@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.131 2004/06/16 12:01:01 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.132 2004/06/18 23:21:47 dougcurrie Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2778,7 +2778,7 @@ sync_exit:
   return rc;
 }
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 /*
 ** Return the current state of the file lock for the given pager.
 ** The return value is one of NO_LOCK, SHARED_LOCK, RESERVED_LOCK,

@@ -1,5 +1,5 @@
-C MinGW/MSYS\sbuild\sfixes;\sticket\s#765\s(CVS\s1624)
-D 2004-06-18T23:20:53
+C MinGW/MSYS\sbuild\sfixes;\sticket\s#765\s(CVS\s1625)
+D 2004-06-18T23:21:47
 F Makefile.in 2659cbce885c1365cb0a5fbeeed5ad69a354fa70
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,10 +48,10 @@ F src/os_unix.c 47176c8e9b90ba751b2c110b6384936572ff3abc
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 337e973ee77797aaab4787e3477a5945fcd97266
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 453099416c10669365ca70f12f13e67e6ef11000
+F src/pager.c d627c5e46084b0c757a16cec2c17adcc8046f8ee
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
-F src/pragma.c c11121c2c0659c37deebae3668db6db5e2be43b1
+F src/pragma.c 42de2b327d17af5167de66744a731f8dae8bbe96
 F src/printf.c 823b6a5cbedb6971a9e62f5d83204fe9b0be7c1b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 91570af7f13d1c5584f3b711676e1226ee12194e
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7121cee78c2ed20fd09190fdcca1c8c92ef1e09d
-R 58e1f6e21954d4318ce72d56b439f77e
+P 3c6b9b41a682a7bb979acc1e269eea2384aa9d45
+R 4719ffddd7d2386ff948074c254db351
 U dougcurrie
-Z b09565c21375e35ceafe9a40a90515d6
+Z 732ff77795683407d59dc0e3a8abe1ac

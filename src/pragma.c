@@ -11,12 +11,12 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.47 2004/06/18 17:10:17 drh Exp $
+** $Id: pragma.c,v 1.48 2004/06/18 23:21:47 dougcurrie Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 # include "pager.h"
 # include "btree.h"
 #endif
@@ -816,7 +816,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
   }else
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases
   */
