@@ -1,5 +1,5 @@
-C Simplifications\sand\soptimizations.\s\sAlso:\sdisable\sthe\scorrupt.test\sfor\snow.\s(CVS\s1924)
-D 2004-08-31T13:45:11
+C Changes\sto\ssupport\scompiling\sunder\swindows.\s(CVS\s1925)
+D 2004-08-31T23:41:26
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F sqlite3.def cf325d366f167029a971de7333f32b74bfe2e375
+F sqlite3.def 84215604aa7b547d75e0f7b437966e7ad18fa8b2
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
@@ -59,7 +59,7 @@ F src/pragma.c b39177b96bb5f7354511468c933357ce65a0dd4c
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 400b2dcc8e05c0101a65a370f7ebb33c9c85f0b3
-F src/shell.c 64932b37d79baffd34544172c14c99b2e08a11bb
+F src/shell.c 4f1a2760ced81c829defb47b0a3b61ffec61b604
 F src/sqlite.h.in b89ced1acc705bc9c79a2a4e725ac0eb64bd0614
 F src/sqliteInt.h 89c1555ceba68d460ee13530eb8a51944e57fad2
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
@@ -246,7 +246,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0a47c8f86d1649e9ae7edd4c49a6fe5f5272351e
-R 4e22239c77e5e5c0b57b87eb76489528
+P 8fd65e704888a8e2f4a712a94fd0e3f866c10ef3
+R 0d8f5ad503e5312e676ca00f78eae116
 U drh
-Z 972ff5a80d13e0bb73eb2d8433c24b81
+Z 56bb610aa487540418fc40b7a4941024

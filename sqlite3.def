@@ -70,6 +70,7 @@ sqlite3_result_text16le
 sqlite3_result_value
 sqlite3_set_authorizer
 sqlite3_set_auxdata
+sqlite3_snprintf
 sqlite3_step
 sqlite3_total_changes
 sqlite3_trace

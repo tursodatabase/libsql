@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.112 2004/08/30 01:54:05 drh Exp $
+** $Id: shell.c,v 1.113 2004/08/31 23:41:26 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +81,29 @@ static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 /*
 ** Determines if a string is a number of not.
 */
-extern int sqlite3IsNumber(const char*, int*, unsigned char);
+static int isNumber(const unsigned char *z, int *realnum){
+  if( *z=='-' || *z=='+' ) z++;
+  if( !isdigit(*z) ){
+    return 0;
+  }
+  z++;
+  if( realnum ) *realnum = 0;
+  while( isdigit(*z) ){ z++; }
+  if( *z=='.' ){
+    z++;
+    if( !isdigit(*z) ) return 0;
+    while( isdigit(*z) ){ z++; }
+    if( realnum ) *realnum = 1;
+  }
+  if( *z=='e' || *z=='E' ){
+    z++;
+    if( *z=='+' || *z=='-' ) z++;
+    if( !isdigit(*z) ) return 0;
+    while( isdigit(*z) ){ z++; }
+    if( realnum ) *realnum = 1;
+  }
+  return *z==0;
+}
 
 /*
 ** A global char* and an SQL function to access its current value 
@@ -459,7 +481,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         char *zSep = i>0 ? ",": "";
         if( azArg[i]==0 ){
           fprintf(p->out,"%sNULL",zSep);
-        }else if( sqlite3IsNumber(azArg[i], 0, 1) ){
+        }else if( isNumber(azArg[i], 0) ){
           fprintf(p->out,"%s%s",zSep, azArg[i]);
         }else{
           if( zSep[0] ) fprintf(p->out,"%s",zSep);
@@ -1179,8 +1201,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     data.showHeader = 0;
     data.mode = MODE_Semi;
     if( nArg>1 ){
-      extern int sqlite3StrICmp(const char*,const char*);
-      if( sqlite3StrICmp(azArg[1],"sqlite_master")==0 ){
+      int i;
+      for(i=0; azArg[1][i]; i++) azArg[1][i] = tolower(azArg[1][i]);
+      if( strcmp(azArg[1],"sqlite_master")==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = "CREATE TABLE sqlite_master (\n"
                       "  type text,\n"
@@ -1193,7 +1216,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         new_colv[0] = "sql";
         new_colv[1] = 0;
         callback(&data, 1, new_argv, new_colv);
-      }else if( sqlite3StrICmp(azArg[1],"sqlite_temp_master")==0 ){
+      }else if( strcmp(azArg[1],"sqlite_temp_master")==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = "CREATE TEMP TABLE sqlite_temp_master (\n"
                       "  type text,\n"
@@ -1372,10 +1395,10 @@ static int _all_whitespace(const char *z){
 ** as is the Oracle "/".
 */
 static int _is_command_terminator(const char *zLine){
-  extern int sqlite3StrNICmp(const char*,const char*,int);
   while( isspace(*(unsigned char*)zLine) ){ zLine++; };
   if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ) return 1;  /* Oracle */
-  if( sqlite3StrNICmp(zLine,"go",2)==0 && _all_whitespace(&zLine[2]) ){
+  if( tolower(zLine[0])=='g' && tolower(zLine[1])=='o'
+         && _all_whitespace(&zLine[2]) ){
     return 1;  /* SQL Server */
   }
   return 0;
@@ -1585,7 +1608,6 @@ int main(int argc, char **argv){
   const char *zInitFile = 0;
   char *zFirstCmd = 0;
   int i;
-  extern int sqlite3OsFileExists(const char*);
 
 #ifdef __MACOS__
   argc = ccommand(&argv);
@@ -1632,7 +1654,7 @@ int main(int argc, char **argv){
   ** files from being created if a user mistypes the database name argument
   ** to the sqlite command-line tool.
   */
-  if( sqlite3OsFileExists(data.zDbFilename) ){
+  if( access(data.zDbFilename, 0)==0 ){
     open_db(&data);
   }
 
@@ -1672,7 +1694,7 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-echo")==0 ){
       data.echoOn = 1;
     }else if( strcmp(z,"-version")==0 ){
-      printf("%s\n", sqlite3_version);
+      printf("%s\n", sqlite3_libversion());
       return 1;
     }else if( strcmp(z,"-help")==0 ){
       usage(1);
@@ -1707,7 +1729,7 @@ int main(int argc, char **argv){
       printf(
         "SQLite version %s\n"
         "Enter \".help\" for instructions\n",
-        sqlite3_version
+        sqlite3_libversion()
       );
       zHome = find_home_dir();
       if( zHome && (zHistory = malloc(strlen(zHome)+20))!=0 ){
