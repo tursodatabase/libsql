@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.221 2005/01/15 01:52:32 drh Exp $
+** $Id: select.c,v 1.222 2005/01/17 08:57:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2057,7 +2057,6 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ExprList *pEList, *pList, eList;
   struct ExprList_item eListItem;
   SrcList *pSrc;
-  
 
   /* Check to see if this query is a simple min() or max() query.  Return
   ** zero if it is  not.
@@ -2130,17 +2129,25 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   if( pIdx==0 ){
     sqlite3VdbeAddOp(v, seekOp, base, 0);
   }else{
+    /* Even though the cursor used to open the index here is closed
+    ** as soon as a single value has been read from it, allocate it
+    ** using (pParse->nTab++) to prevent the cursor id from being 
+    ** reused. This is important for statements of the form 
+    ** "INSERT INTO x SELECT max() FROM x".
+    */
+    int iIdx;
+    iIdx = pParse->nTab++;
     sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-    sqlite3VdbeOp3(v, OP_OpenRead, base+1, pIdx->tnum,
+    sqlite3VdbeOp3(v, OP_OpenRead, iIdx, pIdx->tnum,
                    (char*)&pIdx->keyInfo, P3_KEYINFO);
     if( seekOp==OP_Rewind ){
       sqlite3VdbeAddOp(v, OP_String, 0, 0);
       sqlite3VdbeAddOp(v, OP_MakeRecord, 1, 0);
       seekOp = OP_MoveGt;
     }
-    sqlite3VdbeAddOp(v, seekOp, base+1, 0);
-    sqlite3VdbeAddOp(v, OP_IdxRecno, base+1, 0);
-    sqlite3VdbeAddOp(v, OP_Close, base+1, 0);
+    sqlite3VdbeAddOp(v, seekOp, iIdx, 0);
+    sqlite3VdbeAddOp(v, OP_IdxRecno, iIdx, 0);
+    sqlite3VdbeAddOp(v, OP_Close, iIdx, 0);
     sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
   }
   eList.nExpr = 1;
