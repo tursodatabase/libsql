@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.29 2001/12/22 21:48:30 drh Exp $
+** $Id: insert.c,v 1.30 2001/12/31 02:48:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -132,6 +132,13 @@ void sqliteInsert(
   /* If the INSERT statement included an IDLIST term, then make sure
   ** all elements of the IDLIST really are columns of the table and 
   ** remember the column indices.
+  **
+  ** If the table has an INTEGER PRIMARY KEY column and that column
+  ** is named in the IDLIST, then record in the keyColumn variable
+  ** the index into IDLIST of the primary key column.  keyColumn is
+  ** the index of the primary key as it appears in IDLIST, not as
+  ** is appears in the original table.  (The index of the primary
+  ** key in the original table is pTab->iPKey.)
   */
   if( pColumn ){
     for(i=0; i<pColumn->nId; i++){
@@ -157,7 +164,8 @@ void sqliteInsert(
   }
 
   /* If there is not IDLIST term but the table has an integer primary
-  ** key, the set the keyColumn variable to the primary key column.
+  ** key, the set the keyColumn variable to the primary key column index
+  ** in the original table definition.
   */
   if( pColumn==0 ){
     keyColumn = pTab->iPKey;
@@ -205,7 +213,7 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
   }
 
-  /* If there are indices, we'll need this record number again, so make
+  /* If there are indices, we'll need the new record number again, so make
   ** a copy.
   */
   if( pTab->pIndex ){
@@ -219,7 +227,7 @@ void sqliteInsert(
     if( i==pTab->iPKey ){
       /* The value of the INTEGER PRIMARY KEY column is always a NULL.
       ** Whenever this column is used, the record number will be substituted
-      ** in its place, so there is no point it it taking up space in
+      ** in its place, so there is no point in it taking up space in
       ** the data record. */
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       continue;

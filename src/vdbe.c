@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.102 2001/12/22 14:49:25 drh Exp $
+** $Id: vdbe.c,v 1.103 2001/12/31 02:48:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -56,11 +56,11 @@ typedef struct VdbeOp Op;
 typedef unsigned char Bool;
 
 /*
-** A cursor is a pointer into a database file.  The database file
-** can represent either an SQL table or an SQL index.  Each file is
-** a bag of key/data pairs.  The cursor can loop over all key/data
-** pairs (in an arbitrary order) or it can retrieve a particular
-** key/data pair given a copy of the key.
+** A cursor is a pointer into a single BTree within a database file.
+** The cursor can seek to a BTree entry with a particular key, or
+** loop over all entries of the Btree.  You can also insert new BTree
+** entries or retrieve the key or data from the entry that the cursor
+** is currently pointing to.
 ** 
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
@@ -98,7 +98,7 @@ struct Sorter {
 ** layer without having to malloc.  NBFS is short for Number of Bytes
 ** For Strings.
 */
-#define NBFS 30
+#define NBFS 32
 
 /*
 ** A single level of the stack is an instance of the following
@@ -170,8 +170,8 @@ struct Set {
 
 /*
 ** A Keylist is a bunch of keys into a table.  The keylist can
-** grow without bound.  The keylist stores the keys of database
-** records that need to be deleted.
+** grow without bound.  The keylist stores the ROWIDs of database
+** records that need to be deleted or updated.
 */
 typedef struct Keylist Keylist;
 struct Keylist {
@@ -394,7 +394,7 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
 ** first null byte.  If n>0 then copy n+1 bytes of zP3.
 **
 ** If n==P3_STATIC  it means that zP3 is a pointer to a constant static
-** string we can just copy the pointer.  n==P3_POINTER means zP3 is
+** string and we can just copy the pointer.  n==P3_POINTER means zP3 is
 ** a pointer to some object other than a string.
 **
 ** If addr<0 then change P3 on the most recently inserted instruction.
@@ -1177,6 +1177,7 @@ case OP_String: {
   z = pOp->p3;
   if( z==0 ){
     zStack[i] = 0;
+    aStack[i].n = 0;
     aStack[i].flags = STK_Null;
   }else{
     zStack[i] = z;

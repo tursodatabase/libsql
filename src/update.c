@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.24 2001/12/22 14:49:25 drh Exp $
+** $Id: update.c,v 1.25 2001/12/31 02:48:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,7 +49,7 @@ void sqliteUpdate(
   /* Locate the table which we want to update.  This table has to be
   ** put in an IdList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
-  ** an IdList* parameter instead of just a Table* parameger.
+  ** an IdList* parameter instead of just a Table* parameter.
   */
   pTabList = sqliteIdListAppend(0, pTableName);
   if( pTabList==0 ) goto update_cleanup;
@@ -119,7 +119,8 @@ void sqliteUpdate(
 
   /* Allocate memory for the array apIdx[] and fill it with pointers to every
   ** index that needs to be updated.  Indices only need updating if their
-  ** key includes one of the columns named in pChanges.
+  ** key includes one of the columns named in pChanges or if the record
+  ** number of the original table entry is changing.
   */
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( chngRecno ){
@@ -203,7 +204,12 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     pIdx = apIdx[i];
     for(j=0; j<pIdx->nColumn; j++){
-      sqliteVdbeAddOp(v, OP_Column, base, pIdx->aiColumn[j]);
+      int x = pIdx->aiColumn[j];
+      if( x==pTab->iPKey ){
+        sqliteVdbeAddOp(v, OP_Dup, j, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_Column, base, x);
+      }
     }
     sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
     sqliteVdbeAddOp(v, OP_IdxDelete, base+i+1, 0);
@@ -233,7 +239,7 @@ void sqliteUpdate(
     }
   }
 
-  /* If changing the record number, delete the hold record.
+  /* If changing the record number, delete the old record.
   */
   if( chngRecno ){
     sqliteVdbeAddOp(v, OP_Delete, 0, 0);

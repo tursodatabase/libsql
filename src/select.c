@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.51 2001/12/22 14:49:25 drh Exp $
+** $Id: select.c,v 1.52 2001/12/31 02:48:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -130,7 +130,6 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
     sqliteVdbeResolveLabel(v, lbl);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
     sqliteVdbeAddOp(v, OP_Put, distinct, 0);
   }
 
@@ -159,7 +158,6 @@ static int selectInnerLoop(
   if( eDest==SRT_Union ){
     sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
     sqliteVdbeAddOp(v, OP_String, iParm, 0);
-    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0);
   }else 
 
@@ -189,7 +187,6 @@ static int selectInnerLoop(
   if( eDest==SRT_Set ){
     assert( nColumn==1 );
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0);
   }else 
 
@@ -909,7 +906,6 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
     if( pGroupBy==0 ){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, "", P3_STATIC);
       sqliteVdbeAddOp(v, OP_AggFocus, 0, 0);
       for(i=0; i<pParse->nAgg; i++){
         Expr *pE;
