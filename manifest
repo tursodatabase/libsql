@@ -1,5 +1,5 @@
-C Modify\sthe\sbuild\sprocess\sso\sthat\sthe\sVDBE\sopcode\snumbers\sand\sthe\stable\nthat\scontains\sthe\sopcode\snames\sare\sboth\sautomatically\sgenerated.\sThis\smakes\nit\smuch\seasier\sto\screate\snew\sVDBE\sopcodes.\s(CVS\s746)
-D 2002-09-08T00:04:51
+C Modify\sthe\sbuild\sprocess\sso\sthat\sthe\sVDBE\sopcode\snumbers\sand\sthe\stable\nthat\scontains\sthe\sopcode\snames\sare\sboth\sautomatically\sgenerated.\sThis\smakes\nit\smuch\seasier\sto\screate\snew\sVDBE\sopcodes.\s(CVS\s1727)
+D 2002-09-08T00:04:54
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a876021304a5de7ede1bf835971da7e328d1af07
+P eb54d455b0325d3be96daf6c220c4ee3e0da1a85
 R ec4eceb930ae5f7d03668e5150997da1
 U drh
-Z 19db40a2a17437704a985384e7939b07
+Z ef4086cb3b45d72139e3d7498833a607
