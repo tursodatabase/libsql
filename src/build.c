@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.104 2002/07/13 03:11:53 drh Exp $
+** $Id: build.c,v 1.105 2002/07/13 17:23:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1730,6 +1730,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
   if( db->flags & SQLITE_InTrans ) return;
   sqliteBeginWriteOperation(pParse, 0);
   db->flags |= SQLITE_InTrans;
+  db->pid = sqliteOsProcessId();
   db->onError = onError;
 }
 

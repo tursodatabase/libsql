@@ -82,6 +82,7 @@ int sqliteOsWriteLock(OsFile*);
 int sqliteOsUnlock(OsFile*);
 int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
+int sqliteOsProcessId(void);
 void sqliteOsEnterMutex(void);
 void sqliteOsLeaveMutex(void);
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.137 2002/07/13 03:11:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.138 2002/07/13 17:23:21 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -199,6 +199,7 @@ struct sqlite {
   int next_cookie;              /* Value of schema_cookie after commit */
   int cache_size;               /* Number of pages to use in the cache */
   int nTable;                   /* Number of tables in the database */
+  int pid;                      /* Process ID that started the transaction */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Hash tblHash;                 /* All tables indexed by name */
