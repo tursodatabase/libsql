@@ -1,5 +1,5 @@
-C Add\sthe\s"onecolumn"\smethod\sto\sthe\sTCL\slanguage\sbindings.\s(CVS\s1076)
-D 2003-08-19T14:31:01
+C Add\sthe\sexperimental\s"quote()"\sfunction\sto\sthe\sset\sof\sbuild-in\sfunctions.\s(CVS\s1077)
+D 2003-08-20T01:03:34
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
 F src/expr.c 03c321ac66c1e998c2e0faf22184b5a808b559ca
-F src/func.c 2b196fdca328838c0c02f290ec833d05d63d7a32
+F src/func.c 8cd63ca63d0f5115c371ee3888bcc94ed7200c1d
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c dc200ae04a36bd36e575272a069e20c528b7fbdf
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 7d8d3252df1e9f6bec5e105b6eca3313cb7e226a
-R d1a2b335d94bf870fe28343e60ff8361
+P c7b4c28fbc0bca5645af5750fd353f4eca400b40
+R f0e36a3323c0eee33584e7783fcb7726
 U drh
-Z 3a0f7413336c1c88c47d903a1a6bf2bc
+Z 2c287b9d3454cd33d4083df643e4ab27

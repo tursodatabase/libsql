@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.28 2003/08/10 01:50:55 drh Exp $
+** $Id: func.c,v 1.29 2003/08/20 01:03:34 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -254,6 +254,43 @@ static void nullifFunc(sqlite_func *context, int argc, const char **argv){
 */
 static void versionFunc(sqlite_func *context, int argc, const char **argv){
   sqlite_set_result_string(context, sqlite_version, -1);
+}
+
+/*
+** EXPERIMENTAL - This is not an official function.  The interface may
+** change.  This function may disappear.  Do not write code that depends
+** on this function.
+**
+** Implementation of the QUOTE() function.  This function takes a single
+** argument.  If the argument is numeric, the return value is the same as
+** the argument.  If the argument is NULL, the return value is the string
+** "NULL".  Otherwise, the argument is enclosed in single quotes with
+** single-quote escapes.
+*/
+static void quoteFunc(sqlite_func *context, int argc, const char **argv){
+  if( argc<1 ) return;
+  if( argv[0]==0 ){
+    sqlite_set_result_string(context, "NULL", 4);
+  }else if( sqliteIsNumber(argv[0]) ){
+    sqlite_set_result_string(context, argv[0], -1);
+  }else{
+    int i,j,n;
+    char *z;
+    for(i=n=0; argv[0][i]; i++){ if( argv[0][i]=='\'' ) n++; }
+    z = sqliteMalloc( i+n+3 );
+    if( z==0 ) return;
+    z[0] = '\'';
+    for(i=0, j=1; argv[0][i]; i++){
+      z[j++] = argv[0][i];
+      if( argv[0][i]=='\'' ){
+        z[j++] = '\'';
+      }
+    }
+    z[j++] = '\'';
+    z[j] = 0;
+    sqlite_set_result_string(context, z, j);
+    sqliteFree(z);
+  }
 }
 
 #ifdef SQLITE_SOUNDEX
@@ -830,6 +867,7 @@ void sqliteRegisterBuiltinFunctions(sqlite *db){
     { "glob",       2, SQLITE_NUMERIC, globFunc   },
     { "nullif",     2, SQLITE_ARGS,    nullifFunc },
     { "sqlite_version",0,SQLITE_TEXT,  versionFunc},
+    { "quote",      1, SQLITE_ARGS,    quoteFunc  },
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
     { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },
     { "timestamp", -1, SQLITE_TEXT,    timestampFunc   },
