@@ -1,5 +1,5 @@
-C Mistake\sin\shelp\stext.\sSpurious\strailing\swhitespace\sremoved.\s(CVS\s532)
-D 2002-04-18T02:53:05
+C Updated\sto\smatch\snew\sshell.c\sfunctionality.\s(CVS\s533)
+D 2002-04-18T02:53:54
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -18,7 +18,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 0b9da5898bf5997f30d6f80de4880072db7e5718
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
-F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
+F sqlite.1 6b339cb747b45f8e7ea0335b06291b6d52067b31
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e751338c468cdad79efcc5cd5b924eb2c1eb3c3a
-R 74810d67fb25072226a3268c124de609
+P 4bdd040e4810565c91bcbb5f065580520c5e3c45
+R fccec3c1f56efdafc771baab879ce3fe
 U persicom
-Z 0a078b1bd6cde4d7fa95da2e64371ee8
+Z f4c9300a9a77dcec47079904c2bfe5db
