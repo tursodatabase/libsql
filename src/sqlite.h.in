@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.68 2004/05/21 10:08:54 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.69 2004/05/22 09:21:21 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -57,25 +57,6 @@ extern const char sqlite3_encoding[];
 ** following opaque structure.
 */
 typedef struct sqlite sqlite;
-
-/*
-** A function to open a new sqlite database.  
-**
-** If the database does not exist and mode indicates write
-** permission, then a new database is created.  If the database
-** does not exist and mode does not indicate write permission,
-** then the open fails, an error message generated (if errmsg!=0)
-** and the function returns 0.
-** 
-** If mode does not indicates user write permission, then the 
-** database is opened read-only.
-**
-** The Truth:  As currently implemented, all databases are opened
-** for writing all the time.  Maybe someday we will provide the
-** ability to open a database readonly.  The mode parameters is
-** provided in anticipation of that enhancement.
-*/
-sqlite *sqlite3_open(const char *filename, int mode, char **errmsg);
 
 /*
 ** A function to close the database.
@@ -1203,12 +1184,42 @@ int sqlite3_finalize_new(sqlite3_stmt *pStmt);
 */
 int sqlite3_reset_new(sqlite3_stmt *pStmt);
 
-int sqlite3_open_new(
+/*
+** Open the sqlite database file "filename", where "filename" is UTF-8
+** encoded. An sqlite3* handle is returned in *ppDb, even if an error 
+** occurs. If the database is opened (or created) successfully, then 
+** SQLITE_OK is returned. Otherwise an error code is returned and the
+** sqlite3_errmsg() function may be used to obtain an English language
+** explanation of the error.
+**
+** If the database file does not exist, then a new database is created
+** using UTF-8 text encoding.
+**
+** Whether or not an error occurs when it is opened, resources associated
+** with the sqlite3* handle should be released by passing it to
+** sqlite3_close() when it is no longer required.
+*/
+int sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   const char **args       /* Null terminated array of option strings */
 );
 
+/*
+** Open the sqlite database file "filename", where "filename" is native
+** byte order UTF-16 encoded. An sqlite3* handle is returned in *ppDb, even
+** if an error occurs. If the database is opened (or created) successfully,
+** then SQLITE_OK is returned. Otherwise an error code is returned and the
+** sqlite3_errmsg() function may be used to obtain an English language
+** explanation of the error.
+**
+** If the database file does not exist, then a new database is created
+** using UTF-16 text encoding in the machines native byte order.
+**
+** Whether or not an error occurs when it is opened, resources associated
+** with the sqlite3* handle should be released by passing it to
+** sqlite3_close() when it is no longer required.
+*/
 int sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */

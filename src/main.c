@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.183 2004/05/22 08:09:40 danielk1977 Exp $
+** $Id: main.c,v 1.184 2004/05/22 09:21:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1199,6 +1199,19 @@ static int openDatabase(
   int rc, i;
   char *zErrMsg = 0;
 
+#ifdef SQLITE_TEST
+  for(i=0; options && options[i]; i++){
+    char const *zOpt = options[i];
+    if( 0==sqlite3StrICmp(zOpt, "-utf8") ){
+      def_enc = TEXT_Utf8;
+    }else if( 0==sqlite3StrICmp(zOpt, "-utf16le") ){
+      def_enc = TEXT_Utf16le;
+    }else if( 0==sqlite3StrICmp(zOpt, "-utf16be") ){
+      def_enc = TEXT_Utf16be;
+    }
+  }
+#endif
+
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
   if( db==0 ) goto opendb_out;
@@ -1257,26 +1270,12 @@ opendb_out:
 /*
 ** Open a new database handle.
 */
-int sqlite3_open_new(
+int sqlite3_open(
   const char *zFilename, 
   sqlite3 **ppDb, 
   const char **options
 ){
   return openDatabase(zFilename, ppDb, options, TEXT_Utf8);
-  /* return openDatabase(zFilename, ppDb, options, TEXT_Utf16le); */
-}
-
-sqlite *sqlite3_open(const char *zFilename, int mode, char **pzErrMsg){
-  sqlite3 *db;
-  int rc;
- 
-  rc = sqlite3_open_new(zFilename, &db, 0);
-  if( rc!=SQLITE_OK && pzErrMsg ){
-    char *err = sqlite3_errmsg(db);
-    *pzErrMsg = malloc(strlen(err)+1);
-    strcpy(*pzErrMsg, err);
-  }
-  return db;
 }
 
 /*
@@ -1297,6 +1296,8 @@ int sqlite3_open16(
     *ppDb = 0;
     return SQLITE_NOMEM;
   }
+
+  /* FIX ME: Also need to translate the option strings */
 
   if( SQLITE3_BIGENDIAN ){
     rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16be);
@@ -1335,115 +1336,3 @@ int sqlite3_reset_new(sqlite3_stmt *pStmt){
   return rc;
 }
 
-#if 0
-
-/*
-** sqlite3_open
-**
-*/
-int sqlite3_open(const char *filename, sqlite3 **pDb, const char **options){
-  *pDb = sqlite3_open(filename, 0, &errmsg);
-  return (*pDb?SQLITE_OK:SQLITE_ERROR);
-}
-int sqlite3_open16(const void *filename, sqlite3 **pDb, const char **options){
-  int rc;
-  char * filename8;
-
-  filename8 = sqlite3utf16to8(filename, -1, SQLITE3_BIGENDIAN);
-  if( !filename8 ){
-    return SQLITE_NOMEM;
-  }
-
-  rc = sqlite3_open(filename8, pDb, options);
-  sqliteFree(filename8);
-
-  return rc;
-}
-
-/*
-** sqlite3_close
-**
-*/
-int sqlite3_close(sqlite3 *db){
-  return sqlite3_close(db);
-}
-
-/*
-** sqlite3_errmsg
-**
-** TODO: !
-*/
-const char *sqlite3_errmsg(sqlite3 *db){
-  assert(!"TODO");
-}
-const void *sqlite3_errmsg16(sqlite3 *db){
-  assert(!"TODO");
-}
-
-/*
-** sqlite3_errcode
-**
-** TODO: !
-*/
-int sqlite3_errcode(sqlite3 *db){
-  assert(!"TODO");
-}
-
-struct sqlite_stmt {
-};
-
-/*
-** sqlite3_finalize
-*/
-int sqlite3_finalize(sqlite3_stmt *stmt){
-  return sqlite3_finalize(stmt, 0);
-}
-
-/*
-** sqlite3_reset
-*/
-int sqlite3_reset(sqlite3_stmt*){
-  return sqlite3_reset(stmt, 0);
-}
-
-/*
-** sqlite3_step
-*/
-int sqlite3_step(sqlite3_stmt *pStmt){
-  return sqlite3_step(pStmt);
-}
-
-int sqlite3_column_count(sqlite3_stmt*){
-}
-
-int sqlite3_column_type(sqlite3_stmt*,int){
-}
-
-const char *sqlite3_column_decltype(sqlite3_stmt*,int){
-}
-
-const void *sqlite3_column_decltype16(sqlite3_stmt*,int){
-}
-
-const char *sqlite3_column_name(sqlite3_stmt*,int){
-}
-
-const void *sqlite3_column_name16(sqlite3_stmt*,int){
-}
-
-const unsigned char *sqlite3_column_data(sqlite3_stmt*,int){
-}
-
-const void *sqlite3_column_data16(sqlite3_stmt*,int){
-}
-
-int sqlite3_column_bytes(sqlite3_stmt*,int){
-}
-
-long long int sqlite3_column_int(sqlite3_stmt*,int){
-}
-
-double sqlite3_column_float(sqlite3_stmt*,int){
-}
-
-#endif

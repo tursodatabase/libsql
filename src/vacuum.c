@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.15 2004/05/10 10:35:00 danielk1977 Exp $
+** $Id: vacuum.c,v 1.16 2004/05/22 09:21:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -266,10 +266,9 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   }
 
   
-  dbNew = sqlite3_open(zTemp, 0, &zErrMsg);
-  if( dbNew==0 ){
+  if( SQLITE_OK!=sqlite3_open(zTemp, &dbNew, 0) ){
     sqlite3SetString(pzErrMsg, "unable to open a temporary database at ",
-       zTemp, " - ", zErrMsg, (char*)0);
+       zTemp, " - ", sqlite3_errmsg(dbNew), (char*)0);
     goto end_of_vacuum;
   }
   if( (rc = execsql(pzErrMsg, db, "BEGIN"))!=0 ) goto end_of_vacuum;
@@ -313,6 +312,7 @@ end_of_vacuum:
   sqliteFree(zTemp);
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
+  if( dbNew ) sqlite3_close(dbNew);
   if( zErrMsg ) sqlite3_freemem(zErrMsg);
   if( rc==SQLITE_ABORT ) sVac.rc = SQLITE_ERROR;
   return sVac.rc;

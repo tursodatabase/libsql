@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.96 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: shell.c,v 1.97 2004/05/22 09:21:21 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -510,20 +510,17 @@ static void process_input(struct callback_data *p, FILE *in);
 */
 static void open_db(struct callback_data *p){
   if( p->db==0 ){
-    char *zErrMsg = 0;
 #ifdef SQLITE_HAS_CODEC
     int n = p->zKey ? strlen(p->zKey) : 0;
     db = p->db = sqlite3_open_encrypted(p->zDbFilename, p->zKey, n, 0, &zErrMsg);
+    assert(0); /* Encrypted databases are broken in SQLite 3 */
 #else
-    db = p->db = sqlite3_open(p->zDbFilename, 0, &zErrMsg);
+    sqlite3_open(p->zDbFilename, &p->db, 0);
+    db = p->db;
 #endif
-    if( p->db==0 ){
-      if( zErrMsg ){
-        fprintf(stderr,"Unable to open database \"%s\": %s\n", 
-           p->zDbFilename, zErrMsg);
-      }else{
-        fprintf(stderr,"Unable to open database %s\n", p->zDbFilename);
-      }
+    if( SQLITE_OK!=sqlite3_errcode(db) ){
+      fprintf(stderr,"Unable to open database \"%s\": %s\n", 
+          p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
     }
   }
