@@ -17,6 +17,16 @@
 #include "sqliteInt.h"
 #include "os.h"
 
+#ifndef OS_UNIX
+# ifndef OS_WIN
+#  define OS_UNIX 1
+# else
+#  define OS_UNIX 0
+# endif
+#endif
+#ifndef OS_WIN
+# define OS_WIN 0
+#endif
 #if OS_UNIX
 # include <fcntl.h>
 # include <sys/stat.h>
@@ -26,6 +36,44 @@
 #if OS_WIN
 # include <winbase.h>
 #endif
+
+/*
+** Delete the named file
+*/
+int sqliteOsDelete(const char *zFilename){
+#if OS_UNIX
+  unlink(zFilename);
+#endif
+#if OS_WIN
+  DeleteFile(zFilename);
+#endif
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the named file exists.
+*/
+int sqliteOsFileExists(const char *zFilename){
+#if OS_UNIX
+  return access(zFilename, 0)==0;
+#endif
+#if OS_WIN
+  HANDLE h;
+  h = CreateFile(zBuf,
+    GENERIC_READ,
+    0,
+    NULL,
+    OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
+    NULL
+  );
+  if( h!=INVALID_FILE_HANDLE ){
+    CloseHandle(h);
+    return 1;
+  }
+  return 0;
+#endif
+}
 
 
 /*
@@ -41,7 +89,11 @@
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *pResulst and *pReadonly unchanged.
 */
-int sqliteOsOpenReadWrite(char *zFilename, OsFile *pResult, int *pReadonly){
+int sqliteOsOpenReadWrite(
+  const char *zFilename,
+  OsFile *pResult,
+  int *pReadonly
+){
 #if OS_UNIX
   int fd = open(zFilename, O_RDWR|O_CREAT, 0644);
   if( fd<0 ){
@@ -84,6 +136,7 @@ int sqliteOsOpenReadWrite(char *zFilename, OsFile *pResult, int *pReadonly){
   *pResult = h;
   return SQLITE_OK;
 #endif
+}
 
 
 /*
@@ -97,10 +150,8 @@ int sqliteOsOpenReadWrite(char *zFilename, OsFile *pResult, int *pReadonly){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqliteOsOpenExclusive(char *zFilename, OsFile *pResult){
+int sqliteOsOpenExclusive(const char *zFilename, OsFile *pResult){
 #if OS_UNIX
-  struct stat buf;
-  time_t now;
   int fd;
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
@@ -150,7 +201,7 @@ int sqliteOsTempFileName(char *zBuf){
     "0123456789";
   int i, j;
   struct stat buf;
-  char *zDir = ".";
+  const char *zDir = ".";
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
     if( stat(azDirs[i], &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
@@ -181,19 +232,7 @@ int sqliteOsTempFileName(char *zBuf){
       zBuf[j++] = zChars[n];
     }
     zBuf[j] = 0;
-    h = CreateFile(zBuf,
-      GENERIC_READ,
-      0,
-      NULL,
-      OPEN_EXISTING,
-      FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
-      NULL
-    );
-    if( h!=INVALID_FILE_HANDLE ){
-      CloseHandle(h);
-      continue;
-    }
-    break;
+    if( !sqliteOsFileExists(zBuf) ) break;
   }
 #endif
   return SQLITE_OK; 
@@ -214,37 +253,183 @@ int sqliteOsClose(OsFile id){
 }
 
 /*
-** Read data from a file into a buffer
+** Read data from a file into a buffer.  Return the number of
+** bytes actually read.
 */
+int sqliteOsRead(OsFile id, void *pBuf, int amt){
+#if OS_UNIX
+  int got;
+  got = read(id, pBuf, amt);
+  if( got<0 ) got = 0;
+  return got==amt ? SQLITE_OK : SQLITE_IOERR;
+#endif
+#if OS_WIN
+  int got;
+  if( !ReadFile(id, pBuf, amt, &got, 0) ){
+    got = 0;
+  }
+  return got==amt ? SQLITE_OK : SQLITE_IOERR;
+#endif
+}
 
 /*
-** Write data from a buffer into a file
+** Write data from a buffer into a file.  Return SQLITE_OK on success
+** or some other error code on failure.
 */
+int sqliteOsWrite(OsFile id, const void *pBuf, int amt){
+#if OS_UNIX
+  int wrote;
+  wrote = write(id, pBuf, amt);
+  if( wrote<amt ) return SQLITE_FULL;
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  int wrote;
+  if( !WriteFile(id, pBuf, amt, &wrote, 0) || wrote<amt ){
+    return SQLITE_FULL;
+  }
+  return SQLITE_OK;
+#endif
+}
+
 /*
 ** Move the read/write pointer in a file.
 */
+int sqliteOsSeek(OsFile id, int offset){
+#if OS_UNIX
+  lseek(id, offset, SEEK_SET);
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  SetFilePointer(id, offset, 0, FILE_BEGIN);
+  return SQLITE_OK;
+#endif
+}
+
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
+int sqliteOsSync(OsFile id){
+#if OS_UNIX
+  return fsync(id)==0 ? SQLITE_OK : SQLITE_IOERR;
+#endif
+#if OS_WIN
+  return FlushFileBuffers(id) ? SQLITE_OK : SQLITE_IOERR;
+#endif
+}
+
 /*
 ** Truncate an open file to a specified size
 */
+int sqliteOsTruncate(OsFile id, int nByte){
+#if OS_UNIX
+  return ftruncate(id, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
+#endif
+#if OS_WIN
+  SetFilePointer(id, nByte, 0, FILE_BEGIN);
+  SetEndOfFile(id);
+  return SQLITE_OK;
+#endif
+}
+
 /*
 ** Determine the current size of a file in bytes
 */
+int sqliteOsFileSize(OsFile id, int *pSize){
+#if OS_UNIX
+  struct stat buf;
+  if( fstat(id, &buf)!=0 ){
+    return SQLITE_IOERR;
+  }
+  *pSize = buf.st_size;
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  *pSize = GetFileSize(id, 0);
+  return SQLITE_OK;
+#endif
+}
+
 /*
 ** Get a read or write lock on a file.
 */
+int sqliteOsLock(OsFile id, int wrlock){
+#if OS_UNIX
+  int rc;
+  struct flock lock;
+memset(&lock, 0, sizeof(lock));
+  lock.l_type = wrlock ? F_WRLCK : F_RDLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0L;
+  lock.l_len = 1024L;
+printf("LOCK %s %d\n",wrlock?"WRITE":"READ",id);
+  rc = fcntl(id, F_SETLK, &lock);
+fcntl(id, F_GETLK, &lock);
+printf("rc=%d why=%d\n",rc,lock.l_type);
+  return rc==0 ? SQLITE_OK : SQLITE_BUSY;
+#endif
+#if OS_WIN
+  if( !LockFile(id, 0, 0, 1024, 0) ){
+    return SQLITE_BUSY;
+  }
+  return SQLITE_OK;
+#endif
+}
+
 /*
 ** Release the read or write lock from a file.
 */
+int sqliteOsUnlock(OsFile id){
+#if OS_UNIX
+  int rc;
+  struct flock lock;
+  lock.l_type = F_UNLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0L;
+  lock.l_len = 1L;
+printf("UNLOCK %d\n",id);
+  rc = fcntl(id, F_SETLK, &lock);
+  return rc==0 ? SQLITE_OK : SQLITE_IOERR;
+#endif
+#if OS_WIN
+  return UnlockFile(id, 0, 0, 1024, 0) ? SQLITE_OK : SQLITE_IOERR;
+#endif
+}
+
 /*
 ** Get information to seed the random number generator.
 */
+int sqliteOsRandomSeed(char *zBuf){
+#if OS_UNIX
+  int pid;
+  time((time_t*)zBuf);
+  zBuf += sizeof(time_t);
+  pid = getpid();
+  memcpy(zBuf, &pid, sizeof(pid));
+  zBuf += pid;
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  GetSystemTime((LPSYSTEMTIME)zBuf);
+  return SQLITE_OK;
+#endif 
+}
+
 /*
-** Sleep for a little while.
+** Sleep for a little while.  Return the amount of time slept.
 */
-
-
-
-#endif /* OS_WIN */
+int sqliteOsSleep(int ms){
+#if OS_UNIX
+#if defined(HAVE_USLEEP) && HAVE_USLEEP
+  usleep(ms*1000);
+  return ms;
+#else
+  sleep((ms+999)/1000);
+  return 1000*((ms+999)/1000);
+#endif
+#endif
+#if OS_WIN
+  Sleep(ms);
+  return ms;
+#endif
+}

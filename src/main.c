@@ -14,12 +14,10 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.38 2001/09/17 20:25:58 drh Exp $
+** $Id: main.c,v 1.39 2001/09/19 13:22:40 drh Exp $
 */
 #include "sqliteInt.h"
-#if defined(HAVE_USLEEP) && HAVE_USLEEP
-#include <unistd.h>
-#endif
+#include "os.h"
 
 /*
 ** This is the callback routine for the code that initializes the
@@ -428,8 +426,8 @@ static int sqliteDefaultBusyCallback(
  const char *NotUsed,     /* The name of the table that is busy */
  int count                /* Number of times table has been busy */
 ){
-#if defined(HAVE_USLEEP) && HAVE_USLEEP
-  int delay = 10000;
+#if SQLITE_MIN_SLEEP_MS==1
+  int delay = 10;
   int prior_delay = 0;
   int timeout = (int)Timeout;
   int i;
@@ -437,9 +435,9 @@ static int sqliteDefaultBusyCallback(
   for(i=1; i<count; i++){ 
     prior_delay += delay;
     delay = delay*2;
-    if( delay>=1000000 ){
-      delay = 1000000;
-      prior_delay += 1000000*(count - i - 1);
+    if( delay>=1000 ){
+      delay = 1000;
+      prior_delay += 1000*(count - i - 1);
       break;
     }
   }
@@ -447,14 +445,14 @@ static int sqliteDefaultBusyCallback(
     delay = timeout*1000 - prior_delay;
     if( delay<=0 ) return 0;
   }
-  usleep(delay);
+  sqliteOsSleep(delay);
   return 1;
 #else
   int timeout = (int)Timeout;
   if( (count+1)*1000 > timeout ){
     return 0;
   }
-  sleep(1);
+  sqliteOsSleep(1000);
   return 1;
 #endif
 }

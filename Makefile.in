@@ -61,7 +61,7 @@ ENCODING = @ENCODING@
 # Object files for the SQLite library.
 #
 LIBOBJ = btree.o build.o delete.o expr.o insert.o \
-         main.o pager.o parse.o printf.o random.o select.o table.o \
+         main.o os.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
@@ -134,6 +134,7 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 HDR = \
    sqlite.h  \
    $(TOP)/src/btree.h \
+   $(TOP)/src/os.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h  \
    parse.h
@@ -149,6 +150,9 @@ main.o:	$(TOP)/src/main.c $(HDR)
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(TCC) -c $(TOP)/src/pager.c
+
+os.o:	$(TOP)/src/os.c $(HDR)
+	$(TCC) -c $(TOP)/src/os.c
 
 parse.o:	parse.c $(HDR)
 	$(TCC) -c parse.c

@@ -1,6 +1,6 @@
-C Fix\sa\sproblem\sin\sGROUP\sBY\swith\smultiple\scolumns.\s(CVS\s255)
-D 2001-09-18T22:17:44
-F Makefile.in a7053596881af6f2590a816ad4eb8fbbf20724a7
+C Trying\sto\sget\sthe\sOS\sabstraction\slayer\sto\swork.\s(CVS\s256)
+D 2001-09-19T13:22:39
+F Makefile.in 1d9592c4aeedd3643b2e1dfa037ce5faf54805a3
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 3861a21803fcd9eb92a403027b0da2bb7add4de1
 F configure aad857a97ca28a584228869186eb4cd7dbebbb3a x
@@ -14,15 +14,15 @@ F src/build.c 072d6cf5b894c47d3fb8c11580eaa1a24528bca8
 F src/delete.c ca7ca9bf8b613730821c4a755030d1a020b5e067
 F src/expr.c 343a515a4abaf60e9e26c7412aa8c43fd3eae97d
 F src/insert.c b34860ea58525754f18bde652f74161295ca2455
-F src/main.c 71ca839b90869c8c13db52fd08b0d0e80dae3288
+F src/main.c 5e5794eea3316dd3a63c112ccdcc997b9118f345
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c 2e0daeca8a8c75f122d41f894698f5e1b258b69c
-F src/os.h 3b21772e76df0f3998c5a968a2a0d23b9d4551fe
-F src/pager.c c7db91e4e44bbf3e13ecea658e47b670d1f26e29
+F src/os.c 6ed6f61915807b1b4578398b4e797e55b12db4ab
+F src/os.h 2528414d4d441e86cf458b7520ed7f629d446d70
+F src/pager.c 28c8a641601b81a11454de3015d3d796e31ea182
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 2bcf47bb8e6afd8bc10aebd555fa07b73905bee4
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
-F src/random.c 707529bcda5c7382dc32bd0545e0217f90f70e29
+F src/random.c b6a57e85288470b013ad584a8813e893b60e62fe
 F src/select.c 7d90a6464906419fde96c0707a4cf4f3280db318
 F src/shell.c 8e573138074e0b9526fca59b3eac22bdf18ecc03
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
@@ -35,7 +35,7 @@ F src/test2.c 0168b39225b768cfdadd534406f9dec58c27879e
 F src/test3.c f46bad555db7a6a25be332a96ac99e4d68a1b0c5
 F src/tokenize.c 2adf0568edf41b3d3c2fcb541ac49bd6e662da0c
 F src/update.c a1952ad5d53379fa2b2d12efae5993ddb85a1ddb
-F src/util.c 2cd0bb9693e1c538a5c6f152b7d45cc8567e6724
+F src/util.c 2a3491fd761b64cca849b07095076f482d119f9c
 F src/vdbe.c efe564f482c94d361843c5975e2a5724cf0ca8af
 F src/vdbe.h 900b59b46afdfb9c048a2a31a4478f380ab8504e
 F src/where.c cce952b6a2459ac2296e3432876a4252d2fe3b87
@@ -96,7 +96,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 8f28a83abac59a2161d486c96386b8df726468d0
-R 716384b1a17cd98ef2ff77fe086995d1
+P 22132ce18cad31482cdb9b380cedc3f53bc532b8
+R f2b9b288263979b8bf39b2aa8c086069
 U drh
-Z 8f168bc49c168254b9355cae69013087
+Z a1f7206e19ddb2d1a7062a107b29fcdc

@@ -23,27 +23,35 @@
 #if OS_UNIX
   typedef int OsFile;
 # define SQLITE_TEMPNAME_SIZE 200
+# if defined(HAVE_USLEEP) && HAVE_USLEEP
+#  define SQLITE_MIN_SLEEP_MS 1
+# else
+#  define SQLITE_MIN_SLEEP_MS 1000
+# endif
 #endif
 
 #if OS_WIN
   typedef HANDLE OsFile;
-# define SQLITE_TEMPNAME_SIZE (MAX_PATH+1)
+# define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
+# deifne SQLITE_MIN_SLEEP_MS 1
 #endif
 
-int sqliteOsOpenReadWrite(char*, OsFile*, int*);
-int sqliteOsOpenExclusive(char*, OsFile*);
+int sqliteOsDelete(const char*);
+int sqliteOsFileExists(const char*);
+int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
+int sqliteOsOpenExclusive(const char*, OsFile*);
 int sqliteOsTempFileName(char*);
 int sqliteOsClose(OsFile);
-int sqliteOsRead(OsFile, int amt, void*);
-int sqliteOsWrite(OsFile, int amt, void*);
+int sqliteOsRead(OsFile, void*, int amt);
+int sqliteOsWrite(OsFile, const void*, int amt);
 int sqliteOsSeek(OsFile, int offset);
 int sqliteOsSync(OsFile);
 int sqliteOsTruncate(OsFile, int size);
 int sqliteOsFileSize(OsFile, int *pSize);
 int sqliteOsLock(OsFile, int wrlock);
 int sqliteOsUnlock(OsFile);
-int sqliteOsRandomSeed(int amt, char*);
-int sqliteSleep(int ms);
+int sqliteOsRandomSeed(char*);
+int sqliteOsSleep(int ms);
 
 
 

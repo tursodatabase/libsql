@@ -15,10 +15,10 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.5 2001/09/16 00:13:27 drh Exp $
+** $Id: random.c,v 1.6 2001/09/19 13:22:40 drh Exp $
 */
 #include "sqliteInt.h"
-#include <time.h>
+#include "os.h"
 
 /*
 ** Get a single 8-bit random value from the RC4 PRNG.
@@ -48,9 +48,9 @@ int sqliteRandomByte(void){
   */
   if( !prng_state.isInit ){
     int i;
-    static char seed[] = "    sqlite random seed";
+    static char seed[] = "    sqlite random seed abcdefghijklmnop";
     char k[256];
-    time((time_t*)seed);
+    sqliteOsRandomSeed(seed);
     prng_state.j = 0;
     prng_state.i = 0;
     for(i=0; i<256; i++){
