@@ -11,11 +11,6 @@
 #
 srcdir=`echo "$0" | sed 's%\(^.*\)/[^/][^/]*$%\1%'`
 
-# Get the makefile.
-#
-cp $srcdir/Makefile.linux-gcc ./Makefile
-chmod +x $srcdir/install-sh
-
 # Clear out the build directory "doc"
 #
 #rm -rf doc
