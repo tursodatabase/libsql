@@ -1,5 +1,5 @@
-C Prepare\sfor\sthe\srelease\sof\sversion\s3.0.4.\s(CVS\s1883)
-D 2004-08-09T00:04:05
+C Version\s3.0.4\s(beta)\s(CVS\s1884)
+D 2004-08-09T00:26:58
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 81d91d14cf2352fc7981b361ac9af99b3cbbc9e8
+P 72fb719bdd627694d89ea523dda3cf44537463a9
 R 90e96fde8e9b7dffc0f3f68d9146eaac
 U drh
-Z 595b1435ed7b64ed7d1a75de2c9eb76d
+Z 1c62f6e94ef5d400623d97aff1d08313
