@@ -1,5 +1,5 @@
-C Version\s2.4.8\s(CVS\s538)
-D 2002-04-20T14:45:31
+C Fix\sfor\sticket\s#21\s(I\sthink):\sDo\snot\sreturn\san\s"out\sof\smemory"\serror\sif\swe\ncan\snot\sfind\sthe\susers\shome\sdirectory.\sInstead,\sjust\sreport\sthat\swe\scould\nnot\sfind\sthe\shome\sdirectory.\s(CVS\s540)
+D 2002-04-21T19:06:22
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -39,7 +39,7 @@ F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
-F src/shell.c c0800304c9f915f8dec2cb73119d6f4e98f30c12
+F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
 F src/sqliteInt.h e47ca9267a4c4a98e9f8d90c2df994a18f23d699
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c01bc2d19e8592fe3b1a5202926be649af96c783
-R c985aee663734079903708a52d4ca252
+P d703a2c5c4fa3e792e203fd9895b59570b5fdfd1
+R bb1d1e53778c477b7a16e995e39db7ea
 U drh
-Z aec1c09c119aa7c61e11883fb01fa5f4
+Z 70b66d954b78e66bbb5b11096a71fa35

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.55 2002/04/19 12:34:06 drh Exp $
+** $Id: shell.c,v 1.56 2002/04/21 19:06:22 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -998,11 +998,18 @@ static char *find_home_dir(void){
     }
   }
 
+#if defined(_WIN32) || defined(WIN32)
+  if (!home_dir) {
+    home_dir = "c:";
+  }
+#endif
+
   if( home_dir ){
     char *z = malloc( strlen(home_dir)+1 );
     if( z ) strcpy(z, home_dir);
     home_dir = z;
   }
+
   return home_dir;
 }
 
@@ -1017,7 +1024,11 @@ static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
 
   if (sqliterc == NULL) {
     home_dir = find_home_dir();
-    sqliterc = home_dir ? malloc(strlen(home_dir) + 15) : 0;
+    if( home_dir==0 ){
+      fprintf(stderr,"%s: cannot locate your home directory!\n", Argv0);
+      return;
+    }
+    sqliterc = malloc(strlen(home_dir) + 15);
     if( sqliterc==0 ){
       fprintf(stderr,"%s: out of memory!\n", Argv0);
       exit(1);
