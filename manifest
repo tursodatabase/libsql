@@ -1,5 +1,5 @@
-C Remove\san\sunused\svariable.\s(CVS\s848)
-D 2003-01-25T14:34:23
+C Fix\sa\sbug\sin\sthe\srollback\svalidation\slogic\s(code\sthat\sonly\sruns\sduring\ndebugging).\s\sThe\sproblem\swas\sintroduced\sby\scheck-in\s(835).\s(CVS\s849)
+D 2003-01-25T15:43:22
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/main.c ad3193c56da5acd31bc6cd48aa50dae1962d7c78
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c 82148bde7a080caab5f1c9ccec921275a14306dc
+F src/pager.c 95f5c5c775ed47e837ce02b407d80527d93e6c43
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y a4fbfbe3c4254c96dae8c33264fb54af755a3770
 F src/printf.c e8e9a0605602cb1a3a2dc754e0978fa9064ecee7
@@ -154,7 +154,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5143d4814df1dd440a362a90dd3f328c84527565
-R 8d798f4de6f078b0174c54b9f779d4d6
+P 18f4ffaa2ed89784a1ea3c61c864d20e18fa1e9f
+R 4cf2a85c454063f72e76dc7b464fd72d
 U drh
-Z 8afdccf6d8d280981bb3a6b92995d993
+Z e18f1e76d391be3676abefbe5def4da4

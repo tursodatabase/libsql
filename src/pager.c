@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.70 2003/01/22 01:26:44 drh Exp $
+** @(#) $Id: pager.c,v 1.71 2003/01/25 15:43:22 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1713,12 +1713,15 @@ int sqlitepager_rollback(Pager *pPager){
   ** worked if it had occurred after an OS crash or unexpected power
   ** loss.
   */
-  if( pPager->syncJSize<sizeof(aJournalMagic)+sizeof(Pgno) ){
-    pPager->syncJSize = sizeof(aJournalMagic)+sizeof(Pgno);
+  if( !pPager->noSync ){
+    assert( !pPager->tempFile );
+    if( pPager->syncJSize<sizeof(aJournalMagic)+sizeof(Pgno) ){
+      pPager->syncJSize = sizeof(aJournalMagic)+sizeof(Pgno);
+    }
+    TRACE2("TRUNCATE JOURNAL %lld\n", pPager->syncJSize);
+    rc =  sqliteOsTruncate(&pPager->jfd, pPager->syncJSize);
+    if( rc ) return rc;
   }
-  TRACE2("TRUNCATE JOURNAL %lld\n", pPager->syncJSize);
-  rc =  sqliteOsTruncate(&pPager->jfd, pPager->syncJSize);
-  if( rc ) return rc;
 #endif
 
   if( pPager->errMask!=0 && pPager->errMask!=PAGER_ERR_FULL ){
