@@ -1,5 +1,5 @@
-C Identify\stests\sthat\sdepend\son\ssystem\sload\sand\nprocessor\sspeed.\s(CVS\s192)
-D 2001-03-15T18:21:22
+C Version\s1.0.25\s(CVS\s478)
+D 2001-03-15T18:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 34b17e6ce15dd24dc2ca609ef9c136fe4dc1b4b5
+P 4b0ba23807a57eaa3649622cff3be66cd75e7561
 R 9278e0d1b4fb4a58660b2bd6644e304b
 U drh
-Z 6ff756cd972c647d04eb15cb7f8ae57c
+Z 1678389fee545571636f80371eb62ce2
