@@ -9,11 +9,11 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.15 2003/08/27 22:52:34 drh Exp $
+** $Id: btree_rb.c,v 1.16 2003/08/27 22:57:08 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
-**
+** 
 ** It was contributed to SQLite by anonymous on 2003-Feb-04 23:24:49 UTC.
 */
 #include "btree.h"
