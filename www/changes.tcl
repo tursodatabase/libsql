@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Mar 31 (2.4.5)} {
+<li>When inserting an explicit NULL into an INTEGER PRIMARY KEY, convert
+    the NULL value into a unique key automatically.</li>
+}
+
 chng {2002 Mar 24 (2.4.4)} {
 <li>Allow "VIEW" to be a column name</li>
 <li>Added support for CASE expressions (patch from Dan Kennedy)</li>

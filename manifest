@@ -1,9 +1,9 @@
-C Version\s2.4.4\s(CVS\s509)
-D 2002-03-30T15:32:09
+C When\san\sattempt\sis\smade\sto\sinsert\san\sexplicit\sNULL\sinto\san\sINTEGER\nPRIMARY\sKEY\scolumn,\sautomatically\sconvert\sthe\sNULL\svalue\sinto\sa\sunique\ninteger\skey.\s\sThis\swas\salready\shappening\swhen\san\simplied\sNULL\swas\ninserted\s-\swhen\sthe\sINTEGER\sPRIMARY\sKEY\scolumn\swas\somitted\sfrom\sthe\nlist\sof\scolumns\sbeing\sinserted.\s\sPatches\sfrom\sChristian\sWerner.\s(CVS\s510)
+D 2002-03-31T18:29:03
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 709d6814e7f7be60eddfd0c173f583061695e9b6
+F VERSION 15676b83c5cca5728ec7721e28925685d89e118d
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -28,7 +28,7 @@ F src/expr.c e7a1e22bc2ebcd789f0f8c0db544cf16ad664054
 F src/func.c 87516e7dc37190c24af77593931a5d09d797520a
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
-F src/insert.c 42bfd145efd428d7e5f200dd49ea0b816fc30d79
+F src/insert.c 903ff262c90586c99eafd43934517bc3aed5f77e
 F src/main.c b21019084b93fe685a8a25217d01f6958584ae9b
 F src/md5.c b2b1a34fce66ceca97f4e0dabc20be8be7933c92
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
@@ -69,7 +69,7 @@ F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test c36d534a4ab58c2cd452a273e51b2b0dd1ede1f9
 F test/insert2.test 2f02b1e0dbfba3e8c76496209be5f4010b584181
-F test/intpkey.test 101ec266222e88b24e6f1e204b9b6873404cd4dc
+F test/intpkey.test 31b5f28b2c44273e6695cf36ab2e4133aee7753c
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/limit.test a930f3eba2a7691c8397ccab33710b931589566a
 F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
@@ -116,7 +116,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 2ffec658e3072301bcead463b035b9663f7bbbed
+F www/changes.tcl bb47ad160743e11dba5a4b73477150b6859ab1a3
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 81c4b749614cb0ca50bc52a3d4aac189af0222cd
-R 1efdee052cda46c4285c9aa461bc40c7
+P c4b6c0be00b9688a432bbd23736564a042f5d8ee
+R e2de74a1adee248f8bf782a34615369d
 U drh
-Z f55b9c743018f95f2b4a4105752314ab
+Z e74b73d788602904fac17121a6ad9cc5
