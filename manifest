@@ -1,5 +1,5 @@
-C The\squery\soptimizer\snow\sattempts\sto\ssatisfy\san\sORDER\sBY\sclause\susing\nan\sindex.\s\sSorting\sis\sstill\sused\sif\sthere\sare\sno\ssuitable\sindices.\s(CVS\s628)
-D 2002-06-19T14:27:05
+C Version\s2.5.1\s(CVS\s629)
+D 2002-06-19T14:27:23
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9baef3e240c4ffd90881ac4664efd205bd9e65f4
+P f09e19b43ef61073713cf32282c90ea666229eba
 R e3b8c707333c1ebbf7616bf0a643f3ed
 U drh
-Z 9b74fdbff1dc04448a39217a6e95f99b
+Z 8383f6bd0a1652a6736946631d343146
