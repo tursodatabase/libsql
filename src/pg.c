@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: pg.c,v 1.1 2001/01/15 22:51:11 drh Exp $
+** $Id: pg.c,v 1.2 2001/01/20 19:52:49 drh Exp $
 */
 #include <assert.h>
 #include <sys/types.h>
@@ -695,7 +695,15 @@ int sqlitePgTouch(void *pD){
 ** Return the number of the first unused page at the end of the
 ** database file.
 */
-int sqlitePgAlloc(Pgr *p, int *pPgno){
+int sqlitePgAlloc(Pgr *p, u32 *pPgno){
   *pPgno = p->nDbPg;
   return SQLITE_OK;
+}
+
+/*
+** Return the page number associated with the given page.
+*/
+u32 sqlitePgNum(void *pD){
+  Pghdr *pPg = DATA_TO_PG(pD);
+  return pPg->dbpgno;
 }

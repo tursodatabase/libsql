@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.35 2001/01/15 22:51:11 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.36 2001/01/20 19:52:50 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -34,6 +34,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+/*
+** The paging system deals with 32-bit integers.
+*/
+typedef unsigned int u32;
 
 /*
 ** If memory allocation problems are found, recompile with
