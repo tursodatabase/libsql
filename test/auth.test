@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.13 2004/05/27 17:22:56 drh Exp $
+# $Id: auth.test,v 1.14 2004/06/14 11:54:18 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -417,6 +417,15 @@ do_test auth-1.53 {
   catchsql {SELECT * FROM t2}
 } {0 {11 2 33}}
 
+# Update for version 3: There used to be a handful of test here that
+# tested the authorisation callback with the COPY command. The following
+# test makes the same database modifications as they used to.
+do_test auth-1.54 {
+  execsql {INSERT INTO t2 VALUES(7, 8, 9);}
+} {}
+do_test auth-1.55 {
+  execsql {SELECT * FROM t2}
+} {11 2 33 7 8 9}
 
 do_test auth-1.63 {
   proc auth {code arg1 arg2 arg3 arg4} {

@@ -1,5 +1,5 @@
-C Have\sthe\sTCL\s'errorcode'\sinterface\scall\ssqlite3_errcode().\s(CVS\s1589)
-D 2004-06-14T11:43:46
+C Fix\sa\sbug\sin\sthe\sauth.test\sscript.\s(CVS\s1590)
+D 2004-06-14T11:54:18
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -82,7 +82,7 @@ F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
 F test/attach2.test 579d6cb94cb944e0d87a2bf8d6696e2036847e6a
 F test/attach3.test 8259ab833b5dcdf4acd75d9653f42f703ce2e013
-F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
+F test/auth.test 4077c84a150579eefb38e47e2b66f010d221d76a
 F test/bigfile.test 5b079dfe7354a6c43b92a3ea5e49e4e5d88c789e
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 4f5a19e84077b61ea797644b4942bb98b17bdd42
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 293fbf0aa5c221bc341d0d9afc73d459f427f940
-R 888007395645f5297c33209c47df9ae4
+P f4b4df6514c19b0c23b399142749a7e4a20d0f70
+R 276f7a5870a912eac65482d1c432e28e
 U danielk1977
-Z d9668c3a4b8e6a851d44ddfa1603077f
+Z 928c748f2a9ec89b583d30c2c73e50ae
