@@ -811,7 +811,9 @@ int sqlite3OsSleep(int ms){
 ** Static variables used for thread synchronization
 */
 static int inMutex = 0;
+#ifdef SQLITE_UNIX_THREADS
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /*
 ** The following pair of routine implement mutual exclusion for

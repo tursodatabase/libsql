@@ -1,5 +1,5 @@
-C Move\sbtree_rb.c\sinto\sthe\sattic.\s(CVS\s1442)
-D 2004-05-22T17:46:37
+C Remove\sthe\sOP_SetInsert\sopcode.\s(CVS\s1443)
+D 2004-05-22T21:30:41
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -42,14 +42,14 @@ F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
 F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_unix.c e93a6858b4ab880ce91cbc95af14975ef53b6369
+F src/os_unix.c 585665eccd31a9bb4dc090bc6b5e29d8d42899f0
 F src/os_unix.h 426e1480f0847a7f8ba22aa9ac5115520875610b
 F src/os_win.c 92b51a38437b98d8aa3ac05b57c71e1d1092e5be
 F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
 F src/parse.y 567718866b94d58a6c7681cc45ba7987771d583a
-F src/pragma.c aeeba7dc5bc32a6f0980e6516cb2a48a50973fab
+F src/pragma.c e14dd3b06cedeadcc027f0b6706b2f53d456a46e
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 7d77a8bed7eeac23216d42fc1be006fb4352fcdc
@@ -69,10 +69,10 @@ F src/update.c 1a5e9182596f3ea8c7a141e308a3d2a7e5689fee
 F src/utf.c a4640c6a1530b43b651495246349ee0a6eca3038
 F src/util.c 5cbeb452da09cfc7248de9948c15b14d840723f7
 F src/vacuum.c 8734f89742f246abd91dbd3e087fc153bddbfbad
-F src/vdbe.c c1846f4b2938d11250f532b068d7856fd8decd6c
+F src/vdbe.c 316491eb9b02fb6a385ffe8d5256eab40a254171
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
-F src/vdbeInt.h f40e8048d644c8389cda16f46479376f763d56e6
-F src/vdbeaux.c d3dfb6d40eb1fdf2626896e8b13fe7b50134ff12
+F src/vdbeInt.h e3f2643c62a8d958f760fb307074d1c5d868c9ab
+F src/vdbeaux.c 1e5262696aa32a50ca691a5669f6ed534655a94c
 F src/where.c efe5d25fe18cd7381722457898cd863e84097a0c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -202,7 +202,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5c61be1c47ac960fba2a642e69a98436ce1cd725
-R 895a23f6e8990fb83852de59938ec75c
+P 4159ef235d780ec941677439e77c6fa96e24997c
+R 5d98176ba2ec77b07a87ae923b3b9934
 U drh
-Z 284f15852c16971e78cc98172c48c47f
+Z 9374b217aab3cb0d12f84dd869677fb1

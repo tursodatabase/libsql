@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.27 2004/05/20 22:16:29 drh Exp $
+** $Id: pragma.c,v 1.28 2004/05/22 21:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -574,31 +574,6 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  0, 1,        "integrity_check"},
     };
 
-    /* Code to do an BTree integrity check on a single database file.
-    */
-    static VdbeOpList checkDb[] = {
-      { OP_SetInsert,   0, 0,        "1"},
-      { OP_Integer,     0, 0,        0},    /* 1 */
-      { OP_OpenRead,    0, MASTER_ROOT, 0},
-      { OP_SetNumColumns,0,5,        0},    /* sqlite_master has 5 cols */
-
-      { OP_Rewind,      0, 8,        0},    /* 4 */
-      { OP_Column,      0, 3,        0},    /* 5 */
-      { OP_SetInsert,   0, 0,        0},
-      { OP_Next,        0, 5,        0},    /* 7 */
-      { OP_IntegrityCk, 0, 0,        0},    /* 8 */
-      { OP_Dup,         0, 1,        0},
-      { OP_String,      0, 0,        "ok"},
-      { OP_Eq,          0, 13,       0},    /* 11 */
-      { OP_MemIncr,     0, 0,        0},
-      { OP_String,      0, 0,        "*** in database "},
-      { OP_String,      0, 0,        0},    /* 14 */
-      { OP_String,      0, 0,        " ***\n"},
-      { OP_Pull,        3, 0,        0},
-      { OP_Concat,      4, 1,        0},
-      { OP_Callback,    1, 0,        0},
-    };
-
     /* Code that appears at the end of the integrity check.  If no error
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
@@ -617,16 +592,30 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
       HashElem *x;
+      int cnt = 0;
 
       /* Do an integrity check of the B-Tree
       */
-      addr = sqlite3VdbeAddOpList(v, ArraySize(checkDb), checkDb);
-      sqlite3VdbeChangeP1(v, addr+1, i);
-      sqlite3VdbeChangeP2(v, addr+4, addr+8);
-      sqlite3VdbeChangeP2(v, addr+7, addr+5);
-      sqlite3VdbeChangeP2(v, addr+8, i);
-      sqlite3VdbeChangeP2(v, addr+11, addr+ArraySize(checkDb));
-      sqlite3VdbeChangeP3(v, addr+14, db->aDb[i].zName, P3_STATIC);
+      for(x=sqliteHashFirst(&db->aDb[i].tblHash); x; x=sqliteHashNext(x)){
+        Table *pTab = sqliteHashData(x);
+        Index *pIdx;
+        sqlite3VdbeAddOp(v, OP_Integer, pTab->tnum, 0);
+        cnt++;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          sqlite3VdbeAddOp(v, OP_Integer, pIdx->tnum, 0);
+          cnt++;
+        }
+      }
+      sqlite3VdbeAddOp(v, OP_IntegrityCk, cnt, i);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 1);
+      addr = sqlite3VdbeOp3(v, OP_String, 0, 0, "ok", P3_STATIC);
+      sqlite3VdbeAddOp(v, OP_Eq, 0, addr+6);
+      sqlite3VdbeOp3(v, OP_String, 0, 0,
+         sqlite3MPrintf("*** in database %s ***\n", db->aDb[i].zName),
+         P3_DYNAMIC);
+      sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
+      sqlite3VdbeAddOp(v, OP_Concat, 2, 1);
+      sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
 
       /* Make sure all the indices are constructed correctly.
       */

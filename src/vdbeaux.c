@@ -923,14 +923,6 @@ static void Cleanup(Vdbe *p){
   }
   p->nLineAlloc = 0;
   sqlite3VdbeAggReset(&p->agg);
-  if( p->aSet ){
-    for(i=0; i<p->nSet; i++){
-      sqlite3HashClear(&p->aSet[i].hash);
-    }
-  }
-  sqliteFree(p->aSet);
-  p->aSet = 0;
-  p->nSet = 0;
   if( p->keylistStack ){
     int ii;
     for(ii = 0; ii < p->keylistStackDepth; ii++){

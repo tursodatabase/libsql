@@ -285,8 +285,6 @@ struct Vdbe {
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   Agg agg;                /* Aggregate information */
-  int nSet;               /* Number of sets allocated */
-  Set *aSet;              /* An array of sets */
   int nCallback;          /* Number of callbacks invoked so far */
   Keylist *pList;         /* A list of ROWIDs */
   int keylistStackDepth;  /* The size of the "keylist" stack */
@@ -343,4 +341,3 @@ int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeSetEncoding(Mem *, u8);
-

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.319 2004/05/22 11:09:30 drh Exp $
+** $Id: vdbe.c,v 1.320 2004/05/22 21:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1562,8 +1562,8 @@ case OP_Callback: {
   p->resOnStack = 1;
 
   azArgv[i] = 0;
-  p->nCallback++;
   p->azResColumn = azArgv;
+  p->nCallback++;
   assert( p->nResColumn==pOp->p1 );
   p->popStack = pOp->p1;
   p->pc = pc + 1;
@@ -4469,16 +4469,15 @@ case OP_CreateTable: {
   break;
 }
 
-/* Opcode: IntegrityCk P1 P2 *
+/* Opcode: IntegrityCk * P2 *
 **
 ** Do an analysis of the currently open database.  Push onto the
 ** stack the text of an error message describing any problems.
 ** If there are no errors, push a "ok" onto the stack.
 **
-** P1 is the index of a set that contains the root page numbers
-** for all tables and indices in the main database file.  The set
-** is cleared by this opcode.  In other words, after this opcode
-** has executed, the set will be empty.
+** The root page numbers of all tables in the database are integer
+** values on the stack.  This opcode pulls as many integers as it
+** can off of the stack and uses those numbers as the root pages.
 **
 ** If P2 is not zero, the check is done on the auxiliary database
 ** file, not the main database file.
@@ -4488,26 +4487,22 @@ case OP_CreateTable: {
 case OP_IntegrityCk: {
   int nRoot;
   int *aRoot;
-  int iSet = pOp->p1;
-  Set *pSet;
   int j;
-  HashElem *i;
   char *z;
 
-  assert( iSet>=0 && iSet<p->nSet );
-  pTos++;
-  pSet = &p->aSet[iSet];
-  nRoot = sqliteHashCount(&pSet->hash);
-  aRoot = sqliteMallocRaw( sizeof(int)*(nRoot+1) );
+  for(nRoot=0; &pTos[-nRoot]>=p->aStack; nRoot++){
+    if( (pTos[-nRoot].flags & MEM_Int)==0 ) break;
+  }
+  assert( nRoot>0 );
+  aRoot = sqliteMallocRaw( sizeof(int*)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
-  for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
-    i64 root64;
-    sqlite3atoi64((char*)sqliteHashKey(i), &root64);
-    aRoot[j] = root64;
+  for(j=0; j<nRoot; j++){
+    Mem *pMem = &pTos[-j];
+    aRoot[j] = pMem->i;
   }
   aRoot[j] = 0;
-  sqlite3HashClear(&pSet->hash);
-  pSet->prev = 0;
+  popStack(&pTos, nRoot);
+  pTos++;
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot);
   if( z==0 || z[0]==0 ){
     if( z ) sqliteFree(z);
@@ -5256,37 +5251,6 @@ case OP_AggNext: {
   break;
 }
 
-/* Opcode: SetInsert P1 * P3
-**
-** If Set P1 does not exist then create it.  Then insert value
-** P3 into that set.  If P3 is NULL, then insert the top of the
-** stack into the set.
-*/
-case OP_SetInsert: {
-  int i = pOp->p1;
-  if( p->nSet<=i ){
-    int k;
-    Set *aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
-    if( aSet==0 ) goto no_mem;
-    p->aSet = aSet;
-    for(k=p->nSet; k<=i; k++){
-      sqlite3HashInit(&p->aSet[k].hash, SQLITE_HASH_BINARY, 1);
-    }
-    p->nSet = i+1;
-  }
-  if( pOp->p3 ){
-    sqlite3HashInsert(&p->aSet[i].hash, pOp->p3, strlen(pOp->p3)+1, p);
-  }else{
-    assert( pTos>=p->aStack );
-    Stringify(pTos);
-    sqlite3HashInsert(&p->aSet[i].hash, pTos->z, pTos->n, p);
-    Release(pTos);
-    pTos--;
-  }
-  if( sqlite3_malloc_failed ) goto no_mem;
-  break;
-}
-
 /* Opcode: Vacuum * * *
 **
 ** Vacuum the entire database.  This opcode will cause other virtual
@@ -5371,7 +5335,7 @@ default: {
           fprintf(p->trace, " r:%g", pTos[i].r);
         }else{
           char zBuf[100];
-          prettyPrintMem(pTos, zBuf, 100);
+          prettyPrintMem(&pTos[i], zBuf, 100);
           fprintf(p->trace, " ");
           fprintf(p->trace, zBuf);
         }
