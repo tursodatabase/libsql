@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.228 2004/06/19 03:33:57 danielk1977 Exp $
+** $Id: main.c,v 1.229 2004/06/19 08:18:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -626,13 +626,14 @@ static int sqliteDefaultBusyCallback(
 ** This routine sets the busy callback for an Sqlite database to the
 ** given callback function with the given argument.
 */
-void sqlite3_busy_handler(
-  sqlite *db,
+int sqlite3_busy_handler(
+  sqlite3 *db,
   int (*xBusy)(void*,int),
   void *pArg
 ){
   db->busyHandler.xFunc = xBusy;
   db->busyHandler.pArg = pArg;
+  return SQLITE_OK;
 }
 
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
@@ -664,12 +665,13 @@ void sqlite3_progress_handler(
 ** This routine installs a default busy handler that waits for the
 ** specified number of milliseconds before returning 0.
 */
-void sqlite3_busy_timeout(sqlite *db, int ms){
+int sqlite3_busy_timeout(sqlite3 *db, int ms){
   if( ms>0 ){
     sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)ms);
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
+  return SQLITE_OK;
 }
 
 /*
@@ -699,7 +701,6 @@ int sqlite3_create_function(
   const char *zFunctionName,
   int nArg,
   int enc,
-  int iCollateArg,
   void *pUserData,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
   void (*xStep)(sqlite3_context*,int,sqlite3_value **),
@@ -729,10 +730,10 @@ int sqlite3_create_function(
   }else if( enc==SQLITE_ANY ){
     int rc;
     rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF8,
-        iCollateArg, pUserData, xFunc, xStep, xFinal);
+         pUserData, xFunc, xStep, xFinal);
     if( rc!=SQLITE_OK ) return rc;
     rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF16LE,
-        iCollateArg, pUserData, xFunc, xStep, xFinal);
+        pUserData, xFunc, xStep, xFinal);
     if( rc!=SQLITE_OK ) return rc;
     enc = SQLITE_UTF16BE;
   }
@@ -750,7 +751,6 @@ int sqlite3_create_function16(
   const void *zFunctionName,
   int nArg,
   int eTextRep,
-  int iCollateArg,
   void *pUserData,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
@@ -767,7 +767,7 @@ int sqlite3_create_function16(
     return SQLITE_NOMEM;
   }
   rc = sqlite3_create_function(db, zFunc8, nArg, eTextRep, 
-      iCollateArg, pUserData, xFunc, xStep, xFinal);
+      pUserData, xFunc, xStep, xFinal);
   return rc;
 }
 
@@ -1282,7 +1282,6 @@ int sqlite3_create_collation16(
   void* pCtx,
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
-  int rc;
   char const *zName8;
   sqlite3_value *pTmp = sqlite3GetTransientValue(db);
   sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF16NATIVE, SQLITE_STATIC);

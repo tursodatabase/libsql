@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.71 2004/06/17 05:36:44 danielk1977 Exp $
+** $Id: func.c,v 1.72 2004/06/19 08:18:09 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -1066,7 +1066,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
       case 2: pArg = (void *)(-1); break;
     }
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
-        aFuncs[i].eTextRep, 0, pArg, aFuncs[i].xFunc, 0, 0);
+        aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
     if( aFuncs[i].needCollSeq ){
       FuncDef *pFunc = sqlite3FindFunction(db, aFuncs[i].zName, 
           strlen(aFuncs[i].zName), aFuncs[i].nArg, aFuncs[i].eTextRep, 0);
@@ -1082,7 +1082,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
       case 2: pArg = (void *)(-1); break;
     }
     sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
-        0, pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
+        pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
     if( aAggs[i].needCollSeq ){
       FuncDef *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
           strlen(aAggs[i].zName), aAggs[i].nArg, SQLITE_UTF8, 0);

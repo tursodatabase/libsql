@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.290 2004/06/19 03:33:57 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.291 2004/06/19 08:18:19 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -137,6 +137,8 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 extern const int sqlite3one;
 #define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 #define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
+
+typedef struct sqlite sqlite;
 
 /*
 ** Defer sourcing vdbe.h until after the "u8" typedef is defined.
@@ -272,7 +274,6 @@ typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
 typedef struct BusyHandler BusyHandler;
-
 
 /*
 ** Each database file to be accessed by the system is an instance
