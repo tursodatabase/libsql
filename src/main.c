@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.71 2002/05/10 13:14:07 drh Exp $
+** $Id: main.c,v 1.72 2002/05/15 08:30:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -326,6 +326,8 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( db==0 ) goto no_mem_on_open;
   sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&db->trigDrop, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
@@ -383,11 +385,29 @@ no_mem_on_open:
 static void clearHashTable(sqlite *db, int preserveTemps){
   HashElem *pElem;
   Hash temp1;
+  Hash temp2;
   assert( sqliteHashFirst(&db->tblDrop)==0 ); /* There can not be uncommitted */
   assert( sqliteHashFirst(&db->idxDrop)==0 ); /*   DROP TABLEs or DROP INDEXs */
   temp1 = db->tblHash;
-  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
+  temp2 = db->trigHash;
+  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
   sqliteHashClear(&db->idxHash);
+
+  for (pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
+    Trigger * pTrigger = sqliteHashData(pElem);
+    Table *pTab = sqliteFindTable(db, pTrigger->table);
+    assert(pTab);
+    if (pTab->isTemp) { 
+      sqliteHashInsert(&db->trigHash, pTrigger->name, strlen(pTrigger->name), 
+	  pTrigger);
+    } else {
+      sqliteDeleteTrigger(pTrigger);
+    }
+  }
+  sqliteHashClear(&temp2);
+
+  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
+
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTab = sqliteHashData(pElem);
     if( preserveTemps && pTab->isTemp ){
@@ -413,6 +433,7 @@ static void clearHashTable(sqlite *db, int preserveTemps){
     }
   }
   sqliteHashClear(&temp1);
+
   db->flags &= ~SQLITE_Initialized;
 }
 
@@ -458,6 +479,7 @@ void sqlite_close(sqlite *db){
 */
 int sqlite_complete(const char *zSql){
   int isComplete = 0;
+  int seenCreate = 0;
   while( *zSql ){
     switch( *zSql ){
       case ';': {
@@ -501,6 +523,16 @@ int sqlite_complete(const char *zSql){
         break;
       } 
       default: {
+        if (seenCreate && !sqliteStrNICmp(zSql, "trigger", 7)) 
+	  while (sqliteStrNICmp(zSql, "end", 3))
+	    if (!*++zSql) return 0;
+
+        if (!sqliteStrNICmp(zSql, "create", 6)) {
+	  zSql = zSql + 5;
+	  seenCreate = 1;
+	} else 
+	  seenCreate = 0;
+
         isComplete = 0;
         break;
       }

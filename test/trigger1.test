@@ -1,0 +1,113 @@
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests creating and dropping triggers, and interaction thereof
+# with the database COMMIT/ROLLBACK logic.
+#
+# 1. CREATE and DROP TRIGGER tests
+# trig-1.1: Error if table does not exist
+# trig-1.2: Error if trigger already exists
+# trig-1.3: Created triggers are deleted if the transaction is rolled back
+# trig-1.4: DROP TRIGGER removes trigger
+# trig-1.5: Dropped triggers are restored if the transaction is rolled back
+# trig-1.6: Error if dropped trigger doesn't exist
+# trig-1.7: Dropping the table automatically drops all triggers
+# trig-1.8: A trigger created on a TEMP table is not inserted into sqlite_master
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test trig_cd-1.1 {
+   catchsql {
+     CREATE TRIGGER trig UPDATE ON no_such_table BEGIN
+       SELECT * from sqlite_master;
+     END;
+   } 
+} {1 {no such table: no_such_table}}
+
+execsql {
+    CREATE TABLE t1(a);
+}
+execsql {
+	CREATE TRIGGER tr1 INSERT ON t1 BEGIN
+	  INSERT INTO t1 values(1);
+ 	END;
+}
+do_test trig_cd-1.2 {
+    catchsql {
+	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
+	    SELECT * FROM sqlite_master;
+ 	END
+     }
+} {1 {trigger tr1 already exists}}
+
+do_test trig_cd-1.3 {
+    catchsql {
+	BEGIN;
+	CREATE TRIGGER tr2 INSERT ON t1 BEGIN
+	    SELECT * from sqlite_master; END;
+        ROLLBACK;
+	CREATE TRIGGER tr2 INSERT ON t1 BEGIN
+	    SELECT * from sqlite_master; END;
+    }
+} {0 {}}
+
+do_test trig_cd-1.4 {
+    catchsql {
+	DROP TRIGGER tr1;
+	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
+	    SELECT * FROM sqlite_master;
+	END
+    }
+} {0 {}}
+
+do_test trig_cd-1.5 {
+    execsql {
+	BEGIN;
+	DROP TRIGGER tr2;
+	ROLLBACK;
+	DROP TRIGGER tr2;
+    }
+} {}
+
+do_test trig_cd-1.6 {
+    catchsql {
+	DROP TRIGGER biggles;
+    }
+} {1 {no such trigger: biggles}}
+
+do_test trig_cd-1.7 {
+    catchsql {
+	DROP TABLE t1;
+	DROP TRIGGER tr1;
+    }
+} {1 {no such trigger: tr1}}
+
+execsql {
+  CREATE TEMP TABLE temp_table(a);
+}
+do_test trig_cd-1.8 {
+  execsql {
+	CREATE TRIGGER temp_trig UPDATE ON temp_table BEGIN
+	    SELECT * from sqlite_master;
+	END;
+	SELECT count(*) FROM sqlite_master WHERE name = 'temp_trig';
+  } 
+} {0}
+
+catchsql {
+  DROP TABLE temp_table;
+}
+catchsql {
+  DROP TABLE t1;
+}
+
+finish_test
+

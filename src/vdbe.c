@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.141 2002/05/10 13:14:07 drh Exp $
+** $Id: vdbe.c,v 1.142 2002/05/15 08:30:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -249,6 +249,9 @@ struct Vdbe {
   int nCallback;      /* Number of callbacks invoked so far */
   int iLimit;         /* Limit on the number of callbacks remaining */
   int iOffset;        /* Offset before beginning to do callbacks */
+
+  int keylistStackDepth; 
+  Keylist ** keylistStack;
 };
 
 /*
@@ -999,6 +1002,15 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->aSet);
   p->aSet = 0;
   p->nSet = 0;
+  if (p->keylistStackDepth > 0) {
+    int ii;
+    for (ii = 0; ii < p->keylistStackDepth; ii++) {
+      KeylistFree(p->keylistStack[ii]);
+    }
+    sqliteFree(p->keylistStack);
+    p->keylistStackDepth = 0;
+    p->keylistStack = 0;
+  }
 }
 
 /*
@@ -1062,7 +1074,7 @@ static char *zOpName[] = { 0,
   "Le",                "Gt",                "Ge",                "IsNull",
   "NotNull",           "Negative",          "And",               "Or",
   "Not",               "Concat",            "Noop",              "Function",
-  "Limit",           
+  "Limit",             "PushList",          "PopList",           
 };
 
 /*
@@ -4536,6 +4548,39 @@ case OP_SetFound: {
     pc = pOp->p2 - 1;
   }
   POPSTACK;
+  break;
+}
+
+/* Opcode: PushList * * * 
+**
+** Save the current Vdbe list such that it can be restored by a PopList 
+** opcode. The list is empty after this is executed.
+*/
+case OP_PushList: {
+  p->keylistStackDepth++;
+  assert(p->keylistStackDepth > 0);
+  p->keylistStack = sqliteRealloc(p->keylistStack, 
+	  sizeof(Keylist *) * p->keylistStackDepth);
+  p->keylistStack[p->keylistStackDepth - 1] = p->pList;
+  p->pList = 0;
+  break;
+}
+
+/* Opcode: PopList * * * 
+**
+** Restore the Vdbe list to the state it was in when PushList was last
+** executed.
+*/
+case OP_PopList: {
+  assert(p->keylistStackDepth > 0);
+  p->keylistStackDepth--;
+  KeylistFree(p->pList);
+  p->pList = p->keylistStack[p->keylistStackDepth];
+  p->keylistStack[p->keylistStackDepth] = 0;
+  if (p->keylistStackDepth == 0) {
+    sqliteFree(p->keylistStack);
+    p->keylistStack = 0;
+  }
   break;
 }
 

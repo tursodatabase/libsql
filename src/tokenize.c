@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.40 2002/03/24 13:13:29 drh Exp $
+** $Id: tokenize.c,v 1.41 2002/05/15 08:30:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -39,10 +39,12 @@ struct Keyword {
 */
 static Keyword aKeywordTable[] = {
   { "ABORT",             0, TK_ABORT,            0 },
+  { "AFTER",             0, TK_AFTER,            0 },
   { "ALL",               0, TK_ALL,              0 },
   { "AND",               0, TK_AND,              0 },
   { "AS",                0, TK_AS,               0 },
   { "ASC",               0, TK_ASC,              0 },
+  { "BEFORE",            0, TK_BEFORE,           0 },
   { "BEGIN",             0, TK_BEGIN,            0 },
   { "BETWEEN",           0, TK_BETWEEN,          0 },
   { "BY",                0, TK_BY,               0 },
@@ -61,10 +63,12 @@ static Keyword aKeywordTable[] = {
   { "DISTINCT",          0, TK_DISTINCT,         0 },
   { "DROP",              0, TK_DROP,             0 },
   { "END",               0, TK_END,              0 },
+  { "EACH",              0, TK_EACH,             0 },
   { "ELSE",              0, TK_ELSE,             0 },
   { "EXCEPT",            0, TK_EXCEPT,           0 },
   { "EXPLAIN",           0, TK_EXPLAIN,          0 },
   { "FAIL",              0, TK_FAIL,             0 },
+  { "FOR",               0, TK_FOR,              0 },
   { "FROM",              0, TK_FROM,             0 },
   { "GLOB",              0, TK_GLOB,             0 },
   { "GROUP",             0, TK_GROUP,            0 },
@@ -73,6 +77,7 @@ static Keyword aKeywordTable[] = {
   { "IN",                0, TK_IN,               0 },
   { "INDEX",             0, TK_INDEX,            0 },
   { "INSERT",            0, TK_INSERT,           0 },
+  { "INSTEAD",           0, TK_INSTEAD,          0 },
   { "INTERSECT",         0, TK_INTERSECT,        0 },
   { "INTO",              0, TK_INTO,             0 },
   { "IS",                0, TK_IS,               0 },
@@ -83,6 +88,7 @@ static Keyword aKeywordTable[] = {
   { "NOT",               0, TK_NOT,              0 },
   { "NOTNULL",           0, TK_NOTNULL,          0 },
   { "NULL",              0, TK_NULL,             0 },
+  { "OF",                0, TK_OF,               0 },
   { "OFFSET",            0, TK_OFFSET,           0 },
   { "ON",                0, TK_ON,               0 },
   { "OR",                0, TK_OR,               0 },
@@ -91,6 +97,7 @@ static Keyword aKeywordTable[] = {
   { "PRIMARY",           0, TK_PRIMARY,          0 },
   { "REPLACE",           0, TK_REPLACE,          0 },
   { "ROLLBACK",          0, TK_ROLLBACK,         0 },
+  { "ROW",               0, TK_ROW,              0 },
   { "SELECT",            0, TK_SELECT,           0 },
   { "SET",               0, TK_SET,              0 },
   { "TABLE",             0, TK_TABLE,            0 },
@@ -98,6 +105,7 @@ static Keyword aKeywordTable[] = {
   { "TEMPORARY",         0, TK_TEMP,             0 },
   { "THEN",              0, TK_THEN,             0 },
   { "TRANSACTION",       0, TK_TRANSACTION,      0 },
+  { "TRIGGER",           0, TK_TRIGGER,          0 },
   { "UNION",             0, TK_UNION,            0 },
   { "UNIQUE",            0, TK_UNIQUE,           0 },
   { "UPDATE",            0, TK_UPDATE,           0 },

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.63 2002/05/08 21:46:15 drh Exp $
+** @(#) $Id: parse.y,v 1.64 2002/05/15 08:30:14 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -33,6 +33,11 @@
 ** A structure for holding two integers
 */
 struct twoint { int a,b; };
+
+/*
+** A structure for holding an integer and an IdList
+*/
+struct int_idlist { int a; IdList * b; };
 }
 
 // These are extra tokens used by the lexer but never seen by the
@@ -628,3 +633,63 @@ number(A) ::= INTEGER(X).  {A = X;}
 number(A) ::= FLOAT(X).    {A = X;}
 plus_opt ::= PLUS.
 plus_opt ::= .
+
+//////////////////////////// The CREATE TRIGGER command /////////////////////
+cmd ::= CREATE(A) TRIGGER ids(B) trigger_time(C) trigger_event(D) ON ids(E) 
+                  foreach_clause(F) when_clause(G)
+                  BEGIN trigger_cmd_list(S) END(Z). {
+  sqliteCreateTrigger(pParse, &B, C, D.a, D.b, &E, F, G, S, 
+      A.z, (int)(Z.z - A.z) + Z.n );
+}
+
+%type trigger_time  {int}
+trigger_time(A) ::= BEFORE.      { A = TK_BEFORE; }
+trigger_time(A) ::= AFTER.       { A = TK_AFTER;  }
+trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
+trigger_time(A) ::= .            { A = TK_BEFORE; }
+
+%type trigger_event {struct int_idlist}
+trigger_event(A) ::= DELETE. { A.a = TK_DELETE; A.b = 0; }
+trigger_event(A) ::= INSERT. { A.a = TK_INSERT; A.b = 0; }
+trigger_event(A) ::= UPDATE. { A.a = TK_UPDATE; A.b = 0;}
+trigger_event(A) ::= UPDATE OF inscollist(X). {A.a = TK_UPDATE; A.b = X; }
+
+%type foreach_clause {int}
+foreach_clause(A) ::= .                   { A = TK_ROW; }
+foreach_clause(A) ::= FOR EACH ROW.       { A = TK_ROW; }
+foreach_clause(A) ::= FOR EACH STATEMENT. { A = TK_STATEMENT; }
+
+%type when_clause {Expr *}
+when_clause(A) ::= .             { A = 0; }
+when_clause(A) ::= WHEN expr(X). { A = X; }
+
+%type trigger_cmd_list {TriggerStep *}
+trigger_cmd_list(A) ::= trigger_cmd(X) SEMI trigger_cmd_list(Y). {
+  X->pNext = Y ; A = X; }
+trigger_cmd_list(A) ::= . { A = 0; }
+
+%type trigger_cmd {TriggerStep *}
+// UPDATE 
+trigger_cmd(A) ::= UPDATE orconf(R) ids(X) SET setlist(Y) where_opt(Z).  
+               { A = sqliteTriggerUpdateStep(&X, Y, Z, R); }
+
+// INSERT
+trigger_cmd(A) ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) 
+  VALUES LP itemlist(Y) RP.  
+{A = sqliteTriggerInsertStep(&X, F, Y, 0, R);}
+
+trigger_cmd(A) ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) select(S).
+               {A = sqliteTriggerInsertStep(&X, F, 0, S, R);}
+
+// DELETE
+trigger_cmd(A) ::= DELETE FROM ids(X) where_opt(Y).
+               {A = sqliteTriggerDeleteStep(&X, Y);}
+
+// SELECT
+trigger_cmd(A) ::= select(X).  {A = sqliteTriggerSelectStep(X); }
+
+////////////////////////  DROP TRIGGER statement //////////////////////////////
+cmd ::= DROP TRIGGER ids(X). {
+    sqliteDropTrigger(pParse,&X,0);
+}
+

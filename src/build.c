@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.87 2002/05/08 21:30:15 drh Exp $
+** $Id: build.c,v 1.88 2002/05/15 08:30:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -250,6 +250,22 @@ void sqliteCommitInternalChanges(sqlite *db){
     sqliteUnlinkAndDeleteIndex(db, pIndex);
   }
   sqliteHashClear(&db->idxDrop);
+
+  /* Set the commit flag on all triggers added this transaction */
+  for(pElem=sqliteHashFirst(&db->trigHash); pElem; pElem=sqliteHashNext(pElem)){
+    Trigger *pTrigger = sqliteHashData(pElem);
+    pTrigger->isCommit = 1;
+  }
+
+  /* Delete the structures for triggers removed this transaction */
+  pElem = sqliteHashFirst(&db->trigDrop);
+  while (pElem) {
+    Trigger *pTrigger = sqliteHashData(pElem);
+    sqliteDeleteTrigger(pTrigger);
+    pElem = sqliteHashNext(pElem);
+  }
+  sqliteHashClear(&db->trigDrop);
+
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -304,6 +320,48 @@ void sqliteRollbackInternalChanges(sqlite *db){
     assert( pOld==0 || pOld==p );
   }
   sqliteHashClear(&db->idxDrop);
+
+  /* Remove any triggers that haven't been commited yet */
+  for(pElem = sqliteHashFirst(&db->trigHash); pElem; 
+      pElem = (pElem?sqliteHashNext(pElem):0)) {
+    Trigger * pTrigger = sqliteHashData(pElem);
+    if (!pTrigger->isCommit) {
+      Table * tbl = sqliteFindTable(db, pTrigger->table);
+      if (tbl) {
+	if (tbl->pTrigger == pTrigger) 
+	  tbl->pTrigger = pTrigger->pNext;
+	else {
+	  Trigger * cc = tbl->pTrigger;
+	  while (cc) {
+	    if (cc->pNext == pTrigger) {
+	      cc->pNext = cc->pNext->pNext;
+	      break;
+	    }
+	    cc = cc->pNext;
+	  }
+	  assert(cc);
+	}
+      }
+      sqliteHashInsert(&db->trigHash, pTrigger->name,
+	      1 + strlen(pTrigger->name), 0);
+      sqliteDeleteTrigger(pTrigger);
+      pElem = sqliteHashFirst(&db->trigHash);
+    }
+  }
+
+  /* Any triggers that were dropped - put 'em back in place */
+  for(pElem = sqliteHashFirst(&db->trigDrop); pElem; 
+      pElem = sqliteHashNext(pElem)) {
+    Trigger * pTrigger = sqliteHashData(pElem);
+    Table * tab = sqliteFindTable(db, pTrigger->table);
+    sqliteHashInsert(&db->trigHash, pTrigger->name, 
+	strlen(pTrigger->name) + 1, pTrigger);
+
+    pTrigger->pNext = tab->pTrigger;
+    tab->pTrigger = pTrigger;
+  }
+
+  sqliteHashClear(&db->trigDrop);
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -595,7 +653,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
 */
-static void changeCookie(sqlite *db){
+void changeCookie(sqlite *db){
   if( db->next_cookie==db->schema_cookie ){
     db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
     db->flags |= SQLITE_InternChanges;
@@ -1036,6 +1094,13 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     };
     Index *pIdx;
     sqliteBeginWriteOperation(pParse);
+    /* Drop all triggers associated with the table being dropped */
+    while (pTable->pTrigger) {
+      Token tt;
+      tt.z = pTable->pTrigger->name;
+      tt.n = strlen(pTable->pTrigger->name);
+      sqliteDropTrigger(pParse, &tt, 1);
+    }
     if( !pTable->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
       sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
@@ -1653,6 +1718,7 @@ void sqliteBeginWriteOperation(Parse *pParse){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
+  if (pParse->trigStack) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0  ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
@@ -1672,6 +1738,7 @@ void sqliteBeginMultiWriteOperation(Parse *pParse){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
+  if (pParse->trigStack) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
@@ -1689,6 +1756,7 @@ void sqliteBeginMultiWriteOperation(Parse *pParse){
 */
 void sqliteEndWriteOperation(Parse *pParse){
   Vdbe *v;
+  if (pParse->trigStack) return; /* if this is in a trigger */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
   if( pParse->db->flags & SQLITE_InTrans ){
@@ -1912,6 +1980,14 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       if( !getBoolean(zRight) ) size = -size;
       db->cache_size = size;
       sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "trigger_overhead_test")==0 ){
+    if( getBoolean(zRight) ){
+      always_code_trigger_setup = 1;
+    }else{
+      always_code_trigger_setup = 0;
     }
   }else
 
