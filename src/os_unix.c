@@ -661,6 +661,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
   assert( id->isOpen );
+  assert( amt>0 );
   SimulateIOError(SQLITE_IOERR);
   SimulateDiskfullError;
   TIMER_START;

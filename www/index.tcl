@@ -61,16 +61,14 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Jan-21} {Version 3.1.0 (alpha) Released} {
-  Version 3.1.0 (alpha) is now available on the
-  website.  Verison 3.1.0 is fully backwards compatible with the 3.0 series
+newsitem {2005-Feb-01} {Version 3.1.1 (beta) Released} {
+  Version 3.1.1 (beta) is now available on the
+  website.  Verison 3.1.1 is fully backwards compatible with the 3.0 series
   and features many new features including Autovacuum and correlated
-  subqueries.  See the
+  subqueries.  The
   <a href="http://www.sqlite.org/releasenotes310.html">release notes</a>
-  for details.
-
-  This is an alpha release.  A beta release is expected in about a week
-  with the first stable release to follow after two more weeks.
+  From version 3.1.0 apply equally to this release beta.  A stable release
+  is expected within a couple of weeks.
 }
 
 newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
@@ -105,4 +103,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.104 2005/01/21 18:19:28 drh Exp $}
+footer {$Id: index.tcl,v 1.105 2005/02/03 00:29:47 drh Exp $}
