@@ -130,14 +130,16 @@ struct Sorter {
 struct Mem {
   i64 i;              /* Integer value */
   int n;              /* Number of characters in string value, including '\0' */
-  int flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
+  u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
+  u8  type;           /* One of MEM_Null, MEM_Str, etc. */
+  u8  enc;            /* TEXT_Utf8, TEXT_Utf16le, or TEXT_Utf16be */
   double r;           /* Real value */
   char *z;            /* String or BLOB value */
   char zShort[NBFS];  /* Space for short strings */
 };
 typedef struct Mem Mem;
 
-/* One or more of the following flags are set to indicate the valid
+/* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
 **
 ** If the MEM_Null flag is set, then the value is an SQL NULL value.
@@ -148,7 +150,9 @@ typedef struct Mem Mem;
 ** database (see below for exceptions). If the MEM_Term flag is also
 ** set, then the string is nul terminated. The MEM_Int and MEM_Real 
 ** flags may coexist with the MEM_Str flag.
-** 
+**
+** Multiple of these values can appear in Mem.flags.  But only one
+** at a time can appear in Mem.type.
 */
 #define MEM_Null      0x0001   /* Value is NULL */
 #define MEM_Str       0x0002   /* Value is a string */
@@ -156,65 +160,22 @@ typedef struct Mem Mem;
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 
-#define MEM_Term       0x0100   /* String rep is nul terminated */
-
-/* Values with type NULL or BLOB can have only one representation. But
-** values with a manifest type of REAL, INTEGER or STRING may have one
-** or more representation cached in the Mem struct at any one time. The
-** flags MEM_IntVal, MEM_RealVal and MEM_StrVal are true whenever the real,
-** integer or string representation stored in a Mem struct is valid.
-**
-** When MEM_StrVal is set, then MEM_Term may also be set. This indicates
-** that the string is terminated with a nul-terminator character.
-*/
-#define MEM_TypeInt    0x0020   /* Value type is an integer */
-#define MEM_TypeReal   0x0040   /* Value type is real */
-#define MEM_TypeStr    0x0080   /* Value type is string */
-
-
 /* Whenever Mem contains a valid string or blob representation, one of
 ** the following flags must be set to determine the memory management
-** policy for Mem.z
+** policy for Mem.z.  The MEM_Term flag tells us whether or not the
+** string is \000 or \u0000 terminated
 */
-#define MEM_Dyn       0x0200   /* Need to call sqliteFree() on Mem.z */
-#define MEM_Static    0x0400   /* Mem.z points to a static string */
-#define MEM_Ephem     0x0800   /* Mem.z points to an ephemeral string */
-#define MEM_Short     0x1000   /* Mem.z points to Mem.zShort */
-
-/* Internally, all strings manipulated by the  VDBE are encoded using the
-** native encoding for the main database. Therefore the following three
-** flags, which describe the text encoding of the string if the MEM_Str
-** flag is true, are not generally valid for Mem* objects handled by the
-** VDBE.
-**
-** When a user-defined function is called (see OP_Function), the Mem*
-** objects that store the argument values for the function call are 
-** passed to the user-defined function routine cast to sqlite3_value*.
-** The user routine may then call sqlite3_value_text() or
-** sqlite3_value_text16() to request a UTF-8 or UTF-16 string. If the
-** string representation currently stored in Mem.z is not the requested
-** encoding, then a translation occurs. To keep track of things, the
-** MEM_Utf* flags are set correctly for the database encoding before a
-** user-routine is called, and kept up to date if any translations occur
-** thereafter.
-** 
-** When sqlite3_step() returns SQLITE3_ROW, indicating that a row of data
-** is ready for processing by the caller, the data values are stored
-** internally as Mem* objects. Before sqlite3_step() returns, the MEM_Utf*
-** flags are set correctly for the database encoding. A translation may
-** take place if the user requests a non-native encoding via
-** sqlite3_column_text() or sqlite3_column_text16(). If this occurs, then
-** the MEM_Utf* flags are updated accordingly.
-*/
-#define MEM_Utf8      0x2000   /* String uses UTF-8 encoding */
-#define MEM_Utf16be   0x4000   /* String uses UTF-16 big-endian */
-#define MEM_Utf16le   0x8000   /* String uses UTF-16 little-endian */
+#define MEM_Term      0x0020   /* String rep is nul terminated */
+#define MEM_Dyn       0x0040   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Static    0x0080   /* Mem.z points to a static string */
+#define MEM_Ephem     0x0100   /* Mem.z points to an ephemeral string */
+#define MEM_Short     0x0200   /* Mem.z points to Mem.zShort */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** aggregate function context that needs to be finalized.
 */
-#define MEM_AggCtx    0x10000  /* Mem.z points to an agg function context */
+#define MEM_AggCtx    0x0400  /* Mem.z points to an agg function context */
 
 /*
 ** The "context" argument for a installable function.  A pointer to an
