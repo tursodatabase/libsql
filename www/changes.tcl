@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Oct 11 (Not Released)} {
+<li>Added notes on how to compile for Windows95/98.</li>
+<li>Add Doug Lea's memory allocator to the distribution, for completeness.</li>
+<li>Removed a few variables that were not being used.  Etc.</li>
+}
+
 chng {2000 Oct 8 (1.0.9)} {
 <li>Added the <b>sqlite_..._printf()</b> interface routines.</li>
 <li>Modified the <b>sqlite</b> shell program to use the new interface 

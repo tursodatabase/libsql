@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.10 2000/09/30 22:46:07 drh Exp $
+** $Id: tclsqlite.c,v 1.11 2000/10/11 19:28:52 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -138,7 +138,6 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
   int rc;
   char zVal[30];
   char *zCmd;
-  char *zResult;
   Tcl_DString cmd;
 
   Tcl_DStringInit(&cmd);

@@ -46,7 +46,9 @@
 **      +  All functions are fully reentrant.
 **
 */
+#include <ctype.h>
 #include "sqliteInt.h"
+
 /*
 ** Undefine COMPATIBILITY to make some slight changes in the way things
 ** work.  I think the changes are an improvement, but they are not

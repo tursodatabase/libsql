@@ -31,8 +31,8 @@ typedef struct TabResult {
 static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   TabResult *p = (TabResult*)pArg;
   int need;
-  int i, len;
-  char *z, *zVal;
+  int i;
+  char *z;
 
   /* Make sure there is enough space in p->azResult to hold everything
   ** we need to remember from this invocation of the callback.

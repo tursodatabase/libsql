@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.18 2000/08/22 13:40:51 drh Exp $
+** $Id: main.c,v 1.19 2000/10/11 19:28:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -327,7 +327,6 @@ static int sqlite_default_busy_callback(
  const char *NotUsed,     /* The name of the table that is busy */
  int count                /* Number of times table has been busy */
 ){
-  int rc;
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
   int delay = 10000;
   int prior_delay = 0;

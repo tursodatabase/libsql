@@ -27,7 +27,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.12 2000/08/28 15:51:45 drh Exp $
+** $Id: vdbe.h,v 1.13 2000/10/11 19:28:53 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -196,6 +196,6 @@ int sqliteVdbeList(Vdbe*,sqlite_callback,void*,char**);
 void sqliteVdbeResolveLabel(Vdbe*, int);
 int sqliteVdbeCurrentAddr(Vdbe*);
 void sqliteVdbeTrace(Vdbe*,FILE*);
-
+void sqliteVdbeCompressSpace(Vdbe*,int);
 
 #endif
