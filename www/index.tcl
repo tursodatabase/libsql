@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.11 2000/06/02 15:51:18 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.12 2000/06/03 19:28:49 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
@@ -97,8 +97,9 @@ Click to subscribe to sqlite</a>
 
 puts {<h2>Download</h2>
 
-<p>You can download a tarball containing all C source
-code for SQLite at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
+<p>You can download a tarball containing all source
+code for SQLite (including the TCL scripts that generate the
+HTML files for this website) at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
 puts "This is a [file size sqlite.tar.gz] byte download.  The
 tarball was last modified at [clock format [file mtime sqlite.tar.gz]]"
 puts {</p>
@@ -115,13 +116,7 @@ $ ../sqlite/configure
 $ make                    ;# Builds "sqlite" and "libsqlite.a"
 $ make test               ;# Optional: run regression tests
 </pre></blockquote>
-
-<p>You can also download a larger tarball that contains everything
-in the source tarball plus all of the sources for the text that
-appears on this website, and other miscellaneous files.  The
-complete tarball is found at <a href="all.tar.gz">all.tar.gz</a>.}
-puts "This is a [file size all.tar.gz] byte download and was
-was last modified at [clock format [file mtime sqlite.tar.gz]]</p>"
+}
 
 puts {<h2>Related Sites</h2>
 

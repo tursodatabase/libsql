@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 3} {
+<li>Added support for default values on columns of a table.</li>
+<li>Improved test coverage.  Fixed a few obscure bugs found by the
+improved tests.</li>
+}
+
 chng {2000 June 2} {
 <li>All database files to be modified by an UPDATE, INSERT or DELETE are 
 now locked before any changes are made to any files.  

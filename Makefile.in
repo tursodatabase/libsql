@@ -167,24 +167,10 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 test:	tclsqlite
 	./tclsqlite $(TOP)/test/all.test
 
-TARBALL = \
-  sqlite/COPYRIGHT \
-  sqlite/doc/*.html \
-  sqlite/src/*.h \
-  sqlite/src/*.c \
-  sqlite/src/*.y \
-  sqlite/tool/*.c \
-  sqlite/tool/*.awk \
-  sqlite/configure \
-  sqlite/*.in
-
 sqlite.tar.gz:	
-	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz $(TARBALL)
+	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite
 
-all.tar.gz:	
-	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/all.tar.gz sqlite
-
-index.html:	$(TOP)/www/index.tcl sqlite.tar.gz all.tar.gz last_change
+index.html:	$(TOP)/www/index.tcl sqlite.tar.gz last_change
 	tclsh $(TOP)/www/index.tcl >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
@@ -200,7 +186,6 @@ changes.html:	$(TOP)/www/changes.tcl
 #
 PUBLISH = \
   sqlite.tar.gz \
-  all.tar.gz \
   index.html \
   sqlite.html \
   changes.html \
