@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 May 08 (2.4.11)} {
+<li>Bug fix: Column names in the result set were not being generated
+    correctly for some (rather complex) VIEWs.  This could cause a
+    segfault under certain circumstances.</li>
+}
+
 chng {2002 May 02 (2.4.10)} {
 <li>Bug fix: Generate correct column headers when a compound SELECT is used
     as a subquery.</li>
