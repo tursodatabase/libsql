@@ -1,5 +1,5 @@
-C Extend\sthe\sauthorization\smechanism\sto\sdisallow\sthe\sATTACH\sand\sDETACH\scommands.\nTicket\s#340.\s(CVS\s1010)
-D 2003-06-06T19:00:42
+C Hyperlinks\sand\sminor\sadditions/corrections\sfor\slang.tcl\s(CVS\s1011)
+D 2003-06-07T08:56:09
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
-F www/lang.tcl 0d3037b9d3be2450e03ff588bfbb048597907cf3
+F www/lang.tcl bc92ee5c8f77d1499040b7556de9a6c76703b2ba
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 09546972991601697925c10b6ef31694b0be2385
-R 2688e6833b4c30f26b7524864dd64eb2
-U drh
-Z 160fa4fe206cb761a89db5dbd54f41dd
+P a97dca73aed0b42d8dcf944360667ae93c5324fd
+R 990a0b4df2d173c5db871c0c6065292b
+U jplyon
+Z a49d0c549bf8970eaa53731030e4c6b4

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.59 2003/05/29 04:21:39 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.60 2003/06/07 08:56:09 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -619,13 +619,16 @@ CREATE [TEMP | TEMPORARY] VIEW <view-name> AS <select-statement>
 }
 
 puts {
-<p>The CREATE VIEW command assigns a name to a pre-packaged SELECT
+<p>The CREATE VIEW command assigns a name to a pre-packaged 
+<a href="#select">SELECT</a>
 statement.  Once the view is created, it can be used in the FROM clause
 of another SELECT in place of a table name.
 </p>
 
-<p>You cannot COPY, INSERT or UPDATE a view.  Views are read-only 
-in SQLite.  Views are removed with the <a href="#dropview">DROP VIEW</a> 
+<p>You cannot COPY, DELETE, INSERT or UPDATE a view.  Views are read-only 
+in SQLite.  However, in many cases you can use a <a href="#trigger">
+TRIGGER</a> on the view to accomplish the same thing.  Views are removed 
+with the <a href="#dropview">DROP VIEW</a> 
 command.  Non-temporary views cannot be created on tables in an attached 
 database.</p>
 }
@@ -774,7 +777,7 @@ puts {
 <p>This section is different from the others.  Most other sections of
 this document talks about a particular SQL command.  This section does
 not talk about a standalone command but about "expressions" which are 
-subcomponent of most other commands.</p>
+subcomponents of most other commands.</p>
 
 <p>SQLite understands the following binary operators, in order from
 highest to lowest precedence:</p>
@@ -1413,9 +1416,12 @@ with caution.</p>
     the library compile-time options to override this setting. </p>
     </li>
 
+<a name="pragma_vdbe_trace"></a>
 <li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
     <p>Turn tracing of the virtual database engine inside of the
-    SQLite library on and off.  This is used for debugging.</p></li>
+    SQLite library on and off.  This is used for debugging.  See the 
+    <a href="vdbe.html#trace">VDBE documentation</a> for more 
+    information.</p></li>
 </ul>
 
 <p>No error message is generated if an unknown pragma is issued.
