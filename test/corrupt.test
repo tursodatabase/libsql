@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.1 2004/08/30 16:52:19 drh Exp $
+# $Id: corrupt.test,v 1.2 2005/01/16 23:21:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,7 +44,7 @@ do_test corrupt-1.1 {
   }
 } {ok}
 
-# Copy a file 
+# Copy file $from into $to
 #
 proc copy_file {from to} {
   set f [open $from]
@@ -56,14 +56,19 @@ proc copy_file {from to} {
   close $f
 }
 
-# Setup for the tests.
+# Setup for the tests.  Make a backup copy of the good database in test.bu.
+# Create a string of garbage data that is 256 bytes long.
+#
 copy_file test.db test.bu
 set fsize [file size test.db]
 set junk "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 while {[string length $junk]<256} {append junk $junk}
 set junk [string range $junk 0 255]
 
-
+# Go through the database and write garbage data into each 256 segment
+# of the file.  Then do various operations on the file to make sure that
+# the database engine can recover gracefully from the corruption.
+#
 for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
   set tn [expr {$i/256}]
   db close
@@ -99,7 +104,6 @@ for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
     catchsql {DROP TABLE t1}
     set x {}
   } {}
-if {$tn==724} btree_breakpoint
   do_test corrupt-2.$tn.7 {
     catchsql {PRAGMA integrity_check}
     set x {}

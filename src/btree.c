@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.237 2005/01/16 11:07:07 danielk1977 Exp $
+** $Id: btree.c,v 1.238 2005/01/16 23:21:00 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -359,10 +359,22 @@ struct BtCursor {
 };
 
 /*
+** The TRACE macro will print high-level status information about the
+** btree operation when the global variable sqlite3_btree_trace is
+** enabled.
+*/
+#if SQLITE_TEST
+# define TRACE(X)   if( sqlite3_btree_trace )\
+                        { sqlite3DebugPrintf X; fflush(stdout); }
+#else
+# define TRACE(X)
+#endif
+int sqlite3_btree_trace=0;  /* True to enable tracing */
+
+/*
 ** Forward declaration
 */
 static int checkReadLocks(Btree*,Pgno,BtCursor*);
-
 
 /*
 ** Read or write a two- and four-byte big-endian integer values.
@@ -420,12 +432,18 @@ static void put4byte(unsigned char *p, u32 v){
 #define PTRMAP_ISPAGE(pgsz, pgno) (PTRMAP_PAGENO(pgsz,pgno)==pgno)
 
 /*
-** The pointer map is a lookup table that contains an entry for each database
-** page in the file except for page 1. In this context 'database page' refers
-** to any page that is not part of the pointer map itself.  Each pointer map
-** entry consists of a single byte 'type' and a 4 byte page number. The
-** PTRMAP_XXX identifiers below are the valid types. The interpretation
-** of the page-number depends on the type, as follows:
+** The pointer map is a lookup table that identifies the parent page for
+** each child page in the database file.  The parent page is the page that
+** contains a pointer to the child.  Every page in the database contains
+** 0 or 1 parent pages.  (In this context 'database page' refers
+** to any page that is not part of the pointer map itself.)  Each pointer map
+** entry consists of a single byte 'type' and a 4 byte parent page number.
+** The PTRMAP_XXX identifiers below are the valid types.
+**
+** The purpose of the pointer map is to facility moving pages from one
+** position in the file to another as part of autovacuum.  When a page
+** is moved, the pointer in its parent must be updated to point to the
+** new location.  The pointer map is used to locate the parent page quickly.
 **
 ** PTRMAP_ROOTPAGE: The database page is a root-page. The page-number is not
 **                  used in this case.
@@ -457,7 +475,7 @@ static void put4byte(unsigned char *p, u32 v){
 ** so that it maps to type 'eType' and parent page number 'pgno'.
 ** An error code is returned if something goes wrong, otherwise SQLITE_OK.
 */
-static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno pgno){
+static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno parent){
   u8 *pPtrmap;    /* The pointer map page */
   Pgno iPtrmap;   /* The pointer map page number */
   int offset;     /* Offset in pointer map page */
@@ -472,13 +490,14 @@ static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno pgno){
   }
   offset = PTRMAP_PTROFFSET(pBt->usableSize, key);
 
-  if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=pgno ){
+  if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
+    TRACE(("PTRMAP_UPDATE: %d->(%d,%d)\n", key, eType, parent));
     rc = sqlite3pager_write(pPtrmap);
     if( rc!=0 ){
       return rc;
     }
     pPtrmap[offset] = eType;
-    put4byte(&pPtrmap[offset+1], pgno);
+    put4byte(&pPtrmap[offset+1], parent);
   }
 
   sqlite3pager_unref(pPtrmap);
@@ -1562,19 +1581,6 @@ int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
   }
   return rc;
 }
-
-/*
-** The TRACE macro will print high-level status information about the
-** btree operation when the global variable sqlite3_btree_trace is
-** enabled.
-*/
-#if SQLITE_TEST
-# define TRACE(X)   if( sqlite3_btree_trace )\
-                        { sqlite3DebugPrintf X; fflush(stdout); }
-#else
-# define TRACE(X)
-#endif
-int sqlite3_btree_trace=0;  /* True to enable tracing */
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 
@@ -3571,6 +3577,7 @@ static void assemblePage(
 /* Forward reference */
 static int balance(MemPage*, int);
 
+#ifndef SQLITE_OMIT_QUICKBALANCE
 /*
 ** This version of balance() handles the common special case where
 ** a new entry is being inserted on the extreme right-end of the
@@ -3658,6 +3665,7 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   releasePage(pNew);
   return balance(pParent, 0);
 }
+#endif /* SQLITE_OMIT_QUICKBALANCE */
 
 /*
 ** The ISAUTOVACUUM macro is used within balance_nonroot() to determine
@@ -3747,7 +3755,7 @@ static int balance_nonroot(MemPage *pPage){
   assert( pParent );
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
 
-#ifdef SQLITE_BALANCE_QUICK
+#ifndef SQLITE_OMIT_QUICKBALANCE
   /*
   ** A special case:  If a new entry has just been inserted into a
   ** table (that is, a btree with integer keys and all data at the leaves)
