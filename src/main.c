@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.6 2000/06/02 13:27:59 drh Exp $
+** $Id: main.c,v 1.7 2000/06/02 14:27:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -185,7 +185,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqlite_close(db);
     return 0;
   }else{
-    sqliteFree(pzErrMsg);
+    sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
   return db;

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s37)
-D 2000-06-02T13:27:59
+C :-)\s(CVS\s38)
+D 2000-06-02T14:27:23
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in b0553e870e5daa6279af4dc09101322db16a49f1
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -12,7 +12,7 @@ F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
 F src/expr.c fb0972a54cc0230b6d4ce02c80ae07d0e1876e01
 F src/insert.c 747aad76e48a811c6fd30336514df84104587c3f
-F src/main.c e0fb4de58091f7421793e9b93571cf2d64caf3c3
+F src/main.c ed15e0132659ace7f44ea2dbcdd21c232af3dbd5
 F src/parse.y 16322c46ec117082ef745715f7a4761f2491a0b2
 F src/select.c ce21eb2db2c621c097f03c21ff8d18804fb9897d
 F src/shell.c bd658f9208bc20ce565c3f687836155772ca939a
@@ -25,14 +25,14 @@ F src/util.c c22846f23b9311ca0e68f076686493bac7b20d5d
 F src/vdbe.c a92f66fa70d1df99ff29795fe8f18e9ea51f8f4c
 F src/vdbe.h ab574c91c6328c5795f68b84074fbcf860eae70e
 F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
-F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
+F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test 641bd3cfaab61c4ee32889587e21e4c70788a97a
 F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
 F test/expr.test f3fc925935533082911dfa5fde9b22e382b3132f
 F test/index.test 8d4f26901a5582daa353fe3c8266cbf4a53af830
 F test/insert.test 161bc67a4189738c559e3569323ceae31f4d49d6
 F test/select1.test a0b00df77e85adff75c338e487718c5d31f69e3a
-F test/select2.test 33a53530dc011bcf970068f79674b2272fda5917
+F test/select2.test 4a86ab6dcf166aec2bc6d8c0762103916c6c90c3
 F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
 F test/tester.tcl 44690d463c1dc83a4c76ccde07cc146a988600f6
 F test/update.test 69459302ea75cafac1479e60b0e36efb88123c0e
@@ -46,7 +46,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 7d6ed774362dea0c9687d4efbafd939c1c48fd81
 F www/index.tcl 95bab9c95813c2222265532e4e0340a8c1d4e354
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 80d925b82b176df7f73a1747a6ed711ac3d9a0d3
-R e8a51bd00aae9034f42802ab343d2bb5
+P 2b55f9b790e2914bbd2fd27ef23bbab79fa76937
+R bb17a885c77051981ec6ed823290ffdd
 U drh
-Z aaac793e5f9c2c3602d5040dcac36c63
+Z 8068067c5c6d0589ad45c58c2c0a0852
