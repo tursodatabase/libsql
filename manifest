@@ -1,5 +1,5 @@
-C Added\ssupport\sfor\sCASE\sexpressions\s-\spatches\sfrom\sDan\sKennedy.\s(CVS\s437)
-D 2002-03-24T13:13:28
+C Update\sthe\schange\slog.\s(CVS\s438)
+D 2002-03-26T03:11:27
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -115,7 +115,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 7137167dc4193b4658096559d94ce14fde33ddec
+F www/changes.tcl b9769b3fb8bac6a70a5be41356dcf847cb1d1c97
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 99d6764e57ddc7f0a321229cc1b7aa9a76f1aae5
-R 2c07c24bb32189e5643cb9ff23369e12
+P 836b59d057c3fb4087b138c9bfbc03392ddfb89d
+R b029c62118dba399fd0dec9fed0ef690
 U drh
-Z efaaf0dd01ae4aa4e97af0ad8b65ddc7
+Z c7bf5b5594ad90e26197a233d0590f42

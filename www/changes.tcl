@@ -17,7 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Mar 122 (2.4.3)} {
+chng {2002 Mar 24 (2.4.4)} {
+<li>Added support for CASE expressions (patch from Dan Kennedy)</li>
+}
+
+chng {2002 Mar 22 (2.4.3)} {
 <li>Fix a bug in SELECT that occurs when a compound SELECT is used as a
     subquery in the FROM of a SELECT.</li>
 <li>The <b>sqlite_get_table()</b> function now returns an error if you
