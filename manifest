@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sprior\sto\sthe\srelease\sof\sversion\s2.7.3.\s(CVS\s773)
-D 2002-10-30T23:04:27
+C Fix\san\sassert\sthat\smight\sfail\sif\smalloc()\sfails.\s(CVS\s774)
+D 2002-10-31T00:09:40
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
 F src/build.c 1559232f6878fd7f2b1c79aede0f7a33ececab07
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
-F src/expr.c 108017b98634a3bddc1b41c9b158e4d26f9b27f0
+F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
 F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8c4cbdd05517e91879a0f2c4559d0f0518d2385b
-R e45fb39d2412ba050ad0f809e542a329
+P bc7c7d87e550c786d5bdb4169a0ad75db3fb066a
+R f8477ebc66610cd7938692d7ec68ce06
 U drh
-Z 81b9d246d2219c6cfbb498689da38259
+Z 4d95d48fbae005ad580c41cc0f9f6e52
