@@ -1,5 +1,5 @@
-C Prepare\sfor\sanother\sALPHA\srelease.\s\sVersion\snumber\s3.0.1.\s(CVS\s1664)
-D 2004-06-22T14:41:01
+C Rename\ssqlite.dll\sto\ssqlite3.dll.\s(CVS\s1665)
+D 2004-06-22T14:41:36
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,7 +19,7 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 5dbdfd52ee306c553c88278d7dc4adb58a662209
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
-F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
+F publish.sh 4193d9022fb7cf9beecd313bed3d1d68b8386fbe
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 129c5d5e3af4a7eeeebf5e4cbe9f0da5c123a68b
-R 0829285ee3b3b447f034d706b535cf09
+P 6dd7b02537c20af2074ada70c3fd4294dd46742d
+R 082d2eabc913cbc62ad07fc3c9334cca
 U drh
-Z c2b941e294602b9788c419b7d5d0dcce
+Z 0f97c6160038e797fea45ada917f34bc

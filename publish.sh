@@ -70,20 +70,19 @@ for i in *.c; do
   echo $CMD
   $CMD
 done
-echo 'EXPORTS' >tclsqlite.def
-echo 'Tclsqlite_Init' >>tclsqlite.def
-echo 'Sqlite_Init' >>tclsqlite.def
+echo 'EXPORTS' >tclsqlite3.def
+echo 'Tclsqlite_Init' >>tclsqlite3.def
+echo 'Sqlite_Init' >>tclsqlite3.def
 i386-mingw32msvc-dllwrap \
-     --def tclsqlite.def -v --export-all \
+     --def tclsqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
-     -dllname tclsqlite.dll -lmsvcrt *.o $TCLSTUBLIB
+     -dllname tclsqlite3.dll -lmsvcrt *.o $TCLSTUBLIB
 i386-mingw32msvc-strip tclsqlite.dll
-mv tclsqlite.dll ..
 rm tclsqlite.o
-cat >sqlite.def <<\END_OF_FILE
+cat >sqlite3.def <<\END_OF_FILE
 EXPORTS
 sqlite3_aggregate_context
 sqlite3_aggregate_count
@@ -118,6 +117,7 @@ sqlite3_create_function16
 sqlite3_errcode
 sqlite3_errmsg
 sqlite3_errmsg16
+sqlite3_exec
 sqlite3_finalize
 sqlite3_free
 sqlite3_interrupt
@@ -158,10 +158,10 @@ i386-mingw32msvc-dllwrap \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
-     -dllname sqlite.dll -lmsvcrt *.o
-i386-mingw32msvc-strip sqlite.dll
-zip ../doc/tclsqlite-$VERSW.zip tclsqlite.dll
-zip ../doc/sqlitedll-$VERSW.zip sqlite.dll sqlite.def
+     -dllname sqlite3.dll -lmsvcrt *.o
+i386-mingw32msvc-strip sqlite3.dll
+zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
+zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
 cd ..
 
 # Build the sqlite.exe executable for windows.
@@ -170,8 +170,8 @@ make target_source
 cd tsrc
 rm tclsqlite.c
 OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
-i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite.exe
-zip ../doc/sqlite-$VERSW.zip sqlite.exe
+i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite3.exe
+zip ../doc/sqlite-$VERSW.zip sqlite3.exe
 cd ..
 
 # Construct a tarball of the source tree
