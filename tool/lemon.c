@@ -493,6 +493,7 @@ int acttab_insert(acttab *p){
   */
   n = p->mxLookahead - p->mnLookahead + 1;
   if( p->nAction + n >= p->nActionAlloc ){
+    int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
     p->aAction = realloc( p->aAction,
                           sizeof(p->aAction[0])*p->nActionAlloc);
@@ -500,7 +501,7 @@ int acttab_insert(acttab *p){
       fprintf(stderr,"malloc failed\n");
       exit(1);
     }
-    for(i=p->nAction; i<p->nActionAlloc; i++){
+    for(i=oldAlloc; i<p->nActionAlloc; i++){
       p->aAction[i].lookahead = -1;
       p->aAction[i].action = -1;
     }
@@ -520,7 +521,13 @@ int acttab_insert(acttab *p){
         if( k<0 ) break;
         if( p->aAction[k].lookahead>=0 ) break;
       }
-      if( j==p->nLookahead ) break;  /* Fits in empty slots */
+      if( j<p->nLookahead ) continue;
+      for(j=0; j<p->nAction; j++){
+        if( p->aAction[j].lookahead==j+p->mnLookahead-i ) break;
+      }
+      if( j==p->nAction ){
+        break;  /* Fits in empty slots */
+      }
     }else if( p->aAction[i].lookahead==p->mnLookahead ){
       if( p->aAction[i].action!=p->mnAction ) continue;
       for(j=0; j<p->nLookahead; j++){
@@ -532,9 +539,12 @@ int acttab_insert(acttab *p){
       if( j<p->nLookahead ) continue;
       n = 0;
       for(j=0; j<p->nAction; j++){
-        if( p->aAction[j].lookahead==j+i-p->mnLookahead ) n++;
+        if( p->aAction[j].lookahead<0 ) continue;
+        if( p->aAction[j].lookahead==j+p->mnLookahead-i ) n++;
       }
-      if( n==p->nLookahead ) break;  /* Same as a prior transaction set */
+      if( n==p->nLookahead ){
+        break;  /* Same as a prior transaction set */
+      }
     }
   }
   /* Insert transaction set at index i. */
@@ -3125,6 +3135,27 @@ static const char *minimum_size_type(int lwr, int upr){
   }
 }
 
+/*
+** Each state contains a set of token transaction and a set of
+** nonterminal transactions.  Each of these sets makes an instance
+** of the following structure.  An array of these structures is used
+** to order the creation of entries in the yy_action[] table.
+*/
+struct axset {
+  struct state *stp;   /* A pointer to a state */
+  int isTkn;           /* True to use tokens.  False for non-terminals */
+  int nAction;         /* Number of actions */
+};
+
+/*
+** Compare to axset structures for sorting purposes
+*/
+static int axset_compare(const void *a, const void *b){
+  struct axset *p1 = (struct axset*)a;
+  struct axset *p2 = (struct axset*)b;
+  return p2->nAction - p1->nAction;
+}
+
 /* Generate C source code for the parser */
 void ReportTable(lemp, mhflag)
 struct lemon *lemp;
@@ -3141,6 +3172,7 @@ int mhflag;     /* Output in makeheaders format if true */
   char *name;
   int mnTknOfst, mxTknOfst;
   int mnNtOfst, mxNtOfst;
+  struct axset *ax;
 
   in = tplt_open(lemp);
   if( in==0 ) return;
@@ -3241,6 +3273,11 @@ int mhflag;     /* Output in makeheaders format if true */
   */
 
   /* Compute the actions on all states and count them up */
+  ax = malloc( sizeof(ax[0])*lemp->nstate*2 );
+  if( ax==0 ){
+    fprintf(stderr,"malloc failed\n");
+    exit(1);
+  }
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
     stp->nTknAct = stp->nNtAct = 0;
@@ -3258,45 +3295,50 @@ int mhflag;     /* Output in makeheaders format if true */
         }
       }
     }
+    ax[i*2].stp = stp;
+    ax[i*2].isTkn = 1;
+    ax[i*2].nAction = stp->nTknAct;
+    ax[i*2+1].stp = stp;
+    ax[i*2+1].isTkn = 0;
+    ax[i*2+1].nAction = stp->nNtAct;
   }
   mxTknOfst = mnTknOfst = 0;
   mxNtOfst = mnNtOfst = 0;
 
-  /* Compute the action table.  Do this in two passes.  The first
-  ** pass does all entries with two or more actions and the second
-  ** pass does all states with a single action.
+  /* Compute the action table.  In order to try to keep the size of the
+  ** action table to a minimum, the heuristic of placing the largest action
+  ** sets first is used.
   */
+  qsort(ax, lemp->nstate*2, sizeof(ax[0]), axset_compare);
   pActtab = acttab_alloc();
-  for(j=0; j<=1; j++){
-    for(i=0; i<lemp->nstate; i++){
-      stp = lemp->sorted[i];
-      if( (j==0 && stp->nTknAct>=2) || (j==1 && stp->nTknAct==1) ){
-        for(ap=stp->ap; ap; ap=ap->next){
-          int action;
-          if( ap->sp->index>=lemp->nterminal ) continue;
-          action = compute_action(lemp, ap);
-          if( action<0 ) continue;
-          acttab_action(pActtab, ap->sp->index, action);
-        }
-        stp->iTknOfst = acttab_insert(pActtab);
-        if( stp->iTknOfst<mnTknOfst ) mnTknOfst = stp->iTknOfst;
-        if( stp->iTknOfst>mxTknOfst ) mxTknOfst = stp->iTknOfst;
+  for(i=0; i<lemp->nstate*2 && ax[i].nAction>0; i++){
+    stp = ax[i].stp;
+    if( ax[i].isTkn ){
+      for(ap=stp->ap; ap; ap=ap->next){
+        int action;
+        if( ap->sp->index>=lemp->nterminal ) continue;
+        action = compute_action(lemp, ap);
+        if( action<0 ) continue;
+        acttab_action(pActtab, ap->sp->index, action);
       }
-      if( (j==0 && stp->nNtAct>=2) || (j==1 && stp->nNtAct==1) ){
-        for(ap=stp->ap; ap; ap=ap->next){
-          int action;
-          if( ap->sp->index<lemp->nterminal ) continue;
-          if( ap->sp->index==lemp->nsymbol ) continue;
-          action = compute_action(lemp, ap);
-          if( action<0 ) continue;
-          acttab_action(pActtab, ap->sp->index, action);
-        }
-        stp->iNtOfst = acttab_insert(pActtab);
-        if( stp->iNtOfst<mnNtOfst ) mnNtOfst = stp->iNtOfst;
-        if( stp->iNtOfst>mxNtOfst ) mxNtOfst = stp->iNtOfst;
+      stp->iTknOfst = acttab_insert(pActtab);
+      if( stp->iTknOfst<mnTknOfst ) mnTknOfst = stp->iTknOfst;
+      if( stp->iTknOfst>mxTknOfst ) mxTknOfst = stp->iTknOfst;
+    }else{
+      for(ap=stp->ap; ap; ap=ap->next){
+        int action;
+        if( ap->sp->index<lemp->nterminal ) continue;
+        if( ap->sp->index==lemp->nsymbol ) continue;
+        action = compute_action(lemp, ap);
+        if( action<0 ) continue;
+        acttab_action(pActtab, ap->sp->index, action);
       }
+      stp->iNtOfst = acttab_insert(pActtab);
+      if( stp->iNtOfst<mnNtOfst ) mnNtOfst = stp->iNtOfst;
+      if( stp->iNtOfst>mxNtOfst ) mxNtOfst = stp->iNtOfst;
     }
   }
+  free(ax);
 
   /* Output the yy_action table */
   fprintf(out,"static YYACTIONTYPE yy_action[] = {\n"); lineno++;
@@ -3304,6 +3346,7 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=j=0; i<n; i++){
     int action = acttab_yyaction(pActtab, i);
     if( action<0 ) action = lemp->nsymbol + lemp->nrule + 2;
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", action);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
@@ -3319,6 +3362,7 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=j=0; i<n; i++){
     int la = acttab_yylookahead(pActtab, i);
     if( la<0 ) la = lemp->nsymbol;
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", la);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
@@ -3339,6 +3383,7 @@ int mhflag;     /* Output in makeheaders format if true */
     stp = lemp->sorted[i];
     ofst = stp->iTknOfst;
     if( ofst==NO_OFFSET ) ofst = mnTknOfst - 1;
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", ofst);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
@@ -3359,6 +3404,7 @@ int mhflag;     /* Output in makeheaders format if true */
     stp = lemp->sorted[i];
     ofst = stp->iNtOfst;
     if( ofst==NO_OFFSET ) ofst = mnNtOfst - 1;
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", ofst);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
@@ -3374,6 +3420,7 @@ int mhflag;     /* Output in makeheaders format if true */
   n = lemp->nstate;
   for(i=j=0; i<n; i++){
     stp = lemp->sorted[i];
+    if( j==0 ) fprintf(out," /* %5d */ ", i);
     fprintf(out, " %4d,", stp->iDflt);
     if( j==9 || i==n-1 ){
       fprintf(out, "\n"); lineno++;
