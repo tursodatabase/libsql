@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scapi3.tcl\s(CVS\s1618)
-D 2004-06-18T11:34:09
+C Version\s3.0.0\s(ALPHA)\s(CVS\s1619)
+D 2004-06-18T12:29:23
 F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl f9a4c1a12864e129f6717d22313be01d5657e3aa
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 917391e05ef45fd1eae883a99e6bbe6d7df3cc1c
+P 9e0e530f10bf70996471650496173dee074c2732
 R e652117e65d118a6c36b9df849e95e4a
-U danielk1977
-Z 65641b4e96f5d9c91c06d2c81c03a7c6
+U drh
+Z a6276db799a30487f4c5e98319787ced
