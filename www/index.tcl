@@ -14,17 +14,19 @@ Features include:
 </p>
 
 <p><ul>
-<li>ACID (Atomic, Consistent, Isolated, Durable) transactions.</li>
+<li>Transaction are atomic, consistent, isolated, and durable (ACID)
+    even after system crashes and power failures.
 <li>Zero-configuration - no setup or administration needed.</li>
 <li>Implements most of SQL92.
     (<a href="omitted.html">Features not supported</a>)</li>
 <li>A complete database is stored in a single disk file.</li>
 <li>Database files can be freely shared between machines with
     different byte orders.</li>
-<li>Supports databases up to 2 terabytes (2^41 bytes) in size.</li>
-<li>Small memory footprint: less than 30K lines of C code,
+<li>Supports databases up to 2 terabytes (2<sup>41</sup> bytes) in size.</li>
+<li>Sizes of strings and BLOBs limited only by available memory.</li>
+<li>Small code footprint: less than 30K lines of C code,
     less than 250KB code space (gcc on i486)</li>
-<li><a href="speed.html">Faster</a> than other popular database
+<li><a href="speed.html">Faster</a> than popular client/server database
     engines for most common operations.</li>
 <li>Simple, easy to use <a href="c_interface.html">API</a>.</li>
 <li><a href="tclsqlite.html">TCL bindings</a> included.
@@ -58,26 +60,10 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2004-Sep-02} {Version 3.0.6 (beta)} {
-  Because of some important changes to sqlite3_step(),
-  we have decided to
-  do an additional beta release prior to the first "stable" release.
-  If no serious problems are discovered in this version, we will
-  release version 3.0 "stable" in about a week.
-}
-
-
-newsitem {2004-Aug-29} {Version 3.0.5 (beta)} {
-  The fourth beta release of SQLite version 3.0 is now available.
-  The next release is expected to be called "stable".
-}
-
-
-newsitem {2004-Aug-08} {Version 3.0.4 (beta)} {
-  The third beta release of SQLite version 3.0 is now available.
-  This new beta fixes several bugs including a database corruption
-  problem that can occur when doing a DELETE while a SELECT is pending.
-  Expect at least one more beta before version 3.0 goes final.
+newsitem {2004-Sep-18} {Version 3.0.7} {
+  Version 3.0 has now been in use by multiple projects for several
+  months with no major difficulties.   We consider it stable and
+  ready for production use. 
 }
 
 
@@ -94,4 +80,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.95 2004/09/02 16:53:12 drh Exp $}
+footer {$Id: index.tcl,v 1.96 2004/09/18 18:00:24 drh Exp $}

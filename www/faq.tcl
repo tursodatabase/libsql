@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.24 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.25 2004/09/18 18:00:24 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -55,14 +55,16 @@ INSERT INTO t1 VALUES((SELECT max(a) FROM t1)+1,123);
   <b>sqlite_last_insert_rowid()</b> which will return the integer key
   for the most recent insert operation.  See the API documentation for
   details.</p>
+
+  <p>SQLite version 3.0 expands the size of the rowid to 64 bits.</p>
 }
 
 faq {
   What datatypes does SQLite support?
 } {
-  <p>SQLite is typeless. All data is stored as null-terminated strings.
-  The datatype information that follows the column name in CREATE TABLE
-  statements is ignored (mostly).  You can put any type of data you want
+  <p>SQLite ignores
+  the datatype information that follows the column name in CREATE TABLE.
+  You can put any type of data you want
   into any column, without regard to the declared datatype of that column.
   </p>
 
@@ -70,14 +72,17 @@ faq {
   Such columns must hold an integer.  An attempt to put a non-integer
   value into an INTEGER PRIMARY KEY column will generate an error.</p>
 
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
+  version 2.8</a>
+  and another for <a href="datatype3.html">version 3.0</a>
   that explains this concept further.</p>
 }
 
 faq {
   SQLite lets me insert a string into a database column of type integer!
 } {
-  <p>This is a feature, not a bug.  SQLite is typeless.  Any data can be
+  <p>This is a feature, not a bug.  SQLite does not enforce data type
+  constraints.  Any data can be
   inserted into any column.  You can put arbitrary length strings into
   integer columns, floating point numbers in boolean columns, or dates
   in character columns.  The datatype you assign to a column in the
@@ -106,7 +111,9 @@ INSERT INTO t1 VALUES('0.0');             INSERT INTO t2 VALUES(0.0);
   this case, the constants 0 and 0.0 are treated a strings which means that
   they are distinct.</p>
 
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
+  version 2.8</a>
+  and another for <a href="datatype3.html">version 3.0</a>
   that explains this concept further.</p>
 }
 
@@ -138,7 +145,9 @@ SELECT count(*) FROM t3 WHERE b=='00';
   is done against '00'.  '0'!='00' so the WHERE clause returns FALSE and
   the count is zero.</p>
 
-  <p>There is a page on <a href="datatypes.html">datatypes in SQLite</a>
+  <p>There is a page on <a href="datatypes.html">datatypes in SQLite
+  version 2.8</a>
+  and another for <a href="datatype3.html">version 3.0</a>
   that explains this concept further.</p>
 }
 
@@ -307,23 +316,14 @@ faq {
   Are there any known size limits to SQLite databases?
 } {
   <p>As of version 2.7.4, 
-  SQLite can handle databases up to 2^41 bytes (2 terabytes)
+  SQLite can handle databases up to 2<sup>41</sup> bytes (2 terabytes)
   in size on both Windows and Unix.  Older version of SQLite
-  were limited to databases of 2^31 bytes (2 gigabytes).</p>
+  were limited to databases of 2<sup>31</sup> bytes (2 gigabytes).</p>
 
-  <p>SQLite arbitrarily limits the amount of data in one row to 1 megabyte.
-  There is a single #define in the source code that can be changed to raise
-  this limit as high as 16 megabytes if desired.</p>
-
-  <p>There is a theoretical limit of about 2^32 (4 billion) rows
-  in a single table, but this limit has never been tested.</p>
-  There is also a theoretical limit of about 2^32
-  tables and indices.</p>
-
-  <p>The name and "CREATE TABLE" statement for a table must fit entirely
-  within a 1-megabyte row of the SQLITE_MASTER table.  Other than this,
-  there are no constraints on the length of the name of a table, or on the
-  number of columns, etc.  Indices are similarly unconstrained.</p>
+  <p>SQLite version 2.8 limits the amount of data in one row to 
+  1 megabyte.  SQLite version 3.0 has no limit on the amount of
+  data that can be stored in a single row.
+  </p>
 
   <p>The names of tables, indices, view, triggers, and columns can be
   as long as desired.  However, the names of SQL functions (as created
@@ -334,32 +334,21 @@ faq {
 faq {
   What is the maximum size of a VARCHAR in SQLite?
 } {
-  <p>Remember, SQLite is typeless.  A VARCHAR column can hold as much
-  data as any other column.  The total amount of data in a single row
-  of the database is limited to 1 megabyte.  You can increase this limit
-  to 16 megabytes, if you need to, by adjusting a single #define in the
-  source tree and recompiling.</p>
-
-  <p>For maximum speed and space efficiency, you should try to keep the
-  amount of data in a single row below about 230 bytes.</p>
+  <p>SQLite does not enforce datatype constraints.
+  A VARCHAR column can hold as much data as you care to put it in.</p>
 }
 
 faq {
   Does SQLite support a BLOB type?
 } {
-  <p>You can declare a table column to be of type "BLOB" but it will still
-  only store null-terminated strings.  This is because the only way to 
-  insert information into an SQLite database is using an INSERT SQL statement,
-  and you can not include binary data in the middle of the ASCII text string
-  of an INSERT statement.</p>
+  <p>SQLite version 3.0 lets you puts BLOB data into any column, even
+  columns that are declared to hold some other type.</p>
 
-  <p>SQLite is 8-bit clean with regard to the data it stores as long as
-  the data does not contain any '\000' characters.  If you want to store binary
-  data, consider encoding your data in such a way that it contains no NUL
-  characters and inserting it that way.  You might use URL-style encoding:
-  encode NUL as "%00" and "%" as "%25".  Or, you might consider encoding your
-  binary data using base-64.  There is a source file named 
-  "<b>src/encode.c</b>" in the SQLite distribution that contains
+  <p>SQLite version 2.8 would hold store text data without embedded
+  '\000' characters.  If you need to store BLOB data in SQLite version
+  2.8 you'll want to encode that data first.
+  There is a source file named 
+  "<b>src/encode.c</b>" in the SQLite version 2.8 distribution that contains
   implementations of functions named "<b>sqlite_encode_binary()</b>
   and <b>sqlite_decode_binary()</b> that can be used for converting
   binary data to ASCII and back again, if you like.</p>
@@ -370,7 +359,7 @@ faq {
 faq {
   How do I add or delete columns from an existing table in SQLite.
 } {
-  <p>SQLite does not support the "ALTER TABLE" SQL command.  If you
+  <p>SQLite does yes not support the "ALTER TABLE" SQL command.  If you
   what to change the structure of a table, you have to recreate the
   table.  You can save existing data to a temporary table, drop the
   old table, create the new table, then copy the data back in from
@@ -417,6 +406,20 @@ faq {
 } {
   <p>Yes.  SQLite is in the public domain.  No claim of ownership is made
   to any part of the code.  You can do anything you want with it.</p>
+}
+
+faq {
+  How do I use a string literal that contains an embedded single-quote (')
+  character?
+} {
+  <p>The SQL standard specifies that single-quotes in strings are escaped
+  by putting two single quotes in a row.  SQL works like the Pascal programming
+  language in the regard.  SQLite follows this standard.  Example:
+  </p>
+
+  <blockquote><pre>
+    INSERT INTO xyz VALUES('5 O''clock');
+  </pre></blockquote>
 }
 
 # End of questions and answers.

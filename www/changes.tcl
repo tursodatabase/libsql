@@ -21,6 +21,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 September 18 (3.0.7)} {
+<li>The BTree module allocates large buffers using malloc() instead of
+    off of the stack, in order to play better on machines with limited
+    stack space.</li>
+<li>Fixed naming conflicts so that versions 2.8 and 3.0 can be
+    linked and used together in the same ANSI-C source file.</li>
+<li>New interface: sqlite3_bind_parameter_index()</li>
+<li>Add support for wildcard parameters of the form: "?nnn"</li>
+<li>Fix problems found on 64-bit systems.</li>
+<li>Removed encode.c file (containing unused routines) from the 
+    version 3.0 source tree.</li>
+<li>The sqlite3_trace() callbacks occur before each statement
+    is executed, not when the statement is compiled.</li>
+<li>Makefile updates and miscellaneous bug fixes.</li>
+}
+
 chng {2004 September 02 (3.0.6 beta)} {
 <li>Better detection and handling of corrupt database files.</li>
 <li>The sqlite3_step() interface returns SQLITE_BUSY if it is unable
