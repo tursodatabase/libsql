@@ -47,7 +47,7 @@ extern char *sqlite_vmprintf(const char *zFormat, va_list);
 /*
 ** When a lock occurs, yield.
 */
-static int db_is_locked(void *NotUsed, const char *zNotUsed, int iNotUsed){
+static int db_is_locked(void *NotUsed, int iNotUsed){
   /* sched_yield(); */
   if( verbose ) printf("BUSY %s\n", (char*)NotUsed);
   usleep(100);

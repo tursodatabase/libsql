@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.366 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.367 2004/06/12 01:43:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2378,16 +2378,12 @@ case OP_Transaction: {
     }
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, db->nMaster);
     if( rc==SQLITE_BUSY ){
-        if( db->busyHandler.xFunc==0 ){
-          p->pc = pc;
-          p->rc = SQLITE_BUSY;
-          p->pTos = pTos;
-          return SQLITE_BUSY;
-        }else{
-          sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
-        }
+      p->pc = pc;
+      p->rc = SQLITE_BUSY;
+      p->pTos = pTos;
+      return SQLITE_BUSY;
     }
-    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY && rc!=SQLITE_BUSY ){
+    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
       goto abort_due_to_error;
     }
   }
@@ -2565,15 +2561,10 @@ case OP_OpenWrite: {
   }
   switch( rc ){
     case SQLITE_BUSY: {
-      if( db->busyHandler.xFunc ){
-        p->pc = pc;
-        p->rc = SQLITE_BUSY;
-        p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
-        return SQLITE_BUSY;
-      }else{
-        sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
-      }
-      break;
+      p->pc = pc;
+      p->rc = SQLITE_BUSY;
+      p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
+      return SQLITE_BUSY;
     }
     case SQLITE_OK: {
       int flags = sqlite3BtreeFlags(pCur->pCursor);

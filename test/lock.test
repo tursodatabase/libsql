@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.23 2004/06/10 00:29:12 drh Exp $
+# $Id: lock.test,v 1.24 2004/06/12 01:43:27 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -172,8 +172,8 @@ do_test lock-2.2 {
 # a RESERVED lock) tries to get a RESERVED lock, we get a busy callback.
 #
 do_test lock-2.3 {
-  proc callback {args} {
-    set ::callback_value $args
+  proc callback {count} {
+    set ::callback_value $count
     break
   }
   set ::callback_value {}
@@ -181,9 +181,9 @@ do_test lock-2.3 {
   set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
   lappend r $msg
   lappend r $::callback_value
-} {1 {database is locked} {{} 1}}
+} {1 {database is locked} 1}
 do_test lock-2.4 {
-  proc callback {file count} {
+  proc callback {count} {
     lappend ::callback_value $count
     if {$count>4} break
   }
@@ -194,7 +194,7 @@ do_test lock-2.4 {
   lappend r $::callback_value
 } {1 {database is locked} {1 2 3 4 5}}
 do_test lock-2.5 {
-  proc callback {file count} {
+  proc callback {count} {
     lappend ::callback_value $count
     if {$count>4} break
   }
@@ -210,7 +210,7 @@ do_test lock-2.5 {
 # second thread to continue.
 #
 do_test lock-2.6 {
-  proc callback {file count} {
+  proc callback {count} {
     lappend ::callback_value $count
     if {$count>2} {
       execsql {ROLLBACK}
@@ -223,7 +223,7 @@ do_test lock-2.6 {
   lappend r $::callback_value
 } {0 {9 8} {}}
 do_test lock-2.7 {
-  proc callback {file count} {
+  proc callback {count} {
     lappend ::callback_value $count
     if {$count>2} {
       execsql {ROLLBACK}
@@ -281,7 +281,7 @@ do_test lock-4.2 {
   lappend rc $msg $::callback_value
 } {1 {database is locked} {}}
 do_test lock-4.3 {
-  proc callback {file count} {
+  proc callback {count} {
     lappend ::callback_value $count
     if {$count>4} break
   }

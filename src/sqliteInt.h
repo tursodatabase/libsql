@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.283 2004/06/12 00:42:35 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.284 2004/06/12 01:43:27 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -342,8 +342,8 @@ struct Db {
 ** callback is currently invoked only from within pager.c.
 */
 struct BusyHandler {
-  int (*xFunc)(void *,const char*,int);  /* The busy callback */
-  void *pArg;                            /* First arg to busy callback */
+  int (*xFunc)(void *,int);  /* The busy callback */
+  void *pArg;                /* First arg to busy callback */
 };
 
 /*

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.123 2004/06/10 23:35:50 drh Exp $
+** @(#) $Id: pager.c,v 1.124 2004/06/12 01:43:26 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1555,7 +1555,7 @@ static int pager_write_pagelist(PgHdr *pList){
   }while( rc==SQLITE_BUSY && 
       pPager->pBusyHandler && 
       pPager->pBusyHandler->xFunc && 
-      pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+      pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
   );
   if( rc!=SQLITE_OK ){
     return rc;
@@ -1639,7 +1639,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     }while( rc==SQLITE_BUSY && 
         pPager->pBusyHandler && 
         pPager->pBusyHandler->xFunc && 
-        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
     );
     if( rc!=SQLITE_OK ){
       return rc;
@@ -2030,7 +2030,7 @@ int sqlite3pager_begin(void *pData, int nMaster){
       }while( rc==SQLITE_BUSY && 
           pPager->pBusyHandler && 
           pPager->pBusyHandler->xFunc && 
-          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
       );
       if( rc!=SQLITE_OK ){
         return rc;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.83 2004/06/10 10:50:38 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.84 2004/06/12 01:43:27 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -149,7 +149,7 @@ static void DbDeleteCmd(void *db){
 ** This routine is called when a database file is locked while trying
 ** to execute SQL.
 */
-static int DbBusyHandler(void *cd, const char *zTable, int nTries){
+static int DbBusyHandler(void *cd, int nTries){
   SqliteDb *pDb = (SqliteDb*)cd;
   int rc;
   char zVal[30];
@@ -158,9 +158,8 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 
   Tcl_DStringInit(&cmd);
   Tcl_DStringAppend(&cmd, pDb->zBusy, -1);
-  Tcl_DStringAppendElement(&cmd, zTable);
-  sprintf(zVal, " %d", nTries);
-  Tcl_DStringAppend(&cmd, zVal, -1);
+  sprintf(zVal, "%d", nTries);
+  Tcl_DStringAppendElement(&cmd, zVal);
   zCmd = Tcl_DStringValue(&cmd);
   rc = Tcl_Eval(pDb->interp, zCmd);
   Tcl_DStringFree(&cmd);

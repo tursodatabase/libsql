@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.216 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: main.c,v 1.217 2004/06/12 01:43:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -608,7 +608,7 @@ static int sqliteDefaultBusyCallback(
 */
 void sqlite3_busy_handler(
   sqlite *db,
-  int (*xBusy)(void*,const char*,int),
+  int (*xBusy)(void*,int),
   void *pArg
 ){
   db->busyHandler.xFunc = xBusy;

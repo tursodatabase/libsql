@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.99 2004/06/12 00:42:35 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.100 2004/06/12 01:43:27 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -242,7 +242,7 @@ int sqlite3_complete16(const void *sql);
 ** data structures out from under the executing query and will 
 ** probably result in a coredump.
 */
-void sqlite3_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+void sqlite3_busy_handler(sqlite*, int(*)(void*,int), void*);
 
 /*
 ** This routine sets a busy handler that sleeps for a while when a
