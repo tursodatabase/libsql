@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.5 2004/11/04 02:57:35 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.6 2004/11/04 14:30:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -143,7 +143,6 @@ for {set i 5} {$i < 15} {incr i} {
     }
   } {ok}
 }
-
 
 finish_test
 

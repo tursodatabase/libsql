@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.171 2004/11/03 08:44:06 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.172 2004/11/04 14:30:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2588,115 +2588,115 @@ int sqlite3pager_write(void *pData){
   pPg->dirty = 1;
   if( pPg->inJournal && (pPg->inStmt || pPager->stmtInUse==0) ){
     pPager->dirtyCache = 1;
-    return SQLITE_OK;
-  }
+  }else{
 
-  /* If we get this far, it means that the page needs to be
-  ** written to the transaction journal or the ckeckpoint journal
-  ** or both.
-  **
-  ** First check to see that the transaction journal exists and
-  ** create it if it does not.
-  */
-  assert( pPager->state!=PAGER_UNLOCK );
-  rc = sqlite3pager_begin(pData, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  assert( pPager->state>=PAGER_RESERVED );
-  if( !pPager->journalOpen && pPager->useJournal ){
-    rc = pager_open_journal(pPager);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-  assert( pPager->journalOpen || !pPager->useJournal );
-  pPager->dirtyCache = 1;
-
-  /* The transaction journal now exists and we have a RESERVED or an
-  ** EXCLUSIVE lock on the main database file.  Write the current page to
-  ** the transaction journal if it is not there already.
-  */
-  if( !pPg->inJournal && (pPager->useJournal || MEMDB) ){
-    if( (int)pPg->pgno <= pPager->origDbSize ){
-      int szPg;
-      u32 saved;
-      if( MEMDB ){
-        PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
-        TRACE3("JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
-        assert( pHist->pOrig==0 );
-        pHist->pOrig = sqliteMallocRaw( pPager->pageSize );
-        if( pHist->pOrig ){
-          memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
+    /* If we get this far, it means that the page needs to be
+    ** written to the transaction journal or the ckeckpoint journal
+    ** or both.
+    **
+    ** First check to see that the transaction journal exists and
+    ** create it if it does not.
+    */
+    assert( pPager->state!=PAGER_UNLOCK );
+    rc = sqlite3pager_begin(pData, 0);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    assert( pPager->state>=PAGER_RESERVED );
+    if( !pPager->journalOpen && pPager->useJournal ){
+      rc = pager_open_journal(pPager);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    assert( pPager->journalOpen || !pPager->useJournal );
+    pPager->dirtyCache = 1;
+  
+    /* The transaction journal now exists and we have a RESERVED or an
+    ** EXCLUSIVE lock on the main database file.  Write the current page to
+    ** the transaction journal if it is not there already.
+    */
+    if( !pPg->inJournal && (pPager->useJournal || MEMDB) ){
+      if( (int)pPg->pgno <= pPager->origDbSize ){
+        int szPg;
+        u32 saved;
+        if( MEMDB ){
+          PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+          TRACE3("JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
+          assert( pHist->pOrig==0 );
+          pHist->pOrig = sqliteMallocRaw( pPager->pageSize );
+          if( pHist->pOrig ){
+            memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
+          }
+        }else{
+          u32 cksum;
+          CODEC(pPager, pData, pPg->pgno, 7);
+          cksum = pager_cksum(pPager, pPg->pgno, pData);
+          saved = *(u32*)PGHDR_TO_EXTRA(pPg, pPager);
+          store32bits(cksum, pPg, pPager->pageSize);
+          szPg = pPager->pageSize+8;
+          store32bits(pPg->pgno, pPg, -4);
+          rc = sqlite3OsWrite(&pPager->jfd, &((char*)pData)[-4], szPg);
+          pPager->journalOff += szPg;
+          TRACE4("JOURNAL %d page %d needSync=%d\n",
+                  pPager->fd.h, pPg->pgno, pPg->needSync);
+          CODEC(pPager, pData, pPg->pgno, 0);
+          *(u32*)PGHDR_TO_EXTRA(pPg, pPager) = saved;
+          if( rc!=SQLITE_OK ){
+            sqlite3pager_rollback(pPager);
+            pPager->errMask |= PAGER_ERR_FULL;
+            return rc;
+          }
+          pPager->nRec++;
+          assert( pPager->aInJournal!=0 );
+          pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+          pPg->needSync = !pPager->noSync;
+          if( pPager->stmtInUse ){
+            pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+            page_add_to_stmt_list(pPg);
+          }
         }
       }else{
-        u32 cksum;
-        CODEC(pPager, pData, pPg->pgno, 7);
-        cksum = pager_cksum(pPager, pPg->pgno, pData);
-        saved = *(u32*)PGHDR_TO_EXTRA(pPg, pPager);
-        store32bits(cksum, pPg, pPager->pageSize);
-        szPg = pPager->pageSize+8;
-        store32bits(pPg->pgno, pPg, -4);
-        rc = sqlite3OsWrite(&pPager->jfd, &((char*)pData)[-4], szPg);
-        pPager->journalOff += szPg;
-        TRACE4("JOURNAL %d page %d needSync=%d\n",
+        pPg->needSync = !pPager->journalStarted && !pPager->noSync;
+        TRACE4("APPEND %d page %d needSync=%d\n",
                 pPager->fd.h, pPg->pgno, pPg->needSync);
+      }
+      if( pPg->needSync ){
+        pPager->needSync = 1;
+      }
+      pPg->inJournal = 1;
+    }
+  
+    /* If the statement journal is open and the page is not in it,
+    ** then write the current page to the statement journal.  Note that
+    ** the statement journal format differs from the standard journal format
+    ** in that it omits the checksums and the header.
+    */
+    if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
+      assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
+      if( MEMDB ){
+        PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+        assert( pHist->pStmt==0 );
+        pHist->pStmt = sqliteMallocRaw( pPager->pageSize );
+        if( pHist->pStmt ){
+          memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
+        }
+        TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
+      }else{
+        store32bits(pPg->pgno, pPg, -4);
+        CODEC(pPager, pData, pPg->pgno, 7);
+        rc = sqlite3OsWrite(&pPager->stfd,((char*)pData)-4, pPager->pageSize+4);
+        TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
         CODEC(pPager, pData, pPg->pgno, 0);
-        *(u32*)PGHDR_TO_EXTRA(pPg, pPager) = saved;
         if( rc!=SQLITE_OK ){
           sqlite3pager_rollback(pPager);
           pPager->errMask |= PAGER_ERR_FULL;
           return rc;
         }
-        pPager->nRec++;
-        assert( pPager->aInJournal!=0 );
-        pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-        pPg->needSync = !pPager->noSync;
-        if( pPager->stmtInUse ){
-          pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-          page_add_to_stmt_list(pPg);
-        }
+        pPager->stmtNRec++;
+        assert( pPager->aInStmt!=0 );
+        pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
       }
-    }else{
-      pPg->needSync = !pPager->journalStarted && !pPager->noSync;
-      TRACE4("APPEND %d page %d needSync=%d\n",
-              pPager->fd.h, pPg->pgno, pPg->needSync);
+      page_add_to_stmt_list(pPg);
     }
-    if( pPg->needSync ){
-      pPager->needSync = 1;
-    }
-    pPg->inJournal = 1;
-  }
-
-  /* If the statement journal is open and the page is not in it,
-  ** then write the current page to the statement journal.  Note that
-  ** the statement journal format differs from the standard journal format
-  ** in that it omits the checksums and the header.
-  */
-  if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
-    assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
-    if( MEMDB ){
-      PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
-      assert( pHist->pStmt==0 );
-      pHist->pStmt = sqliteMallocRaw( pPager->pageSize );
-      if( pHist->pStmt ){
-        memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
-      }
-      TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
-    }else{
-      store32bits(pPg->pgno, pPg, -4);
-      CODEC(pPager, pData, pPg->pgno, 7);
-      rc = sqlite3OsWrite(&pPager->stfd, ((char*)pData)-4, pPager->pageSize+4);
-      TRACE3("STMT-JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
-      CODEC(pPager, pData, pPg->pgno, 0);
-      if( rc!=SQLITE_OK ){
-        sqlite3pager_rollback(pPager);
-        pPager->errMask |= PAGER_ERR_FULL;
-        return rc;
-      }
-      pPager->stmtNRec++;
-      assert( pPager->aInStmt!=0 );
-      pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    }
-    page_add_to_stmt_list(pPg);
   }
 
   /* Update the database size and return.

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.258 2004/10/31 02:22:49 drh Exp $
+** $Id: build.c,v 1.259 2004/11/04 14:30:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1555,6 +1555,141 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
 #endif /* SQLITE_OMIT_VIEW */
 
 /*
+** This function is called by the VDBE to adjust the internal schema
+** used by SQLite when the btree layer moves a table root page. The
+** root-page of a table or index in database iDb has changed from iFrom
+** to iTo.
+*/
+#ifndef SQLITE_OMIT_AUTOVACUUM
+void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
+  HashElem *pElem;
+  
+  for(pElem=sqliteHashFirst(&pDb->tblHash); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pTab = sqliteHashData(pElem);
+    if( pTab->tnum==iFrom ){
+      pTab->tnum = iTo;
+      return;
+    }
+  }
+  for(pElem=sqliteHashFirst(&pDb->idxHash); pElem; pElem=sqliteHashNext(pElem)){
+    Index *pIdx = sqliteHashData(pElem);
+    if( pIdx->tnum==iFrom ){
+      pIdx->tnum = iTo;
+      return;
+    }
+  }
+  assert(0);
+}
+#endif
+
+/*
+** Write code to erase the table with root-page iTable from database iDb.
+** Also write code to modify the sqlite_master table and internal schema
+** if a root-page of another table is moved by the btree-layer whilst
+** erasing iTable (this can happen with an auto-vacuum database).
+*/ 
+static void destroyRootPage(Vdbe *v, int iTable, int iDb){
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  int base;
+#endif
+  sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  /* If SQLITE_OMIT_AUTOVACUUM is not defined, then OP_Destroy pushes
+  ** an integer onto the stack. If this integer is non-zero, then it is
+  ** the root page number of a table moved to location iTable. The 
+  ** following writes VDBE code to modify the sqlite_master table to
+  ** reflect this. It is assumed that cursor number 0 is a write-cursor
+  ** opened on the sqlite_master table.
+  */
+  static const VdbeOpList updateMaster[] = {
+    /* If the Op_Destroy pushed a 0 onto the stack, then skip the following
+    ** code. sqlite_master does not need updating in this case.
+    */
+    { OP_Dup,        0, 0,        0},
+    { OP_Integer,    0, 0,        0},
+    { OP_Eq,         0, ADDR(17), 0},
+
+    /* Search for the sqlite_master row containing root-page iTable. */
+    { OP_Rewind,     0, ADDR(8), 0}, 
+    { OP_Dup,        0, 0,       0}, /* 4 */
+    { OP_Column,     0, 3,       0}, /* 5 */
+    { OP_Eq,         0, ADDR(9), 0},
+    { OP_Next,       0, ADDR(4), 0},
+    { OP_Halt,       SQLITE_CORRUPT, OE_Fail, 0}, /* 8 */
+    { OP_Recno,      0, 0,       0}, /* 9 */
+
+    /* Cursor 0 now points at the row that will be updated. The top of
+    ** the stack is the rowid of that row. The next value on the stack is 
+    ** the new value for the root-page field.
+    */
+    { OP_Column,     0, 0,       0}, /* 10 */
+    { OP_Column,     0, 1,       0},
+    { OP_Column,     0, 2,       0},
+    { OP_Integer,    4, 0,       0}, /* 13 */
+    { OP_Column,     0, 4,       0},
+    { OP_MakeRecord, 5, 0,       0},
+    { OP_PutIntKey,  0, 0,       0}  /* 16 */
+  };
+
+  base = sqlite3VdbeAddOpList(v, ArraySize(updateMaster), updateMaster);
+  sqlite3VdbeChangeP1(v, base+13, iTable);
+#endif
+}
+
+/*
+** Write VDBE code to erase table pTab and all associated indices on disk.
+** Code to update the sqlite_master tables and internal schema definitions
+** in case a root-page belonging to another table is moved by the btree layer
+** is also added (this can happen with an auto-vacuum database).
+*/
+static void destroyTable(Vdbe *v, Table *pTab){
+#ifdef SQLITE_OMIT_AUTOVACUUM
+  destroyRootPage(v, pTab->tnum, pTab->iDb);
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    destroyRootPage(v, pIdx->tnum, pIdx->iDb);
+  }
+#else
+  /* If the database may be auto-vacuum capable (if SQLITE_OMIT_AUTOVACUUM
+  ** is not defined), then it is important to call OP_Destroy on the
+  ** table and index root-pages in order, starting with the numerically 
+  ** largest root-page number. This guarantees that none of the root-pages
+  ** to be destroyed is relocated by an earlier OP_Destroy. i.e. if the
+  ** following were coded:
+  **
+  ** OP_Destroy 4 0
+  ** ...
+  ** OP_Destroy 5 0
+  **
+  ** and root page 5 happened to be the largest root-page number in the
+  ** database, then root page 5 would be moved to page 4 by the 
+  ** "OP_Destroy 4 0" opcode. The subsequent "OP_Destroy 5 0" would hit
+  ** a free-list page.
+  */
+  int iTab = pTab->tnum;
+  int iDestroyed = 0;
+
+  while( 1 ){
+    Index *pIdx;
+    int iLargest = 0;
+
+    if( iDestroyed==0 || iTab<iDestroyed ){
+      iLargest = iTab;
+    }
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      int iIdx = pIdx->tnum;
+      assert( pIdx->iDb==pTab->iDb );
+      if( (iDestroyed==0 || (iIdx<iDestroyed)) && iIdx>iLargest ){
+        iLargest = iIdx;
+      }
+    }
+    if( iLargest==0 ) return;
+    destroyRootPage(v, iLargest, pTab->iDb);
+    iDestroyed = iLargest;
+  }
+#endif
+}
+
+/*
 ** This routine is called to do the work of a DROP TABLE statement.
 ** pName is the name of the table to be dropped.
 */
@@ -1635,7 +1770,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
       { OP_Goto,       0, ADDR(3),  0},
       { OP_Next,       0, ADDR(3),  0}, /* 12 */
     };
-    Index *pIdx;
+    /* Index *pIdx; */
     Trigger *pTrigger;
     sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
 
@@ -1661,13 +1796,16 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
     sqlite3ChangeCookie(db, v, pTab->iDb);
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
+/*
       sqlite3VdbeAddOp(v, OP_Destroy, pTab->tnum, pTab->iDb);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeAddOp(v, OP_Destroy, pIdx->tnum, pIdx->iDb);
       }
+*/
+      destroyTable(v, pTab);
     }
+    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
   }
   sqliteViewResetAll(db, iDb);
@@ -2237,8 +2375,9 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     base = sqlite3VdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqlite3VdbeChangeP3(v, base+1, pIndex->zName, 0);
     sqlite3ChangeCookie(db, v, pIndex->iDb);
+    /* sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb); */
+    destroyRootPage(v, pIndex->tnum, pIndex->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb);
     sqlite3VdbeOp3(v, OP_DropIndex, pIndex->iDb, 0, pIndex->zName, 0);
   }
 

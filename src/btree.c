@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.203 2004/11/04 02:57:34 danielk1977 Exp $
+** $Id: btree.c,v 1.204 2004/11/04 14:30:05 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1624,8 +1624,8 @@ static int relocatePage(
   Pager *pPager = pBt->pPager;
   int rc;
 
-  assert( eType==PTRMAP_OVERFLOW2 
-      || eType==PTRMAP_OVERFLOW1 || eType==PTRMAP_BTREE );
+  assert( eType==PTRMAP_OVERFLOW2 || eType==PTRMAP_OVERFLOW1 || 
+      eType==PTRMAP_BTREE || eType==PTRMAP_ROOTPAGE );
 
   /* Move page iDbPage from it's current location to page number iFreePage */
   TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
@@ -1644,7 +1644,7 @@ static int relocatePage(
   ** pointer to a subsequent overflow page. If this is the case, then
   ** the pointer map needs to be updated for the subsequent overflow page.
   */
-  if( eType==PTRMAP_BTREE ){
+  if( eType==PTRMAP_BTREE || eType==PTRMAP_ROOTPAGE ){
     rc = setChildPtrmaps(pDbPage);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -1664,18 +1664,20 @@ static int relocatePage(
   ** that it points at iFreePage. Also fix the pointer map entry for
   ** iPtrPage.
   */
-  rc = getPage(pBt, iPtrPage, &pPtrPage);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  rc = sqlite3pager_write(pPtrPage->aData);
-  if( rc!=SQLITE_OK ){
+  if( eType!=PTRMAP_ROOTPAGE ){
+    rc = getPage(pBt, iPtrPage, &pPtrPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    rc = sqlite3pager_write(pPtrPage->aData);
+    if( rc!=SQLITE_OK ){
+      releasePage(pPtrPage);
+      return rc;
+    }
+    modifyPagePointer(pPtrPage, iDbPage, iFreePage, eType);
+    rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
     releasePage(pPtrPage);
-    return rc;
   }
-  modifyPagePointer(pPtrPage, iDbPage, iFreePage, eType);
-  rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
-  releasePage(pPtrPage);
   return rc;
 }
 
@@ -1723,6 +1725,7 @@ static int autoVacuumCommit(Btree *pBt){
 
   TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origSize, finSize));
 
+#if 0
   /* Note: This is temporary code for use during development of auto-vacuum. 
   **
   ** Inspect the pointer map to make sure there are no root pages with a
@@ -1738,6 +1741,7 @@ static int autoVacuumCommit(Btree *pBt){
       return SQLITE_OK;
     }
   }
+#endif
 
   /* Variable 'finSize' will be the size of the file in pages after
   ** the auto-vacuum has completed (the current file size minus the number
@@ -4287,6 +4291,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
         return rc;
       }
       rc = ptrmapGet(pBt, pgnoRoot, &eType, &iPtrPage);
+      assert( eType!=PTRMAP_ROOTPAGE );
       if( rc!=SQLITE_OK ){
         releasePage(pRoot);
         return rc;
@@ -4408,29 +4413,90 @@ int sqlite3BtreeClearTable(Btree *pBt, int iTable){
 ** This routine will fail with SQLITE_LOCKED if there are any open
 ** cursors on the table.
 */
-int sqlite3BtreeDropTable(Btree *pBt, int iTable){
+int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
   int rc;
-  MemPage *pPage;
+  MemPage *pPage = 0;
   BtCursor *pCur;
-/* TODO: Disallow schema modifications if there are open cursors */
+
   if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
+
+/* TODO: Disallow schema modifications if there are open cursors */
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     if( pCur->pgnoRoot==(Pgno)iTable ){
       return SQLITE_LOCKED;  /* Cannot drop a table that has a cursor */
     }
   }
+
   rc = getPage(pBt, (Pgno)iTable, &pPage);
   if( rc ) return rc;
   rc = sqlite3BtreeClearTable(pBt, iTable);
   if( rc ) return rc;
+
+  if( piMoved ) *piMoved = 0;
+
   if( iTable>1 ){
+#ifdef SQLITE_OMIT_AUTOVACUUM
     rc = freePage(pPage);
+    releasePage(pPage);
+#else
+    if( pBt->autoVacuum ){
+      Pgno maxRootPgno;
+      rc = sqlite3BtreeGetMeta(pBt, 4, &maxRootPgno);
+      if( rc!=SQLITE_OK ){
+        releasePage(pPage);
+        return rc;
+      }
+
+      if( iTable==maxRootPgno ){
+        /* If the table being dropped is the table with the largest root-page
+        ** number in the database, put the root page on the free list. 
+        */
+        rc = freePage(pPage);
+        releasePage(pPage);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+      }else{
+        /* The table being dropped does not have the largest root-page
+        ** number in the database. So move the page that does into the 
+        ** gap left by the deleted root-page.
+        */
+        MemPage *pMove;
+        releasePage(pPage);
+        rc = getPage(pBt, maxRootPgno, &pMove);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = relocatePage(pBt, pMove, PTRMAP_ROOTPAGE, 0, iTable);
+        releasePage(pMove);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = getPage(pBt, maxRootPgno, &pMove);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = freePage(pMove);
+        releasePage(pMove);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        *piMoved = maxRootPgno;
+      }
+
+      rc = sqlite3BtreeUpdateMeta(pBt, 4, maxRootPgno-1);
+    }else{
+      rc = freePage(pPage);
+      releasePage(pPage);
+    }
+#endif
   }else{
+    /* If sqlite3BtreeDropTable was called on page 1. */
     zeroPage(pPage, PTF_INTKEY|PTF_LEAF );
+    releasePage(pPage);
   }
-  releasePage(pPage);
   return rc;  
 }
 
