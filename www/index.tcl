@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.42 2001/09/28 17:47:14 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.43 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -41,7 +41,7 @@ puts {<h2>Features</h2>
 
 <p><ul>
 <li>Implements a large subset of SQL92.</li>
-<li>A complete SQL database (with multiple tables and indices) is
+<li>A complete database (with multiple tables and indices) is
     stored in a single disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
 <li>Small memory footprint: about 12000 lines of C code.</li>
@@ -50,8 +50,7 @@ puts {<h2>Features</h2>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
-<li>A <a href="tclsqlite.html">TCL interface</a>
-    to the library is included.</li>
+<li><a href="tclsqlite.html">TCL bindings</a> included.</li>
 <li>A TCL-based test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux and Win2K.</li>
@@ -60,21 +59,34 @@ three functions and one opaque structure.</li>
 </p>
 }
 
-puts {<h2>Download</h2>
-
-<p>
-Precompiled binaries for Linux and Windows and the complete
-source tree are available for <a href="download.html">download</a>.
-</p>
-}
-
 puts {<h2>Current Status</h2>
 
 <p>A <a href="changes.html">change history</a> is available online.
+The latest source code is
+<a href="download.html">available for download</a>.
 There are currently no <em>known</em> memory leaks or debilitating bugs
-in the library.  <a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">Gcov</a>
-is used to verify test coverage.</p>
+in the library.
+</p>
 
+<p>
+The file format used changed beginning with version 2.0.0.  Version 1.0.X
+of SQLite used GDBM as its database backend.  Version 2.0.0 and later
+use a built-in implementation of B-trees.  If you have older 1.0 databases
+you will need to convert them before they can be read using a 2.0
+release of SQLite.  The following command will convert a legacy
+database into the new 2.0 format:
+</p>
+
+<blockquote><pre>
+echo .dump | sqlite1.0 old.db | sqlite2.0 new.db
+</pre></blockquote>
+
+<p>
+The above command assumes that <b>sqlite1.0</b> is sqlite version 1.0
+and <b>sqlite2.0</b> is sqlite version 2.0.  The old database is stored
+in a directory named <b>old.db</b> and the new database is created in
+the file <b>new.db</b>.
+</p>
 
 <h2>Documentation</h2>
 
@@ -85,7 +97,7 @@ is used to verify test coverage.</p>
     command-line utility.</li>
 <li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.</li>
 <li>The <a href="c_interface.html">C/C++ Interface</a>.</li>
-<li>The <a href="tclsqlite.html">Tcl Interface</a>.</li>
+<li>The <a href="tclsqlite.html">Tcl Binding</a> to SQLite.</li>
 <li>The <a href="arch.html">Architecture of the SQLite Library</a> describes
     how the library is put together.</li>
 <li>A description of the <a href="opcode.html">virtual machine</a> that

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.6 2000/11/28 20:46:41 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.7 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -15,11 +15,15 @@ puts "<p align=center>
 (This page was last modified on [lrange $rcsid 3 4] GMT)
 </p>"
 
-# puts {
-# <blockquote><font color="red"><b>This document is
-# currently under development.  It is incomplete and contains
-# errors.  Use it accordingly.</b></font></blockquote>
-# }
+puts {
+<blockquote><font color="red"><b>
+This document describes the
+virtual machine used in SQLite version 1.0.  It has not been
+updated to reflect important changes that have occurred for
+version 2.0.  Some of the information presented below is
+obsolete and/or incorrect.  Use it accordingly.
+</b></font></blockquote>
+}
 
 puts {
 <p>If you want to know how the SQLite library works internally,

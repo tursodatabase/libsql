@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.2 2001/09/25 02:04:29 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.3 2001/09/28 23:11:24 drh Exp $ }
 
 puts {<html>
 <head>
@@ -29,7 +29,7 @@ conclusions drawn from these experiments:
   SQLite 2.0 is significantly faster than both SQLite 1.0 and PostgreSQL
   for most common operations.
   SQLite 2.0 is over 4 times faster than PostgreSQL for simple
-  query operations about 7 times faster for <b>INSERT</b> statements 
+  query operations and about 7 times faster for <b>INSERT</b> statements 
   within a transaction.
 </p></li>
 <li><p>
@@ -75,8 +75,7 @@ the NDEBUG macro makes SQLite 2.0 run nearly twice as fast.
 
 <p>
 All tests are conducted on an otherwise quiescent machine.
-A simple shell script generates and runs all the tests.
-The shell script is named <a href="speedtest3.sh">speedtest3.sh</a>.
+A simple shell script was used to generate and run all the tests.
 Each test reports three different times:
 </p>
 

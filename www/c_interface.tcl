@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.15 2001/09/20 01:44:43 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.16 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -41,22 +41,26 @@ int sqlite_exec(
   char **errmsg
 );
 
-#define SQLITE_OK        0    /* Successful result */
-#define SQLITE_ERROR     1    /* SQL error or missing database */
-#define SQLITE_INTERNAL  2    /* An internal logic error in SQLite */
-#define SQLITE_PERM      3    /* Access permission denied */
-#define SQLITE_ABORT     4    /* Callback routine requested an abort */
-#define SQLITE_BUSY      5    /* One or more database files are locked */
-#define SQLITE_NOMEM     6    /* A malloc() failed */
-#define SQLITE_READONLY  7    /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
-#define SQLITE_IOERR     9    /* Some kind of disk I/O error occurred */
-#define SQLITE_CORRUPT   10   /* The database disk image is malformed */
-#define SQLITE_FULL      12   /* Insertion failed because database is full */
-#define SQLITE_CANTOPEN  13   /* Unable to open the database file */
-#define SQLITE_PROTOCOL  14   /* Database lock protocol error */
-#define SQLITE_SCHEMA    16   /* The database schema changed */
-#define SQLITE_TOOBIG    17   /* Too much data for one row of a table */
+#define SQLITE_OK           0   /* Successful result */
+#define SQLITE_ERROR        1   /* SQL error or missing database */
+#define SQLITE_INTERNAL     2   /* An internal logic error in SQLite */
+#define SQLITE_PERM         3   /* Access permission denied */
+#define SQLITE_ABORT        4   /* Callback routine requested an abort */
+#define SQLITE_BUSY         5   /* The database file is locked */
+#define SQLITE_LOCKED       6   /* A table in the database is locked */
+#define SQLITE_NOMEM        7   /* A malloc() failed */
+#define SQLITE_READONLY     8   /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
+#define SQLITE_CORRUPT     11   /* The database disk image is malformed */
+#define SQLITE_NOTFOUND    12   /* (Internal Only) Table or record not found */
+#define SQLITE_FULL        13   /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN    14   /* Unable to open the database file */
+#define SQLITE_PROTOCOL    15   /* Database lock protocol error */
+#define SQLITE_EMPTY       16   /* (Internal Only) Database table is empty */
+#define SQLITE_SCHEMA      17   /* The database schema changed */
+#define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
+#define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
 </pre></blockquote>
 
 <p>Only the three core routines shown above are required to use
@@ -259,6 +263,15 @@ database at the same time, but only one thread can have the database
 open for writing at the same time.  Locking in SQLite is on the
 entire database.</p>
 </p></dd>
+<dt>SQLITE_LOCKED</dt>
+<dd><p>This return code is similar to SQLITE_BUSY in that it indicates
+that the database is locked.  But the source of the lock is a recursive
+call to <b>sqlite_exec()</b>.  This return can only occur if you attempt
+to invoke sqlite_exec() from within a callback routine of a query
+from a prior invocation of sqlite_exec().  Recursive calls to
+sqlite_exec() are allowed as long as no more they all read-only or do
+not attempt to write the same table.
+</p></dd>
 <dt>SQLITE_NOMEM</dt>
 <dd><p>This value is returned if a call to <b>malloc()</b> fails.
 </p></dd>
@@ -308,6 +321,10 @@ command usually will clear the problem.
 <dd><p>SQLite cannot store more than about 64K of data in a single row
 of a single table.  If you attempt to store more than 64K in a single
 row, this is the return code you get.
+</p></dd>
+<dt>SQLITE_CONSTRAINT</dt>
+<dd><p>This constant is returned if the SQL statement would have violated
+a database constraint.
 </p></dd>
 </dl>
 </blockquote>

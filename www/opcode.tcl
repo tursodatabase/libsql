@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.5 2001/09/20 01:44:44 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.6 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -183,27 +183,26 @@ sqlite> (((explain delete from tbl1 where two<20;)))
 addr  opcode        p1     p2     p3                                      
 ----  ------------  -----  -----  ----------------------------------------
 0     Transaction   0      0                                              
-1     VerifyCookie  990    0                                              
+1     VerifyCookie  219    0                                              
 2     ListOpen      0      0                                              
-3     Open          0      31     tbl1                                    
-4     VerifyCookie  990    0                                              
-5     Rewind        0      0                                              
-6     Next          0      13                                             
-7     Column        0      1                                              
-8     Integer       20     0                                              
-9     Ge            0      6                                              
-10    Recno         0      0                                              
-11    ListWrite     0      0                                              
-12    Goto          0      6                                              
-13    Close         0      0                                              
-14    ListRewind    0      0                                              
-15    Open          0      31                                             
-16    ListRead      0      20                                             
-17    MoveTo        0      0                                              
-18    Delete        0      0                                              
-19    Goto          0      16                                             
-20    ListClose     0      0                                              
-21    Commit        0      0                                              
+3     Open          0      3      tbl1                                    
+4     Rewind        0      0                                              
+5     Next          0      12                                             
+6     Column        0      1                                              
+7     Integer       20     0                                              
+8     Ge            0      5                                              
+9     Recno         0      0                                              
+10    ListWrite     0      0                                              
+11    Goto          0      5                                              
+12    Close         0      0                                              
+13    ListRewind    0      0                                              
+14    OpenWrite     0      3                                              
+15    ListRead      0      19                                             
+16    MoveTo        0      0                                              
+17    Delete        0      0                                              
+18    Goto          0      15                                             
+19    ListClose     0      0                                              
+20    Commit        0      0                                              
 }
 
 puts {

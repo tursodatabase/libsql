@@ -1,5 +1,5 @@
-C Remove\sreference\sto\sGDBM\sin\sthe\sdocumentation\sof\sthe\s"sqlite"\ncommand-line\sutility.\s(CVS\s274)
-D 2001-09-28T18:14:17
+C Documentation\supdates.\s(CVS\s275)
+D 2001-09-28T23:11:24
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 7179523fdf3d6e7933ec843e2352dcfc9785c700
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -98,20 +98,20 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl c1891efdc00cd76eec72bdbf8b446195902932a3
-F www/c_interface.tcl 52ae81c89bf906b358e04857bd3f76b1a7f61c1b
+F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
+F www/c_interface.tcl 8e8d9e66e8467c5751116c3427296bde77f474a6
 F www/changes.tcl 47619693c843174b57d41482fcd00e2e70d41fd0
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl 639a75165dc532a16ddb02055bc69541eecc3fa7
+F www/index.tcl 998f61fe69be9f1b04e403c8efb75bca92710e83
 F www/lang.tcl 33a74d727615ccbee8be7c8efd5876ce008c4b0e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
-F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
-F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
-F www/sqlite.tcl ea362207eee32cdd9dd594b1ec990bdb20101efe
+F www/opcode.tcl 4365ad9798872491dbd7d3071510ebe461785ac3
+F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
+F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
-F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 7e79e91b03e21058bbae2c0aab8f3e8ce09ae7f9
-R 241095ce4074dd39044429d0144b987e
+F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
+P 0ffab36d1fc29125fdcf0d732073f77012dfcad4
+R 50ffde789836ed27912ab4a11f3cd02b
 U drh
-Z 5497d3942cad9d16c737ee62c27c8636
+Z 7f4c737cc5ad90cbc1518651f459aab9

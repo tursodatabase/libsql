@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.5 2001/09/20 01:44:43 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.6 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -121,11 +121,11 @@ between the virtual machine and the rest of the SQLite library.</p>
 
 <p>An SQLite database is maintained on disk using a B-tree implementation
 found in the <b>btree.c</b> source file.  A separate B-tree is used for
-each table and index in the database but all B-trees are stored in the
-same disk file.  Each page of a B-tree is 1024 bytes in size.  The data
-is stored with the key in an area called "payload".  Up to 236 bytes of
-payload can be stored with each B-tree entry.  Any additional payload
-is stored in a chain of overflow pages.</p>
+each table and index in the database.  All B-trees are stored in the
+same disk file.  Each page of a B-tree is 1024 bytes in size.  The key
+and data for an entry are stored together in an area called "payload".
+Up to 236 bytes of payload can be stored on the same page as the B-tree
+entry.  Any additional payload is stored in a chain of overflow pages.</p>
 
 <p>The interface to the B-tree subsystem is defined by the header file
 <b>btree.h</b>.
@@ -135,11 +135,11 @@ is stored in a chain of overflow pages.</p>
 
 <p>The B-tree module requests information from the disk in 1024 byte
 chunks.  The page cache is reponsible for reading, writing, and
-caching these chunks for the B-tree module.
+caching these chunks at the behest of the B-tree module.
 The page cache also provides the rollback and atomic commit abstraction
 and takes care of reader/writer locking of the database file.  The
 B-tree driver requests particular pages from the page cache and notifies
-the page cache when it wants to modify pages and commit or rollback its
+the page cache when it wants to modify pages or commit or rollback
 changes and the page cache handles all the messy details of making sure
 the requests are handled quickly, safely, and efficiently.</p>
 

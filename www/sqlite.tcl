@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.14 2001/09/28 18:14:17 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.15 2001/09/28 23:11:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -28,8 +28,7 @@ the name the file that holds the SQLite database.  If the file does
 not exist, a new one is created automatically.
 The <b>sqlite</b> program will
 then prompt you to enter SQL.  Type in SQL statements (terminated by a
-semicolon), press "Enter" and the SQL will be executed.  It's as
-simple as that!</p>
+semicolon), press "Enter" and the SQL will be executed.</p>
 
 <p>For example, to create a new SQLite database named "ex1" 
 with a single table named "tbl1", you might do this:</p>
@@ -48,6 +47,7 @@ proc Code {body} {
 
 Code {
 $ (((sqlite ex1)))
+SQLite version 2.0.0
 Enter ".help" for instructions
 sqlite> (((create table tbl1(one varchar(10), two smallint);)))
 sqlite> (((insert into tbl1 values('hello!',10);)))
@@ -60,7 +60,7 @@ sqlite>
 
 puts {
 <p>(In the example above, and in all subsequent examples, the commands
-you type are underlined shown with a green tint and the responses
+you type are underlined and shown with a green tint and the responses
 from the computer are shown in black without underlining.)</p>
 
 <p>You can terminate the sqlite program by typing your systems
@@ -85,31 +85,26 @@ sqlite>
 }
 
 puts {
-<p>If you exit sqlite and look at the contents of the directory "ex1"
-you'll see that it now contains two files: <b>sqlite_master.tcl</b>
-and <b>tbl1.tbl</b>.  The <b>tbl1.tbl</b> file contains all the
-data for table "tbl1" in your database.  The file
-<b>sqlite_master.tbl</b> is a special table found on all SQLite
-databases that records information about all other tables and
-indices.  In general, an SQLite database will contain one "*.tbl"
-file for each table and index in your database, plus the extra
-"sqlite_master.tbl" file used to store the database schema.</p>
 
 <h2>Aside: Querying the SQLITE_MASTER table</h2>
 
-<p>You can execute "SELECT" statements against the
+<p>The database schema in an SQLite database is stored in
+a special table named "sqlite_master".
+You can execute "SELECT" statements against the
 special sqlite_master table just like any other table
 in an SQLite database.  For example:</p>
 }
 
 Code {
 $ (((sqlite ex1)))
+SQlite vresion 2.0.0
 Enter ".help" for instructions
 sqlite> (((select * from sqlite_master;)))
-type = table
-name = tbl1
+    type = table
+    name = tbl1
 tbl_name = tbl1
-sql = create table tbl1(one varchar(10), two smallint)
+rootpage = 3
+     sql = create table tbl1(one varchar(10), two smallint)
 sqlite>
 }
 
