@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.161 2004/02/25 22:51:06 rdc Exp $
+** $Id: main.c,v 1.162 2004/03/04 19:09:20 rdc Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -718,8 +718,30 @@ int sqlite_compile(
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
-  if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
   sqliteRunParser(&sParse, zSql, pzErrMsg);
+  if( db->xTrace ){
+    /* Trace only the statment that was compiled.
+    ** Make a copy of that part of the SQL string since zSQL is const
+    ** and we must pass a zero terminated string to the trace function
+    ** The copy is unnecessary if the tail pointer is pointing at the
+    ** beginnig or end of the SQL string.
+    */
+    if( sParse.zTail && sParse.zTail!=zSql && *sParse.zTail ){
+      char *tmpSql = sqliteStrNDup(zSql, sParse.zTail - zSql);
+      if( tmpSql ){
+        db->xTrace(db->pTraceArg, tmpSql);
+        free(tmpSql);
+      }else{
+        /* If a memory error occurred during the copy,
+        ** trace entire SQL string and fall through to the
+        ** sqlite_malloc_failed test to report the error.
+        */
+        db->xTrace(db->pTraceArg, zSql); 
+      }
+    }else{
+      db->xTrace(db->pTraceArg, zSql); 
+    }
+  }
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", (char*)0);
     sParse.rc = SQLITE_NOMEM;
