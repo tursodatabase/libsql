@@ -513,44 +513,6 @@ int sqlite3OsTempFileName(char *zBuf){
 }
 
 /*
-** Close a file.
-*/
-int sqlite3OsClose(OsFile *id){
-  if( !id->isOpen ) return SQLITE_OK;
-  sqlite3OsUnlock(id, NO_LOCK);
-  if( id->dirfd>=0 ) close(id->dirfd);
-  id->dirfd = -1;
-  sqlite3OsEnterMutex();
-  if( id->pOpen->nLock ){
-    /* If there are outstanding locks, do not actually close the file just
-    ** yet because that would clear those locks.  Instead, add the file
-    ** descriptor to pOpen->aPending.  It will be automatically closed when
-    ** the last lock is cleared.
-    */
-    int *aNew;
-    struct openCnt *pOpen = id->pOpen;
-    pOpen->nPending++;
-    aNew = sqliteRealloc( pOpen->aPending, pOpen->nPending*sizeof(int) );
-    if( aNew==0 ){
-      /* If a malloc fails, just leak the file descriptor */
-    }else{
-      pOpen->aPending = aNew;
-      pOpen->aPending[pOpen->nPending-1] = id->h;
-    }
-  }else{
-    /* There are no outstanding locks so we can close the file immediately */
-    close(id->h);
-  }
-  releaseLockInfo(id->pLock);
-  releaseOpenCnt(id->pOpen);
-  sqlite3OsLeaveMutex();
-  id->isOpen = 0;
-  TRACE2("CLOSE   %-3d\n", id->h);
-  OpenCounter(-1);
-  return SQLITE_OK;
-}
-
-/*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
@@ -940,6 +902,44 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   }
   sqlite3OsLeaveMutex();
   id->locktype = locktype;
+  return SQLITE_OK;
+}
+
+/*
+** Close a file.
+*/
+int sqlite3OsClose(OsFile *id){
+  if( !id->isOpen ) return SQLITE_OK;
+  sqlite3OsUnlock(id, NO_LOCK);
+  if( id->dirfd>=0 ) close(id->dirfd);
+  id->dirfd = -1;
+  sqlite3OsEnterMutex();
+  if( id->pOpen->nLock ){
+    /* If there are outstanding locks, do not actually close the file just
+    ** yet because that would clear those locks.  Instead, add the file
+    ** descriptor to pOpen->aPending.  It will be automatically closed when
+    ** the last lock is cleared.
+    */
+    int *aNew;
+    struct openCnt *pOpen = id->pOpen;
+    pOpen->nPending++;
+    aNew = sqliteRealloc( pOpen->aPending, pOpen->nPending*sizeof(int) );
+    if( aNew==0 ){
+      /* If a malloc fails, just leak the file descriptor */
+    }else{
+      pOpen->aPending = aNew;
+      pOpen->aPending[pOpen->nPending-1] = id->h;
+    }
+  }else{
+    /* There are no outstanding locks so we can close the file immediately */
+    close(id->h);
+  }
+  releaseLockInfo(id->pLock);
+  releaseOpenCnt(id->pOpen);
+  sqlite3OsLeaveMutex();
+  id->isOpen = 0;
+  TRACE2("CLOSE   %-3d\n", id->h);
+  OpenCounter(-1);
   return SQLITE_OK;
 }
 

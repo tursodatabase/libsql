@@ -23,7 +23,7 @@
 ** N.B. MacOS means Mac Classic (or Carbon). Treat Darwin (OS X) as Unix.
 **      The MacOS build is designed to use CodeWarrior (tested with v8)
 */
-#ifndef OS_UNIX
+#if !defined(OS_UNIX) && !defined(OS_TEST)
 # ifndef OS_WIN
 #  ifndef OS_MAC
 #    if defined(__MACOS__)
@@ -57,6 +57,9 @@
 /*
 ** Invoke the appropriate operating-system specific header file.
 */
+#if OS_TEST
+# include "os_test.h"
+#endif
 #if OS_UNIX
 # include "os_unix.h"
 #endif
@@ -154,7 +157,6 @@
 
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
-int sqliteOsFileRename(const char*, const char*);
 int sqlite3OsOpenReadWrite(const char*, OsFile*, int*);
 int sqlite3OsOpenExclusive(const char*, OsFile*, int);
 int sqlite3OsOpenReadOnly(const char*, OsFile*);

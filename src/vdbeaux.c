@@ -675,7 +675,7 @@ void sqlite3VdbeSorterReset(Vdbe *p){
 ** Free all resources allociated with AggElem pElem, an element of
 ** aggregate pAgg.
 */
-int freeAggElem(AggElem *pElem, Agg *pAgg){
+void freeAggElem(AggElem *pElem, Agg *pAgg){
   int i;
   for(i=0; i<pAgg->nMem; i++){
     Mem *pMem = &pElem->aMem[i];
@@ -719,7 +719,6 @@ int freeAggElem(AggElem *pElem, Agg *pAgg){
 ** for the next round of aggregate processing.
 */
 int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
-  int i;
   int rc = 0;
   BtCursor *pCsr = pAgg->pCsr;
 

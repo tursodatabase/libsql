@@ -56,7 +56,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 #
 LIBOBJ = attach.o auth.o btree.o build.o date.o delete.o \
          expr.o func.o hash.o insert.o \
-         main.o opcodes.o os_mac.o os_unix.o os_win.o \
+         main.o opcodes.o os_mac.o os_unix.o os_win.o os_test.o \
          pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
@@ -273,6 +273,9 @@ opcodes.h:	$(TOP)/src/vdbe.h
 os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_mac.c
 
+os_test.o:	$(TOP)/src/os_test.c $(HDR)
+	$(TCCX) -c $(TOP)/src/os_test.c
+
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_unix.c
 
@@ -352,6 +355,11 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 
 testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture$(EXE) \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libsqlite3.a $(LIBTCL) $(THREADLIB)
+
+testfixturex:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
+	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture$(EXE) \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 

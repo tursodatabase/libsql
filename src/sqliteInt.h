@@ -11,8 +11,11 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.297 2004/06/21 07:36:32 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.298 2004/06/22 11:29:02 danielk1977 Exp $
 */
+#ifndef _SQLITEINT_H_
+#define _SQLITEINT_H_
+
 #include "config.h"
 #include "sqlite3.h"
 #include "hash.h"
@@ -1397,3 +1400,5 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew();
 sqlite3_value *sqlite3GetTransientValue(sqlite *db);
+
+#endif
