@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.18 2003/06/15 23:42:25 drh Exp $
+# $Id: conflict.test,v 1.19 2003/08/05 13:13:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -363,7 +363,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
  25 IGNORE   ABORT    UPDATE                  1 {1 2 3 4}  1
  26 REPLACE  ROLLBACK UPDATE                  1 {1 2 3 4}  0
 } {
-  if {$t0} {set t1 {uniqueness constraint failed}}
+  if {$t0} {set t1 {column a is not unique}}
   do_test conflict-6.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
     if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
@@ -539,13 +539,13 @@ do_test conflict-9.5 {
     INSERT INTO t2 VALUES(3,1,3,3,3);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column b is not unique}}
 do_test conflict-9.6 {
   catchsql {
     UPDATE t2 SET b=b+1 WHERE b=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column b is not unique}}
 do_test conflict-9.7 {
   catchsql {
     BEGIN;
@@ -553,7 +553,7 @@ do_test conflict-9.7 {
     INSERT INTO t2 VALUES(3,1,3,3,3);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column b is not unique}}
 do_test conflict-9.8 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -565,7 +565,7 @@ do_test conflict-9.9 {
     UPDATE t2 SET b=b+1 WHERE b=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column b is not unique}}
 do_test conflict-9.10 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -575,13 +575,13 @@ do_test conflict-9.11 {
     INSERT INTO t2 VALUES(3,3,3,1,3);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column d is not unique}}
 do_test conflict-9.12 {
   catchsql {
     UPDATE t2 SET d=d+1 WHERE d=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column d is not unique}}
 do_test conflict-9.13 {
   catchsql {
     BEGIN;
@@ -589,7 +589,7 @@ do_test conflict-9.13 {
     INSERT INTO t2 VALUES(3,3,3,1,3);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column d is not unique}}
 do_test conflict-9.14 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -601,7 +601,7 @@ do_test conflict-9.15 {
     UPDATE t2 SET d=d+1 WHERE d=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column d is not unique}}
 do_test conflict-9.16 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -611,13 +611,13 @@ do_test conflict-9.17 {
     INSERT INTO t2 VALUES(3,3,3,3,1);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column e is not unique}}
 do_test conflict-9.18 {
   catchsql {
     UPDATE t2 SET e=e+1 WHERE e=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column e is not unique}}
 do_test conflict-9.19 {
   catchsql {
     BEGIN;
@@ -625,7 +625,7 @@ do_test conflict-9.19 {
     INSERT INTO t2 VALUES(3,3,3,3,1);
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column e is not unique}}
 do_test conflict-9.20 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}
@@ -637,7 +637,7 @@ do_test conflict-9.21 {
     UPDATE t2 SET e=e+1 WHERE e=1;
     SELECT * FROM t2;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column e is not unique}}
 do_test conflict-9.22 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.9 2003/07/09 00:28:15 drh Exp $
+# $Id: capi2.test,v 1.10 2003/08/05 13:13:38 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -178,7 +178,7 @@ do_test capi2-3.13 {
 do_test capi2-3.13b {db changes} {0}
 do_test capi2-3.14 {
   list [catch {sqlite_finalize $VM} msg] [set msg]
-} {1 {(19) uniqueness constraint failed}}
+} {1 {(19) column a is not unique}}
 do_test capi2-3.15 {
   set VM [sqlite_compile $DB {CREATE TABLE t2(a NOT NULL, b)} TAIL]
   set TAIL
@@ -386,7 +386,7 @@ do_test capi2-6.27 {
     INSERT INTO t1 VALUES(2,4,5);
     SELECT * FROM t1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test capi2-6.28 {
   list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
 } {SQLITE_ROW 1 13 {x counter}}

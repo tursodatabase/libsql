@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.13 2003/06/15 23:42:25 drh Exp $
+# $Id: update.test,v 1.14 2003/08/05 13:13:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -457,7 +457,7 @@ do_test update-10.6 {
     UPDATE t1 SET b=2, e=12 WHERE f=7;
     SELECT * FROM t1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column b is not unique}}
 do_test update-10.7 {
   catchsql {
     SELECT * FROM t1;
@@ -474,7 +474,7 @@ do_test update-10.9 {
     UPDATE t1 SET c=3, d=4, e=14 WHERE f=7;
     SELECT * FROM t1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {columns c, d are not unique}}
 do_test update-10.10 {
   catchsql {
     SELECT * FROM t1;

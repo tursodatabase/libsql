@@ -472,7 +472,7 @@ do_test trigger2-6.1b {
   catchsql {
     INSERT OR ABORT INTO tbl values (2, 2, 3);
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.1c {
   execsql {
     SELECT * from tbl;
@@ -482,7 +482,7 @@ do_test trigger2-6.1d {
   catchsql {
     INSERT OR FAIL INTO tbl values (2, 2, 3);
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.1e {
   execsql {
     SELECT * from tbl;
@@ -498,7 +498,7 @@ do_test trigger2-6.1g {
   catchsql {
     INSERT OR ROLLBACK INTO tbl values (3, 2, 3);
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.1h {
   execsql {
     SELECT * from tbl;
@@ -526,7 +526,7 @@ do_test trigger2-6.2b {
   catchsql {
     UPDATE OR ABORT tbl SET a = 4 WHERE a = 1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.2c {
   execsql {
     SELECT * from tbl;
@@ -536,7 +536,7 @@ do_test trigger2-6.2d {
   catchsql {
     UPDATE OR FAIL tbl SET a = 4 WHERE a = 1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.2e {
   execsql {
     SELECT * from tbl;
@@ -558,7 +558,7 @@ do_test trigger2-6.2g {
   catchsql {
     UPDATE OR ROLLBACK tbl SET a = 4 WHERE a = 1;
   }
-} {1 {uniqueness constraint failed}}
+} {1 {column a is not unique}}
 do_test trigger2-6.2h {
   execsql {
     SELECT * from tbl;

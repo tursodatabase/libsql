@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.5 2003/06/15 23:42:25 drh Exp $
+# $Id: memdb.test,v 1.6 2003/08/05 13:13:39 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -253,7 +253,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
  25 IGNORE   ABORT    UPDATE                  1 {1 2 3 4}  1
  26 REPLACE  ROLLBACK UPDATE                  1 {1 2 3 4}  0
 } {
-  if {$t0} {set t1 {uniqueness constraint failed}}
+  if {$t0} {set t1 {column a is not unique}}
   do_test memdb-5.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
     if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
