@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.17 2002/12/07 21:45:14 drh Exp $
+# $Id: misc1.test,v 1.18 2003/01/18 20:11:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -376,11 +376,16 @@ do_test misc1-12.9 {
     SELECT min(z), max(z), count(z) FROM t7 GROUP BY y ORDER BY 1;
   }
 } {1 2 2 3 4 2}
+
+# This used to be an error.  But we changed the code so that arbitrary
+# identifiers can be used as a collating sequence.  Collation is by text
+# if the identifier contains "text", "blob", or "clob" and is numeric
+# otherwise.
 do_test misc1-12.10 {
   catchsql {
     SELECT * FROM t6 ORDER BY a COLLATE unknown;
   }
-} {1 {unknown collating type: unknown}}
+} {0 {0 0.0 y 0}}
 do_test misc1-12.11 {
   execsql {
     CREATE TABLE t8(x TEXT COLLATE numeric, y INTEGER COLLATE text, z);

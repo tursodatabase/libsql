@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.2 2003/01/11 14:19:52 drh Exp $
+# $Id: pragma.test,v 1.3 2003/01/18 20:11:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -129,7 +129,7 @@ do_test pragma-1.12 {
     PRAGMA empty_result_callbacks=on;
   }
   sqlite_datatypes $::DB {SELECT * FROM sqlite_master}
-} {NUMERIC NUMERIC NUMERIC NUMERIC NUMERIC}
+} {text text text integer text}
 do_test pragma-1.13 {
   execsql {
     CREATE TABLE t1(
@@ -143,7 +143,7 @@ do_test pragma-1.13 {
     );
   }
   sqlite_datatypes $::DB {SELECT * FROM t1}
-} {NUMERIC TEXT NUMERIC TEXT TEXT TEXT TEXT}
+} {INTEGER TEXT WHATEVER CLOB BLOB VARCHAR(123) nVaRcHaR(432)}
 do_test pragma-1.14 {
   sqlite_datatypes $::DB {
      SELECT 1, 'hello', NULL
@@ -154,6 +154,33 @@ do_test pragma-1.15 {
      SELECT 1+2 AS X, 'hello' || 5 AS Y, NULL AS Z
   }
 } {NUMERIC TEXT TEXT}
+do_test pragma-1.16 {
+  execsql {
+    CREATE VIEW v1 AS SELECT a+b, b||c, * FROM t1;
+  }
+  sqlite_datatypes $::DB {SELECT * FROM v1}
+} {NUMERIC TEXT INTEGER TEXT WHATEVER CLOB BLOB VARCHAR(123) nVaRcHaR(432)}
+do_test pragma-1.17 {
+  sqlite_datatypes $::DB {
+    SELECT d,e FROM t1 UNION SELECT a,c FROM t1
+  }
+} {INTEGER WHATEVER}
+do_test pragma-1.18 {
+  sqlite_datatypes $::DB {
+    SELECT d,e FROM t1 EXCEPT SELECT c,e FROM t1
+  }
+} {WHATEVER BLOB}
+do_test pragma-1.19 {
+  sqlite_datatypes $::DB {
+    SELECT d,e FROM t1 INTERSECT SELECT c,e FROM t1
+  }
+} {WHATEVER BLOB}
+do_test pragma-1.20 {
+  sqlite_datatypes $::DB {
+    SELECT d,e FROM t1 INTERSECT SELECT c,e FROM v1
+  }
+} {WHATEVER BLOB}
+    
 
 
 finish_test

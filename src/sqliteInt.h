@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.155 2003/01/16 16:28:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.156 2003/01/18 20:11:07 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -948,7 +948,7 @@ void sqliteAddNotNull(Parse*, int);
 void sqliteAddPrimaryKey(Parse*, IdList*, int);
 void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
-int sqliteCollateType(Parse*, Token*);
+int sqliteCollateType(const char*, int);
 void sqliteAddCollateType(Parse*, int);
 void sqliteEndTable(Parse*,Token*,Select*);
 void sqliteCreateView(Parse*,Token*,Token*,Select*,int);

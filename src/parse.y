@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.87 2003/01/13 23:27:33 drh Exp $
+** @(#) $Id: parse.y,v 1.88 2003/01/18 20:11:07 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -174,7 +174,7 @@ ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqliteCreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqliteDeferForeignKey(pParse,D);}
 ccons ::= COLLATE id(C).  {
-   sqliteAddCollateType(pParse, sqliteCollateType(pParse, &C));
+   sqliteAddCollateType(pParse, sqliteCollateType(C.z, C.n));
 }
 
 // The next group of rules parses the arguments to a REFERENCES clause
@@ -417,7 +417,7 @@ sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
 collate(C) ::= .                {C = SQLITE_SO_UNK;}
-collate(C) ::= COLLATE id(X).   {C = sqliteCollateType(pParse, &X);}
+collate(C) ::= COLLATE id(X).   {C = sqliteCollateType(X.z, X.n);}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqliteExprListDelete($$);}

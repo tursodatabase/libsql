@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.7 2002/08/26 19:55:11 drh Exp $
+# $Id: sort.test,v 1.8 2003/01/18 20:11:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -266,5 +266,85 @@ do_test sort-6.4 {
     select a from t3 order by b desc, a desc;
   }
 } {4 1 6 5 3 2}
+
+do_test sort-7.1 {
+  execsql {
+    CREATE TABLE t4(
+      a INTEGER,
+      b VARCHAR(30)
+    );
+    INSERT INTO t4 VALUES(1,1);
+    INSERT INTO t4 VALUES(2,2);
+    INSERT INTO t4 VALUES(11,11);
+    INSERT INTO t4 VALUES(12,12);
+    SELECT a FROM t4 ORDER BY 1;
+  }
+} {1 2 11 12}
+do_test sort-7.2 {
+  execsql {
+    SELECT b FROM t4 ORDER BY 1
+  }
+} {1 11 12 2}
+do_test sort-7.3 {
+  execsql {
+    CREATE VIEW v4 AS SELECT * FROM t4;
+    SELECT a FROM v4 ORDER BY 1;
+  }
+} {1 2 11 12}
+do_test sort-7.4 {
+  execsql {
+    SELECT b FROM v4 ORDER BY 1;
+  }
+} {1 11 12 2}
+do_test sort-7.5 {
+  execsql {
+    SELECT a FROM t4 UNION SELECT a FROM v4 ORDER BY 1;
+  }
+} {1 2 11 12}
+do_test sort-7.6 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT a FROM v4 ORDER BY 1;
+  }
+} {1 2 11 12}
+do_test sort-7.7 {
+  execsql {
+    SELECT a FROM t4 UNION SELECT b FROM v4 ORDER BY 1;
+  }
+} {1 2 11 12}
+do_test sort-7.8 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1;
+  }
+} {1 11 12 2}
+do_test sort-7.9 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE numeric;
+  }
+} {1 2 11 12}
+do_test sort-7.10 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE integer;
+  }
+} {1 2 11 12}
+do_test sort-7.11 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE text;
+  }
+} {1 11 12 2}
+do_test sort-7.12 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE blob;
+  }
+} {1 11 12 2}
+do_test sort-7.13 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE clob;
+  }
+} {1 11 12 2}
+do_test sort-7.14 {
+  execsql {
+    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE varchar;
+  }
+} {1 11 12 2}
 
 finish_test

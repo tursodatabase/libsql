@@ -113,6 +113,8 @@ sqlite_set_result_error
 sqliteMalloc
 sqliteFree
 sqliteRealloc
+sqlite_set_authorizer
+sqlite_trace
 END_OF_FILE
 i386-mingw32msvc-dllwrap \
      --def sqlite.def -v --export-all \

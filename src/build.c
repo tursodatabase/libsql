@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.123 2003/01/14 02:54:08 drh Exp $
+** $Id: build.c,v 1.124 2003/01/18 20:11:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -530,40 +530,10 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
-  pCol->sortOrder = SQLITE_SO_NUM;
   if( pParse->db->file_format>=4 ){
-    for(i=0; z[i]; i++){
-      switch( z[i] ){
-        case 'b':
-        case 'B': {
-          if( sqliteStrNICmp(&z[i],"blob",4)==0 ){
-            pCol->sortOrder = SQLITE_SO_TEXT;
-            return;
-          }
-          break;
-        }
-        case 'c':
-        case 'C': {
-          if( sqliteStrNICmp(&z[i],"char",4)==0 ||
-                  sqliteStrNICmp(&z[i],"clob",4)==0 ){
-            pCol->sortOrder = SQLITE_SO_TEXT;
-            return;
-          }
-          break;
-        }
-        case 'x':
-        case 'X': {
-          if( i>=2 && sqliteStrNICmp(&z[i-2],"text",4)==0 ){
-            pCol->sortOrder = SQLITE_SO_TEXT;
-            return;
-          }
-          break;
-        }
-        default: {
-          break;
-        }
-      }
-    }
+    pCol->sortOrder = sqliteCollateType(z, n);
+  }else{
+    pCol->sortOrder = SQLITE_SO_NUM;
   }
 }
 
@@ -643,21 +613,47 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
 }
 
 /*
-** Return the appropriate collating type given the collation type token.
-** Report an error if the type is undefined.
+** Return the appropriate collating type given a type name.
+**
+** The collation type is text (SQLITE_SO_TEXT) if the type
+** name contains the character stream "text" or "blob" or
+** "clob".  Any other type name is collated as numeric
+** (SQLITE_SO_NUM).
 */
-int sqliteCollateType(Parse *pParse, Token *pType){
-  if( pType==0 ) return SQLITE_SO_UNK;
-  if( pType->n==4 && sqliteStrNICmp(pType->z, "text", 4)==0 ){
-    return SQLITE_SO_TEXT;
+int sqliteCollateType(const char *zType, int nType){
+  int i;
+  int sortOrder = SQLITE_SO_NUM;
+  for(i=0; i<nType-1; i++){
+    switch( zType[i] ){
+      case 'b':
+      case 'B': {
+        if( i<nType-3 && sqliteStrNICmp(&zType[i],"blob",4)==0 ){
+          return SQLITE_SO_TEXT;
+        }
+        break;
+      }
+      case 'c':
+      case 'C': {
+        if( i<nType-3 && (sqliteStrNICmp(&zType[i],"char",4)==0 ||
+                           sqliteStrNICmp(&zType[i],"clob",4)==0)
+        ){
+          return SQLITE_SO_TEXT;
+        }
+        break;
+      }
+      case 'x':
+      case 'X': {
+        if( i>=2 && sqliteStrNICmp(&zType[i-2],"text",4)==0 ){
+          return SQLITE_SO_TEXT;
+        }
+        break;
+      }
+      default: {
+        break;
+      }
+    }
   }
-  if( pType->n==7 && sqliteStrNICmp(pType->z, "numeric", 7)==0 ){
-    return SQLITE_SO_NUM;
-  }
-  sqliteSetNString(&pParse->zErrMsg, "unknown collating type: ", -1,
-    pType->z, pType->n, 0);
-  pParse->nErr++;
-  return SQLITE_SO_UNK;
+  return SQLITE_SO_NUM;
 }
 
 /*
