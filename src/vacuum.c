@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.13.2.4 2005/02/14 00:21:39 drh Exp $
+** $Id: vacuum.c,v 1.13.2.5 2005/02/14 00:25:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -164,24 +164,6 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
 }
 
 /*
-** This callback is used to transfer PRAGMA settings from one database
-** to the other.  The value in argv[0] should be passed to a pragma
-** identified by ((vacuumStruct*)pArg)->zPragma.
-*/
-static int vacuumCallback3(void *pArg, int argc, char **argv, char **NotUsed){
-  vacuumStruct *p = (vacuumStruct*)pArg;
-  char zBuf[200];
-  assert( argc==1 );
-  if( argv==0 ) return 0;
-  assert( argv[0]!=0 );
-  assert( strlen(p->zPragma)<100 );
-  assert( strlen(argv[0])<30 );
-  sprintf(zBuf,"PRAGMA %s=%s;", p->zPragma, argv[0]);
-  p->rc = execsql(p->pzErrMsg, p->dbNew, zBuf);
-  return p->rc;
-}
-
-/*
 ** Generate a random name of 20 character in length.
 */
 static void randomName(unsigned char *zBuf){
@@ -296,8 +278,6 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
     rc = sqliteBtreeUpdateMeta(dbNew->aDb[0].pBt, meta2);
   }
   if( rc==SQLITE_OK ){
-    int meta[SQLITE_N_BTREE_META];
-    
     rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
     sqlite_exec(db, "COMMIT", 0, 0, 0);
     sqliteResetInternalSchema(db, 0);

@@ -1,5 +1,5 @@
-C Fix\sthe\svacuum\sbug\sin\sversion\s2.8.\s\sAlso\sprepare\sfor\srelease\s2.8.16.\s(CVS\s2326)
-D 2005-02-14T00:21:39
+C Cleanup\sthe\svacuum\sbug\sfixes\sin\sversion\s2.8.\s(CVS\s2327)
+D 2005-02-14T00:25:48
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -60,7 +60,7 @@ F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c 48f1e99803e924433477a7ccbdab35663acb621d
-F src/vacuum.c 9a59796f3d8303e19ea7acfac26f13221ecf9411
+F src/vacuum.c 12de02a8dec2b3f8d30ea496b66a0f989322a2c4
 F src/vdbe.c f78a26f5bbd647fac84c26e0a54b85361613a004
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0f444c032dded0ea4c5bf47516f37cbd44767689
-R 815998f5923df7cdf378ba921e528786
+P 0eaebad5a0242bbdc9c205bf9efeda93bb0a2de9
+R ae89b6bc94ac5a31cab0377e313efc19
 U drh
-Z ad934a75e14adf4c31565d94ad77114b
+Z e923c62761876756bf9cb0fcca2b41af
