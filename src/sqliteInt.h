@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.29 2000/08/02 13:47:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.30 2000/08/28 15:51:44 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -99,6 +99,8 @@ int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 #define FN_Sum        4
 #define FN_Avg        5
 #define FN_Fcnt       6
+#define FN_Length     7
+#define FN_Substr     8
 
 /*
 ** Forward references to structures

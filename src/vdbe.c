@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.38 2000/08/02 12:26:29 drh Exp $
+** $Id: vdbe.c,v 1.39 2000/08/28 15:51:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -788,6 +788,7 @@ static char *zOpName[] = { 0,
   "Lt",             "Le",             "Gt",             "Ge",
   "IsNull",         "NotNull",        "Negative",       "And",
   "Or",             "Not",            "Concat",         "Noop",
+  "Strlen",         "Substr",       
 };
 
 /*
@@ -3127,6 +3128,91 @@ int sqliteVdbeExec(
           pc = pOp->p2 - 1;
         }
         PopStack(p, 1);
+        break;
+      }
+
+      /* Opcode: Length * * *
+      **
+      ** Interpret the top of the stack as a string.  Replace the top of
+      ** stack with an integer which is the length of the string.
+      */
+      case OP_Strlen: {
+        int tos = p->tos;
+        int len;
+        if( tos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        len = p->aStack[tos].n-1;
+        PopStack(p, 1);
+        p->tos++;
+        p->aStack[tos].i = len;
+        p->aStack[tos].flags = STK_Int;
+        break;
+      }
+
+      /* Opcode: Substr P1 P2 *
+      **
+      ** This operation pops between 1 and 3 elements from the stack and
+      ** pushes back a single element.  The bottom-most element popped from
+      ** the stack is a string and the element pushed back is also a string.
+      ** The other two elements popped are integers.  The integers are taken
+      ** from the stack only if P1 and/or P2 are 0.  When P1 or P2 are
+      ** not zero, the value of the operand is used rather than the integer
+      ** from the stack.  In the sequel, we will use P1 and P2 to describe
+      ** the two integers, even if those integers are really taken from the
+      ** stack.
+      **
+      ** The string pushed back onto the stack is a substring of the string
+      ** that was popped.  There are P2 characters in the substring.  The
+      ** first character of the substring is the P1-th character of the
+      ** original string where the left-most character is 1 (not 0).  If P1
+      ** is negative, then counting begins at the right instead of at the
+      ** left.
+      */
+      case OP_Substr: {
+        int cnt;
+        int start;
+        int n;
+        char *z;
+
+        if( pOp->p2==0 ){
+          if( p->tos<0 ) goto not_enough_stack;
+          Integerify(p, p->tos);
+          cnt = p->aStack[p->tos].i;
+          PopStack(p, 1);
+        }else{
+          cnt = pOp->p2;
+        }
+        if( pOp->p1==0 ){
+          if( p->tos<0 ) goto not_enough_stack;
+          Integerify(p, p->tos);
+          start = p->aStack[p->tos].i;
+          PopStack(p, 1);
+        }else{
+          start = pOp->p1;
+        }
+        if( p->tos<0 ) goto not_enough_stack;
+        Stringify(p, p->tos);
+        n = p->aStack[p->tos].n - 1;
+        if( start<0 ){
+          start += n;
+          if( start<0 ){
+            cnt += start;
+            start = 0;
+          }
+        }
+        if( cnt<0 ) cnt = 0;
+        if( cnt > n ){
+          cnt = n;
+        }
+        z = sqliteMalloc( cnt+1 );
+        if( z==0 ) goto no_mem;
+        strncpy(z, p->zStack[p->tos], cnt);
+        z[cnt] = 0;
+        PopStack(p, 1);
+        p->tos++;
+        p->zStack[p->tos] = z;
+        p->aStack[p->tos].n = cnt + 1;
+        p->aStack[p->tos].flags = STK_Str|STK_Dyn;
         break;
       }
 

@@ -24,7 +24,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.18 2000/06/21 13:59:11 drh Exp $
+** $Id: expr.c,v 1.19 2000/08/28 15:51:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -323,6 +323,8 @@ int sqliteFuncId(Token *pToken){
      { "sum",    3, FN_Sum   },
      { "avg",    3, FN_Avg   },
      { "fcnt",   4, FN_Fcnt  },  /* Used for testing only */
+     { "length", 6, FN_Length},
+     { "substr", 6, FN_Substr},
   };
   int i;
   for(i=0; i<ArraySize(aFunc); i++){
@@ -381,6 +383,16 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           is_agg = 1;
           break;
         }
+        case FN_Length: {
+          too_few_args = n<1;
+          too_many_args = n>1;
+          break;
+        }
+        case FN_Substr: {
+          too_few_args = n<3;
+          too_many_args = n>3;
+          break;
+        }
         /* The "fcnt(*)" function always returns the number of fetch
         ** operations that have occurred so far while processing the
         ** SQL statement.  This information can be used by test procedures
@@ -392,6 +404,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           n = 0;
           break;
         }
+      
         default: break;
       }
       if( no_such_func ){
@@ -574,15 +587,37 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       int op;
       int i;
       ExprList *pList = pExpr->pList;
-      if( id==FN_Fcnt ){
-        sqliteVdbeAddOp(v, OP_Fcnt, 0, 0, 0, 0);
-        break;
-      }
-      op = id==FN_Min ? OP_Min : OP_Max;
-      for(i=0; i<pList->nExpr; i++){
-        sqliteExprCode(pParse, pList->a[i].pExpr);
-        if( i>0 ){
-          sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+      switch( id ){
+        case FN_Fcnt: {
+          sqliteVdbeAddOp(v, OP_Fcnt, 0, 0, 0, 0);
+          break;
+        }
+        case FN_Min: 
+        case FN_Max: {
+          op = id==FN_Min ? OP_Min : OP_Max;
+          for(i=0; i<pList->nExpr; i++){
+            sqliteExprCode(pParse, pList->a[i].pExpr);
+            if( i>0 ){
+              sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+            }
+          }
+          break;
+        }
+        case FN_Length: {
+          sqliteExprCode(pParse, pList->a[0].pExpr);
+          sqliteVdbeAddOp(v, OP_Strlen, 0, 0, 0, 0);
+          break;
+        }
+        case FN_Substr: {
+          for(i=0; i<pList->nExpr; i++){
+            sqliteExprCode(pParse, pList->a[i].pExpr);
+          }
+          sqliteVdbeAddOp(v, OP_Substr, 0, 0, 0, 0);
+          break;
+        }
+        default: {
+          /* Can't happen! */
+          break;
         }
       }
       break;

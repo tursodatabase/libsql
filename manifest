@@ -1,5 +1,5 @@
-C Version\s1.0.3\s(CVS\s497)
-D 2000-08-22T18:30:00
+C Added\slength()\sand\ssubstr()\sfunctions\s(CVS\s143)
+D 2000-08-28T15:51:44
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -11,7 +11,7 @@ F src/build.c 4d90e9e94750ca80249fc7958c617021d8bb7a50
 F src/dbbe.c 226daaf8c095ceb4aff48cad188dad90643f9867
 F src/dbbe.h 6337132f904e72ecb28b07390021c241397e4cbf
 F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
-F src/expr.c 2fa63f086707176d09092e71832f9bbdc6a8ac85
+F src/expr.c e8e350d7baa33bd9ed8701c159eaba5e912e0adb
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c 9a89579b40e498920f86e89878f52185457b9c2c
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
@@ -19,13 +19,13 @@ F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c 061186b1a4f0884037d067f0f102ec5d382119b5
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d341439fc1432c7d7014bcff5f7b6e914571232c
-F src/sqliteInt.h f6d1e139b3bfa4ceff2136684e19d76b53178ec0
+F src/sqliteInt.h b65fdecac7281aafb4c9ff3e79ea1b5546478385
 F src/tclsqlite.c 89dc4ba2b521f3e919d6d7aaa4cc1c2aba8e16f3
 F src/tokenize.c 097bec5843d4a0fb4509e036fee93bac080c5e73
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c b75b33e6bd5d47898bb7ed9fdd0dea4fe7c19b00
-F src/vdbe.c bdedf21230581f0cf73a2dcd8fe23f30cf30ebe6
-F src/vdbe.h 6c5653241633c583549c2d8097394ab52550eb63
+F src/vdbe.c a2372aebfcf2a5ed4530cd956a8cdbb595c67991
+F src/vdbe.h 6413cd0165ac62b0839fe3e077cb7c9f0b736295
 F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P f255ea6d4bb085a869485c14b4c96af13ca826fa
-R d941b15d38d95642a66b6ff4bba2c454
+P d35a1f8b37333e2df86c22c2dbd766132b4931b2
+R 33478b7323acb1d67e1ce4b66b8bba30
 U drh
-Z cbdf4324aa4508ca2f8e72c3acf62235
+Z a1f7d622d82864a914f4580098647f78
