@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.304 2005/01/31 23:45:56 drh Exp $
+** $Id: build.c,v 1.305 2005/02/01 01:21:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -857,37 +857,46 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 /*
 ** Scan the column type name zType (length nType) and return the
 ** associated affinity type.
+**
+** This routine does a case-independent search of zType for the 
+** substrings in the following table. If one of the substrings is
+** found, the corresponding affinity is returned. If zType contains
+** more than one of the substrings, entries toward the top of 
+** the table take priority. For example, if zType is 'BLOBINT', 
+** SQLITE_AFF_INTEGER is returned.
+**
+** Substring     | Affinity
+** --------------------------------
+** 'INT'         | SQLITE_AFF_INTEGER
+** 'CHAR'        | SQLITE_AFF_TEXT
+** 'CLOB'        | SQLITE_AFF_TEXT
+** 'TEXT'        | SQLITE_AFF_TEXT
+** 'BLOB'        | SQLITE_AFF_NONE
+**
+** If none of the substrings in the above table are found,
+** SQLITE_AFF_NUMERIC is returned.
 */
 static char sqlite3AffinityType(const char *zType, int nType){
-  int n, i;
-  static const struct {
-    const char *zSub;  /* Keywords substring to search for */
-    char nSub;         /* length of zSub */
-    char affinity;     /* Affinity to return if it matches */
-  } substrings[] = {
-    {"INT",  3, SQLITE_AFF_INTEGER},
-    {"CHAR", 4, SQLITE_AFF_TEXT},
-    {"CLOB", 4, SQLITE_AFF_TEXT},
-    {"TEXT", 4, SQLITE_AFF_TEXT},
-    {"BLOB", 4, SQLITE_AFF_NONE},
-  };
+  u32 h = 0;
+  char aff = SQLITE_AFF_NUMERIC;
+  const unsigned char *zIn = zType;
+  const unsigned char *zEnd = (zIn+nType);
 
-  if( nType==0 ){
-    return SQLITE_AFF_NONE;
-  }
-  for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
-    const char *zSub = substrings[i].zSub;
-    int c1 = tolower(zSub[0]);
-    int len = substrings[i].nSub;
-    int limit = nType - len;
-    const char *z = zType;
-    for(n=0; n<=limit; n++, z++){
-      if( tolower(z[0])==c1 && 0==sqlite3StrNICmp(z, zSub, len) ){
-        return substrings[i].affinity;
-      }
+  while( zIn!=zEnd ){
+    h = (h<<8) + sqlite3UpperToLower[*zIn];
+    zIn++;
+    if     ( h==0x63686172 ) aff = SQLITE_AFF_TEXT;           /* CHAR */
+    else if( h==0x636C6F62 ) aff = SQLITE_AFF_TEXT;           /* CLOB */
+    else if( h==0x74657874 ) aff = SQLITE_AFF_TEXT;           /* TEXT */
+    else if( h==0x626C6F62 && aff==SQLITE_AFF_NUMERIC ){      /* BLOB */
+      aff = SQLITE_AFF_NONE;
+    }else if( (h&0x00FFFFFF)==0x00696E74 ){                   /* INT */
+      aff = SQLITE_AFF_INTEGER; 
+      break;
     }
   }
-  return SQLITE_AFF_NUMERIC;
+
+  return aff;
 }
 
 /*
