@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sTEMPORARY\striggers.\s\sSuch\striggers\scan\swrite\stemporary\sor\npermanent\stables.\s(CVS\s926)
-D 2003-04-21T18:48:46
+C Check\sfor\sreadline\slibs\snow\sadds\sappropriate\scurses\sor\stermcap\slib\swhen\sneeded\s(CVS\s927)
+D 2003-04-22T08:04:49
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -7,8 +7,8 @@ F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
-F configure df43f93754fd81b151e8c6d81b750bf0e9480a8a x
-F configure.ac a158f37fc6b15821406e4d5d4f9a0ed35b8b0e6b
+F configure 8c9c261da9037dba368e5454de877a22255661ad x
+F configure.ac 3c199bb4d54c6aa8501dcc84facb50bebfefeaad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 11cab41c4f02cdddc4fd3f57555573ac2814a81b
-R fdfcbaff78e43d8a367933863118062c
-U drh
-Z 56b9d2fa20bf8f19c521466c7923ae4d
+P 58ddd587b0f5d565ae3b0ba3a1fa5c20d459f3fc
+R 56bc5369df13f5ed3e79edd9e52598e8
+U paul
+Z 46984dea9f9baae2ea78dc3185931bfa

@@ -1434,7 +1434,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.15 $
+# $Revision: 1.16 $
 
 #########
 # Programs needed
@@ -8838,13 +8838,120 @@ if test "$config_TARGET_READLINE_LIBS" != ""; then
 else
   CC=$TARGET_CC
   LIBS=""
-  echo "$as_me:$LINENO: checking for library containing readline" >&5
-echo $ECHO_N "checking for library containing readline... $ECHO_C" >&6
-if test "${ac_cv_search_readline+set}" = set; then
+  echo "$as_me:$LINENO: checking for library containing tgetent" >&5
+echo $ECHO_N "checking for library containing tgetent... $ECHO_C" >&6
+if test "${ac_cv_search_tgetent+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_func_search_save_LIBS=$LIBS
-ac_cv_search_readline=no
+ac_cv_search_tgetent=no
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char tgetent ();
+int
+main ()
+{
+tgetent ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_tgetent="none required"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_tgetent" = no; then
+  for ac_lib in readline ncurses curses termcap; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char tgetent ();
+int
+main ()
+{
+tgetent ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_tgetent="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_tgetent" >&5
+echo "${ECHO_T}$ac_cv_search_tgetent" >&6
+if test "$ac_cv_search_tgetent" != no; then
+  test "$ac_cv_search_tgetent" = "none required" || LIBS="$ac_cv_search_tgetent $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking for readline in -lreadline" >&5
+echo $ECHO_N "checking for readline in -lreadline... $ECHO_C" >&6
+if test "${ac_cv_lib_readline_readline+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lreadline  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -8880,67 +8987,24 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_search_readline="none required"
+  ac_cv_lib_readline_readline=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
+ac_cv_lib_readline_readline=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_readline" = no; then
-  for ac_lib in readline; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_readline_readline" >&5
+echo "${ECHO_T}$ac_cv_lib_readline_readline" >&6
+if test $ac_cv_lib_readline_readline = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBREADLINE 1
 _ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
 
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char readline ();
-int
-main ()
-{
-readline ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_readline="-l$ac_lib"
-break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_readline" >&5
-echo "${ECHO_T}$ac_cv_search_readline" >&6
-if test "$ac_cv_search_readline" != no; then
-  test "$ac_cv_search_readline" = "none required" || LIBS="$ac_cv_search_readline $LIBS"
+  LIBS="-lreadline $LIBS"
 
 fi
 
