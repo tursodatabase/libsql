@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.314 2004/05/21 10:49:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.315 2004/05/21 13:39:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2672,18 +2672,19 @@ case OP_MakeIdxKey: {
   break;
 }
 
-/* Opcode: Checkpoint P1 * *
+/* Opcode: Statement P1 * *
 **
-** Begin a checkpoint.  A checkpoint is the beginning of a operation that
-** is part of a larger transaction but which might need to be rolled back
-** itself without effecting the containing transaction.  A checkpoint will
-** be automatically committed or rollback when the VDBE halts.
+** Begin an individual statement transaction which is part of a larger
+** BEGIN..COMMIT transaction.  This is needed so that the statement
+** can be rolled back after an error without having to roll back the
+** entire transaction.  The statement transaction will automatically
+** commit when the VDBE halts.
 **
-** The checkpoint is begun on the database file with index P1.  The main
+** The statement is begun on the database file with index P1.  The main
 ** database file has an index of 0 and the file used for temporary tables
 ** has an index of 1.
 */
-case OP_Checkpoint: {
+case OP_Statement: {
   int i = pOp->p1;
   if( i>=0 && i<db->nDb && db->aDb[i].pBt && db->aDb[i].inTrans==1 ){
     rc = sqlite3BtreeBeginStmt(db->aDb[i].pBt);
@@ -5151,86 +5152,6 @@ case OP_SetInsert: {
     pTos--;
   }
   if( sqlite3_malloc_failed ) goto no_mem;
-  break;
-}
-
-/* Opcode: SetFound P1 P2 *
-**
-** Pop the stack once and compare the value popped off with the
-** contents of set P1.  If the element popped exists in set P1,
-** then jump to P2.  Otherwise fall through.
-*/
-case OP_SetFound: {
-  int i = pOp->p1;
-  assert( pTos>=p->aStack );
-  Stringify(pTos);
-  if( i>=0 && i<p->nSet && sqlite3HashFind(&p->aSet[i].hash, pTos->z, pTos->n)){
-    pc = pOp->p2 - 1;
-  }
-  Release(pTos);
-  pTos--;
-  break;
-}
-
-/* Opcode: SetNotFound P1 P2 *
-**
-** Pop the stack once and compare the value popped off with the
-** contents of set P1.  If the element popped does not exists in 
-** set P1, then jump to P2.  Otherwise fall through.
-*/
-case OP_SetNotFound: {
-  int i = pOp->p1;
-  assert( pTos>=p->aStack );
-  Stringify(pTos);
-  if( i<0 || i>=p->nSet ||
-       sqlite3HashFind(&p->aSet[i].hash, pTos->z, pTos->n)==0 ){
-    pc = pOp->p2 - 1;
-  }
-  Release(pTos);
-  pTos--;
-  break;
-}
-
-/* Opcode: SetFirst P1 P2 *
-**
-** Read the first element from set P1 and push it onto the stack.  If the
-** set is empty, push nothing and jump immediately to P2.  This opcode is
-** used in combination with OP_SetNext to loop over all elements of a set.
-*/
-/* Opcode: SetNext P1 P2 *
-**
-** Read the next element from set P1 and push it onto the stack.  If there
-** are no more elements in the set, do not do the push and fall through.
-** Otherwise, jump to P2 after pushing the next set element.
-*/
-case OP_SetFirst: 
-case OP_SetNext: {
-  Set *pSet;
-  CHECK_FOR_INTERRUPT;
-  if( pOp->p1<0 || pOp->p1>=p->nSet ){
-    if( pOp->opcode==OP_SetFirst ) pc = pOp->p2 - 1;
-    break;
-  }
-  pSet = &p->aSet[pOp->p1];
-  if( pOp->opcode==OP_SetFirst ){
-    pSet->prev = sqliteHashFirst(&pSet->hash);
-    if( pSet->prev==0 ){
-      pc = pOp->p2 - 1;
-      break;
-    }
-  }else{
-    assert( pSet->prev );
-    pSet->prev = sqliteHashNext(pSet->prev);
-    if( pSet->prev==0 ){
-      break;
-    }else{
-      pc = pOp->p2 - 1;
-    }
-  }
-  pTos++;
-  pTos->z = sqliteHashKey(pSet->prev);
-  pTos->n = sqliteHashKeysize(pSet->prev);
-  pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem;
   break;
 }
 

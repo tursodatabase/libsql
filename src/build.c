@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.191 2004/05/21 01:29:06 drh Exp $
+** $Id: build.c,v 1.192 2004/05/21 13:39:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2149,7 +2149,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 **
 ** This routine starts a new transaction if we are not already within
 ** a transaction.  If we are already within a transaction, then a checkpoint
-** is set if the setCheckpoint parameter is true.  A checkpoint should
+** is set if the setStatement parameter is true.  A checkpoint should
 ** be set for operations that might fail (due to a constraint) part of
 ** the way through and which will need to undo some writes without having to
 ** rollback the whole transaction.  For operations where all constraints
@@ -2161,7 +2161,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** iDb==1 then only the temp database is made writable.  If iDb>1 then the
 ** specified auxiliary database and the temp database are made writable.
 */
-void sqlite3BeginWriteOperation(Parse *pParse, int setCheckpoint, int iDb){
+void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Vdbe *v;
   sqlite *db = pParse->db;
   if( DbHasProperty(db, iDb, DB_Locked) ) return;
@@ -2172,10 +2172,10 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setCheckpoint, int iDb){
     DbSetProperty(db, iDb, DB_Locked);
     sqlite3CodeVerifySchema(pParse, iDb);
     if( iDb!=1 ){
-      sqlite3BeginWriteOperation(pParse, setCheckpoint, 1);
+      sqlite3BeginWriteOperation(pParse, setStatement, 1);
     }
-  }else if( setCheckpoint ){
-    sqlite3VdbeAddOp(v, OP_Checkpoint, iDb, 0);
+  }else if( setStatement ){
+    sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
     DbSetProperty(db, iDb, DB_Locked);
   }
 }

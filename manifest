@@ -1,5 +1,5 @@
-C Eliminate\ssome\sunused\scode\s(CVS\s1429)
-D 2004-05-21T11:39:05
+C Remove\sthe\sOP_SetFound\sopcode\sand\sits\scousins.\s(CVS\s1430)
+D 2004-05-21T13:39:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,12 +27,12 @@ F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 68f8e0f6271afd31551abf0b48de9667c5f7368b
 F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
-F src/build.c 1d71deac55e44e9b2443a2f8f55ca03773555613
+F src/build.c 95969f37eb4edf62660d83e314df6d08b8a19fe7
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
 F src/date.c 0eb0a89960bb45c7f7e768748605a7a97b0c8064
 F src/delete.c 2e1dda38345416a1ea1c0a6468589a7472334dac
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c fb92ef7e7111de4a4dc58bc6c6d58b84793c725a
+F src/expr.c 5b283e68bd6df365b7c2ad10bd04cc54c2b4b07c
 F src/func.c cfbb7096efb58e2857e3b312a8958a12774b625a
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -64,7 +64,7 @@ F src/update.c 1a5e9182596f3ea8c7a141e308a3d2a7e5689fee
 F src/utf.c c27c4f1120f7aaef00cd6942b3d9e3f4ca4fe0e4
 F src/util.c 5cbeb452da09cfc7248de9948c15b14d840723f7
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c f0e24400884c3e3a5021f60ca2310e7373709e3e
+F src/vdbe.c 2944326a99869c71698f634d6ace9e9be56d9180
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
 F src/vdbeInt.h 8ed2272e97bef20c5302c3b2cb4f900e8b5e2642
 F src/vdbeaux.c 0a0de6f6097125960b02a3c8625fa896cbc61271
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5eb94c97657b34ed2df6455e23875e2840743bda
-R df698f64280827d490a25f92b9ffde93
-U danielk1977
-Z b43705fe091d47ae368c00cb70601ef1
+P 550a53b3f28ddb288bcb6c21849ca83b0a20bde4
+R a27328b840ad5ac31f67deb6b635b74b
+U drh
+Z 678137ddf4cdf9bac7e4b018c69ba9fb
