@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.4 2001/09/16 00:13:29 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.5 2001/09/20 01:44:43 drh Exp $}
 
 puts {<html>
 <head>
@@ -22,7 +22,12 @@ puts {
 <tr><th>Block Diagram Of SQLite</th></tr>
 <tr><td><img src="arch.png"></td></tr>
 </table>
-<p>This file describes the architecture of the SQLite library.
+<p>This document describes the architecture of the SQLite library.
+The information here is useful to those who want to understand or
+modify the inner workings of SQLite.
+</p>
+
+<p>
 A block diagram showing the main components of SQLite
 and how they interrelate is shown at the right.  The text that
 follows will provide a quick overview of each of these components.
@@ -39,9 +44,8 @@ information on the C interface to SQLite is
 
 <p>To avoid name collisions with other software, all external
 symbols in the SQLite library begin with the prefix <b>sqlite</b>.
-Those symbols that are intended for external use (as oppose to
-those which are for internal use only but which have to be exported
-do to limitations of the C linker's scoping mechanism) begin
+Those symbols that are intended for external use (in other words,
+those symbols which form the API for SQLite) begin
 with <b>sqlite_</b>.</p>
 
 <h2>Tokenizer</h2>
@@ -50,13 +54,14 @@ with <b>sqlite_</b>.</p>
 interface passes that string to the tokenizer.  The job of the tokenizer
 is to break the original string up into tokens and pass those tokens
 one by one to the parser.  The tokenizer is hand-coded in C.
-(There is no "lex" code here.)  All of the code for the tokenizer
+All of the code for the tokenizer
 is contained in the <b>tokenize.c</b> source file.</p>
 
 <p>Note that in this design, the tokenizer calls the parser.  People
 who are familiar with YACC and BISON may be used to doing things the
-other way around -- having the parser call the tokenizer.  This author
-as done it both ways, and finds things generally work out nicer for
+other way around -- having the parser call the tokenizer.  The author
+of SQLite 
+has done it both ways and finds things generally work out nicer for
 the tokenizer to call the parser.  YACC has it backwards.</p>
 
 <h2>Parser</h2>
@@ -122,14 +127,39 @@ is stored with the key in an area called "payload".  Up to 236 bytes of
 payload can be stored with each B-tree entry.  Any additional payload
 is stored in a chain of overflow pages.</p>
 
+<p>The interface to the B-tree subsystem is defined by the header file
+<b>btree.h</b>.
+</p>
+
 <h2>Page Cache</h2>
 
-<p>The page cache provides the rollback and atomic commit abstraction
+<p>The B-tree module requests information from the disk in 1024 byte
+chunks.  The page cache is reponsible for reading, writing, and
+caching these chunks for the B-tree module.
+The page cache also provides the rollback and atomic commit abstraction
 and takes care of reader/writer locking of the database file.  The
 B-tree driver requests particular pages from the page cache and notifies
 the page cache when it wants to modify pages and commit or rollback its
 changes and the page cache handles all the messy details of making sure
 the requests are handled quickly, safely, and efficiently.</p>
+
+<p>The code to implement the page cache is contained in the single C
+source file <b>pager.c</b>.  The interface to the page cache subsystem
+is defined by the header file <b>pager.h</b>.
+</p>
+
+<h2>OS Interface</h2>
+
+<p>
+In order to provide portability between POSIX and Win32 operating systems,
+SQLite uses an abstraction layer to interace with the operating system.
+The <b>os.c</b> file contains about 20 routines used for opening and
+closing files, deleting files, creating and deleting locks on files,
+flushing the disk cache, and so forth.  Each of these functions contains
+two implementations separated by #ifdefs: one for POSIX and the other
+for Win32.  The interface to the OS abstraction layer is defined by
+the <b>os.h</b> header file.
+</p>
 }
 
 puts {

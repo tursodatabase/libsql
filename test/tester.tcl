@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.18 2001/09/16 00:13:28 drh Exp $
+# $Id: tester.tcl,v 1.19 2001/09/20 01:44:43 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -42,8 +42,9 @@ if {[sqlite -tcl-uses-utf]} {
 
 # Create a test database
 #
-file delete -force ./test.db
-file delete -force ./test.db-journal
+catch {db close}
+file delete -force test.db
+file delete -force test.db-journal
 sqlite db ./test.db
 
 # Abort early if this script has been run before.

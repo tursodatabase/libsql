@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.3 2000/10/23 13:16:33 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.4 2001/09/20 01:44:44 drh Exp $}
 
 puts {<html>
 <head>
@@ -44,27 +44,8 @@ way widgets are created in Tk.
 </p>
 
 <p>
-The name of the database is usually either the name of a directory
-that will contain the GDBM files that comprise the database, or it is the
-name of the directory prefaced by "<b>gdbm:</b>".  The second form
-of the name is a new feature beginning in SQLite version 1.0.14 that
-allows you to select alternative database backends.  The default
-backend is GDBM.  But you can also select to store the database in
-a hash table in memory by using the prefix "<b>memory:</b>". 
-Other backends may be added in the future.
-</p>
-
-<p>
-Every time you open an SQLite database with the <b>memory:</b> prefix
-on the database name, you get a new in-memory database.  This is true
-even if you open two databases with the same name.  Furthermore,
-an in-memory database is automatically deleted when the database is
-closed and so is not useful for persistant storage like a normal
-database.  But the use of an in-memory SQL database does give Tcl/Tk
-a powerful new data storage mechanism that can do things that are
-difficult to do with only Tcl array variables.  In fact, the
-hash-table backend for SQLite was created for the sole purpose of
-providing better data structure support to the Tcl language.
+The name of the database is just the name of a disk file in which
+the database is stored.
 </p>
 
 <p>
@@ -229,19 +210,17 @@ will wait for locks to clear before giving up on a database transaction.
 The default timeout is 0 millisecond.  (In other words, the default behavior
 is not to wait at all.)</p>
 
-<p>The GDBM backend allows multiple simultaneous
+<p>The SQlite database allows multiple simultaneous
 readers or a single writer but not both.  If any process is writing to
 the database no other process is allows to read or write.  If any process
 is reading the database other processes are allowed to read but not write.
-Each GDBM file is locked separately.  Because each SQL table is stored as
-a separate file, it is possible for different processes to write to different
-database tables at the same time, just not the same table.</p>
+The entire database shared a single lock.</p>
 
-<p>When SQLite tries to open a GDBM file and finds that it is locked, it
+<p>When SQLite tries to open a database and finds that it is locked, it
 can optionally delay for a short while and try to open the file again.
 This process repeats until the query times out and SQLite returns a
 failure.  The timeout is adjustable.  It is set to 0 by default so that
-if a GDBM file is locked, the SQL statement fails immediately.  But you
+if the database is locked, the SQL statement fails immediately.  But you
 can use the "timeout" method to change the timeout value to a positive
 number.  For example:</p>
 
@@ -253,14 +232,14 @@ would be 2 seconds.</p>
 
 <h2>The "busy" method</h2>
 
-<p>The "busy" method, like "timeout", only comes into play when a GDBM
-file is locked.  But the "busy" method gives the programmer much more
+<p>The "busy" method, like "timeout", only comes into play when the
+database is locked.  But the "busy" method gives the programmer much more
 control over what action to take.  The "busy" method specifies a callback
 Tcl procedure that is invoked whenever SQLite tries to open a locked
-GDBM file.  This callback can do whatever is desired.  Presumably, the
+database.  This callback can do whatever is desired.  Presumably, the
 callback will do some other useful work for a short while then return
 so that the lock can be tried again.  The callback procedure should
-return "0" if it wants SQLite to try again to open the GDBM file and
+return "0" if it wants SQLite to try again to open the database and
 should return "1" if it wants SQLite to abandon the current operation.
 
 }

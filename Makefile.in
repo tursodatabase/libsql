@@ -226,6 +226,7 @@ sqlite.tar.gz:
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite
 
 index.html:	$(TOP)/www/index.tcl sqlite.tar.gz last_change
+	cp ../sqlite-*.tar.gz .
 	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
@@ -236,9 +237,6 @@ c_interface.html:	$(TOP)/www/c_interface.tcl
 
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
-
-fileformat.html:	$(TOP)/www/fileformat.tcl
-	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
 
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
@@ -272,7 +270,6 @@ PUBLISH = \
   index.html \
   sqlite.html \
   changes.html \
-  fileformat.html \
   lang.html \
   opcode.html \
   arch.html \
@@ -286,8 +283,8 @@ PUBLISH = \
 website:	$(PUBLISH)
 
 publish:	$(PUBLISH)
-	chmod 0644 $(PUBLISH)
-	scp $(PUBLISH) hwaci@oak.he.net:public_html/sw/sqlite
+	chmod 0644 $(PUBLISH) sqlite-*.tar.gz
+	scp $(PUBLISH) sqlite-*.tar.gz hwaci@oak.he.net:public_html/sw/sqlite
 
 install:	sqlite libsqlite.a sqlite.h
 	mv sqlite /usr/bin

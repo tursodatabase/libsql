@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.14 2001/04/05 16:25:53 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.15 2001/09/20 01:44:43 drh Exp $}
 
 puts {<html>
 <head>
@@ -42,13 +42,21 @@ int sqlite_exec(
 );
 
 #define SQLITE_OK        0    /* Successful result */
-#define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
-#define SQLITE_ERROR     2    /* SQL error or missing database */
+#define SQLITE_ERROR     1    /* SQL error or missing database */
+#define SQLITE_INTERNAL  2    /* An internal logic error in SQLite */
 #define SQLITE_PERM      3    /* Access permission denied */
 #define SQLITE_ABORT     4    /* Callback routine requested an abort */
 #define SQLITE_BUSY      5    /* One or more database files are locked */
 #define SQLITE_NOMEM     6    /* A malloc() failed */
 #define SQLITE_READONLY  7    /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR     9    /* Some kind of disk I/O error occurred */
+#define SQLITE_CORRUPT   10   /* The database disk image is malformed */
+#define SQLITE_FULL      12   /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN  13   /* Unable to open the database file */
+#define SQLITE_PROTOCOL  14   /* Database lock protocol error */
+#define SQLITE_SCHEMA    16   /* The database schema changed */
+#define SQLITE_TOOBIG    17   /* Too much data for one row of a table */
 </pre></blockquote>
 
 <p>Only the three core routines shown above are required to use
@@ -127,39 +135,26 @@ header file that comes in the source tree.</p>
 
 <p>Use the <b>sqlite_open()</b> function to open an existing SQLite
 database or to create a new SQLite database.  The first argument
-is the database name.  The second argument is a constant 0666 to
-open the database for reading and writing and 0444 to open the
-database read only.  The third argument is a pointer to a string
-pointer.  If the third argument is not NULL and an error occurs
+is the database name.  The second argument is intended to signal
+whether the database is going to be used for reading and writing
+or just for reading.  But in the current implementation, the
+second argument to <b>sqlite_open</b> is ignored.
+The third argument is a pointer to a string pointer.
+If the third argument is not NULL and an error occurs
 while trying to open the database, then an error message will be
 written to memory obtained from malloc() and *errmsg will be made
 to point to this error message.  The calling function is responsible
 for freeing the memory when it has finished with it.</p>
 
-<p>The name of an SQLite database is normally the name of a directory
-that contains a collection of GDBM files that comprise the database.
-There is one GDBM file for each table and index in the
-database.  All GDBM files end with the ".tbl" suffix.  Every SQLite
-database also contains a special database table named <b>sqlite_master</b>
-stored in its own GDBM file.  This special table records the database
-schema.</p>
-
-<p>To create a new SQLite database, all you have to do is call
-<b>sqlite_open()</b> with the first parameter set to the name of
-an empty directory and the second parameter set to 0666.  The
-directory is created automatically if it does not already exist.</p>
-
-<p>Beginning with SQLite version 1.0.14, SQLite supports database
-backends other than GDBM.  The only backends currently supported 
-are the default GDBM driver and an in-memory hash table database.
-You may anticipate additional backends in future versions of SQLite.</p>
-
-<p>An alternative database backend is specified by prepending the
-backend name and a colon to the database name argument of the
-<b>sqlite_open()</b> function.  For the GDBM backend, you can
-prepend "<b>gdbm:</b>" to the directory name.  To select the in-memory
-hash table backend, prepend "<b>memory:</b>" to the database name.
-Future database drivers will be selected by a similar mechanism.</p>
+<p>The name of an SQLite database is the name of a file that will
+contain the database.  If the file does not exist, SQLite attempts
+to create and initialize it.  If the file is read-only (due to
+permission bits or because it is located on read-only media like
+a CD-ROM) then SQLite opens the database for reading only.  The
+entire SQL database is stored in a single file on the disk.  But
+additional temporary files may be created during the execution of
+an SQL command in order to store the database rollback journal or
+temporary and intermediate results of a query.</p>
 
 <p>The return value of the <b>sqlite_open()</b> function is a
 pointer to an opaque <b>sqlite</b> structure.  This pointer will
@@ -172,6 +167,8 @@ for any reason.</p>
 <p>To close an SQLite database, call the <b>sqlite_close()</b>
 function passing it the sqlite structure pointer that was obtained
 from a prior call to <b>sqlite_open</b>.
+If a transaction is active when the database is closed, the transaction
+is rolled back.</p>
 
 <h2>Executing SQL statements</h2>
 
@@ -249,41 +246,68 @@ mailing list.
 that was passed into the <b>sqlite_exec()</b>.
 </p></dd>
 <dt>SQLITE_PERM</dt>
-<dd><p>This return value says that the access permissions on one of the
-GDBM files is such that the file cannot be opened.
+<dd><p>This return value says that the access permissions on the database
+file are such that the file cannot be opened.
 </p></dd>
 <dt>SQLITE_ABORT</dt>
 <dd><p>This value is returned if the callback function returns non-zero.
 </p></dd>
 <dt>SQLITE_BUSY</dt>
-<dd><p>This return code indicates that one of the underlying GDBM files
-is locked because it is currently being accessed by another thread or
-process.  GDBM allows mutiple readers of the same file, but only one
-writer.  So multiple processes can query an SQLite database at once.
-But only a single process can write to an SQLite database at one time.
-If an attempt is made to write to an SQLite database that another
-process is currently reading, the write is not performed and 
-<b>sqlite_exec()</b> returns SQLITE_BUSY.  Similarly, an attempt to read
-an SQLite database that is currently being written by another process
-will return SQLITE_BUSY.  In both cases, the write or query attempt
-can be retried after the other process finishes.</p>
-<p>Note that locking is done at the file level.  One process can
-write to table ABC (for example) while another process simultaneously
-reads from a different table XYZ.  But you cannot have two processes reading
-and writing table ABC at the same time.
+<dd><p>This return code indicates that another program or thread has
+the database locked.  SQLite allows two or more threads to read the
+database at the same time, but only one thread can have the database
+open for writing at the same time.  Locking in SQLite is on the
+entire database.</p>
 </p></dd>
 <dt>SQLITE_NOMEM</dt>
 <dd><p>This value is returned if a call to <b>malloc()</b> fails.
 </p></dd>
 <dt>SQLITE_READONLY</dt>
 <dd><p>This return code indicates that an attempt was made to write to
-a database file that was originally opened for reading only.  This can
-happen if the callback from a query attempts to update the table
-being queried.
+a database file that is opened for reading only.
 </p></dd>
 <dt>SQLITE_INTERRUPT</dt>
 <dd><p>This value is returned if a call to <b>sqlite_interrupt()</b>
 interrupts a database operation in progress.
+</p></dd>
+<dt>SQLITE_IOERR</dt>
+<dd><p>This value is returned if the operating system informs SQLite
+that it is unable to perform some disk I/O operation.  This could mean
+that there is no more space left on the disk.
+</p></dd>
+<dt>SQLITE_CORRUPT</dt>
+<dd><p>This value is returned if SQLite detects that the database it is
+working on has become corrupted.  Corruption might occur due to a rogue
+process writing to the database file or it might happen due to an 
+perviously undetected logic error in of SQLite. 
+</p></dd>
+<dt>SQLITE_FULL</dt>
+<dd><p>This value is returned if an insertion failed because there is
+no space left on the disk, or the database is too big to hold any
+more information.  The latter case should only occur for databases
+that are larger than 2GB in size.
+</p></dd>
+<dt>SQLITE_CANTOPEN</dt>
+<dd><p>This value is returned if the database file could not be opened
+for some reason.
+</p></dd>
+<dt>SQLITE_PROTOCOL</dt>
+<dd><p>This value is returned if some other process is messing with
+file locks and has violated the file locking protocol that SQLite uses
+on its rollback journal files.
+</p></dd>
+<dt>SQLITE_SCHEMA</dt>
+<dd><p>When the database first opened, SQLite reads the database schema
+into memory and uses that schema to parse new SQL statements.  If another
+process changes the schema, the command currently being processed will
+abort because the virtual machine code generated assumed the old
+schema.  This is the return code for such cases.  Retrying the
+command usually will clear the problem.
+</p></dd>
+<dt>SQLITE_TOOBIG</dt>
+<dd><p>SQLite cannot store more than about 64K of data in a single row
+of a single table.  If you attempt to store more than 64K in a single
+row, this is the return code you get.
 </p></dd>
 </dl>
 </blockquote>
@@ -398,23 +422,12 @@ was compiled.</p>
 
 <h2>Changing the libraries response to locked files</h2>
 
-<p>The GDBM library supports database locks at the file level.
-If a GDBM database file is opened for reading, then that same
-file cannot be reopened for writing until all readers have closed
-the file.  If a GDBM file is open for writing, then the file cannot
-be reopened for reading or writing until it is closed.</p>
-
-<p>If the SQLite library attempts to open a GDBM file and finds that
-the file is locked, the default action is to abort the current
-operation and return SQLITE_BUSY.  But this is not always the most
-convenient behavior, so a mechanism exists to change it.</p>
-
 <p>The <b>sqlite_busy_handler()</b> procedure can be used to register
 a busy callback with an open SQLite database.  The busy callback will
-be invoked whenever SQLite tries to open a GDBM file that is locked.
+be invoked whenever SQLite tries to open a locked that is locked.
 The callback will typically do some other useful work, or perhaps sleep,
 in order to give the lock a chance to clear.  If the callback returns
-non-zero, then SQLite tries again to open the GDBM file and the cycle
+non-zero, then SQLite tries again to open the database and the cycle
 repeats.  If the callback returns zero, then SQLite aborts the current
 operation and returns SQLITE_BUSY.</p>
 

@@ -59,7 +59,7 @@ int sqliteOsFileExists(const char *zFilename){
 #endif
 #if OS_WIN
   HANDLE h;
-  h = CreateFile(zBuf,
+  h = CreateFile(zFilename,
     GENERIC_READ,
     0,
     NULL,
@@ -67,7 +67,7 @@ int sqliteOsFileExists(const char *zFilename){
     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
     NULL
   );
-  if( h!=INVALID_FILE_HANDLE ){
+  if( h!=INVALID_HANDLE_VALUE ){
     CloseHandle(h);
     return 1;
   }
@@ -253,8 +253,11 @@ int sqliteOsTempFileName(char *zBuf){
   }while( access(zBuf,0)==0 );
 #endif
 #if OS_WIN
+  static char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
   int i, j;
-  HANDLE h;
   char zTempPath[SQLITE_TEMPNAME_SIZE];
   GetTempPath(SQLITE_TEMPNAME_SIZE-30, zTempPath);
   for(;;){
@@ -297,7 +300,7 @@ int sqliteOsRead(OsFile id, void *pBuf, int amt){
   return got==amt ? SQLITE_OK : SQLITE_IOERR;
 #endif
 #if OS_WIN
-  int got;
+  DWORD got;
   if( !ReadFile(id, pBuf, amt, &got, 0) ){
     got = 0;
   }
@@ -317,7 +320,7 @@ int sqliteOsWrite(OsFile id, const void *pBuf, int amt){
   return SQLITE_OK;
 #endif
 #if OS_WIN
-  int wrote;
+  DWORD wrote;
   if( !WriteFile(id, pBuf, amt, &wrote, 0) || wrote<amt ){
     return SQLITE_FULL;
   }

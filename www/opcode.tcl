@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.4 2000/07/30 20:04:43 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.5 2001/09/20 01:44:44 drh Exp $}
 
 puts {<html>
 <head>
@@ -60,7 +60,11 @@ available.  If you are looking for a narrative description
 of how the virtual machine works, you should read the tutorial
 and not this document.  Once you have a basic idea of what the
 virtual machine does, you can refer back to this document for
-the details on a particular opcode.</p>
+the details on a particular opcode.
+Unfortunately, the virtual machine tutorial was written for
+SQLite version 1.0.  There are substantial changes in the virtual
+machine for version 2.0 and the document has not been updated.
+</p>
 
 <p>The source code to the virtual machine is in the <b>vdbe.c</b> source
 file.  All of the opcode definitions further down in this document are
@@ -84,23 +88,27 @@ Execution continues until (1) a Halt instruction is seen, or
 (2) the program counter becomes one greater than the address of
 last instruction, or (3) there is an execution error.
 When the virtual machine halts, all memory
-that it allocated is released and all database files it may
-have had open are closed.</p>
+that it allocated is released and all database cursors it may
+have had open are closed.  If the execution stopped due to an
+error, any pending transactions are terminated and changes made
+to the database are rollback.</p>
 
 <p>The virtual machine also contains an operand stack of unlimited
 depth.  Many of the opcodes use operands from the stack.  See the
 individual opcode descriptions for details.</p>
 
 <p>The virtual machine can have zero or more cursors.  Each cursor
-is a pointer into a single GDBM file.  There can be multiple
-cursors pointing at the same file.
-All cursors operate independently, even cursors pointing to the same file.
-The only way for the virtual machine to interact with a GDBM
+is a pointer into a single table or index within the database.
+There can be multiple cursors pointing at the same index or table.
+All cursors operate independently, even cursors pointing to the same
+indices or tables.
+The only way for the virtual machine to interact with a database
 file is through a cursor.
 Instructions in the virtual
 machine can create a new cursor (Open), read data from a cursor
-(Field), advance the cursor to the next entry in the GDBM file
-(Next), and many other operations.  All cursors are automatically
+(Column), advance the cursor to the next entry in the table
+(Next) or index (NextIdx), and many other operations.
+All cursors are automatically
 closed when the virtual machine terminates.</p>
 
 <p>The virtual machine contains an arbitrary number of fixed memory
@@ -119,14 +127,12 @@ historical accident.  In practice no more than one sorter
 
 <p>The virtual machine may contain an arbitrary number of "Lists".
 Each list stores a list of integers.  Lists are used to hold the
-GDBM keys for records of a GDBM file that needs to be modified.
-(See the <a href="fileformat.html">file format</a> description for
-more information on GDBM keys in SQLite table files.)
+rowids for records of a database table that needs to be modified.
 The WHERE clause of an UPDATE or DELETE statement scans through
-the table and writes the GDBM key of every record to be modified
+the table and writes the rowid of every record to be modified
 into a list.  Then the list is played back and the table is modified
 in a separate step.  It is necessary to do this in two steps since
-making a change to a GDBM file can alter the scan order.</p>
+making a change to a database table can alter the scan order.</p>
 
 <p>The virtual machine can contain an arbitrary number of "Sets".
 Each set holds an arbitrary number of strings.  Sets are used to
@@ -174,23 +180,30 @@ Code {
 $ (((sqlite ex1)))
 sqlite> (((.explain)))
 sqlite> (((explain delete from tbl1 where two<20;)))
-addr  opcode        p1     p2     p3          
-----  ------------  -----  -----  -------------------------------------   
-0     ListOpen      0      0                  
-1     Open          0      1      tbl1        
-2     Next          0      9                  
-3     Field         0      1                  
-4     Integer       20     0                  
-5     Ge            0      2                  
-6     Key           0      0                  
-7     ListWrite     0      0                  
-8     Goto          0      2                  
-9     Noop          0      0                  
-10    ListRewind    0      0                  
-11    ListRead      0      14                 
-12    Delete        0      0                  
-13    Goto          0      11                 
-14    ListClose     0      0                  
+addr  opcode        p1     p2     p3                                      
+----  ------------  -----  -----  ----------------------------------------
+0     Transaction   0      0                                              
+1     VerifyCookie  990    0                                              
+2     ListOpen      0      0                                              
+3     Open          0      31     tbl1                                    
+4     VerifyCookie  990    0                                              
+5     Rewind        0      0                                              
+6     Next          0      13                                             
+7     Column        0      1                                              
+8     Integer       20     0                                              
+9     Ge            0      6                                              
+10    Recno         0      0                                              
+11    ListWrite     0      0                                              
+12    Goto          0      6                                              
+13    Close         0      0                                              
+14    ListRewind    0      0                                              
+15    Open          0      31                                             
+16    ListRead      0      20                                             
+17    MoveTo        0      0                                              
+18    Delete        0      0                                              
+19    Goto          0      16                                             
+20    ListClose     0      0                                              
+21    Commit        0      0                                              
 }
 
 puts {
@@ -202,10 +215,18 @@ viewable.</p>
 <p>If <b>sqlite</b> has been compiled without the "-DNDEBUG=1" option
 (that is, with the NDEBUG preprocessor macro not defined) then you
 can put the SQLite virtual machine in a mode where it will trace its
-execution by writing messages to standard output.  There are special
-comments to turn tracing on and off.  Use the <b>--vdbe-trace-on--</b>
-comment to turn tracing on and the <b>--vdbe-trace-off--</b> comment
-to turn tracing back off.</p>
+execution by writing messages to standard output.  The non-standard
+SQL "PRAGMA" comments can be used to turn tracing on and off.  To
+turn tracing on, enter:
+</p>
+
+<blockquote><pre>
+PRAGMA vdbe_trace=on;
+</pre></blockquote>
+
+<p>
+You can turn tracing back off by entering a similar statement but
+changing the value "on" to "off".</p>
 
 <h2>The Opcodes</h2>
 }

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.17 2001/09/16 00:13:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.18 2001/09/20 01:44:43 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -144,11 +144,11 @@ int sqlite_exec(
 #define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
 #define SQLITE_IOERR     9    /* Some kind of disk I/O error occurred */
 #define SQLITE_CORRUPT   10   /* The database disk image is malformed */
-#define SQLITE_NOTFOUND  11   /* Table or record not found */
+#define SQLITE_NOTFOUND  11   /* (Internal Only) Table or record not found */
 #define SQLITE_FULL      12   /* Insertion failed because database is full */
 #define SQLITE_CANTOPEN  13   /* Unable to open the database file */
 #define SQLITE_PROTOCOL  14   /* Database lock protocol error */
-#define SQLITE_EMPTY     15   /* Database table is empty */
+#define SQLITE_EMPTY     15   /* (Internal Only) Database table is empty */
 #define SQLITE_SCHEMA    16   /* The database schema changed */
 #define SQLITE_TOOBIG    17   /* Too much data for one row of a table */
 

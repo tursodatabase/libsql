@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.23 2001/09/19 13:58:44 drh Exp $
+** @(#) $Id: pager.c,v 1.24 2001/09/20 01:44:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -327,7 +327,7 @@ static int pager_playback(Pager *pPager){
   */
   for(i=nRec-1; i>=0; i--){
     /* Seek to the beginning of the segment */
-    off_t ofst;
+    int ofst;
     ofst = i*sizeof(PageRecord) + sizeof(aMagic) + sizeof(Pgno);
     rc = sqliteOsSeek(pPager->jfd, ofst);
     if( rc!=SQLITE_OK ) break;

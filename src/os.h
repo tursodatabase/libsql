@@ -31,9 +31,11 @@
 #endif
 
 #if OS_WIN
+#include <windows.h>
+#include <winbase.h>
   typedef HANDLE OsFile;
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
-# deifne SQLITE_MIN_SLEEP_MS 1
+# define SQLITE_MIN_SLEEP_MS 1
 #endif
 
 int sqliteOsDelete(const char*);

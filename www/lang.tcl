@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.8 2001/05/21 13:45:10 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.9 2001/09/20 01:44:44 drh Exp $}
 
 puts {<html>
 <head>
@@ -49,6 +49,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {EXPLAIN explain}
   {expression expr}
   {{BEGIN TRANSACTION} transaction}
+  {PRAGMA pragma}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -116,40 +117,29 @@ ROLLBACK [TRANSACTION [<name>]]
 }
 
 puts {
-<p>Support for transactions in SQLite is thin.  Transactions
-may not be nested.  The GDBM backend does not support an atomic
-commit or rollback, but it does support locking.  (Note, however,
-that the compilation instructions on this website for using GDBM under 
-Windows will disable locking.)  The MEM backend has no transaction
-support and silently ignores all requests to begin or end
-transactions.  A new backend is currently under
-development for SQLite 2.0 that will support both atomic commits and rollback,
-but that driver is not yet available.</p>
+<p>Beginning in version 2.0, SQLite supports transactions with
+rollback and atomic commit.  However, only a single level of
+transaction is required.  In other words, transactions
+may not be nested.
+</p>
 
-<p>Under GDBM, starting a transaction just locks all
-tables that are either read or written during the course of the
-transaction.  The locks are removed when the transaction is ended.
-Thus, transactions can be used to make changes to multiple tables
-with the assurance that other threads or processes will not touch
-the same tables at the same time. For example:</p>
+<p>
+No changes can be made to the database except within a transaction.
+Any command that changes the database (basically, any SQL command
+other than SELECT) will automatically starts a transaction if
+when is not already in effect.  Automatically stared transactions
+are committed at the conclusion of the command.
+</p>
 
-<blockquote>
-<b>SELECT data1, data2, ... FROM table1 WHERE ...;</b><br>
-... Make a decision to update the table ...<br>
-<b>BEGIN TRANSACTION;<br>
-SELECT data1, data2, ... FROM table1 WHERE ...;</b><br>
-... Make sure no other process changed the table in between
-the first SELECT and the BEGIN TRANSACTION. ...<br>
-<b>UPDATE table1 SET data1=... WHERE ...;<br>
-END TRANSACTION;</b>
-</blockquote>
-
-<p>In the code above, the <b>table1</b> table is locked by
-the second SELECT because of the transaction.  Thus we know that
-no other process has modified <b>table1</b> when the UPDATE
-occurs.  The END TRANSACTION releases the lock.</p>
+<p>
+Transactions can be started manually using the BEGIN TRANSACTION
+command. Such transactions persist until a COMMIT or ROLLBACK
+or until an error occurs or the database is closed.  If an
+error is encountered or the database is closed, the transaction
+is automatically rolled back.  The END TRANSACTION command is
+a alias for COMMIT.
+</p>
 }
-
 
 Section COPY copy
 
@@ -195,8 +185,8 @@ by the name of the new index, the keyword "ON", the name of a previously
 created table that is to be indexed, and a parenthesized list of names of
 columns in the table that are used for the index key.
 Each column name can be followed by one of the "ASC" or "DESC" keywords
-to indicate sort order, but since GDBM does not implement ordered keys,
-these keywords are ignored.</p>
+to indicate sort order, but the sort order is ignored in the current
+implementation.</p>
 
 <p>There are no arbitrary limits on the number of indices that can be
 attached to a single table, nor on the number of columns in an index.</p>
@@ -248,14 +238,11 @@ is stored as null-terminated strings.  The constraints are also ignored,
 except that the PRIMARY KEY constraint will cause an index to be automatically
 created that implements the primary key and the DEFAULT constraint
 which specifies a default value to use when doing an INSERT.
-The name of the primary
-key index will be the table name
-with "<b>__primary_key</b>" appended.  The index used for a primary key
-does not show up in the <b>sqlite_master</b> table, but a GDBM file is
-created for that index.</p>
+</p>
 
-<p>There are no arbitrary limits on the size of columns, on the number
-of columns, or on the number of constraints in a table.</p>
+<p>There are no arbitrary limits on the number
+of columns or on the number of constraints in a table.
+The total amount of data in a single row is limited to 65535 bytes.</p>
 
 <p>The exact text
 of each CREATE TABLE statement is stored in the <b>sqlite_master</b>
@@ -524,8 +511,8 @@ the FROM keyword.  If more than one table is specified, then the
 query is against the join of the various tables.</p>
 
 <p>The WHERE clause can be used to limit the number of rows over
-which the query operates.  Note that because of limitations of
-GDBM (it uses hashing not b-trees) indices will only be used to
+which the query operates.  In the current implementation,
+indices will only be used to
 optimize the query if WHERE expression contains equality comparisons
 connected by the AND operator.</p>
 
@@ -585,15 +572,21 @@ VACUUM [<index-or-table-name>]
 puts {
 <p>The VACUUM command is an SQLite extension modelled after a similar
 command found in PostgreSQL.  If VACUUM is invoked with the name of a
-table or index, then the <b>gdbm_reorganize()</b> function is called
-on the corresponding GDBM file.  If VACUUM is invoked with no arguments,
-then <b>gdbm_reorganize()</b> is called for every GDBM file in the database.</p>
+table or index then it is suppose to clean up the named table or index.
+In the current implementation, VACUUM is a no-op.
+</p>
+}
 
-<p>It is a good idea to run VACUUM after creating large indices,
-especially indices where a single index value refers to many
-entries in the data table.  Reorganizing these indices will make
-the underlying GDBM file much smaller and will help queries to
-run much faster.</p>
+Section PRAGMA pragma
+
+Syntax {sql-statement} {
+PRAGMA <name> = <value>
+}
+
+puts {
+<p>The PRAGMA command is used to modify the operation of the SQLite library.
+Additional documentation on the PRAMGA statement is forthcoming.
+</p>
 }
 
 puts {

@@ -1,13 +1,12 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.38 2001/09/16 00:13:29 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.39 2001/09/20 01:44:44 drh Exp $}
 
 puts {<html>
-<head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
+<head><title>SQLite: An SQL Database Engine In A C Library</title></head>
 <body bgcolor=white>
-<h1 align=center>SQLite: An SQL Database Library Built Atop
-<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a></h1>
+<h1 align=center>SQLite: An SQL Database Engine In A C Library</h1>
 <p align=center>}
 puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
 set vers [lindex $argv 0]
@@ -25,6 +24,10 @@ access program (<a href="sqlite.html">sqlite</a>) that can
 be used to administer an SQLite database and which serves as
 an example of how to use the SQLite library.</p>
 
+<p>SQLite is <b>not</b> a client library used to connect to a
+big database server.  SQLite <b>is</b> the server.  The SQLite
+library reads and writes directly to and from the database files
+on disk.</p>
 
 <h2>Features</h2>
 
@@ -40,18 +43,48 @@ three functions and one opaque structure.</li>
 <li>A TCL interface to the library is included.</li>
 <li>A TCL-based test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
-<li>Built and tested under Linux, HPUX, and WinNT.</li>
+<li>Built and tested under Linux and Win2K.</li>
+<li>No copyright on the source code.  Use for any purpose.</li>
 </ul>
 </p>
+}
 
-<h2>Current Status</h2>
+puts {<h2>Download</h2>}
+
+puts {<table align="right"hspace="10">
+<tr><td align="center" bgcolor="#8ee5ee">
+<table border="2"><tr><td align="center">
+<a href="sqlite.tar.gz"><big><b>Download SQLite<br>}
+puts "version $vers<br>"
+puts {Now!
+</td></tr></table>
+</td></tr>
+</table>}
+
+
+puts {<p>You can download a tarball containing all source
+code for SQLite
+}
+puts "version $vers"
+puts {
+(including the TCL scripts that generate the
+HTML files for this website) at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
+puts "This is a [file size sqlite.tar.gz] byte download."
+set historical [lsort -dict [glob -nocomplain sqlite-*.tar.gz]]
+if {$historical!=""} {
+  puts {The following historical versions of SQLite are also available:}
+  foreach x $historical {
+     puts "<a href=\"$x\">$x</a> ([file size $x] bytes)"
+  }
+}
+puts {</p>}
+
+puts {<h2>Current Status</h2>
 
 <p>A <a href="changes.html">change history</a> is available online.
 There are currently no <em>known</em> memory leaks or debilitating bugs
 in the library.  <a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">Gcov</a>
-is used to verify test coverage.  The test suite currently exercises
-all code except for a few areas which are unreachable or which are
-only reached when <tt>malloc()</tt> fails.</p>
+is used to verify test coverage.</p>
 
 <p>Known bugs:</p>
 
@@ -75,16 +108,10 @@ only reached when <tt>malloc()</tt> fails.</p>
 <li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.</li>
 <li>The <a href="c_interface.html">C/C++ Interface</a>.</li>
 <li>The <a href="tclsqlite.html">Tcl Interface</a>.</li>
-<li>The <a href="fileformat.html">file format</a> used by SQLite databases.</li>
 <li>The <a href="arch.html">Architecture of the SQLite Library</a> describes
     how the library is put together.</li>
 <li>A description of the <a href="opcode.html">virtual machine</a> that
     SQLite uses to access the database.</li>
-<li>Instructions for building 
-    <a href="crosscompile.html">SQLite for Win98/NT</a> using the
-    MinGW cross-compiler.  There are also instructions on
-    <a href="mingw.html">building MinGW</a> in case you don't already have
-    a copy.</li>
 </ul>
 </p>
 
@@ -93,28 +120,22 @@ another important source of information. </p>
 }
 
 puts {
-<a name="mailinglist" />
-<h2>Mailing List</h2>
-<p>A mailing list has been set up on eGroups for discussion of
-SQLite design issues or for asking questions about SQLite.</p>
-<center>
-<a href="http://www.egroups.com/subscribe/sqlite">
+<table align="right">
+<tr><td align="center">
+<a href="http://www.yahoogroups.com/subscribe/sqlite">
 <img src="http://www.egroups.com/img/ui/join.gif" border=0 /><br />
 Click to subscribe to sqlite</a>
-</center>}
-
-puts {<h2>Download</h2>
-
-<p>You can download a tarball containing all source
-code for SQLite
+</td></tr>
+</table>
+<a name="mailinglist" />
+<h2>Mailing List</h2>
+<p>A mailing list has been set up on yahooGroups for discussion of
+SQLite design issues or for asking questions about SQLite.</p>
 }
-puts "version $vers"
-puts {
-(including the TCL scripts that generate the
-HTML files for this website) at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
-puts "This is a [file size sqlite.tar.gz] byte download."
-puts {</p>
 
+puts {<h2>Building From Source</h2>}
+
+puts {
 <p>To build sqlite under Unix, just unwrap the tarball, create a separate
 build directory, run configure from the build directory and then
 type "make".  For example:</p>
@@ -128,8 +149,13 @@ $ make                       <i> Builds "sqlite" and "libsqlite.a" </i>
 $ make test                  <i> Optional: run regression tests </i>
 </pre></blockquote>
 
-<p>Instructions for building SQLite for WindowsNT are
-found <a href="crosscompile.html">here</a>.
+<p>The Win2K version of SQLite was built using the MingW32 cross-compiler
+running under Linux.  You have to give the configure script hints to make
+this work.  Read the comments at the beginning of the file
+<b>configure.in</b> for additional information.  The source code is
+general enough that it should be possible to compile SQLite using VC++,
+though the author has no desire or motivation to try.
+</p>
 }
 
 puts {<h2>Command-line Usage Example</h2>
@@ -161,15 +187,6 @@ base$
 puts {<h2>Related Sites</h2>
 
 <ul>
-<li><p>The canonical site for GDBM is
-       <a href="http://www.gnu.org/software/gdbm/gdbm.html">
-       http://www.gnu.org/software/gdbm/gdbm.html</a></p></li>
-
-<li><p>Someday, we would like to port SQLite to work with
-       the Berkeley DB library in addition to GDBM.  For information
-       about the Berkeley DB library, see
-       <a href="http://www.sleepycat.com/">http://www.sleepycat.com/</a>
-       </p></li>
 
 <li><p>Here is a good <a href="http://w3.one.net/~jhoffman/sqltut.htm">
        tutorial on SQL</a>.</p></li>
@@ -180,11 +197,6 @@ puts {<h2>Related Sites</h2>
 <li><p><a href="http://www.chordate.com/gadfly.html">Gadfly</a> is another
        SQL library, similar to SQLite, except that Gadfly is written
        in Python.</p></li>
-
-<li><p><a href="http://www.vogel-nest.de/tcl/qgdbm.html">Qgdbm</a> is
-       a wrapper around 
-       <a href="http://www.vogel-nest.de/tcl/tclgdbm.html">tclgdbm</a>
-       that provides SQL-like access to GDBM files.</p></li>
 </ul>}
 
 puts {
