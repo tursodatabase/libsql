@@ -1,9 +1,9 @@
-C Implement\sindices\sthat\soccur\sin\ssort\sorder\sand\sthe\sLIMIT...OFFSET\sclause\nof\sSELECT\sstatements.\s(CVS\s301)
-D 2001-11-06T04:00:18
+C Added\ssupport\sfor\sLIMIT.\s(CVS\s302)
+D 2001-11-06T14:10:42
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION b3711dc07b598efaec968538f5ed3069a5908f2d
+F VERSION f97b0f811f25906ab78f1aa58910db5757c64c58
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -21,7 +21,7 @@ F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 2789f704777d29b1b38e62e4798381ce602dc0fb
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
-F src/build.c 8857c16751a5e9c5ee845e1b3cf2da78935c8cb3
+F src/build.c 65438f92919d92c7974e995f2d654b6cb3280a50
 F src/delete.c a4c13c444544f315703d5fbed6419c8786f66581
 F src/expr.c 2dd0252ced345c1e64db015b94dc6b5d7a57eef3
 F src/hash.c d0110e6da70a5962e21575fccf8206f7d9d75e00
@@ -36,7 +36,7 @@ F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c 008d79761a6025e4db490c8f732e32631c0c57c3
+F src/select.c da60dfdd449ef6a71225878aca130b86f298c76e
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
@@ -65,6 +65,7 @@ F test/index.test 6076f29d09a4f26a2efa38b03b8cc338b8662f0e
 F test/insert.test a5c122aa726f1cef6f07d6767e8fd6f220994c11
 F test/insert2.test d6901ca931e308fea7fca8c95ebe7dc957cc9fc2
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
+F test/limit.test a930f3eba2a7691c8397ccab33710b931589566a
 F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
 F test/main.test 1626345b5f630c5398eede500d9354813b76b0fd
 F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
@@ -74,7 +75,7 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test 427bfbbe9684fe7a2f851aa05badaae6d4972ce8
-F test/select1.test 75af194669ff9f4fe42c6fd070d9ec3b268354bb
+F test/select1.test 13aa0a5545209a73d1073cb9062a1b9075b734ae
 F test/select2.test f91c903e2bab0e9d45274855a981eebf846d5e32
 F test/select3.test 5e1fe8e5a4e63fb2827ab3b89527e0fd4ae35259
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
@@ -102,19 +103,19 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 797653d0d9988c716beb8a33e54b682fe53a4b93
+F www/changes.tcl 983aecfb6bdfdd2b44c32de59414029da80ca164
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/index.tcl b9d166d09fa4237d31d78be49f2b8b205e6e7678
-F www/lang.tcl 1899ec4fb77cd69de335ebd998253de869f34d8e
+F www/lang.tcl f0e953bfeaaba4c33117ec4bca639dd71ba0e13e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 7989ed328316454c7030dcdb60f09ae1e017286d
 F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 7dd58fad398253608f55867cf1c7749eef005657
-R 6b4d638b3f341e525807c77329fb1dc1
+P eb07768ae93f14bf6c150c1c4329948857a9d01c
+R 69771165b17aa31e07d926b8467701a7
 U drh
-Z e5f14755e0856f35fd2676a75ffdfa97
+Z 0d18c20a2f39388100a44f2bc527ed6b

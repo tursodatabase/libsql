@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.46 2001/11/06 04:00:19 drh Exp $
+** $Id: select.c,v 1.47 2001/11/06 14:10:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -364,8 +364,13 @@ static int fillInColumnList(Parse *pParse, Select *p){
         if( pExpr==0 ) break;
         pExpr->pLeft = sqliteExpr(TK_ID, 0, 0, 0);
         if( pExpr->pLeft==0 ){ sqliteExprDelete(pExpr); break; }
-        pExpr->pLeft->token.z = pTab->zName;
-        pExpr->pLeft->token.n = strlen(pTab->zName);
+        if( pTabList->a[i].zAlias && pTabList->a[i].zAlias[0] ){
+          pExpr->pLeft->token.z = pTabList->a[i].zAlias;
+          pExpr->pLeft->token.n = strlen(pTabList->a[i].zAlias);
+        }else{
+          pExpr->pLeft->token.z = pTab->zName;
+          pExpr->pLeft->token.n = strlen(pTab->zName);
+        }
         pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
         if( pExpr->pRight==0 ){ sqliteExprDelete(pExpr); break; }
         pExpr->pRight->token.z = pTab->aCol[j].zName;
