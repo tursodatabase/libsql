@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.101 2004/09/06 17:24:13 drh Exp $
+** $Id: test1.c,v 1.102 2004/09/07 16:19:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1646,6 +1646,33 @@ static int test_bind_parameter_name(
 }
 
 /*
+** Usage:   sqlite3_bind_parameter_index  STMT  NAME
+**
+** Return the index of the wildcard called NAME.  Return 0 if there is
+** no such wildcard.
+*/
+static int test_bind_parameter_index(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT NAME");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  Tcl_SetObjResult(interp, 
+     Tcl_NewIntObj(
+       sqlite3_bind_parameter_index(pStmt,Tcl_GetString(objv[2]))
+     )
+  );
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_errcode DB
 **
 ** Return the string representation of the most recent sqlite3_* API
@@ -2463,6 +2490,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_blob",             test_bind_blob     ,0 },
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
+     { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},
      { "sqlite3_errcode",               test_errcode       ,0 },
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },

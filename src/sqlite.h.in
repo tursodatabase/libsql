@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.118 2004/09/06 17:34:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.119 2004/09/07 16:19:54 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -640,11 +640,18 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 
 /*
 ** Return the name of the i-th parameter.  Ordinary wildcards "?" are
-** nameless and a NULL is returned.  For wildcards of the form :N: or
+** nameless and a NULL is returned.  For wildcards of the form :N or
 ** $vvvv the complete text of the wildcard is returned.
 ** NULL is returned if the index is out of range.
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
+
+/*
+** Return the index of a parameter with the given name.  The name
+** must match exactly.  If no parameter with the given name is found,
+** return 0.
+*/
+int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
 /*
 ** Return the number of columns in the result set returned by the compiled

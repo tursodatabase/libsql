@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.18 2004/08/25 04:07:03 drh Exp $
+# $Id: bind.test,v 1.19 2004/09/07 16:19:54 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -115,6 +115,18 @@ do_test bind-2.1.3 {
 do_test bind-2.1.4 {
   sqlite3_bind_parameter_name $VM 3
 } {${x}}
+do_test bind-2.1.5 {
+  sqlite3_bind_parameter_index $VM {$one}
+} 1
+do_test bind-2.1.6 {
+  sqlite3_bind_parameter_index $VM {$::two}
+} 2
+do_test bind-2.1.7 {
+  sqlite3_bind_parameter_index $VM {${x}}
+} 3
+do_test bind-2.1.8 {
+  sqlite3_bind_parameter_index $VM {:hi}
+} 0
 
 # 32 bit Integers
 do_test bind-2.2 {
@@ -280,10 +292,98 @@ do_test bind-8.15 {
   catch { sqlite3_bind_double $VM 4 6.0 }
 } {1}
 
-do_test bind-9.99 {
+do_test bind-8.99 {
   sqlite3_finalize $VM
 } SQLITE_OK
 
+do_test bind-9.1 {
+  execsql {
+    CREATE TABLE t2(a,b,c,d,e,f);
+  }
+  set rc [catch {
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a) VALUES(?0)
+    } -1 TAIL
+  } msg]
+  lappend rc $msg
+} {1 {(1) variable number must be between ?1 and ?999}}
+do_test bind-9.2 {
+  set rc [catch {
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a) VALUES(?1000)
+    } -1 TAIL
+  } msg]
+  lappend rc $msg
+} {1 {(1) variable number must be between ?1 and ?999}}
+do_test bind-9.3 {
+  set VM [
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a,b) VALUES(?1,?999)
+    } -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $VM
+} {999}
+catch {sqlite3_finalize $VM}
+do_test bind-9.4 {
+  set VM [
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a,b,c,d) VALUES(?1,?999,?,?)
+    } -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $VM
+} {1001}
+do_test bind-9.5 {
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 999 999
+  sqlite3_bind_int $VM 1000 1000
+  sqlite3_bind_int $VM 1001 1001
+  sqlite3_step $VM
+} SQLITE_DONE
+do_test bind-9.6 {
+  sqlite3_finalize $VM
+} SQLITE_OK
+do_test bind-9.7 {
+  execsql {SELECT * FROM t2}
+} {1 999 1000 1001 {} {}}
 
+do_test bind-10.1 {
+  catch {sqlite3_finalize $VM}
+  set VM [
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a,b,c,d,e,f) VALUES(:abc,$abc,:abc,$ab,$abc,:abc)
+    } -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $VM
+} 3
+do_test bind-10.2 {
+  sqlite3_bind_parameter_index $VM :abc
+} 1
+do_test bind-10.3 {
+  sqlite3_bind_parameter_index $VM {$abc}
+} 2
+do_test bind-10.4 {
+  sqlite3_bind_parameter_index $VM {$ab}
+} 3
+do_test bind-10.5 {
+  sqlite3_bind_parameter_name $VM 1
+} :abc
+do_test bind-10.6 {
+  sqlite3_bind_parameter_name $VM 2
+} {$abc}
+do_test bind-10.7 {
+  sqlite3_bind_parameter_name $VM 3
+} {$ab}
+do_test bind-10.8 {
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_step $VM
+} SQLITE_DONE
+do_test bind-10.9 {
+  sqlite3_finalize $VM
+} SQLITE_OK
+do_test bind-10.10 {
+  execsql {SELECT * FROM t2}
+} {1 999 1000 1001 {} {} 1 2 1 3 2 1}
 
 finish_test

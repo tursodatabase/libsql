@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.85 2004/09/06 17:24:13 drh Exp $
+** $Id: tokenize.c,v 1.86 2004/09/07 16:19:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -371,7 +371,8 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     }
     case '?': {
       *tokenType = TK_VARIABLE;
-      return 1;
+      for(i=1; isdigit(z[i]); i++){}
+      return i;
     }
     case ':': {
       for(i=1; (z[i]&0x80)!=0 || isIdChar[z[i]]; i++){}
@@ -474,7 +475,13 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     return 1;
   }
-  pParse->sLastToken.dyn = 0;
+  assert( pParse->sLastToken.dyn==0 );
+  assert( pParse->pNewTable==0 );
+  assert( pParse->pNewTrigger==0 );
+  assert( pParse->nVar==0 );
+  assert( pParse->nVarExpr==0 );
+  assert( pParse->nVarExprAlloc==0 );
+  assert( pParse->apVarExpr==0 );
   pParse->zTail = pParse->zSql = zSql;
   while( sqlite3_malloc_failed==0 && zSql[i]!=0 ){
     assert( i>=0 );
@@ -541,14 +548,9 @@ abort_parse:
     sqlite3VdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }
-  if( pParse->pNewTable ){
-    sqlite3DeleteTable(pParse->db, pParse->pNewTable);
-    pParse->pNewTable = 0;
-  }
-  if( pParse->pNewTrigger ){
-    sqlite3DeleteTrigger(pParse->pNewTrigger);
-    pParse->pNewTrigger = 0;
-  }
+  sqlite3DeleteTable(pParse->db, pParse->pNewTable);
+  sqlite3DeleteTrigger(pParse->pNewTrigger);
+  sqliteFree(pParse->apVarExpr);
   if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
     pParse->rc = SQLITE_ERROR;
   }

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.160 2004/09/06 17:24:13 drh Exp $
+** $Id: expr.c,v 1.161 2004/09/07 16:19:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -271,6 +271,75 @@ Expr *sqlite3ExprFunction(ExprList *pList, Token *pToken){
   }
   pNew->span = pNew->token;
   return pNew;
+}
+
+/*
+** Assign a variable number to an expression that encodes a wildcard
+** in the original SQL statement.  
+**
+** Wildcards consisting of a single "?" are assigned the next sequential
+** variable number.
+**
+** Wildcards of the form "?nnn" are assigned the number "nnn".  We make
+** sure "nnn" is not too be to avoid a denial of service attack when
+** the SQL statement comes from an external source.
+**
+** Wildcards of the form ":aaa" or "$aaa" are assigned the same number
+** as the previous instance of the same wildcard.  Or if this is the first
+** instance of the wildcard, the next sequenial variable number is
+** assigned.
+*/
+void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
+  Token *pToken;
+  if( pExpr==0 ) return;
+  pToken = &pExpr->token;
+  assert( pToken->n>=1 );
+  assert( pToken->z!=0 );
+  assert( pToken->z[0]!=0 );
+  if( pToken->n==1 ){
+    /* Wildcard of the form "?".  Assign the next variable number */
+    pExpr->iTable = ++pParse->nVar;
+  }else if( pToken->z[0]=='?' ){
+    /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
+    ** use it as the variable number */
+    int i;
+    pExpr->iTable = i = atoi(&pToken->z[1]);
+    if( i<1 || i>SQLITE_MAX_VARIABLE_NUMBER ){
+      sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
+          SQLITE_MAX_VARIABLE_NUMBER);
+    }
+    if( i>pParse->nVar ){
+      pParse->nVar = i;
+    }
+  }else{
+    /* Wildcards of the form ":aaa" or "$aaa".  Reuse the same variable
+    ** number as the prior appearance of the same name, or if the name
+    ** has never appeared before, reuse the same variable number
+    */
+    int i, n;
+    n = pToken->n;
+    for(i=0; i<pParse->nVarExpr; i++){
+      Expr *pE;
+      if( (pE = pParse->apVarExpr[i])!=0
+          && pE->token.n==n
+          && memcmp(pE->token.z, pToken->z, n)==0 ){
+        pExpr->iTable = pE->iTable;
+        break;
+      }
+    }
+    if( i>=pParse->nVarExpr ){
+      pExpr->iTable = ++pParse->nVar;
+      if( pParse->nVarExpr>=pParse->nVarExprAlloc-1 ){
+        pParse->nVarExprAlloc += pParse->nVarExprAlloc + 10;
+        pParse->apVarExpr = sqliteRealloc(pParse->apVarExpr,
+                       pParse->nVarExprAlloc*sizeof(pParse->apVarExpr[0]) );
+      }
+      if( !sqlite3_malloc_failed ){
+        assert( pParse->apVarExpr!=0 );
+        pParse->apVarExpr[pParse->nVarExpr++] = pExpr;
+      }
+    }
+  } 
 }
 
 /*
