@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.3 2002/08/24 18:24:58 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.4 2003/06/30 10:36:23 drh Exp $}
 
 puts {<html>
 <head>
@@ -100,8 +100,9 @@ puts {
 
 <p>
 If you find other SQL92 features that SQLite does not support, please
-send e-mail to <a href="mailto:drh@hwaci.com">drh@hwaci.com</a> so they
-can be added to this list.
+add them to the Wiki page at 
+<a href="http://cvs.hwaci.com/sqlite/wiki?p=UnsupportedSql">
+http://cvs.hwaci.com/sqlite/wiki?p=Unsupported</a>
 </p>
 <p><hr /></p>
 <p><a href="index.html"><img src="/goback.jpg" border=0 />
