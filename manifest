@@ -1,6 +1,6 @@
-C Skip\sbigfile.test\son\sMac\sOS\sX.\s\sDarwin\sdoes\snot\shandle\slarge\ssparse\sfiles\nefficiently\sand\sso\sthis\stest\stakes\sa\sreally\slong\stime.\s(CVS\s1779)
-D 2004-06-30T11:28:13
-F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
+C Add\sthe\scrashtest\starget\sto\sMakefile.in.\s\sAdd\sLL\ssuffix\sto\slong\slong\sconstants\nin\sthe\svdbe.\s\sComment\schanges\sto\svdbeaux.c.\s(CVS\s1780)
+D 2004-06-30T11:41:55
+F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 34009b3459559db331ace9f14f8bb7f94cfbb787
@@ -73,11 +73,11 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
 F src/util.c b267d0fe10cffa3301fe9fab6592a6808a38bce6
 F src/vacuum.c b8546f4921719458cc537b9e736df52a8256399c
-F src/vdbe.c 4629151c9995b8b6a895c42de8808df1969bdcc7
+F src/vdbe.c 4e756ef91c9eb9ffd3dd5be17bda9d5bf2755a3e
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h 7160653a006b6d2c4a00d204112a095bdf842ab6
 F src/vdbeapi.c 7c3c3d818fad427881b65c51999d06bf393ebeaf
-F src/vdbeaux.c f97b4b5e922fe74152e084bcea7b4468156bde50
+F src/vdbeaux.c 4de85e30ca4a83ea0a45eceb7e88ac7a48f4c237
 F src/vdbemem.c 053f8adcb644bca1c1e4ad08f4016cb7ee6bf1b8
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0fedf74e30026afe2c8caacff3d62cf5c1b1f528
-R f265cdcdb3e5a78d515ac3546d48dc57
+P a3c38a6d286ab37a9cdcc8b2243ea3258cc61ff0
+R f3dc92bc418113954f3540b52554dd34
 U drh
-Z 2c3428bd0192b36fbf29e70c8322b7d0
+Z 78fbbed92b6b5d99dca4a6b3397cf5af

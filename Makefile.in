@@ -382,7 +382,15 @@ testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.l
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la libsqlite3.la $(LIBTCL)
 
-fulltest:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@
+crashtest@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
+	$(LTLINK) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
+		-o crashtest \
+		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
+		libsqlite3.la $(LIBTCL) $(THREADLIB)
+
+
+
+fulltest:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@ crashtest@TARGET_EXEEXT@
 	./testfixture $(TOP)/test/all.test
 
 test:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@

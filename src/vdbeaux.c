@@ -1092,7 +1092,10 @@ static int vdbeCommit(sqlite *db){
 
 /*
 ** Find every active VM other than pVdbe and change its status to
-** aborted.  This happens when on VM causes a rollback.
+** aborted.  This happens when one VM causes a rollback due to an
+** ON CONFLICT ROLLBACK clause (for example).  The other VMs must be
+** aborted so that they do not have data rolled out from underneath
+** them leading to a segfault.
 */
 static void abortOtherActiveVdbes(Vdbe *pVdbe){
   Vdbe *pOther;
