@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.9 2002/06/16 04:54:29 chw Exp $
+** $Id: test1.c,v 1.10 2002/06/26 20:06:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -91,7 +91,7 @@ static int test_exec_printf(
        " DB FORMAT STRING", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   Tcl_DStringInit(&str);
   rc = sqlite_exec_printf(db, argv[2], exec_printf_cb, &str, &zErr, argv[3]);
   sprintf(zBuf, "%d", rc);
@@ -128,7 +128,7 @@ static int test_get_table_printf(
        " DB FORMAT STRING", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   Tcl_DStringInit(&str);
   rc = sqlite_get_table_printf(db, argv[2], &aResult, &nRow, &nCol, 
                &zErr, argv[3]);
@@ -169,7 +169,7 @@ static int test_last_rowid(
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " DB\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   sprintf(zBuf, "%d", sqlite_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
@@ -192,7 +192,7 @@ static int sqlite_test_close(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   sqlite_close(db);
   return TCL_OK;
 }
@@ -251,7 +251,7 @@ static int sqlite_test_create_function(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   sqlite_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
   sqlite_create_function(db, "x_sqlite_exec", 1, sqliteExecFunc, db);
   return TCL_OK;
@@ -300,7 +300,7 @@ static int sqlite_test_create_aggregate(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)atoi(argv[1]);
+  db = (sqlite*)strtol(argv[1], 0, 0);
   sqlite_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
   sqlite_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
   return TCL_OK;

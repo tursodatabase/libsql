@@ -1,5 +1,5 @@
-C The\sdatatype\sof\sthe\si-th\scolumn\sin\sthe\sresult\sset\sis\sgiven\sby\sthe\nazColName(argc+1+i)\sparameter\sto\sthe\scallback.\s(CVS\s647)
-D 2002-06-26T02:45:04
+C In\sthe\sTCL\sinterface,\sthe\s"sqlite"\scommand\snow\salways\sreturns\sthe\saddress\nof\sthe\s"sqlite*"\spointer\sthat\ssqlite_open()\sreturns.\s\sIt\sused\sto\sdo\sthis\nonly\swhen\scompiled\swith\sthe\sSQLITE_TEST\smacro\sdefined.\s(CVS\s648)
+D 2002-06-26T20:06:06
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -43,10 +43,10 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
 F src/sqliteInt.h 3d1d86cb9ea4f06e49af855267478e3661abcd1b
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
-F src/tclsqlite.c 7bbdf1873d843cc8706826987268322798aaf6cd
-F src/test1.c 5cc4f0bbf38237e04e1b2077e285b41bfb4c4cbf
+F src/tclsqlite.c e932591c0bb522b0a35ea7dc861c623ccb2e3aa8
+F src/test1.c 29ed719d8ce890733fbeadb53cacc4e542d423ed
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
-F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
+F src/test3.c 72ac6a9017a70e542954907a1dfd87ab6f7824e3
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c ac4c46f190346b87da54ec3e2605d160af80c619
 F src/trigger.c d88ab4d68d68955c217b38fb6717e090fbbf54a4
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ac64065d0c5e2de0f71238d55b2c14bb5c5c194c
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 332164d6455658ca633a1dc49811d9fb0fd4b01c
-R 3d4733b97443e83d7b5e9cd5d5bb7f60
+P bdb006b809feb0f29342eb5138c0884d34e95599
+R e92040518419bf0a2b83e28d532bff32
 U drh
-Z 6ddcef67963fec9e5770a42b675dc0e1
+Z c4b8650cbf25de8c257848e151944d66

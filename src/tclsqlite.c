@@ -11,11 +11,11 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.33 2002/06/25 19:31:18 drh Exp $
+** $Id: tclsqlite.c,v 1.34 2002/06/26 20:06:06 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
-#include "sqlite.h"
+#include "sqliteInt.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
@@ -543,6 +543,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   int mode;
   SqliteDb *p;
   char *zErrMsg;
+  char zBuf[80];
   if( argc==2 ){
     if( strcmp(argv[1],"-encoding")==0 ){
       Tcl_AppendResult(interp,sqlite_encoding,0);
@@ -583,18 +584,19 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   }
   Tcl_CreateObjCommand(interp, argv[1], DbObjCmd, (char*)p, DbDeleteCmd);
 
+  /* The return value is the value of the sqlite* pointer
+  */
+  sprintf(zBuf, "%p", p->db);
+  Tcl_AppendResult(interp, zBuf, 0);
+
   /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
-  ** SQL function and return an integer which is the memory address of
-  ** the underlying sqlite* pointer.
+  ** SQL function.
   */
 #ifdef SQLITE_TEST
   {
-    char zBuf[40];
     extern void Md5_Register(sqlite*);
     Md5_Register(p->db);
-    sprintf(zBuf, "%d", (int)p->db);
-    Tcl_AppendResult(interp, zBuf, 0);
-  }
+   }
 #endif  
   return TCL_OK;
 }
