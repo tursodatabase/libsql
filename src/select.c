@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.92 2002/06/06 23:42:28 drh Exp $
+** $Id: select.c,v 1.93 2002/06/14 22:38:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -294,6 +294,7 @@ static void sqliteAggregateInfoReset(Parse *pParse){
 */
 static int selectInnerLoop(
   Parse *pParse,          /* The parser context */
+  Select *p,              /* The complete select statement being coded */
   ExprList *pEList,       /* List of values being extracted */
   int srcTab,             /* Pull data from this table */
   int nColumn,            /* Number of columns in the source table */
@@ -307,6 +308,18 @@ static int selectInnerLoop(
   Vdbe *v = pParse->pVdbe;
   int i;
   if( v==0 ) return 0;
+
+  /* If there was a LIMIT clause on the SELECT statement, then do the check
+  ** to see if this row should be output.
+  */
+  if( pOrderBy==0 ){
+    if( p->nOffset>0 ){
+      sqliteVdbeAddOp(v, OP_LimitCk, 1, iContinue);
+    }
+    if( p->nLimit>0 ){
+      sqliteVdbeAddOp(v, OP_LimitCk, 0, iBreak);
+    }
+  }
 
   /* Pull the requested columns.
   */
@@ -419,7 +432,8 @@ static int selectInnerLoop(
   /* If none of the above, send the data to the callback function.
   */
   {
-    sqliteVdbeAddOp(v, OP_Callback, nColumn, iBreak);
+    assert( eDest==SRT_Callback );
+    sqliteVdbeAddOp(v, OP_Callback, nColumn, 0);
   }
   return 0;
 }
@@ -430,12 +444,18 @@ static int selectInnerLoop(
 ** we need to run the sorter and output the results.  The following
 ** routine generates the code needed to do that.
 */
-static void generateSortTail(Vdbe *v, int nColumn){
+static void generateSortTail(Select *p, Vdbe *v, int nColumn){
   int end = sqliteVdbeMakeLabel(v);
   int addr;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
-  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, end);
+  if( p->nOffset>0 ){
+    sqliteVdbeAddOp(v, OP_LimitCk, 1, addr);
+  }
+  if( p->nLimit>0 ){
+    sqliteVdbeAddOp(v, OP_LimitCk, 0, end);
+  }
+  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0);
   sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   sqliteVdbeResolveLabel(v, end);
   sqliteVdbeAddOp(v, OP_SortReset, 0, 0);
@@ -975,7 +995,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         iCont = sqliteVdbeMakeLabel(v);
         sqliteVdbeAddOp(v, OP_Rewind, unionTab, iBreak);
         iStart = sqliteVdbeCurrentAddr(v);
-        rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
+        rc = selectInnerLoop(pParse, p, 0, unionTab, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
         if( rc ) return 1;
@@ -984,7 +1004,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         sqliteVdbeResolveLabel(v, iBreak);
         sqliteVdbeAddOp(v, OP_Close, unionTab, 0);
         if( p->pOrderBy ){
-          generateSortTail(v, p->pEList->nExpr);
+          generateSortTail(p, v, p->pEList->nExpr);
         }
       }
       break;
@@ -1031,7 +1051,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       sqliteVdbeAddOp(v, OP_Rewind, tab1, iBreak);
       iStart = sqliteVdbeAddOp(v, OP_FullKey, tab1, 0);
       sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont);
-      rc = selectInnerLoop(pParse, 0, tab1, p->pEList->nExpr,
+      rc = selectInnerLoop(pParse, p, 0, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
       if( rc ) return 1;
@@ -1041,7 +1061,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       sqliteVdbeAddOp(v, OP_Close, tab2, 0);
       sqliteVdbeAddOp(v, OP_Close, tab1, 0);
       if( p->pOrderBy ){
-        generateSortTail(v, p->pEList->nExpr);
+        generateSortTail(p, v, p->pEList->nExpr);
       }
       break;
     }
@@ -1176,6 +1196,14 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 **
 **   (7)  The subquery has a FROM clause.
 **
+**   (8)  The subquery does not use LIMIT or the outer query is not a join.
+**
+**   (9)  The subquery does not use LIMIT or the outer query does not use
+**        aggregates.
+**
+**  (10)  The subquery does not use aggregates or the outer query does not
+**        use LIMIT.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -1207,9 +1235,10 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   if( pSubSrc->nSrc!=1 ) return 0;
-  if( pSub->isDistinct && pSrc->nSrc>1 ) return 0;
-  if( pSub->isDistinct && isAgg ) return 0;
-  if( p->isDistinct && subqueryIsAgg ) return 0;
+  if( (pSub->isDistinct || pSub->nLimit>=0) &&  (pSrc->nSrc>1 || isAgg) ){
+     return 0;
+  }
+  if( (p->isDistinct || p->nLimit) && subqueryIsAgg ) return 0;
 
   /* If we reach this point, it means flattening is permitted for the
   ** i-th entry of the FROM clause in the outer query.
@@ -1267,6 +1296,14 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
     }
   }
   p->isDistinct = p->isDistinct || pSub->isDistinct;
+  if( pSub->nLimit>=0 ){
+    if( p->nLimit<0 ){
+      p->nLimit = pSub->nLimit;
+    }else if( p->nLimit+p->nOffset > pSub->nLimit+pSub->nOffset ){
+      p->nLimit = pSub->nLimit + pSub->nOffset - p->nOffset;
+    }
+  }
+  p->nOffset += pSub->nOffset;
   if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
     sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
   }
@@ -1386,7 +1423,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   eList.a = &eListItem;
   eList.a[0].pExpr = pExpr;
   cont = sqliteVdbeMakeLabel(v);
-  selectInnerLoop(pParse, &eList, base, 1, 0, -1, eDest, iParm, cont, cont);
+  selectInnerLoop(pParse, p, &eList, base, 1, 0, -1, eDest, iParm, cont, cont);
   sqliteVdbeResolveLabel(v, cont);
   sqliteVdbeAddOp(v, OP_Close, base, 0);
   return 1;
@@ -1720,8 +1757,8 @@ int sqliteSelect(
   ** aggregates
   */
   if( !isAgg ){
-    if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
-                    pWInfo->iContinue, pWInfo->iBreak) ){
+    if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, eDest,
+                    iParm, pWInfo->iContinue, pWInfo->iBreak) ){
        goto select_end;
     }
   }
@@ -1779,8 +1816,8 @@ int sqliteSelect(
     if( pHaving ){
       sqliteExprIfFalse(pParse, pHaving, startagg, 1);
     }
-    if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
-                    startagg, endagg) ){
+    if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, eDest,
+                    iParm, startagg, endagg) ){
       goto select_end;
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, startagg);
@@ -1793,7 +1830,7 @@ int sqliteSelect(
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
-    generateSortTail(v, pEList->nExpr);
+    generateSortTail(p, v, pEList->nExpr);
   }
 
 

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.155 2002/06/11 02:25:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.156 2002/06/14 22:38:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1080,6 +1080,7 @@ static char *zOpName[] = { 0,
   "Gt",                "Ge",                "IsNull",            "NotNull",
   "Negative",          "And",               "Or",                "Not",
   "Concat",            "Noop",              "Function",          "Limit",
+  "LimitCk",
 };
 
 /*
@@ -1585,18 +1586,11 @@ case OP_ColumnName: {
   break;
 }
 
-/* Opcode: Callback P1 P2 *
+/* Opcode: Callback P1 * *
 **
 ** Pop P1 values off the stack and form them into an array.  Then
 ** invoke the callback function using the newly formed array as the
 ** 3rd parameter.
-**
-** If the offset counter (set by the OP_Limit opcode) is positive,
-** then decrement the counter and do not invoke the callback.
-** 
-** If the callback is invoked, then after the callback returns
-** decrement the limit counter.  When the limit counter reaches
-** zero, jump to address P2.
 */
 case OP_Callback: {
   int i = p->tos - pOp->p1 + 1;
@@ -1612,22 +1606,12 @@ case OP_Callback: {
   }
   zStack[p->tos+1] = 0;
   if( xCallback!=0 ){
-    if( p->iOffset>0 ){
-      p->iOffset--;
-    }else{
-      if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
-      if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
-        rc = SQLITE_ABORT;
-      }
-      if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-      p->nCallback++;
-      if( p->iLimit>0 ){
-        p->iLimit--;
-        if( p->iLimit==0 ){
-          pc = pOp->p2 - 1;
-        }
-      }
+    if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
+    if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
+      rc = SQLITE_ABORT;
     }
+    if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
+    p->nCallback++;
   }
   PopStack(p, pOp->p1);
   if( sqlite_malloc_failed ) goto no_mem;
@@ -3917,6 +3901,35 @@ case OP_Limit: {
   break;
 }
 
+/* Opcode: LimitCk P1 P2 *
+**
+** If P1 is 1, then check to see if the offset counter (set by the
+** P2 argument of OP_Limit) is positive.  If the offset counter is
+** positive then decrement the counter and jump immediately to P2.
+** Otherwise fall straight through.
+**
+** If P1 is 0, then check the value of the limit counter (set by the
+** P1 argument of OP_Limit).  If the limit counter is negative or
+** zero then jump immedately to P2.  Otherwise decrement the limit
+** counter and fall through.
+*/
+case OP_LimitCk: {
+  if( pOp->p1 ){
+    if( p->iOffset ){
+      p->iOffset--;
+      pc = pOp->p2 - 1;
+    }
+  }else{
+    if( p->iLimit>0 ){
+      p->iLimit--;
+    }else{
+      pc = pOp->p2 - 1;
+    }
+  }
+  break;
+}
+
+
 /* Opcode: ListWrite * * *
 **
 ** Write the integer on the top of the stack
@@ -4207,40 +4220,22 @@ case OP_SortNext: {
   break;
 }
 
-/* Opcode: SortCallback P1 P2 *
+/* Opcode: SortCallback P1 * *
 **
 ** The top of the stack contains a callback record built using
 ** the SortMakeRec operation with the same P1 value as this
 ** instruction.  Pop this record from the stack and invoke the
 ** callback on it.
-**
-** If the offset counter (set by the OP_Limit opcode) is positive,
-** then decrement the counter and do not invoke the callback.
-** 
-** If the callback is invoked, then after the callback returns
-** decrement the limit counter.  When the limit counter reaches
-** zero, jump to address P2.
 */
 case OP_SortCallback: {
   int i = p->tos;
   VERIFY( if( i<0 ) goto not_enough_stack; )
   if( xCallback!=0 ){
-    if( p->iOffset>0 ){
-      p->iOffset--;
-    }else{
-      if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
-      if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName)!=0 ){
-        rc = SQLITE_ABORT;
-      }
-      if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-      p->nCallback++;
-      if( p->iLimit>0 ){
-        p->iLimit--;
-        if( p->iLimit==0 ){
-          pc = pOp->p2 - 1;
-        }
-      }
+    if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
+    if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName)!=0 ){
+      rc = SQLITE_ABORT;
     }
+    if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
     p->nCallback++;
   }
   POPSTACK;
