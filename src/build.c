@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.240 2004/07/22 01:19:35 drh Exp $
+** $Id: build.c,v 1.241 2004/07/24 03:30:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -231,8 +231,8 @@ void sqlite3UnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
 
 /*
 ** Erase all schema information from the in-memory hash tables of
-** a sigle database.  This routine is called to reclaim memory
-** before the closes.  It is also called during a rollback
+** a single database.  This routine is called to reclaim memory
+** before the database closes.  It is also called during a rollback
 ** if there were schema changes during the transaction or if a
 ** schema-cookie mismatch occurs.
 **
@@ -1169,14 +1169,16 @@ void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
 ** Measure the number of characters needed to output the given
 ** identifier.  The number returned includes any quotes used
 ** but does not include the null terminator.
+**
+** The estimate is conservative.  It might be larger that what is
+** really needed.
 */
 static int identLength(const char *z){
   int n;
-  int needQuote = 0;
   for(n=0; *z; n++, z++){
-    if( *z=='\'' ){ n++; needQuote=1; }
+    if( *z=='"' ){ n++; }
   }
-  return n + needQuote*2;
+  return n + 2;
 }
 
 /*
@@ -1191,12 +1193,12 @@ static void identPut(char *z, int *pIdx, char *zIdent){
   }
   needQuote =  zIdent[j]!=0 || isdigit(zIdent[0])
                   || sqlite3KeywordCode(zIdent, j)!=TK_ID;
-  if( needQuote ) z[i++] = '\'';
+  if( needQuote ) z[i++] = '"';
   for(j=0; zIdent[j]; j++){
     z[i++] = zIdent[j];
-    if( zIdent[j]=='\'' ) z[i++] = '\'';
+    if( zIdent[j]=='"' ) z[i++] = '"';
   }
-  if( needQuote ) z[i++] = '\'';
+  if( needQuote ) z[i++] = '"';
   z[i] = 0;
   *pIdx = i;
 }
@@ -1209,16 +1211,18 @@ static void identPut(char *z, int *pIdx, char *zIdent){
 static char *createTableStmt(Table *p){
   int i, k, n;
   char *zStmt;
-  char *zSep, *zSep2, *zEnd;
+  char *zSep, *zSep2, *zEnd, *z;
+  Column *pCol;
   n = 0;
-  for(i=0; i<p->nCol; i++){
-    n += identLength(p->aCol[i].zName);
-    if( p->aCol[i].zType ){
-      n += (strlen(p->aCol[i].zType) + 1);
+  for(pCol = p->aCol, i=0; i<p->nCol; i++, pCol++){
+    n += identLength(pCol->zName);
+    z = pCol->zType;
+    if( z ){
+      n += (strlen(z) + 1);
     }
   }
   n += identLength(p->zName);
-  if( n<40 ){
+  if( n<50 ){
     zSep = "";
     zSep2 = ",";
     zEnd = ")";
@@ -1234,15 +1238,15 @@ static char *createTableStmt(Table *p){
   k = strlen(zStmt);
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
-  for(i=0; i<p->nCol; i++){
+  for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
     strcpy(&zStmt[k], zSep);
     k += strlen(&zStmt[k]);
     zSep = zSep2;
-    identPut(zStmt, &k, p->aCol[i].zName);
-    if( p->aCol[i].zType ){
+    identPut(zStmt, &k, pCol->zName);
+    if( (z = pCol->zType)!=0 ){
       zStmt[k++] = ' ';
-      strcpy(&zStmt[k], p->aCol[i].zType);
-      k += strlen(p->aCol[i].zType);
+      strcpy(&zStmt[k], z);
+      k += strlen(z);
     }
   }
   strcpy(&zStmt[k], zEnd);
@@ -1305,12 +1309,11 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
 
     if( p->pSelect==0 ){
       /* A regular table */
-      sqlite3VdbeOp3(v, OP_CreateTable, 0, p->iDb, (char*)&p->tnum, P3_POINTER);
+      sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0);
     }else{
       /* A view */
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
     }
-    p->tnum = 0;
 
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
 
@@ -1371,13 +1374,15 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     sqlite3ChangeCookie(db, v, p->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+    sqlite3VdbeOp3(v, OP_ParseSchema, p->iDb, 0,
+        sqlite3MPrintf("tbl_name='%q'",p->zName), P3_DYNAMIC);
 
     sqlite3EndWriteOperation(pParse);
   }
 
   /* Add the table to the in-memory representation of the database.
   */
-  if( pParse->explain==0 && pParse->nErr==0 ){
+  if( db->init.busy && pParse->nErr==0 ){
     Table *pOld;
     FKey *pFKey;
     pOld = sqlite3HashInsert(&db->aDb[p->iDb].tblHash, 
@@ -1564,26 +1569,6 @@ static void sqliteViewResetAll(sqlite *db, int idx){
   }
   DbClearProperty(db, idx, DB_UnresetViews);
 }
-
-#if 0
-/*
-** Given a token, look up a table with that name.  If not found, leave
-** an error for the parser to find and return NULL.
-*/
-Table *sqlite3TableFromToken(Parse *pParse, Token *pTok){
-  char *zName;
-  Table *pTab;
-  zName = sqlite3NameFromToken(pTok);
-  if( zName==0 ) return 0;
-  pTab = sqlite3FindTable(pParse->db, zName, 0);
-  sqliteFree(zName);
-  if( pTab==0 ){
-    sqlite3ErrorMsg(pParse, "no such table: %T", pTok);
-    pParse->checkSchema = 1;
-  }
-  return pTab;
-}
-#endif
 
 /*
 ** This routine is called to do the work of a DROP TABLE statement.
@@ -2099,7 +2084,7 @@ void sqlite3CreateIndex(
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
-  if( !pParse->explain ){
+  if( db->init.busy ){
     Index *p;
     p = sqlite3HashInsert(&db->aDb[pIndex->iDb].idxHash, 
                          pIndex->zName, strlen(pIndex->zName)+1, pIndex);
@@ -2108,14 +2093,9 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     db->flags |= SQLITE_InternChanges;
-  }
-
-  /* If the db->init.busy is 1 it means we are reading the SQL off the
-  ** "sqlite_master" table on the disk.  So do not write to the disk
-  ** again.  Extract the table number from the db->init.newTnum field.
-  */
-  if( db->init.busy && pTblName!=0 ){
-    pIndex->tnum = db->init.newTnum;
+    if( pTblName!=0 ){
+      pIndex->tnum = db->init.newTnum;
+    }
   }
 
   /* If the db->init.busy is 0 then create the index on disk.  This
@@ -2148,8 +2128,7 @@ void sqlite3CreateIndex(
     sqlite3VdbeOp3(v, OP_String8, 0, 0, "index", P3_STATIC);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, pIndex->zName, 0);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
-    sqlite3VdbeOp3(v, OP_CreateIndex, 0, iDb,(char*)&pIndex->tnum,P3_POINTER);
-    pIndex->tnum = 0;
+    sqlite3VdbeAddOp(v, OP_CreateIndex, iDb, 0);
     if( pTblName ){
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
@@ -2185,11 +2164,11 @@ void sqlite3CreateIndex(
       sqlite3VdbeResolveLabel(v, lbl2);
       sqlite3VdbeAddOp(v, OP_Close, 2, 0);
       sqlite3VdbeAddOp(v, OP_Close, 1, 0);
-    }
-    if( pTblName!=0 ){
       sqlite3ChangeCookie(db, v, iDb);
       sqlite3VdbeAddOp(v, OP_Close, 0, 0);
       sqlite3EndWriteOperation(pParse);
+      sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
+         sqlite3MPrintf("name='%q'", pIndex->zName), P3_DYNAMIC);
     }
   }
 
@@ -2198,19 +2177,21 @@ void sqlite3CreateIndex(
   ** OE_Ignore.  This is necessary for the correct operation of UPDATE
   ** and INSERT.
   */
-  if( onError!=OE_Replace || pTab->pIndex==0
-       || pTab->pIndex->onError==OE_Replace){
-    pIndex->pNext = pTab->pIndex;
-    pTab->pIndex = pIndex;
-  }else{
-    Index *pOther = pTab->pIndex;
-    while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
-      pOther = pOther->pNext;
+  if( db->init.busy || pTblName==0 ){
+    if( onError!=OE_Replace || pTab->pIndex==0
+         || pTab->pIndex->onError==OE_Replace){
+      pIndex->pNext = pTab->pIndex;
+      pTab->pIndex = pIndex;
+    }else{
+      Index *pOther = pTab->pIndex;
+      while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
+        pOther = pOther->pNext;
+      }
+      pIndex->pNext = pOther->pNext;
+      pOther->pNext = pIndex;
     }
-    pIndex->pNext = pOther->pNext;
-    pOther->pNext = pIndex;
+    pIndex = 0;
   }
-  pIndex = 0;
 
   /* Clean up before exiting */
 exit_create_index:
@@ -2244,13 +2225,6 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
       "or PRIMARY KEY constraint cannot be dropped", 0);
     goto exit_drop_index;
   }
-/*
-  if( pIndex->iDb>1 ){
-    sqlite3ErrorMsg(pParse, "cannot alter schema of attached "
-       "databases", 0);
-    goto exit_drop_index;
-  }
-*/
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
@@ -2272,7 +2246,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   if( v ){
     static VdbeOpList dropIndex[] = {
       { OP_Rewind,     0, ADDR(9), 0}, 
-      { OP_String8,     0, 0,       0}, /* 1 */
+      { OP_String8,    0, 0,       0}, /* 1 */
       { OP_MemStore,   1, 1,       0},
       { OP_MemLoad,    1, 0,       0}, /* 3 */
       { OP_Column,     0, 1,       0},

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.28 2004/06/21 07:36:33 danielk1977 Exp $
+# $Id: table.test,v 1.29 2004/07/24 03:30:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -316,39 +316,39 @@ do_test table-8.1.1 {
     SELECT sql FROM sqlite_master WHERE name='t2';
   }
 } {{CREATE TABLE t2(
-  'desc' text,
-  'asc' text,
-  'explain' int,
-  '14_vac' boolean,
+  "desc" text,
+  "asc" text,
+  "explain" int,
+  "14_vac" boolean,
   fuzzy_dog_12 varchar(10),
-  'begin' blob,
-  'end' clob
+  "begin" blob,
+  "end" clob
 )}}
 do_test table-8.2 {
   execsql {
-    CREATE TABLE 't3''xyz'(a,b,c);
-    INSERT INTO [t3'xyz] VALUES(1,2,3);
-    SELECT * FROM [t3'xyz];
+    CREATE TABLE "t3""xyz"(a,b,c);
+    INSERT INTO [t3"xyz] VALUES(1,2,3);
+    SELECT * FROM [t3"xyz];
   }
 } {1 2 3}
 do_test table-8.3 {
   execsql2 {
-    CREATE TABLE [t4'abc] AS SELECT count(*) as cnt, max(b+c) FROM [t3'xyz];
-    SELECT * FROM [t4'abc];
+    CREATE TABLE [t4"abc] AS SELECT count(*) as cnt, max(b+c) FROM [t3"xyz];
+    SELECT * FROM [t4"abc];
   }
 } {cnt 1 max(b+c) 5}
 
 # Update for v3: The declaration type of anything except a column is now a
 # NULL pointer, so the created table has no column types. (Changed result
-# from {{CREATE TABLE 't4''abc'(cnt NUMERIC,'max(b+c)' NUMERIC)}}).
+# from {{CREATE TABLE 't4"abc'(cnt NUMERIC,"max(b+c)" NUMERIC)}}).
 do_test table-8.3.1 {
   execsql {
-    SELECT sql FROM sqlite_master WHERE name='t4''abc'
+    SELECT sql FROM sqlite_master WHERE name='t4"abc'
   }
-} {{CREATE TABLE 't4''abc'(cnt,'max(b+c)')}}
+} {{CREATE TABLE "t4""abc"(cnt,"max(b+c)")}}
 do_test table-8.4 {
   execsql2 {
-    CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3'xyz];
+    CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3"xyz];
     SELECT * FROM t5;
   }
 } {y'all 1}
@@ -356,7 +356,7 @@ do_test table-8.5 {
   db close
   sqlite3 db test.db
   execsql2 {
-    SELECT * FROM [t4'abc];
+    SELECT * FROM [t4"abc];
   }
 } {cnt 1 max(b+c) 5}
 do_test table-8.6 {
@@ -520,5 +520,3 @@ do_test table-12.2 {
 } {{CREATE TABLE t8(b number(5,10),h,i integer,j BLOB)}}
 
 finish_test
-
-

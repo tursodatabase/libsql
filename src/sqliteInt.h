@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.308 2004/07/22 15:02:25 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.309 2004/07/24 03:30:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1160,6 +1160,16 @@ struct DbFixer {
 };
 
 /*
+** A pointer to this structure is used to communicate information
+** from sqlite3Init and OP_ParseSchema into the sqlite3InitCallback.
+*/
+typedef struct {
+  sqlite *db;         /* The database being initialized */
+  char **pzErrMsg;    /* Error message stored here */
+} InitData;
+
+
+/*
  * This global flag is set for performance testing of triggers. When it is set
  * SQLite will perform the overhead of building new and old trigger references 
  * even when no triggers exist
@@ -1210,6 +1220,7 @@ void sqlite3ExprDelete(Expr*);
 ExprList *sqlite3ExprListAppend(ExprList*,Expr*,Token*);
 void sqlite3ExprListDelete(ExprList*);
 int sqlite3Init(sqlite*, char**);
+int sqlite3InitCallback(void*, int, char**, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 void sqlite3ResetInternalSchema(sqlite*, int);
 void sqlite3BeginParse(Parse*,int);

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.403 2004/07/21 02:53:30 drh Exp $
+** $Id: vdbe.c,v 1.404 2004/07/24 03:30:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3670,16 +3670,11 @@ case OP_Clear: {
   break;
 }
 
-/* Opcode: CreateTable * P2 P3
+/* Opcode: CreateTable P1 * *
 **
 ** Allocate a new table in the main database file if P2==0 or in the
 ** auxiliary database file if P2==1.  Push the page number
 ** for the root page of the new table onto the stack.
-**
-** The root page number is also written to a memory location that P3
-** points to.  This is the mechanism is used to write the root page
-** number into the parser's internal data structures that describe the
-** new table.
 **
 ** The difference between a table and an index is this:  A table must
 ** have a 4-byte integer key and can have arbitrary data.  An index
@@ -3687,7 +3682,7 @@ case OP_Clear: {
 **
 ** See also: CreateIndex
 */
-/* Opcode: CreateIndex * P2 P3
+/* Opcode: CreateIndex P1 * *
 **
 ** Allocate a new index in the main database file if P2==0 or in the
 ** auxiliary database file if P2==1.  Push the page number of the
@@ -3699,27 +3694,58 @@ case OP_CreateIndex:
 case OP_CreateTable: {
   int pgno;
   int flags;
-  assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
-  assert( pOp->p2>=0 && pOp->p2<db->nDb );
-  assert( db->aDb[pOp->p2].pBt!=0 );
+  Db *pDb;
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  pDb = &db->aDb[pOp->p1];
+  assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
     /* flags = BTREE_INTKEY; */
     flags = BTREE_LEAFDATA|BTREE_INTKEY;
   }else{
     flags = BTREE_ZERODATA;
   }
-  rc = sqlite3BtreeCreateTable(db->aDb[pOp->p2].pBt, &pgno, flags);
+  rc = sqlite3BtreeCreateTable(pDb->pBt, &pgno, flags);
   pTos++;
   if( rc==SQLITE_OK ){
     pTos->i = pgno;
     pTos->flags = MEM_Int;
-    *(u32*)pOp->p3 = pgno;
-    pOp->p3 = 0;
   }else{
     pTos->flags = MEM_Null;
   }
   break;
 }
+
+/* Opcode: ParseSchema P1 * P3
+**
+** Read and parse all entries from the SQLITE_MASTER table of database P1
+** that match the WHERE clause P3.
+**
+** This opcode invokes the parser to create a new virtual machine,
+** then runs the new virtual machine.  It is thus a reentrant opcode.
+*/
+case OP_ParseSchema: {
+  char *zSql;
+  int iDb = pOp->p1;
+  const char *zMaster;
+  InitData initData;
+
+  assert( iDb>=0 && iDb<db->nDb );
+  zMaster = iDb==1 ? TEMP_MASTER_NAME : MASTER_NAME;
+  initData.db = db;
+  initData.pzErrMsg = &p->zErrMsg;
+  zSql = sqlite3MPrintf(
+     "SELECT name, rootpage, sql, %d FROM '%q'.%s WHERE %s",
+     pOp->p1, db->aDb[iDb].zName, zMaster, pOp->p3);
+  sqlite3SafetyOff(db);
+  assert( db->init.busy==0 );
+  db->init.busy = 1;
+  rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+  db->init.busy = 0;
+  sqlite3SafetyOn(db);
+  sqliteFree(zSql);
+  break;  
+}
+
 
 /* Opcode: IntegrityCk * P2 *
 **

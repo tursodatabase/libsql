@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.3 2004/07/19 17:25:25 drh Exp $
+# $Id: misc4.test,v 1.4 2004/07/24 03:30:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,5 +53,30 @@ do_test misc4-1.2 {
 do_test misc4-1.3 {
   sqlite3_finalize $stmt
 } {SQLITE_SCHEMA}
+
+# Prepare but do not execute various CREATE statements.  Then before
+# those statements are executed, try to use the tables, indices, views,
+# are triggers that were created.
+#
+if 0 {
+do_test misc4-2.1 {
+  set stmt [sqlite3_prepare $DB {CREATE TABLE t3(x);} -1 TAIL]
+  catchsql {
+pragma vdbe_trace=on;
+    INSERT INTO t3 VALUES(1);
+  }
+} {1 {no such table: t3}}
+do_test misc4-2.2 {
+  sqlite3_step $stmt
+} SQLITE_DONE
+do_test misc4-2.3 {
+  sqlite3_finalize $stmt
+} SQLITE_OK
+do_test misc4-2.4 {
+  catchsql {
+    INSERT INTO t3 VALUES(1);
+  }
+} {0 {}}
+}
 
 finish_test

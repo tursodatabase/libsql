@@ -14,20 +14,11 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.246 2004/07/22 01:19:35 drh Exp $
+** $Id: main.c,v 1.247 2004/07/24 03:30:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
 #include <ctype.h>
-
-/*
-** A pointer to this structure is used to communicate information
-** from sqlite3Init into the sqlite3InitCallback.
-*/
-typedef struct {
-  sqlite *db;         /* The database being initialized */
-  char **pzErrMsg;    /* Error message stored here */
-} InitData;
 
 /*
 ** The following constant value is used by the SQLITE_BIGENDIAN and
@@ -49,89 +40,69 @@ static void corruptSchema(InitData *pData, const char *zExtra){
 /*
 ** This is the callback routine for the code that initializes the
 ** database.  See sqlite3Init() below for additional information.
+** This routine is also called from the OP_ParseSchema opcode of the VDBE.
 **
 ** Each callback contains the following information:
 **
-**     argv[0] = "table" or "index" or "view" or "trigger"
-**     argv[1] = name of thing being created
-**     argv[2] = root page number for table or index.  NULL for trigger or view.
-**     argv[3] = SQL text for the CREATE statement.
-**     argv[4] = "1" for temporary files, "0" for main database, "2" or more
+**     argv[0] = name of thing being created
+**     argv[1] = root page number for table or index.  NULL for trigger or view.
+**     argv[2] = SQL text for the CREATE statement.
+**     argv[3] = "1" for temporary files, "0" for main database, "2" or more
 **               for auxiliary database files.
 **
 */
-static
 int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
-  int nErr = 0;
+  sqlite *db = pData->db;
+  int iDb;
 
-  assert( argc==5 );
+  assert( argc==4 );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
-  if( argv[0]==0 ){
+  if( argv[1]==0 || argv[3]==0 ){
     corruptSchema(pData, 0);
     return 1;
   }
-  switch( argv[0][0] ){
-    case 'v':
-    case 'i':
-    case 't': {  /* CREATE TABLE, CREATE INDEX, or CREATE VIEW statements */
-      sqlite *db = pData->db;
-      if( argv[2]==0 || argv[4]==0 ){
-        corruptSchema(pData, 0);
-        return 1;
-      }
-      if( argv[3] && argv[3][0] ){
-        /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
-        ** But because db->init.busy is set to 1, no VDBE code is generated
-        ** or executed.  All the parser does is build the internal data
-        ** structures that describe the table, index, or view.
-        */
-        char *zErr;
-        int rc;
-        assert( db->init.busy );
-        db->init.iDb = atoi(argv[4]);
-        assert( db->init.iDb>=0 && db->init.iDb<db->nDb );
-        db->init.newTnum = atoi(argv[2]);
-        rc = sqlite3_exec(db, argv[3], 0, 0, &zErr);
-        db->init.iDb = 0;
-        if( SQLITE_OK!=rc ){
-          corruptSchema(pData, zErr);
-          sqlite3_free(zErr);
-          return rc;
-        }
-      }else{
-        /* If the SQL column is blank it means this is an index that
-        ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
-        ** constraint for a CREATE TABLE.  The index should have already
-        ** been created when we processed the CREATE TABLE.  All we have
-        ** to do here is record the root page number for that index.
-        */
-        int iDb;
-        Index *pIndex;
-
-        iDb = atoi(argv[4]);
-        assert( iDb>=0 && iDb<db->nDb );
-        pIndex = sqlite3FindIndex(db, argv[1], db->aDb[iDb].zName);
-        if( pIndex==0 || pIndex->tnum!=0 ){
-          /* This can occur if there exists an index on a TEMP table which
-          ** has the same name as another index on a permanent index.  Since
-          ** the permanent table is hidden by the TEMP table, we can also
-          ** safely ignore the index on the permanent table.
-          */
-          /* Do Nothing */;
-        }else{
-          pIndex->tnum = atoi(argv[2]);
-        }
-      }
+  iDb = atoi(argv[3]);
+  assert( iDb>=0 && iDb<db->nDb );
+  if( argv[2] && argv[2][0] ){
+    /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
+    ** But because db->init.busy is set to 1, no VDBE code is generated
+    ** or executed.  All the parser does is build the internal data
+    ** structures that describe the table, index, or view.
+    */
+    char *zErr;
+    int rc;
+    assert( db->init.busy );
+    db->init.iDb = iDb;
+    db->init.newTnum = atoi(argv[1]);
+    rc = sqlite3_exec(db, argv[2], 0, 0, &zErr);
+    db->init.iDb = 0;
+    if( SQLITE_OK!=rc ){
+      corruptSchema(pData, zErr);
+      sqlite3_free(zErr);
+      return rc;
     }
-    break;
-    default: {
-      /* This can not happen! */
-      nErr = 1;
-      assert( nErr==0 );
+  }else{
+    /* If the SQL column is blank it means this is an index that
+    ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
+    ** constraint for a CREATE TABLE.  The index should have already
+    ** been created when we processed the CREATE TABLE.  All we have
+    ** to do here is record the root page number for that index.
+    */
+    Index *pIndex;
+    pIndex = sqlite3FindIndex(db, argv[0], db->aDb[iDb].zName);
+    if( pIndex==0 || pIndex->tnum!=0 ){
+      /* This can occur if there exists an index on a TEMP table which
+      ** has the same name as another index on a permanent index.  Since
+      ** the permanent table is hidden by the TEMP table, we can also
+      ** safely ignore the index on the permanent table.
+      */
+      /* Do Nothing */;
+    }else{
+      pIndex->tnum = atoi(argv[1]);
     }
   }
-  return nErr;
+  return 0;
 }
 
 /*
@@ -147,7 +118,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   BtCursor *curMain;
   int size;
   Table *pTab;
-  char const *azArg[6];
+  char const *azArg[5];
   char zDbNum[30];
   int meta[10];
   InitData initData;
@@ -192,16 +163,15 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* Construct the schema tables.  */
   sqlite3SafetyOff(db);
-  azArg[0] = "table";
-  azArg[1] = zMasterName;
-  azArg[2] = "1";
-  azArg[3] = zMasterSchema;
+  azArg[0] = zMasterName;
+  azArg[1] = "1";
+  azArg[2] = zMasterSchema;
   sprintf(zDbNum, "%d", iDb);
-  azArg[4] = zDbNum;
-  azArg[5] = 0;
+  azArg[3] = zDbNum;
+  azArg[4] = 0;
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
-  rc = sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
+  rc = sqlite3InitCallback(&initData, 4, (char **)azArg, 0);
   if( rc!=SQLITE_OK ){
     sqlite3SafetyOn(db);
     return rc;
@@ -304,14 +274,14 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     /* For an empty database, there is nothing to read */
     rc = SQLITE_OK;
   }else{
-    char *zSql = 0;
+    char *zSql;
+    zSql = sqlite3MPrintf(
+        "SELECT name, rootpage, sql, %s FROM '%q'.%s",
+        zDbNum, db->aDb[iDb].zName, zMasterName);
     sqlite3SafetyOff(db);
-    sqlite3SetString(&zSql, 
-        "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
-        db->aDb[iDb].zName, "\".", zMasterName, (char*)0);
     rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-    sqliteFree(zSql);
     sqlite3SafetyOn(db);
+    sqliteFree(zSql);
     sqlite3BtreeCloseCursor(curMain);
   }
   if( sqlite3_malloc_failed ){
