@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.61 2002/07/13 17:33:45 drh Exp $
+** $Id: shell.c,v 1.62 2002/08/21 11:26:41 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -984,11 +984,8 @@ static char *find_home_dir(void){
 #if !defined(_WIN32) && !defined(WIN32)
   struct passwd *pwent;
   uid_t uid = getuid();
-  while( (pwent=getpwent()) != NULL) {
-    if(pwent->pw_uid == uid) {
-      home_dir = pwent->pw_dir;
-      break;
-    }
+  if( (pwent=getpwuid(uid)) != NULL) {
+    home_dir = pwent->pw_dir;
   }
 #endif
 

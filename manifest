@@ -1,5 +1,5 @@
-C This\sCOLLATE\skeyword\swas\snot\sbeing\sparsed\scorrectly\sinside\sCREATE\sTABLE\nstatements\s-\sit\swas\sbeing\sincluded\sas\spart\sof\sthe\sdatatype.\s\sThis\sfixes\nthe\sproblem.\s(CVS\s722)
-D 2002-08-18T22:41:22
+C Fix\sfor\sticket\s#137:\sUse\sgetpwuid()\sinstead\sof\sgetpwent().\s(CVS\s723)
+D 2002-08-21T11:26:41
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/parse.y 5de87bb0f5cd0245471483b9c8bf26df6a68979f
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c f504cc542229f472b3f15cefe5d6782494ee8d92
-F src/shell.c 37a8405aec5740726c4ee18826c1ff5fd2c29b96
+F src/shell.c 9e9a6eb6bca07f01e6472a603f908a0127ea50ff
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
 F src/sqliteInt.h b40ef4cdcfc98e2e9417e73b896c8b2bfec545eb
@@ -147,7 +147,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P df51cb166bf7c5b8b0530cc86df8d2d68de81a40
-R af4ace67120ef42eca959d81e6a8f302
+P 39bd52d33029233d4b22df08975e9ef3c74c260f
+R 6a1abb62e413c693a06001ba7911a178
 U drh
-Z 388492759bccd0d58f757107b145340a
+Z 8c1950b7c3aa43ff65e154fca595ce49
