@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.4 2000/06/05 18:54:47 drh Exp $
+# $Id: copy.test,v 1.5 2000/06/07 01:27:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -102,11 +102,11 @@ do_test copy-1.7 {
 
 # Try copying into a table that has one or more indices.
 #
-execsql {DELETE FROM test1}
-execsql {CREATE INDEX index1 ON test1(one)}
-execsql {CREATE INDEX index2 ON test1(two)}
-execsql {CREATE INDEX index3 ON test1(three)}
 do_test copy-1.8 {
+  execsql {DELETE FROM test1}
+  execsql {CREATE INDEX index1 ON test1(one)}
+  execsql {CREATE INDEX index2 ON test1(two)}
+  execsql {CREATE INDEX index3 ON test1(three)}
   execsql {COPY test1 from 'data1.txt'}
   execsql {SELECT * FROM test1 WHERE one=11}
 } {11 22 33}
@@ -135,6 +135,20 @@ do_test copy-2.1 {
   execsql {COPY test2 FROM 'data21.txt'}
   execsql {SELECT x from test2}
 } $x
+
+# Test the escape character mechanism
+#
+do_test copy-3.1 {
+  set fd [open data6.txt w]
+  puts $fd "hello\\\tworld\t1"
+  puts $fd "hello\tworld\\\t2"
+  close $fd
+  execsql {
+    CREATE TABLE t1(a text, b text);
+    COPY t1 FROM 'data6.txt';
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {hello {world	2} {hello	world} 1}
 
 # Cleanup 
 #

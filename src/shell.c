@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.9 2000/06/07 00:12:25 drh Exp $
+** $Id: shell.c,v 1.10 2000/06/07 01:27:48 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -122,10 +122,12 @@ static char *one_input_line(const char *zPrior, int isatty){
 ** state and mode information.
 */
 struct callback_data {
+  sqlite *db;        /* The database */
   int cnt;           /* Number of records displayed so far */
   FILE *out;         /* Write results here */
   int mode;          /* An output mode setting */
   int showHeader;    /* True to show column names in List or Column mode */
+  int escape;        /* Escape this character when in MODE_List */
   char separator[20];/* Separator character for MODE_List */
   int colWidth[30];  /* Width of each column when in column mode */
 };
@@ -200,8 +202,20 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }
       }
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%s%s",azArg[i] ? azArg[i] : "",
-             i==nArg-1 ? "\n" : p->separator);
+        char *z = azArg[i];
+        if( z==0 ) z = "";
+        while( *z ){
+          int j;
+          for(j=0; z[j] && z[j]!=p->escape && z[j]!='\\'; j++){}
+          if( j>0 ){
+            fprintf(p->out, "%.*s", j, z);
+          }
+          if( z[j] ){
+            fprintf(p->out, "\\%c", z[j]);
+            z = &z[j+1];
+          }
+        }
+        fprintf(p->out, "%s", i==nArg-1 ? "\n" : p->separator);
       }
       break;
     }
@@ -227,9 +241,35 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 }
 
 /*
+** This is a different callback routine used for dumping the database.
+** Each row received by this callback consists of a table name,
+** the table type ("index" or "table") and SQL to create the table.
+** This routine should print text sufficient to recreate the table.
+*/
+static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
+  struct callback_data *pData = (struct callback_data *)pArg;
+  if( nArg!=3 ) return 1;
+  fprintf(pData->out, "%s;\n", azArg[2]);
+  if( strcmp(azArg[1],"table")==0 ){
+    struct callback_data d2;
+    char zSql[1000];
+    d2 = *pData;
+    d2.mode = MODE_List;
+    strcpy(d2.separator,"\t");
+    fprintf(pData->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
+    sprintf(zSql, "SELECT * FROM '%s'", azArg[0]);
+    sqlite_exec(pData->db, zSql, callback, &d2, 0);
+    fprintf(pData->out, "\\.\n");
+  }
+  fprintf(pData->out, "VACUUM '%s';\n", azArg[2]);
+  return 0;
+}
+
+/*
 ** Text of a help message
 */
 static char zHelp[] = 
+  ".dump ?TABLE? ...      Dump the database in an text format\n"
   ".exit                  Exit this program\n"
   ".explain               Set output mode suitable for EXPLAIN\n"
   ".header ON|OFF         Turn display of headers on or off\n"
@@ -278,6 +318,29 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( nArg==0 ) return;
   n = strlen(azArg[0]);
   c = azArg[0][0];
+ 
+  if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
+    char *zErrMsg = 0;
+    char zSql[1000];
+    if( nArg==1 ){
+      sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
+                    "ORDER BY tbl_name, type DESC, name");
+      sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
+    }else{
+      int i;
+      for(i=1; i<nArg && zErrMsg==0; i++){
+        sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
+                      "WHERE tbl_name LIKE '%.800s'"
+                      "ORDER BY type DESC, name", azArg[i]);
+        sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
+        
+      }
+    }
+    if( zErrMsg ){
+      fprintf(stderr,"Error: %s\n", zErrMsg);
+      free(zErrMsg);
+    }
+  }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
     exit(0);
@@ -320,7 +383,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     data.showHeader = 0;
     data.mode = MODE_List;
     sprintf(zSql, "SELECT name FROM sqlite_master "
-                  "WHERE type='index' AND tbl_name LIKE '%.00s' "
+                  "WHERE type='index' AND tbl_name LIKE '%.800s' "
                   "ORDER BY name", azArg[1]);
     sqlite_exec(db, zSql, callback, &data, &zErrMsg);
     if( zErrMsg ){
@@ -456,7 +519,7 @@ int main(int argc, char **argv){
     fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", argv0);
     exit(1);
   }
-  db = sqlite_open(argv[1], 0666, &zErrMsg);
+  data.db = db = sqlite_open(argv[1], 0666, &zErrMsg);
   if( db==0 ){
     if( zErrMsg ){
       fprintf(stderr,"Unable to open database \"%s\": %s\n", argv[1], zErrMsg);
