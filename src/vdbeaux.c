@@ -679,7 +679,7 @@ void freeAggElem(AggElem *pElem, Agg *pAgg){
   int i;
   for(i=0; i<pAgg->nMem; i++){
     Mem *pMem = &pElem->aMem[i];
-    if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
+    if( pAgg->apFunc && pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
       sqlite3_context ctx;
       ctx.pFunc = pAgg->apFunc[i];
       ctx.s.flags = MEM_Null;

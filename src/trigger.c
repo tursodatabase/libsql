@@ -79,7 +79,7 @@ void sqlite3BeginTrigger(
   ** If sqlite3SrcListLookup() returns 0, indicating the table does not
   ** exist, the error is caught by the block below.
   */
-  if( !pTableName ) goto trigger_cleanup;
+  if( !pTableName || sqlite3_malloc_failed ) goto trigger_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( pName2->n==0 && pTab && pTab->iDb==1 ){
     iDb = 1;

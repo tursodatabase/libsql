@@ -1,5 +1,5 @@
-C Add\scrash.test\sscript.\s(CVS\s1660)
-D 2004-06-22T13:12:52
+C Fix\ssome\ssegfaults\sthat\scould\shave\soccurred\safter\sa\smalloc()\sfailure.\s(CVS\s1661)
+D 2004-06-22T13:22:40
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c baed8f54ea9fb785cb798dc6600b07697b8595d4
+F src/build.c fc0b51748da8bc9c8266fdb36e57d49393793947
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -68,16 +68,16 @@ F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
-F src/trigger.c 368fb2953bef9399273c67bca283914822de8762
+F src/trigger.c 296e888ae931e9774e1761996b2b66db40f7d216
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 5da73f61016b1874d935b522bab6ca8b5aa15216
+F src/vdbe.c 4fd24e030878888962a7da383639eb1af4a0e087
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h 0b8eda5e0a1331d23b38d7888f187119a3491b40
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
-F src/vdbeaux.c 9fe01087f2ddc410827b6e124fc423d429e6f5a1
+F src/vdbeaux.c a7831608f895a4756e937d9a002ef5270ee7a2a0
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P be6bd6c99dde902aafd02d8a72f3d42826caabe8
-R e0f8cd78ed0c1d3c7e04b2acf0370248
-U danielk1977
-Z c3503634057680b2d410b0fe073781d0
+P 64a6d805178af8947ccca19898c06979c226d92b
+R 8a2991bd99cf63f67057ae040d7bd05a
+U drh
+Z 77d0fbc0eeda0f21673a68ba50db4d18

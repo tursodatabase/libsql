@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.385 2004/06/21 11:30:56 danielk1977 Exp $
+** $Id: vdbe.c,v 1.386 2004/06/22 13:22:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -185,20 +185,6 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
   return 0;
 }
 
-/*
-** Get the AggElem currently in focus
-*/
-#if 0
-#define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
-static AggElem *_AggInFocus(Agg *p){
-  HashElem *pElem = sqliteHashFirst(&p->hash);
-  if( pElem==0 ){
-    AggInsert(p,"",1);
-    pElem = sqliteHashFirst(&p->hash);
-  }
-  return pElem ? sqliteHashData(pElem) : 0;
-}
-#endif
 /*
 ** Store a pointer to the AggElem currently in focus in *ppElem. Return
 ** SQLITE_OK if successful, otherwise an error-code.
@@ -4223,7 +4209,7 @@ case OP_AggReset: {
   if( pOp->p1 ){
     rc = sqlite3VdbeAggReset(0, &p->agg, (KeyInfo *)pOp->p3);
     p->agg.nMem = pOp->p2;    /* Agg.nMem is used by AggInsert() */
-    AggInsert(&p->agg, 0, 0);
+    rc = AggInsert(&p->agg, 0, 0);
   }else{
     rc = sqlite3VdbeAggReset(db, &p->agg, (KeyInfo *)pOp->p3);
     p->agg.nMem = pOp->p2;
