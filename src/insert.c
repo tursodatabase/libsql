@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.28 2001/12/22 14:49:25 drh Exp $
+** $Id: insert.c,v 1.29 2001/12/22 21:48:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -142,7 +142,7 @@ void sqliteInsert(
         if( sqliteStrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
           pColumn->a[i].idx = j;
           if( j==pTab->iPKey ){
-            keyColumn = j;
+            keyColumn = i;
           }
           break;
         }
