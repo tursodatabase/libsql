@@ -1,5 +1,5 @@
-C Minor\scoding\sfix\sin\sgetting\sthe\swindows\splatform\sversion,\swhen\smultithreading\s(CVS\s761)
-D 2002-10-17T09:01:32
+C Fix\sthe\sURL\sfor\spointing\sto\sMinGW\son\sthe\shomepage.\s(CVS\s762)
+D 2002-10-19T20:13:51
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -138,7 +138,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 207d3e31597c63ed3bbecd58aaeaa38c53d39dd4
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
-F www/index.tcl 190f767c4b0bf44f75bf4af023d644c3e7a1e579
+F www/index.tcl c93b864e3c7313bbe5f86eec571479d438307173
 F www/lang.tcl 6be4254a751ab183ec974fe65375f50230c777f3
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 83add34f64895a4b465881213eba82f3b1f5c964
-R b18c7ccdbae2c5e8036c38df73751405
-U mike
-Z c44f29d11b8dd47ea375422490d2c34d
+P b53ab71d074ada47ce22bd161f6aee24587302af
+R dc777f5c50257e5bd8bd8e95ead8ade9
+U drh
+Z 2951b597bc23253105199ba2fa6ecd1d
