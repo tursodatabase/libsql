@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.245 2004/07/19 17:25:25 drh Exp $
+** $Id: main.c,v 1.246 2004/07/22 01:19:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -821,6 +821,22 @@ void *sqlite3_commit_hook(
 ** the connection is closed.)  If zFilename is NULL then the database
 ** is for temporary use only and is deleted as soon as the connection
 ** is closed.
+**
+** A temporary database can be either a disk file (that is automatically
+** deleted when the file is closed) or a set of red-black trees held in memory,
+** depending on the values of the TEMP_STORE compile-time macro and the
+** db->temp_store variable, according to the following chart:
+**
+**       TEMP_STORE     db->temp_store     Location of temporary database
+**       ----------     --------------     ------------------------------
+**           0               any             file
+**           1                1              file
+**           1                2              memory
+**           1                0              file
+**           2                1              file
+**           2                2              memory
+**           2                0              memory
+**           3               any             memory
 */
 int sqlite3BtreeFactory(
   const sqlite *db,	    /* Main database when opening aux otherwise 0 */
@@ -830,20 +846,41 @@ int sqlite3BtreeFactory(
   Btree **ppBtree           /* Pointer to new Btree object written here */
 ){
   int btree_flags = 0;
+  int rc;
+  int useMem = 0;
   
   assert( ppBtree != 0);
   if( omitJournal ){
     btree_flags |= BTREE_OMIT_JOURNAL;
   }
-  if( !zFilename || !strcmp(zFilename, ":memory:") ){
-    /* If zFilename is NULL or the magic string ":memory:" then the
-    ** new btree storest data in main memory, not a file.
-    */
+  if( zFilename==0 ){
+#ifndef TEMP_STORE
+# define TEMP_STORE 2
+#endif
+#if TEMP_STORE==0
+    useMem = 0;
+#endif
+#if TEMP_STORE==1
+    useMem = db->temp_store==2;
+#endif
+#if TEMP_STORE==2
+    useMem = db->temp_store!=1;
+#endif
+#if TEMP_STORE==3
+    useMem = 1;
+#endif
+  }
+  if( (zFilename && strcmp(zFilename, ":memory:")==0)
+         || (zFilename==0 && useMem) ){
     btree_flags |= BTREE_MEMORY;
   }
 
-  return sqlite3BtreeOpen(zFilename, ppBtree, nCache, btree_flags,
-      (void *)&db->busyHandler);
+  rc = sqlite3BtreeOpen(zFilename, ppBtree, btree_flags);
+  if( rc==SQLITE_OK ){
+    sqlite3BtreeSetBusyHandler(*ppBtree, (void*)&db->busyHandler);
+    sqlite3BtreeSetCacheSize(*ppBtree, nCache);
+  }
+  return rc;
 }
 
 /*

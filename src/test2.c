@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.23 2004/06/21 18:14:47 drh Exp $
+** $Id: test2.c,v 1.24 2004/07/22 01:19:35 drh Exp $
 */
 #include "os.h"
 #include "sqliteInt.h"
@@ -56,6 +56,11 @@ static char *errorName(int rc){
 }
 
 /*
+** Page size and reserved size used for testing.
+*/
+static int test_pagesize = 1024;
+
+/*
 ** Usage:   pager_open FILENAME N-PAGE
 **
 ** Open a new pager
@@ -76,11 +81,13 @@ static int pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlite3pager_open(&pPager, argv[1], nPage, 0, 1, 0);
+  rc = sqlite3pager_open(&pPager, argv[1], 0, 1);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
+  sqlite3pager_set_cachesize(pPager, nPage);
+  sqlite3pager_set_pagesize(pPager, test_pagesize);
   sprintf(zBuf,"0x%x",(int)pPager);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
@@ -468,8 +475,8 @@ static int page_write(
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
-  strncpy((char*)pPage, argv[2], SQLITE_USABLE_SIZE-1);
-  ((char*)pPage)[SQLITE_USABLE_SIZE-1] = 0;
+  strncpy((char*)pPage, argv[2], test_pagesize-1);
+  ((char*)pPage)[test_pagesize-1] = 0;
   return TCL_OK;
 }
 
@@ -526,7 +533,6 @@ static int fake_big_file(
 */
 int Sqlitetest2_Init(Tcl_Interp *interp){
   extern int sqlite3_io_error_pending;
-  char zBuf[100];
   static struct {
     char *zName;
     Tcl_CmdProc *xProc;
@@ -554,11 +560,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   }
   Tcl_LinkVar(interp, "sqlite_io_error_pending",
      (char*)&sqlite3_io_error_pending, TCL_LINK_INT);
-  sprintf(zBuf, "%d", SQLITE_PAGE_SIZE);
-  Tcl_SetVar(interp, "SQLITE_PAGE_SIZE", zBuf, TCL_GLOBAL_ONLY); 
-  sprintf(zBuf, "%d", SQLITE_PAGE_RESERVE);
-  Tcl_SetVar(interp, "SQLITE_PAGE_RESERVE", zBuf, TCL_GLOBAL_ONLY); 
-  sprintf(zBuf, "%d", SQLITE_USABLE_SIZE);
-  Tcl_SetVar(interp, "SQLITE_USABLE_SIZE", zBuf, TCL_GLOBAL_ONLY); 
+  Tcl_LinkVar(interp, "pager_pagesize",
+     (char*)&test_pagesize, TCL_LINK_INT);
   return TCL_OK;
 }

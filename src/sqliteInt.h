@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.306 2004/07/20 12:45:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.307 2004/07/22 01:19:35 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -139,7 +139,23 @@ extern const int sqlite3one;
 typedef struct sqlite sqlite;
 
 /*
-** Defer sourcing vdbe.h until after the "u8" typedef is defined.
+** An instance of the following structure is used to store the busy-handler
+** callback for a given sqlite handle. 
+**
+** The sqlite.busyHandler member of the sqlite struct contains the busy
+** callback for the database handle. Each pager opened via the sqlite
+** handle is passed a pointer to sqlite.busyHandler. The busy-handler
+** callback is currently invoked only from within pager.c.
+*/
+typedef struct BusyHandler BusyHandler;
+struct BusyHandler {
+  int (*xFunc)(void *,int);  /* The busy callback */
+  void *pArg;                /* First arg to busy callback */
+};
+
+/*
+** Defer sourcing vdbe.h and btree.h until after the "u8" and 
+** "BusyHandler typedefs.
 */
 #include "vdbe.h"
 #include "btree.h"
@@ -262,7 +278,6 @@ typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
-typedef struct BusyHandler BusyHandler;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -279,8 +294,8 @@ struct Db {
   Hash idxHash;        /* All (named) indices indexed by name */
   Hash trigHash;       /* All triggers indexed by name */
   Hash aFKey;          /* Foreign keys indexed by to-table */
-  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u16 flags;           /* Flags associated with this database */
+  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at synching data to disk */
   int cache_size;      /* Number of pages to use in the cache */
   void *pAux;          /* Auxiliary data.  Usually NULL */
@@ -310,20 +325,6 @@ struct Db {
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
 
 #define SQLITE_UTF16NATIVE (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
-
-/*
-** An instance of the following structure is used to store the busy-handler
-** callback for a given sqlite handle. 
-**
-** The sqlite.busyHandler member of the sqlite struct contains the busy
-** callback for the database handle. Each pager opened via the sqlite
-** handle is passed a pointer to sqlite.busyHandler. The busy-handler
-** callback is currently invoked only from within pager.c.
-*/
-struct BusyHandler {
-  int (*xFunc)(void *,int);  /* The busy callback */
-  void *pArg;                /* First arg to busy callback */
-};
 
 /*
 ** Each database is an instance of the following structure.
@@ -357,6 +358,7 @@ struct sqlite {
   Db aDbStatic[2];              /* Static space for the 2 default backends */
   int flags;                    /* Miscellanous flags. See below */
   u8 file_format;               /* What file format version is this database? */
+  u8 temp_store;                /* 1: file 2: memory 0: default */
   int nTable;                   /* Number of tables in the database */
   BusyHandler busyHandler;      /* Busy callback */
   void *pCommitArg;             /* Argument to xCommitCallback() */   
@@ -1331,7 +1333,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 void sqlite3Attach(Parse*, Token*, Token*, Token*);
 void sqlite3Detach(Parse*, Token*);
 int sqlite3BtreeFactory(const sqlite *db, const char *zFilename,
-                       int mode, int nPg, Btree **ppBtree);
+                       int omitJournal, int nCache, Btree **ppBtree);
 int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);

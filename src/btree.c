@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.177 2004/07/20 12:45:22 drh Exp $
+** $Id: btree.c,v 1.178 2004/07/22 01:19:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -211,27 +211,16 @@
 #include <assert.h>
 
 
-/* Maximum page size.  The upper bound on this value is 65536 (a limit
-** imposed by the 2-byte size of cell array pointers.)  The
-** maximum page size determines the amount of stack space allocated
-** by many of the routines in this module.  On embedded architectures
-** or any machine where memory and especially stack memory is limited,
-** one may wish to chose a smaller value for the maximum page size.
-*/
-#ifndef MX_PAGE_SIZE
-# define MX_PAGE_SIZE 1024
-#endif
-
 /* The following value is the maximum cell size assuming a maximum page
 ** size give above.
 */
-#define MX_CELL_SIZE  (MX_PAGE_SIZE-8)
+#define MX_CELL_SIZE  (SQLITE_MAX_PAGE_SIZE-8)
 
 /* The maximum number of cells on a single page of the database.  This
 ** assumes a minimum cell size of 3 bytes.  Such small cells will be
 ** exceedingly rare, but they are possible.
 */
-#define MX_CELL ((MX_PAGE_SIZE-8)/3)
+#define MX_CELL ((SQLITE_MAX_PAGE_SIZE-8)/3)
 
 /* Forward declarations */
 typedef struct MemPage MemPage;
@@ -308,6 +297,7 @@ struct Btree {
   u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
   u8 minEmbedFrac;      /* Minimum payload as % of total page size */
   u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
+  u8 pageSizeFixed;     /* True if the page size can no longer be changed */
   u16 pageSize;         /* Total number of bytes on a page */
   u16 usableSize;       /* Number of usable bytes on each page */
   int maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
@@ -532,7 +522,7 @@ static void _pageIntegrity(MemPage *pPage){
   int i, j, idx, c, pc, hdr, nFree;
   int cellOffset;
   int nCell, cellLimit;
-  u8 used[MX_PAGE_SIZE];
+  u8 used[SQLITE_MAX_PAGE_SIZE];
 
   usableSize = pPage->pBt->usableSize;
   assert( pPage->aData==&((unsigned char*)pPage)[-pPage->pBt->pageSize] );
@@ -616,11 +606,11 @@ static void defragmentPage(MemPage *pPage){
   int brk;                   /* Offset to the cell content area */
   int nCell;                 /* Number of cells on the page */
   unsigned char *data;               /* The page data */
-  unsigned char temp[MX_PAGE_SIZE];  /* Temp holding area for cell content */
+  unsigned char temp[SQLITE_MAX_PAGE_SIZE];  /* Temp area for cell content */
 
   assert( sqlite3pager_iswriteable(pPage->aData) );
   assert( pPage->pBt!=0 );
-  assert( pPage->pBt->usableSize <= MX_PAGE_SIZE );
+  assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
   assert( pPage->nOverflow==0 );
   data = pPage->aData;
   hdr = pPage->hdrOffset;
@@ -857,7 +847,7 @@ static int initPage(
   while( pc>0 ){
     int next, size;
     if( pc>=usableSize ) return SQLITE_CORRUPT;
-    if( i++>MX_PAGE_SIZE ) return SQLITE_CORRUPT;
+    if( i++>SQLITE_MAX_PAGE_SIZE ) return SQLITE_CORRUPT;
     next = get2byte(&data[pc]);
     size = get2byte(&data[pc+2]);
     if( next>0 && next<=pc+size+3 ) return SQLITE_CORRUPT;
@@ -998,12 +988,12 @@ static void pageReinit(void *pData, int pageSize){
 int sqlite3BtreeOpen(
   const char *zFilename,  /* Name of the file containing the BTree database */
   Btree **ppBtree,        /* Pointer to new Btree object written here */
-  int nCache,             /* Number of cache pages */
-  int flags,              /* Options */
-  void *pBusyHandler      /* Busy callback info passed to pager layer */
+  int flags               /* Options */
 ){
   Btree *pBt;
   int rc;
+  int nReserve;
+  unsigned char zDbHeader[100];
 
   /*
   ** The following asserts make sure that structures used by the btree are
@@ -1023,9 +1013,8 @@ int sqlite3BtreeOpen(
     *ppBtree = 0;
     return SQLITE_NOMEM;
   }
-  if( nCache<10 ) nCache = 10;
-  rc = sqlite3pager_open(&pBt->pPager, zFilename, nCache, EXTRA_SIZE,
-                        (flags & BTREE_OMIT_JOURNAL)==0, pBusyHandler);
+  rc = sqlite3pager_open(&pBt->pPager, zFilename, EXTRA_SIZE,
+                        (flags & BTREE_OMIT_JOURNAL)==0);
   if( rc!=SQLITE_OK ){
     if( pBt->pPager ) sqlite3pager_close(pBt->pPager);
     sqliteFree(pBt);
@@ -1037,12 +1026,23 @@ int sqlite3BtreeOpen(
   pBt->pCursor = 0;
   pBt->pPage1 = 0;
   pBt->readOnly = sqlite3pager_isreadonly(pBt->pPager);
-  pBt->pageSize = SQLITE_PAGE_SIZE;  /* FIX ME - read from header */
-  pBt->usableSize = pBt->pageSize;
-  pBt->maxEmbedFrac = 64;            /* FIX ME - read from header */
-  pBt->minEmbedFrac = 32;            /* FIX ME - read from header */
-  pBt->minLeafFrac = 32;             /* FIX ME - read from header */
-
+  sqlite3pager_read_fileheader(pBt->pPager, sizeof(zDbHeader), zDbHeader);
+  pBt->pageSize = get2byte(&zDbHeader[16]);
+  if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE ){
+    pBt->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
+    pBt->maxEmbedFrac = 64;   /* 25% */
+    pBt->minEmbedFrac = 32;   /* 12.5% */
+    pBt->minLeafFrac = 32;    /* 12.5% */
+    nReserve = 0;
+  }else{
+    nReserve = zDbHeader[20];
+    pBt->maxEmbedFrac = zDbHeader[21];
+    pBt->minEmbedFrac = zDbHeader[22];
+    pBt->minLeafFrac = zDbHeader[23];
+    pBt->pageSizeFixed = 1;
+  }
+  pBt->usableSize = pBt->pageSize - nReserve;
+  sqlite3pager_set_pagesize(pBt->pPager, pBt->pageSize);
   *ppBtree = pBt;
   return SQLITE_OK;
 }
@@ -1056,6 +1056,14 @@ int sqlite3BtreeClose(Btree *pBt){
   }
   sqlite3pager_close(pBt->pPager);
   sqliteFree(pBt);
+  return SQLITE_OK;
+}
+
+/*
+** Change the busy handler callback function.
+*/
+int sqlite3BtreeSetBusyHandler(Btree *pBt, BusyHandler *pHandler){
+  sqlite3pager_set_busyhandler(pBt->pPager, pHandler);
   return SQLITE_OK;
 }
 
@@ -1090,6 +1098,31 @@ int sqlite3BtreeSetCacheSize(Btree *pBt, int mxPage){
 int sqlite3BtreeSetSafetyLevel(Btree *pBt, int level){
   sqlite3pager_set_safety_level(pBt->pPager, level);
   return SQLITE_OK;
+}
+
+/*
+** Change the default pages size and the number of reserved bytes per page.
+*/
+int sqlite3BtreeSetPageSize(Btree *pBt, int pageSize, int nReserve){
+  if( pBt->pageSizeFixed ){
+    return SQLITE_READONLY;
+  }
+  if( nReserve<0 ){
+    nReserve = pBt->pageSize - pBt->usableSize;
+  }
+  if( pageSize>512 && pageSize<SQLITE_MAX_PAGE_SIZE ){
+    pBt->pageSize = pageSize;
+    sqlite3pager_set_pagesize(pBt->pPager, pageSize);
+  }
+  pBt->usableSize = pBt->pageSize - nReserve;
+  return SQLITE_OK;
+}
+
+/*
+** Return the currently defined page size
+*/
+int sqlite3BtreeGetPageSize(Btree *pBt){
+  return pBt->pageSize;
 }
 
 /*
@@ -1154,6 +1187,7 @@ static int lockBtree(Btree *pBt){
   }
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE );
   pBt->pPage1 = pPage1;
+  pBt->pageSizeFixed = 1;
   return SQLITE_OK;
 
 page1_init_failed:
@@ -2863,8 +2897,8 @@ static int balance_nonroot(MemPage *pPage){
   int szNew[NB+2];             /* Combined size of cells place on i-th page */
   u8 *apCell[(MX_CELL+2)*NB];  /* All cells from pages being balanced */
   int szCell[(MX_CELL+2)*NB];  /* Local size of all cells */
-  u8 aCopy[NB][MX_PAGE_SIZE+sizeof(MemPage)];  /* Space for apCopy[] */
-  u8 aSpace[MX_PAGE_SIZE*5];   /* Space to copies of divider cells */
+  u8 aCopy[NB][SQLITE_MAX_PAGE_SIZE+sizeof(MemPage)];  /* Space for apCopy[] */
+  u8 aSpace[SQLITE_MAX_PAGE_SIZE*5];   /* Space to copies of divider cells */
 
   /* 
   ** Find the parent page.
@@ -4042,7 +4076,7 @@ static int checkTreePage(
   int maxLocal, usableSize;
   char zMsg[100];
   char zContext[100];
-  char hit[MX_PAGE_SIZE];
+  char hit[SQLITE_MAX_PAGE_SIZE];
 
   /* Check that the page exists
   */

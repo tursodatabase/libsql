@@ -13,41 +13,26 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.36 2004/06/30 08:20:16 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.37 2004/07/22 01:19:35 drh Exp $
 */
 
 /*
-** The size of a page.
-**
-** You can change this value to another (reasonable) value you want.
-** It need not be a power of two, though the interface to the disk
-** will likely be faster if it is.
-**
-** Experiments show that a page size of 1024 gives the best speed
-** for common usages.  The speed differences for different sizes
-** such as 512, 2048, 4096, an so forth, is minimal.  Note, however,
-** that changing the page size results in a completely imcompatible
-** file format.
+** The default size of a database page.
 */
-#ifndef SQLITE_PAGE_SIZE
-#define SQLITE_PAGE_SIZE 1024
+#ifndef SQLITE_DEFAULT_PAGE_SIZE
+# define SQLITE_DEFAULT_PAGE_SIZE 1024
 #endif
 
-/*
-** Number of extra bytes of data allocated at the end of each page and
-** stored on disk but not used by the higher level btree layer.  Changing
-** this value results in a completely incompatible file format.
+/* Maximum page size.  The upper bound on this value is 65536 (a limit
+** imposed by the 2-byte size of cell array pointers.)  The
+** maximum page size determines the amount of stack space allocated
+** by many of the routines in pager.c and btree.c  On embedded architectures
+** or any machine where memory and especially stack memory is limited,
+** one may wish to chose a smaller value for the maximum page size.
 */
-#ifndef SQLITE_PAGE_RESERVE
-#define SQLITE_PAGE_RESERVE 0
+#ifndef SQLITE_MAX_PAGE_SIZE
+# define SQLITE_MAX_PAGE_SIZE 8192
 #endif
-
-/*
-** The total number of usable bytes stored on disk for each page.
-** The usable bytes come at the beginning of the page and the reserve
-** bytes come at the end.
-*/
-#define SQLITE_USABLE_SIZE (SQLITE_PAGE_SIZE-SQLITE_PAGE_RESERVE)
 
 /*
 ** Maximum number of pages in one database.
@@ -65,15 +50,18 @@ typedef unsigned int Pgno;
 */
 typedef struct Pager Pager;
 
+
 /*
 ** See source code comments for a detailed description of the following
 ** routines:
 */
 int sqlite3pager_open(Pager **ppPager, const char *zFilename,
-                     int nPage, int nExtra, int useJournal,
-                     void *pBusyHandler);
+                     int nExtra, int useJournal);
+void sqlite3pager_set_busyhandler(Pager*, BusyHandler *pBusyHandler);
 void sqlite3pager_set_destructor(Pager*, void(*)(void*,int));
 void sqlite3pager_set_reiniter(Pager*, void(*)(void*,int));
+void sqlite3pager_set_pagesize(Pager*, int);
+void sqlite3pager_read_fileheader(Pager*, int, unsigned char*);
 void sqlite3pager_set_cachesize(Pager*, int);
 int sqlite3pager_close(Pager *pPager);
 int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage);
