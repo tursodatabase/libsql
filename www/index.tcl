@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.25 2000/08/03 15:13:30 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.26 2000/08/04 13:49:03 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -132,7 +132,7 @@ puts "This is a [file size sqlite.tar.gz] byte download.  The
 tarball was last modified at [clock format [file mtime sqlite.tar.gz]]"
 puts {</p>
 
-<p>To build sqlite, just unwrap the tarball, create a separate
+<p>To build sqlite under Unix, just unwrap the tarball, create a separate
 build directory, run configure from the build directory and then
 type "make".  For example:</p>
 
@@ -144,6 +144,9 @@ $ ../sqlite/configure
 $ make                       <i> Builds "sqlite" and "libsqlite.a" </i>
 $ make test                  <i> Optional: run regression tests </i>
 </pre></blockquote>
+
+<p>Instructions for building SQLite for WindowsNT are
+found <a href="crosscompile.html">here</a>.
 }
 
 puts {<h2>Command-line Usage Example</h2>

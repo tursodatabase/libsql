@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the fileformat.html file.
 #
-set rcsid {$Id: fileformat.tcl,v 1.3 2000/08/02 12:26:30 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.4 2000/08/04 13:49:03 drh Exp $}
 
 puts {<html>
 <head>
@@ -215,8 +215,7 @@ table that has the corresponding value for the <b>a</b> column.</p>
 The index entry for -11 contains only a single entry and is 4
 bytes in size.  The index entry for 10 is 16 bytes in size but
 contains only 2 entries.  The first integer is the number of
-entires.  The two integer keys follow.  The last 4 bytes unused
-and are set to zero.
+entires.  The two integer keys follow.  The last 4 bytes are unused.
 }
 
 puts {

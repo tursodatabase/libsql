@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.11 2000/07/28 14:32:51 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.12 2000/08/04 13:49:03 drh Exp $}
 
 puts {<html>
 <head>
@@ -28,8 +28,9 @@ the name of an SQLite database.  An SQLite database is really just
 a directory full of GDBM files, so the argument to the sqlite command
 should really be the name of a directory on your disk.  If that
 directory did not previously contain an SQLite database, a new one
-is created for you automatically.  The <b>sqlite</b> program will
-prompt you to enter SQL.  Type in SQL statements (terminated by a
+is created for you automatically.  If the directory did not previously
+exist, it is automatically created.  The <b>sqlite</b> program will
+then prompt you to enter SQL.  Type in SQL statements (terminated by a
 semicolon), press "Enter" and the SQL will be executed.  It's as
 simple as that!</p>
 
@@ -49,7 +50,6 @@ proc Code {body} {
 }
 
 Code {
-$ (((mkdir ex1)))
 $ (((sqlite ex1)))
 Enter ".help" for instructions
 sqlite> (((create table tbl1(one varchar(10), two smallint);)))
@@ -230,7 +230,7 @@ sqlite>
 }
 
 puts {
-<p>By default, each column is 10 characters wide. 
+<p>By default, each column is at least 10 characters wide. 
 Data that is too wide to fit in a column is truncated.  You can
 adjust the column widths using the ".width" command.  Like this:</p>}
 
@@ -251,6 +251,13 @@ widths were unaltered.  You can gives as many arguments to ".width" as
 necessary to specify the widths of as many columns as are in your
 query results.</p>
 
+<p>If you specify a column a width of 0, then the column
+width is automatically adjusted to be the maximum of three
+numbers: 10, the width of the header, and the width of the
+first row of data.  This makes the column width self-adjusting.
+The default width setting for every column is this 
+auto-adjusting 0 value.</p>
+
 <p>The column labels that appear on the first two lines of output
 can be turned on and off using the ".header" dot command.  In the
 examples above, the column labels are on.  To turn them off you
@@ -270,6 +277,19 @@ is formatted to look like SQL INSERT statements.  You can use insert
 mode to generate text that can later be used to input data into a 
 different database.</p>
 
+<p>When specifying insert mode, you have to give an extra argument
+which is the name of the table to be inserted into.  For example:</p>
+}
+
+Code {
+sqlite> (((.mode insert new_table)))
+sqlite> (((select * from tbl1;)))
+INSERT INTO 'new_table' VALUES('hello',10);
+INSERT INTO 'new_table' VALUES('goodbye',20);
+sqlite>
+}
+
+puts {
 <p>The last output mode is "html".  In this mode, sqlite writes
 the results of the query as an XHTML table.  The beginning
 &lt;TABLE&gt; and the ending &lt;/TABLE&gt; are not written, but
@@ -365,6 +385,7 @@ list mode, then entering the following query:</p>
 
 <blockquote><pre>
 SELECT sql FROM sqlite_master
+WHERE type!='meta'
 ORDER BY tbl_name, type DESC, name
 </pre></blockquote>
 
@@ -373,7 +394,7 @@ want the schema for a single table, the query looks like this:</p>
 
 <blockquote><pre>
 SELECT sql FROM sqlite_master
-WHERE tbl_name LIKE '%s'
+WHERE tbl_name LIKE '%s' AND type!='meta'
 ORDER BY type DESC, name
 </pre></blockquote>
 

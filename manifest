@@ -1,5 +1,5 @@
-C spelling\serror\s(CVS\s124)
-D 2000-08-03T15:13:30
+C :-)\s(CVS\s125)
+D 2000-08-04T13:49:02
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -18,7 +18,7 @@ F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c 2fd370838742afa068cfcdd05b667ff89bab25b6
 F src/sqlite.h 82ae53028e27919250f886ff9d7c4927de81978a
 F src/sqliteInt.h f6d1e139b3bfa4ceff2136684e19d76b53178ec0
-F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
+F src/tclsqlite.c 6ced80832c13e70dae5a176da2dff3d5f4801d92
 F src/tokenize.c 77ff8164a8751994bc9926ce282847f653ac0c16
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c b75b33e6bd5d47898bb7ed9fdd0dea4fe7c19b00
@@ -61,14 +61,14 @@ F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
 F www/changes.tcl 4a1aaaaad9a9b4cf3259264955c225b98a9d025d
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
-F www/fileformat.tcl 1c353d202cc75de55a916a1bab80e7b3cc5660ee
-F www/index.tcl 2ea89f6f90d4d4efd591b9679f0e71a9a4adc2f5
-F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
+F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
+F www/index.tcl 421bcabc6839eb00698b75b169caa8a559454515
+F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
-F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
+F www/sqlite.tcl 7c2ee68063fa59463f55d5bac1ffe3e50d8a817f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 4dabf5e4e647f6dcdcfd45d1e885e379357a2d57
-R 32c359deccb869c0c62b7f96f90c83a2
+P 577421e5d370e220b5f228f4c711d49ce95612dc
+R 2cf2ed69cb63137ea0c1416ab3f1b043
 U drh
-Z e70ff0d215fda57f6188c3a588c372be
+Z 70478f10c211823f0de6f883859c4135

@@ -23,12 +23,23 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.5 2000/06/04 12:58:38 drh Exp $
+** $Id: tclsqlite.c,v 1.6 2000/08/04 13:49:02 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
 #include <stdlib.h>
 #include <string.h>
+
+/*
+** There is one instance of this structure for each SQLite database
+** that has been opened by the SQLite TCL interface.
+*/
+typedef struct SqliteDb SqliteDb;
+struct SqliteDb {
+  sqlite *db;           /* The "real" database structure */
+  Tcl_Interp *interp;   /* The interpreter used for this database */
+  char *zBusy;          /* The name of the busy callback routine */
+};
 
 /*
 ** An instance of this structure passes information thru the sqlite
@@ -81,7 +92,38 @@ static int DbEvalCallback(
 ** Called when the command is deleted.
 */
 static void DbDeleteCmd(void *db){
-  sqlite_close((sqlite*)db);
+  SqliteDb *pDb = (SqliteDb*)db;
+  sqlite_close(pDb->db);
+  if( pDb->zBusy ){
+    Tcl_Free(pDb->zBusy);
+  }
+  Tcl_Free((char*)pDb);
+}
+
+/*
+** This routine is called when a database file is locked while trying
+** to execute SQL.
+*/
+static int DbBusyHandler(void *cd, const char *zTable, int nTries){
+  SqliteDb *pDb = (SqliteDb*)cd;
+  int rc;
+  char zVal[30];
+  char *zCmd;
+  char *zResult;
+  Tcl_DString cmd;
+
+  Tcl_DStringInit(&cmd);
+  Tcl_DStringAppend(&cmd, pDb->zBusy, -1);
+  Tcl_DStringAppendElement(&cmd, zTable);
+  sprintf(zVal, " %d", nTries);
+  Tcl_DStringAppend(&cmd, zVal, -1);
+  zCmd = Tcl_DStringValue(&cmd);
+  rc = Tcl_Eval(pDb->interp, zCmd);
+  Tcl_DStringFree(&cmd);
+  if( rc!=TCL_OK || atoi(Tcl_GetStringResult(pDb->interp)) ){
+    return 0;
+  }
+  return 1;
 }
 
 /*
@@ -100,7 +142,7 @@ static void DbDeleteCmd(void *db){
 static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
   char *z;
   int n, c;
-  sqlite *db = cd;
+  SqliteDb *pDb = (SqliteDb*)cd;
   if( argc<2 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
         " SUBCOMMAND ...\"", 0);
@@ -109,6 +151,38 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
   z = argv[1];
   n = strlen(z);
   c = z[0];
+
+  /*    $db busy ?CALLBACK?
+  **
+  ** Invoke the given callback if an SQL statement attempts to open
+  ** a locked database file.
+  */
+  if( c=='b' && strncmp(z,"busy",n)==0 ){
+    if( argc>3 ){
+      Tcl_AppendResult(interp,"wrong # args: should be \"",
+         argv[0], " busy ?CALLBACK?", 0);
+      return TCL_ERROR;
+    }else if( argc==2 ){
+      if( pDb->zBusy ){
+        Tcl_AppendResult(interp, pDb->zBusy, 0);
+      }
+    }else{
+      if( pDb->zBusy ){
+        Tcl_Free(pDb->zBusy);
+        pDb->zBusy = 0;
+      }
+      if( argv[2][0] ){
+        pDb->zBusy = Tcl_Alloc( strlen(argv[2]) + 1 );
+        if( pDb->zBusy ){
+          strcpy(pDb->zBusy, argv[2]);
+        }
+      }
+      if( pDb->zBusy ){
+        pDb->interp = interp;
+        sqlite_busy_handler(pDb->db, DbBusyHandler, pDb);
+      }
+    }
+  }else
 
   /*    $db close
   **
@@ -139,7 +213,7 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
   **    $db eval $sql ?array {  ...code... }?
   **
   ** The SQL statement in $sql is evaluated.  For each row, the values are
-  ** placed in elements of the array named "array" and ...code.. is executed.
+  ** placed in elements of the array named "array" and ...code... is executed.
   ** If "array" and "code" are omitted, then no callback is every invoked.
   ** If "array" is an empty string, then the values are placed in variables
   ** that have the same name as the fields extracted by the query.
@@ -154,26 +228,43 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
          " eval SQL ?ARRAY-NAME CODE?", 0);
       return TCL_ERROR;
     }
+    pDb->interp = interp;
     if( argc==5 ){
       cbData.interp = interp;
       cbData.once = 1;
       cbData.zArray = argv[3];
       cbData.zCode = argv[4];
       zErrMsg = 0;
-      rc = sqlite_exec(db, argv[2], DbEvalCallback, &cbData, &zErrMsg);
+      rc = sqlite_exec(pDb->db, argv[2], DbEvalCallback, &cbData, &zErrMsg);
     }else{
-      rc = sqlite_exec(db, argv[2], 0, 0, &zErrMsg);
+      rc = sqlite_exec(pDb->db, argv[2], 0, 0, &zErrMsg);
     }
     if( zErrMsg ){
       Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
       free(zErrMsg);
     }
     return rc;
-  }
+  }else
+
+  /*
+  **     $db timeout MILLESECONDS
+  **
+  ** Delay for the number of milliseconds specified when a file is locked.
+  */
+  if( c=='t' && strncmp(z,"timeout",n)==0 ){
+    int ms;
+    if( argc!=3 ){
+      Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
+          " timeout MILLISECONDS", 0);
+      return TCL_ERROR;
+    }
+    if( Tcl_GetInt(interp, argv[2], &ms) ) return TCL_ERROR;
+    sqlite_busy_timeout(pDb->db, ms);
+  }else
 
   /* The default
   */
-  else{
+  {
     Tcl_AppendResult(interp,"unknown subcommand \"", z, 
         "\" - should be one of: close complete eval", 0);
     return TCL_ERROR;
@@ -197,7 +288,7 @@ static int DbCmd(void *cd, Tcl_Interp *interp, int argc, char **argv){
 */
 static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   int mode;
-  sqlite *p;
+  SqliteDb *p;
   char *zErrMsg;
   if( argc!=3 && argc!=4 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0],
@@ -210,13 +301,20 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   zErrMsg = 0;
-  p = sqlite_open(argv[2], mode, &zErrMsg);
+  p = Tcl_Alloc( sizeof(*p) );
   if( p==0 ){
+    Tcl_SetResult(interp, "malloc failed", TCL_STATIC);
+    return TCL_ERROR;
+  }
+  memset(p, 0, sizeof(*p));
+  p->db = sqlite_open(argv[2], mode, &zErrMsg);
+  if( p->db==0 ){
     Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
+    Tcl_Free((char*)p);
     free(zErrMsg);
     return TCL_ERROR;
   }
-  Tcl_CreateCommand(interp, argv[1], DbCmd, p, DbDeleteCmd);
+  Tcl_CreateCommand(interp, argv[1], DbCmd, (char*)p, DbDeleteCmd);
   return TCL_OK;
 }
 

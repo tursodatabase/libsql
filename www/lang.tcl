@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.4 2000/06/09 14:14:34 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.5 2000/08/04 13:49:03 drh Exp $}
 
 puts {<html>
 <head>
@@ -139,7 +139,7 @@ ON <table-name> ( <column-name> [, <column-name>]* )
 
 puts {
 <p>The CREATE INDEX command consists of the keywords "CREATE INDEX" followed
-by the name of the new index, the keyword "ON" the name of a previously
+by the name of the new index, the keyword "ON", the name of a previously
 created table that is to be indexed, and a parenthesized list of names of
 columns in the table that are used for the index key.
 Each column name can be followed by one of the "ASC" or "DESC" keywords
