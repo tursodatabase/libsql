@@ -210,20 +210,7 @@ int sqliteOsFileExists(const char *zFilename){
   return access(zFilename, 0)==0;
 #endif
 #if OS_WIN
-  HANDLE h;
-  h = CreateFile(zFilename,
-    GENERIC_READ,
-    0,
-    NULL,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
-    NULL
-  );
-  if( h!=INVALID_HANDLE_VALUE ){
-    CloseHandle(h);
-    return 1;
-  }
-  return 0;
+  return GetFileAttributes(zFilename) != 0xffffffff;
 #endif
 }
 

@@ -1,5 +1,5 @@
-C Test\sand\sdocumentation\supdates\sfor\ssub-queries.\s(CVS\s373)
-D 2002-02-18T03:21:46
+C Enhancement\sto\sWindows\s"file-exists"\sfunction\sby\sJoel\sLucsy.\s(CVS\s374)
+D 2002-02-18T12:48:46
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -29,7 +29,7 @@ F src/hash.h d1ce47900c7325af5e41c4feb4855c4bf2b841e7
 F src/insert.c 98edfd1ae7da7558cbaad3ae5023e1ea271513a6
 F src/main.c 300320ba68d3e5b22c2c5b2c07fa884878202181
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c 1953080d14098cd45e5bde88941567688efb72b1
+F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
 F src/pager.c d261a3a0b4e96a400ef5432297edec09b041e9c7
 F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
@@ -123,7 +123,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 89ffa9ff132858b62a91df1fb7fe49b2d58c01e7
-R 7ab01fed9c641afece9998e0036b69da
+P 607c0c49b2098771020514198cb1076de8245a62
+R 3af6afadbeb571c12afffc634ba291bc
 U drh
-Z c93e572aa74a691d85a071d29df82a3d
+Z 12bafaf1d5ee9acb4349af632ae545b5
