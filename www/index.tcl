@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.7 2000/05/31 20:00:53 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.8 2000/06/01 00:03:44 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Frontend For GDBM</title></head>
@@ -13,16 +13,19 @@ puts {</p>}
 
 puts {
 <blockquote><em><p>
-SQLite is currently "alpha"-quality software under active development.
-It is being release early so that you can have an opportunity
-to comment on its design and implementation and possibly influence
-the direction of its development.  Your constructive comments
-are <b>very</b> important to us and are encouraged.  If you have 
-any suggestions or any words of encouragement, please submit
-them to the mailing list described <a href="#mailinglist">below</a>.</p>
+The SQLite code base is rapidly becoming usable.  Most of the commonly
+used features of SQL (at least the features of SQL that this author
+commonly uses) are now supported.  There are currently no known
+errors in the code.  (There are known omissions but that is another
+matter.)
+One very large database (1M+ records in 50+ separate tables) has
+been converted from PostgreSQL and gives every appearance of working
+correctly.  We are rapidly approaching a "beta" release, I think...</p>
 
-<p>If you are looking for a stable SQL library, check back here in a few
-months...</p></em></blockquote>
+<p>Your constructive comments are still very important to us.
+Please visit the 
+<a href="#mailinglist">mailing list</a> to offer your feedback.</p>
+</em></blockquote>
 }
 
 puts {<h2>Introduction</h2>
@@ -65,16 +68,10 @@ implement are as follows:</p>
 
 <H2>Status</h2>
 
-<p>The current version of SQLite should be considered "alpha" software.
-It is incomplete and is known to contain bugs.  The software is
-subject to incompatible changes with each release.  You should not use
-SQLite in its present form in production software.</p>
-
-<p>The purpose of releasing SQLite before it is ready is to evoke
-public comment and criticism of the software.  If you find bugs
-or have any thoughts on how to make SQLite better, or would
-like to contribute code or patches to SQLite, please join
-the mailing (see below) and let us know.</p>
+<p>The SQLite code is rapidly stablizing.  There are currently
+no known errors in the code.  At least one large database has
+be loaded into SQLite and appears to work.  Most of the major
+functionality is in place.</p>
 
 <p>SQLite has so far been tested only on RedHat 6.0 Linux.  But we
 know of no reason why it will not work on any other Unix platform,

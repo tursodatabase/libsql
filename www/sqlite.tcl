@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.4 2000/05/31 02:27:50 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.5 2000/06/01 00:03:44 drh Exp $}
 
 puts {<html>
 <head>
@@ -151,7 +151,7 @@ sql> (((.help)))
 .header ON|OFF         Turn display of headers on or off
 .help                  Show this message
 .indices TABLE         Show names of all indices on TABLE
-.mode MODE             Set mode to one of "line", "column", or "list"
+.mode MODE             Set mode to one of "line", "column", "list", or "html"
 .output FILENAME       Send output to FILENAME
 .output stdout         Send output to the screen
 .schema ?TABLE?        Show the CREATE statements
@@ -165,11 +165,11 @@ puts {
 <h2>Changing Output Formats</h2>
 
 <p>The sqlite program is able to show the results of a query
-in three different formats: "line", "column", and "list".  You can
-use the ".mode" dot command to switch between these three output
+in four different formats: "line", "column", "list", and "html".
+You can use the ".mode" dot command to switch between these three output
 formats.</p>
 
-<p>In "line" mode (the default), each field in a record of the database
+<p>In "line" mode, each field in a record of the database
 is shown on a line by itself.  Each line consists of the field
 name, an equal sign and the field data.  Successive records are
 separated by a blank line.  Here is an example of line mode
@@ -184,6 +184,11 @@ two = 10
 one = goodbye
 two = 20
 sql>
+}
+
+puts {
+<p>Line mode used to be the default mode setting.  But recently the
+default mode was changed to "list".</p>
 }
 
 puts {
@@ -262,6 +267,15 @@ sql> (((select * from tbl1;)))
 hello, 10
 goodbye, 20
 sql>
+}
+
+puts {
+<p>The last output mode is "html".  In this mode, sqlite writes
+the results of the query as an XHTML table.  The beginning
+&lt;TABLE&;gt and the ending &lt;/TABLE&gt; are not written, but
+all of the intervening &lt;TR&gt;s, &lt;TH&gt;s, and &lt;TD&gt;s
+are.  The html output mode is envisioned as being useful for
+CGI.</p>
 }
 
 puts {
