@@ -1,5 +1,5 @@
-C Alpha-3\s(CVS\s269)
-D 2001-09-27T15:13:40
+C Added\smore\stests\sof\sunique\sindices.\s(CVS\s270)
+D 2001-09-27T23:57:06
 F Makefile.in fe9d96d6a7b04b3000a24692c2a3761840bbbf97
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 17fadc361fb942d644f92116388409c937c9fa79
@@ -74,7 +74,7 @@ F test/tableapi.test 162840153191a91a7dce6395f2334f9aef713b37
 F test/tclsqlite.test a57bb478d7e9f0b2c927f92e161f391e2896631a
 F test/tester.tcl c7ddeebc14cc841abb37134cd5d40c1e3ad367c1
 F test/trans.test 855337b8a178c73c433fcf8ee88e4b2f5efff0d9
-F test/unique.test 23056f0705755bc503ff543e79b79a5c91d35850
+F test/unique.test ef1f67607a7109e9c0842cd8557550fb121d7ec6
 F test/update.test b320ea22899e80b32b4d21c54591eb7a6ba4d6bd
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
 F test/where.test 43d5ac94da3f3722375307f948884dc79b326a91
@@ -100,7 +100,7 @@ F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 116fdad06868acf6aca9e75c2c3497c0511a42c3
-R bab102652f094d1047c0063db1742af9
+P a70d445070c905690dd8ec080981232594e1a969
+R 1b44db7fca8e394e88522eb424d8e81f
 U drh
-Z b41297f7bc20aa98a04e339482b2110b
+Z 52b2894364a881e04b3ad05afbb2e248
