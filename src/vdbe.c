@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.191 2003/01/06 23:54:06 drh Exp $
+** $Id: vdbe.c,v 1.192 2003/01/07 02:47:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1314,6 +1314,20 @@ __inline__ unsigned long long int hwtime(void){
 #endif
 
 /*
+** The CHECK_FOR_INTERRUPT macro defined here looks to see if the
+** sqlite_interrupt() routine has been called.  If it has been, then
+** processing of the VDBE program is interrupted.
+**
+** This macro added to every instruction that does a jump in order to
+** implement a loop.  This test used to be on every single instruction,
+** but that meant we more testing that we needed.  By only testing the
+** flag on jump instructions, we get a (small) speed improvement.
+*/
+#define CHECK_FOR_INTERRUPT \
+   if( db->flags & SQLITE_Interrupt ) goto abort_due_to_interrupt;
+
+
+/*
 ** Execute the program in the VDBE.
 **
 ** If an error occurs, an error message is written to memory obtained
@@ -1374,6 +1388,7 @@ int sqliteVdbeExec(
   **
   ** Allocation all the stack space we will ever need.
   */
+  sqliteVdbeAddOp(p, OP_Halt, 0, 0);
   zStack = p->zStack = sqliteMalloc( p->nOp*sizeof(zStack[0]) );
   aStack = p->aStack = sqliteMalloc( p->nOp*sizeof(aStack[0]) );
   p->tos = -1;
@@ -1399,26 +1414,13 @@ int sqliteVdbeExec(
   }
 #endif
   if( sqlite_malloc_failed ) goto no_mem;
-  for(pc=0; !sqlite_malloc_failed && rc==SQLITE_OK && pc<p->nOp
-             VERIFY(&& pc>=0); pc++){
+  for(pc=0; rc==SQLITE_OK; pc++){
+    assert( pc>=0 && pc<p->nOp );
 #ifdef VDBE_PROFILE
     origPc = pc;
     start = hwtime();
 #endif
     pOp = &p->aOp[pc];
-
-    /* Interrupt processing if requested.
-    */
-    if( db->flags & SQLITE_Interrupt ){
-      db->flags &= ~SQLITE_Interrupt;
-      if( db->magic!=SQLITE_MAGIC_BUSY ){
-        rc = SQLITE_MISUSE;
-      }else{
-        rc = SQLITE_INTERRUPT;
-      }
-      sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
-      break;
-    }
 
     /* Only allow tracing if NDEBUG is not defined.
     */
@@ -1466,6 +1468,7 @@ int sqliteVdbeExec(
 ** the program.
 */
 case OP_Goto: {
+  CHECK_FOR_INTERRUPT;
   pc = pOp->p2 - 1;
   break;
 }
@@ -1535,9 +1538,8 @@ case OP_Halt: {
     }
     goto abort_due_to_error;
   }else{
-    pc = p->nOp-1;
+    goto cleanup;
   }
-  break;
 }
 
 /* Opcode: Integer P1 * P3
@@ -3947,6 +3949,7 @@ case OP_FullKey: {
     }
     if( amt>NBFS ){
       z = sqliteMallocRaw( amt );
+      if( z==0 ) goto no_mem;
       aStack[tos].flags = STK_Str | STK_Dyn;
     }else{
       z = aStack[tos].z;
@@ -4043,6 +4046,7 @@ case OP_Next: {
   Cursor *pC;
   BtCursor *pCrsr;
 
+  CHECK_FOR_INTERRUPT;
   if( VERIFY( pOp->p1>=0 && pOp->p1<p->nCursor && ) 
       (pCrsr = (pC = &p->aCsr[pOp->p1])->pCursor)!=0 ){
     int res;
@@ -4317,7 +4321,8 @@ case OP_IntegrityCk: {
   VERIFY( if( iSet<0 || iSet>=p->nSet ) goto bad_instruction; )
   pSet = &p->aSet[iSet];
   nRoot = sqliteHashCount(&pSet->hash);
-  aRoot = sqliteMalloc( sizeof(int)*(nRoot+1) );
+  aRoot = sqliteMallocRaw( sizeof(int)*(nRoot+1) );
+  if( aRoot==0 ) goto no_mem;
   for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
     toInt((char*)sqliteHashKey(i), &aRoot[j]);
   }
@@ -4378,6 +4383,7 @@ case OP_ListRewind: {
 */
 case OP_ListRead: {
   Keylist *pKeylist;
+  CHECK_FOR_INTERRUPT;
   pKeylist = p->pList;
   if( pKeylist!=0 ){
     VERIFY(
@@ -4421,6 +4427,7 @@ case OP_ListPush: {
   assert(p->keylistStackDepth > 0);
   p->keylistStack = sqliteRealloc(p->keylistStack, 
           sizeof(Keylist *) * p->keylistStackDepth);
+  if( p->keylistStack==0 ) goto no_mem;
   p->keylistStack[p->keylistStackDepth - 1] = p->pList;
   p->pList = 0;
   break;
@@ -4624,6 +4631,7 @@ case OP_Sort: {
 */
 case OP_SortNext: {
   Sorter *pSorter = p->pSort;
+  CHECK_FOR_INTERRUPT;
   if( pSorter!=0 ){
     p->pSort = pSorter->pNext;
     p->tos++;
@@ -4710,6 +4718,7 @@ case OP_FileOpen: {
 case OP_FileRead: {
   int n, eol, nField, i, c, nDelim;
   char *zDelim, *z;
+  CHECK_FOR_INTERRUPT;
   if( p->pFile==0 ) goto fileread_jump;
   nField = pOp->p1;
   if( nField<=0 ) goto fileread_jump;
@@ -4949,6 +4958,7 @@ case OP_AggReset: {
   AggReset(&p->agg);
   p->agg.nMem = pOp->p2;
   p->agg.apFunc = sqliteMalloc( p->agg.nMem*sizeof(p->agg.apFunc[0]) );
+  if( p->agg.apFunc==0 ) goto no_mem;
   break;
 }
 
@@ -5117,6 +5127,7 @@ case OP_AggGet: {
 ** in between an AggNext and an AggReset.
 */
 case OP_AggNext: {
+  CHECK_FOR_INTERRUPT;
   if( p->agg.pSearch==0 ){
     p->agg.pSearch = sqliteHashFirst(&p->agg.hash);
   }else{
@@ -5243,6 +5254,7 @@ case OP_SetFirst:
 case OP_SetNext: {
   Set *pSet;
   int tos;
+  CHECK_FOR_INTERRUPT;
   if( pOp->p1<0 || pOp->p1>=p->nSet ){
     if( pOp->opcode==OP_SetFirst ) pc = pOp->p2 - 1;
     break;
@@ -5440,6 +5452,20 @@ abort_due_to_error:
   sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
   goto cleanup;
 
+  /* Jump to here if the sqlite_interrupt() API sets the interrupt
+  ** flag.
+  */
+abort_due_to_interrupt:
+  assert( db->flags & SQLITE_Interrupt );
+  db->flags &= ~SQLITE_Interrupt;
+  if( db->magic!=SQLITE_MAGIC_BUSY ){
+    rc = SQLITE_MISUSE;
+  }else{
+    rc = SQLITE_INTERRUPT;
+  }
+  sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
+  goto cleanup;
+
   /* Jump to here if a operator is encountered that requires more stack
   ** operands than are currently available on the stack.
   */
@@ -5447,7 +5473,6 @@ not_enough_stack:
   sprintf(zBuf,"%d",pc);
   sqliteSetString(pzErrMsg, "too few operands on stack at ", zBuf, 0);
   rc = SQLITE_INTERNAL;
-  goto cleanup;
 
   /* Jump here if an illegal or illformed instruction is executed.
   */

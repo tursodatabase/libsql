@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\stokenizer.\s(CVS\s815)
-D 2003-01-07T01:44:38
+C More\soptimizations.\s(CVS\s816)
+D 2003-01-07T02:47:48
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -34,7 +34,7 @@ F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
 F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
 F src/pager.c e7d05fa23a61f109c2276bb05be7a8d6721980f1
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
-F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
+F src/parse.y 427a17888c117cc9cc35311eda0603d55437f02b
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c cc8640e5d4e3ec1a8de58fde6b2fdd6f846b7263
@@ -48,11 +48,11 @@ F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
 F src/test2.c 03f05e984c8e2f2badc44644d42baf72b249096b
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
-F src/tokenize.c 8eaa8f878aa8c6375b567504736a5047f367ce9b
+F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
-F src/vdbe.c 1d396c7029487630b16b8a310a8c5440d05945dd
+F src/vdbe.c a92cbde50ab9ddd6eeee086531252211ce00e3f9
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b96ec281ff29aad8af340b30c6ff4e129ffeeefb
-R eca56f05aef2b5cf05bae2fe3b0da7b4
+P 032b3daa1d3cf3e00a4a6ba0b09624f1aba6445c
+R 049c740e00e3ae1c8ab222520497ef43
 U drh
-Z f083eac995258132bf28df3cbcdc9fef
+Z e3868eb77f429973c82f0ac95cfb0d3a

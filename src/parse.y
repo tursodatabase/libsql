@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.85 2002/10/27 19:35:34 drh Exp $
+** @(#) $Id: parse.y,v 1.86 2003/01/07 02:47:48 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -48,7 +48,8 @@ struct LimitVal {
 ** Then the "b" IdList records the list "a,b,c".
 */
 struct TrigEvent { int a; IdList * b; };
-}
+
+} // end %include
 
 // These are extra tokens used by the lexer but never seen by the
 // parser.  We put them in a rule so that the parser generator will
