@@ -1,5 +1,5 @@
-C Fix\sa\swarning\sintroduced\sby\s(2280).\s(CVS\s2283)
-D 2005-01-27T00:33:38
+C Make\ssure\sthe\s#include\sof\s"sqliteInt.h"\salways\scomes\sfirst\sin\sC\ssource\sfiles.\s(CVS\s2284)
+D 2005-01-28T01:29:08
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -37,7 +37,7 @@ F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
 F src/expr.c abadaf7b858084949ac36316a335384498c5b0e2
-F src/func.c dc188d862d7276ea897655b248e2cb17022686e3
+F src/func.c f096b6771cc0aaa11790aca95773a50a8f74ba73
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 037eb46630f027d0f93584db180d08ce163f3dbb
@@ -72,7 +72,7 @@ F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
 F src/tokenize.c 88bef43fe3e3c8865a7447f934296ac13238c4f6
 F src/trigger.c 5da126eeedca7d25c892311f21f909ff1f3825ba
 F src/update.c 6e5c6eb660a5508c449c6d637571e24ef13f70a1
-F src/utf.c 9bece2c7b94d9002ab1bb900a7658c6f826b0f74
+F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c a858b93ba06bbafab55ba41e4d58538eb51f4b6a
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
 F src/vdbe.c 8e877a9cdc92f30a71510e427db5e99d1f989c54
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P e4b5c16858db3b17a13cb572896bfd3dc08b88c1
-R 9e52795f4b64b64f2ed38f6635592380
-U danielk1977
-Z 51b169cdf2f6e2778562efcf6c6ce595
+P dc1b8106c4ce0ab378ee26324df4537ffe68a940
+R 0f59dcbabaf209eff6e73098be3a8682
+U drh
+Z 53c0e4d0713e8aee932500cd93118fec

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.31 2005/01/12 07:15:06 danielk1977 Exp $
+** $Id: utf.c,v 1.32 2005/01/28 01:29:08 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -58,8 +58,8 @@
 ** sqlite3utf8LikeCompare()  - Do a LIKE match given two UTF8 char* strings.
 **
 */
-#include <assert.h>
 #include "sqliteInt.h"
+#include <assert.h>
 #include "vdbeInt.h"
 
 /*
