@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.64 2002/05/15 08:30:14 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.65 2002/05/15 14:17:45 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -120,6 +120,7 @@ id(A) ::= OFFSET(X).     {A = X;}
 id(A) ::= PRAGMA(X).     {A = X;}
 id(A) ::= REPLACE(X).    {A = X;}
 id(A) ::= TEMP(X).       {A = X;}
+id(A) ::= TRIGGER(X).    {A = X;}
 id(A) ::= VACUUM(X).     {A = X;}
 id(A) ::= VIEW(X).       {A = X;}
 
@@ -692,4 +693,3 @@ trigger_cmd(A) ::= select(X).  {A = sqliteTriggerSelectStep(X); }
 cmd ::= DROP TRIGGER ids(X). {
     sqliteDropTrigger(pParse,&X,0);
 }
-

@@ -14,10 +14,11 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.73 2002/05/15 11:44:14 drh Exp $
+** $Id: main.c,v 1.74 2002/05/15 14:17:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
+#include <ctype.h>
 
 /*
 ** This is the callback routine for the code that initializes the
@@ -476,14 +477,22 @@ void sqlite_close(sqlite *db){
 
 /*
 ** Return TRUE if the given SQL string ends in a semicolon.
+**
+** Special handling is require for CREATE TRIGGER statements.
+** Whenever the CREATE TRIGGER keywords are seen, the statement
+** must end with ";END;".
 */
 int sqlite_complete(const char *zSql){
-  int isComplete = 0;
+  int isComplete = 1;
+  int requireEnd = 0;
+  int seenText = 0;
   int seenCreate = 0;
   while( *zSql ){
     switch( *zSql ){
       case ';': {
         isComplete = 1;
+        seenText = 1;
+        seenCreate = 0;
         break;
       }
       case ' ':
@@ -494,53 +503,88 @@ int sqlite_complete(const char *zSql){
       }
       case '[': {
         isComplete = 0;
+        seenText = 1;
+        seenCreate = 0;
         zSql++;
         while( *zSql && *zSql!=']' ){ zSql++; }
         if( *zSql==0 ) return 0;
         break;
       }
+      case '"':
       case '\'': {
+        int c = *zSql;
         isComplete = 0;
+        seenText = 1;
+        seenCreate = 0;
         zSql++;
-        while( *zSql && *zSql!='\'' ){ zSql++; }
-        if( *zSql==0 ) return 0;
-        break;
-      }
-      case '"': {
-        isComplete = 0;
-        zSql++;
-        while( *zSql && *zSql!='"' ){ zSql++; }
+        while( *zSql && *zSql!=c ){ zSql++; }
         if( *zSql==0 ) return 0;
         break;
       }
       case '-': {
         if( zSql[1]!='-' ){
           isComplete = 0;
+          seenCreate = 0;
           break;
         }
         while( *zSql && *zSql!='\n' ){ zSql++; }
-        if( *zSql==0 ) return isComplete;
+        if( *zSql==0 ) return seenText && isComplete && requireEnd==0;
+        break;
+      }
+      case 'c':
+      case 'C': {
+        seenText = 1;
+        if( !isComplete ) break;
+        isComplete = 0;
+        if( sqliteStrNICmp(zSql, "create", 6)!=0 ) break;
+        if( !isspace(zSql[6]) ) break;
+        zSql += 5;
+        seenCreate = 1;
+        while( isspace(zSql[1]) ) zSql++;
+        if( sqliteStrNICmp(&zSql[1],"trigger", 7)!=0 ) break;
+        zSql += 7;
+        requireEnd++;
+        break;
+      }
+      case 't':
+      case 'T': {
+        seenText = 1;
+        if( !seenCreate ) break;
+        seenCreate = 0;
+        isComplete = 0;
+        if( sqliteStrNICmp(zSql, "trigger", 7)!=0 ) break;
+        if( !isspace(zSql[7]) ) break;
+        zSql += 6;
+        requireEnd++;
+        break;
+      }
+      case 'e':
+      case 'E': {
+        seenCreate = 0;
+        seenText = 1;
+        if( !isComplete ) break;
+        isComplete = 0;
+        if( requireEnd==0 ) break;
+        if( sqliteStrNICmp(zSql, "end", 3)!=0 ) break;
+        zSql += 2;
+        while( isspace(zSql[1]) ) zSql++;
+        if( zSql[1]==';' ){
+          zSql++;
+          isComplete = 1;
+          requireEnd--;
+        }
         break;
       }
       default: {
-        if (seenCreate && !sqliteStrNICmp(zSql, "trigger", 7)){
-          while (sqliteStrNICmp(zSql, "end", 3)){
-            if (!*++zSql) return 0;
-          }
-        }
-        if (!sqliteStrNICmp(zSql, "create", 6)) {
-          zSql = zSql + 5;
-          seenCreate = 1;
-        }else{
-          seenCreate = 0;
-        }
+        seenCreate = 0;
+        seenText = 1;
         isComplete = 0;
         break;
       }
     }
     zSql++;
   }
-  return isComplete;
+  return seenText && isComplete && requireEnd==0;
 }
 
 /*

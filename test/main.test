@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.10 2002/05/10 13:14:08 drh Exp $
+# $Id: main.test,v 1.11 2002/05/15 14:17:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -70,6 +70,95 @@ do_test main-1.14 {
 do_test main-1.15 {
   db complete {SELECT a-b FROM t1 }
 } {0}
+do_test main-1.16 {
+  db complete {
+    CREATE TABLE abc(x,y);
+  }
+} {1}
+do_test main-1.17 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE abc BEGIN UPDATE pqr;
+  }
+} {0}
+do_test main-1.18 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE abc BEGIN UPDATE pqr; END;
+  }
+} {1}
+do_test main-1.19 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE abc BEGIN
+       UPDATE pqr;
+       unknown command;
+  }
+} {0}
+do_test main-1.20 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr;
+  }
+} {0}
+do_test main-1.21 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE end BEGIN
+       SELECT a, b FROM end;
+  }
+} {0}
+do_test main-1.22 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE end BEGIN
+       SELECT a, b FROM end;
+    END;
+  }
+} {1}
+do_test main-1.23 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE end BEGIN
+       SELECT a, b FROM end;
+    END;
+    SELECT a, b FROM end;
+  }
+} {1}
+do_test main-1.24 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE [;end;] BEGIN
+       UPDATE pqr;
+  }
+} {0}
+do_test main-1.25 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=[;end;];;;
+  }
+} {0}
+do_test main-1.26 {
+  db complete {
+    CREATE -- a comment
+    TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {0}
+do_test main-1.27 {
+  db complete {
+    CREATE -- a comment
+    TRIGGERX xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {1}
+do_test main-1.28 {
+  db complete {
+    CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {1}
+do_test main-1.29 {
+  db complete {
+    CREATE TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+       EXPLAIN select * from xyz;
+  }
+} {0}
+
 
 # Try to open a database with a corrupt database file.
 #
