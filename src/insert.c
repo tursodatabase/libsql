@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.101 2004/05/18 01:23:38 danielk1977 Exp $
+** $Id: insert.c,v 1.102 2004/05/18 09:58:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -260,7 +260,7 @@ void sqlite3Insert(
     iInitCode = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
-    rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock, 0,0,0);
+    rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock, 0,0,0,0);
     if( rc || pParse->nErr || sqlite3_malloc_failed ) goto insert_cleanup;
     iCleanup = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iCleanup);
@@ -278,7 +278,7 @@ void sqlite3Insert(
     if( row_triggers_exist ){
       useTempTable = 1;
     }else{
-      int addr = sqlite3VdbeFindOp(v, OP_OpenRead, pTab->tnum);
+      int addr = sqlite3VdbeFindOp(v, 0, OP_OpenRead, pTab->tnum);
       useTempTable = 0;
       if( addr>0 ){
         VdbeOp *pOp = sqlite3VdbeGetOp(v, addr-2);
@@ -398,6 +398,7 @@ void sqlite3Insert(
   */
   if( row_triggers_exist ){
     sqlite3VdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, newIdx, pTab->nCol);
   }
     
   /* Initialize the count of rows to be inserted

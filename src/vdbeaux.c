@@ -366,13 +366,14 @@ void sqlite3VdbeCompressSpace(Vdbe *p, int addr){
 }
 
 /*
-** Search for the current program for the given opcode and P2
-** value.  Return the address plus 1 if found and 0 if not found.
+** Search the current program starting at instruction addr for the given
+** opcode and P2 value.  Return the address plus 1 if found and 0 if not
+** found.
 */
-int sqlite3VdbeFindOp(Vdbe *p, int op, int p2){
+int sqlite3VdbeFindOp(Vdbe *p, int addr, int op, int p2){
   int i;
   assert( p->magic==VDBE_MAGIC_INIT );
-  for(i=0; i<p->nOp; i++){
+  for(i=addr; i<p->nOp; i++){
     if( p->aOp[i].opcode==op && p->aOp[i].p2==p2 ) return i+1;
   }
   return 0;
@@ -1478,7 +1479,7 @@ int sqlite3VdbeKeyCompare(
 ** or positive integer if {nKey1, pKey1} is less than, equal to or 
 ** greater than {nKey2, pKey2}.
 **
-** This function is pretty inefficient and will probably be replace
+** This function is pretty inefficient and will probably be replaced
 ** by something else in the near future. It is currently required
 ** by compound SELECT operators. 
 */
@@ -1487,12 +1488,58 @@ int sqlite3VdbeRowCompare(
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
 ){
+  Cursor *pC = (Cursor *)userData;
   int offset1 = 0;
   int offset2 = 0;
+  int toffset1 = 0;
+  int toffset2 = 0;
+  int i;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
 
-  assert( userData==0 );
+  assert( pC );
+  assert( pC->nField>0 );
+
+  for( i=0; i<pC->nField; i++ ){
+    u64 dummy;
+    offset1 += sqlite3GetVarint(&aKey1[offset1], &dummy);
+    offset2 += sqlite3GetVarint(&aKey1[offset1], &dummy);
+  }
+
+  for( i=0; i<pC->nField; i++ ){
+    Mem mem1;
+    Mem mem2;
+    u64 serial_type1;
+    u64 serial_type2;
+    int rc;
+
+    /* Read the serial types for the next element in each key. */
+    toffset1 += sqlite3GetVarint(&aKey1[toffset1], &serial_type1);
+    toffset2 += sqlite3GetVarint(&aKey2[toffset2], &serial_type2);
+
+    assert( serial_type1 && serial_type2 );
+
+    /* Assert that there is enough space left in each key for the blob of
+    ** data to go with the serial type just read. This assert may fail if
+    ** the file is corrupted.  Then read the value from each key into mem1
+    ** and mem2 respectively.
+    */
+    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
+    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
+
+    rc = sqlite3MemCompare(&mem1, &mem2);
+    if( mem1.flags&MEM_Dyn ){
+      sqliteFree(mem1.z);
+    }
+    if( mem2.flags&MEM_Dyn ){
+      sqliteFree(mem2.z);
+    }
+    if( rc!=0 ){
+      return rc;
+    }
+  }
+
+  return 0;
 }
   
 

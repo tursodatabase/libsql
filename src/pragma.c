@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.24 2004/05/18 01:23:38 danielk1977 Exp $
+** $Id: pragma.c,v 1.25 2004/05/18 09:58:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -622,11 +622,11 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       */
       addr = sqlite3VdbeAddOpList(v, ArraySize(checkDb), checkDb);
       sqlite3VdbeChangeP1(v, addr+1, i);
-      sqlite3VdbeChangeP2(v, addr+3, addr+7);
-      sqlite3VdbeChangeP2(v, addr+6, addr+4);
-      sqlite3VdbeChangeP2(v, addr+7, i);
-      sqlite3VdbeChangeP2(v, addr+10, addr+ArraySize(checkDb));
-      sqlite3VdbeChangeP3(v, addr+13, db->aDb[i].zName, P3_STATIC);
+      sqlite3VdbeChangeP2(v, addr+4, addr+8);
+      sqlite3VdbeChangeP2(v, addr+7, addr+5);
+      sqlite3VdbeChangeP2(v, addr+8, i);
+      sqlite3VdbeChangeP2(v, addr+11, addr+ArraySize(checkDb));
+      sqlite3VdbeChangeP3(v, addr+14, db->aDb[i].zName, P3_STATIC);
 
       /* Make sure all the indices are constructed correctly.
       */

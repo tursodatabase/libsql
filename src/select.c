@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.166 2004/05/18 01:23:38 danielk1977 Exp $
+** $Id: select.c,v 1.167 2004/05/18 09:58:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -382,7 +382,8 @@ static int selectInnerLoop(
   int eDest,              /* How to dispose of the results */
   int iParm,              /* An argument to the disposal method */
   int iContinue,          /* Jump here to continue with next row */
-  int iBreak              /* Jump here to break out of the inner loop */
+  int iBreak,             /* Jump here to break out of the inner loop */
+  char *aff               /* affinity string if eDest is SRT_Union */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
@@ -440,6 +441,7 @@ static int selectInnerLoop(
     */
     case SRT_Union: {
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
+      sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String, 0, 0);
       sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
       break;
@@ -467,6 +469,7 @@ static int selectInnerLoop(
     case SRT_Except: {
       int addr;
       addr = sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
+      sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_NotFound, iParm, addr+3);
       sqlite3VdbeAddOp(v, OP_Delete, iParm, 0);
       break;
@@ -491,7 +494,7 @@ static int selectInnerLoop(
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
         affStr = sqlite3AffinityString(aff);
-        sqlite3VdbeOp3(v, OP_MakeKey, 1, 1, affStr, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
         sqlite3VdbeAddOp(v, OP_String, 0, 0);
         sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       }
@@ -612,11 +615,13 @@ static void generateSortTail(
     }
     case SRT_Subroutine: {
       int i;
+      sqlite3VdbeAddOp(v, OP_Integer, p->pEList->nExpr, 0);
+      sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       for(i=0; i<nColumn; i++){
         sqlite3VdbeAddOp(v, OP_Column, -1-i, i);
       }
       sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
-      sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+      sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       break;
     }
     default: {
@@ -1208,6 +1213,19 @@ static void multiSelectSortOrder(Select *p, ExprList *pOrderBy){
   }
 }
 
+static void multiSelectAffinity(Select *p, char *zAff){
+  int i;
+
+  if( !p ) return;
+  multiSelectAffinity(p->pPrior, zAff);
+
+  for(i=0; i<p->pEList->nExpr; i++){
+    if( zAff[i]=='\0' ){
+      zAff[i] = sqlite3ExprAffinity(p->pEList->a[i].pExpr);
+    }
+  }
+}
+
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
 ** nLimit and nOffset fields.  nLimit and nOffset hold the integers
@@ -1284,31 +1302,62 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 ** Notice that because of the way SQLite parses compound SELECTs, the
 ** individual selects always group from left to right.
 */
-static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
-  int rc;             /* Success code from a subroutine */
+static int multiSelect(
+  Parse *pParse, 
+  Select *p, 
+  int eDest, 
+  int iParm, 
+  char *aff           /* If eDest is SRT_Union, the affinity string */
+){
+  int rc = SQLITE_OK;  /* Success code from a subroutine */
   Select *pPrior;     /* Another SELECT immediately to our left */
   Vdbe *v;            /* Generate code to this VDBE */
+  char *affStr = 0;
+
+  if( !aff ){
+    int len;
+    rc = fillInColumnList(pParse, p);
+    if( rc!=SQLITE_OK ){
+      goto multi_select_end;
+    }
+    len = p->pEList->nExpr+1;
+    affStr = (char *)sqliteMalloc(p->pEList->nExpr+1);
+    if( !affStr ){
+      rc = SQLITE_NOMEM;
+      goto multi_select_end;
+    }
+    memset(affStr, (int)SQLITE_AFF_NUMERIC, len-1);
+    aff = affStr;
+  }
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last SELECT in the series may have an ORDER BY or LIMIT.
   */
-  if( p==0 || p->pPrior==0 ) return 1;
+  if( p==0 || p->pPrior==0 ){
+    rc = 1;
+    goto multi_select_end;
+  }
   pPrior = p->pPrior;
   if( pPrior->pOrderBy ){
     sqlite3ErrorMsg(pParse,"ORDER BY clause should come after %s not before",
       selectOpName(p->op));
-    return 1;
+    rc = 1;
+    goto multi_select_end;
   }
   if( pPrior->nLimit>=0 || pPrior->nOffset>0 ){
     sqlite3ErrorMsg(pParse,"LIMIT clause should come after %s not before",
       selectOpName(p->op));
-    return 1;
+    rc = 1;
+    goto multi_select_end;
   }
 
   /* Make sure we have a valid query engine.  If not, create a new one.
   */
   v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return 1;
+  if( v==0 ){
+    rc = 1;
+    goto multi_select_end;
+  }
 
   /* Create the destination temporary table if necessary
   */
@@ -1326,16 +1375,20 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       if( p->pOrderBy==0 ){
         pPrior->nLimit = p->nLimit;
         pPrior->nOffset = p->nOffset;
-        rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0);
-        if( rc ) return rc;
+        rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
+        if( rc ){
+          goto multi_select_end;
+        }
         p->pPrior = 0;
         p->iLimit = pPrior->iLimit;
         p->iOffset = pPrior->iOffset;
         p->nLimit = -1;
         p->nOffset = 0;
-        rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0);
+        rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff);
         p->pPrior = pPrior;
-        if( rc ) return rc;
+        if( rc ){
+          goto multi_select_end;
+        }
         break;
       }
       /* For UNION ALL ... ORDER BY fall through to the next case */
@@ -1361,7 +1414,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         unionTab = pParse->nTab++;
         if( p->pOrderBy 
         && matchOrderbyToColumn(pParse, p, p->pOrderBy, unionTab, 1) ){
-          return 1;
+          rc = 1;
+          goto multi_select_end;
         }
         if( p->op!=TK_ALL ){
           sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 1);
@@ -1369,12 +1423,18 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         }else{
           sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 0);
         }
+        assert( p->pEList );
       }
 
       /* Code the SELECT statements to our left
       */
-      rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0);
-      if( rc ) return rc;
+      rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0, aff);
+      if( rc ){
+        goto multi_select_end;
+      }
+      if( p->op==TK_ALL ){
+        sqlite3VdbeAddOp(v, OP_SetNumColumns, unionTab, pPrior->pEList->nExpr);
+      }
 
       /* Code the current SELECT statement
       */
@@ -1390,12 +1450,15 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       p->nLimit = -1;
       nOffset = p->nOffset;
       p->nOffset = 0;
-      rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0);
+      rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0, aff);
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
       p->nLimit = nLimit;
       p->nOffset = nOffset;
-      if( rc ) return rc;
+      if( rc ){
+        goto multi_select_end;
+      }
+
 
       /* Convert the data in the temporary table into whatever form
       ** it is that we currently need.
@@ -1415,8 +1478,11 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         multiSelectSortOrder(p, p->pOrderBy);
         rc = selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
-                             iCont, iBreak);
-        if( rc ) return 1;
+                             iCont, iBreak, 0);
+        if( rc ){
+          rc = 1;
+          goto multi_select_end;
+        }
         sqlite3VdbeResolveLabel(v, iCont);
         sqlite3VdbeAddOp(v, OP_Next, unionTab, iStart);
         sqlite3VdbeResolveLabel(v, iBreak);
@@ -1439,15 +1505,19 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       tab1 = pParse->nTab++;
       tab2 = pParse->nTab++;
       if( p->pOrderBy && matchOrderbyToColumn(pParse,p,p->pOrderBy,tab1,1) ){
-        return 1;
+        rc = 1;
+        goto multi_select_end;
       }
       sqlite3VdbeAddOp(v, OP_OpenTemp, tab1, 1);
       sqlite3VdbeAddOp(v, OP_KeyAsData, tab1, 1);
+      assert( p->pEList );
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
-      rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0);
-      if( rc ) return rc;
+      rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0, aff);
+      if( rc ){
+        goto multi_select_end;
+      }
 
       /* Code the current SELECT into temporary table "tab2"
       */
@@ -1458,11 +1528,13 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       p->nLimit = -1;
       nOffset = p->nOffset;
       p->nOffset = 0;
-      rc = sqlite3Select(pParse, p, SRT_Union, tab2, 0, 0, 0);
+      rc = sqlite3Select(pParse, p, SRT_Union, tab2, 0, 0, 0, aff);
       p->pPrior = pPrior;
       p->nLimit = nLimit;
       p->nOffset = nOffset;
-      if( rc ) return rc;
+      if( rc ){
+        goto multi_select_end;
+      }
 
       /* Generate code to take the intersection of the two temporary
       ** tables.
@@ -1481,8 +1553,11 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       multiSelectSortOrder(p, p->pOrderBy);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                              p->pOrderBy, -1, eDest, iParm, 
-                             iCont, iBreak);
-      if( rc ) return 1;
+                             iCont, iBreak, 0);
+      if( rc ){
+        rc = 1;
+        goto multi_select_end;
+      }
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp(v, OP_Next, tab1, iStart);
       sqlite3VdbeResolveLabel(v, iBreak);
@@ -1498,9 +1573,20 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
     sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
       " do not have the same number of result columns", selectOpName(p->op));
-    return 1;
+    rc = 1;
+    goto multi_select_end;
   }
-  return 0;
+
+multi_select_end:
+  if( affStr ){
+    if( rc!=SQLITE_OK ){
+      sqliteFree(affStr);
+    }else{
+      multiSelectAffinity(p, affStr);
+      sqlite3VdbeOp3(v, OP_Noop, 0, 0, affStr, P3_DYNAMIC);
+    }
+  }
+  return rc;
 }
 
 /*
@@ -1937,7 +2023,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   memset(&eListItem, 0, sizeof(eListItem));
   eList.a = &eListItem;
   eList.a[0].pExpr = pExpr;
-  selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, eDest, iParm, cont, cont);
+  selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, eDest, iParm, cont, cont, 0);
   sqlite3VdbeResolveLabel(v, cont);
   sqlite3VdbeAddOp(v, OP_Close, base, 0);
   
@@ -2003,7 +2089,8 @@ int sqlite3Select(
   int iParm,             /* A parameter used by the eDest disposal method */
   Select *pParent,       /* Another SELECT for which this is a sub-query */
   int parentTab,         /* Index in pParent->pSrc of this query */
-  int *pParentAgg        /* True if pParent uses aggregate functions */
+  int *pParentAgg,       /* True if pParent uses aggregate functions */
+  char *aff              /* If eDest is SRT_Union, the affinity string */
 ){
   int i;
   WhereInfo *pWInfo;
@@ -2025,7 +2112,7 @@ int sqlite3Select(
   /* If there is are a sequence of queries, do the earlier ones first.
   */
   if( p->pPrior ){
-    return multiSelect(pParse, p, eDest, iParm);
+    return multiSelect(pParse, p, eDest, iParm, aff);
   }
 
   /* Make local copies of the parameters for this query.
@@ -2181,6 +2268,21 @@ int sqlite3Select(
     generateColumnNames(pParse, pTabList, pEList);
   }
 
+  /* If the destination is SRT_Union, then set the number of columns in
+  ** the records that will be inserted into the temporary table. The caller
+  ** couldn't do this, in case the select statement is of the form 
+  ** "SELECT * FROM ....". 
+  **
+  ** We need to do this before we start inserting records into the 
+  ** temporary table (which has had OP_KeyAsData executed on it), because
+  ** it is required by the key comparison function. So do it now, even
+  ** though this means that OP_SetNumColumns may be executed on the same
+  ** cursor more than once.
+  */
+  if( eDest==SRT_Union ){
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, pEList->nExpr);
+  }
+
   /* Generate code for all sub-queries in the FROM clause
   */
   for(i=0; i<pTabList->nSrc; i++){
@@ -2196,7 +2298,7 @@ int sqlite3Select(
       needRestoreContext = 0;
     }
     sqlite3Select(pParse, pTabList->a[i].pSelect, SRT_TempTable, 
-                 pTabList->a[i].iCursor, p, i, &isAgg);
+                 pTabList->a[i].iCursor, p, i, &isAgg, 0);
     if( needRestoreContext ){
       pParse->zAuthContext = zSavedAuthContext;
     }
@@ -2324,7 +2426,7 @@ int sqlite3Select(
   */
   if( !isAgg ){
     if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, eDest,
-                    iParm, pWInfo->iContinue, pWInfo->iBreak) ){
+                    iParm, pWInfo->iContinue, pWInfo->iBreak, aff) ){
        goto select_end;
     }
   }
@@ -2383,7 +2485,7 @@ int sqlite3Select(
       sqlite3ExprIfFalse(pParse, pHaving, startagg, 1);
     }
     if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, eDest,
-                    iParm, startagg, endagg) ){
+                    iParm, startagg, endagg, aff) ){
       goto select_end;
     }
     sqlite3VdbeAddOp(v, OP_Goto, 0, startagg);

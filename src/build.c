@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.186 2004/05/18 01:23:38 danielk1977 Exp $
+** $Id: build.c,v 1.187 2004/05/18 09:58:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -790,7 +790,7 @@ char sqlite3AffinityType(const char *zType, int nType){
 
   for(n=0; n<(nType-2); n++){
     for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
-      if( 0==sqlite3StrNICmp(zType, substrings[i].zSub, substrings[i].nSub) ){
+      if( 0==sqlite3StrNICmp(&zType[n], substrings[i].zSub, substrings[i].nSub) ){
         return substrings[i].affinity;
       }
     }
@@ -992,7 +992,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       n = Addr(pEnd->z) - Addr(pParse->sFirstToken.z) + 1;
       sqlite3VdbeChangeP3(v, -1, pParse->sFirstToken.z, n);
     }
-    sqlite3VdbeAddOp(v, OP_MakeRecord, 5, 0);
+    sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( !p->iDb ){
       sqlite3ChangeCookie(db, v);
@@ -1002,7 +1002,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3VdbeAddOp(v, OP_Integer, p->iDb, 0);
       sqlite3VdbeAddOp(v, OP_OpenWrite, 1, 0);
       pParse->nTab = 2;
-      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0);
+      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0);
     }
     sqlite3EndWriteOperation(pParse);
   }
@@ -1720,7 +1720,7 @@ void sqlite3CreateIndex(
       n = Addr(pEnd->z) - Addr(pStart->z) + 1;
       sqlite3VdbeChangeP3(v, addr, pStart->z, n);
     }
-    sqlite3VdbeAddOp(v, OP_MakeRecord, 5, 0);
+    sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
       sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);

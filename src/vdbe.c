@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.297 2004/05/18 01:23:38 danielk1977 Exp $
+** $Id: vdbe.c,v 1.298 2004/05/18 09:58:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -484,6 +484,57 @@ static void applyAffinity(Mem *pRec, char affinity){
       assert(0);
   }
 }
+
+static int getBtreeMem(
+  BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
+  int offset,       /* Offset from the start of data to return bytes from. */
+  int amt,          /* Number of bytes to return. */
+  int key,          /* If true, retrieve from the btree key, not data. */
+  Mem *pMem         /* OUT: Return data in this Mem structure. */
+){
+  char *zData;
+
+  if( key ){
+    zData = (char *)sqlite3BtreeKeyFetch(pCur, offset+amt);
+  }else{
+    zData = (char *)sqlite3BtreeDataFetch(pCur, offset+amt);
+  }
+
+  if( zData ){
+    pMem->z = &zData[offset];
+    pMem->n = amt;
+    pMem->flags = MEM_Blob|MEM_Ephem;
+  }else{
+    int rc;
+    if( amt>NBFS ){
+      zData = (char *)sqliteMallocRaw(amt);
+      if( !zData ){
+        return SQLITE_NOMEM;
+      }
+      pMem->flags = MEM_Blob|MEM_Dyn;
+    }else{
+      zData = &(pMem->zShort[0]);
+      pMem->flags = MEM_Blob|MEM_Short;
+    }
+    pMem->z = zData;
+
+    if( key ){
+      rc = sqlite3BtreeKey(pCur, offset, amt, zData);
+    }else{
+      rc = sqlite3BtreeData(pCur, offset, amt, zData);
+    }
+
+    if( rc!=SQLITE_OK ){
+      if( amt>NBFS ){
+        sqliteFree(zData);
+      }
+      return rc;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
 
 #ifdef VDBE_PROFILE
 /*
@@ -2019,7 +2070,8 @@ case OP_SetNumColumns: {
 ** a table.  For P1==-1, the top of the stack is used.  For P1==-2, the
 ** next on the stack is used.  And so forth.  The value pushed is always
 ** just a pointer into the record which is stored further down on the
-** stack.  The column value is not copied.
+** stack.  The column value is not copied. The number of columns in the
+** record is stored on the stack just above the record itself.
 */
 case OP_Column: {
   int payloadSize;   /* Number of bytes in the record */
@@ -2029,30 +2081,61 @@ case OP_Column: {
   char *zRec;        /* Pointer to record-data from stack or pseudo-table. */
   BtCursor *pCrsr;
 
-  char *zData;       
-  int freeZdata = 0; /* zData requires sqliteFree() */
-
   u64 nField;        /* number of fields in the record */
-
   int len;           /* The length of the serialized data for the column */
   int offset = 0;
   int nn;
 
+  char *zData;       
+  Mem zMem;
+  zMem.flags = 0;
+
   assert( i<p->nCursor );
   pTos++;
+
+  /* If the record is coming from the stack, not from a cursor, then there
+  ** is nowhere to cache the record header infomation. This simplifies
+  ** things greatly, so deal with this case seperately.
+  */
+  if( i<0 ){
+    char *zRec;     /* Pointer to record data from the stack. */
+    int off = 0;    /* Offset in zRec to start of the columns data. */
+    int off2 = 0;   /* Offset in zRec to the next serial type to read */
+    u64 colType;    /* The serial type of the value being read. */
+
+    assert( &pTos[i-1]>=p->aStack );
+    assert( pTos[i].flags & MEM_Str );
+    assert( pTos[i-1].flags & MEM_Int );
+
+    if( pTos[i].n==0 ){
+      pTos->flags = MEM_Null;
+      break;
+    }
+
+    zRec = pTos[i].z;
+    nField = pTos[i-1].i;
+     
+    for( nn=0; nn<nField; nn++ ){
+      u64 v;
+      off2 += sqlite3GetVarint(&zRec[off2], &v);
+      if( nn==p2 ){
+        colType = v;
+      }else if( nn<p2 ){
+        off += sqlite3VdbeSerialTypeLen(v);
+      }
+    }
+    off += off2;
+    
+    sqlite3VdbeSerialGet(&zRec[off], colType, pTos);
+    break;
+  }
+
 
   /* This block sets the variable payloadSize, and if the data is coming
   ** from the stack or from a pseudo-table zRec. If the data is coming
   ** from a real cursor, then zRec is left as NULL.
   */
-  if( i<0 ){
-    assert( &pTos[i]>=p->aStack );
-    assert( pTos[i].flags & MEM_Str );
-    zRec = pTos[i].z;
-    payloadSize = pTos[i].n;
-    pC->cacheValid = 0;
-    assert(!"broken for now");
-  }else if( (pC = p->apCsr[i])->pCursor!=0 ){
+  if( (pC = p->apCsr[i])->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     zRec = 0;
     pCrsr = pC->pCursor;
@@ -2093,31 +2176,8 @@ case OP_Column: {
   /* Read and parse the table header.  Store the results of the parse
   ** into the record header cache fields of the cursor.
   */
-  if( !pC->cacheValid ){
+  if( !pC || !pC->cacheValid ){
     pC->payloadSize = payloadSize;
-#if 0
-    if( zRec ){
-      zData = zRec;
-    }else{
-      /* We can assume that 10 bytes (maximum length of a varint) fits
-      ** on the main page in all cases.
-      */
-      int n = 10;
-      if( payloadSize<10 ) n = payloadSize;
-      if( pC->keyAsData ){
-        zData = (char *)sqlite3BtreeKeyFetch(pCrsr, n);
-      }else{
-        zData = (char *)sqlite3BtreeDataFetch(pCrsr, n);
-      }
-      assert( zData );
-    }
-    {
-      u64 x;
-      offset = sqlite3GetVarint(zData, &x);
-      assert( x==nField );
-    }
-#endif
-
     if( !pC->aType ){
       pC->aType = sqliteMallocRaw( nField*sizeof(pC->aType[0]) );
       if( pC->aType==0 ){
@@ -2125,52 +2185,28 @@ case OP_Column: {
       }
     }
 
-    if( !zRec ){
-      /* If the record is stored in a table, see if enough of it is on
-      ** the main page to use sqlite3BtreeDataFetch() to get the data
-      ** containing the nField serial types (varints). This will almost
-      ** always work, but if it doesn't sqliteMalloc() space and use
-      ** sqlite3BtreeData().
-      **
-      ** Estimate the maximum space required by the nField varints by
+    if( zRec ){
+      zData = zRec;
+    }else{
+      /* Estimate the maximum space required by the nField varints by
       ** assuming the maximum space for each is the length required to store:
       **
       **     (<record length> * 2) + 13
       **
       ** This is the serial-type for a text object as long as the record
-      ** itself. In all cases the length required to store this is three
-      ** bytes or less. 
+      ** itself. In almost all cases the length required to store this is
+      ** three bytes or less. 
       */
       int max_space = sqlite3VarintLen((((u64)payloadSize)<<1)+13)*nField;
-      max_space += offset;
       if( max_space>payloadSize ){
         max_space = payloadSize;
       }
 
-      if( pC->keyAsData ){
-        zData = (char *)sqlite3BtreeKeyFetch(pCrsr, max_space);
-      }else{
-        zData = (char *)sqlite3BtreeDataFetch(pCrsr, max_space);
+      rc = getBtreeMem(pCrsr, 0, max_space, pC->keyAsData, &zMem);
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
       }
-      if( !zData ){
-        /* This code will run very infrequently (e.g. tables with several
-        ** hundred columns).
-        */
-        zData = (char *)sqliteMallocRaw(max_space);
-        if( !zData ){
-          goto no_mem;
-        }
-        if( pC->keyAsData ){
-          rc = sqlite3BtreeKey(pCrsr, 0, max_space, zData);
-        }else{
-          rc = sqlite3BtreeData(pCrsr, 0, max_space, zData);
-        }
-        if( rc!=SQLITE_OK ){
-          sqliteFree(zData);
-          goto abort_due_to_error;
-        }
-        freeZdata = 1;
-      }
+      zData = zMem.z;
     }
 
     /* Read all the serial types for the record.  At the end of this block
@@ -2179,12 +2215,11 @@ case OP_Column: {
     for(nn=0; nn<nField; nn++){
       offset += sqlite3GetVarint(&zData[offset], &pC->aType[nn]);
     }
-    if( freeZdata ){
-      freeZdata = 0;
-      sqliteFree(zData);
-    }
     pC->nHeader = offset;
     pC->cacheValid = 1;
+
+    Release(&zMem);
+    zMem.flags = 0;
   }
 
   /* Compute the offset from the beginning of the record to the beginning
@@ -2194,44 +2229,17 @@ case OP_Column: {
   for(nn=0; nn<p2; nn++){
     offset += sqlite3VdbeSerialTypeLen(pC->aType[nn]);
   }
-  len = sqlite3VdbeSerialTypeLen(pC->aType[p2]);
 
-  if( !zRec ){
-    /* If the record is stored in a table, see if enough of it
-    ** is on the main page to read our column using
-    ** sqlite3BtreeDataFetch(). If not sqliteMalloc() space and read data
-    ** with sqlite3BtreeData().
-    */
-    if( pC->keyAsData ){
-      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, offset+len);
-    }else{
-      zData = (char *)sqlite3BtreeDataFetch(pCrsr, offset+len);
-    }
-    if( !zData ){
-      zData = (char *)sqliteMallocRaw(len);
-      if( !zData ){
-        goto no_mem;
-      }
-      if( pC->keyAsData ){
-        rc = sqlite3BtreeKey(pCrsr, offset, len, zData);
-      }else{
-        rc = sqlite3BtreeData(pCrsr, offset, len, zData);
-      }
-      if( rc!=SQLITE_OK ){
-        sqliteFree( zData );
-        goto abort_due_to_error;
-      }
-      freeZdata = 1;
-      offset = 0;
-    }
+  if( zRec ){
+    zData = &zRec[offset];
+  }else{
+    len = sqlite3VdbeSerialTypeLen(pC->aType[p2]);
+    getBtreeMem(pCrsr, offset, len, pC->keyAsData, &zMem);
+    zData = zMem.z;
   }
+  sqlite3VdbeSerialGet(zData, pC->aType[p2], pTos);
 
-  /* Deserialize the value directly into the top of the stack */
-  sqlite3VdbeSerialGet(&zData[offset], pC->aType[p2], pTos);
-
-  if( freeZdata ){
-    sqliteFree(zData);
-  }
+  Release(&zMem);
   break;
 }
 
@@ -2293,7 +2301,6 @@ case OP_MakeRecord: {
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  // nBytes = sqlite3VarintLen(nField);
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
@@ -2317,7 +2324,6 @@ case OP_MakeRecord: {
 
   /* Write the record */
   zCsr = zNewRecord;
-  // zCsr += sqlite3PutVarint(zCsr, nField);             /* number of fields */
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type = sqlite3VdbeSerialType(pRec);
     zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
@@ -2348,9 +2354,9 @@ case OP_MakeRecord: {
 /* Opcode: MakeKey P1 P2 P3
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index. If P2 is not zero, then the original 
-** entries are popped off the stack. If P2 is zero, the original entries
-** remain on the stack.
+** for use as the key in an index. If P2 is zero, then the original 
+** entries are popped off the stack. If P2 is not zero, the original 
+** entries remain on the stack.
 **
 ** P3 is interpreted in the same way as for MakeIdxKey.
 */
@@ -3449,11 +3455,16 @@ case OP_SetCounts: {
 ** off (if P2==0).  In key-as-data mode, the OP_Column opcode pulls
 ** data off of the key rather than the data.  This is used for
 ** processing compound selects.
+**
+** This opcode also instructs the cursor that the keys used will be
+** serialized in the record format usually used for table data, not
+** the usual index key format.
 */
 case OP_KeyAsData: {
   int i = pOp->p1;
   assert( i>=0 && i<p->nCursor );
   p->apCsr[i]->keyAsData = pOp->p2;
+  sqlite3BtreeSetCompare(p->apCsr[i]->pCursor, sqlite3VdbeRowCompare, p->apCsr[i]);
   break;
 }
 
