@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#15:\sAdd\sthe\ssqlite_changes()\sAPI\sfunction\sfor\sretrieving\sthe\nnumber\sof\srows\sthat\schanged\sin\sthe\sprevious\soperation.\s(CVS\s526)
-D 2002-04-12T10:08:59
+C Add\stests\sto\sprevent\sa\srecurrance\sof\sbug\s#16.\sAlso:\sput\sa\shyperlink\sto\sthe\snew\nticket\sscreen\son\sthe\smain\spage\sof\sthe\swebsite.\s(CVS\s527)
+D 2002-04-12T13:11:53
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -67,7 +67,7 @@ F test/expr.test 846795016b5993a7411f772eebe82ab67bd7230a
 F test/func.test d34e461f0acb0cf2978a4b3a3e098460f2ea8fbc
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
-F test/insert.test c36d534a4ab58c2cd452a273e51b2b0dd1ede1f9
+F test/insert.test 58d44c19b3557f67f4aeb5110ed9ef02038c3684
 F test/insert2.test eb8481878a7f52ccb4e3346f87550f5afdd77f76
 F test/intpkey.test 31b5f28b2c44273e6695cf36ab2e4133aee7753c
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
@@ -123,7 +123,7 @@ F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
-F www/index.tcl 2a9653ebeeaba3aca3401f476ba0e0e4acb40929
+F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
 F www/lang.tcl 2d4654255ad1ec7f58d02dc41b59528c0ee6ea44
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 43a77f019d34e1a6b3f502ad0ec31a00c8fdbe6e
-R f1c51fffab48448616c03a8f7db64a46
+P 6e71493b9dc77d508c3ce90562766789e87e6d80
+R 1c28bb516c3dd5de76adf35f517aa9d2
 U drh
-Z fa8a7c3395ff2734ddb7f18394f23f2a
+Z 59bf2c2973a5fd320a12e7c400509189

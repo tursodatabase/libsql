@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.58 2002/04/03 20:50:21 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.59 2002/04/12 13:11:53 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -29,13 +29,20 @@ big database server.  SQLite <b>is</b> the server.  The SQLite
 library reads and writes directly to and from the database files
 on disk.</p>}
 
-puts {<table align="right"hspace="10">
-<tr><td align="center" bgcolor="#8ee5ee">
-<table border="2"><tr><td align="center">
-<a href="download.html"><big><b>Download<br>SQLite
+puts {
+<table align="right" hspace="10" cellpadding=0 cellspacing=0 broder=0>
+<tr><td align="right" bgcolor="#cacae4">
+<table border="2" width="100%" cellspacing=0 cellpadding=5><tr><td align="left">
+Quick Links:
+<ul>
+<li><a href="download.html">Download</a></li>
+<li><a href="http://cvs.hwaci.com:2080/sqlite/timeline">Change Log</a></li>
+<li><a href="http://cvs.hwaci.com:2080/sqlite/tktnew">Report a bug</a></li>
+</ul>
 </td></tr></table>
 </td></tr>
-</table>}
+</table>
+}
 
 puts {<h2>Features</h2>
 
@@ -63,10 +70,11 @@ puts {<h2>Current Status</h2>
 
 <p>A <a href="changes.html">Change Summary</a> is available on this
 website.  You can also access a detailed
-<a href="http://cvs.hwaci.com:2080/sqlite/timeline">change history</a>
-and a list of
-<a href="http://cvs.hwaci.com:2080/sqlite/rptview?rn=2">open bugs</a> 
-from the 
+<a href="http://cvs.hwaci.com:2080/sqlite/timeline">change history</a>,
+<a href="http://cvs.hwaci.com:2080/sqlite/rptview?rn=2">view open bugs</a>,
+or
+<a href="http://cvs.hwaci.com:2080/sqlite/tktnew">report new bugs</a>
+at the
 <a href="http://cvs.hwaci.com:2080/sqlite/">CVS server</a>.</p>
 
 <p>Complete source code and precompiled binaries for the latest release are
