@@ -58,12 +58,13 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2004-May-31} {CVS Access Temporarily Suspended} {
+newsitem {2004-May-31} {CVS Access Temporarily Disabled} {
   Anonymous access to the CVS repository will be suspended
-  temporarily beginning on 2004-June-04
-  so that the developers working on version 3.0 can have a free hand to
-  implement features that a covered by a non-compete agreement.
-  Access will be reenabled after the non-compete expires on 2004-June-17.
+  for 2 weeks beginning on 2004-June-04.  Everyone will still
+  be able to download
+  prepackaged source bundles, create or modify trouble tickets, or view
+  change logs during the CVS service interruption. Full open access to the
+  CVS repository will be restored on 2004-June-18.
 }
 
 newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
@@ -79,4 +80,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
 puts {
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.83 2004/05/31 15:06:30 drh Exp $}
+footer {$Id: index.tcl,v 1.84 2004/05/31 16:04:08 drh Exp $}

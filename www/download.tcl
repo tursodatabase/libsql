@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.7 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.8 2004/05/31 16:04:08 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -46,6 +46,7 @@ Product sqlite.so.gz {
   <b>tclsqlite.so.gz</b> but without the TCL bindings.
 }
 
+cd doc
 foreach name [lsort -dict [glob -nocomplain sqlite-*.i386.rpm]] {
   if {[regexp -- -devel- $name]} {
     Product $name {
@@ -95,4 +96,34 @@ foreach name [lsort -dict -decreasing [glob -nocomplain sqlite-*.tar.gz]] {
       Version $vers of the source tree including all documentation.
   "
 }
+
+puts {
+</table>
+
+<a name="cvs">
+<h3>Direct Access To The Sources Via Anonymous CVS</h3>
+
+<p>
+All SQLite source code is maintained in a 
+<a href="http://www.cvshome.org/">CVS</a> repository that is
+available for read-only access by anyone.  You can 
+interactively view the
+respository contents and download individual files
+by visiting
+<a href="http://www.sqlite.org/cvstrac/dir?d=sqlite">
+http://www.sqlite.org/cvstrac/dir?d=sqlite</a>.
+To access the respository directly, use the following
+commands:
+</p>
+
+<blockquote><pre>
+cvs -d :pserver:anonymous@www.sqlite.org:/sqlite login
+cvs -d :pserver:anonymous@www.sqlite.org:/sqlite checkout sqlite
+</pre></blockquote>
+
+<p>
+When the first command prompts you for a password, enter "anonymous".
+</p>
+}
+
 footer $rcsid

@@ -369,11 +369,26 @@ c_interface.html:	$(TOP)/www/c_interface.tcl
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
 
+copyright.html:	$(TOP)/www/copyright.tcl
+	tclsh $(TOP)/www/copyright.tcl >copyright.html
+
+copyright-release.html:	$(TOP)/www/copyright-release.html
+	cp $(TOP)/www/copyright-release.html .
+
+copyright-release.pdf:	$(TOP)/www/copyright-release.pdf
+	cp $(TOP)/www/copyright-release.pdf .
+
+common.tcl:	$(TOP)/www/common.tcl
+	cp $(TOP)/www/common.tcl .
+
 conflict.html:	$(TOP)/www/conflict.tcl
 	tclsh $(TOP)/www/conflict.tcl >conflict.html
 
 datatypes.html:	$(TOP)/www/datatypes.tcl
 	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+
+docs.html:	$(TOP)/www/docs.tcl
+	tclsh $(TOP)/www/docs.tcl >docs.html
 
 download.html:	$(TOP)/www/download.tcl
 	tclsh $(TOP)/www/download.tcl >download.html
@@ -388,7 +403,7 @@ formatchng.html:	$(TOP)/www/formatchng.tcl
 	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
 
 index.html:	$(TOP)/www/index.tcl last_change
-	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
+	tclsh $(TOP)/www/index.tcl >index.html
 
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
@@ -411,8 +426,14 @@ quickstart.html:	$(TOP)/www/quickstart.tcl
 speed.html:	$(TOP)/www/speed.tcl
 	tclsh $(TOP)/www/speed.tcl >speed.html
 
+sqlite.gif:	$(TOP)/art/SQLite.gif
+	cp $(TOP)/art/SQLite.gif sqlite.gif
+
 sqlite.html:	$(TOP)/www/sqlite.tcl
 	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
+
+support.html:	$(TOP)/www/support.tcl
+	tclsh $(TOP)/www/support.tcl >support.html
 
 tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
 	tclsh $(TOP)/www/tclsqlite.tcl >tclsqlite.html
@@ -428,8 +449,12 @@ DOC = \
   arch.png \
   changes.html \
   c_interface.html \
+  copyright.html \
+  copyright-release.html \
+  copyright-release.pdf \
   conflict.html \
   datatypes.html \
+  docs.html \
   download.html \
   faq.html \
   fileformat.html \
@@ -442,11 +467,13 @@ DOC = \
   opcode.html \
   quickstart.html \
   speed.html \
+  sqlite.gif \
   sqlite.html \
+  support.html \
   tclsqlite.html \
   vdbe.html 
 
-doc:	$(DOC)
+doc:	common.tcl $(DOC)
 	mkdir -p doc
 	mv $(DOC) doc
 
