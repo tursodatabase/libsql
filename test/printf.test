@@ -1,0 +1,92 @@
+# Copyright (c) 2001 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the sqlite_*_printf() interface.
+#
+# $Id: printf.test,v 1.1 2001/04/07 15:24:33 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set n 1
+foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
+  do_test printf-1.$n.1 [subst {
+    sqlite_mprintf_int {Three integers: %d %x %o} $v $v $v
+  }] [format {Three integers: %d %x %o} $v $v $v]
+  do_test printf-1.$n.2 [subst {
+    sqlite_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
+  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v $v]
+  do_test printf-1.$n.3 [subst {
+    sqlite_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
+  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v]
+  incr n
+}
+
+set m 1
+foreach {a b} {1 1 5 5 10 10 10 5} {
+  set n 1
+  foreach x {0.001 1.0e-20 1.0 0.0 100.0 9.99999 -0.00543 -1.0 -99.99999} {
+    do_test printf-2.$m.$n.1 [subst {
+      sqlite_mprintf_double {A double: %*.*f} $a $b $x
+    }] [format {A double: %*.*f} $a $b $x]
+    do_test printf-2.$m.$n.2 [subst {
+      sqlite_mprintf_double {A double: %*.*e} $a $b $x
+    }] [format {A double: %*.*e} $a $b $x]
+    do_test printf-2.$m.$n.3 [subst {
+      sqlite_mprintf_double {A double: %*.*g} $a $b $x
+    }] [format {A double: %*.*g} $a $b $x]
+    do_test printf-2.$m.$n.4 [subst {
+      sqlite_mprintf_double {A double: %d %d %g} $a $b $x
+    }] [format {A double: %d %d %g} $a $b $x]
+    do_test printf-2.$m.$n.5 [subst {
+      sqlite_mprintf_double {A double: %d %d %#g} $a $b $x
+    }] [format {A double: %d %d %#g} $a $b $x]
+    incr n
+  }
+  incr m
+}
+
+do_test printf-3.1 {
+  sqlite_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
+} [format {A String: (%*.*s)} 10 10 {This is the string}]
+do_test printf-3.2 {
+  sqlite_mprintf_str {A String: (%*.*s)} 10 5 {This is the string}
+} [format {A String: (%*.*s)} 10 5 {This is the string}]
+do_test printf-3.3 {
+  sqlite_mprintf_str {A String: (%*.*s)} -10 5 {This is the string}
+} [format {A String: (%*.*s)} -10 5 {This is the string}]
+do_test printf-3.4 {
+  sqlite_mprintf_str {%d %d A String: (%s)} 1 2 {This is the string}
+} [format {%d %d A String: (%s)} 1 2 {This is the string}]
+do_test printf-3.5 {
+  sqlite_mprintf_str {%d %d A String: (%30s)} 1 2 {This is the string}
+} [format {%d %d A String: (%30s)} 1 2 {This is the string}]
+do_test printf-3.6 {
+  sqlite_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
+} [format {%d %d A String: (%-30s)} 1 2 {This is the string}]
+
+do_test printf-4.1 {
+  sqlite_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+
+finish_test

@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.39 2001/04/04 21:10:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.40 2001/04/07 15:24:33 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -432,3 +432,4 @@ char *sqliteDbbeNameToFile(const char*,const char*,const char*);
 void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);
+char *sqlite_mprintf(const char *, ...);

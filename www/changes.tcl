@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Apr 6 (1.0.31)} {
+<li>New tests added to the test suite.</li>
+}
+
 chng {2001 Apr 6 (1.0.30)} {
 <li>Remove the <b>sqlite_encoding</b> TCL variable that was introduced
     in the previous version.</li>

@@ -186,11 +186,16 @@ gdbmdump:	$(TOP)/tool/gdbmdump.c
 	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)
 
 tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
-	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
+	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o sqlite_tester \
 		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
 
-test:	tclsqlite sqlite
-	./tclsqlite $(TOP)/test/all.test
+sqlite_tester:	$(TOP)/src/tclsqlite.c libsqlite.a $(TOP)/src/test1.c
+	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST1=1 -o sqlite_tester \
+		$(TOP)/src/test1.c $(TOP)/src/tclsqlite.c \
+		libsqlite.a $(LIBGDBM) $(LIBTCL)
+
+test:	sqlite_tester sqlite
+	./sqlite_tester $(TOP)/test/all.test
 
 sqlite.tar.gz:	
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite

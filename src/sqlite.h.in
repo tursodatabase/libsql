@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.12 2001/04/06 16:13:43 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.13 2001/04/07 15:24:33 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -341,6 +341,5 @@ int sqlite_get_table_vprintf(
   char **errmsg,         /* Error msg written here */
   va_list ap             /* Arguments to the format string */
 );
-
 
 #endif /* _SQLITE_H_ */
