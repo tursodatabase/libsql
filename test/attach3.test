@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.8 2004/06/19 02:22:11 danielk1977 Exp $
+# $Id: attach3.test,v 1.9 2004/07/19 00:56:24 drh Exp $
 #
 
 
@@ -219,9 +219,23 @@ do_test attach3-10.0 {
   }
 } {1 {table sqlite_master may not be modified}}
 
+# Failure to attach leaves us in a workable state.
+# Ticket #811
+#
+do_test attach3-11.0 {
+  catchsql {
+    ATTACH DATABASE '/nodir/nofile.x' AS notadb;
+  }
+} {1 {unable to open database: /nodir/nofile.x}}
+do_test attach3-11.1 {
+  catchsql {
+    ATTACH DATABASE ':memory:' AS notadb;
+  }
+} {0 {}}
+do_test attach3-11.2 {
+  catchsql {
+    DETACH DATABASE notadb;
+  }
+} {0 {}}
 
 finish_test
-
-
-
-
