@@ -1,5 +1,5 @@
-C Fix\sa\shyperlink\sbug\son\sthe\shomepage.\s(CVS\s2338)
-D 2005-02-15T13:38:46
+C Append\sthe\sversion\snumber\sto\sthe\sdirectory\sname\sin\ssource\scode\starballs.\nTickets\s#793,\s#855,\sand\s#1055.\s(CVS\s2340)
+D 2005-02-15T16:15:10
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -21,7 +21,7 @@ F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk e4d010870a3e98fd4323635c31565a3ca8584741
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
-F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
+F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 01fdb467ce387a83248857c92f9e801df9e4611c
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P e9012d917a97a2f62ea58e85afa4879d213558e8
-R 4e2a8051d35610745341a08236a7a69b
+P 9fd9d9fbeefcc76e7262f488f99ac11eaf58e88e
+R a2fd2a4c1c603dd3a01028da57d54289
 U drh
-Z 5e2b2536b6972e741c13f2e6e92a0596
+Z c969f213578d828c413220b331345b06
