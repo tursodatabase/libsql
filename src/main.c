@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.22 2000/12/10 18:23:50 drh Exp $
+** $Id: main.c,v 1.23 2001/01/13 14:34:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -239,7 +239,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
 */
 void sqlite_close(sqlite *db){
   int i;
-  db->pBe->Close(db->pBe);
+  db->pBe->x->Close(db->pBe);
   for(i=0; i<N_HASH; i++){
     Table *pNext, *pList = db->apTblHash[i];
     db->apTblHash[i] = 0;

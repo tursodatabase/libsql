@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.1 2000/10/19 01:49:02 drh Exp $
+** $Id: dbbegdbm.c,v 1.2 2001/01/13 14:34:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -58,33 +58,14 @@ struct BeFile {
 };
 
 /*
-** The following structure holds the current state of the RC4 algorithm.
-** We use RC4 as a random number generator.  Each call to RC4 gives
-** a random 8-bit number.
-**
-** Nothing in this file or anywhere else in SQLite does any kind of
-** encryption.  The RC4 algorithm is being used as a PRNG (pseudo-random
-** number generator) not as an encryption device.
-*/
-struct rc4 {
-  int i, j;
-  int s[256];
-};
-
-/*
 ** The following structure contains all information used by GDBM
 ** database driver.  This is a subclass of the Dbbe structure.
 */
 typedef struct Dbbex Dbbex;
 struct Dbbex {
   Dbbe dbbe;         /* The base class */
-  char *zDir;        /* The directory containing the database */
   int write;         /* True for write permission */
   BeFile *pOpen;     /* List of open files */
-  int nTemp;         /* Number of temporary files created */
-  FILE **apTemp;     /* Space to hold temporary file pointers */
-  char **azTemp;     /* Names of the temporary files */
-  struct rc4 rc4;    /* The random number generator */
 };
 
 /*
@@ -105,41 +86,12 @@ struct DbbeCursor {
 };
 
 /*
-** Initialize the RC4 PRNG.  "seed" is a pointer to some random
-** data used to initialize the PRNG.  
+**
 */
-static void rc4init(struct rc4 *p, char *seed, int seedlen){
-  int i;
-  char k[256];
-  p->j = 0;
-  p->i = 0;
-  for(i=0; i<256; i++){
-    p->s[i] = i;
-    k[i] = seed[i%seedlen];
-  }
-  for(i=0; i<256; i++){
-    int t;
-    p->j = (p->j + p->s[i] + k[i]) & 0xff;
-    t = p->s[p->j];
-    p->s[p->j] = p->s[i];
-    p->s[i] = t;
-  }
-}
-
-/*
-** Get a single 8-bit random value from the RC4 PRNG.
-*/
-static int rc4byte(struct rc4 *p){
-  int t;
-  p->i = (p->i + 1) & 0xff;
-  p->j = (p->j + p->s[p->i]) & 0xff;
-  t = p->s[p->i];
-  p->s[p->i] = p->s[p->j];
-  p->s[p->j] = t;
-  t = p->s[p->i] + p->s[p->j];
-  return t & 0xff;
-}
-
+struct DbbeList {
+  FILE *pOut;
+  Dbbe *pDbbe;
+};
 /*
 ** The "mkdir()" function only takes one argument under Windows.
 */
@@ -165,18 +117,7 @@ static void sqliteGdbmClose(Dbbe *pDbbe){
     memset(pFile, 0, sizeof(*pFile));   
     sqliteFree(pFile);
   }
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]!=0 ){
-      unlink(pBe->azTemp[i]);
-      fclose(pBe->apTemp[i]);
-      sqliteFree(pBe->azTemp[i]);
-      pBe->apTemp[i] = 0;
-      pBe->azTemp[i] = 0;
-      break;
-    }
-  }
-  sqliteFree(pBe->azTemp);
-  sqliteFree(pBe->apTemp);
+  sqliteDbbeCloseAllTempFiles(pDbbe);
   memset(pBe, 0, sizeof(*pBe));
   sqliteFree(pBe);
 }
@@ -190,9 +131,9 @@ static void sqliteGdbmClose(Dbbe *pDbbe){
 static char *sqliteFileOfTable(Dbbex *pBe, const char *zTable){
   char *zFile = 0;
   int i;
-  sqliteSetString(&zFile, pBe->zDir, "/", zTable, ".tbl", 0);
+  sqliteSetString(&zFile, pBe->dbbe.zDir, "/", zTable, ".tbl", 0);
   if( zFile==0 ) return 0;
-  for(i=strlen(pBe->zDir)+1; zFile[i]; i++){
+  for(i=strlen(pBe->dbbe.zDir)+1; zFile[i]; i++){
     int c = zFile[i];
     if( isupper(c) ){
       zFile[i] = tolower(c);
@@ -201,27 +142,6 @@ static char *sqliteFileOfTable(Dbbex *pBe, const char *zTable){
     }
   }
   return zFile;
-}
-
-/*
-** Generate a random filename with the given prefix.  The new filename
-** is written into zBuf[].  The calling function must insure that
-** zBuf[] is big enough to hold the prefix plus 20 or so extra
-** characters.
-**
-** Very random names are chosen so that the chance of a
-** collision with an existing filename is very very small.
-*/
-static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
-  int i, j;
-  static const char zRandomChars[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-  strcpy(zBuf, zPrefix);
-  j = strlen(zBuf);
-  for(i=0; i<15; i++){
-    int c = rc4byte(pRc4) % (sizeof(zRandomChars) - 1);
-    zBuf[j++] = zRandomChars[c];
-  }
-  zBuf[j] = 0;
 }
 
 /*
@@ -295,13 +215,11 @@ static int sqliteGdbmOpenCursor(
       }
     }else{
       int limit;
-      struct rc4 *pRc4;
       char zRandom[50];
-      pRc4 = &pBe->rc4;
       zFile = 0;
       limit = 5;
       do {
-        randomName(&pBe->rc4, zRandom, "_temp_table_");
+        sqliteRandomName(zRandom, "_temp_table_");
         sqliteFree(zFile);
         zFile = sqliteFileOfTable(pBe, zRandom);
         pFile->dbf = gdbm_open(zFile, 0, rw_mask, mode, 0);
@@ -577,15 +495,10 @@ static int sqliteGdbmNew(DbbeCursor *pCursr){
   datum key;
   int go = 1;
   int i;
-  struct rc4 *pRc4;
 
   if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return 1;
-  pRc4 = &pCursr->pBe->rc4;
   while( go ){
-    iKey = 0;
-    for(i=0; i<4; i++){
-      iKey = (iKey<<8) + rc4byte(pRc4);
-    }
+    iKey = sqliteRandomInteger();
     if( iKey==0 ) continue;
     key.dptr = (char*)&iKey;
     key.dsize = 4;
@@ -631,68 +544,31 @@ static int sqliteGdbmDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
-** Open a temporary file.  The file should be deleted when closed.
-**
-** Note that we can't use the old Unix trick of opening the file
-** and then immediately unlinking the file.  That works great
-** under Unix, but fails when we try to port to Windows.
+** This variable contains pointers to all of the access methods
+** used to implement the GDBM backend.
 */
-static int sqliteGdbmOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
-  char *zFile;         /* Full name of the temporary file */
-  char zBuf[50];       /* Base name of the temporary file */
-  int i;               /* Loop counter */
-  int limit;           /* Prevent an infinite loop */
-  int rc = SQLITE_OK;  /* Value returned by this function */
-  Dbbex *pBe = (Dbbex*)pDbbe;
-
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]==0 ) break;
-  }
-  if( i>=pBe->nTemp ){
-    pBe->nTemp++;
-    pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
-    pBe->azTemp = sqliteRealloc(pBe->azTemp, pBe->nTemp*sizeof(char*) );
-  }
-  if( pBe->apTemp==0 ){
-    *ppFile = 0;
-    return SQLITE_NOMEM;
-  }
-  limit = 4;
-  zFile = 0;
-  do{
-    randomName(&pBe->rc4, zBuf, "/_temp_file_");
-    sqliteFree(zFile);
-    zFile = 0;
-    sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
-  }while( access(zFile,0)==0 && limit-- >= 0 );
-  *ppFile = pBe->apTemp[i] = fopen(zFile, "w+");
-  if( pBe->apTemp[i]==0 ){
-    rc = SQLITE_ERROR;
-    sqliteFree(zFile);
-    pBe->azTemp[i] = 0;
-  }else{
-    pBe->azTemp[i] = zFile;
-  }
-  return rc;
-}
-
-/*
-** Close a temporary file opened using sqliteGdbmOpenTempFile()
-*/
-static void sqliteGdbmCloseTempFile(Dbbe *pDbbe, FILE *f){
-  int i;
-  Dbbex *pBe = (Dbbex*)pDbbe;
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]==f ){
-      unlink(pBe->azTemp[i]);
-      sqliteFree(pBe->azTemp[i]);
-      pBe->apTemp[i] = 0;
-      pBe->azTemp[i] = 0;
-      break;
-    }
-  }
-  fclose(f);
-}
+static struct DbbeMethods gdbmMethods = {
+  /* n         Close */   sqliteGdbmClose,
+  /*      OpenCursor */   sqliteGdbmOpenCursor,
+  /*       DropTable */   sqliteGdbmDropTable,
+  /* ReorganizeTable */   sqliteGdbmReorganizeTable,
+  /*     CloseCursor */   sqliteGdbmCloseCursor,
+  /*           Fetch */   sqliteGdbmFetch,
+  /*            Test */   sqliteGdbmTest,
+  /*         CopyKey */   sqliteGdbmCopyKey,
+  /*        CopyData */   sqliteGdbmCopyData,
+  /*         ReadKey */   sqliteGdbmReadKey,
+  /*        ReadData */   sqliteGdbmReadData,
+  /*       KeyLength */   sqliteGdbmKeyLength,
+  /*      DataLength */   sqliteGdbmDataLength,
+  /*         NextKey */   sqliteGdbmNextKey,
+  /*          Rewind */   sqliteGdbmRewind,
+  /*             New */   sqliteGdbmNew,
+  /*             Put */   sqliteGdbmPut,
+  /*          Delete */   sqliteGdbmDelete,
+  /*    OpenTempFile */   sqliteDbbeOpenTempFile,
+  /*   CloseTempFile */   sqliteDbbeCloseTempFile
+};
 
 
 /*
@@ -746,31 +622,10 @@ Dbbe *sqliteGdbmOpen(
     sqliteSetString(pzErrMsg, "out of memory", 0);
     return 0;
   }
-  pNew->dbbe.Close = sqliteGdbmClose;
-  pNew->dbbe.OpenCursor = sqliteGdbmOpenCursor;
-  pNew->dbbe.DropTable = sqliteGdbmDropTable;
-  pNew->dbbe.ReorganizeTable = sqliteGdbmReorganizeTable;
-  pNew->dbbe.CloseCursor = sqliteGdbmCloseCursor;
-  pNew->dbbe.Fetch = sqliteGdbmFetch;
-  pNew->dbbe.Test = sqliteGdbmTest;
-  pNew->dbbe.CopyKey = sqliteGdbmCopyKey;
-  pNew->dbbe.CopyData = sqliteGdbmCopyData;
-  pNew->dbbe.ReadKey = sqliteGdbmReadKey;
-  pNew->dbbe.ReadData = sqliteGdbmReadData;
-  pNew->dbbe.KeyLength = sqliteGdbmKeyLength;
-  pNew->dbbe.DataLength = sqliteGdbmDataLength;
-  pNew->dbbe.NextKey = sqliteGdbmNextKey;
-  pNew->dbbe.Rewind = sqliteGdbmRewind;
-  pNew->dbbe.New = sqliteGdbmNew;
-  pNew->dbbe.Put = sqliteGdbmPut;
-  pNew->dbbe.Delete = sqliteGdbmDelete;
-  pNew->dbbe.OpenTempFile = sqliteGdbmOpenTempFile;
-  pNew->dbbe.CloseTempFile = sqliteGdbmCloseTempFile;
-  pNew->zDir = (char*)&pNew[1];
-  strcpy(pNew->zDir, zName);
+  pNew->dbbe.x = &gdbmMethods;
+  pNew->dbbe.zDir = (char*)&pNew[1];
+  strcpy(pNew->dbbe.zDir, zName);
   pNew->write = writeFlag;
   pNew->pOpen = 0;
-  time(&statbuf.st_ctime);
-  rc4init(&pNew->rc4, (char*)&statbuf, sizeof(statbuf));
   return &pNew->dbbe;
 }

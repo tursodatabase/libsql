@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.8 2000/10/19 01:49:02 drh Exp $
+** $Id: dbbe.h,v 1.9 2001/01/13 14:34:06 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -53,7 +53,7 @@
 */
 typedef struct Dbbe Dbbe;
 typedef struct DbbeCursor DbbeCursor;
-
+typedef struct DbbeMethods DbbeMethods;
 
 /*
 ** Open a complete database.
@@ -65,10 +65,13 @@ typedef struct DbbeCursor DbbeCursor;
 Dbbe *sqliteDbbeOpen(const char *zName, int write, int create, char **pzErr);
 
 /*
-** This is the structure returned by sqliteDbbeOpen().  It contains pointers
-** to all access routines for the database backend.
+** Each of the various SQLite backends defines a set of methods for
+** accessing the database.  Pointers to the methods are contained in
+** an instance of the following structure.  A pointer to a static instance
+** of this structure is assigned to the Dbbe structure that sqlileDbbeOpen
+** returns.
 */
-struct Dbbe {
+struct DbbeMethods {
   /* Close the whole database. */
   void (*Close)(Dbbe*);
 
@@ -147,6 +150,24 @@ struct Dbbe {
 
   /* Close a temporary file */
   void (*CloseTempFile)(Dbbe *, FILE *);
+};
+
+/*
+** This is the structure returned by sqliteDbbeOpen().  It contains
+** information common to all the different backend drivers.
+**
+** The information in this structure (with the exception the method
+** pointers in the Dbbe.x field) is intended to be visible to
+** the backend drivers only.  Users should not access or modify
+** this structure in any way other than the read the method pointers
+** in Dbbe.x.
+*/
+struct Dbbe {
+  struct DbbeMethods *x; /* Backend-specific methods for database access */
+  char *zDir;            /* The directory containing the database file(s) */
+  int nTemp;             /* Number of temporary files created */
+  FILE **apTemp;         /* Space to hold temporary file pointers */
+  char **azTemp;         /* Names of the temporary files */
 };
 
 #endif /* defined(_SQLITE_DBBE_H_) */

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.49 2000/12/10 18:35:20 drh Exp $
+** $Id: vdbe.c,v 1.50 2001/01/13 14:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -696,7 +696,7 @@ static void Cleanup(Vdbe *p){
   p->azColName = 0;
   for(i=0; i<p->nCursor; i++){
     if( p->aCsr[i].pCursor ){
-      p->pBe->CloseCursor(p->aCsr[i].pCursor);
+      p->pBe->x->CloseCursor(p->aCsr[i].pCursor);
       p->aCsr[i].pCursor = 0;
     }
   }
@@ -713,7 +713,7 @@ static void Cleanup(Vdbe *p){
   p->nMem = 0;
   for(i=0; i<p->nList; i++){
     if( p->apList[i] ){
-      p->pBe->CloseTempFile(p->pBe, p->apList[i]);
+      p->pBe->x->CloseTempFile(p->pBe, p->apList[i]);
       p->apList[i] = 0;
     }
   }
@@ -953,6 +953,7 @@ int sqliteVdbeExec(
   Op *pOp;                   /* Current operation */
   int rc;                    /* Value to return */
   Dbbe *pBe = p->pBe;        /* The backend driver */
+  DbbeMethods *pBex = pBe->x;  /* The backend driver methods */
   sqlite *db = p->db;        /* The database */
   char **zStack;
   Stack *aStack;
@@ -1809,10 +1810,10 @@ int sqliteVdbeExec(
           for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
           p->nCursor = i+1;
         }else if( p->aCsr[i].pCursor ){
-          pBe->CloseCursor(p->aCsr[i].pCursor);
+          pBex->CloseCursor(p->aCsr[i].pCursor);
         }
         do {
-          rc = pBe->OpenCursor(pBe,pOp->p3,pOp->p2,&p->aCsr[i].pCursor);
+          rc = pBex->OpenCursor(pBe,pOp->p3,pOp->p2,&p->aCsr[i].pCursor);
           switch( rc ){
             case SQLITE_BUSY: {
               if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
@@ -1853,7 +1854,7 @@ int sqliteVdbeExec(
       case OP_Close: {
         int i = pOp->p1;
         if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
-          pBe->CloseCursor(p->aCsr[i].pCursor);
+          pBex->CloseCursor(p->aCsr[i].pCursor);
           p->aCsr[i].pCursor = 0;
         }
         break;
@@ -1871,11 +1872,11 @@ int sqliteVdbeExec(
         VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
           if( aStack[tos].flags & STK_Int ){
-            pBe->Fetch(p->aCsr[i].pCursor, sizeof(int), 
+            pBex->Fetch(p->aCsr[i].pCursor, sizeof(int), 
                            (char*)&aStack[tos].i);
           }else{
             if( Stringify(p, tos) ) goto no_mem;
-            pBe->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
+            pBex->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
                            zStack[tos]);
           }
           p->nFetch++;
@@ -1937,11 +1938,11 @@ int sqliteVdbeExec(
         VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
           if( aStack[tos].flags & STK_Int ){
-            alreadyExists = pBe->Test(p->aCsr[i].pCursor, sizeof(int), 
+            alreadyExists = pBex->Test(p->aCsr[i].pCursor, sizeof(int), 
                                           (char*)&aStack[tos].i);
           }else{
             if( Stringify(p, tos) ) goto no_mem;
-            alreadyExists = pBe->Test(p->aCsr[i].pCursor,aStack[tos].n, 
+            alreadyExists = pBex->Test(p->aCsr[i].pCursor,aStack[tos].n, 
                                            zStack[tos]);
           }
         }
@@ -1967,7 +1968,7 @@ int sqliteVdbeExec(
         if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
           v = 0;
         }else{
-          v = pBe->New(p->aCsr[i].pCursor);
+          v = pBex->New(p->aCsr[i].pCursor);
         }
         VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
@@ -2000,7 +2001,7 @@ int sqliteVdbeExec(
             nKey = sizeof(int);
             zKey = (char*)&aStack[nos].i;
           }
-          pBe->Put(p->aCsr[i].pCursor, nKey, zKey,
+          pBex->Put(p->aCsr[i].pCursor, nKey, zKey,
                         aStack[tos].n, zStack[tos]);
         }
         POPSTACK;
@@ -2028,7 +2029,7 @@ int sqliteVdbeExec(
             nKey = aStack[tos].n;
             zKey = zStack[tos];
           }
-          pBe->Delete(p->aCsr[i].pCursor, nKey, zKey);
+          pBex->Delete(p->aCsr[i].pCursor, nKey, zKey);
         }
         POPSTACK;
         break;
@@ -2082,29 +2083,29 @@ int sqliteVdbeExec(
         VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           if( p->aCsr[i].keyAsData ){
-            amt = pBe->KeyLength(pCrsr);
+            amt = pBex->KeyLength(pCrsr);
             if( amt<=sizeof(int)*(p2+1) ){
               aStack[tos].flags = STK_Null;
               break;
             }
-            pAddr = (int*)pBe->ReadKey(pCrsr, sizeof(int)*p2);
+            pAddr = (int*)pBex->ReadKey(pCrsr, sizeof(int)*p2);
             if( *pAddr==0 ){
               aStack[tos].flags = STK_Null;
               break;
             }
-            z = pBe->ReadKey(pCrsr, *pAddr);
+            z = pBex->ReadKey(pCrsr, *pAddr);
           }else{
-            amt = pBe->DataLength(pCrsr);
+            amt = pBex->DataLength(pCrsr);
             if( amt<=sizeof(int)*(p2+1) ){
               aStack[tos].flags = STK_Null;
               break;
             }
-            pAddr = (int*)pBe->ReadData(pCrsr, sizeof(int)*p2);
+            pAddr = (int*)pBex->ReadData(pCrsr, sizeof(int)*p2);
             if( *pAddr==0 ){
               aStack[tos].flags = STK_Null;
               break;
             }
-            z = pBe->ReadData(pCrsr, *pAddr);
+            z = pBex->ReadData(pCrsr, *pAddr);
           }
           zStack[tos] = z;
           aStack[tos].n = strlen(z) + 1;
@@ -2127,11 +2128,11 @@ int sqliteVdbeExec(
 
         VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          char *z = pBe->ReadKey(pCrsr, 0);
+          char *z = pBex->ReadKey(pCrsr, 0);
           if( p->aCsr[i].keyAsData ){
             zStack[tos] = z;
             aStack[tos].flags = STK_Str;
-            aStack[tos].n = pBe->KeyLength(pCrsr);
+            aStack[tos].n = pBex->KeyLength(pCrsr);
           }else{
             memcpy(&aStack[tos].i, z, sizeof(int));
             aStack[tos].flags = STK_Int;
@@ -2148,7 +2149,7 @@ int sqliteVdbeExec(
       case OP_Rewind: {
         int i = pOp->p1;
         if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          pBe->Rewind(p->aCsr[i].pCursor);
+          pBex->Rewind(p->aCsr[i].pCursor);
         }
         break;
       }
@@ -2161,7 +2162,7 @@ int sqliteVdbeExec(
       case OP_Next: {
         int i = pOp->p1;
         if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-          if( pBe->NextKey(p->aCsr[i].pCursor)==0 ){
+          if( pBex->NextKey(p->aCsr[i].pCursor)==0 ){
             pc = pOp->p2 - 1;
           }else{
             p->nFetch++;
@@ -2211,8 +2212,8 @@ int sqliteVdbeExec(
           int *aIdx;
           int nIdx;
           int j, k;
-          nIdx = pBe->DataLength(pCrsr)/sizeof(int);
-          aIdx = (int*)pBe->ReadData(pCrsr, 0);
+          nIdx = pBex->DataLength(pCrsr)/sizeof(int);
+          aIdx = (int*)pBex->ReadData(pCrsr, 0);
           if( nIdx>1 ){
             k = *(aIdx++);
             if( k>nIdx-1 ) k = nIdx-1;
@@ -2257,10 +2258,10 @@ int sqliteVdbeExec(
           Integerify(p, nos);
           newVal = aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = pBe->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
+          r = pBex->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
           if( r==0 ){
             /* Create a new record for this index */
-            pBe->Put(pCrsr, aStack[tos].n, zStack[tos],
+            pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
                           sizeof(int), (char*)&newVal);
           }else{
             /* Extend the existing record */
@@ -2268,32 +2269,32 @@ int sqliteVdbeExec(
             int *aIdx;
             int k;
             
-            nIdx = pBe->DataLength(pCrsr)/sizeof(int);
+            nIdx = pBex->DataLength(pCrsr)/sizeof(int);
             if( nIdx==1 ){
               aIdx = sqliteMalloc( sizeof(int)*4 );
               if( aIdx==0 ) goto no_mem;
               aIdx[0] = 2;
-              pBe->CopyData(pCrsr, 0, sizeof(int), (char*)&aIdx[1]);
+              pBex->CopyData(pCrsr, 0, sizeof(int), (char*)&aIdx[1]);
               aIdx[2] = newVal;
-              pBe->Put(pCrsr, aStack[tos].n, zStack[tos],
+              pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
                     sizeof(int)*4, (char*)aIdx);
               sqliteFree(aIdx);
             }else{
-              aIdx = (int*)pBe->ReadData(pCrsr, 0);
+              aIdx = (int*)pBex->ReadData(pCrsr, 0);
               k = aIdx[0];
               if( k<nIdx-1 ){
                 aIdx[k+1] = newVal;
                 aIdx[0]++;
-                pBe->Put(pCrsr, aStack[tos].n, zStack[tos],
+                pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
                     sizeof(int)*nIdx, (char*)aIdx);
               }else{
                 nIdx *= 2;
                 aIdx = sqliteMalloc( sizeof(int)*nIdx );
                 if( aIdx==0 ) goto no_mem;
-                pBe->CopyData(pCrsr, 0, sizeof(int)*(k+1), (char*)aIdx);
+                pBex->CopyData(pCrsr, 0, sizeof(int)*(k+1), (char*)aIdx);
                 aIdx[k+1] = newVal;
                 aIdx[0]++;
-                pBe->Put(pCrsr, aStack[tos].n, zStack[tos],
+                pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
                       sizeof(int)*nIdx, (char*)aIdx);
                 sqliteFree(aIdx);
               }
@@ -2333,12 +2334,12 @@ int sqliteVdbeExec(
           Integerify(p, nos);
           oldVal = aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = pBe->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
+          r = pBex->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
           if( r==0 ) break;
-          nIdx = pBe->DataLength(pCrsr)/sizeof(int);
-          aIdx = (int*)pBe->ReadData(pCrsr, 0);
+          nIdx = pBex->DataLength(pCrsr)/sizeof(int);
+          aIdx = (int*)pBex->ReadData(pCrsr, 0);
           if( (nIdx==1 && aIdx[0]==oldVal) || (aIdx[0]==1 && aIdx[1]==oldVal) ){
-            pBe->Delete(pCrsr, aStack[tos].n, zStack[tos]);
+            pBex->Delete(pCrsr, aStack[tos].n, zStack[tos]);
           }else{
             k = aIdx[0];
             for(j=1; j<=k && aIdx[j]!=oldVal; j++){}
@@ -2349,7 +2350,7 @@ int sqliteVdbeExec(
             if( aIdx[0]*3 + 1 < nIdx ){
               nIdx /= 2;
             }
-            pBe->Put(pCrsr, aStack[tos].n, zStack[tos], 
+            pBex->Put(pCrsr, aStack[tos].n, zStack[tos], 
                           sizeof(int)*nIdx, (char*)aIdx);
           }
         }
@@ -2365,7 +2366,7 @@ int sqliteVdbeExec(
       ** from the disk.
       */
       case OP_Destroy: {
-        pBe->DropTable(pBe, pOp->p3);
+        pBex->DropTable(pBe, pOp->p3);
         break;
       }
 
@@ -2374,7 +2375,7 @@ int sqliteVdbeExec(
       ** Compress, optimize, and tidy up the GDBM file named by P3.
       */
       case OP_Reorganize: {
-        pBe->ReorganizeTable(pBe, pOp->p3);
+        pBex->ReorganizeTable(pBe, pOp->p3);
         break;
       }
 
@@ -2396,9 +2397,9 @@ int sqliteVdbeExec(
           for(j=p->nList; j<=i; j++) p->apList[j] = 0;
           p->nList = i+1;
         }else if( p->apList[i] ){
-          pBe->CloseTempFile(pBe, p->apList[i]);
+          pBex->CloseTempFile(pBe, p->apList[i]);
         }
-        rc = pBe->OpenTempFile(pBe, &p->apList[i]);
+        rc = pBex->OpenTempFile(pBe, &p->apList[i]);
         if( rc!=SQLITE_OK ){
           sqliteSetString(pzErrMsg, "unable to open a temporary file", 0);
         }
@@ -2468,7 +2469,7 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         VERIFY( if( i<0 ) goto bad_instruction; )
         if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
-          pBe->CloseTempFile(pBe, p->apList[i]);
+          pBex->CloseTempFile(pBe, p->apList[i]);
           p->apList[i] = 0;
         }
         break;

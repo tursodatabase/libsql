@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.21 2000/10/19 14:10:09 drh Exp $
+** $Id: dbbe.c,v 1.22 2001/01/13 14:34:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -61,4 +61,91 @@ Dbbe *sqliteDbbeOpen(
     return sqliteMemOpen(&zName[7], writeFlag, createFlag, pzErrMsg);
   }
   return sqliteGdbmOpen(zName, writeFlag, createFlag, pzErrMsg);
+}
+
+/*
+** Open a temporary file.  The file should be deleted when closed.
+**
+** Note that we can't use the old Unix trick of opening the file
+** and then immediately unlinking the file.  That works great
+** under Unix, but fails when we try to port to Windows.
+*/
+int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
+  char *zFile;         /* Full name of the temporary file */
+  char zBuf[50];       /* Base name of the temporary file */
+  int i;               /* Loop counter */
+  int limit;           /* Prevent an infinite loop */
+  int rc = SQLITE_OK;  /* Value returned by this function */
+  char *zDir;          /* Directory to hold the file */
+
+  for(i=0; i<pBe->nTemp; i++){
+    if( pBe->apTemp[i]==0 ) break;
+  }
+  if( i>=pBe->nTemp ){
+    pBe->nTemp++;
+    pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
+    pBe->azTemp = sqliteRealloc(pBe->azTemp, pBe->nTemp*sizeof(char*) );
+  }
+  if( pBe->apTemp==0 ){
+    *ppFile = 0;
+    return SQLITE_NOMEM;
+  }
+  limit = 4;
+  zFile = 0;
+  zDir = pBe->zDir;
+  if( zDir==0 ){
+    zDir = "./";
+  }
+  do{
+    sqliteRandomName(zBuf, "/_temp_file_");
+    sqliteFree(zFile);
+    zFile = 0;
+    sqliteSetString(&zFile, zDir, zBuf, 0);
+  }while( access(zFile,0)==0 && limit-- >= 0 );
+  *ppFile = pBe->apTemp[i] = fopen(zFile, "w+");
+  if( pBe->apTemp[i]==0 ){
+    rc = SQLITE_ERROR;
+    sqliteFree(zFile);
+    pBe->azTemp[i] = 0;
+  }else{
+    pBe->azTemp[i] = zFile;
+  }
+  return rc;
+}
+
+/*
+** Close a temporary file opened using sqliteGdbmOpenTempFile()
+*/
+void sqliteDbbeCloseTempFile(Dbbe *pBe, FILE *f){
+  int i;
+  for(i=0; i<pBe->nTemp; i++){
+    if( pBe->apTemp[i]==f ){
+      unlink(pBe->azTemp[i]);
+      sqliteFree(pBe->azTemp[i]);
+      pBe->apTemp[i] = 0;
+      pBe->azTemp[i] = 0;
+      break;
+    }
+  }
+  fclose(f);
+}
+
+/*
+** Close all temporary files that happen to still be open.
+** This routine is called when the database is being closed.
+*/
+void sqliteDbbeCloseAllTempFiles(Dbbe *pBe){
+  int i;
+  for(i=0; i<pBe->nTemp; i++){
+    if( pBe->apTemp[i]!=0 ){
+      unlink(pBe->azTemp[i]);
+      fclose(pBe->apTemp[i]);
+      sqliteFree(pBe->azTemp[i]);
+      pBe->apTemp[i] = 0;
+      pBe->azTemp[i] = 0;
+      break;
+    }
+  }
+  sqliteFree(pBe->azTemp);
+  sqliteFree(pBe->apTemp);
 }

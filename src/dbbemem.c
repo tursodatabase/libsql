@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.5 2000/12/10 18:23:50 drh Exp $
+** $Id: dbbemem.c,v 1.6 2001/01/13 14:34:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -343,20 +343,6 @@ struct MTable {
 };
 
 /*
-** The following structure holds the current state of the RC4 algorithm.
-** We use RC4 as a random number generator.  Each call to RC4 gives
-** a random 8-bit number.
-**
-** Nothing in this file or anywhere else in SQLite does any kind of
-** encryption.  The RC4 algorithm is being used as a PRNG (pseudo-random
-** number generator) not as an encryption device.
-*/
-struct rc4 {
-  int i, j;
-  int s[256];
-};
-
-/*
 ** The following structure contains all information used by GDBM
 ** database driver.  This is a subclass of the Dbbe structure.
 */
@@ -364,10 +350,6 @@ typedef struct Dbbex Dbbex;
 struct Dbbex {
   Dbbe dbbe;         /* The base class */
   Array tables;      /* All tables of the database */
-  int nTemp;         /* Number of temporary files created */
-  FILE **apTemp;     /* Space to hold temporary file pointers */
-  char **azTemp;     /* Names of the temporary files */
-  struct rc4 rc4;    /* The random number generator */
 };
 
 /*
@@ -384,42 +366,6 @@ struct DbbeCursor {
   ArrayElem *elem;   /* Most recently accessed record */
   int needRewind;    /* Next key should be the first */
 };
-
-/*
-** Initialize the RC4 PRNG.  "seed" is a pointer to some random
-** data used to initialize the PRNG.  
-*/
-static void rc4init(struct rc4 *p, char *seed, int seedlen){
-  int i;
-  char k[256];
-  p->j = 0;
-  p->i = 0;
-  for(i=0; i<256; i++){
-    p->s[i] = i;
-    k[i] = seed[i%seedlen];
-  }
-  for(i=0; i<256; i++){
-    int t;
-    p->j = (p->j + p->s[i] + k[i]) & 0xff;
-    t = p->s[p->j];
-    p->s[p->j] = p->s[i];
-    p->s[i] = t;
-  }
-}
-
-/*
-** Get a single 8-bit random value from the RC4 PRNG.
-*/
-static int rc4byte(struct rc4 *p){
-  int t;
-  p->i = (p->i + 1) & 0xff;
-  p->j = (p->j + p->s[p->i]) & 0xff;
-  t = p->s[p->i];
-  p->s[p->i] = p->s[p->j];
-  p->s[p->j] = t;
-  t = p->s[p->i] + p->s[p->j];
-  return t & 0xff;
-}
 
 /*
 ** Forward declaration
@@ -453,41 +399,9 @@ static void sqliteMemClose(Dbbe *pDbbe){
     deleteMTable(pTble);
   }
   ArrayClear(&pBe->tables);
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]!=0 ){
-      unlink(pBe->azTemp[i]);
-      fclose(pBe->apTemp[i]);
-      sqliteFree(pBe->azTemp[i]);
-      pBe->apTemp[i] = 0;
-      pBe->azTemp[i] = 0;
-      break;
-    }
-  }
-  sqliteFree(pBe->azTemp);
-  sqliteFree(pBe->apTemp);
+  sqliteDbbeCloseAllTempFiles(pDbbe);
   memset(pBe, 0, sizeof(*pBe));
   sqliteFree(pBe);
-}
-
-/*
-** Generate a random filename with the given prefix.  The new filename
-** is written into zBuf[].  The calling function must insure that
-** zBuf[] is big enough to hold the prefix plus 20 or so extra
-** characters.
-**
-** Very random names are chosen so that the chance of a
-** collision with an existing filename is very very small.
-*/
-static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
-  int i, j;
-  static const char zRandomChars[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-  strcpy(zBuf, zPrefix);
-  j = strlen(zBuf);
-  for(i=0; i<15; i++){
-    int c = rc4byte(pRc4) % (sizeof(zRandomChars) - 1);
-    zBuf[j++] = zRandomChars[c];
-  }
-  zBuf[j] = 0;
 }
 
 /*
@@ -752,14 +666,9 @@ static int sqliteMemNew(DbbeCursor *pCursr){
   Datum key;
   int go = 1;
   int i;
-  struct rc4 *pRc4;
 
-  pRc4 = &pCursr->pBe->rc4;
   while( go ){
-    iKey = 0;
-    for(i=0; i<4; i++){
-      iKey = (iKey<<8) + rc4byte(pRc4);
-    }
+    iKey = sqliteRandomInteger();
     if( iKey==0 ) continue;
     key.p = (char*)&iKey;
     key.n = 4;
@@ -804,69 +713,31 @@ static int sqliteMemDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
-** Open a temporary file.  The file should be deleted when closed.
-**
-** Note that we can't use the old Unix trick of opening the file
-** and then immediately unlinking the file.  That works great
-** under Unix, but fails when we try to port to Windows.
+** This variable contains pointers to all of the access methods
+** used to implement the MEMORY backend.
 */
-static int sqliteMemOpenTempFile(Dbbe *pDbbe, FILE **ppTble){
-  char *zName;         /* Full name of the temporary file */
-  char zBuf[50];       /* Base name of the temporary file */
-  int i;               /* Loop counter */
-  int limit;           /* Prevent an infinite loop */
-  int rc = SQLITE_OK;  /* Value returned by this function */
-  Dbbex *pBe = (Dbbex*)pDbbe;
-
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]==0 ) break;
-  }
-  if( i>=pBe->nTemp ){
-    pBe->nTemp++;
-    pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
-    pBe->azTemp = sqliteRealloc(pBe->azTemp, pBe->nTemp*sizeof(char*) );
-  }
-  if( pBe->apTemp==0 ){
-    *ppTble = 0;
-    return SQLITE_NOMEM;
-  }
-  limit = 4;
-  zName = 0;
-  do{
-    randomName(&pBe->rc4, zBuf, "/tmp/_temp_file_");
-    sqliteFree(zName);
-    zName = 0;
-    sqliteSetString(&zName, zBuf, 0);
-  }while( access(zName,0)==0 && limit-- >= 0 );
-  *ppTble = pBe->apTemp[i] = fopen(zName, "w+");
-  if( pBe->apTemp[i]==0 ){
-    rc = SQLITE_ERROR;
-    sqliteFree(zName);
-    pBe->azTemp[i] = 0;
-  }else{
-    pBe->azTemp[i] = zName;
-  }
-  return rc;
-}
-
-/*
-** Close a temporary file opened using sqliteMemOpenTempFile()
-*/
-static void sqliteMemCloseTempFile(Dbbe *pDbbe, FILE *f){
-  int i;
-  Dbbex *pBe = (Dbbex*)pDbbe;
-  for(i=0; i<pBe->nTemp; i++){
-    if( pBe->apTemp[i]==f ){
-      unlink(pBe->azTemp[i]);
-      sqliteFree(pBe->azTemp[i]);
-      pBe->apTemp[i] = 0;
-      pBe->azTemp[i] = 0;
-      break;
-    }
-  }
-  fclose(f);
-}
-
+static struct DbbeMethods memoryMethods = {
+  /* n         Close */   sqliteMemClose,
+  /*      OpenCursor */   sqliteMemOpenCursor,
+  /*       DropTable */   sqliteMemDropTable,
+  /* ReorganizeTable */   sqliteMemReorganizeTable,
+  /*     CloseCursor */   sqliteMemCloseCursor,
+  /*           Fetch */   sqliteMemFetch,
+  /*            Test */   sqliteMemTest,
+  /*         CopyKey */   sqliteMemCopyKey,
+  /*        CopyData */   sqliteMemCopyData,
+  /*         ReadKey */   sqliteMemReadKey,
+  /*        ReadData */   sqliteMemReadData,
+  /*       KeyLength */   sqliteMemKeyLength,
+  /*      DataLength */   sqliteMemDataLength,
+  /*         NextKey */   sqliteMemNextKey,
+  /*          Rewind */   sqliteMemRewind,
+  /*             New */   sqliteMemNew,
+  /*             Put */   sqliteMemPut,
+  /*          Delete */   sqliteMemDelete,
+  /*    OpenTempFile */   sqliteDbbeOpenTempFile,
+  /*   CloseTempFile */   sqliteDbbeCloseTempFile
+};
 
 /*
 ** This routine opens a new database.  For the GDBM driver
@@ -884,7 +755,6 @@ Dbbe *sqliteMemOpen(
   char **pzErrMsg        /* Write error messages (if any) here */
 ){
   Dbbex *pNew;
-  long now;
 
   pNew = sqliteMalloc( sizeof(*pNew) );
   if( pNew==0 ){
@@ -892,27 +762,7 @@ Dbbe *sqliteMemOpen(
     return 0;
   }
   ArrayInit(&pNew->tables);
-  pNew->dbbe.Close = sqliteMemClose;
-  pNew->dbbe.OpenCursor = sqliteMemOpenCursor;
-  pNew->dbbe.DropTable = sqliteMemDropTable;
-  pNew->dbbe.ReorganizeTable = sqliteMemReorganizeTable;
-  pNew->dbbe.CloseCursor = sqliteMemCloseCursor;
-  pNew->dbbe.Fetch = sqliteMemFetch;
-  pNew->dbbe.Test = sqliteMemTest;
-  pNew->dbbe.CopyKey = sqliteMemCopyKey;
-  pNew->dbbe.CopyData = sqliteMemCopyData;
-  pNew->dbbe.ReadKey = sqliteMemReadKey;
-  pNew->dbbe.ReadData = sqliteMemReadData;
-  pNew->dbbe.KeyLength = sqliteMemKeyLength;
-  pNew->dbbe.DataLength = sqliteMemDataLength;
-  pNew->dbbe.NextKey = sqliteMemNextKey;
-  pNew->dbbe.Rewind = sqliteMemRewind;
-  pNew->dbbe.New = sqliteMemNew;
-  pNew->dbbe.Put = sqliteMemPut;
-  pNew->dbbe.Delete = sqliteMemDelete;
-  pNew->dbbe.OpenTempFile = sqliteMemOpenTempFile;
-  pNew->dbbe.CloseTempFile = sqliteMemCloseTempFile;
-  time(&now);
-  rc4init(&pNew->rc4, (char*)&now, sizeof(now));
+  pNew->dbbe.x = &memoryMethods;
+  pNew->dbbe.zDir = 0;
   return &pNew->dbbe;
 }

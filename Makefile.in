@@ -48,8 +48,8 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 # Object files for the SQLite library.
 #
 LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
-         main.o parse.o printf.o select.o table.o tokenize.o update.o \
-         util.o vdbe.o where.o tclsqlite.o
+         main.o parse.o printf.o random.o select.o table.o tokenize.o \
+         update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -66,6 +66,7 @@ SRC = \
   $(TOP)/src/main.c \
   $(TOP)/src/parse.y \
   $(TOP)/src/printf.c \
+  $(TOP)/src/random.c \
   $(TOP)/src/select.c \
   $(TOP)/src/shell.c \
   $(TOP)/src/sqlite.h.in \
@@ -161,6 +162,9 @@ expr.o:	$(TOP)/src/expr.c $(HDR)
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/insert.c
+
+random.o:	$(TOP)/src/random.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/random.c
 
 select.o:	$(TOP)/src/select.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/select.c
