@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.108 2004/02/11 10:35:30 drh Exp $
+** $Id: expr.c,v 1.109 2004/02/21 19:17:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -148,16 +148,16 @@ void sqliteTokenCopy(Token *pTo, Token *pFrom){
 }
 ExprList *sqliteExprListDup(ExprList *p){
   ExprList *pNew;
+  struct ExprList_item *pItem;
   int i;
   if( p==0 ) return 0;
   pNew = sqliteMalloc( sizeof(*pNew) );
   if( pNew==0 ) return 0;
   pNew->nExpr = pNew->nAlloc = p->nExpr;
-  pNew->a = sqliteMalloc( p->nExpr*sizeof(p->a[0]) );
-  if( pNew->a==0 ) return 0;
-  for(i=0; i<p->nExpr; i++){
+  pNew->a = pItem = sqliteMalloc( p->nExpr*sizeof(p->a[0]) );
+  for(i=0; pItem && i<p->nExpr; i++, pItem++){
     Expr *pNewExpr, *pOldExpr;
-    pNew->a[i].pExpr = pNewExpr = sqliteExprDup(pOldExpr = p->a[i].pExpr);
+    pItem->pExpr = pNewExpr = sqliteExprDup(pOldExpr = p->a[i].pExpr);
     if( pOldExpr->span.z!=0 && pNewExpr ){
       /* Always make a copy of the span for top-level expressions in the
       ** expression list.  The logic in SELECT processing that determines
@@ -166,10 +166,10 @@ ExprList *sqliteExprListDup(ExprList *p){
     }
     assert( pNewExpr==0 || pNewExpr->span.z!=0 
             || pOldExpr->span.z==0 || sqlite_malloc_failed );
-    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
-    pNew->a[i].sortOrder = p->a[i].sortOrder;
-    pNew->a[i].isAgg = p->a[i].isAgg;
-    pNew->a[i].done = 0;
+    pItem->zName = sqliteStrDup(p->a[i].zName);
+    pItem->sortOrder = p->a[i].sortOrder;
+    pItem->isAgg = p->a[i].isAgg;
+    pItem->done = 0;
   }
   return pNew;
 }

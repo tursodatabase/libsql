@@ -1,5 +1,5 @@
-C Cleanup\sthe\sprintf\scode\sto\smake\sit\ssmaller\sand\smore\smodular.\r\nFix\sa\smemory\sleak\sin\sthe\snew\sOP_ContextPush\sopcode.\s(CVS\s1258)
-D 2004-02-21T19:02:30
+C Fix\sa\slong-standing\smemory\sleak\sthat\sthe\snew\slast_insert_rowid()\stests\nbrought\sto\slight.\s(CVS\s1259)
+D 2004-02-21T19:17:18
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/copy.c 391ce142f6b1faa093867ecee134f61a5028a9af
 F src/date.c 6120c591cd905799318018cc67df53e9bdfaef28
 F src/delete.c 8e2ff752bf485906effcc64f267cdd7227463567
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
-F src/expr.c fdd57e18cf6f2dea42e1e1930930b32ec6351c47
+F src/expr.c 7bb3a1ffbf3233b663f017d5296a718156f1f5fb
 F src/func.c 36504a3458a5501ce960c46c74ead32aab9b306a
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6a5fb5b89a98307060bb4a92a499b5d3dba74553
-R 23ba520dcd63d47bd6ccb825a335f506
+P 2756f7af3382fa9d186ab99cf76f469fb891a3c3
+R 09dcfa9883318e3dd453fbd3aecb1691
 U drh
-Z af3bc531c9f40f1ba9bd7423a0477add
+Z 0b989ac8450abf4555e95dc344458b63
