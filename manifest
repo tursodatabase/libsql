@@ -1,5 +1,5 @@
-C Rework\sthe\schanges\sfor\sticket\s#176\s(check-ins\s(760)\sand\s(761))\sto\sbe\nmore\sconsistent\swith\sthe\srest\sof\sthe\ssource\scode.\s(CVS\s768)
-D 2002-10-20T18:19:45
+C Take\scare\sto\strack\sephemeral\sstrings\sin\sthe\sVDBE\sand\smake\scopies\sof\sephemeral\nstrings\sthat\sneed\sto\sbe\spreserved.\s\sTicket\s#177.\s(CVS\s769)
+D 2002-10-22T15:04:34
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 62c98842447effe92eba9622bb2f9a2a8a4b97ad
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c 4144effb953f1f25eb451dba85e69f0c34e3b788
+F src/vdbe.c b5d25c18f306cdb1da145dd555b056057920521f
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 8ff2acfcb9bb15a057512bd6207b259feed57a2c
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 395ab5fac201a37d6eca833ffd6f58ac8a0121a2
-R 839af7b0330753291020e1f24ae79a14
+P f50a177b4239bc7a83563ac9361e830ec04e81fb
+R 51ce3b0413b1dc8a7f5705e4ce1ca408
 U drh
-Z 224ddb64edfd2ea0e4f95e777cac97ff
+Z c497ca5b513d571220d0f770a2a71d04
