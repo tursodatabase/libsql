@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.24 2004/06/12 01:43:27 danielk1977 Exp $
+# $Id: lock.test,v 1.25 2004/06/14 08:26:37 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -43,9 +43,10 @@ do_test lock-1.6 {
   execsql {INSERT INTO t1 VALUES(1,2)}
   execsql {SELECT * FROM t1}
 } {1 2}
-do_test lock-1.7.1 {
-  catchsql {SELECT * FROM t1} db2
-} {1 {no such table: t1}}
+# Update: The schema is now brought up to date by test lock-1.5.
+# do_test lock-1.7.1 {
+#   catchsql {SELECT * FROM t1} db2
+# } {1 {no such table: t1}}
 do_test lock-1.7.2 {
   catchsql {SELECT * FROM t1} db2
 } {0 {1 2}}

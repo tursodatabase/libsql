@@ -13,10 +13,22 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.9 2004/06/13 23:07:04 drh Exp $
+# $Id: enc2.test,v 1.10 2004/06/14 08:26:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# The rough organisation of tests in this file is:
+#
+# enc2.1.*: Simple tests with a UTF-8 db.
+# enc2.2.*: Simple tests with a UTF-16LE db.
+# enc2.3.*: Simple tests with a UTF-16BE db.
+# enc2.4.*: Test that attached databases must have the same text encoding
+#           as the main database.
+# enc2.5.*: Test the behaviour of the library when a collation sequence is
+#           not available for the most desirable text encoding.
+# enc2.6.*: Test that the VerifyCookie opcode protects against assuming the
+#           wrong text encoding for the database.
 
 db close
 
@@ -252,4 +264,55 @@ do_test enc2-5.11 {
   lappend res $::test_collate_enc
 } {one two three four five UTF-8}
 
+db close
+file delete -force test.db
+
+# The following tests - enc2-6.* - function as follows:
+#
+# 1: Open an empty database file assuming UTF-16 encoding.
+# 2: Open the same database with a different handle assuming UTF-8. Create
+#    a table using this handle.
+# 3: Read the sqlite_master table from the first handle. 
+# 4: Ensure the first handle recognises the database encoding is UTF-8.
+#
+do_test enc2-6.1 {
+  sqlite db test.db
+  execsql {
+    PRAGMA encoding = 'UTF-16';
+    SELECT * FROM sqlite_master;
+  }
+} {}
+do_test enc2-6.2 {
+  set enc [execsql {
+    PRAGMA encoding;
+  }]
+  string range $enc 0 end-2 ;# Chop off the "le" or "be"
+} {UTF-16}
+do_test enc2-6.3 {
+  sqlite db2 test.db
+  execsql {
+    PRAGMA encoding = 'UTF-8';
+    CREATE TABLE abc(a, b, c);
+  } db2
+} {}
+do_test enc2-6.4 {
+  execsql {
+    SELECT * FROM sqlite_master;
+  }
+} {table abc abc 2 {CREATE TABLE abc(a, b, c)}}
+do_test enc2-6.5 {
+  execsql {
+    PRAGMA encoding;
+  }
+} {UTF-8}
+
+db close
+db2 close
+
+
 finish_test
+
+
+
+
+
