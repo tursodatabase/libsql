@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.28 2004/06/20 03:06:18 dougcurrie Exp $
+# $Id: btree.test,v 1.29 2004/06/30 02:35:51 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -372,14 +372,14 @@ do_test btree-5.1 {
 } {0 0 0 0 0 0 0 0 0 0}
 do_test btree-5.2 {
   set rc [catch {
-    btree_update_meta $::b1 1 2 3 4 5 6 7 8 9 10
+    btree_update_meta $::b1 0 1 2 3 4 5 6 7 8 9
   } msg]
   lappend rc $msg
 } {1 SQLITE_ERROR}
 do_test btree-5.3 {
   btree_begin_transaction $::b1
   set rc [catch {
-    btree_update_meta $::b1 1 2 3 4 5 6 7 8 9 10
+    btree_update_meta $::b1 0 1 2 3 4 5 6 7 8 9
   } msg]
   lappend rc $msg
 } {0 {}}
@@ -393,7 +393,7 @@ do_test btree-5.5 {
 } {0 0 0 0 0 0 0 0 0 0}
 do_test btree-5.6 {
   btree_begin_transaction $::b1
-  btree_update_meta $::b1 10 20 30 40 50 60 70 80 90 100
+  btree_update_meta $::b1 0 10 20 30 40 50 60 70 80 90
   btree_commit $::b1
   btree_get_meta $::b1
 } {0 10 20 30 40 50 60 70 80 90}

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.17 2004/06/29 14:03:58 danielk1977 Exp $
+# $Id: capi3.test,v 1.18 2004/06/30 02:35:51 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -405,12 +405,10 @@ do_test capi3-5.0 {
   }
   set sql "SELECT * FROM t1"
   set STMT [sqlite3_prepare $DB $sql -1 TAIL]
-
   sqlite3_column_count $STMT
 } 3
 
 check_header $STMT capi3-5.1 {a b c} {VARINT BLOB VARCHAR(16)}
-
 do_test capi3-5.2 {
   sqlite3_step $STMT
 } SQLITE_ROW
@@ -440,6 +438,7 @@ do_test capi3-5.12 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 
+set ::ENC [execsql {pragma encoding}]
 db close
 
 do_test capi3-6.0 {
@@ -468,13 +467,14 @@ do_test capi3-7.1 {
   set ::bt [btree_open test.db 10 0]
   btree_begin_transaction $::bt
   set meta [btree_get_meta $::bt]
-  lset meta 5 2
-  eval [concat btree_update_meta $::bt $meta]
+  lset meta 2 2
+  eval [concat btree_update_meta $::bt [lrange $meta 0 end]]
   btree_commit $::bt
   btree_close $::bt
 } {}
 do_test capi3-7.2 {
   sqlite3 db test.db
+breakpoint
   catchsql {
     SELECT * FROM sqlite_master;
   }
@@ -498,6 +498,7 @@ do_test capi3-8.2 {
 
   # Build a 5-field row record consisting of 5 null records. This is
   # officially black magic.
+  unset data
   set data [binary format c6 {6 0 0 0 0 0}]
   btree_insert $::bc 5 $data
 
@@ -518,8 +519,14 @@ do_test capi3-8.4 {
 
   # Build a 5-field row record. The first field is a string 'table', and
   # subsequent fields are all NULL. Replace the other broken record with
-  # this one and try to read the schema again.
-  set data [binary format c6a5 {6 23 0 0 0 0} table]
+  # this one and try to read the schema again. The broken record uses
+  # either UTF-8 or native UTF-16 (if this file is being run by
+  # utf16.test).
+  if { [string match UTF-16* $::ENC] } {
+    set data [binary format c6a10 {6 33 0 0 0 0} [utf16 table]]
+  } else {
+    set data [binary format c6a5 {6 23 0 0 0 0} table]
+  }
   btree_insert $::bc 5 $data
 
   btree_close_cursor $::bc

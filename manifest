@@ -1,5 +1,5 @@
-C Some\sextra\stests\sfor\sthe\sOP_MustBeInt\sopcode.\s(CVS\s1769)
-D 2004-06-30T02:29:03
+C Minor\sfixes\sfor\sUTF-16\sdatabases.\s(CVS\s1770)
+D 2004-06-30T02:35:51
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,16 +64,16 @@ F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c f72288553ca3cdaf686baab4b1797dd98140c501
 F src/test1.c 151df224f7202c2a0d907638f22ed4b0e2378ba9
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
-F src/test3.c 7bf0d3fb811a68e009f4c0b228d6daad49176efb
+F src/test3.c 7163c577f1dd73ad4a1d3730ea6541af3274c964
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 6aaf6d79cc2157c70a06031dd1531707d644cfb4
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
-F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
+F src/util.c 94796d2b31600beee7de426c3946022ef3508d46
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
-F src/vdbe.c aa0339933c31e4bb3bb83831a185d60be1060cb5
+F src/vdbe.c b1a0357089b2118c9509703ec6208cb75fb08413
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
 F src/vdbeapi.c ba3722f45db3d3c3509bf5d24f4f868f4c64449d
@@ -89,14 +89,14 @@ F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test ca031e902f63fb7d69545b4a47b0c7aea8747ffe
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
-F test/btree.test f1dc208d59b1c28f853ba09dd2553fc3382d22b6
+F test/btree.test 973791eb269ab320c1a2bf0c440adee28ea936d2
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
 F test/capi2.test fe61f341e953f73c29bacfcbdaf688cd7b0e0d38
-F test/capi3.test f16c92be7d9a0b66893651c44bebc05386daeb5b
+F test/capi3.test 3a7f759ce26a300ecdd288be901fcb0727f8773a
 F test/collate1.test 2ee4fa3a47a652ccf56c5ddf65dcc44d9bad82ef
 F test/collate2.test c1a3b41f761b28853c5696037f92de928f93233b
 F test/collate3.test e60b428e07ec945492ba90ff1c895902ee3a8a50
@@ -164,17 +164,17 @@ F test/tester.tcl f36cc22d0532725073ca78272d7834d56dceb6d9
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
-F test/trace.test 0c5da18f986bf2c83b2669f2691931264cdaab6d
+F test/trace.test 0ed72787440d97c6de6b6ecb4c022e6f78d5d94a
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
 F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 97c11d3cf43d752b172809bb82536372ee5e399c
-F test/types.test 6c49e574970866558365a025b44c9fd8a162ef0d
+F test/types.test 41aa7ad65b6e7dc07fd1a06acc218dc6e8118578
 F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
-F test/utf16.test b20a8cea5877d53fa2cf177a38b0d5f4b84b70b4
+F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
 F test/vacuum.test 3922b97f958986a9ab198c30480f54361087a06f
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test b42c98499ae9fbf578cd7a4b020d23057c8825fb
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 73eec675059f6d2178c6175268e80750378bf07b
-R 62daf07c155b652cd6cf4ae16d676643
-U drh
-Z d7a37b25656f17819dd729b71cc53465
+P b9d5858ca171e11afaeb9712efa0fc1a0e79102b
+R 1713a91d92d6107dcb2c5c63e12187e6
+U danielk1977
+Z 23a2baa08de6f312dfc7ecc222823a86

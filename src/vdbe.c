@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.394 2004/06/29 13:54:50 drh Exp $
+** $Id: vdbe.c,v 1.395 2004/06/30 02:35:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -702,6 +702,7 @@ case OP_Real: {
   pTos->enc = SQLITE_UTF8;
   pTos->r = sqlite3VdbeRealValue(pTos);
   pTos->flags |= MEM_Real;
+  sqlite3VdbeChangeEncoding(pTos, db->enc);
   break;
 }
 
