@@ -1,6 +1,6 @@
-C Fix\sa\smemory\sleak\sin\spager.c.\s(CVS\s2151)
-D 2004-11-24T01:16:43
-F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
+C The\sconfigure\sscript\snow\sautomatically\sdetects\stclConfig.sh\sand\sbuilds\sthe\nTcl\sextension\sonly\sif\stclConfig.sh\sis\spresent.\s\sThe\sTcl\sextension\scan\sbe\ndisabled\susing\s--disable-tcl.\s(CVS\s2152)
+D 2004-11-25T13:50:01
+F Makefile.in 323399124557d568541dc377780679b19df80f40
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -10,13 +10,13 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure 8f1b0d5cad4dadcc1677c737e35646abf6332794 x
-F configure.ac 5903493fe34908d768d4abaa3c0c9397e32e2bb5
+F configure 4b52c5747661a4864365ab4cd6ca6e2f6ef9c86a x
+F configure.ac acefb1bd62d62959f6288353c2d7b3d65785fc4b
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk cdbb576b8a789e8d0428d39c07600097628198a0
+F main.mk 41626e77ccf8ece8a3afa98e41c2fe584160e7a1
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 14a794f7b206976afc416b30fe8e0fc97f3434e9
 F mkopcodeh.awk 4090944e4de0a2ccb99aa0083290f73bce4db406
@@ -261,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 5944d51e6c164270301b57e4351add4cb6137be6
-R 2bae729981167d404fdf1f99ff102b64
+P 0ad4ed87ce1112663ca94805dea167372485396a
+R 8eb4a1911a6d9341ac20110203ec6e63
 U drh
-Z dee73820d0fb35a1429c8ffae402ed94
+Z 0cc9ef7bf73b18d792c309c66172b724

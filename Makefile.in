@@ -44,11 +44,11 @@ LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # Compiler options needed for programs that use the TCL library.
 #
-TCL_FLAGS = @TARGET_TCL_INC@
+TCC += @TCL_INCLUDE_SPEC@
 
 # The library that programs using TCL must link against.
 #
-LIBTCL = @TARGET_TCL_LIBS@
+LIBTCL = @TCL_LIB_SPEC@ @TCL_LIBS@
 
 # Compiler options needed for programs that use the readline() library.
 #
@@ -74,19 +74,27 @@ LIBPTHREAD=@TARGET_THREAD_LIB@
 #
 TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 
+# Filename extensions
+#
+BEXE = @BUILD_EXEEXT@
+TEXE = @TARGET_EXEEXT@
+
+# The following variable is "1" to cause the TCL extension library to
+# be build from the "all" target.
+#
+HAVE_TCL = @HAVE_TCL@
+
 # You should not have to change anything below this line
 ###############################################################################
 
-BEXE = @BUILD_EXEEXT@
-
 # Object files for the SQLite library.
 #
-LIBOBJ = attach.lo auth.lo btree.lo build.lo date.lo delete.lo \
-         expr.lo func.lo hash.lo insert.lo \
+LIBOBJ = attach.lo auth.lo btree.lo build.lo cursor.lo date.lo \
+         delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os_mac.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo printf.lo random.lo \
-         select.lo table.lo tokenize.lo trigger.lo update.lo util.lo vacuum.lo \
-         vdbe.lo vdbeapi.lo vdbeaux.lo vdbemem.lo \
+         select.lo table.lo tokenize.lo trigger.lo update.lo \
+         util.lo vacuum.lo vdbe.lo vdbeapi.lo vdbeaux.lo vdbemem.lo \
          where.lo utf.lo legacy.lo
 
 # All of the source code files.
@@ -97,6 +105,7 @@ SRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
+  $(TOP)/src/cursor.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -183,7 +192,7 @@ VDBEHDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3@TARGET_EXEEXT@
+all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -201,10 +210,11 @@ libsqlite3.la:	$(LIBOBJ)
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o libtclsqlite3.la tclsqlite.lo \
-		libsqlite3.la $(LIBTCL) $(LIBPTHREAD) -rpath $(libdir)/sqlite \
+		$(LIBOJB) @TCL_STUB_LIB_SPEC@ $(LIBPTHREAD) \
+                -rpath $(libdir)/sqlite \
 		-version-info "8:6:8"
 
-sqlite3@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
+sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) $(LIBPTHREAD) \
 		-o sqlite3 $(TOP)/src/shell.c libsqlite3.la $(LIBREADLINE)
 
@@ -258,6 +268,9 @@ config.h:
 	./temp >config.h
 	echo >>config.h
 	rm -f temp.c temp
+
+cursor.lo:	$(TOP)/src/cursor.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/cursor.c
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/date.c
@@ -314,10 +327,10 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	./lemon $(OPTS) parse.y
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
-	$(LTCOMPILE) $(TCL_FLAGS) -c $(TOP)/src/pragma.c
+	$(LTCOMPILE) -c $(TOP)/src/pragma.c
 
 printf.lo:	$(TOP)/src/printf.c $(HDR)
-	$(LTCOMPILE) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+	$(LTCOMPILE) -c $(TOP)/src/printf.c
 
 random.lo:	$(TOP)/src/random.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/random.c
@@ -333,7 +346,7 @@ table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/table.c
 
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
+	$(LTCOMPILE) -c $(TOP)/src/tclsqlite.c
 
 tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tokenize.c
@@ -372,31 +385,34 @@ vdbemem.lo:	$(TOP)/src/vdbemem.c $(VDBEHDR)
 where.lo:	$(TOP)/src/where.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/where.c
 
-tclsqlite-sh.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) $(TCL_FLAGS) -DTCLSH=1 -o $@ -c $(TOP)/src/tclsqlite.c
+tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
+	$(LTCOMPILE) -DTCLSH=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
-tclsqlite3:	tclsqlite-sh.lo libsqlite3.la
-	$(LTLINK) $(TCL_FLAGS) -o tclsqlite3 tclsqlite-sh.lo \
+tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
+	$(LTCOMPILE) -DTCL_USE_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
+
+tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
+	$(LTLINK) -o tclsqlite3 tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
-testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
-	$(LTLINK) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
+testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.la $(TESTSRC)
+	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1\
                 $(THREADSAFE) $(TEMP_STORE)\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la libsqlite3.la $(LIBTCL)
 
-crashtest@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
-	$(LTLINK) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
+crashtest$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC) $(TOP)/src/os_test.c
+	$(LTLINK) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
 		-o crashtest \
 		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
 		libsqlite3.la $(LIBTCL) $(THREADLIB)
 
 
 
-fulltest:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@ crashtest@TARGET_EXEEXT@
+fulltest:	testfixture$(TEXE) sqlite3$(TEXE) crashtest$(TEXE)
 	./testfixture $(TOP)/test/all.test
 
-test:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@
+test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture $(TOP)/test/quick.test
 
 
@@ -567,14 +583,14 @@ install:	sqlite3 libsqlite3.la sqlite3.h
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 
 clean:	
-	rm -f *.lo *.la *.o sqlite3@TARGET_EXEEXT@ libsqlite3.la
+	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps 
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) keywordhash.c
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -f testfixture@TARGET_EXEEXT@ test.db
+	rm -f testfixture$(TEXE) test.db
 	rm -rf doc
 	rm -f common.tcl
 	rm -f sqlite3.dll sqlite3.lib

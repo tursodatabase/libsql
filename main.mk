@@ -183,7 +183,7 @@ objects: $(LIBOBJ_ORIG)
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(VDBEHDR) opcodes.c keyworkhash.c
+target_source:	$(SRC) $(VDBEHDR) opcodes.c keywordhash.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
