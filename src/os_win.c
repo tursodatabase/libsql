@@ -18,6 +18,10 @@
 
 #include <winbase.h>
 
+#ifdef __CYGWIN__
+# include <sys/cygwin.h>
+#endif
+
 /*
 ** Macros used to determine whether or not to use threads.
 */
@@ -703,10 +707,17 @@ char *sqlite3OsFullPathname(const char *zRelative){
   char *zNotUsed;
   char *zFull;
   int nByte;
+#ifdef __CYGWIN__
+  nByte = strlen(zRelative) + MAX_PATH + 1001;
+  zFull = sqliteMalloc( nByte );
+  if( zFull==0 ) return 0;
+  if( cygwin_conv_to_full_win32_path(zRelative, zFull) ) return 0;
+#else
   nByte = GetFullPathNameA(zRelative, 0, 0, &zNotUsed) + 1;
   zFull = sqliteMalloc( nByte );
   if( zFull==0 ) return 0;
   GetFullPathNameA(zRelative, nByte, zFull, &zNotUsed);
+#endif
   return zFull;
 }
 
