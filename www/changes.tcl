@@ -21,6 +21,21 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 August 29 (3.0.5 beta)} {
+<li>Support for ":AAA" style bind parameter names.</li>
+<li>Added the new sqlite3_bind_parameter_name() interface.</li>
+<li>Support for TCL variable names embedded in SQL statements in the
+    TCL bindings.</li>
+<li>The TCL bindings transfer data without necessarily doing a conversion
+    to a string.</li>
+<li>The database for TEMP tables is not created until it is needed.</li>
+<li>Add the ability to specify an alternative temporary file directory
+    using the "sqlite_temp_directory" global variable.</li>
+<li>A compile-time option (SQLITE_BUSY_RESERVED_LOCK) causes the busy
+    handler to be called when there is contention for a RESERVED lock.</li>
+<li>Various bug fixes and optimizations</li>
+}
+
 chng {2004 August 8 (3.0.4 beta)} {
 <li>CREATE TABLE and DROP TABLE now work correctly as prepared statements.</li>
 <li>Fix a bug in VACUUM and UNIQUE indices.</li>
