@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.13 2000/06/21 13:59:12 drh Exp $
+** $Id: util.c,v 1.14 2000/07/31 11:57:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -605,9 +605,9 @@ int main(int argc, char **argv){
 #endif
 
 /*
-** This routine is used for sorting.  Each key is a list one or more
-** null-terminated strings.  The list is terminated by two null in
-** a row.  For example, the following text is strings:
+** This routine is used for sorting.  Each key is a list of one or more
+** null-terminated strings.  The list is terminated by two nulls in
+** a row.  For example, the following text is key with three strings:
 **
 **            +one\000-two\000+three\000\000
 **
