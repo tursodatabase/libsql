@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.73 2004/06/19 15:40:23 drh Exp $
+** $Id: func.c,v 1.74 2004/06/19 17:33:07 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -768,7 +768,9 @@ static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
   zBuf[n] = 0;
   sqlite3_result_text(context, zBuf, n, SQLITE_TRANSIENT);
 }
+#endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
 /*
 ** The following two SQL functions are used to test returning a text
 ** result with a destructor. Function 'test_destructor' takes one argument
@@ -810,7 +812,20 @@ static void test_destructor_count(
 ){
   sqlite3_result_int(pCtx, test_destructor_count_var);
 }
+#endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
+/*
+** Routines for testing the sqlite3_get_auxdata() and sqlite3_set_auxdata()
+** interface.
+**
+** The test_auxdata() SQL function attempts to register each of its arguments
+** as auxiliary data.  If there are no prior registrations of aux data for
+** that argument (meaning the argument is not a constant or this is its first
+** call) then the result for that argument is 0.  If there is a prior
+** registration, the result for that argument is 1.  The overall result
+** is the individual argument results separated by spaces.
+*/
 static void free_test_auxdata(void *p) {sqliteFree(p);}
 static void test_auxdata(
   sqlite3_context *pCtx, 
@@ -840,7 +855,7 @@ static void test_auxdata(
   }
   sqlite3_result_text(pCtx, zRet, 2*nArg-1, free_test_auxdata);
 }
-#endif
+#endif /* SQLITE_TEST */
 
 /*
 ** An instance of the following structure holds the context of a

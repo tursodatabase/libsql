@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.226 2004/06/19 16:06:12 drh Exp $
+** $Id: build.c,v 1.227 2004/06/19 17:33:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -62,6 +62,13 @@ void sqlite3FinishCoding(Parse *pParse){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
+
+    /* The cookie mask contains one bit for each database file open.
+    ** (Bit 0 is for main, bit 1 is for temp, and so forth.)  Bits are
+    ** set for each database that is used.  Generate code to start a
+    ** transaction on each used database and to verify the schema cookie
+    ** on each used database.
+    */
     if( pParse->cookieMask!=0 ){
       u32 mask;
       int iDb;
@@ -221,8 +228,8 @@ void sqlite3UnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
 
 /*
 ** Erase all schema information from the in-memory hash tables of
-** database connection.  This routine is called to reclaim memory
-** before the connection closes.  It is also called during a rollback
+** a sigle database.  This routine is called to reclaim memory
+** before the closes.  It is also called during a rollback
 ** if there were schema changes during the transaction.
 **
 ** If iDb<=0 then reset the internal schema tables for all database
@@ -357,9 +364,10 @@ void sqlite3DeleteTable(sqlite *db, Table *pTable){
   /* Delete the Table structure itself.
   */
   for(i=0; i<pTable->nCol; i++){
-    sqliteFree(pTable->aCol[i].zName);
-    sqliteFree(pTable->aCol[i].zDflt);
-    sqliteFree(pTable->aCol[i].zType);
+    Column *pCol = &pTable->aCol[i];
+    sqliteFree(pCol->zName);
+    sqliteFree(pCol->zDflt);
+    sqliteFree(pCol->zType);
   }
   sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
@@ -379,7 +387,7 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
   FKey *pF1, *pF2;
   int i = p->iDb;
   assert( db!=0 );
-  pOld = sqlite3HashInsert(&db->aDb[i].tblHash, p->zName, strlen(p->zName)+1, 0);
+  pOld = sqlite3HashInsert(&db->aDb[i].tblHash, p->zName, strlen(p->zName)+1,0);
   assert( pOld==0 || pOld==p );
   for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
     int nTo = strlen(pF1->zTo) + 1;
@@ -444,13 +452,29 @@ int findDb(sqlite3 *db, Token *pName){
   return -1;
 }
 
+/* The table or view or trigger name is passed to this routine via tokens
+** pName1 and pName2. If the table name was fully qualified, for example:
+**
+** CREATE TABLE xxx.yyy (...);
+** 
+** Then pName1 is set to "xxx" and pName2 "yyy". On the other hand if
+** the table name is not fully qualified, i.e.:
+**
+** CREATE TABLE yyy(...);
+**
+** Then pName1 is set to "yyy" and pName2 is "".
+**
+** This routine sets the *ppUnqual pointer to point at the token (pName1 or
+** pName2) that stores the unqualified table name.  The index of the
+** database "xxx" is returned.
+*/
 int sqlite3TwoPartName(
-  Parse *pParse, 
-  Token *pName1, 
-  Token *pName2, 
-  Token **pUnqual
+  Parse *pParse,      /* Parsing and code generating context */
+  Token *pName1,      /* The "xxx" in the name "xxx.yyy" */
+  Token *pName2,      /* The "yyy" in the name "xxx.yyy" */
+  Token **pUnqual     /* Write the unqualified object name here */
 ){
-  int iDb;
+  int iDb;                    /* Database holding the object */
   sqlite3 *db = pParse->db;
 
   if( pName2 && pName2->n>0 ){

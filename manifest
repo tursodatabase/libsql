@@ -1,5 +1,5 @@
-C Omit\sthe\sDB_Locked\sand\sDB_Cookie\sflags.\s\sOther\sminor\scleanup.\s(CVS\s1642)
-D 2004-06-19T16:06:11
+C Make\ssure\sVdbeFunc\sentries\sare\sinitialized\sbefore\strying\sto\sdestroy\sthem.\nAlso,\sunrelated\scomment\schanges\sin\sbuild.c.\s(CVS\s1643)
+D 2004-06-19T17:33:07
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,12 +28,12 @@ F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c 09d8863a5dc174bac8bd3fc293a3e2519b9d7a49
+F src/build.c 2ed1f14a72ce94a2e4adf333272d67a49925304b
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c a5191011b7429dff939df631b8bdcc1714b8d7aa
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 9ae0e55a230802da35a55fd6e87533cca0301af9
-F src/func.c 21985e3b20749a18fdf3ae77b455815f730be0b9
+F src/func.c e520c64e83b4a3fb93668552891124b453cc0eff
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1428887f4a7515a7d34e82aaeb76297c79ba378b
@@ -74,7 +74,7 @@ F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
 F src/vdbe.c 3931b2e4dfb23c8808fb4efc4880dda08c8915ad
 F src/vdbe.h 9ad64674c4c7acd6744174cab5d34013413ef0d3
 F src/vdbeInt.h d007ccada5e3043816097242a560ed6c7f6483ce
-F src/vdbeapi.c 0ef00cd2a3764363e957f8e9c6bc90d12989ee3a
+F src/vdbeapi.c 8a9421341e09b506a934132c9015f26362ae8c0e
 F src/vdbeaux.c d2d95f1b9341bd3861e5229cb24a821715824449
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
@@ -109,7 +109,7 @@ F test/enc.test e29a0d0558f4597ac1652a7bbac03b0e4ce17416
 F test/enc2.test 57c847492afd46eef7a498fc3853fe909a40fef7
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
-F test/func.test a680cac38851a49669eae6eee7dcf13057fae480
+F test/func.test c97954ad23bdbc58e2b73f264f6a006bae79f626
 F test/hook.test c4102c672d67f8fb60ea459842805abcba69a747
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
 F test/index.test b6941dd532815f278042b85f79b1a6dc16c4d729
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 70680a34b4b617286d92730bd3042b8b569b3371
-R b1a9e75569a189850c5300b5594dbc5c
+P 01f74b420c3f24918c066172e09cebbb22568faf
+R 078b0d50f5c9020e229ba6d09ba2761f
 U drh
-Z 1c5518adfc53e32ee655b3ffea101b0b
+Z 71efb9400cf1f9d35d1444e4dd44098f
