@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.21 2002/11/06 14:08:12 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.22 2003/05/03 19:04:04 drh Exp $}
 
 puts {<html>
 <head>
@@ -396,6 +396,32 @@ INSERT INTO t1 SELECT a,b FROM t1_backup;
 DROP TABLE t1_backup;
 COMMIT;
 </pre></blockquote>
+}
+
+faq {
+  I deleted a lot of data but the database file did not get any
+  smaller.  Is this a bug?
+} {
+  <p>No.  When you delete information from an SQLite database, the
+  unused disk space is added to an internal "free-list" and is reused
+  the next time you insert data.  The disk space is not lost.  But
+  neither is it returned to the operating system.</p>
+
+  <p>If you delete a lot of data and want to shrink the database file,
+  run the VACUUM command (version 2.8.1 and later).  VACUUM will reconstruct
+  the database from scratch.  This will leave the database with an empty
+  free-list and a file that is minimal in size.  Note, however, that the
+  VACUUM can take some time to run (around a half second per megabyte
+  on the Linux box where SQLite is developed) and it can use up to twice
+  as much temporary disk space as the original file while it is running.
+  </p>
+}
+
+faq {
+  Can I use SQLite in my commerical product without paying royalties?
+} {
+  <p>Yes.  SQLite is in the public domain.  No claim of ownership is made
+  to any part of the code.  You can do anything you want with it.</p>
 }
 
 # End of questions and answers.

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.51 2003/05/03 04:55:19 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.52 2003/05/03 19:04:04 drh Exp $}
 
 puts {<html>
 <head>
@@ -913,7 +913,16 @@ assumed.</td>
 <tr>
 <td valign="top" align="right">soundex(<i>X</i>)</td>
 <td valign="top">Compute the soundex encoding of the string <i>X</i>.
-This returns "?000" for a NULL argument.
+The string "?000" is returned if the argument is NULL.
+This function is omitted from SQLite by default.
+It is only available the -DSQLITE_SOUNDEX=1 compiler option
+is used when SQLite is built.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">sqlite_version(*)</td>
+<td valign="top">Return the version string for the SQLite library
+that is running.  Example:  "2.8.0"</td>
 </tr>
 
 <tr>
@@ -1067,13 +1076,18 @@ contained the constraint violation continue to be inserted or updated
 normally.  No error is returned.</p></dd>
 
 <dt><b>REPLACE</b></dt>
-<dd><p>When a UNIQUE constraint violation occurs, the pre-existing row
-that is causing the constraint violation is removed prior to inserting
+<dd><p>When a UNIQUE constraint violation occurs, the pre-existing rows
+that are causing the constraint violation are removed prior to inserting
 or updating the current row.  Thus the insert or update always occurs.
-The command continues executing normally.  No error is returned.</p>
-<p>If a NOT NULL constraint violation occurs, the NULL value is replaced
+The command continues executing normally.  No error is returned.
+If a NOT NULL constraint violation occurs, the NULL value is replaced
 by the default value for that column.  If the column has no default
 value, then the ABORT algorithm is used.</p>
+
+<p>When this conflict resolution strategy delete rows in order to
+statisfy a constraint, it does not invoke delete triggers on those
+rows.  But that may change in a future release.</p>
+
 </dd>
 </dl>
 
@@ -1435,11 +1449,12 @@ In version 1.0 of SQLite, the VACUUM command would invoke
 <b>gdbm_reorganize()</b> to clean up the backend database file.</p>
 
 <p>
-This command was readded after version 2.8.0. of SQLite.  It now cleans
+VACUUM became a no-op for version 2.0.0 of SQLite. 
+The command was reactivated with version 2.8.1.  It now cleans
 the database by copying its contents to a temporary database file, and 
 reloading the database file from it.  This will eliminate free pages, 
 align table data to be contiguous, and otherwise clean up the database 
-file structure.</p>
+file structure.  The index or table name argument is now ignored.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>
@@ -1453,9 +1468,3 @@ Back to the SQLite Home Page</a>
 </p>
 
 </body></html>}
-
-
-
-
-
-
