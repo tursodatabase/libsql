@@ -37,6 +37,16 @@
 # include <winbase.h>
 #endif
 
+#if OS_MAC
+# include <extras.h>
+# include <path2fss.h>
+# include <TextUtils.h>
+# include <FinderRegistry.h>
+# include <Folders.h>
+# include <Timer.h>
+# include <OSUtils.h>
+#endif
+
 /*
 ** Macros for performance tracing.  Normally turned off
 */
@@ -209,6 +219,9 @@ int sqliteOsDelete(const char *zFilename){
 #if OS_WIN
   DeleteFile(zFilename);
 #endif
+#if OS_MAC
+  unlink(zFilename);
+#endif
   return SQLITE_OK;
 }
 
@@ -221,6 +234,9 @@ int sqliteOsFileExists(const char *zFilename){
 #endif
 #if OS_WIN
   return GetFileAttributes(zFilename) != 0xffffffff;
+#endif
+#if OS_MAC
+  return access(zFilename, 0)==0;
 #endif
 }
 
@@ -294,6 +310,55 @@ int sqliteOsOpenReadWrite(
   id->locked = 0;
   return SQLITE_OK;
 #endif
+#if OS_MAC
+  FSSpec fsSpec;
+# ifdef _LARGE_FILE
+  HFSUniStr255 dfName;
+  FSRef fsRef;
+  if( __path2fss(zFilename, &fsSpec) != noErr ){
+    if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
+      return SQLITE_CANTOPEN;
+  }
+  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
+    return SQLITE_CANTOPEN;
+  FSGetDataForkName(&dfName);
+  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
+                 fsRdWrShPerm, &(id->refNum)) != noErr ){
+    if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
+                   fsRdWrPerm, &(id->refNum)) != noErr ){
+      if (FSOpenFork(&fsRef, dfName.length, dfName.unicode,
+                   fsRdPerm, &(id->refNum)) != noErr )
+        return SQLITE_CANTOPEN;
+      else
+        *pReadonly = 1;
+    } else
+      *pReadonly = 0;
+  } else
+    *pReadonly = 0;
+# else
+  __path2fss(zFilename, &fsSpec);
+  if( !sqliteOsFileExists(zFilename) ){
+    if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
+      return SQLITE_CANTOPEN;
+  }
+  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNum)) != noErr ){
+    if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrPerm, &(id->refNum)) != noErr ){
+      if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdPerm, &(id->refNum)) != noErr )
+        return SQLITE_CANTOPEN;
+      else
+        *pReadonly = 1;
+    } else
+      *pReadonly = 0;
+  } else
+    *pReadonly = 0;
+# endif
+  if( HOpenRF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNumRF)) != noErr){
+    id->refNumRF = -1;
+  }
+  id->locked = 0;
+  id->delOnClose = 0;
+  return SQLITE_OK;
+#endif
 }
 
 
@@ -359,6 +424,34 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   id->locked = 0;
   return SQLITE_OK;
 #endif
+#if OS_MAC
+  FSSpec fsSpec;
+# ifdef _LARGE_FILE
+  HFSUniStr255 dfName;
+  FSRef fsRef;
+  __path2fss(zFilename, &fsSpec);
+  if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
+    return SQLITE_CANTOPEN;
+  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
+    return SQLITE_CANTOPEN;
+  FSGetDataForkName(&dfName);
+  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
+                 fsRdWrPerm, &(id->refNum)) != noErr )
+    return SQLITE_CANTOPEN;
+# else
+  __path2fss(zFilename, &fsSpec);
+  if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
+    return SQLITE_CANTOPEN;
+  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrPerm, &(id->refNum)) != noErr )
+    return SQLITE_CANTOPEN;
+# endif
+  id->refNumRF = -1;
+  id->locked = 0;
+  id->delOnClose = delFlag;
+  if (delFlag)
+    id->pathToDel = sqliteOsFullPathname(zFilename);
+  return SQLITE_OK;
+#endif
 }
 
 /*
@@ -401,6 +494,31 @@ int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
   id->locked = 0;
   return SQLITE_OK;
 #endif
+#if OS_MAC
+  FSSpec fsSpec;
+# ifdef _LARGE_FILE
+  HFSUniStr255 dfName;
+  FSRef fsRef;
+  if( __path2fss(zFilename, &fsSpec) != noErr )
+    return SQLITE_CANTOPEN;
+  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
+    return SQLITE_CANTOPEN;
+  FSGetDataForkName(&dfName);
+  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
+                 fsRdPerm, &(id->refNum)) != noErr )
+    return SQLITE_CANTOPEN;
+# else
+  __path2fss(zFilename, &fsSpec);
+  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdPerm, &(id->refNum)) != noErr )
+    return SQLITE_CANTOPEN;
+# endif
+  if( HOpenRF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNumRF)) != noErr){
+    id->refNumRF = -1;
+  }
+  id->locked = 0;
+  id->delOnClose = 0;
+  return SQLITE_OK;
+#endif
 }
 
 /*
@@ -430,7 +548,7 @@ int sqliteOsTempFileName(char *zBuf){
     break;
   }
   do{
-    sprintf(zBuf, "%s/sqlite_", zDir);
+    sprintf(zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
       int n = sqliteRandomByte() % (sizeof(zChars)-1);
@@ -450,7 +568,50 @@ int sqliteOsTempFileName(char *zBuf){
   for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
   for(;;){
-    sprintf(zBuf, "%s\\sqlite_", zTempPath);
+    sprintf(zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
+    j = strlen(zBuf);
+    for(i=0; i<15; i++){
+      int n = sqliteRandomByte() % sizeof(zChars);
+      zBuf[j++] = zChars[n];
+    }
+    zBuf[j] = 0;
+    if( !sqliteOsFileExists(zBuf) ) break;
+  }
+#endif
+#if OS_MAC
+  static char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i, j;
+  char zTempPath[SQLITE_TEMPNAME_SIZE];
+  char zdirName[32];
+  CInfoPBRec infoRec;
+  Str31 dirName;
+  memset(&infoRec, 0, sizeof(infoRec));
+  memset(zTempPath, 0, SQLITE_TEMPNAME_SIZE);
+  if( FindFolder(kOnSystemDisk, kTemporaryFolderType,  kCreateFolder,
+       &(infoRec.dirInfo.ioVRefNum), &(infoRec.dirInfo.ioDrParID)) == noErr ){
+    infoRec.dirInfo.ioNamePtr = dirName;
+    do{
+      infoRec.dirInfo.ioFDirIndex = -1;
+      infoRec.dirInfo.ioDrDirID = infoRec.dirInfo.ioDrParID;
+      if( PBGetCatInfoSync(&infoRec) == noErr ){
+        CopyPascalStringToC(dirName, zdirName);
+        i = strlen(zdirName);
+        memmove(&(zTempPath[i+1]), zTempPath, strlen(zTempPath));
+        strcpy(zTempPath, zdirName);
+        zTempPath[i] = ':';
+      }else{
+        *zTempPath = 0;
+        break;
+      }
+    } while( infoRec.dirInfo.ioDrDirID != fsRtDirID );
+  }
+  if( *zTempPath == 0 )
+    getcwd(zTempPath, SQLITE_TEMPNAME_SIZE-24);
+  for(;;){
+    sprintf(zBuf, "%s"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
       int n = sqliteRandomByte() % sizeof(zChars);
@@ -478,6 +639,19 @@ int sqliteOsClose(OsFile *id){
 #if OS_WIN
   CloseHandle(id->h);
   return SQLITE_OK;
+#endif
+#if OS_MAC
+  if( id->refNumRF!=-1 )
+    FSClose(id->refNumRF);
+# ifdef _LARGE_FILE
+  FSCloseFork(id->refNum);
+# else
+  FSClose(id->refNum);
+# endif
+  if( id->delOnClose ){
+    unlink(id->pathToDel);
+    sqliteFree(id->pathToDel);
+  }
 #endif
 }
 
@@ -507,6 +681,22 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
     got = 0;
   }
   if( got==(DWORD)amt ){
+    return SQLITE_OK;
+  }else{
+    return SQLITE_IOERR;
+  }
+#endif
+#if OS_MAC
+  int got;
+  SimulateIOError(SQLITE_IOERR);
+  TRACE2("READ %d\n", last_page);
+# ifdef _LARGE_FILE
+  FSReadFork(id->refNum, fsAtMark, 0, (ByteCount)amt, pBuf, (ByteCount*)&got);
+# else
+  got = amt;
+  FSRead(id->refNum, &got, pBuf);
+# endif
+  if( got==amt ){
     return SQLITE_OK;
   }else{
     return SQLITE_IOERR;
@@ -546,6 +736,29 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
   }
   return SQLITE_OK;
 #endif
+#if OS_MAC
+  OSErr oserr;
+  int wrote = 0;
+  SimulateIOError(SQLITE_IOERR);
+  TRACE2("WRITE %d\n", last_page);
+  while( amt>0 ){
+# ifdef _LARGE_FILE
+    oserr = FSWriteFork(id->refNum, fsAtMark, 0,
+                        (ByteCount)amt, pBuf, (ByteCount*)&wrote);
+# else
+    wrote = amt;
+    oserr = FSWrite(id->refNum, &wrote, pBuf);
+# endif
+    if( wrote == 0 || oserr != noErr)
+      break;
+    amt -= wrote;
+    pBuf = &((char*)pBuf)[wrote];
+  }
+  if( oserr != noErr || amt>wrote ){
+    return SQLITE_FULL;
+  }
+  return SQLITE_OK;
+#endif
 }
 
 /*
@@ -567,15 +780,37 @@ int sqliteOsSeek(OsFile *id, off_t offset){
   }
   return SQLITE_OK;
 #endif
+#if OS_MAC
+  {
+    off_t curSize;
+    if( sqliteOsFileSize(id, &curSize) != SQLITE_OK ){
+      return SQLITE_IOERR;
+    }
+    if( offset >= curSize ){
+      if( sqliteOsTruncate(id, offset+1) != SQLITE_OK ){
+        return SQLITE_IOERR;
+      }
+    }
+# ifdef _LARGE_FILE
+    if( FSSetForkPosition(id->refNum, fsFromStart, offset) != noErr ){
+# else
+    if( SetFPos(id->refNum, fsFromStart, offset) != noErr ){
+# endif
+      return SQLITE_IOERR;
+    }else{
+      return SQLITE_OK;
+    }
+  }
+#endif
 }
 
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
 int sqliteOsSync(OsFile *id){
+#if OS_UNIX
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->fd);
-#if OS_UNIX
   if( fsync(id->fd) ){
     return SQLITE_IOERR;
   }else{
@@ -587,6 +822,20 @@ int sqliteOsSync(OsFile *id){
     return SQLITE_OK;
   }else{
     return SQLITE_IOERR;
+  }
+#endif
+#if OS_MAC
+# ifdef _LARGE_FILE
+  if( FSFlushFork(id->refNum) != noErr ){
+# else
+  ParamBlockRec params;
+  memset(&params, 0, sizeof(ParamBlockRec));
+  params.ioParam.ioRefNum = id->refNum;
+  if( PBFlushFileSync(&params) != noErr ){
+# endif
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
   }
 #endif
 }
@@ -606,6 +855,17 @@ int sqliteOsTruncate(OsFile *id, off_t nByte){
     SetEndOfFile(id->h);
   }
   return SQLITE_OK;
+#endif
+#if OS_MAC
+# ifdef _LARGE_FILE
+  if( FSSetForkSize(id->refNum, fsFromStart, nByte) != noErr){
+# else
+  if( SetEOF(id->refNum, nByte) != noErr ){
+# endif
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
+  }
 #endif
 }
 
@@ -629,6 +889,17 @@ int sqliteOsFileSize(OsFile *id, off_t *pSize){
   *pSize = (((off_t)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
 #endif
+#if OS_MAC
+# ifdef _LARGE_FILE
+  if( FSGetForkSize(id->refNum, pSize) != noErr){
+# else
+  if( GetEOF(id->refNum, pSize) != noErr ){
+# endif
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
+  }
+#endif
 }
 
 #if OS_WIN
@@ -649,7 +920,7 @@ int isNT(void){
 #endif
 
 /*
-** Windows file locking notes:
+** Windows file locking notes:  [the same/equivalent applies to MacOS]
 **
 ** We cannot use LockFileEx() or UnlockFileEx() because those functions
 ** are not available under Win95/98/ME.  So we use only LockFile() and
@@ -677,6 +948,8 @@ int isNT(void){
 ** another process jumping into the middle and messing us up.  The same
 ** argument applies to sqliteOsWriteLock().
 **
+** Note: On MacOS we use the resource fork for locking.
+**
 ** The following #defines specify the range of bytes used for locking.
 ** N_LOCKBYTE is the number of bytes available for doing the locking.
 ** The first byte used to hold the lock while the lock is changing does
@@ -684,7 +957,11 @@ int isNT(void){
 ** the first byte in the range of bytes used for locking.
 */
 #define N_LOCKBYTE       10239
-#define FIRST_LOCKBYTE   (0xffffffff - N_LOCKBYTE)
+#if OS_MAC
+# define FIRST_LOCKBYTE   (0x000fffff - N_LOCKBYTE)
+#else
+# define FIRST_LOCKBYTE   (0xffffffff - N_LOCKBYTE)
+#endif
 
 /*
 ** Change the status of the lock on the file "id" to be a readlock.
@@ -743,6 +1020,44 @@ int sqliteOsReadLock(OsFile *id){
       UnlockFile(id->h, FIRST_LOCKBYTE, page, 1, 0);
     }
     if( res ){
+      id->locked = lk;
+      rc = SQLITE_OK;
+    }else{
+      rc = SQLITE_BUSY;
+    }
+  }
+  return rc;
+#endif
+#if OS_MAC
+  int rc;
+  if( id->locked>0 || id->refNumRF == -1 ){
+    rc = SQLITE_OK;
+  }else{
+    int lk = (sqliteRandomInteger() & 0x7ffffff)%N_LOCKBYTE+1;
+    OSErr res;
+    int cnt = 5;
+    ParamBlockRec params;
+    memset(&params, 0, sizeof(params));
+    params.ioParam.ioRefNum = id->refNumRF;
+    params.ioParam.ioPosMode = fsFromStart;
+    params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
+    params.ioParam.ioReqCount = 1;
+    while( cnt-->0 && (res = PBLockRangeSync(&params))!=noErr ){
+      UInt32 finalTicks;
+      Delay(1, &finalTicks); /* 1/60 sec */
+    }
+    if( res == noErr ){
+      params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
+      params.ioParam.ioReqCount = N_LOCKBYTE;
+      PBUnlockRangeSync(&params);
+      params.ioParam.ioPosOffset = FIRST_LOCKBYTE+lk;
+      params.ioParam.ioReqCount = 1;
+      res = PBLockRangeSync(&params);
+      params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
+      params.ioParam.ioReqCount = 1;
+      PBUnlockRangeSync(&params);
+    }
+    if( res == noErr ){
       id->locked = lk;
       rc = SQLITE_OK;
     }else{
@@ -812,6 +1127,47 @@ int sqliteOsWriteLock(OsFile *id){
   }
   return rc;
 #endif
+#if OS_MAC
+  int rc;
+  if( id->locked<0 || id->refNumRF == -1 ){
+    rc = SQLITE_OK;
+  }else{
+    OSErr res;
+    int cnt = 5;
+    ParamBlockRec params;
+    memset(&params, 0, sizeof(params));
+    params.ioParam.ioRefNum = id->refNumRF;
+    params.ioParam.ioPosMode = fsFromStart;
+    params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
+    params.ioParam.ioReqCount = 1;
+    while( cnt-->0 && (res = PBLockRangeSync(&params))!=noErr ){
+      UInt32 finalTicks;
+      Delay(1, &finalTicks); /* 1/60 sec */
+    }
+    if( res == noErr ){
+      params.ioParam.ioPosOffset = FIRST_LOCKBYTE + id->locked;
+      params.ioParam.ioReqCount = 1;
+      if( id->locked==0 
+            || PBUnlockRangeSync(&params)==noErr ){
+        params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
+        params.ioParam.ioReqCount = N_LOCKBYTE;
+        res = PBLockRangeSync(&params);
+      }else{
+        res = afpRangeNotLocked;
+      }
+      params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
+      params.ioParam.ioReqCount = 1;
+      PBUnlockRangeSync(&params);
+    }
+    if( res == noErr ){
+      id->locked = -1;
+      rc = SQLITE_OK;
+    }else{
+      rc = SQLITE_BUSY;
+    }
+  }
+  return rc;
+#endif
 }
 
 /*
@@ -863,6 +1219,29 @@ int sqliteOsUnlock(OsFile *id){
   }
   return rc;
 #endif
+#if OS_MAC
+  int rc;
+  ParamBlockRec params;
+  memset(&params, 0, sizeof(params));
+  params.ioParam.ioRefNum = id->refNumRF;
+  params.ioParam.ioPosMode = fsFromStart;
+  if( id->locked==0 || id->refNumRF == -1 ){
+    rc = SQLITE_OK;
+  }else if( id->locked<0 ){
+    params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
+    params.ioParam.ioReqCount = N_LOCKBYTE;
+    PBUnlockRangeSync(&params);
+    rc = SQLITE_OK;
+    id->locked = 0;
+  }else{
+    params.ioParam.ioPosOffset = FIRST_LOCKBYTE+id->locked;
+    params.ioParam.ioReqCount = 1;
+    PBUnlockRangeSync(&params);
+    rc = SQLITE_OK;
+    id->locked = 0;
+  }
+  return rc;
+#endif
 }
 
 /*
@@ -886,6 +1265,12 @@ int sqliteOsRandomSeed(char *zBuf){
 #if OS_WIN && !defined(SQLITE_TEST)
   GetSystemTime((LPSYSTEMTIME)zBuf);
 #endif
+#if OS_MAC
+  int pid;
+  Microseconds((UnsignedWide*)zBuf);
+  pid = getpid();
+  memcpy(&zBuf[sizeof(UnsignedWide)], &pid, sizeof(pid));
+#endif
   return SQLITE_OK;
 }
 
@@ -906,6 +1291,12 @@ int sqliteOsSleep(int ms){
   Sleep(ms);
   return ms;
 #endif
+#if OS_MAC
+  UInt32 finalTicks;
+  UInt32 ticks = (((UInt32)ms+16)*3)/50;  /* 1/60 sec per tick */
+  Delay(ticks, &finalTicks);
+  return (int)((ticks*50)/3);
+#endif
 }
 
 /*
@@ -921,6 +1312,10 @@ int sqliteOsSleep(int ms){
 #if OS_WIN && defined(THREADSAFE) && THREADSAFE
 # define SQLITE_W32_THREADS 1
 #endif
+#if OS_MAC && defined(THREADSAFE) && THREADSAFE
+# include <Multiprocessing.h>
+# define SQLITE_MACOS_MULTITASKING 1
+#endif
 
 /*
 ** Static variables used for thread synchronization
@@ -931,6 +1326,9 @@ static int inMutex = 0;
 #endif
 #ifdef SQLITE_W32_THREADS
   static CRITICAL_SECTION cs;
+#endif
+#ifdef SQLITE_MACOS_MULTITASKING
+  static MPCriticalRegionID criticalRegion;
 #endif
 
 /*
@@ -958,6 +1356,19 @@ void sqliteOsEnterMutex(){
   }
   EnterCriticalSection(&cs);
 #endif
+#ifdef SQLITE_MACOS_MULTITASKING
+  static volatile int notInit = 1;
+  if( notInit ){
+    if( notInit == 2 ) /* as close as you can get to thread safe init */
+      MPYield();
+    else{
+      notInit = 2;
+      MPCreateCriticalRegion(&criticalRegion);
+      notInit = 0;
+    }
+  }
+  MPEnterCriticalRegion(criticalRegion, kDurationForever);
+#endif
   assert( !inMutex );
   inMutex = 1;
 }
@@ -969,6 +1380,9 @@ void sqliteOsLeaveMutex(){
 #endif
 #ifdef SQLITE_W32_THREADS
   LeaveCriticalSection(&cs);
+#endif
+#ifdef SQLITE_MACOS_MULTITASKING
+  MPExitCriticalRegion(criticalRegion);
 #endif
 }
 
@@ -993,10 +1407,26 @@ char *sqliteOsFullPathname(const char *zRelative){
   char *zNotUsed;
   char *zFull;
   int nByte;
-  nByte = GetFullPathName(zRelative, 0, 0, &zNotUsed);
+  nByte = GetFullPathName(zRelative, 0, 0, &zNotUsed) + 1;
   zFull = sqliteMalloc( nByte );
   if( zFull==0 ) return 0;
   GetFullPathName(zRelative, nByte, zFull, &zNotUsed);
   return zFull;
 #endif
+#if OS_MAC
+  char *zFull = 0;
+  if( zRelative[0]==':' ){
+    char zBuf[_MAX_PATH+1];
+    sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]), 0);
+  }else{
+    if( strchr(zRelative, ':') ){
+      sqliteSetString(&zFull, zRelative, 0);
+    }else{
+    char zBuf[_MAX_PATH+1];
+      sqliteSetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, 0);
+    }
+  }
+  return zFull;
+#endif
 }
+

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.63 2002/11/11 13:56:47 drh Exp $
+** $Id: shell.c,v 1.64 2003/01/08 13:02:53 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +20,20 @@
 #include "sqlite.h"
 #include <ctype.h>
 
-#if !defined(_WIN32) && !defined(WIN32)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)
 # include <signal.h>
 # include <pwd.h>
 # include <unistd.h>
 # include <sys/types.h>
+#endif
+
+#ifdef __MACOS__
+# include <console.h>
+# include <signal.h>
+# include <unistd.h>
+# include <extras.h>
+# include <Files.h>
+# include <Folders.h>
 #endif
 
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
@@ -981,12 +990,17 @@ static void process_input(struct callback_data *p, FILE *in){
 static char *find_home_dir(void){
   char *home_dir = NULL;
 
-#if !defined(_WIN32) && !defined(WIN32)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)
   struct passwd *pwent;
   uid_t uid = getuid();
   if( (pwent=getpwuid(uid)) != NULL) {
     home_dir = pwent->pw_dir;
   }
+#endif
+
+#ifdef __MACOS__
+  char home_path[_MAX_PATH+1];
+  home_dir = getcwd(home_path, _MAX_PATH);
 #endif
 
   if (!home_dir) {
@@ -1060,6 +1074,12 @@ int main(int argc, char **argv){
   struct callback_data data;
   int origArgc = argc;
   char **origArgv = argv;
+
+#ifdef __MACOS__
+  argc = ccommand(&argv);
+  origArgc = argc;
+  origArgv = argv;
+#endif
 
   Argv0 = argv[0];
   main_init(&data);
