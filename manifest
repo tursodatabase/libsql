@@ -1,5 +1,5 @@
-C fix\sthe\sUPDATE\sbug\s(CVS\s185)
-D 2001-02-19T18:24:22
+C Version\s1.0.21\s(CVS\s482)
+D 2001-02-19T18:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P eb0a523c49df65ef3454b8d7e05a6a852b24fc8b
+P 99aae9aaa9f53d1be6600f8598f66594692aae39
 R 59db407686a1360be2fb4d74bb42df04
 U drh
-Z 5cfb38fc484d8e92722ad127ca28c196
+Z 7f2f78067b526c415a8e7024c34c1b61
