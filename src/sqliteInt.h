@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.145 2002/08/31 18:53:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.146 2002/09/14 13:47:32 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -977,7 +977,7 @@ void sqliteGenerateRowDelete(sqlite*, Vdbe*, Table*, int, int);
 void sqliteGenerateRowIndexDelete(sqlite*, Vdbe*, Table*, int, char*);
 void sqliteGenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
-void sqliteBeginWriteOperation(Parse*, int);
+void sqliteBeginWriteOperation(Parse*, int, int);
 void sqliteEndWriteOperation(Parse*);
 Expr *sqliteExprDup(Expr*);
 void sqliteTokenCopy(Token*, Token*);

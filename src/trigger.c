@@ -143,7 +143,7 @@ void sqliteCreateTrigger(
     /* Make an entry in the sqlite_master table */
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto trigger_cleanup;
-    sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0, 0);
     sqliteOpenMasterTable(v, tab->isTemp);
     addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqliteVdbeChangeP3(v, addr, tab->isTemp ? TEMP_MASTER_NAME : MASTER_NAME,
@@ -386,7 +386,7 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
       { OP_Next,       0, ADDR(3),  0}, /* 7 */
     };
 
-    sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0, 0);
     sqliteOpenMasterTable(v, pTable->isTemp);
     base = sqliteVdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqliteVdbeChangeP3(v, base+1, zName, 0);
@@ -674,7 +674,7 @@ void sqliteViewTriggers(
 
   v = sqliteGetVdbe(pParse);
   assert(v);
-  sqliteBeginWriteOperation(pParse, 1);
+  sqliteBeginWriteOperation(pParse, 1, 0);
 
   /* Allocate temp tables */
   oldIdx = pParse->nTab++;

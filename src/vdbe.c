@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.177 2002/09/08 17:23:43 drh Exp $
+** $Id: vdbe.c,v 1.178 2002/09/14 13:47:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1336,6 +1336,7 @@ int sqliteVdbeExec(
   unsigned uniqueCnt = 0;     /* Used by OP_MakeRecord when P2!=0 */
   int errorAction = OE_Abort; /* Recovery action to do in case of an error */
   int undoTransOnError = 0;   /* If error, either ROLLBACK or COMMIT */
+  int inTempTrans = 0;        /* True if temp database is transactioned */
   char zBuf[100];             /* Space to sprintf() an integer */
   int returnStack[100];     /* Return address stack for OP_Gosub & OP_Return */
   int returnDepth = 0;      /* Next unused element in returnStack[] */
@@ -2919,11 +2920,16 @@ case OP_Checkpoint: {
   break;
 }
 
-/* Opcode: Transaction * * *
+/* Opcode: Transaction P1 * *
 **
 ** Begin a transaction.  The transaction ends when a Commit or Rollback
 ** opcode is encountered.  Depending on the ON CONFLICT setting, the
 ** transaction might also be rolled back if an error is encountered.
+**
+** If P1 is true, then the transaction is started on the temporary
+** tables of the database only.  The main database file is not write
+** locked and other processes can continue to read the main database
+** file.
 **
 ** A write lock is obtained on the database file when a transaction is
 ** started.  No other process can read or write the file while the
@@ -2933,13 +2939,14 @@ case OP_Checkpoint: {
 */
 case OP_Transaction: {
   int busy = 0;
-  if( db->pBeTemp ){
+  if( db->pBeTemp && !inTempTrans ){
     rc = sqliteBtreeBeginTrans(db->pBeTemp);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
+    inTempTrans = 1;
   }
-  do{
+  if( pOp->p1==0 ) do{
     rc = sqliteBtreeBeginTrans(pBt);
     switch( rc ){
       case SQLITE_BUSY: {
@@ -2954,6 +2961,7 @@ case OP_Transaction: {
         /* Fall thru into the next case */
       }
       case SQLITE_OK: {
+        inTempTrans = 0;
         busy = 0;
         break;
       }
@@ -2976,7 +2984,7 @@ case OP_Transaction: {
 */
 case OP_Commit: {
   if( db->pBeTemp==0 || (rc = sqliteBtreeCommit(db->pBeTemp))==SQLITE_OK ){
-    rc = sqliteBtreeCommit(pBt);
+    rc = inTempTrans ? SQLITE_OK : sqliteBtreeCommit(pBt);
   }
   if( rc==SQLITE_OK ){
     sqliteCommitInternalChanges(db);
@@ -2985,6 +2993,7 @@ case OP_Commit: {
     sqliteBtreeRollback(pBt);
     sqliteRollbackInternalChanges(db);
   }
+  inTempTrans = 0;
   break;
 }
 

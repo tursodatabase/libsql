@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.111 2002/08/31 18:53:06 drh Exp $
+** $Id: build.c,v 1.112 2002/09/14 13:47:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -398,7 +398,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   ** now.
   */
   if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
-    sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0, isTemp);
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_Integer, db->file_format, 0);
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 1);
@@ -1105,7 +1105,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     };
     Index *pIdx;
     Trigger *pTrigger;
-    sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0, pTable->isTemp);
     sqliteOpenMasterTable(v, pTable->isTemp);
     /* Drop all triggers associated with the table being dropped */
     pTrigger = pTable->pTrigger;
@@ -1537,7 +1537,7 @@ void sqliteCreateIndex(
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
     if( pTable!=0 ){
-      sqliteBeginWriteOperation(pParse, 0);
+      sqliteBeginWriteOperation(pParse, 0, isTemp);
       sqliteOpenMasterTable(v, isTemp);
     }
     sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
@@ -1643,7 +1643,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     int base;
     Table *pTab = pIndex->pTable;
 
-    sqliteBeginWriteOperation(pParse, 0);
+    sqliteBeginWriteOperation(pParse, 0, pTab->isTemp);
     sqliteOpenMasterTable(v, pTab->isTemp);
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqliteVdbeChangeP3(v, base+1, pIndex->zName, 0);
@@ -1824,7 +1824,7 @@ void sqliteCopy(
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;
-    sqliteBeginWriteOperation(pParse, 1);
+    sqliteBeginWriteOperation(pParse, 1, pTab->isTemp);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
@@ -1910,7 +1910,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
        "within a transaction", 0);
     return;
   }
-  sqliteBeginWriteOperation(pParse, 0);
+  sqliteBeginWriteOperation(pParse, 0, 0);
   db->flags |= SQLITE_InTrans;
   db->onError = onError;
 }
@@ -1969,16 +1969,23 @@ void sqliteRollbackTransaction(Parse *pParse){
 ** rollback the whole transaction.  For operations where all constraints
 ** can be checked before any changes are made to the database, it is never
 ** necessary to undo a write and the checkpoint should not be set.
+**
+** The tempOnly flag indicates that only temporary tables will be changed
+** during this write operation.  The primary database table is not
+** write-locked.  Only the temporary database file gets a write lock.
+** Other processes can continue to read or write the primary database file.
 */
-void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint){
+void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint, int tempOnly){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
   if( pParse->trigStack ) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
-    pParse->schemaVerified = 1;
+    sqliteVdbeAddOp(v, OP_Transaction, tempOnly, 0);
+    if( !tempOnly ){
+      sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
+      pParse->schemaVerified = 1;
+    }
   }else if( setCheckpoint ){
     sqliteVdbeAddOp(v, OP_Checkpoint, 0, 0);
   }
@@ -2081,7 +2088,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       int addr;
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse, 0);
+      sqliteBeginWriteOperation(pParse, 0, 0);
       sqliteVdbeAddOp(v, OP_Integer, size, 0);
       sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
       addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
@@ -2172,7 +2179,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       int addr;
       int size = db->cache_size;
       if( size<0 ) size = -size;
-      sqliteBeginWriteOperation(pParse, 0);
+      sqliteBeginWriteOperation(pParse, 0, 0);
       sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);

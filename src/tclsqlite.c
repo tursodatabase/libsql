@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.41 2002/09/03 19:43:24 drh Exp $
+** $Id: tclsqlite.c,v 1.42 2002/09/14 13:47:32 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -32,6 +32,17 @@
 #endif
 
 /*
+** New SQL functions can be created as TCL scripts.  Each such function
+** is described by an instance of the following structure.
+*/
+typedef struct SqlFunc SqlFunc;
+struct SqlFunc {
+  Tcl_Interp *interp;   /* The TCL interpret to execute the function */
+  char *zScript;        /* The script to be run */
+  SqlFunc *pNext;       /* Next function on the list of them all */
+};
+
+/*
 ** There is one instance of this structure for each SQLite database
 ** that has been opened by the SQLite TCL interface.
 */
@@ -40,6 +51,7 @@ struct SqliteDb {
   sqlite *db;           /* The "real" database structure */
   Tcl_Interp *interp;   /* The interpreter used for this database */
   char *zBusy;          /* The busy callback routine */
+  SqlFunc *pFunc;       /* List of SQL functions */
 };
 
 /*
@@ -239,6 +251,11 @@ static int DbEvalCallback2(
 static void DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
   sqlite_close(pDb->db);
+  while( pDb->pFunc ){
+    SqlFunc *pFunc = pDb->pFunc;
+    pDb->pFunc = pFunc->pNext;
+    Tcl_Free((char*)pFunc);
+  }
   if( pDb->zBusy ){
     Tcl_Free(pDb->zBusy);
   }
@@ -271,6 +288,29 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 }
 
 /*
+** This routine is called to evaluate an SQL function implemented
+** using TCL script.
+*/
+static void tclSqlFunc(sqlite_func *context, int argc, const char **argv){
+  SqlFunc *p = sqlite_user_data(context);
+  Tcl_DString cmd;
+  int i;
+  int rc;
+
+  Tcl_DStringInit(&cmd);
+  Tcl_DStringAppend(&cmd, p->zScript, -1);
+  for(i=0; i<argc; i++){
+    Tcl_DStringAppendElement(&cmd, argv[i] ? argv[i] : "");
+  }
+  rc = Tcl_Eval(p->interp, Tcl_DStringValue(&cmd));
+  if( rc ){
+    sqlite_set_result_error(context, Tcl_GetStringResult(p->interp), -1); 
+  }else{
+    sqlite_set_result_string(context, Tcl_GetStringResult(p->interp), -1);
+  }
+}
+
+/*
 ** The "sqlite" command below creates a new Tcl command for each
 ** connection it opens to an SQLite database.  This routine is invoked
 ** whenever one of those connection-specific commands is executed
@@ -288,13 +328,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int choice;
   static const char *DB_strs[] = {
     "busy",               "changes",           "close",
-    "complete",           "eval",              "last_insert_rowid",
-    "open_aux_file",      "timeout",           0
+    "complete",           "eval",              "function",
+    "last_insert_rowid",  "open_aux_file",     "timeout",
+    0                    
   };
   enum DB_enum {
     DB_BUSY,              DB_CHANGES,          DB_CLOSE,
-    DB_COMPLETE,          DB_EVAL,             DB_LAST_INSERT_ROWID,
-    DB_OPEN_AUX_FILE,     DB_TIMEOUT,          
+    DB_COMPLETE,          DB_EVAL,             DB_FUNCTION,
+    DB_LAST_INSERT_ROWID, DB_OPEN_AUX_FILE,    DB_TIMEOUT,
   };
 
   if( objc<2 ){
@@ -466,6 +507,34 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
 #endif
     return rc;
+  }
+
+  /*
+  **     $db function NAME SCRIPT
+  **
+  ** Create a new SQL function called NAME.  Whenever that function is
+  ** called, invoke SCRIPT to evaluate the function.
+  */
+  case DB_FUNCTION: {
+    SqlFunc *pFunc;
+    char *zName;
+    char *zScript;
+    int nScript;
+    if( objc!=4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "NAME SCRIPT");
+      return TCL_ERROR;
+    }
+    zName = Tcl_GetStringFromObj(objv[2], 0);
+    zScript = Tcl_GetStringFromObj(objv[3], &nScript);
+    pFunc = (SqlFunc*)Tcl_Alloc( sizeof(*pFunc) + nScript + 1 );
+    if( pFunc==0 ) return TCL_ERROR;
+    pFunc->interp = interp;
+    pFunc->pNext = pDb->pFunc;
+    pFunc->zScript = (char*)&pFunc[1];
+    strcpy(pFunc->zScript, zScript);
+    sqlite_create_function(pDb->db, zName, -1, tclSqlFunc, pFunc);
+    sqlite_function_type(pDb->db, zName, SQLITE_NUMERIC);
+    break;
   }
 
   /*
