@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.12 2004/02/22 17:49:33 drh Exp $
+** $Id: date.c,v 1.13 2004/02/29 00:40:32 drh Exp $
 **
 ** NOTES:
 **
@@ -335,17 +335,23 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
 static void computeYMD(DateTime *p){
   int Z, A, B, C, D, E, X1;
   if( p->validYMD ) return;
-  Z = p->rJD + 0.5;
-  A = (Z - 1867216.25)/36524.25;
-  A = Z + 1 + A - (A/4);
-  B = A + 1524;
-  C = (B - 122.1)/365.25;
-  D = 365.25*C;
-  E = (B-D)/30.6001;
-  X1 = 30.6001*E;
-  p->D = B - D - X1;
-  p->M = E<14 ? E-1 : E-13;
-  p->Y = p->M>2 ? C - 4716 : C - 4715;
+  if( !p->validJD ){
+    p->Y = 2000;
+    p->M = 1;
+    p->D = 1;
+  }else{
+    Z = p->rJD + 0.5;
+    A = (Z - 1867216.25)/36524.25;
+    A = Z + 1 + A - (A/4);
+    B = A + 1524;
+    C = (B - 122.1)/365.25;
+    D = 365.25*C;
+    E = (B-D)/30.6001;
+    X1 = 30.6001*E;
+    p->D = B - D - X1;
+    p->M = E<14 ? E-1 : E-13;
+    p->Y = p->M>2 ? C - 4716 : C - 4715;
+  }
   p->validYMD = 1;
 }
 
@@ -560,6 +566,25 @@ static int parseModifier(const char *zMod, DateTime *p){
     case '9': {
       n = getValue(z, &r);
       if( n<=0 ) break;
+      if( z[n]==':' ){
+        /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the
+        ** specified number of hours, minutes, seconds, and fractional seconds
+        ** to the time.  The ".FFF" may be omitted.  The ":SS.FFF" may be
+        ** omitted.
+        */
+        const char *z2 = z;
+        DateTime tx;
+        int day;
+        if( !isdigit(*z2) ) z2++;
+        memset(&tx, 0, sizeof(tx));
+        if( parseHhMmSs(z2, &tx) ) break;
+        computeJD(&tx);
+        if( z[0]=='-' ) tx.rJD = -tx.rJD;
+        day = (int)tx.rJD;
+        p->rJD += tx.rJD - day;
+        rc = 0;
+        break;
+      }
       z += n;
       while( isspace(z[0]) ) z++;
       n = strlen(z);
