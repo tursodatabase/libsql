@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.124 2002/06/16 18:21:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.125 2002/06/17 17:07:20 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -258,7 +258,22 @@ struct Column {
   char *zType;     /* Data type for this column */
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is an INTEGER PRIMARY KEY */
+  u8 sortOrder;    /* Some combination of SQLITE_SO_... values */
 };
+
+/*
+** The allowed sort orders.
+**
+** The TEXT and NUM values use bits that do not overlap with DESC and ASC.
+** That way the two can be combined into a single number.
+*/
+#define SQLITE_SO_UNK       0  /* Use the default collating type.  (SCT_NUM) */
+#define SQLITE_SO_TEXT      2  /* Sort using memcmp() */
+#define SQLITE_SO_NUM       4  /* Sort using sqliteCompare() */
+#define SQLITE_SO_TYPEMASK  6  /* Mask to extract the collating sequence */
+#define SQLITE_SO_ASC       0  /* Sort in ascending order */
+#define SQLITE_SO_DESC      1  /* Sort in descending order */
+#define SQLITE_SO_DIRMASK   1  /* Mask to extract the sort direction */
 
 /*
 ** Each SQL table is represented in memory by an instance of the
@@ -409,15 +424,15 @@ struct Token {
 ** operand.
 */
 struct Expr {
-  int op;                /* Operation performed by this node */
+  u16 op;                /* Operation performed by this node */
+  u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
   Token token;           /* An operand token */
   Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
-                         ** iColumn-th field of the iTable-th table.  When
-                         ** op==TK_FUNCTION, iColumn holds the function id */
+                         ** iColumn-th field of the iTable-th table. */
   int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull
                          ** result from the iAgg-th element of the aggregator */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
@@ -437,9 +452,9 @@ struct ExprList {
   struct ExprList_item {
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
-    char sortOrder;        /* 1 for DESC or 0 for ASC */
-    char isAgg;            /* True if this is an aggregate like count(*) */
-    char done;             /* A flag to indicate when processing is finished */
+    u8 sortOrder;          /* 1 for DESC or 0 for ASC */
+    u8 isAgg;              /* True if this is an aggregate like count(*) */
+    u8 done;               /* A flag to indicate when processing is finished */
   } *a;                  /* One entry for each expression */
 };
 
@@ -821,6 +836,8 @@ void sqliteAddNotNull(Parse*, int);
 void sqliteAddPrimaryKey(Parse*, IdList*, int);
 void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
+int sqliteCollateType(Parse*, Token*);
+void sqliteAddCollateType(Parse*, int);
 void sqliteEndTable(Parse*,Token*,Select*);
 void sqliteCreateView(Parse*,Token*,Token*,Select*);
 int sqliteViewGetColumnNames(Parse*,Table*);

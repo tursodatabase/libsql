@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.95 2002/05/24 20:31:37 drh Exp $
+** $Id: build.c,v 1.96 2002/06/17 17:07:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -643,6 +643,38 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   }else{
     sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0);
   }
+}
+
+/*
+** Return the appropriate collating type given the collation type token.
+** Report an error if the type is undefined.
+*/
+int sqliteCollateType(Parse *pParse, Token *pType){
+  if( pType==0 ) return SQLITE_SO_UNK;
+  if( pType->n==4 && sqliteStrNICmp(pType->z, "text", 4)==0 ){
+    return SQLITE_SO_TEXT;
+  }
+  if( pType->n==7 && sqliteStrNICmp(pType->z, "numeric", 7)==0 ){
+    return SQLITE_SO_NUM;
+  }
+  sqliteSetNString(&pParse->zErrMsg, "unknown collating type: ", -1,
+    pType->z, pType->n, 0);
+  pParse->nErr++;
+  return SQLITE_SO_UNK;
+}
+
+/*
+** This routine is called by the parser while in the middle of
+** parsing a CREATE TABLE statement.  A "COLLATE" clause has
+** been seen on a column.  This routine sets the Column.sortOrder on
+** the column currently under construction.
+*/
+void sqliteAddCollateType(Parse *pParse, int collType){
+  Table *p;
+  int i;
+  if( (p = pParse->pNewTable)==0 ) return;
+  i = p->nCol-1;
+  if( i>=0 ) p->aCol[i].sortOrder = collType;
 }
 
 /*

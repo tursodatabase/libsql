@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.73 2002/06/11 02:25:42 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.74 2002/06/17 17:07:20 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -117,7 +117,7 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID 
-  ABORT AFTER ASC BEFORE BEGIN CASCADE CLUSTER CONFLICT
+  ABORT AFTER ASC BEFORE BEGIN CASCADE CLUSTER COLLATE CONFLICT
   COPY DEFERRED DELIMITERS DESC EACH END EXPLAIN FAIL FOR
   FULL IGNORE IMMEDIATE INITIALLY INSTEAD MATCH JOIN KEY
   OF OFFSET PARTIAL PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
@@ -163,6 +163,9 @@ ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
 ccons ::= references.
 ccons ::= defer_subclause.
+ccons ::= COLLATE id(C).  {
+   sqliteAddCollateType(pParse, sqliteCollateType(pParse, &C));
+}
 
 // A REFERENCES clause is parsed but the current implementation does not
 // do anything with it.
@@ -379,9 +382,9 @@ using_opt(U) ::= .                        {U = 0;}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
+sortlist(A) ::= sortlist(X) COMMA sortitem(Y) collate(C) sortorder(Z). {
   A = sqliteExprListAppend(X,Y,0);
-  if( A ) A->a[A->nExpr-1].sortOrder = Z;  /* 0=ascending, 1=decending */
+  if( A ) A->a[A->nExpr-1].sortOrder = C+Z;
 }
 sortlist(A) ::= sortitem(Y) sortorder(Z). {
   A = sqliteExprListAppend(0,Y,0);
@@ -390,10 +393,13 @@ sortlist(A) ::= sortitem(Y) sortorder(Z). {
 sortitem(A) ::= expr(X).   {A = X;}
 
 %type sortorder {int}
+%type collate {int}
 
-sortorder(A) ::= ASC.      {A = 0;}
-sortorder(A) ::= DESC.     {A = 1;}
-sortorder(A) ::= .         {A = 0;}
+sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
+sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
+sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
+collate(C) ::= .                {C = SQLITE_SO_UNK;}
+collate(C) ::= COLLATE id(X).   {C = sqliteCollateType(pParse, &X);}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqliteExprListDelete($$);}
