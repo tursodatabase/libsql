@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.13.2.1 2004/05/10 20:27:41 drh Exp $
+** $Id: vacuum.c,v 1.13.2.2 2004/06/04 19:07:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -321,7 +321,7 @@ end_of_vacuum:
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
   if( zErrMsg ) sqlite_freemem(zErrMsg);
-  if( rc==SQLITE_ABORT && sVac.rc==SQLITE_OK ) sVac.rc = SQLITE_ERROR;
+  if( rc==SQLITE_ABORT && sVac.rc!=SQLITE_INTERRUPT ) sVac.rc = SQLITE_ERROR;
   return sVac.rc;
 #endif
 }
