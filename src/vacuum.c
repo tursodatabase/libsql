@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.9 2003/12/07 00:24:35 drh Exp $
+** $Id: vacuum.c,v 1.10 2004/02/11 09:46:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -185,14 +185,14 @@ static int vacuumCallback3(void *pArg, int argc, char **argv, char **NotUsed){
 /*
 ** Generate a random name of 20 character in length.
 */
-static void randomName(char *zBuf){
-  static const char zChars[] =
+static void randomName(unsigned char *zBuf){
+  static const unsigned char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789";
   int i;
+  sqliteRandomness(20, zBuf);
   for(i=0; i<20; i++){
-    int n = sqliteRandomByte() % (sizeof(zChars)-1);
-    zBuf[i] = zChars[n];
+    zBuf[i] = zChars[ zBuf[i]%(sizeof(zChars)-1) ];
   }
 }
 #endif

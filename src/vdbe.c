@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.258 2004/02/10 13:41:52 drh Exp $
+** $Id: vdbe.c,v 1.259 2004/02/11 09:46:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2893,10 +2893,12 @@ case OP_NewRecno: {
       cnt = 0;
       do{
         if( v==0 || cnt>2 ){
-          v = sqliteRandomInteger();
+          sqliteRandomness(sizeof(v), &v);
           if( cnt<5 ) v &= 0xffffff;
         }else{
-          v += sqliteRandomByte() + 1;
+          unsigned char r;
+          sqliteRandomness(1, &r);
+          v += r + 1;
         }
         if( v==0 ) continue;
         x = intToKey(v);

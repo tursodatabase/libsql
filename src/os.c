@@ -785,7 +785,7 @@ int sqliteOsTempFileName(char *zBuf){
      "/tmp",
      ".",
   };
-  static char zChars[] =
+  static unsigned char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
@@ -802,9 +802,9 @@ int sqliteOsTempFileName(char *zBuf){
   do{
     sprintf(zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
-    for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % (sizeof(zChars)-1);
-      zBuf[j++] = zChars[n];
+    sqliteRandomness(15, &zBuf[j]);
+    for(i=0; i<15; i++, j++){
+      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
   }while( access(zBuf,0)==0 );
@@ -822,9 +822,9 @@ int sqliteOsTempFileName(char *zBuf){
   for(;;){
     sprintf(zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
-    for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % (sizeof(zChars) - 1);
-      zBuf[j++] = zChars[n];
+    sqliteRandomness(15, &zBuf[j]);
+    for(i=0; i<15; i++, j++){
+      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
     if( !sqliteOsFileExists(zBuf) ) break;
@@ -865,9 +865,9 @@ int sqliteOsTempFileName(char *zBuf){
   for(;;){
     sprintf(zBuf, "%s"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
-    for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % sizeof(zChars);
-      zBuf[j++] = zChars[n];
+    sqliteRandomness(15, &zBuf[j]);
+    for(i=0; i<15; i++, j++){
+      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }
     zBuf[j] = 0;
     if( !sqliteOsFileExists(zBuf) ) break;
@@ -1325,9 +1325,11 @@ int sqliteOsReadLock(OsFile *id){
   if( id->locked>0 ){
     rc = SQLITE_OK;
   }else{
-    int lk = (sqliteRandomInteger() & 0x7ffffff)%N_LOCKBYTE+1;
+    int lk;
     int res;
     int cnt = 100;
+    sqliteRandomness(sizeof(lk), &lk);
+    lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
     while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
       Sleep(1);
     }
@@ -1359,10 +1361,12 @@ int sqliteOsReadLock(OsFile *id){
   if( id->locked>0 || id->refNumRF == -1 ){
     rc = SQLITE_OK;
   }else{
-    int lk = (sqliteRandomInteger() & 0x7ffffff)%N_LOCKBYTE+1;
+    int lk;
     OSErr res;
     int cnt = 5;
     ParamBlockRec params;
+    sqliteRandomness(sizeof(lk), &lk);
+    lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
     memset(&params, 0, sizeof(params));
     params.ioParam.ioRefNum = id->refNumRF;
     params.ioParam.ioPosMode = fsFromStart;

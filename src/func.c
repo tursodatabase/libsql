@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.38 2004/01/30 14:49:17 drh Exp $
+** $Id: func.c,v 1.39 2004/02/11 09:46:32 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -195,7 +195,9 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
 ** Implementation of random().  Return a random integer.  
 */
 static void randomFunc(sqlite_func *context, int argc, const char **argv){
-  sqlite_set_result_int(context, sqliteRandomInteger());
+  int r;
+  sqliteRandomness(sizeof(r), &r);
+  sqlite_set_result_int(context, r);
 }
 
 /*
@@ -341,13 +343,13 @@ static void soundexFunc(sqlite_func *context, int argc, const char **argv){
 ** generating test data.
 */
 static void randStr(sqlite_func *context, int argc, const char **argv){
-  static const char zSrc[] = 
+  static const unsigned char zSrc[] = 
      "abcdefghijklmnopqrstuvwxyz"
      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
      "0123456789"
      ".-!,:*^+=_|?/<> ";
   int iMin, iMax, n, r, i;
-  char zBuf[1000];
+  unsigned char zBuf[1000];
   if( argc>=1 ){
     iMin = atoi(argv[0]);
     if( iMin<0 ) iMin = 0;
@@ -364,14 +366,14 @@ static void randStr(sqlite_func *context, int argc, const char **argv){
   }
   n = iMin;
   if( iMax>iMin ){
-    r = sqliteRandomInteger() & 0x7fffffff;
+    sqliteRandomness(sizeof(r), &r);
+    r &= 0x7fffffff;
     n += r%(iMax + 1 - iMin);
   }
   assert( n<sizeof(zBuf) );
-  r = 0;
+  sqliteRandomness(n, zBuf);
   for(i=0; i<n; i++){
-    r = (r + sqliteRandomByte())% (sizeof(zSrc)-1);
-    zBuf[i] = zSrc[r];
+    zBuf[i] = zSrc[zBuf[i]%(sizeof(zSrc)-1)];
   }
   zBuf[n] = 0;
   sqlite_set_result_string(context, zBuf, n);
