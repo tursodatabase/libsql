@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.12 2001/09/16 00:13:28 drh Exp $
+# $Id: index.test,v 1.13 2001/09/17 20:25:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -204,7 +204,7 @@ do_test index-7.2 {
 } {16}
 do_test index-7.3 {
   set code [execsql {EXPLAIN SELECT f1 FROM test1 WHERE f2=65536}]
-  expr {[lsearch $code test1__primary_key]>0}
+  expr {[lsearch $code {test1 (primary key)}]>0}
 } {1}
 do_test index-7.4 {
   execsql {DROP table test1}

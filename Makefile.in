@@ -74,6 +74,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/os.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \

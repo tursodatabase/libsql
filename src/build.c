@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.36 2001/09/16 00:13:26 drh Exp $
+** $Id: build.c,v 1.37 2001/09/17 20:25:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -504,50 +504,59 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
 
   /* If the initFlag is 1 it means we are reading the SQL off the
   ** "sqlite_master" table on the disk.  So do not write to the disk
-  ** again.  Extract the table number from the pParse->newTnum field.
+  ** again.  Extract the root page number for the table from the 
+  ** pParse->newTnum field.  (The page number should have been put
+  ** there by the sqliteOpenCb routine.)  If the table has a primary
+  ** key, the root page of the index associated with the primary key
+  ** should be in pParse->newKnum.
   */
   if( pParse->initFlag ){
     p->tnum = pParse->newTnum;
+    if( p->pIndex ){
+      p->pIndex->tnum = pParse->newKnum;
+    }
   }
 
-  /* If not initializing, then create the table on disk.
+  /* If not initializing, then create a record for the new table
+  ** in the SQLITE_MASTER table of the database.
   */
   if( !pParse->initFlag ){
-    static VdbeOp addTable[] = {
-      { OP_Open,        0, 2, MASTER_NAME},
-      { OP_NewRecno,    0, 0, 0},
-      { OP_String,      0, 0, "table"     },
-      { OP_String,      0, 0, 0},            /* 3 */
-      { OP_CreateTable, 0, 0, 0},
-      { OP_String,      0, 0, 0},            /* 5 */
-      { OP_String,      0, 0, 0},            /* 6 */
-      { OP_MakeRecord,  5, 0, 0},
-      { OP_Put,         0, 0, 0},
-      { OP_SetCookie,   0, 0, 0},            /* 9 */
-    };
     int n, base;
     Vdbe *v;
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
-    base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
-    sqliteVdbeChangeP3(v, base+3, p->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, 0, 2, MASTER_NAME, 0);
+    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "table", 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, p->zName, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, p->zName, 0);
+    sqliteVdbeAddOp(v, OP_CreateTable, 0, 0, 0, 0);
     sqliteVdbeTableRootAddr(v, &p->tnum);
-    sqliteVdbeChangeP3(v, base+5, p->zName, 0);
-    sqliteVdbeChangeP3(v, base+6, pParse->sFirstToken.z, n);
-    changeCookie(db);
-    sqliteVdbeChangeP1(v, base+9, db->next_cookie);
-    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
     if( p->pIndex ){
       /* If the table has a primary key, create an index in the database
-      ** for that key. */
+      ** for that key and record the root page of the index in the "knum"
+      ** column of of the SQLITE_MASTER table.
+      */
       Index *pIndex = p->pIndex;
       assert( pIndex->pNext==0 );
       assert( pIndex->tnum==0 );
       sqliteVdbeAddOp(v, OP_CreateIndex, 0, 0, 0, 0),
       sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
+    }else{
+      /* If the table does not have a primary key, the "knum" column is 
+      ** fill with a NULL value.
+      */
+      sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
     }
+    base = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
+    sqliteVdbeChangeP3(v, base, pParse->sFirstToken.z, n);
+    sqliteVdbeAddOp(v, OP_MakeRecord, 6, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
+    changeCookie(db);
+    sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
@@ -604,7 +613,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
       { OP_String,     0, 0,        0}, /* 2 */
       { OP_Next,       0, ADDR(9),  0}, /* 3 */
       { OP_Dup,        0, 0,        0},
-      { OP_Column,     0, 3,        0},
+      { OP_Column,     0, 2,        0},
       { OP_Ne,         0, ADDR(3),  0},
       { OP_Delete,     0, 0,        0},
       { OP_Goto,       0, ADDR(3),  0},
@@ -672,8 +681,10 @@ void sqliteCreateIndex(
   ** Find the table that is to be indexed.  Return early if not found.
   */
   if( pTable!=0 ){
+    assert( pName!=0 );
     pTab =  sqliteTableFromToken(pParse, pTable);
   }else{
+    assert( pName==0 );
     pTab =  pParse->pNewTable;
   }
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
@@ -686,26 +697,29 @@ void sqliteCreateIndex(
 
   /*
   ** Find the name of the index.  Make sure there is not already another
-  ** index or table with the same name.
+  ** index or table with the same name.  If pName==0 it means that we are
+  ** dealing with a primary key, which has no name, so this step can be
+  ** skipped.
   */
   if( pName ){
     zName = sqliteTableNameFromToken(pName);
+    if( zName==0 ) goto exit_create_index;
+    if( sqliteFindIndex(db, zName) ){
+      sqliteSetString(&pParse->zErrMsg, "index ", zName, 
+         " already exists", 0);
+      pParse->nErr++;
+      goto exit_create_index;
+    }
+    if( sqliteFindTable(db, zName) ){
+      sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
+         zName, 0);
+      pParse->nErr++;
+      goto exit_create_index;
+    }
   }else{
     zName = 0;
-    sqliteSetString(&zName, pTab->zName, "__primary_key", 0);
-  }
-  if( zName==0 ) goto exit_create_index;
-  if( sqliteFindIndex(db, zName) ){
-    sqliteSetString(&pParse->zErrMsg, "index ", zName, 
-       " already exists", 0);
-    pParse->nErr++;
-    goto exit_create_index;
-  }
-  if( sqliteFindTable(db, zName) ){
-    sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
-       zName, 0);
-    pParse->nErr++;
-    goto exit_create_index;
+    sqliteSetString(&zName, pTab->zName, " (primary key)", 0);
+    if( zName==0 ) goto exit_create_index;
   }
 
   /* If pList==0, it means this routine was called to make a primary
@@ -750,12 +764,15 @@ void sqliteCreateIndex(
   }
 
   /* Link the new Index structure to its table and to the other
-  ** in-memory database structures.
+  ** in-memory database structures.  Note that primary key indices
+  ** do not appear in the index hash table.
   */
   if( pParse->explain==0 ){
-    h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
-    pIndex->pHash = db->apIdxHash[h];
-    db->apIdxHash[h] = pIndex;
+    if( pName!=0 ){
+      h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
+      pIndex->pHash = db->apIdxHash[h];
+      db->apIdxHash[h] = pIndex;
+    }
     pIndex->pNext = pTab->pIndex;
     pTab->pIndex = pIndex;
     db->flags |= SQLITE_InternChanges;
@@ -792,14 +809,15 @@ void sqliteCreateIndex(
       { OP_NewRecno,    2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
+      { OP_String,      0, 0, 0},  /* 4 */
       { OP_CreateIndex, 1, 0, 0},
       { OP_Dup,         0, 0, 0},
-      { OP_Open,        1, 0, 0},  /* 6 */
-      { OP_String,      0, 0, 0},  /* 7 */
-      { OP_String,      0, 0, 0},  /* 8 */
-      { OP_MakeRecord,  5, 0, 0},
+      { OP_Open,        1, 0, 0},  /* 7 */
+      { OP_Null,        0, 0, 0},
+      { OP_String,      0, 0, 0},  /* 9 */
+      { OP_MakeRecord,  6, 0, 0},
       { OP_Put,         2, 0, 0},
-      { OP_SetCookie,   0, 0, 0},  /* 11 */
+      { OP_SetCookie,   0, 0, 0},  /* 12 */
       { OP_Close,       2, 0, 0},
     };
     int n;
@@ -818,12 +836,12 @@ void sqliteCreateIndex(
       n = (int)pEnd->z - (int)pStart->z + 1;
       base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
       sqliteVdbeChangeP3(v, base+3, pIndex->zName, 0);
+      sqliteVdbeChangeP3(v, base+4, pTab->zName, 0);
       sqliteVdbeIndexRootAddr(v, &pIndex->tnum);
-      sqliteVdbeChangeP3(v, base+6, pIndex->zName, 0);
-      sqliteVdbeChangeP3(v, base+7, pTab->zName, 0);
-      sqliteVdbeChangeP3(v, base+8, pStart->z, n);
+      sqliteVdbeChangeP3(v, base+7, pIndex->zName, 0);
+      sqliteVdbeChangeP3(v, base+9, pStart->z, n);
       changeCookie(db);
-      sqliteVdbeChangeP1(v, base+11, db->next_cookie);
+      sqliteVdbeChangeP1(v, base+12, db->next_cookie);
     }
     sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
     lbl1 = sqliteVdbeMakeLabel(v);

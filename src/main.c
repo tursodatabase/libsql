@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.37 2001/09/16 00:13:27 drh Exp $
+** $Id: main.c,v 1.38 2001/09/17 20:25:58 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -26,9 +26,10 @@
 ** database.  Each callback contains the following information:
 **
 **     argv[0] = "meta" or "table" or "index"
-**     argv[1] = table or index name
-**     argv[2] = root page number for table or index
-**     argv[3] = SQL create statement for the table or index
+**     argv[1] = table or index name or meta statement type.
+**     argv[2] = root page number for table or index.  NULL for meta.
+**     argv[3] = root page number of primary key for tables or NULL.
+**     argv[4] = SQL create statement for the table or index
 **
 */
 static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
@@ -36,13 +37,16 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   Parse sParse;
   int nErr = 0;
 
-  assert( argc==4 );
+/* TODO: Do some validity checks on all fields.  In particular,
+** make sure fields do not contain NULLs. */
+
+  assert( argc==5 );
   switch( argv[0][0] ){
     case 'm': {  /* Meta information */
       if( strcmp(argv[1],"file-format")==0 ){
-        db->file_format = atoi(argv[3]);
+        db->file_format = atoi(argv[4]);
       }else if( strcmp(argv[1],"schema-cookie")==0 ){
-        db->schema_cookie = atoi(argv[3]);
+        db->schema_cookie = atoi(argv[4]);
         db->next_cookie = db->schema_cookie;
       }
       break;
@@ -53,7 +57,8 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
       sParse.db = db;
       sParse.initFlag = 1;
       sParse.newTnum = atoi(argv[2]);
-      nErr = sqliteRunParser(&sParse, argv[3], 0);
+      sParse.newKnum = argv[3] ? atoi(argv[3]) : 0;
+      nErr = sqliteRunParser(&sParse, argv[4], 0);
       break;
     }
     default: {
@@ -88,8 +93,9 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
      "CREATE TABLE " MASTER_NAME " (\n"
      "  type text,\n"
      "  name text,\n"
-     "  tnum integer,\n"
      "  tbl_name text,\n"
+     "  tnum integer,\n"
+     "  knum integer,\n"
      "  sql text\n"
      ")"
   ;
@@ -102,8 +108,9 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   **    CREATE TABLE sqlite_master (
   **        type       text,    --  Either "table" or "index" or "meta"
   **        name       text,    --  Name of table or index
-  **        tnum       integer, --  The integer page number of root page
   **        tbl_name   text,    --  Associated table 
+  **        tnum       integer, --  The integer page number of root page
+  **        knum       integer, --  Root page of primary key, or NULL
   **        sql        text     --  The CREATE statement for this object
   **    );
   **
@@ -131,43 +138,47 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   static VdbeOp initProg[] = {
     { OP_Open,     0, 2,  0},
     { OP_Rewind,   0, 0,  0},
-    { OP_Next,     0, 12, 0},           /* 2 */
+    { OP_Next,     0, 13, 0},           /* 2 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "meta"},
     { OP_Ne,       0, 2,  0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 2,  0},
-    { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
+    { OP_Column,   0, 3,  0},
+    { OP_Null,     0, 0,  0},
+    { OP_Column,   0, 5,  0},
+    { OP_Callback, 5, 0,  0},
     { OP_Goto,     0, 2,  0},
-    { OP_Rewind,   0, 0,  0},           /* 12 */
-    { OP_Next,     0, 23, 0},           /* 13 */
+    { OP_Rewind,   0, 0,  0},           /* 13 */
+    { OP_Next,     0, 25, 0},           /* 14 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "table"},
-    { OP_Ne,       0, 13, 0},
+    { OP_Ne,       0, 14, 0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 2,  0},
+    { OP_Column,   0, 3,  0},
     { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Goto,     0, 13, 0},
-    { OP_Rewind,   0, 0,  0},           /* 23 */
-    { OP_Next,     0, 34, 0},           /* 24 */
+    { OP_Column,   0, 5,  0},
+    { OP_Callback, 5, 0,  0},
+    { OP_Goto,     0, 14, 0},
+    { OP_Rewind,   0, 0,  0},           /* 25 */
+    { OP_Next,     0, 37, 0},           /* 26 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "index"},
-    { OP_Ne,       0, 24, 0},
+    { OP_Ne,       0, 26, 0},
     { OP_Column,   0, 0,  0},
     { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 2,  0},
-    { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Goto,     0, 24, 0},
-    { OP_String,   0, 0,  "meta"},      /* 34 */
+    { OP_Column,   0, 3,  0},
+    { OP_Null,     0, 0,  0},
+    { OP_Column,   0, 5,  0},
+    { OP_Callback, 5, 0,  0},
+    { OP_Goto,     0, 26, 0},
+    { OP_String,   0, 0,  "meta"},      /* 37 */
     { OP_String,   0, 0,  "schema-cookie"},
-    { OP_String,   0, 0,  ""},
+    { OP_Null,     0, 0,  0},
+    { OP_Null,     0, 0,  0},
     { OP_ReadCookie,0,0,  0},
-    { OP_Callback, 4, 0,  0},
+    { OP_Callback, 5, 0,  0},
     { OP_Close,    0, 0,  0},
     { OP_Halt,     0, 0,  0},
   };
@@ -190,13 +201,14 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   }
   if( rc==SQLITE_OK ){
     Table *pTab;
-    char *azArg[5];
+    char *azArg[6];
     azArg[0] = "table";
     azArg[1] = MASTER_NAME;
     azArg[2] = "2";
-    azArg[3] = master_schema;
-    azArg[4] = 0;
-    sqliteOpenCb(db, 4, azArg, 0);
+    azArg[3] = 0;
+    azArg[4] = master_schema;
+    azArg[5] = 0;
+    sqliteOpenCb(db, 5, azArg, 0);
     pTab = sqliteFindTable(db, MASTER_NAME);
     if( pTab ){
       pTab->readOnly = 1;
