@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.77 2003/07/22 12:44:54 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.78 2003/08/22 02:34:30 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -36,8 +36,8 @@ puts {
 Quick Links:
 <ul>
 <li><a href="download.html">Download</a></li>
-<li><a href="http://cvs.hwaci.com/sqlite/timeline">Change Log</a></li>
-<li><a href="http://cvs.hwaci.com/sqlite/tktnew">Report a bug</a></li>
+<li><a href="http://www.sqlite.org/cvstrac/timeline">Change Log</a></li>
+<li><a href="http://www.sqlite.org/cvstrac/tktnew">Report a bug</a></li>
 <li><a href="quickstart.html">Quick start</a></li>
 </ul>
 </td></tr></table>
@@ -64,7 +64,7 @@ puts {<h2>Features</h2>
 three functions and one opaque structure.</li>
 <li><a href="tclsqlite.html">TCL bindings</a> included.
     Bindings for many other languages 
-    <a href="http://cvs.hwaci.com/sqlite/wiki?p=SqliteWrappers">
+    <a href="http://www.sqlite.org/cvstrac/wiki?p=SqliteWrappers">
     available separately.</a></li>
 <li>Simple, well-commented source code.</li>
 <li>Automated test suite provides near 100% code coverage.</li>
@@ -79,12 +79,12 @@ puts {<h2>Current Status</h2>
 
 <p>A <a href="changes.html">Change Summary</a> is available on this
 website.  You can also access a detailed
-<a href="http://cvs.hwaci.com/sqlite/timeline">change history</a>,
-<a href="http://cvs.hwaci.com/sqlite/rptview?rn=2">view open bugs</a>,
+<a href="http://www.sqlite.org/cvstrac/timeline">change history</a>,
+<a href="http://www.sqlite.org/cvstrac/rptview?rn=2">view open bugs</a>,
 or
-<a href="http://cvs.hwaci.com/sqlite/tktnew">report new bugs</a>
+<a href="http://www.sqlite.org/cvstrac/tktnew">report new bugs</a>
 at the
-<a href="http://cvs.hwaci.com/sqlite/">CVS server</a>.</p>
+<a href="http://www.sqlite.org/cvstrac/">CVS server</a>.</p>
 
 <p>Complete source code and precompiled binaries for the latest release are
 <a href="download.html">available for download</a> on this site.  You
@@ -138,7 +138,7 @@ puts {<h2>Documentation</h2>
 <li>A <a href="speed.html">speed comparison</a> between SQLite, PostgreSQL,
     and MySQL.</li>
 <li>User-written documentation is available on the
-    <a href="http://cvs.hwaci.com/sqlite/wiki">SQLite Wiki</a>.  Please
+    <a href="http://www.sqlite.org/cvstrac/wiki">SQLite Wiki</a>.  Please
     contribute if you can.</li>
 </ul>
 </p>
@@ -214,8 +214,8 @@ using SQLite, visit the Wiki documentation at:
 </p>
 
 <blockquote>
-<a href="http://cvs.hwaci.com/sqlite/wiki">
-http://cvs.hwaci.com/sqlite/wiki</a>
+<a href="http://www.sqlite.org/cvstrac/wiki">
+http://www.sqlite.org/cvstrac/wiki</a>
 </blockquote>
 }
 
