@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.362 2005/01/21 21:31:41 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.363 2005/01/22 03:03:55 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1572,6 +1572,7 @@ void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
+void sqlite3ExpirePreparedStatements(sqlite3*);
 
 #ifndef SQLITE_OMIT_CURSOR
 void sqlite3CursorDelete(SqlCursor*);

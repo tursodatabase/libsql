@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.127 2005/01/20 01:14:23 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.128 2005/01/22 03:03:54 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1173,6 +1173,18 @@ int sqlite3_rekey(
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 int sqlite3_sleep(int);
+
+/*
+** Return TRUE (non-zero) of the statement supplied as an argument needs
+** to be recompiled.  A statement needs to be recompiled whenever the
+** execution environment changes in a way that would alter the program
+** that sqlite3_prepare() generates.  For example, if new functions or
+** collating sequences are registered or if an authorizer function is
+** added or changed.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite3_expired(sqlite3_stmt*);
 
 /*
 ** If the following global variable is made to point to a

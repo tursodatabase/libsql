@@ -342,6 +342,7 @@ struct Vdbe {
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 changeCntOn;         /* True to update the change-counter */
   u8 aborted;             /* True if ROLLBACK in another VM causes an abort */
+  u8 expired;             /* True if the VM needs to be recompiled */
   int nChange;            /* Number of db changes made since last reset */
 };
 

@@ -16,6 +16,21 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+/*
+** Return TRUE (non-zero) of the statement supplied as an argument needs
+** to be recompiled.  A statement needs to be recompiled whenever the
+** execution environment changes in a way that would alter the program
+** that sqlite3_prepare() generates.  For example, if new functions or
+** collating sequences are registered or if an authorizer function is
+** added or changed.
+**
+***** EXPERIMENTAL ******
+*/
+int sqlite3_expired(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe*)pStmt;
+  return p==0 || p->expired;
+}
+
 /**************************** sqlite3_value_  *******************************
 ** The following routines extract information from a Mem or sqlite3_value
 ** structure.

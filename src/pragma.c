@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.84 2005/01/20 11:32:24 danielk1977 Exp $
+** $Id: pragma.c,v 1.85 2005/01/22 03:03:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,10 +160,13 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
         if( v ){
           returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
         }
-      }else if( getBoolean(zRight) ){
-        db->flags |= p->mask;
       }else{
-        db->flags &= ~p->mask;
+        if( getBoolean(zRight) ){
+          db->flags |= p->mask;
+        }else{
+          db->flags &= ~p->mask;
+        }
+        sqlite3ExpirePreparedStatements(db);
       }
       return 1;
     }

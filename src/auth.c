@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.19 2004/09/30 13:43:13 drh Exp $
+** $Id: auth.c,v 1.20 2005/01/22 03:03:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,6 +76,7 @@ int sqlite3_set_authorizer(
 ){
   db->xAuth = xAuth;
   db->pAuthArg = pArg;
+  sqlite3ExpirePreparedStatements(db);
   return SQLITE_OK;
 }
 
