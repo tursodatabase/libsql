@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.269 2005/01/08 18:42:28 drh Exp $
+** $Id: main.c,v 1.270 2005/01/12 12:44:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1160,14 +1160,8 @@ static int openDatabase(
   ** is accessed.
   */
   sqlite3RegisterBuiltinFunctions(db);
-  if( rc==SQLITE_OK ){
-    sqlite3Error(db, SQLITE_OK, 0);
-    db->magic = SQLITE_MAGIC_OPEN;
-  }else{
-    sqlite3Error(db, rc, "%s", zErrMsg, 0);
-    if( zErrMsg ) sqliteFree(zErrMsg);
-    db->magic = SQLITE_MAGIC_CLOSED;
-  }
+  sqlite3Error(db, SQLITE_OK, 0);
+  db->magic = SQLITE_MAGIC_OPEN;
 
 opendb_out:
   if( sqlite3_errcode(db)==SQLITE_OK && sqlite3_malloc_failed ){

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.120 2005/01/12 07:15:05 danielk1977 Exp $
+** $Id: test1.c,v 1.121 2005/01/12 12:44:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -483,7 +483,7 @@ static int test_create_function(
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " FILENAME\"", 0);
+       " DB\"", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
@@ -504,6 +504,7 @@ static int test_create_function(
 #endif
 
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)errorName(rc), 0);
   return TCL_OK;
 }
 
@@ -907,10 +908,12 @@ static int test_finalize(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
-  db = StmtToDb(pStmt);
+  if( pStmt ){
+    db = StmtToDb(pStmt);
+  }
   rc = sqlite3_finalize(pStmt);
   Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
-  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( db && sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -937,7 +940,9 @@ static int test_reset(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
   rc = sqlite3_reset(pStmt);
-  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  if( pStmt && 
+      sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
   if( rc ){
     return TCL_ERROR;
   }

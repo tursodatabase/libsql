@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.29 2004/11/22 10:02:23 danielk1977 Exp $
+# $Id: lock.test,v 1.30 2005/01/12 12:44:04 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -212,8 +212,7 @@ do_test lock-2.8 {
   db2 timeout 400
   execsql BEGIN
   execsql {UPDATE t1 SET a = 0 WHERE 0}
-  # catchsql BEGIN db2
-  catchsql {UPDATE t1 SET a = 0 WHERE 0} db2
+  catchsql {BEGIN EXCLUSIVE;} db2
 } {1 {database is locked}}
 do_test lock-2.9 {
   db2 timeout 0

@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.15 2005/01/12 09:10:41 danielk1977 Exp $
+# $Id: malloc.test,v 1.16 2005/01/12 12:44:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,66 @@ if {[info command sqlite_malloc_stat]==""} {
    finish_test
    return
 }
+
+# Usage: do_malloc_test <test number> <options...>
+#
+# The first argument, <test number>, is an integer used to name the
+# tests executed by this proc. Options are as follows:
+#
+#     -tclprep          TCL script to run to prepare test.
+#     -sqlprep          SQL script to run to prepare test.
+#     -tclbody          TCL script to run with IO error simulation.
+#     -sqlbody          TCL script to run with IO error simulation.
+#
+proc do_malloc_test {tn args} {
+  array set ::mallocopts $args
+
+  set ::go 1
+  for {set ::n 1} {$::go} {incr ::n} {
+
+    do_test malloc-$tn.$::n {
+
+      sqlite_malloc_fail 0
+      catch {db close}
+      catch {file delete -force test.db}
+      catch {file delete -force test.db-journal}
+      catch {file delete -force test2.db}
+      catch {file delete -force test2.db-journal}
+      set ::DB [sqlite3 db test.db]
+
+      if {[info exists ::mallocopts(-tclprep)]} {
+        eval $::mallocopts(-tclprep)
+      }
+      if {[info exists ::mallocopts(-sqlprep)]} {
+        execsql $::mallocopts(-sqlprep)
+      }
+
+      sqlite_malloc_fail $::n
+      set ::mallocbody {}
+      if {[info exists ::mallocopts(-tclbody)]} {
+        append ::mallocbody "$::mallocopts(-tclbody)\n"
+      }
+      if {[info exists ::mallocopts(-sqlbody)]} {
+        append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
+      }
+
+      set v [catch $::mallocbody msg]
+
+      set leftover [lindex [sqlite_malloc_stat] 2]
+      if {$leftover>0} {
+        if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
+        set ::go 0
+        set v {1 1}
+      } else {
+        set v2 [expr {$msg=="" || $msg=="out of memory"}]
+        if {!$v2} {puts "\nError message returned: $msg"}
+        lappend v $v2
+      }
+    } {1 1}
+  }
+}
+
+if 0 {
 
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-1.$i {
@@ -386,45 +446,47 @@ for {set go 1; set i 1} {$go && $::sqlite_options(utf16)} {incr i} {
   } {0}
 }
 
+
 # This block tests that malloc() failures that occur whilst commiting
 # a multi-file transaction are handled correctly.
 #
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-9.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     catch {file delete -force test2.db}
-     catch {file delete -force test2.db-journal}
-
-     sqlite3 db test.db
-     execsql {
-       ATTACH 'test2.db' as test2;
-       CREATE TABLE abc1(a, b, c);
-       CREATE TABLE test2.abc2(a, b, c);
-     }
-
-     sqlite_malloc_fail $i
-     set v [catch {execsql {
-       BEGIN;
-       INSERT INTO abc1 VALUES(1, 2, 3);
-       INSERT INTO abc2 VALUES(1, 2, 3);
-       COMMIT;
-     }} msg]
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
+do_malloc_test 9 -sqlprep {
+  ATTACH 'test2.db' as test2;
+  CREATE TABLE abc1(a, b, c);
+  CREATE TABLE test2.abc2(a, b, c);
+} -sqlbody {
+  BEGIN;
+  INSERT INTO abc1 VALUES(1, 2, 3);
+  INSERT INTO abc2 VALUES(1, 2, 3);
+  COMMIT;
 }
 
+}
+
+# This block tests malloc() failures that occur while opening a 
+# connection to a database.
+do_malloc_test 10 -sqlprep {
+  CREATE TABLE abc(a, b, c);
+} -tclbody {
+  set ::DB [sqlite3 db2 test.db]
+  db2 eval {SELECT * FROM sqlite_master}
+  db2 close
+} 
+
+# This block tests malloc() failures that occur within calls to
+# sqlite3_create_function().
+do_malloc_test 11  -tclbody {
+  if {[string match [sqlite3_create_function $::DB] SQLITE_NOMEM]==0} {
+    error "out of memory"
+  }
+}
+
+do_malloc_test 12 -tclbody {
+  set sql16 [encoding convertto unicode "SELECT * FROM sqlite_master"]
+  append sql16 "\00\00"
+  set ::STMT [sqlite3_prepare16 $::DB $sql16 -1 DUMMY]
+  sqlite3_finalize $::STMT
+} 
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

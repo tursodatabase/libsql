@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.113 2005/01/12 00:08:25 drh Exp $
+** $Id: tclsqlite.c,v 1.114 2005/01/12 12:44:04 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -406,7 +406,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "errorcode",          "eval",              "function",
     "last_insert_rowid",  "onecolumn",         "progress",
     "rekey",              "timeout",           "total_changes",
-    "trace",
+    "trace",              "version",
     0                    
   };
   enum DB_enum {
@@ -416,7 +416,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_ERRORCODE,         DB_EVAL,             DB_FUNCTION,
     DB_LAST_INSERT_ROWID, DB_ONECOLUMN,        DB_PROGRESS,
     DB_REKEY,             DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE
+    DB_TRACE,             DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1276,6 +1276,15 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp,", failed while processing line: ",zLineNum,0);
       rc = TCL_ERROR;
     }
+    break;
+  }
+
+  /*    $db version
+  **
+  ** Return the version string for this database.
+  */
+  case DB_VERSION: {
+    Tcl_SetResult(interp, (char *)sqlite3_libversion(), TCL_STATIC);
     break;
   }
 
