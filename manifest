@@ -1,5 +1,5 @@
-C Fix\sthe\smin/max\soptimizer\sso\sthat\sit\sworks\swhen\sthe\sFROM\sclause\sis\sa\nsubquery.\s\sTicket\s#658.\s(CVS\s1293)
-D 2004-03-13T14:00:36
+C Updates\sto\sthe\sarchitecture\sdocument.\s(CVS\s1294)
+D 2004-03-14T11:57:58
 F Makefile.in 46788b65500865e3fd965f7617d41697da8a11a1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -163,7 +163,7 @@ F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 1e5289d63fc45564c67e205bc503db74718436ca
+F www/arch.tcl b329ca2c8dc75cd1cf0dd714b8bb47bdd458d0da
 F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5864fc6937b933b7da0c00e6c4c2ee1b9b939cff
-R 38ce5fb591e7b91ddde53b0f21b20e52
+P 31c94acc72d318b5dec0fef1485621943add45c8
+R 4444a9fae45099d79266fa1def7dab13
 U drh
-Z b929c36981acffd0768f9e08052aab34
+Z 8aa570decc2b64f7981738dac3c42536

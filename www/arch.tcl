@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.10 2004/02/18 16:56:32 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.11 2004/03/14 11:57:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -42,8 +42,8 @@ version 2.8.0 (2003-Feb-16) only sqlite_exec() was supported.
 For version 2.8.0, the sqlite_exec and sqlite_compile methods
 existed as peers.  Beginning with version 2.8.13, the sqlite_compile
 method is the primary interface, and sqlite_exec is implemented
-using sqlite_compile.  Externally, there are API extensions but
-not changes that break backwards compatibility.  But internally,
+using sqlite_compile.  Externally, this change is an enhancement
+that maintains backwards compatibility.  But internally,
 the plumbing is very different.  The diagram at the right shows
 the structure of SQLite for version 2.8.13 and following.
 </p>
@@ -110,17 +110,19 @@ lemon is found in the "doc" subdirectory of the distribution.
 
 <p>After the parser assembles tokens into complete SQL statements,
 it calls the code generator to produce virtual machine code that
-will do the work that the SQL statements request.  There are seven
-files in the code generator:  <b>build.c</b>, <b>delete.c</b>,
-<b>expr.c</b>, <b>insert.c</b> <b>select.c</b>, <b>update.c</b>, 
+will do the work that the SQL statements request.  There are many
+files in the code generator:  <b>build.c</b>, <b>copy.c</b>,
+<b>delete.c</b>,
+<b>expr.c</b>, <b>insert.c</b>, <b>pragma.c</b>,
+<b>select.c</b>, <b>trigger.c</b>, <b>update.c</b>, <b>vacuum.c</b>
 and <b>where.c</b>.
 In these files is where most of the serious magic happens.
 <b>expr.c</b> handles code generation for expressions.
 <b>where.c</b> handles code generation for WHERE clauses on
-SELECT, UPDATE and DELETE statements.  The files
-<b>delete.c</b>, <b>insert.c</b>, <b>select.c</b>, and
-<b>update.c</b> handle the code generation for SQL statements
-with the same names.  (Each of these files calls routines
+SELECT, UPDATE and DELETE statements.  The files <b>copy.c</b>,
+<b>delete.c</b>, <b>insert.c</b>, <b>select.c</b>, <b>trigger.c</b>
+<b>update.c</b>, and <b>vacuum.c</b> handle the code generation
+for SQL statements with the same names.  (Each of these files calls routines
 in <b>expr.c</b> and <b>where.c</b> as necessary.)  All other
 SQL statements are coded out of <b>build.c</b>.</p>
 
@@ -135,10 +137,14 @@ machine has a stack which is used for intermediate storage.
 Each instruction contains an opcode and
 up to three additional operands.</p>
 
-<p>The virtual machine is entirely contained in a single
+<p>The virtual machine itself is entirely contained in a single
 source file <b>vdbe.c</b>.  The virtual machine also has
-its own header file <b>vdbe.h</b> that defines an interface
-between the virtual machine and the rest of the SQLite library.</p>
+its own header files: <b>vdbe.h</b> that defines an interface
+between the virtual machine and the rest of the SQLite library and
+<b>vdbeInt.h</b> which defines structure private the virtual machine.
+The <b>vdbeaux.c</b> file contains utilities used by the virtual
+machine and interface modules used by the rest of the library to
+construct VM programs.</p>
 
 <h2>Backend</h2>
 
