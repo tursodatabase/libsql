@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sallocation\sproblem\sin\sos_test.c\s(CVS\s1782)
-D 2004-06-30T12:42:59
+C Have\sthe\sdebug\sversion\sof\ssqliteRealloc()\sreturn\spartially\suninitialised\nmemory\sin\sthe\ssame\sway\sas\sthe\snon-debug\sversion\scan.\s(CVS\s1783)
+D 2004-06-30T12:49:46
 F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -71,7 +71,7 @@ F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 6aaf6d79cc2157c70a06031dd1531707d644cfb4
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
-F src/util.c b267d0fe10cffa3301fe9fab6592a6808a38bce6
+F src/util.c a373ba2f631181b3302f3c2ebdfc9772833c6a17
 F src/vacuum.c b8546f4921719458cc537b9e736df52a8256399c
 F src/vdbe.c 4e756ef91c9eb9ffd3dd5be17bda9d5bf2755a3e
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a98dd004c4d328eb44a71fecdbf8c5ab416dc524
-R c0688e6bbb815a8d0503d70a0e36d154
+P ed511c2ea9581933ca504ce4b43d863503c6cc22
+R a9545d46e5988521e62ac4bcd2b6fe2d
 U danielk1977
-Z d7bcae3abcff61a6164622b223681da2
+Z 9cc28bee00d11300c71fd982024608f0

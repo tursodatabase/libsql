@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.109 2004/06/30 04:02:12 drh Exp $
+** $Id: util.c,v 1.110 2004/06/30 12:49:46 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -202,7 +202,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   p = &pi[N_GUARD+1];
   memcpy(p, oldP, n>oldN ? oldN : n);
   if( n>oldN ){
-    memset(&((char*)p)[oldN], 0, n-oldN);
+    memset(&((char*)p)[oldN], 0x55, n-oldN);
   }
   memset(oldPi, 0xab, (oldK+N_GUARD+2)*sizeof(int));
   free(oldPi);
