@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.10 2001/06/23 11:36:20 drh Exp $
+** @(#) $Id: pager.c,v 1.11 2001/06/24 20:39:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -476,6 +476,7 @@ int sqlitepager_open(
   pPager->errMask = 0;
   pPager->pFirst = 0;
   pPager->pLast = 0;
+  pPager->nExtra = nExtra;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
   *ppPager = pPager;
   return SQLITE_OK;

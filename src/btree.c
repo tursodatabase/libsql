@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.13 2001/06/22 19:15:00 drh Exp $
+** $Id: btree.c,v 1.14 2001/06/24 20:39:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -81,7 +81,7 @@ typedef unsigned char u8;
 ** This macro casts a pointer to an integer.  Useful for doing
 ** pointer arithmetic.
 */
-#define addr(X)  ((uptr)X)
+#define Addr(X)  ((uptr)X)
 
 /*
 ** Forward declarations of structures used only in this file.
@@ -368,8 +368,8 @@ static void defragmentPage(MemPage *pPage){
 
     /* This routine should never be called on an overfull page.  The
     ** following asserts verify that constraint. */
-    assert( addr(pCell) > addr(pPage) );
-    assert( addr(pCell) < addr(pPage) + SQLITE_PAGE_SIZE );
+    assert( Addr(pCell) > Addr(pPage) );
+    assert( Addr(pCell) < Addr(pPage) + SQLITE_PAGE_SIZE );
 
     n = cellSize(pCell);
     pCell->h.iNext = i<pPage->nCell-1 ? pc + n : 0;
@@ -534,7 +534,7 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, MemPage *pParent){
     if( idx<sizeof(PageHdr) ) goto page_format_error;
     pFBlk = (FreeBlk*)&pPage->u.aDisk[idx];
     pPage->nFree += pFBlk->iSize;
-    if( pFBlk->iNext <= idx ) goto page_format_error;
+    if( pFBlk->iNext>0 && pFBlk->iNext <= idx ) goto page_format_error;
     idx = pFBlk->iNext;
   }
   if( pPage->nCell==0 && pPage->nFree==0 ){
@@ -666,7 +666,7 @@ static int newDatabase(Btree *pBt){
   MemPage *pRoot;
   PageOne *pP1;
   int rc;
-  if( sqlitepager_pagecount(pBt->pPager)>0 ) return SQLITE_OK;
+  if( sqlitepager_pagecount(pBt->pPager)>1 ) return SQLITE_OK;
   pP1 = pBt->page1;
   rc = sqlitepager_write(pBt->page1);
   if( rc ) return rc;
@@ -721,7 +721,7 @@ int sqliteBtreeBeginTrans(Btree *pBt){
 ** remove the read lock.
 */
 static void unlockBtree(Btree *pBt){
-  if( pBt->pCursor==0 && pBt->page1!=0 ){
+  if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->page1!=0 ){
     sqlitepager_unref(pBt->page1);
     pBt->page1 = 0;
     pBt->inTrans = 0;
@@ -734,8 +734,9 @@ static void unlockBtree(Btree *pBt){
 */
 int sqliteBtreeCommit(Btree *pBt){
   int rc;
-  if( pBt->pCursor!=0 ) return SQLITE_ERROR;
+  if( pBt->pCursor!=0 || pBt->inTrans==0 ) return SQLITE_ERROR;
   rc = sqlitepager_commit(pBt->pPager);
+  pBt->inTrans = 0;
   unlockBtree(pBt);
   return rc;
 }
@@ -747,6 +748,8 @@ int sqliteBtreeCommit(Btree *pBt){
 int sqliteBtreeRollback(Btree *pBt){
   int rc;
   if( pBt->pCursor!=0 ) return SQLITE_ERROR;
+  if( pBt->inTrans==0 ) return SQLITE_OK;
+  pBt->inTrans = 0;
   rc = sqlitepager_rollback(pBt->pPager);
   unlockBtree(pBt);
   return rc;
@@ -1144,16 +1147,17 @@ static int moveToLeftmost(BtCursor *pCur){
 ** this value is as follows:
 **
 **     *pRes<0      The cursor is left pointing at an entry that
-**                  is larger than pKey.
+**                  is smaller than pKey.
 **
 **     *pRes==0     The cursor is left pointing at an entry that
 **                  exactly matches pKey.
 **
 **     *pRes>0      The cursor is left pointing at an entry that
-**                  is smaller than pKey.
+**                  is larger than pKey.
 */
 int sqliteBtreeMoveto(BtCursor *pCur, void *pKey, int nKey, int *pRes){
   int rc;
+  pCur->bSkipNext = 0;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
   for(;;){
@@ -1449,8 +1453,8 @@ static void dropCell(MemPage *pPage, int idx, int sz){
   int j;
   assert( idx>=0 && idx<pPage->nCell );
   assert( sz==cellSize(pPage->apCell[idx]) );
-  freeSpace(pPage, idx, sz);
-  for(j=idx; j<pPage->nCell-2; j++){
+  freeSpace(pPage, Addr(pPage->apCell[idx]) - Addr(pPage), sz);
+  for(j=idx; j<pPage->nCell-1; j++){
     pPage->apCell[j] = pPage->apCell[j+1];
   }
   pPage->nCell--;
@@ -1498,7 +1502,7 @@ static void relinkCellList(MemPage *pPage){
   u16 *pIdx;
   pIdx = &pPage->u.hdr.firstCell;
   for(i=0; i<pPage->nCell; i++){
-    int idx = addr(pPage->apCell[i]) - addr(pPage);
+    int idx = Addr(pPage->apCell[i]) - Addr(pPage);
     assert( idx>0 && idx<SQLITE_PAGE_SIZE );
     *pIdx = idx;
     pIdx = &pPage->apCell[i]->h.iNext;
@@ -1521,10 +1525,10 @@ static void copyPage(MemPage *pTo, MemPage *pFrom){
   pTo->nCell = pFrom->nCell;
   pTo->nFree = pFrom->nFree;
   pTo->isOverfull = pFrom->isOverfull;
-  to = addr(pTo);
-  from = addr(pFrom);
+  to = Addr(pTo);
+  from = Addr(pFrom);
   for(i=0; i<pTo->nCell; i++){
-    uptr x = addr(pFrom->apCell[i]);
+    uptr x = Addr(pFrom->apCell[i]);
     if( x>from && x<from+SQLITE_PAGE_SIZE ){
       *((uptr*)&pTo->apCell[i]) = x + to - from;
     }
@@ -1903,13 +1907,13 @@ int sqliteBtreeInsert(
     rc = clearCell(pBt, pPage->apCell[pCur->idx]);
     if( rc ) return rc;
     dropCell(pPage, pCur->idx, cellSize(pPage->apCell[pCur->idx]));
-  }else if( loc>0 ){
+  }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->u.hdr.rightChild==0 );  /* Must be a leaf page */
     pCur->idx++;
   }else{
     assert( pPage->u.hdr.rightChild==0 );  /* Must be a leaf page */
   }
-  insertCell(pPage, pCur->idx, &newCell, cellSize(&newCell));
+  insertCell(pPage, pCur->idx, &newCell, szNew);
   rc = balance(pCur->pBt, pPage, pCur);
   return rc;
 }
@@ -2123,6 +2127,7 @@ int sqliteBtreePageDump(Btree *pBt, int pgno){
       i, range, (int)pCell->h.leftChild, pCell->h.nKey, pCell->h.nData,
       pCell->aPayload
     );
+    i++;
     idx = pCell->h.iNext;
   }
   if( idx!=0 ){

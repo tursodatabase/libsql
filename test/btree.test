@@ -1,0 +1,315 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is btree database backend
+#
+# $Id: btree.test,v 1.1 2001/06/24 20:39:41 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {$dbprefix!="memory:" && [info commands btree_open]!=""} {
+
+# Basic functionality.  Open and close a database.
+#
+do_test btree-1.1 {
+  file delete -force test1.bt
+  file delete -force test1.bt-journal
+  set rc [catch {btree_open test1.bt} ::b1]
+} {0}
+do_test btree-1.2 {
+  set rc [catch {btree_open test1.bt} ::b2]
+} {0}
+do_test btree-1.3 {
+  set rc [catch {btree_close $::b2} msg]
+  lappend rc $msg
+} {0 {}}
+
+# Do an insert and verify that the database file grows in size.
+#
+do_test btree-1.4 {
+  set rc [catch {btree_begin_transaction $::b1} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-1.5 {
+  set rc [catch {btree_cursor $::b1 2} ::c1]
+  if {$rc} {lappend rc $::c1}
+  set rc
+} {0}
+do_test btree-1.6 {
+  set rc [catch {btree_insert $::c1 one 1.00} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-1.7 {
+  btree_key $::c1
+} {one}
+do_test btree-1.8 {
+  btree_data $::c1
+} {1.00}
+do_test btree-1.9 {
+  set rc [catch {btree_close_cursor $::c1} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-1.10 {
+  set rc [catch {btree_commit $::b1} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-1.11 {
+  file size test1.bt
+} {2048}
+
+# Reopen the database and attempt to read the record that we wrote.
+#
+do_test btree-2.1 {
+  set rc [catch {btree_cursor $::b1 2} ::c1]
+  if {$rc} {lappend rc $::c1}
+  set rc
+} {0}
+do_test btree-2.2 {
+  btree_move_to $::c1 abc
+} {1}
+do_test btree-2.3 {
+  btree_move_to $::c1 xyz
+} {-1}
+do_test btree-2.4 {
+  btree_move_to $::c1 one
+} {0}
+do_test btree-2.5 {
+  btree_key $::c1
+} {one}
+do_test btree-2.6 {
+  btree_data $::c1
+} {1.00}
+
+# Do some additional inserts
+#
+do_test btree-3.1 {
+  btree_begin_transaction $::b1
+  btree_insert $::c1 two 2.00
+  btree_key $::c1
+} {two}
+do_test btree-3.2 {
+  btree_insert $::c1 three 3.00
+  btree_key $::c1
+} {three}
+do_test btree-3.4 {
+  btree_insert $::c1 four 4.00
+  btree_key $::c1
+} {four}
+do_test btree-3.5 {
+  btree_insert $::c1 five 5.00
+  btree_key $::c1
+} {five}
+do_test btree-3.6 {
+  btree_insert $::c1 six 6.00
+  btree_key $::c1
+} {six}
+#btree_page_dump $::b1 2
+do_test btree-3.7 {
+  set rc [btree_move_to $::c1 {}]
+  expr {$rc>0}
+} {1}
+do_test btree-3.8 {
+  btree_key $::c1
+} {five}
+do_test btree-3.9 {
+  btree_data $::c1
+} {5.00}
+do_test btree-3.10 {
+  btree_next $::c1
+  btree_key $::c1
+} {four}
+do_test btree-3.11 {
+  btree_data $::c1
+} {4.00}
+do_test btree-3.12 {
+  btree_next $::c1
+  btree_key $::c1
+} {one}
+do_test btree-3.13 {
+  btree_data $::c1
+} {1.00}
+do_test btree-3.14 {
+  btree_next $::c1
+  btree_key $::c1
+} {six}
+do_test btree-3.15 {
+  btree_data $::c1
+} {6.00}
+do_test btree-3.16 {
+  btree_next $::c1
+  btree_key $::c1
+} {three}
+do_test btree-3.17 {
+  btree_data $::c1
+} {3.00}
+do_test btree-3.18 {
+  btree_next $::c1
+  btree_key $::c1
+} {two}
+do_test btree-3.19 {
+  btree_data $::c1
+} {2.00}
+do_test btree-3.20 {
+  btree_next $::c1
+  btree_key $::c1
+} {}
+do_test btree-3.21 {
+  btree_data $::c1
+} {}
+
+# Commit the changes, reopen and reread the data
+#
+do_test btree-3.22 {
+  set rc [catch {btree_close_cursor $::c1} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-3.23 {
+  set rc [catch {btree_commit $::b1} msg]
+  lappend rc $msg
+} {0 {}}
+do_test btree-3.24 {
+  file size test1.bt
+} {2048}
+do_test btree-3.25 {
+  set rc [catch {btree_cursor $::b1 2} ::c1]
+  if {$rc} {lappend rc $::c1}
+  set rc
+} {0}
+do_test btree-3.26 {
+  set rc [btree_move_to $::c1 {}]
+  expr {$rc>0}
+} {1}
+do_test btree-3.27 {
+  btree_key $::c1
+} {five}
+do_test btree-3.28 {
+  btree_data $::c1
+} {5.00}
+do_test btree-3.29 {
+  btree_next $::c1
+  btree_key $::c1
+} {four}
+do_test btree-3.30 {
+  btree_data $::c1
+} {4.00}
+do_test btree-3.31 {
+  btree_next $::c1
+  btree_key $::c1
+} {one}
+do_test btree-3.32 {
+  btree_data $::c1
+} {1.00}
+do_test btree-3.33 {
+  btree_next $::c1
+  btree_key $::c1
+} {six}
+do_test btree-3.34 {
+  btree_data $::c1
+} {6.00}
+do_test btree-3.35 {
+  btree_next $::c1
+  btree_key $::c1
+} {three}
+do_test btree-3.36 {
+  btree_data $::c1
+} {3.00}
+do_test btree-3.37 {
+  btree_next $::c1
+  btree_key $::c1
+} {two}
+do_test btree-3.38 {
+  btree_data $::c1
+} {2.00}
+do_test btree-3.39 {
+  btree_next $::c1
+  btree_key $::c1
+} {}
+do_test btree-3.40 {
+  btree_data $::c1
+} {}
+
+# Now try a delete
+#
+do_test btree-4.1 {
+  btree_begin_transaction $::b1
+  btree_move_to $::c1 one
+  btree_key $::c1
+} {one}
+do_test btree-4.2 {
+  btree_delete $::c1
+} {}
+do_test btree-4.3 {
+  btree_key $::c1
+} {six}
+do_test btree-4.4 {
+  btree_next $::c1
+  btree_key $::c1
+} {six}
+do_test btree-4.5 {
+  btree_next $::c1
+  btree_key $::c1
+} {three}
+do_test btree-4.4 {
+  btree_move_to $::c1 {}
+  set r {}
+  while 1 {
+    set key [btree_key $::c1]
+    if {$key==""} break
+    lappend r $key
+    lappend r [btree_data $::c1]
+    btree_next $::c1
+  }
+  set r   
+} {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
+
+# Commit and make sure the delete is still there.
+#
+do_test btree-4.5 {
+  btree_close_cursor $::c1
+  btree_commit $::b1
+  set ::c1 [btree_cursor $::b1 2]
+  btree_move_to $::c1 {}
+  set r {}
+  while 1 {
+    set key [btree_key $::c1]
+    if {$key==""} break
+    lappend r $key
+    lappend r [btree_data $::c1]
+    btree_next $::c1
+  }
+  set r   
+} {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
+
+
+
+
+do_test btree-99.1 {
+  btree_close $::b1
+} {}
+
+
+} ;# end if( not mem: and has pager_open command );
+
+finish_test
