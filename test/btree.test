@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.3 2001/06/28 01:54:50 drh Exp $
+# $Id: btree.test,v 1.4 2001/06/28 11:50:22 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -790,6 +790,224 @@ do_test btree-9.7 {
   btree_rollback $::b1
   lindex [btree_pager_stats $::b1] 1
 } {0}
+
+# Create a tree of depth two.  That is, there is a single divider entry
+# on the root pages and two leaf pages.  Then delete the divider entry
+# see what happens.
+#
+do_test btree-10.1 {
+  btree_begin_transaction $::b1
+  btree_drop_table $::b1 2
+  lindex [btree_pager_stats $::b1] 1
+} {1}
+do_test btree-10.2 {
+  set ::c1 [btree_cursor $::b1 2]
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+do_test btree-10.3 {
+  for {set i 1} {$i<=20} {incr i} {
+    set key [format %03d $i]
+    set data "*** $key *** $key *** $key *** $key ***"
+    btree_insert $::c1 $key $data
+  }
+  select_keys $::c1
+} {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
+#btree_page_dump $::b1 7
+#btree_page_dump $::b1 2
+#btree_page_dump $::b1 6
+do_test btree-10.4 {
+  btree_move_to $::c1 011
+  btree_delete $::c1
+  select_keys $::c1
+} {001 002 003 004 005 006 007 008 009 010 012 013 014 015 016 017 018 019 020}
+#btree_page_dump $::b1 2
+for {set i 1} {$i<=20} {incr i} {
+  do_test btree-10.5.$i {
+    btree_move_to $::c1 [format %03d $i]
+    lindex [btree_pager_stats $::b1] 1
+  } {2}
+}
+
+# Create a tree with lots more pages
+#
+catch {unset ::data}
+catch {unset ::key}
+for {set i 21} {$i<=1000} {incr i} {
+  do_test btree-11.1.$i.1 {
+    set key [format %03d $i]
+    set ::data "*** $key *** $key *** $key *** $key ***"
+    btree_insert $::c1 $key $data
+    btree_key $::c1
+  } [format %03d $i]
+  do_test btree-11.1.$i.2 {
+    btree_data $::c1
+  } $::data
+  set ::key [format %03d [expr {$i/2}]]
+  if {$::key=="011"} {set ::key 010}
+  do_test btree-11.1.$i.3 {
+    btree_move_to $::c1 $::key
+    btree_key $::c1
+  } $::key
+}
+catch {unset ::data}
+catch {unset ::key}
+
+# Make sure our reference count is still correct.
+#
+do_test btree-11.2 {
+  btree_close_cursor $::c1
+  lindex [btree_pager_stats $::b1] 1
+} {1}
+do_test btree-11.3 {
+  set ::c1 [btree_cursor $::b1 2]
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+#btree_page_dump $::b1 2
+
+# Delete the dividers on the root page
+#
+do_test btree-11.4 {
+  btree_move_to $::c1 257
+  btree_delete $::c1
+  btree_next $::c1
+  btree_key $::c1
+} {258}
+do_test btree-11.4.1 {
+  btree_move_to $::c1 256
+  btree_key $::c1
+} {256}
+do_test btree-11.4.2 {
+  btree_move_to $::c1 258
+  btree_key $::c1
+} {258}
+do_test btree-11.4.3 {
+  btree_move_to $::c1 259
+  btree_key $::c1
+} {259}
+do_test btree-11.4.4 {
+  btree_move_to $::c1 257
+  btree_key $::c1
+} {256}
+do_test btree-11.5 {
+  btree_move_to $::c1 513
+  btree_delete $::c1
+  btree_next $::c1
+  btree_key $::c1
+} {514}
+do_test btree-11.5.1 {
+  btree_move_to $::c1 512
+  btree_key $::c1
+} {512}
+do_test btree-11.5.2 {
+  btree_move_to $::c1 514
+  btree_key $::c1
+} {514}
+do_test btree-11.5.3 {
+  btree_move_to $::c1 515
+  btree_key $::c1
+} {515}
+do_test btree-11.5.4 {
+  btree_move_to $::c1 513
+  btree_key $::c1
+} {512}
+do_test btree-11.6 {
+  btree_move_to $::c1 769
+  btree_delete $::c1
+  btree_next $::c1
+  btree_key $::c1
+} {770}
+do_test btree-11.6.1 {
+  btree_move_to $::c1 768
+  btree_key $::c1
+} {768}
+do_test btree-11.6.2 {
+  btree_move_to $::c1 771
+  btree_key $::c1
+} {771}
+do_test btree-11.6.3 {
+  btree_move_to $::c1 770
+  btree_key $::c1
+} {770}
+do_test btree-11.6.4 {
+  btree_move_to $::c1 769
+  btree_key $::c1
+} {768}
+#btree_page_dump $::b1 2
+#btree_page_dump $::b1 25
+
+# Change the data on an intermediate node such that the node becomes overfull
+# and has to split.  We happen to know that intermediate nodes exist on
+# 337, 401 and 465 by the btree_page_dumps above
+#
+catch {unset ::data}
+set ::data {This is going to be a very long data segment}
+append ::data $::data
+append ::data $::data
+do_test btree-12.1 {
+  btree_insert $::c1 337 $::data
+  btree_data $::c1
+} $::data
+do_test btree-12.2 {
+  btree_insert $::c1 401 $::data
+  btree_data $::c1
+} $::data
+do_test btree-12.3 {
+  btree_insert $::c1 465 $::data
+  btree_data $::c1
+} $::data
+do_test btree-12.4 {
+  btree_move_to $::c1 337
+  btree_key $::c1
+} {337}
+do_test btree-12.5 {
+  btree_data $::c1
+} $::data
+do_test btree-12.6 {
+  btree_next $::c1
+  btree_key $::c1
+} {338}
+do_test btree-12.7 {
+  btree_move_to $::c1 464
+  btree_key $::c1
+} {464}
+do_test btree-12.8 {
+  btree_next $::c1
+  btree_data $::c1
+} $::data
+do_test btree-12.9 {
+  btree_next $::c1
+  btree_key $::c1
+} {466}
+do_test btree-12.10 {
+  btree_move_to $::c1 400
+  btree_key $::c1
+} {400}
+do_test btree-12.11 {
+  btree_next $::c1
+  btree_data $::c1
+} $::data
+do_test btree-12.12 {
+  btree_next $::c1
+  btree_key $::c1
+} {402}
+
+# To Do:
+#
+#   1.  Do some deletes from the 3-layer tree
+#   2.  Commit and reopen the database
+#   3.  Read every 15th entry and make sure it works
+#   4.  Implement btree_sanity and put it throughout this script
+#
+
+do_test btree-10.98 {
+  btree_close_cursor $::c1
+  lindex [btree_pager_stats $::b1] 1
+} {1}
+do_test btree-10.99 {
+  btree_rollback $::b1
+  lindex [btree_pager_stats $::b1] 1
+} {0}
+btree_pager_ref_dump $::b1
 
 do_test btree-99.1 {
   btree_close $::b1

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.16 2001/06/28 01:54:48 drh Exp $
+** $Id: btree.c,v 1.17 2001/06/28 11:50:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1623,6 +1623,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   int usedPerPage;             /* Memory needed for each page */
   int freePerPage;             /* Average free space per page */
   int totalSize;               /* Total bytes for all cells */
+  MemPage *extraUnref = 0;     /* A page that needs to be unref-ed */
   Pgno pgno;                   /* Page number */
   Cell *apCell[MX_CELL*3+5];   /* All cells from pages being balanceed */
   int szCell[MX_CELL*3+5];     /* Local size of all cells */
@@ -1693,6 +1694,8 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     if( pCur ){
       sqlitepager_unref(pCur->pPage);
       pCur->pPage = pChild;
+    }else{
+      extraUnref = pChild;
     }
     zeroPage(pPage);
     pPage->u.hdr.rightChild = pgnoChild;
@@ -1767,7 +1770,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   */
   if( pCur ){
     iCur = pCur->idx;
-    for(i=0; idxDiv[i]<idx; i++){
+    for(i=0; i<nDiv && idxDiv[i]<idx; i++){
       iCur += apOld[i]->nCell + 1;
     }
     sqlitepager_unref(pCur->pPage);
@@ -1888,6 +1891,9 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   ** Cleanup before returning.
   */
 balance_cleanup:
+  if( extraUnref ){
+    sqlitepager_unref(extraUnref);
+  }
   for(i=0; i<nOld; i++){
     if( apOld[i]!=&aOld[i] ) sqlitepager_unref(apOld[i]);
   }
@@ -1975,13 +1981,13 @@ int sqliteBtreeDelete(BtCursor *pCur){
   pCell = pPage->apCell[pCur->idx];
   pgnoChild = pCell->h.leftChild;
   clearCell(pCur->pBt, pCell);
-  dropCell(pPage, pCur->idx, cellSize(pCell));
   if( pgnoChild ){
     /*
-    ** If the entry we just deleted is not a leaf, then we've left a
-    ** hole in an internal page.  We have to fill the hole by moving
-    ** in a cell from a leaf.  The next Cell after the one just deleted
-    ** is guaranteed to exist and to be a leaf so we can use it.
+    ** If the entry we are about to delete is not a leaf so if we do not
+    ** do something we will leave a hole on an internal page.
+    ** We have to fill the hole by moving in a cell from a leaf.  The
+    ** next Cell after the one to be deleted is guaranteed to exist and
+    ** to be a leaf so we can use it.
     */
     BtCursor leafCur;
     Cell *pNext;
@@ -1991,6 +1997,7 @@ int sqliteBtreeDelete(BtCursor *pCur){
     if( rc!=SQLITE_OK ){
       return SQLITE_CORRUPT;
     }
+    dropCell(pPage, pCur->idx, cellSize(pCell));
     pNext = leafCur.pPage->apCell[leafCur.idx];
     szNext = cellSize(pNext);
     pNext->h.leftChild = pgnoChild;
@@ -2002,6 +2009,7 @@ int sqliteBtreeDelete(BtCursor *pCur){
     rc = balance(pCur->pBt, leafCur.pPage, 0);
     releaseTempCursor(&leafCur);
   }else{
+    dropCell(pPage, pCur->idx, cellSize(pCell));
     rc = balance(pCur->pBt, pPage, pCur);
     pCur->bSkipNext = 1;
   }
