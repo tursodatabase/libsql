@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\striggers\sand\supdate\stests\sto\sshow\sthe\slatest\serror\nmessage\stext.\s(CVS\s886)
-D 2003-03-30T00:19:50
+C Detect\swhen\sa\schild\snode\sof\sa\sbtree\spage\shas\szero\sentries\sand\sreport\sthat\nas\sa\scase\sof\sdatabase\scorruption.\s(CVS\s887)
+D 2003-03-30T18:41:22
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,7 +20,7 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
-F src/btree.c 327819bb858d534072f5004973f8bcdd50f133d6
+F src/btree.c dba4d12945228dd7e94de7da0e1d8638b70d99f2
 F src/btree.h 8209bfadf5845d4fdaa60f471bb360f894cd4095
 F src/build.c afe256e29f62733d8d8816c220eb822a6317a444
 F src/delete.c 923497248e0ff9097a595c6333ec6d67fe6650b5
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8a593e9c2d57e758739a7ef54fa40ca6a0071a9a
-R 12ff781420cd36c65ce42f0a8d453f00
+P b90d9de32d10a71fe81f5bfd0cf57faae8c5c3b4
+R 2edd0e7412987cbf5566b47c204bebb0
 U drh
-Z cae0b1f447565e6a34dea07e18ae8c1a
+Z 4b34ca6a145e046d4b78a760de2492ba

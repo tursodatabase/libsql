@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.84 2003/03/19 03:14:01 drh Exp $
+** $Id: btree.c,v 1.85 2003/03/30 18:41:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1389,6 +1389,7 @@ static int moveToChild(BtCursor *pCur, int newPgno){
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pNewPage;
   pCur->idx = 0;
+  if( pNewPage->nCell<1 ) return SQLITE_CORRUPT;
   return SQLITE_OK;
 }
 
