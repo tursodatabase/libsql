@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.268.2.3 2004/07/19 19:30:50 drh Exp $
+** $Id: vdbe.c,v 1.268.2.4 2004/10/01 15:11:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4544,6 +4544,10 @@ case OP_AggGet: {
   if( pTos->flags & MEM_Str ){
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTos->flags |= MEM_Ephem;
+  }
+  if( pTos->flags & MEM_AggCtx ){
+    Release(pTos);
+    pTos->flags = MEM_Null;
   }
   break;
 }
