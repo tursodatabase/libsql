@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the crosscompile.html file.
 #
-set rcsid {$Id: crosscompile.tcl,v 1.1 2000/07/31 18:56:15 drh Exp $}
+set rcsid {$Id: crosscompile.tcl,v 1.2 2000/07/31 19:16:32 drh Exp $}
 
 puts {<html>
 <head>
@@ -18,7 +18,7 @@ puts "<p align=center>
 puts {
 <p><a href="http://www.mingw.org/">MinGW</a> or
 <a href="http://www.mingw.org/">Minimalist GNU For Windows</a>
-is a version of the popular GCC compiler that build Win95/Win98/WinNT
+is a version of the popular GCC compiler that builds Win95/Win98/WinNT
 binaries.  See the website for details.</p>
 
 <p>This page describes how you can use MinGW configured as a
