@@ -8,7 +8,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.4 2004/11/19 05:14:56 danielk1977 Exp $
+# $Id: alter.test,v 1.5 2004/11/19 08:02:14 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -33,6 +33,7 @@ ifcapable !altertable {
 #     "CREATE TABLE abc       (a, b, c);"
 # alter-2.*: Test error conditions and messages.
 # alter-3.*: Test ALTER TABLE on tables that have TRIGGERs attached to them.
+# alter-4.*: Test ALTER TABLE on tables that have AUTOINCREMENT fields.
 #
 
 # Create some tables to rename.  Be sure to include some TEMP tables
@@ -255,12 +256,8 @@ do_test alter-2.3 {
   }
 } {1 {there is already another table or index with this name: i3}}
 
-# If this compilation does not include triggers, omit the remainder
-# of this file.
-ifcapable !trigger {
-  finish_test
-  return
-}
+# If this compilation does not include triggers, omit the alter-3.* tests.
+ifcapable trigger {
 
 #-----------------------------------------------------------------------
 # Tests alter-3.* test ALTER TABLE on tables that have triggers.
@@ -451,5 +448,33 @@ do_test alter-3.3.7 {
     SELECT * FROM sqlite_temp_master WHERE type = 'trigger';
   }
 } {}
+
+} ;# ifcapable trigger
+
+# If the build does not include AUTOINCREMENT fields, omit alter-4.*.
+ifcapable autoinc {
+
+do_test alter-4.1 {
+  execsql {
+    CREATE TABLE tbl1(a INTEGER PRIMARY KEY AUTOINCREMENT);
+    INSERT INTO tbl1 VALUES(10);
+  }
+} {}
+do_test alter-4.2 {
+  execsql {
+    INSERT INTO tbl1 VALUES(NULL);
+    SELECT a FROM tbl1;
+  }
+} {10 11}
+do_test alter-4.3 {
+  execsql {
+    ALTER TABLE tbl1 RENAME TO tbl2;
+    DELETE FROM tbl2;
+    INSERT INTO tbl2 VALUES(NULL);
+    SELECT a FROM tbl2;
+  }
+} {12}
+
+} ;# ifcapable autoinc
 
 finish_test

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.282 2004/11/19 07:07:31 danielk1977 Exp $
+** $Id: build.c,v 1.283 2004/11/19 08:02:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2996,9 +2996,20 @@ void sqlite3AlterRenameTable(
               "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
             "ELSE name END "
       "WHERE tbl_name=%Q AND type IN ('table', 'index', 'trigger');", 
-      db->aDb[iDb].zName, SCHEMA_TABLE(iDb), zName, zName, zName, zName, 
+      zDb, SCHEMA_TABLE(iDb), zName, zName, zName, zName, 
       zName, strlen(pTab->zName), pTab->zName
   );
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  /* If the sqlite_sequence table exists in this database, then update 
+  ** it with the new table name.
+  */
+  if( sqlite3FindTable(db, "sqlite_sequence", zDb) ){
+    sqlite3NestedParse(pParse,
+        "UPDATE %Q.sqlite_sequence set name = %Q WHERE name = %Q",
+        zDb, zName, pTab->zName);
+  }
+#endif
 
 #ifndef SQLITE_OMIT_TRIGGER
   /* If there are TEMP triggers on this table, modify the sqlite_temp_master
