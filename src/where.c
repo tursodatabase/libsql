@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.56 2002/06/25 01:09:12 drh Exp $
+** $Id: where.c,v 1.57 2002/06/28 01:02:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -304,12 +304,28 @@ WhereInfo *sqliteWhereBegin(
   int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
   int iDirectGt[32];   /* Term of the form ROWID>X or ROWID>=X */
-  ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
+  ExprInfo aExpr[101]; /* The WHERE clause is divided into these expressions */
 
   /* pushKey is only allowed if there is a single table (as in an INSERT or
   ** UPDATE statement)
   */
   assert( pushKey==0 || pTabList->nSrc==1 );
+
+  /* Split the WHERE clause into separate subexpressions where each
+  ** subexpression is separated by an AND operator.  If the aExpr[]
+  ** array fills up, the last entry might point to an expression which
+  ** contains additional unfactored AND operators.
+  */
+  memset(aExpr, 0, sizeof(aExpr));
+  nExpr = exprSplit(ARRAYSIZE(aExpr), aExpr, pWhere);
+  if( nExpr==ARRAYSIZE(aExpr) ){
+    char zBuf[50];
+    sprintf(zBuf, "%d", ARRAYSIZE(aExpr)-1);
+    sqliteSetString(&pParse->zErrMsg, "WHERE clause too complex - no more "
+       "than ", zBuf, " terms allowed", 0);
+    pParse->nErr++;
+    return 0;
+  }
   
   /* Allocate space for aOrder[] */
   aOrder = sqliteMalloc( sizeof(int) * pTabList->nSrc );
@@ -336,16 +352,6 @@ WhereInfo *sqliteWhereBegin(
     sqliteExprIfFalse(pParse, pWhere, pWInfo->iBreak, 1);
     pWhere = 0;
   }
-
-  /* Split the WHERE clause into as many as 32 separate subexpressions
-  ** where each subexpression is separated by an AND operator.  Any additional
-  ** subexpressions are attached in the aExpr[32] and will not enter
-  ** into the query optimizer computations.  32 is chosen as the cutoff
-  ** since that is the number of bits in an integer that we use for an
-  ** expression-used mask.  
-  */
-  memset(aExpr, 0, sizeof(aExpr));
-  nExpr = exprSplit(ARRAYSIZE(aExpr), aExpr, pWhere);
 
   /* Analyze all of the subexpressions.
   */

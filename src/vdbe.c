@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.161 2002/06/26 02:45:04 drh Exp $
+** $Id: vdbe.c,v 1.162 2002/06/28 01:02:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2845,6 +2845,8 @@ case OP_Commit: {
   if( rc==SQLITE_OK ){
     sqliteCommitInternalChanges(db);
   }else{
+    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
+    sqliteBtreeRollback(pBt);
     sqliteRollbackInternalChanges(db);
   }
   break;

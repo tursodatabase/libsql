@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.9 2002/06/21 23:01:51 drh Exp $
+# $Id: misc1.test,v 1.10 2002/06/28 01:02:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -257,5 +257,48 @@ do_test misc1-9.1 {
     SELECT * FROM t1;
   }
 } {0 {a 12345678901234567890 b 12345678911234567890 c 12345678921234567890}}
+
+# A WHERE clause is not allowed to contain more than 99 terms.  Check to
+# make sure this limit is enforced.
+#
+do_test misc1-10.0 {
+  execsql {SELECT count(*) FROM manycol}
+} {9}
+do_test misc1-10.1 {
+  set ::where {WHERE x0>=0}
+  for {set i 1} {$i<=99} {incr i} {
+    append ::where " AND x$i<>0"
+  }
+  catchsql "SELECT count(*) FROM manycol $::where"
+} {0 9}
+do_test misc1-10.2 {
+  catchsql "SELECT count(*) FROM manycol $::where AND rowid>0"
+} {1 {WHERE clause too complex - no more than 100 terms allowed}}
+do_test misc1-10.3 {
+  regsub "x0>=0" $::where "x0=0" ::where
+  catchsql "DELETE FROM manycol $::where"
+} {0 {}}
+do_test misc1-10.4 {
+  execsql {SELECT count(*) FROM manycol}
+} {8}
+do_test misc1-10.5 {
+  catchsql "DELETE FROM manycol $::where AND rowid>0"
+} {1 {WHERE clause too complex - no more than 100 terms allowed}}
+do_test misc1-10.6 {
+  execsql {SELECT x1 FROM manycol WHERE x0=100}
+} {101}
+do_test misc1-10.7 {
+  regsub "x0=0" $::where "x0=100" ::where
+  catchsql "UPDATE manycol SET x1=x1+1 $::where"
+} {0 {}}
+do_test misc1-10.8 {
+  execsql {SELECT x1 FROM manycol WHERE x0=100}
+} {102}
+do_test misc1-10.9 {
+  catchsql "UPDATE manycol SET x1=x1+1 $::where AND rowid>0"
+} {1 {WHERE clause too complex - no more than 100 terms allowed}}
+do_test misc1-10.10 {
+  execsql {SELECT x1 FROM manycol WHERE x0=100}
+} {102}
 
 finish_test
