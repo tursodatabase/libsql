@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.5 $
+# $Revision: 1.6 $
 
 #########
 # Programs needed
@@ -319,6 +319,21 @@ else
   AC_MSG_RESULT([yes])
 fi
 AC_SUBST(ALLOWATTACHMEM)
+
+##########
+# Do we want to support release
+#
+AC_ARG_ENABLE(releasemode, 
+[  --enable-releasemode           Support libtool link to release mode],,enable_releasemode=no)
+AC_MSG_CHECKING([whether to support shared library linked as release mode or not])
+if test "$enable_releasemode" = "no"; then
+  ALLOWRELEASE=""
+  AC_MSG_RESULT([no])
+else
+  ALLOWRELEASE="-release `cat VERSION`"
+  AC_MSG_RESULT([yes])
+fi
+AC_SUBST(ALLOWRELEASE)
 
 ##########
 # Do we want temporary databases in memory

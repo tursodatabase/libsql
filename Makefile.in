@@ -34,6 +34,7 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 INSTALL = @INSTALL@
 LIBTOOL = ./libtool
+RELEASE = @ALLOWRELEASE@
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -174,7 +175,7 @@ last_change:	$(SRC)
           | awk '{print $$5,$$6}' >last_change
 
 libsqlite.la:	$(LIBOBJ)
-	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(exec_prefix)/lib \
+	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) ${RELEASE} -rpath $(exec_prefix)/lib \
 		-version-info "8:6:8"
 
 libtclsqlite.la:	tclsqlite.lo libsqlite.la
