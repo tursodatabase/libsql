@@ -1,5 +1,5 @@
-C Correctly\sallocate\snew\scolumns\sarray\sin\sALTER\sTABLE\s..\sADD\sCOLUMN.\sTicket\s#1183.\s(CVS\s2419)
-D 2005-03-27T01:56:31
+C Use\sSQL\sfunction\ssubstr()\scorrectly\sfrom\sALTER\sTABLE\scode.\sTicket\s#1182.\s(CVS\s2420)
+D 2005-03-28T00:07:16
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -27,7 +27,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c f0b637b850dce24997105b526e9c68720e6711fb
+F src/alter.c 9570af388bc99471ea6e1258817fbf06e3120030
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c c33c0e6833eb8ac0f0941c1f8e722f7c70dbef57
@@ -210,7 +210,7 @@ F test/types.test f0a98d10c5ecc9865d19dc94486f9873afc6bb6b
 F test/types2.test 81dd1897be8ef4b5b73d0006e6076abe40610de3
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 7669ca789d62c258b678e8aa7a22a57eac10f2cf
-F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
+F test/utf16.test 5fb019e09601774743858ef7380b6c02103ff120
 F test/vacuum.test 76c4bc4589353d071e81c003a25338d02560474d
 F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P f0d64dc8aa65b25af551e6e5f07746bd77c8112a
-R 93fef3478cb27e538ca03d0eaca7e793
+P 3c86e63389b286a49106d8d7009cc63e3914d40f
+R 3adfb48b0abd4dc2177fe558aa7e30c3
 U danielk1977
-Z 9d9c3def40d044e2fb4f7873a3f87cc5
+Z 3ec82bbe3ce369ab3af3b74fe4147272

@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.5 2005/03/27 01:56:31 danielk1977 Exp $
+** $Id: alter.c,v 1.6 2005/03/28 00:07:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -449,7 +449,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     }
     sqlite3NestedParse(pParse, 
         "UPDATE %Q.%s SET "
-          "sql = substr(sql,0,%d) || ', ' || %Q || substr(sql,%d,length(sql)) "
+          "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d,length(sql)) "
         "WHERE type = 'table' AND name = %Q", 
       zDb, SCHEMA_TABLE(iDb), pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab
