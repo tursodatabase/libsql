@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.43 2002/01/22 12:39:24 drh Exp $
+** $Id: shell.c,v 1.44 2002/01/24 00:00:21 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -125,7 +125,6 @@ struct callback_data {
   FILE *out;             /* Write results here */
   int mode;              /* An output mode setting */
   int showHeader;        /* True to show column names in List or Column mode */
-  int escape;            /* Escape this character when in MODE_List */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char separator[20];    /* Separator character for MODE_List */
   int colWidth[100];     /* Requested width of each column when in column mode*/
@@ -315,18 +314,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       for(i=0; i<nArg; i++){
         char *z = azArg[i];
         if( z==0 ) z = "";
-        while( *z ){
-          int j;
-          for(j=0; z[j] && z[j]!=p->escape && z[j]!='\\'; j++){}
-          if( j>0 ){
-            fprintf(p->out, "%.*s", j, z);
-          }
-          if( z[j] ){
-            fprintf(p->out, "\\%c", z[j]);
-            z++;
-          }
-          z += j;
-        }
+        fprintf(p->out, "%s", z);
         if( i<nArg-1 ){
           fprintf(p->out, "%s", p->separator);
         }else if( p->mode==MODE_Semi ){

@@ -1,5 +1,5 @@
-C Version\s2.2.4\s(CVS\s449)
-D 2002-01-22T14:15:00
+C Do\snot\sescape\sthe\sbackslash\scharacter\sin\sshell\soutput.\s(CVS\s353)
+D 2002-01-24T00:00:21
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3e26a3b9e7aee1b811deaf673e8d8973bdb3f22d
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/parse.y f3fc4fb5766393003577bd175eb611495f6efd9f
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
 F src/select.c de0d1d12e258d339a7936556512680366177f277
-F src/shell.c a77f9f1fad44a6e109b0c1bf7a170896842564e1
+F src/shell.c c102dfe388c7618a668c944ff157c49cb48f28e3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
 F src/sqliteInt.h 3274f3039db3164ba8c31acce027ea6408f247b3
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 035984a5b00b4a1a6505405f40b15c7695283c0a
-R 8941cac6aacb0ffecd385f18a7bbf6c9
+P 16712dae4feedd001d8153141a55e298b3a80a94
+R 0530842c82f7bef6b5f9c0ae1cc69c65
 U drh
-Z 8de421cb4f9d39c4c47e4ceb52ea7f81
+Z 61c11f99131a5810bde1ae96d98c46d4
