@@ -1,5 +1,5 @@
-C All\sthe\scode\sis\snow\sin\splace\sfor\sSQLite\sto\sdistinguish\sbetween\sNUMERIC\sand\nTEXT\sdatatypes.\s\sStill\sneed\sto\sturn\son\sthe\snew\scode\sand\stest\sit.\s(CVS\s659)
-D 2002-07-05T21:42:36
+C Fix\sfor\sbug\s#94:\sBe\ssure\sto\sjournal\spages\sthat\sare\sadded\sto\sthe\sfreelist\sthen\nremoved\sfrom\sthe\sfreelist\sand\sreused\sduring\sthe\ssame\stransaction.\s(CVS\s660)
+D 2002-07-06T16:28:48
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -32,7 +32,7 @@ F src/main.c 6ac32ca71ab4728212c5b44aed25e26dc6cfe73c
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
-F src/pager.c 58ae9f569b3c664ea9205c6f6da432e3ae180f56
+F src/pager.c 103341600b4044e41b5bd95cd3850f046b976ff2
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 35437ac29441ce2d34904d8e93f40b7d112147a9
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 85793a4f03250166c21007cab3525709592d0866
-R f77acd757b229f1cdb42ab7cac78b933
+P b4737a16c997a6c139d616211fb6bc4b0fae181c
+R 253a44e4b92ce398170a14aa4989c608
 U drh
-Z 6c4c383ead0a1302c4ea68955c9a4a90
+Z 4750e3634de2bc1c9f7bbad93ace444e
