@@ -1,5 +1,5 @@
-C bug\sfix\s(CVS\s142)
-D 2000-08-22T18:29:34
+C Version\s1.0.3\s(CVS\s497)
+D 2000-08-22T18:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 7ecc9c447bd9259c52e82c8a75830c7fc3381af7
+P f255ea6d4bb085a869485c14b4c96af13ca826fa
 R d941b15d38d95642a66b6ff4bba2c454
 U drh
-Z 20279627a80a674fdd5f37866394e8e6
+Z cbdf4324aa4508ca2f8e72c3acf62235
