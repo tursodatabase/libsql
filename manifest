@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell\sin\sCSV\smove,\sput\sstrings\sin\sC-style\sdouble-quotes.\nTicket\s#911.\s(CVS\s2009)
-D 2004-10-07T00:32:40
+C Additional\sparser\soptimizations.\s(CVS\s2010)
+D 2004-10-07T03:06:29
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -55,7 +55,7 @@ F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c dc0ffab9941393b072e0b1f1f3de54830727cec9
 F src/pager.h 774d1973acbda341827d21b0da0150575d69f7d9
-F src/parse.y 329d1bca30000093f664b8b8e981e75ce2b11d3e
+F src/parse.y 8d97a91cba7e35b5eaac064c9f6e597dc6442b29
 F src/pragma.c 3134201e4d47be04b9fcd437e01eab682ad3a096
 F src/printf.c 7a92adc00b758cd5ce087dae80181a8bbdb70ed2
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -251,7 +251,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 30370412630970a76aafb9715106911b716256db
-R a25f83fa122b7caf08059140bd1172c7
+P 1376a0bb8d864de755c614b2ecce4342155fd09b
+R 7c281d56a2bfc9c05afabc9a79a1f3b5
 U drh
-Z 9c5b634c11fd90503fe58c96320a51a7
+Z fe725e970bb1b0deb3b69c8bf4e69648
