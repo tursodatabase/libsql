@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.12 2001/02/19 23:23:39 drh Exp $
+** $Id: where.c,v 1.13 2001/04/04 11:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -160,6 +160,7 @@ WhereInfo *sqliteWhereBegin(
   int haveKey;         /* True if KEY is on the stack */
   int base;            /* First available index for OP_Open opcodes */
   Index *aIdx[32];     /* Index to use on each nested loop.  */
+  int aDirect[32];     /* If TRUE, then index this table using ROWID */
   ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
 
   /* Allocate space for aOrder[]. */
@@ -209,17 +210,42 @@ WhereInfo *sqliteWhereBegin(
   /* Figure out what index to use (if any) for each nested loop.
   ** Make aIdx[i] point to the index to use for the i-th nested loop
   ** where i==0 is the outer loop and i==pTabList->nId-1 is the inner
-  ** loop.
+  ** loop.  If the expression uses only the ROWID field, then set
+  ** aDirect[i] to 1.
   **
   ** Actually, if there are more than 32 tables in the join, only the
   ** first 32 tables are candidates for indices.
   */
   loopMask = 0;
   for(i=0; i<pTabList->nId && i<ARRAYSIZE(aIdx); i++){
+    int j;
     int idx = aOrder[i];
     Table *pTab = pTabList->a[idx].pTab;
     Index *pIdx;
     Index *pBestIdx = 0;
+
+    /* Check to see if there is an expression that uses only the
+    ** ROWID field of this table.  If so, set aDirect[i] to 1.
+    ** If not, set aDirect[i] to 0.
+    */
+    aDirect[i] = 0;
+    for(j=0; j<nExpr; j++){
+      if( aExpr[j].idxLeft==idx && aExpr[j].p->pLeft->iColumn<0
+            && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
+        aDirect[i] = 1;
+        break;
+      }
+      if( aExpr[j].idxRight==idx && aExpr[j].p->pRight->iColumn<0
+            && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
+        aDirect[i] = 1;
+        break;
+      }
+    }
+    if( aDirect[i] ){
+      loopMask |= 1<<idx;
+      aIdx[i] = 0;
+      continue;
+    }
 
     /* Do a search for usable indices.  Leave pBestIdx pointing to
     ** the most specific usable index.
@@ -230,7 +256,6 @@ WhereInfo *sqliteWhereBegin(
     ** index.
     */
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      int j;
       int columnMask = 0;
 
       if( pIdx->nColumn>32 ) continue;
@@ -285,18 +310,58 @@ WhereInfo *sqliteWhereBegin(
   for(i=0; i<pTabList->nId; i++){
     int j, k;
     int idx = aOrder[i];
-    Index *pIdx = i<ARRAYSIZE(aIdx) ? aIdx[i] : 0;
+    int goDirect;
+    Index *pIdx;
 
-    cont = sqliteVdbeMakeLabel(v);
-    if( pIdx==0 ){
-      /* Case 1:  There was no usable index.  We must do a complete
+    if( i<ARRAYSIZE(aIdx) ){
+      pIdx = aIdx[i];
+      goDirect = aDirect[i];
+    }else{
+      pIdx = 0;
+      goDirect = 0;
+    }
+
+    if( goDirect ){
+      /* Case 1:  We can directly reference a single row using the ROWID field.
+      */
+      cont = brk;
+      for(k=0; k<nExpr; k++){
+        if( aExpr[k].p==0 ) continue;
+        if( aExpr[k].idxLeft==idx 
+           && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
+           && aExpr[k].p->pLeft->iColumn<0
+        ){
+          sqliteExprCode(pParse, aExpr[k].p->pRight);
+          aExpr[k].p = 0;
+          break;
+        }
+        if( aExpr[k].idxRight==idx 
+           && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
+           && aExpr[k].p->pRight->iColumn<0
+        ){
+          sqliteExprCode(pParse, aExpr[k].p->pLeft);
+          aExpr[k].p = 0;
+          break;
+        }
+      }
+      sqliteVdbeAddOp(v, OP_AddImm, 0, 0, 0, 0);
+      if( i==pTabList->nId-1 && pushKey ){
+        haveKey = 1;
+      }else{
+        sqliteVdbeAddOp(v, OP_Fetch, base+idx, 0, 0, 0);
+        haveKey = 0;
+      }
+    }else if( pIdx==0 ){
+      /* Case 2:  There was no usable index.  We must do a complete
       ** scan of the table.
       */
+      cont = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Next, base+idx, brk, 0, cont);
       haveKey = 0;
     }else{
-      /* Case 2:  We do have a usable index in pIdx.
+      /* Case 3:  We do have a usable index in pIdx.
       */
+      cont = sqliteVdbeMakeLabel(v);
       for(j=0; j<pIdx->nColumn; j++){
         for(k=0; k<nExpr; k++){
           if( aExpr[k].p==0 ) continue;

@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.4 2000/06/07 14:42:27 drh Exp $
+# $Id: insert.test,v 1.5 2001/04/04 11:48:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -100,24 +100,47 @@ do_test insert-1.6c {
 
 # A table to use for testing default values
 #
-execsql {
-  CREATE TABLE test2(
-    f1 int default 111, 
-    f2 real default -4.32,
-    f3 text default hi,
-    f4 text default 'abc-123',
-    f5 varchar(10)
-  )
-}
-
 do_test insert-2.1 {
+  execsql {
+    CREATE TABLE test2(
+      f1 int default -111, 
+      f2 real default +4.32,
+      f3 int default +222,
+      f4 int default 7.89
+    )
+  }
   execsql {SELECT * from test2}
 } {}
 do_test insert-2.2 {
+  execsql {INSERT INTO test2(f1,f3) VALUES(+10,-10)}
+  execsql {SELECT * FROM test2}
+} {10 4.32 -10 7.89}
+do_test insert-2.3 {
+  execsql {INSERT INTO test2(f2,f4) VALUES(1.23,-3.45)}
+  execsql {SELECT * FROM test2 WHERE f1==-111}
+} {-111 1.23 222 -3.45}
+do_test insert-2.4 {
+  execsql {INSERT INTO test2(f1,f2,f4) VALUES(77,+1.23,3.45)}
+  execsql {SELECT * FROM test2 WHERE f1==77}
+} {77 1.23 222 3.45}
+do_test insert-2.10 {
+  execsql {
+    DROP TABLE test2;
+    CREATE TABLE test2(
+      f1 int default 111, 
+      f2 real default -4.32,
+      f3 text default hi,
+      f4 text default 'abc-123',
+      f5 varchar(10)
+    )
+  }
+  execsql {SELECT * from test2}
+} {}
+do_test insert-2.11 {
   execsql {INSERT INTO test2(f2,f4) VALUES(-2.22,'hi!')}
   execsql {SELECT * FROM test2}
 } {111 -2.22 hi hi! {}}
-do_test insert-2.3 {
+do_test insert-2.12 {
   execsql {INSERT INTO test2(f1,f5) VALUES(1,'xyzzy')}
   execsql {SELECT * FROM test2 ORDER BY f1}
 } {1 -4.32 hi abc-123 xyzzy 111 -2.22 hi hi! {}}

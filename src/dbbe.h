@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.12 2001/04/03 16:53:22 drh Exp $
+** $Id: dbbe.h,v 1.13 2001/04/04 11:48:57 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -151,6 +151,15 @@ struct DbbeMethods {
 
   /* Remove an entry from the table */
   int (*Delete)(DbbeCursor*, int nKey, char *pKey);
+
+  /* Begin a transaction. */
+  int (*BeginTransaction)(Dbbe*);
+
+  /* Commit a transaction. */
+  int (*Commit)(Dbbe*);
+
+  /* Rollback a transaction. */
+  int (*Rollback)(Dbbe*);
 };
 
 /*

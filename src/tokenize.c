@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.17 2001/02/11 16:56:24 drh Exp $
+** $Id: tokenize.c,v 1.18 2001/04/04 11:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -53,9 +53,11 @@ static Keyword aKeywordTable[] = {
   { "AND",               0, TK_AND,              0 },
   { "AS",                0, TK_AS,               0 },
   { "ASC",               0, TK_ASC,              0 },
+  { "BEGIN",             0, TK_BEGIN,            0 },
   { "BETWEEN",           0, TK_BETWEEN,          0 },
   { "BY",                0, TK_BY,               0 },
   { "CHECK",             0, TK_CHECK,            0 },
+  { "COMMIT",            0, TK_COMMIT,           0 },
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
   { "COPY",              0, TK_COPY,             0 },
   { "CREATE",            0, TK_CREATE,           0 },
@@ -65,6 +67,7 @@ static Keyword aKeywordTable[] = {
   { "DESC",              0, TK_DESC,             0 },
   { "DISTINCT",          0, TK_DISTINCT,         0 },
   { "DROP",              0, TK_DROP,             0 },
+  { "END",               0, TK_END,              0 },
   { "EXCEPT",            0, TK_EXCEPT,           0 },
   { "EXPLAIN",           0, TK_EXPLAIN,          0 },
   { "FROM",              0, TK_FROM,             0 },
@@ -87,9 +90,11 @@ static Keyword aKeywordTable[] = {
   { "OR",                0, TK_OR,               0 },
   { "ORDER",             0, TK_ORDER,            0 },
   { "PRIMARY",           0, TK_PRIMARY,          0 },
+  { "ROLLBACK",          0, TK_ROLLBACK,         0 },
   { "SELECT",            0, TK_SELECT,           0 },
   { "SET",               0, TK_SET,              0 },
   { "TABLE",             0, TK_TABLE,            0 },
+  { "TRANSACTION",       0, TK_TRANSACTION,      0 },
   { "UNION",             0, TK_UNION,            0 },
   { "UNIQUE",            0, TK_UNIQUE,           0 },
   { "UPDATE",            0, TK_UPDATE,           0 },

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.29 2001/02/19 23:23:38 drh Exp $
+** $Id: select.c,v 1.30 2001/04/04 11:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -620,7 +620,9 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 **
 **     SRT_Union       Store results as a key in a temporary table iParm
 **
-**     SRT_Except      Remove results form the temporary talbe iParm.
+**     SRT_Except      Remove results form the temporary table iParm.
+**
+**     SRT_Table       Store results in temporary table iParm
 **
 ** This routine returns the number of errors.  If any errors are
 ** encountered, then an appropriate error message is left in

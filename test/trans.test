@@ -1,0 +1,191 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is database locks.
+#
+# $Id: trans.test,v 1.1 2001/04/04 11:48:58 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {$dbprefix=="gdbm:" && $::tcl_platform(platform)!="windows"} {
+
+# Create several tables to work with.
+#
+do_test trans-1.0 {
+  execsql {
+    CREATE TABLE one(a int PRIMARY KEY, b text);
+    INSERT INTO one VALUES(1,'one');
+    INSERT INTO one VALUES(2,'two');
+    INSERT INTO one VALUES(3,'three');
+    SELECT b FROM one ORDER BY a;
+  }
+} {one two three}
+do_test trans-1.1 {
+  execsql {
+    CREATE TABLE two(a int PRIMARY KEY, b text);
+    INSERT INTO two VALUES(1,'I');
+    INSERT INTO two VALUES(5,'V');
+    INSERT INTO two VALUES(10,'X');
+    SELECT b FROM two ORDER BY a;
+  }
+} {I V X}
+do_test trans-1.9 {
+  sqlite altdb ${dbprefix}testdb
+  execsql {SELECT b FROM one ORDER BY a} altdb
+} {one two three}
+do_test trans-1.10 {
+  execsql {SELECT b FROM two ORDER BY a} altdb
+} {I V X}
+
+# Basic transactions
+#
+do_test trans-2.1 {
+  set v [catch {execsql {BEGIN}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.2 {
+  set v [catch {execsql {END}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.3 {
+  set v [catch {execsql {BEGIN TRANSACTION}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.4 {
+  set v [catch {execsql {COMMIT TRANSACTION}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.5 {
+  set v [catch {execsql {BEGIN TRANSACTION 'foo'}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.6 {
+  set v [catch {execsql {ROLLBACK TRANSACTION 'foo'}} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-2.10 {
+  execsql {
+    BEGIN;
+    SELECT a FROM one ORDER BY a;
+    SELECT a FROM two ORDER BY a;
+    END;
+  }
+} {1 2 3 1 5 10}
+
+# Check the locking behavior
+#
+do_test trans-3.1 {
+  execsql {
+    BEGIN;
+    SELECT a FROM one ORDER BY a;
+  }
+} {1 2 3}
+do_test trans-3.2 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 5 10}}
+do_test trans-3.3 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table one is locked}}
+do_test trans-3.4 {
+  set v [catch {execsql {
+    INSERT INTO one VALUES(4,'four');
+  }} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-3.2 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 5 10}}
+do_test trans-3.3 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table one is locked}}
+do_test trans-3.5 {
+  set v [catch {execsql {
+    INSERT INTO two VALUES(4,'IV');
+  }} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-3.6 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table two is locked}}
+do_test trans-3.7 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table one is locked}}
+do_test trans-3.10 {
+  execsql {END TRANSACTION}
+} {}
+do_test trans-3.11 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 4 5 10}}
+do_test trans-3.12 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 2 3 4}}
+do_test trans-3.13 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } db} msg]
+  lappend v $msg
+} {0 {1 4 5 10}}
+do_test trans-3.14 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } db} msg]
+  lappend v $msg
+} {0 {1 2 3 4}}
+
+do_test trans-99.1 {
+  altdb close
+  execsql {
+    DROP TABLE one;
+    DROP TABLE two;
+  }
+} {}
+
+finish_test
+
+} ;# end if(gdbm and not windows)

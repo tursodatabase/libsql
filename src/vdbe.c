@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.53 2001/03/20 22:05:00 drh Exp $
+** $Id: vdbe.c,v 1.54 2001/04/04 11:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -811,29 +811,29 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "OpenIdx",        "OpenTbl",        "Close",          "Fetch",
-  "Fcnt",           "New",            "Put",            "Distinct",
-  "Found",          "NotFound",       "Delete",         "Field",
-  "KeyAsData",      "Key",            "FullKey",        "Rewind",
-  "Next",           "Destroy",        "Reorganize",     "ResetIdx",
-  "NextIdx",        "PutIdx",         "DeleteIdx",      "MemLoad",
-  "MemStore",       "ListOpen",       "ListWrite",      "ListRewind",
-  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
-  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
-  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
-  "FileRead",       "FileField",      "FileClose",      "AggReset",
-  "AggFocus",       "AggIncr",        "AggNext",        "AggSet",
-  "AggGet",         "SetInsert",      "SetFound",       "SetNotFound",
-  "SetClear",       "MakeRecord",     "MakeKey",        "Goto",
-  "If",             "Halt",           "ColumnCount",    "ColumnName",
-  "Callback",       "Integer",        "String",         "Null",
-  "Pop",            "Dup",            "Pull",           "Add",
-  "AddImm",         "Subtract",       "Multiply",       "Divide",
-  "Min",            "Max",            "Like",           "Glob",
-  "Eq",             "Ne",             "Lt",             "Le",
-  "Gt",             "Ge",             "IsNull",         "NotNull",
-  "Negative",       "And",            "Or",             "Not",
-  "Concat",         "Noop",           "Strlen",         "Substr",
+  "OpenIdx",           "OpenTbl",           "Close",             "Fetch",
+  "Fcnt",              "New",               "Put",               "Distinct",
+  "Found",             "NotFound",          "Delete",            "Field",
+  "KeyAsData",         "Key",               "FullKey",           "Rewind",
+  "Next",              "Destroy",           "Reorganize",        "ResetIdx",
+  "NextIdx",           "PutIdx",            "DeleteIdx",         "MemLoad",
+  "MemStore",          "ListOpen",          "ListWrite",         "ListRewind",
+  "ListRead",          "ListClose",         "SortOpen",          "SortPut",
+  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
+  "SortKey",           "SortCallback",      "SortClose",         "FileOpen",
+  "FileRead",          "FileField",         "FileClose",         "AggReset",
+  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
+  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
+  "SetClear",          "MakeRecord",        "MakeKey",           "Goto",
+  "If",                "Halt",              "ColumnCount",       "ColumnName",
+  "Callback",          "Integer",           "String",            "Null",
+  "Pop",               "Dup",               "Pull",              "Add",
+  "AddImm",            "Subtract",          "Multiply",          "Divide",
+  "Min",               "Max",               "Like",              "Glob",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "IsNull",            "NotNull",
+  "Negative",          "And",               "Or",                "Not",
+  "Concat",            "Noop",              "Strlen",            "Substr",
 };
 
 /*

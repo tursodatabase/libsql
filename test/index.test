@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.8 2000/10/19 14:10:09 drh Exp $
+# $Id: index.test,v 1.9 2001/04/04 11:48:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -334,5 +334,21 @@ do_test index-10.8 {
   }
 } {0}
 
+# Automatically create an index when we specify a primary key.
+#
+do_test index-11.1 {
+  execsql {
+    CREATE TABLE t3(
+      a text,
+      b int,
+      c float,
+      PRIMARY KEY(b)
+    );
+  }
+  for {set i 1} {$i<=50} {incr i} {
+    execsql "INSERT INTO t3 VALUES('x${i}x',$i,0.$i)"
+  }
+  execsql {SELECT c, fcnt() FROM t3 WHERE b==10}
+} {0.10 2}
 
 finish_test

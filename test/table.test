@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.7 2000/10/19 14:10:09 drh Exp $
+# $Id: table.test,v 1.8 2001/04/04 11:48:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -242,7 +242,7 @@ do_test table-4.1b {
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 
-# Drop the even number tables
+# Drop the even numbered tables
 #
 set r {}
 for {set i 1} {$i<=100} {incr i 2} {
@@ -303,5 +303,31 @@ do_test table-6.1 {
   execsql {INSERT INTO 'spaces in this name!' VALUES(1)}
   set list [glob -nocomplain testdb/spaces*.tbl]
 } {testdb/spaces+in+this+name+.tbl}
+
+# Try using keywords as table names or column names.
+# 
+do_test table-7.1 {
+  set v [catch {execsql {
+    CREATE TABLE weird(
+      desc text,
+      asc text,
+      explain int,
+      vacuum boolean,
+      delimiters varchar(10)
+    )
+  }} msg]
+  lappend v $msg
+} {0 {}}
+do_test table-7.2 {
+  execsql {
+    INSERT INTO weird VALUES('a','b',9,0,'xyz');
+    SELECT * FROM weird;
+  }
+} {a b 9 0 xyz}
+do_test table-7.3 {
+  execsql2 {
+    SELECT * FROM weird;
+  }
+} {desc a asc b explain 9 vacuum 0 delimiters xyz}
 
 finish_test

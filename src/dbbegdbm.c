@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.5 2001/04/03 16:53:22 drh Exp $
+** $Id: dbbegdbm.c,v 1.6 2001/04/04 11:48:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -68,6 +68,7 @@ typedef struct Dbbex Dbbex;
 struct Dbbex {
   Dbbe dbbe;         /* The base class */
   int write;         /* True for write permission */
+  int inTrans;       /* Currently in a transaction */
   BeFile *pOpen;     /* List of open files */
   char *zDir;        /* Directory hold the database */
 };
@@ -178,6 +179,7 @@ static int sqliteGdbmOpenCursor(
   int mode;               /* Mode for opening a table */
   Dbbex *pBe = (Dbbex*)pDbbe;
 
+  if( pBe->inTrans ) writeable = 1;
   *ppCursr = 0;
   pCursr = sqliteMalloc( sizeof(*pCursr) );
   if( pCursr==0 ) return SQLITE_NOMEM;
@@ -224,7 +226,7 @@ static int sqliteGdbmOpenCursor(
     }
     pFile->writeable = writeable;
     pFile->zName = zFile;
-    pFile->nRef = 1;
+    pFile->nRef = 1 + pBe->inTrans;
     pFile->pPrev = 0;
     if( pBe->pOpen ){
       pBe->pOpen->pPrev = pFile;
@@ -277,6 +279,29 @@ static void sqliteGdbmDropTable(Dbbe *pBe, const char *zTable){
 }
 
 /*
+** Unlink a file pointer
+*/
+static void sqliteUnlinkFile(Dbbex *pBe, BeFile *pFile){
+  if( pFile->dbf!=NULL ){
+    gdbm_close(pFile->dbf);
+  }
+  if( pFile->pPrev ){
+    pFile->pPrev->pNext = pFile->pNext;
+  }else{
+    pBe->pOpen = pFile->pNext;
+  }
+  if( pFile->pNext ){
+    pFile->pNext->pPrev = pFile->pPrev;
+  }
+  if( pFile->delOnClose ){
+    unlink(pFile->zName);
+  }
+  sqliteFree(pFile->zName);
+  memset(pFile, 0, sizeof(*pFile));
+  sqliteFree(pFile);
+}
+
+/*
 ** Close a cursor previously opened by sqliteGdbmOpenCursor().
 **
 ** There can be multiple cursors pointing to the same open file.
@@ -295,23 +320,7 @@ static void sqliteGdbmCloseCursor(DbbeCursor *pCursr){
     gdbm_sync(pFile->dbf);
   }
   if( pFile->nRef<=0 ){
-    if( pFile->dbf!=NULL ){
-      gdbm_close(pFile->dbf);
-    }
-    if( pFile->pPrev ){
-      pFile->pPrev->pNext = pFile->pNext;
-    }else{
-      pBe->pOpen = pFile->pNext;
-    }
-    if( pFile->pNext ){
-      pFile->pNext->pPrev = pFile->pPrev;
-    }
-    if( pFile->delOnClose ){
-      unlink(pFile->zName);
-    }
-    sqliteFree(pFile->zName);
-    memset(pFile, 0, sizeof(*pFile));
-    sqliteFree(pFile);
+    sqliteUnlinkFile(pBe, pFile);
   }
   if( pCursr->key.dptr ) free(pCursr->key.dptr);
   if( pCursr->data.dptr ) free(pCursr->data.dptr);
@@ -493,7 +502,7 @@ static int sqliteGdbmNew(DbbeCursor *pCursr){
 
   if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return 1;
   while( go ){
-    iKey = sqliteRandomInteger();
+    iKey = sqliteRandomInteger() & 0x7fffffff;
     if( iKey==0 ) continue;
     key.dptr = (char*)&iKey;
     key.dsize = 4;
@@ -544,6 +553,40 @@ static int sqliteGdbmDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
+** Begin a transaction.
+*/
+static int sqliteGdbmBeginTrans(Dbbe *pDbbe){
+  Dbbex *pBe = (Dbbex*)pDbbe;
+  BeFile *pFile;
+  if( pBe->inTrans ) return SQLITE_OK;
+  for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
+    pFile->nRef++;
+  }
+  pBe->inTrans = 1;
+  return SQLITE_OK;  
+}
+
+/*
+** End a transaction.
+*/
+static int sqliteGdbmEndTrans(Dbbe *pDbbe){
+  Dbbex *pBe = (Dbbex*)pDbbe;
+  BeFile *pFile, *pNext;
+  if( !pBe->inTrans ) return SQLITE_OK;
+  for(pFile=pBe->pOpen; pFile; pFile=pNext){
+    pNext = pFile->pNext;
+    pFile->nRef--;
+    if( pFile->nRef<=0 ){
+      sqliteUnlinkFile(pBe, pFile);
+    }
+  }
+  pBe->inTrans = 0;
+  return SQLITE_OK;  
+}
+
+
+
+/*
 ** This variable contains pointers to all of the access methods
 ** used to implement the GDBM backend.
 */
@@ -566,6 +609,9 @@ static struct DbbeMethods gdbmMethods = {
   /*             New */   sqliteGdbmNew,
   /*             Put */   sqliteGdbmPut,
   /*          Delete */   sqliteGdbmDelete,
+  /*      BeginTrans */   sqliteGdbmBeginTrans,
+  /*          Commit */   sqliteGdbmEndTrans,
+  /*        Rollback */   sqliteGdbmEndTrans,
 };
 
 

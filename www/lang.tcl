@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.6 2001/02/20 13:06:31 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.7 2001/04/04 11:48:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -48,6 +48,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {COPY copy}
   {EXPLAIN explain}
   {expression expr}
+  {{BEGIN TRANSACTION} transaction}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -98,6 +99,57 @@ proc Section {name {label {}}} {
 proc Example {text} {
   puts "<blockquote><pre>$text</pre></blockquote>"
 }
+
+Section {BEGIN TRANSACTION} createindex
+
+Syntax {sql-statement} {
+BEGIN [TRANSACTION [<name>]]
+}
+Syntax {sql-statement} {
+END [TRANSACTION [<name>]]
+}
+Syntax {sql-statement} {
+COMMIT [TRANSACTION [<name>]]
+}
+Syntax {sql-statement} {
+ROLLBACK [TRANSACTION [<name>]]
+}
+
+puts {
+<p>Support for transactions in SQLite is thin.  Transactions
+may not be nested.  The GDBM backend does not support an atomic
+commit or rollback, but it does support locking.  (Note, however,
+that the compilation instructions on this website for using GDBM under 
+Windows will disable locking.)  The MEM backend has no transaction
+support and silently ignores all requests to begin or end
+transactions.  A new backend is currently under
+development for SQLite 2.0 that will support both atomic commits and rollback,
+but that driver is not yet available.</p>
+
+<p>Under GDBM, starting a transaction just locks all
+tables that are either read or written during the course of the
+transaction.  The locks are removed when the transaction is ended.
+Thus, transactions can be used to make changes to multiple tables
+with the assurance that other threads or processes will not touch
+the same tables at the same time. For example:</p>
+
+<blockquote>
+<b>SELECT data1, data2, ... FROM table1 WHERE ...;</b><br>
+... Make a decision to update the table ...<br>
+<b>BEGIN TRANSACTION;<br>
+SELECT data1, data2, ... FROM table1 WHERE ...;</b><br>
+... Make sure no other process changed the table in between
+the first SELECT and the BEGIN TRANSACTION. ...<br>
+<b>UPDATE table1 SET data1=... WHERE ...;<br>
+END TRANSACTION;</b>
+</blockquote>
+
+<p>In the code above, the <b>table1</b> table is locked by
+the second SELECT because of the transaction.  Thus we know that
+no other process has modified <b>table1</b> when the UPDATE
+occurs.  The END TRANSACTION releases the lock.</p>
+}
+
 
 Section COPY copy
 
@@ -341,6 +393,19 @@ puts {
 file globbing syntax for its wildcards.  Also, GLOB is case
 sensitive, unlike LIKE.  Both GLOB and LIKE may be preceded by
 the NOT keyword to invert the sense of the test.</p>
+
+<p>A column name can be any of the names defined in the CREATE TABLE
+statement or one of the following special identifiers: "<b>ROWID</b>",
+"<b>OID</b>", or "<b>_ROWID_</b>".
+These special identifiers all describe the
+unique random integer key (the "row key") associated every every 
+row of every table.
+The special identifiers only refer to the row key if the CREATE TABLE
+statement does not define a real column with the same name.  Row keys
+act like read-only columns.  A row key can be used anywhere a regular
+column can be used, except that you cannot change the value
+of a row key in an UPDATE or INSERT statement.
+"SELECT * ..." does not return the row key.</p>
 
 <p>SELECT statements can appear in expressions as either the
 right-hand operand of the IN operator or as a scalar quantity.

@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.25 2001/01/15 22:51:09 drh Exp $
+** $Id: build.c,v 1.26 2001/04/04 11:48:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -923,4 +923,64 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
 vacuum_cleanup:
   sqliteFree(zName);
   return;
+}
+
+/*
+** Begin a transaction
+*/
+void sqliteBeginTransaction(Parse *pParse){
+  int rc;
+  DbbeMethods *pM;
+  sqlite *db;
+  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( db->flags & SQLITE_InTrans ) return;
+  pM = pParse->db->pBe->x;
+  if( pM && pM->BeginTransaction ){
+    rc = (*pM->BeginTransaction)(pParse->db->pBe);
+  }else{
+    rc = SQLITE_OK;
+  }
+  if( rc==SQLITE_OK ){
+    db->flags |= SQLITE_InTrans;
+  }
+}
+
+/*
+** Commit a transaction
+*/
+void sqliteCommitTransaction(Parse *pParse){
+  int rc;
+  DbbeMethods *pM;
+  sqlite *db;
+  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( (db->flags & SQLITE_InTrans)==0 ) return;
+  pM = pParse->db->pBe->x;
+  if( pM && pM->Commit ){
+    rc = (*pM->Commit)(pParse->db->pBe);
+  }else{
+    rc = SQLITE_OK;
+  }
+  if( rc==SQLITE_OK ){
+    db->flags &= ~SQLITE_InTrans;
+  }
+}
+
+/*
+** Rollback a transaction
+*/
+void sqliteRollbackTransaction(Parse *pParse){
+  int rc;
+  DbbeMethods *pM;
+  sqlite *db;
+  if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( (db->flags & SQLITE_InTrans)==0 ) return;
+  pM = pParse->db->pBe->x;
+  if( pM && pM->Rollback ){
+    rc = (*pM->Rollback)(pParse->db->pBe);
+  }else{
+    rc = SQLITE_OK;
+  }
+  if( rc==SQLITE_OK ){
+    db->flags &= ~SQLITE_InTrans;
+  }
 }

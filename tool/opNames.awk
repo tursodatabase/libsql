@@ -10,7 +10,7 @@ BEGIN {
 /^#define OP_/ {
   name = "\"" substr($2,4) "\","
   if( n<3 ){
-    printf "  %-16s", name
+    printf "  %-19s", name
     n++
   } else {
     printf "  %s\n", name

@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.26 2001/01/04 14:20:18 drh Exp $
+** @(#) $Id: parse.y,v 1.27 2001/04/04 11:48:58 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -41,16 +41,15 @@
 #include "parse.h"
 }
 
-
-// Input is zero or more commands.
-input ::= cmdlist.
-
 // These are extra tokens used by the lexer but never seen by the
 // parser.  We put them in a rule so that the parser generator will
 // add them to the parse.h output file.
 //
-input ::= END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
-          UMINUS COLUMN AGG_FUNCTION.
+%nonassoc END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
+          COLUMN AGG_FUNCTION.
+
+// Input is zero or more commands.
+input ::= cmdlist.
 
 // A list of commands is zero or more commands
 //
@@ -61,10 +60,22 @@ ecmd ::= cmd.          {sqliteExec(pParse);}
 ecmd ::= .
 explain ::= EXPLAIN.    {pParse->explain = 1;}
 
+// Begin and end transactions.  Transaction support is sparse.
+// Some backends support only COMMIT and not ROLLBACK.  There can
+// be only a single active transaction at a time.
+//
+cmd ::= BEGIN trans_opt.       {sqliteBeginTransaction(pParse);}
+trans_opt ::= .
+trans_opt ::= TRANSACTION.
+trans_opt ::= TRANSACTION ids.
+cmd ::= COMMIT trans_opt.      {sqliteCommitTransaction(pParse);}
+cmd ::= END trans_opt.         {sqliteCommitTransaction(pParse);}
+cmd ::= ROLLBACK trans_opt.    {sqliteRollbackTransaction(pParse);}
+
 // The first form of a command is a CREATE TABLE statement.
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE(X) TABLE id(Y).    {sqliteStartTable(pParse,&X,&Y);}
+create_table ::= CREATE(X) TABLE ids(Y).   {sqliteStartTable(pParse,&X,&Y);}
 create_table_args ::= LP columnlist conslist_opt RP(X).
                                            {sqliteEndTable(pParse,&X);}
 columnlist ::= columnlist COMMA column.
@@ -75,21 +86,39 @@ columnlist ::= column.
 // an elaborate typename.  Perhaps someday we'll do something with it.
 //
 column ::= columnid type carglist. 
-columnid ::= id(X).                {sqliteAddColumn(pParse,&X);}
+columnid ::= ids(X).                {sqliteAddColumn(pParse,&X);}
+
+// An IDENTIFIER can be a generic identifier, or one of several
+// keywords.  Any non-standard keyword can also be an identifier.
+// We also make DESC and identifier since it comes up so often.
+//
 %type id {Token}
-id(A) ::= ID(X).     {A = X;}
-id(A) ::= STRING(X). {A = X;}
+id(A) ::= DESC(X).       {A = X;}
+id(A) ::= ASC(X).        {A = X;}
+id(A) ::= DELIMITERS(X). {A = X;}
+id(A) ::= EXPLAIN(X).    {A = X;}
+id(A) ::= VACUUM(X).     {A = X;}
+id(A) ::= BEGIN(X).      {A = X;}
+id(A) ::= END(X).        {A = X;}
+id(A) ::= ID(X).         {A = X;}
+
+// And "ids" is an identifer-or-string.
+//
+%type ids {Token}
+ids(A) ::= id(X).        {A = X;}
+ids(A) ::= STRING(X).    {A = X;}
+
 type ::= typename.
 type ::= typename LP signed RP.
 type ::= typename LP signed COMMA signed RP.
-typename ::= id.
-typename ::= typename id.
+typename ::= ids.
+typename ::= typename ids.
 signed ::= INTEGER.
 signed ::= PLUS INTEGER.
 signed ::= MINUS INTEGER.
 carglist ::= carglist carg.
 carglist ::= .
-carg ::= CONSTRAINT id ccons.
+carg ::= CONSTRAINT ids ccons.
 carg ::= ccons.
 carg ::= DEFAULT STRING(X).          {sqliteAddDefaultValue(pParse,&X,0);}
 carg ::= DEFAULT ID(X).              {sqliteAddDefaultValue(pParse,&X,0);}
@@ -116,16 +145,16 @@ conslist_opt ::= COMMA conslist.
 conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
-tcons ::= CONSTRAINT id.
+tcons ::= CONSTRAINT ids.
 tcons ::= PRIMARY KEY LP idxlist(X) RP. {sqliteCreateIndex(pParse,0,0,X,0,0);}
 tcons ::= UNIQUE LP idlist RP.
 tcons ::= CHECK expr.
-idlist ::= idlist COMMA id.
-idlist ::= id.
+idlist ::= idlist COMMA ids.
+idlist ::= ids.
 
 // The next command format is dropping tables.
 //
-cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
+cmd ::= DROP TABLE ids(X).          {sqliteDropTable(pParse,&X);}
 
 // The select statement
 //
@@ -175,7 +204,7 @@ sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
 selcollist(A) ::= STAR.                      {A = 0;}
 selcollist(A) ::= sclp(P) expr(X).           {A = sqliteExprListAppend(P,X,0);}
-selcollist(A) ::= sclp(P) expr(X) as id(Y).  {A = sqliteExprListAppend(P,X,&Y);}
+selcollist(A) ::= sclp(P) expr(X) as ids(Y). {A = sqliteExprListAppend(P,X,&Y);}
 as ::= .
 as ::= AS.
 
@@ -190,10 +219,11 @@ as ::= AS.
 from(A) ::= FROM seltablist(X).               {A = X;}
 stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) id(Y).        {A = sqliteIdListAppend(X,&Y);}
-seltablist(A) ::= stl_prefix(X) id(Y) as id(Z).
-   {A = sqliteIdListAppend(X,&Y);
-    sqliteIdListAddAlias(A,&Z);}
+seltablist(A) ::= stl_prefix(X) ids(Y).       {A = sqliteIdListAppend(X,&Y);}
+seltablist(A) ::= stl_prefix(X) ids(Y) as ids(Z). {
+  A = sqliteIdListAppend(X,&Y);
+  sqliteIdListAddAlias(A,&Z);
+}
 
 %type orderby_opt {ExprList*}
 %destructor orderby_opt {sqliteExprListDelete($$);}
@@ -231,7 +261,7 @@ having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
 
-cmd ::= DELETE FROM id(X) where_opt(Y).
+cmd ::= DELETE FROM ids(X) where_opt(Y).
     {sqliteDeleteFrom(pParse, &X, Y);}
 
 %type where_opt {Expr*}
@@ -243,16 +273,16 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 %type setlist {ExprList*}
 %destructor setlist {sqliteExprListDelete($$);}
 
-cmd ::= UPDATE id(X) SET setlist(Y) where_opt(Z).
+cmd ::= UPDATE ids(X) SET setlist(Y) where_opt(Z).
     {sqliteUpdate(pParse,&X,Y,Z);}
 
-setlist(A) ::= setlist(Z) COMMA id(X) EQ expr(Y).
+setlist(A) ::= setlist(Z) COMMA ids(X) EQ expr(Y).
     {A = sqliteExprListAppend(Z,Y,&X);}
-setlist(A) ::= id(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
+setlist(A) ::= ids(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
-cmd ::= INSERT INTO id(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
+cmd ::= INSERT INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
                {sqliteInsert(pParse, &X, Y, 0, F);}
-cmd ::= INSERT INTO id(X) inscollist_opt(F) select(S).
+cmd ::= INSERT INTO ids(X) inscollist_opt(F) select(S).
                {sqliteInsert(pParse, &X, 0, S, F);}
 
 
@@ -283,10 +313,10 @@ item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
 %type inscollist {IdList*}
 %destructor inscollist {sqliteIdListDelete($$);}
 
-inscollist_opt(A) ::= .                      {A = 0;}
-inscollist_opt(A) ::= LP inscollist(X) RP.   {A = X;}
-inscollist(A) ::= inscollist(X) COMMA id(Y). {A = sqliteIdListAppend(X,&Y);}
-inscollist(A) ::= id(Y).                     {A = sqliteIdListAppend(0,&Y);}
+inscollist_opt(A) ::= .                       {A = 0;}
+inscollist_opt(A) ::= LP inscollist(X) RP.    {A = X;}
+inscollist(A) ::= inscollist(X) COMMA ids(Y). {A = sqliteIdListAppend(X,&Y);}
+inscollist(A) ::= ids(Y).                     {A = sqliteIdListAppend(0,&Y);}
 
 %left OR.
 %left AND.
@@ -302,9 +332,9 @@ inscollist(A) ::= id(Y).                     {A = sqliteIdListAppend(0,&Y);}
 %destructor expr {sqliteExprDelete($$);}
 
 expr(A) ::= LP(B) expr(X) RP(E). {A = X; sqliteExprSpan(A,&B,&E);}
-expr(A) ::= ID(X).               {A = sqliteExpr(TK_ID, 0, 0, &X);}
 expr(A) ::= NULL(X).             {A = sqliteExpr(TK_NULL, 0, 0, &X);}
-expr(A) ::= id(X) DOT id(Y). {
+expr(A) ::= id(X).               {A = sqliteExpr(TK_ID, 0, 0, &X);}
+expr(A) ::= ids(X) DOT ids(Y). {
   Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
   Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
   A = sqliteExpr(TK_DOT, temp1, temp2, 0);
@@ -422,7 +452,7 @@ expritem(A) ::= expr(X).                {A = X;}
 expritem(A) ::= .                       {A = 0;}
 
 
-cmd ::= CREATE(S) uniqueflag INDEX id(X) ON id(Y) LP idxlist(Z) RP(E).
+cmd ::= CREATE(S) uniqueflag INDEX ids(X) ON ids(Y) LP idxlist(Z) RP(E).
     {sqliteCreateIndex(pParse, &X, &Y, Z, &S, &E);}
 uniqueflag ::= UNIQUE.
 uniqueflag ::= .
@@ -435,14 +465,14 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y).
      {A = sqliteIdListAppend(X,&Y);}
 idxlist(A) ::= idxitem(Y).
      {A = sqliteIdListAppend(0,&Y);}
-idxitem(A) ::= id(X).           {A = X;}
+idxitem(A) ::= ids(X).          {A = X;}
 
-cmd ::= DROP INDEX id(X).       {sqliteDropIndex(pParse, &X);}
+cmd ::= DROP INDEX ids(X).      {sqliteDropIndex(pParse, &X);}
 
-cmd ::= COPY id(X) FROM id(Y) USING DELIMITERS STRING(Z).
+cmd ::= COPY ids(X) FROM ids(Y) USING DELIMITERS STRING(Z).
     {sqliteCopy(pParse,&X,&Y,&Z);}
-cmd ::= COPY id(X) FROM id(Y).
+cmd ::= COPY ids(X) FROM ids(Y).
     {sqliteCopy(pParse,&X,&Y,0);}
 
 cmd ::= VACUUM.                {sqliteVacuum(pParse,0);}
-cmd ::= VACUUM id(X).          {sqliteVacuum(pParse,&X);}
+cmd ::= VACUUM ids(X).         {sqliteVacuum(pParse,&X);}

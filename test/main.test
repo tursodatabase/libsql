@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.5 2001/03/20 12:55:14 drh Exp $
+# $Id: main.test,v 1.6 2001/04/04 11:48:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -76,6 +76,12 @@ do_test main-1.13 {
   db complete {DROP TABLE xyz; -- hi
   }
 } {1}
+do_test main-1.14 {
+  db complete {SELECT a-b FROM t1; }
+} {1}
+do_test main-1.15 {
+  db complete {SELECT a-b FROM t1 }
+} {0}
 
 # Try to open a database with a corrupt master file.
 #

@@ -1,0 +1,267 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the magic ROWID column that is
+# found on all tables.
+#
+# $Id: rowid.test,v 1.1 2001/04/04 11:48:58 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Basic ROWID functionality tests.
+#
+do_test rowid-1.1 {
+  execsql {
+    CREATE TABLE t1(x int, y int);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(3,4);
+    SELECT x FROM t1 ORDER BY y;
+  }
+} {1 3}
+do_test rowid-1.2 {
+  set r [execsql {SELECT rowid FROM t1 ORDER BY x}]
+  global x2rowid rowid2x
+  set x2rowid(1) [lindex $r 0]
+  set x2rowid(3) [lindex $r 1]
+  set rowid2x($x2rowid(1)) 1
+  set rowid2x($x2rowid(3)) 3
+  llength $r
+} {2}
+do_test rowid-1.3 {
+  global x2rowid
+  set sql "SELECT x FROM t1 WHERE rowid==$x2rowid(1)"
+  execsql $sql
+} {1}
+do_test rowid-1.4 {
+  global x2rowid
+  set sql "SELECT x FROM t1 WHERE rowid==$x2rowid(3)"
+  execsql $sql
+} {3}
+do_test rowid-1.5 {
+  global x2rowid
+  set sql "SELECT x FROM t1 WHERE oid==$x2rowid(1)"
+  execsql $sql
+} {1}
+do_test rowid-1.6 {
+  global x2rowid
+  set sql "SELECT x FROM t1 WHERE OID==$x2rowid(3)"
+  execsql $sql
+} {3}
+do_test rowid-1.7 {
+  global x2rowid
+  set sql "SELECT x FROM t1 WHERE _rowid_==$x2rowid(1)"
+  execsql $sql
+} {1}
+do_test rowid-1.8 {
+  global x2rowid
+  set v [execsql {SELECT x, oid FROM t1 order by x}]
+  set v2 [list 1 $x2rowid(1) 3 $x2rowid(3)]
+  expr {$v==$v2}
+} {1}
+do_test rowid-1.9 {
+  global x2rowid
+  set v [execsql {SELECT x, RowID FROM t1 order by x}]
+  set v2 [list 1 $x2rowid(1) 3 $x2rowid(3)]
+  expr {$v==$v2}
+} {1}
+do_test rowid-1.9 {
+  global x2rowid
+  set v [execsql {SELECT x, _rowid_ FROM t1 order by x}]
+  set v2 [list 1 $x2rowid(1) 3 $x2rowid(3)]
+  expr {$v==$v2}
+} {1}
+
+# We cannot update or insert the ROWID column
+#
+do_test rowid-2.1 {
+  set v [catch {execsql {INSERT INTO t1(rowid,x,y) VALUES(1234,5,6)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named rowid}}
+do_test rowid-2.2 {
+  set v [catch {execsql {UPDATE t1 SET rowid=12345 WHERE x==1}}]
+  lappend v $msg
+} {1 {table t1 has no column named rowid}}
+do_test rowid-2.3 {
+  set v [catch {execsql {INSERT INTO t1(oid,x,y) VALUES(1234,5,6)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named oid}}
+do_test rowid-2.4 {
+  set v [catch {execsql {UPDATE t1 SET oid=12345 WHERE x==1}}]
+  lappend v $msg
+} {1 {table t1 has no column named oid}}
+do_test rowid-2.5 {
+  set v [catch {execsql {INSERT INTO t1(_rowid_,x,y) VALUES(1234,5,6)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named _rowid_}}
+do_test rowid-2.6 {
+  set v [catch {execsql {UPDATE t1 SET _rowid_=12345 WHERE x==1}}]
+  lappend v $msg
+} {1 {table t1 has no column named _rowid_}}
+
+# But we can use ROWID in the WHERE clause of an UPDATE that does not
+# change the ROWID.
+#
+do_test rowid-2.7 {
+  global x2rowid
+  set sql "UPDATE t1 SET x=2 WHERE OID==$x2rowid(3)"
+  execsql $sql
+  execsql {SELECT x FROM t1 ORDER BY x}
+} {1 2}
+do_test rowid-2.8 {
+  global x2rowid
+  set sql "UPDATE t1 SET x=3 WHERE _rowid_==$x2rowid(3)"
+  execsql $sql
+  execsql {SELECT x FROM t1 ORDER BY x}
+} {1 3}
+
+# We cannot index by ROWID
+#
+do_test rowid-2.9 {
+  set v [catch {execsql {CREATE INDEX idxt1 ON t1(rowid)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named rowid}}
+do_test rowid-2.10 {
+  set v [catch {execsql {CREATE INDEX idxt1 ON t1(_rowid_)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named _rowid_}}
+do_test rowid-2.11 {
+  set v [catch {execsql {CREATE INDEX idxt1 ON t1(oid)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named oid}}
+do_test rowid-2.12 {
+  set v [catch {execsql {CREATE INDEX idxt1 ON t1(x, rowid)}} msg]
+  lappend v $msg
+} {1 {table t1 has no column named rowid}}
+
+# Columns defined in the CREATE statement override the buildin ROWID
+# column names.
+#
+do_test rowid-3.1 {
+  execsql {
+    CREATE TABLE t2(rowid int, x int, y int);
+    INSERT INTO t2 VALUES(1,2,3);
+    INSERT INTO t2 VALUES(4,5,6);
+    INSERT INTO t2 VALUES(7,8,9);
+    SELECT * FROM t2 ORDER BY x;
+  }
+} {1 2 3 4 5 6 7 8 9}
+do_test rowid-3.2 {
+  execsql {SELECT * FROM t2 ORDER BY rowid}
+} {1 2 3 4 5 6 7 8 9}
+do_test rowid-3.3 {
+  execsql {SELECT rowid, x, y FROM t2 ORDER BY rowid}
+} {1 2 3 4 5 6 7 8 9}
+do_test rowid-3.4 {
+  set r1 [execsql {SELECT _rowid_, rowid FROM t2 ORDER BY rowid}]
+  foreach {a b c d e f} $r1 {}
+  set r2 [execsql {SELECT _rowid_, rowid FROM t2 ORDER BY x DESC}]
+  foreach {u v w x y z} $r2 {}
+  expr {$u==$e && $w==$c && $y==$a}
+} {1}
+do_probtest rowid-3.5 {
+  set r1 [execsql {SELECT _rowid_, rowid FROM t2 ORDER BY rowid}]
+  foreach {a b c d e f} $r1 {}
+  expr {$a!=$b && $c!=$d && $e!=$f}
+} {1}
+
+# Let's try some more complex examples, including some joins.
+#
+do_test rowid-4.1 {
+  execsql {
+    DELETE FROM t1;
+    DELETE FROM t2;
+  }
+  for {set i 1} {$i<=50} {incr i} {
+    execsql "INSERT INTO t1(x,y) VALUES($i,[expr {$i*$i}])"
+  }
+  execsql {INSERT INTO t2 SELECT _rowid_, x*y, y*y FROM t1}
+  execsql {SELECT t2.y FROM t1, t2 WHERE t1.x==4 AND t1.rowid==t2.rowid}
+} {256}
+do_test rowid-4.2 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t1.rowid==t2.rowid}
+} {256}
+do_test rowid-4.2.1 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t1.oid==t2.rowid}
+} {256}
+do_test rowid-4.2.2 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t1._rowid_==t2.rowid}
+} {256}
+do_test rowid-4.2.3 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t2.rowid==t1.rowid}
+} {256}
+do_test rowid-4.2.4 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t2.rowid==t1.oid AND t1.x==4}
+} {256}
+do_test rowid-4.2.5 {
+  execsql {SELECT t2.y FROM t1, t2 WHERE t1.x==4 AND t1._rowid_==t2.rowid}
+} {256}
+do_test rowid-4.2.6 {
+  execsql {SELECT t2.y FROM t1, t2 WHERE t1.x==4 AND t2.rowid==t1.rowid}
+} {256}
+do_test rowid-4.2.7 {
+  execsql {SELECT t2.y FROM t1, t2 WHERE t2.rowid==t1.oid AND t1.x==4}
+} {256}
+do_test rowid-4.3 {
+  execsql {CREATE INDEX idxt1 ON t1(x)}
+  execsql {SELECT t2.y FROM t1, t2 WHERE t1.x==4 AND t1.rowid==t2.rowid}
+} {256}
+do_test rowid-4.3.1 {
+  execsql {SELECT t2.y FROM t1, t2 WHERE t1.x==4 AND t1._rowid_==t2.rowid}
+} {256}
+do_test rowid-4.3.2 {
+  execsql {SELECT t2.y FROM t1, t2 WHERE t2.rowid==t1.oid AND 4==t1.x}
+} {256}
+do_test rowid-4.4 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t1.rowid==t2.rowid}
+} {256}
+do_test rowid-4.4.1 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t1.x==4 AND t1._rowid_==t2.rowid}
+} {256}
+do_test rowid-4.4.2 {
+  execsql {SELECT t2.y FROM t2, t1 WHERE t2.rowid==t1.oid AND 4==t1.x}
+} {256}
+do_test rowid-4.5 {
+  execsql {CREATE INDEX idxt2 ON t2(y)}
+  execsql {
+    SELECT t1.x, fcnt() FROM t2, t1 
+    WHERE t2.y==256 AND t1.rowid==t2.rowid
+  }
+} {4 3}
+do_test rowid-4.5.1 {
+  execsql {
+    SELECT t1.x, fcnt() FROM t2, t1 
+    WHERE t1.OID==t2.rowid AND t2.y==81
+  }
+} {3 3}
+do_test rowid-4.6 {
+  execsql {
+    SELECT t1.x FROM t1, t2
+    WHERE t2.y==256 AND t1.rowid==t2.rowid
+  }
+} {4}
+
+do_test rowid-5.1 {
+  execsql {DELETE FROM t1 WHERE _rowid_ IN (SELECT oid FROM t1 WHERE x>8)}
+  execsql {SELECT max(x) FROM t1}
+} {8}

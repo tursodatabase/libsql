@@ -30,7 +30,7 @@
 ** Nothing is ever written to disk using this backend.  All information
 ** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.12 2001/04/03 16:53:22 drh Exp $
+** $Id: dbbemem.c,v 1.13 2001/04/04 11:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -669,7 +669,7 @@ static int sqliteMemNew(DbbeCursor *pCursr){
   int go = 1;
 
   while( go ){
-    iKey = sqliteRandomInteger();
+    iKey = sqliteRandomInteger() & 0x7fffffff;
     if( iKey==0 ) continue;
     key.p = (char*)&iKey;
     key.n = 4;

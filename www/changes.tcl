@@ -17,7 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Apr 3 (1.0.28)} {
+chng {2001 Apr 4 (1.0.28)} {
+<li>Added limited support for transactions.  At this point, transactions
+    will do table locking on the GDBM backend.  There is no support (yet)
+    for rollback or atomic commit.</li>
+<li>Added special column names ROWID, OID, and _ROWID_ that refer to the
+    unique random integer key associated with every row of every table.</li>
+<li>Additional tests added to the regression suite to cover the new ROWID
+    feature and the TCL interface bugs mentioned below.</li>
 <li>Changes to the "lemon" parser generator to help it work better when
     compiled using MSVC.</li>
 <li>Bug fixes in the TCL interface identified by Oleg Oleinick.</li>
