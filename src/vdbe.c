@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.379 2004/06/18 04:24:55 danielk1977 Exp $
+** $Id: vdbe.c,v 1.380 2004/06/19 09:35:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4585,7 +4585,7 @@ default: {
           char zBuf[100];
           sqlite3VdbeMemPrettyPrint(&pTos[i], zBuf, 100);
           fprintf(p->trace, " ");
-          fprintf(p->trace, zBuf);
+          fprintf(p->trace, "%s", zBuf);
         }
       }
       if( rc!=0 ) fprintf(p->trace," rc=%d",rc);

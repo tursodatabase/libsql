@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.229 2004/06/19 08:18:12 danielk1977 Exp $
+** $Id: main.c,v 1.230 2004/06/19 09:35:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -275,8 +275,6 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     }
     if( db->safety_level==0 ) db->safety_level = 2;
 
-    /* FIX ME: Every struct Db will need a next_cookie */
-    db->next_cookie = meta[0];
     db->file_format = meta[1];
     if( db->file_format==0 ){
       /* This happens if the database was initially empty */

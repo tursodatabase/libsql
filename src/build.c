@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.223 2004/06/19 02:22:10 danielk1977 Exp $
+** $Id: build.c,v 1.224 2004/06/19 09:35:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -327,7 +327,6 @@ void sqlite3RollbackInternalChanges(sqlite *db){
 ** This routine is called when a commit occurs.
 */
 void sqlite3CommitInternalChanges(sqlite *db){
-  db->aDb[0].schema_cookie = db->next_cookie;
   db->flags &= ~SQLITE_InternChanges;
 }
 
