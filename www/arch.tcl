@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.7 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.8 2002/08/06 12:05:00 drh Exp $}
 
 puts {<html>
 <head>
@@ -135,7 +135,7 @@ entry.  Any additional payload is stored in a chain of overflow pages.</p>
 
 <p>The B-tree module requests information from the disk in 1024 byte
 chunks.  The page cache is reponsible for reading, writing, and
-caching these chunks at the behest of the B-tree module.
+caching these chunks.
 The page cache also provides the rollback and atomic commit abstraction
 and takes care of reader/writer locking of the database file.  The
 B-tree driver requests particular pages from the page cache and notifies
@@ -152,7 +152,7 @@ is defined by the header file <b>pager.h</b>.
 
 <p>
 In order to provide portability between POSIX and Win32 operating systems,
-SQLite uses an abstraction layer to interace with the operating system.
+SQLite uses an abstraction layer to interface with the operating system.
 The <b>os.c</b> file contains about 20 routines used for opening and
 closing files, deleting files, creating and deleting locks on files,
 flushing the disk cache, and so forth.  Each of these functions contains

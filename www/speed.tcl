@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.6 2002/03/11 02:06:14 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.7 2002/08/06 12:05:01 drh Exp $ }
 
 puts {<html>
 <head>
@@ -184,7 +184,7 @@ SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one hundred%';<br>
 <p>
 This set of 100 queries uses string comparisons instead of
 numerical comparisions.  As a result, the speed of SQLite is
-compariable to are better then PostgreSQL and MySQL.
+compariable to or better then PostgreSQL and MySQL.
 </p>
 
 <h2>Test 5: Creating an index</h2>

@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#131:\sWhen\sa\sSELECT\scontains\sa\sGROUP\sBY\sclause\sit\scannot\nuse\san\sindex\sfor\ssorting.\s\sIt\shas\sto\ssort\sas\sa\sseparate\soperation\safter\nthe\sGROUP\sBY\sis\scomplete.\s(CVS\s702)
-D 2002-08-04T00:52:38
+C Fix\stypos\sthe\ssource\sto\swebpages\shtml\sfiles.\s(CVS\s703)
+D 2002-08-06T12:05:00
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -125,7 +125,7 @@ F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
+F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl fb87b825b9032b9aa941694c5c9c5aee9424467e
 F www/changes.tcl 170d01bd2c877a494f9eb041c68b10a7007e4a75
@@ -139,11 +139,11 @@ F www/index.tcl 17384c30e0ddccaac4cd775be4e3b18fa8a248eb
 F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
-F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
+F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bdbdb866f2e76abd1f8f545adadc9a900ed0cd1a
-R 7e4332a36f68ac29bb96e906247d54dc
+P 18745c67acdf7ebec378f5538174117970e9f5cc
+R 758cf5a969dba907709ff2017be34dc3
 U drh
-Z 8543b6144e2b62dfac20ae8ed8338057
+Z 49ea59ad7dbd18b80f8590758e88954f
