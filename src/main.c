@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.54 2002/01/09 03:20:00 drh Exp $
+** $Id: main.c,v 1.55 2002/01/10 14:31:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -73,7 +73,12 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
         */
         Index *pIndex = sqliteFindIndex(db, argv[1]);
         if( pIndex==0 || pIndex->tnum!=0 ){
-          nErr++;
+          /* This can occur if there exists an index on a TEMP table which
+          ** has the same name as another index on a permanent index.  Since
+          ** the permanent table is hidden by the TEMP table, we can also
+          ** safely ignore the index on the permanent table.
+          */
+          /* Do Nothing */;
         }else{
           pIndex->tnum = atoi(argv[2]);
         }

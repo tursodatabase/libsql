@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.9 2002/01/09 13:30:42 drh Exp $
+# $Id: trans.test,v 1.10 2002/01/10 14:31:49 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -646,13 +646,19 @@ do_test trans-6.36 {
     SELECT * FROM t1 WHERE c<1;
   }
 } {4 -5 -6 1 -2 -3}
-do_test trans-6.36 {
+do_test trans-6.37 {
+  execsql {
+    DROP INDEX i1;
+    SELECT * FROM t1 WHERE c<1;
+  }
+} {1 -2 -3 4 -5 -6}
+do_test trans-6.38 {
   execsql {
     ROLLBACK;
     SELECT * FROM t1 WHERE b<1;
   }
 } {4 -5 -6 1 -2 -3}
-do_test trans-6.38 {
+do_test trans-6.39 {
   execsql {
     SELECT * FROM t1 WHERE c<1;
   }

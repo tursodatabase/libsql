@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jan 10 (2.2.2)} {
+<li>Bug fix: An assertion was failing when a temporary table with an index
+    had the same name as a permanent table created by a separate process.</li>
+}
+
 chng {2002 Jan 9 (2.2.1)} {
 <li>Bug fix: An attempt to delete a single row of a table with a WHERE
     clause of "ROWID=x" when no such rowid exists was causing an error.</li>
