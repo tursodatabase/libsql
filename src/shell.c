@@ -12,13 +12,12 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.78 2003/05/11 20:07:05 jplyon Exp $
+** $Id: shell.c,v 1.79 2003/05/13 00:24:41 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "sqlite.h"
-#include "sqliteInt.h"
 #include <ctype.h>
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)

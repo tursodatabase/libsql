@@ -1,5 +1,5 @@
-C Fix\sa\s#ifdefs\sthat\sare\sused\sto\scomment-out\sthe\sVACUUM\scommand.\s(CVS\s970)
-D 2003-05-13T00:21:59
+C Remove\sunnecessary\s"#include\s<sqliteInt.h>"\sfrom\sthe\sshell\scode.\s(CVS\s971)
+D 2003-05-13T00:24:41
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 8928b747a48d2c84de79814a71792ea13367644b
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
-F src/shell.c 88305ca3d0435cb5e5667c5b4cb991a2d63c1385
+F src/shell.c 2565cb32cd862024bcfd88400e05437636cf21a1
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h 9b64d8225a26f3d5a376370b31060dd70bcc362b
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 39a3e403f0440acb2f85a064ec23d404f9cdfbc4
-R 7306809a4e8852d48a70b3ad0f0f7bc9
+P 22d5324073a727627d4294870a441fa2316fb049
+R 9a128b996778255d75786e14cba56097
 U drh
-Z 964a58c640b88c89eec4f9710b117e21
+Z 40b9e2cefeacb83ef238454ec82c959e
