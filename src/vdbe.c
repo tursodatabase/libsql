@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.44 2000/10/19 01:49:03 drh Exp $
+** $Id: vdbe.c,v 1.45 2000/10/19 14:42:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -547,22 +547,24 @@ static int SetTest(Set *p, char *zKey){
 #define Stringify(P,I) \
    ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
 static int hardStringify(Vdbe *p, int i){
+  Stack *pStack = &p->aStack[i];
+  char **pzStack = &p->zStack[i];
   char zBuf[30];
-  int fg = p->aStack[i].flags;
+  int fg = pStack->flags;
   if( fg & STK_Real ){
-    sprintf(zBuf,"%.15g",p->aStack[i].r);
+    sprintf(zBuf,"%.15g",pStack->r);
   }else if( fg & STK_Int ){
-    sprintf(zBuf,"%d",p->aStack[i].i);
+    sprintf(zBuf,"%d",pStack->i);
   }else{
     p->zStack[i] = "";
-    p->aStack[i].n = 1;
-    p->aStack[i].flags |= STK_Str;
+    pStack->n = 1;
+    pStack->flags |= STK_Str;
     return 0;
   }
-  p->zStack[i] = sqliteStrDup(zBuf);
-  if( p->zStack[i]==0 ) return 1;
-  p->aStack[i].n = strlen(p->zStack[i])+1;
-  p->aStack[i].flags |= STK_Str|STK_Dyn;
+  *pzStack = sqliteStrDup(zBuf);
+  if( *pzStack==0 ) return 1;
+  pStack->n = strlen(*pzStack)+1;
+  pStack->flags |= STK_Str|STK_Dyn;
   return 0;
 }
 
@@ -622,7 +624,22 @@ static void hardRealify(Vdbe *p, int i){
 ** popped stack elements.
 */
 static void PopStack(Vdbe *p, int N){
+  char **pzStack;
+  Stack *pStack;
   if( p->zStack==0 ) return;
+  pStack = &p->aStack[p->tos];
+  pzStack = &p->zStack[p->tos];
+  p->tos -= N;
+  while( N-- > 0 ){
+    if( pStack->flags & STK_Dyn ){
+      sqliteFree(*pzStack);
+    }
+    pStack->flags = 0;
+    *pzStack = 0;
+    pStack--;
+    pzStack--;
+  }
+#if 0  /* Older code was a little slower */
   while( p->tos>=0 && N-->0 ){
     int i = p->tos--;
     if( p->aStack[i].flags & STK_Dyn ){
@@ -630,7 +647,8 @@ static void PopStack(Vdbe *p, int N){
     }
     p->aStack[i].flags = 0;
     p->zStack[i] = 0;
-  }    
+  }
+#endif  
 }
 
 /*
