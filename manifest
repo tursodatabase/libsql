@@ -1,5 +1,5 @@
-C Makefile\schanges\sfrom\sAndreas\sRottmann\s(CVS\s340)
-D 2002-01-07T19:04:21
+C Makefile\schanges\sfrom\sAndreas\sRottmann\s(CVS\s1725)
+D 2002-01-07T19:04:22
 F Makefile.in 4b445b9a47f454ecd05220d803ee1b48a81f45ac
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -118,7 +118,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9b0be4fcc1cbca69f5fee906f86dfb36a323fe84
+P e7004afbf808b6389e67e8a335c610227c76101b
 R bf419d8b9df57fd8ac55e43d882f9c8b
 U drh
-Z 58d3c56a6be7deba646bdedee2cc6967
+Z c48727dc7a9baf3a6ef017147df1b0c7
