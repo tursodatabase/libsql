@@ -1,5 +1,5 @@
-C Replace\ssqlite3AffinityType()\swith\sa\sslightly\sfaster\sversion.\s(CVS\s2296)
-D 2005-02-01T01:21:55
+C Tweaks\sto\sthe\skeyword\shash\sgenerator.\s\sTried\sto\smake\sit\sa\slittle\sfaster.\r\nIf\snothing\selse,\sthe\skeyword\shash\stable\sis\snow\sa\slittle\ssmaller.\s(CVS\s2297)
+D 2005-02-01T01:40:44
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -216,7 +216,7 @@ F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl b8eb053190e95a55dc188896afb972e8108822d6
-F tool/mkkeywordhash.c 18e45fb1c39ed3020b3bc2e133fc65e88c229eed
+F tool/mkkeywordhash.c 548b4b1a7ed6b7679111fe44e6d5fe51360572d5
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 32b926154aaae9264359fa1e9a7189afd08b0bb7
-R 8e50ba8963e4eb03424af74a3c54cd49
-U danielk1977
-Z e5d48140c00b6d3b721213654c5201c0
+P abe9f5e81f1196f28eec628e898b2a994c4d659d
+R aaf87812bb4ebeec74a9818d212c6af5
+U drh
+Z e6d866cf99a5bfeaa357fd188a3face1

@@ -319,8 +319,8 @@ int main(int argc, char **argv){
   for(i=0; i<NKEYWORD; i++){
     Keyword *p = &aKeywordTable[i];
     p->len = strlen(p->zName);
-    p->hash = UpperToLower[p->zName[0]]*5 +
-              UpperToLower[p->zName[p->len-1]]*3 + p->len;
+    p->hash = (UpperToLower[p->zName[0]]*4) ^
+              (UpperToLower[p->zName[p->len-1]]*3) ^ p->len;
     p->id = i+1;
   }
 
@@ -409,6 +409,7 @@ int main(int argc, char **argv){
   }
 
   /* Begin generating code */
+  printf("/* Hash score: %d */\n", bestCount);
   printf("static int keywordCode(const char *z, int n){\n");
 
   printf("  static const char zText[%d] =\n", nChar+1);
@@ -488,8 +489,8 @@ int main(int argc, char **argv){
 
   printf("  int h, i;\n");
   printf("  if( n<2 ) return TK_ID;\n");
-  printf("  h = (sqlite3UpperToLower[((unsigned char*)z)[0]]*5 + \n"
-         "      sqlite3UpperToLower[((unsigned char*)z)[n-1]]*3 +\n"
+  printf("  h = ((sqlite3UpperToLower[((unsigned char*)z)[0]]*4) ^\n"
+         "      (sqlite3UpperToLower[((unsigned char*)z)[n-1]]*3) ^\n"
          "      n) %% %d;\n", bestSize);
   printf("  for(i=((int)aHash[h])-1; i>=0; i=((int)aNext[i])-1){\n");
   printf("    if( aLen[i]==n &&"
