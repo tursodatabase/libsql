@@ -1,5 +1,5 @@
-C Make\ssure\sthe\shost\smachine\shas\senough\sdisk\sspace\sbefore\srunning\sthe\nlarge\sfile\stests.\s(CVS\s800)
-D 2002-12-17T14:13:49
+C If\sthe\s"fake_big_file"\scommand\sfails,\sbe\ssure\sto\sclose\sthe\sfile\sbefore\nreturning.\s(CVS\s801)
+D 2002-12-17T14:19:49
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -45,7 +45,7 @@ F src/sqliteInt.h 4eb6290304c9225752ca9cc4fdda5bc480d14176
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
-F src/test2.c 7e501ef1eb5d6b106f1d87f00e943171cdc41624
+F src/test2.c 03f05e984c8e2f2badc44644d42baf72b249096b
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f04547edfa1643ce52925d317915badfc676bd8b
-R c9be58291f5dab2cb8e7f3e84b5d8006
+P b1ec547865a76541951433630bd4528d1988a4de
+R 4820e72bca35c51b3a8677ac2635958d
 U drh
-Z 32f22a385f20425fc7ff8f101f10b6d6
+Z c24dbef41a9f6373c8f68994e5f33daa
