@@ -10,7 +10,7 @@
 #
 BEGIN {
   print "/* Automatically generated.  Do not edit */"
-  print "/* See the mkopcodec.h script for details. */"
+  print "/* See the mkopcodec.awk script for details. */"
   printf "#if !defined(SQLITE_OMIT_EXPLAIN)"
   printf    " || !defined(NDEBUG)"
   printf    " || defined(VDBE_PROFILE)"
