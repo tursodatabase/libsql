@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.34 2002/05/21 11:38:11 drh Exp $
+** $Id: delete.c,v 1.35 2002/05/23 12:50:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -332,9 +332,11 @@ void sqliteGenerateRowDelete(
   int base,          /* Cursor number for the table */
   int count          /* Increment the row change counter */
 ){
-  sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+  int addr;
+  addr = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
   sqliteGenerateRowIndexDelete(v, pTab, base, 0);
   sqliteVdbeAddOp(v, OP_Delete, base, count);
+  sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
 }
 
 /*

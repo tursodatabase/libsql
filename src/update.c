@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.40 2002/05/21 11:38:12 drh Exp $
+** $Id: update.c,v 1.41 2002/05/23 12:50:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -287,7 +287,7 @@ void sqliteUpdate(
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
   }
-  sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+  sqliteVdbeAddOp(v, OP_NotExists, base, addr);
 
   /* If the record number will change, push the record number as it
   ** will be after the update. (The old record number is currently
