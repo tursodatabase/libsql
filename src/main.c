@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.112 2003/01/29 18:46:53 drh Exp $
+** $Id: main.c,v 1.113 2003/02/12 14:09:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -273,6 +273,9 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   if( size==0 ){ size = MAX_PAGES; }
   db->cache_size = size;
   sqliteBtreeSetCacheSize(db->pBe, size);
+  db->safety_level = meta[4];
+  if( db->safety_level==0 ) db->safety_level = 2;
+  sqliteBtreeSetSafetyLevel(db->pBe, db->safety_level);
 
   /*
   **     file_format==1    Version 2.1.0.

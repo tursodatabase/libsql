@@ -1,7 +1,7 @@
 #
 # Run this script to generated a fileformat.html output file
 #
-set rcsid {$Id: fileformat.tcl,v 1.6 2002/08/18 19:09:24 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.7 2003/02/12 14:09:45 drh Exp $}
 
 puts {<html>
 <head>
@@ -687,17 +687,18 @@ name change, it works exactly the same.
 <h3>4.4 &nbsp; Schema Version Numbering And Other Meta-Information</h3>
 
 <p>
-The four 32-bit integers that are stored beginning at byte offset
+The nine 32-bit integers that are stored beginning at byte offset
 60 of Page 1 in the b-tree layer are passed up into the schema layer
 and used for versioning and configuration information.  The meaning
-of these four integers is as follows:
+of the first four integers is shown below.  The other five are currently
+unused.
 </p>
 
 <ol>
 <li>The schema version number</li>
 <li>The format version number</li>
 <li>The recommended pager cache size</li>
-<li>Unused</li>
+<li>The safety level</li>
 </ol>
 
 <p>

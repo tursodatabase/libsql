@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.82 2003/01/29 22:58:26 drh Exp $
+** $Id: btree.c,v 1.83 2003/02/12 14:09:43 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -742,6 +742,19 @@ int sqliteBtreeClose(Btree *pBt){
 */
 int sqliteBtreeSetCacheSize(Btree *pBt, int mxPage){
   sqlitepager_set_cachesize(pBt->pPager, mxPage);
+  return SQLITE_OK;
+}
+
+/*
+** Change the way data is synced to disk in order to increase or decrease
+** how well the database resists damage due to OS crashes and power
+** failures.  Level 1 is the same as asynchronous (no syncs() occur and
+** there is a high probability of damage)  Level 2 is the default.  There
+** is a very low but non-zero probability of damage.  Level 3 reduces the
+** probability of damage to near zero but with a write performance reduction.
+*/
+int sqliteBtreeSetSafetyLevel(Btree *pBt, int level){
+  sqlitepager_set_safety_level(pBt->pPager, level);
   return SQLITE_OK;
 }
 

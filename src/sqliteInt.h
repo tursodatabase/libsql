@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.160 2003/02/11 14:55:41 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.161 2003/02/12 14:09:44 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -207,7 +207,8 @@ struct sqlite {
   Btree *pBe;                   /* The B*Tree backend */
   Btree *pBeTemp;               /* Backend for session temporary tables */
   int flags;                    /* Miscellanous flags. See below */
-  int file_format;              /* What file format version is this database? */
+  u8 file_format;               /* What file format version is this database? */
+  u8 safety_level;              /* How aggressive at synching data to disk */
   int schema_cookie;            /* Magic number that changes with the schema */
   int next_cookie;              /* Value of schema_cookie after commit */
   int cache_size;               /* Number of pages to use in the cache */

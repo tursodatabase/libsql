@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.13 2002/09/02 12:14:51 drh Exp $
+# $Id: btree.test,v 1.14 2003/02/12 14:09:45 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -359,30 +359,30 @@ do_test btree-4.9 {
 #
 do_test btree-5.1 {
   btree_get_meta $::b1
-} {0 0 0 0}
+} {0 0 0 0 0 0 0 0 0 0}
 do_test btree-5.2 {
-  set rc [catch {btree_update_meta $::b1 1 2 3 4} msg]
+  set rc [catch {btree_update_meta $::b1 1 2 3 4 5 6 7 8 9 10} msg]
   lappend rc $msg
 } {1 SQLITE_ERROR}
 do_test btree-5.3 {
   btree_begin_transaction $::b1
-  set rc [catch {btree_update_meta $::b1 1 2 3 4} msg]
+  set rc [catch {btree_update_meta $::b1 1 2 3 4 5 6 7 8 9 10} msg]
   lappend rc $msg
 } {0 {}}
 do_test btree-5.4 {
   btree_get_meta $::b1
-} {0 2 3 4}
+} {0 2 3 4 5 6 7 8 9 10}
 do_test btree-5.5 {
   btree_close_cursor $::c1
   btree_rollback $::b1
   btree_get_meta $::b1
-} {0 0 0 0}
+} {0 0 0 0 0 0 0 0 0 0}
 do_test btree-5.6 {
   btree_begin_transaction $::b1
-  btree_update_meta $::b1 999 10 20 30
+  btree_update_meta $::b1 999 10 20 30 40 50 60 70 80 90
   btree_commit $::b1
   btree_get_meta $::b1
-} {0 10 20 30}
+} {0 10 20 30 40 50 60 70 80 90}
 
 proc select_all {cursor} {
   set r {}

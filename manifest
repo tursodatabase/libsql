@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\slegacy\sjournal\sformat\swriting\slogic.\s(CVS\s862)
-D 2003-02-12T02:10:15
+C Added\sthe\snew\sFULL\soption\sto\sthe\sSYNCHRONOUS\spragma.\s\sStill\sneed\sto\stest\sit.\s(CVS\s863)
+D 2003-02-12T14:09:43
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,9 +19,9 @@ F publish.sh ce0bf7e235984bc156dc5d1a0c8092db4c8442f3
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
-F src/btree.c 668402ca441592d85da521309625bd1bcc6f010e
-F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
-F src/build.c f13728865b6de5eb1ecc61827d334dc881ca1fb5
+F src/btree.c 2a0305ccbe617266ac3524805e0c6ef55a9f9cb7
+F src/btree.h 36a7a26a29382c2b1a519b42bb125880d46d00d4
+F src/build.c 757b1a37436b55b43c8eb41436a23a0ce8cad447
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c bd690b3a6174e97a0f16800e78c8aeae749a4e71
@@ -29,12 +29,12 @@ F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 13c2ef8984ce0f38701a8af89e4ba7a3c86c0701
-F src/main.c 764a72e6a4f021ae1d3db7e82dab625075f4fedb
+F src/main.c f88dfe09ed79588899cb4013836dd940f73a17fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c 1748a01ed18d7507c4c4dd54985c4aa613583a52
-F src/pager.h ce264d558c8ec289f5a9c50ca4ad499e3522a67e
+F src/pager.c f7658e5d07ef66c966443a3f4420510ce640442b
+F src/pager.h e5b8e301a732007766dc04880c764d7ee1aa34dd
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -42,7 +42,7 @@ F src/select.c d12d4c12d6536deccdede90b482d24f0590f5dc8
 F src/shell.c 0d260a007e0668fc7dda2b0c89bd597ef2966ec6
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
-F src/sqliteInt.h 8beea34db78e1452569e22b020934002da5debee
+F src/sqliteInt.h 2ae2c24fde8f7bb8040db964223d6e551e979358
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 8167d40fd34036701e07492d07a6f9e5c4015241
 F src/test1.c eb05abd3ec6822f800476c04aed4db112690b144
@@ -60,7 +60,7 @@ F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
 F test/auth.test 33e8b9680eb0ce521c54096fff1c9ab506c7dfb8
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
-F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
+F test/btree.test 1e3463c7838e7e71bbf37c9c6e45beee9c8975ba
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
@@ -142,7 +142,7 @@ F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
-F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
+F www/fileformat.tcl 5e3009b1451364602916da986501b94d8516bbb4
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl b5265ca54a5124ec40bffb7c7943e072e074d61a
 F www/lang.tcl 7ad51d873059368a98bcc2afec60d6ba4bb5688a
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8ec5632536eea31197a3b1fd6abc57881a0cf1d7
-R b30735c88387ed3f8675a36136884368
+P 6c927dd36c19ebb8bb8222b4d18ed67f4fe733e8
+R 4c767e05bbbde68a52aa488a93a1a8fd
 U drh
-Z b9a60900a465cbc97d661e720b92ed2b
+Z c4a4b24e4cf8bd7a0ea9e8a1c854d6c7

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.74 2003/02/12 02:10:15 drh Exp $
+** @(#) $Id: pager.c,v 1.75 2003/02/12 14:09:44 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -101,7 +101,7 @@ struct PgHdr {
   u8 alwaysRollback;             /* Disable dont_rollback() for this page */
   PgHdr *pDirty;                 /* Dirty pages sorted by PgHdr.pgno */
   /* SQLITE_PAGE_SIZE bytes of page data follow this header */
-  /* Pager.nExtra bytes of local data follow the page data and checksum */
+  /* Pager.nExtra bytes of local data follow the page data */
 };
 
 /*
@@ -470,10 +470,6 @@ static int pager_unwritelock(Pager *pPager){
 */
 static u32 pager_cksum(Pager *pPager, Pgno pgno, const char *aData){
   u32 cksum = pPager->cksumInit + pgno;
-  /* const u8 *a = (const u8*)aData;
-  int i;
-  for(i=0; i<SQLITE_PAGE_SIZE; i++){ cksum += a[i]; } */
-  /* fprintf(stderr,"CKSUM for %p(%08x) page %d: %08x\n", pPager, pPager->cksumInit, pgno, cksum); */
   return cksum;
 }
 
@@ -768,6 +764,36 @@ void sqlitepager_set_cachesize(Pager *pPager, int mxPage){
   if( mxPage>10 ){
     pPager->mxPage = mxPage;
   }
+}
+
+/*
+** Adjust the robustness of the database to damage due to OS crashes
+** or power failures by changing the number of syncs()s when writing
+** the rollback journal.  There are three levels:
+**
+**    OFF       sqliteOsSync() is never called.  This is the default
+**              for temporary and transient files.
+**
+**    NORMAL    The journal is synced once before writes begin on the
+**              database.  This is normally adequate protection, but
+**              it is theoretically possible, though very unlikely,
+**              that an inopertune power failure could leave the journal
+**              in a state which would cause damage to the database
+**              when it is rolled back.
+**
+**    FULL      The journal is synced twice before writes begin on the
+**              database (with some additional information being written
+**              in between the two syncs.  If we assume that writing a
+**              single disk sector is atomic, then this mode provides
+**              assurance that the journal will not be corrupted to the
+**              point of causing damage to the database during rollback.
+**
+** Numeric values associated with these states are OFF==1, NORMAL=2,
+** and FULL=3.
+*/
+void sqlitepager_set_safety_level(Pager *pPager, int level){
+  pPager->noSync =  level==1 || pPager->tempFile;
+  pPager->fullSync = level==3 && !pPager->tempFile;
 }
 
 /*
