@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.169 2004/10/31 02:22:49 drh Exp $
+** @(#) $Id: pager.c,v 1.170 2004/11/02 12:56:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2017,10 +2017,22 @@ static int pager_write_pagelist(PgHdr *pList){
   while( pList ){
     assert( pList->dirty );
     sqlite3OsSeek(&pPager->fd, (pList->pgno-1)*(i64)pPager->pageSize);
-    CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
-    TRACE3("STORE %d page %d\n", pPager->fd.h, pList->pgno);
-    rc = sqlite3OsWrite(&pPager->fd, PGHDR_TO_DATA(pList), pPager->pageSize);
-    CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 0);
+    /* If there are dirty pages in the page cache with page numbers greater
+    ** than Pager.dbSize, this means sqlite3pager_truncate() was called to
+    ** make the file smaller (presumably by auto-vacuum code). Do not write
+    ** any such pages to the file.
+    */
+    if( pList->pgno<=pPager->dbSize ){
+      CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
+      TRACE3("STORE %d page %d\n", pPager->fd.h, pList->pgno);
+      rc = sqlite3OsWrite(&pPager->fd, PGHDR_TO_DATA(pList), pPager->pageSize);
+      CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 0);
+    }
+#ifndef NDEBUG
+    else{
+      TRACE3("NOSTORE %d page %d\n", pPager->fd.h, pList->pgno);
+    }
+#endif
     if( rc ) return rc;
     pList->dirty = 0;
     pList = pList->pDirty;
@@ -3201,6 +3213,81 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster){
 sync_exit:
   return rc;
 }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+/*
+** Move the page identified by pData to location pgno in the file. 
+**
+** There must be no references to the current page pgno. If current page
+** pgno is not already in the rollback journal, it is not written there by
+** by this routine. The same applies to the page pData refers to on entry to
+** this routine.
+**
+** References to the page refered to by pData remain valid. Updating any
+** meta-data associated with page pData (i.e. data stored in the nExtra bytes
+** allocated along with the page) is the responsibility of the caller.
+**
+** A transaction must be active when this routine is called, however it is 
+** illegal to call this routine if a statment transaction is active.
+*/
+int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  PgHdr *pPgOld; 
+
+  assert( !pPager->stmtInUse );
+  /* assert( pPg->pNextFree==0 && pPg->pPrevFree==0 && pPg->nRef>0 ); */
+  assert( pPg->nRef>0 );
+
+  /* Unlink pPg from it's hash-chain */
+  if( pPg->pNextHash ){
+    pPg->pNextHash->pPrevHash = pPg->pPrevHash;
+  }
+  if( pPg->pPrevHash ){
+    pPg->pPrevHash->pNextHash = pPg->pNextHash;
+  }else{
+    int h = pager_hash(pPg->pgno);
+    assert( pPager->aHash[h]==pPg );
+    pPager->aHash[h] = pPg->pNextHash;
+  }
+
+  /* Change the page number for pPg */
+  pPg->pgno = pgno;
+
+  pPgOld = pager_lookup(pPager, pgno);
+  if( pPgOld ){
+    /* Remove pPgOld from the page number hash-chain and insert pPg. */
+    assert(pPgOld->nRef==0 && !pPgOld->pNextStmt && !pPgOld->pPrevStmt );
+    if( pPgOld->pNextHash ){
+      pPgOld->pNextHash->pPrevHash = pPg;
+    }
+    if( pPgOld->pPrevHash ){
+      pPgOld->pPrevHash->pNextHash = pPg;
+    }else{
+      int h = pager_hash(pgno);
+      assert( pPager->aHash[h]==pPgOld );
+      pPager->aHash[h] = pPg;
+    }
+    pPgOld->pNextHash = pPgOld->pPrevHash = 0;
+  }else{
+    /* Insert pPg into it's new hash-chain. */
+    int h = pager_hash(pgno);
+    if( pPager->aHash[h] ){
+      pPager->aHash[h]->pNextHash = pPg;
+    }
+    pPg->pNextHash = pPager->aHash[h];
+    pPg->pPrevHash = 0;
+  }
+
+  /* Don't write the old page when sqlite3pager_sync() is called. Do write
+  ** the new one. 
+  */
+  pPgOld->dirty = 0;
+  pPg->dirty = 1;
+  pPager->dirtyCache = 1;
+
+  return SQLITE_OK;
+}
+#endif
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 /*
