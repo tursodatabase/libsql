@@ -18,9 +18,6 @@
 #include "os.h"
 
 #if OS_UNIX
-# include <unistd.h>
-# include <fcntl.h>
-# include <sys/stat.h>
 # include <time.h>
 # ifndef O_LARGEFILE
 #  define O_LARGEFILE 0

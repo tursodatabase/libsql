@@ -1,5 +1,5 @@
-C Update\sthe\sFAQ\sto\sexplain\show\sto\senable\slarge\sfile\ssupport.\s(CVS\s779)
-D 2002-11-05T23:24:38
+C Changes\sto\sinclude\sfiles\sso\sthat\sthe\s>2GB\sfile\spatch\swill\scompile\sunder\sBSD.\s(CVS\s780)
+D 2002-11-06T00:59:45
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,8 +30,8 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c b95d7eeec90f86d05b6a064d07db34b7279e06d4
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 355c66ca67623f9fd652e5c20820b1d9e2210c2a
-F src/os.h c5e4fb5906b506d6e0ad99485a777928b27f6228
+F src/os.c da4cd10aba649e0622b8e766a3e6717b25359703
+F src/os.h c7038373d137b46da7a1da7f8f662b91fb6926dd
 F src/pager.c baf50d8308c61d079086f532c70155cd22c6d07a
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a3f67fe9121ca4655510094fe775b8603a87800e
-R cf4f7decc291dfde5a877f00e8e00b89
+P 4caf624e9061fe7489a8e3c6892975036a2272d5
+R 89790936c953bb945d21f542c92f53cc
 U drh
-Z d6bb8956fe38e60e0b9132cb2cfe2434
+Z 58e955a4900c7a886f46bf868041833c

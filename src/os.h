@@ -38,6 +38,10 @@
 ** A handle for an open file is stored in an OsFile object.
 */
 #if OS_UNIX
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+# include <unistd.h>
   typedef struct OsFile OsFile;
   struct OsFile {
     struct lockInfo *pLock;  /* Information about locks on this inode */
