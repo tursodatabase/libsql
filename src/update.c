@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.61 2003/04/20 17:29:24 drh Exp $
+** $Id: update.c,v 1.62 2003/04/22 20:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -139,7 +139,7 @@ void sqliteUpdate(
     {
       int rc;
       rc = sqliteAuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
-                           pTab->aCol[j].zName);
+                           pTab->aCol[j].zName, db->aDb[pTab->iDb].zName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){

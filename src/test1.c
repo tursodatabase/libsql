@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.22 2003/02/16 22:21:32 drh Exp $
+** $Id: test1.c,v 1.23 2003/04/22 20:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -588,125 +588,6 @@ static int sqlite_datatypes(
   return TCL_OK;
 }
 
-#ifndef SQLITE_OMIT_AUTHORIZATION
-/*
-** Information used by the authentication function. 
-*/
-typedef struct AuthInfo AuthInfo;
-struct AuthInfo {
-  Tcl_Interp *interp;    /* Interpreter to use */
-  int nCmd;              /* Number of characters in zCmd[] */
-  char zCmd[500];        /* Command to invoke */
-};
-
-/*
-** We create a single static authenticator.  This won't work in a
-** multi-threaded environment, but the test fixture is not multithreaded.
-** And be making it static, we don't have to worry about deallocating
-** after a test in order to void memory leaks.
-*/
-static AuthInfo authInfo;
-
-/*
-** This is the authentication function.  It appends the authentication
-** type code and the two arguments to zCmd[] then invokes the result
-** on the interpreter.  The reply is examined to determine if the
-** authentication fails or succeeds.
-*/
-static int auth_callback(
-  void *NotUsed, 
-  int code,
-  const char *zArg1,
-  const char *zArg2
-){
-  char *zCode;
-  Tcl_DString str;
-  int rc;
-  const char *zReply;
-  switch( code ){
-    case SQLITE_COPY              : zCode="SQLITE_COPY"; break;
-    case SQLITE_CREATE_INDEX      : zCode="SQLITE_CREATE_INDEX"; break;
-    case SQLITE_CREATE_TABLE      : zCode="SQLITE_CREATE_TABLE"; break;
-    case SQLITE_CREATE_TEMP_INDEX : zCode="SQLITE_CREATE_TEMP_INDEX"; break;
-    case SQLITE_CREATE_TEMP_TABLE : zCode="SQLITE_CREATE_TEMP_TABLE"; break;
-    case SQLITE_CREATE_TEMP_TRIGGER: zCode="SQLITE_CREATE_TEMP_TRIGGER"; break;
-    case SQLITE_CREATE_TEMP_VIEW  : zCode="SQLITE_CREATE_TEMP_VIEW"; break;
-    case SQLITE_CREATE_TRIGGER    : zCode="SQLITE_CREATE_TRIGGER"; break;
-    case SQLITE_CREATE_VIEW       : zCode="SQLITE_CREATE_VIEW"; break;
-    case SQLITE_DELETE            : zCode="SQLITE_DELETE"; break;
-    case SQLITE_DROP_INDEX        : zCode="SQLITE_DROP_INDEX"; break;
-    case SQLITE_DROP_TABLE        : zCode="SQLITE_DROP_TABLE"; break;
-    case SQLITE_DROP_TEMP_INDEX   : zCode="SQLITE_DROP_TEMP_INDEX"; break;
-    case SQLITE_DROP_TEMP_TABLE   : zCode="SQLITE_DROP_TEMP_TABLE"; break;
-    case SQLITE_DROP_TEMP_TRIGGER : zCode="SQLITE_DROP_TEMP_TRIGGER"; break;
-    case SQLITE_DROP_TEMP_VIEW    : zCode="SQLITE_DROP_TEMP_VIEW"; break;
-    case SQLITE_DROP_TRIGGER      : zCode="SQLITE_DROP_TRIGGER"; break;
-    case SQLITE_DROP_VIEW         : zCode="SQLITE_DROP_VIEW"; break;
-    case SQLITE_INSERT            : zCode="SQLITE_INSERT"; break;
-    case SQLITE_PRAGMA            : zCode="SQLITE_PRAGMA"; break;
-    case SQLITE_READ              : zCode="SQLITE_READ"; break;
-    case SQLITE_SELECT            : zCode="SQLITE_SELECT"; break;
-    case SQLITE_TRANSACTION       : zCode="SQLITE_TRANSACTION"; break;
-    case SQLITE_UPDATE            : zCode="SQLITE_UPDATE"; break;
-    default                       : zCode="????"; break;
-  }
-  Tcl_DStringInit(&str);
-  Tcl_DStringAppend(&str, authInfo.zCmd, -1);
-  Tcl_DStringAppendElement(&str, zCode);
-  Tcl_DStringAppendElement(&str, zArg1 ? zArg1 : "");
-  Tcl_DStringAppendElement(&str, zArg2 ? zArg2 : "");
-  rc = Tcl_GlobalEval(authInfo.interp, Tcl_DStringValue(&str));
-  Tcl_DStringFree(&str);
-  zReply = Tcl_GetStringResult(authInfo.interp);
-  if( strcmp(zReply,"SQLITE_OK")==0 ){
-    rc = SQLITE_OK;
-  }else if( strcmp(zReply,"SQLITE_DENY")==0 ){
-    rc = SQLITE_DENY;
-  }else if( strcmp(zReply,"SQLITE_IGNORE")==0 ){
-    rc = SQLITE_IGNORE;
-  }else{
-    rc = 999;
-  }
-  return rc;
-}
-
-/*
-** This routine creates a new authenticator.  It fills in the zCmd[]
-** field of the authentication function state variable and then registers
-** the authentication function with the SQLite library.
-*/
-static int test_set_authorizer(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite *db;
-  char *zCmd;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-         " DB CALLBACK\"", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  zCmd = argv[2];
-  if( zCmd[0]==0 ){
-    sqlite_set_authorizer(db, 0, 0);
-    return TCL_OK;
-  }
-  if( strlen(zCmd)>sizeof(authInfo.zCmd) ){
-    Tcl_AppendResult(interp, "command too big", 0);
-    return TCL_ERROR;
-  }
-  authInfo.interp = interp;
-  authInfo.nCmd = strlen(zCmd);
-  strcpy(authInfo.zCmd, zCmd);
-  sqlite_set_authorizer(db, auth_callback, 0);
-  return TCL_OK;
-}
-#endif /* SQLITE_OMIT_AUTHORIZATION */
-
-
 /*
 ** Usage:  sqlite_compile  DB  SQL  TAILVAR
 **
@@ -878,9 +759,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_register_test_function",  (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                   (Tcl_CmdProc*)sqlite_abort          },
      { "sqlite_datatypes",               (Tcl_CmdProc*)sqlite_datatypes      },
-#ifndef SQLITE_OMIT_AUTHORIZATION
-     { "sqlite_set_authorizer",          (Tcl_CmdProc*)test_set_authorizer   },
-#endif
 #ifdef MEMORY_DEBUG
      { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },

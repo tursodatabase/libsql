@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.52 2003/04/17 22:57:53 drh Exp $
+** $Id: delete.c,v 1.53 2003/04/22 20:30:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -58,6 +58,7 @@ void sqliteDeleteFrom(
 ){
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
+  const char *zDb;       /* Name of database holding pTab */
   int end, addr;         /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -97,7 +98,9 @@ void sqliteDeleteFrom(
   }
   if( sqliteIsReadOnly(pParse, pTab) ) goto delete_from_cleanup;
   assert( pTab->pSelect==0 );  /* This table is not a view */
-  if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0) ){
+  assert( pTab->iDb<db->nDb );
+  zDb = db->aDb[pTab->iDb].zName;
+  if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
     goto delete_from_cleanup;
   }
 

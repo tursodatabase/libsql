@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.148 2003/04/21 18:48:46 drh Exp $
+** $Id: build.c,v 1.149 2003/04/22 20:30:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -453,12 +453,13 @@ void sqliteStartTable(
   if( pParse->iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   assert( (isTemp & 1)==isTemp );
-  if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0) ){
-    sqliteFree(zName);
-    return;
-  }
   {
     int code;
+    char *zDb = isTemp ? "temp" : "main";
+    if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
+      sqliteFree(zName);
+      return;
+    }
     if( isView ){
       if( isTemp ){
         code = SQLITE_CREATE_TEMP_VIEW;
@@ -472,7 +473,7 @@ void sqliteStartTable(
         code = SQLITE_CREATE_TABLE;
       }
     }
-    if( sqliteAuthCheck(pParse, code, zName, 0) ){
+    if( sqliteAuthCheck(pParse, code, zName, 0, zDb) ){
       sqliteFree(zName);
       return;
     }
@@ -1218,12 +1219,15 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   pTable = sqliteTableFromToken(pParse, pName);
   if( pTable==0 ) return;
   iDb = pTable->iDb;
+  assert( iDb>=0 && iDb<db->nDb );
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->iDb),0)){
-    return;
-  }
   {
     int code;
+    const char *zTab = SCHEMA_TABLE(pTable->iDb);
+    const char *zDb = db->aDb[pTable->iDb].zName;
+    if( sqliteAuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb)){
+      return;
+    }
     if( isView ){
       if( iDb==1 ){
         code = SQLITE_DROP_TEMP_VIEW;
@@ -1237,10 +1241,10 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
         code = SQLITE_DROP_TABLE;
       }
     }
-    if( sqliteAuthCheck(pParse, code, pTable->zName, 0) ){
+    if( sqliteAuthCheck(pParse, code, pTable->zName, 0, zDb) ){
       return;
     }
-    if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTable->zName, 0) ){
+    if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTable->zName, 0, zDb) ){
       return;
     }
   }
@@ -1600,15 +1604,19 @@ void sqliteCreateIndex(
   /* Check for authorization to create an index.
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  assert( isTemp==0 || isTemp==1 );
-  assert( pTab->iDb==pParse->iDb || isTemp==1 );
-  if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0) ){
-    goto exit_create_index;
-  }
-  i = SQLITE_CREATE_INDEX;
-  if( isTemp ) i = SQLITE_CREATE_TEMP_INDEX;
-  if( sqliteAuthCheck(pParse, i, zName, pTab->zName) ){
-    goto exit_create_index;
+  {
+    const char *zDb = db->aDb[pTab->iDb].zName;
+
+    assert( isTemp==0 || isTemp==1 );
+    assert( pTab->iDb==pParse->iDb || isTemp==1 );
+    if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
+      goto exit_create_index;
+    }
+    i = SQLITE_CREATE_INDEX;
+    if( isTemp ) i = SQLITE_CREATE_TEMP_INDEX;
+    if( sqliteAuthCheck(pParse, i, zName, pTab->zName, zDb) ){
+      goto exit_create_index;
+    }
   }
 #endif
 
@@ -1813,11 +1821,13 @@ void sqliteDropIndex(Parse *pParse, SrcList *pName){
   {
     int code = SQLITE_DROP_INDEX;
     Table *pTab = pIndex->pTable;
-    if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pIndex->iDb), 0) ){
+    const char *zDb = db->aDb[pIndex->iDb].zName;
+    const char *zTab = SCHEMA_TABLE(pIndex->iDb);
+    if( sqliteAuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       goto exit_drop_index;
     }
     if( pIndex->iDb ) code = SQLITE_DROP_TEMP_INDEX;
-    if( sqliteAuthCheck(pParse, code, pIndex->zName, pTab->zName) ){
+    if( sqliteAuthCheck(pParse, code, pIndex->zName, pTab->zName, zDb) ){
       goto exit_drop_index;
     }
   }
@@ -2035,7 +2045,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0) ) return;
+  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ) return;
   if( db->flags & SQLITE_InTrans ){
     sqliteErrorMsg(pParse, "cannot start a transaction within a transaction");
     return;
@@ -2053,7 +2063,7 @@ void sqliteCommitTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0) ) return;
+  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteErrorMsg(pParse, "cannot commit - no transaction is active");
     return;
@@ -2072,7 +2082,7 @@ void sqliteRollbackTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0) ) return;
+  if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteErrorMsg(pParse, "cannot rollback - no transaction is active");
     return; 

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.44 2003/04/03 15:46:04 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.45 2003/04/22 20:30:39 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -513,7 +513,7 @@ int sqlite_aggregate_count(sqlite_func*);
 */
 int sqlite_set_authorizer(
   sqlite*,
-  int (*xAuth)(void*,int,const char*,const char*),
+  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
 );
 
@@ -522,7 +522,10 @@ int sqlite_set_authorizer(
 ** be one of the values below.  These values signify what kind of operation
 ** is to be authorized.  The 3rd and 4th parameters to the authorization
 ** function will be parameters or NULL depending on which of the following
-** codes is used as the second parameter.
+** codes is used as the second parameter.  The 5th parameter is the name
+** of the database ("main", "temp", etc.) if applicable.  The 6th parameter
+** is the name of the trigger that is responsible for the access attempt,
+** or NULL if this access attempt is directly from input SQL code.
 **
 **                                          Arg-3           Arg-4
 */

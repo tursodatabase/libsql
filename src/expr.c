@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.93 2003/04/19 17:27:25 drh Exp $
+** $Id: expr.c,v 1.94 2003/04/22 20:30:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -432,6 +432,8 @@ int sqliteExprResolveIds(
       int cnt = 0;      /* Number of matches */
       int i;            /* Loop counter */
       char *z;
+      int iDb = -1;
+
       assert( pExpr->token.z );
       z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
       sqliteDequote(z);
@@ -440,11 +442,13 @@ int sqliteExprResolveIds(
         int j;
         Table *pTab = pTabList->a[i].pTab;
         if( pTab==0 ) continue;
+        iDb = pTab->iDb;
         assert( pTab->nCol>0 );
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
             pExpr->iTable = i + base;
+            pExpr->iDb = pTab->iDb;
             if( j==pTab->iPKey ){
               /* Substitute the record number for the INTEGER PRIMARY KEY */
               pExpr->iColumn = -1;
@@ -470,9 +474,10 @@ int sqliteExprResolveIds(
           }
         } 
       }
-      if( cnt==0 && sqliteIsRowid(z) ){
+      if( cnt==0 && iDb>=0 && sqliteIsRowid(z) ){
         pExpr->iColumn = -1;
         pExpr->iTable = base;
+        pExpr->iDb = iDb;
         cnt = 1 + (pTabList->nSrc>1);
         pExpr->op = TK_COLUMN;
         pExpr->dataType = SQLITE_SO_NUM;
@@ -544,11 +549,15 @@ int sqliteExprResolveIds(
             continue;
           }
         }
-        if( 0==(cntTab++) ) pExpr->iTable = i + base;
+        if( 0==(cntTab++) ){
+          pExpr->iTable = i + base;
+          pExpr->iDb = pTab->iDb;
+        }
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
             pExpr->iTable = i + base;
+            pExpr->iDb = pTab->iDb;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
@@ -563,11 +572,15 @@ int sqliteExprResolveIds(
         int t = 0;
         if( pTriggerStack->newIdx != -1 && sqliteStrICmp("new", zLeft) == 0 ){
           pExpr->iTable = pTriggerStack->newIdx;
+          assert( pTriggerStack->pTab );
+          pExpr->iDb = pTriggerStack->pTab->iDb;
           cntTab++;
           t = 1;
         }
         if( pTriggerStack->oldIdx != -1 && sqliteStrICmp("old", zLeft) == 0 ){
           pExpr->iTable = pTriggerStack->oldIdx;
+          assert( pTriggerStack->pTab );
+          pExpr->iDb = pTriggerStack->pTab->iDb;
           cntTab++;
           t = 1;
         }

@@ -98,11 +98,13 @@ void sqliteBeginTrigger(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_CREATE_TRIGGER;
+    const char *zDb = db->aDb[tab->iDb].zName;
+    const char *zDbTrig = isTemp ? db->aDb[1].zName : zDb;
     if( tab->iDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
-    if( sqliteAuthCheck(pParse, code, zName, tab->zName) ){
+    if( sqliteAuthCheck(pParse, code, zName, tab->zName, zDbTrig) ){
       goto trigger_cleanup;
     }
-    if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(tab->iDb), 0)){
+    if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(tab->iDb), 0, zDb)){
       goto trigger_cleanup;
     }
   }
@@ -397,9 +399,11 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_TRIGGER;
+    const char *zDb = db->aDb[pTrigger->iDb].zName;
+    const char *zTab = SCHEMA_TABLE(pTrigger->iDb);
     if( pTrigger->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
-    if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName) ||
-      sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTrigger->iDb),0) ){
+    if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName, zDb) ||
+      sqliteAuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       goto drop_trigger_cleanup;
     }
   }

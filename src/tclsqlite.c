@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.46 2003/04/03 15:46:04 drh Exp $
+** $Id: tclsqlite.c,v 1.47 2003/04/22 20:30:39 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -53,6 +53,7 @@ struct SqliteDb {
   char *zBusy;          /* The busy callback routine */
   char *zBegin;         /* The begin-transaction callback routine */
   char *zCommit;        /* The commit-transaction callback routine */
+  char *zAuth;          /* The authorization callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
   int rc;               /* Return code of most recent sqlite_exec() */
 };
@@ -268,6 +269,9 @@ static void DbDeleteCmd(void *db){
   if( pDb->zCommit ){
     Tcl_Free(pDb->zCommit);
   }
+  if( pDb->zAuth ){
+    Tcl_Free(pDb->zAuth);
+  }
   Tcl_Free((char*)pDb);
 }
 
@@ -351,6 +355,76 @@ static void tclSqlFunc(sqlite_func *context, int argc, const char **argv){
     sqlite_set_result_string(context, Tcl_GetStringResult(p->interp), -1);
   }
 }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+/*
+** This is the authentication function.  It appends the authentication
+** type code and the two arguments to zCmd[] then invokes the result
+** on the interpreter.  The reply is examined to determine if the
+** authentication fails or succeeds.
+*/
+static int auth_callback(
+  void *pArg,
+  int code,
+  const char *zArg1,
+  const char *zArg2,
+  const char *zArg3,
+  const char *zArg4
+){
+  char *zCode;
+  Tcl_DString str;
+  int rc;
+  const char *zReply;
+  SqliteDb *pDb = (SqliteDb*)pArg;
+
+  switch( code ){
+    case SQLITE_COPY              : zCode="SQLITE_COPY"; break;
+    case SQLITE_CREATE_INDEX      : zCode="SQLITE_CREATE_INDEX"; break;
+    case SQLITE_CREATE_TABLE      : zCode="SQLITE_CREATE_TABLE"; break;
+    case SQLITE_CREATE_TEMP_INDEX : zCode="SQLITE_CREATE_TEMP_INDEX"; break;
+    case SQLITE_CREATE_TEMP_TABLE : zCode="SQLITE_CREATE_TEMP_TABLE"; break;
+    case SQLITE_CREATE_TEMP_TRIGGER: zCode="SQLITE_CREATE_TEMP_TRIGGER"; break;
+    case SQLITE_CREATE_TEMP_VIEW  : zCode="SQLITE_CREATE_TEMP_VIEW"; break;
+    case SQLITE_CREATE_TRIGGER    : zCode="SQLITE_CREATE_TRIGGER"; break;
+    case SQLITE_CREATE_VIEW       : zCode="SQLITE_CREATE_VIEW"; break;
+    case SQLITE_DELETE            : zCode="SQLITE_DELETE"; break;
+    case SQLITE_DROP_INDEX        : zCode="SQLITE_DROP_INDEX"; break;
+    case SQLITE_DROP_TABLE        : zCode="SQLITE_DROP_TABLE"; break;
+    case SQLITE_DROP_TEMP_INDEX   : zCode="SQLITE_DROP_TEMP_INDEX"; break;
+    case SQLITE_DROP_TEMP_TABLE   : zCode="SQLITE_DROP_TEMP_TABLE"; break;
+    case SQLITE_DROP_TEMP_TRIGGER : zCode="SQLITE_DROP_TEMP_TRIGGER"; break;
+    case SQLITE_DROP_TEMP_VIEW    : zCode="SQLITE_DROP_TEMP_VIEW"; break;
+    case SQLITE_DROP_TRIGGER      : zCode="SQLITE_DROP_TRIGGER"; break;
+    case SQLITE_DROP_VIEW         : zCode="SQLITE_DROP_VIEW"; break;
+    case SQLITE_INSERT            : zCode="SQLITE_INSERT"; break;
+    case SQLITE_PRAGMA            : zCode="SQLITE_PRAGMA"; break;
+    case SQLITE_READ              : zCode="SQLITE_READ"; break;
+    case SQLITE_SELECT            : zCode="SQLITE_SELECT"; break;
+    case SQLITE_TRANSACTION       : zCode="SQLITE_TRANSACTION"; break;
+    case SQLITE_UPDATE            : zCode="SQLITE_UPDATE"; break;
+    default                       : zCode="????"; break;
+  }
+  Tcl_DStringInit(&str);
+  Tcl_DStringAppend(&str, pDb->zAuth, -1);
+  Tcl_DStringAppendElement(&str, zCode);
+  Tcl_DStringAppendElement(&str, zArg1 ? zArg1 : "");
+  Tcl_DStringAppendElement(&str, zArg2 ? zArg2 : "");
+  Tcl_DStringAppendElement(&str, zArg3 ? zArg3 : "");
+  Tcl_DStringAppendElement(&str, zArg4 ? zArg4 : "");
+  rc = Tcl_GlobalEval(pDb->interp, Tcl_DStringValue(&str));
+  Tcl_DStringFree(&str);
+  zReply = Tcl_GetStringResult(pDb->interp);
+  if( strcmp(zReply,"SQLITE_OK")==0 ){
+    rc = SQLITE_OK;
+  }else if( strcmp(zReply,"SQLITE_DENY")==0 ){
+    rc = SQLITE_DENY;
+  }else if( strcmp(zReply,"SQLITE_IGNORE")==0 ){
+    rc = SQLITE_IGNORE;
+  }else{
+    rc = 999;
+  }
+  return rc;
+}
+#endif /* SQLITE_OMIT_AUTHORIZATION */
 
 /*
 ** The "sqlite" command below creates a new Tcl command for each
@@ -369,16 +443,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   static const char *DB_strs[] = {
-    "begin_hook",         "busy",              "changes",
-    "close",              "commit_hook",       "complete",
-    "errorcode",          "eval",              "function",
-    "last_insert_rowid",  "timeout",           0
+    "authorizer",         "begin_hook",        "busy",
+    "changes",            "close",             "commit_hook",
+    "complete",           "errorcode",         "eval",
+    "function",           "last_insert_rowid", "timeout",
+    0                    
   };
   enum DB_enum {
-    DB_BEGIN_HOOK,        DB_BUSY,             DB_CHANGES,
-    DB_CLOSE,             DB_COMMIT_HOOK,      DB_COMPLETE,
-    DB_ERRORCODE,         DB_EVAL,             DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_TIMEOUT,          
+    DB_AUTHORIZER,        DB_BEGIN_HOOK,       DB_BUSY,
+    DB_CHANGES,           DB_CLOSE,            DB_COMMIT_HOOK,
+    DB_COMPLETE,          DB_ERRORCODE,        DB_EVAL,
+    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_TIMEOUT,
   };
 
   if( objc<2 ){
@@ -390,6 +465,57 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   switch( (enum DB_enum)choice ){
+
+  /*    $db authorizer ?CALLBACK?
+  **
+  ** Invoke the given callback to authorize each SQL operation as it is
+  ** compiled.  5 arguments are appended to the callback before it is
+  ** invoked:
+  **
+  **   (1) The authorization type (ex: SQLITE_CREATE_TABLE, SQLITE_INSERT, ...)
+  **   (2) First descriptive name (depends on authorization type)
+  **   (3) Second descriptive name
+  **   (4) Name of the database (ex: "main", "temp")
+  **   (5) Name of trigger that is doing the access
+  **
+  ** The callback should return on of the following strings: SQLITE_OK,
+  ** SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
+  **
+  ** If this method is invoked with no arguments, the current authorization
+  ** callback string is returned.
+  */
+  case DB_AUTHORIZER: {
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+    }else if( objc==2 ){
+      if( pDb->zBegin ){
+        Tcl_AppendResult(interp, pDb->zAuth, 0);
+      }
+    }else{
+      char *zAuth;
+      int len;
+      if( pDb->zAuth ){
+        Tcl_Free(pDb->zAuth);
+      }
+      zAuth = Tcl_GetStringFromObj(objv[2], &len);
+      if( zAuth && len>0 ){
+        pDb->zAuth = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zAuth, zAuth);
+      }else{
+        pDb->zAuth = 0;
+      }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+      if( pDb->zAuth ){
+        pDb->interp = interp;
+        sqlite_set_authorizer(pDb->db, auth_callback, pDb);
+      }else{
+        sqlite_set_authorizer(pDb->db, 0, 0);
+      }
+#endif
+    }
+    break;
+  }
+
 
   /*    $db begin_callback ?CALLBACK?
   **

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.132 2003/04/17 22:57:54 drh Exp $
+** $Id: select.c,v 1.133 2003/04/22 20:30:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1917,7 +1917,7 @@ int sqliteSelect(
   int rc = 1;            /* Value to return from this function */
 
   if( sqlite_malloc_failed || pParse->nErr || p==0 ) return 1;
-  if( sqliteAuthCheck(pParse, SQLITE_SELECT, 0, 0) ) return 1;
+  if( sqliteAuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 
   /* If there is are a sequence of queries, do the earlier ones first.
   */

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.177 2003/04/21 18:48:47 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.178 2003/04/22 20:30:39 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -105,6 +105,9 @@
 #ifndef UINT8_TYPE
 # define UINT8_TYPE unsigned char
 #endif
+#ifndef INT8_TYPE
+# define INT8_TYPE signed char
+#endif
 #ifndef INTPTR_TYPE
 # if SQLITE_PTR_SZ==4
 #   define INTPTR_TYPE int
@@ -115,6 +118,7 @@
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
+typedef INT8_TYPE i8;              /* 1-byte signed integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
 typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 
@@ -290,7 +294,8 @@ struct sqlite {
   void *pTraceArg;                       /* Argument to the trace function */
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  int (*xAuth)(void*,int,const char*,const char*); /* Access Auth function */
+  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
+                                /* Access authorization function */
   void *pAuthArg;               /* 1st argument to the access auth function */
 #endif
 };
@@ -580,7 +585,8 @@ struct Token {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
-  u16 flags;             /* Various flags.  See below */
+  i8 iDb;                /* Database referenced by this expression */
+  u8 flags;              /* Various flags.  See below */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
@@ -953,9 +959,8 @@ struct TriggerStack {
   int oldIdx;          /* Index of vdbe cursor to "old" temp table */
   int orconf;          /* Current orconf policy */
   int ignoreJump;      /* where to jump to for a RAISE(IGNORE) */
-  Trigger *pTrigger;
-
-  TriggerStack *pNext;
+  Trigger *pTrigger;   /* The trigger currently being coded */
+  TriggerStack *pNext; /* Next trigger down on the trigger stack */
 };
 
 /*
@@ -1113,7 +1118,7 @@ void sqliteCreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
 void sqliteDeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   void sqliteAuthRead(Parse*,Expr*,SrcList*,int);
-  int sqliteAuthCheck(Parse*,int, const char*, const char*);
+  int sqliteAuthCheck(Parse*,int, const char*, const char*, const char*);
 #else
 # define sqliteAuthRead(a,b,c,d)
 # define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
