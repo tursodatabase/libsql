@@ -1,5 +1,5 @@
-C When\sa\sCREATE\sTABLE\s...\sAS\sSELECT\sstatement\sfails,\smake\ssure\sthe\stable\sname\nis\sremoved\sfrom\sthe\sinternal\shash\stables.\s\sTicket\s#238.\s(CVS\s858)
-D 2003-02-01T13:53:28
+C Make\sthe\sGROUP\sBY\sclause\swork\seven\sif\sthere\sare\sno\saggregate\sfunctions.\s(CVS\s859)
+D 2003-02-02T12:41:26
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 77018f471976a80648dfb3996de52c2ddf5b8f9e
+F src/select.c d12d4c12d6536deccdede90b482d24f0590f5dc8
 F src/shell.c cbb29252f0bd7b144d1e3126e64e17e5a314f2fd
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
@@ -98,7 +98,7 @@ F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
-F test/select4.test 10ba54f24ef6ca7958a7045b001079378db2370c
+F test/select4.test e7e9a32fa745246cb99fadbeb63af4843a17925b
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
 F test/sort.test 61a729023ae4ac3be9b225dc0be026fb43fec4e6
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d93c1aeb544a5b1056424945eb43854213b30e50
-R b5d305d3382423fe9540f0b4e0c64173
+P 65264780c553e8a00ec7a40cf76b89a11b245faf
+R bcf5d563cdfd66ab83ddebe53976490d
 U drh
-Z cd3aa5a5b1d7b6dd053874302f832e4b
+Z de0eb8741aaf06b1a17e5c2252ef5c5a
