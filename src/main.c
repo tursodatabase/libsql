@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.76 2002/05/23 02:09:04 drh Exp $
+** $Id: main.c,v 1.77 2002/05/23 13:15:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -401,7 +401,7 @@ static void clearHashTable(sqlite *db, int preserveTemps){
     Trigger * pTrigger = sqliteHashData(pElem);
     Table *pTab = sqliteFindTable(db, pTrigger->table);
     assert(pTab);
-    if( pTab->isTemp ){ 
+    if( pTab->isTemp && preserveTemps ){ 
       sqliteHashInsert(&db->trigHash, pTrigger->name, strlen(pTrigger->name), 
           pTrigger);
     }else{
