@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.26 2003/06/15 23:42:25 drh Exp $
+# $Id: tester.tcl,v 1.27 2004/02/11 02:18:07 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -39,6 +39,19 @@ if {[sqlite -tcl-uses-utf]} {
     exit 1
   }
 }
+
+# Use the pager codec if it is available
+#
+if {[sqlite -has-codec] && [info command sqlite_orig]==""} {
+  rename sqlite sqlite_orig
+  proc sqlite {args} {
+    if {[llength $args]==2 && [string index [lindex $args 0] 0]!="-"} {
+      lappend args -key {xyzzy}
+    }
+    uplevel 1 sqlite_orig $args
+  }
+}
+
 
 # Create a test database
 #

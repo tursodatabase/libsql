@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.85 2004/02/10 02:57:59 drh Exp $
+** $Id: shell.c,v 1.86 2004/02/11 02:18:07 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -490,7 +490,7 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
   ".rekey OLD NEW NEW     Change the encryption key\n"
 #endif
   ".schema ?TABLE?        Show the CREATE statements\n"
@@ -511,7 +511,7 @@ static void process_input(struct callback_data *p, FILE *in);
 static void open_db(struct callback_data *p){
   if( p->db==0 ){
     char *zErrMsg = 0;
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
     if( p->zKey && p->zKey[0] ){
       int n = strlen(p->zKey);
       p->db = sqlite_open_encrypted(p->zDbFilename, p->zKey, n, &zErrMsg);
@@ -786,7 +786,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
   if( c=='r' && strncmp(azArg[0],"rekey", n)==0 && nArg==4 ){
     char *zOld = p->zKey;
     if( zOld==0 ) zOld = "";
@@ -1170,7 +1170,7 @@ static const char zOptions[] =
   "   -[no]header          turn headers on or off\n"
   "   -column              set output mode to 'column'\n"
   "   -html                set output mode to HTML\n"
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
   "   -key KEY             encryption key\n"
 #endif                 
   "   -line                set output mode to 'line'\n"

@@ -1,5 +1,5 @@
-C Adjustments\sto\sthe\scodec\sin\sthe\spager.\s(CVS\s1222)
-D 2004-02-10T23:51:06
+C Pass\sall\s(relevant)\sregression\stests\swhen\susing\sthe\scodec.\s(CVS\s1223)
+D 2004-02-11T02:18:06
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F src/attach.c 4a0a3c0885fec11a0a199a8031694d08925d0a27
 F src/auth.c c59ad0dab501888f8b1fccc25e2f5965d2265116
 F src/btree.c c325d46f0aa815d73358bf2e044dab23f645c214
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
-F src/btree_rb.c 9a22056a94ef3253dbcf58849b05dfc3284d8fac
+F src/btree_rb.c ed844f9181d08efa4eaca2c157accc27434e345f
 F src/build.c 0fdb0ce4bd87419b3930d0279e8277c4f9f69c1f
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c c9d2bfd40b1c95f8f97d53a5eba981d7167c7b61
@@ -40,18 +40,18 @@ F src/main.c 6ec57b0f146572033c70493417d251365a7b4fbe
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
 F src/os.h 8d02b622153d2df442da1ec37cdd6b1bd9804a25
-F src/pager.c 3678afeb3f8ff4af3e4538e4a586b01198458046
-F src/pager.h b618354fa6270a87e0105be8aeaa0a0c7c545ee2
+F src/pager.c 8b4803d3225dfa15b15cfe6d0f48d8e690238a54
+F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
 F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c a0211d1a6a94f6c3e611096e77f2d689a641495e
-F src/shell.c 77b1d34a21b61cb8b0a2efa0152156f805c51897
+F src/shell.c 514056d54893e58995ab27237e54c7f057e47597
 F src/sqlite.h.in 1798588cab21ebf9fac3aad7fc1539b396c1f91d
 F src/sqliteInt.h c5b727d5d07b88654c204c0fc1ae79c9f635a008
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
-F src/tclsqlite.c 30afbb2e446d193d867e49fb0ca5ed84f1e0867f
+F src/tclsqlite.c 735da4580554cd38fc9360fe7d36ceff9574a84e
 F src/test1.c 56e9a156df3ad5e4e98df776776e963effc727f7
 F src/test2.c 75819b0f2c63c6a0fd6995445881f2eb94036996
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
@@ -112,10 +112,10 @@ F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
-F test/pragma.test 17ff54f4abe187fa1e9dd20afef63d14c650d737
+F test/pragma.test 33011f5741cc4952ff8306ead8a1aeb003fb0786
 F test/printf.test bdb5f66eb4a63abab9e26ab7277f2f8c886138a5
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
-F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
+F test/quick.test 5a6bccf5c02f16841a79fbac7409a02138880c10
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 77f7e8c7ca626a15ff91a536595b695cfce7c845
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
@@ -128,10 +128,10 @@ F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
-F test/tclsqlite.test 97233f45db35a76ceae9e56d244af68fc8061ceb
+F test/tclsqlite.test 602c73172b46c47221d4e699beaf6684eb120d48
 F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
-F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
-F test/thread1.test 0c1fcc2f9bdd887225e56f48db8ddfbb3d0794ba
+F test/tester.tcl 024e68f66c85f265f4143c4e073939f09710aaf5
+F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
@@ -183,7 +183,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cf1cec74ae039cd7cbc8a1032d29f067dedb4210
-R 33a0bad7d3175733647a431c861739f1
+P be5122e99caacbeb5e568a2782fe2faf634ad355
+R 68916ef0731924b53922877bb802191f
 U drh
-Z 19f14306e79d3dfba9d27638424ae996
+Z 51a413c8556d4e6f634af0189fc8243d

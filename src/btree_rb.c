@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.21 2004/02/10 02:57:59 drh Exp $
+** $Id: btree_rb.c,v 1.22 2004/02/11 02:18:06 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1425,8 +1425,7 @@ static int memRbtreeCursorDump(RbtCursor* pCur, int* aRes)
 
 static struct Pager *memRbtreePager(Rbtree* tree)
 {
-  assert(!"Cannot call sqliteRbtreePager");
-  return SQLITE_OK;
+  return 0;
 }
 
 /*

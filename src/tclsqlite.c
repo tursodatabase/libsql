@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.55 2004/02/01 01:22:52 drh Exp $
+** $Id: tclsqlite.c,v 1.56 2004/02/11 02:18:07 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -900,7 +900,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       return TCL_ERROR;
     }
     pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
     rc = sqlite_rekey(pDb->db, pKey, nKey);
     if( rc ){
       Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
@@ -1016,8 +1016,8 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp,sqlite_version,0);
       return TCL_OK;
     }
-    if( strcmp(zArg,"-has-crypto")==0 ){
-#ifdef SQLITE_HAS_CRYPTO
+    if( strcmp(zArg,"-has-codec")==0 ){
+#ifdef SQLITE_HAS_CODEC
       Tcl_AppendResult(interp,"1",0);
 #else
       Tcl_AppendResult(interp,"0",0);
@@ -1042,8 +1042,8 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
   if( objc!=3 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
-#ifdef SQLITE_HAS_CRYPTO
-      "HANDLE FILENAME ?-key CRYPTOKEY?"
+#ifdef SQLITE_HAS_CODEC
+      "HANDLE FILENAME ?-key CODEC-KEY?"
 #else
       "HANDLE FILENAME ?MODE?"
 #endif
@@ -1063,7 +1063,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
   memset(p, 0, sizeof(*p));
   zFile = Tcl_GetStringFromObj(objv[2], 0);
-#ifdef SQLITE_HAS_CRYPTO
+#ifdef SQLITE_HAS_CODEC
   if( nKey>0 ){
     p->db = sqlite_open_encrypted(zFile, pKey, nKey, &zErrMsg);
   }else

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.5 2003/02/16 22:21:33 drh Exp $
+# $Id: quick.test,v 1.6 2004/02/11 02:18:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,6 +25,15 @@ set EXCLUDE {
   malloc.test
   memleak.test
   misuse.test
+}
+
+if {[sqlite -has-codec]} {
+  lappend EXCLUDE \
+    attach.test \
+    attach2.test \
+    auth.test \
+    format3.test \
+    version.test
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {

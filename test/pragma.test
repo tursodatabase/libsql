@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.7 2003/12/16 03:44:48 drh Exp $
+# $Id: pragma.test,v 1.8 2004/02/11 02:18:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -243,6 +243,7 @@ do_test pragma-2.10 {
 # Construct a corrupted index and make sure the integrity_check
 # pragma finds it.
 #
+if {![sqlite -has-codec]} {
 do_test pragma-3.1 {
   execsql {
     BEGIN;
@@ -265,5 +266,6 @@ do_test pragma-3.2 {
   btree_close $db
   execsql {PRAGMA integrity_check}
 } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
+}; # endif has-codec
 
 finish_test

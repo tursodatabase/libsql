@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is multithreading behavior
 #
-# $Id: thread1.test,v 1.2 2003/12/19 08:40:24 drh Exp $
+# $Id: thread1.test,v 1.3 2004/02/11 02:18:07 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 
 # Skip this whole file if the thread testing code is not enabled
 #
-if {[llength [info command thread_step]]==0} {
+if {[llength [info command thread_step]]==0 || [sqlite -has-codec]} {
   finish_test
   return
 }
