@@ -1,5 +1,5 @@
-C Change\sshell.c\sso\sthat\sit\swill\scompile\sunder\swindows.\s\sShorten\sthe\shelp\ncommand\ssomewhat.\s\sAdd\sthe\sstate\sof\s".header"\sto\sthe\soutput\sof\s".show".\s(CVS\s534)
-D 2002-04-18T12:39:03
+C Added\srights\srelease\sfor\sMatthew\sO.\sPersico\s(CVS\s535)
+D 2002-04-19T01:00:13
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -39,7 +39,7 @@ F src/parse.y 9a8a2311dd95101bb02b3991042e619eea49729a
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
-F src/shell.c 4a225aa846f494488d9bab324b68749d25a890b7
+F src/shell.c 56ed7250b26c1205cfa18d90349909e3d705d249
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
 F src/sqliteInt.h e47ca9267a4c4a98e9f8d90c2df994a18f23d699
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ff67ad40106a20fb85797cca4c495dc34ad5519b
-R 83edff024b8dcab1f99c47b3727e4d20
-U drh
-Z 1f0ab834158fafdf0840052f540be94f
+P 0582168b8b853559b484f4a024d28c67192160c4
+R 0d1547c2e1e9f19b787a3e2b35ee0831
+U persicom
+Z 36bb1b1acfa30e39b3ee9d958b5b917c
