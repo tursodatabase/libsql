@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.190 2003/01/05 21:41:42 drh Exp $
+** $Id: vdbe.c,v 1.191 2003/01/06 23:54:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -933,46 +933,6 @@ static void PopStack(Vdbe *p, int N){
  p->tos--;
 
 /*
-** Make sure space has been allocated to hold at least N
-** stack elements.  Allocate additional stack space if
-** necessary.
-**
-** Return 0 on success and non-zero if there are memory
-** allocation errors.
-*/
-#define NeedStack(P,N) (((P)->nStackAlloc<=(N)) ? hardNeedStack(P,N) : 0)
-static int hardNeedStack(Vdbe *p, int N){
-  int oldAlloc;
-  int i;
-  if( N>=p->nStackAlloc ){
-    Stack *aNew;
-    char **zNew;
-    oldAlloc = p->nStackAlloc;
-    p->nStackAlloc = N + 20;
-    aNew = sqliteRealloc(p->aStack, p->nStackAlloc*sizeof(p->aStack[0]));
-    zNew = aNew ? sqliteRealloc(p->zStack, p->nStackAlloc*sizeof(char*)) : 0;
-    if( zNew==0 ){
-      sqliteFree(aNew);
-      sqliteFree(p->aStack);
-      sqliteFree(p->zStack);
-      p->aStack = 0;
-      p->zStack = 0;
-      p->nStackAlloc = 0;
-      p->aStack = 0;
-      p->zStack = 0;
-      return 1;
-    }
-    p->aStack = aNew;
-    p->zStack = zNew;
-    for(i=oldAlloc; i<p->nStackAlloc; i++){
-      p->zStack[i] = 0;
-      p->aStack[i].flags = 0;
-    }
-  }
-  return 0;
-}
-
-/*
 ** Return TRUE if zNum is a floating-point or integer number.
 */
 static int isNumber(const char *zNum){
@@ -1414,9 +1374,8 @@ int sqliteVdbeExec(
   **
   ** Allocation all the stack space we will ever need.
   */
-  NeedStack(p, p->nOp);
-  zStack = p->zStack;
-  aStack = p->aStack;
+  zStack = p->zStack = sqliteMalloc( p->nOp*sizeof(zStack[0]) );
+  aStack = p->aStack = sqliteMalloc( p->nOp*sizeof(aStack[0]) );
   p->tos = -1;
 #ifdef VDBE_PROFILE
   {
@@ -1588,7 +1547,6 @@ case OP_Halt: {
 */
 case OP_Integer: {
   int i = ++p->tos;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   aStack[i].i = pOp->p1;
   aStack[i].flags = STK_Int;
   if( pOp->p3 ){
@@ -1607,7 +1565,6 @@ case OP_Integer: {
 case OP_String: {
   int i = ++p->tos;
   char *z;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   z = pOp->p3;
   if( z==0 ){
     zStack[i] = 0;
@@ -1650,7 +1607,6 @@ case OP_Dup: {
   int i = p->tos - pOp->p1;
   int j = ++p->tos;
   VERIFY( if( i<0 ) goto not_enough_stack; )
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   memcpy(&aStack[j], &aStack[i], sizeof(aStack[i])-NBFS);
   if( aStack[j].flags & STK_Str ){
     int isStatic = (aStack[j].flags & STK_Static)!=0;
@@ -1778,7 +1734,6 @@ case OP_Callback: {
   int i = p->tos - pOp->p1 + 1;
   int j;
   VERIFY( if( i<0 ) goto not_enough_stack; )
-  VERIFY( if( NeedStack(p, p->tos+2) ) goto no_mem; )
   for(j=i; j<=p->tos; j++){
     if( aStack[j].flags & STK_Null ){
       zStack[j] = 0;
@@ -1866,7 +1821,6 @@ case OP_Concat: {
   }
   if( nByte<0 ){
     if( pOp->p2==0 ) PopStack(p, nField);
-    VERIFY( NeedStack(p, p->tos+1); )
     p->tos++;
     aStack[p->tos].flags = STK_Null;
     zStack[p->tos] = 0;
@@ -1887,7 +1841,6 @@ case OP_Concat: {
   }
   zNew[j] = 0;
   if( pOp->p2==0 ) PopStack(p, nField);
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
   aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -2042,7 +1995,6 @@ case OP_Function: {
   ctx.isStep = 0;
   (*ctx.pFunc->xFunc)(&ctx, n, (const char**)&zStack[p->tos-n+1]);
   PopStack(p, n);
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos] = ctx.s;
   if( ctx.s.flags & STK_Dyn ){
@@ -2818,7 +2770,6 @@ case OP_MakeRecord: {
     }
   }
   PopStack(p, nField);
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
   aStack[p->tos].flags = STK_Str | STK_Dyn;
@@ -2964,7 +2915,6 @@ case OP_MakeKey: {
   }else{
     if( pOp->p2==0 ) PopStack(p, nField+addRowid);
   }
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
   aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -3130,7 +3080,6 @@ case OP_ReadCookie: {
   int i = ++p->tos;
   int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p2<SQLITE_N_BTREE_META );
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   rc = sqliteBtreeGetMeta(pBt, aMeta);
   aStack[i].i = aMeta[1+pOp->p2];
   aStack[i].flags = STK_Int;
@@ -3587,7 +3536,6 @@ case OP_IsUnique: {
     ** violates a UNIQUE constraint.)
     */
     p->tos++;
-    VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
   }
@@ -3723,7 +3671,6 @@ case OP_NewRecno: {
     }
     pC->recnoIsValid = 0;
   }
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].i = v;
   aStack[p->tos].flags = STK_Int;
@@ -3851,7 +3798,6 @@ case OP_Column: {
   int idxWidth;
   unsigned char aHdr[10];
 
-  VERIFY( if( NeedStack(p, tos+1) ) goto no_mem; )
   if( i<0 ){
     VERIFY( if( tos+i<0 ) goto bad_instruction; )
     VERIFY( if( (aStack[tos+i].flags & STK_Str)==0 ) goto bad_instruction; )
@@ -3958,7 +3904,6 @@ case OP_Recno: {
   int tos = ++p->tos;
   BtCursor *pCrsr;
 
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int v;
     if( p->aCsr[i].recnoIsValid ){
@@ -3990,7 +3935,6 @@ case OP_FullKey: {
   int tos = ++p->tos;
   BtCursor *pCrsr;
 
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   VERIFY( if( !p->aCsr[i].keyAsData ) goto bad_instruction; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int amt;
@@ -4204,7 +4148,6 @@ case OP_IdxRecno: {
   int tos = ++p->tos;
   BtCursor *pCrsr;
 
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int v;
     int sz;
@@ -4332,7 +4275,6 @@ case OP_CreateIndex:
 case OP_CreateTable: {
   int i = ++p->tos;
   int pgno;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
   if( pOp->opcode==OP_CreateTable ){
     rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
@@ -4373,7 +4315,6 @@ case OP_IntegrityCk: {
   char *z;
 
   VERIFY( if( iSet<0 || iSet>=p->nSet ) goto bad_instruction; )
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   pSet = &p->aSet[iSet];
   nRoot = sqliteHashCount(&pSet->hash);
   aRoot = sqliteMalloc( sizeof(int)*(nRoot+1) );
@@ -4445,7 +4386,6 @@ case OP_ListRead: {
         || pKeylist->nRead>=pKeylist->nKey ) goto bad_instruction;
     )
     p->tos++;
-    if( NeedStack(p, p->tos) ) goto no_mem;
     aStack[p->tos].i = pKeylist->aKey[pKeylist->nRead++];
     aStack[p->tos].flags = STK_Int;
     zStack[p->tos] = 0;
@@ -4573,7 +4513,6 @@ case OP_SortMakeRec: {
     }
   }
   PopStack(p, nField);
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
   zStack[p->tos] = (char*)azArg;
@@ -4632,7 +4571,6 @@ case OP_SortMakeKey: {
   zNewKey[j] = 0;
   assert( j<nByte );
   PopStack(p, nField);
-  VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
   aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -4689,7 +4627,6 @@ case OP_SortNext: {
   if( pSorter!=0 ){
     p->pSort = pSorter->pNext;
     p->tos++;
-    VERIFY( NeedStack(p, p->tos); )
     zStack[p->tos] = pSorter->pData;
     aStack[p->tos].n = pSorter->nData;
     aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -4874,7 +4811,6 @@ fileread_jump:
 case OP_FileColumn: {
   int i = pOp->p1;
   char *z;
-  VERIFY( if( NeedStack(p, p->tos+1) ) goto no_mem; )
   if( VERIFY( i>=0 && i<p->nField && ) p->azField ){
     z = p->azField[i];
   }else{
@@ -4972,7 +4908,6 @@ case OP_MemStore: {
 case OP_MemLoad: {
   int tos = ++p->tos;
   int i = pOp->p1;
-  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
   VERIFY( if( i<0 || i>=p->nMem ) goto bad_instruction; )
   memcpy(&aStack[tos], &p->aMem[i].s, sizeof(aStack[tos])-NBFS);;
   if( aStack[tos].flags & STK_Str ){
@@ -5158,7 +5093,6 @@ case OP_AggGet: {
   AggElem *pFocus = AggInFocus(p->agg);
   int i = pOp->p2;
   int tos = ++p->tos;
-  VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
   if( pFocus==0 ) goto no_mem;
   if( VERIFY( i>=0 && ) i<p->agg.nMem ){
     Mem *pMem = &pFocus->aMem[i];
@@ -5330,7 +5264,6 @@ case OP_SetNext: {
     }
   }
   tos = ++p->tos;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   zStack[tos] = sqliteHashKey(pSet->prev);
   aStack[tos].n = sqliteHashKeysize(pSet->prev);
   aStack[tos].flags = STK_Str | STK_Ephem;
