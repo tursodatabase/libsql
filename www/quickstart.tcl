@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the quickstart.html file.
 #
-set rcsid {$Id: quickstart.tcl,v 1.2 2002/08/18 19:09:24 drh Exp $}
+set rcsid {$Id: quickstart.tcl,v 1.3 2003/01/21 23:06:58 drh Exp $}
 
 puts {<html>
 <head><title>SQLite In 5 Minutes Or Less</title></head>
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
   }
   db = <b>sqlite_open</b>(argv[1], 0, &zErrMsg);
   if( db==0 ){
-    fprintf(stderr, "Can't open database: %s\n", &zErrMsg);
+    fprintf(stderr, "Can't open database: %s\n", zErrMsg);
     exit(1);
   }
   rc = <b>sqlite_exec</b>(db, argv[2], callback, 0, &zErrMsg);
