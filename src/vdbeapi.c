@@ -436,7 +436,7 @@ int sqlite3_bind_blob(
   int rc;
 
   rc = vdbeUnbind(p, i);
-  if( rc ){
+  if( rc || zData==0 ){
     return rc;
   }
   pVar = &p->apVar[i-1];
@@ -479,7 +479,7 @@ int sqlite3_bind_text(
   int rc;
 
   rc = vdbeUnbind(p, i);
-  if( rc ){
+  if( rc || zData==0 ){
     return rc;
   }
   pVar = &p->apVar[i-1];
@@ -502,7 +502,7 @@ int sqlite3_bind_text16(
   int rc;
 
   rc = vdbeUnbind(p, i);
-  if( rc ){
+  if( rc || zData==0 ){
     return rc;
   }
   pVar = &p->apVar[i-1];

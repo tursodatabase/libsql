@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.131 2004/07/22 15:02:25 drh Exp $
+** @(#) $Id: parse.y,v 1.132 2004/08/01 00:10:45 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -902,10 +902,8 @@ cmd ::= ATTACH database_kw_opt ids(F) AS nm(D) key_opt(K). {
 }
 %type key_opt {struct AttachKey}
 key_opt(A) ::= .                     { A.type = 0; }
-%ifdef SQLITE_HAS_CODEC
 key_opt(A) ::= KEY ids(X).           { A.type=1; A.key = X; }
-key_opt(A) ::= KEY BLOB(X).          { A.type=2; A.Key = X; }
-%endif
+key_opt(A) ::= KEY BLOB(X).          { A.type=2; A.key = X; }
 
 database_kw_opt ::= DATABASE.
 database_kw_opt ::= .

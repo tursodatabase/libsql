@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.107 2004/07/22 02:40:38 drh Exp $
+** $Id: shell.c,v 1.108 2004/08/01 00:10:45 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -104,7 +104,7 @@ static void shellstaticFunc(
 
 
 /*
-** This routine reads a line of text from standard input, stores
+** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
 ** to the text.  NULL is returned at end of file, or if malloc()
 ** fails.
@@ -219,7 +219,8 @@ struct callback_data {
 #define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
 #define MODE_Html     4  /* Generate an XHTML table */
 #define MODE_Insert   5  /* Generate SQL "insert" statements */
-#define MODE_NUM_OF   6  /* The number of modes (not a mode itself) */
+#define MODE_Tcl      6  /* Generate ANSI-C or TCL quoted elements */
+#define MODE_NUM_OF   7  /* The number of modes (not a mode itself) */
 
 char *modeDescr[MODE_NUM_OF] = {
   "line",
@@ -227,7 +228,8 @@ char *modeDescr[MODE_NUM_OF] = {
   "list",
   "semi",
   "html",
-  "insert"
+  "insert",
+  "tcl",
 };
 
 /*
@@ -263,6 +265,34 @@ static void output_quoted_string(FILE *out, const char *z){
     }
     fprintf(out,"'");
   }
+}
+
+/*
+** Output the given string as a quoted according to C or TCL quoting rules.
+*/
+static void output_c_string(FILE *out, const char *z){
+  unsigned int c;
+  fputc('"', out);
+  while( (c = *(z++))!=0 ){
+    if( c=='\\' ){
+      fputc(c, out);
+      fputc(c, out);
+    }else if( c=='\t' ){
+      fputc('\\', out);
+      fputc('t', out);
+    }else if( c=='\n' ){
+      fputc('\\', out);
+      fputc('n', out);
+    }else if( c=='\r' ){
+      fputc('\\', out);
+      fputc('r', out);
+    }else if( !isprint(c) ){
+      fprintf(out, "\\%03o", c);
+    }else{
+      fputc(c, out);
+    }
+  }
+  fputc('"', out);
 }
 
 /*
@@ -404,6 +434,22 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         fprintf(p->out,"</TD>\n");
       }
       fprintf(p->out,"</TR>\n");
+      break;
+    }
+    case MODE_Tcl: {
+      if( p->cnt++==0 && p->showHeader ){
+        for(i=0; i<nArg; i++){
+          output_c_string(p->out,azCol[i]);
+          fprintf(p->out, "%s", p->separator);
+        }
+        fprintf(p->out,"\n");
+      }
+      if( azArg==0 ) break;
+      for(i=0; i<nArg; i++){
+        output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
+        fprintf(p->out, "%s", p->separator);
+      }
+      fprintf(p->out,"\n");
       break;
     }
     case MODE_Insert: {
@@ -603,9 +649,10 @@ static char zHelp[] =
   ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
   ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
+  ".import FILE TABLE     Import data from FILE\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
-  ".mode MODE             Set mode to one of \"line(s)\", \"column(s)\", \n"
-  "                       \"insert\", \"list\", or \"html\"\n"
+  ".mode MODE             Set mode to one of: cvs column html insert line\n"
+  "                       list tabs tcl\n"
   ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
   ".nullvalue STRING      Print STRING instead of nothing for NULL data\n"
   ".output FILENAME       Send output to FILENAME\n"
@@ -617,9 +664,9 @@ static char zHelp[] =
   ".rekey OLD NEW NEW     Change the encryption key\n"
 #endif
   ".schema ?TABLE?        Show the CREATE statements\n"
-  ".separator STRING      Change separator string for \"list\" mode\n"
+  ".separator STRING      Change separator string\n"
   ".show                  Show the current values for various settings\n"
-  ".tables ?PATTERN?      List names of tables matching a pattern\n"
+  ".tables ?PATTERN?      List names of tables matching a LIKE pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
@@ -649,6 +696,43 @@ static void open_db(struct callback_data *p){
 }
 
 /*
+** Do C-language style dequoting.
+**
+**    \t    -> tab
+**    \n    -> newline
+**    \r    -> carriage return
+**    \NNN  -> ascii character NNN in octal
+**    \\    -> backslash
+*/
+static void resolve_backslashes(char *z){
+  int i, j, c;
+  for(i=j=0; (c = z[i])!=0; i++, j++){
+    if( c=='\\' ){
+      c = z[++i];
+      if( c=='n' ){
+        c = '\n';
+      }else if( c=='t' ){
+        c = '\t';
+      }else if( c=='r' ){
+        c = '\r';
+      }else if( c>='0' && c<='7' ){
+        c =- '0';
+        if( z[i+1]>='0' && z[i+1]<='7' ){
+          i++;
+          c = (c<<3) + z[i] - '0';
+          if( z[i+1]>='0' && z[i+1]<='7' ){
+            i++;
+            c = (c<<3) + z[i] - '0';
+          }
+        }
+      }
+    }
+    z[j] = c;
+  }
+  z[j] = 0;
+}
+
+/*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
 **
@@ -673,10 +757,12 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       if( zLine[i]==delim ){
         zLine[i++] = 0;
       }
+      if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
     }else{
       azArg[nArg++] = &zLine[i];
       while( zLine[i] && !isspace(zLine[i]) ){ i++; }
       if( zLine[i] ) zLine[i++] = 0;
+      resolve_backslashes(azArg[nArg-1]);
     }
   }
 
@@ -816,6 +902,98 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     fprintf(stderr,zHelp);
   }else
 
+  if( c=='i' && strncmp(azArg[0], "import", n)==0 && nArg>=3 ){
+    char *zTable = azArg[2];    /* Insert data into this table */
+    char *zFile = azArg[1];     /* The file from which to extract data */
+    sqlite3_stmt *pStmt;        /* A statement */
+    int rc;                     /* Result code */
+    int nCol;                   /* Number of columns in the table */
+    int nByte;                  /* Number of bytes in an SQL string */
+    int i, j;                   /* Loop counters */
+    int nSep;                   /* Number of bytes in p->separator[] */
+    char *zSql;                 /* An SQL statement */
+    char *zLine;                /* A single line of input from the file */
+    char **azCol;               /* zLine[] broken up into columns */
+    char *zCommit;              /* How to commit changes */   
+    FILE *in;                   /* The input file */      
+
+    nSep = strlen(p->separator);
+    if( nSep==0 ){
+      fprintf(stderr, "non-null separator required for import\n");
+      return 0;
+    }
+    zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
+    if( zSql==0 ) return 0;
+    nByte = strlen(zSql);
+    rc = sqlite3_prepare(p->db, zSql, 0, &pStmt, 0);
+    sqlite3_free(zSql);
+    if( rc ){
+      fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
+      nCol = 0;
+    }else{
+      nCol = sqlite3_column_count(pStmt);
+    }
+    sqlite3_finalize(pStmt);
+    if( nCol==0 ) return 0;
+    zSql = malloc( nByte + 20 + nCol*2 );
+    if( zSql==0 ) return 0;
+    sqlite3_snprintf(nByte+20, zSql, "INSERT INTO '%q' VALUES(?", zTable);
+    j = strlen(zSql);
+    for(i=1; i<nCol; i++){
+      zSql[j++] = ',';
+      zSql[j++] = '?';
+    }
+    zSql[j++] = ')';
+    zSql[j] = 0;
+    rc = sqlite3_prepare(p->db, zSql, 0, &pStmt, 0);
+    free(zSql);
+    if( rc ){
+      fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
+      sqlite3_finalize(pStmt);
+      return 0;
+    }
+    in = fopen(zFile, "rb");
+    if( in==0 ){
+      fprintf(stderr, "cannot open file: %s\n", zFile);
+      sqlite3_finalize(pStmt);
+      return 0;
+    }
+    azCol = malloc( sizeof(azCol[0])*(nCol+1) );
+    if( azCol==0 ) return 0;
+    sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
+    zCommit = "COMMIT";
+    while( (zLine = local_getline(0, in))!=0 ){
+      char *z;
+      i = 0;
+      azCol[0] = zLine;
+      for(i=0, z=zLine; *z; z++){
+        if( *z==p->separator[0] && strncmp(z, p->separator, nSep)==0 ){
+          *z = 0;
+          i++;
+          if( i>=nCol ) break;
+          azCol[i] = &z[nSep];
+          z += nSep-1;
+        }
+      }
+      while( i<nCol ) azCol[i++] = 0;
+      for(i=0; i<nCol; i++){
+        sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
+      }
+      sqlite3_step(pStmt);
+      rc = sqlite3_reset(pStmt);
+      free(zLine);
+      if( rc!=SQLITE_OK ){
+        fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
+        zCommit = "ROLLBACK";
+        break;
+      }
+    }
+    free(azCol);
+    fclose(in);
+    sqlite3_finalize(pStmt);
+    sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+  }else
+
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg>1 ){
     struct callback_data data;
     char *zErrMsg = 0;
@@ -854,6 +1032,14 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->mode = MODE_List;
     }else if( strncmp(azArg[1],"html",n2)==0 ){
       p->mode = MODE_Html;
+    }else if( strncmp(azArg[1],"tcl",n2)==0 ){
+      p->mode = MODE_Tcl;
+    }else if( strncmp(azArg[1],"csv",n2)==0 ){
+      p->mode = MODE_List;
+      strcpy(p->separator, ",");
+    }else if( strncmp(azArg[1],"tabs",n2)==0 ){
+      p->mode = MODE_List;
+      strcpy(p->separator, "\t");
     }else if( strncmp(azArg[1],"insert",n2)==0 ){
       p->mode = MODE_Insert;
       if( nArg>=3 ){
@@ -862,7 +1048,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         set_table_name(p, "table");
       }
     }else {
-      fprintf(stderr,"mode should be on of: column html insert line list\n");
+      fprintf(stderr,"mode should be on of: "
+         "column csv html insert line list tabs tcl\n");
     }
   }else
 
@@ -999,15 +1186,19 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
     fprintf(p->out,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
-    fprintf(p->out,"%9.9s: %s\n","nullvalue", p->nullvalue);
+    fprintf(p->out,"%9.9s: ", "nullvalue");
+      output_c_string(p->out, p->nullvalue);
+      fprintf(p->out, "\n");
     fprintf(p->out,"%9.9s: %s\n","output",
                                  strlen(p->outfile) ? p->outfile : "stdout");
-    fprintf(p->out,"%9.9s: %s\n","separator", p->separator);
+    fprintf(p->out,"%9.9s: ", "separator");
+      output_c_string(p->out, p->separator);
+      fprintf(p->out, "\n");
     fprintf(p->out,"%9.9s: ","width");
     for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
-        fprintf(p->out,"%d ",p->colWidth[i]);
+      fprintf(p->out,"%d ",p->colWidth[i]);
     }
-    fprintf(p->out,"\n\n");
+    fprintf(p->out,"\n");
   }else
 
   if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
