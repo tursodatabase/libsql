@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssource\sof\sa\sPULL\sopcode\sis\snot\san\sephemeral\sstring.\s\sTicket\s#360.\s(CVS\s1031)
-D 2003-06-22T01:41:49
+C Remove\sall\sreferences\sto\sSQLITE_OMIT_TRACE.\s\sTracing\sis\salways\senabled.\nTicket\s#361.\s(CVS\s1032)
+D 2003-06-23T11:06:02
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c fc4c26a0bb505fb802babfb9a7b7a1d4be2e3061
-F src/main.c e818e84e9eb11a0d4b594752a9a659cdf97a6b9b
+F src/main.c 284e19c72a3f17eac5b9245501183e7f72dc5950
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 4f540b4e5208c8b59e81cdbb8267c8705288b56e
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -47,7 +47,7 @@ F src/select.c 29c53228a4e66bfcebd797b7539678fcd0e2cf64
 F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
-F src/sqliteInt.h 602cb477392db2f2902f571ccd40da62b57ff6da
+F src/sqliteInt.h fed31c3e6d21b7a8a38048f8f8a07599360f8946
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c d6860dcd56348b9521726280b72c412d2a33ae97
 F src/test1.c b9cfee0bd97d0ade63a3ce76e910b444fb32dce2
@@ -166,7 +166,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 5228cecdb84a665b96750fc0dc7c81e3f50a3ce8
-R 6835d350ce41ce4896b7c87869ba5677
+P cb70ee67ea9f5a47d58820e0e8b28c8f945217ed
+R e0cff5def32c5fab5b9a3aa8fede7dc3
 U drh
-Z 1759307f03632cff767f18d3563cf6b3
+Z 9eefae39003ac7e2ee24176d93c421d3

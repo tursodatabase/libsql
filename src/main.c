@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.135 2003/06/12 08:59:01 jplyon Exp $
+** $Id: main.c,v 1.136 2003/06/23 11:06:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -928,6 +928,7 @@ void *sqlite_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
   return pOld;
+  return 0;
 }
 
 /*
