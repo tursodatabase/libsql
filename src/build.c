@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.308 2005/02/01 03:46:44 danielk1977 Exp $
+** $Id: build.c,v 1.309 2005/02/09 07:05:46 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -53,7 +53,9 @@ void sqlite3FinishCoding(Parse *pParse){
   if( sqlite3_malloc_failed ) return;
   if( pParse->nested ) return;
   if( !pParse->pVdbe ){
-    pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
+    if( pParse->rc==SQLITE_OK && pParse->nErr ){
+      pParse->rc = SQLITE_ERROR;
+    }
     return;
   }
 

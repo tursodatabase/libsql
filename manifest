@@ -1,5 +1,5 @@
-C Add\sexperimental\scollation_list\spragma.\s(CVS\s2321)
-D 2005-02-09T03:20:37
+C Return\sSQLITE_BUSY\sif\sthe\sdatabase\sis\slocked\sreading\sthe\sschema\swithin\r\nsqlite_prepare().\sTicket\s#1106.\s(CVS\s2322)
+D 2005-02-09T07:05:46
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c d88766f8eb98241cd7af6aabf302ed322606057b
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c fcb437bcda09a57b3fe898dff5ff558e7536621b
+F src/build.c 9783b4bd230a22d0eaf7a3a1b521192d0ce85707
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c 4b94395b52a8f7785acd71135c2ce54f3f5550b3
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P ddcea6f8891b02e64f96591af161feb55c00a72c
-R e466854aaacba808643591e9960883c0
+P f73a8aa34afd39e0b7df8f22b5c5d2c8d8979a1b
+R f830539fd533897542bbb8d2a19a23a0
 U danielk1977
-Z 33af67b6340da3c6cb60fb210dbb411f
+Z 0245bb834a1cf0f9358bd0fb2bd64ab5
