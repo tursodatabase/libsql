@@ -1,5 +1,5 @@
-C :-)\s(CVS\s8)
-D 2000-05-29T23:48:23
+C :-)\s(CVS\s9)
+D 2000-05-29T23:58:12
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -21,8 +21,8 @@ F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
 F src/where.c 67ffea57920e16b33c580e9a9b9855b3ec9dea7b
 F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
-F test/crtidx.test 56de1628220deafe33037c40369229eb02c1907d
-F test/crttbl.test 45889cb39e3c3de9e10d79057f424a38ecebe93f
+F test/index.test 37cd05c590469d72c5a9299b510eb6bea00ada28
+F test/table.test 7eea7cd2a055b694fb1ba6b5de83ed7d78870b61
 F test/tester.tcl 0c260d6e56ba5ba69fbddef130638562e79bb2a3
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/lemon.c cff35578b3c4d1491021b6418016639ebe21b1a5
@@ -33,7 +33,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 67b2bee04077377eacede2b11e21fe37ef7e10c6
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P fdf4b31a18fcbbcd358bf92c91fccbf94a79bc26
-R 8e7ef511fbf73d9fc2da9869644b9298
+P e34143c24f1b3eff0c9f1e22702f099674e0ef4e
+R 54f9c4e3d938cf3051ef76323625c2ee
 U drh
-Z 333679d5ad9690cc5b3b61743c281f2f
+Z 09e5fac9544134338a0bd303b6437e57
