@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.60 2003/06/07 08:56:09 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.61 2003/06/08 08:36:34 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -904,7 +904,8 @@ API.</p>
 <tr>
 <td valign="top" align="right">coalesce(<i>X</i>,<i>Y</i>,...)</td>
 <td valign="top">Return a copy of the first non-NULL argument.  If
-all arguments are NULL then NULL is returned.</td>
+all arguments are NULL then NULL is returned.  There must be at least 
+2 arguments.</td>
 </tr>
 
 <tr>
@@ -916,6 +917,13 @@ all arguments are NULL then NULL is returned.</td>
 interface can
 be used to override this function and thereby change the operation
 of the <a href="#glob">GLOB</a> operator.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">ifnull(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Return a copy of the first non-NULL argument.  If
+both arguments are NULL then NULL is returned. This behaves the same as 
+<b>coalesce()</b> above.</td>
 </tr>
 
 <tr>
@@ -967,6 +975,12 @@ may be strings in addition to numbers.  The mminimum value is determined
 by the usual sort order.  Note that <b>min()</b> is a simple function when
 it has 2 or more arguments but converts to an aggregate function if given
 only a single argument.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">nullif(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Return the first argument if the arguments are different, 
+otherwise return NULL.</td>
 </tr>
 
 <tr>

@@ -1,5 +1,5 @@
-C Use\ssqliteOsFileExists()\sin\sthe\sdebugging\shook\sin\svdbe.c,\sinstead\sof\saccess().\nTicket\s#341.\s(CVS\s1014)
-D 2003-06-07T11:33:45
+C Documented\sSQL\sfns\sIFNULL()\sand\sNULLIF().\s(CVS\s1015)
+D 2003-06-08T08:36:34
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
-F www/lang.tcl bc92ee5c8f77d1499040b7556de9a6c76703b2ba
+F www/lang.tcl f206cb1b637337f3783f05716edb577cf327377a
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 5dad7c05e9789e101d5ce75a6f3ea2ffb278b29d
-R 14326af17af8b228ddca6070dcaf4ff4
-U drh
-Z 266945e115d9e22002a3c382885d3cfd
+P 7d3405b95bae74e0c476a7bdf708ca518723eaf7
+R 70e6f0a74b3b545144652db7473f3b65
+U jplyon
+Z 0185e23f4d75ba1076c2f3f0760f318d
