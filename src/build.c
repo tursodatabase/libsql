@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.222 2004/06/18 06:02:35 danielk1977 Exp $
+** $Id: build.c,v 1.223 2004/06/19 02:22:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -656,16 +656,15 @@ void sqlite3StartTable(
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
     sqlite3BeginWriteOperation(pParse, 0, iDb);
-    if( !isTemp ){
-      /* Every time a new table is created the file-format
-      ** and encoding meta-values are set in the database, in
-      ** case this is the first table created.
-      */
-      sqlite3VdbeAddOp(v, OP_Integer, db->file_format, 0);
-      sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
-      sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
-      sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
-    }
+    /* Every time a new table is created the file-format
+    ** and encoding meta-values are set in the database, in
+    ** case this is the first table created.
+    */
+    sqlite3VdbeAddOp(v, OP_Integer, db->file_format, 0);
+    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
+    sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
+    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
+
     sqlite3OpenMasterTable(v, iDb);
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.7 2004/06/19 00:16:31 drh Exp $
+# $Id: attach3.test,v 1.8 2004/06/19 02:22:11 danielk1977 Exp $
 #
 
 
@@ -211,6 +211,14 @@ do_test attach3-9.2 {
     SELECT count(*) FROM sqlite_temp_master;
   }
 } {0}
+
+# Make sure the aux.sqlite_master table is read-only
+do_test attach3-10.0 {
+  catchsql {
+    INSERT INTO aux.sqlite_master VALUES(1, 2, 3, 4, 5);
+  }
+} {1 {table sqlite_master may not be modified}}
+
 
 finish_test
 

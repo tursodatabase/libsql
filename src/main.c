@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.226 2004/06/18 17:10:17 drh Exp $
+** $Id: main.c,v 1.227 2004/06/19 02:22:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -142,10 +142,12 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   BtCursor *curMain;
   int size;
   Table *pTab;
-  char *azArg[6];
+  char const *azArg[6];
   char zDbNum[30];
   int meta[10];
   InitData initData;
+  char const *zMasterSchema;
+  char const *zMasterName;
 
   /*
   ** The master database table has a structure like this
@@ -169,41 +171,35 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
      ")"
   ;
 
-  /* The following SQL will read the schema from the master tables.
-  */
-  static char init_script1[] = 
-     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master";
-  static char init_script2[] = 
-     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master";
+  assert( iDb>=0 && iDb<db->nDb );
 
-  assert( iDb>=0 && iDb!=1 && iDb<db->nDb );
-
-  /* Construct the schema tables: sqlite_master and sqlite_temp_master
+  /* zMasterSchema and zInitScript are set to point at the master schema
+  ** and initialisation script appropriate for the database being
+  ** initialised. zMasterName is the name of the master table.
   */
+  if( iDb==1 ){
+    zMasterSchema = temp_master_schema;
+    zMasterName = TEMP_MASTER_NAME;
+  }else{
+    zMasterSchema = master_schema;
+    zMasterName = MASTER_NAME;
+  }
+
+  /* Construct the schema tables.  */
   sqlite3SafetyOff(db);
   azArg[0] = "table";
-  azArg[1] = MASTER_NAME;
+  azArg[1] = zMasterName;
   azArg[2] = "1";
-  azArg[3] = master_schema;
+  azArg[3] = zMasterSchema;
   sprintf(zDbNum, "%d", iDb);
   azArg[4] = zDbNum;
   azArg[5] = 0;
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
-  sqlite3InitCallback(&initData, 5, azArg, 0);
-  pTab = sqlite3FindTable(db, MASTER_NAME, "main");
+  sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
+  pTab = sqlite3FindTable(db, zMasterName, db->aDb[iDb].zName);
   if( pTab ){
     pTab->readOnly = 1;
-  }
-  if( iDb==0 ){
-    azArg[1] = TEMP_MASTER_NAME;
-    azArg[3] = temp_master_schema;
-    azArg[4] = "1";
-    sqlite3InitCallback(&initData, 5, azArg, 0);
-    pTab = sqlite3FindTable(db, TEMP_MASTER_NAME, "temp");
-    if( pTab ){
-      pTab->readOnly = 1;
-    }
   }
   sqlite3SafetyOn(db);
 
@@ -307,23 +303,13 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     /* For an empty database, there is nothing to read */
     rc = SQLITE_OK;
   }else{
+    char *zSql = 0;
     sqlite3SafetyOff(db);
-    if( iDb==0 ){
-      /* This SQL statement tries to read the temp.* schema from the
-      ** sqlite_temp_master table. It might return SQLITE_EMPTY. 
-      */
-      rc = sqlite3_exec(db, init_script1, sqlite3InitCallback, &initData, 0);
-      if( rc==SQLITE_OK || rc==SQLITE_EMPTY ){
-        rc = sqlite3_exec(db, init_script2, sqlite3InitCallback, &initData, 0);
-      }
-    }else{
-      char *zSql = 0;
-      sqlite3SetString(&zSql, 
-         "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
-         db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
-      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-      sqliteFree(zSql);
-    }
+    sqlite3SetString(&zSql, 
+        "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
+        db->aDb[iDb].zName, "\".", zMasterName, (char*)0);
+    rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+    sqliteFree(zSql);
     sqlite3SafetyOn(db);
     sqlite3BtreeCloseCursor(curMain);
   }
@@ -334,9 +320,6 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   }
   if( rc==SQLITE_OK ){
     DbSetProperty(db, iDb, DB_SchemaLoaded);
-    if( iDb==0 ){
-      DbSetProperty(db, 1, DB_SchemaLoaded);
-    }
   }else{
     sqlite3ResetInternalSchema(db, iDb);
   }
@@ -360,13 +343,24 @@ int sqlite3Init(sqlite *db, char **pzErrMsg){
   rc = SQLITE_OK;
   db->init.busy = 1;
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-    if( DbHasProperty(db, i, DB_SchemaLoaded) ) continue;
-    assert( i!=1 );  /* Should have been initialized together with 0 */
+    if( DbHasProperty(db, i, DB_SchemaLoaded) || i==1 ) continue;
     rc = sqlite3InitOne(db, i, pzErrMsg);
     if( rc ){
       sqlite3ResetInternalSchema(db, i);
     }
   }
+
+  /* Once all the other databases have been initialised, load the schema
+  ** for the TEMP database. This is loaded last, as the TEMP database
+  ** schema may contain references to objects in other databases.
+  */
+  if( rc==SQLITE_OK && db->nDb>1 && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
+    rc = sqlite3InitOne(db, 1, pzErrMsg);
+    if( rc ){
+      sqlite3ResetInternalSchema(db, 1);
+    }
+  }
+
   db->init.busy = 0;
   if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;

@@ -1,5 +1,5 @@
-C fix\sdependencies\sfor\stestfixture\sin\sMakefile.in\s(CVS\s1627)
-D 2004-06-19T02:19:39
+C Fix\sfor\s#764.\sWhen\sreloading\sthe\sschema,\sload\sthe\stemp\sschema\slast.\s(CVS\s1628)
+D 2004-06-19T02:22:10
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c 44057a0aba7c57fb7a32ee4addd2e981fcb9de60
+F src/build.c 239bd93949db1ddc277f26c27e0d613ff5fe16c7
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
 F src/delete.c a5191011b7429dff939df631b8bdcc1714b8d7aa
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1428887f4a7515a7d34e82aaeb76297c79ba378b
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c bbb19c7ad47bbb433a5467a39347ddd49eb5eefe
+F src/main.c da53b961729954bd4c4408ee339f2e2b690feb98
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -81,7 +81,7 @@ F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
 F test/attach2.test a05150eb43cf852599dcc491351c67a060337e4b
-F test/attach3.test 0ac01a2baf600768e36a8ef6e0a5d4d652b93e74
+F test/attach3.test c4cc0b806783ce3d860af6b80c947f93ffb14270
 F test/auth.test a211eab0542ec024b578d771b09242dd9bb1aba3
 F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -160,7 +160,7 @@ F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c f5c7d628d5b23a1418816351b3cd8fe06e146250
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
-F test/trigger1.test b45ef390959f736e5a4b7463c857939c48a7c6bb
+F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 97c11d3cf43d752b172809bb82536372ee5e399c
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d705d051bed2b92b6c3bbcc75fe5b056633b9c31
-R 98029011cfa4c6389636b174deced918
-U dougcurrie
-Z d0a7909e9532f0b290607d1238c66326
+P 26676538ee63311393b52c8479c324469bf71f65
+R 00e7c262ba02f91646c321e006cada67
+U danielk1977
+Z 9439357e77e5edc00904308c8fb4c430
