@@ -265,8 +265,8 @@ struct Vdbe {
   Mem *pTos;          /* Top entry in the operand stack */
   char **zArgv;       /* Text values used by the callback */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
-  int nCursor;        /* Number of slots in aCsr[] */
-  Cursor *aCsr;       /* One element of this array for each open cursor */
+  int nCursor;        /* Number of slots in apCsr[] */
+  Cursor **apCsr;     /* One element of this array for each open cursor */
   Sorter *pSort;      /* A linked list of objects to be sorted */
   FILE *pFile;        /* At most one open file handler */
   int nField;         /* Number of file fields */

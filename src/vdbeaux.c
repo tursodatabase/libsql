@@ -736,7 +736,7 @@ void sqlite3VdbeCleanupCursor(Cursor *pCx){
   }
   sqliteFree(pCx->pData);
   sqliteFree(pCx->aType);
-  memset(pCx, 0, sizeof(Cursor));
+  memset(pCx, 0, sizeof(*pCx));
 }
 
 /*
@@ -745,10 +745,12 @@ void sqlite3VdbeCleanupCursor(Cursor *pCx){
 static void closeAllCursors(Vdbe *p){
   int i;
   for(i=0; i<p->nCursor; i++){
-    sqlite3VdbeCleanupCursor(&p->aCsr[i]);
+    Cursor *pC = p->apCsr[i];
+    sqlite3VdbeCleanupCursor(pC);
+    sqliteFree(pC);
   }
-  sqliteFree(p->aCsr);
-  p->aCsr = 0;
+  sqliteFree(p->apCsr);
+  p->apCsr = 0;
   p->nCursor = 0;
 }
 

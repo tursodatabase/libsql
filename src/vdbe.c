@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.292 2004/05/14 21:12:23 drh Exp $
+** $Id: vdbe.c,v 1.293 2004/05/14 21:59:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -413,11 +413,13 @@ static char *vdbe_fgets(char *zBuf, int nBuf, FILE *in){
 */
 static int expandCursorArraySize(Vdbe *p, int mxCursor){
   if( mxCursor>=p->nCursor ){
-    Cursor *aCsr = sqliteRealloc( p->aCsr, (mxCursor+1)*sizeof(Cursor) );
-    if( aCsr==0 ) return 1;
-    p->aCsr = aCsr;
-    memset(&p->aCsr[p->nCursor], 0, sizeof(Cursor)*(mxCursor+1-p->nCursor));
-    p->nCursor = mxCursor+1;
+    p->apCsr = sqliteRealloc( p->apCsr, (mxCursor+1)*sizeof(Cursor*) );
+    if( p->apCsr==0 ) return 1;
+    while( p->nCursor<=mxCursor ){
+      Cursor *pC;
+      p->apCsr[p->nCursor++] = pC = sqliteMalloc( sizeof(Cursor) );
+      if( pC==0 ) return 1;
+    }
   }
   return 0;
 }
@@ -561,9 +563,6 @@ int sqlite3VdbeExec(
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
-
-  /* FIX ME. */
-  expandCursorArraySize(p, 100);
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
@@ -1921,7 +1920,7 @@ case OP_Column: {
     zRec = pTos[i].z;
     payloadSize = pTos[i].n;
     pC->cacheValid = 0;
-  }else if( (pC = &p->aCsr[i])->pCursor!=0 ){
+  }else if( (pC = p->apCsr[i])->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     zRec = 0;
     pCrsr = pC->pCursor;
@@ -2623,9 +2622,8 @@ case OP_OpenWrite: {
   }
   assert( i>=0 );
   if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCur = &p->aCsr[i];
+  pCur = p->apCsr[i];
   sqlite3VdbeCleanupCursor(pCur);
-  memset(pCur, 0, sizeof(Cursor));
   pCur->nullRow = 1;
   if( pX==0 ) break;
   do{
@@ -2691,7 +2689,7 @@ case OP_OpenTemp: {
   Cursor *pCx;
   assert( i>=0 );
   if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCx = &p->aCsr[i];
+  pCx = p->apCsr[i];
   sqlite3VdbeCleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
   pCx->nullRow = 1;
@@ -2736,7 +2734,7 @@ case OP_OpenPseudo: {
   Cursor *pCx;
   assert( i>=0 );
   if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCx = &p->aCsr[i];
+  pCx = p->apCsr[i];
   sqlite3VdbeCleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
   pCx->nullRow = 1;
@@ -2752,7 +2750,7 @@ case OP_OpenPseudo: {
 case OP_Close: {
   int i = pOp->p1;
   if( i>=0 && i<p->nCursor ){
-    sqlite3VdbeCleanupCursor(&p->aCsr[i]);
+    sqlite3VdbeCleanupCursor(p->apCsr[i]);
   }
   break;
 }
@@ -2795,7 +2793,7 @@ case OP_MoveTo: {
 
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   if( pC->pCursor!=0 ){
     int res, oc;
     pC->nullRow = 0;
@@ -2895,7 +2893,7 @@ case OP_Found: {
   Cursor *pC;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  if( (pC = &p->aCsr[i])->pCursor!=0 ){
+  if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
     assert( pC->intKey==0 );
     Stringify(pTos);
@@ -2950,7 +2948,7 @@ case OP_IsUnique: {
   R = pTos->i;
   pTos--;
   assert( i>=0 && i<=p->nCursor );
-  pCx = &p->aCsr[i];
+  pCx = p->apCsr[i];
   pCrsr = pCx->pCursor;
   if( pCrsr!=0 ){
     int res, rc;
@@ -3034,11 +3032,11 @@ case OP_NotExists: {
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rx;
     u64 iKey;
     assert( pTos->flags & MEM_Int );
-    assert( p->aCsr[i].intKey );
+    assert( p->apCsr[i]->intKey );
     iKey = intToKey(pTos->i);
     rx = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
     pC->lastRecno = pTos->i;
@@ -3067,7 +3065,7 @@ case OP_NewRecno: {
   i64 v = 0;
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
-  if( (pC = &p->aCsr[i])->pCursor==0 ){
+  if( (pC = p->apCsr[i])->pCursor==0 ){
     /* The zero initialization above is all that is needed */
   }else{
     /* The next rowid or record number (different terms for the same
@@ -3195,7 +3193,7 @@ case OP_PutStrKey: {
   Cursor *pC;
   assert( pNos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  if( ((pC = &p->aCsr[i])->pCursor!=0 || pC->pseudoTable) ){
+  if( ((pC = p->apCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     char *zKey;
     i64 nKey; 
     i64 iKey;
@@ -3282,7 +3280,7 @@ case OP_Delete: {
   int i = pOp->p1;
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   if( pC->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     rc = sqlite3BtreeDelete(pC->pCursor);
@@ -3315,7 +3313,7 @@ case OP_SetCounts: {
 case OP_KeyAsData: {
   int i = pOp->p1;
   assert( i>=0 && i<p->nCursor );
-  p->aCsr[i].keyAsData = pOp->p2;
+  p->apCsr[i]->keyAsData = pOp->p2;
   break;
 }
 
@@ -3345,7 +3343,7 @@ case OP_RowData: {
 
   pTos++;
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   if( pC->nullRow ){
     pTos->flags = MEM_Null;
   }else if( pC->pCursor!=0 ){
@@ -3400,7 +3398,7 @@ case OP_Recno: {
   i64 v;
 
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   sqlite3VdbeCursorMoveto(pC);
   pTos++;
   if( pC->recnoIsValid ){
@@ -3434,17 +3432,18 @@ case OP_Recno: {
 case OP_FullKey: {
   int i = pOp->p1;
   BtCursor *pCrsr;
+  Cursor *pC;
 
-  assert( p->aCsr[i].keyAsData );
-  assert( !p->aCsr[i].pseudoTable );
+  assert( p->apCsr[i]->keyAsData );
+  assert( !p->apCsr[i]->pseudoTable );
   assert( i>=0 && i<p->nCursor );
   pTos++;
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     u64 amt;
     char *z;
 
-    sqlite3VdbeCursorMoveto(&p->aCsr[i]);
-    assert( p->aCsr[i].intKey==0 );
+    sqlite3VdbeCursorMoveto(pC);
+    assert( pC->intKey==0 );
     sqlite3BtreeKeySize(pCrsr, &amt);
     if( amt<=0 ){
       rc = SQLITE_CORRUPT;
@@ -3473,10 +3472,12 @@ case OP_FullKey: {
 */
 case OP_NullRow: {
   int i = pOp->p1;
+  Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );
-  p->aCsr[i].nullRow = 1;
-  p->aCsr[i].recnoIsValid = 0;
+  pC = p->apCsr[i];
+  pC->nullRow = 1;
+  pC->recnoIsValid = 0;
   break;
 }
 
@@ -3494,7 +3495,7 @@ case OP_Last: {
   BtCursor *pCrsr;
 
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     rc = sqlite3BtreeLast(pCrsr, &res);
@@ -3525,7 +3526,7 @@ case OP_Rewind: {
   int res;
 
   assert( i>=0 && i<p->nCursor );
-  pC = &p->aCsr[i];
+  pC = p->apCsr[i];
   if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
@@ -3564,7 +3565,7 @@ case OP_Next: {
 
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  pC = &p->aCsr[pOp->p1];
+  pC = p->apCsr[pOp->p1];
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     if( pC->nullRow ){
@@ -3605,7 +3606,7 @@ case OP_IdxPut: {
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   assert( pTos->flags & MEM_Str );
-  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
     const char *zKey = pTos->z;
     if( pOp->p2 ){
@@ -3662,7 +3663,7 @@ case OP_IdxDelete: {
   assert( pTos>=p->aStack );
   assert( pTos->flags & MEM_Str );
   assert( i>=0 && i<p->nCursor );
-  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int rx, res;
     rx = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, &res);
     if( rx==SQLITE_OK && res==0 ){
@@ -3687,14 +3688,15 @@ case OP_IdxDelete: {
 case OP_IdxRecno: {
   int i = pOp->p1;
   BtCursor *pCrsr;
+  Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   pTos++;
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     i64 rowid;
 
-    assert( p->aCsr[i].deferredMoveto==0 );
-    assert( p->aCsr[i].intKey==0 );
+    assert( pC->deferredMoveto==0 );
+    assert( pC->intKey==0 );
     rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -3769,15 +3771,15 @@ case OP_IdxGT:
 case OP_IdxGE: {
   int i= pOp->p1;
   BtCursor *pCrsr;
+  Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   assert( pTos>=p->aStack );
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rc;
-    Cursor *pC = &p->aCsr[i];
  
     Stringify(pTos);
-    assert( p->aCsr[i].deferredMoveto==0 );
+    assert( pC->deferredMoveto==0 );
     if( pOp->p3 ){
       pC->incrKey = 1;
     }
