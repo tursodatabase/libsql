@@ -1,11 +1,11 @@
-C :-)\s(CVS\s147)
-D 2000-09-29T13:30:54
+C Fix\sa\sproblem\swith\sthe\sconfigure\sscript\s(CVS\s148)
+D 2000-09-29T15:15:52
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 39f684ee06a661157793f01cce98d43026fc2c06
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION c4ef5804e5824ee814fdd368026a5d21314bdbed
-F configure bc917320fcc6d8a1a5154737304763acb5f7f68c x
-F configure.in ae915ce37ff010e8aac34b90b9136d4a32659bdb
+F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
+F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F src/build.c 4d90e9e94750ca80249fc7958c617021d8bb7a50
 F src/dbbe.c 226daaf8c095ceb4aff48cad188dad90643f9867
@@ -72,7 +72,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 85a4254ef0998fac06ddc285decd79345968fee1
-R fad0a2ae1fae99e59e2510dbd713bcbd
+P e11f7527f9187e8902db84069baad0d3b7e17ad0
+R 374764ea3793b387c2fde1f92050f82f
 U drh
-Z 97f25b6b3274d7f182f155f5491676b3
+Z 3aff00aa74cc9d683b8bbe857e7c925e

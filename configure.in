@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -408,7 +408,7 @@ else
   AC_CHECK_HEADER(tcl.h, [found=yes])
 fi
 if test "$found" = "no"; then
-  for dir in /usr/local /usr/X11* /usr/pkg /usr/contrib /usr; do
+  for dir in /usr/local /usr/X11 /usr/X11R6 /usr/pkg /usr/contrib /usr; do
     AC_CHECK_FILE($dir/include/tcl.h, found=yes)
     if test "$found" = "yes"; then
       TARGET_TCL_INC="-I$dir/include"

@@ -525,7 +525,7 @@ fi
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.7 $
+# $Revision: 1.8 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -1342,7 +1342,7 @@ fi
 
 fi
 if test "$found" = "no"; then
-  for dir in /usr/local /usr/X11* /usr/pkg /usr/contrib /usr; do
+  for dir in /usr/local /usr/X11 /usr/X11R6 /usr/pkg /usr/contrib /usr; do
     
 ac_safe=`echo "$dir/include/tcl.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $dir/include/tcl.h""... $ac_c" 1>&6
