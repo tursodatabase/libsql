@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.84 2003/06/04 16:24:40 drh Exp $
+** @(#) $Id: pager.c,v 1.85 2003/06/14 11:42:58 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1221,7 +1221,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* If a journal file exists, try to play it back.
     */
     if( pPager->useJournal && sqliteOsFileExists(pPager->zJournal) ){
-       int rc, dummy;
+       int rc;
 
        /* Get a write lock on the database
        */
@@ -1235,14 +1235,15 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        }
        pPager->state = SQLITE_WRITELOCK;
 
-       /* Open the journal for exclusive access.  Return SQLITE_BUSY if
-       ** we cannot get exclusive access to the journal file. 
+       /* Open the journal for reading only.  Return SQLITE_BUSY if
+       ** we are unable to open the journal file. 
        **
-       ** Even though we will only be reading from the journal, not writing,
-       ** we have to open the journal for writing in order to obtain an
-       ** exclusive access lock.
+       ** The journal file does not need to be locked itself.  The
+       ** journal file is never open unless the main database file holds
+       ** a write lock, so there is never any chance of two or more
+       ** processes opening the journal at the same time.
        */
-       rc = sqliteOsOpenReadWrite(pPager->zJournal, &pPager->jfd, &dummy);
+       rc = sqliteOsOpenReadOnly(pPager->zJournal, &pPager->jfd);
        if( rc!=SQLITE_OK ){
          rc = sqliteOsUnlock(&pPager->fd);
          assert( rc==SQLITE_OK );

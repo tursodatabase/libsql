@@ -1,5 +1,5 @@
-C Added\smissing\serror\sstring\sto\ssqlite_error_string().\s(CVS\s1018)
-D 2003-06-12T08:59:01
+C Open\sthe\sjournal\sfile\sfor\sread-only\swhen\sdoing\sa\splayback.\s\sTicket\s#351.\s(CVS\s1019)
+D 2003-06-14T11:42:58
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/main.c e818e84e9eb11a0d4b594752a9a659cdf97a6b9b
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 4f540b4e5208c8b59e81cdbb8267c8705288b56e
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
-F src/pager.c c4d007fc3572950d9ee20cae03c2beb4e4c12daa
+F src/pager.c 6c50e8dc861bb08f8c52b1fe9aabef6554d61c95
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 917250e5d86bdee752355e6617ea2e8ee12438bf
 F src/pragma.c f439a6157fe7c8d66dc2c6bfde2abaf23e770e1d
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P b52f07e1c894a52bb12459d03fd0efcee05dd08c
-R 375f5c988936e58c05b781805fc9b599
-U jplyon
-Z e300729656da799f5c12bc51a4173669
+P 3afb7b3586be81202c76692afea9d2b7a63b4b93
+R 91e497d8c49cdf07678d9dc6985d9f6e
+U drh
+Z 8bb44e08ee869ed017552dfc2baeceb2
