@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.86 2004/02/11 02:18:07 drh Exp $
+** $Id: shell.c,v 1.87 2004/02/11 10:37:23 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -512,12 +512,11 @@ static void open_db(struct callback_data *p){
   if( p->db==0 ){
     char *zErrMsg = 0;
 #ifdef SQLITE_HAS_CODEC
-    if( p->zKey && p->zKey[0] ){
-      int n = strlen(p->zKey);
-      p->db = sqlite_open_encrypted(p->zDbFilename, p->zKey, n, &zErrMsg);
-    }else
-#endif
+    int n = p->zKey ? strlen(p->zKey) : 0;
+    p->db = sqlite_open_encrypted(p->zDbFilename, p->zKey, n, &zErrMsg);
+#else
     p->db = sqlite_open(p->zDbFilename, 0, &zErrMsg);
+#endif
     if( p->db==0 ){
       if( zErrMsg ){
         fprintf(stderr,"Unable to open database \"%s\": %s\n", 
