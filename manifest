@@ -1,5 +1,5 @@
-C Makefile\supdates\sfor\sthe\snew\s"test4.c"\smodule.\s\sAlso\sdisable\slarge\sfile\ntests\sfor\sarchic\sTCL\sversions.\s(CVS\s1139)
-D 2003-12-19T12:31:20
+C Remove\sa\scomma\sat\sthe\send\sof\san\senum\sdefinition.\s\sSome\scompilers\scould\snot\ndeal\swith\sit.\s(CVS\s1140)
+D 2003-12-19T12:32:46
 F Makefile.in 3c04579d45d26fc0432dcf0e5414ad065722c3a1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
 F src/sqliteInt.h f8549cf426920e43efb105a08484768cdb73c808
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
-F src/tclsqlite.c 7425d6980a1d96d6d3af911f935ee699c2390db7
+F src/tclsqlite.c dcd18d1f0d51ac4863d1f9059f614f903bc1fffe
 F src/test1.c f9d5816610f7ec4168ab7b098d5207a5708712b6
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 7dddbeb586504de30c64a1e61614da447f18c8ba
-R 8ca7ffb65f56f2637926388c44e96204
+P 55e2488912871381959326ab7fa89123ab30d659
+R 94fd29229d6e048836e2ae3bf9bf36fd
 U drh
-Z c56a7f39662db48c06db8a9cdcf08cc5
+Z c3d8ae6bfeac7ec0d73f8e5c33a77b76

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.52 2003/12/19 02:52:09 drh Exp $
+** $Id: tclsqlite.c,v 1.53 2003/12/19 12:32:46 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -480,7 +480,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_CLOSE,             DB_COMPLETE,         DB_ERRORCODE,
     DB_EVAL,              DB_FUNCTION,         DB_LAST_INSERT_ROWID,
     DB_ONECOLUMN,         DB_TIMEOUT,          DB_TRACE,            
-    DB_PROGRESS,
+    DB_PROGRESS
   };
 
   if( objc<2 ){
