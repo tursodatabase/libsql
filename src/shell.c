@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.93 2004/03/17 23:42:13 drh Exp $
+** $Id: shell.c,v 1.93.2.1 2005/02/16 03:53:11 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -591,7 +591,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       sqlite_exec(p->db,
         "SELECT name, type, sql FROM sqlite_master "
         "WHERE type!='meta' AND sql NOT NULL "
-        "ORDER BY substr(type,2,1), name",
+        "ORDER BY substr(type,2,1), rowid",
         dump_callback, p, &zErrMsg
       );
     }else{
@@ -600,7 +600,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         sqlite_exec_printf(p->db,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOT NULL "
-          "ORDER BY substr(type,2,1), name",
+          "ORDER BY substr(type,2,1), rowid",
           dump_callback, p, &zErrMsg, azArg[i]
         );
       }
