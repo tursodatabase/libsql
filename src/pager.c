@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.64 2003/01/03 02:04:27 drh Exp $
+** @(#) $Id: pager.c,v 1.65 2003/01/07 14:46:08 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -109,6 +109,7 @@ struct Pager {
   int origDbSize;             /* dbSize before the current change */
   int ckptSize;               /* Size of database (in pages) at ckpt_begin() */
   off_t ckptJSize;            /* Size of journal at ckpt_begin() */
+  int ckptNRec;               /* Number of records in the checkpoint journal */
   int nExtra;                 /* Add this many bytes to each in-memory page */
   void (*xDestructor)(void*); /* Call this routine when freeing pages */
   int nPage;                  /* Total number of in-memory pages */
@@ -521,11 +522,7 @@ static int pager_ckpt_playback(Pager *pPager){
   */
   assert( pPager->ckptInUse && pPager->journalOpen );
   sqliteOsSeek(&pPager->cpfd, 0);
-  rc = sqliteOsFileSize(&pPager->cpfd, &nRec);
-  if( rc!=SQLITE_OK ){
-    goto end_ckpt_playback;
-  }
-  nRec /= sizeof(PageRecord);
+  nRec = pPager->ckptNRec;
   
   /* Copy original pages out of the checkpoint journal and back into the
   ** database file.
@@ -1374,6 +1371,7 @@ int sqlitepager_write(void *pData){
       pPager->errMask |= PAGER_ERR_FULL;
       return rc;
     }
+    pPager->ckptNRec++;
     assert( pPager->aInCkpt!=0 );
     pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
     page_add_to_ckpt_list(pPg);
@@ -1621,6 +1619,7 @@ int sqlitepager_ckpt_begin(Pager *pPager){
     rc = sqlitepager_opentemp(zTemp, &pPager->cpfd);
     if( rc ) goto ckpt_begin_failed;
     pPager->ckptOpen = 1;
+    pPager->ckptNRec = 0;
   }
   pPager->ckptInUse = 1;
   return SQLITE_OK;
@@ -1640,7 +1639,8 @@ int sqlitepager_ckpt_commit(Pager *pPager){
   if( pPager->ckptInUse ){
     PgHdr *pPg, *pNext;
     sqliteOsSeek(&pPager->cpfd, 0);
-    sqliteOsTruncate(&pPager->cpfd, 0);
+    /* sqliteOsTruncate(&pPager->cpfd, 0); */
+    pPager->ckptNRec = 0;
     pPager->ckptInUse = 0;
     sqliteFree( pPager->aInCkpt );
     pPager->aInCkpt = 0;

@@ -1,5 +1,5 @@
-C In\sthe\sVDBE,\sallocate\sspace\sto\shold\scolumn\snames\swhen\sthe\sVDBE\sfirst\sstarts.\nThe\sColumnCount\sopcode\snow\sjust\swrites\sthe\snull\sterminator\sinto\sthis\sspace.\s(CVS\s818)
-D 2003-01-07T13:55:23
+C Avoid\scalling\struncate()\sand\sstat()\son\sthe\scheckpoint\sjournal\sto\simprove\sthe\nspeed\sof\sa\slarge\snumber\sof\sUPDATEs\swithin\sa\stransaction.\s(CVS\s819)
+D 2003-01-07T14:46:08
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
 F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
-F src/pager.c e7d05fa23a61f109c2276bb05be7a8d6721980f1
+F src/pager.c 20ea93000c5580f1ee4fa56dcc3d3589da35c70f
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 427a17888c117cc9cc35311eda0603d55437f02b
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 657c9fb5133aef93e4edd433912e6942ad9674ec
-R 30af34abe888623d0ad22c90d02b73df
+P 46d8f5e377bf790c18a7acdd1f3bc20b538d69eb
+R 137ba05a6f797353869b0a39dc185e2c
 U drh
-Z 10b12f5b3cbab70eee4329daa1b839b8
+Z e1ac466b5c8e5a1eafdd3945463b4e3b
