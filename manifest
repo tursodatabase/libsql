@@ -1,5 +1,5 @@
-C Disable\ssorting\sby\sindices\sif\sthere\sis\sa\sCOLLATE\ssubclause\sin\sthe\nORDER\sBY\sclause.\s(CVS\s713)
-D 2002-08-14T03:03:57
+C Implement\sprobabilistic\sreader/writer\slocks\sunder\swindows\sso\sthat\swindows\ncan\shave\smultiple\ssimultaneous\sreaders.\s(CVS\s714)
+D 2002-08-14T12:56:55
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,8 +30,8 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 8aefc998c86a3bd53082e2f8fdd049345fcf3463
 F src/main.c c7e313ef70d7e4339a6d8ba1deb31f7b51a3473d
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
-F src/os.c 35a3d362e13b8d689eb8a70ae0befa2abe00a121
-F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
+F src/os.c 00d10655e1dc9a52b4aabca58c8d8e45048057b0
+F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
 F src/pager.c 4b0169e91b34f6ff91e8feb57545c43e4d6eb370
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 66e7da55b34b57f81ca07e50d1dcc430b1c1bf74
@@ -93,7 +93,7 @@ F test/select3.test 3e98cec10e755226cbabdd7073ec37baab9ab148
 F test/select4.test 10ba54f24ef6ca7958a7045b001079378db2370c
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
-F test/sort.test 742c07bda828eb16c95f3b1e83fdaea2c0d939b2
+F test/sort.test f9744a81a488d6b448aeeb98d0546b5c802248ae
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test dedb4d3a73340d811e309672ca14537daa542fb1
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
@@ -134,7 +134,7 @@ F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl ac58cd17bd96cbf1dc228dfb965f88e3e8d45c6b
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl e5a752ff431a8408ae24a91ab88ded2dfe699e16
+F www/faq.tcl 234cd80a771f63c778b0a86784589f4eaae2b381
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl 9af69527a26895ec56ad920d4c51541c3e5643a6
 F www/lang.tcl 902f677258ee63dd8f6677b54118f354a1d824b6
@@ -145,7 +145,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 26a4e7e7a3eee62c170ce264cb964a92bc7f52c9
-R 215a8fd5d2921ac00a3d290d9e37f326
+P 2438da791afb53b4f1c7a9ff9705d393c86f3cbd
+R 3364c6051f89755389e8e9106b910ace
 U drh
-Z 8f90666769659acaee3140c2279b94e8
+Z f3b8f86df854c948ca0c5a5c4e19b034

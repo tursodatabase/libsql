@@ -57,8 +57,8 @@
 #include <winbase.h>
   typedef struct OsFile OsFile;
   struct OsFile {
-    HANDLE h;
-    int locked;
+    HANDLE h;               /* Handle for accessing the file */
+    int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
   };
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 # define SQLITE_MIN_SLEEP_MS 1

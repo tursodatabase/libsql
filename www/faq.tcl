@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.15 2002/08/13 20:45:41 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.16 2002/08/14 12:56:56 drh Exp $}
 
 puts {<html>
 <head>
@@ -169,19 +169,27 @@ faq {
   application access a single database file at the same time?
 } {
   <p>Multiple processes can have the same database open at the same
-  time.  On unix systems, multiple processes can be doing a SELECT
+  time.  Multiple processes can be doing a SELECT
   at the same time.  But only one process can be making changes to
-  the database at once.  On windows, only a single process can be
-  reading from the database at one time since Win95/98/ME does not
-  support reader/writer locks.</p>
+  the database at once.</p>
+
+  <p>Win95/98/ME lacks support for reader/writer locks in the operating
+  system.  Prior to version 2.7.0, this meant that under windows you
+  could only have a single process reading the database at one time.
+  This problem was resolved in version 2.7.0 by implementing a user-space
+  probabilistic reader/writer locking strategy in the windows interface
+  code file.  Windows
+  now works like Unix in allowing multiple simultaneous readers.</p>
 
   <p>The locking mechanism used to control simultaneous access might
   not work correctly if the database file is kept on an NFS filesystem.
   You should avoid putting SQLite database files on NFS if multiple
-  processes might try to access the file at the same time.</p>
+  processes might try to access the file at the same time.  On Windows,
+  Microsoft's documentation says that locking may not work under FAT
+  filesystems if you are not running the Share.exe daemon.</p>
 
   <p>Locking in SQLite is very course-grained.  SQLite locks the
-  entire database.  Big database servers (PostgreSQL, MySQL, Oracle, etc.)
+  entire database.  Big database servers (PostgreSQL, Oracle, etc.)
   generally have finer grained locking, such as locking on a single
   table or a single row within a table.  If you have a massively
   parallel database application, you should consider using a big database

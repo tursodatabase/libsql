@@ -580,6 +580,33 @@ int sqliteOsFileSize(OsFile *id, int *pSize){
 }
 
 /*
+** Windows file locking notes:
+**
+** We cannot use LockFileEx() or UnlockFileEx() because those functions
+** are not available under Win95/98/ME.  So we use only LockFile() and
+** UnlockFile().
+**
+** A read lock is obtained by locking a single random byte in the
+** range of 1 to MX_LOCKBYTE.  The lock byte is obtained at random so
+** two separate readers can probably access the file at the same time,
+** unless they are unlucky and choose the same lock byte.  A write lock
+** is obtained by locking all bytes in the range of 1 to MX_LOCKBYTE.
+** There can only be one writer.
+**
+** A lock is obtained on byte 0 before acquiring either a read lock or
+** a write lock.  This prevents two processes from attempting to get a
+** lock at a same time.  The semantics of sqliteOsReadLock() require that
+** if there is already a write lock, that lock is converted into a read
+** lock atomically.  The lock on byte 0 allows us to drop the old write
+** lock and get the read lock without another process jumping into the
+** middle and messing us up.  The same argument applies to sqliteOsWriteLock().
+**
+** There are a finite number of read locks under windows.  That number
+** is determined by the following variable:
+*/
+#define MX_LOCKBYTE 10240
+
+/*
 ** Change the status of the lock on the file "id" to be a readlock.
 ** If the file was write locked, then this reduces the lock to a read.
 ** If the file was read locked, then this acquires a new read lock.
@@ -616,13 +643,22 @@ int sqliteOsReadLock(OsFile *id){
 #endif
 #if OS_WIN
   int rc;
-  if( id->locked ){
+  if( id->locked>0 ){
     rc = SQLITE_OK;
-  }else if( LockFile(id->h, 0, 0, 1024, 0) ){
-    rc = SQLITE_OK;
-    id->locked = 1;
   }else{
-    rc = SQLITE_BUSY;
+    int lk = (sqliteRandomInteger() & 0x7ffffff)%MX_LOCKBYTE + 1;
+    int res;
+    if( (res = LockFile(id->h, 0, 0, 1, 0))!=0 ){
+      UnlockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
+      res = LockFile(id->h, lk, 0, 1, 0);
+      UnlockFile(id->h, 0, 0, 1, 0);
+    }
+    if( res ){
+      id->locked = lk;
+      rc = SQLITE_OK;
+    }else{
+      rc = SQLITE_BUSY;
+    }
   }
   return rc;
 #endif
@@ -656,13 +692,24 @@ int sqliteOsWriteLock(OsFile *id){
 #endif
 #if OS_WIN
   int rc;
-  if( id->locked ){
+  if( id->locked<0 ){
     rc = SQLITE_OK;
-  }else if( LockFile(id->h, 0, 0, 1024, 0) ){
-    rc = SQLITE_OK;
-    id->locked = 1;
   }else{
-    rc = SQLITE_BUSY;
+    int res;
+    if( (res = LockFile(id->h, 0, 0, 1, 0))!=0 ){
+      if( id->locked==0 || UnlockFile(id->h, id->locked, 0, 1, 0) ){
+        res = LockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
+      }else{
+        res = 0;
+      }
+      UnlockFile(id->h, 0, 0, 1, 0);
+    }
+    if( res ){
+      id->locked = -1;
+      rc = SQLITE_OK;
+    }else{
+      rc = SQLITE_BUSY;
+    }
   }
   return rc;
 #endif
@@ -699,13 +746,16 @@ int sqliteOsUnlock(OsFile *id){
 #endif
 #if OS_WIN
   int rc;
-  if( !id->locked ){
+  if( id->locked==0 ){
     rc = SQLITE_OK;
-  }else if( UnlockFile(id->h, 0, 0, 1024, 0) ){
+  }else if( id->locked<0 ){
+    UnlockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
     rc = SQLITE_OK;
     id->locked = 0;
   }else{
-    rc = SQLITE_BUSY;
+    UnlockFile(id->h, id->locked, 0, 1, 0);
+    rc = SQLITE_OK;
+    id->locked = 0;
   }
   return rc;
 #endif
