@@ -1,5 +1,5 @@
-C Fix\serror\smessage\sreturned\swhen\sa\sdatabase\scannot\sbe\sopened.\s(CVS\s1739)
-D 2004-06-26T10:02:16
+C Add\snews\sabout\sthe\sbreak-in\sto\sthe\shomepage.\s(CVS\s1740)
+D 2004-06-26T12:40:07
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -213,7 +213,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
-F www/index.tcl 9783a8370bf16dfc20e81f1cf14489f95408353e
+F www/index.tcl fe6c0eeb15cd2761b38966f493b1cbec549934be
 F www/lang.tcl 5193e27d5ab92ffa98427ef0fcc55d7a7c0e3ac3
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0af3ff39422e02afdfdaf2005ab5eb01b496dc72
-R 74fc53b1d0ec565dfae6b2c9c8d55906
-U danielk1977
-Z 2a622ffd85c9a9c2ded97785e4e9ce71
+P 440bfd2ac57d228d10913aca81ca8c6d7f38aa61
+R 33c3a7e7a8eaf64864de650e0dd92206
+U drh
+Z b1d9e2fd14f2166ab626a20625f8587e
