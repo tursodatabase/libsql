@@ -1,21 +1,12 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.9 2003/06/29 16:11:13 drh Exp $ }
-
-puts {<html>
-<head>
-  <title>File Format Changes in SQLite</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-File Format Changes in SQLite
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: formatchng.tcl,v 1.10 2004/05/31 15:06:30 drh Exp $ }
+source common.tcl
+header {File Format Changes in SQLite}
 puts {
+<h2>File Format Changes in SQLite</h2>
+
 <p>
 From time to time, enhancements or bug fixes require a change to
 the underlying file format for SQLite.  When this happens and you
@@ -175,6 +166,16 @@ occurred since version 1.0.0:
   to restore the database.</p>
   </td>
 </tr>
+<tr>
+  <td valign="top">2.8.13 to 3.0.0</td>
+  <td valign="top">(pending)</td>
+  <td><p>Version 3.0.0 is a major upgrade for SQLite that incorporates
+  support for UTF-16, BLOBs, and a more compact encoding that results
+  in database files that are typically 25% to 35% smaller.  The new file
+  format is radically different and completely incompatible with the
+  version 2 file format.</p>
+  </td>
+</tr>
 </table>
 </blockquote>
 
@@ -192,11 +193,4 @@ this is as follows:
   echo .dump | sqlite-old old.db | sqlite-new new.db
 </blockquote>
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

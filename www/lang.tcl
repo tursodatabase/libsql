@@ -1,21 +1,12 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.67 2004/04/23 17:04:45 drh Exp $}
-
-puts {<html>
-<head>
-  <title>Query Language Understood By SQLite</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-SQL As Understood By SQLite
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: lang.tcl,v 1.68 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {Query Language Understood by SQLite}
 puts {
+<h2>SQL As Understood By SQLite</h2>
+
 <p>The SQLite library understands most of the standard SQL
 language.  But it does <a href="omitted.html">omit some features</a>
 while at the same time
@@ -1841,10 +1832,4 @@ keyword_list {
   *SQLITE_TEMP_MASTER
 }
 
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

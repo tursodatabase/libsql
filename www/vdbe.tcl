@@ -1,21 +1,12 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.11 2003/06/29 16:11:13 drh Exp $}
-
-puts {<html>
-<head>
-  <title>The Virtual Database Engine of SQLite</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-The Virtual Database Engine of SQLite
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: vdbe.tcl,v 1.12 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {The Virtual Database Engine of SQLite}
 puts {
+<h2>The Virtual Database Engine of SQLite</h2>
+
 <blockquote><b>
 This document describes the virtual machine used in SQLite version 2.8.0.  
 </b></blockquote>
@@ -1989,11 +1980,4 @@ feel free to fix them and/or contact the author at
 <a href="mailto:drh@hwaci.com">drh@hwaci.com</a>.  Your bug fixes or
 suggestions are always welcomed.</p>
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

@@ -1,27 +1,18 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.21 2003/06/29 16:11:13 drh Exp $}
-
-puts {<html>
-<head>
-  <title>sqlite: A program of interacting with SQLite databases</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-sqlite: A program to administer SQLite databases
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: sqlite.tcl,v 1.22 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {sqlite: A program of interacting with SQLite databases}
 puts {
+<h2>sqlite: A command-line program to administer SQLite databases</h2>
+
 <p>The SQLite library includes a simple command-line utility named
 <b>sqlite</b> that allows the user to manually enter and execute SQL
 commands against an SQLite database.  This document provides a brief
 introduction on how to use <b>sqlite</b>.
 
-<h2>Getting Started</h2>
+<h3>Getting Started</h3>
 
 <p>To start the <b>sqlite</b> program, just type "sqlite" followed by
 the name the file that holds the SQLite database.  If the file does
@@ -84,7 +75,7 @@ sqlite>
 
 puts {
 
-<h2>Aside: Querying the SQLITE_MASTER table</h2>
+<h3>Aside: Querying the SQLITE_MASTER table</h3>
 
 <p>The database schema in an SQLite database is stored in
 a special table named "sqlite_master".
@@ -123,7 +114,7 @@ is stored in another special table named "sqlite_temp_master".  The
 "sqlite_temp_master" table is temporary itself.
 </p>
 
-<h2>Special commands to sqlite</h2>
+<h3>Special commands to sqlite</h3>
 
 <p>
 Most of the time, sqlite just reads lines of input and passes them
@@ -168,7 +159,7 @@ sqlite>
 }
 
 puts {
-<h2>Changing Output Formats</h2>
+<h3>Changing Output Formats</h3>
 
 <p>The sqlite program is able to show the results of a query
 in five different formats: "line", "column", "list", "html", and "insert".
@@ -305,7 +296,7 @@ CGI.</p>
 }
 
 puts {
-<h2>Writing results to a file</h2>
+<h3>Writing results to a file</h3>
 
 <p>By default, sqlite sends query results to standard output.  You
 can change this using the ".output" command.  Just put the name of
@@ -326,7 +317,7 @@ $
 }
 
 puts {
-<h2>Querying the database schema</h2>
+<h3>Querying the database schema</h3>
 
 <p>The sqlite program provides several convenience commands that
 are useful for looking at the schema of the database.  There is
@@ -441,7 +432,7 @@ sqlite> (((.databases)))
 }
 
 puts {
-<h2>Converting An Entire Database To An ASCII Text File</h2>
+<h3>Converting An Entire Database To An ASCII Text File</h3>
 
 <p>Use the ".dump" command to convert the entire contents of a
 database into a single ASCII text file.  This file can be converted
@@ -495,7 +486,7 @@ $ (((pg_dump -a ex2 | sqlite ex3)))
 }
 
 puts {
-<h2>Other Dot Commands</h2>
+<h3>Other Dot Commands</h3>
 
 <p>The ".explain" dot command can be used to set the output mode
 to "column" and to set the column widths to values that are reasonable
@@ -539,7 +530,7 @@ index is locked.</p>
 <p>And finally, we mention the ".exit" command which causes the
 sqlite program to exit.</p>
 
-<h2>Using sqlite in a shell script</h2>
+<h3>Using sqlite in a shell script</h3>
 
 <p>
 One way to use sqlite in a shell script is to use "echo" or
@@ -564,7 +555,7 @@ $
 }
 
 puts {
-<h2>Ending shell commands</h2>
+<h3>Ending shell commands</h3>
 
 <p>
 SQLite commands are normally terminated by a semicolon.  In the shell 
@@ -576,18 +567,11 @@ to that function.</p>
 }
 
 puts {
-<h2>Compiling the sqlite program from sources</h2>
+<h3>Compiling the sqlite program from sources</h3>
 
 <p>
 The sqlite program is built automatically when you compile the
 sqlite library.  Just get a copy of the source tree, run
 "configure" and then "make".</p>
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

@@ -1,22 +1,13 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.6 2003/12/18 14:19:41 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.7 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {Datatypes In SQLite version 2}
+puts {
+<h2>Datatypes In SQLite Version 2</h2>
 
-puts {<html>
-<head>
-  <title>Datatypes In SQLite</title>
-</head>
-<body bgcolor="white">
-<h1 align="center">
-Datatypes In SQLite
-</h1>
-}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
-puts {<h2>1.0 &nbsp; Typelessness</h2>
+<h3>1.0 &nbsp; Typelessness</h3>
 <p>
 SQLite is "typeless".  This means that you can store any
 kind of data you want in any column of any table, regardless of the
@@ -79,7 +70,7 @@ And so forth.  Basically any sequence of names optionally followed by
 one or two signed integers in parentheses will do.
 </p>
 
-<h2>2.0 &nbsp; The INTEGER PRIMARY KEY</h2>
+<h3>2.0 &nbsp; The INTEGER PRIMARY KEY</h3>
 
 <p>
 One exception to the typelessness of SQLite is a column whose type
@@ -101,7 +92,7 @@ the <b>sqlite_last_insert_rowid()</b> API function or using the
 <b>last_insert_rowid()</b> SQL function in a subsequent SELECT statement.
 </p>
 
-<h2>3.0 &nbsp; Comparison and Sort Order</h2>
+<h3>3.0 &nbsp; Comparison and Sort Order</h3>
 
 <p>
 SQLite is typeless for the purpose of deciding what data is allowed
@@ -144,7 +135,7 @@ A comparison of any value against NULL using operators like "&lt;" or
 "&gt;=" is always false.
 </p>
 
-<h2>4.0 &nbsp; How SQLite Determines Datatypes</h2>
+<h3>4.0 &nbsp; How SQLite Determines Datatypes</h3>
 
 <p>
 For SQLite version 2.6.3 and earlier, all values used the numeric datatype.
@@ -193,7 +184,7 @@ then the datatype is numeric.  Note in particular that the datatype for columns
 with an empty type declaration is numeric.
 </p>
 
-<h2>5.0 &nbsp; Examples</h2>
+<h3>5.0 &nbsp; Examples</h3>
 
 <p>
 Consider the following two command sequences:
@@ -249,11 +240,4 @@ are treated as numbers and are therefore indistinct.  But the SELECT
 statement on the right returns two rows since 0 and 0.0 are treated
 a strings which are different.</p>
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

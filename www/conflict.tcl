@@ -1,29 +1,18 @@
 #
 # Run this Tcl script to generate the constraint.html file.
 #
-set rcsid {$Id: conflict.tcl,v 1.2 2002/02/03 00:56:11 drh Exp $ }
-
-puts {<html>
-<head>
-  <title>Constraint Conflict Resolution in SQLite</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-Constraint Conflict Resolution in SQLite
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: conflict.tcl,v 1.3 2004/05/31 15:06:30 drh Exp $ }
+source common.tcl
+header {Constraint Conflict Resolution in SQLite}
 puts {
-<h2>Introduction</h2>
+<h1>Constraint Conflict Resolution in SQLite</h1>
 
 <p>
 In most SQL databases, if you have a UNIQUE constraint on
 a table and you try to do an UPDATE or INSERT that violates
-that constraint, the database will aborts the operation in
-progress, back out any prior changes associated with that 
-one UPDATE or INSERT command, and return an error.
+the constraint, the database will abort the operation in
+progress, back out any prior changes associated with
+UPDATE or INSERT command, and return an error.
 This is the default behavior of SQLite.
 Beginning with version 2.3.0, though, SQLite allows you to
 define alternative ways for dealing with constraint violations.
@@ -99,11 +88,4 @@ What you really want is to use the IGNORE algorithm to insert
 all but the malformed record.</p>
 
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

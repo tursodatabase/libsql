@@ -1,26 +1,17 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.8 2003/08/19 14:31:02 drh Exp $}
-
-puts {<html>
-<head>
-  <title>The Tcl interface to the SQLite library</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-The Tcl interface to the SQLite library
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: tclsqlite.tcl,v 1.9 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {The Tcl interface to the SQLite library}
 puts {
+<h2>The Tcl interface to the SQLite library</h2>
+
 <p>The SQLite library is designed to be very easy to use from
 a Tcl or Tcl/Tk script.  This document gives an overview of the Tcl
 programming interface.</p>
 
-<h2>The API</h2>
+<h3>The API</h3>
 
 <p>The interface to the SQLite library consists of single
 tcl command named <b>sqlite</b>.  Because there is only this
@@ -69,7 +60,7 @@ defined:</p>
 <p>We will explain all of these methods, though not in that order.
 We will be begin with the "close" method.</p>
 
-<h2>The "close" method</h2>
+<h3>The "close" method</h3>
 
 <p>
 As its name suggests, the "close" method to an SQLite database just
@@ -93,7 +84,7 @@ to the previous:</p>
 rename db1 {}</b>
 </blockquote>
 
-<h2>The "eval" method</h2>
+<h3>The "eval" method</h3>
 
 <p>
 The most useful <i>dbcmd</i> method is "eval".  The eval method is used
@@ -193,7 +184,7 @@ a=2 b=goodbye<br>
 a=3 b=howdy!</b>
 </blockquote>
 
-<h2>The "complete" method</h2>
+<h3>The "complete" method</h3>
 
 <p>
 The "complete" method takes a string of supposed SQL as its only argument.
@@ -206,7 +197,7 @@ This is really just an interface to the <b>sqlite_complete()</b> C
 function.  Refer to the <a href="c_interface.html">C/C++ interface</a>
 specification for additional information.</p>
 
-<h2>The "timeout" method</h2>
+<h3>The "timeout" method</h3>
 
 <p>The "timeout" method is used to control how long the SQLite library
 will wait for locks to clear before giving up on a database transaction.
@@ -233,7 +224,7 @@ number.  For example:</p>
 to wait for the lock to clear.  So in the example above, the maximum delay
 would be 2 seconds.</p>
 
-<h2>The "busy" method</h2>
+<h3>The "busy" method</h3>
 
 <p>The "busy" method, like "timeout", only comes into play when the
 database is locked.  But the "busy" method gives the programmer much more
@@ -245,12 +236,12 @@ so that the lock can be tried again.  The callback procedure should
 return "0" if it wants SQLite to try again to open the database and
 should return "1" if it wants SQLite to abandon the current operation.
 
-<h2>The "last_insert_rowid" method</h2>
+<h3>The "last_insert_rowid" method</h3>
 
 <p>The "last_insert_rowid" method returns an integer which is the ROWID
 of the most recently inserted database row.</p>
 
-<h2>The "onecolumn" method</h2>
+<h3>The "onecolumn" method</h3>
 
 <p>The "onecolumn" method works like "eval" in that it evaluates the
 SQL query statement given as its argument.  The difference is that
@@ -261,18 +252,11 @@ first row of the query result.</p>
 do a "<tt>[lindex&nbsp;...&nbsp;0]</tt>" on the results of an "eval"
 in order to extract a single column result.</p>
 
-<h2>The "changes" method</h2>
+<h3>The "changes" method</h3>
 
 <p>The "changes" method returns an integer which is the number of rows
 in the database that were inserted, deleted, and/or modified by the most
 recent "eval" method.</p>
 
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

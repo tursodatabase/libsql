@@ -1,26 +1,17 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.39 2003/10/18 09:37:27 danielk1977 Exp $}
-
-puts {<html>
-<head>
-  <title>The C language interface to the SQLite library</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-The C language interface to the SQLite library
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: c_interface.tcl,v 1.40 2004/05/31 15:06:29 drh Exp $}
+source common.tcl
+header {The C language interface to the SQLite library}
 puts {
+<h2>The C language interface to the SQLite library</h2>
+
 <p>The SQLite library is designed to be very easy to use from
 a C or C++ program.  This document gives an overview of the C/C++
 programming interface.</p>
 
-<h2>1.0 The Core API</h2>
+<h3>1.0 The Core API</h3>
 
 <p>The interface to the SQLite library consists of three core functions,
 one opaque data structure, and some constants used as return values.
@@ -51,7 +42,7 @@ the core functions shown above.
 </p>
 
 <a name="sqlite_open">
-<h3>1.1 Opening a database</h3>
+<h4>1.1 Opening a database</h4>
 
 <p>Use the <b>sqlite_open</b> function to open an existing SQLite
 database or to create a new SQLite database.  The first argument
@@ -83,7 +74,7 @@ deal with the same database.  NULL is returned if the open fails
 for any reason.</p>
 
 <a name="sqlite_close">
-<h3>1.2 Closing the database</h3>
+<h4>1.2 Closing the database</h4>
 
 <p>To close an SQLite database, call the <b>sqlite_close</b>
 function passing it the sqlite structure pointer that was obtained
@@ -92,7 +83,7 @@ If a transaction is active when the database is closed, the transaction
 is rolled back.</p>
 
 <a name="sqlite_exec">
-<h3>1.3 Executing SQL statements</h3>
+<h4>1.3 Executing SQL statements</h4>
 
 <p>The <b>sqlite_exec</b> function is used to process SQL statements
 and queries.  This function requires 5 parameters as follows:</p>
@@ -170,7 +161,7 @@ result set is empty.</p>
 function returns non-zero, the query is immediately aborted and 
 <b>sqlite_exec</b> will return SQLITE_ABORT.</p>
 
-<h3>1.4 Error Codes</h3>
+<h4>1.4 Error Codes</h4>
 
 <p>
 The <b>sqlite_exec</b> function normally returns SQLITE_OK.  But
@@ -344,7 +335,7 @@ the <b>sqlite_finalize</b> routine is ready to be called.
 </dl>
 </blockquote>
 
-<h2>2.0 Accessing Data Without Using A Callback Function</h2>
+<h3>2.0 Accessing Data Without Using A Callback Function</h3>
 
 <p>
 The <b>sqlite_exec</b> routine described above used to be the only
@@ -390,7 +381,7 @@ once for each row of output, and finally call <b>sqlite_finalize</b>
 to clean up after the SQL has finished execution.
 </p>
 
-<h3>2.1 Compiling An SQL Statement Into A Virtual Machine</h3>
+<h4>2.1 Compiling An SQL Statement Into A Virtual Machine</h4>
 
 <p>
 The <b>sqlite_compile</b> "compiles" a single SQL statement (specified
@@ -436,7 +427,7 @@ On success, <b>sqlite_compile</b> returns SQLITE_OK.
 Otherwise and error code is returned.
 </p>
 
-<h3>2.2 Step-By-Step Execution Of An SQL Statement</h3>
+<h4>2.2 Step-By-Step Execution Of An SQL Statement</h4>
 
 <p>
 After a virtual machine has been generated using <b>sqlite_compile</b>
@@ -521,7 +512,7 @@ usage prior to a mishap.  The misuse detection logic is not guaranteed
 to work in every case.
 </p>
 
-<h3>2.3 Deleting A Virtual Machine</h3>
+<h4>2.3 Deleting A Virtual Machine</h4>
 
 <p>
 Every virtual machine that <b>sqlite_compile</b> creates should
@@ -556,7 +547,7 @@ It is also acceptable to call <b>sqlite_finalize</b> on a virtual machine
 that has never been passed to <b>sqlite_step</b> even once.
 </p>
 
-<h2>3.0 The Extended API</h2>
+<h3>3.0 The Extended API</h3>
 
 <p>Only the three core routines described in section 1.0 are required to use
 SQLite.  But there are many other functions that provide 
@@ -642,7 +633,7 @@ void sqlite_progress_handler(sqlite*, int, int (*)(void*), void*);
 <p>All of the above definitions are included in the "sqlite.h"
 header file that comes in the source tree.</p>
 
-<h3>3.1 The ROWID of the most recent insert</h3>
+<h4>3.1 The ROWID of the most recent insert</h4>
 
 <p>Every row of an SQLite table has a unique integer key.  If the
 table has a column labeled INTEGER PRIMARY KEY, then that column
@@ -658,7 +649,7 @@ the key is automatically generated.  You can find the value of the key
 for the most recent INSERT statement using the
 <b>sqlite_last_insert_rowid</b> API function.</p>
 
-<h3>3.2 The number of rows that changed</h3>
+<h4>3.2 The number of rows that changed</h4>
 
 <p>The <b>sqlite_changes</b> API function returns the number of rows
 that have been inserted, deleted, or modified since the database was
@@ -686,7 +677,7 @@ will be zero regardless of the number of elements that were originally
 in the table.  If an accurate count of the number of elements deleted
 is necessary, use "<b>DELETE FROM table WHERE 1</b>" instead.</p>
 
-<h3>3.3 Querying into memory obtained from malloc()</h3>
+<h4>3.3 Querying into memory obtained from malloc()</h4>
 
 <p>The <b>sqlite_get_table</b> function is a wrapper around
 <b>sqlite_exec</b> that collects all the information from successive
@@ -773,7 +764,7 @@ as would be returned if the result set is empty.</p>
 <p>The <b>sqlite_get_table</b> routine returns the same integer
 result code as <b>sqlite_exec</b>.</p>
 
-<h3>3.4 Interrupting an SQLite operation</h3>
+<h4>3.4 Interrupting an SQLite operation</h4>
 
 <p>The <b>sqlite_interrupt</b> function can be called from a
 different thread or from a signal handler to cause the current database
@@ -781,7 +772,7 @@ operation to exit at its first opportunity.  When this happens,
 the <b>sqlite_exec</b> routine (or the equivalent) that started
 the database operation will return SQLITE_INTERRUPT.</p>
 
-<h3>3.5 Testing for a complete SQL statement</h3>
+<h4>3.5 Testing for a complete SQL statement</h4>
 
 <p>The next interface routine to SQLite is a convenience function used
 to test whether or not a string forms a complete SQL statement.
@@ -803,7 +794,7 @@ then <b>sqlite_exec</b> is called and the input buffer is reset.  If
 the continuation prompt and another line of text is read and added to
 the input buffer.</p>
 
-<h3>3.6 Library version string</h3>
+<h4>3.6 Library version string</h4>
 
 <p>The SQLite library exports the string constant named
 <b>sqlite_version</b> which contains the version number of the
@@ -813,7 +804,7 @@ the SQLITE_VERSION macro against the <b>sqlite_version</b>
 string constant to verify that the version number of the
 header file and the library match.</p> 
 
-<h3>3.7 Library character encoding</h3>
+<h4>3.7 Library character encoding</h4>
 
 <p>By default, SQLite assumes that all data uses a fixed-size
 8-bit character (iso8859).  But if you give the --enable-utf8 option
@@ -830,7 +821,7 @@ be changed at run-time.  This is a compile-time option only.  The
 <b>sqlite_encoding</b> character string just tells you how the library
 was compiled.</p>
 
-<h3>3.8 Changing the library's response to locked files</h3>
+<h4>3.8 Changing the library's response to locked files</h4>
 
 <p>The <b>sqlite_busy_handler</b> procedure can be used to register
 a busy callback with an open SQLite database.  The busy callback will
@@ -860,7 +851,7 @@ will wait for the lock to clear for at least the number of milliseconds
 specified before it returns SQLITE_BUSY.  Specifying zero milliseconds for
 the timeout restores the default behavior.</p>
 
-<h3>3.9 Using the <tt>_printf()</tt> wrapper functions</h3>
+<h4>3.9 Using the <tt>_printf()</tt> wrapper functions</h4>
 
 <p>The four utility functions</p>
 
@@ -981,7 +972,7 @@ routine.  The string pointer that these routines return should be freed
 by passing it to <b>sqlite_freemem()</b>.
 </p>
 
-<h3>3.10 Performing background jobs during large queries </h2>
+<h4>3.10 Performing background jobs during large queries</h3>
 
 <p>The <b>sqlite_progress_handler()</b> routine can be used to register a
 callback routine with an SQLite database to be invoked periodically during long
@@ -1006,7 +997,7 @@ determine whether or not background jobs need to be run.
 </p>
 
 <a name="cfunc">
-<h2>4.0 Adding New SQL Functions</h2>
+<h3>4.0 Adding New SQL Functions</h3>
 
 <p>Beginning with version 2.4.0, SQLite allows the SQL language to be
 extended with new functions implemented as C code.  The following interface
@@ -1089,7 +1080,7 @@ new SQL functions, review the SQLite source code in the file
 <b>func.c</b>.
 </p>
 
-<h2>5.0 Multi-Threading And SQLite</h2>
+<h3>5.0 Multi-Threading And SQLite</h3>
 
 <p>
 If SQLite is compiled with the THREADSAFE preprocessor macro set to 1,
@@ -1112,7 +1103,7 @@ Under Unix, an <b>sqlite*</b> pointer should not be carried across a
 should open its own copy of the database after the <b>fork()</b>.
 </p>
 
-<h2>6.0 Usage Examples</h2>
+<h3>6.0 Usage Examples</h3>
 
 <p>For examples of how the SQLite C/C++ interface can be used,
 refer to the source code for the <b>sqlite</b> program in the
@@ -1122,11 +1113,4 @@ Additional information about sqlite is available at
 See also the sources to the Tcl interface for SQLite in
 the source file <b>src/tclsqlite.c</b>.</p>
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

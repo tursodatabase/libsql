@@ -1,23 +1,19 @@
 #
 # Run this script to generated a fileformat.html output file
 #
-set rcsid {$Id: fileformat.tcl,v 1.11 2003/11/25 23:48:57 drh Exp $}
-
-puts {<html>
-<head>
-  <title>SQLite Database File Format</title>
-</head>
-<body bgcolor="white">
-<h1 align="center">
-SQLite Database File Format
-</h1>
-}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
-
+set rcsid {$Id: fileformat.tcl,v 1.12 2004/05/31 15:06:30 drh Exp $}
+source common.tcl
+header {SQLite Database File Format (Version 2)}
 puts {
-<h2>1.0 &nbsp; Layers</h2>
+<h2>SQLite 2.X Database File Format</h2>
+
+<p>
+This document describes the disk file format for SQLite versions 2.1
+through 2.8.  SQLite version 3.0 and following uses a very different
+format which is described separately.
+</p>
+
+<h3>1.0 &nbsp; Layers</h3>
 
 <p>
 SQLite is implemented in layers.
@@ -37,7 +33,7 @@ We wil describe each layer beginning with the bottom (pager)
 layer and working upwards.
 </p>
 
-<h2>2.0 &nbsp; The Pager Layer</h2>
+<h3>2.0 &nbsp; The Pager Layer</h3>
 
 <p>
 An SQLite database consists of
@@ -158,7 +154,7 @@ Here is a summary of the journal file format:
 </li>
 </ul>
 
-<h2>3.0 &nbsp; The B-Tree Layer</h2>
+<h3>3.0 &nbsp; The B-Tree Layer</h3>
 
 <p>
 The B-Tree layer builds on top of the pager layer to implement
@@ -206,7 +202,7 @@ The b-tree itself does not record which pages are root pages and which
 are not.  That information is handled entirely at the schema layer.
 </p>
 
-<h3>3.1 &nbsp; B-Tree Page 1 Details</h3>
+<h4>3.1 &nbsp; B-Tree Page 1 Details</h4>
 
 <p>
 Page 1 begins with the following 48-byte string:
@@ -275,7 +271,7 @@ Here is a summary of the information contained on page 1 in the b-tree layer:
 <li>928 bytes of unused space</li>
 </ul>
 
-<h3>3.2 &nbsp; Structure Of A Single B-Tree Page</h3>
+<h4>3.2 &nbsp; Structure Of A Single B-Tree Page</h4>
 
 <p>
 Conceptually, a b-tree page contains N database entries and N+1 pointers
@@ -502,7 +498,7 @@ the page by moving all cells to the beginning and constructing a single
 freeblock at the end to take up all remaining space.
 </p>
 
-<h3>3.3 &nbsp; The B-Tree Free Page List</h3>
+<h4>3.3 &nbsp; The B-Tree Free Page List</h4>
 
 <p>
 When information is removed from an SQLite database such that one or
@@ -571,7 +567,7 @@ these two optimizations allow some database operations
 to go four to six times faster than they would otherwise.
 </p>
 
-<h2>4.0 &nbsp; The Schema Layer</h2>
+<h3>4.0 &nbsp; The Schema Layer</h3>
 
 <p>
 The schema layer implements an SQL database on top of one or more
@@ -591,7 +587,7 @@ extracted.  For indices, the b-tree key varies in size depending on the
 size of the fields being indexed and the b-tree data is empty.
 </p>
 
-<h3>4.1 &nbsp; SQL Table Implementation Details</h3>
+<h4>4.1 &nbsp; SQL Table Implementation Details</h4>
 
 <p>Each row of an SQL table is stored in a single b-tree entry.
 The b-tree key is a 4-byte big-endian integer that is the ROWID
@@ -659,7 +655,7 @@ INTEGER PRIMARY KEY, just like any other column.  But the Value
 associated with that offset is always NULL.
 </p>
 
-<h3>4.2 &nbsp; SQL Index Implementation Details</h3>
+<h4>4.2 &nbsp; SQL Index Implementation Details</h4>
 
 <p>
 SQL indices are implement using a b-tree in which the key is used
@@ -685,7 +681,7 @@ NULLs being sorted first, followed by numerical values in numerical
 order, followed by text values in lexigraphical order.
 </p>
 
-<h3>4.4 &nbsp; SQL Schema Storage And Root B-Tree Page Numbers</h3>
+<h4>4.4 &nbsp; SQL Schema Storage And Root B-Tree Page Numbers</h4>
 
 <p>
 The database schema is stored in the database in a special tabled named
@@ -720,7 +716,7 @@ database.  But the schema table for the temporary database named
 name change, it works exactly the same.
 </p>
 
-<h3>4.4 &nbsp; Schema Version Numbering And Other Meta-Information</h3>
+<h4>4.4 &nbsp; Schema Version Numbering And Other Meta-Information</h4>
 
 <p>
 The nine 32-bit integers that are stored beginning at byte offset
@@ -785,13 +781,5 @@ to a SYNCHRONOUS setting of NORMAL.  A value of 3 corresponds to a
 SYNCHRONOUS setting of FULL. If the value is 0, that means it has not
 been initialized so the default synchronous setting of NORMAL is used.
 </p>
-
 }
-
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid

@@ -1,22 +1,14 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.13 2003/06/29 16:11:13 drh Exp $ }
-
-puts {<html>
-<head>
-  <title>Database Speed Comparison: SQLite versus PostgreSQL</title>
-</head>
-<body bgcolor=white>
-<h1 align=center>
-Database Speed Comparison
-</h1>}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
+set rcsid {$Id: speed.tcl,v 1.14 2004/05/31 15:06:30 drh Exp $ }
+source common.tcl
+header {SQLite Database Speed Comparison}
 
 puts {
-<h2>Executive Summary</h2>
+<h2>Database Speed Comparison</h2>
+
+<h3>Executive Summary</h3>
 
 <p>A series of tests were run to measure the relative performance of
 SQLite 2.7.6, PostgreSQL 7.1.3, and MySQL 3.23.41.
@@ -61,7 +53,7 @@ The results presented here come with the following caveats:
 </p></li>
 </ul>
 
-<h2>Test Environment</h2>
+<h3>Test Environment</h3>
 
 <p>
 The platform used for these tests is a 1.6GHz Athlon with 1GB or memory
@@ -132,7 +124,7 @@ synchronous) and the asynchronous SQLite times are for
 comparison against the asynchronous MySQL engine.
 </p>
 
-<h2>Test 1: 1000 INSERTs</h2>
+<h3>Test 1: 1000 INSERTs</h3>
 <blockquote>
 CREATE TABLE t1(a INTEGER, b INTEGER, c VARCHAR(100));<br>
 INSERT INTO t1 VALUES(1,13153,'thirteen thousand one hundred fifty three');<br>
@@ -162,7 +154,7 @@ the disk surface before continuing.  For most of the 13 seconds in the
 synchronous test, SQLite was sitting idle waiting on disk I/O to complete.</p>
 
 
-<h2>Test 2: 25000 INSERTs in a transaction</h2>
+<h3>Test 2: 25000 INSERTs in a transaction</h3>
 <blockquote>
 BEGIN;<br>
 CREATE TABLE t2(a INTEGER, b INTEGER, c VARCHAR(100));<br>
@@ -187,7 +179,7 @@ have to do any fsync()s until the very end.  When unshackled in
 this way, SQLite is much faster than either PostgreSQL and MySQL.
 </p>
 
-<h2>Test 3: 25000 INSERTs into an indexed table</h2>
+<h3>Test 3: 25000 INSERTs into an indexed table</h3>
 <blockquote>
 BEGIN;<br>
 CREATE TABLE t3(a INTEGER, b INTEGER, c VARCHAR(100));<br>
@@ -211,7 +203,7 @@ SQLite is not as fast at creating new index entries as the other engines
 (see Test 6 below) but its overall speed is still better.
 </p>
 
-<h2>Test 4: 100 SELECTs without an index</h2>
+<h3>Test 4: 100 SELECTs without an index</h3>
 <blockquote>
 BEGIN;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=0 AND b<1000;<br>
@@ -237,7 +229,7 @@ enhancements have increased its speed so that it is now the fastest
 of the group.
 </p>
 
-<h2>Test 5: 100 SELECTs on a string comparison</h2>
+<h3>Test 5: 100 SELECTs on a string comparison</h3>
 <blockquote>
 BEGIN;<br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one%';<br>
@@ -261,7 +253,7 @@ SQLite is over three times faster than PostgreSQL here and about 30%
 faster than MySQL.
 </p>
 
-<h2>Test 6: Creating an index</h2>
+<h3>Test 6: Creating an index</h3>
 <blockquote>
 CREATE INDEX i2a ON t2(a);<br>CREATE INDEX i2b ON t2(b);
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -278,7 +270,7 @@ is being worked on.  Hopefully, future versions of SQLite will do better
 here.
 </p>
 
-<h2>Test 7: 5000 SELECTs with an index</h2>
+<h3>Test 7: 5000 SELECTs with an index</h3>
 <blockquote>
 SELECT count(*), avg(b) FROM t2 WHERE b>=0 AND b<100;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=100 AND b<200;<br>
@@ -300,7 +292,7 @@ All three database engines run faster when they have indices to work with.
 But SQLite is still the fastest.
 </p>
 
-<h2>Test 8: 1000 UPDATEs without an index</h2>
+<h3>Test 8: 1000 UPDATEs without an index</h3>
 <blockquote>
 BEGIN;<br>
 UPDATE t1 SET b=b*2 WHERE a>=0 AND a<10;<br>
@@ -325,7 +317,7 @@ normally a very fast engine.  Perhaps this problem has been addressed
 in later versions of MySQL.
 </p>
 
-<h2>Test 9: 25000 UPDATEs with an index</h2>
+<h3>Test 9: 25000 UPDATEs with an index</h3>
 <blockquote>
 BEGIN;<br>
 UPDATE t2 SET b=468026 WHERE a=1;<br>
@@ -348,7 +340,7 @@ MySQL on this test.  But recent optimizations to SQLite have more
 than doubled speed of UPDATEs.
 </p>
 
-<h2>Test 10: 25000 text UPDATEs with an index</h2>
+<h3>Test 10: 25000 text UPDATEs with an index</h3>
 <blockquote>
 BEGIN;<br>
 UPDATE t2 SET c='one hundred forty eight thousand three hundred eighty two' WHERE a=1;<br>
@@ -377,7 +369,7 @@ knowledgeable administrator might be able to get PostgreSQL to run a lot
 faster here by tweaking and tuning the server a little.
 </p>
 
-<h2>Test 11: INSERTs from a SELECT</h2>
+<h3>Test 11: INSERTs from a SELECT</h3>
 <blockquote>
 BEGIN;<br>INSERT INTO t1 SELECT b,a,c FROM t2;<br>INSERT INTO t2 SELECT b,a,c FROM t1;<br>COMMIT;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -394,7 +386,7 @@ The PostgreSQL engine is still thrashing - most of the 61 seconds it used
 were spent waiting on disk I/O.
 </p>
 
-<h2>Test 12: DELETE without an index</h2>
+<h3>Test 12: DELETE without an index</h3>
 <blockquote>
 DELETE FROM t2 WHERE c LIKE '%fifty%';
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -410,7 +402,7 @@ but the asynchronous version is the fastest.
 The difference is the extra time needed to execute fsync().
 </p>
 
-<h2>Test 13: DELETE with an index</h2>
+<h3>Test 13: DELETE with an index</h3>
 <blockquote>
 DELETE FROM t2 WHERE a>10 AND a<20000;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -426,7 +418,7 @@ PostgreSQL is faster than MySQL.  The asynchronous SQLite is,
 however, faster then both the other two.
 </p>
 
-<h2>Test 14: A big INSERT after a big DELETE</h2>
+<h3>Test 14: A big INSERT after a big DELETE</h3>
 <blockquote>
 INSERT INTO t2 SELECT * FROM t1;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -443,7 +435,7 @@ sequence of DELETEs followed by new INSERTs.  As this test shows, the
 problem has now been resolved.
 </p>
 
-<h2>Test 15: A big DELETE followed by many small INSERTs</h2>
+<h3>Test 15: A big DELETE followed by many small INSERTs</h3>
 <blockquote>
 BEGIN;<br>
 DELETE FROM t1;<br>
@@ -465,7 +457,7 @@ SQLite is very good at doing INSERTs within a transaction, which probably
 explains why it is so much faster than the other databases at this test.
 </p>
 
-<h2>Test 16: DROP TABLE</h2>
+<h3>Test 16: DROP TABLE</h3>
 <blockquote>
 DROP TABLE t1;<br>DROP TABLE t2;<br>DROP TABLE t3;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
@@ -489,10 +481,4 @@ so if SQLite takes a little longer, that is not seen as a big problem.
 </p>
 
 }
-puts {
-<p><hr /></p>
-<p><a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite Home Page</a>
-</p>
-
-</body></html>}
+footer $rcsid
