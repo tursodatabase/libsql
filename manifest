@@ -1,5 +1,5 @@
-C Added\sthe\s"memory:"\sdriver\s(CVS\s1707)
-D 2000-10-19T14:10:09
+C fix\sa\smemory\sleadk\s(CVS\s1708)
+D 2000-10-19T14:18:34
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -11,7 +11,7 @@ F src/build.c e2ceba852dc45ca899e68a042b29c3daab011575
 F src/dbbe.c 7e01384320075bf1d3e7fb54984df73435908809
 F src/dbbe.h d175a04b35ea75078274e059dcbcbf7c1262d42a
 F src/dbbegdbm.c 4ac7222afff0cf91014803f8791740b6da825a2b
-F src/dbbemem.c ce8f5ce6b93c5f916e3238956b204fccf2cafda3
+F src/dbbemem.c f151ba58e3112a75359527e84d33c66a3ca642fe
 F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
 F src/expr.c e8e350d7baa33bd9ed8701c159eaba5e912e0adb
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 54d60c68dc83410e911b828a680772541c44e9df
-R e2499a42784d4a08fc7792702e632947
+P e9236833d95060509bdcba008d0e15e61fd7b6d7
+R 795207d02db45c216afe2f2c20fb6839
 U drh
-Z 5ac5d5609f4553c67cbf13e7827b054d
+Z efd68c6765770679a998f7c5283947e0

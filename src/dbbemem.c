@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash talbe as the database backend. 
 **
-** $Id: dbbemem.c,v 1.2 2000/10/19 14:10:09 drh Exp $
+** $Id: dbbemem.c,v 1.3 2000/10/19 14:18:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -434,6 +434,7 @@ static void deleteMTable(MTable *p){
     sqliteFree(data);
   }
   ArrayClear(&p->data);
+  sqliteFree(p->zName);
   sqliteFree(p);
 }
 
