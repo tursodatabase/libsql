@@ -92,7 +92,7 @@ READLINE_FLAGS = -DHAVE_READLINE=1 -I/usr/include/readline
 #### Linker options needed by programs using readline() must link against.
 #
 #LIBREADLINE =
-LIBREADLINE = -lreadline 
+LIBREADLINE = -static -lreadline -ltermcap
 
 #### Should the database engine assume text is coded as UTF-8 or iso8859?
 #

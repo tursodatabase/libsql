@@ -1,7 +1,7 @@
-C Version\s2.1.4\s(CVS\s323)
-D 2001-12-05T00:22:00
+C Minor\schanges\sprior\sto\s2.1.4\s(CVS\s324)
+D 2001-12-05T00:46:03
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
-F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
+F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION af44acbfe8124bdb8c63037755cf2a2f1fc4e46e
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
@@ -104,7 +104,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58922228e8fdb0f6af3561a051ee8ccec6dbfd17
-F www/changes.tcl 9e0fc062862a3f99081b5a42ff91567c92b4bd64
+F www/changes.tcl e4e3f3f0a4327afcca395cfd83fed50c9d8995be
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 585ed5ebf1c1afc8ae1d569b121208018d8ecd49
-R 6f1ff44ca6b62cca200e262f17765dc3
+P 003f967e8749903af859ad81a8a57767ea20ddec
+R f359da850136c640c5f78cc094d6b415
 U drh
-Z 0f1344051fcbad02ad7c4234ee7c220b
+Z 1c497686e4b3f58cabaddd07a2173292

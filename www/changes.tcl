@@ -18,7 +18,7 @@ proc chng {date desc} {
 }
 
 chng {2001 Dec 4 (2.1.4)} {
-<li>Sometime <b>sqlite_exec()</b> would return SQLITE_PROTOCOL when it
+<li>Sometimes <b>sqlite_exec()</b> would return SQLITE_PROTOCOL when it
     should have returned SQLITE_BUSY.</li>
 <li>The fix to the previous bug uncovered a deadlock which was also
     fixed.</li>
