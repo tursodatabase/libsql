@@ -1,5 +1,5 @@
-C Propagate\sdetected\sdatabase\scorruption\sup\sthrough\sthe\scall\sstack.\s(CVS\s2279)
-D 2005-01-26T21:55:32
+C Have\sREINDEX\shandle\smissing\scollation\ssequences\scorrectly.\s(CVS\s2280)
+D 2005-01-27T00:22:03
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 4b15c85335417752cc1045eae18b8186e08c8184
 F src/btree.c e68ae12c8b12ef9d45d58d931c36c184055a3880
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
-F src/build.c 91e05a3a5031a72b94696f0ac062aa972d4254ec
+F src/build.c 7fceb519293cbedd49a675975130722693a0f12b
 F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
@@ -170,7 +170,7 @@ F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
 F test/quick.test 91e5b8ae6663dc9e3e754b271f0384f0cae706e6
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
-F test/reindex.test 3552c6b944a3fab28cfd3049c04c65cb79419757
+F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 94cd981ee3a627d9f6466f69dcf1f7dbfe695d7a
 F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
 F test/safety.test 907b64fee719554a3622853812af3886fddbbb4f
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P db36773830cc81c38b78d1776a495d49475523be
-R 14737fbdc610c888f2122625dc951acf
-U drh
-Z 2ab7fa6f90cabec8fa7c878d19342500
+P 2c54aba5ba781f4da1f14ed7a3986b6dc17728d7
+R 27b0ccb0c3d8867cc123414e9dfdc53a
+U danielk1977
+Z d33512312c057cff348d67921260de69
