@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.8 2000/06/01 00:03:44 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.9 2000/06/01 00:04:41 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Frontend For GDBM</title></head>
@@ -114,7 +114,7 @@ puts {<h2>Related Sites</h2>
 <li><p>Someday, we would like to port SQLite to work with
        the Berkeley DB library in addition to GDBM.  For information
        about the Berkeley DB library, see
-       <a href="http://www.sleepcat.com/">http://www.sleepycat.com</a>
+       <a href="http://www.sleepycat.com/">http://www.sleepycat.com/</a>
        </p></li>
 
 <li><p>Here is a <a href="http://w3.one.net/~jhoffman/sqltut.htm">
