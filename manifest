@@ -1,5 +1,5 @@
-C Changes\sto\slemon.c\sso\sthat\sit\scompiles\son\sOpenWatcom\s1.3.\s\sTicket\s#665.\s(CVS\s1307)
-D 2004-04-24T12:59:13
+C Fix\sa\sstack\soverflow\sproblem\swith\sINSTEAD\sOF\striggers.\s(CVS\s1310)
+D 2004-04-29T16:16:29
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,10 +58,10 @@ F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/test4.c 6e3e31acfaf21d66420fc35fda5b17dc0000cc8d
 F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
-F src/update.c 4c50328ebc127852bde8e2950eb8933234802c21
+F src/update.c bd391079138e67d09c9af34528ca4137c29242d1
 F src/util.c 122bc174f6c8c2eb6a9127d9f13c4c74f83b85e4
 F src/vacuum.c a4e8464c9f6d60659c5343e9d62c742463227820
-F src/vdbe.c 7c33f761fdc799633468766fb53eda4301daa6b3
+F src/vdbe.c f006200348ef3feded56bef8714e052da74a885a
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
 F src/vdbeaux.c e2cdd1ab63604a390612c73e26bdd2ef910e9438
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 635f674d20ca3e0b534eba54313004e859de16e9
-R 9c976d5c8583c7ac8ea10461b8760357
+P b8b8ce5c81ef614d488e0f79df8935ef609dc4f2
+R 09116ec27eaf3c7f0c80f307e42d61db
 U drh
-Z 6726be1b9326ca3188d590be44166ddf
+Z f5047c70c45fb9bcbbd3fb6ce59d57f5

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.268 2004/03/03 01:51:25 drh Exp $
+** $Id: vdbe.c,v 1.268.2.1 2004/04/29 16:16:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4720,6 +4720,36 @@ case OP_Vacuum: {
   if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
   rc = sqliteRunVacuum(&p->zErrMsg, db);
   if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
+  break;
+}
+
+/* Opcode: StackDepth * * *
+**
+** Push an integer onto the stack which is the depth of the stack prior
+** to that integer being pushed.
+*/
+case OP_StackDepth: {
+  int depth = (&pTos[1]) - p->aStack;
+  pTos++;
+  pTos->i = depth;
+  pTos->flags = MEM_Int;
+  break;
+}
+
+/* Opcode: StackReset * * *
+**
+** Pop a single integer off of the stack.  Then pop the stack
+** as many times as necessary to get the depth of the stack down
+** to the value of the integer that was popped.
+*/
+case OP_StackReset: {
+  int depth, goal;
+  assert( pTos>=p->aStack );
+  Integerify(pTos);
+  goal = pTos->i;
+  depth = (&pTos[1]) - p->aStack;
+  assert( goal<depth );
+  popStack(&pTos, depth-goal);
   break;
 }
 
