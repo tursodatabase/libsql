@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.67 2003/03/30 19:17:03 drh Exp $
+** $Id: shell.c,v 1.68 2003/04/03 19:35:02 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1200,7 +1200,7 @@ int main(int argc, char **argv){
     }
   }else{
     extern int isatty();
-    if( isatty(0) ){
+    if( isatty(fileno(stdout)) ){
       char *zHome;
       char *zHistory = 0;
       printf(

@@ -1,5 +1,5 @@
-C Added\sexperimental\sAPIs:\ssqlite_begin_hook()\sand\ssqlite_commit_hook().\s(CVS\s896)
-D 2003-04-03T15:46:04
+C Fix\sfor\sticket\s#276.\s(CVS\s897)
+D 2003-04-03T19:35:02
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/parse.y 3be47fa18323aa2e3364fc42bf7a6ba5b3cc0a81
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 14e2e2a512f4edfc75fb310ebcb502ff3ee87402
-F src/shell.c c13ff46e905a59eb1c7dbea7c1850f8f115e6395
+F src/shell.c 97f397c0c108176ccbc52ea5b8ec688f995eba7a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f49c2cdec7d24cb03e496a1ca519e16306495ee1
 F src/sqliteInt.h 5c2371b20f69f2607ee988ba0aee85cdf9367370
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 087d1e83af12b3a9aedd4945f02774a1043b1eb4
-R 367f6fd088c73003bdf4587260d5c5b6
+P 5efbf62313519d0a6e8b8f5dbb29d3ef428d73e8
+R 5a014d6f47bb6b05e15d9a08aab3096d
 U drh
-Z 9020be80da9a15f4bf8643579ba2aa56
+Z 2ea90991c4b4f9c403624226cb57c924
