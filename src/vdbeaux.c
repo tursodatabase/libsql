@@ -1151,6 +1151,7 @@ static int vdbeCommit(sqlite *db){
       }
     }
   }
+
   return rc;
 }
 
@@ -1275,6 +1276,8 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
 
   if( p->rc!=SQLITE_OK ){
     sqlite3RollbackInternalChanges(db);
+  }else if( db->flags & SQLITE_InternChanges ){
+    db->flags &= ~SQLITE_InternChanges;
   }
 
   if( (p->magic==VDBE_MAGIC_RUN && p->pc>=0) || p->magic==VDBE_MAGIC_HALT ){

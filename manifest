@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sauth.test\sscript.\s(CVS\s1590)
-D 2004-06-14T11:54:18
+C Schema\smodifications\sare\scommitted\sinternally\swhen\sa\sstatement\stransaction\nis\scommitted.\s(CVS\s1592)
+D 2004-06-14T13:14:59
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -71,11 +71,11 @@ F src/update.c 6133c876aa126e1771cda165fd992bb0d2f8eb38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 90375fa253137562d536ccdd40b297f0fd7413fc
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
-F src/vdbe.c e6b6702fb2c2e2702e312f52c2cc08353c580736
+F src/vdbe.c afbffe8d238004cf940f8844ecbec921fbeb2996
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
-F src/vdbeaux.c 79b0dc52fc950c6e66c6259504796350ea5c5964
+F src/vdbeaux.c 9484c890b9dab6ee94705d1ca8072b33c202e3ca
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
 F src/where.c 7fee7aeb9278f27324f228c55ab453b5f183b486
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -140,7 +140,7 @@ F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 1b6792d4af550ca4973096d77fc278dd6c32c4dd
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 7542a6ac7894a1b7730c1f9a27f3f8b9388a4d25 x
-F test/quick.test 8800cd2f6b45ce2cafadb0e3d5161688c61c946a
+F test/quick.test 10c5fdbee91ef440d6adefa8e5844796c5764bfb
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 863e6e75878cccf03d166fe52023f20e09508683
 F test/select1.test 2f161f9cdf9fb577336bc8c930edade538567123
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f4b4df6514c19b0c23b399142749a7e4a20d0f70
-R 276f7a5870a912eac65482d1c432e28e
+P 1fa97dd81d349e448171a78f69e463e7fa364daa
+R e2df8a58e6722e61f1dd53384723fd2e
 U danielk1977
-Z 928c748f2a9ec89b583d30c2c73e50ae
+Z 699e2d26d511fd198a645a9fe1c7342b
