@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.5 2004/06/25 10:26:13 danielk1977 Exp $
+# $Id: memleak.test,v 1.6 2004/08/01 03:52:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,12 +43,7 @@ set EXCLUDE {
   crash.test
 }
 if {[sqlite3 -has-codec]} {
-  lappend EXCLUDE \
-    attach.test \
-    attach2.test \
-    auth.test \
-    format3.test \
-    version.test
+  # lappend EXCLUDE 
 }
 if {[llength $argv]>0} {
   set FILELIST $argv

@@ -1,5 +1,5 @@
-C Add\sthe\s".import"\scommand\sto\sthe\scommand-line\sshell.\s(CVS\s1873)
-D 2004-08-01T00:10:45
+C Fix\sa\smemory\sleak\swhen\sthe\sauxiliary\sdata\sof\sa\sdatabase\sstructure\sis\sused.\s(CVS\s1874)
+D 2004-08-01T03:52:18
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def c139a6b17293d71759a7c301ad76707243ce5d54
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/attach.c 784456629b3d7e50e4691f496700658fd1f16441
+F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c edf4ece708350dec7f28ebd4620c6d33afe6993a
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
@@ -82,7 +82,7 @@ F src/vdbeaux.c daf40a292ec458ed962845a8d95d5c96bc242e04
 F src/vdbemem.c bbf621377343bee046547712a144a94f387bb1eb
 F src/where.c cf8a54641eea01f1af5d09529ad69166db92f658
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
-F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
+F test/attach.test 8fd75d2939528e1ae2a5030dfe738cd7fa8520eb
 F test/attach2.test b175333059e86c82dbf593fc922522ecb0f8aff8
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test e74b015545f608c06d5b84d17acdf7146eb818af
@@ -135,7 +135,7 @@ F test/lock2.test 2213590d442147d09fd2334c905a755586c1c398
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
 F test/malloc.test 769b240d89a7ef3320d88919fdb6765f9395a51f
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
-F test/memleak.test 26571a04575461f39a7cf97a2ee2f7fb2f519ddb
+F test/memleak.test a7efa33c7adc2762add028a4cc70a6bb04fe573e
 F test/minmax.test 6513f9a1bb85fd35ff72b34b7b6634fad6b1e69c
 F test/misc1.test 72768ec8cabc952a4cfcddca43d566f9e0bce899
 F test/misc2.test 703734f5817215ca54e364833b3bf5ff36fcc21e
@@ -240,7 +240,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a62129af99b4a576a48eb4931f417af257f510c7
-R b813c752399c5314294f809547b48dc6
+P b56afe640f7f3f2837120e3dd923c529c4a3123a
+R 06ca33779ad15e09f523b9428a32a8d5
 U drh
-Z a47918bb8602f63d1d3008ff249473a1
+Z a9f8d3489b4ba1e9ece699045aac4ce2
