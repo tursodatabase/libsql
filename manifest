@@ -1,5 +1,5 @@
-C Enhancement\sto\sWindows\s"file-exists"\sfunction\sby\sJoel\sLucsy.\s(CVS\s374)
-D 2002-02-18T12:48:46
+C Additional\stests\sfor\sthe\ssub-query\sfeature.\s(CVS\s375)
+D 2002-02-18T13:35:33
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -84,7 +84,7 @@ F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test 510377ac09e3b5de9a164eea7732395c6813f0ca
+F test/select6.test d9fb417d6cab75a072b547ba6303120f327fd6fd
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
@@ -108,7 +108,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl f10f6552731c9b11a8f73d6d900320b29b56b656
+F www/changes.tcl 836ec1f2e87e5d21c4cbc1f7531194e84962dd94
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -123,7 +123,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 607c0c49b2098771020514198cb1076de8245a62
-R 3af6afadbeb571c12afffc634ba291bc
+P d3d59261da9bef3250e99444167ad6ef98764574
+R 76e39ed07dfb31018506c2491ca420cc
 U drh
-Z 12bafaf1d5ee9acb4349af632ae545b5
+Z 6f65c1d3be6a2b9892d59e07f4ed69c8
