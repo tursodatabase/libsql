@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.212 2004/06/09 12:30:05 danielk1977 Exp $
+** $Id: build.c,v 1.213 2004/06/10 00:29:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -164,6 +164,7 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
     }else{
       sqlite3ErrorMsg(pParse, "no such table: %s", zName);
     }
+    pParse->checkSchema = 1;
   }
   return p;
 }
@@ -1385,6 +1386,7 @@ Table *sqlite3TableFromToken(Parse *pParse, Token *pTok){
   sqliteFree(zName);
   if( pTab==0 ){
     sqlite3ErrorMsg(pParse, "no such table: %T", pTok);
+    pParse->checkSchema = 1;
   }
   return pTab;
 }
@@ -1985,6 +1987,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
     sqlite3ErrorMsg(pParse, "no such index: %S", pName, 0);
+    pParse->checkSchema = 1;
     goto exit_drop_index;
   }
   if( pIndex->autoIndex ){

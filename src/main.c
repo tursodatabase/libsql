@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.210 2004/06/09 20:03:09 drh Exp $
+** $Id: main.c,v 1.211 2004/06/10 00:29:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -856,6 +856,34 @@ int sqlite3_errcode(sqlite3 *db){
 }
 
 /*
+** Check schema cookies in all databases except TEMP.  If any cookie is out
+** of date, return 0.  If all schema cookies are current, return 1.
+*/
+static int schemaIsValid(sqlite *db){
+  int iDb;
+  int rc;
+  BtCursor *curTemp;
+  int cookie;
+  int allOk = 1;
+
+  for(iDb=0; allOk && iDb<db->nDb; iDb++){
+    Btree *pBt;
+    if( iDb==1 ) continue;
+    pBt = db->aDb[iDb].pBt;
+    if( pBt==0 ) continue;
+    rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, 0, &curTemp);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3BtreeGetMeta(pBt, 1, &cookie);
+      if( rc==SQLITE_OK && cookie!=db->aDb[iDb].schema_cookie ){
+        allOk = 0;
+      }
+      sqlite3BtreeCloseCursor(curTemp);
+    }
+  }
+  return allOk;
+}
+
+/*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
 int sqlite3_prepare(
@@ -911,6 +939,9 @@ int sqlite3_prepare(
     goto prepare_out;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
+  if( sParse.checkSchema && !schemaIsValid(db) ){
+    sParse.rc = SQLITE_SCHEMA;
+  }
   if( sParse.rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
   }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.276 2004/06/09 20:03:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.277 2004/06/10 00:29:10 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -1010,6 +1010,7 @@ struct Parse {
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
+  u8 checkSchema;      /* Causes schema cookie check after an error */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
