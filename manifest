@@ -1,9 +1,9 @@
-C Version\s2.3.1\s(CVS\s445)
-D 2002-02-13T23:30:00
+C Fix\san\sincorrect\sassert()\sin\spager.c.\s(CVS\s369)
+D 2002-02-14T12:50:34
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION ed0510bca23ecd087a7c96ee72838b17e2b5d355
+F VERSION 8a3972d032a0720e980b8b9143ef5c03312e37d6
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -31,7 +31,7 @@ F src/main.c 300320ba68d3e5b22c2c5b2c07fa884878202181
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 1953080d14098cd45e5bde88941567688efb72b1
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
-F src/pager.c 4059bda97a7e10083b77b7d347fea45426b08589
+F src/pager.c d261a3a0b4e96a400ef5432297edec09b041e9c7
 F src/pager.h b28f004e2f5541dc60cc32db01bf80cf4d056283
 F src/parse.y 734ba1e0dce9882345e65de5a14d9fe02fb757c2
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
@@ -72,7 +72,7 @@ F test/limit.test a930f3eba2a7691c8397ccab33710b931589566a
 F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
 F test/main.test 1626345b5f630c5398eede500d9354813b76b0fd
 F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
-F test/misc1.test 5ed0df7274912cbce56f1afa19c9510510b0a7f9
+F test/misc1.test 7fd54d33547177da86e39e13e9608c5112681831
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
 F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
@@ -107,7 +107,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl f8f4837a26f49cff1c65bfd69a47f04ec705c1de
+F www/changes.tcl 4bf48ffd0027217e25d9e2db7914dca099096a2a
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -122,7 +122,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P df6bf627a51358e8b14297403feab7b888c38580
-R 2dd44e4df5f1749abcfa5e153ebc4db9
+P 846148d6e3fd0529abfef3f819e4a7cb91e44422
+R 83a2e2aa6bfb49216f2c372d2d5334c7
 U drh
-Z fef393ae90710c36822a8b0657319b1f
+Z 0128439de8d04ee4033ade5a65fa6e18

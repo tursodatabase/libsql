@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.38 2002/02/02 18:49:20 drh Exp $
+** @(#) $Id: pager.c,v 1.39 2002/02/14 12:50:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1093,7 +1093,7 @@ int sqlitepager_write(void *pData){
   ** then write the current page to the checkpoint journal.
   */
   if( pPager->ckptOpen && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
-    assert( pPg->inJournal );
+    assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
     rc = sqliteOsWrite(&pPager->cpfd, &pPg->pgno, sizeof(Pgno));
     if( rc==SQLITE_OK ){
       rc = sqliteOsWrite(&pPager->cpfd, pData, SQLITE_PAGE_SIZE);

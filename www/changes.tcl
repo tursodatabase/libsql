@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Feb 14 (2.3.2)} {
+<li>Bug fix: There was an incorrect assert() in pager.c.  The real code was
+    all correct (as far as is known) so everything should work OK if you
+    compile with -DNDEBUG=1.  But without disability the assertions, there
+    could be a fault.</li>
+}
+
 chng {2002 Feb 13 (2.3.1)} {
 <li>Bug fix: An assertion was failing if "PRAGMA full_column_names=ON;" was
     set and you did a query that used a rowid, like this:  
