@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or on writer.
 **
-** @(#) $Id: pager.c,v 1.1 2001/04/11 14:29:22 drh Exp $
+** @(#) $Id: pager.c,v 1.2 2001/04/14 16:38:23 drh Exp $
 */
 #include "pager.h"
 #include <fcntl.h>
@@ -47,7 +47,7 @@
 **   SQLITE_READLOCK     The page cache is reading the database.
 **                       Writing is not permitted.  There can be
 **                       multiple readers accessing the same database
-**                       at the same time.
+**                       file at the same time.
 **
 **   SQLITE_WRITELOCK    The page cache is writing the database.
 **                       Access is exclusive.  No other processes or
@@ -72,17 +72,17 @@
 struct PgHdr {
   Pager *pPager;                 /* The pager to which this page belongs */
   Pgno pgno;                     /* The page number for this page */
-  PgHdr *pNextHash, *pPrevHash;  /* Hash collision change for PgHdr.pgno */
+  PgHdr *pNextHash, *pPrevHash;  /* Hash collision chain for PgHdr.pgno */
   int nRef;                      /* Number of users of this page */
   PgHdr *pNext, *pPrev;          /* Freelist of pages where nRef==0 */
   char inJournal;                /* TRUE if has been written to journal */
   char dirty;                    /* TRUE if we need to write back changes */
-  /* The page data follows this header */
+  /* SQLITE_PAGE_SIZE bytes of page data follow this header */
 };
 
 /*
-** Convert a pointer to a PgHdr into a pointer to its data,
-** and vice verse.
+** Convert a pointer to a PgHdr into a pointer to its data
+** and back again.
 */
 #define PGHDR_TO_DATA(P)  ((void*)(&(P)[1]))
 #define DATA_TO_PGHDR(D)  (&((PgHdr*)(D))[-1])
@@ -107,13 +107,16 @@ struct Pager {
   int fd, jfd;                /* File descriptors for database and journal */
   int nRef;                   /* Sum of PgHdr.nRef */
   int dbSize;                 /* Number of pages in the file */
+  int origDbSize;             /* dbSize before the current change */
   int jSize;                  /* Number of pages in the journal */
+  int nIdx;                   /* Number of entries in aIdx[] */
   int nPage;                  /* Total number of in-memory pages */
   int mxPage;                 /* Maximum number of pages to hold in cache */
-  Pgno *aIdx;                 /* Current journal index page */
   char state;                 /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
+  char ioErr;                 /* True if an I/O error has occurred */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
+  Pgno aIdx[SQLITE_INDEX_SIZE];  /* Current journal index page */
 };
 
 /*
@@ -610,6 +613,12 @@ int sqlite_pager_unref(void *pData){
 ** change any page data until this routine returns SQLITE_OK.
 */
 int sqlite_pager_write(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  Pager *pPager = pPg->pPager;
+  int rc;
+
+  if( pPg->inJournal ){ return SQLITE_OK; }
+  if( pPager->state==SQLITE_UNLOCK ){ return SQLITE_PROTOCOL; }
   if( pPager->state==SQLITE_READLOCK ){
     pPager->jfd = open(pPager->zJournal, O_RDWR|O_CREAT, 0644);
     if( pPager->jfd<0 ){
@@ -629,9 +638,30 @@ int sqlite_pager_write(void *pData){
       return SQLITE_PROTOCOL;
     }
     pPager->state = SQLITE_WRITELOCK;
-    pPager->jSize = 0;
+    pPager->jSize = 1;
+    pPager->aIdx[0] = pPager->dbSize;
+    pPager->origDbSize = pPager->dbSize;
+    pPager->nIdx = 1;
   }
   /* Write this page to the journal */
+  assert( pPager->jfd>=0 );
+  if( pPg->pgno >= pPager->origDbSize ){
+    sqlite_pager_seekpage(pPager->fd, pPg->pgno, SEEK_SET);
+    rc = sqlite_pager_writepage(pPager->fd, pData);
+    pPg->inJournal = 1;
+    return rc;
+  }
+  pPager->aIdx[pPager->nIdx++] = pPg->pgno;
+  sqlite_pager_seekpage(pPager->jfd, pPager->jSize++, SEEK_SET);
+  rc = sqlite_pager_write(pPager->jfd, pData);
+  pPg->inJournal = 1;
+  if( pPager->nIdx==SQLITE_INDEX_SIZE ){
+    sqlite_pager_seekpage(pPager->jfd, pPager->idxPgno, SEEK_SET);
+    rc = sqlite_pager_writepage(pPager->jfd, &pPager->aIdx);
+    pPager->nIdx = 0;
+    pPager->jSize++;
+  }
+  return rc;
 }
 
 /*
@@ -642,6 +672,10 @@ int sqlite_pager_commit(Pager*){
   PgHdr *pPg;
   assert( pPager->state==SQLITE_WRITELOCK );
   assert( pPager->jfd>=0 );
+  memset(&pPager->aIdx[&pPager->nIdx], 0, 
+          (SQLITE_INDEX_SIZE - pPager->nIdx)*sizeof(Pgno));
+  sqlite_pager_seekpage(pPager->jfd, pPager->idxPgno, SEEK_SET);
+  rc = sqlite_pager_writepage(pPager->jfd, &pPager->aIdx);
   if( fsync(pPager->jfd) ){
     return SQLITE_IOERR;
   }
@@ -669,6 +703,10 @@ int sqlite_pager_commit(Pager*){
 int sqlite_pager_rollback(Pager *pPager){
   int rc;
   if( pPager->state!=SQLITE_WRITELOCK ) return SQLITE_OK;
+  memset(&pPager->aIdx[&pPager->nIdx], 0, 
+          (SQLITE_INDEX_SIZE - pPager->nIdx)*sizeof(Pgno));
+  sqlite_pager_seekpage(pPager->jfd, pPager->idxPgno, SEEK_SET);
+  rc = sqlite_pager_writepage(pPager->jfd, &pPager->aIdx);
   rc = sqlite_pager_playback(pPager);
   if( rc!=SQLITE_OK ){
     rc = sqlite_pager_unwritelock(pPager);
