@@ -29,7 +29,7 @@ execsql {
     END;
 }
 # ABORT
-do_test trig-raise-1.1 {
+do_test trigger3-1.1 {
     catchsql {
 	BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
@@ -37,7 +37,7 @@ do_test trig-raise-1.1 {
     }
 } {1 {Trigger abort}}
 
-do_test trig-raise-1.2 {
+do_test trigger3-1.2 {
     execsql {
 	SELECT * FROM tbl;
 	ROLLBACK;
@@ -45,41 +45,41 @@ do_test trig-raise-1.2 {
 } {5 5 6}
 
 # FAIL
-do_test trig-raise-2.1 {
+do_test trigger3-2.1 {
     catchsql {
 	BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (2, 5, 6);
     }
 } {1 {Trigger fail}}
-do_test trig-raise-2.2 {
+do_test trigger3-2.2 {
     execsql {
 	SELECT * FROM tbl;
 	ROLLBACK;
     }
 } {5 5 6 2 5 6}
 # ROLLBACK
-do_test trig-raise-3.1 {
+do_test trigger3-3.1 {
     catchsql {
 	BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (3, 5, 6);
     }
 } {1 {Trigger rollback}}
-do_test trig-raise-3.2 {
+do_test trigger3-3.2 {
     execsql {
 	SELECT * FROM tbl;
     }
 } {}
 # IGNORE
-do_test trig-raise-4.1 {
+do_test trigger3-4.1 {
     catchsql {
 	BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (4, 5, 6);
     }
 } {0 {}}
-do_test trig-raise-4.2 {
+do_test trigger3-4.2 {
     execsql {
 	SELECT * FROM tbl;
 	ROLLBACK;
@@ -100,13 +100,13 @@ execsql {
 	SELECT CASE WHEN (old.a = 1) THEN RAISE(IGNORE) END;
     END;
 }
-do_test trig-raise-5.1 {
+do_test trigger3-5.1 {
     execsql {
 	UPDATE tbl SET c = 10;
 	SELECT * FROM tbl;
     }
 } {1 2 3 4 5 10}
-do_test trig-raise-5.2 {
+do_test trigger3-5.2 {
     execsql {
 	DELETE FROM tbl;
 	SELECT * FROM tbl;
@@ -121,7 +121,7 @@ execsql {
         INSERT INTO tbl2 VALUES (new.a, new.b, new.c);
     END;
 }
-do_test trig-raise-6 {
+do_test trigger3-6 {
     execsql {
 	INSERT INTO tbl2 VALUES (1, 2, 3);
 	SELECT * FROM tbl2;
@@ -139,17 +139,17 @@ execsql {
     END;
 }
 
-do_test trig-raise-7.1 {
+do_test trigger3-7.1 {
     catchsql {
 	INSERT INTO tbl_view VALUES(1, 2, 3);
     }
 } {1 {View rollback}}
-do_test trig-raise-7.2 {
+do_test trigger3-7.2 {
     catchsql {
 	INSERT INTO tbl_view VALUES(2, 2, 3);
     }
 } {0 {}}
-do_test trig-raise-7.3 {
+do_test trigger3-7.3 {
     catchsql {
 	INSERT INTO tbl_view VALUES(3, 2, 3);
     }

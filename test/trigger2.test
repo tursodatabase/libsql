@@ -13,9 +13,9 @@
 # These tests ensure that BEFORE and AFTER triggers are fired at the correct
 # times relative to each other and the triggering statement. 
 #
-# trig-1.1.*: ON UPDATE trigger execution model.
-# trig-1.2.*: DELETE trigger execution model.
-# trig-1.3.*: INSERT trigger execution model.
+# trigger2-1.1.*: ON UPDATE trigger execution model.
+# trigger2-1.2.*: DELETE trigger execution model.
+# trigger2-1.3.*: INSERT trigger execution model.
 #
 # 2. Trigger program execution tests.
 # These tests ensure that trigger programs execute correctly (ie. that a
@@ -26,23 +26,23 @@
 # This tests that conditional triggers (ie. UPDATE OF triggers and triggers
 # with WHEN clauses) are fired only fired when they are supposed to be.
 #
-# trig-3.1: UPDATE OF triggers
-# trig-3.2: WHEN clause
+# trigger2-3.1: UPDATE OF triggers
+# trigger2-3.2: WHEN clause
 #
 # 4. Cascaded trigger execution 
 # Tests that trigger-programs may cause other triggers to fire. Also that a 
 # trigger-program is never executed recursively.
 # 
-# trig-4.1: Trivial cascading trigger
-# trig-4.2: Trivial recursive trigger handling 
+# trigger2-4.1: Trivial cascading trigger
+# trigger2-4.2: Trivial recursive trigger handling 
 #
 # 5. Count changes behaviour.
 # Verify that rows altered by triggers are not included in the return value
 # of the "count changes" interface.
 #
 # 6. ON CONFLICT clause handling
-# trig-6.1[a-f]: INSERT statements
-# trig-6.2[a-f]: UPDATE statements
+# trigger2-6.1[a-f]: INSERT statements
+# trigger2-6.2[a-f]: UPDATE statements
 #
 # 7. Triggers on views fire correctly.
 #
@@ -102,7 +102,7 @@ foreach tbl_defn [ list \
     END;
   }
 
-  do_test trig-1.1.$ii {
+  do_test trigger2-1.1.$ii {
     execsql {
       UPDATE tbl SET a = a * 10, b = b * 10;
       SELECT * FROM rlog ORDER BY idx;
@@ -135,7 +135,7 @@ foreach tbl_defn [ list \
 	  0, 0);
     END;
   }
-  do_test trig-1.2.$ii {
+  do_test trigger2-1.2.$ii {
     execsql {
       DELETE FROM tbl;
       SELECT * FROM rlog;
@@ -163,7 +163,7 @@ foreach tbl_defn [ list \
 	  new.a, new.b);
     END;
   }
-  do_test trig-1.3.$ii {
+  do_test trigger2-1.3.$ii {
     execsql {
 
       CREATE TABLE other_tbl(a, b);
@@ -277,7 +277,7 @@ foreach tr_program [ list \
     execsql "DELETE FROM tbl; DELETE FROM log; $prep";
     execsql "CREATE TRIGGER the_trigger BEFORE [string range $statement 0 6] ON tbl BEGIN $tr_program_fixed END;"
 
-    do_test trig-2-$ii-before "execsql {$statement $query}" $before_data
+    do_test trigger2-2-$ii-before "execsql {$statement $query}" $before_data
 
     execsql "DROP TRIGGER the_trigger;"
     execsql "DELETE FROM tbl; DELETE FROM log;"
@@ -289,7 +289,7 @@ foreach tr_program [ list \
 
     execsql "CREATE TRIGGER the_trigger AFTER [string range $statement 0 6] ON tbl BEGIN $tr_program_fixed END;"
 
-    do_test trig-2-$ii-after "execsql {$statement $query}" $after_data
+    do_test trigger2-2-$ii-after "execsql {$statement $query}" $after_data
     execsql "DROP TRIGGER the_trigger;"
   }
 }
@@ -300,7 +300,7 @@ catchsql {
 
 # 3.
 
-# trig-3.1: UPDATE OF triggers
+# trigger2-3.1: UPDATE OF triggers
 execsql {
   CREATE TABLE tbl (a, b, c, d);
   CREATE TABLE log (a);
@@ -312,7 +312,7 @@ execsql {
       UPDATE log SET a = a + 1;
     END;
 }
-do_test trig-3.1 {
+do_test trigger2-3.1 {
   execsql {
     UPDATE tbl SET b = 1, c = 10; -- 2
     UPDATE tbl SET b = 10; -- 0
@@ -326,7 +326,7 @@ execsql {
   DROP TABLE log;
 }
 
-# trig-3.2: WHEN clause
+# trigger2-3.2: WHEN clause
 set when_triggers [ list \
              {t1 BEFORE INSERT ON tbl WHEN new.a > 20} \
              {t2 BEFORE INSERT ON tbl WHEN (SELECT count(*) FROM tbl) = 0} ]
@@ -341,7 +341,7 @@ foreach trig $when_triggers {
   execsql "CREATE TRIGGER $trig BEGIN UPDATE log set a = a + 1; END;"
 }
 
-do_test trig-3.2 {
+do_test trigger2-3.2 {
   execsql { 
 
     INSERT INTO tbl VALUES(0, 0, 0, 0);     -- 1
@@ -376,7 +376,7 @@ execsql {
     INSERT INTO tblC values(new.a, new.b);
   END;
 }
-do_test trig-4.1 {
+do_test trigger2-4.1 {
   execsql {
     INSERT INTO tblA values(1, 2);
     SELECT * FROM tblA;
@@ -398,7 +398,7 @@ execsql {
       INSERT INTO tbl VALUES (new.a, new.b, new.c);
     END;
 }
-do_test trig-4.2 {
+do_test trigger2-4.2 {
   execsql {
     INSERT INTO tbl VALUES (1, 2, 3);
     select * from tbl;
@@ -420,7 +420,7 @@ execsql {
       DELETE FROM tbl;
     END;
 }
-do_test trig-5 {
+do_test trigger2-5 {
   execsql {
     INSERT INTO tbl VALUES(100, 200, 300);
   }
@@ -437,45 +437,45 @@ execsql {
     INSERT OR IGNORE INTO tbl values (new.a, 0, 0);
   END;
 }
-do_test trig-6.1a {
+do_test trigger2-6.1a {
   execsql {
     BEGIN;
     INSERT INTO tbl values (1, 2, 3);
     SELECT * from tbl;
   }
 } {1 2 3}
-do_test trig-6.1b {
+do_test trigger2-6.1b {
   catchsql {
     INSERT OR ABORT INTO tbl values (2, 2, 3);
   }
 } {1 {constraint failed}}
-do_test trig-6.1c {
+do_test trigger2-6.1c {
   execsql {
     SELECT * from tbl;
   }
 } {1 2 3}
-do_test trig-6.1d {
+do_test trigger2-6.1d {
   catchsql {
     INSERT OR FAIL INTO tbl values (2, 2, 3);
   }
 } {1 {constraint failed}}
-do_test trig-6.1e {
+do_test trigger2-6.1e {
   execsql {
     SELECT * from tbl;
   }
 } {1 2 3 2 2 3}
-do_test trig-6.1f {
+do_test trigger2-6.1f {
   execsql {
     INSERT OR REPLACE INTO tbl values (2, 2, 3);
     SELECT * from tbl;
   }
 } {1 2 3 2 0 0}
-do_test trig-6.1g {
+do_test trigger2-6.1g {
   catchsql {
     INSERT OR ROLLBACK INTO tbl values (3, 2, 3);
   }
 } {1 {constraint failed}}
-do_test trig-6.1h {
+do_test trigger2-6.1h {
   execsql {
     SELECT * from tbl;
   }
@@ -490,34 +490,34 @@ execsql {
     UPDATE OR IGNORE tbl SET a = new.a, c = 10;
   END;
 }
-do_test trig-6.2a {
+do_test trigger2-6.2a {
   execsql {
     BEGIN;
     UPDATE tbl SET a = 1 WHERE a = 4;
     SELECT * from tbl;
   }
 } {1 2 10 6 3 4}
-do_test trig-6.2b {
+do_test trigger2-6.2b {
   catchsql {
     UPDATE OR ABORT tbl SET a = 4 WHERE a = 1;
   }
 } {1 {constraint failed}}
-do_test trig-6.2c {
+do_test trigger2-6.2c {
   execsql {
     SELECT * from tbl;
   }
 } {1 2 10 6 3 4}
-do_test trig-6.2d {
+do_test trigger2-6.2d {
   catchsql {
     UPDATE OR FAIL tbl SET a = 4 WHERE a = 1;
   }
 } {1 {constraint failed}}
-do_test trig-6.2e {
+do_test trigger2-6.2e {
   execsql {
     SELECT * from tbl;
   }
 } {4 2 10 6 3 4}
-do_test trig-6.2f {
+do_test trigger2-6.2f {
   execsql {
     UPDATE OR REPLACE tbl SET a = 1 WHERE a = 4;
     SELECT * from tbl;
@@ -526,12 +526,12 @@ do_test trig-6.2f {
 execsql {
   INSERT INTO tbl VALUES (2, 3, 4);
 }
-do_test trig-6.2g {
+do_test trigger2-6.2g {
   catchsql {
     UPDATE OR ROLLBACK tbl SET a = 4 WHERE a = 1;
   }
 } {1 {constraint failed}}
-do_test trig-6.2h {
+do_test trigger2-6.2h {
   execsql {
     SELECT * from tbl;
   }
@@ -541,7 +541,7 @@ execsql {
 }
 
 # 7. Triggers on views
-do_test trig-7.1 {
+do_test trigger2-7.1 {
   execsql {
   CREATE TABLE ab(a, b);
   CREATE TABLE cd(c, d);
@@ -583,7 +583,7 @@ do_test trig-7.1 {
   }
 } {}
 
-do_test trig-7.2 {
+do_test trigger2-7.2 {
   execsql {
     UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
     DELETE FROM abcd WHERE a = 1;

@@ -1,5 +1,5 @@
-C Update\sthe\sSQL\slanguage\sdocumentation\sto\stalk\sabout\sSELECT\sDISTINCT.\s(CVS\s748)
-D 2002-09-12T14:08:32
+C Rename\sall\stests\sso\sthat\sthe\sfirst\spart\sof\sthe\stest\sname\scorresponds\sto\sthe\nfile\sthat\scontains\sthat\stest.\s\sThis\smakes\sit\smuch\seasier\sto\sfind\sa\sparticular\ntest\safter\sit\sfail.\s(CVS\s749)
+D 2002-09-14T12:04:56
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -104,9 +104,9 @@ F test/tclsqlite.test 6f4b9760681c7dbca52a18d0ab46a1679cdc79b9
 F test/temptable.test 03b7bdb7d6ce2c658ad20c94b037652c6cad34e0
 F test/tester.tcl 6f603d90881bd835ea27c568a7fecaa57dce91cc
 F test/trans.test 10b53c77e2cc4ad9529c15fdcb390b8d5722ea65
-F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
-F test/trigger2.test 19070bdb7cdcb2b163170d864fc2fd289b2d73ef
-F test/trigger3.test 7b4cbeb70e0875495516dd27de180552834708d4
+F test/trigger1.test ec1da76e1a9f618deb96e505f459dcf8a23f2247
+F test/trigger2.test ee346d8c612e7f847c9543058f1b89d094d27ffb
+F test/trigger3.test 2bf76f7367a36242f670026af542d9f60efe3dc6
 F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 23fe36c7e88282f6d1b7547ab892ea88f0e65262
-R cb437ad4d3f01e7699b3e8bb2797f1f9
+P ef7116751ddc4e82228c115b0a332ffb47a22ae5
+R 8189584121ea08912ee4948047822dc1
 U drh
-Z 0ee1932374e268052ad2e19b552bf00b
+Z 5104f4a49d2a5667b7c13a5b97f926e5

@@ -30,7 +30,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test trig_cd-1.1 {
+do_test trigger1-1.1 {
    catchsql {
      CREATE TRIGGER trig UPDATE ON no_such_table BEGIN
        SELECT * from sqlite_master;
@@ -46,7 +46,7 @@ execsql {
 	  INSERT INTO t1 values(1);
  	END;
 }
-do_test trig_cd-1.2 {
+do_test trigger1-1.2 {
     catchsql {
 	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
 	    SELECT * FROM sqlite_master;
@@ -54,7 +54,7 @@ do_test trig_cd-1.2 {
      }
 } {1 {trigger tr1 already exists}}
 
-do_test trig_cd-1.3 {
+do_test trigger1-1.3 {
     catchsql {
 	BEGIN;
 	CREATE TRIGGER tr2 INSERT ON t1 BEGIN
@@ -65,7 +65,7 @@ do_test trig_cd-1.3 {
     }
 } {0 {}}
 
-do_test trig_cd-1.4 {
+do_test trigger1-1.4 {
     catchsql {
 	DROP TRIGGER tr1;
 	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
@@ -74,7 +74,7 @@ do_test trig_cd-1.4 {
     }
 } {0 {}}
 
-do_test trig_cd-1.5 {
+do_test trigger1-1.5 {
     execsql {
 	BEGIN;
 	DROP TRIGGER tr2;
@@ -83,13 +83,13 @@ do_test trig_cd-1.5 {
     }
 } {}
 
-do_test trig_cd-1.6 {
+do_test trigger1-1.6 {
     catchsql {
 	DROP TRIGGER biggles;
     }
 } {1 {no such trigger: biggles}}
 
-do_test trig_cd-1.7 {
+do_test trigger1-1.7 {
     catchsql {
 	DROP TABLE t1;
 	DROP TRIGGER tr1;
@@ -99,7 +99,7 @@ do_test trig_cd-1.7 {
 execsql {
   CREATE TEMP TABLE temp_table(a);
 }
-do_test trig_cd-1.8 {
+do_test trigger1-1.8 {
   execsql {
 	CREATE TRIGGER temp_trig UPDATE ON temp_table BEGIN
 	    SELECT * from sqlite_master;
@@ -108,7 +108,7 @@ do_test trig_cd-1.8 {
   } 
 } {0}
 
-do_test trig_cd-1.9 {
+do_test trigger1-1.9 {
   catchsql {
     CREATE TRIGGER tr1 AFTER UPDATE ON sqlite_master BEGIN
        SELECT * FROM sqlite_master;
@@ -120,7 +120,7 @@ do_test trig_cd-1.9 {
 # a trigger does not mess up the DELETE that caused the trigger to
 # run in the first place.
 #
-do_test trig_cd-1.10 {
+do_test trigger1-1.10 {
   execsql {
     create table t1(a,b);
     insert into t1 values(1,'a');
@@ -135,7 +135,7 @@ do_test trig_cd-1.10 {
     drop table t1;
   }
 } {2 b 4 d}
-do_test trig_cd-1.11 {
+do_test trigger1-1.11 {
   execsql {
     create table t1(a,b);
     insert into t1 values(1,'a');
@@ -152,7 +152,7 @@ do_test trig_cd-1.11 {
 } {1 x-a 2 b 4 d}
 
 # Ensure that we cannot create INSTEAD OF triggers on tables
-do_test trig_cd-1.12 {
+do_test trigger1-1.12 {
   catchsql {
     create table t1(a,b);
     create trigger t1t instead of update on t1 for each row begin
@@ -161,7 +161,7 @@ do_test trig_cd-1.12 {
   }
 } {1 {cannot create INSTEAD OF trigger on table: t1}}
 # Ensure that we cannot create BEFORE triggers on views
-do_test trig_cd-1.13 {
+do_test trigger1-1.13 {
   catchsql {
     create view v1 as select * from t1;
     create trigger v1t before update on v1 for each row begin
@@ -170,7 +170,7 @@ do_test trig_cd-1.13 {
   }
 } {1 {cannot create BEFORE trigger on view: v1}}
 # Ensure that we cannot create AFTER triggers on views
-do_test trig_cd-1.14 {
+do_test trigger1-1.14 {
   catchsql {
     create table t1(a,b);
     create view v1 as select * from t1;
