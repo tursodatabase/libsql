@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.16 2000/06/07 23:51:50 drh Exp $
+** $Id: select.c,v 1.17 2000/06/08 00:19:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -429,9 +429,10 @@ Vdbe *sqliteGetVdbe(Parse *pParse){
 ** or intersection of two or more separate queries.
 */
 static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
-  int rc;
-  Select *pPrior;
-  Vdbe *v;
+  int rc;             /* Success code from a subroutine */
+  Select *pPrior;     /* Another SELECT immediately to our left */
+  Vdbe *v;            /* Generate code to this VDBE */
+  int base;           /* Baseline value for pParse->nTab */
 
   /* Make sure there is no ORDER BY clause on prior SELECTs.  Only the 
   ** last SELECT in the series may have an ORDER BY.
@@ -452,6 +453,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* Process the UNION or INTERSECTION
   */
+  base = pParse->nTab;
   switch( p->op ){
     case TK_ALL:
     case TK_EXCEPT:
@@ -580,6 +582,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     pParse->nErr++;
     return 1;
   }
+  pParse->nTab = base;
   return 0;
 }
 
@@ -626,6 +629,7 @@ int sqliteSelect(
   Expr *pHaving;         /* The HAVING clause.  May be NULL */
   int isDistinct;        /* True if the DISTINCT keyword is present */
   int distinct;          /* Table to use for the distinct set */
+  int base;              /* First cursor available for use */
 
   /* If there is are a sequence of queries, do the earlier ones first.
   */
@@ -642,11 +646,16 @@ int sqliteSelect(
   pHaving = p->pHaving;
   isDistinct = p->isDistinct;
 
+  /* Save the current value of pParse->nTab.  Restore this value before
+  ** we exit.
+  */
+  base = pParse->nTab;
+
   /* 
   ** Do not even attempt to generate any code if we have already seen
   ** errors before this routine starts.
   */
-  if( pParse->nErr>0 ) return 0;
+  if( pParse->nErr>0 ) return 1;
   sqliteParseInfoReset(pParse);
 
   /* Look up every table in the table list and create an appropriate
@@ -702,7 +711,11 @@ int sqliteSelect(
   }
   if( pHaving ) sqliteExprResolveInSelect(pParse, pHaving);
 
-  /* Resolve the field names and do a semantics check on all the expressions.
+  /* At this point, we should have allocated all the cursors that we
+  ** need to handle subquerys and temporary tables.  From here on we
+  ** are committed to keeping the same value for pParse->nTab.
+  **
+  ** Resolve the field names and do a semantics check on all the expressions.
   */
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
@@ -918,5 +931,6 @@ int sqliteSelect(
   if( pOrderBy ){
     generateSortTail(v, pEList->nExpr);
   }
+  pParse->nTab = base;
   return 0;
 }
