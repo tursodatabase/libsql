@@ -26,7 +26,13 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src -DNDEBUG
+TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
+
+# Define -DNDEBUG to compile without debugging (i.e., for production usage)
+# Omitting the define will cause extra debugging code to be inserted and
+# includes extra comments when "EXPLAIN stmt" is used.
+#
+TCC += @TARGET_DEBUG@
 
 # Compiler options needed for programs that use the TCL library.
 #
