@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.158 2003/08/23 22:40:54 drh Exp $
+** $Id: build.c,v 1.159 2003/08/24 16:38:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -717,7 +717,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   }else{
     for(i=0; i<pList->nId; i++){
       for(iCol=0; iCol<pTab->nCol; iCol++){
-        if( sqliteStrICmp(pList->a[0].zName, pTab->aCol[iCol].zName)==0 ) break;
+        if( sqliteStrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ) break;
       }
       if( iCol<pTab->nCol ) pTab->aCol[iCol].isPrimKey = 1;
     }
