@@ -30,7 +30,7 @@
 ** Nothing is ever written to disk using this backend.  All information
 ** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.16 2001/08/19 18:19:46 drh Exp $
+** $Id: dbbemem.c,v 1.17 2001/08/20 00:33:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -867,9 +867,9 @@ static struct DbbeMethods memoryMethods = {
 };
 
 /*
-** This routine opens a new database.  For the GDBM driver
-** implemented here, the database name is the name of the directory
-** containing all the files of the database.
+** This routine opens a new database.  For the MEMORY driver
+** implemented here, the database name is ignored.  Every MEMORY database
+** is unique and is erased when the database is closed.
 **
 ** If successful, a pointer to the Dbbe structure is returned.
 ** If there are errors, an appropriate error message is left

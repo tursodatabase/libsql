@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.20 2001/07/02 17:51:46 drh Exp $
+** $Id: btree.c,v 1.21 2001/08/20 00:33:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1026,7 +1026,12 @@ int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
 ** pages, then some other value might be returned to indicate the
 ** reason for the error.
 */
-static int compareKey(BtCursor *pCur, char *pKey, int nKeyOrig, int *pResult){
+static int compareKey(
+  BtCursor *pCur,      /* Points to the entry against which we are comparing */
+  const char *pKey,    /* The comparison key */
+  int nKeyOrig,        /* Number of bytes in the comparison key */
+  int *pResult         /* Write the comparison results here */
+){
   Pgno nextPage;
   int nKey = nKeyOrig;
   int n, c, rc;
@@ -1178,7 +1183,7 @@ static int moveToLeftmost(BtCursor *pCur){
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than pKey.
 */
-int sqliteBtreeMoveto(BtCursor *pCur, void *pKey, int nKey, int *pRes){
+int sqliteBtreeMoveto(BtCursor *pCur, const void *pKey, int nKey, int *pRes){
   int rc;
   pCur->bSkipNext = 0;
   rc = moveToRoot(pCur);
@@ -1382,15 +1387,15 @@ static int clearCell(Btree *pBt, Cell *pCell){
 static int fillInCell(
   Btree *pBt,              /* The whole Btree.  Needed to allocate pages */
   Cell *pCell,             /* Populate this Cell structure */
-  void *pKey, int nKey,    /* The key */
-  void *pData,int nData    /* The data */
+  const void *pKey, int nKey,    /* The key */
+  const void *pData,int nData    /* The data */
 ){
   OverflowPage *pOvfl, *pPrior;
   Pgno *pNext;
   int spaceLeft;
   int n, rc;
   int nPayload;
-  char *pPayload;
+  const char *pPayload;
   char *pSpace;
 
   pCell->h.leftChild = 0;
@@ -1965,9 +1970,9 @@ balance_cleanup:
 ** is left pointing at the new record.
 */
 int sqliteBtreeInsert(
-  BtCursor *pCur,            /* Insert data into the table of this cursor */
-  void *pKey,  int nKey,     /* The key of the new record */
-  void *pData, int nData     /* The data of the new record */
+  BtCursor *pCur,                /* Insert data into the table of this cursor */
+  const void *pKey,  int nKey,   /* The key of the new record */
+  const void *pData, int nData   /* The data of the new record */
 ){
   Cell newCell;
   int rc;

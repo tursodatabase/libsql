@@ -47,13 +47,14 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
-         main.o parse.o printf.o random.o select.o table.o \
+LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
+         main.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/dbbe.c \
   $(TOP)/src/dbbe.h \
@@ -63,6 +64,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/pager.c \
   $(TOP)/src/parse.y \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -82,7 +84,11 @@ SRC = \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/src/btree.c \
+  $(TOP)/src/pager.c \
   $(TOP)/src/test1.c \
+  $(TOP)/src/test2.c \
+  $(TOP)/src/test3.c \
   $(TOP)/src/md5.c
 
 # This is the default Makefile target.  The objects listed here
@@ -120,6 +126,9 @@ HDR = \
    $(TOP)/src/vdbe.h  \
    parse.h
 
+btree.o:	$(TOP)/src/btree.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/btree.c
+
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/build.c
 
@@ -134,6 +143,9 @@ dbbemem.o:	$(TOP)/src/dbbemem.c $(HDR)
 
 main.o:	$(TOP)/src/main.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/main.c
+
+pager.o:	$(TOP)/src/pager.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/pager.c
 
 parse.o:	parse.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c parse.c
