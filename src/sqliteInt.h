@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.326 2004/10/04 13:19:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.327 2004/10/05 02:41:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1310,7 +1310,7 @@ Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);
 void sqlite3RollbackAll(sqlite3*);
 void sqlite3CodeVerifySchema(Parse*, int);
-void sqlite3BeginTransaction(Parse*);
+void sqlite3BeginTransaction(Parse*, int);
 void sqlite3CommitTransaction(Parse*);
 void sqlite3RollbackTransaction(Parse*);
 int sqlite3ExprIsConstant(Expr*);
@@ -1323,7 +1323,6 @@ void sqlite3GenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqlite3CompleteInsertion(Parse*, Table*, int, char*, int, int, int);
 void sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
-void sqlite3EndWriteOperation(Parse*);
 Expr *sqlite3ExprDup(Expr*);
 void sqlite3TokenCopy(Token*, Token*);
 ExprList *sqlite3ExprListDup(ExprList*);

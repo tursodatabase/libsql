@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.72 2004/09/08 13:06:21 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.73 2004/10/05 02:41:43 drh Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -169,7 +169,7 @@ the main database were ":memory:".
 Section {BEGIN TRANSACTION} transaction
 
 Syntax {sql-statement} {
-BEGIN [TRANSACTION [<name>]]
+BEGIN [ DEFERRED | IMMEDIATE | EXCLUSIVE ] [TRANSACTION [<name>]]
 }
 Syntax {sql-statement} {
 END [TRANSACTION [<name>]]
@@ -205,6 +205,42 @@ and the ROLLBACK conflict resolution algorithm is specified.
 See the documention on the <a href="#conflict">ON CONFLICT</a>
 clause for additional information about the ROLLBACK
 conflict resolution algorithm.
+</p>
+
+<p>
+In SQLite version 3.0.8 and later, transactions can be deferred,
+immediate, or exclusive.  Deferred means that no locks are acquired
+on the database until the database is first accessed.  Thus with a
+deferred transaction, the BEGIN statement itself does nothing.  Locks
+are not acquired until the first read or write operation.  The first read
+operation against a database creates a SHARED lock and the first
+write operation creates a RESERVED lock.   Because the acquisition of
+locks is deferred until they are needed, it is possible that another
+thread or process could create a separate transaction and write to
+the database after the BEGIN on the current thread has executed.
+If the transation is immediate, then RESERVED locks
+are acquired on all databases as soon as the BEGIN command is
+executed, without waiting for the
+database to be used.  After a BEGIN IMMEDIATE, you are guaranteed that
+no other thread or process will be able to write to the database or
+do a BEGIN IMMEDIATE or BEGIN EXCLUSIVE.  Other processes can continue
+to read from the database, however.  An exclusive transaction causes
+EXCLUSIVE locks to be acquired on all databases.  After a BEGIN
+EXCLUSIVE, you are guaranteed that no other thread or process will
+be able to read or write the database until the transaction is
+complete.
+</p>
+
+<p>
+A description of the meaning of SHARED, RESERVED, and EXCLUSIVE locks
+is available <a href="lockingv3.html">separately</a>.
+</p>
+
+<p>
+The default behavior for SQLite version 3.0.8 is a
+deferred transaction.  For SQLite version 3.0.0 through 3.0.7,
+deferred is the only kind of transaction available.  For SQLite
+version 2.8 and earlier, all transactions are exclusive.
 </p>
 
 <p>

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.191 2004/09/27 13:19:52 drh Exp $
+** $Id: btree.c,v 1.192 2004/10/05 02:41:42 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1289,8 +1289,12 @@ static int newDatabase(Btree *pBt){
 
 /*
 ** Attempt to start a new transaction. A write-transaction
-** is started if the second argument is true, otherwise a read-
-** transaction.
+** is started if the second argument is nonzero, otherwise a read-
+** transaction.  If the second argument is 2 or more and exclusive
+** transaction is started, meaning that no other process is allowed
+** to access the database.  A preexisting transaction may not be
+** upgrade to exclusive by calling this routine a second time - the
+** exclusivity flag only works for a new transaction.
 **
 ** A write-transaction must be started before attempting any 
 ** changes to the database.  None of the following routines 
@@ -1329,7 +1333,7 @@ int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
   }
 
   if( rc==SQLITE_OK && wrflag ){
-    rc = sqlite3pager_begin(pBt->pPage1->aData);
+    rc = sqlite3pager_begin(pBt->pPage1->aData, wrflag>1);
     if( rc==SQLITE_OK ){
       rc = newDatabase(pBt);
     }

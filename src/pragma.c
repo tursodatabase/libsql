@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.67 2004/09/25 14:39:19 drh Exp $
+** $Id: pragma.c,v 1.68 2004/10/05 02:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -261,7 +261,6 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp(v, OP_Ge, 0, addr+3);
       sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
       sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 2);
-      sqlite3EndWriteOperation(pParse);
       pDb->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->cache_size);
     }

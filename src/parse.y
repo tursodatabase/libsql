@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.141 2004/10/04 13:38:09 drh Exp $
+** @(#) $Id: parse.y,v 1.142 2004/10/05 02:41:43 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -81,10 +81,15 @@ explain ::= .           { sqlite3BeginParse(pParse, 0); }
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
 
-cmd ::= BEGIN trans_opt.  {sqlite3BeginTransaction(pParse);}
+cmd ::= BEGIN transtype(Y) trans_opt.  {sqlite3BeginTransaction(pParse, Y);}
 trans_opt ::= .
 trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION nm.
+%type transtype {int}
+transtype(A) ::= .             {A = TK_DEFERRED;}
+transtype(A) ::= DEFERRED(X).  {A = @X;}
+transtype(A) ::= IMMEDIATE(X). {A = @X;}
+transtype(A) ::= EXCLUSIVE(X). {A = @X;}
 cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
 cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
 cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
@@ -127,7 +132,7 @@ id(A) ::= ID(X).         {A = X;}
 //
 %fallback ID
   ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CONFLICT
-  DATABASE DEFERRED DESC DETACH EACH END EXPLAIN FAIL FOR
+  DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW.

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.416 2004/10/04 13:19:24 drh Exp $
+** $Id: vdbe.c,v 1.417 2004/10/05 02:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2157,7 +2157,8 @@ case OP_AutoCommit: {
 ** other process can start another write transaction while this transaction is
 ** underway.  Starting a write transaction also creates a rollback journal. A
 ** write transaction must be started before any changes can be made to the
-** database.
+** database.  If P2 is 2 or greater then an EXCLUSIVE lock is also obtained
+** on the file.
 **
 ** If P2 is zero, then a read-lock is obtained on the database file.
 */

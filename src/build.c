@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.255 2004/09/30 14:22:47 drh Exp $
+** $Id: build.c,v 1.256 2004/10/05 02:41:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1376,8 +1376,6 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_ParseSchema, p->iDb, 0,
         sqlite3MPrintf("tbl_name='%q'",p->zName), P3_DYNAMIC);
-
-    sqlite3EndWriteOperation(pParse);
   }
 
   /* Add the table to the in-memory representation of the database.
@@ -1663,7 +1661,6 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
       }
     }
     sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
-    sqlite3EndWriteOperation(pParse);
   }
   sqliteViewResetAll(db, iDb);
 
@@ -2131,7 +2128,6 @@ void sqlite3CreateIndex(
       sqlite3VdbeAddOp(v, OP_Close, 1, 0);
       sqlite3ChangeCookie(db, v, iDb);
       sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-      sqlite3EndWriteOperation(pParse);
       sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
          sqlite3MPrintf("name='%q'", pIndex->zName), P3_DYNAMIC);
     }
@@ -2232,7 +2228,6 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb);
     sqlite3VdbeOp3(v, OP_DropIndex, pIndex->iDb, 0, pIndex->zName, 0);
-    sqlite3EndWriteOperation(pParse);
   }
 
 exit_drop_index:
@@ -2398,9 +2393,10 @@ void sqlite3SrcListDelete(SrcList *pList){
 /*
 ** Begin a transaction
 */
-void sqlite3BeginTransaction(Parse *pParse){
+void sqlite3BeginTransaction(Parse *pParse, int type){
   sqlite3 *db;
   Vdbe *v;
+  int i;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite3_malloc_failed ) return;
@@ -2408,6 +2404,11 @@ void sqlite3BeginTransaction(Parse *pParse){
 
   v = sqlite3GetVdbe(pParse);
   if( !v ) return;
+  if( type!=TK_DEFERRED ){
+    for(i=0; i<db->nDb; i++){
+      sqlite3VdbeAddOp(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
+    }
+  }
   sqlite3VdbeAddOp(v, OP_AutoCommit, 0, 0);
 }
 
@@ -2549,21 +2550,6 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   if( iDb!=1 && pParse->db->aDb[1].pBt!=0 ){
     sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
-}
-
-/*
-** Generate code that concludes an operation that may have changed
-** the database.  If a statement transaction was started, then emit
-** an OP_Commit that will cause the changes to be committed to disk.
-**
-** Note that checkpoints are automatically committed at the end of
-** a statement.  Note also that there can be multiple calls to 
-** sqlite3BeginWriteOperation() but there should only be a single
-** call to sqlite3EndWriteOperation() at the conclusion of the statement.
-*/
-void sqlite3EndWriteOperation(Parse *pParse){
-  /* Delete me! */
-  return;
 }
 
 /* 

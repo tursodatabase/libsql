@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.166 2004/10/02 20:38:28 drh Exp $
+** @(#) $Id: pager.c,v 1.167 2004/10/05 02:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -88,11 +88,27 @@
 ** or sqlite_pager_commit(), the state goes back to PAGER_SHARED.
 */
 #define PAGER_UNLOCK      0
-#define PAGER_SHARED      1
-#define PAGER_RESERVED    2
-#define PAGER_EXCLUSIVE   3
-#define PAGER_SYNCED      4
+#define PAGER_SHARED      1   /* same as SHARED_LOCK */
+#define PAGER_RESERVED    2   /* same as RESERVED_LOCK */
+#define PAGER_EXCLUSIVE   4   /* same as EXCLUSIVE_LOCK */
+#define PAGER_SYNCED      5
 
+/*
+** If the SQLITE_BUSY_RESERVED_LOCK macro is set to true at compile-time,
+** then failed attempts to get a reserved lock will invoke the busy callback.
+** This is off by default.  To see why, consider the following scenario:
+** 
+** Suppose thread A already has a shared lock and wants a reserved lock.
+** Thread B already has a reserved lock and wants an exclusive lock.  If
+** both threads are using their busy callbacks, it might be a long time
+** be for one of the threads give up and allows the other to proceed.
+** But if the thread trying to get the reserved lock gives up quickly
+** (if it never invokes its busy callback) then the contention will be
+** resolved quickly.
+*/
+#ifndef SQLITE_BUSY_RESERVED_LOCK
+# define SQLITE_BUSY_RESERVED_LOCK 0
+#endif
 
 /*
 ** Each in-memory image of a page begins with the following header.
@@ -1908,6 +1924,37 @@ static int syncJournal(Pager *pPager){
 }
 
 /*
+** Try to obtain a lock on a file.  Invoke the busy callback if the lock
+** is currently not available.  Repeate until the busy callback returns
+** false or until the lock succeeds.
+**
+** Return SQLITE_OK on success and an error code if we cannot obtain
+** the lock.
+*/
+static int pager_wait_on_lock(Pager *pPager, int locktype){
+  int rc;
+  assert( PAGER_SHARED==SHARED_LOCK );
+  assert( PAGER_RESERVED==RESERVED_LOCK );
+  assert( PAGER_EXCLUSIVE==EXCLUSIVE_LOCK );
+  if( pPager->state>=locktype ){
+    rc = SQLITE_OK;
+  }else{
+    int busy = 1;
+    do {
+      rc = sqlite3OsLock(&pPager->fd, locktype);
+    }while( rc==SQLITE_BUSY && 
+        pPager->pBusyHandler && 
+        pPager->pBusyHandler->xFunc && 
+        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
+    );
+    if( rc==SQLITE_OK ){
+      pPager->state = locktype;
+    }
+  }
+  return rc;
+}
+
+/*
 ** Given a list of pages (connected by the PgHdr.pDirty pointer) write
 ** every one of those pages out to the database file and mark them all
 ** as clean.
@@ -1915,7 +1962,6 @@ static int syncJournal(Pager *pPager){
 static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
   int rc;
-  int busy = 1;
 
   if( pList==0 ) return SQLITE_OK;
   pPager = pList->pPager;
@@ -1936,17 +1982,10 @@ static int pager_write_pagelist(PgHdr *pList){
   ** EXCLUSIVE, it means the database file has been changed and any rollback
   ** will require a journal playback.
   */
-  do {
-    rc = sqlite3OsLock(&pPager->fd, EXCLUSIVE_LOCK);
-  }while( rc==SQLITE_BUSY && 
-      pPager->pBusyHandler && 
-      pPager->pBusyHandler->xFunc && 
-      pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
-  );
+  rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  pPager->state = PAGER_EXCLUSIVE;
 
   while( pList ){
     assert( pList->dirty );
@@ -2019,18 +2058,10 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   ** on the database file.
   */
   if( pPager->nRef==0 && !pPager->memDb ){
-    int busy = 1;
-    do {
-      rc = sqlite3OsLock(&pPager->fd, SHARED_LOCK);
-    }while( rc==SQLITE_BUSY && 
-        pPager->pBusyHandler && 
-        pPager->pBusyHandler->xFunc && 
-        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
-    );
+    rc = pager_wait_on_lock(pPager, SHARED_LOCK);
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    pPager->state = PAGER_SHARED;
 
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
@@ -2408,8 +2439,12 @@ failed_to_open_journal:
 ** actual need to write to the journal.
 **
 ** If the database is already reserved for writing, this routine is a no-op.
+**
+** If exFlag is true, go ahead and get an EXCLUSIVE lock on the file
+** immediately instead of waiting until we try to flush the cache.  The
+** exFlag is ignored if a transaction is already active.
 */
-int sqlite3pager_begin(void *pData){
+int sqlite3pager_begin(void *pData, int exFlag){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
@@ -2421,29 +2456,20 @@ int sqlite3pager_begin(void *pData){
       pPager->state = PAGER_EXCLUSIVE;
       pPager->origDbSize = pPager->dbSize;
     }else{
-#ifdef SQLITE_BUSY_RESERVED_LOCK
-      int busy = 1;
-      do {
+      if( SQLITE_BUSY_RESERVED_LOCK || exFlag ){
+        rc = pager_wait_on_lock(pPager, RESERVED_LOCK);
+      }else{
         rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
-      }while( rc==SQLITE_BUSY && 
-          pPager->pBusyHandler && 
-          pPager->pBusyHandler->xFunc && 
-          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
-      );
-#else
-      rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
-#endif
+      }
+      if( rc==SQLITE_OK ){
+        pPager->state = PAGER_RESERVED;
+        if( exFlag ){
+          rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+        }
+      }
       if( rc!=SQLITE_OK ){
-        /* We do not call the busy handler when we fail to get a reserved lock.
-        ** The only reason we might fail is because another process is holding
-        ** the reserved lock.  But the other process will not be able to
-        ** release its reserved lock until this process releases its shared
-        ** lock.  So we might as well fail in this process, let it release
-        ** its shared lock so that the other process can commit.
-        */
         return rc;
       }
-      pPager->state = PAGER_RESERVED;
       pPager->dirtyCache = 0;
       TRACE2("TRANSACTION %d\n", pPager->fd.h);
       if( pPager->useJournal && !pPager->tempFile ){
@@ -2504,7 +2530,7 @@ int sqlite3pager_write(void *pData){
   ** create it if it does not.
   */
   assert( pPager->state!=PAGER_UNLOCK );
-  rc = sqlite3pager_begin(pData);
+  rc = sqlite3pager_begin(pData, 0);
   if( rc!=SQLITE_OK ){
     return rc;
   }

@@ -241,7 +241,6 @@ void sqlite3FinishTrigger(
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3VdbeOp3(v, OP_ParseSchema, nt->iDb, 0, 
        sqlite3MPrintf("type='trigger' AND name='%q'", nt->name), P3_DYNAMIC);
-    sqlite3EndWriteOperation(pParse);
   }
 
   if( db->init.busy ){

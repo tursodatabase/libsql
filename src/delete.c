@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.81 2004/09/19 02:15:25 drh Exp $
+** $Id: delete.c,v 1.82 2004/10/05 02:41:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -307,7 +307,6 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
   }
-  sqlite3EndWriteOperation(pParse);
 
   /*
   ** Return the number of rows that were deleted.
