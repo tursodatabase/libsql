@@ -65,7 +65,7 @@ void sqliteCreateTrigger(
   if( !tab ){
     goto trigger_cleanup;
   }
-  if( tab->iDb>=2 ){
+  if( tab->iDb>=2 && !pParse->initFlag ){
     sqliteErrorMsg(pParse, "triggers may not be added to auxiliary "
        "database %s", db->aDb[tab->iDb].zName);
     goto trigger_cleanup;
@@ -124,6 +124,11 @@ void sqliteCreateTrigger(
   sqliteIdListDelete(pColumns);
   nt->foreach = foreach;
   nt->step_list = pStepList;
+  while( pStepList ){
+    pStepList->pTrig = nt;
+    pStepList = pStepList->pNext;
+  }
+  pStepList = nt->step_list;
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
@@ -512,8 +517,10 @@ static int codeTriggerProgram(
 
   while( pTriggerStep ){
     int saveNTab = pParse->nTab;
+    int saveUseDb = pParse->useDb;
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
+    pParse->useDb = pTriggerStep->pTrig->iDb;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
 	Select * ss = sqliteSelectDup(pTriggerStep->pSelect);		  
@@ -554,6 +561,7 @@ static int codeTriggerProgram(
         assert(0);
     } 
     pParse->nTab = saveNTab;
+    pParse->useDb = saveUseDb;
     pTriggerStep = pTriggerStep->pNext;
   }
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.59 2003/04/15 19:22:24 drh Exp $
+** $Id: update.c,v 1.60 2003/04/17 22:57:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -27,8 +27,6 @@ void sqliteUpdate(
   int onError            /* How to handle constraint errors */
 ){
   int i, j;              /* Loop counters */
-  char *zTab;            /* Name of the table to be updated */
-  char *zDb;             /* Name of the database holding zTab */
   Table *pTab;           /* The table to be updated */
   int addr;              /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -58,38 +56,25 @@ void sqliteUpdate(
   db = pParse->db;
   assert( pTabList->nSrc==1 );
 
-  /* Check for the special case of a VIEW with one or more ON UPDATE triggers 
-   * defined 
-   */
-  zTab = pTabList->a[0].zName;
-  zDb = pTabList->a[0].zDatabase;
-  if( zTab != 0 ){
-    pTab = sqliteFindTable(pParse->db, zTab, zDb);
-    if( pTab ){
-      before_triggers =
-        sqliteTriggersExist(pParse, pTab->pTrigger, 
-            TK_UPDATE, TK_BEFORE, TK_ROW, pChanges);
-      after_triggers = 
-        sqliteTriggersExist(pParse, pTab->pTrigger, 
-            TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
-      row_triggers_exist = before_triggers || after_triggers;
-    }
-
-    if( row_triggers_exist &&  pTab->pSelect ){
-      /* Just fire VIEW triggers */
-      sqliteSrcListDelete(pTabList);
-      sqliteViewTriggers(pParse, pTab, pWhere, onError, pChanges);
-      return;
-    }
-  }
-
   /* Locate the table which we want to update.  This table has to be
   ** put in an SrcList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
   pTab = sqliteSrcListLookup(pParse, pTabList);
-  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ) goto update_cleanup;
+  if( pTab==0 ) goto update_cleanup;
+  before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+            TK_UPDATE, TK_BEFORE, TK_ROW, pChanges);
+  after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+            TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
+  row_triggers_exist = before_triggers || after_triggers;
+  if( row_triggers_exist &&  pTab->pSelect ){
+    /* Just fire VIEW triggers */
+    sqliteSrcListDelete(pTabList);
+    sqliteViewTriggers(pParse, pTab, pWhere, onError, pChanges);
+    return;
+  }
+  if( sqliteIsReadOnly(pParse, pTab) ) goto update_cleanup;
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.51 2003/04/15 19:22:23 drh Exp $
+** $Id: delete.c,v 1.52 2003/04/17 22:57:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -27,11 +27,7 @@ Table *sqliteSrcListLookup(Parse *pParse, SrcList *pSrc){
   for(i=0; i<pSrc->nSrc; i++){
     const char *zTab = pSrc->a[i].zName;
     const char *zDb = pSrc->a[i].zDatabase;
-    pTab = sqliteFindTable(pParse->db, zTab, zDb);
-    if( pTab==0 ){
-      sqliteErrorMsg(pParse, "no such table: %S", pSrc, 0);
-      break;
-    }
+    pTab = sqliteLocateTable(pParse, zTab, zDb);
     pSrc->a[i].pTab = pTab;
   }
   return pTab;
@@ -62,8 +58,6 @@ void sqliteDeleteFrom(
 ){
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
-  char *zTab;            /* Name of the table from which we are deleting */
-  char *zDb;             /* Name of database containing table zTab */
   int end, addr;         /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -83,37 +77,25 @@ void sqliteDeleteFrom(
   db = pParse->db;
   assert( pTabList->nSrc==1 );
 
-  /* Check for the special case of a VIEW with one or more ON DELETE triggers 
-  ** defined 
-  */
-  zTab = pTabList->a[0].zName;
-  zDb = pTabList->a[0].zDatabase;
-  if( zTab != 0 ){
-    pTab = sqliteFindTable(pParse->db, zTab, zDb);
-    if( pTab ){
-      before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
-                             TK_DELETE, TK_BEFORE, TK_ROW, 0);
-      after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
-                             TK_DELETE, TK_AFTER, TK_ROW, 0);
-      row_triggers_exist = before_triggers || after_triggers;
-    }
-    if( row_triggers_exist &&  pTab->pSelect ){
-      /* Just fire VIEW triggers */
-      sqliteSrcListDelete(pTabList);
-      sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
-      return;
-    }
-  }
-
   /* Locate the table which we want to delete.  This table has to be
   ** put in an SrcList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
   pTab = sqliteSrcListLookup(pParse, pTabList);
-  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ){
-    goto delete_from_cleanup;
+  if( pTab==0 )  goto delete_from_cleanup;
+  before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+                         TK_DELETE, TK_BEFORE, TK_ROW, 0);
+  after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+                         TK_DELETE, TK_AFTER, TK_ROW, 0);
+  row_triggers_exist = before_triggers || after_triggers;
+  if( row_triggers_exist &&  pTab->pSelect ){
+    /* Just fire VIEW triggers */
+    sqliteSrcListDelete(pTabList);
+    sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
+    return;
   }
+  if( sqliteIsReadOnly(pParse, pTab) ) goto delete_from_cleanup;
   assert( pTab->pSelect==0 );  /* This table is not a view */
   if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0) ){
     goto delete_from_cleanup;

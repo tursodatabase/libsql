@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.2 2003/04/05 16:56:30 drh Exp $
+# $Id: attach.test,v 1.3 2003/04/17 22:57:55 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -200,6 +200,43 @@ do_test attach-1.29 {
   }
 } {0 main 1 temp}
 
+do_test attach-2.1 {
+  execsql {
+    CREATE TABLE tx(x1,x2,y1,y2);
+    CREATE TRIGGER r1 AFTER UPDATE ON t2 FOR EACH ROW BEGIN
+      INSERT INTO tx(x1,x2,y1,y2) VALUES(OLD.x,NEW.x,OLD.y,NEW.y);
+    END;
+    SELECT * FROM tx;
+  } db2;
+} {}
+do_test attach-2.2 {
+  execsql {
+    UPDATE t2 SET x=x+10;
+    SELECT * FROM tx;
+  } db2;
+} {1 11 x x 2 12 y y}
+do_test attach-2.3 {
+  execsql {
+    CREATE TABLE tx(x1,x2,y1,y2);
+    SELECT * FROM tx;
+  }
+} {}
+do_test attach-2.4 {
+  execsql {
+    ATTACH 'test2.db' AS db2;
+  }
+} {}
+do_test attach-2.5 {
+  execsql {
+    UPDATE db2.t2 SET x=x+10;
+    SELECT * FROM db2.tx;
+  }
+} {1 11 x x 2 12 y y 11 21 x x 12 22 y y}
+do_test attach-2.6 {
+  execsql {
+    SELECT * FROM main.tx;
+  }
+} {}
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}

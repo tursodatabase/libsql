@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.145 2003/04/15 01:19:48 drh Exp $
+** $Id: build.c,v 1.146 2003/04/17 22:57:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -109,7 +109,10 @@ void sqliteExec(Parse *pParse){
 /*
 ** Locate the in-memory structure that describes 
 ** a particular database table given the name
-** of that table.  Return NULL if not found.
+** of that table and (optionally) the name of the database
+** containing the table.  Return NULL if not found.
+**
+** See also sqliteLocateTable().
 */
 Table *sqliteFindTable(sqlite *db, const char *zName, const char *zDatabase){
   Table *p = 0;
@@ -125,7 +128,48 @@ Table *sqliteFindTable(sqlite *db, const char *zName, const char *zDatabase){
 
 /*
 ** Locate the in-memory structure that describes 
-** a particular index given the name of that index.
+** a particular database table given the name
+** of that table and (optionally) the name of the database
+** containing the table.  Return NULL if not found.
+**
+** If pParse->useDb is not negative, then the table must be
+** located in that database.  If a different database is specified,
+** an error message is generated into pParse->zErrMsg.
+*/
+Table *sqliteLocateTable(Parse *pParse, const char *zName, const char *zDbase){
+  sqlite *db;
+  const char *zUse;
+  Table *p;
+  db = pParse->db;
+  if( pParse->useDb<0 ){
+    p = sqliteFindTable(db, zName, zDbase);
+  }else {
+    assert( pParse->useDb<db->nDb );
+    assert( db->aDb[pParse->useDb].pBt!=0 );
+    zUse = db->aDb[pParse->useDb].zName;
+    if( zDbase && pParse->useDb!=1 && sqliteStrICmp(zDbase, zUse)!=0 ){
+      sqliteErrorMsg(pParse,"cannot use database %s in this context", zDbase);
+      return 0;
+    }
+    p = sqliteFindTable(db, zName, zUse);
+    if( p==0 && pParse->useDb==1 && zDbase==0 ){
+      p = sqliteFindTable(db, zName, 0);
+    }
+  }
+  if( p==0 ){
+    if( zDbase ){
+      sqliteErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
+    }else{
+      sqliteErrorMsg(pParse, "no such table: %s", zName);
+    }
+  }
+  return p;
+}
+
+/*
+** Locate the in-memory structure that describes 
+** a particular index given the name of that index
+** and the name of the database that contains the index.
 ** Return NULL if not found.
 */
 Index *sqliteFindIndex(sqlite *db, const char *zName, const char *zDb){
@@ -2078,7 +2122,13 @@ void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint, int tempOnly){
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 1, 0);
     if( !tempOnly ){
+      int i;
+      sqlite *db = pParse->db;
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
+      for(i=2; i<db->nDb; i++){
+        if( db->aDb[i].pBt==0 ) continue;
+        sqliteVdbeAddOp(v, OP_Transaction, i, 0);
+      }
       sqliteCodeVerifySchema(pParse);
     }
   }else if( setCheckpoint ){

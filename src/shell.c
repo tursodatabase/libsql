@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.69 2003/04/17 02:54:14 drh Exp $
+** $Id: shell.c,v 1.70 2003/04/17 22:57:54 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -285,7 +285,8 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       if( p->cnt++>0 ) fprintf(p->out,"\n");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%*s = %s\n", w, azCol[i], azArg[i] ? azArg[i] : p->nullvalue);
+        fprintf(p->out,"%*s = %s\n", w, azCol[i], 
+                azArg[i] ? azArg[i] : p->nullvalue);
       }
       break;
     }

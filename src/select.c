@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.131 2003/04/17 12:44:24 drh Exp $
+** $Id: select.c,v 1.132 2003/04/17 22:57:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -908,10 +908,8 @@ static int fillInColumnList(Parse *pParse, Select *p){
     }else{
       /* An ordinary table or view name in the FROM clause */
       pTabList->a[i].pTab = pTab = 
-        sqliteFindTable(pParse->db, pTabList->a[i].zName,
-                                    pTabList->a[i].zDatabase);
+        sqliteLocateTable(pParse,pTabList->a[i].zName,pTabList->a[i].zDatabase);
       if( pTab==0 ){
-        sqliteErrorMsg(pParse, "no such table: %S", pTabList, i);
         return 1;
       }
       if( pTab->pSelect ){

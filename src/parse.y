@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.94 2003/03/31 00:30:48 drh Exp $
+** @(#) $Id: parse.y,v 1.95 2003/04/17 22:57:54 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -794,7 +794,9 @@ when_clause(A) ::= WHEN expr(X). { A = X; }
 
 %type trigger_cmd_list {TriggerStep *}
 trigger_cmd_list(A) ::= trigger_cmd(X) SEMI trigger_cmd_list(Y). {
-  X->pNext = Y ; A = X; }
+  X->pNext = Y;
+  A = X;
+}
 trigger_cmd_list(A) ::= . { A = 0; }
 
 %type trigger_cmd {TriggerStep *}

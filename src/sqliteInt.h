@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.174 2003/04/16 02:17:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.175 2003/04/17 22:57:54 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -225,8 +225,8 @@ typedef struct Db Db;
 ** Each database file to be accessed by the system is an instance
 ** of the following structure.  There are normally two of these structures
 ** in the sqlite.aDb[] array.  aDb[0] is the main database file and
-** aDb[1] is the database file used to hold temporary tables.  But
-** additional databases may be attached to the engine.
+** aDb[1] is the database file used to hold temporary tables.  Additional
+** databases may be attached.
 */
 struct Db {
   char *zName;         /* Name of this database */
@@ -825,6 +825,7 @@ struct Parse {
                        ** other than after an OP_Transaction */
   u8 iDb;              /* Index of database whose schema is being parsed */
   u8 useCallback;      /* True if callbacks should be used to report results */
+  int useDb;           /* Restrict references to tables in this database */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
@@ -918,6 +919,7 @@ struct Trigger {
 struct TriggerStep {
   int op;              /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
   int orconf;          /* OE_Rollback etc. */
+  Trigger *pTrig;      /* The trigger that this step is a part of */
 
   Select *pSelect;     /* Valid for SELECT and sometimes 
 			  INSERT steps (when pExprList == 0) */
@@ -1062,6 +1064,7 @@ void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int, int);
 void sqliteExprIfFalse(Parse*, Expr*, int, int);
 Table *sqliteFindTable(sqlite*,const char*, const char*);
+Table *sqliteLocateTable(Parse*,const char*, const char*);
 Index *sqliteFindIndex(sqlite*,const char*, const char*);
 void sqliteUnlinkAndDeleteIndex(sqlite*,Index*);
 void sqliteCopy(Parse*, SrcList*, Token*, Token*, int);

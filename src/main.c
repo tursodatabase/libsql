@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.125 2003/04/16 20:24:52 drh Exp $
+** $Id: main.c,v 1.126 2003/04/17 22:57:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -69,6 +69,7 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
         sParse.db = pData->db;
         sParse.initFlag = 1;
         sParse.iDb = atoi(argv[4]);
+        sParse.useDb = -1;
         sParse.newTnum = atoi(argv[2]);
         sParse.useCallback = 1;
         sqliteRunParser(&sParse, argv[3], pData->pzErrMsg);
@@ -320,6 +321,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   sParse.xCallback = sqliteInitCallback;
   sParse.pArg = (void*)&initData;
   sParse.initFlag = 1;
+  sParse.useDb = -1;
   sParse.useCallback = 1;
   if( iDb==0 ){
     sqliteRunParser(&sParse,
@@ -719,6 +721,7 @@ static int sqliteMain(
   sParse.db = db;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
+  sParse.useDb = -1;
   sParse.useCallback = ppVm==0;
 #ifndef SQLITE_OMIT_TRACE
   if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
