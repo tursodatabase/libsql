@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.221 2004/06/15 13:36:31 danielk1977 Exp $
+** $Id: main.c,v 1.222 2004/06/15 16:51:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -472,10 +472,18 @@ void sqlite3_close(sqlite *db){
   HashElem *i;
   int j;
   db->want_to_close = 1;
-  if( sqlite3SafetyCheck(db) || sqlite3SafetyOn(db) ){
+
+  /* FIX ME: db->magic may be set to SQLITE_MAGIC_CLOSED if the database
+  ** cannot be opened for some reason. So this routine needs to run in
+  ** that case. But maybe there should be an extra magic value for the
+  ** "failed to open" state.
+  */
+  if( db->magic!=SQLITE_MAGIC_CLOSED && 
+      (sqlite3SafetyCheck(db) || sqlite3SafetyOn(db)) ){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
     return;
   }
+
   db->magic = SQLITE_MAGIC_CLOSED;
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
@@ -1048,6 +1056,7 @@ int sqlite3_prepare16(
     int chars_parsed = sqlite3utf8CharLen(zSql8, zTail8-zSql8);
     *pzTail = (u8 *)zSql + sqlite3utf16ByteLen(zSql, chars_parsed);
   }
+  sqliteFree(zSql8);
  
   return rc;
 }

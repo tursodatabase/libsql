@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.218 2004/06/12 09:25:12 danielk1977 Exp $
+** $Id: build.c,v 1.219 2004/06/15 16:51:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -556,10 +556,11 @@ void sqlite3StartTable(
 
   pParse->sNameToken = *pName;
   zName = sqlite3TableNameFromToken(pName);
+  if( zName==0 ) return;
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
+    sqliteFree(zName);
     return;
   }
-  if( zName==0 ) return;
   if( db->init.iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   assert( (isTemp & 1)==isTemp );
@@ -599,6 +600,7 @@ void sqlite3StartTable(
       sqlite3ErrorMsg(pParse, "unable to open a temporary database "
         "file for storing temporary tables");
       pParse->nErr++;
+      sqliteFree(zName);
       return;
     }
     if( db->flags & !db->autoCommit ){
@@ -606,6 +608,7 @@ void sqlite3StartTable(
       if( rc!=SQLITE_OK ){
         sqlite3ErrorMsg(pParse, "unable to get a write lock on "
           "the temporary database file");
+        sqliteFree(zName);
         return;
       }
     }
@@ -629,6 +632,8 @@ void sqlite3StartTable(
   }
   pTable = sqliteMalloc( sizeof(Table) );
   if( pTable==0 ){
+    pParse->rc = SQLITE_NOMEM;
+    pParse->nErr++;
     sqliteFree(zName);
     return;
   }
@@ -2209,7 +2214,7 @@ void sqlite3CreateIndex(
 exit_create_index:
   if( pIndex ) sqliteFree(pIndex);
   sqlite3ExprListDelete(pList);
-  /* sqlite3SrcListDelete(pTable); */
+  sqlite3SrcListDelete(pTblName);
   sqliteFree(zName);
   return;
 }

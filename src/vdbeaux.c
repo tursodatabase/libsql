@@ -745,6 +745,7 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
           ctx.isStep = 0;
           ctx.isError = 0;
           (*pAgg->apFunc[i]->xFinalize)(&ctx);
+          pMem->z = ctx.pAgg;
           if( pMem->z!=0 && pMem->z!=pMem->z ){
             sqliteFree(pMem->z);
           }
