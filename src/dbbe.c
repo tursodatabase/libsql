@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.7 2000/06/02 01:17:37 drh Exp $
+** $Id: dbbe.c,v 1.8 2000/06/02 01:36:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -270,8 +270,8 @@ int sqliteDbbeOpenTable(
       sqliteFree(zFile);
       return SQLITE_NOMEM;
     }
-    if( pFile->zName ){
-      pFile->dbf = gdbm_open(pFile->zName, 0, rw_mask, mode, 0);
+    if( zFile ){
+      pFile->dbf = gdbm_open(zFile, 0, rw_mask, mode, 0);
     }else{
       int limit;
       struct rc4 *pRc4;

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.7 2000/06/02 01:17:38 drh Exp $
+** $Id: vdbe.c,v 1.8 2000/06/02 01:36:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1323,6 +1323,20 @@ int sqliteVdbeExec(
           sqliteDbbeCloseTable(p->aTab[i].pTable);
         }
         rc = sqliteDbbeOpenTable(p->pBe, pOp->p3, pOp->p2, &p->aTab[i].pTable);
+        switch( rc ){
+          case SQLITE_BUSY: {
+            sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
+            break;
+          }
+          case SQLITE_READONLY: {
+            sqliteSetString(pzErrMsg,"table ", pOp->p3, 
+               " is already opened for reading", 0);
+            break;
+          }
+          case SQLITE_NOMEM: {
+            goto no_mem;
+          }
+        }
         p->aTab[i].index = 0;
         break;
       }
@@ -1714,6 +1728,9 @@ int sqliteVdbeExec(
           sqliteDbbeCloseTempFile(p->pBe, p->apList[i]);
         }
         rc = sqliteDbbeOpenTempFile(p->pBe, &p->apList[i]);
+        if( rc!=SQLITE_OK ){
+          sqliteSetString(pzErrMsg, "unable to open a temporary file", 0);
+        }
         break;
       }
 
@@ -2224,5 +2241,4 @@ bad_instruction:
   sqliteSetString(pzErrMsg, "illegal operation at ", zBuf, 0);
   rc = SQLITE_INTERNAL;
   goto cleanup;
-
 }
