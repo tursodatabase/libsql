@@ -1,5 +1,5 @@
-C Change\sprototype\sfor\sbusy\scallbacks\sto\s"int\sxBusy(void\s*,\sint);"\s(CVS\s1573)
-D 2004-06-12T01:43:26
+C Bug\sfix\sin\sthe\sunix\slocking\scode.\s(CVS\s1574)
+D 2004-06-12T02:17:15
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,9 +44,9 @@ F src/os.h 23c69c5084e71b5fe199ff1c4e35a4aded0f1380
 F src/os_common.h 6393ac67a3a7b4aea19ff17529980ecf77eb2348
 F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_unix.c 1d6f3d1a87d4aa0e4490bcc47b3f0ff9b2e37e7a
+F src/os_unix.c 7ece785e36c4ecb57c73db8d374b56912d742c4a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
-F src/os_win.c 6b8f9fcc683bb888e07fc485372803baa68faadb
+F src/os_win.c d4009586dfd0543ca8956ff0be30f9d23e2cbbdd
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
 F src/pager.c 4a2d3c871169385f7fe65c37919ced82cb3d34ed
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
@@ -80,7 +80,7 @@ F src/vdbemem.c 26cd5419a9c9e7a8959618376f04afdb433b77a3
 F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
-F test/attach2.test 01f55202c7984f9835b9195a5bff4b5c5f0316ee
+F test/attach2.test e6b5f0d735cf8f6c14acfa2ce69b925dbe316b3e
 F test/attach3.test 8259ab833b5dcdf4acd75d9653f42f703ce2e013
 F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9b84f2f488e1d37ba1a4c4cf31490bcbba0f6edd
-R 9710f09de77faaee2416768df891dc21
-U danielk1977
-Z f9730ca2955947853f997709fb7895ea
+P 4f1cfca5ca703d0068cf8d6222dc8e0cfb7e24b6
+R 5ae96fc36d6708ebd2e3e17bdca09c44
+U drh
+Z 179ef88834f751e9c7fc73c1211cbbf2

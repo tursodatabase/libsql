@@ -733,7 +733,6 @@ int sqlite3OsLock(OsFile *id, int locktype){
   */
   if( (id->locktype!=pLock->locktype && 
           (pLock->locktype>=PENDING_LOCK || locktype>SHARED_LOCK))
-   || (locktype==EXCLUSIVE_LOCK && pLock->cnt>1)
   ){
     rc = SQLITE_BUSY;
     goto end_lock;
@@ -757,16 +756,13 @@ int sqlite3OsLock(OsFile *id, int locktype){
   lock.l_len = 1L;
   lock.l_whence = SEEK_SET;
 
-  /* If control gets to this point, then actually go ahead and make
-  ** operating system calls for the specified lock.
+  /* A PENDING lock is needed before acquiring a SHARED lock and before
+  ** acquiring an EXCLUSIVE lock.  For the SHARED lock, the PENDING will
+  ** be released.
   */
-  if( locktype==SHARED_LOCK ){
-    assert( pLock->cnt==0 );
-    assert( pLock->locktype==0 );
-  
-    /* Temporarily grab a PENDING lock.  This prevents new SHARED locks from
-    ** being formed if a PENDING lock is already held.
-    */
+  if( locktype==SHARED_LOCK 
+      || (locktype==EXCLUSIVE_LOCK && id->locktype<PENDING_LOCK)
+  ){
     lock.l_type = F_RDLCK;
     lock.l_start = PENDING_BYTE;
     s = fcntl(id->h, F_SETLK, &lock);
@@ -774,6 +770,15 @@ int sqlite3OsLock(OsFile *id, int locktype){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
       goto end_lock;
     }
+  }
+
+
+  /* If control gets to this point, then actually go ahead and make
+  ** operating system calls for the specified lock.
+  */
+  if( locktype==SHARED_LOCK ){
+    assert( pLock->cnt==0 );
+    assert( pLock->locktype==0 );
 
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
@@ -792,8 +797,12 @@ int sqlite3OsLock(OsFile *id, int locktype){
       id->pOpen->nLock++;
       pLock->cnt = 1;
     }
+  }else if( locktype==EXCLUSIVE_LOCK && pLock->cnt>1 ){
+    /* We are trying for an exclusive lock but another thread in this
+    ** same process is still holding a shared lock. */
+    rc = SQLITE_BUSY;
   }else{
-    /* The request was for a RESERVED, PENDING or EXCLUSIVE lock.  It is
+    /* The request was for a RESERVED or EXCLUSIVE lock.  It is
     ** assumed that there is a SHARED or greater lock on the file
     ** already.
     */
@@ -802,9 +811,6 @@ int sqlite3OsLock(OsFile *id, int locktype){
     switch( locktype ){
       case RESERVED_LOCK:
         lock.l_start = RESERVED_BYTE;
-        break;
-      case PENDING_LOCK:
-        lock.l_start = PENDING_BYTE;
         break;
       case EXCLUSIVE_LOCK:
         lock.l_start = SHARED_FIRST;
@@ -822,6 +828,9 @@ int sqlite3OsLock(OsFile *id, int locktype){
   if( rc==SQLITE_OK ){
     id->locktype = locktype;
     pLock->locktype = locktype;
+  }else if( locktype==EXCLUSIVE_LOCK ){
+    id->locktype = PENDING_LOCK;
+    pLock->locktype = PENDING_LOCK;
   }
 
 end_lock:

@@ -420,6 +420,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
   ** the PENDING_LOCK byte is temporary.
   */
+  newLocktype = id->locktype;
   if( id->locktype==NO_LOCK
    || (locktype==EXCLUSIVE_LOCK && id->locktype==RESERVED_LOCK)
   ){
@@ -536,7 +537,7 @@ int sqlite3OsCheckReservedLock(OsFile *id){
 int sqlite3OsUnlock(OsFile *id, int locktype){
   int rc, type;
   assert( locktype<=SHARED_LOCK );
-  TRACE4("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
+  TRACE5("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
           id->locktype, id->sharedLockByte);
   type = id->locktype;
   if( type>=EXCLUSIVE_LOCK ){
