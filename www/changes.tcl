@@ -21,6 +21,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 March 27 (3.2.1)} {
+<li>Fix a memory allocation error in the new ADD COLUMN comment.</li>
+<li>Documentation updates</li>
+}
+
 chng {2005 March 21 (3.2.0)} {
 <li>Added support for ALTER TABLE ADD COLUMN.</li>
 <li>Added support for the "T" separator in ISO-8601 date/time strings.</li>
