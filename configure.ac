@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.8 $
+# $Revision: 1.9 $
 
 #########
 # Programs needed
