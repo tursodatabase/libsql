@@ -1,5 +1,5 @@
-C More\saggressive\sretry\sschedule\sin\ssqlite_busy_timeout().\s(CVS\s1181)
-D 2004-01-15T13:29:32
+C Fix\sa\sbuffer-overflow\sproblem\sin\sthe\srandStr\sfunction\s(used\sonly\sfor\stesting).\s(CVS\s1182)
+D 2004-01-16T13:58:18
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c 866a6d7aacc2825aa13056ccbea1a16f436a1ca5
-F src/func.c 62cf8fae8147c0301d1c6a4a94fe0a78f7aa5b33
+F src/func.c 564c0bbe93c290774b305c0199237b8e8bcbda53
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 01874d252ac44861e927dea3f5534f67e19b1fa8
-R 889c699198a4172a6f24b672e8a9f759
+P 5e85025be7aa4a03b0cfb4d0f28a2e44653b9d3f
+R aaef1a0aff5b12b7d4f36cc6a72499f1
 U drh
-Z 4f8f302ff0837a7468fa75430d63c5d0
+Z ebbe741602d66e22ec8fa796a8084911
