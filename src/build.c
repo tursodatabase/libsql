@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.79 2002/02/23 02:32:10 drh Exp $
+** $Id: build.c,v 1.80 2002/02/27 01:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -824,6 +824,7 @@ void sqliteCreateView(
   pSelTab->nCol = 0;
   pSelTab->aCol = 0;
   sqliteDeleteTable(0, pSelTab);
+  sqliteSelectUnbind(pSelect);
   sEnd = pParse->sLastToken;
   if( sEnd.z[0]!=0 && sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
@@ -1341,21 +1342,14 @@ void sqliteIdListDelete(IdList *pList){
   for(i=0; i<pList->nId; i++){
     sqliteFree(pList->a[i].zName);
     sqliteFree(pList->a[i].zAlias);
-
-    /* If the pSelect field is set and is not pointing to the Select
-    ** structure that defines a VIEW, then the Select is for a subquery
-    ** and should be deleted.  Do not delete VIEWs, however.
-    */
-    if( pList->a[i].pSelect && 
-         (pList->a[i].pTab==0 || pList->a[i].pTab->pSelect==0) ){
-      sqliteSelectDelete(pList->a[i].pSelect);
+    if( pList->a[i].pTab && pList->a[i].pTab->isTransient ){
       sqliteDeleteTable(0, pList->a[i].pTab);
     }
+    sqliteSelectDelete(pList->a[i].pSelect);
   }
   sqliteFree(pList->a);
   sqliteFree(pList);
 }
-
 
 /*
 ** The COPY command is for compatibility with PostgreSQL and specificially

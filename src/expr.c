@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.45 2002/02/26 23:55:31 drh Exp $
+** $Id: expr.c,v 1.46 2002/02/27 01:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -146,6 +146,91 @@ void sqliteSelectMoveStrings(Select *pSelect, int offset){
   sqliteExprListMoveStrings(pSelect->pOrderBy, offset);
   sqliteSelectMoveStrings(pSelect->pPrior, offset);
 }
+
+/*
+** The following group of routines make deep copies of expressions,
+** expression lists, ID lists, and select statements.  The copies can
+** be deleted (by being passed to their respective ...Delete() routines)
+** without effecting the originals.
+**
+** Note, however, that the Expr.token.z and Expr.span.z fields point to
+** string space that is allocated separately from the expression tree
+** itself.  These routines do NOT duplicate that string space.
+**
+** The expression list and ID list return by sqliteExprListDup() and 
+** sqliteIdListDup() can not be further expanded by subsequent calls
+** to sqliteExprListAppend() or sqliteIdListAppend().
+**
+** Any tables that the ID list might point to are not duplicated.
+*/
+Expr *sqliteExprDup(Expr *p){
+  Expr *pNew;
+  if( p==0 ) return 0;
+  pNew = sqliteMalloc( sizeof(*p) );
+  if( pNew==0 ) return 0;
+  pNew->op = p->op;
+  pNew->pLeft = sqliteExprDup(p->pLeft);
+  pNew->pRight = sqliteExprDup(p->pRight);
+  pNew->pList = sqliteExprListDup(p->pList);
+  pNew->token = p->token;
+  pNew->span = p->span;
+  pNew->pSelect = sqliteSelectDup(p->pSelect);
+  return pNew;
+}
+ExprList *sqliteExprListDup(ExprList *p){
+  ExprList *pNew;
+  int i;
+  if( p==0 ) return 0;
+  pNew = sqliteMalloc( sizeof(*pNew) );
+  if( pNew==0 ) return 0;
+  pNew->nExpr = p->nExpr;
+  pNew->a = sqliteMalloc( p->nExpr*sizeof(p->a[0]) );
+  for(i=0; i<p->nExpr; i++){
+    pNew->a[i].pExpr = sqliteExprDup(p->a[i].pExpr);
+    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
+    pNew->a[i].sortOrder = p->a[i].sortOrder;
+    pNew->a[i].isAgg = p->a[i].isAgg;
+    pNew->a[i].done = 0;
+  }
+  return pNew;
+}
+IdList *sqliteIdListDup(IdList *p){
+  IdList *pNew;
+  int i;
+  if( p==0 ) return 0;
+  pNew = sqliteMalloc( sizeof(*pNew) );
+  if( pNew==0 ) return 0;
+  pNew->nId = p->nId;
+  pNew->a = sqliteMalloc( p->nId*sizeof(p->a[0]) );
+  for(i=0; i<p->nId; i++){
+    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
+    pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
+    pNew->a[i].idx = p->a[i].idx;
+    pNew->a[i].pTab = 0;
+    pNew->a[i].pSelect = sqliteSelectDup(p->a[i].pSelect);
+  }
+  return pNew;
+}
+Select *sqliteSelectDup(Select *p){
+  Select *pNew;
+  if( p==0 ) return 0;
+  pNew = sqliteMalloc( sizeof(*p) );
+  if( pNew==0 ) return 0;
+  pNew->isDistinct = p->isDistinct;
+  pNew->pEList = sqliteExprListDup(p->pEList);
+  pNew->pSrc = sqliteIdListDup(p->pSrc);
+  pNew->pWhere = sqliteExprDup(p->pWhere);
+  pNew->pGroupBy = sqliteExprListDup(p->pGroupBy);
+  pNew->pHaving = sqliteExprDup(p->pHaving);
+  pNew->pOrderBy = sqliteExprListDup(p->pOrderBy);
+  pNew->op = p->op;
+  pNew->pPrior = sqliteSelectDup(p->pPrior);
+  pNew->nLimit = p->nLimit;
+  pNew->nOffset = p->nOffset;
+  pNew->zSelect = 0;
+  return pNew;
+}
+
 
 /*
 ** Add a new element to the end of an expression list.  If pList is

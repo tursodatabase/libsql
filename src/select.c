@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.66 2002/02/24 03:25:16 drh Exp $
+** $Id: select.c,v 1.67 2002/02/27 01:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -397,7 +397,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
         return 1;
       }
       if( pTab->pSelect ){
-        pTabList->a[i].pSelect = pTab->pSelect;
+        pTabList->a[i].pSelect = sqliteSelectDup(pTab->pSelect);
       }
     }
   }
@@ -454,6 +454,36 @@ static int fillInColumnList(Parse *pParse, Select *p){
     p->pEList = pNew;
   }
   return 0;
+}
+
+/*
+** This routine recursively unlinks the Select.pSrc.a[].pTab pointers
+** in a select structure.  It just sets the pointers to NULL.  This
+** routine is recursive in the sense that if the Select.pSrc.a[].pSelect
+** pointer is not NULL, this routine is called recursively on that pointer.
+**
+** This routine is called on the Select structure that defines a
+** VIEW in order to undo any bindings to tables.  This is necessary
+** because those tables might be DROPed by a subsequent SQL command.
+*/
+void sqliteSelectUnbind(Select *p){
+  int i;
+  IdList *pSrc = p->pSrc;
+  Table *pTab;
+  if( p==0 ) return;
+  for(i=0; i<pSrc->nId; i++){
+    if( (pTab = pSrc->a[i].pTab)!=0 ){
+      if( pTab->isTransient ){
+        sqliteDeleteTable(0, pTab);
+        sqliteSelectDelete(pSrc->a[i].pSelect);
+        pSrc->a[i].pSelect = 0;
+      }
+      pSrc->a[i].pTab = 0;
+      if( pSrc->a[i].pSelect ){
+        sqliteSelectUnbind(pSrc->a[i].pSelect);
+      }
+    }
+  }
 }
 
 /*

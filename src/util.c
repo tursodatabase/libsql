@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.37 2002/02/14 21:42:51 drh Exp $
+** $Id: util.c,v 1.38 2002/02/27 01:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -183,12 +183,16 @@ void sqliteStrRealloc(char **pz){
 ** Make a copy of a string in memory obtained from sqliteMalloc()
 */
 char *sqliteStrDup_(const char *z, char *zFile, int line){
-  char *zNew = sqliteMalloc_(strlen(z)+1, zFile, line);
+  char *zNew;
+  if( z==0 ) return 0;
+  zNew = sqliteMalloc_(strlen(z)+1, zFile, line);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
 char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
-  char *zNew = sqliteMalloc_(n+1, zFile, line);
+  char *zNew;
+  if( z==0 ) return 0;
+  zNew = sqliteMalloc_(n+1, zFile, line);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
