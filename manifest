@@ -1,9 +1,9 @@
-C Make\sthe\scompile\swork\sunder\scygwin.\nTickets\s#327,\s#213,\s#316,\s#322,\s#349,\s#373,\sand\s#429.\s(CVS\s1075)
-D 2003-08-16T13:10:52
+C Add\sthe\s"onecolumn"\smethod\sto\sthe\sTCL\slanguage\sbindings.\s(CVS\s1076)
+D 2003-08-19T14:31:01
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION ab111ee5fce506ec6965461e6c89d8b9eb112e85
+F VERSION 97d209249f825001288ff942df07b48e1083af5c
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
@@ -49,7 +49,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in dafa83571810b6932f089b589c783355ef7a54b5
 F src/sqliteInt.h cdcfdb5dca98359e443e23384b822a53ebd610ac
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
-F src/tclsqlite.c d6860dcd56348b9521726280b72c412d2a33ae97
+F src/tclsqlite.c ec9e5b796bf9ec1483927e986828a205d4a7422a
 F src/test1.c b12b585bfb4763df3262975ed8d3f4f274b5eaed
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
@@ -117,7 +117,7 @@ F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
-F test/tclsqlite.test d9bdfc0afca9ee605c50ecb39e94ae4dea8c222b
+F test/tclsqlite.test 751b358b45843f7cab569e362f2db135612b8c59
 F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
 F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
@@ -166,9 +166,9 @@ F www/opcode.tcl b8d561f33597c62955796b797646f00144d97332
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
-F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
+F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P ef58f163b08d13f8e9b69459bd83e0bf9d5b404b
-R ce296030d9e4d30410759bccc85cc8c6
+P 7d8d3252df1e9f6bec5e105b6eca3313cb7e226a
+R d1a2b335d94bf870fe28343e60ff8361
 U drh
-Z 56580904bed2b7015cd53a563fb3ab39
+Z 3a0f7413336c1c88c47d903a1a6bf2bc

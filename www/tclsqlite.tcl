@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.7 2002/04/12 10:09:00 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.8 2003/08/19 14:31:02 drh Exp $}
 
 puts {<html>
 <head>
@@ -61,6 +61,7 @@ defined:</p>
 <li> complete
 <li> eval
 <li> last_insert_rowid
+<li> onecolumn
 <li> timeout
 </ul>
 </p>
@@ -248,6 +249,17 @@ should return "1" if it wants SQLite to abandon the current operation.
 
 <p>The "last_insert_rowid" method returns an integer which is the ROWID
 of the most recently inserted database row.</p>
+
+<h2>The "onecolumn" method</h2>
+
+<p>The "onecolumn" method works like "eval" in that it evaluates the
+SQL query statement given as its argument.  The difference is that
+"onecolumn" returns a single element which is the first column of the
+first row of the query result.</p>
+
+<p>This is a convenience method.  It saves the user from having to
+do a "<tt>[lindex&nbsp;...&nbsp;0]</tt>" on the results of an "eval"
+in order to extract a single column result.</p>
 
 <h2>The "changes" method</h2>
 
