@@ -1,5 +1,5 @@
-C :-)\s(CVS\s63)
-D 2000-06-06T22:13:55
+C :-)\s(CVS\s64)
+D 2000-06-06T22:19:01
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -47,10 +47,10 @@ F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
-F www/changes.tcl f5839fe8de7449d994c71a8e48ce8ea736bec7d1
-F www/index.tcl 0c63672bad5188327143ecd0a07c7c0741ff9823
+F www/changes.tcl 04e66b4257589ff78a7e1de93e9dda4725fb03d6
+F www/index.tcl 52e29a4eeda8d59e91af43c61fef177c5f2ffd53
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P f4d9089c5d69b16fee5feb49b02e524499e6328d
-R dbe7159bcbb54ce029964c82a0bd434c
+P 65d2100d33350e6bce30d4d75f3cead9fcab3efb
+R e51fd857be77f5fde7a86a91f2309159
 U drh
-Z cf4067fbc404bfe31608e9dcddc7bc35
+Z bce721fb4a38727dd225a300710a20ea

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.13 2000/06/06 18:24:42 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.14 2000/06/06 22:19:02 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
@@ -62,10 +62,8 @@ The following are the known limitations:</p>
 
 <p>
 <ul>
-<li>The UNION, INTERSECTION and EXCEPT operations connecting multiple
-SELECT statements are not yet implement</li>
 <li>Constraints are parsed but are not enforced</li>
-<li>There is not support for transactions or rollback</li>
+<li>There is no support for transactions or rollback</li>
 </ul>
 </p>
 
