@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.44 2001/09/13 14:46:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.45 2001/09/13 16:18:54 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
@@ -359,6 +359,7 @@ struct Parse {
   int colNamesSet;     /* TRUE after OP_ColumnCount has been issued to pVdbe */
   int explain;         /* True if the EXPLAIN flag is found on the query */
   int initFlag;        /* True if reparsing CREATE TABLEs */
+  int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated cursors */
   int nMem;            /* Number of memory cells used so far */

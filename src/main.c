@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.32 2001/09/13 15:21:32 drh Exp $
+** $Id: main.c,v 1.33 2001/09/13 16:18:54 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -35,32 +35,40 @@
 
 /*
 ** This is the callback routine for the code that initializes the
-** database.  Each callback contains text of a CREATE TABLE or
-** CREATE INDEX statement that must be parsed to yield the internal
-** structures that describe the tables.
+** database.  Each callback contains the following information:
 **
-** This callback is also called with argc==2 when there is meta
-** information in the sqlite_master file.  The meta information is
-** contained in argv[1].  Typical meta information is the file format
-** version.
+**     argv[0] = "meta" or "table" or "index"
+**     argv[1] = table or index name
+**     argv[2] = root page number for table or index
+**     argv[3] = SQL create statement for the table or index
+**
 */
 static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   sqlite *db = (sqlite*)pDb;
   Parse sParse;
-  int nErr;
+  int nErr = 0;
 
-  if( argc==2 ){
-    if( sscanf(argv[1],"file format %d",&db->file_format)==1 ){
-      return 0;
+  assert( argc==4 );
+  switch( argv[0][0] ){
+    case 'm': {  /* Meta information */
+      sscanf(argv[1],"file format %d",&db->file_format);
+      break;
     }
-    /* Unknown meta information.  Ignore it. */
-    return 0;
+    case 'i':
+    case 't': {  /* CREATE TABLE  and CREATE INDEX statements */
+      memset(&sParse, 0, sizeof(sParse));
+      sParse.db = db;
+      sParse.initFlag = 1;
+      sParse.newTnum = atoi(argv[2]);
+      nErr = sqliteRunParser(&sParse, argv[3], 0);
+      break;
+    }
+    default: {
+      /* This can not happen! */
+      nErr = 1;
+      assert( nErr==0 );
+    }
   }
-  if( argc!=1 ) return 0;
-  memset(&sParse, 0, sizeof(sParse));
-  sParse.db = db;
-  sParse.initFlag = 1;
-  nErr = sqliteRunParser(&sParse, argv[0], 0);
   return nErr;
 }
 
@@ -129,31 +137,40 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   static VdbeOp initProg[] = {
     { OP_Open,     0, 2,  0},
-    { OP_Next,     0, 9,  0},           /* 1 */
+    { OP_Rewind,   0, 0,  0},
+    { OP_Next,     0, 12, 0},           /* 2 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "meta"},
-    { OP_Ne,       0, 1,  0},
+    { OP_Ne,       0, 2,  0},
     { OP_Column,   0, 0,  0},
+    { OP_Column,   0, 1,  0},
+    { OP_Column,   0, 2,  0},
     { OP_Column,   0, 4,  0},
-    { OP_Callback, 2, 0,  0},
-    { OP_Goto,     0, 1,  0},
-    { OP_Rewind,   0, 0,  0},           /* 9 */
-    { OP_Next,     0, 17, 0},           /* 10 */
+    { OP_Callback, 4, 0,  0},
+    { OP_Goto,     0, 2,  0},
+    { OP_Rewind,   0, 0,  0},           /* 12 */
+    { OP_Next,     0, 23, 0},           /* 13 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "table"},
-    { OP_Ne,       0, 10, 0},
+    { OP_Ne,       0, 13, 0},
+    { OP_Column,   0, 0,  0},
+    { OP_Column,   0, 1,  0},
+    { OP_Column,   0, 2,  0},
     { OP_Column,   0, 4,  0},
-    { OP_Callback, 1, 0,  0},
-    { OP_Goto,     0, 10, 0},
-    { OP_Rewind,   0, 0,  0},           /* 17 */
-    { OP_Next,     0, 25, 0},           /* 18 */
+    { OP_Callback, 4, 0,  0},
+    { OP_Goto,     0, 13, 0},
+    { OP_Rewind,   0, 0,  0},           /* 23 */
+    { OP_Next,     0, 34, 0},           /* 24 */
     { OP_Column,   0, 0,  0},
     { OP_String,   0, 0,  "index"},
-    { OP_Ne,       0, 18, 0},
+    { OP_Ne,       0, 24, 0},
+    { OP_Column,   0, 0,  0},
+    { OP_Column,   0, 1,  0},
+    { OP_Column,   0, 2,  0},
     { OP_Column,   0, 4,  0},
-    { OP_Callback, 1, 0,  0},
-    { OP_Goto,     0, 18, 0},
-    { OP_Close,    2, 0,  0},           /* 25 */
+    { OP_Callback, 4, 0,  0},
+    { OP_Goto,     0, 24, 0},
+    { OP_Close,    0, 0,  0},           /* 34 */
     { OP_Halt,     0, 0,  0},
   };
 
@@ -169,20 +186,22 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
                       db->pBusyArg, db->xBusyCallback);
   sqliteVdbeDelete(vdbe);
-  if( rc==SQLITE_OK && db->file_format<2 && db->nTable>0 ){
-    sqliteSetString(pzErrMsg, "obsolete file format", 0);
+  if( rc==SQLITE_OK && db->file_format>1 && db->nTable>0 ){
+    sqliteSetString(pzErrMsg, "unsupported file format", 0);
     rc = SQLITE_ERROR;
   }
   if( rc==SQLITE_OK ){
     Table *pTab;
-    char *azArg[2];
-    azArg[0] = master_schema;
-    azArg[1] = 0;
-    sqliteOpenCb(db, 1, azArg, 0);
+    char *azArg[5];
+    azArg[0] = "table";
+    azArg[1] = MASTER_NAME;
+    azArg[2] = "2";
+    azArg[3] = master_schema;
+    azArg[4] = 0;
+    sqliteOpenCb(db, 4, azArg, 0);
     pTab = sqliteFindTable(db, MASTER_NAME);
     if( pTab ){
       pTab->readOnly = 1;
-      pTab->tnum = 2;
     }
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);

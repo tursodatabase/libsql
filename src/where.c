@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.17 2001/09/13 14:46:11 drh Exp $
+** $Id: where.c,v 1.18 2001/09/13 16:18:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -358,6 +358,7 @@ WhereInfo *sqliteWhereBegin(
       /* Case 2:  There was no usable index.  We must do a complete
       ** scan of the table.
       */
+      sqliteVdbeAddOp(v, OP_Rewind, base+idx, 0, 0, 0);
       cont = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Next, base+idx, brk, 0, cont);
       haveKey = 0;

@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.30 2001/09/13 14:46:10 drh Exp $
+** $Id: build.c,v 1.31 2001/09/13 16:18:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -461,6 +461,14 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     db->flags |= SQLITE_InternChanges;
   }
 
+  /* If the initFlag is 1 it means we are reading the SQL off the
+  ** "sqlite_master" table on the disk.  So do not write to the disk
+  ** again.  Extract the table number from the pParse->newTnum field.
+  */
+  if( pParse->initFlag ){
+    p->tnum = pParse->newTnum;
+  }
+
   /* If not initializing, then create the table on disk.
   */
   if( !pParse->initFlag ){
@@ -472,7 +480,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       { OP_CreateTable, 0, 0, 0},
       { OP_String,      0, 0, 0},            /* 5 */
       { OP_String,      0, 0, 0},            /* 6 */
-      { OP_MakeRecord,  4, 0, 0},
+      { OP_MakeRecord,  5, 0, 0},
       { OP_Put,         0, 0, 0},
     };
     int n, base;
@@ -538,15 +546,16 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   if( v ){
     static VdbeOp dropTable[] = {
       { OP_Open,       0, 2,        0},
-      { OP_String,     0, 0,        0}, /* 1 */
-      { OP_Next,       0, ADDR(9),  0}, /* 2 */
+      { OP_Rewind,     0, 0,        0},
+      { OP_String,     0, 0,        0}, /* 2 */
+      { OP_Next,       0, ADDR(10), 0}, /* 3 */
       { OP_Dup,        0, 0,        0},
       { OP_Column,     0, 3,        0},
-      { OP_Ne,         0, ADDR(2),  0},
+      { OP_Ne,         0, ADDR(3),  0},
       { OP_Recno,      0, 0,        0},
       { OP_Delete,     0, 0,        0},
-      { OP_Goto,       0, ADDR(2),  0},
-      { OP_Destroy,    0, 0,        0}, /* 9 */
+      { OP_Goto,       0, ADDR(3),  0},
+      { OP_Destroy,    0, 0,        0}, /* 10 */
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
@@ -554,7 +563,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
-    sqliteVdbeChangeP1(v, base+9, pTable->tnum);
+    sqliteVdbeChangeP1(v, base+10, pTable->tnum);
     for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
       sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, 0, 0, 0);
     }
@@ -694,6 +703,14 @@ void sqliteCreateIndex(
     db->flags |= SQLITE_InternChanges;
   }
 
+  /* If the initFlag is 1 it means we are reading the SQL off the
+  ** "sqlite_master" table on the disk.  So do not write to the disk
+  ** again.  Extract the table number from the pParse->newTnum field.
+  */
+  if( pParse->initFlag ){
+    pIndex->tnum = pParse->newTnum;
+  }
+
   /* If the initFlag is 0 then create the index on disk.  This
   ** involves writing the index into the master table and filling in the
   ** index with the current table contents.
@@ -740,6 +757,7 @@ void sqliteCreateIndex(
     }
     lbl1 = sqliteVdbeMakeLabel(v);
     lbl2 = sqliteVdbeMakeLabel(v);
+    sqliteVdbeAddOp(v, OP_Rewind, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
     sqliteVdbeAddOp(v, OP_Recno, 0, 0, 0, 0);
     for(i=0; i<pIndex->nColumn; i++){
@@ -795,14 +813,15 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   if( v ){
     static VdbeOp dropIndex[] = {
       { OP_Open,       0, 2,       0},
-      { OP_String,     0, 0,       0}, /* 1 */
-      { OP_Next,       0, ADDR(8), 0}, /* 2 */
+      { OP_Rewind,     0, 0,       0}, 
+      { OP_String,     0, 0,       0}, /* 2 */
+      { OP_Next,       0, ADDR(9), 0}, /* 3 */
       { OP_Dup,        0, 0,       0},
       { OP_Column,     0, 1,       0},
-      { OP_Ne,         0, ADDR(2), 0},
+      { OP_Ne,         0, ADDR(3), 0},
       { OP_Recno,      0, 0,       0},
       { OP_Delete,     0, 0,       0},
-      { OP_Destroy,    0, 0,       0}, /* 8 */
+      { OP_Destroy,    0, 0,       0}, /* 9 */
       { OP_Close,      0, 0,       0},
     };
     int base;
@@ -811,7 +830,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
-    sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
+    sqliteVdbeChangeP1(v, base+9, pIndex->tnum);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.62 2001/09/13 15:21:32 drh Exp $
+** $Id: vdbe.c,v 1.63 2001/09/13 16:18:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1798,11 +1798,11 @@ case OP_MakeRecord: {
   j = 0;
   addr = sizeof(int)*nField;
   for(i=p->tos-nField+1; i<=p->tos; i++){
+    memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
+    j += sizeof(int);
     if( (aStack[i].flags & STK_Null)==0 ){
       addr += aStack[i].n;
     }
-    memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
-    j += sizeof(int);
   }
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( (aStack[i].flags & STK_Null)==0 ){
@@ -2300,7 +2300,7 @@ case OP_KeyAsData: {
 case OP_Column: {
   int amt, offset, nCol, payloadSize;
   int aHdr[10];
-  const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
+  static const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
   int i = pOp->p1;
   int p2 = pOp->p2;
   int tos = ++p->tos;
@@ -2338,6 +2338,7 @@ case OP_Column: {
     if( p2+1<mxHdr ){
       (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), (char*)aHdr);
       nCol = aHdr[0];
+      nCol /= sizeof(int);
       offset = aHdr[p2];
       if( p2 == nCol-1 ){
         amt = payloadSize - offset;
