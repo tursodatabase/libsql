@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.49 2003/06/06 19:00:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.50 2003/07/22 09:24:44 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -683,6 +683,21 @@ int sqlite_step(
 ** and the result code returned will be SQLITE_ABORT.
 */
 int sqlite_finalize(sqlite_vm*, char **pzErrMsg);
+
+/*
+** This routine deletes the virtual machine, writes any error message to
+** *pzErrMsg and returns an SQLite return code in the same way as the
+** sqlite_finalize() function.
+**
+** Additionally, if ppVm is not NULL, *ppVm is left pointing to a new virtual
+** machine loaded with the compiled version of the original query ready for
+** execution.
+**
+** If sqlite_reset() returns SQLITE_SCHEMA, then *ppVm is set to NULL.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite_reset(sqlite_vm *, char **pzErrMsg, sqlite_vm **ppVm);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
