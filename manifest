@@ -1,5 +1,5 @@
-C Fix\sa\snaming\sconflict\sbetween\ssqlite\sversions\s2\sand\s3.\s\sAn\sopen\ssqlite3\nconnection\snow\s*must*\sbe\scalled\s"sqlite3".\s\sYou\scannot\scall\sit\s"sqlite".\nThis\smight\sbreak\sexisting\scode.\s(CVS\s1941)
-D 2004-09-06T17:24:12
+C Fix\smore\sname\scollisions.\s\sAllow\ssqlite.h\sand\ssqlite3.h\sto\sboth\sbe\sincluded\nin\sthe\ssame\sC/C++\ssource\sfile.\s(CVS\s1942)
+D 2004-09-06T17:34:13
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,7 +39,7 @@ F src/func.c 14bf20710a10fe66266e16da4364ca2dd8c4c36d
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c bfd21070c28dd94e58ae918260a6985d2b5e4477
-F src/legacy.c 1cf9a326313f99879b4970a1d454725deb12e81b
+F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c ac302ed646bdb256b78c87385627b3142357eced
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
@@ -60,7 +60,7 @@ F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 6e3ec12a01c6d5b51459d6ddaca36040d9e7730e
 F src/shell.c 4f1a2760ced81c829defb47b0a3b61ffec61b604
-F src/sqlite.h.in 40c365c4af381fea8f103d579d4ce021c1b5fbc6
+F src/sqlite.h.in 8bdf3fc4c76040f939cb1831eb97babf6a2fa858
 F src/sqliteInt.h 0840e651db8e16f88f2b8a2393ac98dfdbf01df0
 F src/table.c 8168c6e824009f8485bff79fc60ea8fea6829b10
 F src/tclsqlite.c ad6460a22cee18f292614a083cd15db670298213
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P dfa9ea89c473e1fea804ad07e8e58a9af1e92f6c
-R d6d5fe458835a0a28a6ff1bc8acf5454
+P 3ddf5a9d1c480a2e3aa32685879063b11afddbe1
+R 4e21ecb2dca1b0e6b2292d8785d52007
 U drh
-Z eb4e97b9a729a6f470349fc7f802efa6
+Z 6b0395c7e689562e57eb91318a8ed3d1

@@ -12,10 +12,10 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.117 2004/09/06 17:24:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.118 2004/09/06 17:34:13 drh Exp $
 */
-#ifndef _SQLITE_H_
-#define _SQLITE_H_
+#ifndef _SQLITE3_H_
+#define _SQLITE3_H_
 #include <stdarg.h>     /* Needed for the definition of va_list */
 
 /*
@@ -77,7 +77,7 @@ int sqlite3_close(sqlite3 *);
 /*
 ** The type for a callback function.
 */
-typedef int (*sqlite_callback)(void*,int,char**, char**);
+typedef int (*sqlite3_callback)(void*,int,char**, char**);
 
 /*
 ** A function to executes one or more statements of SQL.
@@ -120,9 +120,9 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** and sqlite3_busy_timeout() functions below.)
 */
 int sqlite3_exec(
-  sqlite3*,                      /* An open database */
+  sqlite3*,                     /* An open database */
   const char *sql,              /* SQL to be executed */
-  sqlite_callback,              /* Callback function */
+  sqlite3_callback,             /* Callback function */
   void *,                       /* 1st argument to callback function */
   char **errmsg                 /* Error msg written here */
 );
