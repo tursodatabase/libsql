@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct 8 (2.0.2)} {
+chng {2001 Oct 9 (2.0.2)} {
 <li>Fix a bugs in the locking protocol.</li>
 <li>Removed some unused "#include <unistd.h>" that were causing problems
     for VC++.</li>

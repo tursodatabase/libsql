@@ -1,9 +1,9 @@
-C Fix\sthe\slocking\sprotocol.\s(CVS\s280)
-D 2001-10-09T04:19:47
+C Version\s2.0.2\s(CVS\s281)
+D 2001-10-09T04:21:51
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 1e54087c0390c4ce0bb5be43e14ba028283751e6
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
-F VERSION 1fb7be12efaa1608dc63e784e33082ae0ac7919b
+F VERSION 73e5f5e088b67ed1629b08ca531b81c778ab8695
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -101,7 +101,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl 8e8d9e66e8467c5751116c3427296bde77f474a6
-F www/changes.tcl 7530ecb46af5e2ecb196a90f0ccd46feb3321169
+F www/changes.tcl 6c25c0098cddde028e04d8ce7b59f58359a0fa1f
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -113,7 +113,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 9368c62e4097aae3081a325962c1dec167fd253d
-R 08d1f89d62d87ee167ed839388fa6d57
+P 484b82d8a1c84f3d9725a509de93276b9fa9b294
+R e0211f7ef81f1015b59b3a33ae8ec9df
 U drh
-Z 67f2491d5f9216116d67e90ffb5f4570
+Z 085c67f80b7bd57b2ee9d6e92b91d085
