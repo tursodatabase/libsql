@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.150 2004/02/12 19:01:05 drh Exp $
+** $Id: main.c,v 1.151 2004/02/13 16:30:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -681,8 +681,60 @@ int sqlite_exec(
   void *pArg,                 /* First argument to xCallback() */
   char **pzErrMsg             /* Write error messages here */
 ){
+#if 1
   return sqliteMain(db, zSql, xCallback, pArg, 0, 0, pzErrMsg);
+#else
+  int rc;
+  const char *zLeftover;
+  sqlite_vm *pVm;
+
+  if( zSql==0 ) return SQLITE_OK;
+  while( zSql[0] ){
+    int nBusy = 0;
+    rc = sqlite_compile(db, zSql, &zLeftover, &pVm, pzErrMsg);
+    if( rc!=SQLITE_OK ){
+      /* sqlite_finalize(pVm, 0); */
+      return rc;
+    }
+    while(1){
+      int nArg;
+      char **azArg, **azCol;
+      rc = sqlite_step(pVm, &nArg, &azArg, &azCol);
+      if( rc==SQLITE_ROW ){
+        if( xCallback(pArg, nArg, azArg, azCol) ){
+          sqlite_finalize(pVm, 0);
+          return SQLITE_ABORT;
+        }
+#if 0
+      }else if( rc==SQLITE_BUSY ){
+        if( db->xBusyCallback==0
+              || db->xBusyCallback(db->pBusyArg, "", nBusy++)==0 ){
+          sqlite_finalize(pVm, 0);
+          return SQLITE_BUSY;
+        }
+#endif
+      }else if( rc==SQLITE_SCHEMA ){
+        sqlite_finalize(pVm, 0);
+        break;
+      }else{
+        rc = sqlite_finalize(pVm, pzErrMsg);
+        if( rc==SQLITE_SCHEMA ){
+          sqliteResetInternalSchema(db, 0);
+          /* break; */
+        }
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        zSql = zLeftover;
+        while( isspace(zSql[0]) ) zSql++;
+        break;
+      }
+    }
+  }
+  return SQLITE_OK;
+#endif
 }
+
 
 /*
 ** Compile a single statement of SQL into a virtual machine.  Return one

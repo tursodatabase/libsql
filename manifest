@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\squery\sflattener\swhen\strying\sto\sfind\sthe\sdatatype\sof\sthe\nrowid\sof\sa\sview.\s\sAlso\sfix\sa\sproblem\swith\ssqlite_compile()\sand\sauthorization\nfailures.\s(CVS\s1236)
-D 2004-02-13T16:22:23
+C Begin\sthe\sprocess\sover\sconverting\ssqlite_exec()\sover\sto\suse\ssqlite_compile()\nand\ssqlite_step().\s\sThe\snew\ssqlite_exec()\sis\sstill\scommented\sout.\s(CVS\s1237)
+D 2004-02-13T16:30:10
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/func.c cbc5edd10c82a5193b9ca0726873328be445e6c1
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
-F src/main.c 3230d9e31e7dd0800d5bd5c9bd59e58a73fdb776
+F src/main.c cfe8ca913219dbfb45990a5bdac01ad63361a3f3
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c f5fc4954725b2fcd852979f2746085fe8ca27710
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
@@ -184,7 +184,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9f149fdc1c6af1c663b91c878ed1903f82f80245
-R 0a1abd4879d35c7c70d8d469ebb2575b
+P aa0490ccd4a820a707dfb4905e67c01ffb4f758b
+R 3d4312db1b01209de5e7a503534ee386
 U drh
-Z ccb3ee1ecce4c81620c08fbe0b8c5332
+Z 4885952f027f0f0cf39c7f995fa7e947
