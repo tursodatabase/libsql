@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.203 2004/05/31 10:01:35 danielk1977 Exp $
+** $Id: build.c,v 1.204 2004/05/31 11:51:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2226,9 +2226,11 @@ void sqlite3RollbackTransaction(Parse *pParse){
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   sqlite *db = pParse->db;
   Vdbe *v = sqlite3GetVdbe(pParse);
+  if( v==0 ) return;
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
   if( iDb!=1 && (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
+    sqlite3VdbeAddOp(v, OP_Transaction, iDb, 0);
     sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
     pParse->cookieMask |= ((u64)1<<iDb);
   }
@@ -2253,10 +2255,14 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** specified auxiliary database and the temp database are made writable.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
+  sqlite *db = pParse->db;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   sqlite3VdbeAddOp(v, OP_Transaction, iDb, 1);
-  sqlite3CodeVerifySchema(pParse, iDb);
+  if( iDb!=1 && (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
+    sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
+    pParse->cookieMask |= ((u64)1<<iDb);
+  }
   if( setStatement ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
   }

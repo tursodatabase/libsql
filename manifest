@@ -1,5 +1,5 @@
-C Bugfix\sfor\sprevious\scheckin.\s(CVS\s1503)
-D 2004-05-31T10:08:15
+C Use\sread-only\stransactions.\s(CVS\s1504)
+D 2004-05-31T11:51:45
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 652efb14a17ba26759f73ca167f7d1e5d6651eb3
 F src/btree.h 1e2beb41b4b4a4fc41da67cb4692614938066f2f
-F src/build.c 8fd4c1a7df5761ff95dd0e57e82b2c08ab88bbce
+F src/build.c 2f791d1d52778b9a2ec251465215ca480a966f36
 F src/date.c 0eb922af5c5f5e2455f8dc2f98023ed3e04a857e
 F src/delete.c 72f8febf6170cda830f509c8f9dffbed3df3596c
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6b43633a96c674a5d470578ef80ebf2227da0682
-R afcfd11cc38960c271ce100579be408f
+P 5f869fbfc029eb2601d1d967685517d007d002a4
+R 62350eb9f403c6ef305bb359dbc711d8
 U danielk1977
-Z e1607363421eeb9cb3c20a7c6b83785e
+Z 89534b52ebf7a971be3266cc25c2b9c8
