@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.12 2005/03/21 01:31:37 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.13 2005/03/31 21:02:46 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -203,7 +203,8 @@ puts {
     may only be set if the database has not yet been created. The page
     size must be a power of two greater than or equal to 512 and less
     than or equal to 8192. The upper limit may be modified by setting
-    the value of macro SQLITE_MAX_PAGE_SIZE during compilation.
+    the value of macro SQLITE_MAX_PAGE_SIZE during compilation.  The
+    maximum upper bound is 32768.
     </p>
 </li>
 
