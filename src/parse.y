@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.45 2002/01/31 15:54:22 drh Exp $
+** @(#) $Id: parse.y,v 1.46 2002/02/02 15:01:16 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -56,7 +56,11 @@ explain ::= EXPLAIN.    {pParse->explain = 1;}
 
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
-cmd ::= BEGIN trans_opt onconf(R).  {sqliteBeginTransaction(pParse,R);}
+
+// For now, disable the ability to change the default conflict resolution
+// algorithm in a transaction.  We made add it back later.
+// cmd ::= BEGIN trans_opt onconf(R).  {sqliteBeginTransaction(pParse,R);}
+cmd ::= BEGIN trans_opt.        {sqliteBeginTransaction(pParse, OE_Default);}
 trans_opt ::= .
 trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION ids.
@@ -325,10 +329,14 @@ setlist(A) ::= ids(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
+cmd ::= insert_cmd(R) INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
                {sqliteInsert(pParse, &X, Y, 0, F, R);}
-cmd ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) select(S).
+cmd ::= insert_cmd(R) INTO ids(X) inscollist_opt(F) select(S).
                {sqliteInsert(pParse, &X, 0, S, F, R);}
+
+%type insert_cmd {int}
+insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
+insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 
 
 %type itemlist {ExprList*}

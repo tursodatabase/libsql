@@ -96,6 +96,9 @@ sqlite_exec_printf
 sqlite_exec_vprintf
 sqlite_get_table_printf
 sqlite_get_table_vprintf
+sqlite_freemem
+sqlite_libversion
+sqlite_libencoding
 sqliteMalloc
 sqliteFree
 sqliteRealloc

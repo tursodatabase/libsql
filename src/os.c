@@ -306,11 +306,14 @@ int sqliteOsOpenReadWrite(
 ** previously existed.  Nor do we allow the file to be a symbolic
 ** link.
 **
+** If delFlag is true, then make arrangements to automatically delete
+** the file when it is closed.
+**
 ** On success, write the file handle into *id and return SQLITE_OK.
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqliteOsOpenExclusive(const char *zFilename, OsFile *id){
+int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 #if OS_UNIX
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
@@ -331,15 +334,26 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id){
     return SQLITE_NOMEM;
   }
   id->locked = 0;
+  if( delFlag ){
+    unlink(zFilename);
+  }
   return SQLITE_OK;
 #endif
 #if OS_WIN
-  HANDLE h = CreateFile(zFilename,
+  HANDLE h;
+  int fileflags;
+  if( delFlag ){
+    fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS 
+                     | FILE_FLAG_DELETE_ON_CLOSE;
+  }else{
+    fileflags = FILE_FLAG_RANDOM_ACCESS;
+  }
+  h = CreateFile(zFilename,
      GENERIC_READ | GENERIC_WRITE,
      0,
      NULL,
      CREATE_ALWAYS,
-     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
+     fileflags,
      NULL
   );
   if( h==INVALID_HANDLE_VALUE ){

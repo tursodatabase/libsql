@@ -21,6 +21,10 @@ chng {2002 Jan 30 (2.3.0 beta)} {
 <li>Added the ability to resolve constraint conflicts is ways other than
     an abort and rollback.  See the documentation on the "ON CONFLICT"
     clause for details.</li>
+<li>Temporary files are now automatically deleted by the operating system
+    when closed.  There are no more dangling temporary files on a program
+    crash.  (If the OS crashes, fsck will delete the file after reboot 
+    under Unix.  I do not know what happens under Windows.)</li>
 <li>NOT NULL constraints are honored.</li>
 <li>The COPY command puts NULLs in columns whose data is '\N'.</li>
 <li>In the COPY command, backslash can now be used to escape a newline.</li>

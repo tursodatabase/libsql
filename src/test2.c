@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.6 2001/10/12 17:30:05 drh Exp $
+** $Id: test2.c,v 1.7 2002/02/02 15:01:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -152,6 +152,87 @@ static int pager_commit(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
   rc = sqlitepager_commit(pPager);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   pager_ckpt_begin ID
+**
+** Start a new checkpoint.
+*/
+static int pager_ckpt_begin(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Pager *pPager;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  rc = sqlitepager_ckpt_begin(pPager);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   pager_ckpt_rollback ID
+**
+** Rollback changes to a checkpoint
+*/
+static int pager_ckpt_rollback(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Pager *pPager;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  rc = sqlitepager_ckpt_rollback(pPager);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   pager_ckpt_commit ID
+**
+** Commit changes to a checkpoint
+*/
+static int pager_ckpt_commit(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Pager *pPager;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  rc = sqlitepager_ckpt_commit(pPager);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -393,6 +474,9 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "pager_close", pager_close, 0, 0);
   Tcl_CreateCommand(interp, "pager_commit", pager_commit, 0, 0);
   Tcl_CreateCommand(interp, "pager_rollback", pager_rollback, 0, 0);
+  Tcl_CreateCommand(interp, "pager_ckpt_begin", pager_ckpt_begin, 0, 0);
+  Tcl_CreateCommand(interp, "pager_ckpt_commit", pager_ckpt_commit, 0, 0);
+  Tcl_CreateCommand(interp, "pager_ckpt_rollback", pager_ckpt_rollback, 0, 0);
   Tcl_CreateCommand(interp, "pager_stats", pager_stats, 0, 0);
   Tcl_CreateCommand(interp, "pager_pagecount", pager_pagecount, 0, 0);
   Tcl_CreateCommand(interp, "page_get", page_get, 0, 0);
