@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.60 2002/07/10 21:26:01 drh Exp $
+** $Id: shell.c,v 1.61 2002/07/13 17:33:45 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -915,6 +915,7 @@ static void process_input(struct callback_data *p, FILE *in){
   char *zSql = 0;
   int nSql = 0;
   char *zErrMsg;
+  int rc;
   while( fflush(p->out), (zLine = one_input_line(zSql, in))!=0 ){
     if( seenInterrupt ){
       if( in!=0 ) break;
@@ -949,12 +950,16 @@ static void process_input(struct callback_data *p, FILE *in){
     free(zLine);
     if( zSql && sqlite_complete(zSql) ){
       p->cnt = 0;
-      if( sqlite_exec(db, zSql, callback, p, &zErrMsg)!=0
-           && zErrMsg!=0 ){
+      rc = sqlite_exec(db, zSql, callback, p, &zErrMsg);
+      if( rc || zErrMsg ){
         if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
-        printf("SQL error: %s\n", zErrMsg);
-        free(zErrMsg);
-        zErrMsg = 0;
+        if( zErrMsg!=0 ){
+          printf("SQL error: %s\n", zErrMsg);
+          free(zErrMsg);
+          zErrMsg = 0;
+        }else{
+          printf("SQL error: %s\n", sqlite_error_string(rc));
+        }
       }
       free(zSql);
       zSql = 0;

@@ -1,5 +1,5 @@
-C Partial\sfix\sfor\sticket\s#96:\sReturn\sSQLITE_MISUSE\sfrom\ssqlite_exec()\sif\scalled\nfrom\sa\schild\sprocess\swith\san\sactive\stransaction\sthat\swas\sstarted\sin\sthe\sparent.\s(CVS\s675)
-D 2002-07-13T17:23:21
+C Fix\sfor\sticket\s#64:\sBetter\serror\sreporting\sin\sthe\sshell.\s(CVS\s676)
+D 2002-07-13T17:33:45
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -38,7 +38,7 @@ F src/parse.y 9267b7681882205f904f6564fff733d8fbcd58a3
 F src/printf.c 06f4c8725063e0faf0e34824ab70feace7146bf7
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c f4e7221a319da25f549a434a6c664eedcbce4dec
-F src/shell.c 16cb2db27f2d3045f78e74e83bac965a8249357b
+F src/shell.c 37a8405aec5740726c4ee18826c1ff5fd2c29b96
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
 F src/sqliteInt.h d18d098aa9121d2415a9c0d1d3e09a10dde39385
@@ -141,7 +141,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d918de5f06d187c76aab0879b728c89a7d4ae55a
-R 214fd6b9786115aa42764d5ad4da2283
+P 72a609ec6492e7d740b6e6184fa14a5e6b04a5dc
+R 7891214f9c076556276edc1f13c9cc97
 U drh
-Z c95a49a092cf8f04fa10039151e0a18e
+Z 35db130645374838f60c5ae02d3f553f
