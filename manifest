@@ -1,5 +1,5 @@
-C Minor\schanges\sto\savoid\swarnings\son\ssome\scompilers.\s(CVS\s2267)
-D 2005-01-23T22:41:37
+C Modification\sto\sshell.c\sto\savoid\sa\scompiler\swarning\son\ssome\scompilers.\s(CVS\s2268)
+D 2005-01-23T23:43:22
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -59,7 +59,7 @@ F src/pragma.c 141a3f4985b76035d102dc7ca37be6b04cfb8376
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c e204ca5292751ed889f2cbcf2d2808a4d29edd2c
-F src/shell.c 591364a0e9ca4ce53873e21e0294476c0c2b4770
+F src/shell.c 1f0da77ef0520afd6df71f4781076021874310f3
 F src/sqlite.h.in 7d7c28344e2bd770491b56ed9169be20859c707d
 F src/sqliteInt.h be6fa5e31c65e2b8e10112ee47a6e63ec7de37b5
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 1a64295e055d083539e05f069df6f1bea12e14b2
-R d8849dc8719dcdd857520d8fcc0fa116
+P 4daf1d1f9d4d32397d785d660394c5579c296b1f
+R 8df86275dd33cf0b616f418209c56803
 U danielk1977
-Z b4da30a39691547fb689e1e570bb8249
+Z d19cfe2e48a816a764328ffd26ac041f
