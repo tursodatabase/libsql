@@ -1,5 +1,5 @@
-C Many\sproblems\sfixed.\sMany\sproblems\syet\sto\sgo.\s(CVS\s242)
-D 2001-09-13T21:53:09
+C Many\sproblems\sfixed.\sMany\sproblems\syet\sto\sgo.\s(CVS\s1722)
+D 2001-09-13T21:53:10
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ecb2370b5cb34d390af1fcb3118ea6d84a253ca
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -107,7 +107,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 9ac8399c99cb996a382f3d49f45b6ca857adc827
+P 62c7bd11bcf6438cdcbf66fa67a2bf4ab9d1664d
 R 2372c1f59dbe1995efdd6847c777d732
 U drh
-Z 2c92ace69c7d17b3485a5d299eba152d
+Z 9edda9a44c3e972600e05079de600040
