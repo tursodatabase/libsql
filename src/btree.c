@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.2 2001/04/28 16:52:41 drh Exp $
+** $Id: btree.c,v 1.3 2001/04/29 23:32:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -29,6 +29,34 @@
 #include <assert.h>
 
 typedef unsigned int u32;
+
+
+/*
+** The first page contains the following additional information:
+**
+**      MAGIC-1
+**      MAGIC-2
+**      First free block
+*/
+#define EXTRA_PAGE_1_CELLS  3
+#define MAGIC_1  0x7264dc61
+#define MAGIC_2  0x54e55d9e
+
+/*
+** Each database page has a header as follows:
+**
+**      page1_header          Extra numbers found on page 1 only.
+**      leftmost_pgno         Page number of the leftmost child
+**      first_cell            Index into MemPage.aPage of first cell
+**      first_free            Index of first free block
+**
+** MemPage.pStart always points to the leftmost_pgno.  First_free is
+** 0 if there is no free space on this page.  Otherwise it points to
+** an area like this:
+**
+**      nByte                 Number of free bytes in this block
+**      next_free             Next free block or 0 if this is the end
+*/
 
 /*
 ** The maximum number of database entries that can be held in a single
@@ -45,13 +73,7 @@ typedef unsigned int u32;
 ** be at least 4 bytes in the key/data packet, so each entry consumes at
 ** least 20 bytes of space on the page.
 */
-#define MX_CELL (SQLITE_PAGE_SIZE/20)
-
-/*
-** Freeblocks are divided by cells, so there can be at most one more
-** free block than there are cells.
-*/
-#define MX_FREE (MX_CELL+1)
+#define MX_CELL ((SQLITE_PAGE_SIZE-12)/20)
 
 /*
 ** The maximum amount of data (in bytes) that can be stored locally for a
@@ -87,11 +109,9 @@ struct MemPage {
   Pgno left;                   /* Left sibling page.  0==none */
   Pgno right;                  /* Right sibling page.  0==none */
   int idxStart;                /* Index in aPage[] of real data */
+  int nFree;                   /* Number of free elements of aPage[] */
   int nCell;                   /* Number of entries on this page */
   u32 *aCell[MX_CELL];         /* All entires in sorted order */
-  int nFree;                   /* Number of free blocks on this page */
-  int nFreeSlot;               /* Number of free elements of aPage[] */
-  FreeBlk aFree[MX_FREE];      /* Free blocks in no particular order */
 }
 typedef struct MemPage;
 
@@ -144,27 +164,6 @@ struct BtCursor {
 };
 
 /*
-** The first page contains the following additional information:
-**
-**      MAGIC-1
-**      MAGIC-2
-**      First free block
-*/
-#define EXTRA_PAGE_1_CELLS  3
-#define MAGIC_1  0x7264dc61
-#define MAGIC_2  0x54e55d9e
-
-/*
-** Each database page has a header as follows:
-**
-**      page1_header          Extra numbers found on page 1 only.
-**      leftmost_pgno         Page number of the leftmost child
-**      first_cell            Index into MemPage.aPage of first cell
-**
-** MemPage.pStart always points to the leftmost_pgno.
-*/
-
-/*
 ** Mark a section of the memory block as in-use.
 */
 static void useSpace(MemPage *pPage, int start, int size){
@@ -201,9 +200,12 @@ static void useSpace(MemPage *pPage, int start, int size){
     /* Space at the end of the block */
     p->size -= size;
   }else{
-    /* Space in the middle of the freeblock.  We have to split the
-    ** freeblock in two */
-    /******* TBD *********/
+    /* Space in the middle of the freeblock. */
+    FreeBlk *pNew;
+    assert( p->nFreeSlot < MX_FREE );
+    pNew->idx = start+size;
+    pNew->size = p->idx+p->size - pNew->idx;
+    p->size = start - p->idx;
   }
   pPage->nFreeSlot -= size;
 }
@@ -212,6 +214,26 @@ static void useSpace(MemPage *pPage, int start, int size){
 ** Return a section of the MemPage.aPage[] to the freelist.
 */
 static void freeSpace(MemPage *pPage, int start, int size){
+  int end = start+size;
+  int i;
+  FreeBlk *pMatch = 0;
+  FreeBlk *
+  for(i=0; i<pPage->nFreeSlot; i++){
+    FreeBlk *p = &pPage->aFree[i];
+    if( p->idx==end+1 ){
+      if( pMatch ){
+        
+      }else{
+        p->idx = start;
+        p->size += size;
+        pMatch = p;
+      }
+    }
+    if( p->idx+p->size+1==start ){
+      p->size += size;
+      break;
+    }
+  }
 }
 
 /*
