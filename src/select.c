@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.150 2004/01/30 02:01:04 drh Exp $
+** $Id: select.c,v 1.151 2004/02/09 14:37:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2402,6 +2402,18 @@ int sqliteSelect(
     (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0)
   ){
     sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
+  }
+
+  /* If this was a subquery, we have now converted the subquery into a
+  ** temporary table.  So delete the subquery structure from the parent
+  ** to prevent this subquery from being evaluated again and to force the
+  ** the use of the temporary table.
+  */
+  if( pParent ){
+    assert( pParent->pSrc->nSrc>parentTab );
+    assert( pParent->pSrc->a[parentTab].pSelect==p );
+    sqliteSelectDelete(p);
+    pParent->pSrc->a[parentTab].pSelect = 0;
   }
 
   /* The SELECT was successfully coded.   Set the return code to 0

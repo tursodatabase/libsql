@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\sticket\s#601.\s(CVS\s1215)
-D 2004-02-09T14:35:28
+C After\scode\sis\sgenerated\sfor\sa\ssubquery,\sdelete\sthe\sSelect\sstructure\sin\sorder\nto\sforce\sthe\stemporary\stable\sto\sbe\sused\sand\sto\sprevent\sthe\ssubquery\sfrom\nbeing\sevaluated\sa\ssecond\stime.\s\sTicket\s#601.\s(CVS\s1216)
+D 2004-02-09T14:37:50
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c b7694067df8d57fd0c85ddcc0840532d181552ad
+F src/select.c a0211d1a6a94f6c3e611096e77f2d689a641495e
 F src/shell.c a069d35277983d54348105aa3c73be3c45eb9c38
 F src/sqlite.h.in 1798588cab21ebf9fac3aad7fc1539b396c1f91d
 F src/sqliteInt.h c5b727d5d07b88654c204c0fc1ae79c9f635a008
@@ -183,7 +183,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2f0c122cfb84dea58d112324a0bdd8b85552a9fa
-R d18a2a09d807f6210998c6b4e404fd9c
+P 096312dacb9eb2f8da3cec1504aef8629b505e7f
+R 485fc15d5916c254834a6d63a2aa701b
 U drh
-Z 427bc38262d3a60f06bbf19ed3ec6be5
+Z 235197ea178a89eec5c2077e08869e28
