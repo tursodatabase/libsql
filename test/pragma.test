@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.30 2005/01/08 15:44:26 drh Exp $
+# $Id: pragma.test,v 1.31 2005/01/10 02:48:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,7 +25,11 @@ source $testdir/tester.tcl
 # pragma-4.*: Test cache_size and default_cache_size on attached db.
 # pragma-5.*: Test that pragma synchronous may not be used inside of a
 #             transaction.
+# pragma-6.*: Test schema-query pragmas.
+# pragma-7.*: Miscellaneous tests.
+# pragma-8.*: Test user_version and schema_version pragmas.
 # pragma-9.*: Test temp_store and temp_store_directory.
+# pragma-10.*: Test the count_changes pragma in the presence of triggers.
 #
 
 # Delete the preexisting database to avoid the special setup
@@ -654,4 +658,57 @@ do_test pragma-9.10 {
 } {1 {no such table: temp_store_directory_test}}
 } ;# ifcapable pager_pragmas
 
+ifcapable trigger {
+
+do_test pragma-10.0 {
+  catchsql {
+    DROP TABLE main.t1;
+  }
+  execsql {
+    PRAGMA count_changes = 1;
+
+    CREATE TABLE t1(a PRIMARY KEY);
+    CREATE TABLE t1_mirror(a);
+    CREATE TABLE t1_mirror2(a);
+    CREATE TRIGGER t1_bi BEFORE INSERT ON t1 BEGIN 
+      INSERT INTO t1_mirror VALUES(new.a);
+    END;
+    CREATE TRIGGER t1_ai AFTER INSERT ON t1 BEGIN 
+      INSERT INTO t1_mirror2 VALUES(new.a);
+    END;
+    CREATE TRIGGER t1_bu BEFORE UPDATE ON t1 BEGIN 
+      UPDATE t1_mirror SET a = new.a WHERE a = old.a;
+    END;
+    CREATE TRIGGER t1_au AFTER UPDATE ON t1 BEGIN 
+      UPDATE t1_mirror2 SET a = new.a WHERE a = old.a;
+    END;
+    CREATE TRIGGER t1_bd BEFORE DELETE ON t1 BEGIN 
+      DELETE FROM t1_mirror WHERE a = old.a;
+    END;
+    CREATE TRIGGER t1_ad AFTER DELETE ON t1 BEGIN 
+      DELETE FROM t1_mirror2 WHERE a = old.a;
+    END;
+  }
+} {}
+
+do_test pragma-10.1 {
+  execsql {
+    INSERT INTO t1 VALUES(randstr(10,10));
+  }
+} {1}
+do_test pragma-10.2 {
+  execsql {
+    UPDATE t1 SET a = randstr(10,10);
+  }
+} {1}
+do_test pragma-10.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {1}
+
+} ;# ifcapable trigger
+
 finish_test
+
+
