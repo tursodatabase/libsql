@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.129 2005/01/31 12:56:44 danielk1977 Exp $
+** $Id: util.c,v 1.130 2005/02/01 10:35:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -93,7 +93,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (N_GUARD*2+1+k)*sizeof(int));
   if( pi==0 ){
-    sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3_malloc_failed++;
     return 0;
   }
   sqlite3_nMalloc++;
@@ -197,7 +197,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   k = (n + sizeof(int) - 1)/sizeof(int);
   pi = malloc( (k+N_GUARD*2+1)*sizeof(int) );
   if( pi==0 ){
-    sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3_malloc_failed++;
     return 0;
   }
   for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
@@ -304,7 +304,7 @@ void *sqlite3Realloc(void *p, int n){
   }
   p2 = realloc(p, n);
   if( p2==0 ){
-    sqlite3_malloc_failed++;
+    if( n>0 ) sqlite3_malloc_failed++;
   }
   return p2;
 }

@@ -1,5 +1,5 @@
-C More\sperformance\stweaking\sin\sthe\sparser.\s(CVS\s2302)
-D 2005-02-01T04:09:37
+C Have\sdebugging\scode\shandle\ssqliteMalloc(n)\swhere\sn<0\sin\sthe\ssame\sway\sas\sproduction.\s(CVS\s2303)
+D 2005-02-01T10:35:07
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -73,7 +73,7 @@ F src/tokenize.c bbeee5e30019261fe2d36330d2bf70d9d7c3eee9
 F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
-F src/util.c 5bee9b90b542b33ec87cf1225a679b8157d81525
+F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
 F src/vdbe.c 84ccc6be09e13ee5825f32a94b289117cc903ab2
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 22041d5f26355b0fc80eb355bfec897fb50ac1e1
-R b4a54ea3cafcdb288b43686dac552263
-U drh
-Z 237a2ff17f8375528094b2d5b90c3f47
+P a3d12726bb7bce72b8266236800c07f22ac5212f
+R b57b166e1928ebe0d59a6327104a41fd
+U danielk1977
+Z 12bc5af8e1b73a495f7666b7272f68e3
