@@ -83,11 +83,14 @@ struct Cursor {
   int nField;           /* Number of fields in the header */
 
   /* Cached information about the header for the data record that the
-  ** cursor is currently pointing to */
+  ** cursor is currently pointing to.  Only valid if cacheValid is true.
+  ** zRow might point to (ephemeral) data for the current row, or it might
+  ** be NULL. */
   Bool cacheValid;      /* True if the cache is valid */
   int payloadSize;      /* Total number of bytes in the record */
   u32 *aType;           /* Type values for all entries in the record */
   u32 *aOffset;         /* Cached offsets to the start of each columns data */
+  u8 *aRow;             /* Data for the current row, if all on one page */
 };
 typedef struct Cursor Cursor;
 

@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\slocking\sdocument.\s(CVS\s1576)
-D 2004-06-12T14:11:38
+C Improve\sthe\sspeed\sof\sOP_Column\sthrough\sbetter\scaching.\s(CVS\s1577)
+D 2004-06-12T18:12:16
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -41,7 +41,7 @@ F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 9061fff2b04759d849155a334bf2a9f158d325d7
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 23c69c5084e71b5fe199ff1c4e35a4aded0f1380
-F src/os_common.h 6393ac67a3a7b4aea19ff17529980ecf77eb2348
+F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_unix.c 7ece785e36c4ecb57c73db8d374b56912d742c4a
@@ -71,9 +71,9 @@ F src/update.c 168b6d523087ca4545b74ec9f3102b1f3c6b1e38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 90375fa253137562d536ccdd40b297f0fd7413fc
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
-F src/vdbe.c 026b78bc404a2585aaefbf876295ed3ae892d769
+F src/vdbe.c 9f941bbdf0bcbc18fbdfceecbc2322e82084e094
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
-F src/vdbeInt.h c4ff480cd8f859c9862d759aebd0fe5ebaef47a1
+F src/vdbeInt.h 1cc767a63eefd1d1114e190336588c6d4f70a6a0
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
 F src/vdbeaux.c 1d0dbaf73c89bd1cc27abad19ee0aa26ab5d03f4
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5903f53828b5d282b33e27813417e4317c9ecf0b
-R a46c51da808bad8e24d7946d300b2226
+P 99a7bd83ac38e14bb936a834634313cf98279a62
+R 1e1692dcb3026c03937468eb4d723051
 U drh
-Z e597c81eeb6dd60916f877dd834b0e9c
+Z 511db11f04adc59072cae9559d18a6b6

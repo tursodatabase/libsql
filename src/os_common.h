@@ -24,7 +24,7 @@
 ** on i486 hardware.
 */
 int sqlite3_os_trace = 0;
-#if 1
+#ifdef SQLITE_DEBUG
 static int last_page = 0;
 __inline__ unsigned long long int hwtime(void){
   unsigned long long int x;

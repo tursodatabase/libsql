@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.368 2004/06/12 09:25:25 danielk1977 Exp $
+** $Id: vdbe.c,v 1.369 2004/06/12 18:12:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1899,7 +1899,7 @@ case OP_Column: {
   int p1 = pOp->p1;  /* P1 value of the opcode */
   int p2 = pOp->p2;  /* column number to retrieve */
   Cursor *pC = 0;    /* The VDBE cursor */
-  char *zRec;        /* Pointer to record-data from stack or pseudo-table. */
+  char *zRec;        /* Pointer to complete record-data */
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
   u32 *aOffset;      /* aOffset[i] is offset to start of data for i-th column */
@@ -1916,9 +1916,15 @@ case OP_Column: {
   assert( p1<p->nCursor );
   pTos++;
 
-  /* This block sets the variable payloadSize, and if the data is coming
-  ** from the stack or from a pseudo-table zRec. If the data is coming
-  ** from a real cursor, then zRec is left as NULL.
+  /* This block sets the variable payloadSize to be the total number of
+  ** bytes in the record.
+  **
+  ** zRec is set to be the complete text of the record if it is available.
+  ** The complete record text is always available for pseudo-tables and
+  ** when we are decoded a record from the stack.  If the record is stored
+  ** in a cursor, the complete record text might be available in the 
+  ** pC->aRow cache.  Or it might not be.  If the data is unavailable,
+  ** zRec is set to NULL.
   **
   ** We also compute the number of columns in the record.  For cursors,
   ** the number of columns is stored in the Cursor.nField element.  For
@@ -1926,6 +1932,7 @@ case OP_Column: {
   ** which is the number of records.
   */
   if( p1<0 ){
+    /* Take the record off of the stack */
     Mem *pRec = &pTos[p1];
     Mem *pCnt = &pRec[-1];
     assert( pRec>=p->aStack );
@@ -1936,6 +1943,7 @@ case OP_Column: {
     assert( pCnt->flags & MEM_Int );
     nField = pCnt->i;
   }else if( (pC = p->apCsr[p1])->pCursor!=0 ){
+    /* The record is stored in a B-Tree */
     sqlite3VdbeCursorMoveto(pC);
     zRec = 0;
     pCrsr = pC->pCursor;
@@ -1943,6 +1951,7 @@ case OP_Column: {
       payloadSize = 0;
     }else if( pC->cacheValid ){
       payloadSize = pC->payloadSize;
+      zRec = pC->aRow;
     }else if( pC->keyAsData ){
       i64 payloadSize64;
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
@@ -1952,6 +1961,7 @@ case OP_Column: {
     }
     nField = pC->nField;
   }else if( pC->pseudoTable ){
+    /* The record is the sole entry of a pseudo-table */
     payloadSize = pC->nData;
     zRec = pC->pData;
     pC->cacheValid = 0;
@@ -1996,11 +2006,27 @@ case OP_Column: {
       }else{
         zData = (char*)sqlite3BtreeDataFetch(pCrsr, &avail);
       }
+      /* If KeyFetch()/DataFetch() managed to get the entire payload,
+      ** save the payload in the pC->aRow cache.  That will save us from
+      ** having to make additional calls to fetch the content portion of
+      ** the record.
+      */
+      if( avail>=payloadSize ){
+        zRec = pC->aRow = zData;
+      }else{
+        pC->aRow = 0;
+      }
     }
     idx = sqlite3GetVarint32(zData, &szHdr);
 
-    /* Get the complete header text */
-    if( !zRec && avail<idx ){
+
+    /* The KeyFetch() or DataFetch() above are fast and will get the entire
+    ** record header in most cases.  But they will fail to get the complete
+    ** record header if the record header does not fit on a single page
+    ** in the B-Tree.  When that happens, use sqlite3VdbeMemFromBtree() to
+    ** acquire the complete header text.
+    */
+    if( !zRec && avail<szHdr ){
       rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
