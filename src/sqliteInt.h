@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.370 2005/02/09 01:40:25 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.371 2005/02/15 21:36:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1539,6 +1539,7 @@ sqlite3_value *sqlite3GetTransientValue(sqlite3*db);
 extern const unsigned char sqlite3UpperToLower[];
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
+void sqlite3AlterFunctions(sqlite3*);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);

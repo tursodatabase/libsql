@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.95 2005/02/15 20:47:57 drh Exp $
+** $Id: func.c,v 1.96 2005/02/15 21:36:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -533,130 +533,6 @@ static void versionFunc(
   sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
 }
 
-#ifndef SQLITE_OMIT_ALTERTABLE
-/*
-** This function is used by SQL generated to implement the 
-** ALTER TABLE command. The first argument is the text of a CREATE TABLE or
-** CREATE INDEX command. The second is a table name. The table name in 
-** the CREATE TABLE or CREATE INDEX statement is replaced with the second
-** argument and the result returned. Examples:
-**
-** sqlite_rename_table('CREATE TABLE abc(a, b, c)', 'def')
-**     -> 'CREATE TABLE def(a, b, c)'
-**
-** sqlite_rename_table('CREATE INDEX i ON abc(a)', 'def')
-**     -> 'CREATE INDEX i ON def(a, b, c)'
-*/
-static void renameTableFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  unsigned char const *zSql = sqlite3_value_text(argv[0]);
-  unsigned char const *zTableName = sqlite3_value_text(argv[1]);
-
-  int token;
-  Token tname;
-  char const *zCsr = zSql;
-  int len = 0;
-  char *zRet;
-
-  /* The principle used to locate the table name in the CREATE TABLE 
-  ** statement is that the table name is the first token that is immediatedly
-  ** followed by a left parenthesis - TK_LP.
-  */
-  if( zSql ){
-    do {
-      /* Store the token that zCsr points to in tname. */
-      tname.z = zCsr;
-      tname.n = len;
-
-      /* Advance zCsr to the next token. Store that token type in 'token',
-      ** and it's length in 'len' (to be used next iteration of this loop).
-      */
-      do {
-        zCsr += len;
-        len = sqlite3GetToken(zCsr, &token);
-      } while( token==TK_SPACE );
-      assert( len>0 );
-    } while( token!=TK_LP );
-
-    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
-       zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
-  }
-}
-#endif
-
-#ifndef SQLITE_OMIT_ALTERTABLE
-#ifndef SQLITE_OMIT_TRIGGER
-/* This function is used by SQL generated to implement the ALTER TABLE
-** ALTER TABLE command. The first argument is the text of a CREATE TRIGGER 
-** statement. The second is a table name. The table name in the CREATE 
-** TRIGGER statement is replaced with the second argument and the result 
-** returned. This is analagous to renameTableFunc() above, except for CREATE
-** TRIGGER, not CREATE INDEX and CREATE TABLE.
-*/
-static void renameTriggerFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  unsigned char const *zSql = sqlite3_value_text(argv[0]);
-  unsigned char const *zTableName = sqlite3_value_text(argv[1]);
-
-  int token;
-  Token tname;
-  int dist = 3;
-  char const *zCsr = zSql;
-  int len = 0;
-  char *zRet;
-
-  /* The principle used to locate the table name in the CREATE TRIGGER 
-  ** statement is that the table name is the first token that is immediatedly
-  ** preceded by either TK_ON or TK_DOT and immediatedly followed by one
-  ** of TK_WHEN, TK_BEGIN or TK_FOR.
-  */
-  if( zSql ){
-    do {
-      /* Store the token that zCsr points to in tname. */
-      tname.z = zCsr;
-      tname.n = len;
-
-      /* Advance zCsr to the next token. Store that token type in 'token',
-      ** and it's length in 'len' (to be used next iteration of this loop).
-      */
-      do {
-        zCsr += len;
-        len = sqlite3GetToken(zCsr, &token);
-      }while( token==TK_SPACE );
-      assert( len>0 );
-
-      /* Variable 'dist' stores the number of tokens read since the most
-      ** recent TK_DOT or TK_ON. This means that when a WHEN, FOR or BEGIN 
-      ** token is read and 'dist' equals 2, the condition stated above
-      ** to be met.
-      **
-      ** Note that ON cannot be a database, table or column name, so
-      ** there is no need to worry about syntax like 
-      ** "CREATE TRIGGER ... ON ON.ON BEGIN ..." etc.
-      */
-      dist++;
-      if( token==TK_DOT || token==TK_ON ){
-        dist = 0;
-      }
-    } while( dist!=2 || (token!=TK_WHEN && token!=TK_FOR && token!=TK_BEGIN) );
-
-    /* Variable tname now contains the token that is the old table-name
-    ** in the CREATE TRIGGER statement.
-    */
-    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
-       zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
-  }
-}
-#endif   /* !SQLITE_OMIT_TRIGGER */
-#endif   /* !SQLITE_OMIT_ALTERTABLE */
 
 /*
 ** EXPERIMENTAL - This is not an official function.  The interface may
@@ -975,33 +851,6 @@ struct StdDevCtx {
   int cnt;        /* Number of terms counted */
 };
 
-#if 0   /* Omit because math library is required */
-/*
-** Routines used to compute the standard deviation as an aggregate.
-*/
-static void stdDevStep(sqlite3_context *context, int argc, const char **argv){
-  StdDevCtx *p;
-  double x;
-  if( argc<1 ) return;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p && argv[0] ){
-    x = sqlite3AtoF(argv[0], 0);
-    p->sum += x;
-    p->sum2 += x*x;
-    p->cnt++;
-  }
-}
-static void stdDevFinalize(sqlite3_context *context){
-  double rN = sqlite3_aggregate_count(context);
-  StdDevCtx *p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p && p->cnt>1 ){
-    double rCnt = cnt;
-    sqlite3_set_result_double(context, 
-       sqrt((p->sum2 - p->sum*p->sum/rCnt)/(rCnt-1.0)));
-  }
-}
-#endif
-
 /*
 ** The following structure keeps track of state information for the
 ** count() aggregate function.
@@ -1122,12 +971,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "last_insert_rowid",  0, 1, SQLITE_UTF8,    0, last_insert_rowid },
     { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
     { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
-#ifndef SQLITE_OMIT_ALTERTABLE
-    { "sqlite_rename_table",  2, 0, SQLITE_UTF8,  0, renameTableFunc},
-#ifndef SQLITE_OMIT_TRIGGER
-    { "sqlite_rename_trigger",2, 0, SQLITE_UTF8,  0, renameTriggerFunc},
-#endif
-#endif
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif
@@ -1153,9 +996,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "avg",    1, 0, 0, sumStep,      avgFinalize    },
     { "count",  0, 0, 0, countStep,    countFinalize  },
     { "count",  1, 0, 0, countStep,    countFinalize  },
-#if 0
-    { "stddev", 1, 0, stdDevStep,   stdDevFinalize },
-#endif
   };
   int i;
 
@@ -1175,6 +1015,9 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
       }
     }
   }
+#ifndef SQLITE_OMIT_ALTERTABLE
+  sqlite3AlterFunctions(db);
+#endif
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     void *pArg = 0;
     switch( aAggs[i].argType ){

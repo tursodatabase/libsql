@@ -12,12 +12,160 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.1 2005/02/15 20:47:57 drh Exp $
+** $Id: alter.c,v 1.2 2005/02/15 21:36:18 drh Exp $
 */
 #include "sqliteInt.h"
 
-
+/*
+** The code in this file only exists if we are not omitting the
+** ALTER TABLE logic from the build.
+*/
 #ifndef SQLITE_OMIT_ALTERTABLE
+
+
+/*
+** This function is used by SQL generated to implement the 
+** ALTER TABLE command. The first argument is the text of a CREATE TABLE or
+** CREATE INDEX command. The second is a table name. The table name in 
+** the CREATE TABLE or CREATE INDEX statement is replaced with the second
+** argument and the result returned. Examples:
+**
+** sqlite_rename_table('CREATE TABLE abc(a, b, c)', 'def')
+**     -> 'CREATE TABLE def(a, b, c)'
+**
+** sqlite_rename_table('CREATE INDEX i ON abc(a)', 'def')
+**     -> 'CREATE INDEX i ON def(a, b, c)'
+*/
+static void renameTableFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  unsigned char const *zSql = sqlite3_value_text(argv[0]);
+  unsigned char const *zTableName = sqlite3_value_text(argv[1]);
+
+  int token;
+  Token tname;
+  char const *zCsr = zSql;
+  int len = 0;
+  char *zRet;
+
+  /* The principle used to locate the table name in the CREATE TABLE 
+  ** statement is that the table name is the first token that is immediatedly
+  ** followed by a left parenthesis - TK_LP.
+  */
+  if( zSql ){
+    do {
+      /* Store the token that zCsr points to in tname. */
+      tname.z = zCsr;
+      tname.n = len;
+
+      /* Advance zCsr to the next token. Store that token type in 'token',
+      ** and it's length in 'len' (to be used next iteration of this loop).
+      */
+      do {
+        zCsr += len;
+        len = sqlite3GetToken(zCsr, &token);
+      } while( token==TK_SPACE );
+      assert( len>0 );
+    } while( token!=TK_LP );
+
+    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
+       zTableName, tname.z+tname.n);
+    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
+  }
+}
+
+#ifndef SQLITE_OMIT_TRIGGER
+/* This function is used by SQL generated to implement the ALTER TABLE
+** ALTER TABLE command. The first argument is the text of a CREATE TRIGGER 
+** statement. The second is a table name. The table name in the CREATE 
+** TRIGGER statement is replaced with the second argument and the result 
+** returned. This is analagous to renameTableFunc() above, except for CREATE
+** TRIGGER, not CREATE INDEX and CREATE TABLE.
+*/
+static void renameTriggerFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  unsigned char const *zSql = sqlite3_value_text(argv[0]);
+  unsigned char const *zTableName = sqlite3_value_text(argv[1]);
+
+  int token;
+  Token tname;
+  int dist = 3;
+  char const *zCsr = zSql;
+  int len = 0;
+  char *zRet;
+
+  /* The principle used to locate the table name in the CREATE TRIGGER 
+  ** statement is that the table name is the first token that is immediatedly
+  ** preceded by either TK_ON or TK_DOT and immediatedly followed by one
+  ** of TK_WHEN, TK_BEGIN or TK_FOR.
+  */
+  if( zSql ){
+    do {
+      /* Store the token that zCsr points to in tname. */
+      tname.z = zCsr;
+      tname.n = len;
+
+      /* Advance zCsr to the next token. Store that token type in 'token',
+      ** and it's length in 'len' (to be used next iteration of this loop).
+      */
+      do {
+        zCsr += len;
+        len = sqlite3GetToken(zCsr, &token);
+      }while( token==TK_SPACE );
+      assert( len>0 );
+
+      /* Variable 'dist' stores the number of tokens read since the most
+      ** recent TK_DOT or TK_ON. This means that when a WHEN, FOR or BEGIN 
+      ** token is read and 'dist' equals 2, the condition stated above
+      ** to be met.
+      **
+      ** Note that ON cannot be a database, table or column name, so
+      ** there is no need to worry about syntax like 
+      ** "CREATE TRIGGER ... ON ON.ON BEGIN ..." etc.
+      */
+      dist++;
+      if( token==TK_DOT || token==TK_ON ){
+        dist = 0;
+      }
+    } while( dist!=2 || (token!=TK_WHEN && token!=TK_FOR && token!=TK_BEGIN) );
+
+    /* Variable tname now contains the token that is the old table-name
+    ** in the CREATE TRIGGER statement.
+    */
+    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
+       zTableName, tname.z+tname.n);
+    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
+  }
+}
+#endif   /* !SQLITE_OMIT_TRIGGER */
+
+/*
+** Register built-in functions used to help implement ALTER TABLE
+*/
+void sqlite3AlterFunctions(sqlite3 *db){
+  static const struct {
+     char *zName;
+     signed char nArg;
+     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
+  } aFuncs[] = {
+    { "sqlite_rename_table",    2, renameTableFunc},
+#ifndef SQLITE_OMIT_TRIGGER
+    { "sqlite_rename_trigger",  2, renameTriggerFunc},
+#endif
+  };
+  int i;
+
+  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
+    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
+        SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
+  }
+}
+
 /*
 ** Generate code to implement the "ALTER TABLE xxx RENAME TO yyy" 
 ** command. 
