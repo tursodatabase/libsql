@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.239 2005/01/17 01:33:14 danielk1977 Exp $
+** $Id: btree.c,v 1.240 2005/01/17 02:12:19 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -482,7 +482,9 @@ static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno parent){
   int rc;
 
   assert( pBt->autoVacuum );
-  assert( key!=0 );
+  if( key==0 ){
+    return SQLITE_CORRUPT;
+  }
   iPtrmap = PTRMAP_PAGENO(pBt->usableSize, key);
   rc = sqlite3pager_get(pBt->pPager, iPtrmap, (void **)&pPtrmap);
   if( rc!=SQLITE_OK ){
@@ -528,6 +530,7 @@ static int ptrmapGet(Btree *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
   if( pPgno ) *pPgno = get4byte(&pPtrmap[offset+1]);
 
   sqlite3pager_unref(pPtrmap);
+  if( *pEType<1 || *pEType>5 ) return SQLITE_CORRUPT;
   return SQLITE_OK;
 }
 
@@ -1609,7 +1612,6 @@ static int setChildPtrmaps(MemPage *pPage){
   nCell = pPage->nCell;
 
   for(i=0; i<nCell; i++){
-    CellInfo info;
     u8 *pCell = findCell(pPage, i);
 
     rc = ptrmapPutOvflPtr(pPage, pCell);
@@ -1649,11 +1651,12 @@ set_child_ptrmaps_out:
 ** PTRMAP_OVERFLOW2: pPage is an overflow-page. The pointer points at the next
 **                   overflow page in the list.
 */
-static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
-
+static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
   if( eType==PTRMAP_OVERFLOW2 ){
     /* The pointer is always the first 4 bytes of the page in this case.  */
-    assert( get4byte(pPage->aData)==iFrom );
+    if( get4byte(pPage->aData)!=iFrom ){
+      return SQLITE_CORRUPT;
+    }
     put4byte(pPage->aData, iTo);
   }else{
     int isInitOrig = pPage->isInit;
@@ -1683,13 +1686,16 @@ static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
     }
   
     if( i==nCell ){
-      assert( eType==PTRMAP_BTREE );
-      assert( get4byte(&pPage->aData[pPage->hdrOffset+8])==iFrom );
+      if( eType!=PTRMAP_BTREE || 
+          get4byte(&pPage->aData[pPage->hdrOffset+8])!=iFrom ){
+        return SQLITE_CORRUPT;
+      }
       put4byte(&pPage->aData[pPage->hdrOffset+8], iTo);
     }
 
     pPage->isInit = isInitOrig;
   }
+  return SQLITE_OK;
 }
 
 
@@ -1737,7 +1743,6 @@ static int relocatePage(
   }else{
     Pgno nextOvfl = get4byte(pDbPage->aData);
     if( nextOvfl!=0 ){
-      assert( nextOvfl<=sqlite3pager_pagecount(pPager) );
       rc = ptrmapPut(pBt, nextOvfl, PTRMAP_OVERFLOW2, iFreePage);
       if( rc!=SQLITE_OK ){
         return rc;
@@ -1759,9 +1764,11 @@ static int relocatePage(
       releasePage(pPtrPage);
       return rc;
     }
-    modifyPagePointer(pPtrPage, iDbPage, iFreePage, eType);
-    rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
+    rc = modifyPagePointer(pPtrPage, iDbPage, iFreePage, eType);
     releasePage(pPtrPage);
+    if( rc==SQLITE_OK ){
+      rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
+    }
   }
   return rc;
 }
@@ -1793,7 +1800,9 @@ static int autoVacuumCommit(Btree *pBt, Pgno *nTrunc){
 #endif
 
   assert( pBt->autoVacuum );
-  assert( 0==PTRMAP_ISPAGE(pgsz, sqlite3pager_pagecount(pPager)) );
+  if( PTRMAP_ISPAGE(pgsz, sqlite3pager_pagecount(pPager)) ){
+    return SQLITE_CORRUPT;
+  }
 
   /* Figure out how many free-pages are in the database. If there are no
   ** free pages, then auto-vacuum is a no-op.
