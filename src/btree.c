@@ -1,5 +1,5 @@
 /*
-** 2001 September 15
+** 2004 April 6
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.103 2004/03/10 13:42:38 drh Exp $
+** $Id: btree.c,v 1.104 2004/04/23 23:43:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -36,18 +36,116 @@
 **
 ** In this implementation, a single file can hold one or more separate 
 ** BTrees.  Each BTree is identified by the index of its root page.  The
-** key and data for any entry are combined to form the "payload".  Up to
-** MX_LOCAL_PAYLOAD bytes of payload can be carried directly on the
-** database page.  If the payload is larger than MX_LOCAL_PAYLOAD bytes
-** then surplus bytes are stored on overflow pages.  The payload for an
-** entry and the preceding pointer are combined to form a "Cell".  Each 
-** page has a small header which contains the Ptr(N+1) pointer.
+** key and data for any entry are combined to form the "payload".  A
+** fixed amount of payload can be carried directly on the database
+** page.  If the payload is larger than the preset amount then surplus
+** bytes are stored on overflow pages.  The payload for an entry
+** and the preceding pointer are combined to form a "Cell".  Each 
+** page has a small header which contains the Ptr(N+1) pointer and other
+** information such as the size of key and data.
 **
-** The first page of the file contains a magic string used to verify that
-** the file really is a valid BTree database, a pointer to a list of unused
-** pages in the file, and some meta information.  The root of the first
-** BTree begins on page 2 of the file.  (Pages are numbered beginning with
-** 1, not 0.)  Thus a minimum database contains 2 pages.
+** FORMAT DETAILS
+**
+** The file is divided into pages.  The first page is called page 1,
+** the second is page 2, and so forth.  A page number of zero indicates
+** "no such page".  The page size can be anything between 512 and 65536.
+** Each page can be either a btree page, a freelist page or an overflow
+** page.
+**
+** The first page is always a btree page.  The first 100 bytes of the first
+** page contain a special header that describes the file.  The format
+** of that header is as follows:
+**
+**   OFFSET   SIZE    DESCRIPTION
+**      0      16     Header string: "SQLite version 3"
+**     16       2     Page size in bytes.  
+**     18       1     File format write version
+**     19       1     File format read version
+**     20       2     Bytes of unused space at the end of each page
+**     22       2     Maximum allowed local payload per entry
+**     24       8     File change counter
+**     32       4     First freelist page
+**     36       4     Number of freelist pages in the file
+**     40      60     15 4-byte meta values passed to higher layers
+**
+** All of the integer values are big-endian (most significant byte first).
+** The file change counter is incremented every time the database is changed.
+** This allows other processes to know when the file has changed and thus
+** when they need to flush their cache.
+**
+** Each btree page begins with a header described below.  Note that the
+** header for page one begins at byte 100.  For all other btree pages, the
+** header begins on byte zero.
+**
+**   OFFSET   SIZE     DESCRIPTION
+**      0       1      Flags.  01: leaf, 02: zerodata, 04: intkey,  F8: type
+**      1       2      byte offset to the first freeblock
+**      3       2      byte offset to the first cell
+**      5       1      number of fragmented free bytes
+**      6       4      Right child (the Ptr(N+1) value).  Omitted if leaf
+**
+** The flags define the format of this btree page.  The leaf flag means that
+** this page has no children.  The zerodata flag means that this page carries
+** only keys and no data.  The intkey flag means that the key is a single
+** variable length integer at the beginning of the payload.
+**
+** A variable-length integer is 1 to 9 bytes where the lower 7 bits of each 
+** byte are used.  The integer consists of all bytes that have bit 8 set and
+** the first byte with bit 8 clear.  Unlike fixed-length values, variable-
+** length integers are little-endian.  Examples:
+**
+**    0x00                      becomes  0x00000000
+**    0x1b                      becomes  0x0000001b
+**    0x9b 0x4a                 becomes  0x00000dca
+**    0x80 0x1b                 becomes  0x0000001b
+**    0xf8 0xac 0xb1 0x91 0x01  becomes  0x12345678
+**    0x81 0x81 0x81 0x81 0x01  becomes  0x10204081
+**
+** Variable length integers are used for rowids and to hold the number of
+** bytes of key and data in a btree cell.
+**
+** Unused space within a btree page is collected into a linked list of
+** freeblocks.  Each freeblock is at least 4 bytes in size.  The byte offset
+** to the first freeblock is given in the header.  Freeblocks occur in
+** increasing order.  Because a freeblock is 4 bytes in size, the minimum
+** size allocation on a btree page is 4 bytes.  Because a freeblock must be
+** at least 4 bytes in size, any group of 3 or fewer unused bytes cannot
+** exist on the freeblock chain.  The total number of such fragmented bytes
+** is recorded in the page header at offset 5.
+**
+**    SIZE    DESCRIPTION
+**      2     Byte offset of the next freeblock
+**      2     Bytes in this freeblock
+**
+** Cells are of variable length.  The first cell begins on the byte defined
+** in the page header.  Cells do not necessarily occur in order - they can
+** skip around on the page.
+**
+**    SIZE    DESCRIPTION
+**      2     Byte offset of the next cell.  0 if this is the last cell
+**      4     Page number of the left child.  Omitted if leaf flag is set.
+**     var    Number of bytes of data.  Omitted if the zerodata flag is set.
+**     var    Number of bytes of key.  Omitted if the intkey flag is set.
+**      *     Payload
+**      4     First page of the overflow chain.  Omitted if no overflow
+**
+** Overflow pages form a linked list.  Each page except the last is completely
+** filled with data (pagesize - 4 bytes).  The last page can have as little
+** as 1 byte of data.
+**
+**    SIZE    DESCRIPTION
+**      4     Page number of next overflow page
+**      *     Data
+**
+** Freelist pages come in two subtypes: trunk pages and leaf pages.  The
+** file header points to first in a linked list of trunk page.  Each trunk
+** page points to multiple leaf pages.  The content of a leaf page is
+** unspecified.  A trunk page looks like this:
+**
+**    SIZE    DESCRIPTION
+**      4     Page number of next trunk page
+**      4     Number of leaf pointers on this page
+**      *     zero or more pages numbers of leaves
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -59,258 +157,22 @@ static BtOps sqliteBtreeOps;
 static BtCursorOps sqliteBtreeCursorOps;
 
 /*
-** Macros used for byteswapping.  B is a pointer to the Btree
-** structure.  This is needed to access the Btree.needSwab boolean
-** in order to tell if byte swapping is needed or not.
-** X is an unsigned integer.  SWAB16 byte swaps a 16-bit integer.
-** SWAB32 byteswaps a 32-bit integer.
-*/
-#define SWAB16(B,X)   ((B)->needSwab? swab16((u16)X) : ((u16)X))
-#define SWAB32(B,X)   ((B)->needSwab? swab32(X) : (X))
-#define SWAB_ADD(B,X,A) \
-   if((B)->needSwab){ X=swab32(swab32(X)+A); }else{ X += (A); }
-
-/*
-** The following global variable - available only if SQLITE_TEST is
-** defined - is used to determine whether new databases are created in
-** native byte order or in non-native byte order.  Non-native byte order
-** databases are created for testing purposes only.  Under normal operation,
-** only native byte-order databases should be created, but we should be
-** able to read or write existing databases regardless of the byteorder.
-*/
-#ifdef SQLITE_TEST
-int btree_native_byte_order = 1;
-#else
-# define btree_native_byte_order 1
-#endif
-
-/*
-** Forward declarations of structures used only in this file.
-*/
-typedef struct PageOne PageOne;
-typedef struct MemPage MemPage;
-typedef struct PageHdr PageHdr;
-typedef struct Cell Cell;
-typedef struct CellHdr CellHdr;
-typedef struct FreeBlk FreeBlk;
-typedef struct OverflowPage OverflowPage;
-typedef struct FreelistInfo FreelistInfo;
-
-/*
-** All structures on a database page are aligned to 4-byte boundries.
-** This routine rounds up a number of bytes to the next multiple of 4.
-**
-** This might need to change for computer architectures that require
-** and 8-byte alignment boundry for structures.
-*/
-#define ROUNDUP(X)  ((X+3) & ~3)
-
-/*
 ** This is a magic string that appears at the beginning of every
 ** SQLite database in order to identify the file as a real database.
-*/
-static const char zMagicHeader[] = 
-   "** This file contains an SQLite 2.1 database **";
-#define MAGIC_SIZE (sizeof(zMagicHeader))
+**                                  0123456789 123456 */
+static const char zMagicHeader[] = "SQLite version 3";
 
 /*
-** This is a magic integer also used to test the integrity of the database
-** file.  This integer is used in addition to the string above so that
-** if the file is written on a little-endian architecture and read
-** on a big-endian architectures (or vice versa) we can detect the
-** problem.
-**
-** The number used was obtained at random and has no special
-** significance other than the fact that it represents a different
-** integer on little-endian and big-endian machines.
+** Page type flags
 */
-#define MAGIC 0xdae37528
+#define PTF_LEAF      0x01
+#define PTF_ZERODATA  0x02
+#define PTF_INTKEY    0x04
 
 /*
-** The first page of the database file contains a magic header string
-** to identify the file as an SQLite database file.  It also contains
-** a pointer to the first free page of the file.  Page 2 contains the
-** root of the principle BTree.  The file might contain other BTrees
-** rooted on pages above 2.
-**
-** The first page also contains SQLITE_N_BTREE_META integers that
-** can be used by higher-level routines.
-**
-** Remember that pages are numbered beginning with 1.  (See pager.c
-** for additional information.)  Page 0 does not exist and a page
-** number of 0 is used to mean "no such page".
-*/
-struct PageOne {
-  char zMagic[MAGIC_SIZE]; /* String that identifies the file as a database */
-  int iMagic;              /* Integer to verify correct byte order */
-  Pgno freeList;           /* First free page in a list of all free pages */
-  int nFree;               /* Number of pages on the free list */
-  int aMeta[SQLITE_N_BTREE_META-1];  /* User defined integers */
-};
-
-/*
-** Each database page has a header that is an instance of this
-** structure.
-**
-** PageHdr.firstFree is 0 if there is no free space on this page.
-** Otherwise, PageHdr.firstFree is the index in MemPage.u.aDisk[] of a 
-** FreeBlk structure that describes the first block of free space.  
-** All free space is defined by a linked list of FreeBlk structures.
-**
-** Data is stored in a linked list of Cell structures.  PageHdr.firstCell
-** is the index into MemPage.u.aDisk[] of the first cell on the page.  The
-** Cells are kept in sorted order.
-**
-** A Cell contains all information about a database entry and a pointer
-** to a child page that contains other entries less than itself.  In
-** other words, the i-th Cell contains both Ptr(i) and Key(i).  The
-** right-most pointer of the page is contained in PageHdr.rightChild.
-*/
-struct PageHdr {
-  Pgno rightChild;  /* Child page that comes after all cells on this page */
-  u16 firstCell;    /* Index in MemPage.u.aDisk[] of the first cell */
-  u16 firstFree;    /* Index in MemPage.u.aDisk[] of the first free block */
-};
-
-/*
-** Entries on a page of the database are called "Cells".  Each Cell
-** has a header and data.  This structure defines the header.  The
-** key and data (collectively the "payload") follow this header on
-** the database page.
-**
-** A definition of the complete Cell structure is given below.  The
-** header for the cell must be defined first in order to do some
-** of the sizing #defines that follow.
-*/
-struct CellHdr {
-  Pgno leftChild; /* Child page that comes before this cell */
-  u16 nKey;       /* Number of bytes in the key */
-  u16 iNext;      /* Index in MemPage.u.aDisk[] of next cell in sorted order */
-  u8 nKeyHi;      /* Upper 8 bits of key size for keys larger than 64K bytes */
-  u8 nDataHi;     /* Upper 8 bits of data size when the size is more than 64K */
-  u16 nData;      /* Number of bytes of data */
-};
-
-/*
-** The key and data size are split into a lower 16-bit segment and an
-** upper 8-bit segment in order to pack them together into a smaller
-** space.  The following macros reassembly a key or data size back
-** into an integer.
-*/
-#define NKEY(b,h)  (SWAB16(b,h.nKey) + h.nKeyHi*65536)
-#define NDATA(b,h) (SWAB16(b,h.nData) + h.nDataHi*65536)
-
-/*
-** The minimum size of a complete Cell.  The Cell must contain a header
-** and at least 4 bytes of payload.
-*/
-#define MIN_CELL_SIZE  (sizeof(CellHdr)+4)
-
-/*
-** The maximum number of database entries that can be held in a single
-** page of the database. 
-*/
-#define MX_CELL ((SQLITE_USABLE_SIZE-sizeof(PageHdr))/MIN_CELL_SIZE)
-
-/*
-** The amount of usable space on a single page of the BTree.  This is the
-** page size minus the overhead of the page header.
-*/
-#define USABLE_SPACE  (SQLITE_USABLE_SIZE - sizeof(PageHdr))
-
-/*
-** The maximum amount of payload (in bytes) that can be stored locally for
-** a database entry.  If the entry contains more data than this, the
-** extra goes onto overflow pages.
-**
-** This number is chosen so that at least 4 cells will fit on every page.
-*/
-#define MX_LOCAL_PAYLOAD ((USABLE_SPACE/4-(sizeof(CellHdr)+sizeof(Pgno)))&~3)
-
-/*
-** Data on a database page is stored as a linked list of Cell structures.
-** Both the key and the data are stored in aPayload[].  The key always comes
-** first.  The aPayload[] field grows as necessary to hold the key and data,
-** up to a maximum of MX_LOCAL_PAYLOAD bytes.  If the size of the key and
-** data combined exceeds MX_LOCAL_PAYLOAD bytes, then Cell.ovfl is the
-** page number of the first overflow page.
-**
-** Though this structure is fixed in size, the Cell on the database
-** page varies in size.  Every cell has a CellHdr and at least 4 bytes
-** of payload space.  Additional payload bytes (up to the maximum of
-** MX_LOCAL_PAYLOAD) and the Cell.ovfl value are allocated only as
-** needed.
-*/
-struct Cell {
-  CellHdr h;                        /* The cell header */
-  char aPayload[MX_LOCAL_PAYLOAD];  /* Key and data */
-  Pgno ovfl;                        /* The first overflow page */
-};
-
-/*
-** Free space on a page is remembered using a linked list of the FreeBlk
-** structures.  Space on a database page is allocated in increments of
-** at least 4 bytes and is always aligned to a 4-byte boundry.  The
-** linked list of FreeBlks is always kept in order by address.
-*/
-struct FreeBlk {
-  u16 iSize;      /* Number of bytes in this block of free space */
-  u16 iNext;      /* Index in MemPage.u.aDisk[] of the next free block */
-};
-
-/*
-** The number of bytes of payload that will fit on a single overflow page.
-*/
-#define OVERFLOW_SIZE (SQLITE_USABLE_SIZE-sizeof(Pgno))
-
-/*
-** When the key and data for a single entry in the BTree will not fit in
-** the MX_LOCAL_PAYLOAD bytes of space available on the database page,
-** then all extra bytes are written to a linked list of overflow pages.
-** Each overflow page is an instance of the following structure.
-**
-** Unused pages in the database are also represented by instances of
-** the OverflowPage structure.  The PageOne.freeList field is the
-** page number of the first page in a linked list of unused database
-** pages.
-*/
-struct OverflowPage {
-  Pgno iNext;
-  char aPayload[OVERFLOW_SIZE];
-};
-
-/*
-** The PageOne.freeList field points to a linked list of overflow pages
-** hold information about free pages.  The aPayload section of each
-** overflow page contains an instance of the following structure.  The
-** aFree[] array holds the page number of nFree unused pages in the disk
-** file.
-*/
-struct FreelistInfo {
-  int nFree;
-  Pgno aFree[(OVERFLOW_SIZE-sizeof(int))/sizeof(Pgno)];
-};
-
-/*
-** For every page in the database file, an instance of the following structure
-** is stored in memory.  The u.aDisk[] array contains the raw bits read from
-** the disk.  The rest is auxiliary information held in memory only. The
-** auxiliary info is only valid for regular database pages - it is not
-** used for overflow pages and pages on the freelist.
-**
-** Of particular interest in the auxiliary info is the apCell[] entry.  Each
-** apCell[] entry is a pointer to a Cell structure in u.aDisk[].  The cells are
-** put in this array so that they can be accessed in constant time, rather
-** than in linear time which would be needed if we had to walk the linked 
-** list on every access.
-**
-** Note that apCell[] contains enough space to hold up to two more Cells
-** than can possibly fit on one page.  In the steady state, every apCell[]
-** points to memory inside u.aDisk[].  But in the middle of an insert
-** operation, some apCell[] entries may temporarily point to data space
-** outside of u.aDisk[].  This is a transient situation that is quickly
-** resolved.  But while it is happening, it is possible for a database
-** page to hold as many as two more cells than it might otherwise hold.
+** As each page of the file is loaded into memory, an instance of the following
+** structure is appended and initialized to zero.  This structure stores
+** information about the page that is decoded from the raw file page.
 ** The extra two entries in apCell[] are an allowance for this situation.
 **
 ** The pParent field points back to the parent page.  This allows us to
@@ -319,18 +181,20 @@ struct FreelistInfo {
 ** The pageDestructor() routine handles that chore.
 */
 struct MemPage {
-  union u_page_data {
-    char aDisk[SQLITE_PAGE_SIZE];  /* Page data stored on disk */
-    PageHdr hdr;                   /* Overlay page header */
-  } u;
-  u8 isInit;                     /* True if auxiliary data is initialized */
-  u8 idxShift;                   /* True if apCell[] indices have changed */
-  u8 isOverfull;                 /* Some apCell[] points outside u.aDisk[] */
+  struct BTree *pBt;             /* Pointer back to BTree structure */
+  unsigned char *aData;          /* Pointer back to the start of the page */
+  u8 idxShift;                   /* True if Cell indices have changed */
+  u8 isOverfull;                 /* Some aCell[] points outside u.aDisk[] */
+  u8 intKey;                     /* True if intkey flag is set */
+  u8 leaf;                       /* True if leaf flag is set */
+  u8 zeroData;                   /* True if zero data flag is set */
+  u8 hdrOffset;                  /* 100 for page 1.  0 otherwise */
+  Pgno pgno;                     /* Page number for this page */
   MemPage *pParent;              /* The parent of this page.  NULL for root */
   int idxParent;                 /* Index in pParent->apCell[] of this node */
-  int nFree;                     /* Number of free bytes in u.aDisk[] */
+  int nFree;                     /* Number of free bytes on the page */
   int nCell;                     /* Number of entries on this page */
-  Cell *apCell[MX_CELL+2];       /* All data entires in sorted order */
+  unsigned char **aCell;         /* Pointer to start of each cell */
 };
 
 /*
@@ -338,7 +202,7 @@ struct MemPage {
 ** to the end.  EXTRA_SIZE is the number of bytes of space needed to hold
 ** that extra information.
 */
-#define EXTRA_SIZE (sizeof(MemPage)-sizeof(union u_page_data))
+#define EXTRA_SIZE sizeof(Mempage)
 
 /*
 ** Everything we need to know about an open database
@@ -347,11 +211,12 @@ struct Btree {
   BtOps *pOps;          /* Function table */
   Pager *pPager;        /* The page cache */
   BtCursor *pCursor;    /* A list of all open cursors */
-  PageOne *page1;       /* First page of the database */
+  MemPage *page1;       /* First page of the database */
   u8 inTrans;           /* True if a transaction is in progress */
   u8 inCkpt;            /* True if there is a checkpoint on the transaction */
   u8 readOnly;          /* True if the underlying file is readonly */
-  u8 needSwab;          /* Need to byte-swapping */
+  int pageSize;         /* Number of usable bytes on each page */
+  int maxLocal;         /* Maximum local payload */
 };
 typedef Btree Bt;
 
@@ -385,14 +250,59 @@ struct BtCursor {
 static int fileBtreeCloseCursor(BtCursor *pCur);
 
 /*
-** Routines for byte swapping.
+** Read or write a two-, four-, and eight-byte integer values
 */
-u16 swab16(u16 x){
-  return ((x & 0xff)<<8) | ((x>>8)&0xff);
+static u32 get2byte(unsigned char *p){
+  return (p[0]<<8) | p[1];
 }
-u32 swab32(u32 x){
-  return ((x & 0xff)<<24) | ((x & 0xff00)<<8) |
-         ((x>>8) & 0xff00) | ((x>>24)&0xff);
+static u32 get4byte(unsigned char *p){
+  return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
+}
+static u64 get4byte(unsigned char *p){
+  u64 v = get4byte(p);
+  return (v<<32) | get4byte(&p[4]);
+}
+static void put2byte(unsigned char *p, u32 v){
+  p[0] = v>>8;
+  p[1] = v;
+}
+static void put4byte(unsigned char *p, u32 v){
+  p[0] = v>>24;
+  p[1] = v>>16;
+  p[2] = v>>8;
+  p[3] = v;
+}
+static void put8byte(unsigned char *p, u64 v){
+  put4byte(&p[4], v>>32);
+  put4byte(p, v);
+}
+
+/*
+** Read a variable-length integer.  Store the result in *pResult.
+** Return the number of bytes in the integer.
+*/
+static unsigned int getVarint(unsigned char *p, u64 *pResult){
+  u64 x = p[0] & 0x7f;
+  int n = 0;
+  while( (p[n++]&0x80)!=0 ){
+    x |= (p[n]&0x7f)<<(n*7);
+  }
+  *pResult = x;
+  return n;
+}
+
+/*
+** Write a variable length integer with value v into p[].  Return
+** the number of bytes written.
+*/
+static unsigned int putVarint(unsigned char *p, u64 v){
+  int i = 0;
+  do{
+    p[i++] = v & 0x7f;
+    v >>= 7;
+  }while( v!=0 );
+  p[i-1] |= 0x80;
+  return i;
 }
 
 /*
@@ -402,15 +312,32 @@ u32 swab32(u32 x){
 ** applicable).  Additional space allocated on overflow pages
 ** is NOT included in the value returned from this routine.
 */
-static int cellSize(Btree *pBt, Cell *pCell){
-  int n = NKEY(pBt, pCell->h) + NDATA(pBt, pCell->h);
-  if( n>MX_LOCAL_PAYLOAD ){
-    n = MX_LOCAL_PAYLOAD + sizeof(Pgno);
+static int cellSize(MemPage *pPage, unsigned char *pCell){
+  int n, nPayload;
+  u64 nData, nKey;
+  int maxPayload;
+  if( pPage->leaf ){
+    n = 2;
   }else{
-    n = ROUNDUP(n);
+    n = 6;
   }
-  n += sizeof(CellHdr);
-  return n;
+  if( pPage->zeroData ){
+    nData = 0;
+  }else{
+    n += getVarint(&pCell[n], &nData);
+  }
+  if( pPage->intKey ){
+    u64 dummy;
+    nKey = getVarint(&pCell[n], &dummy);
+  }else{
+    n += getVarint(pCell, &nKey);
+  }
+  nPayload = nKey + nData;
+  maxPayload = pPage->pBt->maxPayload;
+  if( nPayload>maxPayload ){
+    nPayload = maxPayload + 4;
+  }
+  return n + nPayload;
 }
 
 /*
@@ -418,47 +345,60 @@ static int cellSize(Btree *pBt, Cell *pCell){
 ** beginning of the page and all free space is collected 
 ** into one big FreeBlk at the end of the page.
 */
-static void defragmentPage(Btree *pBt, MemPage *pPage){
+static void defragmentPage(MemPage *pPage){
   int pc, i, n;
-  FreeBlk *pFBlk;
-  char newPage[SQLITE_USABLE_SIZE];
+  int start, hdr;
+  int leftover;
+  unsigned char *oldPage;
+  unsigned char newPage[SQLITE_PAGE_SIZE];
 
-  assert( sqlitepager_iswriteable(pPage) );
-  assert( pPage->isInit );
-  pc = sizeof(PageHdr);
-  pPage->u.hdr.firstCell = SWAB16(pBt, pc);
-  memcpy(newPage, pPage->u.aDisk, pc);
-  for(i=0; i<pPage->nCell; i++){
-    Cell *pCell = pPage->apCell[i];
-
-    /* This routine should never be called on an overfull page.  The
-    ** following asserts verify that constraint. */
-    assert( Addr(pCell) > Addr(pPage) );
-    assert( Addr(pCell) < Addr(pPage) + SQLITE_USABLE_SIZE );
-
-    n = cellSize(pBt, pCell);
-    pCell->h.iNext = SWAB16(pBt, pc + n);
-    memcpy(&newPage[pc], pCell, n);
-    pPage->apCell[i] = (Cell*)&pPage->u.aDisk[pc];
-    pc += n;
+  assert( sqlitepager_iswriteable(pPage->aData) );
+  assert( pPage->pBt!=0 );
+  assert( pPage->pageSize <= SQLITE_PAGE_SIZE );
+  oldPage = pPage->aData;
+  hdr = pPage->hdrOffset;
+  ptr = 3+hdr;
+  n = 6+hdr;
+  if( !pPage->leaf ){
+    n += 4;
   }
-  assert( pPage->nFree==SQLITE_USABLE_SIZE-pc );
-  memcpy(pPage->u.aDisk, newPage, pc);
-  if( pPage->nCell>0 ){
-    pPage->apCell[pPage->nCell-1]->h.iNext = 0;
+  start = n;
+  pc = get2byte(&oldPage[ptr]);
+  i = 0;
+  while( pc>0 ){
+    assert( n<pPage->pageSize );
+    size = cellSize(pPage, &oldPage[pc]);
+    memcpy(&newPage[n], &oldPage[pc], size);
+    put2byte(&newPage[ptr],n);
+    pPage->aCell[i] = &oldPage[n];
+    n += size;
+    ptr = pc;
+    pc = get2byte(&oldPage[pc]);
   }
-  pFBlk = (FreeBlk*)&pPage->u.aDisk[pc];
-  pFBlk->iSize = SWAB16(pBt, SQLITE_USABLE_SIZE - pc);
-  pFBlk->iNext = 0;
-  pPage->u.hdr.firstFree = SWAB16(pBt, pc);
-  memset(&pFBlk[1], 0, SQLITE_USABLE_SIZE - pc - sizeof(FreeBlk));
+  leftover = pPage->pageSize - n;
+  assert( leftover>=0 );
+  assert( pPage->nFree==leftover );
+  if( leftover<4 ){
+    oldPage[hdr+5] = leftover;
+    leftover = 0;
+    n = pPage->pageSize;
+  }
+  memcpy(&oldPage[start], &newPage[start], n-start);
+  if( leftover==0 ){
+    put2byte(&oldPage[hdr+3], 0);
+  }else if( leftover>=4 ){
+    put2byte(&oldPage[hdr+3], n);
+    put2byte(&oldPage[n], 0);
+    put2byte(&oldPage[n+2], leftover);
+    memset(&oldPage[n+4], 0, leftover-4);
+  }
 }
 
 /*
-** Allocate nByte bytes of space on a page.  nByte must be a 
-** multiple of 4.
+** Allocate nByte bytes of space on a page.  If nByte is less than
+** 4 it is rounded up to 4.
 **
-** Return the index into pPage->u.aDisk[] of the first byte of
+** Return the index into pPage->aData[] of the first byte of
 ** the new allocation. Or return 0 if there is not enough free
 ** space on the page to satisfy the allocation request.
 **
@@ -466,110 +406,194 @@ static void defragmentPage(Btree *pBt, MemPage *pPage){
 ** nBytes of contiguous free space, then this routine automatically
 ** calls defragementPage() to consolidate all free space before 
 ** allocating the new chunk.
+**
+** Algorithm:  Carve a piece off of the first freeblock that is
+** nByte in size or that larger.
 */
-static int allocateSpace(Btree *pBt, MemPage *pPage, int nByte){
-  FreeBlk *p;
-  u16 *pIdx;
-  int start;
-  int iSize;
+static int allocateSpace(MemPage *pPage, int nByte){
+  int ptr, pc, hdr;
+  int size;
+  unsigned char *data;
 #ifndef NDEBUG
   int cnt = 0;
 #endif
 
-  assert( sqlitepager_iswriteable(pPage) );
-  assert( nByte==ROUNDUP(nByte) );
-  assert( pPage->isInit );
+  data = pPage->aData;
+  assert( sqlitepager_iswriteable(data) );
+  assert( pPage->pBt );
+  if( nByte<4 ) nByte = 4;
   if( pPage->nFree<nByte || pPage->isOverfull ) return 0;
-  pIdx = &pPage->u.hdr.firstFree;
-  p = (FreeBlk*)&pPage->u.aDisk[SWAB16(pBt, *pIdx)];
-  while( (iSize = SWAB16(pBt, p->iSize))<nByte ){
-    assert( cnt++ < SQLITE_USABLE_SIZE/4 );
-    if( p->iNext==0 ){
-      defragmentPage(pBt, pPage);
-      pIdx = &pPage->u.hdr.firstFree;
-    }else{
-      pIdx = &p->iNext;
-    }
-    p = (FreeBlk*)&pPage->u.aDisk[SWAB16(pBt, *pIdx)];
+  hdr = pPage->hdrOffset;
+  if( data[hdr+5]>=252 ){
+    defragmentPage(pPage);
   }
-  if( iSize==nByte ){
-    start = SWAB16(pBt, *pIdx);
-    *pIdx = p->iNext;
+  ptr = hdr+1;
+  pc = get2byte(&data[ptr]);
+  assert( ptr<pc );
+  assert( pc<=pPage->pageSize-4 );
+  while( (size = get2byte(&data[pc+2])<nByte ){
+    ptr = pc;
+    pc = get2byte(&data[ptr]);
+    assert( pc<=pPage->pageSize-4 );
+    assert( pc>=ptr+size+4 || pc==0 );
+    if( pc==0 ){
+      assert( (cnt++)==0 );
+      defragmentPage(pPage);
+      assert( data[hdr+5]==0 );
+      ptr = pPage->hdrOffset+1;
+      pc = get2byte(&data[ptr]);
+    }
+  }
+  assert( pc>0 && size>=nByte );
+  assert( pc+size<=pPage->pageSize );
+  if( size>nByte+4 ){
+    put2byte(&data[ptr], pc+nByte);
+    put2byte(&data[pc+size], get2byte(&data[pc]));
+    put2byte(&data[pc+size+2], size-nByte);
   }else{
-    FreeBlk *pNew;
-    start = SWAB16(pBt, *pIdx);
-    pNew = (FreeBlk*)&pPage->u.aDisk[start + nByte];
-    pNew->iNext = p->iNext;
-    pNew->iSize = SWAB16(pBt, iSize - nByte);
-    *pIdx = SWAB16(pBt, start + nByte);
+    put2byte(&data[ptr], get2byte(&data[pc]));
+    data[hdr+5] += size-nByte;
   }
   pPage->nFree -= nByte;
-  return start;
+  assert( pPage->nFree>=0 );
+  return pc;
 }
 
 /*
-** Return a section of the MemPage.u.aDisk[] to the freelist.
-** The first byte of the new free block is pPage->u.aDisk[start]
-** and the size of the block is "size" bytes.  Size must be
-** a multiple of 4.
+** Return a section of the pPage->aData to the freelist.
+** The first byte of the new free block is pPage->aDisk[start]
+** and the size of the block is "size" bytes.
 **
 ** Most of the effort here is involved in coalesing adjacent
 ** free blocks into a single big free block.
 */
-static void freeSpace(Btree *pBt, MemPage *pPage, int start, int size){
-  int end = start + size;
-  u16 *pIdx, idx;
-  FreeBlk *pFBlk;
-  FreeBlk *pNew;
-  FreeBlk *pNext;
-  int iSize;
+static void freeSpace(MemPage *pPage, int start, int size){
+  int end = start + size;  /* End of the segment being freed */
+  int ptr, pbegin, pend;
+#ifndef NDEBUG
+  int tsize = 0;          /* Total size of all freeblocks */
+#endif
+  unsigned char *data = pPage->aData;
 
-  assert( sqlitepager_iswriteable(pPage) );
-  assert( size == ROUNDUP(size) );
-  assert( start == ROUNDUP(start) );
-  assert( pPage->isInit );
-  pIdx = &pPage->u.hdr.firstFree;
-  idx = SWAB16(pBt, *pIdx);
-  while( idx!=0 && idx<start ){
-    pFBlk = (FreeBlk*)&pPage->u.aDisk[idx];
-    iSize = SWAB16(pBt, pFBlk->iSize);
-    if( idx + iSize == start ){
-      pFBlk->iSize = SWAB16(pBt, iSize + size);
-      if( idx + iSize + size == SWAB16(pBt, pFBlk->iNext) ){
-        pNext = (FreeBlk*)&pPage->u.aDisk[idx + iSize + size];
-        if( pBt->needSwab ){
-          pFBlk->iSize = swab16((u16)swab16(pNext->iSize)+iSize+size);
-        }else{
-          pFBlk->iSize += pNext->iSize;
-        }
-        pFBlk->iNext = pNext->iNext;
-      }
-      pPage->nFree += size;
-      return;
-    }
-    pIdx = &pFBlk->iNext;
-    idx = SWAB16(pBt, *pIdx);
+  assert( pPage->pBt!=0 );
+  assert( sqlitepager_iswriteable(data) );
+  assert( start>=pPage->hdrOffset+6+(pPage->leaf?0:4) );
+  assert( end<=pPage->pBt->pageSize );
+  if( size<4 ) size = 4;
+
+  /* Add the space back into the linked list of freeblocks */
+  ptr = pPage->hdrOffset + 1;
+  while( (pbegin = get2byte(&data[ptr]))<start && pbegin>0 ){
+    assert( pbegin<=pPage->pBt->pageSize-4 );
+    assert( pbegin>ptr );
+    ptr = pbegin;
   }
-  pNew = (FreeBlk*)&pPage->u.aDisk[start];
-  if( idx != end ){
-    pNew->iSize = SWAB16(pBt, size);
-    pNew->iNext = SWAB16(pBt, idx);
-  }else{
-    pNext = (FreeBlk*)&pPage->u.aDisk[idx];
-    pNew->iSize = SWAB16(pBt, size + SWAB16(pBt, pNext->iSize));
-    pNew->iNext = pNext->iNext;
-  }
-  *pIdx = SWAB16(pBt, start);
+  assert( pbegin<=pPage->pBt->pageSize-4 );
+  assert( pbegin>ptr || pbegin==0 );
+  put2bytes(&data[ptr], start);
+  put2bytes(&data[start], pbegin);
+  put2bytes(&data[start+2], size);
   pPage->nFree += size;
+
+  /* Coalesce adjacent free blocks */
+  ptr = pPage->hdrOffset + 1;
+  while( (pbegin = get2byte(&data[ptr]))>0 ){
+    int pnext, psize;
+    assert( pbegin>ptr );
+    assert( pbegin<pPage->pBt->pageSize-4 );
+    pnext = get2byte(&data[pbegin]);
+    psize = get2byte(&data[pbegin+2]);
+    if( pbegin + psize + 3 >= pnext && pnext>0 ){
+      int frag = pnext - (pbegin+psize);
+      assert( frag<=data[pPage->hdrOffset+5] );
+      data[pPage->hdrOffset+5] -= frag;
+      put2byte(&data[pbegin], get2byte(&data[pnext]));
+      put2byte(&data[pbegin+2], pnext+get2byte(&data[pnext+2])-pbegin);
+    }else{
+      assert( (tsize += psize)>0 );
+      ptr = pbegin;
+    }
+  }
+  assert( tsize+data[pPage->hdrOffset+5]==pPage->nFree );
 }
+
+/*
+** The following is the default comparison function for (non-integer)
+** keys in the btrees.  This function returns negative, zero, or
+** positive if the first key is less than, equal to, or greater than
+** the second.
+**
+*/
+static int keyComp(
+  void *userData,
+  int nKey1, const unsigned char *aKey1, 
+  int nKey2, const unsigned char *aKey2,
+){
+  KeyClass *pKeyClass = (KeyClass*)userData;
+  i1 = i2 = 0;
+  for(i1=i2=0; pKeyClass!=0; pKeyClass=pKeyClass->pNext){
+    if( varint32(aKey1, &i1, nKey1, &n1) ) goto bad_key;
+    if( varint32(aKey2, &i2, nKey2, &n2) ) goto bad_key;
+    if( n1==0 ){
+      if( n2>0 ) return -1;
+      /* both values are NULL.  consider them equal for sorting purposes. */
+    }else if( n2==0 ){
+      /* right value is NULL but the left value is not.  right comes first */
+      return +1;
+    }else if( n1<=5 ){
+      if( n2>5 ) return -1;
+      /* both values are numbers.  sort them numerically */
+      ...
+    }else if( n2<=5 ){
+      /* right value is numeric and left is TEXT or BLOB.  right comes first */
+      return +1;
+    }else if( n1<12 || n2<12 ){
+      /* bad coding for either the left or the right value */
+      goto bad_key;
+    }else if( (n1&0x01)==0 ){
+      if( n2&0x01)!=0 ) return -1;
+      /* both values are BLOB.  use memcmp() */
+      n1 = (n1-12)/2;
+      n2 = (n2-12)/2;
+      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
+      c = memcmp(&aKey1[i1], &aKey2[i2], n1<n2 ? n1 : n2);
+      if( c!=0 ){
+        return c | 1;
+      }
+      if( n1!=n2 ){
+        return (n1-n2) | 1;
+      }
+      i1 += n1;
+      i2 += n2;
+    }else if( n2&0x01)!=0 ){
+      /* right value if BLOB and left is TEXT.  BLOB comes first */
+      return +1;
+    }else{
+      /* both values are TEXT.  use the supplied comparison function */
+      n1 = (n1-13)/2;
+      n2 = (n2-13)/2;
+      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
+      c = pKeyClass->xCompare(pKeyClass->pUser, n1, &aKey1[i1], n2, &aKey2[i2]);
+      if( c!=0 ){
+        return c | 1;
+      }
+      i1 += n1;
+      i2 += n2;
+    } 
+  }
+  return 0;
+
+bad_key:
+  return 1;
+}
+  
 
 /*
 ** Initialize the auxiliary information for a disk block.
 **
 ** The pParent parameter must be a pointer to the MemPage which
-** is the parent of the page being initialized.  The root of the
-** BTree (usually page 2) has no parent and so for that page, 
-** pParent==NULL.
+** is the parent of the page being initialized.  The root of a
+** BTree has no parent and so for that page, pParent==NULL.
 **
 ** Return SQLITE_OK on success.  If we see that the page does
 ** not contain a well-formed database page, then return 
@@ -577,79 +601,102 @@ static void freeSpace(Btree *pBt, MemPage *pPage, int start, int size){
 ** guarantee that the page is well-formed.  It only shows that
 ** we failed to detect any corruption.
 */
-static int initPage(Bt *pBt, MemPage *pPage, Pgno pgnoThis, MemPage *pParent){
-  int idx;           /* An index into pPage->u.aDisk[] */
-  Cell *pCell;       /* A pointer to a Cell in pPage->u.aDisk[] */
-  FreeBlk *pFBlk;    /* A pointer to a free block in pPage->u.aDisk[] */
-  int sz;            /* The size of a Cell in bytes */
-  int freeSpace;     /* Amount of free space on the page */
+static int initPage(
+  Bt *pBt,               /* The Btree */
+  unsigned char *data,   /* Start of the data for the page */
+  Pgno pgnoThis,         /* The page number */
+  MemPage *pParent       /* The parent.  Might be NULL */
+){
+  MemPage *pPage;
+  int c, pc, i;
+  int sumCell = 0;       /* Total size of all cells */
+  unsigned char *data;
 
+  pPage = (MemPage*)&aData[pBt->pageSize];
   if( pPage->pParent ){
     assert( pPage->pParent==pParent );
     return SQLITE_OK;
   }
   if( pParent ){
     pPage->pParent = pParent;
-    sqlitepager_ref(pParent);
+    sqlitepager_ref(pParent->aData);
   }
-  if( pPage->isInit ) return SQLITE_OK;
-  pPage->isInit = 1;
+  if( pPage->pBt!=0 ) return SQLITE_OK;
+  pPage->pBt = pBt;
   pPage->nCell = 0;
-  freeSpace = USABLE_SPACE;
-  idx = SWAB16(pBt, pPage->u.hdr.firstCell);
-  while( idx!=0 ){
-    if( idx>SQLITE_USABLE_SIZE-MIN_CELL_SIZE ) goto page_format_error;
-    if( idx<sizeof(PageHdr) ) goto page_format_error;
-    if( idx!=ROUNDUP(idx) ) goto page_format_error;
-    pCell = (Cell*)&pPage->u.aDisk[idx];
-    sz = cellSize(pBt, pCell);
-    if( idx+sz > SQLITE_USABLE_SIZE ) goto page_format_error;
-    freeSpace -= sz;
-    pPage->apCell[pPage->nCell++] = pCell;
-    idx = SWAB16(pBt, pCell->h.iNext);
-  }
-  pPage->nFree = 0;
-  idx = SWAB16(pBt, pPage->u.hdr.firstFree);
-  while( idx!=0 ){
-    int iNext;
-    if( idx>SQLITE_USABLE_SIZE-sizeof(FreeBlk) ) goto page_format_error;
-    if( idx<sizeof(PageHdr) ) goto page_format_error;
-    pFBlk = (FreeBlk*)&pPage->u.aDisk[idx];
-    pPage->nFree += SWAB16(pBt, pFBlk->iSize);
-    iNext = SWAB16(pBt, pFBlk->iNext);
-    if( iNext>0 && iNext <= idx ) goto page_format_error;
-    idx = iNext;
-  }
-  if( pPage->nCell==0 && pPage->nFree==0 ){
-    /* As a special case, an uninitialized root page appears to be
-    ** an empty database */
-    return SQLITE_OK;
-  }
-  if( pPage->nFree!=freeSpace ) goto page_format_error;
-  return SQLITE_OK;
+  pPage->pgno = pgnoThis;
+  pPage->hdrOffset = hdr = pgnoThis==1 ? 100 : 0;
+  c = data[pPage->hdrOffset];
+  pPage->intKey = (c & PTF_INTKEY)!=0;
+  pPage->zeroData = (c & PTF_ZERODATA)!=0;
+  pPage->leaf = (c & PTF_INTKEY)!=0;
 
-page_format_error:
-  return SQLITE_CORRUPT;
+  /* Initialize the cell count and cell pointers */
+  pc = get2byte(&data[hdr+3]);
+  while( pc>0 ){
+    if( pc>=pBt->pageSize ) return SQLITE_CORRUPT;
+    if( pPage->nCell>pBt->pageSize ) return SQLITE_CORRUPT;
+    pPage->nCell++;
+    pc = get2byte(&data[pc]);
+  }
+  pPage->aCell = sqlite_malloc( sizeof(pPage->aCell[0])*pPage->nCell );
+  if( pPage->aCell==0 ){
+    return SQLITE_NOMEM;
+  }
+  pc = get2byte(&data[hdr+3]);
+  for(i=0; pc>0; i++){
+    pPage->aCell[i] = &data[pc];
+    pc = get2byte(&data[pc]);
+    sumCell += cellSize(pPage, &data[pc]);
+  }
+
+  /* Compute the total free space on the page */
+  pPage->nFree = data[hdr+5];
+  pc = get2byte(&data[hdr+1]);
+  while( pc>0 ){
+    int next, size;
+    if( pc>=pBt->pageSize ) return SQLITE_CORRUPT;
+    next = get2byte(&data[pc]);
+    size = get2byte(&data[pc+2]);
+    if( next>0 && next<=pc+size+3 ) return SQLITE_CURRUPT;
+    pPage->nFree += size;
+    pc = next;
+  }
+  if( pPage->nFree>=pBt->pageSize ) return SQLITE_CORRUPT;
+
+  /* Sanity check:  Cells and freespace and header must sum to the size
+  ** a page. */
+  if( sumCell+pPage->nFree+hdr+10-pPage->leaf*4 != pBt->pageSize ){
+    return CORRUPT;
+  }
+
+  return SQLITE_OK;
 }
 
 /*
 ** Set up a raw page so that it looks like a database page holding
 ** no entries.
 */
-static void zeroPage(Btree *pBt, MemPage *pPage){
-  PageHdr *pHdr;
-  FreeBlk *pFBlk;
-  assert( sqlitepager_iswriteable(pPage) );
-  memset(pPage, 0, SQLITE_USABLE_SIZE);
-  pHdr = &pPage->u.hdr;
-  pHdr->firstCell = 0;
-  pHdr->firstFree = SWAB16(pBt, sizeof(*pHdr));
-  pFBlk = (FreeBlk*)&pHdr[1];
-  pFBlk->iNext = 0;
-  pPage->nFree = SQLITE_USABLE_SIZE - sizeof(*pHdr);
-  pFBlk->iSize = SWAB16(pBt, pPage->nFree);
+static void zeroPage(MemPage *pPage, int flags){
+  unsigned char *data = pPage->aData;
+  Btree *pBt = pPage->pBt;
+  int hdr = pPage->pgno==1 ? 100 : 0;
+  int first;
+
+  assert( sqlitepager_iswriteable(data) );
+  memset(&data[hdr], 0, pBt->pageSize - hdr);
+  data[hdr] = flags;
+  first = hdr + 6 + 4*((flags&0x01)!=0);
+  put2byte(&data[hdr+1], first);
+  put2byte(&data[first+2], pBt->pageSize - first);
+  sqliteFree(pPage->aCell);
+  pPage->aCell = 0;
   pPage->nCell = 0;
-  pPage->isOverfull = 0;
+  pPage->nFree = pBt->pageSize - first;
+  pPage->intKey = (flags & PTF_INTKEY)!=0;
+  pPage->leaf = (flags & PTF_LEAF)!=0;
+  pPage->zeroData = (flags & PTF_ZERODATA)!=0;
+  pPage->hdrOffset = hdr;
 }
 
 /*
@@ -658,12 +705,14 @@ static void zeroPage(Btree *pBt, MemPage *pPage){
 ** happens.
 */
 static void pageDestructor(void *pData){
-  MemPage *pPage = (MemPage*)pData;
+  MemPage *pPage = (MemPage*)&((char*)pData)[SQLITE_PAGE_SIZE];
   if( pPage->pParent ){
     MemPage *pParent = pPage->pParent;
     pPage->pParent = 0;
-    sqlitepager_unref(pParent);
+    sqlitepager_unref(pParent->aData);
   }
+  sqliteFree(pPage->aCell);
+  pPage->aCell = 0;
 }
 
 /*
@@ -691,14 +740,10 @@ int sqliteBtreeOpen(
   ** the right size.  This is to guard against size changes that result
   ** when compiling on a different architecture.
   */
+  assert( sizeof(u64)==8 );
   assert( sizeof(u32)==4 );
   assert( sizeof(u16)==2 );
   assert( sizeof(Pgno)==4 );
-  assert( sizeof(PageHdr)==8 );
-  assert( sizeof(CellHdr)==12 );
-  assert( sizeof(FreeBlk)==4 );
-  assert( sizeof(OverflowPage)==SQLITE_USABLE_SIZE );
-  assert( sizeof(FreelistInfo)==OVERFLOW_SIZE );
   assert( sizeof(ptr)==sizeof(char*) );
   assert( sizeof(uptr)==sizeof(ptr) );
 
@@ -721,6 +766,8 @@ int sqliteBtreeOpen(
   pBt->page1 = 0;
   pBt->readOnly = sqlitepager_isreadonly(pBt->pPager);
   pBt->pOps = &sqliteBtreeOps;
+  pBt->pageSize = SQLITE_PAGE_SIZE;
+  pBt->maxLocal = (SQLITE_PAGE_SIZE-10)/4-12;
   *ppBtree = pBt;
   return SQLITE_OK;
 }
@@ -782,26 +829,26 @@ static int fileBtreeSetSafetyLevel(Btree *pBt, int level){
 */
 static int lockBtree(Btree *pBt){
   int rc;
+  unsigned char *data;
   if( pBt->page1 ) return SQLITE_OK;
-  rc = sqlitepager_get(pBt->pPager, 1, (void**)&pBt->page1);
+  rc = sqlitepager_get(pBt->pPager, 1, (void**)&data);
   if( rc!=SQLITE_OK ) return rc;
 
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
   if( sqlitepager_pagecount(pBt->pPager)>0 ){
-    PageOne *pP1 = pBt->page1;
-    if( strcmp(pP1->zMagic,zMagicHeader)!=0 ||
-          (pP1->iMagic!=MAGIC && swab32(pP1->iMagic)!=MAGIC) ){
+    if( memcmp(data, zMagicHeader, 16)!=0 ){
       rc = SQLITE_NOTADB;
       goto page1_init_failed;
     }
-    pBt->needSwab = pP1->iMagic!=MAGIC;
+    /*** TBD:  Other header checks such as page size ****/
   }
+  pBt->page1 = (MemPage*)&data[SQLITE_PAGE_SIZE];
   return rc;
 
 page1_init_failed:
-  sqlitepager_unref(pBt->page1);
+  sqlitepager_unref(pBt->data);
   pBt->page1 = 0;
   return rc;
 }
@@ -818,7 +865,7 @@ page1_init_failed:
 */
 static void unlockBtreeIfUnused(Btree *pBt){
   if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->page1!=0 ){
-    sqlitepager_unref(pBt->page1);
+    sqlitepager_unref(pBt->page1->aData);
     pBt->page1 = 0;
     pBt->inTrans = 0;
     pBt->inCkpt = 0;
@@ -826,34 +873,26 @@ static void unlockBtreeIfUnused(Btree *pBt){
 }
 
 /*
-** Create a new database by initializing the first two pages of the
+** Create a new database by initializing the first page of the
 ** file.
 */
 static int newDatabase(Btree *pBt){
-  MemPage *pRoot;
-  PageOne *pP1;
+  MemPage *pP1;
+  unsigned char *data;
   int rc;
   if( sqlitepager_pagecount(pBt->pPager)>1 ) return SQLITE_OK;
   pP1 = pBt->page1;
-  rc = sqlitepager_write(pBt->page1);
+  assert( pP1!=0 );
+  data = pP1->aData;
+  rc = sqlitepager_write(data);
   if( rc ) return rc;
-  rc = sqlitepager_get(pBt->pPager, 2, (void**)&pRoot);
-  if( rc ) return rc;
-  rc = sqlitepager_write(pRoot);
-  if( rc ){
-    sqlitepager_unref(pRoot);
-    return rc;
-  }
-  strcpy(pP1->zMagic, zMagicHeader);
-  if( btree_native_byte_order ){
-    pP1->iMagic = MAGIC;
-    pBt->needSwab = 0;
-  }else{
-    pP1->iMagic = swab32(MAGIC);
-    pBt->needSwab = 1;
-  }
-  zeroPage(pBt, pRoot);
-  sqlitepager_unref(pRoot);
+  memcpy(data, zMagicHeader, sizeof(zMagicHeader));
+  assert( sizeof(zMagicHeader)==16 );
+  put2byte(&data[16], SQLITE_PAGE_SIZE);
+  data[18] = 1;
+  data[19] = 1;
+  put2byte(&data[22], (SQLITE_PAGE_SIZE-10)/4-12);
+  zeroPage(pP1, PTF_INTKEY|PTF_LEAF);
   return SQLITE_OK;
 }
 
@@ -927,7 +966,7 @@ static int fileBtreeRollback(Btree *pBt){
   pBt->inCkpt = 0;
   rc = pBt->readOnly ? SQLITE_OK : sqlitepager_rollback(pBt->pPager);
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->pPage && pCur->pPage->isInit==0 ){
+    if( pCur->pPage && pCur->pPage->pBt==0 ){
       sqlitepager_unref(pCur->pPage);
       pCur->pPage = 0;
     }
