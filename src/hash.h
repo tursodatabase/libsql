@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.4 2002/02/23 23:45:45 drh Exp $
+** $Id: hash.h,v 1.5 2002/06/08 23:25:09 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -99,6 +99,7 @@ void sqliteHashClear(Hash*);
 #define sqliteHashNext(E)   ((E)->next)
 #define sqliteHashData(E)   ((E)->data)
 #define sqliteHashKey(E)    ((E)->pKey)
+#define sqliteHashKeysize(E) ((E)->nKey)
 
 /*
 ** Number of entries in a hash table

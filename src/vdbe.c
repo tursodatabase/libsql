@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.153 2002/06/06 23:16:06 drh Exp $
+** $Id: vdbe.c,v 1.154 2002/06/08 23:25:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -198,6 +198,7 @@ struct AggElem {
 typedef struct Set Set;
 struct Set {
   Hash hash;             /* A set is just a hash table */
+  HashElem *prev;        /* Previously accessed hash elemen */
 };
 
 /*
@@ -1066,19 +1067,19 @@ static char *zOpName[] = { 0,
   "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
   "AggFocus",          "AggNext",           "AggSet",            "AggGet",
   "AggFunc",           "AggInit",           "AggPush",           "AggPop",
-  "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
-  "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
-  "If",                "IfNot",             "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Pop",               "Dup",               "Pull",
-  "Push",              "MustBeInt",         "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Remainder",
-  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
-  "ShiftRight",        "AbsValue",          "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Function",          "Limit",           
+  "SetInsert",         "SetFound",          "SetNotFound",       "SetFirst",
+  "SetNext",           "MakeRecord",        "MakeKey",           "MakeIdxKey",
+  "IncrKey",           "Goto",              "If",                "IfNot",
+  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
+  "NullCallback",      "Integer",           "String",            "Pop",
+  "Dup",               "Pull",              "Push",              "MustBeInt",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Remainder",         "BitAnd",            "BitOr",
+  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "IsNull",            "NotNull",
+  "Negative",          "And",               "Or",                "Not",
+  "Concat",            "Noop",              "Function",          "Limit",
 };
 
 /*
@@ -1957,7 +1958,7 @@ case OP_AddImm: {
 /* Opcode: MustBeInt  * P2 *
 ** 
 ** Force the top of the stack to be an integer.  If the top of the
-** stack is not an integer and cannot be comverted into an integer
+** stack is not an integer and cannot be converted into an integer
 ** with out data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
 */
@@ -3018,7 +3019,7 @@ case OP_MoveTo: {
 ** This operation is similar to NotFound except that this operation
 ** does not pop the key from the stack.
 **
-** See also: Found, NotFound, MoveTo
+** See also: Found, NotFound, MoveTo, IsUnique, NotExists
 */
 /* Opcode: Found P1 P2 *
 **
@@ -3027,7 +3028,7 @@ case OP_MoveTo: {
 ** does not exist, then fall thru.  The cursor is left pointing
 ** to the record if it exists.  The key is popped from the stack.
 **
-** See also: Distinct, NotFound, MoveTo
+** See also: Distinct, NotFound, MoveTo, IsUnique, NotExists
 */
 /* Opcode: NotFound P1 P2 *
 **
@@ -3084,7 +3085,7 @@ case OP_Found: {
 ** number for that entry is pushed onto the stack and control
 ** falls through to the next instruction.
 **
-** See also: Distinct, NotFound, NotExists
+** See also: Distinct, NotFound, NotExists, Found
 */
 case OP_IsUnique: {
   int i = pOp->p1;
@@ -3167,7 +3168,7 @@ case OP_IsUnique: {
 ** operation assumes the key is an integer and NotFound assumes it
 ** is a string.
 **
-** See also: Distinct, Found, MoveTo, NotExists
+** See also: Distinct, Found, MoveTo, NotFound, IsUnique
 */
 case OP_NotExists: {
   int i = pOp->p1;
@@ -4775,6 +4776,46 @@ case OP_SetNotFound: {
   break;
 }
 
+/* Opcode: SetFirst P1 P2 *
+**
+** Read the first element from set P1 and push it onto the stack.  If the
+** set is empty, push nothing and jump immediately to P2.  This opcode is
+** used in combination with OP_SetNext to loop over all elements of a set.
+*/
+/* Opcode: SetNext P1 P2 *
+**
+** Read the next element from set P1 and push it onto the stack.  If there
+** are no more elements in the set, do not do the push and fall through.
+** Otherwise, jump to P2 after pushing the next set element.
+*/
+case OP_SetFirst: 
+case OP_SetNext: {
+  Set *pSet;
+  int tos;
+  VERIFY( if( pOp->p1<0 || pOp->p1>=p->nSet ) goto bad_instruction; )
+  pSet = &p->aSet[pOp->p1];
+  if( pOp->opcode==OP_SetFirst ){
+    pSet->prev = sqliteHashFirst(&pSet->hash);
+    if( pSet->prev==0 ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+  }else{
+    VERIFY( if( pSet->prev==0 ) goto bad_instruction; )
+    pSet->prev = sqliteHashNext(pSet->prev);
+    if( pSet->prev==0 ){
+      break;
+    }else{
+      pc = pOp->p2 - 1;
+    }
+  }
+  tos = ++p->tos;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  zStack[tos] = sqliteHashKey(pSet->prev);
+  aStack[tos].n = sqliteHashKeysize(pSet->prev);
+  aStack[tos].flags = STK_Str | STK_Static;
+  break;
+}
 
 /* An other opcode is illegal...
 */

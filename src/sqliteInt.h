@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.120 2002/06/06 18:54:41 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.121 2002/06/08 23:25:09 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -411,7 +411,8 @@ struct Token {
 struct Expr {
   int op;                /* Operation performed by this node */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
-  ExprList *pList;       /* A list of expressions used as a function argument */
+  ExprList *pList;       /* A list of expressions used as function arguments
+                         ** or in "<expr> IN (<expr-list)" */
   Token token;           /* An operand token */
   Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
@@ -419,7 +420,8 @@ struct Expr {
                          ** op==TK_FUNCTION, iColumn holds the function id */
   int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull
                          ** result from the iAgg-th element of the aggregator */
-  Select *pSelect;       /* When the expression is a sub-select */
+  Select *pSelect;       /* When the expression is a sub-select.  Also the
+                         ** right side of "<expr> IN (<select>)" */
 };
 
 /*
@@ -508,6 +510,7 @@ struct WhereLevel {
   int op, p1, p2;      /* Opcode used to terminate the loop */
   int iLeftJoin;       /* Memory cell used to implement LEFT OUTER JOIN */
   int top;             /* First instruction of interior of the loop */
+  int inOp, inP1, inP2;/* Opcode used to implement an IN operator */
 };
 
 /*

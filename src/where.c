@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.48 2002/05/26 20:54:34 drh Exp $
+** $Id: where.c,v 1.49 2002/06/08 23:25:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -112,6 +112,7 @@ static int allowedOp(int op){
     case TK_GT:
     case TK_GE:
     case TK_EQ:
+    case TK_IN:
       return 1;
     default:
       return 0;
@@ -136,7 +137,7 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
   pInfo->idxLeft = -1;
   pInfo->idxRight = -1;
   if( allowedOp(pExpr->op) && (pInfo->prereqRight & pInfo->prereqLeft)==0 ){
-    if( pExpr->pRight->op==TK_COLUMN ){
+    if( pExpr->pRight && pExpr->pRight->op==TK_COLUMN ){
       pInfo->idxRight = pExpr->pRight->iTable - base;
       pInfo->indexable = 1;
     }
@@ -288,6 +289,7 @@ WhereInfo *sqliteWhereBegin(
       if( aExpr[j].idxLeft==idx && aExpr[j].p->pLeft->iColumn<0
             && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
         switch( aExpr[j].p->op ){
+          case TK_IN:
           case TK_EQ: iDirectEq[i] = j; break;
           case TK_LE:
           case TK_LT: iDirectLt[i] = j; break;
@@ -329,6 +331,9 @@ WhereInfo *sqliteWhereBegin(
     ** there is an inequality used as a termination key.  (ex: "x<...")
     ** If score&2 is not 0 then there is an inequality used as the
     ** start key.  (ex: "x>...");
+    **
+    ** The IN operator as in "<expr> IN (...)" is treated the same as
+    ** an equality comparison.
     */
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int eqMask = 0;  /* Index columns covered by an x=... constraint */
@@ -346,6 +351,7 @@ WhereInfo *sqliteWhereBegin(
           for(k=0; k<pIdx->nColumn; k++){
             if( pIdx->aiColumn[k]==iColumn ){
               switch( aExpr[j].p->op ){
+                case TK_IN:
                 case TK_EQ: {
                   eqMask |= 1<<k;
                   break;
@@ -467,6 +473,7 @@ WhereInfo *sqliteWhereBegin(
     }
 
     pIdx = pLevel->pIdx;
+    pLevel->inOp = OP_Noop;
     if( i<ARRAYSIZE(iDirectEq) && iDirectEq[i]>=0 ){
       /* Case 1:  We can directly reference a single row using an
       **          equality comparison against the ROWID field.
@@ -475,30 +482,31 @@ WhereInfo *sqliteWhereBegin(
       assert( k<nExpr );
       assert( aExpr[k].p!=0 );
       assert( aExpr[k].idxLeft==idx || aExpr[k].idxRight==idx );
+      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       if( aExpr[k].idxLeft==idx ){
-        sqliteExprCode(pParse, aExpr[k].p->pRight);
+        Expr *pX = aExpr[k].p;
+        if( pX->op!=TK_IN ){
+          sqliteExprCode(pParse, aExpr[k].p->pRight);
+        }else if( pX->pList ){
+          sqliteVdbeAddOp(v, OP_SetFirst, pX->iTable, brk);
+          pLevel->inOp = OP_SetNext;
+          pLevel->inP1 = pX->iTable;
+          pLevel->inP2 = sqliteVdbeCurrentAddr(v);
+        }else{
+          assert( pX->pSelect );
+          sqliteVdbeAddOp(v, OP_Rewind, pX->iTable, brk);
+          sqliteVdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
+          pLevel->inP2 = sqliteVdbeAddOp(v, OP_FullKey, pX->iTable, 0);
+          pLevel->inOp = OP_Next;
+          pLevel->inP1 = pX->iTable;
+        }
       }else{
         sqliteExprCode(pParse, aExpr[k].p->pLeft);
       }
       aExpr[k].p = 0;
-      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
-      cont = pLevel->cont = brk;
+      cont = pLevel->cont = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_MustBeInt, 0, brk);
-      if( i==pTabList->nSrc-1 && pushKey ){
-        /* Note: The OP_Dup below will cause the recno to be left on the
-        ** stack if the record does not exists and the OP_NotExists jump is
-        ** taken.  This violates a general rule of the VDBE that you should
-        ** never leave values on the stack in order to avoid a stack overflow.
-        ** But in this case, the OP_Dup will never happen inside of a loop,
-        ** because the pushKey flag is only true for UPDATE and DELETE, not
-        ** for SELECT, and nested loops only occur on a SELECT.
-        ** So it is safe to leave the recno on the stack.
-        */
-        haveKey = 1;
-        sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      }else{
-        haveKey = 0;
-      }
+      haveKey = 0;
       sqliteVdbeAddOp(v, OP_NotExists, base+idx, brk);
       pLevel->op = OP_Noop;
     }else if( pIdx!=0 && pLevel->score%4==0 ){
@@ -507,17 +515,37 @@ WhereInfo *sqliteWhereBegin(
       int start;
       int testOp;
       int nColumn = pLevel->score/4;
+      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       for(j=0; j<nColumn; j++){
         for(k=0; k<nExpr; k++){
-          if( aExpr[k].p==0 ) continue;
+          Expr *pX = aExpr[k].p;
+          if( pX==0 ) continue;
           if( aExpr[k].idxLeft==idx 
-             && aExpr[k].p->op==TK_EQ
              && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
-             && aExpr[k].p->pLeft->iColumn==pIdx->aiColumn[j]
+             && pX->pLeft->iColumn==pIdx->aiColumn[j]
           ){
-            sqliteExprCode(pParse, aExpr[k].p->pRight);
-            aExpr[k].p = 0;
-            break;
+            if( pX->op==TK_EQ ){
+              sqliteExprCode(pParse, pX->pRight);
+              aExpr[k].p = 0;
+              break;
+            }
+            if( pX->op==TK_IN && nColumn==1 ){
+              if( pX->pList ){
+                sqliteVdbeAddOp(v, OP_SetFirst, pX->iTable, brk);
+                pLevel->inOp = OP_SetNext;
+                pLevel->inP1 = pX->iTable;
+                pLevel->inP2 = sqliteVdbeCurrentAddr(v);
+              }else{
+                assert( pX->pSelect );
+                sqliteVdbeAddOp(v, OP_Rewind, pX->iTable, brk);
+                sqliteVdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
+                pLevel->inP2 = sqliteVdbeAddOp(v, OP_FullKey, pX->iTable, 0);
+                pLevel->inOp = OP_Next;
+                pLevel->inP1 = pX->iTable;
+              }
+              aExpr[k].p = 0;
+              break;
+            }
           }
           if( aExpr[k].idxRight==idx 
              && aExpr[k].p->op==TK_EQ
@@ -531,7 +559,6 @@ WhereInfo *sqliteWhereBegin(
         }
       }
       pLevel->iMem = pParse->nMem++;
-      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       cont = pLevel->cont = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_MakeKey, nColumn, 0);
       if( nColumn==pIdx->nColumn ){
@@ -834,6 +861,9 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
       sqliteVdbeAddOp(v, pLevel->op, pLevel->p1, pLevel->p2);
     }
     sqliteVdbeResolveLabel(v, pLevel->brk);
+    if( pLevel->inOp!=OP_Noop ){
+      sqliteVdbeAddOp(v, pLevel->inOp, pLevel->inP1, pLevel->inP2);
+    }
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqliteVdbeAddOp(v, OP_MemLoad, pLevel->iLeftJoin, 0);
