@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.5 2004/06/18 11:34:09 danielk1977 Exp $}
+set rcsid {$Id: capi3.tcl,v 1.6 2004/06/30 13:28:33 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -46,11 +46,11 @@ to whatever datatype is appropriate for their system.
 <h3>2.0 C/C++ Interface</h3>
 
 <p>
-The API for SQLite 3.0 three includes 83 separate functions in addition
+The API for SQLite 3.0 includes 83 separate functions in addition
 to several data structures and #defines.  (A complete
 <a href="capi3ref.html">API reference</a> is provided as a separate document.)
 Fortunately, the interface is not nearly as complex as its size implies.
-Simple programs can still make due with only 3 functions:
+Simple programs can still make do with only 3 functions:
 <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a>,
 <a href="capi3ref.html#sqlite3_exec">sqlite3_exec()</a>, and
 <a href="capi3ref.html#sqlite3_close">sqlite3_close()</a>.
@@ -62,9 +62,9 @@ to compile an SQLite statement into byte code and
 to execute that bytecode.
 A family of routines with names beginning with 
 <a href="capi3ref.html#sqlite3_column_blob">sqlite3_column_</a>
-is used to extract informatiom about the result set of a query.
+is used to extract information about the result set of a query.
 Many interface functions come in pairs, with both a UTF-8 and
-and UTF-16 version.  And there is a collection of routines
+UTF-16 version.  And there is a collection of routines
 used to implement user-defined SQL functions and user-defined
 text collating sequences.
 </p>
@@ -111,7 +111,7 @@ as UTF-16 in host native byte order.
 </p>
 
 <p>
-The error codes for SQLite version 3 are unchanged from version2.
+The error codes for SQLite version 3 are unchanged from version 2.
 They are as follows:
 </p>
 

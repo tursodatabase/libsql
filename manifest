@@ -1,5 +1,5 @@
-C Have\sthe\sdebug\sversion\sof\ssqliteRealloc()\sreturn\spartially\suninitialised\nmemory\sin\sthe\ssame\sway\sas\sthe\snon-debug\sversion\scan.\s(CVS\s1783)
-D 2004-06-30T12:49:46
+C Fix\sa\stypo\sin\scapi3.tcl.\s(CVS\s1784)
+D 2004-06-30T13:28:33
 F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -201,7 +201,7 @@ F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
-F www/capi3.tcl af6938cc417fe323d7570b95d2e9a019bbff637e
+F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
 F www/capi3ref.tcl ae6c0ed88f601119c15de964b7b4b2f8c9b05831
 F www/changes.tcl 29701180c74161380a4d3a1cd6640fe50bc1fae1
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ed511c2ea9581933ca504ce4b43d863503c6cc22
-R a9545d46e5988521e62ac4bcd2b6fe2d
+P e78b0ff30fb630bc9835a7545525eea64924bafc
+R 5a53fa7c23614312cd45bc36b92cf7b4
 U danielk1977
-Z 9cc28bee00d11300c71fd982024608f0
+Z 1ffda58858ec478fc2be1aff401663fe
