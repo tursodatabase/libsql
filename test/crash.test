@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.11 2004/11/08 09:51:09 danielk1977 Exp $
+# $Id: crash.test,v 1.12 2004/11/23 22:16:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -403,3 +403,9 @@ do_test crash-6.2 {
   signature
 } $sig
 
+# The AUTOVACUUM was changed above.  We have to reset it for
+# other scripts that run as part of "fulltest"
+#
+set AUTOVACUUM $sqlite_options(default_autovacuum)
+
+finish_test

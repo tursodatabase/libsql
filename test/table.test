@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.34 2004/11/23 09:06:56 danielk1977 Exp $
+# $Id: table.test,v 1.35 2004/11/23 22:16:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -570,6 +570,7 @@ set sqlite_current_time 0
 #
 
 # Try to create a table from within a callback:
+unset -nocomplain result
 do_test table-14.1 {
   set rc [
     catch {
@@ -648,4 +649,3 @@ do_test table-15.2 {
 } {}
 
 finish_test
-
