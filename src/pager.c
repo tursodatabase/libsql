@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.75 2003/02/12 14:09:44 drh Exp $
+** @(#) $Id: pager.c,v 1.76 2003/02/13 01:58:21 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -135,9 +135,6 @@ struct Pager {
   int origDbSize;             /* dbSize before the current change */
   int ckptSize;               /* Size of database (in pages) at ckpt_begin() */
   off_t ckptJSize;            /* Size of journal at ckpt_begin() */
-#ifndef NDEBUG
-  off_t syncJSize;            /* Size of journal at last fsync() call */
-#endif
   int nRec;                   /* Number of pages written to the journal */
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   int ckptNRec;               /* Number of records in the checkpoint journal */
@@ -634,20 +631,15 @@ static int pager_playback(Pager *pPager){
     }
   }
 
-
-end_playback:
-#if !defined(NDEBUG) && defined(SQLITE_TEST)
-  /* For pages that were never written into the journal, restore the
-  ** memory copy from the original database file.
-  **
-  ** This is code is used during testing only.  It is necessary to
-  ** compensate for the sqliteOsTruncate() call inside 
-  ** sqlitepager_rollback().
+  /* Pages that have been written to the journal but never synced
+  ** where not restored by the loop above.  We have to restore those
+  ** pages by reading the back from the original database.
   */
   if( rc==SQLITE_OK ){
     PgHdr *pPg;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
       char zBuf[SQLITE_PAGE_SIZE];
+      if( !pPg->dirty ) continue;
       if( (int)pPg->pgno <= pPager->origDbSize ){
         sqliteOsSeek(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)(pPg->pgno-1));
         rc = sqliteOsRead(&pPager->fd, zBuf, SQLITE_PAGE_SIZE);
@@ -663,7 +655,8 @@ end_playback:
       pPg->dirty = 0;
     }
   }
-#endif
+
+end_playback:
   if( rc!=SQLITE_OK ){
     pager_unwritelock(pPager);
     pPager->errMask |= PAGER_ERR_CORRUPT;
@@ -1057,12 +1050,12 @@ static int syncAllPages(Pager *pPager){
       assert( !pPager->noSync );
 #ifndef NDEBUG
       {
-        off_t hdrSz, pgSz;
+        off_t hdrSz, pgSz, jSz;
         hdrSz = JOURNAL_HDR_SZ(journal_format);
         pgSz = JOURNAL_PG_SZ(journal_format);
-        rc = sqliteOsFileSize(&pPager->jfd, &pPager->syncJSize);
+        rc = sqliteOsFileSize(&pPager->jfd, &jSz);
         if( rc!=0 ) return rc;
-        assert( pPager->nRec*pgSz+hdrSz==pPager->syncJSize );
+        assert( pPager->nRec*pgSz+hdrSz==jSz );
       }
 #endif
       if( journal_format>=3 ){
@@ -1542,9 +1535,6 @@ static int pager_open_journal(Pager *pPager){
       rc = SQLITE_FULL;
     }
   }
-#ifndef NDEBUG
-  pPager->syncJSize = 0;
-#endif
   return rc;  
 }
 
@@ -1888,26 +1878,6 @@ int sqlitepager_rollback(Pager *pPager){
     pPager->dbSize = -1;
     return rc;
   }
-
-#if defined(SQLITE_TEST) && !defined(NDEBUG)
-  /* Truncate the journal to the size it was at the conclusion of the
-  ** last sqliteOsSync() call.  This is really an error check.  If the
-  ** rollback still works, it means that the rollback would have also
-  ** worked if it had occurred after an OS crash or unexpected power
-  ** loss.
-  */
-  if( !pPager->noSync ){
-    int m = JOURNAL_HDR_SZ(journal_format);
-    assert( !pPager->tempFile );
-    if( pPager->syncJSize<m ){
-      pPager->syncJSize = m;
-    }
-    TRACE2("TRUNCATE JOURNAL %lld\n", pPager->syncJSize);
-    rc =  sqliteOsTruncate(&pPager->jfd, pPager->syncJSize);
-    if( rc ) return rc;
-    pPager->nRec = 0;
-  }
-#endif
 
   if( pPager->errMask!=0 && pPager->errMask!=PAGER_ERR_FULL ){
     if( pPager->state>=SQLITE_WRITELOCK ){

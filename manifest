@@ -1,5 +1,5 @@
-C Added\sthe\snew\sFULL\soption\sto\sthe\sSYNCHRONOUS\spragma.\s\sStill\sneed\sto\stest\sit.\s(CVS\s1728)
-D 2003-02-12T14:09:44
+C Fix\sa\sbug\sin\sthe\srollback\slogic\sfor\sthe\snew\sjournal\sformat.\s(CVS\s864)
+D 2003-02-13T01:58:21
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/main.c f88dfe09ed79588899cb4013836dd940f73a17fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c f7658e5d07ef66c966443a3f4420510ce640442b
+F src/pager.c a64f69216ebef0e6ce90e65700674b7c64f6b16e
 F src/pager.h e5b8e301a732007766dc04880c764d7ee1aa34dd
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 792a9e157dd066fcaffd4f5b373010151fb4ca61
-R 4c767e05bbbde68a52aa488a93a1a8fd
+P 8968bc063607856775ad63b6594d40c55cf288c0
+R 5afba469118d5ff096906c926faadaaa
 U drh
-Z 628b9de7e355f82d06d514404826a9e9
+Z dea82f51b0a81ba078f1ce14af670302
