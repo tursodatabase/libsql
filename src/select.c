@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.224 2005/01/18 04:00:44 drh Exp $
+** $Id: select.c,v 1.225 2005/01/18 14:45:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -654,6 +654,7 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
   int j;
   if( pExpr==0 || pTabList==0 ) return 0;
 
+  sqlite3ExprResolveNames(pParse, pTabList, 0, pExpr, 1, 0);
   switch( pExpr->op ){
     case TK_COLUMN: {
       Table *pTab;
@@ -803,7 +804,7 @@ static const char *selectOpName(int id){
 /*
 ** Forward declaration
 */
-static int fillInColumnList(Parse*, Select*);
+static int prepSelectStmt(Parse*, Select*);
 
 /*
 ** Given a SELECT statement, generate a Table structure that describes
@@ -815,7 +816,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   ExprList *pEList;
   Column *aCol, *pCol;
 
-  if( fillInColumnList(pParse, pSelect) ){
+  if( prepSelectStmt(pParse, pSelect) ){
     return 0;
   }
   pTab = sqliteMalloc( sizeof(Table) );
@@ -870,20 +871,24 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 }
 
 /*
-** For the given SELECT statement, do three things.
+** Prepare a SELECT statement for processing by doing the following
+** things:
 **
-**    (1)  Fill in the pTabList->a[].pTab fields in the SrcList that 
-**         defines the set of tables that should be scanned.  For views,
+**    (1)  Make sure VDBE cursor numbers have been assigned to every
+**         element of the FROM clause.
+**
+**    (2)  Fill in the pTabList->a[].pTab fields in the SrcList that 
+**         defines FROM clause.  When views appear in the FROM clause,
 **         fill pTabList->a[].pSelect with a copy of the SELECT statement
 **         that implements the view.  A copy is made of the view's SELECT
 **         statement so that we can freely modify or delete that statement
 **         without worrying about messing up the presistent representation
 **         of the view.
 **
-**    (2)  Add terms to the WHERE clause to accomodate the NATURAL keyword
+**    (3)  Add terms to the WHERE clause to accomodate the NATURAL keyword
 **         on joins and the ON and USING clause of joins.
 **
-**    (3)  Scan the list of columns in the result set (pEList) looking
+**    (4)  Scan the list of columns in the result set (pEList) looking
 **         for instances of the "*" operator or the TABLE.* operator.
 **         If found, expand each "*" to be every column in every table
 **         and TABLE.* to be every column in TABLE.
@@ -891,7 +896,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 ** Return 0 on success.  If there are problems, leave an error message
 ** in pParse and return non-zero.
 */
-static int fillInColumnList(Parse *pParse, Select *p){
+static int prepSelectStmt(Parse *pParse, Select *p){
   int i, j, k, rc;
   SrcList *pTabList;
   ExprList *pEList;
@@ -902,11 +907,20 @@ static int fillInColumnList(Parse *pParse, Select *p){
   pTabList = p->pSrc;
   pEList = p->pEList;
 
-  /* Look up every table in the table list.
+  /* Make sure cursor numbers have been assigned to all entries in
+  ** the FROM clause of the SELECT statement.
+  */
+  sqlite3SrcListAssignCursors(pParse, p->pSrc);
+
+  /* Look up every table named in the FROM clause of the select.  If
+  ** an entry of the FROM clause is a subquery instead of a table or view,
+  ** then create a transient table structure to describe the subquery.
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-    if( pFrom->pTab ){
-      /* This routine has run before!  No need to continue */
+    if( pFrom->pTab!=0 ){
+      /* This statement has already been prepared.  There is no need
+      ** to go further. */
+      assert( i==0 );
       return 0;
     }
     if( pFrom->zName==0 ){
@@ -1125,7 +1139,7 @@ static int matchOrderbyToColumn(
   if( mustComplete ){
     for(i=0; i<pOrderBy->nExpr; i++){ pOrderBy->a[i].done = 0; }
   }
-  if( fillInColumnList(pParse, pSelect) ){
+  if( prepSelectStmt(pParse, pSelect) ){
     return 1;
   }
   if( pSelect->pPrior ){
@@ -1263,7 +1277,7 @@ static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   Vdbe *v = pParse->pVdbe;
   int addr;
 
-  if( fillInColumnList(pParse, p) ){
+  if( prepSelectStmt(pParse, p) ){
     return 0;
   }
   nColumn = p->pEList->nExpr;
@@ -2307,21 +2321,13 @@ int sqlite3Select(
   pHaving = p->pHaving;
   isDistinct = p->isDistinct;
 
-  /* Allocate VDBE cursors for each table in the FROM clause
-  */
-  sqlite3SrcListAssignCursors(pParse, pTabList);
-
   /* 
   ** Do not even attempt to generate any code if we have already seen
   ** errors before this routine starts.
   */
   if( pParse->nErr>0 ) goto select_end;
 
-  /* Expand any "*" terms in the result set.  (For example the "*" in
-  ** "SELECT * FROM t1")  The fillInColumnlist() routine also does some
-  ** other housekeeping - see the header comment for details.
-  */
-  if( fillInColumnList(pParse, p) ){
+  if( prepSelectStmt(pParse, p) ){
     goto select_end;
   }
   pWhere = p->pWhere;

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.9 2005/01/11 15:28:33 drh Exp $
+# $Id: misc4.test,v 1.10 2005/01/18 14:45:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,5 +98,25 @@ do_test misc4-3.1 {
   }
 } {{} {} 1 x 1 z}
 } ;# ifcapable compound
+
+# Ticket #1047.  Make sure column types are preserved in subqueries.
+#
+do_test misc4-4.1 {
+  execsql {
+    create table a(key varchar, data varchar);
+    create table b(key varchar, period integer);
+    insert into a values('01','data01');
+    insert into a values('+1','data+1');
+    
+    insert into b values ('01',1);
+    insert into b values ('01',2);
+    insert into b values ('+1',3);
+    insert into b values ('+1',4);
+    
+    select a.*, x.*
+      from a, (select key,sum(period) from b group by key) as x
+      where a.key=x.key;
+  }
+} {01 data01 01 3.0 +1 data+1 +1 7.0}
 
 finish_test

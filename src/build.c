@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.293 2005/01/18 04:00:44 drh Exp $
+** $Id: build.c,v 1.294 2005/01/18 14:45:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1578,10 +1578,10 @@ void sqlite3CreateView(
 ** of errors.  If an error is seen leave an error message in pParse->zErrMsg.
 */
 int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
-  ExprList *pEList;
-  Select *pSel;
-  Table *pSelTab;
-  int nErr = 0;
+  Table *pSelTab;   /* A fake table from which we get the result set */
+  Select *pSel;     /* Copy of the SELECT that implements the view */
+  int nErr = 0;     /* Number of errors encountered */
+  int n;            /* Temporarily holds the number of cursors assigned */
 
   assert( pTable );
 
@@ -1606,23 +1606,19 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   }
 
   /* If we get this far, it means we need to compute the table names.
+  ** Note that the call to sqlite3ResultSetOfSelect() will expand any
+  ** "*" elements in the results set of the view and will assign cursors
+  ** to the elements of the FROM clause.  But we do not want these changes
+  ** to be permanent.  So the computation is done on a copy of the SELECT
+  ** statement that defines the view.
   */
-  assert( pTable->pSelect ); /* If nCol==0, then pTable must be a VIEW */
-  pSel = pTable->pSelect;
-
-  /* Note that the call to sqlite3ResultSetOfSelect() will expand any
-  ** "*" elements in this list.  But we will need to restore the list
-  ** back to its original configuration afterwards, so we save a copy of
-  ** the original in pEList.
-  */
-  pEList = pSel->pEList;
-  pSel->pEList = sqlite3ExprListDup(pEList);
-  if( pSel->pEList==0 ){
-    pSel->pEList = pEList;
-    return 1;  /* Malloc failed */
-  }
+  assert( pTable->pSelect );
+  pSel = sqlite3SelectDup(pTable->pSelect);
+  n = pParse->nTab;
+  sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
   pTable->nCol = -1;
   pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
+  pParse->nTab = n;
   if( pSelTab ){
     assert( pTable->aCol==0 );
     pTable->nCol = pSelTab->nCol;
@@ -1635,9 +1631,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     pTable->nCol = 0;
     nErr++;
   }
-  sqlite3SelectUnbind(pSel);
-  sqlite3ExprListDelete(pSel->pEList);
-  pSel->pEList = pEList;
+  sqlite3SelectDelete(pSel);
   return nErr;  
 }
 #endif /* SQLITE_OMIT_VIEW */
@@ -2584,9 +2578,12 @@ SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
 */
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;
-  for(i=0; i<pList->nSrc; i++){
-    if( pList->a[i].iCursor<0 ){
-      pList->a[i].iCursor = pParse->nTab++;
+  struct SrcList_item *pItem;
+  for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
+    if( pItem->iCursor>=0 ) break;
+    pItem->iCursor = pParse->nTab++;
+    if( pItem->pSelect ){
+      sqlite3SrcListAssignCursors(pParse, pItem->pSelect->pSrc);
     }
   }
 }
