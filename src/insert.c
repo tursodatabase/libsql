@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.124 2004/11/09 12:44:38 danielk1977 Exp $
+** $Id: insert.c,v 1.125 2004/11/12 03:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -189,6 +189,8 @@ void sqlite3Insert(
   int iInsertBlock = 0; /* Address of the subroutine used to insert data */
   int iCntMem = 0;      /* Memory cell used for the row counter */
   int newIdx = -1;      /* Cursor for the NEW table */
+  Db *pDb;              /* The database containing table being inserted into */
+  int counterMem = 0;   /* Memory cell holding AUTOINCREMENT counter */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
@@ -210,7 +212,8 @@ void sqlite3Insert(
     goto insert_cleanup;
   }
   assert( pTab->iDb<db->nDb );
-  zDb = db->aDb[pTab->iDb].zName;
+  pDb = &db->aDb[pTab->iDb];
+  zDb = pDb->zName;
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0, zDb) ){
     goto insert_cleanup;
   }
@@ -269,6 +272,21 @@ void sqlite3Insert(
   if( row_triggers_exist ){
     newIdx = pParse->nTab++;
   }
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  /* If this is an AUTOINCREMENT table, look up the sequence number in the
+  ** sqlite_sequence table and store it in a memory cell.  Create a new
+  ** sqlite_sequence table entry if one does not already exist.
+  */
+  if( pTab->autoInc ){
+    counterMem = ++pParse->nMem;
+    assert( counterMem>0 );  /* Must be so for OP_NewRecno to work right */
+    sqlite3NestedParse(pParse, 
+       "SELECT seq FROM %Q.sqlite_sequence WHERE name=%Q INTO %d",
+       pDb->zName, pTab->zName, counterMem
+    );
+  }
+#endif /* SQLITE_OMIT_AUTOINCREMENT */
 
   /* Figure out how many columns of data are supplied.  If the data
   ** is coming from a SELECT statement, then this step also generates
@@ -545,11 +563,16 @@ void sqlite3Insert(
       */
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-      sqlite3VdbeAddOp(v, OP_NewRecno, base, 0);
+      sqlite3VdbeAddOp(v, OP_NewRecno, base, counterMem);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     }else{
       sqlite3VdbeAddOp(v, OP_NewRecno, base, 0);
     }
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+    if( pTab->autoInc ){
+      sqlite3VdbeAddOp(v, OP_MemMax, counterMem, 0);
+    }
+#endif /* SQLITE_OMIT_AUTOINCREMENT */
 
     /* Push onto the stack, data for all columns of the new entry, beginning
     ** with the first column.
@@ -632,6 +655,17 @@ void sqlite3Insert(
       sqlite3VdbeAddOp(v, OP_Close, idx+base, 0);
     }
   }
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  /* Update the sqlite_sequence table 
+  */
+  if( pTab->autoInc ){
+    sqlite3NestedParse(pParse,
+      "UPDATE %Q.sqlite_sequence SET seq=#-%d WHERE name=%Q",
+      pDb->zName, counterMem+1, pTab->zName
+    );
+  }
+#endif
 
   /*
   ** Return the number of rows inserted. If this routine is 

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.169 2004/11/09 12:44:38 danielk1977 Exp $
+** $Id: expr.c,v 1.170 2004/11/12 03:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -202,7 +202,8 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
 ** When doing a nested parse, you can include terms in an expression
 ** that look like this:   #0 #1 #2 ...  These terms refer to elements
 ** on the stack.  "#0" (or just "#") means the top of the stack.
-** "#1" means the next down on the stack.  And so forth.
+** "#1" means the next down on the stack.  And so forth.  #-1 means
+** memory location 0.  #-2 means memory location 1.  And so forth.
 **
 ** This routine is called by the parser to deal with on of those terms.
 ** It immediately generates code to store the value in a memory location.
@@ -220,9 +221,13 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   }
   p = sqlite3Expr(TK_REGISTER, 0, 0, pToken);
   depth = atoi(&pToken->z[1]);
-  p->iTable = pParse->nMem++;
-  sqlite3VdbeAddOp(v, OP_Dup, depth, 0);
-  sqlite3VdbeAddOp(v, OP_MemStore, p->iTable, 1);
+  if( depth>=0 ){
+    p->iTable = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_Dup, depth, 0);
+    sqlite3VdbeAddOp(v, OP_MemStore, p->iTable, 1);
+  }else{
+    p->iTable = -1-depth;
+  }
   return p;
 }
 

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.152 2004/11/09 16:13:33 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.153 2004/11/12 03:56:15 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -150,7 +150,7 @@ id(A) ::= ID(X).         {A = X;}
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
-  REINDEX RENAME AUTOINCR CDATE CTIME CTIMESTAMP ALTER
+  REINDEX RENAME CDATE CTIME CTIMESTAMP ALTER
   .
 
 // Define operator precedence early so that this is the first occurance
@@ -230,8 +230,8 @@ ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, C.z, C.n);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}
-autoinc(X) ::= .         {X = 0;}
-autoinc(X) ::= AUTOINC.  {X = 1;}
+autoinc(X) ::= .          {X = 0;}
+autoinc(X) ::= AUTOINCR.  {X = 1;}
 
 // The next group of rules parses the arguments to a REFERENCES clause
 // that determine if the referential integrity checking is deferred or
@@ -319,6 +319,21 @@ cmd ::= select(X).  {
   sqlite3Select(pParse, X, SRT_Callback, 0, 0, 0, 0, 0);
   sqlite3SelectDelete(X);
 }
+
+%ifndef SQLITE_OMIT_AUTOINCREMENT
+// The INTO clause after a select only works in nested mode.  It causes
+// the result of the SELECT to be stored in a memory register of the
+// virtual machine.
+//
+cmd ::= select(X) INTO INTEGER(M).  {
+  if( pParse->nested ){
+    sqlite3Select(pParse, X, SRT_Mem, atoi(M.z), 0, 0, 0, 0);
+  }else{
+    sqlite3ErrorMsg(pParse, "near \"INTO\": syntax error");
+  }
+  sqlite3SelectDelete(X);
+}
+%endif // SQLITE_OMIT_AUTOINCREMENT
 
 %type select {Select*}
 %destructor select {sqlite3SelectDelete($$);}

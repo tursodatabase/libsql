@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.425 2004/11/10 11:55:13 danielk1977 Exp $
+** $Id: vdbe.c,v 1.426 2004/11/12 03:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2822,7 +2822,7 @@ case OP_NotExists: {
 **
 ** If P2>0 then P2 is a memory cell that holds the largest previously
 ** generated record number.  No new record numbers are allowed to be less
-** than this value.  When this value reaches 0x7fffffff, a SQLITE_FULL
+** than this value.  When this value reaches its maximum, a SQLITE_FULL
 ** error is generated.  The P2 memory cell is updated with the generated
 ** record number.  This P2 mechanism is used to help implement the
 ** AUTOINCREMENT feature.

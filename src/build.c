@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.275 2004/11/10 11:55:12 danielk1977 Exp $
+** $Id: build.c,v 1.276 2004/11/12 03:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -321,6 +321,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
       sqlite3DeleteTable(db, pTab);
     }
     sqlite3HashClear(&temp1);
+    pDb->pSeqTab = 0;
     DbClearProperty(db, i, DB_SchemaLoaded);
     if( iDb>0 ) return;
   }
@@ -517,12 +518,15 @@ void sqlite3OpenMasterTable(Vdbe *v, int iDb){
 int findDb(sqlite3 *db, Token *pName){
   int i;
   Db *pDb;
+  char *zName = sqlite3NameFromToken(pName);
+  int n = strlen(zName);
   for(pDb=db->aDb, i=0; i<db->nDb; i++, pDb++){
-    if( pName->n==strlen(pDb->zName) && 
-        0==sqlite3StrNICmp(pDb->zName, pName->z, pName->n) ){
+    if( n==strlen(pDb->zName) && 0==sqlite3StrICmp(pDb->zName, zName) ){
+      sqliteFree(zName);
       return i;
     }
   }
+  sqliteFree(zName);
   return -1;
 }
 
@@ -720,7 +724,6 @@ void sqlite3StartTable(
   */
 #ifndef SQLITE_OMIT_AUTOINCREMENT
   if( strcmp(zName, "sqlite_sequence")==0 ){
-    assert( db->aDb[iDb].pSeqTab==0 );
     db->aDb[iDb].pSeqTab = pTable;
   }
 #endif
@@ -1452,12 +1455,33 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       zStmt
     );
     sqliteFree(zStmt);
+    sqlite3ChangeCookie(db, v, p->iDb);
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+    /* Check to see if we need to create an sqlite_sequence table for
+    ** keeping track of autoincrement keys.
+    */
+    if( p->autoInc ){
+      Db *pDb = &db->aDb[p->iDb];
+      if( pDb->pSeqTab==0 ){
+        sqlite3NestedParse(pParse,
+          "CREATE TABLE %Q.sqlite_sequence AS SELECT %Q AS name, 0 AS seq;",
+          pDb->zName, p->zName
+        );
+      }else{
+        sqlite3NestedParse(pParse,
+          "INSERT INTO %Q.sqlite_sequence VALUES(%Q,0)",
+          pDb->zName, p->zName
+        );
+      }
+    }
+#endif
 
     /* Reparse everything to update our internal data structures */
-    sqlite3ChangeCookie(db, v, p->iDb);
     sqlite3VdbeOp3(v, OP_ParseSchema, p->iDb, 0,
         sqlite3MPrintf("tbl_name='%q'",p->zName), P3_DYNAMIC);
   }
+
 
   /* Add the table to the in-memory representation of the database.
   */
@@ -1807,7 +1831,9 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     Trigger *pTrigger;
-    sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
+    int iDb = pTab->iDb;
+    Db *pDb = &db->aDb[iDb];
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
 
     /* Drop all triggers associated with the table being dropped. Code
     ** is generated to remove entries from sqlite_master and/or
@@ -1815,7 +1841,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     */
     pTrigger = pTab->pTrigger;
     while( pTrigger ){
-      assert( pTrigger->iDb==pTab->iDb || pTrigger->iDb==1 );
+      assert( pTrigger->iDb==iDb || pTrigger->iDb==1 );
       sqlite3DropTriggerPtr(pParse, pTrigger, 1);
       pTrigger = pTrigger->pNext;
     }
@@ -1829,11 +1855,25 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     */
     sqlite3NestedParse(pParse, 
         "DELETE FROM %Q.%s WHERE tbl_name=%Q and type!='trigger'",
-        db->aDb[pTab->iDb].zName, SCHEMA_TABLE(pTab->iDb), pTab->zName);
+        pDb->zName, SCHEMA_TABLE(iDb), pTab->zName);
     if( !isView ){
       destroyTable(pParse, pTab);
     }
-    sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+    /* Remove any entries of the sqlite_sequence table associated with
+    ** the table being dropped */
+    if( pTab->autoInc ){
+      sqlite3NestedParse(pParse,
+        "DELETE FROM %s.sqlite_sequence WHERE name=%Q",
+        pDb->zName, pTab->zName
+      );
+    }
+#endif
+
+    /* Remove the table entry from SQLite's internal schema
+    */
+    sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
   }
   sqliteViewResetAll(db, iDb);
 

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.95 2004/11/05 05:10:29 drh Exp $
+** $Id: tokenize.c,v 1.96 2004/11/12 03:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -178,7 +178,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return 1;
     }
     case '#': {
-      for(i=1; isdigit(z[i]); i++){}
+      for(i=1; isdigit(z[i]) || (i==1 && z[1]=='-'); i++){}
       *tokenType = TK_REGISTER;
       return i;
     }
@@ -409,7 +409,7 @@ abort_parse:
     pParse->zErrMsg = 0;
     if( !nErr ) nErr++;
   }
-  if( pParse->pVdbe && pParse->nErr>0 ){
+  if( pParse->pVdbe && pParse->nErr>0 && pParse->nested==0 ){
     sqlite3VdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }
