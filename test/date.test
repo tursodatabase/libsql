@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.4 2004/01/02 15:08:43 drh Exp $
+# $Id: date.test,v 1.5 2004/01/07 03:29:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,7 +59,7 @@ datetest 2.8 {date('2003-10-22','weekday 5')} 2003-10-24
 datetest 2.9 {date('2003-10-22','weekday 6')} 2003-10-25
 datetest 2.10 {date('2003-10-22','weekday 7')} NULL
 datetest 2.11 {date('2003-10-22','weekday 5.5')} NULL
-datetest 2.12 {datetime('2003-10-22 12:34','weekday 0')} {2003-10-26 00:00:00}
+datetest 2.12 {datetime('2003-10-22 12:34','weekday 0')} {2003-10-26 12:34:00}
 datetest 2.13 {datetime('2003-10-22 12:34','start of month')} \
    {2003-10-01 00:00:00}
 datetest 2.14 {datetime('2003-10-22 12:34','start of year')} \
@@ -150,6 +150,10 @@ if {[clock scan [clock format 0 -format {%b %d, %Y %H:%M:%S}] -gmt 1]==-18000} {
       {1969-07-01 07:00:00}
   datetest 6.15 {datetime('2039-07-01 12:00:00','localtime')} \
       {2039-07-01 07:00:00}
+  set sqlite_current_time \
+     [db eval {SELECT strftime('%s','2000-07-01 12:34:56')}]
+  datetest 6.16 {datetime('now','localtime')} {2000-07-01 08:34:56}
+  set sqlite_current_time 0
 }
 
 # Date-time functions that contain NULL arguments return a NULL
@@ -171,5 +175,31 @@ datetest 7.13 {strftime(null,'now')} NULL
 datetest 7.14 {strftime('%s',null)} NULL
 datetest 7.15 {strftime('%s','now',null)} NULL
 datetest 7.16 {strftime('%s','now','localtime',null)} NULL
+
+# Test modifiers when the date begins as a julian day number - to
+# make sure the HH:MM:SS is preserved.  Ticket #551.
+#
+set sqlite_current_time [db eval {SELECT strftime('%s','2003-10-22 12:34:00')}]
+datetest 8.1 {datetime('now','weekday 0')} {2003-10-26 12:34:00}
+datetest 8.2 {datetime('now','weekday 1')} {2003-10-27 12:34:00}
+datetest 8.3 {datetime('now','weekday 2')} {2003-10-28 12:34:00}
+datetest 8.4 {datetime('now','weekday 3')} {2003-10-22 12:34:00}
+datetest 8.5 {datetime('now','start of month')} {2003-10-01 00:00:00}
+datetest 8.6 {datetime('now','start of year')} {2003-01-01 00:00:00}
+datetest 8.7 {datetime('now','start of day')} {2003-10-22 00:00:00}
+datetest 8.8 {datetime('now','1 day')} {2003-10-23 12:34:00}
+datetest 8.9 {datetime('now','+1 day')} {2003-10-23 12:34:00}
+datetest 8.10 {datetime('now','+1.25 day')} {2003-10-23 18:34:00}
+datetest 8.11 {datetime('now','-1.0 day')} {2003-10-21 12:34:00}
+datetest 8.12 {datetime('now','1 month')} {2003-11-22 12:34:00}
+datetest 8.13 {datetime('now','11 month')} {2004-09-22 12:34:00}
+datetest 8.14 {datetime('now','-13 month')} {2002-09-22 12:34:00}
+datetest 8.15 {datetime('now','1.5 months')} {2003-12-07 12:34:00}
+datetest 8.16 {datetime('now','-5 years')} {1998-10-22 12:34:00}
+datetest 8.17 {datetime('now','+10.5 minutes')} {2003-10-22 12:44:30}
+datetest 8.18 {datetime('now','-1.25 hours')} {2003-10-22 11:19:00}
+datetest 8.19 {datetime('now','11.25 seconds')} {2003-10-22 12:34:11}
+set sqlite_current_time 0
+
 
 finish_test

@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.6 2003/12/31 17:25:48 drh Exp $
+** $Id: date.c,v 1.7 2004/01/07 03:29:16 drh Exp $
 **
 ** NOTES:
 **
@@ -494,16 +494,15 @@ static int parseModifier(const char *zMod, DateTime *p){
       /*
       **    weekday N
       **
-      ** Move the date to the beginning of the next occurrance of
+      ** Move the date to the same time on the next occurrance of
       ** weekday N where 0==Sunday, 1==Monday, and so forth.  If the
-      ** date is already on the appropriate weekday, this is equivalent
-      ** to "start of day".
+      ** date is already on the appropriate weekday, this is a no-op.
       */
       if( strncmp(z, "weekday ", 8)==0 && getValue(&z[8],&r)>0
                  && (n=r)==r && n>=0 && r<7 ){
         int Z;
         computeYMD(p);
-        p->validHMS = 0;
+        computeHMS(p);
         p->validTZ = 0;
         p->validJD = 0;
         computeJD(p);
@@ -581,6 +580,7 @@ static int parseModifier(const char *zMod, DateTime *p){
       }else if( n==5 && strcmp(z,"month")==0 ){
         int x, y;
         computeYMD(p);
+        computeHMS(p);
         p->M += r;
         x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
         p->Y += x;
@@ -593,6 +593,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         }
       }else if( n==4 && strcmp(z,"year")==0 ){
         computeYMD(p);
+        computeHMS(p);
         p->Y += r;
         p->validJD = 0;
         computeJD(p);
@@ -798,11 +799,11 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
         case 'm':  sprintf(&z[j],"%02d",x.M); j+=2; break;
         case 'M':  sprintf(&z[j],"%02d",x.m); j+=2; break;
         case 's': {
-          sprintf(&z[j],"%d",(int)((x.rJD-2440587.5)*86400.0));
+          sprintf(&z[j],"%d",(int)((x.rJD-2440587.5)*86400.0 + 0.5));
           j += strlen(&z[j]);
           break;
         }
-        case 'S':  sprintf(&z[j],"%02d",(int)x.s); j+=2; break;
+        case 'S':  sprintf(&z[j],"%02d",(int)(x.s+0.5)); j+=2; break;
         case 'w':  z[j++] = (((int)(x.rJD+1.5)) % 7) + '0'; break;
         case 'Y':  sprintf(&z[j],"%04d",x.Y); j+=strlen(&z[j]); break;
         case '%':  z[j++] = '%'; break;
