@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.145 2004/06/26 13:51:34 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.146 2004/06/28 01:16:46 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -403,7 +403,7 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
   int rc;
   u32 len;
   off_t szJ;
-  int cksum;
+  u32 cksum;
   int i;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
 
@@ -595,7 +595,7 @@ static int readJournalHdr(
   ** is being called from within pager_playback(). The local value
   ** of Pager.sectorSize is restored at the end of that routine.
   */
-  rc = read32bits(&pPager->jfd, &pPager->sectorSize);
+  rc = read32bits(&pPager->jfd, (u32 *)&pPager->sectorSize);
   if( rc ) return rc;
 
   pPager->journalOff += JOURNAL_HDR_SZ(pPager);
@@ -624,7 +624,7 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   int rc;
   int len; 
   int i; 
-  int cksum = 0; 
+  u32 cksum = 0; 
 
   if( !zMaster || pPager->setMaster) return SQLITE_OK;
   pPager->setMaster = 1;
@@ -1069,7 +1069,7 @@ static int pager_reload_cache(Pager *pPager){
 */
 static int pager_playback(Pager *pPager){
   off_t szJ;               /* Size of the journal file in bytes */
-  int nRec;                /* Number of Records in the journal */
+  u32 nRec;                /* Number of Records in the journal */
   int i;                   /* Loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
   int rc;                  /* Result code of a subroutine */
