@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.303 2004/05/19 13:13:08 drh Exp $
+** $Id: vdbe.c,v 1.304 2004/05/19 14:56:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -52,7 +52,7 @@
 
 /*
 ** The following global variable is incremented every time a cursor
-** moves, either by the OP_MoveTo or the OP_Next opcode.  The test
+** moves, either by the OP_MoveXX, OP_Next, or OP_Prev opcodes.  The test
 ** procedures use this information to make sure that indices are
 ** working correctly.  This variable has no function other than to
 ** help verify the correct operation of the library.
@@ -2757,43 +2757,50 @@ case OP_Close: {
   break;
 }
 
-/* Opcode: MoveTo P1 P2 *
+/* Opcode: MoveGe P1 P2 *
 **
 ** Pop the top of the stack and use its value as a key.  Reposition
-** cursor P1 so that it points to an entry with a matching key.  If
-** the table contains no record with a matching key, then the cursor
-** is left pointing at the first record that is greater than the key.
+** cursor P1 so that it points to the smallest entry that is greater
+** than or equal to the key that was popped ffrom the stack.
+** If there are no records greater than or equal to the key and P2 
+** is not zero, then jump to P2.
+**
+** See also: Found, NotFound, Distinct, MoveLt, MoveGt, MoveLe
+*/
+/* Opcode: MoveGt P1 P2 *
+**
+** Pop the top of the stack and use its value as a key.  Reposition
+** cursor P1 so that it points to the smallest entry that is greater
+** than the key from the stack.
 ** If there are no records greater than the key and P2 is not zero,
-** then an immediate jump to P2 is made.
+** then jump to P2.
 **
-** If P3 is the "+" string (or any other non-NULL string) then the
-** index taken from the top of the stack is temporarily increased by
-** an epsilon prior to the move.  This causes the P1 cursor to move
-** to the first entry which is greater than the index on the top of
-** the stack rather than the first entry that is equal to the top of
-** the stack.
-**
-** See also: Found, NotFound, Distinct, MoveLt
+** See also: Found, NotFound, Distinct, MoveLt, MoveGe, MoveLe
 */
 /* Opcode: MoveLt P1 P2 *
 **
 ** Pop the top of the stack and use its value as a key.  Reposition
-** cursor P1 so that it points to the entry with the largest key that is
-** less than the key popped from the stack.
-** If there are no records less than than the key and P2
-** is not zero then an immediate jump to P2 is made.
+** cursor P1 so that it points to the largest entry that is less
+** than the key from the stack.
+** If there are no records less than the key and P2 is not zero,
+** then jump to P2.
 **
-** If P3 is the "+" string (or any other non-NULL string) then the
-** index taken from the top of the stack is temporarily increased by
-** an epsilon prior to the move.  This causes the P1 cursor to move
-** to the smallest entry that is greater than or equal to the top of
-** the stack rather than the largest entry that is less than the top
-** of the stack.
+** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLe
+*/
+/* Opcode: MoveLe P1 P2 *
 **
-** See also: MoveTo
+** Pop the top of the stack and use its value as a key.  Reposition
+** cursor P1 so that it points to the largest entry that is less than
+** or equal to the key that was popped from the stack.
+** If there are no records less than or eqal to the key and P2 is not zero,
+** then jump to P2.
+**
+** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
 */
 case OP_MoveLt:
-case OP_MoveTo: {
+case OP_MoveLe:
+case OP_MoveGe:
+case OP_MoveGt: {
   int i = pOp->p1;
   Cursor *pC;
 
@@ -2802,13 +2809,15 @@ case OP_MoveTo: {
   pC = p->apCsr[i];
   if( pC->pCursor!=0 ){
     int res, oc;
+    oc = pOp->opcode;
     pC->nullRow = 0;
+    pC->incrKey = oc==OP_MoveGt || oc==OP_MoveLe;
     if( pC->intKey ){
       i64 iKey;
       assert( !pOp->p3 );
       Integerify(pTos);
       iKey = intToKey(pTos->i);
-      if( pOp->p2==0 && pOp->opcode==OP_MoveTo ){
+      if( pOp->p2==0 && pOp->opcode==OP_MoveGe ){
         pC->movetoTarget = iKey;
         pC->deferredMoveto = 1;
         Release(pTos);
@@ -2831,14 +2840,16 @@ case OP_MoveTo: {
     pC->cacheValid = 0;
     pC->incrKey = 0;
     sqlite3_search_count++;
-    oc = pOp->opcode;
-    if( oc==OP_MoveTo && res<0 ){
-      sqlite3BtreeNext(pC->pCursor, &res);
-      pC->recnoIsValid = 0;
-      if( res && pOp->p2>0 ){
-        pc = pOp->p2 - 1;
+    if( oc==OP_MoveGe || oc==OP_MoveGt ){
+      if( res<0 ){
+        sqlite3BtreeNext(pC->pCursor, &res);
+        pC->recnoIsValid = 0;
+        if( res && pOp->p2>0 ){
+          pc = pOp->p2 - 1;
+        }
       }
-    }else if( oc==OP_MoveLt ){
+    }else{
+      assert( oc==OP_MoveLt || oc==OP_MoveLe );
       if( res>=0 ){
         sqlite3BtreePrevious(pC->pCursor, &res);
         pC->recnoIsValid = 0;
@@ -2927,12 +2938,13 @@ case OP_Found: {
 ** using MakeIdxKey.  Call it K.  This instruction pops R from the
 ** stack but it leaves K unchanged.
 **
-** P1 is an index.  So all but the last four bytes of K are an
-** index string.  The last four bytes of K are a record number.
+** P1 is an index.  So it has no data and its key consists of a
+** record generated by OP_MakeIdxKey.  This key contains one or more
+** fields followed by a varint ROWID.
 **
 ** This instruction asks if there is an entry in P1 where the
-** index string matches K but the record number is different
-** from R.  If there is no such entry, then there is an immediate
+** fields matches K but the rowid is different from R.
+** If there is no such entry, then there is an immediate
 ** jump to P2.  If any entry does exist where the index string
 ** matches K but the record number is not R, then the record
 ** number for that entry is pushed onto the stack and control
@@ -2987,7 +2999,7 @@ case OP_IsUnique: {
         break;
       }
     }
-    rc = sqlite3VdbeIdxKeyCompare(pCx, len, zKey, 0, &res); 
+    rc = sqlite3VdbeIdxKeyCompare(pCx, len, zKey, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3685,7 +3697,7 @@ case OP_IdxPut: {
         int c;
         sqlite3BtreeKeySize(pCrsr, &n);
         if( n==nKey && 
-            sqlite3VdbeIdxKeyCompare(pC, len, zKey, 0, &c)==SQLITE_OK
+            sqlite3VdbeIdxKeyCompare(pC, len, zKey, &c)==SQLITE_OK
             && c==0
         ){
           rc = SQLITE_CONSTRAINT;
@@ -3802,32 +3814,31 @@ case OP_IdxRecno: {
   break;
 }
 
-/* Opcode: IdxGT P1 P2 P3
+/* Opcode: IdxGT P1 P2 *
 **
 ** Compare the top of the stack against the key on the index entry that
 ** cursor P1 is currently pointing to.  Ignore the ROWID of the
 ** index entry.  If the index entry is greater than the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
-**
-** If P3 is the "+" string (or any other non-NULL string) then the
-** index taken from the top of the stack is temporarily increased by
-** an epsilon prior to the comparison.
 */
-/* Opcode: IdxGE P1 P2 *
+/* Opcode: IdxGE P1 P2 P3
 **
 ** Compare the top of the stack against the key on the index entry that
 ** cursor P1 is currently pointing to.  Ignore the ROWID of the
-** index entry.  If the index entry is greater than or equal to 
+** index entry.  If the index in the cursor is greater than or equal to 
 ** the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
 **
 ** If P3 is the "+" string (or any other non-NULL string) then the
 ** index taken from the top of the stack is temporarily increased by
-** an epsilon prior to the comparison.
+** an epsilon prior to the comparison.  This make the opcode work
+** like IdxGT except that if the key from the stack is a prefix of
+** the key in the cursor, the result is false whereas it would be
+** true with IdxGT.
 */
-/* Opcode: IdxLT P1 P2 *
+/* Opcode: IdxLT P1 P2 P3
 **
 ** Compare the top of the stack against the key on the index entry that
 ** cursor P1 is currently pointing to.  Ignore the ROWID of the
@@ -3837,7 +3848,8 @@ case OP_IdxRecno: {
 **
 ** If P3 is the "+" string (or any other non-NULL string) then the
 ** index taken from the top of the stack is temporarily increased by
-** an epsilon prior to the comparison.
+** an epsilon prior to the comparison.  This makes the opcode work
+** like IdxLE.
 */
 case OP_IdxLT:
 case OP_IdxGT:
@@ -3853,10 +3865,9 @@ case OP_IdxGE: {
  
     Stringify(pTos);
     assert( pC->deferredMoveto==0 );
-    if( pOp->p3 ){
-      pC->incrKey = 1;
-    }
-    rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, pTos->z, 0, &res);
+    pC->incrKey = pOp->p3!=0;
+    assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
+    rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, pTos->z, &res);
     pC->incrKey = 0;
     if( rc!=SQLITE_OK ){
       break;

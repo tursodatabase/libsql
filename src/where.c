@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.97 2004/05/19 13:13:08 drh Exp $
+** $Id: where.c,v 1.98 2004/05/19 14:56:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -809,15 +809,6 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3IndexAffinityStr(v, pIdx);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
 
-      /* Choose a testOp that will determine when we have moved past the
-      ** last element of the table that matches the index key we just
-      ** created */
-      if( nColumn==pIdx->nColumn || pLevel->bRev ){
-        testOp = OP_IdxGT;
-      }else{
-        testOp = OP_IdxGE;
-      }
-
       /* Generate code (1) to move to the first matching element of the table.
       ** Then generate code (2) that jumps to "brk" after the cursor is past
       ** the last matching element of the table.  The code (1) is executed
@@ -825,18 +816,18 @@ WhereInfo *sqlite3WhereBegin(
       ** iteration of the scan to see if the scan has finished. */
       if( pLevel->bRev ){
         /* Scan in reverse order */
-        sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
-        sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+        sqlite3VdbeAddOp(v, OP_MoveLe, pLevel->iCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, OP_IdxLT, pLevel->iCur, brk);
         pLevel->op = OP_Prev;
       }else{
         /* Scan in the forward order */
-        sqlite3VdbeAddOp(v, OP_MoveTo, pLevel->iCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveGe, pLevel->iCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeAddOp(v, testOp, pLevel->iCur, brk);
-        if( testOp==OP_IdxGE ){
-          sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+        if( nColumn==pIdx->nColumn || 0 ){
+          sqlite3VdbeAddOp(v, OP_IdxGT, pLevel->iCur, brk);
+        }else{
+          sqlite3VdbeOp3(v, OP_IdxGE, pLevel->iCur, brk, "+", P3_STATIC);
         }
         pLevel->op = OP_Next;
       }
@@ -846,7 +837,7 @@ WhereInfo *sqlite3WhereBegin(
       if( i==pTabList->nSrc-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
         haveKey = 0;
       }
       pLevel->p1 = pLevel->iCur;
@@ -871,7 +862,7 @@ WhereInfo *sqlite3WhereBegin(
         }
         sqlite3VdbeAddOp(v, OP_ForceInt,
           aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT, brk);
-        sqlite3VdbeAddOp(v, OP_MoveTo, iCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, brk);
         aExpr[k].p = 0;
       }else{
         sqlite3VdbeAddOp(v, OP_Rewind, iCur, brk);
@@ -1023,10 +1014,8 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_MakeKey, nCol, 0);
         sqlite3IndexAffinityStr(v, pIdx);
         if( pLevel->bRev ){
-          sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
-          if( leFlag ){
-            sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
-          }
+          int op = leFlag ? OP_MoveLe : OP_MoveLt;
+          sqlite3VdbeAddOp(v, op, pLevel->iCur, brk);
         }else{
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
         }
@@ -1083,10 +1072,8 @@ WhereInfo *sqlite3WhereBegin(
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
           testOp = OP_IdxLT;
         }else{
-          sqlite3VdbeAddOp(v, OP_MoveTo, pLevel->iCur, brk);
-          if( !geFlag ){
-            sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
-          }
+          int op = geFlag ? OP_MoveGe : OP_MoveGt;
+          sqlite3VdbeAddOp(v, op, pLevel->iCur, brk);
         }
       }else if( pLevel->bRev ){
         testOp = OP_Noop;
@@ -1112,7 +1099,7 @@ WhereInfo *sqlite3WhereBegin(
       if( i==pTabList->nSrc-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
         haveKey = 0;
       }
 
@@ -1135,7 +1122,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( haveKey ){
         haveKey = 0;
-        sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       }
       sqlite3ExprIfFalse(pParse, aExpr[j].p, cont, 1);
       aExpr[j].p = 0;
@@ -1158,7 +1145,7 @@ WhereInfo *sqlite3WhereBegin(
           ** no outer joins with DELETE and UPDATE.
           */
           haveKey = 0;
-          sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
+          sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
         }
         sqlite3ExprIfFalse(pParse, aExpr[j].p, cont, 1);
         aExpr[j].p = 0;

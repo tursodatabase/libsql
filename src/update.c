@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.76 2004/05/18 09:58:08 danielk1977 Exp $
+** $Id: update.c,v 1.77 2004/05/19 14:56:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -262,7 +262,7 @@ void sqlite3Update(
       sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pTab->tnum);
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
     }
-    sqlite3VdbeAddOp(v, OP_MoveTo, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
 
     /* Generate the OLD table
     */
@@ -458,6 +458,3 @@ update_cleanup:
   sqlite3ExprDelete(pWhere);
   return;
 }
-
-
-

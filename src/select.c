@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.168 2004/05/18 22:38:32 drh Exp $
+** $Id: select.c,v 1.169 2004/05/19 14:56:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2023,7 +2023,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     sqlite3VdbeAddOp(v, seekOp, base+1, 0);
     sqlite3VdbeAddOp(v, OP_IdxRecno, base+1, 0);
     sqlite3VdbeAddOp(v, OP_Close, base+1, 0);
-    sqlite3VdbeAddOp(v, OP_MoveTo, base, 0);
+    sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
   }
   eList.nExpr = 1;
   memset(&eListItem, 0, sizeof(eListItem));

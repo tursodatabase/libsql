@@ -1626,11 +1626,16 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   return SQLITE_OK;
 }
 
+/*
+** Compare the key of index entry that cursor pC is point to against
+** the key string in pKey (of length nKey).  Write into *pRes a number
+** that is negative, zero, or positive if pC is less than, equal to,
+** or greater than pKey.  Return SQLITE_OK on success.
+*/
 int sqlite3VdbeIdxKeyCompare(
-  Cursor *pC, 
-  int nKey, const unsigned char *pKey,
-  int ignorerowid,
-  int *res
+  Cursor *pC,                 /* The cursor to compare against */
+  int nKey, const u8 *pKey,   /* The key to compare */
+  int *res                    /* Write the comparison result here */
 ){
   unsigned char *pCellKey;
   u64 nCellKey;
@@ -1662,10 +1667,12 @@ int sqlite3VdbeIdxKeyCompare(
   len = nCellKey-2;
   while( pCellKey[len] && --len );
 
+#if 0
   if( ignorerowid ){
     nKey--;
     while( pKey[nKey] && --nKey );
   }
+#endif
   *res = sqlite3VdbeKeyCompare(pC, len, pCellKey, nKey, pKey);
   
   if( freeCellKey ){

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.102 2004/05/18 09:58:07 danielk1977 Exp $
+** $Id: insert.c,v 1.103 2004/05/19 14:56:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -823,7 +823,7 @@ void sqlite3GenerateConstraintChecks(
         sqlite3GenerateRowIndexDelete(pParse->db, v, pTab, base, 0);
         if( isUpdate ){
           sqlite3VdbeAddOp(v, OP_Dup, nCol+hasTwoRecnos, 1);
-          sqlite3VdbeAddOp(v, OP_MoveTo, base, 0);
+          sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
         }
         seenReplace = 1;
         break;
@@ -840,7 +840,7 @@ void sqlite3GenerateConstraintChecks(
     if( isUpdate ){
       sqlite3VdbeChangeP2(v, jumpInst1, contAddr);
       sqlite3VdbeAddOp(v, OP_Dup, nCol+1, 1);
-      sqlite3VdbeAddOp(v, OP_MoveTo, base, 0);
+      sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
     }
   }
 
@@ -926,7 +926,7 @@ void sqlite3GenerateConstraintChecks(
         sqlite3GenerateRowDelete(pParse->db, v, pTab, base, 0);
         if( isUpdate ){
           sqlite3VdbeAddOp(v, OP_Dup, nCol+extra+1+hasTwoRecnos, 1);
-          sqlite3VdbeAddOp(v, OP_MoveTo, base, 0);
+          sqlite3VdbeAddOp(v, OP_MoveGe, base, 0);
         }
         seenReplace = 1;
         break;
@@ -1010,6 +1010,3 @@ int sqlite3OpenTableAndIndices(Parse *pParse, Table *pTab, int base){
   }
   return i;
 }
-
-
-
