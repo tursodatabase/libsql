@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.81 2004/08/31 00:52:37 drh Exp $
+** $Id: func.c,v 1.82 2004/09/02 15:53:57 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -44,7 +44,7 @@ static void minmaxFunc(
   CollSeq *pColl;
 
   if( argc==0 ) return;
-  mask = (int)sqlite3_user_data(context);
+  mask = sqlite3_user_data(context)==0 ? 0 : -1;
   pColl = sqlite3GetFuncCollSeq(context);
   assert( pColl );
   assert( mask==-1 || mask==0 );
