@@ -1,5 +1,5 @@
-C file\sjoin4_28.test\swas\sinitially\sadded\son\sbranch\sversion_2.\s(CVS\s1852)
-D 2004-07-22T16:08:39
+C Update\schanges\slog\sfor\s2.8.15.\s\sAdd\snew\sarchitecture\simages.\s(CVS\s1853)
+D 2004-07-22T16:12:19
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -199,15 +199,17 @@ F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
+F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl b833057e89aeb43335c0bf84a3d5b7f9d11df6fa
 F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
+F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
 F www/capi3ref.tcl 46283326edfd0de9e6bb5425b54dc1624b8bef27
-F www/changes.tcl e55782af3a75bbfc8bc51909a2e607fbe3d87353
+F www/changes.tcl b0467f707cfe741d3f490e721f625d1410c170b3
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
@@ -237,7 +239,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ee5c2cff810511b8f457c5c5af0791fc7f05d6c4
-R f558b644dbbbefc6121213a8be1b65fb
+P dc3caba7f0c8f1decb20e57915278acb8388fdd9
+R 2867251644abe5c91df8ac6101c311ba
 U drh
-Z 4ff0299324a49d118e37f6ade0bcef03
+Z c18c939f203f8f865afe415a28000a42
