@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.14 2003/06/15 23:42:25 drh Exp $
+# $Id: intpkey.test,v 1.15 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -380,14 +380,16 @@ do_test intpkey=5.2 {
 # Test the ability of the COPY command to put data into a
 # table that contains an integer primary key.
 #
+# COPY command has been removed.  But we retain these tests so
+# that the tables will contain the right data for tests that follow.
+#
 do_test intpkey-6.1 {
-  set f [open ./data1.txt w]
-  puts $f "20\tb-20\tc-20"
-  puts $f "21\tb-21\tc-21"
-  puts $f "22\tb-22\tc-22"
-  close $f
   execsql {
-    COPY t1 FROM 'data1.txt';
+    BEGIN;
+    INSERT INTO t1 VALUES(20,'b-20','c-20');
+    INSERT INTO t1 VALUES(21,'b-21','c-21');
+    INSERT INTO t1 VALUES(22,'b-22','c-22');
+    COMMIT;
     SELECT * FROM t1 WHERE a>=20;
   }
 } {20 b-20 c-20 21 b-21 c-21 22 b-22 c-22}

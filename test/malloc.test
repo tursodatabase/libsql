@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.6 2004/02/14 01:39:50 drh Exp $
+# $Id: malloc.test,v 1.7 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,7 +67,7 @@ for {set go 1; set i 1} {$go} {incr i} {
 
 set fd [open ./data.tmp w]
 for {set i 1} {$i<=20} {incr i} {
-  puts $fd "$i\t[expr {$i*$i}]\t[expr {100-$i}] abcdefghijklmnopqrstuvwxyz"
+  puts $fd "$i\t[expr {$i*$i}]\t[expr {100-$i}]  abcdefghijklmnopqrstuvwxyz"
 }
 close $fd
 
@@ -85,7 +85,12 @@ for {set go 1; set i 1} {$go} {incr i} {
        set v [catch {execsql {
          CREATE TABLE t1(a int, b int, c int);
          CREATE INDEX i1 ON t1(a,b);
-         COPY t1 FROM 'data.tmp';
+         INSERT INTO t1 VALUES(1,1,'99 abcdefghijklmnopqrstuvwxyz');
+         INSERT INTO t1 VALUES(2,4,'98 abcdefghijklmnopqrstuvwxyz');
+         INSERT INTO t1 VALUES(3,9,'97 abcdefghijklmnopqrstuvwxyz');
+         INSERT INTO t1 VALUES(4,16,'96 abcdefghijklmnopqrstuvwxyz');
+         INSERT INTO t1 VALUES(5,25,'95 abcdefghijklmnopqrstuvwxyz');
+         INSERT INTO t1 VALUES(6,36,'94 abcdefghijklmnopqrstuvwxyz');
          SELECT 'stuff', count(*) as 'other stuff', max(a+10) FROM t1;
          UPDATE t1 SET b=b||b||b||b;
          UPDATE t1 SET b=a WHERE a in (10,12,22);
@@ -110,12 +115,6 @@ for {set go 1; set i 1} {$go} {incr i} {
   } {1 1}
 }
 
-set fd [open ./data.tmp w]
-for {set i 1} {$i<=10} {incr i} {
-  puts $fd "$i\t[expr {$i*$i}]\t[expr {100-$i}]"
-}
-close $fd
-
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-3.$i {
      sqlite_malloc_fail 0
@@ -131,7 +130,12 @@ for {set go 1; set i 1} {$go} {incr i} {
          BEGIN TRANSACTION;
          CREATE TABLE t1(a int, b int, c int);
          CREATE INDEX i1 ON t1(a,b);
-         COPY t1 FROM 'data.tmp';
+         INSERT INTO t1 VALUES(1,1,99);
+         INSERT INTO t1 VALUES(2,4,98);
+         INSERT INTO t1 VALUES(3,9,97);
+         INSERT INTO t1 VALUES(4,16,96);
+         INSERT INTO t1 VALUES(5,25,95);
+         INSERT INTO t1 VALUES(6,36,94);
          INSERT INTO t1(c,b,a) VALUES(20,10,5);
          DELETE FROM t1 WHERE a>=10;
          DROP INDEX i1;
@@ -166,7 +170,12 @@ for {set go 1; set i 1} {$go} {incr i} {
          BEGIN TRANSACTION;
          CREATE TABLE t1(a int, b int, c int);
          CREATE INDEX i1 ON t1(a,b);
-         COPY t1 FROM 'data.tmp';
+         INSERT INTO t1 VALUES(1,1,99);
+         INSERT INTO t1 VALUES(2,4,98);
+         INSERT INTO t1 VALUES(3,9,97);
+         INSERT INTO t1 VALUES(4,16,96);
+         INSERT INTO t1 VALUES(5,25,95);
+         INSERT INTO t1 VALUES(6,36,94);
          UPDATE t1 SET b=a WHERE a in (10,12,22);
          INSERT INTO t1 SELECT * FROM t1
              WHERE a IN (SELECT a FROM t1 WHERE a<10);

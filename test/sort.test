@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.11 2004/05/21 02:14:25 drh Exp $
+# $Id: sort.test,v 1.12 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,16 +19,6 @@ source $testdir/tester.tcl
 # Create a bunch of data to sort against
 #
 do_test sort-1.0 {
-  set fd [open data.txt w]
-  puts $fd "1\tone\t0\tI\t3.141592653"
-  puts $fd "2\ttwo\t1\tII\t2.15"
-  puts $fd "3\tthree\t1\tIII\t4221.0"
-  puts $fd "4\tfour\t2\tIV\t-0.0013442"
-  puts $fd "5\tfive\t2\tV\t-11"
-  puts $fd "6\tsix\t2\tVI\t0.123"
-  puts $fd "7\tseven\t2\tVII\t123.0"
-  puts $fd "8\teight\t3\tVIII\t-1.6"
-  close $fd
   execsql {
     CREATE TABLE t1(
        n int,
@@ -37,9 +27,15 @@ do_test sort-1.0 {
        roman varchar(10),
        flt real
     );
-    COPY t1 FROM 'data.txt'
+    INSERT INTO t1 VALUES(1,'one',0,'I',3.141592653);
+    INSERT INTO t1 VALUES(2,'two',1,'II',2.15);
+    INSERT INTO t1 VALUES(3,'three',1,'III',4221.0);
+    INSERT INTO t1 VALUES(4,'four',2,'IV',-0.0013442);
+    INSERT INTO t1 VALUES(5,'five',2,'V',-11);
+    INSERT INTO t1 VALUES(6,'six',2,'VI',0.123);
+    INSERT INTO t1 VALUES(7,'seven',2,'VII',123.0);
+    INSERT INTO t1 VALUES(8,'eight',3,'VIII',-1.6);
   }
-  file delete data.txt
   execsql {SELECT count(*) FROM t1}
 } {8}
 

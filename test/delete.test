@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.13 2003/06/15 23:42:25 drh Exp $
+# $Id: delete.test,v 1.14 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -152,16 +152,15 @@ integrity_check delete-5.8
 # mechanism in the vdbe.
 #
 do_test delete-6.1 {
-  set fd [open data1.txt w]
+  execsql {BEGIN; DELETE FROM table1}
   for {set i 1} {$i<=3000} {incr i} {
-    puts $fd "[expr {$i}]\t[expr {$i*$i}]"
+    execsql "INSERT INTO table1 VALUES($i,[expr {$i*$i}])"
   }
-  close $fd
-  execsql {DELETE FROM table1}
-  execsql {COPY table1 FROM 'data1.txt'}
   execsql {DELETE FROM table2}
-  execsql {COPY table2 FROM 'data1.txt'}
-  file delete data1.txt
+  for {set i 1} {$i<=3000} {incr i} {
+    execsql "INSERT INTO table2 VALUES($i,[expr {$i*$i}])"
+  }
+  execsql {COMMIT}
   execsql {SELECT count(*) FROM table1}
 } {3000}
 do_test delete-6.2 {

@@ -12,24 +12,24 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.15 2004/05/14 11:00:53 danielk1977 Exp $
+# $Id: select4.test,v 1.16 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Build some test data
 #
-set fd [open data1.txt w]
-for {set i 1} {$i<32} {incr i} {
-  for {set j 0} {pow(2,$j)<$i} {incr j} {}
-  puts $fd "$i\t$j"
-}
-close $fd
 execsql {
   CREATE TABLE t1(n int, log int);
-  COPY t1 FROM 'data1.txt'
+  BEGIN;
 }
-file delete data1.txt
+for {set i 1} {$i<32} {incr i} {
+  for {set j 0} {pow(2,$j)<$i} {incr j} {}
+  execsql "INSERT INTO t1 VALUES($i,$j)"
+}
+execsql {
+  COMMIT;
+}
 
 do_test select4-1.0 {
   execsql {SELECT DISTINCT log FROM t1 ORDER BY log}

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.72 2004/05/27 13:35:20 danielk1977 Exp $
+** $Id: tokenize.c,v 1.73 2004/05/27 17:22:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -57,7 +57,6 @@ static Keyword aKeywordTable[] = {
   { "COMMIT",            TK_COMMIT,       },
   { "CONFLICT",          TK_CONFLICT,     },
   { "CONSTRAINT",        TK_CONSTRAINT,   },
-  { "COPY",              TK_COPY,         },
   { "CREATE",            TK_CREATE,       },
   { "CROSS",             TK_JOIN_KW,      },
   { "DATABASE",          TK_DATABASE,     },
@@ -65,7 +64,6 @@ static Keyword aKeywordTable[] = {
   { "DEFERRED",          TK_DEFERRED,     },
   { "DEFERRABLE",        TK_DEFERRABLE,   },
   { "DELETE",            TK_DELETE,       },
-  { "DELIMITERS",        TK_DELIMITERS,   },
   { "DESC",              TK_DESC,         },
   { "DETACH",            TK_DETACH,       },
   { "DISTINCT",          TK_DISTINCT,     },
@@ -696,6 +694,3 @@ int sqlite3_complete(const char *zSql){
   }
   return state==0;
 }
-
-
-

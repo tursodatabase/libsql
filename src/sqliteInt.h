@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.255 2004/05/27 13:35:20 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.256 2004/05/27 17:22:56 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1244,7 +1244,6 @@ Table *sqlite3FindTable(sqlite*,const char*, const char*);
 Table *sqlite3LocateTable(Parse*,const char*, const char*);
 Index *sqlite3FindIndex(sqlite*,const char*, const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite*,Index*);
-void sqlite3Copy(Parse*, SrcList*, Token*, Token*, int);
 void sqlite3Vacuum(Parse*, Token*);
 int sqlite3RunVacuum(char**, sqlite*);
 int sqlite3GlobCompare(const unsigned char*,const unsigned char*);

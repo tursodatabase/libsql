@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.3 2004/05/27 01:53:56 drh Exp $
+# $Id: enc2.test,v 1.4 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,14 +59,13 @@ do_test $t.2 {
   execsql {SELECT * FROM t1}
 } {one I 1 two II 2}
 
-# Insert some data using the COPY command.
+# Insert some data 
 do_test $t.3 {
-  set f [open data.txt w]
-  puts $f "three\tIII\t3"
-  puts $f "four\tIV\t4"
-  puts $f "five\tV\t5"
-  close $f
-  execsql {COPY t1 FROM 'data.txt'}
+  execsql {
+    INSERT INTO t1 VALUES('three','III',3);
+    INSERT INTO t1 VALUES('four','IV',4);
+    INSERT INTO t1 VALUES('five','V',5);
+  }
   execsql {SELECT * FROM t1}
 } {one I 1 two II 2 three III 3 four IV 4 five V 5}
 

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.118 2004/05/27 09:28:43 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.119 2004/05/27 17:22:55 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -122,7 +122,7 @@ id(A) ::= ID(X).         {A = X;}
 //
 %fallback ID
   ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CLUSTER CONFLICT
-  COPY DATABASE DEFERRED DELIMITERS DESC DETACH EACH END EXPLAIN FAIL FOR
+  DATABASE DEFERRED DESC DETACH EACH END EXPLAIN FAIL FOR
   GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW.
@@ -757,14 +757,6 @@ idxitem(A) ::= nm(X) sortorder.              {A = X;}
 cmd ::= DROP INDEX nm(X) dbnm(Y).   {
   sqlite3DropIndex(pParse, sqlite3SrcListAppend(0,&X,&Y));
 }
-
-
-///////////////////////////// The COPY command ///////////////////////////////
-//
-cmd ::= COPY orconf(R) nm(X) dbnm(D) FROM nm(Y) USING DELIMITERS STRING(Z).
-    {sqlite3Copy(pParse,sqlite3SrcListAppend(0,&X,&D),&Y,&Z,R);}
-cmd ::= COPY orconf(R) nm(X) dbnm(D) FROM nm(Y).
-    {sqlite3Copy(pParse,sqlite3SrcListAppend(0,&X,&D),&Y,0,R);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //

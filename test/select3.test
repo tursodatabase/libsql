@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.9 2004/05/21 02:14:25 drh Exp $
+# $Id: select3.test,v 1.10 2004/05/27 17:22:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,17 +20,17 @@ source $testdir/tester.tcl
 # Build some test data
 #
 do_test select3-1.0 {
-  set fd [open data1.txt w]
-  for {set i 1} {$i<32} {incr i} {
-    for {set j 0} {pow(2,$j)<$i} {incr j} {}
-    puts $fd "$i\t$j"
-  }
-  close $fd
   execsql {
     CREATE TABLE t1(n int, log int);
-    COPY t1 FROM 'data1.txt'
+    BEGIN;
   }
-  file delete data1.txt
+  for {set i 1} {$i<32} {incr i} {
+    for {set j 0} {pow(2,$j)<$i} {incr j} {}
+    execsql "INSERT INTO t1 VALUES($i,$j)"
+  }
+  execsql {
+    COMMIT
+  }
   execsql {SELECT DISTINCT log FROM t1 ORDER BY log}
 } {0 1 2 3 4 5}
 
