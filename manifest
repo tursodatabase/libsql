@@ -1,5 +1,5 @@
-C continued\sprogress\stoward\sversion\s2.0\s(CVS\s177)
-D 2001-01-15T22:51:09
+C continued\sprogress\stoward\sversion\s2.0\s(CVS\s1710)
+D 2001-01-15T22:51:10
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -80,7 +80,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P c0730217a04323a1a73d125e3e7da32bcc8d58fc
+P c6ffb7ec6acb596907ead8992dfad94e18e83866
 R b80dc777f56bf909f70a5edbd987dadf
 U drh
-Z 4eb2cf72a91b309ee3730e1dfd3dfa42
+Z 4e7864aea5f0b96103b33ae4ab586e6e
