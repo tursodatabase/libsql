@@ -1,5 +1,5 @@
-C Remove\sunused\svariable.\s\sTicket\s#355.\s(CVS\s1030)
-D 2003-06-17T02:57:18
+C Make\ssure\sthe\ssource\sof\sa\sPULL\sopcode\sis\snot\san\sephemeral\sstring.\s\sTicket\s#360.\s(CVS\s1031)
+D 2003-06-22T01:41:49
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 566c7780170dd11fb1ad5de3ba81f0dfea7cccf0
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
-F src/vdbe.c b0118814124785cf9244f3cf7f389681ad46adac
+F src/vdbe.c fba0a1d25b7dac26c3cf3c10f6e8fde352a386ee
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -96,6 +96,7 @@ F test/memdb.test cd4580f466f34c42354612a375c5adb90447e4c4
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test c7dc2f2bd702d8283e885a64ec0714be26cfb051
+F test/misc2.test afbb0678792654e7495d580e227f36999f6eb20d
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -165,7 +166,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 6920b633c2e4a94ee5de7d2db3933a873ee3513b
-R 2461ecf1634ca64718874d80a89b0476
+P 5228cecdb84a665b96750fc0dc7c81e3f50a3ce8
+R 6835d350ce41ce4896b7c87869ba5677
 U drh
-Z 77374d9cfdfe95b412a1c7d387e72705
+Z 1759307f03632cff767f18d3563cf6b3

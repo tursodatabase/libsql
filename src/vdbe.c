@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.228 2003/06/15 23:42:24 drh Exp $
+** $Id: vdbe.c,v 1.229 2003/06/22 01:41:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -979,6 +979,7 @@ static int hardDeephem(Vdbe *p, int i){
   if( z==0 ) return 1;
   memcpy(z, *pzStack, pStack->n);
   *pzStack = z;
+  pStack->flags &= !STK_Ephem;
   return 0;
 }
 
@@ -1835,6 +1836,7 @@ case OP_Pull: {
   Stack ts;
   char *tz;
   VERIFY( if( from<0 ) goto not_enough_stack; )
+  Deephemeralize(p, from);
   ts = aStack[from];
   tz = zStack[from];
   Deephemeralize(p, to);

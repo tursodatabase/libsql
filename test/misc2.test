@@ -1,0 +1,32 @@
+# 2003 June 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for miscellanous features that were
+# left out of other test files.
+#
+# $Id: misc2.test,v 1.1 2003/06/22 01:41:50 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Test for ticket #360
+#
+do_test misc2-1.1 {
+  catchsql {
+    CREATE TABLE FOO(bar integer);
+    CREATE TRIGGER foo_insert BEFORE INSERT ON foo BEGIN
+      SELECT CASE WHEN (NOT new.bar BETWEEN 0 AND 20)
+             THEN raise(rollback, 'aiieee') END;
+    END;
+    INSERT INTO foo(bar) VALUES (1);
+  }
+} {1 aiieee}
