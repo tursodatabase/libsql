@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.6 2004/06/07 07:52:19 danielk1977 Exp $
+# $Id: attach3.test,v 1.7 2004/06/19 00:16:31 drh Exp $
 #
 
 
@@ -27,7 +27,7 @@ execsql {
 
 # Create tables t1 and t2 in database file test2.db
 file delete -force test2.db
-sqlite db2 test2.db
+sqlite3 db2 test2.db
 execsql {
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(c, d);

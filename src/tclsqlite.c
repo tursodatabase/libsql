@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.87 2004/06/18 17:10:17 drh Exp $
+** $Id: tclsqlite.c,v 1.88 2004/06/19 00:16:31 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1111,14 +1111,14 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 */
 int Sqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite", "2.0");
+  Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
+  Tcl_PkgProvide(interp, "sqlite3", "3.0");
   return TCL_OK;
 }
 int Tclsqlite3_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite", "2.0");
+  Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
+  Tcl_PkgProvide(interp, "sqlite3", "3.0");
   return TCL_OK;
 }
 int Sqlite3_SafeInit(Tcl_Interp *interp){

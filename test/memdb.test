@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.8 2004/06/15 11:40:10 danielk1977 Exp $
+# $Id: memdb.test,v 1.9 2004/06/19 00:16:31 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -25,8 +25,8 @@ source $testdir/tester.tcl
 #
 do_test memdb-1.1 {
   db close
-  sqlite db :memory:
-  # sqlite db test.db
+  sqlite3 db :memory:
+  # sqlite3 db test.db
   execsql {
     BEGIN;
     CREATE TABLE t3(x TEXT);

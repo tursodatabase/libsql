@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.4 2004/06/13 23:07:04 drh Exp $
+# $Id: bigfile.test,v 1.5 2004/06/19 00:16:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -61,7 +61,7 @@ if {[catch {fake_big_file 4096 test.db}]} {
 }
 
 do_test bigfile-1.2 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
@@ -83,7 +83,7 @@ do_test bigfile-1.3 {
 } $::MAGIC_SUM
 do_test bigfile-1.4 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
@@ -102,7 +102,7 @@ if {[catch {fake_big_file 8192 test.db}]} {
 }
 
 do_test bigfile-1.6 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
@@ -115,7 +115,7 @@ do_test bigfile-1.7 {
 } $::MAGIC_SUM
 do_test bigfile-1.8 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
@@ -139,7 +139,7 @@ if {[catch {fake_big_file 16384 test.db}]} {
 }
 
 do_test bigfile-1.11 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
@@ -152,7 +152,7 @@ do_test bigfile-1.12 {
 } $::MAGIC_SUM
 do_test bigfile-1.13 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }

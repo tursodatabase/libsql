@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: blob.test,v 1.1 2004/05/27 13:55:27 danielk1977 Exp $
+# $Id: blob.test,v 1.2 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -99,7 +99,7 @@ do_test blob-2.4 {
 
 # Try to bind a blob value to a prepared statement.
 do_test blob-3.0 {
-  set DB [sqlite db2 test.db]
+  set DB [sqlite3 db2 test.db]
   set STMT [sqlite3_prepare $DB "DELETE FROM t1 WHERE a = ?" -1 DUMMY]
   sqlite3_bind_blob $STMT 1 "\x12\x34\x56" 3
   sqlite3_step $STMT

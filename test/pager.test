@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.16 2004/06/14 06:13:06 danielk1977 Exp $
+# $Id: pager.test,v 1.17 2004/06/19 00:16:31 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -411,7 +411,7 @@ if 0 {
 # fault, but we might as well test for it.
 #
 do_test pager-5.1 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     BEGIN;
     CREATE TABLE t1(x);

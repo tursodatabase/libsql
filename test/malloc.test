@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.7 2004/05/27 17:22:56 drh Exp $
+# $Id: malloc.test,v 1.8 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
      sqlite_malloc_fail $i
-     set v [catch {sqlite db test.db} msg]
+     set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
      } else {
@@ -78,7 +78,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
      sqlite_malloc_fail $i
-     set v [catch {sqlite db test.db} msg]
+     set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
      } else {
@@ -122,7 +122,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
      sqlite_malloc_fail $i
-     set v [catch {sqlite db test.db} msg]
+     set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
      } else {
@@ -162,7 +162,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
      sqlite_malloc_fail $i
-     set v [catch {sqlite db test.db} msg]
+     set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
      } else {
@@ -203,7 +203,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
      sqlite_malloc_fail $i
-     set v [catch {sqlite db test.db} msg]
+     set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
      } else {

@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.13 2004/06/14 08:26:37 danielk1977 Exp $
+# $Id: temptable.test,v 1.14 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,7 +20,7 @@ source $testdir/tester.tcl
 # Create an alternative connection to the database
 #
 do_test temptable-1.0 {
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   set dummy {}
 } {}
 
@@ -205,7 +205,7 @@ do_test temptable-4.5 {
 } {0 {9 8 7}}
 do_test temptable-4.6 {
   db2 close
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   catchsql {
     SELECT * FROM t2;
   } db2
@@ -218,7 +218,7 @@ do_test temptable-4.7 {
 } {1 {no such table: t2}}
 do_test temptable-4.8 {
   db2 close
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   execsql {
     CREATE TEMP TABLE t2(x unique,y);
     INSERT INTO t2 VALUES(1,2);
@@ -272,7 +272,7 @@ do_test temptable-4.14 {
 } {3 4}
 do_test temptable-4.15 {
   db2 close
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   execsql {
     SELECT * FROM t2;
   } db2
@@ -349,7 +349,7 @@ do_test temptable-6.2 {
   db close
   catch {file attributes test.db -permissions 0444}
   catch {file attributes test.db -readonly 1}
-  sqlite db test.db
+  sqlite3 db test.db
   if {[file writable test.db]} {
     error "Unable to make the database file test.db readonly - rerun this test as an unprivileged user"
   }
@@ -392,7 +392,7 @@ do_test temptable-6.7 {
 } {0 {xyzzy 1 2}}
 do_test temptable-6.8 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   catchsql {
     SELECT * FROM t8,t9;
   }

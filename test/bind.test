@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.11 2004/05/27 09:28:44 danielk1977 Exp $
+# $Id: bind.test,v 1.12 2004/06/19 00:16:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -36,7 +36,7 @@ proc sqlite_step {stmt N VALS COLS} {
 
 do_test bind-1.1 {
   db close
-  set DB [sqlite db test.db]
+  set DB [sqlite3 db test.db]
   execsql {CREATE TABLE t1(a,b,c)}
   set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(?,?,?)} -1 TAIL]
   set TAIL

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.17 2004/05/13 05:16:17 danielk1977 Exp $
+# $Id: insert.test,v 1.18 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -146,7 +146,7 @@ do_test insert-3.1 {
   }
 } {}
 
-# Update for sqlite v3:
+# Update for sqlite3 v3:
 # Change the 111 to '111' in the following two test cases, because
 # the default value is being inserted as a string. TODO: It shouldn't be.
 do_test insert-3.2 {

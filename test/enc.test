@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc.test,v 1.2 2004/06/18 04:24:56 danielk1977 Exp $
+# $Id: enc.test,v 1.3 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -74,23 +74,23 @@ proc swap_byte_order {utf16} {
 proc test_conversion {testname str} {
  
   # Step 1.
-  set utf16le_sqlite [test_translate $str UTF8 UTF16LE]
+  set utf16le_sqlite3 [test_translate $str UTF8 UTF16LE]
   set utf16le_tcl [encoding convertto unicode $str]
   append utf16le_tcl "\x00\x00"
   if { $::tcl_platform(byteOrder)!="littleEndian" } {
     set utf16le_tcl [swap_byte_order $utf16le_tcl]
   }
-  do_bincmp_test $testname.1 $utf16le_sqlite $utf16le_tcl
+  do_bincmp_test $testname.1 $utf16le_sqlite3 $utf16le_tcl
   set utf16le $utf16le_tcl
 
   # Step 2.
-  set utf16be_sqlite [test_translate $str UTF8 UTF16BE]
+  set utf16be_sqlite3 [test_translate $str UTF8 UTF16BE]
   set utf16be_tcl [encoding convertto unicode $str]
   append utf16be_tcl "\x00\x00"
   if { $::tcl_platform(byteOrder)=="littleEndian" } {
     set utf16be_tcl [swap_byte_order $utf16be_tcl]
   }
-  do_bincmp_test $testname.2 $utf16be_sqlite $utf16be_tcl
+  do_bincmp_test $testname.2 $utf16be_sqlite3 $utf16be_tcl
   set utf16be $utf16be_tcl
  
   # Step 3.
@@ -99,34 +99,34 @@ proc test_conversion {testname str} {
   } else {
     set utf16 $utf16be
   }
-  set utf8_sqlite [test_translate $utf16 UTF16 UTF8]
-  do_bincmp_test $testname.3 $utf8_sqlite [binarize $str]
+  set utf8_sqlite3 [test_translate $utf16 UTF16 UTF8]
+  do_bincmp_test $testname.3 $utf8_sqlite3 [binarize $str]
 
   # Step 4 (little endian).
   append utf16le_bom "\xFF\xFE" $utf16le
-  set utf8_sqlite [test_translate $utf16le_bom UTF16 UTF8]
-  do_bincmp_test $testname.4.le $utf8_sqlite [binarize $str]
+  set utf8_sqlite3 [test_translate $utf16le_bom UTF16 UTF8]
+  do_bincmp_test $testname.4.le $utf8_sqlite3 [binarize $str]
 
   # Step 4 (big endian).
   append utf16be_bom "\xFE\xFF" $utf16be
-  set utf8_sqlite [test_translate $utf16be_bom UTF16 UTF8]
-  do_bincmp_test $testname.4.be $utf8_sqlite [binarize $str]
+  set utf8_sqlite3 [test_translate $utf16be_bom UTF16 UTF8]
+  do_bincmp_test $testname.4.be $utf8_sqlite3 [binarize $str]
 
   # Step 5 (little endian to little endian).
-  set utf16_sqlite [test_translate $utf16le_bom UTF16LE UTF16LE]
-  do_bincmp_test $testname.5.le.le $utf16_sqlite $utf16le
+  set utf16_sqlite3 [test_translate $utf16le_bom UTF16LE UTF16LE]
+  do_bincmp_test $testname.5.le.le $utf16_sqlite3 $utf16le
 
   # Step 5 (big endian to big endian).
-  set utf16_sqlite [test_translate $utf16be_bom UTF16 UTF16BE]
-  do_bincmp_test $testname.5.be.be $utf16_sqlite $utf16be
+  set utf16_sqlite3 [test_translate $utf16be_bom UTF16 UTF16BE]
+  do_bincmp_test $testname.5.be.be $utf16_sqlite3 $utf16be
 
   # Step 5 (big endian to little endian).
-  set utf16_sqlite [test_translate $utf16be_bom UTF16 UTF16LE]
-  do_bincmp_test $testname.5.be.le $utf16_sqlite $utf16le
+  set utf16_sqlite3 [test_translate $utf16be_bom UTF16 UTF16LE]
+  do_bincmp_test $testname.5.be.le $utf16_sqlite3 $utf16le
 
   # Step 5 (little endian to big endian).
-  set utf16_sqlite [test_translate $utf16le_bom UTF16 UTF16BE]
-  do_bincmp_test $testname.5.le.be $utf16_sqlite $utf16be
+  set utf16_sqlite3 [test_translate $utf16le_bom UTF16 UTF16BE]
+  do_bincmp_test $testname.5.le.be $utf16_sqlite3 $utf16be
 }
 
 translate_selftest

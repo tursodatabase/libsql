@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.22 2004/06/17 05:36:45 danielk1977 Exp $
+# $Id: func.test,v 1.23 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -278,7 +278,7 @@ do_test func-9.1 {
 # functions.
 #
 db close
-set ::DB [sqlite db test.db]
+set ::DB [sqlite3 db test.db]
 sqlite_register_test_function $::DB testfunc
 do_test func-10.1 {
   catchsql {
@@ -334,9 +334,9 @@ do_test func-11.1 {
   execsql {
     SELECT sqlite_version(*);
   }
-} [sqlite -version]
+} [sqlite3 -version]
 
-# Test that destructors passed to sqlite by calls to sqlite3_result_text()
+# Test that destructors passed to sqlite3 by calls to sqlite3_result_text()
 # etc. are called. These tests use two special user-defined functions
 # (implemented in func.c) only available in test builds. 
 #
@@ -423,7 +423,7 @@ do_test func-13.6 {
 # Test that auxilary data is preserved between calls for SQL variables.
 do_test func-13.7 {
   db close
-  set DB [sqlite db test.db]
+  set DB [sqlite3 db test.db]
   set sql "SELECT test_auxdata( ? , a ) FROM t4;"
   set STMT [sqlite3_prepare $DB $sql -1 TAIL]
   sqlite3_bind_text $STMT 1 hello -1

@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.14 2004/05/13 11:34:17 danielk1977 Exp $
+# $Id: rowid.test,v 1.15 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -186,7 +186,7 @@ do_test rowid-3.4 {
   foreach {u v w x y z} $r2 {}
   expr {$u==$e && $w==$c && $y==$a}
 } {1}
-# sqlite v3 - do_probtest doesn't exist anymore?
+# sqlite3 v3 - do_probtest doesn't exist anymore?
 if 0 {
 do_probtest rowid-3.5 {
   set r1 [execsql {SELECT _rowid_, rowid FROM t2 ORDER BY rowid}]

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.25 2004/06/14 08:26:37 danielk1977 Exp $
+# $Id: lock.test,v 1.26 2004/06/19 00:16:31 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -20,7 +20,7 @@ source $testdir/tester.tcl
 # Create an alternative connection to the database
 #
 do_test lock-1.0 {
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   set dummy {}
 } {}
 do_test lock-1.1 {
@@ -273,7 +273,7 @@ do_test lock-4.1 {
   catch {db eval ROLLBACK}
   db eval BEGIN
   db eval {UPDATE t1 SET a=0 WHERE 0}
-  sqlite db2 ./test.db
+  sqlite3 db2 ./test.db
   catchsql {UPDATE t1 SET a=0} db2
 } {1 {database is locked}}
 do_test lock-4.2 {

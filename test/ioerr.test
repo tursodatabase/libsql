@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.4 2004/06/15 11:40:10 danielk1977 Exp $
+# $Id: ioerr.test,v 1.5 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,7 +27,7 @@ for {set n 1} {$go} {incr n} {
     db close
     catch {file delete -force test.db}
     catch {file delete -force test.db-journal}
-    sqlite db test.db
+    sqlite3 db test.db
     execsql {SELECT * FROM sqlite_master}
   } {}
   do_test ioerr-1.$n.2 [subst {
@@ -80,7 +80,7 @@ for {set n 1} {$go} {incr n} {
     db close
     catch {file delete -force test.db}
     catch {file delete -force test.db-journal}
-    sqlite db test.db
+    sqlite3 db test.db
     execsql {
       BEGIN;
       CREATE TABLE t1(a, b, c);
@@ -120,7 +120,7 @@ set sqlite_os_trace 0
     expr {$::sqlite_io_error_pending>0 || $r!=0}
     set ::sqlite_io_error_pending 0
     db close
-    sqlite db test.db
+    sqlite3 db test.db
     cksum
   } $cksum
 }

@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.11 2004/06/18 06:02:35 danielk1977 Exp $
+# $Id: enc2.test,v 1.12 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,7 +61,7 @@ proc run_test_script {t enc} {
 
 # Open the database and pull out a (the) row.
 do_test $t.1 {
-  set DB [sqlite db test.db]
+  set DB [sqlite3 db test.db]
   execsql {SELECT * FROM t1}
 } {one I 1}
 
@@ -127,7 +127,7 @@ set sqlite_os_trace 0
 set i 1
 foreach enc $encodings {
   file delete -force test.db
-  sqlite db test.db
+  sqlite3 db test.db
   db eval "PRAGMA encoding = \"$enc\""
   execsql $dbcontents
   db close
@@ -140,13 +140,13 @@ foreach enc $encodings {
 # encoding to the main database.
 do_test enc2-4.1 {
   file delete -force test.db
-  sqlite db test.db
+  sqlite3 db test.db
   db eval "PRAGMA encoding = 'UTF-8'"
   db eval "CREATE TABLE abc(a, b, c);"
 } {}
 do_test enc2-4.2 {
   file delete -force test2.db
-  sqlite db2 test2.db
+  sqlite3 db2 test2.db
   db2 eval "PRAGMA encoding = 'UTF-16'"
   db2 eval "CREATE TABLE abc(a, b, c);"
 } {}
@@ -173,7 +173,7 @@ proc test_collate {enc lhs rhs} {
 }
 
 file delete -force test.db
-set DB [sqlite db test.db]
+set DB [sqlite3 db test.db]
 do_test enc2-5.0 {
   execsql {
     CREATE TABLE t5(a);
@@ -202,7 +202,7 @@ do_test enc2-5.3 {
 
 db close
 file delete -force test.db
-set DB [sqlite db test.db]
+set DB [sqlite3 db test.db]
 execsql {pragma encoding = 'UTF-16LE'}
 do_test enc2-5.4 {
   execsql {
@@ -232,7 +232,7 @@ do_test enc2-5.7 {
 
 db close
 file delete -force test.db
-set DB [sqlite db test.db]
+set DB [sqlite3 db test.db]
 execsql {pragma encoding = 'UTF-16BE'}
 do_test enc2-5.8 {
   execsql {
@@ -272,7 +272,7 @@ file delete -force test.db
 # 4: Ensure the first handle recognises the database encoding is UTF-8.
 #
 do_test enc2-6.1 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     PRAGMA encoding = 'UTF-16';
     SELECT * FROM sqlite_master;
@@ -285,7 +285,7 @@ do_test enc2-6.2 {
   string range $enc 0 end-2 ;# Chop off the "le" or "be"
 } {UTF-16}
 do_test enc2-6.3 {
-  sqlite db2 test.db
+  sqlite3 db2 test.db
   execsql {
     PRAGMA encoding = 'UTF-8';
     CREATE TABLE abc(a, b, c);

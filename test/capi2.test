@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.13 2004/06/15 02:44:20 danielk1977 Exp $
+# $Id: capi2.test,v 1.14 2004/06/19 00:16:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -73,7 +73,7 @@ proc get_column_names {STMT} {
 #
 do_test capi2-1.1 {
   db close
-  set DB [sqlite db test.db]
+  set DB [sqlite3 db test.db]
   execsql {CREATE TABLE t1(a,b,c)}
   set VM [sqlite3_prepare $DB {SELECT name, rowid FROM sqlite_master} -1 TAIL]
   set TAIL
@@ -410,7 +410,7 @@ do_test capi2-6.1 {
     COMMIT;
   }
   set VM1 [sqlite3_prepare $DB {SELECT * FROM t3} -1 TAIL]
-  sqlite db2 test.db
+  sqlite3 db2 test.db
   execsql {BEGIN} db2
 } {}
 # Update for v3: BEGIN doesn't write-lock the database. It is quite

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.23 2004/06/15 11:40:10 danielk1977 Exp $
+# $Id: quick.test,v 1.24 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ set EXCLUDE {
   format3.test
 }
 
-if {[sqlite -has-codec]} {
+if {[sqlite3 -has-codec]} {
   lappend EXCLUDE \
     attach.test \
     attach2.test \

@@ -11,12 +11,12 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.36 2004/06/15 02:44:20 danielk1977 Exp $
+# $Id: tester.tcl,v 1.37 2004/06/19 00:16:31 drh Exp $
 
-# Make sure tclsqlite was compiled correctly.  Abort now with an
+# Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
 #
-if {[sqlite -tcl-uses-utf]} {
+if {[sqlite3 -tcl-uses-utf]} {
   if {"\u1234"=="u1234"} {
     puts stderr "***** BUILD PROBLEM *****"
     puts stderr "$argv0 was linked against an older version"
@@ -42,9 +42,9 @@ if {[sqlite -tcl-uses-utf]} {
 
 # Use the pager codec if it is available
 #
-if {[sqlite -has-codec] && [info command sqlite_orig]==""} {
-  rename sqlite sqlite_orig
-  proc sqlite {args} {
+if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
+  rename sqlite3 sqlite_orig
+  proc sqlite3 {args} {
     if {[llength $args]==2 && [string index [lindex $args 0] 0]!="-"} {
       lappend args -key {xyzzy}
     }
@@ -58,7 +58,7 @@ if {[sqlite -has-codec] && [info command sqlite_orig]==""} {
 catch {db close}
 file delete -force test.db
 file delete -force test.db-journal
-sqlite db ./test.db
+sqlite3 db ./test.db
 if {[info exists ::SETUP_SQL]} {
   db eval $::SETUP_SQL
 }

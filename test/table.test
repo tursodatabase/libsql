@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.26 2004/06/12 09:25:30 danielk1977 Exp $
+# $Id: table.test,v 1.27 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,7 +45,7 @@ do_test table-1.3 {
 #
 do_test table-1.4 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {SELECT name, tbl_name, type from sqlite_master WHERE type!='meta'}
 } {test1 test1 table}
 
@@ -61,7 +61,7 @@ do_test table-1.5 {
 #
 do_test table-1.6 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
@@ -99,7 +99,7 @@ do_test table-2.1b {
 } {1 {object name reserved for internal use: sqlite_master}}
 do_test table-2.1c {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   set v [catch {execsql {CREATE TABLE sqlite_master(two text)}} msg]
   lappend v $msg
 } {1 {object name reserved for internal use: sqlite_master}}
@@ -116,7 +116,7 @@ do_test table-2.2a {
 } {1 {there is already an index named test3}}
 do_test table-2.2b {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
   lappend v $msg
 } {1 {there is already an index named test3}}
@@ -179,7 +179,7 @@ do_test table-3.4 {
 } {1 {table bIg already exists}}
 do_test table-3.5 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   set v [catch {execsql {CREATE TABLE Big(xyz foo)}} msg]
   lappend v $msg
 } {1 {table Big already exists}}
@@ -207,7 +207,7 @@ do_test table-4.1 {
 } $r
 do_test table-4.1b {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 
@@ -350,7 +350,7 @@ do_test table-8.4 {
 } {y'all 1}
 do_test table-8.5 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql2 {
     SELECT * FROM [t4'abc];
   }

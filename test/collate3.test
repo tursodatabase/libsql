@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate3.test,v 1.2 2004/06/11 10:51:41 danielk1977 Exp $
+# $Id: collate3.test,v 1.3 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -76,7 +76,7 @@ do_test collate3-2.0 {
     CREATE TABLE collate3t1(c1 COLLATE string_compare, c2);
   }
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   expr 0
 } 0
 do_test collate3-2.1 {
@@ -186,7 +186,7 @@ do_test collate3-3.0 {
     INSERT INTO collate3t1 VALUES('xxx', 'yyy');
   }
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   expr 0
 } 0
 db eval {select * from collate3t1}
@@ -274,7 +274,7 @@ do_test collate3-4.6 {
 } {}
 do_test collate3-4.7 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   catchsql {
     SELECT * FROM collate3t1 ORDER BY a COLLATE user_defined;
   }
@@ -288,7 +288,7 @@ do_test collate3-4.8 {
 do_test collate3-4.8 {
   db close
   lindex [catch {
-    sqlite db test.db
+    sqlite3 db test.db
   }] 0
 } {0}
 do_test collate3-4.8 {
@@ -323,7 +323,7 @@ do_test collate3-4.9 {
 } {2 {} 12 {} 101 {}}
 do_test collate3-4.10 {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   catchsql {
     SELECT * FROM collate3v1;
   }
@@ -387,7 +387,7 @@ do_test collate3-5.7 {
     CREATE TABLE collate3t1(a COLLATE unk);
   }
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   catchsql {
     SELECT a FROM collate3t1 ORDER BY 1;
   }

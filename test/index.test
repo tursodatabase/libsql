@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.29 2004/06/17 06:13:35 danielk1977 Exp $
+# $Id: index.test,v 1.30 2004/06/19 00:16:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,13 +29,13 @@ do_test index-1.1b {
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
 do_test index-1.1c {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
            WHERE name='index1'}
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
 do_test index-1.1d {
   db close
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {index1 test1}
 
@@ -344,7 +344,7 @@ integrity_check index-11.2
 # same number they should compare equal to one another.  Verify that this
 # is true in indices.
 #
-# Updated for sqlite v3: SQLite will now store these values as numbers
+# Updated for sqlite3 v3: SQLite will now store these values as numbers
 # (because the affinity of column a is NUMERIC) so the quirky
 # representations are not retained. i.e. '+1.0' becomes '1'.
 do_test index-12.1 {

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.18 2004/06/14 09:41:18 danielk1977 Exp $
+# $Id: attach2.test,v 1.19 2004/06/19 00:16:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -31,7 +31,7 @@ do_test attach2-1.1 {
   }
   file delete -force test2.db
   file delete -force test2.db-journal
-  sqlite db2 test2.db
+  sqlite3 db2 test2.db
   db2 eval {
     CREATE TABLE t1(a,b);
     CREATE INDEX x1 ON t1(a);
@@ -129,7 +129,7 @@ do_test attach2-2.12 {
 #
 do_test attach2-3.1 {
   db close
-  set DB [sqlite db test.db]
+  set DB [sqlite3 db test.db]
   set rc [catch {sqlite3_prepare $DB "ATTACH 'test2.db' AS t2" -1 TAIL} VM]
   if {$rc} {lappend rc $VM}
   sqlite3_finalize $VM
@@ -159,8 +159,8 @@ set sqlite_os_trace 0
 # Tests attach2-4.* test that read-locks work correctly with attached
 # databases.
 do_test attach2-4.1 {
-  sqlite db test.db
-  sqlite db2 test.db
+  sqlite3 db test.db
+  sqlite3 db2 test.db
   execsql {ATTACH 'test2.db' as file2}
   execsql {ATTACH 'test2.db' as file2} db2
 } {}
@@ -311,7 +311,7 @@ file delete -force test2.db
 # doesn't really prove too much.
 foreach f [glob test.db*] {file delete -force $f}
 do_test attach2-5.1 {
-  sqlite db test.db
+  sqlite3 db test.db
   execsql {
     ATTACH 'test.db2' AS aux;
   }
