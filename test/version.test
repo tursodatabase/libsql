@@ -12,7 +12,7 @@
 # focus of this file is testing the ability of the library to detect
 # past or future file format version numbers and respond appropriately.
 #
-# $Id: version.test,v 1.9 2004/02/12 19:01:05 drh Exp $
+# $Id: version.test,v 1.10 2004/05/13 11:34:17 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,7 +37,7 @@ do_test version-1.1 {
 #
 do_test version-1.2 {
   db close
-  set ::bt [btree_open test.db]
+  set ::bt [btree_open test.db 100 0]
   btree_begin_transaction $::bt
   set ::meta [btree_get_meta $::bt]
   btree_rollback $::bt

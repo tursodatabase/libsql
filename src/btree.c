@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.131 2004/05/13 01:12:57 drh Exp $
+** $Id: btree.c,v 1.132 2004/05/13 11:34:16 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1523,22 +1523,24 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   unsigned char *cell;
 
   if( !pCur->isValid ){
-    return pCur->status ? pCur->status : SQLITE_INTERNAL;
-  }
-  pPage = pCur->pPage;
-  assert( pPage!=0 );
-  assert( pPage->isInit );
-  pageIntegrity(pPage);
-  if( !pPage->hasData ){
+    /* Not pointing at a valid entry - set *pSize to 0. */
     *pSize = 0;
   }else{
-    assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-    cell = pPage->aCell[pCur->idx];
-    cell += 2;   /* Skip the offset to the next cell */
-    if( !pPage->leaf ){
-      cell += 4;  /* Skip the child pointer */
+    pPage = pCur->pPage;
+    assert( pPage!=0 );
+    assert( pPage->isInit );
+    pageIntegrity(pPage);
+    if( !pPage->hasData ){
+      *pSize = 0;
+    }else{
+      assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
+      cell = pPage->aCell[pCur->idx];
+      cell += 2;   /* Skip the offset to the next cell */
+      if( !pPage->leaf ){
+        cell += 4;  /* Skip the child pointer */
+      }
+      getVarint32(cell, pSize);
     }
-    getVarint32(cell, pSize);
   }
   return SQLITE_OK;
 }

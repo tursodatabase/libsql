@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.9 2004/04/23 17:04:45 drh Exp $
+# $Id: pragma.test,v 1.10 2004/05/13 11:34:17 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -257,7 +257,7 @@ do_test pragma-3.1 {
 } {1 11 2 3 2 22 3 4}
 do_test pragma-3.2 {
   set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
-  set db [btree_open test.db]
+  set db [btree_open test.db 100 0]
   btree_begin_transaction $db
   set c [btree_cursor $db $rootpage 1]
   btree_first $c

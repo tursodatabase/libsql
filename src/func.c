@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.45 2004/05/10 10:34:38 danielk1977 Exp $
+** $Id: func.c,v 1.46 2004/05/13 11:34:16 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -586,7 +586,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     { "like",       2, SQLITE_NUMERIC, 0, likeFunc   },
     { "glob",       2, SQLITE_NUMERIC, 0, globFunc   },
     { "nullif",     2, SQLITE_ARGS,    0, nullifFunc },
-    { "sqlite3_version",0,SQLITE_TEXT,  0, versionFunc},
+    { "sqlite_version",0,SQLITE_TEXT,  0, versionFunc},
     { "quote",      1, SQLITE_ARGS,    0, quoteFunc  },
     { "last_insert_rowid", 0, SQLITE_NUMERIC, 1, last_insert_rowid },
     { "change_count",      0, SQLITE_NUMERIC, 1, change_count      },
