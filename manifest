@@ -1,5 +1,5 @@
-C Incremental\scode\scompaction\sin\sexpr.c.\s\sNow\sabout\s4%\ssmaller.\nLots\smore\swork\sto\sdo.\s(CVS\s1183)
-D 2004-01-16T15:55:38
+C More\scompaction\sof\sexpr.c.\s(CVS\s1184)
+D 2004-01-16T16:42:54
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
-F src/expr.c 5ecbce47b7f163bb1f64bc5e19fbb115ab468f98
+F src/expr.c e6a05bec1ca8d80d0901e5ff59c4ce3d9553f6cc
 F src/func.c 564c0bbe93c290774b305c0199237b8e8bcbda53
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
@@ -64,7 +64,7 @@ F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
 F src/vdbe.c 802364c5b1b989ec4592aaffcbf575fa3eb0478b
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h eab39bc209b267271bc4afbcf4991d6c229bae9a
-F src/vdbeaux.c 6f2d43643f83656b2555b7ee320397805db11d4c
+F src/vdbeaux.c dae9f8de7140daebbd621bfccb0982e17c352a9f
 F src/where.c 1302d728bd338c237e6a8282e4e3eadbbdf11e45
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 42c79edc2e8d1051b3bca915b4b205c601b8077f
-R 36f16e7773dddd52ae0de77fcf909446
+P d292ba5148059dce3893b80eabdca4af9f75194e
+R a82c6cee014268ec5c5592ae977adf6a
 U drh
-Z 7d1bc38e295a20482fad97622944af0e
+Z 8377cc2fd09d8eae60d98fbd7e1551ff

@@ -280,7 +280,11 @@ void sqliteVdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 void sqliteVdbeDequoteP3(Vdbe *p, int addr){
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
+  if( p->aOp==0 ) return;
+  if( addr<0 || addr>=p->nOp ){
+    addr = p->nOp - 1;
+    if( addr<0 ) return;
+  }
   pOp = &p->aOp[addr];
   if( pOp->p3==0 || pOp->p3[0]==0 ) return;
   if( pOp->p3type==P3_POINTER ) return;

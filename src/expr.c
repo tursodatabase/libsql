@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.105 2004/01/16 15:55:38 drh Exp $
+** $Id: expr.c,v 1.106 2004/01/16 16:42:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -242,7 +242,6 @@ Select *sqliteSelectDup(Select *p){
 ** initially NULL, then create a new expression list.
 */
 ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
-  int i;
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(ExprList) );
     if( pList==0 ){
@@ -1013,26 +1012,17 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       }
       break;
     }
+    case TK_STRING:
+    case TK_FLOAT:
     case TK_INTEGER: {
-      if( !sqliteFitsIn32Bits(pExpr->token.z) ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-      }else{
+      if( pExpr->op==TK_INTEGER && sqliteFitsIn32Bits(pExpr->token.z) ){
         sqliteVdbeAddOp(v, OP_Integer, atoi(pExpr->token.z), 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
       }
-      sqliteVdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
-      break;
-    }
-    case TK_FLOAT: {
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
       assert( pExpr->token.z );
       sqliteVdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
-      break;
-    }
-    case TK_STRING: {
-      int addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
-      assert( pExpr->token.z );
-      sqliteVdbeChangeP3(v, addr, pExpr->token.z, pExpr->token.n);
-      sqliteVdbeDequoteP3(v, addr);
+      sqliteVdbeDequoteP3(v, -1);
       break;
     }
     case TK_NULL: {
@@ -1079,23 +1069,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, OP_Concat, 2, 0);
-      break;
-    }
-    case TK_UPLUS: {
-      Expr *pLeft = pExpr->pLeft;
-      if( pLeft && pLeft->op==TK_INTEGER ){
-        if( sqliteFitsIn32Bits(pLeft->token.z) ){
-          sqliteVdbeAddOp(v, OP_Integer, atoi(pLeft->token.z), 0);
-        }else{
-          sqliteVdbeAddOp(v, OP_String, 0, 0);
-        }
-        sqliteVdbeChangeP3(v, -1, pLeft->token.z, pLeft->token.n);
-      }else if( pLeft && pLeft->op==TK_FLOAT ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pLeft->token.z, pLeft->token.n);
-      }else{
-        sqliteExprCode(pParse, pExpr->pLeft);
-      }
       break;
     }
     case TK_UMINUS: {
@@ -1186,6 +1159,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_And, 0, 0);
       break;
     }
+    case TK_UPLUS:
     case TK_AS: {
       sqliteExprCode(pParse, pExpr->pLeft);
       break;
