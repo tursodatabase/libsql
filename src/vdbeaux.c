@@ -1329,87 +1329,7 @@ int sqlite3VdbeKeyCompare(
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
 ){
-  KeyInfo *pKeyInfo = (KeyInfo*)userData;
-  int offset1 = 0;
-  int offset2 = 0;
-  int i = 0;
-  int rc = 0;
-  const unsigned char *aKey1 = (const unsigned char *)pKey1;
-  const unsigned char *aKey2 = (const unsigned char *)pKey2;
-  
-  assert( pKeyInfo!=0 );
-  while( offset1<nKey1 && offset2<nKey2 ){
-    Mem mem1;
-    Mem mem2;
-    u32 serial_type1;
-    u32 serial_type2;
-
-    /* Read the serial types for the next element in each key. */
-    offset1 += sqlite3GetVarint32(&aKey1[offset1], &serial_type1);
-    offset2 += sqlite3GetVarint32(&aKey2[offset2], &serial_type2);
-
-    /* If either of the varints just read in are 0 (not a type), then
-    ** this is the end of the keys. The remaining data in each key is
-    ** the varint rowid. Compare these as signed integers and return
-    ** the result.
-    */
-    if( !serial_type1 || !serial_type2 ){
-      assert( !serial_type1 && !serial_type2 );
-      sqlite3GetVarint32(&aKey1[offset1], &serial_type1);
-      sqlite3GetVarint32(&aKey2[offset2], &serial_type2);
-      if( serial_type1 < serial_type2 ){
-        rc = -1;
-      }else if( serial_type1 > serial_type2 ){
-        rc = +1;
-      }else{
-        rc = 0;
-      }
-      return rc;
-    }
-
-    assert( i<pKeyInfo->nField );
-
-    /* Assert that there is enough space left in each key for the blob of
-    ** data to go with the serial type just read. This assert may fail if
-    ** the file is corrupted.  Then read the value from each key into mem1
-    ** and mem2 respectively.
-    */
-    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
-    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
-
-    rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
-    if( mem1.flags&MEM_Dyn ){
-      sqliteFree(mem1.z);
-    }
-    if( mem2.flags&MEM_Dyn ){
-      sqliteFree(mem2.z);
-    }
-    if( rc!=0 ){
-      break;
-    }
-    i++;
-  }
-
-  /* One of the keys ran out of fields, but all the fields up to that point
-  ** were equal. If the incrKey flag is true, then the second key is
-  ** treated as larger.
-  */
-  if( rc==0 ){
-    if( pKeyInfo->incrKey ){
-      assert( offset2==nKey2 );
-      rc = -1;
-    }else if( offset1<nKey1 ){
-      rc = 1;
-    }else if( offset2<nKey2 ){
-      rc = -1;
-    }
-  }
-
-  if( pKeyInfo->aSortOrder && i<pKeyInfo->nField && pKeyInfo->aSortOrder[i] ){
-    rc = -rc;
-  }
-
-  return rc;
+  return sqlite3VdbeRowCompare(userData,nKey1,pKey1,nKey2,pKey2);
 }
 
 /*
@@ -1442,7 +1362,7 @@ int sqlite3VdbeRowCompare(
   idx2 = sqlite3GetVarint32(pKey2, &szHdr2);
   d2 = szHdr2;
   nField = pKeyInfo->nField;
-  while( idx1<szHdr1 && idx2<szHdr2 && d1<nKey1 && d2<nKey2 && i<nField ){
+  while( idx1<szHdr1 && idx2<szHdr2 ){
     Mem mem1;
     Mem mem2;
     u32 serial_type1;
@@ -1450,7 +1370,9 @@ int sqlite3VdbeRowCompare(
 
     /* Read the serial types for the next element in each key. */
     idx1 += sqlite3GetVarint32(&aKey1[idx1], &serial_type1);
+    if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
     idx2 += sqlite3GetVarint32(&aKey2[idx2], &serial_type2);
+    if( d2>=nKey2 && sqlite3VdbeSerialTypeLen(serial_type2)>0 ) break;
 
     /* Assert that there is enough space left in each key for the blob of
     ** data to go with the serial type just read. This assert may fail if
@@ -1460,7 +1382,7 @@ int sqlite3VdbeRowCompare(
     d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
     d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2);
 
-    rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
+    rc = sqlite3MemCompare(&mem1, &mem2, i<nField ? pKeyInfo->aColl[i] : 0);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }
@@ -1479,7 +1401,6 @@ int sqlite3VdbeRowCompare(
   */
   if( rc==0 ){
     if( pKeyInfo->incrKey ){
-      assert( d2==nKey2 );
       rc = -1;
     }else if( d1<nKey1 ){
       rc = 1;
@@ -1494,6 +1415,19 @@ int sqlite3VdbeRowCompare(
 
   return rc;
 }
+
+/*
+** The argument is an index key that contains the ROWID at the end.
+** Return the length of the rowid.
+*/
+int sqlite3VdbeIdxRowidLen(int nKey, const u8 *aKey){
+  u32 szHdr;        /* Size of the header */
+  u32 typeRowid;    /* Serial type of the rowid */
+
+  sqlite3GetVarint32(aKey, &szHdr);
+  sqlite3GetVarint32(&aKey[szHdr-1], &typeRowid);
+  return sqlite3VdbeSerialTypeLen(typeRowid);
+}
   
 
 /*
@@ -1502,38 +1436,29 @@ int sqlite3VdbeRowCompare(
 ** everything works, or an error code otherwise.
 */
 int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
-  i64 sz;
+  u64 nCellKey;
   int rc;
-  char buf[10];
-  int len;
-  u64 r;
+  u32 szHdr;        /* Size of the header */
+  u32 typeRowid;    /* Serial type of the rowid */
+  u32 lenRowid;     /* Size of the rowid */
+  Mem m, v;
 
-  rc = sqlite3BtreeKeySize(pCur, &sz);
-  if( rc!=SQLITE_OK ){
+  sqlite3BtreeKeySize(pCur, &nCellKey);
+  if( nCellKey<=0 ){
+    return SQLITE_CORRUPT;
+  }
+  rc = sqlite3VdbeMemFromBtree(pCur, 0, nCellKey, 1, &m);
+  if( rc ){
     return rc;
   }
-  len = ((sz>10)?10:sz);
-
-  /* If there are less than 2 bytes in the key, this cannot be
-  ** a valid index entry. In practice this comes up for a query
-  ** of the sort "SELECT max(x) FROM t1;" when t1 is an empty table
-  ** with an index on x. In this case just call the rowid 0.
-  */
-  if( len<2 ){
-    *rowid = 0;
-    return SQLITE_OK;
+  sqlite3GetVarint32(m.z, &szHdr);
+  sqlite3GetVarint32(&m.z[szHdr-1], &typeRowid);
+  lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
+  sqlite3VdbeSerialGet(&m.z[m.n-lenRowid], typeRowid, &v);
+  *rowid = v.i;
+  if( m.flags & MEM_Dyn ){
+    sqliteFree(m.z);
   }
-
-  rc = sqlite3BtreeKey(pCur, sz-len, len, buf);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-
-  len--;
-  while( buf[len-1] && --len );
-
-  sqlite3GetVarint(&buf[len], &r);
-  *rowid = r;
   return SQLITE_OK;
 }
 
@@ -1543,47 +1468,34 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 ** that is negative, zero, or positive if pC is less than, equal to,
 ** or greater than pKey.  Return SQLITE_OK on success.
 **
-** pKey might contain fewer terms than the cursor.
+** pKey is either created without a rowid or is truncated so that it
+** omits the rowid at the end.  The rowid at the end of the index entry
+** is ignored as well.
 */
 int sqlite3VdbeIdxKeyCompare(
   Cursor *pC,                 /* The cursor to compare against */
   int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
 ){
-  unsigned char *pCellKey;
   u64 nCellKey;
-  int freeCellKey = 0;
   int rc;
-  int len;
   BtCursor *pCur = pC->pCursor;
+  int lenRowid;
+  Mem m;
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
   if( nCellKey<=0 ){
     *res = 0;
     return SQLITE_OK;
   }
-
-  pCellKey = (unsigned char *)sqlite3BtreeKeyFetch(pCur, nCellKey);
-  if( !pCellKey ){
-    pCellKey = (unsigned char *)sqliteMallocRaw(nCellKey);
-    if( !pCellKey ){
-      return SQLITE_NOMEM;
-    }
-    freeCellKey = 1;
-    rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
-    if( rc!=SQLITE_OK ){
-      sqliteFree(pCellKey);
-      return rc;
-    }
+  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m);
+  if( rc ){
+    return rc;
   }
- 
-  len = nCellKey-2;
-  while( pCellKey[len] && --len );
-
-  *res = sqlite3VdbeKeyCompare(pC->pKeyInfo, len, pCellKey, nKey, pKey);
-  
-  if( freeCellKey ){
-    sqliteFree(pCellKey);
+  lenRowid = sqlite3VdbeIdxRowidLen(m.n, m.z);
+  *res = sqlite3VdbeKeyCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
+  if( m.flags & MEM_Dyn ){
+    sqliteFree(m.z);
   }
   return SQLITE_OK;
 }

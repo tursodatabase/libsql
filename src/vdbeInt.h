@@ -350,6 +350,7 @@ int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3VdbeKeyCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
+int sqlite3VdbeIdxRowidLen(int,const u8*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
@@ -364,6 +365,7 @@ int sqlite3VdbeMemDynamicify(Mem*);
 int sqlite3VdbeMemStringify(Mem*, int);
 int sqlite3VdbeMemIntegerify(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
+int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 #endif

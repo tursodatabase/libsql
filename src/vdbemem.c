@@ -443,6 +443,72 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   return rc;
 }
 
+/*
+** Move data out of a btree key or data field and into a Mem structure.
+** The data or key is taken from the entry that pCur is currently pointing
+** to.  offset and amt determine what portion of the data or key to retrieve.
+** key is true to get the key or false to get data.  The result is written
+** into the pMem element.
+**
+** The pMem structure is assumed to be uninitialized.  Any prior content
+** is overwritten without being freed.
+**
+** If this routine fails for any reason (malloc returns NULL or unable
+** to read from the disk) then the pMem is left in an inconsistent state.
+*/
+int sqlite3VdbeMemFromBtree(
+  BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
+  int offset,       /* Offset from the start of data to return bytes from. */
+  int amt,          /* Number of bytes to return. */
+  int key,          /* If true, retrieve from the btree key, not data. */
+  Mem *pMem         /* OUT: Return data in this Mem structure. */
+){
+  char *zData;
+
+  if( key ){
+    zData = (char *)sqlite3BtreeKeyFetch(pCur, offset+amt);
+  }else{
+    zData = (char *)sqlite3BtreeDataFetch(pCur, offset+amt);
+  }
+
+  pMem->n = amt;
+  if( zData ){
+    pMem->z = &zData[offset];
+    pMem->flags = MEM_Blob|MEM_Ephem;
+  }else{
+    int rc;
+    if( amt>NBFS-2 ){
+      zData = (char *)sqliteMallocRaw(amt+2);
+      if( !zData ){
+        return SQLITE_NOMEM;
+      }
+      pMem->flags = MEM_Blob|MEM_Dyn|MEM_Term;
+    }else{
+      zData = &(pMem->zShort[0]);
+      pMem->flags = MEM_Blob|MEM_Short|MEM_Term;
+    }
+    pMem->z = zData;
+    pMem->enc = 0;
+    pMem->type = SQLITE3_BLOB;
+
+    if( key ){
+      rc = sqlite3BtreeKey(pCur, offset, amt, zData);
+    }else{
+      rc = sqlite3BtreeData(pCur, offset, amt, zData);
+    }
+    zData[amt] = 0;
+    zData[amt+1] = 0;
+    if( rc!=SQLITE_OK ){
+      if( amt>NBFS ){
+        sqliteFree(zData);
+      }
+      return rc;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
 #ifndef NDEBUG
 /*
 ** Perform various checks on the memory cell pMem. An assert() will
@@ -481,4 +547,3 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
           || (pMem->flags&MEM_Null)==0 );
 }
 #endif
-
