@@ -1,5 +1,5 @@
-C Documentation\supdates.\s(CVS\s1946)
-D 2004-09-08T13:06:21
+C Add\snew\sAPIs\sto\ssqlite3.def:\ssqlite3_bind_parameter_name\sand\nsqlite3_bind_parameter_index.\s(CVS\s1947)
+D 2004-09-08T13:07:45
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F sqlite3.def 84215604aa7b547d75e0f7b437966e7ad18fa8b2
+F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 038d7c7c2224fa92f0125c0c30c90f7b2ca8c39a
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 435b3f301fbb6953adc974c7f03589b06e9114c3
-R e9ed3557bbf8633eb729c636ad21e3fd
+P 799f5383c0c72a74c7b29f9f40fc949f3248a499
+R 29cd57a3de62ebc43e7c33447b14f409
 U drh
-Z d578a3410535617a4415c71c00fd3edf
+Z a760cd683beafc0ddcaf063e4cd97088

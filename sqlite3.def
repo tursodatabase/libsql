@@ -7,6 +7,8 @@ sqlite3_bind_int
 sqlite3_bind_int64
 sqlite3_bind_null
 sqlite3_bind_parameter_count
+sqlite3_bind_parameter_index
+sqlite3_bind_parameter_name
 sqlite3_bind_text
 sqlite3_bind_text16
 sqlite3_busy_handler
