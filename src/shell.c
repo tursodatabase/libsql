@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.4 2000/05/31 02:27:49 drh Exp $
+** $Id: shell.c,v 1.5 2000/05/31 23:33:17 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -137,6 +137,7 @@ struct callback_data {
 #define MODE_Line     0  /* One field per line.  Blank line between records */
 #define MODE_Column   1  /* One record per line in neat columns */
 #define MODE_List     2  /* One record per line with a separator */
+#define MODE_Html     3  /* Generate an XHTML table */
 
 /*
 ** Number of elements in an array
@@ -176,7 +177,8 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           }else{
              w = 10;
           }
-          fprintf(p->out,"%-*.*s%s",w,w,"-------------------------------------",
+          fprintf(p->out,"%-*.*s%s",w,w,"-------------------------------------"
+                 "------------------------------------------------------------",
                   i==nArg-1 ? "\n": "  ");
         }
       }
@@ -202,6 +204,23 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       break;
     }
+    case MODE_Html: {
+      if( p->cnt++==0 && p->showHeader ){
+        fprintf(p->out,"<TR>");
+        for(i=0; i<nArg; i++){
+          fprintf(p->out,"<TH>%s</TH>",azCol[i]);
+        }
+        fprintf(p->out,"</TR>\n");
+      }
+      for(i=0; i<nArg; i++){
+        fprintf(p->out,"<TR>");
+        for(i=0; i<nArg; i++){
+          fprintf(p->out,"<TD>%s</TD>",azArg[i]);
+        }
+        fprintf(p->out,"</TD>\n");
+      }
+      break;
+    }
   }      
   return 0;
 }
@@ -215,8 +234,8 @@ static char zHelp[] =
   ".header ON|OFF         Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
-  ".mode MODE             Set mode to one of \"line\", \"column\", or"
-                                      " \"list\"\n"
+  ".mode MODE             Set mode to one of \"line\", \"column\", "
+                                      "\"list\", or \"html\"\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
@@ -317,6 +336,8 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       p->mode = MODE_Column;
     }else if( strncmp(azArg[1],"list",n2)==0 ){
       p->mode = MODE_List;
+    }else if( strncmp(azArg[1],"html",n2)==0 ){
+      p->mode = MODE_Html;
     }
   }else
 
@@ -391,10 +412,45 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 int main(int argc, char **argv){
   sqlite *db;
   char *zErrMsg = 0;
+  char *argv0 = argv[0];
   struct callback_data data;
 
+  memset(&data, 0, sizeof(data));
+  data.mode = MODE_List;
+  strcpy(data.separator,"|");
+  data.showHeader = 0;
+  while( argc>=2 && argv[1][0]=='-' ){
+    if( strcmp(argv[1],"-html")==0 ){
+      data.mode = MODE_Html;
+      argc--;
+      argv++;
+    }else if( strcmp(argv[1],"-list")==0 ){
+      data.mode = MODE_List;
+      argc--;
+      argv++;
+    }else if( strcmp(argv[1],"-line")==0 ){
+      data.mode = MODE_Line;
+      argc--;
+      argv++;
+    }else if( argc>=3 && strcmp(argv[0],"-separator")==0 ){
+      sprintf(data.separator,"%.*s",sizeof(data.separator)-1,argv[2]);
+      argc -= 2;
+      argv += 2;
+    }else if( strcmp(argv[1],"-header")==0 ){
+      data.showHeader = 1;
+      argc--;
+      argv++;
+    }else if( strcmp(argv[1],"-noheader")==0 ){
+      data.showHeader = 0;
+      argc--;
+      argv++;
+    }else{
+      fprintf(stderr,"%s: unknown option: %s\n", argv0, argv[1]);
+      return 1;
+    }
+  }
   if( argc!=2 && argc!=3 ){
-    fprintf(stderr,"Usage: %s FILENAME ?SQL?\n", *argv);
+    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", argv0);
     exit(1);
   }
   db = sqlite_open(argv[1], 0666, &zErrMsg);
@@ -402,11 +458,8 @@ int main(int argc, char **argv){
     fprintf(stderr,"Unable to open database \"%s\": %s\n", argv[1], zErrMsg);
     exit(1);
   }
-  memset(&data, 0, sizeof(data));
   data.out = stdout;
   if( argc==3 ){
-    data.mode = MODE_List;
-    strcpy(data.separator,"|");
     if( sqlite_exec(db, argv[2], callback, &data, &zErrMsg)!=0 && zErrMsg!=0 ){
       fprintf(stderr,"SQL error: %s\n", zErrMsg);
       exit(1);
@@ -416,9 +469,6 @@ int main(int argc, char **argv){
     char *zSql = 0;
     int nSql = 0;
     int istty = isatty(0);
-    data.mode = MODE_Line;
-    strcpy(data.separator,"|");
-    data.showHeader = 0;
     if( istty ){
       printf(
         "Enter \".help\" for instructions\n"
@@ -438,7 +488,7 @@ int main(int argc, char **argv){
         int len = strlen(zLine);
         zSql = realloc( zSql, nSql + len + 2 );
         if( zSql==0 ){
-          fprintf(stderr,"%s: out of memory!\n", *argv);
+          fprintf(stderr,"%s: out of memory!\n", argv0);
           exit(1);
         }
         strcpy(&zSql[nSql++], "\n");
