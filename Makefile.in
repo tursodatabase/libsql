@@ -247,10 +247,11 @@ parse.c:	$(TOP)/src/parse.y lemon
 config.h:	
 	echo '#include <stdio.h>' >temp.c
 	echo 'int main(){printf(' >>temp.c
-	echo '"#define SQLITE_PTR_SZ %d\\n",sizeof(char*));' >>temp.c
+	echo '"#define SQLITE_PTR_SZ %d",sizeof(char*));' >>temp.c
 	echo 'exit(0);}' >>temp.c
 	$(BCC) -o temp temp.c
 	./temp >config.h
+	echo >>config.h
 	rm -f temp.c temp
 
 sqlite.h:	$(TOP)/src/sqlite.h.in 

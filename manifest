@@ -1,6 +1,6 @@
-C Bump\sthe\sversion\snumber\sto\s2.8.1.\s\sUpdate\sdocumentation\sprior\sto\srelease.\s(CVS\s978)
-D 2003-05-17T01:39:40
-F Makefile.in 14d22c39109f6212b1fcc15aee6d05b20ac68476
+C Fix\sthe\sfix\sfor\snewlines\sin\secho\scommands.\s\sTickets\s#311,\s#282,\s#256.\s(CVS\s979)
+D 2003-05-17T02:27:21
+F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 861f3b65982ad74cf5a8ddc9ce5df857c4c7a3bf
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool bbbea7d79c23323e4100103836028e4fad0d9242
 F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
-F main.mk a22911e6793b9eae920afcffd5b7dd9ba5cdecf2
+F main.mk d01843179ed14559adb75f7e2fe093c943d56756
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d614861b8ad9e661b8f08131b95d730e2c2c35c2
-R c76d9b8ab613a0380e0dfbca7054b976
+P 0874814ab01ffc0acffec8e6cec34eaab3428d36
+R d79117ebcf990c76ac030f81c35e1389
 U drh
-Z bb2218ce727ba25eecc329f2efd70f2c
+Z 63739ab587e63f67ac6a2fd296939d48
