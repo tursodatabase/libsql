@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.88 2005/02/06 02:45:42 drh Exp $
+** $Id: pragma.c,v 1.89 2005/02/09 03:20:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -537,6 +537,20 @@ void sqlite3Pragma(
       sqlite3VdbeOp3(v, OP_String8, 0, 0,
            sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
       sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
+    }
+  }else
+
+  if( sqlite3StrICmp(zLeft, "collation_list")==0 ){
+    int i = 0;
+    HashElem *p;
+    sqlite3VdbeSetNumCols(v, 2);
+    sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
+    sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
+    for(p=sqliteHashFirst(&db->aCollSeq); p; p=sqliteHashNext(p)){
+      CollSeq *pColl = (CollSeq *)sqliteHashData(p);
+      sqlite3VdbeAddOp(v, OP_Integer, i++, 0);
+      sqlite3VdbeOp3(v, OP_String8, 0, 0, pColl->zName, 0);
+      sqlite3VdbeAddOp(v, OP_Callback, 2, 0);
     }
   }else
 #endif /* SQLITE_OMIT_SCHEMA_PRAGMAS */

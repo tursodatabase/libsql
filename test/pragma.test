@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.32 2005/01/17 07:53:44 danielk1977 Exp $
+# $Id: pragma.test,v 1.33 2005/02/09 03:20:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,6 +30,7 @@ source $testdir/tester.tcl
 # pragma-8.*: Test user_version and schema_version pragmas.
 # pragma-9.*: Test temp_store and temp_store_directory.
 # pragma-10.*: Test the count_changes pragma in the presence of triggers.
+# pragma-11.*: Test the collation_list pragma.
 #
 
 # Delete the preexisting database to avoid the special setup
@@ -708,6 +709,20 @@ do_test pragma-10.3 {
 } {1}
 
 } ;# ifcapable trigger
+
+ifcapable schema_pragmas {
+  do_test pragma-11.1 {
+    execsql2 {
+      pragma collation_list;
+    }
+  } {seq 0 name NOCASE seq 1 name BINARY}
+  do_test pragma-11.2 {
+    db collate New_Collation blah...
+    execsql {
+      pragma collation_list;
+    }
+  } {0 New_Collation 1 NOCASE 2 BINARY}
+}
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:
 sqlite3 dbX :memory:
