@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.79 2002/04/23 17:10:18 drh Exp $
+** $Id: select.c,v 1.80 2002/04/30 19:20:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -918,6 +918,8 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 **   (6)  The subquery does not use aggregates or the outer query is not
 **        DISTINCT.
 **
+**   (7)  The subquery has a FROM clause.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -947,7 +949,7 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   if( subqueryIsAgg && pSrc->nId>1 ) return 0;
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
-  if( pSubSrc->nId>1 ) return 0;
+  if( pSubSrc->nId!=1 ) return 0;
   if( pSub->isDistinct && pSrc->nId>1 ) return 0;
   if( pSub->isDistinct && isAgg ) return 0;
   if( p->isDistinct && subqueryIsAgg ) return 0;

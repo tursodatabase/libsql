@@ -1,9 +1,9 @@
-C Fix\sfor\sticket\s#28:\sExport\sthe\s"sqlite_changes"\sfunction\sin\sWindows\sDLLs.\s(CVS\s547)
-D 2002-04-26T09:47:21
+C Fix\sfor\sticket\s#31:\sDo\snot\sattempt\sthe\sflattening\soptimization\sif\sthe\nsubselect\sdoes\snot\scontain\sa\sFROM\sclause.\s\sHandle\sthe\sspecial\scase\swhere\na\sWHERE\sclause\sis\sconstant.\s(CVS\s548)
+D 2002-04-30T19:20:28
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 23cded544ac22813b39f410aac0a8735ae991d64
+F VERSION 6e80c9947485276e468a2630f3c89616498507bf
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -39,7 +39,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 04860119440c22b7f473bec848127d73af46db39
+F src/select.c 5e9fe2cdbb398be036c43bfa71b0686fcbbe5f96
 F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
@@ -55,7 +55,7 @@ F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
 F src/vdbe.c 0ed88fff32273c103a24396d491b71bc69b4b596
 F src/vdbe.h 67840a462e1daedb958cca0ccc97db140d3d9152
-F src/where.c 9d36f6c9fea4af71501770c13089f824cb9b033c
+F src/where.c 5e3e97adfa5800378f2ed45bb9312dd3a70e239c
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -90,7 +90,7 @@ F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test a8f1d97fbd6049211ddd0ed50899e8afb1cb4508
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test 5b9b52e84c1f44fd3a4eeb75e78deceb085b78b0
+F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 17b0b6eafa3faaee5545b7a94e6c1ff73f0880f3
@@ -103,7 +103,7 @@ F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test 4a8a9cf59b54409228c7b9b918ed8bf9bade1220
-F test/where.test 032d581c3de4893eba33b569e581c46b941bb02a
+F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
 F tool/lemon.c 77d026f58d7715543786d457cf9432f9103e3f62
 F tool/lempar.c ee508b94607f74d591d60eda5c8014db4e144de5
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
@@ -132,7 +132,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 18c28519d973944756694b2c213bfef3153f4b1b
-R 2d6fab377f325966b8f3f4627b42b359
+P f7cea4634dd53204b4aa8a3630b9c55c40fdc4b3
+R 9d7c12ded1d4fd021880c7039e5ea94d
 U drh
-Z 3841c5ff7d19de6d1820c7833baa6b1c
+Z 70d8eddc023a9dcb2b671be415f0e5d2

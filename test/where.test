@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.5 2001/12/22 14:49:26 drh Exp $
+# $Id: where.test,v 1.6 2002/04/30 19:20:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -236,5 +236,30 @@ do_test where-3.3 {
     WHERE A.w=15 AND B.p=C.w AND B.r=10202-A.y
   }
 } {15 86 86 9}
+
+# Test to see that the special case of a constant WHERE clause is
+# handled.
+#
+do_test where-4.1 {
+  count {
+    SELECT * FROM t1 WHERE 0
+  }
+} {0}
+do_test where-4.2 {
+  count {
+    SELECT * FROM t1 WHERE 1 LIMIT 1
+  }
+} {1 0 4 0}
+do_test where-4.3 {
+  execsql {
+    SELECT 99 WHERE 0
+  }
+} {}
+do_test where-4.4 {
+  execsql {
+    SELECT 99 WHERE 1
+  }
+} {99}
+
 
 finish_test
