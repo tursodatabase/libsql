@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.184 2004/08/31 13:45:11 drh Exp $
+** $Id: btree.c,v 1.185 2004/09/01 16:12:25 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -348,6 +348,12 @@ struct BtCursor {
   u8 isValid;               /* TRUE if points to a valid entry */
   u8 status;                /* Set to SQLITE_ABORT if cursors is invalidated */
 };
+
+/*
+** Forward declaration
+*/
+static int checkReadLocks(Btree*,Pgno,BtCursor*);
+
 
 /*
 ** Read or write a two- and four-byte big-endian integer values.
@@ -1560,7 +1566,6 @@ int sqlite3BtreeCursor(
 
   *ppCur = 0;
   if( wrFlag ){
-    static int checkReadLocks(Btree*,Pgno,BtCursor*);
     if( pBt->readOnly ){
       return SQLITE_READONLY;
     }
