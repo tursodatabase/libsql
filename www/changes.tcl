@@ -18,8 +18,8 @@ proc chng {date desc} {
 }
 
 chng {2000 June 19} {
-<li>Bug fix: Column names in UPDATE statements used to be case sensitive.
-    Now they are not.</li>
+<li>Column names in UPDATE statements were case sensitive.
+    This mistake has now been fixed.</li>
 }
 
 chng {2000 June 16} {
