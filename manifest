@@ -1,5 +1,5 @@
-C Transform\sOP_HexBlob\sand\sOP_String8\sto\sOP_Blob\sand\sOP_String\sthe\sfirst\stime\sthey\sare\sexecuted.\s(CVS\s1492)
-D 2004-05-29T11:24:50
+C A\sfile\sformat\schange\sfor\sbtree.c\smakes\sit\sbetween\s10\sand\s20%\sfaster.\s(CVS\s1493)
+D 2004-05-29T21:46:49
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 7832e4247f0d14dfe25dcf85647ddde71b614170
+F src/btree.c 3287b359b0dbfef9ffcddfa776e136505f01cd77
 F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
 F src/build.c fd36c4a603e23df35aa7f57772d965e1865e39e0
 F src/date.c 0eb922af5c5f5e2455f8dc2f98023ed3e04a857e
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0a6689be843e695902fbfef863f128915545499e
-R 1d952e495024dd4407d89b7b9acbc34c
-U danielk1977
-Z 654311e7b543692762f3cae151122ce2
+P 3225de8902b0e7e60c4d9f3a5ef51bc74f57d364
+R 702efc72950b18adf9baf0d005935d93
+U drh
+Z e0fe70a1953600e894856c5d74936688
