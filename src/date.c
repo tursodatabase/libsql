@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.30 2004/06/19 08:18:08 danielk1977 Exp $
+** $Id: date.c,v 1.31 2004/07/18 22:22:44 drh Exp $
 **
 ** NOTES:
 **
@@ -822,18 +822,20 @@ static void strftimeFunc(
         case 'H':  sprintf(&z[j],"%02d",x.h); j+=2; break;
         case 'W': /* Fall thru */
         case 'j': {
-          int n;
+          int n;             /* Number of days since 1st day of year */
           DateTime y = x;
           y.validJD = 0;
           y.M = 1;
           y.D = 1;
           computeJD(&y);
-          n = x.rJD - y.rJD + 1;
+          n = x.rJD - y.rJD;
           if( zFmt[i]=='W' ){
-            sprintf(&z[j],"%02d",(n+6)/7);
+            int wd;   /* 0=Monday, 1=Tuesday, ... 6=Sunday */
+            wd = ((int)(x.rJD+0.5)) % 7;
+            sprintf(&z[j],"%02d",(n+7-wd)/7);
             j += 2;
           }else{
-            sprintf(&z[j],"%03d",n);
+            sprintf(&z[j],"%03d",n+1);
             j += 3;
           }
           break;

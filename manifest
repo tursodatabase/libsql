@@ -1,5 +1,5 @@
-C An\simproved\sfix\sfor\sthe\smin()\sproblem\sof\sticket\s#800.\s(CVS\s1804)
-D 2004-07-18T21:33:02
+C The\s%W\sdate\sspecifier\sin\sstrftime\sshould\sbe\smeasured\sfrom\sthe\sfirst\sMonday\nof\sthe\syear.\s\sTicket\s#758.\s(CVS\s1805)
+D 2004-07-18T22:22:44
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 3ed3c19e43bb243f502ee614f6ad0a52e53362a7
 F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
 F src/build.c ecc10d4e5232a49f55304dd9b90739f2771e34ef
-F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
+F src/date.c d42ea73a0b16d5dff9d97e10dc0c05671471b753
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
@@ -106,7 +106,7 @@ F test/collate6.test 2a45768914f04c1447a69d1358bbede376552675
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
 F test/crash.test 3ea432ce624369c04ba1a23a5288115e40f5daa2
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
+F test/date.test a5cdaed88fe575f2d6f63ff605abb5abc1b7319c
 F test/delete.test ec0b455f2dcc0e189d96ee438438ba026c4e51d8
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test 7a60971a62748be6b607b4b4380eb4c5e151a6ec
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 166234a2b61e1d6a501e48dde1caec0a02bec90b
-R 2a9b12db8b0f7803d1ccfb6ddc0865f4
+P b6e8b7a13cd9f90e2f7d963d9ddbe591571f3a27
+R 9aba732fdd9d77e41030d43848e7a6a8
 U drh
-Z 5efd915ae1cc027bdebade132f88a97d
+Z df904b51619345b20c4c765ab2f0eb6b

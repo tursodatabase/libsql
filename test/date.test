@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.7 2004/02/29 01:08:18 drh Exp $
+# $Id: date.test,v 1.8 2004/07/18 22:22:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -95,7 +95,20 @@ datetest 3.7 {strftime('%M','2003-10-31 12:34:56.432')} 34
 datetest 3.8 {strftime('%s','2003-10-31 12:34:56.432')} 1067603696
 datetest 3.9 {strftime('%S','2003-10-31 12:34:56.432')} 56
 datetest 3.10 {strftime('%w','2003-10-31 12:34:56.432')} 5
-datetest 3.11 {strftime('%W','2003-10-31 12:34:56.432')} 44
+datetest 3.11.1 {strftime('%W','2003-10-31 12:34:56.432')} 43
+datetest 3.11.2 {strftime('%W','2004-01-01')} 00
+datetest 3.11.3 {strftime('%W','2004-01-02')} 00
+datetest 3.11.4 {strftime('%W','2004-01-03')} 00
+datetest 3.11.5 {strftime('%W','2004-01-04')} 00
+datetest 3.11.6 {strftime('%W','2004-01-05')} 01
+datetest 3.11.7 {strftime('%W','2004-01-06')} 01
+datetest 3.11.8 {strftime('%W','2004-01-07')} 01
+datetest 3.11.9 {strftime('%W','2004-01-08')} 01
+datetest 3.11.10 {strftime('%W','2004-01-09')} 01
+datetest 3.11.11 {strftime('%W','2004-07-18')} 28
+datetest 3.11.12 {strftime('%W','2004-12-31')} 52
+datetest 3.11.13 {strftime('%W','2007-12-31')} 53
+datetest 3.11.14 {strftime('%W','2007-01-01')} 01
 datetest 3.12 {strftime('%Y','2003-10-31 12:34:56.432')} 2003
 datetest 3.13 {strftime('%%','2003-10-31 12:34:56.432')} %
 datetest 3.14 {strftime('%_','2003-10-31 12:34:56.432')} NULL
