@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.182 2004/05/22 03:05:34 danielk1977 Exp $
+** $Id: main.c,v 1.183 2004/05/22 08:09:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -217,12 +217,15 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   **    meta[1]   File format of schema layer.
   **    meta[2]   Size of the page cache.
   **    meta[3]   Synchronous setting.  1:off, 2:normal, 3:full
-  **    meta[4]
+  **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16 LE 3:UTF-16 BE
   **    meta[5]   Pragma temp_store value.  See comments on BtreeFactory
   **    meta[6]
   **    meta[7]
   **    meta[8]
   **    meta[9]
+  **
+  ** Note: The hash defined TEXT_Utf* symbols in sqliteInt.h correspond to
+  ** the possible values of meta[4].
   */
   if( rc==SQLITE_OK ){
     int i;
@@ -241,6 +244,13 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   if( iDb==0 ){
     db->next_cookie = meta[0];
     db->file_format = meta[1];
+    if( meta[4] ){
+      /* If meta[4] is still zero, then we are opening a previously empty
+      ** file. Leave db->enc to the default value set by the sqlite3_open()
+      ** call in this case.
+      */
+      db->enc = (u8)meta[4];
+    }
     size = meta[2];
     if( size==0 ){ size = MAX_PAGES; }
     db->cache_size = size;

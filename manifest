@@ -1,5 +1,5 @@
-C A\sfew\sbugfixes\srelated\sto\sUTF-16\sdatabases.\ssqlite3_open()\sstill\sassumes\sa\nUTF-8\sdatabase,\sand\ssqlite3_open16()\sstill\sassumes\sa\sUTF-16\sdb.\s(CVS\s1434)
-D 2004-05-22T07:27:46
+C Store\sthe\stext\sencoding\sin\sthe\sdatabase\s(as\smeta\svalue\s4).\s(CVS\s1435)
+D 2004-05-22T08:09:11
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 51dfa34da5f42762b228d7360cf3273ee403bce8
 F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
-F src/build.c 95969f37eb4edf62660d83e314df6d08b8a19fe7
+F src/build.c 35cbeb439b49cca5eb5e8a1de010a5194f4523e8
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
 F src/date.c 0eb0a89960bb45c7f7e768748605a7a97b0c8064
 F src/delete.c 2e1dda38345416a1ea1c0a6468589a7472334dac
@@ -37,7 +37,7 @@ F src/func.c cfbb7096efb58e2857e3b312a8958a12774b625a
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c e510d62d23b4de4d901e7ccbbe7833b7fb3b9570
-F src/main.c a2be4b3976818f3fe5dfdc5709c330599da7acc3
+F src/main.c 25f197c6e2d8dd24f993a218824c81356cf269e5
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h 6e446a17cbeb6c2ce470683a0bb8d9c63abe8607
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c4a8246864eee7cb993ab7b703324d92c284d72a
-R 92babf97adb0222e27f8107a93f8fb2a
+P b3581d2796c8cb6581b7156774698a05fc8f800e
+R 4a21a58cde782ee5391b183bd4ae3e26
 U danielk1977
-Z c69763de411eab46b3116a06db08807c
+Z ae26e12ee15e175d842a96dadc5dd1c3
