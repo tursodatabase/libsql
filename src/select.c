@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.237 2005/01/31 12:42:29 danielk1977 Exp $
+** $Id: select.c,v 1.238 2005/02/04 04:07:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -547,7 +547,7 @@ static int selectInnerLoop(
       break;
     }
 
-#if !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_CURSOR)
+#if !defined(SQLITE_OMIT_TRIGGER)
     /* Discard the results.  This is used for SELECT statements inside
     ** the body of a TRIGGER.  The purpose of such selects is to call
     ** user-defined functions that have side effects.  We do not care
@@ -2522,12 +2522,6 @@ int sqlite3Select(
   /* If there is are a sequence of queries, do the earlier ones first.
   */
   if( p->pPrior ){
-#ifndef SQLITE_OMIT_CURSOR
-    if( p->pFetch ){
-      sqlite3ErrorMsg(pParse, "cursors cannot be used on compound queries");
-      goto select_end;
-    }
-#endif
     return multiSelect(pParse, p, eDest, iParm, aff);
   }
 #endif
@@ -2582,26 +2576,6 @@ int sqlite3Select(
     default:
       break;
   }
-
-  /* We cannot use a SQL cursor on a join or on a DISTINCT query
-  */
-#ifndef SQLITE_OMIT_CURSOR
-  if( p->pFetch ){
-    if( p->isDistinct ){
-      sqlite3ErrorMsg(pParse, "cursors cannot be used on DISTINCT queries");
-      goto select_end;
-    }
-    if( pTabList->nSrc>0 ){
-      sqlite3ErrorMsg(pParse, "cursors cannot be used on joins");
-      goto select_end;
-    }
-    if( pTabList->a[0].pSelect ){
-      sqlite3ErrorMsg(pParse, "cursor cannot be used with nested queries "
-          "or views");
-      goto select_end;
-    }
-  }
-#endif
 
   /* Begin generating code.
   */

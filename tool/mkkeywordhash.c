@@ -8,13 +8,6 @@
 #include <stdlib.h>
 
 /*
-** Cursor support is off by default.
-*/
-#if !defined(SQLITE_ENABLE_CURSOR) && !defined(SQLITE_OMIT_CURSOR)
-# define SQLITE_OMIT_CURSOR 1
-#endif
-
-/*
 ** All the keywords of the SQL language are stored as in a hash
 ** table composed of instances of the following structure.
 */
@@ -61,11 +54,6 @@ struct Keyword {
 #  define CONFLICT   0
 #else
 #  define CONFLICT   32
-#endif
-#ifdef SQLITE_OMIT_CURSOR
-#  define CURSOR     0
-#else
-#  define CURSOR     64
 #endif
 #ifdef SQLITE_OMIT_EXPLAIN
 #  define EXPLAIN    0
@@ -114,7 +102,6 @@ struct Keyword {
 */
 static Keyword aKeywordTable[] = {
   { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
-  { "ABSOLUTE",         "TK_ABSOLUTE",     CURSOR                 },
   { "AFTER",            "TK_AFTER",        TRIGGER                },
   { "ALL",              "TK_ALL",          ALWAYS                 },
   { "ALTER",            "TK_ALTER",        ALTER                  },
@@ -130,20 +117,16 @@ static Keyword aKeywordTable[] = {
   { "CASCADE",          "TK_CASCADE",      FKEY                   },
   { "CASE",             "TK_CASE",         ALWAYS                 },
   { "CHECK",            "TK_CHECK",        ALWAYS                 },
-  { "CLOSE",            "TK_CLOSE",        CURSOR                 },
   { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
   { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
   { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
   { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
   { "CREATE",           "TK_CREATE",       ALWAYS                 },
   { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
-  { "CURSOR",           "TK_CURSOR",       CURSOR                 },
-  { "CURRENT",          "TK_CURRENT",      CURSOR                 },
   { "CURRENT_DATE",     "TK_CDATE",        ALWAYS                 },
   { "CURRENT_TIME",     "TK_CTIME",        ALWAYS                 },
   { "CURRENT_TIMESTAMP","TK_CTIMESTAMP",   ALWAYS                 },
   { "DATABASE",         "TK_DATABASE",     ATTACH                 },
-  { "DECLARE",          "TK_DECLARE",      CURSOR                 },
   { "DEFAULT",          "TK_DEFAULT",      ALWAYS                 },
   { "DEFERRED",         "TK_DEFERRED",     ALWAYS                 },
   { "DEFERRABLE",       "TK_DEFERRABLE",   FKEY                   },
@@ -161,9 +144,7 @@ static Keyword aKeywordTable[] = {
   { "EXISTS",           "TK_EXISTS",       SUBQUERY               },
   { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
-  { "FETCH",            "TK_FETCH",        CURSOR                 },
-  { "FIRST",            "TK_FIRST",        CURSOR                 },
-  { "FOR",              "TK_FOR",          TRIGGER|CURSOR         },
+  { "FOR",              "TK_FOR",          TRIGGER                },
   { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
   { "FROM",             "TK_FROM",         ALWAYS                 },
   { "FULL",             "TK_JOIN_KW",      ALWAYS                 },
@@ -189,7 +170,6 @@ static Keyword aKeywordTable[] = {
   { "LIMIT",            "TK_LIMIT",        ALWAYS                 },
   { "MATCH",            "TK_MATCH",        ALWAYS                 },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
-  { "NEXT",             "TK_NEXT",         CURSOR                 },
   { "NOT",              "TK_NOT",          ALWAYS                 },
   { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
   { "NULL",             "TK_NULL",         ALWAYS                 },
@@ -200,12 +180,10 @@ static Keyword aKeywordTable[] = {
   { "ORDER",            "TK_ORDER",        ALWAYS                 },
   { "OUTER",            "TK_JOIN_KW",      ALWAYS                 },
   { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
-  { "PRIOR",            "TK_PRIOR",        CURSOR                 },
   { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
   { "RAISE",            "TK_RAISE",        TRIGGER                },
   { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
   { "REINDEX",          "TK_REINDEX",      REINDEX                },
-  { "RELATIVE",         "TK_RELATIVE",     CURSOR                 },
   { "RENAME",           "TK_RENAME",       ALTER                  },
   { "REPLACE",          "TK_REPLACE",      CONFLICT               },
   { "RESTRICT",         "TK_RESTRICT",     FKEY                   },

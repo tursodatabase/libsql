@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.190 2005/01/30 09:17:59 danielk1977 Exp $
+** $Id: expr.c,v 1.191 2005/02/04 04:07:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -453,8 +453,8 @@ ExprList *sqlite3ExprListDup(ExprList *p){
 ** sqlite3SelectDup(), can be called. sqlite3SelectDup() is sometimes
 ** called with a NULL argument.
 */
-#if !defined(SQLITE_OMIT_CURSOR) || !defined(SQLITE_OMIT_VIEW) \
- || !defined(SQLITE_OMIT_TRIGGER) || !defined(SQLITE_OMIT_SUBQUERY)
+#if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER) \
+ || !defined(SQLITE_OMIT_SUBQUERY)
 SrcList *sqlite3SrcListDup(SrcList *p){
   SrcList *pNew;
   int i;

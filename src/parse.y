@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.163 2005/01/29 08:32:45 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.164 2005/02/04 04:07:17 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -600,9 +600,6 @@ term(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
 term(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
 term(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= BLOB(X).         {A = sqlite3Expr(@X, 0, 0, &X);}
-%ifdef SQLITE_ENABLE_CURSOR
-expr(A) ::= CURRENT OF id.
-%endif 
 expr(A) ::= REGISTER(X).     {A = sqlite3RegisterExpr(pParse, &X);}
 expr(A) ::= VARIABLE(X).     {
   Token *pToken = &X;
@@ -968,32 +965,3 @@ cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
   sqlite3AlterRenameTable(pParse,X,&Z);
 }
 %endif
-
-////////////////////////////// CURSORS //////////////////////////////////////
-%ifdef SQLITE_ENABLE_CURSOR
-cmd ::= DECLARE nm(X) CURSOR FOR select(Y).  {sqlite3CursorCreate(pParse,&X,Y);}
-cmd ::= CLOSE nm(X).                         {sqlite3CursorClose(pParse,&X);}
-
-cmd ::= FETCH direction FROM nm(N) into_opt(D).
-                                      {sqlite3Fetch(pParse,&N,D);}
-
-%type into_opt {IdList*}
-%destructor into_opt {sqlite3IdListDelete($$);}
-into_opt(A) ::= .                     {A = 0;}
-into_opt(A) ::= INTO inscollist(X).   {A = X;}
-direction ::= NEXT(X) count_opt(Y).   {pParse->fetchDir=@X; pParse->dirArg1=Y;}
-direction ::= PRIOR(X) count_opt(Y).  {pParse->fetchDir=@X; pParse->dirArg1=Y;}
-direction ::= FIRST(X) count_opt(Y).  {pParse->fetchDir=@X; pParse->dirArg1=Y;}
-direction ::= LAST(X) count_opt(Y).   {pParse->fetchDir=@X; pParse->dirArg1=Y;}
-direction ::= ABSOLUTE(X) signed(Z) comma_count_opt(Y).
-                   {pParse->fetchDir=@X; pParse->dirArg1=Y; pParse->dirArg2=Z;}
-direction ::= RELATIVE(X) signed(Z) comma_count_opt(Y).
-                   {pParse->fetchDir=@X; pParse->dirArg1=Y; pParse->dirArg2=Z;}
-
-%type count_opt {int}
-count_opt(A) ::= .          {A = 1;}
-count_opt(A) ::= signed(X). {A = X;}
-%type comma_count_opt {int}
-comma_count_opt(A) ::= .                 {A = 1;}
-comma_count_opt(A) ::= COMMA signed(X).  {A = X;}
-%endif // SQLITE_ENABLE_CURSOR

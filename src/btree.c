@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.244 2005/01/21 11:55:26 danielk1977 Exp $
+** $Id: btree.c,v 1.245 2005/02/04 04:07:17 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1951,7 +1951,6 @@ static void invalidateCursors(Btree *pBt){
 ** Print debugging information about all cursors to standard output.
 */
 void sqlite3BtreeCursorList(Btree *pBt){
-#ifndef SQLITE_OMIT_CURSOR
   BtCursor *pCur;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     MemPage *pPage = pCur->pPage;
@@ -1962,7 +1961,6 @@ void sqlite3BtreeCursorList(Btree *pBt){
        pCur->isValid ? "" : " eof"
     );
   }
-#endif
 }
 #endif
 

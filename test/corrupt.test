@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.4 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: corrupt.test,v 1.5 2005/02/04 04:07:18 danielk1977 Exp $
 
 catch {file delete -force test.db}
 catch {file delete -force test.db-journal}
@@ -81,7 +81,6 @@ for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
   seek $fd $i
   puts -nonewline $fd $junk
   close $fd
-  sqlite3 db test.db
   do_test corrupt-2.$tn.1 {
     sqlite3 db test.db
     catchsql {SELECT count(*) FROM sqlite_master}

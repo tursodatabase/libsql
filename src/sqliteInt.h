@@ -11,18 +11,10 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.365 2005/01/31 12:56:44 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.366 2005/02/04 04:07:17 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
-
-/*
-** Cursor support is turned off unless the SQLITE_ENABLE_CURSOR option
-** is defined.
-*/
-#ifndef SQLITE_ENABLE_CURSOR
-# define SQLITE_OMIT_CURSOR 1
-#endif
 
 /*
 ** These #defines should enable >2GB file support on Posix if the
@@ -328,10 +320,8 @@ typedef struct AuthContext AuthContext;
 typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
-typedef struct SqlCursor SqlCursor;
 typedef struct NameContext NameContext;
 typedef struct Fetch Fetch;
-typedef struct CursorSubst CursorSubst;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -444,10 +434,6 @@ struct sqlite3 {
   int (*xProgress)(void *);     /* The progress callback */
   void *pProgressArg;           /* Argument to the progress callback */
   int nProgressOps;             /* Number of opcodes for progress callback */
-#endif
-#ifndef SQLITE_OMIT_CURSOR
-  int nSqlCursor;               /* Number of slots in apSqlCursor[] */
-  SqlCursor **apSqlCursor;      /* Pointers to all active SQL cursors */
 #endif
   int errCode;                  /* Most recent error code (SQLITE_*) */
   u8 enc;                       /* Text encoding for this database. */
@@ -975,16 +961,6 @@ struct WhereInfo {
 };
 
 /*
-** An instance of the following structure is used to store information
-** about a single FETCH sql command.
-*/
-struct Fetch {
-  SqlCursor *pCursor;  /* Cursor used by the fetch */
-  int isBackwards;     /* Cursor moves backwards if true, forward if false */
-  int doRewind;        /* True to rewind cursor before starting */
-};
-
-/*
 ** A NameContext defines a context in which to resolve table and column
 ** names.  The context consists of a list of tables (the pSrcList) field and
 ** a list of named expression (pEList).  The named expression list may
@@ -1123,11 +1099,6 @@ struct Parse {
   int nVarExprAlloc;   /* Number of allocated slots in apVarExpr[] */
   Expr **apVarExpr;    /* Pointers to :aaa and $aaaa wildcard expressions */
   u8 explain;          /* True if the EXPLAIN flag is found on the query */
-#ifndef SQLITE_OMIT_CURSOR
-  u8 fetchDir;         /* The direction argument to the FETCH command */
-  int dirArg1;         /* First argument to the direction */
-  int dirArg2;         /* Second argument to the direction */
-#endif
   Token sErrToken;     /* The token at which the error occurred */
   Token sNameToken;    /* Token with unqualified schema object name */
   Token sLastToken;    /* The last token parsed */
@@ -1311,19 +1282,6 @@ typedef struct {
   sqlite3 *db;        /* The database being initialized */
   char **pzErrMsg;    /* Error message stored here */
 } InitData;
-
-/*
-** Each SQL cursor (a cursor created by the DECLARE ... CURSOR syntax)
-** is represented by an instance of the following structure.
-*/
-struct SqlCursor {
-  char *zName;           /* Name of this cursor */
-  int idx;               /* Index of this cursor in db->apSqlCursor[] */
-  Select *pSelect;       /* The SELECT statement that defines this cursor */
-  int nPtr;              /* Number of slots in aPtr[] */
-  sqlite3_value *aPtr;   /* Values that define the current cursor position */
-};
-
 
 /*
  * This global flag is set for performance testing of triggers. When it is set
@@ -1577,12 +1535,5 @@ void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 void sqlite3CodeSubselect(Parse *, Expr *);
 int sqlite3SelectResolve(Parse *, Select *, NameContext *);
-
-#ifndef SQLITE_OMIT_CURSOR
-void sqlite3CursorDelete(SqlCursor*);
-void sqlite3CursorCreate(Parse*, Token*, Select*);
-void sqlite3CursorClose(Parse*, Token*);
-void sqlite3Fetch(Parse*, Token*, IdList*);
-#endif /* SQLITE_OMIT_CURSOR */
 
 #endif

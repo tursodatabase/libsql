@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.24 2005/01/20 22:48:48 drh Exp $
+# $Id: capi2.test,v 1.25 2005/02/04 04:07:18 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -251,6 +251,26 @@ do_test capi2-3.18 {
 do_test capi2-3.19 {
   list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
 } {SQLITE_CONSTRAINT {t2.a may not be NULL}}
+
+do_test capi2-3.20 {
+  execsql {
+    CREATE TABLE a1(message_id, name , UNIQUE(message_id, name) );
+    INSERT INTO a1 VALUES(1, 1);
+  }
+} {}
+do_test capi2-3.21 {
+  set VM [sqlite3_prepare $DB {INSERT INTO a1 VALUES(1, 1)} -1 TAIL]
+  sqlite3_step $VM
+} {SQLITE_ERROR}
+do_test capi2-3.22 {
+  sqlite3_errcode $DB
+} {SQLITE_ERROR}
+do_test capi2-3.23 {
+  sqlite3_finalize $VM
+} {SQLITE_CONSTRAINT}
+do_test capi2-3.24 {
+  sqlite3_errcode $DB
+} {SQLITE_CONSTRAINT}
 
 # Two or more virtual machines exists at the same time.
 #
