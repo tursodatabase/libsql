@@ -1,5 +1,5 @@
-C Do\snot\suse\s"new"\sas\sa\svariable\sname\s-\ssome\scompilers\sthink\sit\sis\sa\skeyword.\s(CVS\s1787)
-D 2004-06-30T22:43:22
+C Add\sa\sCredits\ssection\sto\sthe\sversion3.html\sdocument.\s(CVS\s1788)
+D 2004-06-30T22:54:06
 F Makefile.in f5788bf4daea9b25424df5ccb529ac3438efb2b2
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -231,9 +231,9 @@ F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
-F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
+F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0b73b7a074896f45573e612992d08a22124fc485
-R f5f234e6d9fc32a1acebf966d8937fb9
+P 8a6e4ea79e5f4333fbc767832d5e55c77da204e1
+R cf1951d0f07edadbc952b3f25c1c3914
 U drh
-Z 3f1e35c1e38b1c2c127038249b9a806d
+Z 7ea747c3bbe6be9be89b1f471e32932f
