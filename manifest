@@ -1,5 +1,5 @@
-C Line\stclsqlite.so\sagainst\sthe\sstub\slibrary.\s(CVS\s273)
-D 2001-09-28T18:10:56
+C Remove\sreference\sto\sGDBM\sin\sthe\sdocumentation\sof\sthe\s"sqlite"\ncommand-line\sutility.\s(CVS\s274)
+D 2001-09-28T18:14:17
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 7179523fdf3d6e7933ec843e2352dcfc9785c700
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -108,10 +108,10 @@ F www/lang.tcl 33a74d727615ccbee8be7c8efd5876ce008c4b0e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
 F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
-F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
+F www/sqlite.tcl ea362207eee32cdd9dd594b1ec990bdb20101efe
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 1df5386a5557c1fc6a5433e9dbd23009026be369
-R 6225ec3f6335ee7954c1d6de6918fbe0
+P 7e79e91b03e21058bbae2c0aab8f3e8ce09ae7f9
+R 241095ce4074dd39044429d0144b987e
 U drh
-Z 8263c2f5969f26088267e7e476fc0b16
+Z 5497d3942cad9d16c737ee62c27c8636

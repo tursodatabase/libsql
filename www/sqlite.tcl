@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.13 2000/08/08 20:19:09 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.14 2001/09/28 18:14:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -24,12 +24,9 @@ introduction on how to use <b>sqlite</b>.
 <h2>Getting Started</h2>
 
 <p>To start the <b>sqlite</b> program, just type "sqlite" followed by
-the name of an SQLite database.  An SQLite database is really just
-a directory full of GDBM files, so the argument to the sqlite command
-should really be the name of a directory on your disk.  If that
-directory did not previously contain an SQLite database, a new one
-is created for you automatically.  If the directory did not previously
-exist, it is automatically created.  The <b>sqlite</b> program will
+the name the file that holds the SQLite database.  If the file does
+not exist, a new one is created automatically.
+The <b>sqlite</b> program will
 then prompt you to enter SQL.  Type in SQL statements (terminated by a
 semicolon), press "Enter" and the SQL will be executed.  It's as
 simple as that!</p>
