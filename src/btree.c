@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.234 2005/01/15 12:45:51 danielk1977 Exp $
+** $Id: btree.c,v 1.235 2005/01/16 08:00:01 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -643,18 +643,27 @@ static int cellSizePtr(MemPage *pPage, u8 *pCell){
   return info.nSize;
 }
 
+#ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** If pCell, part of pPage, contains a pointer to an overflow page,
-** return the overflow page number. Otherwise return 0.
+** If the cell with index iCell on page pPage contains a pointer
+** to an overflow page, insert an entry into the pointer-map
+** for the overflow page.
 */
-static Pgno ovflPagePtr(MemPage *pPage, u8 *pCell){
-  CellInfo info;
-  parseCellPtr(pPage, pCell, &info);
-  if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
-    return get4byte(&pCell[info.iOverflow]);
+static int ptrmapPutOvfl(MemPage *pPage, int iCell){
+  u8 *pCell;
+  pCell = findOverflowCell(pPage, iCell);
+  if( pCell ){
+    CellInfo info;
+    parseCellPtr(pPage, pCell, &info);
+    if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
+      Pgno ovfl = get4byte(&pCell[info.iOverflow]);
+      return ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno);
+    }
   }
-  return 0;
+  return SQLITE_OK;
 }
+#endif
+
 
 /*
 ** Do sanity checking on a page.  Throw an exception if anything is
@@ -3581,10 +3590,9 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   int szCell;
   CellInfo info;
   Btree *pBt = pPage->pBt;
-
-  u8 parentCell[64];              /* How big should this be? */
-  int parentIdx = pParent->nCell;
-  int parentSize;
+  int parentIdx = pParent->nCell;   /* pParent new divider cell index */
+  int parentSize;                   /* Size of new divider cell */
+  u8 parentCell[64];                /* Space for the new divider cell */
 
   /* Allocate a new page. Insert the overflow cell from pPage
   ** into it. Then remove the overflow cell from pPage.
@@ -3599,44 +3607,48 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   assemblePage(pNew, 1, &pCell, &szCell);
   pPage->nOverflow = 0;
 
+  /* Set the parent of the newly allocated page to pParent. */
+  pNew->pParent = pParent;
+  sqlite3pager_ref(pParent->aData);
+
   /* pPage is currently the right-child of pParent. Change this
   ** so that the right-child is the new page allocated above and
-  ** pPage is the next-to-right child. Then balance() the parent
-  ** page, in case it is now overfull.
+  ** pPage is the next-to-right child. 
   */
   assert( pPage->nCell>0 );
   parseCellPtr(pPage, findCell(pPage, pPage->nCell-1), &info);
   rc = fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, &parentSize);
   if( rc!=SQLITE_OK ){
-    return SQLITE_OK;
+    return rc;
   }
   assert( parentSize<64 );
   rc = insertCell(pParent, parentIdx, parentCell, parentSize, 0, 4);
   if( rc!=SQLITE_OK ){
-    return SQLITE_OK;
+    return rc;
   }
   put4byte(findOverflowCell(pParent,parentIdx), pPage->pgno);
   put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew);
 
-  pNew->pParent = pParent;
-  sqlite3pager_ref(pParent->aData);
-
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  /* If this is an auto-vacuum database, update the pointer map
+  ** with entries for the new page, and any pointer from the 
+  ** cell on the page to an overflow page.
+  */
   if( pBt->autoVacuum ){
     rc = ptrmapPut(pBt, pgnoNew, PTRMAP_BTREE, pParent->pgno);
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    pCell = findCell(pNew, 0);
-    parseCellPtr(pNew, pCell, &info);
-    if( info.nData>info.nLocal ){
-      Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
-      rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pgnoNew);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    rc = ptrmapPutOvfl(pNew, 0);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
   }
+#endif
 
+  /* Release the reference to the new page and balance the parent page,
+  ** in case the divider cell inserted caused it to become overfull.
+  */
   releasePage(pNew);
   return balance(pParent, 0);
 }
@@ -4090,12 +4102,9 @@ static int balance_nonroot(MemPage *pPage){
     if( pBt->autoVacuum ){
       for(k=j; k<cntNew[i]; k++){
         if( aFrom[k]==0xFF || apCopy[aFrom[k]]->pgno!=pNew->pgno ){
-          Pgno ovfl = ovflPagePtr(pNew, findCell(pNew, k-j));
-          if( ovfl ){
-            rc = ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pNew->pgno);
-            if( rc!=SQLITE_OK ){
-              goto balance_cleanup;
-            }
+          rc = ptrmapPutOvfl(pNew, k-j);
+          if( rc!=SQLITE_OK ){
+            goto balance_cleanup;
           }
         }
       }
@@ -4145,12 +4154,9 @@ static int balance_nonroot(MemPage *pPage){
       ** that the cell just inserted points to (if any).
       */
       if( pBt->autoVacuum && !leafData ){
-        Pgno ovfl = ovflPagePtr(pParent, findOverflowCell(pParent, nxDiv));
-        if( ovfl ){
-          rc = ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pParent->pgno);
-          if( rc!=SQLITE_OK ){
-            goto balance_cleanup;
-          }
+        rc = ptrmapPutOvfl(pParent, nxDiv);
+        if( rc!=SQLITE_OK ){
+          goto balance_cleanup;
         }
       }
 #endif
@@ -4290,12 +4296,9 @@ static int balance_shallower(MemPage *pPage){
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       for(i=0; i<pPage->nCell; i++){ 
-        Pgno ovfl = ovflPagePtr(pPage, findCell(pPage, i));
-        if( ovfl ){
-          rc = ptrmapPut(pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno);
-          if( rc!=SQLITE_OK ){
-            goto end_shallow_balance;
-          } 
+        rc = ptrmapPutOvfl(pPage, i);
+        if( rc!=SQLITE_OK ){
+          goto end_shallow_balance;
         }
       }
     }
@@ -4359,10 +4362,9 @@ static int balance_deeper(MemPage *pPage){
     rc = ptrmapPut(pBt, pChild->pgno, PTRMAP_BTREE, pPage->pgno);
     if( rc ) return rc;
     for(i=0; i<pChild->nCell; i++){
-      Pgno pgno = ovflPagePtr(pChild, findOverflowCell(pChild, i));
-      if( pgno ){ 
-        rc = ptrmapPut(pBt, pgno, PTRMAP_OVERFLOW1, pChild->pgno);
-        if( rc ) return rc;
+      rc = ptrmapPutOvfl(pChild, i);
+      if( rc!=SQLITE_OK ){
+        return rc;
       }
     }
   }

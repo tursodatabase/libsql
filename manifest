@@ -1,5 +1,5 @@
-C Enhance\sthe\sperformance\sof\sauto-vacuum\sdatabases\sby\sreducing\sthe\snumber\sof\spointer-map\sentries\swritten\sduring\stree\sbalancing.\sAlso\sfix\sbugs\sin\sbalance_quick().\s(CVS\s2216)
-D 2005-01-15T12:45:51
+C Move\sduplicate\scode\sto\supdate\spointer-map\swrt\soverflow\spages\sinto\sa\sfunction.\s(CVS\s2217)
+D 2005-01-16T08:00:01
 F Makefile.in 6ce51dde6a8fe82fc12f20dec750572f6a19f56a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 426032061fb39b1bfcbf1d58915d5a6346bb4e22
+F src/btree.c a007420eaced555faf95bba82260a6581a53ce24
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
 F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
@@ -269,7 +269,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 92f9d2b2f480fccfa6e8b70a1d19058b92a4ea8f
-R 0a0af1f143c2a17b3aa82ad2aba89b86
+P 0ae29538ccccfc237904cbcfb4507074db0f5905
+R 983f36f11ba46bcdb0dbd6d8fd3e81a2
 U danielk1977
-Z 0cdc37c80cb8604b1387cf29891ba583
+Z ca69fe793079786f4174a1ca82437b0c
