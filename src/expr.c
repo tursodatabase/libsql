@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.136 2004/06/06 12:41:50 danielk1977 Exp $
+** $Id: expr.c,v 1.137 2004/06/09 09:55:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -53,6 +53,20 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3ExprAffinity(pExpr->pSelect->pEList->a[0].pExpr);
   }
   return pExpr->affinity;
+}
+
+/*
+** Return the default collation sequence for the expression pExpr. If
+** there is no default collation type, return 0.
+*/
+CollSeq *sqlite3ExprCollSeq(Expr *pExpr){
+  if( pExpr ){
+    if( pExpr->pColl ) return pExpr->pColl;
+    if( pExpr->op==TK_AS ){
+      return sqlite3ExprCollSeq(pExpr->pLeft);
+    }
+  }
+  return 0;
 }
 
 /*
@@ -132,6 +146,23 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
 static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
   char aff = sqlite3ExprAffinity(pExpr2);
   return (((int)sqlite3CompareAffinity(pExpr1, aff))<<8)+(jumpIfNull?1:0);
+}
+
+/*
+** Return a pointer to the collation sequence that should be used by
+** a binary comparison operator comparing pLeft and pRight.
+**
+** If the left hand expression has a collating sequence type, then it is
+** used. Otherwise the collation sequence for the right hand expression
+** is used, or the default (BINARY) if neither expression has a collating
+** type.
+*/
+static CollSeq* binaryCompareCollSeq(Expr *pLeft, Expr *pRight){
+  CollSeq *pColl = sqlite3ExprCollSeq(pLeft);
+  if( !pColl ){
+    pColl = sqlite3ExprCollSeq(pRight);
+  }
+  return pColl;
 }
 
 /*
@@ -588,6 +619,7 @@ static int lookupName(
         /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
         pExpr->iColumn = j==pTab->iPKey ? -1 : j;
         pExpr->affinity = pTab->aCol[j].affinity;
+        pExpr->pColl = pTab->aCol[j].pColl;
         break;
       }
     }
@@ -620,6 +652,7 @@ static int lookupName(
           cnt++;
           pExpr->iColumn = j==pTab->iPKey ? -1 : j;
           pExpr->affinity = pTab->aCol[j].affinity;
+          pExpr->pColl = pTab->aCol[j].pColl;
           break;
         }
       }
@@ -798,6 +831,7 @@ int sqlite3ExprResolveIds(
       char affinity;
       Vdbe *v = sqlite3GetVdbe(pParse);
       KeyInfo keyInfo;
+      int addr;        /* Address of OP_OpenTemp instruction */
 
       if( v==0 ) return 1;
       if( sqlite3ExprResolveIds(pParse, pSrcList, pEList, pExpr->pLeft) ){
@@ -819,11 +853,9 @@ int sqlite3ExprResolveIds(
       ** is used.
       */
       pExpr->iTable = pParse->nTab++;
+      addr = sqlite3VdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 0);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
-      keyInfo.aColl[0] = pParse->db->pDfltColl;
-      sqlite3VdbeOp3(v, OP_OpenTemp, pExpr->iTable, 0, \
-           (char*)&keyInfo, P3_KEYINFO);
       sqlite3VdbeAddOp(v, OP_SetNumColumns, pExpr->iTable, 1);
 
       if( pExpr->pSelect ){
@@ -835,6 +867,10 @@ int sqlite3ExprResolveIds(
         int iParm = pExpr->iTable +  (((int)affinity)<<16);
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0, 0);
+        if( pExpr->pSelect->pEList && pExpr->pSelect->pEList->nExpr>0 ){ 
+          keyInfo.aColl[0] = binaryCompareCollSeq(pExpr->pLeft,
+              pExpr->pSelect->pEList->a[0].pExpr);
+        }
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
         **
@@ -849,6 +885,7 @@ int sqlite3ExprResolveIds(
           affinity = SQLITE_AFF_NUMERIC;
         }
         affStr = sqlite3AffinityString(affinity);
+        keyInfo.aColl[0] = pExpr->pLeft->pColl;
 
         /* Loop through each expression in <exprlist>. */
         for(i=0; i<pExpr->pList->nExpr; i++){
@@ -871,6 +908,8 @@ int sqlite3ExprResolveIds(
           sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
         }
       }
+      sqlite3VdbeChangeP3(v, addr, (void *)&keyInfo, P3_KEYINFO);
+
       break;
     }
 
@@ -1002,8 +1041,9 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         nErr = sqlite3ExprCheck(pParse, pExpr->pList->a[i].pExpr,
                                allowAgg && !is_agg, pIsAgg);
       }
-      /** TODO:  Compute pExpr->affinity based on the expected return
-      ** type of the function */
+      /* FIX ME:  Compute pExpr->affinity based on the expected return
+      ** type of the function 
+      */
     }
     default: {
       if( pExpr->pLeft ){
@@ -1155,9 +1195,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_NE:
     case TK_EQ: {
       int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, 0);
+      CollSeq *p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pRight);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, p1, 0);
+      sqlite3VdbeOp3(v, op, p1, 0, (void *)p3, P3_COLLSEQ);
       break;
     }
     case TK_AND:
@@ -1279,13 +1320,19 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_BETWEEN: {
+      int p1;
+      CollSeq *p3;
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       sqlite3ExprCode(pParse, pExpr->pList->a[0].pExpr);
-      sqlite3VdbeAddOp(v, OP_Ge, 0, 0);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[0].pExpr, 0);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[0].pExpr);
+      sqlite3VdbeOp3(v, OP_Ge, p1, 0, (void *)p3, P3_COLLSEQ);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3ExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqlite3VdbeAddOp(v, OP_Le, 0, 0);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[1].pExpr, 0);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[1].pExpr);
+      sqlite3VdbeOp3(v, OP_Le, p1, 0, (void *)p3, P3_COLLSEQ);
       sqlite3VdbeAddOp(v, OP_And, 0, 0);
       break;
     }
@@ -1312,8 +1359,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       for(i=0; i<nExpr; i=i+2){
         sqlite3ExprCode(pParse, pExpr->pList->a[i].pExpr);
         if( pExpr->pLeft ){
+          int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[i].pExpr, 1);
+          CollSeq *p3 = binaryCompareCollSeq(pExpr->pLeft, 
+              pExpr->pList->a[i].pExpr);
           sqlite3VdbeAddOp(v, OP_Dup, 1, 1);
-          jumpInst = sqlite3VdbeAddOp(v, OP_Ne, 1, 0);
+          jumpInst = sqlite3VdbeOp3(v, OP_Ne, p1, 0, (void *)p3, P3_COLLSEQ);
           sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
         }else{
           jumpInst = sqlite3VdbeAddOp(v, OP_IfNot, 1, 0);
@@ -1426,9 +1476,10 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_NE:
     case TK_EQ: {
       int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, jumpIfNull);
+      CollSeq *p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pRight);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, p1, dest);
+      sqlite3VdbeOp3(v, op, p1, dest, (void *)p3, P3_COLLSEQ);
       break;
     }
     case TK_ISNULL:
@@ -1438,13 +1489,27 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_BETWEEN: {
+      /* The expression "x BETWEEN y AND z" is implemented as:
+      **
+      ** 1 IF (x < y) GOTO 3
+      ** 2 IF (x <= z) GOTO <dest>
+      ** 3 ...
+      */
       int addr;
+      int p1;
+      CollSeq *p3;
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       sqlite3ExprCode(pParse, pExpr->pList->a[0].pExpr);
-      addr = sqlite3VdbeAddOp(v, OP_Lt, !jumpIfNull, 0);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[0].pExpr, !jumpIfNull);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[0].pExpr);
+      addr = sqlite3VdbeOp3(v, OP_Lt, p1, 0, (void *)p3, P3_COLLSEQ);
+
       sqlite3ExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqlite3VdbeAddOp(v, OP_Le, jumpIfNull, dest);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[1].pExpr, jumpIfNull);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[1].pExpr);
+      sqlite3VdbeOp3(v, OP_Le, p1, dest, (void *)p3, P3_COLLSEQ);
+
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
       sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
@@ -1505,9 +1570,10 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_NE:
     case TK_EQ: {
       int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, jumpIfNull);
+      CollSeq *p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pRight);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, p1, dest);
+      sqlite3VdbeOp3(v, op, p1, dest, (void *)p3, P3_COLLSEQ);
       break;
     }
     case TK_ISNULL:
@@ -1516,33 +1582,29 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3VdbeAddOp(v, op, 1, dest);
       break;
     }
-#if 0
-    case TK_IN: {
-      int addr;
-      sqlite3ExprCode(pParse, pExpr->pLeft);
-      addr = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+3);
-      sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, jumpIfNull ? dest : addr+4);
-      if( pExpr->pSelect ){
-        sqlite3VdbeAddOp(v, OP_NotFound, pExpr->iTable, dest);
-      }else{
-        sqlite3VdbeAddOp(v, OP_SetNotFound, pExpr->iTable, dest);
-      }
-      break;
-    }
-#endif
     case TK_BETWEEN: {
+      /* The expression is "x BETWEEN y AND z". It is implemented as:
+      **
+      ** 1 IF (x >= y) GOTO 3
+      ** 2 GOTO <dest>
+      ** 3 IF (x > z) GOTO <dest>
+      */
       int addr;
+      int p1;
+      CollSeq *p3;
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       sqlite3ExprCode(pParse, pExpr->pList->a[0].pExpr);
       addr = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_Ge, !jumpIfNull, addr+3);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[0].pExpr, !jumpIfNull);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[0].pExpr);
+      sqlite3VdbeOp3(v, OP_Ge, p1, addr+3, (void *)p3, P3_COLLSEQ);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, dest);
       sqlite3ExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqlite3VdbeAddOp(v, OP_Gt, jumpIfNull, dest);
+      p1 = binaryCompareP1(pExpr->pLeft, pExpr->pList->a[1].pExpr, jumpIfNull);
+      p3 = binaryCompareCollSeq(pExpr->pLeft, pExpr->pList->a[1].pExpr);
+      sqlite3VdbeOp3(v, OP_Gt, p1, dest, (void *)p3, P3_COLLSEQ);
       break;
     }
     default: {

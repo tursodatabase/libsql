@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.360 2004/06/09 00:48:14 drh Exp $
+** $Id: vdbe.c,v 1.361 2004/06/09 09:55:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1510,25 +1510,25 @@ mismatch:
 /* Opcode: Lt P1 P2 P3
 **
 ** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the task is less than the top of the stack.
+** the 2nd element down on the stack is less than the top of the stack.
 ** See the Eq opcode for additional information.
 */
 /* Opcode: Le P1 P2 P3
 **
 ** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the task is less than or equal to the
+** the 2nd element down on the stack is less than or equal to the
 ** top of the stack.  See the Eq opcode for additional information.
 */
 /* Opcode: Gt P1 P2 P3
 **
 ** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the task is greater than the top of the stack.
+** the 2nd element down on the stack is greater than the top of the stack.
 ** See the Eq opcode for additional information.
 */
 /* Opcode: Ge P1 P2 P3
 **
 ** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the task is greater than or equal to the
+** the 2nd element down on the stack is greater than or equal to the
 ** top of the stack.  See the Eq opcode for additional information.
 */
 case OP_Eq:

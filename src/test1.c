@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.71 2004/06/08 00:02:35 danielk1977 Exp $
+** $Id: test1.c,v 1.72 2004/06/09 09:55:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1551,47 +1551,6 @@ static int test_data_count(
 }
 
 /*
-** This is a collating function named "REVERSE" which sorts text
-** in reverse order.
-*/
-static int reverseCollatingFunc(
-  void *NotUsed,
-  int nKey1, const void *pKey1,
-  int nKey2, const void *pKey2
-){
-  int rc, n;
-  n = nKey1<nKey2 ? nKey1 : nKey2;
-  rc = memcmp(pKey1, pKey2, n);
-  if( rc==0 ){
-    rc = nKey1 - nKey2;
-  }
-  return -rc;
-}
-
-/*
-** Usage: add_reverse_collating_func DB 
-**
-** This routine adds a collation named "REVERSE" to database given.
-** REVERSE is used for testing only.
-*/
-static int reverse_collfunc(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3 *db;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  sqlite3ChangeCollatingFunction(db, "REVERSE", 7, 0, reverseCollatingFunc);
-  return TCL_OK;
-}
-
-/*
 ** Usage: sqlite3_column_text STMT column
 **
 ** Usage: sqlite3_column_decltype STMT column
@@ -1880,7 +1839,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
      { "sqlite3_open",                  test_open          ,0 },
      { "sqlite3_open16",                test_open16        ,0 },
-     { "add_reverse_collating_func",    reverse_collfunc   ,0 },
 
      { "sqlite3_prepare",               test_prepare       ,0 },
      { "sqlite3_prepare16",             test_prepare16     ,0 },

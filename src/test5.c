@@ -15,9 +15,10 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.8 2004/06/04 06:22:02 danielk1977 Exp $
+** $Id: test5.c,v 1.9 2004/06/09 09:55:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
+#include "vdbeInt.h"
 #include "os.h"         /* to get SQLITE_BIGENDIAN */
 #include "tcl.h"
 #include <stdlib.h>
@@ -234,6 +235,52 @@ static int binarize(
   return TCL_OK;
 }
 
+/*
+** Usage: test_value_overhead <repeat-count> <do-calls>.
+**
+** This routine is used to test the overhead of calls to
+** sqlite3_value_text(), on a value that contains a UTF-8 string. The idea
+** is to figure out whether or not it is a problem to use sqlite3_value
+** structures with collation sequence functions.
+**
+** If <do-calls> is 0, then the calls to sqlite3_value_text() are not
+** actually made.
+*/
+static int test_value_overhead(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int do_calls;
+  int repeat_count;
+  int i;
+  Mem val;
+  const char *zVal;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", 0);
+    return TCL_ERROR;
+  }
+
+  if( Tcl_GetIntFromObj(interp, objv[1], &repeat_count) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &do_calls) ) return TCL_ERROR;
+
+  val.flags = MEM_Str|MEM_Term|MEM_Static;
+  val.z = "hello world";
+  val.type = SQLITE_TEXT;
+  val.enc = TEXT_Utf8;
+
+  for(i=0; i<repeat_count; i++){
+    if( do_calls ){
+      zVal = sqlite3_value_text(&val);
+    }
+  }
+
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -249,11 +296,12 @@ int Sqlitetest5_Init(Tcl_Interp *interp){
     { "sqlite_utf16to16le",      (Tcl_ObjCmdProc*)sqlite_utf16to16le },
     { "sqlite_utf16to16be",      (Tcl_ObjCmdProc*)sqlite_utf16to16be },
     { "binarize",                (Tcl_ObjCmdProc*)binarize },
+    { "test_value_overhead",     (Tcl_ObjCmdProc*)test_value_overhead },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
-
-  return TCL_OK;
+  return SQLITE_OK;
 }
+

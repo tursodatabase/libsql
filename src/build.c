@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.210 2004/06/09 00:48:12 drh Exp $
+** $Id: build.c,v 1.211 2004/06/09 09:55:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -784,7 +784,7 @@ void sqlite3AddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 ** If the key is not an INTEGER PRIMARY KEY, then create a unique
 ** index for the key.  No index is created for INTEGER PRIMARY KEYs.
 */
-void sqlite3AddPrimaryKey(Parse *pParse, IdList *pList, int onError){
+void sqlite3AddPrimaryKey(Parse *pParse, ExprList *pList, int onError){
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
   int iCol = -1, i;
@@ -799,7 +799,7 @@ void sqlite3AddPrimaryKey(Parse *pParse, IdList *pList, int onError){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].isPrimKey = 1;
   }else{
-    for(i=0; i<pList->nId; i++){
+    for(i=0; i<pList->nExpr; i++){
       for(iCol=0; iCol<pTab->nCol; iCol++){
         if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ){
           break;
@@ -807,7 +807,7 @@ void sqlite3AddPrimaryKey(Parse *pParse, IdList *pList, int onError){
       }
       if( iCol<pTab->nCol ) pTab->aCol[iCol].isPrimKey = 1;
     }
-    if( pList->nId>1 ) iCol = -1;
+    if( pList->nExpr>1 ) iCol = -1;
   }
   if( iCol>=0 && iCol<pTab->nCol ){
     zType = pTab->aCol[iCol].zType;
@@ -821,25 +821,8 @@ void sqlite3AddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   }
 
 primary_key_exit:
-  sqlite3IdListDelete(pList);
+  sqlite3ExprListDelete(pList);
   return;
-}
-
-/*
-** Return a pointer to CollSeq given the name of a collating sequence.
-** If the collating sequence did not previously exist, create it but
-** assign it an NULL comparison function.
-*/
-CollSeq *sqlite3CollateType(Parse *pParse, const char *zType, int nType){
-  CollSeq *pColl;
-  sqlite *db = pParse->db;
-
-  pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
-  if( pColl==0 ){
-    sqlite3ChangeCollatingFunction(db, zType, nType, 0, 0);
-    pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
-  }
-  return pColl;
 }
 
 /*
@@ -848,51 +831,73 @@ CollSeq *sqlite3CollateType(Parse *pParse, const char *zType, int nType){
 */
 void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
   Table *p;
+  Index *pIdx;
   CollSeq *pColl;
-  sqlite *db = pParse->db;
+  int i;
 
   if( (p = pParse->pNewTable)==0 ) return;
-  pColl = sqlite3HashFind(&db->aCollSeq, zType, nType);
-  if( pColl==0 ){
-    pColl = sqlite3ChangeCollatingFunction(db, zType, nType, 0, 0);
-  }
-  if( pColl ){
-    p->aCol[p->nCol-1].pColl = pColl;
+  i = p->nCol-1;
+
+  pColl = sqlite3LocateCollSeq(pParse, zType, nType);
+  p->aCol[i].pColl = pColl;
+
+  /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
+  ** then an index may have been created on this column before the
+  ** collation type was added. Correct this if it is the case.
+  */
+  for(pIdx = p->pIndex; pIdx; pIdx=pIdx->pNext){
+    assert( pIdx->nColumn==1 );
+    if( pIdx->aiColumn[0]==i ) pIdx->keyInfo.aColl[0] = pColl;
   }
 }
 
 /*
-** Create or modify a collating sequence entry in the sqlite.aCollSeq
-** table.
+** Locate and return an entry from the db.aCollSeq hash table. If the entry
+** specified by zName and nName is not found and parameter 'create' is
+** true, then create a new entry.
 **
-** Once an entry is added to the sqlite.aCollSeq table, it can never
-** be removed, though is comparison function or user data can be changed.
+** FIX ME: For now, return NULL if create is not true and the entry is not
+** found. But this needs to change to call the collation factory.
 **
-** Return a pointer to the collating function that was created or modified.
+** FIX ME: If we have a UTF-8 version of the collation function, and a
+** UTF-16 version would be better, should the collation factory be called?
+** If so should a flag be set to say that we already requested such a
+** function and couldn't get one?
 */
-CollSeq *sqlite3ChangeCollatingFunction(
-  sqlite *db,             /* Database into which to insert the collation */
-  const char *zName,      /* Name of the collation */
-  int nName,              /* Number of characters in zName */
-  void *pUser,            /* First argument to xCmp */
-  int (*xCmp)(void*,int,const void*,int,const void*) /* Comparison function */
+CollSeq *sqlite3FindCollSeq(
+  sqlite *db, 
+  const char *zName, 
+  int nName,
+  int create
 ){
   CollSeq *pColl;
-
+  if( nName<0 ) nName = strlen(zName);
   pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
-  if( pColl==0 ){
-    pColl = sqliteMallocRaw( sizeof(*pColl) + nName + 1 );
-    if( pColl==0 ){
-      return 0;
+  if( 0==pColl && create ){
+    pColl = sqliteMalloc( sizeof(*pColl) + nName + 1 );
+    if( pColl ){
+      pColl->zName = (char*)&pColl[1];
+      memcpy(pColl->zName, zName, nName+1);
+      sqlite3HashInsert(&db->aCollSeq, pColl->zName, nName, pColl);
     }
-    pColl->zName = (char*)&pColl[1];
-    memcpy(pColl->zName, zName, nName+1);
-    sqlite3HashInsert(&db->aCollSeq, pColl->zName, nName, pColl);
   }
-  pColl->pUser = pUser;
-  pColl->xCmp = xCmp;
   return pColl;
 }
+
+CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
+  CollSeq *pColl = sqlite3FindCollSeq(pParse->db, zName, nName, 0);
+  if( !pColl ){
+    if( pParse->nErr==0 ){
+      sqlite3SetNString(&pParse->zErrMsg, 
+          "no such collation sequence: ", -1, 
+          zName, nName, 0);
+    }
+    pParse->nErr++;
+  }
+  return pColl;
+}
+
+
 
 /*
 ** Scan the column type name zType (length nType) and return the
@@ -1540,9 +1545,9 @@ exit_drop_table:
 */
 void sqlite3CreateForeignKey(
   Parse *pParse,       /* Parsing context */
-  IdList *pFromCol,    /* Columns in this table that point to other table */
+  ExprList *pFromCol,  /* Columns in this table that point to other table */
   Token *pTo,          /* Name of the other table */
-  IdList *pToCol,      /* Columns in the other table */
+  ExprList *pToCol,    /* Columns in the other table */
   int flags            /* Conflict resolution algorithms. */
 ){
   Table *p = pParse->pNewTable;
@@ -1557,24 +1562,24 @@ void sqlite3CreateForeignKey(
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
     if( iCol<0 ) goto fk_end;
-    if( pToCol && pToCol->nId!=1 ){
+    if( pToCol && pToCol->nExpr!=1 ){
       sqlite3ErrorMsg(pParse, "foreign key on %s"
          " should reference only one column of table %T",
          p->aCol[iCol].zName, pTo);
       goto fk_end;
     }
     nCol = 1;
-  }else if( pToCol && pToCol->nId!=pFromCol->nId ){
+  }else if( pToCol && pToCol->nExpr!=pFromCol->nExpr ){
     sqlite3ErrorMsg(pParse,
         "number of columns in foreign key does not match the number of "
         "columns in the referenced table");
     goto fk_end;
   }else{
-    nCol = pFromCol->nId;
+    nCol = pFromCol->nExpr;
   }
   nByte = sizeof(*pFKey) + nCol*sizeof(pFKey->aCol[0]) + pTo->n + 1;
   if( pToCol ){
-    for(i=0; i<pToCol->nId; i++){
+    for(i=0; i<pToCol->nExpr; i++){
       nByte += strlen(pToCol->a[i].zName) + 1;
     }
   }
@@ -1631,8 +1636,8 @@ void sqlite3CreateForeignKey(
 
 fk_end:
   sqliteFree(pFKey);
-  sqlite3IdListDelete(pFromCol);
-  sqlite3IdListDelete(pToCol);
+  sqlite3ExprListDelete(pFromCol);
+  sqlite3ExprListDelete(pToCol);
 }
 
 /*
@@ -1665,8 +1670,8 @@ void sqlite3CreateIndex(
   Parse *pParse,   /* All information about this parse */
   Token *pName1,   /* First part of index name. May be NULL */
   Token *pName2,   /* Second part of index name. May be NULL */
-  SrcList *pTblName, /* Name of the table to index. Use pParse->pNewTable if 0 */
-  IdList *pList,   /* A list of columns to be indexed */
+  SrcList *pTblName,  /* Table to index. Use pParse->pNewTable if 0 */
+  ExprList *pList,   /* A list of columns to be indexed */
   int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
@@ -1794,7 +1799,7 @@ void sqlite3CreateIndex(
   if( pList==0 ){
     nullId.z = pTab->aCol[pTab->nCol-1].zName;
     nullId.n = strlen(nullId.z);
-    pList = sqlite3IdListAppend(0, &nullId);
+    pList = sqlite3ExprListAppend(0, 0, &nullId);
     if( pList==0 ) goto exit_create_index;
   }
 
@@ -1802,13 +1807,13 @@ void sqlite3CreateIndex(
   ** Allocate the index structure. 
   */
   pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 +
-                        (sizeof(int) + sizeof(CollSeq*))*pList->nId );
+                        (sizeof(int) + sizeof(CollSeq*))*pList->nExpr );
   if( pIndex==0 ) goto exit_create_index;
-  pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nId];
-  pIndex->zName = (char*)&pIndex->aiColumn[pList->nId];
+  pIndex->aiColumn = (int*)&pIndex->keyInfo.aColl[pList->nExpr];
+  pIndex->zName = (char*)&pIndex->aiColumn[pList->nExpr];
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
-  pIndex->nColumn = pList->nId;
+  pIndex->nColumn = pList->nExpr;
   pIndex->onError = onError;
   pIndex->autoIndex = pName==0;
   pIndex->iDb = iDb;
@@ -1817,7 +1822,7 @@ void sqlite3CreateIndex(
   ** load the column indices into the Index structure.  Report an error
   ** if any column is not found.
   */
-  for(i=0; i<pList->nId; i++){
+  for(i=0; i<pList->nExpr; i++){
     for(j=0; j<pTab->nCol; j++){
       if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[j].zName)==0 ) break;
     }
@@ -1828,9 +1833,15 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
+    if( pList->a[i].pExpr ){
+      assert( pList->a[i].pExpr->pColl );
+      pIndex->keyInfo.aColl[i] = pList->a[i].pExpr->pColl;
+    }else{
+      pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
+    }
+    assert( pIndex->keyInfo.aColl[i] );
   }
-  pIndex->keyInfo.nField = pList->nId;
+  pIndex->keyInfo.nField = pList->nExpr;
 
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
@@ -1915,7 +1926,11 @@ void sqlite3CreateIndex(
     }
     sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     if( pStart && pEnd ){
-      sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", P3_STATIC);
+      if( onError==OE_None ){
+        sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", P3_STATIC);
+      }else{
+        sqlite3VdbeChangeP3(v, -1, "CREATE UNIQUE INDEX ", P3_STATIC);
+      }
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       n = Addr(pEnd->z) - Addr(pName->z) + 1;
       sqlite3VdbeChangeP3(v, -1, pName->z, n);
@@ -1950,7 +1965,7 @@ void sqlite3CreateIndex(
 
   /* Clean up before exiting */
 exit_create_index:
-  sqlite3IdListDelete(pList);
+  sqlite3ExprListDelete(pList);
   /* sqlite3SrcListDelete(pTable); */
   sqliteFree(zName);
   return;

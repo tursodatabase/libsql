@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.126 2004/06/09 00:48:13 drh Exp $
+** @(#) $Id: parse.y,v 1.127 2004/06/09 09:55:18 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -423,7 +423,7 @@ on_opt(N) ::= .             {N = 0;}
 
 %type using_opt {IdList*}
 %destructor using_opt {sqlite3IdListDelete($$);}
-using_opt(U) ::= USING LP idxlist(L) RP.  {U = L;}
+using_opt(U) ::= USING LP inscollist(L) RP.  {U = L;}
 using_opt(U) ::= .                        {U = 0;}
 
 
@@ -741,17 +741,32 @@ cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
 uniqueflag(A) ::= UNIQUE.  { A = OE_Abort; }
 uniqueflag(A) ::= .        { A = OE_None; }
 
-%type idxlist {IdList*}
-%destructor idxlist {sqlite3IdListDelete($$);}
-%type idxlist_opt {IdList*}
-%destructor idxlist_opt {sqlite3IdListDelete($$);}
+%type idxlist {ExprList*}
+%destructor idxlist {sqlite3ExprListDelete($$);}
+%type idxlist_opt {ExprList*}
+%destructor idxlist_opt {sqlite3ExprListDelete($$);}
 %type idxitem {Token}
 
 idxlist_opt(A) ::= .                         {A = 0;}
 idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
-idxlist(A) ::= idxlist(X) COMMA idxitem(Y).  {A = sqlite3IdListAppend(X,&Y);}
-idxlist(A) ::= idxitem(Y).                   {A = sqlite3IdListAppend(0,&Y);}
-idxitem(A) ::= nm(X) sortorder.              {A = X;}
+idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder.  {
+  Expr *p = 0;
+  if( C.n>0 ){
+    p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
+    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, C.z, C.n);
+  }
+  A = sqlite3ExprListAppend(X, p, &Y);
+}
+idxlist(A) ::= idxitem(Y) collate(C) sortorder. {
+  Expr *p = 0;
+  if( C.n>0 ){
+    p = sqlite3Expr(TK_COLUMN, 0, 0, 0);
+    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, C.z, C.n);
+  }
+  A = sqlite3ExprListAppend(0, p, &Y);
+}
+idxitem(A) ::= nm(X).              {A = X;}
+
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //

@@ -427,12 +427,41 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     if( (f2 & MEM_Str)==0 ){
       return -1;
     }
-    if( pColl && pColl->xCmp ){
-      return pColl->xCmp(pColl->pUser, pMem1->n, pMem1->z, pMem2->n, pMem2->z);
-    }else{
-      /* If no collating sequence is defined, fall through into the
-      ** blob case below and use memcmp() for the comparison. */
+
+    assert( pMem1->enc==pMem2->enc );
+    assert( pMem1->enc==TEXT_Utf8 || 
+            pMem1->enc==TEXT_Utf16le || pMem1->enc==TEXT_Utf16be );
+
+    /* FIX ME: This may fail if the collation sequence is deleted after
+    ** this vdbe program is compiled. We cannot just use BINARY in this
+    ** case as this may lead to a segfault caused by traversing an index
+    ** table incorrectly.  We need to return an error to the user in this
+    ** case.
+    */
+    assert( !pColl || (pColl->xCmp || pColl->xCmp16) );
+
+    if( pColl ){
+      if( (pMem1->enc==TEXT_Utf8 && pColl->xCmp) || !pColl->xCmp16 ){
+        return pColl->xCmp(
+          pColl->pUser,
+          sqlite3_value_bytes((sqlite3_value *)pMem1),
+          sqlite3_value_text((sqlite3_value *)pMem1),
+          sqlite3_value_bytes((sqlite3_value *)pMem2),
+          sqlite3_value_text((sqlite3_value *)pMem2)
+        );
+      }else{
+        return pColl->xCmp16(
+          pColl->pUser,
+          sqlite3_value_bytes16((sqlite3_value *)pMem1),
+          sqlite3_value_text16((sqlite3_value *)pMem1),
+          sqlite3_value_bytes16((sqlite3_value *)pMem2),
+          sqlite3_value_text16((sqlite3_value *)pMem2)
+        );
+      }
     }
+    /* If a NULL pointer was passed as the collate function, fall through
+    ** to the blob case and use memcmp().
+    */
   }
  
   /* Both values must be blobs.  Compare using memcmp().

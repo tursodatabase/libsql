@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2001 September 15.
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -13,10 +13,23 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.25 2004/05/31 08:26:49 danielk1977 Exp $
+# $Id: misc1.test,v 1.26 2004/06/09 09:55:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Mimic the SQLite 2 collation type NUMERIC.
+db collate numeric numeric_collate
+proc numeric_collate {lhs rhs} {
+  if {$lhs == $rhs} {return 0} 
+  return [expr ($lhs>$rhs)?1:-1]
+}
+
+# Mimic the SQLite 2 collation type TEXT.
+db collate text text_collate
+proc numeric_collate {lhs rhs} {
+  return [string compare $lhs $rhs]
+}
 
 # Test the creation and use of tables that have a large number
 # of columns.
@@ -381,11 +394,14 @@ do_test misc1-12.9 {
 # identifiers can be used as a collating sequence.  Collation is by text
 # if the identifier contains "text", "blob", or "clob" and is numeric
 # otherwise.
-do_test misc1-12.10 {
-  catchsql {
-    SELECT * FROM t6 ORDER BY a COLLATE unknown;
-  }
-} {0 {0 0.0 y 0}}
+#
+# Update: In v3, it is an error again.
+#
+#do_test misc1-12.10 {
+#  catchsql {
+#    SELECT * FROM t6 ORDER BY a COLLATE unknown;
+#  }
+#} {0 {0 0.0 y 0}}
 do_test misc1-12.11 {
   execsql {
     CREATE TABLE t8(x TEXT COLLATE numeric, y INTEGER COLLATE text, z);

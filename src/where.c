@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.102 2004/06/09 00:48:15 drh Exp $
+** $Id: where.c,v 1.103 2004/06/09 09:55:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -208,6 +208,7 @@ static void exprAnalyze(ExprMaskSet *pMaskSet, ExprInfo *pInfo){
 ** set to 0 if the ORDER BY clause is all ASC.
 */
 static Index *findSortingIndex(
+  sqlite *db,
   Table *pTab,            /* The table to be sorted */
   int base,               /* Cursor number for pTab */
   ExprList *pOrderBy,     /* The ORDER BY clause */
@@ -230,10 +231,6 @@ static Index *findSortingIndex(
       ** DESC or ASC.  Indices cannot be used on a mixture. */
       return 0;
     }
-    if( pOrderBy->a[i].zName!=0 ){
-      /* Do not sort by index if there is a COLLATE clause */
-      return 0;
-    }
     p = pOrderBy->a[i].pExpr;
     if( p->op!=TK_COLUMN || p->iTable!=base ){
       /* Can not use an index sort on anything that is not a column in the
@@ -241,7 +238,7 @@ static Index *findSortingIndex(
       return 0;
     }
   }
-  
+
   /* If we get this far, it means the ORDER BY clause consists only of
   ** ascending columns in the left-most table of the FROM clause.  Now
   ** check for a matching index.
@@ -251,12 +248,23 @@ static Index *findSortingIndex(
     int nExpr = pOrderBy->nExpr;
     if( pIdx->nColumn < nEqCol || pIdx->nColumn < nExpr ) continue;
     for(i=j=0; i<nEqCol; i++){
+      CollSeq *pColl = sqlite3ExprCollSeq(pOrderBy->a[j].pExpr);
+      if( !pColl ) pColl = db->pDfltColl;
       if( pPreferredIdx->aiColumn[i]!=pIdx->aiColumn[i] ) break;
-      if( j<nExpr && pOrderBy->a[j].pExpr->iColumn==pIdx->aiColumn[i] ){ j++; }
+      if( pPreferredIdx->keyInfo.aColl[i]!=pIdx->keyInfo.aColl[i] ) break;
+      if( j<nExpr && 
+          pOrderBy->a[j].pExpr->iColumn==pIdx->aiColumn[i] &&
+          pColl==pIdx->keyInfo.aColl[i]
+      ){ 
+        j++; 
+      }
     }
     if( i<nEqCol ) continue;
     for(i=0; i+j<nExpr; i++){
-      if( pOrderBy->a[i+j].pExpr->iColumn!=pIdx->aiColumn[i+nEqCol] ) break;
+      CollSeq *pColl = sqlite3ExprCollSeq(pOrderBy->a[i+j].pExpr);
+      if( !pColl ) pColl = db->pDfltColl;
+      if( pOrderBy->a[i+j].pExpr->iColumn!=pIdx->aiColumn[i+nEqCol] ||
+          pColl!=pIdx->keyInfo.aColl[i+nEqCol] ) break;
     }
     if( i+j>=nExpr ){
       pMatch = pIdx;
@@ -532,14 +540,24 @@ WhereInfo *sqlite3WhereBegin(
 
       if( pIdx->nColumn>32 ) continue;  /* Ignore indices too many columns */
       for(j=0; j<nExpr; j++){
+        CollSeq *pColl = sqlite3ExprCollSeq(aExpr[j].p->pLeft);
+        if( !pColl && aExpr[j].p->pRight ){
+          pColl = sqlite3ExprCollSeq(aExpr[j].p->pRight);
+        }
+        if( !pColl ){
+          pColl = pParse->db->pDfltColl;
+        }
         if( aExpr[j].idxLeft==iCur 
              && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
           int iColumn = aExpr[j].p->pLeft->iColumn;
           int k;
           char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
           for(k=0; k<pIdx->nColumn; k++){
-            if( pIdx->aiColumn[k]==iColumn 
-                && sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ){
+            /* If the collating sequences or affinities don't match, 
+            ** ignore this index.  */
+            if( pColl!=pIdx->keyInfo.aColl[k] ) continue;
+            if( !sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ) continue;
+            if( pIdx->aiColumn[k]==iColumn ){
               switch( aExpr[j].p->op ){
                 case TK_IN: {
                   if( k==0 ) inMask |= 1;
@@ -575,8 +593,11 @@ WhereInfo *sqlite3WhereBegin(
           int k;
           char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
           for(k=0; k<pIdx->nColumn; k++){
-            if( pIdx->aiColumn[k]==iColumn 
-                && sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ){
+            /* If the collating sequences or affinities don't match, 
+            ** ignore this index.  */
+            if( pColl!=pIdx->keyInfo.aColl[k] ) continue;
+            if( !sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ) continue;
+            if( pIdx->aiColumn[k]==iColumn ){
               switch( aExpr[j].p->op ){
                 case TK_EQ: {
                   eqMask |= 1<<k;
@@ -655,7 +676,7 @@ WhereInfo *sqlite3WhereBegin(
        pSortIdx = 0;
      }else{
        int nEqCol = (pWInfo->a[0].score+4)/8;
-       pSortIdx = findSortingIndex(pTab, pTabList->a[0].iCursor, 
+       pSortIdx = findSortingIndex(pParse->db, pTab, pTabList->a[0].iCursor, 
                                    *ppOrderBy, pIdx, nEqCol, &bRev);
      }
      if( pSortIdx && (pIdx==0 || pIdx==pSortIdx) ){

@@ -1,4 +1,4 @@
-# 2001 September 15
+# 2001 September 15.
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.12 2004/05/27 17:22:56 drh Exp $
+# $Id: sort.test,v 1.13 2004/06/09 09:55:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -323,26 +323,26 @@ do_test sort-7.8 {
 #    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE integer;
 #  }
 #} {1 2 11 12}
-do_test sort-7.11 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE text;
-  }
-} {1 11 12 2}
-do_test sort-7.12 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE blob;
-  }
-} {1 11 12 2}
-do_test sort-7.13 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE clob;
-  }
-} {1 11 12 2}
-do_test sort-7.14 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE varchar;
-  }
-} {1 11 12 2}
+#do_test sort-7.11 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE text;
+#  }
+#} {1 11 12 2}
+#do_test sort-7.12 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE blob;
+#  }
+#} {1 11 12 2}
+#do_test sort-7.13 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE clob;
+#  }
+#} {1 11 12 2}
+#do_test sort-7.14 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE varchar;
+#  }
+#} {1 11 12 2}
 
 # Ticket #297
 #

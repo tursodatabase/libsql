@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.184 2004/06/07 10:00:31 danielk1977 Exp $
+** $Id: select.c,v 1.185 2004/06/09 09:55:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -546,7 +546,14 @@ static void generateSortTail(
   pInfo->aSortOrder = (char*)&pInfo->aColl[nCol];
   pInfo->nField = nCol;
   for(i=0; i<nCol; i++){
-    pInfo->aColl[i] = db->pDfltColl;
+    /* If a collation sequence was specified explicity, then it
+    ** is stored in pOrderBy->a[i].zName. Otherwise, use the default
+    ** collation type for the expression.
+    */
+    pInfo->aColl[i] = sqlite3ExprCollSeq(pOrderBy->a[i].pExpr);
+    if( !pInfo->aColl[i] ){
+      pInfo->aColl[i] = db->pDfltColl;
+    }
     pInfo->aSortOrder[i] = pOrderBy->a[i].sortOrder;
   }
   sqlite3VdbeOp3(v, OP_Sort, 0, 0, (char*)pInfo, P3_KEYINFO_HANDOFF);
@@ -817,6 +824,10 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     pTab->aCol[i].affinity = SQLITE_AFF_NUMERIC;
     if( zType ){
       pTab->aCol[i].affinity = sqlite3AffinityType(zType, strlen(zType));
+    }
+    pTab->aCol[i].pColl = sqlite3ExprCollSeq(p);
+    if( !pTab->aCol[i].pColl ){
+      pTab->aCol[i].pColl = pParse->db->pDfltColl;
     }
   }
   pTab->iPKey = -1;
@@ -2219,6 +2230,21 @@ int sqlite3Select(
           goto select_end;
         }
       }
+    }
+  }
+
+  /* If there is an ORDER BY clause, resolve any collation sequences
+  ** names that have been explicitly specified.
+  */
+  if( pOrderBy ){
+    for(i=0; i<pOrderBy->nExpr; i++){
+      if( pOrderBy->a[i].zName ){
+        pOrderBy->a[i].pExpr->pColl = 
+            sqlite3LocateCollSeq(pParse, pOrderBy->a[i].zName, -1);
+      }
+    }
+    if( pParse->nErr ){
+      goto select_end;
     }
   }
 

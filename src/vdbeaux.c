@@ -1256,7 +1256,7 @@ void sqlite3VdbeDelete(Vdbe *p){
       int j;
       VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
       for(j=0; j<pVdbeFunc->nAux; j++){
-        struct AuxData *pAuxData = &pVdbeFunc->apAux[j].pAux;
+        struct AuxData *pAuxData = &pVdbeFunc->apAux[j];
         if( pAuxData->pAux && pAuxData->xDelete ){
           pAuxData->xDelete(pAuxData->pAux);
         }
@@ -1520,6 +1520,11 @@ int sqlite3VdbeRecordCompare(
   int rc = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
+
+  Mem mem1;
+  Mem mem2;
+  mem1.enc = pKeyInfo->enc;
+  mem2.enc = pKeyInfo->enc;
   
   idx1 = sqlite3GetVarint32(pKey1, &szHdr1);
   d1 = szHdr1;
@@ -1527,8 +1532,6 @@ int sqlite3VdbeRecordCompare(
   d2 = szHdr2;
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && idx2<szHdr2 ){
-    Mem mem1;
-    Mem mem2;
     u32 serial_type1;
     u32 serial_type2;
 

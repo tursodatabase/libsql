@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.3 2004/06/01 10:01:25 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.4 2004/06/09 09:55:20 danielk1977 Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -44,7 +44,8 @@ database engine may convert values between numeric storage classes
 	quotes, INTEGER if the literal is specified as an unquoted number
 	with no decimal point or exponent, REAL if the literal is an
 	unquoted number with a decimal point or exponent and NULL if the
-	value is a NULL.</P>
+	value is a NULL. Literals with storage class BLOB are specified
+        using the X'ABCD' notation.</P>
 	<LI><P>Values supplied using the sqlite3_bind_* APIs are assigned
 	the storage class that most closely matches the native type bound
 	(i.e. sqlite3_bind_blob() binds a value with storage class BLOB).</P>
@@ -199,6 +200,22 @@ SQL scalar expression or literal other than a column value.</P>
 	place.</P>
 </UL>
 
+<P>
+In SQLite, the expression "a BETWEEN b AND c" is equivalent to "a &gt;= b
+AND a &lt;= c", even if this means that different affinities are applied to
+'a' in each of the comparisons required to evaluate the expression.
+</P>
+
+<P>Expressions of the type "a IN (SELECT b ....)" are handled by the three
+rules enumerated above for binary comparisons (e.g. in a
+similar manner to "a = b"). For example if 'b' is a column value
+and 'a' is an expression, then the affinity of 'b' is applied to 'a'
+before any comparisons take place.</P>
+
+<P>SQLite treats the expression "a IN (x, y, z)" as equivalent to "a = z OR
+a = y OR a = z".
+</P>
+
 <h4>3.1 Comparison Example</h4>
 
 <blockquote>
@@ -227,25 +244,6 @@ SELECT c &lt; 60, c &lt; 600 FROM t1;
 0|0
 </PRE>
 </blockquote>
-
-<P>
-In SQLite, the expression "a BETWEEN b AND c" is currently
-equivalent to "a &gt;= b AND a &lt;= c". SQLite will continue to
-treat the two as exactly equivalent, even if this means that
-different affinities are applied to 'a' in each of the comparisons
-required to evaluate the expression.</P>
-<P>Expressions of the type "a IN (SELECT b ....)" are handled by
-the three rules enumerated above for binary comparisons (e.g. in a
-similar manner to "a = b"). For example if 'b' is a column value
-and 'a' is an expression, then the affinity of 'b' is applied to 'a'
-before any comparisons take place.</P>
-
-<P>SQLite currently treats the expression "a IN (x, y, z)" as
-equivalent to "a = z OR a = y OR a = z". SQLite will continue to
-treat the two as exactly equivalent, even if this means that
-different affinities are applied to 'a' in each of the comparisons
-required to evaluate the expression.</P>
-
 <h3>4. Operators</h3>
 
 <P>All mathematical operators (which is to say, all operators other
@@ -302,11 +300,121 @@ modes, as follows:</P>
 
 <h3>7. User-defined Collation Sequences</h3>
 
-<P>By default, when SQLite compares two
-text values, the result of the comparison is determined using
-memcmp(), regardless of the encoding of the string. SQLite v3
-provides the ability for users to supply arbitrary comparison
-functions, known as user-defined collation sequences, to be used
-instead of memcmp().</P>
+<p>
+By default, when SQLite compares two text values, the result of the
+comparison is determined using memcmp(), regardless of the encoding of the
+string. SQLite v3 provides the ability for users to supply arbitrary
+comparison functions, known as user-defined collation sequences, to be used
+instead of memcmp().
+</p>  
+<p>
+Aside from the default collation sequence BINARY, implemented using
+memcmp(), SQLite features two extra built-in collation sequences,
+NOCASE and REVERSE:
+</p>  
+<UL>
+	<LI><b>BINARY</b> - Compares string data using memcmp(), regardless
+                            of text encoding.</LI>
+	<LI><b>REVERSE</b> - Collate in the reverse order to BINARY. </LI>
+	<LI><b>NOCASE</b> - The same as binary, except the 26 upper case
+			    characters used by the English language are
+			    folded to their lower case equivalents before
+                            the comparison is performed.  </UL>
+
+
+<h4>7.1 Assigning Collation Sequences from SQL</h4>
+
+<p>
+Each column of each table has a default collation type. If a collation type
+other than BINARY is required, a COLLATE clause is specified as part of the
+<a href="lang.html#createtable">column definition</a> to define it.used as
+illustrated in the example below to 
+</p>  
+
+<p>
+Whenever two text values are compared by SQLite, a collation sequence is
+used to determine the results of the comparison according to the following
+rules. Sections 3 and 5 of this document describe the circumstances under
+which such a comparison takes place.
+</p>  
+
+<p>
+For binary comparison operators (=, <, >, <= and >=) if either operand is a
+column, then the default collation type of the column determines the
+collation sequence to use for the comparison. If both operands are columns,
+then the collation type for the left operand determines the collation
+sequence used. If neither operand is a column, then the BINARY collation
+sequence is used.
+</p>  
+
+<p>
+The expression "x BETWEEN y and z" is equivalent to "x &gt;= y AND x &lt;=
+z". The expression "x IN (SELECT y ...)" is handled in the same way as the
+expression "x = y" for the purposes of determining the collation sequence
+to use. The collation sequence used for expressions of the form "x IN (y, z
+...)" is the default collation type of x if x is a column, or BINARY
+otherwise.
+</p>  
+
+<p>
+An <a href="lang.html#select">ORDER BY</a> clause that is part of a SELECT
+statement may be assigned a collation sequence to be used for the sort
+operation explicitly. In this case the explicit collation sequence is
+always used.  Otherwise, if the expression sorted by an ORDER BY clause is
+a column, then the default collation type of the column is used to
+determine sort order. If the expression is not a column, then the BINARY
+collation sequence is used.
+</p>  
+
+<h4>7.2 Collation Sequences Example</h4>
+<p>
+The examples below identify the collation sequences that would be used to
+determine the results of text comparisons that may be performed by various
+SQL statements. Note that a text comparison may not be required, and no
+collation sequence used, in the case of numeric, blob or NULL values.
+</p>
+<blockquote>
+<PRE>
+CREATE TABLE t1(
+    a,                 -- default collation type BINARY
+    b COLLATE BINARY,  -- default collation type BINARY
+    c COLLATE REVERSE, -- default collation type REVERSE
+    d COLLATE NOCASE   -- default collation type NOCASE
+);
+
+-- Text comparison is performed using the BINARY collation sequence.
+SELECT (a = b) FROM t1;
+
+-- Text comparison is performed using the NOCASE collation sequence.
+SELECT (a = d) FROM t1;
+
+-- Text comparison is performed using the BINARY collation sequence.
+SELECT (d = a) FROM t1;
+
+-- Text comparison is performed using the REVERSE collation sequence.
+SELECT ('abc' = c) FROM t1;
+
+-- Text comparison is performed using the REVERSE collation sequence.
+SELECT (c = 'abc') FROM t1;
+
+-- Grouping is performed using the NOCASE collation sequence (i.e. values
+-- 'abc' and 'ABC' are placed in the same group).
+SELECT count(*) GROUP BY d FROM t1;
+
+-- Grouping is performed using the BINARY collation sequence.
+SELECT count(*) GROUP BY (d || '') FROM t1;
+
+-- Sorting is performed using the REVERSE collation sequence.
+SELECT * FROM t1 ORDER BY c;
+
+-- Sorting is performed using the BINARY collation sequence.
+SELECT * FROM t1 ORDER BY (c || '');
+
+-- Sorting is performed using the NOCASE collation sequence.
+SELECT * FROM t1 ORDER BY c COLLATE NOCASE;
+
+</PRE>
+</blockquote>
+
 }
 footer $rcsid

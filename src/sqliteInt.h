@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.272 2004/06/09 00:48:13 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.273 2004/06/09 09:55:19 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -488,19 +488,31 @@ struct Column {
 
 /*
 ** A "Collating Sequence" is defined by an instance of the following
-** structure.  Every collating sequence has a name and a comparison
-** function that defines the order of text for that sequence.  The
-** CollSeq.pUser parameter is an extra parameter that passed in as
-** the first argument to the comparison function.
+** structure. Conceptually, a collating sequence consists of a name and
+** a comparison routine that defines the order of that sequence.
 **
-** If CollSeq.xCmp is NULL, it means that the collating sequence is
-** undefined.  Indices built on an undefined collating sequence may
-** not be read or written.
+** There may two seperate implementations of the collation function, one
+** that processes text in UTF-8 encoding (CollSeq.xCmp) and another that
+** processes text encoded in UTF-16 (CollSeq.xCmp16), using the machine
+** native byte order. When a collation sequence is invoked, SQLite selects
+** the version that will require the least expensive encoding
+** transalations, if any.
+**
+** The CollSeq.pUser member variable is an extra parameter that passed in
+** as the first argument to the UTF-8 comparison function, xCmp.
+** CollSeq.pUser16 is the equivalent for the UTF-16 comparison function,
+** xCmp16.
+**
+** If both CollSeq.xCmp and CollSeq.xCmp16 are NULL, it means that the
+** collating sequence is undefined.  Indices built on an undefined
+** collating sequence may not be read or written.
 */
 struct CollSeq {
-  char *zName;         /* Name of the collating sequence */
+  char *zName;         /* Name of the collating sequence, UTF-8 encoded */
   void *pUser;         /* First argument to xCmp() */
-  int (*xCmp)(void*,int,const void*,int,const void*); /* Comparison function */
+  void *pUser16;       /* First argument to xCmp16() */
+  int (*xCmp)(void*,int, const void*, int, const void*);
+  int (*xCmp16)(void*,int, const void*, int, const void*);
 };
 
 /*
@@ -756,6 +768,7 @@ struct Token {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
+  CollSeq *pColl;        /* The collation type of the column or 0 */
   u8 iDb;                /* Database referenced by this expression */
   u8 flags;              /* Various flags.  See below */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
@@ -1224,12 +1237,10 @@ void sqlite3OpenMasterTable(Vdbe *v, int);
 void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
-void sqlite3AddPrimaryKey(Parse*, IdList*, int);
+void sqlite3AddPrimaryKey(Parse*, ExprList*, int);
 void sqlite3AddColumnType(Parse*,Token*,Token*);
 void sqlite3AddDefaultValue(Parse*,Token*,int);
 void sqlite3AddCollateType(Parse*, const char*, int);
-CollSeq *sqlite3ChangeCollatingFunction(sqlite*,const char*,int,
-                  void*, int(*)(void*,int,const void*,int,const void*));
 void sqlite3EndTable(Parse*,Token*,Select*);
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int);
 int sqlite3ViewGetColumnNames(Parse*,Table*);
@@ -1243,7 +1254,7 @@ void sqlite3SrcListAddAlias(SrcList*, Token*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(IdList*);
 void sqlite3SrcListDelete(SrcList*);
-void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,IdList*,int,Token*,
+void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                         Token*);
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
@@ -1324,7 +1335,7 @@ TriggerStep *sqlite3TriggerUpdateStep(Token*, ExprList*, Expr*, int);
 TriggerStep *sqlite3TriggerDeleteStep(Token*, Expr*);
 void sqlite3DeleteTrigger(Trigger*);
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
-void sqlite3CreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
+void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   void sqlite3AuthRead(Parse*,Expr*,SrcList*);
@@ -1379,3 +1390,6 @@ int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold);
 int sqlite3ReadSchema(sqlite *db);
+CollSeq *sqlite3FindCollSeq(sqlite *,const char *,int,int);
+CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
+CollSeq *sqlite3ExprCollSeq(Expr *pExpr);

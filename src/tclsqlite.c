@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.80 2004/06/08 00:02:35 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.81 2004/06/09 09:55:19 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -43,6 +43,17 @@ struct SqlFunc {
 };
 
 /*
+** New collation sequences function can be created as TCL scripts.  Each such
+** function is described by an instance of the following structure.
+*/
+typedef struct SqlCollate SqlCollate;
+struct SqlCollate {
+  Tcl_Interp *interp;   /* The TCL interpret to execute the function */
+  char *zScript;        /* The script to be run */
+  SqlCollate *pNext;       /* Next function on the list of them all */
+};
+
+/*
 ** There is one instance of this structure for each SQLite database
 ** that has been opened by the SQLite TCL interface.
 */
@@ -56,6 +67,7 @@ struct SqliteDb {
   char *zProgress;      /* The progress callback routine */
   char *zAuth;          /* The authorization callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
+  SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
   int nChange;         /* Database changes for the most recent eval */
 };
@@ -114,6 +126,11 @@ static void DbDeleteCmd(void *db){
     SqlFunc *pFunc = pDb->pFunc;
     pDb->pFunc = pFunc->pNext;
     Tcl_Free((char*)pFunc);
+  }
+  while( pDb->pCollate ){
+    SqlCollate *pCollate = pDb->pCollate;
+    pDb->pCollate = pCollate->pNext;
+    Tcl_Free((char*)pCollate);
   }
   if( pDb->zBusy ){
     Tcl_Free(pDb->zBusy);
@@ -198,6 +215,29 @@ static int DbCommitHandler(void *cd){
     return 1;
   }
   return 0;
+}
+
+/*
+** This routine is called to evaluate an SQL collation function implemented
+** using TCL script.
+*/
+static int tclSqlCollate(
+  void *pCtx,
+  int nA,
+  const void *zA,
+  int nB,
+  const void *zB
+){
+  SqlCollate *p = (SqlCollate *)pCtx;
+  Tcl_Obj *pCmd;
+
+  pCmd = Tcl_NewStringObj(p->zScript, -1);
+  Tcl_IncrRefCount(pCmd);
+  Tcl_ListObjAppendElement(p->interp, pCmd, Tcl_NewStringObj(zA, nA));
+  Tcl_ListObjAppendElement(p->interp, pCmd, Tcl_NewStringObj(zB, nB));
+  Tcl_EvalObjEx(p->interp, pCmd, 0);
+  Tcl_DecrRefCount(pCmd);
+  return (atoi(Tcl_GetStringResult(p->interp)));
 }
 
 /*
@@ -342,7 +382,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "errorcode",          "eval",                   "function",
     "last_insert_rowid",  "last_statement_changes", "onecolumn",
     "progress",           "rekey",                  "timeout",
-    "trace",
+    "trace",              "collate",
     0                    
   };
   enum DB_enum {
@@ -351,7 +391,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_ERRORCODE,         DB_EVAL,                   DB_FUNCTION,
     DB_LAST_INSERT_ROWID, DB_LAST_STATEMENT_CHANGES, DB_ONECOLUMN,        
     DB_PROGRESS,          DB_REKEY,                  DB_TIMEOUT,
-    DB_TRACE
+    DB_TRACE,             DB_COLLATE
   };
 
   if( objc<2 ){
@@ -850,6 +890,35 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         sqlite3_trace(pDb->db, 0, 0);
       }
+    }
+    break;
+  }
+
+  /*
+  **     $db collate NAME SCRIPT
+  **
+  ** Create a new SQL collation function called NAME.  Whenever
+  ** that function is called, invoke SCRIPT to evaluate the function.
+  */
+  case DB_COLLATE: {
+    SqlCollate *pCollate;
+    char *zName;
+    char *zScript;
+    int nScript;
+    if( objc!=4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "NAME SCRIPT");
+      return TCL_ERROR;
+    }
+    zName = Tcl_GetStringFromObj(objv[2], 0);
+    zScript = Tcl_GetStringFromObj(objv[3], &nScript);
+    pCollate = (SqlCollate*)Tcl_Alloc( sizeof(*pCollate) + nScript + 1 );
+    if( pCollate==0 ) return TCL_ERROR;
+    pCollate->interp = interp;
+    pCollate->pNext = pDb->pCollate;
+    pCollate->zScript = (char*)&pCollate[1];
+    strcpy(pCollate->zScript, zScript);
+    if( sqlite3_create_collation(pDb->db, zName, 0, pCollate, tclSqlCollate) ){
+      return TCL_ERROR;
     }
     break;
   }
