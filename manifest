@@ -1,5 +1,5 @@
-C new\ssection\sfor\skeywords,\smore\sdocs\sfor\sattached\sdatabases\s,\slinks,\scleanup\s(CVS\s952)
-D 2003-05-04T07:02:55
+C added\sshell\scommand\s".databases"\sto\slist\sname\sand\sfile\sof\sopen\sones.\s(CVS\s953)
+D 2003-05-04T07:25:58
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 3fe63e3a29df661ba72a67eecd77e8ee82801def
-F src/shell.c 6f59240f69e65a1c4e1d06492eb9238092defc34
+F src/shell.c c53ff468787109cf178c6b14ecb7a78654018fd1
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h a3d84942dacaf72fbe1426adfbd37e8cf5f57e97
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 24b9b569240d2108b17420d85cafdc718c67269f
-R f59caf097b77c12dfe5196947fa850d1
+P 87e1b6a936972670771cf90670aeb4308ba0a30a
+R 5320898e74f5e804dcf5efe20f5cd8de
 U jplyon
-Z 15d8de3d7ad598167e85986bd9fd5378
+Z 6095dc4d8b2b48d4029c4d0dd1f58135

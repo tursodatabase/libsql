@@ -12,12 +12,13 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.75 2003/04/30 11:38:26 drh Exp $
+** $Id: shell.c,v 1.76 2003/05/04 07:25:58 jplyon Exp $
 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "sqlite.h"
+#include "sqliteInt.h"
 #include <ctype.h>
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__)
@@ -472,7 +473,8 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 ** Text of a help message
 */
 static char zHelp[] =
-  ".dump ?TABLE? ...      Dump the database in an text format\n"
+  ".databases             List names and files of attached databases\n"
+  ".dump ?TABLE? ...      Dump the database in a text format\n"
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
   ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
@@ -560,6 +562,20 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( nArg==0 ) return rc;
   n = strlen(azArg[0]);
   c = azArg[0][0];
+  if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 ){
+    int i;
+    open_db(p);
+    fprintf(p->out, "[Name]\t[File]\n");
+    for(i=0; i<db->nDb; i++){
+      sqlite *db = p->db;
+      Db *pDb = &db->aDb[i];
+      BtOps* pOps = btOps(pDb->pBt);
+      const char *zName = pDb->zName;
+      const char *zFilename = pOps->GetFilename(pDb->pBt);
+      fprintf(p->out, "%s\t%s\n", zName, zFilename);
+    }
+  }else
+
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
     open_db(p);
