@@ -1,0 +1,125 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for the special processing associated
+# with INTEGER PRIMARY KEY columns.
+#
+# $Id: intpkey.test,v 1.1 2001/12/21 14:30:44 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table with a primary key and a datatype other than
+# integer
+#
+do_test intpkey-1.0 {
+  execsql {
+    CREATE TABLE t1(a TEXT PRIMARY KEY, b, c);
+  }
+} {}
+
+# There should be an index associated with the primary key
+#
+do_test intpkey-1.1 {
+  execsql {
+    SELECT name FROM sqlite_master
+    WHERE type='index' AND tbl_name='t1';
+  }
+} {{(t1 autoindex 1)}}
+
+# Now create a table with an integer primary key and verify that
+# there is no associated index.
+#
+do_test intpkey-1.2 {
+  execsql {
+    DROP TABLE t1;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    SELECT name FROM sqlite_master
+      WHERE type='index' AND tbl_name='t1';
+  }
+} {}
+
+# Insert some records into the new table.  Specify the primary key
+# and verify that the key is used as the record number.
+#
+do_test intpkey-1.3 {
+  execsql {
+    INSERT INTO t1 VALUES(5,'hello','world');
+  }
+} {}
+do_test intpkey-1.4 {
+  execsql {
+    SELECT * FROM t1;
+  }
+} {5 hello world}
+do_test intpkey-1.5 {
+  execsql {
+    SELECT rowid, * FROM t1;
+  }
+} {5 5 hello world}
+
+# Attempting to insert a duplicate primary key should give a constraint
+# failure.
+#
+do_test intpkey-1.6 {
+  set r [catch {execsql {
+     INSERT INTO t1 VALUES(5,'second','entry');
+  }} msg]
+  lappend r $msg
+} {1 {constraint failed}}
+do_test intpkey-1.7 {
+  execsql {
+    SELECT rowid, * FROM t1;
+  }
+} {5 5 hello world}
+do_test intpkey-1.8 {
+  set r [catch {execsql {
+     INSERT INTO t1 VALUES(6,'second','entry');
+  }} msg]
+  lappend r $msg
+} {0 {}}
+do_test intpkey-1.9 {
+  execsql {
+    SELECT rowid, * FROM t1;
+  }
+} {5 5 hello world 6 6 second entry}
+
+# A ROWID is automatically generated for new records that do not specify
+# the integer primary key.
+#
+do_test intpkey-1.10 {
+  execsql {
+    INSERT INTO t1(b,c) VALUES('one','two');
+    SELECT b FROM t1 ORDER BY b;
+  }
+} {hello one second}
+
+# Try to change the ROWID for the new entry.
+#
+do_test intpkey-1.11 {
+  execsql {
+    UPDATE t1 SET a=7 WHERE b='one';
+    SELECT * FROM t1;
+  }
+} {5 hello world 6 second entry 7 one two}
+
+# Make sure SELECT statements are able to use the primary key column
+# as an index.
+#
+do_test intpkey-1.12 {
+  execsql {
+    SELECT * FROM t1 WHERE a==7;
+  }
+} {7 one two}
+
+
+finish_test

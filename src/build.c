@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.59 2001/12/15 02:35:59 drh Exp $
+** $Id: build.c,v 1.60 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -268,7 +268,7 @@ void sqliteCommitInternalChanges(sqlite *db){
   }
   sqliteHashClear(&toDelete);
   for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pIndex = sqliteHashData(pElem);
+    Index *pIndex = sqliteHashData(pElem);
     if( pIndex->isDelete ){
       sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
     }else{
@@ -311,7 +311,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
   }
   sqliteHashClear(&toDelete);
   for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pIndex = sqliteHashData(pElem);
+    Index *pIndex = sqliteHashData(pElem);
     if( !pIndex->isCommit ){
       sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
     }else{
@@ -425,6 +425,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   pTable->zName = zName;
   pTable->nCol = 0;
   pTable->aCol = 0;
+  pTable->iPKey = -1;
   pTable->pIndex = 0;
   pTable->isTemp = isTemp;
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
@@ -436,6 +437,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
       pParse->schemaVerified = 1;
     }
     if( !isTemp ){
+      sqliteVdbeAddOp(v, OP_SetCookie, db->file_format, 1);
       sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
       sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
     }
@@ -532,6 +534,56 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
     sqliteSetNString(pz, pVal->z, pVal->n, 0);
   }
   sqliteDequote(*pz);
+}
+
+/*
+** Designate the PRIMARY KEY for the table.  pList is a list of names 
+** of columns that form the primary key.  If pList is NULL, then the
+** most recently added column of the table is the primary key.
+**
+** A table can have at most one primary key.  If the table already has
+** a primary key (and this is the second primary key) then create an
+** error.
+**
+** If the PRIMARY KEY is on a single column whose datatype is INTEGER,
+** then we will try to use that column as the row id.  (Exception:
+** For backwards compatibility with older databases, do not do this
+** if the file format version number is less than 1.)  Set the Table.iPKey
+** field of the table under construction to be the index of the
+** INTEGER PRIMARY KEY column.  Table.iPKey is set to -1 if there is
+** no INTEGER PRIMARY KEY.
+**
+** If the key is not an INTEGER PRIMARY KEY, then create a unique
+** index for the key.  No index is created for INTEGER PRIMARY KEYs.
+*/
+void sqliteAddPrimaryKey(Parse *pParse, IdList *pList){
+  Table *pTab = pParse->pNewTable;
+  char *zType = 0;
+  int iCol = -1;
+  if( pTab==0 ) return;
+  if( pTab->hasPrimKey ){
+    sqliteSetString(&pParse->zErrMsg, "table \"", pTab->zName, 
+        "\" has more than one primary key", 0);
+    pParse->nErr++;
+    return;
+  }
+  pTab->hasPrimKey = 1;
+  if( pList==0 ){
+    iCol = pTab->nCol - 1;
+  }else if( pList->nId==1 ){
+    for(iCol=0; iCol<pTab->nCol; iCol++){
+      if( sqliteStrICmp(pList->a[0].zName, pTab->aCol[iCol].zName)==0 ) break;
+    }
+  }
+  if( iCol>=0 && iCol<pTab->nCol ){
+    zType = pTab->aCol[iCol].zType;
+  }
+  if( pParse->db->file_format>=1 && 
+           zType && sqliteStrICmp(zType, "INTEGER")==0 ){
+    pTab->iPKey = iCol;
+  }else{
+    sqliteCreateIndex(pParse, 0, 0, pList, 1, 0, 0);
+  }
 }
 
 /*
@@ -787,8 +839,8 @@ void sqliteCreateIndex(
 
   /* If this index is created while re-reading the schema from sqlite_master
   ** but the table associated with this index is a temporary table, it can
-  ** only mean that the table this index is really associated with is one 
-  ** whose name is hidden behind a temporary table with the same name.
+  ** only mean that the table that this index is really associated with is
+  ** one whose name is hidden behind a temporary table with the same name.
   ** Since its table has been suppressed, we need to also suppress the
   ** index.
   */

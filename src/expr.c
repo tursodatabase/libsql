@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.34 2001/11/24 00:31:46 drh Exp $
+** $Id: expr.c,v 1.35 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -127,7 +127,12 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
             pExpr->iTable = i + pParse->nTab;
-            pExpr->iColumn = j;
+            if( j==pTab->iPKey ){
+              /* Substitute the record number for the INTEGER PRIMARY KEY */
+              pExpr->iColumn = -1;
+            }else{
+              pExpr->iColumn = j;
+            }
           }
         }
       }
@@ -190,7 +195,12 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
             pExpr->iTable = i + pParse->nTab;
-            pExpr->iColumn = j;
+            if( j==pTab->iPKey ){
+              /* Substitute the record number for the INTEGER PRIMARY KEY */
+              pExpr->iColumn = -1;
+            }else{
+              pExpr->iColumn = j;
+            }
           }
         }
       }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.26 2001/11/07 16:48:27 drh Exp $
+** $Id: insert.c,v 1.27 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,6 +49,7 @@ void sqliteInsert(
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
   sqlite *db;           /* The main database structure */
   int openOp;           /* Opcode used to open cursors */
+  int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
   db = pParse->db;
@@ -140,6 +141,9 @@ void sqliteInsert(
       for(j=0; j<pTab->nCol; j++){
         if( sqliteStrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
           pColumn->a[i].idx = j;
+          if( j==pTab->iPKey ){
+            keyColumn = j;
+          }
           break;
         }
       }
@@ -150,6 +154,13 @@ void sqliteInsert(
         goto insert_cleanup;
       }
     }
+  }
+
+  /* If there is not IDLIST term but the table has an integer primary
+  ** key, the set the keyColumn variable to the primary key column.
+  */
+  if( pColumn==0 ){
+    keyColumn = pTab->iPKey;
   }
 
   /* Open cursors into the table that is received the new data and
@@ -178,13 +189,41 @@ void sqliteInsert(
     iCont = sqliteVdbeCurrentAddr(v);
   }
 
-  /* Create a new entry in the table and fill it with data.
+  /* Push the record number for the new entry onto the stack.  The
+  ** record number is a randomly generate integer created by NewRecno
+  ** except when the table has an INTEGER PRIMARY KEY column, in which
+  ** case the record number is the same as that column.
   */
-  sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
+  if( keyColumn>=0 ){
+    if( srcTab>=0 ){
+      sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
+    }else{
+      sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
+    }
+    sqliteVdbeAddOp(v, OP_AddImm, 0, 0);  /* Make sure ROWID is an integer */
+  }else{
+    sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
+  }
+
+  /* If there are indices, we'll need this record number again, so make
+  ** a copy.
+  */
   if( pTab->pIndex ){
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
   }
+
+  /* Push onto the stack data for all columns of the new entry, beginning
+  ** with the first column.
+  */
   for(i=0; i<pTab->nCol; i++){
+    if( i==pTab->iPKey ){
+      /* The value of the INTEGER PRIMARY KEY column is always a NULL.
+      ** Whenever this column is used, the record number will be substituted
+      ** in its place, so there is no point it it taking up space in
+      ** the data record. */
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      continue;
+    }
     if( pColumn==0 ){
       j = i;
     }else{
@@ -201,10 +240,12 @@ void sqliteInsert(
       sqliteExprCode(pParse, pList->a[j].pExpr);
     }
   }
-  sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-  sqliteVdbeAddOp(v, OP_Put, base, 0);
-  
 
+  /* Create the new record and put it into the database.
+  */
+  sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+  sqliteVdbeAddOp(v, OP_Put, base, keyColumn>=0);
+  
   /* Create appropriate entries for the new data row in all indices
   ** of the table.
   */
@@ -214,6 +255,11 @@ void sqliteInsert(
     }
     for(i=0; i<pIdx->nColumn; i++){
       int idx = pIdx->aiColumn[i];
+      if( idx==pTab->iPKey ){
+        /* Copy the record number in place of the INTEGER PRIMARY KEY column */
+        sqliteVdbeAddOp(v, OP_Dup, i, 0);
+        continue;
+      }
       if( pColumn==0 ){
         j = idx;
       }else{

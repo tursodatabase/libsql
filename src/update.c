@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.22 2001/11/21 02:21:12 drh Exp $
+** $Id: update.c,v 1.23 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -40,6 +40,8 @@ void sqliteUpdate(
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
   int openOp;            /* Opcode used to open tables */
+  int chngRecno;         /* True if the record number is being changed */
+  Expr *pRecnoExpr;      /* Expression defining the new record number */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto update_cleanup;
   db = pParse->db;
@@ -89,6 +91,7 @@ void sqliteUpdate(
       goto update_cleanup;
     }
   }
+  chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pChanges->a[i].pExpr) ){
       goto update_cleanup;
@@ -98,6 +101,10 @@ void sqliteUpdate(
     }
     for(j=0; j<pTab->nCol; j++){
       if( sqliteStrICmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
+        if( i==pTab->iPKey ){
+          chngRecno = 1;
+          pRecnoExpr = pChanges->a[i].pExpr;
+        }
         aXRef[j] = i;
         break;
       }
@@ -115,8 +122,12 @@ void sqliteUpdate(
   ** key includes one of the columns named in pChanges.
   */
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    for(i=0; i<pIdx->nColumn; i++){
-      if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
+    if( chngRecno ){
+      i = 0;
+    }else {
+      for(i=0; i<pIdx->nColumn; i++){
+        if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
+      }
     }
     if( i<pIdx->nColumn ) nIdx++;
   }
@@ -125,8 +136,12 @@ void sqliteUpdate(
     if( apIdx==0 ) goto update_cleanup;
   }
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    for(i=0; i<pIdx->nColumn; i++){
-      if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
+    if( chngRecno ){
+      i = 0;
+    }else{
+      for(i=0; i<pIdx->nColumn; i++){
+        if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
+      }
     }
     if( i<pIdx->nColumn ) apIdx[nIdx++] = pIdx;
   }
@@ -175,6 +190,7 @@ void sqliteUpdate(
   ** the old data for each record to be updated because some columns
   ** might not change and we will need to copy the old value.
   ** Also, the old data is needed to delete the old index entires.
+  ** So make the cursor point at the old record.
   */
   end = sqliteVdbeMakeLabel(v);
   addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
@@ -193,9 +209,22 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_IdxDelete, base+i+1, 0);
   }
 
+  /* If changing the record number, remove the old record number
+  ** from the top of the stack and replace it with the new one.
+  */
+  if( chngRecno ){
+    sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+    sqliteExprCode(pParse, pRecnoExpr);
+    sqliteVdbeAddOp(v, OP_AddImm, 0, 0);
+  }
+
   /* Compute new data for this record.  
   */
   for(i=0; i<pTab->nCol; i++){
+    if( i==pTab->iPKey ){
+      sqliteVdbeAddOp(v, OP_Dup, i, 0);
+      continue;
+    }
     j = aXRef[i];
     if( j<0 ){
       sqliteVdbeAddOp(v, OP_Column, base, i);
@@ -204,13 +233,24 @@ void sqliteUpdate(
     }
   }
 
+  /* If changing the record number, delete the hold record.
+  */
+  if( chngRecno ){
+    sqliteVdbeAddOp(v, OP_Delete, 0, 0);
+  }
+
   /* Insert new index entries that correspond to the new data
   */
   for(i=0; i<nIdx; i++){
     sqliteVdbeAddOp(v, OP_Dup, pTab->nCol, 0); /* The KEY */
     pIdx = apIdx[i];
     for(j=0; j<pIdx->nColumn; j++){
-      sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-pIdx->aiColumn[j], 0);
+      int idx = pIdx->aiColumn[j];
+      if( idx==pTab->iPKey ){
+        sqliteVdbeAddOp(v, OP_Dup, j, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-idx, 0);
+      }
     }
     sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
     sqliteVdbeAddOp(v, OP_IdxPut, base+i+1, pIdx->isUnique);

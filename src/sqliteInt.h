@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.72 2001/12/05 00:21:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.73 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -29,6 +29,11 @@
 */
 #define MAX_PAGES   100
 #define TEMP_PAGES   25
+
+/*
+** File format version number
+*/
+#define FILE_FORMAT 1
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -213,7 +218,8 @@ struct Column {
   char *zName;     /* Name of this column */
   char *zDflt;     /* Default value of this column */
   char *zType;     /* Data type for this column */
-  int notNull;     /* True if there is a NOT NULL constraint */
+  u8 notNull;      /* True if there is a NOT NULL constraint */
+  u8 isPrimKey;    /* True if this column is an INTEGER PRIMARY KEY */
 };
 
 /*
@@ -224,12 +230,14 @@ struct Table {
   char *zName;     /* Name of the table */
   int nCol;        /* Number of columns in this table */
   Column *aCol;    /* Information about each column */
+  int iPKey;       /* Use this column as the record-number for each row */
   Index *pIndex;   /* List of SQL indexes on this table. */
   int tnum;        /* Page containing root for this table */
   u8 readOnly;     /* True if this table should not be written by the user */
   u8 isCommit;     /* True if creation of this table has been committed */
   u8 isDelete;     /* True if this table is being deleted */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
+  u8 hasPrimKey;   /* True if there exists a primary key */
 };
 
 /*

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.51 2001/12/05 00:21:20 drh Exp $
+** $Id: main.c,v 1.52 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -25,7 +25,7 @@
 **
 ** Each callback contains the following information:
 **
-**     argv[0] = "meta" or "table" or "index"
+**     argv[0] = "file-format" or "schema-cookie" or "table" or "index"
 **     argv[1] = table or index name or meta statement type.
 **     argv[2] = root page number for table or index.  NULL for meta.
 **     argv[3] = SQL create statement for the table or index
@@ -42,13 +42,13 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
 
   assert( argc==4 );
   switch( argv[0][0] ){
-    case 'm': {  /* Meta information */
-      if( strcmp(argv[1],"file-format")==0 ){
-        db->file_format = atoi(argv[3]);
-      }else if( strcmp(argv[1],"schema-cookie")==0 ){
-        db->schema_cookie = atoi(argv[3]);
-        db->next_cookie = db->schema_cookie;
-      }
+    case 'f': {  /* File format */
+      db->file_format = atoi(argv[3]);
+      break;
+    }
+    case 's': { /* Schema cookie */
+      db->schema_cookie = atoi(argv[3]);
+      db->next_cookie = db->schema_cookie;
       break;
     }
     case 'i':
@@ -156,44 +156,39 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** database scheme.
   */
   static VdbeOp initProg[] = {
-    { OP_Open,     0, 2,  0},
-    { OP_Rewind,   0, 31, 0},
-    { OP_Column,   0, 0,  0},           /* 2 */
-    { OP_String,   0, 0,  "meta"},
-    { OP_Ne,       0, 10, 0},
-    { OP_Column,   0, 0,  0},
-    { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 3,  0},
-    { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Next,     0, 2,  0},           /* 10 */
-    { OP_Rewind,   0, 31, 0},           /* 11 */
-    { OP_Column,   0, 0,  0},           /* 12 */
-    { OP_String,   0, 0,  "table"},
-    { OP_Ne,       0, 20, 0},
-    { OP_Column,   0, 0,  0},
-    { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 3,  0},
-    { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Next,     0, 12, 0},           /* 20 */
-    { OP_Rewind,   0, 31, 0},           /* 21 */
-    { OP_Column,   0, 0,  0},           /* 22 */
-    { OP_String,   0, 0,  "index"},
-    { OP_Ne,       0, 30, 0},
-    { OP_Column,   0, 0,  0},
-    { OP_Column,   0, 1,  0},
-    { OP_Column,   0, 3,  0},
-    { OP_Column,   0, 4,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Next,     0, 22, 0},           /* 30 */
-    { OP_String,   0, 0,  "meta"},      /* 31 */
-    { OP_String,   0, 0,  "schema-cookie"},
-    { OP_String,   0, 0,  0},
-    { OP_ReadCookie,0,0,  0},
-    { OP_Callback, 4, 0,  0},
-    { OP_Close,    0, 0,  0},
-    { OP_Halt,     0, 0,  0},
+    { OP_Open,       0, 2,  0},
+    { OP_String,     0, 0,  "file-format"},
+    { OP_String,     0, 0,  0},
+    { OP_String,     0, 0,  0},
+    { OP_ReadCookie, 0, 1,  0},
+    { OP_Callback,   4, 0,  0},
+    { OP_String,     0, 0,  "schema_cookie"},
+    { OP_String,     0, 0,  0},
+    { OP_String,     0, 0,  0},
+    { OP_ReadCookie, 0, 0,  0},
+    { OP_Callback,   4, 0,  0},
+    { OP_Rewind,     0, 31, 0},
+    { OP_Column,     0, 0,  0},           /* 12 */
+    { OP_String,     0, 0,  "table"},
+    { OP_Ne,         0, 20, 0},
+    { OP_Column,     0, 0,  0},
+    { OP_Column,     0, 1,  0},
+    { OP_Column,     0, 3,  0},
+    { OP_Column,     0, 4,  0},
+    { OP_Callback,   4, 0,  0},
+    { OP_Next,       0, 12, 0},           /* 20 */
+    { OP_Rewind,     0, 31, 0},           /* 21 */
+    { OP_Column,     0, 0,  0},           /* 22 */
+    { OP_String,     0, 0,  "index"},
+    { OP_Ne,         0, 30, 0},
+    { OP_Column,     0, 0,  0},
+    { OP_Column,     0, 1,  0},
+    { OP_Column,     0, 3,  0},
+    { OP_Column,     0, 4,  0},
+    { OP_Callback,   4, 0,  0},
+    { OP_Next,       0, 22, 0},           /* 30 */
+    { OP_Close,      0, 0,  0},           /* 31 */
+    { OP_Halt,       0, 0,  0},
   };
 
   /* Create a virtual machine to run the initialization program.  Run
@@ -208,7 +203,10 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
                       db->pBusyArg, db->xBusyCallback);
   sqliteVdbeDelete(vdbe);
-  if( rc==SQLITE_OK && db->file_format>1 && db->nTable>0 ){
+  if( rc==SQLITE_OK && db->nTable==0 ){
+    db->file_format = FILE_FORMAT;
+  }
+  if( rc==SQLITE_OK && db->file_format>FILE_FORMAT ){
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
     rc = SQLITE_ERROR;
   }
@@ -281,9 +279,6 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteStrRealloc(pzErrMsg);
     return 0;
   }
-
-  /* Assume file format 1 unless the database says otherwise */
-  db->file_format = 1;
 
   /* Attempt to read the schema */
   rc = sqliteInit(db, pzErrMsg);

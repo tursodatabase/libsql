@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.100 2001/11/13 19:35:15 drh Exp $
+** $Id: vdbe.c,v 1.101 2001/12/21 14:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1654,7 +1654,10 @@ case OP_ShiftRight: {
 
 /* Opcode: AddImm  P1 * *
 ** 
-** Add the value P1 to whatever is on top of the stack.
+** Add the value P1 to whatever is on top of the stack.  The result
+** is always an integer.
+**
+** To force the top of the stack to be an integer, just add 0.
 */
 case OP_AddImm: {
   int tos = p->tos;
@@ -2269,14 +2272,19 @@ case OP_Rollback: {
   break;
 }
 
-/* Opcode: ReadCookie * * *
+/* Opcode: ReadCookie * P2 *
 **
-** Read the schema cookie from the database file and push it onto the
+** When P2==0, 
+** read the schema cookie from the database file and push it onto the
 ** stack.  The schema cookie is an integer that is used like a version
 ** number for the database schema.  Everytime the schema changes, the
 ** cookie changes to a new random value.  This opcode is used during
 ** initialization to read the initial cookie value so that subsequent
 ** database accesses can verify that the cookie has not changed.
+**
+** If P2>0, then read global database parameter number P2.  There is
+** a small fixed number of global database parameters.  P2==1 is the
+** database version number.  Other parameters are currently unused.
 **
 ** There must be a read-lock on the database (either a transaction
 ** must be started or there must be an open cursor) before
@@ -2285,17 +2293,21 @@ case OP_Rollback: {
 case OP_ReadCookie: {
   int i = ++p->tos;
   int aMeta[SQLITE_N_BTREE_META];
+  assert( pOp->p2<SQLITE_N_BTREE_META );
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   rc = sqliteBtreeGetMeta(pBt, aMeta);
-  aStack[i].i = aMeta[1];
+  aStack[i].i = aMeta[1+pOp->p2];
   aStack[i].flags = STK_Int;
   break;
 }
 
-/* Opcode: SetCookie P1 * *
+/* Opcode: SetCookie P1 P2 *
 **
-** This operation changes the value of the schema cookie on the database.
-** The new value is P1.
+** When P2==0,
+** this operation changes the value of the schema cookie on the database.
+** The new value is P1.  When P2>0, the value of global database parameter
+** number P2 is changed.  See ReadCookie for more information about
+** global database parametes.
 **
 ** The schema cookie changes its value whenever the database schema changes.
 ** That way, other processes can recognize when the schema has changed
@@ -2305,18 +2317,21 @@ case OP_ReadCookie: {
 */
 case OP_SetCookie: {
   int aMeta[SQLITE_N_BTREE_META];
+  assert( pOp->p2<SQLITE_N_BTREE_META );
   rc = sqliteBtreeGetMeta(pBt, aMeta);
   if( rc==SQLITE_OK ){
-    aMeta[1] = pOp->p1;
+    aMeta[1+pOp->p2] = pOp->p1;
     rc = sqliteBtreeUpdateMeta(pBt, aMeta);
   }
   break;
 }
 
-/* Opcode: VerifyCookie P1 * *
+/* Opcode: VerifyCookie P1 P2 *
 **
-** Check the current value of the schema cookie and make sure it is
-** equal to P1.  If it is not, abort with an SQLITE_SCHEMA error.
+** Check the value of global database parameter number P2 and make
+** sure it is equal to P1.  P2==0 is the schema cookie.  P1==1 is
+** the database version.  If the values do not match, abort with
+** an SQLITE_SCHEMA error.
 **
 ** The cookie changes its value whenever the database schema changes.
 ** This operation is used to detect when that the cookie has changed
@@ -2328,8 +2343,9 @@ case OP_SetCookie: {
 */
 case OP_VerifyCookie: {
   int aMeta[SQLITE_N_BTREE_META];
+  assert( pOp->p2<SQLITE_N_BTREE_META );
   rc = sqliteBtreeGetMeta(pBt, aMeta);
-  if( rc==SQLITE_OK && aMeta[1]!=pOp->p1 ){
+  if( rc==SQLITE_OK && aMeta[1+pOp->p2]!=pOp->p1 ){
     sqliteSetString(pzErrMsg, "database schema has changed", 0);
     rc = SQLITE_SCHEMA;
   }
@@ -2613,7 +2629,7 @@ case OP_Found: {
 **
 ** Get a new integer record number used as the key to a table.
 ** The record number is not previously used as a key in the database
-** table that cursor P1 points to.  The new record number pushed 
+** table that cursor P1 points to.  The new record number is pushed 
 ** onto the stack.
 */
 case OP_NewRecno: {
@@ -2666,13 +2682,16 @@ case OP_NewRecno: {
   break;
 }
 
-/* Opcode: Put P1 * *
+/* Opcode: Put P1 P2 *
 **
 ** Write an entry into the database file P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The stack
 ** is popped twice by this instruction.
+**
+** If P2==1 then overwriting is prohibited.  If a prior entry with
+** the same key exists, an SQLITE_CONSTRAINT exception is raised.
 */
 case OP_Put: {
   int tos = p->tos;
@@ -2690,6 +2709,16 @@ case OP_Put: {
       nKey = sizeof(int);
       iKey = bigEndian(aStack[nos].i);
       zKey = (char*)&iKey;
+    }
+    if( pOp->p2 ){
+      int res;
+      rc = sqliteBtreeMoveto(p->aCsr[i].pCursor, zKey, nKey, &res);
+      if( res==0 && rc==SQLITE_OK ){
+        rc = SQLITE_CONSTRAINT;
+      }
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
+      }
     }
     rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
                         zStack[tos], aStack[tos].n);
