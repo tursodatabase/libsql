@@ -1,5 +1,5 @@
-C Detect\swhen\sthe\stest\sscripts\sare\sbeing\srun\sas\sroot\sand\sissue\san\sappropriate\nerror\smessage.\s(CVS\s740)
-D 2002-09-02T12:14:51
+C Add\sdocumentation\son\sNULL\shandling\sin\sSQLite\sversus\sother\sSQL\sdatabase\nengines.\s(CVS\s741)
+D 2002-09-02T14:11:03
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F main.mk 8e34134476c039c89bb404f2712bcbb2f044bdfe
+F main.mk 14a6933b738143bf939e9c04c59163d738239fae
 F publish.sh a7a8d23e6525bd25d4f5ba9b0fc6edc107d94050
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -140,9 +140,10 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 207d3e31597c63ed3bbecd58aaeaa38c53d39dd4
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
-F www/index.tcl 33881038e9664a36e56df3b80ef0828594c8dcd9
+F www/index.tcl 190f767c4b0bf44f75bf4af023d644c3e7a1e579
 F www/lang.tcl bf9d830aa0042718ae157e25fc7539f5378c46ff
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
+F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
 F www/quickstart.tcl fde79aa2de20074842b60f780800cdeee6a5dec2
@@ -150,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8c2a0836980341faa479cfe6c716409e6057367d
-R d69d74396bd3d8fa6110e1bb4d145b9c
+P 9ca2c507704f85446d873d5e8429554f2ad4df9e
+R a486780ea79cbf7fa41ff4e723ebd4b5
 U drh
-Z 5b7e102d83ef9c4dd3f46fe8bd1002c5
+Z 27d152bf1210ee491944a9449323bf4b

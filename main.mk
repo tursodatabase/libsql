@@ -308,6 +308,9 @@ quickstart.html:	$(TOP)/www/quickstart.tcl
 fileformat.html:	$(TOP)/www/fileformat.tcl
 	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
 
+nulls.html:	$(TOP)/www/nulls.tcl
+	tclsh $(TOP)/www/nulls.tcl >nulls.html
+
 
 # Files to be published on the website.
 #
@@ -332,7 +335,8 @@ DOC = \
   omitted.html \
   datatypes.html \
   quickstart.html \
-  fileformat.html
+  fileformat.html \
+  nulls.html
 
 doc:	$(DOC)
 	mkdir -p doc
