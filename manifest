@@ -1,5 +1,5 @@
-C Update\sthe\schange\slog\sprior\sto\sreleasing\sversion\s2.4.10.\s(CVS\s549)
-D 2002-05-03T00:17:54
+C Version\s2.4.10\s(CVS\s550)
+D 2002-05-03T00:18:12
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -132,7 +132,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 24e4cf73d22bb41d26bf3c833f1854a9c90923e8
+P 67838bbc800a1acdd91af8e43f5a65494fb9d690
 R 5d30e48f63589957c83bcafdc3ad7839
 U drh
-Z 1c870499377124be86cfb09ddc052d38
+Z f25f0b492acb188aa02ceb32116236f7
