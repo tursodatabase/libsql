@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.49 2002/02/03 03:34:08 drh Exp $
+** $Id: btree.c,v 1.50 2002/02/03 17:37:36 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2458,10 +2458,10 @@ int sqliteBtreeUpdateMeta(Btree *pBt, int *aMeta){
 ** The complete implementation of the BTree subsystem is above this line.
 ** All the code the follows is for testing and troubleshooting the BTree
 ** subsystem.  None of the code that follows is used during normal operation.
-** All of the following code is omitted unless the library is compiled with
-** the -DSQLITE_TEST=1 compiler option.
+** All of the following code is omitted if the library is compiled with
+** the -DNDEBUG=1 compiler option.
 ******************************************************************************/
-#if 1
+#ifndef NDEEBUG
 
 /*
 ** Print a disassembly of the given page on standard output.  This routine
@@ -2663,6 +2663,23 @@ static void checkList(SanityCheck *pCheck, int iPage, int N, char *zContext){
 }
 
 /*
+** Return negative if zKey1<zKey2.
+** Return zero if zKey1==zKey2.
+** Return positive if zKey1>zKey2.
+*/
+static int keyCompare(
+  const char *zKey1, int nKey1,
+  const char *zKey2, int nKey2
+){
+  int min = nKey1>nKey2 ? nKey2 : nKey1;
+  int c = memcmp(zKey1, zKey2, min);
+  if( c==0 ){
+    c = nKey1 - nKey2;
+  }
+  return c;
+}
+
+/*
 ** Do various sanity checks on a single page of a tree.  Return
 ** the tree depth.  Root pages return 0.  Parents of root pages
 ** return 1, and so forth.
@@ -2686,11 +2703,14 @@ static int checkTreePage(
   MemPage *pParent,     /* Parent page */
   char *zParentContext, /* Parent context */
   char *zLowerBound,    /* All keys should be greater than this, if not NULL */
-  char *zUpperBound     /* All keys should be less than this, if not NULL */
+  int nLower,           /* Number of characters in zLowerBound */
+  char *zUpperBound,    /* All keys should be less than this, if not NULL */
+  int nUpper            /* Number of characters in zUpperBound */
 ){
   MemPage *pPage;
   int i, rc, depth, d2, pgno;
   char *zKey1, *zKey2;
+  int nKey1, nKey2;
   BtCursor cur;
   char zMsg[100];
   char zContext[100];
@@ -2716,7 +2736,14 @@ static int checkTreePage(
   /* Check out all the cells.
   */
   depth = 0;
-  zKey1 = zLowerBound ? sqliteStrDup(zLowerBound) : 0;
+  if( zLowerBound ){
+    zKey1 = sqliteMalloc( nLower+1 );
+    memcpy(zKey1, zLowerBound, nLower);
+    zKey1[nLower] = 0;
+  }else{
+    zKey1 = 0;
+  }
+  nKey1 = nLower;
   cur.pPage = pPage;
   cur.pBt = pCheck->pBt;
   for(i=0; i<pPage->nCell; i++){
@@ -2725,7 +2752,8 @@ static int checkTreePage(
 
     /* Check payload overflow pages
     */
-    sz = NKEY(pCell->h) + NDATA(pCell->h);
+    nKey2 = NKEY(pCell->h);
+    sz = nKey2 + NDATA(pCell->h);
     sprintf(zContext, "On page %d cell %d: ", iPage, i);
     if( sz>MX_LOCAL_PAYLOAD ){
       int nPage = (sz - MX_LOCAL_PAYLOAD + OVERFLOW_SIZE - 1)/OVERFLOW_SIZE;
@@ -2735,26 +2763,27 @@ static int checkTreePage(
     /* Check that keys are in the right order
     */
     cur.idx = i;
-    zKey2 = sqliteMalloc( NKEY(pCell->h)+1 );
-    getPayload(&cur, 0, NKEY(pCell->h), zKey2);
-    if( zKey1 && strcmp(zKey1,zKey2)>0 ){
+    zKey2 = sqliteMalloc( nKey2+1 );
+    getPayload(&cur, 0, nKey2, zKey2);
+    if( zKey1 && keyCompare(zKey1, nKey1, zKey2, nKey2)>=0 ){
       checkAppendMsg(pCheck, zContext, "Key is out of order");
     }
 
     /* Check sanity of left child page.
     */
     pgno = (int)pCell->h.leftChild;
-    d2 = checkTreePage(pCheck, pgno, pPage, zContext, zKey1, zKey2);
+    d2 = checkTreePage(pCheck, pgno, pPage, zContext, zKey1,nKey1,zKey2,nKey2);
     if( i>0 && d2!=depth ){
       checkAppendMsg(pCheck, zContext, "Child page depth differs");
     }
     depth = d2;
     sqliteFree(zKey1);
     zKey1 = zKey2;
+    nKey1 = nKey2;
   }
   pgno = pPage->u.hdr.rightChild;
   sprintf(zContext, "On page %d at right child: ", iPage);
-  checkTreePage(pCheck, pgno, pPage, zContext, zKey1, zUpperBound);
+  checkTreePage(pCheck, pgno, pPage, zContext, zKey1,nKey1,zUpperBound,nUpper);
   sqliteFree(zKey1);
  
   /* Check for complete coverage of the page
@@ -2838,7 +2867,7 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
   /* Check all the tables.
   */
   for(i=0; i<nRoot; i++){
-    checkTreePage(&sCheck, aRoot[i], 0, "List of tree roots: ", 0, 0);
+    checkTreePage(&sCheck, aRoot[i], 0, "List of tree roots: ", 0,0,0,0);
   }
 
   /* Make sure every page in the file is referenced
@@ -2869,4 +2898,4 @@ char *sqliteBtreeSanityCheck(Btree *pBt, int *aRoot, int nRoot){
   return sCheck.zErrMsg;
 }
 
-#endif /* SQLITE_TEST */
+#endif /* !defined(NDEBUG) */

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.73 2002/02/03 03:34:08 drh Exp $
+** $Id: build.c,v 1.74 2002/02/03 17:37:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1398,33 +1398,13 @@ copy_cleanup:
 ** collapse free space, etc.  It is modelled after the VACUUM command
 ** in PostgreSQL.
 **
-** In this implementation, no cleanup occurs.  Instead, the B-tree that
-** forms the database is checked for integrity.  This is a no-op unless
-** SQLite is compiled with the SQLITE_TEST macro.
+** In version 1.0.x of SQLite, the VACUUM command would call
+** gdbm_reorganize() on all the database tables.  But beginning
+** with 2.0.0, SQLite no longer uses GDBM so this command has
+** become a no-op.
 */
 void sqliteVacuum(Parse *pParse, Token *pTableName){
-#if 1
-  static VdbeOp checkDb[] = {
-    { OP_SetInsert,   0, 0,        "2"},
-    { OP_Open,        0, 2,        0},
-    { OP_Rewind,      0, 6,        0},
-    { OP_Column,      0, 3,        0},
-    { OP_SetInsert,   0, 0,        0},
-    { OP_Next,        0, 3,        0},
-    { OP_SanityCheck, 0, 0,        0},
-    { OP_ColumnCount, 1, 0,        0},
-    { OP_ColumnName,  0, 0,        "sanity_check"},
-    { OP_Callback,    1, 0,        0},
-  };
-  static 
-  Vdbe *v;
- 
-
-  v = sqliteGetVdbe(pParse);
-  if( v==0 ) return;
-  sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
-  return;
-#endif
+  /* Do nothing */
 }
 
 /*
@@ -1714,6 +1694,26 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }else{
       sqliteParserTrace(0, 0);
     }
+  }else
+#endif
+
+#ifndef NDEBUG
+  if( sqliteStrICmp(zLeft, "sanity_check")==0 ){
+    static VdbeOp checkDb[] = {
+      { OP_SetInsert,   0, 0,        "2"},
+      { OP_Open,        0, 2,        0},
+      { OP_Rewind,      0, 6,        0},
+      { OP_Column,      0, 3,        0},
+      { OP_SetInsert,   0, 0,        0},
+      { OP_Next,        0, 3,        0},
+      { OP_SanityCheck, 0, 0,        0},
+      { OP_ColumnCount, 1, 0,        0},
+      { OP_ColumnName,  0, 0,        "sanity_check"},
+      { OP_Callback,    1, 0,        0},
+    };
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
   }else
 #endif
 

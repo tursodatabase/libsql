@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.47 2002/02/03 00:56:10 drh Exp $
+** @(#) $Id: parse.y,v 1.48 2002/02/03 17:37:36 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -573,6 +573,7 @@ cmd ::= PRAGMA ids(X) EQ ON(Y).          {sqlitePragma(pParse,&X,&Y,0);}
 cmd ::= PRAGMA ids(X) EQ plus_num(Y).    {sqlitePragma(pParse,&X,&Y,0);}
 cmd ::= PRAGMA ids(X) EQ minus_num(Y).   {sqlitePragma(pParse,&X,&Y,1);}
 cmd ::= PRAGMA ids(X) LP ids(Y) RP.      {sqlitePragma(pParse,&X,&Y,0);}
+cmd ::= PRAGMA(Y) ids(X).                {sqlitePragma(pParse,&X,&Y,0);}
 plus_num(A) ::= plus_opt number(X).   {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
 number(A) ::= INTEGER(X).  {A = X;}
