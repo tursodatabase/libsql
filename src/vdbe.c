@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.236 2003/08/16 12:37:52 drh Exp $
+** $Id: vdbe.c,v 1.237 2003/08/26 11:35:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -582,7 +582,7 @@ void sqliteVdbeDequoteP3(Vdbe *p, int addr){
 ** delete leading and trailing whitespace.
 */
 void sqliteVdbeCompressSpace(Vdbe *p, int addr){
-  char *z;
+  unsigned char *z;
   int i, j;
   Op *pOp;
   assert( p->magic==VDBE_MAGIC_INIT );
@@ -595,7 +595,7 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
     pOp->p3 = sqliteStrDup(pOp->p3);
     pOp->p3type = P3_DYNAMIC;
   }
-  z = pOp->p3;
+  z = (unsigned char*)pOp->p3;
   if( z==0 ) return;
   i = j = 0;
   while( isspace(z[i]) ){ i++; }

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\ssqliteRealloc()\sthat\sonly\soccurs\sif\sthere\sis\smemory\scorruption\nand\sdebugging\sis\senabled.\s\sTicket\s#421.\s(CVS\s1086)
-D 2003-08-26T11:29:08
+C Try\sto\swork\saround\sa\sbug\sin\sVC++\sby\sonly\spassing\sunsigned\scharacters\sto\nthe\sisspace()\sroutine.\s\sBug\sreported\son\sthe\smailing\slist.\s(CVS\s1087)
+D 2003-08-26T11:35:00
 F Makefile.in f7e916ae863393827fa6a4cb292e3398096edcf1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 474581eaab388233df01bb019e558af2965decbf
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c f16efa2d60bfd4e31ae06b07ed149557e828d294
 F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
-F src/vdbe.c fb7f2fc00cd3400ca7e7b10b2b6cc692dfa8c59b
+F src/vdbe.c 306f59011785428e2d19578ca1fcd7a1304f57f7
 F src/vdbe.h d853ed6cc4727fa9e8ace6187c55afcf817041dd
 F src/where.c 83b2a2d26d5c3bea33457a83e541bb1dcf7b1248
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P da53369f0bf133b89b213bbb1ccea13eb93ab6ed
-R c063bc5b44f0e04369457c8d8da286bc
+P eebc82b77dbf35a18d2eae47336038d4b67806c6
+R 64a387695e85e253e6f4e85fdfd7e471
 U drh
-Z d6308bf677dd6cb42320ba8033b5ea82
+Z b4e08592f479e81537e4664dee3f1616
