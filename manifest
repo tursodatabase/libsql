@@ -1,5 +1,5 @@
-C Update\schanges\slog\sfor\s2.8.15.\s\sAdd\snew\sarchitecture\simages.\s(CVS\s1853)
-D 2004-07-22T16:12:19
+C Fixes\sto\sthe\spublish.sh\sfile\sfor\sversion\s3.0.\s(CVS\s1857)
+D 2004-07-22T18:44:24
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,7 +19,7 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 1957885390af52f5a69679bb43ec4cd8904c7a9f
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
-F publish.sh 73703b55b590a7b7ee305b05445a424ec47be29e
+F publish.sh 5a491758e36308716d60b571238e90e3084a1b94
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
@@ -239,7 +239,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P dc3caba7f0c8f1decb20e57915278acb8388fdd9
-R 2867251644abe5c91df8ac6101c311ba
+P 8dd9b4de278570e8a741d28752724117e8c5fae0
+R d75adc228245bad4d76ecd4feb2b643b
 U drh
-Z c18c939f203f8f865afe415a28000a42
+Z 3cc7aa0a733d903552827fdfbc509fff

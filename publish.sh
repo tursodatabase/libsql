@@ -84,7 +84,6 @@ i386-mingw32msvc-dllwrap \
 i386-mingw32msvc-strip tclsqlite3.dll
 rm tclsqlite.o
 cp ../sqlite3.def .
-cat >sqlite3.def <<\END_OF_FILE
 i386-mingw32msvc-dllwrap \
      --def sqlite3.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \
@@ -94,7 +93,9 @@ i386-mingw32msvc-dllwrap \
      -dllname sqlite3.dll -lmsvcrt *.o
 i386-mingw32msvc-strip sqlite3.dll
 zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
+echo zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
 zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
+echo zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
 cd ..
 
 # Build the sqlite.exe executable for windows.
@@ -112,7 +113,7 @@ cd ..
 ORIGIN=`pwd`
 cd $srcdir
 cd ..
-EXCLUDE=`find sqlite -print | grep CVS | sed 's,sqlite/, --exclude sqlite/,'`
+EXCLUDE=`find sqlite -print | grep CVS | sed 's,^, --exclude ,'`
 tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite
 cd $ORIGIN
 
