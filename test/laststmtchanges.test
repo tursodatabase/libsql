@@ -1,0 +1,244 @@
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests to make sure that value returned by last_statement_change_count()
+# (LSCC) is updated properly, especially inside triggers
+#
+# Note 1: LSCC remains constant within a statement and only updates once
+#           the statement is finished (triggers count as part of statement)
+# Note 2: LSCC is changed within the context of a trigger
+#           much like last_insert_rowid() (see lastinsert.test),
+#           but is restored once the trigger exits
+# Note 3: LSCC is not changed by a change to a view (since everything
+#           is done within instead of trigger context)
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# ----------------------------------------------------------------------------
+# 1.x - basic tests (no triggers)
+
+# LSCC set properly after insert
+do_test laststmtchanges-1.1 {
+    catchsql {
+        create table t0 (x);
+        insert into t0 values (1);
+        insert into t0 values (1);
+        insert into t0 values (2);
+        insert into t0 values (2);
+        insert into t0 values (1);
+        insert into t0 values (1);
+        insert into t0 values (1);
+        insert into t0 values (2);
+        select last_statement_change_count();
+    }
+} {0 1}
+
+# LSCC set properly after update
+do_test laststmtchanges-1.2 {
+    catchsql {
+        update t0 set x=3 where x=1;
+        select last_statement_change_count();
+    }
+} {0 5}
+
+# LSCC unchanged within an update statement
+do_test laststmtchanges-1.3 {
+    catchsql {
+        update t0 set x=x+last_statement_change_count() where x=3;
+        select count() from t0 where x=8;
+    }
+} {0 5}
+
+# LSCC set properly after update on table where no rows changed
+do_test laststmtchanges-1.4 {
+    catchsql {
+        update t0 set x=77 where x=88;
+        select last_statement_change_count();
+    }
+} {0 0}
+
+# LSCC set properly after delete from table
+do_test laststmtchanges-1.5 {
+    catchsql {
+        delete from t0 where x=2;
+        select last_statement_change_count();
+    }
+} {0 3}
+
+# ----------------------------------------------------------------------------
+# 2.x - tests with after insert trigger
+
+# LSCC changed properly after insert into table containing after trigger
+do_test laststmtchanges-2.1 {
+    catchsql {
+        create table t1 (k integer primary key);
+        create table t2 (k integer primary key, v1, v2);
+        create trigger r1 after insert on t1 for each row begin
+            insert into t2 values (NULL, last_statement_change_count(), NULL);
+            update t0 set x=x;
+            update t2 set v2=last_statement_change_count();
+        end;
+        insert into t1 values (77);
+        select last_statement_change_count();
+    }
+} {0 1}
+
+# LSCC unchanged upon entry into after insert trigger
+do_test laststmtchanges-2.2 {
+    catchsql {
+        select v1 from t2;
+    }
+} {0 3}
+
+# LSCC changed properly by update within context of after insert trigger
+do_test laststmtchanges-2.3 {
+    catchsql {
+        select v2 from t2;
+    }
+} {0 5}
+
+# ----------------------------------------------------------------------------
+# 3.x - tests with after update trigger
+
+# LSCC changed properly after update into table containing after trigger
+do_test laststmtchanges-3.1 {
+    catchsql {
+        drop trigger r1;
+        delete from t2; delete from t2;
+        create trigger r1 after update on t1 for each row begin
+            insert into t2 values (NULL, last_statement_change_count(), NULL);
+            delete from t0 where oid=1 or oid=2;
+            update t2 set v2=last_statement_change_count();
+        end;
+        update t1 set k=k;
+        select last_statement_change_count();
+    }
+} {0 1}
+
+# LSCC unchanged upon entry into after update trigger
+do_test laststmtchanges-3.2 {
+    catchsql {
+        select v1 from t2;
+    }
+} {0 0}
+
+# LSCC changed properly by delete within context of after update trigger
+do_test laststmtchanges-3.3 {
+    catchsql {
+        select v2 from t2;
+    }
+} {0 2}
+
+# ----------------------------------------------------------------------------
+# 4.x - tests with before delete trigger
+
+# LSCC changed properly on delete from table containing before trigger
+do_test laststmtchanges-4.1 {
+    catchsql {
+        drop trigger r1;
+        delete from t2; delete from t2;
+        create trigger r1 before delete on t1 for each row begin
+            insert into t2 values (NULL, last_statement_change_count(), NULL);
+            insert into t0 values (5);
+            update t2 set v2=last_statement_change_count();
+        end;
+        delete from t1;
+        select last_statement_change_count();
+    }
+} {0 1}
+
+# LSCC unchanged upon entry into before delete trigger
+do_test laststmtchanges-4.2 {
+    catchsql {
+        select v1 from t2;
+    }
+} {0 0}
+
+# LSCC changed properly by insert within context of before delete trigger
+do_test laststmtchanges-4.3 {
+    catchsql {
+        select v2 from t2;
+    }
+} {0 1}
+
+# ----------------------------------------------------------------------------
+# 5.x - complex tests with temporary tables and nested instead of triggers
+
+do_test laststmtchanges-5.1 {
+    catchsql {
+        drop table t0; drop table t1; drop table t2;
+        create temp table t0(x);
+        create temp table t1 (k integer primary key);
+        create temp table t2 (k integer primary key);
+        create temp view v1 as select * from t1;
+        create temp view v2 as select * from t2;
+        create temp table n1 (k integer primary key, n);
+        create temp table n2 (k integer primary key, n);
+        insert into t0 values (1);
+        insert into t0 values (2);
+        insert into t0 values (1);
+        insert into t0 values (1);
+        insert into t0 values (1);
+        insert into t0 values (2);
+        insert into t0 values (2);
+        insert into t0 values (1);
+        create temp trigger r1 instead of insert on v1 for each row begin
+            insert into n1 values (NULL, last_statement_change_count());
+            update t0 set x=x*10 where x=1;
+            insert into n1 values (NULL, last_statement_change_count());
+            insert into t1 values (NEW.k);
+            insert into n1 values (NULL, last_statement_change_count());
+            update t0 set x=x*10 where x=0;
+            insert into v2 values (100+NEW.k);
+            insert into n1 values (NULL, last_statement_change_count());
+        end;
+        create temp trigger r2 instead of insert on v2 for each row begin
+            insert into n2 values (NULL, last_statement_change_count());
+            insert into t2 values (1000+NEW.k);
+            insert into n2 values (NULL, last_statement_change_count());
+            update t0 set x=x*100 where x=0;
+            insert into n2 values (NULL, last_statement_change_count());
+            delete from t0 where x=2;
+            insert into n2 values (NULL, last_statement_change_count());
+        end;
+        insert into t1 values (77);
+        select last_statement_change_count();
+    }
+} {0 1}
+
+do_test laststmtchanges-5.2 {
+    catchsql {
+        delete from t1 where k=88;
+        select last_statement_change_count();
+    }
+} {0 0}
+
+do_test laststmtchanges-5.3 {
+    catchsql {
+        insert into v1 values (5);
+        select last_statement_change_count();
+    }
+} {0 0}
+
+do_test laststmtchanges-5.4 {
+    catchsql {
+        select n from n1;
+    }
+} {0 {0 5 1 0}}
+
+do_test laststmtchanges-5.5 {
+    catchsql {
+        select n from n2;
+    }
+} {0 {0 1 0 3}}
+
+finish_test
+
