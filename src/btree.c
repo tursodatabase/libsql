@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.42 2001/12/05 00:21:20 drh Exp $
+** $Id: btree.c,v 1.43 2001/12/14 15:09:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -990,7 +990,10 @@ static int getPayload(BtCursor *pCur, int offset, int amt, char *zBuf){
     }
     sqlitepager_unref(pOvfl);
   }
-  return amt==0 ? SQLITE_OK : SQLITE_CORRUPT;
+  if( amt>0 ){
+    return SQLITE_CORRUPT;
+  }
+  return SQLITE_OK;
 }
 
 /*

@@ -25,6 +25,7 @@
   struct OsFile {
     struct lockInfo *pLock;  /* Information about locks on this inode */
     int fd;                  /* The file descriptor */
+    int locked;              /* True if this user holds the lock */
   };
 # define SQLITE_TEMPNAME_SIZE 200
 # if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -37,7 +38,11 @@
 #if OS_WIN
 #include <windows.h>
 #include <winbase.h>
-  typedef HANDLE OsFile;
+  typedef struct OsFile OsFile;
+  struct OsFile {
+    HANDLE h;
+    int locked;
+  };
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 # define SQLITE_MIN_SLEEP_MS 1
 #endif
@@ -48,15 +53,16 @@ int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
 int sqliteOsOpenExclusive(const char*, OsFile*);
 int sqliteOsOpenReadOnly(const char*, OsFile*);
 int sqliteOsTempFileName(char*);
-int sqliteOsClose(OsFile);
-int sqliteOsRead(OsFile, void*, int amt);
-int sqliteOsWrite(OsFile, const void*, int amt);
-int sqliteOsSeek(OsFile, int offset);
-int sqliteOsSync(OsFile);
-int sqliteOsTruncate(OsFile, int size);
-int sqliteOsFileSize(OsFile, int *pSize);
-int sqliteOsLock(OsFile, int wrlock);
-int sqliteOsUnlock(OsFile);
+int sqliteOsClose(OsFile*);
+int sqliteOsRead(OsFile*, void*, int amt);
+int sqliteOsWrite(OsFile*, const void*, int amt);
+int sqliteOsSeek(OsFile*, int offset);
+int sqliteOsSync(OsFile*);
+int sqliteOsTruncate(OsFile*, int size);
+int sqliteOsFileSize(OsFile*, int *pSize);
+int sqliteOsReadLock(OsFile*);
+int sqliteOsWriteLock(OsFile*);
+int sqliteOsUnlock(OsFile*);
 int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
 void sqliteOsEnterMutex(void);
