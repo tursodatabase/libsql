@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.188 2004/05/25 12:05:57 danielk1977 Exp $
+** $Id: main.c,v 1.189 2004/05/25 23:35:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -481,79 +481,6 @@ void sqlite3RollbackAll(sqlite *db){
   sqlite3ResetInternalSchema(db, 0);
   /* sqlite3RollbackInternalChanges(db); */
 }
-
-/*
-** Execute SQL code.  Return one of the SQLITE_ success/failure
-** codes.  Also write an error message into memory obtained from
-** malloc() and make *pzErrMsg point to that message.
-**
-** If the SQL is a query, then for each row in the query result
-** the xCallback() function is called.  pArg becomes the first
-** argument to xCallback().  If xCallback=NULL then no callback
-** is invoked, even for queries.
-*/
-int sqlite3_exec(
-  sqlite *db,                 /* The database on which the SQL executes */
-  const char *zSql,           /* The SQL to be executed */
-  sqlite_callback xCallback,  /* Invoke this callback routine */
-  void *pArg,                 /* First argument to xCallback() */
-  char **pzErrMsg             /* Write error messages here */
-){
-  int rc = SQLITE_OK;
-  const char *zLeftover;
-  sqlite_vm *pVm;
-  int nRetry = 0;
-  int nChange = 0;
-  int nCallback;
-
-  if( zSql==0 ) return SQLITE_OK;
-  while( rc==SQLITE_OK && zSql[0] ){
-    pVm = 0;
-    rc = sqlite3_compile(db, zSql, &zLeftover, &pVm, pzErrMsg);
-    if( rc!=SQLITE_OK ){
-      assert( pVm==0 || sqlite3_malloc_failed );
-      return rc;
-    }
-    if( pVm==0 ){
-      /* This happens if the zSql input contained only whitespace */
-      break;
-    }
-    db->nChange += nChange;
-    nCallback = 0;
-    while(1){
-      int nArg;
-      char **azArg, **azCol;
-      rc = sqlite3_step(pVm, &nArg, (const char***)&azArg,(const char***)&azCol);
-      if( rc==SQLITE_ROW ){
-        if( xCallback!=0 && xCallback(pArg, nArg, azArg, azCol) ){
-          sqlite3_finalize(pVm, 0);
-          return SQLITE_ABORT;
-        }
-        nCallback++;
-      }else{
-        if( rc==SQLITE_DONE && nCallback==0
-          && (db->flags & SQLITE_NullCallback)!=0 && xCallback!=0 ){
-          xCallback(pArg, nArg, azArg, azCol);
-        }
-        rc = sqlite3_finalize(pVm, pzErrMsg);
-        if( rc==SQLITE_SCHEMA && nRetry<2 ){
-          nRetry++;
-          rc = SQLITE_OK;
-          break;
-        }
-        if( db->pVdbe==0 ){
-          nChange = db->nChange;
-        }
-        nRetry = 0;
-        zSql = zLeftover;
-        while( isspace(zSql[0]) ) zSql++;
-        break;
-      }
-    }
-  }
-  return rc;
-}
-
 
 /*
 ** Compile a single statement of SQL into a virtual machine.  Return one
@@ -1074,7 +1001,7 @@ int sqlite3_prepare(
 
   if( !db->init.busy ){
     if( (db->flags & SQLITE_Initialized)==0 ){
-      int rc, cnt = 1;
+      int cnt = 1;
       while( (rc = sqlite3Init(db, &zErrMsg))==SQLITE_BUSY
          && db->xBusyCallback
          && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
@@ -1132,15 +1059,16 @@ int sqlite3_prepare(
   assert( ppStmt );
   *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
   if( pzTail ) *pzTail = sParse.zTail;
-
-  if( sqlite3SafetyOff(db) ){
-    rc = SQLITE_MISUSE;
-    goto prepare_out;
-  }
-
   rc = sParse.rc;
 
+  if( rc==SQLITE_OK && sParse.pVdbe && sParse.explain ){
+    sqlite3VdbeSetNumCols(sParse.pVdbe, 5);
+  } 
+
 prepare_out:
+  if( sqlite3SafetyOff(db) ){
+    rc = SQLITE_MISUSE;
+  }
   if( zErrMsg ){
     sqlite3Error(db, rc, "%s", zErrMsg);
   }else{

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.28 2004/05/22 21:30:41 drh Exp $
+** $Id: pragma.c,v 1.29 2004/05/25 23:35:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -129,6 +129,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
       sqlite *db = pParse->db;
       Vdbe *v;
       if( strcmp(zLeft,zRight)==0 && (v = sqlite3GetVdbe(pParse))!=0 ){
+        sqlite3VdbeSetNumCols(v, 1);
         sqlite3VdbeOp3(v, OP_ColumnName, 0, 1, aPragma[i].zName, P3_STATIC);
         sqlite3VdbeOp3(v, OP_ColumnName, 1, 0, "boolean", P3_STATIC);
         sqlite3VdbeCode(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0,
@@ -207,6 +208,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
     int addr;
     if( pRight->z==pLeft->z ){
+      sqlite3VdbeSetNumCols(v, 1);
       addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
       sqlite3VdbeChangeP1(v, addr+5, MAX_PAGES);
     }else{
@@ -248,6 +250,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       int size = db->cache_size;;
       if( size<0 ) size = -size;
       sqlite3VdbeAddOp(v, OP_Integer, size, 0);
+      sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
     }else{
       int size = atoi(zRight);
@@ -293,6 +296,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0}
     };
     if( pRight->z==pLeft->z ){
+      sqlite3VdbeSetNumCols(v, 1);
       int addr = sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
       sqlite3VdbeChangeP2(v, addr+3, addr+10);
     }else{
@@ -336,6 +340,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0},
     };
     if( pRight->z==pLeft->z ){
+      sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeAddOp(v, OP_Integer, db->safety_level-1, 0);
       sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
     }else{
@@ -376,6 +381,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  5, 1,       "pk"},
       };
       int i;
+      sqlite3VdbeSetNumCols(v, 6);
       sqlite3VdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0; i<pTab->nCol; i++){
@@ -404,6 +410,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       };
       int i;
       pTab = pIdx->pTable;
+      sqlite3VdbeSetNumCols(v, 3);
       sqlite3VdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
       for(i=0; i<pIdx->nColumn; i++){
         int cnum = pIdx->aiColumn[i];
@@ -432,6 +439,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  2, 1,       "unique"},
       };
 
+      sqlite3VdbeSetNumCols(v, 3);
       sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
       while(pIdx){
         sqlite3VdbeAddOp(v, OP_Integer, i, 0);
@@ -462,6 +470,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  4, 1,       "to"},
       };
 
+      sqlite3VdbeSetNumCols(v, 6);
       sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
       while(pFK){
         int j;
@@ -488,6 +497,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ColumnName,  2, 1,       "file"},
     };
 
+    sqlite3VdbeSetNumCols(v, 3);
     sqlite3VdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
     for(i=0; i<db->nDb; i++){
       if( db->aDb[i].pBt==0 ) continue;
@@ -519,6 +529,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
     if( pRight->z==pLeft->z ){
       sqlite3VdbeAddOp(v, OP_Integer, db->temp_store, 0);
+      sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
       changeTempStorage(pParse, zRight);
@@ -542,6 +553,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_ReadCookie,  0, 5,        0},
       { OP_Callback,    1, 0,        0}};
     if( pRight->z==pLeft->z ){
+      sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
     }else{
       sqlite3BeginWriteOperation(pParse, 0, 0);
@@ -587,6 +599,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
 
     /* Initialize the VDBE program */
+    sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeAddOpList(v, ArraySize(initCode), initCode);
 
     /* Do an integrity check on each database file */

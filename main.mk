@@ -59,7 +59,7 @@ LIBOBJ = attach.o auth.o btree.o build.o copy.o date.o delete.o \
          main.o opcodes.o os_mac.o os_unix.o os_win.o \
          pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
-         vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o utf.o
+         vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o utf.o legacy.o
 
 # All of the source code files.
 #
@@ -240,6 +240,8 @@ hash.o:	$(TOP)/src/hash.c $(HDR)
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCCX) -c $(TOP)/src/insert.c
 
+legacy.o:	$(TOP)/src/legacy.c $(HDR)
+	$(TCCX) -c $(TOP)/src/legacy.c
 
 main.o:	$(TOP)/src/main.c $(HDR)
 	$(TCCX) -c $(TOP)/src/main.c

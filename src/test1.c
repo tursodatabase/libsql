@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.51 2004/05/25 12:05:57 danielk1977 Exp $
+** $Id: test1.c,v 1.52 2004/05/25 23:35:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -764,6 +764,7 @@ static int sqlite_datatypes(
 ** Step a virtual machine.  Return a the result code as a string.
 ** Column results are written into three variables.
 */
+#if 0
 static int test_step(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -817,6 +818,7 @@ static int test_step(
   Tcl_AppendResult(interp, zRc, 0);
   return TCL_OK;
 }
+#endif
 
 /*
 ** Usage:  sqlite3_finalize  STMT 
@@ -1562,7 +1564,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
      { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },
-//     { "sqlite3_open",                  (Tcl_CmdProc*)sqlite_test_open      },
      { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
      { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },
      { "sqlite3_get_table_printf",      (Tcl_CmdProc*)test_get_table_printf },
@@ -1576,10 +1577,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-     { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
-// { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
+/*{ "sqlite_step",                    (Tcl_CmdProc*)test_step * },*/
      { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
-// { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   static struct {

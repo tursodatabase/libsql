@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.76 2004/05/25 12:05:57 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.77 2004/05/25 23:35:19 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -1059,7 +1059,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*,int);
 ** column, then a NULL pointer is returned. The returned string is always
 ** UTF-8 encoded. For example, in the database schema:
 **
-** CREATE TABLE t1(c1 VARINT);
+** CREATE TABLE t1(c1 VARIANT);
 **
 ** And the following statement compiled:
 **

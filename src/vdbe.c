@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.328 2004/05/25 11:47:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.329 2004/05/25 23:35:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -527,6 +527,7 @@ static void hardRealify(Mem *pStack, u8 enc){
 ** SQLITE_DONE.  Or it could be the case the the same database connection
 ** is being used simulataneously by two or more threads.
 */
+#if 0
 int sqlite3_step(
   sqlite_vm *pVm,              /* The virtual machine to execute */
   int *pN,                     /* OUT: Number of columns in result */
@@ -568,6 +569,7 @@ int sqlite3_step(
 
   return rc;
 }
+#endif 
 
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the
@@ -2090,7 +2092,8 @@ case OP_ColumnName: {
   assert( pOp->p1>=0 && pOp->p1<p->nOp );
   p->azColName[pOp->p1] = pOp->p3;
   p->nCallback = 0;
-  if( pOp->p2 ) p->nResColumn = pOp->p1+1;
+  assert( !pOp->p2 || p->nResColumn==(pOp->p1+1) );
+  /* if( pOp->p2 ) p->nResColumn = pOp->p1+1; */
   break;
 }
 
@@ -2347,7 +2350,7 @@ divide_by_zero:
 case OP_Function: {
   int i;
   Mem *pArg;
-  sqlite_func ctx;
+  sqlite3_context ctx;
   sqlite3_value **apVal;
   int n = pOp->p1;
 
@@ -5693,7 +5696,7 @@ case OP_AggFunc: {
   int n = pOp->p2;
   int i;
   Mem *pMem, *pRec;
-  sqlite_func ctx;
+  sqlite3_context ctx;
   sqlite3_value **apVal;
 
   assert( n>=0 );
@@ -5840,7 +5843,7 @@ case OP_AggNext: {
     pc = pOp->p2 - 1;
   } else {
     int i;
-    sqlite_func ctx;
+    sqlite3_context ctx;
     Mem *aMem;
     p->agg.pCurrent = sqliteHashData(p->agg.pSearch);
     aMem = p->agg.pCurrent->aMem;

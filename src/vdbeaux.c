@@ -867,6 +867,16 @@ static void Cleanup(Vdbe *p){
 }
 
 /*
+** Set the number of result columns that will be returned by this SQL
+** statement. This is now set at compile time, rather than during
+** execution of the vdbe program so that sqlite3_column_count() can
+** be called on an SQL statement before sqlite3_step().
+*/
+void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
+  p->nResColumn = nResColumn;
+}
+
+/*
 ** Clean up a VDBE after execution but do not delete the VDBE just yet.
 ** Write any error messages into *pzErrMsg.  Return the result code.
 **
