@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.35 2002/07/06 16:32:15 drh Exp $
+** $Id: tclsqlite.c,v 1.36 2002/07/07 17:12:36 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -587,6 +587,9 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   /* The return value is the value of the sqlite* pointer
   */
   sprintf(zBuf, "%p", p->db);
+  if( strncmp(zBuf,"0x",2) ){
+    sprintf(zBuf, "0x%p", p->db);
+  }
   Tcl_AppendResult(interp, zBuf, 0);
 
   /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
