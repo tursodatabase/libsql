@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.12 2004/02/25 02:33:35 drh Exp $
+** $Id: vacuum.c,v 1.13 2004/03/10 18:57:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -256,7 +256,7 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   strcpy(zTemp, zFilename);
   for(i=0; i<10; i++){
     zTemp[nFilename] = '-';
-    randomName(&zTemp[nFilename+1]);
+    randomName((unsigned char*)&zTemp[nFilename+1]);
     if( !sqliteOsFileExists(zTemp) ) break;
   }
   if( i>=10 ){
