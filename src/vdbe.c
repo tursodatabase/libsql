@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.13 2000/06/04 12:58:38 drh Exp $
+** $Id: vdbe.c,v 1.14 2000/06/05 02:07:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -671,6 +671,11 @@ int sqliteVdbeExec(
 
   p->tos = -1;
   rc = SQLITE_OK;
+#ifdef MEMORY_DEBUG
+  if( access("vdbe_trace",0)==0 ){
+    p->trace = stderr;
+  }
+#endif
   if( pzErrMsg ){ *pzErrMsg = 0; }
   for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
     pOp = &p->aOp[pc];
@@ -1644,13 +1649,13 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           char *zKey;
           int nKey;
-          if( (p->aStack[tos].flags & STK_Int)==0 ){
+          if( p->aStack[tos].flags & STK_Int ){
+            nKey = sizeof(int);
+            zKey = (char*)&p->aStack[tos].i;
+          }else{
             if( Stringify(p, tos) ) goto no_mem;
             nKey = p->aStack[tos].n;
             zKey = p->zStack[tos];
-          }else{
-            nKey = sizeof(int);
-            zKey = (char*)&p->aStack[tos].n;
           }
           sqliteDbbeDelete(p->aTab[i].pTable, nKey, zKey);
         }
@@ -1971,8 +1976,9 @@ int sqliteVdbeExec(
         if( amt==1 ){
           p->tos++;
           if( NeedStack(p, p->tos) ) goto no_mem;
-          p->aStack[p->tos].n = val;
+          p->aStack[p->tos].i = val;
           p->aStack[p->tos].flags = STK_Int;
+          p->zStack[p->tos] = 0;
         }else{
           pc = pOp->p2 - 1;
         }

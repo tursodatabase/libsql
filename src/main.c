@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.7 2000/06/02 14:27:23 drh Exp $
+** $Id: main.c,v 1.8 2000/06/05 02:07:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -46,7 +46,7 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sParse.initFlag = 1;
-  nErr = sqliteRunParser(&sParse, argv[0], &zErrMsg);
+  nErr = sqliteRunParser(&sParse, argv[0], 0);
   return nErr;
 }
 
