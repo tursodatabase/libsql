@@ -61,7 +61,6 @@
 */
 #include "os_common.h"
 
-
 /*
 ** Here is the dirt on POSIX advisory locks:  ANSI STD 1003.1 (1996)
 ** section 6.5.2.2 lines 483 through 490 specify that when a process
@@ -649,7 +648,6 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsReadLock(OsFile *id){
-  int rc;
   return sqlite3OsLock(id, SHARED_LOCK);
 }
 
@@ -660,7 +658,6 @@ int sqlite3OsReadLock(OsFile *id){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsWriteLock(OsFile *id){
-  int rc;
   return sqlite3OsLock(id, EXCLUSIVE_LOCK);
 }
 
@@ -715,13 +712,14 @@ int sqlite3OsLock(OsFile *id, int locktype){
       (pLock->locktype==SHARED_LOCK || pLock->locktype==RESERVED_LOCK) ){
     assert( locktype==SHARED_LOCK );
     assert( id->locked==0 );
+    assert( pLock->cnt>0 );
     id->locked = SHARED_LOCK;
     pLock->cnt++;
     id->pOpen->nLock++;
     goto end_lock;
   }
 
-  lock.l_len = 1L;
+  lock.l_len = 0L;
   lock.l_whence = SEEK_SET;
 
   /* If control gets to this point, then actually go ahead and make
@@ -729,7 +727,6 @@ int sqlite3OsLock(OsFile *id, int locktype){
   */
   if( locktype==SHARED_LOCK ){
     assert( pLock->cnt==0 );
-    assert( id->pOpen->nLock==0 );
     assert( pLock->locktype==0 );
   
     /* Grab a read-lock on byte 2. This ensures that no other process
@@ -753,7 +750,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       id->locked = SHARED_LOCK;
-      id->pOpen->nLock = 1;
+      id->pOpen->nLock++;
       pLock->cnt = 1;
     }
   }else{
@@ -782,9 +779,11 @@ int sqlite3OsLock(OsFile *id, int locktype){
     }
   }
   
-  id->locked = locktype;
-  pLock->locktype = locktype;
-  assert(pLock->locktype==RESERVED_LOCK||(id->pOpen->nLock==1&&pLock->cnt==1));
+  if( rc==SQLITE_OK ){
+    id->locked = locktype;
+    pLock->locktype = locktype;
+    assert( pLock->locktype==RESERVED_LOCK || pLock->cnt==1 );
+  }
 
 end_lock:
   sqlite3OsLeaveMutex();
@@ -800,10 +799,10 @@ end_lock:
 int sqlite3OsUnlock(OsFile *id){
   int rc;
   if( !id->locked ) return SQLITE_OK;
+  id->locked = 0;
   sqlite3OsEnterMutex();
   assert( id->pLock->cnt!=0 );
   if( id->pLock->cnt>1 ){
-    id->locked = 0;
     id->pLock->cnt--;
     rc = SQLITE_OK;
   }else{
@@ -819,9 +818,9 @@ int sqlite3OsUnlock(OsFile *id){
       rc = SQLITE_OK;
       id->pLock->cnt = 0;
       id->pLock->locktype = 0;
-      id->locked = 0;
     }
   }
+
   if( rc==SQLITE_OK ){
     /* Decrement the count of locks against this same file.  When the
     ** count reaches zero, close any other file descriptors whose close
