@@ -1,5 +1,5 @@
-C More\sbug\sfixes\sin\sthe\sON\sCONFLICT\senhancement.\s(CVS\s357)
-D 2002-01-30T00:54:56
+C Better\stesting\sof\sthe\sON\sCONFLICT\slogic.\s(CVS\s358)
+D 2002-01-30T04:32:01
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3e26a3b9e7aee1b811deaf673e8d8973bdb3f22d
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,10 +23,10 @@ F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
 F src/btree.h 9ead7f54c270d8a554e59352ca7318fdaf411390
 F src/build.c c55881f270b1a77d1025dcfba7c87db46d43a9d0
 F src/delete.c 4cdb6d2e94e2eb1b1aa79eefafd4669d43c249d6
-F src/expr.c 4cae8bf44d5732182e5e8c25b4552c05ea55593e
+F src/expr.c a2a87dbd411a508ff89dffa90505ad42dac2f920
 F src/hash.c 8f7c740ef2eaaa8decfa8751f2be30680b123e46
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
-F src/insert.c b942f99e4f4c0464f51ad171b6edbc1439fac893
+F src/insert.c 5de9d85889d4b97c823be1b9ebf01c30e29947b3
 F src/main.c 0205771a6c31a9858ff131fc1e797b589afb76bf
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c c615faa4d23e742e0650e0751a6ad2a18438ad53
@@ -57,7 +57,7 @@ F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 6ab4dc5f595905a276ef588fad3c9236dc07a47b
 F test/btree2.test 08e9485619265cbaf5d11bd71f357cdc26bb87e0
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
-F test/conflict.test b1115520b32fe682dfd161754ed634352ab476af
+F test/conflict.test 66ac8bec8e25224b6aca18d76dd40b0afa27e227
 F test/copy.test 768e6f1701a07d08090e1ca7f7dcce0a7a72b43e
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test c8a495050dcec3f9e68538c3ef466726933302c1
@@ -73,6 +73,7 @@ F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
 F test/main.test 1626345b5f630c5398eede500d9354813b76b0fd
 F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
 F test/misc1.test 50a5ca3481fc1f3cd6b978bcd6ed04c06f26a1e6
+F test/notnull.test 70856457c86fe50877f760e4057e99fdedd2997c
 F test/pager.test 59bbc4e3d489529ed33db6e15595789e51056077
 F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
@@ -120,7 +121,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ac8a4189e2a0c41161ee359db25de94435420368
-R d0474e87b43c8e56cdd7c7f610ed8044
+P 8229b5f6a348a56432a4a609ee125520c5831973
+R 6092c649bf38d0cb57a1ec35caeb9370
 U drh
-Z 06e7e93dabc09d9be0f533183ed3ad0f
+Z 733d233a561b4a44b1706a6a61fc3f4e

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.36 2002/01/30 00:54:56 drh Exp $
+** $Id: insert.c,v 1.37 2002/01/30 04:32:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -409,8 +409,8 @@ void sqliteGenerateConstraintChecks(
     if( onError==OE_Replace && pTab->aCol[i].zDflt==0 ){
       onError = OE_Abort;
     }
-    addr = sqliteVdbeAddOp(v, OP_Dup, nCol-i, 1);
-    sqliteVdbeAddOp(v, OP_NotNull, 0, addr+1+(onError!=OE_Abort));
+    sqliteVdbeAddOp(v, OP_Dup, nCol-1-i, 1);
+    addr = sqliteVdbeAddOp(v, OP_NotNull, 0, 0);
     switch( onError ){
       case OE_Abort: {
         sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, 0);
@@ -429,6 +429,7 @@ void sqliteGenerateConstraintChecks(
       }
       default: assert(0);
     }
+    sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
   }
 
   /* Test all CHECK constraints
@@ -498,7 +499,7 @@ void sqliteGenerateConstraintChecks(
       case OE_Replace: {
         sqliteGenerateRowDelete(v, pTab, base);
         if( isUpdate ){
-          sqliteVdbeAddOp(v, OP_Dup, nCol+extra+recnoChng, 1);
+          sqliteVdbeAddOp(v, OP_Dup, nCol+extra+1+recnoChng, 1);
           sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
         }
         seenReplace = 1;
