@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.13 2004/07/22 18:53:17 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.14 2004/08/29 18:14:18 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -34,13 +34,7 @@ proc Heading {title} {
 
 Heading {Precompiled Binaries for Linux}
 
-Product sqlite-VERSION.bin.gz {
-  A statically linked command-line program for accessing and modifing
-  SQLite databases.
-  See <a href="sqlite.html">the documentation</a> for additional information.
-}
-
-Product sqlite3-VERSION.bin.gz {
+Product sqlite*-VERSION.bin.gz {
   A statically linked command-line program for accessing and modifing
   SQLite databases.
   See <a href="sqlite.html">the documentation</a> for additional information.
@@ -67,8 +61,8 @@ Product sqlite-VERSION-1.i386.rpm {
 }
 
 Product sqlite_analyzer-VERSION.bin.gz {
-  An analysis program for database files generated using SQLite version
-  2.8.14 and earlier.
+  An analysis program for database files compatible with SQLite 
+  version VERSION.
 }
 
 Heading {Precompiled Binaries For Windows}
@@ -88,7 +82,7 @@ Product sqlitedll-VERSION.zip {
 }
 
 Product sqlite_analyzer-VERSION.zip {
-  An analysis program for database files generated using SQLite version
+  An analysis program for database files compatible with SQLite version
   VERSION.
 }
 
