@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.62 2002/04/20 14:24:42 drh Exp $
+** @(#) $Id: parse.y,v 1.63 2002/05/08 21:46:15 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -283,10 +283,18 @@ seltablist(A) ::= stl_prefix(X) ids(Y) as ids(Z). {
 seltablist(A) ::= stl_prefix(X) LP select(S) RP. {
   A = sqliteIdListAppend(X,0);
   A->a[A->nId-1].pSelect = S;
+  if( S->pOrderBy ){
+    sqliteExprListDelete(S->pOrderBy);
+    S->pOrderBy = 0;
+  }
 }
 seltablist(A) ::= stl_prefix(X) LP select(S) RP as ids(Z). {
   A = sqliteIdListAppend(X,0);
   A->a[A->nId-1].pSelect = S;
+  if( S->pOrderBy ){
+    sqliteExprListDelete(S->pOrderBy);
+    S->pOrderBy = 0;
+  }
   sqliteIdListAddAlias(A,&Z);
 }
 

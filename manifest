@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#34:\sVIEWs\signore\stheir\sORDER\sBY\sclause.\s(CVS\s556)
-D 2002-05-08T21:30:15
+C Fix\sfor\sticket\s#35:\sIgnore\sany\sORDER\sBY\sclause\son\sa\ssubquery\sin\sa\sFROM\sclause.\s(CVS\s557)
+D 2002-05-08T21:46:15
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -34,7 +34,7 @@ F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c ba5740104cc27b342cd43eebfdc44d60f64a3ded
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
+F src/parse.y 83850a81fe9170d32eb683e77d7602736c663e34
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 1b623a7d826ec7c245bc542b665d61724da2a62d
@@ -83,7 +83,7 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
-F test/select1.test 734b9f45a85b4f8d594390b1ed3cbff0b8c76c84
+F test/select1.test c19617be69fb1322c71e100b5882c469729c4bf1
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test a8f1d97fbd6049211ddd0ed50899e8afb1cb4508
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b13151794b42109a59ed34e6b9bce6ce90de537b
-R b50c1ac078edfd5aced2d105f10a7073
+P 5f22d21571acedbd6348b61445a7c408cde8d229
+R 8bb0ddf73035f1de9a05b9cb9c9657bb
 U drh
-Z 97bfd3bfbda4f4c22d4d187d6a98c52c
+Z 9f4be155fc56c5c79e292303d6e98925

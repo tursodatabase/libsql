@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.24 2002/04/06 13:57:43 drh Exp $
+# $Id: select1.test,v 1.25 2002/05/08 21:46:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -665,5 +665,20 @@ do_test select1-12.7 {
     SELECT * FROM t3 WHERE a=(SELECT 2);
   }
 } {}
+do_test select1-12.8 {
+  execsql2 {
+    SELECT x FROM (
+      SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
+    ) ORDER BY x;
+  }
+} {x 1 x 3}
+do_test select1-12.9 {
+  execsql2 {
+    SELECT z.x FROM (
+      SELECT a,b FROM t3 UNION SELECT a AS 'x', b AS 'y' FROM t4 ORDER BY a,b
+    ) AS 'z' ORDER BY x;
+  }
+} {z.x 1 z.x 3}
+
 
 finish_test
