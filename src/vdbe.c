@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.463 2005/03/29 13:07:00 danielk1977 Exp $
+** $Id: vdbe.c,v 1.464 2005/03/31 18:40:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1316,7 +1316,7 @@ case OP_AddImm: {            /* no-push */
 ** greater than its current value if P1==1.
 */
 case OP_ForceInt: {            /* no-push */
-  int v;
+  i64 v;
   assert( pTos>=p->aStack );
   applyAffinity(pTos, SQLITE_AFF_INTEGER, db->enc);
   if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){

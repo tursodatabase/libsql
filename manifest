@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sTCL\sbindings.\s(CVS\s2435)
-D 2005-03-31T18:26:21
+C Make\ssure\sinteger\sprimary\skeys\slarger\sthan\s2^31\sare\shandled\nproperly.\s\sTicket\s#1188.\s(CVS\s2436)
+D 2005-03-31T18:40:05
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,7 +75,7 @@ F src/update.c 42823d00865c9fe4f01b3c62647858726345a28e
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
-F src/vdbe.c cb701319876cb1332a7372feaaa1310cd463c9f6
+F src/vdbe.c 8fa793422686f801a9379385278fb5c64563dd92
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
 F src/vdbeInt.h 97b62807bd001efd82006460ad8a8d72d1c8d36d
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
@@ -139,7 +139,7 @@ F test/insert.test 1781f8ec647ef96cadee3d0c63557fd0c16feceb
 F test/insert2.test 8d71cb249cfed3803fa77def6336ff0592caffa0
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 170f87c2819f0e56c76e0a754949ea103d05009c
-F test/intpkey.test ce2a5d91120a831fc076fbf98fce132e192bad69
+F test/intpkey.test aaee5325eedf48b8f1e01d0d6e3f7c712908179b
 F test/ioerr.test b27540c5873d28c0e77f02ce85b15f904d5b03a6
 F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 4aa05d2251b0cf6323ea695330de9ccf7e071bed
-R 0919f1f178fbb1b8f09dba3854669561
+P c31ea6332f53d361be864554b83662d3fc0d52f7
+R a311b9d0ce53d2c52cd966b96ef532ff
 U drh
-Z b01513e52c97e8110618542320799180
+Z 6c477f50c1882d01dcdfc519faad2371
