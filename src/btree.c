@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.202 2004/11/03 11:37:08 danielk1977 Exp $
+** $Id: btree.c,v 1.203 2004/11/04 02:57:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1426,6 +1426,11 @@ static int newDatabase(Btree *pBt){
   memset(&data[24], 0, 100-24);
   zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
   pBt->pageSizeFixed = 1;
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( pBt->autoVacuum ){
+    put4byte(&data[36 + 4*4], 1);
+  }
+#endif
   return SQLITE_OK;
 }
 
@@ -1606,6 +1611,74 @@ static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
   }
 }
 
+
+static int relocatePage(
+  Btree *pBt, 
+  MemPage *pDbPage,
+  u8 eType,
+  Pgno iPtrPage,
+  Pgno iFreePage
+){
+  MemPage *pPtrPage;   /* The page that contains a pointer to pDbPage */
+  Pgno iDbPage = pDbPage->pgno;
+  Pager *pPager = pBt->pPager;
+  int rc;
+
+  assert( eType==PTRMAP_OVERFLOW2 
+      || eType==PTRMAP_OVERFLOW1 || eType==PTRMAP_BTREE );
+
+  /* Move page iDbPage from it's current location to page number iFreePage */
+  TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
+      iDbPage, iFreePage, iPtrPage, eType));
+  rc = sqlite3pager_movepage(pPager, pDbPage->aData, iFreePage);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  pDbPage->pgno = iFreePage;
+
+  /* If pDbPage was a btree-page, then it may have child pages and/or cells
+  ** that point to overflow pages. The pointer map entries for all these
+  ** pages need to be changed.
+  **
+  ** If pDbPage is an overflow page, then the first 4 bytes may store a
+  ** pointer to a subsequent overflow page. If this is the case, then
+  ** the pointer map needs to be updated for the subsequent overflow page.
+  */
+  if( eType==PTRMAP_BTREE ){
+    rc = setChildPtrmaps(pDbPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+  }else{
+    Pgno nextOvfl = get4byte(pDbPage->aData);
+    if( nextOvfl!=0 ){
+      assert( nextOvfl<=sqlite3pager_pagecount(pPager) );
+      rc = ptrmapPut(pBt, nextOvfl, PTRMAP_OVERFLOW2, iFreePage);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+    }
+  }
+
+  /* Fix the database pointer on page iPtrPage that pointed at iDbPage so
+  ** that it points at iFreePage. Also fix the pointer map entry for
+  ** iPtrPage.
+  */
+  rc = getPage(pBt, iPtrPage, &pPtrPage);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  rc = sqlite3pager_write(pPtrPage->aData);
+  if( rc!=SQLITE_OK ){
+    releasePage(pPtrPage);
+    return rc;
+  }
+  modifyPagePointer(pPtrPage, iDbPage, iFreePage, eType);
+  rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
+  releasePage(pPtrPage);
+  return rc;
+}
+
 /* Forward declaration required by autoVacuumCommit(). */
 static int allocatePage(Btree *, MemPage **, Pgno *, Pgno);
 
@@ -1624,10 +1697,8 @@ static int autoVacuumCommit(Btree *pBt){
   u8 eType;
   int pgsz = pBt->pageSize;  /* Page size for this database */
   Pgno iDbPage;              /* The database page to move */
-  u8 *pDbPage = 0;           /* "" */
   MemPage *pDbMemPage = 0;   /* "" */
   Pgno iPtrPage;             /* The page that contains a pointer to iDbPage */
-  MemPage *pPtrMemPage = 0;  /* "" */
   Pgno iFreePage;            /* The free-list page to move iDbPage to */
   MemPage *pFreeMemPage = 0; /* "" */
 
@@ -1685,7 +1756,6 @@ static int autoVacuumCommit(Btree *pBt){
     }
     rc = getPage(pBt, iDbPage, &pDbMemPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
-    pDbPage = pDbMemPage->aData;
 
     /* Find the next page in the free-list that is not already at the end 
     ** of the file. A page can be pulled off the free list using the 
@@ -1700,50 +1770,12 @@ static int autoVacuumCommit(Btree *pBt){
       if( rc!=SQLITE_OK ) goto autovacuum_out;
       assert( iFreePage<=origSize );
     }while( iFreePage>finSize );
-
-    /* Move page iDbPage from it's current location to page number iFreePage */
-    TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
-        iDbPage, iFreePage, iPtrPage, eType));
     releasePage(pFreeMemPage);
     pFreeMemPage = 0;
-    rc = sqlite3pager_movepage(pPager, pDbPage, iFreePage);
-    if( rc!=SQLITE_OK ) goto autovacuum_out;
-    pDbMemPage->pgno = iFreePage;
 
-    /* If pDbPage was a btree-page, then it may have child pages and/or cells
-    ** that point to overflow pages. The pointer map entries for all these
-    ** pages need to be changed.
-    **
-    ** If pDbPage is an overflow page, then the first 4 bytes may store a
-    ** pointer to a subsequent overflow page. If this is the case, then
-    ** the pointer map needs to be updated for the subsequent overflow page.
-    */
-    if( eType==PTRMAP_BTREE ){
-      rc = setChildPtrmaps(pDbMemPage);
-      if( rc!=SQLITE_OK ) goto autovacuum_out;
-    }else{
-      Pgno nextOvfl = get4byte(pDbPage);
-      if( nextOvfl!=0 ){
-        assert( nextOvfl<=origSize );
-        rc = ptrmapPut(pBt, nextOvfl, PTRMAP_OVERFLOW2, iFreePage);
-        if( rc!=SQLITE_OK ) goto autovacuum_out;
-      }
-    }
+    rc = relocatePage(pBt, pDbMemPage, eType, iPtrPage, iFreePage);
     releasePage(pDbMemPage);
-    pDbMemPage = 0;
-
-    /* Fix the database pointer on page iPtrPage that pointed at iDbPage so
-    ** that it points at iFreePage. Also fix the pointer map entry for
-    ** iPtrPage.
-    */
-    rc = getPage(pBt, iPtrPage, &pPtrMemPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
-    rc = sqlite3pager_write(pPtrMemPage->aData);
-    if( rc!=SQLITE_OK ) goto autovacuum_out;
-    modifyPagePointer(pPtrMemPage, iDbPage, iFreePage, eType);
-    rc = ptrmapPut(pBt, iFreePage, eType, iPtrPage);
-    if( rc!=SQLITE_OK ) goto autovacuum_out;
-    releasePage(pPtrMemPage);
   }
 
   /* The entire free-list has been swapped to the end of the file. So
@@ -4198,6 +4230,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
+/* TODO: Disallow schema modifications if there are open cursors */
   if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction first */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
@@ -4205,18 +4238,90 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   if( pBt->readOnly ){
     return SQLITE_READONLY;
   }
+#ifdef SQLITE_OMIT_AUTOVACUUM
   rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1);
   if( rc ) return rc;
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  /* Note: This is temporary code for use during development of auto-vacuum. 
-  ** There should be no need for a pointer map entry for root-pages.
-  */
+#else
   if( pBt->autoVacuum ){
-    rc = ptrmapPut(pBt, pgnoRoot, PTRMAP_ROOTPAGE, 0);
-    if( rc ){
-      sqlite3pager_unref(pRoot->aData);
+    Pgno pgnoMove;      /* Move a page here to make room for the root-page */
+    MemPage *pPageMove; /* The page to move to. */
+
+    /* Run the auto-vacuum code to ensure the free-list is empty. This is
+    ** not really necessary, but it avoids complications in dealing with
+    ** a free-list in the code below.
+    ** TODO: This may need to be revisited.
+    */
+    rc = autoVacuumCommit(pBt);
+    if( rc!=SQLITE_OK ) return rc;
+
+    /* Read the value of meta[3] from the database to determine where the
+    ** root page of the new table should go. meta[3] is the largest root-page
+    ** created so far, so the new root-page is (meta[3]+1).
+    */
+    rc = sqlite3BtreeGetMeta(pBt, 4, &pgnoRoot);
+    if( rc!=SQLITE_OK ) return rc;
+    pgnoRoot++;
+
+    /* The new root-page may not be allocated on a pointer-map page. */
+    if( pgnoRoot==PTRMAP_PAGENO(pBt->pageSize, pgnoRoot) ){
+      pgnoRoot++;
+    }
+    assert( pgnoRoot>=3 );
+
+    /* Allocate a page. The page that currently resides at pgnoRoot will
+    ** be moved to the allocated page (unless the allocated page happens
+    ** to reside at pgnoRoot).
+    */
+    rc = allocatePage(pBt, &pPageMove, &pgnoMove, 0);
+    if( rc!=SQLITE_OK ){
       return rc;
     }
+
+    if( pgnoMove!=pgnoRoot ){
+      u8 eType;
+      Pgno iPtrPage;
+
+      releasePage(pPageMove);
+      rc = getPage(pBt, pgnoRoot, &pRoot);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      rc = ptrmapGet(pBt, pgnoRoot, &eType, &iPtrPage);
+      if( rc!=SQLITE_OK ){
+        releasePage(pRoot);
+        return rc;
+      }
+      rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove);
+      releasePage(pRoot);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      rc = getPage(pBt, pgnoRoot, &pRoot);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      rc = sqlite3pager_write(pRoot->aData);
+      if( rc!=SQLITE_OK ){
+        releasePage(pRoot);
+        return rc;
+      }
+    }else{
+      pRoot = pPageMove;
+    } 
+
+    rc = ptrmapPut(pBt, pgnoRoot, PTRMAP_ROOTPAGE, 0);
+    if( rc ){
+      releasePage(pRoot);
+      return rc;
+    }
+    rc = sqlite3BtreeUpdateMeta(pBt, 4, pgnoRoot);
+    if( rc ){
+      releasePage(pRoot);
+      return rc;
+    }
+  }else{
+    rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1);
+    if( rc ) return rc;
   }
 #endif
   assert( sqlite3pager_iswriteable(pRoot->aData) );
@@ -4307,6 +4412,7 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable){
   int rc;
   MemPage *pPage;
   BtCursor *pCur;
+/* TODO: Disallow schema modifications if there are open cursors */
   if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
@@ -4351,7 +4457,9 @@ int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
 
   /* The current implementation is unable to handle writes to an autovacuumed
   ** database.  So make such a database readonly. */
+#ifdef SQLITE_OMIT_AUTOVACUUM
   if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
+#endif
 
   return SQLITE_OK;
 }

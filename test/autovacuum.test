@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.4 2004/11/03 09:30:55 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.5 2004/11/04 02:57:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -111,6 +111,39 @@ foreach delete_order $delete_orders {
     file_pages
   } {4}
 }
+
+# Tests autovacuum-2.* test that root pages are allocated correctly at
+# the start of the file.
+do_test autovacuum-2.1 {
+  for {set i 0} {$i<5} {incr i} {
+    execsql "
+      INSERT INTO av1 VALUES('[make_str abc 1000]')
+    "
+  }
+  file_pages 
+} {14}
+
+for {set i 5} {$i < 15} {incr i} {
+  set tablename "av$i"
+  
+  do_test autovacuum-2.$i.2 {
+    execsql "
+      CREATE TABLE $tablename (a);
+      SELECT rootpage FROM sqlite_master WHERE name = '$tablename';
+    "
+  } $i
+
+  do_test autovacuum-2.$i.3 {
+    file_pages 
+  } [expr $i+10]
+
+  do_test autovacuum-2.$i.4 {
+    execsql {
+      pragma integrity_check
+    }
+  } {ok}
+}
+
 
 finish_test
 
