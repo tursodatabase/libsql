@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.72 2004/05/26 16:54:46 drh Exp $
+** $Id: tclsqlite.c,v 1.73 2004/05/26 23:25:31 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -391,7 +391,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
     if( SQLITE3_NULL==sqlite3_value_type(argv[i]) ){
       Tcl_DStringAppendElement(&cmd, "");
     }else{
-      Tcl_DStringAppendElement(&cmd, sqlite3_value_data(argv[i]));
+      Tcl_DStringAppendElement(&cmd, sqlite3_value_text(argv[i]));
     }
   }
   rc = Tcl_Eval(p->interp, Tcl_DStringValue(&cmd));

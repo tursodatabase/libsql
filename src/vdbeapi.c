@@ -1,0 +1,503 @@
+/*
+** 2004 May 26
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains code use to implement APIs that are part of the
+** VDBE.
+*/
+#include "sqliteInt.h"
+#include "vdbeInt.h"
+
+/**************************** sqlite3_value_  *******************************
+** The following routines extract information from a Mem or sqlite3_value
+** structure.
+*/
+const void *sqlite3_value_blob(sqlite3_value *pVal){
+  Mem *p = (Mem*)pVal;
+  if( p->flags & (MEM_Blob|MEM_Str) ){
+    return p->z;
+  }else{
+    return sqlite3_value_text(pVal);
+  }
+}
+int sqlite3_value_bytes(sqlite3_value *pVal){
+  Mem *p = (Mem*)pVal;
+  if( (p->flags & MEM_Blob)!=0 || sqlite3_value_text(pVal) ){
+    return p->n;
+  }
+  return 0;
+}
+int sqlite3_value_bytes16(sqlite3_value *pVal){
+  Mem *p = (Mem*)pVal;
+  if( (p->flags & MEM_Blob)!=0 || sqlite3_value_text16(pVal) ){
+    return ((Mem *)pVal)->n;
+  }
+  return 0;
+}
+double sqlite3_value_double(sqlite3_value *pVal){
+  Mem *pMem = (Mem *)pVal;
+  Realify(pMem, flagsToEnc(pMem->flags));
+  return pMem->r;
+}
+int sqlite3_value_int(sqlite3_value *pVal){
+  Mem *pMem = (Mem *)pVal;
+  Integerify(pMem, flagsToEnc(pMem->flags));
+  return (int)pVal->i;
+}
+long long int sqlite3_value_int64(sqlite3_value *pVal){
+  Mem *pMem = (Mem *)pVal;
+  Integerify(pMem, flagsToEnc(pMem->flags));
+  return pVal->i;
+}
+const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
+  if( pVal->flags&MEM_Null ){
+    /* For a NULL return a NULL Pointer */
+    return 0;
+  }
+
+  if( pVal->flags&MEM_Str ){
+    /* If there is already a string representation, make sure it is in
+    ** encoded in UTF-8.
+    */
+    SetEncoding(pVal, MEM_Utf8|MEM_Term);
+  }else if( !(pVal->flags&MEM_Blob) ){
+    /* Otherwise, unless this is a blob, convert it to a UTF-8 string */
+    Stringify(pVal, TEXT_Utf8);
+  }
+
+  return pVal->z;
+}
+const void *sqlite3_value_text16(sqlite3_value* pVal){
+  if( pVal->flags&MEM_Null ){
+    /* For a NULL return a NULL Pointer */
+    return 0;
+  }
+
+  if( pVal->flags&MEM_Str ){
+    /* If there is already a string representation, make sure it is in
+    ** encoded in UTF-16 machine byte order.
+    */
+    SetEncoding(pVal, encToFlags(TEXT_Utf16)|MEM_Term);
+  }else if( !(pVal->flags&MEM_Blob) ){
+    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
+    Stringify(pVal, TEXT_Utf16);
+  }
+
+  return (const void *)(pVal->z);
+}
+int sqlite3_value_type(sqlite3_value* pVal){
+  int f = ((Mem *)pVal)->flags;
+  if( f&MEM_Null ){
+    return SQLITE3_NULL;
+  }
+  if( f&MEM_Int ){
+    return SQLITE3_INTEGER;
+  }
+  if( f&MEM_Real ){
+    return SQLITE3_FLOAT;
+  }
+  if( f&MEM_Str ){
+    return SQLITE3_TEXT;
+  }
+  if( f&MEM_Blob ){
+    return SQLITE3_BLOB;
+  }
+  assert(0);
+}
+
+/**************************** sqlite3_result_  *******************************
+** The following routines are used by user-defined functions to specify
+** the function result.
+*/
+void sqlite3_result_blob(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  int eCopy
+){
+  assert( n>0 );
+  MemSetStr(&pCtx->s, z, n, 0, eCopy);
+}
+void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
+  sqlite3VdbeMemSetDouble(&pCtx->s, rVal);
+}
+void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
+  pCtx->isError = 1;
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf8, 1);
+}
+void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
+  pCtx->isError = 1;
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf16, 1);
+}
+void sqlite3_result_int32(sqlite3_context *pCtx, int iVal){
+  sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
+}
+void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
+  sqlite3VdbeMemSetInt64(&pCtx->s, iVal);
+}
+void sqlite3_result_null(sqlite3_context *pCtx){
+  sqilte3VdbeMemSetNull(&pCtx->s);
+}
+void sqlite3_result_text(
+  sqlite3_context *pCtx, 
+  const char *z, 
+  int n,
+  int eCopy
+){
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf8, eCopy);
+}
+void sqlite3_result_text16(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  int eCopy
+){
+  MemSetStr(&pCtx->s, z, n, TEXT_Utf16, eCopy);
+}
+void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
+  sqlite3VdbeMemCopy(&pCtx->s, pValue);
+}
+
+
+/*
+** Execute the statement pStmt, either until a row of data is ready, the
+** statement is completely executed or an error occurs.
+*/
+int sqlite3_step(sqlite3_stmt *pStmt){
+  Vdbe *p = (Vdbe*)pStmt;
+  sqlite *db;
+  int rc;
+
+  if( p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_MISUSE;
+  }
+  db = p->db;
+  if( sqlite3SafetyOn(db) ){
+    p->rc = SQLITE_MISUSE;
+    return SQLITE_MISUSE;
+  }
+  if( p->explain ){
+    rc = sqlite3VdbeList(p);
+  }else{
+    rc = sqlite3VdbeExec(p);
+  }
+
+  if( sqlite3SafetyOff(db) ){
+    rc = SQLITE_MISUSE;
+  }
+
+  sqlite3Error(p->db, rc, p->zErrMsg);
+  return rc;
+}
+
+/*
+** Return the number of columns in the result set for the statement pStmt.
+*/
+int sqlite3_column_count(sqlite3_stmt *pStmt){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  return pVm->nResColumn;
+}
+
+/*
+** Return the number of values available from the current row of the
+** currently executing statement pStmt.
+*/
+int sqlite3_data_count(sqlite3_stmt *pStmt){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  if( !pVm->resOnStack ) return 0;
+  return pVm->nResColumn;
+}
+
+
+/*
+** Check to see if column iCol of the given statement is valid.  If
+** it is, return a pointer to the Mem for the value of that column.
+** If iCol is not valid, return a pointer to a Mem which has a value
+** of NULL.
+*/
+static Mem *columnMem(sqlite3_stmt *pStmt, int i){
+  Vdbe *pVm = (Vdbe *)pStmt;
+  int vals = sqlite3_data_count(pStmt);
+  if( i>=vals || i<0 ){
+    static Mem nullMem;
+    if( nullMem.flags==0 ){ nullMem.flags = MEM_Null; }
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return &nullMem;
+  }
+  return &pVm->pTos[(1-vals)+i];
+}
+
+/**************************** sqlite3_column_  *******************************
+** The following routines are used to access elements of the current row
+** in the result set.
+*/
+int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_bytes( columnMem(pStmt,i) );
+}
+int sqlite3_column_bytes16(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_bytes16( columnMem(pStmt,i) );
+}
+double sqlite3_column_double(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_double( columnMem(pStmt,i) );
+}
+int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_int( columnMem(pStmt,i) );
+}
+long long int sqlite3_column_int64(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_int64( columnMem(pStmt,i) );
+}
+const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_text( columnMem(pStmt,i) );
+}
+const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_text16( columnMem(pStmt,i) );
+}
+int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
+  return sqlite3_value_type( columnMem(pStmt,i) );
+}
+
+
+/*
+** Return the name of the Nth column of the result set returned by SQL
+** statement pStmt.
+*/
+const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
+
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pColName = &(p->aColName[N]);
+  return sqlite3_value_text(pColName);
+}
+
+/*
+** Return the name of the 'i'th column of the result set of SQL statement
+** pStmt, encoded as UTF-16.
+*/
+const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
+
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pColName = &(p->aColName[N]);
+  return sqlite3_value_text16(pColName);
+}
+
+
+/*
+** This routine returns either the column name, or declaration type (see
+** sqlite3_column_decltype16() ) of the 'i'th column of the result set of
+** SQL statement pStmt. The returned string is UTF-16 encoded.
+**
+** The declaration type is returned if 'decltype' is true, otherwise
+** the column name.
+*/
+static const void *columnName16(sqlite3_stmt *pStmt, int i, int decltype){
+  Vdbe *p = (Vdbe *)pStmt;
+
+  if( i>=sqlite3_column_count(pStmt) || i<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  if( decltype ){
+    i += p->nResColumn;
+  }
+
+  if( !p->azColName16 ){
+    p->azColName16 = (void **)sqliteMalloc(sizeof(void *)*p->nResColumn*2);
+    if( !p->azColName16 ){
+      sqlite3Error(p->db, SQLITE_NOMEM, 0);
+      return 0;
+    }
+  }
+  if( !p->azColName16[i] ){
+    if( SQLITE3_BIGENDIAN ){
+      p->azColName16[i] = sqlite3utf8to16be(p->azColName[i], -1);
+    }
+    if( !p->azColName16[i] ){
+      sqlite3Error(p->db, SQLITE_NOMEM, 0);
+      return 0;
+    }
+  }
+  return p->azColName16[i];
+}
+
+/*
+** Return the column declaration type (if applicable) of the 'i'th column
+** of the result set of SQL statement pStmt, encoded as UTF-8.
+*/
+const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int i){
+  Vdbe *p = (Vdbe *)pStmt;
+
+  if( i>=sqlite3_column_count(pStmt) || i<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  return p->azColName[i+p->nResColumn];
+}
+
+/*
+** Return the column declaration type (if applicable) of the 'i'th column
+** of the result set of SQL statement pStmt, encoded as UTF-16.
+*/
+const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int i){
+  return columnName16(pStmt, i, 1);
+}
+
+/******************************* sqlite3_bind_  ***************************
+** 
+** Routines used to attach values to wildcards in a compiled SQL statement.
+*/
+/*
+** Unbind the value bound to variable i in virtual machine p. This is the 
+** the same as binding a NULL value to the column. If the "i" parameter is
+** out of range, then SQLITE_RANGE is returned. Othewise SQLITE_OK.
+**
+** The error code stored in database p->db is overwritten with the return
+** value in any case.
+*/
+static int vdbeUnbind(Vdbe *p, int i){
+  Mem *pVar;
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
+    sqlite3Error(p->db, SQLITE_MISUSE, 0);
+    return SQLITE_MISUSE;
+  }
+  if( i<1 || i>p->nVar ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return SQLITE_RANGE;
+  }
+  i--;
+  pVar = &p->apVar[i];
+  if( pVar->flags&MEM_Dyn ){
+    sqliteFree(pVar->z);
+  }
+  pVar->flags = MEM_Null;
+  sqlite3Error(p->db, SQLITE_OK, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Bind a blob value to an SQL statement variable.
+*/
+int sqlite3_bind_blob(
+  sqlite3_stmt *p, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc ){
+    return rc;
+  }
+  pVar = &p->apVar[i-1];
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, 0, eCopy);
+  return rc;
+}
+int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    sqlite3VdbeMemSetReal(&p->apVar[i-1], rValue);
+  }
+  return SQLITE_OK;
+}
+int sqlite3_bind_int(sqlite3_stmt *p, int i, int iValue){
+  return sqlite3_bind_int64(p, i, (long long int)iValue);
+}
+int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, long long int iValue){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    sqlite3VdbeMemSetInt(&p->apVar[i-1], iValue);
+  }
+  return rc;
+}
+int sqlite3_bind_null(sqlite3_stmt* p, int i){
+  return vdbeUnbind((Vdbe *)p, i);
+}
+int sqlite3_bind_text( 
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const char *zData, 
+  int nData, 
+  int eCopy
+){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc ){
+    return rc;
+  }
+  pVar = &p->apVar[i-1];
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, TEXT_Utf8, eCopy);
+  if( rc ){
+    return rc;
+  }
+  rc = sqlite3VdbeSetEncoding(pVar, p->db->enc);
+  return rc;
+}
+int sqlite3_bind_text16(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc ){
+    return rc;
+  }
+  Mem *pVar = &p->apVar[i-1];
+
+  /* There may or may not be a byte order mark at the start of the UTF-16.
+  ** Either way set 'txt_enc' to the TEXT_Utf16* value indicating the 
+  ** actual byte order used by this string. If the string does happen
+  ** to contain a BOM, then move zData so that it points to the first
+  ** byte after the BOM.
+  */
+  txt_enc = sqlite3UtfReadBom(zData, nData);
+  if( txt_enc ){
+    zData = (void *)(((u8 *)zData) + 2);
+    nData -= 2;
+  }else{
+    txt_enc = SQLITE3_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
+  }
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, eCopy);
+  if( rc ){
+    return rc;
+  }
+  rc = sqlite3VdbeSetEncoding(pVar, p->db->enc);
+  return rc;
+}

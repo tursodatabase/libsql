@@ -137,31 +137,6 @@ struct Mem {
 };
 typedef struct Mem Mem;
 
-/*
-** The following three macros are used to set the value and manifest type
-** stored by a Mem structure.
-**
-** MemSetNull - Set the value to NULL.
-** MemSetInt  - Set the value to an integer.
-** MemSetReal - Set the value to a real.
-** MemSetStr - Set the value to a string (or blob if enc==0).
-*/
-#define MemSetNull(p) sqlite3VdbeMemSetNull(p)
-#define MemSetInt(p,v) sqlite3VdbeMemSetInt(p,v)
-#define MemSetReal(p,v) sqlite3VdbeMemSetReal(p,v)
-#define MemSetStr(p,z,n,enc,eCopy) sqlite3VdbeMemSetStr(p,z,n,enc,eCopy)
-
-/*
-** This macro is used to ensure a string stored in a Mem struct is NULL
-** terminated. When used on an object that is not a string or is a nul
-** terminated string this is a no-op. When used on a non-nul-terminated
-** string a nul terminator character is appended.
-**
-** Non-zero is returned if a malloc() fails.
-*/
-#define MemNulTerminate(p) \
-if( ((p)->flags&MEM_Str) && !((p)->flags&MEM_Term) ) sqlite3VdbeMemNulTerminate(p);
-
 /* One or more of the following flags are set to indicate the valid
 ** representations of the value stored in the Mem struct.
 **
@@ -215,8 +190,8 @@ if( ((p)->flags&MEM_Str) && !((p)->flags&MEM_Term) ) sqlite3VdbeMemNulTerminate(
 ** When a user-defined function is called (see OP_Function), the Mem*
 ** objects that store the argument values for the function call are 
 ** passed to the user-defined function routine cast to sqlite3_value*.
-** The user routine may then call sqlite3_value_data() or
-** sqlite3_value_data16() to request a UTF-8 or UTF-16 string. If the
+** The user routine may then call sqlite3_value_text() or
+** sqlite3_value_text16() to request a UTF-8 or UTF-16 string. If the
 ** string representation currently stored in Mem.z is not the requested
 ** encoding, then a translation occurs. To keep track of things, the
 ** MEM_Utf* flags are set correctly for the database encoding before a
@@ -228,7 +203,7 @@ if( ((p)->flags&MEM_Str) && !((p)->flags&MEM_Term) ) sqlite3VdbeMemNulTerminate(
 ** internally as Mem* objects. Before sqlite3_step() returns, the MEM_Utf*
 ** flags are set correctly for the database encoding. A translation may
 ** take place if the user requests a non-native encoding via
-** sqlite3_column_data() or sqlite3_column_data16(). If this occurs, then
+** sqlite3_column_text() or sqlite3_column_text16(). If this occurs, then
 ** the MEM_Utf* flags are updated accordingly.
 */
 #define MEM_Utf8      0x2000   /* String uses UTF-8 encoding */

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.2 2004/05/26 02:04:57 danielk1977 Exp $
+** $Id: legacy.c,v 1.3 2004/05/26 23:25:31 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -90,7 +90,7 @@ int sqlite3_exec(
         if( rc==SQLITE_ROW ){
           azVals = &azCols[nCol];
           for(i=0; i<nCol; i++){
-            azVals[i] = (char *)sqlite3_column_data(pStmt, i);
+            azVals[i] = (char *)sqlite3_column_text(pStmt, i);
           }
         }
         if( xCallback(pArg, nCol, azVals, azCols) ){
@@ -133,5 +133,3 @@ exec_out:
 
   return rc;
 }
-
-

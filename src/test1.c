@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.58 2004/05/26 13:27:00 danielk1977 Exp $
+** $Id: test1.c,v 1.59 2004/05/26 23:25:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -300,7 +300,7 @@ static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result_text(context, sqlite3_value_data(argv[i]), -1, 1);
+      sqlite3_result_text(context, sqlite3_value_text(argv[i]), -1, 1);
       break;
     }
   }
@@ -373,7 +373,7 @@ static void sqlite3ExecFunc(
   struct dstr x;
   memset(&x, 0, sizeof(x));
   sqlite3_exec((sqlite*)sqlite3_user_data(context),
-      sqlite3_value_data(argv[0]),
+      sqlite3_value_text(argv[0]),
       execFuncCallback, &x, 0);
   sqlite3_result_text(context, x.z, x.nUsed, 1);
   sqliteFree(x.z);
@@ -423,14 +423,14 @@ struct CountCtx {
 };
 static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   CountCtx *p;
-  p = sqlite3_get_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, sizeof(*p));
   if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0]) ) && p ){
     p->n++;
   }
 }   
 static void countFinalize(sqlite3_context *context){
   CountCtx *p;
-  p = sqlite3_get_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, sizeof(*p));
   sqlite3_result_int32(context, p ? p->n : 0);
 }
 
@@ -645,8 +645,8 @@ static int sqlite_abort(
 */
 static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   while( argc>=2 ){
-    const char *zArg0 = sqlite3_value_data(argv[0]);
-    const char *zArg1 = sqlite3_value_data(argv[1]);
+    const char *zArg0 = sqlite3_value_text(argv[0]);
+    const char *zArg1 = sqlite3_value_text(argv[1]);
     if( zArg0==0 ){
       sqlite3_result_error(context, "first argument to test function "
          "may not be NULL", -1);
@@ -1316,11 +1316,11 @@ static int test_step(
 }
 
 /*
-** Usage: sqlite3_column_data STMT column
+** Usage: sqlite3_column_text STMT column
 **
 ** Advance the statement to the next row.
 */
-static int test_column_data(
+static int test_column_text(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1341,9 +1341,9 @@ static int test_column_data(
 
   if( SQLITE3_BLOB==sqlite3_column_type(pStmt, col) ){
     int len = sqlite3_column_bytes(pStmt, col);
-    pRet = Tcl_NewByteArrayObj(sqlite3_column_data(pStmt, col), len);
+    pRet = Tcl_NewByteArrayObj(sqlite3_column_text(pStmt, col), len);
   }else{
-    pRet = Tcl_NewStringObj(sqlite3_column_data(pStmt, col), -1);
+    pRet = Tcl_NewStringObj(sqlite3_column_text(pStmt, col), -1);
   }
   Tcl_SetObjResult(interp, pRet);
 
@@ -1351,11 +1351,11 @@ static int test_column_data(
 }
 
 /*
-** Usage: sqlite3_column_data16 STMT column
+** Usage: sqlite3_column_text16 STMT column
 **
 ** Advance the statement to the next row.
 */
-static int test_column_data16(
+static int test_column_text16(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1376,7 +1376,7 @@ static int test_column_data16(
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
   len = sqlite3_column_bytes16(pStmt, col);
-  pRet = Tcl_NewByteArrayObj(sqlite3_column_data16(pStmt, col), len);
+  pRet = Tcl_NewByteArrayObj(sqlite3_column_text16(pStmt, col), len);
   Tcl_SetObjResult(interp, pRet);
 
   return TCL_OK;
@@ -1663,8 +1663,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize      },
      { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset         },
      { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step},
-     { "sqlite3_column_data",           (Tcl_ObjCmdProc*)test_column_data   },
-     { "sqlite3_column_data16",         (Tcl_ObjCmdProc*)test_column_data16 },
+     { "sqlite3_column_text",           (Tcl_ObjCmdProc*)test_column_text   },
+     { "sqlite3_column_text16",         (Tcl_ObjCmdProc*)test_column_text16 },
      { "sqlite3_column_count",          (Tcl_ObjCmdProc*)test_column_count  },
      { "sqlite3_column_name",           (Tcl_ObjCmdProc*)test_column_name   },
      { "sqlite3_column_name16",         (Tcl_ObjCmdProc*)test_column_name16 },

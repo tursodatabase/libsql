@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.25 2004/05/26 16:54:42 drh Exp $
+** $Id: date.c,v 1.26 2004/05/26 23:25:31 drh Exp $
 **
 ** NOTES:
 **
@@ -645,10 +645,10 @@ static int isDate(int argc, sqlite3_value **argv, DateTime *p){
   int i;
   if( argc==0 ) return 1;
   if( SQLITE3_NULL==sqlite3_value_type(argv[0]) || 
-      parseDateOrTime(sqlite3_value_data(argv[0]), p) ) return 1;
+      parseDateOrTime(sqlite3_value_text(argv[0]), p) ) return 1;
   for(i=1; i<argc; i++){
     if( SQLITE3_NULL==sqlite3_value_type(argv[i]) || 
-        parseModifier(sqlite3_value_data(argv[i]), p) ) return 1;
+        parseModifier(sqlite3_value_text(argv[i]), p) ) return 1;
   }
   return 0;
 }
@@ -761,7 +761,7 @@ static void strftimeFunc(
   DateTime x;
   int n, i, j;
   char *z;
-  const char *zFmt = sqlite3_value_data(argv[0]);
+  const char *zFmt = sqlite3_value_text(argv[0]);
   char zBuf[100];
   if( zFmt==0 || isDate(argc-1, argv+1, &x) ) return;
   for(i=0, n=1; zFmt[i]; i++, n++){

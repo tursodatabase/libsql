@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.81 2004/05/26 16:54:44 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.82 2004/05/26 23:25:31 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -330,12 +330,14 @@ int sqlite3_get_table(
 void sqlite3_free_table(char **result);
 
 /*
-** The following routines are wrappers around sqlite3_exec() and
-** sqlite3_get_table().  The only difference between the routines that
-** follow and the originals is that the second argument to the 
-** routines that follow is really a printf()-style format
-** string describing the SQL to be executed.  Arguments to the format
-** string appear at the end of the argument list.
+** The following routines are variants of the "sprintf()" from the
+** standard C library.  The resulting string is written into memory
+** obtained from malloc() so that there is never a possiblity of buffer
+** overflow.  These routines also implement some additional formatting
+** options that are useful for constructing SQL statements.
+**
+** The strings returned by these routines should be freed by calling
+** sqlite3_free().
 **
 ** All of the usual printf formatting options apply.  In addition, there
 ** is a "%q" option.  %q works like %s in that it substitutes a null-terminated
@@ -367,50 +369,9 @@ void sqlite3_free_table(char **result);
 ** should always use %q instead of %s when inserting text into a string 
 ** literal.
 */
-int sqlite3_exec_printf(
-  sqlite*,                      /* An open database */
-  const char *sqlFormat,        /* printf-style format string for the SQL */
-  sqlite_callback,              /* Callback function */
-  void *,                       /* 1st argument to callback function */
-  char **errmsg,                /* Error msg written here */
-  ...                           /* Arguments to the format string. */
-);
-int sqlite3_exec_vprintf(
-  sqlite*,                      /* An open database */
-  const char *sqlFormat,        /* printf-style format string for the SQL */
-  sqlite_callback,              /* Callback function */
-  void *,                       /* 1st argument to callback function */
-  char **errmsg,                /* Error msg written here */
-  va_list ap                    /* Arguments to the format string. */
-);
-int sqlite3_get_table_printf(
-  sqlite*,               /* An open database */
-  const char *sqlFormat, /* printf-style format string for the SQL */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncolumn,          /* Number of result columns written here */
-  char **errmsg,         /* Error msg written here */
-  ...                    /* Arguments to the format string */
-);
-int sqlite3_get_table_vprintf(
-  sqlite*,               /* An open database */
-  const char *sqlFormat, /* printf-style format string for the SQL */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncolumn,          /* Number of result columns written here */
-  char **errmsg,         /* Error msg written here */
-  va_list ap             /* Arguments to the format string */
-);
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
-
-/*
-** Windows systems should call this routine to free memory that
-** is returned in the in the errmsg parameter of sqlite3_open() when
-** SQLite is a DLL.  For some reason, it does not work to call free()
-** directly.
-*/
-void sqlite3_freemem(void *p);
+void sqlite3_free(char *z);
 
 /*
 ** Windows systems need functions to call to return the sqlite3_version
@@ -533,77 +494,17 @@ void sqlite3_progress_handler(sqlite*, int, int(*)(void*), void*);
 void *sqlite3_commit_hook(sqlite*, int(*)(void*), void*);
 
 /*
-** Open an encrypted SQLite database.  If pKey==0 or nKey==0, this routine
-** is the same as sqlite3_open().
+** Open the sqlite database file "filename".  The "filename" is UTF-8
+** encoded for sqlite3_open() and UTF-16 encoded in the native byte order
+** for sqlite3_open16().  An sqlite3* handle is returned in *ppDb, even
+** if an error occurs. If the database is opened (or created) successfully,
+** then SQLITE_OK is returned. Otherwise an error code is returned. The
+** sqlite3_errmsg() or sqlite3_errmsg16()  routines can be used to obtain
+** an English language description of the error.
 **
-** The code to implement this API is not available in the public release
-** of SQLite.
-*/
-sqlite *sqlite3_open_encrypted(
-  const char *zFilename,   /* Name of the encrypted database */
-  const void *pKey,        /* Pointer to the key */
-  int nKey,                /* Number of bytes in the key */
-  int *pErrcode,           /* Write error code here */
-  char **pzErrmsg          /* Write error message here */
-);
-
-/*
-** Change the key on an open database.  If the current database is not
-** encrypted, this routine will encrypt it.  If pNew==0 or nNew==0, the
-** database is decrypted.
-**
-** The code to implement this API is not available in the public release
-** of SQLite.
-*/
-int sqlite_rekey(
-  sqlite *db,                    /* Database to be rekeyed */
-  const void *pKey, int nKey     /* The new key */
-);
-
-/*
-** Encode a binary buffer "in" of size n bytes so that it contains
-** no instances of characters '\'' or '\000'.  The output is 
-** null-terminated and can be used as a string value in an INSERT
-** or UPDATE statement.  Use sqlite_decode_binary() to convert the
-** string back into its original binary.
-**
-** The result is written into a preallocated output buffer "out".
-** "out" must be able to hold at least 2 +(257*n)/254 bytes.
-** In other words, the output will be expanded by as much as 3
-** bytes for every 254 bytes of input plus 2 bytes of fixed overhead.
-** (This is approximately 2 + 1.0118*n or about a 1.2% size increase.)
-**
-** The return value is the number of characters in the encoded
-** string, excluding the "\000" terminator.
-**
-** If out==NULL then no output is generated but the routine still returns
-** the number of characters that would have been generated if out had
-** not been NULL.
-*/
-int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out);
-
-/*
-** Decode the string "in" into binary data and write it into "out".
-** This routine reverses the encoding created by sqlite_encode_binary().
-** The output will always be a few bytes less than the input.  The number
-** of bytes of output is returned.  If the input is not a well-formed
-** encoding, -1 is returned.
-**
-** The "in" and "out" parameters may point to the same buffer in order
-** to decode a string in place.
-*/
-int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
-
-/*
-** Open the sqlite database file "filename", where "filename" is UTF-8
-** encoded. An sqlite3* handle is returned in *ppDb, even if an error 
-** occurs. If the database is opened (or created) successfully, then 
-** SQLITE_OK is returned. Otherwise an error code is returned and the
-** sqlite3_errmsg() function may be used to obtain an English language
-** explanation of the error.
-**
-** If the database file does not exist, then a new database is created
-** using UTF-8 text encoding.
+** If the database file does not exist, then a new database is created.
+** The encoding for the database is UTF-8 if sqlite3_open() is called and
+** UTF-16 if sqlite3_open16 is used.
 **
 ** Whether or not an error occurs when it is opened, resources associated
 ** with the sqlite3* handle should be released by passing it to
@@ -614,22 +515,6 @@ int sqlite3_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   const char **args       /* Null terminated array of option strings */
 );
-
-/*
-** Open the sqlite database file "filename", where "filename" is native
-** byte order UTF-16 encoded. An sqlite3* handle is returned in *ppDb, even
-** if an error occurs. If the database is opened (or created) successfully,
-** then SQLITE_OK is returned. Otherwise an error code is returned and the
-** sqlite3_errmsg() function may be used to obtain an English language
-** explanation of the error.
-**
-** If the database file does not exist, then a new database is created
-** using UTF-16 text encoding in the machines native byte order.
-**
-** Whether or not an error occurs when it is opened, resources associated
-** with the sqlite3* handle should be released by passing it to
-** sqlite3_close() when it is no longer required.
-*/
 int sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
@@ -720,6 +605,35 @@ int sqlite3_prepare16(
 );
 
 /*
+** In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
+** one or more literals can be replace by a wildcard "?" or ":N:" where
+** N is an integer.  These value of these wildcard literals can be set
+** using the routines listed below.
+**
+** In every case, the first parameter is a pointer to the sqlite3_stmt
+** structure returned from sqlite3_prepare().  The second parameter is the
+** index of the wildcard.  The first "?" has an index of 1.  ":N:" wildcards
+** use the index N.
+**
+** When the eCopy parameter is true, a copy of the value is made into
+** memory obtained and managed by SQLite.  When eCopy is false, SQLite
+** assumes that the value is a constant and just stores a pointer to the
+** value without making a copy.
+**
+** The sqlite3_bind_* routine must be called before sqlite3_step() after
+** an sqlite3_prepare() or sqlite3_reset().  Unbound wildcards are interpreted
+** as NULL.
+*/
+void sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
+void sqlite3_bind_double(sqlite3_stmt*, int, double);
+void sqlite3_bind_int(sqlite3_stmt*, int, int);
+void sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
+void sqlite3_bind_null(sqlite3_stmt*, int);
+void sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
+void sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
+void sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
+
+/*
 ** Return the number of columns in the result set returned by the compiled
 ** SQL statement. This routine returns 0 if pStmt is an SQL statement
 ** that does not return data (for example an UPDATE).
@@ -729,15 +643,10 @@ int sqlite3_column_count(sqlite3_stmt *pStmt);
 /*
 ** The first parameter is a compiled SQL statement. This function returns
 ** the column heading for the Nth column of that statement, where N is the
-** second function parameter. The string returned is UTF-8 encoded.
+** second function parameter.  The string returned is UTF-8 for
+** sqlite3_column_name() and UTF-16 for sqlite3_column_name16().
 */
 const char *sqlite3_column_name(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement. This function returns
-** the column heading for the Nth column of that statement, where N is the
-** second function parameter. The string returned is UTF-16 encoded.
-*/
 const void *sqlite3_column_name16(sqlite3_stmt*,int);
 
 /*
@@ -768,130 +677,17 @@ const char *sqlite3_column_decltype(sqlite3_stmt *, int i);
 ** column, then a NULL pointer is returned. The returned string is always
 ** UTF-16 encoded. For example, in the database schema:
 **
-** CREATE TABLE t1(c1 VARINT);
+** CREATE TABLE t1(c1 INTEGER);
 **
 ** And the following statement compiled:
 **
 ** SELECT c1 + 1, 0 FROM t1;
 **
-** Then this routine would return the string "VARIANT" for the second
+** Then this routine would return the string "INTEGER" for the second
 ** result column (i==1), and a NULL pointer for the first result column
 ** (i==0).
 */
 const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
-
-/*
-** This routine is used to bind a 32-bit integer value to a variable
-** in an SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously
-** obtained from a call to sqlite3_prepare(). The second parameter "i"
-** determines the parameter to bind the value "iValue" to.
-*/
-int sqlite3_bind_int32(sqlite3_stmt*, int i, int iValue);
-
-/*
-** This routine is used to bind a 64-bit integer value to a variable
-** in an SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously
-** obtained from a call to sqlite3_prepare(). The second parameter "i"
-** determines the parameter to bind the value "iValue" to.
-*/
-int sqlite3_bind_int64(sqlite3_stmt*, int i, long long int iValue);
-
-/*
-** This routine is used to bind a real (floating point) value to a variable
-** in an SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_prepare(). The second parameter "i" determines
-** the parameter to bind the value "iValue" to. Internally, SQLite will
-** manipulate the value as a 64-bit IEEE float.
-*/
-int sqlite3_bind_double(sqlite3_stmt*, int i, double iValue);
-
-/*
-** This routine is used to bind a NULL value to a variable in an SQL
-** statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_prepare(). The second parameter "i" determines
-** the parameter to bind the NULL value to.
-*/
-int sqlite3_bind_null(sqlite3_stmt*, int i);
-
-/*
-** This routine is used to bind a UTF-8 string value to a variable in an
-** SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_prepare(). The second parameter "i" determines
-** the parameter to bind the value to. Parameter three "z" is a pointer
-** to the UTF-8 string. 
-**
-** The fourth "n" parameter is the number of bytes (not characters) in the
-** string pointed to by "z". "n" may or may not include any nul terminator
-** character. If "n" is less than zero, then SQLite assumes that "z" is
-** a nul terminated string.
-**
-** If paramater "eCopy" is true, then SQLite makes a copy of the string
-** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
-** the original string data. In this case the caller must ensure that the
-** string data remains stable until after the SQL statement has been
-** finalised or another value bound to variable "i".
-*/
-int sqlite3_bind_text(sqlite3_stmt*, int i, const char* z, int n, int eCopy);
-
-/*
-** This routine is used to bind a UTF-16 string value to a variable in an
-** SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_prepare(). The second parameter "i" determines
-** the parameter to bind the value to. Parameter three "z" is a pointer to
-** the UTF-16 string. If the string does not begin with a byte-order-mark,
-** it is assumed to be encoded in the native byte order of the machine.
-**
-** The fourth "n" parameter is the number of bytes (not characters) in the
-** string pointed to by "z". "n" may or may not include any nul terminator
-** character. If "n" is less than zero, then SQLite assumes that "z" is
-** terminated by a pair of 0x00 characters.
-**
-** If paramater "eCopy" is true, then SQLite makes a copy of the string
-** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
-** the original string data. In this case the caller must ensure that the
-** string data remains stable until after the SQL statement has been
-** finalised or another value bound to variable "i".
-*/
-int sqlite3_bind_text16(sqlite3_stmt*, int i, const void *z, int, int eCopy);
-
-/*
-** This routine is used to bind a blob value to a variable in an
-** SQL statement compiled by sqlite3_prepare(). See comments for
-** sqlite3_prepare() for more details on SQL statement variables.
-**
-** The first argument is a pointer to an SQL statement previously obtained
-** from a call to sqlite3_prepare(). The second parameter "i" determines
-** the parameter to bind the value to. Parameter three "z" is a pointer to
-** the blob of data.
-**
-** The fourth "n" parameter is the number of bytes in the blob pointed to
-** by "z". "n" may not be less than zero.
-**
-** If paramater "eCopy" is true, then SQLite makes a copy of the blob
-** pointed to by "z". If "eCopy" is false, then SQLite stores a pointer to
-** the original blob data. In this case the caller must ensure that the
-** blob data remains stable until after the SQL statement has been
-** finalised or another value bound to variable "i".
-*/
-int sqlite3_bind_blob(sqlite3_stmt*, int i, const void *z, int n, int eCopy);
 
 /* 
 ** After an SQL query has been compiled with a call to either
@@ -938,108 +734,82 @@ int sqlite3_step(sqlite3_stmt*);
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt);
 
-#define SQLITE3_INTEGER  1
-#define SQLITE3_FLOAT    2
-#define SQLITE3_TEXT     3
-#define SQLITE3_BLOB     4
-#define SQLITE3_NULL     5
+/*
+** Values are stored in the database in one of the following fundamental
+** types.
+*/
+#define SQLITE_INTEGER  1
+#define SQLITE_FLOAT    2
+#define SQLITE_TEXT     3
+#define SQLITE_BLOB     4
+#define SQLITE_NULL     5
 
 /*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the type of the Nth column of the current row, where
-** N is the second function parameter.
+** The next group of routines returns information about the information
+** in a single column of the current result row of a query.  In every
+** case the first parameter is a pointer to the SQL statement that is being
+** executed (the sqlite_stmt* that was returned from sqlite3_prepare()) and
+** the second argument is the index of the column for which information 
+** should be returned.  iCol is zero-indexed.  The left-most column as an
+** index of 0.
 **
-** The value type is one of SQLITE3_INTEGER, SQLITE3_FLOAT, SQLITE3_TEXT,
-** SQLITE3_BLOB and SQLITE3_NULL.
+** If the SQL statement is not currently point to a valid row, or if the
+** the colulmn index is out of range, the result is undefined.
+**
+** These routines attempt to convert the value where appropriate.  For
+** example, if the internal representation is FLOAT and a text result
+** is requested, sprintf() is used internally to do the conversion
+** automatically.  The following table details the conversions that
+** are applied:
+**
+**    Internal Type    Requested Type     Conversion
+**    -------------    --------------    --------------------------
+**       NULL             INTEGER         Result is 0
+**       NULL             FLOAT           Result is 0.0
+**       NULL             TEXT            Result is an empty string
+**       NULL             BLOB            Result is a zero-length BLOB
+**       INTEGER          FLOAT           Convert from integer to float
+**       INTEGER          TEXT            ASCII rendering of the integer
+**       INTEGER          BLOB            Same as for INTEGER->TEXT
+**       FLOAT            INTEGER         Convert from float to integer
+**       FLOAT            TEXT            ASCII rendering of the float
+**       FLOAT            BLOB            Same as FLOAT->TEXT
+**       TEXT             INTEGER         Use atoi()
+**       TEXT             FLOAT           Use atof()
+**       TEXT             BLOB            No change
+**       BLOB             INTEGER         Convert to TEXT then use atoi()
+**       BLOB             FLOAT           Convert to TEXT then use atof()
+**       BLOB             TEXT            Add a \000 terminator if needed
+**
+** The following access routines are provided:
+**
+** _type()     Return the datatype of the result.  This is one of
+**             SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB,
+**             or SQLITE_NULL.
+** _blob()     Return the value of a BLOB.
+** _bytes()    Return the number of bytes in a BLOB value or the number
+**             of bytes in a TEXT value represented as UTF-8.  The \000
+**             terminator is included in the byte count for TEXT values.
+** _bytes16()  Return the number of bytes in a BLOB value or the number
+**             of bytes in a TEXT value represented as UTF-16.  The \u0000
+**             terminator is included in the byte count for TEXT values.
+** _double()   Return a FLOAT value.
+** _int()      Return an INTEGER value in the host computer's native
+**             integer representation.  This might be either a 32- or 64-bit
+**             integer depending on the host.
+** _int64()    Return an INTEGER value as a 64-bit signed integer.
+** _text()     Return the value as UTF-8 text.
+** _text16()   Return the value as UTF-16 text.
 */
-int sqlite3_column_type(sqlite3_stmt *pStmt, int i);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the value of the Nth column of the current row, where
-** N is the second function parameter.
-**
-** The value returned depends on the type of the SQL column value, as
-** returned by sqlite3_column_type():
-**
-** SQLITE3_NULL      A Null pointer.
-** SQLITE3_INTEGER   String representation of the integer, UTF-8 encoded.
-** SQLITE3_FLOAT     String representation of the real, UTF-8 encoded.
-** SQLITE3_TEXT      The string UTF-8 encoded.
-** SQLITE3_BLOB      A pointer to the blob of data.
-*/
-const unsigned char *sqlite3_column_data(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the value of the Nth column of the current row, where
-** N is the second function parameter.
-**
-** The value returned depends on the type of the SQL column value, as
-** returned by sqlite3_column_type():
-**
-** SQLITE3_NULL      A Null pointer.
-** SQLITE3_INTEGER   String representation of the integer, UTF-16 encoded.
-** SQLITE3_FLOAT     String representation of the real, UTF-16 encoded.
-** SQLITE3_TEXT      The string UTF-16 encoded.
-** SQLITE3_BLOB      A pointer to the blob of data.
-*/
-const void *sqlite3_column_data16(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the length of the data in bytes returned by the
-** sqlite3_column_data() routine for the same second parameter value.
-**
-** If sqlite3_column_data() returns a UTF-8 string, then the length
-** returned by this function includes the nul terminator character at the
-** end of the UTF-8 string.
-*/
-int sqlite3_column_bytes(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the length of the data in bytes returned by the
-** sqlite3_column_data() routine for the same second parameter value.
-**
-** If sqlite3_column_data() returns a UTF-16 string, then the length
-** returned by this function includes the nul terminator character (two
-** bytes) at the end of the UTF-16 string.
-*/
-int sqlite3_column_bytes16(sqlite3_stmt *, int);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the value of the Nth column of the current row, where
-** N is the second function parameter as an integer.
-**
-** SQLITE3_NULL      0
-** SQLITE3_INTEGER   The integer value.
-** SQLITE3_FLOAT     The integer component of the real (2^63 if too large)
-** SQLITE3_TEXT      Integer conversion of string, or 0
-** SQLITE3_BLOB      0
-*/
-long long int sqlite3_column_int(sqlite3_stmt*,int);
-
-/*
-** The first parameter is a compiled SQL statement for which the most
-** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the value of the Nth column of the current row, where
-** N is the second function parameter as an integer.
-**
-** SQLITE3_NULL      0.0
-** SQLITE3_INTEGER   The value of the integer. Some rounding may occur.
-** SQLITE3_FLOAT     The value of the float.
-** SQLITE3_TEXT      Real number conversion of string, or 0.0
-** SQLITE3_BLOB      0.0
-*/
-double sqlite3_column_float(sqlite3_stmt*,int);
+void *sqlite3_column_blob(sqlite3_stmt*, int iCol)
+int sqlite3_column_bytes(sqlite3_stmt*, int iCol)
+int sqlite3_column_bytes16(sqlite3_stmt*, int iCol)
+double sqlite3_column_double(sqlite3_stmt*, int iCol)
+int sqlite3_column_int(sqlite3_stmt*, int iCol)
+long long int sqlite3_column_int64(sqlite3_stmt*, int iCol)
+const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol)
+const void *sqlite3_column_text16(sqlite3_stmt*, int iCol)
+int sqlite3_column_type(sqlite3_stmt*, int iCol);
 
 /*
 ** The sqlite3_finalize() function is called to delete a compiled
@@ -1131,77 +901,23 @@ int sqlite3_create_function16(
 */
 int sqlite3_aggregate_count(sqlite3_context*);
 
-
 /*
-** Return the type of the sqlite3_value* passed as the first argument. 
-** The type is one of SQLITE3_NULL, SQLITE3_INTEGER, SQLITE3_FLOAT,
-** SQLITE3_TEXT or SQLITE3_BLOB.
+** The next group of routines returns information about parameters to
+** a user-defined function.  Function implementations use these routines
+** to access their parameters.  These routines are the same as the
+** sqlite3_column_* routines except that these routines take a single
+** sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
+** column number.
 */
+void *sqlite3_value_blob(sqlite3_value*)
+int sqlite3_value_bytes(sqlite3_value*)
+int sqlite3_value_bytes16(sqlite3_value*)
+double sqlite3_value_double(sqlite3_value*)
+int sqlite3_value_int(sqlite3_value*)
+long long int sqlite3_value_int64(sqlite3_value*)
+const unsigned char *sqlite3_value_text(sqlite3_value*)
+const void *sqlite3_value_text16(sqlite3_value*)
 int sqlite3_value_type(sqlite3_value*);
-
-/*
-** Return the value of the sqlite3_value* passed as the first argument.
-** The value returned depends on the type of the value, as returned by
-** sqlite3_value_type():
-**
-** SQLITE3_NULL      A Null pointer.
-** SQLITE3_INTEGER   String representation of the integer, UTF-8 encoded.
-** SQLITE3_FLOAT     String representation of the real, UTF-8 encoded.
-** SQLITE3_TEXT      The string UTF-8 encoded.
-** SQLITE3_BLOB      A pointer to the blob of data.
-*/ 
-const unsigned char *sqlite3_value_data(sqlite3_value*);
-
-/*
-** Return the number of bytes in the string or blob returned by a call
-** to sqlite3_value_data() on the same sqlite3_value* object.
-*/
-int sqlite3_value_bytes(sqlite3_value*);
-
-/*
-** Return the value of the sqlite3_value* passed as the first argument.
-** The value returned depends on the type of the value, as returned by
-** sqlite3_value_type():
-**
-** SQLITE3_NULL      A Null pointer.
-** SQLITE3_INTEGER   String representation of the integer, UTF-16 encoded.
-** SQLITE3_FLOAT     String representation of the real, UTF-16 encoded.
-** SQLITE3_TEXT      The string UTF-16 encoded.
-** SQLITE3_BLOB      A pointer to the blob of data.
-*/ 
-const void *sqlite3_value_data16(sqlite3_value*);
-
-/*
-** Return the number of bytes in the string or blob returned by a call
-** to sqlite3_value_data16() on the same sqlite3_value* object.
-*/
-int sqlite3_value_bytes16(sqlite3_value*);
-
-/*
-** Return the value of the sqlite3_value* passed as the first argument.
-** The value returned depends on the type of the value, as returned by
-** sqlite3_value_type():
-**
-** SQLITE3_NULL      0
-** SQLITE3_INTEGER   The integer value.
-** SQLITE3_FLOAT     The integer component of the real (2^63 if too large)
-** SQLITE3_TEXT      Integer conversion of string, or 0
-** SQLITE3_BLOB      0
-*/
-long long int sqlite3_value_int(sqlite3_value*);
-
-/*
-** Return the value of the sqlite3_value* passed as the first argument.
-** The value returned depends on the type of the value, as returned by
-** sqlite3_value_type():
-**
-** SQLITE3_NULL      0.0
-** SQLITE3_INTEGER   The value of the integer. Some rounding may occur.
-** SQLITE3_FLOAT     The value of the float.
-** SQLITE3_TEXT      Real number conversion of string, or 0.0
-** SQLITE3_BLOB      0.0
-*/
-double sqlite3_value_float(sqlite3_value*);
 
 /*
 ** Aggregate functions use the following routine to allocate
@@ -1213,7 +929,7 @@ double sqlite3_value_float(sqlite3_value*);
 **
 ** The buffer allocated is freed automatically by SQLite.
 */
-void *sqlite3_get_context(sqlite3_context*, int nBytes);
+void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 
 /*
 ** The pUserData parameter to the sqlite3_create_function() and
@@ -1224,89 +940,19 @@ void *sqlite3_get_context(sqlite3_context*, int nBytes);
 void *sqlite3_user_data(sqlite3_context*);
 
 /*
-** The following three functions may be called from within a user-defined
-** function callback or a user-defined aggregate finalizer callback. The
-** result of the user-defined function or aggregate is set to the value of
-** the second parameter. Any value previously set as the return value via
-** an sqlite3_result_*() call is overwritten.
-**
-** The first parameter to each of these routines must be a copy of the
-** sqlite3_context* pointer passed to the user-defined function or
-** aggregate finalizer function.
-*/
-void sqlite3_result_int32(sqlite3_context*, int);
-void sqlite3_result_int64(sqlite3_context*, long long int);
-void sqlite3_result_double(sqlite3_context*, double);
-
-/*
-** This function may be called from within a user-defined function callback
-** or a user-defined aggregate finalizer callback. The result of the
-** user-defined function or aggregate is set to NULL.  Any value previously
-** set as the return value via an sqlite3_result_*() call is overwritten.
-**
-** The parameter to this routine must be a copy of the sqlite3_context*
-** pointer passed to the user-defined function or aggregate finalizer
-** function.
-*/
-void sqlite3_result_null(sqlite3_context*);
-
-/*
-** The following two functions may be called from within a user-defined or
-** a user-defined aggregate finalizer callback to return a text value. 
-** The second parameter is a pointer to the string, encoded in UTF-8 
-** for sqlite3_result_text() and UTF-16 (machine byte order) for
-** sqlite3_result_text16(). 
-**
-** If the third parameter, n,  is positive, it is the number of bytes (not
-** characters) in the string data. A negative n value indicates that the
-** string may be read up to the nul terminator character.
-**
-** If the fourth parameter is non-zero, then a copy is made of the string.
-** Otherwise, SQLite stores a pointer to the original string data.
-**
-** The first parameter to this routine must be a copy of the
-** sqlite3_context* pointer passed to the user-defined function or
-** aggregate finalizer function.
-*/
-void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
-void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
-
-/*
-** The following function may be called from within a user-defined or a
-** user-defined aggregate finalizer callback to return a blob value.  The
-** second parameter is a pointer to the blob of data. The third parameter
-** is the number of bytes of data in the blob.
-**
-** If the fourth parameter is non-zero, then a copy is made of the blob.
-** Otherwise, SQLite stores a pointer to the original blob data.
-**
-** The first parameter to this routine must be a copy of the
-** sqlite3_context* pointer passed to the user-defined function or
-** aggregate finalizer function.
+** User-defined functions invoke the following routines in order to
+** set their return value.
 */
 void sqlite3_result_blob(sqlite3_context*, const void*, int n, int eCopy);
-
-/*
-** These routines are used from within a user-defined or a user-defined
-** aggregate finalizer callback to return an error. The second parameter
-** is a pointer to a string describing the error, or NULL if no explanation
-** is provided.
-**
-** The string should be encoded in UTF-8 for sqlite3_result_error() and
-** UTF-16 (machine byte order) for sqlite3_result_error16().
-**
-** If not negative, the third parameter is the number of bytes (not
-** characters) in the string passed as the second argument. If the third
-** parameter is negative, then the string is read up to the first nul
-** terminator character.
-*/
+void sqlite3_result_double(sqlite3_context*, double);
 void sqlite3_result_error(sqlite3_context*, const char*, int);
 void sqlite3_result_error16(sqlite3_context*, const void*, int);
-
-/*
-** Copy a function parameter into the result of the function.
-*/
-void sqlite3_result(sqlite3_context*, sqlite3_value*);
+void sqlite3_result_int(sqlite3_context*, int);
+void sqlite3_result_int64(sqlite3_context*, long long int);
+void sqlite3_result_null(sqlite3_context*);
+void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
+void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
+void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

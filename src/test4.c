@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.7 2004/05/26 02:04:57 danielk1977 Exp $
+** $Id: test4.c,v 1.8 2004/05/26 23:25:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -498,7 +498,7 @@ static void do_step(Thread *p){
   if( p->rc==SQLITE_ROW ){
     p->argc = sqlite3_column_count(p->pStmt);
     for(i=0; i<sqlite3_data_count(p->pStmt); i++){
-      p->argv[i] = sqlite3_column_data(p->pStmt, i);
+      p->argv[i] = sqlite3_column_text(p->pStmt, i);
     }
     for(i=0; i<p->argc; i++){
       p->colv[i] = sqlite3_column_name(p->pStmt, i);
@@ -648,6 +648,3 @@ int Sqlitetest4_Init(Tcl_Interp *interp){
 #else
 int Sqlitetest4_Init(Tcl_Interp *interp){ return TCL_OK; }
 #endif /* OS_UNIX */
-
-
-

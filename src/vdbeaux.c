@@ -442,7 +442,7 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** the internals of the sqlite3_context structure which is only defined in
 ** this source file.
 */
-void *sqlite3_get_context(sqlite3_context *p, int nByte){
+void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   if( p->pAgg==0 ){
     if( nByte<=NBFS ){
@@ -584,7 +584,7 @@ int sqlite3VdbeList(
 
   /* Even though this opcode does not put dynamic strings onto the
   ** the stack, they may become dynamic if the user calls
-  ** sqlite3_column_data16(), causing a translation to UTF-16 encoding.
+  ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
   if( p->pTos==&p->aStack[4] ){
     for(i=0; i<5; i++){
