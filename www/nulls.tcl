@@ -1,7 +1,7 @@
 #
 # Run this script to generated a nulls.html output file
 #
-set rcsid {$Id: nulls.tcl,v 1.4 2003/08/13 11:29:24 drh Exp $}
+set rcsid {$Id: nulls.tcl,v 1.5 2003/11/08 12:07:01 drh Exp $}
 
 puts {<html>
 <head>
@@ -170,13 +170,15 @@ The following table shows the results of the NULL handling experiments.
 
 <table border=1 cellpadding=3 width="100%">
 <tr><th>&nbsp&nbsp;</th>
-<th>MySQL</th>
+<th>MySQL<br>3.23.41</th>
+<th>MySQL<br>4.0.16</th>
 <th>Firebird</th>
-<th>SQL Anywhere</th>
-<th>Borland Interbase</th>
+<th>SQL<br>Anywhere</th>
+<th>Borland<br>Interbase</th>
 </tr>
 
 <tr><td>Adding anything to null gives null</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -187,8 +189,10 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>nulls are distinct in a UNIQUE column</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 4)</td>
@@ -196,17 +200,20 @@ The following table shows the results of the NULL handling experiments.
 </tr>
 <tr><td>nulls are distinct in SELECT DISTINCT</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No (Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>nulls are distinct in a UNION</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 3)</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No (Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>"CASE WHEN null THEN 1 ELSE 0 END" is 0?</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -217,9 +224,11 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>"not (null AND false)" is true</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -237,7 +246,7 @@ and from UNION.</td>
 <td>Test data unavailable.</td>
 </tr>
 <tr><td>3.&nbsp;</td>
-<td>The version of MySQL tested (3.23.41) does not support UNION.</td>
+<td>MySQL version 3.23.41 does not support UNION.</td>
 </tr>
 <tr><td>4.&nbsp;</td>
 <td>SQL Anywhere and Borland Interbase 
