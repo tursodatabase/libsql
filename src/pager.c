@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.170 2004/11/02 12:56:41 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.171 2004/11/03 08:44:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1636,6 +1636,33 @@ static int syncJournal(Pager*);
 
 
 /*
+** Unlink pPg from it's hash chain. Also set the page number to 0 to indicate
+** that the page is not part of any hash chain. This is required because the
+** sqlite3pager_movepage() routine can leave a page in the 
+** pNextFree/pPrevFree list that is not a part of any hash-chain.
+*/
+static void unlinkHashChain(Pager *pPager, PgHdr *pPg){
+  if( pPg->pgno==0 ){
+    /* If the page number is zero, then this page is not in any hash chain. */
+    return;
+  }
+  if( pPg->pNextHash ){
+    pPg->pNextHash->pPrevHash = pPg->pPrevHash;
+  }
+  if( pPg->pPrevHash ){
+    assert( pPager->aHash[pager_hash(pPg->pgno)]!=pPg );
+    pPg->pPrevHash->pNextHash = pPg->pNextHash;
+  }else{
+    int h = pager_hash(pPg->pgno);
+    assert( pPager->aHash[h]==pPg );
+    pPager->aHash[h] = pPg->pNextHash;
+  }
+
+  pPg->pgno = 0;
+  pPg->pNextHash = pPg->pPrevHash = 0;
+}
+
+/*
 ** Unlink a page from the free list (the list of all pages where nRef==0)
 ** and from its hash collision chain.
 */
@@ -1665,6 +1692,8 @@ static void unlinkPage(PgHdr *pPg){
   pPg->pNextFree = pPg->pPrevFree = 0;
 
   /* Unlink from the pgno hash table */
+  unlinkHashChain(pPager, pPg);
+/*
   if( pPg->pNextHash ){
     pPg->pNextHash->pPrevHash = pPg->pPrevHash;
   }
@@ -1676,6 +1705,7 @@ static void unlinkPage(PgHdr *pPg){
     pPager->aHash[h] = pPg->pNextHash;
   }
   pPg->pNextHash = pPg->pPrevHash = 0;
+*/
 }
 
 /*
@@ -3215,6 +3245,7 @@ sync_exit:
 }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
+
 /*
 ** Move the page identified by pData to location pgno in the file. 
 **
@@ -3233,55 +3264,35 @@ sync_exit:
 int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   PgHdr *pPgOld; 
+  int h;
 
   assert( !pPager->stmtInUse );
-  /* assert( pPg->pNextFree==0 && pPg->pPrevFree==0 && pPg->nRef>0 ); */
   assert( pPg->nRef>0 );
 
   /* Unlink pPg from it's hash-chain */
-  if( pPg->pNextHash ){
-    pPg->pNextHash->pPrevHash = pPg->pPrevHash;
-  }
-  if( pPg->pPrevHash ){
-    pPg->pPrevHash->pNextHash = pPg->pNextHash;
-  }else{
-    int h = pager_hash(pPg->pgno);
-    assert( pPager->aHash[h]==pPg );
-    pPager->aHash[h] = pPg->pNextHash;
-  }
+  unlinkHashChain(pPager, pPg);
 
-  /* Change the page number for pPg */
-  pPg->pgno = pgno;
-
+  /* If the cache contains a page with page-number pgno exists, remove it
+  ** from it's hash chain.
+  */
   pPgOld = pager_lookup(pPager, pgno);
   if( pPgOld ){
-    /* Remove pPgOld from the page number hash-chain and insert pPg. */
-    assert(pPgOld->nRef==0 && !pPgOld->pNextStmt && !pPgOld->pPrevStmt );
-    if( pPgOld->pNextHash ){
-      pPgOld->pNextHash->pPrevHash = pPg;
-    }
-    if( pPgOld->pPrevHash ){
-      pPgOld->pPrevHash->pNextHash = pPg;
-    }else{
-      int h = pager_hash(pgno);
-      assert( pPager->aHash[h]==pPgOld );
-      pPager->aHash[h] = pPg;
-    }
-    pPgOld->pNextHash = pPgOld->pPrevHash = 0;
-  }else{
-    /* Insert pPg into it's new hash-chain. */
-    int h = pager_hash(pgno);
-    if( pPager->aHash[h] ){
-      pPager->aHash[h]->pNextHash = pPg;
-    }
-    pPg->pNextHash = pPager->aHash[h];
-    pPg->pPrevHash = 0;
+    assert( pPgOld->nRef==0 );
+    unlinkHashChain(pPager, pPgOld);
+    pPgOld->dirty = 0;
   }
 
-  /* Don't write the old page when sqlite3pager_sync() is called. Do write
-  ** the new one. 
-  */
-  pPgOld->dirty = 0;
+  /* Change the page number for pPg and insert it into the new hash-chain. */
+  pPg->pgno = pgno;
+  h = pager_hash(pgno);
+  if( pPager->aHash[h] ){
+    assert( pPager->aHash[h]->pPrevHash==0 );
+    pPager->aHash[h]->pPrevHash = pPg;
+  }
+  pPg->pNextHash = pPager->aHash[h];
+  pPager->aHash[h] = pPg;
+  pPg->pPrevHash = 0;
+
   pPg->dirty = 1;
   pPager->dirtyCache = 1;
 
