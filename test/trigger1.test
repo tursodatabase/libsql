@@ -320,9 +320,13 @@ integrity_check trigger-5.1
 # trigger works.  Then drop the trigger.  Make sure the table is
 # still there.
 #
+set view_v1 {}
+ifcapable view {
+  set view_v1 {view v1}
+}
 do_test trigger-6.1 {
   execsql {SELECT type, name FROM sqlite_master}
-} [concat [ifcapable view {list view v1}] {table t2}]
+} [concat $view_v1 {table t2}]
 do_test trigger-6.2 {
   execsql {
     CREATE TRIGGER t2 BEFORE DELETE ON t2 BEGIN
@@ -330,7 +334,7 @@ do_test trigger-6.2 {
     END;
     SELECT type, name FROM sqlite_master;
   }
-} [concat [ifcapable view {list view v1}] {table t2 trigger t2}]
+} [concat $view_v1 {table t2 trigger t2}]
 do_test trigger-6.3 {
   catchsql {DELETE FROM t2}
 } {1 {deletes are not allows}}
@@ -341,13 +345,13 @@ do_test trigger-6.5 {
   db close
   sqlite3 db test.db
   execsql {SELECT type, name FROM sqlite_master}
-} [concat [ifcapable view {list view v1}] {table t2 trigger t2}]
+} [concat $view_v1 {table t2 trigger t2}]
 do_test trigger-6.6 {
   execsql {
     DROP TRIGGER t2;
     SELECT type, name FROM sqlite_master;
   }
-} [concat [ifcapable view {list view v1}] {table t2}]
+} [concat $view_v1 {table t2}]
 do_test trigger-6.7 {
   execsql {SELECT * FROM t2}
 } {3 4 7 8}
