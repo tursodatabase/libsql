@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.183 2004/06/05 00:01:46 drh Exp $
+** $Id: select.c,v 1.184 2004/06/07 10:00:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -612,19 +612,45 @@ static void generateSortTail(
 }
 
 /*
-** Generate code that will tell the VDBE the datatypes of
-** columns in the result set.
+** Return a pointer to a string containing the 'declaration type' of the
+** expression pExpr. The string may be treated as static by the caller.
 **
-** This routine only generates code if the "PRAGMA show_datatypes=on"
-** has been executed.  The datatypes are reported out in the azCol
-** parameter to the callback function.  The first N azCol[] entries
-** are the names of the columns, and the second N entries are the
-** datatypes for the columns.
-**
-** The "datatype" for a result that is a column of a type is the
-** datatype definition extracted from the CREATE TABLE statement.
-** The datatype for an expression is either TEXT or NUMERIC.  The
-** datatype for a ROWID field is INTEGER.
+** If the declaration type is the exact datatype definition extracted from
+** the original CREATE TABLE statement if the expression is a column.
+** 
+** The declaration type for an expression is either TEXT, NUMERIC or ANY.
+** The declaration type for a ROWID field is INTEGER.
+*/
+static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
+  char const *zType = 0;
+  int j;
+  if( pExpr==0 ) return 0;
+  if( pExpr->op==TK_COLUMN && pTabList ){
+    Table *pTab;
+    int iCol = pExpr->iColumn;
+    for(j=0; j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable; j++){}
+    assert( j<pTabList->nSrc );
+    pTab = pTabList->a[j].pTab;
+    if( iCol<0 ) iCol = pTab->iPKey;
+    assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
+    if( iCol<0 ){
+      zType = "INTEGER";
+    }else{
+      zType = pTab->aCol[iCol].zType;
+    }
+  }else{
+    switch( sqlite3ExprType(pExpr) ){
+      case SQLITE_AFF_TEXT:     zType = "TEXT";    break;
+      case SQLITE_AFF_NUMERIC:  zType = "NUMERIC"; break;
+      default:                  zType = "ANY";     break;
+    }
+  }
+  return zType;
+}
+
+/*
+** Generate code that will tell the VDBE the declaration types of columns
+** in the result set.
 */
 static void generateColumnTypes(
   Parse *pParse,      /* Parser context */
@@ -632,31 +658,11 @@ static void generateColumnTypes(
   ExprList *pEList    /* Expressions defining the result set */
 ){
   Vdbe *v = pParse->pVdbe;
-  int i, j;
+  int i;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
-    char *zType = 0;
+    const char *zType = columnType(pParse, pTabList, p);
     if( p==0 ) continue;
-    if( p->op==TK_COLUMN && pTabList ){
-      Table *pTab;
-      int iCol = p->iColumn;
-      for(j=0; j<pTabList->nSrc && pTabList->a[j].iCursor!=p->iTable; j++){}
-      assert( j<pTabList->nSrc );
-      pTab = pTabList->a[j].pTab;
-      if( iCol<0 ) iCol = pTab->iPKey;
-      assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
-      if( iCol<0 ){
-        zType = "INTEGER";
-      }else{
-        zType = pTab->aCol[iCol].zType;
-      }
-    }else{
-      switch( sqlite3ExprType(p) ){
-        case SQLITE_AFF_TEXT:     zType = "TEXT";    break;
-        case SQLITE_AFF_NUMERIC:  zType = "NUMERIC"; break;
-        default:                  zType = "ANY";     break;
-      }
-    }
     sqlite3VdbeSetColName(v, i+pEList->nExpr, zType, P3_STATIC);
   }
 }
@@ -779,10 +785,12 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   assert( pTab->nCol>0 );
   pTab->aCol = aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
   for(i=0; i<pTab->nCol; i++){
-    Expr *p, *pR;
+    Expr *pR;
+    char *zType;
+    Expr *p = pEList->a[i].pExpr;
     if( pEList->a[i].zName ){
       aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
-    }else if( (p=pEList->a[i].pExpr)->op==TK_DOT 
+    }else if( p->op==TK_DOT 
                && (pR=p->pRight)!=0 && pR->token.z && pR->token.z[0] ){
       int cnt;
       sqlite3SetNString(&aCol[i].zName, pR->token.z, pR->token.n, 0);
@@ -803,9 +811,13 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
       sprintf(zBuf, "column%d", i+1);
       pTab->aCol[i].zName = sqliteStrDup(zBuf);
     }
-    
-    /* Affinity is always NONE, as there is no type name. */
-    pTab->aCol[i].affinity = SQLITE_AFF_NONE;
+
+    zType = sqliteStrDup(columnType(pParse, pSelect->pSrc ,p));
+    pTab->aCol[i].zType = zType;
+    pTab->aCol[i].affinity = SQLITE_AFF_NUMERIC;
+    if( zType ){
+      pTab->aCol[i].affinity = sqlite3AffinityType(zType, strlen(zType));
+    }
   }
   pTab->iPKey = -1;
   return pTab;

@@ -1,5 +1,5 @@
-C Add\spragma\sto\sset/get\stext\sencoding.\sAlso\sfix\san\sobscure\sproblem\swhere\sa\ntemp\strigger\scould\sbe\saccidently\sdropped.\s(CVS\s1537)
-D 2004-06-07T07:52:18
+C Tables\screated\swith\sthe\sCREATE\sTABLE\s<tbl>\sAS\sSELECT\s...\ssyntax\snow\sinherit\ncolumn\sdeclaration\stypes\sfrom\sthe\sSELECT\sstatement.\s(CVS\s1538)
+D 2004-06-07T10:00:31
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/attach.c e76e4590ec5dd389e5646b171881b5243a6ef391
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 3f0c22ab8c0c000ee5de4ad875836c111c4191c6
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
-F src/build.c 92144f30d30fa00cb21c9c9e51de49cfb948d113
+F src/build.c e8043747608eba9ff293f4fcb52cbf958625d599
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
 F src/delete.c b30f08250c9ed53a25a13c7c04599c1e8753992d
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -53,7 +53,7 @@ F src/parse.y 27c1ce09f9d309be91f9e537df2fb00892990af4
 F src/pragma.c 54b4d67fa81fd38b911aa3325348dcae9ceac5a4
 F src/printf.c 77ee9ec6dbf1b7512b17d63ccf8322ea9466278b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 02d711160100ef3a730060f7cfb5bc85fde06d72
+F src/select.c 0ac0adeb2ae15255ac4399d9ee1b0d25a266a676
 F src/shell.c 79af86d39b2149c7f16219fcbe636e7c2da9df8e
 F src/sqlite.h.in 4705697dd7213f322d59ffc69b48b8ac32b23373
 F src/sqliteInt.h 845d2a3ffdb9a9050a1b55044d4856227b649b84
@@ -144,7 +144,7 @@ F test/select5.test 3f3f0f31e674fa61f8a3bdb6af1517dfae674081
 F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test 863f07884fb68a70b738998e9a548132a0d0b7d9
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
-F test/table.test 71f808817b50ae3a9a693a88b3ea003f1031cdbb
+F test/table.test 1defd90e8200661a822618b18748b9339a7fef2f
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
 F test/tclsqlite.test 853e4372004d209e2ff0d4b0b35c91d4f64cd7d8
 F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4f7c0961ad6cb7082bf7716f0c7ca16a8742c039
-R ec69eb8a9c750d8d0b48358a8267ec3f
+P 983221b038813c5a7892564896e39597c223c4c3
+R 9252a60acb4c967bd956d4d623f3bcb8
 U danielk1977
-Z 53de26870eaceb80255c757bed464dd0
+Z b067b126b336d1aa6d04e5d165e845dc

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.207 2004/06/07 07:52:18 danielk1977 Exp $
+** $Id: build.c,v 1.208 2004/06/07 10:00:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -714,7 +714,6 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
-//  pCol->sortOrder = sqlite3CollateType(z, n);
   pCol->affinity = sqlite3AffinityType(z, n);
 }
 
@@ -985,6 +984,9 @@ static char *createTableStmt(Table *p){
   n = 0;
   for(i=0; i<p->nCol; i++){
     n += identLength(p->aCol[i].zName);
+    if( p->aCol[i].zType ){
+      n += (strlen(p->aCol[i].zType) + 1);
+    }
   }
   n += identLength(p->zName);
   if( n<40 ){
@@ -1008,6 +1010,11 @@ static char *createTableStmt(Table *p){
     k += strlen(&zStmt[k]);
     zSep = zSep2;
     identPut(zStmt, &k, p->aCol[i].zName);
+    if( p->aCol[i].zType ){
+      zStmt[k++] = ' ';
+      strcpy(&zStmt[k], p->aCol[i].zType);
+      k += strlen(p->aCol[i].zType);
+    }
   }
   strcpy(&zStmt[k], zEnd);
   return zStmt;
@@ -1041,18 +1048,12 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   p = pParse->pNewTable;
   if( p==0 ) return;
 
+  assert( !db->init.busy || !pSelect );
+
   /* If the table is generated from a SELECT, then construct the
   ** list of columns and the text of the table.
   */
   if( pSelect ){
-    Table *pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);
-    if( pSelTab==0 ) return;
-    assert( p->aCol==0 );
-    p->nCol = pSelTab->nCol;
-    p->aCol = pSelTab->aCol;
-    pSelTab->nCol = 0;
-    pSelTab->aCol = 0;
-    sqlite3DeleteTable(0, pSelTab);
   }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
@@ -1078,6 +1079,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
+
     if( p->pSelect==0 ){
       /* A regular table */
       sqlite3VdbeOp3(v, OP_CreateTable, 0, p->iDb, (char*)&p->tnum, P3_POINTER);
@@ -1086,11 +1088,44 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
     }
     p->tnum = 0;
-    sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->pSelect==0?"table":"view", P3_STATIC);
+
+    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+
+    /* If this is a CREATE TABLE xx AS SELECT ..., execute the SELECT
+    ** statement to populate the new table. The root-page number for the
+    ** new table is on the top of the vdbe stack.
+    **
+    ** Once the SELECT has been coded by sqlite3Select(), it is in a
+    ** suitable state to query for the column names and types to be used
+    ** by the new table.
+    */
+    if( pSelect ){
+      Table *pSelTab;
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, p->iDb, 0);
+      sqlite3VdbeAddOp(v, OP_OpenWrite, 1, 0);
+      pParse->nTab = 2;
+      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Close, 1, 0);
+      if( pParse->nErr==0 ){
+        pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);
+        if( pSelTab==0 ) return;
+        assert( p->aCol==0 );
+        p->nCol = pSelTab->nCol;
+        p->aCol = pSelTab->aCol;
+        pSelTab->nCol = 0;
+        pSelTab->aCol = 0;
+        sqlite3DeleteTable(0, pSelTab);
+      }
+    }
+  
+    sqlite3OpenMasterTable(v, p->iDb);
+
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->pSelect==0?"table":"view",P3_STATIC);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
     sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
-    sqlite3VdbeAddOp(v, OP_Dup, 4, 0);
+    sqlite3VdbeAddOp(v, OP_Pull, 3, 0);
+
     if( pSelect ){
       char *z = createTableStmt(p);
       n = z ? strlen(z) : 0;
@@ -1115,12 +1150,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3ChangeCookie(db, v, p->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    if( pSelect ){
-      sqlite3VdbeAddOp(v, OP_Integer, p->iDb, 0);
-      sqlite3VdbeAddOp(v, OP_OpenWrite, 1, 0);
-      pParse->nTab = 2;
-      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0);
-    }
+
     sqlite3EndWriteOperation(pParse);
   }
 
