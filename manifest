@@ -1,5 +1,5 @@
-C adding\slength()\sand\ssubstr()\stests.\s\sfix\sshell.c\sbug\s(CVS\s144)
-D 2000-08-28T16:21:59
+C Version\s1.0.4\s(CVS\s496)
+D 2000-08-28T16:25:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -71,7 +71,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 0eef538f3de66fede7c88f8be8c3458d84107c3f
+P b8cec9b938b4be1ccf230588d8e1564fb3ac4316
 R b19d9376e2ed736a8c71d021909787e7
 U drh
-Z a629695fda46772305184d1159d79249
+Z 240a9899293f42faa04a2a025b9382ba
