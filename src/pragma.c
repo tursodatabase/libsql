@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.29 2004/05/25 23:35:18 danielk1977 Exp $
+** $Id: pragma.c,v 1.30 2004/05/26 00:01:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -295,12 +295,12 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_AddImm,     -1, 0,        0},  /* 10 */
       { OP_Callback,    1, 0,        0}
     };
+    int addr;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
-      int addr = sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
+      addr = sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
       sqlite3VdbeChangeP2(v, addr+3, addr+10);
     }else{
-      int addr;
       int size = db->cache_size;
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, 0);
