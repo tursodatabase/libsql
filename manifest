@@ -1,5 +1,5 @@
-C Describe\sthe\sdifference\sbetween\sthe\sbinary\sRPMs\sin\sthe\sdownload.html\sfile.\s(CVS\s506)
-D 2002-03-30T14:15:52
+C Fix\sfor\sbug\s#3:\sAllow\sVIEW\sas\sa\scolumn\sname.\s\sAlso\sallow\sCOPY.\s(CVS\s507)
+D 2002-03-30T15:26:51
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -35,7 +35,7 @@ F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c f136f5ba82c896d500a10b6a2e5caea62abf716b
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y e6f300a355459fb29a71c30246be4cdb6ed5b6a7
+F src/parse.y a0943e2774c7b0cab608640df1126f6c3ae39e90
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 9323800e2937e84b52c198fffc51995d822b1779
@@ -76,7 +76,7 @@ F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
 F test/main.test 1626345b5f630c5398eede500d9354813b76b0fd
 F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
 F test/minmax.test fb6ab400271ae1f5bc88617c2882f2f081ea8e6d
-F test/misc1.test 84a3d8e8c47af327fbfa1bca2b29192ae5432240
+F test/misc1.test a03214118429b40ca5548bc1fae0ebd5c34dabe6
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
 F test/pragma.test 0b9675ef1f5ba5b43abfa337744445fc5b01a34a
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 57d4c7704794d0a28cbf67be3f90dbf81bf3b05d
-R a7e657944cab421e84233e6c131e8395
+P 8ce9a1fad2d8b20876b0557fa57515e0df74ed05
+R e3e6743fe3cd6441517378726496ed2c
 U drh
-Z 61ccaedd9c5efd48bb2825a1aa5ac5d0
+Z 8268c6d7053c63093cf4628188d6e593

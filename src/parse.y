@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.58 2002/03/24 13:13:29 drh Exp $
+** @(#) $Id: parse.y,v 1.59 2002/03/30 15:26:51 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -97,24 +97,26 @@ columnid ::= ids(X).                {sqliteAddColumn(pParse,&X);}
 // an abbreviation of "description").
 //
 %type id {Token}
-id(A) ::= DESC(X).       {A = X;}
-id(A) ::= ASC(X).        {A = X;}
-id(A) ::= DELIMITERS(X). {A = X;}
-id(A) ::= EXPLAIN(X).    {A = X;}
-id(A) ::= VACUUM(X).     {A = X;}
-id(A) ::= BEGIN(X).      {A = X;}
-id(A) ::= END(X).        {A = X;}
-id(A) ::= PRAGMA(X).     {A = X;}
-id(A) ::= CLUSTER(X).    {A = X;}
-id(A) ::= ID(X).         {A = X;}
-id(A) ::= TEMP(X).       {A = X;}
-id(A) ::= OFFSET(X).     {A = X;}
-id(A) ::= KEY(X).        {A = X;}
 id(A) ::= ABORT(X).      {A = X;}
-id(A) ::= IGNORE(X).     {A = X;}
-id(A) ::= REPLACE(X).    {A = X;}
-id(A) ::= FAIL(X).       {A = X;}
+id(A) ::= ASC(X).        {A = X;}
+id(A) ::= BEGIN(X).      {A = X;}
+id(A) ::= CLUSTER(X).    {A = X;}
 id(A) ::= CONFLICT(X).   {A = X;}
+id(A) ::= COPY(X).       {A = X;}
+id(A) ::= DELIMITERS(X). {A = X;}
+id(A) ::= DESC(X).       {A = X;}
+id(A) ::= END(X).        {A = X;}
+id(A) ::= EXPLAIN(X).    {A = X;}
+id(A) ::= FAIL(X).       {A = X;}
+id(A) ::= ID(X).         {A = X;}
+id(A) ::= IGNORE(X).     {A = X;}
+id(A) ::= KEY(X).        {A = X;}
+id(A) ::= OFFSET(X).     {A = X;}
+id(A) ::= PRAGMA(X).     {A = X;}
+id(A) ::= REPLACE(X).    {A = X;}
+id(A) ::= TEMP(X).       {A = X;}
+id(A) ::= VACUUM(X).     {A = X;}
+id(A) ::= VIEW(X).       {A = X;}
 
 // And "ids" is an identifer-or-string.
 //
