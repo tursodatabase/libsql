@@ -48,6 +48,7 @@ sqlite3_get_auxdata
 sqlite3_get_table
 sqlite3_interrupt
 sqlite3_last_insert_rowid
+sqlite3_libversion
 sqlite3_mprintf
 sqlite3_open
 sqlite3_open16

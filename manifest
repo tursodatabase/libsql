@@ -1,6 +1,6 @@
-C Add\snew\sdefenses\sagainst\smisuse\sof\sthe\sC\sAPI.\s\sTicket\s#870.\s(CVS\s1906)
-D 2004-08-28T14:49:47
-F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
+C Add\sthe\ssqlite3_libversion()\sAPI\s(ticket\s#834).\s\sFix\sthe\sbuild\sscripts\sto\ncorrectly\sbuild\sthe\sshared\slibraries\swith\sversion\s8.4\sof\sTcl.\s(CVS\s1908)
+D 2004-08-28T16:19:01
+F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 17f839d72355f3b8d4b1e4715cfcc7aa03443e2a
@@ -17,13 +17,14 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 430cb919fb25515058186674ea0ab7d27fa19c95
-F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
-F publish.sh fa3c5ad1a6ac59925f2b37e422db378a7bec621c
+F main.mk 2eb2826d6bd82d54e768902e5e1929e550409273
+F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
+F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
+F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F sqlite3.def c139a6b17293d71759a7c301ad76707243ce5d54
+F sqlite3.def cf325d366f167029a971de7333f32b74bfe2e375
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
@@ -39,7 +40,7 @@ F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c fc1ce65a0fe68f226143de9b43c3582164a92aff
 F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
-F src/main.c c00e3f9e8c4fa9bc0fdad43ce366958db73ac9c6
+F src/main.c 63f77b83a518fda4d8405204b45ae016c5f35a2d
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h cd7eb025fdab7dc91e0e97bf6310f1648205857f
@@ -212,7 +213,7 @@ F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
-F www/capi3ref.tcl 740d222be4d66e8947b60a0627dd760a2e019e9f
+F www/capi3ref.tcl bead38516efb0227ffa6ac76beb3f7ea405bb389
 F www/changes.tcl 8c36aab96163bbb64f5f07a12606a242c0a820f2
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
@@ -243,7 +244,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f5b0e5b0b2f17d179c23c7e4542dbbb452096056
-R 19adc0034f3d181b6cae6f1ebdba626d
+P 6ef1f662d71c75bdb7f61b2fff03f5b1b41e5586
+R 5b251c944f99c3bf147bc10eb4f70f96
 U drh
-Z 8b14a526a7800c9ee03abeba359d39e9
+Z 5c52cbb1dda1a18b82f5188a439efbf0

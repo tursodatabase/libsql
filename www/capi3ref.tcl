@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.9 2004/08/25 04:07:03 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.10 2004/08/28 16:19:01 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -45,6 +45,15 @@ api {result-codes} {
 } {
 Many SQLite functions return an integer result code from the set shown
 above in order to indicates success or failure.
+}
+
+api {} {
+  const char *sqlite3_libversion(void);
+} {
+  Return a pointer to a string which contains the version number of
+  the library.  The same string is available in the global
+  variable named "sqlite3_version".  This interface is provided since
+  windows is unable to access global variables in DLLs.
 }
 
 api {} {

@@ -212,6 +212,7 @@ target_source:	$(SRC) $(VDBEHDR)
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	cp parse.c opcodes.c tsrc
+	cp $(TOP)/sqlite3.def tsrc
 
 # Rules to build the LEMON compiler generator
 #

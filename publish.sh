@@ -14,7 +14,6 @@ srcdir=`echo "$0" | sed 's%\(^.*\)/[^/][^/]*$%\1%'`
 # Get the makefile.
 #
 cp $srcdir/Makefile.linux-gcc ./Makefile
-cp $srcdir/sqlite3.def ./sqlite3.def
 chmod +x $srcdir/install-sh
 
 # Get the current version number - needed to help build filenames
@@ -31,71 +30,34 @@ mv sqlite3 sqlite3-$VERS.bin
 gzip sqlite3-$VERS.bin
 mv sqlite3-$VERS.bin.gz doc
 
-# Build the tclsqlite.so shared library for import into tclsh or wish
-# under Linux
+# Build a source archive useful for windows.
 #
 make target_source
 cd tsrc
 zip ../doc/sqlite-source-$VERSW.zip *
-rm shell.c
-TCLDIR=/home/drh/tcltk/8.2linux
-TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a
-OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1'
-gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
-strip tclsqlite.so
-mv tclsqlite.so tclsqlite-$VERS.so
+cd ..
+
+# Build the sqlite.so and tclsqlite.so shared libraries
+# under Linux
+#
+. $srcdir/mkso.sh
+cd tsrc
+mv tclsqlite3.so tclsqlite-$VERS.so
 gzip tclsqlite-$VERS.so
 mv tclsqlite-$VERS.so.gz ../doc
-rm tclsqlite.c
-gcc -fPIC -DNDEBUG=1 -O2 -I. -shared *.c -o sqlite.so
-strip sqlite.so
-mv sqlite.so sqlite-$VERS.so
+mv sqlite3.so sqlite-$VERS.so
 gzip sqlite-$VERS.so
 mv sqlite-$VERS.so.gz ../doc
 cd ..
 
-# Build the tclsqlite.dll shared library that can be imported into tclsh
-# or wish on windows.
+# Build the tclsqlite3.dll and sqlite3.dll shared libraries.
 #
-make target_source
+. $srcdir/mkdll.sh
 cd tsrc
-rm shell.c
-TCLDIR=/home/drh/tcltk/8.2win
-TCLSTUBLIB=$TCLDIR/tclstub82.a
-PATH=$PATH:/opt/mingw/bin
-OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DTHREADSAFE=1'
-CC="i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR"
-rm shell.c
-for i in *.c; do
-  CMD="$CC -c $i"
-  echo $CMD
-  $CMD
-done
-echo 'EXPORTS' >tclsqlite3.def
-echo 'Tclsqlite3_Init' >>tclsqlite3.def
-echo 'Sqlite3_Init' >>tclsqlite3.def
-i386-mingw32msvc-dllwrap \
-     --def tclsqlite3.def -v --export-all \
-     --driver-name i386-mingw32msvc-gcc \
-     --dlltool-name i386-mingw32msvc-dlltool \
-     --as i386-mingw32msvc-as \
-     --target i386-mingw32 \
-     -dllname tclsqlite3.dll -lmsvcrt *.o $TCLSTUBLIB
-i386-mingw32msvc-strip tclsqlite3.dll
-rm tclsqlite.o
-cp ../sqlite3.def .
-i386-mingw32msvc-dllwrap \
-     --def sqlite3.def -v --export-all \
-     --driver-name i386-mingw32msvc-gcc \
-     --dlltool-name i386-mingw32msvc-dlltool \
-     --as i386-mingw32msvc-as \
-     --target i386-mingw32 \
-     -dllname sqlite3.dll -lmsvcrt *.o
-i386-mingw32msvc-strip sqlite3.dll
-zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
 echo zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
-zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
+zip ../doc/tclsqlite-$VERSW.zip tclsqlite3.dll
 echo zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
+zip ../doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
 cd ..
 
 # Build the sqlite.exe executable for windows.
