@@ -1,7 +1,7 @@
 #
 # Run this script to generated a fileformat.html output file
 #
-set rcsid {$Id: fileformat.tcl,v 1.10 2003/11/24 23:11:08 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.11 2003/11/25 23:48:57 drh Exp $}
 
 puts {<html>
 <head>
@@ -357,8 +357,8 @@ bytes of payload space.  Space is allocated to payload in increments
 of 4 bytes.  Thus the minimum size of a cell is 16 bytes and up to
 63 cells can fit on a single page.  The size of a cell is always a multiple
 of 4 bytes.
-A cell can have up to 238 byte of payload space.  If
-the payload is more than 238 bytes, then an addition 4 point page
+A cell can have up to 238 bytes of payload space.  If
+the payload is more than 238 bytes, then an additional 4 byte page
 number is appended to the cell which is the page number of the first
 overflow page containing the additional payload.  The maximum size
 of a cell is thus 254 bytes, meaning that a least 4 cells can fit into
