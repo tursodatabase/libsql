@@ -1,5 +1,5 @@
-C Increment\sversion\snumber\sand\supdate\sdocumentation\sin\spreparation\sfor\nversion\s3.2.1.\s(CVS\s2424)
-D 2005-03-28T16:56:09
+C Fix\sanother\smemory\sleak\sin\sthe\spager.\s(CVS\s2425)
+D 2005-03-28T18:04:28
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -52,7 +52,7 @@ F src/os_unix.c fba0167576f09e242afd4c4978e1d2944b1da8b5
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c 2bbbe6fbb010763c3fa79d5e951afca9b138c6b5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 221076cde9af787fc45eec1bfebf5f20e4faacf0
+F src/pager.c 95e24c9134a00613ca87b963a84ad62d85d5b979
 F src/pager.h 9a417a1e04737c227ebbba3bdf8597d6dd51513a
 F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 9e856bab2bbb77004b049827b4a275aa6c48096b
-R c82db33696dd6db4dadfa436540fc8e4
+P b0409b93108096a81245170887d60d076d639c60
+R 3406a83472c1bef895744682e9f56800
 U drh
-Z 14b421528b7e0f12d5c772b72b90603c
+Z 6061a5ba3667967690a9ebc111c561e6
