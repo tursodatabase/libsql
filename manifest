@@ -1,5 +1,5 @@
-C Version\s3.1.3\s(CVS\s2356)
-D 2005-02-20T02:25:57
+C Fix\sbug\sreported\son\sthe\smailing\slist\sfor\sWHERE\sclauses\slike\s(rowid<'2').\s(CVS\s2357)
+D 2005-02-22T09:47:18
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -81,7 +81,7 @@ F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
 F src/vdbeaux.c 8d8cc8992cb78cab35e034fa81ad0c1a771c39f1
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
-F src/where.c c4b6a799ed9cc99c63d298c8741956156eeb05eb
+F src/where.c 80a2a9d24f868fc5744ba2838701c46934c7e09f
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
@@ -138,7 +138,7 @@ F test/insert.test f39cb2306199c6f9d8959b843c9199d799217055
 F test/insert2.test 065f179a21b42f9746b97571b8ad10b092e90913
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
-F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
+F test/intpkey.test ce2a5d91120a831fc076fbf98fce132e192bad69
 F test/ioerr.test 7eff0a5cb552a6532ccc5c62bb4911127f2c9562
 F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 5b66631fd4820e721fd506b233ca9259360139be
-R 66e9f65bf977012e90f1427d0383db2c
-U drh
-Z e7ab23384e92e44875cf0c8d8b19036b
+P 36dbf5e929ede7768e8b63219e54548384a8fab5
+R 17de5ae7bd4c63838d9f895c13f76a43
+U danielk1977
+Z 99d54793828c857958404eec4961af97

@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.20 2004/11/03 13:59:06 drh Exp $
+# $Id: intpkey.test,v 1.21 2005/02/22 09:47:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -519,5 +519,43 @@ do_test intpkey-13.5 {
   }
 } {0 {}}
 
+# Compare an INTEGER PRIMARY KEY against a TEXT expression. The INTEGER
+# affinity should be applied to the text value before the comparison
+# takes place.
+#
+do_test intpkey-14.1 {
+  execsql {
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b INTEGER, c TEXT);
+    INSERT INTO t3 VALUES(1, 1, 'one');
+    INSERT INTO t3 VALUES(2, 2, '2');
+    INSERT INTO t3 VALUES(3, 3, 3);
+  }
+} {}
+do_test intpkey-14.2 {
+  execsql {
+    SELECT * FROM t3 WHERE a>2;
+  }
+} {3 3 3}
+do_test intpkey-14.3 {
+  execsql {
+    SELECT * FROM t3 WHERE a>'2';
+  }
+} {3 3 3}
+do_test intpkey-14.4 {
+  execsql {
+    SELECT * FROM t3 WHERE a<'2';
+  }
+} {1 1 one}
+do_test intpkey-14.5 {
+  execsql {
+    SELECT * FROM t3 WHERE a<c;
+  }
+} {1 1 one}
+do_test intpkey-14.6 {
+  execsql {
+    SELECT * FROM t3 WHERE a=c;
+  }
+} {2 2 2 3 3 3}
 
 finish_test
+
