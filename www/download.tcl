@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.11 2004/06/18 23:20:53 dougcurrie Exp $}
+set rcsid {$Id: download.tcl,v 1.12 2004/06/22 14:52:26 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -26,7 +26,7 @@ proc Product {pattern desc} {
     puts "<td valign=\"top\">[string trim $d2]</td></tr>"
   }
 }
-#cd doc
+cd doc
 
 proc Heading {title} {
   puts "<tr><td colspan=4><big><b>$title</b></big></td></tr>"

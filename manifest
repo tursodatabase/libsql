@@ -1,5 +1,5 @@
-C Update\sthe\schanges.html\swebpage\sfor\sversion\s3.0.1.\s(CVS\s1666)
-D 2004-06-22T14:47:01
+C The\sdownload.tcl\sscript\sused\sto\sgenerate\sdownload.html\smust\srun\sout\sof\nthe\sdoc\ssubdirectory\sof\sthe\sbuild.\s(CVS\s1667)
+D 2004-06-22T14:52:26
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -207,7 +207,7 @@ F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl dadcd0b09dc6fdf86d0c38499e310ae94cb586d7
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl 095b5718ec044156af477061566ea25632624b56
-F www/download.tcl 3e28632ec437bb78d267743a203647b20d1384c5
+F www/download.tcl b182424161c588891188500abea7a9ea054a508c
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a82cb4d30a1191322e61faedc9c48472d0686c98
-R c7ec457fab14e015d86fd3b8ec72a537
+P d5d28e9822ba9177acfd72ebd87c293a4fac4784
+R 81bbb159e7d5473c4b3489de52500e71
 U drh
-Z 00affbda14c76cc98559ddbf61a1056e
+Z e8fd8d16827062c29789d47358b7d377
