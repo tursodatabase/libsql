@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#65:\sIf\san\sinteger\svalue\sis\stoo\sbig\sto\sbe\srepresented\sas\sa\n32-bit\sinteger,\sthen\streat\sit\sas\sa\sstring.\s(CVS\s611)
-D 2002-06-09T01:16:01
+C Added\stests\sfor\sthe\snew\sIN\soperator\soptimizer\sand\sfixed\sa\sbug\sthat\sthe\nnew\stests\sfound.\s\sThis\scompletes\sthe\simplementation\sof\senhancement\s#63.\s(CVS\s612)
+D 2002-06-09T01:55:20
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -54,7 +54,7 @@ F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
 F src/util.c 7cf46b5612f5d12601c697374b9c6b38b2332ce8
 F src/vdbe.c b315d7ad5086164bb8d8aee8bc9edeafcb68b8ea
 F src/vdbe.h 1742d6f8b40f40879475b4c41cf4f9980ceb0e21
-F src/where.c d5308069f8794ec7e9f5084ffd611fe0922ae9f0
+F src/where.c b7c653054d4941d17f3112776ebcaf00d9613cb7
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -107,7 +107,7 @@ F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test b9851e9142de5e5831fdf18f125cbe1256cb550a
-F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
+F test/where.test fe33c2f92de1da8192abf763a2852a4ba270fefe
 F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8481e841ebdeabe07bf780246bda1aa053eb60b7
-R 6174dd4e5dfa7253bbd8e3c34a08582a
+P ad9624798edbd6d0c4652fed3d74fe87498844ff
+R 7131726bbe7f69ab24aea1be14cd5f47
 U drh
-Z 84f663882ed0b11c01ed6267485637fc
+Z 566256d2d9ffc189bf51044ba8051993

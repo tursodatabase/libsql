@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.49 2002/06/08 23:25:10 drh Exp $
+** $Id: where.c,v 1.50 2002/06/09 01:55:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -338,7 +338,8 @@ WhereInfo *sqliteWhereBegin(
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int eqMask = 0;  /* Index columns covered by an x=... constraint */
       int ltMask = 0;  /* Index columns covered by an x<... constraint */
-      int gtMask = 0;  /* Index columns covered by an x>... constraing */
+      int gtMask = 0;  /* Index columns covered by an x>... constraint */
+      int inMask = 0;  /* Index columns covered by an x IN .. constraint */
       int nEq, m, score;
 
       if( pIdx->isDropped ) continue;   /* Ignore dropped indices */
@@ -351,7 +352,10 @@ WhereInfo *sqliteWhereBegin(
           for(k=0; k<pIdx->nColumn; k++){
             if( pIdx->aiColumn[k]==iColumn ){
               switch( aExpr[j].p->op ){
-                case TK_IN:
+                case TK_IN: {
+                  if( k==0 ) inMask |= 1;
+                  break;
+                }
                 case TK_EQ: {
                   eqMask |= 1<<k;
                   break;
@@ -416,6 +420,7 @@ WhereInfo *sqliteWhereBegin(
       m = 1<<nEq;
       if( m & ltMask ) score++;
       if( m & gtMask ) score+=2;
+      if( score==0 && inMask ) score = 4;
       if( score>bestScore ){
         pBestIdx = pIdx;
         bestScore = score;
