@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.274 2004/11/09 12:44:38 danielk1977 Exp $
+** $Id: build.c,v 1.275 2004/11/10 11:55:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -758,6 +758,7 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
   }
 }
 
@@ -1380,6 +1381,8 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
 
+    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+
     /* Create the rootpage for the new table and push it onto the stack.
     ** A view has no rootpage, so just push a zero onto the stack for
     ** views.  Initialize zType at the same time.
@@ -1395,8 +1398,6 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       zType = "view";
       zType2 = "VIEW";
     }
-
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
 
     /* If this is a CREATE TABLE xx AS SELECT ..., execute the SELECT
     ** statement to populate the new table. The root-page number for the

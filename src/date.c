@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.39 2004/11/09 16:13:33 danielk1977 Exp $
+** $Id: date.c,v 1.40 2004/11/10 11:55:12 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -938,7 +938,6 @@ static void currentTimeFunc(
   time_t t;
   char *zFormat = (char *)sqlite3_user_data(context);
   char zBuf[20];
-  struct tm now;
 
 #ifdef SQLITE_TEST
   /* This test variable is located in os_XXX.c */
@@ -950,8 +949,11 @@ extern int sqlite3_current_time;
     t = sqlite3_current_time;
   }
 #endif
-  localtime_r(&t, &now);
-  strftime(zBuf, 20, zFormat, &now);
+
+  sqlite3OsEnterMutex();
+  strftime(zBuf, 20, zFormat, gmtime(&t));
+  sqlite3OsLeaveMutex();
+
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
 #endif

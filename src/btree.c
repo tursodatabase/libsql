@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.215 2004/11/08 09:26:09 danielk1977 Exp $
+** $Id: btree.c,v 1.216 2004/11/10 11:55:11 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4304,11 +4304,17 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   }
   rc = sqlite3pager_write(pPage->aData);
   if( rc ) return rc;
+
+  /* Locate the cell within it's page and leave pCell pointing to the
+  ** data. The clearCell() call frees any overflow pages associated with the
+  ** cell. The cell itself is still intact.
+  */
   pCell = findCell(pPage, pCur->idx);
   if( !pPage->leaf ){
     pgnoChild = get4byte(pCell);
   }
   clearCell(pPage, pCell);
+
   if( !pPage->leaf ){
     /*
     ** The entry we are about to delete is not a leaf so if we do not
@@ -4375,7 +4381,6 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
-/* TODO: Disallow schema modifications if there are open cursors */
   if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction first */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
@@ -4383,6 +4388,16 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   if( pBt->readOnly ){
     return SQLITE_READONLY;
   }
+
+  /* It is illegal to create a table if any cursors are open on the
+  ** database. This is because in auto-vacuum mode the backend may
+  ** need to move a database page to make room for the new root-page.
+  ** If an open cursor was using the page a problem would occur.
+  */
+  if( pBt->pCursor ){
+    return SQLITE_LOCKED;
+  }
+
 #ifdef SQLITE_OMIT_AUTOVACUUM
   rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
   if( rc ) return rc;
@@ -4565,17 +4580,19 @@ int sqlite3BtreeClearTable(Btree *pBt, int iTable){
 int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
   int rc;
   MemPage *pPage = 0;
-  BtCursor *pCur;
 
   if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
 
-/* TODO: Disallow schema modifications if there are open cursors */
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->pgnoRoot==(Pgno)iTable ){
-      return SQLITE_LOCKED;  /* Cannot drop a table that has a cursor */
-    }
+  /* It is illegal to drop a table if any cursors are open on the
+  ** database. This is because in auto-vacuum mode the backend may
+  ** need to move another root-page to fill a gap left by the deleted
+  ** root page. If an open cursor was using this page a problem would 
+  ** occur.
+  */
+  if( pBt->pCursor ){
+    return SQLITE_LOCKED;
   }
 
   rc = getPage(pBt, (Pgno)iTable, &pPage);

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.424 2004/11/05 00:43:12 drh Exp $
+** $Id: vdbe.c,v 1.425 2004/11/10 11:55:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3646,15 +3646,20 @@ case OP_IdxIsNull: {
 */
 case OP_Destroy: {
   int iMoved;
-  rc = sqlite3BtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1, &iMoved);
-  pTos++;
-  pTos->flags = MEM_Int;
-  pTos->i = iMoved;
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  if( iMoved!=0 ){
-    sqlite3RootPageMoved(&db->aDb[pOp->p2], iMoved, pOp->p1);
+  if( db->activeVdbeCnt>1 ){
+    rc = SQLITE_LOCKED;
+  }else{
+    assert( db->activeVdbeCnt==1 );
+    rc = sqlite3BtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1, &iMoved);
+    pTos++;
+    pTos->flags = MEM_Int;
+    pTos->i = iMoved;
+  #ifndef SQLITE_OMIT_AUTOVACUUM
+    if( rc==SQLITE_OK && iMoved!=0 ){
+      sqlite3RootPageMoved(&db->aDb[pOp->p2], iMoved, pOp->p1);
+    }
+  #endif
   }
-#endif
   break;
 }
 

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.31 2004/10/18 21:34:47 drh Exp $
+# $Id: btree.test,v 1.32 2004/11/10 11:55:14 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -467,6 +467,7 @@ do_test btree-6.6.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
 do_test btree-6.7 {
+  btree_close_cursor $::c1
   btree_drop_table $::b1 $::t2
 } {}
 do_test btree-6.7.1 {
@@ -491,8 +492,9 @@ do_test btree-6.9.1 {
 # If we drop table 1 it just clears the table.  Table 1 always exists.
 #
 do_test btree-6.10 {
-  btree_close_cursor $::c1
+  btree_close_cursor $::c2
   btree_drop_table $::b1 1
+  set ::c2 [btree_cursor $::b1 $::t2 1]
   set ::c1 [btree_cursor $::b1 1 1]
   btree_first $::c1
   btree_eof $::c1

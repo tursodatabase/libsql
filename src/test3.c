@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.56 2004/11/05 00:43:12 drh Exp $
+** $Id: test3.c,v 1.57 2004/11/10 11:55:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -44,6 +44,7 @@ static char *errorName(int rc){
     case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
     case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
     case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
+    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
     default:                zName = "SQLITE_Unknown";     break;
   }
   return zName;
