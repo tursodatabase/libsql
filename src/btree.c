@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.150 2004/05/30 02:14:18 drh Exp $
+** $Id: btree.c,v 1.151 2004/05/30 19:19:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -53,8 +53,8 @@
 ** page.
 **
 ** The first page is always a btree page.  The first 100 bytes of the first
-** page contain a special header that describes the file.  The format
-** of that header is as follows:
+** page contain a special header (the "file header") that describes the file.
+** The format of the file header is as follows:
 **
 **   OFFSET   SIZE    DESCRIPTION
 **      0      16     Header string: "SQLite format 3\000"
@@ -97,8 +97,23 @@
 **
 ** Each btree pages is divided into three sections:  The header, the
 ** cell pointer array, and the cell area area.  Page 1 also has a 100-byte
-** file header that occurs before the page header.   The 100-byte file
-** header occurs on page 1 only.
+** file header that occurs before the page header.
+**
+**      |----------------|
+**      | file header    |   100 bytes.  Page 1 only.
+**      |----------------|
+**      | page header    |   8 bytes for leaves.  12 bytes for interior nodes
+**      |----------------|
+**      | cell pointer   |   |  2 bytes per cell.  Sorted order.
+**      | array          |   |  Grows downward
+**      |                |   v
+**      |----------------|
+**      | unallocated    |
+**      | space          |
+**      |----------------|   ^  Grows upwards
+**      | cell content   |   |  Arbitrary order interspersed with freeblocks.
+**      | area           |   |  and free space fragments.
+**      |----------------|
 **
 ** The page headers looks like this:
 **
@@ -106,9 +121,9 @@
 **      0       1      Flags. 1: intkey, 2: zerodata, 4: leafdata, 8: leaf
 **      1       2      byte offset to the first freeblock
 **      3       2      number of cells on this page
-**      5       2      first byte past the cell array area
+**      5       2      first byte of the cell content area
 **      7       1      number of fragmented free bytes
-**      8       4      Right child (the Ptr(N+1) value).  Omitted if leaf
+**      8       4      Right child (the Ptr(N+1) value).  Omitted on leaves.
 **
 ** The flags define the format of this btree page.  The leaf flag means that
 ** this page has no children.  The zerodata flag means that this page carries
@@ -255,6 +270,9 @@ struct MemPage {
   u8 leafData;         /* True if tables stores data on leaves only */
   u8 hasData;          /* True if this page stores data */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
+  u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
+  u8 maxLocal;         /* Copy of Btree.maxLocal or Btree.maxLeaf */
+  u8 minLocal;         /* Copy of Btree.minLocal or Btree.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
   u16 idxParent;       /* Index in parent of this node */
   u16 nFree;           /* Number of free bytes on the page */
@@ -300,7 +318,7 @@ typedef Btree Bt;
 
 /*
 ** An instance of the following structure is used to hold information
-** about a cell.  The parseCell() function fills in this structure
+** about a cell.  The parseCellPtr() function fills in this structure
 ** based on information extract from the raw disk page.
 */
 typedef struct CellInfo CellInfo;
@@ -308,10 +326,10 @@ struct CellInfo {
   u8 *pCell;     /* Pointer to the start of cell content */
   i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
   u32 nData;     /* Number of bytes of data */
-  u16 nHeader;   /* Size of the cell header in bytes */
+  u16 nHeader;   /* Size of the cell content header in bytes */
   u16 nLocal;    /* Amount of payload held locally */
   u16 iOverflow; /* Offset to overflow page number.  Zero if no overflow */
-  u16 nSize;     /* Total size of the cell content (on the main b-tree page) */
+  u16 nSize;     /* Size of the cell content on the main b-tree page */
 };
 
 /*
@@ -329,7 +347,6 @@ struct BtCursor {
   MemPage *pPage;           /* Page that contains the entry */
   int idx;                  /* Index of the entry in pPage->aCell[] */
   CellInfo info;            /* A parse of the cell we are pointing at */
-  u8 infoValid;             /* True if information in BtCursor.info is valid */
   u8 wrFlag;                /* True if writable */
   u8 isValid;               /* TRUE if points to a valid entry */
   u8 status;                /* Set to SQLITE_ABORT if cursors is invalidated */
@@ -365,9 +382,11 @@ static void put4byte(unsigned char *p, u32 v){
 #define putVarint    sqlite3PutVarint
 
 /*
-** Return a pointer to the start of cell content for the given
-** cell of a page.  This routine works only for pages that
-** do not contain overflow cells.
+** Given a btree page and a cell index (0 means the first cell on
+** the page, 1 means the second cell, and so forth) return a pointer
+** to the cell content.
+**
+** This routine works only for pages that do not contain overflow cells.
 */
 static u8 *findCell(MemPage *pPage, int iCell){
   u8 *data = pPage->aData;
@@ -404,42 +423,53 @@ static void parseCellPtr(
   u8 *pCell,              /* Pointer to the cell text. */
   CellInfo *pInfo         /* Fill in this structure */
 ){
-  int n;
-  int nPayload;
-  Btree *pBt;
-  int minLocal, maxLocal;
+  int n;                  /* Number bytes in cell content header */
+  u32 nPayload;           /* Number of bytes of cell payload */
 
   pInfo->pCell = pCell;
   assert( pPage->leaf==0 || pPage->leaf==1 );
-  n = 4 - 4*pPage->leaf;
+  n = pPage->childPtrSize;
+  assert( n==4-4*pPage->leaf );
   if( pPage->hasData ){
-    n += getVarint32(&pCell[n], &pInfo->nData);
+    n += getVarint32(&pCell[n], &nPayload);
   }else{
-    pInfo->nData = 0;
+    nPayload = 0;
   }
   n += getVarint(&pCell[n], &pInfo->nKey);
   pInfo->nHeader = n;
-  nPayload = pInfo->nData;
+  pInfo->nData = nPayload;
   if( !pPage->intKey ){
     nPayload += pInfo->nKey;
   }
-  pBt = pPage->pBt;
-  if( pPage->leafData ){
-    minLocal = pBt->minLeaf;
-    maxLocal = pBt->maxLeaf;
-  }else{
-    minLocal = pBt->minLocal;
-    maxLocal = pBt->maxLocal;
-  }
-  if( nPayload<=maxLocal ){
+  if( nPayload<=pPage->maxLocal ){
+    /* This is the (easy) common case where the entire payload fits
+    ** on the local page.  No overflow is required.
+    */
+    int nSize;          /* Total size of cell content in bytes */
     pInfo->nLocal = nPayload;
     pInfo->iOverflow = 0;
-    pInfo->nSize = nPayload + n;
-    if( pInfo->nSize<4 ){
-      pInfo->nSize = 4;  /* Minimum cell size is 4 */
+    nSize = nPayload + n;
+    if( nSize<4 ){
+      nSize = 4;        /* Minimum cell size is 4 */
     }
+    pInfo->nSize = nSize;
   }else{
-    int surplus = minLocal + (nPayload - minLocal)%(pBt->usableSize - 4);
+    /* If the payload will not fit completely on the local page, we have
+    ** to decide how much to store locally and how much to spill onto
+    ** overflow pages.  The strategy is to minimize the amount of unused
+    ** space on overflow pages while keeping the amount of local storage
+    ** in between minLocal and maxLocal.
+    **
+    ** Warning:  changing the way overflow payload is distributed in any
+    ** way will result in an incompatible file format.
+    */
+    int minLocal;  /* Minimum amount of payload held locally */
+    int maxLocal;  /* Maximum amount of payload held locally */
+    int surplus;   /* Overflow payload available for local storage */
+
+    minLocal = pPage->minLocal;
+    maxLocal = pPage->maxLocal;
+    surplus = minLocal + (nPayload - minLocal)%(pPage->pBt->usableSize - 4);
     if( surplus <= maxLocal ){
       pInfo->nLocal = surplus;
     }else{
@@ -736,6 +766,31 @@ static void freeSpace(MemPage *pPage, int start, int size){
 }
 
 /*
+** Decode the flags byte (the first byte of the header) for a page
+** and initialize fields of the MemPage structure accordingly.
+*/
+static void decodeFlags(MemPage *pPage, int flagByte){
+  Btree *pBt;     /* A copy of pPage->pBt */
+
+  assert( pPage->hdrOffset==(pPage->pgno==1 ? 100 : 0) );
+  pPage->intKey = (flagByte & (PTF_INTKEY|PTF_LEAFDATA))!=0;
+  pPage->zeroData = (flagByte & PTF_ZERODATA)!=0;
+  pPage->leaf = (flagByte & PTF_LEAF)!=0;
+  pPage->childPtrSize = 4*(pPage->leaf==0);
+  pBt = pPage->pBt;
+  if( flagByte & PTF_LEAFDATA ){
+    pPage->leafData = 1;
+    pPage->maxLocal = pBt->maxLeaf;
+    pPage->minLocal = pBt->minLeaf;
+  }else{
+    pPage->leafData = 0;
+    pPage->maxLocal = pBt->maxLocal;
+    pPage->minLocal = pBt->minLocal;
+  }
+  pPage->hasData = !(pPage->zeroData || (!pPage->leaf && pPage->leafData));
+}
+
+/*
 ** Initialize the auxiliary information for a disk block.
 **
 ** The pParent parameter must be a pointer to the MemPage which
@@ -752,11 +807,14 @@ static int initPage(
   MemPage *pPage,        /* The page to be initialized */
   MemPage *pParent       /* The parent.  Might be NULL */
 ){
-  int c, pc, i, hdr;
-  unsigned char *data;
-  int usableSize, cellOffset;
-  int nFree;
-  int top;
+  int pc;            /* Address of a freeblock within pPage->aData[] */
+  int i;             /* Loop counter */
+  int hdr;           /* Offset to beginning of page header */
+  u8 *data;          /* Equal to pPage->aData */
+  int usableSize;    /* Amount of usable space on each page */
+  int cellOffset;    /* Offset from start of page to first cell pointer */
+  int nFree;         /* Number of unused bytes on the page */
+  int top;           /* First byte of the cell content area */
 
   assert( pPage->pBt!=0 );
   assert( pParent==0 || pParent->pBt==pPage->pBt );
@@ -771,13 +829,7 @@ static int initPage(
   }
   hdr = pPage->hdrOffset;
   data = pPage->aData;
-  c = data[hdr];
-  assert( pPage->hdrOffset==(pPage->pgno==1 ? 100 : 0) );
-  pPage->intKey = (c & (PTF_INTKEY|PTF_LEAFDATA))!=0;
-  pPage->zeroData = (c & PTF_ZERODATA)!=0;
-  pPage->leafData = (c & PTF_LEAFDATA)!=0;
-  pPage->leaf = (c & PTF_LEAF)!=0;
-  pPage->hasData = !(pPage->zeroData || (!pPage->leaf && pPage->leafData));
+  decodeFlags(pPage, data[hdr]);
   pPage->nOverflow = 0;
   pPage->idxShift = 0;
   usableSize = pPage->pBt->usableSize;
@@ -827,11 +879,7 @@ static void zeroPage(MemPage *pPage, int flags){
   data[hdr+7] = 0;
   put2byte(&data[hdr+5], pBt->usableSize);
   pPage->nFree = pBt->usableSize - first;
-  pPage->intKey = (flags & (PTF_INTKEY|PTF_LEAFDATA))!=0;
-  pPage->zeroData = (flags & PTF_ZERODATA)!=0;
-  pPage->leafData = (flags & PTF_LEAFDATA)!=0;
-  pPage->leaf = (flags & PTF_LEAF)!=0;
-  pPage->hasData = !(pPage->zeroData || (!pPage->leaf && pPage->leafData));
+  decodeFlags(pPage, flags);
   pPage->hdrOffset = hdr;
   pPage->cellOffset = first;
   pPage->nOverflow = 0;
@@ -1407,7 +1455,7 @@ int sqlite3BtreeCursor(
   pCur->pBt = pBt;
   pCur->wrFlag = wrFlag;
   pCur->idx = 0;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
     pCur->pNext->pPrev = pCur;
@@ -1505,9 +1553,8 @@ static void releaseTempCursor(BtCursor *pCur){
 ** Using this cache reduces the number of calls to parseCell().
 */
 static void getCellInfo(BtCursor *pCur){
-  if( !pCur->infoValid ){
+  if( pCur->info.nSize==0 ){
     parseCell(pCur->pPage, pCur->idx, &pCur->info);
-    pCur->infoValid = 1;
   }else{
 #ifndef NDEBUG
     CellInfo info;
@@ -1793,7 +1840,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   releasePage(pOldPage);
   pCur->pPage = pNewPage;
   pCur->idx = 0;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   if( pNewPage->nCell<1 ){
     return SQLITE_CORRUPT;
   }
@@ -1844,7 +1891,7 @@ static void moveToParent(BtCursor *pCur){
   oldPgno = pPage->pgno;
   releasePage(pPage);
   pCur->pPage = pParent;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   assert( pParent->idxShift==0 );
   pCur->idx = idxParent;
 }
@@ -1866,7 +1913,7 @@ static int moveToRoot(BtCursor *pCur){
   pageIntegrity(pRoot);
   pCur->pPage = pRoot;
   pCur->idx = 0;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   if( pRoot->nCell==0 && !pRoot->leaf ){
     Pgno subpage;
     assert( pRoot->pgno==1 );
@@ -1918,7 +1965,7 @@ static int moveToRightmost(BtCursor *pCur){
     if( rc ) return rc;
   }
   pCur->idx = pPage->nCell - 1;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   return SQLITE_OK;
 }
 
@@ -2020,7 +2067,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       const void *pCellKey;
       i64 nCellKey;
       pCur->idx = (lwr+upr)/2;
-      pCur->infoValid = 0;
+      pCur->info.nSize = 0;
       sqlite3BtreeKeySize(pCur, &nCellKey);
       if( pPage->intKey ){
         if( nCellKey<nKey ){
@@ -2071,7 +2118,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       return SQLITE_OK;
     }
     pCur->idx = lwr;
-    pCur->infoValid = 0;
+    pCur->info.nSize = 0;
     rc = moveToChild(pCur, chldPg);
     if( rc ){
       return rc;
@@ -2109,7 +2156,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   assert( pPage->isInit );
   assert( pCur->idx<pPage->nCell );
   pCur->idx++;
-  pCur->infoValid = 0;
+  pCur->info.nSize = 0;
   if( pCur->idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
@@ -2176,7 +2223,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
       pPage = pCur->pPage;
     }
     pCur->idx--;
-    pCur->infoValid = 0;
+    pCur->info.nSize = 0;
     if( pPage->leafData ){
       rc = sqlite3BtreePrevious(pCur, pRes);
     }else{
@@ -3361,7 +3408,7 @@ int sqlite3BtreeInsert(
   }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->leaf );
     pCur->idx++;
-    pCur->infoValid = 0;
+    pCur->info.nSize = 0;
   }else{
     assert( pPage->leaf );
   }
