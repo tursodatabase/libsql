@@ -215,6 +215,7 @@ PUBLISH = \
 website:	$(PUBLISH)
 
 publish:	$(PUBLISH)
+	chmod 0644 $(PUBLISH)
 	scp $(PUBLISH) hwaci@oak.he.net:public_html/sw/sqlite
 
 clean:	
