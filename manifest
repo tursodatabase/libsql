@@ -1,6 +1,6 @@
-C Fix\sdeclaration\sproblem\sin\sthe\sprevious\scheck-in.\s(CVS\s1622)
-D 2004-06-18T17:45:12
-F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
+C MinGW/MSYS\sbuild\sfixes;\sticket\s#765\s(CVS\s1623)
+D 2004-06-18T23:19:20
+F Makefile.in 2659cbce885c1365cb0a5fbeeed5ad69a354fa70
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 8c6981d7f982c3e2986fda2f34282264a4db344c
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2590fffcaa92adc619f7a927d2b5169d8dfef50a
-R da897760fd987d26eb94c198c43f975a
-U drh
-Z 7472299a336decf9fcfc4b5af7956e15
+P f312057da4304857d16b344b784c84ce14e2ef69
+R b20ad43ea14e6dc2f45c4b6098329cad
+U dougcurrie
+Z b47ac03834a134c7ae6483a335c150db

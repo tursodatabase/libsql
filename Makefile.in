@@ -148,6 +148,7 @@ TESTSRC = \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
+  $(TOP)/src/pragma.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -317,7 +318,7 @@ parse.lo:	parse.c $(HDR)
 
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon
+parse.c:	$(TOP)/src/parse.y lemon@BUILD_EXEEXT@
 	cp $(TOP)/src/parse.y .
 	./lemon parse.y
 
@@ -389,10 +390,10 @@ testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite3.la libsqlite3.l
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la libsqlite3.la $(LIBTCL)
 
-fulltest:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
+fulltest:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@
 	./testfixture $(TOP)/test/all.test
 
-test:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
+test:	testfixture@TARGET_EXEEXT@ sqlite3@TARGET_EXEEXT@
 	./testfixture $(TOP)/test/quick.test
 
 
@@ -401,8 +402,8 @@ test:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
 arch.html:	$(TOP)/www/arch.tcl
 	tclsh $(TOP)/www/arch.tcl >arch.html
 
-arch.png:	$(TOP)/www/arch.png
-	cp $(TOP)/www/arch.png .
+arch2.gif:	$(TOP)/www/arch2.gif
+	cp $(TOP)/www/arch2.gif .
 
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
@@ -505,7 +506,7 @@ version3.html:	$(TOP)/www/version3.tcl
 #
 DOC = \
   arch.html \
-  arch.png \
+  arch2.gif \
   c_interface.html \
   capi3.html \
   capi3ref.html \
@@ -538,7 +539,7 @@ DOC = \
   vdbe.html \
   version3.html
 
-doc:	$(DOC)
+doc:	common.tcl $(DOC)
 	mkdir -p doc
 	mv $(DOC) doc
 
@@ -561,27 +562,28 @@ clean:
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -f testfixture@TARGET_EXEEXT@ test.db
 	rm -rf doc
-	rm -f sqlite.dll sqlite.lib
+	rm -f common.tcl
+	rm -f sqlite3.dll sqlite3.lib
 
 #
 # Windows section; all this funky .dll stuff ;-)
 #
-dll: sqlite.dll
+dll: sqlite3.dll
 
 REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
 
-sqlite.dll: $(LIBOBJ) $(TOP)/sqlite.def
-	dllwrap --dllname sqlite.dll --def $(TOP)/sqlite.def $(REAL_LIBOBJ)
-	strip sqlite.dll
+sqlite3.dll: $(LIBOBJ) $(TOP)/sqlite3.def
+	dllwrap --dllname sqlite3.dll --def $(TOP)/sqlite3.def $(REAL_LIBOBJ)
+	strip sqlite3.dll
 
 #target for dll import libraries
-implib: sqlite.lib 
+implib: sqlite3.lib 
 
 #make Borland C++ and/or Microsoft VC import library for the dll
 #   ignore any errors (usually due to missing programs)
-sqlite.lib: sqlite.dll
-	-implib -a sqlite.lib sqlite.dll
-	-lib /machine:i386 /def:$(TOP)/sqlite.def 
+sqlite3.lib: sqlite3.dll
+	-implib -a sqlite3.lib sqlite3.dll
+	-lib /machine:i386 /def:$(TOP)/sqlite3.def 
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h
