@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.1 2000/06/12 12:20:49 drh Exp $
+# $Id: where.test,v 1.2 2001/08/19 18:19:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,37 +59,37 @@ do_test where-1.0 {
 #
 do_test where-1.1 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=10}
-} {3 121 2}
+} {3 121 1}
 do_test where-1.2 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=11}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.3 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE 11=w}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.4 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE 11=w AND x>2}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.5 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y<200 AND w=11 AND x>2}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.6 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y<200 AND x>2 AND w=11}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.7 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=11 AND y<200 AND x>2}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.8 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w>10 AND y=144 AND x=3}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.9 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y=144 AND w>10 AND x=3}
-} {3 144 2}
+} {3 144 1}
 do_test where-1.10 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE x=3 AND w>=10 AND y=121}
-} {3 121 2}
+} {3 121 1}
 do_test where-1.11 {
   execsql {SELECT x, y, fcnt(*) FROM t1 WHERE x=3 AND y=100 AND w<10}
-} {3 100 2}
+} {3 100 1}
 
 # Do the same kind of thing except use a join as the data source.
 #
@@ -98,43 +98,43 @@ do_test where-2.1 {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE x=q AND y=s AND r=8977
   }
-} {34 67 4}
+} {34 67 2}
 do_test where-2.2 {
   execsql {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE x=q AND s=y AND r=8977
   }
-} {34 67 4}
+} {34 67 2}
 do_test where-2.3 {
   execsql {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE x=q AND s=y AND r=8977 AND w>10
   }
-} {34 67 4}
+} {34 67 2}
 do_test where-2.4 {
   execsql {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE p<80 AND x=q AND s=y AND r=8977 AND w>10
   }
-} {34 67 4}
+} {34 67 2}
 do_test where-2.5 {
   execsql {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE p<80 AND x=q AND 8977=r AND s=y AND w>10
   }
-} {34 67 4}
+} {34 67 2}
 do_test where-2.6 {
   execsql {
     SELECT w, p, fcnt(*) FROM t2, t1
     WHERE x=q AND p=77 AND s=y AND w>5
   }
-} {24 77 4}
+} {24 77 2}
 do_test where-2.7 {
   execsql {
     SELECT w, p, fcnt(*) FROM t1, t2
     WHERE x=q AND p>77 AND s=y AND w=5
   }
-} {5 96 4}
+} {5 96 2}
 
 # Lets do a 3-way join.
 #
@@ -143,18 +143,18 @@ do_test where-3.1 {
     SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
     WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=11
   }
-} {11 90 11 6}
+} {11 90 11 3}
 do_test where-3.2 {
   execsql {
     SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
     WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=12
   }
-} {12 89 12 6}
+} {12 89 12 3}
 do_test where-3.3 {
   execsql {
     SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
     WHERE A.w=15 AND B.p=C.w AND B.r=10202-A.y
   }
-} {15 86 86 6}
+} {15 86 86 3}
 
 finish_test

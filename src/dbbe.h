@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.13 2001/04/04 11:48:57 drh Exp $
+** $Id: dbbe.h,v 1.14 2001/08/19 18:19:46 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -160,6 +160,21 @@ struct DbbeMethods {
 
   /* Rollback a transaction. */
   int (*Rollback)(Dbbe*);
+
+  /* Begin searching an index where the key is given. */
+  int (*BeginIndex)(DbbeCursor*, int nKey, char *pKey);
+
+  /* Return the integer key for the next index entry, or return 0 if
+  ** there are no more index entries. */
+  int (*NextIndex)(DbbeCursor*);
+
+  /* Add a new index entry to the file.  The key and record number are
+  ** given. */
+  int (*PutIndex)(DbbeCursor*, int nKey, char *pKey, int recno);
+
+  /* Delete an index entry from the file.  The key and record number are
+  ** given. */
+  int (*DeleteIndex)(DbbeCursor*, int nKey, char *pKey, int recno);
 };
 
 /*

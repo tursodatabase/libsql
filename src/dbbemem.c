@@ -30,7 +30,7 @@
 ** Nothing is ever written to disk using this backend.  All information
 ** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.15 2001/04/28 16:52:42 drh Exp $
+** $Id: dbbemem.c,v 1.16 2001/08/19 18:19:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -371,6 +371,7 @@ struct DbbeCursor {
   MTable *pTble;     /* The database file for this table */
   ArrayElem *elem;   /* Most recently accessed record */
   int needRewind;    /* Next key should be the first */
+  int nextIndex;     /* Next recno in an index entry */
 };
 
 /*
@@ -723,6 +724,117 @@ static int sqliteMemDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
+** Begin scanning an index for the given key.  Return 1 on success and
+** 0 on failure.
+*/
+static int sqliteMemBeginIndex(DbbeCursor *pCursr, int nKey, char *pKey){
+  if( !sqliteMemFetch(pCursr, nKey, pKey) ) return 0;
+  pCursr->nextIndex = 0;
+  return 1;
+}
+
+/*
+** Return an integer key which is the next record number in the index search
+** that was started by a prior call to BeginIndex.  Return 0 if all records
+** have already been searched.
+*/
+static int sqliteMemNextIndex(DbbeCursor *pCursr){
+  int *aIdx;
+  int nIdx;
+  int k;
+  nIdx = sqliteMemDataLength(pCursr)/sizeof(int);
+  aIdx = (int*)sqliteMemReadData(pCursr, 0);
+  if( nIdx>1 ){
+    k = *(aIdx++);
+    if( k>nIdx-1 ) k = nIdx-1;
+  }else{
+    k = nIdx;
+  }
+  while( pCursr->nextIndex < k ){
+    int recno = aIdx[pCursr->nextIndex++];
+    if( recno!=0 ) return recno;
+  }
+  pCursr->nextIndex = 0;
+  return 0;
+}
+
+/*
+** Write a new record number and key into an index table.  Return a status
+** code.
+*/
+static int sqliteMemPutIndex(DbbeCursor *pCursr, int nKey, char *pKey, int N){
+  int r = sqliteMemFetch(pCursr, nKey, pKey);
+  if( r==0 ){
+    /* Create a new record for this index */
+    sqliteMemPut(pCursr, nKey, pKey, sizeof(int), (char*)&N);
+  }else{
+    /* Extend the existing record */
+    int nIdx;
+    int *aIdx;
+    int k;
+            
+    nIdx = sqliteMemDataLength(pCursr)/sizeof(int);
+    if( nIdx==1 ){
+      aIdx = sqliteMalloc( sizeof(int)*4 );
+      if( aIdx==0 ) return SQLITE_NOMEM;
+      aIdx[0] = 2;
+      sqliteMemCopyData(pCursr, 0, sizeof(int), (char*)&aIdx[1]);
+      aIdx[2] = N;
+      sqliteMemPut(pCursr, nKey, pKey, sizeof(int)*4, (char*)aIdx);
+      sqliteFree(aIdx);
+    }else{
+      aIdx = (int*)sqliteMemReadData(pCursr, 0);
+      k = aIdx[0];
+      if( k<nIdx-1 ){
+        aIdx[k+1] = N;
+        aIdx[0]++;
+        sqliteMemPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+      }else{
+        nIdx *= 2;
+        aIdx = sqliteMalloc( sizeof(int)*nIdx );
+        if( aIdx==0 ) return SQLITE_NOMEM;
+        sqliteMemCopyData(pCursr, 0, sizeof(int)*(k+1), (char*)aIdx);
+        aIdx[k+1] = N;
+        aIdx[0]++;
+        sqliteMemPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+        sqliteFree(aIdx);
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Delete an index entry.  Return a status code.
+*/
+static int sqliteMemDeleteIndex(DbbeCursor *pCursr,int nKey,char *pKey, int N){
+  int *aIdx;
+  int nIdx;
+  int j, k;
+  int rc;
+  rc = sqliteMemFetch(pCursr, nKey, pKey);
+  if( !rc ) return SQLITE_OK;
+  nIdx = sqliteMemDataLength(pCursr)/sizeof(int);
+  if( nIdx==0 ) return SQLITE_OK;
+  aIdx = (int*)sqliteMemReadData(pCursr, 0);
+  if( (nIdx==1 && aIdx[0]==N) || (aIdx[0]==1 && aIdx[1]==N) ){
+    sqliteMemDelete(pCursr, nKey, pKey);
+  }else{
+    k = aIdx[0];
+    for(j=1; j<=k && aIdx[j]!=N; j++){}
+    if( j>k ) return SQLITE_OK;
+    aIdx[j] = aIdx[k];
+    aIdx[k] = 0;
+    aIdx[0]--;
+    if( aIdx[0]*3 + 1 < nIdx ){
+      nIdx /= 2;
+    }
+    sqliteMemPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** This variable contains pointers to all of the access methods
 ** used to implement the MEMORY backend.
 */
@@ -745,6 +857,13 @@ static struct DbbeMethods memoryMethods = {
   /*             New */   sqliteMemNew,
   /*             Put */   sqliteMemPut,
   /*          Delete */   sqliteMemDelete,
+  /*      BeginTrans */   0,
+  /*          Commit */   0,
+  /*        Rollback */   0,
+  /*      BeginIndex */   sqliteMemBeginIndex,
+  /*       NextIndex */   sqliteMemNextIndex,
+  /*        PutIndex */   sqliteMemPutIndex,
+  /*     DeleteIndex */   sqliteMemDeleteIndex,
 };
 
 /*

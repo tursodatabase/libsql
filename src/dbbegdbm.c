@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.8 2001/04/28 16:52:41 drh Exp $
+** $Id: dbbegdbm.c,v 1.9 2001/08/19 18:19:46 drh Exp $
 */
 #ifndef DISABLE_GDBM
 #include "sqliteInt.h"
@@ -87,6 +87,7 @@ struct DbbeCursor {
   BeFile *pFile;     /* The database file for this table */
   datum key;         /* Most recently used key */
   datum data;        /* Most recent data */
+  int nextIndex;     /* Next index entry to search */
   int needRewind;    /* Next key should be the first */
   int readPending;   /* The fetch hasn't actually been done yet */
 };
@@ -334,18 +335,18 @@ static void sqliteGdbmCloseCursor(DbbeCursor *pCursr){
 ** Reorganize a table to reduce search times and disk usage.
 */
 static int sqliteGdbmReorganizeTable(Dbbe *pBe, const char *zTable){
-  DbbeCursor *pCrsr;
+  DbbeCursor *pCursr;
   int rc;
 
-  rc = sqliteGdbmOpenCursor(pBe, zTable, 1, 0, &pCrsr);
+  rc = sqliteGdbmOpenCursor(pBe, zTable, 1, 0, &pCursr);
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  if( pCrsr && pCrsr->pFile && pCrsr->pFile->dbf ){
-    gdbm_reorganize(pCrsr->pFile->dbf);
+  if( pCursr && pCursr->pFile && pCursr->pFile->dbf ){
+    gdbm_reorganize(pCursr->pFile->dbf);
   }
-  if( pCrsr ){
-    sqliteGdbmCloseCursor(pCrsr);
+  if( pCursr ){
+    sqliteGdbmCloseCursor(pCursr);
   }
   return SQLITE_OK;
 }
@@ -586,7 +587,116 @@ static int sqliteGdbmEndTrans(Dbbe *pDbbe){
   return SQLITE_OK;  
 }
 
+/*
+** Begin scanning an index for the given key.  Return 1 on success and
+** 0 on failure.
+*/
+static int sqliteGdbmBeginIndex(DbbeCursor *pCursr, int nKey, char *pKey){
+  if( !sqliteGdbmFetch(pCursr, nKey, pKey) ) return 0;
+  pCursr->nextIndex = 0;
+  return 1;
+}
 
+/*
+** Return an integer key which is the next record number in the index search
+** that was started by a prior call to BeginIndex.  Return 0 if all records
+** have already been searched.
+*/
+static int sqliteGdbmNextIndex(DbbeCursor *pCursr){
+  int *aIdx;
+  int nIdx;
+  int k;
+  nIdx = pCursr->data.dsize/sizeof(int);
+  aIdx = (int*)pCursr->data.dptr;
+  if( nIdx>1 ){
+    k = *(aIdx++);
+    if( k>nIdx-1 ) k = nIdx-1;
+  }else{
+    k = nIdx;
+  }
+  while( pCursr->nextIndex < k ){
+    int recno = aIdx[pCursr->nextIndex++];
+    if( recno!=0 ) return recno;
+  }
+  pCursr->nextIndex = 0;
+  return 0;
+}
+
+/*
+** Write a new record number and key into an index table.  Return a status
+** code.
+*/
+static int sqliteGdbmPutIndex(DbbeCursor *pCursr, int nKey, char *pKey, int N){
+  int r = sqliteGdbmFetch(pCursr, nKey, pKey);
+  if( r==0 ){
+    /* Create a new record for this index */
+    sqliteGdbmPut(pCursr, nKey, pKey, sizeof(int), (char*)&N);
+  }else{
+    /* Extend the existing record */
+    int nIdx;
+    int *aIdx;
+    int k;
+            
+    nIdx = pCursr->data.dsize/sizeof(int);
+    if( nIdx==1 ){
+      aIdx = sqliteMalloc( sizeof(int)*4 );
+      if( aIdx==0 ) return SQLITE_NOMEM;
+      aIdx[0] = 2;
+      sqliteGdbmCopyData(pCursr, 0, sizeof(int), (char*)&aIdx[1]);
+      aIdx[2] = N;
+      sqliteGdbmPut(pCursr, nKey, pKey, sizeof(int)*4, (char*)aIdx);
+      sqliteFree(aIdx);
+    }else{
+      aIdx = (int*)sqliteGdbmReadData(pCursr, 0);
+      k = aIdx[0];
+      if( k<nIdx-1 ){
+        aIdx[k+1] = N;
+        aIdx[0]++;
+        sqliteGdbmPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+      }else{
+        nIdx *= 2;
+        aIdx = sqliteMalloc( sizeof(int)*nIdx );
+        if( aIdx==0 ) return SQLITE_NOMEM;
+        sqliteGdbmCopyData(pCursr, 0, sizeof(int)*(k+1), (char*)aIdx);
+        aIdx[k+1] = N;
+        aIdx[0]++;
+        sqliteGdbmPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+        sqliteFree(aIdx);
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Delete an index entry.  Return a status code.
+*/
+static 
+int sqliteGdbmDeleteIndex(DbbeCursor *pCursr, int nKey, char *pKey, int N){
+  int *aIdx;
+  int nIdx;
+  int j, k;
+  int rc;
+  rc = sqliteGdbmFetch(pCursr, nKey, pKey);
+  if( !rc ) return SQLITE_OK;
+  nIdx = pCursr->data.dsize/sizeof(int);
+  aIdx = (int*)sqliteGdbmReadData(pCursr, 0);
+  if( (nIdx==1 && aIdx[0]==N) || (aIdx[0]==1 && aIdx[1]==N) ){
+    sqliteGdbmDelete(pCursr, nKey, pKey);
+  }else{
+    k = aIdx[0];
+    for(j=1; j<=k && aIdx[j]!=N; j++){}
+    if( j>k ) return SQLITE_OK;
+    aIdx[j] = aIdx[k];
+    aIdx[k] = 0;
+    aIdx[0]--;
+    if( aIdx[0]*3 + 1 < nIdx ){
+      nIdx /= 2;
+    }
+    sqliteGdbmPut(pCursr, nKey, pKey, sizeof(int)*nIdx, (char*)aIdx);
+  }
+  return SQLITE_OK;
+}
 
 /*
 ** This variable contains pointers to all of the access methods
@@ -614,6 +724,10 @@ static struct DbbeMethods gdbmMethods = {
   /*      BeginTrans */   sqliteGdbmBeginTrans,
   /*          Commit */   sqliteGdbmEndTrans,
   /*        Rollback */   sqliteGdbmEndTrans,
+  /*      BeginIndex */   sqliteGdbmBeginIndex,
+  /*       NextIndex */   sqliteGdbmNextIndex,
+  /*        PutIndex */   sqliteGdbmPutIndex,
+  /*     DeleteIndex */   sqliteGdbmDeleteIndex,
 };
 
 

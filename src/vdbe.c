@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.58 2001/04/28 16:52:42 drh Exp $
+** $Id: vdbe.c,v 1.59 2001/08/19 18:19:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -822,7 +822,7 @@ static char *zOpName[] = { 0,
   "Fcnt",              "New",               "Put",               "Distinct",
   "Found",             "NotFound",          "Delete",            "Field",
   "KeyAsData",         "Key",               "FullKey",           "Rewind",
-  "Next",              "Destroy",           "Reorganize",        "ResetIdx",
+  "Next",              "Destroy",           "Reorganize",        "BeginIdx",
   "NextIdx",           "PutIdx",            "DeleteIdx",         "MemLoad",
   "MemStore",          "ListOpen",          "ListWrite",         "ListRewind",
   "ListRead",          "ListClose",         "SortOpen",          "SortPut",
@@ -2245,35 +2245,33 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: ResetIdx P1 * *
+      /* Opcode: BeginIdx P1 * *
       **
-      ** Begin treating the current data in cursor P1 as a bunch of integer
-      ** keys to records of a (separate) SQL table file.  This instruction
-      ** causes the new NextIdx instruction push the first integer table
-      ** key in the data.
+      ** Begin searching an index for records with the key found on the
+      ** top of the stack.  The stack is popped once.  Subsequent calls
+      ** to NextIdx will push record numbers onto the stack until all
+      ** records with the same key have been returned.
       */
-      case OP_ResetIdx: {
+      case OP_BeginIdx: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nCursor ){
-          p->aCsr[i].index = 0;
+        int tos = p->tos;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+          if( Stringify(p, tos) ) goto no_mem;
+          pBex->BeginIndex(p->aCsr[i].pCursor, aStack[tos].n, zStack[tos]);
+          p->aCsr[i].keyIsValid = 0;
         }
+        POPSTACK;
         break;
       }
 
       /* Opcode: NextIdx P1 P2 *
       **
-      ** The P1 cursor points to an SQL index.  The data from the most
-      ** recent fetch on that cursor consists of a bunch of integers where
-      ** each integer is the key to a record in an SQL table file.
-      ** This instruction grabs the next integer table key from the data
-      ** of P1 and pushes that integer onto the stack.  The first time
-      ** this instruction is executed after a fetch, the first integer 
-      ** table key is pushed.  Subsequent integer table keys are pushed 
-      ** in each subsequent execution of this instruction.
-      **
-      ** If there are no more integer table keys in the data of P1
-      ** when this instruction is executed, then nothing gets pushed and
-      ** there is an immediate jump to instruction P2.
+      ** The P1 cursor points to an SQL index for which a BeginIdx operation
+      ** has been issued.  This operation retrieves the next record number and
+      ** pushes that record number onto the stack.  Or, if there are no more
+      ** record numbers for the given key, this opcode pushes nothing onto the
+      ** stack but instead jumps to instruction P2.
       */
       case OP_NextIdx: {
         int i = pOp->p1;
@@ -2283,32 +2281,15 @@ int sqliteVdbeExec(
         VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         zStack[tos] = 0;
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          int *aIdx;
-          int nIdx;
-          int j, k;
-          nIdx = pBex->DataLength(pCrsr)/sizeof(int);
-          aIdx = (int*)pBex->ReadData(pCrsr, 0);
-          if( nIdx>1 ){
-            k = *(aIdx++);
-            if( k>nIdx-1 ) k = nIdx-1;
+          int recno = pBex->NextIndex(pCrsr);
+          if( recno!=0 ){
+            p->aCsr[i].lastKey = aStack[tos].i = recno;
+            p->aCsr[i].keyIsValid = 1;
+            aStack[tos].flags = STK_Int;
           }else{
-            k = nIdx;
-          }
-          p->aCsr[i].keyIsValid = 0;
-          for(j=p->aCsr[i].index; j<k; j++){
-            if( aIdx[j]!=0 ){
-              aStack[tos].i = p->aCsr[i].lastKey = aIdx[j];
-              p->aCsr[i].keyIsValid = 1;
-              aStack[tos].flags = STK_Int;
-              break;
-            }
-          }
-          if( j>=k ){
-            j = -1;
             pc = pOp->p2 - 1;
             POPSTACK;
           }
-          p->aCsr[i].index = j+1;
         }
         break;
       }
@@ -2317,10 +2298,9 @@ int sqliteVdbeExec(
       **
       ** The top of the stack hold an SQL index key (probably made using the
       ** MakeKey instruction) and next on stack holds an integer which
-      ** the key to an SQL table entry.  Locate the record in cursor P1
-      ** that has the same key as on the TOS.  Create a new record if
-      ** necessary.  Then append the integer table key to the data for that
-      ** record and write it back to the P1 file.
+      ** the record number for an SQL table entry.  This opcode makes an entry
+      ** in the index table P1 that associates the key with the record number.
+      ** But the record number and the key are popped from the stack.
       */
       case OP_PutIdx: {
         int i = pOp->p1;
@@ -2329,53 +2309,9 @@ int sqliteVdbeExec(
         DbbeCursor *pCrsr;
         VERIFY( if( nos<0 ) goto not_enough_stack; )
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          int r;
-          int newVal;
           Integerify(p, nos);
-          newVal = aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = pBex->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
-          if( r==0 ){
-            /* Create a new record for this index */
-            pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
-                          sizeof(int), (char*)&newVal);
-          }else{
-            /* Extend the existing record */
-            int nIdx;
-            int *aIdx;
-            int k;
-            
-            nIdx = pBex->DataLength(pCrsr)/sizeof(int);
-            if( nIdx==1 ){
-              aIdx = sqliteMalloc( sizeof(int)*4 );
-              if( aIdx==0 ) goto no_mem;
-              aIdx[0] = 2;
-              pBex->CopyData(pCrsr, 0, sizeof(int), (char*)&aIdx[1]);
-              aIdx[2] = newVal;
-              pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
-                    sizeof(int)*4, (char*)aIdx);
-              sqliteFree(aIdx);
-            }else{
-              aIdx = (int*)pBex->ReadData(pCrsr, 0);
-              k = aIdx[0];
-              if( k<nIdx-1 ){
-                aIdx[k+1] = newVal;
-                aIdx[0]++;
-                pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
-                    sizeof(int)*nIdx, (char*)aIdx);
-              }else{
-                nIdx *= 2;
-                aIdx = sqliteMalloc( sizeof(int)*nIdx );
-                if( aIdx==0 ) goto no_mem;
-                pBex->CopyData(pCrsr, 0, sizeof(int)*(k+1), (char*)aIdx);
-                aIdx[k+1] = newVal;
-                aIdx[0]++;
-                pBex->Put(pCrsr, aStack[tos].n, zStack[tos],
-                      sizeof(int)*nIdx, (char*)aIdx);
-                sqliteFree(aIdx);
-              }
-            }              
-          }
+          pBex->PutIndex(pCrsr, aStack[tos].n, zStack[tos], aStack[nos].i);
         }
         POPSTACK;
         POPSTACK;
@@ -2385,15 +2321,9 @@ int sqliteVdbeExec(
       /* Opcode: DeleteIdx P1 * *
       **
       ** The top of the stack is a key and next on stack is integer
-      ** which is the key to a record in an SQL table.
-      ** Locate the record in the cursor P1 (P1 represents an SQL index)
-      ** that has the same key as the top of stack.  Then look through
-      ** the integer table-keys contained in the data of the P1 record.
-      ** Remove the integer table-key that matches the NOS and write the
-      ** revised data back to P1 with the same key.
-      **
-      ** If this routine removes the very last integer table-key from
-      ** the P1 data, then the corresponding P1 record is deleted.
+      ** which is a record number for an SQL table.  The operation removes
+      ** any entry to the index table P1 that associates the key with the
+      ** record number.
       */
       case OP_DeleteIdx: {
         int i = pOp->p1;
@@ -2402,33 +2332,9 @@ int sqliteVdbeExec(
         DbbeCursor *pCrsr;
         VERIFY( if( nos<0 ) goto not_enough_stack; )
         if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-          int *aIdx;
-          int nIdx;
-          int j, k;
-          int r;
-          int oldVal;
           Integerify(p, nos);
-          oldVal = aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = pBex->Fetch(pCrsr, aStack[tos].n, zStack[tos]);
-          if( r==0 ) break;
-          nIdx = pBex->DataLength(pCrsr)/sizeof(int);
-          aIdx = (int*)pBex->ReadData(pCrsr, 0);
-          if( (nIdx==1 && aIdx[0]==oldVal) || (aIdx[0]==1 && aIdx[1]==oldVal) ){
-            pBex->Delete(pCrsr, aStack[tos].n, zStack[tos]);
-          }else{
-            k = aIdx[0];
-            for(j=1; j<=k && aIdx[j]!=oldVal; j++){}
-            if( j>k ) break;
-            aIdx[j] = aIdx[k];
-            aIdx[k] = 0;
-            aIdx[0]--;
-            if( aIdx[0]*3 + 1 < nIdx ){
-              nIdx /= 2;
-            }
-            pBex->Put(pCrsr, aStack[tos].n, zStack[tos], 
-                          sizeof(int)*nIdx, (char*)aIdx);
-          }
+          pBex->DeleteIndex(pCrsr, aStack[tos].n, zStack[tos], aStack[nos].i);
         }
         POPSTACK;
         POPSTACK;

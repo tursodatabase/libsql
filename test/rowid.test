@@ -24,7 +24,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.1 2001/04/04 11:48:58 drh Exp $
+# $Id: rowid.test,v 1.2 2001/08/19 18:19:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -247,13 +247,13 @@ do_test rowid-4.5 {
     SELECT t1.x, fcnt() FROM t2, t1 
     WHERE t2.y==256 AND t1.rowid==t2.rowid
   }
-} {4 3}
+} {4 2}
 do_test rowid-4.5.1 {
   execsql {
     SELECT t1.x, fcnt() FROM t2, t1 
     WHERE t1.OID==t2.rowid AND t2.y==81
   }
-} {3 3}
+} {3 2}
 do_test rowid-4.6 {
   execsql {
     SELECT t1.x FROM t1, t2
