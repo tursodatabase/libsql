@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.254 2004/09/25 14:39:18 drh Exp $
+** $Id: build.c,v 1.255 2004/09/30 14:22:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -784,7 +784,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   if( i<0 ) return;
   pCol = &p->aCol[i];
   pz = &pCol->zType;
-  n = pLast->n + Addr(pLast->z) - Addr(pFirst->z);
+  n = pLast->n + (pLast->z - pFirst->z);
   assert( pCol->zType==0 );
   z = pCol->zType = sqlite3MPrintf("%.*s", n, pFirst->z);
   if( z==0 ) return;

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.138 2004/09/25 15:29:09 drh Exp $
+** @(#) $Id: parse.y,v 1.139 2004/09/30 14:22:47 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -168,7 +168,7 @@ type ::= typename(X) LP signed COMMA signed RP(Y).
                                          {sqlite3AddColumnType(pParse,&X,&Y);}
 %type typename {Token}
 typename(A) ::= ids(X).             {A = X;}
-typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=X.n+Addr(Y.z)-Addr(X.z);}
+typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=Y.n+(Y.z-X.z);}
 %type signed {int}
 signed(A) ::= INTEGER(X).         { A = atoi(X.z); }
 signed(A) ::= PLUS INTEGER(X).    { A = atoi(X.z); }

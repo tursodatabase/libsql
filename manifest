@@ -1,5 +1,5 @@
-C Allow\sfunctions\sto\sbe\screated\swhen\sthere\sare\soutstanding\sVMs.\n(Ticket\s#926)\s\sFix\sproblems\swith\ssqlite3_errcode().\s\sAdd\stests\sfor\nsqlite3_errcode().\s(CVS\s1989)
-D 2004-09-30T13:43:13
+C Correctly\sparser\scolumn\stypenames\sthat\scontain\smore\sthan\sone\sidentifier.\nTicket\s#934.\s(CVS\s1990)
+D 2004-09-30T14:22:47
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 014d3c9d31136050f3b3294c0c5dc0c7615557bf
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
-F src/build.c 86318bdcd291919d4f87700385fdb73146436531
+F src/build.c 2ed6d9c26ad736142012bc99898869db17337121
 F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
 F src/delete.c d862b383a9abc0b79f4588783c2619fe52d74ea7
 F src/expr.c f255c5c56c0371cb2955cbc2733621051e4f79f8
@@ -53,7 +53,7 @@ F src/os_win.c 9e2887825b1a32f0ceb1b73b93ffe29a112cd86f
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 705a61117f05d7dd031762408f9a279834e88c3a
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
-F src/parse.y 52ca09eec10fdce4e6a8b4005e89209154b6cfb7
+F src/parse.y 968231351dd13ef6ee544336295db54708c22faf
 F src/pragma.c 45978cc82fdf91f00d024a8e875c2b679fbce488
 F src/printf.c 40770e1f553612d13dfc86d236086e69baa62fe1
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b15abf984fa06ae968d92fa9533dab20dcebd323
-R 8f6137a115115a381df787e036d26411
+P d0f1dc5898382258b283308c2cce55a8bc378ee4
+R aa5092649a19379f2aef61459f86a3f4
 U drh
-Z 0f9579e4a88ed7070472b7f1aab3addc
+Z bc0a1170a8e5cf89cf6852a70795a98a
