@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.171 2004/06/16 12:00:29 danielk1977 Exp $
+** $Id: btree.c,v 1.172 2004/06/22 14:40:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2945,7 +2945,7 @@ static int balance_nonroot(MemPage *pPage){
   ** process of being overwritten.
   */
   for(i=0; i<nOld; i++){
-    MemPage *p = apCopy[i] = (MemPage*)&aCopy[i+1][-sizeof(MemPage)];
+    MemPage *p = apCopy[i] = (MemPage*)&aCopy[i+1][-(int)sizeof(MemPage)];
     p->aData = &((u8*)p)[-pBt->pageSize];
     memcpy(p->aData, apOld[i]->aData, pBt->pageSize + sizeof(MemPage));
     p->aData = &((u8*)p)[-pBt->pageSize];

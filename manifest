@@ -1,5 +1,5 @@
-C Fix\serror\sintroduced\sduring\smerge\sof\smain.mk.\s(CVS\s1662)
-D 2004-06-22T13:23:47
+C Do\snot\sapply\sunary\s'-'\sto\san\sunsigned\s"sizeof"\sresult.\s(CVS\s1663)
+D 2004-06-22T14:40:11
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def c4bc3f10bccded91d06328c4b2b742ace4d3ed9f
 F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
+F src/btree.c 0591368af031a0ecc4620140dfdaa177b82885a1
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c fc0b51748da8bc9c8266fdb36e57d49393793947
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
@@ -228,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 80151e728101c3cd5a8cf36cca2bfa661b21c746
-R f4f8b0a0e751eed0da6a164979ec2da0
-U danielk1977
-Z c0120d3009da903dfa531b7977038fc8
+P eef6da38d5b1d84e8a1eb9fe88f0f568717ea323
+R 3f803f6c814edea6b22302bc0ee60607
+U drh
+Z fbc181b2836ef01b88a830d42326fb8f
