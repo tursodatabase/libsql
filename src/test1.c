@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.74 2004/06/09 17:37:28 drh Exp $
+** $Id: test1.c,v 1.75 2004/06/10 14:01:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -858,6 +858,108 @@ static int test_bind(
     return TCL_ERROR;
   }
   return TCL_OK;
+}
+
+
+/*
+** Usage: add_test_collate <db ptr> <utf8> <utf16le> <utf16be>
+**
+** This function is used to test that SQLite selects the correct collation
+** sequence callback when multiple versions (for different text encodings)
+** are available.
+**
+** Calling this routine registers the collation sequence "test_collate"
+** with database handle <db>. The second argument must be a list of three
+** boolean values. If the first is true, then a version of test_collate is
+** registered for UTF-8, if the second is true, a version is registered for
+** UTF-16le, if the third is true, a UTF-16be version is available.
+** Previous versions of test_collate are deleted.
+**
+** The collation sequence test_collate is implemented by calling the
+** following TCL script:
+**
+**   "test_collate <enc> <lhs> <rhs>"
+**
+** The <lhs> and <rhs> are the two values being compared, encoded in UTF-8.
+** The <enc> parameter is the encoding of the collation function that
+** SQLite selected to call. The TCL test script implements the
+** "test_collate" proc.
+**
+** Note that this will only work with one intepreter at a time, as the
+** interp pointer to use when evaluating the TCL script is stored in
+** pTestCollateInterp.
+*/
+static Tcl_Interp* pTestCollateInterp;
+static int test_collate_func(
+  void *pCtx, 
+  int nA, const void *zA,
+  int nB, const void *zB
+){
+  Tcl_Interp *i = pTestCollateInterp;
+  int encin = (int)pCtx;
+  int res;
+
+  sqlite3_value *pVal;
+  Tcl_Obj *pX;
+
+  pX = Tcl_NewStringObj("test_collate", -1);
+  Tcl_IncrRefCount(pX);
+
+  switch( encin ){
+    case SQLITE_UTF8:
+      Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj("UTF-8",-1));
+      break;
+    case SQLITE_UTF16LE:
+      Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj("UTF-16LE",-1));
+      break;
+    case SQLITE_UTF16BE:
+      Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj("UTF-16BE",-1));
+      break;
+    default:
+      assert(0);
+  }
+
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, nA, zA, encin);
+  Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),-1));
+  sqlite3ValueSetStr(pVal, nB, zB, encin);
+  Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),-1));
+  sqlite3ValueFree(pVal);
+
+  Tcl_EvalObjEx(i, pX, 0);
+  Tcl_DecrRefCount(pX);
+  Tcl_GetIntFromObj(i, Tcl_GetObjResult(i), &res);
+  return res;
+}
+static int test_collate(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int val;
+
+  if( objc!=5 ) goto bad_args;
+  pTestCollateInterp = interp;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
+  sqlite3_create_collation(db, "test_collate", SQLITE_UTF8, 
+        (void *)SQLITE_UTF8, val?test_collate_func:0);
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+  sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
+        (void *)SQLITE_UTF16LE, val?test_collate_func:0);
+  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
+  sqlite3_create_collation(db, "test_collate", SQLITE_UTF16BE, 
+        (void *)SQLITE_UTF16BE, val?test_collate_func:0);
+  
+  return TCL_OK;
+
+bad_args:
+  Tcl_AppendResult(interp, "wrong # args: should be \"",
+      Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+  return TCL_ERROR;
 }
 
 /*
@@ -1868,6 +1970,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3OsClose",        test_sqlite3OsClose, 0 },
      { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
      { "sqlite3OsUnlock",       test_sqlite3OsUnlock, 0 },
+     { "add_test_collate",      test_collate, 0         },
 
   };
   int i;

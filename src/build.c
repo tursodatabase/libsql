@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.215 2004/06/10 10:50:08 danielk1977 Exp $
+** $Id: build.c,v 1.216 2004/06/10 14:01:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -912,10 +912,10 @@ CollSeq *sqlite3FindCollSeq(
     case TEXT_Utf8:
       break;
     case TEXT_Utf16le:
-      pColl = &pColl[2];
+      pColl = &pColl[1];
       break;
     case TEXT_Utf16be:
-      pColl = &pColl[1];
+      pColl = &pColl[2];
       break;
     default: 
       assert(!"Cannot happen");

@@ -58,40 +58,10 @@ long long int sqlite3_value_int64(sqlite3_value *pVal){
   return pVal->i;
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
-  if( pVal->flags&MEM_Null ){
-    /* For a NULL return a NULL Pointer */
-    return 0;
-  }
-
-  if( pVal->flags&MEM_Str ){
-    /* If there is already a string representation, make sure it is in
-    ** encoded in UTF-8.
-    */
-    sqlite3VdbeChangeEncoding(pVal, TEXT_Utf8);
-  }else if( !(pVal->flags&MEM_Blob) ){
-    /* Otherwise, unless this is a blob, convert it to a UTF-8 string */
-    sqlite3VdbeMemStringify(pVal, TEXT_Utf8);
-  }
-
-  return pVal->z;
+  return (const char *)sqlite3ValueText(pVal, TEXT_Utf8);
 }
 const void *sqlite3_value_text16(sqlite3_value* pVal){
-  if( pVal->flags&MEM_Null ){
-    /* For a NULL return a NULL Pointer */
-    return 0;
-  }
-
-  if( pVal->flags&MEM_Str ){
-    /* If there is already a string representation, make sure it is in
-    ** encoded in UTF-16 machine byte order.
-    */
-    sqlite3VdbeChangeEncoding(pVal, TEXT_Utf16);
-  }else if( !(pVal->flags&MEM_Blob) ){
-    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
-    sqlite3VdbeMemStringify(pVal, TEXT_Utf16);
-  }
-
-  return (const void *)(pVal->z);
+  return sqlite3ValueText(pVal, TEXT_Utf16);
 }
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;

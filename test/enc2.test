@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.7 2004/06/10 05:59:25 danielk1977 Exp $
+# $Id: enc2.test,v 1.8 2004/06/10 14:01:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -143,5 +143,112 @@ do_test enc2-4.3 {
 } {1 {attached databases must use the same text encoding as main database}}
 
 db2 close
+db close
+
+# The following tests - enc2-5.* - test that SQLite selects the correct
+# collation sequence when more than one is available.
+
+set ::values [list one two three four five]
+set ::test_collate_enc INVALID
+proc test_collate {enc lhs rhs} {
+  set ::test_collate_enc $enc
+  set l [lsearch -exact $::values $lhs]
+  set r [lsearch -exact $::values $rhs]
+  set res [expr $l - $r]
+  # puts "test_collate $enc $lhs $rhs -> $res"
+  return $res
+}
+
+file delete -force test.db
+set DB [sqlite db test.db]
+do_test enc2-5.0 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('one');
+    INSERT INTO t5 VALUES('two');
+    INSERT INTO t5 VALUES('five');
+    INSERT INTO t5 VALUES('three');
+    INSERT INTO t5 VALUES('four');
+  }
+} {}
+do_test enc2-5.1 {
+  add_test_collate $DB 1 1 1
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-8}
+do_test enc2-5.2 {
+  add_test_collate $DB 0 1 0
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16LE}
+breakpoint
+do_test enc2-5.3 {
+  add_test_collate $DB 0 0 1
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16BE}
+
+file delete -force test.db
+set DB [sqlite db test.db]
+execsql {pragma encoding = 'UTF-16LE'}
+do_test enc2-5.4 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('one');
+    INSERT INTO t5 VALUES('two');
+    INSERT INTO t5 VALUES('five');
+    INSERT INTO t5 VALUES('three');
+    INSERT INTO t5 VALUES('four');
+  }
+} {}
+do_test enc2-5.5 {
+  add_test_collate $DB 1 1 1
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16LE}
+do_test enc2-5.6 {
+  add_test_collate $DB 1 0 1
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16BE}
+breakpoint
+do_test enc2-5.7 {
+  add_test_collate $DB 1 0 0
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-8}
+
+file delete -force test.db
+set DB [sqlite db test.db]
+execsql {pragma encoding = 'UTF-16BE'}
+do_test enc2-5.8 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES('one');
+    INSERT INTO t5 VALUES('two');
+    INSERT INTO t5 VALUES('five');
+    INSERT INTO t5 VALUES('three');
+    INSERT INTO t5 VALUES('four');
+  }
+} {}
+do_test enc2-5.9 {
+  add_test_collate $DB 1 1 1
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16BE}
+do_test enc2-5.10 {
+  add_test_collate $DB 1 1 0
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16LE}
+breakpoint
+do_test enc2-5.11 {
+  add_test_collate $DB 1 0 0
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-8}
 
 finish_test
+
+
+

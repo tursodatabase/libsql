@@ -47,12 +47,15 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     */
     char *z;
     int n;
-    int rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc,
-                                 (void **)&z, &n, desiredEnc);
+    int rc;
+
+    rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc, &z, &n, desiredEnc);
     if( rc!=SQLITE_OK ){
       return rc;
     }
-  
+    if( pMem->flags&MEM_Dyn ){
+      sqliteFree(pMem->z);
+    }
     /* Result of sqlite3utfTranslate is currently always dynamically
     ** allocated and nul terminated. This might be altered as a performance
     ** enhancement later.
@@ -444,38 +447,20 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       if( pMem1->enc==pColl->enc ){
         return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
       }else{
-        switch( pColl->enc ){
-          case SQLITE_UTF8:
-            return pColl->xCmp(
-              pColl->pUser,
-              sqlite3_value_bytes((sqlite3_value *)pMem1),
-              sqlite3_value_text((sqlite3_value *)pMem1),
-              sqlite3_value_bytes((sqlite3_value *)pMem2),
-              sqlite3_value_text((sqlite3_value *)pMem2)
-            );
-          case SQLITE_UTF16LE:
-          case SQLITE_UTF16BE:
-            /* FIX ME: Handle non-native UTF-16 properly instead of
-            ** assuming it is always native. */
-            return pColl->xCmp(
-              pColl->pUser,
-              sqlite3_value_bytes16((sqlite3_value *)pMem1),
-              sqlite3_value_text16((sqlite3_value *)pMem1),
-              sqlite3_value_bytes16((sqlite3_value *)pMem2),
-              sqlite3_value_text16((sqlite3_value *)pMem2)
-            );
-          default:
-            assert(!"Cannot happen");
-        }
+        return pColl->xCmp(
+          pColl->pUser,
+          sqlite3ValueBytes((sqlite3_value*)pMem1, pColl->enc),
+          sqlite3ValueText((sqlite3_value*)pMem1, pColl->enc),
+          sqlite3ValueBytes((sqlite3_value*)pMem2, pColl->enc),
+          sqlite3ValueText((sqlite3_value*)pMem2, pColl->enc)
+        );
       }
     }
     /* If a NULL pointer was passed as the collate function, fall through
-    ** to the blob case and use memcmp().
-    */
+    ** to the blob case and use memcmp().  */
   }
  
-  /* Both values must be blobs.  Compare using memcmp().
-  */
+  /* Both values must be blobs.  Compare using memcmp().  */
   rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
   if( rc==0 ){
     rc = pMem1->n - pMem2->n;
@@ -588,3 +573,72 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
           || (pMem->flags&MEM_Null)==0 );
 }
 #endif
+
+/* This function is only available internally, it is not part of the
+** external API. It works in a similar way to sqlite3_value_text(),
+** except the data returned is in the encoding specified by the second
+** parameter, which must be one of SQLITE_UTF16BE, SQLITE_UTF16LE or
+** SQLITE_UTF8.
+*/
+const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
+  assert( enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE || enc==SQLITE_UTF8);
+  if( pVal->flags&MEM_Null ){
+    /* For a NULL return a NULL Pointer */
+    return 0;
+  }
+
+  if( pVal->flags&MEM_Str ){
+    /* If there is already a string representation, make sure it is in
+    ** encoded in the required UTF-16 byte order.
+    */
+    sqlite3VdbeChangeEncoding(pVal, enc);
+  }else if( !(pVal->flags&MEM_Blob) ){
+    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
+    sqlite3VdbeMemStringify(pVal, enc);
+  }
+
+  return (const void *)(pVal->z);
+}
+
+sqlite3_value* sqlite3ValueNew(){
+  Mem *p = sqliteMalloc(sizeof(*p));
+  if( p ){
+    p->flags = MEM_Null;
+    p->type = SQLITE_NULL;
+  }
+  return p;
+}
+
+void sqlite3ValueSetStr(sqlite3_value *v, int n, const void *z, u8 enc){
+  Mem *p = (Mem *)v;
+  if( p->z && p->flags&MEM_Dyn ){
+    sqliteFree(p->z);
+  }
+  p->z = (char *)z;
+  p->n = n;
+  p->enc = enc;
+  p->type = SQLITE_TEXT;
+  p->flags = (MEM_Str|MEM_Static);
+
+  if( p->n<0 ){
+    if( enc==SQLITE_UTF8 ){
+      p->n = strlen(p->z);
+    }else{
+      p->n = sqlite3utf16ByteLen(p->z, -1);
+    }
+  }
+  return;
+}
+
+void sqlite3ValueFree(sqlite3_value *v){
+  sqlite3ValueSetStr(v, 0, 0, SQLITE_UTF8);
+  sqliteFree(v);
+}
+
+int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
+  Mem *p = (Mem*)pVal;
+  if( (p->flags & MEM_Blob)!=0 || sqlite3ValueText(pVal, enc) ){
+    return p->n;
+  }
+  return 0;
+}

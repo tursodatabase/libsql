@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_collation_needed()\sAPI\sand\sfix\ssome\serror\shandling\scases\ninvolving\sunknown\scollation\ssequences.\s(CVS\s1564)
-D 2004-06-10T10:51:53
+C Correctly\shandle\sthe\ssituation\swhere\sa\scollation\ssequence\sis\savailable,\sbut\nnot\sin\sthe\spreferred\sencoding.\s(CVS\s1565)
+D 2004-06-10T14:01:08
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 281af87aa117de024f5b6c2728a2339cba9ef584
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
-F src/build.c 4b1a23d919fe01549702f7f1bfe7f8b656e77a17
+F src/build.c b36b62f49aea7d258cb804999dcc8650e4d79464
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
 F src/delete.c 911221aadb35d610c84fadb32e71c52990827e58
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -56,10 +56,10 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 6cb407796dde0e8f27450ead68856eb9f8188789
 F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
 F src/sqlite.h.in 2b6afe1de6935d3dfbd6042f46a62f1b7c3b3992
-F src/sqliteInt.h 6be535d420f99c57f29f13c3c2d6a3497432b366
+F src/sqliteInt.h e8e641bec4d7806023ce8192a64234d3599c5fc0
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c e974c0b2479ed37334aeb268de331e0a1b21b5a8
-F src/test1.c f78d6ac0675bc5db48dac9c5379c965bdadb9113
+F src/test1.c 5f5c0773df1091cc02ddf6608a8f6e0c65940a56
 F src/test2.c 05f810c90cf6262d5f352860e87d41a3f34207f9
 F src/test3.c beafd0ccf7b9ae784744be1b1e66ffe8f64c25da
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -73,9 +73,9 @@ F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
 F src/vdbe.c 90e0e6bdbdf9b77c66f2500374b5784d30c323fa
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h d41605853332bdbd600d7ecd60e1f54bbaea174e
-F src/vdbeapi.c 4ac95766b0515538037a7aec172ed26142f97cf9
+F src/vdbeapi.c bcf5821ed09070d586898374b905861c4dd73d0b
 F src/vdbeaux.c 73764dadcdbf79aa2d948f863eae07b18589e663
-F src/vdbemem.c 5b2fab8b5a830e5204413b808c4a2d8335189f21
+F src/vdbemem.c b1599f5d24131107a21a54e618e372e1252de958
 F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
@@ -103,7 +103,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test ac14bd6df5f1581d646eebc013d6b844a885dcf6
 F test/enc.test a55481d45ff493804e8d88357feb4642fc50a6b2
-F test/enc2.test 28b61a098dd571b06147fe9f857489edba4e405d
+F test/enc2.test 1d469f58ee7f187bf06e11bd72a12bdea6362b2f
 F test/expr.test 521588701dae8cf5aa2b8a18c5c897711f754332
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test 9816fbed0a5e87e00f4fc88b4cdcd638abc524c4
@@ -219,7 +219,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 518d82d3b1ab996d675f45c94d740c98578a04a6
-R 9cc8eb0d8d516e56f0a005459d5bbc05
+P 67500546ea24fd7a30348960c98cd257dbfa965f
+R 393c5de920a400aa587d8f21dc793fbe
 U danielk1977
-Z 25a8aff272a87359157d326e3bffc5a6
+Z 3447cf118fd13bbb0c99c8f654b072b2
