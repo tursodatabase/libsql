@@ -113,6 +113,7 @@ TESTSRC = \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
   $(TOP)/src/test4.c \
+  $(TOP)/src/vdbe.c \
   $(TOP)/src/md5.c
 
 # Header files used by all library source files.

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.94 2004/02/08 06:05:46 drh Exp $
+** @(#) $Id: pager.c,v 1.95 2004/02/08 18:07:35 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -84,6 +84,19 @@ static Pager *mainPager = 0;
 ** Each in-memory image of a page begins with the following header.
 ** This header is only visible to this pager module.  The client
 ** code that calls pager sees only the data that follows the header.
+**
+** Client code should call sqlitepager_write() on a page prior to making
+** any modifications to that page.  The first time sqlitepager_write()
+** is called, the original page contents are written into the rollback
+** journal and PgHdr.inJournal and PgHdr.needSync are set.  Later, once
+** the journal page has made it onto the disk surface, PgHdr.needSync
+** is cleared.  The modified page cannot be written back into the original
+** database file until the journal pages has been synced to disk and the
+** PgHdr.needSync has been cleared.
+**
+** The PgHdr.dirty flag is set when sqlitepager_write() is called and
+** is cleared again when the page content is written back to the original
+** database file.
 */
 typedef struct PgHdr PgHdr;
 struct PgHdr {

@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 February 8 (2.8.12)} {
+<li>Fix a bug that will might corrupt the rollback journal if a power failure
+    or external program halt occurs in the middle of a COMMIT.  The corrupt
+    journal can lead to database corruption when it is rolled back.</li>
+<li>Reduce the size and increase the speed of various modules, especially
+    the virtual machine.</li>
+<li>Allow "&lt;expr&gt; IN &lt;table&gt;" as a shorthand for
+    "&lt;expr&gt; IN (SELECT * FROM &lt;table&gt;".</li>
+<li>Optimizations to the sqlite_mprintf() routine.</li>
+<li>Make sure the MIN() and MAX() optimizations work within subqueries.</li>
+}
+
 chng {2004 January 14 (2.8.11)} {
 <li>Fix a bug in how the IN operator handles NULLs in subqueries.  The bug
     was introduced by the previous release.</li>
