@@ -1,5 +1,5 @@
-C Mark\sthe\saffinity.html\sfile\sas\sobsolete.\s(CVS\s2031)
-D 2004-10-26T16:33:15
+C Move\saffinity.html\sinto\sthe\sattic.\s(CVS\s2032)
+D 2004-10-26T16:34:38
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -12,7 +12,6 @@ F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
 F configure 8f1b0d5cad4dadcc1677c737e35646abf6332794 x
 F configure.ac 5903493fe34908d768d4abaa3c0c9397e32e2bb5
-F doc/affinity.html 915e49a8ed714116fd38055a93449f10dc2bcefa
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -252,7 +251,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 507d8e6f5cff308116289b27b3138e5bbfd55352
-R af374f1489e468fd7e9c3f577b123145
+P 09de96b6b2e877282be0815ba76c10f18839ff6b
+R c872ef25d669a1ccc74408d414b2bed5
 U drh
-Z 02d41a1887ade636ac506a74baaa62a5
+Z 3519d7ca392cdf8d6ad112e35ee57148
