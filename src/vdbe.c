@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.68 2001/09/15 13:15:13 drh Exp $
+** $Id: vdbe.c,v 1.69 2001/09/15 14:43:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1803,7 +1803,7 @@ case OP_MakeRecord: {
     }
   }
   nByte += sizeof(addr)*nField;
-  if( nByte>65535 ){
+  if( nByte>MAX_BYTES_PER_ROW ){
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
@@ -1837,9 +1837,10 @@ case OP_MakeRecord: {
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index or a sort.  The top P1 records are
-** concatenated with a tab character (ASCII 0x09) used as a record
-** separator.  The entire concatenation is null-terminated.  The
-** lowest entry in the stack is the first field and the top of the
+** converted to strings and merged.  The null-terminator on each string
+** is retained and used as a separator.  The entire string is also
+** null-terminated.
+** The lowest entry in the stack is the first field and the top of the
 ** stack becomes the last.
 **
 ** If P2 is not zero, then the original entries remain on the stack
@@ -1866,17 +1867,21 @@ case OP_MakeKey: {
       nByte += aStack[i].n;
     }
   }
+  if( nByte+sizeof(u32)>MAX_BYTES_PER_ROW ){
+    rc = SQLITE_TOOBIG;
+    goto abort_due_to_error;
+  }
   zNewKey = sqliteMalloc( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( (aStack[i].flags & STK_Null)==0 ){
-      memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
-      j += aStack[i].n-1;
+    if( aStack[i].flags & STK_Null ){
+      zNewKey[j++] = 0;
+    }else{
+      memcpy(&zNewKey[j], zStack[i], aStack[i].n);
+      j += aStack[i].n;
     }
-    if( i<p->tos ) zNewKey[j++] = '\t';
   }
-  zNewKey[j] = 0;
   if( pOp->p2==0 ) PopStack(p, nField);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -1897,7 +1902,7 @@ case OP_MakeKey: {
 ** entry (the lowest on the stack) is an integer record number.
 **
 ** The converstion of the first P1 string entries occurs just like in
-** MakeKey.  Each entry is separated from the others by a tab (ASCII 0x09).
+** MakeKey.  Each entry is separated from the others by a null.
 ** The entire concatenation is null-terminated.  The lowest entry
 ** in the stack is the first field and the top of the stack becomes the
 ** last.
@@ -1921,17 +1926,21 @@ case OP_MakeIdxKey: {
       nByte += aStack[i].n;
     }
   }
+  if( nByte>MAX_BYTES_PER_ROW ){
+    rc = SQLITE_TOOBIG;
+    goto abort_due_to_error;
+  }
   zNewKey = sqliteMalloc( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( (aStack[i].flags & STK_Null)==0 ){
-      memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
-      j += aStack[i].n-1;
+    if( aStack[i].flags & STK_Null ){
+      zNewKey[j++] = 0;
+    }else{
+      memcpy(&zNewKey[j], zStack[i], aStack[i].n);
+      j += aStack[i].n;
     }
-    if( i<p->tos ) zNewKey[j++] = '\t';
   }
-  zNewKey[j++] = 0;
   Integerify(p, p->tos-nField);
   memcpy(&zNewKey[j], &aStack[p->tos-nField].i, sizeof(u32));
   PopStack(p, nField+1);
@@ -2581,8 +2590,10 @@ case OP_Next: {
 ** but the key used for PutIdx and DeleteIdx should be built using
 ** MakeIdxKey.  The difference is that MakeIdxKey adds a 4-bytes
 ** record number to the end of the key in order to specify a particular
-** entry in the index.  MakeKey specifies zero or more entries in the
-** index that all have common values.
+** entry in the index.  MakeKey omits the 4-byte record number.
+** The search that this BeginIdx instruction initiates will span all
+** entries in the index where the MakeKey generated key matches all
+** but the last four bytes of the MakeIdxKey generated key.
 */
 case OP_BeginIdx: {
   int i = pOp->p1;
@@ -2594,10 +2605,10 @@ case OP_BeginIdx: {
     if( Stringify(p, tos) ) goto no_mem;
     if( pCrsr->zKey ) sqliteFree(pCrsr->zKey);
     pCrsr->nKey = aStack[tos].n;
-    pCrsr->zKey = sqliteMalloc( 2*(pCrsr->nKey + 1) );
+    pCrsr->zKey = sqliteMalloc( 2*pCrsr->nKey );
     if( pCrsr->zKey==0 ) goto no_mem;
-    pCrsr->zBuf = &pCrsr->zKey[pCrsr->nKey+1];
-    strncpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
+    pCrsr->zBuf = &pCrsr->zKey[pCrsr->nKey];
+    memcpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
     pCrsr->zKey[aStack[tos].n] = 0;
     rx = sqliteBtreeMoveto(pCrsr->pCursor, zStack[tos], aStack[tos].n, &res);
     pCrsr->atFirst = rx==SQLITE_OK && res>0;
@@ -2610,10 +2621,12 @@ case OP_BeginIdx: {
 /* Opcode: NextIdx P1 P2 *
 **
 ** The P1 cursor points to an SQL index for which a BeginIdx operation
-** has been issued.  This operation retrieves the next record number and
-** pushes that record number onto the stack.  Or, if there are no more
-** record numbers for the given key, this opcode pushes nothing onto the
-** stack but instead jumps to instruction P2.
+** has been issued.  This operation retrieves the next record from that
+** cursor and verifies that the key on the record matches the key that
+** was pulled from the stack by the BeginIdx instruction.  If they do
+** match, then the last 4 bytes of the key on the record hold a record
+** number and that record number is extracted and pushed on the stack.
+** If the keys do not match, there is an immediate jump to instruction P2.
 */
 case OP_NextIdx: {
   int i = pOp->p1;
@@ -2636,7 +2649,7 @@ case OP_NextIdx: {
     sqliteBtreeKeySize(pCur, &size);
     if( res>0 || size!=pCrsr->nKey+sizeof(u32) ||
       sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
-      strncmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
+      memcmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
     ){
       pc = pOp->p2 - 1;
       POPSTACK;
@@ -3786,9 +3799,9 @@ default: {
           char zBuf[100];
           zBuf[0] = ' ';
           zBuf[1] = (aStack[i].flags & STK_Dyn)!=0 ? 'z' : 's';
-          zBuf[2] = ':';
+          zBuf[2] = '[';
           k = 3;
-          for(j=0; j<15 && j<aStack[i].n; j++){
+          for(j=0; j<20 && j<aStack[i].n; j++){
             int c = zStack[i][j];
             if( c==0 && j==aStack[i].n-1 ) break;
             if( isprint(c) && !isspace(c) ){
@@ -3797,6 +3810,7 @@ default: {
               zBuf[k++] = '.';
             }
           }
+          zBuf[k++] = ']';
           zBuf[k++] = 0;
           fprintf(p->trace, "%s", zBuf);
         }else{

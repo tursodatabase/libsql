@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.49 2001/09/15 13:15:13 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.50 2001/09/15 14:43:39 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
@@ -48,6 +48,12 @@
 typedef unsigned int u32;             /* 4-byte unsigned integer */
 typedef unsigned short int u16;       /* 2-byte unsigned integer */
 typedef unsigned char u8;             /* 1-byte unsigned integer */
+
+/*
+** The maximum number of bytes of data that can be put into a single
+** row of a single table.
+*/
+#define MAX_BYTES_PER_ROW  65535
 
 /*
 ** If memory allocation problems are found, recompile with
