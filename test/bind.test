@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.9 2004/05/26 10:11:07 danielk1977 Exp $
+# $Id: bind.test,v 1.10 2004/05/27 01:53:56 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -28,7 +28,7 @@ proc sqlite_step {stmt N VALS COLS} {
     lappend cols [sqlite3_column_name $stmt $i]
   }
   for {set i 0} {$i < [sqlite3_data_count $stmt]} {incr i} {
-    lappend vals [sqlite3_column_data $stmt $i]
+    lappend vals [sqlite3_column_text $stmt $i]
   }
 
   return $rc

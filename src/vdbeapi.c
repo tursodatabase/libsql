@@ -199,6 +199,50 @@ int sqlite3_step(sqlite3_stmt *pStmt){
 }
 
 /*
+** Extract the user data from a sqlite3_context structure and return a
+** pointer to it.
+*/
+void *sqlite3_user_data(sqlite3_context *p){
+  assert( p && p->pFunc );
+  return p->pFunc->pUserData;
+}
+
+/*
+** Allocate or return the aggregate context for a user function.  A new
+** context is allocated on the first call.  Subsequent calls return the
+** same context that was returned on prior calls.
+**
+** This routine is defined here in vdbe.c because it depends on knowing
+** the internals of the sqlite3_context structure which is only defined in
+** this source file.
+*/
+void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
+  assert( p && p->pFunc && p->pFunc->xStep );
+  if( p->pAgg==0 ){
+    if( nByte<=NBFS ){
+      p->pAgg = (void*)p->s.z;
+      memset(p->pAgg, 0, nByte);
+    }else{
+      p->pAgg = sqliteMalloc( nByte );
+    }
+  }
+  return p->pAgg;
+}
+
+/*
+** Return the number of times the Step function of a aggregate has been 
+** called.
+**
+** This routine is defined here in vdbe.c because it depends on knowing
+** the internals of the sqlite3_context structure which is only defined in
+** this source file.
+*/
+int sqlite3_aggregate_count(sqlite3_context *p){
+  assert( p && p->pFunc && p->pFunc->xStep );
+  return p->cnt;
+}
+
+/*
 ** Return the number of columns in the result set for the statement pStmt.
 */
 int sqlite3_column_count(sqlite3_stmt *pStmt){

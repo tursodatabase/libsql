@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.336 2004/05/26 23:25:31 drh Exp $
+** $Id: vdbe.c,v 1.337 2004/05/27 01:53:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -70,104 +70,17 @@ int sqlite3_search_count = 0;
 int sqlite3_interrupt_count = 0;
 
 /*
-** This macro takes a single parameter, a pointer to a Mem structure.
-** It returns the string encoding for the Mem structure, one of TEXT_Utf8
-** TEXT_Utf16le or TEXT_Utf16be.
-*/
-#define MemEnc(p) ( \
-   ((p)->flags&MEM_Utf16le)?TEXT_Utf16le: \
-       ((p)->flags&MEM_Utf16be)?TEXT_Utf16be:TEXT_Utf8) )
-
-/*
 ** Release the memory associated with the given stack level.  This
 ** leaves the Mem.flags field in an inconsistent state.
 */
 #define Release(P) if((P)->flags&MEM_Dyn){ sqliteFree((P)->z); }
 
 /*
-** Parmameter "flags" is the value of the flags for a string Mem object.
-** Return one of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be, depending
-** on the encoding indicated by the flags value.
-*/
-static u8 flagsToEnc(int flags){
-  if( flags&MEM_Utf8 ){
-    assert( !(flags&(MEM_Utf16be|MEM_Utf16le)) );
-    return TEXT_Utf8;
-  }
-  if( flags&MEM_Utf16le ){
-    assert( !(flags&(MEM_Utf8|MEM_Utf16be)) );
-    return TEXT_Utf16le;
-  }
-  assert( flags&MEM_Utf16be );
-  assert( !(flags&(MEM_Utf8|MEM_Utf16le)) );
-  return TEXT_Utf16be;
-}
-
-/*
-** Parameter "enc" is one of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be.
-** Return the corresponding MEM_Utf* value.
-*/
-static int encToFlags(u8 enc){
-  switch( enc ){
-    case TEXT_Utf8:   return MEM_Utf8;
-    case TEXT_Utf16be: return MEM_Utf16be;
-    case TEXT_Utf16le: return MEM_Utf16le;
-  }
-  assert(0);
-}
-
-/*
-** Set the encoding flags of memory cell "pMem" to the correct values
-** for the database encoding "enc" (one of TEXT_Utf8, TEXT_Utf16le or
-** TEXT_Utf16be).
-*/
-#define SetEncodingFlags(pMem, enc) ((pMem)->flags = \
-((pMem->flags & ~(MEM_Utf8|MEM_Utf16le|MEM_Utf16be))) | encToFlags(enc))
-static int SetEncoding(Mem*, int);
-
-/*
 ** Convert the given stack entity into a string if it isn't one
 ** already. Return non-zero if a malloc() fails.
 */
 #define Stringify(P, enc) \
-(!((P)->flags&(MEM_Str|MEM_Blob)) && hardStringify(P, enc))
-static int hardStringify(Mem *pStack, u8 enc){
-  int rc = SQLITE_OK;
-  int fg = pStack->flags;
-
-  assert( !(fg&(MEM_Str|MEM_Blob)) );
-  assert( fg&(MEM_Int|MEM_Real|MEM_Null) );
-
-  if( fg & MEM_Null ){      
-    /* A NULL value is converted to a zero length string */
-    pStack->zShort[0] = 0;
-    pStack->zShort[1] = 0;
-    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
-    pStack->z = pStack->zShort;
-    pStack->n = (enc==TEXT_Utf8?1:2);
-  }else{
-    /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
-    ** string representation of the value. Then, if the required encoding
-    ** is UTF-16le or UTF-16be do a translation.
-    ** 
-    ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
-    */
-    if( fg & MEM_Real ){
-      sqlite3_snprintf(NBFS, pStack->zShort, "%.15g", pStack->r);
-    }else if( fg & MEM_Int ){
-      sqlite3_snprintf(NBFS, pStack->zShort, "%lld", pStack->i);
-    }
-    pStack->n = strlen(pStack->zShort) + 1;
-    pStack->z = pStack->zShort;
-    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
-
-    /* Flip the string to UTF-16 if required */
-    SetEncodingFlags(pStack, TEXT_Utf8);
-    rc = SetEncoding(pStack, encToFlags(enc)|MEM_Term);
-  }
-
-  return rc;
-}
+      (!((P)->flags&(MEM_Str|MEM_Blob)) && sqlite3VdbeMemStringify(P,enc))
 
 /*
 ** Convert the given stack entity into a string that has been obtained
@@ -176,22 +89,8 @@ static int hardStringify(Mem *pStack, u8 enc){
 ** will fit but this routine always mallocs for space.
 ** Return non-zero if we run out of memory.
 */
-#define Dynamicify(P, enc) \
-(((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P, enc):0)
-static int hardDynamicify(Mem *pStack, u8 enc){
-  int fg = pStack->flags;
-  char *z;
-  if( (fg & MEM_Str)==0 ){
-    hardStringify(pStack, enc);
-  }
-  assert( (fg & MEM_Dyn)==0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags |= MEM_Dyn;
-  return 0;
-}
+#define Dynamicify(P,enc) sqlite3VdbeMemDynamicify(P)
+
 
 /*
 ** An ephemeral string value (signified by the MEM_Ephem flag) contains
@@ -205,18 +104,8 @@ static int hardDynamicify(Mem *pStack, u8 enc){
 ** converts an MEM_Ephem string into an MEM_Dyn string.
 */
 #define Deephemeralize(P) \
-   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
-static int hardDeephem(Mem *pStack){
-  char *z;
-  assert( (pStack->flags & MEM_Ephem)!=0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags &= ~MEM_Ephem;
-  pStack->flags |= MEM_Dyn;
-  return 0;
-}
+   if( ((P)->flags&MEM_Ephem)!=0 \
+       && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
 /*
 ** Convert the given stack entity into a integer if it isn't one
@@ -226,19 +115,7 @@ static int hardDeephem(Mem *pStack){
 ** NULLs are converted into 0.
 */
 #define Integerify(P, enc) \
-if(((P)->flags&MEM_Int)==0){ hardIntegerify(P, enc); }
-static void hardIntegerify(Mem *pStack, u8 enc){
-  pStack->i = 0;
-  if( pStack->flags & MEM_Real ){
-    pStack->i = (int)pStack->r;
-    Release(pStack);
-  }else if( pStack->flags & MEM_Str ){
-    if( pStack->z ){
-      sqlite3atoi64(pStack->z, &pStack->i, enc);
-    }
-  }
-  pStack->flags = MEM_Int;
-}
+    if((P)->flags!=MEM_Int){ sqlite3VdbeMemIntegerify(P); }
 
 /*
 ** Get a valid Real representation for the given stack element.
@@ -246,21 +123,8 @@ static void hardIntegerify(Mem *pStack, u8 enc){
 ** Any prior string or integer representation is retained.
 ** NULLs are converted into 0.0.
 */
-#define Realify(P,enc) if(((P)->flags&MEM_Real)==0){ hardRealify(P,enc); }
-static void hardRealify(Mem *pStack, u8 enc){
-  if( pStack->flags & MEM_Str ){
-    SetEncodingFlags(pStack, enc);
-    SetEncoding(pStack, MEM_Utf8|MEM_Term);
-    pStack->r = sqlite3AtoF(pStack->z, 0);
-  }else if( pStack->flags & MEM_Int ){
-    pStack->r = pStack->i;
-  }else{
-    pStack->r = 0.0;
-  }
-/*  pStack->flags |= MEM_Real; */
-  pStack->flags = MEM_Real;
-}
-
+#define Realify(P,enc) \
+    if(((P)->flags&MEM_Real)==0){ sqlite3VdbeMemRealify(P); }
 
 
 /*
@@ -1158,29 +1022,26 @@ case OP_Concat: {
   int nField;
   int i, j;
   Mem *pTerm;
-  Mem zSep; /* Memory cell containing the seperator string, if any */
-  int termLen;  /* Bytes in the terminator character for this encoding */
-
-  termLen = (db->enc==TEXT_Utf8?1:2);
+  Mem mSep;     /* Memory cell containing the seperator string, if any */
 
   /* FIX ME: Eventually, P3 will be in database native encoding. But for
   ** now it is always UTF-8. So set up zSep to hold the native encoding of
   ** P3.
   */
   if( pOp->p3 ){
-    zSep.z = pOp->p3;
-    zSep.n = strlen(zSep.z)+1;
-    zSep.flags = MEM_Str|MEM_Static|MEM_Utf8|MEM_Term;
-    SetEncoding(&zSep, encToFlags(db->enc)|MEM_Term);
+    mSep.z = pOp->p3;
+    mSep.n = strlen(mSep.z);
+    mSep.flags = MEM_Str|MEM_Static|MEM_Term;
+    mSep.enc = TEXT_Utf8;
+    sqlite3VdbeChangeEncoding(&mSep, db->enc);
   }else{
-    zSep.flags = MEM_Null;
-    zSep.n = 0;
+    mSep.flags = MEM_Null;
   }
 
   /* Loop through the stack elements to see how long the result will be. */
   nField = pOp->p1;
   pTerm = &pTos[1-nField];
-  nByte = termLen + (nField-1)*(zSep.n - ((zSep.flags&MEM_Term)?termLen:0));
+  nByte = (nField-1)*mSep.n;
   for(i=0; i<nField; i++, pTerm++){
     assert( pOp->p2==0 || (pTerm->flags&MEM_Str) );
     if( pTerm->flags&MEM_Null ){
@@ -1188,7 +1049,7 @@ case OP_Concat: {
       break;
     }
     Stringify(pTerm, db->enc);
-    nByte += (pTerm->n - ((pTerm->flags&MEM_Term)?termLen:0));
+    nByte += pTerm->n;
   }
 
   if( nByte<0 ){
@@ -1205,33 +1066,32 @@ case OP_Concat: {
     /* Otherwise malloc() space for the result and concatenate all the
     ** stack values.
     */
-    zNew = sqliteMallocRaw( nByte );
+    zNew = sqliteMallocRaw( nByte+2 );
     if( zNew==0 ) goto no_mem;
     j = 0;
     pTerm = &pTos[1-nField];
     for(i=j=0; i<nField; i++, pTerm++){
-      int n = pTerm->n-((pTerm->flags&MEM_Term)?termLen:0);
+      int n = pTerm->n;
       assert( pTerm->flags & MEM_Str );
       memcpy(&zNew[j], pTerm->z, n);
       j += n;
-      if( i<nField-1 && !(zSep.flags|MEM_Null) ){
-        n = zSep.n-((zSep.flags&MEM_Term)?termLen:0);
-        memcpy(&zNew[j], zSep.z, n);
-        j += n;
+      if( i<nField-1 && !(mSep.flags|MEM_Null) ){
+        memcpy(&zNew[j], mSep.z, mSep.n);
+        j += mSep.n;
       }
     }
-    zNew[j++] = 0;
-    if( termLen==2 ){
-      zNew[j++] = 0;
-    }
-    assert( j==nByte );
+    zNew[j] = 0;
+    zNew[j+1] = 0;
+    assert( j==nByte-1 );
 
     if( pOp->p2==0 ){
       popStack(&pTos, nField);
     }
     pTos++;
-    pTos->n = nByte;
-    pTos->flags = MEM_Str|MEM_Dyn|MEM_Term|encToFlags(db->enc);
+    pTos->n = j;
+    pTos->flags = MEM_Str|MEM_Dyn|MEM_Term
+    pTos->enc = db->enc;
+    pTos->type = SQLITE3_TEXT;
     pTos->z = zNew;
   }
   break;
@@ -1553,12 +1413,16 @@ case OP_MustBeInt: {
     pTos->i = i;
   }else if( pTos->flags & MEM_Str ){
     i64 v;
-    if( !sqlite3atoi64(pTos->z, &v, db->enc) ){
+    if( sqlite3VdbeChangeEncoding(pTos, TEXT_Utf8)
+       || sqlite3VdbeNulTerminate(pTos) ){
+      goto no_mem;
+    }
+    if( !sqlite3atoi64(pTos->z, &v) ){
       double r;
-      if( !sqlite3IsNumber(pTos->z, 0, db->enc) ){
+      if( !sqlite3IsNumber(pTos->z, 0, TEXT_Utf8) ){
         goto mismatch;
       }
-      Realify(pTos, db->enc);
+      Realify(pTos, TEXT_Utf8);
       v = (int)pTos->r;
       r = (double)v;
       if( r!=pTos->r ){
@@ -1571,6 +1435,7 @@ case OP_MustBeInt: {
   }
   Release(pTos);
   pTos->flags = MEM_Int;
+  pTos->type = SQLITE3_INTEGER;
   break;
 
 mismatch:
@@ -4385,11 +4250,9 @@ case OP_SortNext: {
     pTos++;
     pTos->z = pSorter->pData;
     pTos->n = pSorter->nData;
-    /* FIX ME: I don't understand this. What does the sorter return? 
-    ** I thought it would be the commented out flags.
-    */
-    /* pTos->flags = MEM_Blob|MEM_Dyn; */
-    pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
+    pTos->flags = MEM_Blob|MEM_Dyn|MEM_Term;
+    pTos->enc = 0;
+    pTos->type = SQLITE3_BLOB;
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{

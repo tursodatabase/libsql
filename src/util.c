@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.88 2004/05/24 07:04:26 danielk1977 Exp $
+** $Id: util.c,v 1.89 2004/05/27 01:53:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -665,27 +665,23 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
 ** 32-bit numbers.  At that time, it was much faster than the
 ** atoi() library routine in RedHat 7.2.
 */
-int sqlite3atoi64(const char *zNum, i64 *pNum, u8 enc){
+int sqlite3atoi64(const char *zNum, i64 *pNum){
   i64 v = 0;
   int neg;
   int i, c;
-  int incr = (enc==TEXT_Utf8?1:2);
-  if( enc==TEXT_Utf16be ) zNum++;
   if( *zNum=='-' ){
     neg = 1;
-    zNum += incr;
+    zNum++;
   }else if( *zNum=='+' ){
     neg = 0;
-    zNum += incr;
+    zNum++;
   }else{
     neg = 0;
   }
-  for(i=0; (c=zNum[i])>='0' && c<='9'; i += incr){
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
     v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
-
-  /* FIX ME: Handle overflow of strings in UTF-16 here */
   return c==0 && i>0 && 
       (i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0));
 }

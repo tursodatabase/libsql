@@ -21,130 +21,232 @@
 #include "vdbeInt.h"
 
 /*
-** Given a Mem.flags value, return TEXT_Utf8, TEXT_Utf16le, or TEXT_Utf16be
-** as appropriate.
-*/
-#define flagsToEnc(F) \
-    (((F)&MEM_Utf8)?TEXT_Utf8: \
-       ((F)&MEM_Utf16be)?TEXT_Utf16be:TEXT_Utf16le)
-
-/*
 ** If pMem is a string object, this routine sets the encoding of the string
 ** (to one of UTF-8 or UTF16) and whether or not the string is
 ** nul-terminated. If pMem is not a string object, then this routine is
 ** a no-op.
 **
-** The second argument, "flags" consists of one of MEM_Utf8, MEM_Utf16le
-** or MEM_Utf16be, possible ORed with MEM_Term. If necessary this function 
-** manipulates the value stored by pMem so that it matches the flags passed
-** in "flags".
+** The second argument, "desiredEnc" is one of TEXT_Utf8, TEXT_Utf16le
+** or TEXT_Utf16be.  This routine changes the encoding of pMem to match
+** desiredEnc.
 **
 ** SQLITE_OK is returned if the conversion is successful (or not required).
 ** SQLITE_NOMEM may be returned if a malloc() fails during conversion
 ** between formats.
 */
-int sqlite3VdbeSetEncoding(Mem *pMem, int flags){
-  u8 enc1;    /* Current string encoding (TEXT_Utf* value) */
-  u8 enc2;    /* Required string encoding (TEXT_Utf* value) */
+int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
+  u8 oldEnd;    /* 
 
-  /* If this is not a string, do nothing. */
-  if( !(pMem->flags&MEM_Str) ){
+  /* If this is not a string, or if it is a string but the encoding is
+  ** already correct, do nothing. */
+  if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
 
-  enc1 = flagsToEnc(pMem->flags);
-  enc2 = flagsToEnc(flags);
-
-  if( enc1!=enc2 ){
-    if( enc1==TEXT_Utf8 || enc2==TEXT_Utf8 ){
-      /* If the current encoding does not match the desired encoding, then
-      ** we will need to do some translation between encodings.
-      */
-      char *z;
-      int n;
-      int rc = sqlite3utfTranslate(pMem->z,pMem->n,enc1,(void **)&z,&n,enc2);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+  if( pMem->enc==TEXT_Utf8 || desiredEnd==TEXT_Utf8 ){
+    /* If the current encoding does not match the desired encoding, then
+    ** we will need to do some translation between encodings.
+    */
+    char *z;
+    int n;
+    int rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc,
+                                 (void **)&z, &n, desiredEnd);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
   
-      /* Result of sqlite3utfTranslate is currently always dynamically
-      ** allocated and nul terminated. This might be altered as a performance
-      ** enhancement later.
-      */
-      pMem->z = z;
-      pMem->n = n;
-      pMem->flags = (MEM_Str | MEM_Dyn | MEM_Term | flags);
-    }else{
-      /* Must be translating between UTF-16le and UTF-16be. */
-      int i;
-      if( pMem->flags&MEM_Static ){
-        Dynamicify(pMem, enc1);
-      }
-      for(i=0; i<pMem->n; i+=2){
-        char c = pMem->z[i];
-        pMem->z[i] = pMem->z[i+1];
-        pMem->z[i+1] = c;
-      }
-      SetEncodingFlags(pMem, enc2);
+    /* Result of sqlite3utfTranslate is currently always dynamically
+    ** allocated and nul terminated. This might be altered as a performance
+    ** enhancement later.
+    */
+    pMem->z = z;
+    pMem->n = n;
+    pMem->flags &= ~(MEM_Ephem | MEM_Short | MEM_Static);
+    pMem->flags |= MEM_Str | MEM_Dyn | MEM_Term;
+  }else{
+    /* Must be translating between UTF-16le and UTF-16be. */
+    int i;
+    u8 *pFrom, *pTo;
+    sqlite3VdbeMemMakeWritable(pMem);
+    for(i=0, pFrom=pMem->z, pTo=&pMem->z[1]; i<pMem->n; i+=2, pFrom++, pTo++){
+      u8 temp = *pFrom;
+      *pFrom = *pTo;
+      *pTo = temp;
     }
   }
-
-  if( (flags&MEM_Term) && !(pMem->flags&MEM_Term) ){
-    /* If we did not do any translation, but currently the string is
-    ** not nul terminated (and is required to be), then we add the
-    ** nul terminator now. We never have to do this if we translated
-    ** the encoding of the string, as the translation functions return
-    ** nul terminated values.
-    */
-    int f = pMem->flags;
-    int nulTermLen = 2;     /* The number of 0x00 bytes to append */
-    if( enc2==MEM_Utf8 ){
-      nulTermLen = 1;
-    }
-
-    if( pMem->n+nulTermLen<=NBFS ){
-      /* If the string plus the nul terminator will fit in the Mem.zShort
-      ** buffer, and it is not already stored there, copy it there.
-      */
-      if( !(f&MEM_Short) ){
-        memcpy(pMem->z, pMem->zShort, pMem->n);
-        if( f&MEM_Dyn ){
-          sqliteFree(pMem->z);
-        }
-        pMem->z = pMem->zShort;
-        pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Dyn);
-        pMem->flags |= MEM_Short;
-      }
-    }else{
-      /* Otherwise we have to malloc for memory. If the string is already
-      ** dynamic, use sqliteRealloc(). Otherwise sqliteMalloc() enough
-      ** space for the string and the nul terminator, and copy the string
-      ** data there.
-      */
-      if( f&MEM_Dyn ){
-        pMem->z = (char *)sqliteRealloc(pMem->z, pMem->n+nulTermLen);
-        if( !pMem->z ){
-          return SQLITE_NOMEM;
-        }
-      }else{
-        char *z = (char *)sqliteMallocRaw(pMem->n+nulTermLen);
-        memcpy(z, pMem->z, pMem->n);
-        pMem->z = z;
-        pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
-        pMem->flags |= MEM_Dyn;
-      }
-    }
-
-    /* pMem->z now points at the string data, with enough space at the end
-    ** to insert the nul nul terminator. pMem->n has not yet been updated.
-    */
-    memcpy(&pMem->z[pMem->n], "\0\0", nulTermLen);
-    pMem->n += nulTermLen;
-    pMem->flags |= MEM_Term;
-  }
+  pMem->enc = desiredEnc;
   return SQLITE_OK;
 }
 
+/*
+** Make the given Mem object MEM_Dyn.
+**
+** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
+*/
+int sqlite3VdbeMemMakeDynamicify(Mem *pMem){
+  int n;
+  u8 *z;
+  if( (pMem->flags & (MEM_Ephem|MEM_Static|MEM_Short))==0 ){
+    return SQLITE_OK;
+  }
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  assert( pMem->flags & (MEM_Str|MEM_Blob) );
+  z = sqliteMallocRaw( n+2 )
+  if( z==0 ){
+    return SQLITE_NOMEM;
+  }
+  pMem->flags |= MEM_Dyn|MEM_Term;
+  memcpy(z, pMem->z, n );
+  z[n] = 0;
+  z[n+1] = 0;
+  pMem->z = z;
+  pMem->flags &= ~(MEM_Ephem|MEM_Static|MEM_Short);
+}
+
+/*
+** Make the given Mem object either MEM_Short or MEM_Dyn so that bytes
+** of the Mem.z[] array can be modified.
+**
+** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
+*/
+int sqlite3VdbeMemMakeWritable(Mem *pMem){
+  int n;
+  u8 *z;
+  if( (pMem->flags & (MEM_Ephem|MEM_Static))==0 ){
+    return SQLITE_OK;
+  }
+  assert( (pMem->flags & MEM_Dyn)==0 );
+  assert( pMem->flags & (MEM_Str|MEM_Blob) );
+  if( (n = pMem->n)+2<sizeof(pMem->zShort) ){
+    z = pMem->zShort;
+    pMem->flags |= MEM_Short|MEM_Term;
+  }else{
+    z = sqliteMallocRaw( n+2 )
+    if( z==0 ){
+      return SQLITE_NOMEM;
+    }
+    pMem->flags |= MEM_Dyn|MEM_Term;
+  }
+  memcpy(z, pMem->z, n );
+  z[n] = 0;
+  z[n+1] = 0;
+  pMem->z = z;
+  pMem->flags &= ~(MEM_Ephem|MEM_Static);
+}
+
+/*
+** Make sure the given Mem is \u0000 terminated.
+*/
+int sqlite3VdbeMemNulTerminate(Mem *pMem){
+  if( (pMem->flags & MEM_Term)!=0 || pMem->flags & (MEM_Str|MEM_Blob))==0 ){
+    return SQLITE_OK;   /* Nothing to do */
+  }
+  /* Only static or ephemeral strings can be unterminated */
+  assert( (pMem->flags & (MEM_Static|MEM_Ephem))!=0 );
+  sqlite3VdbeMemMakeWriteable(pMem);
+}
+
+/*
+** Add MEM_Str to the set of representations for the given Mem.
+** A NULL is converted into an empty string.  Numbers are converted
+** using sqlite3_snprintf().  Converting a BLOB to a string is a
+** no-op.
+**
+** Existing representations MEM_Int and MEM_Real are *not* invalidated.
+** But MEM_Null is.
+*/
+int sqlite3VdbeMemStringify(Mem *pMem, int enc){
+  int rc = SQLITE_OK;
+  int fg = pMem->flags;
+
+  assert( !(fg&(MEM_Str|MEM_Blob)) );
+  assert( fg&(MEM_Int|MEM_Real|MEM_Null) );
+
+  if( fg & MEM_Null ){      
+    /* A NULL value is converted to a zero length string */
+    u8 *z = pMem->zShort;
+    z[0] = 0;
+    z[1] = 0;
+    pMem->flags = MEM_Str | MEM_Short | MEM_Term;
+    pMem->z = z;
+    pMem->n = 0;
+    pMem->enc = enc;
+  }else{
+    /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
+    ** string representation of the value. Then, if the required encoding
+    ** is UTF-16le or UTF-16be do a translation.
+    ** 
+    ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
+    */
+    u8 *z = pMem->zShort;
+    if( fg & MEM_Real ){
+      sqlite3_snprintf(NBFS, z, "%.15g", pMem->r);
+    }else{
+      assert( fg & MEM_Int );
+      sqlite3_snprintf(NBFS, z, "%lld", pMem->i);
+    }
+    pMem->n = strlen(z);
+    pMem->z = n;
+    pMem->enc = TEXT_Utf8;
+    pMem->flags |= MEM_Str | MEM_Short | MEM_Term;
+    sqlite3VdbeMemChangeEncoding(pMem, enc);
+  }
+  return rc;
+}
+
+/*
+** Convert the Mem to have representation MEM_Int only.  All
+** prior representations are invalidated.  NULL is converted into 0.
+*/
+int sqlite3VdbeMemIntegerify(Mem *pMem){
+  if( pMem->flags & MEM_Int ){
+    /* Do nothing */
+  }else if( pMem->flags & MEM_Real ){
+    pMem->i = (i64)pMem->r;
+  }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
+    if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
+       || sqlite3VdbeNulTerminate(pMem) ){
+      return SQLITE_NOMEM;
+    }
+    assert( pMem->z );
+    sqlite3atoi64(pMem->z, &pMem->i);
+  }else{
+    pMem->i = 0;
+  }
+  Release(pMem);
+  pMem->flags = MEM_Int;
+  pMem->type = SQLITE3_INTEGER;
+}
+
+/*
+** Add MEM_Real to the set of representations for pMem.  Prior
+** prior representations other than MEM_Null retained.  NULL is
+** converted into 0.0.
+*/
+int sqlite3VdbeMemRealify(Mem *pMem){
+  if( pMem->flags & MEM_Int ){
+    pMem->r = pMem->r;
+    pMem->flags |= MEM_Real;
+  }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
+    if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
+       || sqlite3VdbeNulTerminate(pMem) ){
+      return SQLITE_NOMEM;
+    }
+    assert( pMem->z );
+    pMem->r = sqlite3AtoF(pMem->z, 0);
+    Release(pMem);
+    pMem->flags = MEM_Real;
+    pMem->type = SQLITE3_INTEGER;
+  }else{
+    pMem->r = 0.0;
+    pMem->flags = MEM_Real;
+    pMem->type = SQLITE3_INTEGER;
+  }
+}
+
+/*
+** Release any memory held by the Mem
+*/
 static void releaseMem(Mem *p){
   if( p->flags & MEM_Dyn ){
     sqliteFree(p);
@@ -157,26 +259,29 @@ static void releaseMem(Mem *p){
 void sqlite3VdbeMemSetNull(Mem *pMem){
   releaseMem(pMem);
   pMem->flags = MEM_Null;
+  pMem->type = SQLITE3_NULL;
 }
 
 /*
 ** Delete any previous value and set the value stored in *pMem to val,
 ** manifest type INTEGER.
 */
-void sqlite3VdbeMemSetInt(Mem *pMem, i64 val){
+void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   releaseMem(pMem);
   pMem->i = val;
   pMem->flags = MEM_Int;
+  pMem->type = SQLITE3_INTEGER;
 }
 
 /*
 ** Delete any previous value and set the value stored in *pMem to val,
 ** manifest type REAL.
 */
-void sqlite3VdbeMemSetReal(Mem *pMem, double val){
+void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
   releaseMem(pMem);
   pMem->r = val;
   pMem->flags = MEM_Real;
+  pMem->type = SQLITE3_FLOAT;
 }
 
 /*
@@ -184,36 +289,31 @@ void sqlite3VdbeMemSetReal(Mem *pMem, double val){
 */
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   releaseMem(pTo);
-  memcpy(pTo, pFrom, sizeof(*pFrom));
-  if( pTo->flags&MEM_Short ){
-    pTo->z = pTo->zShort;
-  }else if( pTo->flags&(MEM_Ephem|MEM_Dyn) ){
-    pTo->flags = pTo->flags&(~(MEM_Static|MEM_Ephem|MEM_Short|MEM_Dyn));
-    if( pTo->n>NBFS ){
-      pTo->z = sqliteMalloc(pTo->n);
-      if( !pTo->z ) return SQLITE_NOMEM;
-      pTo->flags |= MEM_Dyn;
-    }else{
-      pTo->z = pTo->zShort;
-      pTo->flags |= MEM_Short;
-    }
-    memcpy(pTo->z, pFrom->z, pTo->n);
+  memcpy(pTo, pFrom, sizeof(*pFrom)-sizeof(pFrom->zShort));
+  if( pTo->flags & (MEM_Str|MEM_Blob) ){
+    pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
+    pTo->flags |= MEM_Ephem;
+    sqlite3VdbeMemMakeWriteable(pTo);
   }
   return SQLITE_OK;
 }
 
+/*
+** Change the value of a Mem to be a string or a BLOB.
+*/
 int sqlite3VdbeMemSetStr(
   Mem *pMem,          /* Memory cell to set to string value */
   const char *z,      /* String pointer */
   int n,              /* Bytes in string, or negative */
-  u8 enc,             /* Encoding of z */
+  u8 enc,             /* Encoding of z.  0 for BLOBs */
   int eCopy           /* True if this function should make a copy of z */
 ){
   Mem tmp;
 
   releaseMem(pMem);
   if( !z ){
-    /* If z is NULL, just set *pMem to contain NULL. */
+    pMem->flags = MEM_Null;
+    pMem->type = SQLITE3_NULL;
     return SQLITE_OK;
   }
 
@@ -223,7 +323,8 @@ int sqlite3VdbeMemSetStr(
   }else{
     pMem->flags = MEM_Static|MEM_Str;
   }
-  pMem->flags |= encToFlags(enc);
+  pMem->enc = enc;
+  pMem->type = enc==0 ? SQLITE3_BLOB : SQLITE3_TEXT;
   pMem->n = n;
   switch( enc ){
     case 0:
@@ -231,22 +332,16 @@ int sqlite3VdbeMemSetStr(
       break;
 
     case TEXT_Utf8:
-      pMem->flags |= MEM_Utf8;
       if( n<0 ){
-        pMem->n = strlen(z)+1;
-        pMem->flags |= MEM_Term;
-      }else if( z[pMem->n-1]==0 ){
+        pMem->n = strlen(z);
         pMem->flags |= MEM_Term;
       }
       break;
 
     case TEXT_Utf16le:
     case TEXT_Utf16be:
-      pMem->flags |= (enc==TEXT_Utf16le?MEM_Utf16le:MEM_Utf16be);
       if( n<0 ){
-        pMem->n = sqlite3utf16ByteLen(z,-1)+1;
-        pMem->flags |= MEM_Term;
-      }else if( z[pMem->n-1]==0 && z[pMem->n-2]==0 ){
+        pMem->n = sqlite3utf16ByteLen(z,-1);
         pMem->flags |= MEM_Term;
       }
       break;
@@ -254,57 +349,9 @@ int sqlite3VdbeMemSetStr(
     default:
       assert(0);
   }
-  Deephemeralize(pMem);
-}
-
-int sqlite3VdbeMemNulTerminate(Mem *pMem){
-  int nulTermLen;
-  int f = pMem->flags;
-
-  assert( pMem->flags&MEM_Str && !pMem->flags&MEM_Term );
-  assert( flagsToEnc(pMem->flags) );
-
-  nulTermLen = (flagsToEnc(f)==TEXT_Utf8?1:2);
-
-  if( pMem->n+nulTermLen<=NBFS ){
-    /* If the string plus the nul terminator will fit in the Mem.zShort
-    ** buffer, and it is not already stored there, copy it there.
-    */
-    if( !(f&MEM_Short) ){
-      memcpy(pMem->z, pMem->zShort, pMem->n);
-      if( f&MEM_Dyn ){
-        sqliteFree(pMem->z);
-      }
-      pMem->z = pMem->zShort;
-      pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Dyn);
-      pMem->flags |= MEM_Short;
-    }
-  }else{
-    /* Otherwise we have to malloc for memory. If the string is already
-    ** dynamic, use sqliteRealloc(). Otherwise sqliteMalloc() enough
-    ** space for the string and the nul terminator, and copy the string
-    ** data there.
-    */
-    if( f&MEM_Dyn ){
-      pMem->z = (char *)sqliteRealloc(pMem->z, pMem->n+nulTermLen);
-      if( !pMem->z ){
-        return SQLITE_NOMEM;
-      }
-    }else{
-      char *z = (char *)sqliteMalloc(pMem->n+nulTermLen);
-      memcpy(z, pMem->z, pMem->n);
-      pMem->z = z;
-      pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
-      pMem->flags |= MEM_Dyn;
-    }
+  if( eCopy ){
+    sqlite3VdbeMemMakeWriteable(pMem);
   }
-
-  /* pMem->z now points at the string data, with enough space at the end
-  ** to insert the nul nul terminator. pMem->n has not yet been updated.
-  */
-  memcpy(&pMem->z[pMem->n], "\0\0", nulTermLen);
-  pMem->n += nulTermLen;
-  pMem->flags |= MEM_Term;
 }
 
 /*
