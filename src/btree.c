@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.102 2004/02/14 17:35:07 drh Exp $
+** $Id: btree.c,v 1.103 2004/03/10 13:42:38 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1031,10 +1031,15 @@ static int fileBtreeRollbackCkpt(Btree *pBt){
 ** root page of a b-tree.  If it is not, then the cursor acquired
 ** will not work correctly.
 */
-static int fileBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
+static 
+int fileBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   int rc;
   BtCursor *pCur, *pRing;
 
+  if( pBt->readOnly && wrFlag ){
+    *ppCur = 0;
+    return SQLITE_READONLY;
+  }
   if( pBt->page1==0 ){
     rc = lockBtree(pBt);
     if( rc!=SQLITE_OK ){

@@ -1,5 +1,5 @@
-C The\sshell\sprogram\snow\signores\sextra\swhitespace\sat\sthe\send\sof\sdot-commands.\s(CVS\s1288)
-D 2004-03-09T13:37:45
+C The\sBTree\slayer\snow\sreturns\sSQLITE_READONLY\son\san\sattempt\sto\sopen\sa\swrite\r\ncursor\son\sa\sread-only\sdatabase.\s\sPreviously,\sthe\sfailure\swould\snot\soccur\r\nuntil\sthere\swas\san\sattempt\sto\swrite\sto\sthe\scursor.\s(CVS\s1289)
+D 2004-03-10T13:42:38
 F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def a4d2ada1c3667fd1bc18a37bf2ff9dcf138e0d51
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c b01db0d3211f673d8e670abf7eaad04591d40d14
 F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
-F src/btree.c 0a40efb01fa3a431a16d8604f603431d8c9cebfa
+F src/btree.c 08a05b925b348c05d79b9b062b79e50d565678de
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
 F src/build.c c8ab8b467d9a64254b0d4d42083f6313b3a980d1
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4d5bbb3dc32412ee7fa5dec42d3278836a362e8c
-R 7966201eb81f0777d388a3d9d0fc9ed6
+P b6817e99bd97f427b1cfd16328d612e1a7d70d0a
+R dd6d5acc23ee81f1b56620c2e34fbfdc
 U drh
-Z 2e3536299dacf293bc7c5149672be287
+Z e8a7d40432246c6ffa11556ef33fac86
