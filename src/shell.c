@@ -12,18 +12,19 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.52 2002/04/18 02:53:05 persicom Exp $
+** $Id: shell.c,v 1.53 2002/04/18 12:39:03 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "sqlite.h"
 #include <ctype.h>
-#include <pwd.h>
-#include <sys/types.h>
 
 #if !defined(_WIN32) && !defined(WIN32)
 # include <signal.h>
+# include <pwd.h>
+# include <unistd.h>
+# include <sys/types.h>
 #endif
 
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
@@ -473,8 +474,6 @@ static char zHelp[] =
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
   ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
-  "                       \"off\" will revert to the output mode that was\n"
-  "                       previously in effect\n"
   ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
@@ -485,23 +484,13 @@ static char zHelp[] =
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
-  "                       \"sqlite > \" and \"   ...> \"\n"
-  "                       with the strings MAIN and CONTINUE\n"
-  "                       CONTINUE is optional.\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".reindex ?TABLE?       Rebuild indices\n"
 /*  ".rename OLD NEW        Change the name of a table or index\n" */
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
-  ".show                  Show the current values for the following:\n"
-  "                       .echo\n"
-  "                       .explain\n"
-  "                       .mode\n"
-  "                       .nullvalue\n"
-  "                       .output\n"
-  "                       .separator\n"
-  "                       .width\n"
+  ".show                  Show the current values for various settings\n"
   ".tables ?PATTERN?      List names of tables matching a pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
@@ -592,10 +581,10 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     exit(0);
   }else
 
-  if( c=='e' && strncmp(azArg[0], "explain", n)==0 && nArg>1){
+  if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
     int j;
-    char *z = azArg[1];
-    int val = atoi(azArg[1]);
+    char *z = nArg>=2 ? azArg[1] : "1";
+    int val = atoi(z);
     for(j=0; z[j]; j++){
       if( isupper(z[j]) ) z[j] = tolower(z[j]);
     }
@@ -721,7 +710,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }
   }else
 
-  if( c=='p' && strncmp(azArg[0], "prompt", n)==0 && nArg==2 || nArg==3){
+  if( c=='p' && strncmp(azArg[0], "prompt", n)==0 && (nArg==2 || nArg==3)){
     if( nArg >= 2) {
       strncpy(mainPrompt,azArg[1],(int)ArraySize(mainPrompt)-1);
     }
@@ -829,6 +818,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     int i;
     fprintf(p->out,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" : "off");
+    fprintf(p->out,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
     fprintf(p->out,"%9.9s: %s\n","nullvalue", p->nullvalue);
     fprintf(p->out,"%9.9s: %s\n","output", strlen(p->outfile) ? p->outfile : "stdout");
@@ -960,18 +950,20 @@ static void process_sqliterc(struct callback_data *p,
 
   char *home_dir = NULL;
   char *sqliterc = sqliterc_override;
-  struct passwd *pwent;
-  uid_t uid = getuid();
   FILE *in = NULL;
 
   if (sqliterc == NULL) {
     /* Figure out the user's home directory */
+#if !defined(_WIN32) && !defined(WIN32)
+    struct passwd *pwent;
+    uid_t uid = getuid();
     while( (pwent=getpwent()) != NULL) {
       if(pwent->pw_uid == uid) {
         home_dir = pwent->pw_dir;
         break;
       }
     }
+#endif
 
     if (!home_dir) {
       home_dir = getenv("HOME");
@@ -1003,7 +995,7 @@ static void process_sqliterc(struct callback_data *p,
   } else {
     printf("Loading resources from %s\n",sqliterc);
     process_input(p,in);
-    close (in);
+    fclose(in);
   }
   return;
 }
