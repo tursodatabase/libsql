@@ -1,5 +1,5 @@
-C Version\s2.8.3\s(CVS\s1002)
-D 2003-06-04T12:44:27
+C Change\sthe\s"database_list"\spragma\sto\sreturn\sa\sthird\scolumn\scontaining\sthe\nfilename\sof\sthe\sunderlying\sdatabase\sfile.\s\sAlways\suse\san\sin-memory\sTEMP\ndatabase\swith\san\sin-memory\smain\sdatabase.\s(CVS\s1003)
+D 2003-06-04T15:48:33
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,14 +33,14 @@ F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 6a61c6d1ef17396d0e87e555806653fddab0b084
-F src/main.c 945f9b6855007b28a6c910584d1ca5adff92d821
+F src/main.c c785a3d4675b26cde2d69015aa1090d69ff0da43
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 080238f03015057879cdf53bc4af9e497f2ba724
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 917250e5d86bdee752355e6617ea2e8ee12438bf
-F src/pragma.c ec64704e61286948f39157617f1ce2f506dd1b74
+F src/pragma.c f439a6157fe7c8d66dc2c6bfde2abaf23e770e1d
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c96f5bf0d7b75c8091f78dc2b9e3937949642ce5
-R e31e8c7cdbafc68dc5929b52631fff51
+P 433570e3e6caa52b9e480a22529dde6385a3c7d3
+R cb2900943d7c0b51209a7805a653dfeb
 U drh
-Z aee5f3bfe272c0c6eeead46ab85c86d4
+Z 3de7c4883d1691228d569396e6e62416

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.133 2003/06/02 18:17:33 drh Exp $
+** $Id: main.c,v 1.134 2003/06/04 15:48:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -440,6 +440,9 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   }
   
   /* Open the backend database driver */
+  if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
+    db->temp_store = 2;
+  }
   rc = sqliteBtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     switch( rc ){
