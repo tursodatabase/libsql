@@ -1,5 +1,5 @@
-C Removed\snever-used\spragma\s"result_set_details".\s(CVS\s964)
-D 2003-05-10T03:03:34
+C Removed\snever-used\ssymbol\sSQLITE_ResultDetails.\s(CVS\s965)
+D 2003-05-10T03:04:34
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
 F src/shell.c 89a14538b40fbfa15b0ad10b3367aab272bd9f15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
-F src/sqliteInt.h a3d84942dacaf72fbe1426adfbd37e8cf5f57e97
+F src/sqliteInt.h 9b64d8225a26f3d5a376370b31060dd70bcc362b
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
 F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6a76bd9590f372411e697f002285fe36ff3787ee
-R 74f788b873e6394b28e13a7884967ff8
+P bf558e79524c04339f1174dc935e39d47cb33457
+R dbcdc1e6ba937154b079e14cdd4eab7b
 U jplyon
-Z ce7efc80b41796afb0acc1ade34d51d2
+Z c717a1a241516bca947b8579016988c0
