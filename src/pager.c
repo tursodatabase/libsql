@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.88 2003/08/26 11:25:58 drh Exp $
+** @(#) $Id: pager.c,v 1.89 2003/08/26 11:41:27 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -316,7 +316,7 @@ static int write32bits(OsFile *fd, u32 val){
 */
 static void store32bits(u32 val, PgHdr *p, int offset){
   unsigned char *ac;
-  ac = &((char*)PGHDR_TO_DATA(p))[offset];
+  ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
   if( journal_format<=1 ){
     memcpy(ac, &val, 4);
   }else{

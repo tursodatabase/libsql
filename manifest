@@ -1,5 +1,5 @@
-C Try\sto\swork\saround\sa\sbug\sin\sVC++\sby\sonly\spassing\sunsigned\scharacters\sto\nthe\sisspace()\sroutine.\s\sBug\sreported\son\sthe\smailing\slist.\s(CVS\s1087)
-D 2003-08-26T11:35:00
+C Fix\scompiler\swarnings\sunder\sOpenVMS.\s\sTicket\s#357.\s(CVS\s1088)
+D 2003-08-26T11:41:27
 F Makefile.in f7e916ae863393827fa6a4cb292e3398096edcf1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
 F src/expr.c 03c321ac66c1e998c2e0faf22184b5a808b559ca
-F src/func.c 8cd63ca63d0f5115c371ee3888bcc94ed7200c1d
+F src/func.c be22d719450ffa4c2e04adec96d9116a4c0cdb62
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c dc200ae04a36bd36e575272a069e20c528b7fbdf
@@ -37,7 +37,7 @@ F src/main.c 2500392bad5629b6d70b06ac5a076958acb49b92
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 97df440bc71f65e22df5d3d920ce39551c0a5f5a
 F src/os.h 729395fefcca4b81ae056aa9ff67b72bb40dd9e0
-F src/pager.c 48abfc7dae5259b7ca040a335bf3cd6e05ca761e
+F src/pager.c 77e1a7de50197e5fc87353c36006a304756b0747
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 16aed0e3ed05445fa7f6a4209cc054208c7083c0
 F src/pragma.c cee60f17679210e8acd30d5bdee855716d0c898c
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P eebc82b77dbf35a18d2eae47336038d4b67806c6
-R 64a387695e85e253e6f4e85fdfd7e471
+P cbe32216966c987902ceb4d85332fc95801dbda2
+R ddd7131f94b88ef749e9dcf2a2026ce5
 U drh
-Z b4e08592f479e81537e4664dee3f1616
+Z bc22588721b74c4fdc0bad5666b4494e

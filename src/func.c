@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.29 2003/08/20 01:03:34 drh Exp $
+** $Id: func.c,v 1.30 2003/08/26 11:41:27 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -220,7 +220,9 @@ static void last_insert_rowid(sqlite_func *context, int arg, const char **argv){
 */
 static void likeFunc(sqlite_func *context, int arg, const char **argv){
   if( argv[0]==0 || argv[1]==0 ) return;
-  sqlite_set_result_int(context, sqliteLikeCompare(argv[0], argv[1]));
+  sqlite_set_result_int(context, 
+    sqliteLikeCompare((const unsigned char*)argv[0],
+                      (const unsigned char*)argv[1]));
 }
 
 /*
@@ -234,7 +236,9 @@ static void likeFunc(sqlite_func *context, int arg, const char **argv){
 */
 static void globFunc(sqlite_func *context, int arg, const char **argv){
   if( argv[0]==0 || argv[1]==0 ) return;
-  sqlite_set_result_int(context, sqliteGlobCompare(argv[0], argv[1]));
+  sqlite_set_result_int(context,
+    sqliteGlobCompare((const unsigned char*)argv[0],
+                      (const unsigned char*)argv[1]));
 }
 
 /*
