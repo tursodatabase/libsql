@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite_temp_directory\sglobal\svariable\swhich,\sif\sset,\sdefines\sthe\ndirectory\sin\swhich\stemporary\sfiles\sare\screated.\s(CVS\s1316)
-D 2004-05-07T00:57:06
+C Fix\sa\smemory\sleak\sin\sDETACH\swhen\susing\sthe\scodec.\s(CVS\s1317)
+D 2004-05-07T01:46:01
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F src/attach.c b01db0d3211f673d8e670abf7eaad04591d40d14
+F src/attach.c 026702566f941bf2bb158a0aaa86bfeb65910aa6
 F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
 F src/btree.c 08a05b925b348c05d79b9b062b79e50d565678de
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5a33e0b06f495628704d0881940a792f342facc7
-R 43b881fc6eae3c147e100628eed1f28a
+P c90ed20dc4f95eb06a5259578597593f5968bfb7
+R d8249d1567d218e36b49e8c43150a27b
 U drh
-Z fa1184d1e363db84111f9914f4de11d2
+Z 024ab278400ed22150e07d78741f9bbc

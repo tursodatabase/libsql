@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.10 2004/02/12 18:46:39 drh Exp $
+** $Id: attach.c,v 1.10.2.1 2004/05/07 01:46:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -137,15 +137,17 @@ void sqliteDetach(Parse *pParse, Token *pDbname){
   int i;
   sqlite *db;
   Vdbe *v;
+  Db *pDb;
 
   v = sqliteGetVdbe(pParse);
   sqliteVdbeAddOp(v, OP_Halt, 0, 0);
   if( pParse->explain ) return;
   db = pParse->db;
   for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].pBt==0 || db->aDb[i].zName==0 ) continue;
-    if( strlen(db->aDb[i].zName)!=pDbname->n ) continue;
-    if( sqliteStrNICmp(db->aDb[i].zName, pDbname->z, pDbname->n)==0 ) break;
+    pDb = &db->aDb[i];
+    if( pDb->pBt==0 || pDb->zName==0 ) continue;
+    if( strlen(pDb->zName)!=pDbname->n ) continue;
+    if( sqliteStrNICmp(pDb->zName, pDbname->z, pDbname->n)==0 ) break;
   }
   if( i>=db->nDb ){
     sqliteErrorMsg(pParse, "no such database: %T", pDbname);
@@ -160,10 +162,11 @@ void sqliteDetach(Parse *pParse, Token *pDbname){
     return;
   }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
-  sqliteBtreeClose(db->aDb[i].pBt);
-  db->aDb[i].pBt = 0;
-  sqliteFree(db->aDb[i].zName);
+  sqliteBtreeClose(pDb->pBt);
+  pDb->pBt = 0;
+  sqliteFree(pDb->zName);
   sqliteResetInternalSchema(db, i);
+  if( pDb->pAux && pDb->xFreeAux ) pDb->xFreeAux(pDb->pAux);
   db->nDb--;
   if( i<db->nDb ){
     db->aDb[i] = db->aDb[db->nDb];
