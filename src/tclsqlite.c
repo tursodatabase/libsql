@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.85 2004/06/12 09:25:22 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.86 2004/06/14 11:43:46 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -659,7 +659,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** call to sqlite3_exec().
   */
   case DB_ERRORCODE: {
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(pDb->rc));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_errcode(pDb->db)));
     break;
   }
    

@@ -1,5 +1,5 @@
-C Don't\sinvoke\sauthorisation\scallback\sduring\sdatabase\sinitialisation.\s(CVS\s1588)
-D 2004-06-14T11:35:18
+C Have\sthe\sTCL\s'errorcode'\sinterface\scall\ssqlite3_errcode().\s(CVS\s1589)
+D 2004-06-14T11:43:46
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
 F src/sqlite.h.in 36c253844656186ca53e1999efa6ef7b44f88779
 F src/sqliteInt.h 924f0bcb493722c90cec7b19a240a37a4f01bbe7
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
-F src/tclsqlite.c f094cc80cdbc87178c1e28db7749e8770b301554
+F src/tclsqlite.c 6f88be282a3617c6739c043fd13571b5f2fe9922
 F src/test1.c e7588e3e55f7595c76874a4b9c6365e891ac69d1
 F src/test2.c 05f810c90cf6262d5f352860e87d41a3f34207f9
 F src/test3.c beafd0ccf7b9ae784744be1b1e66ffe8f64c25da
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2737505f28e37627ed6091e356d005624e1f49fa
-R 435424555e597f57c1fb5a99c2aa7338
+P 293fbf0aa5c221bc341d0d9afc73d459f427f940
+R 888007395645f5297c33209c47df9ae4
 U danielk1977
-Z 02907838488a8b54954c599b9995e751
+Z d9668c3a4b8e6a851d44ddfa1603077f
