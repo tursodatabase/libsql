@@ -1,5 +1,5 @@
-C Version\s2.5.4\s(CVS\s656)
-D 2002-07-01T12:35:51
+C Fix\sfor\sticket\s91:\sModify\sthe\s"publish.sh"\sscript\sto\suse\sthe\snew\smingw\ncross-compiler\sinstalled\son\sthe\sdevelopment\splatform.\s(CVS\s657)
+D 2002-07-02T11:55:33
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh d115bd49631e3bb0d799e7dc1da51f9866d67647
+F publish.sh 1a04b9aa0d9c9661e338268343476ed0851c5778
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f9d77140aed301775b2b8dd88d464cc38edfe192
-R 261767fcc4e66f8e3e7a27a84ebcaa52
+P f7159fde6b8692f91fa8a3c928dc219d0f3d8884
+R 3d0d0f4fa9a98d753eaa2c7acc814e2d
 U drh
-Z 1848cebc2c040461ee0a5dad10250356
+Z 549a099bb6b0ce21b34627ac400d3d9b

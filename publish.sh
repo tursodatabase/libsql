@@ -57,7 +57,7 @@ TCLDIR=/home/drh/tcltk/8.2win
 TCLSTUBLIB=$TCLDIR/tclstub82.a
 PATH=$PATH:/opt/mingw/bin
 OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DTHREADSAFE=1'
-CC="i386-mingw32-gcc -O2 $OPTS -I. -I$TCLDIR"
+CC="i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR"
 rm shell.c
 for i in *.c; do
   CMD="$CC -c $i"
@@ -67,14 +67,14 @@ done
 echo 'EXPORTS' >tclsqlite.def
 echo 'Tclsqlite_Init' >>tclsqlite.def
 echo 'Sqlite_Init' >>tclsqlite.def
-i386-mingw32-dllwrap \
+i386-mingw32msvc-dllwrap \
      --def tclsqlite.def -v --export-all \
-     --driver-name i386-mingw32-gcc \
-     --dlltool-name i386-mingw32-dlltool \
-     --as i386-mingw32-as \
+     --driver-name i386-mingw32msvc-gcc \
+     --dlltool-name i386-mingw32msvc-dlltool \
+     --as i386-mingw32msvc-as \
      --target i386-mingw32 \
      -dllname tclsqlite.dll -lmsvcrt *.o $TCLSTUBLIB
-i386-mingw32-strip tclsqlite.dll
+i386-mingw32msvc-strip tclsqlite.dll
 mv tclsqlite.dll ..
 rm tclsqlite.o
 cat >sqlite.def <<\END_OF_FILE
@@ -104,14 +104,14 @@ sqliteMalloc
 sqliteFree
 sqliteRealloc
 END_OF_FILE
-i386-mingw32-dllwrap \
+i386-mingw32msvc-dllwrap \
      --def sqlite.def -v --export-all \
-     --driver-name i386-mingw32-gcc \
-     --dlltool-name i386-mingw32-dlltool \
-     --as i386-mingw32-as \
+     --driver-name i386-mingw32msvc-gcc \
+     --dlltool-name i386-mingw32msvc-dlltool \
+     --as i386-mingw32msvc-as \
      --target i386-mingw32 \
      -dllname sqlite.dll -lmsvcrt *.o
-i386-mingw32-strip sqlite.dll
+i386-mingw32msvc-strip sqlite.dll
 mv sqlite.dll sqlite.def ..
 cd ..
 rm -f tclsqlite.zip sqlitedll.zip
@@ -124,7 +124,7 @@ make target_source
 cd tsrc
 rm tclsqlite.c
 OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
-i386-mingw32-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite.exe
+i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite.exe
 mv sqlite.exe ..
 cd ..
 rm -f sqlite.zip
