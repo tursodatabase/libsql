@@ -921,18 +921,18 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   int rc;
   Mem *pColName;
-  assert( idx<p->nResColumn );
+  assert( idx<(2*p->nResColumn) );
 
   /* If the Vdbe.aColName array has not yet been allocated, allocate
   ** it now.
   */
   if( !p->aColName ){
     int i;
-    p->aColName = (Mem *)sqliteMalloc(sizeof(Mem)*p->nResColumn);
+    p->aColName = (Mem *)sqliteMalloc(sizeof(Mem)*p->nResColumn*2);
     if( !p->aColName ){
       return SQLITE_NOMEM;
     }
-    for(i=0; i<p->nResColumn; i++){
+    for(i=0; i<(2*p->nResColumn); i++){
       p->aColName[i].flags = MEM_Null;
     }
   }

@@ -330,67 +330,38 @@ const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
   return sqlite3_value_text16(pColName);
 }
 
-
-/*
-** This routine returns either the column name, or declaration type (see
-** sqlite3_column_decltype16() ) of the 'i'th column of the result set of
-** SQL statement pStmt. The returned string is UTF-16 encoded.
-**
-** The declaration type is returned if 'decltype' is true, otherwise
-** the column name.
-*/
-static const void *columnName16(sqlite3_stmt *pStmt, int i, int decltype){
-  Vdbe *p = (Vdbe *)pStmt;
-
-  if( i>=sqlite3_column_count(pStmt) || i<0 ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
-    return 0;
-  }
-
-  if( decltype ){
-    i += p->nResColumn;
-  }
-
-  if( !p->azColName16 ){
-    p->azColName16 = (void **)sqliteMalloc(sizeof(void *)*p->nResColumn*2);
-    if( !p->azColName16 ){
-      sqlite3Error(p->db, SQLITE_NOMEM, 0);
-      return 0;
-    }
-  }
-  if( !p->azColName16[i] ){
-    if( SQLITE3_BIGENDIAN ){
-      p->azColName16[i] = sqlite3utf8to16be(p->azColName[i], -1);
-    }
-    if( !p->azColName16[i] ){
-      sqlite3Error(p->db, SQLITE_NOMEM, 0);
-      return 0;
-    }
-  }
-  return p->azColName16[i];
-}
-
 /*
 ** Return the column declaration type (if applicable) of the 'i'th column
 ** of the result set of SQL statement pStmt, encoded as UTF-8.
 */
-const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int i){
+const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int N){
   Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
 
-  if( i>=sqlite3_column_count(pStmt) || i<0 ){
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
     sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
-  return p->azColName[i+p->nResColumn];
+  pColName = &(p->aColName[N+sqlite3_column_count(pStmt)]);
+  return sqlite3_value_text(pColName);
 }
 
 /*
 ** Return the column declaration type (if applicable) of the 'i'th column
 ** of the result set of SQL statement pStmt, encoded as UTF-16.
 */
-const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int i){
-  return columnName16(pStmt, i, 1);
+const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
+
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pColName = &(p->aColName[N+sqlite3_column_count(pStmt)]);
+  return sqlite3_value_text16(pColName);
 }
 
 /******************************* sqlite3_bind_  ***************************

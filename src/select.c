@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.180 2004/05/27 23:56:16 danielk1977 Exp $
+** $Id: select.c,v 1.181 2004/05/28 13:13:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -663,7 +663,7 @@ static void generateColumnTypes(
         default:                  zType = "ANY";     break;
       }
     }
-    sqlite3VdbeOp3(v, OP_ColumnName, i + pEList->nExpr, 0, zType, 0);
+    sqlite3VdbeSetColName(v, i+pEList->nExpr, zType, P3_STATIC);
   }
 }
 
@@ -740,6 +740,7 @@ static void generateColumnNames(
       sqlite3VdbeSetColName(v, i, zName, 0);
     }
   }
+  generateColumnTypes(pParse, pTabList, pEList);
 }
 
 /*
