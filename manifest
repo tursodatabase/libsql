@@ -1,5 +1,5 @@
-C Fix\sthe\sfix\sfor\snewlines\sin\secho\scommands.\s\sTickets\s#311,\s#282,\s#256.\s(CVS\s979)
-D 2003-05-17T02:27:21
+C Version\s2.8.1\s(CVS\s980)
+D 2003-05-17T02:44:32
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0874814ab01ffc0acffec8e6cec34eaab3428d36
+P baea7aca10e30f30b874e1e8b6cd3b05954ba83c
 R d79117ebcf990c76ac030f81c35e1389
 U drh
-Z 63739ab587e63f67ac6a2fd296939d48
+Z b3ec67d7cdead0321417395bbb89e4c5
