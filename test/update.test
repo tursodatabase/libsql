@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.11 2003/01/29 18:46:54 drh Exp $
+# $Id: update.test,v 1.12 2003/02/15 23:09:17 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -217,6 +217,7 @@ do_test update-5.6.5 {
 
 # Repeat the previous sequence of tests with a different index.
 #
+execsql {PRAGMA synchronous=FULL}
 do_test update-6.0 {
   execsql {DROP INDEX idx1}
   execsql {CREATE INDEX idx1 ON test1(f2)}

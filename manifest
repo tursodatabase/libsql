@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sfor\sthe\snew\sjournal\sformat\sto\sbe\sintroduced\sin\nversion\s2.8.0.\s(CVS\s1729)
-D 2003-02-13T02:54:04
+C Fix\sthe\spager\sso\sthat\scorrect\srollbacks\soccur\swhen\ssynchronous\sis\sturned\soff.\r\nThis\scheck-in\salso\sincluded\sunrelated\sdocumentation\supdates.\s(CVS\s866)
+D 2003-02-15T23:09:17
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/main.c f88dfe09ed79588899cb4013836dd940f73a17fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c a64f69216ebef0e6ce90e65700674b7c64f6b16e
+F src/pager.c bffccf853a20032d89b592572309ea8a15a7f3ed
 F src/pager.h e5b8e301a732007766dc04880c764d7ee1aa34dd
 F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
@@ -90,7 +90,7 @@ F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
 F test/pager.test d3a2e2f00999f97e056822a39d5ee2fad18bf12c
-F test/pragma.test 0ca0773e2559ec9715f72d90695554dc3368e8f2
+F test/pragma.test d45d130f532bfe86ebd5ba74862d88b36ded8998
 F test/printf.test a29b8afa24edb4411adfe473b12ac32c84098fce
 F test/quick.test b372c8dad4fa1554747e90683fc72e59c0c98502
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -108,13 +108,13 @@ F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
 F test/tclsqlite.test f650195b8124aca24bee175393a1ed2e5a544a38
 F test/temptable.test 03b7bdb7d6ce2c658ad20c94b037652c6cad34e0
 F test/tester.tcl 6f603d90881bd835ea27c568a7fecaa57dce91cc
-F test/trans.test 0d3584f8d50646ff22776ac0a28521a410a673d6
+F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
 F test/trigger1.test ec1da76e1a9f618deb96e505f459dcf8a23f2247
-F test/trigger2.test 592daa956dc62b19930fe673405e389a80c5764e
+F test/trigger2.test ab4c743bb96cee96ab5a17c5edfd57a9134329d6
 F test/trigger3.test 870afef7997a5b86bf3ea893ce0c2e85d6356c72
 F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 22a46df72a3e0a3fd1a2d39e96fb59f18448dd5f
-F test/update.test e7b224f4ed652b3d6defdd6174ebc2ccd894307a
+F test/update.test 198360dfa14e65354dbcc66d5b98d8070780e42b
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
@@ -144,18 +144,18 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
-F www/index.tcl b5265ca54a5124ec40bffb7c7943e072e074d61a
+F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
 F www/lang.tcl 9bd9380dceba83d11fe268e0142c05ee06c757db
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
-F www/quickstart.tcl 368d7ef130274307accceb2e21c9fc70bbb0ba65
+F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e05a7a552f694158ee449d8682f5c137f1c2f2ac
-R 496fbf0dd37f4b8503d955d31fa52734
+P dc53d92141c931fb133149355c3a1ea64030e676
+R 571b9c5813a6dfc27b61cc9c2ebc6b12
 U drh
-Z bec57f8a48da6d4cfdb9d6259114717b
+Z b201cdfd990195584437ce2ba1bc7248

@@ -480,6 +480,7 @@ do_test trigger2-6.1h {
     SELECT * from tbl;
   }
 } {}
+execsql {DELETE FROM tbl}
 
 
 # Handling of ON CONFLICT by UPDATE statements inside triggers
@@ -517,15 +518,18 @@ do_test trigger2-6.2e {
     SELECT * from tbl;
   }
 } {4 2 10 6 3 4}
-do_test trigger2-6.2f {
+do_test trigger2-6.2f.1 {
   execsql {
     UPDATE OR REPLACE tbl SET a = 1 WHERE a = 4;
     SELECT * from tbl;
   }
 } {1 3 10}
-execsql {
-  INSERT INTO tbl VALUES (2, 3, 4);
-}
+do_test trigger2-6.2f.2 {
+  execsql {
+    INSERT INTO tbl VALUES (2, 3, 4);
+    SELECT * FROM tbl;
+  }
+} {1 3 10 2 3 4}
 do_test trigger2-6.2g {
   catchsql {
     UPDATE OR ROLLBACK tbl SET a = 4 WHERE a = 1;

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the quickstart.html file.
 #
-set rcsid {$Id: quickstart.tcl,v 1.3 2003/01/21 23:06:58 drh Exp $}
+set rcsid {$Id: quickstart.tcl,v 1.4 2003/02/15 23:09:17 drh Exp $}
 
 puts {<html>
 <head><title>SQLite In 5 Minutes Or Less</title></head>
@@ -67,7 +67,7 @@ the first argument and the second argument is one or more SQL statements
 to execute against the database.  The function calls to pay attention
 to here are the call to <b>sqlite_open()</b> on line 22 which opens
 the database, <b>sqlite_exec()</b> on line 27 that executes SQL
-command against the database, and <b>sqlite_close()</b> on line 31
+commands against the database, and <b>sqlite_close()</b> on line 31
 that closes the database connection.</p>
 
 <blockquote><pre>
