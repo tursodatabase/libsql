@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.428 2004/11/14 21:56:30 drh Exp $
+** $Id: vdbe.c,v 1.429 2004/11/15 23:42:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1914,7 +1914,7 @@ case OP_Column: {
   break;
 }
 
-/* Opcode MakeRecord P1 P2 P3
+/* Opcode: MakeRecord P1 P2 P3
 **
 ** Convert the top abs(P1) entries of the stack into a single entry
 ** suitable for use as a data record in a database table or as a key
@@ -1939,12 +1939,11 @@ case OP_Column: {
 ** field of the index key (i.e. the first character of P3 corresponds to the
 ** lowest element on the stack).
 **
-**  Character      Column affinity
-**  ------------------------------
-**  'n'            NUMERIC
-**  'i'            INTEGER
-**  't'            TEXT
-**  'o'            NONE
+** The mapping from character to affinity is as follows:
+**    'n' = NUMERIC.
+**    'i' = INTEGER.
+**    't' = TEXT.
+**    'o' = NONE.
 **
 ** If P3 is NULL then all index fields have the affinity NONE.
 */
