@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.330 2004/11/04 14:30:05 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.331 2004/11/05 00:43:12 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -573,6 +573,7 @@ struct Table {
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
+  u8 autoInc;      /* True if the integer primary key is autoincrement */
   Trigger *pTrigger; /* List of SQL triggers on this table */
   FKey *pFKey;       /* Linked list of all foreign keys in this table */
   char *zColAff;     /* String defining the affinity of each column */
@@ -1010,6 +1011,7 @@ struct Parse {
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
   u8 checkSchema;      /* Causes schema cookie check after an error */
+  u8 nested;           /* Number of nested calls to the parser/code generator */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
@@ -1254,7 +1256,7 @@ void sqlite3OpenMasterTable(Vdbe *v, int);
 void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
 void sqlite3AddColumn(Parse*,Token*);
 void sqlite3AddNotNull(Parse*, int);
-void sqlite3AddPrimaryKey(Parse*, ExprList*, int);
+void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int);
 void sqlite3AddColumnType(Parse*,Token*,Token*);
 void sqlite3AddDefaultValue(Parse*,Token*,int);
 void sqlite3AddCollateType(Parse*, const char*, int);
@@ -1298,6 +1300,7 @@ void sqlite3ExprCode(Parse*, Expr*);
 int sqlite3ExprCodeExprList(Parse*, ExprList*);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
+void sqlite3NextedParse(Parse*, const char*, ...);
 Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 Table *sqlite3LocateTable(Parse*,const char*, const char*);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);

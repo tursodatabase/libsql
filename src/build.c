@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.260 2004/11/04 14:47:12 drh Exp $
+** $Id: build.c,v 1.261 2004/11/05 00:43:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -54,6 +54,7 @@ void sqlite3FinishCoding(Parse *pParse){
   Vdbe *v;
 
   if( sqlite3_malloc_failed ) return;
+  if( pParse->nested ) return;
 
   /* Begin by generating some termination code at the end of the
   ** vdbe program
@@ -110,6 +111,35 @@ void sqlite3FinishCoding(Parse *pParse){
   pParse->nVar = 0;
   pParse->cookieMask = 0;
   pParse->cookieGoto = 0;
+}
+
+/*
+** Run the parser and code generator recursively in order to generate
+** code for the SQL statement given onto the end of the pParse context
+** currently under construction.  When the parser is run recursively
+** this way, the final OP_Halt is not appended and other initialization
+** and finalization steps are omitted because those are handling by the
+** outermost parser.
+**
+** Not everything is nestable.  This facility is designed to permit
+** INSERT, UPDATE, and DELETE operations against SQLITE_MASTER.  Use
+** care if you decide to try to use this routine for some other purpose.
+*/
+void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
+  va_list ap;
+  char *zSql;
+  int rc;
+  Parse savedState;
+  if( pParse->nErr ) return;
+  assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
+  va_start(ap, zFormat);
+  zSql = sqlite3VMPrintf(zFormat, ap);
+  va_end(ap);
+  pParse->nested++;
+  savedState = *pParse;
+  rc = sqlite3RunParser(pParse, zSql, 0);
+  sqliteFree(zSql);
+  pParse->nested--;
 }
 
 /*
@@ -836,7 +866,12 @@ void sqlite3AddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 ** If the key is not an INTEGER PRIMARY KEY, then create a unique
 ** index for the key.  No index is created for INTEGER PRIMARY KEYs.
 */
-void sqlite3AddPrimaryKey(Parse *pParse, ExprList *pList, int onError){
+void sqlite3AddPrimaryKey(
+  Parse *pParse,    /* Parsing context */
+  ExprList *pList,  /* List of field names to be indexed */
+  int onError,      /* What to do with a uniqueness conflict */
+  int autoInc       /* True if the AUTOINCREMENT keyword is present */
+){
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
   int iCol = -1, i;
@@ -867,6 +902,10 @@ void sqlite3AddPrimaryKey(Parse *pParse, ExprList *pList, int onError){
   if( zType && sqlite3StrICmp(zType, "INTEGER")==0 ){
     pTab->iPKey = iCol;
     pTab->keyConf = onError;
+    pTab->autoInc = autoInc;
+  }else if( autoInc ){
+    sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
+       "INTEGER PRIMARY KEY");
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0);
     pList = 0;

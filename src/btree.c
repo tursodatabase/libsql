@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.204 2004/11/04 14:30:05 danielk1977 Exp $
+** $Id: btree.c,v 1.205 2004/11/05 00:43:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4412,6 +4412,18 @@ int sqlite3BtreeClearTable(Btree *pBt, int iTable){
 **
 ** This routine will fail with SQLITE_LOCKED if there are any open
 ** cursors on the table.
+**
+** If AUTOVACUUM is enabled and the page at iTable is not the last
+** root page in the database file, then the last root page 
+** in the database file is moved into the slot formerly occupied by
+** iTable and that last slot formerly occupied by the last root page
+** is added to the freelist instead of iTable.  In this say, all
+** root pages are kept at the beginning of the database file, which
+** is necessary for AUTOVACUUM to work right.  *piMoved is set to the 
+** page number that used to be the last root page in the file before
+** the move.  If no page gets moved, *piMoved is set to 0.
+** The last root page is recorded in meta[3] and the value of
+** meta[3] is updated by this procedure.
 */
 int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
   int rc;
@@ -4434,7 +4446,7 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
   rc = sqlite3BtreeClearTable(pBt, iTable);
   if( rc ) return rc;
 
-  if( piMoved ) *piMoved = 0;
+  *piMoved = 0;
 
   if( iTable>1 ){
 #ifdef SQLITE_OMIT_AUTOVACUUM
@@ -4521,8 +4533,9 @@ int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
   *pMeta = get4byte(&pP1[36 + idx*4]);
   sqlite3pager_unref(pP1);
 
-  /* The current implementation is unable to handle writes to an autovacuumed
-  ** database.  So make such a database readonly. */
+  /* If autovacuumed is disabled in the implementation but we are
+  ** trying to access an autovacuumed database, then make the
+  ** database readonly. */
 #ifdef SQLITE_OMIT_AUTOVACUUM
   if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
 #endif

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.423 2004/11/04 14:30:06 danielk1977 Exp $
+** $Id: vdbe.c,v 1.424 2004/11/05 00:43:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2813,12 +2813,19 @@ case OP_NotExists: {
   break;
 }
 
-/* Opcode: NewRecno P1 * *
+/* Opcode: NewRecno P1 P2 *
 **
 ** Get a new integer record number used as the key to a table.
 ** The record number is not previously used as a key in the database
 ** table that cursor P1 points to.  The new record number is pushed 
 ** onto the stack.
+**
+** If P2>0 then P2 is a memory cell that holds the largest previously
+** generated record number.  No new record numbers are allowed to be less
+** than this value.  When this value reaches 0x7fffffff, a SQLITE_FULL
+** error is generated.  The P2 memory cell is updated with the generated
+** record number.  This P2 mechanism is used to help implement the
+** AUTOINCREMENT feature.
 */
 case OP_NewRecno: {
   int i = pOp->p1;
@@ -2882,6 +2889,24 @@ case OP_NewRecno: {
           }
         }
       }
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+      if( pOp->p2 ){
+        Mem *pMem;
+        assert( pOp->p2>0 && pOp->p2<p->nMem );  /* P2 is a valid memory cell */
+        pMem = &p->aMem[pOp->p2];
+        assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P2) holds an integer */
+        if( pMem->i==0x7fffffffffffffff || pC->useRandomRowid ){
+          rc = SQLITE_FULL;
+          goto abort_due_to_error;
+        }
+        if( v<pMem->i+1 ){
+          v = pMem->i + 1;
+        }
+        pMem->i = v;
+      }
+#endif
+
       if( v<0x7fffffffffffffff ){
         pC->nextRowidValid = 1;
         pC->nextRowid = v+1;
@@ -2890,6 +2915,7 @@ case OP_NewRecno: {
       }
     }
     if( pC->useRandomRowid ){
+      assert( pOp->p2==0 );  /* SQLITE_FULL must have occurred prior to this */
       v = db->priorNewRowid;
       cnt = 0;
       do{
@@ -3607,15 +3633,24 @@ case OP_IdxIsNull: {
 ** P2==1 then the table to be clear is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
+** If AUTOVACUUM is enabled then it is possible that another root page
+** might be moved into the newly deleted root page in order to keep all
+** root pages contiguous at the beginning of the database.  The former
+** value of the root page that moved - its value before the move occurred -
+** is pushed onto the stack.  If no page movement was required (because
+** the table being dropped was already the last one in the database) then
+** a zero is pushed onto the stack.  If AUTOVACUUM is disabled at 
+** then a zero is pushed onto the stack.
+**
 ** See also: Clear
 */
 case OP_Destroy: {
   int iMoved;
   rc = sqlite3BtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1, &iMoved);
-#ifndef SQLITE_OMIT_AUTOVACUUM
   pTos++;
   pTos->flags = MEM_Int;
   pTos->i = iMoved;
+#ifndef SQLITE_OMIT_AUTOVACUUM
   if( iMoved!=0 ){
     sqlite3RootPageMoved(&db->aDb[pOp->p2], iMoved, pOp->p1);
   }
@@ -4070,6 +4105,30 @@ case OP_MemLoad: {
   sqlite3VdbeMemShallowCopy(pTos, &p->aMem[i], MEM_Ephem);
   break;
 }
+
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+/* Opcode: MemMax P1 * *
+**
+** Set the value of memory cell P1 to the maximum of its current value
+** and the value on the top of the stack.  The stack is unchanged.
+**
+** This instruction throws an error if the memory cell is not initially
+** an integer.
+*/
+case OP_MemMax: {
+  int i = pOp->p1;
+  Mem *pMem;
+  assert( pTos>=p->aStack );
+  assert( i>=0 && i<p->nMem );
+  pMem = &p->aMem[i];
+  assert( pMem->flags==MEM_Int );
+  Integerify(pTos);
+  if( pMem->i<pTos->i){
+    pMem->i = pTos->i;
+  }
+  break;
+}
+#endif /* SQLITE_OMIT_AUTOINCREMENT */
 
 /* Opcode: MemIncr P1 P2 *
 **

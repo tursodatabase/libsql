@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.147 2004/11/03 13:59:05 drh Exp $
+** @(#) $Id: parse.y,v 1.148 2004/11/05 00:43:12 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -213,13 +213,19 @@ carg ::= DEFAULT NULL.
 //
 ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
-ccons ::= PRIMARY KEY sortorder onconf(R).  {sqlite3AddPrimaryKey(pParse,0,R);}
+ccons ::= PRIMARY KEY sortorder onconf(R) autoinc(I).
+                                     {sqlite3AddPrimaryKey(pParse,0,R,I);}
 ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
 ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, C.z, C.n);}
+
+// The optional AUTOINCREMENT keyword
+%type autoinc {int}
+autoinc(X) ::= .         {X = 0;}
+autoinc(X) ::= AUTOINC.  {X = 1;}
 
 // The next group of rules parses the arguments to a REFERENCES clause
 // that determine if the referential integrity checking is deferred or
@@ -256,8 +262,8 @@ conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT nm.
-tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
-                                             {sqlite3AddPrimaryKey(pParse,X,R);}
+tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R) autoinc(I).
+                                         {sqlite3AddPrimaryKey(pParse,X,R,I);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                        {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0);}
 tcons ::= CHECK expr onconf.
