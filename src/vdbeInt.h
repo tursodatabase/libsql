@@ -151,7 +151,7 @@ typedef struct Mem Mem;
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** aggregate function context that needs to be finalized.
 */
-#define MEM_AggCtx    0x0100   /* Mem.z points to an agg function context */
+#define MEM_AggCtx    0x1000   /* Mem.z points to an agg function context */
 
 /*
 ** The "context" argument for a installable function.  A pointer to an
