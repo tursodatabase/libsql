@@ -62,6 +62,7 @@ struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   i64 lastRecno;        /* Last recno from a Next or NextIdx operation */
   i64 nextRowid;        /* Next rowid returned by OP_NewRowid */
+  Bool zeroed;          /* True if zeroed out and ready for reuse */
   Bool recnoIsValid;    /* True if lastRecno is valid */
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
@@ -352,7 +353,7 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
-void sqlite3VdbeCleanupCursor(Cursor*);
+void sqlite3VdbeFreeCursor(Cursor*);
 void sqlite3VdbeSorterReset(Vdbe*);
 int sqlite3VdbeAggReset(sqlite *, Agg *, KeyInfo *);
 void sqlite3VdbeKeylistFree(Keylist*);

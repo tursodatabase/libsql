@@ -826,7 +826,10 @@ void sqlite3VdbeKeylistFree(Keylist *p){
 ** Close a cursor and release all the resources that cursor happens
 ** to hold.
 */
-void sqlite3VdbeCleanupCursor(Cursor *pCx){
+void sqlite3VdbeFreeCursor(Cursor *pCx){
+  if( pCx==0 ){
+    return;
+  }
   if( pCx->pCursor ){
     sqlite3BtreeCloseCursor(pCx->pCursor);
   }
@@ -835,7 +838,7 @@ void sqlite3VdbeCleanupCursor(Cursor *pCx){
   }
   sqliteFree(pCx->pData);
   sqliteFree(pCx->aType);
-  memset(pCx, 0, sizeof(*pCx));
+  sqliteFree(pCx);
 }
 
 /*
@@ -844,9 +847,7 @@ void sqlite3VdbeCleanupCursor(Cursor *pCx){
 static void closeAllCursors(Vdbe *p){
   int i;
   for(i=0; i<p->nCursor; i++){
-    Cursor *pC = p->apCsr[i];
-    sqlite3VdbeCleanupCursor(pC);
-    sqliteFree(pC);
+    sqlite3VdbeFreeCursor(p->apCsr[i]);
   }
   sqliteFree(p->apCsr);
   p->apCsr = 0;

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.369 2004/06/12 18:12:16 drh Exp $
+** $Id: vdbe.c,v 1.370 2004/06/12 20:12:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -271,24 +271,27 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight, KeyInfo *pKeyInfo){
 }
 
 /*
-** Make sure there is space in the Vdbe structure to hold at least
-** mxCursor cursors.  If there is not currently enough space, then
-** allocate more.
-**
-** If a memory allocation error occurs, return 1.  Return 0 if
-** everything works.
+** Allocate cursor number iCur.  Return a pointer to it.  Return NULL
+** if we run out of memory.
 */
-static int expandCursorArraySize(Vdbe *p, int mxCursor){
-  if( mxCursor>=p->nCursor ){
-    p->apCsr = sqliteRealloc( p->apCsr, (mxCursor+1)*sizeof(Cursor*) );
-    if( p->apCsr==0 ) return 1;
-    while( p->nCursor<=mxCursor ){
-      Cursor *pC;
-      p->apCsr[p->nCursor++] = pC = sqliteMalloc( sizeof(Cursor) );
-      if( pC==0 ) return 1;
+static Cursor *allocateCursor(Vdbe *p, int iCur){
+  Cursor *pCx;
+  if( iCur>=p->nCursor ){
+    int i;
+    p->apCsr = sqliteRealloc( p->apCsr, (iCur+1)*sizeof(Cursor*) );
+    if( p->apCsr==0 ){
+      p->nCursor = 0;
+      return 0;
     }
+    for(i=p->nCursor; i<iCur; i++){
+      p->apCsr[i] = 0;
+    }
+    p->nCursor = iCur+1;
+  }else if( p->apCsr[iCur] ){
+    sqlite3VdbeFreeCursor(p->apCsr[iCur]);
   }
-  return 0;
+  p->apCsr[iCur] = pCx = sqliteMalloc( sizeof(Cursor) );
+  return pCx;
 }
 
 /*
@@ -1867,6 +1870,7 @@ case OP_NotNull: {
 */
 case OP_SetNumColumns: {
   assert( (pOp->p1)<p->nCursor );
+  assert( p->apCsr[pOp->p1]!=0 );
   p->apCsr[pOp->p1]->nField = pOp->p2;
   break;
 }
@@ -1931,6 +1935,7 @@ case OP_Column: {
   ** records on the stack, the next entry down on the stack is an integer
   ** which is the number of records.
   */
+  assert( p1<0 || p->apCsr[p1]!=0 );
   if( p1<0 ){
     /* Take the record off of the stack */
     Mem *pRec = &pTos[p1];
@@ -2572,9 +2577,8 @@ case OP_OpenWrite: {
     }
   }
   assert( i>=0 );
-  if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCur = p->apCsr[i];
-  sqlite3VdbeCleanupCursor(pCur);
+  pCur = allocateCursor(p, i);
+  if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
   if( pX==0 ) break;
   /* We always provide a key comparison function.  If the table being
@@ -2635,10 +2639,8 @@ case OP_OpenTemp: {
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
-  if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCx = p->apCsr[i];
-  sqlite3VdbeCleanupCursor(pCx);
-  memset(pCx, 0, sizeof(*pCx));
+  pCx = allocateCursor(p, i);
+  if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, TEMP_PAGES, &pCx->pBt);
 
@@ -2686,10 +2688,8 @@ case OP_OpenPseudo: {
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
-  if( expandCursorArraySize(p, i) ) goto no_mem;
-  pCx = p->apCsr[i];
-  sqlite3VdbeCleanupCursor(pCx);
-  memset(pCx, 0, sizeof(*pCx));
+  pCx = allocateCursor(p, i);
+  if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
   pCx->pIncrKey = &pCx->bogusIncrKey;
@@ -2704,7 +2704,8 @@ case OP_OpenPseudo: {
 case OP_Close: {
   int i = pOp->p1;
   if( i>=0 && i<p->nCursor ){
-    sqlite3VdbeCleanupCursor(p->apCsr[i]);
+    sqlite3VdbeFreeCursor(p->apCsr[i]);
+    p->apCsr[i] = 0;
   }
   break;
 }
@@ -2759,6 +2760,7 @@ case OP_MoveGt: {
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   if( pC->pCursor!=0 ){
     int res, oc;
     oc = pOp->opcode;
@@ -2858,6 +2860,7 @@ case OP_Found: {
   Cursor *pC;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
     assert( pC->intKey==0 );
@@ -2915,6 +2918,7 @@ case OP_IsUnique: {
   pTos--;
   assert( i>=0 && i<=p->nCursor );
   pCx = p->apCsr[i];
+  assert( pCx!=0 );
   pCrsr = pCx->pCursor;
   if( pCrsr!=0 ){
     int res, rc;
@@ -2998,6 +3002,7 @@ case OP_NotExists: {
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rx;
     u64 iKey;
@@ -3031,6 +3036,7 @@ case OP_NewRecno: {
   i64 v = 0;
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor==0 ){
     /* The zero initialization above is all that is needed */
   }else{
@@ -3159,6 +3165,7 @@ case OP_PutStrKey: {
   Cursor *pC;
   assert( pNos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   if( ((pC = p->apCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     char *zKey;
     i64 nKey; 
@@ -3249,6 +3256,7 @@ case OP_Delete: {
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   if( pC->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     rc = sqlite3BtreeDelete(pC->pCursor);
@@ -3283,6 +3291,7 @@ case OP_KeyAsData: {
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   pC->keyAsData = pOp->p2;
   break;
 }
@@ -3314,6 +3323,7 @@ case OP_RowData: {
   pTos++;
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   if( pC->nullRow ){
     pTos->flags = MEM_Null;
   }else if( pC->pCursor!=0 ){
@@ -3370,6 +3380,7 @@ case OP_Recno: {
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   sqlite3VdbeCursorMoveto(pC);
   pTos++;
   if( pC->recnoIsValid ){
@@ -3405,9 +3416,10 @@ case OP_FullKey: {
   BtCursor *pCrsr;
   Cursor *pC;
 
+  assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   assert( p->apCsr[i]->keyAsData );
   assert( !p->apCsr[i]->pseudoTable );
-  assert( i>=0 && i<p->nCursor );
   pTos++;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     u64 amt;
@@ -3448,6 +3460,7 @@ case OP_NullRow: {
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   pC->nullRow = 1;
   pC->recnoIsValid = 0;
   break;
@@ -3468,6 +3481,7 @@ case OP_Last: {
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     rc = sqlite3BtreeLast(pCrsr, &res);
@@ -3499,6 +3513,7 @@ case OP_Rewind: {
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
+  assert( pC!=0 );
   if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
@@ -3538,6 +3553,7 @@ case OP_Next: {
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     if( pC->nullRow ){
@@ -3577,6 +3593,7 @@ case OP_IdxPut: {
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   assert( pTos->flags & MEM_Blob );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
@@ -3629,6 +3646,7 @@ case OP_IdxDelete: {
   assert( pTos>=p->aStack );
   assert( pTos->flags & MEM_Blob );
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int rx, res;
     rx = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, &res);
@@ -3657,6 +3675,7 @@ case OP_IdxRecno: {
   Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   pTos++;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     i64 rowid;
@@ -3763,6 +3782,7 @@ case OP_IdxGE: {
   Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );
+  assert( p->apCsr[i]!=0 );
   assert( pTos>=p->aStack );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rc;

@@ -1,5 +1,5 @@
-C Improve\sthe\sspeed\sof\sOP_Column\sthrough\sbetter\scaching.\s(CVS\s1577)
-D 2004-06-12T18:12:16
+C Speed\sup\sin\sthe\shandling\sof\sVDBE\scursors.\s(CVS\s1578)
+D 2004-06-12T20:12:51
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -71,11 +71,11 @@ F src/update.c 168b6d523087ca4545b74ec9f3102b1f3c6b1e38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 90375fa253137562d536ccdd40b297f0fd7413fc
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
-F src/vdbe.c 9f941bbdf0bcbc18fbdfceecbc2322e82084e094
+F src/vdbe.c c71e47262d3d3539a20a489a03b9cde15ef3acb7
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
-F src/vdbeInt.h 1cc767a63eefd1d1114e190336588c6d4f70a6a0
+F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
-F src/vdbeaux.c 1d0dbaf73c89bd1cc27abad19ee0aa26ab5d03f4
+F src/vdbeaux.c ff7c66b704dc2c35805657f2cb10ad1b00c8ecd2
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
 F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 99a7bd83ac38e14bb936a834634313cf98279a62
-R 1e1692dcb3026c03937468eb4d723051
+P f687977a28eda5ce0aa1cba2fdfb0152443032bc
+R 088c58f79c616faca7f8012c3563c5db
 U drh
-Z 511db11f04adc59072cae9559d18a6b6
+Z 661048d261d615dd2ffa1c2c62f56278
