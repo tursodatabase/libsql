@@ -90,6 +90,7 @@ int sqlite3OsOpenReadWrite(
   }
   id->h = h;
   id->locktype = NO_LOCK;
+  id->sharedLockByte = 0;
   OpenCounter(+1);
   TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -132,6 +133,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   }
   id->h = h;
   id->locktype = NO_LOCK;
+  id->sharedLockByte = 0;
   OpenCounter(+1);
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -158,6 +160,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   }
   id->h = h;
   id->locktype = NO_LOCK;
+  id->sharedLockByte = 0;
   OpenCounter(+1);
   TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -218,6 +221,7 @@ int sqlite3OsTempFileName(char *zBuf){
 ** Close a file.
 */
 int sqlite3OsClose(OsFile *id){
+  TRACE2("CLOSE %d\n", id->h);
   CloseHandle(id->h);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -231,7 +235,7 @@ int sqlite3OsClose(OsFile *id){
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("READ %d\n", id->h);
+  TRACE3("READ %d lock=%d\n", id->h, id->locktype);
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
@@ -250,7 +254,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int rc;
   DWORD wrote;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("WRITE %d\n", id->h);
+  TRACE3("WRITE %d lock=%d\n", id->h, id->locktype);
   while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -278,7 +282,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 ** Make sure all writes to a particular file are committed to disk.
 */
 int sqlite3OsSync(OsFile *id){
-  TRACE2("SYNC %d\n", id->h);
+  TRACE3("SYNC %d lock=%d\n", id->h, id->locktype);
   if( FlushFileBuffers(id->h) ){
     return SQLITE_OK;
   }else{
@@ -346,7 +350,7 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 ** shared locks begins at SHARED_FIRST.  
 */
 #define SHARED_SIZE       10238
-#define SHARED_FIRST      (0xffffffff - SHARED_SIZE + 1)
+#define SHARED_FIRST      (0x3fffffff - (SHARED_SIZE - 1))
 #define RESERVED_BYTE     (SHARED_FIRST - 1)
 #define PENDING_BYTE      (RESERVED_BYTE - 1)
 
@@ -413,8 +417,11 @@ static int unlockReadLock(OsFile *id){
 int sqlite3OsLock(OsFile *id, int locktype){
   int rc = SQLITE_OK;    /* Return code from subroutines */
   int res = 1;           /* Result of a windows lock call */
+  int newLocktype;       /* Set id->locktype to this value before exiting */
+  int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
 
-  TRACE4("LOCK %d %d was %d\n", id->h, locktype, id->locktype);
+  TRACE5("LOCK %d %d was %d(%d)\n",
+          id->h, locktype, id->locktype, id->sharedLockByte);
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -428,14 +435,18 @@ int sqlite3OsLock(OsFile *id, int locktype){
   ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
   ** the PENDING_LOCK byte is temporary.
   */
-  if( id->locktype==NO_LOCK || locktype==PENDING_LOCK ){
+  if( id->locktype==NO_LOCK
+   || (locktype>=PENDING_LOCK && id->locktype<PENDING_LOCK)
+  ){
     int cnt = 4;
     while( cnt-->0 && (res = LockFile(id->h, PENDING_BYTE, 0, 1, 0))==0 ){
       /* Try 4 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
+      TRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
       Sleep(1);
     }
+    gotPendingLock = res;
   }
 
   /* Acquire a shared lock
@@ -449,40 +460,65 @@ int sqlite3OsLock(OsFile *id, int locktype){
       id->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
       res = LockFile(id->h, SHARED_FIRST+id->sharedLockByte, 0, 1, 0);
     }
-    if( locktype<PENDING_LOCK ){
-      UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
+    if( res ){
+      newLocktype = SHARED_LOCK;
     }
   }
 
   /* Acquire a RESERVED lock
   */
   if( locktype>=RESERVED_LOCK && id->locktype<RESERVED_LOCK && res ){
-    res = getReadLock(id->h, RESERVED_BYTE, 1);
+    res = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+    if( res ){
+      newLocktype = RESERVED_LOCK;
+    }
+  }
+
+  /* Acquire a PENDING lock
+  */
+  if( locktype>=PENDING_LOCK && res ){
+    newLocktype = PENDING_LOCK;
+    gotPendingLock = 0;
   }
 
   /* Acquire an EXCLUSIVE lock
   */
-  if( locktype==EXCLUSIVE_LOCK ){
+  if( locktype==EXCLUSIVE_LOCK && res ){
     if( id->locktype>=SHARED_LOCK ){
       res = unlockReadLock(id);
+      TRACE2("unreadlock = %d\n", res);
     }
     if( res ){
       res = LockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     }else{
+      TRACE2("LOCK FAILED due to failure to unlock read %d\n", id->h);
       res = 0;
     }
+    if( res ){
+      newLocktype = EXCLUSIVE_LOCK;
+    }else{
+      TRACE2("error-code = %d\n", GetLastError());
+    }
+  }
+
+  /* If we are holding a PENDING lock that ought to be released, then
+  ** release it now.
+  */
+  if( gotPendingLock && (res==0 || locktype<PENDING_LOCK) ){
+    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
 
   /* Update the state of the lock has held in the file descriptor then
   ** return the appropriate result code.
   */
   if( res ){
-    id->locktype = locktype;
     rc = SQLITE_OK;
   }else{
-    TRACE2("LOCK FAILED %d\n", id->h);
+    TRACE4("LOCK FAILED %d trying for %d but got %d\n", id->h,
+           locktype, newLocktype);
     rc = SQLITE_BUSY;
   }
+  id->locktype = newLocktype;
   return rc;
 }
 
@@ -496,7 +532,7 @@ int sqlite3OsCheckWriteLock(OsFile *id){
   if( id->locktype>=RESERVED_LOCK ){
     rc = 1;
   }else{
-    rc = getReadLock(id->h, RESERVED_BYTE, 1);
+    rc = LockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     }
@@ -511,18 +547,19 @@ int sqlite3OsCheckWriteLock(OsFile *id){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsUnlock(OsFile *id){
-  int rc;
-  TRACE3("UNLOCK %d was %d\n", id->h, id->locktype);
-  if( id->locktype>=EXCLUSIVE_LOCK ){
+  int rc, type;
+  TRACE4("UNLOCK %d was %d(%d)\n", id->h, id->locktype, id->sharedLockByte);
+  type = id->locktype;
+  if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   }
-  if( id->locktype>=PENDING_LOCK ){
+  if( type>=PENDING_LOCK ){
     UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
-  if( id->locktype>=RESERVED_LOCK ){
+  if( type>=RESERVED_LOCK ){
     UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
   }
-  if( id->locktype==SHARED_LOCK ){
+  if( type>=SHARED_LOCK && type<EXCLUSIVE_LOCK ){
     unlockReadLock(id);
   }
   id->locktype = NO_LOCK;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.269 2004/06/06 09:44:05 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.270 2004/06/07 01:52:14 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -1195,6 +1195,7 @@ void sqlite3RealToSortable(double r, char *);
 #endif
 char *sqlite3MPrintf(const char*, ...);
 char *sqlite3VMPrintf(const char*, va_list);
+void sqlite3DebugPrintf(const char*, ...);
 void sqlite3SetString(char **, const char *, ...);
 void sqlite3SetNString(char **, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);

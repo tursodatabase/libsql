@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.159 2004/06/06 00:42:26 drh Exp $
+** $Id: btree.c,v 1.160 2004/06/07 01:52:14 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2266,7 +2266,8 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
 ** enabled.
 */
 #if SQLITE_TEST
-# define TRACE(X)   if( sqlite3_btree_trace ){ printf X; fflush(stdout); }
+# define TRACE(X)   if( sqlite3_btree_trace )\
+                        { sqlite3DebugPrintf X; fflush(stdout); }
 #else
 # define TRACE(X)
 #endif

@@ -37,11 +37,11 @@ static unsigned int elapse;
 #define TIMER_START       g_start=hwtime()
 #define TIMER_END         elapse=hwtime()-g_start
 #define SEEK(X)           last_page=(X)
-#define TRACE1(X)         fprintf(stderr,X)
-#define TRACE2(X,Y)       fprintf(stderr,X,Y)
-#define TRACE3(X,Y,Z)     fprintf(stderr,X,Y,Z)
-#define TRACE4(X,Y,Z,A)   fprintf(stderr,X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B) fprintf(stderr,X,Y,Z,A,B)
+#define TRACE1(X)         sqlite3DebugPrintf(X)
+#define TRACE2(X,Y)       sqlite3DebugPrintf(X,Y)
+#define TRACE3(X,Y,Z)     sqlite3DebugPrintf(X,Y,Z)
+#define TRACE4(X,Y,Z,A)   sqlite3DebugPrintf(X,Y,Z,A)
+#define TRACE5(X,Y,Z,A,B) sqlite3DebugPrintf(X,Y,Z,A,B)
 #else
 #define TIMER_START
 #define TIMER_END

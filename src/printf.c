@@ -798,6 +798,22 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   return z;
 }
 
+#ifndef NDEBUG
+/*
+** A version of printf() that understands %lld.  Used for debugging.
+** The printf() built into some versions of windows does not understand %lld
+** and segfaults if you give it a long long int.
+*/
+void sqlite3DebugPrintf(const char *zFormat, ...){
+  va_list ap;
+  char zBuf[500];
+  va_start(ap, zFormat);
+  base_vprintf(0, 0, zBuf, sizeof(zBuf), zFormat, ap);
+  va_end(ap);
+  fprintf(stderr,"%s", zBuf);
+}
+#endif
+
 /*
 ** The following four routines implement the varargs versions of the
 ** sqlite3_exec() and sqlite3_get_table() interfaces.  See the sqlite.h
@@ -872,6 +888,3 @@ int sqlite3_get_table_vprintf(
   free(zSql);
   return rc;
 }
-
-
-
