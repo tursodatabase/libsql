@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.14 2001/09/27 15:11:55 drh Exp $
+# $Id: index.test,v 1.15 2001/11/08 00:45:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -317,7 +317,8 @@ do_test index-11.1 {
   for {set i 1} {$i<=50} {incr i} {
     execsql "INSERT INTO t3 VALUES('x${i}x',$i,0.$i)"
   }
-  execsql {SELECT c, fcnt() FROM t3 WHERE b==10}
-} {0.10 1}
+  set sqlite_search_count 0
+  concat [execsql {SELECT c FROM t3 WHERE b==10}] $sqlite_search_count
+} {0.10 3}
 
 finish_test

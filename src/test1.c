@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.4 2001/09/24 03:12:40 drh Exp $
+** $Id: test1.c,v 1.5 2001/11/08 00:45:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -303,6 +303,7 @@ static int sqlite_malloc_stat(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
+  extern int sqlite_search_count;
   Tcl_CreateCommand(interp, "sqlite_mprintf_int", sqlite_mprintf_int, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_mprintf_str", sqlite_mprintf_str, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_mprintf_double", sqlite_mprintf_double,0,0);
@@ -311,6 +312,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite_get_table_printf", test_get_table_printf,
       0, 0);
   Tcl_CreateCommand(interp, "sqlite_close", sqlite_test_close, 0, 0);
+  Tcl_LinkVar(interp, "sqlite_search_count", 
+      (char*)&sqlite_search_count, TCL_LINK_INT);
 #ifdef MEMORY_DEBUG
   Tcl_CreateCommand(interp, "sqlite_malloc_fail", sqlite_malloc_fail, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_malloc_stat", sqlite_malloc_stat, 0, 0);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.68 2001/11/07 16:48:27 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.69 2001/11/08 00:45:21 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -309,6 +309,7 @@ struct WhereLevel {
   int iMem;            /* Memory cell used by this level */
   Index *pIdx;         /* Index used */
   int iCur;            /* Cursor number used for this index */
+  int score;           /* How well this indexed scored */
   int brk;             /* Jump here to break out of the loop */
   int cont;            /* Jump here to continue with the next loop cycle */
   int op, p1, p2;      /* Opcode used to terminate the loop */

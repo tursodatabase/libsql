@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.5 2001/09/18 02:02:23 drh Exp $
+# $Id: rowid.test,v 1.6 2001/11/08 00:45:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -238,17 +238,19 @@ do_test rowid-4.4.2 {
 } {256}
 do_test rowid-4.5 {
   execsql {CREATE INDEX idxt2 ON t2(y)}
-  execsql {
-    SELECT t1.x, fcnt() FROM t2, t1 
+  set sqlite_search_count 0
+  concat [execsql {
+    SELECT t1.x FROM t2, t1 
     WHERE t2.y==256 AND t1.rowid==t2.rowid
-  }
-} {4 1}
+  }] $sqlite_search_count
+} {4 3}
 do_test rowid-4.5.1 {
-  execsql {
-    SELECT t1.x, fcnt() FROM t2, t1 
+  set sqlite_search_count 0
+  concat [execsql {
+    SELECT t1.x FROM t2, t1 
     WHERE t1.OID==t2.rowid AND t2.y==81
-  }
-} {3 1}
+  }] $sqlite_search_count
+} {3 3}
 do_test rowid-4.6 {
   execsql {
     SELECT t1.x FROM t1, t2

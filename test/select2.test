@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select2.test,v 1.14 2001/09/16 00:13:28 drh Exp $
+# $Id: select2.test,v 1.15 2001/11/08 00:45:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,30 +93,23 @@ do_test select2-3.2c {
   execsql {SELECT f1 FROM tbl2 WHERE f2=1000}
 } {500}
 do_test select2-3.2d {
-  execsql {SELECT fcnt() FROM tbl2 WHERE 1000=f2}
-} {1}
+  set sqlite_search_count 0
+  execsql {SELECT * FROM tbl2 WHERE 1000=f2}
+  set sqlite_search_count
+} {3}
 do_test select2-3.2e {
-  execsql {SELECT fcnt() FROM tbl2 WHERE f2=1000}
-} {1}
-
-# omit the time-dependent tests
-#
-do_probtest select2-3.2f {
-  set t1 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE 1000=f2}} 1] 0]
-  set t2 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE f2=1000}} 1] 0]
-  expr {$t1*0.7<$t2 && $t2*0.7<$t1}
-} {1}
+  set sqlite_search_count 0
+  execsql {SELECT * FROM tbl2 WHERE f2=1000}
+  set sqlite_search_count
+} {3}
 
 # Make sure queries run faster with an index than without
 #
-do_probtest select2-3.3 {
-  set t1 [lindex [time {execsql {SELECT f1 from tbl2 WHERE f2==2000}} 1] 0]
+do_test select2-3.3 {
   execsql {DROP INDEX idx1}
-  set t2 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE f2==2000}} 1] 0]
-  expr {$t1*10 < $t2}
-} {1}
-do_probtest select2-3.4 {
-  expr {[execsql {SELECT fcnt() FROM tbl2 WHERE f2==2000}]>10}
-} {1}
+  set sqlite_search_count 0
+  execsql {SELECT f1 FROM tbl2 WHERE f2==2000}
+  set sqlite_search_count
+} {29999}
 
 finish_test

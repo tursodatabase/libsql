@@ -30,10 +30,18 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.95 2001/11/07 16:48:27 drh Exp $
+** $Id: vdbe.c,v 1.96 2001/11/08 00:45:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
+/*
+** The following global variable is incremented every time a cursor
+** moves, either by the OP_MoveTo or the OP_Next opcode.  The test
+** procedures use this information to make sure that indices are
+** working correctly.
+*/
+int sqlite_search_count = 0;
 
 /*
 ** SQL is translated into a sequence of instructions to be
@@ -206,7 +214,6 @@ struct Vdbe {
   Agg agg;            /* Aggregate information */
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
-  int nFetch;         /* Number of OP_Fetch instructions executed */
   int nCallback;      /* Number of callbacks invoked so far */
   int iLimit;         /* Limit on the number of callbacks remaining */
   int iOffset;        /* Offset before beginning to do callbacks */
@@ -837,31 +844,31 @@ static char *zOpName[] = { 0,
   "Transaction",       "Commit",            "Rollback",          "ReadCookie",
   "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
   "OpenWrite",         "OpenAux",           "OpenWrAux",         "Close",
-  "MoveTo",            "Fcnt",              "NewRecno",          "Put",
-  "Distinct",          "Found",             "NotFound",          "Delete",
-  "Column",            "KeyAsData",         "Recno",             "FullKey",
-  "Rewind",            "Next",              "Destroy",           "Clear",
-  "CreateIndex",       "CreateTable",       "Reorganize",        "IdxPut",
-  "IdxDelete",         "IdxRecno",          "IdxGT",             "IdxGE",
-  "MemLoad",           "MemStore",          "ListWrite",         "ListRewind",
-  "ListRead",          "ListReset",         "SortPut",           "SortMakeRec",
-  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
-  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
-  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
-  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
-  "SetNotFound",       "MakeRecord",        "MakeKey",           "MakeIdxKey",
-  "IncrKey",           "Goto",              "If",                "Halt",
-  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
-  "Integer",           "String",            "Pop",               "Dup",
-  "Pull",              "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Precision",         "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",            "Limit",           
+  "MoveTo",            "NewRecno",          "Put",               "Distinct",
+  "Found",             "NotFound",          "Delete",            "Column",
+  "KeyAsData",         "Recno",             "FullKey",           "Rewind",
+  "Next",              "Destroy",           "Clear",             "CreateIndex",
+  "CreateTable",       "Reorganize",        "IdxPut",            "IdxDelete",
+  "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
+  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
+  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortCallback",      "SortReset",
+  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
+  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
+  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
+  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
+  "Goto",              "If",                "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "NullCallback",      "Integer",
+  "String",            "Pop",               "Dup",               "Pull",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Remainder",         "BitAnd",            "BitOr",
+  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
+  "Precision",         "Min",               "Max",               "Like",
+  "Glob",              "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "IsNull",
+  "NotNull",           "Negative",          "And",               "Or",
+  "Not",               "Concat",            "Noop",              "Strlen",
+  "Substr",            "Limit",           
 };
 
 /*
@@ -2524,7 +2531,7 @@ case OP_MoveTo: {
       sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
       pC->recnoIsValid = 0;
     }
-    p->nFetch++;
+    sqlite_search_count++;
     if( res<0 ){
       sqliteBtreeNext(pC->pCursor, &res);
       pC->recnoIsValid = 0;
@@ -2534,23 +2541,6 @@ case OP_MoveTo: {
     }
   }
   POPSTACK;
-  break;
-}
-
-/* Opcode: Fcnt * * *
-**
-** Push an integer onto the stack which is the total number of
-** MoveTo opcodes that have been executed by this virtual machine.
-**
-** This instruction is used to implement the special fcnt() function
-** in the SQL dialect that SQLite understands.  fcnt() is used for
-** testing purposes.
-*/
-case OP_Fcnt: {
-  int i = ++p->tos;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  aStack[i].i = p->nFetch;
-  aStack[i].flags = STK_Int;
   break;
 }
 
@@ -2940,7 +2930,7 @@ case OP_Next: {
     rc = sqliteBtreeNext(pCrsr, &res);
     if( res==0 ){
       pc = pOp->p2 - 1;
-      p->nFetch++;
+      sqlite_search_count++;
     }
     p->aCsr[i].recnoIsValid = 0;
   }

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.32 2001/10/22 02:58:10 drh Exp $
+** $Id: expr.c,v 1.33 2001/11/08 00:45:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -340,7 +340,6 @@ int sqliteFuncId(Token *pToken){
      { "max",    3, FN_Max    },
      { "sum",    3, FN_Sum    },
      { "avg",    3, FN_Avg    },
-     { "fcnt",   4, FN_Fcnt   },  /* Used for testing only */
      { "length", 6, FN_Length },
      { "substr", 6, FN_Substr },
      { "abs",    3, FN_Abs    },
@@ -419,18 +418,6 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           too_many_args = n>3;
           break;
         }
-        /* The "fcnt(*)" function always returns the number of OP_MoveTo
-        ** operations that have occurred so far while processing the
-        ** SQL statement.  This information can be used by test procedures
-        ** to verify that indices are being used properly to minimize
-        ** searching.  All arguments to fcnt() are ignored.  fcnt() has
-        ** no use (other than testing) that we are aware of.
-        */
-        case FN_Fcnt: {
-          n = 0;
-          break;
-        }
-      
         default: break;
       }
       if( no_such_func ){
@@ -635,10 +622,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       int i;
       ExprList *pList = pExpr->pList;
       switch( id ){
-        case FN_Fcnt: {
-          sqliteVdbeAddOp(v, OP_Fcnt, 0, 0);
-          break;
-        }
         case FN_Min: 
         case FN_Max: {
           op = id==FN_Min ? OP_Min : OP_Max;
