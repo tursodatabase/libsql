@@ -1,5 +1,5 @@
-C Change\slots\sof\sinternal\ssymbols\sfrom\ssqliteXXX\sto\ssqlite3XXX\sso\sthat\sthe\nlibrary\slinks\sagain.\sIt\sdoesn't\swork\syet,\sdue\sto\schanges\sin\sthe\sbtree\slayer\ncalling\sconvention.\s(CVS\s1324)
-D 2004-05-08T08:23:20
+C Minor\schange\sto\smain.c\sso\sthat\sit\swill\scompile\swith\sGCC\s2.96.\s(CVS\s1325)
+D 2004-05-08T10:11:37
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/func.c f87eec5cf103f739ba32866660ce22d000c5723f
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 954c0ddabc10899526c975b403ca4352d253f2e0
-F src/main.c eb4b3e74543b137c168a059979039dec681bb0a2
+F src/main.c b6e249c71c3f815d7551ddf1b914f4bb45a4bd67
 F src/md5.c 01d2f55b06316d242749759b6a37186439ef7fe3
 F src/os.c 4092dcc87e66f49ed660fae1519569a0cee34da0
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
@@ -190,7 +190,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2d64cba38c0f5fffa18cb30c4c448278837de49d
-R 03384ffd55df6020603f8282df180679
-U danielk1977
-Z bcb34ef43ffabd77f195774597adcbb5
+P 8af6474c49263ae26216dff9465b33f76b500cf4
+R 2ed9c287297cae4581a05c12a5103a70
+U drh
+Z 345f2d0e7e37c3a350d2d2026464612e

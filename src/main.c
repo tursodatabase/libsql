@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.165 2004/05/08 08:23:26 danielk1977 Exp $
+** $Id: main.c,v 1.166 2004/05/08 10:11:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1119,9 +1119,9 @@ int sqlite3BtreeFactory(
   int nCache,               /* How many pages in the page cache */
   Btree **ppBtree           /* Pointer to new Btree object written here */
 ){
-  assert( ppBtree != 0);
   int btree_flags = 0;
   
+  assert( ppBtree != 0);
   if( omitJournal ){
     btree_flags |= BTREE_OMIT_JOURNAL;
   }
@@ -1342,6 +1342,3 @@ double sqlite3_column_float(sqlite3_stmt*,int){
 }
 
 #endif
-
-
-
