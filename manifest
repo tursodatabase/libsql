@@ -1,5 +1,5 @@
-C Manifest\stypes\sin\sindices.\sAt\sthe\smoment\sindices\suse\smanifest\styping,\sbut\nsome\sother\sparts\sof\sthe\sSQL\sengine\sdo\snot,\swhich\scan\slead\sto\ssome\sstrange\nresults.\s(CVS\s1368)
-D 2004-05-13T05:16:16
+C Commit\svdbeaux.c,\swhich\sshould\sof\sgone\sin\swith\sthe\sprevious\scommit.\s(CVS\s1369)
+D 2004-05-13T05:20:26
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -66,7 +66,7 @@ F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
 F src/vdbe.c 773fb49293f0412aa65e2bcbced40bd64464529e
 F src/vdbe.h 94457ca73bae972dc61bca33a4dccc2e6e14e2f8
 F src/vdbeInt.h 66904cfb0b004de8441e47ce00da8c7d4c498c76
-F src/vdbeaux.c c976c7fe334a1d1c102dda410546e880549a6060
+F src/vdbeaux.c 8bf71f7ba91a208c5e0a8bcf5da03889bc858041
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 1d52a4bb478648ef53a0dbb21865ccb9281dc24a
-R 348f622445c9bf52db446021aadee19c
+P 9f2b6d9d3a07e25fcdb7e8290da7a182a65c37b2
+R f11624c39f06ceae0abda7ba6de7cde2
 U danielk1977
-Z b02892c4dfff10665b81dd53d91883c9
+Z 1145b683d60660fe323388d21c0508f8

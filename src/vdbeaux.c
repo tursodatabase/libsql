@@ -1130,13 +1130,14 @@ int sqlite2BtreeKeyCompare(
 **
 **   serial type        bytes of data      type
 **   --------------     ---------------    ---------------
-**      0                     0            NULL
+**      0                     -            Not a type.
 **      1                     1            signed integer
 **      2                     2            signed integer
 **      3                     4            signed integer
 **      4                     8            signed integer
 **      5                     8            IEEE float
-**     6..12                               reserved for expansion
+**      6                     0            NULL
+**     7..11                               reserved for expansion
 **    N>=12 and even       (N-12)/2        BLOB
 **    N>=13 and odd        (N-13)/2        text
 **
@@ -1149,7 +1150,7 @@ u64 sqlite3VdbeSerialType(const Mem *pMem){
   int flags = pMem->flags;
 
   if( flags&MEM_Null ){
-    return 0;
+    return 6;
   }
   if( flags&MEM_Int ){
     /* Figure out whether to use 1, 2, 4 or 8 bytes. */
@@ -1175,8 +1176,9 @@ u64 sqlite3VdbeSerialType(const Mem *pMem){
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 int sqlite3VdbeSerialTypeLen(u64 serial_type){
+  assert( serial_type!=0 );
   switch(serial_type){
-    case 0: return 0;                  /* NULL */
+    case 6: return 0;                  /* NULL */
     case 1: return 1;                  /* 1 byte integer */
     case 2: return 2;                  /* 2 byte integer */
     case 3: return 4;                  /* 4 byte integer */
@@ -1195,9 +1197,11 @@ int sqlite3VdbeSerialTypeLen(u64 serial_type){
 int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
   u64 serial_type = sqlite3VdbeSerialType(pMem);
   int len;
+
+  assert( serial_type!=0 );
  
   /* NULL */
-  if( serial_type==0 ){
+  if( serial_type==6 ){
     return 0;
   }
  
@@ -1234,12 +1238,14 @@ int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
 int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   int len;
 
+  assert( serial_type!=0 );
+
   /* memset(pMem, 0, sizeof(pMem)); */
   pMem->flags = 0;
   pMem->z = 0;
 
   /* NULL */
-  if( serial_type==0 ){
+  if( serial_type==6 ){
     pMem->flags = MEM_Null;
     return 0;
   }
@@ -1372,19 +1378,23 @@ int compareMemCells(Mem *pMem1, Mem *pMem2){
 ** the second.
 **
 ** This function assumes that each key consists of one or more type/blob
-** pairs, encoded using the sqlite3VdbeSerialXXX() functions above. One
-** of the keys may have some trailing data appended to it. This is OK
-** provided that the other key does not have more type/blob pairs than
-** the key with the trailing data.
+** pairs, encoded using the sqlite3VdbeSerialXXX() functions above. 
+**
+** Following the type/blob pairs, each key may have a single 0x00 byte
+** followed by a varint. A key may only have this traling 0x00/varint
+** pair if it has at least as many type/blob pairs as the key it is being
+** compared to.
 */
 int sqlite3VdbeKeyCompare(
   void *userData,                         /* not used yet */
-  int nKey1, const unsigned char *aKey1, 
-  int nKey2, const unsigned char *aKey2
+  int nKey1, const void *pKey1, 
+  int nKey2, const void *pKey2
 ){
   int offset1 = 0;
   int offset2 = 0;
-
+  const unsigned char *aKey1 = (const unsigned char *)pKey1;
+  const unsigned char *aKey2 = (const unsigned char *)pKey2;
+  
   while( offset1<nKey1 && offset2<nKey2 ){
     Mem mem1;
     Mem mem2;
@@ -1392,8 +1402,27 @@ int sqlite3VdbeKeyCompare(
     u64 serial_type2;
     int rc;
 
+    /* Read the serial types for the next element in each key. */
     offset1 += sqlite3GetVarint(&aKey1[offset1], &serial_type1);
     offset2 += sqlite3GetVarint(&aKey2[offset2], &serial_type2);
+
+    /* If either of the varints just read in are 0 (not a type), then
+    ** this is the end of the keys. The remaining data in each key is
+    ** the varint rowid. Compare these as signed integers and return
+    ** the result.
+    */
+    if( !serial_type1 || !serial_type2 ){
+      assert( !serial_type1 && !serial_type2 );
+      sqlite3GetVarint(&aKey1[offset1], &serial_type1);
+      sqlite3GetVarint(&aKey2[offset2], &serial_type2);
+      return ( (i64)serial_type1 - (i64)serial_type2 );
+    }
+
+    /* Assert that there is enough space left in each key for the blob of
+    ** data to go with the serial type just read. This assert may fail if
+    ** the file is corrupted.  Then read the value from each key into mem1
+    ** and mem2 respectively.
+    */
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
@@ -1417,3 +1446,85 @@ int sqlite3VdbeKeyCompare(
   }
   return 0;
 }
+
+/*
+** pCur points at an index entry. Read the rowid (varint occuring at
+** the end of the entry and store it in *rowid. Return SQLITE_OK if
+** everything works, or an error code otherwise.
+*/
+int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
+  i64 sz;
+  int rc;
+  char buf[9];
+  int len;
+  u64 r;
+
+  rc = sqlite3BtreeKeySize(pCur, &sz);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  len = ((sz>9)?9:sz);
+  assert( len>=2 );
+
+  rc = sqlite3BtreeKey(pCur, sz-len, len, buf);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  len = len - 2;
+  while( buf[len] && --len );
+
+  sqlite3GetVarint(buf, &r);
+  *rowid = r;
+  return SQLITE_OK;
+}
+
+int sqlite3VdbeIdxKeyCompare(
+  BtCursor *pCur, 
+  int nKey, const unsigned char *pKey,
+  int ignorerowid,
+  int *res
+){
+  unsigned char *pCellKey;
+  u64 nCellKey;
+  int freeCellKey = 0;
+  int rc;
+  int len;
+
+  sqlite3BtreeKeySize(pCur, &nCellKey);
+  if( nCellKey<=0 ){
+    *res = 0;
+    return SQLITE_OK;
+  }
+
+  pCellKey = (unsigned char *)sqlite3BtreeKeyFetch(pCur, nCellKey);
+  if( !pCellKey ){
+    pCellKey = (unsigned char *)sqliteMalloc(nCellKey);
+    if( !pCellKey ){
+      return SQLITE_NOMEM;
+    }
+    freeCellKey = 1;
+    rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(pCellKey);
+      return rc;
+    }
+  }
+ 
+  len = nCellKey-2;
+  while( pCellKey[len] && --len );
+
+  if( ignorerowid ){
+    nKey--;
+    while( pKey[nKey] && --nKey );
+  }
+  *res = sqlite3VdbeKeyCompare(0, len, pCellKey, nKey, pKey);
+  
+  if( freeCellKey ){
+    sqliteFree(pCellKey);
+  }
+  return SQLITE_OK;
+}
+
+
+
