@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.48 2004/05/16 11:15:38 danielk1977 Exp $
+** $Id: func.c,v 1.49 2004/05/24 07:04:26 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -295,7 +295,7 @@ static void quoteFunc(sqlite_func *context, int argc, const char **argv){
   if( argc<1 ) return;
   if( argv[0]==0 ){
     sqlite3_set_result_string(context, "NULL", 4);
-  }else if( sqlite3IsNumber(argv[0], 0) ){
+  }else if( sqlite3IsNumber(argv[0], 0, TEXT_Utf8) ){
     sqlite3_set_result_string(context, argv[0], -1);
   }else{
     int i,j,n;

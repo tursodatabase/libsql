@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.87 2004/05/20 11:00:52 danielk1977 Exp $
+** $Id: util.c,v 1.88 2004/05/24 07:04:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -564,25 +564,27 @@ int sqlite3StrNICmp(const char *zLeft, const char *zRight, int N){
 **
 ** Am empty string is considered non-numeric.
 */
-int sqlite3IsNumber(const char *z, int *realnum){
-  if( *z=='-' || *z=='+' ) z++;
+int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
+  int incr = (enc==TEXT_Utf8?1:2);
+  if( enc==TEXT_Utf16be ) z++;
+  if( *z=='-' || *z=='+' ) z += incr;
   if( !isdigit(*z) ){
     return 0;
   }
-  z++;
+  z += incr;
   if( realnum ) *realnum = 0;
-  while( isdigit(*z) ){ z++; }
+  while( isdigit(*z) ){ z += incr; }
   if( *z=='.' ){
-    z++;
+    z += incr;
     if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z++; }
+    while( isdigit(*z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   if( *z=='e' || *z=='E' ){
-    z++;
-    if( *z=='+' || *z=='-' ) z++;
+    z += incr;
+    if( *z=='+' || *z=='-' ) z += incr;
     if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z++; }
+    while( isdigit(*z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   return *z==0;
@@ -663,23 +665,27 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
 ** 32-bit numbers.  At that time, it was much faster than the
 ** atoi() library routine in RedHat 7.2.
 */
-int sqlite3atoi64(const char *zNum, i64 *pNum){
+int sqlite3atoi64(const char *zNum, i64 *pNum, u8 enc){
   i64 v = 0;
   int neg;
   int i, c;
+  int incr = (enc==TEXT_Utf8?1:2);
+  if( enc==TEXT_Utf16be ) zNum++;
   if( *zNum=='-' ){
     neg = 1;
-    zNum++;
+    zNum += incr;
   }else if( *zNum=='+' ){
     neg = 0;
-    zNum++;
+    zNum += incr;
   }else{
     neg = 0;
   }
-  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i += incr){
     v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
+
+  /* FIX ME: Handle overflow of strings in UTF-16 here */
   return c==0 && i>0 && 
       (i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0));
 }
@@ -738,7 +744,7 @@ int sqlite3FitsIn64Bits(const char *zNum){
 */
 int sqlite3GetInt64(const char *zNum, i64 *pValue){
   if( sqlite3FitsIn64Bits(zNum) ){
-    sqlite3atoi64(zNum, pValue);
+    sqlite3atoi64(zNum, pValue, TEXT_Utf8);
     return 1;
   }
   return 0;
@@ -765,8 +771,8 @@ int sqlite3Compare(const char *atext, const char *btext){
   }else if( btext==0 ){
     return 1;
   }
-  isNumA = sqlite3IsNumber(atext, 0);
-  isNumB = sqlite3IsNumber(btext, 0);
+  isNumA = sqlite3IsNumber(atext, 0, TEXT_Utf8);
+  isNumB = sqlite3IsNumber(btext, 0, TEXT_Utf8);
   if( isNumA ){
     if( !isNumB ){
       result = -1;
@@ -857,8 +863,8 @@ int sqlite3SortCompare(const char *a, const char *b){
       res = strcmp(&a[1],&b[1]);
       if( res ) break;
     }else{
-      isNumA = sqlite3IsNumber(&a[1], 0);
-      isNumB = sqlite3IsNumber(&b[1], 0);
+      isNumA = sqlite3IsNumber(&a[1], 0, TEXT_Utf8);
+      isNumB = sqlite3IsNumber(&b[1], 0, TEXT_Utf8);
       if( isNumA ){
         double rA, rB;
         if( !isNumB ){

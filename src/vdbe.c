@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.321 2004/05/23 13:30:58 danielk1977 Exp $
+** $Id: vdbe.c,v 1.322 2004/05/24 07:04:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -98,69 +98,10 @@ static int Recordify(Mem *pMem){
 #endif
 
 /*
-** Convert the given stack entity into a string if it isn't one
-** already.
-*/
-#define Stringify(P) if(!((P)->flags&(MEM_Str|MEM_Blob))){hardStringify(P);}
-static int hardStringify(Mem *pStack){
-  int fg = pStack->flags;
-  if( fg & MEM_Real ){
-    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%.15g",pStack->r);
-  }else if( fg & MEM_Int ){
-    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%lld",pStack->i);
-  }else{
-    pStack->zShort[0] = 0;
-  }
-  pStack->z = pStack->zShort;
-  pStack->n = strlen(pStack->zShort)+1;
-  pStack->flags = MEM_Str | MEM_Short | MEM_Term | MEM_Utf8;
-  return 0;
-}
-
-/*
 ** Release the memory associated with the given stack level.  This
 ** leaves the Mem.flags field in an inconsistent state.
 */
 #define Release(P) if((P)->flags&MEM_Dyn){ sqliteFree((P)->z); }
-
-/*
-** Convert the given stack entity into a integer if it isn't one
-** already.
-**
-** Any prior string or real representation is invalidated.  
-** NULLs are converted into 0.
-*/
-#define Integerify(P) if(((P)->flags&MEM_Int)==0){ hardIntegerify(P); }
-static void hardIntegerify(Mem *pStack){
-  if( pStack->flags & MEM_Real ){
-    pStack->i = (int)pStack->r;
-    Release(pStack);
-  }else if( pStack->flags & MEM_Str ){
-    sqlite3atoi64(pStack->z, &pStack->i);
-    Release(pStack);
-  }else{
-    pStack->i = 0;
-  }
-  pStack->flags = MEM_Int;
-}
-
-/*
-** Get a valid Real representation for the given stack element.
-**
-** Any prior string or integer representation is retained.
-** NULLs are converted into 0.0.
-*/
-#define Realify(P) if(((P)->flags&MEM_Real)==0){ hardRealify(P); }
-static void hardRealify(Mem *pStack){
-  if( pStack->flags & MEM_Str ){
-    pStack->r = sqlite3AtoF(pStack->z, 0);
-  }else if( pStack->flags & MEM_Int ){
-    pStack->r = pStack->i;
-  }else{
-    pStack->r = 0.0;
-  }
-  pStack->flags |= MEM_Real;
-}
 
 /*
 ** Parmameter "flags" is the value of the flags for a string Mem object.
@@ -199,8 +140,8 @@ static int encToFlags(u8 enc){
 ** for the database encoding "enc" (one of TEXT_Utf8, TEXT_Utf16le or
 ** TEXT_Utf16be).
 */
-#define SetEncodingFlags(pMem, enc) (pMem->flags = \
-(pMem->flags & ~(MEM_Utf8|MEM_Utf16le|MEM_Utf16be)) | encToFlags(enc))
+#define SetEncodingFlags(pMem, enc) ((pMem)->flags = \
+((pMem->flags & ~(MEM_Utf8|MEM_Utf16le|MEM_Utf16be))) | encToFlags(enc))
 
 /*
 ** If pMem is a string object, this routine sets the encoding of the string
@@ -222,7 +163,7 @@ int SetEncoding(Mem *pMem, int flags){
   u8 enc2;    /* Required string encoding (TEXT_Utf* value) */
 
   /* If this is not a string, do nothing. */
-  if( !(pMem->flags&MEM_Str) || pMem->flags&MEM_Int || pMem->flags&MEM_Real ){
+  if( !(pMem->flags&MEM_Str) ){
     return SQLITE_OK;
   }
 
@@ -235,7 +176,7 @@ int SetEncoding(Mem *pMem, int flags){
     */
     char *z;
     int n;
-    int rc = sqlite3utfTranslate(pMem->z, pMem->n, enc1, (void **)&z, &n, enc2);
+    int rc = sqlite3utfTranslate(pMem->z,pMem->n,enc1,(void **)&z,&n,enc2);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -306,24 +247,139 @@ int SetEncoding(Mem *pMem, int flags){
 }
 
 /*
+** Convert the given stack entity into a integer if it isn't one
+** already.
+**
+** Any prior string or real representation is invalidated.  
+** NULLs are converted into 0.
+*/
+#define Integerify(P, enc) \
+if(((P)->flags&MEM_Int)==0){ hardIntegerify(P, enc); }
+static void hardIntegerify(Mem *pStack, u8 enc){
+  pStack->i = 0;
+  if( pStack->flags & MEM_Real ){
+    pStack->i = (int)pStack->r;
+    Release(pStack);
+  }else if( pStack->flags & MEM_Str ){
+    if( pStack->z ){
+      sqlite3atoi64(pStack->z, &pStack->i, enc);
+    }
+  }
+  pStack->flags = MEM_Int;
+}
+
+/*
+** Get a valid Real representation for the given stack element.
+**
+** Any prior string or integer representation is retained.
+** NULLs are converted into 0.0.
+*/
+#define Realify(P,enc) if(((P)->flags&MEM_Real)==0){ hardRealify(P,enc); }
+static void hardRealify(Mem *pStack, u8 enc){
+  if( pStack->flags & MEM_Str ){
+    SetEncodingFlags(pStack, enc);
+    SetEncoding(pStack, MEM_Utf8|MEM_Term);
+    pStack->r = sqlite3AtoF(pStack->z, 0);
+  }else if( pStack->flags & MEM_Int ){
+    pStack->r = pStack->i;
+  }else{
+    pStack->r = 0.0;
+  }
+/*  pStack->flags |= MEM_Real; */
+  pStack->flags = MEM_Real;
+}
+
+
+/*
+** Convert the given stack entity into a string if it isn't one
+** already. Return non-zero if a malloc() fails.
+*/
+#define Stringify(P, enc) \
+(!((P)->flags&(MEM_Str|MEM_Blob)) && hardStringify(P, enc))
+static int hardStringify(Mem *pStack, u8 enc){
+  int rc = SQLITE_OK;
+  int fg = pStack->flags;
+
+  assert( !(fg&(MEM_Str|MEM_Blob)) );
+  assert( fg&(MEM_Int|MEM_Real|MEM_Null) );
+
+  if( fg & MEM_Null ){      
+    /* A NULL value is converted to a zero length string */
+    pStack->zShort[0] = 0;
+    pStack->zShort[1] = 0;
+    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
+    pStack->z = pStack->zShort;
+    pStack->n = (enc==TEXT_Utf8?1:2);
+  }else{
+    /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
+    ** string representation of the value. Then, if the required encoding
+    ** is UTF-16le or UTF-16be do a translation.
+    ** 
+    ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
+    */
+    if( fg & MEM_Real ){
+      sqlite3_snprintf(NBFS, pStack->zShort, "%.15g", pStack->r);
+    }else if( fg & MEM_Int ){
+      sqlite3_snprintf(NBFS, pStack->zShort, "%lld", pStack->i);
+    }
+    pStack->n = strlen(pStack->zShort) + 1;
+    pStack->z = pStack->zShort;
+    pStack->flags = MEM_Str | MEM_Short | MEM_Term;
+
+    /* Flip the string to UTF-16 if required */
+    SetEncodingFlags(pStack, TEXT_Utf8);
+    rc = SetEncoding(pStack, encToFlags(enc)|MEM_Term);
+  }
+
+  return rc;
+}
+
+
+/*
 ** Convert the given stack entity into a string that has been obtained
 ** from sqliteMalloc().  This is different from Stringify() above in that
 ** Stringify() will use the NBFS bytes of static string space if the string
 ** will fit but this routine always mallocs for space.
 ** Return non-zero if we run out of memory.
 */
-#define Dynamicify(P) (((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P):0)
-static int hardDynamicify(Mem *pStack){
+#define Dynamicify(P, enc) \
+(((P)->flags & MEM_Dyn)==0 ? hardDynamicify(P, enc):0)
+static int hardDynamicify(Mem *pStack, u8 enc){
   int fg = pStack->flags;
   char *z;
   if( (fg & MEM_Str)==0 ){
-    hardStringify(pStack);
+    hardStringify(pStack, enc);
   }
   assert( (fg & MEM_Dyn)==0 );
   z = sqliteMallocRaw( pStack->n );
   if( z==0 ) return 1;
   memcpy(z, pStack->z, pStack->n);
   pStack->z = z;
+  pStack->flags |= MEM_Dyn;
+  return 0;
+}
+
+/*
+** An ephemeral string value (signified by the MEM_Ephem flag) contains
+** a pointer to a dynamically allocated string where some other entity
+** is responsible for deallocating that string.  Because the stack entry
+** does not control the string, it might be deleted without the stack
+** entry knowing it.
+**
+** This routine converts an ephemeral string into a dynamically allocated
+** string that the stack entry itself controls.  In other words, it
+** converts an MEM_Ephem string into an MEM_Dyn string.
+*/
+#define Deephemeralize(P) \
+   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
+static int hardDeephem(Mem *pStack){
+  char *z;
+  assert( (pStack->flags & MEM_Ephem)!=0 );
+  z = sqliteMallocRaw( pStack->n );
+  if( z==0 ) return 1;
+  memcpy(z, pStack->z, pStack->n);
+  pStack->z = z;
+  pStack->flags &= ~MEM_Ephem;
   pStack->flags |= MEM_Dyn;
   return 0;
 }
@@ -470,30 +526,39 @@ const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
   }
 
   pVal = &pVm->pTos[(1-vals)+i];
-  SetEncodingFlags(pVal, pVm->db->enc);
   return sqlite3_value_data((sqlite3_value *)pVal);
 }
 
+/*
+** pVal is a Mem* cast to an sqlite_value* value. Return a pointer to
+** the nul terminated UTF-8 string representation if the value is 
+** not a blob or NULL. If the value is a blob, then just return a pointer
+** to the blob of data. If it is a NULL, return a NULL pointer.
+**
+** This function may translate the encoding of the string stored by
+** pVal. The MEM_Utf8, MEM_Utf16le and MEM_Utf16be flags must be set
+** correctly when this function is called. If a translation occurs,
+** the flags are set to reflect the new encoding of the string.
+**
+** If a translation fails because of a malloc() failure, a NULL pointer
+** is returned.
+*/
 const unsigned char *sqlite3_value_data(sqlite3_value* pVal){
   if( pVal->flags&MEM_Null ){
+    /* For a NULL return a NULL Pointer */
     return 0;
   }
-  if( !(pVal->flags&MEM_Blob) ){
-    if( pVal->flags&MEM_Str && !(pVal->flags&MEM_Utf8) ){
-      char *z = 0;
-      int n;
-      u8 enc = flagsToEnc(pVal->flags);
-      if( sqlite3utfTranslate(pVal->z,pVal->n,enc,(void **)&z,&n,TEXT_Utf8) ){
-        return 0;
-      }
-      Release(pVal);
-      pVal->z = z;
-      pVal->n = n;
-      SetEncodingFlags(pVal, TEXT_Utf8);
-    }else{
-      Stringify(pVal);
-    }
+
+  if( pVal->flags&MEM_Str ){
+    /* If there is already a string representation, make sure it is in
+    ** encoded in UTF-8.
+    */
+    SetEncoding(pVal, MEM_Utf8|MEM_Term);
+  }else if( !(pVal->flags&MEM_Blob) ){
+    /* Otherwise, unless this is a blob, convert it to a UTF-8 string */
+    Stringify(pVal, TEXT_Utf8);
   }
+
   return pVal->z;
 }
 
@@ -513,20 +578,43 @@ const void *sqlite3_column_data16(sqlite3_stmt *pStmt, int i){
   }
 
   pVal = &pVm->pTos[(1-vals)+i];
+  return sqlite3_value_data16((sqlite3_value *)pVal);
+}
+
+/*
+** pVal is a Mem* cast to an sqlite_value* value. Return a pointer to
+** the nul terminated UTF-16 string representation if the value is 
+** not a blob or NULL. If the value is a blob, then just return a pointer
+** to the blob of data. If it is a NULL, return a NULL pointer.
+**
+** The byte-order of the returned string data is the machines native byte
+** order.
+**
+** This function may translate the encoding of the string stored by
+** pVal. The MEM_Utf8, MEM_Utf16le and MEM_Utf16be flags must be set
+** correctly when this function is called. If a translation occurs,
+** the flags are set to reflect the new encoding of the string.
+**
+** If a translation fails because of a malloc() failure, a NULL pointer
+** is returned.
+*/
+const void *sqlite3_value_data16(sqlite3_value* pVal){
   if( pVal->flags&MEM_Null ){
+    /* For a NULL return a NULL Pointer */
     return 0;
   }
 
-  if( !(pVal->flags&MEM_Blob) ){
-    Stringify(pVal);
-    if( SQLITE3_BIGENDIAN ){
-      /* SetEncoding(pVal, MEM_Utf16be|MEM_Term); */
-    }else{
-  /*    SetEncoding(pVal, MEM_Utf16le|MEM_Term); */
-    }
+  if( pVal->flags&MEM_Str ){
+    /* If there is already a string representation, make sure it is in
+    ** encoded in UTF-16 machine byte order.
+    */
+    SetEncoding(pVal, encToFlags(TEXT_Utf16)|MEM_Term);
+  }else if( !(pVal->flags&MEM_Blob) ){
+    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
+    Stringify(pVal, TEXT_Utf16);
   }
 
-  return pVal->z;
+  return (const void *)(pVal->z);
 }
 
 /*
@@ -573,7 +661,7 @@ long long int sqlite3_column_int(sqlite3_stmt *pStmt, int i){
   }
 
   pVal = &pVm->pTos[(1-vals)+i];
-  Integerify(pVal);
+  Integerify(pVal, pVm->db->enc);
   return pVal->i;
 }
 
@@ -593,7 +681,7 @@ double sqlite3_column_float(sqlite3_stmt *pStmt, int i){
   }
 
   pVal = &pVm->pTos[(1-vals)+i];
-  Realify(pVal);
+  Realify(pVal, pVm->db->enc);
   return pVal->r;
 }
 
@@ -718,6 +806,273 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int i){
 }
 
 /*
+** Unbind the value bound to variable $i in virtual machine p. This is the 
+** the same as binding a NULL value to the column. If the "i" parameter is
+** out of range, then SQLITE_RANGE is returned. Othewise SQLITE_OK.
+**
+** The error code stored in database p->db is overwritten with the return
+** value in any case.
+*/
+static int vdbeUnbind(Vdbe *p, int i){
+  Mem *pVar;
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
+    sqlite3Error(p->db, SQLITE_MISUSE, 0);
+    return SQLITE_MISUSE;
+  }
+  if( i<1 || i>p->nVar ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return SQLITE_RANGE;
+  }
+  i--;
+  pVar = &p->apVar[i];
+  if( pVar->flags&MEM_Dyn ){
+    sqliteFree(pVar->z);
+  }
+  pVar->flags = MEM_Null;
+  sqlite3Error(p->db, SQLITE_OK, 0);
+  return SQLITE_OK;
+}
+
+/*
+** This routine is used to bind text or blob data to an SQL variable (a ?).
+** It may also be used to bind a NULL value, by setting zVal to 0. Any
+** existing value is unbound.
+**
+** The error code stored in p->db is overwritten with the return value in
+** all cases.
+*/
+static int vdbeBindBlob(
+  Vdbe *p,           /* Virtual machine */
+  int i,             /* Var number to bind (numbered from 1 upward) */
+  const char *zVal,  /* Pointer to blob of data */
+  int bytes,         /* Number of bytes to copy */
+  int copy,          /* True to copy the memory, false to copy a pointer */
+  int flags          /* Valid combination of MEM_Blob, MEM_Str, MEM_Term */
+){
+  Mem *pVar;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  pVar = &p->apVar[i-1];
+
+  if( zVal ){
+    pVar->n = bytes;
+    pVar->flags = flags;
+    if( !copy ){
+      pVar->z = (char *)zVal;
+      pVar->flags |= MEM_Static;
+    }else{
+      if( bytes>NBFS ){
+        pVar->z = (char *)sqliteMalloc(bytes);
+        if( !pVar->z ){
+          sqlite3Error(p->db, SQLITE_NOMEM, 0);
+          return SQLITE_NOMEM;
+        }
+        pVar->flags |= MEM_Dyn;
+      }else{
+        pVar->z = pVar->zShort;
+        pVar->flags |= MEM_Short;
+      }
+      memcpy(pVar->z, zVal, bytes);
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Bind a 64 bit integer to an SQL statement variable.
+*/
+int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
+  int rc;
+  Vdbe *v = (Vdbe *)p;
+  rc = vdbeUnbind(v, i);
+  if( rc==SQLITE_OK ){
+    Mem *pVar = &v->apVar[i-1];
+    pVar->flags = MEM_Int;
+    pVar->i = iValue;
+  }
+  return rc;
+}
+
+/*
+** Bind a 32 bit integer to an SQL statement variable.
+*/
+int sqlite3_bind_int32(sqlite3_stmt *p, int i, int iValue){
+  return sqlite3_bind_int64(p, i, (long long int)iValue);
+}
+
+/*
+** Bind a double (real) to an SQL statement variable.
+*/
+int sqlite3_bind_double(sqlite3_stmt *p, int i, double iValue){
+  int rc;
+  Vdbe *v = (Vdbe *)p;
+  rc = vdbeUnbind(v, i);
+  if( rc==SQLITE_OK ){
+    Mem *pVar = &v->apVar[i-1];
+    pVar->flags = MEM_Real;
+    pVar->r = iValue;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Bind a NULL value to an SQL statement variable.
+*/
+int sqlite3_bind_null(sqlite3_stmt* p, int i){
+  return vdbeUnbind((Vdbe *)p, i);
+}
+
+/*
+** Bind a UTF-8 text value to an SQL statement variable.
+*/
+int sqlite3_bind_text( 
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const char *zData, 
+  int nData, 
+  int eCopy
+){
+  Mem *pVar;
+  Vdbe *p = (Vdbe *)pStmt;
+  int rc = SQLITE_OK;
+  u8 db_enc = p->db->enc;            /* Text encoding of the database */
+
+  /* Unbind any previous variable value */
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    pVar = &p->apVar[i-1];
+
+    if( !zData ){
+      /* If zData is NULL, then bind an SQL NULL value */
+      pVar->flags = MEM_Null;
+    }else{
+      if( zData && nData<0 ){
+        nData = strlen(zData) + 1;
+      }
+      pVar->z = (char *)zData;
+      pVar->n = nData;
+      pVar->flags = MEM_Utf8|MEM_Str|(zData[nData-1]?0:MEM_Term);
+      if( !eCopy || db_enc!=TEXT_Utf8 ){
+        pVar->flags |= MEM_Static;
+        rc = SetEncoding(pVar, encToFlags(db_enc)|MEM_Term);
+      }else{
+        pVar->flags |= MEM_Ephem;
+        Deephemeralize(pVar);
+      }
+    }
+  }
+
+  sqlite3Error(p->db, rc, 0);
+  return rc;
+
+no_mem:
+  sqlite3Error(p->db, SQLITE_NOMEM, 0);
+  return SQLITE_NOMEM;
+}
+
+/*
+** Bind a UTF-16 text value to an SQL statement variable.
+*/
+int sqlite3_bind_text16(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  u8 db_enc = p->db->enc;            /* Text encoding of the database */
+  u8 txt_enc;
+  int null_term = 0;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  pVar = &p->apVar[i-1];
+
+  /* If zData is NULL, then bind an SQL NULL value */
+  if( !zData ){
+    pVar->flags = MEM_Null;
+    return SQLITE_OK;
+  }
+
+  if( db_enc==TEXT_Utf8 ){
+    /* If the database encoding is UTF-8, then do a translation. */
+    pVar->z = sqlite3utf16to8(zData, nData, SQLITE3_BIGENDIAN);
+    if( !pVar->z ) return SQLITE_NOMEM;
+    pVar->n = strlen(pVar->z)+1;
+    pVar->flags = MEM_Str|MEM_Term|MEM_Dyn;
+    return SQLITE_OK;
+  }
+ 
+  /* There may or may not be a byte order mark at the start of the UTF-16.
+  ** Either way set 'txt_enc' to the TEXT_Utf16* value indicating the 
+  ** actual byte order used by this string. If the string does happen
+  ** to contain a BOM, then move zData so that it points to the first
+  ** byte after the BOM.
+  */
+  txt_enc = sqlite3UtfReadBom(zData, nData);
+  if( txt_enc ){
+    zData = (void *)(((u8 *)zData) + 2);
+  }else{
+    txt_enc = SQLITE3_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
+  }
+
+  if( nData<0 ){
+    nData = sqlite3utf16ByteLen(zData, -1) + 2;
+    null_term = 1;
+  }else if( nData>1 && !((u8*)zData)[nData-1] && !((u8*)zData)[nData-2] ){
+    null_term = 1;
+  }
+
+  if( db_enc==txt_enc && !eCopy ){
+    /* If the byte order of the string matches the byte order of the
+    ** database and the eCopy parameter is not set, then the string can
+    ** be used without making a copy.
+    */
+    pVar->z = (char *)zData;
+    pVar->n = nData;
+    pVar->flags = MEM_Str|MEM_Static|(null_term?MEM_Term:0);
+  }else{
+    /* Make a copy. Swap the byte order if required */
+    pVar->n = nData + (null_term?0:2);
+    pVar->z = sqliteMalloc(pVar->n);
+    pVar->flags = MEM_Str|MEM_Dyn|MEM_Term;
+    if( db_enc==txt_enc ){
+      memcpy(pVar->z, zData, nData);
+    }else{
+      swab(zData, pVar->z, nData);
+    }
+    pVar->z[pVar->n-1] = '\0';
+    pVar->z[pVar->n-2] = '\0';
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Bind a blob value to an SQL statement variable.
+*/
+int sqlite3_bind_blob(
+  sqlite3_stmt *p, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  int eCopy
+){
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Blob);
+}
+
+
+/*
 ** Insert a new aggregate element and make it the element that
 ** has focus.
 **
@@ -757,31 +1112,6 @@ static AggElem *_AggInFocus(Agg *p){
     pElem = sqliteHashFirst(&p->hash);
   }
   return pElem ? sqliteHashData(pElem) : 0;
-}
-
-/*
-** An ephemeral string value (signified by the MEM_Ephem flag) contains
-** a pointer to a dynamically allocated string where some other entity
-** is responsible for deallocating that string.  Because the stack entry
-** does not control the string, it might be deleted without the stack
-** entry knowing it.
-**
-** This routine converts an ephemeral string into a dynamically allocated
-** string that the stack entry itself controls.  In other words, it
-** converts an MEM_Ephem string into an MEM_Dyn string.
-*/
-#define Deephemeralize(P) \
-   if( ((P)->flags&MEM_Ephem)!=0 && hardDeephem(P) ){ goto no_mem;}
-static int hardDeephem(Mem *pStack){
-  char *z;
-  assert( (pStack->flags & MEM_Ephem)!=0 );
-  z = sqliteMallocRaw( pStack->n );
-  if( z==0 ) return 1;
-  memcpy(z, pStack->z, pStack->n);
-  pStack->z = z;
-  pStack->flags &= ~MEM_Ephem;
-  pStack->flags |= MEM_Dyn;
-  return 0;
 }
 
 /*
@@ -888,7 +1218,7 @@ static int expandCursorArraySize(Vdbe *p, int mxCursor){
 ** SQLITE_AFF_INTEGER
 **
 */
-static void applyAffinity(Mem *pRec, char affinity){
+static void applyAffinity(Mem *pRec, char affinity, u8 enc){
   switch( affinity ){
     case SQLITE_AFF_INTEGER:
     case SQLITE_AFF_NUMERIC:
@@ -898,11 +1228,11 @@ static void applyAffinity(Mem *pRec, char affinity){
         ** it looks like a number.
         */
         int realnum;
-        if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum) ){
+        if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
           if( realnum ){
-            Realify(pRec);
+            Realify(pRec, enc);
           }else{
-            Integerify(pRec);
+            Integerify(pRec, enc);
           }
         }
       }
@@ -924,7 +1254,7 @@ static void applyAffinity(Mem *pRec, char affinity){
       ** representation.
       */
       if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-        Stringify(pRec);
+        Stringify(pRec, enc);
       }
       pRec->flags &= ~(MEM_Real|MEM_Int);
 
@@ -997,8 +1327,8 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
     zBuf[k++] = '[';
     for(j=0; j<15 && j<pMem->n; j++){
       u8 c = pMem->z[j];
-      if( c==0 && j==pMem->n-1 ) break;
 /*
+      if( c==0 && j==pMem->n-1 ) break;
             zBuf[k++] = "0123456789ABCDEF"[c>>4];
             zBuf[k++] = "0123456789ABCDEF"[c&0xf];
 */
@@ -1359,7 +1689,7 @@ case OP_String: {
   */
   if( op==OP_Real ){
     assert( z );
-    assert( sqlite3IsNumber(z, 0) );
+    assert( sqlite3IsNumber(z, 0, TEXT_Utf8) );
     pTos->r = sqlite3AtoF(z, 0);
     pTos->flags = MEM_Real;
   }else if( op==OP_Integer ){
@@ -1600,6 +1930,7 @@ case OP_ColumnName: {
 ** 3rd parameter.
 */
 case OP_Callback: {
+#if 0
   int i;
   char **azArgv = p->zArgv;
   Mem *pCol;
@@ -1610,16 +1941,25 @@ case OP_Callback: {
     if( pCol->flags & MEM_Null ){
       azArgv[i] = 0;
     }else{
-      Stringify(pCol);
+      Stringify(pCol, db->enc);
       azArgv[i] = pCol->z;
     }
   }
-  p->resOnStack = 1;
 
   azArgv[i] = 0;
   p->azResColumn = azArgv;
-  p->nCallback++;
+#endif
+
+  int i;
   assert( p->nResColumn==pOp->p1 );
+
+  for(i=0; i<pOp->p1; i++){
+    Mem *pVal = &pTos[0-i];
+    SetEncodingFlags(pVal, db->enc);
+  }
+
+  p->resOnStack = 1;
+  p->nCallback++;
   p->popStack = pOp->p1;
   p->pc = pc + 1;
   p->pTos = pTos;
@@ -1643,55 +1983,83 @@ case OP_Concat: {
   int nByte;
   int nField;
   int i, j;
-  char *zSep;
-  int nSep;
   Mem *pTerm;
+  Mem zSep; /* Memory cell containing the seperator string, if any */
+  int termLen;  /* Bytes in the terminator character for this encoding */
 
+  termLen = (db->enc==TEXT_Utf8?1:2);
+
+  /* FIX ME: Eventually, P3 will be in database native encoding. But for
+  ** now it is always UTF-8. So set up zSep to hold the native encoding of
+  ** P3.
+  */
+  if( pOp->p3 ){
+    zSep.z = pOp->p3;
+    zSep.n = strlen(zSep.z)+1;
+    zSep.flags = MEM_Str|MEM_Static|MEM_Utf8|MEM_Term;
+    SetEncoding(&zSep, encToFlags(db->enc)|MEM_Term);
+  }else{
+    zSep.flags = MEM_Null;
+    zSep.n = 0;
+  }
+
+  /* Loop through the stack elements to see how long the result will be. */
   nField = pOp->p1;
-  zSep = pOp->p3;
-  if( zSep==0 ) zSep = "";
-  nSep = strlen(zSep);
-  assert( &pTos[1-nField] >= p->aStack );
-  nByte = 1 - nSep;
   pTerm = &pTos[1-nField];
+  nByte = termLen + (nField-1)*(zSep.n - ((zSep.flags&MEM_Term)?termLen:0));
   for(i=0; i<nField; i++, pTerm++){
-    if( pTerm->flags & MEM_Null ){
+    assert( pOp->p2==0 || (pTerm->flags&MEM_Str) );
+    if( pTerm->flags&MEM_Null ){
       nByte = -1;
       break;
-    }else{
-      Stringify(pTerm);
-      nByte += pTerm->n - 1 + nSep;
     }
+    Stringify(pTerm, db->enc);
+    nByte += (pTerm->n - ((pTerm->flags&MEM_Term)?termLen:0));
   }
+
   if( nByte<0 ){
+    /* If nByte is less than zero, then there is a NULL value on the stack.
+    ** In this case just pop the values off the stack (if required) and
+    ** push on a NULL.
+    */
     if( pOp->p2==0 ){
       popStack(&pTos, nField);
     }
     pTos++;
     pTos->flags = MEM_Null;
-    break;
-  }
-  zNew = sqliteMallocRaw( nByte );
-  if( zNew==0 ) goto no_mem;
-  j = 0;
-  pTerm = &pTos[1-nField];
-  for(i=j=0; i<nField; i++, pTerm++){
-    assert( pTerm->flags & MEM_Str );
-    memcpy(&zNew[j], pTerm->z, pTerm->n-1);
-    j += pTerm->n-1;
-    if( nSep>0 && i<nField-1 ){
-      memcpy(&zNew[j], zSep, nSep);
-      j += nSep;
+  }else{
+    /* Otherwise malloc() space for the result and concatenate all the
+    ** stack values.
+    */
+    zNew = sqliteMallocRaw( nByte );
+    if( zNew==0 ) goto no_mem;
+    j = 0;
+    pTerm = &pTos[1-nField];
+    for(i=j=0; i<nField; i++, pTerm++){
+      int n = pTerm->n-((pTerm->flags&MEM_Term)?termLen:0);
+      assert( pTerm->flags & MEM_Str );
+      memcpy(&zNew[j], pTerm->z, n);
+      j += n;
+      if( i<nField-1 && !(zSep.flags|MEM_Null) ){
+        n = zSep.n-((zSep.flags&MEM_Term)?termLen:0);
+        memcpy(&zNew[j], zSep.z, n);
+        j += n;
+      }
     }
+    zNew[j++] = 0;
+    if( termLen==2 ){
+      zNew[j++] = 0;
+    }
+    assert( j==nByte );
+
+    if( pOp->p2==0 ){
+      popStack(&pTos, nField);
+    }
+    pTos++;
+    pTos->n = nByte;
+    pTos->flags = MEM_Str|MEM_Dyn|MEM_Term|encToFlags(db->enc);
+    pTos->z = zNew;
   }
-  zNew[j] = 0;
-  if( pOp->p2==0 ){
-    popStack(&pTos, nField);
-  }
-  pTos++;
-  pTos->n = nByte;
-  pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
-  pTos->z = zNew;
   break;
 }
 
@@ -1779,8 +2147,8 @@ case OP_Remainder: {
     pTos->flags = MEM_Int;
   }else{
     double a, b;
-    Realify(pTos);
-    Realify(pNos);
+    Realify(pTos, db->enc);
+    Realify(pNos, db->enc);
     a = pTos->r;
     b = pNos->r;
     switch( pOp->opcode ){
@@ -1836,8 +2204,12 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     if( pArg->flags & MEM_Null ){
       azArgv[i] = 0;
+    }else if( !(pArg->flags&MEM_Str) ){
+      Stringify(pArg, TEXT_Utf8);
+      azArgv[i] = pArg->z;
     }else{
-      Stringify(pArg);
+      SetEncodingFlags(pArg, db->enc);
+      SetEncoding(pArg, MEM_Utf8|MEM_Term);
       azArgv[i] = pArg->z;
     }
   }
@@ -1863,6 +2235,12 @@ case OP_Function: {
        (pTos->flags & MEM_Str)!=0 ? pTos->z : "user function error", (char*)0);
     rc = SQLITE_ERROR;
   }
+
+  if( pTos->flags&MEM_Str ){
+    SetEncodingFlags(pTos, TEXT_Utf8);
+    SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
+  }
+
   break;
 }
 
@@ -1908,8 +2286,8 @@ case OP_ShiftRight: {
     pTos->flags = MEM_Null;
     break;
   }
-  Integerify(pTos);
-  Integerify(pNos);
+  Integerify(pTos, db->enc);
+  Integerify(pNos, db->enc);
   a = pTos->i;
   b = pNos->i;
   switch( pOp->opcode ){
@@ -1919,8 +2297,14 @@ case OP_ShiftRight: {
     case OP_ShiftRight:  a >>= b;    break;
     default:   /* CANT HAPPEN */     break;
   }
+  /* FIX ME: Because constant P3 values sometimes need to be translated,
+  ** the following assert() can fail. When P3 is always in the native text
+  ** encoding, this assert() will be valid again. Until then, the Release()
+  ** is neeed instead.
   assert( (pTos->flags & MEM_Dyn)==0 );
   assert( (pNos->flags & MEM_Dyn)==0 );
+  */
+  Release(pTos);
   pTos--;
   Release(pTos);
   pTos->i = a;
@@ -1937,7 +2321,7 @@ case OP_ShiftRight: {
 */
 case OP_AddImm: {
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   pTos->i += pOp->p1;
   break;
 }
@@ -1955,8 +2339,8 @@ case OP_AddImm: {
 case OP_ForceInt: {
   int v;
   assert( pTos>=p->aStack );
-  if( (pTos->flags & (MEM_Int|MEM_Real))==0
-         && ((pTos->flags & MEM_Str)==0 || sqlite3IsNumber(pTos->z, 0)==0) ){
+  if( (pTos->flags & (MEM_Int|MEM_Real))==0 && ((pTos->flags & MEM_Str)==0 
+      || sqlite3IsNumber(pTos->z, 0, db->enc)==0) ){
     Release(pTos);
     pTos--;
     pc = pOp->p2 - 1;
@@ -1965,7 +2349,7 @@ case OP_ForceInt: {
   if( pTos->flags & MEM_Int ){
     v = pTos->i + (pOp->p1!=0);
   }else{
-    Realify(pTos);
+    Realify(pTos, db->enc);
     v = (int)pTos->r;
     if( pTos->r>(double)v ) v++;
     if( pOp->p1 && pTos->r==(double)v ) v++;
@@ -2000,12 +2384,12 @@ case OP_MustBeInt: {
     pTos->i = i;
   }else if( pTos->flags & MEM_Str ){
     i64 v;
-    if( !sqlite3atoi64(pTos->z, &v) ){
+    if( !sqlite3atoi64(pTos->z, &v, db->enc) ){
       double r;
-      if( !sqlite3IsNumber(pTos->z, 0) ){
+      if( !sqlite3IsNumber(pTos->z, 0, db->enc) ){
         goto mismatch;
       }
-      Realify(pTos);
+      Realify(pTos, db->enc);
       v = (int)pTos->r;
       r = (double)v;
       if( r!=pTos->r ){
@@ -2119,8 +2503,8 @@ case OP_Ge: {
 
   affinity = (pOp->p1>>8)&0xFF;
   if( affinity=='\0' ) affinity = 'n';
-  applyAffinity(pNos, affinity);
-  applyAffinity(pTos, affinity);
+  applyAffinity(pNos, affinity, db->enc);
+  applyAffinity(pTos, affinity, db->enc);
 
   assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
   res = sqlite3MemCompare(pNos, pTos, (CollSeq*)pOp->p3);
@@ -2167,13 +2551,13 @@ case OP_Or: {
   if( pTos->flags & MEM_Null ){
     v1 = 2;
   }else{
-    Integerify(pTos);
+    Integerify(pTos, db->enc);
     v1 = pTos->i==0;
   }
   if( pNos->flags & MEM_Null ){
     v2 = 2;
   }else{
-    Integerify(pNos);
+    Integerify(pNos, db->enc);
     v2 = pNos->i==0;
   }
   if( pOp->opcode==OP_And ){
@@ -2224,7 +2608,7 @@ case OP_AbsValue: {
   }else if( pTos->flags & MEM_Null ){
     /* Do nothing */
   }else{
-    Realify(pTos);
+    Realify(pTos, db->enc);
     Release(pTos);
     if( pOp->opcode==OP_Negative || pTos->r<0.0 ){
       pTos->r = -pTos->r;
@@ -2243,7 +2627,7 @@ case OP_AbsValue: {
 case OP_Not: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   Release(pTos);
   pTos->i = !pTos->i;
   pTos->flags = MEM_Int;
@@ -2259,7 +2643,7 @@ case OP_Not: {
 case OP_BitNot: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   Release(pTos);
   pTos->i = ~pTos->i;
   pTos->flags = MEM_Int;
@@ -2302,11 +2686,17 @@ case OP_IfNot: {
   if( pTos->flags & MEM_Null ){
     c = pOp->p1;
   }else{
-    Integerify(pTos);
+    Integerify(pTos, db->enc);
     c = pTos->i;
     if( pOp->opcode==OP_IfNot ) c = !c;
   }
-  assert( (pTos->flags & MEM_Dyn)==0 );
+  /* FIX ME: Because constant P3 values sometimes need to be translated,
+  ** the following assert() can fail. When P3 is always in the native text
+  ** encoding, this assert() will be valid again. Until then, the Release()
+  ** is neeed instead.
+  assert( (pTos->flags & MEM_Dyn)==0 ); 
+  */
+  Release(pTos);
   pTos--;
   if( c ) pc = pOp->p2-1;
   break;
@@ -2369,25 +2759,44 @@ case OP_Class: {
   struct {
     int mask;
     char * zClass;
+    char * zClass16;
   } classes[] = {
-    {MEM_Null, "NULL"},
-    {MEM_Int, "INTEGER"},
-    {MEM_Real, "REAL"},
-    {MEM_Str, "TEXT"},
-    {MEM_Blob, "BLOB"}
+    {MEM_Null, "NULL", "\0N\0U\0L\0L\0\0\0"},
+    {MEM_Int, "INTEGER", "\0I\0N\0T\0E\0G\0E\0R\0\0\0"},
+    {MEM_Real, "REAL", "\0R\0E\0A\0L\0\0\0"},
+    {MEM_Str, "TEXT", "\0T\0E\0X\0T\0\0\0"},
+    {MEM_Blob, "BLOB", "\0B\0L\0O\0B\0\0\0"}
   };
 
   Release(pTos);
-  pTos->flags = MEM_Str|MEM_Static|MEM_Utf8|MEM_Term;
+  pTos->flags = MEM_Str|MEM_Static|MEM_Term;
 
   for(i=0; i<5; i++){
     if( classes[i].mask&flags ){
-      pTos->z = classes[i].zClass;
+      switch( db->enc ){
+        case TEXT_Utf8: 
+          pTos->z = classes[i].zClass;
+          break;
+        case TEXT_Utf16be: 
+          pTos->z = classes[i].zClass16;
+          break;
+        case TEXT_Utf16le: 
+          pTos->z = &(classes[i].zClass16[1]);
+          break;
+        default:
+          assert(0);
+      }
       break;
     }
   }
   assert( i<5 );
-  pTos->n = strlen(classes[i].zClass);
+
+  if( db->enc==TEXT_Utf8 ){
+    pTos->n = strlen(pTos->z) + 1;
+  }else{
+    pTos->n = sqlite3utf16ByteLen(pTos->z, -1) + 2;
+  }
+
   break;
 }
 
@@ -2663,7 +3072,7 @@ case OP_MakeRecord: {
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0]);
+      applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
     }
     serial_type = sqlite3VdbeSerialType(pRec);
     nBytes += sqlite3VdbeSerialTypeLen(serial_type);
@@ -2783,7 +3192,7 @@ case OP_MakeIdxKey: {
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0]);
+      applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
     }
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
@@ -2800,7 +3209,7 @@ case OP_MakeIdxKey: {
   if( addRowid ){
     pRec = &pTos[0-nField];
     assert( pRec>=p->aStack );
-    Integerify(pRec);
+    Integerify(pRec, db->enc);
     rowid = pRec->i;
     nByte += sqlite3VarintLen(rowid);
     nByte++;
@@ -3020,7 +3429,7 @@ case OP_SetCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( db->aDb[pOp->p1].pBt!=0 );
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(db->aDb[pOp->p1].pBt, 1+pOp->p2, (int)pTos->i);
   Release(pTos);
@@ -3108,7 +3517,7 @@ case OP_OpenWrite: {
   Cursor *pCur;
   
   assert( pTos>=p->aStack );
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   iDb = pTos->i;
   pTos--;
   assert( iDb>=0 && iDb<db->nDb );
@@ -3117,7 +3526,7 @@ case OP_OpenWrite: {
   wrFlag = pOp->opcode==OP_OpenWrite;
   if( p2<=0 ){
     assert( pTos>=p->aStack );
-    Integerify(pTos);
+    Integerify(pTos, db->enc);
     p2 = pTos->i;
     pTos--;
     if( p2<2 ){
@@ -3334,7 +3743,7 @@ case OP_MoveGt: {
     if( pC->intKey ){
       i64 iKey;
       assert( !pOp->p3 );
-      Integerify(pTos);
+      Integerify(pTos, db->enc);
       iKey = intToKey(pTos->i);
       if( pOp->p2==0 && pOp->opcode==OP_MoveGe ){
         pC->movetoTarget = iKey;
@@ -3347,7 +3756,7 @@ case OP_MoveGt: {
       pC->lastRecno = pTos->i;
       pC->recnoIsValid = res==0;
     }else{
-      Stringify(pTos);
+      Stringify(pTos, db->enc);
       sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
       pC->recnoIsValid = 0;
     }
@@ -3428,7 +3837,7 @@ case OP_Found: {
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
     assert( pC->intKey==0 );
-    Stringify(pTos);
+    Stringify(pTos, db->enc);
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
     pC->deferredMoveto = 0;
@@ -3477,7 +3886,7 @@ case OP_IsUnique: {
   /* Pop the value R off the top of the stack
   */
   assert( pNos>=p->aStack );
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   R = pTos->i;
   pTos--;
   assert( i>=0 && i<=p->nCursor );
@@ -3492,7 +3901,7 @@ case OP_IsUnique: {
 
     /* Make sure K is a string and make zKey point to K
     */
-    Stringify(pNos);
+    Stringify(pNos, db->enc);
     zKey = pNos->z;
     nKey = pNos->n;
 
@@ -3731,7 +4140,7 @@ case OP_PutStrKey: {
     i64 nKey; 
     i64 iKey;
     if( pOp->opcode==OP_PutStrKey ){
-      Stringify(pNos);
+      Stringify(pNos, db->enc);
       nKey = pNos->n;
       zKey = pNos->z;
     }else{
@@ -4380,7 +4789,7 @@ case OP_IdxGE: {
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rc;
  
-    Stringify(pTos);
+    Stringify(pTos, db->enc);
     assert( pC->deferredMoveto==0 );
     *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
@@ -4558,11 +4967,15 @@ case OP_IntegrityCk: {
     if( z ) sqliteFree(z);
     pTos->z = "ok";
     pTos->n = 3;
-    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Static;
+    pTos->flags = MEM_Str | MEM_Static;
   }else{
     pTos->z = z;
     pTos->n = strlen(z) + 1;
-    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Dyn;
+    pTos->flags = MEM_Str | MEM_Dyn;
+  }
+  if( db->enc!=TEXT_Utf8 ){
+    SetEncodingFlags(pTos, TEXT_Utf8);
+    SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
   }
   sqliteFree(aRoot);
   break;
@@ -4586,7 +4999,7 @@ case OP_ListWrite: {
     pKeylist->pNext = p->pList;
     p->pList = pKeylist;
   }
-  Integerify(pTos);
+  Integerify(pTos, db->enc);
   pKeylist->aKey[pKeylist->nUsed++] = pTos->i;
   Release(pTos);
   pTos--;
@@ -4733,7 +5146,7 @@ case OP_SortPut: {
   Mem *pNos = &pTos[-1];
   Sorter *pSorter;
   assert( pNos>=p->aStack );
-  if( Dynamicify(pTos) || Dynamicify(pNos) ) goto no_mem;
+  if( Dynamicify(pTos, db->enc) || Dynamicify(pNos, db->enc) ) goto no_mem;
   pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
   pSorter->pNext = p->pSort;
@@ -4987,6 +5400,7 @@ case OP_FileColumn: {
     pTos->n = strlen(z) + 1;
     pTos->z = z;
     pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem | MEM_Term;
+    SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
   }else{
     pTos->flags = MEM_Null;
   }
@@ -5143,7 +5557,9 @@ case OP_AggFunc: {
     if( pRec->flags & MEM_Null ){
       azArgv[i] = 0;
     }else{
-      Stringify(pRec);
+      Stringify(pRec, db->enc);
+      SetEncodingFlags(pRec, db->enc);
+      SetEncoding(pRec, MEM_Utf8|MEM_Term);
       azArgv[i] = pRec->z;
     }
   }
@@ -5186,7 +5602,7 @@ case OP_AggFocus: {
   int nKey;
 
   assert( pTos>=p->aStack );
-  Stringify(pTos);
+  Stringify(pTos, db->enc);
   zKey = pTos->z;
   nKey = pTos->n;
   pElem = sqlite3HashFind(&p->agg.hash, zKey, nKey);
@@ -5223,6 +5639,8 @@ case OP_AggSet: {
   }else if( pMem->flags & MEM_Short ){
     pMem->z = pMem->zShort;
   }
+  SetEncodingFlags(pMem, db->enc);
+  SetEncoding(pMem, MEM_Utf8|MEM_Term);
   Release(pTos);
   pTos--;
   break;
@@ -5246,6 +5664,10 @@ case OP_AggGet: {
   if( pTos->flags & (MEM_Str|MEM_Blob) ){
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTos->flags |= MEM_Ephem;
+  }
+  if( pTos->flags&MEM_Str ){
+    SetEncodingFlags(pTos, TEXT_Utf8);
+    SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
   }
   break;
 }
