@@ -1,5 +1,5 @@
-C patches\sto\scompile\sfor\sWinNT\s(CVS\s115)
-D 2000-07-31T13:38:25
+C patches\sto\scompile\sfor\sWinNT\s(CVS\s1701)
+D 2000-07-31T13:38:26
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 9e6dcd232e594fb599a5e9ba8bcf45e6c6e2fe72
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -66,7 +66,7 @@ F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P dfbb8225c1da34673a37f571f1ca1e12928728fe
+P 47dfec3aaa896073ee0e26db428f0dc9b27f94f3
 R 0d93c426d053c3c080390a9a083935d2
 U drh
-Z 023b49ade9ed0d90761954af7550abea
+Z ae87683a3b1ac35511fcc2c31434694f
