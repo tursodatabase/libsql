@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.11 2004/08/26 01:12:14 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.12 2004/12/17 15:41:13 tpoindex Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -46,7 +46,7 @@ the database is stored.
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 17 methods
+methods of the <i>dbcmd</i>.  There are currently 18 methods
 defined:</p>
 
 <p>
@@ -61,6 +61,7 @@ foreach m [lsort {
  collation_needed
  commit_hook
  complete
+ copy
  errorcode
  eval
  function
@@ -241,6 +242,57 @@ in order to know when the user has finished entering a line of SQL code.
 This is really just an interface to the <b>sqlite3_complete()</b> C
 function.  Refer to the <a href="c_interface.html">C/C++ interface</a>
 specification for additional information.</p>
+}
+
+##############################################################################
+METHOD copy {
+
+<p>
+The "copy" method copies data from a file into a table.
+It returns the number of rows processed successfully from the file.
+The syntax of the copy method looks like this:</p>
+
+<blockquote>
+<i>dbcmd</i>&nbsp;&nbsp;<b>copy</b>&nbsp;&nbsp;<i>conflict-algorithm</i>
+&nbsp;&nbsp;<i>table-name&nbsp;</i>&nbsp;&nbsp;<i>file-name&nbsp;</i>
+&nbsp;&nbsp;&nbsp;&nbsp;?<i>column-separator&nbsp;</i>?
+&nbsp;&nbsp;?<i>null-indicator</i>?
+</blockquote>
+
+<p>Conflict-alogrithm must be one of the SQLite conflict algorithms for
+the INSERT statement: <i>rollback</i>, <i>abort</i>,
+<i>fail</i>,<i>ignore</i>, or <i>replace</i>. See the SQLite Language
+section for <a href="lang.html#conflict">ON CONFLICT</a> for more information.
+The conflict-algorithm must be specified in lower case.
+</p>
+
+<p>Table-name must already exists as a table.  File-name must exist, and
+each row must contain the same number of columns as defined in the table.
+If a line in the file contains more or less than the number of columns defined,
+the copy method rollbacks any inserts, and returns an error.</p>
+
+<p>Column-separator is an optional column separator string.  The default is
+the ASCII tab character \t. </p>
+
+<p>Null-indicator is an optional string that indicates a column value is null.
+The default is an empty string.  Note that column-separator and
+null-indicator are optional positional arguments; if null-indicator
+is specified, a column-separator argument must be specifed and
+precede the null-indicator argument.</p>
+
+<p>The copy method implements similar functionality to the <b>.import</b>
+SQLite shell command. 
+The SQLite 2.x <a href="lang.html#copy"><b>COPY</b></a> statement 
+(using the PostgreSQL COPY file format)
+can be implemented with this method as:</p>
+
+<blockquote>
+dbcmd&nbsp;&nbsp;copy&nbsp;&nbsp;$conflictalgo
+&nbsp;&nbsp;$tablename&nbsp;&nbsp;&nbsp;$filename&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;\t&nbsp;
+&nbsp;&nbsp;\\N
+</blockquote>
+
 }
 
 ##############################################################################
