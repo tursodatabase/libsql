@@ -1,5 +1,5 @@
-C Improve\sthe\sos_test.c\smodule.\s(CVS\s1657)
-D 2004-06-22T12:18:32
+C Add\sos_tst.c\sto\sthe\sTESTSRC\smacro\sin\smain.mk.\s(CVS\s1658)
+D 2004-06-22T12:30:20
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk e0dcbccbec3295c7b59d6d5578cf48304b99c887
+F main.mk 8f87a6089d3ae33be43ecc71d0bfd2d14892e91f
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -227,7 +227,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d98b1502e2947d24ab9f4a5d2e5b9a95dde92faf
-R 6110d7f21fe73b602543dea11b1b80ca
-U danielk1977
-Z 5ef671e5847eb9235ebe6c8ce5485e34
+P ecdb93d3c92e34f7d85aa2fd703880669397b216
+R 1e01c88734384dabe83d06ec8278258d
+U drh
+Z 86334b34bd6d33aac7e9e0c5563c0932

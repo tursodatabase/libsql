@@ -116,6 +116,7 @@ TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os_mac.c \
+  $(TOP)/src/os_test.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
