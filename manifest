@@ -1,5 +1,5 @@
-C Documentation\schange:\srefer\susers\sto\sthe\swiki\sfor\sadditional\sunsupported\nfeatures\srather\sthan\shave\sthem\ssend\sme\se-mail.\s(CVS\s1042)
-D 2003-06-30T10:36:23
+C Update\sthe\snull-handling\sdocument\sto\sshow\show\sSQL\sAnywhere\sand\sBorland\nInterbase\sdeal\swith\sNULLs.\s(CVS\s1043)
+D 2003-07-01T01:16:30
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -159,7 +159,7 @@ F www/formatchng.tcl ca6cc1cb1bef9bc36f0619049d3c95e749bc6983
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
 F www/lang.tcl 2890eb85809c8fca20c1d81fa30fbdbceecc2a43
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
-F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
+F www/nulls.tcl f0304bc4dbe344f4738e52ad45906c5ffd289fbb
 F www/omitted.tcl fe59eaa9c1459cbf08fa7daa83421bfc814331bb
 F www/opcode.tcl b8d561f33597c62955796b797646f00144d97332
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
@@ -167,7 +167,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 7f5e8894ae37761d1015c426b5d383d3deef3e25
-R a6cc3a4266f28cd733e63c9a8d83c011
+P a3920b0804e9993bb21e6c46c612e72bd03178a2
+R a8b083bb866a87dcf70f77ed1fb561d9
 U drh
-Z eacae768ac4a586e6c3db54c44a1bdf7
+Z 3174cbe95c851c7270578015eafa897d
