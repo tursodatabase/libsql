@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.179 2004/05/10 10:34:35 danielk1977 Exp $
+** $Id: build.c,v 1.180 2004/05/11 06:55:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -626,11 +626,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
-  if( pParse->db->file_format>=4 ){
-    pCol->sortOrder = sqlite3CollateType(z, n);
-  }else{
-    pCol->sortOrder = SQLITE_SO_NUM;
-  }
+  pCol->sortOrder = sqlite3CollateType(z, n);
 }
 
 /*

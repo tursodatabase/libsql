@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.278 2004/05/11 06:17:22 danielk1977 Exp $
+** $Id: vdbe.c,v 1.279 2004/05/11 06:55:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2348,7 +2348,6 @@ case OP_MakeKey: {
     pRec = &pTos[-nField];
     assert( pRec>=p->aStack );
     Integerify(pRec);
-    /* TODO */
     iKey = intToKey(pRec->i);
     memcpy(&zNewKey[j], &iKey, sizeof(i64));
     popStack(&pTos, nField+1);
@@ -3042,10 +3041,12 @@ case OP_NotExists: {
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    int res, rx, iKey;
+    int res, rx;
+    u64 iKey;
     assert( pTos->flags & MEM_Int );
+    assert( p->aCsr[i].intKey );
     iKey = intToKey(pTos->i);
-    rx = sqlite3BtreeMoveto(pCrsr, (char*)&iKey, sizeof(int), &res);
+    rx = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
     p->aCsr[i].lastRecno = pTos->i;
     p->aCsr[i].recnoIsValid = res==0;
     p->aCsr[i].nullRow = 0;
@@ -3570,11 +3571,12 @@ case OP_FullKey: {
   assert( i>=0 && i<p->nCursor );
   pTos++;
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    int amt;
+    u64 amt;
     char *z;
 
     sqlite3VdbeCursorMoveto(&p->aCsr[i]);
-    /* TODO: sqlite3BtreeKeySize(pCrsr, &amt); */
+    assert( p->aCsr[i].intKey==0 );
+    sqlite3BtreeKeySize(pCrsr, &amt);
     if( amt<=0 ){
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
@@ -3734,13 +3736,14 @@ case OP_IdxPut: {
     int nKey = pTos->n;
     const char *zKey = pTos->z;
     if( pOp->p2 ){
-      int res, n;
+      int res;
+      u64 n;
       assert( nKey >= 4 );
       rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-4, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       while( res!=0 ){
         int c;
-        /* TODO: sqlite3BtreeKeySize(pCrsr, &n); */
+        sqlite3BtreeKeySize(pCrsr, &n);
         if( n==nKey
      /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
             && sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &c)==SQLITE_OK

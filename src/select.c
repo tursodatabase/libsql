@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.163 2004/05/10 10:34:49 danielk1977 Exp $
+** $Id: select.c,v 1.164 2004/05/11 06:55:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -324,10 +324,8 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
       type = SQLITE_SO_TEXT;
     }else if( (order & SQLITE_SO_TYPEMASK)==SQLITE_SO_NUM ){
       type = SQLITE_SO_NUM;
-    }else if( pParse->db->file_format>=4 ){
-      type = sqlite3ExprType(pOrderBy->a[i].pExpr);
     }else{
-      type = SQLITE_SO_NUM;
+      type = sqlite3ExprType(pOrderBy->a[i].pExpr);
     }
     if( (order & SQLITE_SO_DIRMASK)==SQLITE_SO_ASC ){
       c = type==SQLITE_SO_TEXT ? 'A' : '+';
@@ -428,7 +426,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqlite3VdbeCurrentAddr(v)+7);
 #endif
     sqlite3VdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
-    if( pParse->db->file_format>=4 ) sqlite3AddKeyType(v, pEList);
+    sqlite3AddKeyType(v, pEList);
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
@@ -2327,7 +2325,7 @@ int sqlite3Select(
         sqlite3ExprCode(pParse, pGroupBy->a[i].pExpr);
       }
       sqlite3VdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0);
-      if( pParse->db->file_format>=4 ) sqlite3AddKeyType(v, pGroupBy);
+      sqlite3AddKeyType(v, pGroupBy);
       lbl1 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, lbl1);
       for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
