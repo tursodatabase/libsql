@@ -1,5 +1,5 @@
-C Additional\scode\scleanup\sresulting\sfrom\sa\sreview\sof\sthe\snew\strigger\scode.\s(CVS\s572)
-D 2002-05-21T11:38:11
+C Fix\sfor\sticket\s#45:\sAllow\san\sUPDATE\sstatement\sto\schange\sthe\sINTEGER\sPRIMARY\sKEY\nto\sitself\swithout\striggering\sa\sconstraint\serror.\s(CVS\s573)
+D 2002-05-21T12:56:43
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -27,7 +27,7 @@ F src/expr.c 2c7535ba013b731ed73f12b6cc1cd5b466efb3e2
 F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
-F src/insert.c bc98bfe7f508f7a3027ea93ef9bbdc87bbce1e93
+F src/insert.c 5b6586bb5d8306280253829f42f5f98b1455e757
 F src/main.c 3f0db74a3e8385322a3b69f51bea6ce19caeff19
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
@@ -102,7 +102,7 @@ F test/trans.test ae0b9a82d5d34122c3a3108781eb8d078091ccee
 F test/trigger1.test 06dd47935cf38ce5de0b232e7b61aad57685bae1
 F test/trigger2.test 662818d5cc3313c14819df1c9084c119057a0bde
 F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
-F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
+F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test b9851e9142de5e5831fdf18f125cbe1256cb550a
 F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8a4195c7466962291a296e8f53034ea8cb25005f
-R 361b70ca0dd473638df412c87f908919
+P 37dbdd551e88440933066133ec9cc1e10b03fc1a
+R dd36d2d9056aabd6c21f44ccd0344249
 U drh
-Z 5451ccaf091b36f9a5e5679c783b7dab
+Z 0984c384f62431e003b1702d17aa1b7d
