@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.6 2000/10/16 22:06:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.7 2000/11/28 20:47:20 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -141,7 +141,7 @@ int sqlite_exec(
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically
-** called in response to a user include such as pressing "Cancel"
+** called in response to a user action such as pressing "Cancel"
 ** or Ctrl-C where the user wants a long query operation to halt
 ** immediately.
 */
@@ -258,9 +258,9 @@ void sqlite_free_table(char **result);
 **
 ** All of the usual printf formatting options apply.  In addition, there
 ** is a "%q" option.  %q works like %s in that it substitutes a null-terminated
-** string from the argument list.  But %q also double every '\'' character.
+** string from the argument list.  But %q also doubles every '\'' character.
 ** %q is designed for use inside a string literal.  By doubling each '\''
-** character is escapes that character and allows it to be inserted into
+** character it escapes that character and allows it to be inserted into
 ** the string.
 **
 ** For example, so some string variable contains text as follows:

@@ -24,7 +24,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.19 2000/08/28 15:51:44 drh Exp $
+** $Id: expr.c,v 1.20 2000/11/28 20:47:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -738,7 +738,7 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
 }
 
 /*
-** Generate code for boolean expression such that a jump is made
+** Generate code for a boolean expression such that a jump is made
 ** to the label "dest" if the expression is false but execution
 ** continues straight thru if the expression is true.
 */

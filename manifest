@@ -1,5 +1,5 @@
-C Comment\schanges\sonly\s(CVS\s165)
-D 2000-11-28T20:46:39
+C Comment\schanges\sonly\s(CVS\s166)
+D 2000-11-28T20:47:18
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -13,7 +13,7 @@ F src/dbbe.h d175a04b35ea75078274e059dcbcbf7c1262d42a
 F src/dbbegdbm.c 4ac7222afff0cf91014803f8791740b6da825a2b
 F src/dbbemem.c 60cfc71c4d170cde66aff24ab0afc041063b1cad
 F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
-F src/expr.c e8e350d7baa33bd9ed8701c159eaba5e912e0adb
+F src/expr.c 7d7646afd52d1448237e5f517454cfb2d3d394d6
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c 6686df1f9e88fb72c3b3fc660d4595382555fb5c
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
@@ -21,8 +21,8 @@ F src/printf.c 1efb6b3e7f28a93be57132de3f8f400d2ac1460e
 F src/select.c c1de8ac34131324fa05664b06b0ae1ee9c02905d
 F src/shell.c 146149928c7dca23ceebd6aa53026e9b02d3b4e4
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 43c0e1e321e94c20eb20efe593155296cd57728a
-F src/sqliteInt.h 4b49e8c162c2ebf5d7a7ed392953380dbfd3673a
+F src/sqlite.h.in fd86903777f1ee7bd0465243224a0fd2100eedc8
+F src/sqliteInt.h a24c516147e6fa072f74789d636312ac279e1f35
 F src/table.c f08189678c806d8a74a70c156d7c27083760e028
 F src/tclsqlite.c 178adf318eab2ff480c288a87541d4ab1c37d985
 F src/tokenize.c 95bf7baa7d829981bed81ca89080d99d2c09d463
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P d2ad3d2b4ee868621fb1155c64216536d576e456
-R 83fb4b0a2d996778108e66a5fdc62b84
+P 97339efdf3f3b02a6a4fe57d2cb01d19cec3c749
+R 1c6acddf7130094f372af0f6ab539a9f
 U drh
-Z ab74421a3e62e0f3d766c4c0780c1caf
+Z 0dae5798cf7348c71ddbbe7fba631943
