@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.4 2004/05/29 02:37:20 danielk1977 Exp $
+# $Id: attach3.test,v 1.5 2004/05/29 10:23:20 danielk1977 Exp $
 #
 
 
@@ -172,7 +172,7 @@ do_test attach3-5.3 {
   execsql {
     SELECT * FROM aux.sqlite_master WHERE name = 'tr1';
   }
-} {trigger tr1 t3 0 {CREATE TRIGGER aux.tr1 AFTER INSERT ON t3 BEGIN
+} {trigger tr1 t3 0 {CREATE TRIGGER tr1 AFTER INSERT ON t3 BEGIN
       INSERT INTO t3 VALUES(new.e*2, new.f*2);
     END}}
 

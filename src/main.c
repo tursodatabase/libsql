@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.195 2004/05/27 23:56:16 danielk1977 Exp $
+** $Id: main.c,v 1.196 2004/05/29 10:23:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -247,16 +247,28 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     memset(meta, 0, sizeof(meta));
   }
   db->aDb[iDb].schema_cookie = meta[0];
-  if( iDb==0 ){
-    db->next_cookie = meta[0];
-    db->file_format = meta[1];
-    if( meta[4] ){
-      /* If meta[4] is still zero, then we are opening a previously empty
-      ** file. Leave db->enc to the default value set by the sqlite3_open()
-      ** call in this case.
-      */
+
+  /* If opening a non-empty database, check the text encoding. For the
+  ** main database, set sqlite3.enc to the encoding of the main database.
+  ** For an attached db, it is an error if the encoding is not the same
+  ** as sqlite3.enc.
+  */
+  if( meta[4] ){  /* text encoding */
+    if( iDb==0 ){
+      /* If opening the main database, set db->enc. */
       db->enc = (u8)meta[4];
+    }else{
+      /* If opening an attached database, the encoding much match db->enc */
+      if( meta[4]!=db->enc ){
+        sqlite3BtreeCloseCursor(curMain);
+        sqlite3SetString(pzErrMsg, "attached databases must use the same"
+            " text encoding as main database", (char*)0);
+        return SQLITE_ERROR;
+      }
     }
+  }
+
+  if( iDb==0 ){
     size = meta[2];
     if( size==0 ){ size = MAX_PAGES; }
     db->cache_size = size;
@@ -266,40 +278,35 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     }
     if( db->safety_level==0 ) db->safety_level = 2;
 
-    /*
-    **  file_format==1    Version 3.0.0.
-    */
+    /* FIX ME: Every struct Db will need a next_cookie */
+    db->next_cookie = meta[0];
+    db->file_format = meta[1];
     if( db->file_format==0 ){
       /* This happens if the database was initially empty */
       db->file_format = 1;
-    }else if( db->file_format>1 ){
-      sqlite3BtreeCloseCursor(curMain);
-      sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
-      return SQLITE_ERROR;
     }
-  }else if( db->file_format!=meta[1] ){
-    if( meta[1]==0 ){
-      sqlite3SetString(pzErrMsg, "cannot attach empty database: ",
-         db->aDb[iDb].zName, (char*)0);
-    }else{
-      sqlite3SetString(pzErrMsg, "incompatible file format in auxiliary "
-         "database: ", db->aDb[iDb].zName, (char*)0);
-    }
-    sqlite3BtreeClose(db->aDb[iDb].pBt);
-    db->aDb[iDb].pBt = 0;
-    return SQLITE_FORMAT;
   }
+
+  /*
+  **  file_format==1    Version 3.0.0.
+  */
+  if( meta[1]>1 ){
+    sqlite3BtreeCloseCursor(curMain);
+    sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
+    return SQLITE_ERROR;
+  }
+
   sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
   sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[3]==0 ? 2 : meta[3]);
 
   /* Read the schema information out of the schema tables
   */
   assert( db->init.busy );
-  sqlite3SafetyOff(db);
   if( rc==SQLITE_EMPTY ){
     /* For an empty database, there is nothing to read */
     rc = SQLITE_OK;
   }else{
+    sqlite3SafetyOff(db);
     if( iDb==0 ){
       /* This SQL statement tries to read the temp.* schema from the
       ** sqlite_temp_master table. It might return SQLITE_EMPTY. 

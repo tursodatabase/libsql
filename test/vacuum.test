@@ -11,14 +11,16 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.18 2004/05/26 10:11:07 danielk1977 Exp $
+# $Id: vacuum.test,v 1.19 2004/05/29 10:23:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 proc cksum {{db db}} {
-  set txt [$db eval {SELECT name, type, sql FROM sqlite_master}]\n
-  foreach tbl [$db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+  set sql "SELECT name, type, sql FROM sqlite_master ORDER BY name, type"
+  set txt [$db eval $sql]\n
+  set sql "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+  foreach tbl [$db eval $sql] {
     append txt [$db eval "SELECT * FROM $tbl"]\n
   }
   foreach prag {default_synchronous default_cache_size} {

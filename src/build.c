@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.198 2004/05/29 02:37:19 danielk1977 Exp $
+** $Id: build.c,v 1.199 2004/05/29 10:23:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -566,14 +566,11 @@ void sqlite3StartTable(
   }
 
   /* Make sure the new table name does not collide with an existing
-  ** index or table name.  Issue an error message if it does.
-  **
-  ** If we are re-reading the sqlite_master table because of a schema
-  ** change and a new permanent table is found whose name collides with
-  ** an existing temporary table, that is not an error.
+  ** index or table name in the same database.  Issue an error message if
+  ** it does.
   */
-  pTable = sqlite3FindTable(db, zName, 0);
-  if( pTable!=0 && (pTable->iDb==iDb || !db->init.busy) ){
+  pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
+  if( pTable ){
     sqlite3ErrorMsg(pParse, "table %T already exists", pName);
     sqliteFree(zName);
     return;
@@ -1691,7 +1688,7 @@ void sqlite3CreateIndex(
     Table *pTSameName;    /* A table with same name as the index */
     zName = sqliteStrNDup(pName->z, pName->n);
     if( zName==0 ) goto exit_create_index;
-    if( (pISameName = sqlite3FindIndex(db, zName, 0))!=0 ){
+    if( (pISameName = sqlite3FindIndex(db, zName, db->aDb[iDb].zName))!=0 ){
       sqlite3ErrorMsg(pParse, "index %s already exists", zName);
       goto exit_create_index;
     }

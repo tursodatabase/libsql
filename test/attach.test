@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.17 2004/05/29 02:37:20 danielk1977 Exp $
+# $Id: attach.test,v 1.18 2004/05/29 10:23:20 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -72,17 +72,17 @@ do_test attach-1.8 {
   catchsql {
     ATTACH DATABASE 'test3.db' AS three;
   }
-} {1 {cannot attach empty database: three}}
+} {0 {}}
 do_test attach-1.9 {
   catchsql {
     SELECT * FROM three.sqlite_master;
   }
-} {1 {no such table: three.sqlite_master}}
+} {0 {}}
 do_test attach-1.10 {
   catchsql {
     DETACH DATABASE three;
   }
-} {1 {no such database: three}}
+} {0 {}}
 do_test attach-1.11 {
   execsql {
     ATTACH 'test.db' AS db2;
@@ -563,7 +563,7 @@ do_test attach-6.1 {
   catchsql {
     ATTACH DATABASE 'no-such-file' AS nosuch;
   }
-} {1 {cannot attach empty database: nosuch}}
+} {0 {}}
 file delete -force no-such-file
 if {$tcl_platform(platform)=="unix"} {
   do_test attach-6.2 {

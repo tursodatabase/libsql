@@ -213,7 +213,9 @@ void sqlite3FinishTrigger(
       { OP_String,     0, 0,  0          },  /* 2: trigger name */
       { OP_String,     0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
-      { OP_String,     0, 0,  0          },  /* 5: SQL */
+      { OP_String,     0, 0,  "CREATE TRIGGER "},
+      { OP_String,     0, 0,  0          },  /* 6: SQL */
+      { OP_Concat,     2, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  "tttit"    },
       { OP_PutIntKey,  0, 0,  0          },
     };
@@ -228,7 +230,7 @@ void sqlite3FinishTrigger(
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqlite3VdbeChangeP3(v, addr+2, nt->name, 0); 
     sqlite3VdbeChangeP3(v, addr+3, nt->table, 0); 
-    sqlite3VdbeChangeP3(v, addr+5, pAll->z, pAll->n);
+    sqlite3VdbeChangeP3(v, addr+6, pAll->z, pAll->n);
     if( nt->iDb==0 ){
       sqlite3ChangeCookie(db, v, 0);
     }

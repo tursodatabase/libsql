@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.123 2004/05/29 02:37:19 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.124 2004/05/29 10:23:20 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -782,17 +782,18 @@ plus_opt ::= .
 
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
-cmd ::= CREATE(A) trigger_decl BEGIN trigger_cmd_list(S) END(Z). {
+cmd ::= CREATE trigger_decl(A) BEGIN trigger_cmd_list(S) END(Z). {
   Token all;
   all.z = A.z;
   all.n = (Z.z - A.z) + Z.n;
   sqlite3FinishTrigger(pParse, S, &all);
 }
 
-trigger_decl ::= temp(T) TRIGGER nm(B) dbnm(Z) trigger_time(C) trigger_event(D)
+trigger_decl(A) ::= temp(T) TRIGGER nm(B) dbnm(Z) trigger_time(C) trigger_event(D)
                  ON nm(E) dbnm(DB) foreach_clause(F) when_clause(G). {
   SrcList *pTab = sqlite3SrcListAppend(0, &E, &DB);
   sqlite3BeginTrigger(pParse, &B, &Z, C, D.a, D.b, pTab, F, G, T);
+  A = (Z.n==0?B:Z);
 }
 
 %type trigger_time  {int}

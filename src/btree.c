@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.147 2004/05/26 00:01:54 drh Exp $
+** $Id: btree.c,v 1.148 2004/05/29 10:23:19 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4150,7 +4150,7 @@ const char *sqlite3BtreeGetFilename(Btree *pBt){
 ** must be active for both files.
 **
 ** The size of file pBtFrom may be reduced by this operation.
-** If anything goes wrong, the transaction on pBtFrom is rolled back.
+** If anything goes wrong, the transaction on pBtTo is rolled back.
 */
 int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   int rc = SQLITE_OK;
