@@ -759,6 +759,24 @@ int sqlite3OsCheckReservedLock(OsFile *id){
   return r;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Helper function for printing out trace information from debugging
+** binaries. This returns the string represetation of the supplied
+** integer lock-type.
+*/
+static const char * locktypeName(int locktype){
+  switch( locktype ){
+  case NO_LOCK: return "NONE";
+  case SHARED_LOCK: return "SHARED";
+  case RESERVED_LOCK: return "RESERVED";
+  case PENDING_LOCK: return "PENDING";
+  case EXCLUSIVE_LOCK: return "EXCLUSIVE";
+  }
+  return "ERROR";
+}
+#endif
+
 /*
 ** Lock the file with the lock specified by parameter locktype - one
 ** of the following:
@@ -828,14 +846,16 @@ int sqlite3OsLock(OsFile *id, int locktype){
   int s;
 
   assert( id->isOpen );
-  TRACE6("LOCK %d %d was %d(%d,%d)\n",
-          id->h, locktype, id->locktype, pLock->locktype, pLock->cnt);
+  TRACE7("LOCK %d %s was %s(%s,%d) pid=%d\n", id->h, locktypeName(locktype), 
+      locktypeName(id->locktype), locktypeName(pLock->locktype), pLock->cnt
+      ,getpid() );
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
   ** sqlite3OsEnterMutex() hasn't been called yet.
   */
   if( id->locktype>=locktype ){
+    TRACE3("LOCK %d %s ok (already held)\n", id->h, locktypeName(locktype));
     return SQLITE_OK;
   }
 
@@ -956,7 +976,8 @@ int sqlite3OsLock(OsFile *id, int locktype){
 
 end_lock:
   sqlite3OsLeaveMutex();
-  TRACE4("LOCK %d %d %s\n", id->h, locktype, rc==SQLITE_OK ? "ok" : "failed");
+  TRACE4("LOCK %d %s %s\n", id->h, locktypeName(locktype), 
+      rc==SQLITE_OK ? "ok" : "failed");
   return rc;
 }
 
@@ -974,8 +995,8 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   struct flock lock;
 
   assert( id->isOpen );
-  TRACE6("UNLOCK %d %d was %d(%d,%d)\n",
-          id->h, locktype, id->locktype, id->pLock->locktype, id->pLock->cnt);
+  TRACE7("UNLOCK %d %d was %d(%d,%d) pid=%d\n", id->h, locktype, id->locktype, 
+      id->pLock->locktype, id->pLock->cnt, getpid());
 
   assert( locktype<=SHARED_LOCK );
   if( id->locktype<=locktype ){

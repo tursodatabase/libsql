@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.235 2004/06/28 01:11:47 danielk1977 Exp $
+** $Id: build.c,v 1.236 2004/06/29 07:45:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -147,7 +147,12 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
-    if( zDbase ){
+    if( !(pParse->db->flags & SQLITE_Initialized) ){
+      /* If the schema is not initialised at this point, it must be because
+      ** the database is locked. */
+      pParse->nErr++;
+      pParse->rc = SQLITE_BUSY;
+    }else if( zDbase ){
       sqlite3ErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
     }else if( sqlite3FindTable(pParse->db, zName, 0)!=0 ){
       sqlite3ErrorMsg(pParse, "table \"%s\" is not in database \"%s\"",
@@ -617,6 +622,7 @@ void sqlite3StartTable(
       sqlite3ErrorMsg(pParse, "unable to open a temporary database "
         "file for storing temporary tables");
       pParse->nErr++;
+      pParse->rc = rc;
       sqliteFree(zName);
       return;
     }
@@ -626,6 +632,7 @@ void sqlite3StartTable(
         sqlite3ErrorMsg(pParse, "unable to get a write lock on "
           "the temporary database file");
         sqliteFree(zName);
+        pParse->rc = rc;
         return;
       }
     }

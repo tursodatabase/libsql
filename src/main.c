@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.237 2004/06/28 01:11:47 danielk1977 Exp $
+** $Id: main.c,v 1.238 2004/06/29 07:45:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -85,15 +85,18 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
         ** structures that describe the table, index, or view.
         */
         char *zErr;
+        int rc;
         assert( db->init.busy );
         db->init.iDb = atoi(argv[4]);
         assert( db->init.iDb>=0 && db->init.iDb<db->nDb );
         db->init.newTnum = atoi(argv[2]);
-        if( sqlite3_exec(db, argv[3], 0, 0, &zErr) ){
+        rc = sqlite3_exec(db, argv[3], 0, 0, &zErr);
+        db->init.iDb = 0;
+        if( SQLITE_OK!=rc ){
           corruptSchema(pData, zErr);
           sqlite3_free(zErr);
+          return rc;
         }
-        db->init.iDb = 0;
       }else{
         /* If the SQL column is blank it means this is an index that
         ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
@@ -118,8 +121,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
           pIndex->tnum = atoi(argv[2]);
         }
       }
-      break;
     }
+    break;
     default: {
       /* This can not happen! */
       nErr = 1;
@@ -196,7 +199,11 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   azArg[5] = 0;
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
-  sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
+  rc = sqlite3InitCallback(&initData, 5, (char **)azArg, 0);
+  if( rc!=SQLITE_OK ){
+    sqlite3SafetyOn(db);
+    return rc;
+  }
   pTab = sqlite3FindTable(db, zMasterName, db->aDb[iDb].zName);
   if( pTab ){
     pTab->readOnly = 1;

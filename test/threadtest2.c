@@ -96,7 +96,12 @@ int main(int argc, char **argv){
   int i, rc;
   pthread_t aThread[5];
 
-  if( strcmp(DB_FILE,":memory:") ) unlink(DB_FILE);
+  if( strcmp(DB_FILE,":memory:") ){
+    char *zJournal = sqlite3_mprintf("%s-journal", DB_FILE);
+    unlink(DB_FILE);
+    unlink(zJournal);
+    free(zJournal);
+  }  
   sqlite3_open(DB_FILE, &db);
   if( db==0 ){
     fprintf(stderr,"unable to initialize database\n");

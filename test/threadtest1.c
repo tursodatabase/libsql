@@ -262,7 +262,16 @@ int main(int argc, char **argv){
   }
   for(i=0; i<n; i++){
     zFile = sqlite3_mprintf("%d.testdb-%d", i%2+1, (i+2)/2);
-    unlink(zFile);
+    if( (i%2)==0 ){
+      /* Remove both the database file and any old journal for the file
+      ** being used by this thread and the next one. */
+      char *zDb = &zFile[2];
+      char *zJournal = sqlite3_mprintf("%s-journal", zDb);
+      unlink(zDb);
+      unlink(zJournal);
+      free(zJournal);
+    }
+      
     pthread_create(&id, 0, worker_bee, (void*)zFile);
     pthread_detach(id);
   }

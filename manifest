@@ -1,5 +1,5 @@
-C Try\sto\sget\sthreads\sworking\sagain\son\sLinux.\s(CVS\s1755)
-D 2004-06-29T03:29:00
+C Bug-fixes\sto\sget\sthe\stwo\sthreadtest\sC\sprograms\sworking\sagain.\s(CVS\s1756)
+D 2004-06-29T07:45:33
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c 73b16e608fc662e8602639e946582832b6f2902b
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c ad428c56e42d748a0c1441fbbd93e41df407c31d
 F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
-F src/build.c 574cdd30922ead0ababc717865aef9948c17701d
+F src/build.c ea8a3220574348b052e5c66e90c0619f3fd89863
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -38,22 +38,22 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 6d27d09c9984d9b68a53b95fc2e327a19cd28851
+F src/main.c b2f25e2fe7ae2f930804694d01425f0ddfc51bee
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
-F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
+F src/os_common.h 1e745e582138c01d995f190d7544da3e826f6b2f
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c ef353f73a2ad85a239d7a77c4a5df2e1377f3848
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 2d787fd91a1b202ec6d0930b70982bc1ab816bb8
+F src/os_unix.c 8acbb7190cd6d91d076bd51da902daf2874bfbd2
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c c1d5212e7cac86bc1a29d01a30d9dbbdb545dfd8
 F src/pager.h fe818866f6d1adcffeed88705e8df7e588cbaf13
 F src/parse.y e19e066e726a31d7b2d3e6475bdf55f7e339f8a3
-F src/pragma.c 2ca5ef7e27916f191a3b1201ad576ef6f8a8d72d
+F src/pragma.c b6df973670332adc6c211b111ee41dcf31ac183f
 F src/printf.c 3090c8ff397d549bc0de09b16d8ab7fd37a0c3f7
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
@@ -162,8 +162,8 @@ F test/tclsqlite.test 2517b10ee2c806fb700548f54540aec7d62ed14a
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl f36cc22d0532725073ca78272d7834d56dceb6d9
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
-F test/threadtest1.c 1dd597369021ed72cd71c138a14a561d443f6edf
-F test/threadtest2.c c38c9c1769725ebe240317dcc6bbed13c600ac98
+F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
+F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
 F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
@@ -231,7 +231,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 332921041040b343b6b568685ff55d21a624f502
-R bdedb5a03f87b2291e0c7bb98d11a6cb
-U drh
-Z 23b6d4864c82370d472ac66ee3391b29
+P a8417cb83e9d070f46e7505f92a95f057b992658
+R f6a3ab8dfc5160d3b6066eb0982690ff
+U danielk1977
+Z 627f904ea791eadd909ab90d3df46fcf

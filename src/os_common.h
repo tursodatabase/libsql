@@ -44,6 +44,8 @@ static unsigned int elapse;
 #define TRACE4(X,Y,Z,A)   if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A)
 #define TRACE5(X,Y,Z,A,B) if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A,B)
 #define TRACE6(X,Y,Z,A,B,C) if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
+#define TRACE7(X,Y,Z,A,B,C,D) \
+    if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
 #else
 #define TIMER_START
 #define TIMER_END
