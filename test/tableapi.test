@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.6 2003/09/09 00:47:47 drh Exp $
+# $Id: tableapi.test,v 1.7 2004/02/02 12:29:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,7 +62,14 @@ do_test tableapi-2.3.2 {
   } {}
 } {0 3 2 a b 48 (48) 49 (49) 50 (50)}
 do_test tableapi-2.4 {
-  set ::big_str [sqlite_mprintf_str {%500'* Hello %500'*} 0 0 {}]
+  set manyquote ''''''''
+  append manyquote $manyquote
+  append manyquote $manyquote
+  append manyquote $manyquote
+  append manyquote $manyquote
+  append manyquote $manyquote
+  append manyquote $manyquote
+  set ::big_str "$manyquote Hello $manyquote"
   sqlite_get_table_printf $::dbx {
     INSERT INTO xyz VALUES(51,'%q')
   } $::big_str
@@ -120,7 +127,6 @@ do_test tableapi-3.3.2 {
   } {}
 } {0 3 2 a b 48 (48) 49 (49) 50 (50)}
 do_test tableapi-3.4 {
-  set ::big_str [sqlite_mprintf_str {%500'* Hello %500'*} 0 0 {}]
   sqlite_get_table_printf $::dbx {
     INSERT INTO xyz VALUES(51,'%q')
   } $::big_str

@@ -1,5 +1,5 @@
-C Fix\sthe\shandling\sof\s-init\soption\sto\sthe\ssqlite\sshell.\sTicket\s#568.\nAlso\sadd\shooks\sfor\sencrypting\sthe\sdatabase.\s(CVS\s1206)
-D 2004-02-01T01:22:51
+C Remove\sundocumented\sextensions\sfrom\ssqlite_mprintf()\sand\sfriends\sin\sorder\sto\nmake\sit\sabout\s10%\ssmaller.\s(CVS\s1207)
+D 2004-02-02T12:29:25
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pager.c 289328d8efba620eae99f6c2f6062710838a3eb4
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
-F src/printf.c 292a7bfc5a815cb6465e32b2d5c9fe9bd43b27f0
+F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c b7694067df8d57fd0c85ddcc0840532d181552ad
 F src/shell.c a069d35277983d54348105aa3c73be3c45eb9c38
@@ -112,7 +112,7 @@ F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
 F test/pragma.test 17ff54f4abe187fa1e9dd20afef63d14c650d737
-F test/printf.test 3ed02f1361402c0767492cd5cef4650e61df8308
+F test/printf.test bdb5f66eb4a63abab9e26ab7277f2f8c886138a5
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -126,7 +126,7 @@ F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
-F test/tableapi.test d881e787779a175238b72f55b5e50d3a85ab47a6
+F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
 F test/tclsqlite.test 97233f45db35a76ceae9e56d244af68fc8061ceb
 F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
 F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
@@ -182,7 +182,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 04cf22785e68fcd4098e6c10a89386108cd0bf07
-R 6b544ab7468b55cbc9dfec6b7298d72d
+P 3c796de8d1af55944f396f08feaa9e69c1652896
+R eeb1a65670905e806f11ab1b63f5e8e7
 U drh
-Z e87a644a943e033216fc69c960947b44
+Z f7f5c0bf32582b04f90ec08e5433a558

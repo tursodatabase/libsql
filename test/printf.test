@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.6 2003/06/16 03:08:19 drh Exp $
+# $Id: printf.test,v 1.7 2004/02/02 12:29:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -107,9 +107,6 @@ do_test printf-5.1 {
 do_test printf-5.2 {
   sqlite_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
 } {-9 -10 (HelloHello) %}
-do_test printf-5.3 {
-  sqlite_mprintf_str {%% %d %d (%=10s)} 5 6 Hello
-} {% 5 6 (  Hello   )}
 
 do_test printf-6.1 {
   sqlite_mprintf_z_test , one two three four five six
