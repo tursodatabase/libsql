@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\sa\sfile\swas\snot\sbeing\sclosed\safter\sa\smalloc()\sfailure.\s(CVS\s1741)
-D 2004-06-26T13:51:34
+C Fold\sin\sa\s64-bit\schange\sthat\scame\sfrom\sthe\sPHP\speople.\s(CVS\s1743)
+D 2004-06-26T14:46:40
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/attach.c b105aeb8c82fbd097c5067dddde90d5f7fadf8dd
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c d485d1b2f00d9957a58dae15ad718da0a8596267
 F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
-F src/build.c ef9fb5bbc951f879145edb6a2278d32565bc77b8
+F src/build.c 98466ddf5e3142783d0c628992836c3c382c9233
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5cda1cda63bef554f8b3436bd958014f453087c2
-R 233a4cd5164642db4057352be7dd3517
-U danielk1977
-Z 2f1f04242ccfcca0027666d04e1cf454
+P 3c8512bc549e10ee131cb7f2d4e74d96e9de74a0
+R b3df37a9b31c0d3af047ea48e90adc06
+U drh
+Z ee2a09b86bd7a1a127412206343d53c2
