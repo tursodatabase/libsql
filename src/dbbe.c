@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.11 2000/06/02 13:27:59 drh Exp $
+** $Id: dbbe.c,v 1.12 2000/06/07 14:42:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -161,7 +161,7 @@ Dbbe *sqliteDbbeOpen(
     return 0;
   }
   zMaster = 0;
-  sqliteSetString(&zMaster, zName, "/" MASTER_NAME, 0);
+  sqliteSetString(&zMaster, zName, "/" MASTER_NAME ".tbl", 0);
   if( stat(zMaster, &statbuf)==0
    && access(zMaster, writeFlag ? (W_OK|R_OK) : R_OK)!=0 ){
     sqliteSetString(pzErrMsg, "access permission denied for ", zMaster, 0);

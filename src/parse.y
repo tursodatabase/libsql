@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.14 2000/06/06 21:56:08 drh Exp $
+** @(#) $Id: parse.y,v 1.15 2000/06/07 14:42:27 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -256,7 +256,9 @@ setlist(A) ::= ID(X) EQ expr(Y) COMMA setlist(Z).
 setlist(A) ::= ID(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
 cmd ::= INSERT INTO ID(X) fieldlist_opt(F) VALUES LP itemlist(Y) RP.
-               {sqliteInsert(pParse, &X, Y, F);}
+               {sqliteInsert(pParse, &X, Y, 0, F);}
+cmd ::= INSERT INTO ID(X) fieldlist_opt(F) select(S).
+               {sqliteInsert(pParse, &X, 0, S, F);}
 
 
 %type itemlist {ExprList*}

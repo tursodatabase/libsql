@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.14 2000/06/06 22:13:55 drh Exp $
+** $Id: select.c,v 1.15 2000/06/07 14:42:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -156,6 +156,15 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
 
+  /* Store the result as data using a unique key.
+  */
+  if( eDest==SRT_Table ){
+    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else 
+
   /* Construct a record from the query result, but instead of
   ** saving that record, use it as a key to delete elements from
   ** the temporary table iParm.
@@ -215,7 +224,7 @@ static void generateColumnNames(Vdbe *v, IdList *pTabList, ExprList *pEList){
     p = pEList->a[i].pExpr;
     if( p->op!=TK_FIELD || pTabList==0 ){
       char zName[30];
-      sprintf(zName, "field%d", i+1);
+      sprintf(zName, "column%d", i+1);
       sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
     }else{
       if( pTabList->nId>1 ){
