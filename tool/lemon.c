@@ -1387,6 +1387,7 @@ char **argv;
   lem.nsymbol = Symbol_count();
   Symbol_new("{default}");
   lem.symbols = Symbol_arrayof();
+  for(i=0; i<=lem.nsymbol; i++) lem.symbols[i]->index = i;
   qsort(lem.symbols,lem.nsymbol+1,sizeof(struct symbol*),
         (int(*)())Symbolcmpp);
   for(i=0; i<=lem.nsymbol; i++) lem.symbols[i]->index = i;
@@ -3886,12 +3887,20 @@ char *x;
   return sp;
 }
 
-/* Compare two symbols */
-int Symbolcmpp(a,b)
-struct symbol **a;
-struct symbol **b;
-{
-  return strcmp((**a).name,(**b).name);
+/* Compare two symbols for working purposes
+**
+** Symbols that begin with upper case letters (terminals or tokens)
+** must sort before symbols that begin with lower case letters
+** (non-terminals).  Other than that, the order does not matter.
+**
+** We find experimentally that leaving the symbols in their original
+** order (the order they appeared in the grammar file) gives the
+** smallest parser tables in SQLite.
+*/
+int Symbolcmpp(struct symbol **a, struct symbol **b){
+  int i1 = (**a).index + 10000000*((**a).name[0]>'Z');
+  int i2 = (**b).index + 10000000*((**b).name[0]>'Z');
+  return i1-i2;
 }
 
 /* There is one instance of the following structure for each
