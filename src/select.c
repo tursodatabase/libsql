@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.11 2000/06/06 17:27:05 drh Exp $
+** $Id: select.c,v 1.12 2000/06/06 18:00:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -336,15 +336,15 @@ int sqliteSelect(
   }
   if( pHaving ){
     if( pGroupBy==0 ){
-      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required to "
-         "use HAVING", 0);
+      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required "
+         "before HAVING", 0);
       pParse->nErr++;
       return 1;
     }
     if( sqliteExprResolveIds(pParse, pTabList, pHaving) ){
       return 1;
     }
-    if( sqliteExprCheck(pParse, pHaving, 0, 0) ){
+    if( sqliteExprCheck(pParse, pHaving, isAgg, 0) ){
       return 1;
     }
   }

@@ -1,5 +1,5 @@
-C GROUP\sBY\sand\sHAVING\sinstalled\s(CVS\s58)
-D 2000-06-06T17:27:05
+C :-)\s(CVS\s59)
+D 2000-06-06T18:00:16
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -14,7 +14,7 @@ F src/expr.c d350fe393e1753aaa733a5d21f0830a23e547400
 F src/insert.c 5e69dd70c3f91cf5ec5090f39fd6cd8e135af9bf
 F src/main.c 93a7ad14bb5a82ad13ad59da23ef674a94b0c3d6
 F src/parse.y 210c888c052f3fde3def6ff1f402e4b4e8ba270d
-F src/select.c 77906ffaae962e49acc9a0c0c39cb710f06e56d8
+F src/select.c 5fd6fbd73f68f0baf1d53a73c4217f7862c37c0e
 F src/shell.c 5fa24c0bb678782ffe9070128e3e160674f297eb
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
 F src/sqliteInt.h 267f66d4a851e19adb0f9a3050a3acb62fc70cae
@@ -34,6 +34,7 @@ F test/index.test 9f99dca2d904b8de330863a978587f136e2df65a
 F test/insert.test b4c186ffa4b97a231643726f3bcee29815b24eaf
 F test/select1.test 2311bddd40bca257c27a7d141ed2a359bbdbc906
 F test/select2.test 3cd3c0f9d67e98b1b54af5853679b4a111224410
+F test/select3.test 73ae8c7b80c4e03a9c29d12f2ea1782e28b8e61f
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
 F test/tester.tcl 44690d463c1dc83a4c76ccde07cc146a988600f6
@@ -49,7 +50,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 567cc6066d87460bdedff8e5bbc20f41ddaadf77
 F www/index.tcl f8189a7898f6d06307c34047b9d7e00860026e44
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 54d198189b58366e4e40139102bc6de94ac55e18
-R dcd329d5daa579a072c3c6f09022ae9f
+P db88a0c2d4b5c5cd05e0172f061fc33763fe3829
+R d187390322c22a87c588288b385bc0fd
 U drh
-Z 6732a1b7035c88b38d7888f45d2d7142
+Z 7fd829b482d9369ef2332e8e548395ac
