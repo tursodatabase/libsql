@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.194 2005/02/12 08:59:57 danielk1977 Exp $
+** $Id: expr.c,v 1.195 2005/03/09 12:26:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -403,6 +403,7 @@ Expr *sqlite3ExprDup(Expr *p){
   pNew->pRight = sqlite3ExprDup(p->pRight);
   pNew->pList = sqlite3ExprListDup(p->pList);
   pNew->pSelect = sqlite3SelectDup(p->pSelect);
+  pNew->pTab = p->pTab;
   return pNew;
 }
 void sqlite3TokenCopy(Token *pTo, Token *pFrom){
@@ -847,6 +848,7 @@ static int lookupName(
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
             pExpr->pColl = pTab->aCol[j].pColl;
+            pExpr->pTab = pTab;
             break;
           }
         }
@@ -958,6 +960,9 @@ static int lookupName(
   if( cnt==1 ){
     assert( pNC!=0 );
     sqlite3AuthRead(pParse, pExpr, pNC->pSrcList);
+    if( pMatch && !pMatch->pSelect ){
+      pExpr->pTab = pMatch->pTab;
+    }
   }
   return cnt!=1;
 }
@@ -1385,11 +1390,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3VdbeAddOp(v, OP_AggGet, pExpr->iAggCtx, pExpr->iAgg);
       }else if( pExpr->iColumn>=0 ){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
-#ifndef NDEBUG
-        if( pExpr->span.z && pExpr->span.n>0 && pExpr->span.n<100 ){
-          VdbeComment((v, "# %T", &pExpr->span));
-        }
-#endif
+        sqlite3ColumnDefault(v, pExpr->pTab, pExpr->iColumn);
       }else{
         sqlite3VdbeAddOp(v, OP_Recno, pExpr->iTable, 0);
       }

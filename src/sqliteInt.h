@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.371 2005/02/15 21:36:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.372 2005/03/09 12:26:51 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -805,6 +805,10 @@ struct Token {
 ** be the right operand of an IN operator.  Or, if a scalar SELECT appears
 ** in an expression the opcode is TK_SELECT and Expr.pSelect is the only
 ** operand.
+**
+** If the Expr is of type OP_Column, and the table it is selecting from
+** is a disk table or the "old.*" pseudo-table, then pTab points to the
+** corresponding table definition.
 */
 struct Expr {
   u8 op;                 /* Operation performed by this node */
@@ -824,6 +828,7 @@ struct Expr {
   int iAggCtx;           /* The value to pass as P1 of OP_AggGet. */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
+  Table *pTab;           /* Table for OP_Column expressions. */
 };
 
 /*
@@ -1536,6 +1541,8 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew();
 sqlite3_value *sqlite3GetTransientValue(sqlite3*db);
+int sqlite3ValueFromExpr(Expr *, u8, u8, sqlite3_value **);
+void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3UpperToLower[];
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
@@ -1546,5 +1553,6 @@ void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 void sqlite3CodeSubselect(Parse *, Expr *);
 int sqlite3SelectResolve(Parse *, Select *, NameContext *);
+void sqlite3ColumnDefault(Vdbe *, Table *, int);
 
 #endif

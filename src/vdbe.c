@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.456 2005/02/19 08:18:06 danielk1977 Exp $
+** $Id: vdbe.c,v 1.457 2005/03/09 12:26:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -301,6 +301,14 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
       }
     }
   }
+}
+
+/*
+** Exported version of applyAffinity(). This one works on sqlite3_value*, 
+** not the internal Mem* type.
+*/
+void sqlite3ValueApplyAffinity(sqlite3_value *pVal, u8 affinity, u8 enc){
+  applyAffinity((Mem *)pVal, affinity, enc);
 }
 
 #ifdef SQLITE_DEBUG
@@ -1677,7 +1685,7 @@ case OP_SetNumColumns: {
   break;
 }
 
-/* Opcode: Column P1 P2 *
+/* Opcode: Column P1 P2 P3
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -1911,7 +1919,11 @@ case OP_Column: {
     sqlite3VdbeSerialGet(zData, aType[p2], pTos);
     pTos->enc = db->enc;
   }else{
-    pTos->flags = MEM_Null;
+    if( pOp->p3 ){
+      sqlite3VdbeMemShallowCopy(pTos, (Mem *)(pOp->p3), MEM_Static);
+    }else{
+      pTos->flags = MEM_Null;
+    }
   }
 
   /* If we dynamically allocated space to hold the data (in the

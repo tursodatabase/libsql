@@ -1420,6 +1420,9 @@ void sqlite3VdbeDelete(Vdbe *p){
         sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
         sqliteFree(pVdbeFunc);
       }
+      if( pOp->p3type==P3_MEM ){
+        sqlite3ValueFree((sqlite3_value*)pOp->p3);
+      }
     }
     sqliteFree(p->aOp);
   }
@@ -1846,4 +1849,11 @@ void sqlite3ExpirePreparedStatements(sqlite3 *db){
   for(p = db->pVdbe; p; p=p->pNext){
     p->expired = 1;
   }
+}
+
+/*
+** Return the database associated with the Vdbe.
+*/
+sqlite3 *sqlite3VdbeDb(Vdbe *v){
+  return v->db;
 }

@@ -12,9 +12,44 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.104 2005/01/29 08:32:45 danielk1977 Exp $
+** $Id: update.c,v 1.105 2005/03/09 12:26:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
+
+/*
+** The most recently coded instruction was an OP_Column to retrieve column
+** 'i' of table pTab. This routine sets the P3 parameter of the 
+** OP_Column to the default value, if any.
+**
+** The default value of a column is specified by a DEFAULT clause in the 
+** column definition. This was either supplied by the user when the table
+** was created, or added later to the table definition by an ALTER TABLE
+** command. If the latter, then the row-records in the table btree on disk
+** may not contain a value for the column and the default value, taken
+** from the P3 parameter of the OP_Column instruction, is returned instead.
+** If the former, then all row-records are guaranteed to include a value
+** for the column and the P3 value is not required.
+**
+** Column definitions created by an ALTER TABLE command may only have 
+** literal default values specified: a number, null or a string. (If a more
+** complicated default expression value was provided, it is evaluated 
+** when the ALTER TABLE is executed and one of the literal values written
+** into the sqlite_master table.)
+**
+** Therefore, the P3 parameter is only required if the default value for
+** the column is a literal number, string or null. The sqlite3ValueFromExpr()
+** function is capable of transforming these types of expressions into
+** sqlite3_value objects.
+*/
+void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
+  if( pTab && !pTab->pSelect ){
+    sqlite3_value *pValue;
+    u8 enc = sqlite3VdbeDb(v)->enc;
+    Column *pCol = &pTab->aCol[i];
+    sqlite3ValueFromExpr(pCol->pDflt, enc, pCol->affinity, &pValue);
+    sqlite3VdbeChangeP3(v, -1, (const char *)pValue, P3_MEM);
+  }
+}
 
 /*
 ** Process an UPDATE statement.
@@ -294,6 +329,7 @@ void sqlite3Update(
       j = aXRef[i];
       if( j<0 ){
         sqlite3VdbeAddOp(v, OP_Column, iCur, i);
+        sqlite3ColumnDefault(v, pTab, i);
       }else{
         sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr);
       }
@@ -378,6 +414,7 @@ void sqlite3Update(
       j = aXRef[i];
       if( j<0 ){
         sqlite3VdbeAddOp(v, OP_Column, iCur, i);
+        sqlite3ColumnDefault(v, pTab, i);
       }else{
         sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
       }

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.14 2004/10/10 17:24:55 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.15 2005/03/09 12:26:51 danielk1977 Exp $}
 source common.tcl
 header {SQLite Virtual Machine Opcodes}
 puts {
@@ -20,7 +20,10 @@ foreach line [split $file \n] {
   }
   if {[regexp {^/\* Opcode: } $line]} {
     set current_op [lindex $line 2]
-    set Opcode($current_op:args) [lrange $line 3 end]
+    set txt [lrange $line 3 end]
+    regsub -all {>} $txt {\&gt;} txt
+    regsub -all {<} $txt {\&lt;} txt
+    set Opcode($current_op:args) $txt
     lappend OpcodeList $current_op
     continue
   }
@@ -33,6 +36,8 @@ foreach line [split $file \n] {
   if {$line==""} {
     append Opcode($current_op:text) \n<p>
   } else {
+    regsub -all {>} $line {\&gt;} line
+    regsub -all {<} $line {\&lt;} line
     append Opcode($current_op:text) \n$line
   }
 }

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.281 2005/02/19 08:18:06 danielk1977 Exp $
+** $Id: main.c,v 1.282 2005/03/09 12:26:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -258,7 +258,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       db->file_format = 1;
     }
 
-    if( db->file_format==2 ){
+    if( db->file_format==2 || db->file_format==3 ){
       /* File format 2 is treated exactly as file format 1. New 
       ** databases are created with file format 1.
       */ 
@@ -269,11 +269,13 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   /*
   ** file_format==1    Version 3.0.0.
   ** file_format==2    Version 3.1.3.
+  ** file_format==3    Version 3.1.4.
   **
   ** Version 3.0 can only use files with file_format==1. Version 3.1.3
   ** can read and write files with file_format==1 or file_format==2.
+  ** Version 3.1.4 can read and write file formats 1, 2 and 3.
   */
-  if( meta[1]>2 ){
+  if( meta[1]>3 ){
     sqlite3BtreeCloseCursor(curMain);
     sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
     return SQLITE_ERROR;
