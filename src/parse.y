@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.137 2004/09/25 13:12:16 drh Exp $
+** @(#) $Id: parse.y,v 1.138 2004/09/25 15:29:09 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -126,7 +126,7 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID
-  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CLUSTER CONFLICT
+  ABORT AFTER ASC ATTACH BEFORE BEGIN CASCADE CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXPLAIN FAIL FOR
   GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
