@@ -22,6 +22,7 @@
       - Transactions
   *  Modify sqlite_master to store the table number.
   *  Add a cache in DbCursor to speed up the sqliteDbReadOvfl() routine.
+  *  Add cache information to speed up sqliteDbCursorMoveTo().
 
 Longer term:
   *  Document all the changes and release Sqlite 2.0.
@@ -29,4 +30,6 @@ Longer term:
      indices.
   *  "OPTIMIZE select" statement to automatically create and/or tune
      indices.
+  *  "CREATE INDEX FOR select" to automatically generate needed indices.
+  *  "VACUUM table USING index".
   *  Parse and use constraints.

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: db.c,v 1.2 2001/01/21 00:58:08 drh Exp $
+** $Id: db.c,v 1.3 2001/01/22 00:31:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pg.h"
@@ -92,16 +92,16 @@ struct DbCursor {
 **     entries....
 **         0.  size of this entry (measured in u32's)
 **         1.  hash
-**         2.  keysize  (in bytes. bit 31 set if uses overflow)
-**         3.  datasize (in bytes. bit 31 set if uses overflow pages)
-**         4.  key
-**         5+. data
+**         2.  keysize  (in bytes)
+**         3.  datasize (in bytes)
+**         4.  payload
 **
-** Overflow block:
+** Payload area:
 **
-**     0.   BLOCK_MAGIC | BLOCK_OVERFLOW
-**     1.   address of next block in overflow buffer
-**     data...
+**     *   up to LOCAL_PAYLOAD bytes of data
+**     *   10 page number of direct blocks
+**     *   1 indirect block
+**     *   1 double-indirect block
 **
 ** Index block:
 **
@@ -114,11 +114,14 @@ struct DbCursor {
 **
 ** Contents block:  (The first page in the file)
 **     0.   BLOCK_MAGIC | BLOCK_CONTENTS
-**     1.   overflow page list
-**     2.   freelist
-**     3.   number of tables
-**     table root page numbers...
+**     1.   zero
+**     2.   number of bytes of payload
+**     3.   freelist
+**     4... root pages numbers of tables
 */
+
+#define U32_PER_PAGE  (SQLITE_PAGE_SIZE/sizeof(u32))
+#deifne LOCAL_PAYLOAD  (SQLITE_PAGE_SIZE - 18*sizeof(u32))
 
 /*
 ** Byte swapping code.
@@ -141,6 +144,262 @@ static u32 sqliteDbSwapBytes(u32 x){
 }
 
 #endif
+
+/*
+** Return the number of bytes of payload storage required on the leaf
+** node to hold the key and data given.  Overflow pages do not count.
+** The argument is the total size of the payload.
+*/
+static int payloadLocalSize(int nTotal){
+  int nLocal, i;
+  if( nTotal<0 ) nTotal = 0;
+  if( nTotal <= LOCAL_PAYLOAD ){
+    /* All the data fits on the leaf page */
+    return (nTotal + 3)/4;
+  }
+  nLocal = LOCAL_PAYLOAD;
+  nTotal -= LOCAL_PAYLOAD;
+  if( nTotal < 10*SQLITE_PAGE_SIZE ){
+    return nLocal + ((nTotal+SQLITE_PAGE_SIZE-1)/SQLITE_PAGE_SIZE)*sizeof(u32);
+  }
+  nLocal += 10*sizeof(u32);
+  nTotal -= 10*SQLITE_PAGE_SIZE;
+  if( nTotal < U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+    return nLocal + sizeof(u32);
+  }
+  nLocal += sizeof(u32);
+  nTotal -= U32_PER_PAGE*SQLITE_PAGE_SIZE;
+  if( nTotal < U32_PER_PAGE*U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+    return nLocal + sizeof(u32);
+  }
+  return -1;  /* This payload will not fit. */
+}
+
+/*
+** Read data from the payload area.
+**
+** aPage points directly at the beginning of the payload.  No bounds 
+** checking is done on offset or amt -- it is assumed that the payload
+** area is big enough to accomodate.
+*/
+static int payloadRead(Db *pDb, u32 *aPage, int offset, int amt, void *pBuf){
+  int rc;
+  int toread, more;
+
+  assert( offset>=0 && amt>=0 );
+  if( offset < LOCAL_PAYLOAD ){
+    /* Data stored directly in the leaf block of the BTree */
+    if( amt+offset>LOCAL_PAYLOAD ){
+      toread = LOCAL_PAYLOAD - offset;
+      more = 1;
+    }else{
+      toread = amt;
+      more = 0;
+    }
+    memcpy(pBuf, &((char*)aPage)[offset], toread);
+    if( !more ) return SQLITE_OK;
+    pBuf = &((char*)pBuf)[toread];
+    offset += toread;
+    amt -= toread;
+  }
+  offset -= LOCAL_PAYLOAD;
+  aPage += LOCAL_PAYLOAD/sizeof(aPage[0]);
+  while( offset < 10*SQLITE_PAGE_SIZE ){
+    /* Data stored in one of 10 direct pages */
+    int iDir;
+    char *aData;
+    iDir = offset/SQLITE_PAGE_SIZE;
+    base = offset - iDir*SQLITE_PAGE_SIZE;
+    rc = sqlitePgGet(pDb->pPgr, aPage[iDir], &aData);
+    if( rc!=SQLITE_OK ) return rc;
+    if( amt+base > SQLITE_PAGE_SIZE ){
+      toread = SQLITE_PAGE_SIZE - base;
+      more = 1;
+    }else{
+      toread = amt;
+      more = 0;
+    }
+    memcpy(pBuf, &aData[base], toread);
+    sqlitePgUnref(aData);
+    if( !more ) return SQLITE_OK;
+    pBuf = &((char*)pBuf)[toread];
+    amt -= toread;
+    offset += toread;
+  }
+  offset -= 10*SQLITE_PAGE_SIZE;
+  aPage += 10;
+  if( offset < U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+    /* Data stored in an indirect page */ 
+    u32 *indirPage;
+    rc = sqlitePgGet(pDb->pPgr, aPage[0], &indirPage);
+    if( rc!=SQLITE_OK ) return rc;
+    while( amt>0 && offset < U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+      int idx, base;
+      char *aData;
+      idx = offset/SQLITE_PAGE_SIZE;
+      base = offset - idx*SQLITE_PAGE_SIZE;
+      rc = sqlitePgGet(pDb->pPgr, indirPage[idx], &aData);
+      if( rc!=SQLITE_OK ) break;
+      if( amt+base > SQLITE_PAGE_SIZE ){
+        toread = SQLITE_PAGE_SIZE - base;
+      }else{
+        toread = amt;
+      }
+      memcpy(pBuf, &aData[base], toread);
+      sqlitePgUnref(aData);
+      pBuf = &((char*)pBuf)[toread];
+      amt -= toread;
+      offset += toread;
+    }
+    sqlitePgUnref(indirPage);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  offset -= U32_PER_PAGE*SQLITE_PAGE_SIZE;
+  aPage++;
+  if( offset < U32_PER_PAGE*U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+    /* Data stored in a double-indirect page */
+    u32 *dblIndirPage;
+    rc = sqlitePgGet(pDb->pPgr, aPage[0], &dblIndirPage);
+    if( rc!=SQLITE_OK ) return rc;
+    while( amt>0 && offset < U32_PER_PAGE*U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+      int dblidx;
+      u32 *indirPage;
+      int basis;
+      dblidx = offset/(U32_PER_PAGE*SQLITE_PAGE_SIZE);
+      rc = sqlitePgGet(pDb->pPgr, dblIndirPage[dblidx], &indirPage);
+      if( rc!=SQLITE_OK ) break;
+      basis = dblidx*U32_PER_PAGE*SQLITE_PAGE_SIZE;
+      while( amt>0 && offset < basis + U32_PER_PAGE*SQLITE_PAGE_SIZE ){
+        int idx, base;
+        char *aData;
+        idx = (offset - basis)/SQLITE_PAGE_SIZE;
+        base = (offset - basis) - idx*SQLITE_PAGE_SIZE;
+        rc = sqlitePgGet(pDb->pPgr, indirPage[idx], &aData);
+        if( rc!=SQLITE_OK ) break;
+        if( amt+base > SQLITE_PAGE_SIZE ){
+          toread = SQLITE_PAGE_SIZE - base;
+        }else{
+          toread = amt;
+        }
+        memcpy(pBuf, &aData[base], toread);
+        sqlitePgUnref(aData);
+        pBuf = &((char*)pBuf)[toread];
+        amt -= toread;
+        offset += toread;
+      }
+      sqlitePgUnref(indirPage);
+      if( rc!=SQLITE_OK ) break;
+    }
+    sqlitePgUnref(dblIndirPage);
+    return rc;
+  }
+  memset(pBuf, 0, amt);
+  return SQLITE_OK;
+}
+
+/*
+** Write data into the payload area.
+**
+** If pages have already been allocated for the payload, they are
+** simply overwritten.  New pages are allocated as necessary to
+** fill in gaps.  sqlitePgTouch() is called on all overflow pages,
+** but the calling function must invoke sqlitePgTouch() for aPage
+** itself.
+*/
+static int payloadWrite(Db *pDb, u32 *aPage, int offset, int amt, void *pBuf){
+  assert( offset>=0 && amt>=0 );
+  if( offset < LOCAL_PAYLOAD ){
+    if( amt+offset>LOCAL_PAYLOAD ){
+      towrite = LOCAL_PAYLOAD - offset;
+      more = 1;
+    }else{
+      towrite = amt;
+      more = 0;
+    }
+    memcpy(&((char*)aPage)[offset], pBuf, towrite);
+    if( !more ) return SQLITE_OK;
+    pBuf = &((char*)pBuf)[towrite];
+    offset += toread;
+    amt -= toread;
+  }
+  offset -= LOCAL_PAYLOAD;
+  aPage += LOCAL_PAYLOAD/sizeof(aPage[0]);
+  while( offset < 10*SQLITE_PAGE_SIZE ){
+    int iDir;
+    char *aData;
+    iDir = offset/SQLITE_PAGE_SIZE;
+    base = offset - iDir*SQLITE_PAGE_SIZE;
+    if( aPage[iDir] ){
+      rc = sqliteGet(pDb->pPgr, aPage[iDir], &aData);
+    }else{
+      rc = sqliteDbAllocPage(pDb, &aPage[iDir], &aData);
+    }
+    if( rc!=SQLITE_OK ) return rc;
+    if( amt+base > SQLITE_PAGE_SIZE ){
+      towrite = SQLITE_PAGE_SIZE - base;
+      more = 1;
+    }else{
+      towrite = amt;
+      more = 0;
+    }
+    memcpy(&aData[base], pBuf, towrite);
+    sqlitePgUnref(aData);
+    if( !more ) return SQLITE_OK;
+    pBuf = &((char*)pBuf)[towrite];
+    amt -= towrite;
+    offset += towrite;
+  }
+  /* TBD.... */
+}
+
+/*
+** Release any and all overflow pages associated with data starting
+** with byte "newSize" up to but not including "oldSize".
+*/
+static int payloadFree(Db *pDb, u32 *aPage, int newSize, int oldSize){
+  int i;
+
+  if( newSize>=oldSize ) return;
+  oldSize -= LOCAL_PAYLOAD;
+  if( oldSize<=0 ) return SQLITE_OK;
+  newSize -= LOCAL_PAYLOAD;
+  if( newSize<0 ) newSize = 0;
+  aPage += LOCAL_PAYLOAD/sizeof(u32);
+*************
+  for(i=0; i<10; i++){
+    sqliteDbFreePage(pDb, aPage[0], 0);
+    amt -= SQLITE_PAGE_SIZE;
+    if( amt<=0 ) return SQLITE_OK;
+    aPage++;
+  }
+  rc = sqlitePgGet(pDb->pPgr, aPage[0], &indirPage);
+  if( rc!=SQLITE_OK ) return rc;
+  for(i=0; i<U32_PER_PAGE; i++){
+    if( indirPage[i]==0 ) continue;
+    sqliteDbFreePage(pDb, indirPage[i], 0);
+  }
+  sqliteDbFreePage(pDb, aPage[0], indirPage);
+  sqlitePgUnref(indirPage);
+  amt -= U32_PER_PAGE*SQLITE_PAGE_SIZE;
+  if( amt<=0 ) return SQLITE_OK;
+  aPage++;
+  rc = sqlitePgGet(pDb->pPgr, aPage[0], &dblIndirPage);
+  if( rc!=SQLITE_OK ) return rc;
+  for(i=0; i<U32_PER_PAGE; i++){
+    if( dblIndirPage[i]==0 ) continue;
+    rc = sqlitePgGet(pDb->pPgr, dblIndirPage[i], &indirPage);
+    if( rc!=SQLITE_OK ) break;
+    for(j=0; j<U32_PER_PAGE; j++){
+      if( indirPage[j]==0 ) continue;
+      sqliteDbFreePage(pDb, dblIndirPage[i], 0);
+    }
+    sqliteDbFreePage(pDb, dblIndirPage[i], indirPage);
+    sqlitePgUnder(indirPage);
+  }
+  sqliteDbFreePage(pDb, aPage[0], dblIndirPage);
+  sqlitePgUnref(dblIndirPage);
+  return SQLITE_OK;    
+}
 
 /*
 ** Allocate space for the content table in the given Db structure.
@@ -200,36 +459,6 @@ static void sqliteDbFreePage(DB *pDb, u32 pgno, u32 *aPage){
 }
 
 /*
-** Write data into overflow pages.  The first overflow page is
-** provided in the second argument.  If additional pages are
-** needed, they must be allocated.
-*/
-static int sqliteDbWriteOvfl(Db *pDb, u32 *aPage, int nData, const void *pData){
-  while( nData>0 ){
-    int toWrite, rc;
-    u32 *nxPage, nxPgno;
-    if( nData > SQLITE_PAGE_SIZE - 2*sizeof(u32) ){
-      toWrite = SQLITE_PAGE_SIZE - 2*sizeof(u32);
-    }else{
-      toWrite = nData;
-    }
-    memcpy(&aPage[2], pData, toWrite);
-    nData -= toWrite;
-    pData = &((char*)pData)[toWrite];
-    if( nData<=0 ) break;
-    rc = sqliteDbAllocPage(pDb, &nxPgno, &nxPage);
-    if( rc!=SQLITE_OK ) return rc;  /* Be smarter here */
-    aPage[1] = SWB(nxPgno);
-    nxPage[0] = SWB(BLOCK_MAGIC|BLOCK_OVERFLOW);
-    nxPage[1] = 0;
-    sqlitePgTouch(aPage);
-    sqlitePgUnref(aPage);
-    aPage = nxPage;
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** Open a database.
 */
 int sqliteDbOpen(const char *filename, Db **ppDb){
@@ -254,18 +483,18 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
   if( rc!=0 ) goto open_err;
   if( nPage==0 ){
     sqlitePgBeginTransaction(pDb->pPgr);
-    aPage1[0] = SWB(BLOCK_MAGIC|BLOCK_CONTENT);
+    aPage1[0] = BLOCK_MAGIC|BLOCK_CONTENT;
+    aPage1[2] = sizeof(u32)*10;
     sqlitePgTouch(aPage1);
     sqlitePgCommit(pDb->pPgr);
   }
-  pDb->nContent = SWB(aPage1[3]) + 2;
+  pDb->nContent = aPage1[2]/sizeof(u32);
   pDb->nAlloc = 0;
   rc = sqliteDbExpandContent(pDb, pDb->nContent);
   if( rc!=SQLITE_OK ) goto open_err;
-  rc = sqliteDbReadOvfl(pDb, 1, aPage1, 0, pDb->nContent*sizeof(u32),
-                        pDb->aContent);
-  if( rc!=SQLITE_OK ) goto open_err;
+  rc = payloadRead(pDb, &aPage1[3], 0, aPage[2], pDb->aContent);
   sqlitePgUnref(aPage1);
+  if( rc!=SQLITE_OK ) goto open_err;
   *ppDb = pDb;
   return SQLITE_OK;
 
@@ -313,14 +542,16 @@ int sqliteDbBeginTransaction(Db *pDb){
 ** Commit changes to the database
 */ 
 int sqliteDbCommit(Db *pDb){
-  u32 *aPage;
+  u32 *aPage1;
   int rc;
   if( !pDb->inTransaction ){
     return SQLITE_OK;
   }
-  rc = sqlitePgGet(pDb->pPgr, 1, &aPage);
+  rc = sqlitePgGet(pDb->pPgr, 1, &aPage1);
   if( rc!=SQLITE_OK ) return rc;
-  sqliteDbWriteOvfl(pDb, aPage, pDb->nContent*sizeof(u32), pDb->aContent);
+  aPage1[2] = pDb->nContent*sizeof(u32);
+  payloadWrite(pDb, 0, aPage1[2], pDb->aContent);
+  sqlitePgUnref(aPage1);
   rc = sqlitePgCommit(pDb->pPgr);
   if( rc!=SQLITE_OK ) return rc;
   pDb->inTransaction = 0;

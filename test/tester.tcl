@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.8 2000/12/10 18:23:52 drh Exp $
+# $Id: tester.tcl,v 1.9 2001/01/22 00:31:53 drh Exp $
 
 # Create a test database
 #
@@ -139,6 +139,7 @@ proc finish_test {} {
 # A procedure to execute SQL
 #
 proc execsql {sql} {
+  # puts "SQL = $sql"
   return [db eval $sql]
 }
 
