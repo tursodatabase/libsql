@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.16 2004/02/21 13:31:10 drh Exp $
+** $Id: pragma.c,v 1.17 2004/02/21 14:00:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -19,7 +19,7 @@
 /*
 ** Interpret the given string as a boolean value.
 */
-static int getBoolean(char *z){
+static int getBoolean(const char *z){
   static char *azTrue[] = { "yes", "on", "true" };
   int i;
   if( z[0]==0 ) return 0;
@@ -81,6 +81,46 @@ static int getTempStore(char *z){
   }else{
     return 0;
   }
+}
+
+/*
+** Check to see if zRight and zLeft refer to a pragma that queries
+** or changes one of the flags in db->flags.  Return 1 if so and 0 if not.
+** Also, implement the pragma.
+*/
+static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
+  static const struct {
+    const char *zName;  /* Name of the pragma */
+    int mask;           /* Mask for the db->flags value */
+  } aPragma[] = {
+    { "vdbe_trace",               SQLITE_VdbeTrace     },
+    { "full_column_names",        SQLITE_FullColNames  },
+    { "short_column_names",       SQLITE_ShortColNames },
+    { "show_datatypes",           SQLITE_ReportTypes   },
+    { "count_changes",            SQLITE_CountRows     },
+    { "empty_result_callbacks",   SQLITE_NullCallback  },
+  };
+  int i;
+  for(i=0; i<sizeof(aPragma)/sizeof(aPragma[0]); i++){
+    if( sqliteStrICmp(zLeft, aPragma[i].zName)==0 ){
+      sqlite *db = pParse->db;
+      Vdbe *v;
+      if( strcmp(zLeft,zRight)==0 && (v = sqliteGetVdbe(pParse))!=0 ){
+        sqliteVdbeAddOp(v, OP_ColumnName, 0, 1);
+        sqliteVdbeChangeP3(v, -1, aPragma[i].zName, P3_STATIC);
+        sqliteVdbeAddOp(v, OP_ColumnName, 1, 0);
+        sqliteVdbeChangeP3(v, -1, "boolean", P3_STATIC);
+        sqliteVdbeAddOp(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0);
+        sqliteVdbeAddOp(v, OP_Callback, 1, 0);
+      }else if( getBoolean(zRight) ){
+        db->flags |= aPragma[i].mask;
+      }else{
+        db->flags &= ~aPragma[i].mask;
+      }
+      return 1;
+    }
+  }
+  return 0;
 }
 
 /*
@@ -287,6 +327,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
   }else
 
+#ifndef NDEBUG
   if( sqliteStrICmp(zLeft, "trigger_overhead_test")==0 ){
     if( getBoolean(zRight) ){
       always_code_trigger_setup = 1;
@@ -294,53 +335,10 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       always_code_trigger_setup = 0;
     }
   }else
+#endif
 
-  if( sqliteStrICmp(zLeft, "vdbe_trace")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_VdbeTrace;
-    }else{
-      db->flags &= ~SQLITE_VdbeTrace;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "full_column_names")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_FullColNames;
-    }else{
-      db->flags &= ~SQLITE_FullColNames;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "short_column_names")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_ShortColNames;
-    }else{
-      db->flags &= ~SQLITE_ShortColNames;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "show_datatypes")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_ReportTypes;
-    }else{
-      db->flags &= ~SQLITE_ReportTypes;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "count_changes")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_CountRows;
-    }else{
-      db->flags &= ~SQLITE_CountRows;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "empty_result_callbacks")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_NullCallback;
-    }else{
-      db->flags &= ~SQLITE_NullCallback;
-    }
+  if( flagPragma(pParse, zLeft, zRight) ){
+    /* The flagPragma() call also generates any necessary code */
   }else
 
   if( sqliteStrICmp(zLeft, "table_info")==0 ){
