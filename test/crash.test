@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.13 2005/01/08 02:35:44 danielk1977 Exp $
+# $Id: crash.test,v 1.14 2005/01/13 11:07:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -404,6 +404,30 @@ do_test crash-6.1 {
   }
 } {1 {child process exited abnormally}}
 do_test crash-6.2 {
+  signature
+} $sig
+
+#--------------------------------------------------------------------------
+# These test cases test the case where the master journal file name is 
+# corrupted slightly so that the corruption has to be detected by the
+# checksum.
+do_test crash-7.1 {
+  crashsql 1 test.db {
+    ATTACH 'test2.db' AS aux;
+    BEGIN;
+    INSERT INTO abc VALUES(randstr(1500,1500), 0, 0);
+    INSERT INTO abc2 VALUES(randstr(1500,1500), 0, 0);
+    COMMIT;
+  }
+
+  # Change the checksum value for the master journal name.
+  set f [open test.db-journal a]
+  fconfigure $f -encoding binary
+  seek $f [expr [file size test.db-journal] - 12]
+  puts -nonewline $f "\00\00\00\00"
+  close $f
+} {}
+do_test crash-7.2 {
   signature
 } $sig
 

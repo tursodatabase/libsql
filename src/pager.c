@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.181 2005/01/11 10:25:08 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.182 2005/01/13 11:07:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -358,7 +358,7 @@ static const unsigned char aJournalMagic[] = {
 /*
 ** Enable reference count tracking (for debugging) here:
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
   int pager3_refinfo_enable = 0;
   static void pager_refinfo(PgHdr *p){
     static int cnt = 0;
@@ -506,8 +506,9 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
     */
     sqliteFree(*pzMaster);
     *pzMaster = 0;
+  }else{
+    (*pzMaster)[len] = '\0';
   }
-  (*pzMaster)[len] = '\0';
    
   return SQLITE_OK;
 }
@@ -1829,12 +1830,7 @@ int sqlite3pager_close(Pager *pPager){
   **   sqlite3OsDelete(pPager->zFilename);
   ** }
   */
-  if( pPager->zFilename!=(char*)&pPager[1] ){
-    assert( 0 );  /* Cannot happen */
-    sqliteFree(pPager->zFilename);
-    sqliteFree(pPager->zJournal);
-    sqliteFree(pPager->zDirectory);
-  }
+
   sqliteFree(pPager);
   return SQLITE_OK;
 }
@@ -1879,7 +1875,7 @@ static void _page_ref(PgHdr *pPg){
   pPg->nRef++;
   REFINFO(pPg);
 }
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
   static void page_ref(PgHdr *pPg){
     if( pPg->nRef==0 ){
       _page_ref(pPg);

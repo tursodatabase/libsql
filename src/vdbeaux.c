@@ -1034,7 +1034,7 @@ static int vdbeCommit(sqlite3 *db){
     ** master journal file. If an error occurs at this point close
     ** and delete the master journal file. All the individual journal files
     ** still have 'null' as the master journal pointer, so they will roll
-    ** back independantly if a failure occurs.
+    ** back independently if a failure occurs.
     */
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;

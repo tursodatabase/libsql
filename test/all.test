@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.26 2005/01/12 07:15:07 danielk1977 Exp $
+# $Id: all.test,v 1.27 2005/01/13 11:07:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -115,7 +115,7 @@ if {$LeakList!=""} {
 # Run the crashtest only on unix and only once. If the library does not
 # always create auto-vacuum databases, also run autovacuum_crash.test.
 #
-if {$tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform)=="unix"} {
   source $testdir/crash.test
   ifcapable !default_autovacuum {
     source $testdir/autovacuum_crash.test

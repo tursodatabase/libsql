@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.43 2005/01/03 01:33:00 drh Exp $
+# $Id: tester.tcl,v 1.44 2005/01/13 11:07:54 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -244,6 +244,41 @@ proc ifcapable {expr code} {
   regsub -all {[a-z_0-9]+} $expr {$::sqlite_options(&)} e2
   if !($e2) return
   return -code [catch {uplevel 1 $code}]
+}
+
+# This proc execs a seperate process that crashes midway through executing
+# the SQL script $sql on database test.db.
+#
+# The crash occurs during a sync() of file $crashfile. When the crash
+# occurs a random subset of all unsynced writes made by the process are
+# written into the files on disk. Argument $crashdelay indicates the
+# number of file syncs to wait before crashing.
+#
+# The return value is a list of two elements. The first element is a
+# boolean, indicating whether or not the process actually crashed or
+# reported some other error. The second element in the returned list is the
+# error message. This is "child process exited abnormally" if the crash
+# occured.
+#
+proc crashsql {crashdelay crashfile sql} {
+  if {$::tcl_platform(platform)!="unix"} {
+    error "crashsql should only be used on unix"
+  }
+  set cfile [file join [pwd] $crashfile]
+
+  set f [open crash.tcl w]
+  puts $f "sqlite3_crashparams $crashdelay $cfile"
+  puts $f "sqlite3 db test.db"
+  puts $f "db eval {pragma cache_size = 10}"
+  puts $f "db eval {"
+  puts $f   "$sql"
+  puts $f "}"
+  close $f
+
+  set r [catch {
+    exec [file join . crashtest] crash.tcl >@stdout
+  } msg]
+  lappend r $msg
 }
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set

@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.11 2005/01/12 09:10:41 danielk1977 Exp $
+# $Id: ioerr.test,v 1.12 2005/01/13 11:07:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,12 +32,16 @@ set ::AV [execsql {pragma auto_vacuum}]
 #     -tclbody          TCL script to run with IO error simulation.
 #     -sqlbody          TCL script to run with IO error simulation.
 #     -exclude          List of 'N' values not to test.
+#     -start            Value of 'N' to begin with (default 1)
 #
 proc do_ioerr_test {tn args} {
   array set ::ioerropts $args
 
   set ::go 1
-  for {set n 1} {$::go} {incr n} {
+  if {![info exists ::ioerropts(-start)]} {
+    set ::ioerropts(-start) 1
+  }
+  for {set n $::ioerropts(-start)} {$::go} {incr n} {
  
     if {[info exists ::ioerropts(-exclude)]} {
       if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
@@ -45,7 +49,7 @@ proc do_ioerr_test {tn args} {
 
     do_test ioerr-$tn.$n.1 {
       set ::sqlite_io_error_pending 0
-      db close
+      catch {db close}
       catch {file delete -force test.db}
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}
@@ -80,6 +84,7 @@ proc do_ioerr_test {tn args} {
     } {1}
   }
   set ::sqlite_io_error_pending 0
+  unset ::ioerropts
 }
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
@@ -213,6 +218,9 @@ do_ioerr_test 4 -tclprep {
 }
 
 # Test IO errors that may occur during a multi-file commit.
+#
+# Test 8 is excluded when auto-vacuum is enabled for the same reason
+# as in test cases ioerr-1.XXX
 do_ioerr_test 5 -sqlprep {
   ATTACH 'test2.db' AS test2;
 } -sqlbody {
@@ -220,6 +228,63 @@ do_ioerr_test 5 -sqlprep {
   CREATE TABLE t1(a,b,c);
   CREATE TABLE test2.t2(a,b,c);
   COMMIT;
+} -exclude [expr [execsql {pragma auto_vacuum}] ? 8 : 0]
+
+# Test IO errors when replaying two hot journals from a 2-file 
+# transaction. This test only runs on UNIX.
+if {$tcl_platform(platform)=="unix"} {
+  do_ioerr_test 6 -tclprep {
+    set rc [crashsql 2 test2.db-journal {
+      ATTACH 'test2.db' as aux;
+      PRAGMA cache_size = 10;
+      BEGIN;
+      CREATE TABLE aux.t2(a, b, c);
+      CREATE TABLE t1(a, b, c);
+      COMMIT;
+    }]
+    if {$rc!="1 {child process exited abnormally}"} {
+      error "Wrong error message: $rc"
+    }
+  } -sqlbody {
+    ATTACH 'test2.db' as aux;
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
 }
 
+# Test handling of IO errors that occur while rolling back hot journal
+# files.
+do_ioerr_test 14 -tclprep {
+  db close
+  sqlite3 db2 test2.db
+  db2 eval {
+    PRAGMA synchronous = 0;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  file copy -force test2.db test.db
+  file copy -force test2.db-journal test.db-journal
+  db2 close
+} -tclbody {
+  sqlite3 db test.db
+  db eval {
+    SELECT * FROM t1;
+  }
+} -exclude 1
+
+# do_ioerr_test 15 -sqlprep {
+#   CREATE TABLE abc(a UNIQUE, b, c);
+#   INSERT INTO abc VALUES(1, 2, 3);
+# } -sqlbody {
+#   BEGIN;
+#   INSERT INTO abc VALUES(1, 2, 3);
+#   COMMIT;
+# }
+
 finish_test
+
+
+
+

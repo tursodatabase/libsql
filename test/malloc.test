@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.18 2005/01/13 02:14:25 danielk1977 Exp $
+# $Id: malloc.test,v 1.19 2005/01/13 11:07:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -96,6 +96,7 @@ proc do_malloc_test {tn args} {
       }
     } {1 1}
   }
+  unset ::mallocopts
 }
 
 for {set go 1; set i 1} {$go} {incr i} {
@@ -497,6 +498,48 @@ do_malloc_test 12 -tclbody {
   set ::STMT [sqlite3_prepare16 $::DB $sql16 -1 DUMMY]
   sqlite3_finalize $::STMT
 } 
+
+# Test malloc errors when replaying two hot journals from a 2-file 
+# transaction. This test only runs on UNIX.
+if {$tcl_platform(platform)=="unix"} {
+  do_malloc_test 13 -tclprep {
+    set rc [crashsql 1 test2.db {
+      ATTACH 'test2.db' as aux;
+      PRAGMA cache_size = 10;
+      BEGIN;
+      CREATE TABLE aux.t2(a, b, c);
+      CREATE TABLE t1(a, b, c);
+      COMMIT;
+    }]
+    if {$rc!="1 {child process exited abnormally}"} {
+      error "Wrong error message: $rc"
+    }
+  } -sqlbody {
+    ATTACH 'test2.db' as aux;
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+}
+
+do_malloc_test 14 -tclprep {
+  catch {db close}
+  sqlite3 db2 test2.db
+  db2 eval {
+    PRAGMA synchronous = 0;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  file copy -force test2.db test.db
+  file copy -force test2.db-journal test.db-journal
+  db2 close
+} -tclbody {
+  sqlite3 db test.db
+  db eval {
+    SELECT * FROM t1;
+  }  
+}
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

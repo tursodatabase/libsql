@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.18 2004/09/08 20:13:06 drh Exp $
+# $Id: pager.test,v 1.19 2005/01/13 11:07:54 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -396,6 +396,26 @@ for {set i 1} {$i<20} {incr i} {
   } {state 1}
 }
 
+# Test that nothing bad happens when sqlite3pager_set_cachesize() is
+# called with a negative argument.
+do_test pager-4.6.1 {
+  pager_close [pager_open ptf2.db -15]
+} {}
+
+# Test truncate on an in-memory database is Ok.
+do_test pager-4.6.2 {
+  set ::p2 [pager_open :memory: 10]
+  pager_truncate $::p2 5
+} {}
+do_test pager-4.6.3 {
+  for {set i 1} {$i<5} {incr i} {
+    set p [page_get $::p2 $i]
+    page_write $p "Page $i"
+    pager_commit $::p2
+  }
+  pager_truncate $::p2 3
+} {}
+
 do_test pager-4.99 {
   pager_close $::p1
 } {}
@@ -421,4 +441,76 @@ do_test pager-5.1 {
 } {}
 }
 
+do_test pager-6.1 {
+  file delete -force test2.db
+  file delete -force test2.db-journal
+  sqlite3 db2 test2.db
+  execsql {
+    PRAGMA synchronous = 0;
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    INSERT INTO abc VALUES(1, 2, randstr(200,200));
+    BEGIN;
+    UPDATE abc SET c = randstr(200,200);
+  } db2
+  file copy -force test2.db test.db
+  file copy -force test2.db-journal test.db-journal
+
+  set f [open test.db-journal a]
+  fconfigure $f -encoding binary
+  seek $f [expr [file size test.db-journal] - 1032] start
+  puts -nonewline $f "\00\00\00\00"
+  close $f
+
+  sqlite3 db test.db
+  execsql {
+    SELECT sql FROM sqlite_master
+  }
+} {{CREATE TABLE abc(a, b, c)}}
+
+do_test pager-6.2 {
+  file copy -force test2.db test.db
+  file copy -force test2.db-journal test.db-journal
+
+  set f [open test.db-journal a]
+  fconfigure $f -encoding binary
+  seek $f [expr [file size test.db-journal] - 1032] start
+  puts -nonewline $f "\00\00\00\FF"
+  close $f
+
+  sqlite3 db test.db
+  execsql {
+    SELECT sql FROM sqlite_master
+  }
+} {{CREATE TABLE abc(a, b, c)}}
+
+do_test pager-6.3 {
+  file copy -force test2.db test.db
+  file copy -force test2.db-journal test.db-journal
+
+  set f [open test.db-journal a]
+  fconfigure $f -encoding binary
+  seek $f [expr [file size test.db-journal] - 4] start
+  puts -nonewline $f "\00\00\00\00"
+  close $f
+
+  sqlite3 db test.db
+  execsql {
+    SELECT sql FROM sqlite_master
+  }
+} {{CREATE TABLE abc(a, b, c)}}
+
+do_test pager-6.4 {
+  db2 close
+} {}
 finish_test
+
+
+
