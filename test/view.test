@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.7 2002/07/02 13:05:05 drh Exp $
+# $Id: view.test,v 1.8 2002/07/16 02:05:45 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -213,5 +213,56 @@ do_test view-6.2 {
   }
 } {11 12 13 14 39}
 
+do_test view-7.1 {
+  execsql {
+    CREATE TABLE test1(id integer primary key, a);
+    CREATE TABLE test2(id integer, b);
+    INSERT INTO test1 VALUES(1,2);
+    INSERT INTO test2 VALUES(1,3);
+    CREATE VIEW test AS
+      SELECT test1.id, a, b
+      FROM test1 JOIN test2 ON test2.id=test1.id;
+    SELECT * FROM test;
+  }
+} {1 2 3}
+do_test view-7.2 {
+  db close
+  sqlite db test.db
+  execsql {
+    SELECT * FROM test;
+  }
+} {1 2 3}
+do_test view-7.3 {
+  execsql {
+    DROP VIEW test;
+    CREATE VIEW test AS
+      SELECT test1.id, a, b
+      FROM test1 JOIN test2 USING(id);
+    SELECT * FROM test;
+  }
+} {1 2 3}
+do_test view-7.4 {
+  db close
+  sqlite db test.db
+  execsql {
+    SELECT * FROM test;
+  }
+} {1 2 3}
+do_test view-7.5 {
+  execsql {
+    DROP VIEW test;
+    CREATE VIEW test AS
+      SELECT test1.id, a, b
+      FROM test1 NATURAL JOIN test2;
+    SELECT * FROM test;
+  }
+} {1 2 3}
+do_test view-7.6 {
+  db close
+  sqlite db test.db
+  execsql {
+    SELECT * FROM test;
+  }
+} {1 2 3}
 
 finish_test

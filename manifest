@@ -1,5 +1,5 @@
-C Fix\sa\ssyntax\serror\sin\sthe\stclsqlite.c\sfile.\s(CVS\s678)
-D 2002-07-15T20:58:48
+C Fix\sfor\sticket\s#100:\sCorrectly\shandle\sON\sand\sUSING\sclauses\sof\sJOINs\swithin\na\sVIEW.\s(CVS\s679)
+D 2002-07-16T02:05:44
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 81d0f42ae58af35d6331402e71a4fb2d2898586c
 F src/delete.c 215492ffcea4262a993e55f3c4a67dc9fea4da9c
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 4b25ee5e65f351d40dea8575b998605762556d76
+F src/expr.c 5c3b241a680dff98afdf5f0ba6e14a3b19669914
 F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -107,7 +107,7 @@ F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/view.test 28700c1f9a10121242eaad77622f603cf59a548b
+F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
 F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
@@ -141,7 +141,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7e918c8b0df5120e3630811f164defb8c9fedd6d
-R 80d0f442519bb19c84eac71b236ad54c
+P 47997d7f3ad2dd486a00dc13b7a8c48bb4751e5d
+R 5268df3b683caf62c45fc04db3c4a2fd
 U drh
-Z a6f748da86333d939a65f771a8458e68
+Z 2216eae1017a9d0dde05f2fc78d38393
