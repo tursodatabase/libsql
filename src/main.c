@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.160 2004/02/25 13:47:32 drh Exp $
+** $Id: main.c,v 1.161 2004/02/25 22:51:06 rdc Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -545,6 +545,12 @@ int sqlite_changes(sqlite *db){
   return db->nChange;
 }
 
+/*
+** Return the number of changes produced by the last INSERT, UPDATE, or
+** DELETE statement to complete execution. The count does not include
+** changes due to SQL statements executed in trigger programs that were
+** triggered by that statement
+*/
 int sqlite_last_statement_changes(sqlite *db){
   return db->lsChange;
 }

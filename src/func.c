@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.42 2004/02/25 13:47:32 drh Exp $
+** $Id: func.c,v 1.43 2004/02/25 22:51:06 rdc Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -210,10 +210,19 @@ static void last_insert_rowid(sqlite_func *context, int arg, const char **argv){
   sqlite_set_result_int(context, sqlite_last_insert_rowid(db));
 }
 
+/*
+** Implementation of the change_count() SQL function.  The return
+** value is the same as the sqlite_changes() API function.
+*/
 static void change_count(sqlite_func *context, int arg, const char **argv){
   sqlite *db = sqlite_user_data(context);
   sqlite_set_result_int(context, sqlite_changes(db));
 }
+
+/*
+** Implementation of the last_statement_change_count() SQL function.  The
+** return value is the same as the sqlite_last_statement_changes() API function.
+*/
 static void last_statement_change_count(sqlite_func *context, int arg,
                                         const char **argv){
   sqlite *db = sqlite_user_data(context);
