@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.248 2004/05/24 07:04:26 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.249 2004/05/24 12:55:55 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -464,7 +464,7 @@ struct sqlite {
 ** points to a linked list of these structures.
 */
 struct FuncDef {
-  void (*xFunc)(sqlite_func*,int,const char**);  /* Regular function */
+  void (*xFunc)(sqlite_func*,int,sqlite3_value**);  /* Regular function */
   void (*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
   void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
   signed char nArg;         /* Number of arguments.  -1 means unlimited */

@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.5 2004/05/20 12:41:20 drh Exp $
+# $Id: types.test,v 1.6 2004/05/24 12:55:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,14 +52,14 @@ do_test types-1.1.0 {
 # literal were inserted into a column with affinity INTEGER, NUMERIC, TEXT
 # or NONE, respectively.
 set values {
-  { 5.0    INTEGER REAL    TEXT REAL    }
-  { 5      INTEGER INTEGER TEXT INTEGER }
-  { '5.0'  INTEGER REAL    TEXT TEXT    }
-  { '-5.0' INTEGER REAL    TEXT TEXT    }
-  { '-5.0' INTEGER REAL    TEXT TEXT    }
-  { '5'    INTEGER INTEGER TEXT TEXT    }
-  { 'abc'  TEXT    TEXT    TEXT TEXT    }
-  { NULL   NULL    NULL    NULL NULL    }
+  { 5.0    integer real    text real    }
+  { 5      integer integer text integer }
+  { '5.0'  integer real    text text    }
+  { '-5.0' integer real    text text    }
+  { '-5.0' integer real    text text    }
+  { '5'    integer integer text text    }
+  { 'abc'  text    text    text text    }
+  { NULL   null    null    null null    }
 }
 
 # This code tests that the storage classes specified above (in the $values
@@ -75,7 +75,7 @@ foreach val $values {
   execsql "INSERT INTO t1 VALUES($lit, $lit, $lit, $lit);"
   do_test types-1.1.$tnum {
     execsql {
-      SELECT classof(i), classof(n), classof(t), classof(o) FROM t1;
+      SELECT typeof(i), typeof(n), typeof(t), typeof(o) FROM t1;
     }
   } [lrange $val 1 end]
   incr tnum
@@ -94,7 +94,7 @@ foreach val $values {
   execsql "INSERT INTO t1 SELECT $lit, $lit, $lit, $lit;"
   do_test types-1.2.$tnum {
     execsql {
-      SELECT classof(i), classof(n), classof(t), classof(o) FROM t1;
+      SELECT typeof(i), typeof(n), typeof(t), typeof(o) FROM t1;
     }
   } [lrange $val 1 end]
   incr tnum
@@ -112,7 +112,7 @@ foreach val $values {
   execsql "UPDATE t1 SET i = $lit, n = $lit, t = $lit, o = $lit;"
   do_test types-1.3.$tnum {
     execsql {
-      SELECT classof(i), classof(n), classof(t), classof(o) FROM t1;
+      SELECT typeof(i), typeof(n), typeof(t), typeof(o) FROM t1;
     }
   } [lrange $val 1 end]
   incr tnum

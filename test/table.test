@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.23 2004/05/19 21:09:32 drh Exp $
+# $Id: table.test,v 1.24 2004/05/24 12:55:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -473,7 +473,8 @@ do_test table-10.13 {
 } {1 {unknown column "x" in foreign key definition}}
 
 
-# Test for the "typeof" function.
+# Test for the "typeof" function. More tests for the
+# typeof() function are found in bind.test and types.test.
 #
 do_test table-11.1 {
   execsql {
@@ -492,12 +493,12 @@ do_test table-11.1 {
            typeof(e), typeof(f), typeof(g), typeof(h)
     FROM t7 LIMIT 1;
   }
-} {numeric numeric text text text numeric text numeric}
+} {integer null null null null null null null} 
 do_test table-11.2 {
   execsql {
     SELECT typeof(a+b), typeof(a||b), typeof(c+d), typeof(c||d)
     FROM t7 LIMIT 1;
   }
-} {numeric text numeric text}
+} {null null null null}
 
 finish_test
