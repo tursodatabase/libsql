@@ -1,5 +1,5 @@
-C Update\sthe\smisuse.test\sscript\sso\sthat\sit\swill\swork\sunder\sWindows.\s\sChanges\nto\sthe\sspeed\stesting\sscript\sto\ssupport\sversion\s2.4.12.\s(CVS\s560)
-D 2002-05-10T14:37:31
+C Version\s2.4.12\s(CVS\s561)
+D 2002-05-10T14:41:54
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f42907ce457e012592f8c043dc6c915e87258b35
+P 232b7ef2c8207eb6d2564a641446267d3dec97af
 R 3b5832b01c3219f88712622031d79de7
 U drh
-Z cc3ac64d3e10830979d9b55160a880d9
+Z 49360959ab78dbfb5d6ce76a90c8f01e
