@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.22 2000/08/01 09:56:27 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.23 2000/08/02 12:26:30 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -13,23 +13,6 @@ puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
 puts "The SQLite source code was last modifed on [exec cat last_change] GMT"
 puts {</p>}
 
-if 0 {
-puts {
-<h2>News</h2>
-<p>
-The SQLite code base is being called "beta" only because it is
-relatively new.  It appears to be stable and usable.
-Most of the SQL language is now implemented and working.  
-The regression test suite
-provides good coverage, according to
-<a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">gcov</a>.
-There are currently no known errors in the code.</p>
-
-<p>If you find bugs or missing features, please submit a comment
-to the <a href="#mailinglist">SQLite mailing list</a>.</p>
-}
-}
-
 puts {<h2>Introduction</h2>
 
 <p>SQLite is an SQL database engine built on top of the
@@ -40,6 +23,25 @@ and a C library (<a href="c_interface.html">libsqlite.a</a>)
 that can be linked
 with a C/C++ program to provide SQL database access without
 an separate RDBMS.</p>
+
+<h2>Important News Flash!</h2>
+<p>
+The SQLite file format was changed in an incompatible way on
+Aug 2, 2000.  If you are updated the library and have databases
+built using the old version of the library, you should save your
+old databases into an ASCII fileformat then reimport those
+database using the new library.  For example, if you change the
+name of the old <b>sqlite</b> utility to "old-sqlite" and
+change the name of the old database directory to "old-db", then
+you can reconstruct the database as follows:</p>
+
+<blockquote><pre>
+echo .dump | old-sqlite old-db | sqlite db
+</pre></blockquote>
+
+<p>This file format change was made to work around a potential 
+inefficiency in GDBM that comes up when large indices are created 
+on tables where many entries in the table have the same key.</p>
 
 <h2>Features</h2>
 

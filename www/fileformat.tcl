@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the fileformat.html file.
 #
-set rcsid {$Id: fileformat.tcl,v 1.2 2000/06/23 17:02:09 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.3 2000/08/02 12:26:30 drh Exp $}
 
 puts {<html>
 <head>
@@ -109,11 +109,11 @@ sqlite> (((insert into t1 values(10,NULL,'hello!');)))
 sqlite> (((insert into t1 values(-11,'this is','a test');)))
 sqlite> (((.exit)))
 $ (((gdbmdump ex1/t1.tbl)))
-key  : 223100ae                                      "1..
+key  : 6d1a6e03                                      m.n.
 data : 0c000000 10000000 18000000 2d313100 74686973  ............-11.this
        20697300 61207465 737400                       is.a test.
 
-key  : a840e996                                      .@..
+key  : 6d3f90e2                                      m?..
 data : 0c000000 00000000 0f000000 31300068 656c6c6f  ............10.hello
        2100                                          !.
 
@@ -151,7 +151,12 @@ table that is being indexed.  The GDBM key is an
 arbitrary length null-terminated string which is SQL key that
 is used by the index.  The data is a list of integers that correspond
 to GDBM keys of entries in data table that have the corresponding
-SQL key.</p>
+SQL key.  If the data record of the index is exactly 4 bytes in size,
+then the data represents a single integer key.  If the data is greater
+than 4 bytes in size, then the first 4 bytes form an integer that
+tells us how many keys are in the data.  The index data record is
+always sized to be a power of 2.  Unused slots at the end of the
+index data record are filled with zero.</p>
 
 <p>To illustrate, we will create an index on the example table
 shown above, and add a new entry to this table that has a duplicate
@@ -191,10 +196,10 @@ GDBM key.</p>
 Code {
 $ (((gdbmdump ex1/i1.tbl)))
 key  : 313000                                        10.
-data : a840e996 c19e3119                             .@....1.
+data : 02000000 45b4f724 6d3f90e2 00000000           ....E..$m?......
 
 key  : 2d313100                                      -11.
-data : 223100ae                                      "1..
+data : 6d1a6e03                                      m.n.
 
 $
 }
@@ -207,6 +212,11 @@ are just the text values for <b>a</b> columns of table <b>t1</b>.
 The data for each record of the index is a list of integers
 where each integer is the GDBM key for an entry in the <b>t1</b>
 table that has the corresponding value for the <b>a</b> column.</p>
+The index entry for -11 contains only a single entry and is 4
+bytes in size.  The index entry for 10 is 16 bytes in size but
+contains only 2 entries.  The first integer is the number of
+entires.  The two integer keys follow.  The last 4 bytes unused
+and are set to zero.
 }
 
 puts {

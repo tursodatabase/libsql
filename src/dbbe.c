@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.17 2000/07/31 13:38:26 drh Exp $
+** $Id: dbbe.c,v 1.18 2000/08/02 12:26:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -629,6 +629,7 @@ int sqliteDbbeNew(DbbeCursor *pCursr){
     for(i=0; i<4; i++){
       iKey = (iKey<<8) + rc4byte(pRc4);
     }
+    if( iKey==0 ) continue;
     key.dptr = (char*)&iKey;
     key.dsize = 4;
     go = gdbm_exists(pCursr->pFile->dbf, key);

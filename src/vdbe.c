@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.37 2000/07/30 20:04:43 drh Exp $
+** $Id: vdbe.c,v 1.38 2000/08/02 12:26:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -2143,17 +2143,23 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
-          int j;
+          int j, k;
           nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
           aIdx = (int*)sqliteDbbeReadData(pCrsr, 0);
-          for(j=p->aCsr[i].index; j<nIdx; j++){
+          if( nIdx>1 ){
+            k = *(aIdx++);
+            if( k>nIdx-1 ) k = nIdx-1;
+          }else{
+            k = nIdx;
+          }
+          for(j=p->aCsr[i].index; j<k; j++){
             if( aIdx[j]!=0 ){
               p->aStack[tos].i = aIdx[j];
               p->aStack[tos].flags = STK_Int;
               break;
             }
           }
-          if( j>=nIdx ){
+          if( j>=k ){
             j = -1;
             pc = pOp->p2 - 1;
             PopStack(p, 1);
@@ -2193,14 +2199,38 @@ int sqliteVdbeExec(
             /* Extend the existing record */
             int nIdx;
             int *aIdx;
+            int k;
+            
             nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
-            aIdx = sqliteMalloc( sizeof(int)*(nIdx+1) );
-            if( aIdx==0 ) goto no_mem;
-            sqliteDbbeCopyData(pCrsr, 0, nIdx*sizeof(int), (char*)aIdx);
-            aIdx[nIdx] = newVal;
-            sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
-                          sizeof(int)*(nIdx+1), (char*)aIdx);
-            sqliteFree(aIdx);
+            if( nIdx==1 ){
+              aIdx = sqliteMalloc( sizeof(int)*4 );
+              if( aIdx==0 ) goto no_mem;
+              aIdx[0] = 2;
+              sqliteDbbeCopyData(pCrsr, 0, sizeof(int), (char*)&aIdx[1]);
+              aIdx[2] = newVal;
+              sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
+                    sizeof(int)*4, (char*)aIdx);
+              sqliteFree(aIdx);
+            }else{
+              aIdx = (int*)sqliteDbbeReadData(pCrsr, 0);
+              k = aIdx[0];
+              if( k<nIdx-1 ){
+                aIdx[k+1] = newVal;
+                aIdx[0]++;
+                sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
+                    sizeof(int)*nIdx, (char*)aIdx);
+              }else{
+                nIdx *= 2;
+                aIdx = sqliteMalloc( sizeof(int)*nIdx );
+                if( aIdx==0 ) goto no_mem;
+                sqliteDbbeCopyData(pCrsr, 0, sizeof(int)*(k+1), (char*)aIdx);
+                aIdx[k+1] = newVal;
+                aIdx[0]++;
+                sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
+                      sizeof(int)*nIdx, (char*)aIdx);
+                sqliteFree(aIdx);
+              }
+            }              
           }
         }
         PopStack(p, 2);
@@ -2229,7 +2259,7 @@ int sqliteVdbeExec(
         if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
-          int j;
+          int j, k;
           int r;
           int oldVal;
           Integerify(p, nos);
@@ -2239,14 +2269,20 @@ int sqliteVdbeExec(
           if( r==0 ) break;
           nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
           aIdx = (int*)sqliteDbbeReadData(pCrsr, 0);
-          for(j=0; j<nIdx && aIdx[j]!=oldVal; j++){}
-          if( j>=nIdx ) break;
-          aIdx[j] = aIdx[nIdx-1];
-          if( nIdx==1 ){
+          if( (nIdx==1 && aIdx[0]==oldVal) || (aIdx[0]==1 && aIdx[1]==oldVal) ){
             sqliteDbbeDelete(pCrsr, p->aStack[tos].n, p->zStack[tos]);
           }else{
+            k = aIdx[0];
+            for(j=1; j<=k && aIdx[j]!=oldVal; j++){}
+            if( j>k ) break;
+            aIdx[j] = aIdx[k];
+            aIdx[k] = 0;
+            aIdx[0]--;
+            if( aIdx[0]*3 + 1 < nIdx ){
+              nIdx /= 2;
+            }
             sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos], 
-                          sizeof(int)*(nIdx-1), (char*)aIdx);
+                          sizeof(int)*nIdx, (char*)aIdx);
           }
         }
         PopStack(p, 2);

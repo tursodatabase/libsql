@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 2} {
+<li>The file format for indices was changed slightly in order to work
+    around an inefficiency that can sometimes come up with GDBM when
+    there are large indices having many entries with the same key.
+    <font color="red">** Incompatible Change **</font></li>
+}
+
 chng {2000 Aug 1} {
 <li>The parser's stack was overflowing on a very long UPDATE statement.
     This is now fixed.</li>

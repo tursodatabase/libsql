@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.27 2000/07/29 13:06:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.28 2000/08/02 12:26:29 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -123,7 +123,7 @@ struct sqlite {
   Dbbe *pBe;                 /* The backend driver */
   int flags;                 /* Miscellanous flags */
   void *pBusyArg;            /* 1st Argument to the busy callback */
-  int (*xBusyCallback)(void *,const char*,int);
+  int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Table *apTblHash[N_HASH];  /* All tables of the database */
   Index *apIdxHash[N_HASH];  /* All indices of the database */
 };
