@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sCOPY\scommand\sintroduced\sby\scheck-in\s(991).\s(CVS\s996)
-D 2003-06-02T22:50:26
+C The\sOP_Checkpoint\sopcode\sis\snow\sa\sno-op\sif\sinvoked\son\sa\sdatabase\sthat\salready\nhas\san\sactive\scheckpoint\sjournal.\s\sTicket\s#333.\s(CVS\s997)
+D 2003-06-02T23:14:13
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
-F src/sqliteInt.h ad7895b4cd9ae7fed25d98ee6f91d7d4774fdc84
+F src/sqliteInt.h 7562ea21beb84e4f90ea0e016b02945ac35350a9
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
 F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
@@ -59,7 +59,7 @@ F src/trigger.c 5caf7697e6cd4cfaf38d55bff31580f4124d836f
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 18d16fa3171e34b6f6f73ef0c61e7d9b73b78826
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
-F src/vdbe.c 0f09d140c311a843676c0e9f9a8272ed47cad7a4
+F src/vdbe.c 4170cba0a05da0a93dcd674859fc1ce18f3fb0a3
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 89957b09ce746cf98d5d75cab2a23994e27c4937
-R 19e4f618ecebcc891f9a6f0384dad1dd
+P 77ec13dab85b70795ef06ff2c714cca0cd496837
+R d450e05d46a3501d91726056bd4029e5
 U drh
-Z 2724cf1f234f4f3e53681523549e7156
+Z ef7ae355ee25a92de1dd5e8db797cf3d

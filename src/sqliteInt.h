@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.189 2003/05/31 16:21:13 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.190 2003/06/02 23:14:13 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -241,7 +241,7 @@ struct Db {
   Hash idxHash;        /* All (named) indices indexed by name */
   Hash trigHash;       /* All triggers indexed by name */
   Hash aFKey;          /* Foreign keys indexed by to-table */
-  u8 inTrans;          /* True if a transaction is underway for this backend */
+  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u16 flags;           /* Flags associated with this database */
 };
 
