@@ -25,6 +25,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jly 30 (2.6.2)} {
+<li>Text files read by the COPY command can now have line terminators
+    of LF,  CRLF, or CR.</li>
+<li>SQLITE_BUSY is handled correctly if encountered during database
+    initialization.</li>
+<li>Fix to UPDATE triggers on TEMP tables.</li>
+<li>Documentation updates.</li>
+}
+
 chng {2002 Jly 19 (2.6.1)} {
 <li>Include a static string in the library that responds to the RCS
     "ident" command and which contains the library version number.</li>

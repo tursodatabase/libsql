@@ -1,9 +1,9 @@
-C Fix\sfor\sticket\s#104:\sMake\striggers\son\sviews\swork\sproperly\seven\safter\sclosing\nand\sreopening\sthe\sdatabase.\s\sAlso\sfixed\san\sunrelated\sbug\sin\sthe\sversion\n2.6.0\sdatabase\sformat\supgrade\slogic.\s\sThe\supgrade\slogic\sbug\swas\sfound\swhile\ntesting\sthe\strigger\sfixes.\s(CVS\s697)
-D 2002-07-31T00:32:50
+C Update\sversion\snumber\sand\schange\slog\sfor\sthe\s2.6.2\srelease.\s(CVS\s698)
+D 2002-07-31T00:37:37
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 162ea0af81011c17ff003197a34f3b1d5318a7f2
+F VERSION 8a5fcfd7c610c6d019b77b799ad1db89103ed2bf
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -128,7 +128,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 59338ef6b9d6cff504659010a361e863f554b0ef
-F www/changes.tcl c920fe01975e4eac1333e075134aa857b6ebee32
+F www/changes.tcl 170d01bd2c877a494f9eb041c68b10a7007e4a75
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -143,7 +143,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5b814b5df667ccc91d85fbb7f96e523483e9219b
-R e7cab85ea2c9f7138b4a7428603a00f1
+P 04973fc2a6a0c93877de7e564618e0e9fcffc06c
+R 6fc4add27e1daff3e73e47693ab2e9a0
 U drh
-Z 973c17ae849347942e20c1058f1b7159
+Z e68689418f1541ac98d8b59320c5aba4
