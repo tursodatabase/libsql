@@ -1441,12 +1441,19 @@ int sqliteOsUnlock(OsFile *id){
 ** supply a sufficiently large buffer.
 */
 int sqliteOsRandomSeed(char *zBuf){
-#ifdef SQLITE_TEST
-  /* When testing, always use the same random number sequence.
-  ** This makes the tests repeatable.
+  /* We have to initialize zBuf to prevent valgrind from reporting
+  ** errors.  The reports issued by valgrind are incorrect - we would
+  ** prefer that the randomness be increased by making use of the
+  ** uninitialized space in zBuf - but valgrind errors tend to worry
+  ** some users.  Rather than argue, it seems easier just to initialize
+  ** the whole array and silence valgrind, even if that means less randomness
+  ** in the random seed.
+  **
+  ** When testing, initializing zBuf[] to zero is all we do.  That means
+  ** that we always use the same random number sequence.* This makes the
+  ** tests repeatable.
   */
   memset(zBuf, 0, 256);
-#endif
 #if OS_UNIX && !defined(SQLITE_TEST)
   int pid;
   time((time_t*)zBuf);
