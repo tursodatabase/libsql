@@ -1,12 +1,22 @@
-C Added\smore\stests\sof\sunique\sindices.\s(CVS\s270)
-D 2001-09-27T23:57:06
-F Makefile.in fe9d96d6a7b04b3000a24692c2a3761840bbbf97
-F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
+C Put\sin\sthe\snew\sLIBTOOL\sbuild\ssystem.\s(CVS\s271)
+D 2001-09-28T01:34:44
+F Makefile.in 4d29e58224476426cc8c78b631ae478cbad0e1ea
+F Makefile.template 31de3ce7126e8325c759a94e5b72ee8febc43357
+F README 93d2977cc5c6595c448de16bdefc312b9d401533
 F VERSION 17fadc361fb942d644f92116388409c937c9fa79
-F configure aad857a97ca28a584228869186eb4cd7dbebbb3a x
+F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
+F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
+F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
+F config.status eea88b8fe8b8b82d69b886382061efa9b77131cc
+F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
+F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
+F configure.ac 38e2e5594cab99eb3a753b0614fcc36f4ddbbb48
 F configure.in 0000c0d62beb47cae1d2d81a197c7fe6efd56a45
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
+F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c a4a88dfef2072cedfdac09f3a51b7d70b017b9b4
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
@@ -100,7 +110,7 @@ F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P a70d445070c905690dd8ec080981232594e1a969
-R 1b44db7fca8e394e88522eb424d8e81f
+P 3ae952933997c6422ec53b26391ba362c6e5c44a
+R 9eb0a8a330099ee573677e4648d1a9dc
 U drh
-Z 52b2894364a881e04b3ad05afbb2e248
+Z dd38c213d9c2c1db847a360dc3d08644

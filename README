@@ -1,12 +1,12 @@
 This directory contains source code to 
 
-    SQLite: An SQL Database Built Upon GDBM
+    SQLite: An SQL Database Engine in a C Library
 
 To compile the project, first create a directory in which to place
-the build products.  The build directory must be separate from the
-source tree.  Cd into the build directory and then from the build
-directory run the configure script found at the root of the source
-tree.  Then run "make".
+the build products.  It is recommended, but not required, that the
+build directory be separate from the source directory.  Cd into the
+build directory and then from the build directory run the configure
+script found at the root of the source tree.  Then run "make".
 
 For example:
 
@@ -16,21 +16,8 @@ For example:
     ../sqlite/configure      ;#  Run the configure script
     make                     ;#  Run the makefile.
 
-The primary build products are left in the build directory.  The
-primary build products are:
-
-    libsqlite.a        The SQLite library file
-
-    sqlite.h           A header file for SQLite
-
-    sqlite             Command line program for accessing SQLite databases
-
-There are some other make targets of interest:
-
-
-   make test              This runs a regression test on the library.
-
-   make gdbmdump          This builds a utility named "gdbmdump" that
-                          writes out the contents of a GDBM file in a
-                          readable format.  It is useful for testing and
-                          debugging the library.
+The configure script uses autoconf 2.50 and libtool.  If the configure
+script does not work out for you, there is a generic makefile named
+"Makefile.template" in the top directory of the source tree that you
+can copy and edit to suite your needs.  Comments on the generic makefile
+show what changes are needed.

@@ -28,10 +28,11 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 #
 TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
 
-# Tools used to build a static library.
+# Some standard variables and programs
 #
-AR = @TARGET_AR@
-RANLIB = @TARGET_RANLIB@
+prefix = @prefix@
+INSTALL = @INSTALL@
+LIBTOOL = ./libtool
 
 # Compiler options needed for programs that use the TCL library.
 #
@@ -60,9 +61,9 @@ ENCODING = @ENCODING@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o delete.o expr.o hash.o insert.o \
-         main.o os.o pager.o parse.o printf.o random.o select.o table.o \
-         tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
+LIBOBJ = btree.lo build.lo delete.lo expr.lo hash.lo insert.lo \
+         main.lo os.lo pager.lo parse.lo printf.lo random.lo select.lo \
+         table.lo tokenize.lo update.lo util.lo vdbe.lo where.lo
 
 # All of the source code files.
 #
@@ -107,7 +108,7 @@ TESTSRC = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite.h libsqlite.a sqlite 
+all:	sqlite.h libsqlite.la sqlite 
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -116,13 +117,16 @@ last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
           | awk '{print $$5,$$6}' >last_change
 
-libsqlite.a:	$(LIBOBJ)
-	$(AR) libsqlite.a $(LIBOBJ)
-	$(RANLIB) libsqlite.a
+libsqlite.la:	$(LIBOBJ)
+	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(prefix)/lib
 
-sqlite:	$(TOP)/src/shell.c libsqlite.a sqlite.h
-	$(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
-		libsqlite.a $(LIBREADLINE)
+libtclsqlite.la:	$(LIBOBJ) tclsqlite.lo
+	$(LIBTOOL) $(TCC) -o libtclsqlite.la $(LIBOBJ) tclsqlite.lo \
+            $(LIBTCL) -rpath $(prefix)/lib
+
+sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
+	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
+		libsqlite.la $(LIBREADLINE)
 
 # Rules to build the LEMON compiler generator
 #
@@ -140,23 +144,23 @@ HDR = \
    $(TOP)/src/vdbe.h  \
    parse.h
 
-btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
-	$(TCC) -c $(TOP)/src/btree.c
+btree.lo:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/btree.c
 
-build.o:	$(TOP)/src/build.c $(HDR)
-	$(TCC) -c $(TOP)/src/build.c
+build.lo:	$(TOP)/src/build.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/build.c
 
-main.o:	$(TOP)/src/main.c $(HDR)
-	$(TCC) -c $(TOP)/src/main.c
+main.lo:	$(TOP)/src/main.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/main.c
 
-pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-	$(TCC) -c $(TOP)/src/pager.c
+pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/pager.c
 
-os.o:	$(TOP)/src/os.c $(HDR)
-	$(TCC) -c $(TOP)/src/os.c
+os.lo:	$(TOP)/src/os.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/os.c
 
-parse.o:	parse.c $(HDR)
-	$(TCC) -c parse.c
+parse.lo:	parse.c $(HDR)
+	$(LIBTOOL) $(TCC) -c parse.c
 
 parse.h:	parse.c
 
@@ -169,56 +173,56 @@ sqlite.h:	$(TOP)/src/sqlite.h.in
             -e s/--ENCODING--/$(ENCODING)/ \
                  $(TOP)/src/sqlite.h.in >sqlite.h
 
-tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
-	$(TCC) -c $(TOP)/src/tokenize.c
+tokenize.lo:	$(TOP)/src/tokenize.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/tokenize.c
 
-util.o:	$(TOP)/src/util.c $(HDR)
-	$(TCC) -c $(TOP)/src/util.c
+util.lo:	$(TOP)/src/util.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/util.c
 
-vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
-	$(TCC) -c $(TOP)/src/vdbe.c
+vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/vdbe.c
 
-where.o:	$(TOP)/src/where.c $(HDR)
-	$(TCC) -c $(TOP)/src/where.c
+where.lo:	$(TOP)/src/where.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/where.c
 
-delete.o:	$(TOP)/src/delete.c $(HDR)
-	$(TCC) -c $(TOP)/src/delete.c
+delete.lo:	$(TOP)/src/delete.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/delete.c
 
-expr.o:	$(TOP)/src/expr.c $(HDR)
-	$(TCC) -c $(TOP)/src/expr.c
+expr.lo:	$(TOP)/src/expr.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/expr.c
 
-hash.o:	$(TOP)/src/hash.c $(HDR)
-	$(TCC) -c $(TOP)/src/hash.c
+hash.lo:	$(TOP)/src/hash.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/hash.c
 
-insert.o:	$(TOP)/src/insert.c $(HDR)
-	$(TCC) -c $(TOP)/src/insert.c
+insert.lo:	$(TOP)/src/insert.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/insert.c
 
-random.o:	$(TOP)/src/random.c $(HDR)
-	$(TCC) -c $(TOP)/src/random.c
+random.lo:	$(TOP)/src/random.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/random.c
 
-select.o:	$(TOP)/src/select.c $(HDR)
-	$(TCC) -c $(TOP)/src/select.c
+select.lo:	$(TOP)/src/select.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/select.c
 
-table.o:	$(TOP)/src/table.c $(HDR)
-	$(TCC) -c $(TOP)/src/table.c
+table.lo:	$(TOP)/src/table.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/table.c
 
-update.o:	$(TOP)/src/update.c $(HDR)
-	$(TCC) -c $(TOP)/src/update.c
+update.lo:	$(TOP)/src/update.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/update.c
 
-tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(TCC) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
+tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
-printf.o:	$(TOP)/src/printf.c $(HDR)
-	$(TCC) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+printf.lo:	$(TOP)/src/printf.c $(HDR)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/printf.c
 
-tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
-	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
-		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBTCL)
+tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.la
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
+		$(TOP)/src/tclsqlite.c libsqlite.la $(LIBTCL)
 
-testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
-	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libsqlite.a $(LIBTCL)
+testfixture:	$(TOP)/src/tclsqlite.c libtclsqlite.la $(TESTSRC)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
+                -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libtclsqlite.la $(LIBTCL)
 
 fulltest:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test
@@ -294,13 +298,15 @@ publish:	$(PUBLISH)
 	chmod 0644 $(PUBLISH) sqlite-*.tar.gz
 	scp $(PUBLISH) sqlite-*.tar.gz hwaci@oak.he.net:public_html/sw/sqlite
 
-install:	sqlite libsqlite.a sqlite.h
-	mv sqlite /usr/bin
-	mv libsqlite.a /usr/lib
-	mv sqlite.h /usr/include
+install:	sqlite libsqlite.la sqlite.h
+	$(LIBTOOL) $(INSTALL) libsqlite.la $(prefix)/lib
+	$(LIBTOOL) $(INSTALL) sqlite $(prefix)/bin
+	$(INSTALL) sqlite.h $(prefix)/include
 
 clean:	
-	rm -f *.o sqlite libsqlite.a sqlite.h
+	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h
+	rm -rf .libs .deps
 	rm -f lemon lempar.c parse.* sqlite.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
+	rm -f testfixture test.db
