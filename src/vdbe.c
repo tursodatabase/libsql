@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.284 2004/05/12 11:24:03 danielk1977 Exp $
+** $Id: vdbe.c,v 1.285 2004/05/13 05:16:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2181,8 +2181,8 @@ case OP_MakeRecord: {
 **
 ** See also:  MakeKey, SortMakeKey
 */
-case OP_MakeIdxKey:
-case OP_MakeKey: {
+case OP_MakeIdxKey2:
+case OP_MakeKey2: {
   char *zNewKey;
   int nByte;
   int nField;
@@ -2280,7 +2280,7 @@ case OP_MakeKey: {
   break;
 }
 
-/* Opcode: MakeIdxKey3 P1 P2 P3
+/* Opcode: MakeIdxKey3 P1 P2 *
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  In addition, take one additional integer
@@ -2290,21 +2290,23 @@ case OP_MakeKey: {
 ** pushed back.  The first P1 entries that are popped are strings and the
 ** last entry (the lowest on the stack) is an integer record number.
 */
-case OP_MakeKey3:
-case OP_MakeIdxKey3: {
+case OP_MakeKey:
+case OP_MakeIdxKey: {
   Mem *pRec;
   Mem *pData0;
   int nField;
   u64 rowid;
   int nByte = 0;
   int addRowid;
+  int containsNull = 0;
   char *zKey;      /* The new key */
+  int offset = 0;
  
   nField = pOp->p1;
   pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
 
-  addRowid = (pOp->opcode==OP_MakeIdxKey?1:0);
+  addRowid = ((pOp->opcode==OP_MakeIdxKey)?1:0);
 
   /* Calculate the number of bytes required for the new index key and
   ** store that number in nByte. Also set rowid to the record number to
@@ -2312,19 +2314,23 @@ case OP_MakeIdxKey3: {
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type = sqlite3VdbeSerialType(pRec);
+    if( serial_type==0 ){
+      containsNull = 1;
+    }
     nByte += sqlite3VarintLen(serial_type);
     nByte += sqlite3VdbeSerialTypeLen(serial_type);
   }
   if( addRowid ){
-    pRec = &pData0[-nField];
+    pRec = &pTos[0-nField];
     assert( pRec>=p->aStack );
     Integerify(pRec);
     rowid = pRec->i;
     nByte += sqlite3VarintLen(rowid);
+    nByte++;
   }
 
   /* Allocate space for the new key */
-  zKey = sqliteMalloc(nByte);
+  zKey = (char *)sqliteMalloc(nByte);
   if( !zKey ){
     rc = SQLITE_NOMEM;
     goto abort_due_to_error;
@@ -2332,20 +2338,27 @@ case OP_MakeIdxKey3: {
   
   /* Build the key in the buffer pointed to by zKey. */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    zKey += sqlite3PutVarint(zKey, sqlite3VdbeSerialType(pRec));
-    zKey += sqlite3VdbeSerialPut(zKey, pRec);
+    offset += sqlite3PutVarint(&zKey[offset], sqlite3VdbeSerialType(pRec));
+    offset += sqlite3VdbeSerialPut(&zKey[offset], pRec);
   }
   if( addRowid ){
-    sqlite3PutVarint(zKey, rowid);
+    zKey[offset++] = '\0';
+    offset += sqlite3PutVarint(&zKey[offset], rowid);
   }
+  assert( offset==nByte );
 
   /* Pop the consumed values off the stack and push on the new key. */
-  popStack(&pTos, nField+addRowid);
+  if( addRowid||(pOp->p2==0) ){
+    popStack(&pTos, nField+addRowid);
+  }
   pTos++;
-  pTos->flags = MEM_Blob|MEM_Dyn;
+  pTos->flags = MEM_Str|MEM_Dyn; /* TODO: should eventually be MEM_Blob */
   pTos->z = zKey;
   pTos->n = nByte;
 
+  if( pOp->p2 && containsNull ){
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 
@@ -2657,7 +2670,12 @@ case OP_OpenWrite: {
   pCur->nullRow = 1;
   if( pX==0 ) break;
   do{
-    rc = sqlite3BtreeCursor(pX, p2, wrFlag, 0, 0, &pCur->pCursor);
+    /* When opening cursors, always supply the comparison function
+    ** sqlite3VdbeKeyCompare(). If the table being opened is of type
+    ** INTKEY, the btree layer won't call the comparison function anyway.
+    */
+    rc = sqlite3BtreeCursor(pX, p2, wrFlag, sqlite3VdbeKeyCompare, 0,
+        &pCur->pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
@@ -2946,7 +2964,7 @@ case OP_IsUnique: {
   Mem *pNos = &pTos[-1];
   Cursor *pCx;
   BtCursor *pCrsr;
-  int R;
+  i64 R;
 
   /* Pop the value R off the top of the stack
   */
@@ -2959,22 +2977,26 @@ case OP_IsUnique: {
   pCrsr = pCx->pCursor;
   if( pCrsr!=0 ){
     int res, rc;
-    int v;         /* The record number on the P1 entry that matches K */
+    i64 v;         /* The record number on the P1 entry that matches K */
     char *zKey;    /* The value of K */
     int nKey;      /* Number of bytes in K */
+    int len;       /* Number of bytes in K without the rowid at the end */
 
     /* Make sure K is a string and make zKey point to K
     */
     Stringify(pNos);
     zKey = pNos->z;
     nKey = pNos->n;
-    assert( nKey >= 4 );
+
+    assert( nKey >= 2 );
+    len = nKey-2;
+    while( zKey[len] && --len );
 
     /* Search for an entry in P1 where all but the last four bytes match K.
     ** If there is no such entry, jump immediately to P2.
     */
     assert( p->aCsr[i].deferredMoveto==0 );
-    rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-4, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
       rc = sqlite3BtreeNext(pCrsr, &res);
@@ -2983,8 +3005,7 @@ case OP_IsUnique: {
         break;
       }
     }
-    /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
-    rc = sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &res); 
+    rc = sqlite3VdbeIdxKeyCompare(pCrsr, len, zKey, 0, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -2992,21 +3013,22 @@ case OP_IsUnique: {
     }
 
     /* At this point, pCrsr is pointing to an entry in P1 where all but
-    ** the last for bytes of the key match K.  Check to see if the last
-    ** four bytes of the key are different from R.  If the last four
-    ** bytes equal R then jump immediately to P2.
+    ** the final varint (the rowid) matches K.  Check to see if the
+    ** final varint is different from R.  If it equals R then jump
+    ** immediately to P2.
     */
-    sqlite3BtreeKey(pCrsr, nKey - 4, 4, (char*)&v);
-    v = keyToInt(v);
+    rc = sqlite3VdbeIdxRowid(pCrsr, &v);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     if( v==R ){
       pc = pOp->p2 - 1;
       break;
     }
 
-    /* The last four bytes of the key are different from R.  Convert the
-    ** last four bytes of the key into an integer and push it onto the
-    ** stack.  (These bytes are the record number of an entry that
-    ** violates a UNIQUE constraint.)
+    /* The final varint of the key is different from R.  Push it onto
+    ** the stack.  (The record number of an entry that violates a UNIQUE
+    ** constraint.)
     */
     pTos++;
     pTos->i = v;
@@ -3601,17 +3623,21 @@ case OP_IdxPut: {
     const char *zKey = pTos->z;
     if( pOp->p2 ){
       int res;
+      int len;
       u64 n;
-      assert( nKey >= 4 );
-      rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-4, &res);
+   
+      /* 'len' is the length of the key minus the rowid at the end */
+      len = nKey-2;
+      while( zKey[len] && --len );
+
+      rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       while( res!=0 ){
         int c;
         sqlite3BtreeKeySize(pCrsr, &n);
-        if( n==nKey
-     /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
-            && sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &c)==SQLITE_OK
-           && c==0
+        if( n==nKey 
+            && sqlite3VdbeIdxKeyCompare(pCrsr, len, zKey, 0, &c)==SQLITE_OK
+            && c==0
         ){
           rc = SQLITE_CONSTRAINT;
           if( pOp->p3 && pOp->p3[0] ){
@@ -3627,6 +3653,7 @@ case OP_IdxPut: {
         }
       }
     }
+    assert( p->aCsr[i].intKey==0 );
     rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
     assert( p->aCsr[i].deferredMoveto==0 );
   }
@@ -3661,10 +3688,9 @@ case OP_IdxDelete: {
 
 /* Opcode: IdxRecno P1 * *
 **
-** Push onto the stack an integer which is the last 4 bytes of the
-** the key to the current entry in index P1.  These 4 bytes should
-** be the record number of the table entry to which this index entry
-** points.
+** Push onto the stack an integer which is the varint located at the
+** end of the index key pointed to by cursor P1.  These integer should be
+** the record number of the table entry to which this index entry points.
 **
 ** See also: Recno, MakeIdxKey.
 */
@@ -3675,18 +3701,41 @@ case OP_IdxRecno: {
   assert( i>=0 && i<p->nCursor );
   pTos++;
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    i64 v;
     u64 sz;
+    int len;
+    char buf[9];
+
     assert( p->aCsr[i].deferredMoveto==0 );
     assert( p->aCsr[i].intKey==0 );
+
+    /* Read the final 9 bytes of the key into buf[]. If the whole key is
+    ** less than 9 bytes then just load the whole thing. Set len to the 
+    ** number of bytes read.
+    */
     sqlite3BtreeKeySize(pCrsr, &sz);
-    if( sz<sizeof(i64) ){
+    len = ((sz>9)?9:sz);
+    rc = sqlite3BtreeKey(pCrsr, sz-len, len, buf);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
+
+    len--;
+    if( buf[len]&0x80 ){
+      /* If the last byte read has the 0x80 bit set, then the key does
+      ** not end with a varint. Push a NULL onto the stack instead.
+      */
       pTos->flags = MEM_Null;
     }else{
-      sqlite3BtreeKey(pCrsr, sz - sizeof(i64), sizeof(i64), (char*)&v);
-      v = keyToInt(v);
-      pTos->i = v;
+      /* Find the start of the varint by searching backwards for a 0x00
+      ** byte. If one does not exists, then intepret the whole 9 bytes as a
+      ** varint.
+      */
+      while( len && buf[len-1] ){
+        len--;
+      }
+      sqlite3GetVarint(&buf[len], &sz);
       pTos->flags = MEM_Int;
+      pTos->i = sz;
     }
   }else{
     pTos->flags = MEM_Null;
@@ -3732,8 +3781,7 @@ case OP_IdxGE: {
  
     Stringify(pTos);
     assert( p->aCsr[i].deferredMoveto==0 );
-    /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
-    rc = sqlite2BtreeKeyCompare(pCrsr, pTos->z, pTos->n, 4, &res);
+    rc = sqlite3VdbeIdxKeyCompare(pCrsr, pTos->n, pTos->z, 0, &res);
     if( rc!=SQLITE_OK ){
       break;
     }

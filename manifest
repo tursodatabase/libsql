@@ -1,5 +1,5 @@
-C Allocate\smore\soverflow\sdata\sonto\soverflow\spages,\sthus\swasting\sless\sdisk\sspace.\s(CVS\s1367)
-D 2004-05-13T01:12:57
+C Manifest\stypes\sin\sindices.\sAt\sthe\smoment\sindices\suse\smanifest\styping,\sbut\nsome\sother\sparts\sof\sthe\sSQL\sengine\sdo\snot,\swhich\scan\slead\sto\ssome\sstrange\nresults.\s(CVS\s1368)
+D 2004-05-13T05:16:16
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,9 +63,9 @@ F src/update.c 6ca82fc4a0fb4d7f134e961921c906f6f3c8bc74
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 778a8cd03ad6e52778602d20a3132c7d2d1b0a0c
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 9b82d9ed192729e00581ae08d1cd71a27a698fe0
-F src/vdbe.h 71c02a75d506a3ce9f6bdfc78101528d5edf319b
-F src/vdbeInt.h 608a0b092a2ab3ab7538384e5e3da09ae512d50c
+F src/vdbe.c 773fb49293f0412aa65e2bcbced40bd64464529e
+F src/vdbe.h 94457ca73bae972dc61bca33a4dccc2e6e14e2f8
+F src/vdbeInt.h 66904cfb0b004de8441e47ce00da8c7d4c498c76
 F src/vdbeaux.c c976c7fe334a1d1c102dda410546e880549a6060
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -93,7 +93,7 @@ F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/hook.test 1a67ce0cd64a6455d016962542f2822458dccc49
 F test/in.test 0de39b02ceeca90993b096822fb5a884661c5b47
 F test/index.test 9295deefbdb6dedbe01be8905f0c448fe5bd4079
-F test/insert.test 105e559e024051ea0ba5ccd2a219490028e1ead5
+F test/insert.test 6ec324659656f4a86e4abfcf1a1fd2795ba6b603
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
@@ -124,9 +124,9 @@ F test/quick.test 25df45ec1f8551279358dc0f0a2388ab59e06a30
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 77f7e8c7ca626a15ff91a536595b695cfce7c845
 F test/select1.test 3bfcccd2eadcddbb07f1f5da6550aee8484ea4fb
-F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
+F test/select2.test 2115d8f7a34fcb5c0cbe8491f441830bc44d3398
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
-F test/select4.test e7e9a32fa745246cb99fadbeb63af4843a17925b
+F test/select4.test 804b48d637aeee5e952333a997cfba316b489a3a
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 64a75c4cd40f79c7b384bb2972922ff0c10212a4
-R bb0bf681c9aa31fdafb3dd299e62bb5d
-U drh
-Z 90888ec7d9d6df77a80907a07724f815
+P 1d52a4bb478648ef53a0dbb21865ccb9281dc24a
+R 348f622445c9bf52db446021aadee19c
+U danielk1977
+Z b02892c4dfff10665b81dd53d91883c9

@@ -322,3 +322,5 @@ int sqlite3VdbeSerialPut(unsigned char *, const Mem *);
 int sqlite3VdbeSerialGet(const unsigned char *, u64, Mem *);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
+int sqlite3VdbeIdxKeyCompare(BtCursor*, int , const unsigned char*, int, int*);
+int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
