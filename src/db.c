@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: db.c,v 1.4 2001/01/25 01:45:40 drh Exp $
+** $Id: db.c,v 1.5 2001/01/29 01:27:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pg.h"
@@ -66,6 +66,27 @@ struct DbCursor {
   int onEntry;                  /* True if pointing to a table entry */
   int nLevel;                   /* Number of levels of indexing used */
   DbIdxpt aLevel[MX_LEVEL];     /* The index levels */
+};
+
+/*
+** Used for rebalancing
+*/
+typedef struct DbEntry DbEntry;
+struct DbEntry {
+  int nByte;      /* Space needed on leaf to record this entry */
+  int pgno;       /* Page on which this entry is currently found */
+  int idx;        /* Index slot in part that points to leaf "pgno" */
+  u32 *aPage;     /* Pointer to the leaf for this entry */
+  u32 *aEntry;    /* Pointer to the actual text of this entry */
+  DbEntry *pNext; /* Next entry in a list of them all */
+};
+typedef struct DbEntrySet DbEntrySet;
+struct DbEntrySet {
+  u32 *pIndex;         /* The index node above the leaf pages being balanced */
+  int nAlloc;          /* Number of slots allocated in aEntry[] */
+  int nEntry;          /* Number of slots in aEntry[] actually used */
+  DbEntry *pFirst;     /* First entry in hash order */
+  DbEntry aEntry[100]; /* Descriptions of actual database entries */
 };
 
 /*
@@ -664,7 +685,7 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
   pDb->nAlloc = 0;
   rc = sqliteDbExpandContent(pDb, pDb->nContent);
   if( rc!=SQLITE_OK ) goto open_err;
-  rc = payloadRead(pDb, &aPage1[3], 0, aPage[2], pDb->aContent);
+  rc = payloadRead(pDb, &aPage1[3], 0, aPage1[2], pDb->aContent);
   sqlitePgUnref(aPage1);
   if( rc!=SQLITE_OK ) goto open_err;
   *ppDb = pDb;
@@ -673,8 +694,10 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
 open_err:
   *ppDb = 0;
   if( pPgr ) sqlitePgClose(pPgr);
-  if( pDb && pDb->aContent ) sqliteFree(pDb->aContent);
-  if( pDb ) sqliteFree(pDb);
+  if( pDb ){
+    sqliteFree(pDb->aContent);
+    sqliteFree(pDb);
+  }
   return rc;
 }
 
@@ -745,7 +768,7 @@ int sqliteDbRollback(Db *pDb){
   if( sqliteDbExpandContent(pDb, pDb->nContent)!=SQLITE_OK ){
     return SQLITE_NOMEM;
   }
-  sqliteDbReadOvfl(pDb, 1, aPage1, 0, pDb->nContent*sizeof(u32), pDb->aContent);
+  payloadRead(pDb, &aPage1[3], 0, pDb->nContent*sizeof(u32), pDb->aContent);
   pDb->inTransaction = 0;
   return SQLITE_OK;
 }
@@ -773,24 +796,22 @@ int sqliteDbCreateTable(Db *pDb, int *pTblno){
     }
   }
   if( tblno<0 ){
-    tblno = SWB(pDb->aContent[1]);
+    tblno = pDb->aContent[1];
   }
   if( tblno+2 >= pDb->nContent ){
     sqliteDbExpandContent(pDb, tblno+2);
   }
   if( pDb->aContent==0 ){
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+  }else{
+    pDb->aContent[tblno+2] = pgno;
+    pPage[0] = SWB(BLOCK_MAGIC | BLOCK_LEAF);
+    memset(&pPage[1], 0, SQLITE_PAGE_SIZE - sizeof(u32));
+    sqlitePgTouch(pPage);
   }
-  pDb->aContent[tblno+2] = SWB(pgno);
-  pPage[0] = SWB(BLOCK_MAGIC | BLOCK_LEAF);
-  memset(&pPage[1], 0, SQLITE_PAGE_SIZE - sizeof(u32));
-  sqlitePgTouch(pPage);
   sqlitePgUnref(pPage);
-  return SQLITE_OK;
+  return rc;
 }
-
-/* forward reference */
-static int sqliteDbClearEntry(Db *pDb, u32 *pEntry);
 
 /*
 ** Recursively add a page to the free list
@@ -806,18 +827,18 @@ static int sqliteDbDropPage(Db *pDb, u32 pgno){
       int n, i;
       n = aPage[2];
       for(i=0; i<n; i++){
-        u32 subpgno = aPage[3+i*2];
-        sqliteDbDropPage(pDb, subpgno);
+        u32 subpgno = aPage[4+i*2];
+        if( subpgno>0 ) sqliteDbDropPage(pDb, subpgno);
       }
       freePage(pDb, pgno, aPage);
       break;
     }
     case BLOCK_MAGIC | BLOCK_LEAF: {
-      int i = 1;
-      while( i<SQLITE_PAGE_SIZE/sizeof(u32) ){
-        int entrySize = SWB(aPage[i]);
+      int i = 2;
+      while( i<U32_PER_PAGE ){
+        int entrySize = aPage[i];
         if( entrySize==0 ) break;
-        sqliteDbClearEntry(pDb, &aPage[i]);
+        payloadFree(pDb, &aPage[i+4], 0, aPage[i+2]+aPage[i+3]);
         i += entrySize;
       }
       freePage(pDb, pgno, aPage);
@@ -828,15 +849,6 @@ static int sqliteDbDropPage(Db *pDb, u32 pgno){
       break;
     }
   }
-}
-
-/*
-** aEntry points directly at a database entry on a leaf page.
-** Free any overflow pages associated with the key or data of
-** this entry.
-*/
-static int sqliteDbClearEntry(Db *pDb, u32 *aEntry){
-  return SQLITE_OK;
 }
 
 /*
@@ -868,9 +880,10 @@ static int sqliteDbDropTable(Db *pDb, int tblno){
   if( tblno<0 || tblno+2>=pDb->nContent || pDb->aContent[tblno+2]==0 ){
     return SQLITE_NOTFOUND;
   }
-  pgno = SWB(pDb->aContent[tblno+2]);
+  pgno = pDb->aContent[tblno+2];
+  pDb->aContent[tblno+2] = 0;
 
-  /* Reset any cursors point to the table that is about to
+  /* Reset any cursors pointing to the table that is about to
   ** be dropped */
   for(pCur=pDb->pCursor; pCur; pCur=pCur->pNext){
     if( pCur->rootPgno==pgno ){
@@ -1066,8 +1079,8 @@ int sqliteDbCursorDatasize(DbCursor *pCur){
   idx = pCur->aLevel[i].idx;
   aPage = pCur->aLevel[i].aPage;
   assert( aPage );
-  assert( idx>=2 && idx+4<(SQLITE_PAGE_SIZE/sizeof(u32))
-  return SWB(aPage[idx+3]) & 0x80000000;
+  assert( idx>=2 && idx+4<U32_PER_PAGE );
+  return aPage[idx+3];
 }
 
 /*
@@ -1082,8 +1095,8 @@ int sqliteDbCursorKeysize(DbCursor *pCur){
   idx = pCur->aLevel[i].idx;
   aPage = pCur->aLevel[i].aPage;
   assert( aPage );
-  assert( idx>=2 && idx+4<(SQLITE_PAGE_SIZE/sizeof(u32))
-  return SWB(aPage[idx+2]) & 0x80000000;
+  assert( idx>=2 && idx+4<U32_PER_PAGE );
+  return aPage[idx+2];
 }
 
 /*
@@ -1091,11 +1104,9 @@ int sqliteDbCursorKeysize(DbCursor *pCur){
 */
 int sqliteDbCursorRead(DbCursor *pCur, int amt, int offset, void *buf){
   u32 *aPage;
-  int idx, i, dstart;
+  int idx, i;
   int nData;
   int nKey;
-  char *cbuf = buf;
-  char *cfrom;
   if( !pCur->onEntry ){
     memset(cbuf, 0, amt);
     return SQLITE_OK;
@@ -1107,25 +1118,19 @@ int sqliteDbCursorRead(DbCursor *pCur, int amt, int offset, void *buf){
   idx = pCur->aLevel[i].idx;
   aPage = pCur->aLevel[i].aPage;
   assert( aPage );
-  assert( idx>=2 && idx+4<(SQLITE_PAGE_SIZE/sizeof(u32))
-  nData = SWB(aPage[idx+3]);
-  nKey = SWB(aPage[idx+2]);
-  dstart = idx + 4;
-  if( nKey!=4 ) dstart++;
-  if( nData & 0x80000000 ){
-    return sqliteDbReadOvfl(pCur->pDb, SWB(aPage[dstart]), 0, amt, offset, buf);
+  assert( idx>=2 && idx+4<U32_PER_PAGE );
+  nData = aPage[idx+3];
+  if( offset>=nData ){
+    memset(buf, 0, amt);
+    return SQLITE_OK;
   }
-  cfrom = (char*)&aPage[dstart];
-  cfrom += offset;
-  nData -= offset;
-  if( nData<0 ) nData = 0;
-  if( amt>nData ){
-    memset(&cbuf[nData], 0, amt-nData);
+  nKey = aPage[idx+2];
+  if( nData<offset+amt ){
+    memset(&((char*)buf)[nData-offset], 0, amt+offset-nData);
+    amt = nData - offset;
   }
-  if( amt<nData ){
-    nData = amt;
-  }
-  memcpy(cbuf, cfrom, nData);
+  payloadRead(pCur->pDb, &aPage[idx+4], amt, offset + nKey, buf);
+  return SQLITE_OK;
 }
 
 /*
@@ -1133,11 +1138,9 @@ int sqliteDbCursorRead(DbCursor *pCur, int amt, int offset, void *buf){
 */
 int sqliteDbCursorReadKey(DbCursor *pCur, int amt, int offset, void *buf){
   u32 *aPage;
-  int idx, i, kstart;
+  int idx, i;
   int nData;
   int nKey;
-  char *cbuf = buf;
-  char *cfrom;
   if( !pCur->onEntry ){
     memset(cbuf, 0, amt);
     return SQLITE_OK;
@@ -1150,26 +1153,17 @@ int sqliteDbCursorReadKey(DbCursor *pCur, int amt, int offset, void *buf){
   aPage = pCur->aLevel[i].aPage;
   assert( aPage );
   assert( idx>=2 && idx+4<(SQLITE_PAGE_SIZE/sizeof(u32))
-  nKey = SWB(aPage[idx+2]);
-  if( nKey & 0x80000000 ){
-    return sqliteDbReadOvfl(pCur->pDb, SWB(aPage[idx+4]), 0, amt, offset, buf);
+  nKey = aPage[idx+2];
+  if( offset>=nKey ){
+    memset(buf, 0, amt);
+    return SQLITE_OK;
   }
-  if( nKey==4 ){
-    kstart = idx + 1;
-  }else{
-    kstart = idx + 4;
+  if( nKey<offset+amt ){
+    memset(&((char*)buf)[nKey-offset], 0, amt+offset-nKey);
+    amt = nKey - offset;
   }
-  cfrom = (char*)&aPage[kstart];
-  cfrom += offset;
-  nKey -= offset;
-  if( nKey<0 ) nKey = 0;
-  if( amt>nKey ){
-    memset(&cbuf[nKey], 0, amt-nKey);
-  }
-  if( amt<nKey ){
-    nData = amt;
-  }
-  memcpy(cbuf, cfrom, nKey);
+  payloadRead(pCur->pDb, &aPage[idx+4], amt, offset, buf);
+  return SQLITE_OK;
 }
 
 /*
