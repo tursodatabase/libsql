@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.108 2002/08/15 01:26:09 drh Exp $
+** $Id: build.c,v 1.109 2002/08/18 20:28:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1729,7 +1729,12 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( db->flags & SQLITE_InTrans ) return;
+  if( db->flags & SQLITE_InTrans ){
+    pParse->nErr++;
+    sqliteSetString(&pParse->zErrMsg, "cannot start a transaction "
+       "within a transaction", 0);
+    return;
+  }
   sqliteBeginWriteOperation(pParse, 0);
   db->flags |= SQLITE_InTrans;
   db->onError = onError;
@@ -1743,7 +1748,12 @@ void sqliteCommitTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( (db->flags & SQLITE_InTrans)==0 ) return;
+  if( (db->flags & SQLITE_InTrans)==0 ){
+    pParse->nErr++;
+    sqliteSetString(&pParse->zErrMsg, 
+       "cannot commit - no transaction is active", 0);
+    return;
+  }
   db->flags &= ~SQLITE_InTrans;
   sqliteEndWriteOperation(pParse);
   db->onError = OE_Default;
@@ -1758,7 +1768,12 @@ void sqliteRollbackTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( (db->flags & SQLITE_InTrans)==0 ) return;
+  if( (db->flags & SQLITE_InTrans)==0 ){
+    pParse->nErr++;
+    sqliteSetString(&pParse->zErrMsg,
+       "cannot rollback - no transaction is active", 0);
+    return; 
+  }
   v = sqliteGetVdbe(pParse);
   if( v ){
     sqliteVdbeAddOp(v, OP_Rollback, 0, 0);

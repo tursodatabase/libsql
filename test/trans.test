@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.15 2002/08/13 00:01:18 drh Exp $
+# $Id: trans.test,v 1.16 2002/08/18 20:28:07 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -173,13 +173,13 @@ do_test trans-4.1 {
     COMMIT;
   } db} msg]
   lappend v $msg
-} {0 {}}
+} {1 {cannot commit - no transaction is active}}
 do_test trans-4.2 {
   set v [catch {execsql {
     ROLLBACK;
   } db} msg]
   lappend v $msg
-} {0 {}}
+} {1 {cannot rollback - no transaction is active}}
 do_test trans-4.3 {
   set v [catch {execsql {
     BEGIN TRANSACTION;
@@ -205,7 +205,7 @@ do_test trans-4.6 {
     SELECT a FROM one ORDER BY a;
   } db} msg]
   lappend v $msg
-} {0 {1 2 3 4}}
+} {1 {cannot start a transaction within a transaction}}
 do_test trans-4.7 {
   set v [catch {execsql {
     SELECT a FROM two ORDER BY a;

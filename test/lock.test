@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.15 2002/06/25 13:16:04 drh Exp $
+# $Id: lock.test,v 1.16 2002/08/18 20:28:07 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -241,7 +241,7 @@ do_test lock-3.1 {
   set r [catch {execsql {BEGIN TRANSACTION}} msg]
   execsql {ROLLBACK}
   lappend r $msg
-} {0 {}}
+} {1 {cannot start a transaction within a transaction}}
 integrity_check lock-3.2
 
 do_test lock-999.1 {
