@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.22 2004/07/19 17:25:25 drh Exp $
+# $Id: attach2.test,v 1.23 2004/08/18 02:10:15 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -165,8 +165,8 @@ do_test attach2-4.1 {
   execsql {ATTACH 'test2.db' as file2} db2
 } {}
 
-lock_status 4.1.1 db {main unlocked temp unlocked file2 unlocked}
-lock_status 4.1.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.1.1 db {main unlocked temp closed file2 unlocked}
+lock_status 4.1.2 db2 {main unlocked temp closed file2 unlocked}
 
 do_test attach2-4.2 {
   # Handle 'db' read-locks test.db
@@ -177,16 +177,16 @@ do_test attach2-4.2 {
   #    db2 -
 } {}
 
-lock_status 4.2.1 db {main shared temp unlocked file2 unlocked}
-lock_status 4.2.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.2.1 db {main shared temp closed file2 unlocked}
+lock_status 4.2.2 db2 {main unlocked temp closed file2 unlocked}
 
 do_test attach2-4.3 {
   # The read lock held by db does not prevent db2 from reading test.db
   execsql {SELECT * FROM t1} db2
 } {}
 
-lock_status 4.3.1 db {main shared temp unlocked file2 unlocked}
-lock_status 4.3.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.3.1 db {main shared temp closed file2 unlocked}
+lock_status 4.3.2 db2 {main unlocked temp closed file2 unlocked}
 
 do_test attach2-4.4 {
   # db is holding a read lock on test.db, so we should not be able
@@ -196,7 +196,7 @@ do_test attach2-4.4 {
   } db2 
 } {1 {database is locked}}
 
-lock_status 4.4.1 db {main shared temp unlocked file2 unlocked}
+lock_status 4.4.1 db {main shared temp closed file2 unlocked}
 lock_status 4.4.2 db2 {main unlocked temp unlocked file2 unlocked}
 
 do_test attach2-4.5 {
@@ -208,7 +208,7 @@ do_test attach2-4.5 {
   #    db2 - reserved(file2)
 } {}
 
-lock_status 4.5.1 db {main shared temp unlocked file2 unlocked}
+lock_status 4.5.1 db {main shared temp closed file2 unlocked}
 lock_status 4.5.2 db2 {main unlocked temp reserved file2 reserved}
 
 do_test attach2-4.6.1 {
@@ -221,7 +221,7 @@ do_test attach2-4.6.1 {
   #    db2 - reserved(file2)
 } {0 {}}
 
-lock_status 4.6.1.1 db {main shared temp unlocked file2 shared}
+lock_status 4.6.1.1 db {main shared temp closed file2 shared}
 lock_status 4.6.1.2 db2 {main unlocked temp reserved file2 reserved}
 
 do_test attach2-4.6.2 {

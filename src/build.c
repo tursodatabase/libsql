@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.246 2004/08/08 23:39:19 drh Exp $
+** $Id: build.c,v 1.247 2004/08/18 02:10:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -646,31 +646,6 @@ void sqlite3StartTable(
     }
   }
 #endif
-
-  /* Before trying to create a temporary table, make sure the Btree for
-  ** holding temporary tables is open.
-  */
-  if( isTemp && db->aDb[1].pBt==0 && !pParse->explain ){
-    int rc = sqlite3BtreeFactory(db, 0, 0, MAX_PAGES, &db->aDb[1].pBt);
-    if( rc!=SQLITE_OK ){
-      sqlite3ErrorMsg(pParse, "unable to open a temporary database "
-        "file for storing temporary tables");
-      pParse->nErr++;
-      pParse->rc = rc;
-      sqliteFree(zName);
-      return;
-    }
-    if( db->flags & !db->autoCommit ){
-      rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1);
-      if( rc!=SQLITE_OK ){
-        sqlite3ErrorMsg(pParse, "unable to get a write lock on "
-          "the temporary database file");
-        sqliteFree(zName);
-        pParse->rc = rc;
-        return;
-      }
-    }
-  }
 
   /* Make sure the new table name does not collide with an existing
   ** index or table name in the same database.  Issue an error message if
@@ -2476,6 +2451,33 @@ void sqlite3RollbackTransaction(Parse *pParse){
 }
 
 /*
+** Make sure the TEMP database is open and available for use.  Return
+** the number of errors.  Leave any error messages in the pParse structure.
+*/
+static int sqlite3OpenTempDatabase(Parse *pParse){
+  sqlite3 *db = pParse->db;
+  if( db->aDb[1].pBt==0 && !pParse->explain ){
+    int rc = sqlite3BtreeFactory(db, 0, 0, MAX_PAGES, &db->aDb[1].pBt);
+    if( rc!=SQLITE_OK ){
+      sqlite3ErrorMsg(pParse, "unable to open a temporary database "
+        "file for storing temporary tables");
+      pParse->rc = rc;
+      return 1;
+    }
+    if( db->flags & !db->autoCommit ){
+      rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1);
+      if( rc!=SQLITE_OK ){
+        sqlite3ErrorMsg(pParse, "unable to get a write lock on "
+          "the temporary database file");
+        pParse->rc = rc;
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+/*
 ** Generate VDBE code that will verify the schema cookie and start
 ** a read-transaction for all named database files.
 **
@@ -2516,6 +2518,9 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
     if( (pParse->cookieMask & mask)==0 ){
       pParse->cookieMask |= mask;
       pParse->cookieValue[iDb] = db->aDb[iDb].schema_cookie;
+      if( iDb==1 ){
+        sqlite3OpenTempDatabase(pParse);
+      }
     }
   }
 }

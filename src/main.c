@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.251 2004/08/14 19:20:10 drh Exp $
+** $Id: main.c,v 1.252 2004/08/18 02:10:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -184,7 +184,10 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* Create a cursor to hold the database open
   */
-  if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
+  if( db->aDb[iDb].pBt==0 ){
+    if( iDb==1 ) DbSetProperty(db, 1, DB_SchemaLoaded);
+    return SQLITE_OK;
+  }
   rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, MASTER_ROOT, 0, 0, 0, &curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
