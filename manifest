@@ -1,5 +1,5 @@
-C Enhance\slemon\sso\sthat\sa\s@X\sinstead\sof\sjust\sX\sin\sthe\scode\sexpands\sto\sthe\nmajor\stoken\svalue\srather\sthan\sthe\sminor\stoken\svalue.\s\sUse\sthis\sto\smake\nthe\sparser\sa\sfew\shundred\sbytes\ssmaller.\s(CVS\s1895)
-D 2004-08-19T15:12:26
+C Optimizations\sin\sthe\shash\stable\smodule.\s(CVS\s1896)
+D 2004-08-20T14:08:51
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,8 +35,8 @@ F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c f11a1e5c489bc8f5cc83b10aa80f21e85f48141e
 F src/func.c 7e2eeebe219aa612ce7a04c74ae6d57379c6656b
-F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
-F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
+F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
+F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c bedcba371401395033a1a1c578d8fdc3fec87bec
 F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
 F src/main.c a779422c5402df92c390e233ac32ab718fc4436b
@@ -243,7 +243,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 25fe7a42ec2e06e659d7a0a6664789114c007e17
-R 0379dd9278368974892dd5434039fab5
+P 28215096e0748b5b02776ddb4c964e0161bc0f16
+R 5607576f6316ac80134bcd33d2f77b9e
 U drh
-Z ddb5c020240eaf2ea91499a31fc16aa6
+Z d2ae7348c29545bbd90048ea25e77c25

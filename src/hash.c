@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.14 2004/06/30 22:43:22 drh Exp $
+** $Id: hash.c,v 1.15 2004/08/20 14:08:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -31,10 +31,12 @@
 */
 void sqlite3HashInit(Hash *pNew, int keyClass, int copyKey){
   assert( pNew!=0 );
-  assert( keyClass>=SQLITE_HASH_INT && keyClass<=SQLITE_HASH_BINARY );
+  assert( keyClass>=SQLITE_HASH_STRING && keyClass<=SQLITE_HASH_BINARY );
   pNew->keyClass = keyClass;
-  pNew->copyKey = copyKey &&
-                (keyClass==SQLITE_HASH_STRING || keyClass==SQLITE_HASH_BINARY);
+#if 0
+  if( keyClass==SQLITE_HASH_POINTER || keyClass==SQLITE_HASH_INT ) copyKey = 0;
+#endif
+  pNew->copyKey = copyKey;
   pNew->first = 0;
   pNew->count = 0;
   pNew->htsize = 0;
@@ -99,7 +101,7 @@ static int strHash(const void *pKey, int nKey){
   return sqlite3HashNoCase((const char*)pKey, nKey); 
 }
 static int strCompare(const void *pKey1, int n1, const void *pKey2, int n2){
-  if( n1!=n2 ) return n2-n1;
+  if( n1!=n2 ) return 1;
   return sqlite3StrNICmp((const char*)pKey1,(const char*)pKey2,n1);
 }
 
@@ -115,7 +117,7 @@ static int binHash(const void *pKey, int nKey){
   return h & 0x7fffffff;
 }
 static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
-  if( n1!=n2 ) return n2-n1;
+  if( n1!=n2 ) return 1;
   return memcmp(pKey1,pKey2,n1);
 }
 
@@ -132,14 +134,23 @@ static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 ** with types "const void*" and "int" and returns an "int".
 */
 static int (*hashFunction(int keyClass))(const void*,int){
+#if 0  /* HASH_INT and HASH_POINTER are never used */
   switch( keyClass ){
-    /* case SQLITE_HASH_INT:     return &intHash; // NOT USED */
-    /* case SQLITE_HASH_POINTER: return &ptrHash; // NOT USED */
+    case SQLITE_HASH_INT:     return &intHash;
+    case SQLITE_HASH_POINTER: return &ptrHash;
     case SQLITE_HASH_STRING:  return &strHash;
     case SQLITE_HASH_BINARY:  return &binHash;;
     default: break;
   }
   return 0;
+#else
+  if( keyClass==SQLITE_HASH_STRING ){
+    return &strHash;
+  }else{
+    assert( keyClass==SQLITE_HASH_BINARY );
+    return &binHash;
+  }
+#endif
 }
 
 /*
@@ -149,14 +160,48 @@ static int (*hashFunction(int keyClass))(const void*,int){
 ** see the header comment on the previous function.
 */
 static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
+#if 0 /* HASH_INT and HASH_POINTER are never used */
   switch( keyClass ){
-    /* case SQLITE_HASH_INT:     return &intCompare; // NOT USED */
-    /* case SQLITE_HASH_POINTER: return &ptrCompare; // NOT USED */
+    case SQLITE_HASH_INT:     return &intCompare;
+    case SQLITE_HASH_POINTER: return &ptrCompare;
     case SQLITE_HASH_STRING:  return &strCompare;
     case SQLITE_HASH_BINARY:  return &binCompare;
     default: break;
   }
   return 0;
+#else
+  if( keyClass==SQLITE_HASH_STRING ){
+    return &strCompare;
+  }else{
+    assert( keyClass==SQLITE_HASH_BINARY );
+    return &binCompare;
+  }
+#endif
+}
+
+/* Link an element into the hash table
+*/
+static void insertElement(
+  Hash *pH,              /* The complete hash table */
+  struct _ht *pEntry,    /* The entry into which pNew is inserted */
+  HashElem *pNew         /* The element to be inserted */
+){
+  HashElem *pHead;       /* First element already in pEntry */
+  pHead = pEntry->chain;
+  if( pHead ){
+    pNew->next = pHead;
+    pNew->prev = pHead->prev;
+    if( pHead->prev ){ pHead->prev->next = pNew; }
+    else             { pH->first = pNew; }
+    pHead->prev = pNew;
+  }else{
+    pNew->next = pH->first;
+    if( pH->first ){ pH->first->prev = pNew; }
+    pNew->prev = 0;
+    pH->first = pNew;
+  }
+  pEntry->count++;
+  pEntry->chain = pNew;
 }
 
 
@@ -167,7 +212,6 @@ static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
 static void rehash(Hash *pH, int new_size){
   struct _ht *new_ht;            /* The new hash table */
   HashElem *elem, *next_elem;    /* For looping over existing elements */
-  HashElem *x;                   /* Element being copied to new hash table */
   int (*xHash)(const void*,int); /* The hash function */
 
   assert( (new_size & (new_size-1))==0 );
@@ -180,21 +224,7 @@ static void rehash(Hash *pH, int new_size){
   for(elem=pH->first, pH->first=0; elem; elem = next_elem){
     int h = (*xHash)(elem->pKey, elem->nKey) & (new_size-1);
     next_elem = elem->next;
-    x = new_ht[h].chain;
-    if( x ){
-      elem->next = x;
-      elem->prev = x->prev;
-      if( x->prev ) x->prev->next = elem;
-      else          pH->first = elem;
-      x->prev = elem;
-    }else{
-      elem->next = pH->first;
-      if( pH->first ) pH->first->prev = elem;
-      elem->prev = 0;
-      pH->first = elem;
-    }
-    new_ht[h].chain = elem;
-    new_ht[h].count++;
+    insertElement(pH, &new_ht[h], elem);
   }
 }
 
@@ -213,8 +243,9 @@ static HashElem *findElementGivenHash(
   int (*xCompare)(const void*,int,const void*,int);  /* comparison function */
 
   if( pH->ht ){
-    elem = pH->ht[h].chain;
-    count = pH->ht[h].count;
+    struct _ht *pEntry = &pH->ht[h];
+    elem = pEntry->chain;
+    count = pEntry->count;
     xCompare = compareFunction(pH->keyClass);
     while( count-- && elem ){
       if( (*xCompare)(elem->pKey,elem->nKey,pKey,nKey)==0 ){ 
@@ -234,6 +265,7 @@ static void removeElementGivenHash(
   HashElem* elem,   /* The element to be removed from the pH */
   int h             /* Hash value for the element */
 ){
+  struct _ht *pEntry;
   if( elem->prev ){
     elem->prev->next = elem->next; 
   }else{
@@ -242,12 +274,13 @@ static void removeElementGivenHash(
   if( elem->next ){
     elem->next->prev = elem->prev;
   }
-  if( pH->ht[h].chain==elem ){
-    pH->ht[h].chain = elem->next;
+  pEntry = &pH->ht[h];
+  if( pEntry->chain==elem ){
+    pEntry->chain = elem->next;
   }
-  pH->ht[h].count--;
-  if( pH->ht[h].count<=0 ){
-    pH->ht[h].chain = 0;
+  pEntry->count--;
+  if( pEntry->count<=0 ){
+    pEntry->chain = 0;
   }
   if( pH->copyKey && elem->pKey ){
     sqliteFree(elem->pKey);
@@ -327,32 +360,21 @@ void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   }
   new_elem->nKey = nKey;
   pH->count++;
-  if( pH->htsize==0 ) rehash(pH,8);
   if( pH->htsize==0 ){
-    pH->count = 0;
-    sqliteFree(new_elem);
-    return data;
+    rehash(pH,8);
+    if( pH->htsize==0 ){
+      pH->count = 0;
+      sqliteFree(new_elem);
+      return data;
+    }
   }
   if( pH->count > pH->htsize ){
     rehash(pH,pH->htsize*2);
   }
+  assert( pH->htsize>0 );
   assert( (pH->htsize & (pH->htsize-1))==0 );
   h = hraw & (pH->htsize-1);
-  elem = pH->ht[h].chain;
-  if( elem ){
-    new_elem->next = elem;
-    new_elem->prev = elem->prev;
-    if( elem->prev ){ elem->prev->next = new_elem; }
-    else            { pH->first = new_elem; }
-    elem->prev = new_elem;
-  }else{
-    new_elem->next = pH->first;
-    new_elem->prev = 0;
-    if( pH->first ){ pH->first->prev = new_elem; }
-    pH->first = new_elem;
-  }
-  pH->ht[h].count++;
-  pH->ht[h].chain = new_elem;
+  insertElement(pH, &pH->ht[h], new_elem);
   new_elem->data = data;
   return 0;
 }
