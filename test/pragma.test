@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.14 2004/06/26 06:37:07 danielk1977 Exp $
+# $Id: pragma.test,v 1.15 2004/06/26 19:35:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,6 +133,48 @@ do_test pragma-1.12 {
     PRAGMA synchronous;
   }
 } {123 123 2}
+
+# Make sure the pragma handler understands numeric values in addition
+# to keywords like "off" and "full".
+#
+do_test pragma-1.13 {
+  execsql {
+    PRAGMA synchronous=0;
+    PRAGMA synchronous;
+  }
+} {0}
+do_test pragma-1.14 {
+  execsql {
+    PRAGMA synchronous=2;
+    PRAGMA synchronous;
+  }
+} {2}
+
+# Test turning "flag" pragmas on and off.
+#
+do_test pragma-1.15 {
+  execsql {
+    PRAGMA vdbe_listing=YES;
+    PRAGMA vdbe_listing;
+  }
+} {1}
+do_test pragma-1.16 {
+  execsql {
+    PRAGMA vdbe_listing=NO;
+    PRAGMA vdbe_listing;
+  }
+} {0}
+do_test pragma-1.17 {
+  execsql {
+    PRAGMA parser_trace=ON;
+    PRAGMA parser_trace=OFF;
+  }
+} {}
+do_test pragma-1.18 {
+  execsql {
+    PRAGMA bogus = -1234;  -- Parsing of negative values
+  }
+} {}
 
 # Test modifying the safety_level of an attached database.
 do_test pragma-2.1 {
@@ -258,5 +300,64 @@ do_test pragma-5.2 {
     pragma synchronous;
   } 
 } {2}
+catchsql {COMMIT;}
+
+# Test schema-query pragmas
+#
+do_test pragma-6.1 {
+  foreach {idx name file} [execsql {pragma database_list}] {
+    lappend res $idx $name
+  }
+  set res
+} {0 main 1 temp 2 aux}
+do_test pragma-6.2 {
+  execsql {
+    pragma table_info(t2)
+  }
+} {0 a numeric 0 {} 0 1 b numeric 0 {} 0 2 c numeric 0 {} 0}
+do_test pragma-6.3 {
+  execsql {
+    CREATE TABLE t3(a int references t2(b), b UNIQUE);
+    pragma foreign_key_list(t3);
+  }
+} {0 0 t2 a b}
+do_test pragma-6.4 {
+  execsql {
+    pragma index_list(t3);
+  }
+} {0 sqlite_autoindex_t3_1 1}
+do_test pragma-6.5 {
+  execsql {
+    CREATE INDEX t3i1 ON t3(a,b);
+    pragma index_info(t3i1);
+  }
+} {0 0 a 1 1 b}
+
+# Miscellaneous tests
+#
+do_test pragma-7.1 {
+  # Make sure a pragma knows to read the schema if it needs to
+  db close
+  sqlite3 db test.db
+  execsql {
+    pragma index_list(t3);
+  }
+} {0 t3i1 0 1 sqlite_autoindex_t3_1 1}
+do_test pragma-7.2 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    pragma encoding=bogus;
+  }
+} {1 {unsupported encoding: bogus}}
+do_test pragma-7.3 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    pragma lock_status;
+  }
+} {main unlocked temp closed}
+
+
 
 finish_test

@@ -1,5 +1,5 @@
-C Fold\sin\sa\s64-bit\schange\sthat\scame\sfrom\sthe\sPHP\speople.\s(CVS\s1743)
-D 2004-06-26T14:46:40
+C Coverage\stesting\sof\spragma.c.\s(CVS\s1744)
+D 2004-06-26T19:35:30
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 51cdc61a9eccc7e430acdb236991ba0dbafc0341
+F main.mk 5d21c17c2bf56915658f65e5d395c40f78e2ea6f
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 4193d9022fb7cf9beecd313bed3d1d68b8386fbe
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -53,7 +53,7 @@ F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 6240557abedaf6d888359a2365df45bce414c540
 F src/pager.h fe818866f6d1adcffeed88705e8df7e588cbaf13
 F src/parse.y e19e066e726a31d7b2d3e6475bdf55f7e339f8a3
-F src/pragma.c 16713c1bc440ccd9982a27fb4b38e1a1c95ffd29
+F src/pragma.c 2ca5ef7e27916f191a3b1201ad576ef6f8a8d72d
 F src/printf.c 3090c8ff397d549bc0de09b16d8ab7fd37a0c3f7
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
@@ -80,7 +80,7 @@ F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
 F src/vdbeaux.c e7201e3f129439bc64d2ff79b54001adc2c95539
 F src/vdbemem.c d37e4033f7350e542f715c061bffe23feb51bc9e
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
-F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
+F test/all.test d591e074013248176402a16a0fb6fc82d241bad5
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
 F test/attach2.test 3cd1d4a69e0ec307d0b68a44a96c9c8e1e253d65
 F test/attach3.test c4cc0b806783ce3d860af6b80c947f93ffb14270
@@ -104,7 +104,7 @@ F test/collate4.test 0e9fc08ffcf6eddf72e354a15de06688fa86db31
 F test/collate5.test 1dd5f0f508c46667f9d4606c7950c414b0bdc0d5
 F test/collate6.test 2a45768914f04c1447a69d1358bbede376552675
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
-F test/crash.test 062a108997c3f58a72e9add04d48e766468daf04
+F test/crash.test 886d531d4057fe1bf3fae57166127a1ac82c39cb
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
@@ -141,7 +141,7 @@ F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 64730a1c32955e5cc510b7632fed6b9929a4029a
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
-F test/pragma.test a0dac4320e130e31e855bbdb935645d7c45d6340
+F test/pragma.test 212d810e02a51c0ff9784a19d55e35d23382005d
 F test/printf.test 1eb584b7272d1abdfe117b2ef7cf3376ae8e4e06
 F test/progress.test 7542a6ac7894a1b7730c1f9a27f3f8b9388a4d25 x
 F test/quick.test 4c0b3eabe2e0e606622d63d7d61ef6efb3ce156b
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 3c8512bc549e10ee131cb7f2d4e74d96e9de74a0
-R b3df37a9b31c0d3af047ea48e90adc06
+P b69b4fe8adff83a26e3566613bea8b477a26e8a4
+R 72fd52c0e274fc83fa1945dfd7a6deb8
 U drh
-Z ee2a09b86bd7a1a127412206343d53c2
+Z 03157110b37f81d3fef2f16d6fba5e75

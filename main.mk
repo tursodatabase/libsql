@@ -356,11 +356,12 @@ testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
 crashtest:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) $(TOP)/src/os_test.c
-	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o crashtest \
+	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 \
+		-o crashtest \
 		$(TESTSRC) $(TOP)/src/os_test.c $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-fulltest:	testfixture$(EXE) sqlite3$(EXE)
+fulltest:	testfixture$(EXE) sqlite3$(EXE) crashtest
 	./testfixture$(EXE) $(TOP)/test/all.test
 
 test:	testfixture$(EXE) sqlite3$(EXE)

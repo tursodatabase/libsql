@@ -10,7 +10,17 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: crash.test,v 1.5 2004/06/26 09:50:12 danielk1977 Exp $
+# The focus of this file is testing the ability of the database to
+# uses its rollback journal to recover intact (no database corruption)
+# from a power failure during the middle of a COMMIT.  The special test
+# module "crashtest" compiled with the special "os_test.c" backend is used.
+# The os_test.c simulates the kind of file corruption that can occur
+# when writes are happening at the moment of power loss.
+# 
+# The special crash-test module with its os_test.c backend only works
+# on Unix.
+#
+# $Id: crash.test,v 1.6 2004/06/26 19:35:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -305,5 +315,3 @@ for {set i 1} {$i < 5} {incr i} {
     signature2
   } $sig2
 }
-
-

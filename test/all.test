@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.19 2003/02/16 22:21:33 drh Exp $
+# $Id: all.test,v 1.20 2004/06/26 19:35:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,7 +20,7 @@ proc finish_test {} {memleak_check}
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
 } else {
-  set COUNT 4
+  set COUNT 3
 }
 
 if {[llength $argv]>0} {
@@ -49,6 +49,7 @@ set LeakList {}
 
 set EXCLUDE {
   all.test
+  crash.test
   quick.test
   malloc.test
   misuse.test
@@ -57,7 +58,6 @@ set EXCLUDE {
 #  btree2.test
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
-  set btree_native_byte_order [expr {($Counter>>1)&0x1}]
   if {$Counter%2} {
     set ::SETUP_SQL {PRAGMA default_synchronous=off;}
   } else {
@@ -96,6 +96,12 @@ if {$LeakList!=""} {
     }
   }
   puts " Ok"
+}
+
+# Run the crashtest only on unix and only once.
+#
+if {$tcl_platform(platform)=="unix"} {
+  source $testdir/crash.test
 }
 
 # Run the malloc tests and the misuse test after memory leak detection.
