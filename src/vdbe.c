@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.266 2004/02/20 22:53:39 rdc Exp $
+** $Id: vdbe.c,v 1.267 2004/02/22 17:49:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -335,7 +335,7 @@ static void hardIntegerify(Mem *pStack){
 #define Realify(P) if(((P)->flags&MEM_Real)==0){ hardRealify(P); }
 static void hardRealify(Mem *pStack){
   if( pStack->flags & MEM_Str ){
-    pStack->r = sqliteAtoF(pStack->z);
+    pStack->r = sqliteAtoF(pStack->z, 0);
   }else if( pStack->flags & MEM_Int ){
     pStack->r = pStack->i;
   }else{
@@ -2039,7 +2039,7 @@ case OP_MakeKey: {
       if( (flags & (MEM_Real|MEM_Int))==MEM_Int ){
         pRec->r = pRec->i;
       }else if( (flags & (MEM_Real|MEM_Int))==0 ){
-        pRec->r = sqliteAtoF(pRec->z);
+        pRec->r = sqliteAtoF(pRec->z, 0);
       }
       Release(pRec);
       z = pRec->zShort;

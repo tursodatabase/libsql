@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.73 2004/02/21 19:02:31 drh Exp $
+** $Id: util.c,v 1.74 2004/02/22 17:49:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -553,7 +553,7 @@ int sqliteIsNumber(const char *z){
 ** of "." depending on how locale is set.  But that would cause problems
 ** for SQL.  So this routine always uses "." regardless of locale.
 */
-double sqliteAtoF(const char *z){
+double sqliteAtoF(const char *z, const char **pzEnd){
   int sign = 1;
   LONGDOUBLE_TYPE v1 = 0.0;
   if( *z=='-' ){
@@ -601,6 +601,7 @@ double sqliteAtoF(const char *z){
       v1 *= scale;
     }
   }
+  if( pzEnd ) *pzEnd = z;
   return sign<0 ? -v1 : v1;
 }
 
@@ -650,8 +651,8 @@ int sqliteCompare(const char *atext, const char *btext){
       result = -1;
     }else{
       double rA, rB;
-      rA = sqliteAtoF(atext);
-      rB = sqliteAtoF(btext);
+      rA = sqliteAtoF(atext, 0);
+      rB = sqliteAtoF(btext, 0);
       if( rA<rB ){
         result = -1;
       }else if( rA>rB ){
@@ -743,8 +744,8 @@ int sqliteSortCompare(const char *a, const char *b){
           res = -1;
           break;
         }
-        rA = sqliteAtoF(&a[1]);
-        rB = sqliteAtoF(&b[1]);
+        rA = sqliteAtoF(&a[1], 0);
+        rB = sqliteAtoF(&b[1], 0);
         if( rA<rB ){
           res = -1;
           break;

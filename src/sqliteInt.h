@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.217 2004/02/21 19:02:30 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.218 2004/02/22 17:49:34 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1257,6 +1257,6 @@ int sqliteFixSelect(DbFixer*, Select*);
 int sqliteFixExpr(DbFixer*, Expr*);
 int sqliteFixExprList(DbFixer*, ExprList*);
 int sqliteFixTriggerStep(DbFixer*, TriggerStep*);
-double sqliteAtoF(const char *z);
+double sqliteAtoF(const char *z, const char **);
 char *sqlite_snprintf(int,char*,const char*,...);
 int sqliteFitsIn32Bits(const char *);

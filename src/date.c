@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.11 2004/02/21 03:28:18 drh Exp $
+** $Id: date.c,v 1.12 2004/02/22 17:49:33 drh Exp $
 **
 ** NOTES:
 **
@@ -74,17 +74,50 @@ struct DateTime {
 
 
 /*
-** Convert N digits from zDate into an integer.  Return
-** -1 if zDate does not begin with N digits.
+** Convert zDate into one or more integers.  Additional arguments
+** come in groups of 5 as follows:
+**
+**       N       number of digits in the integer
+**       min     minimum allowed value of the integer
+**       max     maximum allowed value of the integer
+**       nextC   first character after the integer
+**       pVal    where to write the integers value.
+**
+** Conversions continue until one with nextC==0 is encountered.
+** The function returns the number of successful conversions.
 */
-static int getDigits(const char *zDate, int N){
-  int val = 0;
-  while( N-- ){
-    if( !isdigit(*zDate) ) return -1;
-    val = val*10 + *zDate - '0';
+static int getDigits(const char *zDate, ...){
+  va_list ap;
+  int val;
+  int N;
+  int min;
+  int max;
+  int nextC;
+  int *pVal;
+  int cnt = 0;
+  va_start(ap, zDate);
+  do{
+    N = va_arg(ap, int);
+    min = va_arg(ap, int);
+    max = va_arg(ap, int);
+    nextC = va_arg(ap, int);
+    pVal = va_arg(ap, int*);
+    val = 0;
+    while( N-- ){
+      if( !isdigit(*zDate) ){
+        return cnt;
+      }
+      val = val*10 + *zDate - '0';
+      zDate++;
+    }
+    if( val<min || val>max || (nextC!=0 && nextC!=*zDate) ){
+      return cnt;
+    }
+    *pVal = val;
     zDate++;
-  }
-  return val;
+    cnt++;
+  }while( nextC );
+  return cnt;
 }
 
 /*
@@ -92,38 +125,9 @@ static int getDigits(const char *zDate, int N){
 ** the number of digits converted.
 */
 static int getValue(const char *z, double *pR){
-  double r = 0.0;
-  double rDivide = 1.0;
-  int isNeg = 0;
-  int nChar = 0;
-  if( *z=='+' ){
-    z++;
-    nChar++;
-  }else if( *z=='-' ){
-    z++;
-    isNeg = 1;
-    nChar++;
-  }
-  if( !isdigit(*z) ) return 0;
-  while( isdigit(*z) ){
-    r = r*10.0 + *z - '0';
-    nChar++;
-    z++;
-  }
-  if( *z=='.' && isdigit(z[1]) ){
-    z++;
-    nChar++;
-    while( isdigit(*z) ){
-      r = r*10.0 + *z - '0';
-      rDivide *= 10.0;
-      nChar++;
-      z++;
-    }
-    r /= rDivide;
-  }
-  if( *z!=0 && !isspace(*z) ) return 0;
-  *pR = isNeg ? -r : r;
-  return nChar;
+  const char *zEnd;
+  *pR = sqliteAtoF(z, &zEnd);
+  return zEnd - z;
 }
 
 /*
@@ -151,14 +155,10 @@ static int parseTimezone(const char *zDate, DateTime *p){
     return *zDate!=0;
   }
   zDate++;
-  nHr = getDigits(zDate, 2);
-  if( nHr<0 || nHr>14 ) return 1;
-  zDate += 2;
-  if( zDate[0]!=':' ) return 1;
-  zDate++;
-  nMn = getDigits(zDate, 2);
-  if( nMn<0 || nMn>59 ) return 1;
-  zDate += 2;
+  if( getDigits(zDate, 2, 0, 14, ':', &nHr, 2, 0, 59, 0, &nMn)!=2 ){
+    return 1;
+  }
+  zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
   while( isspace(*zDate) ){ zDate++; }
   return *zDate!=0;
@@ -174,16 +174,16 @@ static int parseTimezone(const char *zDate, DateTime *p){
 static int parseHhMmSs(const char *zDate, DateTime *p){
   int h, m, s;
   double ms = 0.0;
-  h = getDigits(zDate, 2);
-  if( h<0 || zDate[2]!=':' ) return 1;
-  zDate += 3;
-  m = getDigits(zDate, 2);
-  if( m<0 || m>59 ) return 1;
-  zDate += 2;
+  if( getDigits(zDate, 2, 0, 24, ':', &h, 2, 0, 59, 0, &m)!=2 ){
+    return 1;
+  }
+  zDate += 5;
   if( *zDate==':' ){
-    s = getDigits(&zDate[1], 2);
-    if( s<0 || s>59 ) return 1;
-    zDate += 3;
+    zDate++;
+    if( getDigits(zDate, 2, 0, 59, 0, &s)!=1 ){
+      return 1;
+    }
+    zDate += 2;
     if( *zDate=='.' && isdigit(zDate[1]) ){
       double rScale = 1.0;
       zDate++;
@@ -268,18 +268,13 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   }else{
     neg = 0;
   }
-  Y = getDigits(zDate, 4);
-  if( Y<0 || zDate[4]!='-' ) return 1;
-  zDate += 5;
-  M = getDigits(zDate, 2);
-  if( M<=0 || M>12 || zDate[2]!='-' ) return 1;
-  zDate += 3;
-  D = getDigits(zDate, 2);
-  if( D<=0 || D>31 ) return 1;
-  zDate += 2;
+  if( getDigits(zDate,4,0,9999,'-',&Y,2,1,12,'-',&M,2,1,31,0,&D)!=3 ){
+    return 1;
+  }
+  zDate += 10;
   while( isspace(*zDate) ){ zDate++; }
-  if( isdigit(*zDate) ){
-    if( parseHhMmSs(zDate, p) ) return 1;
+  if( parseHhMmSs(zDate, p)==0 ){
+    /* We got the time */
   }else if( *zDate==0 ){
     p->validHMS = 0;
   }else{
@@ -327,7 +322,7 @@ static int parseDateOrTime(const char *zDate, DateTime *p){
     }
     return 1;
   }else if( sqliteIsNumber(zDate) ){
-    p->rJD = sqliteAtoF(zDate);
+    p->rJD = sqliteAtoF(zDate, 0);
     p->validJD = 1;
     return 0;
   }
