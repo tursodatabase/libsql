@@ -1,5 +1,5 @@
-C Fix\sTRACE7\sin\sos_common.h.\s(CVS\s1765)
-D 2004-06-29T13:54:50
+C Fix\scapi3.test\sso\sthat\sit\sworks\swith\sproduction\s(as\swell\sas\sdebugging\s)\sbuilds.\s(CVS\s1766)
+D 2004-06-29T14:03:58
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -96,7 +96,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
 F test/capi2.test fe61f341e953f73c29bacfcbdaf688cd7b0e0d38
-F test/capi3.test e878f7fb13a80bf4c88e4dca7d4a45b43c526e5c
+F test/capi3.test f16c92be7d9a0b66893651c44bebc05386daeb5b
 F test/collate1.test 2ee4fa3a47a652ccf56c5ddf65dcc44d9bad82ef
 F test/collate2.test c1a3b41f761b28853c5696037f92de928f93233b
 F test/collate3.test e60b428e07ec945492ba90ff1c895902ee3a8a50
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 357a82cd224e33e11870ad7c2f934c27af682881
-R bf2a126fc83c04e6a2818599eb7607b9
-U drh
-Z e226a5c5a0b18ac841dc5c20185e31ab
+P 76e0b74961af3ff285757ac428b82fe7eaffc025
+R e22231de78a033c0a90f661617ad0dfd
+U danielk1977
+Z 17042cf4cdfadc174e66915f6d6aca06

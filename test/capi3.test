@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.16 2004/06/29 13:18:24 danielk1977 Exp $
+# $Id: capi3.test,v 1.17 2004/06/29 14:03:58 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -575,6 +575,7 @@ foreach {code english} $code2english {
 }
 
 # Test the error message when a "real" out of memory occurs.
+if {[info command sqlite_malloc_stat]!=""} {
 set sqlite_malloc_fail 1
 do_test capi3-10-1 {
   set ::DB [sqlite3 db test.db]
@@ -591,6 +592,7 @@ do_test capi3-10-3 {
 } {out of memory}
 db close
 sqlite_malloc_fail 0
+}
 
 finish_test
 
