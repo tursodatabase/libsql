@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.60 2004/05/27 01:04:07 danielk1977 Exp $
+** $Id: test1.c,v 1.61 2004/05/27 01:49:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1419,6 +1419,36 @@ static int test_column_int64(
 }
 
 /*
+** Usage: sqlite3_column_blob STMT column
+*/
+static int test_column_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+
+  int len;
+  void *pBlob;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  pBlob = sqlite3_column_blob(pStmt, col);
+  len = sqlite3_column_bytes(pStmt, col);
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pBlob, len));
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_column_double STMT column
 **
 ** Return the data in column 'column' of the current row cast as a double.
@@ -1671,7 +1701,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_count",          test_column_count  ,0 },
      { "sqlite3_data_count",            test_data_count    ,0 },
      { "sqlite3_column_type",           test_column_type   ,0 },
-     { "sqlite3_column_blob",           test_column_name   ,0 },
+     { "sqlite3_column_blob",           test_column_blob   ,0 },
      { "sqlite3_column_double",         test_column_double ,0 },
      { "sqlite3_column_int64",          test_column_int64  ,0 },
      { "sqlite3_column_int", test_stmt_int ,sqlite3_column_int },
