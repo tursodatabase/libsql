@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.120 2004/09/30 14:24:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.121 2004/10/06 15:52:01 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -28,7 +28,11 @@ extern "C" {
 /*
 ** The version of the SQLite library.
 */
-#define SQLITE_VERSION         "--VERS--"
+#ifdef SQLITE_VERSION
+# undef SQLITE_VERSION
+#else
+# define SQLITE_VERSION         "--VERS--"
+#endif
 
 /*
 ** The version string is also compiled into the library so that a program
@@ -760,9 +764,21 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 */
 #define SQLITE_INTEGER  1
 #define SQLITE_FLOAT    2
-#define SQLITE_TEXT     3
+/* #define SQLITE_TEXT  3  // See below */
 #define SQLITE_BLOB     4
 #define SQLITE_NULL     5
+
+/*
+** SQLite version 2 defines SQLITE_TEXT differently.  To allow both
+** version 2 and version 3 to be included, undefine them both if a
+** conflict is seen.  Define SQLITE3_TEXT to be the version 3 value.
+*/
+#ifdef SQLITE_TEXT
+# undef SQLITE_TEXT
+#else
+# define SQLITE_TEXT     3
+#endif
+#define SQLITE3_TEXT     3
 
 /*
 ** The next group of routines returns information about the information
