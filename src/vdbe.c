@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.89 2001/10/22 02:58:10 drh Exp $
+** $Id: vdbe.c,v 1.90 2001/11/01 13:52:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1840,7 +1840,7 @@ case OP_Not: {
   break;
 }
 
-/* Opcode:  * * *
+/* Opcode: BitNot * * *
 **
 ** Interpret the top of the stack as an value.  Replace it
 ** with its ones-complement.

@@ -1,5 +1,5 @@
-C More\sdocumentation\supdates\s(CVS\s295)
-D 2001-10-31T15:44:47
+C Comment\schanges\sonly.\s(CVS\s296)
+D 2001-11-01T13:52:53
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -19,7 +19,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh badcd69b8e3a8bc69b162c4c9d7c209b2a0b119e
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 89380aea55bd0d5c756d92ec9bee756203f63a6b
+F src/btree.c f5b3bf49c98a90754097e8f0a946931d9cc857ef
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
 F src/build.c 8857c16751a5e9c5ee845e1b3cf2da78935c8cb3
 F src/delete.c 6fe2191c49c4a31336e2fac11b3ad665ddcd4246
@@ -49,7 +49,7 @@ F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 8f4c2b5e7fb471ba194979fb4dd5f947402fd792
 F src/update.c c916182c6bfbc8a6f20c24920c4560fece6c9569
 F src/util.c aa4d2de60cb2445239b71c79c3a8c0b7c0d3336a
-F src/vdbe.c aa28392b908ef8ee338e77af49ce2903b85f7b22
+F src/vdbe.c 4b0df66646648a7f60037926015ec2c181536f53
 F src/vdbe.h f8407fd6b644bc001b1e7c65460c9962f6a15f6b
 F src/where.c 22fe910c7c8e2736eb37e9861343e90c0b513c86
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
@@ -114,7 +114,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 475e2fedda2256cc1cfdffa1b12745bc401e552d
-R b2fc4ff3650cbe526a68ea1cf8e3178b
+P f65df59e554c281ad1efa830f13f87488eb16845
+R 50f675a2d3f94fcb2f093eaf90b1247b
 U drh
-Z a9512049e53d528acde7056d6370a7e0
+Z 77ddce4c95e7ba412288de1a3a02ea29

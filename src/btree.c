@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.35 2001/10/22 02:58:09 drh Exp $
+** $Id: btree.c,v 1.36 2001/11/01 13:52:53 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -277,7 +277,7 @@ struct OverflowPage {
 ** outside of u.aDisk[].  This is a transient situation that is quickly
 ** resolved.  But while it is happening, it is possible for a database
 ** page to hold as many as two more cells than it might otherwise hold.
-** The extra too entries in apCell[] are an allowance for this situation.
+** The extra two entries in apCell[] are an allowance for this situation.
 **
 ** The pParent field points back to the parent page.  This allows us to
 ** walk up the BTree from any leaf to the root.  Care must be taken to
