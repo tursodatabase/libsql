@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.60 2003/03/31 13:36:09 drh Exp $
+** $Id: util.c,v 1.61 2003/04/16 02:17:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -797,12 +797,12 @@ static int sortStrCmp(const char *atext, const char *btext, int useCase){
 ** Return TRUE if z is a pure numeric string.  Return FALSE if the
 ** string contains any character which is not part of a number.
 **
-** Am empty string is considered numeric.
+** Am empty string is considered non-numeric.
 */
-static int sqliteIsNumber(const char *z){
+int sqliteIsNumber(const char *z){
   if( *z=='-' || *z=='+' ) z++;
   if( !isdigit(*z) ){
-    return *z==0;
+    return 0;
   }
   z++;
   while( isdigit(*z) ){ z++; }
@@ -810,12 +810,12 @@ static int sqliteIsNumber(const char *z){
     z++;
     if( !isdigit(*z) ) return 0;
     while( isdigit(*z) ){ z++; }
-    if( *z=='e' || *z=='E' ){
-      z++;
-      if( *z=='+' || *z=='-' ) z++;
-      if( !isdigit(*z) ) return 0;
-      while( isdigit(*z) ){ z++; }
-    }
+  }
+  if( *z=='e' || *z=='E' ){
+    z++;
+    if( *z=='+' || *z=='-' ) z++;
+    if( !isdigit(*z) ) return 0;
+    while( isdigit(*z) ){ z++; }
   }
   return *z==0;
 }

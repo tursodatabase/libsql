@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.173 2003/04/15 19:22:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.174 2003/04/16 02:17:35 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -981,6 +981,7 @@ extern int always_code_trigger_setup;
 int sqliteStrICmp(const char *, const char *);
 int sqliteStrNICmp(const char *, const char *, int);
 int sqliteHashNoCase(const char *, int);
+int sqliteIsNumber(const char*);
 int sqliteCompare(const char *, const char *);
 int sqliteSortCompare(const char *, const char *);
 void sqliteRealToSortable(double r, char *);
@@ -1127,4 +1128,5 @@ void sqliteDeferForeignKey(Parse*, int);
 #endif
 void sqliteAttach(Parse*, Token*, Token*);
 void sqliteDetach(Parse*, Token*);
-int sqliteBtreeFactory(const sqlite *db, const char *zFilename, int mode, int nPg, Btree **ppBtree);
+int sqliteBtreeFactory(const sqlite *db, const char *zFilename,
+                       int mode, int nPg, Btree **ppBtree);

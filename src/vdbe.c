@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.215 2003/04/15 19:22:24 drh Exp $
+** $Id: vdbe.c,v 1.216 2003/04/16 02:17:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -485,6 +485,7 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
   return addr;
 }
 
+#if 0 /* NOT USED */
 /*
 ** Change the value of the P1 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -497,6 +498,7 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
     p->aOp[addr].p1 = val;
   }
 }
+#endif /* NOT USED */
 
 /*
 ** Change the value of the P2 operand for a specific instruction.
@@ -1088,27 +1090,6 @@ static void PopStack(Vdbe *p, int N){
   assert(p->tos>=0); \
   if( aStack[p->tos].flags & STK_Dyn ) sqliteFree(zStack[p->tos]); \
   p->tos--;
-
-/*
-** Return TRUE if zNum is a floating-point or integer number.
-*/
-static int isNumber(const char *zNum){
-  if( *zNum=='-' || *zNum=='+' ) zNum++;
-  if( !isdigit(*zNum) ) return 0;
-  while( isdigit(*zNum) ) zNum++;
-  if( *zNum==0 ) return 1;
-  if( *zNum!='.' ) return 0;
-  zNum++;
-  if( !isdigit(*zNum) ) return 0;
-  while( isdigit(*zNum) ) zNum++;
-  if( *zNum==0 ) return 1;
-  if( *zNum!='e' && *zNum!='E' ) return 0;
-  zNum++;
-  if( *zNum=='-' || *zNum=='+' ) zNum++;
-  if( !isdigit(*zNum) ) return 0;
-  while( isdigit(*zNum) ) zNum++;
-  return *zNum==0;
-}
 
 /*
 ** Delete a keylist
@@ -3082,7 +3063,7 @@ case OP_MakeKey: {
       Stringify(p, i);
       aStack[i].flags &= ~(STK_Int|STK_Real);
       nByte += aStack[i].n+1;
-    }else if( (flags & (STK_Real|STK_Int))!=0 || isNumber(zStack[i]) ){
+    }else if( (flags & (STK_Real|STK_Int))!=0 || sqliteIsNumber(zStack[i]) ){
       if( (flags & (STK_Real|STK_Int))==STK_Int ){
         aStack[i].r = aStack[i].i;
       }else if( (flags & (STK_Real|STK_Int))==0 ){
