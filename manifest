@@ -1,5 +1,5 @@
-C Bug\sfix\sto\sthe\sleft\souter\sjoin\slogic.\s(CVS\s1726)
-D 2002-08-13T13:15:50
+C Bug\sfix\sto\sthe\sleft\souter\sjoin\slogic.\s(CVS\s708)
+D 2002-08-13T13:15:51
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 0f288908fb6b1186b1594d753f79dc06c32b1dd7
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -142,7 +142,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ba706aca0af9ed1ecb64edd4ab327bd5a5a32044
+P 957d908e6b84cd599b5cfd82af80c8fac79c1dbd
 R 3e7291c79a919fa2cefc3efc93c90571
 U drh
-Z 1899af56f51d3a2e8e413d3d675047ee
+Z de838e68957e6e35c849e80fb3e5a484
