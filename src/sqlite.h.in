@@ -12,16 +12,11 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.39 2003/01/16 16:28:54 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.40 2003/01/28 23:13:12 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
 #include <stdarg.h>     /* Needed for the definition of va_list */
-
-/*
-** The version of the SQLite library.
-*/
-#define SQLITE_VERSION         "--VERS--"
 
 /*
 ** Make sure we can call this stuff from C++.
@@ -29,6 +24,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+** The version of the SQLite library.
+*/
+#define SQLITE_VERSION         "--VERS--"
 
 /*
 ** The version string is also compiled into the library so that a program
@@ -73,7 +73,7 @@ typedef struct sqlite sqlite;
 ** The Truth:  As currently implemented, all databases are opened
 ** for writing all the time.  Maybe someday we will provide the
 ** ability to open a database readonly.  The mode parameters is
-** provide in anticipation of that enhancement.
+** provided in anticipation of that enhancement.
 */
 sqlite *sqlite_open(const char *filename, int mode, char **errmsg);
 
@@ -118,7 +118,8 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** message is written into memory obtained from malloc() and
 ** *errmsg is made to point to that message.  The calling function
 ** is responsible for freeing the memory that holds the error
-** message.  If errmsg==NULL, then no error message is ever written.
+** message.   Use sqlite_freemem() for this.  If errmsg==NULL,
+** then no error message is ever written.
 **
 ** The return value is is SQLITE_OK if there are no errors and
 ** some other return code if there is an error.  The particular
@@ -138,7 +139,7 @@ int sqlite_exec(
 );
 
 /*
-** Return values for sqlite_exec()
+** Return values for sqlite_exec() and sqlite_step()
 */
 #define SQLITE_OK           0   /* Successful result */
 #define SQLITE_ERROR        1   /* SQL error or missing database */
@@ -164,6 +165,8 @@ int sqlite_exec(
 #define SQLITE_MISUSE      21   /* Library used incorrectly */
 #define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
 #define SQLITE_AUTH        23   /* Authorization denied */
+#define SQLITE_ROW         100  /* sqlite_step() has another row ready */
+#define SQLITE_DONE        101  /* sqlite_step() has finished executing */
 
 /*
 ** Each entry in an SQLite table has a unique integer key.  (The key is
@@ -501,10 +504,11 @@ int sqlite_aggregate_count(sqlite_func*);
 
 /*
 ** This routine registers a callback with the SQLite library.  The
-** callback is invoked for every attempt to access a column of a table
-** in the database.  The callback returns SQLITE_OK if access is allowed,
-** SQLITE_DENY if the entire SQL statement should be aborted with an error
-** and SQLITE_IGNORE if the column should be treated as a NULL value.
+** callback is invoked (at compile-time, not at run-time) for each
+** attempt to access a column of a table in the database.  The callback
+** returns SQLITE_OK if access is allowed, SQLITE_DENY if the entire
+** SQL statement should be aborted with an error and SQLITE_IGNORE
+** if the column should be treated as a NULL value.
 */
 int sqlite_set_authorizer(
   sqlite*,
@@ -555,17 +559,127 @@ int sqlite_set_authorizer(
 #define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
 
 /*
-** Register a function that is called at every invocation of sqlite_exec().
-** This function can be used (for example) to generate a log file of all
-** SQL executed against a database.
+** Register a function that is called at every invocation of sqlite_exec()
+** or sqlite_compile().  This function can be used (for example) to generate
+** a log file of all SQL executed against a database.
 */
 void *sqlite_trace(sqlite*, void(*xTrace)(void*,const char*), void*);
+
+/*** The Callback-Free API
+** 
+** The following routines implement a new way to access SQLite that does not
+** involve the use of callbacks.
+**
+** An sqlite_vm is an opaque object that represents a single SQL statement
+** that is ready to be executed.
+*/
+typedef struct sqlite_vm sqlite_vm;
+
+/*
+** To execute an SQLite query without the use of callbacks, you first have
+** to compile the SQL using this routine.  The 1st parameter "db" is a pointer
+** to an sqlite object obtained from sqlite_open().  The 2nd parameter
+** "zSql" is the text of the SQL to be compiled.   The remaining parameters
+** are all outputs.
+**
+** *pzTail is made to point to the first character past the end of the first
+** SQL statement in zSql.  This routine only compiles the first statement
+** in zSql, so *pzTail is left pointing to what remains uncompiled.
+**
+** *ppVm is left pointing to a "virtual machine" that can be used to execute
+** the compiled statement.  Or if there is an error, *ppVm may be set to NULL.
+**
+** If any errors are detected during compilation, an error message is written
+** into space obtained from malloc() and *pzErrMsg is made to point to that
+** error message.  The calling routine is responsible for freeing the text
+** of this message when it has finished with it.  Use sqlite_freemem() to
+** free the message.  pzErrMsg may be NULL in which case no error message
+** will be generated.
+**
+** On success, SQLITE_OK is returned.  Otherwise and error code is returned.
+*/
+int sqlite_compile(
+  sqlite *db,                   /* The open database */
+  const char *zSql,             /* SQL statement to be compiled */
+  const char **pzTail,          /* OUT: uncompiled tail of zSql */
+  sqlite_vm **ppVm,             /* OUT: the virtual machine to execute zSql */
+  char **pzErrmsg               /* OUT: Error message. */
+);
+
+/*
+** After an SQL statement has been compiled, it is handed to this routine
+** to be executed.  This routine executes the statement as far as it can
+** go then returns.  The return value will be one of SQLITE_DONE,
+** SQLITE_ERROR, SQLITE_BUSY, SQLITE_ROW, or SQLITE_MISUSE.
+**
+** SQLITE_DONE means that the execute of the SQL statement is complete
+** an no errors have occurred.  sqlite_step() should not be called again
+** for the same virtual machine.  *pN is set to the number of columns in
+** the result set and *pazColName is set to an array of strings that
+** describe the column names and datatypes.  The name of the i-th column
+** is (*pazColName)[i] and the datatype of the i-th column is
+** (*pazColName)[i+*pN].  *pazValue is set to NULL.
+**
+** SQLITE_ERROR means that the virtual machine encountered a run-time
+** error.  sqlite_step() should not be called again for the same
+** virtual machine.  *pN is set to 0 and *pazColName and *pazValue are set
+** to NULL.  Use sqlite_finalize() to obtain the specific error code
+** and the error message text for the error.
+**
+** SQLITE_BUSY means that an attempt to open the database failed because
+** another thread or process is holding a lock.  The calling routine
+** can try again to open the database by calling sqlite_step() again.
+** The return code will only be SQLITE_BUSY if no busy handler is registered
+** using the sqlite_busy_handler() or sqlite_busy_timeout() routines.  If
+** a busy handler callback has been registered but returns 0, then this
+** routine will return SQLITE_ERROR and sqltie_finalize() will return
+** SQLITE_BUSY when it is called.
+**
+** SQLITE_ROW means that a single row of the result is now available.
+** The data is contained in *pazValue.  The value of the i-th column is
+** (*azValue)[i].  *pN and *pazColName are set as described in SQLITE_DONE.
+** Invoke sqlite_step() again to advance to the next row.
+**
+** SQLITE_MISUSE is returned if sqlite_step() is called incorrectly.
+** For example, if you call sqlite_step() after the virtual machine
+** has halted (after a prior call to sqlite_step() has returned SQLITE_DONE)
+** or if you call sqlite_step() with an incorrectly initialized virtual
+** machine or a virtual machine that has been deleted or that is associated
+** with an sqlite structure that has been closed.
+*/
+int sqlite_step(
+  sqlite_vm *pVm,              /* The virtual machine to execute */
+  int *pN,                     /* OUT: Number of columns in result */
+  const char ***pazValue,      /* OUT: Column data */
+  const char ***pazColName     /* OUT: Column names and datatypes */
+);
+
+/*
+** This routine is called to delete a virtual machine after it has finished
+** executing.  The return value is the result code.  SQLITE_OK is returned
+** if the statement executed successfully and some other value is returned if
+** there was any kind of error.  If an error occurred and pzErrMsg is not
+** NULL, then an error message is written into memory obtained from malloc()
+** and *pzErrMsg is made to point to that error message.  The calling routine
+** should use sqlite_freemem() to delete this message when it has finished
+** with it.
+**
+** This routine can be called at any point during the execution of the
+** virtual machine.  If the virtual machine has not completed execution
+** when this routine is called, that is like encountering an error or
+** an interrupt.  (See sqlite_interrupt().)  Incomplete updates may be
+** rolled back and transactions cancelled,  depending on the circumstances,
+** and the result code returned will be SQLITE_ABORT.
+*/
+int sqlite_finalize(sqlite_vm*, char **pzErrMsg);
 
 /*
 ** Attempt to open the file named in the argument as the auxiliary database
 ** file.  The auxiliary database file is used to store TEMP tables.  But
 ** by using this API, it is possible to trick SQLite into opening two
 ** separate databases and acting on them as if they were one.
+**
+****** THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE. ******
 */
 int sqlite_open_aux_file(sqlite *db, const char *zName, char **pzErrMsg);
 

@@ -13,12 +13,34 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.16 2003/01/13 23:27:33 drh Exp $
+** $Id: test1.c,v 1.17 2003/01/28 23:13:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
+
+/*
+** Decode a pointer to an sqlite object.
+*/
+static int getDbPointer(Tcl_Interp *interp, const char *zArg, sqlite **ppDb){
+  if( sscanf(zArg, "%p", (void**)ppDb)!=1 ){
+    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Decode a pointer to an sqlite_vm object.
+*/
+static int getVmPointer(Tcl_Interp *interp, const char *zArg, sqlite_vm **ppVm){
+  if( sscanf(zArg, "%p", (void**)ppVm)!=1 ){
+    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
 
 /*
 ** Usage:   sqlite_open filename
@@ -45,7 +67,7 @@ static int sqlite_test_open(
     free(zErr);
     return TCL_ERROR;
   }
-  sprintf(zBuf,"%d",(int)db);
+  sprintf(zBuf,"%p", db);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -91,7 +113,7 @@ static int test_exec_printf(
        " DB FORMAT STRING", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
   rc = sqlite_exec_printf(db, argv[2], exec_printf_cb, &str, &zErr, argv[3]);
   sprintf(zBuf, "%d", rc);
@@ -128,7 +150,7 @@ static int test_get_table_printf(
        " DB FORMAT STRING", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
   rc = sqlite_get_table_printf(db, argv[2], &aResult, &nRow, &nCol, 
                &zErr, argv[3]);
@@ -169,7 +191,7 @@ static int test_last_rowid(
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " DB\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sprintf(zBuf, "%d", sqlite_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
@@ -192,7 +214,7 @@ static int sqlite_test_close(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite_close(db);
   return TCL_OK;
 }
@@ -251,7 +273,7 @@ static int test_create_function(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
   sqlite_create_function(db, "x_sqlite_exec", 1, sqliteExecFunc, db);
   return TCL_OK;
@@ -300,7 +322,7 @@ static int test_create_aggregate(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
   sqlite_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
   return TCL_OK;
@@ -497,7 +519,7 @@ static int test_register_func(
        " DB FUNCTION-NAME", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   rc = sqlite_create_function(db, argv[2], -1, testFunc, 0);
   if( rc!=0 ){
     Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
@@ -550,7 +572,7 @@ static int sqlite_datatypes(
        " DB SQL", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   rc = sqlite_exec(db, argv[2], rememberDataTypes, interp, 0);
   if( rc!=0 && rc!=SQLITE_ABORT ){
     Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
@@ -659,7 +681,7 @@ static int test_set_authorizer(
          " DB CALLBACK\"", 0);
     return TCL_ERROR;
   }
-  db = (sqlite*)strtol(argv[1], 0, 0);
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zCmd = argv[2];
   if( zCmd[0]==0 ){
     sqlite_set_authorizer(db, 0, 0);
@@ -676,6 +698,131 @@ static int test_set_authorizer(
   return TCL_OK;
 }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
+
+
+/*
+** Usage:  sqlite_compile  DB  SQL  TAILVAR
+**
+** Attempt to compile an SQL statement.  Return a pointer to the virtual
+** machine used to execute that statement.  Unprocessed SQL is written
+** into TAILVAR.
+*/
+static int test_compile(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  sqlite_vm *vm;
+  int rc;
+  char *zErr = 0;
+  const char *zTail;
+  char zBuf[50];
+  if( argc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB SQL TAILVAR", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  rc = sqlite_compile(db, argv[2], &zTail, &vm, &zErr);
+  if( rc ){
+    assert( vm==0 );
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, zErr, 0);
+    sqlite_freemem(zErr);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf, "%p", vm);
+  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_SetVar(interp, argv[3], zTail, 0);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite_step  VM  NVAR  VALUEVAR  COLNAMEVAR
+**
+** Step a virtual machine.  Return a the result code as a string.
+** Column results are written into three variables.
+*/
+static int test_step(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite_vm *vm;
+  int rc, i;
+  const char **azValue;
+  const char **azColName;
+  int N;
+  char *zRc;
+  char zBuf[50];
+  if( argc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " VM NVAR VALUEVAR COLNAMEVAR", 0);
+    return TCL_ERROR;
+  }
+  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
+  rc = sqlite_step(vm, &N, &azValue, &azColName);
+  if( rc==SQLITE_DONE || SQLITE_ROW ){
+    sprintf(zBuf, "%d", N);
+    Tcl_SetVar(interp, argv[2], zBuf, 0);
+    Tcl_SetVar(interp, argv[3], "", 0);
+    if( rc==SQLITE_ROW ){
+      for(i=0; i<N; i++){
+        Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
+            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+      }
+    }
+    Tcl_SetVar(interp, argv[4], "", 0);
+    for(i=0; i<N*2; i++){
+      Tcl_SetVar(interp, argv[4], azValue[i] ? azValue[i] : "",
+          TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+    }
+  }
+  switch( rc ){
+    case SQLITE_DONE:   zRc = "SQLITE_DONE";    break;
+    case SQLITE_BUSY:   zRc = "SQLITE_DONE";    break;
+    case SQLITE_ROW:    zRc = "SQLITE_DONE";    break;
+    case SQLITE_ERROR:  zRc = "SQLITE_DONE";    break;
+    case SQLITE_MISUSE: zRc = "SQLITE_MISUSE";  break;
+    default:            zRc = "unknown";        break;
+  }
+  Tcl_AppendResult(interp, zRc, 0);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite_finalize  VM 
+**
+** Shutdown a virtual machine.
+*/
+static int test_finalize(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite_vm *vm;
+  int rc;
+  char *zErrMsg = 0;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " VM NVAR VALUEVAR COLNAMEVAR", 0);
+    return TCL_ERROR;
+  }
+  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
+  rc = sqlite_finalize(vm, &zErrMsg);
+  if( rc ){
+    char zBuf[50];
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
+    sqlite_freemem(zErrMsg);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -706,6 +853,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
+     { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
+     { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
+     { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
   };
   int i;
 

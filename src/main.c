@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.109 2003/01/19 03:59:47 drh Exp $
+** $Id: main.c,v 1.110 2003/01/28 23:13:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -69,6 +69,7 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
         sParse.initFlag = 1;
         sParse.isTemp = argv[4][0] - '0';
         sParse.newTnum = atoi(argv[2]);
+        sParse.useCallback = 1;
         sqliteRunParser(&sParse, argv[3], pData->pzErrMsg);
       }else{
         /* If the SQL column is blank it means this is an index that
@@ -297,6 +298,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   sParse.xCallback = sqliteInitCallback;
   sParse.pArg = (void*)&initData;
   sParse.initFlag = 1;
+  sParse.useCallback = 1;
   sqliteRunParser(&sParse,
       db->file_format>=2 ? init_script : older_init_script,
       pzErrMsg);
@@ -584,29 +586,23 @@ int sqlite_complete(const char *zSql){
 }
 
 /*
-** Execute SQL code.  Return one of the SQLITE_ success/failure
-** codes.  Also write an error message into memory obtained from
-** malloc() and make *pzErrMsg point to that message.
-**
-** If the SQL is a query, then for each row in the query result
-** the xCallback() function is called.  pArg becomes the first
-** argument to xCallback().  If xCallback=NULL then no callback
-** is invoked, even for queries.
+** This routine does the work of either sqlite_exec() or sqlite_compile().
+** It works like sqlite_exec() if pVm==NULL and it works like sqlite_compile()
+** otherwise.
 */
-int sqlite_exec(
+static int sqliteMain(
   sqlite *db,                 /* The database on which the SQL executes */
   const char *zSql,           /* The SQL to be executed */
   sqlite_callback xCallback,  /* Invoke this callback routine */
   void *pArg,                 /* First argument to xCallback() */
-  char **pzErrMsg             /* Write error messages here */
+  const char **pzTail,        /* OUT: Next statement after the first */
+  sqlite_vm **ppVm,           /* OUT: The virtual machine */
+  char **pzErrMsg             /* OUT: Write error messages here */
 ){
   Parse sParse;
 
   if( pzErrMsg ) *pzErrMsg = 0;
   if( sqliteSafetyOn(db) ) goto exec_misuse;
-#ifndef SQLITE_OMIT_TRACE
-  if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
-#endif
   if( (db->flags & SQLITE_Initialized)==0 ){
     int rc, cnt = 1;
     while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
@@ -633,6 +629,10 @@ int sqlite_exec(
   sParse.pBe = db->pBe;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
+  sParse.useCallback = ppVm==0;
+#ifndef SQLITE_OMIT_TRACE
+  if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
+#endif
   sqliteRunParser(&sParse, zSql, pzErrMsg);
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
@@ -650,6 +650,11 @@ int sqlite_exec(
     sqliteResetInternalSchema(db);
   }
   db->recursionDepth--;
+  if( sParse.useCallback==0 ){
+    assert( ppVm );
+    *ppVm = sParse.pVdbe;
+    *pzTail = &sParse.sLastToken.z[sParse.sLastToken.n];
+  }
   if( sqliteSafetyOff(db) ) goto exec_misuse;
   return sParse.rc;
 
@@ -660,6 +665,59 @@ exec_misuse:
     sqliteStrRealloc(pzErrMsg);
   }
   return SQLITE_MISUSE;
+}
+
+/*
+** Execute SQL code.  Return one of the SQLITE_ success/failure
+** codes.  Also write an error message into memory obtained from
+** malloc() and make *pzErrMsg point to that message.
+**
+** If the SQL is a query, then for each row in the query result
+** the xCallback() function is called.  pArg becomes the first
+** argument to xCallback().  If xCallback=NULL then no callback
+** is invoked, even for queries.
+*/
+int sqlite_exec(
+  sqlite *db,                 /* The database on which the SQL executes */
+  const char *zSql,           /* The SQL to be executed */
+  sqlite_callback xCallback,  /* Invoke this callback routine */
+  void *pArg,                 /* First argument to xCallback() */
+  char **pzErrMsg             /* Write error messages here */
+){
+  return sqliteMain(db, zSql, xCallback, pArg, 0, 0, pzErrMsg);
+}
+
+/*
+** Compile a single statement of SQL into a virtual machine.  Return one
+** of the SQLITE_ success/failure codes.  Also write an error message into
+** memory obtained from malloc() and make *pzErrMsg point to that message.
+*/
+int sqlite_compile(
+  sqlite *db,                 /* The database on which the SQL executes */
+  const char *zSql,           /* The SQL to be executed */
+  const char **pzTail,        /* OUT: Next statement after the first */
+  sqlite_vm **ppVm,           /* OUT: The virtual machine */
+  char **pzErrMsg             /* OUT: Write error messages here */
+){
+  return sqliteMain(db, zSql, 0, 0, pzTail, ppVm, pzErrMsg);
+}
+
+/*
+** The following routine destroys a virtual machine that is created by
+** the sqlite_compile() routine.
+**
+** The integer returned is an SQLITE_ success/failure code that describes
+** the result of executing the virtual machine.  An error message is
+** written into memory obtained from malloc and *pzErrMsg is made to
+** point to that error if pzErrMsg is not NULL.  The calling routine
+** should use sqlite_freemem() to delete the message when it has finished
+** with it.
+*/
+int sqlite_finalize(
+  sqlite_vm *pVm,            /* The virtual machine to be destroyed */
+  char **pzErrMsg            /* OUT: Write error messages here */
+){
+  return sqliteVdbeFinalize((Vdbe*)pVm, pzErrMsg);
 }
 
 /*

@@ -14,15 +14,22 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.88 2003/01/18 20:11:07 drh Exp $
+** @(#) $Id: parse.y,v 1.89 2003/01/28 23:13:12 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
 %default_type {Token}
 %extra_argument {Parse *pParse}
 %syntax_error {
-  sqliteSetString(&pParse->zErrMsg,"syntax error",0);
-  pParse->sErrToken = TOKEN;
+  if( pParse->zErrMsg==0 ){
+    if( TOKEN.z[0] ){
+      sqliteSetNString(&pParse->zErrMsg, 
+          "near \"", -1, TOKEN.z, TOKEN.n, "\": syntax error", -1, 0);
+    }else{
+      sqliteSetString(&pParse->zErrMsg, "incomplete SQL statement", 0);
+    }
+  }
+  pParse->nErr++;
 }
 %name sqliteParser
 %include {

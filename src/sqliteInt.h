@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.156 2003/01/18 20:11:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.157 2003/01/28 23:13:12 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -748,6 +748,7 @@ struct Parse {
   u8 schemaVerified;   /* True if an OP_VerifySchema has been coded someplace
                        ** other than after an OP_Transaction */
   u8 isTemp;           /* True if parsing temporary tables */
+  u8 useCallback;      /* True if callbacks should be used to report results */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.125 2003/01/25 14:34:23 drh Exp $
+** $Id: build.c,v 1.126 2003/01/28 23:13:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -49,6 +49,17 @@ void sqliteBeginParse(Parse *pParse, int explainFlag){
 }
 
 /*
+** This is a fake callback procedure used when sqlite_exec() is
+** invoked with a NULL callback pointer.  If we pass a NULL callback
+** pointer into sqliteVdbeExec() it will return at every OP_Callback,
+** which we do not want it to do.  So we substitute a pointer to this
+** procedure in place of the NULL.
+*/
+static int fakeCallback(void *NotUsed, int n, char **az1, char **az2){
+  return 0;
+}
+
+/*
 ** This routine is called after a single SQL statement has been
 ** parsed and we want to execute the VDBE code to implement 
 ** that statement.  Prior action routines should have already
@@ -61,24 +72,33 @@ void sqliteBeginParse(Parse *pParse, int explainFlag){
 void sqliteExec(Parse *pParse){
   int rc = SQLITE_OK;
   sqlite *db = pParse->db;
+  Vdbe *v = pParse->pVdbe;
+  int (*xCallback)(void*,int,char**,char**);
+
   if( sqlite_malloc_failed ) return;
-  if( pParse->pVdbe && pParse->nErr==0 ){
-    if( pParse->explain ){
-      rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                          &pParse->zErrMsg);
-      db->next_cookie = db->schema_cookie;
-    }else{
-      FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
-      sqliteVdbeTrace(pParse->pVdbe, trace);
-      rc = sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                          &pParse->zErrMsg, db->pBusyArg,
-                          db->xBusyCallback);
+  xCallback = pParse->xCallback;
+  if( xCallback==0 && pParse->useCallback ) xCallback = fakeCallback;
+  if( v && pParse->nErr==0 ){
+    FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
+    sqliteVdbeTrace(v, trace);
+    sqliteVdbeMakeReady(v, xCallback, pParse->pArg, pParse->explain);
+    if( pParse->useCallback ){
+      if( pParse->explain ){
+        rc = sqliteVdbeList(v);
+        db->next_cookie = db->schema_cookie;
+      }else{
+        sqliteVdbeExec(v);
+      }
+      rc = sqliteVdbeFinalize(v, &pParse->zErrMsg);
       if( rc ) pParse->nErr++;
+      sqliteVdbeDelete(v);
+      pParse->pVdbe = 0;
+      pParse->rc = rc;
+      if( rc ) pParse->nErr++;
+    }else{
+      pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
     }
-    sqliteVdbeDelete(pParse->pVdbe);
-    pParse->pVdbe = 0;
     pParse->colNamesSet = 0;
-    pParse->rc = rc;
     pParse->schemaVerified = 0;
   }
   pParse->nTab = 0;

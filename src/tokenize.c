@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.53 2003/01/07 02:47:48 drh Exp $
+** $Id: tokenize.c,v 1.54 2003/01/28 23:13:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -406,6 +406,8 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;
   int i;
   void *pEngine;
+  int tokenType;
+  int lastTokenParsed = -1;
   sqlite *db = pParse->db;
   extern void *sqliteParserAlloc(void*(*)(int));
   extern void sqliteParserFree(void*, void(*)(void*));
@@ -421,7 +423,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   pParse->sLastToken.dyn = 0;
   while( sqlite_malloc_failed==0 && zSql[i]!=0 ){
-    int tokenType;
     
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
@@ -446,19 +447,8 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }
       default: {
         sqliteParser(pEngine, tokenType, pParse->sLastToken, pParse);
-        if( pParse->zErrMsg && pParse->sErrToken.z ){
-          sqliteSetNString(pzErrMsg, "near \"", -1, 
-             pParse->sErrToken.z, pParse->sErrToken.n,
-             "\": ", -1,
-             pParse->zErrMsg, -1,
-             0);
-          nErr++;
-          sqliteFree(pParse->zErrMsg);
-          pParse->zErrMsg = 0;
-          goto abort_parse;
-        }else if( pParse->rc!=SQLITE_OK ){
-          sqliteSetString(pzErrMsg, sqlite_error_string(pParse->rc), 0);
-          nErr++;
+        lastTokenParsed = tokenType;
+        if( pParse->rc!=SQLITE_OK ){
           goto abort_parse;
         }
         break;
@@ -466,31 +456,26 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     }
   }
 abort_parse:
-  if( zSql[i]==0 && nErr==0 ){
-    sqliteParser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
-    sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
-    if( pParse->zErrMsg && pParse->sErrToken.z ){
-       sqliteSetNString(pzErrMsg, "near \"", -1, 
-          pParse->sErrToken.z, pParse->sErrToken.n,
-          "\": ", -1,
-          pParse->zErrMsg, -1,
-          0);
-       nErr++;
-       sqliteFree(pParse->zErrMsg);
-       pParse->zErrMsg = 0;
+  if( zSql[i]==0 && nErr==0 && pParse->rc==SQLITE_OK ){
+    if( lastTokenParsed!=TK_SEMI ){
+      sqliteParser(pEngine, TK_SEMI, pParse->sLastToken, pParse);
     }
+    sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
   }
   sqliteParserFree(pEngine, free);
+  if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
+    sqliteSetString(&pParse->zErrMsg, sqlite_error_string(pParse->rc), 0);
+  }
   if( pParse->zErrMsg ){
-    if( pzErrMsg ){
-      sqliteFree(*pzErrMsg);
+    if( pzErrMsg && *pzErrMsg==0 ){
       *pzErrMsg = pParse->zErrMsg;
     }else{
       sqliteFree(pParse->zErrMsg);
     }
+    pParse->zErrMsg = 0;
     if( !nErr ) nErr++;
   }
-  if( pParse->pVdbe ){
+  if( pParse->pVdbe && (pParse->useCallback || pParse->nErr>0) ){
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }
@@ -498,7 +483,7 @@ abort_parse:
     sqliteDeleteTable(pParse->db, pParse->pNewTable);
     pParse->pNewTable = 0;
   }
-  if( nErr>0 && pParse->rc==SQLITE_OK ){
+  if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
     pParse->rc = SQLITE_ERROR;
   }
   return nErr;
