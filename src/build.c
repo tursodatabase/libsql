@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.139 2003/03/31 13:36:09 drh Exp $
+** $Id: build.c,v 1.140 2003/04/05 03:42:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2670,6 +2670,11 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
 
   if( pParse->explain ) return;
   db = pParse->db;
+  if( db->file_format<4 ){
+    sqliteErrorMsg(pParse, "cannot attach auxiliary databases to an "
+       "older format master database", 0);
+    return;
+  }
   if( db->nDb>=MAX_ATTACHED ){
     sqliteErrorMsg(pParse, "too many attached databases - max %d", 
        MAX_ATTACHED);
@@ -2715,6 +2720,7 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   if( pParse->nErr ) return;
   rc = sqliteInit(pParse->db, &pParse->zErrMsg);
   if( rc ){
+    sqliteResetInternalSchema(db, 0);
     pParse->nErr++;
   }
 }

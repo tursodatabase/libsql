@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.120 2003/04/03 15:46:04 drh Exp $
+** $Id: main.c,v 1.121 2003/04/05 03:42:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -297,9 +297,15 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
       sqliteSetString(pzErrMsg, "unsupported file format", 0);
       return SQLITE_ERROR;
     }
-  }else if( db->file_format<4 || db->file_format!=meta[2] ){
-    sqliteSetString(pzErrMsg, "incompatible file format in auxiliary "
-       "database \"", db->aDb[iDb].zName, "\"", 0);
+  }else if( db->file_format!=meta[2] || db->file_format<4 ){
+    assert( db->file_format>=4 );
+    if( meta[2]==0 ){
+      sqliteSetString(pzErrMsg, "cannot attach empty database: ",
+         db->aDb[iDb].zName, 0);
+    }else{
+      sqliteSetString(pzErrMsg, "incompatible file format in auxiliary "
+         "database: ", db->aDb[iDb].zName, 0);
+    }
     sqliteBtreeClose(db->aDb[iDb].pBt);
     db->aDb[iDb].pBt = 0;
     return SQLITE_FORMAT;
