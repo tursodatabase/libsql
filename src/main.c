@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.265 2004/11/14 21:56:30 drh Exp $
+** $Id: main.c,v 1.266 2004/11/20 20:18:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -553,7 +553,7 @@ const char *sqlite3ErrStr(int rc){
     case SQLITE_NOLFS:      z = "kernel lacks large file support";       break;
     case SQLITE_AUTH:       z = "authorization denied";                  break;
     case SQLITE_FORMAT:     z = "auxiliary database format error";       break;
-    case SQLITE_RANGE:      z = "bind index out of range";               break;
+    case SQLITE_RANGE:      z = "bind or column index out of range";     break;
     case SQLITE_NOTADB:     z = "file is encrypted or is not a database";break;
     default:                z = "unknown error";                         break;
   }
