@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.343 2004/11/22 19:12:21 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.344 2004/11/23 01:47:30 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1281,7 +1281,7 @@ void sqlite3Dequote(char*);
 int sqlite3KeywordCode(const char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);
-Expr *sqlite3Expr(int, Expr*, Expr*, Token*);
+Expr *sqlite3Expr(int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);
 Expr *sqlite3ExprAnd(Expr*, Expr*);
 void sqlite3ExprSpan(Expr*,Token*,Token*);
@@ -1341,7 +1341,7 @@ void sqlite3OpenTableForReading(Vdbe*, int iCur, Table*);
 void sqlite3OpenTable(Vdbe*, int iCur, Table*, int);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, int, ExprList**);
+WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, int, ExprList**, Fetch*);
 void sqlite3WhereEnd(WhereInfo*);
 void sqlite3ExprCode(Parse*, Expr*);
 int sqlite3ExprCodeExprList(Parse*, ExprList*);

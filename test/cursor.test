@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is DECLARE...CURSOR functionality
 #
-# $Id: cursor.test,v 1.1 2004/11/22 19:12:21 drh Exp $
+# $Id: cursor.test,v 1.2 2004/11/23 01:47:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]

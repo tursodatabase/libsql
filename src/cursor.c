@@ -21,7 +21,7 @@
 ** cursors, they are really very different things.  It is worth your while
 ** to fully understand the difference.
 **
-** @(#) $Id: cursor.c,v 1.1 2004/11/22 19:12:20 drh Exp $
+** @(#) $Id: cursor.c,v 1.2 2004/11/23 01:47:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_CURSOR
 #include "sqliteInt.h"
@@ -86,13 +86,16 @@ void sqlite3CursorCreate(Parse *pParse, Token *pName, Select *pSelect){
   }
   db->apSqlCursor[i] = pNew = sqliteMallocRaw( sizeof(*pNew) + pName->n + 1 );
   if( pNew==0 ) goto end_create_cursor;
+  pNew->idx = i;
   pNew->zName = (char*)&pNew[1];
   memcpy(pNew->zName, pName->z, pName->n);
   pNew->zName[pName->n] = 0;
   pNew->pSelect = sqlite3SelectDup(pSelect);
-  pNew->nPtr = 0;
-  pNew->aPtr = 0;
-  pNew->idx = i;
+  pNew->nPtr = 2;
+  pNew->aPtr = sqliteMalloc( sizeof(Mem)*2 );
+  for(i=0; i<2; i++){
+    pNew->aPtr[i].flags = MEM_Null;
+  }
 
 end_create_cursor:
   sqlite3SelectDelete(pSelect);
@@ -115,6 +118,26 @@ void sqlite3CursorClose(Parse *pParse, Token *pName){
   assert( db->apSqlCursor[p->idx]==p );
   db->apSqlCursor[p->idx] = 0;
   sqlite3CursorDelete(p);
+}
+
+/*
+** Reverse the direction the ORDER BY clause on the SELECT statement.
+*/
+static void reverseSortOrder(Select *p){
+  if( p->pOrderBy==0 ){
+    /* If there no ORDER BY clause, add a new one that is "rowid DESC" */
+    static const Token rowid = { "ROWID", 0, 5 };
+    Expr *pExpr = sqlite3Expr(TK_ID, 0, 0, &rowid);
+    ExprList *pList = sqlite3ExprListAppend(0, pExpr, 0);
+    if( pList )  pList->a[0].sortOrder = SQLITE_SO_DESC;
+    p->pOrderBy = pList;
+  }else{
+    int i;
+    ExprList *pList = p->pOrderBy;
+    for(i=0; i<pList->nExpr; i++){
+      pList->a[i].sortOrder = !pList->a[i].sortOrder;
+    }
+  }
 }
 
 /*
@@ -142,26 +165,73 @@ void sqlite3Fetch(Parse *pParse, Token *pName, IdList *pInto){
   pCopy->pFetch = &sFetch;
   switch( pParse->fetchDir ){
     case TK_FIRST: {
+      sFetch.isBackwards = 0;
+      sFetch.doRewind = 1;
+      pCopy->nLimit = pParse->dirArg1;
+      pCopy->nOffset = 0;
       break;
     }
     case TK_LAST: {
+      reverseSortOrder(pCopy);
+      sFetch.isBackwards = 1;
+      sFetch.doRewind = 1;
+      pCopy->nLimit = pParse->dirArg1;
+      pCopy->nOffset = 0;
       break;
     }
     case TK_NEXT: {
+      sFetch.isBackwards = 0;
+      sFetch.doRewind = 0;
+      pCopy->nLimit = pParse->dirArg1;
+      pCopy->nOffset = 0;
       break;
     }
     case TK_PRIOR: {
+      reverseSortOrder(pCopy);
+      sFetch.isBackwards = 1;
+      sFetch.doRewind = 0;
+      pCopy->nLimit = pParse->dirArg1;
+      pCopy->nOffset = 0;
       break;
     }
     case TK_ABSOLUTE: {
+      sFetch.isBackwards = 0;
+      sFetch.doRewind = 1;
+      pCopy->nLimit = pParse->dirArg1;
+      pCopy->nOffset = pParse->dirArg2;
       break;
     }
     default: {
       assert( pParse->fetchDir==TK_RELATIVE );
+      if( pParse->dirArg2>=0 ){
+        /* The index parameter is positive.  Move forward from the current
+        ** location */
+        sFetch.isBackwards = 0;
+        sFetch.doRewind = 0;
+        pCopy->nLimit = pParse->dirArg1;
+        pCopy->nOffset = pParse->dirArg2;
+      }else{
+        /* The index is negative.  We have to code two separate SELECTs.
+        ** The first one seeks to the no position and the second one does
+        ** the query.
+        */
+        Select *pSeek = sqlite3SelectDup(pCopy);
+        reverseSortOrder(pSeek);
+        sFetch.isBackwards = 1;
+        sFetch.doRewind = 0;
+        pSeek->nLimit = pParse->dirArg2;
+        pSeek->pFetch = &sFetch;
+        sqlite3Select(pParse, pSeek, SRT_Discard, 0, 0, 0, 0, 0);
+        sFetch.isBackwards = 0;
+        sFetch.doRewind = 0;
+        pCopy->nLimit = pParse->dirArg1;
+        pCopy->nOffset = 0;
+      }
       break;
     }
   }
   sqlite3Select(pParse, pCopy, SRT_Callback, 0, 0, 0, 0, 0);
+
 end_fetch:
   sqlite3IdListDelete(pInto);
 }
