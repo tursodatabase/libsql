@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.111 2004/06/04 06:22:01 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.112 2004/06/04 10:38:31 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -522,7 +522,7 @@ static int pager_unwritelock(Pager *pPager){
   }else{
     assert( pPager->dirtyFile==0 || pPager->useJournal==0 );
   }
-  rc = sqlite3OsReadLock(&pPager->fd);
+  rc = sqlite3OsLock(&pPager->fd, SHARED_LOCK);
   if( rc==SQLITE_OK ){
     pPager->state = SQLITE_READLOCK;
   }else{
@@ -658,15 +658,28 @@ static int pager_delmaster(const char *zMaster){
         */
         OsFile journal;
         int nMaster;
+        off_t jsz;
 
         rc = sqlite3OsOpenReadOnly(zJournal, &journal);
+        sqliteFree(zJournal);
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&journal);
-          sqliteFree(zJournal);
           goto delmaster_out;
         }
-        sqlite3OsClose(&journal);
 
+	/* Check if the file is big enough to be a format 3 journal file
+        ** with the required master journal name. If not, ignore it.
+        */
+        rc = sqlite3OsFileSize(&journal, &jsz);
+        if( rc!=SQLITE_OK ){
+          sqlite3OsClose(&journal);
+          goto delmaster_out;
+        }
+        if( jsz<(sizeof(aJournalMagic3)+4*sizeof(u32)+strlen(zMaster)+1) ){
+          sqlite3OsClose(&journal);
+          continue;
+        }
+        
         /* Seek to the point in the journal where the master journal name
         ** is stored. Read the master journal name into memory obtained
         ** from malloc.
@@ -1532,9 +1545,40 @@ static int syncJournal(Pager *pPager, const char *zMaster){
 static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
   int rc;
+  int busy = 1;
 
   if( pList==0 ) return SQLITE_OK;
   pPager = pList->pPager;
+
+  /* At this point there may be either a RESERVED or EXCLUSIVE lock on the
+  ** database file. If there is already an EXCLUSIVE lock, the following
+  ** calls to sqlite3OsLock() are no-ops.
+  **
+  ** The upgrade from a RESERVED to PENDING lock cannot return SQLITE_BUSY,
+  ** unless someone is not following the locking protocol. 
+  **
+  ** The upgrade from PENDING to EXCLUSIVE can return SQLITE_BUSY. It's
+  ** not totally clear that the busy-callback should be invoked here
+  ** though. (?)
+  */
+  rc = sqlite3OsLock(&pPager->fd, PENDING_LOCK);
+  if( rc==SQLITE_BUSY ){
+    return SQLITE_PROTOCOL;
+  }
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  do {
+    rc = sqlite3OsLock(&pPager->fd, EXCLUSIVE_LOCK);
+  }while( rc==SQLITE_BUSY && 
+      pPager->pBusyHandler && 
+      pPager->pBusyHandler->xFunc && 
+      pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+  );
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
   while( pList ){
     assert( pList->dirty );
     sqlite3OsSeek(&pPager->fd, (pList->pgno-1)*(off_t)SQLITE_PAGE_SIZE);
@@ -1607,20 +1651,15 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   */
   if( pPager->nRef==0 && !pPager->memDb ){
     int busy = 1;
-    while( busy ){
-      rc = sqlite3OsReadLock(&pPager->fd);
-      if( rc==SQLITE_BUSY && 
-          pPager->pBusyHandler && 
-          pPager->pBusyHandler->xFunc && 
-          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
-      ){
-        rc = SQLITE_OK;
-      }else{
-        busy = 0;
-      }
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    do {
+      rc = sqlite3OsLock(&pPager->fd, SHARED_LOCK);
+    }while( rc==SQLITE_BUSY && 
+        pPager->pBusyHandler && 
+        pPager->pBusyHandler->xFunc && 
+        pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+    );
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
     pPager->state = SQLITE_READLOCK;
 
@@ -1906,7 +1945,7 @@ static int pager_open_journal(Pager *pPager){
   sqlite3pager_pagecount(pPager);
   pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInJournal==0 ){
-    sqlite3OsReadLock(&pPager->fd);
+    sqlite3OsLock(&pPager->fd, SHARED_LOCK);
     pPager->state = SQLITE_READLOCK;
     return SQLITE_NOMEM;
   }
@@ -1914,7 +1953,7 @@ static int pager_open_journal(Pager *pPager){
   if( rc!=SQLITE_OK ){
     sqliteFree(pPager->aInJournal);
     pPager->aInJournal = 0;
-    sqlite3OsReadLock(&pPager->fd);
+    sqlite3OsLock(&pPager->fd, SHARED_LOCK);
     pPager->state = SQLITE_READLOCK;
     return SQLITE_CANTOPEN;
   }
@@ -2020,20 +2059,20 @@ int sqlite3pager_begin(void *pData, int nMaster){
       pPager->origDbSize = pPager->dbSize;
     }else{
       int busy = 1;
-      while( busy ){
-        rc = sqlite3OsWriteLock(&pPager->fd);
-        if( rc==SQLITE_BUSY && 
-            pPager->pBusyHandler && 
-            pPager->pBusyHandler->xFunc && 
-            pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
-        ){
-          rc = SQLITE_OK;
-        }else{
-          busy = 0;
-        }
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
+      do {
+	/* If the library grabs an EXCLUSIVE lock here, as in the commented
+        ** out line, then it exhibits the old locking behaviour - a writer
+        ** excludes all readers, not just other writers.
+        */
+        /* rc = sqlite3OsLock(&pPager->fd, EXCLUSIVE_LOCK); */
+        rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
+      }while( rc==SQLITE_BUSY && 
+          pPager->pBusyHandler && 
+          pPager->pBusyHandler->xFunc && 
+          pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, "", busy++)
+      );
+      if( rc!=SQLITE_OK ){
+        return rc;
       }
       pPager->nMaster = nMaster;
       pPager->state = SQLITE_WRITELOCK;
@@ -2515,7 +2554,7 @@ int sqlite3pager_stmt_begin(Pager *pPager){
   assert( pPager->journalOpen );
   pPager->aInStmt = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInStmt==0 ){
-    sqlite3OsReadLock(&pPager->fd);
+    sqlite3OsLock(&pPager->fd, SHARED_LOCK);
     return SQLITE_NOMEM;
   }
 #ifndef NDEBUG

@@ -641,30 +641,6 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
   return SQLITE_OK;
 }
 
-
-/*
-** Change the status of the lock on the file "id" to be a readlock.
-** If the file was write locked, then this reduces the lock to a read.
-** If the file was read locked, then this acquires a new read lock.
-**
-** Return SQLITE_OK on success and SQLITE_BUSY on failure.  If this
-** library was compiled with large file support (LFS) but LFS is not
-** available on the host, then an SQLITE_NOLFS is returned.
-*/
-int sqlite3OsReadLock(OsFile *id){
-  return sqlite3OsLock(id, SHARED_LOCK);
-}
-
-/*
-** Change the lock status to be an exclusive or write lock.  Return
-** SQLITE_OK on success and SQLITE_BUSY on a failure.  If this
-** library was compiled with large file support (LFS) but LFS is not
-** available on the host, then an SQLITE_NOLFS is returned.
-*/
-int sqlite3OsWriteLock(OsFile *id){
-  return sqlite3OsLock(id, EXCLUSIVE_LOCK);
-}
-
 /*
 ** This routine checks if there is a RESERVED lock held on the specified
 ** file by this or any other process. If such a lock is held, return

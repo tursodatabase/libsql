@@ -84,6 +84,7 @@
 ** The following values may be passed as the second argument to
 ** sqlite3OsLock().
 */
+#define NO_LOCK         0
 #define SHARED_LOCK     1
 #define RESERVED_LOCK   2
 #define PENDING_LOCK    3
