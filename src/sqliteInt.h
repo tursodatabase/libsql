@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.224 2004/05/08 08:23:36 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.225 2004/05/10 01:17:37 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -216,6 +216,11 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 */
 #define MASTER_NAME       "sqlite_master"
 #define TEMP_MASTER_NAME  "sqlite_temp_master"
+
+/*
+** The root-page of the master database table.
+*/
+#define MASTER_ROOT       1
 
 /*
 ** The name of the schema table.

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.166 2004/05/08 10:11:37 drh Exp $
+** $Id: main.c,v 1.167 2004/05/10 01:17:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -231,8 +231,10 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   ** not exist then.) 
   */
   static char init_script[] = 
+/****** FIX ME
      "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
      "UNION ALL "
+*/
      "SELECT type, name, rootpage, sql, 0 FROM sqlite_master";
   static char older_init_script[] = 
      "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
@@ -251,7 +253,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   sqlite3SafetyOff(db);
   azArg[0] = "table";
   azArg[1] = MASTER_NAME;
-  azArg[2] = "2";
+  azArg[2] = "1";
   azArg[3] = master_schema;
   sprintf(zDbNum, "%d", iDb);
   azArg[4] = zDbNum;
@@ -278,7 +280,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   /* Create a cursor to hold the database open
   */
   if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
-  rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, 2, 0, 0, 0, &curMain);
+  rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, MASTER_ROOT, 0, 0, 0, &curMain);
   if( rc ){
     sqlite3SetString(pzErrMsg, sqlite_error_string(rc), (char*)0);
     return rc;

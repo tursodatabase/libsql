@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.177 2004/05/08 08:23:23 danielk1977 Exp $
+** $Id: build.c,v 1.178 2004/05/10 01:17:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -400,7 +400,7 @@ char *sqlite3TableNameFromToken(Token *pName){
 */
 void sqlite3OpenMasterTable(Vdbe *v, int isTemp){
   sqlite3VdbeAddOp(v, OP_Integer, isTemp, 0);
-  sqlite3VdbeAddOp(v, OP_OpenWrite, 0, 2);
+  sqlite3VdbeAddOp(v, OP_OpenWrite, 0, MASTER_ROOT);
 }
 
 /*
