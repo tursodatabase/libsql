@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.80 2001/10/06 16:33:03 drh Exp $
+** $Id: vdbe.c,v 1.81 2001/10/08 13:22:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -793,30 +793,31 @@ void sqliteVdbeDelete(Vdbe *p){
 static char *zOpName[] = { 0,
   "Transaction",       "Commit",            "Rollback",          "ReadCookie",
   "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
-  "OpenWrite",         "Close",             "MoveTo",            "Fcnt",
-  "NewRecno",          "Put",               "Distinct",          "Found",
-  "NotFound",          "Delete",            "Column",            "KeyAsData",
-  "Recno",             "FullKey",           "Rewind",            "Next",
-  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
-  "Reorganize",        "BeginIdx",          "NextIdx",           "PutIdx",
-  "DeleteIdx",         "MemLoad",           "MemStore",          "ListOpen",
-  "ListWrite",         "ListRewind",        "ListRead",          "ListClose",
-  "SortOpen",          "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortKey",           "SortCallback",
-  "SortClose",         "FileOpen",          "FileRead",          "FileColumn",
-  "FileClose",         "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
-  "SetFound",          "SetNotFound",       "SetClear",          "MakeRecord",
-  "MakeKey",           "MakeIdxKey",        "Goto",              "If",
-  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
-  "Integer",           "String",            "Null",              "Pop",
-  "Dup",               "Pull",              "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Min",
-  "Max",               "Like",              "Glob",              "Eq",
-  "Ne",                "Lt",                "Le",                "Gt",
-  "Ge",                "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Strlen",            "Substr",          
+  "OpenWrite",         "OpenAux",           "OpenWrAux",         "Close",
+  "MoveTo",            "Fcnt",              "NewRecno",          "Put",
+  "Distinct",          "Found",             "NotFound",          "Delete",
+  "Column",            "KeyAsData",         "Recno",             "FullKey",
+  "Rewind",            "Next",              "Destroy",           "Clear",
+  "CreateIndex",       "CreateTable",       "Reorganize",        "BeginIdx",
+  "NextIdx",           "PutIdx",            "DeleteIdx",         "MemLoad",
+  "MemStore",          "ListOpen",          "ListWrite",         "ListRewind",
+  "ListRead",          "ListClose",         "SortOpen",          "SortPut",
+  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
+  "SortKey",           "SortCallback",      "SortClose",         "FileOpen",
+  "FileRead",          "FileColumn",        "FileClose",         "AggReset",
+  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
+  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
+  "SetClear",          "MakeRecord",        "MakeKey",           "MakeIdxKey",
+  "Goto",              "If",                "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "Integer",           "String",
+  "Null",              "Pop",               "Dup",               "Pull",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Min",               "Max",               "Like",
+  "Glob",              "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "IsNull",
+  "NotNull",           "Negative",          "And",               "Or",
+  "Not",               "Concat",            "Noop",              "Strlen",
+  "Substr",          
 };
 
 /*
@@ -1920,6 +1921,12 @@ case OP_MakeIdxKey: {
 */
 case OP_Transaction: {
   int busy = 0;
+  if( db->pBeTemp ){
+    rc = sqliteBtreeBeginTrans(db->pBeTemp);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
+  }
   do{
     rc = sqliteBtreeBeginTrans(pBt);
     switch( rc ){
@@ -1951,7 +1958,9 @@ case OP_Transaction: {
 ** A read lock continues to be held if there are still cursors open.
 */
 case OP_Commit: {
-  rc = sqliteBtreeCommit(pBt);
+  if( db->pBeTemp==0 || (rc = sqliteBtreeCommit(db->pBeTemp))==SQLITE_OK ){
+    rc = sqliteBtreeCommit(pBt);
+  }
   if( rc==SQLITE_OK ){
     sqliteCommitInternalChanges(db);
   }else{
@@ -1971,6 +1980,9 @@ case OP_Commit: {
 ** the read and write locks on the database.
 */
 case OP_Rollback: {
+  if( db->pBeTemp ){
+    sqliteBtreeRollback(db->pBeTemp);
+  }
   rc = sqliteBtreeRollback(pBt);
   sqliteRollbackInternalChanges(db);
   break;
@@ -2065,6 +2077,16 @@ case OP_VerifyCookie: {
 ** The P3 value is not actually used by this opcode and may be
 ** omitted.  But the code generator usually inserts the index or
 ** table name into P3 to make the code easier to read.
+**
+** See also OpenAux and OpenWrite.
+*/
+/* Opcode: OpenAux P1 P2 P3
+**
+** Open a read-only cursor in the auxiliary table set.  This opcode
+** works exactly like OP_Open except that it opens the cursor on the
+** auxiliary table set (the file used to store tables created using
+** CREATE TEMPORARY TABLE) instead of in the main database file.
+** See OP_Open for additional information.
 */
 /* Opcode: OpenWrite P1 P2 P3
 **
@@ -2074,13 +2096,33 @@ case OP_VerifyCookie: {
 ** This instruction works just like Open except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only
 ** cursors or a single read/write cursor but not both.
+**
+** See also OpWrAux.
 */
+/* Opcode: OpenWrAux P1 P2 P3
+**
+** Open a read/write cursor in the auxiliary table set.  This opcode works
+** just like OpenWrite except that the auxiliary table set (the file used
+** to store tables created using CREATE TEMPORARY TABLE) is used in place
+** of the main database file.
+*/
+case OP_OpenAux:
+case OP_OpenWrAux:
 case OP_OpenWrite:
 case OP_Open: {
   int busy = 0;
   int i = pOp->p1;
   int tos = p->tos;
   int p2 = pOp->p2;
+  int wrFlag;
+  Btree *pX;
+  switch( pOp->opcode ){
+    case OP_Open:        wrFlag = 0;  pX = pBt;          break;
+    case OP_OpenWrite:   wrFlag = 1;  pX = pBt;          break;
+    case OP_OpenAux:     wrFlag = 0;  pX = db->pBeTemp;  break;
+    case OP_OpenWrAux:   wrFlag = 1;  pX = db->pBeTemp;  break;
+  }
+  assert( pX!=0 );
   if( p2<=0 ){
     if( tos<0 ) goto not_enough_stack;
     Integerify(p, tos);
@@ -2105,8 +2147,7 @@ case OP_Open: {
   cleanupCursor(&p->aCsr[i]);
   memset(&p->aCsr[i], 0, sizeof(Cursor));
   do{
-    int wrFlag = pOp->opcode==OP_OpenWrite;
-    rc = sqliteBtreeCursor(pBt, p2, wrFlag, &p->aCsr[i].pCursor);
+    rc = sqliteBtreeCursor(pX, p2, wrFlag, &p->aCsr[i].pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
@@ -2133,6 +2174,13 @@ case OP_Open: {
 ** file.  The temporary file is opened read/write even if the main
 ** database is read-only.  The temporary file is deleted when the
 ** cursor is closed.
+**
+** This opcode is used for tables that exist for the duration of a single
+** SQL statement only.  Tables created using CREATE TEMPORARY TABLE
+** are opened using OP_OpenAux or OP_OpenWrAux.  "Temporary" in the
+** context of this opcode means for the duration of a single SQL statement
+** whereas "Temporary" in the context of CREATE TABLE means for the duration
+** of the connection to the database.  Same word; different meanings.
 */
 case OP_OpenTemp: {
   int i = pOp->p1;
@@ -2765,34 +2813,43 @@ case OP_DeleteIdx: {
   break;
 }
 
-/* Opcode: Destroy P1 * *
+/* Opcode: Destroy P1 P2 *
 **
 ** Delete an entire database table or index whose root page in the database
 ** file is given by P1.
 **
+** The table being destroyed is in the main database file if P2==0.  If
+** P2==1 then the table to be clear is in the auxiliary database file
+** that is used to store tables create using CREATE TEMPORARY TABLE.
+**
 ** See also: Clear
 */
 case OP_Destroy: {
-  sqliteBtreeDropTable(pBt, pOp->p1);
+  sqliteBtreeDropTable(pOp->p2 ? db->pBeTemp : pBt, pOp->p1);
   break;
 }
 
-/* Opcode: Clear P1 * *
+/* Opcode: Clear P1 P2 *
 **
 ** Delete all contents of the database table or index whose root page
 ** in the database file is given by P1.  But, unlike Destroy, do not
 ** remove the table or index from the database file.
 **
+** The table being clear is in the main database file if P2==0.  If
+** P2==1 then the table to be clear is in the auxiliary database file
+** that is used to store tables create using CREATE TEMPORARY TABLE.
+**
 ** See also: Destroy
 */
 case OP_Clear: {
-  sqliteBtreeClearTable(pBt, pOp->p1);
+  sqliteBtreeClearTable(pOp->p2 ? db->pBeTemp : pBt, pOp->p1);
   break;
 }
 
-/* Opcode: CreateTable * * P3
+/* Opcode: CreateTable * P2 P3
 **
-** Allocate a new table in the main database file.  Push the page number
+** Allocate a new table in the main database file if P2==0 or in the
+** auxiliary database file if P2==1.  Push the page number
 ** for the root page of the new table onto the stack.
 **
 ** The root page number is also written to a memory location that P3
@@ -2802,39 +2859,20 @@ case OP_Clear: {
 **
 ** See also: CreateIndex
 */
+/* Opcode: CreateIndex * P2 P3
+**
+** This instruction does exactly the same thing as CreateTable.  It
+** has a different name for historical reasons.
+**
+** See also: CreateTable
+*/
+case OP_CreateIndex:
 case OP_CreateTable: {
   int i = ++p->tos;
   int pgno;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   assert( pOp->p3!=0 && pOp->p3dyn==0 );
-  rc = sqliteBtreeCreateTable(pBt, &pgno);
-  if( rc==SQLITE_OK ){
-    aStack[i].i = pgno;
-    aStack[i].flags = STK_Int;
-    *(u32*)pOp->p3 = pgno;
-    pOp->p3 = 0;
-  }
-  break;
-}
-
-/* Opcode: CreateIndex * * P3
-**
-** Allocate a new Index in the main database file.  Push the page number
-** for the root page of the new table onto the stack.
-**
-** The root page number is also written to a memory location that P3
-** points to.  This is the mechanism is used to write the root page
-** number into the parser's internal data structures that describe the
-** new index.
-**
-** See also: CreateTable
-*/
-case OP_CreateIndex: {
-  int i = ++p->tos;
-  int pgno;
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
-  assert( pOp->p3!=0 && pOp->p3dyn==0 );
-  rc = sqliteBtreeCreateTable(pBt, &pgno);
+  rc = sqliteBtreeCreateTable(pOp->p2 ? db->pBeTemp : pBt, &pgno);
   if( rc==SQLITE_OK ){
     aStack[i].i = pgno;
     aStack[i].flags = STK_Int;
@@ -3164,6 +3202,7 @@ case OP_SortNext: {
   break;
 }
 
+#if 0 /* NOT USED */
 /* Opcode: SortKey P1 * *
 **
 ** Push the key for the topmost element of the sorter onto the stack.
@@ -3182,6 +3221,7 @@ case OP_SortKey: {
   }
   break;
 }
+#endif /* NOT USED */
 
 /* Opcode: SortCallback P1 P2 *
 **
@@ -3245,6 +3285,7 @@ case OP_FileOpen: {
   break;
 }
 
+#if 0 /* NOT USED */
 /* Opcode: FileClose * * *
 **
 ** Close a file previously opened using FileOpen.  This is a no-op
@@ -3267,6 +3308,7 @@ case OP_FileClose: {
   p->nLineAlloc = 0;
   break;
 }
+#endif
 
 /* Opcode: FileRead P1 P2 P3
 **
@@ -3597,6 +3639,7 @@ case OP_AggNext: {
   break;
 }
 
+#if 0 /* NOT USED */
 /* Opcode: SetClear P1 * *
 **
 ** Remove all elements from the P1-th Set.
@@ -3608,6 +3651,7 @@ case OP_SetClear: {
   }
   break;
 }
+#endif /* NOT USED */
 
 /* Opcode: SetInsert P1 * P3
 **
@@ -3874,6 +3918,7 @@ cleanup:
   if( rc!=SQLITE_OK ){
     closeAllCursors(p);
     sqliteBtreeRollback(pBt);
+    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
     sqliteRollbackInternalChanges(db);
     db->flags &= ~SQLITE_InTrans;
   }

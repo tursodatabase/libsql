@@ -20,8 +20,10 @@ proc chng {date desc} {
 chng {2001 Oct ? (2.0.2)} {
 <li>Removed some unused "#include <unistd.h>" that were causing problems
     for VC++.</li>
+<li>Fixed <b>sqlite.h</b> so that it is usable from C++</li>
 <li>Added the FULL_COLUMN_NAMES pragma.  When set to "ON", the names of
     columns are reported back as TABLE.COLUMN instead of just COLUMN.</li>
+<li>Added support for TEMPORARY tables and indices.</li>
 }
 
 chng {2001 Oct 2 (2.0.1)} {

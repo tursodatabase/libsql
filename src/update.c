@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.16 2001/09/27 03:22:34 drh Exp $
+** $Id: update.c,v 1.17 2001/10/08 13:22:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,6 +39,7 @@ void sqliteUpdate(
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
+  int openOp;            /* Opcode used to open tables */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto update_cleanup;
   db = pParse->db;
@@ -159,9 +160,10 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum, 0, 0);
+  openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
+  sqliteVdbeAddOp(v, openOp, base, pTab->tnum, 0, 0);
   for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_OpenWrite, base+i+1, apIdx[i]->tnum, 0, 0);
+    sqliteVdbeAddOp(v, openOp, base+i+1, apIdx[i]->tnum, 0, 0);
   }
 
   /* Loop over every record that needs updating.  We have to load

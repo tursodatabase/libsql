@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.57 2001/10/06 16:33:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.58 2001/10/08 13:22:33 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -139,6 +139,7 @@ typedef struct AggExpr AggExpr;
 */
 struct sqlite {
   Btree *pBe;                   /* The B*Tree backend */
+  Btree *pBeTemp;               /* Backend for session temporary tables */
   int flags;                    /* Miscellanous flags. See below */
   int file_format;              /* What file format version is this database? */
   int schema_cookie;            /* Magic number that changes with the schema */
@@ -195,6 +196,7 @@ struct Table {
   u8 readOnly;     /* True if this table should not be written by the user */
   u8 isCommit;     /* True if creation of this table has been committed */
   u8 isDelete;     /* True if this table is being deleted */
+  u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
 };
 
 /*
@@ -355,7 +357,9 @@ struct AggExpr {
 };
 
 /*
-** An SQL parser context
+** An SQL parser context.  A copy of this structure is passed through
+** the parser and down into all the parser action routine in order to
+** carry around information that is global to the entire parse.
 */
 struct Parse {
   sqlite *db;          /* The main database structure */
@@ -372,8 +376,8 @@ struct Parse {
   int colNamesSet;     /* TRUE after OP_ColumnCount has been issued to pVdbe */
   int explain;         /* True if the EXPLAIN flag is found on the query */
   int initFlag;        /* True if reparsing CREATE TABLEs */
+  int nameClash;       /* A permanent table name clashes with temp table name */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
-  int newKnum;         /* Primary key number when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated cursors */
   int nMem;            /* Number of memory cells used so far */
@@ -423,7 +427,7 @@ void sqliteExprListDelete(ExprList*);
 void sqlitePragma(Parse*,Token*,Token*,int);
 void sqliteCommitInternalChanges(sqlite*);
 void sqliteRollbackInternalChanges(sqlite*);
-void sqliteStartTable(Parse*,Token*,Token*);
+void sqliteStartTable(Parse*,Token*,Token*,int);
 void sqliteAddColumn(Parse*,Token*);
 void sqliteAddNotNull(Parse*);
 void sqliteAddColumnType(Parse*,Token*,Token*);

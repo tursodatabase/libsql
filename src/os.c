@@ -397,6 +397,9 @@ int sqliteOsLock(OsFile id, int wrlock){
   lock.l_whence = SEEK_SET;
   lock.l_start = lock.l_len = 0L;
   rc = fcntl(id, F_SETLK, &lock);
+  if( rc ){
+    fcntl(id, F_GETLK, &lock);  /* For debugging */
+  }
   return rc==0 ? SQLITE_OK : SQLITE_BUSY;
 #endif
 #if OS_WIN

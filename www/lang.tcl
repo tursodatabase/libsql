@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.10 2001/09/28 17:47:14 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.11 2001/10/08 13:22:33 drh Exp $}
 
 puts {<html>
 <head>
@@ -119,15 +119,14 @@ ROLLBACK [TRANSACTION [<name>]]
 puts {
 <p>Beginning in version 2.0, SQLite supports transactions with
 rollback and atomic commit.  However, only a single level of
-transaction is allowed.  In other words, transactions
-may not be nested.
+transaction is allowed.  Transactions may not be nested.
 </p>
 
 <p>
 No changes can be made to the database except within a transaction.
 Any command that changes the database (basically, any SQL command
 other than SELECT) will automatically starts a transaction if
-when is not already in effect.  Automatically stared transactions
+one is not already in effect.  Automatically stared transactions
 are committed at the conclusion of the command.
 </p>
 
@@ -206,7 +205,7 @@ SQLite's internal representation of the index layout.</p>
 Section {CREATE TABLE} {createtable}
 
 Syntax {sql-command} {
-CREATE TABLE <table-name> (
+CREATE [TEMP | TEMPORARY] TABLE <table-name> (
   <column-def> [, <column-def>]*
   [, <constraint>]*
 )
@@ -245,6 +244,13 @@ is an alias for UNIQUE.
 The DEFAULT constraint
 specifies a default value to use when doing an INSERT.
 </p>
+
+<p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
+and "TABLE" then the table that is created is only visible to the
+process that opened the database and is automatically deleted when
+the database is closed.  Any indices created on a temporary table
+are also temporary.  Temporary tables and indices are stored in a
+separate file distinct from the main database file.</p>
 
 <p>There are no arbitrary limits on the number
 of columns or on the number of constraints in a table.
@@ -579,20 +585,55 @@ puts {
 <p>The VACUUM command is an SQLite extension modelled after a similar
 command found in PostgreSQL.  If VACUUM is invoked with the name of a
 table or index then it is suppose to clean up the named table or index.
-In the current implementation, VACUUM is a no-op.
+In version 1.0 of SQLite, the VACUUM command would invoke 
+<b>gdbm_reorganize()</b> to clean up the backend database file.
+Beginning with version 2.0 of SQLite, GDBM is no longer used for
+the database backend and VACUUM has become a no-op.
 </p>
 }
 
 Section PRAGMA pragma
 
 Syntax {sql-statement} {
-PRAGMA <name> = <value>
+PRAGMA <name> = <value> |
+PRAGMA <function>(<arg>)
 }
 
 puts {
 <p>The PRAGMA command is used to modify the operation of the SQLite library.
-Additional documentation on the PRAMGA statement is forthcoming.
-</p>
+The pragma command is experimental and specific pragma statements may
+removed or added in future releases of SQLite.  Use this command
+with caution.</p>
+
+<p>The current implementation supports the following pragmas:</p>
+
+<ul>
+<li><p><b>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
+    <p>Change the maximum number of database disk pages that SQLite
+    will hold in memory at once.  Each page uses about 1.5K of RAM.
+    The default cache size is 100.  If you are doing UPDATEs or DELETEs
+    that change many rows of a database and you do not mind if SQLite
+    uses more memory, you can increase the cache size for a possible speed
+    improvement.</p></li>
+
+<li><p><b>PRAGMA full_column_names = ON;
+       <br>PRAGMA full_column_names = OFF;</b></p>
+    <p>The column names reported in an SQLite callback are normally just
+    the name of the column itself, except for joins when "TABLE.COLUMN"
+    is used.  But when full_column_names is turned on, column names are
+    always reported as "TABLE.COLUMN" even for simple queries.</p></li>
+
+<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
+    <p>Turn tracing of the virtual database engine inside of the
+    SQLite library on and off.  This is used for debugging.</p></li>
+
+<li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
+    <p>Turn tracing of the SQL parser inside of the
+    SQLite library on and off.  This is used for debugging.</p></li>
+</ul>
+
+<p>No error message is generated if an unknown pragma is issued.
+Unknown pragmas are ignored.</p>
 }
 
 puts {

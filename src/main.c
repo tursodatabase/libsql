@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.43 2001/10/06 16:33:03 drh Exp $
+** $Id: main.c,v 1.44 2001/10/08 13:22:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -309,7 +309,9 @@ no_mem_on_open:
 }
 
 /*
-** Erase all schema information from the schema hash table.
+** Erase all schema information from the schema hash table.  Except
+** tables that are created using CREATE TEMPORARY TABLE are preserved
+** if the preserverTemps flag is true.
 **
 ** The database schema is normally read in once when the database
 ** is first opened and stored in a hash table in the sqlite structure.
@@ -317,15 +319,24 @@ no_mem_on_open:
 ** either the database is being closed or because some other process
 ** changed the schema and this process needs to reread it.
 */
-static void clearHashTable(sqlite *db){
+static void clearHashTable(sqlite *db, int preserveTemps){
   HashElem *pElem;
   Hash temp1;
   temp1 = db->tblHash;
   sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
   sqliteHashClear(&db->idxHash);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTbl = sqliteHashData(pElem);
-    sqliteDeleteTable(db, pTbl);
+    Table *pTab = sqliteHashData(pElem);
+    if( preserveTemps && pTab->isTemp ){
+      Index *pIdx;
+      sqliteHashInsert(&db->tblHash, pTab->zName, strlen(pTab->zName)+1, pTab);
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        int n = strlen(pIdx->zName)+1;
+        sqliteHashInsert(&db->idxHash, pIdx->zName, n, pIdx);
+      }
+    }else{
+      sqliteDeleteTable(db, pTab);
+    }
   }
   sqliteHashClear(&temp1);
   db->flags &= ~SQLITE_Initialized;
@@ -336,7 +347,10 @@ static void clearHashTable(sqlite *db){
 */
 void sqlite_close(sqlite *db){
   sqliteBtreeClose(db->pBe);
-  clearHashTable(db);
+  clearHashTable(db, 0);
+  if( db->pBeTemp ){
+    sqliteBtreeClose(db->pBeTemp);
+  }
   sqliteFree(db);
 }
 
@@ -429,7 +443,7 @@ int sqlite_exec(
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){
-    clearHashTable(db);
+    clearHashTable(db, 1);
   }
   return sParse.rc;
 }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.15 2001/09/23 02:35:53 drh Exp $
+** $Id: delete.c,v 1.16 2001/10/08 13:22:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -91,9 +91,9 @@ void sqliteDeleteFrom(
   ** It is easier just to erase the whole table.
   */
   if( pWhere==0 ){
-    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->isTemp, 0, 0);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pTab->isTemp, 0, 0);
     }
   }
 
@@ -101,6 +101,8 @@ void sqliteDeleteFrom(
   ** the table an pick which records to delete.
   */
   else{
+    int openOp;
+
     /* Begin the database scan
     */
     sqliteVdbeAddOp(v, OP_ListOpen, 0, 0, 0, 0);
@@ -121,9 +123,10 @@ void sqliteDeleteFrom(
     */
     base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum, 0, 0);
+    openOp = pTab->isTemp ? OP_OpenWrAux : OP_OpenWrite;
+    sqliteVdbeAddOp(v, openOp, base, pTab->tnum, 0, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_OpenWrite, base+i, pIdx->tnum, 0, 0);
+      sqliteVdbeAddOp(v, openOp, base+i, pIdx->tnum, 0, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
