@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.127 2005/01/03 18:13:18 tpoindex Exp $
+** $Id: where.c,v 1.128 2005/01/11 18:13:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1015,6 +1015,7 @@ WhereInfo *sqlite3WhereBegin(
           if( pTerm->idxLeft==iCur
              && (pTerm->prereqRight & loopMask)==pTerm->prereqRight 
              && pX->pLeft->iColumn==pIdx->aiColumn[j]
+             && (pX->op==TK_EQ || pX->op==TK_IN)
           ){
             char idxaff = pIdx->pTable->aCol[pX->pLeft->iColumn].affinity;
             if( sqlite3IndexAffinityOk(pX, idxaff) ){

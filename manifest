@@ -1,5 +1,5 @@
-C Allow\s'$'\sin\sthe\smiddle\sof\sidentifiers.\s\sTicket\s#1066.\s\sThis\sis\san\nexperimental\schange.\s\sIt\smight\sbe\sbacked\sout\sat\sa\slater\sdate.\s(CVS\s2197)
-D 2005-01-11T17:59:48
+C Fix\sfor\sticket\s#1062:\sCorrectly\shandle\sredundant\sterms\sin\sa\sWHERE\sclause.\s(CVS\s2198)
+D 2005-01-11T18:13:56
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -82,7 +82,7 @@ F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
 F src/vdbeaux.c 60c24559b458d4da368694c0d322326b22edffd1
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
-F src/where.c 2fc4efc7375eb7f1ae18030311bcd6a18e3a0f46
+F src/where.c 3a0d08505e298242f6f151f019a05129a4f8704c
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 87cc4ea3cff6da70aefd789c6ef539dbb1c27eec
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
@@ -207,7 +207,7 @@ F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
 F test/vacuum.test f18eccdee5b538d46298c64d6a060cfbf97bbc23
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3f96df86f1c61ee850b945204683773bbbb8643e
-F test/where.test cbe22fb2e241a896fa5dcc732fda512be011ba52
+F test/where.test 0d7c9dad0aabb30aa8babdee659cc558db85a274
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 250b30bcf3f1f422a2cad24b1597314777058a4b
 F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
@@ -268,7 +268,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 5767850ccadb3b53d14bca547e50f65de1d3092e
-R 71bb19c51dd02cdb496badd87eed0c55
+P 00a352ea79e0e1e855282c54d0e470161215f25e
+R 5fad993d144d0f23ddfb0703fd19bbe3
 U drh
-Z bf2e03dddc8198df2fe40e1f78888259
+Z 38a58b2fdff532e903d36a0479086b72

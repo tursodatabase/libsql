@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.26 2004/12/19 00:11:36 drh Exp $
+# $Id: where.test,v 1.27 2005/01/11 18:13:57 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -157,6 +157,21 @@ do_test where-1.31 {
 } {97 98 99 100 4}
 do_test where-1.33 {
   count {SELECT w FROM t1 WHERE w==97}
+} {97 2}
+do_test where-1.33.1  {
+  count {SELECT w FROM t1 WHERE w<=97 AND w==97}
+} {97 2}
+do_test where-1.33.2  {
+  count {SELECT w FROM t1 WHERE w<98 AND w==97}
+} {97 2}
+do_test where-1.33.3  {
+  count {SELECT w FROM t1 WHERE w>=97 AND w==97}
+} {97 2}
+do_test where-1.33.4  {
+  count {SELECT w FROM t1 WHERE w>96 AND w==97}
+} {97 2}
+do_test where-1.33.5  {
+  count {SELECT w FROM t1 WHERE w==97 AND w==97}
 } {97 2}
 do_test where-1.34 {
   count {SELECT w FROM t1 WHERE w+1==98}
@@ -421,6 +436,16 @@ do_test where-6.8 {
 do_test where-6.9.1 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.1.1 {
+  cksort {
+    SELECT * FROM t3 WHERE a>=1 AND a=1 AND c>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.1.2 {
+  cksort {
+    SELECT * FROM t3 WHERE a<2 AND a=1 AND c>0 ORDER BY a LIMIT 3
   }
 } {1 100 4 nosort}
 do_test where-6.9.2 {
