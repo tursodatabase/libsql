@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#31:\sDo\snot\sattempt\sthe\sflattening\soptimization\sif\sthe\nsubselect\sdoes\snot\scontain\sa\sFROM\sclause.\s\sHandle\sthe\sspecial\scase\swhere\na\sWHERE\sclause\sis\sconstant.\s(CVS\s548)
-D 2002-04-30T19:20:28
+C Update\sthe\schange\slog\sprior\sto\sreleasing\sversion\s2.4.10.\s(CVS\s549)
+D 2002-05-03T00:17:54
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -117,7 +117,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 79f63ffa8c6e7adb9e3449ff325d093cfb0ce3e3
-F www/changes.tcl c4bc9b9e57bf67f272e6d420de4d99175f4d9e82
+F www/changes.tcl 898297d317cdc4554427a381e5426f65767ba07a
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -132,7 +132,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f7cea4634dd53204b4aa8a3630b9c55c40fdc4b3
-R 9d7c12ded1d4fd021880c7039e5ea94d
+P 24e4cf73d22bb41d26bf3c833f1854a9c90923e8
+R 5d30e48f63589957c83bcafdc3ad7839
 U drh
-Z 70d8eddc023a9dcb2b671be415f0e5d2
+Z 1c870499377124be86cfb09ddc052d38

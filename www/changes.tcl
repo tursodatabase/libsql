@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 May 02 (2.4.10)} {
+<li>Bug fix: Generate correct column headers when a compound SELECT is used
+    as a subquery.</li>
+<li>Added the sqlite_encode_binary() and sqlite_decode_binary() functions to
+    the source tree.  But they are not yet linked into the library.</li>
+<li>Documentation updates.</li>
+<li>Export the sqlite_changes() function from windows DLLs.</li>
+<li>Bug fix: Do not attempt the subquery flattening optimization on queries
+    that lack a FROM clause.  To do so causes a segfault.</li>
+}
+
 chng {2002 Apr 21 (2.4.9)} {
 <li>Fix a bug that was causing the precompiled binary of SQLITE.EXE to
     report "out of memory" under Windows 98.</li>
