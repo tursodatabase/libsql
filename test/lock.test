@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.11 2001/09/23 02:35:53 drh Exp $
+# $Id: lock.test,v 1.12 2001/09/23 19:46:52 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -151,6 +151,101 @@ if {$::tcl_platform(platform)=="unix"} {
     set r
   } {0 2}
 }
+
+# If one thread has a transaction another thread cannot start
+# a transaction.
+#
+do_test lock-2.1 {
+  execsql {BEGIN TRANSACTION}
+  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  lappend r $msg
+} {1 {database is locked}}
+
+# Nor can the other thread do a query.
+#
+do_test lock-2.2 {
+  set r [catch {execsql {SELECT * FROM t2} db2} msg]
+  lappend r $msg
+} {1 {database is locked}}
+
+# If the other thread (the one that does not hold the transaction)
+# tries to start a transaction, we get a busy callback.
+#
+do_test lock-2.3 {
+  proc callback {args} {
+    set ::callback_value $args
+    break
+  }
+  set ::callback_value {}
+  db2 busy callback
+  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {1 {database is locked} {{} 1}}
+do_test lock-2.4 {
+  proc callback {file count} {
+    lappend ::callback_value $count
+    if {$count>4} break
+  }
+  set ::callback_value {}
+  db2 busy callback
+  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {1 {database is locked} {1 2 3 4 5}}
+do_test lock-2.5 {
+  proc callback {file count} {
+    lappend ::callback_value $count
+    if {$count>4} break
+  }
+  set ::callback_value {}
+  db2 busy callback
+  set r [catch {execsql {SELECT * FROM t1} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {1 {database is locked} {1 2 3 4 5}}
+
+# In this test, the 3rd invocation of the busy callback causes
+# the first thread to release its transaction.  That allows the
+# second thread to continue.
+#
+do_test lock-2.6 {
+  proc callback {file count} {
+    lappend ::callback_value $count
+    if {$count>2} {
+      execsql {ROLLBACK}
+    }
+  }
+  set ::callback_value {}
+  db2 busy callback
+  set r [catch {execsql {SELECT * FROM t2} db2} msg]
+  lappend r $msg
+  lappend r $::callback_value
+} {0 {9 8} {1 2 3}}
+do_test lock-2.7 {
+  execsql {BEGIN TRANSACTION}
+  proc callback {file count} {
+    lappend ::callback_value $count
+    if {$count>2} {
+      execsql {ROLLBACK}
+    }
+  }
+  set ::callback_value {}
+  db2 busy callback
+  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  execsql {ROLLBACK} db2
+  lappend r $msg
+  lappend r $::callback_value
+} {0 {} {1 2 3}}
+
+# Try to start two transactions in a row
+#
+do_test lock-3.1 {
+  execsql {BEGIN TRANSACTION}
+  set r [catch {execsql {BEGIN TRANSACTION}} msg]
+  execsql {ROLLBACK}
+  lappend r $msg
+} {0 {}}
 
 
 do_test lock-999.1 {

@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\slocking\sand\srollback\sbehavior.\s(CVS\s261)
-D 2001-09-23T02:35:53
+C Additional\stest\scases\swith\slocking\sfixes.\s\sAlso,\smake\sthe\scode\sthread-safe.\s(CVS\s262)
+D 2001-09-23T19:46:52
 F Makefile.in 18eea9a3486939fced70aa95b691be766c2c995d
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 6942aa44940d2972bd72f671a631060106e77f7e
@@ -10,7 +10,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c da9b60a0b94daac0b7a231f42cb79961bf06531d
 F src/btree.h 5e5531869e53623aad5b32c22249c5743039251e
-F src/build.c 8dbdcce4b9b9cb15b0d1a7a535af622cccba6f6b
+F src/build.c 17ba9b8594c0d491c0c4b105f63da5764620a8ce
 F src/delete.c 81002d889aae874decf507627207c5d1b3599dc2
 F src/expr.c 343a515a4abaf60e9e26c7412aa8c43fd3eae97d
 F src/hash.c bf36fb4cba114015123b0050f137d2c4553778a1
@@ -18,18 +18,18 @@ F src/hash.h 5f6e7c04c46ed015ab4e01797c2049b4af5b006d
 F src/insert.c 061e531d19869e26ba9202c6d069385237b4c102
 F src/main.c 49af06b7327c8b23b9331ce80b7e4bc9536ed2e1
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c faf9f484f3261c7650021cae79294338491f2cfb
+F src/os.c 45376582c41dc8829330816d56b8e9e6cd1b7972
 F src/os.h 0f478e2fef5ec1612f94b59b163d4807d4c77d6d
 F src/pager.c 0fe02b63a89d8eebb42ad30529d0c7cc918ecb94
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 2bcf47bb8e6afd8bc10aebd555fa07b73905bee4
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
-F src/random.c b6a57e85288470b013ad584a8813e893b60e62fe
+F src/random.c 708a23f69f40d6f2ae5ce1a04e6a4055d4a6ecec
 F src/select.c 7d90a6464906419fde96c0707a4cf4f3280db318
 F src/shell.c 8e573138074e0b9526fca59b3eac22bdf18ecc03
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in dbe7a1b1e1ab9bfce1a6983cfa6f53c5c2499305
-F src/sqliteInt.h ae90beff6acc510bf98c80908d86b0830933e507
+F src/sqliteInt.h 6bcdcfbc2b2ec7bb6ec96b3a31f4a0c74ee14c4f
 F src/table.c abd0adbe0fee39d995287b3bcccd908d174dfcac
 F src/tclsqlite.c 04a35d04f06046acc3944121dc6c36717f7f36d5
 F src/test1.c 3892caa5372789a6d17329dd595724e1f06cb6de
@@ -38,7 +38,7 @@ F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 2ab07b85fde38d8fa2b4e73417b93e94f9cf8f5f
 F src/update.c 8de22957017e17c5e751ba71c4ea76c60f93aa2f
 F src/util.c 9c888445c1fd7896dab38fa62efc532f2364010a
-F src/vdbe.c 7132265f449b4bb159e77cc548e515b7b8b9398a
+F src/vdbe.c b36ba796eca369d3dbd9272b277d520af03b9ae4
 F src/vdbe.h dc1d441494ba560a1ff464e1c56beb8ca03844fc
 F src/where.c cce952b6a2459ac2296e3432876a4252d2fe3b87
 F test/all.test a2320eb40b462f25bd3e33115b1cabf3791450dd
@@ -52,7 +52,7 @@ F test/in.test 9323681388be301dc73f370b4cd62c5a33f79d1e
 F test/index.test e43e952b482c2afe938f1f31b71e2b33d43893a9
 F test/insert.test a5c122aa726f1cef6f07d6767e8fd6f220994c11
 F test/insert2.test 252d7130d8cc20f649b31a4f503cd87e660abda8
-F test/lock.test 3cef6b302ae0826755ccb226fe444be42fe5d391
+F test/lock.test a9641cdc282214563a2fb0233735b09cc2fdd8f2
 F test/main.test 085ece17913a487caacbc0a392638c958c83a75d
 F test/malloc.test f1400a8d002eb96f1ca0a34abe56d2ab3e324740
 F test/misc1.test 50a5ca3481fc1f3cd6b978bcd6ed04c06f26a1e6
@@ -87,7 +87,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl c1891efdc00cd76eec72bdbf8b446195902932a3
 F www/c_interface.tcl 52ae81c89bf906b358e04857bd3f76b1a7f61c1b
-F www/changes.tcl bf028a66d00a15a6c6a67a11c89c63bb60d5292b
+F www/changes.tcl 7e5a04a59a417a9fd4c94ce38543adbca0e01937
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/index.tcl d65c6eaf66afac5b8a4b0394f691be02a2c3be20
@@ -97,7 +97,7 @@ F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 9114420dd01d92cc8890046500a8806a297a4e65
-R befae190f48e6ee61c8ee654bf44939d
+P 337b3d3b2a903328d9744c111979909a284b8348
+R e078b3cf3fce42ca9d1080ff6c3cabcb
 U drh
-Z 7d651cd9fc4593916e1eb971a253a3a2
+Z f237ccfe6f0011261f7c6612613f9d4f

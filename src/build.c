@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.39 2001/09/23 02:35:53 drh Exp $
+** $Id: build.c,v 1.40 2001/09/23 19:46:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -445,7 +445,7 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 */
 static void changeCookie(sqlite *db){
   if( db->next_cookie==db->schema_cookie ){
-    db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
+    db->next_cookie = db->schema_cookie + sqliteRandomByte(db) + 1;
     db->flags |= SQLITE_InternChanges;
   }
 }

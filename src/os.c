@@ -246,7 +246,7 @@ int sqliteOsTempFileName(char *zBuf){
     sprintf(zBuf, "%s/sqlite_", zDir);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % sizeof(zChars);
+      int n = rand() % sizeof(zChars);
       zBuf[j++] = zChars[n];
     }
     zBuf[j] = 0;
@@ -264,7 +264,7 @@ int sqliteOsTempFileName(char *zBuf){
     sprintf(zBuf, "%s/sqlite_", zTempPath);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % sizeof(zChars);
+      int n = rand() % sizeof(zChars);
       zBuf[j++] = zChars[n];
     }
     zBuf[j] = 0;
@@ -429,19 +429,23 @@ int sqliteOsUnlock(OsFile id){
 ** Get information to seed the random number generator.
 */
 int sqliteOsRandomSeed(char *zBuf){
+  static int once = 1;
 #if OS_UNIX
   int pid;
   time((time_t*)zBuf);
-  zBuf += sizeof(time_t);
   pid = getpid();
-  memcpy(zBuf, &pid, sizeof(pid));
-  zBuf += pid;
-  return SQLITE_OK;
+  memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
 #endif
 #if OS_WIN
   GetSystemTime((LPSYSTEMTIME)zBuf);
+#endif
+  if( once ){
+    int seed;
+    memcpy(&seed, zBuf, sizeof(seed));
+    srand(seed);
+    once = 0;
+  }
   return SQLITE_OK;
-#endif 
 }
 
 /*

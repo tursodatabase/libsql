@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.74 2001/09/23 02:35:53 drh Exp $
+** $Id: vdbe.c,v 1.75 2001/09/23 19:46:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1886,7 +1886,26 @@ case OP_MakeIdxKey: {
 ** database.
 */
 case OP_Transaction: {
-  rc = sqliteBtreeBeginTrans(pBt);
+  int busy = 0;
+  do{
+    rc = sqliteBtreeBeginTrans(pBt);
+    switch( rc ){
+      case SQLITE_BUSY: {
+        if( xBusy==0 || (*xBusy)(pBusyArg, "", ++busy)==0 ){
+          sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+          busy = 0;
+        }
+        break;
+      }
+      case SQLITE_OK: {
+        busy = 0;
+        break;
+      }
+      default: {
+        goto abort_due_to_error;
+      }
+    }
+  }while( busy );
   break;
 }
 
@@ -2262,17 +2281,18 @@ case OP_NewRecno: {
     ** to double the speed of the COPY operation.
     */
     int res, rx, cnt;
-    static int x = 0;
+    int x;
     union {
        char zBuf[sizeof(int)];
        int i;
     } ux;
     cnt = 0;
+    x = db->nextRowid;
     do{
       if( cnt>5 ){
-        x = sqliteRandomInteger();
+        x = sqliteRandomInteger(db);
       }else{
-        x += sqliteRandomByte() + 1;
+        x += sqliteRandomByte(db) + 1;
       }
       if( x==0 ) continue;
       ux.zBuf[3] = x&0xff;
@@ -2283,6 +2303,7 @@ case OP_NewRecno: {
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
     }while( cnt<1000 && rx==SQLITE_OK && res==0 );
+    db->nextRowid = x;
     if( rx==SQLITE_OK && res==0 ){
       rc = SQLITE_FULL;
       goto abort_due_to_error;

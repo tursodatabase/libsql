@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.53 2001/09/22 18:12:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.54 2001/09/23 19:46:52 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -148,6 +148,12 @@ struct sqlite {
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Hash tblHash;                 /* All tables indexed by name */
   Hash idxHash;                 /* All (named) indices indexed by name */
+  struct {                      /* State of the RC4 random number generator */
+    int isInit;                    /* True if initialized */
+    int i, j;                      /* State variables */
+    int s[256];                    /* State variables */
+  } prng;
+  int nextRowid;                /* Next generated rowID */
 };
 
 /*
@@ -451,9 +457,8 @@ void sqliteExprResolveInSelect(Parse*, Expr*);
 int sqliteExprAnalyzeAggregates(Parse*, Expr*);
 void sqliteParseInfoReset(Parse*);
 Vdbe *sqliteGetVdbe(Parse*);
-int sqliteRandomByte(void);
-int sqliteRandomInteger(void);
-void sqliteRandomName(char*,char*);
+int sqliteRandomByte(sqlite*);
+int sqliteRandomInteger(sqlite*);
 void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);

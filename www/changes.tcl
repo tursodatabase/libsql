@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Sep 22 (2.0-beta-1)} {
+<li>Fixes to the rollback and locking behavior</li>
+}
+
 chng {2001 Sep 20 (2.0-alpha-2)} {
 <li>Initial release of version 2.0.  The idea of renaming the library
     to "SQLus" was abandoned in favor of keeping the "SQLite" name and
