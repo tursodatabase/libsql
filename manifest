@@ -1,5 +1,5 @@
-C Remove\sdead\scode\sfrom\sutil.c\s(CVS\s1396)
-D 2004-05-18T22:03:43
+C Remove\sthe\sOP_StrEq\sopcodes.\s(CVS\s1397)
+D 2004-05-18T22:17:46
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
 F src/parse.y d2e226650738931c047c2562326ed05882af2330
-F src/pragma.c fcbd8bc7f2cc1429758a042920e13c8738a6050c
+F src/pragma.c 2332e7fa9d7cd4b21f30583a696bee36628404ca
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f376f3beade0e1e4808b3a393c13f5b30baecf74
@@ -63,7 +63,7 @@ F src/update.c 0cc7291dd0e0f82cf93085e49c973e8ef9e51fd5
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 6d4339b7f05ccdacaebcce67e7fb8c5b880620e8
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 5cc6e41f2c9f24bbbf591ca538c097c0f7b41a3d
+F src/vdbe.c 37c3d0c45fd6bd7096ae50d08e864acf41924b34
 F src/vdbe.h 1d0d0b5741c7f46ab372a95a4305fed0ae09d466
 F src/vdbeInt.h b4ad3993c720eb80430aeff12d63f22eb4925e7d
 F src/vdbeaux.c 760105ceedb7bcfcd3f4dbba7a5500321612669b
@@ -193,7 +193,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 61bdb53a363644074d01682fab8220078523676b
-R 4ce96fc8601455b203e1d075dc16c4ef
+P 3ce42e85a2e6c95ebc0857436d5fe9384cab8628
+R fddf5a86430596516456c7f7cc0b49c1
 U drh
-Z 94a194243da33cd3a770a79c6fa71a6f
+Z 8311704fbb47e04be82877058c3afb37

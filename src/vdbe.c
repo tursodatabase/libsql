@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.298 2004/05/18 09:58:08 danielk1977 Exp $
+** $Id: vdbe.c,v 1.299 2004/05/18 22:17:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1451,13 +1451,20 @@ mismatch:
 ** Pop the top two elements from the stack.  If they are not equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared in that format.  Otherwise the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrNe.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -1470,14 +1477,20 @@ mismatch:
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 ** In other words, jump if NOS<TOS.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared in that format.  Numeric values are always less than
-** non-numeric values.  If both operands are non-numeric, the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrLt.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -1489,14 +1502,20 @@ mismatch:
 ** next on stack) is less than or equal to the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS<=TOS.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared in that format.  Numeric values are always less than
-** non-numeric values.  If both operands are non-numeric, the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrLe.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -1508,14 +1527,20 @@ mismatch:
 ** next on stack) is greater than the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS>TOS.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared in that format.  Numeric values are always less than
-** non-numeric values.  If both operands are non-numeric, the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrGt.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
@@ -1527,20 +1552,24 @@ mismatch:
 ** on stack) is greater than or equal to the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS>=TOS.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared in that format.  Numeric values are always less than
-** non-numeric values.  If both operands are non-numeric, the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrGe.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
-**
-** FIX ME: The comment for OP_Eq is up to date, but none of the others are.
 */
 case OP_Eq:
 case OP_Ne:
@@ -1598,53 +1627,6 @@ case OP_Ge: {
   }
   break;
 }
-
-#if 0
-  Mem *pNos = &pTos[-1];
-  i64 c, v;
-  int ft, fn;
-  assert( pNos>=p->aStack );
-  ft = pTos->flags;
-  fn = pNos->flags;
-  if( (ft | fn) & MEM_Null ){
-    popStack(&pTos, 2);
-    if( pOp->p2 ){
-      if( pOp->p1 ) pc = pOp->p2-1;
-    }else{
-      pTos++;
-      pTos->flags = MEM_Null;
-    }
-    break;
-  }else if( (ft & fn & MEM_Int)==MEM_Int ){
-    c = pNos->i - pTos->i;
-  }else if( (ft & MEM_Int)!=0 && (fn & MEM_Str)!=0 && toInt(pNos->z,&v) ){
-    c = v - pTos->i;
-  }else if( (fn & MEM_Int)!=0 && (ft & MEM_Str)!=0 && toInt(pTos->z,&v) ){
-    c = pNos->i - v;
-  }else{
-    Stringify(pTos);
-    Stringify(pNos);
-    c = sqlite3Compare(pNos->z, pTos->z);
-  }
-  switch( pOp->opcode ){
-    case OP_Eq:    c = c==0;     break;
-    case OP_Ne:    c = c!=0;     break;
-    case OP_Lt:    c = c<0;      break;
-    case OP_Le:    c = c<=0;     break;
-    case OP_Gt:    c = c>0;      break;
-    default:       c = c>=0;     break;
-  }
-  popStack(&pTos, 2);
-  if( pOp->p2 ){
-    if( c ) pc = pOp->p2-1;
-  }else{
-    pTos++;
-    pTos->i = c;
-    pTos->flags = MEM_Int;
-  }
-  break;
-}
-#endif
 /* INSERT NO CODE HERE!
 **
 ** The opcode numbers are extracted from this source file by doing
