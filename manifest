@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sassociated\swith\sPRIMARY\sKEY\sin\sa\sCREATE\sTABLE\sstatement\nthat\sfails.\s\sTicket\s#249.\s(CVS\s1730)
-D 2003-02-26T13:52:51
+C Fix\sa\smemory\sleak\sassociated\swith\sPRIMARY\sKEY\sin\sa\sCREATE\sTABLE\sstatement\nthat\sfails.\s\sTicket\s#249.\s(CVS\s874)
+D 2003-02-26T13:52:52
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6a45fe3bd7e19cf9c20fc6cb65b0269cdd704490
+P 66158843dfa073ffb8779a5170e091cebc018855
 R dc727e1053fa9644419f9b675fcc2f6a
 U drh
-Z 312e9f251ccc372868ea8e5b5518a8b3
+Z e1a44da712ef303e36bd1f401146575b
