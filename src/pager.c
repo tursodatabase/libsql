@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.165 2004/10/01 02:00:31 drh Exp $
+** @(#) $Id: pager.c,v 1.166 2004/10/02 20:38:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -755,6 +755,7 @@ static void pager_reset(Pager *pPager){
 */
 static int pager_unwritelock(Pager *pPager){
   PgHdr *pPg;
+  int rc;
   assert( !pPager->memDb );
   if( pPager->state<PAGER_RESERVED ){
     return SQLITE_OK;
@@ -780,11 +781,11 @@ static int pager_unwritelock(Pager *pPager){
   }else{
     assert( pPager->dirtyCache==0 || pPager->useJournal==0 );
   }
-  sqlite3OsUnlock(&pPager->fd, SHARED_LOCK);
+  rc = sqlite3OsUnlock(&pPager->fd, SHARED_LOCK);
   pPager->state = PAGER_SHARED;
   pPager->origDbSize = 0;
   pPager->setMaster = 0;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -2342,20 +2343,15 @@ static int pager_open_journal(Pager *pPager){
   sqlite3pager_pagecount(pPager);
   pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInJournal==0 ){
-    sqlite3OsUnlock(&pPager->fd, SHARED_LOCK);
-    pPager->state = PAGER_SHARED;
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+    goto failed_to_open_journal;
   }
   rc = sqlite3OsOpenExclusive(pPager->zJournal, &pPager->jfd,pPager->tempFile);
   pPager->journalOff = 0;
   pPager->setMaster = 0;
   pPager->journalHdr = 0;
   if( rc!=SQLITE_OK ){
-    sqliteFree(pPager->aInJournal);
-    pPager->aInJournal = 0;
-    sqlite3OsUnlock(&pPager->fd, SHARED_LOCK);
-    pPager->state = PAGER_SHARED;
-    return rc;
+    goto failed_to_open_journal;
   }
   sqlite3OsOpenDirectory(pPager->zDirectory, &pPager->jfd);
   pPager->journalOpen = 1;
@@ -2380,7 +2376,14 @@ static int pager_open_journal(Pager *pPager){
       rc = SQLITE_FULL;
     }
   }
-  return rc;  
+  return rc;
+
+failed_to_open_journal:
+  sqliteFree(pPager->aInJournal);
+  pPager->aInJournal = 0;
+  sqlite3OsUnlock(&pPager->fd, NO_LOCK);
+  pPager->state = PAGER_UNLOCK;
+  return rc;
 }
 
 /*

@@ -1021,11 +1021,14 @@ end_lock:
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 **
-** It is not possible for this routine to fail.
+** It is not possible for this routine to fail if the second argument
+** is NO_LOCK.  If the second argument is SHARED_LOCK, this routine
+** might return SQLITE_IOERR instead of SQLITE_OK.
 */
 int sqlite3OsUnlock(OsFile *id, int locktype){
   struct lockInfo *pLock;
   struct flock lock;
+  int rc = SQLITE_OK;
 
   assert( id->isOpen );
   TRACE7("UNLOCK %d %d was %d(%d,%d) pid=%d\n", id->h, locktype, id->locktype, 
@@ -1040,11 +1043,16 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   assert( pLock->cnt!=0 );
   if( id->locktype>SHARED_LOCK ){
     assert( pLock->locktype==id->locktype );
-    lock.l_type = F_RDLCK;
-    lock.l_whence = SEEK_SET;
-    lock.l_start = SHARED_FIRST;
-    lock.l_len = SHARED_SIZE;
-    fcntl(id->h, F_SETLK, &lock);
+    if( locktype==SHARED_LOCK ){
+      lock.l_type = F_RDLCK;
+      lock.l_whence = SEEK_SET;
+      lock.l_start = SHARED_FIRST;
+      lock.l_len = SHARED_SIZE;
+      if( fcntl(id->h, F_SETLK, &lock)!=0 ){
+        /* This should never happen */
+        rc = SQLITE_IOERR;
+      }
+    }
     lock.l_type = F_UNLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
@@ -1087,7 +1095,7 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   }
   sqlite3OsLeaveMutex();
   id->locktype = locktype;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

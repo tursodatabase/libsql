@@ -375,20 +375,23 @@ static int isNT(void){
 }
 
 /*
-** Acquire a reader lock on the range of bytes from iByte...iByte+nByte-1.
+** Acquire a reader lock.
 ** Different API routines are called depending on whether or not this
 ** is Win95 or WinNT.
 */
-static int getReadLock(HANDLE h, unsigned int iByte, unsigned int nByte){
+static int getReadLock(OsFile *id){
   int res;
   if( isNT() ){
     OVERLAPPED ovlp;
-    ovlp.Offset = iByte;
+    ovlp.Offset = SHARED_FIRST;
     ovlp.OffsetHigh = 0;
     ovlp.hEvent = 0;
-    res = LockFileEx(h, LOCKFILE_FAIL_IMMEDIATELY, 0, nByte, 0, &ovlp);
+    res = LockFileEx(id->h, LOCKFILE_FAIL_IMMEDIATELY, 0, SHARED_SIZE,0,&ovlp);
   }else{
-    res = LockFile(h, iByte, 0, nByte, 0);
+    int lk;
+    sqlite3Randomness(sizeof(lk), &lk);
+    id->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
+    res = LockFile(id->h, SHARED_FIRST+id->sharedLockByte, 0, 1, 0);
   }
   return res;
 }
@@ -479,14 +482,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   */
   if( locktype==SHARED_LOCK && res ){
     assert( id->locktype==NO_LOCK );
-    if( isNT() ){
-      res = getReadLock(id->h, SHARED_FIRST, SHARED_SIZE);
-    }else{
-      int lk;
-      sqlite3Randomness(sizeof(lk), &lk);
-      id->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
-      res = LockFile(id->h, SHARED_FIRST+id->sharedLockByte, 0, 1, 0);
-    }
+    res = getReadLock(id);
     if( res ){
       newLocktype = SHARED_LOCK;
     }
@@ -573,10 +569,13 @@ int sqlite3OsCheckReservedLock(OsFile *id){
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 **
-** It is not possible for this routine to fail.
+** It is not possible for this routine to fail if the second argument
+** is NO_LOCK.  If the second argument is SHARED_LOCK then this routine
+** might return SQLITE_IOERR;
 */
 int sqlite3OsUnlock(OsFile *id, int locktype){
-  int rc, type;
+  int type;
+  int rc = SQLITE_OK;
   assert( id->isOpen );
   assert( locktype<=SHARED_LOCK );
   TRACE5("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
@@ -584,18 +583,23 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   type = id->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    if( locktype==SHARED_LOCK && !getReadLock(id) ){
+      /* This should never happen.  We should always be able to
+      ** reacquire the read lock */
+      rc = SQLITE_IOERR;
+    }
   }
   if( type>=RESERVED_LOCK ){
     UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
   }
-  if( locktype==NO_LOCK && type>=SHARED_LOCK && type<EXCLUSIVE_LOCK ){
+  if( locktype==NO_LOCK && type>=SHARED_LOCK ){
     unlockReadLock(id);
   }
   if( type>=PENDING_LOCK ){
     UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
   }
   id->locktype = locktype;
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

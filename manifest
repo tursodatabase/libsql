@@ -1,5 +1,5 @@
-C make\sdiskfull\stest\swork\son\sWindows;\ssee\scheck-in\s(1994)\s(CVS\s1996)
-D 2004-10-01T18:21:43
+C Fixes\sto\sthe\sOsUnlock()\sinterface.\s\sCorrectly\sleave\sa\sSHARED\slock\sbehind\nwhen\srequested.\s\sHonor\sthe\serror\scode\sthat\sOsUnlock()\sreturns.\nTicket\s#913\sand\s#938.\s(CVS\s1997)
+D 2004-10-02T20:38:28
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,11 +47,11 @@ F src/os_mac.c 7367dab0c44ab0b2c4337e73ac6f6f97f171c2cb
 F src/os_mac.h 608fdf39eafa1ce25fc8cb223b8b0a073341d4da
 F src/os_test.c d9a21852d170f20adeae6f224d1beba2cb5af8aa
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c ca7891d1f84994559899ced37b45541a68028282
+F src/os_unix.c 5c1f362846afec4232c2291b9f1564f0487e91f4
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
-F src/os_win.c 2b4b103d978daa5efb6ccb11703976429e0aad84
+F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 39e0ad16ffb94fecf3dc9fd73bccf3e7445f0e17
+F src/pager.c d3688828d314135ef0cd87b4d892805136c4168f
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 968231351dd13ef6ee544336295db54708c22faf
 F src/pragma.c 45978cc82fdf91f00d024a8e875c2b679fbce488
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 44e56f0bba61245d342d6e75510d6c35785efd49
-R a61ce3be739beac85c756189a58b0ec2
-U dougcurrie
-Z 4de85fdbce139eac43154165436a4c4e
+P 4493e287809874fabeddf5ca9045065a30790f2f
+R ebf4aac4c1a61ea57872e563bbdb1393
+U drh
+Z 44aded0ba9c92340348fe0ad36d9356d
