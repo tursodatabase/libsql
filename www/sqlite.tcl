@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.7 2000/06/08 19:38:36 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.8 2000/06/08 19:43:40 drh Exp $}
 
 puts {<html>
 <head>
@@ -167,7 +167,6 @@ in four different formats: "line", "column", "list", and "html".
 You can use the ".mode" dot command to switch between these three output
 formats.</p>
 
-puts {
 <p>The default output mode is "list".  In
 list mode, each record of a query result is written on one line of
 output and each field within that record is separated by a specific
@@ -196,6 +195,7 @@ goodbye, 20
 sqlite>
 }
 
+puts {
 <p>In "line" mode, each field in a record of the database
 is shown on a line by itself.  Each line consists of the field
 name, an equal sign and the field data.  Successive records are
@@ -265,7 +265,7 @@ sqlite>
 puts {
 <p>The last output mode is "html".  In this mode, sqlite writes
 the results of the query as an XHTML table.  The beginning
-&lt;TABLE&;gt and the ending &lt;/TABLE&gt; are not written, but
+&lt;TABLE&gt; and the ending &lt;/TABLE&gt; are not written, but
 all of the intervening &lt;TR&gt;s, &lt;TH&gt;s, and &lt;TD&gt;s
 are.  The html output mode is envisioned as being useful for
 CGI.</p>
