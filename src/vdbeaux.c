@@ -126,6 +126,8 @@ int sqlite3VdbeOp3(Vdbe *p, int op, int p1, int p2, const char *zP3,int p3type){
 ** The VDBE knows that a P2 value is a label because labels are
 ** always negative and P2 values are suppose to be non-negative.
 ** Hence, a negative P2 value is a label that has yet to be resolved.
+**
+** Zero is returned if a malloc() fails.
 */
 int sqlite3VdbeMakeLabel(Vdbe *p){
   int i;
@@ -1309,17 +1311,15 @@ int sqlite3VdbeReset(Vdbe *p){
 ** the result code.  Write any error message text into *pzErrMsg.
 */
 int sqlite3VdbeFinalize(Vdbe *p){
-  int rc;
+  int rc = SQLITE_OK;
   sqlite *db;
 
-  if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    if( p->magic==VDBE_MAGIC_INIT ){
-      sqlite3Error(p->db, SQLITE_MISUSE, 0);
-    }
+  if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
+    rc = sqlite3VdbeReset(p);
+  }else if( p->magic!=VDBE_MAGIC_INIT ){
+    /* sqlite3Error(p->db, SQLITE_MISUSE, 0); */
     return SQLITE_MISUSE;
   }
-  db = p->db;
-  rc = sqlite3VdbeReset(p);
   sqlite3VdbeDelete(p);
   if( rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);

@@ -1,5 +1,5 @@
-C Add\snews\sabout\sthe\sbreak-in\sto\sthe\shomepage.\s(CVS\s1740)
-D 2004-06-26T12:40:07
+C Fix\sa\sproblem\swhere\sa\sfile\swas\snot\sbeing\sclosed\safter\sa\smalloc()\sfailure.\s(CVS\s1741)
+D 2004-06-26T13:51:34
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -50,7 +50,7 @@ F src/os_unix.c bd62e20d3abfb96c41fe737715b328d1dbb52bf7
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c d9f34d9245d4aa0b2073564e3f1d8a0d89f8fedd
+F src/pager.c 6240557abedaf6d888359a2365df45bce414c540
 F src/pager.h fe818866f6d1adcffeed88705e8df7e588cbaf13
 F src/parse.y e19e066e726a31d7b2d3e6475bdf55f7e339f8a3
 F src/pragma.c 16713c1bc440ccd9982a27fb4b38e1a1c95ffd29
@@ -77,7 +77,7 @@ F src/vdbe.c 423b55e65501ef2b60d8dedabe8d76d06ea62d99
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h 22ab717b69074fe7a28f64e35a39bd436ad9d150
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
-F src/vdbeaux.c 51f23399819e4c3bcbddf662a90c34465b24392b
+F src/vdbeaux.c e7201e3f129439bc64d2ff79b54001adc2c95539
 F src/vdbemem.c d37e4033f7350e542f715c061bffe23feb51bc9e
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -129,7 +129,7 @@ F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
 F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
 F test/lock.test 1dbf1d06b0a7eb36237b4f107cfb3da9726b449e
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
-F test/malloc.test 082206002cb3162fbbed1c3dd3794a06cee86652
+F test/malloc.test a78617ce8258388e4835f4834a3a2c0d4282a7ec
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
 F test/memleak.test 26571a04575461f39a7cf97a2ee2f7fb2f519ddb
 F test/minmax.test 3f87d1d49f7e9aa9ae80d35c47a1f5b034557899
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 440bfd2ac57d228d10913aca81ca8c6d7f38aa61
-R 33c3a7e7a8eaf64864de650e0dd92206
-U drh
-Z b1d9e2fd14f2166ab626a20625f8587e
+P 5cda1cda63bef554f8b3436bd958014f453087c2
+R 233a4cd5164642db4057352be7dd3517
+U danielk1977
+Z 2f1f04242ccfcca0027666d04e1cf454

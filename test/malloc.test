@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.8 2004/06/19 00:16:31 drh Exp $
+# $Id: malloc.test,v 1.9 2004/06/26 13:51:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -64,6 +64,12 @@ for {set go 1; set i 1} {$go} {incr i} {
      }
   } {1 1}
 }
+
+# Ensure that no file descriptors were leaked.
+do_test malloc-1.X {
+  catch {db close}
+  set sqlite_open_file_count
+} {0}
 
 set fd [open ./data.tmp w]
 for {set i 1} {$i<=20} {incr i} {
@@ -115,6 +121,12 @@ for {set go 1; set i 1} {$go} {incr i} {
   } {1 1}
 }
 
+# Ensure that no file descriptors were leaked.
+do_test malloc-2.X {
+  catch {db close}
+  set sqlite_open_file_count
+} {0}
+
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-3.$i {
      sqlite_malloc_fail 0
@@ -155,6 +167,13 @@ for {set go 1; set i 1} {$go} {incr i} {
      }
   } {1 1}
 }
+
+# Ensure that no file descriptors were leaked.
+do_test malloc-3.X {
+  catch {db close}
+  set sqlite_open_file_count
+} {0}
+
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-4.$i {
      sqlite_malloc_fail 0
@@ -196,6 +215,13 @@ for {set go 1; set i 1} {$go} {incr i} {
      }
   } {1 1}
 }
+
+# Ensure that no file descriptors were leaked.
+do_test malloc-4.X {
+  catch {db close}
+  set sqlite_open_file_count
+} {0}
+
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-5.$i {
      sqlite_malloc_fail 0
@@ -230,5 +256,12 @@ for {set go 1; set i 1} {$go} {incr i} {
      }
   } {1 1}
 }
+
+# Ensure that no file descriptors were leaked.
+do_test malloc-5.X {
+  catch {db close}
+  set sqlite_open_file_count
+} {0}
+
 sqlite_malloc_fail 0
 finish_test
