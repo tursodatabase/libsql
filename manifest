@@ -1,5 +1,5 @@
-C :-)\s(CVS\s69)
-D 2000-06-07T14:42:27
+C :-)\s(CVS\s70)
+D 2000-06-07T15:11:27
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -11,8 +11,8 @@ F src/dbbe.c 9b191b16ff01ec5bc0af436558501d07938ba4f0
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c 8c733bb82a1b84126116d03dcdccf433c0856f5d
 F src/expr.c d350fe393e1753aaa733a5d21f0830a23e547400
-F src/insert.c 8bd762bb6aa7bf0e6abda03699c88db7736bf7dd
-F src/main.c 48440ddd39783ac379c746804e3424e06cdf7138
+F src/insert.c 93f9e36bf96b57326d8d5709ed44b568b8627aa5
+F src/main.c b4275952180b30e1ca3db266157e2d233c0a24d9
 F src/parse.y 4a2e6b14177c97f61fc3e21d4570f5a9c541c1e1
 F src/select.c 4834ab68a3308871f17fe8e22d903fcdf1b42420
 F src/shell.c 3f4afc39a36e4824e8aa262623fd03568874799e
@@ -33,8 +33,9 @@ F test/expr.test 52be5592143a88479e0006dfd7e2023e43294636
 F test/in.test 17cd46a9ca0e5d4a804483e6fb496458494858e6
 F test/index.test 9f99dca2d904b8de330863a978587f136e2df65a
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
-F test/insert2.test 2d529bc4acf33dcf554a8c2e4593aab270fa6faf
-F test/select1.test 55af6d31c778022ac3eecd051a66e9df3573c46f
+F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
+F test/main.test cf1e9035aca55da9ef6d3b73ab36c54b7514b83f
+F test/select1.test 64703852af34c85bb31b0a74bd73b340e8267f42
 F test/select2.test 3cd3c0f9d67e98b1b54af5853679b4a111224410
 F test/select3.test 73ae8c7b80c4e03a9c29d12f2ea1782e28b8e61f
 F test/sort.test d582086c4bb7df3fbf50aa72e69d7e235e9f8e31
@@ -53,7 +54,7 @@ F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
 F www/changes.tcl 04e66b4257589ff78a7e1de93e9dda4725fb03d6
 F www/index.tcl 52e29a4eeda8d59e91af43c61fef177c5f2ffd53
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 5d773b5d4e9c23b81f53afd0cef7bd2300fff329
-R 57fdc174a06c58f4d8c32ca7ec794547
+P e4f6b17f66ddbb0bcf13bb9fffc98e5c102151ef
+R ce3737a50e7c1b7f05029b62a126b877
 U drh
-Z 30c18345d5ffdb7b0aa9296432256266
+Z 7bf9f75d63299255b8d69e32b524ad36

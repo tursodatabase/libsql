@@ -1,0 +1,65 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is exercising the code in main.c.
+#
+# $Id: main.test,v 1.1 2000/06/07 15:11:27 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Tests of the sqlite_complete() function.
+#
+do_test main-1.1 {
+  db complete {This is a test}
+} {0}
+do_test main-1.2 {
+  db complete {
+  }
+} {0}
+do_test main-1.3 {
+  db complete {
+     -- a comment ;
+  }
+} {0}
+do_test main-1.4 {
+  db complete {
+     -- a comment ;
+     ;
+  }
+} {1}
+
+# Try to open a database with a corrupt master file.
+#
+do_test main-2.0 {
+  catch {db close}
+  file delete -force testdb
+  file mkdir testdb
+  set fd [open testdb/sqlite_master.tbl w]
+  puts $fd hi!
+  close $fd
+  set v [catch {sqlite db testdb} msg]
+  lappend v $msg
+} {0 {}}
+
+finish_test
