@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.318 2004/05/22 10:33:04 danielk1977 Exp $
+** $Id: vdbe.c,v 1.319 2004/05/22 11:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4712,9 +4712,9 @@ case OP_SortPut: {
 case OP_Sort: {
   int i;
   KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
-  pKeyInfo->enc = p->db->enc;
   Sorter *pElem;
   Sorter *apSorter[NSORT];
+  pKeyInfo->enc = p->db->enc;
   for(i=0; i<NSORT; i++){
     apSorter[i] = 0;
   }
