@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.51 2002/04/18 02:46:52 persicom Exp $
+** $Id: shell.c,v 1.52 2002/04/18 02:53:05 persicom Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +31,7 @@
 # include <readline/history.h>
 #else
 # define readline(p) getline(p,stdin)
-# define add_history(X) 
+# define add_history(X)
 #endif
 
 /*
@@ -191,7 +191,7 @@ static int is_numeric(const char *z){
   if( *z=='-' || *z=='+' ){
     z++;
   }
-  while( isdigit(*z) ){ 
+  while( isdigit(*z) ){
     seen_digit = 1;
     z++;
   }
@@ -308,7 +308,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
-            p->actualWidth[i] = w; 
+            p->actualWidth[i] = w;
           }
           if( p->showHeader ){
             fprintf(p->out,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
@@ -398,7 +398,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       fprintf(p->out,");\n");
       break;
     }
-  }      
+  }
   return 0;
 }
 
@@ -456,7 +456,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     d2.mode = MODE_Insert;
     d2.zDestTable = 0;
     set_table_name(&d2, azArg[0]);
-    sqlite_exec_printf(p->db, 
+    sqlite_exec_printf(p->db,
        "SELECT * FROM '%q'",
        callback, &d2, 0, azArg[0]
     );
@@ -468,7 +468,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 /*
 ** Text of a help message
 */
-static char zHelp[] = 
+static char zHelp[] =
   ".dump ?TABLE? ...      Dump the database in an text format\n"
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
@@ -488,7 +488,6 @@ static char zHelp[] =
   "                       \"sqlite > \" and \"   ...> \"\n"
   "                       with the strings MAIN and CONTINUE\n"
   "                       CONTINUE is optional.\n"
-  "                       Special characters are:\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".reindex ?TABLE?       Rebuild indices\n"
@@ -557,7 +556,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }else{
       int i;
       for(i=1; i<nArg && zErrMsg==0; i++){
-        sqlite_exec_printf(db, 
+        sqlite_exec_printf(db,
           "SELECT name, type, sql FROM sqlite_master "
           "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOT NULL "
           "ORDER BY substr(type,2,1), name",
@@ -584,7 +583,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       val = 1;
     }else if( strcmp(z,"yes")==0 ){
       val = 1;
-    } 
+    }
     p->echoOn = val;
   }else
 
@@ -648,7 +647,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       val = 1;
     }else if( strcmp(z,"yes")==0 ){
       val = 1;
-    } 
+    }
     p->showHeader = val;
   }else
 
@@ -662,7 +661,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
-    sqlite_exec_printf(db, 
+    sqlite_exec_printf(db,
       "SELECT name FROM sqlite_master "
       "WHERE type='index' AND tbl_name LIKE '%q' "
       "ORDER BY name",
@@ -938,7 +937,7 @@ static void process_input(struct callback_data *p, FILE *in){
     free(zLine);
     if( zSql && sqlite_complete(zSql) ){
       p->cnt = 0;
-      if( sqlite_exec(db, zSql, callback, p, &zErrMsg)!=0 
+      if( sqlite_exec(db, zSql, callback, p, &zErrMsg)!=0
            && zErrMsg!=0 ){
         if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
         printf("SQL error: %s\n", zErrMsg);
