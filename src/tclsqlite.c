@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.11 2000/10/11 19:28:52 drh Exp $
+** $Id: tclsqlite.c,v 1.12 2000/10/19 14:59:27 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -380,6 +380,7 @@ int Sqlite_SafeInit(Tcl_Interp *interp){
   return TCL_OK;
 }
 
+#if 0
 /*
 ** If compiled using mktclapp, this routine runs to initialize
 ** everything.
@@ -387,6 +388,7 @@ int Sqlite_SafeInit(Tcl_Interp *interp){
 int Et_AppInit(Tcl_Interp *interp){
   return Sqlite_Init(interp);
 }
+#endif
 
 /*
 ** If the macro TCLSH is defined and is one, then put in code for the

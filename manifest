@@ -1,5 +1,5 @@
-C make\sit\sa\slittle\sfaster\s(CVS\s160)
-D 2000-10-19T14:42:05
+C remove\sthe\sEt_AppInit()\sfunction\sfrom\stclsqlite\s(CVS\s161)
+D 2000-10-19T14:59:27
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -24,7 +24,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 43c0e1e321e94c20eb20efe593155296cd57728a
 F src/sqliteInt.h 4b49e8c162c2ebf5d7a7ed392953380dbfd3673a
 F src/table.c f08189678c806d8a74a70c156d7c27083760e028
-F src/tclsqlite.c 44b08b47612a668caaf7c4ec32133b69d73ff78e
+F src/tclsqlite.c 178adf318eab2ff480c288a87541d4ab1c37d985
 F src/tokenize.c b0f5c12598105ec924c0733a916485f920168720
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c 811e0ad47f842c16555aaf361b26dab7221c1a6c
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 4ccd9103c3e7236084283a7311b6e746037d12aa
-R 6178bf880777b292ca5925307641dd4d
+P 757668bd641134a6f7479c8df1c8b06a24d51ee4
+R 9bb9f9623b64eb7623a7363ddbbf550c
 U drh
-Z 3c6d10f29cae80e365fba2fc79dd5292
+Z 575450ecb45dc00b559d3c8b3639b4d9
