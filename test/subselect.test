@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that are part of
 # expressions.
 #
-# $Id: subselect.test,v 1.5 2002/05/26 20:54:35 drh Exp $
+# $Id: subselect.test,v 1.6 2002/06/29 02:20:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,5 +81,23 @@ do_test subselect-1.6 {
   execsql {DELETE FROM t2 WHERE x < 0.5*(SELECT max(x) FROM t2)}
   execsql {SELECT x FROM t2 ORDER BY x}
 } {2 3 4}
+
+# Make sure sorting works for SELECTs there used as a scalar expression.
+#
+do_test subselect-2.1 {
+  execsql {
+    SELECT (SELECT a FROM t1 ORDER BY a), (SELECT a FROM t1 ORDER BY a DESC)
+  }
+} {1 5}
+do_test subselect-2.2 {
+  execsql {
+    SELECT 1 IN (SELECT a FROM t1 ORDER BY a);
+  }
+} {1}
+do_test subselect-2.3 {
+  execsql {
+    SELECT 2 IN (SELECT a FROM t1 ORDER BY a DESC);
+  }
+} {0}
 
 finish_test

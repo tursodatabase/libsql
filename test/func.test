@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.12 2002/05/29 23:22:23 drh Exp $
+# $Id: func.test,v 1.13 2002/06/29 02:20:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -221,7 +221,7 @@ do_test func-5.5 {
   catchsql {SELECT upper(*) FROM t2}
 } {1 {wrong number of arguments to function upper()}}
 
-# Test the coalesce() function
+# Test the coalesce() and nullif() functions
 #
 do_test func-6.1 {
   execsql {SELECT coalesce(a,'xyz') FROM t2}
@@ -229,6 +229,16 @@ do_test func-6.1 {
 do_test func-6.2 {
   execsql {SELECT coalesce(upper(a),'nil') FROM t2}
 } {1 nil 345 nil 67890}
+do_test func-6.3 {
+  execsql {SELECT coalesce(nullif(1,1),'nil')}
+} {nil}
+do_test func-6.4 {
+  execsql {SELECT coalesce(nullif(1,2),'nil')}
+} {1}
+do_test func-6.5 {
+  execsql {SELECT coalesce(nullif(1,NULL),'nil')}
+} {1}
+
 
 # Test the last_insert_rowid() function
 #
@@ -243,6 +253,24 @@ do_test func-8.1 {
     SELECT sum(a), count(a), round(avg(a),2), min(a), max(a), count(*) FROM t2;
   }
 } {68236 3 22745.33 1 67890 5}
+do_test func-8.2 {
+  execsql {
+    SELECT max('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t2;
+  }
+} {z+67890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
+do_test func-8.3 {
+  execsql {
+    CREATE TEMP TABLE t3 AS SELECT a FROM t2 ORDER BY a DESC;
+    SELECT min('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t3;
+  }
+} {z+1abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
 
+# How do you test the random() function in a meaningful, deterministic way?
+#
+do_test func-9.1 {
+  execsql {
+    SELECT random() is not null;
+  }
+} {1}
 
 finish_test

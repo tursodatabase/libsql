@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.162 2002/06/28 01:02:38 drh Exp $
+** $Id: vdbe.c,v 1.163 2002/06/29 02:20:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1649,7 +1649,8 @@ case OP_NullCallback: {
 ** Look at the first P1 elements of the stack.  Append them all 
 ** together with the lowest element first.  Use P3 as a separator.  
 ** Put the result on the top of the stack.  The original P1 elements
-** are popped from the stack if P2==0 and retained if P2==1.
+** are popped from the stack if P2==0 and retained if P2==1.  If
+** any element of the stack is NULL, then the result is NULL.
 **
 ** If P3 is NULL, then use no separator.  When P1==1, this routine
 ** makes a copy of the top stack element into memory obtained
@@ -1671,11 +1672,20 @@ case OP_Concat: {
   nByte = 1 - nSep;
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( aStack[i].flags & STK_Null ){
-      nByte += nSep;
+      nByte = -1;
+      break;
     }else{
       if( Stringify(p, i) ) goto no_mem;
       nByte += aStack[i].n - 1 + nSep;
     }
+  }
+  if( nByte<0 ){
+    if( pOp->p2==0 ) PopStack(p, nField);
+    VERIFY( NeedStack(p, p->tos+1); )
+    p->tos++;
+    aStack[p->tos].flags = STK_Null;
+    zStack[p->tos] = 0;
+    break;
   }
   zNew = sqliteMalloc( nByte );
   if( zNew==0 ) goto no_mem;
@@ -4194,11 +4204,14 @@ case OP_SortPut: {
   pSorter->pNext = p->pSort;
   p->pSort = pSorter;
   assert( aStack[tos].flags & STK_Dyn );
-  assert( aStack[nos].flags & STK_Dyn );
   pSorter->nKey = aStack[tos].n;
   pSorter->zKey = zStack[tos];
   pSorter->nData = aStack[nos].n;
-  pSorter->pData = zStack[nos];
+  if( aStack[nos].flags & STK_Dyn ){
+    pSorter->pData = zStack[nos];
+  }else{
+    pSorter->pData = sqliteStrDup(zStack[nos]);
+  }
   aStack[tos].flags = 0;
   aStack[nos].flags = 0;
   zStack[tos] = 0;

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.75 2002/06/28 12:18:47 drh Exp $
+** $Id: expr.c,v 1.76 2002/06/29 02:20:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -370,7 +370,7 @@ int sqliteExprIsInteger(Expr *p, int *pValue){
 /*
 ** Return TRUE if the given string is a row-id column name.
 */
-static int sqliteIsRowid(const char *z){
+int sqliteIsRowid(const char *z){
   if( sqliteStrICmp(z, "_ROWID_")==0 ) return 1;
   if( sqliteStrICmp(z, "ROWID")==0 ) return 1;
   if( sqliteStrICmp(z, "OID")==0 ) return 1;

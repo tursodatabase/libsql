@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.45 2002/06/19 14:27:06 drh Exp $
+** $Id: update.c,v 1.46 2002/06/29 02:20:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -293,12 +293,8 @@ void sqliteUpdate(
   ** on top of the stack.)
   */
   if( chngRecno ){
-    if( pTab->iPKey<0 || (j = aXRef[pTab->iPKey])<0 ){
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    }else{
-      sqliteExprCode(pParse, pChanges->a[j].pExpr);
-      sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
-    }
+    sqliteExprCode(pParse, pRecnoExpr);
+    sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
   }
 
   /* Compute new data for this record.  

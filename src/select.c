@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.101 2002/06/28 12:18:47 drh Exp $
+** $Id: select.c,v 1.102 2002/06/29 02:20:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -436,14 +436,16 @@ static int selectInnerLoop(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
+      int lbl = sqliteVdbeMakeLabel(v);
       assert( nColumn==1 );
-      sqliteVdbeAddOp(v, OP_IsNull, -1, sqliteVdbeCurrentAddr(v)+3);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeAddOp(v, OP_IsNull, -1, lbl);
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
       }
+      sqliteVdbeResolveLabel(v, lbl);
       break;
     }
 
