@@ -16,7 +16,7 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-sqlite \- A command line interface for SQLite
+sqlite3 \- A command line interface for SQLite verson 3
 .SH SYNOPSIS
 .B sqlite
 .RI [ options ] " filename " [ SQL ]
@@ -45,8 +45,8 @@ For example, to create a new SQLite database named "ex1" with a single
 table named "tbl1", you might do this:
 .sp
 .nf
-$ sqlite ex1
-SQLite version 2.0.0
+$ sqlite3 ex1
+SQLite version 3.0.8
 Enter ".help" for instructions
 sqlite> create table tbl1(one varchar(10), two smallint);
 sqlite> insert into tbl1 values('hello!',10);
