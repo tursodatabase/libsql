@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.17 2002/06/25 01:09:13 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.18 2002/06/27 13:21:02 drh Exp $}
 
 puts {<html>
 <head>
@@ -166,7 +166,7 @@ puts {
 
 <p>The sqlite program is able to show the results of a query
 in five different formats: "line", "column", "list", "html", and "insert".
-You can use the ".mode" dot command to switch between these three output
+You can use the ".mode" dot command to switch between these output
 formats.</p>
 
 <p>The default output mode is "list".  In

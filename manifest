@@ -1,5 +1,5 @@
-C In\sthe\sTCL\sinterface,\sthe\s"sqlite"\scommand\snow\salways\sreturns\sthe\saddress\nof\sthe\s"sqlite*"\spointer\sthat\ssqlite_open()\sreturns.\s\sIt\sused\sto\sdo\sthis\nonly\swhen\scompiled\swith\sthe\sSQLITE_TEST\smacro\sdefined.\s(CVS\s648)
-D 2002-06-26T20:06:06
+C Fix\sfor\sticket\s#88:\sA\stypo\sin\sthe\sdocumention\sof\sthe\s"sqlite"\sshell\scommand.\s(CVS\s649)
+D 2002-06-27T13:21:02
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -134,10 +134,10 @@ F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
-F www/sqlite.tcl ac64065d0c5e2de0f71238d55b2c14bb5c5c194c
+F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bdb006b809feb0f29342eb5138c0884d34e95599
-R e92040518419bf0a2b83e28d532bff32
+P 9ca6368525fe81fe9c78c6911f4d23009ce858d5
+R 64604f95a1ca21aa191d2c12711489ff
 U drh
-Z c4b8650cbf25de8c257848e151944d66
+Z 124e1d748152c1b96bd4bcf09a107eb2
