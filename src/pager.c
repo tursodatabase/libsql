@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.28 2001/10/18 12:34:47 drh Exp $
+** @(#) $Id: pager.c,v 1.29 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -933,22 +933,28 @@ int sqlitepager_write(void *pData){
     assert( pPager->aInJournal==0 );
     pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
     if( pPager->aInJournal==0 ){
+      sqliteFree(pPager->aInJournal);
       return SQLITE_NOMEM;
     }
     rc = sqliteOsOpenExclusive(pPager->zJournal, &pPager->jfd);
     if( rc!=SQLITE_OK ){
+      sqliteFree(pPager->aInJournal);
       return SQLITE_CANTOPEN;
     }
     pPager->journalOpen = 1;
     pPager->needSync = 0;
     if( sqliteOsLock(pPager->jfd, 1)!=SQLITE_OK ){
+      sqliteFree(pPager->aInJournal);
       sqliteOsClose(pPager->jfd);
+      sqliteOsDelete(pPager->zJournal);
       pPager->journalOpen = 0;
       return SQLITE_BUSY;
     }
     sqliteOsUnlock(pPager->fd);
     if( sqliteOsLock(pPager->fd, 1)!=SQLITE_OK ){
+      sqliteFree(pPager->aInJournal);
       sqliteOsClose(pPager->jfd);
+      sqliteOsDelete(pPager->zJournal);
       pPager->journalOpen = 0;
       pPager->state = SQLITE_UNLOCK;
       pPager->errMask |= PAGER_ERR_LOCK;

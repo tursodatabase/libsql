@@ -134,12 +134,18 @@ static struct lockInfo *findLockInfo(int fd){
   key.ino = statbuf.st_ino;
   pInfo = (struct lockInfo*)sqliteHashFind(&lockHash, &key, sizeof(key));
   if( pInfo==0 ){
+    struct lockInfo *pOld;
     pInfo = sqliteMalloc( sizeof(*pInfo) );
     if( pInfo==0 ) return 0;
     pInfo->key = key;
     pInfo->nRef = 1;
     pInfo->cnt = 0;
-    sqliteHashInsert(&lockHash, &pInfo->key, sizeof(key), pInfo);
+    pOld = sqliteHashInsert(&lockHash, &pInfo->key, sizeof(key), pInfo);
+    if( pOld!=0 ){
+      assert( pOld==pInfo );
+      sqliteFree(pInfo);
+      pInfo = 0;
+    }
   }else{
     pInfo->nRef++;
   }
@@ -315,6 +321,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *pResult){
   sqliteOsLeaveMutex();
   if( s.pLock==0 ){
     close(s.fd);
+    unlink(zFilename);
     return SQLITE_NOMEM;
   }
   *pResult = s;

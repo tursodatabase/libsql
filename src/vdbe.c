@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.88 2001/10/20 12:30:11 drh Exp $
+** $Id: vdbe.c,v 1.89 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -247,13 +247,14 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
   p->nOp++;
   if( i>=p->nOpAlloc ){
     int oldSize = p->nOpAlloc;
+    Op *aNew;
     p->nOpAlloc = p->nOpAlloc*2 + 100;
-    p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-    if( p->aOp==0 ){
-      p->nOp = 0;
-      p->nOpAlloc = 0;
+    aNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
+    if( aNew==0 ){
+      p->nOpAlloc = oldSize;
       return 0;
     }
+    p->aOp = aNew;
     memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
   }
   p->aOp[i].opcode = op;
@@ -273,7 +274,7 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
 */
 void sqliteVdbeResolveLabel(Vdbe *p, int x){
   int j;
-  if( x<0 && (-x)<=p->nLabel ){
+  if( x<0 && (-x)<=p->nLabel && p->aOp ){
     p->aLabel[-1-x] = p->nOp;
     for(j=0; j<p->nOp; j++){
       if( p->aOp[j].p2==x ) p->aOp[j].p2 = p->nOp;
@@ -296,13 +297,14 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
   int addr;
   if( p->nOp + nOp >= p->nOpAlloc ){
     int oldSize = p->nOpAlloc;
+    Op *aNew;
     p->nOpAlloc = p->nOpAlloc*2 + nOp + 10;
-    p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-    if( p->aOp==0 ){
-      p->nOp = 0;
-      p->nOpAlloc = 0;
+    aNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
+    if( aNew==0 ){
+      p->nOpAlloc = oldSize;
       return 0;
     }
+    p->aOp = aNew;
     memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
   }
   addr = p->nOp;
@@ -326,7 +328,7 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
 ** few minor changes to the program.
 */
 void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
-  if( p && addr>=0 && p->nOp>addr ){
+  if( p && addr>=0 && p->nOp>addr && p->aOp ){
     p->aOp[addr].p1 = val;
   }
 }
@@ -350,7 +352,7 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
 */
 void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
   Op *pOp;
-  if( p==0 ) return;
+  if( p==0 || p->aOp==0 ) return;
   if( addr<0 || addr>=p->nOp ){
     addr = p->nOp - 1;
     if( addr<0 ) return;
@@ -383,7 +385,7 @@ void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
 */
 void sqliteVdbeDequoteP3(Vdbe *p, int addr){
   Op *pOp;
-  if( addr<0 || addr>=p->nOp ) return;
+  if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
   if( pOp->p3==0 || pOp->p3[0]==0 ) return;
   if( pOp->p3type==P3_POINTER ) return;
@@ -403,7 +405,7 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   char *z;
   int i, j;
   Op *pOp;
-  if( addr<0 || addr>=p->nOp ) return;
+  if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
   if( pOp->p3type!=P3_DYNAMIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
@@ -445,8 +447,13 @@ int sqliteVdbeMakeLabel(Vdbe *p){
   int i;
   i = p->nLabel++;
   if( i>=p->nLabelAlloc ){
+    int *aNew;
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
+    aNew = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
+    if( aNew==0 ){
+      sqliteFree(p->aLabel);
+    }
+    p->aLabel = aNew;
   }
   if( p->aLabel==0 ){
     p->nLabel = 0;
@@ -484,7 +491,7 @@ static void AggReset(Agg *pAgg){
 ** Return 0 on success and 1 if memory is exhausted.
 */
 static int AggInsert(Agg *p, char *zKey, int nKey){
-  AggElem *pElem;
+  AggElem *pElem, *pOld;
   int i;
   pElem = sqliteMalloc( sizeof(AggElem) + nKey +
                         (p->nMem-1)*sizeof(pElem->aMem[0]) );
@@ -492,7 +499,12 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
   pElem->zKey = (char*)&pElem->aMem[p->nMem];
   memcpy(pElem->zKey, zKey, nKey);
   pElem->nKey = nKey;
-  sqliteHashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
+  pOld = sqliteHashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
+  if( pOld!=0 ){
+    assert( pOld==pElem );  /* Malloc failed on insert */
+    sqliteFree(pOld);
+    return 0;
+  }
   for(i=0; i<p->nMem; i++){
     pElem->aMem[i].s.flags = STK_Null;
   }
@@ -638,18 +650,25 @@ static int hardNeedStack(Vdbe *p, int N){
   int oldAlloc;
   int i;
   if( N>=p->nStackAlloc ){
+    Stack *aNew;
+    char **zNew;
     oldAlloc = p->nStackAlloc;
     p->nStackAlloc = N + 20;
-    p->aStack = sqliteRealloc(p->aStack, p->nStackAlloc*sizeof(p->aStack[0]));
-    p->zStack = sqliteRealloc(p->zStack, p->nStackAlloc*sizeof(char*));
-    if( p->aStack==0 || p->zStack==0 ){
+    aNew = sqliteRealloc(p->aStack, p->nStackAlloc*sizeof(p->aStack[0]));
+    zNew = aNew ? sqliteRealloc(p->zStack, p->nStackAlloc*sizeof(char*)) : 0;
+    if( zNew==0 ){
+      sqliteFree(aNew);
       sqliteFree(p->aStack);
       sqliteFree(p->zStack);
       p->aStack = 0;
       p->zStack = 0;
       p->nStackAlloc = 0;
+      p->aStack = 0;
+      p->zStack = 0;
       return 1;
     }
+    p->aStack = aNew;
+    p->zStack = zNew;
     for(i=oldAlloc; i<p->nStackAlloc; i++){
       p->zStack[i] = 0;
       p->aStack[i].flags = 0;
@@ -1013,8 +1032,9 @@ int sqliteVdbeExec(
   }
 #endif
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
-  if( sqlite_malloc_failed ) rc = SQLITE_NOMEM;
-  for(pc=0; rc==SQLITE_OK && pc<p->nOp VERIFY(&& pc>=0); pc++){
+  if( sqlite_malloc_failed ) goto no_mem;
+  for(pc=0; !sqlite_malloc_failed && rc==SQLITE_OK && pc<p->nOp
+             VERIFY(&& pc>=0); pc++){
     pOp = &p->aOp[pc];
 
     /* Interrupt processing if requested.
@@ -1192,8 +1212,9 @@ case OP_Pull: {
 ** is done.  If this value is wrong, a coredump can result.
 */
 case OP_ColumnCount: {
-  p->azColName = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
-  if( p->azColName==0 ) goto no_mem;
+  char **az = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
+  if( az==0 ){ goto no_mem; }
+  p->azColName = az;
   p->azColName[pOp->p1] = 0;
   p->nCallback = 0;
   break;
@@ -1237,6 +1258,7 @@ case OP_Callback: {
     p->nCallback++;
   }
   PopStack(p, pOp->p1);
+  if( sqlite_malloc_failed ) goto no_mem;
   break;
 }
 
@@ -1263,6 +1285,7 @@ case OP_NullCallback: {
     }
     p->nCallback++;
   }
+  if( sqlite_malloc_failed ) goto no_mem;
   break;
 }
 
@@ -2098,7 +2121,7 @@ case OP_Transaction: {
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, "", ++busy)==0 ){
-          sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+          sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
           busy = 0;
         }
         break;
@@ -2303,8 +2326,9 @@ case OP_Open: {
   VERIFY( if( i<0 ) goto bad_instruction; )
   if( i>=p->nCursor ){
     int j;
-    p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
-    if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
+    Cursor *aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
+    if( aCsr==0 ) goto no_mem;
+    p->aCsr = aCsr;
     for(j=p->nCursor; j<=i; j++){
       memset(&p->aCsr[j], 0, sizeof(Cursor));
     }
@@ -2317,7 +2341,7 @@ case OP_Open: {
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
-          sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+          sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
           busy = 0;
         }
         break;
@@ -2354,8 +2378,9 @@ case OP_OpenTemp: {
   VERIFY( if( i<0 ) goto bad_instruction; )
   if( i>=p->nCursor ){
     int j;
-    p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
-    if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
+    Cursor *aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
+    if( aCsr==0 ){ goto no_mem; }
+    p->aCsr = aCsr;
     for(j=p->nCursor; j<=i; j++){
       memset(&p->aCsr[j], 0, sizeof(Cursor));
     }
@@ -2670,8 +2695,6 @@ case OP_Column: {
     (*xSize)(pCrsr, &payloadSize);
     if( payloadSize < sizeof(aHdr[0])*(p2+1) ){
       rc = SQLITE_CORRUPT;
-printf("keyasdata=%d ", p->aCsr[i].keyAsData);
-printf("payloadSize=%d aHdr[0]=%d p2=%d\n", payloadSize, aHdr[0], p2);
       goto abort_due_to_error;
     }
     if( p2+1<mxHdr ){
@@ -3075,8 +3098,9 @@ case OP_ListOpen: {
   VERIFY( if( i<0 ) goto bad_instruction; )
   if( i>=p->nList ){
     int j;
-    p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
-    if( p->apList==0 ){ p->nList = 0; goto no_mem; }
+    Keylist **apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
+    if( apList==0 ){ goto no_mem; }
+    p->apList = apList;
     for(j=p->nList; j<=i; j++) p->apList[j] = 0;
     p->nList = i+1;
   }else if( p->apList[i] ){
@@ -3177,8 +3201,9 @@ case OP_SortOpen: {
   VERIFY( if( i<0 ) goto bad_instruction; )
   if( i>=p->nSort ){
     int j;
-    p->apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
-    if( p->apSort==0 ){ p->nSort = 0; goto no_mem; }
+    Sorter **apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
+    if( apSort==0 ){ goto no_mem; }
+    p->apSort = apSort;
     for(j=p->nSort; j<=i; j++) p->apSort[j] = 0;
     p->nSort = i+1;
   }
@@ -3295,7 +3320,7 @@ case OP_SortMakeKey: {
     zNewKey[j++] = 0;
   }
   zNewKey[j] = 0;
-  VERIFY( j<nByte );
+  assert( j<nByte );
   PopStack(p, nField);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -3409,6 +3434,7 @@ case OP_SortCallback: {
     p->nCallback++;
   }
   POPSTACK;
+  if( sqlite_malloc_failed ) goto no_mem;
   break;
 }
 
@@ -3497,23 +3523,25 @@ case OP_FileRead: {
   nField = pOp->p1;
   if( nField<=0 ) goto fileread_jump;
   if( nField!=p->nField || p->azField==0 ){
-    p->azField = sqliteRealloc(p->azField, sizeof(char*)*nField+1);
-    if( p->azField==0 ){
-      p->nField = 0;
-      goto fileread_jump;
-    }
+    char **azField = sqliteRealloc(p->azField, sizeof(char*)*nField+1);
+    if( azField==0 ){ goto no_mem; }
+    p->azField = azField;
     p->nField = nField;
   }
   n = 0;
   eol = 0;
   while( eol==0 ){
     if( p->zLine==0 || n+200>p->nLineAlloc ){
+      char *zLine;
       p->nLineAlloc = p->nLineAlloc*2 + 300;
-      p->zLine = sqliteRealloc(p->zLine, p->nLineAlloc);
-      if( p->zLine==0 ){
+      zLine = sqliteRealloc(p->zLine, p->nLineAlloc);
+      if( zLine==0 ){
         p->nLineAlloc = 0;
-        goto fileread_jump;
+        sqliteFree(p->zLine);
+        p->zLine = 0;
+        goto no_mem;
       }
+      p->zLine = zLine;
     }
     if( fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
       eol = 1;
@@ -3606,9 +3634,11 @@ case OP_MemStore: {
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( i>=p->nMem ){
     int nOld = p->nMem;
+    Mem *aMem;
     p->nMem = i + 5;
-    p->aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
-    if( p->aMem==0 ) goto no_mem;
+    aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
+    if( aMem==0 ) goto no_mem;
+    p->aMem = aMem;
     if( nOld<p->nMem ){
       memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
     }
@@ -3752,8 +3782,9 @@ case OP_AggSet: {
     pMem->s = aStack[tos];
     if( pMem->s.flags & STK_Str ){
       pMem->z = sqliteMalloc( aStack[tos].n );
-      if( pMem->z==0 ) goto no_mem;
-      memcpy(pMem->z, zStack[tos], pMem->s.n);
+      if( pMem->z ){
+        memcpy(pMem->z, zStack[tos], pMem->s.n);
+      }
       pMem->s.flags |= STK_Str|STK_Dyn;
     }
     if( zOld ) sqliteFree(zOld);
@@ -3833,8 +3864,9 @@ case OP_SetInsert: {
   int i = pOp->p1;
   if( p->nSet<=i ){
     int k;
-    p->aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
-    if( p->aSet==0 ) goto no_mem;
+    Set *aSet = sqliteRealloc(p->aSet, (i+1)*sizeof(p->aSet[0]) );
+    if( aSet==0 ) goto no_mem;
+    p->aSet = aSet;
     for(k=p->nSet; k<=i; k++){
       sqliteHashInit(&p->aSet[k].hash, SQLITE_HASH_BINARY, 1);
     }
@@ -4098,7 +4130,7 @@ cleanup:
   ** to fail on a modern VM computer, so this code is untested.
   */
 no_mem:
-  sqliteSetString(pzErrMsg, "out or memory", 0);
+  sqliteSetString(pzErrMsg, "out of memory", 0);
   rc = SQLITE_NOMEM;
   goto cleanup;
 
@@ -4106,7 +4138,7 @@ no_mem:
   ** should hold the error number.
   */
 abort_due_to_error:
-  sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
+  sqliteSetString(pzErrMsg, sqlite_error_string(rc), 0);
   goto cleanup;
 
   /* Jump to here if a operator is encountered that requires more stack

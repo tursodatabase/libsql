@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.21 2001/10/06 16:33:03 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.22 2001/10/22 02:58:10 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -165,7 +165,8 @@ int sqlite_exec(
 ** defined above, then this routine returns a constant text string which
 ** descripts (in English) the meaning of the return value.
 */
-const char *sqliteErrStr(int);
+const char *sqlite_error_string(int);
+#define sqliteErrStr sqlite_error_string  /* Legacy. Do not use in new code. */
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically

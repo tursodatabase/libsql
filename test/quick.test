@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.1 2001/09/16 00:13:28 drh Exp $
+# $Id: quick.test,v 1.2 2001/10/22 02:58:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,6 +21,7 @@ set EXCLUDE {
   all.test
   quick.test
   btree2.test
+  malloc.test
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {

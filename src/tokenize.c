@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.29 2001/10/19 16:44:57 drh Exp $
+** $Id: tokenize.c,v 1.30 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -351,11 +351,12 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   int i;
   void *pEngine;
   int once = 1;
+  sqlite *db = pParse->db;
   extern void *sqliteParserAlloc(void*(*)(int));
   extern void sqliteParserFree(void*, void(*)(void*));
   extern int sqliteParser(void*, int, Token, Parse*);
 
-  pParse->db->flags &= ~SQLITE_Interrupt;
+  db->flags &= ~SQLITE_Interrupt;
   pParse->rc = SQLITE_OK;
   i = 0;
   sqliteParseInfoReset(pParse);
@@ -367,7 +368,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   while( sqlite_malloc_failed==0 && nErr==0 && i>=0 && zSql[i]!=0 ){
     int tokenType;
     
-    if( (pParse->db->flags & SQLITE_Interrupt)!=0 ){
+    if( (db->flags & SQLITE_Interrupt)!=0 ){
       pParse->rc = SQLITE_INTERRUPT;
       sqliteSetString(pzErrMsg, "interrupt", 0);
       break;
@@ -401,13 +402,13 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
           sqliteFree(pParse->zErrMsg);
           pParse->zErrMsg = 0;
         }else if( pParse->rc!=SQLITE_OK ){
-          sqliteSetString(pzErrMsg, sqliteErrStr(pParse->rc), 0);
+          sqliteSetString(pzErrMsg, sqlite_error_string(pParse->rc), 0);
           nErr++;
         }
         break;
     }
   }
-  if( nErr==0 && (pParse->db->flags & SQLITE_Interrupt)==0 ){
+  if( nErr==0 && (db->flags & SQLITE_Interrupt)==0 ){
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
     if( pParse->zErrMsg && pParse->sErrToken.z ){
        sqliteSetNString(pzErrMsg, "near \"", -1, 

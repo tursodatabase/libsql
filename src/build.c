@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.51 2001/10/19 16:44:57 drh Exp $
+** $Id: build.c,v 1.52 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -72,7 +72,11 @@ void sqliteExec(Parse *pParse){
 Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
   Expr *pNew;
   pNew = sqliteMalloc( sizeof(Expr) );
-  if( pNew==0 ) return 0;
+  if( pNew==0 ){
+    sqliteExprDelete(pLeft);
+    sqliteExprDelete(pRight);
+    return 0;
+  }
   pNew->op = op;
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;
@@ -108,7 +112,10 @@ void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
 Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
   Expr *pNew;
   pNew = sqliteMalloc( sizeof(Expr) );
-  if( pNew==0 ) return 0;
+  if( pNew==0 ){
+    sqliteExprListDelete(pList);
+    return 0;
+  }
   pNew->op = TK_FUNCTION;
   pNew->pList = pList;
   if( pToken ){
@@ -172,7 +179,7 @@ static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
 ** the index from the index hash table and free its memory
 ** structures.
 */
-static void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
+void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
   if( pIndex->pTable->pIndex==pIndex ){
     pIndex->pTable->pIndex = pIndex->pNext;
   }else{
@@ -411,7 +418,10 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
     return;
   }
   pTable = sqliteMalloc( sizeof(Table) );
-  if( pTable==0 ) return;
+  if( pTable==0 ){
+    sqliteFree(zName);
+    return;
+  }
   pTable->zName = zName;
   pTable->nCol = 0;
   pTable->aCol = 0;
@@ -445,11 +455,10 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   char **pz;
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
-    p->aCol = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
-    if( p->aCol==0 ){
-      p->nCol = 0;
-      return;
-    }
+    Column *aNew;
+    aNew = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
+    if( aNew==0 ) return;
+    p->aCol = aNew;
   }
   memset(&p->aCol[p->nCol], 0, sizeof(p->aCol[0]));
   pz = &p->aCol[p->nCol++].zName;
@@ -576,7 +585,12 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   */
   assert( pParse->nameClash==0 || pParse->initFlag==1 );
   if( pParse->explain==0 && pParse->nameClash==0 ){
-    sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
+    Table *pOld;
+    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
+    if( pOld ){
+      assert( p==pOld );  /* Malloc must have failed */
+      return;
+    }
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
@@ -878,12 +892,18 @@ void sqliteCreateIndex(
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
-  pIndex->pNext = pTab->pIndex;
-  pTab->pIndex = pIndex;
   if( !pParse->explain && !hideName ){
-    sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(zName)+1, pIndex);
+    Index *p;
+    p = sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(zName)+1, pIndex);
+    if( p ){
+      assert( p==pIndex );  /* Malloc must have failed */
+      sqliteFree(pIndex);
+      goto exit_create_index;
+    }
     db->flags |= SQLITE_InternChanges;
   }
+  pIndex->pNext = pTab->pIndex;
+  pTab->pIndex = pIndex;
 
   /* If the initFlag is 1 it means we are reading the SQL off the
   ** "sqlite_master" table on the disk.  So do not write to the disk
@@ -1071,15 +1091,20 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
   int i;
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(ExprList) );
-    if( pList==0 ) return 0;
+    if( pList==0 ){
+      sqliteExprDelete(pExpr);
+      return 0;
+    }
   }
   if( (pList->nExpr & 7)==0 ){
     int n = pList->nExpr + 8;
-    pList->a = sqliteRealloc(pList->a, n*sizeof(pList->a[0]));
-    if( pList->a==0 ){
-      pList->nExpr = 0;
+    struct ExprList_item *a;
+    a = sqliteRealloc(pList->a, n*sizeof(pList->a[0]));
+    if( a==0 ){
+      sqliteExprDelete(pExpr);
       return pList;
     }
+    pList->a = a;
   }
   if( pExpr ){
     i = pList->nExpr++;
@@ -1119,12 +1144,13 @@ IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
     if( pList==0 ) return 0;
   }
   if( (pList->nId & 7)==0 ){
-    pList->a = sqliteRealloc(pList->a, (pList->nId+8)*sizeof(pList->a[0]) );
-    if( pList->a==0 ){
-      pList->nId = 0;
+    struct IdList_item *a;
+    a = sqliteRealloc(pList->a, (pList->nId+8)*sizeof(pList->a[0]) );
+    if( a==0 ){
       sqliteIdListDelete(pList);
       return 0;
     }
+    pList->a = a;
   }
   memset(&pList->a[pList->nId], 0, sizeof(pList->a[0]));
   if( pToken ){

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.29 2001/09/27 03:22:34 drh Exp $
+** $Id: util.c,v 1.30 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -49,11 +49,15 @@ void *sqliteMalloc_(int n, char *zFile, int line){
   void *p;
   int *pi;
   int k;
-  sqlite_nMalloc++;
   if( sqlite_iMallocFail>=0 ){
     sqlite_iMallocFail--;
     if( sqlite_iMallocFail==0 ){
       sqlite_malloc_failed++;
+#if MEMORY_DEBUG>1
+      fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
+              n, zFile,line);
+#endif
+      sqlite_iMallocFail--;
       return 0;
     }
   }
@@ -64,6 +68,7 @@ void *sqliteMalloc_(int n, char *zFile, int line){
     sqlite_malloc_failed++;
     return 0;
   }
+  sqlite_nMalloc++;
   pi[0] = 0xdead1122;
   pi[1] = n;
   pi[k+2] = 0xdead3344;
@@ -227,6 +232,7 @@ void sqliteFree(void *p){
 ** works just like sqliteFree().
 */
 void *sqliteRealloc(void *p, int n){
+  void *p2;
   if( p==0 ){
     return sqliteMalloc(n);
   }
@@ -234,11 +240,11 @@ void *sqliteRealloc(void *p, int n){
     sqliteFree(p);
     return 0;
   }
-  p = realloc(p, n);
-  if( p==0 ){
+  p2 = realloc(p, n);
+  if( p2==0 ){
     sqlite_malloc_failed++;
   }
-  return p;
+  return p2;
 }
 
 /*
@@ -280,7 +286,9 @@ void sqliteSetString(char **pz, const char *zFirst, ...){
   va_end(ap);
   sqliteFree(*pz);
   *pz = zResult = sqliteMalloc( nByte );
-  if( zResult==0 ) return;
+  if( zResult==0 ){
+    return;
+  }
   strcpy(zResult, zFirst);
   zResult += strlen(zResult);
   va_start(ap, zFirst);
@@ -965,7 +973,7 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** Return a static string that describes the kind of error specified in the
 ** argument.
 */
-const char *sqliteErrStr(int rc){
+const char *sqlite_error_string(int rc){
   const char *z;
   switch( rc ){
     case SQLITE_OK:         z = "not an error";                          break;

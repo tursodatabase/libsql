@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.46 2001/10/12 17:30:05 drh Exp $
+** $Id: main.c,v 1.47 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -204,7 +204,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   vdbe = sqliteVdbeCreate(db);
   if( vdbe==0 ){
-    sqliteSetString(pzErrMsg, "out of memory");
+    sqliteSetString(pzErrMsg, "out of memory", 0);
     return SQLITE_NOMEM;
   }
   sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
@@ -291,6 +291,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   /* Attempt to read the schema */
   rc = sqliteInit(db, pzErrMsg);
   if( sqlite_malloc_failed ){
+    sqlite_close(db);
     goto no_mem_on_open;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     sqlite_close(db);
@@ -329,10 +330,21 @@ static void clearHashTable(sqlite *db, int preserveTemps){
     Table *pTab = sqliteHashData(pElem);
     if( preserveTemps && pTab->isTemp ){
       Index *pIdx;
-      sqliteHashInsert(&db->tblHash, pTab->zName, strlen(pTab->zName)+1, pTab);
+      int nName = strlen(pTab->zName);
+      Table *pOld = sqliteHashInsert(&db->tblHash, pTab->zName, nName+1, pTab);
+      if( pOld!=0 ){
+        assert( pOld==pTab );   /* Malloc failed on the HashInsert */
+        sqliteDeleteTable(db, pOld);
+        continue;
+      }
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int n = strlen(pIdx->zName)+1;
-        sqliteHashInsert(&db->idxHash, pIdx->zName, n, pIdx);
+        Index *pOldIdx;
+        pOldIdx = sqliteHashInsert(&db->idxHash, pIdx->zName, n, pIdx);
+        if( pOld ){
+          assert( pOldIdx==pIdx );
+          sqliteUnlinkAndDeleteIndex(db, pOldIdx);
+        }
       }
     }else{
       sqliteDeleteTable(db, pTab);
@@ -440,6 +452,10 @@ int sqlite_exec(
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     sParse.rc = SQLITE_NOMEM;
+    sqliteBtreeRollback(db->pBe);
+    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
+    db->flags &= ~SQLITE_InTrans;
+    clearHashTable(db, 0);
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){

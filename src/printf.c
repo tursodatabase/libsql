@@ -656,7 +656,13 @@ static void mout(void *arg, char *zNewText, int nNewChar){
       pM->zText = sqliteMalloc(pM->nAlloc);
       if( pM->zText && pM->nChar ) memcpy(pM->zText,pM->zBase,pM->nChar);
     }else{
-      pM->zText = sqliteRealloc(pM->zText, pM->nAlloc);
+      char *z = sqliteRealloc(pM->zText, pM->nAlloc);
+      if( z==0 ){
+        sqliteFree(pM->zText);
+        pM->nChar = 0;
+        pM->nAlloc = 0;
+      }
+      pM->zText = z;
     }
   }
   if( pM->zText ){
@@ -690,6 +696,9 @@ char *sqlite_mprintf(const char *zFormat, ...){
     if( zNew ) strcpy(zNew,zBuf);
   }else{
     zNew = sqliteRealloc(sMprintf.zText,sMprintf.nChar+1);
+    if( zNew==0 ){
+      sqliteFree(sMprintf.zText);
+    }
   }
   return zNew;
 }
@@ -709,7 +718,11 @@ char *sqlite_vmprintf(const char *zFormat, va_list ap){
     sMprintf.zText = sqliteMalloc( strlen(zBuf)+1 );
     if( sMprintf.zText ) strcpy(sMprintf.zText,zBuf);
   }else{
-    sMprintf.zText = sqliteRealloc(sMprintf.zText,sMprintf.nChar+1);
+    char *z = sqliteRealloc(sMprintf.zText,sMprintf.nChar+1);
+    if( z==0 ){
+      sqliteFree(sMprintf.zText);
+    }
+    sMprintf.zText = z;
   }
   return sMprintf.zText;
 }

@@ -17,8 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct 20 (2.0.7)} {
-<li>Patches from Christian Werner</li>
+chng {2001 Oct 21 (2.0.7)} {
+<li>Any UTF-8 character or ISO8859 character can be used as part of
+    an identifier.</li>
+<li>Patches from Christian Werner to improve ODBC compatibility and to
+    fix a bug in the round() function.</li>
+<li>Plug some memory leaks that use to occur if malloc() failed.
+    We have been and continue to be memory leak free as long as
+    malloc() works.</li>
+<li>Changes to some test scripts so that they work on Windows in
+    addition to Unix.</li>
 }
 
 chng {2001 Oct 19 (2.0.6)} {

@@ -11,6 +11,7 @@
 }
 /^free / {
   mem[$5] = "";
+  str[$5] = ""
 }
 /^string at / {
   addr = $3

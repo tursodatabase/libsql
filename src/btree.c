@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.34 2001/10/15 00:44:35 drh Exp $
+** $Id: btree.c,v 1.35 2001/10/22 02:58:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -890,7 +890,7 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
   }
   unlockBtreeIfUnused(pBt);
   nLock = (int)sqliteHashFind(&pBt->locks, 0, pCur->pgnoRoot);
-  assert( nLock!=0 );
+  assert( nLock!=0 || sqlite_malloc_failed );
   nLock = nLock<0 ? 0 : nLock-1;
   sqliteHashInsert(&pBt->locks, 0, pCur->pgnoRoot, (void*)nLock);
   sqliteFree(pCur);

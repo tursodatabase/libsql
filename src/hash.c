@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.2 2001/10/12 17:30:05 drh Exp $
+** $Id: hash.c,v 1.3 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -254,7 +254,8 @@ void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
 **
 ** If another element already exists with the same key, then the
 ** new data replaces the old data and the old data is returned.
-** The key is not copied in this instance.
+** The key is not copied in this instance.  If a malloc fails, then
+** new data is returned.
 **
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.
@@ -284,12 +285,12 @@ void *sqliteHashInsert(Hash *pH, void *pKey, int nKey, void *data){
   }
   if( data==0 ) return 0;
   new_elem = (HashElem*)sqliteMalloc( sizeof(HashElem) );
-  if( new_elem==0 ) return 0;
+  if( new_elem==0 ) return data;
   if( pH->copyKey && pKey!=0 ){
     new_elem->pKey = sqliteMalloc( nKey );
     if( new_elem->pKey==0 ){
       sqliteFree(new_elem);
-      return 0;
+      return data;
     }
     memcpy((void*)new_elem->pKey, pKey, nKey);
   }else{
@@ -301,7 +302,7 @@ void *sqliteHashInsert(Hash *pH, void *pKey, int nKey, void *data){
   if( pH->htsize==0 ){
     pH->count = 0;
     sqliteFree(new_elem);
-    return 0;
+    return data;
   }
   if( pH->count > pH->htsize ){
     rehash(pH,pH->htsize*2);

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.31 2001/10/13 02:59:09 drh Exp $
+** $Id: expr.c,v 1.32 2001/10/22 02:58:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -935,11 +935,11 @@ int sqliteExprCompare(Expr *pA, Expr *pB){
 static int appendAggInfo(Parse *pParse){
   if( (pParse->nAgg & 0x7)==0 ){
     int amt = pParse->nAgg + 8;
-    pParse->aAgg = sqliteRealloc(pParse->aAgg, amt*sizeof(pParse->aAgg[0]));
-    if( pParse->aAgg==0 ){
-      pParse->nAgg = 0;
+    AggExpr *aAgg = sqliteRealloc(pParse->aAgg, amt*sizeof(pParse->aAgg[0]));
+    if( aAgg==0 ){
       return -1;
     }
+    pParse->aAgg = aAgg;
   }
   memset(&pParse->aAgg[pParse->nAgg], 0, sizeof(pParse->aAgg[0]));
   return pParse->nAgg++;

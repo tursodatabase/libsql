@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.10 2001/09/16 00:13:28 drh Exp $
+# $Id: all.test,v 1.11 2001/10/22 02:58:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,8 +65,9 @@ if {$LeakList!=""} {
   puts " Ok"
 }
 
-if {[file readable $testdir/malloc.test]} {
-  source $testdir/malloc.test
-}
+# Run the malloc tests after memory leak detection.  We do leak
+# some if malloc fails.
+#
+catch {source $testdir/malloc.test}
 
 really_finish_test
