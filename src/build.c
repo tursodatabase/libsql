@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.297 2005/01/21 11:55:27 danielk1977 Exp $
+** $Id: build.c,v 1.298 2005/01/24 10:25:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -760,12 +760,21 @@ void sqlite3StartTable(
     ** The rowid value is needed by the code that sqlite3EndTable will
     ** generate.
     */
+#ifndef SQLITE_OMIT_VIEW
+    if( isView ){
+      sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+    }else
+#endif
+    {
+      sqlite3VdbeAddOp(v, OP_CreateTable, iDb, 0);
+    }
     sqlite3OpenMasterTable(v, iDb);
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
   }
 
   /* Normal (non-error) return. */
@@ -1404,13 +1413,13 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     */
     if( p->pSelect==0 ){
       /* A regular table */
-      sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0);
+      /* sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0); */
       zType = "table";
       zType2 = "TABLE";
 #ifndef SQLITE_OMIT_VIEW
     }else{
       /* A view */
-      sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+    /*  sqlite3VdbeAddOp(v, OP_Integer, 0, 0); */
       zType = "view";
       zType2 = "VIEW";
 #endif
@@ -1884,9 +1893,11 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
       destroyTable(pParse, pTab);
     }
 
-    /* Remove the table entry from SQLite's internal schema
+    /* Remove the table entry from SQLite's internal schema and modify
+    ** the schema cookie.
     */
     sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
+    sqlite3ChangeCookie(db, v, iDb);
   }
   sqliteViewResetAll(db, iDb);
 
@@ -2200,7 +2211,7 @@ void sqlite3CreateIndex(
         goto exit_create_index;
       }
     }
-  }else if( pName==0 ){
+  }else{
     char zBuf[30];
     int n;
     Index *pLoop;
@@ -2403,13 +2414,15 @@ void sqlite3CreateIndex(
     sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
     sqliteFree(zStmt);
 
-    /* Fill the index with data and reparse the schema
+    /* Fill the index with data and reparse the schema. Code an OP_Expire
+    ** to invalidate all pre-compiled statements.
     */
     if( pTblName ){
       sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(db, v, iDb);
       sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
          sqlite3MPrintf("name='%q'", pIndex->zName), P3_DYNAMIC);
+      sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
     }
   }
 

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.15 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.16 2005/01/24 10:26:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,9 +337,9 @@ do_test autovacuum-2.5.2 {
   execsql {
     SELECT name, rootpage FROM sqlite_master;
   }
-} [list av1 4  sqlite_autoindex_av1_1 3 \
-        av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
-        av3 10 sqlite_autoindex_av3_1 9 av3_i1 11 \
+} [list av1 3  sqlite_autoindex_av1_1 4 \
+        av2 5  sqlite_autoindex_av2_1 6 av2_i1 7 av2_i2 8 \
+        av3 9 sqlite_autoindex_av3_1 10 av3_i1 11 \
         av4 12 av4_i1 13 av4_i2 14 av4_i3 15 av4_i4 16 \
 ]
 
@@ -378,21 +378,21 @@ do_test autovacuum-2.5.3 {
     DROP TABLE av3;
     SELECT name, rootpage FROM sqlite_master;
   }
-} [list av1 4  sqlite_autoindex_av1_1 3 \
-        av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
+} [list av1 3  sqlite_autoindex_av1_1 4 \
+        av2 5  sqlite_autoindex_av2_1 6 av2_i1 7 av2_i2 8 \
         av4 12 av4_i1 13 av4_i2 9 av4_i3 10 av4_i4 11 \
 ]
-do_test autovacuum-2.5.2.1 {
+do_test autovacuum-2.5.3.1 {
   execsql {
     SELECT * FROM av1 WHERE a = 'av1 a';
   }
 } {{av1 a} {av1 b} {av1 c}}
-do_test autovacuum-2.5.2.2 {
+do_test autovacuum-2.5.3.2 {
   execsql {
     SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
   }
 } {{av2 a} {av2 b} {av2 c}}
-do_test autovacuum-2.5.2.4 {
+do_test autovacuum-2.5.3.3 {
   execsql {
     SELECT * FROM av4 WHERE a = 'av4 a' AND b = 'av4 b' AND c = 'av4 c';
   }
@@ -406,15 +406,15 @@ do_test autovacuum-2.5.4 {
     DROP TABLE av1;
     SELECT name, rootpage FROM sqlite_master;
   }
-} [list av2 6  sqlite_autoindex_av2_1 5 av2_i1 7 av2_i2 8 \
+} [list av2 5  sqlite_autoindex_av2_1 6 av2_i1 7 av2_i2 8 \
         av4 3 av4_i1 4 av4_i2 9 av4_i3 10 av4_i4 11 \
 ]
-do_test autovacuum-2.5.2.2 {
+do_test autovacuum-2.5.4.2 {
   execsql {
     SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
   }
 } {{av2 a} {av2 b} {av2 c}}
-do_test autovacuum-2.5.2.4 {
+do_test autovacuum-2.5.4.4 {
   execsql {
     SELECT * FROM av4 WHERE a = 'av4 a' AND b = 'av4 b' AND c = 'av4 c';
   }
@@ -426,13 +426,13 @@ do_test autovacuum-2.5.2.4 {
 # Step 3: Delete av4_i2.
 # Step 4: Delete av4_i1. av2_i2 replaces it.
 # Step 5: Delete av4. av2_i1 replaces it.
-do_test autovacuum-2.5.4 {
+do_test autovacuum-2.5.5 {
   execsql {
     DROP TABLE av4;
     SELECT name, rootpage FROM sqlite_master;
   }
-} [list av2 6 sqlite_autoindex_av2_1 5 av2_i1 3 av2_i2 4]
-do_test autovacuum-2.5.2.2 {
+} [list av2 5 sqlite_autoindex_av2_1 6 av2_i1 3 av2_i2 4]
+do_test autovacuum-2.5.5.2 {
   execsql {
     SELECT * FROM av2 WHERE a = 'av2 a' AND b = 'av2 b' AND c = 'av2 c'
   }

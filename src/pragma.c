@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.85 2005/01/22 03:03:54 drh Exp $
+** $Id: pragma.c,v 1.86 2005/01/24 10:25:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -155,18 +155,21 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     if( sqlite3StrICmp(zLeft, p->zName)==0 ){
       sqlite3 *db = pParse->db;
       Vdbe *v;
-      if( zRight==0 ){
-        v = sqlite3GetVdbe(pParse);
-        if( v ){
+      v = sqlite3GetVdbe(pParse);
+      if( v ){
+        if( zRight==0 ){
           returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
-        }
-      }else{
-        if( getBoolean(zRight) ){
-          db->flags |= p->mask;
         }else{
-          db->flags &= ~p->mask;
+          if( getBoolean(zRight) ){
+            db->flags |= p->mask;
+          }else{
+            db->flags &= ~p->mask;
+          }
         }
-        sqlite3ExpirePreparedStatements(db);
+        /* If one of these pragmas is executed, any prepared statements
+        ** need to be recompiled.
+        */
+        sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
       }
       return 1;
     }
@@ -896,6 +899,14 @@ void sqlite3Pragma(
 #endif
 
   {}
+
+  if( v ){
+    /* Code an OP_Expire at the end of each PRAGMA program to cause
+    ** the VDBE implementing the pragma to expire. Most (all?) pragmas
+    ** are only valid for a single execution.
+    */
+    sqlite3VdbeAddOp(v, OP_Expire, 1, 0);
+  }
 pragma_out:
   sqliteFree(zLeft);
   sqliteFree(zRight);

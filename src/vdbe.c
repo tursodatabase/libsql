@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.445 2005/01/21 08:13:15 danielk1977 Exp $
+** $Id: vdbe.c,v 1.446 2005/01/24 10:25:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4494,6 +4494,24 @@ case OP_CursorLoad: {
   break;
 }
 #endif /* SQLITE_OMIT_CURSOR */
+
+/* Opcode: Expire P1 * *
+**
+** Cause precompiled statements to become expired. An expired statement
+** fails with an error code of SQLITE_SCHEMA if it is ever executed 
+** (via sqlite3_step()).
+** 
+** If P1 is 0, then all SQL statements become expired. If P1 is non-zero,
+** then only the currently executing statement is affected. 
+*/
+case OP_Expire: {
+  if( !pOp->p1 ){
+    sqlite3ExpirePreparedStatements(db);
+  }else{
+    p->expired = 1;
+  }
+  break;
+}
 
 
 

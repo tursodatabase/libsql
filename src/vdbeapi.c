@@ -163,6 +163,12 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   if( p->aborted ){
     return SQLITE_ABORT;
   }
+  if( p->pc<=0 && p->expired ){
+    if( p->rc==SQLITE_OK ){
+      p->rc = SQLITE_SCHEMA;
+    }
+    return SQLITE_ERROR;
+  }
   db = p->db;
   if( sqlite3SafetyOn(db) ){
     p->rc = SQLITE_MISUSE;

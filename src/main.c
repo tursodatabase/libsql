@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.273 2005/01/21 08:13:15 danielk1977 Exp $
+** $Id: main.c,v 1.274 2005/01/24 10:25:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1287,6 +1287,14 @@ int sqlite3_create_collation(
     );
     return SQLITE_ERROR;
   }
+
+  /* If removing a collation sequence, then set the expired flag for
+  ** all precompiled statements.
+  */
+  if( !xCompare ){
+    sqlite3ExpirePreparedStatements(db);
+  }
+
   pColl = sqlite3FindCollSeq(db, (u8)enc, zName, strlen(zName), 1);
   if( 0==pColl ){
    rc = SQLITE_NOMEM;

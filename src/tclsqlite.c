@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.116 2005/01/24 00:28:43 drh Exp $
+** $Id: tclsqlite.c,v 1.117 2005/01/24 10:25:59 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -22,7 +22,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define NUM_PREPARED_STMTS 0
+#define NUM_PREPARED_STMTS 10
 #define MAX_PREPARED_STMTS 100
 
 /*

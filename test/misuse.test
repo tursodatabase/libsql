@@ -13,7 +13,7 @@
 # This file implements tests for the SQLITE_MISUSE detection logic.
 # This test file leaks memory and file descriptors.
 #
-# $Id: misuse.test,v 1.9 2005/01/16 09:06:34 danielk1977 Exp $
+# $Id: misuse.test,v 1.10 2005/01/24 10:26:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -172,6 +172,9 @@ do_test misuse-4.3 {
   lappend v $msg $r
 } {0 {} SQLITE_BUSY}
 do_test misuse-4.4 {
+  # Flush the TCL statement cache here, otherwise the sqlite3_close() will
+  # fail because there are still un-finalized() VDBEs.
+  db cache flush
   sqlite3_close $::DB
   catchsql2 {SELECT * FROM t1}
 } {1 {library routine called out of sequence}}

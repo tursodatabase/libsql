@@ -1302,6 +1302,12 @@ int sqlite3VdbeReset(Vdbe *p){
     }else{
       sqlite3Error(p->db, SQLITE_OK, 0);
     }
+  }else if( p->rc && p->expired ){
+    /* The expired flag was set on the VDBE before the first call
+    ** to sqlite3_step(). For consistency (since sqlite3_step() was
+    ** called), set the database error in this case as well.
+    */
+    sqlite3Error(p->db, p->rc, 0);
   }
 
   /* Reclaim all memory used by the VDBE
