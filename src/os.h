@@ -162,7 +162,7 @@
 **
 */
 #define PENDING_BYTE      0x40000000  /* First byte past the 1GB boundary */
-/* #define PENDING_BYTE     0x5400   // Page 20 - for testing */
+/* #define PENDING_BYTE     0x5400   // Page 22 - for testing */
 #define RESERVED_BYTE     (PENDING_BYTE+1)
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510

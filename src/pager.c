@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.174 2004/11/06 12:26:08 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.175 2004/11/08 07:13:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -34,13 +34,25 @@
 #define TRACE2(X,Y)     sqlite3DebugPrintf(X,Y)
 #define TRACE3(X,Y,Z)   sqlite3DebugPrintf(X,Y,Z)
 #define TRACE4(X,Y,Z,W) sqlite3DebugPrintf(X,Y,Z,W)
+#define TRACE5(X,Y,Z,W,V) sqlite3DebugPrintf(X,Y,Z,W, V)
 #else
 #define TRACE1(X)
 #define TRACE2(X,Y)
 #define TRACE3(X,Y,Z)
 #define TRACE4(X,Y,Z,W)
+#define TRACE5(X,Y,Z,W,V)
 #endif
 
+/*
+** The following two macros are used within the TRACEX() macros above
+** to print out file-descriptors. They are required so that tracing
+** can be turned on when using both the regular os_unix.c and os_test.c
+** backends.
+**
+** PAGERID() takes a pointer to a Pager struct as it's argument. The
+** associated file-descriptor is returned. FILEHANDLEID() takes an OsFile
+** struct as it's argument.
+*/
 #ifdef OS_TEST
 #define PAGERID(p) (p->fd->fd.h)
 #define FILEHANDLEID(fd) (fd->fd.h)
@@ -339,7 +351,8 @@ static const unsigned char aJournalMagic[] = {
 ** is devoted to storing a master journal name - there are no more pages to
 ** roll back. See comments for function writeMasterJournal() for details.
 */
-#define PAGER_MJ_PGNO(x) (PENDING_BYTE/((x)->pageSize))
+/* #define PAGER_MJ_PGNO(x) (PENDING_BYTE/((x)->pageSize)) */
+#define PAGER_MJ_PGNO(x) ((PENDING_BYTE/((x)->pageSize))+1)
 
 /*
 ** Enable reference count tracking (for debugging) here:
@@ -3271,7 +3284,6 @@ sync_exit:
 }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-
 /*
 ** Move the page identified by pData to location pgno in the file. 
 **
@@ -3295,13 +3307,16 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   assert( !pPager->stmtInUse );
   assert( pPg->nRef>0 );
 
-  TRACE4("MOVE %d page %d moves to %d\n", PAGERID(pPager), pPg->pgno, pgno);
+  TRACE5("MOVE %d page %d (needSync=%d) moves to %d\n", 
+      PAGERID(pPager), pPg->pgno, pPg->needSync, pgno);
 
   /* Unlink pPg from it's hash-chain */
   unlinkHashChain(pPager, pPg);
 
   /* If the cache contains a page with page-number pgno, remove it
-  ** from it's hash chain.
+  ** from it's hash chain. Also, if the PgHdr.needSync was set for 
+  ** page pgno before the 'move' operation, it needs to be retained 
+  ** for the page moved there.
   */
   pPgOld = pager_lookup(pPager, pgno);
   if( pPgOld ){

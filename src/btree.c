@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.213 2004/11/06 12:26:08 danielk1977 Exp $
+** $Id: btree.c,v 1.214 2004/11/08 07:13:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -394,8 +394,13 @@ static void put4byte(unsigned char *p, u32 v){
 #define getVarint32  sqlite3GetVarint32
 #define putVarint    sqlite3PutVarint
 
-#ifndef SQLITE_OMIT_AUTOVACUUM
+/* The database page the PENDING_BYTE occupies. This page is never used.
+** TODO: This macro is very similary to PAGER_MJ_PGNO() in pager.c. They
+** should possibly be consolidated (presumably in pager.h).
+*/
+#define PENDING_BYTE_PAGE(pBt) ((PENDING_BYTE/(pBt)->pageSize)+1)
 
+#ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** These two macros define the location of the pointer-map entry for a 
 ** database page. The first argument to each is the page size used 
@@ -408,11 +413,11 @@ static void put4byte(unsigned char *p, u32 v){
 **
 ** If the pgno argument passed to PTRMAP_PAGENO is a pointer-map page,
 ** then pgno is returned. So (pgno==PTRMAP_PAGENO(pgsz, pgno)) can be
-** used to test if pgno is a pointer-map page.
+** used to test if pgno is a pointer-map page. PTRMAP_ISPAGE implements
+** this test.
 */
 #define PTRMAP_PAGENO(pgsz, pgno) (((pgno-2)/(pgsz/5+1))*(pgsz/5+1)+2)
 #define PTRMAP_PTROFFSET(pgsz, pgno) (((pgno-2)%(pgsz/5+1)-1)*5)
-
 #define PTRMAP_ISPAGE(pgsz, pgno) (PTRMAP_PAGENO(pgsz,pgno)==pgno)
 
 /*
@@ -459,6 +464,7 @@ static int ptrmapPut(Btree *pBt, Pgno key, u8 eType, Pgno pgno){
   int offset;     /* Offset in pointer map page */
   int rc;
 
+  assert( key!=0 );
   iPtrmap = PTRMAP_PAGENO(pBt->pageSize, key);
   rc = sqlite3pager_get(pBt->pPager, iPtrmap, (void **)&pPtrmap);
   if( rc!=SQLITE_OK ){
@@ -1755,6 +1761,12 @@ static int autoVacuumCommit(Btree *pBt, Pgno *nTrunc){
   origSize = sqlite3pager_pagecount(pPager);
   nPtrMap = (nFreeList-origSize+PTRMAP_PAGENO(pgsz, origSize)+pgsz/5)/(pgsz/5);
   finSize = origSize - nFreeList - nPtrMap;
+  if( origSize>PENDING_BYTE_PAGE(pBt) && finSize<=PENDING_BYTE_PAGE(pBt) ){
+    finSize--;
+    if( PTRMAP_ISPAGE(pBt->pageSize, finSize) ){
+      finSize--;
+    }
+  }
   TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origSize, finSize));
 
   /* Variable 'finSize' will be the size of the file in pages after
@@ -1764,14 +1776,17 @@ static int autoVacuumCommit(Btree *pBt, Pgno *nTrunc){
   ** to a free page earlier in the file (somewhere before finSize).
   */
   for( iDbPage=finSize+1; iDbPage<=origSize; iDbPage++ ){
+    /* If iDbPage is a pointer map page, or the pending-byte page, skip it. */
+    if( PTRMAP_ISPAGE(pgsz, iDbPage) || iDbPage==PENDING_BYTE_PAGE(pBt) ){
+      continue;
+    }
+
     rc = ptrmapGet(pBt, iDbPage, &eType, &iPtrPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
     assert( eType!=PTRMAP_ROOTPAGE );
 
-    /* If iDbPage is a free or pointer map page, do not swap it.
-    ** TODO: Instead, make sure the page is in the journal file.
-    */
-    if( eType==PTRMAP_FREEPAGE || PTRMAP_ISPAGE(pgsz, iDbPage) ){
+    /* If iDbPage is free, do not swap it.  */
+    if( eType==PTRMAP_FREEPAGE ){
       continue;
     }
     rc = getPage(pBt, iDbPage, &pDbMemPage);
@@ -3052,15 +3067,19 @@ static int allocatePage(
       ** becomes a new pointer-map page, the second is used by the caller.
       */
       TRACE(("ALLOCATE: %d from end of file (pointer-map page)\n", *pPgno));
+      assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
       (*pPgno)++;
     }
 #endif
 
+    assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
     rc = getPage(pBt, *pPgno, ppPage);
     if( rc ) return rc;
     rc = sqlite3pager_write((*ppPage)->aData);
     TRACE(("ALLOCATE: %d from end of file\n", *pPgno));
   }
+
+  assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
   return rc;
 }
 
@@ -4383,8 +4402,11 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     if( rc!=SQLITE_OK ) return rc;
     pgnoRoot++;
 
-    /* The new root-page may not be allocated on a pointer-map page. */
-    if( pgnoRoot==PTRMAP_PAGENO(pBt->pageSize, pgnoRoot) ){
+    /* The new root-page may not be allocated on a pointer-map page, or the
+    ** PENDING_BYTE page.
+    */
+    if( pgnoRoot==PTRMAP_PAGENO(pBt->pageSize, pgnoRoot) ||
+        pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
     assert( pgnoRoot>=3 );
@@ -4616,10 +4638,20 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
         *piMoved = maxRootPgno;
       }
 
+      /* Set the new 'max-root-page' value in the database header. This
+      ** is the old value less one, less one more if that happens to
+      ** be a root-page number, less one again if that is the
+      ** PENDING_BYTE_PAGE.
+      */
       maxRootPgno--;
+      if( maxRootPgno==PENDING_BYTE_PAGE(pBt) ){
+        maxRootPgno--;
+      }
       if( maxRootPgno==PTRMAP_PAGENO(pBt->pageSize, maxRootPgno) ){
         maxRootPgno--;
       }
+      assert( maxRootPgno!=PENDING_BYTE_PAGE(pBt) );
+
       rc = sqlite3BtreeUpdateMeta(pBt, 4, maxRootPgno);
     }else{
       rc = freePage(pPage);
@@ -4655,9 +4687,9 @@ int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
   *pMeta = get4byte(&pP1[36 + idx*4]);
   sqlite3pager_unref(pP1);
 
-  /* If autovacuumed is disabled in the implementation but we are
-  ** trying to access an autovacuumed database, then make the
-  ** database readonly. */
+  /* If autovacuumed is disabled in this build but we are trying to 
+  ** access an autovacuumed database, then make the database readonly. 
+  */
 #ifdef SQLITE_OMIT_AUTOVACUUM
   if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
 #endif
