@@ -1,5 +1,7 @@
 #!/usr/bin/awk -f
 #
+# Generate the file opcodes.h.
+#
 # This AWK script scans a concatenation of the parse.h output file from the
 # parser and the vdbe.c source file in order to generate the opcodes numbers
 # for all opcodes.  
@@ -11,6 +13,15 @@
 # The TK_ comment is optional.  If it is present, then the value assigned to
 # the OP_ is the same as the TK_ value.  If missing, the OP_ value is assigned
 # a small integer that is different from every other OP_ value.
+#
+# We go to the trouble of making some OP_ value the same as TK_ values
+# as an optimization.  During parsing, things like expression operators
+# are coded with TK_ values such as TK_ADD, TK_DIVIDE, and so forth.  Later
+# during code generation, we need to generate corresponding opcodes like
+# OP_Add and OP_Divide.  By making TK_ADD==OP_Add and TK_DIVIDE==OP_Divide,
+# code to translation from one to the other is avoided.  This makes the
+# code generator run (infinitesimally) faster and more importantly it makes
+# the total library smaller.
 #
 
 # Remember the TK_ values from the parse.h file

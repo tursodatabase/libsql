@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.71 2004/10/22 20:29:22 drh Exp $
+** $Id: pragma.c,v 1.72 2004/10/25 20:33:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -20,22 +20,6 @@
 # include "pager.h"
 # include "btree.h"
 #endif
-
-/*
-** Interpret the given string as a boolean value.
-*/
-static int getBoolean(const u8 *z){
-  static const u8 *azTrue[] = { "yes", "on", "true" };
-  int i;
-  if( z[0]==0 ) return 0;
-  if( sqlite3IsNumber(z, 0, SQLITE_UTF8) ){
-    return atoi(z);
-  }
-  for(i=0; i<sizeof(azTrue)/sizeof(azTrue[0]); i++){
-    if( sqlite3StrICmp(z,azTrue[i])==0 ) return 1;
-  }
-  return 0;
-}
 
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
@@ -47,28 +31,30 @@ static int getBoolean(const u8 *z){
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static int getSafetyLevel(u8 *z){
-  static const struct {
-    const u8 *zWord;
-    int val;
-  } aKey[] = {
-    { "no",    0 },
-    { "off",   0 },
-    { "false", 0 },
-    { "yes",   1 },
-    { "on",    1 },
-    { "true",  1 },
-    { "full",  2 },
-  };
-  int i;
-  if( z[0]==0 ) return 1;
-  if( sqlite3IsNumber(z, 0, SQLITE_UTF8) ){
+static int getSafetyLevel(const u8 *z){
+                             /* 123456789 123456789 */
+  static const char zText[] = "onoffalseyestruefull";
+  static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
+  static const u8 iLength[] = {2, 2, 3, 5, 3, 4, 4};
+  static const u8 iValue[] =  {1, 0, 0, 0, 1, 1, 2};
+  int i, n;
+  if( isdigit(*z) ){
     return atoi(z);
   }
-  for(i=0; i<sizeof(aKey)/sizeof(aKey[0]); i++){
-    if( sqlite3StrICmp(z,aKey[i].zWord)==0 ) return aKey[i].val;
+  n = strlen(z);
+  for(i=0; i<sizeof(iLength); i++){
+    if( iLength[i]==n && sqlite3StrNICmp(&zText[iOffset[i]],z,n)==0 ){
+      return iValue[i];
+    }
   }
   return 1;
+}
+
+/*
+** Interpret the given string as a boolean value.
+*/
+static int getBoolean(const u8 *z){
+  return getSafetyLevel(z)&1;
 }
 
 /*
@@ -130,7 +116,7 @@ static void returnSingleInt(Parse *pParse, const char *zLabel, int value){
 ** Also, implement the pragma.
 */
 static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
-  static const struct {
+  static const struct sPragmaType {
     const char *zName;  /* Name of the pragma */
     int mask;           /* Mask for the db->flags value */
   } aPragma[] = {
@@ -141,24 +127,24 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "short_column_names",       SQLITE_ShortColNames },
     { "count_changes",            SQLITE_CountRows     },
     { "empty_result_callbacks",   SQLITE_NullCallback  },
-/* The following is VERY experimental */
+    /* The following is VERY experimental */
     { "writable_schema",          SQLITE_WriteSchema   },
   };
   int i;
-  for(i=0; i<sizeof(aPragma)/sizeof(aPragma[0]); i++){
-    if( sqlite3StrICmp(zLeft, aPragma[i].zName)==0 ){
+  const struct sPragmaType *p;
+  for(i=0, p=aPragma; i<sizeof(aPragma)/sizeof(aPragma[0]); i++, p++){
+    if( sqlite3StrICmp(zLeft, p->zName)==0 ){
       sqlite3 *db = pParse->db;
       Vdbe *v;
       if( zRight==0 ){
         v = sqlite3GetVdbe(pParse);
         if( v ){
-          returnSingleInt(pParse,
-               aPragma[i].zName, (db->flags&aPragma[i].mask)!=0);
+          returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
         }
       }else if( getBoolean(zRight) ){
-        db->flags |= aPragma[i].mask;
+        db->flags |= p->mask;
       }else{
-        db->flags &= ~aPragma[i].mask;
+        db->flags &= ~p->mask;
       }
       return 1;
     }
