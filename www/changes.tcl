@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Mar 20 (1.0.26)} {
+<li>A serious bug fixed on Windows.  Windows users should upgrade.
+    No impact to Unix.</li>
+}
+
 chng {2001 Mar 15 (1.0.25)} {
 <li>Modify the test scripts to identify tests that depend on system
     load and processor speed and

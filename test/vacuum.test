@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.2 2000/10/19 14:10:10 drh Exp $
+# $Id: vacuum.test,v 1.3 2001/03/20 12:55:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,6 +65,7 @@ do_test vacuum-1.3 {
   set a3 [file mtime testdb/index1.tbl]
   expr {$a1>$b1 && $a2==$b2 && $a3==$b3}
 } {1}
+if {$::tcl_platform(platform)!="windows"} {
 testif gdbm:
 do_test vacuum-1.4 {
   set b1 [file mtime testdb/test1.tbl]
@@ -77,6 +78,6 @@ do_test vacuum-1.4 {
   set a3 [file mtime testdb/index1.tbl]
   expr {$a1>$b1 && $a2>$b2 && $a3>$b3}
 } {1}
-
+} ;# End if( platform!=windows )
 
 finish_test

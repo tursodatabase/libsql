@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.8 2001/02/19 23:48:17 drh Exp $
+** $Id: dbbemem.c,v 1.9 2001/03/20 12:55:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -721,7 +721,12 @@ static int sqliteMemDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 ** directory.
 */
 static int sqliteMemOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
+#if OS_UNIX
   const char *zTemps[] = { "/usr/tmp", "/var/tmp", "/tmp", "/temp", 0};
+#endif
+#if OS_WIN
+  const char *zTemps[] = { "c:/temp", "c:", 0};
+#endif
   const char *zDir;
   int i;
   struct stat statbuf;

@@ -1,19 +1,19 @@
-C Version\s1.0.25\s(CVS\s478)
-D 2001-03-15T18:30:00
+C Open\swindows\sfiles\sin\sbinary\smode.\s(CVS\s193)
+D 2001-03-20T12:55:13
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 80af39f0d764a13d57b92a38c6d21a7d4e5f7197
+F VERSION 900bbde4128ea2f66efdd32cae849187ea790e77
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F doc/report1.txt ad0a41513479f1be0355d1f3f074e66779ff2282
+F doc/report1.txt 734cbae63b1310cc643fe5e9e3da1ab55a79b99e
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
 F src/build.c 7aa5879bf58ea6bbff22c26c59d1130021fa6ca4
-F src/dbbe.c 162d29b09ac379f160892c5795efc14099dcc8eb
+F src/dbbe.c 1b3b8b5ded9e58d10d94d268cd12343b6212dbd1
 F src/dbbe.h 0435a36906a839cce062608f51bd9d3e79878fec
 F src/dbbegdbm.c 5bfcb1b4ee47a98c5eae83041e9716cd3233fd0e
-F src/dbbemem.c 576a0a0ad675063a1dd2c4aae68233232bd2deac
+F src/dbbemem.c af740e5b4f2da3cb010b10592034f0627cdb0543
 F src/delete.c b83dc815f83220a82df13f1f1f479187d305fe6a
 F src/ex/README b745b00acce2d892f60c40111dacdfc48e0c1c7a
 F src/ex/db.c f1419ae6c93e40b5ac6e39fe7efd95d868e6f9d7
@@ -45,16 +45,16 @@ F src/vdbe.h 031b7dd7d6f94c51dc37cdf26efe43d1619bb672
 F src/where.c 478fde7c930969ca428de2d80b137959d25ee2fb
 F test/all.test 15cac2f6b2d4c55bf896212aff3cc9d6597b0490
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
-F test/dbbe.test 27deeebf2a01da97cabaab8dc7f34ca3b51a0123
-F test/delete.test 402ee3ccb6e544582d24c573ef70b34d09583ae7
+F test/dbbe.test 03a6940807f8a1e7538897b4c802a7937677e053
+F test/delete.test e3e082a9dc764e3c259a8d175b31cd648e7c58f7
 F test/expr.test 48273bf48a15d226c35829f702af4254c0ff6795
 F test/func.test 02aed8845b98bde1043dda97455de1d37238ebb3
 F test/in.test 2c560c0f55fb777029fd9bb5378f2997582aa603
 F test/index.test ee060ef8912be47ba616e50cce7985259a68d58a
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
-F test/lock.test a58af9b98b4351dc80896767781d8e6cab1b3666
-F test/main.test 83cfa58b0b9b69924cc915d5c50b12f0ac9e40e7
+F test/lock.test d8f0fc54f2a88969368c15490ea82811e2d7dd37
+F test/main.test 5b0ed3d586c15b9136b9fd4916dcc95086639387
 F test/select1.test 68ff778c24fc8982e63dda37acb5b0396913adf7
 F test/select2.test 04ac3bd69298f58c7d0883159bab42ab9ad6021c
 F test/select3.test a9234b8424b6c6d71de534f43b91ade9be68e9cc
@@ -63,9 +63,9 @@ F test/select5.test e2b9d51d88cbd6c307c2c05b0ef55fe7ba811ac2
 F test/sort.test d582086c4bb7df3fbf50aa72e69d7e235e9f8e31
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test eaa25951c0f18615763cd3dc248ea4bc38739c05
-F test/tester.tcl 2afa947ed17c4633864fbd6506f20e26e884103c
+F test/tester.tcl 01f881142be3bd8713abcea06747652067dafb78
 F test/update.test 72c0c93310483b86dc904a992220c5b84c7ce100
-F test/vacuum.test 2127748ff4ddb409212efbb6d9fb9c469ea1b49c
+F test/vacuum.test b95d8119a0a83dc6c4ac63888f8872f06199e065
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/gdbmstat.c 56a9033531e5f5a48413f6ec436d5fb0341632c1
@@ -80,7 +80,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl 1698d3b1636ec70c77d22aebccc12f43ba4c1c57
+F www/changes.tcl 6216d3a09f4cde137e635ab9aedda63adef086c0
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 4b0ba23807a57eaa3649622cff3be66cd75e7561
-R 9278e0d1b4fb4a58660b2bd6644e304b
+P 7564b223ab39f26a2fcf2afe150a98d10de132ea
+R c64bf80b88e496913947dd674ee75d13
 U drh
-Z 1678389fee545571636f80371eb62ce2
+Z 8308fb574f8a07fbde2a6679bf75d982

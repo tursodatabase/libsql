@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.23 2001/01/15 22:51:10 drh Exp $
+** $Id: dbbe.c,v 1.24 2001/03/20 12:55:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -98,7 +98,11 @@ int sqliteDbbeOpenTempFile(const char *zDir, Dbbe *pBe, FILE **ppFile){
     zFile = 0;
     sqliteSetString(&zFile, zDir, zBuf, 0);
   }while( access(zFile,0)==0 && limit-- >= 0 );
+#if OS_WIN
+  *ppFile = pBe->apTemp[i] = fopen(zFile, "w+b");
+#else
   *ppFile = pBe->apTemp[i] = fopen(zFile, "w+");
+#endif
   if( pBe->apTemp[i]==0 ){
     rc = SQLITE_ERROR;
     sqliteFree(zFile);

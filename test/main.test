@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.4 2000/12/10 18:23:52 drh Exp $
+# $Id: main.test,v 1.5 2001/03/20 12:55:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,6 +81,7 @@ do_test main-1.13 {
 #
 do_test main-2.0 {
   catch {db close}
+  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   file mkdir testdb
   set fd [open testdb/sqlite_master.tbl w]
@@ -94,6 +95,7 @@ do_test main-2.0 {
 #
 do_test main-3.1 {
   catch {db close}
+  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   sqlite db testdb
   set v [catch {execsql {SELECT * from T1 where x!!5}} msg]
@@ -101,6 +103,7 @@ do_test main-3.1 {
 } {1 {unrecognized token: "!!"}}
 do_test main-3.2 {
   catch {db close}
+  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   sqlite db testdb
   set v [catch {execsql {SELECT * from T1 where ~x}} msg]
@@ -108,6 +111,7 @@ do_test main-3.2 {
 } {1 {unrecognized token: "~"}}
 do_test main-3.3 {
   catch {db close}
+  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   sqlite db testdb
   set v [catch {execsql {SELECT a|b from T1 where x}} msg]
@@ -116,6 +120,7 @@ do_test main-3.3 {
 
 do_test main-3.3 {
   catch {db close}
+  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   sqlite db testdb
   execsql {

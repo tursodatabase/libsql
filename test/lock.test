@@ -23,9 +23,9 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.6 2001/03/15 18:21:22 drh Exp $
+# $Id: lock.test,v 1.7 2001/03/20 12:55:14 drh Exp $
 
-if {$dbprefix=="gdbm:"} {
+if {$dbprefix=="gdbm:" && $::tcl_platform(platform)!="windows"} {
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
