@@ -1,5 +1,5 @@
-C Additional\stests\sof\sthe\snew\sflattener\sadded.\s\sTicket\s#272.\s(CVS\s949)
-D 2003-05-02T16:44:25
+C -\sadded\sentry\sfor\sATTACH\sDATABASE.\n-\sadded\sentry\sfor\sDETACH\sDATABASE.\n-\sadded\ssoundex()\sfunction.\n-\sadded\ssome\snew\sTEMP\smodifiers.\n-\sadded\snew\sVACUUM\sbehavior.\n-\sadded\sthe\sOracle8\souter\sjoin\s"(+)"\ssyntax.\n-\sdocumented\sthe\smodulus/remainder\soperator\s%.\n-\sadded\sALL\sas\salternative\sto\sDISTINCT\sin\sSELECT.\n-\sfixed\sassignment\slist\sin\sUPDATE\sto\suse\s*\smetacharacter.\n-\sfixed\svalue\sin\sPRAGMA\sto\sbe\soptional.\n-\sadded\slink\sfrom\sINSERT\stopic\sto\sREPLACE.\n-\sadded\soptional\sCONSTRAINT\s<name>\sbefore\scolumn\sconstraints.\n-\sskip\s2\slines\sbefore\seach\sSection\sin\sthe\sTCL\ssource.\s(CVS\s950)
+D 2003-05-03T04:55:19
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
-F www/lang.tcl 9bd9380dceba83d11fe268e0142c05ee06c757db
+F www/lang.tcl 1852abb0efcff02cc15a0d7f4c3a2a1b9c06c256
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ad57693e9f1b83a8cc4d028264b35018a9a4a701
-R 0c892dfdfe33ba9930d105338a5e3731
-U drh
-Z ba7386fd2621411a19fd3dce98cc1a19
+P 8d9ee45ab487614191e8d6aef845141fdddf832a
+R 385cd6fe68bb70c11d767d812d8a42a0
+U jplyon
+Z 4e270e80f98870cfebfe7350053c13b7

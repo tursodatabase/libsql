@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.50 2003/02/13 02:54:04 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.51 2003/05/03 04:55:19 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -58,6 +58,8 @@ foreach {section} [lsort -index 0 -dictionary {
   {{DROP VIEW} dropview}
   {{CREATE TRIGGER} createtrigger}
   {{DROP TRIGGER} droptrigger}
+  {{ATTACH DATABASE} attachdatabase}
+  {{DETACH DATABASE} detachdatabase}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -109,7 +111,37 @@ proc Example {text} {
   puts "<blockquote><pre>$text</pre></blockquote>"
 }
 
-Section {BEGIN TRANSACTION} createindex
+
+Section {ATTACH DATABASE} attachdatabase
+
+Syntax {sql-statement} {
+ATTACH [DATABASE] <database-filename> AS <database-name>
+}
+
+puts {
+<p>The ATTACH DATABASE statement lets you add a preexisting 
+database file to the current database connection.</p>
+
+<p>You can read and write to the attached database, but you cannot 
+CREATE TABLE or DROP TABLE in the attached database. You can only 
+CREATE and DROP in the original database.</p>
+
+<p>With an attached database, transactions are not atomic. 
+Transactions continue to be atomic within each individual
+database file. But if your machine crashes in the middle
+of a COMMIT where you have updated two or more database
+files, some of those files might get the changes where others
+might not.</p>
+
+<p>There is a compile-time limit of 10 attached database files.</p>
+
+<p>Executing a BEGIN TRANSACTION statement locks all database
+files, so this feature cannot (currently) be used to increase 
+concurrancy.</p>
+}
+
+
+Section {BEGIN TRANSACTION} transaction
 
 Syntax {sql-statement} {
 BEGIN [TRANSACTION [<name>]] [ON CONFLICT <conflict-algorithm>]
@@ -226,10 +258,11 @@ See the section titled
 by a line that contains only a baskslash and a dot:}
 puts "\"[Operator \\.]\".</p>"
 
+
 Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
-CREATE [UNIQUE] INDEX <index-name> 
+CREATE [TEMP | TEMPORARY] [UNIQUE] INDEX <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
 [ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
@@ -283,7 +316,7 @@ CREATE [TEMP | TEMPORARY] TABLE <table-name> (
 } {sql-command} {
 CREATE [TEMP | TEMPORARY] TABLE <table-name> AS <select-statement>
 } {column-def} {
-<name> [<type>] [<column-constraint>]*
+<name> [<type>] [[CONSTRAINT <name>] <column-constraint>]*
 } {type} {
 <typename> |
 <typename> ( <number> ) |
@@ -380,16 +413,18 @@ The text of CREATE TEMPORARY TABLE statements are stored in the
 <b>sqlite_temp_master</b> table.
 </p>
 }
+
+
 Section {CREATE TRIGGER} createtrigger
 
 Syntax {sql-statement} {
-CREATE TRIGGER <trigger-name> [ BEFORE | AFTER ]
+CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> [ BEFORE | AFTER ]
 <database-event> ON <table-name>
 <trigger-action>
 }
 
 Syntax {sql-statement} {
-CREATE TRIGGER <trigger-name> INSTEAD OF
+CREATE [TEMP | TEMPORARY] TRIGGER <trigger-name> INSTEAD OF
 <database-event> ON <view-name>
 <trigger-action>
 }
@@ -532,10 +567,11 @@ the statement that caused the trigger program to execute and any subsequent
 </p>
 }
 
+
 Section {CREATE VIEW} {createview}
 
 Syntax {sql-command} {
-CREATE VIEW <view-name> AS <select-statement>
+CREATE [TEMP | TEMPORARY] VIEW <view-name> AS <select-statement>
 }
 
 puts {
@@ -546,6 +582,7 @@ of another SELECT in place of a table name.
 
 <p>You cannot COPY, INSERT or UPDATE a view.  Views are read-only.</p>
 }
+
 
 Section DELETE delete
 
@@ -565,6 +602,20 @@ the expression are removed.</p>
 }
 
 
+Section {DETACH DATABASE} detachdatabase
+
+Syntax {sql-command} {
+DETACH [DATABASE] <database-name>
+}
+
+puts {
+<p>This statement detaches an additional database file previoiusly attached
+using the ATTACH DATABASE statement.</p>
+
+<p>This statement will fail if SQLite is in the middle of a transaction.</p>
+}
+
+
 Section {DROP INDEX} dropindex
 
 Syntax {sql-command} {
@@ -578,6 +629,7 @@ the disk.  The only way to recover the index is to reenter the
 appropriate CREATE INDEX command.</p>
 }
 
+
 Section {DROP TABLE} droptable
 
 Syntax {sql-command} {
@@ -590,6 +642,7 @@ by the name of the table.  The table named is completely removed from
 the disk.  The table can not be recovered.  All indices associated with
 the table are also deleted.</p>}
 
+
 Section {DROP TRIGGER} droptrigger
 Syntax {sql-statement} {
 DROP TRIGGER <trigger-name>
@@ -598,6 +651,7 @@ puts {
   <p>Used to drop a trigger from the database schema. Note that triggers
   are automatically dropped when the associated table is dropped.</p>
 }
+
 
 Section {DROP VIEW} dropview
 
@@ -609,6 +663,7 @@ puts {
 <p>The DROP VIEW statement consists of the keywords "DROP VIEW" followed
 by the name of the view.  The view named is removed from the database.
 But no actual data is modified.</p>}
+
 
 Section EXPLAIN explain
 
@@ -630,6 +685,7 @@ the <a href="arch.html">architecture description</a> or the documentation
 on <a href="opcode.html">available opcodes</a> for the virtual machine.</p>
 }
 
+
 Section expression expr
 
 Syntax {expr} {
@@ -641,6 +697,7 @@ Syntax {expr} {
 <table-name> . <column-name> |
 <literal-value> |
 <function-name> ( <expr-list> | STAR ) |
+<expr> (+) |
 <expr> ISNULL |
 <expr> NOTNULL |
 <expr> [NOT] BETWEEN <expr> AND <expr> |
@@ -689,7 +746,9 @@ puts "[Operator =] or [Operator ==].
 The non-equals operator can be either
 [Operator !=] or [Operator {&lt;&gt;}].
 The [Operator ||] operator is \"concatenate\" - it joins together
-the two strings of its operands.</p>"
+the two strings of its operands.
+The operator [Operator %] outputs the remainder of its left 
+operand modulo its right operand.</p>"
 puts {
 
 <p>The LIKE operator does a wildcard comparision.  The operand
@@ -725,6 +784,15 @@ act like read-only columns.  A row key can be used anywhere a regular
 column can be used, except that you cannot change the value
 of a row key in an UPDATE or INSERT statement.
 "SELECT * ..." does not return the row key.</p>
+
+<p>SQLite supports a minimal Oracle8 outer join behavior. A column 
+expression of the form "column" or "table.column" can be followed by 
+the special "<b>(+)</b>" operator.  If the table of the column expression 
+is the second or subsequent table in a join, then that table becomes 
+the left table in a LEFT OUTER JOIN.  The expression that uses that 
+table becomes part of the ON clause for the join.
+The exact Oracle8 behavior is not implemented, but it is possible to 
+construct queries that will work correctly for both SQLite and Oracle8.</p>
 
 <p>SELECT statements can appear in expressions as either the
 right-hand operand of the IN operator or as a scalar quantity.
@@ -843,6 +911,12 @@ assumed.</td>
 </tr>
 
 <tr>
+<td valign="top" align="right">soundex(<i>X</i>)</td>
+<td valign="top">Compute the soundex encoding of the string <i>X</i>.
+This returns "?000" for a NULL argument.
+</tr>
+
+<tr>
 <td valign="top" align="right">substr(<i>X</i>,<i>Y</i>,<i>Z</i>)</td>
 <td valign="top">Return a substring of input string <i>X</i> that begins
 with the <i>Y</i>-th character and which is <i>Z</i> characters long.
@@ -898,6 +972,7 @@ The usual sort order is used to determine the minimum.</td>
 </table>
 }
 
+
 Section INSERT insert
 
 Syntax {sql-statement} {
@@ -930,9 +1005,10 @@ constraint conflict resolution algorithm to use during this one command.
 See the section titled
 <a href="#conflict">ON CONFLICT</a> for additional information.
 For compatibility with MySQL, the parser allows the use of the
-single keyword "REPLACE" as an alias for "INSERT OR REPLACE".
+single keyword <a href="#replace">REPLACE</a> as an alias for "INSERT OR REPLACE".
 </p>
 }
+
 
 Section {ON CONFLICT clause} conflict
 
@@ -1035,7 +1111,7 @@ If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 Section PRAGMA pragma
 
 Syntax {sql-statement} {
-PRAGMA <name> = <value> |
+PRAGMA <name> [= <value>] |
 PRAGMA <function>(<arg>)
 }
 
@@ -1211,6 +1287,7 @@ with caution.</p>
 Unknown pragmas are ignored.</p>
 }
 
+
 Section REPLACE replace
 
 Syntax {sql-statement} {
@@ -1226,10 +1303,11 @@ compatibility with MySQL.  See the
 information.</p>  
 }
 
+
 Section SELECT select
 
 Syntax {sql-statement} {
-SELECT [DISTINCT] <result> [FROM <table-list>]
+SELECT [ALL | DISTINCT] <result> [FROM <table-list>]
 [WHERE <expr>]
 [GROUP BY <expr-list>]
 [HAVING <expr>]
@@ -1317,11 +1395,12 @@ removing the results of the right SELECT.  When three are more SELECTs
 are connected into a compound, they group from left to right.</p>
 }
 
+
 Section UPDATE update
 
 Syntax {sql-statement} {
 UPDATE [ OR <conflict-algorithm> ] <table-name>
-SET <assignment> [, <assignment>] 
+SET <assignment> [, <assignment>]*
 [WHERE <expr>]
 } {assignment} {
 <column-name> = <expr>
@@ -1341,6 +1420,7 @@ See the section titled
 <a href="#conflict">ON CONFLICT</a> for additional information.</p>
 }
 
+
 Section VACUUM vacuum
 
 Syntax {sql-statement} {
@@ -1352,10 +1432,17 @@ puts {
 command found in PostgreSQL.  If VACUUM is invoked with the name of a
 table or index then it is suppose to clean up the named table or index.
 In version 1.0 of SQLite, the VACUUM command would invoke 
-<b>gdbm_reorganize()</b> to clean up the backend database file.
-Beginning with version 2.0 of SQLite, GDBM is no longer used for
-the database backend and VACUUM has become a no-op.
-</p>
+<b>gdbm_reorganize()</b> to clean up the backend database file.</p>
+
+<p>
+This command was readded after version 2.8.0. of SQLite.  It now cleans
+the database by copying its contents to a temporary database file, and 
+reloading the database file from it.  This will eliminate free pages, 
+align table data to be contiguous, and otherwise clean up the database 
+file structure.</p>
+
+<p>This command will fail if there is an active transaction.  This 
+command has no effect on an in-memory database.</p>
 }
 
 
@@ -1366,3 +1453,9 @@ Back to the SQLite Home Page</a>
 </p>
 
 </body></html>}
+
+
+
+
+
+
