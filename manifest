@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\stokenizer.\s(CVS\s2011)
-D 2004-10-07T19:03:01
+C Sort\sthe\soutput\sof\sglob\sin\stest\sscript\sattach2.test.\s\sTicket\s#948.\s(CVS\s2012)
+D 2004-10-07T22:22:39
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -85,7 +85,7 @@ F src/vdbemem.c ef9ac7d32acfe4bce5c5b408b1294c8d9e0cdb56
 F src/where.c 6e637a6b3e61fe3104adc4e5caa4738bf6570daa
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/attach.test feb2ce54e78688df4c84553416d5aec3b2a0112e
-F test/attach2.test 32ca2c1a5a347a7404219a11f9f84739a63d2582
+F test/attach2.test f7795123d3051ace1672b6d23973da6435de3745
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test 1cc252d9e7b3bdc1314199cbf3a0d3c5ed026c21
 F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 618dee121e41d8e5c9b4d5c167475b11ddcda2d7
-R c6f2c8afd2a59eadba90462f2b06f8bc
+P e5540ce047e0215904005bc9df4ff0d1d0a3c1d1
+R 29fb052618eeb6a0dd9008992c00c995
 U drh
-Z bc3b2c6d615a585d4fad51811788aa10
+Z a461900bb235298db96cbd6af9221534
