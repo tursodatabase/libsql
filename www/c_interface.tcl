@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.3 2000/06/02 13:28:00 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.4 2000/06/06 18:24:42 drh Exp $}
 
 puts {<html>
 <head>
@@ -130,8 +130,18 @@ to <b>sqlite_exec()</b>  This parameter can be used to pass arbitrary
 information through to the callback function from client code.
 The second argument is the number columns in the query result.
 The third argument is an array of pointers to strings where each string
-is a single column of the result for that record.  The names of the
-columns are contained in the fourth argument.</p>
+is a single column of the result for that record.  Note that the
+callback function reports a NULL value in the database as a NULL pointer,
+which is very different from an empty string.  If the i-th parameter
+is an empty string, we will get:</p>
+<blockquote><pre>
+argv[i][0] == 0
+</pre></blockquote>
+<p>But if the i-th parameter is NULL we will get:</p>
+<blockquote><pre>
+argv[i] == 0
+</pre></blockquote>
+<p>The names of the columns are contained in the fourth argument.</p>
 
 <p>The callback function should normally return 0.  If the callback
 function returns non-zero, the query is immediately aborted and 

@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 6} {
+<li>Added support for using <b>(SELECT ...)</b> within expressions</li>
+<li>Added support for <b>IN</b> and <b>BETWEEN</b> operators</li>
+<li>Added support for <b>GROUP BY</b> and <b>HAVING</b></li>
+<li>NULL values are now reported ot the callback as a NULL pointer
+    rather than an empty string.</li>
+}
+
 chng {2000 June 3} {
 <li>Added support for default values on columns of a table.</li>
 <li>Improved test coverage.  Fixed a few obscure bugs found by the

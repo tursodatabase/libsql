@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.12 2000/06/03 19:28:49 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.13 2000/06/06 18:24:42 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
@@ -16,17 +16,16 @@ puts {</p>}
 puts {
 <h2>News</h2>
 <p>
-Though still relatively new, 
-the SQLite code base appears to be working well and has therefore
-been upgraded to "beta" status.
-There are currently no known errors in the code.
-One very large database (1M+ records in 50+ separate tables) has
-been converted from PostgreSQL and gives every appearance of working
-correctly.</p>
+The SQLite code base is being called "beta" only because it is
+relatively new.  It appears to be stable and usable.
+Most of the SQL language is now implemented and working.  
+The regression test suite
+provides good coverage, according to
+<a href="http://gcc.gnu.org/onlinedocs/gcov_1.html">gcov</a>.
+There are currently no known errors in the code.</p>
 
-<p>Your constructive comments are still very important to us.
-Please visit the 
-<a href="#mailinglist">mailing list</a> to offer feedback.</p>
+<p>If you find bugs or missing features, please submit a comment
+to the <a href="#mailinglist">SQLite mailing list</a>.</p>
 }
 
 puts {<h2>Introduction</h2>
@@ -58,26 +57,24 @@ see <a href="sqlite.html">sqlite.html</a>.</p>
 <p>A history of changes to SQLite is found
 <a href="changes.html">here</a>.</p>
 
-<p>SQLite is intended to be small and light-weight.
-It does not try to implement every feature of SQL. 
-A few of the many SQL features that SQLite does not (currently) 
-implement are as follows:</p>
+<p>SQLite now implements most of the SQL language.
+The following are the known limitations:</p>
 
 <p>
 <ul>
-<li>The GROUP BY or HAVING clauses of a SELECT</li>
-<li>Constraints</li>
-<li>Nested queries</li>
-<li>Transactions or rollback</li>
+<li>The UNION, INTERSECTION and EXCEPT operations connecting multiple
+SELECT statements are not yet implement</li>
+<li>Constraints are parsed but are not enforced</li>
+<li>There is not support for transactions or rollback</li>
 </ul>
 </p>
 
 <H2>Status</h2>
 
-<p>The SQLite code is rapidly stablizing.  There are currently
-no known errors in the code.  At least one large database has
-be loaded into SQLite and appears to work.  Most of the major
-functionality is in place.</p>
+<p>New features are still being added to the SQLite code base.
+Nevertheless, the code appears to be stable and relatively
+bug-free. At least one large database has
+be loaded into SQLite and appears to work.</p>
 
 <p>SQLite has so far been tested only on RedHat 6.0 Linux.  But we
 know of no reason why it will not work on any other Unix platform,

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s59)
-D 2000-06-06T18:00:16
+C :-)\s(CVS\s60)
+D 2000-06-06T18:24:42
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -46,11 +46,11 @@ F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
-F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
-F www/changes.tcl 567cc6066d87460bdedff8e5bbc20f41ddaadf77
-F www/index.tcl f8189a7898f6d06307c34047b9d7e00860026e44
+F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
+F www/changes.tcl f5839fe8de7449d994c71a8e48ce8ea736bec7d1
+F www/index.tcl 0c63672bad5188327143ecd0a07c7c0741ff9823
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P db88a0c2d4b5c5cd05e0172f061fc33763fe3829
-R d187390322c22a87c588288b385bc0fd
+P a8fa6719d55b43f8d194aecfcae5af42d17742af
+R 333a72b8cbe1c9e8e0a8e67f537bc389
 U drh
-Z 7fd829b482d9369ef2332e8e548395ac
+Z 9bbf407a7faf03509fc8b4c0594de30c
