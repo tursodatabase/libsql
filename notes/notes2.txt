@@ -1,111 +1,70 @@
-How to do a B*Tree insert:
+How to do a B-Tree insert:
 
-add_to_page(pageptr, data, pgno){
-  pgno.parent = pageptr
-  if( data+pgno fits on pageptr ){
-    add data+pgno to pageptr
-    return
-  }
-  if( pageptr==root ){
-    split pageptr+(data+pgno) into newpage1, center, newpage2
-    pageptr = ptr(newpage1) + center + ptr(newpage2);
-    return
-  }
-  if( move_some_data_left || move_some_data_right ){
-    add data+pgno to pageptr
-    return
-  }
-  split pageptr+(data+pgno) into pageptr, center, newpage
-  add_to_page(parent(pageptr), center, ptr(newpage));
-  newpage.parent = parent(pageptr)
-}
-
-Cursor: pageptr, idx
-
-unlink_entry(cursor, olddata){
-  if( cursor.pageptr is not a leaf page ){
-    if( olddata!=nil) copy payload(cursor) into olddata
-    n = next_entry(cursor)
-    if( payloadsize(n) <= freesize(cursor) + payloadsize(cursor) ){
-      copy payload(n) into payload(cursor)
-      unlink_entry(n, nil)
+  insert(data){
+    create a new cursor
+    move cursor to the entry nearest data
+    if( cursor.key == keyof(data) ){
+      replace cursor.data with dataof(data)
       return
     }
-    p = prev_entry(cursor)
-    if( payloadsize(p) <= freesize(cursor) + payloadsize(cursor) ){
-      copy payload(p) into payload(cursor)
-      unlink_entry(p, nil)
+    childpg = NULL
+    add_to_page(cursor, data+childpg)
+    delete the cursor
+  }
+
+  add_to_page(cursor, data+childpg ){
+    childpg->parent = cursor.page
+    if( data+childpg fits on cursor.page ){
+      insert data+childpg at cursor
       return
     }
-    unlink(n, leafdata)
-    pageptr = cursor.pageptr
-    nextpgno = pageptr.aCell[cursor.idx].pgno;
-    convert_cursor_to_free_block(cursor)
-    add_to_page(pageptr, leafdata, nextpgno)
-    return
-  }
-  pageptr = cursor.pageptr;
-  convert_cursor_to_free_block(cursor)
-  if( usage(pageptr)<0.65 ){
-    consolidate(pageptr)
-  }
-}
-
-consolidate(pageptr){
-  parentpage = parentof(pageptr)
-  idx = index_of_page(parentpage, pageptr);
-  leftsibling = parentpage.cell[idx].pgno;
-  rightsibling = parentpage.cell[idx+1].pgno;
-  if( idx>0 ){
-    cursor = makecursor(pageptr,idx-1)
-    if( try_to_move_down(cursor) ) return
-  }
-  if( idx<max ){
-    cursor = makecursor(pageptr,idx)
-    try_to_move_down(cursor)
-  }
-  return
-}
-
-try_to_move_down(cursor){
-  pageptr = cursor.pageptr
-  if( payload(cursor)+sizeof(left)+sizeof(right)<=pagesize ){
-    put cursor and content of left into right
-    remove cursor from pageptr
-    if( pageptr is root ){
-      if( cellcount(pageptr)==0 ){
-        copy child into pageptr
-        update parent field of child
-      }
-    }else if( usage(pageptr)<0.65 ){
-      try_to_move_down(cursor)
+    if( page==root ){
+      split page+(data+childpg) into newpage1, center, newpage2
+      cursor.page = &newpage1 + center + &newpage2;
+      newpage1->parent = cursor.page
+      newpage2->parent = cursor.page
+      return
     }
-  }
-}
-
-cursor_move_next(cursor){
-  if( cursor.incr_noop ){
-    cursor.incr_noop = FALSE;
-    return;
-  }
-  if( is_leaf(cursor.pageptr) ){
-    if( cursor.idx==cursor.pageptr.ncell ){
-      if( cursor.pageptr==root ){
-        nil cursor
-        return
-      }
-      cursor_move_up(cursor)
-      cursor_move_next(cursor)
-    }else{
-      cursor.idx++;
+    if( move_some_data_left || move_some_data_right ){
+      insert data+childpg at cursor
+      return
     }
-    return
+    split page+(data+childpg) into page, center, newpage
+    newpage->parent = page->parent
+    move cursor to insertion point of center in parent page.
+    add_to_page(cursor, center, (newpage));
   }
-  pgno = next_pgno(cursor)
-  loop {
-    cursor.pageptr = get(pgno);
-    if( is_leaf(cursor.pageptr) ) break;
-    pgno = first_pgno(pageptr);
+
+How to do a B-Tree delete:
+
+  delete(entry){
+    if( entry is not a leaf ){
+      p = predecessor of entry
+      // note: if entry is not a leaf then p must
+      // exist and must be a leaf
+      free(entry.overflowptr)
+      resize entry so that is is big enough to hold p.payload
+      entry.payload = p.payload
+      entry.overflowptr = p.overflowptr
+      p.overflowptr = NULL
+      delete(p)
+      return
+    }
+    unlink entry from its page
+    refill(page containing entry)
   }
-  cursor.idx = 0;
-}
+
+  refill(page){
+    if( page is more than half full ) return
+    if( page is the root and contains no entries ){
+      copy the one child page into this page thus reducing
+      the height of the tree by one.
+      return
+    }
+    if( able to merge page with neighbors ){
+      do the merge
+      refill(parent page)
+      return
+    }
+    borrow entrys from neighbors
+  }
