@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.17 2004/06/30 08:20:16 danielk1977 Exp $
+# $Id: enc2.test,v 1.18 2004/11/10 15:27:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -420,7 +420,7 @@ do_test enc2-7.4 {
   execsql {
     SELECT * FROM sqlite_master;
   }
-} {table abc abc 2 {CREATE TABLE abc(a, b, c)}}
+} "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
 do_test enc2-7.5 {
   execsql {
     PRAGMA encoding;

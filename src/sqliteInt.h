@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.336 2004/11/09 12:44:39 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.337 2004/11/10 15:27:38 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -106,6 +106,7 @@
 /* #define SQLITE_OMIT_VACUUM         1 */
 /* #define SQLITE_OMIT_DATETIME_FUNCS 1 */
 /* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
+/* #define SQLITE_OMIT_AUTOVACUUM */
 
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it

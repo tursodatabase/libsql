@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.20 2004/11/07 13:01:50 drh Exp $
+# $Id: insert.test,v 1.21 2004/11/10 15:27:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -245,7 +245,7 @@ do_test insert-5.4 {
   execsql {
     SELECT rootpage FROM sqlite_master WHERE name='test1';
   }
-} {2}
+} [expr $AUTOVACUUM?3:2]
 do_test insert-5.5 {
   # Verify that "t4" begins on page 3.
   #

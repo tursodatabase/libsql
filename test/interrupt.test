@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.6 2004/11/04 04:42:28 drh Exp $
+# $Id: interrupt.test,v 1.7 2004/11/10 15:27:38 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -102,7 +102,7 @@ do_test interrupt-2.3 {
     SELECT md5sum(a || b) FROM t1;
   }
 } $cksum
-ifcapable vacuum {
+ifcapable vacuum&&!$AUTOVACUUM {
   do_test interrupt-2.4 {
     expr {$::origsize>[file size test.db]}
   } 1

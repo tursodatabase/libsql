@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.176 2004/11/08 09:26:10 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.177 2004/11/10 15:27:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3331,6 +3331,8 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
     unlinkHashChain(pPager, pPgOld);
     pPgOld->dirty = 0;
     if( pPgOld->needSync ){
+      assert( pPgOld->inJournal );
+      pPg->inJournal = 1;
       pPg->needSync = 1;
     }
   }

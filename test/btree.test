@@ -11,11 +11,16 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.32 2004/11/10 11:55:14 danielk1977 Exp $
+# $Id: btree.test,v 1.33 2004/11/10 15:27:38 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable default_autovacuum {
+  finish_test
+  return
+}
 
 # Basic functionality.  Open and close a database.
 #

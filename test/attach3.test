@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.12 2004/11/05 05:20:40 drh Exp $
+# $Id: attach3.test,v 1.13 2004/11/10 15:27:38 danielk1977 Exp $
 #
 
 
@@ -55,7 +55,7 @@ do_test attach3-1.4 {
   execsql {
     SELECT * FROM aux.sqlite_master WHERE name = 't3';
   }
-} {table t3 t3 4 {CREATE TABLE t3(e, f)}}
+} "table t3 t3 [expr $AUTOVACUUM?5:4] {CREATE TABLE t3(e, f)}"
 do_test attach3-1.5 {
   execsql {
     INSERT INTO t3 VALUES(1, 2);
@@ -78,7 +78,7 @@ do_test attach3-2.3 {
   execsql {
     SELECT * FROM aux.sqlite_master WHERE name = 'i1';
   }
-} {index i1 t3 5 {CREATE INDEX i1 on t3(e)}}
+} "index i1 t3 [expr $AUTOVACUUM?6:5] {CREATE INDEX i1 on t3(e)}"
 
 # Drop the index on the aux database table.
 do_test attach3-3.1 {
@@ -92,7 +92,7 @@ do_test attach3-3.2 {
     CREATE INDEX aux.i1 on t3(e);
     SELECT * FROM aux.sqlite_master WHERE name = 'i1';
   }
-} {index i1 t3 5 {CREATE INDEX i1 on t3(e)}}
+} "index i1 t3 [expr $AUTOVACUUM?6:5] {CREATE INDEX i1 on t3(e)}"
 do_test attach3-3.3 {
   execsql {
     DROP INDEX i1;
