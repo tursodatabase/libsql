@@ -288,7 +288,7 @@ select.o:	$(TOP)/src/select.c $(HDR)
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-            -e s/--ENCODING--/$(ENCODING)/ \
+	    -e s/--VERSION-NUMBER--/`cat ${TOP}/VERSION | sed 's/[^0-9]/ /g' | awk '{printf "%d%03d%03d",$$1,$$2,$$3}'`/ \
                  $(TOP)/src/sqlite.h.in >sqlite3.h
 
 table.o:	$(TOP)/src/table.c $(HDR)

@@ -69,6 +69,7 @@ TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = @VERSION@
+VERSION_NUMBER = @VERSION_NUMBER@
 RELEASE = @RELEASE@
 
 # Filename extensions
@@ -351,7 +352,8 @@ select.lo:	$(TOP)/src/select.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/select.c
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
-	sed -e s/--VERS--/$(RELEASE)/ $(TOP)/src/sqlite.h.in >sqlite3.h
+	sed -e s/--VERS--/$(RELEASE)/ $(TOP)/src/sqlite.h.in | \
+	sed -e s/--VERSION-NUMBER--/$(VERSION_NUMBER)/ >sqlite3.h
 
 table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/table.c

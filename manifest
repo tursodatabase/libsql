@@ -1,6 +1,6 @@
-C Detect\sdatabase\scorruption\sin\srootpage\sflags\s(see\salso\s(2313)).\s(CVS\s2314)
-D 2005-02-05T06:49:54
-F Makefile.in f867ff4c3353a3b10ecf823f338876a47fc7def0
+C Add\sa\snumeric\sversion\snumber.\sTicket\s#1097.\s(CVS\s2315)
+D 2005-02-05T07:33:34
+F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 6755bb368f6ab4bda43b635142309ce2681506cf
@@ -10,13 +10,13 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure e9cfc464d78f31fb3150b18a0e0439841996e5e6 x
+F configure ae39c037bbd1fad89d87a89c505d012b975e9f97 x
 F configure.ac a3e521f42b4352215c2499bc2a7138b076d30c59
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk a31a2d01af035f18db539e5d9ce0629b2f7616e3
+F main.mk 834d5f2feb8d0f79fb3d2bb9db5afac2b3da7349
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cc36b29ff7c996cc482f91a6fd3fa33297b075d5
@@ -41,7 +41,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 6ab596846d52bd63d6227f9128a29e4f5b2cf524
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c de1f29d3c3cdfbced0c38b40d65541cda76c6799
+F src/main.c 75e70f15b4e22bf69f84c77fb80d6a8f0b0836eb
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h ae44064dc118b20d39450cb331409a775e8bb1c6
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -59,7 +59,7 @@ F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 16c750c000f0d6aa543c778e2c752154b7272336
 F src/shell.c 3cb0ef124ed9cd582ce89aec59ff7c659bc6e61b
-F src/sqlite.h.in 2a2cb0131cdbd3fe2082de3261efe0ef002e6816
+F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h f10da39b6407af63002401c7f9cee4a1313f4d2d
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 101994a2c4c0eaa69f1de9bfe4a02167f6049e7d
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 9fc0a5cbf892a22eaa950f3b2ed572ab4985c220
-R 8a70ee41a498a441e9c9ad827e56edad
+P 6d91a1e91bf0e8b4a0f5f78d079031f3ee69603b
+R 752d291cdd1da93d3f1d71a58abca891
 U danielk1977
-Z 7ca8eabd20bbe1e17778cf54c5cd6f57
+Z bc43e9a2df7fa6f5203156118f2ad652

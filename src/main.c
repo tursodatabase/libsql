@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.278 2005/02/04 04:07:17 danielk1977 Exp $
+** $Id: main.c,v 1.279 2005/02/05 07:33:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -373,6 +373,7 @@ int sqlite3ReadSchema(Parse *pParse){
 const char rcsid3[] = "@(#) \044Id: SQLite version " SQLITE_VERSION " $";
 const char sqlite3_version[] = SQLITE_VERSION;
 const char *sqlite3_libversion(void){ return sqlite3_version; }
+int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 
 /*
 ** This is the default collating function named "BINARY" which is always

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.129 2005/02/02 01:13:38 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.130 2005/02/05 07:33:35 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -30,9 +30,25 @@ extern "C" {
 */
 #ifdef SQLITE_VERSION
 # undef SQLITE_VERSION
-#else
-# define SQLITE_VERSION         "--VERS--"
 #endif
+#define SQLITE_VERSION         "--VERS--"
+
+/*
+** The format of the version string is "X.Y.Z<trailing string>", where
+** X is the major version number, Y is the minor version number and Z
+** is the release number. The trailing string is often "alpha" or "beta".
+** For example "3.1.1beta".
+**
+** The SQLITE_VERSION_NUMBER is an integer with the value 
+** (X*100000 + Y*1000 + Z). For example, for version "3.1.1beta", 
+** SQLITE_VERSION_NUMBER is set to 3001001. To detect if they are using 
+** version 3.1.1 or greater at compile time, programs may use the test 
+** (SQLITE_VERSION_NUMBER>=3001001).
+*/
+#ifdef SQLITE_VERSION_NUMBER
+# undef SQLITE_VERSION_NUMBER
+#endif
+#define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
 
 /*
 ** The version string is also compiled into the library so that a program
@@ -43,6 +59,12 @@ extern "C" {
 */
 extern const char sqlite3_version[];
 const char *sqlite3_libversion(void);
+
+/*
+** Return the value of the SQLITE_VERSION_NUMBER macro when the
+** library was compiled.
+*/
+int sqlite3_libversion_number(void);
 
 /*
 ** Each open sqlite database is represented by an instance of the
