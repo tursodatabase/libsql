@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.341 2004/05/27 19:59:32 drh Exp $
+** $Id: vdbe.c,v 1.342 2004/05/28 01:39:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1827,7 +1827,7 @@ case OP_Column: {
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
   u32 *aOffset;      /* aOffset[i] is offset to start of data for i-th column */
-  u64 nField;        /* number of fields in the record */
+  u32 nField;        /* number of fields in the record */
   u32 szHdr;         /* Number of bytes in the record header */
   int len;           /* The length of the serialized data for the column */
   int offset = 0;    /* Offset into the data */
@@ -1974,7 +1974,8 @@ case OP_Column: {
     getBtreeMem(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
     zData = sMem.z;
   }
-  sqlite3VdbeSerialGet(zData, aType[p2], pTos, p->db->enc);
+  sqlite3VdbeSerialGet(zData, aType[p2], pTos);
+  pTos->enc = db->enc;
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
@@ -2044,7 +2045,7 @@ case OP_MakeRecord: {
   ** out how much space is required for the new record.
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type;
+    u32 serial_type;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
     }
@@ -2070,7 +2071,7 @@ case OP_MakeRecord: {
   zCsr = zNewRecord;
   zCsr += sqlite3PutVarint(zCsr, nHdr);
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    u32 serial_type = sqlite3VdbeSerialType(pRec);
     zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
   }
   for(pRec=pData0; pRec<=pTos; pRec++){
@@ -2167,7 +2168,7 @@ case OP_MakeIdxKey: {
   ** OP_MakeKey when P2 is 0 (used by DISTINCT).
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type;
+    u32 serial_type;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
     }
@@ -2205,7 +2206,7 @@ case OP_MakeIdxKey: {
   
   /* Build the key in the buffer pointed to by zKey. */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    u32 serial_type = sqlite3VdbeSerialType(pRec);
     offset += sqlite3PutVarint(&zKey[offset], serial_type);
     offset += sqlite3VdbeSerialPut(&zKey[offset], pRec);
   }
@@ -3354,7 +3355,7 @@ case OP_Recno: {
 case OP_IdxColumn: {
   char *zData;
   i64 n;
-  u64 serial_type;
+  u32 serial_type;
   int len;
   int freeZData = 0;
   BtCursor *pCsr;
@@ -3370,7 +3371,7 @@ case OP_IdxColumn: {
   zData = (char *)sqlite3BtreeKeyFetch(pCsr, n);
   assert( zData );
 
-  len = sqlite3GetVarint(zData, &serial_type);
+  len = sqlite3GetVarint32(zData, &serial_type);
   n = sqlite3VdbeSerialTypeLen(serial_type);
 
   zData = (char *)sqlite3BtreeKeyFetch(pCsr, len+n);
@@ -3389,7 +3390,8 @@ case OP_IdxColumn: {
   }
 
   pTos++;
-  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos, p->db->enc);
+  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos);
+  pTos->enc = db->enc;
   if( freeZData ){
     sqliteFree(zData);
   }
@@ -3708,7 +3710,7 @@ case OP_IdxRecno: {
       while( len && buf[len-1] ){
         len--;
       }
-      sqlite3GetVarint(&buf[len], &sz);
+      sqlite3GetVarint32(&buf[len], &sz);
       pTos->flags = MEM_Int;
       pTos->i = sz;
     }
@@ -3810,8 +3812,8 @@ case OP_IdxIsNull: {
   z = pTos->z;
   n = pTos->n;
   for(k=0; k<n && i>0; i--){
-    u64 serial_type;
-    k += sqlite3GetVarint(&z[k], &serial_type);
+    u32 serial_type;
+    k += sqlite3GetVarint32(&z[k], &serial_type);
     if( serial_type==6 ){   /* Serial type 6 is a NULL */
       pc = pOp->p2-1;
       break;

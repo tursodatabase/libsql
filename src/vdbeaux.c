@@ -1163,7 +1163,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-u64 sqlite3VdbeSerialType(Mem *pMem){
+u32 sqlite3VdbeSerialType(Mem *pMem){
   int flags = pMem->flags;
 
   if( flags&MEM_Null ){
@@ -1194,7 +1194,7 @@ u64 sqlite3VdbeSerialType(Mem *pMem){
 /*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
-int sqlite3VdbeSerialTypeLen(u64 serial_type){
+int sqlite3VdbeSerialTypeLen(u32 serial_type){
   assert( serial_type!=0 );
   switch(serial_type){
     case 6: return 0;                  /* NULL */
@@ -1214,7 +1214,7 @@ int sqlite3VdbeSerialTypeLen(u64 serial_type){
 ** Return the number of bytes written.
 */ 
 int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
-  u64 serial_type = sqlite3VdbeSerialType(pMem);
+  u32 serial_type = sqlite3VdbeSerialType(pMem);
   int len;
 
   assert( serial_type!=0 );
@@ -1254,9 +1254,8 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
 */ 
 int sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
-  u64 serial_type,              /* Serial type to deserialize */
-  Mem *pMem,                    /* Memory cell to write value into */
-  u8 enc      /* Text encoding. Used to determine nul term. character */
+  u32 serial_type,              /* Serial type to deserialize */
+  Mem *pMem                     /* Memory cell to write value into */
 ){
   int len;
 
@@ -1304,7 +1303,6 @@ int sqlite3VdbeSerialGet(
   pMem->n = len;
   if( serial_type&0x01 ){
     pMem->flags = MEM_Str | MEM_Ephem;
-    pMem->enc = enc;
   }else{
     pMem->flags = MEM_Blob | MEM_Ephem;
   }
@@ -1336,7 +1334,6 @@ int sqlite3VdbeKeyCompare(
   int offset2 = 0;
   int i = 0;
   int rc = 0;
-  u8 enc = pKeyInfo->enc;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
   
@@ -1344,12 +1341,12 @@ int sqlite3VdbeKeyCompare(
   while( offset1<nKey1 && offset2<nKey2 ){
     Mem mem1;
     Mem mem2;
-    u64 serial_type1;
-    u64 serial_type2;
+    u32 serial_type1;
+    u32 serial_type2;
 
     /* Read the serial types for the next element in each key. */
-    offset1 += sqlite3GetVarint(&aKey1[offset1], &serial_type1);
-    offset2 += sqlite3GetVarint(&aKey2[offset2], &serial_type2);
+    offset1 += sqlite3GetVarint32(&aKey1[offset1], &serial_type1);
+    offset2 += sqlite3GetVarint32(&aKey2[offset2], &serial_type2);
 
     /* If either of the varints just read in are 0 (not a type), then
     ** this is the end of the keys. The remaining data in each key is
@@ -1358,8 +1355,8 @@ int sqlite3VdbeKeyCompare(
     */
     if( !serial_type1 || !serial_type2 ){
       assert( !serial_type1 && !serial_type2 );
-      sqlite3GetVarint(&aKey1[offset1], &serial_type1);
-      sqlite3GetVarint(&aKey2[offset2], &serial_type2);
+      sqlite3GetVarint32(&aKey1[offset1], &serial_type1);
+      sqlite3GetVarint32(&aKey2[offset2], &serial_type2);
       if( serial_type1 < serial_type2 ){
         rc = -1;
       }else if( serial_type1 > serial_type2 ){
@@ -1377,8 +1374,8 @@ int sqlite3VdbeKeyCompare(
     ** the file is corrupted.  Then read the value from each key into mem1
     ** and mem2 respectively.
     */
-    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1, enc);
-    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2, enc);
+    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
+    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
     rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){
@@ -1460,8 +1457,8 @@ int sqlite3VdbeRowCompare(
     ** the file is corrupted.  Then read the value from each key into mem1
     ** and mem2 respectively.
     */
-    d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1, 0);
-    d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2, 0);
+    d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
+    d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2);
 
     rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){

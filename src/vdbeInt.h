@@ -339,10 +339,10 @@ int sqlite3VdbeCursorMoveto(Cursor*);
 #if !defined(NDEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
-int sqlite3VdbeSerialTypeLen(u64);
-u64 sqlite3VdbeSerialType(Mem *);
-int sqlite3VdbeSerialPut(unsigned char *, Mem *);
-int sqlite3VdbeSerialGet(const unsigned char *, u64, Mem *, u8 enc);
+int sqlite3VdbeSerialTypeLen(u32);
+u32 sqlite3VdbeSerialType(Mem*);
+int sqlite3VdbeSerialPut(unsigned char*, Mem*);
+int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);
