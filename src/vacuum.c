@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.13.2.2 2004/06/04 19:07:54 drh Exp $
+** $Id: vacuum.c,v 1.13.2.3 2004/11/20 19:01:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -231,7 +231,7 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
   static const char *zPragma[] = {
      "default_synchronous",
      "default_cache_size",
-     /* "default_temp_store", */
+     "default_temp_store",
   };
 
   if( db->flags & SQLITE_InTrans ){
