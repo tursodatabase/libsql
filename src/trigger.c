@@ -52,6 +52,7 @@ void sqliteCreateTrigger(
   }
   {
     char *tmp_str = sqliteStrNDup(pTableName->z, pTableName->n);
+    if( tmp_str==0 ) goto trigger_cleanup;
     tab = sqliteFindTable(pParse->db, tmp_str);
     sqliteFree(tmp_str);
     if( !tab ){
@@ -70,8 +71,11 @@ void sqliteCreateTrigger(
 
   /* Build the Trigger object */
   nt = (Trigger*)sqliteMalloc(sizeof(Trigger));
+  if( nt==0 ) goto trigger_cleanup;
   nt->name = sqliteStrNDup(pName->z, pName->n);
   nt->table = sqliteStrNDup(pTableName->z, pTableName->n);
+  nt->strings = sqliteStrNDup(zData, zDataLen);
+  if( sqlite_malloc_failed ) goto trigger_cleanup;
   nt->op = op;
   nt->tr_tm = tr_tm;
   nt->pWhen = pWhen;
@@ -79,10 +83,7 @@ void sqliteCreateTrigger(
   nt->foreach = foreach;
   nt->step_list = pStepList;
   nt->isCommit = 0;
-
-  nt->strings = sqliteStrNDup(zData, zDataLen);
   offset = (int)(nt->strings - zData);
-
   sqliteExprMoveStrings(nt->pWhen, offset);
 
   ss = nt->step_list;
@@ -120,6 +121,7 @@ void sqliteCreateTrigger(
 
     /* Make an entry in the sqlite_master table */
     v = sqliteGetVdbe(pParse);
+    if( v==0 ) goto trigger_cleanup;
     sqliteBeginWriteOperation(pParse, 0);
     addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqliteVdbeChangeP3(v, addr+3, nt->name, 0); 
@@ -175,6 +177,7 @@ trigger_cleanup:
 */
 TriggerStep *sqliteTriggerSelectStep(Select *pSelect){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
+  if( pTriggerStep==0 ) return 0;
 
   pTriggerStep->op = TK_SELECT;
   pTriggerStep->pSelect = pSelect;
@@ -198,6 +201,7 @@ TriggerStep *sqliteTriggerInsertStep(
   int orconf          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
+  if( pTriggerStep==0 ) return 0;
 
   assert(pEList == 0 || pSelect == 0);
   assert(pEList != 0 || pSelect != 0);
@@ -224,6 +228,7 @@ TriggerStep *sqliteTriggerUpdateStep(
   int orconf           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
 ){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
+  if( pTriggerStep==0 ) return 0;
 
   pTriggerStep->op = TK_UPDATE;
   pTriggerStep->target  = *pTableName;
@@ -240,7 +245,8 @@ TriggerStep *sqliteTriggerUpdateStep(
 ** sees a DELETE statement inside the body of a CREATE TRIGGER.
 */
 TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
-  TriggerStep * pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
+  TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
+  if( pTriggerStep==0 ) return 0;
 
   pTriggerStep->op = TK_DELETE;
   pTriggerStep->target  = *pTableName;
@@ -563,7 +569,7 @@ int sqliteCodeRowTrigger(
       }
     }
 
-    if( fire_this ){
+    if( fire_this && (pTriggerStack = sqliteMalloc(sizeof(TriggerStack)))!=0 ){
       int endTrigger;
       IdList dummyTablist;
       Expr * whenExpr;
@@ -572,7 +578,6 @@ int sqliteCodeRowTrigger(
       dummyTablist.a = 0;
 
       /* Push an entry on to the trigger stack */
-      pTriggerStack = sqliteMalloc(sizeof(TriggerStack));
       pTriggerStack->pTrigger = pTrigger;
       pTriggerStack->newIdx = newIdx;
       pTriggerStack->oldIdx = oldIdx;

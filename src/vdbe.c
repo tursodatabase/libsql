@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.144 2002/05/19 23:43:14 danielk1977 Exp $
+** $Id: vdbe.c,v 1.145 2002/05/23 02:09:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -967,9 +967,11 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->azColName);
   p->azColName = 0;
   closeAllCursors(p);
-  for(i=0; i<p->nMem; i++){
-    if( p->aMem[i].s.flags & STK_Dyn ){
-      sqliteFree(p->aMem[i].z);
+  if( p->aMem ){
+    for(i=0; i<p->nMem; i++){
+      if( p->aMem[i].s.flags & STK_Dyn ){
+        sqliteFree(p->aMem[i].z);
+      }
     }
   }
   sqliteFree(p->aMem);
@@ -995,13 +997,15 @@ static void Cleanup(Vdbe *p){
   }
   p->nLineAlloc = 0;
   AggReset(&p->agg);
-  for(i=0; i<p->nSet; i++){
-    sqliteHashClear(&p->aSet[i].hash);
+  if( p->aSet ){
+    for(i=0; i<p->nSet; i++){
+      sqliteHashClear(&p->aSet[i].hash);
+    }
   }
   sqliteFree(p->aSet);
   p->aSet = 0;
   p->nSet = 0;
-  if( p->keylistStackDepth > 0 ){
+  if( p->keylistStack ){
     int ii;
     for(ii = 0; ii < p->keylistStackDepth; ii++){
       KeylistFree(p->keylistStack[ii]);

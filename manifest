@@ -1,5 +1,5 @@
-C Do\snot\sallow\striggers\son\sthe\sSQLITE_MASTER\stable.\s(CVS\s579)
-D 2002-05-23T00:30:31
+C Fix\ssome\splaces\swhere\sa\smalloc()\sfailure\swould\slead\sto\sa\ssegfault.\s(CVS\s580)
+D 2002-05-23T02:09:04
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,12 +23,12 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c d88ad651bedecba69510d87d734040730305c528
 F src/delete.c c2eae01b76d5418d4ff1768659dfb199c38f0641
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 01e1e395392284a3a480c90bd60b3a0fa99aab38
+F src/expr.c 535c2468cfa9a8d043c6bbe50488849943da237b
 F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 5b6586bb5d8306280253829f42f5f98b1455e757
-F src/main.c 3f0db74a3e8385322a3b69f51bea6ce19caeff19
+F src/main.c 1b10b0530cfff19c7a329052b9d91ec7e27dd2aa
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
@@ -49,10 +49,10 @@ F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5892a8eb8f0063718f5bec1a1b24f4c6029eba9b
-F src/trigger.c 0b86599dd395307e330e6dce143d9d04bd051580
+F src/trigger.c a5e6694f2cc6f1b3c10b954b9bc904548f3599fc
 F src/update.c 46c4b3e86c066cd8a0dcf0b75e4580bcf113aeb0
 F src/util.c 707c30f8c13cddace7c08556ac450c0b786660b3
-F src/vdbe.c 5fd717e6a42e98e4f244a2149267004f71f23679
+F src/vdbe.c 67fbceb6fa2a0ab020b65c007430272a66771ae1
 F src/vdbe.h 126a651ba26f05de075dcc6da5466244a31af6b8
 F src/where.c 293985b6cf8391c3dcef9efcac4654884370513a
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
@@ -74,7 +74,7 @@ F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/limit.test a930f3eba2a7691c8397ccab33710b931589566a
 F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
-F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
+F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test fb6ab400271ae1f5bc88617c2882f2f081ea8e6d
 F test/misc1.test a03214118429b40ca5548bc1fae0ebd5c34dabe6
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ba1953abd04671232cf9e93ab3f962fedbbdc508
-R a952285f133ca5b16c99838ac55a7dcb
+P 275ba356f351abcf9a079ac16b765c9443750f0e
+R 24f997b85ebd07b440816b1b8e31fccc
 U drh
-Z 8f9363819a6fa7621778a9a4ae7a975a
+Z e76116375316d7a218c0b8c0bf8e9bb8

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.75 2002/05/19 23:43:14 danielk1977 Exp $
+** $Id: main.c,v 1.76 2002/05/23 02:09:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -387,8 +387,11 @@ static void clearHashTable(sqlite *db, int preserveTemps){
   HashElem *pElem;
   Hash temp1;
   Hash temp2;
-  assert( sqliteHashFirst(&db->tblDrop)==0 ); /* There can not be uncommitted */
-  assert( sqliteHashFirst(&db->idxDrop)==0 ); /*   DROP TABLEs or DROP INDEXs */
+
+  /* Make sure there are no uncommited DROPs */
+  assert( sqliteHashFirst(&db->tblDrop)==0 || sqlite_malloc_failed );
+  assert( sqliteHashFirst(&db->idxDrop)==0 || sqlite_malloc_failed );
+  assert( sqliteHashFirst(&db->trigDrop)==0 || sqlite_malloc_failed );
   temp1 = db->tblHash;
   temp2 = db->trigHash;
   sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
