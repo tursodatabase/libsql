@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.222 2005/01/17 08:57:09 danielk1977 Exp $
+** $Id: select.c,v 1.223 2005/01/17 22:08:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2186,7 +2186,7 @@ static int processOrderGroupBy(
       sqlite3ExprDelete(pE);
       pE = pOrderBy->a[i].pExpr = sqlite3ExprDup(pEList->a[iCol-1].pExpr);
     }
-    if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList, pE, isAgg, 0) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pE, isAgg, 0, 1) ){
       return 1;
     }
     if( sqlite3ExprIsConstant(pE) ){
@@ -2355,12 +2355,12 @@ int sqlite3Select(
   ** Resolve the column names and do a semantics check on all the expressions.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0, pEList->a[i].pExpr,
-                                    1, &isAgg) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, 0, pEList->a[i].pExpr,
+                                    1, &isAgg, 1) ){
       goto select_end;
     }
   }
-  if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList, pWhere, 0, 0) ){
+  if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pWhere, 0, 0, 1) ){
     goto select_end;
   }
   if( pHaving ){
@@ -2368,7 +2368,7 @@ int sqlite3Select(
       sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
       goto select_end;
     }
-    if( sqlite3ExprResolveAndCheck(pParse, pTabList, pEList,pHaving,1,&isAgg) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, pEList,pHaving,1,&isAgg,1) ){
       goto select_end;
     }
   }

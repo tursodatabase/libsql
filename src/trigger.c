@@ -766,7 +766,7 @@ int sqlite3CodeRowTrigger(
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqlite3ExprDup(pTrigger->pWhen);
-      if( sqlite3ExprResolveIds(pParse, &dummyTablist, 0, whenExpr) ){
+      if( sqlite3ExprResolveNames(pParse, &dummyTablist, 0, whenExpr, 0, 0, 1)){
         pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(whenExpr);
         return 1;

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.128 2005/01/11 18:13:56 drh Exp $
+** $Id: where.c,v 1.129 2005/01/17 22:08:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -181,9 +181,9 @@ static Bitmask getMask(ExprMaskSet *pMaskSet, int iCursor){
 ** tree.
 **
 ** In order for this routine to work, the calling function must have
-** previously invoked sqlite3ExprResolveIds() on the expression.  See
+** previously invoked sqlite3ExprResolveNames() on the expression.  See
 ** the header comment on that routine for additional information.
-** The sqlite3ExprResolveIds() routines looks for column names and
+** The sqlite3ExprResolveNames() routines looks for column names and
 ** sets their opcodes to TK_COLUMN and their Expr.iTable fields to
 ** the VDBE cursor number of the table.
 */

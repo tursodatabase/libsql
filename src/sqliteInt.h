@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.353 2005/01/13 02:14:25 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.354 2005/01/17 22:08:19 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -316,6 +316,7 @@ typedef struct KeyClass KeyClass;
 typedef struct CollSeq CollSeq;
 typedef struct KeyInfo KeyInfo;
 typedef struct SqlCursor SqlCursor;
+typedef struct NameContext NameContext;
 typedef struct Fetch Fetch;
 typedef struct CursorSubst CursorSubst;
 
@@ -814,6 +815,8 @@ struct Expr {
 ** The following are the meanings of bits in the Expr.flags field.
 */
 #define EP_FromJoin     0x0001  /* Originated in ON or USING clause of a join */
+#define EP_Agg          0x0002  /* Contains one or more aggregate functions */
+#define EP_Resolved     0x0004  /* IDs have been resolved to COLUMNs */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -973,6 +976,8 @@ struct Select {
   ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u8 isDistinct;         /* True if the DISTINCT keyword is present */
+  u8 isAgg;              /* True if uses aggregate functions */
+  u8 namesResolved;      /* True if processed by sqlite3ExprResolve() */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
@@ -1251,6 +1256,38 @@ typedef struct {
 } InitData;
 
 /*
+** A NameContext defines a context in which to resolve table and column
+** names.  The context consists of a list of tables (the pSrcList) field and
+** a list of named expression (pEList).  The named expression list may
+** be NULL.  The pSrc corresponds to the FROM clause of a SELECT or
+** to the table being operated on by INSERT, UPDATE, or DELETE.  The
+** pEList corresponds to the result set of a SELECT and is NULL for
+** other statements.
+**
+** NameContexts can be nested.  When resolving names, the inner-most 
+** context is searched first.  If no match is found, the next outer
+** context is checked.  If there is still no match, the next context
+** is checked.  This process continues until either a match is found
+** or all contexts are check.  When a match is found, the nRef member of
+** the context containing the match is incremented. 
+**
+** Each subquery gets a new NameContext.  The pNext field points to the
+** NameContext in the parent query.  Thus the process of scanning the
+** NameContext list corresponds to searching through successively outer
+** subqueries looking for a match.
+*/
+struct NameContext {
+  Parse *pParse;       /* The parser */
+  SrcList *pSrcList;   /* One or more tables used to resolve names */
+  ExprList *pEList;    /* Optional list of named expressions */
+  int nRef;            /* Number of names resolved by this context */
+  int nErr;            /* Number of errors encountered while resolving names */
+  u8 allowAgg;         /* Aggregate functions allowed here */
+  u8 hasAgg;           /* Expression actually contains aggregate functions */
+  NameContext *pNext;  /* Next outer name context.  NULL for outermost */
+};
+
+/*
 ** Each SQL cursor (a cursor created by the DECLARE ... CURSOR syntax)
 ** is represented by an instance of the following structure.
 */
@@ -1386,8 +1423,8 @@ char *sqlite3NameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
-int sqlite3ExprResolveIds(Parse*, SrcList*, ExprList*, Expr*);
-int sqlite3ExprResolveAndCheck(Parse*,SrcList*,ExprList*,Expr*,int,int*);
+int sqlite3ExprResolveNames(Parse*, SrcList*, ExprList*, Expr*, int, int*, int);
+int sqlite3ExprCodeSubquery(Parse*, Expr*);
 int sqlite3ExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);

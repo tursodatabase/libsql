@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.130 2005/01/14 01:22:01 drh Exp $
+** $Id: insert.c,v 1.131 2005/01/17 22:08:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -380,7 +380,7 @@ void sqlite3Insert(
     nColumn = pList->nExpr;
     dummy.nSrc = 0;
     for(i=0; i<nColumn; i++){
-      if( sqlite3ExprResolveAndCheck(pParse,&dummy,0,pList->a[i].pExpr,0,0) ){
+      if( sqlite3ExprResolveNames(pParse,&dummy,0,pList->a[i].pExpr,0,0,1) ){
         goto insert_cleanup;
       }
     }
