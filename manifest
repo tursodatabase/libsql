@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#1062:\sCorrectly\shandle\sredundant\sterms\sin\sa\sWHERE\sclause.\s(CVS\s2198)
-D 2005-01-11T18:13:56
+C Fix\sa\sbug\sin\stclsqlite.c.\s(CVS\s2199)
+D 2005-01-12T00:08:25
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -64,7 +64,7 @@ F src/shell.c e8f4f486cbf6e60d81173146ac8a6522c930fa51
 F src/sqlite.h.in 0d5e48e506845b74a845c9470e01d3f472b59611
 F src/sqliteInt.h a362fd46ba14f67e8e088d30ecbbe228545c43fe
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 354d3e4525c7b29c8f50b1a0125d55c63c916fbc
+F src/tclsqlite.c 75a8dc9cd7ac0f41482bd7b96b99d54e62b6e98f
 F src/test1.c d684fb31dccd68434e148bef51d9c0a24b09bdf0
 F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c a72f20066cccd5a7b9f20b7b78fa9b05b47b3020
@@ -97,7 +97,7 @@ F test/autovacuum_ioerr.test 55ea907df34edb9be78a910a1636c2eb3c17ecc4
 F test/autovacuum_ioerr2.test bf427c86e4daa8638a2eb849bbe1446c234c73d3
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test b4ed42a21677dd0c0cd0ec671dffd1c39a9277b0
+F test/bind.test 578c6526f9e7298a8993815336d676a12684b0cd
 F test/blob.test fc41fe95bdc10da51f0dee73ce86e75ce1d6eb9d
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
 F test/btree2.test dbce930b549d5ac883a7d8905c976209ea241db3
@@ -268,7 +268,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 00a352ea79e0e1e855282c54d0e470161215f25e
-R 5fad993d144d0f23ddfb0703fd19bbe3
+P 1bee1bb91d39ff8a33efe662b6cab6dbd2d50e3c
+R 6de97aaefc689d9641defe44416179bf
 U drh
-Z 38a58b2fdff532e903d36a0479086b72
+Z 686cf7812785575d0f1d1fe10b0b7525

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.25 2005/01/11 17:46:42 drh Exp $
+# $Id: bind.test,v 1.26 2005/01/12 00:08:25 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -497,6 +497,5 @@ catch {sqlite3_finalize $VM}
 do_test bind-11.1 {
   catchsql {SELECT * FROM sqlite_master WHERE name=$abc(123 and sql NOT NULL;}
 } {1 {unrecognized token: "$abc(123"}}
-
 
 finish_test
