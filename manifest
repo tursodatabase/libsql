@@ -1,9 +1,9 @@
-C Bug\sfix:\ssqlite_exec()\swould\ssometimes\sreturn\sSQLITE_PROTOCOL\swhen\sit\nshould\shave\sreturned\sSQLITE_BUSY.\s\sThere\swas\salso\sa\sdeadlock\sthat\sthe\nprevious\sbug\swas\smasking.\s(CVS\s322)
-D 2001-12-05T00:21:20
+C Version\s2.1.4\s(CVS\s323)
+D 2001-12-05T00:22:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION e6864ec01e9107b1044207a2556c4e96c3457007
+F VERSION af44acbfe8124bdb8c63037755cf2a2f1fc4e46e
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 653f37c365a0b5d59c11b7dbba57905ffaeff2dc
-R 63aae37ccfcafcca670cad8f7e9ab9ed
+P 585ed5ebf1c1afc8ae1d569b121208018d8ecd49
+R 6f1ff44ca6b62cca200e262f17765dc3
 U drh
-Z 57898bef4e7a90862dc49491082c0c29
+Z 0f1344051fcbad02ad7c4234ee7c220b
