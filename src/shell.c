@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.20 2000/08/08 20:19:09 drh Exp $
+** $Id: shell.c,v 1.21 2000/08/17 09:50:00 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -659,12 +659,17 @@ int main(int argc, char **argv){
   }
   data.db = db = sqlite_open(argv[1], 0666, &zErrMsg);
   if( db==0 ){
-    if( zErrMsg ){
-      fprintf(stderr,"Unable to open database \"%s\": %s\n", argv[1], zErrMsg);
+    data.db = db = sqlite_open(argv[1], 0444, &zErrMsg);
+    if( db==0 ){
+      if( zErrMsg ){
+        fprintf(stderr,"Unable to open database \"%s\": %s\n", argv[1],zErrMsg);
+      }else{
+        fprintf(stderr,"Unable to open database %s\n", argv[1]);
+      }
+      exit(1);
     }else{
-      fprintf(stderr,"Unable to open database %s\n", argv[1]);
+      printf("Database \"%s\" opened READ ONLY!\n", argv[1]);
     }
-    exit(1);
   }
   data.out = stdout;
   if( argc==3 ){

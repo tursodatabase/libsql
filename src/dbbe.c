@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.18 2000/08/02 12:26:29 drh Exp $
+** $Id: dbbe.c,v 1.19 2000/08/17 09:50:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -372,6 +372,8 @@ int sqliteDbbeOpenCursor(
         /* Trying to read a non-existant file.  This is OK.  All the
         ** reads will return empty, which is what we want. */
         rc = SQLITE_OK;   
+      }else if( pBe->write==0 ){
+        rc = SQLITE_READONLY;
       }else if( access(zFile,W_OK|R_OK) ){
         rc = SQLITE_PERM;
       }else{
@@ -413,11 +415,13 @@ void sqliteDbbeDropTable(Dbbe *pBe, const char *zTable){
 /*
 ** Reorganize a table to reduce search times and disk usage.
 */
-void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
+int sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
   DbbeCursor *pCrsr;
+  int rc;
 
-  if( sqliteDbbeOpenCursor(pBe, zTable, 1, &pCrsr)!=SQLITE_OK ){
-    return;
+  rc = sqliteDbbeOpenCursor(pBe, zTable, 1, &pCrsr);
+  if( rc!=SQLITE_OK ){
+    return rc;
   }
   if( pCrsr && pCrsr->pFile && pCrsr->pFile->dbf ){
     gdbm_reorganize(pCrsr->pFile->dbf);
@@ -425,6 +429,7 @@ void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
   if( pCrsr ){
     sqliteDbbeCloseCursor(pCrsr);
   }
+  return SQLITE_OK;
 }
 
 /*
