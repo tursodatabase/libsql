@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.89 2004/02/13 20:09:42 drh Exp $
+** $Id: shell.c,v 1.90 2004/02/14 16:31:04 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -751,7 +751,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->out = stdout;
       strcpy(p->outfile,"stdout");
     }else{
-      p->out = fopen(azArg[1], "w");
+      p->out = fopen(azArg[1], "wb");
       if( p->out==0 ){
         fprintf(stderr,"can't write to \"%s\"\n", azArg[1]);
         p->out = stdout;
@@ -776,7 +776,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='r' && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
-    FILE *alt = fopen(azArg[1], "r");
+    FILE *alt = fopen(azArg[1], "rb");
     if( alt==0 ){
       fprintf(stderr,"can't open \"%s\"\n", azArg[1]);
     }else{
@@ -1149,7 +1149,7 @@ static void process_sqliterc(
     free(home_dir);
     sqliterc = (const char*)zBuf;
   }
-  in = fopen(sqliterc,"r");
+  in = fopen(sqliterc,"rb");
   if( in ){
     if( isatty(fileno(stdout)) ){
       printf("Loading resources from %s\n",sqliterc);

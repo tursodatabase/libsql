@@ -826,6 +826,8 @@ int sqliteVdbeReset(Vdbe *p, char **pzErrMsg){
       sqliteFree(p->zErrMsg);
     }
     p->zErrMsg = 0;
+  }else if( p->rc ){
+    sqliteSetString(pzErrMsg, sqlite_error_string(p->rc), (char*)0);
   }
   Cleanup(p);
   if( p->rc!=SQLITE_OK ){
@@ -908,6 +910,9 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqliteVdbeDelete(p);
   if( db->want_to_close && db->pVdbe==0 ){
     sqlite_close(db);
+  }
+  if( rc==SQLITE_SCHEMA ){
+    sqliteResetInternalSchema(db, 0);
   }
   return rc;
 }

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.167 2004/02/13 16:22:23 drh Exp $
+** $Id: build.c,v 1.168 2004/02/14 16:31:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -112,7 +112,7 @@ void sqliteExec(Parse *pParse){
       pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
     }
     pParse->colNamesSet = 0;
-  }else if( pParse->useCallback==0 ){
+  }else if( pParse->useCallback==0 && pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
   }
   pParse->nTab = 0;

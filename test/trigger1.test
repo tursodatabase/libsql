@@ -179,7 +179,7 @@ do_test trigger1-1.13 {
 # Ensure that we cannot create AFTER triggers on views
 do_test trigger1-1.14 {
   catchsql {
-    create table t1(a,b);
+    drop view v1;
     create view v1 as select * from t1;
     create trigger v1t AFTER update on v1 for each row begin
       delete from t1 WHERE a=old.a+2;

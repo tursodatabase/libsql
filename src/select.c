@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.153 2004/02/13 16:22:23 drh Exp $
+** $Id: select.c,v 1.154 2004/02/14 16:31:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1502,8 +1502,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* Issue a null callback if that is what the user wants.
   */
-  if( eDest==SRT_Callback &&
-    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0)
+  if( eDest==SRT_Callback /* &&
+    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0) */
   ){
     sqliteVdbeAddOp(v, OP_NullCallback, p->pEList->nExpr, 0);
   }
@@ -2402,8 +2402,8 @@ int sqliteSelect(
 
   /* Issue a null callback if that is what the user wants.
   */
-  if( eDest==SRT_Callback &&
-    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0)
+  if( eDest==SRT_Callback /* &&
+    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0) */
   ){
     sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
   }
