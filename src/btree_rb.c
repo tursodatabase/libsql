@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.20 2004/01/12 00:38:18 drh Exp $
+** $Id: btree_rb.c,v 1.21 2004/02/10 02:57:59 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1421,13 +1421,13 @@ static int memRbtreeCursorDump(RbtCursor* pCur, int* aRes)
   assert(!"Cannot call sqliteRbtreeCursorDump");
   return SQLITE_OK;
 }
+#endif
 
 static struct Pager *memRbtreePager(Rbtree* tree)
 {
   assert(!"Cannot call sqliteRbtreePager");
   return SQLITE_OK;
 }
-#endif
 
 /*
 ** Return the full pathname of the underlying database file.
@@ -1463,10 +1463,9 @@ static BtOps sqliteRbtreeOps = {
     (char*(*)(Btree*,int*,int)) memRbtreeIntegrityCheck,
     (const char*(*)(Btree*)) memRbtreeGetFilename,
     (int(*)(Btree*,Btree*)) memRbtreeCopyFile,
-
+    (struct Pager*(*)(Btree*)) memRbtreePager,
 #ifdef SQLITE_TEST
     (int(*)(Btree*,int,int)) memRbtreePageDump,
-    (struct Pager*(*)(Btree*)) memRbtreePager
 #endif
 };
 

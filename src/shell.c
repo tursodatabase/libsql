@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.84 2004/02/01 01:22:51 drh Exp $
+** $Id: shell.c,v 1.85 2004/02/10 02:57:59 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1170,6 +1170,9 @@ static const char zOptions[] =
   "   -[no]header          turn headers on or off\n"
   "   -column              set output mode to 'column'\n"
   "   -html                set output mode to HTML\n"
+#ifdef SQLITE_HAS_CRYPTO
+  "   -key KEY             encryption key\n"
+#endif                 
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
   "   -separator 'x'       set output field separator (|)\n"

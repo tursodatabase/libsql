@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.99 2004/02/10 01:54:28 drh Exp $
+** $Id: btree.c,v 1.100 2004/02/10 02:57:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3139,7 +3139,6 @@ static int fileBtreeCursorDump(BtCursor *pCur, int *aResult){
 }
 #endif
 
-#ifdef SQLITE_TEST
 /*
 ** Return the pager associated with a BTree.  This routine is used for
 ** testing and debugging only.
@@ -3147,7 +3146,6 @@ static int fileBtreeCursorDump(BtCursor *pCur, int *aResult){
 static Pager *fileBtreePager(Btree *pBt){
   return pBt->pPager;
 }
-#endif
 
 /*
 ** This structure is passed around through all the sanity checking routines
@@ -3555,9 +3553,9 @@ static BtOps sqliteBtreeOps = {
     fileBtreeIntegrityCheck,
     fileBtreeGetFilename,
     fileBtreeCopyFile,
+    fileBtreePager,
 #ifdef SQLITE_TEST
     fileBtreePageDump,
-    fileBtreePager
 #endif
 };
 static BtCursorOps sqliteBtreeCursorOps = {
