@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.5 2004/05/29 10:23:20 danielk1977 Exp $
+# $Id: attach3.test,v 1.6 2004/06/07 07:52:19 danielk1977 Exp $
 #
 
 
@@ -187,6 +187,30 @@ do_test attach3-8.2 {
     SELECT * FROM aux.sqlite_master WHERE name = 'tr1';
   }
 } {}
+
+# Try to trick SQLite into dropping the wrong temp trigger.
+do_test attach3-9.0 {
+  execsql {
+    CREATE TABLE main.t4(a, b, c);
+    CREATE TABLE aux.t4(a, b, c);
+    CREATE TEMP TRIGGER tst_trigger BEFORE INSERT ON aux.t4 BEGIN 
+      SELECT 'hello world';
+    END;
+    SELECT count(*) FROM sqlite_temp_master;
+  }
+} {1}
+do_test attach3-9.1 {
+  execsql {
+    DROP TABLE main.t4;
+    SELECT count(*) FROM sqlite_temp_master;
+  }
+} {1}
+do_test attach3-9.2 {
+  execsql {
+    DROP TABLE aux.t4;
+    SELECT count(*) FROM sqlite_temp_master;
+  }
+} {0}
 
 finish_test
 

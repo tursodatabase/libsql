@@ -421,6 +421,8 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   sqlite *db = pParse->db;
 
   if( sqlite3_malloc_failed ) goto drop_trigger_cleanup;
+  if( SQLITE_OK!=sqlite3ReadSchema(db) ) goto drop_trigger_cleanup;
+
   assert( pName->nSrc==1 );
   zDb = pName->a[0].zDatabase;
   zName = pName->a[0].zName;
@@ -470,7 +472,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
 
   /* Generate code to destroy the database record of the trigger.
   */
-  if( pTable!=0 && !nested && (v = sqlite3GetVdbe(pParse))!=0 ){
+  if( pTable!=0 && (v = sqlite3GetVdbe(pParse))!=0 ){
     int base;
     static VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
@@ -488,16 +490,13 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
     sqlite3OpenMasterTable(v, pTrigger->iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);
-    if( pTrigger->iDb!=1 ){
-      sqlite3ChangeCookie(db, v, pTrigger->iDb);
-    }
+    sqlite3ChangeCookie(db, v, pTrigger->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3EndWriteOperation(pParse);
   }
 
   /*
-   * If this is not an "explain", then delete the trigger structure.
-   */
+  ** If this is not an "explain", then delete the trigger structure.
+  */
   if( !pParse->explain ){
     const char *zName = pTrigger->name;
     int nName = strlen(zName);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.36 2004/06/03 16:08:42 danielk1977 Exp $
+** $Id: pragma.c,v 1.37 2004/06/07 07:52:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -203,6 +203,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0},
     };
     int addr;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "cache_size", P3_STATIC);
@@ -242,6 +243,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getCacheSize[] = {
       { OP_Callback,    1, 0,        0},
     };
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       int size = db->cache_size;;
       if( size<0 ) size = -size;
@@ -292,6 +294,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0}
     };
     int addr;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
@@ -335,6 +338,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getSync[] = {
       { OP_Callback,    1, 0,        0},
     };
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
@@ -367,6 +371,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqlite3StrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       int i;
@@ -395,6 +400,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "index_info")==0 ){
     Index *pIdx;
     Table *pTab;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     pIdx = sqlite3FindIndex(db, zRight, 0);
     if( pIdx ){
       int i;
@@ -417,6 +423,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "index_list")==0 ){
     Index *pIdx;
     Table *pTab;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -442,6 +449,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 ){
     FKey *pFK;
     Table *pTab;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -474,6 +482,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqlite3StrICmp(zLeft, "database_list")==0 ){
     int i;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     sqlite3VdbeSetNumCols(v, 3);
     sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
     sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
@@ -505,6 +514,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_Callback,    1, 0,        0},
     };
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeAddOp(v, OP_Integer, db->temp_store, 0);
       sqlite3VdbeSetNumCols(v, 1);
@@ -530,6 +540,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_ReadCookie,  0, 5,        0},
       { OP_Callback,    1, 0,        0}};
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "temp_store", P3_STATIC);
@@ -545,6 +556,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     extern void sqlite3ParserTrace(FILE*, char *);
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     if( getBoolean(zRight) ){
       sqlite3ParserTrace(stdout, "parser: ");
     }else{
@@ -577,6 +589,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
 
     /* Initialize the VDBE program */
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, "integrity_check", P3_STATIC);
     sqlite3VdbeAddOpList(v, ArraySize(initCode), initCode);
@@ -679,6 +692,76 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
     addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode);
     sqlite3VdbeChangeP2(v, addr+2, addr+ArraySize(endCode));
+  }else
+  /*
+  **   PRAGMA encoding
+  **   PRAGMA encoding = "utf-8"|"utf-16"|"utf-16le"|"utf-16be"
+  **
+  ** In it's first form, this pragma returns the encoding of the main
+  ** database. If the database is not initialized, it is initialized now.
+  **
+  ** The second form of this pragma is a no-op if the main database file
+  ** has not already been initialized. In this case it sets the default
+  ** encoding that will be used for the main database file if a new file
+  ** is created. If an existing main database file is opened, then the
+  ** default text encoding for the existing database is used.
+  ** 
+  ** In all cases new databases created using the ATTACH command are
+  ** created to use the same default text encoding as the main database. If
+  ** the main database has not been initialized and/or created when ATTACH
+  ** is executed, this is done before the ATTACH operation.
+  **
+  ** In the second form this pragma sets the text encoding to be used in
+  ** new database files created using this database handle. It is only
+  ** useful if invoked immediately after the main database i
+  */
+  if( sqlite3StrICmp(zLeft, "encoding")==0 ){
+    struct EncName {
+      char *zName;
+      u8 enc;
+    } encnames[] = {
+      { "UTF-8", TEXT_Utf8 },
+      { "UTF-16le", TEXT_Utf16le },
+      { "UTF-16be", TEXT_Utf16be },
+      { "UTF-16", TEXT_Utf16 },
+      { "UTF8", TEXT_Utf8 },
+      { "UTF16le", TEXT_Utf16le },
+      { "UTF16be", TEXT_Utf16be },
+      { "UTF16", TEXT_Utf16 },
+      { 0, 0 }
+    };
+    struct EncName *pEnc;
+    if( pRight->z==pLeft->z ){    /* "PRAGMA encoding" */
+      if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+      sqlite3VdbeSetNumCols(v, 1);
+      sqlite3VdbeSetColName(v, 0, "encoding", P3_STATIC);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+      for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
+        if( pEnc->enc==pParse->db->enc ){
+          sqlite3VdbeChangeP3(v, -1, pEnc->zName, P3_STATIC);
+          break;
+        }
+      }
+      sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
+    }else{                        /* "PRAGMA encoding = XXX" */
+      /* Only change the value of sqlite.enc if the database handle is not
+      ** initialized. If the main database exists, the new sqlite.enc value
+      ** will be overwritten when the schema is next loaded. If it does not
+      ** already exists, it will be created to use the new encoding value.
+      */
+      if( !(pParse->db->flags&SQLITE_Initialized) ){
+        for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
+          if( 0==sqlite3StrICmp(zRight, pEnc->zName) ){
+            pParse->db->enc = pEnc->enc;
+            break;
+          }
+        }
+        if( !pEnc->zName ){
+          sqlite3Error(pParse->db, SQLITE_ERROR, 
+              "Unsupported encoding: %s", zRight);
+        }
+      }
+    }
   }else
 
   {}

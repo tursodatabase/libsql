@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.205 2004/06/06 09:44:04 danielk1977 Exp $
+** $Id: main.c,v 1.206 2004/06/07 07:52:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -349,11 +349,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
 ** error occurs, write an error message into *pzErrMsg.
 **
 ** After the database is initialized, the SQLITE_Initialized
-** bit is set in the flags field of the sqlite structure.  An
-** attempt is made to initialize the database as soon as it
-** is opened.  If that fails (perhaps because another process
-** has the sqlite_master table locked) than another attempt
-** is made the first time the database is accessed.
+** bit is set in the flags field of the sqlite structure. 
 */
 int sqlite3Init(sqlite *db, char **pzErrMsg){
   int i, rc;
@@ -378,6 +374,28 @@ int sqlite3Init(sqlite *db, char **pzErrMsg){
 
   if( rc!=SQLITE_OK ){
     db->flags &= ~SQLITE_Initialized;
+  }
+  return rc;
+}
+
+/*
+** This routine is a no-op if the database schema is already initialised.
+** Otherwise, the schema is loaded. An error code is returned.
+*/
+int sqlite3ReadSchema(sqlite *db){
+  int rc = SQLITE_OK;
+  char *zErrMsg = 0;
+
+  if( !db->init.busy ){
+    if( (db->flags & SQLITE_Initialized)==0 ){
+      rc = sqlite3Init(db, &zErrMsg);
+    }
+  }
+  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
+
+  sqlite3Error(db, rc, zErrMsg);
+  if( zErrMsg ){
+    sqliteFree(zErrMsg);
   }
   return rc;
 }
@@ -845,21 +863,6 @@ int sqlite3_prepare(
     goto prepare_out;
   }
 
-  if( !db->init.busy ){
-    if( (db->flags & SQLITE_Initialized)==0 ){
-      int cnt = 1;
-      rc = sqlite3Init(db, &zErrMsg);
-      if( rc!=SQLITE_OK ){
-        goto prepare_out;
-      }
-      if( zErrMsg ){
-        sqliteFree(zErrMsg);
-        zErrMsg = 0;
-      }
-    }
-  }
-  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
-
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
@@ -974,26 +977,11 @@ int sqlite3_prepare16(
 */
 static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
-  sqlite3 **ppDb,        /* OUT: Returned database handle */
-  const char **options,  /* Null terminated list of db options, or null */
-  u8 def_enc             /* One of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be */
+  sqlite3 **ppDb         /* OUT: Returned database handle */
 ){
   sqlite3 *db;
   int rc, i;
   char *zErrMsg = 0;
-
-#ifdef SQLITE_TEST
-  for(i=0; options && options[i]; i++){
-    char const *zOpt = options[i];
-    if( 0==sqlite3StrICmp(zOpt, "-utf8") ){
-      def_enc = TEXT_Utf8;
-    }else if( 0==sqlite3StrICmp(zOpt, "-utf16le") ){
-      def_enc = TEXT_Utf16le;
-    }else if( 0==sqlite3StrICmp(zOpt, "-utf16be") ){
-      def_enc = TEXT_Utf16be;
-    }
-  }
-#endif
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
@@ -1002,7 +990,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
   db->aDb = db->aDbStatic;
-  db->enc = def_enc;
+  db->enc = TEXT_Utf8;
   db->autoCommit = 1;
   /* db->flags |= SQLITE_ShortColNames; */
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
@@ -1030,20 +1018,18 @@ static int openDatabase(
   db->aDb[0].zName = "main";
   db->aDb[1].zName = "temp";
 
-  /* Attempt to read the schema */
+  /* Register all built-in functions, but do not attempt to read the
+  ** database schema yet. This is delayed until the first time the database
+  ** is accessed.
+  */
   sqlite3RegisterBuiltinFunctions(db);
-  rc = sqlite3Init(db, &zErrMsg);
-  if( sqlite3_malloc_failed ){
-    sqlite3_close(db);
-    db = 0;
-    goto opendb_out;
-  }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
-    sqlite3Error(db, rc, "%s", zErrMsg, 0);
-    db->magic = SQLITE_MAGIC_CLOSED;
-  }else{
+  if( rc==SQLITE_OK ){
     db->magic = SQLITE_MAGIC_OPEN;
+  }else{
+    sqlite3Error(db, rc, "%s", zErrMsg, 0);
+    if( zErrMsg ) sqliteFree(zErrMsg);
+    db->magic = SQLITE_MAGIC_CLOSED;
   }
-  if( zErrMsg ) sqliteFree(zErrMsg);
 
 opendb_out:
   *ppDb = db;
@@ -1058,7 +1044,7 @@ int sqlite3_open(
   sqlite3 **ppDb, 
   const char **options
 ){
-  return openDatabase(zFilename, ppDb, options, TEXT_Utf8);
+  return openDatabase(zFilename, ppDb);
 }
 
 /*
@@ -1079,16 +1065,12 @@ int sqlite3_open16(
     *ppDb = 0;
     return SQLITE_NOMEM;
   }
-
-  /* FIX ME: Also need to translate the option strings */
-
-  if( SQLITE_BIGENDIAN ){
-    rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16be);
-  }else{
-    rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16le);
+  rc = openDatabase(zFilename8, ppDb);
+  if( rc==SQLITE_OK && *ppDb ){
+    sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
   }
-
   sqliteFree(zFilename8);
+
   return rc;
 }
 

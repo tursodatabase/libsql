@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.12 2004/05/11 07:11:52 danielk1977 Exp $
+** $Id: attach.c,v 1.13 2004/06/07 07:52:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -105,7 +105,7 @@ void sqlite3Attach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey)
   db->flags &= ~SQLITE_Initialized;
   if( pParse->nErr ) return;
   if( rc==SQLITE_OK ){
-    rc = sqlite3Init(pParse->db, &pParse->zErrMsg);
+    rc = sqlite3ReadSchema(pParse->db);
   }
   if( rc ){
     int i = db->nDb - 1;

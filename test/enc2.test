@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.4 2004/05/27 17:22:56 drh Exp $
+# $Id: enc2.test,v 1.5 2004/06/07 07:52:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,7 +45,7 @@ set dbcontents {
 # database, and that it is possible to retreive values in
 # various text encodings.
 #
-proc run_test_script {t} {
+proc run_test_script {t enc} {
 
 # Open the database and pull out a (the) row.
 do_test $t.1 {
@@ -102,22 +102,23 @@ do_test $t.9 {
   sqlite3_finalize $STMT
 } SQLITE_OK
 
-do_test $t.99 {
-  db close
-} {}
+do_test $t.10 {
+  db eval {PRAGMA encoding}
+} $enc
 
 }
 
 # The three unicode encodings understood by SQLite.
-set encodings [list -utf8 -utf16be -utf16le]
+set encodings [list UTF-8 UTF-16le UTF-16be]
 
 set i 1
 foreach enc $encodings {
   file delete -force test.db
   sqlite db test.db $enc
+  db eval "PRAGMA encoding = \"$enc\""
   execsql $dbcontents
   db close
-  run_test_script enc2-$i
+  run_test_script enc2-$i $enc
   incr i
 }
 

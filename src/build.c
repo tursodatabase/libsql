@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.206 2004/06/03 16:08:41 danielk1977 Exp $
+** $Id: build.c,v 1.207 2004/06/07 07:52:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -38,6 +38,7 @@ void sqlite3BeginParse(Parse *pParse, int explainFlag){
   sqlite *db = pParse->db;
   int i;
   pParse->explain = explainFlag;
+#if 0
   if((db->flags & SQLITE_Initialized)==0 && db->init.busy==0 ){
     int rc = sqlite3Init(db, &pParse->zErrMsg);
     if( rc!=SQLITE_OK ){
@@ -45,6 +46,7 @@ void sqlite3BeginParse(Parse *pParse, int explainFlag){
       pParse->nErr++;
     }
   }
+#endif
   for(i=0; i<db->nDb; i++){
     DbClearProperty(db, i, DB_Locked);
     if( !db->aDb[i].inTrans ){
@@ -105,7 +107,8 @@ void sqlite3Exec(Parse *pParse){
 Table *sqlite3FindTable(sqlite *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
-  for(i=0; i<db->nDb; i++){
+  int rc = sqlite3ReadSchema(db);
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].tblHash, zName, strlen(zName)+1);
@@ -157,7 +160,8 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 Index *sqlite3FindIndex(sqlite *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
-  for(i=0; i<db->nDb; i++){
+  int rc = sqlite3ReadSchema(db);
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].idxHash, zName, strlen(zName)+1);
@@ -931,16 +935,6 @@ void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
   db->flags |= SQLITE_InternChanges;
   sqlite3VdbeAddOp(v, OP_Integer, *pSchemaCookie, 0);
   sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
-/*
-  if( db->next_cookie==db->aDb[0].schema_cookie ){
-    unsigned char r;
-    sqlite3Randomness(1, &r);
-    db->next_cookie = db->aDb[0].schema_cookie + r + 1;
-    db->flags |= SQLITE_InternChanges;
-    sqlite3VdbeAddOp(v, OP_Integer, db->next_cookie, 0);
-    sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
-  }
-*/
 }
 
 /*
@@ -1404,22 +1398,28 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     static VdbeOpList dropTable[] = {
-      { OP_Rewind,     0, ADDR(10), 0},
-      { OP_String8,     0, 0,        0}, /* 1 */
+      { OP_Rewind,     0, ADDR(13), 0},
+      { OP_String8,    0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
       { OP_MemLoad,    1, 0,        0}, /* 3 */
-      { OP_Column,     0, 2,        0},
-      { OP_Ne,         0, ADDR(9),  0},
+      { OP_Column,     0, 2,        0}, /* sqlite_master.tbl_name */
+      { OP_Ne,         0, ADDR(12), 0},
+      { OP_String8,    0, 0,        "trigger"},
+      { OP_Column,     0, 2,        0}, /* sqlite_master.type */
+      { OP_Eq,         0, ADDR(12), 0},
       { OP_Delete,     0, 0,        0},
-      { OP_Rewind,     0, ADDR(10), 0},
+      { OP_Rewind,     0, ADDR(13), 0},
       { OP_Goto,       0, ADDR(3),  0},
-      { OP_Next,       0, ADDR(3),  0}, /* 9 */
+      { OP_Next,       0, ADDR(3),  0}, /* 12 */
     };
     Index *pIdx;
     Trigger *pTrigger;
     sqlite3BeginWriteOperation(pParse, 0, pTab->iDb);
 
-    /* Drop all triggers associated with the table being dropped */
+    /* Drop all triggers associated with the table being dropped. Code
+    ** is generated to remove entries from sqlite_master and/or
+    ** sqlite_temp_master if required.
+    */
     pTrigger = pTab->pTrigger;
     while( pTrigger ){
       assert( pTrigger->iDb==pTab->iDb || pTrigger->iDb==1 );
@@ -1431,21 +1431,17 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
       }
     }
 
-    /* Drop all SQLITE_MASTER entries that refer to the table */
+    /* Drop all SQLITE_MASTER table and index entries that refer to the
+    ** table. The program name loops through the master table and deletes
+    ** every row that refers to a table of the same name as the one being
+    ** dropped. Triggers are handled seperately because a trigger can be
+    ** created in the temp database that refers to a table in another
+    ** database.
+    */
     sqlite3OpenMasterTable(v, pTab->iDb);
     base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
-
-    /* Drop all SQLITE_TEMP_MASTER entries that refer to the table */
-    if( pTab->iDb!=1 ){
-      sqlite3OpenMasterTable(v, 1);
-      base = sqlite3VdbeAddOpList(v, ArraySize(dropTable), dropTable);
-      sqlite3VdbeChangeP3(v, base+1, pTab->zName, 0);
-    }
-
-    if( pTab->iDb!=1 ){  /* Temp database has no schema cookie */
-      sqlite3ChangeCookie(db, v, pTab->iDb);
-    }
+    sqlite3ChangeCookie(db, v, pTab->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
       sqlite3VdbeAddOp(v, OP_Destroy, pTab->tnum, pTab->iDb);
@@ -2262,7 +2258,7 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   sqlite3VdbeAddOp(v, OP_Transaction, iDb, 1);
-  if( iDb!=1 && (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
+  if( (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
     sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
     pParse->cookieMask |= ((u64)1<<iDb);
   }
