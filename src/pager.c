@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.158 2004/08/18 19:09:44 drh Exp $
+** @(#) $Id: pager.c,v 1.159 2004/08/19 13:29:15 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2417,7 +2417,7 @@ int sqlite3pager_begin(void *pData){
       pPager->state = PAGER_EXCLUSIVE;
       pPager->origDbSize = pPager->dbSize;
     }else{
-#if 0
+#ifdef SQLITE_BUSY_RESERVED_LOCK
       int busy = 1;
       do {
         rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
@@ -2426,8 +2426,9 @@ int sqlite3pager_begin(void *pData){
           pPager->pBusyHandler->xFunc && 
           pPager->pBusyHandler->xFunc(pPager->pBusyHandler->pArg, busy++)
       );
-#endif
+#else
       rc = sqlite3OsLock(&pPager->fd, RESERVED_LOCK);
+#endif
       if( rc!=SQLITE_OK ){
         /* We do not call the busy handler when we fail to get a reserved lock.
         ** The only reason we might fail is because another process is holding
