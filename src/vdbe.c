@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.128 2002/02/28 03:04:48 drh Exp $
+** $Id: vdbe.c,v 1.129 2002/02/28 03:31:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1047,23 +1047,21 @@ static char *zOpName[] = { 0,
   "ListRewind",        "ListRead",          "ListReset",         "SortPut",
   "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
   "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
-  "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "AggFunc",
-  "AggInit",           "SetInsert",         "SetFound",          "SetNotFound",
-  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Pop",               "Dup",               "Pull",
-  "Push",              "MustBeInt",         "Add",               "AddImm",
-  "Subtract",          "Multiply",          "Divide",            "Remainder",
-  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
-  "ShiftRight",        "AbsValue",          "Precision",         "Min",
-  "Max",               "Like",              "Glob",              "Eq",
+  "FileColumn",        "AggReset",          "AggFocus",          "AggNext",
+  "AggSet",            "AggGet",            "AggFunc",           "AggInit",
+  "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
+  "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
+  "If",                "Halt",              "ColumnCount",       "ColumnName",
+  "Callback",          "NullCallback",      "Integer",           "String",
+  "Pop",               "Dup",               "Pull",              "Push",
+  "MustBeInt",         "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Like",              "Glob",              "Eq",
   "Ne",                "Lt",                "Le",                "Gt",
   "Ge",                "IsNull",            "NotNull",           "Negative",
   "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Strlen",            "Substr",            "Function",
-  "Limit",           
+  "Noop",              "Function",          "Limit",           
 };
 
 /*
@@ -1765,104 +1763,6 @@ divide_by_zero:
   PopStack(p, 2);
   p->tos = nos;
   aStack[nos].flags = STK_Null;
-  break;
-}
-
-/*
-** Opcode: Precision * * *
-**
-** The top of stack is a floating-point number and the next on stack is
-** an integer.  Truncate the floating-point number to a number of digits
-** specified by the integer and push the floating-point number back onto
-** the stack. 
-*/
-case OP_Precision: {
-  int tos = p->tos;
-  int nos = tos - 1;
-  int nDigit;
-  int len;
-  double v;
-  char *zNew;
-
-  VERIFY( if( nos<0 ) goto not_enough_stack; )
-  Realify(p, tos);
-  Integerify(p, nos);
-  nDigit = aStack[nos].i;
-  if( nDigit<0 ) nDigit = 0;
-  if( nDigit>30 ) nDigit = 30;
-  v = aStack[tos].r;
-  zNew = sqlite_mprintf("%.*f", nDigit, v);
-  if( zNew==0 ) goto no_mem;
-  POPSTACK;
-  Release(p, nos);
-  aStack[nos].n = len = strlen(zNew) + 1;
-  if( len<=NBFS ){
-    strcpy(aStack[nos].z, zNew);
-    zStack[nos] = aStack[nos].z;
-    aStack[nos].flags = STK_Str;
-    sqliteFree(zNew);
-  }else{
-    zStack[nos] = zNew;
-    aStack[nos].flags = STK_Str | STK_Dyn;
-  }
-  break;
-}
-
-/* Opcode: Max * * *
-**
-** Pop the top two elements from the stack then push back the
-** largest of the two.
-*/
-/* Opcode: Min * * *
-**
-** Pop the top two elements from the stack then push back the
-** smaller of the two. 
-*/
-case OP_Min:
-case OP_Max: {
-  int tos = p->tos;
-  int nos = tos - 1;
-  int a,b;
-  int ft, fn;
-  int copy = 0;
-  VERIFY( if( nos<0 ) goto not_enough_stack; )
-  ft = aStack[tos].flags;
-  fn = aStack[nos].flags;
-  if( pOp->opcode==OP_Max ){
-    a = tos;
-    b = nos;
-  }else{
-    a = nos;
-    b = tos;
-  }
-  if( fn & STK_Null ){
-    copy = 1;
-  }else if( ft & STK_Null ){
-    copy = 0;
-  }else if( (ft & fn & STK_Int)==STK_Int ){
-    copy = aStack[a].i>aStack[b].i;
-  }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
-    Realify(p, tos);
-    Realify(p, nos);
-    copy = aStack[a].r>aStack[b].r;
-  }else{
-    if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-    copy = sqliteCompare(zStack[a],zStack[b])>0;
-  }
-  if( copy ){
-    Release(p, nos);
-    aStack[nos] = aStack[tos];
-    if( aStack[nos].flags & (STK_Dyn|STK_Static) ){
-      zStack[nos] = zStack[tos];
-    }else{
-      zStack[nos] = aStack[nos].z;
-    }
-    zStack[tos] = 0;
-    aStack[tos].flags = 0;
-  }else{
-    Release(p, tos);
-  }
-  p->tos = nos;
   break;
 }
 
@@ -4496,36 +4396,6 @@ case OP_AggFocus: {
   break; 
 }
 
-/* Opcode: AggIncr P1 P2 *
-**
-** Increase the integer value in the P2-th field of the aggregate
-** element current in focus by an amount P1.
-*/
-case OP_AggIncr: {
-  AggElem *pFocus = AggInFocus(p->agg);
-  int i = pOp->p2;
-  if( pFocus==0 ) goto no_mem;
-  if( i>=0 && i<p->agg.nMem ){
-    Mem *pMem = &pFocus->aMem[i];
-    if( pMem->s.flags!=STK_Int ){
-      if( pMem->s.flags & STK_Int ){
-        /* Do nothing */
-      }else if( pMem->s.flags & STK_Real ){
-        pMem->s.i = (int)pMem->s.r;
-      }else if( pMem->s.flags & STK_Str ){
-        pMem->s.i = atoi(pMem->z);
-      }else{
-        pMem->s.i = 0;
-      }
-      if( pMem->s.flags & STK_Dyn ) sqliteFree(pMem->z);
-      pMem->z = 0;
-      pMem->s.flags = STK_Int;
-    }
-    pMem->s.i += pOp->p1;
-  }
-  break;
-}
-
 /* Opcode: AggSet * P2 *
 **
 ** Move the top of the stack into the P2-th field of the current
@@ -4705,133 +4575,6 @@ case OP_SetNotFound: {
   break;
 }
 
-/* Opcode: Strlen * * *
-**
-** Interpret the top of the stack as a string.  Replace the top of
-** stack with an integer which is the length of the string.
-*/
-case OP_Strlen: {
-  int tos = p->tos;
-  int len;
-  VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) ) goto no_mem;
-#ifdef SQLITE_UTF8
-  {
-    char *z = zStack[tos];
-    for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
-  }
-#else
-  len = aStack[tos].n-1;
-#endif
-  POPSTACK;
-  p->tos++;
-  aStack[tos].i = len;
-  aStack[tos].flags = STK_Int;
-  break;
-}
-
-/* Opcode: Substr P1 P2 *
-**
-** This operation pops between 1 and 3 elements from the stack and
-** pushes back a single element.  The bottom-most element popped from
-** the stack is a string and the element pushed back is also a string.
-** The other two elements popped are integers.  The integers are taken
-** from the stack only if P1 and/or P2 are 0.  When P1 or P2 are
-** not zero, the value of the operand is used rather than the integer
-** from the stack.  In the sequel, we will use P1 and P2 to describe
-** the two integers, even if those integers are really taken from the
-** stack.
-**
-** The string pushed back onto the stack is a substring of the string
-** that was popped.  There are P2 characters in the substring.  The
-** first character of the substring is the P1-th character of the
-** original string where the left-most character is 1 (not 0).  If P1
-** is negative, then counting begins at the right instead of at the
-** left.
-*/
-case OP_Substr: {
-  int cnt;
-  int start;
-  int n;
-  char *z;
-
-  if( pOp->p2==0 ){
-    VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-    Integerify(p, p->tos);
-    cnt = aStack[p->tos].i;
-    POPSTACK;
-  }else{
-    cnt = pOp->p2;
-  }
-  if( pOp->p1==0 ){
-    VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-    Integerify(p, p->tos);
-    start = aStack[p->tos].i;
-    POPSTACK;
-  }else{
-    start = pOp->p1;
-  }
-  if( start ) start--;
-  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  if( Stringify(p, p->tos) ) goto no_mem;
-
-  /* "n" will be the number of characters in the input string.
-  ** For iso8859, the number of characters is the number of bytes.
-  ** Buf for UTF-8, some characters can use multiple bytes and the
-  ** situation is more complex. 
-  */
-#ifdef SQLITE_UTF8
-  z = zStack[p->tos];
-  for(n=0; *z; z++){ if( (0xc0&*z)!=0x80 ) n++; }
-#else
-  n = aStack[p->tos].n - 1;
-#endif
-  if( start<0 ){
-    start += n + 1;
-    if( start<0 ){
-      cnt += start;
-      start = 0;
-    }
-  }
-  if( start>n ){
-    start = n;
-  }
-  if( cnt<0 ) cnt = 0;
-  if( cnt > n ){
-    cnt = n;
-  }
-
-  /* At this point, "start" is the index of the first character to
-  ** extract and "cnt" is the number of characters to extract.  We
-  ** need to convert units on these variable from characters into
-  ** bytes.  For iso8859, the conversion is a no-op, but for UTF-8
-  ** we have to do a little work.
-  */
-#ifdef SQLITE_UTF8
-  {
-    int c_start = start;
-    int c_cnt = cnt;
-    int i;
-    z = zStack[p->tos];
-    for(start=i=0; i<c_start; i++){
-      while( (0xc0&z[++start])==0x80 ){}
-    }
-    for(cnt=i=0; i<c_cnt; i++){
-      while( (0xc0&z[(++cnt)+start])==0x80 ){}
-    }
-  }
-#endif
-  z = sqliteMalloc( cnt+1 );
-  if( z==0 ) goto no_mem;
-  strncpy(z, &zStack[p->tos][start], cnt);
-  z[cnt] = 0;
-  POPSTACK;
-  p->tos++;
-  zStack[p->tos] = z;
-  aStack[p->tos].n = cnt + 1;
-  aStack[p->tos].flags = STK_Str|STK_Dyn;
-  break;
-}
 
 /* An other opcode is illegal...
 */

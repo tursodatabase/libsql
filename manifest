@@ -1,5 +1,5 @@
-C Change\sthe\sIFNULL\sand\sNVL\sfunctions\sto\sCOALESCE.\s\sChange\sMIN\sand\sMAX\sso\sthat\nthey\srequire\sat\sleast\sone\sargument.\s(CVS\s404)
-D 2002-02-28T03:14:18
+C Remove\sunused\sopcodes\sfrom\sthe\sVDBE\sand\sfix\sa\sbug\sin\sthe\ssubstr()\sfunction.\s(CVS\s405)
+D 2002-02-28T03:31:11
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c b70bedaffd27ea24c5c2a197a88b07e82dfa4967
-F src/func.c 7169103d1082c24f0e8a71c66e7ac4062f6acc15
+F src/func.c 089b68c021b82d8f3d0f489143d200ddf1eced39
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -51,8 +51,8 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 18971d265b0341574b7e3f73116e7947ddab0997
 F src/util.c 1c01f0a54a77ae9fb638d026d18093ee1b61e3b3
-F src/vdbe.c 26a2b62f1d5d0806bd301413327efc85944ae40c
-F src/vdbe.h 8ab845e63e196e8eb5e51ce69f43b233e51db07e
+F src/vdbe.c 91311e99efe980459a78e8f5b9e5456d772c9e23
+F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 664be01b0ce9ffaecbde609afbd4d8d3e5ed1585
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b00cf110b1cc671b7200a5ce8b9e704f660763c9
-R 700a29215d4083019c40f619d0c95fb2
+P 7d86749d4a78d05930bae2b6491d9428f06fe836
+R f548275963c89789d73119d8b7f277e5
 U drh
-Z b9fbc42617ff7af7970f2ca4a8912d6a
+Z 85324ea3b3c81399d9a571ab6786b2dc
