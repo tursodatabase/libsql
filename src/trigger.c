@@ -556,16 +556,6 @@ static int checkColumnOverLap(IdList *pIdList, ExprList *pEList){
   return 0; 
 }
 
-/* A global variable that is TRUE if we should always set up temp tables for
- * for triggers, even if there are no triggers to code. This is used to test 
- * how much overhead the triggers algorithm is causing.
- *
- * This flag can be set or cleared using the "trigger_overhead_test" pragma.
- * The pragma is not documented since it is not really part of the interface
- * to SQLite, just the test procedure.
-*/
-int sqlite3_always_code_trigger_setup = 0;
-
 /*
  * Returns true if a trigger matching op, tr_tm and foreach that is NOT already
  * on the Parse objects trigger-stack (to prevent recursive trigger firing) is
@@ -580,10 +570,6 @@ int sqlite3TriggersExist(
   ExprList *pChanges      /* Columns that change in an UPDATE statement */
 ){
   Trigger * pTriggerCursor;
-
-  if( sqlite3_always_code_trigger_setup ){
-    return 1;
-  }
 
   pTriggerCursor = pTrigger;
   while( pTriggerCursor ){

@@ -11,10 +11,14 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.77 2004/11/12 16:12:00 danielk1977 Exp $
+** $Id: pragma.c,v 1.78 2004/11/13 15:59:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
+/* Ignore this whole file if pragmas are disabled
+*/
+#ifndef SQLITE_OMIT_PRAGMA
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 # include "pager.h"
@@ -203,6 +207,7 @@ void sqlite3Pragma(
     goto pragma_out;
   }
  
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
   /*
   **  PRAGMA [database.]default_cache_size
   **  PRAGMA [database.]default_cache_size=N
@@ -270,6 +275,7 @@ void sqlite3Pragma(
       sqlite3BtreeSetPageSize(pBt, atoi(zRight), sqlite3BtreeGetReserve(pBt));
     }
   }else
+#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
   /*
   **  PRAGMA [database.]auto_vacuum
@@ -290,6 +296,7 @@ void sqlite3Pragma(
   }else
 #endif
 
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
   /*
   **  PRAGMA [database.]cache_size
   **  PRAGMA [database.]cache_size=N
@@ -358,22 +365,14 @@ void sqlite3Pragma(
       }
     }
   }else
-
-#if 0  /* Used once during development.  No longer needed */
-  if( sqlite3StrICmp(zLeft, "trigger_overhead_test")==0 ){
-    if( getBoolean(zRight) ){
-      sqlite3_always_code_trigger_setup = 1;
-    }else{
-      sqlite3_always_code_trigger_setup = 0;
-    }
-  }else
-#endif
+#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
   if( flagPragma(pParse, zLeft, zRight) ){
     /* The flagPragma() subroutine also generates any necessary code
     ** there is nothing more to do here */
   }else
 
+#ifndef SQLITE_OMIT_SCHEMA_PRAGMAS
   /*
   **   PRAGMA table_info(<table>)
   **
@@ -462,6 +461,25 @@ void sqlite3Pragma(
     }
   }else
 
+  if( sqlite3StrICmp(zLeft, "database_list")==0 ){
+    int i;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    sqlite3VdbeSetNumCols(v, 3);
+    sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
+    sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
+    sqlite3VdbeSetColName(v, 2, "file", P3_STATIC);
+    for(i=0; i<db->nDb; i++){
+      if( db->aDb[i].pBt==0 ) continue;
+      assert( db->aDb[i].zName!=0 );
+      sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+      sqlite3VdbeOp3(v, OP_String8, 0, 0, db->aDb[i].zName, 0);
+      sqlite3VdbeOp3(v, OP_String8, 0, 0,
+           sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
+      sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
+    }
+  }else
+#endif /* SQLITE_OMIT_SCHEMA_PRAGMAS */
+
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 && zRight ){
     FKey *pFK;
@@ -497,24 +515,6 @@ void sqlite3Pragma(
     }
   }else
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
-
-  if( sqlite3StrICmp(zLeft, "database_list")==0 ){
-    int i;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-    sqlite3VdbeSetNumCols(v, 3);
-    sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
-    sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
-    sqlite3VdbeSetColName(v, 2, "file", P3_STATIC);
-    for(i=0; i<db->nDb; i++){
-      if( db->aDb[i].pBt==0 ) continue;
-      assert( db->aDb[i].zName!=0 );
-      sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-      sqlite3VdbeOp3(v, OP_String8, 0, 0, db->aDb[i].zName, 0);
-      sqlite3VdbeOp3(v, OP_String8, 0, 0,
-           sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
-      sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
-    }
-  }else
 
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
@@ -654,6 +654,7 @@ void sqlite3Pragma(
   }else
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+#ifndef SQLITE_OMIT_UTF16
   /*
   **   PRAGMA encoding
   **   PRAGMA encoding = "utf-8"|"utf-16"|"utf-16le"|"utf-16be"
@@ -724,6 +725,9 @@ void sqlite3Pragma(
       }
     }
   }else
+#endif /* SQLITE_OMIT_UTF16 */
+
+#ifndef SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS
   /*
   **   PRAGMA [database.]schema_version
   **   PRAGMA [database.]schema_version = <integer>
@@ -783,6 +787,7 @@ void sqlite3Pragma(
       sqlite3VdbeSetNumCols(v, 1);
     }
   }
+#endif /* SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS */
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
@@ -820,3 +825,5 @@ pragma_out:
   sqliteFree(zLeft);
   sqliteFree(zRight);
 }
+
+#endif /* SQLITE_OMIT_PRAGMA */
