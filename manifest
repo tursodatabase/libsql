@@ -1,5 +1,5 @@
-C documentation\supdate\s(CVS\s224)
-D 2001-06-08T00:25:18
+C All\sBTree\scode\sis\sin\splace.\sNow\swe\sjust\shave\sto\smake\sit\swork.\s(CVS\s225)
+D 2001-06-10T19:56:59
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in acef0f0275a5ca8e68bda165f7f05d810a207664
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -12,7 +12,7 @@ F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
 F notes/notes2.txt 7e3fafd5e25906c1fe1e95f13b089aa398ca403e
 F notes/notes3.txt 985bf688b59f1f52bfe6e4b1f896efdeffac1432
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
-F src/btree.c 2a1a6c3ae7743ebf7f0b1632bef68d2851fe9bfd
+F src/btree.c 788e18f3c668732fc4f228fd24912bb5181b055f
 F src/btree.h f9adc22e8414402c176d71088e76afa89cc0d4b1
 F src/build.c 4f6a2d551c56342cd4a0420654835be3ad179651
 F src/dbbe.c b18259f99d87240cbe751021cf14dd3aa83a48af
@@ -107,7 +107,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 7108b699cc03d5d4dfb222ceab0196a85dbffd50
-R c74d5c7fce6c7dc0d7e612e147204b5e
+P d1e211fad9d787a0fdbcd11fb364d6c592c07a05
+R 3aa8278a253756473c3d6ce9ea5ba81d
 U drh
-Z 2efe93a2d9b9837777b14777d744b8d1
+Z 55b535f0434199de5eef13cb7d2b84b8
