@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.5 2002/01/22 14:11:30 drh Exp $
+# $Id: select3.test,v 1.6 2002/08/04 00:52:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -141,5 +141,52 @@ do_test select3-5.2 {
     ORDER BY max(n+log*2), min(log,avg(n))
   }
 } {0 1 1 1 1 1 2 4 2 2 3.5 8 3 4 6.5 14 4 8 12.5 24 5 15 24 41}
+
+# Test sorting of GROUP BY results in the presence of an index
+# on the GROUP BY column.
+#
+do_test select3-6.1 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY log;
+  }
+} {0 1 1 2 2 3 3 5 4 9 5 17}
+do_test select3-6.2 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY log DESC;
+  }
+} {5 17 4 9 3 5 2 3 1 2 0 1}
+do_test select3-6.3 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY 1;
+  }
+} {0 1 1 2 2 3 3 5 4 9 5 17}
+do_test select3-6.4 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY 1 DESC;
+  }
+} {5 17 4 9 3 5 2 3 1 2 0 1}
+do_test select3-6.5 {
+  execsql {
+    CREATE INDEX i1 ON t1(log);
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY log;
+  }
+} {0 1 1 2 2 3 3 5 4 9 5 17}
+do_test select3-6.6 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY log DESC;
+  }
+} {5 17 4 9 3 5 2 3 1 2 0 1}
+do_test select3-6.7 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY 1;
+  }
+} {0 1 1 2 2 3 3 5 4 9 5 17}
+do_test select3-6.8 {
+  execsql {
+    SELECT log, min(n) FROM t1 GROUP BY log ORDER BY 1 DESC;
+  }
+} {5 17 4 9 3 5 2 3 1 2 0 1}
+
+
 
 finish_test

@@ -1,5 +1,5 @@
-C Remove\sthe\srestriction\sthat\sa\stransaction\scannot\sbe\sstarted\sby\sone\slinuxthread\nand\scontinued\sby\sanother.\s\sLeave\sin\sthe\sdocumentation\sthe\swarning\sabout\snot\ncarrying\sa\sdatabase\sconnection\sacross\sfork()\sbut\sdo\snot\stest\sfor\sit\sany\smore.\nTicket\s#130.\s(CVS\s701)
-D 2002-08-02T10:36:09
+C Fix\sfor\sticket\s#131:\sWhen\sa\sSELECT\scontains\sa\sGROUP\sBY\sclause\sit\scannot\nuse\san\sindex\sfor\ssorting.\s\sIt\shas\sto\ssort\sas\sa\sseparate\soperation\safter\nthe\sGROUP\sBY\sis\scomplete.\s(CVS\s702)
+D 2002-08-04T00:52:38
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 5307e1a7b26241991934d4b50ae70980f3f2aca9
 F src/printf.c 06f4c8725063e0faf0e34824ab70feace7146bf7
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c a43eabfc2e3e4d67660027f016889935f706deab
+F src/select.c f504cc542229f472b3f15cefe5d6782494ee8d92
 F src/shell.c 37a8405aec5740726c4ee18826c1ff5fd2c29b96
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
@@ -89,7 +89,7 @@ F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
-F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
+F test/select3.test 3e98cec10e755226cbabdd7073ec37baab9ab148
 F test/select4.test 10ba54f24ef6ca7958a7045b001079378db2370c
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
@@ -143,7 +143,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P fe329e078fa209faf62e08599a00c7efa75b8501
-R 66c2a41a1ef6ccb1b164992b7bd68837
+P bdbdb866f2e76abd1f8f545adadc9a900ed0cd1a
+R 7e4332a36f68ac29bb96e906247d54dc
 U drh
-Z bd48f812cbcb60975b4748e3aa9b4545
+Z 8543b6144e2b62dfac20ae8ed8338057
