@@ -1,5 +1,5 @@
-C Bug\sfix\sassociated\swith\sOP_SetNumColumns\sin\sinsert.c.\s\sAlso\schanged\sa\nvariable\sname\sin\sOP_Column.\s(CVS\s1413)
-D 2004-05-20T02:42:16
+C Bug\sfix\sassociated\swith\smisc3.test.\s(CVS\s1414)
+D 2004-05-20T03:02:47
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y d2e226650738931c047c2562326ed05882af2330
 F src/pragma.c 2332e7fa9d7cd4b21f30583a696bee36628404ca
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c d01c03462d57b9d1ea25eea297bbd2c1b1c70e47
+F src/select.c 2510f0f16bf28108d89ba6e5680a9f090adc31b7
 F src/shell.c 0c4662e13bfbfd3d13b066c5859cc97ad2f95d21
 F src/sqlite.h.in f9c9ffd435312810a59a4af055021b1a22d78c28
 F src/sqliteInt.h 6b43ef88542c242b39ed41a84055e4504571a9f0
@@ -193,7 +193,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c4e1d02ffded1421c09b0c8e45954e69f3583297
-R 00efca936dc0d4e7252b5e6e6ac01b8b
+P bf2181f13fdad72d8c90eccc2d29034178181731
+R 46472217ba808b054b4a6f2e56ec1043
 U drh
-Z f146143edcb95dd51e33c2460fa9add3
+Z b7043787724d907a7fdbaf95eb29b7cb
