@@ -54,9 +54,10 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o main.o \
-         opcodes.o os.o pager.o parse.o printf.o random.o select.o table.o \
-         tokenize.o trigger.o update.o util.o vdbe.o where.o tclsqlite.o
+LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o \
+         main.o opcodes.o os.o pager.o parse.o printf.o random.o \
+         select.o table.o tokenize.o trigger.o update.o util.o \
+         vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -108,6 +109,7 @@ TESTSRC = \
 HDR = \
    sqlite.h  \
    $(TOP)/src/btree.h \
+   config.h \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -118,7 +120,7 @@ HDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite.h libsqlite.a sqlite$(EXE)
+all:	sqlite.h config.h libsqlite.a sqlite$(EXE)
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -194,7 +196,23 @@ parse.c:	$(TOP)/src/parse.y lemon
 	cp $(TOP)/src/parse.y .
 	./lemon parse.y
 
+# The config.h file will contain a single #define that tells us how
+# many bytes are in a pointer.  This only works if a pointer is the
+# same size on the host as it is on the target.  If you are cross-compiling
+# to a target with a different pointer size, you'll need to manually
+# configure the config.h file.
+#
+config.h:	
+	echo '#include <stdio.h>' >temp.c
+	echo 'int main(){printf(' >>temp.c
+	echo '"#define SQLITE_PTR_SZ %d\n",sizeof(char*));' >>temp.c
+	echo 'exit(0);}' >>temp.c
+	$(BCC) -o temp temp.c
+	./temp >config.h
+	rm -f temp.c temp
+
 sqlite.h:	$(TOP)/src/sqlite.h.in 
+	$(BCC) -o temp temp.c
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
             -e s/--ENCODING--/$(ENCODING)/ \
                  $(TOP)/src/sqlite.h.in >sqlite.h

@@ -1,6 +1,6 @@
-C Get\sthe\snew\slarge\sfile\scode\sworking\swith\sthe\sBorland\scompiler.\s\sTicket\s#195.\s(CVS\s787)
-D 2002-11-20T11:08:00
-F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
+C Automatically\sdetermine\sif\spointers\sare\s4\sor\s8\sbytes\sin\ssize\sduring\sthe\ncompilation\sprocess.\s\sTicket\s#190.\s(CVS\s788)
+D 2002-11-20T11:55:19
+F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 3cd17ced6590df1bb65cb7e075ab529b481517f0
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F main.mk d7a9dfc003ab1eeb4fdb46dfcee8af0ab0e38a99
+F main.mk e0f1f0b2fe39593b5d1c41e467d409210656d3be
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -41,7 +41,7 @@ F src/select.c ce82596a2eaaf418edba45b2426f41065e49578b
 F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
-F src/sqliteInt.h a001c52dfb10ec38f18d6b9ed7dd8b3f42ca8c72
+F src/sqliteInt.h 74198ccddb3443514f0218de1f5a6668c3dbbe59
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P dc5d9c129c566bf57d108b824ba486cfe070dda6
-R a7df48d9796716d510521dcad732255a
+P da4a79e2891aa81e2e6d96689f99b3924f940dd5
+R e6e632d6bef956a28043c04d8612ec4c
 U drh
-Z 28922f3b0a8eee5e8c4c877b1de2de34
+Z 48fdd2120a0a70b5abec7fb92ba361ca

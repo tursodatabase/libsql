@@ -11,8 +11,9 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.148 2002/10/27 19:35:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.149 2002/11/20 11:55:19 drh Exp $
 */
+#include "config.h"
 #include "sqlite.h"
 #include "hash.h"
 #include "vdbe.h"
@@ -73,7 +74,11 @@
 # define UINT8_TYPE unsigned char
 #endif
 #ifndef INTPTR_TYPE
-# define INTPTR_TYPE int
+# if SQLITE_PTR_SZ==4
+#   define INTPTR_TYPE int
+# else
+#   define INTPTR_TYPE long long
+# endif
 #endif
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
