@@ -1,15 +1,14 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.1 2000/05/29 17:44:25 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.2 2000/05/29 18:20:15 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Frontend For GDBM</title></head>
 <body bgcolor=white>
 <h1 align=center>SQLite: An SQL Frontend For GDBM</h1>
 <p align=center>}
-puts "Version 0.1 (alpha)<br />"
-puts "Last modified [lrange $rcsid 3 4]"
+puts "Last modified [lrange $rcsid 3 4] GMT"
 puts {</p>}
 
 puts {<h2>Introduction</h2>
@@ -20,15 +19,19 @@ to use an SQL database but which do not have access to a full-blown
 SQL RDBMS.</p>
 
 <p>The C interface to SQLite is very simple, consisting of only
-four functions and a single opaque data structure.  A Tcl interface
+four functions and a single opaque data structure.  
+See <a href="c_interface.html">c_interface.html</a> for details.
+A Tcl interface
 to SQLite is also available and is included in the source tree.
+Documentation on the Tcl interface is pending.
 Interfaces for perl and python may be supplied in future releases.</p>
 
 <p>There is a standalone C program named "sqlite" that can be used
 to interactively create, update and/or query an SQLite database.
 The sources to the sqlite program are part of the source tree and
 can be used as an example of how to interact with the SQLite C
-library.</p>
+library.  For more information on the sqlite program,
+see <a href="sqlite.html">sqlite.html</a>.</p>
 
 <p>SQLite does not try to implement every feature of SQL.  But it
 does strive to implement to most commonly used features.  SQLite
@@ -47,14 +50,16 @@ currently understands the following SQL commands:</p>
 </ul>
 </p>
 
-<p>SQLite does not (at present) implement any of these features:</p>
+<p>Some the many SQL features that SQLite does not (currently) 
+implement are as follows:</p>
 
 <p>
 <ul>
 <li>ALTER TABLE</li>
 <li>The GROUP BY or HAVING clauses of a SELECT</li>
-<li>The LIKE or IN operators of expressions</li>
+<li>The LIKE or IN</li>
 <li>Constraints</li>
+<li>Nested queries</li>
 <li>Transactions or rollback</li>
 </ul>
 </p>
@@ -88,16 +93,23 @@ Click to subscribe to sqlite</a>
 
 puts {<h2>Download</h2>
 
-<p>You can download a tarball containing complete SQLite source
-code at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
+<p>You can download a tarball containing all C source
+code for SQLite at <a href="sqlite.tar.gz">sqlite.tar.gz</a>.}
 puts "This is a [file size sqlite.tar.gz] byte download.  The
 tarball was last modified at [clock format [file mtime sqlite.tar.gz]]"
-puts {</p>}
+puts {</p>
+
+<p>You can also download a larger tarball that contains everything
+in the source tarball plus all of the sources for the text that
+appears on this website, and other miscellaneous files.  The
+complete tarball is found at <a href="all.tar.gz">all.tar.gz</a>.}
+puts "This is a [file size all.tar.gz] byte download and was
+was last modified at [clock format [file mtime sqlite.tar.gz]]</p>"
 
 puts {<h2>Related Sites</h2>
 
 <ul>
-<li><p>The cannonical site for GDBM is
+<li><p>The canonical site for GDBM is
        <a href="http://www.gnu.org/software/gdbm/gdbm.html">
        http://www.gnu.org/software/gdbm/gdbm.html</a></p></li>
 

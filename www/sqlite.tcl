@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.1 2000/05/29 17:44:26 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.2 2000/05/29 18:20:15 drh Exp $}
 
 puts {<html>
 <head>
@@ -9,9 +9,11 @@ puts {<html>
 </head>
 <body bgcolor=white>
 <h1 align=center>
-<tt>sqlite</tt>: A program to administer SQLite databases
+sqlite: A program to administer SQLite databases
 </h1>}
-puts "<p align=center>(This page was last modified on [lrange $rcsid 3 4])</p>"
+puts "<p align=center>
+(This page was last modified on [lrange $rcsid 3 4] GMT)
+</p>"
 
 puts {
 <p>The SQLite library includes a simple command-line utility named
@@ -200,7 +202,7 @@ sql>
 
 puts {
 <p>By default, each column is 10 characters wide. 
-Data that is too wide to fit in a column is trucated.  You can
+Data that is too wide to fit in a column is truncated.  You can
 adjust the column widths using the ".width" command.  Like this:</p>}
 
 Code {
@@ -237,7 +239,7 @@ puts {
 <p>The third output mode supported by sqlite is called "list".  In
 list mode, each record of a query result is written on one line of
 output and each field within that record is separated by a specific
-separator string.  The default separator is a pipe symbolc ("|").
+separator string.  The default separator is a pipe symbol ("|").
 List mode is especially useful when you are going to send the output
 of a query to another program (such as AWK) for additional process.</p>}
 
@@ -359,7 +361,7 @@ to "column" and to set the column widths to values that are reasonable
 for looking at the output of an EXPLAIN command.  The EXPLAIN command
 is an SQLite-specific command that is useful for debugging.  If any
 regular SQL is prefaced by EXPLAIN, then the SQL command is parsed and
-analyized but is not executed.  Instead, the sequence of virtual machine
+analyzed but is not executed.  Instead, the sequence of virtual machine
 instructions that would have been used to execute the SQL command are
 returned like a query result.  For example:</p>}
 
