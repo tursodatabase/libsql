@@ -425,7 +425,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 }
 
 /*
-** Extract the user data from a sqlite_func structure and return a
+** Extract the user data from a sqlite3_context structure and return a
 ** pointer to it.
 */
 void *sqlite3_user_data(sqlite3_context *p){
@@ -439,10 +439,10 @@ void *sqlite3_user_data(sqlite3_context *p){
 ** same context that was returned on prior calls.
 **
 ** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in
+** the internals of the sqlite3_context structure which is only defined in
 ** this source file.
 */
-void *sqlite3_aggregate_context(sqlite_func *p, int nByte){
+void *sqlite3_get_context(sqlite3_context *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   if( p->pAgg==0 ){
     if( nByte<=NBFS ){
@@ -460,10 +460,10 @@ void *sqlite3_aggregate_context(sqlite_func *p, int nByte){
 ** called.
 **
 ** This routine is defined here in vdbe.c because it depends on knowing
-** the internals of the sqlite_func structure which is only defined in
+** the internals of the sqlite3_context structure which is only defined in
 ** this source file.
 */
-int sqlite3_aggregate_count(sqlite_func *p){
+int sqlite3_aggregate_count(sqlite3_context *p){
   assert( p && p->pFunc && p->pFunc->xStep );
   return p->cnt;
 }
@@ -731,7 +731,7 @@ void sqlite3VdbeAggReset(Agg *pAgg){
     for(i=0; i<pAgg->nMem; i++){
       Mem *pMem = &pElem->aMem[i];
       if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
-        sqlite_func ctx;
+        sqlite3_context ctx;
         ctx.pFunc = pAgg->apFunc[i];
         ctx.s.flags = MEM_Null;
         ctx.pAgg = pMem->z;

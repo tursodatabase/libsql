@@ -237,7 +237,7 @@ typedef struct Mem Mem;
 ** This structure is defined inside of vdbe.c because it uses substructures
 ** (Mem) which are only defined there.
 */
-struct sqlite_func {
+struct sqlite3_context {
   FuncDef *pFunc;   /* Pointer to function information.  MUST BE FIRST */
   Mem s;            /* The return value is stored here */
   void *pAgg;       /* Aggregate context */

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.50 2004/05/25 11:47:26 danielk1977 Exp $
+** $Id: test1.c,v 1.51 2004/05/25 12:05:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -307,7 +307,7 @@ static int sqlite_test_close(
 ** Implementation of the x_coalesce() function.
 ** Return the first argument non-NULL argument.
 */
-static void ifnullFunc(sqlite_func *context, int argc, sqlite3_value **argv){
+static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
@@ -377,7 +377,7 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 ** use the same database at the same time.
 */
 static void sqlite3ExecFunc(
-  sqlite_func *context, 
+  sqlite3_context *context, 
   int argc,  
   sqlite3_value **argv
 ){
@@ -431,16 +431,16 @@ typedef struct CountCtx CountCtx;
 struct CountCtx {
   int n;
 };
-static void countStep(sqlite_func *context, int argc, sqlite3_value **argv){
+static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   CountCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = sqlite3_get_context(context, sizeof(*p));
   if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0]) ) && p ){
     p->n++;
   }
 }   
-static void countFinalize(sqlite_func *context){
+static void countFinalize(sqlite3_context *context){
   CountCtx *p;
-  p = sqlite3_aggregate_context(context, sizeof(*p));
+  p = sqlite3_get_context(context, sizeof(*p));
   sqlite3_result_int32(context, p ? p->n : 0);
 }
 
@@ -653,7 +653,7 @@ static int sqlite_abort(
 ** The following routine is a user-defined SQL function whose purpose
 ** is to test the sqlite_set_result() API.
 */
-static void testFunc(sqlite_func *context, int argc, sqlite3_value **argv){
+static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   while( argc>=2 ){
     const char *zArg0 = sqlite3_value_data(argv[0]);
     const char *zArg1 = sqlite3_value_data(argv[1]);

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.75 2004/05/25 11:47:26 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.76 2004/05/25 12:05:57 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -421,8 +421,9 @@ const char *sqlite3_libencoding(void);
 ** A pointer to the following structure is used to communicate with
 ** the implementations of user-defined functions.
 */
-typedef struct sqlite_func sqlite_func;
+typedef struct sqlite3_context sqlite3_context;
 typedef struct Mem sqlite3_value;
+
 
 /*
 ** Use the following routines to create new user-defined functions.  See
@@ -432,15 +433,15 @@ int sqlite3_create_function(
   sqlite*,                  /* Database where the new function is registered */
   const char *zName,        /* Name of the new function */
   int nArg,                 /* Number of arguments.  -1 means any number */
-  void (*xFunc)(sqlite_func*,int,sqlite3_value **),  /* C code to implement */
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value **),  /* C code to implement */
   void *pUserData           /* Available via the sqlite3_user_data() call */
 );
 int sqlite3_create_aggregate(
   sqlite*,                  /* Database where the new function is registered */
   const char *zName,        /* Name of the function */
   int nArg,                 /* Number of arguments */
-  void (*xStep)(sqlite_func*,int,sqlite3_value**), /* Called for each row */
-  void (*xFinalize)(sqlite_func*),       /* Called once to get final result */
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**), /* Called for each row */
+  void (*xFinalize)(sqlite3_context*),       /* Called once to get final result */
   void *pUserData           /* Available via the sqlite3_user_data() call */
 );
 
@@ -465,23 +466,11 @@ int sqlite3_function_type(
 #define SQLITE_ARGS        (-3)
 
 /*
-** Aggregate functions use the following routine to allocate
-** a structure for storing their state.  The first time this routine
-** is called for a particular aggregate, a new structure of size nBytes
-** is allocated, zeroed, and returned.  On subsequent calls (for the
-** same aggregate instance) the same buffer is returned.  The implementation
-** of the aggregate can use the returned buffer to accumulate data.
-**
-** The buffer allocated is freed automatically be SQLite.
-*/
-void *sqlite3_aggregate_context(sqlite_func*, int nBytes);
-
-/*
 ** The next routine returns the number of calls to xStep for a particular
 ** aggregate function instance.  The current call to xStep counts so this
 ** routine always returns at least 1.
 */
-int sqlite3_aggregate_count(sqlite_func*);
+int sqlite3_aggregate_count(sqlite3_context*);
 
 /*
 ** This routine registers a callback with the SQLite library.  The
@@ -1311,6 +1300,7 @@ long long int sqlite3_column_int(sqlite3_stmt*,int);
 */
 double sqlite3_column_float(sqlite3_stmt*,int);
 
+
 /*
 ** Return the type of the sqlite3_value* passed as the first argument. 
 ** The type is one of SQLITE3_NULL, SQLITE3_INTEGER, SQLITE3_FLOAT,
@@ -1382,9 +1372,17 @@ long long int sqlite3_value_int(sqlite3_value*);
 */
 double sqlite3_value_float(sqlite3_value*);
 
-typedef sqlite_func sqlite3_context;
-
-void *sqlite3_get_context(sqlite3_context*, int nbyte);
+/*
+** Aggregate functions use the following routine to allocate
+** a structure for storing their state.  The first time this routine
+** is called for a particular aggregate, a new structure of size nBytes
+** is allocated, zeroed, and returned.  On subsequent calls (for the
+** same aggregate instance) the same buffer is returned.  The implementation
+** of the aggregate can use the returned buffer to accumulate data.
+**
+** The buffer allocated is freed automatically by SQLite.
+*/
+void *sqlite3_get_context(sqlite3_context*, int nBytes);
 
 /*
 ** The pUserData parameter to the sqlite3_create_function() and
