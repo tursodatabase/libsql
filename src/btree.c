@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.208 2004/11/05 12:27:02 danielk1977 Exp $
+** $Id: btree.c,v 1.209 2004/11/05 12:58:25 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4582,7 +4582,11 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
         *piMoved = maxRootPgno;
       }
 
-      rc = sqlite3BtreeUpdateMeta(pBt, 4, maxRootPgno-1);
+      maxRootPgno--;
+      if( maxRootPgno==PTRMAP_PAGENO(pBt->pageSize, maxRootPgno) ){
+        maxRootPgno--;
+      }
+      rc = sqlite3BtreeUpdateMeta(pBt, 4, maxRootPgno);
     }else{
       rc = freePage(pPage);
       releasePage(pPage);
