@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.113 2002/09/21 15:57:57 drh Exp $
+** $Id: build.c,v 1.114 2002/09/25 19:04:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -81,6 +81,10 @@ void sqliteExec(Parse *pParse){
     pParse->rc = rc;
     pParse->schemaVerified = 0;
   }
+  pParse->nTab = 0;
+  pParse->nMem = 0;
+  pParse->nSet = 0;
+  pParse->nAgg = 0;
 }
 
 /*
