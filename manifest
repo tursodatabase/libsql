@@ -1,7 +1,7 @@
-C :-)\s(CVS\s116)
-D 2000-07-31T14:10:47
+C added\swinNT\scross-compile\sdocumentation\s(CVS\s117)
+D 2000-07-31T18:56:15
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in 9e6dcd232e594fb599a5e9ba8bcf45e6c6e2fe72
+F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure 51063d594190fa085f909cefc9427241088bec4f x
 F configure.in a04f02ba61ed09a00e862b4f78b91b06a559e0b5
@@ -59,14 +59,16 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl 46fa8c4b4939fedd802ae5cc5a9b3b49e3528052
+F www/changes.tcl 874d7b801a9370326e74cc34f119c62f361cb697
+F www/crosscompile.tcl aa75529712e29c92acc6949404716492317c0d22
 F www/fileformat.tcl f3a70650e942262f8285d53097d48f0b3aa59862
-F www/index.tcl 58c9a33ceba12f5efee446c6b10b4f6523a214e1
+F www/index.tcl 1630a46fbe1e2651b7067fd463a3d4ffcd13ba6b
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
+F www/mingw.tcl c55116a9a950d68e0279054c5aab7687162fd02f
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 52c2c50d09f568284d60f5b0715af0759e5f9b22
-R d31874668edbdc4d0a363449cf06ee1d
+P a0246ddfb451801a78c34fde3ad72412323039dc
+R 4435bdfae4e23004f854df39f18c9991
 U drh
-Z 07a8ba4a11f33dc69735485c685e6b81
+Z 6bd32adc8b5b796c01f0b69c7a971591

@@ -19,6 +19,7 @@ proc chng {date desc} {
 
 chng {2000 July 31} {
 <li>Finish the <a href="vdbe.html">VDBE tutorial</a>.</li>
+<li>Added documentation on compiling to WindowsNT.</li>
 <li>Fix a configuration program for WindowsNT.</li>
 <li>Fix a configuration problem for HPUX.</li>
 }
