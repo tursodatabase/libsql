@@ -1,5 +1,5 @@
-C Avoid\sallocating\sa\svdbe\sin\ssqlite3FinishCoding()\sif\sone\shas\snot\sbeen\sallocated\salready.\s(CVS\s2299)
-D 2005-02-01T03:09:52
+C Lemon\soptimization:\s\sWhen\sdoing\sa\sshift\sfollowing\sa\sreduce\sthat\spops\sone\nor\smore\selements\soff\sthe\sstack,\sno\sneed\sto\scheck\sfor\sstack\soverflow.\s(CVS\s2300)
+D 2005-02-01T03:20:00
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -212,7 +212,7 @@ F test/view.test 306cc4342eb03c28de1a92c681836189e03e5af9
 F test/where.test ffb790dfda75d977bae7a1f5830351623f76861b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 4a3b5ccc76d959b8caa5f127d23a7e14d4470b4e
-F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
+F tool/lempar.c 38b1f1fcb8ae384b71a57982940307a7e844e2f1
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl b8eb053190e95a55dc188896afb972e8108822d6
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P d8b4b0ef13dddbf527e7440e7343c458210dceac
-R 32c1bba6ed63992275398bb8bbb11ed7
-U danielk1977
-Z dc111654e2377c88987b45c4a82d2550
+P eaf1866e4d10f0ddf5ccc02b7d9aff281ff9efc0
+R 598decd81211763acd99dde118d03556
+U drh
+Z c40f8770402b118725e7463bbb95fcd4
