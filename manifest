@@ -1,5 +1,5 @@
-C The\sOP_Checkpoint\sopcode\sis\snow\sa\sno-op\sif\sinvoked\son\sa\sdatabase\sthat\salready\nhas\san\sactive\scheckpoint\sjournal.\s\sTicket\s#333.\s(CVS\s997)
-D 2003-06-02T23:14:13
+C Additional\stesting\sof\sthe\sATTACH\scommand\swith\sbug\sfixes\sfor\sthe\snew\sproblems\nthat\sthe\stests\sfound.\s(CVS\s998)
+D 2003-06-03T01:47:11
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,7 +19,7 @@ F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F src/attach.c 4f0aa5add0fb3c11b6a2130a1c8593bb5063b6d4
+F src/attach.c db89b086f58b679e3f140296e3b95942989b04ba
 F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c 8092dca45dcdb69c61273db0213cbb85760673c7
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
@@ -47,7 +47,7 @@ F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
-F src/sqliteInt.h 7562ea21beb84e4f90ea0e016b02945ac35350a9
+F src/sqliteInt.h d1d883d9116dadf63ffe1bafe17ba6455b7db59e
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
 F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
@@ -55,7 +55,7 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
-F src/trigger.c 5caf7697e6cd4cfaf38d55bff31580f4124d836f
+F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 18d16fa3171e34b6f6f73ef0c61e7d9b73b78826
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
@@ -63,7 +63,7 @@ F src/vdbe.c 4170cba0a05da0a93dcd674859fc1ce18f3fb0a3
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test f050eebbb7e45c0796add92fa3f9154d68d7a01a
+F test/attach.test 771334395ba0af08ec27b83f516978989e606e5a
 F test/auth.test dee78be1f4f920bd6b15c4c947ce4d01bfe2826d
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -79,7 +79,7 @@ F test/copy.test c860847f1bd66175ef7cb724326a1700e0295820
 F test/delete.test 1586a00574e699a9913bc3403261813e8a93e6b9
 F test/expr.test 48bc6400627532ec97e233809e33d336468bc84c
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
-F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
+F test/format3.test b05cb2968841553698290f2833f72894f156024e
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/in.test 22de8a3eb27265aab723adc513bea0e76bef70c6
 F test/index.test 90ef4c426865f15937858bd433cc82b9c11af913
@@ -95,7 +95,7 @@ F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memdb.test ab1d16eb3179272016b1fe5fa3988e9c2f6c5594
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
-F test/misc1.test 865c907df58195364eaf2e69426e9674bc8d1a8c
+F test/misc1.test c7dc2f2bd702d8283e885a64ec0714be26cfb051
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 77ec13dab85b70795ef06ff2c714cca0cd496837
-R d450e05d46a3501d91726056bd4029e5
+P daf7b94017f03638da1ef65830f3762be030b93c
+R 64dc9487d2ea82a1f70ee389c18ab473
 U drh
-Z ef7ae355ee25a92de1dd5e8db797cf3d
+Z 95bab4cd51ed3d170690377c2faf1c26

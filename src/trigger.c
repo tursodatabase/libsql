@@ -54,6 +54,7 @@ void sqliteBeginTrigger(
   char *zName = 0;        /* Name of the trigger */
   sqlite *db = pParse->db;
   int iDb;                /* When database to store the trigger in */
+  DbFixer sFix;
 
   /* Check that: 
   ** 1. the trigger name does not already exist.
@@ -64,12 +65,13 @@ void sqliteBeginTrigger(
   */
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
-  assert( pTableName->a[0].zDatabase==0 );
-  if( pParse->initFlag ){
-    pTableName->a[0].zDatabase = db->aDb[pParse->iDb].zName;
+  if( pParse->initFlag 
+   && sqliteFixInit(&sFix, pParse, pParse->iDb, "trigger", pName)
+   && sqliteFixSrcList(&sFix, pTableName)
+  ){
+    goto trigger_cleanup;
   }
   tab = sqliteSrcListLookup(pParse, pTableName);
-  pTableName->a[0].zDatabase = 0;
   if( !tab ){
     goto trigger_cleanup;
   }
@@ -138,7 +140,7 @@ void sqliteBeginTrigger(
   nt->pWhen = sqliteExprDup(pWhen);
   nt->pColumns = sqliteIdListDup(pColumns);
   nt->foreach = foreach;
-  nt->pNameToken = pName;
+  sqliteTokenCopy(&nt->nameToken,pName);
   assert( pParse->pNewTrigger==0 );
   pParse->pNewTrigger = nt;
 
@@ -170,11 +172,10 @@ void sqliteFinishTrigger(
     pStepList->pTrig = nt;
     pStepList = pStepList->pNext;
   }
-  if( sqliteFixInit(&sFix, pParse, nt->iDb, "trigger", nt->pNameToken) 
+  if( sqliteFixInit(&sFix, pParse, nt->iDb, "trigger", &nt->nameToken) 
           && sqliteFixTriggerStep(&sFix, nt->step_list) ){
     goto triggerfinish_cleanup;
   }
-  nt->pNameToken = 0;
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
@@ -366,6 +367,7 @@ void sqliteDeleteTrigger(Trigger *pTrigger){
   sqliteFree(pTrigger->table);
   sqliteExprDelete(pTrigger->pWhen);
   sqliteIdListDelete(pTrigger->pColumns);
+  if( pTrigger->nameToken.dyn ) sqliteFree((char*)pTrigger->nameToken.z);
   sqliteFree(pTrigger);
 }
 

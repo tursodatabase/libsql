@@ -12,7 +12,7 @@
 # focus of this file is testing the the library is able to correctly
 # handle file-format 3 (version 2.6.x) databases.
 #
-# $Id: format3.test,v 1.2 2002/12/04 21:50:16 drh Exp $
+# $Id: format3.test,v 1.3 2003/06/03 01:47:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -717,5 +717,22 @@ do_test format3-11.7 {
     SELECT DISTINCT x, y FROM t7 ORDER BY z;
   }
 } {0 0}
+
+# Make sure attempts to attach a format 3 database fail.
+#
+do_test format3-12.1 {
+  file delete -force test2.db
+  sqlite db2 test2.db
+  catchsql {
+    CREATE TABLE t8(x,y);
+    ATTACH DATABASE 'test.db' AS format3;
+  } db2;
+} {1 {incompatible file format in auxiliary database: format3}}
+do_test format3-12.2 {
+  catchsql {
+    ATTACH DATABASE 'test2.db' AS test2;
+  }
+} {1 {cannot attach auxiliary databases to an older format master database}}
+db2 close
 
 finish_test

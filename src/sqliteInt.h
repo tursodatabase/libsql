@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.190 2003/06/02 23:14:13 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.191 2003/06/03 01:47:11 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -904,7 +904,7 @@ struct Trigger {
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
-  Token *pNameToken;      /* Token containing zName. Use during parsing only */
+  Token nameToken;        /* Token containing zName. Use during parsing only */
 
   TriggerStep *step_list; /* Link list of trigger program steps             */
   Trigger *pNext;         /* Next trigger associated with the table */

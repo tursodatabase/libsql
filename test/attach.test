@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.6 2003/05/31 16:21:13 drh Exp $
+# $Id: attach.test,v 1.7 2003/06/03 01:47:12 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -469,10 +469,112 @@ do_test attach-4.13 {
   }
 } {910 1112 1516}
 
+# Tests for the sqliteFix...() routines in attach.c
+#
+do_test attach-5.1 {
+  db close
+  sqlite db test.db
+  file delete -force test2.db
+  sqlite db2 test2.db
+  catchsql {
+    ATTACH DATABASE 'test.db' AS orig;
+    CREATE TRIGGER r1 AFTER INSERT ON orig.t1 BEGIN;
+      SELECT 'no-op';
+    END;
+  } db2
+} {1 {triggers may not be added to auxiliary database orig}}
+do_test attach-5.2 {
+  catchsql {
+    CREATE TABLE t5(x,y);
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op';
+    END;
+  } db2
+} {0 {}}
+do_test attach-5.3 {
+  catchsql {
+    DROP TRIGGER r5;
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op' FROM orig.t1;
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database orig}}
+do_test attach-5.4 {
+  catchsql {
+    CREATE TEMP TABLE t6(p,q,r);
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op' FROM temp.t6;
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.5 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op' || (SELECT * FROM temp.t6);
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.6 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op' FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.7 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT 'no-op' FROM t1 GROUP BY 1 HAVING x<(SELECT min(x) FROM temp.t6);
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.7 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      SELECT max(1,x,(SELECT min(x) FROM temp.t6)) FROM t1;
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.8 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      INSERT INTO t1 VALUES((SELECT min(x) FROM temp.t6),5);
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+do_test attach-5.9 {
+  catchsql {
+    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+      DELETE FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
+    END;
+  } db2
+} {1 {trigger r5 cannot reference objects in database temp}}
+
+# Check to make sure we get a sensible error if unable to open
+# the file that we are trying to attach.
+#
+do_test attach-6.1 {
+  catchsql {
+    ATTACH DATABASE 'no-such-file' AS nosuch;
+  }
+} {1 {cannot attach empty database: nosuch}}
+file delete -force no-such-file
+do_test attach-6.2 {
+  sqlite dbx cannot-read
+  dbx eval {CREATE TABLE t1(a,b,c)}
+  dbx close
+  catch {file attributes cannot-read -permission 0000}
+  catch {file attributes cannot-read -readonly 1}
+  catchsql {
+    ATTACH DATABASE 'cannot-read' AS noread;
+  }
+} {1 {unable to open database: cannot-read}}
+file delete -force cannot-read
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
+file delete -force test2.db
 
 
 finish_test
