@@ -26,6 +26,7 @@ proc chng {date desc} {
 }
 
 chng {2002 Mar 24 (2.4.4)} {
+<li>Allow "VIEW" to be a column name</li>
 <li>Added support for CASE expressions (patch from Dan Kennedy)</li>
 <li>Added RPMS to the delivery (patches from Doug Henry)</li>
 <li>Fix typos in the documentation</li>

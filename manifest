@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#3:\sAllow\sVIEW\sas\sa\scolumn\sname.\s\sAlso\sallow\sCOPY.\s(CVS\s507)
-D 2002-03-30T15:26:51
+C Update\sthe\schange\slog\sto\sinclude\sthe\sprevious\scommit.\s(CVS\s508)
+D 2002-03-30T15:27:57
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -116,7 +116,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 255d65014ca4b67f1d6d7b8151324e4249bf7ca5
+F www/changes.tcl 2ffec658e3072301bcead463b035b9663f7bbbed
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8ce9a1fad2d8b20876b0557fa57515e0df74ed05
-R e3e6743fe3cd6441517378726496ed2c
+P d2bdc0feeb3a3595850f40ab211df7a3963d6c30
+R 1efdee052cda46c4285c9aa461bc40c7
 U drh
-Z 8268c6d7053c63093cf4628188d6e593
+Z 3701183fe40d012d7dea475d59ae9fae
