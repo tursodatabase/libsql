@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.48 2000/12/10 18:23:51 drh Exp $
+** $Id: vdbe.c,v 1.49 2000/12/10 18:35:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1282,8 +1282,8 @@ int sqliteVdbeExec(
               break;
             }
           }
-          PopStack(p, 2);
-          p->tos = nos;
+          POPSTACK;
+          Release(p, nos);
           aStack[nos].i = b;
           aStack[nos].flags = STK_Int;
         }else{
@@ -1471,7 +1471,8 @@ int sqliteVdbeExec(
           case OP_Gt:    c = c>0;      break;
           default:       c = c>=0;     break;
         }
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         if( c ) pc = pOp->p2-1;
         break;
       }
@@ -1499,7 +1500,8 @@ int sqliteVdbeExec(
         Stringify(p, tos);
         Stringify(p, nos);
         c = sqliteLikeCompare(zStack[tos], zStack[nos]);
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         if( pOp->p1 ) c = !c;
         if( c ) pc = pOp->p2-1;
         break;
@@ -1531,7 +1533,8 @@ int sqliteVdbeExec(
         Stringify(p, tos);
         Stringify(p, nos);
         c = sqliteGlobCompare(zStack[tos], zStack[nos]);
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         if( pOp->p1 ) c = !c;
         if( c ) pc = pOp->p2-1;
         break;
@@ -1562,8 +1565,8 @@ int sqliteVdbeExec(
         }else{
           c = aStack[tos].i || aStack[nos].i;
         }
-        PopStack(p, 2);
-        p->tos++;
+        POPSTACK;
+        Release(p, nos);     
         aStack[nos].i = c;
         aStack[nos].flags = STK_Int;
         break;
@@ -2000,7 +2003,8 @@ int sqliteVdbeExec(
           pBe->Put(p->aCsr[i].pCursor, nKey, zKey,
                         aStack[tos].n, zStack[tos]);
         }
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         break;
       }
 
@@ -2296,7 +2300,8 @@ int sqliteVdbeExec(
             }              
           }
         }
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         break;
       }
 
@@ -2348,7 +2353,8 @@ int sqliteVdbeExec(
                           sizeof(int)*nIdx, (char*)aIdx);
           }
         }
-        PopStack(p, 2);
+        POPSTACK;
+        POPSTACK;
         break;
       }
 
