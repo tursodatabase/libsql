@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sto\s2.8.3.\s(CVS\s1001)
-D 2003-06-04T12:40:44
+C Version\s2.8.3\s(CVS\s1002)
+D 2003-06-04T12:44:27
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4bfb30d20bdd33c6e26c8fb8392a75d3cf2ee4bd
+P c96f5bf0d7b75c8091f78dc2b9e3937949642ce5
 R e31e8c7cdbafc68dc5929b52631fff51
 U drh
-Z 1a2c76b1d33298ed0c0f5c672ce3dd86
+Z aee5f3bfe272c0c6eeead46ab85c86d4
