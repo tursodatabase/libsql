@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.25 2004/08/18 16:05:20 drh Exp $
+# $Id: attach2.test,v 1.26 2004/09/02 14:57:09 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -263,7 +263,6 @@ do_test attach2-4.9 {
 lock_status 4.9.1 db {main shared temp closed file2 shared}
 lock_status 4.9.2 db2 {main reserved temp closed file2 reserved}
 
-btree_breakpoint
 do_test attach2-4.10 {
   # We cannot commit db2 while db is holding a read-lock
   catchsql {COMMIT} db2
@@ -273,7 +272,6 @@ lock_status 4.10.1 db {main shared temp closed file2 shared}
 lock_status 4.10.2 db2 {main pending temp closed file2 reserved}
 
 set sqlite_os_trace 0
-btree_breakpoint
 do_test attach2-4.11 {
   # db is able to commit.
   catchsql {COMMIT}

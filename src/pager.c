@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.161 2004/08/30 16:52:18 drh Exp $
+** @(#) $Id: pager.c,v 1.162 2004/09/02 14:57:08 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2798,10 +2798,7 @@ int sqlite3pager_commit(Pager *pPager){
   /* Jump here if anything goes wrong during the commit process.
   */
 commit_abort:
-  rc = sqlite3pager_rollback(pPager);
-  if( rc==SQLITE_OK ){
-    rc = SQLITE_FULL;
-  }
+  sqlite3pager_rollback(pPager);
   return rc;
 }
 

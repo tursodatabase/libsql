@@ -338,7 +338,6 @@ struct Vdbe {
   char *zErrMsg;          /* Error message written here */
   u8 resOnStack;          /* True if there are result values on the stack */
   u8 explain;             /* True if EXPLAIN present on SQL command */
-  u8 autoCommitOn;        /* True if autocommit got turned on by this program */
   u8 changeCntOn;         /* True to update the change-counter */
   u8 aborted;             /* True if ROLLBACK in another VM causes an abort */
   int nChange;            /* Number of db changes made since last reset */
@@ -379,6 +378,7 @@ int sqlite3VdbeRecordCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeIdxRowidLen(int,const u8*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
+int sqlite3VdbeHalt(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
 int sqlite3VdbeMemCopy(Mem*, const Mem*);
 void sqlite3VdbeMemShallowCopy(Mem*, const Mem*, int);

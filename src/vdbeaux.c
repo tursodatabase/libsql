@@ -543,6 +543,9 @@ void sqlite3VdbePrintSql(Vdbe *p){
 ** as allocating stack space and initializing the program counter.
 ** After the VDBE has be prepped, it can be executed by one or more
 ** calls to sqlite3VdbeExec().  
+**
+** This is the only way to move a VDBE from VDBE_MAGIC_INIT to
+** VDBE_MAGIC_RUN.
 */
 void sqlite3VdbeMakeReady(
   Vdbe *p,                       /* The VDBE */
@@ -938,7 +941,11 @@ static int vdbeCommit(sqlite *db){
 
   /* If there are any write-transactions at all, invoke the commit hook */
   if( needXcommit && db->xCommitCallback ){
-    if( db->xCommitCallback(db->pCommitArg) ){
+    int rc;
+    sqlite3SafetyOff(db);
+    rc = db->xCommitCallback(db->pCommitArg);
+    sqlite3SafetyOn(db);
+    if( rc ){
       return SQLITE_CONSTRAINT;
     }
   }
@@ -1124,6 +1131,8 @@ static void abortOtherActiveVdbes(Vdbe *pVdbe){
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
 ** currently active. An assertion fails if the two counts do not match.
+** This is an internal self-check only - it is not an essential processing
+** step.
 **
 ** This is a no-op if NDEBUG is defined.
 */
@@ -1131,15 +1140,13 @@ static void abortOtherActiveVdbes(Vdbe *pVdbe){
 static void checkActiveVdbeCnt(sqlite *db){
   Vdbe *p;
   int cnt = 0;
-
   p = db->pVdbe;
   while( p ){
-    if( (p->magic==VDBE_MAGIC_RUN && p->pc>=0) || p->magic==VDBE_MAGIC_HALT ){
+    if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
     }
     p = p->pNext;
   }
-
   assert( cnt==db->activeVdbeCnt );
 }
 #else
@@ -1147,60 +1154,41 @@ static void checkActiveVdbeCnt(sqlite *db){
 #endif
 
 /*
-** Clean up a VDBE after execution but do not delete the VDBE just yet.
-** Write any error messages into *pzErrMsg.  Return the result code.
+** This routine is called the when a VDBE tries to halt.  If the VDBE
+** has made changes and is in autocommit mode, then commit those
+** changes.  If a rollback is needed, then do the rollback.
 **
-** After this routine is run, the VDBE should be ready to be executed
-** again.
+** This routine is the only way to move the state of a VM from
+** SQLITE_MAGIC_RUN to SQLITE_MAGIC_HALT.
+**
+** Return an error code.  If the commit could not complete because of
+** lock contention, return SQLITE_BUSY.  If SQLITE_BUSY is returned, it
+** means the close did not happen and needs to be repeated.
 */
-int sqlite3VdbeReset(Vdbe *p){
+int sqlite3VdbeHalt(Vdbe *p){
   sqlite *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
 
-  if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
-    return SQLITE_MISUSE;
+  if( p->magic!=VDBE_MAGIC_RUN ){
+    /* Already halted.  Nothing to do. */
+    assert( p->magic==VDBE_MAGIC_HALT );
+    return SQLITE_OK;
   }
-  if( p->zErrMsg ){
-    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg, 0);
-    sqliteFree(p->zErrMsg);
-    p->zErrMsg = 0;
-  }else if( p->rc ){
-    sqlite3Error(p->db, p->rc, 0);
-  }else{
-    sqlite3Error(p->db, SQLITE_OK, 0);
-  }
-  Cleanup(p);
-
-  /* What is done now depends on the exit status of the vdbe, the value of
-  ** the sqlite.autoCommit flag and whether or not there are any other
-  ** queries in progress. A transaction or statement transaction may need
-  ** to be committed or rolled back on each open database file.
-  */
+  closeAllCursors(p);
   checkActiveVdbeCnt(db);
   if( db->autoCommit && db->activeVdbeCnt==1 ){
     if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
       /* The auto-commit flag is true, there are no other active queries
       ** using this handle and the vdbe program was successful or hit an
-      ** 'OR FAIL' constraint. This means a commit is required, which is
-      ** handled a little differently from the other options.
+      ** 'OR FAIL' constraint. This means a commit is required.
       */
-      p->rc = vdbeCommit(db);
-      if( p->rc!=SQLITE_OK ){
-        sqlite3Error(p->db, p->rc, 0);
-        if( p->rc==SQLITE_BUSY && p->autoCommitOn ){
-          /* If we just now have turned autocommit on (meaning we just have
-          ** finished executing a COMMIT command) but the commit fails due
-          ** to lock contention, autocommit back off.  This gives the user
-          ** the opportunity to try again after the lock that was preventing
-          ** the commit has cleared. */
-          db->autoCommit = 0;
-        }else{
-          /* If the command just executed was not a COMMIT command, then
-          ** rollback whatever the results of that command were */
-          xFunc = sqlite3BtreeRollback;
-        }
+      int rc = vdbeCommit(db);
+      if( rc==SQLITE_BUSY ){
+        return SQLITE_BUSY;
+      }else if( rc!=SQLITE_OK ){
+        p->rc = rc;
+        xFunc = sqlite3BtreeRollback;
       }
     }else{
       xFunc = sqlite3BtreeRollback;
@@ -1216,7 +1204,6 @@ int sqlite3VdbeReset(Vdbe *p){
       abortOtherActiveVdbes(p);
     }
   }
-  p->autoCommitOn = 0;
 
   /* If xFunc is not NULL, then it is one of sqlite3BtreeRollback,
   ** sqlite3BtreeRollbackStmt or sqlite3BtreeCommitStmt. Call it once on
@@ -1242,16 +1229,65 @@ int sqlite3VdbeReset(Vdbe *p){
     p->nChange = 0;
   }
 
+  /* Rollback or commit any schema changes that occurred. */
   if( p->rc!=SQLITE_OK ){
     sqlite3RollbackInternalChanges(db);
   }else if( db->flags & SQLITE_InternChanges ){
     sqlite3CommitInternalChanges(db);
   }
 
-  if( (p->magic==VDBE_MAGIC_RUN && p->pc>=0) || p->magic==VDBE_MAGIC_HALT ){
+  /* We have successfully halted and closed the VM.  Record this fact. */
+  if( p->pc>=0 ){
     db->activeVdbeCnt--;
   }
+  p->magic = VDBE_MAGIC_HALT;
+  checkActiveVdbeCnt(db);
 
+  return SQLITE_OK;
+}
+
+/*
+** Clean up a VDBE after execution but do not delete the VDBE just yet.
+** Write any error messages into *pzErrMsg.  Return the result code.
+**
+** After this routine is run, the VDBE should be ready to be executed
+** again.
+**
+** To look at it another way, this routine resets the state of the
+** virtual machine from VDBE_MAGIC_RUN or VDBE_MAGIC_HALT back to
+** VDBE_MAGIC_INIT.
+*/
+int sqlite3VdbeReset(Vdbe *p){
+  if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
+    sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
+    return SQLITE_MISUSE;
+  }
+
+  /* If the VM did not run to completion or if it encountered an
+  ** error, then it might not have been halted properly.  So halt
+  ** it now.
+  */
+  sqlite3VdbeHalt(p);
+
+  /* Transfer the error code and error message from the VDBE into the
+  ** main database structure.
+  */
+  if( p->zErrMsg ){
+    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg, 0);
+    sqliteFree(p->zErrMsg);
+    p->zErrMsg = 0;
+  }else if( p->rc ){
+    sqlite3Error(p->db, p->rc, 0);
+  }else{
+    sqlite3Error(p->db, SQLITE_OK, 0);
+  }
+
+  /* Reclaim all memory used by the VDBE
+  */
+  Cleanup(p);
+
+  /* Save profiling information from this VDBE run.
+  */
   assert( p->pTos<&p->aStack[p->pc<0?0:p->pc] || sqlite3_malloc_failed==1 );
 #ifdef VDBE_PROFILE
   {
@@ -1279,7 +1315,7 @@ int sqlite3VdbeReset(Vdbe *p){
   p->aborted = 0;
   return p->rc;
 }
-
+ 
 /*
 ** Clean up and delete a VDBE after execution.  Return an integer which is
 ** the result code.  Write any error message text into *pzErrMsg.

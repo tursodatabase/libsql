@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.20 2004/07/22 15:02:26 drh Exp $
+# $Id: capi3.test,v 1.21 2004/09/02 14:57:09 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -536,7 +536,7 @@ if {![sqlite3 -has-codec]} {
     btree_close_cursor $::bc
     btree_commit $::bt
     btree_close $::bt
-  } {}
+  } {};
   do_test capi3-8.5 {
     db close 
     sqlite3 db test.db

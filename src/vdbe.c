@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.412 2004/08/31 13:45:12 drh Exp $
+** $Id: vdbe.c,v 1.413 2004/09/02 14:57:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -621,12 +621,12 @@ case OP_Return: {
 ** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
 **
-** P1 is the result code returned by sqlite3_exec().  For a normal
-** halt, this should be SQLITE_OK (0).  For errors, it can be some
-** other value.  If P1!=0 then P2 will determine whether or not to
-** rollback the current transaction.  Do not rollback if P2==OE_Fail.
-** Do the rollback if P2==OE_Rollback.  If P2==OE_Abort, then back
-** out all changes that have occurred during this execution of the
+** P1 is the result code returned by sqlite3_exec(), sqlite3_reset(),
+** or sqlite3_finalize().  For a normal halt, this should be SQLITE_OK (0).
+** For errors, it can be some other value.  If P1!=0 then P2 will determine
+** whether or not to rollback the current transaction.  Do not rollback
+** if P2==OE_Fail. Do the rollback if P2==OE_Rollback.  If P2==OE_Abort,
+** then back out all changes that have occurred during this execution of the
 ** VDBE, but do not rollback the transaction. 
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
@@ -634,17 +634,21 @@ case OP_Return: {
 ** is the same as executing Halt.
 */
 case OP_Halt: {
-  p->magic = VDBE_MAGIC_HALT;
   p->pTos = pTos;
-  if( pOp->p1!=SQLITE_OK ){
-    p->rc = pOp->p1;
-    p->errorAction = pOp->p2;
+  p->rc = pOp->p1;
+  p->pc = pc;
+  p->errorAction = pOp->p2;
+  if( pOp->p3 ){
     sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
-    return SQLITE_ERROR;
-  }else{
-    p->rc = SQLITE_OK;
-    return SQLITE_DONE;
   }
+  rc = sqlite3VdbeHalt(p);
+  if( rc==SQLITE_BUSY ){
+    p->rc = SQLITE_BUSY;
+    return SQLITE_BUSY;
+  }else if( rc!=SQLITE_OK ){
+    p->rc = rc;
+  }
+  return p->rc ? SQLITE_ERROR : SQLITE_DONE;
 }
 
 /* Opcode: Integer P1 * P3
@@ -2118,6 +2122,8 @@ case OP_Statement: {
 ** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
 ** back any currently active btree transactions. If there are any active
 ** VMs (apart from this one), then the COMMIT or ROLLBACK statement fails.
+**
+** This instruction causes the VM to halt.
 */
 case OP_AutoCommit: {
   u8 i = pOp->p1;
@@ -2126,7 +2132,7 @@ case OP_AutoCommit: {
   assert( i==1 || i==0 );
   assert( i==1 || rollback==0 );
 
-  assert( db->activeVdbeCnt>0 );
+  assert( db->activeVdbeCnt>0 );  /* At least this one VM is active */
 
   if( db->activeVdbeCnt>1 && i && !db->autoCommit ){
     /* If this instruction implements a COMMIT or ROLLBACK, other VMs are
@@ -2138,10 +2144,17 @@ case OP_AutoCommit: {
     rc = SQLITE_ERROR;
   }else if( i!=db->autoCommit ){
     db->autoCommit = i;
-    p->autoCommitOn |= i;
     if( pOp->p2 ){
+      assert( i==1 );
       sqlite3RollbackAll(db);
+    }else if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
+      p->pTos = pTos;
+      p->pc = pc;
+      db->autoCommit = 1-i;
+      p->rc = SQLITE_BUSY;
+      return SQLITE_BUSY;
     }
+    return SQLITE_DONE;
   }else{
     sqlite3SetString(&p->zErrMsg,
         (!i)?"cannot start a transaction within a transaction":(
@@ -4451,7 +4464,7 @@ vdbe_halt:
   }else{
     rc = SQLITE_DONE;
   }
-  p->magic = VDBE_MAGIC_HALT;
+  sqlite3VdbeHalt(p);
   p->pTos = pTos;
   return rc;
 

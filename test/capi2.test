@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.18 2004/06/30 06:30:26 danielk1977 Exp $
+# $Id: capi2.test,v 1.19 2004/09/02 14:57:09 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -203,7 +203,8 @@ do_test capi2-3.10 {
 
 # Update for v3 - the change has not actually happened until the query is
 # finalized. Is this going to cause trouble for anyone? Lee Nelson maybe?
-do_test capi2-3.10b {db changes} {0}
+# (Later:) The change now happens just before SQLITE_DONE is returned.
+do_test capi2-3.10b {db changes} {1}
 do_test capi2-3.11 {
   sqlite3_finalize $VM
 } {SQLITE_OK}
@@ -220,8 +221,9 @@ do_test capi2-3.13 {
 } {SQLITE_ERROR 0 {} {}}
 
 # Update for v3: Preparing a statement does not affect the change counter.
-# (Test result changes from 0 to 1).
-do_test capi2-3.13b {db changes} {1}
+# (Test result changes from 0 to 1).  (Later:) change counter updates occur
+# when sqlite3_step returns, not at finalize time.
+do_test capi2-3.13b {db changes} {0}
 
 do_test capi2-3.14 {
   list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
