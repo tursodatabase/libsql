@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.1 2000/07/28 14:32:50 drh Exp $
+# $Id: lock.test,v 1.2 2000/08/04 13:51:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,7 +50,7 @@ do_test lock-1.1 {
   puts $f "WHERE a.f1+b.f1==0.5;"
   close $f
   set ::lock_pid [exec ./sqlite testdb <slow.sql &]
-  after 10
+  after 250
   set v {}
 } {}
 

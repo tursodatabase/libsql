@@ -1,5 +1,5 @@
-C :-)\s(CVS\s1702)
-D 2000-08-04T13:49:03
+C :-)\s(CVS\s126)
+D 2000-08-04T13:51:11
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -34,7 +34,7 @@ F test/in.test 2c560c0f55fb777029fd9bb5378f2997582aa603
 F test/index.test 950be6116122c6e2db7c2c345eabcdb854ced1d0
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
-F test/lock.test 42a2d171eba1078cf3fd58ab64241eb8f1b08d69
+F test/lock.test 72f3b11be44f29739cb270b14faea2687dedde7d
 F test/main.test b7366cc6f3690915a11834bc1090deeff08acaf9
 F test/select1.test 68ff778c24fc8982e63dda37acb5b0396913adf7
 F test/select2.test 45c28211702b5c82b06dd624a112ea17417f343c
@@ -68,7 +68,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 7c2ee68063fa59463f55d5bac1ffe3e50d8a817f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P ab9c533a3a256ca9d59a6a580c6064c903d962a5
-R 2cf2ed69cb63137ea0c1416ab3f1b043
+P 14785d94fb3775da603001f4a9c2e4ecd732c898
+R a9134ea20219e9a8c4bd56ddbff67290
 U drh
-Z 55b7dd1e003ec1ad1cab3ac302a5035f
+Z 3fa7aeae6df5c70b05c8e1b0d2427519
