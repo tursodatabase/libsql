@@ -1,5 +1,5 @@
-C Added\sthe\s"encode.c"\ssource\sfile\sthat\scontains\stwo\sutility\ssubroutines\sthat\ncan\sbe\sused\sto\sencode\sbinary\sdata\sfor\suse\sin\sINSERT\sand\sUPDATE\sstatements.\nThis\sis\sjust\san\sinitial\schecking.\s\sThe\scode\shas\snot\syet\sbeen\sintegrated\sinto\nthe\slibrary.\s(CVS\s545)
-D 2002-04-25T11:45:42
+C Update\sthe\stest\slogic\sand\sthe\scomments\son\sthe\sencoder.c\smodule.\s(CVS\s546)
+D 2002-04-25T23:06:47
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c d01b81f41481e733e27ab2fa8e1bfcc64f24257d
 F src/delete.c 6a6b8192cdff5e4b083da3bc63de099f3790d01f
-F src/encode.c cf929a63c3db5d893c24c89377871cb89ede44e2
+F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c cf8d2ea17e419fc83b23e080195b2952e0be4164
 F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
@@ -132,7 +132,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 18b31b7ab90ab330e271e0ed5d316f63846845be
-R 6048f8bfc097ad26d4d3ee4d7998e4f3
+P 57f7c59713299b03b10ba9c1a5883e2c08a8b138
+R 1d03be9386f27dabc02ae6f5664f26fc
 U drh
-Z fcb6af942153d3111f8e4a67cbb6971e
+Z 518e7e975793406e2b9482ce10c2312d

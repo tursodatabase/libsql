@@ -15,21 +15,21 @@
 ** data in an SQLite database.  The code in this file is used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.1 2002/04/25 11:45:42 drh Exp $
+** $Id: encode.c,v 1.2 2002/04/25 23:06:47 drh Exp $
 */
-#include "sqliteInt.h"
-#include "encode.h"
 
 /*
 ** Encode a binary buffer "in" of size n bytes so that it contains
 ** no instances of characters '\'' or '\000'.  The output is 
 ** null-terminated and can be used as a string value in an INSERT
-** or UPDATE statement.
+** or UPDATE statement.  Use sqlite_decode_binary() to convert the
+** string back into its original binary.
 **
 ** The result is written into a preallocated output buffer "out".
-** "out" must be able to hold at least 2 + (n+255)*3/256 + n bytes.
+** "out" must be able to hold at least (256*n + 1262)/253 bytes.
 ** In other words, the output will be expanded by as much as 3
-** bytes for every 256 bytes of input plus 2 bytes of fixed overhead.
+** bytes for every 253 bytes of input plus 2 bytes of fixed overhead.
+** (This is approximately 2 + 1.019*n or about a 2% size increase.)
 */
 void sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
   int i, j, e, m;
@@ -107,16 +107,25 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
 */
 int main(int argc, char **argv){
   int i, j, n, m;
-  unsigned char in[20000];
-  unsigned char out[30000];
+  unsigned char in[30000];
+  unsigned char out[33000];
 
-  for(i=0; i<10000; i++){
+  for(i=0; i<sizeof(in); i++){
     printf("Test %d: ", i+1);
-    n = rand() % sizeof(in);
-    for(j=0; j<n; j++) in[j] = rand() & 0xff;
+    n = rand() % (i+1);
+    if( i%100==0 ){
+      int k;
+      for(j=k=0; j<n; j++){
+        /* if( k==0 || k=='\'' ) k++; */
+        in[j] = k;
+        k = (k+1)&0xff;
+      }
+    }else{
+      for(j=0; j<n; j++) in[j] = rand() & 0xff;
+    }
     sqlite_encode_binary(in, n, out);
-    printf("size %d->%d ", n, strlen(out)+1);
-    m = 2 + (n+255)*3/256 + n;
+    m = (256*n + 1262)/253;
+    printf("size %d->%d (max %d)", n, strlen(out)+1, m);
     if( strlen(out)+1>m ){
       printf(" ERROR output too big\n");
       exit(1);
