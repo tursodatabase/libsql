@@ -1,5 +1,5 @@
-C Auto-vacuum\sbug:\sCorrectly\smanipulate\spage\scache\shash-table\sentries\sin\ssqlite3pager_movepage().\s(CVS\s2046)
-D 2004-11-03T08:44:06
+C Comment\sthe\sautovacuum.test\sscript.\sNo\scode\sor\stest-case\schanges.\s(CVS\s2047)
+D 2004-11-03T09:30:55
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -87,7 +87,7 @@ F test/attach.test 6ad560eb3e77751a4faecd77da09deac9e38cc41
 F test/attach2.test f7795123d3051ace1672b6d23973da6435de3745
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test 1cc252d9e7b3bdc1314199cbf3a0d3c5ed026c21
-F test/autovacuum.test 176a9a541726ee6bbc8ed64cf2d41934dc4df63b
+F test/autovacuum.test 832bcbb0086b7a1a5af24f32399e02304f0056d4
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test a8682ba41433b93bb36a4213a43f282ca9aec5a9
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 007aec11333432e08d1091b728773011e9078bc3
-R 745d17de8251e17a5bf338dbe0b72b9d
+P 719c1b79671c8cd7c5a6b5967ad4265b65e433d3
+R b36063b6d6cae6f63b6c4ea7219e3ded
 U danielk1977
-Z 2233bf7f9ac4fbde946c01ae92386ee6
+Z 2b831eb943422ab301a0d60aaa718fbd
