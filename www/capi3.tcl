@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.7 2005/01/03 01:33:00 drh Exp $}
+set rcsid {$Id: capi3.tcl,v 1.8 2005/02/16 23:43:34 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -271,6 +271,12 @@ sqlite3_column_count() except that it only works following sqlite3_step().
 If the previous call to sqlite3_step() returned SQLITE_DONE or an error code,
 then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will
 continue to return the number of columns in the result set.
+</p>
+
+<p>Returned data is examined using the other sqlite3_column_XXX() functions, 
+all of which take a column number as their second parameter. Columns are
+zero-indexed from left to right. Note that this is different to parameters,
+which are indexed starting at one.
 </p>
 
 <p>
