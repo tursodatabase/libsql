@@ -1,5 +1,5 @@
-C NULL\svalues\sare\sdistinct.\s\sA\scomparison\sinvolving\sa\sNULL\sis\salways\sfalse.\nOperations\son\sa\sNULL\svalue\syield\sa\sNULL\sresult.\s\sThis\schange\smakes\sSQLite\noperate\smore\slike\sthe\sSQL\sspec,\sbut\sit\smay\sbreak\sexisting\sapplications\sthat\nassumed\sthe\sold\sbehavior.\s\sAll\sthe\sold\stests\spass\sbut\swe\sstill\sneed\sto\sadd\nnew\stests\sto\sbetter\sverify\sthe\snew\sbehavior.\s\sFix\sfor\sticket\s#44.\s(CVS\s589)
-D 2002-05-26T20:54:33
+C Change\sfunctions\sto\shandle\sNULLs\scorrectly.\s\sAdded\sthe\sNULLIF()\sfunction.\s(CVS\s590)
+D 2002-05-26T21:34:58
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
 F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 1a7a2f5f2b7dd37659783cdb6efaac74a092ba71
-F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
+F src/func.c 16e994eea8cceb0cd451938e63d337f7d9d089bf
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 24b4e146319bada6f82a1d5eae6b38b3065d132f
@@ -51,7 +51,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c facec7dc0b4a13e17ad67702f548dac2f7c6a732
 F src/trigger.c f9adb404ea355a8be2c9cd9740794a898cf1096c
 F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
-F src/util.c 707c30f8c13cddace7c08556ac450c0b786660b3
+F src/util.c a9f6e6f03e8b7137204ac15b35a58f321e38037e
 F src/vdbe.c caa269517b2392986c8f55401f272e76b9de82d9
 F src/vdbe.h b8706429131c14b307a07aab7e47f95a9da53610
 F src/where.c b054f2f23127bd57eb5f973bcd38764b875d73fe
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d8d04c14f18d1feba89ccea0be70530a18248c51
-R 2ee233b2a9ebb3e4a8fe3e93b3747a0c
+P 9051173742f1b0e15a809d12a0c9c98fd2c4614d
+R 0620e522ec88d7386c2177fd29ebfac3
 U drh
-Z f507bf5d6b83b961339e312ca54783e8
+Z 0624defcbccb679d773bc9ffe5a1ecda
