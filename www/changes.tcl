@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 June 29 (2.8.4)} {
+<li>Enhanced the "PRAGMA integrity_check" command to verify indices.</li>
+<li>Added authorization hooks for the new ATTACH and DETACH commands.</li>
+<li>Many documentation updates</li>
+<li>Many minor bug fixes</li>
+}
+
 chng {2003 June 4 (2.8.3)} {
 <li>Fix a problem that will corrupt the indices on a table if you
     do an INSERT OR REPLACE or an UPDATE OR REPLACE on a table that
