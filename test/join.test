@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.4 2002/07/01 12:27:09 drh Exp $
+# $Id: join.test,v 1.5 2002/07/31 19:50:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -220,6 +220,68 @@ do_test join-3.7 {
     SELECT * FROM t1 LEFT BOGUS JOIN t2;
   }
 } {1 {unknown or unsupported join type: LEFT BOGUS}}
+
+do_test join-4.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t5(a INTEGER PRIMARY KEY);
+    CREATE TABLE t6(a INTEGER);
+    INSERT INTO t6 VALUES(NULL);
+    INSERT INTO t6 VALUES(NULL);
+    INSERT INTO t6 SELECT * FROM t6;
+    INSERT INTO t6 SELECT * FROM t6;
+    INSERT INTO t6 SELECT * FROM t6;
+    INSERT INTO t6 SELECT * FROM t6;
+    INSERT INTO t6 SELECT * FROM t6;
+    INSERT INTO t6 SELECT * FROM t6;
+    COMMIT;
+  }
+  execsql {
+    SELECT * FROM t6 NATURAL JOIN t5;
+  }
+} {}
+do_test join-4.2 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a<t5.a;
+  }
+} {}
+do_test join-4.3 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a>t5.a;
+  }
+} {}
+do_test join-4.4 {
+  execsql {
+    UPDATE t6 SET a='xyz';
+    SELECT * FROM t6 NATURAL JOIN t5;
+  }
+} {}
+do_test join-4.6 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a<t5.a;
+  }
+} {}
+do_test join-4.7 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a>t5.a;
+  }
+} {}
+do_test join-4.8 {
+  execsql {
+    UPDATE t6 SET a=1;
+    SELECT * FROM t6 NATURAL JOIN t5;
+  }
+} {}
+do_test join-4.9 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a<t5.a;
+  }
+} {}
+do_test join-4.10 {
+  execsql {
+    SELECT * FROM t6, t5 WHERE t6.a>t5.a;
+  }
+} {}
 
 
 finish_test

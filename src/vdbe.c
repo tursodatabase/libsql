@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.166 2002/07/30 17:20:40 drh Exp $
+** $Id: vdbe.c,v 1.167 2002/07/31 19:50:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1976,12 +1976,16 @@ case OP_AddImm: {
   break;
 }
 
-/* Opcode: MustBeInt  * P2 *
+/* Opcode: MustBeInt P1 P2 *
 ** 
 ** Force the top of the stack to be an integer.  If the top of the
 ** stack is not an integer and cannot be converted into an integer
 ** with out data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
+**
+** If the top of the stack is not an integer and P2 is not zero and
+** P1 is 1, then the stack is popped.  In all other cases, the depth
+** of the stack is unchanged.
 */
 case OP_MustBeInt: {
   int tos = p->tos;
@@ -2012,6 +2016,7 @@ mismatch:
     rc = SQLITE_MISMATCH;
     goto abort_due_to_error;
   }else{
+    if( pOp->p1 ) POPSTACK;
     pc = pOp->p2 - 1;
   }
   break;
