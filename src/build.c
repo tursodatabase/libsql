@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.110 2002/08/24 18:24:53 drh Exp $
+** $Id: build.c,v 1.111 2002/08/31 18:53:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -152,6 +152,7 @@ void sqliteResetInternalSchema(sqlite *db){
   Hash temp1;
   Hash temp2;
 
+  sqliteHashClear(&db->aFKey);
   temp1 = db->tblHash;
   temp2 = db->trigHash;
   sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
@@ -194,8 +195,10 @@ void sqliteCommitInternalChanges(sqlite *db){
 ** Table.  No changes are made to disk by this routine.
 **
 ** This routine just deletes the data structure.  It does not unlink
-** the table data structure from the hash table.  But it does destroy
-** memory structures of the indices associated with the table.
+** the table data structure from the hash table.  Nor does it remove
+** foreign keys from the sqlite.aFKey hash table.  But it does destroy
+** memory structures of the indices and foreign keys associated with 
+** the table.
 **
 ** Indices associated with the table are unlinked from the "db"
 ** data structure if db!=NULL.  If db==NULL, indices attached to
@@ -205,15 +208,32 @@ void sqliteCommitInternalChanges(sqlite *db){
 void sqliteDeleteTable(sqlite *db, Table *pTable){
   int i;
   Index *pIndex, *pNext;
+  FKey *pFKey, *pNextFKey;
+
   if( pTable==0 ) return;
+
+  /* Delete all indices associated with this table
+  */
+  for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
+    pNext = pIndex->pNext;
+    sqliteDeleteIndex(db, pIndex);
+  }
+
+  /* Delete all foreign keys associated with this table.  The keys
+  ** should have already been unlinked from the db->aFKey hash table 
+  */
+  for(pFKey=pTable->pFKey; pFKey; pFKey=pNextFKey){
+    pNextFKey = pFKey->pNextFrom;
+    assert( sqliteHashFind(&db->aFKey,pFKey->zTo,strlen(pFKey->zTo)+1)!=pFKey );
+    sqliteFree(pFKey);
+  }
+
+  /* Delete the Table structure itself.
+  */
   for(i=0; i<pTable->nCol; i++){
     sqliteFree(pTable->aCol[i].zName);
     sqliteFree(pTable->aCol[i].zDflt);
     sqliteFree(pTable->aCol[i].zType);
-  }
-  for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
-    pNext = pIndex->pNext;
-    sqliteDeleteIndex(db, pIndex);
   }
   sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
@@ -223,13 +243,26 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 
 /*
 ** Unlink the given table from the hash tables and the delete the
-** table structure with all its indices.
+** table structure with all its indices and foreign keys.
 */
 static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
   Table *pOld;
+  FKey *pF1, *pF2;
   assert( db!=0 );
   pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
   assert( pOld==0 || pOld==p );
+  for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
+    int nTo = strlen(pF1->zTo) + 1;
+    pF2 = sqliteHashFind(&db->aFKey, pF1->zTo, nTo);
+    if( pF2==pF1 ){
+      sqliteHashInsert(&db->aFKey, pF1->zTo, nTo, pF1->pNextTo);
+    }else{
+      while( pF2 && pF2->pNextTo!=pF1 ){ pF2=pF2->pNextTo; }
+      if( pF2 ){
+        pF2->pNextTo = pF1->pNextTo;
+      }
+    }
+  }
   sqliteDeleteTable(db, p);
 }
 
@@ -739,10 +772,16 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   assert( pParse->nameClash==0 || pParse->initFlag==1 );
   if( pParse->explain==0 && pParse->nameClash==0 ){
     Table *pOld;
+    FKey *pFKey;
     pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
+    }
+    for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      int nTo = strlen(pFKey->zTo) + 1;
+      pFKey->pNextTo = sqliteHashFind(&db->aFKey, pFKey->zTo, nTo);
+      sqliteHashInsert(&db->aFKey, pFKey->zTo, nTo, pFKey);
     }
     pParse->pNewTable = 0;
     db->nTable++;
@@ -1139,6 +1178,137 @@ void sqliteAddIdxKeyType(Vdbe *v, Index *pIdx){
   zType[n] = 0;
   sqliteVdbeChangeP3(v, -1, zType, n);
   sqliteFree(zType);
+}
+
+/*
+** This routine is called to create a new foreign key on the table
+** currently under construction.  pFromCol determines which columns
+** in the current table point to the foreign key.  If pFromCol==0 then
+** connect the key to the last column inserted.  pTo is the name of
+** the table referred to.  pToCol is a list of tables in the other
+** pTo table that the foreign key points to.  flags contains all
+** information about the conflict resolution algorithms specified
+** in the ON DELETE, ON UPDATE and ON INSERT clauses.
+**
+** An FKey structure is created and added to the table currently
+** under construction in the pParse->pNewTable field.  The new FKey
+** is not linked into db->aFKey at this point - that does not happen
+** until sqliteEndTable().
+**
+** The foreign key is set for IMMEDIATE processing.  A subsequent call
+** to sqliteDeferForeignKey() might change this to DEFERRED.
+*/
+void sqliteCreateForeignKey(
+  Parse *pParse,       /* Parsing context */
+  IdList *pFromCol,    /* Columns in this table that point to other table */
+  Token *pTo,          /* Name of the other table */
+  IdList *pToCol,      /* Columns in the other table */
+  int flags            /* Conflict resolution algorithms. */
+){
+  Table *p = pParse->pNewTable;
+  int nByte;
+  int i;
+  int nCol;
+  char *z;
+  FKey *pFKey = 0;
+
+  assert( pTo!=0 );
+  if( p==0 || pParse->nErr ) goto fk_end;
+  if( pFromCol==0 ){
+    int iCol = p->nCol-1;
+    if( iCol<0 ) goto fk_end;
+    if( pToCol && pToCol->nId!=1 ){
+      sqliteSetNString(&pParse->zErrMsg, "foreign key on ", -1,
+         p->aCol[iCol].zName, -1, 
+         " should reference only one column of table ", -1,
+         pTo->z, pTo->n, 0);
+      pParse->nErr++;
+      goto fk_end;
+    }
+    nCol = 1;
+  }else if( pToCol && pToCol->nId!=pFromCol->nId ){
+    sqliteSetString(&pParse->zErrMsg, 
+        "number of columns in foreign key does not match the number of "
+        "columns in the referenced table", 0);
+    pParse->nErr++;
+    goto fk_end;
+  }else{
+    nCol = pFromCol->nId;
+  }
+  nByte = sizeof(*pFKey) + nCol*sizeof(pFKey->aCol[0]) + pTo->n + 1;
+  if( pToCol ){
+    for(i=0; i<pToCol->nId; i++){
+      nByte += strlen(pToCol->a[i].zName) + 1;
+    }
+  }
+  pFKey = sqliteMalloc( nByte );
+  if( pFKey==0 ) goto fk_end;
+  pFKey->pFrom = p;
+  pFKey->pNextFrom = p->pFKey;
+  pFKey->zTo = z = (char*)&pFKey[1];
+  memcpy(z, pTo->z, pTo->n);
+  z[pTo->n] = 0;
+  z += pTo->n+1;
+  pFKey->pNextTo = 0;
+  pFKey->nCol = nCol;
+  pFKey->aCol = (struct sColMap*)z;
+  z += sizeof(struct sColMap)*nCol;
+  if( pFromCol==0 ){
+    pFKey->aCol[0].iFrom = p->nCol-1;
+  }else{
+    for(i=0; i<nCol; i++){
+      int j;
+      for(j=0; j<p->nCol; j++){
+        if( sqliteStrICmp(p->aCol[j].zName, pFromCol->a[i].zName)==0 ){
+          pFKey->aCol[i].iFrom = j;
+          break;
+        }
+      }
+      if( j>=p->nCol ){
+        sqliteSetString(&pParse->zErrMsg, "unknown column \"", 
+          pFromCol->a[i].zName, "\" in foreign key definition", 0);
+        pParse->nErr++;
+        goto fk_end;
+      }
+    }
+  }
+  if( pToCol ){
+    for(i=0; i<nCol; i++){
+      int n = strlen(pToCol->a[i].zName);
+      pFKey->aCol[i].zCol = z;
+      memcpy(z, pToCol->a[i].zName, n);
+      z[n] = 0;
+      z += n+1;
+    }
+  }
+  pFKey->isDeferred = 0;
+  pFKey->deleteConf = flags & 0xff;
+  pFKey->updateConf = (flags >> 8 ) & 0xff;
+  pFKey->insertConf = (flags >> 16 ) & 0xff;
+
+  /* Link the foreign key to the table as the last step.
+  */
+  p->pFKey = pFKey;
+  pFKey = 0;
+
+fk_end:
+  sqliteFree(pFKey);
+  sqliteIdListDelete(pFromCol);
+  sqliteIdListDelete(pToCol);
+}
+
+/*
+** This routine is called when an INITIALLY IMMEDIATE or INITIALLY DEFERRED
+** clause is seen as part of a foreign key definition.  The isDeferred
+** parameter is 1 for INITIALLY DEFERRED and 0 for INITIALLY IMMEDIATE.
+** The behavior of the most recently created foreign key is adjusted
+** accordingly.
+*/
+void sqliteDeferForeignKey(Parse *pParse, int isDeferred){
+  Table *pTab;
+  FKey *pFKey;
+  if( (pTab = pParse->pNewTable)==0 || (pFKey = pTab->pFKey)==0 ) return;
+  pFKey->isDeferred = isDeferred;
 }
 
 /*

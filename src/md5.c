@@ -293,7 +293,7 @@ static void DigestToBase16(unsigned char *digest, char *zBuf){
 ** A TCL command for md5.  The argument is the text to be hashed.  The
 ** Result is the hash in base64.  
 */
-static int md5_cmd(ClientData cd, Tcl_Interp *interp, int argc, char **argv){
+static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
   MD5Context ctx;
   unsigned char digest[16];
 
@@ -313,7 +313,7 @@ static int md5_cmd(ClientData cd, Tcl_Interp *interp, int argc, char **argv){
 ** A TCL command to take the md5 hash of a file.  The argument is the
 ** name of the file.
 */
-static int md5file_cmd(ClientData cd, Tcl_Interp*interp, int argc, char **argv){
+static int md5file_cmd(void*cd, Tcl_Interp*interp, int argc, const char **argv){
   FILE *in;
   MD5Context ctx;
   unsigned char digest[16];
@@ -347,8 +347,8 @@ static int md5file_cmd(ClientData cd, Tcl_Interp*interp, int argc, char **argv){
 ** Register the two TCL commands above with the TCL interpreter.
 */
 int Md5_Init(Tcl_Interp *interp){
-  Tcl_CreateCommand(interp, "md5", md5_cmd, 0, 0);
-  Tcl_CreateCommand(interp, "md5file", md5file_cmd, 0, 0);
+  Tcl_CreateCommand(interp, "md5", (Tcl_CmdProc*)md5_cmd, 0, 0);
+  Tcl_CreateCommand(interp, "md5file", (Tcl_CmdProc*)md5file_cmd, 0, 0);
   return TCL_OK;
 }
 

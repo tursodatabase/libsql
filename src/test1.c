@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.12 2002/07/10 21:26:01 drh Exp $
+** $Id: test1.c,v 1.13 2002/08/31 18:53:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -238,7 +238,7 @@ static void sqliteExecFunc(sqlite_func *context, int argc, const char **argv){
 ** sqlite_create_function function while a query is in progress in order
 ** to test the SQLITE_MISUSE detection logic.
 */
-static int sqlite_test_create_function(
+static int test_create_function(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -288,7 +288,7 @@ static void countFinalize(sqlite_func *context){
 ** sqlite_create_aggregate function while a query is in progress in order
 ** to test the SQLITE_MISUSE detection logic.
 */
-static int sqlite_test_create_aggregate(
+static int test_create_aggregate(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -484,7 +484,7 @@ static void testFunc(sqlite_func *context, int argc, const char **argv){
 **
 ** Register the test SQL function on the database DB under the name NAME.
 */
-static int sqlite_register_test_function(
+static int test_register_func(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -511,27 +511,33 @@ static int sqlite_register_test_function(
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite_search_count;
-  Tcl_CreateCommand(interp, "sqlite_mprintf_int", sqlite_mprintf_int, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_mprintf_str", sqlite_mprintf_str, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_mprintf_double", sqlite_mprintf_double,0,0);
-  Tcl_CreateCommand(interp, "sqlite_open", sqlite_test_open, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_last_insert_rowid", test_last_rowid, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_exec_printf", test_exec_printf, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_get_table_printf", test_get_table_printf,
-      0, 0);
-  Tcl_CreateCommand(interp, "sqlite_close", sqlite_test_close, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_create_function", 
-      sqlite_test_create_function, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_create_aggregate",
-      sqlite_test_create_aggregate, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_register_test_function",
-      sqlite_register_test_function, 0, 0);
+  static struct {
+     char *zName;
+     Tcl_CmdProc *xProc;
+  } aCmd[] = {
+     { "sqlite_mprintf_int",             (Tcl_CmdProc*)sqlite_mprintf_int    },
+     { "sqlite_mprintf_str",             (Tcl_CmdProc*)sqlite_mprintf_str    },
+     { "sqlite_mprintf_double",          (Tcl_CmdProc*)sqlite_mprintf_double },
+     { "sqlite_open",                    (Tcl_CmdProc*)sqlite_test_open      },
+     { "sqlite_last_insert_rowid",       (Tcl_CmdProc*)test_last_rowid       },
+     { "sqlite_exec_printf",             (Tcl_CmdProc*)test_exec_printf      },
+     { "sqlite_get_table_printf",        (Tcl_CmdProc*)test_get_table_printf },
+     { "sqlite_close",                   (Tcl_CmdProc*)sqlite_test_close     },
+     { "sqlite_create_function",         (Tcl_CmdProc*)test_create_function  },
+     { "sqlite_create_aggregate",        (Tcl_CmdProc*)test_create_aggregate },
+     { "sqlite_register_test_function",  (Tcl_CmdProc*)test_register_func    },
+     { "sqlite_abort",                   (Tcl_CmdProc*)sqlite_abort          },
+#ifdef MEMORY_DEBUG
+     { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
+     { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },
+#endif
+  };
+  int i;
+
+  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
+    Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
+  }
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite_search_count, TCL_LINK_INT);
-#ifdef MEMORY_DEBUG
-  Tcl_CreateCommand(interp, "sqlite_malloc_fail", sqlite_malloc_fail, 0, 0);
-  Tcl_CreateCommand(interp, "sqlite_malloc_stat", sqlite_malloc_stat, 0, 0);
-#endif
-  Tcl_CreateCommand(interp, "sqlite_abort", sqlite_abort, 0, 0);
   return TCL_OK;
 }

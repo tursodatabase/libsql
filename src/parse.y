@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.82 2002/08/24 18:24:54 drh Exp $
+** @(#) $Id: parse.y,v 1.83 2002/08/31 18:53:07 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -169,31 +169,38 @@ ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
 ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
-ccons ::= references.
-ccons ::= defer_subclause.
+ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
+                                {sqliteCreateForeignKey(pParse,0,&T,TA,R);}
+ccons ::= defer_subclause(D).   {sqliteDeferForeignKey(pParse,D);}
 ccons ::= COLLATE id(C).  {
    sqliteAddCollateType(pParse, sqliteCollateType(pParse, &C));
 }
 
-// A REFERENCES clause is parsed but the current implementation does not
-// do anything with it.
+// The next group of rules parses the arguments to a REFERENCES clause
+// that determine if the referential integrity checking is deferred or
+// or immediate and which determine what action to take if a ref-integ
+// check fails.
 //
-references ::= REFERENCES nm LP idxlist RP refargs.
-references ::= REFERENCES nm refargs.
-refargs ::= .
-refargs ::= refargs refarg.
-refarg ::= MATCH nm.
-refarg ::= ON DELETE refact.
-refarg ::= ON UPDATE refact.
-refact ::= SET NULL.
-refact ::= SET DEFAULT.
-refact ::= CASCADE.
-refact ::= RESTRICT.
-defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt.
-defer_subclause ::= DEFERRABLE init_deferred_pred_opt.
-init_deferred_pred_opt ::= .
-init_deferred_pred_opt ::= INITIALLY DEFERRED.
-init_deferred_pred_opt ::= INITIALLY IMMEDIATE.
+%type refargs {int}
+refargs(A) ::= .                     { A = OE_Restrict * 0x010101; }
+refargs(A) ::= refargs(X) refarg(Y). { A = (X & Y.mask) | Y.value; }
+%type refarg {struct {int value; int mask;}}
+refarg(A) ::= MATCH nm.              { A.value = 0;     A.mask = 0x000000; }
+refarg(A) ::= ON DELETE refact(X).   { A.value = X;     A.mask = 0x0000ff; }
+refarg(A) ::= ON UPDATE refact(X).   { A.value = X<<8;  A.mask = 0x00ff00; }
+refarg(A) ::= ON INSERT refact(X).   { A.value = X<<16; A.mask = 0xff0000; }
+%type refact {int}
+refact(A) ::= SET NULL.              { A = OE_SetNull; }
+refact(A) ::= SET DEFAULT.           { A = OE_SetDflt; }
+refact(A) ::= CASCADE.               { A = OE_Cascade; }
+refact(A) ::= RESTRICT.              { A = OE_Restrict; }
+%type defer_subclause {int}
+defer_subclause(A) ::= NOT DEFERRABLE init_deferred_pred_opt(X).  {A = X;}
+defer_subclause(A) ::= DEFERRABLE init_deferred_pred_opt(X).      {A = X;}
+%type init_deferred_pred_opt {int}
+init_deferred_pred_opt(A) ::= .                       {A = 0;}
+init_deferred_pred_opt(A) ::= INITIALLY DEFERRED.     {A = 1;}
+init_deferred_pred_opt(A) ::= INITIALLY IMMEDIATE.    {A = 0;}
 
 // For the time being, the only constraint we care about is the primary
 // key and UNIQUE.  Both create indices.
@@ -209,9 +216,14 @@ tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                        {sqliteCreateIndex(pParse,0,0,X,R,0,0);}
 tcons ::= CHECK expr onconf.
-tcons ::= FOREIGN KEY LP idxlist RP references defer_subclause_opt.
-defer_subclause_opt ::= .
-defer_subclause_opt ::= defer_subclause.
+tcons ::= FOREIGN KEY LP idxlist(FA) RP
+          REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
+    sqliteCreateForeignKey(pParse, FA, &T, TA, R);
+    sqliteDeferForeignKey(pParse, D);
+}
+%type defer_subclause_opt {int}
+defer_subclause_opt(A) ::= .                    {A = 0;}
+defer_subclause_opt(A) ::= defer_subclause(X).  {A = X;}
 
 // The following is a non-standard extension that allows us to declare the
 // default behavior when there is a constraint conflict.
@@ -677,13 +689,15 @@ uniqueflag(A) ::= .        { A = OE_None; }
 
 %type idxlist {IdList*}
 %destructor idxlist {sqliteIdListDelete($$);}
+%type idxlist_opt {IdList*}
+%destructor idxlist_opt {sqliteIdListDelete($$);}
 %type idxitem {Token}
 
-idxlist(A) ::= idxlist(X) COMMA idxitem(Y).  
-     {A = sqliteIdListAppend(X,&Y);}
-idxlist(A) ::= idxitem(Y).
-     {A = sqliteIdListAppend(0,&Y);}
-idxitem(A) ::= nm(X).          {A = X;}
+idxlist_opt(A) ::= .                         {A = 0;}
+idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
+idxlist(A) ::= idxlist(X) COMMA idxitem(Y).  {A = sqliteIdListAppend(X,&Y);}
+idxlist(A) ::= idxitem(Y).                   {A = sqliteIdListAppend(0,&Y);}
+idxitem(A) ::= nm(X).                        {A = X;}
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //

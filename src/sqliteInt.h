@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.144 2002/08/28 03:00:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.145 2002/08/31 18:53:07 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -175,6 +175,7 @@ typedef struct FuncDef FuncDef;
 typedef struct Trigger Trigger;
 typedef struct TriggerStep TriggerStep;
 typedef struct TriggerStack TriggerStack;
+typedef struct FKey FKey;
 
 /*
 ** Each database is an instance of the following structure.
@@ -206,6 +207,7 @@ struct sqlite {
   Hash idxHash;                 /* All (named) indices indexed by name */
   Hash trigHash;                /* All triggers indexed by name */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
+  Hash aFKey;                   /* Foreign keys indexed by to-table */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
   int onError;                  /* Default conflict algorithm */
@@ -330,10 +332,52 @@ struct Table {
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
   Trigger *pTrigger; /* List of SQL triggers on this table */
+  FKey *pFKey;       /* Linked list of all foreign keys in this table */
 };
 
 /*
-** SQLite supports 5 different ways to resolve a contraint
+** Each foreign key constraint is an instance of the following structure.
+**
+** A foreign key is associated with two tables.  The "from" table is
+** the table that contains the REFERENCES clause that creates the foreign
+** key.  The "to" table is the table that is named in the REFERENCES clause.
+** Consider this example:
+**
+**     CREATE TABLE ex1(
+**       a INTEGER PRIMARY KEY,
+**       b INTEGER CONSTRAINT fk1 REFERENCES ex2(x)
+**     );
+**
+** For foreign key "fk1", the from-table is "ex1" and the to-table is "ex2".
+**
+** Each REFERENCES clause generates an instance of the following structure
+** which is attached to the from-table.  The to-table need not exist when
+** the from-table is created.  The existance of the to-table is not checked
+** until an attempt is made to insert data into the from-table.
+**
+** The sqlite.aFKey hash table stores pointers to to this structure
+** given the name of a to-table.  For each to-table, all foreign keys
+** associated with that table are on a linked list using the FKey.pNextTo
+** field.
+*/
+struct FKey {
+  Table *pFrom;     /* The table that constains the REFERENCES clause */
+  FKey *pNextFrom;  /* Next foreign key in pFrom */
+  char *zTo;        /* Name of table that the key points to */
+  FKey *pNextTo;    /* Next foreign key that points to zTo */
+  int nCol;         /* Number of columns in this key */
+  struct sColMap {  /* Mapping of columns in pFrom to columns in zTo */
+    int iFrom;         /* Index of column in pFrom */
+    char *zCol;        /* Name of column in zTo.  If 0 use PRIMARY KEY */
+  } *aCol;          /* One entry for each of nCol column s */
+  u8 isDeferred;    /* True if constraint checking is deferred till COMMIT */
+  u8 updateConf;    /* How to resolve conflicts that occur on UPDATE */
+  u8 deleteConf;    /* How to resolve conflicts that occur on DELETE */
+  u8 insertConf;    /* How to resolve conflicts that occur on INSERT */
+};
+
+/*
+** SQLite supports many different ways to resolve a contraint
 ** error.  ROLLBACK processing means that a constraint violation
 ** causes the operation in process to fail and for the current transaction
 ** to be rolled back.  ABORT processing means the operation in process
@@ -346,6 +390,13 @@ struct Table {
 ** is returned.  REPLACE means that preexisting database rows that caused
 ** a UNIQUE constraint violation are removed so that the new insert or
 ** update can proceed.  Processing continues and no error is reported.
+**
+** RESTRICT, SETNULL, and CASCADE actions apply only to foreign keys.
+** RESTRICT is the same as ABORT for IMMEDIATE foreign keys and the
+** same as ROLLBACK for DEFERRED keys.  SETNULL means that the foreign
+** key is set to NULL.  CASCADE means that a DELETE or UPDATE of the
+** referenced table row is propagated into the row that holds the
+** foreign key.
 ** 
 ** The following there symbolic values are used to record which type
 ** of action to take.
@@ -356,7 +407,13 @@ struct Table {
 #define OE_Fail     3   /* Stop the operation but leave all prior changes */
 #define OE_Ignore   4   /* Ignore the error. Do not do the INSERT or UPDATE */
 #define OE_Replace  5   /* Delete existing record, then do INSERT or UPDATE */
-#define OE_Default  9   /* Do whatever the default action is */
+
+#define OE_Restrict 6   /* OE_Abort for IMMEDIATE, OE_Rollback for DEFERRED */
+#define OE_SetNull  7   /* Set the foreign key value to NULL */
+#define OE_SetDflt  8   /* Set the foreign key value to its default */
+#define OE_Cascade  9   /* Cascade the changes */
+
+#define OE_Default  99  /* Do whatever the default action is */
 
 /*
 ** Each SQL index is represented in memory by an
@@ -947,3 +1004,5 @@ TriggerStep *sqliteTriggerUpdateStep(Token*, ExprList*, Expr*, int);
 TriggerStep *sqliteTriggerDeleteStep(Token*, Expr*);
 void sqliteDeleteTrigger(Trigger*);
 int sqliteJoinType(Parse*, Token*, Token*, Token*);
+void sqliteCreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
+void sqliteDeferForeignKey(Parse*, int);

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.9 2002/08/12 12:29:57 drh Exp $
+** $Id: test2.c,v 1.10 2002/08/31 18:53:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -62,7 +62,7 @@ static int pager_open(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int nPage;
@@ -93,7 +93,7 @@ static int pager_close(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -120,7 +120,7 @@ static int pager_rollback(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -147,7 +147,7 @@ static int pager_commit(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -174,7 +174,7 @@ static int pager_ckpt_begin(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -201,7 +201,7 @@ static int pager_ckpt_rollback(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -228,7 +228,7 @@ static int pager_ckpt_commit(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int rc;
@@ -255,7 +255,7 @@ static int pager_stats(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   int i, *a;
@@ -288,7 +288,7 @@ static int pager_pagecount(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   char zBuf[100];
@@ -312,7 +312,7 @@ static int page_get(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   char zBuf[100];
@@ -346,7 +346,7 @@ static int page_lookup(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
   char zBuf[100];
@@ -376,7 +376,7 @@ static int page_unref(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   void *pPage;
   int rc;
@@ -403,7 +403,7 @@ static int page_read(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   char zBuf[100];
   void *pPage;
@@ -427,7 +427,7 @@ static int page_number(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   char zBuf[100];
   void *pPage;
@@ -451,7 +451,7 @@ static int page_write(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   void *pPage;
   int rc;
@@ -476,21 +476,30 @@ static int page_write(
 */
 int Sqlitetest2_Init(Tcl_Interp *interp){
   extern int sqlite_io_error_pending;
-  Tcl_CreateCommand(interp, "pager_open", pager_open, 0, 0);
-  Tcl_CreateCommand(interp, "pager_close", pager_close, 0, 0);
-  Tcl_CreateCommand(interp, "pager_commit", pager_commit, 0, 0);
-  Tcl_CreateCommand(interp, "pager_rollback", pager_rollback, 0, 0);
-  Tcl_CreateCommand(interp, "pager_ckpt_begin", pager_ckpt_begin, 0, 0);
-  Tcl_CreateCommand(interp, "pager_ckpt_commit", pager_ckpt_commit, 0, 0);
-  Tcl_CreateCommand(interp, "pager_ckpt_rollback", pager_ckpt_rollback, 0, 0);
-  Tcl_CreateCommand(interp, "pager_stats", pager_stats, 0, 0);
-  Tcl_CreateCommand(interp, "pager_pagecount", pager_pagecount, 0, 0);
-  Tcl_CreateCommand(interp, "page_get", page_get, 0, 0);
-  Tcl_CreateCommand(interp, "page_lookup", page_lookup, 0, 0);
-  Tcl_CreateCommand(interp, "page_unref", page_unref, 0, 0);
-  Tcl_CreateCommand(interp, "page_read", page_read, 0, 0);
-  Tcl_CreateCommand(interp, "page_write", page_write, 0, 0);
-  Tcl_CreateCommand(interp, "page_number", page_number, 0, 0);
+  static struct {
+    char *zName;
+    Tcl_CmdProc *xProc;
+  } aCmd[] = {
+    { "pager_open",              (Tcl_CmdProc*)pager_open          },
+    { "pager_close",             (Tcl_CmdProc*)pager_close         },
+    { "pager_commit",            (Tcl_CmdProc*)pager_commit        },
+    { "pager_rollback",          (Tcl_CmdProc*)pager_rollback      },
+    { "pager_ckpt_begin",        (Tcl_CmdProc*)pager_ckpt_begin    },
+    { "pager_ckpt_commit",       (Tcl_CmdProc*)pager_ckpt_commit   },
+    { "pager_ckpt_rollback",     (Tcl_CmdProc*)pager_ckpt_rollback },
+    { "pager_stats",             (Tcl_CmdProc*)pager_stats         },
+    { "pager_pagecount",         (Tcl_CmdProc*)pager_pagecount     },
+    { "page_get",                (Tcl_CmdProc*)page_get            },
+    { "page_lookup",             (Tcl_CmdProc*)page_lookup         },
+    { "page_unref",              (Tcl_CmdProc*)page_unref          },
+    { "page_read",               (Tcl_CmdProc*)page_read           },
+    { "page_write",              (Tcl_CmdProc*)page_write          },
+    { "page_number",             (Tcl_CmdProc*)page_number         },
+  };
+  int i;
+  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
+    Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
+  }
   Tcl_LinkVar(interp, "sqlite_io_error_pending",
      (char*)&sqlite_io_error_pending, TCL_LINK_INT);
 #ifdef SQLITE_TEST

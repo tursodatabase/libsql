@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.39 2002/07/15 20:58:48 drh Exp $
+** $Id: tclsqlite.c,v 1.40 2002/08/31 18:53:08 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -643,13 +643,13 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 */
 int Sqlite_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite", (Tcl_CmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite", "2.0");
   return TCL_OK;
 }
 int Tclsqlite_Init(Tcl_Interp *interp){
   Tcl_InitStubs(interp, "8.0", 0);
-  Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite", (Tcl_CmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite", "2.0");
   return TCL_OK;
 }

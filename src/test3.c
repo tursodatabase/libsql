@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.18 2002/08/11 20:10:48 drh Exp $
+** $Id: test3.c,v 1.19 2002/08/31 18:53:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -57,7 +57,7 @@ static int btree_open(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -89,7 +89,7 @@ static int btree_close(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -116,7 +116,7 @@ static int btree_begin_transaction(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -143,7 +143,7 @@ static int btree_rollback(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -170,7 +170,7 @@ static int btree_commit(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -197,7 +197,7 @@ static int btree_create_table(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc, iTable;
@@ -227,7 +227,7 @@ static int btree_drop_table(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int iTable;
@@ -256,7 +256,7 @@ static int btree_clear_table(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int iTable;
@@ -285,7 +285,7 @@ static int btree_get_meta(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -319,7 +319,7 @@ static int btree_update_meta(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int rc;
@@ -354,7 +354,7 @@ static int btree_page_dump(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int iPage;
@@ -384,7 +384,7 @@ static int btree_tree_dump(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int iPage;
@@ -414,7 +414,7 @@ static int btree_pager_stats(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int i;
@@ -449,7 +449,7 @@ static int btree_pager_ref_dump(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
 
@@ -474,7 +474,7 @@ static int btree_integrity_check(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   char *zResult;
@@ -510,7 +510,7 @@ static int btree_cursor(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   Btree *pBt;
   int iTable;
@@ -546,7 +546,7 @@ static int btree_close_cursor(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -574,7 +574,7 @@ static int btree_move_to(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -608,7 +608,7 @@ static int btree_delete(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -637,7 +637,7 @@ static int btree_insert(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -666,7 +666,7 @@ static int btree_next(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -698,7 +698,7 @@ static int btree_first(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -730,7 +730,7 @@ static int btree_key(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -768,7 +768,7 @@ static int btree_data(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -806,7 +806,7 @@ static int btree_payload_size(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int n1, n2;
@@ -845,7 +845,7 @@ static int btree_cursor_dump(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
+  const char **argv      /* Text of each argument */
 ){
   BtCursor *pCur;
   int rc;
@@ -877,33 +877,42 @@ static int btree_cursor_dump(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest3_Init(Tcl_Interp *interp){
-  Tcl_CreateCommand(interp, "btree_open", btree_open, 0, 0);
-  Tcl_CreateCommand(interp, "btree_close", btree_close, 0, 0);
-  Tcl_CreateCommand(interp, "btree_begin_transaction",
-      btree_begin_transaction, 0, 0);
-  Tcl_CreateCommand(interp, "btree_commit", btree_commit, 0, 0);
-  Tcl_CreateCommand(interp, "btree_rollback", btree_rollback, 0, 0);
-  Tcl_CreateCommand(interp, "btree_create_table", btree_create_table, 0, 0);
-  Tcl_CreateCommand(interp, "btree_drop_table", btree_drop_table, 0, 0);
-  Tcl_CreateCommand(interp, "btree_clear_table", btree_clear_table, 0, 0);
-  Tcl_CreateCommand(interp, "btree_get_meta", btree_get_meta, 0, 0);
-  Tcl_CreateCommand(interp, "btree_update_meta", btree_update_meta, 0, 0);
-  Tcl_CreateCommand(interp, "btree_page_dump", btree_page_dump, 0, 0);
-  Tcl_CreateCommand(interp, "btree_tree_dump", btree_tree_dump, 0, 0);
-  Tcl_CreateCommand(interp, "btree_pager_stats", btree_pager_stats, 0, 0);
-  Tcl_CreateCommand(interp, "btree_pager_ref_dump", btree_pager_ref_dump, 0, 0);
-  Tcl_CreateCommand(interp, "btree_cursor", btree_cursor, 0, 0);
-  Tcl_CreateCommand(interp, "btree_close_cursor", btree_close_cursor, 0, 0);
-  Tcl_CreateCommand(interp, "btree_move_to", btree_move_to, 0, 0);
-  Tcl_CreateCommand(interp, "btree_delete", btree_delete, 0, 0);
-  Tcl_CreateCommand(interp, "btree_insert", btree_insert, 0, 0);
-  Tcl_CreateCommand(interp, "btree_next", btree_next, 0, 0);
-  Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
-  Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
-  Tcl_CreateCommand(interp, "btree_payload_size", btree_payload_size, 0, 0);
-  Tcl_CreateCommand(interp, "btree_first", btree_first, 0, 0);
-  Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
-  Tcl_CreateCommand(interp, "btree_integrity_check", btree_integrity_check,0,0);
+  static struct {
+     char *zName;
+     Tcl_CmdProc *xProc;
+  } aCmd[] = {
+     { "btree_open",               (Tcl_CmdProc*)btree_open               },
+     { "btree_close",              (Tcl_CmdProc*)btree_close              },
+     { "btree_begin_transaction",  (Tcl_CmdProc*)btree_begin_transaction  },
+     { "btree_commit",             (Tcl_CmdProc*)btree_commit             },
+     { "btree_rollback",           (Tcl_CmdProc*)btree_rollback           },
+     { "btree_create_table",       (Tcl_CmdProc*)btree_create_table       },
+     { "btree_drop_table",         (Tcl_CmdProc*)btree_drop_table         },
+     { "btree_clear_table",        (Tcl_CmdProc*)btree_clear_table        },
+     { "btree_get_meta",           (Tcl_CmdProc*)btree_get_meta           },
+     { "btree_update_meta",        (Tcl_CmdProc*)btree_update_meta        },
+     { "btree_page_dump",          (Tcl_CmdProc*)btree_page_dump          },
+     { "btree_tree_dump",          (Tcl_CmdProc*)btree_tree_dump          },
+     { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
+     { "btree_pager_ref_dump",     (Tcl_CmdProc*)btree_pager_ref_dump     },
+     { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
+     { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
+     { "btree_move_to",            (Tcl_CmdProc*)btree_move_to            },
+     { "btree_delete",             (Tcl_CmdProc*)btree_delete             },
+     { "btree_insert",             (Tcl_CmdProc*)btree_insert             },
+     { "btree_next",               (Tcl_CmdProc*)btree_next               },
+     { "btree_key",                (Tcl_CmdProc*)btree_key                },
+     { "btree_data",               (Tcl_CmdProc*)btree_data               },
+     { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
+     { "btree_first",              (Tcl_CmdProc*)btree_first              },
+     { "btree_cursor_dump",        (Tcl_CmdProc*)btree_cursor_dump        },
+     { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
+  };
+  int i;
+
+  for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
+    Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
+  }
   Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,
      TCL_LINK_INT);
   Tcl_LinkVar(interp, "btree_native_byte_order",(char*)&btree_native_byte_order,

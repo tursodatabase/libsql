@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.19 2002/08/13 23:02:58 drh Exp $
+# $Id: table.test,v 1.20 2002/08/31 18:53:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -433,6 +433,45 @@ do_test table-10.8 {
     );
   }
 } {0 {}}
+do_test table-10.9 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a,b,c,
+      FOREIGN KEY (b,c) REFERENCES t4(x)
+    );
+  }
+} {1 {number of columns in foreign key does not match the number of columns in the referenced table}}
+do_test table-10.10 {
+  catchsql {DROP TABLE t6}
+  catchsql {
+    CREATE TABLE t6(a,b,c,
+      FOREIGN KEY (b,c) REFERENCES t4(x,y,z)
+    );
+  }
+} {1 {number of columns in foreign key does not match the number of columns in the referenced table}}
+do_test table-10.11 {
+  catchsql {DROP TABLE t6}
+  catchsql {
+    CREATE TABLE t6(a,b, c REFERENCES t4(x,y));
+  }
+} {1 {foreign key on c should reference only one column of table t4}}
+do_test table-10.12 {
+  catchsql {DROP TABLE t6}
+  catchsql {
+    CREATE TABLE t6(a,b,c,
+      FOREIGN KEY (b,x) REFERENCES t4(x,y)
+    );
+  }
+} {1 {unknown column "x" in foreign key definition}}
+do_test table-10.13 {
+  catchsql {DROP TABLE t6}
+  catchsql {
+    CREATE TABLE t6(a,b,c,
+      FOREIGN KEY (x,b) REFERENCES t4(x,y)
+    );
+  }
+} {1 {unknown column "x" in foreign key definition}}
+
 
 # Test for the "typeof" function.
 #
