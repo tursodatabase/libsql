@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.4 2002/03/11 02:06:14 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.5 2002/06/20 11:41:59 drh Exp $ }
 
 puts {<html>
 <head>
@@ -98,12 +98,22 @@ occurred since version 1.0.0:
   Information about views is stored in the SQLITE_MASTER table.  If an older
   version of SQLite attempts to read a database that contains VIEW information
   in the SQLITE_MASTER table, the parser will not understand the new syntax
-  and you will get an error.  Also, the
+  and initialization will fail.  Also, the
   way SQLite keeps track of unused disk blocks in the database file
   changed slightly.
   If an older version of SQLite attempts to write a database that
   was previously written by version 2.4.0 or later, then it may leak disk
   blocks.</td>
+</tr>
+<tr>
+  <td valign="top">2.4.12 to 2.5.0</td>
+  <td valign="top">2002-Jun-17</td>
+  <td>Beginning with version 2.5.0, SQLite added support for triggers. 
+  Information about triggers is stored in the SQLITE_MASTER table.  If an older
+  version of SQLite attempts to read a database that contains a CREATE TRIGGER
+  in the SQLITE_MASTER table, the parser will not understand the new syntax
+  and initialization will fail.
+  </td>
 </tr>
 </table>
 </blockquote>
