@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.95 2004/06/30 12:42:59 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.96 2004/07/22 02:40:39 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -878,7 +878,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     pKey = Tcl_GetByteArrayFromObj(objv[2], &nKey);
 #ifdef SQLITE_HAS_CODEC
-    rc = sqlite_rekey(pDb->db, pKey, nKey);
+    rc = sqlite3_rekey(pDb->db, pKey, nKey);
     if( rc ){
       Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
       rc = TCL_ERROR;
@@ -1048,15 +1048,14 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
   memset(p, 0, sizeof(*p));
   zFile = Tcl_GetStringFromObj(objv[2], 0);
-#ifdef SQLITE_HAS_CODEC
-  p->db = sqlite3_open_encrypted(zFile, pKey, nKey, 0, &zErrMsg);
-#else
   sqlite3_open(zFile, &p->db);
   if( SQLITE_OK!=sqlite3_errcode(p->db) ){
     zErrMsg = strdup(sqlite3_errmsg(p->db));
     sqlite3_close(p->db);
     p->db = 0;
   }
+#ifdef SQLITE_HAS_CODEC
+  sqlite3_key(p->db, pKey, nKey);
 #endif
   if( p->db==0 ){
     Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);

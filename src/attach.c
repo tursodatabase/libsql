@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.23 2004/07/22 01:19:35 drh Exp $
+** $Id: attach.c,v 1.24 2004/07/22 02:40:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -96,7 +96,6 @@ void sqlite3Attach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey)
     extern int sqlite3CodecAttach(sqlite*, int, void*, int);
     char *zKey = 0;
     int nKey;
-    sqlite3BtreeSetPageSize(aNew->pBt, -1, 4);
     sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
     zKey = sqlite3NameFromToken(pKey);
     nKey = strlen(zKey);

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.178 2004/07/22 01:19:35 drh Exp $
+** $Id: btree.c,v 1.179 2004/07/22 02:40:38 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1123,6 +1123,9 @@ int sqlite3BtreeSetPageSize(Btree *pBt, int pageSize, int nReserve){
 */
 int sqlite3BtreeGetPageSize(Btree *pBt){
   return pBt->pageSize;
+}
+int sqlite3BtreeGetReserve(Btree *pBt){
+  return pBt->pageSize - pBt->usableSize;
 }
 
 /*

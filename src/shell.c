@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.106 2004/06/30 08:20:16 danielk1977 Exp $
+** $Id: shell.c,v 1.107 2004/07/22 02:40:38 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -633,13 +633,10 @@ static void process_input(struct callback_data *p, FILE *in);
 */
 static void open_db(struct callback_data *p){
   if( p->db==0 ){
-#ifdef SQLITE_HAS_CODEC
-    int n = p->zKey ? strlen(p->zKey) : 0;
-    db = p->db = sqlite3_open_encrypted(p->zDbFilename, p->zKey, n, 0, &zErrMsg);
-    assert(0); /* Encrypted databases are broken in SQLite 3 */
-#else
     sqlite3_open(p->zDbFilename, &p->db);
     db = p->db;
+#ifdef SQLITE_HAS_CODEC
+    sqlite3_key(p->db, p->zKey, p->zKey ? strlen(p->zKey) : 0);
 #endif
     sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
         shellstaticFunc, 0, 0);
@@ -925,7 +922,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }else{
       sqlite3_free(p->zKey);
       p->zKey = sqlite3_mprintf("%s", azArg[2]);
-      sqlite_rekey(p->db, p->zKey, strlen(p->zKey));
+      sqlite3_rekey(p->db, p->zKey, strlen(p->zKey));
     }
   }else
 #endif
