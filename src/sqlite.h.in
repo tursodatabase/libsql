@@ -24,10 +24,16 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h,v 1.4 2000/07/28 14:32:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.1 2000/08/17 10:22:34 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
+
+/*
+** The version of the SQLite library
+*/
+#define SQLITE_VERSION          --VERS--
+#define SQLITE_VERSION_STRING  "--VERS--"
 
 /*
 ** Each open sqlite database is represented by an instance of the

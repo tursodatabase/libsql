@@ -64,7 +64,7 @@ SRC = \
   $(TOP)/src/parse.y \
   $(TOP)/src/select.c \
   $(TOP)/src/shell.c \
-  $(TOP)/src/sqlite.h \
+  $(TOP)/src/sqlite.h.in \
   $(TOP)/src/sqliteInt.h \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
@@ -77,7 +77,7 @@ SRC = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	libsqlite.a sqlite.h sqlite 
+all:	sqlite.h libsqlite.a sqlite 
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -103,7 +103,7 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 # Header files used by all library source files.
 #
 HDR = \
-   $(TOP)/src/sqlite.h  \
+   sqlite.h  \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/dbbe.h  \
    $(TOP)/src/vdbe.h  \
@@ -127,8 +127,8 @@ parse.c:	$(TOP)/src/parse.y lemon
 	cp $(TOP)/src/parse.y .
 	./lemon parse.y
 
-sqlite.h:	$(TOP)/src/sqlite.h
-	cp $(TOP)/src/sqlite.h .
+sqlite.h:	$(TOP)/src/sqlite.h.in
+	sed s/--VERS--/`cat ${TOP}/VERSION`/ $(TOP)/src/sqlite.h.in >sqlite.h
 
 tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/tokenize.c
@@ -171,7 +171,7 @@ sqlite.tar.gz:
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz sqlite
 
 index.html:	$(TOP)/www/index.tcl sqlite.tar.gz last_change
-	tclsh $(TOP)/www/index.tcl >index.html
+	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
 	tclsh $(TOP)/www/sqlite.tcl >sqlite.html

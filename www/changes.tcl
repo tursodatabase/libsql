@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2000 Aug 17} {
+chng {2000 Aug 17 (Version 1.0)} {
 <li>Change the <b>sqlite</b> program so that it can read
     databases for which it lacks write permission.  (It used to
     refuse all access if it could not write.)</li>

@@ -1,8 +1,9 @@
-C allow\sreadonly\saccess\swhen\swrite\spermission\sdenied\s(CVS\s131)
-D 2000-08-17T09:50:00
+C add\sversion\snumbering\s(CVS\s132)
+D 2000-08-17T10:22:34
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
+F Makefile.in 8a4cc1bdcbb870f76d0c769136cf973af07586a4
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
+F VERSION 61652cd1568dcf2614df833eba241755eee34e89
 F configure 51063d594190fa085f909cefc9427241088bec4f x
 F configure.in a04f02ba61ed09a00e862b4f78b91b06a559e0b5
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -17,7 +18,7 @@ F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c 0aabf9e5e89fc8ac7a56de7f05255ed6864170f2
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h 82ae53028e27919250f886ff9d7c4927de81978a
+F src/sqlite.h.in fe04454ae51f9f3717179ffe5a10a25874643ced
 F src/sqliteInt.h f6d1e139b3bfa4ceff2136684e19d76b53178ec0
 F src/tclsqlite.c 89dc4ba2b521f3e919d6d7aaa4cc1c2aba8e16f3
 F src/tokenize.c 097bec5843d4a0fb4509e036fee93bac080c5e73
@@ -60,16 +61,16 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl ebea5c4eeeb210d118d002a2fbc84c8fba5af7e2
+F www/changes.tcl 32a1a09297095ffa3e49473732e4b60fc6cdc7c1
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
-F www/index.tcl 421bcabc6839eb00698b75b169caa8a559454515
+F www/index.tcl 6dae7e07d110ce06c327223365dc1b475b4fb6ee
 F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P e8882dac2306afbc7bffdaa93c9a7fc45fdbd8e1
-R 84cf4ce23b5394480238cc25bd273361
+P 897b4bc0e92a2c7534d4fa9453a7f8f863fce67a
+R 55d9f580b0fd85533f8ccc00b91b305d
 U drh
-Z 4e8cb91c77f87e4664b844fede982b96
+Z 59dba504407521b2a684591dbcb8b530
