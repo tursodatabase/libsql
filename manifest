@@ -1,5 +1,5 @@
-C Fix\ssigned\sinteger\sproblems\sin\svxprintf.\s\sTicket\s#778.\s\sAlso\sremove\ssome\ndead\scode\sfrom\sutil.c.\s(CVS\s1685)
-D 2004-06-25T01:10:48
+C Modifications\sto\sthe\sjournal\sformat\sto\smake\sit\smore\srobust.\s(CVS\s1686)
+D 2004-06-25T02:38:55
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,13 +44,13 @@ F src/os.h 2f5ea879b784bc82aac8022a3e8fe00b73c83d67
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_test.c ab55524911b66395c39ff8f465dfee0ba1ba06e4
+F src/os_test.c ae1d1e6c5c11ca4b49cc1b9d3c6b8874774c1a5a
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
 F src/os_unix.c 39e73ed02fc992a6bfc52200ea26704633412cc0
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c ec34fbae1a23228cb3743cf7cd8eba1af8e4cd5c
+F src/pager.c e25c880b9bcc21ce049ba609c9ec97dcb506528e
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
@@ -66,7 +66,7 @@ F src/test1.c fcf1a914c27f50d93a41e0b90890008c3ea28cbc
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
-F src/test5.c 605e9cf8ce768a51e5938c9e64c05d5430d5ed02
+F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 296e888ae931e9774e1761996b2b66db40f7d216
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b6ca51e47a6f6551058d529662abe113399b38e9
-R 3468467315cfe0b753d39bdb01a2711a
-U drh
-Z 8c08c5bad4608b351f6e608cfc6f2f71
+P 200cd3baf60e6cfad9fa3971834367821456ae30
+R 111c7f7eea01c4703a9fa5ff151eccf9
+U danielk1977
+Z e8bd1f264c045f846899848a7dd6572b

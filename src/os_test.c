@@ -207,14 +207,24 @@ static int writeCache2(OsTestFile *pFile, int crash){
     u8 *p = pFile->apBlk[i];
     if( p ){
       int skip = 0;
+      int trash = 0;
       if( crash ){
         char random;
         sqlite3Randomness(1, &random);
         if( random & 0x01 ){
-          skip = 1;
+          if( 0 && random & 0x02 ){
+            trash = 1;
 #ifdef TRACE_WRITECACHE
-printf("Not writing block %d of %s\n", i, pFile->zName); 
+printf("Trashing block %d of %s\n", i, pFile->zName); 
+#endif
+          }else{
+            skip = 1;
+#ifdef TRACE_WRITECACHE
+printf("Skiping block %d of %s\n", i, pFile->zName); 
+#endif
+          }
         }else{
+#ifdef TRACE_WRITECACHE
 printf("Writing block %d of %s\n", i, pFile->zName); 
 #endif
         }
@@ -226,6 +236,9 @@ printf("Writing block %d of %s\n", i, pFile->zName);
         int len = BLOCKSIZE;
         if( BLOCK_OFFSET(i+1)>nMax ){
           len = nMax-BLOCK_OFFSET(i);
+        }
+        if( trash ){
+          sqlite3Randomness(len, p);
         }
         rc = sqlite3RealWrite(&pFile->fd, p, len);
       }
