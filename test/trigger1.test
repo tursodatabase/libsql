@@ -350,6 +350,46 @@ do_test trigger-6.8 {
   execsql {SELECT * FROM t2}
 } {3 4 7 8}
 
-integrity_check trigger-7.1    
+integrity_check trigger-7.1
+
+# Check to make sure the name of a trigger can be quoted so that keywords
+# can be used as trigger names.  Ticket #468
+#
+do_test trigger-8.1 {
+  execsql {
+    CREATE TRIGGER 'trigger' AFTER INSERT ON t2 BEGIN SELECT 1; END;
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {trigger}
+do_test trigger-8.2 {
+  execsql {
+    DROP TRIGGER 'trigger';
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {}
+do_test trigger-8.3 {
+  execsql {
+    CREATE TRIGGER "trigger" AFTER INSERT ON t2 BEGIN SELECT 1; END;
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {trigger}
+do_test trigger-8.4 {
+  execsql {
+    DROP TRIGGER "trigger";
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {}
+do_test trigger-8.5 {
+  execsql {
+    CREATE TRIGGER [trigger] AFTER INSERT ON t2 BEGIN SELECT 1; END;
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {trigger}
+do_test trigger-8.6 {
+  execsql {
+    DROP TRIGGER [trigger];
+    SELECT name FROM sqlite_master WHERE type='trigger';
+  }
+} {}
 
 finish_test

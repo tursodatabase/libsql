@@ -83,6 +83,7 @@ void sqliteBeginTrigger(
   }
 
   zName = sqliteStrNDup(pName->z, pName->n);
+  sqliteDequote(zName);
   if( sqliteHashFind(&(db->aDb[iDb].trigHash), zName,pName->n+1) ){
     sqliteErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;

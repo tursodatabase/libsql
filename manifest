@@ -1,5 +1,5 @@
-C All\sLIKE\sand\sGLOB\soperators\sto\suse\sfunction\snotation.\s\s"A\sLIKE\sB"\scan\sbe\nexpressed\sas\s"LIKE(B,A)".\s(CVS\s1108)
-D 2003-09-30T01:54:14
+C Allow\squoted\strigger\snames.\s\sTicket\s#468.\s(CVS\s1109)
+D 2003-10-03T00:13:39
 F Makefile.in ab585a91e34bc33928a1b6181fa2f6ebd4fb17e1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c e14db6bfa972a7c449c80788fcdbc0fdc11b17d7
-F src/trigger.c 474581eaab388233df01bb019e558af2965decbf
+F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c f16efa2d60bfd4e31ae06b07ed149557e828d294
 F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
@@ -126,7 +126,7 @@ F test/tclsqlite.test 964fd2f6c11d384ab784c2afe52130f34261ce2d
 F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
 F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
-F test/trigger1.test 9f82134e5afad3158b0892c088fa5a8d79d56236
+F test/trigger1.test 3fe06daecf8334df840025e154e95fd4727600d7
 F test/trigger2.test 22aa0519ae18cf83568c7fba7b8cee893dd6b824
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
@@ -173,7 +173,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 703741ca1e2b0bf79a4e3cda3cf3c6862d7263eb
-R 1866bbb11afee0781d80fc94f74943f5
+P 95b27ebd1322a877112dee514dffddb0937e45fa
+R d77f051e1f691ee16251e75ff2e4c416
 U drh
-Z cd7d1e8e63d30fe7cb84ae2ae0a6e46c
+Z 5b735f186bb04845c510a554b61d2298
