@@ -19,11 +19,6 @@
 
 #include <unistd.h>
 #include <Files.h>
-#ifdef _LARGE_FILE
-    typedef SInt64 off_t;
-#else
-    typedef SInt32 off_t;
-#endif
 #define SQLITE_TEMPNAME_SIZE _MAX_PATH
 #define SQLITE_MIN_SLEEP_MS 17
 

@@ -13,9 +13,9 @@
 ** This file contains code that is specific classic mac.  Mac OS X
 ** uses the os_unix.c file, not this one.
 */
-#include "os.h"          /* Must be first to enable large file support */
-#if OS_MAC               /* This file used on classic mac only */
 #include "sqliteInt.h"
+#include "os.h"
+#if OS_MAC               /* This file used on classic mac only */
 
 #include <extras.h>
 #include <path2fss.h>

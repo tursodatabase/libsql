@@ -13,10 +13,10 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.25 2004/09/08 20:13:06 drh Exp $
+** $Id: test2.c,v 1.26 2004/10/01 02:00:31 drh Exp $
 */
-#include "os.h"
 #include "sqliteInt.h"
+#include "os.h"
 #include "pager.h"
 #include "tcl.h"
 #include <stdlib.h>
@@ -497,7 +497,7 @@ static int fake_big_file(
 ){
   int rc;
   int n;
-  off_t offset;
+  i64 offset;
   OsFile fd;
   int readOnly = 0;
   if( argc!=3 ){

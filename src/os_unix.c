@@ -12,9 +12,9 @@
 **
 ** This file contains code that is specific to Unix systems.
 */
-#include "os.h"          /* Must be first to enable large file support */
-#if OS_UNIX              /* This file is used on unix only */
 #include "sqliteInt.h"
+#include "os.h"
+#if OS_UNIX              /* This file is used on unix only */
 
 
 #include <time.h>
@@ -33,6 +33,7 @@
 #ifndef O_BINARY
 # define O_BINARY 0
 #endif
+
 
 /*
 ** The DJGPP compiler environment looks mostly like Unix, but it
@@ -662,7 +663,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqlite3OsSeek(OsFile *id, off_t offset){
+int sqlite3OsSeek(OsFile *id, i64 offset){
   assert( id->isOpen );
   SEEK(offset/1024 + 1);
   lseek(id->h, offset, SEEK_SET);
@@ -733,7 +734,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 /*
 ** Truncate an open file to a specified size
 */
-int sqlite3OsTruncate(OsFile *id, off_t nByte){
+int sqlite3OsTruncate(OsFile *id, i64 nByte){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   return ftruncate(id->h, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
@@ -742,7 +743,7 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqlite3OsFileSize(OsFile *id, off_t *pSize){
+int sqlite3OsFileSize(OsFile *id, i64 *pSize){
   struct stat buf;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);

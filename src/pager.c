@@ -18,10 +18,10 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.164 2004/09/24 22:32:31 drh Exp $
+** @(#) $Id: pager.c,v 1.165 2004/10/01 02:00:31 drh Exp $
 */
-#include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
+#include "os.h"
 #include "pager.h"
 #include <assert.h>
 #include <string.h>
@@ -190,7 +190,7 @@ struct Pager {
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
   int stmtSize;               /* Size of database (in pages) at stmt_begin() */
-  off_t stmtJSize;            /* Size of journal at stmt_begin() */
+  i64 stmtJSize;              /* Size of journal at stmt_begin() */
   int nRec;                   /* Number of pages written to the journal */
   u32 cksumInit;              /* Quasi-random value added to every checksum */
   int stmtNRec;               /* Number of records in stmt subjournal */
@@ -228,10 +228,10 @@ struct Pager {
   PgHdr *pFirstSynced;        /* First free page with PgHdr.needSync==0 */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *pStmt;               /* List of pages in the statement subjournal */
-  off_t journalOff;           /* Current byte offset in the journal file */
-  off_t journalHdr;           /* Byte offset to previous journal header */
-  off_t stmtHdrOff;           /* First journal header written this statement */
-  off_t stmtCksum;            /* cksumInit when statement was started */
+  i64 journalOff;             /* Current byte offset in the journal file */
+  i64 journalHdr;             /* Byte offset to previous journal header */
+  i64 stmtHdrOff;             /* First journal header written this statement */
+  i64 stmtCksum;              /* cksumInit when statement was started */
   int sectorSize;             /* Assumed sector size during rollback */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number to PgHdr */
 };
@@ -399,7 +399,7 @@ static int pager_errcode(Pager *pPager){
 static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
   int rc;
   u32 len;
-  off_t szJ;
+  i64 szJ;
   u32 cksum;
   int i;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
@@ -469,8 +469,8 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
 ** 
 */
 static int seekJournalHdr(Pager *pPager){
-  off_t offset = 0;
-  off_t c = pPager->journalOff;
+  i64 offset = 0;
+  i64 c = pPager->journalOff;
   if( c ){
     offset = ((c-1)/JOURNAL_HDR_SZ(pPager) + 1) * JOURNAL_HDR_SZ(pPager);
   }
@@ -562,7 +562,7 @@ static int writeJournalHdr(Pager *pPager){
 */
 static int readJournalHdr(
   Pager *pPager, 
-  off_t journalSize,
+  i64 journalSize,
   u32 *pNRec, 
   u32 *pDbSize
 ){
@@ -871,7 +871,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   assert( pPager->state>=PAGER_EXCLUSIVE || pPg );
   TRACE3("PLAYBACK %d page %d\n", pPager->fd.h, pgno);
   if( pPager->state>=PAGER_EXCLUSIVE ){
-    sqlite3OsSeek(&pPager->fd, (pgno-1)*(off_t)pPager->pageSize);
+    sqlite3OsSeek(&pPager->fd, (pgno-1)*(i64)pPager->pageSize);
     rc = sqlite3OsWrite(&pPager->fd, aData, pPager->pageSize);
   }
   if( pPg ){
@@ -911,7 +911,7 @@ static int pager_delmaster(const char *zMaster){
   int master_open = 0;
   OsFile master;
   char *zMasterJournal = 0; /* Contents of master journal file */
-  off_t nMasterJournal;     /* Size of master journal file */
+  i64 nMasterJournal;       /* Size of master journal file */
 
   /* Open the master journal file exclusively in case some other process
   ** is running this routine also. Not that it makes too much difference.
@@ -996,7 +996,7 @@ static int pager_reload_cache(Pager *pPager){
     char zBuf[SQLITE_MAX_PAGE_SIZE];
     if( !pPg->dirty ) continue;
     if( (int)pPg->pgno <= pPager->origDbSize ){
-      sqlite3OsSeek(&pPager->fd, pPager->pageSize*(off_t)(pPg->pgno-1));
+      sqlite3OsSeek(&pPager->fd, pPager->pageSize*(i64)(pPg->pgno-1));
       rc = sqlite3OsRead(&pPager->fd, zBuf, pPager->pageSize);
       TRACE3("REFETCH %d page %d\n", pPager->fd.h, pPg->pgno);
       if( rc ) break;
@@ -1023,7 +1023,7 @@ static int pager_reload_cache(Pager *pPager){
 ** indicated.
 */
 static int pager_truncate(Pager *pPager, int nPage){
-  return sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(off_t)nPage);
+  return sqlite3OsTruncate(&pPager->fd, pPager->pageSize*(i64)nPage);
 }
 
 /*
@@ -1080,7 +1080,7 @@ static int pager_truncate(Pager *pPager, int nPage){
 ** and an error code is returned.
 */
 static int pager_playback(Pager *pPager){
-  off_t szJ;               /* Size of the journal file in bytes */
+  i64 szJ;                 /* Size of the journal file in bytes */
   u32 nRec;                /* Number of Records in the journal */
   int i;                   /* Loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
@@ -1215,8 +1215,8 @@ end_playback:
 **         at offset pPager->stmtJSize.
 */
 static int pager_stmt_playback(Pager *pPager){
-  off_t szJ;               /* Size of the full journal */
-  off_t hdrOff;
+  i64 szJ;                 /* Size of the full journal */
+  i64 hdrOff;
   int nRec;                /* Number of Records */
   int i;                   /* Loop counter */
   int rc;
@@ -1224,7 +1224,7 @@ static int pager_stmt_playback(Pager *pPager){
   szJ = pPager->journalOff;
 #ifndef NDEBUG 
   {
-    off_t os_szJ;
+    i64 os_szJ;
     rc = sqlite3OsFileSize(&pPager->jfd, &os_szJ);
     if( rc!=SQLITE_OK ) return rc;
     assert( szJ==os_szJ );
@@ -1566,7 +1566,7 @@ void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
 ** pPager.
 */
 int sqlite3pager_pagecount(Pager *pPager){
-  off_t n;
+  i64 n;
   assert( pPager!=0 );
   if( pPager->dbSize>=0 ){
     return pPager->dbSize;
@@ -1852,7 +1852,7 @@ static int syncJournal(Pager *pPager){
         /* Make sure the pPager->nRec counter we are keeping agrees
         ** with the nRec computed from the size of the journal file.
         */
-        off_t jSz;
+        i64 jSz;
         rc = sqlite3OsFileSize(&pPager->jfd, &jSz);
         if( rc!=0 ) return rc;
         assert( pPager->journalOff==jSz );
@@ -1949,7 +1949,7 @@ static int pager_write_pagelist(PgHdr *pList){
 
   while( pList ){
     assert( pList->dirty );
-    sqlite3OsSeek(&pPager->fd, (pList->pgno-1)*(off_t)pPager->pageSize);
+    sqlite3OsSeek(&pPager->fd, (pList->pgno-1)*(i64)pPager->pageSize);
     CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
     TRACE3("STORE %d page %d\n", pPager->fd.h, pList->pgno);
     rc = sqlite3OsWrite(&pPager->fd, PGHDR_TO_DATA(pList), pPager->pageSize);
@@ -2226,12 +2226,12 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     }else{
       int rc;
       assert( pPager->memDb==0 );
-      sqlite3OsSeek(&pPager->fd, (pgno-1)*(off_t)pPager->pageSize);
+      sqlite3OsSeek(&pPager->fd, (pgno-1)*(i64)pPager->pageSize);
       rc = sqlite3OsRead(&pPager->fd, PGHDR_TO_DATA(pPg), pPager->pageSize);
       TRACE3("FETCH %d page %d\n", pPager->fd.h, pPg->pgno);
       CODEC(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
       if( rc!=SQLITE_OK ){
-        off_t fileSize;
+        i64 fileSize;
         if( sqlite3OsFileSize(&pPager->fd,&fileSize)!=SQLITE_OK
                || fileSize>=pgno*pPager->pageSize ){
           sqlite3pager_unref(PGHDR_TO_DATA(pPg));

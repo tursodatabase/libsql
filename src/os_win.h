@@ -18,17 +18,6 @@
 #include <windows.h>
 #include <winbase.h>
 
-#if defined(_MSC_VER) || defined(__BORLANDC__)
-  typedef __int64 off_t;
-#else
-# if !defined(_CYGWIN_TYPES_H)
-  typedef long long off_t;
-#   if defined(__MINGW32__)
-#     define	_OFF_T_
-#   endif
-# endif
-#endif
-
 /*
 ** The OsFile structure is a operating-system independing representation
 ** of an open file handle.  It is defined differently for each architecture.

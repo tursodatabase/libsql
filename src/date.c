@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.35 2004/09/06 17:24:12 drh Exp $
+** $Id: date.c,v 1.36 2004/10/01 02:00:31 drh Exp $
 **
 ** NOTES:
 **
@@ -47,8 +47,8 @@
 **      Willmann-Bell, Inc
 **      Richmond, Virginia (USA)
 */
-#include "os.h"
 #include "sqliteInt.h"
+#include "os.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>

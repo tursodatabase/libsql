@@ -12,9 +12,9 @@
 **
 ** This file contains code that is specific to windows.
 */
-#include "os.h"          /* Must be first to enable large file support */
-#if OS_WIN               /* This file is used for windows only */
 #include "sqliteInt.h"
+#include "os.h"
+#if OS_WIN               /* This file is used for windows only */
 
 #include <winbase.h>
 
@@ -293,7 +293,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqlite3OsSeek(OsFile *id, off_t offset){
+int sqlite3OsSeek(OsFile *id, i64 offset){
   LONG upperBits = offset>>32;
   LONG lowerBits = offset & 0xffffffff;
   DWORD rc;
@@ -329,7 +329,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 /*
 ** Truncate an open file to a specified size
 */
-int sqlite3OsTruncate(OsFile *id, off_t nByte){
+int sqlite3OsTruncate(OsFile *id, i64 nByte){
   LONG upperBits = nByte>>32;
   assert( id->isOpen );
   TRACE3("TRUNCATE %d %lld\n", id->h, nByte);
@@ -342,12 +342,12 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqlite3OsFileSize(OsFile *id, off_t *pSize){
+int sqlite3OsFileSize(OsFile *id, i64 *pSize){
   DWORD upperBits, lowerBits;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   lowerBits = GetFileSize(id->h, &upperBits);
-  *pSize = (((off_t)upperBits)<<32) + lowerBits;
+  *pSize = (((i64)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
 }
 

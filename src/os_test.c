@@ -13,9 +13,9 @@
 ** This file contains code that is specific to Unix systems. It is used
 ** for testing SQLite only.
 */
-#include "os.h"          /* Must be first to enable large file support */
 #if OS_TEST              /* This file is used for the test backend only */
 #include "sqliteInt.h"
+#include "os.h"          /* Must be first to enable large file support */
 
 #define sqlite3OsOpenReadWrite     sqlite3RealOpenReadWrite
 #define sqlite3OsOpenExclusive     sqlite3RealOpenExclusive
@@ -149,7 +149,7 @@ static void closeFile(OsFile *id){
 ** Return the current seek offset from the start of the file. This
 ** is unix-only code.
 */
-static off_t osTell(OsTestFile *pFile){
+static i64 osTell(OsTestFile *pFile){
   return lseek(pFile->fd.h, 0, SEEK_CUR);
 }
 
@@ -167,7 +167,7 @@ static int cacheBlock(OsTestFile *pFile, int blk){
   }
 
   if( !pFile->apBlk[blk] ){
-    off_t filesize;
+    i64 filesize;
     int rc;
 
     u8 *p = sqliteMalloc(BLOCKSIZE);
@@ -201,7 +201,7 @@ static int cacheBlock(OsTestFile *pFile, int blk){
 static int writeCache2(OsTestFile *pFile, int crash){
   int i;
   int nMax = pFile->nMaxWrite;
-  off_t offset;
+  i64 offset;
   int rc = SQLITE_OK;
 
   offset = osTell(pFile);
@@ -295,8 +295,8 @@ int sqlite3OsClose(OsFile *id){
 }
 
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
-  off_t offset;       /* The current offset from the start of the file */
-  off_t end;          /* The byte just past the last byte read */
+  i64 offset;       /* The current offset from the start of the file */
+  i64 end;          /* The byte just past the last byte read */
   int blk;            /* Block number the read starts on */
   int i;
   u8 *zCsr;
@@ -340,8 +340,8 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 }
 
 int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
-  off_t offset;       /* The current offset from the start of the file */
-  off_t end;          /* The byte just past the last byte written */
+  i64 offset;       /* The current offset from the start of the file */
+  i64 end;          /* The byte just past the last byte written */
   int blk;            /* Block number the write starts on */
   int i;
   const u8 *zCsr;
@@ -403,7 +403,7 @@ int sqlite3OsSync(OsFile *id){
 ** file size to ensure that nothing in the write-cache past this point
 ** is written to disk.
 */
-int sqlite3OsTruncate(OsFile *id, off_t nByte){
+int sqlite3OsTruncate(OsFile *id, i64 nByte){
   (*id)->nMaxWrite = nByte;
   return sqlite3RealTruncate(&(*id)->fd, nByte);
 }
@@ -412,7 +412,7 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 ** Return the size of the file. If the cache contains a write that extended
 ** the file, then return this size instead of the on-disk size.
 */
-int sqlite3OsFileSize(OsFile *id, off_t *pSize){
+int sqlite3OsFileSize(OsFile *id, i64 *pSize){
   int rc = sqlite3RealFileSize(&(*id)->fd, pSize);
   if( rc==SQLITE_OK && pSize && *pSize<(*id)->nMaxWrite ){
     *pSize = (*id)->nMaxWrite;
@@ -442,7 +442,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
 ** These six function calls are passed straight through to the os_unix.c
 ** backend.
 */
-int sqlite3OsSeek(OsFile *id, off_t offset){
+int sqlite3OsSeek(OsFile *id, i64 offset){
   return sqlite3RealSeek(&(*id)->fd, offset);
 }
 int sqlite3OsCheckReservedLock(OsFile *id){
