@@ -161,6 +161,14 @@
 # define SQLITE_MIN_SLEEP_MS 17
 #endif
 
+/*
+** Macros to determine whether the machine is big or little endian,
+** evaluated at runtime.
+*/
+static const int sqlite3_one = 1;
+#define SQLITE3_BIGENDIAN (*(char *)(&sqlite3_one)==0)
+#define SQLITE3_LITTLEENDIAN (*(char *)(&sqlite3_one)==1)
+
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
 int sqliteOsFileRename(const char*, const char*);

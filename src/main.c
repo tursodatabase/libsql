@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.176 2004/05/20 01:40:19 danielk1977 Exp $
+** $Id: main.c,v 1.177 2004/05/20 11:00:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -504,6 +504,7 @@ void sqlite3_close(sqlite *db){
     }
   }
   sqlite3HashClear(&db->aFunc);
+  sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
   sqliteFree(db);
 }
 
@@ -1033,6 +1034,164 @@ int sqlite3BtreeFactory(
   return sqlite3BtreeOpen(zFilename, ppBtree, nCache, btree_flags);
 }
 
+const char *sqlite3_errmsg(sqlite3 *db){
+  if( db->zErrMsg ){
+    return db->zErrMsg;
+  }
+  return sqlite3_error_string(db->errCode);
+}
+
+const void *sqlite3_errmsg16(sqlite3 *db){
+  if( !db->zErrMsg16 ){
+    char const *zErr8 = sqlite3_errmsg(db);
+    if( SQLITE3_BIGENDIAN ){
+      db->zErrMsg16 = sqlite3utf8to16be(zErr8, -1);
+    }else{
+      db->zErrMsg16 = sqlite3utf8to16le(zErr8, -1);
+    }
+  }
+  return db->zErrMsg16;
+}
+
+int sqlite3_errcode(sqlite3 *db){
+  return db->errCode;
+}
+
+/*
+** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
+*/
+int sqlite3_prepare(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char** pzTail       /* OUT: End of parsed string */
+){
+  Parse sParse;
+  char *zErrMsg = 0;
+  int rc = SQLITE_OK;
+
+  if( sqlite3SafetyOn(db) ){
+    rc = SQLITE_MISUSE;
+    goto prepare_out;
+  }
+
+  if( !db->init.busy ){
+    if( (db->flags & SQLITE_Initialized)==0 ){
+      int rc, cnt = 1;
+      while( (rc = sqlite3Init(db, &zErrMsg))==SQLITE_BUSY
+         && db->xBusyCallback
+         && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
+      if( rc!=SQLITE_OK ){
+        goto prepare_out;
+      }
+      if( zErrMsg ){
+        sqliteFree(zErrMsg);
+        zErrMsg = 0;
+      }
+    }
+  }
+  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
+
+  if( db->pVdbe==0 ){ db->nChange = 0; }
+  memset(&sParse, 0, sizeof(sParse));
+  sParse.db = db;
+  sqlite3RunParser(&sParse, zSql, &zErrMsg);
+
+  if( db->xTrace && !db->init.busy ){
+    /* Trace only the statment that was compiled.
+    ** Make a copy of that part of the SQL string since zSQL is const
+    ** and we must pass a zero terminated string to the trace function
+    ** The copy is unnecessary if the tail pointer is pointing at the
+    ** beginnig or end of the SQL string.
+    */
+    if( sParse.zTail && sParse.zTail!=zSql && *sParse.zTail ){
+      char *tmpSql = sqliteStrNDup(zSql, sParse.zTail - zSql);
+      if( tmpSql ){
+        db->xTrace(db->pTraceArg, tmpSql);
+        free(tmpSql);
+      }else{
+        /* If a memory error occurred during the copy,
+        ** trace entire SQL string and fall through to the
+        ** sqlite3_malloc_failed test to report the error.
+        */
+        db->xTrace(db->pTraceArg, zSql); 
+      }
+    }else{
+      db->xTrace(db->pTraceArg, zSql); 
+    }
+  }
+
+  if( sqlite3_malloc_failed ){
+    rc = SQLITE_NOMEM;
+    sqlite3RollbackAll(db);
+    sqlite3ResetInternalSchema(db, 0);
+    db->flags &= ~SQLITE_InTrans;
+    goto prepare_out;
+  }
+  if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
+  if( sParse.rc==SQLITE_SCHEMA ){
+    sqlite3ResetInternalSchema(db, 0);
+  }
+  assert( ppStmt );
+  *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
+  if( pzTail ) *pzTail = sParse.zTail;
+
+  if( sqlite3SafetyOff(db) ){
+    rc = SQLITE_MISUSE;
+    goto prepare_out;
+  }
+
+  rc = sParse.rc;
+
+prepare_out:
+  if( zErrMsg ){
+    sqlite3Error(db, rc, "%s", zErrMsg);
+  }else{
+    sqlite3Error(db, rc, 0);
+  }
+  return rc;
+}
+
+/*
+** Compile the UTF-16 encoded SQL statement zSql into a statement handle.
+*/
+int sqlite3_prepare16(
+  sqlite3 *db,              /* Database handle. */ 
+  const void *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const void **pzTail       /* OUT: End of parsed string */
+){
+  /* This function currently works by first transforming the UTF-16
+  ** encoded string to UTF-8, then invoking sqlite3_prepare(). The
+  ** tricky bit is figuring out the pointer to return in *pzTail.
+  */
+  char *zSql8 = 0;
+  char const *zTail8 = 0;
+  int rc;
+
+  zSql8 = sqlite3utf16to8(zSql, nBytes);
+  if( !zSql8 ){
+    sqlite3Error(db, SQLITE_NOMEM, 0);
+    return SQLITE_NOMEM;
+  }
+  rc = sqlite3_prepare(db, zSql8, -1, ppStmt, &zTail8);
+
+  if( zTail8 && pzTail ){
+    /* If sqlite3_prepare returns a tail pointer, we calculate the
+    ** equivalent pointer into the UTF-16 string by counting the unicode
+    ** characters between zSql8 and zTail8, and then returning a pointer
+    ** the same number of characters into the UTF-16 string.
+    */
+    int chars_parsed = sqlite3utf8CharLen(zSql8, zTail8-zSql8);
+    *pzTail = (u8 *)zSql + sqlite3utf16ByteLen(zSql, chars_parsed);
+  }
+ 
+  return rc;
+}
+
+
 #if 0
 
 /*
@@ -1089,44 +1248,6 @@ int sqlite3_errcode(sqlite3 *db){
 
 struct sqlite_stmt {
 };
-
-/*
-** sqlite3_prepare
-**
-** TODO: error message handling
-*/
-int sqlite3_prepare(
-  sqlite3 *db, 
-  const char *zSql, 
-  sqlite3_stmt **ppStmt, 
-  const char** pzTail
-){
-  int rc;
-  rc = sqlite3_compile(db, zSql, pzTail, ppStmt, 0); 
-  return rc;
-}
-int sqlite3_prepare16(
-  sqlite3 *db, 
-  const void *zSql, 
-  sqlite3_stmt **ppStmt, 
-  const void **pzTail
-){
-  int rc;
-  char *sql8;
-
-  sql8 = sqlite3utf16to8(zSql, -1);
-  if( !sql8 ){
-    return SQLITE_NOMEM;
-  }
-
-  /* TODO: Have to set *pzTail to point into the original UTF-16 string
-  ** somehow.
-  */
-  rc = sqlite3_prepare(db, sql8, ppStmt, 0);
-  sqliteFree(filename8);
-
-  return rc;
-}
 
 /*
 ** sqlite3_finalize

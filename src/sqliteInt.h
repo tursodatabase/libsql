@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.239 2004/05/20 01:12:34 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.240 2004/05/20 11:00:52 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -351,6 +351,11 @@ struct Db {
 ** affect the value of lsChange.
 ** The sqlite.csChange keeps track of the number of current changes (since
 ** the last statement) and is used to update sqlite_lsChange.
+**
+** The member variables sqlite.errCode, sqlite.zErrMsg and sqlite.zErrMsg16
+** store the most recent error code and, if applicable, string. The
+** internal function sqlite3Error() is used to set these variables
+** consistently.
 */
 struct sqlite {
   int nDb;                      /* Number of backends currently in use */
@@ -397,7 +402,9 @@ struct sqlite {
   int nProgressOps;             /* Number of opcodes for progress callback */
 #endif
 
+  int errCode;                  /* Most recent error code (SQLITE_*) */
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
+  void *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
 };
 
 /*
@@ -1321,7 +1328,8 @@ void *sqlite3utf8to16be(const unsigned char *pIn, int N);
 void *sqlite3utf8to16le(const unsigned char *pIn, int N);
 void sqlite3utf16to16le(void *pData, int N);
 void sqlite3utf16to16be(void *pData, int N);
-int sqlite3utf16ByteLen(const void *pData);
+int sqlite3utf16ByteLen(const void *pData, int nChar);
+int sqlite3utf8CharLen(const char *pData, int nByte);
 int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3GetVarint32(const unsigned char *, u32 *);
@@ -1334,3 +1342,5 @@ char const *sqlite3AffinityString(char affinity);
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
+void sqlite3Error(sqlite *, int, const char*,...);
+

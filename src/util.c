@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.86 2004/05/19 20:41:03 drh Exp $
+** $Id: util.c,v 1.87 2004/05/20 11:00:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -403,6 +403,48 @@ void sqlite3SetNString(char **pz, ...){
 #endif
 #endif
   va_end(ap);
+}
+
+/*
+** Set the most recent error code and error string for the sqlite
+** handle "db". The error code is set to "err_code".
+**
+** If it is not NULL, string zFormat specifies the format of the
+** error string in the style of the printf functions: The following
+** format characters are allowed:
+**
+**      %s      Insert a string
+**      %z      A string that should be freed after use
+**      %d      Insert an integer
+**      %T      Insert a token
+**      %S      Insert the first element of a SrcList
+**
+** zFormat and any string tokens that follow it are assumed to be
+** encoded in UTF-8.
+**
+** To clear the most recent error for slqite handle "db", sqlite3Error
+** should be called with err_code set to SQLITE_OK and zFormat set
+** to NULL.
+*/
+void sqlite3Error(sqlite *db, int err_code, const char *zFormat, ...){
+  /* Free any existing error message. */
+  if( db->zErrMsg ){
+    sqliteFree(db->zErrMsg);
+    db->zErrMsg = 0;
+  }
+  if( db->zErrMsg16 ){
+    sqliteFree(db->zErrMsg16);
+    db->zErrMsg16 = 0;
+  }
+
+  /* Set the new error code and error message. */
+  db->errCode = err_code;
+  if( zFormat ){
+    va_list ap;
+    va_start(ap, zFormat);
+    db->zErrMsg = sqlite3VMPrintf(zFormat, ap);
+    va_end(ap);
+  }
 }
 
 /*

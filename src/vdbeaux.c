@@ -944,14 +944,20 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 
 /*
 ** Unbind the value bound to variable $i in virtual machine p. This is the 
-** the same as binding a NULL value to the column.
+** the same as binding a NULL value to the column. If the "i" parameter is
+** out of range, then SQLITE_RANGE is returned. Othewise SQLITE_OK.
+**
+** The error code stored in database p->db is overwritten with the return
+** value in any case.
 */
 static int vdbeUnbind(Vdbe *p, int i){
   Mem *pVar;
   if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
+    sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }
   if( i<1 || i>p->nVar ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
     return SQLITE_RANGE;
   }
   i--;
@@ -960,12 +966,17 @@ static int vdbeUnbind(Vdbe *p, int i){
     sqliteFree(pVar->z);
   }
   pVar->flags = MEM_Null;
+  sqlite3Error(p->db, SQLITE_OK, 0);
   return SQLITE_OK;
 }
 
 /*
 ** This routine is used to bind text or blob data to an SQL variable (a ?).
-** It may also be used to bind a NULL value, by setting zVal to 0.
+** It may also be used to bind a NULL value, by setting zVal to 0. Any
+** existing value is unbound.
+**
+** The error code stored in p->db is overwritten with the return value in
+** all cases.
 */
 static int vdbeBindBlob(
   Vdbe *p,           /* Virtual machine */
@@ -976,8 +987,12 @@ static int vdbeBindBlob(
   int flags          /* Valid combination of MEM_Blob, MEM_Str, MEM_UtfXX */
 ){
   Mem *pVar;
+  int rc;
 
-  vdbeUnbind(p, i);
+  rc = vdbeUnbind(p, i);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   pVar = &p->apVar[i-1];
 
   if( zVal ){
@@ -990,6 +1005,7 @@ static int vdbeBindBlob(
       if( bytes>NBFS ){
         pVar->z = (char *)sqliteMalloc(bytes);
         if( !pVar->z ){
+          sqlite3Error(p->db, SQLITE_NOMEM, 0);
           return SQLITE_NOMEM;
         }
         pVar->flags |= MEM_Dyn;
@@ -1087,7 +1103,7 @@ int sqlite3_bind_text16(
     ** manually. In this case the variable will always be null terminated.
     */
     if( nData<0 ){
-      nData = sqlite3utf16ByteLen(zData) + 2;
+      nData = sqlite3utf16ByteLen(zData, -1) + 2;
       flags |= MEM_Term;
     }else{
       /* If nData is greater than zero, check if the final character appears

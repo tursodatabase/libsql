@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.5 2004/05/20 01:12:35 danielk1977 Exp $
+** $Id: utf.c,v 1.6 2004/05/20 11:00:52 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -192,7 +192,7 @@ static int writeUtf8(UtfString *pStr, u32 code){
     {0x0010FFFF, 3, 0xF7, 0xF0},
     {0x00000000, 0, 0x00, 0x00}
   };
-  struct Utf8WriteTblRow *pRow = &utf8tbl[0];
+  const struct Utf8WriteTblRow *pRow = &utf8tbl[0];
 
   while( code>pRow->max_code ){
     assert( pRow->max_code );
@@ -324,17 +324,70 @@ static int writeUtf16(UtfString *pStr, int code, int big_endian){
 }
 
 /*
-** Return the number of bytes up to (but not including) the first \u0000
-** character in *pStr.
+** pZ is a UTF-8 encoded unicode string. If nByte is less than zero,
+** return the number of unicode characters in pZ up to (but not including)
+** the first 0x00 byte. If nByte is not less than zero, return the
+** number of unicode characters in the first nByte of pZ (or up to 
+** the first 0x00, whichever comes first).
 */
-int sqlite3utf16ByteLen(const void *pZ){
-  const unsigned char *pC1 = pZ;
-  const unsigned char *pC2 = pZ+1;
-  while( *pC1 || *pC2 ){
-    pC1 += 2;
-    pC2 += 2;
+int sqlite3utf8CharLen(const char *pZ, int nByte){
+  UtfString str;
+  int ret = 0;
+  u32 code = 1;
+
+  str.pZ = (char *)pZ;
+  str.n = nByte;
+  str.c = 0;
+
+  while( (nByte<0 || str.c<str.n) && code!=0 ){
+    code = readUtf8(&str);
+    ret++;
   }
-  return pC1-(unsigned char *)pZ;
+  if( code==0 ) ret--;
+
+  return ret;
+}
+
+/*
+** pZ is a UTF-16 encoded unicode string. If nChar is less than zero,
+** return the number of bytes up to (but not including), the first pair
+** of consecutive 0x00 bytes in pZ. If nChar is not less than zero,
+** then return the number of bytes in the first nChar unicode characters
+** in pZ (or up until the first pair of 0x00 bytes, whichever comes first).
+*/
+int sqlite3utf16ByteLen(const void *pZ, int nChar){
+  if( nChar<0 ){
+    const unsigned char *pC1 = pZ;
+    const unsigned char *pC2 = pZ+1;
+    while( *pC1 || *pC2 ){
+      pC1 += 2;
+      pC2 += 2;
+    }
+    return pC1-(unsigned char *)pZ;
+  }else{
+    UtfString str;
+    u32 code = 1;
+    int big_endian;
+    int nRead = 0;
+    int ret;
+
+    str.pZ = (char *)pZ;
+    str.c = 0;
+    str.n = -1;
+
+    /* Check for a BOM */
+    big_endian = readUtf16Bom(&str);
+    ret = 0-str.c;
+
+    while( code!=0 && nRead<nChar ){
+      code = readUtf16(&str, big_endian);
+      nRead++;
+    }
+    if( code==0 ){
+      ret -= 2;
+    }
+    return str.c + ret;
+  }
 }
 
 /*
@@ -359,7 +412,7 @@ unsigned char *sqlite3utf16to8(const void *pData, int N){
   in.c = 0;
 
   if( in.n<0 ){
-    in.n = sqlite3utf16ByteLen(in.pZ);
+    in.n = sqlite3utf16ByteLen(in.pZ, -1);
   }
 
   /* A UTF-8 encoding of a unicode string can require at most 1.5 times as
@@ -447,7 +500,7 @@ static void utf16to16(void *pData, int N, int big_endian){
   inout.n = N;
 
   if( inout.n<0 ){
-    inout.n = sqlite3utf16ByteLen(inout.pZ);
+    inout.n = sqlite3utf16ByteLen(inout.pZ, -1);
   }
 
   if( readUtf16Bom(&inout)!=big_endian ){

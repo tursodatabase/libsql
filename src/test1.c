@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.41 2004/05/20 01:12:35 danielk1977 Exp $
+** $Id: test1.c,v 1.42 2004/05/20 11:00:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -26,6 +26,42 @@
 #else
 # define PTR_FMT "%p"
 #endif
+
+static const char * errorName(int rc){
+  const char *zName = 0;
+  switch( rc ){
+    case SQLITE_OK:         zName = "SQLITE_OK";          break;
+    case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
+    case SQLITE_INTERNAL:   zName = "SQLITE_INTERNAL";    break;
+    case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
+    case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
+    case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
+    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
+    case SQLITE_NOMEM:      zName = "SQLITE_NOMEM";       break;
+    case SQLITE_READONLY:   zName = "SQLITE_READONLY";    break;
+    case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
+    case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
+    case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
+    case SQLITE_NOTFOUND:   zName = "SQLITE_NOTFOUND";    break;
+    case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
+    case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
+    case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
+    case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
+    case SQLITE_SCHEMA:     zName = "SQLITE_SCHEMA";      break;
+    case SQLITE_TOOBIG:     zName = "SQLITE_TOOBIG";      break;
+    case SQLITE_CONSTRAINT: zName = "SQLITE_CONSTRAINT";  break;
+    case SQLITE_MISMATCH:   zName = "SQLITE_MISMATCH";    break;
+    case SQLITE_MISUSE:     zName = "SQLITE_MISUSE";      break;
+    case SQLITE_NOLFS:      zName = "SQLITE_NOLFS";       break;
+    case SQLITE_AUTH:       zName = "SQLITE_AUTH";        break;
+    case SQLITE_FORMAT:     zName = "SQLITE_FORMAT";      break;
+    case SQLITE_RANGE:      zName = "SQLITE_RANGE";       break;
+    case SQLITE_ROW:        zName = "SQLITE_ROW";         break;
+    case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
+    default:                zName = "SQLITE_Unknown";     break;
+  }
+  return zName;
+}
 
 /*
 ** Decode a pointer to an sqlite object.
@@ -1193,6 +1229,185 @@ static int test_bind_blob(
 }
 
 /*
+** Usage: sqlite3_errcode DB
+**
+** Return the string representation of the most recent sqlite3_* API
+** error code. e.g. "SQLITE_ERROR".
+*/
+static int test_errcode(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)errorName(sqlite3_errcode(db)), 0);
+  return TCL_OK;
+}
+
+/*
+** Usage:   test_errmsg DB
+**
+** Returns the UTF-8 representation of the error message string for the
+** most recent sqlite3_* API call.
+*/
+static int test_errmsg(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite *db;
+  const char *zErr;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  zErr = sqlite3_errmsg(db);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(zErr, -1));
+  return TCL_OK;
+}
+
+/*
+** Usage:   test_errmsg16 DB
+**
+** Returns the UTF-16 representation of the error message string for the
+** most recent sqlite3_* API call. This is a byte array object at the TCL 
+** level, and it includes the 0x00 0x00 terminator bytes at the end of the
+** UTF-16 string.
+*/
+static int test_errmsg16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite *db;
+  const void *zErr;
+  int bytes;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  zErr = sqlite3_errmsg16(db);
+  bytes = sqlite3utf16ByteLen(zErr, -1);
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zErr, bytes));
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_prepare DB sql bytes tailvar
+**
+** Compile up to <bytes> bytes of the supplied SQL string <sql> using
+** database handle <DB>. The parameter <tailval> is the name of a global
+** variable that is set to the unused portion of <sql> (if any). A
+** STMT handle is returned.
+*/
+static int test_prepare(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const char *zSql;
+  int bytes;
+  const char *zTail = 0;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50];
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql = Tcl_GetString(objv[2]);
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+
+  if( SQLITE_OK!=sqlite3_prepare(db, zSql, bytes, &pStmt, &zTail) ){
+    return TCL_ERROR;
+  }
+
+  if( zTail ){
+    if( bytes>=0 ){
+      bytes = bytes - (zTail-zSql);
+    }
+    Tcl_ObjSetVar2(interp, objv[4], 0, Tcl_NewStringObj(zTail, bytes), 0);
+  }
+
+  if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_prepare DB sql bytes tailvar
+**
+** Compile up to <bytes> bytes of the supplied SQL string <sql> using
+** database handle <DB>. The parameter <tailval> is the name of a global
+** variable that is set to the unused portion of <sql> (if any). A
+** STMT handle is returned.
+*/
+static int test_prepare16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  const void *zSql;
+  const void *zTail = 0;
+  Tcl_Obj *pTail = 0;
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50];
+  int bytes;                /* The integer specified as arg 3 */
+  int objlen;               /* The byte-array length of arg 2 */
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql = Tcl_GetByteArrayFromObj(objv[2], &objlen);
+  if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
+
+  if( SQLITE_OK!=sqlite3_prepare16(db, zSql, bytes, &pStmt, &zTail) ){
+    return TCL_ERROR;
+  }
+
+  if( zTail ){
+    objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
+  }else{
+    objlen = 0;
+  }
+  pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
+  Tcl_IncrRefCount(pTail);
+  Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
+  // Tcl_DecrRefCount(pTail);
+
+  if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -1241,6 +1456,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_text",             (Tcl_ObjCmdProc*)test_bind_text     },
      { "sqlite3_bind_text16",           (Tcl_ObjCmdProc*)test_bind_text16   },
      { "sqlite3_bind_blob",             (Tcl_ObjCmdProc*)test_bind_blob     },
+     { "sqlite3_errcode",               (Tcl_ObjCmdProc*)test_errcode       },
+     { "sqlite3_errmsg",                (Tcl_ObjCmdProc*)test_errmsg        },
+     { "sqlite3_errmsg16",              (Tcl_ObjCmdProc*)test_errmsg16      },
+     { "sqlite3_prepare",               (Tcl_ObjCmdProc*)test_prepare       },
+     { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
   };
   int i;
 
@@ -1262,6 +1482,5 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   return TCL_OK;
 }
-
 
 

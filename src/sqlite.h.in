@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.65 2004/05/20 01:40:19 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.66 2004/05/20 11:00:52 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -861,7 +861,10 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out);
 */
 int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
 
+
+/* FIX ME */
 typedef sqlite_vm sqlite3_stmt;
+typedef sqlite sqlite3;
 
 /*
 ** This routine is used to bind a 32-bit integer value to a variable
@@ -976,30 +979,74 @@ int sqlite3_bind_text16(sqlite3_stmt*, int i, const void *z, int, int eCopy);
 */
 int sqlite3_bind_blob(sqlite3_stmt*, int i, const void *z, int n, int eCopy);
 
-
-#if 0
+/*
+** Return the error code for the most recent sqlite3_* API call associated
+** with sqlite3 handle 'db'. SQLITE_OK is returned if the most recent 
+** API call was successful.
+**
+** Calls to many sqlite3_* functions set the error code and string returned
+** by sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
+** (overwriting the previous values). A complete list of functions that set
+** the error code and string returned by these functions follows. Note that
+** calls to sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
+** themselves do not affect the results of future invocations.
+**
+** sqlite3_bind_int32
+** sqlite3_bind_int64
+** sqlite3_bind_double
+** sqlite3_bind_null
+** sqlite3_bind_text
+** sqlite3_bind_text16
+** sqlite3_bind_blob
+**
+** Assuming no other intervening sqlite3_* API calls are made, the error
+** code returned by this function is associated with the same error as
+** the strings  returned by sqlite3_errmsg() and sqlite3_errmsg16().
+*/
+int sqlite3_errcode(sqlite3 *db);
 
 /*
-** Below this point are the new sqlite3 APIs. At present these are
-** implemented in terms of the sqlite2 API above. This is to get the TCL
-** interface and other testing infrastructure in place for when
-** functionality starts getting added.
+** Return a pointer to a UTF-8 encoded string describing in english the
+** error condition for the most recent sqlite3_* API call. The returned
+** string is always terminated by an 0x00 byte.
+**
+** The string "not an error" is returned when the most recent API call was
+** successful.
 */
+const char *sqlite3_errmsg(sqlite3*);
 
-typedef struct sqlite sqlite3;
+/*
+** Return a pointer to a UTF-16 native byte order encoded string describing
+** in english the error condition for the most recent sqlite3_* API call.
+** The returned string is always terminated by a pair of 0x00 bytes.
+**
+** The string "not an error" is returned when the most recent API call was
+** successful.
+*/
+const void *sqlite3_errmsg16(sqlite3*);
+
+int sqlite3_prepare(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+
+int sqlite3_prepare16(
+  sqlite3 *db,            /* Database handle */
+  const void *zSql,       /* SQL statement, UTF-16 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+
+#if 0
 
 int sqlite3_open(const char*, sqlite3**, const char**);
 int sqlite3_open16(const void*, sqlite3**, const char**);
 int sqlite3_close(sqlite3*);
 
-const char *sqlite3_errmsg(sqlite3*);
-const void *sqlite3_errmsg16(sqlite3*);
-int sqlite3_errcode(sqlite3*);
-
-typedef struct sqlite3_vm sqlite3_stmt;
-
-int sqlite3_prepare(sqlite3*, const char*, sqlite3_stmt**, const char**);
-int sqlite3_prepare16(sqlite3*, const void*, sqlite3_stmt**, const void**);
 int sqlite3_finalize(sqlite3_stmt*);
 int sqlite3_reset(sqlite3_stmt*);
 
