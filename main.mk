@@ -419,6 +419,9 @@ index.html:	$(TOP)/www/index.tcl last_change
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
 
+lockingv3.html:	$(TOP)/www/lockingv3.tcl
+	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
+
 omitted.html:	$(TOP)/www/omitted.tcl
 	tclsh $(TOP)/www/omitted.tcl >omitted.html
 
@@ -475,6 +478,7 @@ DOC = \
   formatchng.html \
   index.html \
   lang.html \
+  lockingv3.html \
   mingw.html \
   nulls.html \
   omitted.html \

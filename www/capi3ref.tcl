@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.1 2004/06/01 01:22:38 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.2 2004/06/11 17:48:04 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -69,13 +69,15 @@ api {} {
 }
 
 api {} {
-  int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
+  int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
   int sqlite3_bind_double(sqlite3_stmt*, int, double);
   int sqlite3_bind_int(sqlite3_stmt*, int, int);
   int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
   int sqlite3_bind_null(sqlite3_stmt*, int);
-  int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
-  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
+  int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
+  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+  #define SQLITE_STATIC      ((void*)0)
+  #define SQLITE_EPHEMERAL   ((void*)8)
 } {
  In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
  one or more literals can be replace by a wildcard "?" or ":N:" where
@@ -87,10 +89,13 @@ api {} {
  index of the wildcard.  The first "?" has an index of 1.  ":N:" wildcards
  use the index N.
 
- When the eCopy parameter is true, a copy of the value is made into
- memory obtained and managed by SQLite.  When eCopy is false, SQLite
- assumes that the value is a constant and just stores a pointer to the
- value without making a copy.
+ The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
+ sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
+ text after SQLite has finished with it.  If the fifth argument is the
+ special value SQLITE_STATIC, then the library assumes that the information
+ is in static, unmanaged space and does not need to be freed.  If the
+ fifth argument has the value SQLITE_EPHEMERAL, then SQLite makes its
+ on private copy of the data.
 
  The sqlite3_bind_*() routine must be called after
  sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
@@ -99,16 +104,16 @@ api {} {
 }
 
 api {} {
-  void sqlite3_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+  void sqlite3_busy_handler(sqlite*, int(*)(void*,int), void*);
 } {
  This routine identifies a callback function that is invoked
  whenever an attempt is made to open a database table that is
  currently locked by another process or thread.  If the busy callback
  is NULL, then sqlite3_exec() returns SQLITE_BUSY immediately if
  it finds a locked table.  If the busy callback is not NULL, then
- sqlite3_exec() invokes the callback with three arguments.  The
- second argument is the name of the locked table and the third
- argument is the number of times the table has been busy.  If the
+ sqlite3_exec() invokes the callback with two arguments.  The
+ second argument is the number of prior calls to the busy callback
+ for the same lock.  If the
  busy callback returns 0, then sqlite3_exec() immediately returns
  SQLITE_BUSY.  If the callback returns non-zero, then sqlite3_exec()
  tries to open the table again and the cycle repeats.
@@ -310,6 +315,90 @@ int sqlite3_complete16(const void *sql);
 } {}
 
 api {} {
+int sqlite3_create_collation(
+  sqlite3*, 
+  const char *zName, 
+  int pref16, 
+  void*,
+  int(*xCompare)(void*,int,const void*,int,const void*)
+);
+int sqlite3_create_collation16(
+  sqlite3*, 
+  const char *zName, 
+  int pref16, 
+  void*,
+  int(*xCompare)(void*,int,const void*,int,const void*)
+);
+#define SQLITE_UTF8     1
+#define SQLITE_UTF16    2
+#define SQLITE_UTF16BE  3
+#define SQLITE_UTF16LE  4
+} {
+ These two functions are used to add new collation sequences to the
+ sqlite3 handle specified as the first argument. 
+
+ The name of the new collation sequence is specified as a UTF-8 string
+ for sqlite3_create_collation() and a UTF-16 string for
+ sqlite3_create_collation16(). In both cases the name is passed as the
+ second function argument.
+
+ The third argument must be one of the constants SQLITE_UTF8,
+ SQLITE_UTF16LE or SQLITE_UTF16BE, indicating that the user-supplied
+ routine expects to be passed pointers to strings encoded using UTF-8,
+ UTF-16 little-endian or UTF-16 big-endian respectively.
+
+ A pointer to the user supplied routine must be passed as the fifth
+ argument. If it is NULL, this is the same as deleting the collation
+ sequence (so that SQLite cannot call it anymore). Each time the user
+ supplied function is invoked, it is passed a copy of the void* passed as
+ the fourth argument to sqlite3_create_collation() or
+ sqlite3_create_collation16() as its first parameter.
+
+ The remaining arguments to the user-supplied routine are two strings,
+ each represented by a [length, data] pair and encoded in the encoding
+ that was passed as the third argument when the collation sequence was
+ registered. The user routine should return negative, zero or positive if
+ the first string is less than, equal to, or greater than the second
+ string. i.e. (STRING1 - STRING2).
+}
+
+api {} {
+int sqlite3_collation_needed(
+  sqlite3*, 
+  void*, 
+  void(*)(void*,sqlite3*,int eTextRep,const char*)
+);
+int sqlite3_collation_needed16(
+  sqlite3*, 
+  void*,
+  void(*)(void*,sqlite3*,int eTextRep,const void*)
+);
+} {
+ To avoid having to register all collation sequences before a database
+ can be used, a single callback function may be registered with the
+ database handle to be called whenever an undefined collation sequence is
+ required.
+
+ If the function is registered using the sqlite3_collation_needed() API,
+ then it is passed the names of undefined collation sequences as strings
+ encoded in UTF-8. If sqlite3_collation_needed16() is used, the names
+ are passed as UTF-16 in machine native byte order. A call to either
+ function replaces any existing callback.
+
+ When the user-function is invoked, the first argument passed is a copy
+ of the second argument to sqlite3_collation_needed() or
+ sqlite3_collation_needed16(). The second argument is the database
+ handle. The third argument is one of SQLITE_UTF8, SQLITE_UTF16BE or
+ SQLITE_UTF16LE, indicating the most desirable form of the collation
+ sequence function required. The fourth parameter is the name of the
+ required collation sequence.
+
+ The collation sequence is returned to SQLite by a collation-needed
+ callback using the sqlite3_create_collation() or
+ sqlite3_create_collation16() APIs, described above.
+}
+
+api {} {
 int sqlite3_create_function(
   sqlite3 *,
   const char *zFunctionName,
@@ -332,10 +421,11 @@ int sqlite3_create_function16(
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 );
-#define SQLITE3_UTF8     1
-#define SQLITE3_UTF16LE  2
-#define SQLITE3_UTF16BE  3
-#define SQLITE3_ANY      4
+#define SQLITE_UTF8     1
+#define SQLITE_UTF16    2
+#define SQLITE_UTF16BE  3
+#define SQLITE_UTF16LE  4
+#define SQLITE_ANY      5
 } {
  These two functions are used to add user functions or aggregates
  implemented in C to the SQL langauge interpreted by SQLite. The
@@ -620,13 +710,11 @@ char *sqlite3_vmprintf(const char*, va_list);
 api {} {
 int sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
 int sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
 } {
  Open the sqlite database file "filename".  The "filename" is UTF-8
@@ -637,8 +725,9 @@ int sqlite3_open16(
  sqlite3_errmsg() or sqlite3_errmsg16()  routines can be used to obtain
  an English language description of the error.
 
- If the database file does not exist, then a new database is created.
- The encoding for the database is UTF-8 if sqlite3_open() is called and
+ If the database file does not exist, then a new database will be created
+ as needed.
+ The encoding for the database will be UTF-8 if sqlite3_open() is called and
  UTF-16 if sqlite3_open16 is used.
 
  Whether or not an error occurs when it is opened, resources associated
@@ -729,15 +818,17 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 }
 
 api {} {
-void sqlite3_result_blob(sqlite3_context*, const void*, int n, int eCopy);
+void sqlite3_result_blob(sqlite3_context*, const void*, int n, void(*)(void*));
 void sqlite3_result_double(sqlite3_context*, double);
 void sqlite3_result_error(sqlite3_context*, const char*, int);
 void sqlite3_result_error16(sqlite3_context*, const void*, int);
 void sqlite3_result_int(sqlite3_context*, int);
 void sqlite3_result_int64(sqlite3_context*, long long int);
 void sqlite3_result_null(sqlite3_context*);
-void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
-void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
+void sqlite3_result_text(sqlite3_context*, const char*, int n, void(*)(void*));
+void sqlite3_result_text16(sqlite3_context*, const void*, int n, void(*)(void*));
+void sqlite3_result_text16be(sqlite3_context*, const void*, int n, void(*)(void*));
+void sqlite3_result_text16le(sqlite3_context*, const void*, int n, void(*)(void*));
 void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 } {
  User-defined functions invoke the following routines in order to
@@ -864,6 +955,8 @@ int sqlite3_value_int(sqlite3_value*);
 long long int sqlite3_value_int64(sqlite3_value*);
 const unsigned char *sqlite3_value_text(sqlite3_value*);
 const void *sqlite3_value_text16(sqlite3_value*);
+const void *sqlite3_value_text16be(sqlite3_value*);
+const void *sqlite3_value_text16le(sqlite3_value*);
 int sqlite3_value_type(sqlite3_value*);
 } {
  This group of routines returns information about parameters to

@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.3 2004/06/01 01:22:38 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.4 2004/06/11 17:48:04 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -38,6 +38,11 @@ doc {Version 3 C/C++ API<br>Reference} {capi3ref.html} {
 
 doc {Tcl API} {tclsqlite.html} {
   A description of the TCL interface bindings for SQLite.
+}
+
+doc {Locking And Concurrency<br>In SQLite Version 3} {lockingv3.html} {
+  A description of how the new locking code in version 3 increases
+  concurrancy and decreases the problem of writer starvation.
 }
 
 doc {Version 2 DataTypes } {datatypes.html} {

@@ -1,5 +1,5 @@
-C Have\sthe\svdbe\saggregator\suse\sa\sbtree\stable\sinstead\sof\sa\shash\stable.\s(CVS\s1569)
-D 2004-06-11T13:19:21
+C Documentation\sof\sthe\snew\spager\slocking\smechanism.\s(CVS\s1570)
+D 2004-06-11T17:48:03
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 126f1ca2190fa19cc9944f54943cf3431891c330
+F main.mk e02f35c8354fe9a0ab48fc87b0bcb3fb7a86d713
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 2e579b7474d57b6debcead93c73a49eb8cb81718
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -56,7 +56,7 @@ F src/printf.c 63b15f1ea9fe3daa066bb7430fd20d4a2d717dc8
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c d29488f86e61e0d45dff318e1f04ba6a7e5782d0
 F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
-F src/sqlite.h.in 2b6afe1de6935d3dfbd6042f46a62f1b7c3b3992
+F src/sqlite.h.in 56c53344a6fbd76328d641d9ddab90d4e4ba9129
 F src/sqliteInt.h 625faf4c9ce2f99b9c85a2bca5c4e73736c30262
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c e974c0b2479ed37334aeb268de331e0a1b21b5a8
@@ -194,7 +194,7 @@ F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl a940c5ca0b0ebafd5acfe2ceca5a388bd8cfb468
-F www/capi3ref.tcl 4248a45a0fd21fe0c116326300408d0999a028b5
+F www/capi3ref.tcl 2cb0861c5219c6e44298c217a6c904464b4403bc
 F www/changes.tcl cbe942607b2b9e5dc995395f37042dbb5a629c7f
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
@@ -203,7 +203,7 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl f48b05cafd5e54ae5c05e643169d5217ee51a244
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
-F www/docs.tcl 0dcbf954907bd5dbfb7f1e0220f4e50516e07cd3
+F www/docs.tcl a924a5043973a70c58b65abf1051ed8b1238864d
 F www/download.tcl 8c84f15695c92cb01486930055fdf5192995f474
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
@@ -211,6 +211,7 @@ F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl 7ed8a5c871ab105f01e5defe1822ec39f70675bb
 F www/index.tcl 64435502af780d7cd813365d443b9b9344662ce4
 F www/lang.tcl fc528581c4a406cabc138e2f17db5ef6f38615ff
+F www/lockingv3.tcl 1449cf3ff0249d6ed44e06b05244b423693d6265
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
@@ -222,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 66835ee67051027456a536e33b2f88a741654525
-R 17851c4c7a9d880622be1c17f4d88abf
-U danielk1977
-Z 37fd25919977ced5eda4bf17b983a171
+P 8d56118f64dbaf8c8006266fa7026f900a4a16bd
+R 452a2adcbc4985a31c30bc500c6b52fd
+U drh
+Z 469b4dfcfa6222fd78598800788c6259
