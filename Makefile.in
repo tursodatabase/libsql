@@ -168,12 +168,12 @@ last_change:	$(SRC)
 
 libsqlite.la:	$(LIBOBJ)
 	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(exec_prefix)/lib \
-		-version-info "5:3:5"
+		-version-info "8:6:8"
 
 libtclsqlite.la:	tclsqlite.lo libsqlite.la
 	$(LIBTOOL) $(TCC) -o libtclsqlite.la tclsqlite.lo \
 		libsqlite.la $(LIBTCL) -rpath $(exec_prefix)/lib \
-		-version-info "0:0:0"
+		-version-info "8:6:8"
 
 sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
