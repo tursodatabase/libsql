@@ -1,5 +1,5 @@
-C Changes\sto\sthe\s"sqlite"\sstructure\sthat\sallow\ssimultaneous\soperations\son\nmultiple\sdatabase\sfiles.\s\sMany\sregession\stests\spass\s-\sbut\snot\sall\sof\sthem.\nDo\snot\suse\sthis\sversion\sexcept\sfor\sdebugging\sSQLite\sitself.\s(CVS\s883)
-D 2003-03-27T12:51:24
+C Changes\sto\sthe\s"sqlite"\sstructure\sthat\sallow\ssimultaneous\soperations\son\nmultiple\sdatabase\sfiles.\s\sMany\sregession\stests\spass\s-\sbut\snot\sall\sof\sthem.\nDo\snot\suse\sthis\sversion\sexcept\sfor\sdebugging\sSQLite\sitself.\s(CVS\s1731)
+D 2003-03-27T12:51:25
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f0c5bcf72cf393ea4c5cd126d085cb959eebd5f2
+P d2fb2bb50cf1e13feb90995079f291384abd6ba9
 R 6683142d762d7951c57ba32402494ae2
 U drh
-Z fa7baaef0faab26ced3760ebfbc99fb5
+Z 12d4ac3ac6d1943a9fe5bf03ce5b85bc
