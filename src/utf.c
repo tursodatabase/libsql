@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.23 2004/06/22 22:04:46 drh Exp $
+** $Id: utf.c,v 1.24 2004/06/23 00:23:49 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -262,6 +262,23 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     goto translate_out;
   }
 
+  /* Set len to the maximum number of bytes required in the output buffer. */
+  if( desiredEnc==SQLITE_UTF8 ){
+    /* When converting from UTF-16, the maximum growth results from
+    ** translating a 2-byte character to a 3-byte UTF-8 character (i.e.
+    ** code-point 0xFFFC). A single byte is required for the output string
+    ** nul-terminator.
+    */
+    len = (pMem->n/2) * 3 + 1;
+  }else{
+    /* When converting from UTF-8 to UTF-16 the maximum growth is caused
+    ** when a 1-byte UTF-8 character is translated into a 2-byte UTF-16
+    ** character. Two bytes are required in the output buffer for the
+    ** nul-terminator.
+    */
+    len = pMem->n * 2 + 2;
+  }
+
   /* Set zIn to point at the start of the input buffer and zTerm to point 1
   ** byte past the end.
   **
@@ -271,7 +288,6 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   */
   zIn = pMem->z;
   zTerm = &zIn[pMem->n];
-  len = pMem->n*2 + 2;
   if( len>NBFS ){
     zOut = sqliteMallocRaw(len);
     if( !zOut ) return SQLITE_NOMEM;
@@ -321,8 +337,8 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
       WRITE_UTF8(z, 0);
       pMem->n = (z-zOut)-1;
     }
-    assert( pMem->n+1<=len );
   }
+  assert( (pMem->n+(desiredEnc==SQLITE_UTF8?1:2))<=len );
 
   sqlite3VdbeMemRelease(pMem);
   pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
