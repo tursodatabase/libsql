@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.216 2003/04/16 02:17:36 drh Exp $
+** $Id: vdbe.c,v 1.217 2003/04/16 21:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3250,9 +3250,7 @@ case OP_Commit: {
       rc = SQLITE_CONSTRAINT;
     }
     if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-    if( rc ) break;
   }
-  assert( rc==SQLITE_OK );
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( db->aDb[i].inTrans ){
       rc = sqliteBtreeCommit(db->aDb[i].pBt);

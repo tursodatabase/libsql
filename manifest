@@ -1,5 +1,5 @@
-C Fix\sthe\sauthorizer\sso\sthat\sit\scorrectly\sinterprets\sattempts\sto\sread\sthe\nOLD\sand\sNEW\spseudo-tables\sof\sa\strigger.\s(CVS\s911)
-D 2003-04-16T20:24:52
+C Rollback\sif\sa\scommit\shook\sfails.\s(CVS\s912)
+D 2003-04-16T21:03:14
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 4ca4499d367548385b8e9fc67eb360cd1ca95b8a
 F src/update.c a60470d07cdd4ff3c11c5418f8055f2f41b3d751
 F src/util.c 13c338a7d0e1e6290ca227edb0d6d7be6a7c7127
 F src/vacuum.c ac65e9578506a0cdf70ece2668e5b22f4895477c
-F src/vdbe.c 45f7167eebd82f52dd73501f2a30ecb398f5d154
+F src/vdbe.c ef99c9f6189218ccf7e19a45bf7de637f970c999
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4326b52a39cad4632dc2db37aa53a285a31af138
-R ab42ed9ff9763ccb3d8ccf7bcec33d8d
+P f04bd43254b3ba3fccc842214115d4c298e28138
+R ba05498314c5f31c57ab60797b0329b3
 U drh
-Z bd7545b4d009a5ef647f9ab75c0af40e
+Z a431049f257620a5d96f06bc4fc52099
