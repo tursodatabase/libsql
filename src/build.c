@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.266 2004/11/05 05:23:59 drh Exp $
+** $Id: build.c,v 1.267 2004/11/05 09:19:28 danielk1977 Exp $
 =======
-** $Id: build.c,v 1.266 2004/11/05 05:23:59 drh Exp $
+** $Id: build.c,v 1.267 2004/11/05 09:19:28 danielk1977 Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -1647,7 +1647,8 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** The "#0" in the SQL is a special constant that means whatever value
   ** is on the top of the stack.  See sqlite3RegisterExpr().
   */
-  sqlite3NestedParse(pParse, "UPDATE %Q.%Q SET rootpage=#0 WHERE rootpage=%d",
+  sqlite3NestedParse(pParse, 
+     "UPDATE %Q.%Q SET rootpage=%d WHERE #0 AND rootpage=#0",
      pParse->db->aDb[iDb].zName, SCHEMA_TABLE(iDb), iTable);
 #endif
 }
@@ -1659,7 +1660,6 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
 ** is also added (this can happen with an auto-vacuum database).
 */
 static void destroyTable(Parse *pParse, Table *pTab){
-  Vdbe *v = pParse->pVdbe;
 #ifdef SQLITE_OMIT_AUTOVACUUM
   destroyRootPage(pParse, pTab->tnum, pTab->iDb);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -2687,7 +2687,7 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   if( v==0 ) return;
   sqlite3CodeVerifySchema(pParse, iDb);
   pParse->writeMask |= 1<<iDb;
-  if( setStatement ){
+  if( setStatement && pParse->nested==0 ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
   }
   if( iDb!=1 && pParse->db->aDb[1].pBt!=0 ){
