@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.4 2000/06/21 13:59:14 drh Exp $
+# $Id: update.test,v 1.5 2001/02/19 18:24:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -90,47 +90,301 @@ do_test update-3.8 {
   execsql {UPDATE test1 SET F2=f1, F1=f2}
   execsql {SELECT * FROM test1 ORDER BY F1}
 } {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1024 10}
-
-# Create an index and make sure updating works with an index.
-#
 do_test update-3.9 {
-  execsql {CREATE INDEX index1 ON test1(f1)}
-  execsql {CREATE INDEX index2 ON test1(f1)}
-  execsql {UPDATE test1 SET f1=1025 WHERE f2==10}
-  execsql {SELECT * FROM test1 ORDER BY f1}
-} {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1025 10}
-do_test update-3.10 {
-  execsql {SELECT * FROM test1 WHERE f1=1025}
-} {1025 10}
-do_test update-3.11 {
-  execsql {UPDATE test1 SET f2=11 WHERE f1==1025}
-  execsql {SELECT * FROM test1 ORDER BY f1}
-} {2 1 4 2 8 3 16 4 32 5 64 6 128 7 256 8 512 9 1025 11}
-do_test update-3.12 {
-  execsql {SELECT * FROM test1 WHERE f1=1025}
-} {1025 11}
+  execsql {UPDATE test1 SET F2=f1, F1=f2}
+  execsql {SELECT * FROM test1 ORDER BY F1}
+} {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
+
+# Create duplicate entries and make sure updating still
+# works.
+#
+do_test update-4.0 {
+  execsql {
+    DELETE FROM test1 WHERE f1<=5;
+    INSERT INTO test1(f1,f2) VALUES(8,88);
+    INSERT INTO test1(f1,f2) VALUES(8,888);
+    INSERT INTO test1(f1,f2) VALUES(77,128);
+    INSERT INTO test1(f1,f2) VALUES(777,128);
+  }
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-4.1 {
+  execsql {UPDATE test1 SET f2=f2+1 WHERE f1==8}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 889 9 512 10 1024 77 128 777 128}
+do_test update-4.2 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2>800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 888 9 512 10 1024 77 128 777 128}
+do_test update-4.3 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2<800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-4.4 {
+  execsql {UPDATE test1 SET f1=f1+1 WHERE f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 778 128}
+do_test update-4.5 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1>100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
+do_test update-4.6 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+
+# Repeat the previous sequence of tests with an index.
+#
+do_test update-5.0 {
+  execsql {CREATE INDEX idx1 ON test1(f1)}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-5.1 {
+  execsql {UPDATE test1 SET f2=f2+1 WHERE f1==8}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 889 9 512 10 1024 77 128 777 128}
+do_test update-5.2 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2>800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 888 9 512 10 1024 77 128 777 128}
+do_test update-5.3 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2<800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-5.4 {
+  execsql {UPDATE test1 SET f1=f1+1 WHERE f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 778 128}
+do_test update-5.4.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-5.4.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {778 128}
+do_test update-5.4.3 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-5.5 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1>100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
+do_test update-5.5.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-5.5.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-5.5.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-5.5.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-5.6 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-5.6.1 {
+  execsql {SELECT * FROM test1 WHERE f1==77 ORDER BY f1,f2}
+} {77 128}
+do_test update-5.6.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-5.6.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-5.6.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 256 8 888}
+
+# Repeat the previous sequence of tests with a different index.
+#
+do_test update-6.0 {
+  execsql {DROP INDEX idx1}
+  execsql {CREATE INDEX idx1 ON test1(f2)}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-6.1 {
+  execsql {UPDATE test1 SET f2=f2+1 WHERE f1==8}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 889 9 512 10 1024 77 128 777 128}
+do_test update-6.1.1 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 89 8 257 8 889}
+do_test update-6.1.2 {
+  execsql {SELECT * FROM test1 WHERE f2==89 ORDER BY f1,f2}
+} {8 89}
+do_test update-6.1.3 {
+  execsql {SELECT * FROM test1 WHERE f1==88 ORDER BY f1,f2}
+} {}
+do_test update-6.2 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2>800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 888 9 512 10 1024 77 128 777 128}
+do_test update-6.3 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2<800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-6.3.1 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 256 8 888}
+do_test update-6.3.2 {
+  execsql {SELECT * FROM test1 WHERE f2==89 ORDER BY f1,f2}
+} {}
+do_test update-6.3.3 {
+  execsql {SELECT * FROM test1 WHERE f2==88 ORDER BY f1,f2}
+} {8 88}
+do_test update-6.4 {
+  execsql {UPDATE test1 SET f1=f1+1 WHERE f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 778 128}
+do_test update-6.4.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-6.4.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {778 128}
+do_test update-6.4.3 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-6.5 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1>100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
+do_test update-6.5.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-6.5.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-6.5.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-6.5.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-6.6 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-6.6.1 {
+  execsql {SELECT * FROM test1 WHERE f1==77 ORDER BY f1,f2}
+} {77 128}
+do_test update-6.6.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-6.6.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-6.6.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 256 8 888}
+
+# Repeat the previous sequence of tests with multiple
+# indices
+#
+do_test update-7.0 {
+  execsql {CREATE INDEX idx2 ON test1(f2)}
+  execsql {CREATE INDEX idx3 ON test1(f1,f2)}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-7.1 {
+  execsql {UPDATE test1 SET f2=f2+1 WHERE f1==8}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 889 9 512 10 1024 77 128 777 128}
+do_test update-7.1.1 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 89 8 257 8 889}
+do_test update-7.1.2 {
+  execsql {SELECT * FROM test1 WHERE f2==89 ORDER BY f1,f2}
+} {8 89}
+do_test update-7.1.3 {
+  execsql {SELECT * FROM test1 WHERE f1==88 ORDER BY f1,f2}
+} {}
+do_test update-7.2 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2>800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 89 8 257 8 888 9 512 10 1024 77 128 777 128}
+do_test update-7.3 {
+  execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2<800}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-7.3.1 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 256 8 888}
+do_test update-7.3.2 {
+  execsql {SELECT * FROM test1 WHERE f2==89 ORDER BY f1,f2}
+} {}
+do_test update-7.3.3 {
+  execsql {SELECT * FROM test1 WHERE f2==88 ORDER BY f1,f2}
+} {8 88}
+do_test update-7.4 {
+  execsql {UPDATE test1 SET f1=f1+1 WHERE f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 778 128}
+do_test update-7.4.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-7.4.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {778 128}
+do_test update-7.4.3 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-7.5 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1>100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 8 88 8 128 8 256 8 888 9 512 10 1024 78 128 777 128}
+do_test update-7.5.1 {
+  execsql {SELECT * FROM test1 WHERE f1==78 ORDER BY f1,f2}
+} {78 128}
+do_test update-7.5.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-7.5.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-7.5.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 128 8 256 8 888}
+do_test update-7.6 {
+  execsql {UPDATE test1 SET f1=f1-1 WHERE f1<=100 and f2==128}
+  execsql {SELECT * FROM test1 ORDER BY f1,f2}
+} {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}
+do_test update-7.6.1 {
+  execsql {SELECT * FROM test1 WHERE f1==77 ORDER BY f1,f2}
+} {77 128}
+do_test update-7.6.2 {
+  execsql {SELECT * FROM test1 WHERE f1==778 ORDER BY f1,f2}
+} {}
+do_test update-7.6.3 {
+  execsql {SELECT * FROM test1 WHERE f1==777 ORDER BY f1,f2}
+} {777 128}
+do_test update-7.6.4 {
+  execsql {SELECT * FROM test1 WHERE f1==8 ORDER BY f1,f2}
+} {8 88 8 256 8 888}
 
 # Error messages
 #
-do_test update-4.1 {
+do_test update-9.1 {
   set v [catch {execsql {
     UPDATE test1 SET x=11 WHERE f1=1025
   }} msg]
   lappend v $msg
 } {1 {no such column: x}}
-do_test update-4.2 {
+do_test update-9.2 {
   set v [catch {execsql {
     UPDATE test1 SET f1=x(11) WHERE f1=1025
   }} msg]
   lappend v $msg
 } {1 {no such function: x}}
-do_test update-4.3 {
+do_test update-9.3 {
   set v [catch {execsql {
     UPDATE test1 SET f1=11 WHERE x=1025
   }} msg]
   lappend v $msg
 } {1 {no such column: x}}
-do_test update-4.4 {
+do_test update-9.4 {
   set v [catch {execsql {
     UPDATE test1 SET f1=11 WHERE x(f1)=1025
   }} msg]

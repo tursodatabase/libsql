@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.29 2000/09/30 22:46:07 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.30 2001/02/19 18:24:22 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -61,6 +61,12 @@ all code except for a few areas which are unreachable or which are
 only reached when <tt>malloc()</tt> fails.  The code has been tested
 for memory leaks and is found to be clean.</p>
 
+<p><b>Important Note:</b>  A bug was found in the processing of UPDATE
+statements when the WHERE clause contained some terms that could be 
+satisfied using indices and other terms which could not.  The problem
+was fixed in version 1.0.21.  Users of prior versions of SQLite should
+consider upgrading.</p>
+
 <p>
 Among the SQL features that SQLite does not currently implement are:</p>
 
@@ -75,7 +81,8 @@ Among the SQL features that SQLite does not currently implement are:</p>
 <h2>Important News Flash!</h2>
 <p>
 The SQLite file format was changed in an incompatible way on
-Aug 2, 2000.  If you are updated the library and have databases
+Aug 2, 2000 (prior to version 1.0, when SQLite was still in Beta).
+If you are updated the library and have databases
 built using the old version of the library, you should save your
 old databases into an ASCII file then reimport the
 database using the new library.  For example, if you change the

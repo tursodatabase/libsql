@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Feb 19 (1.0.21)} {
+<li>The UPDATE statement was not working when the WHERE clause contained
+    some terms that could be satisfied using indices and other terms that
+    could not.  Fixed.</li>
+}
+
 chng {2001 Feb 11 (1.0.20)} {
 <li>Merge development changes into the main trunk.  Future work toward
     using a BTree file structure will use a separate CVS source tree.  This
