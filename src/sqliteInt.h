@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.184 2003/05/10 03:04:34 jplyon Exp $
+** @(#) $Id: sqliteInt.h,v 1.185 2003/05/17 17:35:12 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -241,6 +241,38 @@ struct Db {
 };
 
 /*
+** These macros can be used to test, set, or clear bits in the 
+** Db.flags field.
+*/
+#define DbHasProperty(D,I,P)     (((D)->aDb[I].flags&(P))==(P))
+#define DbHasAnyProperty(D,I,P)  (((D)->aDb[I].flags&(P))!=0)
+#define DbSetProperty(D,I,P)     (D)->aDb[I].flags|=(P)
+#define DbClearProperty(D,I,P)   (D)->aDb[I].flags&=~(P)
+
+/*
+** Allowed values for the DB.flags field.
+**
+** The DB_Locked flag is set when the first OP_Transaction or OP_Checkpoint
+** opcode is emitted for a database.  This prevents multiple occurances
+** of those opcodes for the same database in the same program.  Similarly,
+** the DB_Cookie flag is set when the OP_VerifyCookie opcode is emitted,
+** and prevents duplicate OP_VerifyCookies from taking up space and slowing
+** down execution.
+**
+** The DB_SchemaLoaded flag is set after the database schema has been
+** read into internal hash tables.
+**
+** DB_UnresetViews means that one or more views have column names that
+** have been filled out.  If the schema changes, these column names might
+** changes and so the view will need to be reset.
+*/
+#define DB_Locked          0x0001  /* OP_Transaction opcode has been emitted */
+#define DB_Cookie          0x0002  /* OP_VerifyCookie opcode has been emiited */
+#define DB_SchemaLoaded    0x0004  /* The schema has been loaded */
+#define DB_UnresetViews    0x0008  /* Some views have defined column names */
+
+
+/*
 ** Each database is an instance of the following structure.
 **
 ** The sqlite.file_format is initialized by the database file
@@ -293,7 +325,11 @@ struct sqlite {
 };
 
 /*
-** Possible values for the sqlite.flags.
+** Possible values for the sqlite.flags and or Db.flags fields.
+**
+** On sqlite.flags, the SQLITE_InTrans value means that we have
+** executed a BEGIN.  On Db.flags, SQLITE_InTrans means a statement
+** transaction is active on that particular database file.
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_Initialized    0x00000002  /* True after initialization */
@@ -306,10 +342,7 @@ struct sqlite {
                                           /*   the count using a callback. */
 #define SQLITE_NullCallback   0x00000080  /* Invoke the callback once if the */
                                           /*   result set is empty */
-/*#define SQLITE_ResultDetails  0x00000100 * (UNUSED -- flag free for reuse) */
-#define SQLITE_UnresetViews   0x00000200  /* True if one or more views have */
-                                          /*   defined column names */
-#define SQLITE_ReportTypes    0x00000400  /* Include information on datatypes */
+#define SQLITE_ReportTypes    0x00000200  /* Include information on datatypes */
                                           /*   in 4th argument of callback */
 
 /*
@@ -817,8 +850,6 @@ struct Parse {
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
-  u8 schemaVerified;   /* True if an OP_VerifySchema has been coded someplace
-                       ** other than after an OP_Transaction */
   u8 iDb;              /* Index of database whose schema is being parsed */
   u8 useCallback;      /* True if callbacks should be used to report results */
   int useDb;           /* Restrict references to tables in this database */
@@ -1077,7 +1108,7 @@ Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
 int sqliteRandomInteger(void);
 void sqliteRollbackAll(sqlite*);
-void sqliteCodeVerifySchema(Parse*);
+void sqliteCodeVerifySchema(Parse*, int);
 void sqliteBeginTransaction(Parse*, int);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);

@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.222 2003/05/10 03:36:54 drh Exp $
+** $Id: vdbe.c,v 1.223 2003/05/17 17:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3193,7 +3193,9 @@ case OP_Checkpoint: {
 case OP_Transaction: {
   int busy = 1;
   int i = pOp->p1;
-  while( i>=0 && i<db->nDb && db->aDb[i].pBt!=0 && busy ){
+  assert( i>=0 && i<db->nDb );
+  if( db->aDb[i].inTrans ) break;
+  while( db->aDb[i].pBt!=0 && busy ){
     rc = sqliteBtreeBeginTrans(db->aDb[i].pBt);
     switch( rc ){
       case SQLITE_BUSY: {
@@ -4547,7 +4549,7 @@ case OP_IdxGE: {
 ** See also: Clear
 */
 case OP_Destroy: {
-  sqliteBtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1);
+  rc = sqliteBtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
 
@@ -4564,7 +4566,7 @@ case OP_Destroy: {
 ** See also: Destroy
 */
 case OP_Clear: {
-  sqliteBtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
+  rc = sqliteBtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
 

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.9 2003/04/25 13:22:53 drh Exp $
+** $Id: btree_rb.c,v 1.10 2003/05/17 17:35:11 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -31,10 +31,12 @@
 typedef struct BtRbTree BtRbTree;
 typedef struct BtRbNode BtRbNode;
 typedef struct BtRollbackOp BtRollbackOp;
+typedef struct Rbtree Rbtree;
+typedef struct RbtCursor RbtCursor;
 
 /* Forward declarations */
-static BtOps sqliteBtreeOps;
-static BtCursorOps sqliteBtreeCursorOps;
+static BtOps sqliteRbtreeOps;
+static BtCursorOps sqliteRbtreeCursorOps;
 
 /*
  * During each transaction (or checkpoint), a linked-list of
@@ -68,14 +70,14 @@ struct BtRollbackOp {
 #define ROLLBACK_CREATE 3 /* Create a table */
 #define ROLLBACK_DROP   4 /* Drop a table */
 
-struct Btree {
+struct Rbtree {
   BtOps *pOps;    /* Function table */
   int aMetaData[SQLITE_N_BTREE_META];
 
   int next_idx;   /* next available table index */
   Hash tblHash;   /* All created tables, by index */
-  u8 isAnonymous; /* True if this Btree is to be deleted when closed */
-  u8 eTransState; /* State of this Btree wrt transactions */
+  u8 isAnonymous; /* True if this Rbtree is to be deleted when closed */
+  u8 eTransState; /* State of this Rbtree wrt transactions */
 
   BtRollbackOp *pTransRollback; 
   BtRollbackOp *pCheckRollback;
@@ -83,7 +85,7 @@ struct Btree {
 };
 
 /*
-** Legal values for Btree.eTransState.
+** Legal values for Rbtree.eTransState.
 */
 #define TRANS_NONE           0  /* No transaction is in progress */
 #define TRANS_INTRANSACTION  1  /* A transaction is in progress */
@@ -91,21 +93,21 @@ struct Btree {
 #define TRANS_ROLLBACK       3  /* We are currently rolling back a checkpoint or
                                  * transaction. */
 
-struct BtCursor {
+struct RbtCursor {
   BtCursorOps *pOps;        /* Function table */
-  Btree    *pBtree;
+  Rbtree    *pRbtree;
   BtRbTree *pTree;
-  int       iTree;          /* Index of pTree in pBtree */
+  int       iTree;          /* Index of pTree in pRbtree */
   BtRbNode *pNode;
   u8 eSkip;                 /* Determines if next step operation is a no-op */
 };
 
 /*
-** Legal values for BtCursor.eSkip.
+** Legal values for RbtCursor.eSkip.
 */
 #define SKIP_NONE     0   /* Always step the cursor */
-#define SKIP_NEXT     1   /* The next sqliteBtreeNext() is a no-op */
-#define SKIP_PREV     2   /* The next sqliteBtreePrevious() is a no-op */
+#define SKIP_NEXT     1   /* The next sqliteRbtreeNext() is a no-op */
+#define SKIP_PREV     2   /* The next sqliteRbtreePrevious() is a no-op */
 #define SKIP_INVALID  3   /* Calls to Next() and Previous() are invalid */
 
 struct BtRbTree {
@@ -126,11 +128,16 @@ struct BtRbNode {
 };
 
 /* Forward declarations */
-static int memBtreeMoveto(BtCursor* pCur, const void *pKey, int nKey,int *pRes);
-static int memBtreeClearTable(Btree* tree, int n);
-static int memBtreeNext(BtCursor* pCur, int *pRes);
-static int memBtreeLast(BtCursor* pCur, int *pRes);
-static int memBtreePrevious(BtCursor* pCur, int *pRes);
+static int memRbtreeMoveto(
+  RbtCursor* pCur,
+  const void *pKey,
+  int nKey,
+  int *pRes
+);
+static int memRbtreeClearTable(Rbtree* tree, int n);
+static int memRbtreeNext(RbtCursor* pCur, int *pRes);
+static int memRbtreeLast(RbtCursor* pCur, int *pRes);
+static int memRbtreePrevious(RbtCursor* pCur, int *pRes);
 
 /*
  * The key-compare function for the red-black trees. Returns as follows:
@@ -359,7 +366,7 @@ static void check_redblack_tree(BtRbTree * tree, char ** msg)
 } 
 
 /*
- * Node pX has just been inserted into pTree (by code in sqliteBtreeInsert()).
+ * Node pX has just been inserted into pTree (by code in sqliteRbtreeInsert()).
  * It is possible that pX is a red node with a red parent, which is a violation
  * of the red-black tree properties. This function performs rotations and 
  * color changes to rebalance the tree
@@ -540,57 +547,61 @@ void do_delete_balancing(BtRbTree *pTree, BtRbNode *pX, BtRbNode *pParent)
 }
 
 /*
- * Create table n in tree pBtree. Table n must not exist.
+ * Create table n in tree pRbtree. Table n must not exist.
  */
-static void btreeCreateTable(Btree* pBtree, int n)
+static void btreeCreateTable(Rbtree* pRbtree, int n)
 {
   BtRbTree *pNewTbl = sqliteMalloc(sizeof(BtRbTree));
-  sqliteHashInsert(&pBtree->tblHash, 0, n, pNewTbl);
+  sqliteHashInsert(&pRbtree->tblHash, 0, n, pNewTbl);
 }
 
 /*
- * Log a single "rollback-op" for the given Btree. See comments for struct
+ * Log a single "rollback-op" for the given Rbtree. See comments for struct
  * BtRollbackOp.
  */
-static void btreeLogRollbackOp(Btree* pBtree, BtRollbackOp *pRollbackOp)
+static void btreeLogRollbackOp(Rbtree* pRbtree, BtRollbackOp *pRollbackOp)
 {
-  assert( pBtree->eTransState == TRANS_INCHECKPOINT ||
-      pBtree->eTransState == TRANS_INTRANSACTION );
-  if( pBtree->eTransState == TRANS_INTRANSACTION ){
-    pRollbackOp->pNext = pBtree->pTransRollback;
-    pBtree->pTransRollback = pRollbackOp;
+  assert( pRbtree->eTransState == TRANS_INCHECKPOINT ||
+      pRbtree->eTransState == TRANS_INTRANSACTION );
+  if( pRbtree->eTransState == TRANS_INTRANSACTION ){
+    pRollbackOp->pNext = pRbtree->pTransRollback;
+    pRbtree->pTransRollback = pRollbackOp;
   }
-  if( pBtree->eTransState == TRANS_INCHECKPOINT ){
-    if( !pBtree->pCheckRollback ){
-      pBtree->pCheckRollbackTail = pRollbackOp;
+  if( pRbtree->eTransState == TRANS_INCHECKPOINT ){
+    if( !pRbtree->pCheckRollback ){
+      pRbtree->pCheckRollbackTail = pRollbackOp;
     }
-    pRollbackOp->pNext = pBtree->pCheckRollback;
-    pBtree->pCheckRollback = pRollbackOp;
+    pRollbackOp->pNext = pRbtree->pCheckRollback;
+    pRbtree->pCheckRollback = pRollbackOp;
   }
 }
 
-int sqliteRBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree)
-{
-  *ppBtree = (Btree *)sqliteMalloc(sizeof(Btree));
-  sqliteHashInit(&(*ppBtree)->tblHash, SQLITE_HASH_INT, 0);
+int sqliteRbtreeOpen(
+  const char *zFilename,
+  int mode,
+  int nPg,
+  Rbtree **ppRbtree
+){
+  *ppRbtree = (Rbtree *)sqliteMalloc(sizeof(Rbtree));
+  sqliteHashInit(&(*ppRbtree)->tblHash, SQLITE_HASH_INT, 0);
 
   /* Create a binary tree for the SQLITE_MASTER table at location 2 */
-  btreeCreateTable(*ppBtree, 2);
-  (*ppBtree)->next_idx = 3;
-  (*ppBtree)->pOps = &sqliteBtreeOps;
+  btreeCreateTable(*ppRbtree, 2);
+  (*ppRbtree)->next_idx = 3;
+  (*ppRbtree)->pOps = &sqliteRbtreeOps;
   /* Set file type to 4; this is so that "attach ':memory:' as ...."  does not
   ** think that the database in uninitialised and refuse to attach
   */
-  (*ppBtree)->aMetaData[2] = 4;
+  (*ppRbtree)->aMetaData[2] = 4;
   
   return SQLITE_OK;
 }
 
 /*
- * Create a new table in the supplied Btree. Set *n to the new table number.
+ * Create a new table in the supplied Rbtree. Set *n to the new table number.
  * Return SQLITE_OK if the operation is a success.
  */
-static int memBtreeCreateTable(Btree* tree, int* n)
+static int memRbtreeCreateTable(Rbtree* tree, int* n)
 {
   assert( tree->eTransState != TRANS_NONE );
 
@@ -610,14 +621,14 @@ static int memBtreeCreateTable(Btree* tree, int* n)
 }
 
 /*
- * Delete table n from the supplied Btree. 
+ * Delete table n from the supplied Rbtree. 
  */
-static int memBtreeDropTable(Btree* tree, int n)
+static int memRbtreeDropTable(Rbtree* tree, int n)
 {
   BtRbTree *pTree;
   assert( tree->eTransState != TRANS_NONE );
 
-  memBtreeClearTable(tree, n);
+  memRbtreeClearTable(tree, n);
   pTree = sqliteHashInsert(&tree->tblHash, 0, n, 0);
   assert(pTree);
   sqliteFree(pTree);
@@ -632,7 +643,7 @@ static int memBtreeDropTable(Btree* tree, int n)
   return SQLITE_OK;
 }
 
-static int memBtreeKeyCompare(BtCursor* pCur, const void *pKey, int nKey,
+static int memRbtreeKeyCompare(RbtCursor* pCur, const void *pKey, int nKey,
                                  int nIgnore, int *pRes)
 {
   assert(pCur);
@@ -651,40 +662,49 @@ static int memBtreeKeyCompare(BtCursor* pCur, const void *pKey, int nKey,
 }
 
 /*
- * Get a new cursor for table iTable of the supplied Btree. The wrFlag
+ * Get a new cursor for table iTable of the supplied Rbtree. The wrFlag
  * parameter is ignored, all cursors are capable of write-operations. 
  *
- * Note that BtCursor.eSkip and BtCursor.pNode both initialize to 0.
+ * Note that RbtCursor.eSkip and RbtCursor.pNode both initialize to 0.
  */
-static int memBtreeCursor(Btree* tree, int iTable, int wrFlag, BtCursor **ppCur)
-{
+static int memRbtreeCursor(
+  Rbtree* tree,
+  int iTable,
+  int wrFlag,
+  RbtCursor **ppCur
+){
   assert(tree);
-  *ppCur = sqliteMalloc(sizeof(BtCursor));
+  *ppCur = sqliteMalloc(sizeof(RbtCursor));
   (*ppCur)->pTree  = sqliteHashFind(&tree->tblHash, 0, iTable);
-  (*ppCur)->pBtree = tree;
+  (*ppCur)->pRbtree = tree;
   (*ppCur)->iTree  = iTable;
-  (*ppCur)->pOps = &sqliteBtreeCursorOps;
+  (*ppCur)->pOps = &sqliteRbtreeCursorOps;
 
   assert( (*ppCur)->pTree );
   return SQLITE_OK;
 }
 
 /*
- * Insert a new record into the Btree.  The key is given by (pKey,nKey)
+ * Insert a new record into the Rbtree.  The key is given by (pKey,nKey)
  * and the data is given by (pData,nData).  The cursor is used only to
  * define what database the record should be inserted into.  The cursor
  * is left pointing at the new record.
  *
  * If the key exists already in the tree, just replace the data. 
  */
-static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
-                             const void *pDataInput, int nData)
-{
+static int memRbtreeInsert(
+  RbtCursor* pCur,
+  const void *pKey,
+  int nKey,
+  const void *pDataInput,
+  int nData
+){
   void * pData;
   int match;
 
-  /* It is illegal to call sqliteBtreeInsert() if we are not in a transaction */
-  assert( pCur->pBtree->eTransState != TRANS_NONE );
+  /* It is illegal to call sqliteRbtreeInsert() if we are
+  ** not in a transaction */
+  assert( pCur->pRbtree->eTransState != TRANS_NONE );
 
   /* Take a copy of the input data now, in case we need it for the 
    * replace case */
@@ -702,7 +722,7 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
    * 
    * The new node is initially red.
    */
-  memBtreeMoveto( pCur, pKey, nKey, &match);
+  memRbtreeMoveto( pCur, pKey, nKey, &match);
   if( match ){
     BtRbNode *pNode = sqliteMalloc(sizeof(BtRbNode));
     pNode->nKey = nKey;
@@ -736,14 +756,14 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
     do_insert_balancing(pCur->pTree, pNode);
 
     /* Set up a rollback-op in case we have to roll this operation back */
-    if( pCur->pBtree->eTransState != TRANS_ROLLBACK ){
+    if( pCur->pRbtree->eTransState != TRANS_ROLLBACK ){
       BtRollbackOp *pOp = sqliteMalloc( sizeof(BtRollbackOp) );
       pOp->eOp = ROLLBACK_DELETE;
       pOp->iTab = pCur->iTree;
       pOp->nKey = pNode->nKey;
       pOp->pKey = sqliteMalloc( pOp->nKey );
       memcpy( pOp->pKey, pNode->pKey, pOp->nKey );
-      btreeLogRollbackOp(pCur->pBtree, pOp);
+      btreeLogRollbackOp(pCur->pRbtree, pOp);
     }
 
   }else{ 
@@ -751,7 +771,7 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
      * Just clobber the current nodes data. */
 
     /* Set up a rollback-op in case we have to roll this operation back */
-    if( pCur->pBtree->eTransState != TRANS_ROLLBACK ){
+    if( pCur->pRbtree->eTransState != TRANS_ROLLBACK ){
       BtRollbackOp *pOp = sqliteMalloc( sizeof(BtRollbackOp) );
       pOp->iTab = pCur->iTree;
       pOp->nKey = pCur->pNode->nKey;
@@ -760,7 +780,7 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
       pOp->nData = pCur->pNode->nData;
       pOp->pData = pCur->pNode->pData;
       pOp->eOp = ROLLBACK_INSERT;
-      btreeLogRollbackOp(pCur->pBtree, pOp);
+      btreeLogRollbackOp(pCur->pRbtree, pOp);
     }else{
       sqliteFree( pCur->pNode->pData );
     }
@@ -786,8 +806,12 @@ static int memBtreeInsert(BtCursor* pCur, const void *pKey, int nKey,
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than pKey.
 */
-static int memBtreeMoveto(BtCursor* pCur, const void *pKey, int nKey, int *pRes)
-{
+static int memRbtreeMoveto(
+  RbtCursor* pCur,
+  const void *pKey,
+  int nKey,
+  int *pRes
+){
   BtRbNode *pTmp = 0;
 
   pCur->pNode = pCur->pTree->pHead;
@@ -823,21 +847,22 @@ static int memBtreeMoveto(BtCursor* pCur, const void *pKey, int nKey, int *pRes)
 ** The cursor is left pointing at either the next or the previous
 ** entry.  If the cursor is left pointing to the next entry, then 
 ** the pCur->eSkip flag is set to SKIP_NEXT which forces the next call to 
-** sqliteBtreeNext() to be a no-op.  That way, you can always call
-** sqliteBtreeNext() after a delete and the cursor will be left
+** sqliteRbtreeNext() to be a no-op.  That way, you can always call
+** sqliteRbtreeNext() after a delete and the cursor will be left
 ** pointing to the first entry after the deleted entry.  Similarly,
 ** pCur->eSkip is set to SKIP_PREV is the cursor is left pointing to
 ** the entry prior to the deleted entry so that a subsequent call to
-** sqliteBtreePrevious() will always leave the cursor pointing at the
+** sqliteRbtreePrevious() will always leave the cursor pointing at the
 ** entry immediately before the one that was deleted.
 */
-static int memBtreeDelete(BtCursor* pCur)
+static int memRbtreeDelete(RbtCursor* pCur)
 {
   BtRbNode *pZ;      /* The one being deleted */
   BtRbNode *pChild;  /* The child of the spliced out node */
 
-  /* It is illegal to call sqliteBtreeDelete() if we are not in a transaction */
-  assert( pCur->pBtree->eTransState != TRANS_NONE );
+  /* It is illegal to call sqliteRbtreeDelete() if we are
+  ** not in a transaction */
+  assert( pCur->pRbtree->eTransState != TRANS_NONE );
 
   pZ = pCur->pNode;
   if( !pZ ){
@@ -846,7 +871,7 @@ static int memBtreeDelete(BtCursor* pCur)
 
   /* If we are not currently doing a rollback, set up a rollback op for this 
    * deletion */
-  if( pCur->pBtree->eTransState != TRANS_ROLLBACK ){
+  if( pCur->pRbtree->eTransState != TRANS_ROLLBACK ){
     BtRollbackOp *pOp = sqliteMalloc( sizeof(BtRollbackOp) );
     pOp->iTab = pCur->iTree;
     pOp->nKey = pZ->nKey;
@@ -854,7 +879,7 @@ static int memBtreeDelete(BtCursor* pCur)
     pOp->nData = pZ->nData;
     pOp->pData = pZ->pData;
     pOp->eOp = ROLLBACK_INSERT;
-    btreeLogRollbackOp(pCur->pBtree, pOp);
+    btreeLogRollbackOp(pCur->pRbtree, pOp);
   }
 
   /* First do a standard binary-tree delete (node pZ is to be deleted). How
@@ -867,9 +892,9 @@ static int memBtreeDelete(BtCursor* pCur)
     BtRbNode *pTmp;
     int dummy;
     pCur->eSkip = SKIP_NONE;
-    memBtreeNext(pCur, &dummy);
+    memRbtreeNext(pCur, &dummy);
     assert( dummy == 0 );
-    if( pCur->pBtree->eTransState == TRANS_ROLLBACK ){
+    if( pCur->pRbtree->eTransState == TRANS_ROLLBACK ){
       sqliteFree(pZ->pKey);
       sqliteFree(pZ->pData);
     }
@@ -884,14 +909,14 @@ static int memBtreeDelete(BtCursor* pCur)
   }else{
     int res;
     pCur->eSkip = SKIP_NONE;
-    memBtreeNext(pCur, &res);
+    memRbtreeNext(pCur, &res);
     pCur->eSkip = SKIP_NEXT;
     if( res ){
-      memBtreeLast(pCur, &res);
-      memBtreePrevious(pCur, &res);
+      memRbtreeLast(pCur, &res);
+      memRbtreePrevious(pCur, &res);
       pCur->eSkip = SKIP_PREV;
     }
-    if( pCur->pBtree->eTransState == TRANS_ROLLBACK ){
+    if( pCur->pRbtree->eTransState == TRANS_ROLLBACK ){
         sqliteFree(pZ->pKey);
         sqliteFree(pZ->pData);
     }
@@ -928,9 +953,9 @@ static int memBtreeDelete(BtCursor* pCur)
 }
 
 /*
- * Empty table n of the Btree.
+ * Empty table n of the Rbtree.
  */
-static int memBtreeClearTable(Btree* tree, int n)
+static int memRbtreeClearTable(Rbtree* tree, int n)
 {
   BtRbTree *pTree;
   BtRbNode *pNode;
@@ -974,7 +999,7 @@ static int memBtreeClearTable(Btree* tree, int n)
   return SQLITE_OK;
 }
 
-static int memBtreeFirst(BtCursor* pCur, int *pRes)
+static int memRbtreeFirst(RbtCursor* pCur, int *pRes)
 {
   if( pCur->pTree->pHead ){
     pCur->pNode = pCur->pTree->pHead;
@@ -991,7 +1016,7 @@ static int memBtreeFirst(BtCursor* pCur, int *pRes)
   return SQLITE_OK;
 }
 
-static int memBtreeLast(BtCursor* pCur, int *pRes)
+static int memRbtreeLast(RbtCursor* pCur, int *pRes)
 {
   if( pCur->pTree->pHead ){
     pCur->pNode = pCur->pTree->pHead;
@@ -1014,7 +1039,7 @@ static int memBtreeLast(BtCursor* pCur, int *pRes)
 ** was already pointing to the last entry in the database before
 ** this routine was called, then set *pRes=1.
 */
-static int memBtreeNext(BtCursor* pCur, int *pRes)
+static int memRbtreeNext(RbtCursor* pCur, int *pRes)
 {
   if( pCur->pNode && pCur->eSkip != SKIP_NEXT ){
     if( pCur->pNode->pRight ){
@@ -1041,7 +1066,7 @@ static int memBtreeNext(BtCursor* pCur, int *pRes)
   return SQLITE_OK;
 }
 
-static int memBtreePrevious(BtCursor* pCur, int *pRes)
+static int memRbtreePrevious(RbtCursor* pCur, int *pRes)
 {
   if( pCur->pNode && pCur->eSkip != SKIP_PREV ){
     if( pCur->pNode->pLeft ){
@@ -1068,7 +1093,7 @@ static int memBtreePrevious(BtCursor* pCur, int *pRes)
   return SQLITE_OK;
 }
 
-static int memBtreeKeySize(BtCursor* pCur, int *pSize)
+static int memRbtreeKeySize(RbtCursor* pCur, int *pSize)
 {
   if( pCur->pNode ){
     *pSize = pCur->pNode->nKey;
@@ -1078,7 +1103,7 @@ static int memBtreeKeySize(BtCursor* pCur, int *pSize)
   return SQLITE_OK;
 }
 
-static int memBtreeKey(BtCursor* pCur, int offset, int amt, char *zBuf)
+static int memRbtreeKey(RbtCursor* pCur, int offset, int amt, char *zBuf)
 {
   if( !pCur->pNode ) return 0;
   if( !pCur->pNode->pKey || ((amt + offset) <= pCur->pNode->nKey) ){
@@ -1091,7 +1116,7 @@ static int memBtreeKey(BtCursor* pCur, int offset, int amt, char *zBuf)
   assert(0);
 }
 
-static int memBtreeDataSize(BtCursor* pCur, int *pSize)
+static int memRbtreeDataSize(RbtCursor* pCur, int *pSize)
 {
   if( pCur->pNode ){
     *pSize = pCur->pNode->nData;
@@ -1101,7 +1126,7 @@ static int memBtreeDataSize(BtCursor* pCur, int *pSize)
   return SQLITE_OK;
 }
 
-static int memBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf)
+static int memRbtreeData(RbtCursor *pCur, int offset, int amt, char *zBuf)
 {
   if( !pCur->pNode ) return 0;
   if( (amt + offset) <= pCur->pNode->nData ){
@@ -1114,30 +1139,30 @@ static int memBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf)
   assert(0);
 }
 
-static int memBtreeCloseCursor(BtCursor* pCur)
+static int memRbtreeCloseCursor(RbtCursor* pCur)
 {
   sqliteFree(pCur);
   return SQLITE_OK;
 }
 
-static int memBtreeGetMeta(Btree* tree, int* aMeta)
+static int memRbtreeGetMeta(Rbtree* tree, int* aMeta)
 {
   memcpy( aMeta, tree->aMetaData, sizeof(int) * SQLITE_N_BTREE_META );
   return SQLITE_OK;
 }
 
-static int memBtreeUpdateMeta(Btree* tree, int* aMeta)
+static int memRbtreeUpdateMeta(Rbtree* tree, int* aMeta)
 {
   memcpy( tree->aMetaData, aMeta, sizeof(int) * SQLITE_N_BTREE_META );
   return SQLITE_OK;
 }
 
 /*
- * Check that each table in the Btree meets the requirements for a red-black
+ * Check that each table in the Rbtree meets the requirements for a red-black
  * binary tree. If an error is found, return an explanation of the problem in 
  * memory obtained from sqliteMalloc(). Parameters aRoot and nRoot are ignored. 
  */
-static char *memBtreeIntegrityCheck(Btree* tree, int* aRoot, int nRoot)
+static char *memRbtreeIntegrityCheck(Rbtree* tree, int* aRoot, int nRoot)
 {
   char * msg = 0;
   HashElem *p;
@@ -1151,30 +1176,30 @@ static char *memBtreeIntegrityCheck(Btree* tree, int* aRoot, int nRoot)
 }
 
 /*
- * Close the supplied Btree. Delete everything associated with it.
+ * Close the supplied Rbtree. Delete everything associated with it.
  */
-static int memBtreeClose(Btree* tree)
+static int memRbtreeClose(Rbtree* tree)
 {
   HashElem *p;
   while( (p=sqliteHashFirst(&tree->tblHash))!=0 ){
     tree->eTransState = TRANS_ROLLBACK;
-    memBtreeDropTable(tree, sqliteHashKeysize(p));
+    memRbtreeDropTable(tree, sqliteHashKeysize(p));
   }
   sqliteHashClear(&tree->tblHash);
   sqliteFree(tree);
   return SQLITE_OK;
 }
 
-static int memBtreeSetCacheSize(Btree* tree, int sz)
+static int memRbtreeSetCacheSize(Rbtree* tree, int sz)
 {
   return SQLITE_OK;
 }
 
-static int memBtreeSetSafetyLevel(Btree *pBt, int level){
+static int memRbtreeSetSafetyLevel(Rbtree *pBt, int level){
   return SQLITE_OK;
 }
 
-static int memBtreeBeginTrans(Btree* tree)
+static int memRbtreeBeginTrans(Rbtree* tree)
 {
   if( tree->eTransState != TRANS_NONE ) 
     return SQLITE_ERROR;
@@ -1197,7 +1222,7 @@ static void deleteRollbackList(BtRollbackOp *pOp){
   }
 }
 
-static int memBtreeCommit(Btree* tree){
+static int memRbtreeCommit(Rbtree* tree){
   /* Just delete pTransRollback and pCheckRollback */
   deleteRollbackList(tree->pCheckRollback);
   deleteRollbackList(tree->pTransRollback);
@@ -1209,39 +1234,39 @@ static int memBtreeCommit(Btree* tree){
 }
 
 /*
- * Execute and delete the supplied rollback-list on pBtree.
+ * Execute and delete the supplied rollback-list on pRbtree.
  */
-static void execute_rollback_list(Btree *pBtree, BtRollbackOp *pList)
+static void execute_rollback_list(Rbtree *pRbtree, BtRollbackOp *pList)
 {
   BtRollbackOp *pTmp;
-  BtCursor cur;
+  RbtCursor cur;
   int res;
 
-  cur.pBtree = pBtree;
+  cur.pRbtree = pRbtree;
   while( pList ){
     switch( pList->eOp ){
       case ROLLBACK_INSERT:
-        cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
+        cur.pTree  = sqliteHashFind( &pRbtree->tblHash, 0, pList->iTab );
         assert(cur.pTree);
         cur.iTree  = pList->iTab;
         cur.eSkip  = SKIP_NONE;
-        memBtreeInsert( &cur, pList->pKey,
+        memRbtreeInsert( &cur, pList->pKey,
             pList->nKey, pList->pData, pList->nData );
         break;
       case ROLLBACK_DELETE:
-        cur.pTree  = sqliteHashFind( &pBtree->tblHash, 0, pList->iTab );
+        cur.pTree  = sqliteHashFind( &pRbtree->tblHash, 0, pList->iTab );
         assert(cur.pTree);
         cur.iTree  = pList->iTab;
         cur.eSkip  = SKIP_NONE;
-        memBtreeMoveto(&cur, pList->pKey, pList->nKey, &res);
+        memRbtreeMoveto(&cur, pList->pKey, pList->nKey, &res);
         assert(res == 0);
-        memBtreeDelete( &cur );
+        memRbtreeDelete( &cur );
         break;
       case ROLLBACK_CREATE:
-        btreeCreateTable(pBtree, pList->iTab);
+        btreeCreateTable(pRbtree, pList->iTab);
         break;
       case ROLLBACK_DROP:
-        memBtreeDropTable(pBtree, pList->iTab);
+        memRbtreeDropTable(pRbtree, pList->iTab);
         break;
       default:
         assert(0);
@@ -1254,7 +1279,7 @@ static void execute_rollback_list(Btree *pBtree, BtRollbackOp *pList)
   }
 }
 
-static int memBtreeRollback(Btree* tree)
+static int memRbtreeRollback(Rbtree* tree)
 {
   tree->eTransState = TRANS_ROLLBACK;
   execute_rollback_list(tree, tree->pCheckRollback);
@@ -1266,7 +1291,7 @@ static int memBtreeRollback(Btree* tree)
   return SQLITE_OK;
 }
 
-static int memBtreeBeginCkpt(Btree* tree)
+static int memRbtreeBeginCkpt(Rbtree* tree)
 {
   if( tree->eTransState != TRANS_INTRANSACTION ) 
     return SQLITE_ERROR;
@@ -1277,7 +1302,7 @@ static int memBtreeBeginCkpt(Btree* tree)
   return SQLITE_OK;
 }
 
-static int memBtreeCommitCkpt(Btree* tree)
+static int memRbtreeCommitCkpt(Rbtree* tree)
 {
   if( tree->eTransState == TRANS_INCHECKPOINT ){ 
     if( tree->pCheckRollback ){
@@ -1291,7 +1316,7 @@ static int memBtreeCommitCkpt(Btree* tree)
   return SQLITE_OK;
 }
 
-static int memBtreeRollbackCkpt(Btree* tree)
+static int memRbtreeRollbackCkpt(Rbtree* tree)
 {
   if( tree->eTransState != TRANS_INCHECKPOINT ) return SQLITE_OK;
   tree->eTransState = TRANS_ROLLBACK;
@@ -1304,21 +1329,21 @@ static int memBtreeRollbackCkpt(Btree* tree)
 }
 
 #ifdef SQLITE_TEST
-static int memBtreePageDump(Btree* tree, int pgno, int rec)
+static int memRbtreePageDump(Rbtree* tree, int pgno, int rec)
 {
-  assert(!"Cannot call sqliteBtreePageDump");
+  assert(!"Cannot call sqliteRbtreePageDump");
   return SQLITE_OK;
 }
 
-static int memBtreeCursorDump(BtCursor* pCur, int* aRes)
+static int memRbtreeCursorDump(RbtCursor* pCur, int* aRes)
 {
-  assert(!"Cannot call sqliteBtreeCursorDump");
+  assert(!"Cannot call sqliteRbtreeCursorDump");
   return SQLITE_OK;
 }
 
-static struct Pager *memBtreePager(Btree* tree)
+static struct Pager *memRbtreePager(Rbtree* tree)
 {
-  assert(!"Cannot call sqliteBtreePager");
+  assert(!"Cannot call sqliteRbtreePager");
   return SQLITE_OK;
 }
 #endif
@@ -1326,60 +1351,60 @@ static struct Pager *memBtreePager(Btree* tree)
 /*
 ** Return the full pathname of the underlying database file.
 */
-static const char *memBtreeGetFilename(Btree *pBt){
+static const char *memRbtreeGetFilename(Rbtree *pBt){
   return 0;  /* A NULL return indicates there is no underlying file */
 }
 
 /*
 ** The copy file function is not implemented for the in-memory database
 */
-static int memBtreeCopyFile(Btree *pBt, Btree *pBt2){
+static int memRbtreeCopyFile(Rbtree *pBt, Rbtree *pBt2){
   return SQLITE_INTERNAL;  /* Not implemented */
 }
 
-static BtOps sqliteBtreeOps = {
-    memBtreeClose,
-    memBtreeSetCacheSize,
-    memBtreeSetSafetyLevel,
-    memBtreeBeginTrans,
-    memBtreeCommit,
-    memBtreeRollback,
-    memBtreeBeginCkpt,
-    memBtreeCommitCkpt,
-    memBtreeRollbackCkpt,
-    memBtreeCreateTable,
-    memBtreeCreateTable,
-    memBtreeDropTable,
-    memBtreeClearTable,
-    memBtreeCursor,
-    memBtreeGetMeta,
-    memBtreeUpdateMeta,
-    memBtreeIntegrityCheck,
-    memBtreeGetFilename,
-    memBtreeCopyFile,
+static BtOps sqliteRbtreeOps = {
+    (int(*)(Btree*)) memRbtreeClose,
+    (int(*)(Btree*,int)) memRbtreeSetCacheSize,
+    (int(*)(Btree*,int)) memRbtreeSetSafetyLevel,
+    (int(*)(Btree*)) memRbtreeBeginTrans,
+    (int(*)(Btree*)) memRbtreeCommit,
+    (int(*)(Btree*)) memRbtreeRollback,
+    (int(*)(Btree*)) memRbtreeBeginCkpt,
+    (int(*)(Btree*)) memRbtreeCommitCkpt,
+    (int(*)(Btree*)) memRbtreeRollbackCkpt,
+    (int(*)(Btree*,int*)) memRbtreeCreateTable,
+    (int(*)(Btree*,int*)) memRbtreeCreateTable,
+    (int(*)(Btree*,int)) memRbtreeDropTable,
+    (int(*)(Btree*,int)) memRbtreeClearTable,
+    (int(*)(Btree*,int,int,BtCursor**)) memRbtreeCursor,
+    (int(*)(Btree*,int*)) memRbtreeGetMeta,
+    (int(*)(Btree*,int*)) memRbtreeUpdateMeta,
+    (char*(*)(Btree*,int*,int)) memRbtreeIntegrityCheck,
+    (const char*(*)(Btree*)) memRbtreeGetFilename,
+    (int(*)(Btree*,Btree*)) memRbtreeCopyFile,
 
 #ifdef SQLITE_TEST
-    memBtreePageDump,
-    memBtreePager
+    (int(*)(Btree*,int,int)) memRbtreePageDump,
+    (struct Pager*(*)(Btree*)) memRbtreePager
 #endif
 };
 
-static BtCursorOps sqliteBtreeCursorOps = {
-    memBtreeMoveto,
-    memBtreeDelete,
-    memBtreeInsert,
-    memBtreeFirst,
-    memBtreeLast,
-    memBtreeNext,
-    memBtreePrevious,
-    memBtreeKeySize,
-    memBtreeKey,
-    memBtreeKeyCompare,
-    memBtreeDataSize,
-    memBtreeData,
-    memBtreeCloseCursor,
+static BtCursorOps sqliteRbtreeCursorOps = {
+    (int(*)(BtCursor*,const void*,int,int*)) memRbtreeMoveto,
+    (int(*)(BtCursor*)) memRbtreeDelete,
+    (int(*)(BtCursor*,const void*,int,const void*,int)) memRbtreeInsert,
+    (int(*)(BtCursor*,int*)) memRbtreeFirst,
+    (int(*)(BtCursor*,int*)) memRbtreeLast,
+    (int(*)(BtCursor*,int*)) memRbtreeNext,
+    (int(*)(BtCursor*,int*)) memRbtreePrevious,
+    (int(*)(BtCursor*,int*)) memRbtreeKeySize,
+    (int(*)(BtCursor*,int,int,char*)) memRbtreeKey,
+    (int(*)(BtCursor*,const void*,int,int,int*)) memRbtreeKeyCompare,
+    (int(*)(BtCursor*,int*)) memRbtreeDataSize,
+    (int(*)(BtCursor*,int,int,char*)) memRbtreeData,
+    (int(*)(BtCursor*)) memRbtreeCloseCursor,
 #ifdef SQLITE_TEST
-    memBtreeCursorDump,
+    (int(*)(BtCursor*,int*)) memRbtreeCursorDump,
 #endif
 
 };

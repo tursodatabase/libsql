@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.130 2003/05/04 17:58:26 drh Exp $
+** $Id: main.c,v 1.131 2003/05/17 17:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -29,6 +29,13 @@ typedef struct {
   char **pzErrMsg;    /* Error message stored here */
 } InitData;
 
+/*
+** Fill the InitData structure with an error message that indicates
+** that the database is corrupt.
+*/
+static void corruptSchema(InitData *pData){
+  sqliteSetString(pData->pzErrMsg, "malformed database schema", 0);
+}
 
 /*
 ** This is the callback routine for the code that initializes the
@@ -50,15 +57,19 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
   Parse sParse;
   int nErr = 0;
 
-  /* TODO: Do some validity checks on all fields.  In particular,
-  ** make sure fields do not contain NULLs. Otherwise we might core
-  ** when attempting to initialize from a corrupt database file. */
-
   assert( argc==5 );
+  if( argv[0]==0 ){
+    corruptSchema(pData);
+    return 1;
+  }
   switch( argv[0][0] ){
     case 'v':
     case 'i':
     case 't': {  /* CREATE TABLE, CREATE INDEX, or CREATE VIEW statements */
+      if( argv[2]==0 || argv[4]==0 ){
+        corruptSchema(pData);
+        return 1;
+      }
       if( argv[3] && argv[3][0] ){
         /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
         ** But because sParse.initFlag is set to 1, no VDBE code is generated
@@ -342,7 +353,10 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
     sqliteResetInternalSchema(db, 0);
   }
   if( sParse.rc==SQLITE_OK ){
-    db->aDb[iDb].flags |= SQLITE_Initialized;
+    DbSetProperty(db, iDb, DB_SchemaLoaded);
+    if( iDb==0 ){
+      DbSetProperty(db, 1, DB_SchemaLoaded);
+    }
   }else{
     sqliteResetInternalSchema(db, iDb);
   }
@@ -368,8 +382,8 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   assert( (db->flags & SQLITE_Initialized)==0 );
   rc = SQLITE_OK;
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-    if( db->aDb[i].flags & SQLITE_Initialized ) continue;
-    if( i==1 ) continue;  /* Skip the temp database - initialized with 0 */
+    if( DbHasProperty(db, i, DB_SchemaLoaded) ) continue;
+    assert( i!=1 );  /* Should have been initialized together with 0 */
     rc = sqliteInitOne(db, i, pzErrMsg);
   }
   if( rc==SQLITE_OK ){
@@ -961,14 +975,14 @@ int sqliteBtreeFactory(
       if (location == 1) {
         return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
       } else {
-        return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+        return sqliteRbtreeOpen(0, 0, 0, ppBtree);
       }
     } else {
       /* Always use in-core DB */
-      return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+      return sqliteRbtreeOpen(0, 0, 0, ppBtree);
     }
   }else if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
-    return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+    return sqliteRbtreeOpen(0, 0, 0, ppBtree);
   }else
 #endif
   {

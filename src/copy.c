@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.4 2003/04/24 01:45:04 drh Exp $
+** $Id: copy.c,v 1.5 2003/05/17 17:35:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -57,7 +57,7 @@ void sqliteCopy(
   }
   v = sqliteGetVdbe(pParse);
   if( v ){
-    sqliteBeginWriteOperation(pParse, 1, pTab->iDb==1);
+    sqliteBeginWriteOperation(pParse, 1, pTab->iDb);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);

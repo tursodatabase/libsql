@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.84 2003/05/16 02:30:27 drh Exp $
+** $Id: insert.c,v 1.85 2003/05/17 17:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -159,8 +159,7 @@ void sqliteInsert(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
-  sqliteBeginWriteOperation(pParse, pSelect || row_triggers_exist,
-         !row_triggers_exist && pTab->iDb==1);
+  sqliteBeginWriteOperation(pParse, pSelect || row_triggers_exist, pTab->iDb);
 
   /* if there are row triggers, allocate a temp table for new.* references. */
   if( row_triggers_exist ){

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.92 2003/04/25 15:37:58 drh Exp $
+** $Id: btree.c,v 1.93 2003/05/17 17:35:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3229,7 +3229,7 @@ static void checkList(
       FreelistInfo *pInfo = (FreelistInfo*)pOvfl->aPayload;
       int n = SWAB32(pCheck->pBt, pInfo->nFree);
       for(i=0; i<n; i++){
-        checkRef(pCheck, SWAB32(pCheck->pBt, pInfo->aFree[i]), zMsg);
+        checkRef(pCheck, SWAB32(pCheck->pBt, pInfo->aFree[i]), zContext);
       }
       N -= n;
     }

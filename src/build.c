@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.152 2003/05/02 14:32:13 drh Exp $
+** $Id: build.c,v 1.153 2003/05/17 17:35:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -36,12 +36,19 @@
 */
 void sqliteBeginParse(Parse *pParse, int explainFlag){
   sqlite *db = pParse->db;
+  int i;
   pParse->explain = explainFlag;
   if((db->flags & SQLITE_Initialized)==0 && pParse->initFlag==0 ){
     int rc = sqliteInit(db, &pParse->zErrMsg);
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;
       pParse->nErr++;
+    }
+  }
+  for(i=0; i<db->nDb; i++){
+    DbClearProperty(db, i, DB_Locked);
+    if( !db->aDb[i].inTrans ){
+      DbClearProperty(db, i, DB_Cookie);
     }
   }
 }
@@ -96,7 +103,6 @@ void sqliteExec(Parse *pParse){
       pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
     }
     pParse->colNamesSet = 0;
-    pParse->schemaVerified = 0;
   }else if( pParse->useCallback==0 ){
     pParse->rc = SQLITE_ERROR;
   }
@@ -263,7 +269,7 @@ void sqliteResetInternalSchema(sqlite *db, int iDb){
       sqliteDeleteTable(db, pTab);
     }
     sqliteHashClear(&temp1);
-    db->aDb[i].flags &= ~SQLITE_Initialized;
+    DbClearProperty(db, i, DB_SchemaLoaded);
     if( iDb>0 ) return;
   }
   assert( iDb==0 );
@@ -282,8 +288,9 @@ void sqliteResetInternalSchema(sqlite *db, int iDb){
       continue;
     }
     if( j<i ){
-      db->aDb[j++] = db->aDb[i];
+      db->aDb[j] = db->aDb[i];
     }
+    j++;
   }
   memset(&db->aDb[j], 0, (db->nDb-j)*sizeof(db->aDb[j]));
   db->nDb = j;
@@ -1137,7 +1144,7 @@ int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
     pSelTab->nCol = 0;
     pSelTab->aCol = 0;
     sqliteDeleteTable(0, pSelTab);
-    pParse->db->aDb[pTable->iDb].flags |= SQLITE_UnresetViews;
+    DbSetProperty(pParse->db, pTable->iDb, DB_UnresetViews);
   }else{
     pTable->nCol = 0;
     nErr++;
@@ -1171,18 +1178,18 @@ static void sqliteViewResetColumnNames(Table *pTable){
 }
 
 /*
-** Clear the column names from every VIEW.
+** Clear the column names from every VIEW in database idx.
 */
 static void sqliteViewResetAll(sqlite *db, int idx){
   HashElem *i;
-  if( (db->aDb[idx].flags & SQLITE_UnresetViews)==0 ) return;
+  if( !DbHasProperty(db, idx, DB_UnresetViews) ) return;
   for(i=sqliteHashFirst(&db->aDb[idx].tblHash); i; i=sqliteHashNext(i)){
     Table *pTab = sqliteHashData(i);
     if( pTab->pSelect ){
       sqliteViewResetColumnNames(pTab);
     }
   }
-  db->aDb[idx].flags &= ~SQLITE_UnresetViews;
+  DbClearProperty(db, idx, DB_UnresetViews);
 }
 
 /*
@@ -1286,12 +1293,12 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     Index *pIdx;
     Trigger *pTrigger;
     sqliteBeginWriteOperation(pParse, 0, pTable->iDb);
-    sqliteOpenMasterTable(v, pTable->iDb);
+
     /* Drop all triggers associated with the table being dropped */
     pTrigger = pTable->pTrigger;
     while( pTrigger ){
       SrcList *pNm;
-      assert( pTrigger->iDb==pTable->iDb );
+      assert( pTrigger->iDb==pTable->iDb || pTrigger->iDb==1 );
       pNm = sqliteSrcListAppend(0, 0, 0);
       pNm->a[0].zName = sqliteStrDup(pTrigger->name);
       pNm->a[0].zDatabase = sqliteStrDup(db->aDb[pTable->iDb].zName);
@@ -1302,16 +1309,27 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
         pTrigger = pTable->pTrigger;
       }
     }
+
+    /* Drop all SQLITE_MASTER entries that refer to the table */
+    sqliteOpenMasterTable(v, pTable->iDb);
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqliteVdbeChangeP3(v, base+1, pTable->zName, 0);
-    if( !pTable->iDb ){
+
+    /* Drop all SQLITE_TEMP_MASTER entries that refer to the table */
+    if( pTable->iDb!=1 ){
+      sqliteOpenMasterTable(v, 1);
+      base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
+      sqliteVdbeChangeP3(v, base+1, pTable->zName, 0);
+    }
+
+    if( pTable->iDb==0 ){
       sqliteChangeCookie(db, v);
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
       sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->iDb);
       for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->iDb);
+        sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pIdx->iDb);
       }
     }
     sqliteEndWriteOperation(pParse);
@@ -2117,15 +2135,15 @@ void sqliteRollbackTransaction(Parse *pParse){
 ** Generate VDBE code that will verify the schema cookie for all
 ** named database files.
 */
-void sqliteCodeVerifySchema(Parse *pParse){
-  int i;
+void sqliteCodeVerifySchema(Parse *pParse, int iDb){
   sqlite *db = pParse->db;
   Vdbe *v = sqliteGetVdbe(pParse);
-  for(i=0; i<db->nDb; i++){
-    if( i==1 || db->aDb[i].pBt==0 ) continue;
-    sqliteVdbeAddOp(v, OP_VerifyCookie, i, db->aDb[i].schema_cookie);
+  assert( iDb>=0 && iDb<db->nDb );
+  assert( db->aDb[iDb].pBt!=0 );
+  if( iDb!=1 && !DbHasProperty(db, iDb, DB_Cookie) ){
+    sqliteVdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
+    DbSetProperty(db, iDb, DB_Cookie);
   }
-  pParse->schemaVerified = 1;
 }
 
 /*
@@ -2141,47 +2159,49 @@ void sqliteCodeVerifySchema(Parse *pParse){
 ** can be checked before any changes are made to the database, it is never
 ** necessary to undo a write and the checkpoint should not be set.
 **
-** The tempOnly flag indicates that only temporary tables will be changed
-** during this write operation.  The primary database table is not
-** write-locked.  Only the temporary database file gets a write lock.
-** Other processes can continue to read or write the primary database file.
+** Only database iDb and the temp database are made writable by this call.
+** If iDb==0, then the main and temp databases are made writable.   If
+** iDb==1 then only the temp database is made writable.  If iDb>1 then the
+** specified auxiliary database and the temp database are made writable.
 */
-void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint, int tempOnly){
+void sqliteBeginWriteOperation(Parse *pParse, int setCheckpoint, int iDb){
   Vdbe *v;
+  sqlite *db = pParse->db;
+  if( DbHasProperty(db, iDb, DB_Locked) ) return;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
-  if( pParse->trigStack ) return; /* if this is in a trigger */
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, 1, 0);
-    if( !tempOnly ){
-      int i;
-      sqlite *db = pParse->db;
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-      for(i=2; i<db->nDb; i++){
-        if( db->aDb[i].pBt==0 ) continue;
-        sqliteVdbeAddOp(v, OP_Transaction, i, 0);
-      }
-      sqliteCodeVerifySchema(pParse);
+  if( !db->aDb[iDb].inTrans ){
+    sqliteVdbeAddOp(v, OP_Transaction, iDb, 0);
+    DbSetProperty(db, iDb, DB_Locked);
+    sqliteCodeVerifySchema(pParse, iDb);
+    if( iDb!=1 ){
+      sqliteBeginWriteOperation(pParse, setCheckpoint, 1);
     }
   }else if( setCheckpoint ){
-    sqliteVdbeAddOp(v, OP_Checkpoint, 0, 0);
-    sqliteVdbeAddOp(v, OP_Checkpoint, 1, 0);
+    sqliteVdbeAddOp(v, OP_Checkpoint, iDb, 0);
+    DbSetProperty(db, iDb, DB_Locked);
   }
 }
 
 /*
 ** Generate code that concludes an operation that may have changed
-** the database.  This is a companion function to BeginWriteOperation().
-** If a transaction was started, then commit it.  If a checkpoint was
-** started then commit that.
+** the database.  If a statement transaction was started, then emit
+** an OP_Commit that will cause the changes to be committed to disk.
+**
+** Note that checkpoints are automatically committed at the end of
+** a statement.  Note also that there can be multiple calls to 
+** sqliteBeginWriteOperation() but there should only be a single
+** call to sqliteEndWriteOperation() at the conclusion of the statement.
 */
 void sqliteEndWriteOperation(Parse *pParse){
   Vdbe *v;
+  sqlite *db = pParse->db;
   if( pParse->trigStack ) return; /* if this is in a trigger */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
-  if( pParse->db->flags & SQLITE_InTrans ){
-    /* Do Nothing */
+  if( db->flags & SQLITE_InTrans ){
+    /* A BEGIN has executed.  Do not commit until we see an explicit
+    ** COMMIT statement. */
   }else{
     sqliteVdbeAddOp(v, OP_Commit, 0, 0);
   }

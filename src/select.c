@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.138 2003/05/06 20:35:16 drh Exp $
+** $Id: select.c,v 1.139 2003/05/17 17:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1845,9 +1845,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ** the min() or max() is on the INTEGER PRIMARY KEY, then find the first
   ** or last entry in the main table.
   */
-  if( !pParse->schemaVerified && (pParse->db->flags & SQLITE_InTrans)==0 ){
-    sqliteCodeVerifySchema(pParse);
-  }
+  sqliteCodeVerifySchema(pParse, pTab->iDb);
   base = p->pSrc->a[0].iCursor;
   sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
   sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);

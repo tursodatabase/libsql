@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.65 2003/05/02 14:32:14 drh Exp $
+** $Id: update.c,v 1.66 2003/05/17 17:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -203,7 +203,7 @@ void sqliteUpdate(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
-  sqliteBeginWriteOperation(pParse, 1, !row_triggers_exist && pTab->iDb==1);
+  sqliteBeginWriteOperation(pParse, 1, pTab->iDb);
 
   /* If we are trying to update a view, construct that view into
   ** a temporary table.

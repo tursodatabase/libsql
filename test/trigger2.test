@@ -52,12 +52,16 @@ source $testdir/tester.tcl
 
 # 1.
 set ii 0
-foreach tbl_defn [ list \
-	{CREATE TABLE tbl (a, b);} \
-	{CREATE TEMP TABLE tbl (a, b);} \
-	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} \
-        {CREATE TABLE tbl (a, b PRIMARY KEY);} \
-	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} ] {
+foreach tbl_defn {
+	{CREATE TEMP TABLE tbl (a, b);} 
+	{CREATE TABLE tbl (a, b);} 
+	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} 
+	{CREATE TEMPORARY TABLE tbl (a INTEGER PRIMARY KEY, b);} 
+        {CREATE TABLE tbl (a, b PRIMARY KEY);} 
+	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
+	{CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
+	{CREATE TABLE tbl (a, b); CREATE TEMP INDEX tbl_idx ON tbl(b);} 
+} {
   incr ii
   catchsql { DROP INDEX tbl_idx; }
   catchsql {
@@ -102,8 +106,8 @@ foreach tbl_defn [ list \
     END;
   }
 
-  do_test trigger2-1.1.$ii {
-    execsql {
+  do_test trigger2-1.$ii.1 {
+    execsql { 
       UPDATE tbl SET a = a * 10, b = b * 10;
       SELECT * FROM rlog ORDER BY idx;
       SELECT * FROM clog ORDER BY idx;
@@ -113,7 +117,7 @@ foreach tbl_defn [ list \
 	  3 3 4 13 24 30 40 \
 	  4 3 4 40 60 30 40 \
           1 1 2 13 24 10 20 ]
-  
+
   execsql {
     DELETE FROM rlog;
     DELETE FROM tbl;
@@ -135,7 +139,7 @@ foreach tbl_defn [ list \
 	  0, 0);
     END;
   }
-  do_test trigger2-1.2.$ii {
+  do_test trigger2-1.$ii.2 {
     execsql {
       DELETE FROM tbl;
       SELECT * FROM rlog;
@@ -163,7 +167,7 @@ foreach tbl_defn [ list \
 	  new.a, new.b);
     END;
   }
-  do_test trigger2-1.3.$ii {
+  do_test trigger2-1.$ii.3 {
     execsql {
 
       CREATE TABLE other_tbl(a, b);
@@ -177,6 +181,12 @@ foreach tbl_defn [ list \
     }
   } [list 1 0 0 0 0 5 6 \
           2 0 0 5 6 5 6 ]
+
+  do_test trigger2-1.$ii.4 {
+    execsql {
+      PRAGMA integrity_check;
+    }
+  } {ok ok}
 }
 catchsql {
   DROP TABLE rlog;
@@ -187,16 +197,15 @@ catchsql {
 
 # 2.
 set ii 0
-foreach tr_program [ list \
-   {UPDATE tbl SET b = old.b;} \
-  {INSERT INTO log VALUES(new.c, 2, 3);} \
-  {DELETE FROM log WHERE a = 1;} \
+foreach tr_program {
+  {UPDATE tbl SET b = old.b;}
+  {INSERT INTO log VALUES(new.c, 2, 3);}
+  {DELETE FROM log WHERE a = 1;}
   {INSERT INTO tbl VALUES(500, new.b * 10, 700); 
     UPDATE tbl SET c = old.c; 
-    DELETE FROM log;} \
+    DELETE FROM log;}
   {INSERT INTO log select * from tbl;} 
-   ] \
-{
+} {
   foreach test_varset [ list \
     {
       set statement {UPDATE tbl SET c = 10 WHERE a = 1;} 
@@ -262,22 +271,25 @@ foreach tr_program [ list \
       DROP TABLE tbl;
       DROP TABLE log;
     }
+
     execsql {
       CREATE TABLE tbl(a PRIMARY KEY, b, c);
       CREATE TABLE log(a, b, c);
     }
 
     set query {SELECT * FROM tbl; SELECT * FROM log;}
-    set prep "$prep; INSERT INTO log VALUES(1, 2, 3); INSERT INTO log VALUES(10, 20, 30);"
+    set prep "$prep; INSERT INTO log VALUES(1, 2, 3);\
+             INSERT INTO log VALUES(10, 20, 30);"
 
 # Check execution of BEFORE programs:
 
     set before_data [ execsql "$prep $tr_program_cooked $statement $query" ]
 
     execsql "DELETE FROM tbl; DELETE FROM log; $prep";
-    execsql "CREATE TRIGGER the_trigger BEFORE [string range $statement 0 6] ON tbl BEGIN $tr_program_fixed END;"
+    execsql "CREATE TRIGGER the_trigger BEFORE [string range $statement 0 6]\
+             ON tbl BEGIN $tr_program_fixed END;"
 
-    do_test trigger2-2-$ii-before "execsql {$statement $query}" $before_data
+    do_test trigger2-2.$ii-before "execsql {$statement $query}" $before_data
 
     execsql "DROP TRIGGER the_trigger;"
     execsql "DELETE FROM tbl; DELETE FROM log;"
@@ -286,11 +298,18 @@ foreach tr_program [ list \
     set after_data [ execsql "$prep $statement $tr_program_cooked $query" ]
 
     execsql "DELETE FROM tbl; DELETE FROM log; $prep";
+    execsql "CREATE TRIGGER the_trigger AFTER [string range $statement 0 6]\
+             ON tbl BEGIN $tr_program_fixed END;"
 
-    execsql "CREATE TRIGGER the_trigger AFTER [string range $statement 0 6] ON tbl BEGIN $tr_program_fixed END;"
-
-    do_test trigger2-2-$ii-after "execsql {$statement $query}" $after_data
+    do_test trigger2-2.$ii-after "execsql {$statement $query}" $after_data
     execsql "DROP TRIGGER the_trigger;"
+
+    do_test trigger2-2.$ii-integrity {
+      execsql {
+        PRAGMA integrity_check;
+      }
+    } {ok ok}
+
   }
 }
 catchsql {
@@ -361,6 +380,11 @@ execsql {
   DROP TABLE tbl;
   DROP TABLE log;
 }
+do_test trigger2-3.3 {
+  execsql {
+    PRAGMA integrity_check;
+  }
+} {ok ok}
 
 # Simple cascaded trigger
 execsql {
@@ -585,9 +609,8 @@ do_test trigger2-7.1 {
 	0, 0, 0, 0, new.a, new.b, new.c, new.d);
    END;
   }
-} {}
+} {};
 
-#explain {delete from abcd where a=1;}
 do_test trigger2-7.2 {
   execsql {
     UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
@@ -689,5 +712,8 @@ do_test trigger2-8.6 {
   }
 } {3 103 5 205 4 304 9 109 11 211 10 310}
 
+do_test trigger2-9.9 {
+  execsql {PRAGMA integrity_check}
+} {ok ok}
 
 finish_test
