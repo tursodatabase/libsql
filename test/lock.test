@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.4 2000/10/19 14:10:09 drh Exp $
+# $Id: lock.test,v 1.5 2001/01/04 14:20:18 drh Exp $
 
 if {$dbprefix=="gdbm:"} {
 
@@ -72,7 +72,7 @@ do_test lock-1.3 {
   puts $f "SELECT f2 FROM big WHERE f1=11;"
   close $f
   exec ./sqlite testdb <update.sql
-} "SQL error: table big is locked\n22"
+} "UPDATE big SET f2='xyz' WHERE f1=11;\nSQL error: table big is locked\n22"
 
 do_test lock-1.4 {
   # Try to update the database using a timeout
@@ -83,7 +83,7 @@ do_test lock-1.4 {
   puts $f "SELECT f2 FROM big WHERE f1=11;"
   close $f
   exec ./sqlite testdb <update.sql
-} "SQL error: table big is locked\n22"
+} "UPDATE big SET f2='xyz' WHERE f1=11;\nSQL error: table big is locked\n22"
 
 do_test lock-1.5 {
   # Try to update the database using a timeout

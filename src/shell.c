@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.27 2000/10/16 22:06:42 drh Exp $
+** $Id: shell.c,v 1.28 2001/01/04 14:20:18 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -769,9 +769,13 @@ int main(int argc, char **argv){
         continue;
       }
       if( zSql==0 ){
-        nSql = strlen(zLine);
-        zSql = malloc( nSql+1 );
-        strcpy(zSql, zLine);
+        int i;
+        for(i=0; zLine[i] && isspace(zLine[i]); i++){}
+        if( zLine[i]!=0 ){
+          nSql = strlen(zLine);
+          zSql = malloc( nSql+1 );
+          strcpy(zSql, zLine);
+        }
       }else{
         int len = strlen(zLine);
         zSql = realloc( zSql, nSql + len + 2 );
@@ -784,10 +788,11 @@ int main(int argc, char **argv){
         nSql += len;
       }
       free(zLine);
-      if( sqlite_complete(zSql) ){
+      if( zSql && sqlite_complete(zSql) ){
         data.cnt = 0;
         if( sqlite_exec(db, zSql, callback, &data, &zErrMsg)!=0 
              && zErrMsg!=0 ){
+          if( !istty ) printf("%s\n",zSql);
           printf("SQL error: %s\n", zErrMsg);
           free(zErrMsg);
           zErrMsg = 0;

@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Jan 4 (1.0.18)} {
+<li>Print the offending SQL statement when an error occurs.</li>
+<li>Do not require commas between constraints in CREATE TABLE statements.</li>
+<li>Changes to comments.</li>
+}
+
 chng {2000 Dec 10 (1.0.17)} {
 <li>Rewrote <b>sqlite_complete()</b> to make it faster.</li>
 <li>Minor tweaks to other code to make it run a little faster.</li>
