@@ -1234,6 +1234,16 @@ void sqlite3VdbeDelete(Vdbe *p){
     if( pOp->p3type==P3_DYNAMIC || pOp->p3type==P3_KEYINFO ){
       sqliteFree(pOp->p3);
     }
+    if( pOp->p3type==P3_VDBEFUNC ){
+      VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
+      for(i=0; i<pVdbeFunc->nAux; i++){
+        struct AuxData *pAuxData = &pVdbeFunc->apAux[i].pAux;
+        if( pAuxData->pAux && pAuxData->xDelete ){
+          pAuxData->xDelete(pAuxData->pAux);
+        }
+      }
+      sqliteFree(pVdbeFunc);
+    }
 #ifndef NDEBUG
     sqliteFree(pOp->zComment);
 #endif

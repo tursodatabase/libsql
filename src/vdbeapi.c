@@ -218,6 +218,47 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 }
 
 /*
+** Return the auxilary data pointer, if any, for the iArg'th argument to
+** the user-function defined by pCtx.
+*/
+void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
+  VdbeFunc *pVdbeFunc = pCtx->pVdbeFunc;
+  if( !pVdbeFunc || iArg>=pVdbeFunc->nAux || iArg<0 ){
+    return 0;
+  }
+  return pCtx->pVdbeFunc->apAux[iArg].pAux;
+}
+
+/*
+** Set the auxilary data pointer and delete function, for the iArg'th
+** argument to the user-function defined by pCtx. Any previous value is
+** deleted by calling the delete function specified when it was set.
+*/
+void sqlite3_set_auxdata(
+  sqlite3_context *pCtx, 
+  int iArg, 
+  void *pAux, 
+  void (*xDelete)(void*)
+){
+  struct AuxData *pAuxData;
+  if( iArg<0 ) return;
+
+  if( !pCtx->pVdbeFunc || pCtx->pVdbeFunc->nAux<=iArg ){
+    int nMalloc = sizeof(VdbeFunc)+sizeof(struct AuxData)*(iArg+1);
+    pCtx->pVdbeFunc = sqliteRealloc(pCtx->pVdbeFunc, nMalloc);
+    if( !pCtx->pVdbeFunc ) return;
+    pCtx->pVdbeFunc->nAux = iArg+1;
+  }
+
+  pAuxData = &pCtx->pVdbeFunc->apAux[iArg];
+  if( pAuxData->pAux && pAuxData->xDelete ){
+    pAuxData->xDelete(pAuxData->pAux);
+  }
+  pAuxData->pAux = pAux;
+  pAuxData->xDelete = xDelete;
+}
+
+/*
 ** Return the number of times the Step function of a aggregate has been 
 ** called.
 **

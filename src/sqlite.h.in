@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.91 2004/06/02 01:22:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.92 2004/06/05 10:22:18 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -913,6 +913,35 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 ** call.
 */
 void *sqlite3_user_data(sqlite3_context*);
+
+/*
+** The following two functions may be used by scalar user functions to
+** associate meta-data with argument values. If the same value is passed to
+** multiple invocations of the user-function during query execution, under
+** some circumstances the associated meta-data may be preserved. This may
+** be used, for example, to add a regular-expression matching scalar
+** function. The compiled version of the regular expression is stored as
+** meta-data associated with the SQL value passed as the regular expression
+** pattern.
+**
+** Calling sqlite3_get_auxdata() returns a pointer to the meta data
+** associated with the Nth argument value to the current user function
+** call, where N is the second parameter. If no meta-data has been set for
+** that value, then a NULL pointer is returned.
+**
+** The sqlite3_set_auxdata() is used to associate meta data with a user
+** function argument. The third parameter is a pointer to the meta data
+** to be associated with the Nth user function argument value. The fourth
+** parameter specifies a 'delete function' that will be called on the meta
+** data pointer to release it when it is no longer required. If the delete
+** function pointer is NULL, it is not invoked.
+**
+** In practice, meta-data is preserved between function calls for
+** expressions that are constant at compile time. This includes literal
+** values and SQL variables.
+*/
+void *sqlite3_get_auxdata(sqlite3_context*, int);
+void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
 
 /*
 ** User-defined functions invoke the following routines in order to

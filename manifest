@@ -1,5 +1,5 @@
-C Ensure\sblob\svalues\ssurvive\sthe\s".dump"\scommand\sof\sthe\sshell.\s(CVS\s1531)
-D 2004-06-05T08:04:36
+C Add\sthe\ssqlite3_set_auxdata()\sand\ssqlite3_get_auxdata()\sAPIs.\s(CVS\s1532)
+D 2004-06-05T10:22:17
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/build.c e12e602f06e37a0fbcb49af17cba68ad85e101b6
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
 F src/delete.c b30f08250c9ed53a25a13c7c04599c1e8753992d
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 5145de7d25a4b960a4afdb754a9e88b60cce0405
+F src/expr.c c55461f27a29c593d5b670a77583e44a0d80af0e
 F src/func.c 3b87e2e8b9aaa3a6d36b2c9616e7f404be38a667
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -55,7 +55,7 @@ F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 02d711160100ef3a730060f7cfb5bc85fde06d72
 F src/shell.c 79af86d39b2149c7f16219fcbe636e7c2da9df8e
-F src/sqlite.h.in 8236db65bc6d8f5f47dc5a5e86c4a9bce42f2adf
+F src/sqlite.h.in dae6a7b4f0ff7310b2ae3f0952feaa9caae94f12
 F src/sqliteInt.h 99f2b4ff4ed28123890a0c71359fec3d2c5901c9
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 3db6b868bd844bfb71720c8e573f4c9b0d536bd5
@@ -70,11 +70,11 @@ F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c c8be20ecdcb10659e23c43e35d835460e964d248
 F src/util.c d3d2f62ec94160db3cb2b092267405ba99122152
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
-F src/vdbe.c e1e62347215a8dbe0ec72c155e4a042e81c6aa71
-F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
-F src/vdbeInt.h 9f5df0a21474be02fe870cbb0a414d09b66eb31a
-F src/vdbeapi.c 77d2e681a992ef189032cd9c1b7bf922f01ebe3e
-F src/vdbeaux.c 55c6d501175edb35cd84430302bbbde8dad4b752
+F src/vdbe.c 7f270f9a882bd51f7156cb87e24c5805b192be45
+F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
+F src/vdbeInt.h ab592f23ed5a1913f9a506bd7b76c5e39377942a
+F src/vdbeapi.c b3d8e559eb4a6cd6b49db5b2650426a54324adc5
+F src/vdbeaux.c 185f5ad1269d92684565be3a9bdb330bbda4f597
 F src/vdbemem.c 5d029d83bc60eaf9c45837fcbc0b03348ec95d7a
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cb1ffabf86996ab20dfffcb5f133fa9a9b56bbe2
-R ea7bd988d55c4ea96c95b0dedf76ecab
+P e82eb722b0e0b223ddaf7d85669792c33594f9da
+R 89202e63414e4abff52f3cb8f1936bee
 U danielk1977
-Z 4e22795b8cf7e800bcb3f1d60cd6c40a
+Z d38834ee375024a85c02b119ebf3aa3d

@@ -177,6 +177,16 @@ typedef struct Mem Mem;
 */
 #define MEM_AggCtx    0x0400  /* Mem.z points to an agg function context */
 
+struct VdbeFunc {
+  FuncDef *pFunc;
+  int nAux;
+  struct AuxData {
+    void *pAux;
+    void (*xDelete)(void *);
+  } apAux[0];
+};
+typedef struct VdbeFunc VdbeFunc;
+
 /*
 ** The "context" argument for a installable function.  A pointer to an
 ** instance of this structure is the first argument to the routines used
@@ -192,6 +202,7 @@ typedef struct Mem Mem;
 */
 struct sqlite3_context {
   FuncDef *pFunc;   /* Pointer to function information.  MUST BE FIRST */
+  VdbeFunc *pVdbeFunc;  /* Auxilary data, if created. */
   Mem s;            /* The return value is stored here */
   void *pAgg;       /* Aggregate context */
   u8 isError;       /* Set to true for an error */

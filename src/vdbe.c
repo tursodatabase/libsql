@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.357 2004/06/04 06:22:02 danielk1977 Exp $
+** $Id: vdbe.c,v 1.358 2004/06/05 10:22:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1218,11 +1218,18 @@ divide_by_zero:
   break;
 }
 
-/* Opcode: Function P1 * P3
+/* Opcode: Function P1 P2 P3
 **
 ** Invoke a user function (P3 is a pointer to a Function structure that
-** defines the function) with P1 string arguments taken from the stack.
-** Pop all arguments from the stack and push back the result.
+** defines the function) with P1 arguments taken from the stack.  Pop all
+** arguments from the stack and push back the result.
+**
+** P2 is a 32-bit bitmask indicating whether or not each argument to the 
+** function was determined to be constant at compile time. If the first
+** argument was constant then bit 0 of P2 is set. This is used to determine
+** whether meta data associated with a user function argument using the
+** sqlite3_set_auxdata() API may be safely retained until the next
+** invocation of this opcode.
 **
 ** See also: AggFunc
 */
@@ -1243,7 +1250,15 @@ case OP_Function: {
     storeTypeInfo(pArg, db->enc);
   }
 
-  ctx.pFunc = (FuncDef*)pOp->p3;
+  assert( pOp->p3type==P3_FUNCDEF || pOp->p3type==P3_VDBEFUNC );
+  if( pOp->p3type==P3_FUNCDEF ){
+    ctx.pFunc = (FuncDef*)pOp->p3;
+    ctx.pVdbeFunc = 0;
+  }else{
+    ctx.pVdbeFunc = (VdbeFunc*)pOp->p3;
+    ctx.pFunc = ctx.pVdbeFunc->pFunc;
+  }
+
   ctx.s.flags = MEM_Null;
   ctx.s.z = 0;
   ctx.isError = 0;
@@ -1252,6 +1267,22 @@ case OP_Function: {
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   popStack(&pTos, n);
+
+  /* If any auxilary data functions have been called by this user function,
+  ** immediately call the destructor for any non-static values.
+  */
+  if( ctx.pVdbeFunc ){
+    int mask = pOp->p2;
+    for(i=0; i<n; i++){
+      struct AuxData *pAux = &ctx.pVdbeFunc->apAux[i];
+      if( (i>31 || !(mask&(1<<i))) && pAux->pAux ){
+        pAux->xDelete(pAux->pAux);
+        pAux->pAux = 0;
+      }
+    }
+    pOp->p3 = (char *)ctx.pVdbeFunc;
+    pOp->p3type = P3_VDBEFUNC;
+  }
 
   /* Copy the result of the function to the top of the stack */
   pTos++;
