@@ -57,12 +57,12 @@ int integrity_check(sqlite *db){
   int rc;
   if( all_stop ) return 0;
   /* fprintf(stderr,"pid=%d: CHECK\n", getpid()); */
-  rc = sqlite_exec(db, "pragma integrity_check", check_callback, 0, 0);
+  rc = sqlite3_exec(db, "pragma integrity_check", check_callback, 0, 0);
   if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     fprintf(stderr,"pid=%d, Integrity check returns %d\n", getpid(), rc);
   }
   if( all_stop ){
-    sqlite_exec(db, "pragma integrity_check", check_callback, 0, 0);
+    sqlite3_exec(db, "pragma integrity_check", check_callback, 0, 0);
   }
   return 0;
 }
@@ -76,14 +76,14 @@ void *worker(void *notUsed){
   int cnt = 0;
   while( !all_stop && cnt++<10000 ){
     if( cnt%1000==0 ) printf("pid=%d: %d\n", getpid(), cnt);
-    while( (db = sqlite_open(DB_FILE, 0, 0))==0 ) sched_yield();
-    sqlite_exec(db, "PRAGMA synchronous=OFF", 0, 0, 0);
+    while( (sqlite3_open(DB_FILE, &db))!=SQLITE_OK ) sched_yield();
+    sqlite3_exec(db, "PRAGMA synchronous=OFF", 0, 0, 0);
     integrity_check(db);
-    if( all_stop ){ sqlite_close(db); break; }
+    if( all_stop ){ sqlite3_close(db); break; }
     /* fprintf(stderr, "pid=%d: BEGIN\n", getpid()); */
-    rc = sqlite_exec(db, "INSERT INTO t1 VALUES('bogus data')", 0, 0, 0);
+    rc = sqlite3_exec(db, "INSERT INTO t1 VALUES('bogus data')", 0, 0, 0);
     /* fprintf(stderr, "pid=%d: END rc=%d\n", getpid(), rc); */
-    sqlite_close(db);
+    sqlite3_close(db);
   }
   return 0;
 }
@@ -97,17 +97,17 @@ int main(int argc, char **argv){
   pthread_t aThread[5];
 
   if( strcmp(DB_FILE,":memory:") ) unlink(DB_FILE);
-  db = sqlite_open(DB_FILE, 0, 0);
+  sqlite3_open(DB_FILE, &db);
   if( db==0 ){
     fprintf(stderr,"unable to initialize database\n");
     exit(1);
   }
-  rc = sqlite_exec(db, "CREATE TABLE t1(x);", 0,0,0);
+  rc = sqlite3_exec(db, "CREATE TABLE t1(x);", 0,0,0);
   if( rc ){
     fprintf(stderr,"cannot create table t1: %d\n", rc);
     exit(1);
   }
-  sqlite_close(db);
+  sqlite3_close(db);
   for(i=0; i<sizeof(aThread)/sizeof(aThread[0]); i++){
     pthread_create(&aThread[i], 0, worker, 0);
   }

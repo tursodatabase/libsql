@@ -1,5 +1,5 @@
-C More\scoverage\stesting.\s(CVS\s1754)
-D 2004-06-28T13:09:11
+C Try\sto\sget\sthreads\sworking\sagain\son\sLinux.\s(CVS\s1755)
+D 2004-06-29T03:29:00
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c ef353f73a2ad85a239d7a77c4a5df2e1377f3848
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 295d0d4fe8a3f531ae39623e2c8766b1823c0acd
+F src/os_unix.c 2d787fd91a1b202ec6d0930b70982bc1ab816bb8
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
@@ -162,8 +162,8 @@ F test/tclsqlite.test 2517b10ee2c806fb700548f54540aec7d62ed14a
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl f36cc22d0532725073ca78272d7834d56dceb6d9
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
-F test/threadtest1.c f5c7d628d5b23a1418816351b3cd8fe06e146250
-F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
+F test/threadtest1.c 1dd597369021ed72cd71c138a14a561d443f6edf
+F test/threadtest2.c c38c9c1769725ebe240317dcc6bbed13c600ac98
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
 F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
@@ -231,7 +231,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 168112c8b76af132c675a6508d3ee7764ef7a845
-R 00c6e5e0864fee373c498713d6bf3097
-U danielk1977
-Z c7d1e1ed337b1cd26cb4eaf2ffbfdf15
+P 332921041040b343b6b568685ff55d21a624f502
+R bdedb5a03f87b2291e0c7bb98d11a6cb
+U drh
+Z 23b6d4864c82370d472ac66ee3391b29

@@ -148,19 +148,38 @@
 ** key because close() clears lock on all threads, not just the current
 ** thread.  Were it not for this goofiness in linux threads, we could
 ** combine the lockInfo and openCnt structures into a single structure.
+**
+** 2004-Jun-28:
+** On some versions of linux, threads can override each others locks.
+** On others not.  Sometimes you can change the behavior on the same
+** system by setting the LD_ASSUME_KERNEL environment variable.  The
+** POSIX standard is silent as to which behavior is correct, as far
+** as I can tell, so other versions of unix might show the same
+** inconsistency.  There is no little doubt in my mind that posix
+** advisory locks and linux threads are profoundly broken.
+**
+** To work around the inconsistencies, we have to test at runtime 
+** whether or not threads can override each others locks.  This test
+** is run once, the first time any lock is attempted.  A static 
+** variable is set to record the results of this test for future
+** use.
 */
 
 /*
 ** An instance of the following structure serves as the key used
-** to locate a particular lockInfo structure given its inode.  Note
-** that we have to include the process ID as part of the key.  On some
-** threading implementations (ex: linux), each thread has a separate
-** process ID.
+** to locate a particular lockInfo structure given its inode.
+**
+** If threads cannot override each others locks, then we set the
+** lockKey.tid field to the thread ID.  If threads can override
+** each others locks then tid is always set to zero.  tid is also
+** set to zero if we compile without threading support.
 */
 struct lockKey {
-  dev_t dev;   /* Device number */
-  ino_t ino;   /* Inode number */
-  pid_t pid;   /* Process ID */
+  dev_t dev;       /* Device number */
+  ino_t ino;       /* Inode number */
+#ifdef SQLITE_UNIX_THREADS
+  pthread_t tid;   /* Thread ID or zero if threads cannot override each other */
+#endif
 };
 
 /*
@@ -182,7 +201,7 @@ struct lockInfo {
 /*
 ** An instance of the following structure serves as the key used
 ** to locate a particular openCnt structure given its inode.  This
-** is the same as the lockKey except that the process ID is omitted.
+** is the same as the lockKey except that the thread ID is omitted.
 */
 struct openKey {
   dev_t dev;   /* Device number */
@@ -210,6 +229,70 @@ struct openCnt {
 */
 static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 static Hash openHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
+
+
+#ifdef SQLITE_UNIX_THREADS
+/*
+** This variable records whether or not threads can override each others
+** locks.
+**
+**    0:  No.  Threads cannot override each others locks.
+**    1:  Yes.  Threads can override each others locks.
+**   -1:  We don't know yet.
+*/
+static int threadsOverrideEachOthersLocks = -1;
+
+/*
+** This structure holds information passed into individual test
+** threads by the testThreadLockingBehavior() routine.
+*/
+struct threadTestData {
+  int fd;                /* File to be locked */
+  struct flock lock;     /* The locking operation */
+  int result;            /* Result of the locking operation */
+};
+
+/*
+** The testThreadLockingBehavior() routine launches two separate
+** threads on this routine.  This routine attempts to lock a file
+** descriptor then returns.  The success or failure of that attempt
+** allows the testThreadLockingBehavior() procedure to determine
+** whether or not threads can override each others locks.
+*/
+static void *threadLockingTest(void *pArg){
+  struct threadTestData *pData = (struct threadTestData*)pArg;
+  pData->result = fcntl(pData->fd, F_SETLK, &pData->lock);
+  return pArg;
+}
+
+/*
+** This procedure attempts to determine whether or not threads
+** can override each others locks then sets the 
+** threadsOverrideEachOthersLocks variable appropriately.
+*/
+static void testThreadLockingBehavior(fd_orig){
+  int fd;
+  struct threadTestData d[2];
+  pthread_t t[2];
+
+  fd = dup(fd_orig);
+  if( fd<0 ) return;
+  memset(d, 0, sizeof(d));
+  d[0].fd = fd;
+  d[0].lock.l_type = F_RDLCK;
+  d[0].lock.l_len = 1;
+  d[0].lock.l_start = 0;
+  d[0].lock.l_whence = SEEK_SET;
+  d[1] = d[0];
+  d[1].lock.l_type = F_WRLCK;
+  pthread_create(&t[0], 0, threadLockingTest, &d[0]);
+  pthread_create(&t[1], 0, threadLockingTest, &d[1]);
+  pthread_join(t[0], 0);
+  pthread_join(t[1], 0);
+  close(fd);
+  threadsOverrideEachOthersLocks =  d[0].result==0 && d[1].result==0;
+}
+#endif /* SQLITE_UNIX_THREADS */
 
 /*
 ** Release a lockInfo structure previously allocated by findLockInfo().
@@ -244,7 +327,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
 static int findLockInfo(
   int fd,                      /* The file descriptor used in the key */
   struct lockInfo **ppLock,    /* Return the lockInfo structure here */
-  struct openCnt **ppOpen   /* Return the openCnt structure here */
+  struct openCnt **ppOpen      /* Return the openCnt structure here */
 ){
   int rc;
   struct lockKey key1;
@@ -257,7 +340,12 @@ static int findLockInfo(
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
   key1.ino = statbuf.st_ino;
-  key1.pid = getpid();
+#ifdef SQLITE_UNIX_THREADS
+  if( threadsOverrideEachOthersLocks<0 ){
+    testThreadLockingBehavior(fd);
+  }
+  key1.tid = threadsOverrideEachOthersLocks ? 0 : pthread_self();
+#endif
   memset(&key2, 0, sizeof(key2));
   key2.dev = statbuf.st_dev;
   key2.ino = statbuf.st_ino;
