@@ -1,5 +1,5 @@
-C Five-algorithm\sconflict\sresolution\sappears\sto\sbe\sworking.\s(CVS\s363)
-D 2002-02-03T00:56:10
+C The\sVACUUM\scommand\snow\sdoes\sa\sdatabase\ssanity\scheck.\s(CVS\s364)
+D 2002-02-03T03:34:08
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,13 +19,13 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c ba5712cf620f80055948cc41157e14eab6ceee86
+F src/btree.c ced7d25e7ed33df5ef177e839db3e137d3c6a361
 F src/btree.h a94bef69f5174461331b6b9ae45a2d84f05af6db
-F src/build.c 0c7346d0522e59be67a4bb841020540d8ba5d136
+F src/build.c a8851852bd67821a06dc1a816291ca0edaf15a18
 F src/delete.c f8ad71be53cf18656b6573de65395852fe817f0c
 F src/expr.c a2a87dbd411a508ff89dffa90505ad42dac2f920
 F src/hash.c 8f7c740ef2eaaa8decfa8751f2be30680b123e46
-F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
+F src/hash.h d1ce47900c7325af5e41c4feb4855c4bf2b841e7
 F src/insert.c 173da7b06fe9282e0f529ff1e599460304ceeb23
 F src/main.c 300320ba68d3e5b22c2c5b2c07fa884878202181
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
@@ -49,15 +49,15 @@ F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
 F src/tokenize.c 01a09db6adf933e941db1b781789a0c175be6504
 F src/update.c 95459f94a061860bf8e5716b3426a5ba85c79103
 F src/util.c 8f8973dd55a6ec63be9632fc5de86965c99d6327
-F src/vdbe.c df1c920e74b2cd76d763833a655fbabb67f17237
-F src/vdbe.h 3791edabb212038ae5fbcfa72580204596be01a7
+F src/vdbe.c 6e9851f14edaa98fd244103ff899082063a0e519
+F src/vdbe.h 3d49d22ba9ad14ea0e380bc582ff57347eaddb59
 F src/where.c 2dda39367f193194e4c7d2e0dcab31527d9d8aba
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 6ab4dc5f595905a276ef588fad3c9236dc07a47b
 F test/btree2.test 08e9485619265cbaf5d11bd71f357cdc26bb87e0
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
-F test/conflict.test dd1b380595bb48b90289d761f4d11a46d7c60178
+F test/conflict.test 5515d5dcbb6be9c715d1b83b2796b8a9cb7a32d4
 F test/copy.test 9ff0063c0b95b3d51b8d0c7fe0ff51dabaa66549
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test c8a495050dcec3f9e68538c3ef466726933302c1
@@ -122,7 +122,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9be4d4c6f12056782966396dca0b8e2d384d0cf2
-R 60fe69f0169f5844176ca5b7853e2e65
+P 0115518f8e4591123582e3d2bb67282111ebcf60
+R 3b844437150a914d910bcb945e186cae
 U drh
-Z fa5a72d3a4d7961b510d6a8d5ba99c2c
+Z 41bd35da914d3e147a09ab98b479c192

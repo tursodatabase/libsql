@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.72 2002/02/03 00:56:10 drh Exp $
+** $Id: build.c,v 1.73 2002/02/03 03:34:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1397,49 +1397,34 @@ copy_cleanup:
 ** The non-standard VACUUM command is used to clean up the database,
 ** collapse free space, etc.  It is modelled after the VACUUM command
 ** in PostgreSQL.
+**
+** In this implementation, no cleanup occurs.  Instead, the B-tree that
+** forms the database is checked for integrity.  This is a no-op unless
+** SQLite is compiled with the SQLITE_TEST macro.
 */
 void sqliteVacuum(Parse *pParse, Token *pTableName){
-  char *zName;
+#if 1
+  static VdbeOp checkDb[] = {
+    { OP_SetInsert,   0, 0,        "2"},
+    { OP_Open,        0, 2,        0},
+    { OP_Rewind,      0, 6,        0},
+    { OP_Column,      0, 3,        0},
+    { OP_SetInsert,   0, 0,        0},
+    { OP_Next,        0, 3,        0},
+    { OP_SanityCheck, 0, 0,        0},
+    { OP_ColumnCount, 1, 0,        0},
+    { OP_ColumnName,  0, 0,        "sanity_check"},
+    { OP_Callback,    1, 0,        0},
+  };
+  static 
   Vdbe *v;
-  sqlite *db = pParse->db;
+ 
 
-  if( pParse->nErr || sqlite_malloc_failed ) return;
-  if( pTableName ){
-    zName = sqliteTableNameFromToken(pTableName);
-  }else{
-    zName = 0;
-  }
-  if( zName && sqliteFindIndex(db, zName)==0
-    && sqliteFindTable(db, zName)==0 ){
-    sqliteSetString(&pParse->zErrMsg, "no such table or index: ", zName, 0);
-    pParse->nErr++;
-    goto vacuum_cleanup;
-  }
   v = sqliteGetVdbe(pParse);
-  if( v==0 ) goto vacuum_cleanup;
-  sqliteBeginWriteOperation(pParse);
-  if( zName ){
-    sqliteVdbeAddOp(v, OP_Reorganize, 0, 0);
-    sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
-  }else{
-    Table *pTab;
-    Index *pIdx;
-    HashElem *pE;
-    for(pE=sqliteHashFirst(&db->tblHash); pE; pE=sqliteHashNext(pE)){
-      pTab = sqliteHashData(pE);
-      sqliteVdbeAddOp(v, OP_Reorganize, 0, 0);
-      sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqliteVdbeAddOp(v, OP_Reorganize, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
-      }
-    }
-  }
-  sqliteEndWriteOperation(pParse);
-
-vacuum_cleanup:
-  sqliteFree(zName);
+  if( v==0 ) return;
+  sqliteVdbeAddOpList(v, ArraySize(checkDb), checkDb);
   return;
+#endif
 }
 
 /*

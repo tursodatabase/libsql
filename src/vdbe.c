@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.115 2002/02/03 00:56:10 drh Exp $
+** $Id: vdbe.c,v 1.116 2002/02/03 03:34:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -868,7 +868,7 @@ static char *zOpName[] = { 0,
   "IsUnique",          "NotExists",         "Delete",            "Column",
   "KeyAsData",         "Recno",             "FullKey",           "Rewind",
   "Next",              "Destroy",           "Clear",             "CreateIndex",
-  "CreateTable",       "Reorganize",        "IdxPut",            "IdxDelete",
+  "CreateTable",       "SanityCheck",       "IdxPut",            "IdxDelete",
   "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
   "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
   "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
@@ -3481,15 +3481,51 @@ case OP_CreateTable: {
   break;
 }
 
-/* Opcode: Reorganize P1 * *
+/* Opcode: SanityCheck P1 * *
 **
-** Compress, optimize, and tidy up table or index whose root page in the
-** database file is P1.
+** Do an analysis of the currently open database.  Push onto the
+** stack the text of an error message describing any problems.
+** If there are no errors, push a "ok" onto the stack.
 **
-** In the current implementation, this is a no-op.
+** P1 is the index of a set that contains the root page numbers
+** for all tables and indices in this database.
+**
+** This opcode is used for testing purposes only.
 */
-case OP_Reorganize: {
-  /* This is currently a no-op */
+case OP_SanityCheck: {
+#if 1  /* This opcode used for testing only */
+  int nRoot;
+  int *aRoot;
+  int tos = ++p->tos;
+  int iSet = pOp->p1;
+  Set *pSet;
+  int j;
+  HashElem *i;
+  char *z;
+
+  if( iSet<0 || iSet>=p->nSet ){
+    goto bad_instruction;
+  }
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  pSet = &p->aSet[iSet];
+  nRoot = sqliteHashCount(&pSet->hash);
+  aRoot = sqliteMalloc( sizeof(int)*(nRoot+1) );
+  for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
+    aRoot[j] = atoi((char*)sqliteHashKey(i));
+  }
+  aRoot[j] = 0;
+  z = sqliteBtreeSanityCheck(pBt, aRoot, nRoot);
+  if( z==0 || z[0]==0 ){
+    zStack[tos] = "ok";
+    aStack[tos].n = 3;
+    aStack[tos].flags = STK_Str | STK_Static;
+    if( z ) sqliteFree(z);
+  }else{
+    zStack[tos] = z;
+    aStack[tos].n = strlen(z) + 1;
+    aStack[tos].flags = STK_Str | STK_Dyn;
+  }
+#endif /* SQLITE_TEST */
   break;
 }
 

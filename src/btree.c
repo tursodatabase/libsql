@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.48 2002/02/03 00:56:10 drh Exp $
+** $Id: btree.c,v 1.49 2002/02/03 03:34:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2737,7 +2737,7 @@ static int checkTreePage(
     cur.idx = i;
     zKey2 = sqliteMalloc( NKEY(pCell->h)+1 );
     getPayload(&cur, 0, NKEY(pCell->h), zKey2);
-    if( zKey1 && strcmp(zKey1,zKey2)>=0 ){
+    if( zKey1 && strcmp(zKey1,zKey2)>0 ){
       checkAppendMsg(pCheck, zContext, "Key is out of order");
     }
 

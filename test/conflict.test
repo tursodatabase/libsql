@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.5 2002/02/03 00:56:11 drh Exp $
+# $Id: conflict.test,v 1.6 2002/02/03 03:34:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -367,6 +367,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
       UPDATE t3 SET x=0;
       BEGIN $conf2;
       $cmd t3 SET x=1;
+      $cmd t1 SET b=b*2;
       $cmd t1 SET a=c+5;
     }]} r1]
     execsql {COMMIT}
