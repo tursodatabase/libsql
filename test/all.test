@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.28 2005/01/16 11:07:07 danielk1977 Exp $
+# $Id: all.test,v 1.29 2005/01/17 01:33:14 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,7 +67,6 @@ set EXCLUDE {
 ifcapable default_autovacuum {
   lappend EXCLUDE btree2.test
   lappend EXCLUDE btree4.test
-  lappend EXCLUDE corrupt.test
 }
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {

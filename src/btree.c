@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.238 2005/01/16 23:21:00 drh Exp $
+** $Id: btree.c,v 1.239 2005/01/17 01:33:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -664,13 +664,11 @@ static int cellSizePtr(MemPage *pPage, u8 *pCell){
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** If the cell with index iCell on page pPage contains a pointer
+** If the cell pCell, part of page pPage contains a pointer
 ** to an overflow page, insert an entry into the pointer-map
 ** for the overflow page.
 */
-static int ptrmapPutOvfl(MemPage *pPage, int iCell){
-  u8 *pCell;
-  pCell = findOverflowCell(pPage, iCell);
+static int ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell){
   if( pCell ){
     CellInfo info;
     parseCellPtr(pPage, pCell, &info);
@@ -680,6 +678,16 @@ static int ptrmapPutOvfl(MemPage *pPage, int iCell){
     }
   }
   return SQLITE_OK;
+}
+/*
+** If the cell with index iCell on page pPage contains a pointer
+** to an overflow page, insert an entry into the pointer-map
+** for the overflow page.
+*/
+static int ptrmapPutOvfl(MemPage *pPage, int iCell){
+  u8 *pCell;
+  pCell = findOverflowCell(pPage, iCell);
+  return ptrmapPutOvflPtr(pPage, pCell);
 }
 #endif
 
@@ -1604,12 +1612,11 @@ static int setChildPtrmaps(MemPage *pPage){
     CellInfo info;
     u8 *pCell = findCell(pPage, i);
 
-    parseCellPtr(pPage, pCell, &info);
-    if( info.iOverflow ){
-      Pgno ovflPgno = get4byte(&pCell[info.iOverflow]);
-      rc = ptrmapPut(pBt, ovflPgno, PTRMAP_OVERFLOW1, pgno);
-      if( rc!=SQLITE_OK ) goto set_child_ptrmaps_out;
+    rc = ptrmapPutOvflPtr(pPage, pCell);
+    if( rc!=SQLITE_OK ){
+      goto set_child_ptrmaps_out;
     }
+
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
       rc = ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno);

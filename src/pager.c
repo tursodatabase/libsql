@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.182 2005/01/13 11:07:53 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.183 2005/01/17 01:33:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -354,6 +354,11 @@ static const unsigned char aJournalMagic[] = {
 */
 /* #define PAGER_MJ_PGNO(x) (PENDING_BYTE/((x)->pageSize)) */
 #define PAGER_MJ_PGNO(x) ((PENDING_BYTE/((x)->pageSize))+1)
+
+/*
+** The maximum legal page number is (2^31 - 1).
+*/
+#define PAGER_MAX_PGNO 2147483647
 
 /*
 ** Enable reference count tracking (for debugging) here:
@@ -2124,10 +2129,16 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   PgHdr *pPg;
   int rc;
 
+  /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
+  ** number greater than this, or zero, is requested.
+  */
+  if( pgno>PAGER_MAX_PGNO || pgno==0 ){
+    return SQLITE_CORRUPT;
+  }
+
   /* Make sure we have not hit any critical errors.
   */ 
   assert( pPager!=0 );
-  assert( pgno!=0 );
   *ppPage = 0;
   if( pPager->errMask & ~(PAGER_ERR_FULL) ){
     return pager_errcode(pPager);
