@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.27 2002/02/27 19:00:22 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.28 2002/02/27 19:50:59 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -391,7 +391,7 @@ int sqlite_create_aggregate(
 /*
 ** The user function implementations call one of the following four routines
 ** in order to return their results.  The first parameter to each of these
-** routines is a copy of the first argument to xFunc() or xFinialize()
+** routines is a copy of the first argument to xFunc() or xFinialize().
 ** The second parameter to these routines is the result to be returned.
 ** A NULL can be passed as the second parameter to sqlite_set_result_string()
 ** in order to return a NULL result.
@@ -419,8 +419,8 @@ void sqlite_set_result_error(sqlite_func*,const char*,int);
 void *sqlite_user_data(sqlite_func*);
 
 /*
-** User aggregate functions use the following routine to allocate
-** a structure for storing their context.  The first time this routine
+** Aggregate functions use the following routine to allocate
+** a structure for storing their state.  The first time this routine
 ** is called for a particular aggregate, a new structure of size nBytes
 ** is allocated, zeroed, and returned.  On subsequent calls (for the
 ** same aggregate instance) the same buffer is returned.  The implementation
@@ -431,9 +431,9 @@ void *sqlite_user_data(sqlite_func*);
 void *sqlite_aggregate_context(sqlite_func*, int nBytes);
 
 /*
-** The next return returns the number of calls to xStep for a particular
-** aggregate function instance.  The current call to xStep counts so the
-** function always returns at least 1.
+** The next routine returns the number of calls to xStep for a particular
+** aggregate function instance.  The current call to xStep counts so this
+** routine always returns at least 1.
 */
 int sqlite_aggregate_count(sqlite_func*);
 

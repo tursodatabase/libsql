@@ -1,5 +1,5 @@
-C Revise\sthe\sAPI\sfor\suser-defined\sfunctions.\s(CVS\s398)
-D 2002-02-27T19:00:21
+C Try\sto\sreduce\sthe\snumber\sof\smalloc()\sfor\suser-defined\sfunctions.\s\sBegin\ntransfering\sbuilt-in\sfunctions\sover\sto\sthe\suser-define\sfunction\nmechanism.\s(CVS\s399)
+D 2002-02-27T19:50:59
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c ea2209a6bdefea23db988b470fc16dbf9d5b3a5a
-F src/func.c f020b8c659c95ba1e46cab548ada582ebf8c6c3c
+F src/func.c 3aeff18b277d9fdece117497dfff8119113ea412
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -40,7 +40,7 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c a8e90e8f8366b72830010dd6a9bfbf121d2e9370
 F src/shell.c 9f8249ca5b8f8aad40becd778c151b58c0d6109e
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 681dd71442788f900439b624ad1ea2b98f178904
+F src/sqlite.h.in a9b5772604265f98f3120573ef29e37b9d917216
 F src/sqliteInt.h 4e746aa13c5fa39a31a89b73afcd33fa164e8b4f
 F src/table.c 203a09d5d0009eeeb1f670370d52b4ce163a3b52
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
@@ -51,7 +51,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 18971d265b0341574b7e3f73116e7947ddab0997
 F src/util.c 40a12067fa7b18c7e0461b3256b1353c755b59ac
-F src/vdbe.c 1a5378625687ced2acaa01e200cb63f07f780ad6
+F src/vdbe.c d1efbaf24a745cf895432baf7642846e34a60f40
 F src/vdbe.h 785b2f175f8be2af285d137125f30042ce8a53b5
 F src/where.c 664be01b0ce9ffaecbde609afbd4d8d3e5ed1585
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 085b0d671a1dac964693d69d866224de155dfe4c
-R 06586960572c0c651395cc4d56fdf6f3
+P 633951f0fa11c91f93aa2862df84691750c01e73
+R 1ad564fc9fb52e423ae79061556e1e37
 U drh
-Z 67f54dfeaa3612775fa7c5da9d11c294
+Z 9b3029f554c840c37489da7d32038cb8

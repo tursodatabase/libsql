@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.124 2002/02/27 19:00:22 drh Exp $
+** $Id: vdbe.c,v 1.125 2002/02/27 19:50:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -618,7 +618,11 @@ void *sqlite_user_data(sqlite_func *p){
 void *sqlite_aggregate_context(sqlite_func *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   if( p->pAgg==0 ){
-    p->pAgg = sqliteMalloc( nByte );
+    if( nByte<=NBFS ){
+      p->pAgg = (void*)p->z;
+    }else{
+      p->pAgg = sqliteMalloc( nByte );
+    }
   }
   return p->pAgg;
 }
@@ -652,18 +656,21 @@ static void AggReset(Agg *pAgg){
     AggElem *pElem = sqliteHashData(p);
     assert( pAgg->apFunc!=0 );
     for(i=0; i<pAgg->nMem; i++){
-      if( pAgg->apFunc[i] && (pElem->aMem[i].s.flags & STK_AggCtx)!=0 ){
+      Mem *pMem = &pElem->aMem[i];
+      if( pAgg->apFunc[i] && (pMem->s.flags & STK_AggCtx)!=0 ){
         sqlite_func ctx;
         ctx.s.flags = STK_Null;
         ctx.z = 0;
-        ctx.pAgg = pElem->aMem[i].z;
-        ctx.cnt = pElem->aMem[i].s.i;
+        ctx.pAgg = pMem->z;
+        ctx.cnt = pMem->s.i;
         ctx.isStep = 0;
         ctx.isError = 0;
         (*pAgg->apFunc[i]->xFinalize)(&ctx);
-      }
-      if( pElem->aMem[i].s.flags & (STK_Dyn | STK_AggCtx) ){
-        sqliteFree(pElem->aMem[i].z);
+        if( pMem->z!=0 && pMem->z!=pMem->s.z ){
+          sqliteFree(pMem->z);
+        }
+      }else if( pMem->s.flags & STK_Dyn ){
+        sqliteFree(pMem->z);
       }
     }
     sqliteFree(pElem);
@@ -4437,6 +4444,7 @@ case OP_AggFunc: {
   VERIFY( if( i<0 || i>=p->agg.nMem ) goto bad_instruction; )
   ctx.pFunc = (UserFunc*)pOp->p3;
   pMem = &p->agg.pCurrent->aMem[i];
+  ctx.z = pMem->s.z;
   ctx.pAgg = pMem->z;
   ctx.cnt = ++pMem->s.i;
   ctx.isError = 0;
