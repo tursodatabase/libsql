@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\sin\spager.c.\s(CVS\s369)
-D 2002-02-14T12:50:34
+C Version\s2.3.2\s(CVS\s446)
+D 2002-02-14T13:00:00
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -122,7 +122,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 846148d6e3fd0529abfef3f819e4a7cb91e44422
+P 08a68e098a677c508652ba2ff4bd63185cab7546
 R 83a2e2aa6bfb49216f2c372d2d5334c7
 U drh
-Z 0128439de8d04ee4033ade5a65fa6e18
+Z ac51b555ab9fd6d31bb2afa273f060af
