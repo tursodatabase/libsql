@@ -149,9 +149,6 @@ typedef struct Mem Mem;
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_Struct    0x0020   /* Value is some kind of struct */
 
-#define MEM_Utf8      0x0040   /* String uses UTF-8 encoding */
-#define MEM_Utf16be   0x0080   /* String uses UTF-16 big-endian */
-#define MEM_Utf16le   0x0100   /* String uses UTF-16 little-endian */
 #define MEM_Term      0x0200   /* String has a nul terminator character */
 
 #define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
@@ -159,6 +156,34 @@ typedef struct Mem Mem;
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Short     0x2000   /* Mem.z points to Mem.zShort */
 
+/* Internally, all strings manipulated by the  VDBE are encoded using the
+** native encoding for the main database. Therefore the following three
+** flags, which describe the text encoding of the string if the MEM_Str
+** flag is true, are not generally valid for Mem* objects handled by the
+** VDBE.
+**
+** When a user-defined function is called (see OP_Function), the Mem*
+** objects that store the argument values for the function call are 
+** passed to the user-defined function routine cast to sqlite3_value*.
+** The user routine may then call sqlite3_value_data() or
+** sqlite3_value_data16() to request a UTF-8 or UTF-16 string. If the
+** string representation currently stored in Mem.z is not the requested
+** encoding, then a translation occurs. To keep track of things, the
+** MEM_Utf* flags are set correctly for the database encoding before a
+** user-routine is called, and kept up to date if any translations occur
+** thereafter.
+** 
+** When sqlite3_step() returns SQLITE3_ROW, indicating that a row of data
+** is ready for processing by the caller, the data values are stored
+** internally as Mem* objects. Before sqlite3_step() returns, the MEM_Utf*
+** flags are set correctly for the database encoding. A translation may
+** take place if the user requests a non-native encoding via
+** sqlite3_column_data() or sqlite3_column_data16(). If this occurs, then
+** the MEM_Utf* flags are updated accordingly.
+*/
+#define MEM_Utf8      0x0040   /* String uses UTF-8 encoding */
+#define MEM_Utf16be   0x0080   /* String uses UTF-16 big-endian */
+#define MEM_Utf16le   0x0100   /* String uses UTF-16 little-endian */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a

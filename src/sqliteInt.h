@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.246 2004/05/22 17:41:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.247 2004/05/23 13:30:58 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -329,7 +329,7 @@ struct Db {
 #define TEXT_Utf8             1
 #define TEXT_Utf16le          2
 #define TEXT_Utf16be          3
-#define TEXT_Utf16            4
+/* #define TEXT_Utf16            4 */
 
 /*
 ** Each database is an instance of the following structure.
@@ -1371,3 +1371,4 @@ char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
 void sqlite3Error(sqlite *, int, const char*,...);
 int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
+u8 sqlite3UtfReadBom(const void *zData, int nData);

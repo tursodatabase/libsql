@@ -1101,7 +1101,7 @@ static int vdbeBindBlob(
   const char *zVal,  /* Pointer to blob of data */
   int bytes,         /* Number of bytes to copy */
   int copy,          /* True to copy the memory, false to copy a pointer */
-  int flags          /* Valid combination of MEM_Blob, MEM_Str, MEM_UtfXX */
+  int flags          /* Valid combination of MEM_Blob, MEM_Str, MEM_Term */
 ){
   Mem *pVar;
   int rc;
@@ -1207,38 +1207,79 @@ int sqlite3_bind_text(
 ** Bind a UTF-16 text value to an SQL statement variable.
 */
 int sqlite3_bind_text16(
-  sqlite3_stmt *p, 
+  sqlite3_stmt *pStmt, 
   int i, 
   const void *zData, 
   int nData, 
   int eCopy
 ){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pVar;
+  u8 db_enc = p->db->enc;            /* Text encoding of the database */
+  u8 txt_enc;
+  int null_term = 0;
+
   int flags;
-  
-  if( SQLITE3_BIGENDIAN ){
-    flags = MEM_Str|MEM_Utf16be;
+  int rc;
+
+  rc = vdbeUnbind(p, i);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  pVar = &p->apVar[i-1];
+
+  if( db_enc==TEXT_Utf8 ){
+    /* If the database encoding is UTF-8, then do a translation. */
+    pVar->z = sqlite3utf16to8(zData, nData, SQLITE3_BIGENDIAN);
+    if( !pVar->z ) return SQLITE_NOMEM;
+    pVar->n = strlen(pVar->z)+1;
+    pVar->flags = MEM_Str|MEM_Term|MEM_Dyn;
+    return SQLITE_OK;
+  }
+ 
+  /* There may or may not be a byte order mark at the start of the UTF-16.
+  ** Either way set 'txt_enc' to the TEXT_Utf16* value indicating the 
+  ** actual byte order used by this string. If the string does happen
+  ** to contain a BOM, then move zData so that it points to the first
+  ** byte after the BOM.
+  */
+  txt_enc = sqlite3UtfReadBom(zData, nData);
+  if( txt_enc ){
+    zData = (void *)(((u8 *)zData) + 2);
   }else{
-    flags = MEM_Str|MEM_Utf16le;
+    txt_enc = SQLITE3_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
   }
 
-  if( zData ){
-    /* If nData is less than zero, measure the length of the string. 
-    ** manually. In this case the variable will always be null terminated.
+  if( nData<0 ){
+    nData = sqlite3utf16ByteLen(zData, -1) + 2;
+    null_term = 1;
+  }else if( nData>1 && !((u8*)zData)[nData-1] && !((u8*)zData)[nData-2] ){
+    null_term = 1;
+  }
+
+  if( db_enc==txt_enc && !eCopy ){
+    /* If the byte order of the string matches the byte order of the
+    ** database and the eCopy parameter is not set, then the string can
+    ** be used without making a copy.
     */
-    if( nData<0 ){
-      nData = sqlite3utf16ByteLen(zData, -1) + 2;
-      flags |= MEM_Term;
+    pVar->z = (char *)zData;
+    pVar->n = nData;
+    pVar->flags = MEM_Str|MEM_Static|(null_term?MEM_Term:0);
+  }else{
+    /* Make a copy. Swap the byte order if required */
+    pVar->n = nData + (null_term?0:2);
+    pVar->z = sqliteMalloc(pVar->n);
+    pVar->flags = MEM_Str|MEM_Dyn|MEM_Term;
+    if( db_enc==txt_enc ){
+      memcpy(pVar->z, zData, nData);
     }else{
-      /* If nData is greater than zero, check if the final character appears
-      ** to be a terminator.
-      */
-      if( !(((u8 *)zData)[nData-1]) && !(((u8 *)zData)[nData-2]) ){
-        flags |= MEM_Term;
-      }
+      swab(zData, pVar->z, nData);
     }
-  }  
- 
-  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, flags);
+    pVar->z[pVar->n-1] = '\0';
+    pVar->z[pVar->n-2] = '\0';
+  }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -1400,13 +1441,18 @@ u64 sqlite3VdbeSerialType(Mem *pMem){
     return 5;
   }
   if( flags&MEM_Str ){
-    u64 t;
-    assert( pMem->n>0 );
-    t = (pMem->n*2) + 13;
+    int n = pMem->n;
+    assert( n>=0 );
     if( pMem->flags&MEM_Term ){
-      t -= ((pMem->flags&MEM_Utf8)?2:4);
+      /* If the nul terminated flag is set we have to subtract something
+      ** from the serial-type. Depending on the encoding there could be
+      ** one or two 0x00 bytes at the end of the string. Check for these
+      ** and subtract 2 from serial_
+      */
+      if( n>0 && !pMem->z[n-1] ) n--;
+      if( n>0 && !pMem->z[n-1] ) n--;
     }
-    return t;
+    return ((n*2) + 13);
   }
   if( flags&MEM_Blob ){
     return (pMem->n*2 + 12);
@@ -1476,10 +1522,10 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
 ** and store the result in pMem.  Return the number of bytes read.
 */ 
 int sqlite3VdbeSerialGet(
-  const unsigned char *buf, 
-  u64 serial_type, 
-  Mem *pMem,
-  u8 enc
+  const unsigned char *buf,     /* Buffer to deserialize from */
+  u64 serial_type,              /* Serial type to deserialize */
+  Mem *pMem,                    /* Memory cell to write value into */
+  u8 enc      /* Text encoding. Used to determine nul term. character */
 ){
   int len;
 

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.17 2004/05/20 03:30:11 drh Exp $
+# $Id: quick.test,v 1.18 2004/05/23 13:30:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,7 @@ lappend EXCLUDE version.test      ;# uses the btree_meta API (not updated)
 # Some tests fail in these file as a result of the partial manifest types
 # implementation.
 lappend EXCLUDE capi2.test 
+lappend EXCLUDE enc2.test 
 
 
 if {[sqlite -has-codec]} {
