@@ -1,5 +1,5 @@
-C Update\sthe\sfile-format\schange\sdocument\sto\sdescribes\sthe\schanges\sbetween\nversions\s2.4.12\sand\s2.5.0.\s(CVS\s633)
-D 2002-06-20T11:41:59
+C Fix\sfor\sticket\s#78:\sAvoid\san\sassertion\sfailure\swhen\ssqlite_close()\sto\sbe\ncalled\sin\sthe\smiddle\sof\sa\stransaction.\s(CVS\s634)
+D 2002-06-21T11:55:49
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/func.c 5eae8227a8b0d276a64d51a3880a6e86f238fedf
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 4bb40ed9dbaba4516fc2abbcff3f08d5687b073c
-F src/main.c d026463c501a7eaf740494dfab0faae09980c224
+F src/main.c 53995702ae744bedd206c1818b1aa0309a04f1fc
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cbbc858d973c2d515c6a2464981316549a241b73
-R fd497356faed0fb5c0b085bee520dcb8
+P d28a2ecc91c0a6d64725887dcf2758f69553eb59
+R 7c501d6833981a37701d9630a4f2a397
 U drh
-Z 9a6df148947fb5a3f8644ec1700a654a
+Z 04318c7b992ec9784c65132ba98bdc91

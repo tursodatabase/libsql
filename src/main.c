@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.81 2002/06/20 11:36:49 drh Exp $
+** $Id: main.c,v 1.82 2002/06/21 11:55:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -467,6 +467,7 @@ void sqlite_close(sqlite *db){
   if( sqliteSafetyCheck(db) || sqliteSafetyOn(db) ){ return; }
   db->magic = SQLITE_MAGIC_CLOSED;
   sqliteBtreeClose(db->pBe);
+  sqliteRollbackInternalChanges(db);
   clearHashTable(db, 0);
   if( db->pBeTemp ){
     sqliteBtreeClose(db->pBeTemp);
