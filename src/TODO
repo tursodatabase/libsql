@@ -1,6 +1,0 @@
-  *  Document all the changes and release Sqlite 2.0.
-  *  Implement CLUSTER command like in PostgreSQL.
-  *  "OPTIMIZE select" statement to automatically create indices and/or
-     invoke a CLUSTER command.
-  *  "CREATE INDEX FOR select" to automatically generate needed indices.
-  *  Parse and use constraints.

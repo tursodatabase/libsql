@@ -1,5 +1,5 @@
-C Version\s2.6.3\s(CVS\s707)
-D 2002-08-13T00:02:10
+C Bug\sfix\sto\sthe\sleft\souter\sjoin\slogic.\s(CVS\s1726)
+D 2002-08-13T13:15:50
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 0f288908fb6b1186b1594d753f79dc06c32b1dd7
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -17,7 +17,6 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 29f86624db9253353ae159a9e015f81e16f9dd5b
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 16d1712321e91e77562ffc673ed97b0b1a791db4
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
 F src/build.c 0d661e653e02ce8037917c35403d9f0ff4418e6e
@@ -54,7 +53,7 @@ F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c 7a99e754c44dd220e881122e30581c08b6d6adef
 F src/vdbe.c aa647946d08e54b71bfff9049ad31135b7af4a8e
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
-F src/where.c 0fde349514717a55ff6a27ed2c6e914ce98a1512
+F src/where.c c250b91886f820d88cfa7eed8f79a9ef24e4b2bb
 F test/all.test 9a6eb262393f74cb7fb09b17156491a34b941fe3
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -143,7 +142,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 34c4149eea7a48927e36867f4e25ff7fac40c66e
-R b96ce82652418ef9a905306828af0c0e
+P ba706aca0af9ed1ecb64edd4ab327bd5a5a32044
+R 3e7291c79a919fa2cefc3efc93c90571
 U drh
-Z a3f773bf3a0d32a4220b77aeb88fa1db
+Z 1899af56f51d3a2e8e413d3d675047ee
