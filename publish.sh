@@ -146,7 +146,7 @@ i386-mingw32msvc-dllwrap \
      -dllname sqlite.dll -lmsvcrt *.o
 i386-mingw32msvc-strip sqlite.dll
 zip ../doc/tclsqlite-$VERSW.zip tclsqlite.dll
-zip ../doc/sqlite-$VERSW.zip sqlite.dll sqlite.def
+zip ../doc/sqlitedll-$VERSW.zip sqlite.dll sqlite.def
 cd ..
 
 # Build the sqlite.exe executable for windows.
