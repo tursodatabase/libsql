@@ -1,5 +1,5 @@
-C Remove\sfrom\sthe\sindex\spage\sof\sthe\swebsite\shyperlinks\sthat\sare\snot\sdirectly\nrelated\sto\sSQLite.\s(CVS\s511)
-D 2002-04-01T12:15:02
+C Fix\sfor\sbug\s#7:\sCorrectly\sdisplay\sthe\sP3\soperand\sin\sa\sVDBE\strace\swhen\sthe\noperand\sis\sreally\sa\spointer\sto\sa\sstructure.\s(CVS\s512)
+D 2002-04-02T01:44:51
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -52,7 +52,7 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5624d342601f616157ba266abccc1368a5afee70
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
-F src/vdbe.c 9fbe84ea33dddb08d95f3288d995376d32863fa4
+F src/vdbe.c 3cebe9f77cac311a3c537587258946d04a09c58f
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 34d91fd5d822c2663caeb023f72d60df316ebf29
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9e3cf4aa2cb44932015b8bd3fd800d7678cb09b6
-R 53fd0a680dbf31a4b9dc8de41a4e508f
+P 0cb5cfa814bceecea1a346535cac24ec8e2941d7
+R e07a70b33336e9b181f22c86f5352ca5
 U drh
-Z b044b3e9d7ea6edd45e519cacba8f3f4
+Z 9c1b0b9c16e5f7f216788d912c729dd6

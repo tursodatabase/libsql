@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.135 2002/03/18 13:03:55 drh Exp $
+** $Id: vdbe.c,v 1.136 2002/04/02 01:44:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1300,9 +1300,16 @@ int sqliteVdbeExec(
     */
 #ifndef NDEBUG
     if( p->trace ){
+      char *zP3;
+      char zPtr[40];
+      if( pOp->p3type==P3_POINTER ){
+        sprintf(zPtr, "ptr(%#x)", (int)pOp->p3);
+        zP3 = zPtr;
+      }else{
+        zP3 = pOp->p3;
+      }
       fprintf(p->trace,"%4d %-12s %4d %4d %s\n",
-        pc, zOpName[pOp->opcode], pOp->p1, pOp->p2,
-           pOp->p3 ? pOp->p3 : "");
+        pc, zOpName[pOp->opcode], pOp->p1, pOp->p2, zP3 ? zP3 : "");
       fflush(p->trace);
     }
 #endif
