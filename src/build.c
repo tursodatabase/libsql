@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.214 2004/06/10 02:16:02 danielk1977 Exp $
+** $Id: build.c,v 1.215 2004/06/10 10:50:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -884,7 +884,8 @@ static CollSeq * findCollSeqEntry(
       pColl[1].enc = TEXT_Utf16le;
       pColl[2].zName = (char*)&pColl[3];
       pColl[2].enc = TEXT_Utf16be;
-      memcpy(pColl[0].zName, zName, nName+1);
+      memcpy(pColl[0].zName, zName, nName);
+      pColl[0].zName[nName] = 0;
       sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
     }
   }
@@ -922,6 +923,110 @@ CollSeq *sqlite3FindCollSeq(
   return pColl;
 }
 
+static void callCollNeeded(sqlite *db, const char *zName, int nName){
+  /* No collation sequence of this type for this encoding is registered.
+  ** Call the collation factory to see if it can supply us with one.
+  */
+  char *zExternal = 0;
+  assert( !db->xCollNeeded || !db->xCollNeeded16 );
+  if( nName<0 ) nName = strlen(zName);
+  if( db->xCollNeeded ){
+    zExternal = sqliteStrNDup(zName, nName);
+    if( !zExternal ) return;
+      db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
+  }
+  if( db->xCollNeeded16 ){
+    if( SQLITE_BIGENDIAN ){
+      zExternal = sqlite3utf8to16be(zName, nName);
+    }else{
+      zExternal = sqlite3utf8to16le(zName, nName);
+    }
+    if( !zExternal ) return;
+    db->xCollNeeded16(db->pCollNeededArg, db, (int)db->enc, zExternal);
+  }
+  if( zExternal ) sqliteFree(zExternal);
+}
+
+static int synthCollSeq(Parse *pParse, CollSeq *pColl){
+  /* The collation factory failed to deliver a function but there may be
+  ** other versions of this collation function (for other text encodings)
+  ** available. Use one of these instead. Avoid a UTF-8 <-> UTF-16
+  ** conversion if possible.
+  */
+  CollSeq *pColl2 = 0;
+  char *z = pColl->zName;
+  int n = strlen(z);
+  switch( pParse->db->enc ){
+    case TEXT_Utf16le:
+      pColl2 = sqlite3FindCollSeq(pParse->db, TEXT_Utf16be, z, n, 0);
+      assert( pColl2 );
+      if( pColl2->xCmp ) break;
+      pColl2 = sqlite3FindCollSeq(pParse->db, TEXT_Utf8, z, n, 0);
+      assert( pColl2 );
+      break;
+
+    case TEXT_Utf16be:
+      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le, z, n, 0);
+      assert( pColl2 );
+      if( pColl2->xCmp ) break;
+      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8, z, n, 0);
+      assert( pColl2 );
+      break;
+
+    case TEXT_Utf8:
+      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be, z, n, 0);
+      assert( pColl2 );
+      if( pColl2->xCmp ) break;
+      pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le, z, n, 0);
+      assert( pColl2 );
+      break;
+  }
+  if( pColl2->xCmp ){
+    memcpy(pColl, pColl2, sizeof(CollSeq));
+  }else{
+    if( pParse->nErr==0 ){
+      sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", 
+          -1, z, n, 0);
+    }
+    pParse->nErr++;
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** This routine is called on a collation sequence before it is used to
+** check that it is defined. An undefined collation sequence exists when
+** a database is loaded that contains references to collation sequences
+** that have not been defined by sqlite3_create_collation() etc.
+**
+** If required, this routine calls the 'collation needed' callback to
+** request a definition of the collating sequence. If this doesn't work, 
+** an equivalent collating sequence that uses a text encoding different
+** from the main database is substituted, if one is available.
+*/
+int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
+  if( pColl && !pColl->xCmp ){
+    callCollNeeded(pParse->db, pColl->zName, strlen(pColl->zName));
+    if( !pColl->xCmp && synthCollSeq(pParse, pColl) ){
+      return SQLITE_ERROR;
+    }
+  }
+  return SQLITE_OK;
+}
+
+int sqlite3CheckIndexCollSeq(Parse *pParse, Index *pIdx){
+  if( pIdx ){
+    int i;
+    for(i=0; i<pIdx->nColumn; i++){
+      if( sqlite3CheckCollSeq(pParse, pIdx->keyInfo.aColl[i]) ){
+        return SQLITE_ERROR;
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
 /*
 ** This function returns the collation sequence for database native text
 ** encoding identified by the string zName, length nName.
@@ -938,64 +1043,33 @@ CollSeq *sqlite3FindCollSeq(
 */
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   u8 enc = pParse->db->enc;
-  CollSeq *pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, 0);
-  if( !pColl || !pColl->xCmp ){
+  u8 initbusy = pParse->db->init.busy;
+  CollSeq *pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, initbusy);
+  if( !initbusy && (!pColl || !pColl->xCmp) ){
     /* No collation sequence of this type for this encoding is registered.
     ** Call the collation factory to see if it can supply us with one.
     */
-
-    /* FIX ME: Actually call collation factory, then call
-    ** sqlite3FindCollSeq() again.  */
+    callCollNeeded(pParse->db, zName, nName);
     pColl = sqlite3FindCollSeq(pParse->db, enc, zName, nName, 0);
-
     if( pColl && !pColl->xCmp ){
-      /* The collation factory failed to deliver a function but there are
-      ** other versions of this collation function (for other text
-      ** encodings) available. Use one of these instead. Avoid a 
-      ** UTF-8 <-> UTF-16 conversion if possible.
+      /* There may be a version of the collation sequence that requires
+      ** translation between encodings. Search for it with synthCollSeq().
       */
-      CollSeq *pColl2 = 0;
-      switch( enc ){
-        case TEXT_Utf16le:
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be,zName,nName,0);
-          assert( pColl2 );
-          if( pColl2->xCmp ) break;
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8,zName,nName,0);
-          assert( pColl2 );
-          break;
-
-        case TEXT_Utf16be:
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le,zName,nName,0);
-          assert( pColl2 );
-          if( pColl2->xCmp ) break;
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf8,zName,nName,0);
-          assert( pColl2 );
-          break;
-
-        case TEXT_Utf8:
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16be,zName,nName,0);
-          assert( pColl2 );
-          if( pColl2->xCmp ) break;
-          pColl2 = sqlite3FindCollSeq(pParse->db,TEXT_Utf16le,zName,nName,0);
-          assert( pColl2 );
-          break;
-      }
-
-      if( pColl2->xCmp ){
-        memcpy(pColl, pColl2, sizeof(CollSeq));
+      if( synthCollSeq(pParse, pColl) ){
+        return 0;
       }
     }
   }
 
   /* If nothing has been found, write the error message into pParse */
-  if( !pColl || !pColl->xCmp ){
+  if( !initbusy && (!pColl || !pColl->xCmp) ){
     if( pParse->nErr==0 ){
       sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", -1,
           zName, nName, 0);
     }
     pParse->nErr++;
+    pColl = 0;
   }
-
   return pColl;
 }
 
@@ -1943,6 +2017,11 @@ void sqlite3CreateIndex(
       pIndex->keyInfo.aColl[i] = pTab->aCol[j].pColl;
     }
     assert( pIndex->keyInfo.aColl[i] );
+    if( !db->init.busy && 
+        sqlite3CheckCollSeq(pParse, pIndex->keyInfo.aColl[i]) 
+    ){
+      goto exit_create_index;
+    }
   }
   pIndex->keyInfo.nField = pList->nExpr;
 
@@ -2448,7 +2527,6 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** specified auxiliary database and the temp database are made writable.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
-  sqlite *db = pParse->db;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   sqlite3CodeVerifySchema(pParse, iDb);

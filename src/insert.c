@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.109 2004/05/31 08:55:34 danielk1977 Exp $
+** $Id: insert.c,v 1.110 2004/06/10 10:50:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -232,6 +232,13 @@ void sqlite3Insert(
   */
   if( isView && sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto insert_cleanup;
+  }
+
+  /* Ensure all required collation sequences are available. */
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( sqlite3CheckIndexCollSeq(pParse, pIdx) ){
+      goto insert_cleanup;
+    }
   }
 
   /* Allocate a VDBE

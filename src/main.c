@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.213 2004/06/10 02:16:02 danielk1977 Exp $
+** $Id: main.c,v 1.214 2004/06/10 10:50:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1217,3 +1217,25 @@ int sqlite3_create_collation16(
   sqliteFree(zName8);
   return rc;
 }
+
+int sqlite3_collation_needed(
+  sqlite3 *db, 
+  void *pCollNeededArg, 
+  void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*)
+){
+  db->xCollNeeded = xCollNeeded;
+  db->xCollNeeded16 = 0;
+  db->pCollNeededArg = pCollNeededArg;
+  return SQLITE_OK;
+}
+int sqlite3_collation_needed16(
+  sqlite3 *db, 
+  void *pCollNeededArg, 
+  void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*)
+){
+  db->xCollNeeded = 0;
+  db->xCollNeeded16 = xCollNeeded16;
+  db->pCollNeededArg = pCollNeededArg;
+  return SQLITE_OK;
+}
+

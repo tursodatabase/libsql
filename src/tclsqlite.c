@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.82 2004/06/10 02:16:02 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.83 2004/06/10 10:50:38 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -69,7 +69,8 @@ struct SqliteDb {
   SqlFunc *pFunc;       /* List of SQL functions */
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
-  int nChange;         /* Database changes for the most recent eval */
+  int nChange;          /* Database changes for the most recent eval */
+  Tcl_Obj *pCollateNeeded;  /* Collation needed script */
 };
 
 /*
@@ -215,6 +216,20 @@ static int DbCommitHandler(void *cd){
     return 1;
   }
   return 0;
+}
+
+static void tclCollateNeeded(
+  void *pCtx,
+  sqlite *db,
+  int enc,
+  const char *zName
+){
+  SqliteDb *pDb = (SqliteDb *)pCtx;
+  Tcl_Obj *pScript = Tcl_DuplicateObj(pDb->pCollateNeeded);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj(zName, -1));
+  Tcl_EvalObjEx(pDb->interp, pScript, 0);
+  Tcl_DecrRefCount(pScript);
 }
 
 /*
@@ -382,7 +397,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "errorcode",          "eval",                   "function",
     "last_insert_rowid",  "last_statement_changes", "onecolumn",
     "progress",           "rekey",                  "timeout",
-    "trace",              "collate",
+    "trace",              "collate",                "collation_needed",
     0                    
   };
   enum DB_enum {
@@ -391,7 +406,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_ERRORCODE,         DB_EVAL,                   DB_FUNCTION,
     DB_LAST_INSERT_ROWID, DB_LAST_STATEMENT_CHANGES, DB_ONECOLUMN,        
     DB_PROGRESS,          DB_REKEY,                  DB_TIMEOUT,
-    DB_TRACE,             DB_COLLATE
+    DB_TRACE,             DB_COLLATE,                DB_COLLATION_NEEDED
   };
 
   if( objc<2 ){
@@ -924,6 +939,26 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
+  /*
+  **     $db collate_needed SCRIPT
+  **
+  ** Create a new SQL collation function called NAME.  Whenever
+  ** that function is called, invoke SCRIPT to evaluate the function.
+  */
+  case DB_COLLATION_NEEDED: {
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SCRIPT");
+      return TCL_ERROR;
+    }
+    if( pDb->pCollateNeeded ){
+      Tcl_DecrRefCount(pDb->pCollateNeeded);
+    }
+    pDb->pCollateNeeded = Tcl_DuplicateObj(objv[2]);
+    Tcl_IncrRefCount(pDb->pCollateNeeded);
+    sqlite3_collation_needed(pDb->db, pDb, tclCollateNeeded);
+    break;
+  }
+
   } /* End of the SWITCH statement */
   return rc;
 }
@@ -1051,6 +1086,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Md5_Register(p->db);
    }
 #endif  
+  p->interp = interp;
   return TCL_OK;
 }
 

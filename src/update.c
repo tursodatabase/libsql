@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.81 2004/05/29 11:24:50 danielk1977 Exp $
+** $Id: update.c,v 1.82 2004/06/10 10:50:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -179,6 +179,7 @@ void sqlite3Update(
       }
     }
     if( i<pIdx->nColumn ){
+      if( sqlite3CheckIndexCollSeq(pParse, pIdx) ) goto update_cleanup;
       apIdx[nIdx++] = pIdx;
       aIdxUsed[j] = 1;
     }else{

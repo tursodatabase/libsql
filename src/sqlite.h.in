@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.96 2004/06/10 02:16:02 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.97 2004/06/10 10:50:30 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -967,19 +967,82 @@ void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 #define SQLITE_UTF16LE 2
 #define SQLITE_UTF16BE 3
 
+/*
+** These two functions are used to add new collation sequences to the
+** sqlite3 handle specified as the first argument. 
+**
+** The name of the new collation sequence is specified as a UTF-8 string
+** for sqlite3_create_collation() and a UTF-16 string for
+** sqlite3_create_collation16(). In both cases the name is passed as the
+** second function argument.
+**
+** The third argument must be one of the constants SQLITE_UTF8,
+** SQLITE_UTF16LE or SQLITE_UTF16BE, indicating that the user-supplied
+** routine expects to be passed pointers to strings encoded using UTF-8,
+** UTF-16 little-endian or UTF-16 big-endian respectively.
+**
+** A pointer to the user supplied routine must be passed as the fifth
+** argument. If it is NULL, this is the same as deleting the collation
+** sequence (so that SQLite cannot call it anymore). Each time the user
+** supplied function is invoked, it is passed a copy of the void* passed as
+** the fourth argument to sqlite3_create_collation() or
+** sqlite3_create_collation16() as its first parameter.
+**
+** The remaining arguments to the user-supplied routine are two strings,
+** each represented by a [length, data] pair and encoded in the encoding
+** that was passed as the third argument when the collation sequence was
+** registered. The user routine should return negative, zero or positive if
+** the first string is less than, equal to, or greater than the second
+** string. i.e. (STRING1 - STRING2).
+*/
 int sqlite3_create_collation(
   sqlite3*, 
   const char *zName, 
-  int enc, 
+  int eTextRep, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );
 int sqlite3_create_collation16(
   sqlite3*, 
   const char *zName, 
-  int enc, 
+  int eTextRep, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
+);
+
+/*
+** To avoid having to register all collation sequences before a database
+** can be used, a single callback function may be registered with the
+** database handle to be called whenever an undefined collation sequence is
+** required.
+**
+** If the function is registered using the sqlite3_collation_needed() API,
+** then it is passed the names of undefined collation sequences as strings
+** encoded in UTF-8. If sqlite3_collation_needed16() is used, the names
+** are passed as UTF-16 in machine native byte order. A call to either
+** function replaces any existing callback.
+**
+** When the user-function is invoked, the first argument passed is a copy
+** of the second argument to sqlite3_collation_needed() or
+** sqlite3_collation_needed16(). The second argument is the database
+** handle. The third argument is one of SQLITE_UTF8, SQLITE_UTF16BE or
+** SQLITE_UTF16LE, indicating the most desirable form of the collation
+** sequence function required. The fourth parameter is the name of the
+** required collation sequence.
+**
+** The collation sequence is returned to SQLite by a collation-needed
+** callback using the sqlite3_create_collation() or
+** sqlite3_create_collation16() APIs, described above.
+*/
+int sqlite3_collation_needed(
+  sqlite3*, 
+  void*, 
+  void(*)(void*,sqlite3*,int eTextRep,const char*)
+);
+int sqlite3_collation_needed16(
+  sqlite3*, 
+  void*,
+  void(*)(void*,sqlite3*,int eTextRep,const void*)
 );
 
 

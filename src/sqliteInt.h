@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.279 2004/06/10 02:16:02 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.280 2004/06/10 10:50:32 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -423,6 +423,9 @@ struct sqlite {
   u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
   int nMaster;                  /* Length of master journal name. -1=unknown */
+  void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
+  void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
+  void *pCollNeededArg;
 };
 
 /*
@@ -1395,4 +1398,6 @@ int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold);
 int sqlite3ReadSchema(sqlite *db, char **);
 CollSeq *sqlite3FindCollSeq(sqlite *,u8 enc, const char *,int,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
-CollSeq *sqlite3ExprCollSeq(Expr *pExpr);
+CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
+int sqlite3CheckCollSeq(Parse *, CollSeq *);
+int sqlite3CheckIndexCollSeq(Parse *, Index *);

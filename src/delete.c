@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.72 2004/06/03 16:08:41 danielk1977 Exp $
+** $Id: delete.c,v 1.73 2004/06/10 10:50:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -193,6 +193,13 @@ void sqlite3DeleteFrom(
   ** the table and pick which records to delete.
   */
   else{
+    /* Ensure all required collation sequences are available. */
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      if( sqlite3CheckIndexCollSeq(pParse, pIdx) ){
+        goto delete_from_cleanup;
+      }
+    }
+
     /* Begin the database scan
     */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0);

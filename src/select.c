@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.185 2004/06/09 09:55:18 danielk1977 Exp $
+** $Id: select.c,v 1.186 2004/06/10 10:50:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -550,7 +550,7 @@ static void generateSortTail(
     ** is stored in pOrderBy->a[i].zName. Otherwise, use the default
     ** collation type for the expression.
     */
-    pInfo->aColl[i] = sqlite3ExprCollSeq(pOrderBy->a[i].pExpr);
+    pInfo->aColl[i] = sqlite3ExprCollSeq(pParse, pOrderBy->a[i].pExpr);
     if( !pInfo->aColl[i] ){
       pInfo->aColl[i] = db->pDfltColl;
     }
@@ -825,7 +825,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
     if( zType ){
       pTab->aCol[i].affinity = sqlite3AffinityType(zType, strlen(zType));
     }
-    pTab->aCol[i].pColl = sqlite3ExprCollSeq(p);
+    pTab->aCol[i].pColl = sqlite3ExprCollSeq(pParse, p);
     if( !pTab->aCol[i].pColl ){
       pTab->aCol[i].pColl = pParse->db->pDfltColl;
     }
@@ -2233,21 +2233,6 @@ int sqlite3Select(
     }
   }
 
-  /* If there is an ORDER BY clause, resolve any collation sequences
-  ** names that have been explicitly specified.
-  */
-  if( pOrderBy ){
-    for(i=0; i<pOrderBy->nExpr; i++){
-      if( pOrderBy->a[i].zName ){
-        pOrderBy->a[i].pExpr->pColl = 
-            sqlite3LocateCollSeq(pParse, pOrderBy->a[i].zName, -1);
-      }
-    }
-    if( pParse->nErr ){
-      goto select_end;
-    }
-  }
-
   /* Begin generating code.
   */
   v = sqlite3GetVdbe(pParse);
@@ -2321,6 +2306,21 @@ int sqlite3Select(
       flattenSubquery(pParse, pParent, parentTab, *pParentAgg, isAgg) ){
     if( isAgg ) *pParentAgg = 1;
     return rc;
+  }
+
+  /* If there is an ORDER BY clause, resolve any collation sequences
+  ** names that have been explicitly specified.
+  */
+  if( pOrderBy ){
+    for(i=0; i<pOrderBy->nExpr; i++){
+      if( pOrderBy->a[i].zName ){
+        pOrderBy->a[i].pExpr->pColl = 
+            sqlite3LocateCollSeq(pParse, pOrderBy->a[i].zName, -1);
+      }
+    }
+    if( pParse->nErr ){
+      goto select_end;
+    }
   }
 
   /* Set the limiter.
