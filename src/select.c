@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.69 2002/02/28 00:41:11 drh Exp $
+** $Id: select.c,v 1.70 2002/02/28 01:46:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1271,7 +1271,7 @@ int sqliteSelect(
         }
       }
       sqliteVdbeAddOp(v, OP_Integer, i, 0);
-      sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList->nExpr);
+      sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList ? pE->pList->nExpr : 0);
       assert( pParse->aAgg[i].pFunc!=0 );
       assert( pParse->aAgg[i].pFunc->xStep!=0 );
       sqliteVdbeChangeP3(v, -1, (char*)pParse->aAgg[i].pFunc, P3_POINTER);

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.49 2002/02/28 00:41:10 drh Exp $
+** $Id: expr.c,v 1.50 2002/02/28 01:46:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1180,7 +1180,8 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         pParse->aAgg[i].isAgg = 1;
         pParse->aAgg[i].pExpr = pExpr;
         pParse->aAgg[i].pFunc = sqliteFindFunction(pParse->db,
-             pExpr->token.z, pExpr->token.n, pExpr->pList->nExpr, 0);
+             pExpr->token.z, pExpr->token.n,
+             pExpr->pList ? pExpr->pList->nExpr : 0, 0);
       }
       pExpr->iAgg = i;
       break;
