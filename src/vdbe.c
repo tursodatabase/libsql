@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.296 2004/05/17 10:48:58 danielk1977 Exp $
+** $Id: vdbe.c,v 1.297 2004/05/18 01:23:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1992,6 +1992,19 @@ case OP_Class: {
   break;
 }
 
+/* Opcode: SetNumColumns P1 P2 *
+**
+** Before the OP_Column opcode can be executed on a cursor, this
+** opcode must be called to set the number of fields in the table.
+**
+** This opcode sets the number of columns for cursor P1 to P2.
+*/
+case OP_SetNumColumns: {
+  assert( (pOp->p1)<p->nCursor );
+  p->apCsr[pOp->p1]->nField = pOp->p2;
+  break;
+}
+
 /* Opcode: Column P1 P2 *
 **
 ** Interpret the data that cursor P1 points to as a structure built using
@@ -2012,7 +2025,7 @@ case OP_Column: {
   int payloadSize;   /* Number of bytes in the record */
   int i = pOp->p1;
   int p2 = pOp->p2;  /* column number to retrieve */
-  Cursor *pC;
+  Cursor *pC = 0;
   char *zRec;        /* Pointer to record-data from stack or pseudo-table. */
   BtCursor *pCrsr;
 
@@ -2022,7 +2035,7 @@ case OP_Column: {
   u64 nField;        /* number of fields in the record */
 
   int len;           /* The length of the serialized data for the column */
-  int offset;
+  int offset = 0;
   int nn;
 
   assert( i<p->nCursor );
@@ -2038,6 +2051,7 @@ case OP_Column: {
     zRec = pTos[i].z;
     payloadSize = pTos[i].n;
     pC->cacheValid = 0;
+    assert(!"broken for now");
   }else if( (pC = p->apCsr[i])->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     zRec = 0;
@@ -2068,11 +2082,20 @@ case OP_Column: {
     break;
   }
 
+  /* If the row data is coming from a cursor, then OP_SetNumColumns must of
+  ** been executed on that cursor. Also, p2 (the column to read) must be
+  ** less than nField.
+  */
+  assert( !pC || pC->nField>0 );
+  assert( p2<pC->nField );
+  nField = pC->nField;
+
   /* Read and parse the table header.  Store the results of the parse
   ** into the record header cache fields of the cursor.
   */
   if( !pC->cacheValid ){
     pC->payloadSize = payloadSize;
+#if 0
     if( zRec ){
       zData = zRec;
     }else{
@@ -2088,15 +2111,19 @@ case OP_Column: {
       }
       assert( zData );
     }
-    offset = sqlite3GetVarint(zData, &nField);
-    if( nField>pC->nField ){
-      sqliteFree(pC->aType);
+    {
+      u64 x;
+      offset = sqlite3GetVarint(zData, &x);
+      assert( x==nField );
+    }
+#endif
+
+    if( !pC->aType ){
       pC->aType = sqliteMallocRaw( nField*sizeof(pC->aType[0]) );
       if( pC->aType==0 ){
         goto no_mem;
       }
     }
-    pC->nField = nField;
 
     if( !zRec ){
       /* If the record is stored in a table, see if enough of it is on
@@ -2257,7 +2284,7 @@ case OP_MakeRecord: {
   unsigned char *zCsr;
   char *zAffinity;
   Mem *pRec;
-  int nBytes;    /* Space required for this record */
+  int nBytes = 0;    /* Space required for this record */
 
   Mem *pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
@@ -2266,7 +2293,7 @@ case OP_MakeRecord: {
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  nBytes = sqlite3VarintLen(nField);
+  // nBytes = sqlite3VarintLen(nField);
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
@@ -2285,13 +2312,12 @@ case OP_MakeRecord: {
   /* Allocate space for the new record. */
   zNewRecord = sqliteMallocRaw(nBytes);
   if( !zNewRecord ){
-    rc = SQLITE_NOMEM;
-    goto abort_due_to_error;
+    goto no_mem;
   }
 
   /* Write the record */
   zCsr = zNewRecord;
-  zCsr += sqlite3PutVarint(zCsr, nField);             /* number of fields */
+  // zCsr += sqlite3PutVarint(zCsr, nField);             /* number of fields */
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type = sqlite3VdbeSerialType(pRec);
     zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
@@ -2421,8 +2447,7 @@ case OP_MakeIdxKey: {
   /* Allocate space for the new key */
   zKey = (char *)sqliteMallocRaw(nByte);
   if( !zKey ){
-    rc = SQLITE_NOMEM;
-    goto abort_due_to_error;
+    goto no_mem;
   }
   
   /* Build the key in the buffer pointed to by zKey. */
@@ -3564,8 +3589,7 @@ case OP_IdxColumn: {
   if( !zData ){
     zData = (char *)sqliteMalloc(n);
     if( !zData ){
-      rc = SQLITE_NOMEM;
-      goto abort_due_to_error;
+      goto no_mem;
     }
     rc = sqlite3BtreeKey(pCsr, len, n, zData);
     if( rc!=SQLITE_OK ){

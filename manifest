@@ -1,5 +1,5 @@
-C More\schanges\sto\ssupport\sthe\snew\stypes\smodel.\sCompound\sSELECTs\sare\scurrently\nbroken.\s(CVS\s1389)
-D 2004-05-17T10:48:58
+C Omit\sthe\s'\\0'\sat\sthe\send\sof\sUTF-8\sstrings\son\sdisk\s(it\sis\simplied).\sAlso\ndon't\sstore\sthe\snumber\sof\srows\sat\sthe\sbeginning\sof\seach\stable\srecord.\s(CVS\s1390)
+D 2004-05-18T01:23:38
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,16 +26,16 @@ F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c bf8d9592b66fb9ba89a5be13fd99a7d8b8a67d7f
 F src/btree.h 6f51ad0ffebfba71295fcacdbe86007512200050
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
-F src/build.c fd37eda7100d2507c647df43f9f3ce56a2f59ab4
+F src/build.c ddb0384afd2c82599b7d2bdefc4878850854931c
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
 F src/date.c 0eb0a89960bb45c7f7e768748605a7a97b0c8064
-F src/delete.c ea8212a44b5c0dad8fb1794fe7297654f7ed05f9
+F src/delete.c 8cb317fbba81b428301bccf04be1bea22203508b
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d39afb30c76c2f67fb5ffdfe530ed709c5009786
 F src/func.c cfbb7096efb58e2857e3b312a8958a12774b625a
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
-F src/insert.c 656a648a7ab06a647a3bc5453d6a69f4fbd568e3
+F src/insert.c 72d9dd0b2543420a905ada68f098bc6754b8a1ea
 F src/main.c 4b82d7e78f4c9799343b02740a5ba9768d5e464d
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
@@ -43,10 +43,10 @@ F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
 F src/parse.y d0258aa3cc8b0c5742b07b699d10fa98f3caea7d
-F src/pragma.c 351836bce186f4eee45a32868b7a379c22ac344a
+F src/pragma.c 2c65f46a520cd3bab49623d68bec0a5afaae5b52
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c b62bb2507df4bfac45f808ac9de9a2af99b9ff28
+F src/select.c 62431fb1a1021301e35f12f64c325d5f20371393
 F src/shell.c 0c4662e13bfbfd3d13b066c5859cc97ad2f95d21
 F src/sqlite.h.in 799c5e726296ec7bc20e6407cdf4df0e0bc00c0c
 F src/sqliteInt.h ac5fe07df6cf0a4c935e5a88bc14bc620e4f1591
@@ -59,15 +59,15 @@ F src/test4.c b3fab9aea7a8940a8a7386ce1c7e2157b09bd296
 F src/test5.c eb39aac8fed61bd930b92613cd705c145244074a
 F src/tokenize.c e7536dd31205d5afb76c1bdc832dea009c7a3847
 F src/trigger.c 8df308e09113410bb895e88a2db65b55490268db
-F src/update.c 04492438aee57a6be5a8a8e54e3add12c1d598ca
+F src/update.c d14a0b0f3b35ea2469dda375e59a1064f02c7c0e
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c f9511ffba78e6cf71a28774c2820d7750b5bacdf
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c e8fd1b095f83336519b862b9e79765e3e4493d80
+F src/vdbe.c 8a6b971c130227fc90a6e899afe218277aa29fdd
 F src/vdbe.h 94457ca73bae972dc61bca33a4dccc2e6e14e2f8
 F src/vdbeInt.h 311c2a046ea419781d0ef331198b7b0a65eebc92
 F src/vdbeaux.c 394bde6b1715e28b869d55e5cd90682d87f527e4
-F src/where.c 76a820b814d7ae0bd6b4110aafafce29fd534dfc
+F src/where.c 5f480219a943b0fed1f6922d2fdbfba8616a9148
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
 F test/attach2.test 7c388dee63a4c1997695c3d41957f32ce784ac56
@@ -192,7 +192,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9321e7426337e04064b5791c48dd5fc3c1eecaa2
-R 9e09205970304eba71ff10d90be26268
+P 0f6c9b05e688e281fa168aacdd867db408df2863
+R 9aea282a59c85bfd7c0b6fa8bda19f62
 U danielk1977
-Z 80bb342777e861c5628fead0ab144825
+Z 2f567abfa9bbe1670a49c48e7ddc69a6

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.165 2004/05/17 10:48:58 danielk1977 Exp $
+** $Id: select.c,v 1.166 2004/05/18 01:23:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1313,7 +1313,9 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   /* Create the destination temporary table if necessary
   */
   if( eDest==SRT_TempTable ){
+    assert( p->pEList );
     sqlite3VdbeAddOp(v, OP_OpenTemp, iParm, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, p->pEList->nExpr);
     eDest = SRT_Table;
   }
 
@@ -1904,6 +1906,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   */
   if( eDest==SRT_TempTable ){
     sqlite3VdbeAddOp(v, OP_OpenTemp, iParm, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, 1);
   }
 
   /* Generating code to find the min or the max.  Basically all we have
@@ -1917,6 +1920,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   if( pSrc->a[0].pSelect==0 ){
     sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqlite3VdbeOp3(v, OP_OpenRead, base, pTab->tnum, pTab->zName, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
   }
   cont = sqlite3VdbeMakeLabel(v);
   if( pIdx==0 ){
@@ -2244,6 +2248,7 @@ int sqlite3Select(
   */
   if( eDest==SRT_TempTable ){
     sqlite3VdbeAddOp(v, OP_OpenTemp, iParm, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, pEList->nExpr);
   }
 
   /* Do an analysis of aggregate expressions.

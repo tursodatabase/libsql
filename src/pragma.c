@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.23 2004/05/16 11:15:38 danielk1977 Exp $
+** $Id: pragma.c,v 1.24 2004/05/18 01:23:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -580,17 +580,19 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_SetInsert,   0, 0,        "1"},
       { OP_Integer,     0, 0,        0},    /* 1 */
       { OP_OpenRead,    0, MASTER_ROOT, 0},
-      { OP_Rewind,      0, 7,        0},    /* 3 */
-      { OP_Column,      0, 3,        0},    /* 4 */
+      { OP_SetNumColumns,0,5,        0},    /* sqlite_master has 5 cols */
+
+      { OP_Rewind,      0, 8,        0},    /* 4 */
+      { OP_Column,      0, 3,        0},    /* 5 */
       { OP_SetInsert,   0, 0,        0},
-      { OP_Next,        0, 4,        0},    /* 6 */
-      { OP_IntegrityCk, 0, 0,        0},    /* 7 */
+      { OP_Next,        0, 5,        0},    /* 7 */
+      { OP_IntegrityCk, 0, 0,        0},    /* 8 */
       { OP_Dup,         0, 1,        0},
       { OP_String,      0, 0,        "ok"},
-      { OP_StrEq,       0, 12,       0},    /* 10 */
+      { OP_StrEq,       0, 13,       0},    /* 11 */
       { OP_MemIncr,     0, 0,        0},
       { OP_String,      0, 0,        "*** in database "},
-      { OP_String,      0, 0,        0},    /* 13 */
+      { OP_String,      0, 0,        0},    /* 14 */
       { OP_String,      0, 0,        " ***\n"},
       { OP_Pull,        3, 0,        0},
       { OP_Concat,      4, 1,        0},
@@ -637,6 +639,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         if( pTab->pIndex==0 ) continue;
         sqlite3VdbeAddOp(v, OP_Integer, i, 0);
         sqlite3VdbeOp3(v, OP_OpenRead, 1, pTab->tnum, pTab->zName, 0);
+        sqlite3VdbeAddOp(v, OP_SetNumColumns, 1, pTab->nCol);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           if( pIdx->tnum==0 ) continue;
           sqlite3VdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
