@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.15 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: minmax.test,v 1.16 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -134,27 +134,27 @@ do_test minmax-3.3 {
   set sqlite_search_count
 } {0}
 
-ifcapable compound {
-do_test minmax-4.1 {
-  execsql {
-    SELECT coalesce(min(x+0),-1), coalesce(max(x+0),-1) FROM
-      (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
-  }
-} {1 20}
-do_test minmax-4.2 {
-  execsql {
-    SELECT y, sum(x) FROM
-      (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
-    GROUP BY y ORDER BY y;
-  }
-} {1 1.0 2 5.0 3 22.0 4 92.0 5 90.0 6 0.0}
-do_test minmax-4.3 {
-  execsql {
-    SELECT y, count(x), count(*) FROM
-      (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
-    GROUP BY y ORDER BY y;
-  }
-} {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}
+ifcapable {compound && subquery} {
+  do_test minmax-4.1 {
+    execsql {
+      SELECT coalesce(min(x+0),-1), coalesce(max(x+0),-1) FROM
+        (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
+    }
+  } {1 20}
+  do_test minmax-4.2 {
+    execsql {
+      SELECT y, sum(x) FROM
+        (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+      GROUP BY y ORDER BY y;
+    }
+  } {1 1.0 2 5.0 3 22.0 4 92.0 5 90.0 6 0.0}
+  do_test minmax-4.3 {
+    execsql {
+      SELECT y, count(x), count(*) FROM
+        (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+      GROUP BY y ORDER BY y;
+    }
+  } {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}
 } ;# ifcapable compound
 
 # Make sure the min(x) and max(x) optimizations work on empty tables
@@ -279,22 +279,22 @@ do_test minmax-8.2 {
 # Ticket #658:  Test the min()/max() optimization when the FROM clause
 # is a subquery.
 #
-ifcapable compound {
-do_test minmax-9.1 {
-  execsql {
-    SELECT max(rowid) FROM (
-      SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
-    )
-  }
-} {1}
-do_test minmax-9.2 {
-  execsql {
-    SELECT max(rowid) FROM (
-      SELECT max(rowid) FROM t4 EXCEPT SELECT max(rowid) FROM t5
-    )
-  }
-} {{}}
-} ;# ifcapable compound
+ifcapable {compound && subquery} {
+  do_test minmax-9.1 {
+    execsql {
+      SELECT max(rowid) FROM (
+        SELECT max(rowid) FROM t4 UNION SELECT max(rowid) FROM t5
+      )
+    }
+  } {1}
+  do_test minmax-9.2 {
+    execsql {
+      SELECT max(rowid) FROM (
+        SELECT max(rowid) FROM t4 EXCEPT SELECT max(rowid) FROM t5
+      )
+    }
+  } {{}}
+} ;# ifcapable compound&&subquery
 
 # If there is a NULL in an aggregate max() or min(), ignore it.  An
 # aggregate min() or max() will only return NULL if all values are NULL.

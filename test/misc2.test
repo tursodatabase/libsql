@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.19 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: misc2.test,v 1.20 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,17 +49,19 @@ do_test misc2-2.1 {
   }
 } {}
 ifcapable view {
-do_test misc2-2.2 {
-  execsql {
-    SELECT rowid, * FROM (SELECT * FROM t1, t2);
+  ifcapable subquery {
+    do_test misc2-2.2 {
+      execsql {
+        SELECT rowid, * FROM (SELECT * FROM t1, t2);
+      }
+    } {{} 1 2 3 7 8 9}
   }
-} {{} 1 2 3 7 8 9}
-do_test misc2-2.3 {
-  execsql {
-    CREATE VIEW v1 AS SELECT * FROM t1, t2;
-    SELECT rowid, * FROM v1;
-  }
-} {{} 1 2 3 7 8 9}
+  do_test misc2-2.3 {
+    execsql {
+      CREATE VIEW v1 AS SELECT * FROM t1, t2;
+      SELECT rowid, * FROM v1;
+    }
+  } {{} 1 2 3 7 8 9}
 } ;# ifcapable view
 
 # Check name binding precedence.  Ticket #387

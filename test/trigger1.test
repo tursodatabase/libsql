@@ -141,7 +141,7 @@ do_test trigger1-1.10 {
     create trigger r1 after delete on t1 for each row begin
       delete from t1 WHERE a=old.a+2;
     end;
-    delete from t1 where a in (1,3);
+    delete from t1 where a=1 OR a=3;
     select * from t1;
     drop table t1;
   }
@@ -157,7 +157,7 @@ do_test trigger1-1.11 {
     create trigger r1 after update on t1 for each row begin
       delete from t1 WHERE a=old.a+2;
     end;
-    update t1 set b='x-' || b where a in (1,3);
+    update t1 set b='x-' || b where a=1 OR a=3;
     select * from t1;
     drop table t1;
   }

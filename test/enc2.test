@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.19 2004/11/14 04:04:18 drh Exp $
+# $Id: enc2.test,v 1.20 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -102,11 +102,13 @@ do_test $t.5 {
     SELECT * FROM t1 WHERE a = 'four';
   }
 } {four IV 4}
-do_test $t.6 {
-  execsql {
-    SELECT * FROM t1 WHERE a IN ('one', 'two');
-  }
-} {one I 1 two II 2}
+ifcapable subquery {
+  do_test $t.6 {
+    execsql {
+      SELECT * FROM t1 WHERE a IN ('one', 'two');
+    }
+  } {one I 1 two II 2}
+}
 
 # Now check that we can retrieve data in both UTF-16 and UTF-8
 do_test $t.7 {

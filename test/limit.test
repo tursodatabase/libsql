@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.22 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: limit.test,v 1.23 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,13 +65,13 @@ do_test limit-1.7 {
   execsql {SELECT * FROM t1 AS a, t1 AS b ORDER BY a.x, b.x LIMIT 5 OFFSET 32}
 } {1 5 0 5 1 5 1 5 1 5 2 5 1 5 3 5 1 5 4 5}
 
-ifcapable view {
-do_test limit-2.1 {
-  execsql {
-    CREATE VIEW v1 AS SELECT * FROM t1 LIMIT 2;
-    SELECT count(*) FROM (SELECT * FROM v1);
-  }
-} 2
+ifcapable {view && subquery} {
+  do_test limit-2.1 {
+    execsql {
+      CREATE VIEW v1 AS SELECT * FROM t1 LIMIT 2;
+      SELECT count(*) FROM (SELECT * FROM v1);
+    }
+  } 2
 } ;# ifcapable view
 do_test limit-2.2 {
   execsql {

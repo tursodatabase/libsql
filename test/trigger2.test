@@ -55,151 +55,153 @@ ifcapable {!trigger} {
 }
 
 # 1.
-set ii 0
-foreach tbl_defn {
-	{CREATE TEMP TABLE tbl (a, b);} 
-	{CREATE TABLE tbl (a, b);} 
-	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} 
-	{CREATE TEMPORARY TABLE tbl (a INTEGER PRIMARY KEY, b);} 
-        {CREATE TABLE tbl (a, b PRIMARY KEY);} 
-	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
-	{CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
-} {
-  incr ii
-  catchsql { DROP INDEX tbl_idx; }
+ifcapable subquery {
+  set ii 0
+  foreach tbl_defn {
+  	{CREATE TEMP TABLE tbl (a, b);} 
+  	{CREATE TABLE tbl (a, b);} 
+  	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} 
+  	{CREATE TEMPORARY TABLE tbl (a INTEGER PRIMARY KEY, b);} 
+          {CREATE TABLE tbl (a, b PRIMARY KEY);} 
+  	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
+  	{CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
+  } {
+    incr ii
+    catchsql { DROP INDEX tbl_idx; }
+    catchsql {
+      DROP TABLE rlog;
+      DROP TABLE clog;
+      DROP TABLE tbl;
+      DROP TABLE other_tbl;
+    }
+  
+    execsql $tbl_defn
+  
+    execsql {
+      INSERT INTO tbl VALUES(1, 2);
+      INSERT INTO tbl VALUES(3, 4);
+  
+      CREATE TABLE rlog (idx, old_a, old_b, db_sum_a, db_sum_b, new_a, new_b);
+      CREATE TABLE clog (idx, old_a, old_b, db_sum_a, db_sum_b, new_a, new_b);
+  
+      CREATE TRIGGER before_update_row BEFORE UPDATE ON tbl FOR EACH ROW 
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  old.a, old.b, 
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  new.a, new.b);
+      END;
+  
+      CREATE TRIGGER after_update_row AFTER UPDATE ON tbl FOR EACH ROW 
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  old.a, old.b, 
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  new.a, new.b);
+      END;
+  
+      CREATE TRIGGER conditional_update_row AFTER UPDATE ON tbl FOR EACH ROW
+        WHEN old.a = 1
+        BEGIN
+        INSERT INTO clog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM clog), 
+  	  old.a, old.b, 
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  new.a, new.b);
+      END;
+    }
+  
+    do_test trigger2-1.$ii.1 {
+      set r {}
+      foreach v [execsql { 
+        UPDATE tbl SET a = a * 10, b = b * 10;
+        SELECT * FROM rlog ORDER BY idx;
+        SELECT * FROM clog ORDER BY idx;
+      }] {
+        lappend r [expr {int($v)}]
+      }
+      set r
+    } [list 1 1 2  4  6 10 20 \
+            2 1 2 13 24 10 20 \
+  	  3 3 4 13 24 30 40 \
+  	  4 3 4 40 60 30 40 \
+            1 1 2 13 24 10 20 ]
+  
+    execsql {
+      DELETE FROM rlog;
+      DELETE FROM tbl;
+      INSERT INTO tbl VALUES (100, 100);
+      INSERT INTO tbl VALUES (300, 200);
+      CREATE TRIGGER delete_before_row BEFORE DELETE ON tbl FOR EACH ROW
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  old.a, old.b, 
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  0, 0);
+      END;
+  
+      CREATE TRIGGER delete_after_row AFTER DELETE ON tbl FOR EACH ROW
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  old.a, old.b, 
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  0, 0);
+      END;
+    }
+    do_test trigger2-1.$ii.2 {
+      set r {}
+      foreach v [execsql {
+        DELETE FROM tbl;
+        SELECT * FROM rlog;
+      }] {
+        lappend r [expr {int($v)}]
+      }
+      set r
+    } [list 1 100 100 400 300 0 0 \
+            2 100 100 300 200 0 0 \
+            3 300 200 300 200 0 0 \
+            4 300 200 0 0 0 0 ]
+  
+    execsql {
+      DELETE FROM rlog;
+      CREATE TRIGGER insert_before_row BEFORE INSERT ON tbl FOR EACH ROW
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  0, 0,
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  new.a, new.b);
+      END;
+  
+      CREATE TRIGGER insert_after_row AFTER INSERT ON tbl FOR EACH ROW
+        BEGIN
+        INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
+  	  0, 0,
+  	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
+  	  new.a, new.b);
+      END;
+    }
+    do_test trigger2-1.$ii.3 {
+      execsql {
+  
+        CREATE TABLE other_tbl(a, b);
+        INSERT INTO other_tbl VALUES(1, 2);
+        INSERT INTO other_tbl VALUES(3, 4);
+        -- INSERT INTO tbl SELECT * FROM other_tbl;
+        INSERT INTO tbl VALUES(5, 6);
+        DROP TABLE other_tbl;
+  
+        SELECT * FROM rlog;
+      }
+    } [list 1 0 0 0.0 0.0 5 6 \
+            2 0 0 5.0 6.0 5 6 ]
+  
+    integrity_check trigger2-1.$ii.4
+  }
   catchsql {
     DROP TABLE rlog;
     DROP TABLE clog;
     DROP TABLE tbl;
     DROP TABLE other_tbl;
   }
-
-  execsql $tbl_defn
-
-  execsql {
-    INSERT INTO tbl VALUES(1, 2);
-    INSERT INTO tbl VALUES(3, 4);
-
-    CREATE TABLE rlog (idx, old_a, old_b, db_sum_a, db_sum_b, new_a, new_b);
-    CREATE TABLE clog (idx, old_a, old_b, db_sum_a, db_sum_b, new_a, new_b);
-
-    CREATE TRIGGER before_update_row BEFORE UPDATE ON tbl FOR EACH ROW 
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  old.a, old.b, 
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  new.a, new.b);
-    END;
-
-    CREATE TRIGGER after_update_row AFTER UPDATE ON tbl FOR EACH ROW 
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  old.a, old.b, 
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  new.a, new.b);
-    END;
-
-    CREATE TRIGGER conditional_update_row AFTER UPDATE ON tbl FOR EACH ROW
-      WHEN old.a = 1
-      BEGIN
-      INSERT INTO clog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM clog), 
-	  old.a, old.b, 
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  new.a, new.b);
-    END;
-  }
-
-  do_test trigger2-1.$ii.1 {
-    set r {}
-    foreach v [execsql { 
-      UPDATE tbl SET a = a * 10, b = b * 10;
-      SELECT * FROM rlog ORDER BY idx;
-      SELECT * FROM clog ORDER BY idx;
-    }] {
-      lappend r [expr {int($v)}]
-    }
-    set r
-  } [list 1 1 2  4  6 10 20 \
-          2 1 2 13 24 10 20 \
-	  3 3 4 13 24 30 40 \
-	  4 3 4 40 60 30 40 \
-          1 1 2 13 24 10 20 ]
-
-  execsql {
-    DELETE FROM rlog;
-    DELETE FROM tbl;
-    INSERT INTO tbl VALUES (100, 100);
-    INSERT INTO tbl VALUES (300, 200);
-    CREATE TRIGGER delete_before_row BEFORE DELETE ON tbl FOR EACH ROW
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  old.a, old.b, 
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  0, 0);
-    END;
-
-    CREATE TRIGGER delete_after_row AFTER DELETE ON tbl FOR EACH ROW
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  old.a, old.b, 
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  0, 0);
-    END;
-  }
-  do_test trigger2-1.$ii.2 {
-    set r {}
-    foreach v [execsql {
-      DELETE FROM tbl;
-      SELECT * FROM rlog;
-    }] {
-      lappend r [expr {int($v)}]
-    }
-    set r
-  } [list 1 100 100 400 300 0 0 \
-          2 100 100 300 200 0 0 \
-          3 300 200 300 200 0 0 \
-          4 300 200 0 0 0 0 ]
-
-  execsql {
-    DELETE FROM rlog;
-    CREATE TRIGGER insert_before_row BEFORE INSERT ON tbl FOR EACH ROW
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  0, 0,
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  new.a, new.b);
-    END;
-
-    CREATE TRIGGER insert_after_row AFTER INSERT ON tbl FOR EACH ROW
-      BEGIN
-      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
-	  0, 0,
-	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
-	  new.a, new.b);
-    END;
-  }
-  do_test trigger2-1.$ii.3 {
-    execsql {
-
-      CREATE TABLE other_tbl(a, b);
-      INSERT INTO other_tbl VALUES(1, 2);
-      INSERT INTO other_tbl VALUES(3, 4);
-      -- INSERT INTO tbl SELECT * FROM other_tbl;
-      INSERT INTO tbl VALUES(5, 6);
-      DROP TABLE other_tbl;
-
-      SELECT * FROM rlog;
-    }
-  } [list 1 0 0 0.0 0.0 5 6 \
-          2 0 0 5.0 6.0 5 6 ]
-
-  integrity_check trigger2-1.$ii.4
-}
-catchsql {
-  DROP TABLE rlog;
-  DROP TABLE clog;
-  DROP TABLE tbl;
-  DROP TABLE other_tbl;
 }
 
 # 2.
@@ -348,9 +350,11 @@ execsql {
 }
 
 # trigger2-3.2: WHEN clause
-set when_triggers [ list \
-             {t1 BEFORE INSERT ON tbl WHEN new.a > 20} \
-             {t2 BEFORE INSERT ON tbl WHEN (SELECT count(*) FROM tbl) = 0} ]
+set when_triggers [list {t1 BEFORE INSERT ON tbl WHEN new.a > 20}]
+ifcapable subquery {
+  lappend when_triggers \
+      {t2 BEFORE INSERT ON tbl WHEN (SELECT count(*) FROM tbl) = 0} ]
+}
 
 execsql {
   CREATE TABLE tbl (a, b, c, d);
@@ -362,10 +366,15 @@ foreach trig $when_triggers {
   execsql "CREATE TRIGGER $trig BEGIN UPDATE log set a = a + 1; END;"
 }
 
+ifcapable subquery {
+  set t232 {1 0 1}
+} else {
+  set t232 {0 0 1}
+}
 do_test trigger2-3.2 {
   execsql { 
 
-    INSERT INTO tbl VALUES(0, 0, 0, 0);     -- 1
+    INSERT INTO tbl VALUES(0, 0, 0, 0);     -- 1 (ifcapable subquery)
     SELECT * FROM log;
     UPDATE log SET a = 0;
 
@@ -377,7 +386,7 @@ do_test trigger2-3.2 {
     SELECT * FROM log;
     UPDATE log SET a = 0;
   }
-} {1 0 1}
+} $t232
 execsql {
   DROP TABLE tbl;
   DROP TABLE log;

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.32 2004/11/23 10:13:03 danielk1977 Exp $
+# $Id: attach.test,v 1.33 2005/01/21 04:25:47 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -613,48 +613,50 @@ do_test attach-5.4 {
     END;
   } db2
 } {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.5 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      SELECT 'no-op' || (SELECT * FROM temp.t6);
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.6 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      SELECT 'no-op' FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.7 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      SELECT 'no-op' FROM t1 GROUP BY 1 HAVING x<(SELECT min(x) FROM temp.t6);
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.7 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      SELECT max(1,x,(SELECT min(x) FROM temp.t6)) FROM t1;
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.8 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      INSERT INTO t1 VALUES((SELECT min(x) FROM temp.t6),5);
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
-do_test attach-5.9 {
-  catchsql {
-    CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
-      DELETE FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
-    END;
-  } db2
-} {1 {trigger r5 cannot reference objects in database temp}}
+ifcapable subquery {
+  do_test attach-5.5 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        SELECT 'no-op' || (SELECT * FROM temp.t6);
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+  do_test attach-5.6 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        SELECT 'no-op' FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+  do_test attach-5.7 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        SELECT 'no-op' FROM t1 GROUP BY 1 HAVING x<(SELECT min(x) FROM temp.t6);
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+  do_test attach-5.7 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        SELECT max(1,x,(SELECT min(x) FROM temp.t6)) FROM t1;
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+  do_test attach-5.8 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        INSERT INTO t1 VALUES((SELECT min(x) FROM temp.t6),5);
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+  do_test attach-5.9 {
+    catchsql {
+      CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+        DELETE FROM t1 WHERE x<(SELECT min(x) FROM temp.t6);
+      END;
+    } db2
+  } {1 {trigger r5 cannot reference objects in database temp}}
+} ;# endif subquery
 } ;# endif trigger
 
 # Check to make sure we get a sensible error if unable to open

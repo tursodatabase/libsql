@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.21 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: view.test,v 1.22 2005/01/21 04:25:47 danielk1977 Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -335,28 +335,31 @@ do_test view-8.3 {
     SELECT * FROM v7 ORDER BY a;
   }
 } {9 18 27 39}
-do_test view-8.4 {
-  execsql {
-    CREATE VIEW v8 AS SELECT max(cnt) AS mx FROM
-      (SELECT a%2 AS eo, count(*) AS cnt FROM t1 GROUP BY eo);
-    SELECT * FROM v8;
-  }
-} 3
-do_test view-8.5 {
-  execsql {
-    SELECT mx+10, mx*2 FROM v8;
-  }
-} {13 6}
-do_test view-8.6 {
-  execsql {
-    SELECT mx+10, pqr FROM v6, v8 WHERE xyz=2;
-  }
-} {13 7}
-do_test view-8.7 {
-  execsql {
-    SELECT mx+10, pqr FROM v6, v8 WHERE xyz>2;
-  }
-} {13 13 13 19 13 27}
+
+ifcapable subquery {
+  do_test view-8.4 {
+    execsql {
+      CREATE VIEW v8 AS SELECT max(cnt) AS mx FROM
+        (SELECT a%2 AS eo, count(*) AS cnt FROM t1 GROUP BY eo);
+      SELECT * FROM v8;
+    }
+  } 3
+  do_test view-8.5 {
+    execsql {
+      SELECT mx+10, mx*2 FROM v8;
+    }
+  } {13 6}
+  do_test view-8.6 {
+    execsql {
+      SELECT mx+10, pqr FROM v6, v8 WHERE xyz=2;
+    }
+  } {13 7}
+  do_test view-8.7 {
+    execsql {
+      SELECT mx+10, pqr FROM v6, v8 WHERE xyz>2;
+    }
+  } {13 13 13 19 13 27}
+} ;# ifcapable subquery
 
 # Tests for a bug found by Michiel de Wit involving ORDER BY in a VIEW.
 #

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.32 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: misc1.test,v 1.33 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -554,7 +554,7 @@ do_test misc1-17.1 {
     END;
     INSERT INTO TempTable(TestString) VALUES ('1');
     INSERT INTO TempTable(TestString) VALUES ('2');
-    UPDATE TempTable SET TestString = TestString + 1 WHERE TestID IN (1, 2);
+    UPDATE TempTable SET TestString = TestString + 1 WHERE TestID=1 OR TestId=2;
     COMMIT;
     SELECT TestString FROM RealTable ORDER BY 1;
   }

@@ -14,7 +14,7 @@
 # SELECT statements that use user-defined collation sequences. Also
 # GROUP BY clauses that use user-defined collation sequences.
 #
-# $Id: collate5.test,v 1.2 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: collate5.test,v 1.3 2005/01/21 04:25:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -181,11 +181,10 @@ do_test collate5-2.4.0 {
   foreach ii $::lens { 
     execsql "INSERT INTO collate5t3 VALUES($ii, '[string repeat a $ii]');"
   }
-  execsql {
+  expr [llength [execsql {
     COMMIT;
-    SELECT count(*) FROM 
-        (SELECT * FROM collate5t3 UNION SELECT * FROM collate5t3);
-  }
+    SELECT * FROM collate5t3 UNION SELECT * FROM collate5t3;
+  }]] / 2
 } [llength $::lens]
 do_test collate5-2.4.1 {
   execsql {DROP TABLE collate5t3;}
