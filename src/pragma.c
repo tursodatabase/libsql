@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.73 2004/10/31 02:22:49 drh Exp $
+** $Id: pragma.c,v 1.74 2004/11/05 15:45:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -270,6 +270,25 @@ void sqlite3Pragma(
       sqlite3BtreeSetPageSize(pBt, atoi(zRight), sqlite3BtreeGetReserve(pBt));
     }
   }else
+
+  /*
+  **  PRAGMA [database.]auto_vacuum
+  **  PRAGMA [database.]auto_vacuum=N
+  **
+  ** Get or set the (boolean) value of the database 'auto-vacuum' parameter.
+  */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( sqlite3StrICmp(zLeft,"auto_vacuum")==0 ){
+    Btree *pBt = pDb->pBt;
+    if( !zRight ){
+      int auto_vacuum = 
+          pBt ? sqlite3BtreeGetAutoVacuum(pBt) : SQLITE_DEFAULT_AUTOVACUUM;
+      returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
+    }else{
+      sqlite3BtreeSetAutoVacuum(pBt, getBoolean(zRight));
+    }
+  }else
+#endif
 
   /*
   **  PRAGMA [database.]cache_size

@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.59 2004/11/04 14:30:05 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.60 2004/11/05 15:45:10 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -22,6 +22,14 @@
 ** needs to be revisited.
 */
 #define SQLITE_N_BTREE_META 10
+
+/*
+** If defined as non-zero, auto-vacuum is enabled by default. Otherwise
+** it must be turned on for each database using "PRAGMA auto_vacuum = 1".
+*/
+#ifndef SQLITE_DEFAULT_AUTOVACUUM
+  #define SQLITE_DEFAULT_AUTOVACUUM 0
+#endif
 
 /*
 ** Forward declarations of structure
@@ -49,6 +57,8 @@ int sqlite3BtreeSetSafetyLevel(Btree*,int);
 int sqlite3BtreeSetPageSize(Btree*,int,int);
 int sqlite3BtreeGetPageSize(Btree*);
 int sqlite3BtreeGetReserve(Btree*);
+int sqlite3BtreeSetAutoVacuum(Btree *, int);
+int sqlite3BtreeGetAutoVacuum(Btree *);
 int sqlite3BtreeBeginTrans(Btree*,int);
 int sqlite3BtreeCommit(Btree*);
 int sqlite3BtreeRollback(Btree*);

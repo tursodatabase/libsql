@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.8 2004/11/05 12:58:26 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.9 2004/11/05 15:45:11 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,6 +28,7 @@ proc file_pages {} {
   return [expr [file size test.db] / 1024]
 }
 
+#-------------------------------------------------------------------------
 # Test cases autovacuum-1.* work as follows:
 #
 # 1. A table with a single indexed field is created.
@@ -56,6 +57,7 @@ set ENTRY_LEN 3500
 
 do_test autovacuum-1.1 {
   execsql {
+    PRAGMA auto_vacuum = 1;
     CREATE TABLE av1(a);
     CREATE INDEX av1_idx ON av1(a);
   }
@@ -113,6 +115,7 @@ foreach delete_order $delete_orders {
   } {4}
 }
 
+#---------------------------------------------------------------------------
 # Tests cases autovacuum-2.* test that root pages are allocated 
 # and deallocated correctly at the start of the file. Operation is roughly as
 # follows:
@@ -289,6 +292,56 @@ do_test autovacuum-2.4.7 {
   execsql COMMIT
   file_pages
 } 1
+
+#--------------------------------------------------------------------------
+# Test cases autovacuum-3.* test the operation of the "PRAGMA auto_vacuum"
+# command.
+#
+do_test autovacuum-3.1 {
+  execsql {
+    PRAGMA auto_vacuum;
+  }
+} {1}
+do_test autovacuum-3.2 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA auto_vacuum;
+  }
+} {1}
+do_test autovacuum-3.3 {
+  execsql {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA auto_vacuum;
+  }
+} {1}
+
+do_test autovacuum-3.4 {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  execsql {
+    PRAGMA auto_vacuum;
+  }
+} {0}
+do_test autovacuum-3.5 {
+  execsql {
+    CREATE TABLE av1(x);
+    PRAGMA auto_vacuum;
+  }
+} {0}
+do_test autovacuum-3.6 {
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    PRAGMA auto_vacuum;
+  }
+} {0}
+do_test autovacuum-3.7 {
+  execsql {
+    DROP TABLE av1;
+  }
+  file_pages
+} {2}
 
 finish_test
 
