@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.20 2002/11/05 23:24:38 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.21 2002/11/06 14:08:12 drh Exp $}
 
 puts {<html>
 <head>
@@ -311,21 +311,19 @@ ORDER BY name
 faq {
   Are there any known size limits to SQLite databases?
 } {
-  <p>Internally, SQLite can handle databases up to 2^41 bytes (2 terabytes)
-  in size.  But the backend interface to POSIX and Win32 limits files to
-  2^31 (2 gigabytes).  (See the next question for instructions on how
-  to relax this limit under POSIX.)</p>
+  <p>As of version 2.7.4, 
+  SQLite can handle databases up to 2^41 bytes (2 terabytes)
+  in size on both Windows and Unix.  Older version of SQLite
+  were limited to databases of 2^31 bytes (2 gigabytes).</p>
 
   <p>SQLite arbitrarily limits the amount of data in one row to 1 megabyte.
   There is a single #define in the source code that can be changed to raise
   this limit as high as 16 megabytes if desired.</p>
 
   <p>There is a theoretical limit of about 2^32 (4 billion) rows
-  in a single table, but there
-  is no way to test this limit without exceeding the maximum file size, so
-  it is not really an issue.  There is also a theoretical limit of about 2^32
-  tables and indices, but again it is not really possible to reach this
-  limit due to the file size constraint.</p>
+  in a single table, but this limit has never been tested.</p>
+  There is also a theoretical limit of about 2^32
+  tables and indices.</p>
 
   <p>The name and "CREATE TABLE" statement for a table must fit entirely
   within a 1-megabyte row of the SQLITE_MASTER table.  Other than this,
@@ -336,21 +334,6 @@ faq {
   as long as desired.  However, the names of SQL functions (as created
   by the <a href="c_interface.html#cfunc">sqlite_create_function()</a> API)
   may not exceed 255 characters in length.</p>
-}
-
-faq {
-  Are there any ways to increase the maximum database size limit above 2GB?
-} {
-  <p>For POSIX systems that support large files, you can increase the maximum
-  database size of SQLite by adding the following two options to your
-  compiler command line:</p>
-
-  <blockquote><pre>
-  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
-  </pre></blockquote>
-
-  <p>The resulting library and "sqlite" executable should be able to work
-  with databases as large as 2^41 bytes (2 terabytes).</p>
 }
 
 faq {

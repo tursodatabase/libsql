@@ -17,6 +17,18 @@
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
 
+/*
+** These #defines should enable >2GB file support on Posix if the
+** underlying operating system supports it.  If the OS lacks
+** large file support, or if the OS is windows, these should be no-ops.
+*/
+#define _LARGE_FILE       1
+#define _FILE_OFFSET_BITS 64
+#define _LARGEFILE_SOURCE 1
+
+/*
+** Figure out if we are dealing with Unix or Windows.
+*/
 #ifndef OS_UNIX
 # ifndef OS_WIN
 #  if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -64,7 +76,11 @@
     HANDLE h;               /* Handle for accessing the file */
     int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
   };
-  typedef int off_t;
+# ifdef _MSC_VER
+    typedef __int64 off_t;
+# else
+    typedef long long off_t;
+# endif
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 # define SQLITE_MIN_SLEEP_MS 1
 #endif

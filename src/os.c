@@ -14,8 +14,8 @@
 ** systems.  The purpose of this file is to provide a uniform abstraction
 ** on which the rest of SQLite can operate.
 */
+#include "os.h"          /* Must be first to enable large file support */
 #include "sqliteInt.h"
-#include "os.h"
 
 #if OS_UNIX
 # include <time.h>
@@ -544,7 +544,10 @@ int sqliteOsSeek(OsFile *id, off_t offset){
   return SQLITE_OK;
 #endif
 #if OS_WIN
-  SetFilePointer(id->h, offset, 0, FILE_BEGIN);
+  {
+    LONG upperBits = offset>>32;
+    SetFilePointer(id->h, offset, &upperBits, FILE_BEGIN);
+  }
   return SQLITE_OK;
 #endif
 }
@@ -580,8 +583,11 @@ int sqliteOsTruncate(OsFile *id, off_t nByte){
   return ftruncate(id->fd, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
 #endif
 #if OS_WIN
-  SetFilePointer(id->h, nByte, 0, FILE_BEGIN);
-  SetEndOfFile(id->h);
+  {
+    LONG upperBits = nByte>>32;
+    SetFilePointer(id->h, nByte, &upperBits, FILE_BEGIN);
+    SetEndOfFile(id->h);
+  }
   return SQLITE_OK;
 #endif
 }
@@ -600,8 +606,10 @@ int sqliteOsFileSize(OsFile *id, off_t *pSize){
   return SQLITE_OK;
 #endif
 #if OS_WIN
+  DWORD upperBits, lowerBits;
   SimulateIOError(SQLITE_IOERR);
-  *pSize = GetFileSize(id->h, 0);
+  lowerBits = GetFileSize(id->h, &upperBits);
+  *pSize = (((off_t)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
 #endif
 }

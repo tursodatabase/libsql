@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Nov ?? (2.7.4)} {
+<li>Database files can now grow to be up to 2^41 bytes.  The old limit
+    was 2^31 bytes.</li>
+}
+
 chng {2002 Oct 30 (2.7.3)} {
 <li>Various compiler compatibility fixes.</li>
 <li>Fix a bug in the "expr IN ()" operator.</li>
