@@ -1,5 +1,5 @@
-C Add\sadditional\sbackslash\sescapes\sto\sthe\sCOPY\scommand\sfor\scompatibility\nwith\sPostgreSQL.\s\sTicket\s#460.\s(CVS\s1104)
-D 2003-09-27T00:56:32
+C Add\sa\stest\scase\sfor\sticket\s#464\sbut\sleave\sit\scommented\sout\sfor\snow.\s\sWe\nwill\sfix\sthis\sproblem\swhen\sVACUUM\sis\srewritten.\s(CVS\s1105)
+D 2003-09-27T01:08:38
 F Makefile.in ab585a91e34bc33928a1b6181fa2f6ebd4fb17e1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -132,7 +132,7 @@ F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 2ef5a6655f2966f0aef733a9f4495b3fe8e16809
-F test/vacuum.test 92a4f2f3d50841f1b904ec7cf8372fc0657a5367
+F test/vacuum.test a58776ef529e9bc21980ac120d6859d4ee34b578
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
@@ -173,7 +173,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 5aea81488b2d3bcdc009ccf0f0ffcda046e38d79
-R 26781a0b0fc1fd1d9abd211114ab21da
+P 70a50bdda318f353c8be1ba200f9aedc34642c93
+R 50a4bcfb552b00bc9b0eb7d25299b64b
 U drh
-Z 5212ee3a64fc51376d349d4fdd45cba4
+Z 6825cd4a85a62f9514c9cd13ae2aebc8
