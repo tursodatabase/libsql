@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.273 2004/11/07 13:01:50 drh Exp $
+** $Id: build.c,v 1.274 2004/11/09 12:44:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -388,7 +388,7 @@ static void sqliteResetColumnNames(Table *pTable){
   assert( pTable!=0 );
   for(i=0, pCol=pTable->aCol; i<pTable->nCol; i++, pCol++){
     sqliteFree(pCol->zName);
-    sqliteFree(pCol->zDflt);
+    sqlite3ExprDelete(pCol->pDflt);
     sqliteFree(pCol->zType);
   }
   sqliteFree(pTable->aCol);
@@ -851,23 +851,29 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
 }
 
 /*
-** The given token is the default value for the last column added to
-** the table currently under construction.  If "minusFlag" is true, it
-** means the value token was preceded by a minus sign.
+** The expression is the default value for the most recently added column
+** of the table currently under construction.
+**
+** Default value expressions must be constant.  Raise an exception if this
+** is not the case.
 **
 ** This routine is called by the parser while in the middle of
 ** parsing a CREATE TABLE statement.
 */
-void sqlite3AddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
+void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
   Table *p;
-  int i;
-  char *z;
+  Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
-  i = p->nCol-1;
-  if( i<0 ) return;
-  assert( p->aCol[i].zDflt==0 );
-  z = p->aCol[i].zDflt = sqlite3MPrintf("%s%T", minusFlag ? "-" : "", pVal);
-  sqlite3Dequote(z);
+  pCol = &(p->aCol[p->nCol-1]);
+  if( !sqlite3ExprIsConstant(pExpr) ){
+    sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
+        pCol->zName);
+  }else{
+    sqlite3ExprDelete(pCol->pDflt);
+    pCol->pDflt = sqlite3ExprDup(pExpr);
+    sqlite3ExprCheck(pParse, pExpr, 0, 0);
+  }
+  sqlite3ExprDelete(pExpr);
 }
 
 /*

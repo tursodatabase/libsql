@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.168 2004/11/05 05:10:29 drh Exp $
+** $Id: expr.c,v 1.169 2004/11/09 12:44:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -573,6 +573,9 @@ int sqlite3ExprIsConstant(Expr *p){
     case TK_INTEGER:
     case TK_FLOAT:
     case TK_VARIABLE:
+    case TK_CTIME:
+    case TK_CTIMESTAMP:
+    case TK_CDATE:
       return 1;
     default: {
       if( p->pLeft && !sqlite3ExprIsConstant(p->pLeft) ) return 0;
@@ -1080,6 +1083,21 @@ static void getFunctionName(Expr *pExpr, const char **pzName, int *pnName){
       *pnName = 4;
       break;
     }
+    case TK_CTIME: {
+      *pzName = "current_time";
+      *pnName = 12;
+      break;
+    }
+    case TK_CDATE: {
+      *pzName = "current_date";
+      *pnName = 12;
+      break;
+    }
+    case TK_CTIMESTAMP: {
+      *pzName = "current_timestamp";
+      *pnName = 17;
+      break;
+    }
     default: {
       *pzName = "can't happen";
       *pnName = 12;
@@ -1101,6 +1119,10 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
   int nErr = 0;
   if( pExpr==0 ) return 0;
   switch( pExpr->op ){
+    case TK_CTIME:
+    case TK_CTIMESTAMP:
+    case TK_CDATE:
+    /* Note: The above three were a seperate case in sqlmoto. Reason? */
     case TK_GLOB:
     case TK_LIKE:
     case TK_FUNCTION: {
@@ -1220,7 +1242,11 @@ static void codeInteger(Vdbe *v, const char *z, int n){
 void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   Vdbe *v = pParse->pVdbe;
   int op;
-  if( v==0 || pExpr==0 ) return;
+  if( v==0 ) return;
+  if( pExpr==0 ){
+    sqlite3VdbeAddOp(v, OP_String8, 0, 0);  /* Empty expression evals to NULL */
+    return;
+  }
   op = pExpr->op;
   switch( op ){
     case TK_COLUMN: {
@@ -1357,6 +1383,9 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       break;
     }
+    case TK_CDATE:
+    case TK_CTIME:
+    case TK_CTIMESTAMP:
     case TK_GLOB:
     case TK_LIKE:
     case TK_FUNCTION: {

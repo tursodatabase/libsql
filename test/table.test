@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.30 2004/11/03 16:27:02 drh Exp $
+# $Id: table.test,v 1.31 2004/11/09 12:44:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -523,5 +523,37 @@ do_test table-12.2 {
     SELECT sql FROM sqlite_master WHERE tbl_name = 't8'
   }
 } {{CREATE TABLE t8(b number(5,10),h,i integer,j BLOB)}}
+
+# Test the ability to have default values of CURRENT_TIME, CURRENT_DATE
+# and CURRENT_TIMESTAMP.
+#
+do_test table-13.1 {
+  execsql {
+    CREATE TABLE tablet8(
+       a integer primary key,
+       tm text DEFAULT CURRENT_TIME,
+       dt text DEFAULT CURRENT_DATE,
+       dttm text DEFAULT CURRENT_TIMESTAMP
+    );
+    SELECT * FROM tablet8;
+  }
+} {}
+set i 0
+foreach {date time} {
+  1976-07-04 12:00:00
+  1994-04-16 14:00:00
+  2000-01-01 00:00:00
+  2003-12-31 12:34:56
+} {
+  incr i
+  set sqlite_current_time [execsql "SELECT strftime('%s','$date $time')"]
+  do_test table-13.2.$i {
+    execsql "
+      INSERT INTO tablet8(a) VALUES($i);
+      SELECT tm, dt, dttm FROM tablet8 WHERE a=$i;
+    "
+  } [list $time $date [list $date $time]]
+}
+set sqlite_current_time 0
 
 finish_test

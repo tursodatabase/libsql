@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.150 2004/11/05 23:46:15 drh Exp $
+** @(#) $Id: parse.y,v 1.151 2004/11/09 12:44:38 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -203,10 +203,16 @@ carglist ::= carglist carg.
 carglist ::= .
 carg ::= CONSTRAINT nm ccons.
 carg ::= ccons.
-carg ::= DEFAULT ids(X).             {sqlite3AddDefaultValue(pParse,&X,0);}
-carg ::= DEFAULT plus_num(X).        {sqlite3AddDefaultValue(pParse,&X,0);}
-carg ::= DEFAULT minus_num(X).       {sqlite3AddDefaultValue(pParse,&X,1);}
-carg ::= DEFAULT NULL. 
+carg ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,X);}
+carg ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,X);}
+carg ::= DEFAULT MINUS term(X).      {
+  Expr *p = sqlite3Expr(TK_UMINUS, X, 0, 0);
+  sqlite3AddDefaultValue(pParse,p);
+}
+carg ::= DEFAULT id(X).              {
+  Expr *p = sqlite3Expr(TK_STRING, 0, 0, &X);
+  sqlite3AddDefaultValue(pParse,p);
+}
 
 // In addition to the type name, we also care about the primary key and
 // UNIQUE constraints.
@@ -567,9 +573,12 @@ inscollist(A) ::= nm(Y).                      {A = sqlite3IdListAppend(0,&Y);}
 
 %type expr {Expr*}
 %destructor expr {sqlite3ExprDelete($$);}
+%type term {Expr*}
+%destructor term {sqlite3ExprDelete($$);}
 
-expr(A) ::= LP(B) expr(X) RP(E). {A = X; sqlite3ExprSpan(A,&B,&E); }
-expr(A) ::= NULL(X).             {A = sqlite3Expr(@X, 0, 0, &X);}
+expr(A) ::= term(X).             {A = X;}
+term(A) ::= LP(B) expr(X) RP(E). {A = X; sqlite3ExprSpan(A,&B,&E); }
+term(A) ::= NULL(X).             {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= ID(X).               {A = sqlite3Expr(TK_ID, 0, 0, &X);}
 expr(A) ::= JOIN_KW(X).          {A = sqlite3Expr(TK_ID, 0, 0, &X);}
 expr(A) ::= nm(X) DOT nm(Y). {
@@ -584,9 +593,9 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp4 = sqlite3Expr(TK_DOT, temp2, temp3, 0);
   A = sqlite3Expr(TK_DOT, temp1, temp4, 0);
 }
-expr(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
-expr(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
-expr(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
+term(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
+term(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
+term(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= BLOB(X).         {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= REGISTER(X).     {A = sqlite3RegisterExpr(pParse, &X);}
 expr(A) ::= VARIABLE(X).     {
@@ -594,7 +603,7 @@ expr(A) ::= VARIABLE(X).     {
   Expr *pExpr = A = sqlite3Expr(TK_VARIABLE, 0, 0, pToken);
   sqlite3ExprAssignVarNumber(pParse, pExpr);
 }
-expr(A) ::= ID(X) LP exprlist(Y) RP(E). {
+term(A) ::= ID(X) LP exprlist(Y) RP(E). {
   A = sqlite3ExprFunction(Y, &X);
   sqlite3ExprSpan(A,&X,&E);
 }
@@ -602,6 +611,9 @@ expr(A) ::= ID(X) LP STAR RP(E). {
   A = sqlite3ExprFunction(0, &X);
   sqlite3ExprSpan(A,&X,&E);
 }
+term(A) ::= CTIME(OP).                  {A = sqlite3Expr(@OP,0,0,0);}
+term(A) ::= CDATE(OP).                  {A = sqlite3Expr(@OP,0,0,0);}
+term(A) ::= CTIMESTAMP(OP).             {A = sqlite3Expr(@OP,0,0,0);}
 expr(A) ::= expr(X) AND(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) OR(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) LT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}

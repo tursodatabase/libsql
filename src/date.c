@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.37 2004/10/06 15:41:16 drh Exp $
+** $Id: date.c,v 1.38 2004/11/09 12:44:38 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -862,7 +862,59 @@ static void strftimeFunc(
   }
 }
 
+/*
+** current_time()
+**
+** This function returns the same value as time('now').
+*/
+static void ctimeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_value *pVal = sqlite3ValueNew();
+  if( pVal ){
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    timeFunc(context, 1, &pVal);
+    sqlite3ValueFree(pVal);
+  }
+}
 
+/*
+** current_date()
+**
+** This function returns the same value as date('now').
+*/
+static void cdateFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_value *pVal = sqlite3ValueNew();
+  if( pVal ){
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    dateFunc(context, 1, &pVal);
+    sqlite3ValueFree(pVal);
+  }
+}
+
+/*
+** current_timestamp()
+**
+** This function returns the same value as datetime('now').
+*/
+static void ctimestampFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3_value *pVal = sqlite3ValueNew();
+  if( pVal ){
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    datetimeFunc(context, 1, &pVal);
+    sqlite3ValueFree(pVal);
+  }
+}
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
 
 /*
@@ -882,6 +934,9 @@ void sqlite3RegisterDateTimeFunctions(sqlite3 *db){
     { "time",      -1, timeFunc        },
     { "datetime",  -1, datetimeFunc    },
     { "strftime",  -1, strftimeFunc    },
+    { "current_time",       0, ctimeFunc      },
+    { "current_timestamp",  0, ctimestampFunc },
+    { "current_date",       0, cdateFunc      },
   };
   int i;
 
@@ -891,3 +946,4 @@ void sqlite3RegisterDateTimeFunctions(sqlite3 *db){
   }
 #endif
 }
+
