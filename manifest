@@ -1,5 +1,5 @@
-C Tests\sfor\stext\sencoding\sconversion\sfunctions.\sAlso\snew\ssqlite3_bindXX\sAPIs.\s(CVS\s1403)
-D 2004-05-19T10:36:44
+C Variable\sname\schange:\sazVar\sto\sapVar.\s(CVS\s1404)
+D 2004-05-19T11:24:26
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,10 +63,10 @@ F src/update.c 0cc7291dd0e0f82cf93085e49c973e8ef9e51fd5
 F src/utf.c 48c537bf7990ce32a36b051401874d024ec2a07b
 F src/util.c b72f775a6c3fa404d70250382f63d708e17bc332
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c f5451f1f71e46acebe0be797a138302b4b7ead43
+F src/vdbe.c 962092231fad5370a57ad5b7398944ca6a27678f
 F src/vdbe.h 314e9c07db73a42a6ba91ab7539e27652fc88870
-F src/vdbeInt.h 2097f78f8dd0e2abcd1b986ac3e8af484dc5a1e1
-F src/vdbeaux.c 1e1aed6b07a02bf0768c9bf9eae06c9b488c560a
+F src/vdbeInt.h 3f76e27be527f4848dc2aae898f2d8709eb1b32c
+F src/vdbeaux.c 5743e15988d1cbe2db055c1cb6faaa062c1ec601
 F src/where.c 5f480219a943b0fed1f6922d2fdbfba8616a9148
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -193,7 +193,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a0f3f6ed2327992036267627cf663e5ca56bd3ae
-R 2fe56592f6dc9245a3872afd301b1853
-U danielk1977
-Z 72c11613022fdf4360d5afb7ad04e0c8
+P f71844bc27c9fc799af3337daf2a212370d4a724
+R 09bed5008417bd932f4640e166507cff
+U drh
+Z d3e5bec58d881a9caa41401041151755

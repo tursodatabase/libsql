@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.300 2004/05/19 10:35:01 danielk1977 Exp $
+** $Id: vdbe.c,v 1.301 2004/05/19 11:24:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -856,14 +856,14 @@ case OP_Variable: {
   assert( j>=0 && j<p->nVar );
 
   /* If we need to translate between text encodings, do it now. If this is
-  ** required, then put the new string in p->azVar. This way, if the
+  ** required, then put the new string in p->apVar. This way, if the
   ** variable is used again, even after the virtual machine is reset, the
   ** conversion won't have to be done again.
   **
   ** TODO: This is where we need to support databases that use other than
   ** UTF-8 on disk.
   */
-  pVar = &p->azVar[j];
+  pVar = &p->apVar[j];
   if( pVar->flags&MEM_Str && !(pVar->flags&MEM_Utf8) ){
     char *zUtf8;
     assert( pVar->flags&(MEM_Utf16le|MEM_Utf16be) );

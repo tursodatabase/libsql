@@ -271,8 +271,8 @@ struct Vdbe {
   FILE *pFile;        /* At most one open file handler */
   int nField;         /* Number of file fields */
   char **azField;     /* Data for each file field */
-  int nVar;           /* Number of entries in azVariable[] */
-  Mem *azVar;         /* Values for the OP_Variable opcode. */
+  int nVar;           /* Number of entries in apVar[] */
+  Mem *apVar;         /* Values for the OP_Variable opcode. */
   char *zLine;            /* A single line from the input file */
   int nLineAlloc;         /* Number of spaces allocated for zLine */
   int magic;              /* Magic number for sanity checking */

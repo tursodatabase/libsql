@@ -616,13 +616,13 @@ void sqlite3VdbeMakeReady(
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
       n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
-      + p->nVar*sizeof(Mem)                          /* azVar */
+      + p->nVar*sizeof(Mem)                          /* apVar */
     );
     p->zArgv = (char**)&p->aStack[n];
     p->azColName = (char**)&p->zArgv[n];
-    p->azVar = (Mem *)&p->azColName[n];
+    p->apVar = (Mem *)&p->azColName[n];
     for(n=0; n<p->nVar; n++){
-      p->azVar[n].flags = MEM_Null;
+      p->apVar[n].flags = MEM_Null;
     }
   }
 
@@ -761,7 +761,7 @@ static void closeAllCursors(Vdbe *p){
 **
 ** This routine will automatically close any cursors, lists, and/or
 ** sorters that were left open.  It also deletes the values of
-** variables in the azVariable[] array.
+** variables in the aVar[] array.
 */
 static void Cleanup(Vdbe *p){
   int i;
@@ -955,7 +955,7 @@ static int vdbeUnbind(Vdbe *p, int i){
     return SQLITE_RANGE;
   }
   i--;
-  pVar = &p->azVar[i];
+  pVar = &p->apVar[i];
   if( pVar->flags&MEM_Dyn ){
     sqliteFree(pVar->z);
   }
@@ -978,7 +978,7 @@ static int vdbeBindBlob(
   Mem *pVar;
 
   vdbeUnbind(p, i);
-  pVar = &p->azVar[i-1];
+  pVar = &p->apVar[i-1];
 
   if( zVal ){
     pVar->n = bytes;
@@ -1009,7 +1009,7 @@ int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
   Vdbe *v = (Vdbe *)p;
   rc = vdbeUnbind(v, i);
   if( rc==SQLITE_OK ){
-    Mem *pVar = &v->azVar[i-1];
+    Mem *pVar = &v->apVar[i-1];
     pVar->flags = MEM_Int;
     pVar->i = iValue;
   }
@@ -1025,7 +1025,7 @@ int sqlite3_bind_double(sqlite3_stmt *p, int i, double iValue){
   Vdbe *v = (Vdbe *)p;
   rc = vdbeUnbind(v, i);
   if( rc==SQLITE_OK ){
-    Mem *pVar = &v->azVar[i-1];
+    Mem *pVar = &v->apVar[i-1];
     pVar->flags = MEM_Real;
     pVar->r = iValue;
   }
@@ -1115,8 +1115,8 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
   }
   for(i=0; i<p->nVar; i++){
-    if( p->azVar[i].flags&MEM_Dyn ){
-      sqliteFree(p->azVar[i].z);
+    if( p->apVar[i].flags&MEM_Dyn ){
+      sqliteFree(p->apVar[i].z);
     }
   }
   sqliteFree(p->aOp);
