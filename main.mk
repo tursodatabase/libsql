@@ -56,7 +56,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 #
 LIBOBJ+= attach.o auth.o btree.o build.o cursor.o date.o delete.o \
          expr.o func.o hash.o insert.o \
-         main.o opcodes.o os_mac.o os_unix.o os_win.o \
+         main.o opcodes.o os_unix.o os_win.o \
          pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
@@ -81,7 +81,6 @@ SRC = \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/main.c \
-  $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -116,7 +115,6 @@ TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
-  $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -142,7 +140,6 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
-   $(TOP)/src/os_mac.h \
    $(TOP)/src/os_unix.h \
    $(TOP)/src/os_win.h \
    $(TOP)/src/sqliteInt.h  \
@@ -265,9 +262,6 @@ opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
-
-os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
-	$(TCCX) -c $(TOP)/src/os_mac.c
 
 os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os_unix.c

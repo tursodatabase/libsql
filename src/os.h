@@ -25,30 +25,17 @@
 */
 #if !defined(OS_UNIX) && !defined(OS_TEST)
 # ifndef OS_WIN
-#  ifndef OS_MAC
-#    if defined(__MACOS__)
-#      define OS_MAC 1
-#      define OS_WIN 0
-#      define OS_UNIX 0
-#    elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#      define OS_MAC 0
-#      define OS_WIN 1
-#      define OS_UNIX 0
-#    else
-#      define OS_MAC 0
-#      define OS_WIN 0
-#      define OS_UNIX 1
-#    endif
-#  else
-#    define OS_WIN 0
-#    define OS_UNIX 0
+#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#     define OS_WIN 1
+#     define OS_UNIX 0
+#   else
+#     define OS_WIN 0
+#     define OS_UNIX 1
 #  endif
 # else
-#  define OS_MAC 0
 #  define OS_UNIX 0
 # endif
 #else
-# define OS_MAC 0
 # ifndef OS_WIN
 #  define OS_WIN 0
 # endif
@@ -65,9 +52,6 @@
 #endif
 #if OS_WIN
 # include "os_win.h"
-#endif
-#if OS_MAC
-# include "os_mac.h"
 #endif
 
 /*

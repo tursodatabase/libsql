@@ -113,7 +113,7 @@ TCC += -DSQLITE_OMIT_CURSOR
 #
 LIBOBJ = attach.lo auth.lo btree.lo build.lo cursor.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
-         main.lo opcodes.lo os_mac.lo os_unix.lo os_win.lo \
+         main.lo opcodes.lo os_unix.lo os_win.lo \
          pager.lo parse.lo pragma.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo vdbe.lo vdbeapi.lo vdbeaux.lo vdbemem.lo \
@@ -137,7 +137,6 @@ SRC = \
   $(TOP)/src/insert.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/main.c \
-  $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -172,7 +171,6 @@ TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
-  $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
@@ -198,7 +196,6 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
-   $(TOP)/src/os_mac.h \
    $(TOP)/src/os_unix.h \
    $(TOP)/src/os_win.h \
    $(TOP)/src/sqliteInt.h  \
@@ -329,9 +326,6 @@ opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
 	cat parse.h $(TOP)/src/vdbe.c | awk -f $(TOP)/mkopcodeh.awk >opcodes.h
-
-os_mac.lo:	$(TOP)/src/os_mac.c $(HDR)
-	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_mac.c
 
 os_unix.lo:	$(TOP)/src/os_unix.c $(HDR)
 	$(LTCOMPILE) $(THREADSAFE) -c $(TOP)/src/os_unix.c
