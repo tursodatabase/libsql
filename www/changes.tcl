@@ -17,12 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct ? (2.0.2)} {
+chng {2001 Oct 8 (2.0.2)} {
+<li>Fix a bugs in the locking protocol.</li>
 <li>Removed some unused "#include <unistd.h>" that were causing problems
     for VC++.</li>
 <li>Fixed <b>sqlite.h</b> so that it is usable from C++</li>
 <li>Added the FULL_COLUMN_NAMES pragma.  When set to "ON", the names of
     columns are reported back as TABLE.COLUMN instead of just COLUMN.</li>
+<li>Added the TABLE_INFO() and INDEX_INFO() pragmas to help support the
+    ODBC interface.</li>
 <li>Added support for TEMPORARY tables and indices.</li>
 }
 

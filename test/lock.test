@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.12 2001/09/23 19:46:52 drh Exp $
+# $Id: lock.test,v 1.13 2001/10/09 04:19:47 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -33,16 +33,14 @@ do_test lock-1.3 {
   execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
 } {t1}
 do_test lock-1.4 {
-  set r [catch {execsql {
-     SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
-  } db2} msg]
-  lappend r $msg
+  catchsql {
+    SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
+  } db2
 } {1 {database schema has changed}}
 do_test lock-1.5 {
-  set r [catch {execsql {
+  catchsql {
      SELECT name FROM sqlite_master WHERE type='table' ORDER BY name
-  } db2} msg]
-  lappend r $msg
+  } db2
 } {0 t1}
 
 do_test lock-1.6 {
@@ -59,19 +57,16 @@ do_test lock-1.8 {
 do_test lock-1.9 {
   execsql {SELECT * FROM t1}
 } {2 1}
-
 do_test lock-1.10 {
   execsql {BEGIN TRANSACTION}
   execsql {SELECT * FROM t1}
 } {2 1}
 do_test lock-1.11 {
-  set r [catch {execsql {SELECT * FROM t1} db2} msg]
-  lappend r $msg
+  catchsql {SELECT * FROM t1} db2
 } {1 {database is locked}}
 do_test lock-1.12 {
   execsql {ROLLBACK}
-  set r [catch {execsql {SELECT * FROM t1} db2} msg]
-  lappend r $msg
+  catchsql {SELECT * FROM t1}
 } {0 {2 1}}
 
 do_test lock-1.13 {
@@ -80,12 +75,10 @@ do_test lock-1.13 {
   execsql {SELECT * FROM t2}
 } {8 9}
 do_test lock-1.14 {
-  set r [catch {execsql {SELECT * FROM t1} db2} msg]
-  lappend r $msg
+  catchsql {SELECT * FROM t1} db2
 } {1 {database schema has changed}}
 do_test lock-1.15 {
-  set r [catch {execsql {SELECT * FROM t2} db2} msg]
-  lappend r $msg
+  catchsql {SELECT * FROM t2} db2
 } {0 {8 9}}
 
 do_test lock-1.16 {

@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.1 2001/10/08 13:22:33 drh Exp $
+# $Id: temptable.test,v 1.2 2001/10/09 04:19:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,50 +34,50 @@ do_test temptable-1.2 {
   catch {db2 eval {SELECT * FROM sqlite_master}}
   db2 eval {SELECT * FROM t1}
 } {1 2 3}
-do_test testtable-1.3 {
+do_test temptable-1.3 {
   execsql {SELECT name FROM sqlite_master}
 } {t1}
-do_test testtable-1.4 {
+do_test temptable-1.4 {
   db2 eval {SELECT name FROM sqlite_master}
 } {t1}
 
 # Create a temporary table.  Verify that only one of the two
 # processes can see it.
 #
-do_test testtable-1.5 {
+do_test temptable-1.5 {
   db2 eval {
     CREATE TEMP TABLE t2(x,y,z);
     INSERT INTO t2 VALUES(4,5,6);
   }
   db2 eval {SELECT * FROM t2}
 } {4 5 6}
-do_test testtable-1.6 {
+do_test temptable-1.6 {
   catch {execsql {SELECT * FROM sqlite_master}}
   catchsql {SELECT * FROM t2}
 } {1 {no such table: t2}}
-do_test testtable-1.7 {
+do_test temptable-1.7 {
   catchsql {INSERT INTO t2 VALUES(8,9,0);}
 } {1 {no such table: t2}}
-do_test testtable-1.8 {
+do_test temptable-1.8 {
   db2 eval {INSERT INTO t2 VALUES(8,9,0);}
   db2 eval {SELECT * FROM t2 ORDER BY x}
 } {4 5 6 8 9 0}
-do_test testtable-1.9 {
+do_test temptable-1.9 {
   db2 eval {DELETE FROM t2 WHERE x==8}
   db2 eval {SELECT * FROM t2 ORDER BY x}
 } {4 5 6}
-do_test testtable-1.10 {
+do_test temptable-1.10 {
   db2 eval {DELETE FROM t2}
   db2 eval {SELECT * FROM t2}
 } {}
-do_test testtable-1.11 {
+do_test temptable-1.11 {
   db2 eval {
      INSERT INTO t2 VALUES(7,6,5);
      INSERT INTO t2 VALUES(4,3,2);
      SELECT * FROM t2 ORDER BY x;
   }
 } {4 3 2 7 6 5}
-do_test testtable-1.12 {
+do_test temptable-1.12 {
   db2 eval {DROP TABLE t2;}
   set r [catch {db2 eval {SELECT * FROM t2}} msg]
   lappend r $msg
@@ -85,7 +85,7 @@ do_test testtable-1.12 {
 
 # Make sure temporary tables work with transactions
 #
-do_test testtable-2.1 {
+do_test temptable-2.1 {
   execsql {
     BEGIN TRANSACTION;
     CREATE TEMPORARY TABLE t2(x,y);
@@ -93,11 +93,11 @@ do_test testtable-2.1 {
     SELECT * FROM t2;
   }
 } {1 2}
-do_test testtable-2.2 {
+do_test temptable-2.2 {
   execsql {ROLLBACK}
   catchsql {SELECT * FROM t2}
 } {1 {no such table: t2}}
-do_test testtable-2.3 {
+do_test temptable-2.3 {
   execsql {
     BEGIN TRANSACTION;
     CREATE TEMPORARY TABLE t2(x,y);
@@ -105,20 +105,124 @@ do_test testtable-2.3 {
     SELECT * FROM t2;
   }
 } {1 2}
-do_test testtable-2.4 {
+do_test temptable-2.4 {
   execsql {COMMIT}
   catchsql {SELECT * FROM t2}
 } {0 {1 2}}
-do_test testtable-2.5 {
+do_test temptable-2.5 {
   set r [catch {db2 eval {SELECT * FROM t2}} msg]
   lappend r $msg
 } {1 {no such table: t2}}
 
+
+# Make sure indices on temporary tables are also temporary.
+#
+do_test temptable-3.1 {
+  execsql {
+    CREATE INDEX i2 ON t2(x);
+    SELECT name FROM sqlite_master WHERE type='index';
+  }
+} {}
+do_test temptable-3.2 {
+  execsql {
+    SELECT y FROM t2 WHERE x=1;
+  }
+} {2}
+do_test temptable-3.3 {
+  execsql {
+    DROP INDEX i2;
+    SELECT y FROM t2 WHERE x=1;
+  }
+} {2}
+do_test temptable-3.4 {
+  execsql {
+    CREATE INDEX i2 ON t2(x);
+    DROP TABLE t2;
+  }
+  catchsql {DROP INDEX i2}
+} {1 {no such index: i2}}
 
 # Check for correct name collision processing. A name collision can
 # occur when process A creates a temporary table T then process B
 # creates a permanent table also named T.  The temp table in process A
 # hides the existance of the permanent table.
 #
+do_test temptable-4.1 {
+  db2 eval {
+    CREATE TEMP TABLE t2(x,y);
+    INSERT INTO t2 VALUES(10,20);
+    SELECT * FROM t2;
+  }
+} {10 20}
+do_test temptable-4.2 {
+  execsql {
+    CREATE TABLE t2(x,y,z);
+    INSERT INTO t2 VALUES(9,8,7);
+    SELECT * FROM t2;
+  }
+} {9 8 7}
+do_test temptable-4.3 {
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {1 {database schema has changed}}
+do_test temptable-4.4 {
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {0 {10 20}}
+do_test temptable-4.5 {
+  db2 eval {DROP TABLE t2}
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {1 {no such table: t2}}
+do_test temptable-4.6 {
+  db2 close
+  sqlite db2 ./test.db
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {0 {9 8 7}}
+
+# Now create a temporary table in db2 and a permanent index in db.  The
+# temporary table in db2 should mask the name of the permanent index,
+# but the permanent index should still be accessible and should still
+# be updated when its correspnding table changes.
+#
+do_test temptable-5.1 {
+  db2 eval {CREATE TEMP TABLE mask(a,b,c)}
+  execsql {
+    CREATE INDEX mask ON t2(x);
+    SELECT * FROM t2;
+  }
+} {9 8 7}
+do_test temptable-5.2 {
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {1 {database schema has changed}}
+do_test temptable-5.3 {
+  set r [catch {db2 eval {SELECT * FROM t2}} msg]
+  lappend r $msg
+} {0 {9 8 7}}
+do_test temptable-5.4 {
+  execsql {SELECT y FROM t2 WHERE x=9}
+} {8}
+do_test temptable-5.5 {
+  db2 eval {SELECT y FROM t2 WHERE x=9}
+} {8}
+do_test temptable-5.6 {
+  db2 eval {
+    INSERT INTO t2 VALUES(1,2,3);
+    SELECT y FROM t2 WHERE x=1;
+  }
+} {2}
+do_test temptable-5.7 {
+  db2 eval {SELECT y FROM t2 WHERE x=9}
+} {8}
+do_test temptable-5.8 {
+  execsql {
+    SELECT y FROM t2 WHERE x=1;
+  }
+} {2}
+do_test temptable-5.9 {
+  execsql {SELECT y FROM t2 WHERE x=9}
+} {8}
 
 finish_test

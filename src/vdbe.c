@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.81 2001/10/08 13:22:33 drh Exp $
+** $Id: vdbe.c,v 1.82 2001/10/09 04:19:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2368,9 +2368,9 @@ case OP_NewRecno: {
     v = db->nextRowid;
     do{
       if( cnt>5 ){
-        v = sqliteRandomInteger(db);
+        v = sqliteRandomInteger();
       }else{
-        v += sqliteRandomByte(db) + 1;
+        v += sqliteRandomByte() + 1;
       }
       if( v==0 ) continue;
       x = bigEndian(v);

@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.1 2001/09/22 18:12:10 drh Exp $
+** $Id: hash.h,v 1.2 2001/10/09 04:19:47 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -30,7 +30,7 @@ typedef struct HashElem HashElem;
 ** this structure opaque.
 */
 struct Hash {
-  char keyClass;          /* SQLITE_HASH_INT, ..._STRING, or _BINARY */
+  char keyClass;          /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
   char copyKey;           /* True if copy of key made on insert */
   int count;              /* Number of entries in this table */
   HashElem *first;        /* The first element of the array */

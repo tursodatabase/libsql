@@ -21,7 +21,11 @@
 ** A handle for an open file is stored in an OsFile object.
 */
 #if OS_UNIX
-  typedef int OsFile;
+  typedef struct OsFile OsFile;
+  struct OsFile {
+    struct lockInfo *pLock;  /* Information about locks on this inode */
+    int fd;                  /* The file descriptor */
+  };
 # define SQLITE_TEMPNAME_SIZE 200
 # if defined(HAVE_USLEEP) && HAVE_USLEEP
 #  define SQLITE_MIN_SLEEP_MS 1
@@ -55,6 +59,8 @@ int sqliteOsLock(OsFile, int wrlock);
 int sqliteOsUnlock(OsFile);
 int sqliteOsRandomSeed(char*);
 int sqliteOsSleep(int ms);
+void sqliteOsEnterMutex();
+void sqliteOsLeaveMutex();
 
 
 

@@ -15,9 +15,10 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.25 2001/10/08 13:22:33 drh Exp $
+** $Id: tokenize.c,v 1.26 2001/10/09 04:19:47 drh Exp $
 */
 #include "sqliteInt.h"
+#include "os.h"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -113,16 +114,20 @@ static int sqliteKeywordCode(const char *z, int n){
   Keyword *p;
   if( aKeywordTable[0].len==0 ){
     /* Initialize the keyword hash table */
-    int i;
-    int n;
-    n = sizeof(aKeywordTable)/sizeof(aKeywordTable[0]);
-    for(i=0; i<n; i++){
-      aKeywordTable[i].len = strlen(aKeywordTable[i].zName);
-      h = sqliteHashNoCase(aKeywordTable[i].zName, aKeywordTable[i].len);
-      h %= KEY_HASH_SIZE;
-      aKeywordTable[i].pNext = apHashTable[h];
-      apHashTable[h] = &aKeywordTable[i];
+    sqliteOsEnterMutex();
+    if( aKeywordTable[0].len==0 ){
+      int i;
+      int n;
+      n = sizeof(aKeywordTable)/sizeof(aKeywordTable[0]);
+      for(i=0; i<n; i++){
+        aKeywordTable[i].len = strlen(aKeywordTable[i].zName);
+        h = sqliteHashNoCase(aKeywordTable[i].zName, aKeywordTable[i].len);
+        h %= KEY_HASH_SIZE;
+        aKeywordTable[i].pNext = apHashTable[h];
+        apHashTable[h] = &aKeywordTable[i];
+      }
     }
+    sqliteOsLeaveMutex();
   }
   h = sqliteHashNoCase(z, n) % KEY_HASH_SIZE;
   for(p=apHashTable[h]; p; p=p->pNext){

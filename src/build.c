@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.45 2001/10/08 13:22:32 drh Exp $
+** $Id: build.c,v 1.46 2001/10/09 04:19:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -573,7 +573,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
 
   /* Add the table to the in-memory representation of the database.
   */
-  assert( pParse->nameClash==0 || pParse->initFlag==0 );
+  assert( pParse->nameClash==0 || pParse->initFlag==1 );
   if( pParse->explain==0 && pParse->nameClash==0 ){
     sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
     pParse->pNewTable = 0;
