@@ -1,5 +1,5 @@
-C Fix\sanother\smemory\sleak\sin\sthe\spager.\s(CVS\s2425)
-D 2005-03-28T18:04:28
+C Fix\ssegfault\sdue\sto\sexception\shandler\sbeing\srun\swith\suninitialised\svariable.\s(CVS\s2426)
+D 2005-03-29T02:54:03
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 9570af388bc99471ea6e1258817fbf06e3120030
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c 657fd61dfb4dd37a63416652b1a28700e84b36f7
+F src/btree.c 50f31eb0844ca14614686163f8939b2999272b25
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
 F src/build.c 2589c2ffa263406526d0cc5728405c6c2f9638f6
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P b0409b93108096a81245170887d60d076d639c60
-R 3406a83472c1bef895744682e9f56800
-U drh
-Z 6061a5ba3667967690a9ebc111c561e6
+P 4ca11ca015d798655170593c1b76d312185d6ed2
+R e4c51e3e56b7ef33b113201f3420a8cc
+U danielk1977
+Z 36ddc864efbca1aee674c9701d1319c4
