@@ -1,5 +1,5 @@
-C Fix\sbugs\sassociated\swith\sthe\scodec.\s(CVS\s1846)
-D 2004-07-22T15:02:25
+C Change\ssqlite*\sto\ssqlite3*\sin\sthe\sAPI\sreference\sfor\sversion\s3.0.\s\sTicket\s#818.\s(CVS\s1847)
+D 2004-07-22T15:45:16
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -206,7 +206,7 @@ F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
-F www/capi3ref.tcl 32371dc2c0816a0ee6b3b3396852243e4da9bf86
+F www/capi3ref.tcl 46283326edfd0de9e6bb5425b54dc1624b8bef27
 F www/changes.tcl 536d9919db834ad545dc8c3820105e613b092394
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 58505bf9be8e7f9d33a7a52f0d2ac167448f7b3a
-R f3db447534ed74e51b726af7a9dab6bc
+P b0a3becd82b9a4203c23f35dc5a5fd725e046f21
+R 74c276ef36213e7e0bc4f0be6b04c77d
 U drh
-Z b2bfc42df168bf93298aa49508a9d11e
+Z 5c259fcbe72343cb4ce9c645114e26cb

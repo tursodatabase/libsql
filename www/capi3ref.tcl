@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.6 2004/07/21 14:07:58 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.7 2004/07/22 15:45:16 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -104,7 +104,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_busy_handler(sqlite*, int(*)(void*,int), void*);
+  int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 } {
  This routine identifies a callback function that is invoked
  whenever an attempt is made to open a database table that is
@@ -129,7 +129,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_busy_timeout(sqlite*, int ms);
+  int sqlite3_busy_timeout(sqlite3*, int ms);
 } {
  This routine sets a busy handler that sleeps for a while when a
  table is locked.  The handler will sleep multiple times until 
@@ -142,7 +142,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_changes(sqlite*);
+  int sqlite3_changes(sqlite3*);
 } {
  This function returns the number of database rows that were changed
  (or inserted or deleted) by the most recently completed
@@ -166,7 +166,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_total_changes(sqlite*);
+  int sqlite3_total_changes(sqlite3*);
 } {
   This function returns the total number of database rows that have
   be modified, inserted, or deleted since the database connection was
@@ -188,7 +188,7 @@ api {} {
 }
 
 api {} {
-  int sqlite3_close(sqlite *);
+  int sqlite3_close(sqlite3*);
 } {
   Call this function with a pointer to a structure that was previously
   returned from sqlite3_open() or sqlite3_open16()
@@ -317,7 +317,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*,int);
 }
 
 api {} {
-void *sqlite3_commit_hook(sqlite*, int(*xCallback)(void*), void *pArg);
+void *sqlite3_commit_hook(sqlite3*, int(*xCallback)(void*), void *pArg);
 } {
  <i>Experimental</i>
 
@@ -533,7 +533,7 @@ const void *sqlite3_errmsg16(sqlite3*);
 
 api {} {
 int sqlite3_exec(
-  sqlite*,                      /* An open database */
+  sqlite3*,                     /* An open database */
   const char *sql,              /* SQL to be executed */
   sqlite_callback,              /* Callback function */
   void *,                       /* 1st argument to callback function */
@@ -609,7 +609,7 @@ void sqlite3_free(char *z);
 
 api {} {
 int sqlite3_get_table(
-  sqlite*,               /* An open database */
+  sqlite3*,              /* An open database */
   const char *sql,       /* SQL to be executed */
   char ***resultp,       /* Result written to a char *[]  that this points to */
   int *nrow,             /* Number of result rows written here */
@@ -664,7 +664,7 @@ void sqlite3_free_table(char **result);
 }
 
 api {sqlite3_interrupt} {
- void sqlite3_interrupt(sqlite*);
+ void sqlite3_interrupt(sqlite3*);
 } {
  This function causes any pending database operation to abort and
  return at its earliest opportunity.  This routine is typically
@@ -674,7 +674,7 @@ api {sqlite3_interrupt} {
 } {}
 
 api {} {
-long long int sqlite3_last_insert_rowid(sqlite*);
+long long int sqlite3_last_insert_rowid(sqlite3*);
 } {
  Each entry in an SQLite table has a unique integer key.  (The key is
  the value of the INTEGER PRIMARY KEY column if there is such a column,
@@ -807,7 +807,7 @@ int sqlite3_prepare16(
 }
 
 api {} {
-void sqlite3_progress_handler(sqlite*, int, int(*)(void*), void*);
+void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 } {
  <i>Experimental</i>
 
@@ -872,7 +872,7 @@ void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 
 api {} {
 int sqlite3_set_authorizer(
-  sqlite*,
+  sqlite3*,
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
 );
@@ -967,7 +967,7 @@ int sqlite3_step(sqlite3_stmt*);
 }
 
 api {} {
-void *sqlite3_trace(sqlite*, void(*xTrace)(void*,const char*), void*);
+void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 } {
  Register a function that is called at every invocation of sqlite3_exec()
  or sqlite3_prepare().  This function can be used (for example) to generate
