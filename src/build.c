@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.307 2005/02/01 03:09:52 danielk1977 Exp $
+** $Id: build.c,v 1.308 2005/02/01 03:46:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -52,8 +52,10 @@ void sqlite3FinishCoding(Parse *pParse){
 
   if( sqlite3_malloc_failed ) return;
   if( pParse->nested ) return;
-
-  if( !pParse->pVdbe ) return;
+  if( !pParse->pVdbe ){
+    pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
+    return;
+  }
 
   /* Begin by generating some termination code at the end of the
   ** vdbe program
@@ -98,7 +100,7 @@ void sqlite3FinishCoding(Parse *pParse){
     sqlite3VdbeTrace(v, trace);
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem+3,
                          pParse->nTab+3, pParse->nMaxDepth+1, pParse->explain);
-    pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
+    pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
