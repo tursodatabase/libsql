@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.174 2004/06/28 01:11:46 danielk1977 Exp $
+** $Id: btree.c,v 1.175 2004/06/30 01:07:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1773,8 +1773,6 @@ static int getPayload(
 ** the available payload.
 */
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  assert( amt>=0 );
-  assert( offset>=0 );
   if( pCur->isValid==0 ){
     return pCur->status;
   }
@@ -1797,8 +1795,6 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   if( !pCur->isValid ){
     return pCur->status ? pCur->status : SQLITE_INTERNAL;
   }
-  assert( amt>=0 );
-  assert( offset>=0 );
   assert( pCur->pPage!=0 );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
   return getPayload(pCur, offset, amt, pBuf, 1);

@@ -1,5 +1,5 @@
-C Run\stests\sin\sUTF-16\smode.\s(CVS\s1767)
-D 2004-06-29T23:52:48
+C Remove\ssome\spointless\sasserts\sfrom\sbtree.c.\s(CVS\s1768)
+D 2004-06-30T01:07:02
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def 26f4e7b0a3fbaa55701e020fdec429f1594e2866
 F src/attach.c 678ded370e4b4d5bf03e9566404a42a8dcf5eef9
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c ad428c56e42d748a0c1441fbbd93e41df407c31d
+F src/btree.c a241b25bfc536e5f3ca66954292156973f6e8a66
 F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
 F src/build.c ecc10d4e5232a49f55304dd9b90739f2771e34ef
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9cf371d85d99235771f173572265c5e4dd5ab273
-R d42ca7ddc9878730f90e65ee92fd2235
-U danielk1977
-Z 6ae347125369dc8f10182d763c734d9f
+P 822bee3a4eb88054cc573a7b2d7f15ea2547bc1a
+R 5fe30d03cc7544e77f198951129ec29f
+U drh
+Z cb5f7cb7aed6590b86a5beff0c90d405
