@@ -23,13 +23,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.5 2001/01/04 14:20:18 drh Exp $
+# $Id: lock.test,v 1.6 2001/03/15 18:21:22 drh Exp $
 
 if {$dbprefix=="gdbm:"} {
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
 
 # Create a largish table
 #
@@ -56,14 +55,14 @@ do_test lock-1.1 {
   set v {}
 } {}
 
-do_test lock-1.2 {
+do_probtest lock-1.2 {
   # Now try to update the database
   #
   set v [catch {execsql {UPDATE big SET f2='xyz' WHERE f1=11}} msg]
   lappend v $msg
 } {5 {table big is locked}}
 
-do_test lock-1.3 {
+do_probtest lock-1.3 {
   # Try to update the database in a separate process
   #
   set f [open update.sql w]
@@ -74,7 +73,7 @@ do_test lock-1.3 {
   exec ./sqlite testdb <update.sql
 } "UPDATE big SET f2='xyz' WHERE f1=11;\nSQL error: table big is locked\n22"
 
-do_test lock-1.4 {
+do_probtest lock-1.4 {
   # Try to update the database using a timeout
   #
   set f [open update.sql w]
@@ -85,7 +84,7 @@ do_test lock-1.4 {
   exec ./sqlite testdb <update.sql
 } "UPDATE big SET f2='xyz' WHERE f1=11;\nSQL error: table big is locked\n22"
 
-do_test lock-1.5 {
+do_probtest lock-1.5 {
   # Try to update the database using a timeout
   #
   set f [open update.sql w]

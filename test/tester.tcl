@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.10 2001/01/31 13:28:09 drh Exp $
+# $Id: tester.tcl,v 1.11 2001/03/15 18:21:22 drh Exp $
 
 # Create a test database
 #
@@ -55,6 +55,7 @@ if {[info exists nTest]} return
 #
 set nErr 0
 set nTest 0
+set nProb 0
 set skip_test 0
 
 # Invoke the do_test procedure to run a single test 
@@ -86,6 +87,44 @@ proc do_test {name cmd expected} {
   } elseif {[string compare $result $expected]} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
     incr nErr
+  } else {
+    puts " Ok"
+  }
+}
+
+# Invoke this procedure on a test that is probabilistic
+# and might fail sometimes.
+#
+proc do_probtest {name cmd expected} {
+  global argv nProb nTest skip_test
+  if {$skip_test} {
+    set skip_test 0
+    return
+  }
+  if {[llength $argv]==0} { 
+    set go 1
+  } else {
+    set go 0
+    foreach pattern $argv {
+      if {[string match $pattern $name]} {
+        set go 1
+        break
+      }
+    }
+  }
+  if {!$go} return
+  incr nTest
+  puts -nonewline $::dbprefix$name...
+  flush stdout
+  if {[catch {uplevel #0 "$cmd;\n"} result]} {
+    puts "\nError: $result"
+    incr nErr
+  } elseif {[string compare $result $expected]} {
+    puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
+    puts "NOTE: The results of the previous test depend on system load"
+    puts "and processor speed.  The test may sometimes fail even if the"
+    puts "library is working correctly."
+    incr nProb	
   } else {
     puts " Ok"
   }
@@ -131,11 +170,15 @@ proc memleak_check {} {
 # Run this routine last
 #
 proc finish_test {} {
-  global nTest nErr
+  global nTest nErr nProb
   memleak_check
   catch {db close}
   puts "$nErr errors out of $nTest tests"
-  exit $nErr
+  if {$nProb>0} {
+    puts "$nProb probabilistic tests also failed, but this does"
+    puts "not necessarily indicate a malfunction."
+  }
+  exit [expr {$nErr>0}]
 }
 
 # A procedure to execute SQL

@@ -17,8 +17,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Mar 14 19 (1.0.24)} {
-<li>Fix a bug which was causing 
+chng {2001 Mar 15 (1.0.25)} {
+<li>Modify the test scripts to identify tests that depend on system
+    load and processor speed and
+    to warn the user that a failure of one of those (rare) tests does
+    not necessarily mean the library is malfunctioning.  No changes to
+    code.
+    </li>
+}
+
+chng {2001 Mar 14 (1.0.24)} {
+<li>Fix a bug which was causing
     the UPDATE command to fail on systems where "malloc(0)" returns
     NULL.  The problem does not appear Windows, Linux, or HPUX but does 
     cause the library to fail on QNX.
@@ -258,7 +267,7 @@ chng {2000 June 6} {
 <li>Added support for using <b>(SELECT ...)</b> within expressions</li>
 <li>Added support for <b>IN</b> and <b>BETWEEN</b> operators</li>
 <li>Added support for <b>GROUP BY</b> and <b>HAVING</b></li>
-<li>NULL values are now reported ot the callback as a NULL pointer
+<li>NULL values are now reported to the callback as a NULL pointer
     rather than an empty string.</li>
 }
 

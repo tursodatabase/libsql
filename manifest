@@ -1,9 +1,9 @@
-C Version\s1.0.24\s(CVS\s479)
-D 2001-03-14T13:00:00
+C Identify\stests\sthat\sdepend\son\ssystem\sload\sand\nprocessor\sspeed.\s(CVS\s192)
+D 2001-03-15T18:21:22
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 404ea684e576d2b596e185903cea48b3e984c7fd
+F VERSION 80af39f0d764a13d57b92a38c6d21a7d4e5f7197
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -53,17 +53,17 @@ F test/in.test 2c560c0f55fb777029fd9bb5378f2997582aa603
 F test/index.test ee060ef8912be47ba616e50cce7985259a68d58a
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
-F test/lock.test bf6d3f8a0a91c6673ff5e357b7a1397e241f7f14
+F test/lock.test a58af9b98b4351dc80896767781d8e6cab1b3666
 F test/main.test 83cfa58b0b9b69924cc915d5c50b12f0ac9e40e7
 F test/select1.test 68ff778c24fc8982e63dda37acb5b0396913adf7
-F test/select2.test 0c24b9bb8825ebb96e6cc65f1eb61bace0e02aa0
+F test/select2.test 04ac3bd69298f58c7d0883159bab42ab9ad6021c
 F test/select3.test a9234b8424b6c6d71de534f43b91ade9be68e9cc
 F test/select4.test cb5374d7c87680e294ac749307459a5cc547609d
 F test/select5.test e2b9d51d88cbd6c307c2c05b0ef55fe7ba811ac2
 F test/sort.test d582086c4bb7df3fbf50aa72e69d7e235e9f8e31
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test eaa25951c0f18615763cd3dc248ea4bc38739c05
-F test/tester.tcl e24caef6d07c58c16b24e7afc967464b288a4065
+F test/tester.tcl 2afa947ed17c4633864fbd6506f20e26e884103c
 F test/update.test 72c0c93310483b86dc904a992220c5b84c7ce100
 F test/vacuum.test 2127748ff4ddb409212efbb6d9fb9c469ea1b49c
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
@@ -80,7 +80,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl a8cbb3496ae35184fabc5f7b47242bf33a5637d1
+F www/changes.tcl 1698d3b1636ec70c77d22aebccc12f43ba4c1c57
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 8f79ca2acaf765ecb3274c353284c55b6790f657
-R 360be56ced6760c85770c34d6c105ac8
+P 34b17e6ce15dd24dc2ca609ef9c136fe4dc1b4b5
+R 9278e0d1b4fb4a58660b2bd6644e304b
 U drh
-Z 7f6063d380c9dc73dddd8b75f41104c4
+Z 6ff756cd972c647d04eb15cb7f8ae57c
