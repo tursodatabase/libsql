@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.314 2005/03/17 05:03:39 danielk1977 Exp $
+** $Id: build.c,v 1.315 2005/03/19 01:41:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1405,7 +1405,7 @@ static char *createTableStmt(Table *p){
 ** this is a temporary table or db->init.busy==1.  When db->init.busy==1
 ** it means we are reading the sqlite_master table because we just
 ** connected to the database or because the sqlite_master table has
-** recently changes, so the entry for this table already exists in
+** recently changed, so the entry for this table already exists in
 ** the sqlite_master table.  We do not want to create it again.
 **
 ** If the pSelect argument is not NULL, it means that this routine

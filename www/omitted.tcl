@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.7 2005/01/21 18:19:29 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.8 2005/03/19 01:41:22 drh Exp $}
 source common.tcl
 header {SQL Features That SQLite Does Not Implement}
 puts {
@@ -45,10 +45,11 @@ feature {Complete trigger support} {
   triggers - triggers that trigger themselves.
 }
 
-feature {ALTER TABLE} {
-  To change a table you have to delete it (saving its contents to a temporary
-  table) and recreate it from scratch.
-  ("ALTER TABLE ... RENAME TABLE ..." was added to version 3.1.0.)
+feature {Complete ALTER TABLE support} {
+  Only the RENAME TABLE and ADD COLUMN variants of the 
+  ALTER TABLE command are supported.  Other kinds of ALTER TABLE operations
+  such as
+  DROP COLUMN, ALTER COLUMN, ADD CONSTRAINT, and so forth are omitted.
 }
 
 feature {Nested transactions} {

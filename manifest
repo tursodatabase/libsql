@@ -1,5 +1,5 @@
-C Remove\sunused\scode\sfrom\sutil.c.\s\sEnhance\sthe\strace\soutput\sin\sos_unix.c.\s(CVS\s2397)
-D 2005-03-18T14:03:15
+C Updates\sto\scomments\sand\sdocumentation.\s\sNo\schanges\sto\scode.\s(CVS\s2398)
+D 2005-03-19T01:41:21
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -32,7 +32,7 @@ F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 1d9b2179ccac13970c883da6ae3758cc72978bb0
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c a5688630ba792987dca4daa62aae5ea30d1fad67
+F src/build.c 3c0f4394b0f952083b8aa2791cd699d3b01b02f5
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c d70d54a84695de92efc05b9db7d3684cd21d9094
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
@@ -260,12 +260,12 @@ F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl a53c9b092ab528cc4b9755ccd78e23ca796bafe0
-F www/lang.tcl 21cb28bee6a522ab9a376e33f15a048638d6db97
+F www/lang.tcl 1f58511c7e59c5de26c9bf07c488584493dfab1d
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 61e4b210569e3f45b2df77482ddabb3fa2e8a8a6
-F www/omitted.tcl 9f332aea97b47ec53234f4cd9aa4b4a6da8641ec
+F www/omitted.tcl f1e57977299c3ed54fbae55e4b5ea6a64de39e19
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/pragma.tcl 3b7d88d6545e9b8ea4a3661e0be5e0f0e9817466
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 698be25d3e8f0eb2b5a4c6c7d20343b3c8a06134
-R 8611ce54c1361038076da5f3886275d5
+P f2f31919fdd181c79b86f849d46c60f1ed7a0db1
+R 2c95303c62832891365e2218b3260666
 U drh
-Z d647977318d4fd6baeb9f9cedb4c633a
+Z d7dae444341619a35be06d3f102e8b38
