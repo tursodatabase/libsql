@@ -1,5 +1,5 @@
-C *\sAdded\s-version-info\sto\sshared\slibraries\n*\sRemove\sconfig.h\sand\slibtool\sin\sthe\sdistclean\starget\s(CVS\s1021)
-D 2003-06-14T19:29:09
+C Documented\sinteger\svalues\sused\sby\sPRAGMAs.\nFixed\smissing\send\stags\sin\sgenerated\sanchors.\s(CVS\s1022)
+D 2003-06-15T10:29:25
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
-F www/lang.tcl f206cb1b637337f3783f05716edb577cf327377a
+F www/lang.tcl 860e881dd62074ee86f1fa1f1a4fe4ab4f76ce78
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 9ec40935b9435ddc3749cab517387477e4045f6b
-R 12c201d65566c93a958812cc7bcd5528
-U a.rottmann
-Z d76a73e3bc96042e55286e1e7aa5b780
+P e13e8b05b4d146aa4ca9ed06e414e0c6a4fba4e4
+R 025a97aa1a8710d9abd04f450fb59b7a
+U jplyon
+Z f0f06ece626e6fed7f80c90c5644e695

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.61 2003/06/08 08:36:34 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.62 2003/06/15 10:29:25 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -113,7 +113,7 @@ proc Keyword {name} {
 proc Section {name {label {}}} {
   puts "\n<hr />"
   if {$label!=""} {
-    puts "<a name=\"$label\">"
+    puts "<a name=\"$label\"></a>"
   }
   puts "<h1>$name</h1>\n"
 }
@@ -1228,6 +1228,14 @@ The pragma command is experimental and specific pragma statements may be
 removed or added in future releases of SQLite.  Use this command
 with caution.</p>
 
+<p>The pragmas that take an integer <b><i>value</i></b> also accept 
+symbolic names.  The strings "<b>on</b>", "<b>true</b>", and "<b>yes</b>" 
+are equivalent to <b>1</b>.  The strings "<b>off</b>", "<b>false</b>", 
+and "<b>no</b>" are equivalent to <b>0</b>.  These strings are case-
+insensitive, and do not require quotes.  An unrecognized string will be 
+treated as <b>1</b>, and will not generate an error.  When the <i>value</i> 
+is returned it is as an integer.</p>
+
 <p>The current implementation supports the following pragmas:</p>
 
 <ul>
@@ -1246,8 +1254,8 @@ with caution.</p>
     the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
     pragma to check the cache size permanently.</p></li>
 
-<li><p><b>PRAGMA count_changes = ON;
-       <br>PRAGMA count_changes = OFF;</b></p>
+<li><p><b>PRAGMA count_changes = ON; </b>(1)<b>
+       <br>PRAGMA count_changes = OFF;</b> (0)</p>
     <p>When on, the COUNT_CHANGES pragma causes the callback function to
     be invoked once for each DELETE, INSERT, or UPDATE operation.  The
     argument is the number of rows that were changed.</p>
@@ -1265,7 +1273,7 @@ with caution.</p>
 <li><p><b>PRAGMA default_cache_size;
        <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
     <p>Query or change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses about 1.5K of memory.
+    will hold in memory at once.  Each page uses 1K on disk and about 1.5K in memory.
     This pragma works like the <a href="#pragma_cache_size"><b>cache_size</b></a> 
     pragma with the additional
     feature that it changes the cache size persistently.  With this pragma,
@@ -1274,24 +1282,25 @@ with caution.</p>
 
 <a name="pragma_default_synchronous"></a>
 <li><p><b>PRAGMA default_synchronous;
-       <br>PRAGMA default_synchronous = FULL;
-       <br>PRAGMA default_synchronous = NORMAL;
-       <br>PRAGMA default_synchronous = OFF;</b></p>
+       <br>PRAGMA default_synchronous = FULL; </b>(2)<b>
+       <br>PRAGMA default_synchronous = NORMAL; </b>(1)<b>
+       <br>PRAGMA default_synchronous = OFF; </b>(0)</p>
     <p>Query or change the setting of the "synchronous" flag in
-    the database.  When synchronous is FULL, the SQLite database engine will
+    the database.  The first (query) form will return the setting as an 
+    integer.  When synchronous is FULL (2), the SQLite database engine will
     pause at critical moments to make sure that data has actually been 
     written to the disk surface before continuing.  This ensures that if
     the operating system crashes or if there is a power failure, the database
     will be uncorrupted after rebooting.  FULL synchronous is very 
     safe, but it is also slow.  
-    When synchronous is NORMAL (the default), the SQLite database
+    When synchronous is NORMAL (1, the default), the SQLite database
     engine will still pause at the most critical moments, but less often
     than in FULL mode.  There is a very small (though non-zero) chance that
     a power failure at just the wrong time could corrupt the database in
     NORMAL mode.  But in practice, you are more likely to suffer
     a catastrophic disk failure or some other unrecoverable hardware
     fault.  So NORMAL is the default mode.
-    With synchronous OFF, SQLite continues without pausing
+    With synchronous OFF (0), SQLite continues without pausing
     as soon as it has handed data off to the operating system.
     If the application running SQLite crashes, the data will be safe, but
     the database might become corrupted if the operating system
@@ -1306,13 +1315,13 @@ with caution.</p>
 
 <a name="pragma_default_temp_store"></a>
 <li><p><b>PRAGMA default_temp_store;
-       <br>PRAGMA default_temp_store = DEFAULT;
-       <br>PRAGMA default_temp_store = MEMORY;
-       <br>PRAGMA default_temp_store = FILE;</b></p>
+       <br>PRAGMA default_temp_store = DEFAULT; </b>(0)<b>
+       <br>PRAGMA default_temp_store = MEMORY; </b>(2)<b>
+       <br>PRAGMA default_temp_store = FILE;</b> (1)</p>
     <p>Query or change the setting of the "temp_store" flag stored in
-    the database.  When temp_store is DEFAULT, the compile-time default 
-    is used for the temporary database.  When temp_store is MEMORY, an 
-    in-memory database is used.  When temp_store is FILE, a temporary 
+    the database.  When temp_store is DEFAULT (0), the compile-time default 
+    is used for the temporary database.  When temp_store is MEMORY (2), an 
+    in-memory database is used.  When temp_store is FILE (1), a temporary 
     database file on disk will be used.  Note that it is possible for 
     the library compile-time options to override this setting.  Once 
     the temporary database is in use, its location cannot be changed.</p>
@@ -1323,8 +1332,8 @@ with caution.</p>
     thing but only applies the setting to the current session.</p></li>
 
 <a name="pragma_empty_result_callbacks"></a>
-<li><p><b>PRAGMA empty_result_callbacks = ON;
-       <br>PRAGMA empty_result_callbacks = OFF;</b></p>
+<li><p><b>PRAGMA empty_result_callbacks = ON; </b>(1)<b>
+       <br>PRAGMA empty_result_callbacks = OFF;</b> (0)</p>
     <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
     function to be invoked once for each query that has an empty result
     set.  The third "<b>argv</b>" parameter to the callback is set to NULL
@@ -1333,8 +1342,8 @@ with caution.</p>
     determine the number and names of the columns that would have been in
     the result set had the set not been empty.</p></li>
 
-<li><p><b>PRAGMA full_column_names = ON;
-       <br>PRAGMA full_column_names = OFF;</b></p>
+<li><p><b>PRAGMA full_column_names = ON; </b>(1)<b>
+       <br>PRAGMA full_column_names = OFF;</b> (0)</p>
     <p>The column names reported in an SQLite callback are normally just
     the name of the column itself, except for joins when "TABLE.COLUMN"
     is used.  But when full_column_names is turned on, column names are
@@ -1359,14 +1368,16 @@ with caution.</p>
     a description of all problems.  If everything is in order, "ok" is
     returned.</p></li>
 
-<li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
+<li><p><b>PRAGMA parser_trace = ON; </b>(1)<b>
+    <br>PRAGMA parser_trace = OFF;</b> (0)</p>
     <p>Turn tracing of the SQL parser inside of the
     SQLite library on and off.  This is used for debugging.
     This only works if the library is compiled without the NDEBUG macro.
     </p></li>
 
 <a name="pragma_show_datatypes"></a>
-<li><p><b>PRAGMA show_datatypes = ON;<br>PRAGMA show_datatypes = OFF;</b></p>
+<li><p><b>PRAGMA show_datatypes = ON; </b>(1)<b>
+    <br>PRAGMA show_datatypes = OFF;</b> (0)</p>
     <p>When turned on, the SHOW_DATATYPES pragma causes extra entries containing
     the names of <a href="datatypes.html">datatypes</a> of columns to be
     appended to the 4th ("columnNames") argument to <b>sqlite_exec()</b>
@@ -1399,9 +1410,9 @@ with caution.</p>
 
 <a name="pragma_synchronous"></a>
 <li><p><b>PRAGMA synchronous;
-       <br>PRAGMA synchronous = FULL;
-       <br>PRAGMA synchronous = NORMAL;
-       <br>PRAGMA synchronous = OFF;</b></p>
+       <br>PRAGMA synchronous = FULL; </b>(2)<b>
+       <br>PRAGMA synchronous = NORMAL; </b>(1)<b>
+       <br>PRAGMA synchronous = OFF;</b> (0)</p>
     <p>Query or change the setting of the "synchronous" flag affecting
     the database for the duration of the current database connection.
     The synchronous flag reverts to its default value when the database
@@ -1418,9 +1429,9 @@ with caution.</p>
 
 <a name="pragma_temp_store"></a>
 <li><p><b>PRAGMA temp_store;
-       <br>PRAGMA temp_store = DEFAULT;
-       <br>PRAGMA temp_store = MEMORY;
-       <br>PRAGMA temp_store = FILE;</b></p>
+       <br>PRAGMA temp_store = DEFAULT; </b>(0)<b>
+       <br>PRAGMA temp_store = MEMORY; </b>(2)<b>
+       <br>PRAGMA temp_store = FILE;</b> (1)</p>
     <p>Query or change the setting of the "temp_store" flag affecting
     the database for the duration of the current database connection.
     The temp_store flag reverts to its default value when the database
@@ -1431,7 +1442,8 @@ with caution.</p>
     </li>
 
 <a name="pragma_vdbe_trace"></a>
-<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
+<li><p><b>PRAGMA vdbe_trace = ON; </b>(1)<b>
+    <br>PRAGMA vdbe_trace = OFF;</b> (0)</p>
     <p>Turn tracing of the virtual database engine inside of the
     SQLite library on and off.  This is used for debugging.  See the 
     <a href="vdbe.html#trace">VDBE documentation</a> for more 
