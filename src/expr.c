@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.65 2002/05/30 02:35:12 drh Exp $
+** $Id: expr.c,v 1.66 2002/05/31 15:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -933,9 +933,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_CASE: {
       int expr_end_label;
-      int null_result_label;
       int jumpInst;
-      int nullBypassInst;
       int addr;
       int nExpr;
       int i;
@@ -945,32 +943,25 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       assert(pExpr->pList->nExpr > 0);
       nExpr = pExpr->pList->nExpr;
       expr_end_label = sqliteVdbeMakeLabel(v);
-      null_result_label = sqliteVdbeMakeLabel(v);
       if( pExpr->pLeft ){
         sqliteExprCode(pParse, pExpr->pLeft);
-        nullBypassInst = sqliteVdbeAddOp(v, OP_IsNull, -1, 0);
       }
       for(i=0; i<nExpr; i=i+2){
         sqliteExprCode(pParse, pExpr->pList->a[i].pExpr);
-        sqliteVdbeAddOp(v, OP_IsNull, -1, null_result_label);
         if( pExpr->pLeft ){
           sqliteVdbeAddOp(v, OP_Dup, 1, 1);
-          jumpInst = sqliteVdbeAddOp(v, OP_Ne, 0, 0);
+          jumpInst = sqliteVdbeAddOp(v, OP_Ne, 1, 0);
+          sqliteVdbeAddOp(v, OP_Pop, 1, 0);
         }else{
-          jumpInst = sqliteVdbeAddOp(v, OP_IfNot, 0, 0);
+          jumpInst = sqliteVdbeAddOp(v, OP_IfNot, 1, 0);
         }
         sqliteExprCode(pParse, pExpr->pList->a[i+1].pExpr);
         sqliteVdbeAddOp(v, OP_Goto, 0, expr_end_label);
-        if( i>=nExpr-2 ){
-          sqliteVdbeResolveLabel(v, null_result_label);
-          sqliteVdbeAddOp(v, OP_Pop, 1, 0);
-          if( pExpr->pRight!=0 ){
-            sqliteVdbeAddOp(v, OP_String, 0, 0);
-            sqliteVdbeAddOp(v, OP_Goto, 0, expr_end_label);
-          }
-        }
         addr = sqliteVdbeCurrentAddr(v);
         sqliteVdbeChangeP2(v, jumpInst, addr);
+      }
+      if( pExpr->pLeft ){
+        sqliteVdbeAddOp(v, OP_Pop, 1, 0);
       }
       if( pExpr->pRight ){
         sqliteExprCode(pParse, pExpr->pRight);
@@ -978,11 +969,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
       }
       sqliteVdbeResolveLabel(v, expr_end_label);
-      if( pExpr->pLeft ){
-        sqliteVdbeAddOp(v, OP_Pull, 1, 0);
-        sqliteVdbeAddOp(v, OP_Pop, 1, 0);
-        sqliteVdbeChangeP2(v, nullBypassInst, sqliteVdbeCurrentAddr(v));
-      }
     }
     break;
   }

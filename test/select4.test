@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.8 2002/05/27 01:04:51 drh Exp $
+# $Id: select4.test,v 1.9 2002/05/31 15:51:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -249,7 +249,8 @@ do_test select4-6.2 {
   }
 } {0 1 1 1 2 2 3 4 3 7 4 8 5 15}
 
-# NULLs are distinct.  Make sure the UNION operator recognizes this
+# NULLs are indistinct for the UNION operator.
+# Make sure the UNION operator recognizes this
 #
 do_test select4-6.3 {
   execsql {
@@ -257,8 +258,8 @@ do_test select4-6.3 {
     SELECT 1 UNION SELECT 2 AS 'x'
     ORDER BY x;
   }
-} {{} {} 1 2}
-do_test select4-6.3 {
+} {{} 1 2}
+do_test select4-6.3.1 {
   execsql {
     SELECT NULL UNION ALL SELECT NULL UNION ALL
     SELECT 1 UNION ALL SELECT 2 AS 'x'
@@ -266,7 +267,7 @@ do_test select4-6.3 {
   }
 } {{} {} 1 2}
 
-# Make sure the DISTINCT keyword treats NULLs as DISTINCT
+# Make sure the DISTINCT keyword treats NULLs as indistinct.
 #
 do_test select4-6.4 {
   execsql {
@@ -281,7 +282,7 @@ do_test select4-6.5 {
        SELECT NULL, 1 UNION ALL SELECT NULL, 1
     );
   }
-} {{} 1 {} 1}
+} {{} 1}
 do_test select4-6.6 {
   execsql {
     SELECT DISTINCT * FROM (
@@ -296,7 +297,7 @@ do_test select4-6.7 {
   execsql {
     SELECT NULL EXCEPT SELECT NULL
   }
-} {{}}
+} {}
 
 
 # Make sure column names are correct when a compound select appears as

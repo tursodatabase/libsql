@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.150 2002/05/27 01:04:51 drh Exp $
+** $Id: vdbe.c,v 1.151 2002/05/31 15:51:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1769,9 +1769,28 @@ case OP_Remainder: {
   int nos = tos - 1;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   if( ((aStack[tos].flags | aStack[nos].flags) & STK_Null)!=0 ){
+    int resultType = STK_Null;
+    if( pOp->opcode==OP_Multiply ){
+      /* Special case: multiplying NULL by zero gives a zero result, not a
+      ** NULL result as it would normally. */
+      if( (aStack[tos].flags & (STK_Int|STK_Real))!=0
+              || ((aStack[tos].flags & STK_Str)!=0 && isNumber(zStack[tos])) ){
+        Integerify(p,tos);
+        if( aStack[tos].i==0 ){
+          resultType = STK_Int;
+          aStack[nos].i = 0;
+        }
+      }else if( (aStack[nos].flags & (STK_Int|STK_Real))!=0
+              || ((aStack[nos].flags & STK_Str)!=0 && isNumber(zStack[nos])) ){
+        Integerify(p,nos);
+        if( aStack[nos].i==0 ){
+          resultType = STK_Int;
+        }
+      }
+    }
     POPSTACK;
     Release(p, nos);
-    aStack[nos].flags = STK_Null;
+    aStack[nos].flags = resultType;
   }else if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
     int a, b;
     a = aStack[tos].i;
@@ -2346,6 +2365,10 @@ case OP_NotNull: {
 ** created this way will not necessarily be distinct across runs.
 ** But they should be distinct for transient tables (created using
 ** OP_OpenTemp) which is what they are intended for.
+**
+** (Later:) The P2==1 option was intended to make NULLs distinct
+** for the UNION operator.  But I have since discovered that NULLs
+** are indistinct for UNION.  So this option is never used.
 */
 case OP_MakeRecord: {
   char *zNewRecord;

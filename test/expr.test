@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.23 2002/05/30 12:27:03 drh Exp $
+# $Id: expr.test,v 1.24 2002/05/31 15:51:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,23 +337,23 @@ test_expr expr-case.1 {i1=1, i2=2} \
 test_expr expr-case.2 {i1=2, i2=2} \
 	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} eq
 test_expr expr-case.3 {i1=NULL, i2=2} \
-	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} {{}}
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} ne
 test_expr expr-case.4 {i1=2, i2=NULL} \
-	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} {{}}
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} ne
 test_expr expr-case.5 {i1=2} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} two
 test_expr expr-case.6 {i1=1} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} one
 test_expr expr-case.7 {i1=2} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} {{}}
+	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} error
 test_expr expr-case.8 {i1=3} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} {{}}
+	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} error
 test_expr expr-case.9 {i1=3} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} error
 test_expr expr-case.10 {i1=3} \
 	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' END} {{}}
 test_expr expr-case.11 {i1=null} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 3 END} {{}}
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 3 END} 3
 test_expr expr-case.12 {i1=1} \
 	{CASE i1 WHEN 1 THEN null WHEN 2 THEN 'two' ELSE 3 END} {{}}
 test_expr expr-case.13 {i1=7} \

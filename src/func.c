@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.18 2002/05/29 23:22:23 drh Exp $
+** $Id: func.c,v 1.19 2002/05/31 15:51:25 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -362,7 +362,7 @@ static void minStep(sqlite_func *context, int argc, const char **argv){
   MinMaxCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p==0 || argc<1 || argv[0]==0 ) return;
-  if( sqlite_aggregate_count(context)==1 || sqliteCompare(argv[0],p->z)<0 ){
+  if( p->z==0 || sqliteCompare(argv[0],p->z)<0 ){
     int len;
     if( p->z && p->z!=p->zBuf ){
       sqliteFree(p->z);
@@ -381,7 +381,7 @@ static void maxStep(sqlite_func *context, int argc, const char **argv){
   MinMaxCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p==0 || argc<1 || argv[0]==0 ) return;
-  if( sqlite_aggregate_count(context)==1 || sqliteCompare(argv[0],p->z)>0 ){
+  if( p->z==0 || sqliteCompare(argv[0],p->z)>0 ){
     int len;
     if( p->z && p->z!=p->zBuf ){
       sqliteFree(p->z);

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.44 2002/05/26 21:34:58 drh Exp $
+** $Id: util.c,v 1.45 2002/05/31 15:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -728,6 +728,13 @@ int sqliteSortCompare(const char *a, const char *b){
   int isNumA, isNumB;
 
   while( res==0 && *a && *b ){
+    if( a[1]==0 ){
+      res = -1;
+      break;
+    }else if( b[1]==0 ){
+      res = +1;
+      break;
+    }
     isNumA = sqliteIsNumber(&a[1]);
     isNumB = sqliteIsNumber(&b[1]);
     if( isNumA ){

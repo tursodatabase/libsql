@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.3 2002/05/29 23:22:23 drh Exp $
+# $Id: minmax.test,v 1.4 2002/05/31 15:51:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -128,5 +128,19 @@ do_test minmax-4.1 {
       (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
   }
 } {1 20}
+do_test minmax-4.2 {
+  execsql {
+    SELECT y, sum(x) FROM
+      (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+    GROUP BY y ORDER BY y;
+  }
+} {1 1 2 5 3 22 4 92 5 90 6 0}
+do_test minmax-4.3 {
+  execsql {
+    SELECT y, count(x), count(*) FROM
+      (SELECT null, y+1 FROM t1 UNION SELECT * FROM t1)
+    GROUP BY y ORDER BY y;
+  }
+} {1 1 1 2 2 3 3 4 5 4 8 9 5 5 6 6 0 1}
 
 finish_test
