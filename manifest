@@ -1,5 +1,5 @@
-C Update\sthe\sTCL\sbinding\sdocumentation\sto\sdescribe\sthe\snewly\sadded\sability\nto\sspecify\sTCL\svariable\snames\sin\sthe\sbody\sof\san\sSQL\sstatement.\s(CVS\s1904)
-D 2004-08-26T01:12:14
+C Add\ssqlite_temp_directory\sto\sthe\swindows\sdriver.\s(CVS\s1905)
+D 2004-08-28T01:12:57
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -49,7 +49,7 @@ F src/os_test.c d3cb336448d28cb6238f8c0d7a44b0ff010601ea
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
 F src/os_unix.c 3239a45dbd2f50195bfc97f1ed35cb8fe5a3f60c
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
-F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
+F src/os_win.c feba371674076e4fb8c0b214c579e877677e34d5
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 6ecf24602f56ac98914685d449f6653903f36fec
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
@@ -243,7 +243,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6199f2f243514bbd4befbf768a7e03aec775bed2
-R f973acd39b99533a4d32c0284d2f7a6d
+P b3b9e58103dd6c65c55caf9a25bc1c257b37df88
+R af741a99488fdab1ea07d8dfec296d71
 U drh
-Z e1a14528ab39e612df9c5d5bff54ca90
+Z f2d1ace11f29f4f151b3075cb095a708
