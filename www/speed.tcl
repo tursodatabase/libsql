@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.11 2003/02/16 22:36:03 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.12 2003/06/05 15:05:35 drh Exp $ }
 
 puts {<html>
 <head>
@@ -37,7 +37,7 @@ conclusions drawn from these experiments:
 </p></li>
 <li><p>
   SQLite does not execute CREATE INDEX or DROP TABLE as fast as
-  the other databases.  But this as not seen is a problem because
+  the other databases.  But this is not seen as a problem because
   those are infrequent operations.
 </p></li>
 <li><p>

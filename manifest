@@ -1,5 +1,5 @@
-C Remove\sunused\scode\sfrom\sutil.c.\s(CVS\s1006)
-D 2003-06-05T14:27:56
+C Fix\sa\stypo\sin\sspeed.html.\s(CVS\s1007)
+D 2003-06-05T15:05:35
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -161,11 +161,11 @@ F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 1ff274b0ca7c8a60f7b231a47e4e95cfc3b2873d
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
-F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
+F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P af6f2bdf59fb621ff3e1d061e429f01ebd7d0b42
-R 23537f7b325631f9a84ccee7dc37dfd8
+P 1bcaa841a396e4d592de30d10846f7cefbbdcd0e
+R 153745ab98bc187ead9120d15632c3e2
 U drh
-Z e1539ac99c912a1f3368ac10a6ba549b
+Z d9aa6c60314c53d81452a52dca08849f
