@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite_trace()\shook\sfor\stracing\sthe\sSQL\sthat\san\sapplication\sexecutes.\r\nThe\splan\sis\sto\sleave\sthis\sAPI\sundocumented\sfor\sthe\stime\sbeing,\sin\scase\swe\r\nwant\sto\smake\schanges\sto\sit\slater.\s(CVS\s836)
-D 2003-01-16T16:28:54
+C Check\sthe\svalidity\sof\sthe\sdatabase\sconnection\sbefore\sthe\strace\scallback,\nnot\safterwards.\s(CVS\s837)
+D 2003-01-18T17:04:09
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c db954e955970795819145a3649fd2ad116a58890
-F src/main.c 2747a82e1facdf81658cc9d42bb6805c0371037d
+F src/main.c a05db522f8182f47e0cc6902327a7c205735d808
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 3a652608c296cf639ce63bd31d255db862e45685
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 717523d3750dce784fa767ed9a8267d1246798ef
-R fb11885bef68ba2ec34b18f0b356376e
+P f67bff8ff3db9694f87daf1a549d24ea9612da6b
+R effe9d0228ec9a51eeb8838dab1ee578
 U drh
-Z 4d889a4206e53c677a4ddbc963157d53
+Z 762142889e27f0dfcfbf3d94a2871c9d

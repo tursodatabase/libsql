@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.107 2003/01/16 16:28:54 drh Exp $
+** $Id: main.c,v 1.108 2003/01/18 17:04:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -602,11 +602,11 @@ int sqlite_exec(
 ){
   Parse sParse;
 
+  if( pzErrMsg ) *pzErrMsg = 0;
+  if( sqliteSafetyOn(db) ) goto exec_misuse;
 #ifndef SQLITE_OMIT_TRACE
   if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
 #endif
-  if( pzErrMsg ) *pzErrMsg = 0;
-  if( sqliteSafetyOn(db) ) goto exec_misuse;
   if( (db->flags & SQLITE_Initialized)==0 ){
     int rc, cnt = 1;
     while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
