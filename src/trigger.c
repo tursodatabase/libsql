@@ -20,7 +20,7 @@
 void sqliteCreateTrigger(
   Parse *pParse,      /* The parse context of the CREATE TRIGGER statement */
   Token *pName,       /* The name of the trigger */
-  int tr_tm,          /* One of TK_BEFORE, TK_AFTER */
+  int tr_tm,          /* One of TK_BEFORE, TK_AFTER , TK_INSTEAD */
   int op,             /* One of TK_INSERT, TK_UPDATE, TK_DELETE */
   IdList *pColumns,   /* column list if this is an UPDATE OF trigger */
   Token *pTableName,  /* The name of the table/view the trigger applies to */
@@ -38,6 +38,9 @@ void sqliteCreateTrigger(
   /* Check that: 
   ** 1. the trigger name does not already exist.
   ** 2. the table (or view) does exist.
+  ** 3. that we are not trying to create a trigger on the sqlite_master table
+  ** 4. That we are not trying to create an INSTEAD OF trigger on a table.
+  ** 5. That we are not trying to create a BEFORE or AFTER trigger on a view.
   */
   {
     char *tmp_str = sqliteStrNDup(pName->z, pName->n);
@@ -67,6 +70,21 @@ void sqliteCreateTrigger(
       pParse->nErr++;
       goto trigger_cleanup;
     }
+    if( tab->pSelect && tr_tm != TK_INSTEAD ){
+      sqliteSetNString(&pParse->zErrMsg, "cannot create ", -1,
+	  (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", -1, " trigger on view: ", -1
+          , pTableName->z, pTableName->n, 0);
+      goto trigger_cleanup;
+    }
+    if( !tab->pSelect && tr_tm == TK_INSTEAD ){
+      sqliteSetNString(&pParse->zErrMsg, "cannot create INSTEAD OF", -1, 
+	  " trigger on table: ", -1, pTableName->z, pTableName->n, 0);
+      goto trigger_cleanup;
+    }
+  }
+
+  if (tr_tm == TK_INSTEAD){
+    tr_tm = TK_BEFORE;
   }
 
   /* Build the Trigger object */

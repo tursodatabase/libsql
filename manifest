@@ -1,5 +1,5 @@
-C Change\sfunctions\sto\shandle\sNULLs\scorrectly.\s\sAdded\sthe\sNULLIF()\sfunction.\s(CVS\s590)
-D 2002-05-26T21:34:58
+C Require\sthe\sINSTEAD\sOF\ssyntax\sto\screate\striggers\son\sdatabase\sviews.\s(CVS\s591)
+D 2002-05-26T23:24:41
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -49,7 +49,7 @@ F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c facec7dc0b4a13e17ad67702f548dac2f7c6a732
-F src/trigger.c f9adb404ea355a8be2c9cd9740794a898cf1096c
+F src/trigger.c b7a93ffa7b91dafff433e6c87d603bfb1d50e3ee
 F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
 F src/util.c a9f6e6f03e8b7137204ac15b35a58f321e38037e
 F src/vdbe.c caa269517b2392986c8f55401f272e76b9de82d9
@@ -100,7 +100,7 @@ F test/tclsqlite.test 79deeffd7cd637ca0f06c5dbbf2f44d272079533
 F test/temptable.test daa83489eea2e9aaeeece09675c28be84c72cb67
 F test/tester.tcl dc1b56bd628b487e4d75bfd1e7480b5ed8810ac6
 F test/trans.test ae0b9a82d5d34122c3a3108781eb8d078091ccee
-F test/trigger1.test a0550c5cce97170dbebb88eee09506d9ad1174e9
+F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
 F test/trigger2.test 7f2b0a9b20004449c78b834c2f22494db3b2e63a
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
@@ -128,14 +128,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 45bdb18b75ac3aa1befec42985fb892413aac0bb
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
-F www/lang.tcl be7a241fe3dbb145ff25fe951c3d8ad16b543a1f
+F www/lang.tcl e87aa6b305d92977a6bd84bfcddd18fa76dff60a
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9051173742f1b0e15a809d12a0c9c98fd2c4614d
-R 0620e522ec88d7386c2177fd29ebfac3
-U drh
-Z 0624defcbccb679d773bc9ffe5a1ecda
+P 46ce1a9ab6e527958ebc757fa2175c488299cd84
+R 35b518a6cb0a7aed91c92408e7bd6686
+U danielk1977
+Z 9e3f1ec0355281ef07dac5144d661dfb

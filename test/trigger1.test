@@ -19,6 +19,12 @@
 # trig-1.6: Error if dropped trigger doesn't exist
 # trig-1.7: Dropping the table automatically drops all triggers
 # trig-1.8: A trigger created on a TEMP table is not inserted into sqlite_master
+# trig-1.9: Ensure that we cannot create a trigger on sqlite_master
+# trig-1.10:
+# trig-1.11:
+# trig-1.12: Ensure that INSTEAD OF triggers cannot be created on tables
+# trig-1.13: Ensure that AFTER triggers cannot be created on views
+# trig-1.14: Ensure that BEFORE triggers cannot be created on views
 #
 
 set testdir [file dirname $argv0]
@@ -144,5 +150,34 @@ do_test trig_cd-1.11 {
     drop table t1;
   }
 } {1 x-a 2 b 4 d}
+
+# Ensure that we cannot create INSTEAD OF triggers on tables
+do_test trig_cd-1.12 {
+  catchsql {
+    create table t1(a,b);
+    create trigger t1t instead of update on t1 for each row begin
+      delete from t1 WHERE a=old.a+2;
+    end;
+  }
+} {1 {cannot create INSTEAD OF trigger on table: t1}}
+# Ensure that we cannot create BEFORE triggers on views
+do_test trig_cd-1.13 {
+  catchsql {
+    create view v1 as select * from t1;
+    create trigger v1t before update on v1 for each row begin
+      delete from t1 WHERE a=old.a+2;
+    end;
+  }
+} {1 {cannot create BEFORE trigger on view: v1}}
+# Ensure that we cannot create AFTER triggers on views
+do_test trig_cd-1.14 {
+  catchsql {
+    create table t1(a,b);
+    create view v1 as select * from t1;
+    create trigger v1t AFTER update on v1 for each row begin
+      delete from t1 WHERE a=old.a+2;
+    end;
+  }
+} {1 {cannot create AFTER trigger on view: v1}}
 
 finish_test
