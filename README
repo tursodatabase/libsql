@@ -1,0 +1,36 @@
+This directory contains source code to 
+
+    SQLite: An SQL Frontend To GDBM
+
+To compile the project, first create a directory in which to place
+the build products.  The build directory must be separate from the
+source tree.  Cd into the build directory and then from the build
+directory run the configure script found at the root of the source
+tree.  Then run "make".
+
+For example:
+
+    tar xzf sqlite.tar.gz    ;#  Unpack the source tree into "sqlite"
+    mkdir bld                ;#  Build will occur in a sibling directory
+    cd bld                   ;#  Change to the build directory
+    ../sqlite/configure      ;#  Run the configure script
+    make                     ;#  Run the makefile.
+
+The primary build products are left in the build directory.  The
+primary build products are:
+
+    libsqlite.a        The SQLite library file
+
+    sqlite.h           A header file for SQLite
+
+    sqlite             Command line program for accessing SQLite databases
+
+There are some other make targets of interest:
+
+
+   make regression        This runs a regression test on the library.
+
+   make gdbmdump          This builds a utility named "gdbmdump" that
+                          writes out the contents of a GDBM file in a
+                          readable format.  It is useful for testing and
+                          debugging the library.

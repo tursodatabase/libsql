@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.1 2000/05/29 14:26:01 drh Exp $
+** $Id: tclsqlite.c,v 1.2 2000/05/29 20:41:51 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
@@ -239,3 +239,57 @@ int Sqlite_SafeInit(Tcl_Interp *interp){
 int Et_AppInit(Tcl_Interp *interp){
   return Sqlite_Init(interp);
 }
+
+/*
+** If the macro TCLSH is defined and is one, then put in code for the
+** "main" routine that will initialize Tcl.
+*/
+#if defined(TCLSH) && TCLSH==1
+static char zMainloop[] =
+  "set line {}\n"
+  "while {![eof stdin]} {\n"
+    "if {$line!=\"\"} {\n"
+      "puts -nonewline \"> \"\n"
+    "} else {\n"
+      "puts -nonewline \"% \"\n"
+    "}\n"
+    "flush stdout\n"
+    "append line [gets stdin]\n"
+    "if {[info complete $line]} {\n"
+      "if {[catch {uplevel #0 $line} result]} {\n"
+        "puts stderr \"Error: $result\"\n"
+      "} elseif {$result!=\"\"} {\n"
+        "puts $result\n"
+      "}\n"
+      "set line {}\n"
+    "} else {\n"
+      "append line \\n\n"
+    "}\n"
+  "}\n"
+;
+
+#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
+int TCLSH_MAIN(int argc, char **argv){
+  Tcl_Interp *interp;
+  interp = Tcl_CreateInterp();
+  Sqlite_Init(interp);
+  if( argc>=2 ){
+    int i;
+    Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
+    for(i=2; i<argc; i++){
+      Tcl_SetVar(interp, "argv", argv[i],
+          TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
+    }
+    if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
+      fprintf(stderr,"%s: %s\n", *argv, 
+         Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY)
+      );
+      return 1;
+    }
+  }else{
+    Tcl_GlobalEval(interp, zMainloop);
+  }
+  return 0;
+}
+#endif /* TCLSH */

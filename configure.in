@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.1 $
+# $Revision: 1.2 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -166,6 +166,8 @@ if test "$temp" = ""; then
 ** the configure script or any subdirectory of that directory.   Rerun  **
 ** the configure script from a directory that is separate from the      **
 ** source tree.                                                         **
+**                                                                      **
+** See the README file for additional information.                      **
 **************************************************************************])
 fi
 

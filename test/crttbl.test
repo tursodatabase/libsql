@@ -1,0 +1,92 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the CREATE TABLE statement.
+#
+# $Id: crttbl.test,v 1.1 2000/05/29 20:41:51 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a basic table and verify it is added to sqlite_master
+#
+do_test crttbl-1.1 {
+  execsql {
+    CREATE TABLE test1 (
+      one varchar(10),
+      two text
+    )
+  }
+  execsql {
+    SELECT sql FROM sqlite_master
+  }
+} {{CREATE TABLE test1 (
+      one varchar(10),
+      two text
+    )}}
+
+# Verify that both table files exists in the database directory
+#
+do_test crttbl-1.2 {
+  execsql {INSERT INTO test1 VALUES('hi', 'y''all')}
+  lsort [glob -nocomplain testdb/*.tbl]
+} {testdb/sqlite_master.tbl testdb/test1.tbl}
+
+# Verify the other fields of the sqlite_master file.
+#
+do_test crttbl-1.3 {
+  execsql {SELECT name, tbl_name, type FROM sqlite_master}
+} {test1 test1 table}
+
+# Close and reopen the database.  Verify that everything is
+# still the same.
+#
+do_test crttbl-1.4 {
+  db close
+  sqlite db testdb
+  execsql {SELECT name, tbl_name, type from sqlite_master}
+} {test1 test1 table}
+
+# Drop the database and make sure it disappears.
+#
+do_test crttbl-1.5 {
+  execsql {DROP TABLE test1}
+  execsql {SELECT * FROM sqlite_master}
+} {}
+
+# Verify that the file associated with the database is gone.
+#
+do_test crttbl-1.5 {
+  lsort [glob -nocomplain testdb/*.tbl]
+} {testdb/sqlite_master.tbl}
+
+# Close and reopen the database.  Verify that the table is
+# still gone.
+#
+do_test crttbl-1.6 {
+  db close
+  sqlite db testdb
+  execsql {SELECT name FROM sqlite_master}
+} {}
+
+finish_test

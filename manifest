@@ -1,22 +1,27 @@
-C :-)\s(CVS\s5)
-D 2000-05-29T18:50:16
-F Makefile.in cb1ba563614eae8c4f2261fe464ae4652179cb37
-F configure 8faba4d0194321e5f61a64e842c65eab0f68e6d8 x
-F configure.in 4fc2947d631037bd340b112d6193847d7ac827ae
+C :-)\s(CVS\s6)
+D 2000-05-29T20:41:50
+F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
+F Makefile.in f5e807375d080405b757239762db8f3b4124e08a
+F README 0200f7787a68917ac55c07b97e3c3a982bccd0bc
+F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
+F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F src/build.c 45dc91016e13dec70620b049a53ba785b4a0c76b
 F src/dbbe.c ab05293e89525041eaab8b4aca10516db3648792
 F src/dbbe.h bedeb3a0985bb584458e7849fb59927e99e751e6
 F src/main.c 25cce7bce0eb3ba10bada7c05f4b38dc6dbbc86f
+F src/parse.y 265c8596598afba0a94b94acd9c866d01603dfe5
 F src/shell.c 125f84ea5f8b725ba474d4702b575d062cc94d92
 F src/sqlite.h 2397c17a8f4ca90c09acab0100dc7e2f8f441b69
 F src/sqliteInt.h 0365970442441b5e9b74e1e828afdeac7b0662be
-F src/tclsqlite.c 6eca1c1b8713048245d295ed18dca71c91d4931f
+F src/tclsqlite.c 30f4317e1fc9119b130f29ee5dac4ab9121de68b
 F src/tokenize.c ab578d90ec6ab117b7ade6e6cfbcb5b0f9cad500
 F src/util.c b2e2a4dc55f7cbd41a7d9e0a8473eedd3b2691c8
 F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
 F src/where.c 67ffea57920e16b33c580e9a9b9855b3ec9dea7b
+F test/crttbl.test 49a73b927ad85bf8edae7e5311fde34bf5b2c1fb
+F test/tester.tcl 31a9077926a5eb54dcae11b2c92abc1263dd675c
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/lemon.c cff35578b3c4d1491021b6418016639ebe21b1a5
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
@@ -26,7 +31,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 67b2bee04077377eacede2b11e21fe37ef7e10c6
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 1d3286702cf267857190e6082db15ba4132453d7
-R df24759e4161832879dbb325c08161a8
+P 9fd0628af897c54c122fdef02f79788385ece39c
+R b39dfec9006cd0b187aa3d6ee1e9799f
 U drh
-Z 3893ca4bcccca2377dab7ed9ed04dee7
+Z ad70bffed13ea99cad14d2118369d246

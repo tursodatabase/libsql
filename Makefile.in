@@ -29,6 +29,14 @@ GDBM_FLAGS = @TARGET_GDBM_INC@
 #
 LIBGDBM = @TARGET_GDBM_LIBS@
 
+# Compiler options needed for programs that use the TCL library.
+#
+TCL_FLAGS = @TARGET_TCL_INC@
+
+# The library that programs using TCL must link against.
+#
+LIBTCL = @TARGET_TCL_LIBS@
+
 # Compiler options needed for programs that use the readline() library.
 #
 READLINE_FLAGS = -DHAVE_READLINE=@TARGET_HAVE_READLINE@ @TARGET_READLINE_INC@
@@ -44,8 +52,7 @@ LIBOBJ = build.o dbbe.o main.o parse.o tokenize.o util.o vdbe.o where.o
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	libsqlite.a sqlite.h sqlite
-# libtclsqlite.a tclsqlite
+all:	libsqlite.a sqlite.h sqlite 
 
 libsqlite.a:	$(LIBOBJ)
 	$(AR) libsqlite.a $(LIBOBJ)
@@ -103,7 +110,19 @@ vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/where.c
 
+gdbmdump:	$(TOP)/tool/gdbmdump.c
+	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)
+
+tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
+	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
+		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
+
+regression:	tclsqlite
+	for i in $(TOP)/test/*.test; do ./tclsqlite $$i; done
+
+
 TARBALL = \
+  sqlite/COPYRIGHT \
   sqlite/doc/*.html \
   sqlite/src/*.h \
   sqlite/src/*.c \
@@ -144,3 +163,4 @@ publish:	$(PUBLISH)
 clean:	
 	rm -f *.o sqlite libsqlite.a sqlite.h
 	rm -f lemon lempar.c parse.* sqlite.tar.gz
+	rm -f $(PUBLISH)
