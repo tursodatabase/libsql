@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.19 2000/06/08 01:55:30 drh Exp $
+** $Id: select.c,v 1.20 2000/06/08 11:13:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -795,6 +795,13 @@ int sqliteSelect(
     }
     if( pHaving && sqliteExprAnalyzeAggregates(pParse, pHaving) ){
       return 1;
+    }
+    if( pOrderBy ){
+      for(i=0; i<pOrderBy->nExpr; i++){
+        if( sqliteExprAnalyzeAggregates(pParse, pOrderBy->a[i].pExpr) ){
+          return 1;
+        }
+      }
     }
   }
 
