@@ -389,7 +389,7 @@ static int vxprintf(
             longvalue = longvalue/base;
           }while( longvalue>0 );
         }
-        length = (long)&buf[etBUFSIZE]-(long)bufpt;
+        length = &buf[etBUFSIZE]-bufpt;
         for(idx=precision-length; idx>0; idx--){
           *(--bufpt) = '0';                             /* Zero pad */
         }
@@ -401,7 +401,7 @@ static int vxprintf(
             for(pre=infop->prefix; (x=(*pre))!=0; pre++) *(--bufpt) = x;
           }
         }
-        length = (long)&buf[etBUFSIZE]-(long)bufpt;
+        length = &buf[etBUFSIZE]-bufpt;
         break;
       case etFLOAT:
       case etEXP:
@@ -511,7 +511,7 @@ static int vxprintf(
         /* The converted number is in buf[] and zero terminated. Output it.
         ** Note that the number is in the usual order, not reversed as with
         ** integer conversions. */
-        length = (long)bufpt-(long)buf;
+        length = bufpt-buf;
         bufpt = buf;
 
         /* Special case:  Add leading zeros if the flag_zeropad flag is

@@ -1,5 +1,5 @@
-C Major\supdate\sof\svdbe\stutorial\sto\s2.8.0\sengine.\s(CVS\s1012)
-D 2003-06-07T08:57:58
+C Do\snot\sassume\sthat\sa\spointer\scan\sfit\sin\sa\slong\sinside\sthe\sprintf()\scode.\nTicket\s#342.\s(CVS\s1013)
+D 2003-06-07T11:29:50
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -41,7 +41,7 @@ F src/pager.c c4d007fc3572950d9ee20cae03c2beb4e4c12daa
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 917250e5d86bdee752355e6617ea2e8ee12438bf
 F src/pragma.c f439a6157fe7c8d66dc2c6bfde2abaf23e770e1d
-F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
+F src/printf.c 12ab57e638c8201033c96717df7af59e06933314
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 685a179aae535431ec46922f1aff50a54112e959
-R d6e85951f3ba270b0e12272eb94105d7
-U jplyon
-Z 7226a2f79c96b354956ea3473fe74d79
+P 787d986d0f391d26eef7a2639594c465f9599f5b
+R e6e651d4a1ca867cdb1d1a1cc51b5f22
+U drh
+Z ae9940e2c16a990723b9c10b3754bf84
