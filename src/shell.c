@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.108 2004/08/01 00:10:45 drh Exp $
+** $Id: shell.c,v 1.109 2004/08/04 15:16:55 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -643,18 +643,24 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 */
 static char zHelp[] =
   ".databases             List names and files of attached databases\n"
-  ".dump ?TABLE? ...      Dump the database in a text format\n"
+  ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
   ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
   ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
-  ".import FILE TABLE     Import data from FILE\n"
+  ".import FILE TABLE     Import data from FILE into TABLE\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
-  ".mode MODE             Set mode to one of: cvs column html insert line\n"
-  "                       list tabs tcl\n"
-  ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
-  ".nullvalue STRING      Print STRING instead of nothing for NULL data\n"
+  ".mode MODE ?TABLE?     Set output mode where MODE is on of:\n"
+  "                         cvs      Comma-separated values\n"
+  "                         column   Left-aligned columns.  (See .width)\n"
+  "                         html     HTML <table> code\n"
+  "                         insert   SQL insert statements for TABLE\n"
+  "                         line     One value per line\n"
+  "                         list     Values delimited by .separator string\n"
+  "                         tabs     Tab-separated values\n"
+  "                         tcl      TCL list elements\n"
+  ".nullvalue STRING      Print STRING in place of NULL values\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
@@ -664,7 +670,7 @@ static char zHelp[] =
   ".rekey OLD NEW NEW     Change the encryption key\n"
 #endif
   ".schema ?TABLE?        Show the CREATE statements\n"
-  ".separator STRING      Change separator string\n"
+  ".separator STRING      Change separator used by output mode and .import\n"
   ".show                  Show the current values for various settings\n"
   ".tables ?PATTERN?      List names of tables matching a LIKE pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
@@ -915,7 +921,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     char *zLine;                /* A single line of input from the file */
     char **azCol;               /* zLine[] broken up into columns */
     char *zCommit;              /* How to commit changes */   
-    FILE *in;                   /* The input file */      
+    FILE *in;                   /* The input file */
+    int lineno = 0;             /* Line number of input file */
 
     nSep = strlen(p->separator);
     if( nSep==0 ){
@@ -965,17 +972,24 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     while( (zLine = local_getline(0, in))!=0 ){
       char *z;
       i = 0;
+      lineno++;
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
         if( *z==p->separator[0] && strncmp(z, p->separator, nSep)==0 ){
           *z = 0;
           i++;
-          if( i>=nCol ) break;
-          azCol[i] = &z[nSep];
-          z += nSep-1;
+          if( i<nCol ){
+            azCol[i] = &z[nSep];
+            z += nSep-1;
+          }
         }
       }
-      while( i<nCol ) azCol[i++] = 0;
+      if( i+1!=nCol ){
+        fprintf(stderr,"%s line %d: expected %d columns of data but found %d\n",
+           zFile, lineno, nCol, i+1);
+        zCommit = "ROLLBACK";
+        break;
+      }
       for(i=0; i<nCol; i++){
         sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
       }
@@ -991,7 +1005,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     free(azCol);
     fclose(in);
     sqlite3_finalize(pStmt);
-    sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+    sqlite3_exec(p->db, zCommit, 0, 0, 0);
   }else
 
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg>1 ){

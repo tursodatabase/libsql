@@ -1,5 +1,5 @@
-C Separate\sP4\stiming\sasm\scode\sout\sof\sthe\sSQLITE_DEBUG\smacro\sso\sthat\sSQLITE_DEBUG\ncan\sbe\sused\son\snon-x86\smachines\sand\swith\scompilers\sother\sthan\sGCC.\nTicket\s#838.\s(CVS\s1876)
-D 2004-08-04T14:44:34
+C In\sthe\scommand-line\sshell:\simportments\sto\sthe\s"help"\smessage\sand\sbetter\nerror\schecking\sin\sthe\snew\s.import\scommand.\s(CVS\s1877)
+D 2004-08-04T15:16:55
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/pragma.c c8be18093f0492f9983406647808781ca0073d8b
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c cbed45f4af76ad7fdfc0a0df6878b2b3827ae1d4
-F src/shell.c 7371f0a4b1c1aaed336176dfcc6e6742c138b263
+F src/shell.c 4b40fac1a07512d6b8dbdf8abe0b4660d777c9ce
 F src/sqlite.h.in c340a12b4d0521efb474dd000fba3bdfb18d76da
 F src/sqliteInt.h 7a8dec83364d940372507ca4d4ff0c96bce05300
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
@@ -240,7 +240,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4e7953c13fd2cb32e5c97737c4b2f99b1b1edc9b
-R 32ad53e3950d031bf8dd62a53bdface5
+P add266ccc3146fa56572d109e84c8a79dc3df2ca
+R 674b4df64dead6e35bf0c60489ccd67c
 U drh
-Z 06402d986b3876ed10b4e307c21b4abe
+Z 8d01172e36dc4738ad87459856f6ce34
