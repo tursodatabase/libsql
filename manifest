@@ -1,5 +1,5 @@
-C Be\smore\saggressive\sabout\susing\sthe\sbusy\shandler.\s\sTicket\s#1159.\s(CVS\s2385)
-D 2005-03-14T02:01:50
+C Allow\sthe\sdatabase\sname\sin\sa\sDETACH\sstatement\sto\sbe\squoted.\nTicket\s#1151.\s(CVS\s2386)
+D 2005-03-15T02:04:12
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -28,7 +28,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 6dab3d91aa4bf5c24e874145a2a547070c8c1883
-F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
+F src/attach.c 43099c31dfa82b77e671918fc5565ae7ea211af1
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 1d9b2179ccac13970c883da6ae3758cc72978bb0
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
@@ -86,7 +86,7 @@ F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
-F test/attach.test 3c951c822047854fd6c2f1f6ad7c0ad82c7aa90b
+F test/attach.test e6bda19cc954fd84836fadbd70d80134cb17918a
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
 F test/auth.test b24d12de3a6ba49237216429f8dc672a8a52b342
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 78012246fc1c1fe844d192cfff69a736e388ce7a
-R 12c7fb7c202c4d99608b53151d0373a0
+P 644c6398e52481e5dda87671e1c196b26b1e4990
+R c7a0fd10b1d2a373374c7ed8ae164835
 U drh
-Z 9df5123a27f166217f6a13afcd69b178
+Z 2ee8d8f83569ed719ed59eea247ccc2d

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.38 2005/03/02 05:18:57 drh Exp $
+# $Id: attach.test,v 1.39 2005/03/15 02:04:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -80,7 +80,7 @@ do_test attach-1.9 {
 } {0 {}}
 do_test attach-1.10 {
   catchsql {
-    DETACH DATABASE three;
+    DETACH DATABASE [three];
   }
 } {0 {}}
 do_test attach-1.11 {
@@ -172,7 +172,7 @@ do_test attach-1.22 {
 } {1 {too many attached databases - max 10}}
 do_test attach-1.23 {
   catchsql {
-    DETACH db14;
+    DETACH "db14";
   }
 } {1 {no such database: db14}}
 do_test attach-1.24 {
