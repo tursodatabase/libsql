@@ -7,7 +7,7 @@
 ** The author of this program disclaims copyright.
 */
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -70,7 +70,7 @@ void Configlist_eat(/* struct config * */);
 void Configlist_reset(/* void */);
 
 /********* From the file "error.h" ***************************************/
-void ErrorMsg( /* char *, int, char *, ... */ );
+void ErrorMsg(const char *, int,const char *, ...);
 
 /****** From the file "option.h" ******************************************/
 struct s_options {
@@ -1102,12 +1102,7 @@ int max;
 #define ERRMSGSIZE  10000 /* Hope this is big enough.  No way to error check */
 #define LINEWIDTH      79 /* Max width of any output line */
 #define PREFIXLIMIT    30 /* Max width of the prefix on each line */
-void ErrorMsg(va_alist)
-va_dcl
-{
-  char *filename;
-  int lineno;
-  char *format;
+void ErrorMsg(const char *filename, int lineno, const char *format, ...){
   char errmsg[ERRMSGSIZE];
   char prefix[PREFIXLIMIT+10];
   int errmsgsize;
@@ -1116,10 +1111,7 @@ va_dcl
   va_list ap;
   int end, restart, base;
 
-  va_start(ap);
-  filename = va_arg(ap,char*);
-  lineno = va_arg(ap,int);
-  format = va_arg(ap,char*);
+  va_start(ap, format);
   /* Prepare a prefix to be prepended to every output line */
   if( lineno>0 ){
     sprintf(prefix,"%.*s:%d: ",PREFIXLIMIT-10,filename,lineno);

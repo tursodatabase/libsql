@@ -1,5 +1,5 @@
-C Change\ssome\svariable\snames\sand\scomments\sin\sthe\snew\sin-memory\sdatabase\sfile\nimplementation.\s\sPartial\s(non-working)\simplementation\sof\sthe\sVACUUM\scommand.\s(CVS\s904)
-D 2003-04-15T01:19:48
+C Change\slemon\sto\suse\s<stdarg.h>\sinstead\sof\s<varargs.h>\sbecause\sGCC\sno\slonger\nsupports\svarargs.h.\s\sTickets\s#288\sand\s#280.\s\sIronically,\slemon\soriginally\nused\svarargs.h\sbecause\sstdarg.h\swas\snot\ssupported\sby\sthe\scompiler\sI\swas\nusing\sin\s1989\s(which\swas\sgcc\sif\sI\srecall\scorrectly.)\s(CVS\s905)
+D 2003-04-15T01:49:49
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -127,7 +127,7 @@ F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
 F test/where.test ffaa91611edb8961d887d02492aa13f82782ff66
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
+F tool/lemon.c 14fedcde9cf70aa6040b89de164cf8f56f92a4b9
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -161,7 +161,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 96336bffde6c441af197a521ee9e56fdfd7efff8
-R 502f917ded2eef9644690cdab0eeb915
+P e76787f877c456abdc8bc88bfefc50eaeed68744
+R 2082ff273f79da67ec128510ffa08236
 U drh
-Z 288074bf98169396dec5124561acfdbb
+Z 21cc95134a25d7c9da7271d70e2e3747
