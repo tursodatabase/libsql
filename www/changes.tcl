@@ -20,6 +20,7 @@ proc chng {date desc} {
 chng {2001 Jan 4 (1.0.18)} {
 <li>Print the offending SQL statement when an error occurs.</li>
 <li>Do not require commas between constraints in CREATE TABLE statements.</li>
+<li>Added the "-echo" option to the shell.</li>
 <li>Changes to comments.</li>
 }
 
