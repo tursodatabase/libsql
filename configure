@@ -1493,7 +1493,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.22 $
+# $Revision: 1.23 $
 
 #########
 # Programs needed
@@ -20586,7 +20586,7 @@ fi
 #########
 # Generate the output files.
 #
-                              ac_config_files="$ac_config_files  Makefile sqlite.pc"
+                    ac_config_files="$ac_config_files Makefile sqlite.pc"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -21138,9 +21138,8 @@ for ac_config_target in $ac_config_targets
 do
   case "$ac_config_target" in
   # Handling of arguments.
-  "" ) CONFIG_FILES="$CONFIG_FILES " ;;
-  "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-  "sqlite.pc" ) CONFIG_FILES="$CONFIG_FILES sqlite.pc" ;;
+  "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "sqlite.pc" ) CONFIG_FILES="$CONFIG_FILES sqlite.pc" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;

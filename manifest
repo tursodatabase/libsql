@@ -1,5 +1,5 @@
-C configure\sand\smakefile\supdates\sfor\sv3-alpha\scompiler\smacros\s(CVS\s1652)
-D 2004-06-21T18:57:30
+C configure\sfixes\sfor\scygwin\s(line\sendings\sin\sconfigure.ac)\s(CVS\s1653)
+D 2004-06-21T21:44:49
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -10,7 +10,7 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure c0b49c4e13bf53aee787e8b978d3cdc080336ae3 x
+F configure 7e3a941d455da0f6368c0ed13466565bfed88c90 x
 F configure.ac 8d4eeb8f2831bc80f8a19a65ecb371dd08312abc
 F doc/affinity.html bdc7560fa3d2284af59d8fb52041cddbb14578f5
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P afc398c2ca97ff165ea8242a5ffb8b6374b7fa8f
-R 55b0fd6f6da2558d5cfbac7f74049440
+P 99f38932d6e777392e168493ebcf5559ecc994c7
+R 192f2bc377431264f6a2ea3f9af0d2c1
 U dougcurrie
-Z e62329f9c2ff4aad3f9cba6d12292b96
+Z f462065cc53e9ed7b744e8934238a9b4
