@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: autovacuum_ioerr2.test,v 1.4 2005/01/22 03:39:39 danielk1977 Exp $
+# $Id: autovacuum_ioerr2.test,v 1.5 2005/01/29 09:14:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -76,42 +76,44 @@ do_ioerr_test autovacuum-ioerr2-3 -sqlprep {
 }
 
 file delete -force backup.db
-do_ioerr_test autovacuum-ioerr2-4 -tclprep {
-  if {![file exists backup.db]} {
-    sqlite3 dbb backup.db 
-    execsql {
-      PRAGMA auto_vacuum = 1;
-      BEGIN;
-      CREATE TABLE abc(a);
-      INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
-      INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflow
-    } dbb
-    for {set i 0} {$i<2500} {incr i} {
+ifcapable subquery {
+  do_ioerr_test autovacuum-ioerr2-4 -tclprep {
+    if {![file exists backup.db]} {
+      sqlite3 dbb backup.db 
       execsql {
-        INSERT INTO abc VALUES(randstr(100,100)); 
+        PRAGMA auto_vacuum = 1;
+        BEGIN;
+        CREATE TABLE abc(a);
+        INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 4 is overflow
+        INSERT INTO abc VALUES(randstr(1100,1100)); -- Page 5 is overflow
       } dbb
+      for {set i 0} {$i<2500} {incr i} {
+        execsql {
+          INSERT INTO abc VALUES(randstr(100,100)); 
+        } dbb
+      }
+      execsql {
+        COMMIT;
+        PRAGMA cache_size = 10;
+      } dbb
+      dbb close
     }
+    db close
+    file delete -force test.db
+    file delete -force test.db-journal
+    copy_file backup.db test.db
+    set ::DB [sqlite3 db test.db]
     execsql {
-      COMMIT;
       PRAGMA cache_size = 10;
-    } dbb
-    dbb close
+    }
+  } -sqlbody {
+    BEGIN;
+    DELETE FROM abc WHERE oid < 3;
+    UPDATE abc SET a = randstr(100,100) WHERE oid > 2300;
+    UPDATE abc SET a = randstr(1100,1100) WHERE oid = 
+        (select max(oid) from abc);
+    COMMIT;
   }
-  db close
-  file delete -force test.db
-  file delete -force test.db-journal
-  copy_file backup.db test.db
-  set ::DB [sqlite3 db test.db]
-  execsql {
-    PRAGMA cache_size = 10;
-  }
-} -sqlbody {
-  BEGIN;
-  DELETE FROM abc WHERE oid < 3;
-  UPDATE abc SET a = randstr(100,100) WHERE oid > 2300;
-  UPDATE abc SET a = randstr(1100,1100) WHERE oid = 
-      (select max(oid) from abc);
-  COMMIT;
 }
 
 finish_test

@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.18 2005/01/29 08:36:45 danielk1977 Exp $
+# $Id: ioerr.test,v 1.19 2005/01/29 09:14:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,26 +54,28 @@ do_ioerr_test ioerr-1 -sqlprep {
 # Additionally, if auto-vacuum is enabled, the 12th IO error is not 
 # detected. Same reason as the 8th in the test case above.
 # 
-do_ioerr_test ioerr-2 -cksum true -sqlprep { 
-  BEGIN; 
-  CREATE TABLE t1(a, b, c); 
-  INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
-  INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1; 
-  INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
-  CREATE TABLE t2 AS SELECT * FROM t1;
-  CREATE TABLE t3 AS SELECT * FROM t1;
-  COMMIT;
-  DROP TABLE t2;
-} -sqlbody {
-  VACUUM;
-} -exclude [list \
-    1 [expr [string match [execsql {pragma auto_vacuum}] 1]?12:-1]]
+ifcapable vacuum {
+  do_ioerr_test ioerr-2 -cksum true -sqlprep { 
+    BEGIN; 
+    CREATE TABLE t1(a, b, c); 
+    INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
+    INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1; 
+    INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
+    INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
+    CREATE TABLE t2 AS SELECT * FROM t1;
+    CREATE TABLE t3 AS SELECT * FROM t1;
+    COMMIT;
+    DROP TABLE t2;
+  } -sqlbody {
+    VACUUM;
+  } -exclude [list \
+      1 [expr [string match [execsql {pragma auto_vacuum}] 1]?12:-1]]
+}
 
 do_ioerr_test ioerr-3 -tclprep {
   execsql {

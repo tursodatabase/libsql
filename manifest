@@ -1,5 +1,5 @@
-C Fix\sa\stest\sbug\scausing\sa\ssegfault\sin\sbind.test.\s(CVS\s2288)
-D 2005-01-29T09:00:49
+C Update\sto\stest\sfiles\sto\ssupport\sbuilds\swith\sOMIT\smacros\sdefined.\s(CVS\s2289)
+D 2005-01-29T09:14:05
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -93,7 +93,7 @@ F test/autoinc.test c6daf10ffce8a898cd375b4a71615a741a6029d0
 F test/autovacuum.test 8ba29face873300394f9446ded0e4a142d24e7e4
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
-F test/autovacuum_ioerr2.test 8feb1cfb4d8177c639cd1e0b8c41d3c88a2a1518
+F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test a88917a3d2865f31006e2acb2fd7534dcd15140d
@@ -138,7 +138,7 @@ F test/insert2.test 420cb5c23912732219aad87420abdd7b994b1cad
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
 F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
-F test/ioerr.test 79e1ee69157ffb9445dfa4f34fff32c87f375fd4
+F test/ioerr.test 7eff0a5cb552a6532ccc5c62bb4911127f2c9562
 F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P d0b16bae6555f723400821b22916b66609a26b9c
-R b950a7e4797caf8753adc11674aec7a2
+P a8b921d45ec9ef4d16ef7b5bf09aabaf02ebc70b
+R 23cc5d602d973c6da38d5c947af10e17
 U danielk1977
-Z 114fe59f1960db4ca9978e693524a2bb
+Z be67e3ff70386bba354e06b0c7e33e08
