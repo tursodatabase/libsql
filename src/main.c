@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.155 2004/02/14 23:59:57 drh Exp $
+** $Id: main.c,v 1.156 2004/02/16 03:44:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -614,6 +614,7 @@ int sqlite_exec(
   sqlite_vm *pVm;
   int nRetry = 0;
   int nChange = 0;
+  int nCallback;
 
   if( zSql==0 ) return SQLITE_OK;
   while( rc==SQLITE_OK && zSql[0] ){
@@ -628,16 +629,22 @@ int sqlite_exec(
       break;
     }
     db->nChange += nChange;
+    nCallback = 0;
     while(1){
       int nArg;
       char **azArg, **azCol;
       rc = sqlite_step(pVm, &nArg, (const char***)&azArg,(const char***)&azCol);
       if( rc==SQLITE_ROW ){
-        if( xCallback(pArg, nArg, azArg, azCol) ){
+        if( xCallback!=0 && xCallback(pArg, nArg, azArg, azCol) ){
           sqlite_finalize(pVm, 0);
           return SQLITE_ABORT;
         }
+        nCallback++;
       }else{
+        if( rc==SQLITE_DONE && nCallback==0
+          && (db->flags & SQLITE_NullCallback)!=0 && xCallback!=0 ){
+          xCallback(pArg, nArg, azArg, azCol);
+        }
         rc = sqlite_finalize(pVm, pzErrMsg);
         if( rc==SQLITE_SCHEMA && nRetry<2 ){
           nRetry++;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.155 2004/02/14 23:59:58 drh Exp $
+** $Id: select.c,v 1.156 2004/02/16 03:44:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -689,17 +689,19 @@ static void generateColumnNames(
 ){
   Vdbe *v = pParse->pVdbe;
   int i, j;
+  assert( v!=0 );
   if( pParse->colNamesSet || v==0 || sqlite_malloc_failed ) return;
   pParse->colNamesSet = 1;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
     char *zType = 0;
     int showFullNames;
+    int p2 = i==pEList->nExpr-1;
     p = pEList->a[i].pExpr;
     if( p==0 ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+      sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
       sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
       continue;
     }
@@ -721,7 +723,7 @@ static void generateColumnNames(
         zType = pTab->aCol[iCol].zType;
       }
       if( p->span.z && p->span.z[0] && !showFullNames ){
-        int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
+        int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, p2);
         sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
         sqliteVdbeCompressSpace(v, addr);
       }else if( pTabList->nSrc>1 || showFullNames ){
@@ -731,22 +733,22 @@ static void generateColumnNames(
         zTab = pTabList->a[j].zAlias;
         if( showFullNames || zTab==0 ) zTab = pTab->zName;
         sqliteSetString(&zName, zTab, ".", zCol, 0);
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
         sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
         sqliteFree(zName);
       }else{
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
         sqliteVdbeChangeP3(v, -1, zCol, 0);
       }
     }else if( p->span.z && p->span.z[0] ){
-      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
+      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, p2);
       sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
       sqliteVdbeCompressSpace(v, addr);
     }else{
       char zName[30];
       assert( p->op!=TK_COLUMN || pTabList==0 );
       sprintf(zName, "column%d", i+1);
-      sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
+      sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
       sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
     }
   }
@@ -1495,12 +1497,6 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     sqliteErrorMsg(pParse, "SELECTs to the left and right of %s"
       " do not have the same number of result columns", selectOpName(p->op));
     return 1;
-  }
-
-  /* Issue a null callback if that is what the user wants.
-  */
-  if( eDest==SRT_Callback ){
-    sqliteVdbeAddOp(v, OP_NullCallback, p->pEList->nExpr, 0);
   }
   return 0;
 }
@@ -2392,13 +2388,6 @@ int sqliteSelect(
   */
   if( pOrderBy ){
     generateSortTail(p, v, pEList->nExpr, eDest, iParm);
-  }
-
-
-  /* Issue a null callback if that is what the user wants.
-  */
-  if( eDest==SRT_Callback ){
-    sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
   }
 
   /* If this was a subquery, we have now converted the subquery into a
