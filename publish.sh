@@ -122,6 +122,8 @@ sqlite_finalize
 sqlite_reset
 sqlite_bind
 sqlite_last_statement_changes
+sqlite_encode_binary
+sqlite_decode_binary
 END_OF_FILE
 i386-mingw32msvc-dllwrap \
      --def sqlite.def -v --export-all \

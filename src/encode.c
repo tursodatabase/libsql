@@ -15,9 +15,10 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.10 2004/01/14 21:59:23 drh Exp $
+** $Id: encode.c,v 1.11 2004/03/14 22:12:00 drh Exp $
 */
 #include <string.h>
+#include <assert.h>
 
 /*
 ** How This Encoder Works
@@ -114,13 +115,19 @@
 **
 ** The return value is the number of characters in the encoded
 ** string, excluding the "\000" terminator.
+**
+** If out==NULL then no output is generated but the routine still returns
+** the number of characters that would have been generated if out had
+** not been NULL.
 */
 int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
   int i, j, e, m;
   int cnt[256];
   if( n<=0 ){
-    out[0] = 'x';
-    out[1] = 0;
+    if( out ){
+      out[0] = 'x';
+      out[1] = 0;
+    }
     return 1;
   }
   memset(cnt, 0, sizeof(cnt));
@@ -136,16 +143,16 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
       if( m==0 ) break;
     }
   }
+  if( out==0 ){
+    return n+m+1;
+  }
   out[0] = e;
   j = 1;
   for(i=0; i<n; i++){
     int c = (in[i] - e)&0xff;
-    if( c==0 ){
+    if( c==0 || c==1 ){
       out[j++] = 1;
-      out[j++] = 1;
-    }else if( c==1 ){
-      out[j++] = 1;
-      out[j++] = 2;
+      out[j++] = c+1;
     }else if( c=='\'' ){
       out[j++] = 1;
       out[j++] = 3;
@@ -154,6 +161,7 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
     }
   }
   out[j] = 0;
+  assert( j==n+m+1 );
   return j;
 }
 
@@ -174,10 +182,8 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
   while( (c = *(in++))!=0 ){
     if( c==1 ){
       c = *(in++);
-      if( c==1 ){
-        c = 0;
-      }else if( c==2 ){
-        c = 1;
+      if( c==1 || c==2 ){
+        c--;
       }else if( c==3 ){
         c = '\'';
       }else{
@@ -197,11 +203,11 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
 ** and run the result.
 */
 int main(int argc, char **argv){
-  int i, j, n, m, nOut, nByte;
+  int i, j, n, m, nOut, nByteIn, nByteOut;
   unsigned char in[30000];
   unsigned char out[33000];
 
-  nByte = 0;
+  nByteIn = nByteOut = 0;
   for(i=0; i<sizeof(in); i++){
     printf("Test %d: ", i+1);
     n = rand() % (i+1);
@@ -215,10 +221,15 @@ int main(int argc, char **argv){
     }else{
       for(j=0; j<n; j++) in[j] = rand() & 0xff;
     }
-    nByte += n;
+    nByteIn += n;
     nOut = sqlite_encode_binary(in, n, out);
+    nByteOut += nOut;
     if( nOut!=strlen(out) ){
       printf(" ERROR return value is %d instead of %d\n", nOut, strlen(out));
+      exit(1);
+    }
+    if( nOut!=sqlite_encode_binary(in, n, 0) ){
+      printf(" ERROR actual output size disagrees with predicted size\n");
       exit(1);
     }
     m = (256*n + 1262)/253;
@@ -244,6 +255,9 @@ int main(int argc, char **argv){
     }
     printf(" OK\n");
   }
-  fprintf(stderr, "Finished.  Total encoding: %d bytes\n", nByte);
+  fprintf(stderr,"Finished.  Total encoding: %d->%d bytes\n",
+          nByteIn, nByteOut);
+  fprintf(stderr,"Avg size increase: %.3f%%\n",
+    (nByteOut-nByteIn)*100.0/(double)nByteIn);
 }
 #endif /* ENCODER_TEST */
