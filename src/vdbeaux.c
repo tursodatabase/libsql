@@ -1281,6 +1281,12 @@ void sqlite3VdbeDelete(Vdbe *p){
       sqliteFree(p->apVar[i].z);
     }
   }
+  if( p->azColName16 ){
+    for(i=0; i<p->nResColumn; i++){
+      if( p->azColName16[i] ) sqliteFree(p->azColName16[i]);
+    }
+    sqliteFree(p->azColName16);
+  }
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);

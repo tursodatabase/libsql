@@ -1,5 +1,5 @@
-C Further\swork\son\sthe\snew\sAPI.\sAll\sthe\sfunctions\sto\sexecute\squeries\sare\sthere\nnow.\s(CVS\s1427)
-D 2004-05-21T10:08:54
+C Pretty-print\sblobs\sin\svdbe-traces.\s(CVS\s1428)
+D 2004-05-21T10:49:48
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,10 +64,10 @@ F src/update.c 1a5e9182596f3ea8c7a141e308a3d2a7e5689fee
 F src/utf.c c27c4f1120f7aaef00cd6942b3d9e3f4ca4fe0e4
 F src/util.c 5cbeb452da09cfc7248de9948c15b14d840723f7
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c cafe464b807f480491e4e5212833af1b78e75c3c
+F src/vdbe.c f0e24400884c3e3a5021f60ca2310e7373709e3e
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
 F src/vdbeInt.h 8ed2272e97bef20c5302c3b2cb4f900e8b5e2642
-F src/vdbeaux.c bceaa0b9756d547c5dba871676e5cfc19f4f4322
+F src/vdbeaux.c 0a0de6f6097125960b02a3c8625fa896cbc61271
 F src/where.c efe5d25fe18cd7381722457898cd863e84097a0c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 25643a0137d395572f16cfec3ab3327d913138ba
-R 538616d77e95f3accc922466e9ff1ada
+P fc94575d77f9865e1553bb70c2e3eda2a0b8669e
+R cca19851558a13016ede75fbc3903bef
 U danielk1977
-Z d2021785293946a744d708c10c8e94e3
+Z 37206e6737045cd1363c44f5a04c63c9
