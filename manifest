@@ -1,5 +1,5 @@
-C The\snew\scode\sfor\staking\sadvantage\sof\sinequalities\sin\sWHERE\sclauses\nis\sin\splace.\s\sIt\sappears\sto\swork.\s(CVS\s305)
-D 2001-11-08T00:45:21
+C Bug\sfixes.\s(CVS\s306)
+D 2001-11-09T13:41:10
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -42,16 +42,16 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
 F src/sqliteInt.h aa26c7f8a0c5c3210a81177c60ca08bf8f3f7825
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
-F src/tclsqlite.c 4896e078495bf868742f5394dcf01c5efe5bea02
+F src/tclsqlite.c b82e4faeae89fdb7304b3c970979ade299336a1f
 F src/test1.c 41eabe255970ef947263b94145c9b2766bab8675
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
-F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
+F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
 F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
 F src/update.c b1e315e20b98a013d30fd9ff3b7d9dc4f29b39b3
 F src/util.c ac83973ecc647d3d3c58708f148442365abf9b94
 F src/vdbe.c b4cdc0017bf0574ededf17d7ff5f1d66a58bf430
 F src/vdbe.h cd4c8647051a0c22c0e133c375f1cd17bb8b1e06
-F src/where.c 13a112b720fffd40612051f9e6d37262c4c818c8
+F src/where.c d51e6380dcd0ddb6767add378f266ffb1555403a
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test 9458134d67f81559845f934fdd6802fe19a68ad1
 F test/btree.test 47952c7a0c22660566264c68c0664592b7da85ce
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P decbeb9151885fee473b3fa58c8cf78a2338d2d8
-R d92c3b8d059b1ac938a54da5297c6da3
+P 262bcd17df19f45def6144b5a7e0602ca5b03deb
+R f54b51f56bb87d8fefdd0ec8ce58b976
 U drh
-Z 73b06b3dcf3434a2ed8ea2fd74f12aeb
+Z 41ecae8afdab61183662635580d28dbf

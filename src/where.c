@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.26 2001/11/08 00:45:22 drh Exp $
+** $Id: where.c,v 1.27 2001/11/09 13:41:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -409,7 +409,6 @@ WhereInfo *sqliteWhereBegin(
     if( goDirect ){
       /* Case 1:  We can directly reference a single row using the ROWID field.
       */
-      cont = brk;
       for(k=0; k<nExpr; k++){
         if( aExpr[k].p==0 ) continue;
         if( aExpr[k].idxLeft==idx 

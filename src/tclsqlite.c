@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.27 2001/10/22 02:58:10 drh Exp $
+** $Id: tclsqlite.c,v 1.28 2001/11/09 13:41:10 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -19,6 +19,7 @@
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
 ** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
@@ -50,7 +51,7 @@ struct CallbackData {
   Tcl_Interp *interp;       /* The TCL interpreter */
   char *zArray;             /* The array into which data is written */
   Tcl_Obj *pCode;           /* The code to execute for each row */
-  int once;                 /* Set only for the first invocation of callback */
+  int once;                 /* Set for first callback only */
   int tcl_rc;               /* Return code from TCL script */
   int nColName;             /* Number of entries in the azColName[] array */
   char **azColName;         /* Column names translated to UTF-8 */
@@ -74,26 +75,29 @@ static int DbEvalCallback(
   int i, rc;
   Tcl_DString dCol;
   Tcl_DStringInit(&dCol);
-  if( azCol==0 || (cbData->once && cbData->zArray[0]) ){
-    Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
-    if( azCol ){
-      cbData->azColName = malloc( nCol*sizeof(char*) );
-      if( cbData->azColName==0 ){ return 1; }
+  if( cbData->azColName==0 ){
+    assert( cbData->once );
+    cbData->once = 0;
+    if( cbData->zArray[0] ){
+      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
     }
+    cbData->azColName = malloc( nCol*sizeof(char*) );
+    if( cbData->azColName==0 ){ return 1; }
     cbData->nColName = nCol;
     for(i=0; i<nCol; i++){
       Tcl_ExternalToUtfDString(NULL, azN[i], -1, &dCol);
-      if( azCol ){
-        cbData->azColName[i] = malloc( Tcl_DStringLength(&dCol) + 1);
-        if( cbData->azColName[i] ){
-          strcpy(cbData->azColName[i], Tcl_DStringValue(&dCol));
-        }
+      cbData->azColName[i] = malloc( Tcl_DStringLength(&dCol) + 1 );
+      if( cbData->azColName[i] ){
+        strcpy(cbData->azColName[i], Tcl_DStringValue(&dCol));
+      }else{
+        return 1;
       }
-      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", Tcl_DStringValue(&dCol),
-         TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+      if( cbData->zArray[0] ){
+        Tcl_SetVar2(cbData->interp, cbData->zArray, "*",
+             Tcl_DStringValue(&dCol), TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+      }
       Tcl_DStringFree(&dCol);
     }
-    cbData->once = 0;
   }
   if( azCol!=0 ){
     if( cbData->zArray[0] ){
@@ -414,6 +418,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         if( cbData.azColName[i] ) free(cbData.azColName[i]);
       }
       free(cbData.azColName);
+      cbData.azColName = 0;
     }
 #endif
     return rc;
