@@ -1,0 +1,90 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing SELECT statements that are part of
+# expressions.
+#
+# $Id: subselect.test,v 1.1 2000/06/05 18:54:47 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Basic sanity checking.  Try a simple subselect.
+#
+do_test subselect-1.1 {
+  execsql {
+    CREATE TABLE t1(a int, b int);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(3,4);
+    INSERT INTO t1 VALUES(5,6);
+  }
+  execsql {SELECT * FROM t1 WHERE a = (SELECT count(*) FROM t1)}
+} {3 4}
+
+# Try a select with more than one result column.
+#
+do_test subselect-1.2 {
+  set v [catch {execsql {SELECT * FROM t1 WHERE a = (SELECT * FROM t1)}} msg]
+  lappend v $msg
+} {1 {only a single result allowed for a SELECT this is part of an expression}}
+
+# A subselect without an aggregate.
+#
+do_test subselect-1.3a {
+  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=2)}
+} {2}
+do_test subselect-1.3b {
+  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=4)}
+} {4}
+do_test subselect-1.3c {
+  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=6)}
+} {6}
+do_test subselect-1.3c {
+  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=8)}
+} {}
+
+# What if the subselect doesn't return any value.  We should get
+# NULL as the result.  Check it out.
+#
+do_test subselect-1.4 {
+  execsql {INSERT INTO t1 VALUES(NULL,8)}
+  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=5)}
+} {8}
+
+# Try multiple subselects within a single expression.
+#
+do_test subselect-1.5 {
+  execsql {
+    CREATE TABLE t2(x int, y int);
+    INSERT INTO t2 VALUES(1,2);
+    INSERT INTO t2 VALUES(2,4);
+    INSERT INTO t2 VALUES(3,8);
+    INSERT INTO t2 VALUES(4,16);
+  }
+  execsql {
+    SELECT y from t2 
+    WHERE x = (SELECT sum(b) FROM t1 where a notnull) - (SELECT sum(a) FROM t1)
+  }
+} {8}
+
+finish_test

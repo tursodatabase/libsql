@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.5 2000/06/04 12:58:37 drh Exp $
+** $Id: expr.c,v 1.6 2000/06/05 18:54:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -32,8 +32,13 @@
 ** table fields.  Nodes of the form ID.ID or ID resolve into an
 ** index to the table in the table list and a field offset.  The opcode
 ** for such nodes is changed to TK_FIELD.  The iTable value is changed
-** to the index of the referenced table in pTabList, and the iField value
-** is changed to the index of the field of the referenced table.
+** to the index of the referenced table in pTabList plus the pParse->nTab
+** value.  The iField value is changed to the index of the field of the 
+** referenced table.
+**
+** This routine also looks for SELECTs that are part of an expression.
+** If it finds any, it generates code to write the value of that select
+** into a memory cell.
 **
 ** Unknown fields or tables provoke an error.  The function returns
 ** the number of errors seen and leaves an error message on pParse->zErrMsg.
@@ -54,7 +59,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
-            pExpr->iTable = i;
+            pExpr->iTable = i + pParse->nTab;
             pExpr->iField = j;
           }
         }
@@ -104,7 +109,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
-            pExpr->iTable = i;
+            pExpr->iTable = i + pParse->nTab;
             pExpr->iField = j;
           }
         }
@@ -129,6 +134,14 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       sqliteExprDelete(pRight);
       pExpr->pRight = 0;
       pExpr->op = TK_FIELD;
+      break;
+    }
+
+    case TK_SELECT: {
+      pExpr->iField = pParse->nMem++;
+      if( sqliteSelect(pParse, pExpr->pSelect, -1, pExpr->iField) ){
+        return 1;
+      }
       break;
     }
 
@@ -383,6 +396,10 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
           sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
         }
       }
+      break;
+    }
+    case TK_SELECT: {
+      sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iField, 0, 0, 0);
       break;
     }
   }

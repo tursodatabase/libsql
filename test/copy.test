@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.3 2000/06/05 02:07:05 drh Exp $
+# $Id: copy.test,v 1.4 2000/06/05 18:54:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,7 +81,6 @@ do_test copy-1.4 {
   execsql {COPY test1 FROM 'data2.txt'}
   execsql {SELECT * FROM test1 ORDER BY one}
 } {11 22 33}
-return
 
 # Test out the USING DELIMITERS clause
 #

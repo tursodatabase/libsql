@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.14 2000/06/03 18:06:52 drh Exp $
+** $Id: build.c,v 1.15 2000/06/05 18:54:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -108,6 +108,8 @@ void sqliteExprDelete(Expr *p){
   if( p==0 ) return;
   if( p->pLeft ) sqliteExprDelete(p->pLeft);
   if( p->pRight ) sqliteExprDelete(p->pRight);
+  if( p->pList ) sqliteExprListDelete(p->pList);
+  if( p->pSelect ) sqliteSelectDelete(p->pSelect);
   sqliteFree(p);
 }
 

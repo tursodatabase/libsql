@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.14 2000/06/05 16:01:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.15 2000/06/05 18:54:46 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -162,6 +162,7 @@ struct Expr {
   Token token;           /* An operand token */
   int iTable, iField;    /* When op==TK_FIELD, then this node means the
                          ** iField-th field of the iTable-th table */
+  Select *pSelect;       /* When the expression is a sub-select */
 };
 
 /*
@@ -191,7 +192,7 @@ struct IdList {
     char *zName;      /* Text of the identifier. */
     char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
     Table *pTab;      /* Table corresponding to zName */
-    int idx;          /* Index of a field name in the table */
+    int idx;          /* Index of a field named zName in a table */
   } *a;            /* One entry for each identifier on the list */
 };
 
@@ -204,9 +205,11 @@ struct IdList {
 */
 struct WhereInfo {
   Parse *pParse;
-  IdList *pTabList;
-  int iContinue;
-  int iBreak;
+  IdList *pTabList;    /* List of tables in the join */
+  int iContinue;       /* Jump here to continue with next record */
+  int iBreak;          /* Jump here to break out of the loop */
+  int base;            /* Index of first Open opcode */
+  Index *aIdx[32];     /* Indices used for each table */
 };
 
 /*
@@ -239,6 +242,8 @@ struct Parse {
   int explain;         /* True if the EXPLAIN flag is found on the query */
   int initFlag;        /* True if reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
+  int nTab;            /* Number of previously allocated cursors */
+  int nMem;            /* Number of memory cells used so far */
 };
 
 /*
@@ -281,7 +286,7 @@ void sqliteIdListAddAlias(IdList*, Token*);
 void sqliteIdListDelete(IdList*);
 void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
-int sqliteSelect(Parse*, Select*, Table*, int);
+int sqliteSelect(Parse*, Select*, int, int);
 Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,int);
 void sqliteSelectDelete(Select*);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);

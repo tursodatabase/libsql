@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.7 2000/06/05 16:01:39 drh Exp $
+** $Id: select.c,v 1.8 2000/06/05 18:54:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -71,11 +71,12 @@ void sqliteSelectDelete(Select *p){
 /*
 ** Generate code for the given SELECT statement.
 **
-** If pDest==0 and iMem<0, then the results of the query are sent to
-** the callback function.  If pDest!=0 then the results are written to
-** the single table specified.  If pDest==0 and iMem>=0 then the result
-** should be a single value which is then stored in memory location iMem
-** of the virtual machine.
+** If iDest<0 and iMem<0, then the results of the query are sent to
+** the callback function.  If iDest>=0 then the results are written to
+** an open cursor with the index iDest.  The calling function is
+** responsible for having that cursor open.  If iDest<0 and iMem>=0 
+** then the result should be a single value which is then stored in 
+** memory location iMem of the virtual machine.
 **
 ** This routine returns the number of errors.  If any errors are
 ** encountered, then an appropriate error message is left in
@@ -87,7 +88,7 @@ void sqliteSelectDelete(Select *p){
 int sqliteSelect(
   Parse *pParse,         /* The parser context */
   Select *p,             /* The SELECT statement being coded. */
-  Table *pDest,          /* Write results here, if not NULL */
+  int iDest,             /* Write results to this cursor */
   int iMem               /* Save result in this memory location, if >=0 */
 ){
   int i, j;
@@ -98,14 +99,14 @@ int sqliteSelect(
   IdList *pTabList;      /* List of tables to select from */
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
-  int distinct;          /* If true, only output distinct results */
-
+  int isDistinct;        /* True if the DISTINCT keyword is present */
+  int distinct;          /* Table to use for the distinct set */
 
   pEList = p->pEList;
   pTabList = p->pSrc;
   pWhere = p->pWhere;
   pOrderBy = p->pOrderBy;
-  distinct = p->isDistinct;
+  isDistinct = p->isDistinct;
 
   /* 
   ** Do not even attempt to generate any code if we have already seen
@@ -125,6 +126,13 @@ int sqliteSelect(
     }
   }
 
+  /* Allocate a temporary table to use for the DISTINCT set, if
+  ** necessary.
+  */
+  if( isDistinct ){
+    distinct = pParse->nTab++;
+  }
+
   /* If the list of fields to retrieve is "*" then replace it with
   ** a list of all fields from all tables.
   */
@@ -133,11 +141,20 @@ int sqliteSelect(
       Table *pTab = pTabList->a[i].pTab;
       for(j=0; j<pTab->nCol; j++){
         Expr *pExpr = sqliteExpr(TK_FIELD, 0, 0, 0);
-        pExpr->iTable = i;
+        pExpr->iTable = i + pParse->nTab;
         pExpr->iField = j;
         pEList = sqliteExprListAppend(pEList, pExpr, 0);
       }
     }
+  }
+
+  /* If writing to memory, only a single column may be output.
+  */
+  if( iMem>=0 && pEList->nExpr>1 ){
+    sqliteSetString(&pParse->zErrMsg, "only a single result allowed for "
+       "a SELECT that is part of an expression", 0);
+    pParse->nErr++;
+    return 1;
   }
 
   /* Resolve the field names and do a semantics check on all the expressions.
@@ -180,17 +197,25 @@ int sqliteSelect(
     }
   }
 
-  /* ORDER BY is ignored if this is an aggregate query like count(*)
-  ** since only one row will be returned.
+  /* ORDER BY is ignored if 
+  **
+  **   (1) this is an aggregate query like count(*)
+  **       since only one row will be returned.
+  **
+  **   (2) We are writing the result to another table, since the
+  **       order will get scrambled again after inserting.
+  **
+  **   (3) We are writing to a memory cell, since there is only
+  **       one result.
   */
-  if( isAgg && pOrderBy ){
+  if( isAgg || iDest>=0 || iMem>=0 ){
     pOrderBy = 0;
   }
 
-  /* Turn off distinct if this is an aggregate
+  /* Turn off distinct if this is an aggregate or writing to memory.
   */
-  if( isAgg ){
-    distinct = 0;
+  if( isAgg || iMem>=0 ){
+    isDistinct = 0;
   }
 
   /* Begin generating code.
@@ -208,38 +233,42 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
   }
 
-  /* Identify column names
+  /* Identify column names if we will be using a callback.  This
+  ** step is skipped if the output is going to a table or a memory cell.
   */
-  sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
-  for(i=0; i<pEList->nExpr; i++){
-    Expr *p;
-    if( pEList->a[i].zName ){
-      char *zName = pEList->a[i].zName;
-      int addr = sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-      if( zName[0]=='\'' || zName[0]=='"' ){
-        sqliteVdbeDequoteP3(v, addr);
+  if( iDest<0 && iMem<0 ){
+    sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
+    for(i=0; i<pEList->nExpr; i++){
+      Expr *p;
+      if( pEList->a[i].zName ){
+        char *zName = pEList->a[i].zName;
+        int addr = sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+        if( zName[0]=='\'' || zName[0]=='"' ){
+          sqliteVdbeDequoteP3(v, addr);
+        }
+        continue;
       }
-      continue;
-    }
-    p = pEList->a[i].pExpr;
-    if( p->op!=TK_FIELD ){
-      char zName[30];
-      sprintf(zName, "field%d", i+1);
-      sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-    }else{
-      if( pTabList->nId>1 ){
-        char *zName = 0;
-        Table *pTab = pTabList->a[p->iTable].pTab;
-        char *zTab;
-
-        zTab = pTabList->a[p->iTable].zAlias;
-        if( zTab==0 ) zTab = pTab->zName;
-        sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
+      p = pEList->a[i].pExpr;
+      if( p->op!=TK_FIELD ){
+        char zName[30];
+        sprintf(zName, "field%d", i+1);
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-        sqliteFree(zName);
       }else{
-        Table *pTab = pTabList->a[0].pTab;
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, pTab->aCol[p->iField].zName, 0);
+        if( pTabList->nId>1 ){
+          char *zName = 0;
+          Table *pTab = pTabList->a[p->iTable].pTab;
+          char *zTab;
+  
+          zTab = pTabList->a[p->iTable].zAlias;
+          if( zTab==0 ) zTab = pTab->zName;
+          sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
+          sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+          sqliteFree(zName);
+        }else{
+          Table *pTab = pTabList->a[0].pTab;
+          char *zName = pTab->aCol[p->iField].zName;
+          sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
+        }
       }
     }
   }
@@ -263,10 +292,16 @@ int sqliteSelect(
     }
   }
 
+  /* Initialize the memory cell to NULL
+  */
+  if( iMem>=0 ){
+    sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+  }
+
   /* Begin the database scan
   */
-  if( distinct ){
-    distinct = pTabList->nId*2+1;
+  if( isDistinct ){
     sqliteVdbeAddOp(v, OP_Open, distinct, 1, 0, 0);
   }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
@@ -283,13 +318,13 @@ int sqliteSelect(
   /* If the current result is not distinct, script the remainder
   ** of this processing.
   */
-  if( distinct ){
-    int isDistinct = sqliteVdbeMakeLabel(v);
+  if( isDistinct ){
+    int lbl = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1, 0, 0);
-    sqliteVdbeAddOp(v, OP_Distinct, distinct, isDistinct, 0, 0);
+    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl, 0, 0);
     sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue, 0, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", isDistinct);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", lbl);
     sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
   }
   
@@ -330,6 +365,14 @@ int sqliteSelect(
       }
       sqliteVdbeAddOp(v, op, p1, 0, 0, 0);
     }
+  }else if( iDest>=0 ){
+    sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_New, iDest, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, iDest, 0, 0, 0);
+  }else if( iMem>=0 ){
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iBreak, 0, 0);
   }else{
     sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
   }
@@ -348,14 +391,23 @@ int sqliteSelect(
     addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end, 0, 0);
     sqliteVdbeAddOp(v, OP_SortCallback, pEList->nExpr, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
-    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, end);
+    sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
   }
 
   /* If this is an aggregate, then we need to invoke the callback
   ** exactly once.
   */
   if( isAgg ){
-    sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
+    if( iDest>=0 ){
+      sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_New, iDest, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Put, iDest, 0, 0, 0);
+    }else if( iMem>=0 ){
+      sqliteVdbeAddOp(v, OP_MemStore, iMem, 0, 0, 0);
+    }else{
+      sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
+    }
   }
   return 0;
 }

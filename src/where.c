@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.5 2000/05/31 15:34:54 drh Exp $
+** $Id: where.c,v 1.6 2000/06/05 18:54:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,18 +86,22 @@ static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
 ** In order for this routine to work, the calling function must have
 ** previously invoked sqliteExprResolveIds() on the expression.  See
 ** the header comment on that routine for additional information.
+**
+** "base" is the cursor number (the value of the iTable field) that
+** corresponds to the first entry in the table list.  This is the
+** same as pParse->nTab.
 */
-static int exprTableUsage(Expr *p){
+static int exprTableUsage(int base, Expr *p){
   unsigned int mask = 0;
   if( p==0 ) return 0;
   if( p->op==TK_FIELD ){
-    return 1<<p->iTable;
+    return 1<< (p->iTable - base);
   }
   if( p->pRight ){
-    mask = exprTableUsage(p->pRight);
+    mask = exprTableUsage(base, p->pRight);
   }
   if( p->pLeft ){
-    mask |= exprTableUsage(p->pLeft);
+    mask |= exprTableUsage(base, p->pLeft);
   }
   return mask;
 }
@@ -107,21 +111,25 @@ static int exprTableUsage(Expr *p){
 ** "p" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the ExprInfo
 ** structure.
+**
+** "base" is the cursor number (the value of the iTable field) that
+** corresponds to the first entyr in the table list.  This is the
+** same as pParse->nTab.
 */
-static void exprAnalyze(ExprInfo *pInfo){
+static void exprAnalyze(int base, ExprInfo *pInfo){
   Expr *pExpr = pInfo->p;
-  pInfo->prereqLeft = exprTableUsage(pExpr->pLeft);
-  pInfo->prereqRight = exprTableUsage(pExpr->pRight);
+  pInfo->prereqLeft = exprTableUsage(base, pExpr->pLeft);
+  pInfo->prereqRight = exprTableUsage(base, pExpr->pRight);
   pInfo->indexable = 0;
   pInfo->idxLeft = -1;
   pInfo->idxRight = -1;
   if( pExpr->op==TK_EQ && (pInfo->prereqRight & pInfo->prereqLeft)==0 ){
     if( pExpr->pRight->op==TK_FIELD ){
-      pInfo->idxRight = pExpr->pRight->iTable;
+      pInfo->idxRight = pExpr->pRight->iTable - base;
       pInfo->indexable = 1;
     }
     if( pExpr->pLeft->op==TK_FIELD ){
-      pInfo->idxLeft = pExpr->pLeft->iTable;
+      pInfo->idxLeft = pExpr->pLeft->iTable - base;
       pInfo->indexable = 1;
     }
   }
@@ -150,6 +158,7 @@ WhereInfo *sqliteWhereBegin(
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey;         /* True if KEY is on the stack */
+  int base;            /* First available index for OP_Open opcodes */
   Index *aIdx[32];     /* Index to use on each nested loop.  */
   ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
 
@@ -166,6 +175,7 @@ WhereInfo *sqliteWhereBegin(
   }
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
+  base = pWInfo->base = pParse->nTab;
 
   /* Split the WHERE clause into as many as 32 separate subexpressions
   ** where each subexpression is separated by an AND operator.  Any additional
@@ -180,7 +190,7 @@ WhereInfo *sqliteWhereBegin(
   /* Analyze all of the subexpressions.
   */
   for(i=0; i<nExpr; i++){
-    exprAnalyze(&aExpr[i]);
+    exprAnalyze(pParse->nTab, &aExpr[i]);
   }
 
   /* Figure out a good nesting order for the tables.  aOrder[0] will
@@ -261,11 +271,12 @@ WhereInfo *sqliteWhereBegin(
   /* Open all tables in the pTabList and all indices in aIdx[].
   */
   for(i=0; i<pTabList->nId; i++){
-    sqliteVdbeAddOp(v, OP_Open, i, 0, pTabList->a[i].pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, base+i, 0, pTabList->a[i].pTab->zName, 0);
     if( i<ARRAYSIZE(aIdx) && aIdx[i]!=0 ){
-      sqliteVdbeAddOp(v, OP_Open, pTabList->nId+i, 0, aIdx[i]->zName, 0);
+      sqliteVdbeAddOp(v, OP_Open, base+pTabList->nId+i, 0, aIdx[i]->zName, 0);
     }
   }
+  memcpy(pWInfo->aIdx, aIdx, sizeof(aIdx));
 
   /* Generate the code to do the search
   */
@@ -281,7 +292,7 @@ WhereInfo *sqliteWhereBegin(
       /* Case 1:  There was no usable index.  We must do a complete
       ** scan of the table.
       */
-      sqliteVdbeAddOp(v, OP_Next, idx, brk, 0, cont);
+      sqliteVdbeAddOp(v, OP_Next, base+idx, brk, 0, cont);
       haveKey = 0;
     }else{
       /* Case 2:  We do have a usable index in pIdx.
@@ -308,8 +319,8 @@ WhereInfo *sqliteWhereBegin(
         }
       }
       sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Fetch, pTabList->nId+i, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_NextIdx, pTabList->nId+i, brk, 0, cont);
+      sqliteVdbeAddOp(v, OP_Fetch, base+pTabList->nId+i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_NextIdx, base+pTabList->nId+i, brk, 0, cont);
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
@@ -327,7 +338,7 @@ WhereInfo *sqliteWhereBegin(
       if( (aExpr[j].prereqRight & loopMask)!=aExpr[j].prereqRight ) continue;
       if( (aExpr[j].prereqLeft & loopMask)!=aExpr[j].prereqLeft ) continue;
       if( haveKey ){
-        sqliteVdbeAddOp(v, OP_Fetch, idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Fetch, base+idx, 0, 0, 0);
         haveKey = 0;
       }
       sqliteExprIfFalse(pParse, aExpr[j].p, cont);
@@ -348,8 +359,21 @@ WhereInfo *sqliteWhereBegin(
 */
 void sqliteWhereEnd(WhereInfo *pWInfo){
   Vdbe *v = pWInfo->pParse->pVdbe;
+  int i;
+  int brk = pWInfo->iBreak;
+  int base = pWInfo->base;
+
   sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue, 0, 0);
-  sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, pWInfo->iBreak);
+  for(i=0; i<pWInfo->pTabList->nId; i++){
+    sqliteVdbeAddOp(v, OP_Close, base+i, 0, 0, brk);
+    brk = 0;
+    if( i<ARRAYSIZE(pWInfo->aIdx) && pWInfo->aIdx[i]!=0 ){
+      sqliteVdbeAddOp(v, OP_Close, base+pWInfo->pTabList->nId+i, 0, 0, 0);
+    }
+  }
+  if( brk!=0 ){
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, brk);
+  }
   sqliteFree(pWInfo);
   return;
 }

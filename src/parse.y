@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.9 2000/06/05 16:01:39 drh Exp $
+** @(#) $Id: parse.y,v 1.10 2000/06/05 18:54:46 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -133,7 +133,7 @@ cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
 // The select statement
 //
 cmd ::= select(X).  {
-  sqliteSelect(pParse, X, 0, 0);
+  sqliteSelect(pParse, X, -1, -1);
   sqliteSelectDelete(X);
 }
 
@@ -311,6 +311,10 @@ expr(A) ::= expr(X) NOTNULL.       {A = sqliteExpr(TK_NOTNULL, X, 0, 0);}
 expr(A) ::= NOT expr(X).           {A = sqliteExpr(TK_NOT, X, 0, 0);}
 expr(A) ::= MINUS expr(X). [UMINUS]   {A = sqliteExpr(TK_UMINUS, X, 0, 0);}
 expr(A) ::= PLUS expr(X). [UMINUS]    {A = X;}
+expr(A) ::= LP select(X) RP. {
+  A = sqliteExpr(TK_SELECT, 0, 0, 0);
+  A->pSelect = X;
+}
 
 %type exprlist {ExprList*}
 %destructor exprlist {sqliteExprListDelete($$);}

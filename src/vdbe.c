@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.15 2000/06/05 16:01:39 drh Exp $
+** $Id: vdbe.c,v 1.16 2000/06/05 18:54:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -92,9 +92,19 @@ struct Stack {
   int i;         /* Integer value */
   int n;         /* Number of characters in string value, including '\0' */
   int flags;     /* Some combination of STK_Null, STK_Str, STK_Dyn, etc. */
-  double r;      /* Real value */      
+  double r;      /* Real value */
 };
 typedef struct Stack Stack;
+
+/*
+** Memory cells use the same structure as the stack except that space
+** for an arbitrary string is added.
+*/
+struct Mem {
+  Stack s;       /* All values of the memory cell besides string */
+  char *z;       /* String value for this memory cell */
+};
+typedef struct Mem Mem;
 
 /*
 ** Allowed values for Stack.flags
@@ -133,6 +143,8 @@ struct Vdbe {
   char **azField;     /* Data for each file field */
   char *zLine;        /* A single line from the input file */
   int nLineAlloc;     /* Number of spaces allocated for zLine */
+  int nMem;           /* Number of memory locations currently allocated */
+  Mem *aMem;          /* The memory locations */
 };
 
 /*
@@ -464,6 +476,14 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->aTab);
   p->aTab = 0;
   p->nTable = 0;
+  for(i=0; i<p->nMem; i++){
+    if( p->aMem[i].s.flags & STK_Dyn ){
+      sqliteFree(p->aMem[i].z);
+    }
+  }
+  sqliteFree(p->aMem);
+  p->aMem = 0;
+  p->nMem = 0;
   for(i=0; i<p->nList; i++){
     if( p->apList[i] ){
       sqliteDbbeCloseTempFile(p->pBe, p->apList[i]);
@@ -536,20 +556,21 @@ static char *zOpName[] = { 0,
   "Put",            "Distinct",       "Delete",         "Field",
   "Key",            "Rewind",         "Next",           "Destroy",
   "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
-  "DeleteIdx",      "ListOpen",       "ListWrite",      "ListRewind",
-  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
-  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
-  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
-  "FileRead",       "FileField",      "FileClose",      "MakeRecord",
-  "MakeKey",        "Goto",           "If",             "Halt",
-  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
-  "String",         "Null",           "Pop",            "Dup",
-  "Pull",           "Add",            "AddImm",         "Subtract",
-  "Multiply",       "Divide",         "Min",            "Max",
-  "Like",           "Glob",           "Eq",             "Ne",
-  "Lt",             "Le",             "Gt",             "Ge",
-  "IsNull",         "NotNull",        "Negative",       "And",
-  "Or",             "Not",            "Concat",         "Noop",
+  "DeleteIdx",      "MemLoad",        "MemStore",       "ListOpen",
+  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
+  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
+  "Sort",           "SortNext",       "SortKey",        "SortCallback",
+  "SortClose",      "FileOpen",       "FileRead",       "FileField",
+  "FileClose",      "MakeRecord",     "MakeKey",        "Goto",
+  "If",             "Halt",           "ColumnCount",    "ColumnName",
+  "Callback",       "Integer",        "String",         "Null",
+  "Pop",            "Dup",            "Pull",           "Add",
+  "AddImm",         "Subtract",       "Multiply",       "Divide",
+  "Min",            "Max",            "Like",           "Glob",
+  "Eq",             "Ne",             "Lt",             "Le",
+  "Gt",             "Ge",             "IsNull",         "NotNull",
+  "Negative",       "And",            "Or",             "Not",
+  "Concat",         "Noop",         
 };
 
 /*
@@ -2399,6 +2420,64 @@ int sqliteVdbeExec(
         p->aStack[p->tos].n = strlen(z) + 1;
         p->zStack[p->tos] = z;
         p->aStack[p->tos].flags = STK_Str;
+        break;
+      }
+
+      /* Opcode: MemStore P1 * *
+      **
+      ** Pop a single value of the stack and store that value into memory
+      ** location P1.  P1 should be a small integer since space is allocated
+      ** for all memory locations between 0 and P1 inclusive.
+      */
+      case OP_MemStore: {
+        int i = pOp->p1;
+        int tos = p->tos;
+        Mem *pMem;
+        if( tos<0 ) goto not_enough_stack;
+        if( i>=p->nMem ){
+          int nOld = p->nMem;
+          p->nMem = i + 5;
+          p->aMem = sqliteRealloc(p->aMem, p->nMem*sizeof(p->aMem[0]));
+          if( p->aMem==0 ) goto no_mem;
+          if( nOld<p->nMem ){
+            memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
+          }
+        }
+        pMem = &p->aMem[i];
+        if( pMem->s.flags & STK_Dyn ){
+          sqliteFree(pMem->z);
+        }
+        pMem->s = p->aStack[tos];
+        if( pMem->s.flags & STK_Str ){
+          pMem->z = 0;
+          sqliteSetString(&pMem->z, p->zStack[tos], 0);
+          pMem->s.flags |= STK_Dyn;
+        }
+        PopStack(p, 1);
+        break;
+      }
+
+      /* Opcode: MemLoad P1 * *
+      **
+      ** Push a copy of the value in memory location P1 onto the stack.
+      */
+      case OP_MemLoad: {
+        int tos = ++p->tos;
+        int i = pOp->p1;
+        if( NeedStack(p, tos) ) goto no_mem;
+        if( i<0 || i>=p->nMem ){
+          p->aStack[tos].flags = STK_Null;
+          p->zStack[tos] = 0;
+        }else{
+          p->aStack[tos] = p->aMem[i].s;
+          if( p->aStack[tos].flags & STK_Str ){
+            char *z = sqliteMalloc(p->aStack[tos].n);
+            if( z==0 ) goto no_mem;
+            memcpy(z, p->aMem[i].z, p->aStack[tos].n);
+            p->zStack[tos] = z;
+            p->aStack[tos].flags |= STK_Dyn;
+          }
+        }
         break;
       }
 
