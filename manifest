@@ -1,5 +1,5 @@
-C Misc\scleanup.\s\sNotes\son\scompiling\sfor\sWin95.\s(CVS\s1704)
-D 2000-10-11T19:28:52
+C Version\s1.0.10\s(CVS\s492)
+D 2000-10-11T19:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in faecea9b6419cec25030b4818c9b3f7f4163b3c1
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 3f0f1fa1fce794d1661c845f1a63a8d744892c25
+P 217a8af6d0f4396b755b7d21f94ae6fe002728a1
 R 0e3d2b823401c2dde691e21fb25d6652
 U drh
-Z 932d15c9e3f0ef520935fc2a58071ff3
+Z eae7458cfefbc493be1d4a350c873f88
