@@ -1,5 +1,5 @@
-C added\sthe\sfcnt()\sfunction\sfor\stesting\s(CVS\s92)
-D 2000-06-11T23:50:13
+C :-)\s(CVS\s93)
+D 2000-06-12T12:20:49
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in b5693de0513e32f6e51bf0d1c62ea0d6b9a6c5d6
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -46,6 +46,7 @@ F test/table.test d3e01e4916a99ade7d8f1d534ee1b36d57c00490
 F test/tester.tcl 95b286791e6256bb6db0165f9342c70fff549a62
 F test/update.test b3f45984cd2b3aea6f24b6d77dc1e721ccaba244
 F test/vacuum.test 8becf5cfeb897108b35cdd996793e7f1df2f28fd
+F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/lemon.c 1f0e96515c12e9e413f5b8fdebc79ddcf18ddc9d
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
@@ -57,13 +58,13 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
-F www/changes.tcl 557a1c49e9dfca6da6d659ffc4eb202399b42b81
+F www/changes.tcl 49c6bb069304399f636a37c609da993cf4c38442
 F www/fileformat.tcl b11435fcd2cf2238a1c5e6d16fe5e83bcd14d434
 F www/index.tcl 4116afce6a8c63d68882d2b00aa10b079e0129cd
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 3cdc4bb2515fcfcbe853e3f0c91cd9199e82dadd
 F www/sqlite.tcl 5420eab24b539928f80ea9b3088e2549d34f438d
-P d573b431ed766db2d38672334a0c81faa1dde353
-R a071d3d9a4a3d2d16791159e4a3e2df8
+P 0f93c27cddb4254f72305ca3a64b77c2e7772c56
+R bd5f521fe3a6a6c0433519a44fdb2003
 U drh
-Z beff43aecb1f6e4f53737f0253af3944
+Z 65d5d81332e112b45f79056cb6dde603

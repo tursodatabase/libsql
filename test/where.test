@@ -1,0 +1,160 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the use of indices in WHERE clases.
+#
+# $Id: where.test,v 1.1 2000/06/12 12:20:49 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Build some test data
+#
+do_test where-1.0 {
+  execsql {
+    CREATE TABLE t1(w int, x int, y int);
+    CREATE TABLE t2(p int, q int, r int, s int);
+  }
+  for {set i 1} {$i<=100} {incr i} {
+    set w $i
+    set x [expr {int(log($i)/log(2))}]
+    set y [expr {$i*$i + 2*$i + 1}]
+    execsql "INSERT INTO t1 VALUES($w,$x,$y)"
+  }
+  execsql {
+    INSERT INTO t2 SELECT 101-w, x, (SELECT max(y) FROM t1)+1-y, y FROM t1;
+    CREATE INDEX i1w ON t1(w);
+    CREATE INDEX i1xy ON t1(x,y);
+    CREATE INDEX i2p ON t2(p);
+    CREATE INDEX i2r ON t2(r);
+    CREATE INDEX i2qs ON t2(q, s);
+  }
+} {}
+
+# Verify that queries use an index.  We are using the special "fcnt(*)"
+# function to verify the results.  fcnt(*) returns the number of Fetch
+# operations that have occurred up to the point where fcnt(*) is invoked.
+# By verifing that fcnt(*) returns a small number we know that an index
+# was used instead of an exhaustive search.
+#
+do_test where-1.1 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=10}
+} {3 121 2}
+do_test where-1.2 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=11}
+} {3 144 2}
+do_test where-1.3 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE 11=w}
+} {3 144 2}
+do_test where-1.4 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE 11=w AND x>2}
+} {3 144 2}
+do_test where-1.5 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y<200 AND w=11 AND x>2}
+} {3 144 2}
+do_test where-1.6 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y<200 AND x>2 AND w=11}
+} {3 144 2}
+do_test where-1.7 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w=11 AND y<200 AND x>2}
+} {3 144 2}
+do_test where-1.8 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE w>10 AND y=144 AND x=3}
+} {3 144 2}
+do_test where-1.9 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE y=144 AND w>10 AND x=3}
+} {3 144 2}
+do_test where-1.10 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE x=3 AND w>=10 AND y=121}
+} {3 121 2}
+do_test where-1.11 {
+  execsql {SELECT x, y, fcnt(*) FROM t1 WHERE x=3 AND y=100 AND w<10}
+} {3 100 2}
+
+# Do the same kind of thing except use a join as the data source.
+#
+do_test where-2.1 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE x=q AND y=s AND r=8977
+  }
+} {34 67 4}
+do_test where-2.2 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE x=q AND s=y AND r=8977
+  }
+} {34 67 4}
+do_test where-2.3 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE x=q AND s=y AND r=8977 AND w>10
+  }
+} {34 67 4}
+do_test where-2.4 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE p<80 AND x=q AND s=y AND r=8977 AND w>10
+  }
+} {34 67 4}
+do_test where-2.5 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE p<80 AND x=q AND 8977=r AND s=y AND w>10
+  }
+} {34 67 4}
+do_test where-2.6 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t2, t1
+    WHERE x=q AND p=77 AND s=y AND w>5
+  }
+} {24 77 4}
+do_test where-2.7 {
+  execsql {
+    SELECT w, p, fcnt(*) FROM t1, t2
+    WHERE x=q AND p>77 AND s=y AND w=5
+  }
+} {5 96 4}
+
+# Lets do a 3-way join.
+#
+do_test where-3.1 {
+  execsql {
+    SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
+    WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=11
+  }
+} {11 90 11 6}
+do_test where-3.2 {
+  execsql {
+    SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
+    WHERE C.w=101-B.p AND B.r=10202-A.y AND A.w=12
+  }
+} {12 89 12 6}
+do_test where-3.3 {
+  execsql {
+    SELECT A.w, B.p, C.w, fcnt(*) FROM t1 as A, t2 as B, t1 as C
+    WHERE A.w=15 AND B.p=C.w AND B.r=10202-A.y
+  }
+} {15 86 86 6}
+
+finish_test

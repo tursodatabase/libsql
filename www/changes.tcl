@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 11} {
+<li>Added a <b>fcnt()</b> function which is designed to help write better.
+    test scripts.  This function is not useful for anything other than
+    testing and debugging, as far as I know.</li>
+}
+
 chng {2000 June 8} {
 <li>Added lots of new test cases</li>
 <li>Fix a few bugs discovered while adding test cases</li>
