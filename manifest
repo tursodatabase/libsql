@@ -1,5 +1,5 @@
-C Remove\sunused\sroutines\sfrom\svdbeaux.c.\s\sImprove\stest\scoverage.\s(CVS\s1746)
-D 2004-06-27T21:31:40
+C Fix\sunitialised\svariable\sin\ssqlite3VdbeFinalize().\s(CVS\s1747)
+D 2004-06-27T23:50:22
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -77,7 +77,7 @@ F src/vdbe.c b750a731c90567b77ed6e0cd455ac868953d3a72
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
 F src/vdbeapi.c e92bda928f2fe93a9a77a62bd95642563bbcdea1
-F src/vdbeaux.c 8b6d2558d0f73e1d292544ace62ee530b632e06d
+F src/vdbeaux.c 1e3d0e724fdcfc1261da067454f05db778e3ba08
 F src/vdbemem.c e8ae1f56ad16d5b01119e8dc1d25e913e06c3128
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test d591e074013248176402a16a0fb6fc82d241bad5
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ad65c6e24e15966d5fd15d60f81487ff97788da4
-R 7fb0a503afcd1983e7383e197a263d6b
-U drh
-Z 14da04ae7b5201e9ba94b52411af1fdc
+P 792b3c75e7764bab1473c0d6efc76f1164c943bf
+R 934c210b1f919ecd1582e47e2f492ca6
+U danielk1977
+Z 4c3421e111b9a49abc87050fd99ce2a5
