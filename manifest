@@ -1,5 +1,5 @@
-C Change\sto\sthe\spager\sto\savoid\sopening\sjournal\sfiles\sunnecessarily.\s\sThis\scan\nsometimes\sresults\sin\sa\ssignificant\sspeed\simprovement.\s(CVS\s791)
-D 2002-12-02T04:25:20
+C Honor\sORDER\sBY\sclauses\sin\sVIEWs.\s\sTicket\s#193.\s(CVS\s792)
+D 2002-12-03T02:22:52
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,7 +20,7 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/btree.c cd46130a7f68e3880a59aa5502b64be37bf31e91
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
-F src/build.c ede692549ce5c43a80e2a9954421ccaee116b2df
+F src/build.c 415dce8886aabb6d45851caed7014707056d668b
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
@@ -37,7 +37,7 @@ F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c ce82596a2eaaf418edba45b2426f41065e49578b
+F src/select.c a03c317ff8400752da3b4997e4329949a6f4626c
 F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
@@ -54,7 +54,7 @@ F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
 F src/vdbe.c 2c2472a93d0708920384c05d6099b637ab2229ce
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
-F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
+F src/where.c 1de1a326235bb7f9ef7d3d58c08c0ac73dcd3acf
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
 F test/bigfile.test 38d1071817caceb636c613e3546082b90e749a49
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -113,7 +113,7 @@ F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
-F test/view.test 76d3fe155f1215f9dde1ccad1d1bce5c803132d0
+F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
 F test/where.test 9c1c2c13cfff419ea38451e78cf3d0d238fabc27
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
@@ -151,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9864a1265b5a37c12b0dd8446d81b84c5a3acc43
-R 18e5cbae11f3fb92134940cf13959666
+P fa5c042585c601449ede7319d0c5993cd8ba75a4
+R 3fe16b5077b1d335cf384ebc20ff49d3
 U drh
-Z 0253bbaf25ee8c0f348685f72f181f39
+Z b7816d8e84826cea34ed2b8aced87dca

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.11 2002/08/25 19:20:43 drh Exp $
+# $Id: view.test,v 1.12 2002/12/03 02:22:53 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -296,5 +296,46 @@ do_test view-8.5 {
     SELECT mx+10, mx*2 FROM v8;
   }
 } {13 6}
+
+# Tests for a bug found by Michiel de Wit involving ORDER BY in a VIEW.
+#
+do_test view-9.1 {
+  execsql {
+    INSERT INTO t2 SELECT * FROM t2 WHERE a<5;
+    INSERT INTO t2 SELECT * FROM t2 WHERE a<4;
+    INSERT INTO t2 SELECT * FROM t2 WHERE a<3;
+    SELECT DISTINCT count(*) FROM t2 GROUP BY a ORDER BY 1;
+  }
+} {1 2 4 8}
+do_test view-9.2 {
+  execsql {
+    SELECT DISTINCT count(*) FROM t2 GROUP BY a ORDER BY 1 LIMIT 3;
+  }
+} {1 2 4}
+do_test view-9.3 {
+  execsql {
+    CREATE VIEW v9 AS 
+       SELECT DISTINCT count(*) FROM t2 GROUP BY a ORDER BY 1 LIMIT 3;
+    SELECT * FROM v9;
+  }
+} {1 2 4}
+do_test view-9.4 {
+  execsql {
+    SELECT * FROM v9 ORDER BY 1 DESC;
+  }
+} {4 2 1}
+do_test view-9.5 {
+  execsql {
+    CREATE VIEW v10 AS 
+       SELECT DISTINCT a, count(*) FROM t2 GROUP BY a ORDER BY 2 LIMIT 3;
+    SELECT * FROM v10;
+  }
+} {5 1 4 2 3 4}
+do_test view-9.6 {
+  execsql {
+    SELECT * FROM v10 ORDER BY 1;
+  }
+} {3 4 4 2 5 1}
+
 
 finish_test

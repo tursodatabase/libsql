@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.66 2002/10/27 19:35:35 drh Exp $
+** $Id: where.c,v 1.67 2002/12/03 02:22:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -426,6 +426,8 @@ WhereInfo *sqliteWhereBegin(
     ** set iDirectEq[i] to the index of the term.  For terms of the
     ** form ROWID<expr or ROWID<=expr set iDirectLt[i] to the term index.
     ** For terms like ROWID>expr or ROWID>=expr set iDirectGt[i].
+    **
+    ** (Added:) Treat ROWID IN expr like ROWID=expr.
     */
     pWInfo->a[i].iCur = -1;
     iDirectEq[i] = -1;
@@ -651,7 +653,7 @@ WhereInfo *sqliteWhereBegin(
     WhereLevel *pLevel = &pWInfo->a[i];
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
-    ** initialize a memory cell that record if this table matches any
+    ** initialize a memory cell that records if this table matches any
     ** row of the left table of the join.
     */
     if( i>0 && (pTabList->a[i-1].jointype & JT_LEFT)!=0 ){

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.115 2002/10/27 19:35:35 drh Exp $
+** $Id: select.c,v 1.116 2002/12/03 02:22:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1470,6 +1470,8 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 **  (10)  The subquery does not use aggregates or the outer query does not
 **        use LIMIT.
 **
+**  (11)  The subquery and the outer query do not both have ORDER BY clauses.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -1511,6 +1513,7 @@ static int flattenSubquery(
      return 0;
   }
   if( (p->isDistinct || p->nLimit>=0) && subqueryIsAgg ) return 0;
+  if( p->pOrderBy && pSub->pOrderBy ) return 0;
 
   /* If we reach this point, it means flattening is permitted for the
   ** i-th entry of the FROM clause in the outer query.
@@ -1529,7 +1532,14 @@ static int flattenSubquery(
     substExprList(p->pGroupBy, iParent, pSub->pEList, iSub);
     substExpr(p->pHaving, iParent, pSub->pEList, iSub);
   }
-  substExprList(p->pOrderBy, iParent, pSub->pEList, iSub);
+  if( pSub->pOrderBy ){
+    assert( p->pOrderBy==0 );
+    p->pOrderBy = pSub->pOrderBy;
+    pSub->pOrderBy = 0;
+    changeTablesInList(p->pOrderBy, iSub, iParent);
+  }else if( p->pOrderBy ){
+    substExprList(p->pOrderBy, iParent, pSub->pEList, iSub);
+  }
   if( pSub->pWhere ){
     pWhere = sqliteExprDup(pSub->pWhere);
     if( iParent!=iSub ){
