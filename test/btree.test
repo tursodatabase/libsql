@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.21 2004/05/09 00:40:52 drh Exp $
+# $Id: btree.test,v 1.22 2004/05/09 01:35:06 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -616,7 +616,6 @@ do_test btree-7.15 {
 
 # Check to see that data on overflow pages work correctly.
 #
-#btree_page_dump $::b1 1
 do_test btree-8.1 {
   set data "*** This is a very long key "
   while {[string length $data]<1234} {append data $data}
@@ -641,6 +640,9 @@ do_test btree-8.4 {
 do_test btree-8.4.1 {
   lindex [btree_get_meta $::b1] 0
 } [expr {int(([string length $::data]-238+1019)/1020)}]
+do_test btree-8.4.2 {
+  btree_integrity_check $::b1 1 2
+} {}
 do_test btree-8.5 {
   set data "*** This is an even longer key "
   while {[string length $data]<2000} {append data $data}
@@ -731,16 +733,25 @@ do_test btree-8.21 {
 do_test btree-8.22 {
   lindex [btree_pager_stats $::b1] 1
 } {2}
-do_test btree-8.23 {
+do_test btree-8.23.1 {
   btree_close_cursor $::c1
   btree_drop_table $::b1 2
+  btree_integrity_check $::b1 1
+} {}
+do_test btree-8.23.2 {
+  btree_create_table $::b1 0
+} {2}
+do_test btree_8.23.3 {
   set ::c1 [btree_cursor $::b1 2 1]
   lindex [btree_get_meta $::b1] 0
-} {5}
+} {4}
 do_test btree-8.24 {
   lindex [btree_pager_stats $::b1] 1
 } {2}
 #btree_pager_ref_dump $::b1
+do_test btree-8.25 {
+  btree_integrity_check $::b1 1 2
+} {}
 
 # Check page splitting logic
 #
@@ -807,10 +818,15 @@ do_test btree-9.6 {
   btree_close_cursor $::c1
   lindex [btree_pager_stats $::b1] 1
 } {1}
+puts "222: [btree_integrity_check $::b1 1 2]"
+
 do_test btree-9.7 {
   btree_rollback $::b1
   lindex [btree_pager_stats $::b1] 1
 } {0}
+do_test btree-9.8 {
+  btree_integrity_check $::b1 1 2
+} {}
 
 # Create a tree of depth two.  That is, there is a single divider entry
 # on the root pages and two leaf pages.  Then delete the divider entry
@@ -963,9 +979,11 @@ do_test btree-12.12 {
   btree_next $::c1
   btree_key $::c1
 } {402}
-#do_test btree-13.1 {
-#  btree_integrity_check $::b1 1 2
-#} {}
+btree_commit $::b1
+btree_tree_dump $::b1 1
+do_test btree-13.1 {
+  btree_integrity_check $::b1 1 2
+} {}
 
 # To Do:
 #

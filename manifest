@@ -1,5 +1,5 @@
-C All\stests\sin\sbtree.test\snow\spass\s(but\sonly\sbecause\sI\scommented\sout\sthe\nbtree_integrity_check\stest.)\s(CVS\s1328)
-D 2004-05-09T00:40:52
+C Begin\strying\sto\sget\sintegrity\schecking\sworking\son\sthe\snew\sbtree.c.\s(CVS\s1329)
+D 2004-05-09T01:35:06
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c fa9a58234406d84eeb900517d0c0adc4b2da051a
 F src/auth.c a2a46e3ed7799134cf3d2dd5ae6650115f26b653
-F src/btree.c 927ac9e162c4e97151ba27e0723babda761c58c0
+F src/btree.c 4c9b4a68f5e0c57382fca08d73426ca5af55c80f
 F src/btree.h 825034a68947baf99507f04f318f417013dcd3a3
 F src/btree_rb.c 47e5b5ec90846af392b5668b34648198ba459561
 F src/build.c 21b6645c966970dac51bcccfa8650403a3f56210
@@ -75,7 +75,7 @@ F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
-F test/btree.test faa386a7342b865a87f042db6bd5e5a9486259d6
+F test/btree.test c4399a76bcc6d2c84b156e3a8fef29879d2e54c4
 F test/btree2.test 2ff77e0218e5f55ff5a85874f3e15c7859e3ac26
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
 F test/btree3rb.test 127efcf5cdfcc352054e7db12622b01cdd8b36ac
@@ -190,7 +190,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e9f84ff3fe45a014ab60fabbfd91d19e6d353477
-R 0b200f4f3f4df21ad25f92660d903a27
+P ee706e9c74c3fb32fc3369db226fad9ed4db7596
+R cfbf2d289e390333f8744d3cd9325bcf
 U drh
-Z 2b1cbf8bcd73f8c7eab6d96289461ca5
+Z d0e25b8c23267f444288dc2922ce4fd0
