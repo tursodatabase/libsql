@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.211 2004/02/12 18:46:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.212 2004/02/14 23:05:53 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -318,9 +318,10 @@ struct sqlite {
   u8 file_format;               /* What file format version is this database? */
   u8 safety_level;              /* How aggressive at synching data to disk */
   u8 want_to_close;             /* Close after all VDBEs are deallocated */
+  u8 temp_store;                /* 1=file, 2=memory, 0=compile-time default */
+  u8 onError;                   /* Default conflict algorithm */
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
-  int temp_store;               /* 1=file, 2=memory, 0=compile-time default */
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
@@ -329,9 +330,13 @@ struct sqlite {
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
-  int onError;                  /* Default conflict algorithm */
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
+  struct sqliteInitInfo {       /* Information used during initialization */
+    int iDb;                       /* When back is being initialized */
+    int newTnum;                   /* Rootpage of table being initialized */
+    u8 busy;                       /* TRUE if currently initializing */
+  } init;
   struct Vdbe *pVdbe;           /* List of active virtual machines */
   void (*xTrace)(void*,const char*);     /* Trace function */
   void *pTraceArg;                       /* Argument to the trace function */
@@ -878,13 +883,10 @@ struct Parse {
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
   u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
   u8 explain;          /* True if the EXPLAIN flag is found on the query */
-  u8 initFlag;         /* True if reparsing CREATE TABLEs */
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
-  u8 iDb;              /* Index of database whose schema is being parsed */
   u8 useCallback;      /* True if callbacks should be used to report results */
-  int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */

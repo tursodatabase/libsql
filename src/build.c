@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.168 2004/02/14 16:31:03 drh Exp $
+** $Id: build.c,v 1.169 2004/02/14 23:05:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -38,7 +38,7 @@ void sqliteBeginParse(Parse *pParse, int explainFlag){
   sqlite *db = pParse->db;
   int i;
   pParse->explain = explainFlag;
-  if((db->flags & SQLITE_Initialized)==0 && pParse->initFlag==0 ){
+  if((db->flags & SQLITE_Initialized)==0 && db->init.busy==0 ){
     int rc = sqliteInit(db, &pParse->zErrMsg);
     if( rc!=SQLITE_OK ){
       pParse->rc = rc;
@@ -471,7 +471,7 @@ void sqliteStartTable(
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
   if( zName==0 ) return;
-  if( pParse->iDb==1 ) isTemp = 1;
+  if( db->init.iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   assert( (isTemp & 1)==isTemp );
   {
@@ -532,8 +532,8 @@ void sqliteStartTable(
   ** an existing temporary table, that is not an error.
   */
   pTable = sqliteFindTable(db, zName, 0);
-  iDb = isTemp ? 1 : pParse->iDb;
-  if( pTable!=0 && (pTable->iDb==iDb || !pParse->initFlag) ){
+  iDb = isTemp ? 1 : db->init.iDb;
+  if( pTable!=0 && (pTable->iDb==iDb || !db->init.busy) ){
     sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
         " already exists", 0, 0);
     sqliteFree(zName);
@@ -541,7 +541,7 @@ void sqliteStartTable(
     return;
   }
   if( (pIdx = sqliteFindIndex(db, zName, 0))!=0 &&
-          (pIdx->iDb==0 || !pParse->initFlag) ){
+          (pIdx->iDb==0 || !db->init.busy) ){
     sqliteSetString(&pParse->zErrMsg, "there is already an index named ", 
        zName, (char*)0);
     sqliteFree(zName);
@@ -570,7 +570,7 @@ void sqliteStartTable(
   ** indices.  Hence, the record number for the table must be allocated
   ** now.
   */
-  if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
+  if( !db->init.busy && (v = sqliteGetVdbe(pParse))!=0 ){
     sqliteBeginWriteOperation(pParse, 0, isTemp);
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_Integer, db->file_format, 0);
@@ -927,8 +927,8 @@ static char *createTableStmt(Table *p){
 ** is added to the internal hash tables, assuming no errors have
 ** occurred.
 **
-** An entry for the table is made in the master table on disk,
-** unless this is a temporary table or initFlag==1.  When initFlag==1,
+** An entry for the table is made in the master table on disk, unless
+** this is a temporary table or db->init.busy==1.  When db->init.busy==1
 ** it means we are reading the sqlite_master table because we just
 ** connected to the database or because the sqlite_master table has
 ** recently changes, so the entry for this table already exists in
@@ -961,14 +961,14 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     sqliteDeleteTable(0, pSelTab);
   }
 
-  /* If the initFlag is 1 it means we are reading the SQL off the
+  /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.
   ** So do not write to the disk again.  Extract the root page number
-  ** for the table from the pParse->newTnum field.  (The page number
+  ** for the table from the db->init.newTnum field.  (The page number
   ** should have been put there by the sqliteOpenCb routine.)
   */
-  if( pParse->initFlag ){
-    p->tnum = pParse->newTnum;
+  if( db->init.busy ){
+    p->tnum = db->init.newTnum;
   }
 
   /* If not initializing, then create a record for the new table
@@ -978,7 +978,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   ** If this is a TEMPORARY table, write the entry into the auxiliary
   ** file instead of into the main database file.
   */
-  if( !pParse->initFlag ){
+  if( !db->init.busy ){
     int n;
     Vdbe *v;
 
@@ -1001,9 +1001,9 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqliteVdbeChangeP3(v, -1, "view", P3_STATIC);
     }
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
+    sqliteVdbeChangeP3(v, -1, p->zName, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
+    sqliteVdbeChangeP3(v, -1, p->zName, 0);
     sqliteVdbeAddOp(v, OP_Dup, 4, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     if( pSelect ){
@@ -1089,7 +1089,7 @@ void sqliteCreateView(
   */
   p->pSelect = sqliteSelectDup(pSelect);
   sqliteSelectDelete(pSelect);
-  if( !pParse->initFlag ){
+  if( !pParse->db->init.busy ){
     sqliteViewGetColumnNames(pParse, p);
   }
 
@@ -1567,8 +1567,8 @@ void sqliteCreateIndex(
   sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
-  if( pParse->initFlag 
-     && sqliteFixInit(&sFix, pParse, pParse->iDb, "index", pName)
+  if( db->init.busy 
+     && sqliteFixInit(&sFix, pParse, db->init.iDb, "index", pName)
      && sqliteFixSrcList(&sFix, pTable)
   ){
     goto exit_create_index;
@@ -1592,7 +1592,7 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
-  if( pTab->iDb>=2 && pParse->initFlag==0 ){
+  if( pTab->iDb>=2 && db->init.busy==0 ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
       " may not have indices added", (char*)0);
     pParse->nErr++;
@@ -1618,7 +1618,7 @@ void sqliteCreateIndex(
   ** dealing with a primary key or UNIQUE constraint.  We have to invent our
   ** own name.
   */
-  if( pName && !pParse->initFlag ){
+  if( pName && !db->init.busy ){
     Index *pISameName;    /* Another index with the same name */
     Table *pTSameName;    /* A table with same name as the index */
     zName = sqliteStrNDup(pName->z, pName->n);
@@ -1654,7 +1654,7 @@ void sqliteCreateIndex(
   {
     const char *zDb = db->aDb[pTab->iDb].zName;
 
-    assert( pTab->iDb==pParse->iDb || isTemp );
+    assert( pTab->iDb==db->init.iDb || isTemp );
     if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
       goto exit_create_index;
     }
@@ -1690,7 +1690,7 @@ void sqliteCreateIndex(
   pIndex->nColumn = pList->nId;
   pIndex->onError = onError;
   pIndex->autoIndex = pName==0;
-  pIndex->iDb = isTemp ? 1 : pParse->iDb;
+  pIndex->iDb = isTemp ? 1 : db->init.iDb;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -1743,20 +1743,20 @@ void sqliteCreateIndex(
     pOther->pNext = pIndex;
   }
 
-  /* If the initFlag is 1 it means we are reading the SQL off the
+  /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" table on the disk.  So do not write to the disk
-  ** again.  Extract the table number from the pParse->newTnum field.
+  ** again.  Extract the table number from the db->init.newTnum field.
   */
-  if( pParse->initFlag && pTable!=0 ){
-    pIndex->tnum = pParse->newTnum;
+  if( db->init.busy && pTable!=0 ){
+    pIndex->tnum = db->init.newTnum;
   }
 
-  /* If the initFlag is 0 then create the index on disk.  This
+  /* If the db->init.busy is 0 then create the index on disk.  This
   ** involves writing the index into the master table and filling in the
   ** index with the current table contents.
   **
-  ** The initFlag is 0 when the user first enters a CREATE INDEX 
-  ** command.  The initFlag is 1 when a database is opened and 
+  ** The db->init.busy is 0 when the user first enters a CREATE INDEX 
+  ** command.  db->init.busy is 1 when a database is opened and 
   ** CREATE INDEX statements are read out of the master table.  In
   ** the latter case the index already exists on disk, which is why
   ** we don't want to recreate it.
@@ -1766,7 +1766,7 @@ void sqliteCreateIndex(
   ** has just been created, it contains no data and the index initialization
   ** step can be skipped.
   */
-  else if( pParse->initFlag==0 ){
+  else if( db->init.busy==0 ){
     int n;
     Vdbe *v;
     int lbl1, lbl2;
@@ -1785,7 +1785,7 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeChangeP3(v, -1, pIndex->zName, strlen(pIndex->zName));
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+    sqliteVdbeChangeP3(v, -1, pTab->zName, 0);
     addr = sqliteVdbeAddOp(v, OP_CreateIndex, 0, isTemp);
     sqliteVdbeChangeP3(v, addr, (char*)&pIndex->tnum, P3_POINTER);
     pIndex->tnum = 0;
@@ -1804,7 +1804,7 @@ void sqliteCreateIndex(
     if( pTable ){
       sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
-      sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+      sqliteVdbeChangeP3(v, -1, pTab->zName, 0);
       lbl2 = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Rewind, 2, lbl2);
       lbl1 = sqliteVdbeAddOp(v, OP_Recno, 2, 0);

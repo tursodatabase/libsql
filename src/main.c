@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.153 2004/02/14 17:35:07 drh Exp $
+** $Id: main.c,v 1.154 2004/02/14 23:05:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -33,8 +33,9 @@ typedef struct {
 ** Fill the InitData structure with an error message that indicates
 ** that the database is corrupt.
 */
-static void corruptSchema(InitData *pData){
-  sqliteSetString(pData->pzErrMsg, "malformed database schema", (char*)0);
+static void corruptSchema(InitData *pData, const char *zExtra){
+  sqliteSetString(pData->pzErrMsg, "malformed database schema",
+     zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
 }
 
 /*
@@ -54,36 +55,39 @@ static void corruptSchema(InitData *pData){
 static
 int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
-  Parse sParse;
   int nErr = 0;
 
   assert( argc==5 );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[0]==0 ){
-    corruptSchema(pData);
+    corruptSchema(pData, 0);
     return 1;
   }
   switch( argv[0][0] ){
     case 'v':
     case 'i':
     case 't': {  /* CREATE TABLE, CREATE INDEX, or CREATE VIEW statements */
+      sqlite *db = pData->db;
       if( argv[2]==0 || argv[4]==0 ){
-        corruptSchema(pData);
+        corruptSchema(pData, 0);
         return 1;
       }
       if( argv[3] && argv[3][0] ){
         /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
-        ** But because sParse.initFlag is set to 1, no VDBE code is generated
+        ** But because db->init.busy is set to 1, no VDBE code is generated
         ** or executed.  All the parser does is build the internal data
         ** structures that describe the table, index, or view.
         */
-        memset(&sParse, 0, sizeof(sParse));
-        sParse.db = pData->db;
-        sParse.initFlag = 1;
-        sParse.iDb = atoi(argv[4]);
-        sParse.newTnum = atoi(argv[2]);
-        sParse.useCallback = 1;
-        sqliteRunParser(&sParse, argv[3], pData->pzErrMsg);
+        char *zErr;
+        assert( db->init.busy );
+        db->init.iDb = atoi(argv[4]);
+        assert( db->init.iDb>=0 && db->init.iDb<db->nDb );
+        db->init.newTnum = atoi(argv[2]);
+        if( sqlite_exec(db, argv[3], 0, 0, &zErr) ){
+          corruptSchema(pData, zErr);
+          sqlite_freemem(zErr);
+        }
+        db->init.iDb = 0;
       }else{
         /* If the SQL column is blank it means this is an index that
         ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
@@ -95,8 +99,8 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
         Index *pIndex;
 
         iDb = atoi(argv[4]);
-        assert( iDb>=0 && iDb<pData->db->nDb );
-        pIndex = sqliteFindIndex(pData->db, argv[1], pData->db->aDb[iDb].zName);
+        assert( iDb>=0 && iDb<db->nDb );
+        pIndex = sqliteFindIndex(db, argv[1], db->aDb[iDb].zName);
         if( pIndex==0 || pIndex->tnum!=0 ){
           /* This can occur if there exists an index on a TEMP table which
           ** has the same name as another index on a permanent index.  Since
@@ -188,7 +192,6 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   char *azArg[6];
   char zDbNum[30];
   int meta[SQLITE_N_BTREE_META];
-  Parse sParse;
   InitData initData;
 
   /*
@@ -245,6 +248,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* Construct the schema tables: sqlite_master and sqlite_temp_master
   */
+  sqliteSafetyOff(db);
   azArg[0] = "table";
   azArg[1] = MASTER_NAME;
   azArg[2] = "2";
@@ -269,6 +273,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
       pTab->readOnly = 1;
     }
   }
+  sqliteSafetyOn(db);
 
   /* Create a cursor to hold the database open
   */
@@ -330,31 +335,28 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* Read the schema information out of the schema tables
   */
-  memset(&sParse, 0, sizeof(sParse));
-  sParse.db = db;
-  sParse.xCallback = sqliteInitCallback;
-  sParse.pArg = (void*)&initData;
-  sParse.initFlag = 1;
-  sParse.useCallback = 1;
+  assert( db->init.busy );
+  sqliteSafetyOff(db);
   if( iDb==0 ){
-    sqliteRunParser(&sParse,
+    rc = sqlite_exec(db, 
         db->file_format>=2 ? init_script : older_init_script,
-        pzErrMsg);
+        sqliteInitCallback, &initData, 0);
   }else{
     char *zSql = 0;
     sqliteSetString(&zSql, 
        "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
        db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
-    sqliteRunParser(&sParse, zSql, pzErrMsg);
+    rc = sqlite_exec(db, zSql, sqliteInitCallback, &initData, 0);
     sqliteFree(zSql);
   }
+  sqliteSafetyOn(db);
   sqliteBtreeCloseCursor(curMain);
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", (char*)0);
-    sParse.rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
     sqliteResetInternalSchema(db, 0);
   }
-  if( sParse.rc==SQLITE_OK ){
+  if( rc==SQLITE_OK ){
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     if( iDb==0 ){
       DbSetProperty(db, 1, DB_SchemaLoaded);
@@ -362,7 +364,7 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
   }else{
     sqliteResetInternalSchema(db, iDb);
   }
-  return sParse.rc;
+  return rc;
 }
 
 /*
@@ -381,8 +383,10 @@ static int sqliteInitOne(sqlite *db, int iDb, char **pzErrMsg){
 int sqliteInit(sqlite *db, char **pzErrMsg){
   int i, rc;
   
+  if( db->init.busy ) return SQLITE_OK;
   assert( (db->flags & SQLITE_Initialized)==0 );
   rc = SQLITE_OK;
+  db->init.busy = 1;
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( DbHasProperty(db, i, DB_SchemaLoaded) ) continue;
     assert( i!=1 );  /* Should have been initialized together with 0 */
@@ -391,6 +395,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
       sqliteResetInternalSchema(db, i);
     }
   }
+  db->init.busy = 0;
   if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);
@@ -669,25 +674,29 @@ int sqlite_compile(
 
   if( pzErrMsg ) *pzErrMsg = 0;
   if( sqliteSafetyOn(db) ) goto exec_misuse;
-  if( (db->flags & SQLITE_Initialized)==0 ){
-    int rc, cnt = 1;
-    while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
-       && db->xBusyCallback && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
-    if( rc!=SQLITE_OK ){
-      sqliteStrRealloc(pzErrMsg);
+  if( !db->init.busy ){
+    if( (db->flags & SQLITE_Initialized)==0 ){
+      int rc, cnt = 1;
+      while( (rc = sqliteInit(db, pzErrMsg))==SQLITE_BUSY
+         && db->xBusyCallback
+         && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
+      if( rc!=SQLITE_OK ){
+        sqliteStrRealloc(pzErrMsg);
+        sqliteSafetyOff(db);
+        return rc;
+      }
+      if( pzErrMsg ){
+        sqliteFree(*pzErrMsg);
+        *pzErrMsg = 0;
+      }
+    }
+    if( db->file_format<3 ){
       sqliteSafetyOff(db);
-      return rc;
-    }
-    if( pzErrMsg ){
-      sqliteFree(*pzErrMsg);
-      *pzErrMsg = 0;
+      sqliteSetString(pzErrMsg, "obsolete database file format", (char*)0);
+      return SQLITE_ERROR;
     }
   }
-  if( db->file_format<3 ){
-    sqliteSafetyOff(db);
-    sqliteSetString(pzErrMsg, "obsolete database file format", (char*)0);
-    return SQLITE_ERROR;
-  }
+  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;

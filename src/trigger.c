@@ -65,8 +65,8 @@ void sqliteBeginTrigger(
   */
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
-  if( pParse->initFlag 
-   && sqliteFixInit(&sFix, pParse, pParse->iDb, "trigger", pName)
+  if( db->init.busy
+   && sqliteFixInit(&sFix, pParse, db->init.iDb, "trigger", pName)
    && sqliteFixSrcList(&sFix, pTableName)
   ){
     goto trigger_cleanup;
@@ -76,7 +76,7 @@ void sqliteBeginTrigger(
     goto trigger_cleanup;
   }
   iDb = isTemp ? 1 : tab->iDb;
-  if( iDb>=2 && !pParse->initFlag ){
+  if( iDb>=2 && !db->init.busy ){
     sqliteErrorMsg(pParse, "triggers may not be added to auxiliary "
        "database %s", db->aDb[tab->iDb].zName);
     goto trigger_cleanup;
@@ -181,7 +181,7 @@ void sqliteFinishTrigger(
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
   */
-  if( !pParse->initFlag ){
+  if( !db->init.busy ){
     static VdbeOp insertTrig[] = {
       { OP_NewRecno,   0, 0,  0          },
       { OP_String,     0, 0,  "trigger"  },
