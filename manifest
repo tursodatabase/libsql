@@ -1,5 +1,5 @@
-C modify\sthe\sconfigure\sfile\sto\sallow\scross-compile\sto\swork\sat\sarm\sand\sxscale\s(CVS\s1099)
-D 2003-09-18T21:59:46
+C regenerate\sconfigure\sto\stake\s-enalbe-releasemode\sas\san\soption\s(CVS\s1100)
+D 2003-09-23T00:35:21
 F Makefile.in 0cf2ffb6dc35694895e0dac488bc1259b6a4eb90
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -9,7 +9,7 @@ F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
-F configure e1c78a97ecdb165c9af751a00786fe7d6789c1cf x
+F configure a79b01eab6acd5e45f08a84b187c435d7d76e256 x
 F configure.ac 3c199bb4d54c6aa8501dcc84facb50bebfefeaad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -173,7 +173,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 4fbca3ab09596c530da7c50657f3bc9140178dd5
-R a213f232fcfc16c27ebd04c79a47da28
+P 760f2fa2e5db102b970687f59b79bfb6f4d35b32
+R 9dcd523e3ea360fe30244e5007157ba8
 U xdong
-Z cb20f3238946fd4f33e2c88123f171ae
+Z 0e700a84a79fd07ab1abefa3149913a2

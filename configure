@@ -1008,6 +1008,7 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-utf8           Use UTF-8 encodings
   --enable-incore-db           Support incore database
+  --enable-releasemode           Support libtool link to release mode
   --enable-tempdb-in-ram     Use an in-ram database for temporary tables
 
 Optional Packages:
@@ -1434,7 +1435,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.17 $
+# $Revision: 1.18 $
 
 #########
 # Programs needed
@@ -8037,11 +8038,11 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-#  if test "$cross_compiling" = "yes"; then
-#    { { echo "$as_me:$LINENO: error: unable to find a compiler for building build tools" >&5
-#echo "$as_me: error: unable to find a compiler for building build tools" >&2;}
-#   { (exit 1); exit 1; }; }
-#  fi
+  if test "$cross_compiling" = "yes"; then
+    { { echo "$as_me:$LINENO: error: unable to find a compiler for building build tools" >&5
+echo "$as_me: error: unable to find a compiler for building build tools" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
   BUILD_CC=$CC
   default_build_cflags=$CFLAGS
 else
@@ -8266,6 +8267,27 @@ else
 echo "${ECHO_T}yes" >&6
 fi
 
+##########
+# Do we want to support release
+#
+# Check whether --enable-releasemode or --disable-releasemode was given.
+if test "${enable_releasemode+set}" = set; then
+  enableval="$enable_releasemode"
+
+else
+  enable_releasemode=no
+fi;
+echo "$as_me:$LINENO: checking whether to support shared library linked as release mode or not" >&5
+echo $ECHO_N "checking whether to support shared library linked as release mode or not... $ECHO_C" >&6
+if test "$enable_releasemode" = "no"; then
+  ALLOWRELEASE=""
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+else
+  ALLOWRELEASE="-release `cat VERSION`"
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+fi
 
 ##########
 # Do we want temporary databases in memory
@@ -8801,11 +8823,11 @@ echo "$as_me:$LINENO: checking for $dir/include/tcl.h" >&5
 echo $ECHO_N "checking for $dir/include/tcl.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
-#else
-#  test "$cross_compiling" = yes &&
-#  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-#echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-#   { (exit 1); exit 1; }; }
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
 if test -r "$dir/include/tcl.h"; then
   eval "$as_ac_File=yes"
 else
@@ -9170,11 +9192,11 @@ echo "$as_me:$LINENO: checking for $dir/include/readline.h" >&5
 echo $ECHO_N "checking for $dir/include/readline.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
-#else
-#  test "$cross_compiling" = yes &&
-#  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-#echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-#   { (exit 1); exit 1; }; }
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
 if test -r "$dir/include/readline.h"; then
   eval "$as_ac_File=yes"
 else
@@ -9196,11 +9218,11 @@ echo "$as_me:$LINENO: checking for $dir/include/readline/readline.h" >&5
 echo $ECHO_N "checking for $dir/include/readline/readline.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
-#else
-# test "$cross_compiling" = yes &&
-#  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-#echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-#   { (exit 1); exit 1; }; }
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
 if test -r "$dir/include/readline/readline.h"; then
   eval "$as_ac_File=yes"
 else
@@ -9990,6 +10012,7 @@ s,@TARGET_RANLIB@,$TARGET_RANLIB,;t t
 s,@TARGET_AR@,$TARGET_AR,;t t
 s,@ENCODING@,$ENCODING,;t t
 s,@ALLOWATTACHMEM@,$ALLOWATTACHMEM,;t t
+s,@ALLOWRELEASE@,$ALLOWRELEASE,;t t
 s,@INMEMORYDB@,$INMEMORYDB,;t t
 s,@TEMP_STORE@,$TEMP_STORE,;t t
 s,@BUILD_EXEEXT@,$BUILD_EXEEXT,;t t
