@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sversion\s3\sdocuments.\s(CVS\s1518)
-D 2004-06-01T10:01:25
+C Fix\stypo\son\shomepage\s(CVS\s1519)
+D 2004-06-01T12:59:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -201,7 +201,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl 7ed8a5c871ab105f01e5defe1822ec39f70675bb
-F www/index.tcl 288687610b6fb5a65c7dd57ed75d77c71b03c2cf
+F www/index.tcl 1adf29e9230553b88211ee6a4ec508b6cdae8002
 F www/lang.tcl fc528581c4a406cabc138e2f17db5ef6f38615ff
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
@@ -214,7 +214,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 11c5d6ab39d04e05a3a1b68477f159b17311a6da
-R 027b458639fb8210c23c1409b741ebc9
+P 915cba57123f859c7f128bd52580573877c502ba
+R 869771be1ad6b0ff5d2cfdaa96e9bfc9
 U drh
-Z ebfcd1866cc601ad5bc0d08d518b3a6a
+Z b8d78d36bfca5048d38c8cf79e8d6789

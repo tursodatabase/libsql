@@ -15,7 +15,7 @@ Features include:
 
 <p><ul>
 <li>ACID (Atomic, Consistent, Isolated, Durable) transactions.</li>
-<li>A zero-configuration - no DBA needed.</li>
+<li>Zero-configuration - no setup or administration needed.</li>
 <li>Implements most of SQL92.
     (<a href="omitted.html">Features not supported</a>)</li>
 <li>A complete database is stored in a single disk file.</li>
@@ -80,4 +80,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
 puts {
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.84 2004/05/31 16:04:08 drh Exp $}
+footer {$Id: index.tcl,v 1.85 2004/06/01 12:59:50 drh Exp $}
