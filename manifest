@@ -1,5 +1,5 @@
-C added\sthe\ssqlite_busy_handler()\sinterface\s(CVS\s109)
-D 2000-07-28T14:32:48
+C added\sthe\ssqlite_busy_handler()\sinterface\s(CVS\s1700)
+D 2000-07-28T14:32:49
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 9e6dcd232e594fb599a5e9ba8bcf45e6c6e2fe72
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -66,7 +66,7 @@ F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 401bdc639509c2f17d3bb97cbbdfdc22a61faa07
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl 3330c700ef9c212a169f568a595361e4cce749ed
-P 937c27b7e18505d0f8b85d2040db8d6a8b7cd441
+P 4fe8e51c248369572637a5351bd193f07e059fa2
 R c695a62141a00b7f6ab88cfdecb913c6
 U drh
-Z 65d7af2246a10e3639543f77b1956b6b
+Z f47fbbfa788e1f0f92603c42750a7387
