@@ -440,7 +440,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 }
 
 
-#if !defined(NDEBUG) || defined(VDBE_PROFILE)
+#if !defined(NDEBUG) || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */

@@ -814,7 +814,7 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   va_start(ap, zFormat);
   base_vprintf(0, 0, zBuf, sizeof(zBuf), zFormat, ap);
   va_end(ap);
-  fprintf(stdout,"%s", zBuf);
+  fprintf(stdout,"%d: %s", getpid(), zBuf);
   fflush(stdout);
 }
 #endif
