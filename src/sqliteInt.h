@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.213 2004/02/14 23:59:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.214 2004/02/20 14:50:58 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -365,10 +365,11 @@ struct sqlite {
 #define SQLITE_InTrans        0x00000008  /* True if in a transaction */
 #define SQLITE_InternChanges  0x00000010  /* Uncommitted Hash table changes */
 #define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
-#define SQLITE_CountRows      0x00000040  /* Count rows changed by INSERT, */
+#define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
+#define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
-#define SQLITE_NullCallback   0x00000080  /* Invoke the callback once if the */
+#define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_ReportTypes    0x00000200  /* Include information on datatypes */
                                           /*   in 4th argument of callback */
@@ -410,6 +411,7 @@ struct Column {
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
   u8 sortOrder;    /* Some combination of SQLITE_SO_... values */
+  u8 dottedName;   /* True if zName contains a "." character */
 };
 
 /*

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.156 2004/02/16 03:44:02 drh Exp $
+** $Id: select.c,v 1.157 2004/02/20 14:50:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -680,7 +680,7 @@ static void generateColumnTypes(
 /*
 ** Generate code that will tell the VDBE the names of columns
 ** in the result set.  This information is used to provide the
-** azCol[] vaolues in the callback.
+** azCol[] values in the callback.
 */
 static void generateColumnNames(
   Parse *pParse,      /* Parser context */
@@ -689,13 +689,16 @@ static void generateColumnNames(
 ){
   Vdbe *v = pParse->pVdbe;
   int i, j;
+  sqlite *db = pParse->db;
+  int fullNames, shortNames;
+
   assert( v!=0 );
   if( pParse->colNamesSet || v==0 || sqlite_malloc_failed ) return;
   pParse->colNamesSet = 1;
+  fullNames = (db->flags & SQLITE_FullColNames)!=0;
+  shortNames = (db->flags & SQLITE_ShortColNames)!=0;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
-    char *zType = 0;
-    int showFullNames;
     int p2 = i==pEList->nExpr-1;
     p = pEList->a[i].pExpr;
     if( p==0 ) continue;
@@ -705,7 +708,6 @@ static void generateColumnNames(
       sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
       continue;
     }
-    showFullNames = (pParse->db->flags & SQLITE_FullColNames)!=0;
     if( p->op==TK_COLUMN && pTabList ){
       Table *pTab;
       char *zCol;
@@ -717,21 +719,19 @@ static void generateColumnNames(
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
       if( iCol<0 ){
         zCol = "_ROWID_";
-        zType = "INTEGER";
       }else{
         zCol = pTab->aCol[iCol].zName;
-        zType = pTab->aCol[iCol].zType;
       }
-      if( p->span.z && p->span.z[0] && !showFullNames ){
+      if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
         int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, p2);
         sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
         sqliteVdbeCompressSpace(v, addr);
-      }else if( pTabList->nSrc>1 || showFullNames ){
+      }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
         char *zTab;
  
         zTab = pTabList->a[j].zAlias;
-        if( showFullNames || zTab==0 ) zTab = pTab->zName;
+        if( fullNames || zTab==0 ) zTab = pTab->zName;
         sqliteSetString(&zName, zTab, ".", zCol, 0);
         sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
         sqliteVdbeChangeP3(v, -1, zName, strlen(zName));

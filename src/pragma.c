@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.14 2004/02/16 03:44:02 drh Exp $
+** $Id: pragma.c,v 1.15 2004/02/20 14:50:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -307,6 +307,14 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       db->flags |= SQLITE_FullColNames;
     }else{
       db->flags &= ~SQLITE_FullColNames;
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "short_column_names")==0 ){
+    if( getBoolean(zRight) ){
+      db->flags |= SQLITE_ShortColNames;
+    }else{
+      db->flags &= ~SQLITE_ShortColNames;
     }
   }else
 
