@@ -66,6 +66,7 @@ enum et_type {    /* The type of the format field */
    etGENERIC,          /* Floating or exponential, depending on exponent. %g */
    etSIZE,             /* Return number of characters processed so far. %n */
    etSTRING,           /* Strings. %s */
+   etDYNSTRING,        /* Dynamically allocated strings. %z */
    etPERCENT,          /* Percent symbol. %% */
    etCHARX,            /* Characters. %c */
    etERROR,            /* Used to indicate no such conversion type */
@@ -97,6 +98,7 @@ typedef struct et_info {   /* Information about each format field */
 static et_info fmtinfo[] = {
   { 'd',  10,  "0123456789",       1,    0, etRADIX,      },
   { 's',   0,  0,                  0,    0, etSTRING,     }, 
+  { 'z',   0,  0,                  0,    0, etDYNSTRING,  }, 
   { 'q',   0,  0,                  0,    0, etSQLESCAPE,  },
   { 'Q',   0,  0,                  0,    0, etSQLESCAPE2, },
   { 'c',   0,  0,                  0,    0, etCHARX,      },
@@ -549,8 +551,13 @@ static int vxprintf(
         bufpt = buf;
         break;
       case etSTRING:
+      case etDYNSTRING:
         bufpt = va_arg(ap,char*);
-        if( bufpt==0 ) bufpt = "(null)";
+        if( bufpt==0 ){
+          bufpt = "";
+        }else if( xtype==etDYNSTRING ){
+          zExtra = bufpt;
+        }
         length = strlen(bufpt);
         if( precision>=0 && precision<length ) length = precision;
         break;
@@ -632,7 +639,11 @@ static int vxprintf(
       }
     }
     if( zExtra ){
-      sqliteFree(zExtra);
+      if( xtype==etDYNSTRING ){
+        free(zExtra);
+      }else{
+        sqliteFree(zExtra);
+      }
     }
   }/* End for loop over the format string */
   return errorflag ? -1 : count;
