@@ -1,5 +1,5 @@
-C Clean\sup\ssome\scompiler\swarnings\s(CVS\s200)
-D 2001-04-04T21:22:14
+C Version\s1.0.28\s(CVS\s475)
+D 2001-04-04T21:30:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in fd8815aa01a7181f60f786158b7737a35413189e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -94,7 +94,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P f0674697c90e4eed630c36e40e724de05d54f74f
+P 490d08a8c19d52ebb41999371e2664e29bcb1164
 R 30ef2fcf4f63f23edf35b1bdea9bb9e1
 U drh
-Z d629a2a91b705bdb131fa9d1c350ddbd
+Z c09be351e07d658e489bb28e9f15d0cc
