@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.94 2004/11/05 17:17:50 drh Exp $
+** $Id: update.c,v 1.95 2004/11/16 15:50:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -235,7 +235,7 @@ void sqlite3Update(
 
   /* Begin the database scan
   */
-  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0);
+  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0, -1);
   if( pWInfo==0 ) goto update_cleanup;
 
   /* Remember the index of every item to be updated.

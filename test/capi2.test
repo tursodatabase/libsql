@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.20 2004/11/03 16:27:02 drh Exp $
+# $Id: capi2.test,v 1.21 2004/11/16 15:50:21 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -450,15 +450,22 @@ do_test capi2-6.12 {
        [get_row_values $VM1] \
        [get_column_names $VM1]
 } {SQLITE_ROW 1 5 {x counter}}
+
+# The next test used to report that the database was locked.
+# As of 3.1 this is no longer the case, the UPDATE works
+# even though there is a SELECT active on the table. Rows
+# scanned by subsequent calls to sqlite3_step report the
+# updated values.
+#
 do_test capi2-6.13 {
   catchsql {UPDATE t3 SET x=x+1}
-} {1 {database table is locked}}
+} {0 {}}
 do_test capi2-6.14 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 6 {x counter}}
+} {SQLITE_ROW 1 7 {x counter}}
 do_test capi2-6.15 {
   execsql {SELECT * FROM t1}
 } {1 2 3}
@@ -467,7 +474,7 @@ do_test capi2-6.16 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 7 {x counter}}
+} {SQLITE_ROW 1 8 {x counter}}
 do_test capi2-6.17 {
   catchsql {UPDATE t1 SET b=b+1}
 } {0 {}}
@@ -476,7 +483,7 @@ do_test capi2-6.18 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 8 {x counter}}
+} {SQLITE_ROW 1 9 {x counter}}
 do_test capi2-6.19 {
   execsql {SELECT * FROM t1}
 } {1 3 3}
@@ -485,7 +492,7 @@ do_test capi2-6.20 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 9 {x counter}}
+} {SQLITE_ROW 1 10 {x counter}}
 #do_test capi2-6.21 {
 #  execsql {ROLLBACK; SELECT * FROM t1}
 #} {1 2 3}
@@ -494,7 +501,7 @@ do_test capi2-6.22 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 10 {x counter}}
+} {SQLITE_ROW 1 11 {x counter}}
 #do_test capi2-6.23 {
 #  execsql {BEGIN TRANSACTION;}
 #} {}
@@ -503,7 +510,7 @@ do_test capi2-6.24 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 11 {x counter}}
+} {SQLITE_ROW 1 12 {x counter}}
 do_test capi2-6.25 {
   execsql {
     INSERT INTO t1 VALUES(2,3,4);
@@ -515,7 +522,7 @@ do_test capi2-6.26 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 12 {x counter}}
+} {SQLITE_ROW 1 13 {x counter}}
 do_test capi2-6.27 {
   catchsql {
     INSERT INTO t1 VALUES(2,4,5);
@@ -527,7 +534,7 @@ do_test capi2-6.28 {
        [sqlite3_column_count $VM1] \
        [get_row_values $VM1] \
        [get_column_names $VM1]
-} {SQLITE_ROW 1 13 {x counter}}
+} {SQLITE_ROW 1 14 {x counter}}
 do_test capi2-6.99 {
   sqlite3_finalize $VM1
 } {SQLITE_OK}

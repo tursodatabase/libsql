@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.116 2004/10/04 13:38:09 drh Exp $
+** $Id: where.c,v 1.117 2004/11/16 15:50:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -471,13 +471,18 @@ static void codeEqualityTerm(
 **
 ** If the where clause loops cannot be arranged to provide the correct
 ** output order, then the *ppOrderBy is unchanged.
+**
+** If parameter iTabCur is non-negative, then it is a cursor already open
+** on table pTabList->aSrc[0]. Use this cursor instead of opening a new
+** one.
 */
 WhereInfo *sqlite3WhereBegin(
-  Parse *pParse,       /* The parser context */
-  SrcList *pTabList,   /* A list of all tables to be scanned */
-  Expr *pWhere,        /* The WHERE clause */
-  int pushKey,         /* If TRUE, leave the table key on the stack */
-  ExprList **ppOrderBy /* An ORDER BY clause, or NULL */
+  Parse *pParse,        /* The parser context */
+  SrcList *pTabList,    /* A list of all tables to be scanned */
+  Expr *pWhere,         /* The WHERE clause */
+  int pushKey,          /* If TRUE, leave the table key on the stack */
+  ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
+  int iTabCur           /* Cursor for pTabList->aSrc[0] */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -773,7 +778,9 @@ WhereInfo *sqlite3WhereBegin(
 
     pTab = pTabList->a[i].pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
-    sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
+    if( i>0 || iTabCur<0 ){
+      sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
+    }
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
     if( (pIx = pWInfo->a[i].pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);

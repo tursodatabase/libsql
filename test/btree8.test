@@ -13,15 +13,65 @@
 # this file tests that existing cursors are correctly repositioned 
 # when entries are inserted into or deleted from btrees.
 #
-# $Id: btree8.test,v 1.2 2004/11/16 04:57:25 danielk1977 Exp $
+# $Id: btree8.test,v 1.3 2004/11/16 15:50:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Test organization:
+#
+# btree-8.1.*: Test cursor persistence when inserting records into tables.
+# btree-8.2.*: Test cursor persistence when deleting records from tables.
+# btree-8.3.*: Test cursor persistence when inserting records into indices.
+# btree-8.4.*: Test cursor persistence when deleting records from indices.
+#
+
+
+# Transform the number $num into a string of length $len by repeating the
+# string representation of the number as many times as necessary. Repeats
+# are seperated by a '.' character. Eg:
+#
+# [num_to_string 456 10] -> "456.456.45"
+#
+proc num_to_string {num len} {
+  set num [format %.4d $num]
+  return [string range [string repeat "$num." $len] 0 [expr $len-1]]
+}
+
+# Proc lshuffle takes a list as an argument and returns a copy of that
+# list in randomized order. It uses the K-combinator for speed.
+#
+proc K {x y} {set x}
+proc lshuffle { list } {
+    set n [llength $list]
+    while {$n>0} {
+        set j [expr {int(rand()*$n)}]
+        lappend slist [lindex $list $j]
+        set list [lreplace [K $list [set list {}]] $j $j]
+        incr n -1
+    }
+    return $slist
+}
+
+# Proc lremove takes two arguments, a list (the first argument) and a key
+# (the second argument). A copy of the list is returned with all elements
+# equal to $key removed.
+#
+proc lremove {list key} {
+  while { [set i [lsearch $list $key]] != -1 } {
+    set list [concat \
+        [lrange $list 0 [expr $i-1]] \
+        [lrange $list [expr $i+1] end]
+    ]
+  }
+  return $list
+}
+
+
 # Use the SQL interface to create a couple of btree tables, one using
 # the flags for an SQL table, the other an SQL index.
 # 
-do_test btree8-1.0 {
+do_test btree8-0.0 {
   execsql {
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
     CREATE INDEX i1 ON t1(b);
@@ -30,6 +80,16 @@ do_test btree8-1.0 {
 set tnum [execsql {SELECT rootpage FROM sqlite_master where type = 'table'}]
 set inum [execsql {SELECT rootpage FROM sqlite_master where type = 'index'}]
 db close
+
+#-------------------------------------------------------------------------
+# Tests btree8-1.* insert a handful of records (~10) into the type of 
+# b-tree created for an SQL table. The records have integer keys in the 
+# range 1..5000. A cursor is left pointing to each of these records. 
+# Then, a record is inserted for each key value between 1 and 5000,
+# including the values for which a record already exists (overwriting
+# the original). After each record is inserted, the existing cursors
+# are checked to ensure they still point at the same key-value.
+#
 
 # Open the database at the btree level and begin a transaction
 do_test btree8-1.1 {
@@ -79,6 +139,14 @@ for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Tests btree8-2.* loop through the tree created by tests btree8-1.*,
+# deleting records in sequential order. After each record is deleted,
+# each of the open cursors is checked to ensure that it still points
+# to the same key-value or, if that key value has been deleted, returns
+# 0 as the integer key value.
+#
+
 # Now delete entries from the table.
 btree_first $::write_csr
 for {set i $first_entry} {$i < 5000 && $nErr==0 } {incr i} {
@@ -103,6 +171,7 @@ for {set i $first_entry} {$i < 5000 && $nErr==0 } {incr i} {
   }
 }
 
+# Close all existing cursors and conclude the open transaction.
 btree_close_cursor $::write_csr
 btree_commit $::bt
 if {$::nErr>0} { puts $::csr_list ; exit }
@@ -111,16 +180,12 @@ foreach csr $csr_list {
 }
 set csr_list [list]
 
-# Transform the number $num into a string of length $len by repeating the
-# string representation of the number as many times as necessary. Repeats
-# are seperated by a '.' character. Eg:
+#-------------------------------------------------------------------------
+# Tests btree8-3.* are analogous to btree8-1.*, but use the type of btree
+# created for an SQL index, not an SQL table. Instead of integers, key 
+# values are strings 20 bytes long created by transforming integers
+# into string using the [num_to_string] proc (see above).
 #
-# [num_to_string 456 10] -> "456.456.45"
-#
-proc num_to_string {num len} {
-  set num [format %.4d $num]
-  return [string range [string repeat "$num." $len] 0 [expr $len-1]]
-}
 
 foreach key $keys {
   lappend skeys [num_to_string $key 20]
@@ -143,8 +208,6 @@ foreach key $skeys {
   } $key
 }
 btree_commit $::bt
-
-# set btree_trace 1
 
 # Now write more entries to the index (and overwrite the ones that exist).
 # After each write, check that the cursors created above still point to the
@@ -170,21 +233,13 @@ for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
 btree_commit $::bt
 btree_begin_transaction $::bt
 
-proc lremove {l key} {
-  set idx [lsearch $l $key]
-  return [concat [lrange $l 0 [expr $idx-1]] [lrange $l [expr $idx+1] end]]
-}
-proc K {x y} {set x}
-proc lshuffle { list } {
-    set n [llength $list]
-    while {$n>0} {
-        set j [expr {int(rand()*$n)}]
-        lappend slist [lindex $list $j]
-        set list [lreplace [K $list [set list {}]] $j $j]
-        incr n -1
-    }
-    return $slist
-}
+#-------------------------------------------------------------------------
+# Tests btree8-4.* are analogous to btree8-2.*, but use the type of btree
+# created for an SQL index, not an SQL table. Instead of integers, key 
+# values are strings 20 bytes long created by transforming integers
+# into string using the [num_to_string] proc (see above). Also, keys
+# are deleted in random order, calculated by the [lshuffle] proc (see above).
+#
 
 # Now delete entries from the index. Do this in a random order, to try to
 # ensure that internal and external nodes are deleted.
@@ -202,7 +257,6 @@ foreach i $delete_order {
   do_test btree8-4.$i.2 {
     btree_delete $::write_csr
   } {}
-
   set delete_order [lremove $delete_order $i]
   set testnum 2
   foreach csr $csr_list key $keys {
