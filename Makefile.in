@@ -92,7 +92,6 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
-  $(TOP)/src/encode.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
@@ -257,9 +256,6 @@ date.lo:	$(TOP)/src/date.c $(HDR)
 
 delete.lo:	$(TOP)/src/delete.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/delete.c
-
-encode.lo:	$(TOP)/src/encode.c
-	$(LTCOMPILE) -c $(TOP)/src/encode.c
 
 expr.lo:	$(TOP)/src/expr.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/expr.c

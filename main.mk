@@ -73,7 +73,6 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
-  $(TOP)/src/encode.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
@@ -231,9 +230,6 @@ date.o:	$(TOP)/src/date.c $(HDR)
 
 delete.o:	$(TOP)/src/delete.c $(HDR)
 	$(TCCX) -c $(TOP)/src/delete.c
-
-encode.o:	$(TOP)/src/encode.c
-	$(TCCX) -c $(TOP)/src/encode.c
 
 expr.o:	$(TOP)/src/expr.c $(HDR)
 	$(TCCX) -c $(TOP)/src/expr.c

@@ -1,6 +1,6 @@
-C The\sTCL\sinterface\sresponds\scorrectly\sto\s"break",\s"continue",\sand\s"return"\ninside\sof\sthe\sscript\sof\san\seval\sstatement.\s(CVS\s1958)
-D 2004-09-13T13:16:32
-F Makefile.in 7f481bb8cdb032491df611526e6f4eb6af79691d
+C Remove\sthe\sencode/decode\sfrom\sthe\sversion\s3.0\ssource\stree.\s(CVS\s1959)
+D 2004-09-13T13:46:01
+F Makefile.in 9cdfc3af2647055085969968ca2394f24c3c6166
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION d28cfc2e7714a747851e50cc1a5ee8ab0ded7a78
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 8a090784820241a245b96a0079712775a7f4405a
+F main.mk fbe4b06ed4d32c529f1514595defe73a424a357e
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
@@ -33,7 +33,6 @@ F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c 662f4e56a64aacadc97c481492b08c842b9ec0f4
 F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
 F src/delete.c e887f44aae1e33da1643df58abe86cd9cde45ad1
-F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 9130794d8c86af2cbf2b8cdc66f2158167fd15b1
 F src/func.c 1fbc5256639586573fd0e70814d6dcd8bc10afc1
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
@@ -170,7 +169,7 @@ F test/sort.test 35e9d6bd6930969050606c8feb9c6745469720e3
 F test/subselect.test 50f98723f00e97b1839d36410ee63597ca82d775
 F test/table.test fd9a0f4992230e4ca89cd37ae3191a12750df1d0
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
-F test/tclsqlite.test de670beccf910163bf49973a3a96eaa00cdf127e
+F test/tclsqlite.test 1288e6278e094c58ce650d7cbf3c4f39317d9a34
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl 1ff1170dd4203d87f572871080cdb64330dade99
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -248,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ee335b501cf45727929aac12c0b74547dd54729e
-R ecb736557a3f73e3cac4e72650b0e555
+P dd62224ae8d1047db388acdc4b91eb56fb9e966a
+R b72a839b56c08880706fc5af1e49a3b1
 U drh
-Z 9a080417236581205e2b636a7a8ab66c
+Z 55b7cec5724fd9cc6c0ba5706bebd5ec

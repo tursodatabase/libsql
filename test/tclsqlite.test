@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.31 2004/09/07 13:20:35 drh Exp $
+# $Id: tclsqlite.test,v 1.32 2004/09/13 13:46:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -233,9 +233,51 @@ do_test tcl-5.3 {
   set adata
 } {686900686f00}
 do_test tcl-5.4 {
-    execsql {
+  execsql {
     SELECT typeof(a), typeof(b), typeof(c) FROM t3
   }
 } {blob text null}
+
+# Operation of "break" and "continue" within row scripts
+#
+do_test tcl-6.1 {
+  db eval {SELECT * FROM t1} {
+    break
+  }
+  lappend a $b
+} {10 20}
+do_test tcl-6.2 {
+  set cnt 0
+  db eval {SELECT * FROM t1} {
+    if {$a>40} continue
+    incr cnt
+  }
+  set cnt
+} {4}
+do_test tcl-6.3 {
+  set cnt 0
+  db eval {SELECT * FROM t1} {
+    if {$a<40} continue
+    incr cnt
+  }
+  set cnt
+} {5}
+do_test tcl-6.4 {
+  proc return_test {x} {
+    db eval {SELECT * FROM t1} {
+      if {$a==$x} {return $b}
+    }
+  }
+  return_test 10
+} 20
+do_test tcl-6.5 {
+  return_test 20
+} 40
+do_test tcl-6.6 {
+  return_test 99
+} 510
+do_test tcl-6.7 {
+  return_test 0
+} {}
 
 finish_test
