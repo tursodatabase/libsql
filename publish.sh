@@ -100,6 +100,15 @@ sqlite_freemem
 sqlite_libversion
 sqlite_libencoding
 sqlite_changes
+sqlite_create_function
+sqlite_create_aggregate
+sqlite_user_data
+sqlite_aggregate_context
+sqlite_aggregate_count
+sqlite_set_result_strint
+sqlite_set_result_int
+sqlite_set_result_double
+sqlite_set_result_error
 sqliteMalloc
 sqliteFree
 sqliteRealloc
