@@ -1,5 +1,5 @@
-C Remove\sincorrect\sassert()\sand\sadd\sextra\soption\sto\saccount\sfor\snon-standard\s'sort'\sprogram\sin\ssome\slinux\sversions.\s(CVS\s2179)
-D 2005-01-07T01:56:17
+C Fix\sa\sread\sof\sinvalid\smemory\sthat\scould\soccur\sin\sbtree.c.\s(CVS\s2180)
+D 2005-01-07T08:56:44
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c fa113d624d38bcb36700a0244b47f39d57d34efb
+F src/btree.c 8cab7c66c822ae9c37c59a923ffec81927583ee2
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 9d674d1dc09f72c64ef7f37cd9838c7a9c50b746
-R d21fa91d39b388686915b90d94c4baf8
+P bf14387697459d8d348a35ca50e2ee9407dcf1e1
+R 69691ec0fc90d47f2795ea61e7840061
 U danielk1977
-Z d4d186f3d78d137c0d019d40b89696b1
+Z 5456339343e3dea6f3d7b76699be8b22
