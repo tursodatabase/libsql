@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.123 2004/12/19 00:11:35 drh Exp $
+** $Id: where.c,v 1.124 2004/12/25 01:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -525,6 +525,11 @@ static void codeEqualityTerm(
 ** And so forth.  This routine generates code to open those VDBE cursors
 ** and sqlite3WhereEnd() generates the code to close them.
 **
+** The code that sqlite3WhereBegin() generates leaves the cursors named
+** in pTabList pointing at their appropriate entries.  The [...] code
+** can use OP_Column and OP_Recno opcodes on these cursors to extra
+** data from the various tables of the loop.
+**
 ** If the WHERE clause is empty, the foreach loops must each scan their
 ** entire tables.  Thus a three-way join is an O(N^3) operation.  But if
 ** the tables have indices and there are terms in the WHERE clause that
@@ -575,7 +580,6 @@ WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
-  int pushKey,          /* If TRUE, leave the table key on the stack */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
   Fetch *pFetch         /* Initial location of cursors.  NULL otherwise */
 ){
@@ -585,7 +589,6 @@ WhereInfo *sqlite3WhereBegin(
   int brk, cont = 0;         /* Addresses used during code generation */
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   Bitmask loopMask;    /* One bit set for each outer loop */
-  int haveRowid = 0;   /* True if the ROWID is on the stack */
   ExprInfo *pTerm;     /* A single term in the WHERE clause; ptr to aExpr[] */
   ExprMaskSet maskSet; /* The expression mask set */
   int iDirectEq[BMS];  /* Term of the form ROWID==X for the N-th table */
@@ -594,11 +597,6 @@ WhereInfo *sqlite3WhereBegin(
   ExprInfo aExpr[101]; /* The WHERE clause is divided into these terms */
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
-
-  /* pushKey is only allowed if there is a single table (as in an INSERT or
-  ** UPDATE statement)
-  */
-  assert( pushKey==0 || pTabList->nSrc==1 );
 
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.  If the aExpr[]
@@ -996,7 +994,6 @@ WhereInfo *sqlite3WhereBegin(
       cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 1, brk);
       sqlite3VdbeAddOp(v, OP_NotExists, iCur, brk);
-      haveRowid = 0;
       pLevel->op = OP_Noop;
     }else if( pIdx!=0 && pLevel->score>3 && (pLevel->score&0x0c)==0 ){
       /* Case 2:  There is an index and all terms of the WHERE clause that
@@ -1050,11 +1047,9 @@ WhereInfo *sqlite3WhereBegin(
       }
       sqlite3VdbeAddOp(v, OP_RowKey, iIdxCur, 0);
       sqlite3VdbeAddOp(v, OP_IdxIsNull, nColumn, cont);
-      if( omitTable ){
-        haveRowid = 0;
-      }else{
+      if( !omitTable ){
         sqlite3VdbeAddOp(v, OP_IdxRecno, iIdxCur, 0);
-        haveRowid = 1;
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       }
       pLevel->p1 = iIdxCur;
       pLevel->p2 = start;
@@ -1115,7 +1110,6 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, testOp, 0, brk);
       }
-      haveRowid = 0;
     }else if( pIdx==0 ){
       /* Case 4:  There is no usable index.  We must do a complete
       **          scan of the entire database table.
@@ -1137,7 +1131,6 @@ WhereInfo *sqlite3WhereBegin(
       start = sqlite3VdbeCurrentAddr(v);
       pLevel->p1 = iCur;
       pLevel->p2 = start;
-      haveRowid = 0;
     }else{
       /* Case 5: The WHERE clause term that refers to the right-most
       **         column of the index is an inequality.  For example, if
@@ -1287,11 +1280,9 @@ WhereInfo *sqlite3WhereBegin(
       }
       sqlite3VdbeAddOp(v, OP_RowKey, iIdxCur, 0);
       sqlite3VdbeAddOp(v, OP_IdxIsNull, nEqColumn + ((score&4)!=0), cont);
-      if( omitTable ){
-        haveRowid = 0;
-      }else{
+      if( !omitTable ){
         sqlite3VdbeAddOp(v, OP_IdxRecno, iIdxCur, 0);
-        haveRowid = 1;
+        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       }
 
       /* Record the instruction used to terminate the loop.
@@ -1311,14 +1302,6 @@ WhereInfo *sqlite3WhereBegin(
       if( pLevel->iLeftJoin && !ExprHasProperty(pTerm->p,EP_FromJoin) ){
         continue;
       }
-      if( haveRowid ){
-        haveRowid = 0;
-        if( omitTable ){
-          sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-        }else{
-          sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
-        }
-      }
       sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
       pTerm->p = 0;
     }
@@ -1335,33 +1318,12 @@ WhereInfo *sqlite3WhereBegin(
       for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
         if( pTerm->p==0 ) continue;
         if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;
-        if( haveRowid ){
-          /* Cannot happen.  "haveRowid" can only be true if pushKey is true
-          ** an pushKey can only be true for DELETE and UPDATE and there are
-          ** no outer joins with DELETE and UPDATE.
-          */
-          assert( 0 );
-          haveRowid = 0;
-          sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
-        }
         sqlite3ExprIfFalse(pParse, pTerm->p, cont, 1);
         pTerm->p = 0;
       }
     }
-
-    if( haveRowid && (i<pTabList->nSrc-1 || !pushKey) ){
-      haveRowid = 0;
-      if( omitTable ){
-        sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-      }else{
-        sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
-      }
-    }    
   }
   pWInfo->iContinue = cont;
-  if( pushKey && !haveRowid ){
-    sqlite3VdbeAddOp(v, OP_Recno, pTabList->a[0].iCursor, 0);
-  }
   freeMaskSet(&maskSet);
   return pWInfo;
 }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.434 2004/12/19 00:11:35 drh Exp $
+** $Id: vdbe.c,v 1.435 2004/12/25 01:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -641,6 +641,9 @@ case OP_Halt: {
 ** The integer value P1 is pushed onto the stack.  If P3 is not zero
 ** then it is assumed to be a string representation of the same integer.
 ** If P1 is zero and P3 is not zero, then the value is derived from P3.
+**
+** If the value cannot be represented as a 32-bits then its value
+** will be in P3.
 */
 case OP_Integer: {
   pTos++;
@@ -1100,7 +1103,7 @@ divide_by_zero:
 ** P3 is a pointer to a CollSeq struct. If the next call to a user function
 ** or aggregate calls sqlite3GetFuncCollSeq(), this collation sequence will
 ** be returned. This is used by the built-in min(), max() and nullif()
-** built-in functions.
+** functions.
 **
 ** The interface used by the implementation of the aforementioned functions
 ** to retrieve the collation sequence set by this opcode is not available

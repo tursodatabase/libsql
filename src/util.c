@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.122 2004/11/20 19:18:01 drh Exp $
+** $Id: util.c,v 1.123 2004/12/25 01:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -872,6 +872,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   u32 x;
   int n;
   unsigned char c;
+#if 0
   if( ((c = p[0]) & 0x80)==0 ){
     *v = c;
     return 1;
@@ -882,6 +883,18 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
     return 2;
   }
   x = (x<<7) | (c & 0x7f);
+#else
+  if( ((signed char*)p)[0]>=0 ){
+    *v = p[0];
+    return 1;
+  }
+  x = p[0] & 0x7f;
+  if( ((signed char*)p)[1]>=0 ){
+    *v = (x<<7) | p[1];
+    return 2;
+  }
+  x = (x<<7) | (p[1] & 0x7f);
+#endif
   n = 2;
   do{
     x = (x<<7) | ((c = p[n++])&0x7f);

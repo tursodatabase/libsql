@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.93 2004/12/14 03:34:34 drh Exp $
+** $Id: delete.c,v 1.94 2004/12/25 01:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -225,11 +225,12 @@ void sqlite3DeleteFrom(
 
     /* Begin the database scan
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0, 0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0);
     if( pWInfo==0 ) goto delete_from_cleanup;
 
-    /* Remember the key of every item to be deleted.
+    /* Remember the rowid of every item to be deleted.
     */
+    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
     sqlite3VdbeAddOp(v, OP_ListWrite, 0, 0);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
