@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverrun\sin\sthe\satomic\smultifile\scommit\slogic\sof\sthe\spager.\s(CVS\s1556)
-D 2004-06-10T00:51:44
+C Tests\sin\slock.test\sno\sconform\sto\sthe\snew\slocking\sscheme.\s(CVS\s1557)
+D 2004-06-10T01:08:06
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F test/tester.tcl fc10520db0d3ce4ef6a8b5ab91bd102fc3f4280a
 F test/thread1.test 2fd5c10e82434f6b03be77b61fde5a050668abf2
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
-F test/trans.test eae47c3a25b7f6c45296b1e472a4f8e3b3d91cdf
+F test/trans.test 4a26c6fa3639202c334521954c17d8abe8a1c8e8
 F test/trigger1.test 99b7cd9a568ac60aa04bbc3b9db9575ffa97709a
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
@@ -218,7 +218,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a22283512afe2df09d5783d189fbd7389ed313ad
-R 44c0fe57aaff3fee6a9e59ee85ca7073
+P 3b78ffe0b5dfa20e5c638d85ed400afda8a9f948
+R c24b45928c08ef79b943729c16fbee09
 U drh
-Z e14cb70585259da837e18dc09e5b8e61
+Z d26763f7e9e7e34a6d973c83f7a82c78

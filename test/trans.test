@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.21 2004/06/09 19:03:55 drh Exp $
+# $Id: trans.test,v 1.22 2004/06/10 01:08:06 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -93,53 +93,45 @@ do_test trans-3.1 {
   }
 } {1 2 3}
 do_test trans-3.2 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM two ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 5 10}}
 do_test trans-3.3 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM one ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 2 3}}
 do_test trans-3.4 {
-  set v [catch {execsql {
+  catchsql {
     INSERT INTO one VALUES(4,'four');
-  }} msg]
-  lappend v $msg
+  }
 } {0 {}}
 do_test trans-3.5 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM two ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 5 10}}
 do_test trans-3.6 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM one ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 2 3}}
 do_test trans-3.7 {
-  set v [catch {execsql {
+  catchsql {
     INSERT INTO two VALUES(4,'IV');
-  }} msg]
-  lappend v $msg
+  }
 } {0 {}}
 do_test trans-3.8 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM two ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 5 10}}
 do_test trans-3.9 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM one ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 2 3}}
 do_test trans-3.10 {
   execsql {END TRANSACTION}
 } {}
@@ -182,44 +174,38 @@ do_test trans-4.2 {
   lappend v $msg
 } {1 {cannot rollback - no transaction is active}}
 do_test trans-4.3 {
-  set v [catch {execsql {
+  catchsql {
     BEGIN TRANSACTION;
     UPDATE two SET a = 0 WHERE 0;
     SELECT a FROM two ORDER BY a;
-  } db} msg]
-  lappend v $msg
+  } db
 } {0 {1 4 5 10}}
 do_test trans-4.4 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM two ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 4 5 10}}
 do_test trans-4.5 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM one ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 2 3 4}}
 do_test trans-4.6 {
-  set v [catch {execsql {
+  catchsql {
     BEGIN TRANSACTION;
     SELECT a FROM one ORDER BY a;
-  } db} msg]
-  lappend v $msg
+  } db
 } {1 {cannot start a transaction within a transaction}}
 do_test trans-4.7 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM two ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 4 5 10}}
 do_test trans-4.8 {
-  set v [catch {execsql {
+  catchsql {
     SELECT a FROM one ORDER BY a;
-  } altdb} msg]
-  lappend v $msg
-} {1 {database is locked}}
+  } altdb
+} {0 {1 2 3 4}}
 do_test trans-4.9 {
   set v [catch {execsql {
     END TRANSACTION;
