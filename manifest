@@ -1,5 +1,5 @@
-C More\schanges\sto\simprove\spropagation\sof\sSQLITE_CORRUPT\serrors.\s(CVS\s2282)
-D 2005-01-27T00:33:21
+C Fix\sa\swarning\sintroduced\sby\s(2280).\s(CVS\s2283)
+D 2005-01-27T00:33:38
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 4b15c85335417752cc1045eae18b8186e08c8184
 F src/btree.c e68ae12c8b12ef9d45d58d931c36c184055a3880
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
-F src/build.c 7fceb519293cbedd49a675975130722693a0f12b
+F src/build.c c894a91251c226eb40c54b6f86cbee166ab13334
 F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 1d5ebb1146cc6e59d8b419b3fa4796552111606d
-R 56e4175a578bb4fb9141aeb0a70310d3
-U drh
-Z 0c4adfe6a7238770087bed92ee0cbbde
+P e4b5c16858db3b17a13cb572896bfd3dc08b88c1
+R 9e52795f4b64b64f2ed38f6635592380
+U danielk1977
+Z 51b169cdf2f6e2778562efcf6c6ce595
