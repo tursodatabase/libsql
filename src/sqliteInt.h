@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.186 2003/05/17 19:04:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.187 2003/05/29 17:43:08 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -132,8 +132,13 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 ** multi-megabyte records are OK.  If your needs are different, you can
 ** change this define and recompile to increase or decrease the record
 ** size.
+**
+** The 16777198 is computed as follows:  238 bytes of payload on the
+** original pages plus 16448 overflow pages each holding 1020 bytes of
+** data.
 */
-#define MAX_BYTES_PER_ROW  1048576
+/* #define MAX_BYTES_PER_ROW  1048576 */
+#define MAX_BYTES_PER_ROW 16777198
 
 /*
 ** If memory allocation problems are found, recompile with

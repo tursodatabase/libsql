@@ -1,5 +1,5 @@
-C Added\stypeof()\soperator.\nMinor\sadditions\sfor\sATTACH/DETACH.\s(CVS\s987)
-D 2003-05-29T04:21:39
+C Modify\sthe\swindows\slocking\scode\sso\sthat\sit\sworks\scorrectly\sfor\sa\sdatabase\r\nbeing\sshared\sbetween\sWin95/98/ME\sand\sWinNT/2K/XP\ssystems.\s\sTicket\s#310.\s(CVS\s988)
+D 2003-05-29T17:43:08
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 2f26b95cc1055062411cbdea06e2e1b40a8b0d8d
 F src/main.c 717aaf32d468667dabeaec80054e11bfdb6309b6
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 94b618c0c0a76210e53857d77c96d2f042dc33b1
+F src/os.c 080238f03015057879cdf53bc4af9e497f2ba724
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
@@ -47,7 +47,7 @@ F src/select.c 15d921308065c9320363af6f43c01d9f09ea7118
 F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
-F src/sqliteInt.h 3ba355793a1e0b891cfa414901759189c9287a18
+F src/sqliteInt.h e5ae70c84c07100561eff4ef88ac7b5f1b4dff1e
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
 F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
@@ -151,7 +151,7 @@ F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 12d1788d4abcfe1ff3054e17605df2418883bf6f
+F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e8566cf5a381fa7655caacbc0fe95091e1137fea
-R 2370f3a91a8462e6af77d63e50ad9dc5
-U jplyon
-Z b0d55a69cad4bca6e8fe74221533622d
+P 8b8fa0fff26107912f0bec4e44df207c7885e273
+R b9d0e8972fcc9a231c0902a3a73faac1
+U drh
+Z 03fcc024f3cf3df89cb775ce044ef1b0
