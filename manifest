@@ -1,4 +1,4 @@
-C Change\sthe\snames\sof\sexternal\ssymbols\sfrom\ssqlite_XXX\sto\ssqlite3_XXX.\s(CVS\s1339)
+C Change\sthe\snames\sof\sexternal\ssymbols\sfrom\ssqlite_XXX\sto\ssqlite3_XXX.\s(CVS\s1340)
 D 2004-05-10T10:37:19
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
@@ -187,7 +187,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2242423e31a5e81e89ffcc99e62307c5cc0120d5
+P 19b100ec0d088b2cca147c967a80d18403b7ee86
 R f2908d3295f9c85321a4f31d49755326
 U danielk1977
-Z 3d3dbd26469d780ca594807c5a221b31
+Z a170a8ad66f9cc57576a3dbf5696300c
