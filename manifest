@@ -1,5 +1,5 @@
-C Save\sthe\sfull\spathname\sof\sthe\sdatabase\sfile\sso\sthat\sjournalling\sstill\sworks\neven\sif\sthe\suser\schanges\sworking\sdirectories\safter\sopening\sthe\sdatabae.\nTicket\s#200.\s(CVS\s798)
-D 2002-12-07T21:45:14
+C Take\scare\snot\sto\smodify\sthe\ssqlite*\spointer\sto\ssqlite_exec()\sif\swe\ssuspect\nthat\sthe\spointer\sis\sstale\s-\sthat\sit\shas\spreviously\sbeen\spassed\sto\nsqlite_close().\s\sPossible\sfix\sfor\sticket\s#202.\s\sPrior\sto\sthis\sfix,\stest\nmisuse-5.3\swas\scausing\sa\schange\sto\sa\sbuffer\sthat\shad\sbeen\spreviously\sfree()-ed.\s(CVS\s799)
+D 2002-12-17T13:05:26
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,7 +51,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
-F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
+F src/util.c 8f19c71e45d1a5a3ff2e9a3eef8f36296d87ea43
 F src/vdbe.c aa6165ae4f2303795e4c5531293576c541363e40
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0051c87d5e8d07fae09da2eb7b0d8cbd1bbd3c8e
-R 1755863d930db2fe172862e1ab561a27
+P 1c58b4fc032c5975dcce9b8ae844c0e516254a17
+R 915a4210a181a076d8ac7e4e83a94eed
 U drh
-Z 6749b35c841c31daf6e1b7e300d04efa
+Z eb21639b26597fa970a75e60b827244e

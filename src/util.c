@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.52 2002/10/20 15:46:23 drh Exp $
+** $Id: util.c,v 1.53 2002/12/17 13:05:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1120,16 +1120,22 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** But usually the problem will be seen.  The result will be an
 ** error which can be used to debug the application that is
 ** using SQLite incorrectly.
+**
+** Ticket #202:  If db->magic is not a valid open value, take care not
+** to modify the db structure at all.  It could be that db is a stale
+** pointer.  In other words, it could be that there has been a prior
+** call to sqlite_close(db) and db has been deallocated.  And we do
+** not want to write into deallocated memory.
 */
 int sqliteSafetyOn(sqlite *db){
   if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_BUSY;
     return 0;
-  }else{
+  }else if( db->magic==SQLITE_MAGIC_BUSY || db->magic==SQLITE_MAGIC_ERROR ){
     db->magic = SQLITE_MAGIC_ERROR;
     db->flags |= SQLITE_Interrupt;
-    return 1;
   }
+  return 1;
 }
 
 /*
@@ -1141,11 +1147,11 @@ int sqliteSafetyOff(sqlite *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
     return 0;
-  }else{
+  }else if( db->magic==SQLITE_MAGIC_OPEN || db->magic==SQLITE_MAGIC_ERROR ){
     db->magic = SQLITE_MAGIC_ERROR;
     db->flags |= SQLITE_Interrupt;
-    return 1;
   }
+  return 1;
 }
 
 /*
