@@ -1,0 +1,117 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the COPY statement.
+#
+# $Id: copy.test,v 1.1 2000/05/30 17:30:36 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a file of data from which to copy.
+#
+set f [open data1.txt w]
+puts $f "11\t22\t33"
+puts $f "22\t33\t11"
+close $f
+set f [open data2.txt w]
+puts $f "11\t22\t33"
+puts $f "\\."
+puts $f "22\t33\t11"
+close $f
+set f [open data3.txt w]
+puts $f "11\t22\t33\t44"
+puts $f "22\t33\t11"
+close $f
+set f [open data4.txt w]
+puts $f "11 | 22 | 33"
+puts $f "22 | 33 | 11"
+close $f
+set f [open data5.txt w]
+puts $f "11|22|33"
+puts $f "22|33|11"
+close $f
+
+# Try to COPY into a non-existant table.
+#
+do_test copy-1.1 {
+  set v [catch {execsql {COPY test1 FROM 'data1.txt'}} msg]
+  lappend v $msg
+} {1 {no such table: test1}}
+
+# Try to insert into sqlite_master
+#
+do_test copy-1.2 {
+  set v [catch {execsql {COPY sqlite_master FROM 'data2.txt'}} msg]
+  lappend v $msg
+} {1 {table sqlite_master may not be modified}}
+
+# Do some actual inserts
+#
+do_test copy-1.3 {
+  execsql {CREATE TABLE test1(one int, two int, three int)}
+  execsql {COPY test1 FROM 'data1.txt'}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {11 22 33 22 33 11}
+
+# Make sure input terminates at \.
+#
+do_test copy-1.4 {
+  execsql {DELETE FROM test1}
+  execsql {COPY test1 FROM 'data2.txt'}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {11 22 33}
+
+# Test out the USING DELIMITERS clause
+#
+do_test copy-1.5 {
+  execsql {DELETE FROM test1}
+  execsql {COPY test1 FROM 'data4.txt' USING DELIMITERS ' | '}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {11 22 33 22 33 11}
+do_test copy-1.6 {
+  execsql {DELETE FROM test1}
+  execsql {COPY test1 FROM 'data5.txt' USING DELIMITERS '|'}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {11 22 33 22 33 11}
+
+# Try inserting really long data
+#
+set x {}
+for {set i 0} {$i<100} {incr i} {
+  append x "($i)-abcdefghijklmnopqrstyvwxyz-ABCDEFGHIJKLMNOPQRSTUVWXYZ-"
+}
+do_test copy-2.1 {
+  execsql {CREATE TABLE test2(a int, x text)}
+  set f [open data21.txt w]
+  puts $f "123\t$x"
+  close $f
+  execsql {COPY test2 FROM 'data21.txt'}
+  execsql {SELECT x from test2}
+} $x
+
+# Cleanup 
+#
+file delete -force data1.txt data2.txt data3.txt data4.txt data5.txt data21.txt
+
+finish_test

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.7 2000/05/30 16:27:04 drh Exp $
+** $Id: build.c,v 1.8 2000/05/30 17:30:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1482,6 +1482,7 @@ void sqliteCopy(
   if( v ){
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
+    sqliteVdbeDequoteP3(v, addr);
     sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       sqliteVdbeAddOp(v, OP_Open, i, 0, pIdx->zName, 0);

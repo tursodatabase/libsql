@@ -1,12 +1,12 @@
-C :-)\s(CVS\s15)
-D 2000-05-30T16:27:04
+C :-)\s(CVS\s16)
+D 2000-05-30T17:30:36
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 971796c068b8ae25b476f924e5e0da0b57adb9e6
+F src/build.c 82e7dfdf900428d706ab4f50e72732ce9110767a
 F src/dbbe.c ab05293e89525041eaab8b4aca10516db3648792
 F src/dbbe.h bedeb3a0985bb584458e7849fb59927e99e751e6
 F src/main.c 25cce7bce0eb3ba10bada7c05f4b38dc6dbbc86f
@@ -21,6 +21,7 @@ F src/vdbe.c 117ce5541143e3af9dccdc15c22c4920a7b9bdb4
 F src/vdbe.h 03de26632f2e608c2a44a40262fbba21a8bdfd81
 F src/where.c be3973952e9bb5d2bb0bc5523b03f5d1f9e9d6f9
 F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
+F test/copy.test 641bd3cfaab61c4ee32889587e21e4c70788a97a
 F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
 F test/expr.test 11e00880d2de0f60ff1ba7fdd4e09a0d72a01910
 F test/index.test 8d4f26901a5582daa353fe3c8266cbf4a53af830
@@ -37,7 +38,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 2466d1b2e26c6f354b0acedee12025309a216799
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 1bb8ee8d9f1d3c409a11910e7552e4bb5e7f5f87
-R 0bda635e569bcbbf1f49ce4a3f5d3df9
+P 8d66c7355de1d87b25c4fb92d0ef3603da72899a
+R d80f9589af9e1517c7c756c7ca40c0f1
 U drh
-Z 1c759b788ddf2200404a81ace8a2be6e
+Z 0d13d400c7a8e0dc46e87c85f7c6e1d5
