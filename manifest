@@ -1,5 +1,5 @@
-C :-)\s(CVS\s179)
-D 2001-01-21T00:58:08
+C :-)\s(CVS\s1711)
+D 2001-01-21T22:03:30
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -62,6 +62,7 @@ F test/update.test 62f6ce99ff31756aab0ca832ff6d34c5a87b6250
 F test/vacuum.test 2127748ff4ddb409212efbb6d9fb9c469ea1b49c
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
+F tool/gdbmstat.c 56a9033531e5f5a48413f6ec436d5fb0341632c1
 F tool/lemon.c b13a31798574af881753d38f4da7d505929259c3
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/memleak.awk a0a11dd84bf4582acc81c3c61271021ae49b3f15
@@ -82,7 +83,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 1662063dfb0925bd439e3e2e49bff82705e20fd0
-R fd78a6c47a1cf484ff41084553feb3d7
+P d5f2a668978c0d108045237f19b0a7efa07678f2
+R 1dea96afaac1107dc23974be6b858cb9
 U drh
-Z d0449f87f2ca7d65ae84190b1471dad1
+Z 7168eb4919f6604238c3251129477d38
