@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\s-separator\scommand-line\soption.\s(CVS\s351)
-D 2002-01-22T12:39:24
+C Constant\sORDER\sBY\sor\sGROUP\sBY\sexpressions\sare\san\serror.\s(CVS\s352)
+D 2002-01-22T14:11:29
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3e26a3b9e7aee1b811deaf673e8d8973bdb3f22d
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
 F src/btree.h 9ead7f54c270d8a554e59352ca7318fdaf411390
 F src/build.c bf8456b56011bb3761f11ff4a14121cfbbbd78da
 F src/delete.c cc200609f927ee8fefdda5d11d3f3b2288493c0f
-F src/expr.c 3c4359f9a00791f73569547bb11ce0f0fa5da631
+F src/expr.c 4cae8bf44d5732182e5e8c25b4552c05ea55593e
 F src/hash.c 8f7c740ef2eaaa8decfa8751f2be30680b123e46
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c 813c37719866c583e6ca7660f94f10230f4e385d
@@ -36,11 +36,11 @@ F src/pager.h f78d064c780855ff70beacbeba0e2324471b26fe
 F src/parse.y f3fc4fb5766393003577bd175eb611495f6efd9f
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c f6b36bec5ebd3edb3440224bf5bf811fe4ac9a1b
-F src/select.c f944a94d5004a1b87a5c6b1e41c29ac94488b42a
+F src/select.c de0d1d12e258d339a7936556512680366177f277
 F src/shell.c a77f9f1fad44a6e109b0c1bf7a170896842564e1
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
-F src/sqliteInt.h 576b7b8165b2d78204412227e242cded54188bd5
+F src/sqliteInt.h 3274f3039db3164ba8c31acce027ea6408f247b3
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
 F src/test1.c 33efd350dca27c52c58c553c04fd3a6a51f13c1f
@@ -48,7 +48,7 @@ F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
 F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
 F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
 F src/update.c f30a47928fb7e894221eab2a81c8fa2653f96fb0
-F src/util.c 3958a14a2dbfb13fa5f779976b4d0daf9ab49bb1
+F src/util.c 8f8973dd55a6ec63be9632fc5de86965c99d6327
 F src/vdbe.c 158bab65e4eafceb75a83f616caafa2c58f00242
 F src/vdbe.h e5cc6fb13d1905a4339db4d6dba4ab393c0765fa
 F src/where.c a9b286ac7323e7ebed5d3d217b3963acf1e6a355
@@ -77,12 +77,12 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test cb023f2df36886e1fc4cdfd32eaba05cf7db4331
-F test/select1.test 391a1e1a0527391d1bfa2daab279bf6be21da011
+F test/select1.test fd2936aa907559153c78edf2740ea65eb9a614f5
 F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
-F test/select3.test 3a053d8fd29e10b55f468644641098b5c9adbc06
+F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/sort.test 462c1161eee1abaa7cc93990e0b34d5fdb70ce19
+F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
 F test/tableapi.test 51d0c209aa6b1158cb952ec917c656d4ce66e9e4
@@ -105,7 +105,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 82a026b1681757f13b3f62e035f3a31407c1d353
-F www/changes.tcl 57cad633740a4b66cdd20d5eb1915295186c7d20
+F www/changes.tcl f3f730787338087282e50bd27d152ed68686df15
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3684beab0f8a71ebdf453871bbde7a9ab1f65385
-R 6d4c394d2d59431cbf3d37aead44f9b9
+P 593c986f694b14839b2a2ed1da4da468c53fefa5
+R 8941cac6aacb0ffecd385f18a7bbf6c9
 U drh
-Z d7239dce89c2468939138d009d7b5be4
+Z e67f578d29bd17bb77f6c2a9e00e19f2

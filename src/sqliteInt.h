@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.78 2002/01/22 03:13:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.79 2002/01/22 14:11:29 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -528,3 +528,4 @@ void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);
 char *sqlite_mprintf(const char *, ...);
+int sqliteExprIsConstant(Expr*);

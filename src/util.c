@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.35 2002/01/14 09:28:20 drh Exp $
+** $Id: util.c,v 1.36 2002/01/22 14:11:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -551,6 +551,8 @@ static int sortStrCmp(const char *atext, const char *btext, int useCase){
       if( (ca=map[*a++])!=(cb=map[*b++]) ) break;
       cclass = stateMachine[cclass*N_CHAR_CLASS + charClass[ca]];
     }while( ca!=0 );
+    if( ca>='[' && ca<='`' ) cb = b[-1];
+    if( cb>='[' && cb<='`' ) ca = a[-1];
   }
   switch( cclass ){
     case 0:

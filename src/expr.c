@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.38 2002/01/22 03:13:42 drh Exp $
+** $Id: expr.c,v 1.39 2002/01/22 14:11:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,25 +35,29 @@ void sqliteExprDelete(Expr *p){
 ** Walk an expression tree.  Return 1 if the expression is constant
 ** and 0 if it involves variables.
 */
-static int isConstant(Expr *p){
+int sqliteExprIsConstant(Expr *p){
   switch( p->op ){
     case TK_ID:
     case TK_COLUMN:
     case TK_DOT:
       return 0;
+    case TK_INTEGER:
+    case TK_FLOAT:
+    case TK_STRING:
+      return 1;
     default: {
-      if( p->pLeft && !isConstant(p->pLeft) ) return 0;
-      if( p->pRight && !isConstant(p->pRight) ) return 0;
+      if( p->pLeft && !sqliteExprIsConstant(p->pLeft) ) return 0;
+      if( p->pRight && !sqliteExprIsConstant(p->pRight) ) return 0;
       if( p->pList ){
         int i;
         for(i=0; i<p->pList->nExpr; i++){
-          if( !isConstant(p->pList->a[i].pExpr) ) return 0;
+          if( !sqliteExprIsConstant(p->pList->a[i].pExpr) ) return 0;
         }
       }
-      break;
+      return p->pLeft!=0 || p->pRight!=0 || (p->pList && p->pList->nExpr>0);
     }
   }
-  return 1;
+  return 0;
 }
 
 /*
@@ -304,7 +308,7 @@ int sqliteExprResolveIds(
         int i, iSet;
         for(i=0; i<pExpr->pList->nExpr; i++){
           Expr *pE2 = pExpr->pList->a[i].pExpr;
-          if( !isConstant(pE2) ){
+          if( !sqliteExprIsConstant(pE2) ){
             sqliteSetString(&pParse->zErrMsg,
               "right-hand side of IN operator must be constant", 0);
             pParse->nErr++;

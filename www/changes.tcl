@@ -17,12 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan ?? (2.2.4)} {
+chng {2002 Jan 22 (2.2.4)} {
 <li>The label to the right of an AS in the column list of a SELECT can now
     be used as part of an expression in the WHERE, ORDER BY, GROUP BY, and/or
     HAVING clauses.</li>
 <li>Fix a bug in the <b>-separator</b> command-line option to the <b>sqlite</b>
     command.</li>
+<li>Fix a problem with the sort order when comparing upper-case strings against
+    characters greater than 'Z' but less than 'a'.</li>
+<li>Report an error if an ORDER BY or GROUP BY expression is constant.</li>
 }
 
 chng {2002 Jan 16 (2.2.3)} {
