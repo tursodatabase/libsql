@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.115 2004/11/19 07:07:31 danielk1977 Exp $
+** $Id: test1.c,v 1.116 2004/11/20 19:18:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -746,10 +746,15 @@ static int sqlite3_mprintf_stronly(
 }
 
 /*
-** Usage: sqlite_malloc_fail N
+** Usage: sqlite_malloc_fail N  ?REPEAT-INTERVAL?
 **
-** Rig sqliteMalloc() to fail on the N-th call.  Turn off this mechanism
-** and reset the sqlite3_malloc_failed variable is N==0.
+** Rig sqliteMalloc() to fail on the N-th call and every REPEAT-INTERVAL call
+** after that.  If REPEAT-INTERVAL is 0 or is omitted, then only a single
+** malloc will fail.  If REPEAT-INTERVAL is 1 then all mallocs after the
+** first failure will continue to fail on every call.  If REPEAT-INTERVAL is
+** 2 then every other malloc will fail.  And so forth.
+**
+** Turn off this mechanism and reset the sqlite3_malloc_failed variable is N==0.
 */
 #ifdef SQLITE_DEBUG
 static int sqlite_malloc_fail(
@@ -759,12 +764,19 @@ static int sqlite_malloc_fail(
   char **argv            /* Text of each argument */
 ){
   int n;
-  if( argc!=2 ){
+  int rep;
+  if( argc!=2 && argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " N\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+  if( argc==3 ){
+    if( Tcl_GetInt(interp, argv[2], &rep) ) return TCL_ERROR;
+  }else{
+    rep = 0;
+  }
   sqlite3_iMallocFail = n;
+  sqlite3_iMallocReset = rep;
   sqlite3_malloc_failed = 0;
   return TCL_OK;
 }

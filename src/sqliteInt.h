@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.340 2004/11/16 15:50:20 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.341 2004/11/20 19:18:01 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -250,9 +250,10 @@ extern int sqlite3_malloc_failed;
 ** only.  They only work if SQLITE_DEBUG is defined.
 */
 #ifdef SQLITE_DEBUG
-extern int sqlite3_nMalloc;       /* Number of sqliteMalloc() calls */
-extern int sqlite3_nFree;         /* Number of sqliteFree() calls */
-extern int sqlite3_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
+extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
+extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
+extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
+extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
 #endif
 
 /*

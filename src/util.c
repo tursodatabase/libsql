@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.121 2004/11/04 04:34:15 drh Exp $
+** $Id: util.c,v 1.122 2004/11/20 19:18:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -51,11 +51,15 @@ int sqlite3_malloc_failed = 0;
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
-** is used to check for memory leaks.
+** is used to check for memory leaks.  The iMallocFail and iMallocReset
+** values are used to simulate malloc() failures during testing in 
+** order to verify that the library correctly handles an out-of-memory
+** condition.
 */
 int sqlite3_nMalloc;         /* Number of sqliteMalloc() calls */
 int sqlite3_nFree;           /* Number of sqliteFree() calls */
 int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
+int sqlite3_iMallocReset = -1; /* When iMallocFail reaches 0, set to this */
 #if SQLITE_DEBUG>1
 static int memcnt = 0;
 #endif
@@ -81,7 +85,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
       fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
               n, zFile,line);
 #endif
-      sqlite3_iMallocFail--;
+      sqlite3_iMallocFail = sqlite3_iMallocReset;
       return 0;
     }
   }

@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.10 2004/06/30 09:49:24 danielk1977 Exp $
+# $Id: malloc.test,v 1.11 2004/11/20 19:18:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +33,7 @@ for {set go 1; set i 1} {$go} {incr i} {
      catch {db close}
      catch {file delete -force test.db}
      catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i
+     sqlite_malloc_fail $i [expr {$i%4}]
      set v [catch {sqlite3 db test.db} msg]
      if {$v} {
        set msg ""
