@@ -17,9 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Sep 22 (2.0-beta-1)} {
+chng {2001 Sep 27 (2.0-alpha-3)} {
 <li>SQLite now honors the UNIQUE keyword in CREATE UNIQUE INDEX.  Primary
-    keys are required to unique indices.</li>
+    keys are required to be unique.</li>
+<li>File format changed back to what it was for alpha-1</li>
 <li>Fixes to the rollback and locking behavior</li>
 }
 

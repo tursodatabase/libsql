@@ -1,5 +1,5 @@
-C Fixed\sthe\ssupport\sof\sUNIQUE\sand\sPRIMARY\sKEY.\s(CVS\s268)
-D 2001-09-27T15:11:54
+C Alpha-3\s(CVS\s269)
+D 2001-09-27T15:13:40
 F Makefile.in fe9d96d6a7b04b3000a24692c2a3761840bbbf97
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 17fadc361fb942d644f92116388409c937c9fa79
@@ -89,7 +89,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl c1891efdc00cd76eec72bdbf8b446195902932a3
 F www/c_interface.tcl 52ae81c89bf906b358e04857bd3f76b1a7f61c1b
-F www/changes.tcl 5d0c66ad2bcc9750c7cb6773052e0202a0e7b26d
+F www/changes.tcl d06af04f300162e47ac066e125ef34e863a19ca2
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/index.tcl fd8ef2d78f22022d2baea03371a1add75d98d236
@@ -100,7 +100,7 @@ F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 34c42967f3d52dfb65d9f31db4f6995d098ec1f7
-R 738ff05ebc1672d0941631329247a92e
+P 116fdad06868acf6aca9e75c2c3497c0511a42c3
+R bab102652f094d1047c0063db1742af9
 U drh
-Z b9a4ce432fac1a7969450da73881d616
+Z b41297f7bc20aa98a04e339482b2110b
