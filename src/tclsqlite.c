@@ -23,12 +23,12 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.12 2000/10/19 14:59:27 drh Exp $
+** $Id: tclsqlite.c,v 1.13 2001/01/31 13:28:09 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
 #include "sqlite.h"
-#include <tcl.h>
+#include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: db.c,v 1.5 2001/01/29 01:27:20 drh Exp $
+** $Id: db.c,v 1.6 2001/01/31 13:28:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pg.h"
@@ -33,9 +33,9 @@ struct Db {
   Pgr *pPgr;            /* The pager for the database */
   DbCursor *pCursor;    /* All open cursors */
   int inTransaction;    /* True if a transaction is in progress */
-  int nContents;        /* Number of slots in aContents[] */
-  int nAlloc;           /* Space allocated for aContents[] */
-  u32 *aContents;       /* Contents table for the database */
+  u32 freeList;         /* List of free blocks */
+  int nTable;           /* Number of slots in aContent[] */
+  u32 *aTable;          /* Root page numbers for all tables */
 };
 
 /*
@@ -52,8 +52,6 @@ struct DbIdxpt {
   int pgno;         /* The page number */
   u32 *aPage;       /* The page data */
   int idx;          /* Index into pPage[] */
-  int hashLB;       /* Lower bound on hash at this level */
-  int hashUB;       /* Upper bound on hash at this level */
 };
 
 /*
@@ -69,79 +67,45 @@ struct DbCursor {
 };
 
 /*
-** Used for rebalancing
-*/
-typedef struct DbEntry DbEntry;
-struct DbEntry {
-  int nByte;      /* Space needed on leaf to record this entry */
-  int pgno;       /* Page on which this entry is currently found */
-  int idx;        /* Index slot in part that points to leaf "pgno" */
-  u32 *aPage;     /* Pointer to the leaf for this entry */
-  u32 *aEntry;    /* Pointer to the actual text of this entry */
-  DbEntry *pNext; /* Next entry in a list of them all */
-};
-typedef struct DbEntrySet DbEntrySet;
-struct DbEntrySet {
-  u32 *pIndex;         /* The index node above the leaf pages being balanced */
-  int nAlloc;          /* Number of slots allocated in aEntry[] */
-  int nEntry;          /* Number of slots in aEntry[] actually used */
-  DbEntry *pFirst;     /* First entry in hash order */
-  DbEntry aEntry[100]; /* Descriptions of actual database entries */
-};
+** Data layouts
+**
+** LEAF:
+**    x[0]          Magic number: BLOCK_LEAF
+**    x[1]          If root page, total number of entries in this table
+**    ...           One or more entries follow the leaf.
+**
+** Entry:
+**    x[N+0]        Number of u32-sized words in this entry
+**    x[N+1]        Hash value for this entry
+**    x[N+2]        Number of bytes of key in the payload
+**    x[N+3]        Number of bytes of data in the payload
+**    x{N+4]...     The payload area.
+**
+** INDEX:
+**    x[0]          Magic number: BLOCK_INDEX
+**    x[1]          If root page: total number of entries in this table
+**    x[2]          Number of slots in this index (Max value of N)
+**    x[2*N+3]      Page number containing entries with hash <= x[2*N+4]
+**    x[2*N+4]      The maximum hash value for entries on page x[2*N+3].
+**
+** FREE:
+**    x[0]          Magic number: BLOCK_FREE
+**    x[1]          Page number of the next free block on the free list
+**
+** PAGE1:
+**    x[0]          Magic number: BLOCK_PAGE1
+**    x[1]          First page of the freelist
+**    x[2]          Number of tables in this database
+**    x[N+3]        Root page for table N
 
 /*
 ** The first word of every page is some combination of these values
 ** used to indicate its function.
 */
-#define BLOCK_MAGIC            0x24e47190
-#define BLOCK_INDEX            0x00000001
-#define BLOCK_LEAF             0x00000002
-#define BLOCK_FREE             0x00000003
-#define BLOCK_OVERFLOW         0x00000004
-#define BLOCK_CONTENTS         0x00000005
-#define BLOCK_MAGIC_MASK       0xfffffff8
-#define BLOCK_TYPE_MASK        0x00000007
-
-/*
-** Free blocks:
-**
-**     0.   BLOCK_MAGIC | BLOCK_FREE
-**     1.   address of next block on freelist
-**
-** Leaf blocks:
-**
-**     0.   BLOCK_MAGIC | BLOCK_LEAF 
-**     1.   number of table entries  (only used if a table root block)
-**     entries....
-**         0.  size of this entry (measured in u32's)
-**         1.  hash
-**         2.  keysize  (in bytes)
-**         3.  datasize (in bytes)
-**         4.  payload
-**
-** Payload area:
-**
-**     *   up to LOCAL_PAYLOAD bytes of data
-**     *   10 page number of direct blocks
-**     *   1 indirect block
-**     *   1 double-indirect block
-**
-** Index block:
-**
-**     0.   BLOCK_MAGIC | BLOCK_INDEX
-**     1.   number of table entries  (only used if a table root block)
-**     2.   entries in this index block
-**     entries...
-**         0.  largest hash value for pgno
-**         1.  pgno of subblock
-**
-** Contents block:  (The first page in the file)
-**     0.   BLOCK_MAGIC | BLOCK_CONTENTS
-**     1.   zero
-**     2.   number of bytes of payload
-**     3.   freelist
-**     4... root pages numbers of tables
-*/
+#define BLOCK_PAGE1            0x24e47191
+#define BLOCK_INDEX            0x7ac53b46
+#define BLOCK_LEAF             0x60c45eef
+#define BLOCK_FREE             0x5b2dda47
 
 /*
 ** The number of u32-sized objects that will fit on one page.
@@ -154,33 +118,46 @@ struct DbEntrySet {
 #define N_DIRECT  10
 
 /*
-** The maximum amount of payload that will fit on on the same
-** page as a leaf, assuming the leaf contains only a single
-** database entry and the entry uses no overflow pages.
+** The maximum amount of payload (in bytes) that will fit on on the same
+** page as a leaf.  In other words, the maximum amount of payload
+** that does not require any overflow pages.
+**
+** This size is chosen so that a least 3 entry will fit on every 
+** leaf.  That guarantees it will always be possible to add a new
+** entry after a page split.
 */
-#define LOCAL_PAYLOAD  (SQLITE_PAGE_SIZE - (8+N_DIRECT)*sizeof(u32))
+#define LOCAL_PAYLOAD (((U32_PER_PAGE-2)/3 - (6+N_DIRECT))*sizeof(u32))
 
 /*
 ** Allocate a new page.  Return both the page number and a pointer
 ** to the page data.  The calling function is responsible for unref-ing
 ** the page when it is no longer needed.
+**
+** The page is obtained from the freelist if there is anything there.
+** If the freelist is empty, the new page comes from the end of the
+** database file.
 */
 int allocPage(Db *pDb, u32 *pPgno, u32 **ppPage){
   u32 pgno;
   int rc;
 
-  if( pDb->aContent==0 ) return SQLITE_NOMEM;
+  if( pDb->aTable==0 ) return SQLITE_NOMEM;
 
   /* Try to reuse a page from the freelist
   */
-  pgno = pDb->aContent[0];
-  if( pgno!=0 ){
-    rc = sqlitePgGet(pDb->pPgr, pgno, (void**)ppPage);
+  if( pDb->freeList==0 ){
+    u32 *pPage;
+    rc = sqlitePgGet(pDb->pPgr, pDb->freeList, &pPage);
     if( rc==SQLITE_OK ){
-      pDb->aContent[0] = pFree[1];
-      *pPgno = pgno;
-      memset(*ppPage, 0, SQLITE_PAGE_SIZE);
-      return SQLITE_OK;
+      if( pPage[0]==BLOCK_FREE ){
+        *pPgno = pDb->freeList;
+        *ppPage = aPage;
+        pDb->freeList = aPage[1];
+        memset(*ppPage, 0, SQLITE_PAGE_SIZE);
+        return SQLITE_OK;
+      }
+      /* This only happens if we have database corruption */
+      sqlitePgUnref(pPage);
     }
   }
 
@@ -200,17 +177,17 @@ int allocPage(Db *pDb, u32 *pPgno, u32 **ppPage){
 ** Return a page to the freelist and dereference the page.
 */
 static void freePage(DB *pDb, u32 pgno, u32 *aPage){
-  if( pDb->aContent==0 ) return;
   if( pgno==0 ) return
   if( aPage==0 ){
     int rc;
     rc = sqlitePgGet(pDb->pPgr, pgno, &aPage);
     if( rc!=SQLITE_OK ) return;
   }
-  aPage[0] = BLOCK_MAGIC | BLOCK_FREE;
-  aPage[1] = pDb->aContent[0];
+  assert( sqlitePgNum(aPage)==pgno );
+  aPage[0] = BLOCK_FREE;
+  aPage[1] = pDb->freeList;
+  pDb->freeList = pgno;
   memset(&aPage[2], 0, SQLITE_PAGE_SIZE - 2*sizeof(u32));
-  pDb->aContent[0] = pgno;
   sqlitePgTouch(aPage);
   sqlitePgUnref(aPage);
 }
@@ -535,11 +512,11 @@ static int payloadWrite(Db *pDb, u32 *aPage, int offset, int amt, void *pBuf){
 }
 
 /*
-** Release any and all overflow pages associated with data starting
-** with byte "newSize".  oldSize is the amount of payload before doing
-** the free operation.
+** Resize the payload area.  If the payload area descreases in size,
+** this routine deallocates unused overflow pages.  If the payload
+** area increases in size, this routine is a no-op.
 */
-static int payloadFree(Db *pDb, u32 *aPage, int newSize, int oldSize){
+static int payloadResize(Db *pDb, u32 *aPage, int oldSize, int newSize){
   int i, j;          /* Loop counters */
   int first, last;   /* Indices of first and last pages to be freed */
   int rc;            /* Return code from sqlitePgGet() */
@@ -638,13 +615,9 @@ static int payloadFree(Db *pDb, u32 *aPage, int newSize, int oldSize){
 ** Allocate space for the content table in the given Db structure.
 ** return SQLITE_OK on success and SQLITE_NOMEM if it fails.
 */
-static int sqliteDbExpandContent(Db *pDb, int newSize){
-  if( pDb->nAlloc>=newSize ) return SQLITE_OK;
-  pDb->nAlloc = newSize;
-  pDb->aContent = sqliteRealloc( pDb->aContent, pDb->nAlloc*sizeof(u32));
-  if( pDb->aContent==0 ){
-    pDb->nContent = 0;
-    pDb->nAlloc = 0;
+static int sqliteDbExpandTableArray(Db *pDb){
+  pDb->aTable = sqliteRealloc( pDb->aTable, pDb->nTable*sizeof(u32));
+  if( pDb->aTable==0 ){
     pDb->inTranaction = 0;
     return SQLITE_NOMEM;
   }
@@ -676,16 +649,15 @@ int sqliteDbOpen(const char *filename, Db **ppDb){
   if( rc!=0 ) goto open_err;
   if( nPage==0 ){
     sqlitePgBeginTransaction(pDb->pPgr);
-    aPage1[0] = BLOCK_MAGIC|BLOCK_CONTENT;
-    aPage1[2] = sizeof(u32)*10;
+    aPage1[0] = BLOCK_PAGE1;
     sqlitePgTouch(aPage1);
     sqlitePgCommit(pDb->pPgr);
   }
-  pDb->nContent = aPage1[2]/sizeof(u32);
-  pDb->nAlloc = 0;
-  rc = sqliteDbExpandContent(pDb, pDb->nContent);
+  pDb->freeList = aPage[1];
+  pDb->nTable = aPage[2];
+  rc = sqliteDbExpandTableArray(pDb);
   if( rc!=SQLITE_OK ) goto open_err;
-  rc = payloadRead(pDb, &aPage1[3], 0, aPage1[2], pDb->aContent);
+  rc = payloadRead(pDb, &aPage1[3], 0, pDb->nTable*sizeof(u32), pDb->aTable);
   sqlitePgUnref(aPage1);
   if( rc!=SQLITE_OK ) goto open_err;
   *ppDb = pDb;
@@ -744,8 +716,9 @@ int sqliteDbCommit(Db *pDb){
   }
   rc = sqlitePgGet(pDb->pPgr, 1, &aPage1);
   if( rc!=SQLITE_OK ) return rc;
-  aPage1[2] = pDb->nContent*sizeof(u32);
-  payloadWrite(pDb, 0, aPage1[2], pDb->aContent);
+  aPage1[1] = pDb->freeList;
+  aPage1[2] = pDb->nTable;
+  payloadWrite(pDb, &aPage1[3], 0, pDb->nTable*sizeof(u32), pDb->aTable);
   sqlitePgUnref(aPage1);
   rc = sqlitePgCommit(pDb->pPgr);
   if( rc!=SQLITE_OK ) return rc;
@@ -764,11 +737,13 @@ int sqliteDbRollback(Db *pDb){
   if( rc!=SQLITE_OK ) return rc;
   rc = sqlitePgGet(pDb->pPgr, 1, &aPage1);
   if( rc!=SQLITE_OK ) return rc;
-  pDb->nContent = SWB(aPage1[3]) + 2;
-  if( sqliteDbExpandContent(pDb, pDb->nContent)!=SQLITE_OK ){
+  pDb->freeList = aPage1[1];
+  pDb->nTable = aPage1[2];
+  if( sqliteDbExpandTableArray(pDb)!=SQLITE_OK ){
     return SQLITE_NOMEM;
   }
-  payloadRead(pDb, &aPage1[3], 0, pDb->nContent*sizeof(u32), pDb->aContent);
+  payloadRead(pDb, &aPage1[3], 0, pDb->nTable*sizeof(u32), pDb->aTable);
+  sqlitePgUnref(aPage1);
   pDb->inTransaction = 0;
   return SQLITE_OK;
 }
@@ -778,38 +753,35 @@ int sqliteDbRollback(Db *pDb){
 ** that is used to open a cursor into that table into *pTblno.
 */
 int sqliteDbCreateTable(Db *pDb, int *pTblno){
-  u32 *pPage;
+  u32 *aPage;
   u32 pgno;
   int rc;
   int swTblno;
   int i;
 
-  rc = allocPage(pDb, &pgno, &pPage);
+  rc = allocPage(pDb, &pgno, &aPage);
   if( rc!=SQLITE_OK ){
     return rc;
   }
   tblno = -1;
-  for(i=2; i<pDb->nContent; i++){
-    if( pDb->aContent[i]==0 ){
-      tblno = i - 2;
+  for(i=0; i<pDb->nTable; i++){
+    if( pDb->aTable[i]==0 ){
+      tblno = i;
       break;
     }
   }
   if( tblno<0 ){
-    tblno = pDb->aContent[1];
+    pDb->nTable++;
+    rc = sqliteExpandTableArray(pDb);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
   }
-  if( tblno+2 >= pDb->nContent ){
-    sqliteDbExpandContent(pDb, tblno+2);
-  }
-  if( pDb->aContent==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    pDb->aContent[tblno+2] = pgno;
-    pPage[0] = SWB(BLOCK_MAGIC | BLOCK_LEAF);
-    memset(&pPage[1], 0, SQLITE_PAGE_SIZE - sizeof(u32));
-    sqlitePgTouch(pPage);
-  }
-  sqlitePgUnref(pPage);
+  pDb->aTable[tblno] = pgno;
+  aPage[0] = BLOCK_LEAF;
+  memset(&aPage[1], 0, SQLITE_PAGE_SIZE - sizeof(u32));
+  sqlitePgTouch(aPage);
+  sqlitePgUnref(aPage);
   return rc;
 }
 
@@ -823,22 +795,22 @@ static int sqliteDbDropPage(Db *pDb, u32 pgno){
   rc = sqlitePgGet(pDb->pPgr, pgno, (void**)&aPage);
   if( rc!=SQLITE_OK ) return rc;
   switch(  aPage[0] ){
-    case BLOCK_MAGIC | BLOCK_INDEX: {
+    case BLOCK_INDEX: {
       int n, i;
       n = aPage[2];
       for(i=0; i<n; i++){
-        u32 subpgno = aPage[4+i*2];
+        u32 subpgno = aPage[3 + i*2];
         if( subpgno>0 ) sqliteDbDropPage(pDb, subpgno);
       }
       freePage(pDb, pgno, aPage);
       break;
     }
-    case BLOCK_MAGIC | BLOCK_LEAF: {
+    case BLOCK_LEAF: {
       int i = 2;
       while( i<U32_PER_PAGE ){
         int entrySize = aPage[i];
         if( entrySize==0 ) break;
-        payloadFree(pDb, &aPage[i+4], 0, aPage[i+2]+aPage[i+3]);
+        payloadResize(pDb, &aPage[i+4], aPage[i+2]+aPage[i+3], 0);
         i += entrySize;
       }
       freePage(pDb, pgno, aPage);
@@ -874,14 +846,17 @@ static int sqliteDbDropTable(Db *pDb, int tblno){
 
   /* Find the root page for the table to be dropped.
   */
-  if( pDb->aContent==0 ){
+  if( pDb->aTable==0 ){
     return SQLITE_NOMEM;
   }
-  if( tblno<0 || tblno+2>=pDb->nContent || pDb->aContent[tblno+2]==0 ){
+  if( tblno<0 || tblno>=pDb->nTable || pDb->aTable[tblno]==0 ){
     return SQLITE_NOTFOUND;
   }
-  pgno = pDb->aContent[tblno+2];
-  pDb->aContent[tblno+2] = 0;
+  pgno = pDb->aTable[tblno];
+  pDb->aTable[tblno] = 0;
+  if( tblno==pDb->nTable-1 ){
+    pDb->nTable--;
+  }
 
   /* Reset any cursors pointing to the table that is about to
   ** be dropped */
@@ -906,15 +881,15 @@ int sqliteDbCursorOpen(Db *pDb, int tblno, DbCursor **ppCur){
 
   /* Translate the table number into a page number
   */
-  if( pDb->aContent==0 ){
+  if( pDb->aTable==0 ){
     *ppCur = 0;
     return SQLITE_NOMEM;
   }
-  if( tblno<0 || tblno+2>=pDb->nContent || pDb->aContent[tblno+2]==0 ){
+  if( tblno<0 || tblno>=pDb->nContent || pDb->aTable[tblno]==0 ){
     *ppCur = 0;
     return SQLITE_NOTFOUND;
   }
-  pgno = SWB(pDb->aContent[tblno+2]);
+  pgno = pDb->aTable[tblno];
   
   /* Allocate the cursor
   */
@@ -965,10 +940,10 @@ static int sqliteDbGotoFirst(DbCursor *pCur, int i){
   while( rc < 0 ){
     u32 *aPage = pCur->aLevel[i].aPage;
     assert( aPage!=0 );
-    switch( SWB(aPage[0]) ){
-      case BLOCK_LEAF | BLOCK_MAGIC: {
-        if( aPage[1]!=0 ){
-          pCur->aLevel[i].idx = 1;
+    switch( aPage[0] ){
+      case BLOCK_LEAF: {
+        if( aPage[2]!=0 ){
+          pCur->aLevel[i].idx = 2;
           pCur->onEntry = 1;
         }else{
           sqliteDbResetCursor(pCur, 1);
@@ -976,16 +951,16 @@ static int sqliteDbGotoFirst(DbCursor *pCur, int i){
         rc = SQLITE_OK;
         break;
       }
-      case BLOCK_INDEX | BLOCK_MAGIC: {
-        int n = SWB(aPage[2]);
-        if( n<2 || n>=((SQLITE_PAGE_SIZE/sizeof(u32))-3)/2 ){
+      case BLOCK_INDEX: {
+        int n = aPage[2];
+        if( n<2 || n>=((U32_PER_PAGE - 3)/2) ){
           sqliteDbResetCur(pCur, 1);
           rc = SQLITE_CORRUPT;
           break;
         }
         pCur->nLevel++;
         i++;
-        pCur->aLevel[i].pgno = SWB(aPage[4]);
+        pCur->aLevel[i].pgno = aPage[3];
         rc = sqlitePgGet(pCur->pDb->pPgr, pCur->aLevel[i].pgno,
                     &pCur->aLevel[i].aPage);
         if( rc != SQLITE_OK ){
@@ -1003,6 +978,8 @@ static int sqliteDbGotoFirst(DbCursor *pCur, int i){
   }
   return rc;
 }
+
+################
 
 /*
 ** Move the cursor to the first entry in the table.

@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.9 2001/01/22 00:31:53 drh Exp $
+# $Id: tester.tcl,v 1.10 2001/01/31 13:28:09 drh Exp $
 
 # Create a test database
 #
@@ -36,7 +36,9 @@ if {![info exists dbprefix]} {
 }
 switch $dbprefix {
   gdbm: {
-   file delete -force testdb
+   if {[catch {file delete -force testdb}]} {
+     exec rm -rf testdb
+   }
    file mkdir testdb
   }
   memory: {
@@ -154,4 +156,12 @@ proc execsql2 {sql} {
     }
   }
   return $result
+}
+
+# Delete a file or directory
+#
+proc forcedelete {filename} {
+  if {[catch {file delete -force $filename}]} {
+    exec rm -rf $filename
+  }
 }

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: db.h,v 1.4 2001/01/29 01:27:20 drh Exp $
+** $Id: db.h,v 1.5 2001/01/31 13:28:09 drh Exp $
 */
 
 typedef struct Db Db;
@@ -47,5 +47,5 @@ int sqliteDbCursorRead(DbCursor*, int amt, int offset, void *buf);
 int sqliteDbCursorReadKey(DbCursor*, int amt, int offset, void *buf);
 int sqliteDbCursorWrite(DbCursor*, int amt, int offset, const void *buf);
 
-int sqliteDbCursorFind(DbCursor*, int nKey, const void *pKey, int createSize);
+int sqliteDbCursorFind(DbCursor*, int nKey, const void *pKey, int createFlag);
 int sqliteDbCursorResize(DbCursor*, int nData);

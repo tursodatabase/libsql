@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the crosscompile.html file.
 #
-set rcsid {$Id: crosscompile.tcl,v 1.3 2000/10/11 19:28:53 drh Exp $}
+set rcsid {$Id: crosscompile.tcl,v 1.4 2001/01/31 13:28:09 drh Exp $}
 
 puts {<html>
 <head>
@@ -148,9 +148,9 @@ cat &gt;&gt;systems.h &lt;&lt;\END
 #undef  UNLOCK_FILE
 #define UNLOCK_FILE(x)
 #undef  READLOCK_FILE
-#define READLOCK_FILE(x)
+#define READLOCK_FILE(x)  lock_val=0;
 #undef  WRITELOCK_FILE
-#define WRITELOCK_FILE(x)
+#define WRITELOCK_FILE(x) lock_val=0;
 #endif
 END
 </pre></blockquote>

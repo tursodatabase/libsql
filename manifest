@@ -1,5 +1,5 @@
-C :-)\s(CVS\s1713)
-D 2001-01-29T01:27:20
+C Working\sbetter\swith\sWin95.\nContinued\swork\son\sthe\snew\sdb.c\sbackend.\s(CVS\s1714)
+D 2001-01-31T13:28:08
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -10,8 +10,8 @@ F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F doc/report1.txt ad0a41513479f1be0355d1f3f074e66779ff2282
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
 F src/build.c 7aa5879bf58ea6bbff22c26c59d1130021fa6ca4
-F src/db.c c789cd4491afcdeddc2327107dcf3d15d4558e1a
-F src/db.h 7109f0acd9694c58529fbf98ad6f51a74fb95bc8
+F src/db.c fff070e77423bbf98f5b138f23c605006a61066d
+F src/db.h 6c8b8b6777f7c55b37cb851e9fe4bc3f379920c0
 F src/dbbe.c 162d29b09ac379f160892c5795efc14099dcc8eb
 F src/dbbe.h 0435a36906a839cce062608f51bd9d3e79878fec
 F src/dbbegdbm.c 5bfcb1b4ee47a98c5eae83041e9716cd3233fd0e
@@ -23,15 +23,15 @@ F src/main.c 92fcd6d967ceee1f96a5b9543779eef6e9b56913
 F src/parse.y 25ee4d8efccc4b247c32fe4ab194e3dd8fd5a4ee
 F src/pg.c 2981173b2a752ef3578168e7af1a32ff22b70db6
 F src/pg.h a95c4803a1aae99449aa2c0a1af0c8d863a3f340
-F src/printf.c 1efb6b3e7f28a93be57132de3f8f400d2ac1460e
-F src/random.c 3dc42fb35d834901577aa547308ff3c8941fea25
+F src/printf.c af0dc65c293427272e1949c7807b1d88f10004fd
+F src/random.c b36c3f57dc80c8f354e6bfbf39cf1e1de021d54a
 F src/select.c 0cadab95c8011ddbffe804de94f12f3c0e317863
 F src/shell.c 441e20913cde0bb71281f4027623c623530241cd
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 7c1a53f020418d89d13ed2fe9c477ff54540755d
 F src/sqliteInt.h fd513fa6b7ac94919f85ebfa183aaa194284ce16
 F src/table.c 5be76051a8ed6f6bfa641f4adc52529efa34fbf9
-F src/tclsqlite.c 178adf318eab2ff480c288a87541d4ab1c37d985
+F src/tclsqlite.c 2a925e1835c348f07dd17c87d95ae9a577833407
 F src/tokenize.c 6843f1d7a5d2ee08ceb10bdecfcc8684131ffcf7
 F src/update.c 9692fbac8e95fdbc5318d39db576aa6c57b9c8ab
 F src/util.c 0298100e6427a4b644f767ede12276fa7170fbb6
@@ -40,7 +40,7 @@ F src/vdbe.h d94224ad39c8e9de83dda8d8f960059eb71c0780
 F src/where.c fcc2c2c84fe81a008485a32c680db3eb0aee5d22
 F test/all.test 15cac2f6b2d4c55bf896212aff3cc9d6597b0490
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
-F test/dbbe.test bd2cd9fe84c6d69b6ae42ac5f55b1e940bdca886
+F test/dbbe.test 27deeebf2a01da97cabaab8dc7f34ca3b51a0123
 F test/delete.test 402ee3ccb6e544582d24c573ef70b34d09583ae7
 F test/expr.test 48273bf48a15d226c35829f702af4254c0ff6795
 F test/func.test 02aed8845b98bde1043dda97455de1d37238ebb3
@@ -58,7 +58,7 @@ F test/select5.test e2b9d51d88cbd6c307c2c05b0ef55fe7ba811ac2
 F test/sort.test d582086c4bb7df3fbf50aa72e69d7e235e9f8e31
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test eaa25951c0f18615763cd3dc248ea4bc38739c05
-F test/tester.tcl e053e14aa986c05a87de0b5635e76566f1e022ae
+F test/tester.tcl e24caef6d07c58c16b24e7afc967464b288a4065
 F test/update.test 62f6ce99ff31756aab0ca832ff6d34c5a87b6250
 F test/vacuum.test 2127748ff4ddb409212efbb6d9fb9c469ea1b49c
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
@@ -75,7 +75,7 @@ F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
 F www/changes.tcl cb276a239c98524731e2780c70deb01b2e7e4bcc
-F www/crosscompile.tcl bee79c34f6c3f162ec1c6f5294e79f73651d27ee
+F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
 F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
@@ -84,7 +84,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P edb01b1275c3de7c398522b5826c898917811247
-R fad18d8d52121b49568c3b69513e9996
+P 3259a53111bd19417e78160174bd67c69098494a
+R 75bfcecb552e742e2d0e7291a0cc0ff8
 U drh
-Z f548d6e222a005fc922c38f88384f46b
+Z 45825268c6b006d5b2dd82f20b34d079

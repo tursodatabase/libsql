@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in dbbe.c.
 #
-# $Id: dbbe.test,v 1.4 2000/10/16 22:06:43 drh Exp $
+# $Id: dbbe.test,v 1.5 2001/01/31 13:28:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,13 +32,13 @@ source $testdir/tester.tcl
 #
 do_test dbbe-1.1 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   set v [catch {sqlite db testdb 0444} msg]
   lappend v $msg
 } {1 {can't find directory "testdb"}}
 do_test dbbe-1.2 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   set v [catch {sqlite db testdb/dummy 0666} msg]
   lappend v $msg
 } {1 {can't find or create directory "testdb/dummy"}}
@@ -49,7 +49,7 @@ do_test dbbe-1.2 {
 #
 do_test dbbe-1.3 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   set v [catch {sqlite db testdb 0666} msg]
   lappend v $msg
 } {0 {}}
@@ -58,7 +58,7 @@ do_test dbbe-1.3 {
 #
 do_test dbbe-1.4 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   set fd [open testdb w]
   puts $fd hi!
   close $fd
@@ -70,7 +70,7 @@ do_test dbbe-1.4 {
 #
 do_test dbbe-1.5 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   file mkdir testdb
   file attributes testdb -permissions 0
   set v [catch {sqlite db testdb 0666} msg]
@@ -81,7 +81,7 @@ do_test dbbe-1.5 {
 #
 do_test dbbe-1.6 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   sqlite db testdb 0666
   execsql {CREATE TABLE t1(x int)}
   db close
@@ -91,7 +91,7 @@ do_test dbbe-1.6 {
 } {1 {access permission denied for testdb/sqlite_master.tbl}}
 do_test dbbe-1.6b {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   sqlite db testdb 0666
   execsql {CREATE TABLE t1(x int)}
   db close
@@ -105,7 +105,7 @@ do_test dbbe-1.6b {
 #
 do_test dbbe-2.1 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   sqlite db testdb 0666
   execsql {
     CREATE TABLE t1(x int);
@@ -123,7 +123,7 @@ do_test dbbe-2.1 {
 #
 do_test dbbe-3.1 {
   catch {db close}
-  file delete -force testdb
+  forcedelete testdb
   sqlite db testdb 0666
   execsql {CREATE TABLE t1(x int)}
   db close

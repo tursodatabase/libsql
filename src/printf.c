@@ -46,7 +46,6 @@
 **      +  All functions are fully reentrant.
 **
 */
-#include <ctype.h>
 #include "sqliteInt.h"
 
 /*
@@ -262,7 +261,7 @@ static int vxprintf(
       }
       c = *++fmt;
     }else{
-      while( isdigit(c) ){
+      while( c>='0' && c<='9' ){
         width = width*10 + c - '0';
         c = *++fmt;
       }
@@ -282,7 +281,7 @@ static int vxprintf(
 #endif
         c = *++fmt;
       }else{
-        while( isdigit(c) ){
+        while( c>='0' && c<='9' ){
           precision = precision*10 + c - '0';
           c = *++fmt;
         }

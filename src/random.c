@@ -27,10 +27,10 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.1 2001/01/13 14:34:07 drh Exp $
+** $Id: random.c,v 1.2 2001/01/31 13:28:09 drh Exp $
 */
 #include "sqliteInt.h"
-
+#include <time.h>
 
 /*
 ** Get a single 8-bit random value from the RC4 PRNG.
