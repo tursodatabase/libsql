@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 Feb 14 (2.8.0)} {
+<li>Modified the journal file format to make it more resistant to corruption
+    that can occur after an OS crash or power failure.</li>
+<li>Added a new C/C++ API that does not use callback for returning data.</li>
+}
+
 chng {2003 Jan 25 (2.7.6)} {
 <li>Performance improvements.  The library is now much faster.</li>
 <li>Added the <b>sqlite_set_authorizer()</b> API.  Formal documentation has

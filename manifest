@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\srollback\slogic\sfor\sthe\snew\sjournal\sformat.\s(CVS\s864)
-D 2003-02-13T01:58:21
+C Update\sthe\sdocumentation\sfor\sthe\snew\sjournal\sformat\sto\sbe\sintroduced\sin\nversion\s2.8.0.\s(CVS\s865)
+D 2003-02-13T02:54:03
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -135,17 +135,17 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl bca0aea880d043ed1bc0ad3bb39e24043f88b5bf
-F www/changes.tcl b48068eabfd0ff603d90f75b01bed295f23198e2
+F www/changes.tcl 546f966c8df2c872d1117da0c6e5c8304b0e9577
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 06276ff6c3e369374bb83034cc9d4a7d3a2a34a1
-F www/fileformat.tcl 5e3009b1451364602916da986501b94d8516bbb4
-F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
+F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
+F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
 F www/index.tcl b5265ca54a5124ec40bffb7c7943e072e074d61a
-F www/lang.tcl 7ad51d873059368a98bcc2afec60d6ba4bb5688a
+F www/lang.tcl 9bd9380dceba83d11fe268e0142c05ee06c757db
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8968bc063607856775ad63b6594d40c55cf288c0
-R 5afba469118d5ff096906c926faadaaa
+P 7c22aa3f817e737cfd943d903856756468e8678b
+R 496fbf0dd37f4b8503d955d31fa52734
 U drh
-Z dea82f51b0a81ba078f1ce14af670302
+Z 1eae5b92d00b5a748205e87d73d3dd5a

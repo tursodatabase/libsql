@@ -1,7 +1,7 @@
 #
 # Run this script to generated a fileformat.html output file
 #
-set rcsid {$Id: fileformat.tcl,v 1.7 2003/02/12 14:09:45 drh Exp $}
+set rcsid {$Id: fileformat.tcl,v 1.8 2003/02/13 02:54:04 drh Exp $}
 
 puts {<html>
 <head>
@@ -72,22 +72,37 @@ the journal file.
 
 <p>
 A journal file begins with 8 bytes as follows:
-0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, and 0xd5.
+0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, and 0xd6.
 Processes that are attempting to rollback a journal use these 8 bytes
 as a sanity check to make sure the file they think is a journal really
-is a valid journal.  There is no significance to the choice of
-bytes here - the values were obtained from /dev/random. 
+is a valid journal.  Prior version of SQLite used different journal
+file formats.  The magic numbers for these prior formats is differ
+so that if a new version of the library attempts to rollback a journal
+created by an earlier version, it can detect that the journal uses
+an obsolete format and make the necessary adjustments.  This article
+describes only the newest journal format - supported as of version
+2.8.0.
 </p>
 
 <p>
-Following the 8 byte prefix is a single 4-byte integer that is the
+Following the 8 byte prefix is a three 4-byte integers that tell us
+the number of pages that have been committed to the journal,
+a magic number used for
+sanity checking each page, and the
 original size of the main database file before the transaction was
-started.  The main database file is truncated back to this size
-as part of the rollback process.
-The size is expressed in pages (1024 bytes per page) and is
-a big-endian number.  That means that the most significant byte
-occurs first.  All multi-byte integers in the journal file are
-written as big-endian numbers.  That way, a journal file that is
+started.  The number of committed pages is used to limit how far
+into the journal to read.  The use of the checksum magic number is
+described below.
+The original size of the database is used to restore the database
+file back to its original size.
+The size is expressed in pages (1024 bytes per page).
+</p>
+
+<p>
+All three integers in the journal header and all other multi-byte
+numbers used in the journal file are big-endian.
+That means that the most significant byte
+occurs first.  That way, a journal file that is
 originally created on one machine can be rolled back by another
 machine that uses a different byte order.  So, for example, a
 transaction that failed to complete on your big-endian SparcStation
@@ -95,10 +110,11 @@ can still be rolled back on your little-endian Linux box.
 </p>
 
 <p>
-After the 8-byte prefix and the 4-byte initial database size, the
+After the 8-byte prefix and the three 4-byte integers, the
 journal file consists of zero or more page records.  Each page
 record is a 4-byte (big-endian) page number followed by 1024 bytes
-of data.  The data is the original content of the database page
+of data and a 4-byte checksum.  
+The data is the original content of the database page
 before the transaction was started.  So to roll back the transaction,
 the data is simply written into the corresponding page of the
 main database file.  Pages can appear in the journal in any order,
@@ -108,16 +124,36 @@ appeared at the beginning of the journal.
 </p>
 
 <p>
+The so-called checksum at the end of each record is not really a
+checksum - it is the sum of the page number and the magic number which
+was the second integer in the journal header.  The purpose of this
+value is to try to detect journal corruption that might have occurred
+because of a power loss or OS crash that occurred which the journal
+file was being written to disk.  It could have been the case that the
+meta-data for the journal file, specifically the size of the file, had
+been written to the disk so that when the machine reboots it appears that
+file is large enough to hold the current record.  But even though the
+file size has changed, the data for the file might not have made it to
+the disk surface at the time of the OS crash or power loss.  This means
+that after reboot, the end of the journal file will contain quasi-random
+garbage data.  The checksum is an attempt to detect such corruption.  If
+the checksum does not match, that page of the journal is not rolled back.
+</p>
+
+<p>
 Here is a summary of the journal file format:
 </p>
 
 <ul>
-<li>8 byte prefix: 0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, x0d5</li>
-<li>4 byte initial database page count, big-endian.</li>
+<li>8 byte prefix: 0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd6</li>
+<li>4 byte number of records in journal</li>
+<li>4 byte magic number used for page checksums</li>
+<li>4 byte initial database page count</li>
 <li>Zero or more instances of the following:
    <ul>
-   <li>4 byte page number - big-endian</li>
+   <li>4 byte page number</li>
    <li>1024 bytes of original data for the page</li>
+   <li>4 byte checksum</li>
    </ul>
 </li>
 </ul>
@@ -235,8 +271,8 @@ Here is a summary of the information contained on page 1 in the b-tree layer:
 <li>4 byte integer used to determine the byte-order</li>
 <li>4 byte integer which is the first page of the freelist</li>
 <li>4 byte integer which is the number of pages on the freelist</li>
-<li>16 bytes of meta-data arranged as four 4-byte integers</li>
-<li>948 bytes of unused space</li>
+<li>36 bytes of meta-data arranged as nine 4-byte integers</li>
+<li>928 bytes of unused space</li>
 </ul>
 
 <h3>3.2 &nbsp; Structure Of A Single B-Tree Page</h3>
@@ -741,7 +777,13 @@ disabled.
 </p>
 
 <p>
-The fourth meta-value is currently unused.
+The fourth meta-value is safety level added in version 2.8.0.
+A value of 1 corresponds to a SYNCHRONOUS setting of OFF.  In other
+words, SQLite does not pause to wait for journal data to reach the disk
+surface before overwriting pages of the database.  A value of 2 corresponds
+to a SYNCHRONOUS setting of NORMAL.  A value of 3 corresponds to a
+SYNCHRONOUS setting of FULL. If the value is 0, that means it has not
+been initialized so the default synchronous setting of NORMAL is used.
 </p>
 
 }

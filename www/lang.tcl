@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.49 2003/01/29 22:58:27 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.50 2003/02/13 02:54:04 drh Exp $}
 
 puts {<html>
 <head>
@@ -1080,23 +1080,30 @@ with caution.</p>
     everytime you reopen the database.</p></li>
 
 <li><p><b>PRAGMA default_synchronous;
-       <br>PRAGMA default_synchronous = ON;
+       <br>PRAGMA default_synchronous = FULL;
+       <br>PRAGMA default_synchronous = NORMAL;
        <br>PRAGMA default_synchronous = OFF;</b></p>
     <p>Query or change the setting of the "synchronous" flag in
-    the database.  When synchronous is on (the default), the SQLite database
-    engine will pause at critical moments to make sure that data has actually
-    be written to the disk surface.  (In other words, it invokes the
-    equivalent of the <b>fsync()</b> system call.)  In synchronous mode,
-    an SQLite database should be fully recoverable even if the operating
-    system crashes or power is interrupted unexpectedly.  The penalty for
-    this assurance is that some database operations take longer because the
-    engine has to wait on the (relatively slow) disk drive.  The alternative
-    is to turn synchronous off.  With synchronous off, SQLite continues
-    processing as soon as it has handed data off to the operating system.
+    the database.  When synchronous is FULL, the SQLite database engine will
+    pause at critical moments to make sure that data has actually been 
+    written to the disk surface before continuing.  This ensures that if
+    the operating system crashes or if there is a power failure, the database
+    will be uncorrupted after rebooting.  FULL synchronous is very 
+    safe, but it is also slow.  
+    When synchronous is NORMAL (the default), the SQLite database
+    engine will still pause at the most critical moments, but less often
+    than in FULL mode.  There is a very small (though non-zero) chance that
+    a power failure at just the wrong time could corrupt the database in
+    NORMAL mode.  But in practice, you are more likely to suffer
+    a catastrophic disk failure or some other unrecoverable hardware
+    fault.  So NORMAL is the default mode.
+    With synchronous OFF, SQLite continues without pausing
+    as soon as it has handed data off to the operating system.
     If the application running SQLite crashes, the data will be safe, but
-    the database could (in theory) become corrupted if the operating system
-    crashes or the computer suddenly loses power.  On the other hand, some
-    operations are as much as 50 or more times faster with synchronous off.
+    the database might become corrupted if the operating system
+    crashes or the computer loses power before that data has been written
+    to the disk surface.  On the other hand, some
+    operations are as much as 50 or more times faster with synchronous OFF.
     </p>
     <p>This pragma changes the synchronous mode persistently.  Once changed,
     the mode stays as set even if the database is closed and reopened.  The
@@ -1179,7 +1186,8 @@ with caution.</p>
     </td></table></blockquote></li>
 
 <li><p><b>PRAGMA synchronous;
-       <br>PRAGMA synchronous = ON;
+       <br>PRAGMA synchronous = FULL;
+       <br>PRAGMA synchronous = NORMAL;
        <br>PRAGMA synchronous = OFF;</b></p>
     <p>Query or change the setting of the "synchronous" flag in
     the database for the duration of the current database connect.

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.7 2002/08/13 23:02:59 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.8 2003/02/13 02:54:04 drh Exp $ }
 
 puts {<html>
 <head>
@@ -155,6 +155,24 @@ occurred since version 1.0.0:
   2.7.0 and later database.  Hence version 2.6.3 and earlier of SQLite 
   will be unable to read a 2.7.0 or later database.  But version 2.7.0
   and later of SQLite will read earlier database version.</p>
+  </td>
+</tr>
+<tr>
+  <td valign="top">2.7.6 to 2.8.0</td>
+  <td valign="top">2003-Feb-14</td>
+  <td><p>Version 2.8.0 introduces a change to the format of the rollback
+  journal file.  The main database file format is unchanged.  Versions
+  2.7.6 and earlier can read and write 2.8.0 databases and vice versa.
+  Version 2.8.0 can rollback a transation that was started by version
+  2.7.6 and earlier.  But version 2.7.6 and earlier cannot rollback a
+  transaction started by version 2.8.0 or later.</p>
+
+  <p>The only time this would ever be an issue is when you have a program
+  using version 2.8.0 or later that crashes with an incomplete
+  transaction, then you try to examine the database using version 2.7.6 or
+  earlier.  The 2.7.6 code will not be able to read the journal file
+  and thus will not be able to rollback the incomplete transaction
+  to restore the database.</p>
   </td>
 </tr>
 </table>
