@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.7 2004/01/30 02:01:05 drh Exp $
+# $Id: minmax.test,v 1.8 2004/02/25 13:47:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -124,7 +124,7 @@ do_test minmax-3.3 {
 
 do_test minmax-4.1 {
   execsql {
-    SELECT coalesce(min(x),-1), coalesce(max(x),-1) FROM
+    SELECT coalesce(min(x+0),-1), coalesce(max(x+0),-1) FROM
       (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
   }
 } {1 20}
@@ -235,6 +235,28 @@ do_test minmax-7.4 {
     SELECT * FROM (SELECT min(x) FROM t1);
   }
 } 1
+
+# Make sure min(x) and max(x) work correctly when the datatype is
+# TEXT instead of NUMERIC.  Ticket #623.
+#
+do_test minmax-8.1 {
+  execsql {
+    CREATE TABLE t4(a TEXT);
+    INSERT INTO t4 VALUES('1234');
+    INSERT INTO t4 VALUES('234');
+    INSERT INTO t4 VALUES('34');
+    SELECT min(a), max(a) FROM t4;
+  }
+} {1234 34}
+do_test minmax-8.2 {
+  execsql {
+    CREATE TABLE t5(a INTEGER);
+    INSERT INTO t5 VALUES('1234');
+    INSERT INTO t5 VALUES('234');
+    INSERT INTO t5 VALUES('34');
+    SELECT min(a), max(a) FROM t5;
+  }
+} {34 1234}
 
 
 finish_test

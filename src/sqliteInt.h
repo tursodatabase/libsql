@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.219 2004/02/24 01:05:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.220 2004/02/25 13:47:33 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -423,10 +423,12 @@ struct FuncDef {
   void (*xFunc)(sqlite_func*,int,const char**);  /* Regular function */
   void (*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
   void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
-  int nArg;                                  /* Number of arguments */
-  int dataType;                              /* Datatype of the result */
-  void *pUserData;                           /* User data parameter */
-  FuncDef *pNext;                            /* Next function with same name */
+  signed char nArg;         /* Number of arguments.  -1 means unlimited */
+  signed char dataType;     /* Arg that determines datatype.  -1=NUMERIC, */
+                            /* -2=TEXT. -3=SQLITE_ARGS */
+  u8 includeTypes;          /* Add datatypes to args of xFunc and xStep */
+  void *pUserData;          /* User data parameter */
+  FuncDef *pNext;           /* Next function with same name */
 };
 
 /*
@@ -1172,6 +1174,7 @@ void sqliteUpdate(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, SrcList*, Expr*, int, ExprList**);
 void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);
+int sqliteExprCodeExprList(Parse*, ExprList*, int);
 void sqliteExprIfTrue(Parse*, Expr*, int, int);
 void sqliteExprIfFalse(Parse*, Expr*, int, int);
 Table *sqliteFindTable(sqlite*,const char*, const char*);

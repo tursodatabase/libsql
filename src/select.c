@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.158 2004/02/22 20:05:01 drh Exp $
+** $Id: select.c,v 1.159 2004/02/25 13:47:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2309,6 +2309,7 @@ int sqliteSelect(
   ** processing.  
   */
   else{
+    AggExpr *pAgg;
     if( pGroupBy ){
       int lbl1;
       for(i=0; i<pGroupBy->nExpr; i++){
@@ -2318,29 +2319,27 @@ int sqliteSelect(
       if( pParse->db->file_format>=4 ) sqliteAddKeyType(v, pGroupBy);
       lbl1 = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1);
-      for(i=0; i<pParse->nAgg; i++){
-        if( pParse->aAgg[i].isAgg ) continue;
-        sqliteExprCode(pParse, pParse->aAgg[i].pExpr);
+      for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
+        if( pAgg->isAgg ) continue;
+        sqliteExprCode(pParse, pAgg->pExpr);
         sqliteVdbeAddOp(v, OP_AggSet, 0, i);
       }
       sqliteVdbeResolveLabel(v, lbl1);
     }
-    for(i=0; i<pParse->nAgg; i++){
+    for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
       Expr *pE;
-      int j;
-      if( !pParse->aAgg[i].isAgg ) continue;
-      pE = pParse->aAgg[i].pExpr;
+      int nExpr;
+      FuncDef *pDef;
+      if( !pAgg->isAgg ) continue;
+      assert( pAgg->pFunc!=0 );
+      assert( pAgg->pFunc->xStep!=0 );
+      pDef = pAgg->pFunc;
+      pE = pAgg->pExpr;
+      assert( pE!=0 );
       assert( pE->op==TK_AGG_FUNCTION );
-      if( pE->pList ){
-        for(j=0; j<pE->pList->nExpr; j++){
-          sqliteExprCode(pParse, pE->pList->a[j].pExpr);
-        }
-      }
+      nExpr = sqliteExprCodeExprList(pParse, pE->pList, pDef->includeTypes);
       sqliteVdbeAddOp(v, OP_Integer, i, 0);
-      sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList ? pE->pList->nExpr : 0);
-      assert( pParse->aAgg[i].pFunc!=0 );
-      assert( pParse->aAgg[i].pFunc->xStep!=0 );
-      sqliteVdbeChangeP3(v, -1, (char*)pParse->aAgg[i].pFunc, P3_POINTER);
+      sqliteVdbeOp3(v, OP_AggFunc, 0, nExpr, (char*)pDef, P3_POINTER);
     }
   }
 

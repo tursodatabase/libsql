@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.159 2004/02/20 23:34:07 drh Exp $
+** $Id: main.c,v 1.160 2004/02/25 13:47:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -953,7 +953,7 @@ const char *sqlite_libencoding(void){ return sqlite_encoding; }
 ** sqlite_create_aggregate(), and vice versa.
 **
 ** If nArg is -1 it means that this function will accept any number
-** of arguments, including 0.
+** of arguments, including 0.  The maximum allowed value of nArg is 127.
 */
 int sqlite_create_function(
   sqlite *db,          /* Add the function to this database connection */
@@ -965,6 +965,7 @@ int sqlite_create_function(
   FuncDef *p;
   int nName;
   if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
+  if( nArg<-1 || nArg>127 ) return 1;
   nName = strlen(zName);
   if( nName>255 ) return 1;
   p = sqliteFindFunction(db, zName, nName, nArg, 1);
@@ -986,6 +987,7 @@ int sqlite_create_aggregate(
   FuncDef *p;
   int nName;
   if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
+  if( nArg<-1 || nArg>127 ) return 1;
   nName = strlen(zName);
   if( nName>255 ) return 1;
   p = sqliteFindFunction(db, zName, nName, nArg, 1);

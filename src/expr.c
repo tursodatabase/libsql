@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.111 2004/02/22 20:05:01 drh Exp $
+** $Id: expr.c,v 1.112 2004/02/25 13:47:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -823,7 +823,6 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
     case TK_FUNCTION: {
       int n = pExpr->pList ? pExpr->pList->nExpr : 0;  /* Number of arguments */
       int no_such_func = 0;       /* True if no such function exists */
-      int is_type_of = 0;         /* True if is the special TypeOf() function */
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
       int i;
@@ -836,11 +835,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       if( pDef==0 ){
         pDef = sqliteFindFunction(pParse->db, zId, nId, -1, 0);
         if( pDef==0 ){
-          if( n==1 && nId==6 && sqliteStrNICmp(zId, "typeof", 6)==0 ){
-            is_type_of = 1;
-          }else {
-            no_such_func = 1;
-          }
+          no_such_func = 1;
         }else{
           wrong_num_args = 1;
         }
@@ -868,16 +863,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
                                allowAgg && !is_agg, pIsAgg);
       }
       if( pDef==0 ){
-        if( is_type_of ){
-          pExpr->op = TK_STRING;
-          if( sqliteExprType(pExpr->pList->a[0].pExpr)==SQLITE_SO_NUM ){
-            pExpr->token.z = "numeric";
-            pExpr->token.n = 7;
-          }else{
-            pExpr->token.z = "text";
-            pExpr->token.n = 4;
-          }
-        }
+        /* Already reported an error */
       }else if( pDef->dataType>=0 ){
         if( pDef->dataType<n ){
           pExpr->dataType = 
@@ -1155,7 +1141,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_GLOB:
     case TK_LIKE:
     case TK_FUNCTION: {
-      int i;
       ExprList *pList = pExpr->pList;
       int nExpr = pList ? pList->nExpr : 0;
       FuncDef *pDef;
@@ -1164,9 +1149,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqliteFindFunction(pParse->db, zId, nId, nExpr, 0);
       assert( pDef!=0 );
-      for(i=0; i<nExpr; i++){
-        sqliteExprCode(pParse, pList->a[i].pExpr);
-      }
+      nExpr = sqliteExprCodeExprList(pParse, pList, pDef->includeTypes);
       sqliteVdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
       break;
     }
@@ -1268,6 +1251,36 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     break;
   }
+}
+
+/*
+** Generate code that pushes the value of every element of the given
+** expression list onto the stack.  If the includeTypes flag is true,
+** then also push a string that is the datatype of each element onto
+** the stack after the value.
+**
+** Return the number of elements pushed onto the stack.
+*/
+int sqliteExprCodeExprList(
+  Parse *pParse,     /* Parsing context */
+  ExprList *pList,   /* The expression list to be coded */
+  int includeTypes   /* TRUE to put datatypes on the stack too */
+){
+  struct ExprList_item *pItem;
+  int i, n;
+  Vdbe *v;
+  if( pList==0 ) return 0;
+  v = sqliteGetVdbe(pParse);
+  n = pList->nExpr;
+  for(pItem=pList->a, i=0; i<n; i++, pItem++){
+    sqliteExprCode(pParse, pItem->pExpr);
+    if( includeTypes ){
+      sqliteVdbeOp3(v, OP_String, 0, 0, 
+         sqliteExprType(pItem->pExpr)==SQLITE_SO_NUM ? "numeric" : "text",
+         P3_STATIC);
+    }
+  }
+  return includeTypes ? n*2 : n;
 }
 
 /*

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.8 2004/02/24 01:05:32 drh Exp $
+** $Id: copy.c,v 1.9 2004/02/25 13:47:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -37,7 +37,6 @@ void sqliteCopy(
   int i;
   Vdbe *v;
   int addr, end;
-  Index *pIdx;
   char *zFile = 0;
   const char *zDb;
   sqlite *db = pParse->db;

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.41 2004/02/22 17:49:34 drh Exp $
+** $Id: func.c,v 1.42 2004/02/25 13:47:32 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -28,35 +28,36 @@
 /*
 ** Implementation of the non-aggregate min() and max() functions
 */
-static void minFunc(sqlite_func *context, int argc, const char **argv){
+static void minmaxFunc(sqlite_func *context, int argc, const char **argv){
   const char *zBest; 
   int i;
+  int (*xCompare)(const char*, const char*);
+  int mask;    /* 0 for min() or 0xffffffff for max() */
 
   if( argc==0 ) return;
+  mask = (int)sqlite_user_data(context);
   zBest = argv[0];
   if( zBest==0 ) return;
-  for(i=1; i<argc; i++){
+  if( argv[1][0]=='n' ){
+    xCompare = sqliteCompare;
+  }else{
+    xCompare = strcmp;
+  }
+  for(i=2; i<argc; i+=2){
     if( argv[i]==0 ) return;
-    if( sqliteCompare(argv[i], zBest)<0 ){
+    if( (xCompare(argv[i], zBest)^mask)<0 ){
       zBest = argv[i];
     }
   }
   sqlite_set_result_string(context, zBest, -1);
 }
-static void maxFunc(sqlite_func *context, int argc, const char **argv){
-  const char *zBest; 
-  int i;
 
-  if( argc==0 ) return;
-  zBest = argv[0];
-  if( zBest==0 ) return;
-  for(i=1; i<argc; i++){
-    if( argv[i]==0 ) return;
-    if( sqliteCompare(argv[i], zBest)>0 ){
-      zBest = argv[i];
-    }
-  }
-  sqlite_set_result_string(context, zBest, -1);
+/*
+** Return the type of the argument.
+*/
+static void typeofFunc(sqlite_func *context, int argc, const char **argv){
+  assert( argc==2 );
+  sqlite_set_result_string(context, argv[1], -1);
 }
 
 /*
@@ -501,32 +502,21 @@ struct MinMaxCtx {
 /*
 ** Routines to implement min() and max() aggregate functions.
 */
-static void minStep(sqlite_func *context, int argc, const char **argv){
+static void minmaxStep(sqlite_func *context, int argc, const char **argv){
   MinMaxCtx *p;
-  p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p==0 || argc<1 || argv[0]==0 ) return;
-  if( p->z==0 || sqliteCompare(argv[0],p->z)<0 ){
-    int len;
-    if( !p->zBuf[0] ){
-      sqliteFree(p->z);
-    }
-    len = strlen(argv[0]);
-    if( len < sizeof(p->zBuf)-1 ){
-      p->z = &p->zBuf[1];
-      p->zBuf[0] = 1;
-    }else{
-      p->z = sqliteMalloc( len+1 );
-      p->zBuf[0] = 0;
-      if( p->z==0 ) return;
-    }
-    strcpy(p->z, argv[0]);
+  int (*xCompare)(const char*, const char*);
+  int mask;    /* 0 for min() or 0xffffffff for max() */
+
+  assert( argc==2 );
+  if( argv[1][0]=='n' ){
+    xCompare = sqliteCompare;
+  }else{
+    xCompare = strcmp;
   }
-}
-static void maxStep(sqlite_func *context, int argc, const char **argv){
-  MinMaxCtx *p;
+  mask = (int)sqlite_user_data(context);
   p = sqlite_aggregate_context(context, sizeof(*p));
   if( p==0 || argc<1 || argv[0]==0 ) return;
-  if( p->z==0 || sqliteCompare(argv[0],p->z)>0 ){
+  if( p->z==0 || (xCompare(argv[0],p->z)^mask)<0 ){
     int len;
     if( !p->zBuf[0] ){
       sqliteFree(p->z);
@@ -562,77 +552,86 @@ static void minMaxFinalize(sqlite_func *context){
 void sqliteRegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
-     int nArg;
-     int dataType;
+     signed char nArg;
+     signed char dataType;
+     u8 argType;               /* 0: none.  1: db  2: (-1) */
      void (*xFunc)(sqlite_func*,int,const char**);
   } aFuncs[] = {
-    { "min",       -1, SQLITE_ARGS,    minFunc    },
-    { "min",        0, 0,              0          },
-    { "max",       -1, SQLITE_ARGS,    maxFunc    },
-    { "max",        0, 0,              0          },
-    { "length",     1, SQLITE_NUMERIC, lengthFunc },
-    { "substr",     3, SQLITE_TEXT,    substrFunc },
-    { "abs",        1, SQLITE_NUMERIC, absFunc    },
-    { "round",      1, SQLITE_NUMERIC, roundFunc  },
-    { "round",      2, SQLITE_NUMERIC, roundFunc  },
-    { "upper",      1, SQLITE_TEXT,    upperFunc  },
-    { "lower",      1, SQLITE_TEXT,    lowerFunc  },
-    { "coalesce",  -1, SQLITE_ARGS,    ifnullFunc },
-    { "coalesce",   0, 0,              0          },
-    { "coalesce",   1, 0,              0          },
-    { "ifnull",     2, SQLITE_ARGS,    ifnullFunc },
-    { "random",    -1, SQLITE_NUMERIC, randomFunc },
-    { "like",       2, SQLITE_NUMERIC, likeFunc   },
-    { "glob",       2, SQLITE_NUMERIC, globFunc   },
-    { "nullif",     2, SQLITE_ARGS,    nullifFunc },
-    { "sqlite_version",0,SQLITE_TEXT,  versionFunc},
-    { "quote",      1, SQLITE_ARGS,    quoteFunc  },
+    { "min",       -1, SQLITE_ARGS,    0, minmaxFunc },
+    { "min",        0, 0,              0, 0          },
+    { "max",       -1, SQLITE_ARGS,    2, minmaxFunc },
+    { "max",        0, 0,              2, 0          },
+    { "typeof",     1, SQLITE_TEXT,    0, typeofFunc },
+    { "length",     1, SQLITE_NUMERIC, 0, lengthFunc },
+    { "substr",     3, SQLITE_TEXT,    0, substrFunc },
+    { "abs",        1, SQLITE_NUMERIC, 0, absFunc    },
+    { "round",      1, SQLITE_NUMERIC, 0, roundFunc  },
+    { "round",      2, SQLITE_NUMERIC, 0, roundFunc  },
+    { "upper",      1, SQLITE_TEXT,    0, upperFunc  },
+    { "lower",      1, SQLITE_TEXT,    0, lowerFunc  },
+    { "coalesce",  -1, SQLITE_ARGS,    0, ifnullFunc },
+    { "coalesce",   0, 0,              0, 0          },
+    { "coalesce",   1, 0,              0, 0          },
+    { "ifnull",     2, SQLITE_ARGS,    0, ifnullFunc },
+    { "random",    -1, SQLITE_NUMERIC, 0, randomFunc },
+    { "like",       2, SQLITE_NUMERIC, 0, likeFunc   },
+    { "glob",       2, SQLITE_NUMERIC, 0, globFunc   },
+    { "nullif",     2, SQLITE_ARGS,    0, nullifFunc },
+    { "sqlite_version",0,SQLITE_TEXT,  0, versionFunc},
+    { "quote",      1, SQLITE_ARGS,    0, quoteFunc  },
+    { "last_insert_rowid", 0, SQLITE_NUMERIC, 1, last_insert_rowid },
+    { "change_count",      0, SQLITE_NUMERIC, 1, change_count      },
+    { "last_statement_change_count",
+                           0, SQLITE_NUMERIC, 1, last_statement_change_count },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",    1, SQLITE_TEXT,    soundexFunc},
+    { "soundex",    1, SQLITE_TEXT,    0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",    2, SQLITE_TEXT,    randStr    },
+    { "randstr",    2, SQLITE_TEXT,    0, randStr    },
 #endif
   };
   static struct {
     char *zName;
-    int nArg;
-    int dataType;
+    signed char nArg;
+    signed char dataType;
+    u8 argType;
     void (*xStep)(sqlite_func*,int,const char**);
     void (*xFinalize)(sqlite_func*);
   } aAggs[] = {
-    { "min",    1, 0,              minStep,      minMaxFinalize },
-    { "max",    1, 0,              maxStep,      minMaxFinalize },
-    { "sum",    1, SQLITE_NUMERIC, sumStep,      sumFinalize    },
-    { "avg",    1, SQLITE_NUMERIC, sumStep,      avgFinalize    },
-    { "count",  0, SQLITE_NUMERIC, countStep,    countFinalize  },
-    { "count",  1, SQLITE_NUMERIC, countStep,    countFinalize  },
+    { "min",    1, 0,              0, minmaxStep,   minMaxFinalize },
+    { "max",    1, 0,              2, minmaxStep,   minMaxFinalize },
+    { "sum",    1, SQLITE_NUMERIC, 0, sumStep,      sumFinalize    },
+    { "avg",    1, SQLITE_NUMERIC, 0, sumStep,      avgFinalize    },
+    { "count",  0, SQLITE_NUMERIC, 0, countStep,    countFinalize  },
+    { "count",  1, SQLITE_NUMERIC, 0, countStep,    countFinalize  },
 #if 0
-    { "stddev", 1, SQLITE_NUMERIC, stdDevStep,   stdDevFinalize },
+    { "stddev", 1, SQLITE_NUMERIC, 0, stdDevStep,   stdDevFinalize },
 #endif
   };
+  static const char *azTypeFuncs[] = { "min", "max", "typeof" };
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
+    void *pArg = aFuncs[i].argType==2 ? (void*)(-1) : db;
     sqlite_create_function(db, aFuncs[i].zName,
-           aFuncs[i].nArg, aFuncs[i].xFunc, 0);
+           aFuncs[i].nArg, aFuncs[i].xFunc, pArg);
     if( aFuncs[i].xFunc ){
       sqlite_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
     }
   }
-  sqlite_create_function(db, "last_insert_rowid", 0, 
-           last_insert_rowid, db);
-  sqlite_function_type(db, "last_insert_rowid", SQLITE_NUMERIC);
-  sqlite_create_function(db, "change_count", 0, change_count, db);
-  sqlite_function_type(db, "change_count", SQLITE_NUMERIC);
-  sqlite_create_function(db, "last_statement_change_count", 0, 
-           last_statement_change_count, db);
-  sqlite_function_type(db, "last_statement_change_count", SQLITE_NUMERIC);
-
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
+    void *pArg = aAggs[i].argType==2 ? (void*)(-1) : db;
     sqlite_create_aggregate(db, aAggs[i].zName,
-           aAggs[i].nArg, aAggs[i].xStep, aAggs[i].xFinalize, 0);
+           aAggs[i].nArg, aAggs[i].xStep, aAggs[i].xFinalize, pArg);
     sqlite_function_type(db, aAggs[i].zName, aAggs[i].dataType);
+  }
+  for(i=0; i<sizeof(azTypeFuncs)/sizeof(azTypeFuncs[0]); i++){
+    int n = strlen(azTypeFuncs[i]);
+    FuncDef *p = sqliteHashFind(&db->aFunc, azTypeFuncs[i], n);
+    while( p ){
+      p->includeTypes = 1;
+      p = p->pNext;
+    }
   }
   sqliteRegisterDateTimeFunctions(db);
 }

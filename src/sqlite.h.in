@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.57 2004/02/12 20:49:36 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.58 2004/02/25 13:47:33 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -440,13 +440,12 @@ int sqlite_create_aggregate(
 ** Use the following routine to define the datatype returned by a
 ** user-defined function.  The second argument can be one of the
 ** constants SQLITE_NUMERIC, SQLITE_TEXT, or SQLITE_ARGS or it
-** can be an integer greater than or equal to zero.  The datatype
-** will be numeric or text (the only two types supported) if the
-** argument is SQLITE_NUMERIC or SQLITE_TEXT.  If the argument is
-** SQLITE_ARGS, then the datatype is numeric if any argument to the
-** function is numeric and is text otherwise.  If the second argument
-** is an integer, then the datatype of the result is the same as the
-** parameter to the function that corresponds to that integer.
+** can be an integer greater than or equal to zero.  When the datatype
+** parameter is non-negative, the type of the result will be the
+** same as the datatype-th argument.  If datatype==SQLITE_NUMERIC
+** then the result is always numeric.  If datatype==SQLITE_TEXT then
+** the result is always text.  If datatype==SQLITE_ARGS then the result
+** is numeric if any argument is numeric and is text otherwise.
 */
 int sqlite_function_type(
   sqlite *db,               /* The database there the function is registered */
