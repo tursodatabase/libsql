@@ -1,5 +1,5 @@
-C Fix\sthe\sshell\stool\sto\sdo\sa\sbetter\sjob\sof\signoring\swhitespace.\s\sTicket\s#234.\s(CVS\s940)
-D 2003-04-26T03:03:07
+C In\sthe\stest\scode,\smake\sseveral\sattempts\sto\sconvert\sa\spointer\sto\sa\sstring\nand\stest\seach\sattempt\sto\smake\ssure\sit\sworks\sbefore\sreturnning,\sin\sorder\sto\nwork\saround\sincompatibilities\sbetween\svarious\ssystems.\s\sTicket\s#284.\s(CVS\s941)
+D 2003-04-26T13:19:39
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -50,7 +50,7 @@ F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h 0c7474068c37a5aad715810c8190266edcbd4f4c
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9e25f98f1765afa0716144ef57abda75c88f688d
-F src/test1.c 4484806861a3099670188a09e12f858ec65aa56c
+F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 92ded93376635f37e2f5a7a8f4077c85d5bce735
-R a6549a02bf88e45588d8dc89d4315963
+P 639957e9f793eddce027050d2655863d82fe8ac9
+R 55c305a0471c4f4afa1a6daa2bfcd3e3
 U drh
-Z 2a7401700105d8209d91c7c271e81f42
+Z f6cc1e6c8eb8613b9394102a1cbb5f97

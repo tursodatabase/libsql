@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.23 2003/04/22 20:30:40 drh Exp $
+** $Id: test1.c,v 1.24 2003/04/26 13:19:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -50,6 +50,36 @@ static int getVmPointer(Tcl_Interp *interp, const char *zArg, sqlite_vm **ppVm){
 }
 
 /*
+** Generate a text representation of a pointer that can be understood
+** by the getDbPointer and getVmPointer routines above.
+**
+** The problem is, on some machines (Solaris) if you do a printf with
+** "%p" you cannot turn around and do a scanf with the same "%p" and
+** get your pointer back.  You have to prepend a "0x" before it will
+** work.  Or at least that is what is reported to me (drh).  But this
+** behavior varies from machine to machine.  The solution used her is
+** to test the string right after it is generated to see if it can be
+** understood by scanf, and if not, try prepending an "0x" to see if
+** that helps.  If nothing works, a fatal error is generated.
+*/
+static int makePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
+  void *p2;
+  sprintf(zPtr, PTR_FMT, p);
+  if( sscanf(zPtr, PTR_FMT, &p2)!=1 || p2!=p ){
+    sprintf(zPtr, "0x" PTR_FMT, p);
+    if( sscanf(zPtr, PTR_FMT, &p2)!=1 || p2!=p ){
+      Tcl_AppendResult(interp, "unable to convert a pointer to a string "
+         "in the file " __FILE__ " in function makePointerStr().  Please "
+         "report this problem to the SQLite mailing list or as a new but "
+         "report.  Please provide detailed information about how you compiled "
+         "SQLite and what computer you are running on.", 0);
+      return TCL_ERROR;
+    }
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:   sqlite_open filename
 **
 ** Returns:  The name of an open database.
@@ -74,7 +104,7 @@ static int sqlite_test_open(
     free(zErr);
     return TCL_ERROR;
   }
-  sprintf(zBuf,PTR_FMT, db);
+  if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -623,7 +653,7 @@ static int test_compile(
     return TCL_ERROR;
   }
   if( vm ){
-    sprintf(zBuf, PTR_FMT, vm);
+    if( makePointerStr(interp, zBuf, vm) ) return TCL_ERROR;
     Tcl_AppendResult(interp, zBuf, 0);
   }
   return TCL_OK;
