@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.14 2000/06/15 16:49:49 drh Exp $
+** $Id: shell.c,v 1.15 2000/06/21 13:59:12 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -136,7 +136,7 @@ struct callback_data {
 /*
 ** These are the allowed modes.
 */
-#define MODE_Line     0  /* One field per line.  Blank line between records */
+#define MODE_Line     0  /* One column per line.  Blank line between records */
 #define MODE_Column   1  /* One record per line in neat columns */
 #define MODE_List     2  /* One record per line with a separator */
 #define MODE_Html     3  /* Generate an XHTML table */

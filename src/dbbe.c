@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.14 2000/06/17 13:12:39 drh Exp $
+** $Id: dbbe.c,v 1.15 2000/06/21 13:59:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -43,7 +43,7 @@
 ** Information about each open disk file is an instance of this 
 ** structure.  There will only be one such structure for each
 ** disk file.  If the VDBE opens the same file twice (as will happen
-** for a self-join, for example) then two DbbeTable structures are
+** for a self-join, for example) then two DbbeCursor structures are
 ** created but there is only a single BeFile structure with an
 ** nRef of 2.
 */
@@ -87,12 +87,12 @@ struct Dbbe {
 /*
 ** An cursor into a database file is an instance of the following structure.
 ** There can only be a single BeFile structure for each disk file, but
-** there can be multiple DbbeTable structures.  Each DbbeTable represents
+** there can be multiple DbbeCursor structures.  Each DbbeCursor represents
 ** a cursor pointing to a particular part of the open BeFile.  The
-** BeFile.nRef field hold a count of the number of DbbeTable structures
+** BeFile.nRef field hold a count of the number of DbbeCursor structures
 ** associated with the same disk file.
 */
-struct DbbeTable {
+struct DbbeCursor {
   Dbbe *pBe;         /* The database of which this record is a part */
   BeFile *pFile;     /* The database file for this table */
   datum key;         /* Most recently used key */
@@ -226,8 +226,9 @@ void sqliteDbbeClose(Dbbe *pBe){
 }
 
 /*
-** Translate the name of a table into the name of a file that holds
-** that table.  Space to hold the filename is obtained from
+** Translate the name of an SQL table (or index) into the name 
+** of a file that holds the key/data pairs for that table or
+** index.  Space to hold the filename is obtained from
 ** sqliteMalloc() and must be freed by the calling function.
 */
 static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable){
@@ -269,7 +270,7 @@ static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
 
 /*
 ** Open a new table cursor.  Write a pointer to the corresponding
-** DbbeTable structure into *ppTable.  Return an integer success
+** DbbeCursor structure into *ppCursr.  Return an integer success
 ** code:
 **
 **    SQLITE_OK          It worked!
@@ -287,25 +288,26 @@ static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
 **                       (This can happen if a SELECT callback tries to
 **                       do an UPDATE or DELETE.)
 **
-** If zTable is 0 or "", then a temporary table is created and opened.
-** This table will be deleted from the disk when it is closed.
+** If zTable is 0 or "", then a temporary database file is created and
+** a cursor to that temporary file is opened.  The temporary file
+** will be deleted from the disk when it is closed.
 */
-int sqliteDbbeOpenTable(
+int sqliteDbbeOpenCursor(
   Dbbe *pBe,              /* The database the table belongs to */
-  const char *zTable,     /* The name of the table */
+  const char *zTable,     /* The SQL name of the file to be opened */
   int writeable,          /* True to open for writing */
-  DbbeTable **ppTable     /* Write the resulting table pointer here */
+  DbbeCursor **ppCursr    /* Write the resulting table pointer here */
 ){
   char *zFile;            /* Name of the table file */
-  DbbeTable *pTable;      /* The new table cursor */
+  DbbeCursor *pCursr;     /* The new table cursor */
   BeFile *pFile;          /* The underlying data file for this table */
   int rc = SQLITE_OK;     /* Return value */
   int rw_mask;            /* Permissions mask for opening a table */
   int mode;               /* Mode for opening a table */
 
-  *ppTable = 0;
-  pTable = sqliteMalloc( sizeof(*pTable) );
-  if( pTable==0 ) return SQLITE_NOMEM;
+  *ppCursr = 0;
+  pCursr = sqliteMalloc( sizeof(*pCursr) );
+  if( pCursr==0 ) return SQLITE_NOMEM;
   if( zTable ){
     zFile = sqliteFileOfTable(pBe, zTable);
     for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
@@ -376,11 +378,11 @@ int sqliteDbbeOpenTable(
       rc = SQLITE_READONLY;
     }
   }
-  pTable->pBe = pBe;
-  pTable->pFile = pFile;
-  pTable->readPending = 0;
-  pTable->needRewind = 1;
-  *ppTable = pTable;
+  pCursr->pBe = pBe;
+  pCursr->pFile = pFile;
+  pCursr->readPending = 0;
+  pCursr->needRewind = 1;
+  *ppCursr = pCursr;
   return rc;
 }
 
@@ -400,28 +402,33 @@ void sqliteDbbeDropTable(Dbbe *pBe, const char *zTable){
 ** Reorganize a table to reduce search times and disk usage.
 */
 void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
-  DbbeTable *pTab;
+  DbbeCursor *pCrsr;
 
-  if( sqliteDbbeOpenTable(pBe, zTable, 1, &pTab)!=SQLITE_OK ){
+  if( sqliteDbbeOpenCursor(pBe, zTable, 1, &pCrsr)!=SQLITE_OK ){
     return;
   }
-  if( pTab && pTab->pFile && pTab->pFile->dbf ){
-    gdbm_reorganize(pTab->pFile->dbf);
+  if( pCrsr && pCrsr->pFile && pCrsr->pFile->dbf ){
+    gdbm_reorganize(pCrsr->pFile->dbf);
   }
-  if( pTab ){
-    sqliteDbbeCloseTable(pTab);
+  if( pCrsr ){
+    sqliteDbbeCloseCursor(pCrsr);
   }
 }
 
 /*
-** Close a table previously opened by sqliteDbbeOpenTable().
+** Close a cursor previously opened by sqliteDbbeOpenCursor().
+**
+** There can be multiple cursors pointing to the same open file.
+** The underlying file is not closed until all cursors have been
+** closed.  This routine decrements the BeFile.nref field of the
+** underlying file and closes the file when nref reaches 0.
 */
-void sqliteDbbeCloseTable(DbbeTable *pTable){
+void sqliteDbbeCloseCursor(DbbeCursor *pCursr){
   BeFile *pFile;
   Dbbe *pBe;
-  if( pTable==0 ) return;
-  pFile = pTable->pFile;
-  pBe = pTable->pBe;
+  if( pCursr==0 ) return;
+  pFile = pCursr->pFile;
+  pBe = pCursr->pBe;
   pFile->nRef--;
   if( pFile->dbf!=NULL ){
     gdbm_sync(pFile->dbf);
@@ -445,10 +452,10 @@ void sqliteDbbeCloseTable(DbbeTable *pTable){
     memset(pFile, 0, sizeof(*pFile));
     sqliteFree(pFile);
   }
-  if( pTable->key.dptr ) free(pTable->key.dptr);
-  if( pTable->data.dptr ) free(pTable->data.dptr);
-  memset(pTable, 0, sizeof(*pTable));
-  sqliteFree(pTable);
+  if( pCursr->key.dptr ) free(pCursr->key.dptr);
+  if( pCursr->data.dptr ) free(pCursr->data.dptr);
+  memset(pCursr, 0, sizeof(*pCursr));
+  sqliteFree(pCursr);
 }
 
 /*
@@ -461,32 +468,32 @@ static void datumClear(datum *p){
 }
 
 /*
-** Fetch a single record from an open table.  Return 1 on success
+** Fetch a single record from an open cursor.  Return 1 on success
 ** and 0 on failure.
 */
-int sqliteDbbeFetch(DbbeTable *pTable, int nKey, char *pKey){
+int sqliteDbbeFetch(DbbeCursor *pCursr, int nKey, char *pKey){
   datum key;
   key.dsize = nKey;
   key.dptr = pKey;
-  datumClear(&pTable->key);
-  datumClear(&pTable->data);
-  if( pTable->pFile && pTable->pFile->dbf ){
-    pTable->data = gdbm_fetch(pTable->pFile->dbf, key);
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  if( pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, key);
   }
-  return pTable->data.dptr!=0;
+  return pCursr->data.dptr!=0;
 }
 
 /*
 ** Return 1 if the given key is already in the table.  Return 0
 ** if it is not.
 */
-int sqliteDbbeTest(DbbeTable *pTable, int nKey, char *pKey){
+int sqliteDbbeTest(DbbeCursor *pCursr, int nKey, char *pKey){
   datum key;
   int result = 0;
   key.dsize = nKey;
   key.dptr = pKey;
-  if( pTable->pFile && pTable->pFile->dbf ){
-    result = gdbm_exists(pTable->pFile->dbf, key);
+  if( pCursr->pFile && pCursr->pFile->dbf ){
+    result = gdbm_exists(pCursr->pFile->dbf, key);
   }
   return result;
 }
@@ -495,30 +502,30 @@ int sqliteDbbeTest(DbbeTable *pTable, int nKey, char *pKey){
 ** Copy bytes from the current key or data into a buffer supplied by
 ** the calling function.  Return the number of bytes copied.
 */
-int sqliteDbbeCopyKey(DbbeTable *pTable, int offset, int size, char *zBuf){
+int sqliteDbbeCopyKey(DbbeCursor *pCursr, int offset, int size, char *zBuf){
   int n;
-  if( offset>=pTable->key.dsize ) return 0;
-  if( offset+size>pTable->key.dsize ){
-    n = pTable->key.dsize - offset;
+  if( offset>=pCursr->key.dsize ) return 0;
+  if( offset+size>pCursr->key.dsize ){
+    n = pCursr->key.dsize - offset;
   }else{
     n = size;
   }
-  memcpy(zBuf, &pTable->key.dptr[offset], n);
+  memcpy(zBuf, &pCursr->key.dptr[offset], n);
   return n;
 }
-int sqliteDbbeCopyData(DbbeTable *pTable, int offset, int size, char *zBuf){
+int sqliteDbbeCopyData(DbbeCursor *pCursr, int offset, int size, char *zBuf){
   int n;
-  if( pTable->readPending && pTable->pFile && pTable->pFile->dbf ){
-    pTable->data = gdbm_fetch(pTable->pFile->dbf, pTable->key);
-    pTable->readPending = 0;
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
   }
-  if( offset>=pTable->data.dsize ) return 0;
-  if( offset+size>pTable->data.dsize ){
-    n = pTable->data.dsize - offset;
+  if( offset>=pCursr->data.dsize ) return 0;
+  if( offset+size>pCursr->data.dsize ){
+    n = pCursr->data.dsize - offset;
   }else{
     n = size;
   }
-  memcpy(zBuf, &pTable->data.dptr[offset], n);
+  memcpy(zBuf, &pCursr->data.dptr[offset], n);
   return n;
 }
 
@@ -526,39 +533,39 @@ int sqliteDbbeCopyData(DbbeTable *pTable, int offset, int size, char *zBuf){
 ** Return a pointer to bytes from the key or data.  The data returned
 ** is ephemeral.
 */
-char *sqliteDbbeReadKey(DbbeTable *pTable, int offset){
-  if( offset<0 || offset>=pTable->key.dsize ) return "";
-  return &pTable->key.dptr[offset];
+char *sqliteDbbeReadKey(DbbeCursor *pCursr, int offset){
+  if( offset<0 || offset>=pCursr->key.dsize ) return "";
+  return &pCursr->key.dptr[offset];
 }
-char *sqliteDbbeReadData(DbbeTable *pTable, int offset){
-  if( pTable->readPending && pTable->pFile && pTable->pFile->dbf ){
-    pTable->data = gdbm_fetch(pTable->pFile->dbf, pTable->key);
-    pTable->readPending = 0;
+char *sqliteDbbeReadData(DbbeCursor *pCursr, int offset){
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
   }
-  if( offset<0 || offset>=pTable->data.dsize ) return "";
-  return &pTable->data.dptr[offset];
+  if( offset<0 || offset>=pCursr->data.dsize ) return "";
+  return &pCursr->data.dptr[offset];
 }
 
 /*
 ** Return the total number of bytes in either data or key.
 */
-int sqliteDbbeKeyLength(DbbeTable *pTable){
-  return pTable->key.dsize;
+int sqliteDbbeKeyLength(DbbeCursor *pCursr){
+  return pCursr->key.dsize;
 }
-int sqliteDbbeDataLength(DbbeTable *pTable){
-  if( pTable->readPending && pTable->pFile && pTable->pFile->dbf ){
-    pTable->data = gdbm_fetch(pTable->pFile->dbf, pTable->key);
-    pTable->readPending = 0;
+int sqliteDbbeDataLength(DbbeCursor *pCursr){
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
   }
-  return pTable->data.dsize;
+  return pCursr->data.dsize;
 }
 
 /*
 ** Make is so that the next call to sqliteNextKey() finds the first
 ** key of the table.
 */
-int sqliteDbbeRewind(DbbeTable *pTable){
-  pTable->needRewind = 1;
+int sqliteDbbeRewind(DbbeCursor *pCursr){
+  pCursr->needRewind = 1;
   return SQLITE_OK;
 }
 
@@ -566,28 +573,28 @@ int sqliteDbbeRewind(DbbeTable *pTable){
 ** Read the next key from the table.  Return 1 on success.  Return
 ** 0 if there are no more keys.
 */
-int sqliteDbbeNextKey(DbbeTable *pTable){
+int sqliteDbbeNextKey(DbbeCursor *pCursr){
   datum nextkey;
   int rc;
-  if( pTable==0 || pTable->pFile==0 || pTable->pFile->dbf==0 ){
-    pTable->readPending = 0;
+  if( pCursr==0 || pCursr->pFile==0 || pCursr->pFile->dbf==0 ){
+    pCursr->readPending = 0;
     return 0;
   }
-  if( pTable->needRewind ){
-    nextkey = gdbm_firstkey(pTable->pFile->dbf);
-    pTable->needRewind = 0;
+  if( pCursr->needRewind ){
+    nextkey = gdbm_firstkey(pCursr->pFile->dbf);
+    pCursr->needRewind = 0;
   }else{
-    nextkey = gdbm_nextkey(pTable->pFile->dbf, pTable->key);
+    nextkey = gdbm_nextkey(pCursr->pFile->dbf, pCursr->key);
   }
-  datumClear(&pTable->key);
-  datumClear(&pTable->data);
-  pTable->key = nextkey;
-  if( pTable->key.dptr ){
-    pTable->readPending = 1;
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  pCursr->key = nextkey;
+  if( pCursr->key.dptr ){
+    pCursr->readPending = 1;
     rc = 1;
   }else{
-    pTable->needRewind = 1;
-    pTable->readPending = 0;
+    pCursr->needRewind = 1;
+    pCursr->readPending = 0;
     rc = 0;
   }
   return rc;
@@ -596,15 +603,15 @@ int sqliteDbbeNextKey(DbbeTable *pTable){
 /*
 ** Get a new integer key.
 */
-int sqliteDbbeNew(DbbeTable *pTable){
+int sqliteDbbeNew(DbbeCursor *pCursr){
   int iKey;
   datum key;
   int go = 1;
   int i;
   struct rc4 *pRc4;
 
-  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return 1;
-  pRc4 = &pTable->pBe->rc4;
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return 1;
+  pRc4 = &pCursr->pBe->rc4;
   while( go ){
     iKey = 0;
     for(i=0; i<4; i++){
@@ -612,7 +619,7 @@ int sqliteDbbeNew(DbbeTable *pTable){
     }
     key.dptr = (char*)&iKey;
     key.dsize = 4;
-    go = gdbm_exists(pTable->pFile->dbf, key);
+    go = gdbm_exists(pCursr->pFile->dbf, key);
   }
   return iKey;
 }   
@@ -621,33 +628,33 @@ int sqliteDbbeNew(DbbeTable *pTable){
 ** Write an entry into the table.  Overwrite any prior entry with the
 ** same key.
 */
-int sqliteDbbePut(DbbeTable *pTable, int nKey,char *pKey,int nData,char *pData){
+int sqliteDbbePut(DbbeCursor *pCursr, int nKey,char *pKey,int nData,char *pData){
   datum data, key;
   int rc;
-  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return SQLITE_ERROR;
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return SQLITE_ERROR;
   data.dsize = nData;
   data.dptr = pData;
   key.dsize = nKey;
   key.dptr = pKey;
-  rc = gdbm_store(pTable->pFile->dbf, key, data, GDBM_REPLACE);
+  rc = gdbm_store(pCursr->pFile->dbf, key, data, GDBM_REPLACE);
   if( rc ) rc = SQLITE_ERROR;
-  datumClear(&pTable->key);
-  datumClear(&pTable->data);
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
   return rc;
 }
 
 /*
 ** Remove an entry from a table, if the entry exists.
 */
-int sqliteDbbeDelete(DbbeTable *pTable, int nKey, char *pKey){
+int sqliteDbbeDelete(DbbeCursor *pCursr, int nKey, char *pKey){
   datum key;
   int rc;
-  datumClear(&pTable->key);
-  datumClear(&pTable->data);
-  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return SQLITE_ERROR;
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return SQLITE_ERROR;
   key.dsize = nKey;
   key.dptr = pKey;
-  rc = gdbm_delete(pTable->pFile->dbf, key);
+  rc = gdbm_delete(pCursr->pFile->dbf, key);
   if( rc ) rc = SQLITE_ERROR;
   return rc;
 }

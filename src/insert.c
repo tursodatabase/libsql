@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.10 2000/06/17 13:12:40 drh Exp $
+** $Id: insert.c,v 1.11 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -36,7 +36,7 @@
 **
 ** The IDLIST following the table name is always optional.  If omitted,
 ** then a list of all columns for the table is substituted.  The IDLIST
-** appears in the pField parameter.  pField is NULL if IDLIST is omitted.
+** appears in the pColumn parameter.  pColumn is NULL if IDLIST is omitted.
 **
 ** The pList parameter holds EXPRLIST in the first form of the INSERT
 ** statement above, and pSelect is NULL.  For the second form, pList is
@@ -48,7 +48,7 @@ void sqliteInsert(
   Token *pTableName,    /* Name of table into which we are inserting */
   ExprList *pList,      /* List of values to be inserted */
   Select *pSelect,      /* A SELECT statement to use as the data source */
-  IdList *pField        /* Field names corresponding to IDLIST. */
+  IdList *pColumn       /* Column names corresponding to IDLIST. */
 ){
   Table *pTab;          /* The table to insert into */
   char *zTab;           /* Name of the table into which we are inserting */
@@ -56,7 +56,7 @@ void sqliteInsert(
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
   int srcTab;           /* Date comes from this temporary cursor if >=0 */
-  int nField;           /* Number of columns in the data */
+  int nColumn;          /* Number of columns in the data */
   int base;             /* First available cursor */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
 
@@ -96,20 +96,20 @@ void sqliteInsert(
     rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab);
     if( rc ) goto insert_cleanup;
     assert( pSelect->pEList );
-    nField = pSelect->pEList->nExpr;
+    nColumn = pSelect->pEList->nExpr;
   }else{
     srcTab = -1;
     assert( pList );
-    nField = pList->nExpr;
+    nColumn = pList->nExpr;
   }
 
   /* Make sure the number of columns in the source data matches the number
   ** of columns to be inserted into the table.
   */
-  if( pField==0 && nField!=pTab->nCol ){
+  if( pColumn==0 && nColumn!=pTab->nCol ){
     char zNum1[30];
     char zNum2[30];
-    sprintf(zNum1,"%d", nField);
+    sprintf(zNum1,"%d", nColumn);
     sprintf(zNum2,"%d", pTab->nCol);
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
        " has ", zNum2, " columns but ",
@@ -117,11 +117,11 @@ void sqliteInsert(
     pParse->nErr++;
     goto insert_cleanup;
   }
-  if( pField!=0 && nField!=pField->nId ){
+  if( pColumn!=0 && nColumn!=pColumn->nId ){
     char zNum1[30];
     char zNum2[30];
-    sprintf(zNum1,"%d", nField);
-    sprintf(zNum2,"%d", pField->nId);
+    sprintf(zNum1,"%d", nColumn);
+    sprintf(zNum2,"%d", pColumn->nId);
     sqliteSetString(&pParse->zErrMsg, zNum1, " values for ",
        zNum2, " columns", 0);
     pParse->nErr++;
@@ -132,20 +132,20 @@ void sqliteInsert(
   ** all elements of the IDLIST really are columns of the table and 
   ** remember the column indices.
   */
-  if( pField ){
-    for(i=0; i<pField->nId; i++){
-      pField->a[i].idx = -1;
+  if( pColumn ){
+    for(i=0; i<pColumn->nId; i++){
+      pColumn->a[i].idx = -1;
     }
-    for(i=0; i<pField->nId; i++){
+    for(i=0; i<pColumn->nId; i++){
       for(j=0; j<pTab->nCol; j++){
-        if( sqliteStrICmp(pField->a[i].zName, pTab->aCol[j].zName)==0 ){
-          pField->a[i].idx = j;
+        if( sqliteStrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
+          pColumn->a[i].idx = j;
           break;
         }
       }
       if( j>=pTab->nCol ){
         sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-           " has no column named ", pField->a[i].zName, 0);
+           " has no column named ", pColumn->a[i].zName, 0);
         pParse->nErr++;
         goto insert_cleanup;
       }
@@ -179,14 +179,14 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
   }
   for(i=0; i<pTab->nCol; i++){
-    if( pField==0 ){
+    if( pColumn==0 ){
       j = i;
     }else{
-      for(j=0; j<pField->nId; j++){
-        if( pField->a[j].idx==i ) break;
+      for(j=0; j<pColumn->nId; j++){
+        if( pColumn->a[j].idx==i ) break;
       }
     }
-    if( pField && j>=pField->nId ){
+    if( pColumn && j>=pColumn->nId ){
       char *zDflt = pTab->aCol[i].zDflt;
       if( zDflt==0 ){
         sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
@@ -209,16 +209,16 @@ void sqliteInsert(
     if( pIdx->pNext ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
     }
-    for(i=0; i<pIdx->nField; i++){
-      int idx = pIdx->aiField[i];
-      if( pField==0 ){
+    for(i=0; i<pIdx->nColumn; i++){
+      int idx = pIdx->aiColumn[i];
+      if( pColumn==0 ){
         j = idx;
       }else{
-        for(j=0; j<pField->nId; j++){
-          if( pField->a[j].idx==idx ) break;
+        for(j=0; j<pColumn->nId; j++){
+          if( pColumn->a[j].idx==idx ) break;
         }
       }
-      if( pField && j>=pField->nId ){
+      if( pColumn && j>=pColumn->nId ){
         char *zDflt = pTab->aCol[idx].zDflt;
         if( zDflt==0 ){
           sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
@@ -231,7 +231,7 @@ void sqliteInsert(
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, idx+base, 0, 0, 0);
   }
 
@@ -245,5 +245,5 @@ void sqliteInsert(
 insert_cleanup:
   if( pList ) sqliteExprListDelete(pList);
   if( pSelect ) sqliteSelectDelete(pSelect);
-  sqliteIdListDelete(pField);
+  sqliteIdListDelete(pColumn);
 }

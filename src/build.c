@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.18 2000/06/17 13:12:39 drh Exp $
+** $Id: build.c,v 1.19 2000/06/21 13:59:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -151,8 +151,8 @@ Index *sqliteFindIndex(sqlite *db, char *zName){
 ** its memory structures.
 **
 ** The index is removed from the database hash table, but it is
-** not unlinked from the table that is being indexed.  Unlinking
-** from the table must be done by the calling function.
+** not unlinked from the Table that is being indexed.  Unlinking
+** from the Table must be done by the calling function.
 */
 static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
   int h;
@@ -173,7 +173,7 @@ static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
 
 /*
 ** Remove the memory data structures associated with the given
-** table.  No changes are made to disk by this routine.
+** Table.  No changes are made to disk by this routine.
 **
 ** This routine just deletes the data structure.  It does not unlink
 ** the table data structure from the hash table.  But does it destroy
@@ -512,11 +512,11 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
-  pIndex->aiField = (int*)&pIndex[1];
-  pIndex->zName = (char*)&pIndex->aiField[pList->nId];
+  pIndex->aiColumn = (int*)&pIndex[1];
+  pIndex->zName = (char*)&pIndex->aiColumn[pList->nId];
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
-  pIndex->nField = pList->nId;
+  pIndex->nColumn = pList->nId;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -533,7 +533,7 @@ void sqliteCreateIndex(
       sqliteFree(pIndex);
       goto exit_create_index;
     }
-    pIndex->aiField[i] = j;
+    pIndex->aiColumn[i] = j;
   }
 
   /* Link the new Index structure to its table and to the other
@@ -590,10 +590,10 @@ void sqliteCreateIndex(
     lbl2 = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
     sqliteVdbeAddOp(v, OP_Key, 0, 0, 0, 0);
-    for(i=0; i<pIndex->nField; i++){
-      sqliteVdbeAddOp(v, OP_Field, 0, pIndex->aiField[i], 0, 0);
+    for(i=0; i<pIndex->nColumn; i++){
+      sqliteVdbeAddOp(v, OP_Field, 0, pIndex->aiColumn[i], 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIndex->nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeKey, pIndex->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
@@ -834,10 +834,10 @@ void sqliteCopy(
       if( pIdx->pNext ){
         sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       }
-      for(j=0; j<pIdx->nField; j++){
-        sqliteVdbeAddOp(v, OP_FileField, pIdx->aiField[j], 0, 0, 0);
+      for(j=0; j<pIdx->nColumn; j++){
+        sqliteVdbeAddOp(v, OP_FileField, pIdx->aiColumn[j], 0, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_PutIdx, i, 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);

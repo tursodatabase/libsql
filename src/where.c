@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.7 2000/06/06 13:54:16 drh Exp $
+** $Id: where.c,v 1.8 2000/06/21 13:59:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,10 +38,10 @@ typedef struct ExprInfo ExprInfo;
 struct ExprInfo {
   Expr *p;                /* Pointer to the subexpression */
   int indexable;          /* True if this subexprssion is usable by an index */
-  int idxLeft;            /* p->pLeft is a field in this table number. -1 if
-                          ** p->pLeft is not the field of any table */
-  int idxRight;           /* p->pRight is a field in this table number. -1 if
-                          ** p->pRight is not the field of any table */
+  int idxLeft;            /* p->pLeft is a column in this table number. -1 if
+                          ** p->pLeft is not the column of any table */
+  int idxRight;           /* p->pRight is a column in this table number. -1 if
+                          ** p->pRight is not the column of any table */
   unsigned prereqLeft;    /* Tables referenced by p->pLeft */
   unsigned prereqRight;   /* Tables referenced by p->pRight */
 };
@@ -94,7 +94,7 @@ static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
 static int exprTableUsage(int base, Expr *p){
   unsigned int mask = 0;
   if( p==0 ) return 0;
-  if( p->op==TK_FIELD ){
+  if( p->op==TK_COLUMN ){
     return 1<< (p->iTable - base);
   }
   if( p->pRight ){
@@ -124,11 +124,11 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
   pInfo->idxLeft = -1;
   pInfo->idxRight = -1;
   if( pExpr->op==TK_EQ && (pInfo->prereqRight & pInfo->prereqLeft)==0 ){
-    if( pExpr->pRight->op==TK_FIELD ){
+    if( pExpr->pRight->op==TK_COLUMN ){
       pInfo->idxRight = pExpr->pRight->iTable - base;
       pInfo->indexable = 1;
     }
-    if( pExpr->pLeft->op==TK_FIELD ){
+    if( pExpr->pLeft->op==TK_COLUMN ){
       pInfo->idxLeft = pExpr->pLeft->iTable - base;
       pInfo->indexable = 1;
     }
@@ -225,41 +225,41 @@ WhereInfo *sqliteWhereBegin(
     ** the most specific usable index.
     **
     ** "Most specific" means that pBestIdx is the usable index that
-    ** has the largest value for nField.  A usable index is one for
-    ** which there are subexpressions to compute every field of the
+    ** has the largest value for nColumn.  A usable index is one for
+    ** which there are subexpressions to compute every column of the
     ** index.
     */
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int j;
-      int fieldMask = 0;
+      int columnMask = 0;
 
-      if( pIdx->nField>32 ) continue;
+      if( pIdx->nColumn>32 ) continue;
       for(j=0; j<nExpr; j++){
         if( aExpr[j].idxLeft==idx 
              && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
-          int iField = aExpr[j].p->pLeft->iField;
+          int iColumn = aExpr[j].p->pLeft->iColumn;
           int k;
-          for(k=0; k<pIdx->nField; k++){
-            if( pIdx->aiField[k]==iField ){
-              fieldMask |= 1<<k;
+          for(k=0; k<pIdx->nColumn; k++){
+            if( pIdx->aiColumn[k]==iColumn ){
+              columnMask |= 1<<k;
               break;
             }
           }
         }
         if( aExpr[j].idxRight==idx 
              && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
-          int iField = aExpr[j].p->pRight->iField;
+          int iColumn = aExpr[j].p->pRight->iColumn;
           int k;
-          for(k=0; k<pIdx->nField; k++){
-            if( pIdx->aiField[k]==iField ){
-              fieldMask |= 1<<k;
+          for(k=0; k<pIdx->nColumn; k++){
+            if( pIdx->aiColumn[k]==iColumn ){
+              columnMask |= 1<<k;
               break;
             }
           }
         }
       }
-      if( fieldMask + 1 == (1<<pIdx->nField) ){
-        if( pBestIdx==0 || pBestIdx->nField<pIdx->nField ){
+      if( columnMask + 1 == (1<<pIdx->nColumn) ){
+        if( pBestIdx==0 || pBestIdx->nColumn<pIdx->nColumn ){
           pBestIdx = pIdx;
         }
       }
@@ -297,12 +297,12 @@ WhereInfo *sqliteWhereBegin(
     }else{
       /* Case 2:  We do have a usable index in pIdx.
       */
-      for(j=0; j<pIdx->nField; j++){
+      for(j=0; j<pIdx->nColumn; j++){
         for(k=0; k<nExpr; k++){
           if( aExpr[k].p==0 ) continue;
           if( aExpr[k].idxLeft==idx 
              && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
-             && aExpr[k].p->pLeft->iField==pIdx->aiField[j]
+             && aExpr[k].p->pLeft->iColumn==pIdx->aiColumn[j]
           ){
             sqliteExprCode(pParse, aExpr[k].p->pRight);
             aExpr[k].p = 0;
@@ -310,7 +310,7 @@ WhereInfo *sqliteWhereBegin(
           }
           if( aExpr[k].idxRight==idx 
              && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-             && aExpr[k].p->pRight->iField==pIdx->aiField[j]
+             && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
           ){
             sqliteExprCode(pParse, aExpr[k].p->pLeft);
             aExpr[k].p = 0;
@@ -318,7 +318,7 @@ WhereInfo *sqliteWhereBegin(
           }
         }
       }
-      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_Fetch, base+pTabList->nId+i, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_NextIdx, base+pTabList->nId+i, brk, 0, cont);
       if( i==pTabList->nId-1 && pushKey ){

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.24 2000/06/19 19:09:09 drh Exp $
+** $Id: select.c,v 1.25 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,14 +86,14 @@ void sqliteParseInfoReset(Parse *pParse){
 ** of a SELECT.
 **
 ** The pEList is used to determine the values for each column in the
-** result row.  Except  if pEList==NULL, then we just read nField
+** result row.  Except  if pEList==NULL, then we just read nColumn
 ** elements from the srcTab table.
 */
 static int selectInnerLoop(
   Parse *pParse,          /* The parser context */
   ExprList *pEList,       /* List of values being extracted */
   int srcTab,             /* Pull data from this table */
-  int nField,             /* Number of fields in the source table */
+  int nColumn,            /* Number of columns in the source table */
   ExprList *pOrderBy,     /* If not NULL, sort results using this key */
   int distinct,           /* If >=0, make sure results are distinct */
   int eDest,              /* How to dispose of the results */
@@ -104,15 +104,15 @@ static int selectInnerLoop(
   Vdbe *v = pParse->pVdbe;
   int i;
 
-  /* Pull the requested fields.
+  /* Pull the requested columns.
   */
   if( pEList ){
     for(i=0; i<pEList->nExpr; i++){
       sqliteExprCode(pParse, pEList->a[i].pExpr);
     }
-    nField = pEList->nExpr;
+    nColumn = pEList->nExpr;
   }else{
-    for(i=0; i<nField; i++){
+    for(i=0; i<nColumn; i++){
       sqliteVdbeAddOp(v, OP_Field, srcTab, i, 0, 0);
     }
   }
@@ -135,7 +135,7 @@ static int selectInnerLoop(
   */
   if( pOrderBy ){
     char *zSortOrder;
-    sqliteVdbeAddOp(v, OP_SortMakeRec, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_SortMakeRec, nColumn, 0, 0, 0);
     zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
     if( zSortOrder==0 ) return 1;
     for(i=0; i<pOrderBy->nExpr; i++){
@@ -152,7 +152,7 @@ static int selectInnerLoop(
   ** table iParm.
   */
   if( eDest==SRT_Union ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_String, iParm, 0, "", 0);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
@@ -160,7 +160,7 @@ static int selectInnerLoop(
   /* Store the result as data using a unique key.
   */
   if( eDest==SRT_Table ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
@@ -171,7 +171,7 @@ static int selectInnerLoop(
   ** the temporary table iParm.
   */
   if( eDest==SRT_Except ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Delete, iParm, 0, 0, 0);
   }else 
 
@@ -180,7 +180,7 @@ static int selectInnerLoop(
   ** item into the set table with bogus data.
   */
   if( eDest==SRT_Set ){
-    assert( nField==1 );
+    assert( nColumn==1 );
     sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
@@ -191,7 +191,7 @@ static int selectInnerLoop(
   ** of the scan loop.
   */
   if( eDest==SRT_Mem ){
-    assert( nField==1 );
+    assert( nColumn==1 );
     sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, iBreak, 0, 0);
   }else
@@ -199,7 +199,7 @@ static int selectInnerLoop(
   /* If none of the above, send the data to the callback function.
   */
   {
-    sqliteVdbeAddOp(v, OP_Callback, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Callback, nColumn, 0, 0, 0);
   }
   return 0;
 }
@@ -210,12 +210,12 @@ static int selectInnerLoop(
 ** we need to run the sorter and output the results.  The following
 ** routine generates the code needed to do that.
 */
-static void generateSortTail(Vdbe *v, int nField){
+static void generateSortTail(Vdbe *v, int nColumn){
   int end = sqliteVdbeMakeLabel(v);
   int addr;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end, 0, 0);
-  sqliteVdbeAddOp(v, OP_SortCallback, nField, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0, 0, 0);
   sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
   sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
 }
@@ -240,7 +240,7 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
       continue;
     }
     p = pEList->a[i].pExpr;
-    if( p->op!=TK_FIELD || pTabList==0 ){
+    if( p->op!=TK_COLUMN || pTabList==0 ){
       char zName[30];
       sprintf(zName, "column%d", i+1);
       sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
@@ -252,12 +252,12 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
  
         zTab = pTabList->a[p->iTable].zAlias;
         if( zTab==0 ) zTab = pTab->zName;
-        sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
+        sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iColumn].zName, 0);
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
         sqliteFree(zName);
       }else{
         Table *pTab = pTabList->a[0].pTab;
-        char *zName = pTab->aCol[p->iField].zName;
+        char *zName = pTab->aCol[p->iColumn].zName;
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
       }
     }
@@ -281,8 +281,8 @@ static const char *selectOpName(int id){
 /*
 ** For the given SELECT statement, do two things.
 **
-**    (1)  Fill in the pTab fields of the IdList that defines the set
-**         of tables we are scanning.
+**    (1)  Fill in the pTabList->a[].pTab fields in the IdList that 
+**         defines the set of tables that should be scanned.
 **
 **    (2)  If the columns to be extracted variable (pEList) is NULL
 **         (meaning that a "*" was used in the SQL statement) then
@@ -338,7 +338,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
 /*
 ** This routine associates entries in an ORDER BY expression list with
 ** columns in a result.  For each ORDER BY expression, the opcode of
-** the top-level node is changed to TK_FIELD and the iField value of
+** the top-level node is changed to TK_COLUMN and the iColumn value of
 ** the top-level node is filled in with column number and the iTable
 ** value of the top-level node is filled with iTable parameter.
 **
@@ -390,8 +390,8 @@ static int matchOrderbyToColumn(
         match = 1;
       }
       if( match ){
-        pE->op = TK_FIELD;
-        pE->iField = j;
+        pE->op = TK_COLUMN;
+        pE->iColumn = j;
         pE->iTable = iTable;
         pOrderBy->a[i].done = 1;
         break;
@@ -630,7 +630,7 @@ int sqliteSelect(
   WhereInfo *pWInfo;
   Vdbe *v;
   int isAgg = 0;         /* True for select lists like "count(*)" */
-  ExprList *pEList;      /* List of fields to extract.  NULL means "*" */
+  ExprList *pEList;      /* List of columns to extract.  NULL means "*" */
   IdList *pTabList;      /* List of tables to select from */
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
@@ -669,7 +669,7 @@ int sqliteSelect(
 
   /* Look up every table in the table list and create an appropriate
   ** columnlist in pEList if there isn't one already.  (The parser leaves
-  ** a NULL in the pEList field if the SQL said "SELECT * FROM ...")
+  ** a NULL in the p->pEList if the SQL said "SELECT * FROM ...")
   */
   if( fillInColumnList(pParse, p) ){
     return 1;
@@ -724,7 +724,7 @@ int sqliteSelect(
   ** need to handle subquerys and temporary tables.  From here on we
   ** are committed to keeping the same value for pParse->nTab.
   **
-  ** Resolve the field names and do a semantics check on all the expressions.
+  ** Resolve the column names and do a semantics check on all the expressions.
   */
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
@@ -906,7 +906,7 @@ int sqliteSelect(
       assert( pE->pList!=0 && pE->pList->nExpr==1 );
       sqliteExprCode(pParse, pE->pList->a[0].pExpr);
       sqliteVdbeAddOp(v, OP_AggGet, 0, i, 0, 0);
-      switch( pE->iField ){
+      switch( pE->iColumn ){
         case FN_Min:  op = OP_Min;   break;
         case FN_Max:  op = OP_Max;   break;
         case FN_Avg:  op = OP_Add;   break;

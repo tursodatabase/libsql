@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.3 2000/06/19 19:09:09 drh Exp $
+# $Id: update.test,v 1.4 2000/06/21 13:59:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,20 +54,20 @@ do_test update-3.1 {
   execsql {SELECT * FROM test1 ORDER BY f1}
 } {1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024}
 
-# Unknown field name in an expression
+# Unknown column name in an expression
 #
 do_test update-3.2 {
   set v [catch {execsql {UPDATE test1 SET f1=f3*2 WHERE f2==32}} msg]
   lappend v $msg
-} {1 {no such field: f3}}
+} {1 {no such column: f3}}
 do_test update-3.3 {
   set v [catch {execsql {UPDATE test1 SET f1=test2.f1*2 WHERE f2==32}} msg]
   lappend v $msg
-} {1 {no such field: test2.f1}}
+} {1 {no such column: test2.f1}}
 do_test update-3.4 {
   set v [catch {execsql {UPDATE test1 SET f3=f1*2 WHERE f2==32}} msg]
   lappend v $msg
-} {1 {no such field: f3}}
+} {1 {no such column: f3}}
 
 # Actually do some updates
 #
@@ -117,7 +117,7 @@ do_test update-4.1 {
     UPDATE test1 SET x=11 WHERE f1=1025
   }} msg]
   lappend v $msg
-} {1 {no such field: x}}
+} {1 {no such column: x}}
 do_test update-4.2 {
   set v [catch {execsql {
     UPDATE test1 SET f1=x(11) WHERE f1=1025
@@ -129,7 +129,7 @@ do_test update-4.3 {
     UPDATE test1 SET f1=11 WHERE x=1025
   }} msg]
   lappend v $msg
-} {1 {no such field: x}}
+} {1 {no such column: x}}
 do_test update-4.4 {
   set v [catch {execsql {
     UPDATE test1 SET f1=11 WHERE x(f1)=1025

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.4 2000/06/06 18:24:42 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.5 2000/06/21 13:59:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -88,7 +88,7 @@ for any reason.</p>
 
 <h2>Closing the database</h2>
 
-<p>To close an SQLite database, just call the <b>sqlite_close()</b>
+<p>To close an SQLite database, call the <b>sqlite_close()</b>
 function passing it the sqlite structure pointer that was obtained
 from a prior call to <b>sqlite_open</b>.
 
@@ -146,6 +146,62 @@ argv[i] == 0
 <p>The callback function should normally return 0.  If the callback
 function returns non-zero, the query is immediately aborted and 
 <b>sqlite_exec()</b> will return SQLITE_ABORT.</p>
+
+<p>The <b>sqlite_exec()</b> function returns an integer to indicate
+success or failure of the operation.  The following are possible
+return values:</p>
+
+<blockquote>
+<dl>
+<dt>SQLITE_OK</dt>
+<dd><p>This value is returned if everything worked and there were no errors.
+</p></dd>
+<dt>SQLITE_INTERNAL</dt>
+<dd><p>This value indicates that an internal consistency check within
+the SQLite library failed.  This can only happen if there is a bug in
+the SQLite library.  If you ever get an SQLITE_INTERNAL reply from
+an <b>sqlite_exec()</b> call, please report the problem on the SQLite
+mailing list.
+</p></dd>
+<dt>SQLITE_ERROR</dt>
+<dd><p>This return value indicates that there was an error in the SQL
+that was passed into the <b>sqlite_exec()</b>.
+</p></dd>
+<dt>SQLITE_PERM</dt>
+<dd><p>This return value says that the access permissions on one of the
+GDBM files is such that the file cannot be opened.
+</p></dd>
+<dt>SQLITE_ABORT</dt>
+<dd><p>This value is returned if the callback function returns non-zero.
+</p></dd>
+<dt>SQLITE_BUSY</dt>
+<dd><p>This return code indicates that one of the underlying GDBM files
+is locked because it is currently being accessed by another thread or
+process.  GDBM allows mutiple readers of the same file, but only one
+writer.  So multiple processes can query an SQLite database at once.
+But only a single process can write to an SQLite database at one time.
+If an attempt is made to write to an SQLite database that another
+process is currently reading, the write is not performed and 
+<b>sqlite_exec()</b> returns SQLITE_BUSY.  Similarly, an attempt to read
+an SQLite database that is currently being written by another process
+will return SQLITE_BUSY.  In both cases, the write or query attempt
+can be retried after the other process finishes.</p>
+<p>Note that locking is done at the file level.  One process can
+write to table ABC (for example) while another process simultaneously
+reads from a different table XYZ.  But you cannot have two processes reading
+and writing table ABC at the same time.
+</p></dd>
+<dt>SQLITE_NOMEM</dt>
+<dd><p>This value is returned if a call to <b>malloc()</b> fails.
+</p></dd>
+<dt>SQLITE_READONLY</dt>
+<dd><p>This return code indicates that an attempt was made to write to
+a database file that was originally opened for reading only.  This can
+happen if the callback from a query attempts to update the table
+being queried.
+</p></dd>
+</dl>
+</blockquote>
 
 <h2>Testing for a complete SQL statement</h2>
 

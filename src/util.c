@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.12 2000/06/08 13:36:41 drh Exp $
+** $Id: util.c,v 1.13 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -360,7 +360,7 @@ int sqliteHashNoCase(const char *z, int n){
 }
 
 /*
-** Some system shave stricmp().  Others have strcasecmp().  Because
+** Some systems have stricmp().  Others have strcasecmp().  Because
 ** there is no consistency, we will define our own.
 */
 int sqliteStrICmp(const char *zLeft, const char *zRight){

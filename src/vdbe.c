@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.33 2000/06/11 23:50:13 drh Exp $
+** $Id: vdbe.c,v 1.34 2000/06/21 13:59:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -54,15 +54,21 @@
 typedef struct VdbeOp Op;
 
 /*
-** Every table that the virtual machine has open is represented by an
+** A cursor is a pointer into a database file.  The database file
+** can represent either an SQL table or an SQL index.  Each file is
+** a bag of key/data pairs.  The cursor can loop over all key/data
+** pairs (in an arbitrary order) or it can retrieve a particular
+** key/data pair given a copy of the key.
+** 
+** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
 */
-struct VdbeTable {
-  DbbeTable *pTable;    /* The table structure of the backend */
+struct Cursor {
+  DbbeCursor *pCursor;  /* The cursor structure of the backend */
   int index;            /* The next index to extract */
   int keyAsData;        /* The OP_Field command works on key instead of data */
 };
-typedef struct VdbeTable VdbeTable;
+typedef struct Cursor Cursor;
 
 /*
 ** A sorter builds a list of elements to be sorted.  Each element of
@@ -117,7 +123,7 @@ typedef struct Mem Mem;
 #define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
 
 /*
-** An Agg structure describes and Aggregator.  Each Agg consists of
+** An Agg structure describes an Aggregator.  Each Agg consists of
 ** zero or more Aggregator elements (AggElem).  Each AggElem contains
 ** a key and one or more values.  The values are used in processing
 ** aggregate functions in a SELECT.  The key is used to implement
@@ -130,7 +136,7 @@ struct Agg {
   AggElem *pCurrent;     /* The AggElem currently in focus */
   int nElem;             /* The number of AggElems */
   int nHash;             /* Number of slots in apHash[] */
-  AggElem **apHash;      /* A hash table for looking up AggElems by zKey */
+  AggElem **apHash;      /* A hash array for looking up AggElems by zKey */
   AggElem *pFirst;       /* A list of all AggElems */
 };
 struct AggElem {
@@ -150,7 +156,7 @@ typedef struct Set Set;
 typedef struct SetElem SetElem;
 struct Set {
   SetElem *pAll;         /* All elements of this set */
-  SetElem *apHash[41];   /* A hash table for all elements in this set */
+  SetElem *apHash[41];   /* A hash array for all elements in this set */
 };
 struct SetElem {
   SetElem *pHash;        /* Next element with the same hash on zKey */
@@ -175,8 +181,8 @@ struct Vdbe {
   Stack *aStack;      /* The operand stack, except string values */
   char **zStack;      /* Text or binary values of the stack */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
-  int nTable;         /* Number of slots in aTab[] */
-  VdbeTable *aTab;    /* On element of this array for each open table */
+  int nCursor;        /* Number of slots in aCsr[] */
+  Cursor *aCsr;       /* On element of this array for each open cursor */
   int nList;          /* Number of slots in apList[] */
   FILE **apList;      /* An open file for each list */
   int nSort;          /* Number of slots in apSort[] */
@@ -394,7 +400,7 @@ static void AggReset(Agg *p){
 }
 
 /*
-** Add the given AggElem to the hash table
+** Add the given AggElem to the hash array
 */
 static void AggEnhash(Agg *p, AggElem *pElem){
   int h = sqliteHashNoCase(pElem->zKey, 0) % p->nHash;
@@ -403,7 +409,7 @@ static void AggEnhash(Agg *p, AggElem *pElem){
 }
 
 /*
-** Change the size of the hash table to the amount given.
+** Change the size of the hash array to the amount given.
 */
 static void AggRehash(Agg *p, int nHash){
   int size;
@@ -634,7 +640,7 @@ static int hardNeedStack(Vdbe *p, int N){
 /*
 ** Clean up the VM after execution.
 **
-** This routine will automatically close any tables, list, and/or
+** This routine will automatically close any cursors, list, and/or
 ** sorters that were left open.
 */
 static void Cleanup(Vdbe *p){
@@ -642,15 +648,15 @@ static void Cleanup(Vdbe *p){
   PopStack(p, p->tos+1);
   sqliteFree(p->azColName);
   p->azColName = 0;
-  for(i=0; i<p->nTable; i++){
-    if( p->aTab[i].pTable ){
-      sqliteDbbeCloseTable(p->aTab[i].pTable);
-      p->aTab[i].pTable = 0;
+  for(i=0; i<p->nCursor; i++){
+    if( p->aCsr[i].pCursor ){
+      sqliteDbbeCloseCursor(p->aCsr[i].pCursor);
+      p->aCsr[i].pCursor = 0;
     }
   }
-  sqliteFree(p->aTab);
-  p->aTab = 0;
-  p->nTable = 0;
+  sqliteFree(p->aCsr);
+  p->aCsr = 0;
+  p->nCursor = 0;
   for(i=0; i<p->nMem; i++){
     if( p->aMem[i].s.flags & STK_Dyn ){
       sqliteFree(p->aMem[i].z);
@@ -786,7 +792,7 @@ int sqliteVdbeList(
   char **pzErrMsg            /* Error msg written here */
 ){
   int i, rc;
-  char *azField[6];
+  char *azValue[6];
   char zAddr[20];
   char zP1[20];
   char zP2[20];
@@ -795,19 +801,19 @@ int sqliteVdbeList(
   };
 
   if( xCallback==0 ) return 0;
-  azField[0] = zAddr;
-  azField[2] = zP1;
-  azField[3] = zP2;
-  azField[5] = 0;
+  azValue[0] = zAddr;
+  azValue[2] = zP1;
+  azValue[3] = zP2;
+  azValue[5] = 0;
   rc = SQLITE_OK;
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
     sprintf(zAddr,"%d",i);
     sprintf(zP1,"%d", p->aOp[i].p1);
     sprintf(zP2,"%d", p->aOp[i].p2);
-    azField[4] = p->aOp[i].p3;
-    azField[1] = zOpName[p->aOp[i].opcode];
-    if( xCallback(pArg, 5, azField, azColumnNames) ){
+    azValue[4] = p->aOp[i].p3;
+    azValue[1] = zOpName[p->aOp[i].opcode];
+    if( xCallback(pArg, 5, azValue, azColumnNames) ){
       rc = SQLITE_ABORT;
     }
   }
@@ -1492,7 +1498,7 @@ int sqliteVdbeExec(
 
       /* Opcode: Not * * *
       **
-      ** Treat the top of the stack as a boolean value.  Replace it
+      ** Interpret the top of the stack as a boolean value.  Replace it
       ** with its complement.
       */
       case OP_Not: {
@@ -1676,33 +1682,34 @@ int sqliteVdbeExec(
 
       /* Opcode: Open P1 P2 P3
       **
-      ** Open a new cursor for the database table named P3.  Give the
-      ** cursor an identifier P1.
-      ** Open readonly if P2==0 and for reading and writing if P2!=0.
-      ** The table is created if it does not already exist and P2!=0.
-      ** If there is already another cursor opened with identifier P1,
-      ** then the old cursor is closed first.
-      ** All cursors are automatically closed when
-      ** the VDBE finishes execution.  The P1 values need not be
+      ** Open a new cursor for the database file named P3.  Give the
+      ** cursor an identifier P1.  The P1 values need not be
       ** contiguous but all P1 values should be small integers.  It is
       ** an error for P1 to be negative.
       **
-      ** If P3 is null or an empty string, a temporary table created.
-      ** This table is automatically deleted when the cursor is closed.
+      ** Open readonly if P2==0 and for reading and writing if P2!=0.
+      ** The file is created if it does not already exist and P2!=0.
+      ** If there is already another cursor opened with identifier P1,
+      ** then the old cursor is closed first.  All cursors are
+      ** automatically closed when the VDBE finishes execution.
+      **
+      ** If P3 is null or an empty string, a temporary database file
+      ** is created.  This temporary database file is automatically 
+      ** deleted when the cursor is closed.
       */
       case OP_Open: {
         int i = pOp->p1;
         if( i<0 ) goto bad_instruction;
-        if( i>=p->nTable ){
+        if( i>=p->nCursor ){
           int j;
-          p->aTab = sqliteRealloc( p->aTab, (i+1)*sizeof(VdbeTable) );
-          if( p->aTab==0 ){ p->nTable = 0; goto no_mem; }
-          for(j=p->nTable; j<=i; j++) p->aTab[j].pTable = 0;
-          p->nTable = i+1;
-        }else if( p->aTab[i].pTable ){
-          sqliteDbbeCloseTable(p->aTab[i].pTable);
+          p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
+          if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
+          for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
+          p->nCursor = i+1;
+        }else if( p->aCsr[i].pCursor ){
+          sqliteDbbeCloseCursor(p->aCsr[i].pCursor);
         }
-        rc = sqliteDbbeOpenTable(p->pBe, pOp->p3, pOp->p2, &p->aTab[i].pTable);
+        rc = sqliteDbbeOpenCursor(p->pBe, pOp->p3, pOp->p2,&p->aCsr[i].pCursor);
         switch( rc ){
           case SQLITE_BUSY: {
             sqliteSetString(pzErrMsg,"table ", pOp->p3, " is locked", 0);
@@ -1722,21 +1729,21 @@ int sqliteVdbeExec(
             goto no_mem;
           }
         }
-        p->aTab[i].index = 0;
-        p->aTab[i].keyAsData = 0;
+        p->aCsr[i].index = 0;
+        p->aCsr[i].keyAsData = 0;
         break;
       }
 
       /* Opcode: Close P1 * *
       **
-      ** Close a database table previously opened as P1.  If P1 is not
+      ** Close a cursor previously opened as P1.  If P1 is not
       ** currently open, this instruction is a no-op.
       */
       case OP_Close: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
-          sqliteDbbeCloseTable(p->aTab[i].pTable);
-          p->aTab[i].pTable = 0;
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+          sqliteDbbeCloseCursor(p->aCsr[i].pCursor);
+          p->aCsr[i].pCursor = 0;
         }
         break;
       }
@@ -1744,21 +1751,20 @@ int sqliteVdbeExec(
       /* Opcode: Fetch P1 * *
       **
       ** Pop the top of the stack and use its value as a key to fetch
-      ** a record from database table or index P1.  The data is held
-      ** in the P1 cursor until needed.  The data is not pushed onto the
-      ** stack.
+      ** a record from cursor P1.  The key/data pair is held
+      ** in the P1 cursor until needed.
       */
       case OP_Fetch: {
         int i = pOp->p1;
         int tos = p->tos;
         if( tos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
           if( p->aStack[tos].flags & STK_Int ){
-            sqliteDbbeFetch(p->aTab[i].pTable, sizeof(int), 
+            sqliteDbbeFetch(p->aCsr[i].pCursor, sizeof(int), 
                            (char*)&p->aStack[tos].i);
           }else{
             if( Stringify(p, tos) ) goto no_mem;
-            sqliteDbbeFetch(p->aTab[i].pTable, p->aStack[tos].n, 
+            sqliteDbbeFetch(p->aCsr[i].pCursor, p->aStack[tos].n, 
                            p->zStack[tos]);
           }
           p->nFetch++;
@@ -1787,7 +1793,7 @@ int sqliteVdbeExec(
       /* Opcode: Distinct P1 P2 *
       **
       ** Use the top of the stack as a key.  If a record with that key
-      ** does not exist in table P1, then jump to P2.  If the record
+      ** does not exist in file P1, then jump to P2.  If the record
       ** does already exist, then fall thru.  The record is not retrieved.
       ** The key is not popped from the stack.
       **
@@ -1797,14 +1803,14 @@ int sqliteVdbeExec(
       /* Opcode: Found P1 P2 *
       **
       ** Use the top of the stack as a key.  If a record with that key
-      ** does exist in table P1, then jump to P2.  If the record
+      ** does exist in file P1, then jump to P2.  If the record
       ** does not exist, then fall thru.  The record is not retrieved.
       ** The key is popped from the stack.
       */
       /* Opcode: NotFound P1 P2 *
       **
       ** Use the top of the stack as a key.  If a record with that key
-      ** does not exist in table P1, then jump to P2.  If the record
+      ** does not exist in file P1, then jump to P2.  If the record
       ** does exist, then fall thru.  The record is not retrieved.
       ** The key is popped from the stack.
       **
@@ -1818,13 +1824,13 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int alreadyExists = 0;
         if( tos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
           if( p->aStack[tos].flags & STK_Int ){
-            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, sizeof(int), 
+            alreadyExists = sqliteDbbeTest(p->aCsr[i].pCursor, sizeof(int), 
                                           (char*)&p->aStack[tos].i);
           }else{
             if( Stringify(p, tos) ) goto no_mem;
-            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, p->aStack[tos].n, 
+            alreadyExists = sqliteDbbeTest(p->aCsr[i].pCursor,p->aStack[tos].n, 
                                            p->zStack[tos]);
           }
         }
@@ -1841,16 +1847,16 @@ int sqliteVdbeExec(
 
       /* Opcode: New P1 * *
       **
-      ** Get a new integer key not previous used by table P1 and
-      ** push it onto the stack.
+      ** Get a new integer key not previous used by the database file
+      ** associated with cursor P1 and push it onto the stack.
       */
       case OP_New: {
         int i = pOp->p1;
         int v;
-        if( i<0 || i>=p->nTable || p->aTab[i].pTable==0 ){
+        if( i<0 || i>=p->nCursor || p->aCsr[i].pCursor==0 ){
           v = 0;
         }else{
-          v = sqliteDbbeNew(p->aTab[i].pTable);
+          v = sqliteDbbeNew(p->aCsr[i].pCursor);
         }
         NeedStack(p, p->tos+1);
         p->tos++;
@@ -1861,7 +1867,7 @@ int sqliteVdbeExec(
 
       /* Opcode: Put P1 * *
       **
-      ** Write an entry into the database table P1.  A new entry is
+      ** Write an entry into the database file P1.  A new entry is
       ** created if it doesn't already exist, or the data for an existing
       ** entry is overwritten.  The data is the value on the top of the
       ** stack.  The key is the next value down on the stack.  The stack
@@ -1872,7 +1878,7 @@ int sqliteVdbeExec(
         int nos = p->tos-1;
         int i = pOp->p1;
         if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
           char *zKey;
           int nKey;
           if( (p->aStack[nos].flags & STK_Int)==0 ){
@@ -1883,7 +1889,7 @@ int sqliteVdbeExec(
             nKey = sizeof(int);
             zKey = (char*)&p->aStack[nos].i;
           }
-          sqliteDbbePut(p->aTab[i].pTable, nKey, zKey,
+          sqliteDbbePut(p->aCsr[i].pCursor, nKey, zKey,
                         p->aStack[tos].n, p->zStack[tos]);
         }
         PopStack(p, 2);
@@ -1893,13 +1899,13 @@ int sqliteVdbeExec(
       /* Opcode: Delete P1 * *
       **
       ** The top of the stack is a key.  Remove this key and its data
-      ** from database table P1.  Then pop the stack to discard the key.
+      ** from database file P1.  Then pop the stack to discard the key.
       */
       case OP_Delete: {
         int tos = p->tos;
         int i = pOp->p1;
         if( tos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
           char *zKey;
           int nKey;
           if( p->aStack[tos].flags & STK_Int ){
@@ -1910,7 +1916,7 @@ int sqliteVdbeExec(
             nKey = p->aStack[tos].n;
             zKey = p->zStack[tos];
           }
-          sqliteDbbeDelete(p->aTab[i].pTable, nKey, zKey);
+          sqliteDbbeDelete(p->aCsr[i].pCursor, nKey, zKey);
         }
         PopStack(p, 1);
         break;
@@ -1925,16 +1931,18 @@ int sqliteVdbeExec(
       */
       case OP_KeyAsData: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
-          p->aTab[i].keyAsData = pOp->p2;
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+          p->aCsr[i].keyAsData = pOp->p2;
         }
         break;
       }
 
       /* Opcode: Field P1 P2 *
       **
-      ** Push onto the stack the value of the P2-th field from the
-      ** most recent Fetch from table P1.
+      ** Interpret the data in the most recent fetch from cursor P1
+      ** is a structure built using the MakeRecord instruction.
+      ** Push onto the stack the value of the P2-th field of that
+      ** structure.
       ** 
       ** The value pushed is just a pointer to the data in the cursor.
       ** The value will go away the next time a record is fetched from P1,
@@ -1944,6 +1952,11 @@ int sqliteVdbeExec(
       ** If the KeyAsData opcode has previously executed on this cursor,
       ** then the field might be extracted from the key rather than the
       ** data.
+      **
+      ** Viewed from a higher level, this instruction retrieves the
+      ** data from a single column in a particular row of an SQL table
+      ** file.  Perhaps the name of this instruction should be
+      ** "Column" instead of "Field"...
       */
       case OP_Field: {
         int *pAddr;
@@ -1951,35 +1964,35 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         int p2 = pOp->p2;
         int tos = ++p->tos;
-        DbbeTable *pTab;
+        DbbeCursor *pCrsr;
         char *z;
 
         if( NeedStack(p, tos) ) goto no_mem;
-        if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
-          if( p->aTab[i].keyAsData ){
-            amt = sqliteDbbeKeyLength(pTab);
+        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+          if( p->aCsr[i].keyAsData ){
+            amt = sqliteDbbeKeyLength(pCrsr);
             if( amt<=sizeof(int)*(p2+1) ){
               p->aStack[tos].flags = STK_Null;
               break;
             }
-            pAddr = (int*)sqliteDbbeReadKey(pTab, sizeof(int)*p2);
+            pAddr = (int*)sqliteDbbeReadKey(pCrsr, sizeof(int)*p2);
             if( *pAddr==0 ){
               p->aStack[tos].flags = STK_Null;
               break;
             }
-            z = sqliteDbbeReadKey(pTab, *pAddr);
+            z = sqliteDbbeReadKey(pCrsr, *pAddr);
           }else{
-            amt = sqliteDbbeDataLength(pTab);
+            amt = sqliteDbbeDataLength(pCrsr);
             if( amt<=sizeof(int)*(p2+1) ){
               p->aStack[tos].flags = STK_Null;
               break;
             }
-            pAddr = (int*)sqliteDbbeReadData(pTab, sizeof(int)*p2);
+            pAddr = (int*)sqliteDbbeReadData(pCrsr, sizeof(int)*p2);
             if( *pAddr==0 ){
               p->aStack[tos].flags = STK_Null;
               break;
             }
-            z = sqliteDbbeReadData(pTab, *pAddr);
+            z = sqliteDbbeReadData(pCrsr, *pAddr);
           }
           p->zStack[tos] = z;
           p->aStack[tos].n = strlen(z) + 1;
@@ -1991,21 +2004,22 @@ int sqliteVdbeExec(
       /* Opcode: Key P1 * *
       **
       ** Push onto the stack an integer which is the first 4 bytes of the
-      ** the key to the current entry in a sequential scan of the table P1.
-      ** A sequential scan is started using the Next opcode.
+      ** the key to the current entry in a sequential scan of the database
+      ** file P1.  The sequential scan should have been started using the 
+      ** Next opcode.
       */
       case OP_Key: {
         int i = pOp->p1;
         int tos = ++p->tos;
-        DbbeTable *pTab;
+        DbbeCursor *pCrsr;
 
         if( NeedStack(p, p->tos) ) goto no_mem;
-        if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
-          char *z = sqliteDbbeReadKey(pTab, 0);
-          if( p->aTab[i].keyAsData ){
+        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+          char *z = sqliteDbbeReadKey(pCrsr, 0);
+          if( p->aCsr[i].keyAsData ){
             p->zStack[tos] = z;
             p->aStack[tos].flags = STK_Str;
-            p->aStack[tos].n = sqliteDbbeKeyLength(pTab);
+            p->aStack[tos].n = sqliteDbbeKeyLength(pCrsr);
           }else{
             memcpy(&p->aStack[tos].i, z, sizeof(int));
             p->aStack[tos].flags = STK_Int;
@@ -2017,25 +2031,25 @@ int sqliteVdbeExec(
       /* Opcode: Rewind P1 * *
       **
       ** The next use of the Key or Field or Next instruction for P1 
-      ** will refer to the first entry in the table.
+      ** will refer to the first entry in the database file.
       */
       case OP_Rewind: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
-          sqliteDbbeRewind(p->aTab[i].pTable);
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+          sqliteDbbeRewind(p->aCsr[i].pCursor);
         }
         break;
       }
 
       /* Opcode: Next P1 P2 *
       **
-      ** Advance P1 to the next entry in the table.  Or, if there are no
-      ** more entries, rewind P1 and jump to location P2.
+      ** Advance P1 to the next key/data pair in the file.  Or, if there are no
+      ** more key/data pairs, rewind P1 and jump to location P2.
       */
       case OP_Next: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
-          if( sqliteDbbeNextKey(p->aTab[i].pTable)==0 ){
+        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+          if( sqliteDbbeNextKey(p->aCsr[i].pCursor)==0 ){
             pc = pOp->p2 - 1;
           }else{
             p->nFetch++;
@@ -2046,37 +2060,48 @@ int sqliteVdbeExec(
 
       /* Opcode: ResetIdx P1 * *
       **
-      ** Begin treating the current row of table P1 as an index.  The next
-      ** NextIdx instruction will refer to the first index in the table.
+      ** Begin treating the current data in cursor P1 as a bunch of integer
+      ** keys to records of a (separate) SQL table file.  This instruction
+      ** causes the new NextIdx instruction push the first integer table
+      ** key in the data.
       */
       case OP_ResetIdx: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nTable ){
-          p->aTab[i].index = 0;
+        if( i>=0 && i<p->nCursor ){
+          p->aCsr[i].index = 0;
         }
         break;
       }
 
       /* Opcode: NextIdx P1 P2 *
       **
-      ** Push the next index from the current entry of table P1 onto the
-      ** stack and advance the pointer.  If there are no more indices, then
-      ** reset the table entry and jump to P2
+      ** The P1 cursor points to an SQL index.  The data from the most
+      ** recent fetch on that cursor consists of a bunch of integers where
+      ** each integer is the key to a record in an SQL table file.
+      ** This instruction grabs the next integer table key from the data
+      ** of P1 and pushes that integer onto the stack.  The first time
+      ** this instruction is executed after a fetch, the first integer 
+      ** table key is pushed.  Subsequent integer table keys are pushed 
+      ** in each subsequent execution of this instruction.
+      **
+      ** If there are no more integer table keys in the data of P1
+      ** when this instruction is executed, then nothing gets pushed and
+      ** there is an immediate jump to instruction P2.
       */
       case OP_NextIdx: {
         int i = pOp->p1;
         int tos = ++p->tos;
-        DbbeTable *pTab;
+        DbbeCursor *pCrsr;
 
         if( NeedStack(p, p->tos) ) goto no_mem;
         p->zStack[tos] = 0;
-        if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
+        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
           int j;
-          nIdx = sqliteDbbeDataLength(pTab)/sizeof(int);
-          aIdx = (int*)sqliteDbbeReadData(pTab, 0);
-          for(j=p->aTab[i].index; j<nIdx; j++){
+          nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
+          aIdx = (int*)sqliteDbbeReadData(pCrsr, 0);
+          for(j=p->aCsr[i].index; j<nIdx; j++){
             if( aIdx[j]!=0 ){
               p->aStack[tos].i = aIdx[j];
               p->aStack[tos].flags = STK_Int;
@@ -2088,47 +2113,47 @@ int sqliteVdbeExec(
             pc = pOp->p2 - 1;
             PopStack(p, 1);
           }
-          p->aTab[i].index = j+1;
+          p->aCsr[i].index = j+1;
         }
         break;
       }
 
       /* Opcode: PutIdx P1 * *
       **
-      ** The top of the stack hold an index key (probably made using the
-      ** MakeKey instruction) and next on stack holds an index value for
-      ** a table.  Locate the record in the index P1 that has the key 
-      ** and insert the index value into its
-      ** data.  Write the results back to the index.
-      ** If the key doesn't exist it is created.
+      ** The top of the stack hold an SQL index key (probably made using the
+      ** MakeKey instruction) and next on stack holds an integer which
+      ** the key to an SQL table entry.  Locate the record in cursor P1
+      ** that has the same key as on the TOS.  Create a new record if
+      ** necessary.  Then append the integer table key to the data for that
+      ** record and write it back to the P1 file.
       */
       case OP_PutIdx: {
         int i = pOp->p1;
         int tos = p->tos;
         int nos = tos - 1;
-        DbbeTable *pTab;
+        DbbeCursor *pCrsr;
         if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
+        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int r;
           int newVal;
           Integerify(p, nos);
           newVal = p->aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = sqliteDbbeFetch(pTab, p->aStack[tos].n, p->zStack[tos]);
+          r = sqliteDbbeFetch(pCrsr, p->aStack[tos].n, p->zStack[tos]);
           if( r==0 ){
             /* Create a new record for this index */
-            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos],
+            sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
                           sizeof(int), (char*)&newVal);
           }else{
             /* Extend the existing record */
             int nIdx;
             int *aIdx;
-            nIdx = sqliteDbbeDataLength(pTab)/sizeof(int);
+            nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
             aIdx = sqliteMalloc( sizeof(int)*(nIdx+1) );
             if( aIdx==0 ) goto no_mem;
-            sqliteDbbeCopyData(pTab, 0, nIdx*sizeof(int), (char*)aIdx);
+            sqliteDbbeCopyData(pCrsr, 0, nIdx*sizeof(int), (char*)aIdx);
             aIdx[nIdx] = newVal;
-            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos],
+            sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos],
                           sizeof(int)*(nIdx+1), (char*)aIdx);
             sqliteFree(aIdx);
           }
@@ -2139,20 +2164,24 @@ int sqliteVdbeExec(
 
       /* Opcode: DeleteIdx P1 * *
       **
-      ** The top of the stack is a key and next on stack is an index value.
-      ** Locate the record
-      ** in index P1 that has the key and remove the index value from its
-      ** data.  Write the results back to the table.  If after removing
-      ** the index value no more indices remain in the record, then the
-      ** record is removed from the table.
+      ** The top of the stack is a key and next on stack is integer
+      ** which is the key to a record in an SQL table.
+      ** Locate the record in the cursor P1 (P1 represents an SQL index)
+      ** that has the same key as the top of stack.  Then look through
+      ** the integer table-keys contained in the data of the P1 record.
+      ** Remove the integer table-key that matches the NOS and write the
+      ** revised data back to P1 with the same key.
+      **
+      ** If this routine removes the very last integer table-key from
+      ** the P1 data, then the corresponding P1 record is deleted.
       */
       case OP_DeleteIdx: {
         int i = pOp->p1;
         int tos = p->tos;
         int nos = tos - 1;
-        DbbeTable *pTab;
+        DbbeCursor *pCrsr;
         if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
+        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
           int j;
@@ -2161,17 +2190,17 @@ int sqliteVdbeExec(
           Integerify(p, nos);
           oldVal = p->aStack[nos].i;
           if( Stringify(p, tos) ) goto no_mem;
-          r = sqliteDbbeFetch(pTab, p->aStack[tos].n, p->zStack[tos]);
+          r = sqliteDbbeFetch(pCrsr, p->aStack[tos].n, p->zStack[tos]);
           if( r==0 ) break;
-          nIdx = sqliteDbbeDataLength(pTab)/sizeof(int);
-          aIdx = (int*)sqliteDbbeReadData(pTab, 0);
+          nIdx = sqliteDbbeDataLength(pCrsr)/sizeof(int);
+          aIdx = (int*)sqliteDbbeReadData(pCrsr, 0);
           for(j=0; j<nIdx && aIdx[j]!=oldVal; j++){}
           if( j>=nIdx ) break;
           aIdx[j] = aIdx[nIdx-1];
           if( nIdx==1 ){
-            sqliteDbbeDelete(pTab, p->aStack[tos].n, p->zStack[tos]);
+            sqliteDbbeDelete(pCrsr, p->aStack[tos].n, p->zStack[tos]);
           }else{
-            sqliteDbbePut(pTab, p->aStack[tos].n, p->zStack[tos], 
+            sqliteDbbePut(pCrsr, p->aStack[tos].n, p->zStack[tos], 
                           sizeof(int)*(nIdx-1), (char*)aIdx);
           }
         }
@@ -2181,8 +2210,9 @@ int sqliteVdbeExec(
 
       /* Opcode: Destroy * * P3
       **
-      ** Drop the table whose name is P3.  The file that holds this table
-      ** is removed from the disk drive.
+      ** Drop the disk file whose name is P3.  All key/data pairs in
+      ** the file are deleted and the file itself is removed
+      ** from the disk.
       */
       case OP_Destroy: {
         sqliteDbbeDropTable(p->pBe, pOp->p3);
@@ -2200,7 +2230,7 @@ int sqliteVdbeExec(
 
       /* Opcode: ListOpen P1 * *
       **
-      ** Open a file used for temporary storage of index numbers.  P1
+      ** Open a file used for temporary storage of integer table keys.  P1
       ** will server as a handle to this temporary file for future
       ** interactions.  If another temporary file with the P1 handle is
       ** already opened, the prior file is closed and a new one opened
@@ -2260,7 +2290,7 @@ int sqliteVdbeExec(
       /* Opcode: ListRead P1 P2 *
       **
       ** Attempt to read an integer from temporary storage buffer P1
-      ** and push it onto the stack.  If the storage buffer is empty
+      ** and push it onto the stack.  If the storage buffer is empty, 
       ** push nothing but instead jump to P2.
       */
       case OP_ListRead: {
@@ -2693,7 +2723,7 @@ int sqliteVdbeExec(
       /* Opcode: FileField P1 * *
       **
       ** Push onto the stack the P1-th field of the most recently read line
-      ** from the file.
+      ** from the input file.
       */
       case OP_FileField: {
         int i = pOp->p1;
@@ -2828,8 +2858,8 @@ int sqliteVdbeExec(
 
       /* Opcode: AggIncr P1 P2 *
       **
-      ** Increment the P2-th field of the aggregate element current
-      ** in focus by an amount P1.
+      ** Increase the integer value in the P2-th field of the aggregate
+      ** element current in focus by an amount P1.
       */
       case OP_AggIncr: {
         AggElem *pFocus = AggInFocus(p->agg);

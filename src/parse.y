@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.22 2000/06/19 19:09:09 drh Exp $
+** @(#) $Id: parse.y,v 1.23 2000/06/21 13:59:12 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -50,7 +50,7 @@ input ::= cmdlist.
 // add them to the parse.h output file.
 //
 input ::= END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
-          UMINUS FIELD AGG_FUNCTION.
+          UMINUS COLUMN AGG_FUNCTION.
 
 // A list of commands is zero or more commands
 //
@@ -250,9 +250,9 @@ setlist(A) ::= id(X) EQ expr(Y) COMMA setlist(Z).
     {A = sqliteExprListAppend(Z,Y,&X);}
 setlist(A) ::= id(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
-cmd ::= INSERT INTO id(X) fieldlist_opt(F) VALUES LP itemlist(Y) RP.
+cmd ::= INSERT INTO id(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
                {sqliteInsert(pParse, &X, Y, 0, F);}
-cmd ::= INSERT INTO id(X) fieldlist_opt(F) select(S).
+cmd ::= INSERT INTO id(X) inscollist_opt(F) select(S).
                {sqliteInsert(pParse, &X, 0, S, F);}
 
 
@@ -278,15 +278,15 @@ item(A) ::= MINUS FLOAT(X).  {
 item(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
 item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
 
-%type fieldlist_opt {IdList*}
-%destructor fieldlist_opt {sqliteIdListDelete($$);}
-%type fieldlist {IdList*}
-%destructor fieldlist {sqliteIdListDelete($$);}
+%type inscollist_opt {IdList*}
+%destructor inscollist_opt {sqliteIdListDelete($$);}
+%type inscollist {IdList*}
+%destructor inscollist {sqliteIdListDelete($$);}
 
-fieldlist_opt(A) ::= .                    {A = 0;}
-fieldlist_opt(A) ::= LP fieldlist(X) RP.  {A = X;}
-fieldlist(A) ::= fieldlist(X) COMMA id(Y). {A = sqliteIdListAppend(X,&Y);}
-fieldlist(A) ::= id(Y).                    {A = sqliteIdListAppend(0,&Y);}
+inscollist_opt(A) ::= .                      {A = 0;}
+inscollist_opt(A) ::= LP inscollist(X) RP.   {A = X;}
+inscollist(A) ::= inscollist(X) COMMA id(Y). {A = sqliteIdListAppend(X,&Y);}
+inscollist(A) ::= id(Y).                     {A = sqliteIdListAppend(0,&Y);}
 
 %left OR.
 %left AND.

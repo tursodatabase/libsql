@@ -24,7 +24,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.17 2000/06/17 13:12:40 drh Exp $
+** $Id: expr.c,v 1.18 2000/06/21 13:59:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,7 +35,7 @@
 static int isConstant(Expr *p){
   switch( p->op ){
     case TK_ID:
-    case TK_FIELD:
+    case TK_COLUMN:
     case TK_DOT:
       return 0;
     default: {
@@ -58,10 +58,10 @@ static int isConstant(Expr *p){
 **
 **       expr IN (SELECT ...)
 **
-** These operators have to be processed before field names are
+** These operators have to be processed before column names are
 ** resolved because each such operator increments pParse->nTab
 ** to reserve cursor numbers for its own use.  But pParse->nTab
-** needs to be constant once we begin resolving field names.
+** needs to be constant once we begin resolving column names.
 **
 ** Actually, the processing of IN-SELECT is only started by this
 ** routine.  This routine allocates a cursor number to the IN-SELECT
@@ -87,11 +87,11 @@ void sqliteExprResolveInSelect(Parse *pParse, Expr *pExpr){
 
 /*
 ** This routine walks an expression tree and resolves references to
-** table fields.  Nodes of the form ID.ID or ID resolve into an
-** index to the table in the table list and a field offset.  The opcode
-** for such nodes is changed to TK_FIELD.  The iTable value is changed
+** table columns.  Nodes of the form ID.ID or ID resolve into an
+** index to the table in the table list and a column offset.  The opcode
+** for such nodes is changed to TK_COLUMN.  The iTable value is changed
 ** to the index of the referenced table in pTabList plus the pParse->nTab
-** value.  The iField value is changed to the index of the field of the 
+** value.  The iColumn value is changed to the index of the column of the 
 ** referenced table.
 **
 ** We also check for instances of the IN operator.  IN comes in two
@@ -109,7 +109,7 @@ void sqliteExprResolveInSelect(Parse *pParse, Expr *pExpr){
 ** If it finds any, it generates code to write the value of that select
 ** into a memory cell.
 **
-** Unknown fields or tables provoke an error.  The function returns
+** Unknown columns or tables provoke an error.  The function returns
 ** the number of errors seen and leaves an error message on pParse->zErrMsg.
 */
 int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
@@ -128,27 +128,27 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
           if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
             cnt++;
             pExpr->iTable = i + pParse->nTab;
-            pExpr->iField = j;
+            pExpr->iColumn = j;
           }
         }
       }
       sqliteFree(z);
       if( cnt==0 ){
-        sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
+        sqliteSetNString(&pParse->zErrMsg, "no such column: ", -1,  
           pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: ", -1,  
+        sqliteSetNString(&pParse->zErrMsg, "ambiguous column name: ", -1,  
           pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
         return 1;
       }
-      pExpr->op = TK_FIELD;
+      pExpr->op = TK_COLUMN;
       break; 
     }
   
-    /* A table name and field name:  ID.ID */
+    /* A table name and column name:  ID.ID */
     case TK_DOT: {
       int cnt = 0;             /* Number of matches */
       int i;                   /* Loop counter */
@@ -176,20 +176,20 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
             cnt++;
             pExpr->iTable = i + pParse->nTab;
-            pExpr->iField = j;
+            pExpr->iColumn = j;
           }
         }
       }
       sqliteFree(zLeft);
       sqliteFree(zRight);
       if( cnt==0 ){
-        sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
+        sqliteSetNString(&pParse->zErrMsg, "no such column: ", -1,  
           pLeft->token.z, pLeft->token.n, ".", 1, 
           pRight->token.z, pRight->token.n, 0);
         pParse->nErr++;
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: ", -1,  
+        sqliteSetNString(&pParse->zErrMsg, "ambiguous column name: ", -1,  
           pLeft->token.z, pLeft->token.n, ".", 1,
           pRight->token.z, pRight->token.n, 0);
         pParse->nErr++;
@@ -199,7 +199,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       pExpr->pLeft = 0;
       sqliteExprDelete(pRight);
       pExpr->pRight = 0;
-      pExpr->op = TK_FIELD;
+      pExpr->op = TK_COLUMN;
       break;
     }
 
@@ -263,10 +263,10 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
     case TK_SELECT: {
       /* This has to be a scalar SELECT.  Generate code to put the
       ** value of this select in a memory cell and record the number
-      ** of the memory cell in iField.
+      ** of the memory cell in iColumn.
       */
-      pExpr->iField = pParse->nMem++;
-      if( sqliteSelect(pParse, pExpr->pSelect, SRT_Mem, pExpr->iField) ){
+      pExpr->iColumn = pParse->nMem++;
+      if( sqliteSelect(pParse, pExpr->pSelect, SRT_Mem, pExpr->iColumn) ){
         return 1;
       }
       break;
@@ -355,7 +355,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int too_few_args = 0;
       int is_agg = 0;
       int i;
-      pExpr->iField = id;
+      pExpr->iColumn = id;
       switch( id ){
         case FN_Unknown: { 
           no_such_func = 1;
@@ -467,11 +467,11 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     default: break;
   }
   switch( pExpr->op ){
-    case TK_FIELD: {
+    case TK_COLUMN: {
       if( pParse->useAgg ){
         sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
       }else{
-        sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iField, 0, 0);
+        sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iColumn, 0, 0);
       }
       break;
     }
@@ -562,7 +562,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
-      if( pExpr->iField==FN_Avg ){
+      if( pExpr->iColumn==FN_Avg ){
         assert( pParse->iAggCount>=0 && pParse->iAggCount<pParse->nAgg );
         sqliteVdbeAddOp(v, OP_AggGet, 0, pParse->iAggCount, 0, 0);
         sqliteVdbeAddOp(v, OP_Divide, 0, 0, 0, 0);
@@ -570,7 +570,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_FUNCTION: {
-      int id = pExpr->iField;
+      int id = pExpr->iColumn;
       int op;
       int i;
       ExprList *pList = pExpr->pList;
@@ -588,7 +588,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_SELECT: {
-      sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iField, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0, 0, 0);
       break;
     }
     case TK_IN: {
@@ -864,12 +864,12 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 
   if( pExpr==0 ) return 0;
   switch( pExpr->op ){
-    case TK_FIELD: {
+    case TK_COLUMN: {
       aAgg = pParse->aAgg;
       for(i=0; i<pParse->nAgg; i++){
         if( aAgg[i].isAgg ) continue;
         if( aAgg[i].pExpr->iTable==pExpr->iTable
-         && aAgg[i].pExpr->iField==pExpr->iField ){
+         && aAgg[i].pExpr->iColumn==pExpr->iColumn ){
           break;
         }
       }
@@ -883,7 +883,7 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_AGG_FUNCTION: {
-      if( pExpr->iField==FN_Count || pExpr->iField==FN_Avg ){
+      if( pExpr->iColumn==FN_Count || pExpr->iColumn==FN_Avg ){
         if( pParse->iAggCount>=0 ){
           i = pParse->iAggCount;
         }else{
@@ -893,7 +893,7 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
           pParse->aAgg[i].pExpr = 0;
           pParse->iAggCount = i;
         }
-        if( pExpr->iField==FN_Count ){
+        if( pExpr->iColumn==FN_Count ){
           pExpr->iAgg = i;
           break;
         }

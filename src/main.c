@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.12 2000/06/07 23:51:50 drh Exp $
+** $Id: main.c,v 1.13 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,12 +90,12 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   **    );
   **
   ** The sqlite_master table contains a single entry for each table
-  ** and each index.  The "type" field tells whether the entry is
-  ** a table or index.  The "name" field is the name of the object.
+  ** and each index.  The "type" column tells whether the entry is
+  ** a table or index.  The "name" column is the name of the object.
   ** The "tbl_name" is the name of the associated table.  For tables,
-  ** the tbl_name field is always the same as name.  For indices, the
-  ** tbl_name field contains the name of the table that the index
-  ** indexes.  Finally, the sql field contains the complete text of
+  ** the tbl_name column is always the same as name.  For indices, the
+  ** tbl_name column contains the name of the table that the index
+  ** indexes.  Finally, the "sql" column contains the complete text of
   ** the CREATE TABLE or CREATE INDEX statement that originally created
   ** the table or index.
   **

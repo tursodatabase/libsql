@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.7 2000/06/19 19:09:09 drh Exp $
+** $Id: update.c,v 1.8 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -48,8 +48,8 @@ void sqliteUpdate(
   int base;              /* Index of first available table cursor */
   Index **apIdx = 0;     /* An array of indices that need updating too */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
-                         ** an expression for the i-th field of the table.
-                         ** aXRef[i]==-1 if the i-th field is not changed. */
+                         ** an expression for the i-th column of the table.
+                         ** aXRef[i]==-1 if the i-th column is not changed. */
 
   /* Locate the table which we want to update.  This table has to be
   ** put in an IdList structure because some of the subroutines we
@@ -77,9 +77,9 @@ void sqliteUpdate(
   if( aXRef==0 ) goto update_cleanup;
   for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
-  /* Resolve the field names in all the expressions in both the
-  ** WHERE clause and in the new values.  Also find the field index
-  ** for each field to be updated in the pChanges array.
+  /* Resolve the column names in all the expressions in both the
+  ** WHERE clause and in the new values.  Also find the column index
+  ** for each column to be updated in the pChanges array.
   */
   if( pWhere ){
     sqliteExprResolveInSelect(pParse, pWhere);
@@ -109,7 +109,7 @@ void sqliteUpdate(
       }
     }
     if( j>=pTab->nCol ){
-      sqliteSetString(&pParse->zErrMsg, "no such field: ", 
+      sqliteSetString(&pParse->zErrMsg, "no such column: ", 
          pChanges->a[i].zName, 0);
       pParse->nErr++;
       goto update_cleanup;
@@ -118,21 +118,21 @@ void sqliteUpdate(
 
   /* Allocate memory for the array apIdx[] and fill it pointers to every
   ** index that needs to be updated.  Indices only need updating if their
-  ** key includes one of the fields named in pChanges.
+  ** key includes one of the columns named in pChanges.
   */
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    for(i=0; i<pIdx->nField; i++){
-      if( aXRef[pIdx->aiField[i]]>=0 ) break;
+    for(i=0; i<pIdx->nColumn; i++){
+      if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
     }
-    if( i<pIdx->nField ) nIdx++;
+    if( i<pIdx->nColumn ) nIdx++;
   }
   apIdx = sqliteMalloc( sizeof(Index*) * nIdx );
   if( apIdx==0 ) goto update_cleanup;
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    for(i=0; i<pIdx->nField; i++){
-      if( aXRef[pIdx->aiField[i]]>=0 ) break;
+    for(i=0; i<pIdx->nColumn; i++){
+      if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
     }
-    if( i<pIdx->nField ) apIdx[nIdx++] = pIdx;
+    if( i<pIdx->nColumn ) apIdx[nIdx++] = pIdx;
   }
 
   /* Begin generating code.
@@ -165,7 +165,7 @@ void sqliteUpdate(
   }
 
   /* Loop over every record that needs updating.  We have to load
-  ** the old data for each record to be updated because some fields
+  ** the old data for each record to be updated because some columns
   ** might not change and we will need to copy the old value.
   ** Also, the old data is needed to delete the old index entires.
   */
@@ -179,10 +179,10 @@ void sqliteUpdate(
   for(i=0; i<nIdx; i++){
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
     pIdx = apIdx[i];
-    for(j=0; j<pIdx->nField; j++){
-      sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiField[j], 0, 0);
+    for(j=0; j<pIdx->nColumn; j++){
+      sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiColumn[j], 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_DeleteIdx, base+i+1, 0, 0, 0);
   }
 
@@ -202,10 +202,10 @@ void sqliteUpdate(
   for(i=0; i<nIdx; i++){
     sqliteVdbeAddOp(v, OP_Dup, pTab->nCol, 0, 0, 0); /* The KEY */
     pIdx = apIdx[i];
-    for(j=0; j<pIdx->nField; j++){
-      sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-pIdx->aiField[j], 0, 0, 0);
+    for(j=0; j<pIdx->nColumn; j++){
+      sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-pIdx->aiColumn[j], 0, 0, 0);
     }
-    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, base+i+1, 0, 0, 0);
   }
 

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.8 2000/06/08 19:43:40 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.9 2000/06/21 13:59:14 drh Exp $}
 
 puts {<html>
 <head>
@@ -150,6 +150,7 @@ sqlite> (((.help)))
 .help                  Show this message
 .indices TABLE         Show names of all indices on TABLE
 .mode MODE             Set mode to one of "line", "column", "list", or "html"
+.mode insert TABLE     Generate SQL insert statements for TABLE
 .output FILENAME       Send output to FILENAME
 .output stdout         Send output to the screen
 .schema ?TABLE?        Show the CREATE statements
@@ -163,13 +164,13 @@ puts {
 <h2>Changing Output Formats</h2>
 
 <p>The sqlite program is able to show the results of a query
-in four different formats: "line", "column", "list", and "html".
+in five different formats: "line", "column", "list", "html", and "insert".
 You can use the ".mode" dot command to switch between these three output
 formats.</p>
 
 <p>The default output mode is "list".  In
 list mode, each record of a query result is written on one line of
-output and each field within that record is separated by a specific
+output and each column within that record is separated by a specific
 separator string.  The default separator is a pipe symbol ("|").
 List mode is especially useful when you are going to send the output
 of a query to another program (such as AWK) for additional processing.</p>}
@@ -196,9 +197,9 @@ sqlite>
 }
 
 puts {
-<p>In "line" mode, each field in a record of the database
-is shown on a line by itself.  Each line consists of the field
-name, an equal sign and the field data.  Successive records are
+<p>In "line" mode, each column in a row of the database
+is shown on a line by itself.  Each line consists of the column
+name, an equal sign and the column data.  Successive records are
 separated by a blank line.  Here is an example of line mode
 output:</p>}
 
@@ -263,6 +264,11 @@ sqlite>
 }
 
 puts {
+<p>Another useful output mode is "insert".  In insert mode, the output
+is formatted to look like SQL INSERT statements.  You can use insert
+mode to generate text that can later be used to input data into a 
+different database.</p>
+
 <p>The last output mode is "html".  In this mode, sqlite writes
 the results of the query as an XHTML table.  The beginning
 &lt;TABLE&gt; and the ending &lt;/TABLE&gt; are not written, but

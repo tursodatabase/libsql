@@ -1,50 +1,50 @@
-C :-)\s(CVS\s103)
-D 2000-06-19T19:10:29
+C :-)\s(CVS\s104)
+D 2000-06-21T13:59:11
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 4dc16840f68e3b599915e1ec8463d365474dd286
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure c366a0402bce79ef11fe1bf703ad6ce4ff6afbb0 x
 F configure.in 1085ff994a334b131325de906ed318e926673588
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 9ce11eafbab395b7d19bc5722d1a8955961889b0
-F src/dbbe.c ae5e77f010ba1b68a65aa3cd55c8578eda523dd2
-F src/dbbe.h 9a678ae524c2daad22e959111edd4494e6144dbc
-F src/delete.c 2d5758055ff546453385524d856feb1b51ea7b8a
-F src/expr.c 88ff9ea12a23a3f0dfaf117670524bdc160af597
-F src/insert.c b1434c7c7c387c69e467d993e9d05460f1047bcc
-F src/main.c e3297835b8e38ca726ac73f2c2bdb7cf08103197
-F src/parse.y 974ed07702bda4f04171ef22776eccbb5dae81ca
-F src/select.c 2a91f683d64de0362834248cb291bc601cd2950b
-F src/shell.c 78a35607a88b3d557e1666ae9d0c2c03cbb3553e
+F src/build.c 55edb404bbf4476c73c81604ddb9738281a689a4
+F src/dbbe.c 99aa6daca9a039eebb284dd459bef712ea3843f9
+F src/dbbe.h 8718b718b36d37584e9bbdfccec10588fa91271f
+F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
+F src/expr.c 2fa63f086707176d09092e71832f9bbdc6a8ac85
+F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
+F src/main.c 30b33b6e0cdd5ae1c0af9f626e78a1dc7b835e26
+F src/parse.y 86e268c29a0f00ffc062bbe934d95ea0d6308b0a
+F src/select.c aaf23d4a6ef44e4378840ec94b6aa64641c01b5c
+F src/shell.c 8387580e44878022c88c02b189bf23bff1862bda
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h 19954bd2f75632849b265b9d7163a67391ec5148
+F src/sqliteInt.h ddc6f8081ef469ede272cf6a382773dac5758dfc
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
 F src/tokenize.c 77ff8164a8751994bc9926ce282847f653ac0c16
-F src/update.c 162fc0b86dcd61d164dedc77081a5e7daf6b8fb0
-F src/util.c 38e4bb5edf6fa92e677698c45785bf73c69b9e9f
-F src/vdbe.c 00b2ab7e0c0df2ac6eb4bf659656afc30e76c66b
+F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
+F src/util.c fcd7ac9d2be8353f746e52f665e6c4f5d6b3b805
+F src/vdbe.c 38cec3e88db70b7689018377c1594ac18f746b19
 F src/vdbe.h 5f58611b19799de2dbcdefa4eef33a255cfa8d0d
-F src/where.c c9b90e7672f4662a83ef9a27a193020d69fe034c
+F src/where.c 420f666a38b405cd58bd7af832ed99f1dbc7d336
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
 F test/dbbe.test 0a8e4293cf816e590dcbb01be4cd4e8f7f95bdc8
-F test/delete.test 30edd2c7484274fb2e7dbc4a1ac769bb330b322e
+F test/delete.test 402ee3ccb6e544582d24c573ef70b34d09583ae7
 F test/expr.test 09b55ccf81cb8cc2f9cd83d592a2ba187ee48ba8
-F test/in.test 962a605b6a3a619214f84d1950dfc44fcf0d8b8f
+F test/in.test 2c560c0f55fb777029fd9bb5378f2997582aa603
 F test/index.test 620ceab7165dd078d1266bdc2cac6147f04534ac
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
 F test/main.test b7366cc6f3690915a11834bc1090deeff08acaf9
-F test/select1.test 64703852af34c85bb31b0a74bd73b340e8267f42
-F test/select2.test 5e2783a48360b83956366ea24b2c5f0293015a84
+F test/select1.test 4e57b0b5eae0c991d9cc51d1288be0476110e6f6
+F test/select2.test ed6e7fc3437079686d7ae4390a00347bbd5f7bf8
 F test/select3.test a9234b8424b6c6d71de534f43b91ade9be68e9cc
 F test/select4.test cb5374d7c87680e294ac749307459a5cc547609d
-F test/select5.test 80ea257ce35e736c559bc6cd342361974e60a979
+F test/select5.test e2b9d51d88cbd6c307c2c05b0ef55fe7ba811ac2
 F test/sort.test d582086c4bb7df3fbf50aa72e69d7e235e9f8e31
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test d3e01e4916a99ade7d8f1d534ee1b36d57c00490
 F test/tester.tcl 95b286791e6256bb6db0165f9342c70fff549a62
-F test/update.test 0f763adc3d84e85224e1dadff72237bcabab1938
+F test/update.test 62f6ce99ff31756aab0ca832ff6d34c5a87b6250
 F test/vacuum.test 8becf5cfeb897108b35cdd996793e7f1df2f28fd
 F test/where.test bbab5a308055fb6087dc23d600b4ad2b72797397
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
@@ -57,14 +57,14 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
-F www/c_interface.tcl 9ac800854272db5fe439e07b7435b243a5422293
+F www/c_interface.tcl 8eb800f67e6896b1894d666b81c0b418cea09fc7
 F www/changes.tcl 160f7522145efaf49961f6cf3671c66c02f2207b
 F www/fileformat.tcl b11435fcd2cf2238a1c5e6d16fe5e83bcd14d434
 F www/index.tcl 4116afce6a8c63d68882d2b00aa10b079e0129cd
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 3cdc4bb2515fcfcbe853e3f0c91cd9199e82dadd
-F www/sqlite.tcl 5420eab24b539928f80ea9b3088e2549d34f438d
-P 8cce4d279de00da45c5970c8f0946f49e03e6846
-R 24ae8084d8386391fc8e3403683f09be
+F www/sqlite.tcl 9fdcfd48fe9e5669116d02f29b2608903f295740
+P af14a5b3ba4a13665142b700e8864bf63d591d95
+R 4b875fc1d381ebbdab00fc05e8ad8c74
 U drh
-Z 34d7058e222643fe967104d6dc2aa522
+Z e8d8e8697e4d556ecd0e3a4c2a206a66

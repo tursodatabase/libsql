@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.24 2000/06/11 23:50:13 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.25 2000/06/21 13:59:12 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -35,7 +35,20 @@
 #include <string.h>
 #include <assert.h>
 
-/* #define MEMORY_DEBUG 1 */
+/*
+** If memory allocation problems are found, recompile with
+**
+**      -DMEMORY_DEBUG=1
+**
+** to enable some sanity checking on malloc() and free().  To
+** check for memory leaks, recompile with
+**
+**      -DMEMORY_DEBUG=2
+**
+** and a line of text will be written to standard error for
+** each malloc() and free().  This output can be analyzed
+** by an AWK script to determine if there are any leaks.
+*/
 #ifdef MEMORY_DEBUG
 # define sqliteMalloc(X)    sqliteMalloc_(X,__FILE__,__LINE__)
 # define sqliteFree(X)      sqliteFree_(X,__FILE__,__LINE__)
@@ -58,8 +71,8 @@ int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 #endif
 
 /*
-** The number of entries in the in-memory hash table holding the
-** schema.
+** The number of entries in the in-memory hash array holding the
+** database schema.
 */
 #define N_HASH        51
 
@@ -77,7 +90,7 @@ int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 #define ArraySize(X)    (sizeof(X)/sizeof(X[0]))
 
 /*
-** Integer identifiers for functions.
+** Integer identifiers for built-in SQL functions.
 */
 #define FN_Unknown    0
 #define FN_Count      1
@@ -114,46 +127,61 @@ struct sqlite {
 };
 
 /*
-** Possible values for the flags field of sqlite
+** Possible values for the sqlite.flags.
 */
 #define SQLITE_VdbeTrace    0x00000001
 #define SQLITE_Initialized  0x00000002
 
 /*
-** information about each column of a table is held in an instance
+** information about each column of an SQL table is held in an instance
 ** of this structure.
 */
 struct Column {
-  char *zName;        /* Name of this column */
-  char *zDflt;        /* Default value of this column */
-  int notNull;        /* True if there is a NOT NULL constraing */
+  char *zName;     /* Name of this column */
+  char *zDflt;     /* Default value of this column */
+  int notNull;     /* True if there is a NOT NULL constraint */
 };
 
 /*
-** Each table is represented in memory by
-** an instance of the following structure
+** Each SQL table is represented in memory by
+** an instance of the following structure.
 */
 struct Table {
-  char *zName;        /* Name of the table */
-  Table *pHash;       /* Next table with same hash on zName */
-  int nCol;           /* Number of columns in this table */
-  Column *aCol;       /* Information about each column */
-  int readOnly;       /* True if this table should not be written by the user */
-  Index *pIndex;      /* List of indices on this table. */
+  char *zName;     /* Name of the table */
+  Table *pHash;    /* Next table with same hash on zName */
+  int nCol;        /* Number of columns in this table */
+  Column *aCol;    /* Information about each column */
+  int readOnly;    /* True if this table should not be written by the user */
+  Index *pIndex;   /* List of SQL indexes on this table. */
 };
 
 /*
-** Each index is represented in memory by and
+** Each SQL index is represented in memory by and
 ** instance of the following structure.
+**
+** The columns of the table that are to be indexed are described
+** by the aiColumn[] field of this structure.  For example, suppose
+** we have the following table and index:
+**
+**     CREATE TABLE Ex1(c1 int, c2 int, c3 text);
+**     CREATE INDEX Ex2 ON Ex1(c3,c1);
+**
+** In the Table structure describing Ex1, nCol==3 because there are
+** three columns in the table.  In the Index structure describing
+** Ex2, nColumn==2 since 2 of the 3 columns of Ex1 are indexed.
+** The value of aiColumn is {2, 0}.  aiColumn[0]==2 because the 
+** first column to be indexed (c3) has an index of 2 in Ex1.aCol[].
+** The second column to be indexed (c1) has an index of 0 in
+** Ex1.aCol[], hence Ex2.aiColumn[1]==0.
 */
 struct Index {
-  char *zName;        /* Name of this index */
-  Index *pHash;       /* Next index with the same hash on zName */
-  int nField;         /* Number of fields in the table indexed by this index */
-  int *aiField;       /* Indices of fields used by this index.  1st is 0 */
-  Table *pTable;      /* The table being indexed */
-  int isUnique;       /* True if keys must all be unique */
-  Index *pNext;       /* The next index associated with the same table */
+  char *zName;     /* Name of this index */
+  Index *pHash;    /* Next index with the same hash on zName */
+  int nColumn;     /* Number of columns in the table used by this index */
+  int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
+  Table *pTable;   /* The SQL table being indexed */
+  int isUnique;    /* True if keys must all be unique */
+  Index *pNext;    /* The next index associated with the same table */
 };
 
 /*
@@ -174,11 +202,11 @@ struct Expr {
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as a function argument */
   Token token;           /* An operand token */
-  int iTable, iField;    /* When op==TK_FIELD, then this node means the
-                         ** iField-th field of the iTable-th table.  When
-                         ** op==TK_FUNCTION, iField holds the function id */
-  int iAgg;              /* When op==TK_FIELD and pParse->useAgg==TRUE, pull
-                         ** value from these element of the aggregator */
+  int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
+                         ** iColumn-th field of the iTable-th table.  When
+                         ** op==TK_FUNCTION, iColumn holds the function id */
+  int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull
+                         ** result from the iAgg-th element of the aggregator */
   Select *pSelect;       /* When the expression is a sub-select */
 };
 
@@ -209,8 +237,8 @@ struct IdList {
   struct {
     char *zName;      /* Text of the identifier. */
     char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
-    Table *pTab;      /* Table corresponding to zName */
-    int idx;          /* Index of a field named zName in a table */
+    Table *pTab;      /* An SQL table corresponding to zName */
+    int idx;          /* Index in some Table.aCol[] of a column named zName */
   } *a;            /* One entry for each identifier on the list */
 };
 
@@ -243,7 +271,7 @@ struct Select {
   Expr *pHaving;         /* The HAVING clause */
   ExprList *pOrderBy;    /* The ORDER BY clause */
   int op;                /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
-  Select *pPrior;        /* Prior select to which this one joins */
+  Select *pPrior;        /* Prior select in a compound select statement */
 };
 
 /*
