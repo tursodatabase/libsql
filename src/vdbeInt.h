@@ -144,7 +144,7 @@ typedef struct Mem Mem;
 ** MemSetNull - Set the value to NULL.
 ** MemSetInt  - Set the value to an integer.
 ** MemSetReal - Set the value to a real.
-** MemSetStr - Set the value to a string.
+** MemSetStr - Set the value to a string (or blob if enc==0).
 */
 #define MemSetNull(p) sqlite3VdbeMemSetNull(p)
 #define MemSetInt(p,v) sqlite3VdbeMemSetInt(p,v)
@@ -159,22 +159,21 @@ typedef struct Mem Mem;
 **
 ** Non-zero is returned if a malloc() fails.
 */
-#define MemNulTerminate(p) ( \
-  ((p)->flags&MEM_Str) && \
-  !((p)->flags&MEM_Term) && \
-  sqlite3VdbeMemNulTerminate(p) )
+#define MemNulTerminate(p) \
+if( ((p)->flags&MEM_Str) && !((p)->flags&MEM_Term) ) sqlite3VdbeMemNulTerminate(p);
 
-/*
-** Allowed values for Mem.flags.
+/* One or more of the following flags are set to indicate the valid
+** representations of the value stored in the Mem struct.
 **
-** The first 5 values determine the data type(s).  Null and Blob must
-** occur alone.  But Str, Int, and Real can occur together.
+** If the MEM_Null flag is set, then the value is an SQL NULL value.
+** No other flags may be set in this case.
 **
-** The next 3 utf entries determine the text representation for strings.
-** These values are only meaningful if the type is Str.
-**
-** The last 4 values specify what kind of memory Mem.z points to.
-** These valus are only meaningful if the Str or Blob types are used.
+** If the MEM_Str flag is set then Mem.z points at a string representation.
+** Usually this is encoded in the same unicode encoding as the main
+** database (see below for exceptions). If the MEM_Term flag is also
+** set, then the string is nul terminated. The MEM_Int and MEM_Real 
+** flags may coexist with the MEM_Str flag.
+** 
 */
 #define MEM_Null      0x0001   /* Value is NULL */
 #define MEM_Str       0x0002   /* Value is a string */
@@ -182,12 +181,30 @@ typedef struct Mem Mem;
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 
-#define MEM_Term      0x0200   /* String has a nul terminator character */
+#define MEM_Term       0x0100   /* String rep is nul terminated */
 
-#define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
-#define MEM_Static    0x0800   /* Mem.z points to a static string */
-#define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
-#define MEM_Short     0x2000   /* Mem.z points to Mem.zShort */
+/* Values with type NULL or BLOB can have only one representation. But
+** values with a manifest type of REAL, INTEGER or STRING may have one
+** or more representation cached in the Mem struct at any one time. The
+** flags MEM_IntVal, MEM_RealVal and MEM_StrVal are true whenever the real,
+** integer or string representation stored in a Mem struct is valid.
+**
+** When MEM_StrVal is set, then MEM_Term may also be set. This indicates
+** that the string is terminated with a nul-terminator character.
+*/
+#define MEM_TypeInt    0x0020   /* Value type is an integer */
+#define MEM_TypeReal   0x0040   /* Value type is real */
+#define MEM_TypeStr    0x0080   /* Value type is string */
+
+
+/* Whenever Mem contains a valid string or blob representation, one of
+** the following flags must be set to determine the memory management
+** policy for Mem.z
+*/
+#define MEM_Dyn       0x0200   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Static    0x0400   /* Mem.z points to a static string */
+#define MEM_Ephem     0x0800   /* Mem.z points to an ephemeral string */
+#define MEM_Short     0x1000   /* Mem.z points to Mem.zShort */
 
 /* Internally, all strings manipulated by the  VDBE are encoded using the
 ** native encoding for the main database. Therefore the following three
@@ -214,15 +231,15 @@ typedef struct Mem Mem;
 ** sqlite3_column_data() or sqlite3_column_data16(). If this occurs, then
 ** the MEM_Utf* flags are updated accordingly.
 */
-#define MEM_Utf8      0x0040   /* String uses UTF-8 encoding */
-#define MEM_Utf16be   0x0080   /* String uses UTF-16 big-endian */
-#define MEM_Utf16le   0x0100   /* String uses UTF-16 little-endian */
+#define MEM_Utf8      0x2000   /* String uses UTF-8 encoding */
+#define MEM_Utf16be   0x4000   /* String uses UTF-16 big-endian */
+#define MEM_Utf16le   0x8000   /* String uses UTF-16 little-endian */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** aggregate function context that needs to be finalized.
 */
-#define MEM_AggCtx    0x4000   /* Mem.z points to an agg function context */
+#define MEM_AggCtx    0x10000  /* Mem.z points to an agg function context */
 
 /*
 ** The "context" argument for a installable function.  A pointer to an

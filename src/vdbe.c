@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.333 2004/05/26 10:11:06 danielk1977 Exp $
+** $Id: vdbe.c,v 1.334 2004/05/26 13:27:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -95,7 +95,7 @@ int sqlite3_interrupt_count = 0;
 #define MemIsNull(p) ((p)->flags&Mem_Null)
 #define MemIsBlob(p) ((p)->flags&Mem_Blob)
 #define MemIsStr(p) ((p)->flags&(MEM_Int|MEM_Real|MEM_Str))
-#define MemIsInt(p) ((p)->flags&MEM_Int || hardMemIsInt(p))
+#define MemIsInt(p) ((p)->flags&(MEM_Int|MEM_Real) || hardMemIsInt(p))
 #define MemIsReal(p) ((p)->flags&(MEM_Int|MEM_Real) || hardMemIsReal(p))
 static int hardMemIsInt(Mem *p){
   assert( !(p->flags&(MEM_Int|MEM_Real)) );
@@ -127,7 +127,7 @@ static int hardMemIsReal(Mem *p){
 ** they may cache the integer or real value cast of the value.
 */
 #define MemInt(p) (((p)->flags&MEM_Int)?(p)->i:hardMemInt(p))
-#define MemReal(p) (((p)->flags&MEM_Real)?(p)->i:hardMemReal(p))
+#define MemReal(p) (((p)->flags&MEM_Real)?(p)->r:hardMemReal(p))
 static i64 hardMemInt(Mem *p){
   assert( !(p->flags&MEM_Int) );
   if( !MemIsInt(p) ) return 0;
@@ -240,11 +240,23 @@ static int encToFlags(u8 enc){
 static int SetEncoding(Mem*, int);
 
 /*
+** Set the MEM_TypeStr, MEM_TypeReal or MEM_TypeInt flags in pMem if
+** required.
+*/
+static void MemSetTypeFlags(Mem *pMem){
+  int f = pMem->flags;
+  if( f&MEM_Int ) pMem->flags |= MEM_TypeInt;
+  else if( f&MEM_Real ) pMem->flags |= MEM_TypeReal;
+  else if( f&MEM_Str ) pMem->flags |= MEM_TypeStr;
+}
+
+
+/*
 ** Convert the given stack entity into a string if it isn't one
 ** already. Return non-zero if a malloc() fails.
 */
 #define Stringify(P, enc) \
-(!((P)->flags&(MEM_Str|MEM_Blob)) && hardStringify(P, enc))
+if( !((P)->flags&(MEM_Str|MEM_Blob)) ) hardStringify(P, enc);
 static int hardStringify(Mem *pStack, u8 enc){
   int rc = SQLITE_OK;
   int fg = pStack->flags;
@@ -377,7 +389,9 @@ int SetEncoding(Mem *pMem, int flags){
       */
       pMem->z = z;
       pMem->n = n;
-      pMem->flags = (MEM_Str | MEM_Dyn | MEM_Term | flags);
+      pMem->flags &= ~(MEM_Utf8|MEM_Utf16le|MEM_Utf16be);
+      pMem->flags &= ~(MEM_Static|MEM_Short|MEM_Ephem);
+      pMem->flags |= (MEM_Dyn|MEM_Term|flags);
     }else{
       /* Must be translating between UTF-16le and UTF-16be. */
       int i;
@@ -575,41 +589,31 @@ const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
 ** is returned.
 */
 const unsigned char *sqlite3_value_data(sqlite3_value *pVal){
-  if( pVal->flags&MEM_Null ){
+  int flags = pVal->flags;
+
+  if( flags&MEM_Null ){
     /* For a NULL return a NULL Pointer */
     return 0;
   }
 
-  if( pVal->flags&MEM_Str ){
+  if( flags&MEM_Str ){
     /* If there is already a string representation, make sure it is in
     ** encoded in UTF-8.
     */
     SetEncoding(pVal, MEM_Utf8|MEM_Term);
-  }else if( !(pVal->flags&MEM_Blob) ){
-    /* Otherwise, unless this is a blob, convert it to a UTF-8 string */
-    Stringify(pVal, TEXT_Utf8);
+  }else if( !(flags&MEM_Blob) ){
+    if( flags&MEM_Int ){
+      sqlite3_snprintf(NBFS, pVal->zShort, "%lld", pVal->i);
+    }else{
+      assert( flags&MEM_Real );
+      sqlite3_snprintf(NBFS, pVal->zShort, "%.15g", pVal->r);
+    }
+    pVal->z = pVal->zShort;
+    pVal->n = strlen(pVal->z)+1;
+    pVal->flags |= (MEM_Str|MEM_Short);
   }
 
   return pVal->z;
-}
-
-/*
-** Return the value of the 'i'th column of the current row of the currently
-** executing statement pStmt.
-*/
-const void *sqlite3_column_data16(sqlite3_stmt *pStmt, int i){
-  int vals;
-  Vdbe *pVm = (Vdbe *)pStmt;
-  Mem *pVal;
-
-  vals = sqlite3_data_count(pStmt);
-  if( i>=vals || i<0 ){
-    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
-    return 0;
-  }
-
-  pVal = &pVm->pTos[(1-vals)+i];
-  return sqlite3_value_data16((sqlite3_value *)pVal);
 }
 
 /*
@@ -641,11 +645,30 @@ const void *sqlite3_value_data16(sqlite3_value* pVal){
     */
     SetEncoding(pVal, encToFlags(TEXT_Utf16)|MEM_Term);
   }else if( !(pVal->flags&MEM_Blob) ){
-    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
-    Stringify(pVal, TEXT_Utf16);
+    sqlite3_value_data(pVal);
+    SetEncoding(pVal, encToFlags(TEXT_Utf16)|MEM_Term);
   }
 
   return (const void *)(pVal->z);
+}
+
+/*
+** Return the value of the 'i'th column of the current row of the currently
+** executing statement pStmt.
+*/
+const void *sqlite3_column_data16(sqlite3_stmt *pStmt, int i){
+  int vals;
+  Vdbe *pVm = (Vdbe *)pStmt;
+  Mem *pVal;
+
+  vals = sqlite3_data_count(pStmt);
+  if( i>=vals || i<0 ){
+    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pVal = &pVm->pTos[(1-vals)+i];
+  return sqlite3_value_data16((sqlite3_value *)pVal);
 }
 
 /*
@@ -676,8 +699,7 @@ int sqlite3_value_bytes16(sqlite3_value *pVal){
 */
 long long int sqlite3_value_int(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
-  Integerify(pMem, flagsToEnc(pMem->flags));
-  return pVal->i;
+  return MemInt(pMem);
 }
 
 /*
@@ -686,8 +708,7 @@ long long int sqlite3_value_int(sqlite3_value *pVal){
 */
 double sqlite3_value_float(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
-  Realify(pMem, flagsToEnc(pMem->flags));
-  return pMem->r;
+  return MemReal(pMem);
 }
 
 /*
@@ -799,13 +820,13 @@ int sqlite3_value_type(sqlite3_value* pVal){
   if( f&MEM_Null ){
     return SQLITE3_NULL;
   }
-  if( f&MEM_Int ){
+  if( f&MEM_TypeInt ){
     return SQLITE3_INTEGER;
   }
-  if( f&MEM_Real ){
+  if( f&MEM_TypeReal ){
     return SQLITE3_FLOAT;
   }
-  if( f&MEM_Str ){
+  if( f&MEM_TypeStr ){
     return SQLITE3_TEXT;
   }
   if( f&MEM_Blob ){
@@ -1772,6 +1793,16 @@ case OP_String: {
   pTos++;
   pTos->flags = 0;
  
+  if( z ){
+    /* FIX ME: For now the code in expr.c always puts UTF-8 in P3. It
+    ** should transform text to the native encoding before doing so.
+    */
+    MemSetStr(pTos, z, -1, TEXT_Utf8, 0);
+    SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
+  }else if( op==OP_String ){
+    pTos->flags = MEM_Null;
+  }
+
   /* If this is an OP_Real or OP_Integer opcode, set the pTos->r or pTos->i
   ** values respectively.
   */
@@ -1779,34 +1810,13 @@ case OP_String: {
     assert( z );
     assert( sqlite3IsNumber(z, 0, TEXT_Utf8) );
     pTos->r = sqlite3AtoF(z, 0);
-    pTos->flags = MEM_Real;
+    pTos->flags |= MEM_Real;
   }else if( op==OP_Integer ){
-    pTos->flags = MEM_Int;
     pTos->i = pOp->p1;
     if( pTos->i==0 && pOp->p3 ){
-      sqlite3GetInt64(pOp->p3, &pTos->i);
+      sqlite3GetInt64(z, &pTos->i);
     }
-  }
-
-  if( z ){
-    /* FIX ME: For now the code in expr.c always puts UTF-8 in P3. It
-    ** should transform text to the native encoding before doing so.
-    */
-    if( db->enc!=TEXT_Utf8 ){
-      rc = sqlite3utfTranslate(z, -1, TEXT_Utf8, (void **)&pTos->z, 
-          &pTos->n, db->enc);
-      if( rc!=SQLITE_OK ){
-        assert( !pTos->z );
-        goto abort_due_to_error;
-      }
-      pTos->flags |= MEM_Str | MEM_Dyn | MEM_Term;
-    }else{
-      pTos->z = z;
-      pTos->n = strlen(z) + 1;
-      pTos->flags |= MEM_Str | MEM_Static | MEM_Term;
-    }
-  }else if( op==OP_String ){
-    pTos->flags = MEM_Null;
+    pTos->flags |= MEM_Int;
   }
 
   break;
@@ -2027,6 +2037,7 @@ case OP_Callback: {
     Mem *pVal = &pTos[0-i];
     SetEncodingFlags(pVal, db->enc);
     MemNulTerminate(pVal);
+    MemSetTypeFlags(pVal);
   }
 
   p->resOnStack = 1;
@@ -2277,6 +2288,7 @@ case OP_Function: {
   pArg = &pTos[1-n];
   for(i=0; i<n; i++, pArg++){
     SetEncodingFlags(pArg, db->enc);
+    MemSetTypeFlags(pArg);
     apVal[i] = pArg;
   }
 
@@ -5624,8 +5636,9 @@ case OP_AggFunc: {
   assert( apVal || n==0 );
 
   for(i=0; i<n; i++, pRec++){
-      apVal[i] = pRec;
-      SetEncodingFlags(pRec, db->enc);
+    apVal[i] = pRec;
+    SetEncodingFlags(pRec, db->enc);
+    MemSetTypeFlags(pRec);
   }
   i = pTos->i;
   assert( i>=0 && i<p->agg.nMem );
