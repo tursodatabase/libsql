@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.231 2005/01/20 13:36:20 drh Exp $
+** $Id: select.c,v 1.232 2005/01/20 22:48:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -741,7 +741,7 @@ static void generateColumnNames(
   sqlite3 *db = pParse->db;
   int fullNames, shortNames;
 
-#ifdef SQLITE_OMIT_EXPLAIN
+#ifndef SQLITE_OMIT_EXPLAIN
   /* If this is an EXPLAIN, skip this step */
   if( pParse->explain ){
     return;

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.3 2005/01/03 01:33:00 drh Exp $}
+set rcsid {$Id: whentouse.tcl,v 1.4 2005/01/20 22:48:49 drh Exp $}
 source common.tcl
 header {Appropriate Uses For SQLite}
 
@@ -14,7 +14,7 @@ primary design goal is to be simple:
 <ul>
 <li>Simple to administer</li>
 <li>Simple to operate</li>
-<li>Simple to use in a program</li>
+<li>Simple to embed in a larger program</li>
 <li>Simple to maintain and customize</li>
 </ul>
 
@@ -34,8 +34,8 @@ achieve simplicity, SQLite has had to sacrifice other characteristics
 that some people find useful, such as high concurrency, fine-grained
 access control, a rich set of built-in functions, stored procedures,
 esoteric SQL language features, XML and/or Java extensions,
-tera- or peta-byte scalability, and so forth.  If you need these
-kinds of features and don't mind the added complexity that they
+tera- or peta-byte scalability, and so forth.  If you need some of these
+latter of features and do not mind the added complexity that they
 bring, then SQLite is probably not the database for you.
 SQLite is not intended to be an enterprise database engine.  It
 not designed to compete with Oracle or PostgreSQL.
@@ -188,7 +188,7 @@ prototyping new, experimental database language features or ideas.
 <ul>
 <li><p><b>Client/Server Applications</b><p>
 
-<p>If you have many client programs access a common database
+<p>If you have many client programs accessing a common database
 over a network, you should consider using a client/server database
 engine instead of SQLite.  SQLite will work over a network filesystem,
 but because of the latency associated with most network filesystems,
@@ -235,7 +235,7 @@ consider using a different database engine.
 SQLite uses reader/writer locks on the entire database file.  That means
 if any process is reading from any part of the database, all other
 processes are prevented from writing any other part of the database.
-Similarly, if any one process is writing to any part of the database,
+Similarly, if any one process is writing to the database,
 all other processes are prevented from reading any other part of the
 database.
 For many situations, this is not a problem.  Each application

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.127 2005/01/17 07:53:44 danielk1977 Exp $
+** $Id: util.c,v 1.128 2005/01/20 22:48:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -800,7 +800,7 @@ int sqlite3SafetyCheck(sqlite3 *db){
 int sqlite3PutVarint(unsigned char *p, u64 v){
   int i, j, n;
   u8 buf[10];
-  if( v & 0xff00000000000000 ){
+  if( v & (((u64)0xff000000)<<32) ){
     p[8] = v;
     v >>= 8;
     for(i=7; i>=0; i--){

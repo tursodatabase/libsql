@@ -1,5 +1,5 @@
-C Added\sthe\sSQLITE_OMIT_SUBQUERY\scompile-time\soption\sand\sthe\sEXISTS\soperator.\nRegression\stests\sare\scurrently\sfailing\swith\san\sassertion\sfault.\s(CVS\s2245)
-D 2005-01-20T13:36:20
+C Bug\sfixes\sand\senhancements\sentered\swhile\son\sjury\srecess.\s(CVS\s2246)
+D 2005-01-20T22:48:48
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -36,7 +36,7 @@ F src/cursor.c de73c00aefc4747ad59b5105cf38bbff0667922e
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c b3accca9c38d9a67dbd724f67b04151a13735ebd
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
-F src/expr.c 12b37893ab7e3a41d1d9e9a4931eeb3690951d1f
+F src/expr.c ebddbcf204b1a286799058731c33f4e382d98f1a
 F src/func.c dc188d862d7276ea897655b248e2cb17022686e3
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -58,7 +58,7 @@ F src/parse.y 301d07db056f5125806e84994b5f41a8355d28ad
 F src/pragma.c 8ab313986673aa4c45e8693d8aabb9b95ee7b14a
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 8a4a38310c5168d1f6e1759494e57cf838d6d37c
+F src/select.c d8f5c8b44922d9e295a32be941d0a416cda94f98
 F src/shell.c 591364a0e9ca4ce53873e21e0294476c0c2b4770
 F src/sqlite.h.in 8249b697d71ef6d7f7f752ba4ca04058e9e8b5ff
 F src/sqliteInt.h 9a582fcb8333b5a30706250282d9697654305dbc
@@ -73,15 +73,15 @@ F src/tokenize.c 88bef43fe3e3c8865a7447f934296ac13238c4f6
 F src/trigger.c b3de66150300026f21522bb273bbc413a80f427d
 F src/update.c 6e5c6eb660a5508c449c6d637571e24ef13f70a1
 F src/utf.c 9bece2c7b94d9002ab1bb900a7658c6f826b0f74
-F src/util.c 63e8d77659df88b292ac2a9dbd4766419b0ea158
+F src/util.c a858b93ba06bbafab55ba41e4d58538eb51f4b6a
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
-F src/vdbe.c c5a711f146415634b72b05212bab9f222b0cce26
+F src/vdbe.c 37afd35d6d09cb701f7fd0a959c4cb8aa0432184
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h f2b5f54d9881bbc89fff02d95f3f825ade68bce2
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
-F src/vdbeaux.c 6c294f7390880a7bb4795c9e0bc605b1a416579a
+F src/vdbeaux.c d01eff904aa38fcea738998845b736ec1a3b1f7c
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
-F src/where.c 06aa612bd0bc2634a53e541c4ed9874b814e82d1
+F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
@@ -104,7 +104,7 @@ F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
-F test/capi2.test 325e8d68fe7b3c518f73a37f039c52278be8f101
+F test/capi2.test b0e12aa66684424869f899b421ff71df69411998
 F test/capi3.test ffb8bd785d5fe26e5d63f24c189c45f21297d44f
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
@@ -245,7 +245,7 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/different.tcl 1cdf371794ec04a993be3b3e2c65e1897b789a86
+F www/different.tcl 051086bc273a36808dc08d58ed098611fb53e315
 F www/docs.tcl 09e5eccffad783fe65fac87772f5265e9bb64abe
 F www/download.tcl 4d8ff8c882063b864d004c524e4e7456858f09a5
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -269,8 +269,8 @@ F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
 F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
-F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 417bbba93ad7ed5c03d9db6afc12e170155bd152
-R 0a5b2b3342f1338802ba7063dbaea636
+F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
+P d30fdf0f2c24cb74b48fab9b83fba4e4b2fe878a
+R adcab33f79815bf8e13a0ca4e6aa511b
 U drh
-Z 9bd559beb0f6f23bafe4d9cc37e5f07d
+Z 2ea9d8b8d28cb125114230ce2ca3bb86

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.23 2005/01/12 12:44:04 danielk1977 Exp $
+# $Id: capi2.test,v 1.24 2005/01/20 22:48:48 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -597,6 +597,7 @@ do_test capi2-7.11a {
 
 ifcapable {explain} {
   do_test capi2-7.12 {
+btree_breakpoint
     set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
     lindex $x 0
   } {0}

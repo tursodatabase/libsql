@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.1 2005/01/17 03:42:52 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.2 2005/01/20 22:48:49 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -28,11 +28,9 @@ feature zeroconfig {Zero-Configuration} {
   <p>
   SQLite just works.
   <p>
-  An SQLite database is an ordinary disk file.  If SQLite can read
-  the disk file then it can read anything in the database.  If the disk
-  file and its directory are writable, then SQLite can change anything
-  in the database.
-
+  Other more familiar database engines run great once you get them going.
+  But doing the initial installation and configuration can be
+  intimidatingly complex.
 }
 
 feature serverless {Serverless} {
@@ -64,12 +62,29 @@ feature serverless {Serverless} {
   allows multiple applications to access the same database at the same time.
 }
 
+feature onefile {Single Database File} {
+  An SQLite database is a single ordinary disk file that can be located
+  anywhere in the directory hierarchy.  If SQLite can read
+  the disk file then it can read anything in the database.  If the disk
+  file and its directory are writable, then SQLite can change anything
+  in the database.   Database files can easily be copied onto a USB
+  memory stick or emailed for sharing.
+  <p>
+  Other SQL database engines tend to store data as a large collection of
+  files.  Often these files are in a standard location that only the
+  database engine itself can access.  This makes the data more secure,
+  but also makes it harder to access.  Some SQL database engines provide
+  the option of writing directly to disk and bypassing the filesystem
+  all together.  This provides added performance, but at the cost of
+  considerable setup and maintenance complexity.
+}
+
 feature small {Compact} {
   When optimized for size, the whole SQLite library with everything enabled
   is less than 220KiB in size (as measured on an ix86 using the "size"
   utility from the GNU compiler suite.)  Unneeded features can be disabled
   at compile-time to further reduce the size of the library to under
-  180KiB if desired.
+  170KiB if desired.
   <p>
   Most other SQL database engines are much larger than this.  IBM boasts
   that it's recently released CloudScape database engine is "only" a 2MiB

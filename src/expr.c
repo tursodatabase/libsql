@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.185 2005/01/20 13:36:20 drh Exp $
+** $Id: expr.c,v 1.186 2005/01/20 22:48:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -611,6 +611,10 @@ static int exprNodeIsConstant(void *pArg, Expr *pExpr){
     case TK_DOT:
     case TK_AGG_FUNCTION:
     case TK_FUNCTION:
+#ifndef SQLITE_OMIT_SUBQUERY
+    case TK_SELECT:
+    case TK_EXISTS:
+#endif
       *((int*)pArg) = 0;
       return 2;
     default:
@@ -1534,6 +1538,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeOp3(v, OP_Function, nExpr, p2, (char*)pDef, P3_FUNCDEF);
       break;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS:
     case TK_SELECT: {
       if( pExpr->iTable>=0 ){
         sqlite3VdbeAddOp(v, OP_Gosub, 0, pExpr->iTable);
@@ -1543,6 +1549,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       VdbeComment((v, "# load subquery result"));
       break;
     }
+#endif
     case TK_IN: {
       int addr;
       char affinity;
