@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.6 2002/08/14 12:56:56 drh Exp $
+# $Id: sort.test,v 1.7 2002/08/26 19:55:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -217,6 +217,54 @@ do_test sort-4.8 {
 #  }
 #} {-4000000000 -4221 -123 -3.141592653 -2.15 -2 0.0013442 1.6 2.7 11 50000000000 1.23456789012346e+18}
 
+do_test sort-5.1 {
+  execsql {
+    create table t3(a,b);
+    insert into t3 values(5,NULL);
+    insert into t3 values(6,NULL);
+    insert into t3 values(3,NULL);
+    insert into t3 values(4,'cd');
+    insert into t3 values(1,'ab');
+    insert into t3 values(2,NULL);
+    select a from t3 order by b, a;
+  }
+} {2 3 5 6 1 4}
+do_test sort-5.2 {
+  execsql {
+    select a from t3 order by b, a desc;
+  }
+} {6 5 3 2 1 4}
+do_test sort-5.3 {
+  execsql {
+    select a from t3 order by b desc, a;
+  }
+} {4 1 2 3 5 6}
+do_test sort-5.4 {
+  execsql {
+    select a from t3 order by b desc, a desc;
+  }
+} {4 1 6 5 3 2}
 
+do_test sort-6.1 {
+  execsql {
+    create index i3 on t3(b,a);
+    select a from t3 order by b, a;
+  }
+} {2 3 5 6 1 4}
+do_test sort-6.2 {
+  execsql {
+    select a from t3 order by b, a desc;
+  }
+} {6 5 3 2 1 4}
+do_test sort-6.3 {
+  execsql {
+    select a from t3 order by b desc, a;
+  }
+} {4 1 2 3 5 6}
+do_test sort-6.4 {
+  execsql {
+    select a from t3 order by b desc, a desc;
+  }
+} {4 1 6 5 3 2}
 
 finish_test

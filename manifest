@@ -1,5 +1,5 @@
-C Version\s2.7.0\s(CVS\s729)
-D 2002-08-25T20:58:12
+C Fix\sfor\sticket\s#142:\sMake\ssure\swe\sget\sthe\scorrect\ssort\sorder\seven\swhen\sthe\ncolumns\sbeing\ssorted\scontain\sNULLs.\s(CVS\s730)
+D 2002-08-26T19:55:08
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,8 +51,8 @@ F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
 F src/tokenize.c 8bd6251e5237c9a16d0bbfb9894925eb129985fa
 F src/trigger.c c90a292a4bef25e478fd5deda6d300319be6a023
 F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
-F src/util.c 60bc91db77cf488618ec4720cb06eedb7f959268
-F src/vdbe.c 99b5714751b541a1c64c2c4dede83a474ca6b7e2
+F src/util.c c70d5da5357e01b58392faebae3c3620c1d71f14
+F src/vdbe.c ea41a3ac96511399e95ae18d16d32ec41ca91ec0
 F src/vdbe.h 52ec880c63c6ca74bb6377432149260b1b237873
 F src/where.c ce42cce65d7bf42341627f3fb0a17f69fea6a4f4
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -93,7 +93,7 @@ F test/select3.test 3e98cec10e755226cbabdd7073ec37baab9ab148
 F test/select4.test 10ba54f24ef6ca7958a7045b001079378db2370c
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
-F test/sort.test f9744a81a488d6b448aeeb98d0546b5c802248ae
+F test/sort.test 876b76c5a837af5bead713146c7c65f85e84fbf5
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test dedb4d3a73340d811e309672ca14537daa542fb1
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e2d95f85a3c4beeb5f8e78498f52fc00475f38ed
-R 1887224d7be529eb62028d618058de77
+P 9e341d9c934c2111be6834743f1ce30463b095b6
+R c3833aec2102312b5a02d97350523f61
 U drh
-Z 2d9f1fc80b5f3e7813cac3b3ac44d578
+Z 83157ab4770270ac20f0733ba099c807

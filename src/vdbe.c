@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.171 2002/08/25 19:20:40 drh Exp $
+** $Id: vdbe.c,v 1.172 2002/08/26 19:55:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4393,10 +4393,12 @@ case OP_SortMakeRec: {
 ** number of stack entries consumed is the number of characters in 
 ** the string P3.  One character from P3 is prepended to each entry.
 ** The first character of P3 is prepended to the element lowest in
-** the stack and the last character of P3 is appended to the top of
+** the stack and the last character of P3 is prepended to the top of
 ** the stack.  All stack entries are separated by a \000 character
 ** in the result.  The whole key is terminated by two \000 characters
 ** in a row.
+**
+** "N" is substituted in place of the P3 character for NULL values.
 **
 ** See also the MakeKey and MakeIdxKey opcodes.
 */
@@ -4410,18 +4412,28 @@ case OP_SortMakeKey: {
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
   nByte = 1;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( Stringify(p, i) ) goto no_mem;
-    nByte += aStack[i].n+2;
+    if( (aStack[i].flags & STK_Null)!=0 ){
+      nByte += 2;
+    }else{
+      if( Stringify(p, i) ) goto no_mem;
+      nByte += aStack[i].n+2;
+    }
   }
   zNewKey = sqliteMalloc( nByte );
   if( zNewKey==0 ) goto no_mem;
   j = 0;
   k = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    zNewKey[j++] = pOp->p3[k++];
-    memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
-    j += aStack[i].n-1;
-    zNewKey[j++] = 0;
+    if( (aStack[i].flags & STK_Null)!=0 ){
+      zNewKey[j++] = 'N';
+      zNewKey[j++] = 0;
+      k++;
+    }else{
+      zNewKey[j++] = pOp->p3[k++];
+      memcpy(&zNewKey[j], zStack[i], aStack[i].n-1);
+      j += aStack[i].n-1;
+      zNewKey[j++] = 0;
+    }
   }
   zNewKey[j] = 0;
   assert( j<nByte );

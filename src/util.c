@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.49 2002/08/25 18:29:12 drh Exp $
+** $Id: util.c,v 1.50 2002/08/26 19:55:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -710,6 +710,10 @@ int sqliteCompare(const char *atext, const char *btext){
 **
 **            Aone\000Dtwo\000Athree\000\000
 **
+** All elements begin with one of the characters "+-AD" and end with "\000"
+** with zero or more text elements in between.  Except, NULL elements
+** consist of the special two-character sequence "N\000".
+**
 ** Both arguments will have the same number of elements.  This routine
 ** returns negative, zero, or positive if the first argument is less
 ** than, equal to, or greater than the first.  (Result is a-b).
@@ -744,17 +748,26 @@ int sqliteSortCompare(const char *a, const char *b){
   int len;
   int res = 0;
   int isNumA, isNumB;
+  int dir;
 
   while( res==0 && *a && *b ){
-    assert( a[0]==b[0] );
-    if( a[1]==0 ){
-      res = -1;
-      break;
-    }else if( b[1]==0 ){
-      res = +1;
+    if( a[0]=='N' || b[0]=='N' ){
+      if( a[0]==b[0] ){
+        a += 2;
+        b += 2;
+        continue;
+      }
+      if( a[0]=='N' ){
+        dir = b[0];
+        res = -1;
+      }else{
+        dir = a[0];
+        res = +1;
+      }
       break;
     }
-    if( a[0]=='A' || a[0]=='D' ){
+    assert( a[0]==b[0] );
+    if( (dir=a[0])=='A' || a[0]=='D' ){
       res = strcmp(&a[1],&b[1]);
       if( res ) break;
     }else{
@@ -788,7 +801,7 @@ int sqliteSortCompare(const char *a, const char *b){
     a += len;
     b += len;
   }
-  if( *a=='-' || *a=='D' ) res = -res;
+  if( dir=='-' || dir=='D' ) res = -res;
   return res;
 }
 
