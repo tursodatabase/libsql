@@ -32,6 +32,7 @@ sqlite3_create_function16
 sqlite3_errcode
 sqlite3_errmsg
 sqlite3_errmsg16
+sqlite3_exec
 sqlite3_finalize
 sqlite3_free
 sqlite3_interrupt
