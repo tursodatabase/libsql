@@ -1,5 +1,5 @@
-C Added\sthe\slast_insert_rowid()\sSQL\sfunction.\s(CVS\s521)
-D 2002-04-06T14:10:47
+C Add\sa\s-column\soption\sto\sthe\ssqlite\scommand-line\sutility.\nPatch\sfrom\sMatthew\sO.\sPersico.\s(CVS\s522)
+D 2002-04-08T02:42:58
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -39,7 +39,7 @@ F src/parse.y 9a8a2311dd95101bb02b3991042e619eea49729a
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
-F src/shell.c cf57c66e6cc1bc3c2c78602da25308ce04cb1179
+F src/shell.c 994ca7c8c40c40a95011812013fbbf9828f5a0e7
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
 F src/sqliteInt.h 73e7d0f39a3c11d395fc422986959261bd193eba
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 28ce42f7872e2660faa22e66b508db9b1f046af0
-R 0b5a813afe2cf2bdabedc7aeca66c0d3
+P 6aca3f86bc08849e9d806fdd490f98e4daf71025
+R aaa35423730c084fb0e18ed46a6b9e24
 U drh
-Z 679d6245f83771ba2f6bf195e2401218
+Z ef03ff4a004c157733200eb9aba8b910

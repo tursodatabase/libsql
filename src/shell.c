@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.48 2002/04/04 15:10:12 drh Exp $
+** $Id: shell.c,v 1.49 2002/04/08 02:42:58 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -853,6 +853,10 @@ int main(int argc, char **argv){
       argv++;
     }else if( strcmp(argv[1],"-line")==0 ){
       data.mode = MODE_Line;
+      argc--;
+      argv++;
+    }else if( strcmp(argv[1],"-column")==0 ){
+      data.mode = MODE_Column;
       argc--;
       argv++;
     }else if( argc>=3 && strcmp(argv[1],"-separator")==0 ){
