@@ -25,6 +25,19 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 January 14 (2.8.10)} {
+<li>Fix a potential database corruption problem on Unix caused by the fact
+    that all posix advisory locks are cleared whenever you close() a file.
+    The work around it to embargo all close() calls while locks are 
+    outstanding.</li>
+<li>Performance enhancements on some corner cases of COUNT(*).</li>
+<li>Make sure the in-memory backend response sanely if malloc() fails.</li>
+<li>Allow sqlite_exec() to be called from within user-defined SQL
+    functions.</li>
+<li>Improved accuracy of floating-point conversions using "long double".</li>
+<li>Bug fixes in the experimental date/time functions.</li>
+}
+
 chng {2004 January 5 (2.8.9)} {
 <li>Fix a 32-bit integer overflow problem that could result in corrupt
     indices in a database if large negative numbers (less than -2147483648)

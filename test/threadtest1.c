@@ -17,6 +17,9 @@
 ** places execute for very short periods of time.  So even if the library
 ** is compiled with its mutexes disabled, it is likely to work correctly
 ** in a multi-threaded program most of the time.  
+**
+** This file is NOT part of the standard SQLite library.  It is used for
+** testing only.
 */
 #include "sqlite.h"
 #include <pthread.h>
