@@ -1,5 +1,5 @@
-C Fix\sa\sbug\swith\sUTF-16\sbyte-order-marks\son\sbig-endian\shosts.\s(CVS\s1522)
-D 2004-06-02T00:29:24
+C Remove\sthe\ssqlite3_libencoding()\sapi\sand\sthe\sISO8859\sencoding\soption.\s(CVS\s1523)
+D 2004-06-02T00:41:09
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 66c6c35e94f57a7505f7f44b5a9504fb60ca0730
+F src/main.c d2a7632f459e9c270bb6e313e10916fc840f4a6e
 F src/md5.c 4302e84ae516c616bb079c4e6d038c0addb33481
 F src/os.h 833b9639720d1602d9bfa4ca69c615ec2bfe625a
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
@@ -55,20 +55,20 @@ F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
 F src/shell.c a9e2ad8f6c1d39b04bad61a0ec655e9a3a360b50
-F src/sqlite.h.in d8222d4a1f76468560b60f2b7f5b592995ebd5cf
-F src/sqliteInt.h 8a3a6dc8ef5141563698a3b7a62fca7158cff1f5
+F src/sqlite.h.in 021965a94f5799c8308003cb6e3b01e3b36a8b88
+F src/sqliteInt.h 1aa9f7d5f88d13442d39c1bc9216c73e9b6c5191
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
-F src/tclsqlite.c ed8663e7703346ace72ca3899dba15dbfc0883d7
+F src/tclsqlite.c 3db6b868bd844bfb71720c8e573f4c9b0d536bd5
 F src/test1.c 4a3cc1b628a29f24c0a43227a035d0f2a96eb634
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
 F src/test3.c 86117b74ec7353d76f5cd85c144c7cda23a7e11b
 F src/test4.c caf675e443460ec76b04d78e1688986c17c82cec
-F src/test5.c a894fbfa8a7dcdc2cbc0c38c11149cc5c8252cea
+F src/test5.c e731274b902eaad09b195cfbac06768dfefba93e
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
 F src/trigger.c 04b2c310d0d056b213609cab6df5fff03d5eaf88
 F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c c8be20ecdcb10659e23c43e35d835460e964d248
-F src/util.c 3b647719c0bece41491300b605cff96a7a26f03a
+F src/util.c d3d2f62ec94160db3cb2b092267405ba99122152
 F src/vacuum.c c91acc316127411980982938d050b299d42b81ef
 F src/vdbe.c cc754eddc0d2e741e57c4557c77754d8bbd93eeb
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
@@ -99,9 +99,9 @@ F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test ddb1d4e172a01c0165804f82f81df556fb48a856
 F test/enc.test a55481d45ff493804e8d88357feb4642fc50a6b2
 F test/enc2.test 8ab83839b73ce3a571b1396379f2f8ae3c895d74
-F test/expr.test 8b62f3fcac64fbd5c3d43d7a7984245743dcbe65
+F test/expr.test 521588701dae8cf5aa2b8a18c5c897711f754332
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
-F test/func.test b6d87075ff65babd6466b8a8dfc0d44f6a92df0c
+F test/func.test 9816fbed0a5e87e00f4fc88b4cdcd638abc524c4
 F test/hook.test c4102c672d67f8fb60ea459842805abcba69a747
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
 F test/index.test ad3f479a3dc4a6d9105a2c88e3ee432498441c34
@@ -145,7 +145,7 @@ F test/sort.test 863f07884fb68a70b738998e9a548132a0d0b7d9
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 71f808817b50ae3a9a693a88b3ea003f1031cdbb
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
-F test/tclsqlite.test a684fc191b81e6cded8a81263663d5a130fbb013
+F test/tclsqlite.test 853e4372004d209e2ff0d4b0b35c91d4f64cd7d8
 F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
 F test/tester.tcl fc10520db0d3ce4ef6a8b5ab91bd102fc3f4280a
 F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
@@ -214,7 +214,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 24e2bbd0f233eaec1789e866e9abb88db66e2278
-R 770b5bbc0f504b74630be07ad566c456
-U danielk1977
-Z d278c6c962aa9ab7dcd916a21504bfc5
+P c17b864103fe5e6def0f650eadb7b2cc6e87144f
+R f4cae94848dada7ca979780be2518e9d
+U drh
+Z 839a132eb4ffa52deddad34237e579b7

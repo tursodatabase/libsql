@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.95 2004/05/30 20:46:09 drh Exp $
+** $Id: util.c,v 1.96 2004/06/02 00:41:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -892,14 +892,14 @@ int sqlite3SortCompare(const char *a, const char *b){
   return res;
 }
 
-#ifdef SQLITE_UTF8
+#if 1  /* We are now always UTF-8 */
 /*
 ** X is a pointer to the first byte of a UTF-8 character.  Increment
 ** X so that it points to the next character.  This only works right
 ** if X points to a well-formed UTF-8 string.
 */
 #define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
-#define sqliteCharVal(X)   sqlite_utf8_to_int(X)
+#define sqliteCharVal(X)   sqlite3ReadUtf8(X)
 
 #else /* !defined(SQLITE_UTF8) */
 /*
@@ -911,13 +911,13 @@ int sqlite3SortCompare(const char *a, const char *b){
 #endif /* defined(SQLITE_UTF8) */
 
 
-#ifdef SQLITE_UTF8
+#if 1  /* We are now always UTF-8 */
 /*
 ** Convert the UTF-8 character to which z points into a 31-bit
 ** UCS character.  This only works right if z points to a well-formed
 ** UTF-8 string.
 */
-static int sqlite_utf8_to_int(const unsigned char *z){
+static int sqlite3ReadUtf8(const unsigned char *z){
   int c;
   static const int initVal[] = {
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,

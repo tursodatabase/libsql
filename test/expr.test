@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.32 2004/05/13 11:34:17 danielk1977 Exp $
+# $Id: expr.test,v 1.33 2004/06/02 00:41:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -243,10 +243,9 @@ test_expr expr-5.10 {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} 1
 test_expr expr-5.11 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
 test_expr expr-5.12 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
 
-# The following tests only work on versions of TCL that support
-# Unicode and SQLite configured for UTF-8 support.
+# The following tests only work on versions of TCL that support Unicode
 #
-if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
+if {"\u1234"!="u1234"} {
   test_expr expr-5.13 "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} 1
   test_expr expr-5.14 "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} 1
   test_expr expr-5.15 "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} 1
@@ -261,23 +260,6 @@ if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
   test_expr expr-5.24 "t1='ax\uFEDCy\uFEDC', t2='A%\uFEDC'" {t1 LIKE t2} 1
 }
 
-# Theses tests are for when SQLite assumes iso8859 characters.
-#
-if {[sqlite -encoding]=="iso8859"} {
-  set go 1
-  if {[info command encoding]!=""} {
-    if {[catch {encoding system iso8859-1} msg]} {
-      puts "skipping tests of LIKE operator: $msg"
-      set go 0
-    }
-  }
-  if {$go} {
-    test_expr expr-5.50 "t1='a\266c', t2='A_C'"  {t1 LIKE t2} 1
-    test_expr expr-5.51 "t1='a\347', t2='A_'"  {t1 LIKE t2} 1
-    test_expr expr-5.52 "t1='ax\351', t2='A_\351'"  {t1 LIKE t2} 1
-    test_expr expr-5.53 "t1='ax\241', t2='A_%'"  {t1 LIKE t2} 1
-  }
-}
 test_expr expr-5.54 {t1='abc', t2=NULL} {t1 LIKE t2} {{}}
 test_expr expr-5.55 {t1='abc', t2=NULL} {t1 NOT LIKE t2} {{}}
 test_expr expr-5.56 {t1='abc', t2=NULL} {t2 LIKE t1} {{}}
@@ -317,7 +299,7 @@ test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
 
 # These tests only work on versions of TCL that support Unicode
 #
-if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
+if {"\u1234"!="u1234"} {
   test_expr expr-6.26 "t1='a\u0080c', t2='a?c'" {t1 GLOB t2} 1
   test_expr expr-6.27 "t1='a\u07ffc', t2='a?c'" {t1 GLOB t2} 1
   test_expr expr-6.28 "t1='a\u0800c', t2='a?c'" {t1 GLOB t2} 1
@@ -365,32 +347,6 @@ test_expr expr-6.73 {t1='ABCDEFG', t2='A*?G'} {t1 GLOB t2} 1
 test_expr expr-6.74 {t1='AC', t2='A*C'} {t1 GLOB t2} 1
 test_expr expr-6.75 {t1='AC', t2='A*?C'} {t1 GLOB t2} 0
 
-# Theses tests are for when SQLite assumes iso8859 characters.
-#
-if {[sqlite -encoding]=="iso8859"} {
-  set go 1
-  if {[info command encoding]!=""} {
-    if {[catch {encoding system iso8859-1} msg]} {
-      puts "skipping tests of GLOB operator: $msg"
-      set go 0
-    }
-  }
-  if {$go} {
-    test_expr expr-6.50 "t1='a\266c', t2='a?c'" {t1 GLOB t2} 1
-    test_expr expr-6.51 "t1='a\266', t2='a?'" {t1 GLOB t2} 1
-    test_expr expr-6.52 "t1='a\266', t2='a??'" {t1 GLOB t2} 0
-    test_expr expr-6.53 "t1='ax\266', t2='a??'" {t1 GLOB t2} 1
-    test_expr expr-6.54 "t1='ax\266', t2='a?\266'" {t1 GLOB t2} 1
-    test_expr expr-6.55 "t1='ax\266y\266', t2='a*\266'" {t1 GLOB t2} 1
-    test_expr expr-6.56 "t1='a\266b', t2='a\[x\266y\]b'" {t1 GLOB t2} 1
-    test_expr expr-6.57 "t1='a\266b', t2='a\[\260-\270\]b'" {t1 GLOB t2} 1
-    test_expr expr-6.58 "t1='a\266b', t2='a\[\266-\270\]b'" {t1 GLOB t2} 1
-    test_expr expr-6.59 "t1='a\266b', t2='a\[\267-\270\]b'" {t1 GLOB t2} 0
-    test_expr expr-6.60 "t1='a\266b', t2='a\[x-\267\]b'" {t1 GLOB t2} 1
-    test_expr expr-6.61 "t1='a\266b', t2='a\[x-\266\]b'" {t1 GLOB t2} 1
-    test_expr expr-6.62 "t1='a\266b', t2='a\[x-\265\]b'" {t1 GLOB t2} 0
-  }
-}
 test_expr expr-6.63 {t1=NULL, t2='a*?c'} {t1 GLOB t2} {{}}
 test_expr expr-6.64 {t1='ac', t2=NULL} {t1 GLOB t2} {{}}
 test_expr expr-6.65 {t1=NULL, t2='a*?c'} {t1 NOT GLOB t2} {{}}

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.89 2004/06/01 00:03:53 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.90 2004/06/02 00:41:09 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -369,13 +369,6 @@ void sqlite3_free_table(char **result);
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
 void sqlite3_free(char *z);
-
-/*
-** Windows systems need functions to call to return the sqlite3_version
-** and sqlite3_encoding strings.
-*/
-const char *sqlite3_libversion(void);
-const char *sqlite3_libencoding(void);
 
 /*
 ** This routine registers a callback with the SQLite library.  The

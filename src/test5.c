@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.6 2004/05/31 18:51:58 drh Exp $
+** $Id: test5.c,v 1.7 2004/06/02 00:41:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"         /* to get SQLITE_BIGENDIAN */
@@ -37,6 +37,12 @@ static int utf16_length(const unsigned char *pZ){
   return (pC1-pZ)+2;
 }
 
+/*
+** tclcmd:   sqlite_utf8to16le  STRING
+** title:    Convert STRING from utf-8 to utf-16le
+**
+** Return the utf-16le encoded string
+*/
 static int sqlite_utf8to16le(
   void * clientData,
   Tcl_Interp *interp,
@@ -63,6 +69,12 @@ static int sqlite_utf8to16le(
   return TCL_OK;
 }
 
+/*
+** tclcmd:   sqlite_utf8to16be  STRING
+** title:    Convert STRING from utf-8 to utf-16be
+**
+** Return the utf-16be encoded string
+*/
 static int sqlite_utf8to16be(
   void * clientData,
   Tcl_Interp *interp,
@@ -90,6 +102,14 @@ static int sqlite_utf8to16be(
   return TCL_OK;
 }
 
+/*
+** tclcmd:   sqlite_utf16to16le  STRING
+** title:    Convert STRING from utf-16 in native byte order to utf-16le
+**
+** Return the utf-16le encoded string.  If the input string contains
+** a byte-order mark, then the byte order mark should override the
+** native byte order.
+*/
 static int sqlite_utf16to16le(
   void * clientData,
   Tcl_Interp *interp,
@@ -120,6 +140,14 @@ static int sqlite_utf16to16le(
   return TCL_OK;
 }
 
+/*
+** tclcmd:   sqlite_utf16to16be  STRING
+** title:    Convert STRING from utf-16 in native byte order to utf-16be
+**
+** Return the utf-16be encoded string.  If the input string contains
+** a byte-order mark, then the byte order mark should override the
+** native byte order.
+*/
 static int sqlite_utf16to16be(
   void * clientData,
   Tcl_Interp *interp,
@@ -150,6 +178,14 @@ static int sqlite_utf16to16be(
   return TCL_OK;
 }
 
+/*
+** tclcmd:   sqlite_utf16to8  STRING
+** title:    Convert STRING from utf-16 in native byte order to utf-8
+**
+** Return the utf-8 encoded string.  If the input string contains
+** a byte-order mark, then the byte order mark should override the
+** native byte order.
+*/
 static int sqlite_utf16to8(
   void * clientData,
   Tcl_Interp *interp,

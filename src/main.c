@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.202 2004/06/01 00:03:53 danielk1977 Exp $
+** $Id: main.c,v 1.203 2004/06/02 00:41:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -389,16 +389,6 @@ const char rcsid[] = "@(#) \044Id: SQLite version " SQLITE_VERSION " $";
 const char sqlite3_version[] = SQLITE_VERSION;
 
 /*
-** Does the library expect data to be encoded as UTF-8 or iso8859?  The
-** following global constant always lets us know.
-*/
-#ifdef SQLITE_UTF8
-const char sqlite3_encoding[] = "UTF-8";
-#else
-const char sqlite3_encoding[] = "iso8859";
-#endif
-
-/*
 ** This is the default collating function named "BINARY" which is always
 ** available.
 */
@@ -641,13 +631,8 @@ void sqlite3_interrupt(sqlite *db){
 void sqlite3_free(char *p){ free(p); }
 
 /*
-** Windows systems need functions to call to return the sqlite3_version
-** and sqlite3_encoding strings since they are unable to access constants
-** within DLLs.
+** Create new user functions.
 */
-const char *sqlite3_libversion(void){ return sqlite3_version; }
-const char *sqlite3_libencoding(void){ return sqlite3_encoding; }
-
 int sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.78 2004/05/31 23:56:43 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.79 2004/06/02 00:41:09 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -900,10 +900,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   char zBuf[80];
   if( objc==2 ){
     zArg = Tcl_GetStringFromObj(objv[1], 0);
-    if( strcmp(zArg,"-encoding")==0 ){
-      Tcl_AppendResult(interp,sqlite3_encoding,0);
-      return TCL_OK;
-    }
     if( strcmp(zArg,"-version")==0 ){
       Tcl_AppendResult(interp,sqlite3_version,0);
       return TCL_OK;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.19 2004/05/27 14:23:36 danielk1977 Exp $
+# $Id: func.test,v 1.20 2004/06/02 00:41:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -94,10 +94,9 @@ do_test func-2.10 {
   execsql {SELECT substr(a,2,2) FROM t2}
 } {{} {} 45 {} 78}
 
-# Only do the following tests if TCL has UTF-8 capabilities and
-# the UTF-8 encoding is turned on in the SQLite library.
+# Only do the following tests if TCL has UTF-8 capabilities
 #
-if {[sqlite -encoding]=="UTF-8" && "\u1234"!="u1234"} {
+if {"\u1234"!="u1234"} {
 
 # Put some UTF-8 characters in the database
 #
@@ -146,7 +145,7 @@ do_test func-3.99 {
   execsql {SELECT t1 FROM tbl1}
 } {this program is free software}
 
-} ;# End [sqlite -encoding]==UTF-8 and \u1234!=u1234
+} ;# End \u1234!=u1234
 
 # Test the abs() and round() functions.
 #

@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.20 2004/02/25 22:51:06 rdc Exp $
+# $Id: tclsqlite.test,v 1.21 2004/06/02 00:41:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,7 +71,7 @@ do_test tcl-1.6 {
   lappend v $msg
 } {1 {syntax error in expression "x*"}}
 
-if {[sqlite -encoding]=="UTF-8" && [sqlite -tcl-uses-utf]} {
+if {[sqlite -tcl-uses-utf]} {
   do_test tcl-2.1 {
     execsql "CREATE TABLE t\u0123x(a int, b\u1235 float)"
     execsql "PRAGMA table_info(t\u0123x)"
@@ -83,17 +83,6 @@ if {[sqlite -encoding]=="UTF-8" && [sqlite -tcl-uses-utf]} {
   } "a b\u1235"
 }
 
-if {[sqlite -encoding]=="iso8859" && [sqlite -tcl-uses-utf]} {
-  do_test tcl-2.1 {
-    execsql "CREATE TABLE t\251x(a int, b\306 float)"
-    execsql "PRAGMA table_info(t\251x)"
-  } "0 a int 0 {} 0 1 b\306 float 0 {} 0"
-  do_test tcl-2.2 {
-    execsql "INSERT INTO t\251x VALUES(1,2.3)"
-    db eval "SELECT * FROM t\251x" result break
-    set result(*)
-  } "a b\306"
-}
 
 # Test the onecolumn method
 #

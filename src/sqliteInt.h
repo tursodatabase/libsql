@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.266 2004/05/31 23:56:43 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.267 2004/06/02 00:41:09 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -448,6 +448,7 @@ struct sqlite {
 struct FuncDef {
   char *zName;         /* SQL name of the function */
   int nArg;            /* Number of arguments.  -1 means unlimited */
+  int iPrefEnc;        /* Preferred text encoding */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
