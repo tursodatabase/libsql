@@ -3,16 +3,46 @@ How to do a B*Tree insert:
 add_to_page(cursor, data, ptr){
   if( data_fits_on_page ){ add data to page; return; }
   if( page==root ){
-     newpage1 = lowerpart( page+(data+ptr) );
-     newpage2 = upperpart( page+(data+ptr) );
-     page = newpage1 + center + newpage2;
+     split currentpage+(data+ptr) into lowerpart, center, upperpart
+     newpage1 = lowerpart;
+     newpage2 = upperpart;
+     page = ptr(newpage1) + center + ptr(newpage2);
      return;
   }
   if( move_some_data_left || move_some_data_right ){
     add data to page
     return
   }
-  newpage = upperhalf( page+(data+ptr) );
+  split currentpage+(data+ptr) into lowerpart, center, upperpart
+  newpage = upperpart
+  currentpage = lowerpart
   pop cursor one level
-  add_to_page(cursor, center, newpage);
+  add_to_page(cursor, center, ptr(newpage));
+}
+
+unlink_entry(cursor, olddata){
+  if( !is_a_leaf ){
+    n = next_entry()
+    if( n fits pageof(cursor) ){
+      if( olddata!=nil ) copy dataof(cursor) into olddata
+      copy dataof(n) into dataof(cursor)
+      unlink_entry(n, nil)
+      return
+    }
+    n = prev_entry()
+    if( n fits pageof(cursor) ){
+      if( olddata!=nil ) copy dataof(cursor) into olddata
+      copy dataof(n) into dataof(cursor)
+      unlink_entry(n, nil)
+      return
+    }
+    unlink_entry(n, leafdata)
+    move cursor data and ptr into olddata, oldptr
+    add_to_page(cursor, leafdata, oldptr)
+    return
+  }
+  move cursor data into olddata
+  if( !underfull(pageof(cursor)) ) return
+
+
 }

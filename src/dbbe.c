@@ -30,10 +30,9 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.27 2001/04/11 14:28:42 drh Exp $
+** $Id: dbbe.c,v 1.28 2001/04/28 16:52:41 drh Exp $
 */
 #include "sqliteInt.h"
-#include <unistd.h>
 #include <ctype.h>
 
 /*
@@ -54,15 +53,21 @@ Dbbe *sqliteDbbeOpen(
   int createFlag,        /* True to create database if it doesn't exist */
   char **pzErrMsg        /* Write error messages (if any) here */
 ){
+  extern Dbbe *sqliteMemOpen(const char*,int,int,char**);
+#ifndef DISABLE_GDBM
   extern Dbbe *sqliteGdbmOpen(const char*,int,int,char**);
   if( strncmp(zName, "gdbm:", 5)==0 ){
     return sqliteGdbmOpen(&zName[5], writeFlag, createFlag, pzErrMsg);
   }
+#endif
   if( strncmp(zName, "memory:", 7)==0 ){
-    extern Dbbe *sqliteMemOpen(const char*,int,int,char**);
     return sqliteMemOpen(&zName[7], writeFlag, createFlag, pzErrMsg);
   }
+#ifndef DISABLE_GDBM
   return sqliteGdbmOpen(zName, writeFlag, createFlag, pzErrMsg);
+#else
+  return sqliteMemOpen(zName, writeFlag, createFlag, pzErrMsg);
+#endif
 }
 
 #if 0  /* NOT USED */

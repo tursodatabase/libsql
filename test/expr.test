@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.13 2001/04/06 16:13:43 drh Exp $
+# $Id: expr.test,v 1.14 2001/04/28 16:52:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -180,11 +180,19 @@ if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
 # Theses tests are for when SQLite assumes iso8859 characters.
 #
 if {[sqlite -encoding]=="iso8859"} {
-  catch {encoding system iso8859-1}
-  test_expr expr-5.50 "t1='a\266c', t2='A_C'"  {t1 LIKE t2} 1
-  test_expr expr-5.51 "t1='a\347', t2='A_'"  {t1 LIKE t2} 1
-  test_expr expr-5.52 "t1='ax\351', t2='A_\351'"  {t1 LIKE t2} 1
-  test_expr expr-5.53 "t1='ax\241', t2='A_%'"  {t1 LIKE t2} 1
+  set go 1
+  if {[info command encoding]!=""} {
+    if {[catch {encoding system iso8859-1} msg]} {
+      puts "skipping tests of LIKE operator: $msg"
+      set go 0
+    }
+  }
+  if {$go} {
+    test_expr expr-5.50 "t1='a\266c', t2='A_C'"  {t1 LIKE t2} 1
+    test_expr expr-5.51 "t1='a\347', t2='A_'"  {t1 LIKE t2} 1
+    test_expr expr-5.52 "t1='ax\351', t2='A_\351'"  {t1 LIKE t2} 1
+    test_expr expr-5.53 "t1='ax\241', t2='A_%'"  {t1 LIKE t2} 1
+  }
 }
 
 test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
@@ -237,20 +245,28 @@ if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
 # Theses tests are for when SQLite assumes iso8859 characters.
 #
 if {[sqlite -encoding]=="iso8859"} {
-  catch {encoding system iso8859-1}
-  test_expr expr-6.50 "t1='a\266c', t2='a?c'" {t1 GLOB t2} 1
-  test_expr expr-6.51 "t1='a\266', t2='a?'" {t1 GLOB t2} 1
-  test_expr expr-6.52 "t1='a\266', t2='a??'" {t1 GLOB t2} 0
-  test_expr expr-6.53 "t1='ax\266', t2='a??'" {t1 GLOB t2} 1
-  test_expr expr-6.54 "t1='ax\266', t2='a?\266'" {t1 GLOB t2} 1
-  test_expr expr-6.55 "t1='ax\266y\266', t2='a*\266'" {t1 GLOB t2} 1
-  test_expr expr-6.56 "t1='a\266b', t2='a\[x\266y\]b'" {t1 GLOB t2} 1
-  test_expr expr-6.57 "t1='a\266b', t2='a\[\260-\270\]b'" {t1 GLOB t2} 1
-  test_expr expr-6.58 "t1='a\266b', t2='a\[\266-\270\]b'" {t1 GLOB t2} 1
-  test_expr expr-6.59 "t1='a\266b', t2='a\[\267-\270\]b'" {t1 GLOB t2} 0
-  test_expr expr-6.60 "t1='a\266b', t2='a\[x-\267\]b'" {t1 GLOB t2} 1
-  test_expr expr-6.61 "t1='a\266b', t2='a\[x-\266\]b'" {t1 GLOB t2} 1
-  test_expr expr-6.62 "t1='a\266b', t2='a\[x-\265\]b'" {t1 GLOB t2} 0
+  set go 1
+  if {[info command encoding]!=""} {
+    if {[catch {encoding system iso8859-1} msg]} {
+      puts "skipping tests of GLOB operator: $msg"
+      set go 0
+    }
+  }
+  if {$go} {
+    test_expr expr-6.50 "t1='a\266c', t2='a?c'" {t1 GLOB t2} 1
+    test_expr expr-6.51 "t1='a\266', t2='a?'" {t1 GLOB t2} 1
+    test_expr expr-6.52 "t1='a\266', t2='a??'" {t1 GLOB t2} 0
+    test_expr expr-6.53 "t1='ax\266', t2='a??'" {t1 GLOB t2} 1
+    test_expr expr-6.54 "t1='ax\266', t2='a?\266'" {t1 GLOB t2} 1
+    test_expr expr-6.55 "t1='ax\266y\266', t2='a*\266'" {t1 GLOB t2} 1
+    test_expr expr-6.56 "t1='a\266b', t2='a\[x\266y\]b'" {t1 GLOB t2} 1
+    test_expr expr-6.57 "t1='a\266b', t2='a\[\260-\270\]b'" {t1 GLOB t2} 1
+    test_expr expr-6.58 "t1='a\266b', t2='a\[\266-\270\]b'" {t1 GLOB t2} 1
+    test_expr expr-6.59 "t1='a\266b', t2='a\[\267-\270\]b'" {t1 GLOB t2} 0
+    test_expr expr-6.60 "t1='a\266b', t2='a\[x-\267\]b'" {t1 GLOB t2} 1
+    test_expr expr-6.61 "t1='a\266b', t2='a\[x-\266\]b'" {t1 GLOB t2} 1
+    test_expr expr-6.62 "t1='a\266b', t2='a\[x-\265\]b'" {t1 GLOB t2} 0
+  }
 }
 
 # The sqliteExprIfFalse and sqliteExprIfTrue routines are only

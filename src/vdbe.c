@@ -41,10 +41,9 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.57 2001/04/11 14:28:43 drh Exp $
+** $Id: vdbe.c,v 1.58 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqliteInt.h"
-#include <unistd.h>
 #include <ctype.h>
 
 /*

@@ -23,13 +23,15 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.41 2001/04/11 14:28:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.42 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
 #include "vdbe.h"
 #include "parse.h"
+#ifndef DISABLE_GDBM
 #include <gdbm.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

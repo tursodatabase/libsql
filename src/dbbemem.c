@@ -30,13 +30,10 @@
 ** Nothing is ever written to disk using this backend.  All information
 ** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.14 2001/04/11 14:28:42 drh Exp $
+** $Id: dbbemem.c,v 1.15 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqliteInt.h"
-#include <sys/stat.h>
-#include <unistd.h>
 #include <ctype.h>
-#include <time.h>
 
 
 typedef struct Array Array;

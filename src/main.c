@@ -26,10 +26,12 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.28 2001/04/11 14:28:42 drh Exp $
+** $Id: main.c,v 1.29 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqliteInt.h"
+#if defined(HAVE_USLEEP) && HAVE_USLEEP
 #include <unistd.h>
+#endif
 
 /*
 ** This is the callback routine for the code that initializes the

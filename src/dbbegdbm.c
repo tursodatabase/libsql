@@ -30,8 +30,9 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.7 2001/04/11 14:28:42 drh Exp $
+** $Id: dbbegdbm.c,v 1.8 2001/04/28 16:52:41 drh Exp $
 */
+#ifndef DISABLE_GDBM
 #include "sqliteInt.h"
 #include <gdbm.h>
 #include <sys/stat.h>
@@ -674,3 +675,4 @@ Dbbe *sqliteGdbmOpen(
   pNew->pOpen = 0;
   return &pNew->dbbe;
 }
+#endif /* DISABLE_GDBM */

@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or on writer.
 **
-** @(#) $Id: pager.c,v 1.4 2001/04/15 02:27:25 drh Exp $
+** @(#) $Id: pager.c,v 1.5 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -83,6 +83,7 @@ struct PgHdr {
   char inJournal;                /* TRUE if has been written to journal */
   char dirty;                    /* TRUE if we need to write back changes */
   /* SQLITE_PAGE_SIZE bytes of page data follow this header */
+  /* Pager.nExtra bytes of local data follow the page data */
 };
 
 /*
@@ -91,6 +92,7 @@ struct PgHdr {
 */
 #define PGHDR_TO_DATA(P)  ((void*)(&(P)[1]))
 #define DATA_TO_PGHDR(D)  (&((PgHdr*)(D))[-1])
+#define PGHDR_TO_EXTRA(P) ((void*)&((char*)(&(P)[1]))[SQLITE_PAGE_SIZE])
 
 /*
 ** How big to make the hash table used for locating in-memory pages
@@ -107,6 +109,7 @@ struct Pager {
   int fd, jfd;                /* File descriptors for database and journal */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
+  int nExtra;                 /* Add this many bytes to each in-memory page */
   int nPage;                  /* Total number of in-memory pages */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
@@ -427,7 +430,12 @@ static int pager_playback(Pager *pPager){
 ** the first call to sqlitepager_get() and is only held open until the
 ** last page is released using sqlitepager_unref().
 */
-int sqlitepager_open(Pager **ppPager, const char *zFilename, int mxPage){
+int sqlitepager_open(
+  Pager **ppPager,         /* Return the Pager structure here */
+  const char *zFilename,   /* Name of the database file to open */
+  int mxPage,              /* Max number of in-memory cache pages */
+  int nExtra               /* Extra bytes append to each in-memory page */
+){
   Pager *pPager;
   int nameLen;
   int fd;
@@ -532,6 +540,29 @@ Pgno sqlitepager_pagenumber(void *pData){
 }
 
 /*
+** Increment the reference count for a page.  If the page is
+** currently on the freelist (the reference count is zero) then
+** remove it from the freelist.
+*/
+static void sqlitepager_ref(PgHdr *pPg){
+  if( pPg->nRef==0 ){
+    /* The page is currently on the freelist.  Remove it. */
+    if( pPg->pPrevFree ){
+      pPg->pPrevFree->pNextFree = pPg->pNextFree;
+    }else{
+      pPg->pPager->pFirst = pPg->pNextFree;
+    }
+    if( pPg->pNextFree ){
+      pPg->pNextFree->pPrevFree = pPg->pPrevFree;
+    }else{
+      pPg->pPager->pLast = pPg->pPrevFree;
+    }
+    pPg->pPager->nRef++;
+  }
+  pPg->nRef++;
+}
+
+/*
 ** Acquire a page.
 **
 ** A read lock is obtained for the first page acquired.  The lock
@@ -539,6 +570,14 @@ Pgno sqlitepager_pagenumber(void *pData){
 **
 ** The acquisition might fail for several reasons.  In all cases,
 ** an appropriate error code is returned and *ppPage is set to NULL.
+**
+** See also sqlitepager_lookup().  Both this routine and _lookup() attempt
+** to find a page in the in-memory cache first.  If the page is not already
+** in cache, this routine goes to disk to read it in whereas _lookup()
+** just returns 0.  This routine acquires a read-lock the first time it
+** has to go to disk, and could also playback an old journal if necessary.
+** Since _lookup() never goes to disk, it never has to deal with locks
+** or journal files.
 */
 int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   PgHdr *pPg;
@@ -596,18 +635,17 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        }
     }
     pPg = 0;
-    pPager->nMiss++;
   }else{
     /* Search for page in cache */
     pPg = pager_lookup(pPager, pgno);
-    pPager->nHit++;
   }
   if( pPg==0 ){
     /* The requested page is not in the page cache. */
     int h;
+    pPager->nMiss++;
     if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 ){
       /* Create a new page */
-      pPg = sqliteMalloc( sizeof(*pPg) + SQLITE_PAGE_SIZE );
+      pPg = sqliteMalloc( sizeof(*pPg) + SQLITE_PAGE_SIZE + pPager->nExtra );
       if( pPg==0 ){
         *ppPage = 0;
         pager_unwritelock(pPager);
@@ -691,26 +729,47 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     }
     pager_seek(pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
     pager_read(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+    if( pPager->nExtra>0 ){
+      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+    }
   }else{
     /* The requested page is in the page cache. */
-    if( pPg->nRef==0 ){
-      /* The page is currently on the freelist.  Remove it. */
-      if( pPg->pPrevFree ){
-        pPg->pPrevFree->pNextFree = pPg->pNextFree;
-      }else{
-        pPager->pFirst = pPg->pNextFree;
-      }
-      if( pPg->pNextFree ){
-        pPg->pNextFree->pPrevFree = pPg->pPrevFree;
-      }else{
-        pPager->pLast = pPg->pPrevFree;
-      }
-      pPager->nRef++;
-    }
-    pPg->nRef++;
+    pPager->nHit++;
+    sqlitepager_ref(pPg);
   }
   *ppPage = PGHDR_TO_DATA(pPg);
   return SQLITE_OK;
+}
+
+/*
+** Acquire a page if it is already in the in-memory cache.  Do
+** not read the page from disk.  Return a pointer to the page,
+** or 0 if the page is not in cache.
+**
+** See also sqlitepager_get().  The difference between this routine
+** and sqlitepager_get() is that _get() will go to the disk and read
+** in the page if the page is not already in cache.  This routine
+** returns NULL if the page is not in cache and no disk I/O ever
+** occurs.
+*/
+void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
+  PgHdr *pPg;
+
+  /* Make sure we have not hit any critical errors.
+  */ 
+  if( pPager==0 || pgno==0 ){
+    return 0;
+  }
+  if( pPager->errMask & ~(PAGER_ERR_FULL) ){
+    return 0;
+  }
+  if( pPager->nRef==0 ){
+    return 0;
+  }
+  pPg = pager_lookup(pPager, pgno);
+  if( pPg==0 ) return 0;
+  sqlitepager_ref(pPg);
+  return PGHDR_TO_DATA(pPg);
 }
 
 /*

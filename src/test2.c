@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.1 2001/04/15 00:37:09 drh Exp $
+** $Id: test2.c,v 1.2 2001/04/28 16:52:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -80,7 +80,7 @@ static int pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlitepager_open(&pPager, argv[1], nPage);
+  rc = sqlitepager_open(&pPager, argv[1], nPage, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -262,6 +262,37 @@ static int page_get(
 }
 
 /*
+** Usage:   page_lookup ID PGNO
+**
+** Return a pointer to a page if the page is already in cache.
+** If not in cache, return an empty string.
+*/
+static int page_lookup(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Pager *pPager;
+  char zBuf[100];
+  void *pPage;
+  int pgno;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID PGNO\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pPager) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
+  pPage = sqlitepager_lookup(pPager, pgno);
+  if( pPage ){
+    sprintf(zBuf,"0x%x",(int)pPage);
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:   page_unref PAGE
 **
 ** Drop a pointer to a page.
@@ -376,6 +407,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "pager_stats", pager_stats, 0, 0);
   Tcl_CreateCommand(interp, "pager_pagecount", pager_pagecount, 0, 0);
   Tcl_CreateCommand(interp, "page_get", page_get, 0, 0);
+  Tcl_CreateCommand(interp, "page_lookup", page_lookup, 0, 0);
   Tcl_CreateCommand(interp, "page_unref", page_unref, 0, 0);
   Tcl_CreateCommand(interp, "page_read", page_read, 0, 0);
   Tcl_CreateCommand(interp, "page_write", page_write, 0, 0);
