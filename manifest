@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#62:\sDo\snot\sreport\san\sSQLITE_READONLY\serror\suntil\sthe\sapplication\nactually\stries\sto\swrite\sdata\sinto\sa\sreadonly\sfile.\s\sIt\sis\sOK\sto\sstart\sa\ntransaction\son\sa\sread-only\sfile,\sand\sdoing\sso\swill\sget\syou\sa\sread\slock.\s\sThis\nchange\sallows\sTEMP\stables\sto\sbe\sread/write\seven\sthough\sthe\smain\sdatabase\sis\nreadonly.\s(CVS\s607)
-D 2002-06-06T23:16:05
+C Fix\sfor\sticket\s#59:\sAdd\sdocumentation\sfor\sthe\s||\soperator.\s\sAlso\sadded\ndocumentation\sfor\sthe\snew\sSQL92\sjoin\ssyntax.\s(CVS\s608)
+D 2002-06-06T23:30:59
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -129,14 +129,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 45bdb18b75ac3aa1befec42985fb892413aac0bb
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
-F www/lang.tcl bbff2febcccbe34de75e4eebfea3799483d224ce
+F www/lang.tcl e25a7d383eca7f6a2335ca5b18dcb08a1ccaf6a6
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c0cb3a012e02df1a7965413a92f9b5a77331edb4
-R bbf73b9f76e1af31b5358613f061b43c
+P 9ef795d1d756a404d2123ebc19df1985b19c9888
+R 9e3230f38c2b70333bfdfd540e33cb8b
 U drh
-Z 202177a08e619734270177dc9e884211
+Z 3a7eccbffd2310063ce5e8c10d603c5d

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.37 2002/05/28 06:55:27 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.38 2002/06/06 23:30:59 drh Exp $}
 
 puts {<html>
 <head>
@@ -604,12 +604,13 @@ subcomponent of most other commands.</p>
 highest to lowest precedence:</p>
 
 <blockquote><pre>
-<font color="#2c2cf0"><big>*    /    %
+<font color="#2c2cf0"><big>||
+*    /    %
 +    -
 &lt;&lt;   &gt;&gt;   &amp;    |
 &lt;    &lt;=   &gt;    &gt;=
 =    ==   !=   &lt;&gt;   </big>IN
-AND
+AND   
 OR</font>
 </pre></blockquote>
 
@@ -629,7 +630,9 @@ Note that there are two variations of the equals and not equals
 operators.  Equals can be either}
 puts "[Operator =] or [Operator ==].
 The non-equals operator can be either
-[Operator !=] or [Operator {&lt;&gt;}].</p>"
+[Operator !=] or [Operator {&lt;&gt;}].
+The [Operator ||] operator is \"concatenate\" - it joins together
+the two strings of its operands.</p>"
 puts {
 
 <p>The LIKE operator does a wildcard comparision.  The operand
@@ -1114,12 +1117,16 @@ SELECT <result> [FROM <table-list>]
 } {result} {
 <result-column> [, <result-column>]*
 } {result-column} {
-STAR | <expr> [ [AS] <string> ]
+STAR | <table-name> . STAR | <expr> [ [AS] <string> ]
 } {table-list} {
-<table> [, <table>]*
+<table> [<join-op> <table> <join-args>]*
 } {table} {
 <table-name> [AS <alias>] |
 ( <select> ) [AS <alias>]
+} {join-op} {
+, | [NATURAL] [LEFT | RIGHT | FULL] [OUTER | INNER] JOIN
+} {join-args} {
+[ON <expr>] [USING ( <id-list> )]
 } {sort-expr-list} {
 <expr> [<sort-order>] [, <expr> [<sort-order>]]*
 } {sort-order} {
@@ -1139,8 +1146,10 @@ puts "[Operator *] then all columns of all tables are substituted"
 puts {for that one expression.</p>
 
 <p>The query is executed again one or more tables specified after
-the FROM keyword.  If more than one table is specified, then the
-query is against the (inner) join of the various tables.  A sub-query
+the FROM keyword.  If multiple tables names are separated by commas,
+then the query is against the cross join of the various tables.
+The full SQL-92 join syntax can also be used to specify joins.
+A sub-query
 in parentheses may be substituted for any table name in the FROM clause.
 The entire FROM clause may be omitted, in which case the result is a
 single row consisting of the values of the expression list.
