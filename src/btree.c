@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.67 2002/07/08 10:59:51 drh Exp $
+** $Id: btree.c,v 1.68 2002/07/18 11:01:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1510,12 +1510,12 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
 ** an error.  *ppPage and *pPgno are undefined in the event of an error.
 ** Do not invoke sqlitepager_unref() on *ppPage if an error is returned.
 **
-** If the "near" parameter is not 0, then a (feeble) effort is made to 
-** locate a page close to the page number "near".  This can be used in an
+** If the "nearby" parameter is not 0, then a (feeble) effort is made to 
+** locate a page close to the page number "nearby".  This can be used in an
 ** attempt to keep related pages close to each other in the database file,
 ** which in turn can make database access faster.
 */
-static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno near){
+static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
   PageOne *pPage1 = pBt->page1;
   int rc;
   if( pPage1->freeList ){
@@ -1539,13 +1539,13 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno near){
       *ppPage = (MemPage*)pOvfl;
     }else{
       int closest;
-      if( pInfo->nFree>1 && near>0 ){
+      if( pInfo->nFree>1 && nearby>0 ){
         int i, dist;
         closest = 0;
-        dist = pInfo->aFree[0] - near;
+        dist = pInfo->aFree[0] - nearby;
         if( dist<0 ) dist = -dist;
         for(i=1; i<pInfo->nFree; i++){
-          int d2 = pInfo->aFree[i] - near;
+          int d2 = pInfo->aFree[i] - nearby;
           if( d2<0 ) d2 = -d2;
           if( d2<dist ) closest = i;
         }
@@ -1680,7 +1680,7 @@ static int fillInCell(
   int nPayload;
   const char *pPayload;
   char *pSpace;
-  Pgno near = 0;
+  Pgno nearby = 0;
 
   pCell->h.leftChild = 0;
   pCell->h.nKey = nKey & 0xffff;
@@ -1698,11 +1698,11 @@ static int fillInCell(
   pPrior = 0;
   while( nPayload>0 ){
     if( spaceLeft==0 ){
-      rc = allocatePage(pBt, (MemPage**)&pOvfl, pNext, near);
+      rc = allocatePage(pBt, (MemPage**)&pOvfl, pNext, nearby);
       if( rc ){
         *pNext = 0;
       }else{
-        near = *pNext;
+        nearby = *pNext;
       }
       if( pPrior ) sqlitepager_unref(pPrior);
       if( rc ){

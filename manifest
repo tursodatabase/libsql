@@ -1,5 +1,5 @@
-C Version\s2.6.0\sRelease\s1\s(CVS\s684)
-D 2002-07-18T02:50:52
+C Change\sthe\sname\sof\svariable\s"near"\sto\s"nearby"\ssince\sMSVC\smistakenly\sbelieaves\nthat\s"near"\sis\sa\skeyword.\s(CVS\s685)
+D 2002-07-18T11:01:48
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -18,7 +18,7 @@ F publish.sh fda6422258846d26a56270174162379fa1e3ca8d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c db8cd1bd46cd30a1763c3cc80602571d1b30a329
+F src/btree.c f014b682e184876aba5df14a68f96594e0b7ae00
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 2f81c837284840448f21c90ef7c9c6c6c0d4d8a0
 F src/delete.c bc35d6aa7e7b2a4f88510a17e060abb355a53bd6
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f2d9191381e956900a14bd80e50678b9d49e19e5
-R b4dca914d3bc15b016390e11b1848c08
+P dde65e9e060b9154e848d53d15272a0dcc7c2723
+R f35c505519ae809b4af4159e98b97973
 U drh
-Z a3e72f3606c0149b7860dda7efb12d13
+Z 42051f6c51d45784ab46293850436a20
