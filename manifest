@@ -1,5 +1,5 @@
-C Remove\sthe\sexperimental\ssqlite_open_aux_file()\sAPI.\s\sIt\swill\ssoon\sbe\sreplaced\nby\sATTACH\sand\sDETACH\sSQL\scommands.\s(CVS\s889)
-D 2003-03-30T19:17:02
+C Remove\sthe\sexperimental\ssqlite_open_aux_file()\sAPI.\s\sIt\swill\ssoon\sbe\sreplaced\nby\sATTACH\sand\sDETACH\sSQL\scommands.\s(CVS\s1732)
+D 2003-03-30T19:17:03
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ac0622bf5fca9c8907319a20158e991efdaa6402
+P b6d6e07f3a5cb493f2cf0675bc6061c5afe5c078
 R 359232b433a24865017ceb4c15ffe33b
 U drh
-Z 34c4d8547949ea6d733267131feeb146
+Z b46b224b9a3ce8983137da5d0635bd02
