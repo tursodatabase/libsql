@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.198 2005/03/21 04:04:02 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.199 2005/03/28 03:39:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2634,7 +2634,7 @@ static int pager_open_journal(Pager *pPager){
   pPager->nRec = 0;
   if( pPager->errMask!=0 ){
     rc = pager_errcode(pPager);
-    return rc;
+    goto failed_to_open_journal;
   }
   pPager->origDbSize = pPager->dbSize;
 

@@ -1,5 +1,5 @@
-C Use\sSQL\sfunction\ssubstr()\scorrectly\sfrom\sALTER\sTABLE\scode.\sTicket\s#1182.\s(CVS\s2420)
-D 2005-03-28T00:07:16
+C Fix\ssome\smemory\sleaks\sthat\soccur\safter\sa\smalloc\sfailure.\s(CVS\s2421)
+D 2005-03-28T03:39:56
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -32,7 +32,7 @@ F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c c33c0e6833eb8ac0f0941c1f8e722f7c70dbef57
 F src/btree.h 41a71ce027db9ddee72cb43df2316bbe3a1d92af
-F src/build.c 2dc89aa35a0b4aa318ff9eac941f8412fa6db5df
+F src/build.c 2589c2ffa263406526d0cc5728405c6c2f9638f6
 F src/date.c 2134ef4388256e8247405178df8a61bd60dc180a
 F src/delete.c d70d54a84695de92efc05b9db7d3684cd21d9094
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
@@ -52,13 +52,13 @@ F src/os_unix.c fba0167576f09e242afd4c4978e1d2944b1da8b5
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c 2bbbe6fbb010763c3fa79d5e951afca9b138c6b5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d6ba3096969bc306c46b7db9c11cfe0bbedcc9b9
+F src/pager.c 4c1322dc8458652eb61d23405edd07a7a201160b
 F src/pager.h 9a417a1e04737c227ebbba3bdf8597d6dd51513a
 F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 85695750854188d1eb2d82e0439c99ed6e82645e
+F src/select.c a324af36afe5f050a1e070806ad3ededf1d58f50
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 33e7201f78b3f4aa306d885b69e68fa0f0286368
 F src/sqliteInt.h ecb1592406cf4c684f0ad9ce1bc4fe2a37a61efb
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 3c86e63389b286a49106d8d7009cc63e3914d40f
-R 3adfb48b0abd4dc2177fe558aa7e30c3
-U danielk1977
-Z 3ec82bbe3ce369ab3af3b74fe4147272
+P ccb9f4022b3ccb1cc2ab001628fd38becfbf8efe
+R ceb3b5e5af33f6f582749ad4190a9e4b
+U drh
+Z feff361f817d89fa1dffb88a9f3296a3
