@@ -1,5 +1,5 @@
-C Turn\sthe\sshort_column_names\spragma\soff\sby\sdefault\s-\sfor\sthe\stime\sbeing.\s(CVS\s1254)
-D 2004-02-20T23:34:07
+C Enhance\sdate/time\sfunctions\sto\swork\swith\snegative\syears.\s\sTicket\s#617.\s(CVS\s1255)
+D 2004-02-21T03:28:18
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,7 +29,7 @@ F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 32b2cb4285c0fbd53b89de021637b63d52257e54
 F src/build.c e6d71a3babd1f523abdd806555be3430adbd69eb
 F src/copy.c 391ce142f6b1faa093867ecee134f61a5028a9af
-F src/date.c c9d2bfd40b1c95f8f97d53a5eba981d7167c7b61
+F src/date.c 6120c591cd905799318018cc67df53e9bdfaef28
 F src/delete.c 8e2ff752bf485906effcc64f267cdd7227463567
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c fdd57e18cf6f2dea42e1e1930930b32ec6351c47
@@ -84,7 +84,7 @@ F test/capi2.test ec96e0e235d87b53cbaef3d8e3e0f8ccf32c71ca
 F test/conflict.test 0911bb2f079046914a6e9c3341b36658c4e2103e
 F test/copy.test f07ea8d60878da7a67416ab62f78e9706b9d3c45
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test bb3ce39211cc6687a187133efeb2066b48993643
+F test/date.test 80cc84210b59af26e03ffa3f323bdeb5190a48dd
 F test/delete.test 92256384f1801760180ded129f7427884cf28886
 F test/expr.test c4cc292d601019c2f2ce95093caaa5d10284b105
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b1b23c410260293f57614f32232cf1276f41c16b
-R a77bad2f0fdb5f58fdc86ec241aff60d
+P 6954d2c3240459842be655b600c6b160e918e74a
+R 3b2fc592a58487f152d3f08ba1a44ce5
 U drh
-Z 99f24ada72efe423c099a6c6ffecaab2
+Z 27734a3b760ca8def8dc98b0f2f23cfc

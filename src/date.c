@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.10 2004/02/10 13:19:35 drh Exp $
+** $Id: date.c,v 1.11 2004/02/21 03:28:18 drh Exp $
 **
 ** NOTES:
 **
@@ -260,8 +260,14 @@ static void computeJD(DateTime *p){
 ** date.
 */
 static int parseYyyyMmDd(const char *zDate, DateTime *p){
-  int Y, M, D;
+  int Y, M, D, neg;
 
+  if( zDate[0]=='-' ){
+    zDate++;
+    neg = 1;
+  }else{
+    neg = 0;
+  }
   Y = getDigits(zDate, 4);
   if( Y<0 || zDate[4]!='-' ) return 1;
   zDate += 5;
@@ -281,7 +287,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
   }
   p->validJD = 0;
   p->validYMD = 1;
-  p->Y = Y;
+  p->Y = neg ? -Y : Y;
   p->M = M;
   p->D = D;
   if( p->validTZ ){
@@ -307,15 +313,12 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** as there is a year and date.
 */
 static int parseDateOrTime(const char *zDate, DateTime *p){
-  int i;
   memset(p, 0, sizeof(*p));
-  for(i=0; isdigit(zDate[i]); i++){}
-  if( i==4 && zDate[i]=='-' ){
-    return parseYyyyMmDd(zDate, p);
-  }else if( i==2 && zDate[i]==':' ){
-    return parseHhMmSs(zDate, p);
+  if( parseYyyyMmDd(zDate,p)==0 ){
     return 0;
-  }else if( i==0 && sqliteStrICmp(zDate,"now")==0 ){
+  }else if( parseHhMmSs(zDate, p)==0 ){
+    return 0;
+  }else if( sqliteStrICmp(zDate,"now")==0){
     double r;
     if( sqliteOsCurrentTime(&r)==0 ){
       p->rJD = r;
