@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.111 2002/01/30 00:54:56 drh Exp $
+** $Id: vdbe.c,v 1.112 2002/01/30 16:17:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3824,8 +3824,11 @@ case OP_FileOpen: {
 ** we are able to get another line, split the line apart using P3 as
 ** a delimiter.  There should be P1 fields.  If the input line contains
 ** more than P1 fields, ignore the excess.  If the input line contains
-** fewer than P1 fields, assume the remaining fields contain an
-** empty strings.
+** fewer than P1 fields, assume the remaining fields contain NULLs.
+**
+** Input ends if a line consists of just "\.".  A field containing only
+** "\N" is a null field.  The backslash \ character can be used be used
+** to escape newlines or the delimiter.
 */
 case OP_FileRead: {
   int n, eol, nField, i, c, nDelim;
@@ -3858,11 +3861,18 @@ case OP_FileRead: {
       eol = 1;
       p->zLine[n] = 0;
     }else{
-      while( p->zLine[n] ){ n++; }
-      if( n>0 && p->zLine[n-1]=='\n' ){
-        n--;
-        p->zLine[n] = 0;
-        eol = 1;
+      int c;
+      while( (c = p->zLine[n])!=0 ){
+        if( c=='\\' ){
+          if( p->zLine[n+1]==0 ) break;
+          n += 2;
+        }else if( c=='\n' ){
+          p->zLine[n] = 0;
+          eol = 1;
+          break;
+        }else{
+          n++;
+        }
       }
     }
   }
@@ -3879,6 +3889,13 @@ case OP_FileRead: {
   for(i=1; *z!=0 && i<=nField; i++){
     int from, to;
     from = to = 0;
+    if( z[0]=='\\' && z[1]=='N' 
+       && (z[2]==0 || strncmp(&z[2],zDelim,nDelim)==0) ){
+      if( i<=nField ) p->azField[i-1] = 0;
+      z += 2 + nDelim;
+      if( i<nField ) p->azField[i] = z;
+      continue;
+    }
     while( z[from] ){
       if( z[from]=='\\' && z[from+1]!=0 ){
         z[to++] = z[from+1];
@@ -3898,7 +3915,7 @@ case OP_FileRead: {
     }
   }
   while( i<nField ){
-    p->azField[i++] = "";
+    p->azField[i++] = 0;
   }
   break;
 
@@ -3923,11 +3940,16 @@ case OP_FileColumn: {
   }else{
     z = 0;
   }
-  if( z==0 ) z = "";
   p->tos++;
-  aStack[p->tos].n = strlen(z) + 1;
-  zStack[p->tos] = z;
-  aStack[p->tos].flags = STK_Str;
+  if( z ){
+    aStack[p->tos].n = strlen(z) + 1;
+    zStack[p->tos] = z;
+    aStack[p->tos].flags = STK_Str;
+  }else{
+    aStack[p->tos].n = 0;
+    zStack[p->tos] = 0;
+    aStack[p->tos].flags = STK_Null;
+  }
   break;
 }
 

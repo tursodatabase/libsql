@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.68 2002/01/29 23:07:02 drh Exp $
+** $Id: build.c,v 1.69 2002/01/30 16:17:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1332,7 +1332,8 @@ void sqliteCopy(
   Parse *pParse,       /* The parser context */
   Token *pTableName,   /* The name of the table into which we will insert */
   Token *pFilename,    /* The file from which to obtain information */
-  Token *pDelimiter    /* Use this as the field delimiter */
+  Token *pDelimiter,   /* Use this as the field delimiter */
+  int onError          /* What to do if a constraint fails */
 ){
   Table *pTab;
   char *zTab;
@@ -1376,6 +1377,9 @@ void sqliteCopy(
       sqliteVdbeAddOp(v, openOp, i, pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
+    if( db->flags & SQLITE_CountRows ){
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
+    }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_FileRead, pTab->nCol, end);
     if( pDelimiter ){
@@ -1390,9 +1394,6 @@ void sqliteCopy(
     }else{
       sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
     }
-    if( pTab->pIndex ){
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    }
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
         /* The integer primary key column is filled with NULL since its
@@ -1402,23 +1403,22 @@ void sqliteCopy(
         sqliteVdbeAddOp(v, OP_FileColumn, i, 0);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
-    for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      if( pIdx->pNext ){
-        sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      }
-      for(j=0; j<pIdx->nColumn; j++){
-        sqliteVdbeAddOp(v, OP_FileColumn, pIdx->aiColumn[j], 0);
-      }
-      sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-      sqliteVdbeAddOp(v, OP_IdxPut, i, pIdx->onError!=OE_None);
+    sqliteGenerateConstraintChecks(pParse, pTab, 0, 0, 0, 0, onError, addr);
+    sqliteCompleteInsertion(pParse, pTab, 0, 0, 0, 0);
+    if( (db->flags & SQLITE_CountRows)!=0 ){
+      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);  /* Increment row count */
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
     sqliteVdbeResolveLabel(v, end);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0);
+    }
+    if( db->flags & SQLITE_CountRows ){
+      sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
+      sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
+      sqliteVdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
+      sqliteVdbeAddOp(v, OP_Callback, 1, 0);
     }
   }
   

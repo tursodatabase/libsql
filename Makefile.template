@@ -343,6 +343,9 @@ faq.html:	$(TOP)/www/faq.tcl
 formatchng.html:	$(TOP)/www/formatchng.tcl
 	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
 
+conflict.html:	$(TOP)/www/conflict.tcl
+	tclsh $(TOP)/www/conflict.tcl >conflict.html
+
 download.html:	$(TOP)/www/download.tcl
 	tclsh $(TOP)/www/download.tcl >download.html
 
@@ -365,7 +368,8 @@ DOC = \
   download.html \
   speed.html \
   faq.html \
-  formatchng.html
+  formatchng.html \
+  conflict.html
 
 doc:	$(DOC)
 	mkdir -p doc

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.1 2001/12/22 19:27:41 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.2 2002/01/30 16:17:25 drh Exp $ }
 
 puts {<html>
 <head>
@@ -80,6 +80,16 @@ occurred since version 1.0.0:
   schema does not contain any INTEGER PRIMARY KEYs, then the version 2.1.x
   and version 2.2.x database files will be identical and completely
   interchangeable.</p>
+</tr>
+<tr>
+  <td valign="top">2.2.5 to 2.3.0</td>
+  <td valign="top">2002-Jan-30</td>
+  <td>Beginning with version 2.3.0, SQLite supports some additional syntax
+  (the "ON CONFLICT" clause) in the CREATE TABLE and CREATE INDEX statements
+  that are stored in the SQLITE_MASTER table.  If you create a database that
+  contains this new syntax, then try to read that database using version 2.2.5
+  or earlier, the parser will not understand the new syntax and you will get
+  an error.  Otherwise, databases for 2.2.x and 2.3.x are interchangeable.</p>
 </tr>
 </table>
 </blockquote>

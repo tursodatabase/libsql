@@ -17,6 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jan 30 (2.3.0 beta)} {
+<li>Added the ability to resolve constraint conflicts is ways other than
+    an abort and rollback.  See the documentation on the "ON CONFLICT"
+    clause for details.</li>
+<li>NOT NULL constraints are honored.</li>
+<li>The COPY command puts NULLs in columns whose data is '\N'.</li>
+<li>In the COPY command, backslash can now be used to escape a newline.</li>
+}
+
 chng {2002 Jan 28 (2.2.5)} {
 <li>Important bug fix: the IN operator was not working if either the
     left-hand or right-hand side was derived from an INTEGER PRIMARY KEY.</li>

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.18 2001/12/22 19:27:41 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.19 2002/01/30 16:17:25 drh Exp $}
 
 puts {<html>
 <head>
@@ -31,7 +31,7 @@ by SQLite.  Many low-level productions are omitted.  For detailed information
 on the language that SQLite understands, refer to the source code.</p>
 
 
-<p>SQLite implements the follow SQL commands:</p>
+<p>SQLite implements the follow syntax:</p>
 <p><ul>
 }
 
@@ -50,6 +50,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {expression expr}
   {{BEGIN TRANSACTION} transaction}
   {PRAGMA pragma}
+  {{ON CONFLICT clause} conflict}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -140,11 +141,46 @@ a alias for COMMIT.
 </p>
 }
 
+Section {ON CONFLICT clause} conflict
+
+Syntax {conflict-clause} {
+ON CONFLICT <algorithm>
+} {algorithm} {
+ABORT | IGNORE | REPLACE
+}
+
+puts {
+<p>The ON CONFLICT clause is not a separate SQL command.  It is a
+non-standard clause that can appear in many other SQL commands.
+It is given its own section in this document because it is not
+part of standard SQL and therefore might not be familiar.</p>
+
+<p>The ON CONFLICT clause specifies an algorithm used to resolve
+constraint conflicts.  The default algorithm is ABORT.  When the
+ABORT algorithm is in use, any constraint violation causes the
+command to abort and the current transaction to be rolled back.
+This is the only behavior exhibited by most SQL engines.  But
+SQLite allows two alternative behaviors: IGNORE and REPLACE.
+The IGNORE algorithm means that when a constraint violation occurs
+on a COPY, INSERT or UPDATE, the particular row that caused the constraint
+violation is not inserted or changed, but other rows effected by the
+COPY, INSERT, or UPDATE are insert or changed as usual.
+The command is not aborted and no rollback occurs.
+If the algorithm is REPLACE, then SQLite tries to
+delete preexisting rows from the table to remove the constraint
+violation before inserting or changing the row.</p>
+
+<p>For additional information, see 
+<a href="conflict.html">conflict.html</a>.</p>
+}
+
 Section COPY copy
 
 Syntax {sql-statement} {
-COPY <table-name> FROM <filename>
+COPY [ <conflict-clause> ] <table-name> FROM <filename>
+[ USING DELIMITERS <delim> ]
 }
+
 
 puts {
 <p>The COPY command is an extension used to load large amounts of
@@ -163,7 +199,16 @@ the <b>STDIN</b> to read data from standard input.<p>
 in the table.  Columns are separated by tabs.  If a tab occurs as
 data within a column, then that tab is preceded by a baskslash "\"
 character.  A baskslash in the data appears as two backslashes in
-a row.</p>
+a row.  The optional USING DELIMITERS clause can specify a delimiter
+other than tab.</p>
+
+<p>If a column consists of the character "\N", that column is filled
+with the value NULL.</p>
+
+<p>The optional conflict-clause allows the specification of an alternative
+constraint conflict resolution algorithm to use for this one command.
+See the section titled
+<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 
 <p>When the input data source is STDIN, the input can be terminated
 by a line that contains only a baskslash and a dot:}
@@ -174,9 +219,11 @@ Section {CREATE INDEX} createindex
 Syntax {sql-statement} {
 CREATE [UNIQUE] INDEX <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
+[ <conflict-clause> ]
 } {column-name} {
 <name> [ ASC | DESC ]
 }
+
 
 puts {
 <p>The CREATE INDEX command consists of the keywords "CREATE INDEX" followed
@@ -193,6 +240,16 @@ attached to a single table, nor on the number of columns in an index.</p>
 <p>If the UNIQUE keyword appears between CREATE and INDEX then duplicate
 index entries are not allowed.  Any attempt to insert a duplicate entry
 will result in a rollback and an error message.</p>
+
+<p>The optional conflict-clause allows the specification of al alternative
+default constraint conflict resolution algorithm for this index.
+This only makes sense if the UNIQUE keyword is used since otherwise
+there are not constraints on the index.  The default algorithm is
+ABORT.  If a COPY, INSERT, or UPDATE statement specifies a particular
+conflict resolution algorithm, that algorithm is used in place of
+the default algorithm specified here.
+See the section titled
+<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 
 <p>The exact text
 of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
@@ -216,15 +273,15 @@ CREATE [TEMP | TEMPORARY] TABLE <table-name> (
 <typename> ( <number> ) |
 <typename> ( <number> , <number> )
 } {column-constraint} {
-NOT NULL |
-PRIMARY KEY [<sort-order>] |
-UNIQUE |
-CHECK ( <expr> ) |
+NOT NULL [ <conflict-clause> ] |
+PRIMARY KEY [<sort-order>] [ <conflict-clause> ] |
+UNIQUE [ <conflict-clause> ] |
+CHECK ( <expr> ) [ <conflict-clause> ] |
 DEFAULT <value>
 } {constraint} {
-PRIMARY KEY ( <name> [, <name>]* ) |
-UNIQUE ( <name> [, <name>]* ) |
-CHECK ( <expr> )
+PRIMARY KEY ( <name> [, <name>]* ) [ <conflict-clause> ]|
+UNIQUE ( <name> [, <name>]* ) [ <conflict-clause> ] |
+CHECK ( <expr> ) [ <conflict-clause> ]
 }
 
 puts {
@@ -264,6 +321,17 @@ process that opened the database and is automatically deleted when
 the database is closed.  Any indices created on a temporary table
 are also temporary.  Temporary tables and indices are stored in a
 separate file distinct from the main database file.</p>
+
+<p>The optional conflict-clause following each constraint
+allows the specification of an alternative default
+constraint conflict resolution algorithm for that constraint.
+The default is abort ABORT.  Different constraints within the same
+table may have different default conflict resolution algorithms.
+If an COPY, INSERT, or UPDATE command specifies a different conflict
+resolution algorithm, then that algorithm is used in place of the
+default algorithm specified in the CREATE TABLE statement.
+See the section titled
+<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 
 <p>There are no arbitrary limits on the number
 of columns or on the number of constraints in a table.
@@ -363,7 +431,7 @@ LIKE | GLOB | NOT LIKE | NOT GLOB
 }
 
 puts {
-<p>This section is different from the others.  Every other section of
+<p>This section is different from the others.  Most other sections of
 this document talks about a particular SQL command.  This section does
 not talk about a standalone command but about "expressions" which are 
 subcomponent of most other commands.</p>
@@ -490,8 +558,8 @@ The "<b>count(*)</b>" syntax is supported but
 Section INSERT insert
 
 Syntax {sql-statement} {
-INSERT INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
-INSERT INTO <table-name> [( <column-list> )] <select-statement>
+INSERT [ <conflict-clause> ] INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
+INSERT [ <conflict-clause> ] INTO <table-name> [( <column-list> )] <select-statement>
 }
 
 puts {
@@ -513,6 +581,11 @@ name in the column list.  A new entry is made in the table
 for every row of the SELECT result.  The SELECT may be simple
 or compound.  If the SELECT statement has an ORDER BY clause,
 the ORDER BY is ignored.</p>
+
+<p>The optional conflict-clause allows the specification of an alternative
+constraint conflict resolution algorithm to use during this one command.
+See the section titled
+<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 }
 
 Section SELECT select
@@ -597,7 +670,9 @@ are connected into a compound, they group from left to right.</p>
 Section UPDATE update
 
 Syntax {sql-statement} {
-UPDATE <table-name> SET <assignment> [, <assignment>] [WHERE <expression>]
+UPDATE [ <conflict-clause> ] <table-name>
+SET <assignment> [, <assignment>] 
+[WHERE <expression>]
 } {assignment} {
 <column-name> = <expression>
 }
@@ -608,7 +683,12 @@ selected rows of a table.  Each assignment in an UPDATE specifies
 a column name to the left of the equals sign and an arbitrary expression
 to the right.  The expressions may use the values of other columns.
 All expressions are evaluated before any assignments are made.
-A WHERE clause can be used to restrict which rows are updated.
+A WHERE clause can be used to restrict which rows are updated.</p>
+
+<p>The optional conflict-clause allows the specification of an alternative
+constraint conflict resolution algorithm to use during this one command.
+See the section titled
+<a href="#conflict">ON CONFLICT</a> for additional information.</p>
 }
 
 Section VACUUM vacuum

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.6 2001/09/16 00:13:28 drh Exp $
+# $Id: copy.test,v 1.7 2002/01/30 16:17:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -123,6 +123,7 @@ do_test copy-2.1 {
   execsql {COPY test2 FROM 'data21.txt'}
   execsql {SELECT x from test2}
 } $x
+file delete -force data21.txt
 
 # Test the escape character mechanism
 #
@@ -137,9 +138,79 @@ do_test copy-3.1 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {hello {world	2} {hello	world} 1}
+do_test copy-3.2 {
+  set fd [open data6.txt w]
+  puts $fd "1\thello\\\nworld"
+  puts $fd "2\thello world"
+  close $fd
+  execsql {
+    DELETE FROM t1;
+    COPY t1 FROM 'data6.txt';
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {hello
+world} 2 {hello world}}
+
+# Test the embedded NULL logic.
+#
+do_test copy-4.1 {
+  set fd [open data6.txt w]
+  puts $fd "1\t\\N"
+  puts $fd "\\N\thello world"
+  close $fd
+  execsql {
+    DELETE FROM t1;
+    COPY t1 FROM 'data6.txt';
+    SELECT * FROM t1 WHERE a IS NULL;
+  }
+} {{} {hello world}}
+do_test copy-4.2 {
+  execsql {
+    SELECT * FROM t1 WHERE b IS NULL;
+  }
+} {1 {}}
+
+# Test the conflict resolution logic for COPY
+#
+do_test copy-5.1 {
+  execsql {
+    DROP TABLE t1;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE, c);
+    COPY t1 FROM 'data5.txt' USING DELIMITERS '|';
+    SELECT * FROM t1;
+  }
+} {11 22 33 22 33 11}
+do_test copy-5.2 {
+  set fd [open data6.txt w]
+  puts $fd "33|22|44"
+  close $fd
+  catchsql {
+    COPY t1 FROM 'data6.txt' USING DELIMITERS '|';
+    SELECT * FROM t1;
+  }
+} {1 {constraint failed}}
+do_test copy-5.3 {
+  set fd [open data6.txt w]
+  puts $fd "33|22|44"
+  close $fd
+  catchsql {
+    COPY ON CONFLICT IGNORE t1 FROM 'data6.txt' USING DELIMITERS '|';
+    SELECT * FROM t1;
+  }
+} {0 {11 22 33 22 33 11}}
+do_test copy-5.4 {
+  set fd [open data6.txt w]
+  puts $fd "33|22|44"
+  close $fd
+  catchsql {
+    COPY ON CONFLICT REPLACE t1 FROM 'data6.txt' USING DELIMITERS '|';
+    SELECT * FROM t1;
+  }
+} {0 {22 33 11 33 22 44}}
+ 
 
 # Cleanup 
 #
-file delete -force data1.txt data2.txt data3.txt data4.txt data5.txt data21.txt
+file delete -force data1.txt data2.txt data3.txt data4.txt data5.txt data6.txt
 
 finish_test
