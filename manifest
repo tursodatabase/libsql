@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#59:\sAdd\sdocumentation\sfor\sthe\s||\soperator.\s\sAlso\sadded\ndocumentation\sfor\sthe\snew\sSQL92\sjoin\ssyntax.\s(CVS\s608)
-D 2002-06-06T23:30:59
+C Bug\sfix:\sdo\snot\ssegfault\sif\sa\sSELECT\swithout\sa\sFROM\sclause\sincludes\nthe\s*\swildcard\sin\sthe\sresult\scolumn\slist.\s(CVS\s609)
+D 2002-06-06T23:42:28
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 3b4989cb81ab2f441ef6c7cbb203829838eb299e
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 0293ec0190d9a991725579a5e9c3af2fb6c1b592
+F src/select.c 1d5cb1ae0bb3376bedfde7ae22e6e927e4d0b5e2
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
@@ -77,7 +77,7 @@ F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test df281e9b26cd1db5808939c7cf2703072d555be0
+F test/misc1.test 87490d33b36022610d1e56d1bd5c5b1edfebe753
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9ef795d1d756a404d2123ebc19df1985b19c9888
-R 9e3230f38c2b70333bfdfd540e33cb8b
+P a0abef62bfe1b0f8c6249ba520dd2735190783a5
+R 5d70f1605b7b9ff2e858e45ab5b5947d
 U drh
-Z 3a7eccbffd2310063ce5e8c10d603c5d
+Z 6eb753fe6a2122abae187660dd07b07e

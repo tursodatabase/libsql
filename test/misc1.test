@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.6 2002/05/24 02:14:50 drh Exp $
+# $Id: misc1.test,v 1.7 2002/06/06 23:42:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -226,6 +226,17 @@ do_test misc1-7.6 {
     SELECT * FROM t5 ORDER BY a;
   }
 } {0 2 4 1 2 3}
+
+do_test misc1-8.1 {
+  catchsql {
+    SELECT *;
+  }
+} {1 {no tables specified}}
+do_test misc1-8.2 {
+  catchsql {
+    SELECT t1.*;
+  }
+} {1 {no such table: t1}}
 
 
 finish_test

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.91 2002/06/06 18:54:40 drh Exp $
+** $Id: select.c,v 1.92 2002/06/06 23:42:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -728,9 +728,12 @@ static int fillInColumnList(Parse *pParse, Select *p){
           }
         }
         if( !tableSeen ){
-          assert( pName!=0 );
-          sqliteSetNString(&pParse->zErrMsg, "no such table: ", -1, 
-            pName->z, pName->n, 0);
+          if( pName ){
+            sqliteSetNString(&pParse->zErrMsg, "no such table: ", -1, 
+              pName->z, pName->n, 0);
+          }else{
+            sqliteSetString(&pParse->zErrMsg, "no tables specified", 0);
+          }
           rc = 1;
         }
       }
