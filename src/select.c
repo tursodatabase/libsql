@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.167 2004/05/18 09:58:08 danielk1977 Exp $
+** $Id: select.c,v 1.168 2004/05/18 22:38:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -310,6 +310,12 @@ static void sqliteAggregateInfoReset(Parse *pParse){
 /*
 ** Insert code into "v" that will push the record on the top of the
 ** stack into the sorter.
+**
+** FIX ME:  Change this so that it uses the OP_MakeKey opcode
+** instead of OP_SortMakeKey.  Delete the OP_SortMakeKey opcode.
+** All columns should have affinity NONE.  Handle ASC versus
+** DESC sort order by defining a list of comparison functions to
+** be used by the OP_Sort opcode.
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   char *zSortOrder;
@@ -2525,6 +2531,3 @@ select_end:
   sqliteAggregateInfoReset(pParse);
   return rc;
 }
-
-
-

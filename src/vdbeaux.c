@@ -1017,33 +1017,6 @@ void sqlite3VdbeDelete(Vdbe *p){
 }
 
 /*
-** Convert an integer in between the native integer format and
-** the bigEndian format used as the record number for tables.
-**
-** The bigEndian format (most significant byte first) is used for
-** record numbers so that records will sort into the correct order
-** even though memcmp() is used to compare the keys.  On machines
-** whose native integer format is little endian (ex: i486) the
-** order of bytes is reversed.  On native big-endian machines
-** (ex: Alpha, Sparc, Motorola) the byte order is the same.
-**
-** This function is its own inverse.  In other words
-**
-**         X == byteSwap(byteSwap(X))
-*/
-int sqlite3VdbeByteSwap(int x){
-  union {
-     char zBuf[sizeof(int)];
-     int i;
-  } ux;
-  ux.zBuf[3] = x&0xff;
-  ux.zBuf[2] = (x>>8)&0xff;
-  ux.zBuf[1] = (x>>16)&0xff;
-  ux.zBuf[0] = (x>>24)&0xff;
-  return ux.i;
-}
-
-/*
 ** If a MoveTo operation is pending on the given cursor, then do that
 ** MoveTo now.  Return an error code.  If no MoveTo is pending, this
 ** routine does nothing and returns SQLITE_OK.
@@ -1071,6 +1044,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
   return SQLITE_OK;
 }
 
+#if 0
 /*
 ** FIX ME
 **
@@ -1111,6 +1085,7 @@ int sqlite2BtreeKeyCompare(
 
   return rc;
 }
+#endif
 
 /*
 ** The following functions:

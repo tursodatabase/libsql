@@ -1,5 +1,5 @@
-C Remove\sthe\sOP_StrEq\sopcodes.\s(CVS\s1397)
-D 2004-05-18T22:17:46
+C Remove\sdead\scode\sfrom\svdbeaux.c.\s\sAdd\scomments\sdescribing\sdesired\schanges\nto\sOP_Sort\sprocessing\sin\sselect.c\s(CVS\s1398)
+D 2004-05-18T22:38:32
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y d2e226650738931c047c2562326ed05882af2330
 F src/pragma.c 2332e7fa9d7cd4b21f30583a696bee36628404ca
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c f376f3beade0e1e4808b3a393c13f5b30baecf74
+F src/select.c 2981cafe3b21ca06c97ddec8c7181f209a06ee82
 F src/shell.c 0c4662e13bfbfd3d13b066c5859cc97ad2f95d21
 F src/sqlite.h.in 799c5e726296ec7bc20e6407cdf4df0e0bc00c0c
 F src/sqliteInt.h 9e35491dc2fb88f792744d2e6c1cd172e0c28829
@@ -65,8 +65,8 @@ F src/util.c 6d4339b7f05ccdacaebcce67e7fb8c5b880620e8
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
 F src/vdbe.c 37c3d0c45fd6bd7096ae50d08e864acf41924b34
 F src/vdbe.h 1d0d0b5741c7f46ab372a95a4305fed0ae09d466
-F src/vdbeInt.h b4ad3993c720eb80430aeff12d63f22eb4925e7d
-F src/vdbeaux.c 760105ceedb7bcfcd3f4dbba7a5500321612669b
+F src/vdbeInt.h 5bac5f0f468205f6e43a4ba86a807abff4953abb
+F src/vdbeaux.c 1d447c912c6cde3629c99073eacb4604b201ab16
 F src/where.c 5f480219a943b0fed1f6922d2fdbfba8616a9148
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -193,7 +193,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 3ce42e85a2e6c95ebc0857436d5fe9384cab8628
-R fddf5a86430596516456c7f7cc0b49c1
+P 238442bbd267faee3eb70048bd9419af99c02931
+R 14afd092ade15d8c91f5ce918c3cd94a
 U drh
-Z 8311704fbb47e04be82877058c3afb37
+Z aa7deeaa1cefc9fd6080f4f67691aaa6
