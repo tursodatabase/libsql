@@ -27,8 +27,10 @@
 ** of information to the disk.
 **
 ** This file uses an in-memory hash table as the database backend. 
+** Nothing is ever written to disk using this backend.  All information
+** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.11 2001/03/20 22:05:00 drh Exp $
+** $Id: dbbemem.c,v 1.12 2001/04/03 16:53:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -720,7 +722,7 @@ static int sqliteMemDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 ** used to implement the MEMORY backend.
 */
 static struct DbbeMethods memoryMethods = {
-  /* n         Close */   sqliteMemClose,
+  /*           Close */   sqliteMemClose,
   /*      OpenCursor */   sqliteMemOpenCursor,
   /*       DropTable */   sqliteMemDropTable,
   /* ReorganizeTable */   sqliteMemReorganizeTable,

@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Apr 3 (1.0.28)} {
+<li>Changes to the "lemon" parser generator to help it work better when
+    compiled using MSVC.</li>
+<li>Bug fixes in the TCL interface identified by Oleg Oleinick.</li>
+}
+
 chng {2001 Mar 20 (1.0.27)} {
 <li>When doing DELETE and UPDATE, the library used to write the record
     numbers of records to be deleted or updated into a temporary file.

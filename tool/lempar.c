@@ -1,9 +1,5 @@
 /* Driver template for the LEMON parser generator.
 ** Copyright 1991-1995 by D. Richard Hipp.
-*
-* This version is specially modified for use with sqlite.
-* @(#) $Id: lempar.c,v 1.1 2000/05/29 14:26:02 drh Exp $
-*
 **
 ** This library is free software; you can redistribute it and/or
 ** modify it under the terms of the GNU Library General Public
@@ -177,7 +173,6 @@ static char *yyTracePrompt = 0;
 ** Outputs:
 ** None.
 */
-/* SQLITE MODIFICATION: Give the function file scope */
 void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
   yyTraceFILE = TraceFILE;
   yyTracePrompt = zTracePrompt;
@@ -195,6 +190,18 @@ static char *yyTokenName[] = {
 #define YYTRACE(X)
 #endif
 
+/*
+** This function returns the symbolic name associated with a token
+** value.
+*/
+const char *ParseTokenName(int tokenType){
+  if( tokenType>0 && tokenType<(sizeof(yyTokenName)/sizeof(yyTokenName[0])) ){
+    return yyTokenName[tokenType];
+  }else{
+    return "Unknown";
+  }
+}
+
 /* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
@@ -207,10 +214,9 @@ static char *yyTokenName[] = {
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-/* SQLITE MODIFICATION: Give the function file scope */
-void *ParseAlloc(void *(*mallocProc)()){
+void *ParseAlloc(void *(*mallocProc)(int)){
   yyParser *pParser;
-  pParser = (yyParser*)(*mallocProc)( sizeof(yyParser), __FILE__, __LINE__ );
+  pParser = (yyParser*)(*mallocProc)( (int)sizeof(yyParser) );
   if( pParser ){
     pParser->idx = -1;
   }
@@ -277,15 +283,14 @@ static int yy_pop_parser_stack(yyParser *pParser){
 **       from malloc.
 ** </ul>
 */
-/* SQLITE MODIFICATION: Give the function file scope */
 void ParseFree(
-  void *p,               /* The parser to be deleted */
-  void (*freeProc)()     /* Function used to reclaim memory */
+  void *p,                    /* The parser to be deleted */
+  void (*freeProc)(void*)     /* Function used to reclaim memory */
 ){
   yyParser *pParser = (yyParser*)p;
   if( pParser==0 ) return;
   while( pParser->idx>=0 ) yy_pop_parser_stack(pParser);
-  (*freeProc)(pParser, __FILE__, __LINE__);
+  (*freeProc)((void*)pParser);
 }
 
 /*
@@ -366,7 +371,7 @@ static struct {
 %%
 };
 
-static void yy_accept();  /* Forward declaration */
+static void yy_accept(yyParser *  ParseANSIARGDECL);  /* Forward Declaration */
 
 /*
 ** Perform a reduce action and the shift that must immediately
@@ -475,7 +480,6 @@ static void yy_accept(
 ** Outputs:
 ** None.
 */
-/* SQLITE MODIFICATION: Give the function file scope */
 void Parse(
   void *yyp,                   /* The parser */
   int yymajor,                 /* The major token code number */

@@ -56,9 +56,8 @@ LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
 SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/dbbe.c \
-  $(TOP)/src/dbbegdbm.c \
-  $(TOP)/src/dbbemem.c \
   $(TOP)/src/dbbe.h \
+  $(TOP)/src/dbbegdbm.c \
   $(TOP)/src/dbbemem.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \

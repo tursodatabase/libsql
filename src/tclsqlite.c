@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.13 2001/01/31 13:28:09 drh Exp $
+** $Id: tclsqlite.c,v 1.14 2001/04/03 16:53:22 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -53,6 +53,7 @@ struct CallbackData {
   char *zArray;             /* The array into which data is written */
   Tcl_Obj *pCode;           /* The code to execute for each row */
   int once;                 /* Set only for the first invocation of callback */
+  int tcl_rc;               /* Return code from TCL script */
 };
 
 /*
@@ -88,7 +89,9 @@ static int DbEvalCallback(
   }
   cbData->once = 0;
   rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
-  return rc!=TCL_OK && rc!=TCL_CONTINUE;
+  if( rc==TCL_CONTINUE ) rc = TCL_OK;
+  cbData->tcl_rc = rc;
+  return rc!=TCL_OK;
 }
 
 /*
@@ -171,7 +174,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   static char *DB_optStrs[] = {
-     "busy",   "close",  "complete",  "eval",  "timeout"
+     "busy",   "close",  "complete",  "eval",  "timeout", 0
   };
   enum DB_opts {
      DB_BUSY,  DB_CLOSE, DB_COMPLETE, DB_EVAL, DB_TIMEOUT
@@ -278,20 +281,26 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       cbData.once = 1;
       cbData.zArray = Tcl_GetStringFromObj(objv[3], 0);
       cbData.pCode = objv[4];
+      cbData.tcl_rc = TCL_OK;
       zErrMsg = 0;
       Tcl_IncrRefCount(objv[3]);
       Tcl_IncrRefCount(objv[4]);
       rc = sqlite_exec(pDb->db, zSql, DbEvalCallback, &cbData, &zErrMsg);
       Tcl_DecrRefCount(objv[4]);
       Tcl_DecrRefCount(objv[3]);
+      if( cbData.tcl_rc==TCL_BREAK ){ cbData.tcl_rc = TCL_OK; }
     }else{
       Tcl_Obj *pList = Tcl_NewObj();
+      cbData.tcl_rc = TCL_OK;
       rc = sqlite_exec(pDb->db, zSql, DbEvalCallback2, pList, &zErrMsg);
       Tcl_SetObjResult(interp, pList);
     }
     if( zErrMsg ){
       Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
       free(zErrMsg);
+      rc = TCL_ERROR;
+    }else{
+      rc = cbData.tcl_rc;
     }
     Tcl_DecrRefCount(objv[2]);
     return rc;

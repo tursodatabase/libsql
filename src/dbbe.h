@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.11 2001/03/20 22:05:00 drh Exp $
+** $Id: dbbe.h,v 1.12 2001/04/03 16:53:22 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -75,18 +75,19 @@ struct DbbeMethods {
   /* Close the whole database. */
   void (*Close)(Dbbe*);
 
-  /* Open a cursor into particular file of a previously opened database.
-  ** Create the file if it doesn't already exist and writeable!=0.  zName
-  ** is the base name of the file to be opened.  This routine will add
-  ** an appropriate path and extension to the filename to locate the 
+  /* Open a cursor into a particular table of a previously opened database.
+  ** Create the table if it doesn't already exist and writeable!=0.  zName
+  ** is the base name of the table to be opened.  If the database is 
+  ** implement as one file per table, then this routine will add an
+  ** appropriate path and extension to the table name to locate the 
   ** actual file.
   **
-  ** The keyType parameter is TRUE if this table will only be accessed
+  ** The intKeyOnly parameter is TRUE if this table will only be accessed
   ** using integer keys.  This parameter allows the database backend to
   ** use a faster algorithm for the special case of integer keys, if it
   ** wants to.
   **
-  ** If zName is 0 or "", then a temporary file is created that
+  ** If zName is 0 or "", then a temporary table is created that
   ** will be deleted when closed.
   */
   int (*OpenCursor)(Dbbe*, const char *zName, int writeable, 
@@ -165,7 +166,8 @@ struct DbbeMethods {
 struct Dbbe {
   struct DbbeMethods *x; /* Backend-specific methods for database access */
   /* There used to be other information here, but it has since
-  ** been removed.  */
+  ** been removed.  We'll keep the same design, though, in case we
+  ** ever want to add some new fields in the future. */
 };
 
 #endif /* defined(_SQLITE_DBBE_H_) */
