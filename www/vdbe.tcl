@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.5 2000/07/30 20:04:43 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.6 2000/11/28 20:46:41 drh Exp $}
 
 puts {<html>
 <head>
@@ -220,7 +220,7 @@ cursor to the "examp" file.</p>
 preprocessor macro, then
 there is a special SQL comment that will cause the 
 the VDBE to traces the execution of programs.
-Though this features was originally intended for testing
+Though this feature was originally intended for testing
 and debugging, it might also be useful in learning about
 how the VDBE operates.
 Use the "<tt>--vdbe-trace-on--</tt>" comment to
@@ -306,7 +306,7 @@ int Callback(void *pUserData, int nColumn, char *azData[], char *azColumnName[])
 
 <p>The SQLite library supplies the VDBE with a pointer to the callback function
 and the <b>pUserData</b> pointer.  (Both the callback and the user data were
-originally passed in as argument to the <b>sqlite_exec()</b> API function.)
+originally passed in as arguments to the <b>sqlite_exec()</b> API function.)
 The job of the VDBE is to
 come up with values for <b>nColumn</b>, <b>azData[]</b>, 
 and <b>azColumnName[]</b>.
@@ -769,7 +769,7 @@ a small percentage of the rows end up in the result.  This can
 take a long time on a big table.  To speed things up, SQLite
 can use an index.</p>
 
-<p>An GDBM file associates a key with some data.  For a SQLite
+<p>A GDBM file associates a key with some data.  For a SQLite
 table, the GDBM file is set up so that the key is a integer
 and the data is the information for one row of the table.
 Indices in SQLite reverse this arrangement.  The GDBM key
@@ -1172,7 +1172,7 @@ with that key is brought into focus.  A new bucket is created with
 the key if one did not previously exist.  Once the bucket is in
 focus, the memory locations of the bucket are used to accumulate
 the values of the various aggregate functions.  After the query
-loop terminates, the each bucket is visited once to generate a
+loop terminates, each bucket is visited once to generate a
 single row of the results.</p>
 
 <p>An example will help to clarify this concept.  Consider the
@@ -1476,7 +1476,7 @@ VDBE halts.</p>
 All this code does is make an entry in the temporary table for each
 row of the examp2 table.  The key for each temporary table entry
 is the "three" column of examp2 and the data 
-entries is an empty string since it is never used.</p>
+is an empty string since it is never used.</p>
 
 <p>The outer SELECT is implemented by instructions 8 through 19.  In
 particular, the WHERE clause containing the IN operator is implemented

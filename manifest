@@ -1,5 +1,5 @@
-C Version\s1.0.15\s(CVS\s488)
-D 2000-10-23T13:20:00
+C Comment\schanges\sonly\s(CVS\s165)
+D 2000-11-28T20:46:39
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -65,7 +65,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
-F www/c_interface.tcl 5e15e610397b50a9c2a9b2d1d96ec9c846638c07
+F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
 F www/changes.tcl c31acb39bd4e961e966ac05347a3bbffa56c576d
 F www/crosscompile.tcl bee79c34f6c3f162ec1c6f5294e79f73651d27ee
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -75,8 +75,8 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
-F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 356cdd64860b714f52529159fada799dca7bb1c0
-R 74743bda8c8d42a04097be9627f279df
+F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
+P d2ad3d2b4ee868621fb1155c64216536d576e456
+R 83fb4b0a2d996778108e66a5fdc62b84
 U drh
-Z dc6feacf6ee70c341a007315b3df6654
+Z ab74421a3e62e0f3d766c4c0780c1caf
