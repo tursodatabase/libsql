@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.9 2001/06/22 19:15:00 drh Exp $
+** @(#) $Id: pager.c,v 1.10 2001/06/23 11:36:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -562,8 +562,7 @@ Pgno sqlitepager_pagenumber(void *pData){
 ** currently on the freelist (the reference count is zero) then
 ** remove it from the freelist.
 */
-int sqlitepager_ref(void *pData){
-  PgHdr *pPg = DATA_TO_PGHDR(pData);
+static void page_ref(PgHdr *pPg){
   if( pPg->nRef==0 ){
     /* The page is currently on the freelist.  Remove it. */
     if( pPg->pPrevFree ){
@@ -579,6 +578,15 @@ int sqlitepager_ref(void *pData){
     pPg->pPager->nRef++;
   }
   pPg->nRef++;
+}
+
+/*
+** Increment the reference count for a page.  The input pointer is
+** a reference to the page data.
+*/
+int sqlitepager_ref(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  page_ref(pPg);
   return SQLITE_OK;
 }
 
@@ -766,7 +774,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   }else{
     /* The requested page is in the page cache. */
     pPager->nHit++;
-    sqlitepager_ref(pPg);
+    page_ref(pPg);
   }
   *ppPage = PGHDR_TO_DATA(pPg);
   return SQLITE_OK;
@@ -799,7 +807,7 @@ void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
   }
   pPg = pager_lookup(pPager, pgno);
   if( pPg==0 ) return 0;
-  sqlitepager_ref(pPg);
+  page_ref(pPg);
   return PGHDR_TO_DATA(pPg);
 }
 

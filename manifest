@@ -1,5 +1,5 @@
-C The\sBTree\scode\scompiles\sand\slinks\snow,\sbut\sit\sdoes\snot\swork\syet.\s(CVS\s226)
-D 2001-06-22T19:15:00
+C Fix\sa\sbug\sin\spager.c\sintroduced\sin\sthe\sprevious\sdelta.\s(CVS\s227)
+D 2001-06-23T11:36:20
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 65862a30703b070209b5f5e565d75cc870962b3c
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -31,7 +31,7 @@ F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c c4c24c3af1eba094a816522eb0e085bed518ee16
 F src/insert.c aa528e20a787af85432a61daaea6df394bd251d7
 F src/main.c 0a13c7a2beb8ce36aee43daf8c95989b200727a7
-F src/pager.c 30c6f10a3c0cdfca3314c07d34375dbc19a48c2f
+F src/pager.c d5cb53ac679d039d40661e50200a8dde6406ca15
 F src/pager.h 724ac5a79b5fa704a1e1a87e421e421b3da9c1e4
 F src/parse.y 8fc096948994a7ffbf61ba13129cc589f794a9cb
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
@@ -107,7 +107,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P d4be4709ee32bab6e78104861ed4e02d153779aa
-R 0a720e1f17d26fb5cb5699a653f8a269
+P b31c49021c260a67b7848bc077b75a7146e31c71
+R e52ea2ba0d86c859453a43591ceb35fc
 U drh
-Z 4c2d9d4e753474964194e60669402b32
+Z 86cec7512c643b5b976845158db125a4
