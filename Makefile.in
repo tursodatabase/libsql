@@ -215,3 +215,4 @@ clean:
 	rm -f *.o sqlite libsqlite.a sqlite.h
 	rm -f lemon lempar.c parse.* sqlite.tar.gz
 	rm -f $(PUBLISH)
+	rm -f *.da *.bb *.bbg gmon.out

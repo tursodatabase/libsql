@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.3 2000/05/31 18:33:10 drh Exp $
+# $Id: expr.test,v 1.4 2000/06/03 19:19:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -64,7 +64,18 @@ test_expr expr-1.22 {i1=1, i2=2, r1=3.0} {i1+i2*r1} {7}
 test_expr expr-1.23 {i1=1, i2=2, r1=3.0} {(i1+i2)*r1} {9}
 test_expr expr-1.24 {i1=1, i2=2} {min(i1,i2,i1+i2,i1-i2)} {-1}
 test_expr expr-1.25 {i1=1, i2=2} {max(i1,i2,i1+i2,i1-i2)} {3}
-
+test_expr expr-1.26 {i1=1, i2=2} {max(i1,i2,i1+i2,i1-i2)} {3}
+test_expr expr-1.27 {i1=1, i2=2} {i1==1 AND i2=2} {1}
+test_expr expr-1.28 {i1=1, i2=2} {i1=2 AND i2=1} {0}
+test_expr expr-1.29 {i1=1, i2=2} {i1=1 AND i2=1} {0}
+test_expr expr-1.30 {i1=1, i2=2} {i1=2 AND i2=2} {0}
+test_expr expr-1.31 {i1=1, i2=2} {i1==1 OR i2=2} {1}
+test_expr expr-1.32 {i1=1, i2=2} {i1=2 OR i2=1} {0}
+test_expr expr-1.33 {i1=1, i2=2} {i1=1 OR i2=1} {1}
+test_expr expr-1.34 {i1=1, i2=2} {i1=2 OR i2=2} {1}
+test_expr expr-1.35 {i1=1, i2=2} {i1-i2=-1} {1}
+test_expr expr-1.36 {i1=1, i2=0} {not i1} {0}
+test_expr expr-1.37 {i1=1, i2=NULL} {not i2} {1}
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
@@ -114,6 +125,10 @@ test_expr expr-3.21 {t1='abc', t2='abc'} {t1<>t2} 0
 test_expr expr-3.22 {t1='abc', t2='xyz'} {t1!=t2} 1
 test_expr expr-3.23 {t1='xyz', t2='abc'} {t1!=t2} 1
 test_expr expr-3.24 {t1='abc', t2='abc'} {t1!=t2} 0
+test_expr expr-3.25 {t1=NULL, t2='hi'} {t1 isnull} 1
+test_expr expr-3.26 {t1=NULL, t2='hi'} {t2 isnull} 0
+test_expr expr-3.27 {t1=NULL, t2='hi'} {t1 notnull} 0
+test_expr expr-3.28 {t1=NULL, t2='hi'} {t2 notnull} 1
 
 test_expr expr-4.1 {t1='abc', t2='Abc'} {t1<t2} 0
 test_expr expr-4.2 {t1='abc', t2='Abc'} {t1>t2} 1
@@ -128,5 +143,66 @@ test_expr expr-5.5 {t1='abc', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.6 {t1='abxyzzyc', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.7 {t1='abxyzzy', t2='A%C'} {t1 LIKE t2} 0
 test_expr expr-5.8 {t1='abxyzzycx', t2='A%C'} {t1 LIKE t2} 0
+
+test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
+test_expr expr-6.2 {t1='abc', t2='ABC'} {t1 GLOB t2} 0
+test_expr expr-6.3 {t1='abc', t2='A?C'} {t1 GLOB t2} 0
+test_expr expr-6.4 {t1='abc', t2='a?c'} {t1 GLOB t2} 1
+test_expr expr-6.5 {t1='abc', t2='abc?'} {t1 GLOB t2} 0
+test_expr expr-6.6 {t1='abc', t2='A*C'} {t1 GLOB t2} 0
+test_expr expr-6.7 {t1='abc', t2='a*c'} {t1 GLOB t2} 1
+test_expr expr-6.8 {t1='abxyzzyc', t2='a*c'} {t1 GLOB t2} 1
+test_expr expr-6.9 {t1='abxyzzy', t2='a*c'} {t1 GLOB t2} 0
+test_expr expr-6.10 {t1='abxyzzycx', t2='a*c'} {t1 GLOB t2} 0
+
+
+# The sqliteExprIfFalse and sqliteExprIfTrue routines are only
+# executed as part of a WHERE clause.  Create a table suitable
+# for testing these functions.
+#
+execsql {DROP TABLE test1}
+execsql {CREATE TABLE test1(a int, b int);}
+for {set i 1} {$i<=20} {incr i} {
+  execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+}
+execsql "INSERT INTO test1 VALUES(NULL,0)"
+do_test expr-7.1 {
+  execsql {SELECT * FROM test1 ORDER BY a}
+} {{} 0 1 2 2 4 3 8 4 16 5 32 6 64 7 128 8 256 9 512 10 1024 11 2048 12 4096 13 8192 14 16384 15 32768 16 65536 17 131072 18 262144 19 524288 20 1048576}
+
+proc test_expr2 {name expr result} {
+  do_test $name [format {
+    execsql {SELECT a FROM test1 WHERE %s ORDER BY a}
+  } $expr] $result
+}
+
+test_expr2 expr-7.2  {a<10 AND a>8}                  {9}
+test_expr2 expr-7.3  {a<=10 AND a>=8}                {8 9 10}
+test_expr2 expr-7.4  {a>=8 AND a<=10}                {8 9 10}
+test_expr2 expr-7.5  {a>=20 OR a<=1}                 {{} 1 20}
+test_expr2 expr-7.6  {b!=4 AND a<=3}                 {{} 1 3}
+test_expr2 expr-7.7  {b==8 OR b==16 OR b==32}        {3 4 5}
+test_expr2 expr-7.8  {NOT b<>8 OR b==1024}           {3 10}
+test_expr2 expr-7.9  {b LIKE '10%'}                  {10 20}
+test_expr2 expr-7.10 {b LIKE '_4'}                   {6}
+test_expr2 expr-7.11 {a GLOB '1?'}            {10 11 12 13 14 15 16 17 18 19}
+test_expr2 expr-7.12 {b GLOB '1*4'}                  {10 14}
+test_expr2 expr-7.13 {b GLOB '*1[456]'}              {4}
+test_expr2 expr-7.14 {a ISNULL}                      {{}}
+test_expr2 expr-7.15 {a NOTNULL AND a<3}             {1 2}
+test_expr2 expr-7.16 {a AND a<3}                     {1 2}
+test_expr2 expr-7.17 {NOT a}                         {{}}
+test_expr2 expr-7.18 {a==11 OR (b>1000 AND b<2000)}  {10 11}
+test_expr2 expr-7.19 {a<=1 OR a>=20}                 {{} 1 20}
+test_expr2 expr-7.20 {a<1 OR a>20}                   {{}}
+test_expr2 expr-7.21 {a>19 OR a<1}                   {{} 20}
+test_expr2 expr-7.22 {a!=1 OR a=100} \
+                         {{} 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
+test_expr2 expr-7.23 {(a notnull AND a<4) OR a==8}   {1 2 3 8}
+test_expr2 expr-7.24 {a LIKE '2_' OR a==8}           {8 20}
+test_expr2 expr-7.25 {a GLOB '2?' OR a==8}           {8 20}
+test_expr2 expr-7.26 {a isnull OR a=8}               {{} 8}
+test_expr2 expr-7.27 {a notnull OR a=8} \
+                          {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
 
 finish_test

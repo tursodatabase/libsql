@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.3 2000/06/03 18:06:53 drh Exp $
+# $Id: delete.test,v 1.4 2000/06/03 19:19:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -66,5 +66,17 @@ do_test delete-3.1d {
   execsql {SELECT * FROM table1 ORDER BY f1}
 } {1 2 4 16}
 
+# Semantic errors in the WHERE clause
+#
+do_test delete-4.1 {
+  execsql {CREATE TABLE table2(f1 int, f2 int)}
+  set v [catch {execsql {DELETE FROM table2 WHERE f3=5}} msg]
+  lappend v $msg
+} {1 {no such field: f3}}
+
+do_test delete-4.2 {
+  set v [catch {execsql {DELETE FROM table2 WHERE xyzzy(f1+4)}} msg]
+  lappend v $msg
+} {1 {no such function: xyzzy}}
 
 finish_test

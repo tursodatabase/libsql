@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.7 2000/06/03 18:06:53 drh Exp $
+** @(#) $Id: parse.y,v 1.8 2000/06/03 19:19:41 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -242,6 +242,7 @@ item(A) ::= MINUS FLOAT(X).  {
   sqliteSetNString(&A->token.z, "-", 1, X.z, X.n, 0);
 }
 item(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
+item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
 
 %type fieldlist_opt {IdList*}
 %destructor fieldlist_opt {sqliteIdListDelete($$);}
@@ -255,11 +256,12 @@ fieldlist(A) ::= ID(Y).                    {A = sqliteIdListAppend(0,&Y);}
 
 %left OR.
 %left AND.
+%right NOT.
 %left EQ NE ISNULL NOTNULL IS LIKE GLOB.
 %left GT GE LT LE.
 %left PLUS MINUS.
 %left STAR SLASH PERCENT.
-%right NOT.
+%right UMINUS.
 
 %type expr {Expr*}
 %destructor expr {sqliteExprDelete($$);}
@@ -293,8 +295,8 @@ expr(A) ::= expr(X) SLASH expr(Y). {A = sqliteExpr(TK_SLASH, X, Y, 0);}
 expr(A) ::= expr(X) ISNULL.        {A = sqliteExpr(TK_ISNULL, X, 0, 0);}
 expr(A) ::= expr(X) NOTNULL.       {A = sqliteExpr(TK_NOTNULL, X, 0, 0);}
 expr(A) ::= NOT expr(X).           {A = sqliteExpr(TK_NOT, X, 0, 0);}
-expr(A) ::= MINUS expr(X). [NOT]   {A = sqliteExpr(TK_UMINUS, X, 0, 0);}
-expr(A) ::= PLUS expr(X). [NOT]    {A = X;}
+expr(A) ::= MINUS expr(X). [UMINUS]   {A = sqliteExpr(TK_UMINUS, X, 0, 0);}
+expr(A) ::= PLUS expr(X). [UMINUS]    {A = X;}
 
 %type exprlist {ExprList*}
 %destructor exprlist {sqliteExprListDelete($$);}

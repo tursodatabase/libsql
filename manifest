@@ -1,7 +1,7 @@
-C added\sdefault\svalues\s(CVS\s46)
-D 2000-06-03T18:06:52
+C :-)\s(CVS\s47)
+D 2000-06-03T19:19:41
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in 3d367d6699f6fb987d0041a9d3b4dbf4308c8983
+F Makefile.in 20a035ae94ec7574d7a5f09301d3f6f5f9cb7ef0
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
@@ -10,10 +10,10 @@ F src/build.c 15c4f3844774baa882435223119a18c33810ee94
 F src/dbbe.c ae8b5d2cdb4fa7dd11313059984be9457fa77f63
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
-F src/expr.c baab49f0db860d27fdc41e6cd0bde1c437189ac8
+F src/expr.c 6df33b3a42039e1eb1eb556c84a4b190a8eca8ca
 F src/insert.c 62951015437a96d388f43b591437d489719872fb
 F src/main.c ed15e0132659ace7f44ea2dbcdd21c232af3dbd5
-F src/parse.y 64d9e4808993e9384ba9557f7168ac3dab6cb89f
+F src/parse.y 9ec486608b7b4daaccf4ad9f05eef1a26a008fb8
 F src/select.c 2f4ae48deae2c5c94a89b3bc4fef2fe96c575e9f
 F src/shell.c bd658f9208bc20ce565c3f687836155772ca939a
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
@@ -27,8 +27,8 @@ F src/vdbe.h ab574c91c6328c5795f68b84074fbcf860eae70e
 F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test 6b218a41dc6469491049b50ee105f76282f2547d
-F test/delete.test 9b2515aa621fb5df46c640fdef39c876b9a5fc4b
-F test/expr.test f3fc925935533082911dfa5fde9b22e382b3132f
+F test/delete.test 30451333f89479d2deb5410edd3f3cce67339944
+F test/expr.test db6984d2a6e86118dfce68edade6539495f29022
 F test/index.test 9f99dca2d904b8de330863a978587f136e2df65a
 F test/insert.test b4c186ffa4b97a231643726f3bcee29815b24eaf
 F test/select1.test a0b00df77e85adff75c338e487718c5d31f69e3a
@@ -47,7 +47,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 7d6ed774362dea0c9687d4efbafd939c1c48fd81
 F www/index.tcl 0096a3e00b1364fb2c3e06941aa8c31454b6d06a
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 3e88142e908de02b5c8243c47dc9ca237cb7f011
-R 75efbb82189fa0b34c50ac1e66e30b8e
+P 27c0678623de37f3166cb9952989fd03484cdb8d
+R 55ab5057755afd4eb3d30546b6144ca3
 U drh
-Z c2845300f99ec90b3961e47b3598d5e7
+Z 47b79d9e980f5d785c73e416f1cd2177
