@@ -1,5 +1,5 @@
-C Modify\ssub-query\shandling.\sTickets\s#1083\sand\s#1084.\s(CVS\s2286)
-D 2005-01-29T08:32:44
+C Update\sioerr.test\sto\sbe\smore\sdeterministic.\s(CVS\s2287)
+D 2005-01-29T08:36:45
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -138,7 +138,7 @@ F test/insert2.test 420cb5c23912732219aad87420abdd7b994b1cad
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
 F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
-F test/ioerr.test 3155522a4fd73c714a78fc3403cced7252a130f3
+F test/ioerr.test 79e1ee69157ffb9445dfa4f34fff32c87f375fd4
 F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 95ecb2745f3fc69d370fc3961800db56297acb68
-R fe4aca512646cc7b9406c540eeb0d8a2
+P b1b50f315873a8614920d1e3af4a07fb29a7ff6a
+R c3256f9f49536d2780189347e9c7bebb
 U danielk1977
-Z 3506c9b8c122ebd01b86eeaa686e6ed6
+Z 7c3f10c0ef2167d26758ae5865b86487
