@@ -1,5 +1,5 @@
-C Clean\sup\ssome\scompiler\swarnings.\s(CVS\s575)
-D 2002-05-21T13:18:26
+C Double-quoted\sstrings\sresolve\sto\scolumn\snames\sif\spossible.\s\sSingle-quoted\nstrings\scontinue\sto\sbe\sinterpreted\sas\sstring\sliterals.\s(CVS\s576)
+D 2002-05-21T13:43:04
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c f5aa02e4553ca2db941d6e7f025a180ddc4cea49
 F src/delete.c c2eae01b76d5418d4ff1768659dfb199c38f0641
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c 2c7535ba013b731ed73f12b6cc1cd5b466efb3e2
+F src/expr.c 01e1e395392284a3a480c90bd60b3a0fa99aab38
 F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
@@ -83,7 +83,7 @@ F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
 F test/pragma.test 0b9675ef1f5ba5b43abfa337744445fc5b01a34a
 F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
-F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
+F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test c19617be69fb1322c71e100b5882c469729c4bf1
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f795afd63f19ab61c2b3b96621cb6dda31ce0379
-R f30d941f16e46cee9269d14d467bbb83
+P 3399b01219b9e75b93587b5634d199d9e6fb6e42
+R 11e5246ab7bc31d3891976630a69eee3
 U drh
-Z deb3155eb826aa47da17dfd5a82d0d75
+Z 5b4da1c5d40f9084cbbd43db1688a090

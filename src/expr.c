@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.60 2002/05/19 23:43:14 danielk1977 Exp $
+** $Id: expr.c,v 1.61 2002/05/21 13:43:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -285,6 +285,10 @@ void sqliteExprListDelete(ExprList *pList){
 /*
 ** Walk an expression tree.  Return 1 if the expression is constant
 ** and 0 if it involves variables.
+**
+** For the purposes of this function, a double-quoted string (ex: "abc")
+** is considered a variable but a single-quoted string (ex: 'abc') is
+** a constant.
 */
 int sqliteExprIsConstant(Expr *p){
   switch( p->op ){
@@ -292,9 +296,10 @@ int sqliteExprIsConstant(Expr *p){
     case TK_COLUMN:
     case TK_DOT:
       return 0;
+    case TK_STRING:
+      return p->token.z[0]=='\'';
     case TK_INTEGER:
     case TK_FLOAT:
-    case TK_STRING:
       return 1;
     default: {
       if( p->pLeft && !sqliteExprIsConstant(p->pLeft) ) return 0;
@@ -362,6 +367,14 @@ int sqliteExprResolveIds(
   if( pExpr==0 || pTabList==0 ) return 0;
   assert( base+pTabList->nId<=pParse->nTab );
   switch( pExpr->op ){
+    /* Double-quoted strings (ex: "abc") are used as identifiers if
+    ** possible.  Otherwise they remain as strings.  Single-quoted
+    ** strings (ex: 'abc') are always string literals.
+    */
+    case TK_STRING: {
+      if( pExpr->token.z[0]=='\'' ) break;
+      /* Fall thru into the TK_ID case if this is a double-quoted string */
+    }
     /* A lone identifier.  Try and match it as follows:
     **
     **     1.  To the name of a column of one of the tables in pTabList
@@ -419,7 +432,7 @@ int sqliteExprResolveIds(
         pExpr->op = TK_COLUMN;
       }
       sqliteFree(z);
-      if( cnt==0 ){
+      if( cnt==0 && pExpr->token.z[0]!='"' ){
         sqliteSetNString(&pParse->zErrMsg, "no such column: ", -1,  
           pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
