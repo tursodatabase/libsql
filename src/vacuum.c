@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.10 2004/02/11 09:46:33 drh Exp $
+** $Id: vacuum.c,v 1.11 2004/02/12 13:02:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -108,7 +108,6 @@ static int execsql(char **pzErrMsg, sqlite *db, const char *zSql){
 */
 static int vacuumCallback2(void *pArg, int argc, char **argv, char **NotUsed){
   vacuumStruct *p = (vacuumStruct*)pArg;
-  int rc = 0;
   const char *zSep = "(";
   int i;
 
@@ -127,8 +126,8 @@ static int vacuumCallback2(void *pArg, int argc, char **argv, char **NotUsed){
     }
   }
   appendText(&p->s2,")", 1);
-  rc = execsql(p->pzErrMsg, p->dbNew, p->s2.z);
-  return rc;
+  p->rc = execsql(p->pzErrMsg, p->dbNew, p->s2.z);
+  return p->rc;
 }
 
 /*
@@ -160,6 +159,7 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
       sqlite_freemem(zErrMsg);
     }
   }
+  if( rc!=SQLITE_ABORT ) p->rc = rc;
   return rc;
 }
 
@@ -170,7 +170,6 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
 */
 static int vacuumCallback3(void *pArg, int argc, char **argv, char **NotUsed){
   vacuumStruct *p = (vacuumStruct*)pArg;
-  int rc = 0;
   char zBuf[200];
   assert( argc==1 );
   if( argv==0 ) return 0;
@@ -178,8 +177,8 @@ static int vacuumCallback3(void *pArg, int argc, char **argv, char **NotUsed){
   assert( strlen(p->zPragma)<100 );
   assert( strlen(argv[0])<30 );
   sprintf(zBuf,"PRAGMA %s=%s;", p->zPragma, argv[0]);
-  rc = execsql(p->pzErrMsg, p->dbNew, zBuf);
-  return rc;
+  p->rc = execsql(p->pzErrMsg, p->dbNew, zBuf);
+  return p->rc;
 }
 
 /*
@@ -273,8 +272,8 @@ int sqliteRunVacuum(char **pzErrMsg, sqlite *db){
        zTemp, " - ", zErrMsg, (char*)0);
     goto end_of_vacuum;
   }
-  if( execsql(pzErrMsg, db, "BEGIN") ) goto end_of_vacuum;
-  if( execsql(pzErrMsg, dbNew, "PRAGMA synchronous=off; BEGIN") ){
+  if( (rc = execsql(pzErrMsg, db, "BEGIN"))!=0 ) goto end_of_vacuum;
+  if( (rc = execsql(pzErrMsg, dbNew, "PRAGMA synchronous=off; BEGIN"))!=0 ){
     goto end_of_vacuum;
   }
   
@@ -316,6 +315,7 @@ end_of_vacuum:
   sqliteFree(sVac.s2.z);
   if( zErrMsg ) sqlite_freemem(zErrMsg);
   if( rc==SQLITE_ABORT ) rc = SQLITE_ERROR;
-  return rc;
+  if( sVac.rc!=SQLITE_OK ) rc = sVac.rc;
+  return sVac.rc;
 #endif
 }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.259 2004/02/11 09:46:33 drh Exp $
+** $Id: vdbe.c,v 1.260 2004/02/12 13:02:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -509,6 +509,7 @@ int sqliteVdbeExec(
     popStack(&pTos, p->popStack);
     p->popStack = 0;
   }
+  CHECK_FOR_INTERRUPT;
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
