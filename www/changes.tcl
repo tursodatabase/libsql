@@ -25,7 +25,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2003 Feb 14 (2.8.0)} {
+chng {2003 Feb 16 (2.8.0)} {
 <li>Modified the journal file format to make it more resistant to corruption
     that can occur after an OS crash or power failure.</li>
 <li>Added a new C/C++ API that does not use callback for returning data.</li>

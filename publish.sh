@@ -115,6 +115,9 @@ sqliteFree
 sqliteRealloc
 sqlite_set_authorizer
 sqlite_trace
+sqlite_compile
+sqlite_step
+sqlite_finalize
 END_OF_FILE
 i386-mingw32msvc-dllwrap \
      --def sqlite.def -v --export-all \

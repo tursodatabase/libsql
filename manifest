@@ -1,5 +1,5 @@
-C Update\sthe\sspeed\scomparison\sdocumentation\sto\sshow\sthe\simproved\sperformance\nof\sPostgreSQL\safter\sperformance\stuning.\s(CVS\s869)
-D 2003-02-16T22:36:03
+C Couple\sof\slast-minute\schanges\sbefore\s2.8.0.\s(CVS\s871)
+D 2003-02-16T22:48:13
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -15,7 +15,7 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
-F publish.sh ce0bf7e235984bc156dc5d1a0c8092db4c8442f3
+F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
@@ -135,7 +135,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl bca0aea880d043ed1bc0ad3bb39e24043f88b5bf
-F www/changes.tcl 546f966c8df2c872d1117da0c6e5c8304b0e9577
+F www/changes.tcl 7eb04deffbe116cdb558443f8f7df74ebd021daa
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 75ba78280f7ab6b6acce5878859312f3223ee898
-R 24a2ec5fee02b8a78fc04a7b84369346
+P 73c904e57a158820705daf5737e0fc825cfe1aea
+R b51128b47f94629659cb0a963e38da71
 U drh
-Z 2e49fb8d065665f41dfa451c67c5a8d9
+Z 355049cfab01cacfcff090e0baccf795
