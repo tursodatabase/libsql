@@ -1,5 +1,5 @@
-C The\ssqlite_get_table()\sfunction\snow\sreturns\san\serror\sif\syou\spass\sin\stwo\nor\smore\sSELECT\sstatements\sthat\sreturn\sdifferent\snumbers\sof\scolumns.\s(CVS\s436)
-D 2002-03-23T00:52:01
+C Version\s2.4.3\s(CVS\s440)
+D 2002-03-23T01:00:00
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P aaf7fd4cef04d3d70a0444aad1b606bfc663c3e8
+P e2558c34034cf49524084ec819df58934a8af983
 R b3affb1ebed689441f43f9512795f044
 U drh
-Z a9859b001a58df50bd87dfcc98d0ee86
+Z d8af9dfdacb01b6b9297504ec54586e1
