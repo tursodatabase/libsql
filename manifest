@@ -1,5 +1,5 @@
-C Clear\sup\sanother\szero-length\sarray.\s\sThis\sseems\sto\sfix\sthe\ssegfault\sin\nfunc-13.4\stoo.\s(CVS\s1641)
-D 2004-06-19T15:40:23
+C Omit\sthe\sDB_Locked\sand\sDB_Cookie\sflags.\s\sOther\sminor\scleanup.\s(CVS\s1642)
+D 2004-06-19T16:06:11
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,11 +24,11 @@ F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def c4bc3f10bccded91d06328c4b2b742ace4d3ed9f
-F src/attach.c 78ca379f2db3701cca20055cdd802c6bd3b49870
-F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
+F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
+F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c c843ef3d4440b591e154d0e78c664e213236db68
+F src/build.c 09d8863a5dc174bac8bd3fc293a3e2519b9d7a49
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c a5191011b7429dff939df631b8bdcc1714b8d7aa
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -57,7 +57,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 9aa82bbc63983a304bc51d4a7c259e759f92c8dc
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in c34414b9f5330f875e26a69fe685e38ca45f11b9
-F src/sqliteInt.h b776ee9d096bcd90c0ebdca7ae827e7c89747120
+F src/sqliteInt.h 421687a0b3111d4b3df058aa1a5400739d3d3584
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c ddef9b18271fb46344d3d35446bd7c001465a69a
 F src/test1.c ee426e026ad9223483e7a84bb68849fc6e9f542e
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fbfc3c95a8abf25bb9e2b44cfeb7186c5b0591d7
-R 8b1896930be175cc145ac47aedd2f4cb
+P 70680a34b4b617286d92730bd3042b8b569b3371
+R b1a9e75569a189850c5300b5594dbc5c
 U drh
-Z 4a06f27d3dc21ce0ad6cfd96c4ae0233
+Z 1c5518adfc53e32ee655b3ffea101b0b

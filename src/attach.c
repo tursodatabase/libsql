@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.16 2004/06/19 14:49:12 drh Exp $
+** $Id: attach.c,v 1.17 2004/06/19 16:06:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -59,7 +59,8 @@ void sqlite3Attach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey)
   zName = sqlite3NameFromToken(pDbname);
   if( zName==0 ) return;
   for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].zName && sqlite3StrICmp(db->aDb[i].zName, zName)==0 ){
+    char *z = db->aDb[i].zName;
+    if( z && sqlite3StrICmp(z, zName)==0 ){
       sqlite3ErrorMsg(pParse, "database %z is already in use", zName);
       pParse->rc = SQLITE_ERROR;
       sqliteFree(zFile);
@@ -133,15 +134,17 @@ void sqlite3Detach(Parse *pParse, Token *pDbname){
   int i;
   sqlite *db;
   Vdbe *v;
+  Db *pDb;
 
   v = sqlite3GetVdbe(pParse);
   sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
   if( pParse->explain ) return;
   db = pParse->db;
   for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].pBt==0 || db->aDb[i].zName==0 ) continue;
-    if( strlen(db->aDb[i].zName)!=pDbname->n ) continue;
-    if( sqlite3StrNICmp(db->aDb[i].zName, pDbname->z, pDbname->n)==0 ) break;
+    pDb = &db->aDb[i];
+    if( pDb->pBt==0 || pDb->zName==0 ) continue;
+    if( strlen(pDb->zName)!=pDbname->n ) continue;
+    if( sqlite3StrNICmp(pDb->zName, pDbname->z, pDbname->n)==0 ) break;
   }
   if( i>=db->nDb ){
     sqlite3ErrorMsg(pParse, "no such database: %T", pDbname);
@@ -161,9 +164,9 @@ void sqlite3Detach(Parse *pParse, Token *pDbname){
     return;
   }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
-  sqlite3BtreeClose(db->aDb[i].pBt);
-  db->aDb[i].pBt = 0;
-  sqliteFree(db->aDb[i].zName);
+  sqlite3BtreeClose(pDb->pBt);
+  pDb->pBt = 0;
+  sqliteFree(pDb->zName);
   sqlite3ResetInternalSchema(db, i);
   db->nDb--;
   if( i<db->nDb ){

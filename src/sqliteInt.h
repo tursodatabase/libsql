@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.294 2004/06/19 15:22:56 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.295 2004/06/19 16:06:12 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -308,13 +308,6 @@ struct Db {
 /*
 ** Allowed values for the DB.flags field.
 **
-** The DB_Locked flag is set when the first OP_Transaction or OP_Checkpoint
-** opcode is emitted for a database.  This prevents multiple occurances
-** of those opcodes for the same database in the same program.  Similarly,
-** the DB_Cookie flag is set when the OP_VerifyCookie opcode is emitted,
-** and prevents duplicate OP_VerifyCookies from taking up space and slowing
-** down execution.
-**
 ** The DB_SchemaLoaded flag is set after the database schema has been
 ** read into internal hash tables.
 **
@@ -322,10 +315,8 @@ struct Db {
 ** have been filled out.  If the schema changes, these column names might
 ** changes and so the view will need to be reset.
 */
-#define DB_Locked          0x0001  /* OP_Transaction opcode has been emitted */
-#define DB_Cookie          0x0002  /* OP_VerifyCookie opcode has been emiited */
-#define DB_SchemaLoaded    0x0004  /* The schema has been loaded */
-#define DB_UnresetViews    0x0008  /* Some views have defined column names */
+#define DB_SchemaLoaded    0x0001  /* The schema has been loaded */
+#define DB_UnresetViews    0x0002  /* Some views have defined column names */
 
 #if 0
 /*
