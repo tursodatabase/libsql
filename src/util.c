@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.105 2004/06/19 03:33:57 danielk1977 Exp $
+** $Id: util.c,v 1.106 2004/06/21 08:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -477,6 +477,13 @@ void sqlite3Error(sqlite *db, int err_code, const char *zFormat, ...){
 **      %d      Insert an integer
 **      %T      Insert a token
 **      %S      Insert the first element of a SrcList
+**
+** This function should be used to report any error that occurs whilst
+** compiling an SQL statement (i.e. within sqlite3_prepare()). The
+** last thing the sqlite3_prepare() function does is copy the error
+** stored by this function into the database handle using sqlite3Error().
+** Function sqlite3Error() should be used during statement execution
+** (sqlite3_step() etc.).
 */
 void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_list ap;

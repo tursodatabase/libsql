@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.231 2004/06/21 06:50:28 danielk1977 Exp $
+** $Id: main.c,v 1.232 2004/06/21 08:18:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1210,7 +1210,7 @@ int sqlite3_open16(
 ** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
 */
 int sqlite3_finalize(sqlite3_stmt *pStmt){
-  return sqlite3VdbeFinalize((Vdbe*)pStmt, 0);
+  return sqlite3VdbeFinalize((Vdbe*)pStmt);
 }
 
 /*
@@ -1222,7 +1222,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
 ** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
 */
 int sqlite3_reset(sqlite3_stmt *pStmt){
-  int rc = sqlite3VdbeReset((Vdbe*)pStmt, 0);
+  int rc = sqlite3VdbeReset((Vdbe*)pStmt);
   sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0);
   return rc;
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.50 2004/06/19 15:22:56 drh Exp $
+** $Id: pragma.c,v 1.51 2004/06/21 08:18:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -808,8 +808,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
           }
         }
         if( !pEnc->zName ){
-          sqlite3Error(pParse->db, SQLITE_ERROR, 
-              "Unsupported encoding: %s", zRight);
+          sqlite3ErrorMsg(pParse, "Unsupported encoding: %s", zRight);
         }
       }
     }

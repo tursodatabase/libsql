@@ -1163,27 +1163,20 @@ static void checkActiveVdbeCnt(sqlite *db){
 ** After this routine is run, the VDBE should be ready to be executed
 ** again.
 */
-int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
+int sqlite3VdbeReset(Vdbe *p){
   sqlite *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite3ErrStr(SQLITE_MISUSE), (char*)0);
     sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
-    db->activeVdbeCnt--;
     return SQLITE_MISUSE;
   }
   if( p->zErrMsg ){
     sqlite3Error(p->db, p->rc, "%s", p->zErrMsg, 0);
-    if( pzErrMsg && *pzErrMsg==0 ){
-      *pzErrMsg = p->zErrMsg;
-    }else{
-      sqliteFree(p->zErrMsg);
-    }
+    sqliteFree(p->zErrMsg);
     p->zErrMsg = 0;
   }else if( p->rc ){
-    sqlite3SetString(pzErrMsg, sqlite3ErrStr(p->rc), (char*)0);
     sqlite3Error(p->db, p->rc, 0);
   }else{
     sqlite3Error(p->db, SQLITE_OK, 0);
@@ -1299,19 +1292,18 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
 ** Clean up and delete a VDBE after execution.  Return an integer which is
 ** the result code.  Write any error message text into *pzErrMsg.
 */
-int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
+int sqlite3VdbeFinalize(Vdbe *p){
   int rc;
   sqlite *db;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite3ErrStr(SQLITE_MISUSE), (char*)0);
     if( p->magic==VDBE_MAGIC_INIT ){
       sqlite3Error(p->db, SQLITE_MISUSE, 0);
     }
     return SQLITE_MISUSE;
   }
   db = p->db;
-  rc = sqlite3VdbeReset(p, pzErrMsg);
+  rc = sqlite3VdbeReset(p);
   sqlite3VdbeDelete(p);
   if( rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
