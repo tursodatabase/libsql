@@ -1,5 +1,5 @@
-C Prevent\scollation\ssequences\sand\suser\sfunctions\sfrom\sbeing\sdeleted\sor\schanged\swhile\sSQL\sstatements\sare\sexecuting.\s(CVS\s2275)
-D 2005-01-25T04:27:55
+C Allow\sGROUP\sBY\son\snon-aggregate\squeries.\sTicket\s#1064\s(CVS\s2276)
+D 2005-01-26T03:58:36
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -58,7 +58,7 @@ F src/parse.y 5f2c197fcb63c6aed1787da436ec5a35247ab7a4
 F src/pragma.c c893f03104e94e0921861bd2d3dbd80c47515f7b
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c e204ca5292751ed889f2cbcf2d2808a4d29edd2c
+F src/select.c 32fe60f1aff8a540b709008451013f480dc22d55
 F src/shell.c 1f0da77ef0520afd6df71f4781076021874310f3
 F src/sqlite.h.in 7d7c28344e2bd770491b56ed9169be20859c707d
 F src/sqliteInt.h be6fa5e31c65e2b8e10112ee47a6e63ec7de37b5
@@ -109,7 +109,7 @@ F test/capi3.test f50dd4666deba96275f9927fe8ec089a3d8c0efa
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
-F test/collate3.test 7e30d58e2ae550ad259f2272d203dbb803fd08b9
+F test/collate3.test 210fab018450eeb085e4190cd7ca0aabd99b8c11
 F test/collate4.test b8668612691c4dcf90f67a8df1eeb1544e7fdaf8
 F test/collate5.test 581775b94604b7435dc6a5c6e72fbbf7d69e3830
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
@@ -179,9 +179,9 @@ F test/select1.test ad700a2a1c325a23a7206ad4d189e33917de526f
 F test/select2.test 01b9cbc06e5ed662ce0289aa5f47314d54541e82
 F test/select3.test 9de435aa84fc406708cd8dc1b1d60e7f27cea685
 F test/select4.test c239f516aa31f42f2ef7c6d7cd01105f08f934ca
-F test/select5.test 94db800bbeff2e426c0175e07f7a71d4617853b5
+F test/select5.test 2d414f712bff8e590091e08f9b7287600731be00
 F test/select6.test ba1b4dd18a85bf9070c6df8d933ac4cfcacea6a6
-F test/select7.test 63fb77d50f4dfdac4d4115842f083d2eb33a198c
+F test/select7.test 8f3362336c10d828ab6fe9c1b8897b484da8b592
 F test/sort.test 87882e6c72a75d45e98a1c802c1ded0eac557d85
 F test/subquery.test a3ed9f11a4e576ff31b539ab5d65953dc3d27a81
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 557eb2ec9d825c0a2830d3355d0d27b4b5937de2
-R ccc679b6d9c5516b3defef2b60c271aa
+P cabab62bc10568d435806a7059fad7274f0dd4c8
+R ffae8f42ca0f009f38563fe1ef5cdd78
 U danielk1977
-Z 95e1deb222b350d5a7b99118f5214f27
+Z d9bb33809efa4982a979cf246654c1ed

@@ -10,7 +10,7 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.5 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: select7.test,v 1.6 2005/01/26 03:58:37 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -54,11 +54,20 @@ do_test select7-2.1 {
 
 # Do not allow GROUP BY without an aggregate. Ticket #1039.
 #
+# Change: force any query with a GROUP BY clause to be processed as
+# an aggregate query, whether it contains aggregates or not.
+#
 ifcapable subquery {
+  # do_test select7-3.1 {
+  #   catchsql {
+  #     SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
+  #   }
+  # } {1 {GROUP BY may only be used on aggregate queries}}
   do_test select7-3.1 {
     catchsql {
       SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
     }
-  } {1 {GROUP BY may only be used on aggregate queries}}
+  } [list 0 [execsql {SELECT * FROM sqlite_master ORDER BY name}]]
 }
 finish_test
+
