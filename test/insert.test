@@ -1,0 +1,101 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the INSERT statement.
+#
+# $Id: insert.test,v 1.1 2000/05/30 00:51:27 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Try to insert into a non-existant table.
+#
+do_test insert-1.1 {
+  set v [catch {execsql {INSERT INTO test1 VALUES(1,2,3)}} msg]
+  lappend v $msg
+} {1 {no such table: "test1"}}
+
+# Try to insert into sqlite_master
+#
+do_test insert-1.2 {
+  set v [catch {execsql {INSERT INTO sqlite_master VALUES(1,2,3,4)}} msg]
+  lappend v $msg
+} {1 {table "sqlite_master" may not be modified}}
+
+# Try to insert the wrong number of entries.
+#
+do_test insert-1.3 {
+  execsql {CREATE TABLE test1(one int, two int, three int)}
+  set v [catch {execsql {INSERT INTO test1 VALUES(1,2)}} msg]
+  lappend v $msg
+} {1 {table test1 has 3 columns but 2 values were supplied}}
+do_test insert-1.3b {
+  set v [catch {execsql {INSERT INTO test1 VALUES(1,2,3,4)}} msg]
+  lappend v $msg
+} {1 {table test1 has 3 columns but 4 values were supplied}}
+do_test insert-1.3c {
+  set v [catch {execsql {INSERT INTO test1(one,two) VALUES(1,2,3,4)}} msg]
+  lappend v $msg
+} {1 {4 values for 2 columns}}
+do_test insert-1.3d {
+  set v [catch {execsql {INSERT INTO test1(one,two) VALUES(1)}} msg]
+  lappend v $msg
+} {1 {1 values for 2 columns}}
+
+# Try to insert into a non-existant column of a table.
+#
+do_test insert-1.4 {
+  set v [catch {execsql {INSERT INTO test1(one,four) VALUES(1,2)}} msg]
+  lappend v $msg
+} {1 {table test1 has no column named four}}
+
+# Make sure the inserts actually happen
+#
+do_test insert-1.5 {
+  execsql {INSERT INTO test1 VALUES(1,2,3)}
+  execsql {SELECT * FROM test1}
+} {1 2 3}
+do_test insert-1.5b {
+  execsql {INSERT INTO test1 VALUES(4,5,6)}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {1 2 3 4 5 6}
+do_test insert-1.5c {
+  execsql {INSERT INTO test1 VALUES(7,8,9)}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {1 2 3 4 5 6 7 8 9}
+
+do_test insert-1.6 {
+  execsql {DELETE FROM test1}
+  execsql {INSERT INTO test1(one,two) VALUES(1,2)}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {1 2 {}}
+do_test insert-1.6b {
+  execsql {INSERT INTO test1(two,three) VALUES(5,6)}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {{} 5 6 1 2 {}}
+do_test insert-1.6c {
+  execsql {INSERT INTO test1(three,one) VALUES(7,8)}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {{} 5 6 1 2 {} 8 {} 7}
+
+finish_test

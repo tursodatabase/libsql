@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.2 2000/05/29 23:48:23 drh Exp $
+# $Id: tester.tcl,v 1.3 2000/05/30 00:51:27 drh Exp $
 
 # Create a test database
 #
@@ -83,8 +83,7 @@ proc finish_test {} {
 proc execsql {sql} {
   set result {}
   db eval $sql data {
-    foreach f [lsort [array names data]] {
-      if {$f=="*"} continue
+    foreach f $data(*) {
       lappend result $data($f)
     }
   }

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.3 2000/05/29 23:30:51 drh Exp $
+** $Id: build.c,v 1.4 2000/05/30 00:51:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -770,7 +770,7 @@ void sqliteInsert(
     sprintf(zNum1,"%d", pList->nExpr);
     sprintf(zNum2,"%d", pTab->nCol);
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-       " has ", zNum2, " columns but only ",
+       " has ", zNum2, " columns but ",
        zNum1, " values were supplied", 0);
     pParse->nErr++;
     goto insert_cleanup;
@@ -779,7 +779,7 @@ void sqliteInsert(
     char zNum1[30];
     char zNum2[30];
     sprintf(zNum1,"%d", pList->nExpr);
-    sprintf(zNum2,"%d", pTab->nCol);
+    sprintf(zNum2,"%d", pField->nId);
     sqliteSetString(&pParse->zErrMsg, zNum1, " values for ",
        zNum2, " columns", 0);
     pParse->nErr++;
@@ -1173,8 +1173,8 @@ void sqliteDeleteFrom(
   for(i=0; i<pTabList->nId; i++){
     pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "unknown table \"", 
-         pTabList->a[i].zName, "\"", 0);
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
+         pTabList->a[i].zName, 0);
       pParse->nErr++;
       goto delete_from_cleanup;
     }
