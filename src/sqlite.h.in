@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.110 2004/07/22 02:40:38 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.111 2004/07/26 12:24:23 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -51,8 +51,10 @@ typedef struct sqlite sqlite3;
 */
 #if defined(_MSC_VER) || defined(__BORLANDC__)
   typedef __int64 sqlite_int64;
+  typedef unsigned __int64 sqlite_uint64;
 #else
   typedef long long int sqlite_int64;
+  typedef unsigned long long int sqlite_uint64;
 #endif
 
 
@@ -363,6 +365,7 @@ char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
 void sqlite3_free(char *z);
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
 /*
 ** This routine registers a callback with the SQLite library.  The
 ** callback is invoked (at compile-time, not at run-time) for each
@@ -376,6 +379,7 @@ int sqlite3_set_authorizer(
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
 );
+#endif
 
 /*
 ** The second parameter to the access authorization function above will

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.311 2004/07/24 17:38:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.312 2004/07/26 12:24:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -114,8 +114,10 @@
 #ifndef INTPTR_TYPE
 # if SQLITE_PTR_SZ==4
 #   define INTPTR_TYPE int
+#   define UINTPTR_TYPE unsigned int
 # else
 #   define INTPTR_TYPE sqlite_int64
+#   define UINTPTR_TYPE sqlite_uint64
 # endif
 #endif
 typedef sqlite_int64 i64;          /* 8-byte signed integer */
@@ -126,7 +128,7 @@ typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
-typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
+typedef UINTPTR_TYPE uptr;         /* Big enough to hold a pointer */
 
 /*
 ** Macros to determine whether the machine is big or little endian,

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.95 2004/07/22 15:02:26 drh Exp $
+** $Id: test1.c,v 1.96 2004/07/26 12:24:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -26,24 +26,6 @@
 #else
 # define PTR_FMT "%p"
 #endif
-
-int sqlite3_exec_printf(
-  sqlite *db,                   /* An open database */
-  const char *sqlFormat,        /* printf-style format string for the SQL */
-  sqlite_callback xCallback,    /* Callback function */
-  void *pArg,                   /* 1st argument to callback function */
-  char **errmsg,                /* Error msg written here */
-  ...                           /* Arguments to the format string. */
-);
-int sqlite3_get_table_printf(
-  sqlite *db,            /* An open database */
-  const char *sqlFormat, /* printf-style format string for the SQL */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncol,             /* Number of result columns written here */
-  char **errmsg,         /* Error msg written here */
-  ...                    /* Arguments to the format string */
-);
 
 static const char * errorName(int rc){
   const char *zName = 0;
@@ -190,6 +172,7 @@ static int test_exec_printf(
   Tcl_DString str;
   int rc;
   char *zErr = 0;
+  char *zSql;
   char zBuf[30];
   if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
@@ -198,7 +181,9 @@ static int test_exec_printf(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
-  rc = sqlite3_exec_printf(db, argv[2], exec_printf_cb, &str, &zErr, argv[3]);
+  zSql = sqlite3_mprintf(argv[2], argv[3]);
+  rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
+  sqlite3_free(zSql);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
@@ -252,6 +237,7 @@ static int test_get_table_printf(
   char **aResult;
   int i;
   char zBuf[30];
+  char *zSql;
   if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
        " DB FORMAT STRING", 0);
@@ -259,8 +245,9 @@ static int test_get_table_printf(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
-  rc = sqlite3_get_table_printf(db, argv[2], &aResult, &nRow, &nCol, 
-               &zErr, argv[3]);
+  zSql = sqlite3_mprintf(argv[2],argv[3]);
+  rc = sqlite3_get_table(db, zSql, &aResult, &nRow, &nCol, &zErr);
+  sqlite3_free(zSql);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   if( rc==SQLITE_OK ){
