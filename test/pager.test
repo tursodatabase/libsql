@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.13 2003/02/16 19:13:37 drh Exp $
+# $Id: pager.test,v 1.14 2004/02/25 02:20:42 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -405,5 +405,19 @@ do_test pager-4.99 {
   file delete -force ptf1.db
 
 } ;# end if( not mem: and has pager_open command );
+
+# Ticket #615: an assertion fault inside the pager.  It is a benign
+# fault, but we might as well test for it.
+#
+do_test pager-5.1 {
+  sqlite db test.db
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(x);
+    PRAGMA synchronous=off;
+    COMMIT;
+  }
+} {}
+
 
 finish_test

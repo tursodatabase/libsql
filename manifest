@@ -1,5 +1,5 @@
-C Refactor\sparts\sof\swrite\soperations.\s(CVS\s1268)
-D 2004-02-24T01:05:32
+C Disable\san\sassert\swhich\s(as\sit\sturns\sout)\sis\snot\salways\strue.\s\sTicket\s#615.\s(CVS\s1269)
+D 2004-02-25T02:20:41
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -41,7 +41,7 @@ F src/main.c 0f77633b37540fabd45e68c5137f32f4cd99470a
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c f5fc4954725b2fcd852979f2746085fe8ca27710
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
-F src/pager.c 29ddad4dd454f0aaa98e2bcd327710ab9f02f833
+F src/pager.c b246986e5ba31b15aa3cf91d3b9ec2e608aceb8e
 F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
 F src/parse.y 023720cb8c3bef74e51738bca78335d0dc6d2cfd
 F src/pragma.c 621d319580e9e23712ec232e8be1786cdae06b36
@@ -115,7 +115,7 @@ F test/misc3.test bd371567b6fec7c1d7fe42a172a551226d271dd2
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
-F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
+F test/pager.test 331519008889d45f6df6697395e5bce6ee602fd9
 F test/pragma.test 33011f5741cc4952ff8306ead8a1aeb003fb0786
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2af1f065b5eb39fd3ecac00f8a66d1b4186aead5
-R 9d6a8b25a7f2bb71f6dedeed9e4c62a7
+P 5b0147aece7785373e6f7439c32e5f58c6b12562
+R 0b8a6493f559fa4934fa13ad5002da5d
 U drh
-Z 8a2415f48418d0f788b383a0bebad05c
+Z 2e9a980f55f5d4bf5ce99a47ed1e1a30
