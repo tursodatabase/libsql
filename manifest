@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sprevious\scheckin.\s(CVS\s1677)
-D 2004-06-23T12:35:15
+C Improve\stest\scoverage\sof\sutf.c.\s(CVS\s1678)
+D 2004-06-23T13:46:32
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -66,11 +66,11 @@ F src/test1.c 2504259e29a250190581aaac73d31e71e155df4b
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
-F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
+F src/test5.c 605e9cf8ce768a51e5938c9e64c05d5430d5ed02
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 296e888ae931e9774e1761996b2b66db40f7d216
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
-F src/utf.c 9c66605c5eac4c4aa999207634fabe7885e5b0b3
+F src/utf.c a8fb39c94ae4ef6606d5216b6f05d9b86f6901b2
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
 F src/vdbe.c 0d8f2fea386c173997fb8eab555ab999497591fe
@@ -108,7 +108,7 @@ F test/crash.test 01b4a1cf195678138810f973ec9e2e6cef731d3e
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
-F test/enc.test e29a0d0558f4597ac1652a7bbac03b0e4ce17416
+F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test 8a3b62254292c8ed6bb0671fcecb032b6fcbc356
 F test/enc3.test 315f302ed9a6042be76710eb6aa70e4551e9aa73
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P db6bab574869fde49a147d4e19dd73005f247092
-R 5a1f0cbd459d0c1b045d2cff0431415e
+P f31c84a64f53cf2e75a5e988fbb6ad82537f2403
+R f27d37e6f5bb430f35de9b0eadf438e6
 U danielk1977
-Z 013707b4c596e9bfbd71b5c3bc4ddcc6
+Z 8f088a4eb584d07b7963f42469cbadf6

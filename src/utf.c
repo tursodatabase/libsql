@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.24 2004/06/23 00:23:49 danielk1977 Exp $
+** $Id: utf.c,v 1.25 2004/06/23 13:46:32 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -292,11 +292,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     zOut = sqliteMallocRaw(len);
     if( !zOut ) return SQLITE_NOMEM;
   }else{
-    if( pMem->z==pMem->zShort ){
-      zOut = zShort;
-    }else{
-      zOut = pMem->zShort;
-    }
+    zOut = zShort;
   }
   z = zOut;
 
@@ -343,9 +339,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
   pMem->enc = desiredEnc;
-  if( (char *)zOut==pMem->zShort ){
-    pMem->flags |= (MEM_Term|MEM_Short);
-  }else if( zOut==zShort ){
+  if( zOut==zShort ){
     memcpy(pMem->zShort, zOut, len);
     zOut = pMem->zShort;
     pMem->flags |= (MEM_Term|MEM_Short);
@@ -390,22 +384,20 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
   }
   
   if( bom ){
-    if( pMem->flags & MEM_Short ){
-      memmove(pMem->zShort, &pMem->zShort[2], NBFS-2);
-      pMem->n -= 2;
-      pMem->enc = bom;
-    }
-    else if( pMem->flags & MEM_Dyn ){
+    /* This function is called as soon as a string is stored in a Mem*,
+    ** from within sqlite3VdbeMemSetStr(). At that point it is not possible
+    ** for the string to be stored in Mem.zShort, or for it to be stored
+    ** in dynamic memory with no destructor.
+    */
+    assert( !(pMem->flags&MEM_Short) );
+    assert( !(pMem->flags&MEM_Dyn) || pMem->xDel );
+    if( pMem->flags & MEM_Dyn ){
       void (*xDel)(void*) = pMem->xDel;
       char *z = pMem->z;
       pMem->z = 0;
       pMem->xDel = 0;
       rc = sqlite3VdbeMemSetStr(pMem, &z[2], pMem->n-2, bom, SQLITE_TRANSIENT);
-      if( xDel ){
-        xDel(z);
-      }else{
-        sqliteFree(z);
-      }
+      xDel(z);
     }else{
       rc = sqlite3VdbeMemSetStr(pMem, &pMem->z[2], pMem->n-2, bom, 
           SQLITE_TRANSIENT);
@@ -424,7 +416,7 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
 int sqlite3utf8CharLen(const char *z, int nByte){
   int r = 0;
   const char *zTerm;
-  if( nByte>0 ){
+  if( nByte>=0 ){
     zTerm = &z[nByte];
   }else{
     zTerm = (const char *)(-1);
@@ -528,7 +520,7 @@ void sqlite3utfSelfTest(){
   int n;
   int c;
 
-  for(i=0; 0 && i<0x00110000; i++){
+  for(i=0; i<0x00110000; i++){
     z = zBuf;
     WRITE_UTF8(z, i);
     n = z-zBuf;

@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.11 2004/06/18 04:24:55 danielk1977 Exp $
+** $Id: test5.c,v 1.12 2004/06/23 13:46:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -116,6 +116,10 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
   return pEnc->enc;
 }
 
+/*
+** Usage:   test_translate <string/blob> <from enc> <to enc> ?<transient>?
+**
+*/
 static int test_translate(
   void * clientData,
   Tcl_Interp *interp,
@@ -126,15 +130,19 @@ static int test_translate(
   u8 enc_to;
   sqlite3_value *pVal;
 
-  const char *z;
+  char *z;
   int len;
+  void (*xDel)(void *p) = SQLITE_STATIC;
 
-  if( objc!=4 ){
+  if( objc!=4 && objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), 
         " <string/blob> <from enc> <to enc>", 0
     );
     return TCL_ERROR;
+  }
+  if( objc==5 ){
+    xDel = sqlite3FreeX;
   }
 
   enc_from = name_to_enc(interp, objv[2]);
@@ -146,10 +154,18 @@ static int test_translate(
 
   if( enc_from==SQLITE_UTF8 ){
     z = Tcl_GetString(objv[1]);
-    sqlite3ValueSetStr(pVal, -1, z, enc_from, SQLITE_STATIC);
+    if( objc==5 ){
+      z = sqliteStrDup(z);
+    }
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
   }else{
     z = Tcl_GetByteArrayFromObj(objv[1], &len);
-    sqlite3ValueSetStr(pVal, -1, z, enc_from, SQLITE_STATIC);
+    if( objc==5 ){
+      char *zTmp = z;
+      z = sqliteMalloc(len);
+      memcpy(z, zTmp, len);
+    }
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
   }
 
   z = sqlite3ValueText(pVal, enc_to);
