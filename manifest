@@ -1,5 +1,5 @@
-C Version\s3.0.1\sALPHA\s(CVS\s1669)
-D 2004-06-22T14:59:41
+C Make\ssure\sthe\sresult\sof\sa\suser-defined\sfunction\suses\sthe\stext\sencoding\sof\nthe\sdatabase.\s(CVS\s1670)
+D 2004-06-22T17:59:56
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 4fd24e030878888962a7da383639eb1af4a0e087
+F src/vdbe.c a6b9eaaceab862076debbf98c9445089473394d6
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h 0b8eda5e0a1331d23b38d7888f187119a3491b40
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
@@ -110,6 +110,7 @@ F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
 F test/enc.test e29a0d0558f4597ac1652a7bbac03b0e4ce17416
 F test/enc2.test 57c847492afd46eef7a498fc3853fe909a40fef7
+F test/enc3.test 315f302ed9a6042be76710eb6aa70e4551e9aa73
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test c97954ad23bdbc58e2b73f264f6a006bae79f626
@@ -228,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 04673066ff6a7c127559ba448fe50a4d95a26347
-R 2c20ba5b608dc97c31a1297639248d6a
+P ac6683e380f6199a980d587b2933c3cb0a4024f2
+R c4ba0af43930c42a3e91240b5e6fce3f
 U drh
-Z d8debe02f5236fe47dd4542a10377f03
+Z ad60bac31934b5ba795c9a17c77f245b
