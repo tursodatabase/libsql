@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.101 2001/12/21 14:30:43 drh Exp $
+** $Id: vdbe.c,v 1.102 2001/12/22 14:49:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -710,6 +710,15 @@ static int isNumber(const char *zNum){
 }
 
 /*
+** Return TRUE if zNum is an integer.
+*/
+static int isInteger(const char *zNum){
+  if( *zNum=='-' || *zNum=='+' ) zNum++;
+  while( isdigit(*zNum) ) zNum++;
+  return *zNum==0;
+}
+
+/*
 ** Delete a keylist
 */
 static void KeylistFree(Keylist *p){
@@ -860,15 +869,15 @@ static char *zOpName[] = { 0,
   "Goto",              "If",                "Halt",              "ColumnCount",
   "ColumnName",        "Callback",          "NullCallback",      "Integer",
   "String",            "Pop",               "Dup",               "Pull",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Remainder",         "BitAnd",            "BitOr",
-  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
-  "Precision",         "Min",               "Max",               "Like",
-  "Glob",              "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",            "Limit",           
+  "MustBeInt",         "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Precision",         "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",            "Limit",           
 };
 
 /*
@@ -966,10 +975,21 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
 }
 
 /*
-** Convert an integer into a big-endian integer.  In other words,
-** make sure the most significant byte comes first.
+** Convert an integer in between the native integer format and
+** the bigEndian format used as the record number for tables.
+**
+** The bigEndian format (most significant byte first) is used for
+** record numbers so that records will sort into the correct order
+** even though memcmp() is used to compare the keys.  On machines
+** whose native integer format is little endian (ex: i486) the
+** order of bytes is reversed.  On native big-endian machines
+** (ex: Alpha, Sparc, Motorola) the byte order is the same.
+**
+** This function is its own inverse.  In other words
+**
+**         X == byteSwap(byteSwap(X))
 */
-static int bigEndian(int x){
+static int byteSwap(int x){
   union {
      char zBuf[sizeof(int)];
      int i;
@@ -980,6 +1000,15 @@ static int bigEndian(int x){
   ux.zBuf[0] = (x>>24)&0xff;
   return ux.i;
 }
+
+/*
+** When converting from the native format to the key format and back
+** again, in addition to changing the byte order we invert the high-order
+** bit of the most significant byte.  This causes negative numbers to
+** sort before positive numbers in the memcmp() function.
+*/
+#define keyToInt(X)   (byteSwap(X) ^ 0x80000000)
+#define intToKey(X)   (byteSwap((X) ^ 0x80000000))
 
 /*
 ** Code contained within the VERIFY() macro is not needed for correct
@@ -1667,6 +1696,47 @@ case OP_AddImm: {
   break;
 }
 
+/* Opcode: MustBeInt  * P2 *
+** 
+** Force the top of the stack to be an integer.  If the top of the
+** stack is not an integer and cannot be comverted into an integer
+** with out data loss, then jump immediately to P2, or if P2==0
+** raise an SQLITE_MISMATCH exception.
+*/
+case OP_MustBeInt: {
+  int tos = p->tos;
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( aStack[tos].flags & STK_Int ){
+    /* Do nothing */
+  }else if( aStack[tos].flags & STK_Real ){
+    int i = aStack[tos].r;
+    double r = i;
+    if( r!=aStack[tos].r ){
+      goto mismatch;
+    }
+    aStack[tos].i = i;
+  }else if( aStack[tos].flags & STK_Str ){
+    if( !isInteger(zStack[tos]) ){
+      goto mismatch;
+    }
+    p->aStack[tos].i = atoi(p->zStack[tos]);
+  }else{
+    goto mismatch;
+  }
+  Release(p, tos);
+  p->aStack[tos].flags = STK_Int;
+  break;
+
+mismatch:
+  if( pOp->p2==0 ){
+    rc = SQLITE_MISMATCH;
+    goto abort_due_to_error;
+  }else{
+    pc = pOp->p2 - 1;
+  }
+  break;
+}
+
 /* Opcode: Eq * P2 *
 **
 ** Pop the top two elements from the stack.  If they are equal, then
@@ -2155,7 +2225,7 @@ case OP_MakeKey: {
   if( addRowid ){
     u32 iKey;
     Integerify(p, p->tos-nField);
-    iKey = bigEndian(aStack[p->tos-nField].i);
+    iKey = intToKey(aStack[p->tos-nField].i);
     memcpy(&zNewKey[j], &iKey, sizeof(u32));
   }
   if( pOp->p2==0 ) PopStack(p, nField+addRowid);
@@ -2540,10 +2610,10 @@ case OP_MoveTo: {
   if( i>=0 && i<p->nCursor && (pC = &p->aCsr[i])->pCursor!=0 ){
     int res;
     if( aStack[tos].flags & STK_Int ){
-      int iKey = bigEndian(aStack[tos].i);
+      int iKey = intToKey(aStack[tos].i);
       sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
       pC->lastRecno = aStack[tos].i;
-      pC->recnoIsValid = 1;
+      pC->recnoIsValid = res==0;
     }else{
       if( Stringify(p, tos) ) goto no_mem;
       sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
@@ -2606,7 +2676,7 @@ case OP_Found: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
     int res, rx;
     if( aStack[tos].flags & STK_Int ){
-      int iKey = bigEndian(aStack[tos].i);
+      int iKey = intToKey(aStack[tos].i);
       rx = sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
     }else{
       if( Stringify(p, tos) ) goto no_mem;
@@ -2665,7 +2735,7 @@ case OP_NewRecno: {
         v += sqliteRandomByte() + 1;
       }
       if( v==0 ) continue;
-      x = bigEndian(v);
+      x = intToKey(v);
       rx = sqliteBtreeMoveto(pC->pCursor, &x, sizeof(int), &res);
       cnt++;
     }while( cnt<1000 && rx==SQLITE_OK && res==0 );
@@ -2707,7 +2777,7 @@ case OP_Put: {
       zKey = zStack[nos];
     }else{
       nKey = sizeof(int);
-      iKey = bigEndian(aStack[nos].i);
+      iKey = intToKey(aStack[nos].i);
       zKey = (char*)&iKey;
     }
     if( pOp->p2 ){
@@ -2875,7 +2945,7 @@ case OP_Recno: {
       v = p->aCsr[i].lastRecno;
     }else{
       sqliteBtreeKey(pCrsr, 0, sizeof(u32), (char*)&v);
-      v = bigEndian(v);
+      v = keyToInt(v);
     }
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
@@ -3060,7 +3130,7 @@ case OP_IdxRecno: {
     int sz;
     sqliteBtreeKeySize(pCrsr, &sz);
     sqliteBtreeKey(pCrsr, sz - sizeof(u32), sizeof(u32), (char*)&v);
-    v = bigEndian(v);
+    v = keyToInt(v);
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
   }

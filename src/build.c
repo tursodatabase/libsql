@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.60 2001/12/21 14:30:43 drh Exp $
+** $Id: build.c,v 1.61 2001/12/22 14:49:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1314,12 +1314,23 @@ void sqliteCopy(
     }else{
       sqliteVdbeChangeP3(v, addr, "\t", 1);
     }
-    sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+    if( pTab->iPKey>=0 ){
+      sqliteVdbeAddOp(v, OP_FileColumn, pTab->iPKey, 0);
+      sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
+    }else{
+      sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
+    }
     if( pTab->pIndex ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     }
     for(i=0; i<pTab->nCol; i++){
-      sqliteVdbeAddOp(v, OP_FileColumn, i, 0);
+      if( i==pTab->iPKey ){
+        /* The integer primary key column is filled with NULL since its
+        ** value is always pulled from the record number */
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_FileColumn, i, 0);
+      }
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_Put, 0, 0);

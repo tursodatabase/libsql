@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.28 2001/11/12 13:51:43 drh Exp $
+** $Id: where.c,v 1.29 2001/12/22 14:49:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -167,6 +167,9 @@ WhereInfo *sqliteWhereBegin(
   int base;            /* First available index for OP_Open opcodes */
   int nCur;            /* Next unused cursor number */
   int aDirect[32];     /* If TRUE, then index this table using ROWID */
+  int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
+  int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
+  int iDirectGt[32];   /* Term of the form ROWID>X or ROWID>=X */
   ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
 
   /* Allocate space for aOrder[] and aiMem[]. */
@@ -218,8 +221,13 @@ WhereInfo *sqliteWhereBegin(
   /* Figure out what index to use (if any) for each nested loop.
   ** Make pWInfo->a[i].pIdx point to the index to use for the i-th nested
   ** loop where i==0 is the outer loop and i==pTabList->nId-1 is the inner
-  ** loop.  If the expression uses only the ROWID field, then set
-  ** aDirect[i] to 1.
+  ** loop. 
+  **
+  ** If terms exist that use the ROWID of any table, then set the
+  ** iDirectEq[], iDirectLt[], or iDirectGt[] elements for that table
+  ** to the index of the term containing the ROWID.  We always prefer
+  ** to use a ROWID which can directly access a table rather than an
+  ** index which requires two accesses.
   **
   ** Actually, if there are more than 32 tables in the join, only the
   ** first 32 tables are candidates for indices.
@@ -234,23 +242,37 @@ WhereInfo *sqliteWhereBegin(
     int bestScore = 0;
 
     /* Check to see if there is an expression that uses only the
-    ** ROWID field of this table.  If so, set aDirect[i] to 1.
-    ** If not, set aDirect[i] to 0.
+    ** ROWID field of this table.  For terms of the form ROWID==expr
+    ** set iDirectEq[i] to the index of the term.  For terms of the
+    ** form ROWID<expr or ROWID<=expr set iDirectLt[i] to the term index.
+    ** For terms like ROWID>expr or ROWID>=expr set iDirectGt[i].
     */
-    aDirect[i] = 0;
+    iDirectEq[i] = -1;
+    iDirectLt[i] = -1;
+    iDirectGt[i] = -1;
     for(j=0; j<nExpr; j++){
       if( aExpr[j].idxLeft==idx && aExpr[j].p->pLeft->iColumn<0
             && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
-        aDirect[i] = 1;
-        break;
+        switch( aExpr[j].p->op ){
+          case TK_EQ: iDirectEq[i] = j; break;
+          case TK_LE:
+          case TK_LT: iDirectLt[i] = j; break;
+          case TK_GE:
+          case TK_GT: iDirectGt[i] = j;  break;
+        }
       }
       if( aExpr[j].idxRight==idx && aExpr[j].p->pRight->iColumn<0
             && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
-        aDirect[i] = 1;
-        break;
+        switch( aExpr[j].p->op ){
+          case TK_EQ: iDirectEq[i] = j;  break;
+          case TK_LE:
+          case TK_LT: iDirectGt[i] = j;  break;
+          case TK_GE:
+          case TK_GT: iDirectLt[i] = j;  break;
+        }
       }
     }
-    if( aDirect[i] ){
+    if( iDirectEq[i]>=0 ){
       loopMask |= 1<<idx;
       pWInfo->a[i].pIdx = 0;
       continue;
@@ -394,43 +416,27 @@ WhereInfo *sqliteWhereBegin(
   for(i=0; i<pTabList->nId; i++){
     int j, k;
     int idx = aOrder[i];
-    int goDirect;
     Index *pIdx;
     WhereLevel *pLevel = &pWInfo->a[i];
 
-    if( i<ARRAYSIZE(aDirect) ){
-      pIdx = pLevel->pIdx;
-      goDirect = aDirect[i];
-    }else{
-      pIdx = 0;
-      goDirect = 0;
-    }
-
-    if( goDirect ){
-      /* Case 1:  We can directly reference a single row using the ROWID field.
+    pIdx = pLevel->pIdx;
+    if( i<ARRAYSIZE(iDirectEq) && iDirectEq[i]>=0 ){
+      /* Case 1:  We can directly reference a single row using an
+      **          equality comparison against the ROWID field.
       */
-      for(k=0; k<nExpr; k++){
-        if( aExpr[k].p==0 ) continue;
-        if( aExpr[k].idxLeft==idx 
-           && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
-           && aExpr[k].p->pLeft->iColumn<0
-        ){
-          sqliteExprCode(pParse, aExpr[k].p->pRight);
-          aExpr[k].p = 0;
-          break;
-        }
-        if( aExpr[k].idxRight==idx 
-           && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
-           && aExpr[k].p->pRight->iColumn<0
-        ){
-          sqliteExprCode(pParse, aExpr[k].p->pLeft);
-          aExpr[k].p = 0;
-          break;
-        }
+      k = iDirectEq[i];
+      assert( k<nExpr );
+      assert( aExpr[k].p!=0 );
+      assert( aExpr[k].idxLeft==idx || aExpr[k].idxRight==idx );
+      if( aExpr[k].idxLeft==idx ){
+        sqliteExprCode(pParse, aExpr[k].p->pRight);
+      }else{
+        sqliteExprCode(pParse, aExpr[k].p->pLeft);
       }
-      sqliteVdbeAddOp(v, OP_AddImm, 0, 0);
+      aExpr[k].p = 0;
       brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       cont = pLevel->cont = brk;
+      sqliteVdbeAddOp(v, OP_MustBeInt, 0, brk);
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
@@ -438,22 +444,8 @@ WhereInfo *sqliteWhereBegin(
         haveKey = 0;
       }
       pLevel->op = OP_Noop;
-    }else if( pIdx==0 ){
-      /* Case 2:  There was no usable index.  We must do a complete
-      **          scan of the entire database table.
-      */
-      int start;
-
-      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
-      cont = pLevel->cont = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_Rewind, base+idx, brk);
-      start = sqliteVdbeCurrentAddr(v);
-      pLevel->op = OP_Next;
-      pLevel->p1 = base+idx;
-      pLevel->p2 = start;
-      haveKey = 0;
-    }else if( pLevel->score%4==0 ){
-      /* Case 3:  All index constraints are equality operators.
+    }else if( pIdx!=0 && pLevel->score%4==0 ){
+      /* Case 2:  All index constraints are equality operators.
       */
       int start;
       int testOp;
@@ -507,8 +499,79 @@ WhereInfo *sqliteWhereBegin(
       pLevel->op = OP_Next;
       pLevel->p1 = pLevel->iCur;
       pLevel->p2 = start;
+    }else if( i<ARRAYSIZE(iDirectLt) && (iDirectLt[i]>=0 || iDirectGt[i]>=0) ){
+      /* Case 3:  We have an inequality comparison against the ROWID field.
+      */
+      int testOp = OP_Noop;
+      int start;
+
+      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
+      cont = pLevel->cont = sqliteVdbeMakeLabel(v);
+      if( iDirectGt[i]>=0 ){
+        k = iDirectGt[i];
+        assert( k<nExpr );
+        assert( aExpr[k].p!=0 );
+        assert( aExpr[k].idxLeft==idx || aExpr[k].idxRight==idx );
+        if( aExpr[k].idxLeft==idx ){
+          sqliteExprCode(pParse, aExpr[k].p->pRight);
+        }else{
+          sqliteExprCode(pParse, aExpr[k].p->pLeft);
+        }
+        sqliteVdbeAddOp(v, OP_MustBeInt, 0, brk);
+        if( aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT ){
+          sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
+        }
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, brk);
+        aExpr[k].p = 0;
+      }else{
+        sqliteVdbeAddOp(v, OP_Rewind, base+idx, brk);
+      }
+      if( iDirectLt[i]>=0 ){
+        k = iDirectLt[i];
+        assert( k<nExpr );
+        assert( aExpr[k].p!=0 );
+        assert( aExpr[k].idxLeft==idx || aExpr[k].idxRight==idx );
+        if( aExpr[k].idxLeft==idx ){
+          sqliteExprCode(pParse, aExpr[k].p->pRight);
+        }else{
+          sqliteExprCode(pParse, aExpr[k].p->pLeft);
+        }
+        sqliteVdbeAddOp(v, OP_MustBeInt, 0, sqliteVdbeCurrentAddr(v)+1);
+        pLevel->iMem = pParse->nMem++;
+        sqliteVdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
+        if( aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT ){
+          testOp = OP_Ge;
+        }else{
+          testOp = OP_Gt;
+        }
+        aExpr[k].p = 0;
+      }
+      start = sqliteVdbeCurrentAddr(v);
+      pLevel->op = OP_Next;
+      pLevel->p1 = base+idx;
+      pLevel->p2 = start;
+      if( testOp!=OP_Noop ){
+        sqliteVdbeAddOp(v, OP_Recno, base+idx, 0);
+        sqliteVdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
+        sqliteVdbeAddOp(v, testOp, 0, brk);
+      }
+      haveKey = 0;
+    }else if( pIdx==0 ){
+      /* Case 4:  There was no usable index.  We must do a complete
+      **          scan of the entire database table.
+      */
+      int start;
+
+      brk = pLevel->brk = sqliteVdbeMakeLabel(v);
+      cont = pLevel->cont = sqliteVdbeMakeLabel(v);
+      sqliteVdbeAddOp(v, OP_Rewind, base+idx, brk);
+      start = sqliteVdbeCurrentAddr(v);
+      pLevel->op = OP_Next;
+      pLevel->p1 = base+idx;
+      pLevel->p2 = start;
+      haveKey = 0;
     }else{
-      /* Case 4: The contraints on the right-most index field are
+      /* Case 5: The contraints on the right-most index field are
       **         inequalities.
       */
       int score = pLevel->score;

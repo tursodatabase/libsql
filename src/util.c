@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.33 2001/11/24 00:31:46 drh Exp $
+** $Id: util.c,v 1.34 2001/12/22 14:49:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1070,6 +1070,7 @@ const char *sqlite_error_string(int rc){
     case SQLITE_SCHEMA:     z = "database schema has changed";           break;
     case SQLITE_TOOBIG:     z = "too much data for one table row";       break;
     case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
+    case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
     default:                z = "unknown error";                         break;
   }
   return z;

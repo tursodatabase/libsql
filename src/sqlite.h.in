@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.23 2001/11/03 23:57:09 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.24 2001/12/22 14:49:25 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -160,6 +160,7 @@ int sqlite_exec(
 #define SQLITE_SCHEMA      17   /* The database schema changed */
 #define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
 #define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
+#define SQLITE_MISMATCH    20   /* Data type mismatch */
 
 /* If the parameter to this routine is one of the return value constants
 ** defined above, then this routine returns a constant text string which

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.36 2001/11/08 00:45:22 drh Exp $
+** $Id: vdbe.h,v 1.37 2001/12/22 14:49:26 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -158,45 +158,46 @@ typedef struct VdbeOp VdbeOp;
 #define OP_Pop                74
 #define OP_Dup                75
 #define OP_Pull               76
+#define OP_MustBeInt          77
 
-#define OP_Add                77
-#define OP_AddImm             78
-#define OP_Subtract           79
-#define OP_Multiply           80
-#define OP_Divide             81
-#define OP_Remainder          82
-#define OP_BitAnd             83
-#define OP_BitOr              84
-#define OP_BitNot             85
-#define OP_ShiftLeft          86
-#define OP_ShiftRight         87
-#define OP_AbsValue           88
-#define OP_Precision          89
-#define OP_Min                90
-#define OP_Max                91
-#define OP_Like               92
-#define OP_Glob               93
-#define OP_Eq                 94
-#define OP_Ne                 95
-#define OP_Lt                 96
-#define OP_Le                 97
-#define OP_Gt                 98
-#define OP_Ge                 99
-#define OP_IsNull            100
-#define OP_NotNull           101
-#define OP_Negative          102
-#define OP_And               103
-#define OP_Or                104
-#define OP_Not               105
-#define OP_Concat            106
-#define OP_Noop              107
+#define OP_Add                78
+#define OP_AddImm             79
+#define OP_Subtract           80
+#define OP_Multiply           81
+#define OP_Divide             82
+#define OP_Remainder          83
+#define OP_BitAnd             84
+#define OP_BitOr              85
+#define OP_BitNot             86
+#define OP_ShiftLeft          87
+#define OP_ShiftRight         88
+#define OP_AbsValue           89
+#define OP_Precision          90
+#define OP_Min                91
+#define OP_Max                92
+#define OP_Like               93
+#define OP_Glob               94
+#define OP_Eq                 95
+#define OP_Ne                 96
+#define OP_Lt                 97
+#define OP_Le                 98
+#define OP_Gt                 99
+#define OP_Ge                100
+#define OP_IsNull            101
+#define OP_NotNull           102
+#define OP_Negative          103
+#define OP_And               104
+#define OP_Or                105
+#define OP_Not               106
+#define OP_Concat            107
+#define OP_Noop              108
 
-#define OP_Strlen            108
-#define OP_Substr            109
+#define OP_Strlen            109
+#define OP_Substr            110
 
-#define OP_Limit             110
+#define OP_Limit             111
 
-#define OP_MAX               110
+#define OP_MAX               111
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation
