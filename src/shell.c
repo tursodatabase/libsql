@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.11 2000/06/07 01:33:42 drh Exp $
+** $Id: shell.c,v 1.12 2000/06/07 02:04:23 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -212,7 +212,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           }
           if( z[j] ){
             fprintf(p->out, "\\%c", z[j]);
-            z = &z[j+1];
+            z++;
           }
           z += j;
         }
@@ -256,6 +256,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     char zSql[1000];
     d2 = *pData;
     d2.mode = MODE_List;
+    d2.escape = '\t';
     strcpy(d2.separator,"\t");
     fprintf(pData->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
     sprintf(zSql, "SELECT * FROM '%s'", azArg[0]);

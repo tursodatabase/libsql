@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.8 2000/06/06 21:56:08 drh Exp $
+** $Id: tokenize.c,v 1.9 2000/06/07 02:04:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -337,7 +337,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
           sqliteParserTrace(trace, "parser: ");
         }else if( sqliteStrNICmp(z,"--vdbe-trace-on--",17)==0 ){
           pParse->db->flags |= SQLITE_VdbeTrace;
-        }else if( sqliteStrNICmp(z,"--vdbe-trace-off--", 19)==0 ){
+        }else if( sqliteStrNICmp(z,"--vdbe-trace-off--", 18)==0 ){
           pParse->db->flags &= ~SQLITE_VdbeTrace;
         }
         break;
