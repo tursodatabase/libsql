@@ -159,8 +159,10 @@ cd ..
 ORIGIN=`pwd`
 cd $srcdir
 cd ..
-EXCLUDE=`find sqlite -print | grep CVS | sed 's,^, --exclude ,'`
-tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite
+mv sqlite_v2 sqlite-$VERS
+EXCLUDE=`find sqlite-$VERS -print | grep CVS | sed 's,^, --exclude ,'`
+tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite-$VERS
+mv sqlite-$VERS sqlite_v2
 cd $ORIGIN
 
 #
