@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.127 2002/06/20 11:36:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.128 2002/06/21 23:01:50 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -570,6 +570,12 @@ struct WhereInfo {
 ** a VIEW) we have to make a copy of the input string so that the nodes
 ** of the expression tree will have something to point to.  zSelect is used
 ** to hold that copy.
+**
+** nLimit is set to -1 if there is no LIMIT clause.  nOffset is set to 0.
+** If there is a LIMIT clause, the parser sets nLimit to the value of the
+** limit and nOffset to the value of the offset (or 0 if there is not
+** offset).  But later on, nLimit and nOffset become the memory locations
+** in the VDBE that record the limit and offset counters.
 */
 struct Select {
   int isDistinct;        /* True if the DISTINCT keyword is present */

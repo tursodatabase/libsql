@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.8 2002/06/09 01:16:01 drh Exp $
+# $Id: misc1.test,v 1.9 2002/06/21 23:01:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -257,6 +257,5 @@ do_test misc1-9.1 {
     SELECT * FROM t1;
   }
 } {0 {a 12345678901234567890 b 12345678911234567890 c 12345678921234567890}}
-
 
 finish_test

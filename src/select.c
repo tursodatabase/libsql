@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.95 2002/06/20 03:38:26 drh Exp $
+** $Id: select.c,v 1.96 2002/06/21 23:01:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -334,10 +334,12 @@ static int selectInnerLoop(
   */
   if( pOrderBy==0 ){
     if( p->nOffset>0 ){
-      sqliteVdbeAddOp(v, OP_LimitCk, 1, iContinue);
+      int addr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_MemIncr, p->nOffset, addr+2);
+      sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
     }
-    if( p->nLimit>0 ){
-      sqliteVdbeAddOp(v, OP_LimitCk, 0, iBreak);
+    if( p->nLimit>=0 ){
+      sqliteVdbeAddOp(v, OP_MemIncr, p->nLimit, iBreak);
     }
   }
 
@@ -483,10 +485,12 @@ static void generateSortTail(
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
   if( p->nOffset>0 ){
-    sqliteVdbeAddOp(v, OP_LimitCk, 1, addr);
+    sqliteVdbeAddOp(v, OP_MemIncr, p->nOffset, addr+4);
+    sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   }
-  if( p->nLimit>0 ){
-    sqliteVdbeAddOp(v, OP_LimitCk, 0, end);
+  if( p->nLimit>=0 ){
+    sqliteVdbeAddOp(v, OP_MemIncr, p->nLimit, end);
   }
   switch( eDest ){
     case SRT_Callback: {
@@ -1305,7 +1309,7 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   if( (pSub->isDistinct || pSub->nLimit>=0) &&  (pSrc->nSrc>1 || isAgg) ){
      return 0;
   }
-  if( (p->isDistinct || p->nLimit) && subqueryIsAgg ) return 0;
+  if( (p->isDistinct || p->nLimit>=0) && subqueryIsAgg ) return 0;
 
   /* If we reach this point, it means flattening is permitted for the
   ** i-th entry of the FROM clause in the outer query.
@@ -1722,10 +1726,21 @@ int sqliteSelect(
   /* Set the limiter
   */
   if( p->nLimit<=0 ){
+    p->nLimit = -1;
     p->nOffset = 0;
   }else{
-    if( p->nOffset<0 ) p->nOffset = 0;
-    sqliteVdbeAddOp(v, OP_Limit, p->nLimit, p->nOffset);
+    int iMem = pParse->nMem++;
+    sqliteVdbeAddOp(v, OP_Integer, -p->nLimit, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 0);
+    p->nLimit = iMem;
+    if( p->nOffset<=0 ){
+      p->nOffset = 0;
+    }else{
+      iMem = pParse->nMem++;
+      sqliteVdbeAddOp(v, OP_Integer, -p->nOffset, 0);
+      sqliteVdbeAddOp(v, OP_MemStore, iMem, 0);
+      p->nOffset = iMem;
+    }
   }
 
   /* Generate code for all sub-queries in the FROM clause

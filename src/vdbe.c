@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.157 2002/06/20 11:36:50 drh Exp $
+** $Id: vdbe.c,v 1.158 2002/06/21 23:01:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -248,8 +248,6 @@ struct Vdbe {
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
   int nCallback;      /* Number of callbacks invoked so far */
-  int iLimit;         /* Limit on the number of callbacks remaining */
-  int iOffset;        /* Offset before beginning to do callbacks */
   int keylistStackDepth;  /* The size of the "keylist" stack */
   Keylist **keylistStack; /* The stack used by opcodes ListPush & ListPop */
 };
@@ -1060,28 +1058,28 @@ static char *zOpName[] = { 0,
   "Last",              "Rewind",            "Next",              "Destroy",
   "Clear",             "CreateIndex",       "CreateTable",       "IntegrityCk",
   "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
-  "IdxGE",             "MemLoad",           "MemStore",          "ListWrite",
-  "ListRewind",        "ListRead",          "ListReset",         "ListPush",
-  "ListPop",           "SortPut",           "SortMakeRec",       "SortMakeKey",
-  "Sort",              "SortNext",          "SortCallback",      "SortReset",
-  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
-  "AggFocus",          "AggNext",           "AggSet",            "AggGet",
-  "AggFunc",           "AggInit",           "AggPush",           "AggPop",
-  "SetInsert",         "SetFound",          "SetNotFound",       "SetFirst",
-  "SetNext",           "MakeRecord",        "MakeKey",           "MakeIdxKey",
-  "IncrKey",           "Goto",              "If",                "IfNot",
-  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
-  "NullCallback",      "Integer",           "String",            "Pop",
-  "Dup",               "Pull",              "Push",              "MustBeInt",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Remainder",         "BitAnd",            "BitOr",
-  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
-  "Eq",                "Ne",                "Lt",                "Le",
-  "Gt",                "Ge",                "StrEq",             "StrNe",
-  "StrLt",             "StrLe",             "StrGt",             "StrGe",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Function",          "Limit",             "LimitCk",         
+  "IdxGE",             "MemLoad",           "MemStore",          "MemIncr",
+  "ListWrite",         "ListRewind",        "ListRead",          "ListReset",
+  "ListPush",          "ListPop",           "SortPut",           "SortMakeRec",
+  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
+  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
+  "AggReset",          "AggFocus",          "AggNext",           "AggSet",
+  "AggGet",            "AggFunc",           "AggInit",           "AggPush",
+  "AggPop",            "SetInsert",         "SetFound",          "SetNotFound",
+  "SetFirst",          "SetNext",           "MakeRecord",        "MakeKey",
+  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
+  "IfNot",             "Halt",              "ColumnCount",       "ColumnName",
+  "Callback",          "NullCallback",      "Integer",           "String",
+  "Pop",               "Dup",               "Pull",              "Push",
+  "MustBeInt",         "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "StrEq",
+  "StrNe",             "StrLt",             "StrLe",             "StrGt",
+  "StrGe",             "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Function",        
 };
 
 /*
@@ -1300,8 +1298,6 @@ int sqliteVdbeExec(
   zStack = p->zStack;
   aStack = p->aStack;
   p->tos = -1;
-  p->iLimit = 0;
-  p->iOffset = 0;
 
   /* Initialize the aggregrate hash table.
   */
@@ -4068,54 +4064,6 @@ case OP_IntegrityCk: {
   break;
 }
 
-/* Opcode:  Limit P1 P2 *
-**
-** Set a limit and offset on callbacks.  P1 is the limit and P2 is
-** the offset.  If the offset counter is positive, no callbacks are
-** invoked but instead the counter is decremented.  Once the offset
-** counter reaches zero, callbacks are invoked and the limit
-** counter is decremented.  When the limit counter reaches zero,
-** the OP_Callback or OP_SortCallback instruction executes a jump
-** that should end the query.
-**
-** This opcode is used to implement the "LIMIT x OFFSET y" clause
-** of a SELECT statement.
-*/
-case OP_Limit: {
-  p->iLimit = pOp->p1;
-  p->iOffset = pOp->p2;
-  break;
-}
-
-/* Opcode: LimitCk P1 P2 *
-**
-** If P1 is 1, then check to see if the offset counter (set by the
-** P2 argument of OP_Limit) is positive.  If the offset counter is
-** positive then decrement the counter and jump immediately to P2.
-** Otherwise fall straight through.
-**
-** If P1 is 0, then check the value of the limit counter (set by the
-** P1 argument of OP_Limit).  If the limit counter is negative or
-** zero then jump immedately to P2.  Otherwise decrement the limit
-** counter and fall through.
-*/
-case OP_LimitCk: {
-  if( pOp->p1 ){
-    if( p->iOffset ){
-      p->iOffset--;
-      pc = pOp->p2 - 1;
-    }
-  }else{
-    if( p->iLimit>0 ){
-      p->iLimit--;
-    }else{
-      pc = pOp->p2 - 1;
-    }
-  }
-  break;
-}
-
-
 /* Opcode: ListWrite * * *
 **
 ** Write the integer on the top of the stack
@@ -4671,6 +4619,28 @@ case OP_MemLoad: {
     zStack[tos] = p->aMem[i].z;
     aStack[tos].flags |= STK_Static;
     aStack[tos].flags &= ~STK_Dyn;
+  }
+  break;
+}
+
+/* Opcode: MemIncr P1 P2 *
+**
+** Increment the integer valued memory cell P1 by 1.  If P2 is not zero
+** and the result after the increment is greater than zero, then jump
+** to P2.
+**
+** This instruction throws an error if the memory cell is not initially
+** an integer.
+*/
+case OP_MemIncr: {
+  int i = pOp->p1;
+  Mem *pMem;
+  VERIFY( if( i<0 || i>=p->nMem ) goto bad_instruction; )
+  pMem = &p->aMem[i];
+  VERIFY( if( pMem->s.flags != STK_Int ) goto bad_instruction; )
+  pMem->s.i++;
+  if( pOp->p2>0 && pMem->s.i>0 ){
+     pc = pOp->p2 - 1;
   }
   break;
 }

@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#76:\sFix\sa\sdatabase\scorruption\sthat\smight\soccur\swhen\ndropping\stables\sor\sindices.\s(CVS\s635)
-D 2002-06-21T13:09:17
+C Fix\sfor\sbugs\s#77\sand\s#80:\sRework\sthe\sLIMIT\smechanism\sto\sbe\sreentrant\sand\sto\nclean\sup\sthe\sVDBE\sstack\sproperly.\s(CVS\s636)
+D 2002-06-21T23:01:50
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,11 +37,11 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 2285d8967d7334d52a2188089e5a881d73ba56f6
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 3eadcde4c74341d8ee7db69948cbcb16df9ae9fc
+F src/select.c 346da88a44aef311e932e95239dc0288fdcb10dd
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 7c8882e352cb70818cfaf9bdb5b1b3bee81ef144
-F src/sqliteInt.h 16ccbf72dd823d5764b475353927410ec272305e
+F src/sqliteInt.h f283e5628174d7124c39968442e7adb5b95ea82c
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 5cc4f0bbf38237e04e1b2077e285b41bfb4c4cbf
@@ -52,8 +52,8 @@ F src/tokenize.c ac4c46f190346b87da54ec3e2605d160af80c619
 F src/trigger.c 21342af6ac031fece39c8fc6eabd1739ca5327c1
 F src/update.c 6f6a4dcd71cd9ff730b7f12c83de5498cde4924f
 F src/util.c 876b259f9186e84b944b72e793dd3dad50e63e95
-F src/vdbe.c c33572f803b853c50c22f84d6dfa6922ec79bf6b
-F src/vdbe.h 9b6e632bfa5d52507130f1ae456ef2c01bc0be7e
+F src/vdbe.c 774f79483ce809b27c3bdb02afd7295cc3c7acd4
+F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
 F src/where.c 1fdb7aca26c1963eb42615a95e0fc2978eec566a
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -72,12 +72,12 @@ F test/insert2.test eb8481878a7f52ccb4e3346f87550f5afdd77f76
 F test/intpkey.test 69a6a9b41e541f27a2ffcd20264fb35adc3c2680
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/join.test ea6a4097e4fcebbb16eac7ec819569e759336a74
-F test/limit.test 96b33e108e134b5cc674a660064229d15fa278b9
+F test/limit.test 49b44e027a002c0ba336d723b448f07e05b04466
 F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
-F test/misc1.test faae0b01cce45a75fe8011b1f462c3ef36fb9bda
+F test/misc1.test 18c74cdfa6cc920f1c51827ccb23a442c62caefb
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2532792a5875f9cc0f7d8eaf90dd49d1f6025ca3
-R 3fe0ffaffb77713981828251190bdd81
+P 7936b0325024c81ed8d4bab192d7350d045ec999
+R d15c924c28dce20794c50e0013aa8eb2
 U drh
-Z 08d058b9c9d8b8b2fa6e6514672f1243
+Z 7d39bfd0dd2f959041e3d2a9c3cd818e
