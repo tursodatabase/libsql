@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.212 2003/04/13 18:26:52 paul Exp $
+** $Id: vdbe.c,v 1.213 2003/04/15 01:19:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3503,7 +3503,7 @@ case OP_OpenTemp: {
   cleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
   pCx->nullRow = 1;
-  rc = sqliteBtreeFactory(db, ":temp:", 1, TEMP_PAGES, &pCx->pBt);
+  rc = sqliteBtreeFactory(db, 0, 1, TEMP_PAGES, &pCx->pBt);
 
   if( rc==SQLITE_OK ){
     rc = sqliteBtreeBeginTrans(pCx->pBt);

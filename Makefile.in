@@ -58,15 +58,16 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 ENCODING = @ENCODING@
 
 # Flags controlling use of the in memory btree implementation
-# INCOREDB says whether to build btree_rb.c
-# TEMPDBINCORE controls the default placement of temporary databases.
-# ALLOWATTACHMEM controls whether ATTACH DATABASE ':memory:' is supported
+#
+# SQLITE_OMIT_INMEMORYDB is defined in order to omit the in-memory
+# red/black tree driver in the file btree_rb.c
+#
+# TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
+# default to file, 2 to default ot memory, and 3 to force temporary
+# tables to always be in memory.
+#
 INCOREDB = @INCOREDB@
-TEMPDBINCORE = @TEMPDBINCORE@
-ALLOWATTACHMEM = @ALLOWATTACHMEM@
-
-INCOREFLAGS = -DINCOREDB=${INCOREDB} -DTEMPDBINCORE=${TEMPDBINCORE} 
-INCOREFLAGS += -DALLOWATTACHMEM=${ALLOWATTACHMEM}
+INCOREFLAGS = -DSQLITE_OMIT_INMEMORYDB=1 -DTEMP_STORE=${INCOREDB}
 
 # You should not have to change anything below this line
 ###############################################################################

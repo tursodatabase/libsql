@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.171 2003/04/13 18:26:52 paul Exp $
+** @(#) $Id: sqliteInt.h,v 1.172 2003/04/15 01:19:49 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -64,6 +64,30 @@
 ** an unsigned character is used to stored the database index.
 */
 #define MAX_ATTACHED 10
+
+/*
+** The next macro is used to determine where TEMP tables and indices
+** are stored.  Possible values:
+**
+**   0    Always use a temporary files
+**   1    Use a file unless overridden by "PRAGMA temp_store"
+**   2    Use memory unless overridden by "PRAGMA temp_store"
+**   3    Always use memory
+*/
+#ifndef TEMP_STORE
+# define TEMP_STORE 1
+#endif
+
+/*
+** When building SQLite for embedded systems where memory is scarce,
+** you can define one or more of the following macros to omit extra
+** features of the library and thus keep the size of the library to
+** a minimum.
+*/
+/* #define SQLITE_OMIT_AUTHORIZATION  1 */
+#define SQLITE_OMIT_INMEMORYDB     1
+/* #define SQLITE_OMIT_TRACE          1 */
+/* #define SQLITE_OMIT_VACUUM         1 */
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -230,6 +254,11 @@ struct Db {
 **     file_format==3    Version 2.6.0. Fix empty-string index bug.
 **     file_format==4    Version 2.7.0. Add support for separate numeric and
 **                       text datatypes.
+**
+** The sqlite.temp_store determines where temporary database files
+** are stored.  If 1, then a file is created to hold those tables.  If
+** 2, then they are held in memory.  0 means use the default value in
+** the TEMP_STORE macro.
 */
 struct sqlite {
   int nDb;                      /* Number of backends currently in use */
@@ -241,7 +270,7 @@ struct sqlite {
   u8 want_to_close;             /* Close after all VDBEs are deallocated */
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */
-  int tmpdb_loc;                /* Temp DB loc */
+  int temp_store;               /* 1=file, 2=memory, 0=compile-time default */
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.122 2003/04/13 18:26:51 paul Exp $
+** $Id: main.c,v 1.123 2003/04/15 01:19:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1057,10 +1057,31 @@ void *sqlite_commit_hook(
 }
 
 /*
-** This routine is called when sqlite wants to open a btree.  zFilename is
-** either the name of a btree file or the magic name ":memory:" which opens an
-** in-memory btree or ":temp:" which opens a temporary btree. This may either
-** be in memory or backed by a temporary file depending on run-time settings.
+** This routine is called to create a connection to a database BTree
+** driver.  If zFilename is the name of a file, then that file is
+** opened and used.  If zFilename is the magic name ":memory:" then
+** the database is stored in memory (and is thus forgotten as soon as
+** the connection is closed.)  If zFilename is NULL then the database
+** is for temporary use only and is deleted as soon as the connection
+** is closed.
+**
+** 
+**
+** A temporary database can be either a disk file (that is automatically
+** deleted when the file is closed) or a set of red-black trees held in memory,
+** depending on the values of the TEMP_STORE compile-time macro and the
+** db->temp_store variable, according to the following chart:
+**
+**       TEMP_STORE     db->temp_store     Location of temporary database
+**       ----------     --------------     ------------------------------
+**           0               any             file
+**           1                1              file
+**           1                2              memory
+**           1                0              file
+**           2                1              file
+**           2                2              memory
+**           2                0              memory
+**           3               any             memory
 */
 int sqliteBtreeFactory(
   const sqlite *db,	    /* Main database when opening aux otherwise 0 */
@@ -1069,22 +1090,16 @@ int sqliteBtreeFactory(
   int nCache,               /* How many pages in the page cache */
   Btree **ppBtree){         /* Pointer to new Btree object written here */
 
-  assert( zFilename != 0 );
   assert( ppBtree != 0);
 
-  if (strcmp(zFilename, ":memory:") == 0) {
-    if (ALLOWATTACHMEM) {
-      return sqliteRBtreeOpen(0, 0, 0, ppBtree);
-    } else {
-      return SQLITE_CANTOPEN;
-    }
-  } else if (strcmp(zFilename, ":temp:") == 0) {
-    if (TEMPDBINCORE == 0) {
+#ifndef SQLITE_OMIT_INMEMORYDB
+  if( zFilename==0 ){
+    if (TEMP_STORE == 0) {
       /* Always use file based temporary DB */
       return sqliteBtreeOpen(0, omitJournal, nCache, ppBtree);
-    } else if (TEMPDBINCORE == 1 || TEMPDBINCORE == 2) {
+    } else if (TEMP_STORE == 1 || TEMP_STORE == 2) {
       /* Switch depending on compile-time and/or runtime settings. */
-      int location = db->tmpdb_loc == 0 ? TEMPDBINCORE : db->tmpdb_loc;
+      int location = db->temp_store==0 ? TEMP_STORE : db->temp_store;
 
       if (location == 1) {
         return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
@@ -1095,7 +1110,11 @@ int sqliteBtreeFactory(
       /* Always use in-core DB */
       return sqliteRBtreeOpen(0, 0, 0, ppBtree);
     }
-  } else {
+  }else if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
+    return sqliteRBtreeOpen(0, 0, 0, ppBtree);
+  }else
+#endif
+  {
     return sqliteBtreeOpen(zFilename, omitJournal, nCache, ppBtree);
   }
 }
