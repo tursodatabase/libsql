@@ -64,7 +64,7 @@ ENCODING = @ENCODING@
 #
 LIBOBJ = auth.lo btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os.lo pager.lo parse.lo printf.lo random.lo \
-         select.lo table.lo tokenize.lo update.lo util.lo vdbe.lo \
+         select.lo table.lo tokenize.lo update.lo util.lo vacuum.lo vdbe.lo \
          where.lo trigger.lo
 
 # All of the source code files.
@@ -97,6 +97,7 @@ SRC = \
   $(TOP)/src/trigger.c \
   $(TOP)/src/update.c \
   $(TOP)/src/util.c \
+  $(TOP)/src/vacuum.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/where.c
@@ -269,6 +270,9 @@ trigger.lo:	$(TOP)/src/trigger.c $(HDR)
 
 update.lo:	$(TOP)/src/update.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/update.c
+
+vacuum.lo:	$(TOP)/src/vacuum.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/vacuum.c
 
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c

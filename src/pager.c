@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.80 2003/04/06 20:44:45 drh Exp $
+** @(#) $Id: pager.c,v 1.81 2003/04/06 20:52:32 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2056,13 +2056,13 @@ int sqlitepager_rename(Pager *pPager, const char *zNewName){
   memcpy(zJournal, zNew, nName);
   strcpy(&zJournal[nName], "-journal");
   if( pPager->journalOpen ){
-    rc = sqliteOsRename(pPager->zJournal, zJournal);
+    rc = sqliteOsFileRename(pPager->zJournal, zJournal);
     if( rc ){
       sqliteFree(zNew);
       return rc;
     }
   }
-  rc = sqliteOsRename(pPager->zFilename, zNew);
+  rc = sqliteOsFileRename(pPager->zFilename, zNew);
   if( rc ){
     sqliteFree(zNew);
     return rc;

@@ -1,6 +1,6 @@
-C Simplify\sthe\sBTree\sinterface\sby\sshortening\snames.\s\sAdded\stwo\snew\smethods\nfor\saccessing\sthe\scurrent\sfilename\sand\sfor\schanging\sthe\sname\sof\sthe\ndatabase\sfile.\s(CVS\s900)
-D 2003-04-06T20:44:45
-F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
+C Move\sthe\simplementation\sof\sVACUUM\sinto\sa\sseparate\ssource\sfile.\s(CVS\s901)
+D 2003-04-06T20:52:32
+F Makefile.in 5b084c4a4abf08fa5cdebe78ccebf6310198139c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool bbbea7d79c23323e4100103836028e4fad0d9242
 F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
-F main.mk 23b24112064bd14656a540abf1699a98ecdd9851
+F main.mk 931fdcd4fc6ac4d4e6eb5ce975ad2fb4995ccbcc
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -22,7 +22,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 3b0e0f09886bc83fa183df367d6a1b7077da9c46
 F src/btree.h 5cb871546bd6fa58396a6f033e2b29b388241e1b
-F src/build.c 8f158c26c89464e33de4b83a0964042462ea9977
+F src/build.c da21ffe7daeea576ebfbeb2f96ac0f99fa6b9a09
 F src/delete.c 58d698779a6b7f819718ecd45b310a9de8537088
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c b8daee83f837b24a22d889200bdd74973ca2d8db
@@ -34,7 +34,7 @@ F src/main.c c5109638c0cd86fa450faa2bd5a60468325aef69
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c c33ebb320921b8df6d09ea19fe846348df86a0c9
 F src/os.h aa52f0c9da321ff6134d19f2ca959e18e33615d0
-F src/pager.c 53abd9df41889ca31b223eceda6e5e724145eae2
+F src/pager.c df4c81350cbd80c1ab48341ae0768ba78d99ad49
 F src/pager.h e3702f7d384921f6cd5ce0b3ed589185433e9f6c
 F src/parse.y 3be47fa18323aa2e3364fc42bf7a6ba5b3cc0a81
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
@@ -157,7 +157,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 51f515f28cb1cc3e8f0c3531724dc8876b25f18e
-R c5d5548ccf24f7b5ba0652ab8b119df1
+P 185d8dc8d0c26cef36aeba6992823e5124af4056
+R 7a927220f0e77fb63a637996080a8eec
 U drh
-Z 46e4a19e80ac8f859bd26b2a93f77bd0
+Z 2542fde3715240ecd80028ec8868e426

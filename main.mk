@@ -57,7 +57,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ = auth.o btree.o build.o delete.o expr.o func.o hash.o insert.o \
          main.o opcodes.o os.o pager.o parse.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
-         vdbe.o where.o tclsqlite.o
+         vacuum.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -89,6 +89,7 @@ SRC = \
   $(TOP)/src/trigger.c \
   $(TOP)/src/update.c \
   $(TOP)/src/util.c \
+  $(TOP)/src/vacuum.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/where.c
@@ -225,6 +226,9 @@ trigger.o:	$(TOP)/src/trigger.c $(HDR)
 
 util.o:	$(TOP)/src/util.c $(HDR)
 	$(TCCX) -c $(TOP)/src/util.c
+
+vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
+	$(TCCX) -c $(TOP)/src/vacuum.c
 
 vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
 	$(TCCX) -c $(TOP)/src/vdbe.c
