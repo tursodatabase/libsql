@@ -1,5 +1,5 @@
-C Fix\sVACUUM\sso\sthat\sit\sworks\son\sfiles\swhose\sname\scontains\s'.\s\sTicket\s#873\s(CVS\s1930)
-D 2004-09-02T15:27:42
+C Fix\sa\sbug\sin\sthe\spagesize\stest\sscript.\s(CVS\s1931)
+D 2004-09-02T15:49:08
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -151,7 +151,7 @@ F test/null.test 642428b6a5408cc5b954b49e1b6e5025e4458b2b
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pager3.test 16f546293bb751b8151dc17df613fca938bbec8b
-F test/pagesize.test 81753e370d813e0c32931172baecd13b72561cff
+F test/pagesize.test ada866e3d8bad7ec252d5131e2fd4d892b8fef8d
 F test/pragma.test 66a66b7f3b273b93325c9a5794acb418f52fdcbf
 F test/printf.test 5a30fb0d736148fca64cb1b7ed0390be7414e024
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8ce3d730b0bf1a9b9472ff38c58c462ebc3566e3
-R 5cb40b505228cad9596ad1bd46dde600
+P 8dd938e48048ffeb11181db9d98112ea2adbcfa6
+R 80d652972567c39854f07852d4459386
 U drh
-Z 24f6f1eb1399d91b4eb6174a206010ae
+Z 8f27e83e13b1fbe98bf42e4736180b8f
