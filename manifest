@@ -1,5 +1,5 @@
-C fix\sa\sdebugging\sissue\s(CVS\s162)
-D 2000-10-22T20:39:59
+C remove\sunnecessary\scode\swhen\sNDEBUG\sis\sdefined\s(CVS\s163)
+D 2000-10-23T01:08:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -28,7 +28,7 @@ F src/tclsqlite.c 178adf318eab2ff480c288a87541d4ab1c37d985
 F src/tokenize.c 95bf7baa7d829981bed81ca89080d99d2c09d463
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c 811e0ad47f842c16555aaf361b26dab7221c1a6c
-F src/vdbe.c 45d40d614a48208b560e6285197cece75dbd61a4
+F src/vdbe.c d69f691d1a4adc21c47b349078b6002f5eb6ae2a
 F src/vdbe.h 140cdec3c56f70483e169f8ae657bd90f9fd6e98
 F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
 F test/all.test 71d439d4d8d5bb68ca73344ce6d2b1ebb35ab7dd
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 9e91b729f0a708b08060979a4998be890b6d268d
-R 31bc5188fe93f51dd094373014866609
+P f0a5255d2657ddcba24353d6d94b0d9c579d8dec
+R db2de82bead6490471b7e949022ed705
 U drh
-Z 76e7eb6325e4b7bcee9d8c7288823b0d
+Z 6ca067409ed7e73ca537183814c3e736

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.45 2000/10/19 14:42:05 drh Exp $
+** $Id: vdbe.c,v 1.46 2000/10/23 01:08:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -907,6 +907,17 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
 }
 
 /*
+** Code contained within the VERIFY() macro is not needed for correct
+** execution.  It is there only to catch errors.  So when we compile
+** with NDEBUG=1, the VERIFY() code is omitted.
+*/
+#ifdef NDEBUG
+# define VERIFY(X)
+#else
+# define VERIFY(X) X
+#endif
+
+/*
 ** Execute the program in the VDBE.
 **
 ** If an error occurs, an error message is written to memory obtained
@@ -943,9 +954,20 @@ int sqliteVdbeExec(
   Op *pOp;                   /* Current operation */
   int rc;                    /* Value to return */
   Dbbe *pBe = p->pBe;        /* The backend driver */
+  sqlite *db = p->db;        /* The database */
   char zBuf[100];            /* Space to sprintf() and integer */
 
+
+  /* No instruction ever pushes more than a single element onto the
+  ** stack.  And the stack never grows on successive executions of the
+  ** same loop.  So the total number of instructions is an upper bound
+  ** on the maximum stack depth required.
+  **
+  ** Allocation all the stack space we will ever need.
+  */
+  NeedStack(p, p->nOp);
   p->tos = -1;
+
   rc = SQLITE_OK;
 #ifdef MEMORY_DEBUG
   if( access("vdbe_trace",0)==0 ){
@@ -953,13 +975,13 @@ int sqliteVdbeExec(
   }
 #endif
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
-  for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
+  for(pc=0; rc==SQLITE_OK && pc<p->nOp VERIFY(&& pc>=0); pc++){
     pOp = &p->aOp[pc];
 
     /* Interrupt processing if requested.
     */
-    if( p->db->flags & SQLITE_Interrupt ){
-      p->db->flags &= ~SQLITE_Interrupt;
+    if( db->flags & SQLITE_Interrupt ){
+      db->flags &= ~SQLITE_Interrupt;
       rc = SQLITE_INTERRUPT;
       sqliteSetString(pzErrMsg, "interrupted", 0);
       break;
@@ -1004,7 +1026,7 @@ int sqliteVdbeExec(
       */
       case OP_Integer: {
         int i = ++p->tos;
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         p->aStack[i].i = pOp->p1;
         p->aStack[i].flags = STK_Int;
         break;
@@ -1017,7 +1039,7 @@ int sqliteVdbeExec(
       case OP_String: {
         int i = ++p->tos;
         char *z;
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         z = pOp->p3;
         if( z==0 ) z = "";
         p->zStack[i] = z;
@@ -1032,7 +1054,7 @@ int sqliteVdbeExec(
       */
       case OP_Null: {
         int i = ++p->tos;
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         p->zStack[i] = 0;
         p->aStack[i].flags = STK_Null;
         break;
@@ -1058,8 +1080,8 @@ int sqliteVdbeExec(
       case OP_Dup: {
         int i = p->tos - pOp->p1;
         int j = ++p->tos;
-        if( i<0 ) goto not_enough_stack;
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( i<0 ) goto not_enough_stack; )
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         p->aStack[j] = p->aStack[i];
         if( p->aStack[i].flags & STK_Dyn ){
           p->zStack[j] = sqliteMalloc( p->aStack[j].n );
@@ -1084,7 +1106,7 @@ int sqliteVdbeExec(
         int i;
         Stack ts;
         char *tz;
-        if( from<0 ) goto not_enough_stack;
+        VERIFY( if( from<0 ) goto not_enough_stack; )
         ts = p->aStack[from];
         tz = p->zStack[from];
         for(i=from; i<to; i++){
@@ -1131,8 +1153,8 @@ int sqliteVdbeExec(
       case OP_Callback: {
         int i = p->tos - pOp->p1 + 1;
         int j;
-        if( i<0 ) goto not_enough_stack;
-        if( NeedStack(p, p->tos+2) ) goto no_mem;
+        VERIFY( if( i<0 ) goto not_enough_stack; )
+        VERIFY( if( NeedStack(p, p->tos+2) ) goto no_mem; )
         for(j=i; j<=p->tos; j++){
           if( (p->aStack[j].flags & STK_Null)==0 ){
             if( Stringify(p, j) ) goto no_mem;
@@ -1171,7 +1193,7 @@ int sqliteVdbeExec(
         zSep = pOp->p3;
         if( zSep==0 ) zSep = "";
         nSep = strlen(zSep);
-        if( p->tos+1<nField ) goto not_enough_stack;
+        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
         nByte = 1 - nSep;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( p->aStack[i].flags & STK_Null ){
@@ -1196,7 +1218,7 @@ int sqliteVdbeExec(
         }
         zNew[j] = 0;
         if( pOp->p2==0 ) PopStack(p, nField);
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].n = nByte;
         p->aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -1242,7 +1264,7 @@ int sqliteVdbeExec(
       case OP_Divide: {
         int tos = p->tos;
         int nos = tos - 1;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         if( (p->aStack[tos].flags & p->aStack[nos].flags & STK_Int)==STK_Int ){
           int a, b;
           a = p->aStack[tos].i;
@@ -1301,7 +1323,7 @@ int sqliteVdbeExec(
         int nos = tos - 1;
         int ft, fn;
         int copy = 0;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         ft = p->aStack[tos].flags;
         fn = p->aStack[nos].flags;
         if( fn & STK_Null ){
@@ -1340,7 +1362,7 @@ int sqliteVdbeExec(
         int nos = tos - 1;
         int ft, fn;
         int copy = 0;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         ft = p->aStack[tos].flags;
         fn = p->aStack[nos].flags;
         if( fn & STK_Null ){
@@ -1377,7 +1399,7 @@ int sqliteVdbeExec(
       */
       case OP_AddImm: {
         int tos = p->tos;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         Integerify(p, tos);
         p->aStack[tos].i += pOp->p1;
         break;
@@ -1428,7 +1450,7 @@ int sqliteVdbeExec(
         int nos = tos - 1;
         int c;
         int ft, fn;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         ft = p->aStack[tos].flags;
         fn = p->aStack[nos].flags;
         if( (ft & fn)==STK_Int ){
@@ -1470,7 +1492,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         int c;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
         Stringify(p, nos);
         c = sqliteLikeCompare(p->zStack[tos], p->zStack[nos]);
@@ -1502,7 +1524,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         int c;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
         Stringify(p, nos);
         c = sqliteGlobCompare(p->zStack[tos], p->zStack[nos]);
@@ -1529,7 +1551,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         int c;
-        if( nos<0 ) goto not_enough_stack;
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
         Integerify(p, tos);
         Integerify(p, nos);
         if( pOp->opcode==OP_And ){
@@ -1550,8 +1572,8 @@ int sqliteVdbeExec(
       ** with its additive inverse.
       */
       case OP_Negative: {
-        int tos;
-        if( (tos = p->tos)<0 ) goto not_enough_stack;
+        int tos = p->tos;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( p->aStack[tos].flags & STK_Real ){
           Release(p, tos);
           p->aStack[tos].r = -p->aStack[tos].r;
@@ -1576,7 +1598,7 @@ int sqliteVdbeExec(
       */
       case OP_Not: {
         int tos = p->tos;
-        if( p->tos<0 ) goto not_enough_stack;
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         Integerify(p, tos);
         Release(p, tos);
         p->aStack[tos].i = !p->aStack[tos].i;
@@ -1602,7 +1624,7 @@ int sqliteVdbeExec(
       */
       case OP_If: {
         int c;
-        if( p->tos<0 ) goto not_enough_stack;
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         Integerify(p, p->tos);
         c = p->aStack[p->tos].i;
         PopStack(p, 1);
@@ -1618,7 +1640,7 @@ int sqliteVdbeExec(
       */
       case OP_IsNull: {
         int c;
-        if( p->tos<0 ) goto not_enough_stack;
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         c = (p->aStack[p->tos].flags & STK_Null)!=0;
         PopStack(p, 1);
         if( c ) pc = pOp->p2-1;
@@ -1633,7 +1655,7 @@ int sqliteVdbeExec(
       */
       case OP_NotNull: {
         int c;
-        if( p->tos<0 ) goto not_enough_stack;
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         c = (p->aStack[p->tos].flags & STK_Null)==0;
         PopStack(p, 1);
         if( c ) pc = pOp->p2-1;
@@ -1662,7 +1684,7 @@ int sqliteVdbeExec(
         int addr;
 
         nField = pOp->p1;
-        if( p->tos+1<nField ) goto not_enough_stack;
+        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( (p->aStack[i].flags & STK_Null)==0 ){
@@ -1692,7 +1714,7 @@ int sqliteVdbeExec(
           }
         }
         PopStack(p, nField);
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].n = nByte;
         p->aStack[p->tos].flags = STK_Str | STK_Dyn;
@@ -1723,7 +1745,7 @@ int sqliteVdbeExec(
         int i, j;
 
         nField = pOp->p1;
-        if( p->tos+1<nField ) goto not_enough_stack;
+        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( p->aStack[i].flags & STK_Null ){
@@ -1745,7 +1767,7 @@ int sqliteVdbeExec(
         }
         zNewKey[j] = 0;
         if( pOp->p2==0 ) PopStack(p, nField);
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].n = nByte;
         p->aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -1773,7 +1795,7 @@ int sqliteVdbeExec(
       case OP_Open: {
         int busy = 0;
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
+        VERIFY( if( i<0 ) goto bad_instruction; )
         if( i>=p->nCursor ){
           int j;
           p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
@@ -1840,7 +1862,7 @@ int sqliteVdbeExec(
       case OP_Fetch: {
         int i = pOp->p1;
         int tos = p->tos;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
           if( p->aStack[tos].flags & STK_Int ){
             pBe->Fetch(p->aCsr[i].pCursor, sizeof(int), 
@@ -1867,7 +1889,7 @@ int sqliteVdbeExec(
       */
       case OP_Fcnt: {
         int i = ++p->tos;
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         p->aStack[i].i = p->nFetch;
         p->aStack[i].flags = STK_Int;
         break;
@@ -1906,8 +1928,8 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         int tos = p->tos;
         int alreadyExists = 0;
-        if( tos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
           if( p->aStack[tos].flags & STK_Int ){
             alreadyExists = pBe->Test(p->aCsr[i].pCursor, sizeof(int), 
                                           (char*)&p->aStack[tos].i);
@@ -1936,12 +1958,12 @@ int sqliteVdbeExec(
       case OP_New: {
         int i = pOp->p1;
         int v;
-        if( i<0 || i>=p->nCursor || p->aCsr[i].pCursor==0 ){
+        if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
           v = 0;
         }else{
           v = pBe->New(p->aCsr[i].pCursor);
         }
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].i = v;
         p->aStack[p->tos].flags = STK_Int;
@@ -1960,8 +1982,8 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = p->tos-1;
         int i = pOp->p1;
-        if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
           char *zKey;
           int nKey;
           if( (p->aStack[nos].flags & STK_Int)==0 ){
@@ -1987,8 +2009,8 @@ int sqliteVdbeExec(
       case OP_Delete: {
         int tos = p->tos;
         int i = pOp->p1;
-        if( tos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
           char *zKey;
           int nKey;
           if( p->aStack[tos].flags & STK_Int ){
@@ -2014,7 +2036,7 @@ int sqliteVdbeExec(
       */
       case OP_KeyAsData: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
           p->aCsr[i].keyAsData = pOp->p2;
         }
         break;
@@ -2050,8 +2072,8 @@ int sqliteVdbeExec(
         DbbeCursor *pCrsr;
         char *z;
 
-        if( NeedStack(p, tos) ) goto no_mem;
-        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           if( p->aCsr[i].keyAsData ){
             amt = pBe->KeyLength(pCrsr);
             if( amt<=sizeof(int)*(p2+1) ){
@@ -2096,8 +2118,8 @@ int sqliteVdbeExec(
         int tos = ++p->tos;
         DbbeCursor *pCrsr;
 
-        if( NeedStack(p, p->tos) ) goto no_mem;
-        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           char *z = pBe->ReadKey(pCrsr, 0);
           if( p->aCsr[i].keyAsData ){
             p->zStack[tos] = z;
@@ -2118,7 +2140,7 @@ int sqliteVdbeExec(
       */
       case OP_Rewind: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
           pBe->Rewind(p->aCsr[i].pCursor);
         }
         break;
@@ -2131,7 +2153,7 @@ int sqliteVdbeExec(
       */
       case OP_Next: {
         int i = pOp->p1;
-        if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor!=0 ){
+        if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
           if( pBe->NextKey(p->aCsr[i].pCursor)==0 ){
             pc = pOp->p2 - 1;
           }else{
@@ -2176,9 +2198,9 @@ int sqliteVdbeExec(
         int tos = ++p->tos;
         DbbeCursor *pCrsr;
 
-        if( NeedStack(p, p->tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
         p->zStack[tos] = 0;
-        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
           int j, k;
@@ -2221,8 +2243,8 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         DbbeCursor *pCrsr;
-        if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int r;
           int newVal;
           Integerify(p, nos);
@@ -2293,8 +2315,8 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         DbbeCursor *pCrsr;
-        if( nos<0 ) goto not_enough_stack;
-        if( i>=0 && i<p->nCursor && (pCrsr = p->aCsr[i].pCursor)!=0 ){
+        VERIFY( if( nos<0 ) goto not_enough_stack; )
+        if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
           int *aIdx;
           int nIdx;
           int j, k;
@@ -2357,7 +2379,7 @@ int sqliteVdbeExec(
       */
       case OP_ListOpen: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
+        VERIFY( if( i<0 ) goto bad_instruction; )
         if( i>=p->nList ){
           int j;
           p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(FILE*) );
@@ -2381,9 +2403,9 @@ int sqliteVdbeExec(
       */
       case OP_ListWrite: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
-        if( p->tos<0 ) goto not_enough_stack;
-        if( i<p->nList && p->apList[i]!=0 ){
+        VERIFY( if( i<0 ) goto bad_instruction; )
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
           int val;
           Integerify(p, p->tos);
           val = p->aStack[p->tos].i;
@@ -2399,8 +2421,8 @@ int sqliteVdbeExec(
       */
       case OP_ListRewind: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
-        if( i<p->nList && p->apList[i]!=0 ){
+        VERIFY( if( i<0 ) goto bad_instruction; )
+        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
           rewind(p->apList[i]);
         }
         break;
@@ -2415,7 +2437,7 @@ int sqliteVdbeExec(
       case OP_ListRead: {
         int i = pOp->p1;
         int val, amt;
-        if( i<0 || i>=p->nList || p->apList[i]==0 ) goto bad_instruction;
+        VERIFY(if( i<0 || i>=p->nList || p->apList[i]==0 )goto bad_instruction;)
         amt = fread(&val, sizeof(int), 1, p->apList[i]);
         if( amt==1 ){
           p->tos++;
@@ -2435,8 +2457,8 @@ int sqliteVdbeExec(
       */
       case OP_ListClose: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
-        if( i<p->nList && p->apList[i]!=0 ){
+        VERIFY( if( i<0 ) goto bad_instruction; )
+        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
           pBe->CloseTempFile(pBe, p->apList[i]);
           p->apList[i] = 0;
         }
@@ -2449,7 +2471,7 @@ int sqliteVdbeExec(
       */
       case OP_SortOpen: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
+        VERIFY( if( i<0 ) goto bad_instruction; )
         if( i>=p->nSort ){
           int j;
           p->apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
@@ -2470,8 +2492,8 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int nos = tos - 1;
         Sorter *pSorter;
-        if( i<0 || i>=p->nSort ) goto bad_instruction;
-        if( tos<1 ) goto not_enough_stack;
+        VERIFY( if( i<0 || i>=p->nSort ) goto bad_instruction; )
+        VERIFY( if( tos<1 ) goto not_enough_stack; )
         if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
         pSorter = sqliteMalloc( sizeof(Sorter) );
         if( pSorter==0 ) goto no_mem;
@@ -2503,7 +2525,7 @@ int sqliteVdbeExec(
         int i, j;
 
         nField = pOp->p1;
-        if( p->tos+1<nField ) goto not_enough_stack;
+        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
         nByte = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( (p->aStack[i].flags & STK_Null)==0 ){
@@ -2525,7 +2547,7 @@ int sqliteVdbeExec(
           }
         }
         PopStack(p, nField);
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].n = nByte;
         p->zStack[p->tos] = (char*)azArg;
@@ -2553,7 +2575,7 @@ int sqliteVdbeExec(
         int i, j, k;
 
         nField = strlen(pOp->p3);
-        if( p->tos+1<nField ) goto not_enough_stack;
+        VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
         nByte = 1;
         for(i=p->tos-nField+1; i<=p->tos; i++){
           if( Stringify(p, i) ) goto no_mem;
@@ -2571,7 +2593,7 @@ int sqliteVdbeExec(
         }
         zNewKey[j] = 0;
         PopStack(p, nField);
-        NeedStack(p, p->tos+1);
+        VERIFY( NeedStack(p, p->tos+1); )
         p->tos++;
         p->aStack[p->tos].n = nByte;
         p->aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -2587,7 +2609,7 @@ int sqliteVdbeExec(
       case OP_Sort: {
         int j;
         j = pOp->p1;
-        if( j<0 ) goto bad_instruction;
+        VERIFY( if( j<0 ) goto bad_instruction; )
         if( j<p->nSort ){
           int i;
           Sorter *pElem;
@@ -2628,12 +2650,12 @@ int sqliteVdbeExec(
       */
       case OP_SortNext: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
-        if( i<p->nSort && p->apSort[i]!=0 ){
+        VERIFY( if( i<0 ) goto bad_instruction; )
+        if( VERIFY( i<p->nSort && ) p->apSort[i]!=0 ){
           Sorter *pSorter = p->apSort[i];
           p->apSort[i] = pSorter->pNext;
           p->tos++;
-          NeedStack(p, p->tos);
+          VERIFY( NeedStack(p, p->tos); )
           p->zStack[p->tos] = pSorter->pData;
           p->aStack[p->tos].n = pSorter->nData;
           p->aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -2652,11 +2674,11 @@ int sqliteVdbeExec(
       */
       case OP_SortKey: {
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
+        VERIFY( if( i<0 ) goto bad_instruction; )
         if( i<p->nSort && p->apSort[i]!=0 ){
           Sorter *pSorter = p->apSort[i];
           p->tos++;
-          NeedStack(p, p->tos);
+          VERIFY( NeedStack(p, p->tos); )
           sqliteSetString(&p->zStack[p->tos], pSorter->zKey, 0);
           p->aStack[p->tos].n = pSorter->nKey;
           p->aStack[p->tos].flags = STK_Str|STK_Dyn;
@@ -2673,7 +2695,7 @@ int sqliteVdbeExec(
       */
       case OP_SortCallback: {
         int i = p->tos;
-        if( i<0 ) goto not_enough_stack;
+        VERIFY( if( i<0 ) goto not_enough_stack; )
         if( xCallback!=0 ){
           if( xCallback(pArg, pOp->p1, (char**)p->zStack[i], p->azColName) ){
             rc = SQLITE_ABORT;
@@ -2690,7 +2712,7 @@ int sqliteVdbeExec(
       case OP_SortClose: {
         Sorter *pSorter;
         int i = pOp->p1;
-        if( i<0 ) goto bad_instruction;
+        VERIFY( if( i<0 ) goto bad_instruction; )
         if( i<p->nSort ){
            while( (pSorter = p->apSort[i])!=0 ){
              p->apSort[i] = pSorter->pNext;
@@ -2708,7 +2730,7 @@ int sqliteVdbeExec(
       ** If P3 is "stdin" then open standard input for reading.
       */
       case OP_FileOpen: {
-        if( pOp->p3==0 ) goto bad_instruction;
+        VERIFY( if( pOp->p3==0 ) goto bad_instruction; )
         if( p->pFile ){
           if( p->pFile!=stdin ) fclose(p->pFile);
           p->pFile = 0;
@@ -2847,8 +2869,8 @@ int sqliteVdbeExec(
       case OP_FileField: {
         int i = pOp->p1;
         char *z;
-        if( NeedStack(p, p->tos+1) ) goto no_mem;
-        if( i>=0 && i<p->nField && p->azField ){
+        VERIFY( if( NeedStack(p, p->tos+1) ) goto no_mem; )
+        if( VERIFY( i>=0 && i<p->nField && ) p->azField ){
           z = p->azField[i];
         }else{
           z = 0;
@@ -2872,7 +2894,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         Mem *pMem;
         char *zOld;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( i>=p->nMem ){
           int nOld = p->nMem;
           p->nMem = i + 5;
@@ -2905,7 +2927,7 @@ int sqliteVdbeExec(
       case OP_MemLoad: {
         int tos = ++p->tos;
         int i = pOp->p1;
-        if( NeedStack(p, tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
         if( i<0 || i>=p->nMem ){
           p->aStack[tos].flags = STK_Null;
           p->zStack[tos] = 0;
@@ -2953,7 +2975,7 @@ int sqliteVdbeExec(
         char *zKey;
         int nKey;
 
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
         zKey = p->zStack[tos]; 
         nKey = p->aStack[tos].n;
@@ -3014,9 +3036,9 @@ int sqliteVdbeExec(
         AggElem *pFocus = AggInFocus(p->agg);
         int i = pOp->p2;
         int tos = p->tos;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         if( pFocus==0 ) goto no_mem;
-        if( i>=0 && i<p->agg.nMem ){
+        if( VERIFY( i>=0 && ) i<p->agg.nMem ){
           Mem *pMem = &pFocus->aMem[i];
           char *zOld;
           if( pMem->s.flags & STK_Dyn ){
@@ -3047,9 +3069,9 @@ int sqliteVdbeExec(
         AggElem *pFocus = AggInFocus(p->agg);
         int i = pOp->p2;
         int tos = ++p->tos;
-        if( NeedStack(p, tos) ) goto no_mem;
+        VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
         if( pFocus==0 ) goto no_mem;
-        if( i>=0 && i<p->agg.nMem ){
+        if( VERIFY( i>=0 && ) i<p->agg.nMem ){
           Mem *pMem = &pFocus->aMem[i];
           p->aStack[tos] = pMem->s;
           p->zStack[tos] = pMem->z;
@@ -3141,9 +3163,9 @@ int sqliteVdbeExec(
       case OP_SetFound: {
         int i = pOp->p1;
         int tos = p->tos;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
-        if( i>=0 && i<p->nSet && SetTest(&p->aSet[i], p->zStack[tos]) ){
+        if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], p->zStack[tos])){
           pc = pOp->p2 - 1;
         }
         PopStack(p, 1);
@@ -3159,9 +3181,9 @@ int sqliteVdbeExec(
       case OP_SetNotFound: {
         int i = pOp->p1;
         int tos = p->tos;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
-        if( i>=0 && i<p->nSet && !SetTest(&p->aSet[i], p->zStack[tos]) ){
+        if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], p->zStack[tos])){
           pc = pOp->p2 - 1;
         }
         PopStack(p, 1);
@@ -3176,7 +3198,7 @@ int sqliteVdbeExec(
       case OP_Strlen: {
         int tos = p->tos;
         int len;
-        if( tos<0 ) goto not_enough_stack;
+        VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
         len = p->aStack[tos].n-1;
         PopStack(p, 1);
@@ -3212,7 +3234,7 @@ int sqliteVdbeExec(
         char *z;
 
         if( pOp->p2==0 ){
-          if( p->tos<0 ) goto not_enough_stack;
+          VERIFY( if( p->tos<0 ) goto not_enough_stack; )
           Integerify(p, p->tos);
           cnt = p->aStack[p->tos].i;
           PopStack(p, 1);
@@ -3220,14 +3242,14 @@ int sqliteVdbeExec(
           cnt = pOp->p2;
         }
         if( pOp->p1==0 ){
-          if( p->tos<0 ) goto not_enough_stack;
+          VERIFY( if( p->tos<0 ) goto not_enough_stack; )
           Integerify(p, p->tos);
           start = p->aStack[p->tos].i - 1;
           PopStack(p, 1);
         }else{
           start = pOp->p1 - 1;
         }
-        if( p->tos<0 ) goto not_enough_stack;
+        VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         Stringify(p, p->tos);
         n = p->aStack[p->tos].n - 1;
         if( start<0 ){
