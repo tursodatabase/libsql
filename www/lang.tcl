@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.58 2003/05/17 01:39:40 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.59 2003/05/29 04:21:39 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -144,7 +144,8 @@ DROP in the original database.</p>
 
 <p>You cannot create a new table with the same name as a table in 
 an attached database, but you can attach a database which contains
-tables whose names are duplicates of tables in the main database.</p>
+tables whose names are duplicates of tables in the main database.  It is 
+also permissible to attach the same database file multiple times.</p>
 
 <p>Tables in an attached database can be referred to using the syntax 
 <i>database-name.table-name</i>.  If an attached table doesn't have 
@@ -308,7 +309,7 @@ created table that is to be indexed, and a parenthesized list of names of
 columns in the table that are used for the index key.
 Each column name can be followed by one of the "ASC" or "DESC" keywords
 to indicate sort order, but the sort order is ignored in the current
-implementation.</p>
+implementation.  Sorting is always done in ascending order.</p>
 
 <p>There are no arbitrary limits on the number of indices that can be
 attached to a single table, nor on the number of columns in an index.</p>
@@ -655,8 +656,11 @@ DETACH [DATABASE] <database-name>
 }
 
 puts {
-<p>This statement detaches an additional database file previously attached
-using the <a href="#attach">ATTACH DATABASE</a> statement.</p>
+<p>This statement detaches an additional database connection previously 
+attached using the <a href="#attach">ATTACH DATABASE</a> statement.  It
+is possible to have the same database file attached multiple times using 
+different names, and detaching one connection to a file will leave the 
+others intact.</p>
 
 <p>This statement will fail if SQLite is in the middle of a transaction.</p>
 }
@@ -998,6 +1002,13 @@ The left-most character of <i>X</i> is number 1.  If <i>Y</i> is negative
 the the first character of the substring is found by counting from the
 right rather than the left.  If SQLite is configured to support UTF-8,
 then characters indices refer to actual UTF-8 characters, not bytes.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">typeof(<i>X</i>)</td>
+<td valign="top">Return the type of the expression <i>X</i>.  The only 
+return values are "numeric" and "text".  SQLite's type handling is 
+explained in <a href="datatypes.html">Datatypes in SQLite</a>.</td>
 </tr>
 
 <tr>
