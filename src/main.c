@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.5 2000/06/02 01:51:20 drh Exp $
+** $Id: main.c,v 1.6 2000/06/02 13:27:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -54,6 +54,13 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
 ** Attempt to read the database schema and initialize internal
 ** data structures.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
+**
+** After the database is initialized, the SQLITE_Initialized
+** bit is set in the flags field of the sqlite structure.  An
+** attempt is made to initialize the database as soon as it
+** is opened.  If that fails (perhaps because another process
+** has the sqlite_master table locked) than another attempt
+** is made the first time the database is accessed.
 */
 static int sqliteInit(sqlite *db, char **pzErrMsg){
   Vdbe *vdbe;
@@ -177,6 +184,9 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     sqlite_close(db);
     return 0;
+  }else{
+    sqliteFree(pzErrMsg);
+    *pzErrMsg = 0;
   }
   return db;
 }
@@ -230,7 +240,14 @@ int sqlite_complete(const char *zSql){
 }
 
 /*
-** Execute SQL code 
+** Execute SQL code.  Return one of the SQLITE_ success/failure
+** codes.  Also write an error message into memory obtained from
+** malloc() and make *pzErrMsg point to that message.
+**
+** If the SQL is a query, then for each row in the query result
+** the xCallback() function is called.  pArg becomes the first
+** argument to xCallback().  If xCallback=NULL then no callback
+** is invoked, even for queries.
 */
 int sqlite_exec(
   sqlite *db,                 /* The database on which the SQL executes */

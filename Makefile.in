@@ -51,10 +51,40 @@ LIBOBJ = build.o dbbe.o delete.o expr.o insert.o \
          main.o parse.o select.o tokenize.o update.o \
          util.o vdbe.o where.o
 
+# All of the source code files.
+#
+SRC = \
+  $(TOP)/src/build.c \
+  $(TOP)/src/dbbe.c \
+  $(TOP)/src/dbbe.h \
+  $(TOP)/src/delete.c \
+  $(TOP)/src/expr.c \
+  $(TOP)/src/insert.c \
+  $(TOP)/src/main.c \
+  $(TOP)/src/parse.y \
+  $(TOP)/src/select.c \
+  $(TOP)/src/shell.c \
+  $(TOP)/src/sqlite.h \
+  $(TOP)/src/sqliteInt.h \
+  $(TOP)/src/tclsqlite.c \
+  $(TOP)/src/tokenize.c \
+  $(TOP)/src/update.c \
+  $(TOP)/src/util.c \
+  $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbe.h \
+  $(TOP)/src/where.c
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
 all:	libsqlite.a sqlite.h sqlite 
+
+# Generate the file "last_change" which contains the date of change
+# of the most recently modified source code file
+#
+last_change:	$(SRC)
+	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
+          | awk '{print $$5,$$6}' >last_change
 
 libsqlite.a:	$(LIBOBJ)
 	$(AR) libsqlite.a $(LIBOBJ)
@@ -153,7 +183,7 @@ sqlite.tar.gz:
 all.tar.gz:	
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/all.tar.gz sqlite
 
-index.html:	$(TOP)/www/index.tcl sqlite.tar.gz all.tar.gz
+index.html:	$(TOP)/www/index.tcl sqlite.tar.gz all.tar.gz last_change
 	tclsh $(TOP)/www/index.tcl >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl

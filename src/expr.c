@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.1 2000/05/31 15:34:53 drh Exp $
+** $Id: expr.c,v 1.2 2000/06/02 13:27:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -77,10 +77,9 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
   
     /* A table name and field name:  ID.ID */
     case TK_DOT: {
-      int cnt = 0;   /* Number of matches */
-      int i;         /* Loop counter */
+      int cnt = 0;             /* Number of matches */
+      int i;                   /* Loop counter */
       Expr *pLeft, *pRight;    /* Left and right subbranches of the expr */
-      int n;                   /* Length of an identifier */
       char *zLeft, *zRight;    /* Text of an identifier */
 
       pLeft = pExpr->pLeft;

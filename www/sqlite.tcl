@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.5 2000/06/01 00:03:44 drh Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.6 2000/06/02 13:28:00 drh Exp $}
 
 puts {<html>
 <head>
@@ -30,7 +30,7 @@ should really be the name of a directory on your disk.  If that
 directory did not previously contain an SQLite database, a new one
 is created for you automatically.  The <b>sqlite</b> program will
 prompt you to enter SQL.  Type in SQL statements (terminated by a
-semicolon, press "Enter" and the SQL will be executed.  It's as
+semicolon), press "Enter" and the SQL will be executed.  It's as
 simple as that!</p>
 
 <p>For example, to create a new SQLite database named "ex1" 
@@ -56,11 +56,8 @@ sql> (((create table tbl1(one varchar(10), two smallint);)))
 sql> (((insert into tbl1 values('hello!',10);)))
 sql> (((insert into tbl1 values('goodbye', 20);)))
 sql> (((select * from tbl1;)))
-one = hello!
-two = 10
-
-one = goodbye
-two = 20
+hello!|10
+goodbye|20
 sql>
 }
 
@@ -73,7 +70,7 @@ from the computer are shown in black with a constant-width font.)</p>
 End-Of-File character (usually a Control-D) or the interrupt
 character (usually a Control-C).</p>
 
-<p>Make sure you type a semicolon at the end of each SQL command.
+<p>Make sure you type a semicolon at the end of each SQL command!
 The sqlite looks for a semicolon to know when your SQL command is
 complete.  If you omit the semicolon, sqlite will give you a
 continuation prompt and wait for you to enter more text to be
@@ -122,10 +119,10 @@ sql>
 puts {
 <p>
 But you cannot execute DROP TABLE, UPDATE, INSERT or DELETE against
-the sqlite_master table.  At least not directly.  The sqlite_master
+the sqlite_master table.  The sqlite_master
 table is updated automatically as you create or drop tables and
-indices from the database, but you can not modify sqlite_master
-directly.
+indices from the database.  You can not make manual changes
+to the sqlite_master table.
 </p>
 
 <h2>Special commands to sqlite</h2>
@@ -136,7 +133,7 @@ on to the SQLite library for execution.
 But if an input line begins with a dot ("."), then
 that line is intercepted and interpreted by the sqlite program itself.
 These "dot commands" are typically used to change the output format
-of queries, or to execute certain command prepackaged query statements.
+of queries, or to execute certain prepackaged query statements.
 </p>
 
 <p>
@@ -187,8 +184,9 @@ sql>
 }
 
 puts {
-<p>Line mode used to be the default mode setting.  But recently the
-default mode was changed to "list".</p>
+<p>Line mode used to be the default mode setting.  But after some
+experience using the utility, it was decided that "list" mode made
+a better default and so now the default mode is "list".</p>
 }
 
 puts {
@@ -221,7 +219,7 @@ sql>
 }
 
 puts {
-<p>The ".width" command in the example above set the width of the first
+<p>The ".width" command in the example above sets the width of the first
 column to 12 and the width of the second column to 6.  All other column
 widths were unaltered.  You can gives as many arguments to ".width" as
 necessary to specify the widths of as many columns as are in your
@@ -246,7 +244,7 @@ list mode, each record of a query result is written on one line of
 output and each field within that record is separated by a specific
 separator string.  The default separator is a pipe symbol ("|").
 List mode is especially useful when you are going to send the output
-of a query to another program (such as AWK) for additional process.</p>}
+of a query to another program (such as AWK) for additional processing.</p>}
 
 Code {
 sql> (((.mode list)))
@@ -368,8 +366,8 @@ SELECT sql FROM sqlite_master
 ORDER BY tbl_name, type DESC, name
 </pre></blockquote>
 
-<p>Of, if you give an argument to ".schema" because you only
-one the schema for a single table, the query looks like this:</p>
+<p>Or, if you give an argument to ".schema" because you only
+want the schema for a single table, the query looks like this:</p>
 
 <blockquote><pre>
 SELECT sql FROM sqlite_master
@@ -385,7 +383,7 @@ to ".schema", of course.</p>
 <p>The ".explain" dot command can be used to set the output mode
 to "column" and to set the column widths to values that are reasonable
 for looking at the output of an EXPLAIN command.  The EXPLAIN command
-is an SQLite-specific command that is useful for debugging.  If any
+is an SQLite-specific SQL extension that is useful for debugging.  If any
 regular SQL is prefaced by EXPLAIN, then the SQL command is parsed and
 analyzed but is not executed.  Instead, the sequence of virtual machine
 instructions that would have been used to execute the SQL command are
@@ -397,7 +395,7 @@ sql> (((explain delete from tbl1 where two<20;)))
 addr  opcode        p1     p2     p3          
 ----  ------------  -----  -----  -------------------------------------   
 0     ListOpen      0      0                  
-1     Open          0      0      tbl1        
+1     Open          0      1      tbl1        
 2     Next          0      9                  
 3     Field         0      1                  
 4     Integer       20     0                  

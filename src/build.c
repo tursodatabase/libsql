@@ -22,9 +22,18 @@
 **
 *************************************************************************
 ** This file contains C code routines that are called by the parser
-** when syntax rules are reduced.
+** when syntax rules are reduced.  The routines in this file handle
+** the following kinds of rules:
 **
-** $Id: build.c,v 1.12 2000/06/02 01:17:37 drh Exp $
+**     CREATE TABLE
+**     DROP TABLE
+**     CREATE INDEX
+**     DROP INDEX
+**     creating expressions and ID lists
+**     COPY
+**     VACUUM
+**
+** $Id: build.c,v 1.13 2000/06/02 13:27:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -529,15 +538,15 @@ void sqliteCreateIndex(
   */
   if( pParse->initFlag==0 ){
     static VdbeOp addTable[] = {
-      { OP_Open,        0, 1, MASTER_NAME},
-      { OP_New,         0, 0, 0},
+      { OP_Open,        2, 1, MASTER_NAME},
+      { OP_New,         2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
       { OP_String,      0, 0, 0},  /* 4 */
       { OP_String,      0, 0, 0},  /* 5 */
       { OP_MakeRecord,  4, 0, 0},
-      { OP_Put,         0, 0, 0},
-      { OP_Close,       0, 0, 0},
+      { OP_Put,         2, 0, 0},
+      { OP_Close,       2, 0, 0},
     };
     int n;
     Vdbe *v = pParse->pVdbe;
@@ -548,6 +557,8 @@ void sqliteCreateIndex(
       v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
     }
     if( v==0 ) goto exit_create_index;
+    sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, 1, 1, pIndex->zName, 0);
     if( pStart && pEnd ){
       int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
@@ -556,8 +567,6 @@ void sqliteCreateIndex(
       sqliteVdbeChangeP3(v, base+4, pTab->zName, 0);
       sqliteVdbeChangeP3(v, base+5, pStart->z, n);
     }
-    sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
-    sqliteVdbeAddOp(v, OP_Open, 1, 1, pIndex->zName, 0);
     lbl1 = sqliteVdbeMakeLabel(v);
     lbl2 = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
@@ -569,8 +578,8 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_PutIdx, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
-    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Close, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
   }
 
   /* Reclaim memory on an EXPLAIN call.

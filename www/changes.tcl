@@ -17,6 +17,21 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 2} {
+<li>All database files to be modified by an UPDATE, INSERT or DELETE are 
+now locked before any changes are made to any files.  
+This makes it safe (I think) to access
+the same database simultaneously from multiple processes.</li>
+<li>The code appears stable so we are now calling it "beta".</li>
+}
+
+chng {2000 June 1} {
+<li>Better support for file locking so that two or more processes 
+(or threads)
+can access the same database simultaneously.  More work needed in
+this area, though.</li>
+}
+
 chng {2000 May 31} {
 <li>Added support for aggregate functions (Ex: <b>COUNT(*)</b>, <b>MIN(...)</b>)
 to the SELECT statement.</li>

@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.10 2000/06/02 02:09:23 drh Exp $
+** $Id: dbbe.c,v 1.11 2000/06/02 13:27:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -124,9 +124,13 @@ static int rc4byte(struct rc4 *p){
 }
 
 /*
-** This routine opens a new database.  For the current driver scheme,
-** the database name is the name of the directory
+** This routine opens a new database.  For the GDBM driver
+** implemented here, the database name is the name of the directory
 ** containing all the files of the database.
+**
+** If successful, a pointer to the Dbbe structure is returned.
+** If there are errors, an appropriate error message is left
+** in *pzErrMsg and NULL is returned.
 */
 Dbbe *sqliteDbbeOpen(
   const char *zName,     /* The name of the database */
@@ -142,7 +146,8 @@ Dbbe *sqliteDbbeOpen(
   if( stat(zName, &statbuf)!=0 ){
     if( createFlag ) mkdir(zName, 0750);
     if( stat(zName, &statbuf)!=0 ){
-      sqliteSetString(pzErrMsg, "can't find or make directory \"", 
+      sqliteSetString(pzErrMsg, createFlag ? 
+         "can't find or create directory \"" : "can't find directory \"",
          zName, "\"", 0);
       return 0;
     }
@@ -229,6 +234,9 @@ static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable){
 
 /*
 ** Generate a random filename with the given prefix.
+**
+** Very random names are chosen so that the chance of a
+** collision with an existing filename is very very small.
 */
 static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
   int i, j;
@@ -242,9 +250,28 @@ static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
   zBuf[j] = 0;
 }
 
-
 /*
-** Open a new table cursor
+** Open a new table cursor.  Write a pointer to the corresponding
+** DbbeTable structure into *ppTable.  Return an integer success
+** code:
+**
+**    SQLITE_OK          It worked!
+**
+**    SQLITE_NOMEM       sqliteMalloc() failed
+**
+**    SQLITE_PERM        Attempt to access a file for which file
+**                       access permission is denied
+**
+**    SQLITE_BUSY        Another thread or process is already using
+**                       the corresponding file and has that file locked.
+**
+**    SQLITE_READONLY    The current thread already has this file open
+**                       readonly but you are trying to open for writing.
+**                       (This can happen if a SELECT callback tries to
+**                       do an UPDATE or DELETE.)
+**
+** If zTable is 0 or "", then a temporary table is created and opened.
+** This table will be deleted from the disk when it is closed.
 */
 int sqliteDbbeOpenTable(
   Dbbe *pBe,              /* The database the table belongs to */
@@ -335,7 +362,8 @@ int sqliteDbbeOpenTable(
 }
 
 /*
-** Drop a table from the database.
+** Drop a table from the database.  The file on the disk that corresponds
+** to this table is deleted.
 */
 void sqliteDbbeDropTable(Dbbe *pBe, const char *zTable){
   char *zFile;            /* Name of the table file */
@@ -349,7 +377,6 @@ void sqliteDbbeDropTable(Dbbe *pBe, const char *zTable){
 ** Reorganize a table to reduce search times and disk usage.
 */
 void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
-  char *zFile;            /* Name of the table file */
   DbbeTable *pTab;
 
   if( sqliteDbbeOpenTable(pBe, zTable, 1, &pTab)!=SQLITE_OK ){
@@ -603,14 +630,18 @@ int sqliteDbbeDelete(DbbeTable *pTable, int nKey, char *pKey){
 }
 
 /*
-** Open a temporary file.
+** Open a temporary file.  The file should be deleted when closed.
+**
+** Note that we can't use the old Unix trick of opening the file
+** and then immediately unlinking the file.  That works great
+** under Unix, but fails when we try to port to Windows.
 */
 int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
-  char *zFile;
-  char zBuf[50];
-  int i, j;
-  int limit;
-  int rc = SQLITE_OK;
+  char *zFile;         /* Full name of the temporary file */
+  char zBuf[50];       /* Base name of the temporary file */
+  int i;               /* Loop counter */
+  int limit;           /* Prevent an infinite loop */
+  int rc = SQLITE_OK;  /* Value returned by this function */
 
   for(i=0; i<pBe->nTemp; i++){
     if( pBe->apTemp[i]==0 ) break;

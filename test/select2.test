@@ -1,0 +1,67 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the SELECT statement.
+#
+# $Id: select2.test,v 1.1 2000/06/02 13:28:16 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+execsql {CREATE TABLE tbl1(f1 int, f2 int)}
+for {set i 0} {$i<=30} {incr i} {
+  execsql "INSERT INTO tbl1 VALUES([expr {$i%9}],[expr {$i%10}])"
+}
+
+# Do a second query inside a first.
+#
+do_test select2-1.1 {
+  set sql {SELECT DISTINCT f1 FROM tbl1 ORDER BY f1}
+  set r {}
+  db eval $sql data {
+    set f1 $data(f1)
+    lappend r $f1:
+    set sql2 "SELECT f2 FROM tbl1 WHERE f1=$f1 ORDER BY f2"
+    db eval $sql2 d2 {
+      lappend r $d2(f2)
+    }
+  }
+  set r
+} {0: 0 7 8 9 1: 0 1 8 9 2: 0 1 2 9 3: 0 1 2 3 4: 2 3 4 5: 3 4 5 6: 4 5 6 7: 5 6 7 8: 6 7 8}
+
+
+do_test select2-1.2 {
+  set sql {SELECT DISTINCT f1 FROM tbl1 WHERE f1>3 AND f1<5}
+  set r {}
+  db eval $sql data {
+    set f1 $data(f1)
+    lappend r $f1:
+    set sql2 "SELECT f2 FROM tbl1 WHERE f1=$f1 ORDER BY f2"
+    db eval $sql2 d2 {
+      lappend r $d2(f2)
+    }
+  }
+  set r
+} {4: 2 3 4}
+
+finish_test

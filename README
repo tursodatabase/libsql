@@ -1,6 +1,6 @@
 This directory contains source code to 
 
-    SQLite: An SQL Frontend To GDBM
+    SQLite: An SQL Database Built Upon GDBM
 
 To compile the project, first create a directory in which to place
 the build products.  The build directory must be separate from the

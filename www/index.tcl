@@ -1,49 +1,54 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.9 2000/06/01 00:04:41 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.10 2000/06/02 13:28:00 drh Exp $}
 
 puts {<html>
-<head><title>SQLite: An SQL Frontend For GDBM</title></head>
+<head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
 <body bgcolor=white>
-<h1 align=center>SQLite: An SQL Frontend For GDBM</h1>
+<h1 align=center>SQLite: An SQL Database Built Upon 
+<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM</a></h1>
 <p align=center>}
-puts "Last modified [lrange $rcsid 3 4] GMT"
+puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
+puts "The SQLite source code was last modifed on [exec cat last_change] GMT"
 puts {</p>}
 
 puts {
-<blockquote><em><p>
-The SQLite code base is rapidly becoming usable.  Most of the commonly
-used features of SQL (at least the features of SQL that this author
-commonly uses) are now supported.  There are currently no known
-errors in the code.  (There are known omissions but that is another
-matter.)
+<h2>News</h2>
+<p>
+Though still relatively new, 
+the SQLite code base appears to be working well and has therefore
+been upgraded to "beta" status.
+There are currently no known errors in the code.
 One very large database (1M+ records in 50+ separate tables) has
 been converted from PostgreSQL and gives every appearance of working
-correctly.  We are rapidly approaching a "beta" release, I think...</p>
+correctly.</p>
 
 <p>Your constructive comments are still very important to us.
 Please visit the 
-<a href="#mailinglist">mailing list</a> to offer your feedback.</p>
-</em></blockquote>
+<a href="#mailinglist">mailing list</a> to offer feedback.</p>
 }
 
 puts {<h2>Introduction</h2>
 
-<p>SQLite is a C library that implements an SQL frontend to GDBM.
-SQLite is intended for use in standalone programs that need 
-to use an SQL database but which do not have access to a full-blown 
-SQL RDBMS.</p>
+<p>SQLite is an SQL database built atop the 
+<a href="http://www.gnu.org/software/gdbm/gdbm.html">GDBM library</a>.
+The SQLite distribution includes both a interactive command-line
+access program (<b>sqlite</b>) and a C library (<b>libsqlite.a</b>)
+that can be linked
+with a C/C++ program to provide SQL database access without having
+to rely on an external RDBMS.</p>
 
 <p>The C interface to SQLite is very simple, consisting of only
-four functions and a single opaque data structure.  
+four functions, a single opaque data structure, and a handful of
+constants that define error return codes.
 See <a href="c_interface.html">c_interface.html</a> for details.
 A Tcl interface
 to SQLite is also available and is included in the source tree.
 Documentation on the Tcl interface is pending.
 Interfaces for perl and python may be supplied in future releases.</p>
 
-<p>There is a standalone C program named "sqlite" that can be used
+<p>The standalone program <b>sqlite</b> can be used
 to interactively create, update and/or query an SQLite database.
 The sources to the sqlite program are part of the source tree and
 can be used as an example of how to interact with the SQLite C
@@ -53,7 +58,8 @@ see <a href="sqlite.html">sqlite.html</a>.</p>
 <p>A history of changes to SQLite is found
 <a href="changes.html">here</a>.</p>
 
-<p>SQLite does not try to implement every feature of SQL. 
+<p>SQLite is intended to be small and light-weight.
+It does not try to implement every feature of SQL. 
 A few of the many SQL features that SQLite does not (currently) 
 implement are as follows:</p>
 
@@ -97,6 +103,19 @@ puts "This is a [file size sqlite.tar.gz] byte download.  The
 tarball was last modified at [clock format [file mtime sqlite.tar.gz]]"
 puts {</p>
 
+<p>To build sqlite, just unwrap the tarball, create a separate
+build directory, run configure from the build directory and then
+type "make".  For example:</p>
+
+<blockquote><pre>
+$ tar xzf sqlite.tar.gz   ;# Unpacks into directory named "sqlite"
+$ mkdir bld               ;# Create a separate build directory
+$ cd bld
+$ ../sqlite/configure
+$ make                    ;# Builds "sqlite" and "libsqlite.a"
+$ make test               ;# Optional: run regression tests
+</pre></blockquote>
+
 <p>You can also download a larger tarball that contains everything
 in the source tarball plus all of the sources for the text that
 appears on this website, and other miscellaneous files.  The
@@ -117,8 +136,11 @@ puts {<h2>Related Sites</h2>
        <a href="http://www.sleepycat.com/">http://www.sleepycat.com/</a>
        </p></li>
 
-<li><p>Here is a <a href="http://w3.one.net/~jhoffman/sqltut.htm">
+<li><p>Here is a good <a href="http://w3.one.net/~jhoffman/sqltut.htm">
        tutorial on SQL</a>.</p></li>
+
+<li><p><a href="http://www.postgresql.org/">PostgreSQL</a> is a
+       full-blown SQL RDBMS that is also open source.</p></li>
 </ul>}
 
 puts {

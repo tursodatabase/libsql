@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.8 2000/05/31 22:58:39 drh Exp $
+** $Id: util.c,v 1.9 2000/06/02 13:28:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -683,8 +683,6 @@ int sqliteGlobCompare(const char *zPattern, const char *zString){
 int 
 sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
   register char c;
-  int invert;
-  int seen;
   char c2;
 
   while( (c = UpperToLower[*zPattern])!=0 ){

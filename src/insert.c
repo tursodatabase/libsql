@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.2 2000/06/02 01:17:37 drh Exp $
+** $Id: insert.c,v 1.3 2000/06/02 13:27:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,7 +43,7 @@ void sqliteInsert(
 ){
   Table *pTab;
   char *zTab;
-  int i, j;
+  int i, j, idx;
   Vdbe *v;
 
   zTab = sqliteTableNameFromToken(pTableName);
@@ -105,6 +105,9 @@ void sqliteInsert(
   if( v ){
     Index *pIdx;
     sqliteVdbeAddOp(v, OP_Open, 0, 1, pTab->zName, 0);
+    for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
+      sqliteVdbeAddOp(v, OP_Open, idx, 1, pIdx->zName, 0);
+    }
     sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
     if( pTab->pIndex ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
@@ -126,11 +129,10 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
-    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
       if( pIdx->pNext ){
         sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_Open, 0, 1, pIdx->zName, 0);
       for(i=0; i<pIdx->nField; i++){
         int idx = pIdx->aiField[i];
         if( pField==0 ){
@@ -147,8 +149,8 @@ void sqliteInsert(
         }
       }
       sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_PutIdx, 0, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIdx, idx, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Close, idx, 0, 0, 0);
     }
   }
 

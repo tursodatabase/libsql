@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.5 2000/05/31 23:33:17 drh Exp $
+** $Id: shell.c,v 1.6 2000/06/02 13:27:59 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +53,6 @@
 static char *getline(char *zPrompt){
   char *zLine;
   int nLine;
-  char *z;
   int n;
   int eol;
 
@@ -433,7 +432,7 @@ int main(int argc, char **argv){
       argc--;
       argv++;
     }else if( argc>=3 && strcmp(argv[0],"-separator")==0 ){
-      sprintf(data.separator,"%.*s",sizeof(data.separator)-1,argv[2]);
+      sprintf(data.separator,"%.*s",(int)sizeof(data.separator)-1,argv[2]);
       argc -= 2;
       argv += 2;
     }else if( strcmp(argv[1],"-header")==0 ){
