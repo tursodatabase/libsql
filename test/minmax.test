@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.9 2004/03/13 14:00:37 drh Exp $
+# $Id: minmax.test,v 1.10 2004/06/24 00:20:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,7 +127,7 @@ do_test minmax-4.1 {
     SELECT coalesce(min(x+0),-1), coalesce(max(x+0),-1) FROM
       (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
   }
-} {1 20}
+} {-1 20}
 do_test minmax-4.2 {
   execsql {
     SELECT y, sum(x) FROM
@@ -275,5 +275,35 @@ do_test minmax-9.2 {
     )
   }
 } {{}}
+
+# If there is a NULL in an aggregate max(), ignore it.  If a NULL
+# occurs in an aggregate min(), then the result will be NULL because
+# NULL compares less than all other values.
+#
+do_test minmax-10.1 {
+  execsql {
+    CREATE TABLE t6(x);
+    INSERT INTO t6 VALUES(1);
+    INSERT INTO t6 VALUES(2);
+    INSERT INTO t6 VALUES(NULL);
+    SELECT coalesce(min(x),-1) FROM t6;
+  }
+} {-1}
+do_test minmax-10.2 {
+  execsql {
+    SELECT max(x) FROM t6;
+  }
+} {2}
+do_test minmax-10.3 {
+  execsql {
+    CREATE INDEX i6 ON t6(x);
+    SELECT coalesce(min(x),-1) FROM t6;
+  }
+} {-1}
+do_test minmax-10.4 {
+  execsql {
+    SELECT max(x) FROM t6;
+  }
+} {2}
 
 finish_test

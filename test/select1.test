@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.32 2004/05/28 11:37:29 danielk1977 Exp $
+# $Id: select1.test,v 1.33 2004/06/24 00:20:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -159,7 +159,7 @@ do_test select1-2.8 {
 } {0 {11 33}}
 do_test select1-2.8.1 {
   execsql {SELECT coalesce(min(a),'xyzzy') FROM t3}
-} {11}
+} {xyzzy}
 do_test select1-2.8.2 {
   execsql {SELECT min(coalesce(a,'xyzzy')) FROM t3}
 } {11}
