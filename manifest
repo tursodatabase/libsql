@@ -1,5 +1,5 @@
-C In\sthe\stest\sscripts,\sdo\snot\stry\sto\sdelete\sfiles\sthat\sare\sstill\sopen.\nWindows\sdoes\snot\slike\sit\swhen\syou\sdo.\s\sTicket\s#397.\s(CVS\s1055)
-D 2003-07-18T01:25:35
+C In\sthe\ssqlite\sshell,\schange\sthe\sname\sof\sfunction\sgetline()\sto\slocal_getline()\nto\savoid\sa\sclash\swith\sa\slibrary\sfunction.\s\sTicket\s#400.\s(CVS\s1056)
+D 2003-07-18T01:30:59
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 3b4f5a800e7a2145bc1930f323232e297d4eb782
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 98385a4f8601aad67fc0532570fe48f9833d912e
-F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
+F src/shell.c c2ba26c850874964f5ec1ebf6c43406f28e44c4a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
 F src/sqliteInt.h fed31c3e6d21b7a8a38048f8f8a07599360f8946
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P c74107d63ace3d0e51da3b7bd7ee250c2a39205b
-R 661fe384de2ed85ee5763e7e68dc886d
+P 93a2c961b17d2459272e2d8654bd4b972f52fbe1
+R cea9e7eb8d5651e94a3de389de60c2cf
 U drh
-Z c8d38f0133bcc4acbc1424cba79baf46
+Z afb3d221554241843a330036de61dbd9

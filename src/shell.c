@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.81 2003/06/16 00:16:41 drh Exp $
+** $Id: shell.c,v 1.82 2003/07/18 01:30:59 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@
 # include <readline/readline.h>
 # include <readline/history.h>
 #else
-# define readline(p) getline(p,stdin)
+# define readline(p) local_getline(p,stdin)
 # define add_history(X)
 # define read_history(X)
 # define write_history(X)
@@ -91,7 +91,7 @@ extern int sqliteIsNumber(const char*);
 ** The interface is like "readline" but no command-line editing
 ** is done.
 */
-static char *getline(char *zPrompt, FILE *in){
+static char *local_getline(char *zPrompt, FILE *in){
   char *zLine;
   int nLine;
   int n;
@@ -136,7 +136,7 @@ static char *getline(char *zPrompt, FILE *in){
 ** Retrieve a single line of input text.  "isatty" is true if text
 ** is coming from a terminal.  In that case, we issue a prompt and
 ** attempt to use "readline" for command-line editing.  If "isatty"
-** is false, use "getline" instead of "readline" and issue no prompt.
+** is false, use "local_getline" instead of "readline" and issue no prompt.
 **
 ** zPrior is a string of prior text retrieved.  If not the empty
 ** string, then issue a continuation prompt.
@@ -145,7 +145,7 @@ static char *one_input_line(const char *zPrior, FILE *in){
   char *zPrompt;
   char *zResult;
   if( in!=0 ){
-    return getline(0, in);
+    return local_getline(0, in);
   }
   if( zPrior && zPrior[0] ){
     zPrompt = continuePrompt;
