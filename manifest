@@ -1,5 +1,5 @@
-C Add\smore\stests\sto\smake\ssure\sthat\ssqlite_changes()\sworks\swhen\susing\sthe\nnon-callback\sAPI.\s\sTicket\s#250.\s(CVS\s876)
-D 2003-03-01T19:53:16
+C Do\snot\sallow\san\sempty\sstring\sto\sbe\sinserted\sinto\san\sINTEGER\sPRIMARY\sKEY.\s(CVS\s877)
+D 2003-03-07T19:50:07
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -53,7 +53,7 @@ F src/tokenize.c bc40937d6666f188037aa3e54f0a2661a6fef6d1
 F src/trigger.c da142decd2808bc39e801f3bb1f161dbc2bd4005
 F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
 F src/util.c 73b668d1ed468df650dc00685a5e4ffa6887feb4
-F src/vdbe.c f8fdbf03ac82ccd68ddc3ea33d581babcef52c4d
+F src/vdbe.c 1b54fc0b5e3ffdcf5dc3da537b597ab354753950
 F src/vdbe.h ed43771f1dc2b994d5c484fdf2eab357c6ef0ee3
 F src/where.c ba96cab1fb076f025b6eae3fb0aead769fd2c96f
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -76,7 +76,7 @@ F test/in.test 3171a2b3170a8223665c1a4f26be5f3eda36cc4b
 F test/index.test 2a5a1b654f50ca0768fb10ae44b72e6a776b1f18
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
-F test/intpkey.test e0e283b0cbeaa97eeee183e1cdb91fa73d720866
+F test/intpkey.test 39f49fd993350f7f3ab255e5cfbf9a09d8f8800e
 F test/ioerr.test 45c8feebe608d7f456fea27ff27a0aaaf0b9c636
 F test/join.test c97267c19294bf1fa4e81087edad179828bced88
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 620e1065e978545dd7bf6fa6fad1e6b93918dbf8
-R 2343001f399d56bd2319f7dd88553a18
+P 13e501d190e327cc6fc16e182819ea9d7bb9c566
+R c4e061e42d78dac00088004a55073ed7
 U drh
-Z 7b2db2204ce588937f4a5aa689c3451d
+Z 23e79ce4ba202a0d57ab05666f881be6
