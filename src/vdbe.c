@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.447 2005/01/26 21:55:32 drh Exp $
+** $Id: vdbe.c,v 1.448 2005/01/27 00:33:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1739,7 +1739,7 @@ case OP_Column: {
   }else if( (pC = p->apCsr[p1])->pCursor!=0 ){
     /* The record is stored in a B-Tree */
     rc = sqlite3VdbeCursorMoveto(pC);
-    if ( rc ) return rc;
+    if( rc ) goto abort_due_to_error;
     zRec = 0;
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
@@ -3085,7 +3085,7 @@ case OP_Delete: {
   assert( pC!=0 );
   if( pC->pCursor!=0 ){
     rc = sqlite3VdbeCursorMoveto(pC);
-    if ( rc ) return rc;
+    if( rc ) goto abort_due_to_error;
     rc = sqlite3BtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
     pC->cacheValid = 0;
@@ -3159,7 +3159,7 @@ case OP_RowData: {
   }else if( pC->pCursor!=0 ){
     BtCursor *pCrsr = pC->pCursor;
     rc = sqlite3VdbeCursorMoveto(pC);
-    if ( rc ) return rc;
+    if( rc ) goto abort_due_to_error;
     if( pC->nullRow ){
       pTos->flags = MEM_Null;
       break;
@@ -3215,7 +3215,7 @@ case OP_Recno: {
   pC = p->apCsr[i];
   assert( pC!=0 );
   rc = sqlite3VdbeCursorMoveto(pC);
-  if ( rc ) return rc;
+  if( rc ) goto abort_due_to_error;
   pTos++;
   if( pC->recnoIsValid ){
     v = pC->lastRecno;
@@ -3262,7 +3262,7 @@ case OP_FullKey: {
     char *z;
 
     rc = sqlite3VdbeCursorMoveto(pC);
-    if ( rc ) return rc;
+    if( rc ) goto abort_due_to_error;
     assert( pC->intKey==0 );
     sqlite3BtreeKeySize(pCrsr, &amt);
     if( amt<=0 ){

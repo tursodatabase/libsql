@@ -1,5 +1,5 @@
-C Test\sthat\sit\sis\sok\sto\sexecute\sALTER\sTABLE\simmediately\safter\sopening\sa\sdatabase\sconnection.\s(CVS\s2281)
-D 2005-01-27T00:30:52
+C More\schanges\sto\simprove\spropagation\sof\sSQLITE_CORRUPT\serrors.\s(CVS\s2282)
+D 2005-01-27T00:33:21
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -75,7 +75,7 @@ F src/update.c 6e5c6eb660a5508c449c6d637571e24ef13f70a1
 F src/utf.c 9bece2c7b94d9002ab1bb900a7658c6f826b0f74
 F src/util.c a858b93ba06bbafab55ba41e4d58538eb51f4b6a
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
-F src/vdbe.c 2f2fc0c785022384a2914ff1f1e1d0768bd67829
+F src/vdbe.c 8e877a9cdc92f30a71510e427db5e99d1f989c54
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 24d411de9efc6919a1e580069a597182be269bcf
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 1c1904f44310fa0e327d8f0a77f1cf97599b630a
-R 31f86bcda482ef329881071b35a3c655
-U danielk1977
-Z adda114cce96c39793e236df20bae53b
+P 1d5ebb1146cc6e59d8b419b3fa4796552111606d
+R 56e4175a578bb4fb9141aeb0a70310d3
+U drh
+Z 0c4adfe6a7238770087bed92ee0cbbde
