@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.30 2003/04/06 20:44:45 drh Exp $
+** @(#) $Id: btree.h,v 1.31 2003/04/16 01:28:16 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -96,7 +96,6 @@ struct BtCursorOps {
 
 int sqliteBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
 
-#if !defined(SQLITE_NO_BTREE_DEFS)
 #define btOps(pBt) (*((BtOps **)(pBt)))
 #define btCOps(pCur) (*((BtCursorOps **)(pCur)))
 
@@ -143,18 +142,15 @@ int sqliteBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
 #define sqliteBtreeGetFilename(pBt)       (btOps(pBt)->GetFilename(pBt))
 #define sqliteBtreeChangeFilename(pBt, zNew)\
                 (btOps(pBt)->ChangeFilename(pBt, zNew))
-#endif
 
 #ifdef SQLITE_TEST
-#if !defined(SQLITE_NO_BTREE_DEFS)
 #define sqliteBtreePageDump(pBt, pgno, recursive)\
                 (btOps(pBt)->PageDump(pBt, pgno, recursive))
 #define sqliteBtreeCursorDump(pCur, aResult)\
                 (btCOps(pCur)->CursorDump(pCur, aResult))
 #define sqliteBtreePager(pBt)             (btOps(pBt)->Pager(pBt))
-#endif
-
 int btree_native_byte_order;
-#endif
+#endif /* SQLITE_TEST */
+
 
 #endif /* _BTREE_H_ */
