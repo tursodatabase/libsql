@@ -341,7 +341,6 @@ const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
   Mem *pColName;
 
   if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
@@ -358,7 +357,6 @@ const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
   Mem *pColName;
 
   if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
@@ -375,7 +373,6 @@ const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int N){
   Mem *pColName;
 
   if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
@@ -392,7 +389,6 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
   Mem *pColName;
 
   if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
@@ -459,7 +455,7 @@ int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemSetDouble(&p->apVar[i-1], rValue);
   }
-  return SQLITE_OK;
+  return rc;
 }
 int sqlite3_bind_int(sqlite3_stmt *p, int i, int iValue){
   return sqlite3_bind_int64(p, i, (i64)iValue);

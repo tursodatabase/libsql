@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.13 2004/06/27 01:56:33 drh Exp $
+# $Id: capi3.test,v 1.14 2004/06/28 13:09:11 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -181,8 +181,8 @@ proc check_header {STMT test names decltypes} {
   # a list of column indexes. i.e. If sqlite3_column_count
   # is 3, build the list {0 1 2}.
   set ::idxlist [list]
-  set numcols [sqlite3_column_count $STMT]
-  for {set i 0} {$i < $numcols} {incr i} {lappend ::idxlist $i}
+  set ::numcols [sqlite3_column_count $STMT]
+  for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
 
   # Column names in UTF-8
   do_test $test.1 {
@@ -232,6 +232,20 @@ proc check_header {STMT test names decltypes} {
     set cnamelist
   } $decltypes
 
+
+  # Test some out of range conditions:
+  do_test $test.7 {
+    list \
+      [sqlite3_column_name $STMT -1] \
+      [sqlite3_column_name16 $STMT -1] \
+      [sqlite3_column_decltype $STMT -1] \
+      [sqlite3_column_decltype16 $STMT -1] \
+      [sqlite3_column_name $STMT $numcols] \
+      [sqlite3_column_name16 $STMT $numcols] \
+      [sqlite3_column_decltype $STMT $numcols] \
+      [sqlite3_column_decltype16 $STMT $numcols]
+  } {{} {} {} {} {} {} {} {}}
+
 } 
 
 # This proc is used to test the following APIs:
@@ -275,37 +289,51 @@ do_test $test.1 {
 # Integers
 do_test $test.2 {
   set ints [list]
-  foreach i $idxlist {lappend ints [sqlite3_column_int $STMT $i]}
+  foreach i $idxlist {lappend ints [sqlite3_column_int64 $STMT $i]}
   set ints
 } $ints
 
-# UTF-8
+# bytes
+set lens [list]
+foreach i $::idxlist {
+  lappend lens [string length [lindex $strings $i]]
+}
 do_test $test.3 {
+  set bytes [list]
+  set lens [list]
+  foreach i $idxlist {
+    lappend bytes [sqlite3_column_bytes $STMT $i]
+  }
+  set bytes
+} $lens
+
+# bytes16
+set lens [list]
+foreach i $::idxlist {
+  lappend lens [expr 2 * [string length [lindex $strings $i]]]
+}
+do_test $test.4 {
+  set bytes [list]
+  set lens [list]
+  foreach i $idxlist {
+    lappend bytes [sqlite3_column_bytes16 $STMT $i]
+  }
+  set bytes
+} $lens
+
+# Blob
+do_test $test.5 {
+  set utf8 [list]
+  foreach i $idxlist {lappend utf8 [sqlite3_column_blob $STMT $i]}
+  set utf8
+} $strings
+
+# UTF-8
+do_test $test.6 {
   set utf8 [list]
   foreach i $idxlist {lappend utf8 [sqlite3_column_text $STMT $i]}
   set utf8
 } $strings
-
-# Floats
-do_test $test.4 {
-  set utf8 [list]
-  foreach i $idxlist {lappend utf8 [sqlite3_column_double $STMT $i]}
-  set utf8
-} $doubles
-
-# UTF-16
-do_test $test.5 {
-  set utf8 [list]
-  foreach i $idxlist {lappend utf8 [utf8 [sqlite3_column_text16 $STMT $i]]}
-  set utf8
-} $strings
-
-# Integers
-do_test $test.6 {
-  set ints [list]
-  foreach i $idxlist {lappend ints [sqlite3_column_int $STMT $i]}
-  set ints
-} $ints
 
 # Floats
 do_test $test.7 {
@@ -314,19 +342,48 @@ do_test $test.7 {
   set utf8
 } $doubles
 
-# UTF-8
+# UTF-16
 do_test $test.8 {
+  set utf8 [list]
+  foreach i $idxlist {lappend utf8 [utf8 [sqlite3_column_text16 $STMT $i]]}
+  set utf8
+} $strings
+
+# Integers
+do_test $test.9 {
+  set ints [list]
+  foreach i $idxlist {lappend ints [sqlite3_column_int $STMT $i]}
+  set ints
+} $ints
+
+# Floats
+do_test $test.10 {
+  set utf8 [list]
+  foreach i $idxlist {lappend utf8 [sqlite3_column_double $STMT $i]}
+  set utf8
+} $doubles
+
+# UTF-8
+do_test $test.11 {
   set utf8 [list]
   foreach i $idxlist {lappend utf8 [sqlite3_column_text $STMT $i]}
   set utf8
 } $strings
 
 # Types
-do_test $test.9 {
+do_test $test.12 {
   set types [list]
   foreach i $idxlist {lappend types [sqlite3_column_type $STMT $i]}
   set types
 } $types
+
+# Test that an out of range request returns the equivalent of NULL
+do_test $test.13 {
+  sqlite3_column_int $STMT -1
+} {0}
+do_test $test.13 {
+  sqlite3_column_text $STMT -1
+} {}
 
 }
 

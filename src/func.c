@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.76 2004/06/24 00:20:05 danielk1977 Exp $
+** $Id: func.c,v 1.77 2004/06/28 13:09:11 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -794,14 +794,26 @@ static void test_destructor(
   sqlite3_value **argv
 ){
   char *zVal;
+  int len;
+  sqlite *db = sqlite3_user_data(pCtx);
+ 
   test_destructor_count_var++;
   assert( nArg==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  zVal = sqliteMalloc(sqlite3_value_bytes(argv[0]) + 2);
+  len = sqlite3ValueBytes(argv[0], db->enc); 
+  zVal = sqliteMalloc(len+3);
+  zVal[len] = 0;
+  zVal[len-1] = 0;
   assert( zVal );
   zVal++;
-  strcpy(zVal, sqlite3_value_text(argv[0]));
-  sqlite3_result_text(pCtx, zVal, -1, destructor);
+  memcpy(zVal, sqlite3ValueText(argv[0], db->enc), len);
+  if( db->enc==SQLITE_UTF8 ){
+    sqlite3_result_text(pCtx, zVal, -1, destructor);
+  }else if( db->enc==SQLITE_UTF16LE ){
+    sqlite3_result_text16le(pCtx, zVal, -1, destructor);
+  }else{
+    sqlite3_result_text16be(pCtx, zVal, -1, destructor);
+  }
 }
 static void test_destructor_count(
   sqlite3_context *pCtx, 
@@ -1010,45 +1022,45 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
      signed char nArg;
-     u8 argType;               /* 0: none.  1: db  2: (-1) */
-     u8 eTextRep;              /* 1: UTF-16.  0: UTF-8 */
+     u8 argType;           /* 0: none.  1: db  2: (-1) */
+     u8 eTextRep;          /* 1: UTF-16.  0: UTF-8 */
      u8 needCollSeq;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
-    { "min",                        -1, 0, SQLITE_UTF8, 1, minmaxFunc },
-    { "min",                         0, 0, SQLITE_UTF8, 1, 0          },
-    { "max",                        -1, 2, SQLITE_UTF8, 1, minmaxFunc },
-    { "max",                         0, 2, SQLITE_UTF8, 1, 0          },
-    { "typeof",                      1, 0, SQLITE_UTF8, 0, typeofFunc },
-    { "length",                      1, 0, SQLITE_UTF8, 0, lengthFunc },
-    { "substr",                      3, 0, SQLITE_UTF8, 0, substrFunc },
-    { "abs",                         1, 0, SQLITE_UTF8, 0, absFunc    },
-    { "round",                       1, 0, SQLITE_UTF8, 0, roundFunc  },
-    { "round",                       2, 0, SQLITE_UTF8, 0, roundFunc  },
-    { "upper",                       1, 0, SQLITE_UTF8, 0, upperFunc  },
-    { "lower",                       1, 0, SQLITE_UTF8, 0, lowerFunc  },
-    { "coalesce",                   -1, 0, SQLITE_UTF8, 0, ifnullFunc },
-    { "coalesce",                    0, 0, SQLITE_UTF8, 0, 0          },
-    { "coalesce",                    1, 0, SQLITE_UTF8, 0, 0          },
-    { "ifnull",                      2, 0, SQLITE_UTF8, 1, ifnullFunc },
-    { "random",                     -1, 0, SQLITE_UTF8, 0, randomFunc },
-    { "like",                        2, 0, SQLITE_UTF8, 0, likeFunc   },
-/* { "like",                        2, 2, SQLITE_UTF16,0, likeFunc   }, */
-    { "glob",                        2, 0, SQLITE_UTF8, 0, globFunc   },
-    { "nullif",                      2, 0, SQLITE_UTF8, 0, nullifFunc },
-    { "sqlite_version",              0, 0, SQLITE_UTF8, 0, versionFunc},
-    { "quote",                       1, 0, SQLITE_UTF8, 0, quoteFunc  },
-    { "last_insert_rowid",           0, 1, SQLITE_UTF8, 0, last_insert_rowid },
-    { "changes",                     0, 1, SQLITE_UTF8, 0, changes    },
-    { "total_changes",               0, 1, SQLITE_UTF8, 0, total_changes },
+    { "min",               -1, 0, SQLITE_UTF8,    1, minmaxFunc },
+    { "min",                0, 0, SQLITE_UTF8,    1, 0          },
+    { "max",               -1, 2, SQLITE_UTF8,    1, minmaxFunc },
+    { "max",                0, 2, SQLITE_UTF8,    1, 0          },
+    { "typeof",             1, 0, SQLITE_UTF8,    0, typeofFunc },
+    { "length",             1, 0, SQLITE_UTF8,    0, lengthFunc },
+    { "substr",             3, 0, SQLITE_UTF8,    0, substrFunc },
+    { "substr",             3, 0, SQLITE_UTF16LE, 0, sqlite3utf16Substr },
+    { "abs",                1, 0, SQLITE_UTF8,    0, absFunc    },
+    { "round",              1, 0, SQLITE_UTF8,    0, roundFunc  },
+    { "round",              2, 0, SQLITE_UTF8,    0, roundFunc  },
+    { "upper",              1, 0, SQLITE_UTF8,    0, upperFunc  },
+    { "lower",              1, 0, SQLITE_UTF8,    0, lowerFunc  },
+    { "coalesce",          -1, 0, SQLITE_UTF8,    0, ifnullFunc },
+    { "coalesce",           0, 0, SQLITE_UTF8,    0, 0          },
+    { "coalesce",           1, 0, SQLITE_UTF8,    0, 0          },
+    { "ifnull",             2, 0, SQLITE_UTF8,    1, ifnullFunc },
+    { "random",            -1, 0, SQLITE_UTF8,    0, randomFunc },
+    { "like",               2, 0, SQLITE_UTF8,    0, likeFunc   },
+    { "glob",               2, 0, SQLITE_UTF8,    0, globFunc   },
+    { "nullif",             2, 0, SQLITE_UTF8,    0, nullifFunc },
+    { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},
+    { "quote",              1, 0, SQLITE_UTF8,    0, quoteFunc  },
+    { "last_insert_rowid",  0, 1, SQLITE_UTF8,    0, last_insert_rowid },
+    { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
+    { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",                     1, 0, SQLITE_UTF8, 0, soundexFunc},
+    { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",                     2, 0, SQLITE_UTF8, 0, randStr    },
-    { "test_destructor",             1, 0, SQLITE_UTF8, 0, test_destructor},
+    { "randstr",               2, 0, SQLITE_UTF8, 0, randStr    },
+    { "test_destructor",       1, 1, SQLITE_UTF8, 0, test_destructor},
     { "test_destructor_count", 0, 0, SQLITE_UTF8, 0, test_destructor_count},
-    { "test_auxdata",               -1, 0, SQLITE_UTF8, 0, test_auxdata},
+    { "test_auxdata",         -1, 0, SQLITE_UTF8, 0, test_auxdata},
 #endif
   };
   static struct {

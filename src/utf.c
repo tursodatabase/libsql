@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.25 2004/06/23 13:46:32 danielk1977 Exp $
+** $Id: utf.c,v 1.26 2004/06/28 13:09:11 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -207,6 +207,38 @@ static const int xtra_utf8_bits[4] =  {
     int c2 = ((*zIn++)<<8);                                           \
     c2 += (*zIn++);                                                   \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
+  }                                                                   \
+}
+
+#define SKIP_UTF16BE(zIn){                                            \
+  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn+1)==0x00)) ){  \
+    zIn += 4;                                                         \
+  }else{                                                              \
+    zIn += 2;                                                         \
+  }                                                                   \
+}
+#define SKIP_UTF16LE(zIn){                                            \
+  zIn++;                                                              \
+  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn-1)==0x00)) ){  \
+    zIn += 3;                                                         \
+  }else{                                                              \
+    zIn += 1;                                                         \
+  }                                                                   \
+}
+
+#define RSKIP_UTF16LE(zIn){                                            \
+  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn-1)==0x00)) ){  \
+    zIn -= 4;                                                         \
+  }else{                                                              \
+    zIn -= 2;                                                         \
+  }                                                                   \
+}
+#define RSKIP_UTF16BE(zIn){                                            \
+  zIn--;                                                              \
+  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn+1)==0x00)) ){  \
+    zIn -= 3;                                                         \
+  }else{                                                              \
+    zIn -= 1;                                                         \
   }                                                                   \
 }
 
@@ -505,6 +537,54 @@ int sqlite3utf8LikeCompare(
     }
   }
   return *zString==0;
+}
+
+/*
+** UTF-16 implementation of the substr()
+*/
+void sqlite3utf16Substr(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int y, z;
+  unsigned char const *zStr;
+  unsigned char const *zStrEnd;
+  unsigned char const *zStart;
+  unsigned char const *zEnd;
+  int i;
+
+  zStr = (unsigned char const *)sqlite3_value_text16(argv[0]);
+  zStrEnd = &zStr[sqlite3_value_bytes16(argv[0])];
+  y = sqlite3_value_int(argv[1]);
+  z = sqlite3_value_int(argv[2]);
+
+  if( y>0 ){
+    y = y-1;
+    zStart = zStr;
+    if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
+      for(i=0; i<y && zStart<zStrEnd; i++) SKIP_UTF16BE(zStart);
+    }else{
+      for(i=0; i<y && zStart<zStrEnd; i++) SKIP_UTF16LE(zStart);
+    }
+  }else{
+    zStart = zStrEnd;
+    if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
+      for(i=y; i<0 && zStart>zStr; i++) RSKIP_UTF16BE(zStart);
+    }else{
+      for(i=y; i<0 && zStart>zStr; i++) RSKIP_UTF16LE(zStart);
+    }
+    for(; i<0; i++) z -= 1;
+  }
+
+  zEnd = zStart;
+  if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
+    for(i=0; i<z && zEnd<zStrEnd; i++) SKIP_UTF16BE(zEnd);
+  }else{
+    for(i=0; i<z && zEnd<zStrEnd; i++) SKIP_UTF16LE(zEnd);
+  }
+
+  sqlite3_result_text16(context, zStart, zEnd-zStart, SQLITE_TRANSIENT);
 }
 
 #if defined(SQLITE_TEST)

@@ -497,13 +497,19 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
       if( pMem1->enc==pColl->enc ){
         return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
       }else{
-        return pColl->xCmp(
+        u8 origEnc = pMem1->enc;
+        rc = pColl->xCmp(
           pColl->pUser,
           sqlite3ValueBytes((sqlite3_value*)pMem1, pColl->enc),
           sqlite3ValueText((sqlite3_value*)pMem1, pColl->enc),
           sqlite3ValueBytes((sqlite3_value*)pMem2, pColl->enc),
           sqlite3ValueText((sqlite3_value*)pMem2, pColl->enc)
         );
+        sqlite3ValueBytes((sqlite3_value*)pMem1, origEnc);
+        sqlite3ValueText((sqlite3_value*)pMem1, origEnc);
+        sqlite3ValueBytes((sqlite3_value*)pMem2, origEnc);
+        sqlite3ValueText((sqlite3_value*)pMem2, origEnc);
+        return rc;
       }
     }
     /* If a NULL pointer was passed as the collate function, fall through

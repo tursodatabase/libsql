@@ -1,0 +1,57 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: utf16.test,v 1.1 2004/06/28 13:09:11 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test2
+proc finish_test {} {}
+set ISQUICK 1
+
+set FILES {
+  func.test
+}
+
+rename sqlite3 real_sqlite3
+proc sqlite3 {args} {
+  set r [eval "real_sqlite3 $args"]
+  if { [llength $args] == 2 } {
+    [lindex $args 0] eval {pragma encoding = 'UTF-16'}
+  }
+  set r
+}
+
+rename do_test really_do_test
+proc do_test {args} {
+  set sc [concat really_do_test "utf16-[lindex $args 0]" [lrange $args 1 end]]
+  eval $sc
+}
+
+foreach f $FILES {
+  set testfile $testdir/$f
+  source $testfile
+  catch {db close}
+  if {$sqlite_open_file_count>0} {
+    puts "$tail did not close all files: $sqlite_open_file_count"
+    incr nErr
+    lappend ::failList $tail
+  }
+}
+
+rename sqlite3 ""
+rename real_sqlite3 sqlite3
+rename finish_test ""
+rename really_finish_test2 finish_test
+rename do_test ""
+rename really_do_test do_test
+

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.392 2004/06/28 01:11:47 danielk1977 Exp $
+** $Id: vdbe.c,v 1.393 2004/06/28 13:09:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1288,8 +1288,12 @@ case OP_Function: {
   }
   /* If the function returned an error, throw an exception */
   if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, 
-       (pTos->flags & MEM_Str)!=0 ? pTos->z : "user function error", (char*)0);
+    if( !(pTos->flags&MEM_Str) ){
+      sqlite3SetString(&p->zErrMsg, "user function error", (char*)0);
+    }else{
+      sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pTos), (char*)0);
+      sqlite3VdbeChangeEncoding(pTos, db->enc);
+    }
     rc = SQLITE_ERROR;
   }
   break;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.13 2004/06/22 12:46:54 drh Exp $
+# $Id: bind.test,v 1.14 2004/06/28 13:09:11 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -231,6 +231,30 @@ do_test bind-8.7 {
   encoding convertfrom unicode [sqlite3_errmsg16 $DB]
 } {bind index out of range}
 
+do_test bind-8.8 {
+  catch { sqlite3_bind_blob $VM 0 "abc" 3 }
+} {1}
+do_test bind-8.9 {
+  catch { sqlite3_bind_blob $VM 4 "abc" 3 }
+} {1}
+do_test bind-8.10 {
+  catch { sqlite3_bind_text $VM 0 "abc" 3 }
+} {1}
+do_test bind-8.11 {
+  catch { sqlite3_bind_text16 $VM 4 "abc" 2 }
+} {1}
+do_test bind-8.12 {
+  catch { sqlite3_bind_int $VM 0 5 }
+} {1}
+do_test bind-8.13 {
+  catch { sqlite3_bind_int $VM 4 5 }
+} {1}
+do_test bind-8.14 {
+  catch { sqlite3_bind_double $VM 0 5.0 }
+} {1}
+do_test bind-8.15 {
+  catch { sqlite3_bind_double $VM 4 6.0 }
+} {1}
 
 do_test bind-9.99 {
   sqlite3_finalize $VM
