@@ -498,10 +498,11 @@ sqlite.dll: $(LIBOBJ) $(TOP)/sqlite.def
 #target for dll import libraries
 implib: sqlite.lib 
 
-#make Borland C++ import library for the dll
+#make Borland C++ and/or Microsoft VC import library for the dll
+#   ignore any errors (usually due to missing programs)
 sqlite.lib: sqlite.dll
-	-implib -a sqlite.lib sqlite.dll $(TOP)/sqlite.def
-	-lib /machine:i386 /def:sqlite.def 
+	-implib -a sqlite.lib sqlite.dll
+	-lib /machine:i386 /def:$(TOP)/sqlite.def 
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h

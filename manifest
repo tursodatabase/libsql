@@ -1,6 +1,6 @@
-C Change\sthe\s".database"\scommand\sin\sthe\sshell\sto\sallocate\smore\scharacters\sto\nthe\sdatabase\sname\sand\sfilename.\s(CVS\s1300)
-D 2004-03-17T23:42:13
-F Makefile.in 5d50a7d2a6a641e90a0312fc30d4e9c96b3903da
+C Fix\swindows\sDLL\ssection\sof\sMakefile.in\sfor\suse\swith\sbuild\sdir.\s(CVS\s1301)
+D 2004-03-26T23:16:32
+F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 4328de2a5fb5000699b907ca405cb9d84ba4e097
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fc7a7975b03c144c2db3566facd008d3701c735e
-R 27f8a17f6a5bc218c66951d71c19907c
-U drh
-Z 1ed9d826f53f7d6dd9bd0241bd44560c
+P 85238f06902851dd5085395501a0ab2d6a2b9814
+R 21ef3c09e06057b93271ec18ed7b08b6
+U rdc
+Z a0f2c4708b5ae5e7ecb38e2aaf58c2f0
