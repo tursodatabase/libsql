@@ -22,7 +22,14 @@
 # include <fcntl.h>
 # include <sys/stat.h>
 # include <time.h>
+# ifndef O_LARGEFILE
+#  define O_LARGEFILE 0
+# endif
+# ifndef O_NOFOLLOW
+#  define O_NOFOLLOW 0
+# endif
 #endif
+
 #if OS_WIN
 # include <winbase.h>
 #endif
@@ -232,9 +239,9 @@ int sqliteOsOpenReadWrite(
   int *pReadonly
 ){
 #if OS_UNIX
-  id->fd = open(zFilename, O_RDWR|O_CREAT, 0644);
+  id->fd = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE, 0644);
   if( id->fd<0 ){
-    id->fd = open(zFilename, O_RDONLY);
+    id->fd = open(zFilename, O_RDONLY|O_LARGEFILE);
     if( id->fd<0 ){
       return SQLITE_CANTOPEN; 
     }
@@ -303,10 +310,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
   }
-#ifndef O_NOFOLLOW
-# define O_NOFOLLOW 0
-#endif
-  id->fd = open(zFilename, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600);
+  id->fd = open(zFilename, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE, 0600);
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
@@ -359,7 +363,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 */
 int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
 #if OS_UNIX
-  id->fd = open(zFilename, O_RDONLY);
+  id->fd = open(zFilename, O_RDONLY|O_LARGEFILE);
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
@@ -536,7 +540,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 /*
 ** Move the read/write pointer in a file.
 */
-int sqliteOsSeek(OsFile *id, int offset){
+int sqliteOsSeek(OsFile *id, off_t offset){
   SEEK(offset/1024 + 1);
 #if OS_UNIX
   lseek(id->fd, offset, SEEK_SET);
@@ -573,7 +577,7 @@ int sqliteOsSync(OsFile *id){
 /*
 ** Truncate an open file to a specified size
 */
-int sqliteOsTruncate(OsFile *id, int nByte){
+int sqliteOsTruncate(OsFile *id, off_t nByte){
   SimulateIOError(SQLITE_IOERR);
 #if OS_UNIX
   return ftruncate(id->fd, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
@@ -588,7 +592,7 @@ int sqliteOsTruncate(OsFile *id, int nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-int sqliteOsFileSize(OsFile *id, int *pSize){
+int sqliteOsFileSize(OsFile *id, off_t *pSize){
 #if OS_UNIX
   struct stat buf;
   SimulateIOError(SQLITE_IOERR);

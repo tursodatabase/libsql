@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.53 2002/09/05 19:10:33 drh Exp $
+** @(#) $Id: pager.c,v 1.54 2002/11/05 23:03:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -106,7 +106,8 @@ struct Pager {
   OsFile cpfd;                /* File descriptor for the checkpoint journal */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
-  int ckptSize, ckptJSize;    /* Size of database and journal at ckpt_begin() */
+  int ckptSize;               /* Size of database (in pages) at ckpt_begin() */
+  off_t ckptJSize;            /* Size of journal at ckpt_begin() */
   int nExtra;                 /* Add this many bytes to each in-memory page */
   void (*xDestructor)(void*); /* Call this routine when freeing pages */
   int nPage;                  /* Total number of in-memory pages */
@@ -381,7 +382,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd){
 ** works, then this routine returns SQLITE_OK.
 */
 static int pager_playback(Pager *pPager){
-  int nRec;                /* Number of Records */
+  off_t nRec;              /* Number of Records */
   int i;                   /* Loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
   unsigned char aMagic[sizeof(aJournalMagic)];
@@ -396,10 +397,10 @@ static int pager_playback(Pager *pPager){
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
-  nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
-  if( nRec<=0 ){
+  if( nRec <= sizeof(aMagic)+sizeof(Pgno) ){
     goto end_playback;
   }
+  nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
 
   /* Read the beginning of the journal and truncate the
   ** database file back to its original size.
@@ -421,7 +422,7 @@ static int pager_playback(Pager *pPager){
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
-  rc = sqliteOsTruncate(&pPager->fd, mxPg*SQLITE_PAGE_SIZE);
+  rc = sqliteOsTruncate(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)mxPg);
   if( rc!=SQLITE_OK ){
     goto end_playback;
   }
@@ -460,13 +461,13 @@ end_playback:
 **         at offset pPager->ckptJSize.
 */
 static int pager_ckpt_playback(Pager *pPager){
-  int nRec;                /* Number of Records */
+  off_t nRec;              /* Number of Records */
   int i;                   /* Loop counter */
   int rc;
 
   /* Truncate the database back to its original size.
   */
-  rc = sqliteOsTruncate(&pPager->fd, pPager->ckptSize*SQLITE_PAGE_SIZE);
+  rc = sqliteOsTruncate(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)pPager->ckptSize);
   pPager->dbSize = pPager->ckptSize;
 
   /* Figure out how many records are in the checkpoint journal.
@@ -651,7 +652,7 @@ void sqlitepager_set_destructor(Pager *pPager, void (*xDesc)(void*)){
 ** pPager.
 */
 int sqlitepager_pagecount(Pager *pPager){
-  int n;
+  off_t n;
   assert( pPager!=0 );
   if( pPager->dbSize>=0 ){
     return pPager->dbSize;
@@ -1003,7 +1004,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       sqliteOsSeek(&pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
       rc = sqliteOsRead(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
       if( rc!=SQLITE_OK ){
-        int fileSize;
+        off_t fileSize;
         if( sqliteOsFileSize(&pPager->fd,&fileSize)!=SQLITE_OK
                || fileSize>=pgno*SQLITE_PAGE_SIZE ){
           return rc;

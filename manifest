@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite_version()\sSQL\sfunction\sas\sa\sbuilt-in.\s(CVS\s777)
-D 2002-11-04T19:32:25
+C Add\ssupport\sfor\sdatabases\slarger\sthan\s2GB\sunder\sUnix.\s\sMust\sbe\scompiled\nwith\s-D_FILE_OFFSET_BITS=64\sand\s-D_LARGEFILE_SOURCE\sin\sorder\sto\swork\swith\nlarger\sdatabases.\s(CVS\s778)
+D 2002-11-05T23:03:03
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,9 +30,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c b95d7eeec90f86d05b6a064d07db34b7279e06d4
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c ede7346dffdbab40c6de20d2f325981f3f1168fd
-F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
-F src/pager.c 592e5931fdc65e952a6c3e152bc822580856532a
+F src/os.c 355c66ca67623f9fd652e5c20820b1d9e2210c2a
+F src/os.h c5e4fb5906b506d6e0ad99485a777928b27f6228
+F src/pager.c baf50d8308c61d079086f532c70155cd22c6d07a
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 326e0983c34b584a3c4a2300399bff0a8281b9f8
-R 12c8410f7c6ea71ae42e48a4c6d31874
+P 7c8c0e7633dca00bde7bc7c22075f688c034c200
+R bb6cf2c43588a20871dc03d12670be4d
 U drh
-Z f6c61d47bb938fe73872fd88f36201ed
+Z 1af0198577d28fb69a5246d24434f76c

@@ -60,6 +60,7 @@
     HANDLE h;               /* Handle for accessing the file */
     int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
   };
+  typedef int off_t;
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 # define SQLITE_MIN_SLEEP_MS 1
 #endif
@@ -73,10 +74,10 @@ int sqliteOsTempFileName(char*);
 int sqliteOsClose(OsFile*);
 int sqliteOsRead(OsFile*, void*, int amt);
 int sqliteOsWrite(OsFile*, const void*, int amt);
-int sqliteOsSeek(OsFile*, int offset);
+int sqliteOsSeek(OsFile*, off_t offset);
 int sqliteOsSync(OsFile*);
-int sqliteOsTruncate(OsFile*, int size);
-int sqliteOsFileSize(OsFile*, int *pSize);
+int sqliteOsTruncate(OsFile*, off_t size);
+int sqliteOsFileSize(OsFile*, off_t *pSize);
 int sqliteOsReadLock(OsFile*);
 int sqliteOsWriteLock(OsFile*);
 int sqliteOsUnlock(OsFile*);
