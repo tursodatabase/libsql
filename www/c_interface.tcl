@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.1 2000/05/29 18:20:15 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.2 2000/05/29 18:32:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -20,13 +20,18 @@ puts {
 a C or C++ program.  This document gives an overview of the C/C++
 programming interface.</p>
 
+<h2>The API</h2>
+
 <p>The interface to the SQLite library consists of 4 functions
 and one opaque data structure.</p>
 
 <blockquote><pre>
 typedef struct sqlite sqlite;
+
 sqlite *sqlite_open(const char *filename, int mode, char **errmsg);
+
 void sqlite_close(sqlite*);
+
 int sqlite_exec(
   sqlite*,
   char *sql,
@@ -34,6 +39,7 @@ int sqlite_exec(
   void*,
   char **errmsg
 );
+
 int sqlite_complete(const char *sql);
 </pre></blockquote>
 
@@ -129,6 +135,17 @@ returns false, then more text is required to complete the SQL statement.</p>
 
 <p>For the purpose of the <b>sqlite_complete()</b> function, an SQL
 statement is complete if it ends in a semicolon.</p>
+
+<h2>Usage Examples</h2>
+
+<p>For examples of how the SQLite C/C++ interface can be used,
+refer to the source code for the "sqlite" program in the
+file <b>src/shell.c</b> of the source tree.
+(Additional information about sqlite is available at
+<a href="sqlite.html">sqlite.html</a>.)
+See also the sources to the Tcl interface for SQLite in
+the source file <b>src/tclsqlite.c</b>.</p>
+}
 
 puts {
 <p><hr /></p>

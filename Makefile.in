@@ -115,11 +115,29 @@ TARBALL = \
 sqlite.tar.gz:	
 	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz $(TARBALL)
 
-index.html:	$(TOP)/www/index.tcl sqlite.tar.gz
+all.tar.gz:	
+	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/all.tar.gz sqlite
+
+index.html:	$(TOP)/www/index.tcl sqlite.tar.gz all.tar.gz
 	tclsh $(TOP)/www/index.tcl >index.html
 
 sqlite.html:	$(TOP)/www/sqlite.tcl
 	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
+
+c_interface.html:	$(TOP)/www/c_interface.tcl
+	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
+
+# Files to be published on the website.
+#
+PUBLISH = \
+  sqlite.tar.gz \
+  all.tar.gz \
+  index.html \
+  sqlite.html \
+  c_interface.html
+
+publish:	$(PUBLISH)
+	scp hwaci@oak.he.net:public_html/sw/sqlite $(PUBLISH)
 
 clean:	
 	rm -f *.o sqlite libsqlite.a sqlite.h
