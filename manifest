@@ -1,5 +1,5 @@
-C Previous\scommit\sof\schanges\sto\sthe\sin-memory\sbackend\swas\snot\squite\sright.\nThis\scheck-in\sshould\ssquare\sthings\saway.\s(CVS\s1170)
-D 2004-01-12T00:38:18
+C On\sunix,\sembargo\sclose()\soperations\suntil\sall\slocks\shave\scleared\sfrom\sthe\nfile.\s\sTicket\s#561.\s(CVS\s1171)
+D 2004-01-12T00:39:06
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,8 +38,8 @@ F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
 F src/main.c 3dd3cae00bade294011da5a3cf9ff660a610c545
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c d5a13117cebbef36a5e986783d0a144afc5df7d1
-F src/os.h 4101ce267c2f5c8a34914e6af122e97907fcb205
+F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
+F src/os.h 257c9aef1567bb20c8b767fc27fe3ee7d89104e0
 F src/pager.c 289328d8efba620eae99f6c2f6062710838a3eb4
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y c65aa6c5508763806ac9734b0589b93480ec7e7a
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P ba92af182c6c9c6b2e3816006191eedd424cdf1a
-R 307cb45777333f2e72fe44cddf3ecacb
+P 75d91e3bca44787768b1970203878dd4b1e31e55
+R 4e6557ed12c522a22e5a89673265f6d4
 U drh
-Z f695ac6fe51efc19af97215d9291a74f
+Z 13df3742db676538985084255c192440
