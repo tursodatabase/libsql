@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.10 2004/05/14 11:00:53 danielk1977 Exp $
+# $Id: sort.test,v 1.11 2004/05/21 02:14:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -305,27 +305,28 @@ do_test sort-7.6 {
   execsql {
     SELECT b FROM t4 UNION SELECT a FROM v4 ORDER BY 1;
   }
-} {1 2 11 12}
+} {1 2 11 12 1 11 12 2}  ;# text from t4.b and numeric from v4.a
 do_test sort-7.7 {
   execsql {
     SELECT a FROM t4 UNION SELECT b FROM v4 ORDER BY 1;
   }
-} {1 2 11 12}
+} {1 2 11 12 1 11 12 2} ;# numeric from t4.a and text from v4.b
 do_test sort-7.8 {
   execsql {
     SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1;
   }
 } {1 11 12 2}
-do_test sort-7.9 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE numeric;
-  }
-} {1 2 11 12}
-do_test sort-7.10 {
-  execsql {
-    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE integer;
-  }
-} {1 2 11 12}
+#### Version 3 works differently here:
+#do_test sort-7.9 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE numeric;
+#  }
+#} {1 2 11 12}
+#do_test sort-7.10 {
+#  execsql {
+#    SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE integer;
+#  }
+#} {1 2 11 12}
 do_test sort-7.11 {
   execsql {
     SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1 COLLATE text;

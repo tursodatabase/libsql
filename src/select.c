@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.172 2004/05/21 01:29:06 drh Exp $
+** $Id: select.c,v 1.173 2004/05/21 02:14:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -319,28 +319,9 @@ static void sqliteAggregateInfoReset(Parse *pParse){
 */
 static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   int i;
-#if 0
-  char *zSortOrder;
-  zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
-  if( zSortOrder==0 ) return;
-#endif
   for(i=0; i<pOrderBy->nExpr; i++){
-#if 0
-    int order = pOrderBy->a[i].sortOrder;
-    int c;
-    if( order==SQLITE_SO_ASC ){
-      c = 'A';
-    }else{
-      c = 'D';
-    }
-    zSortOrder[i] = c;
-#endif
     sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
   }
-#if 0
-  zSortOrder[pOrderBy->nExpr] = 0;
-  sqlite3VdbeOp3(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, P3_DYNAMIC);
-#endif
   sqlite3VdbeAddOp(v, OP_MakeKey, pOrderBy->nExpr, 0);
   sqlite3VdbeAddOp(v, OP_SortPut, 0, 0);
 }
@@ -675,9 +656,11 @@ static void generateColumnTypes(
         zType = pTab->aCol[iCol].zType;
       }
     }else{
-      zType = "ANY";
-      /** TODO:  Perhaps something related to the affinity of the 
-      ** exprsssion? */
+      switch( sqlite3ExprType(p) ){
+        case SQLITE_AFF_TEXT:     zType = "TEXT";    break;
+        case SQLITE_AFF_NUMERIC:  zType = "NUMERIC"; break;
+        default:                  zType = "ANY";     break;
+      }
     }
     sqlite3VdbeOp3(v, OP_ColumnName, i + pEList->nExpr, 0, zType, 0);
   }
@@ -1226,11 +1209,15 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 */
 static void openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   KeyInfo *pKeyInfo;
-  int nColumn = p->pEList->nExpr;
+  int nColumn;
   sqlite *db = pParse->db;
   int i;
   Vdbe *v = pParse->pVdbe;
 
+  if( fillInColumnList(pParse, p) ){
+    return;
+  }
+  nColumn = p->pEList->nExpr;
   pKeyInfo = sqliteMalloc( sizeof(*pKeyInfo)+nColumn*sizeof(CollSeq*) );
   if( pKeyInfo==0 ) return;
   pKeyInfo->nField = nColumn;
