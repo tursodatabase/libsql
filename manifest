@@ -1,5 +1,5 @@
-C Changed\sPRAGMA\sdatabase_list\sto\sshow\sthe\sfilename.\s(CVS\s968)
-D 2003-05-11T20:09:20
+C Make\ssure\shash\sfunctions\salways\sreturn\snon-negative.\s(CVS\s969)
+D 2003-05-12T23:06:53
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/delete.c f9536a75b444a21f11b7a1bc0fb8c876f691b013
 F src/encode.c ed720e54ec4ef4d4de651592f1dd1c74d422bbd2
 F src/expr.c a666ef5220ca90ebcf40c8ccc783966a345a7616
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
-F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
+F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c c230a8c216f6788095d46f0e270406a93aae45af
 F src/main.c 16e68905793b118552a9cf43a9f77ca1d9e395a9
@@ -57,7 +57,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
 F src/trigger.c 8ee811986080de60d9d883ad96daffea82014f27
 F src/update.c dc3b680b4cf2cb6d839950b68d632850746639b9
-F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
+F src/util.c 8065b78806a5132119452d9e0417cf071e6f02f9
 F src/vacuum.c 14ac3073203fa021e01ffe33db56968ad79a8344
 F src/vdbe.c e9e560b0c568fb4ffb189d3e0d91628a33d2a367
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bad2065337d8dcaacd519b8f1730a90f1c933c3e
-R 2f3baa72d19786b03a0300d43892d103
-U jplyon
-Z 6c3c744be243d2916c4a968c6f03228a
+P 3da10d2d02e331f136fcf857dc4c435c67ee7196
+R 4e32f2787678262cce8381eeed283f3f
+U drh
+Z 9359b7aa0886849f400e188f1dbf3d43
