@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.12 2004/05/25 23:35:18 danielk1977 Exp $
+** $Id: copy.c,v 1.13 2004/05/26 10:11:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -97,10 +97,9 @@ void sqlite3Copy(
     sqlite3VdbeAddOp(v, OP_Noop, 0, 0);
     sqlite3EndWriteOperation(pParse);
     if( db->flags & SQLITE_CountRows ){
-      sqlite3VdbeAddOp(v, OP_ColumnName, 0, 1);
-      sqlite3VdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
       sqlite3VdbeSetNumCols(v, 1);
+      sqlite3VdbeSetColName(v, 0, "rows inserted", P3_STATIC);
     }
   }
   

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.332 2004/05/26 06:18:38 danielk1977 Exp $
+** $Id: vdbe.c,v 1.333 2004/05/26 10:11:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -762,14 +762,34 @@ double sqlite3_column_float(sqlite3_stmt *pStmt, int i){
 */
 const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
   Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
 
   if( N>=sqlite3_column_count(pStmt) || N<0 ){
     sqlite3Error(p->db, SQLITE_RANGE, 0);
     return 0;
   }
 
-  return p->azColName[N];
+  pColName = &(p->aColName[N]);
+  return sqlite3_value_data(pColName);
 }
+
+/*
+** Return the name of the 'i'th column of the result set of SQL statement
+** pStmt, encoded as UTF-16.
+*/
+const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
+  Vdbe *p = (Vdbe *)pStmt;
+  Mem *pColName;
+
+  if( N>=sqlite3_column_count(pStmt) || N<0 ){
+    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    return 0;
+  }
+
+  pColName = &(p->aColName[N]);
+  return sqlite3_value_data16(pColName);
+}
+
 
 /*
 ** Return the type of the value stored in the sqlite_value* object.
@@ -801,7 +821,6 @@ int sqlite3_value_type(sqlite3_value* pVal){
 int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
   int vals;
   Vdbe *p = (Vdbe *)pStmt;
-  int f;
 
   vals = sqlite3_data_count(pStmt);
   if( i>=vals || i<0 ){
@@ -809,24 +828,7 @@ int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
     return 0;
   }
 
-  f = p->pTos[(1-vals)+i].flags;
-
-  if( f&MEM_Null ){
-    return SQLITE3_NULL;
-  }
-  if( f&MEM_Int ){
-    return SQLITE3_INTEGER;
-  }
-  if( f&MEM_Real ){
-    return SQLITE3_FLOAT;
-  }
-  if( f&MEM_Str ){
-    return SQLITE3_TEXT;
-  }
-  if( f&MEM_Blob ){
-    return SQLITE3_BLOB;
-  }
-  assert(0);
+  return sqlite3_value_type(&(p->pTos[(1-vals)+i]));
 }
 
 /*
@@ -866,14 +868,6 @@ static const void *columnName16(sqlite3_stmt *pStmt, int i, int decltype){
     }
   }
   return p->azColName16[i];
-}
-
-/*
-** Return the name of the 'i'th column of the result set of SQL statement
-** pStmt, encoded as UTF-16.
-*/
-const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int i){
-  return columnName16(pStmt, i, 0);
 }
 
 /*
@@ -2010,6 +2004,7 @@ case OP_Push: {
 ** value of the OP_ColumnName that has P2==1.
 */
 case OP_ColumnName: {
+  assert(0);
   assert( pOp->p1>=0 && pOp->p1<p->nOp );
   p->azColName[pOp->p1] = pOp->p3;
   p->nCallback = 0;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.176 2004/05/26 06:18:38 danielk1977 Exp $
+** $Id: select.c,v 1.177 2004/05/26 10:11:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -682,6 +682,11 @@ static void generateColumnNames(
   sqlite *db = pParse->db;
   int fullNames, shortNames;
 
+  /* If this is an EXPLAIN, skip this step */
+  if( pParse->explain ){
+    return SQLITE_OK;
+  }
+
   assert( v!=0 );
   if( pParse->colNamesSet || v==0 || sqlite3_malloc_failed ) return;
   pParse->colNamesSet = 1;
@@ -695,7 +700,7 @@ static void generateColumnNames(
     if( p==0 ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqlite3VdbeOp3(v, OP_ColumnName, i, p2, zName, 0);
+      sqlite3VdbeSetColName(v, i, zName, 0);
       continue;
     }
     if( p->op==TK_COLUMN && pTabList ){
@@ -713,8 +718,8 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
       }
       if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
-        int addr = sqlite3VdbeOp3(v,OP_ColumnName, i, p2, p->span.z, p->span.n);
-        sqlite3VdbeCompressSpace(v, addr);
+        sqlite3VdbeSetColName(v, i, p->span.z, p->span.n);
+        /* sqlite3VdbeCompressSpace(v, addr); */
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
         char *zTab;
@@ -722,18 +727,18 @@ static void generateColumnNames(
         zTab = pTabList->a[j].zAlias;
         if( fullNames || zTab==0 ) zTab = pTab->zName;
         sqlite3SetString(&zName, zTab, ".", zCol, 0);
-        sqlite3VdbeOp3(v, OP_ColumnName, i, p2, zName, P3_DYNAMIC);
+        sqlite3VdbeSetColName(v, i, zName, P3_DYNAMIC);
       }else{
-        sqlite3VdbeOp3(v, OP_ColumnName, i, p2, zCol, 0);
+        sqlite3VdbeSetColName(v, i, zCol, 0);
       }
     }else if( p->span.z && p->span.z[0] ){
-      int addr = sqlite3VdbeOp3(v,OP_ColumnName, i, p2, p->span.z, p->span.n);
-      sqlite3VdbeCompressSpace(v, addr);
+      sqlite3VdbeSetColName(v, i, p->span.z, p->span.n);
+      /* sqlite3VdbeCompressSpace(v, addr); */
     }else{
       char zName[30];
       assert( p->op!=TK_COLUMN || pTabList==0 );
       sprintf(zName, "column%d", i+1);
-      sqlite3VdbeOp3(v, OP_ColumnName, i, p2, zName, 0);
+      sqlite3VdbeSetColName(v, i, zName, 0);
     }
   }
 }
@@ -1429,7 +1434,6 @@ static int multiSelect(
         assert( p->pEList );
         if( eDest==SRT_Callback ){
           generateColumnNames(pParse, 0, p->pEList);
-          generateColumnTypes(pParse, p->pSrc, p->pEList);
         }
         iBreak = sqlite3VdbeMakeLabel(v);
         iCont = sqlite3VdbeMakeLabel(v);
@@ -1500,7 +1504,6 @@ static int multiSelect(
       assert( p->pEList );
       if( eDest==SRT_Callback ){
         generateColumnNames(pParse, 0, p->pEList);
-        generateColumnTypes(pParse, p->pSrc, p->pEList);
       }
       iBreak = sqlite3VdbeMakeLabel(v);
       iCont = sqlite3VdbeMakeLabel(v);
@@ -1942,9 +1945,6 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   */
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return 0;
-  if( eDest==SRT_Callback ){
-    generateColumnTypes(pParse, p->pSrc, p->pEList);
-  }
 
   /* If the output is destined for a temporary table, open that table.
   */
@@ -2293,19 +2293,6 @@ int sqlite3Select(
   /* Set the limiter.
   */
   computeLimitRegisters(pParse, p);
-
-  /* Identify column types if we will be using a callback.  This
-  ** step is skipped if the output is going to a destination other
-  ** than a callback.
-  **
-  ** We have to do this separately from the creation of column names
-  ** above because if the pTabList contains views then they will not
-  ** have been resolved and we will not know the column types until
-  ** now.
-  */
-  if( eDest==SRT_Callback ){
-    generateColumnTypes(pParse, pTabList, pEList);
-  }
 
   /* If the output is destined for a temporary table, open that table.
   */

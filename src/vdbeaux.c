@@ -873,7 +873,47 @@ static void Cleanup(Vdbe *p){
 ** be called on an SQL statement before sqlite3_step().
 */
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
+  assert( 0==p->nResColumn );
   p->nResColumn = nResColumn;
+}
+
+/*
+** Set the name of the idx'th column to be returned by the SQL statement.
+** zName must be a pointer to a nul terminated string.
+**
+** This call must be made after a call to sqlite3VdbeSetNumCols().
+**
+** Parameter N may be either P3_DYNAMIC or P3_STATIC.
+*/
+int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
+  int rc;
+  Mem *pColName;
+  assert( idx<p->nResColumn );
+
+  /* If the Vdbe.aColName array has not yet been allocated, allocate
+  ** it now.
+  */
+  if( !p->aColName ){
+    int i;
+    p->aColName = (Mem *)sqliteMalloc(sizeof(Mem)*p->nResColumn);
+    if( !p->aColName ){
+      return SQLITE_NOMEM;
+    }
+    for(i=0; i<p->nResColumn; i++){
+      p->aColName[i].flags = MEM_Null;
+    }
+  }
+
+  pColName = &(p->aColName[idx]);
+  if( N==0 ){
+    rc = MemSetStr(pColName, zName, -1, TEXT_Utf8, 1);
+  }else{
+    rc = MemSetStr(pColName, zName, N, TEXT_Utf8, N>0);
+  }
+  if( rc==SQLITE_OK && N==P3_DYNAMIC ){
+    pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
+  }
+  return rc;
 }
 
 /*

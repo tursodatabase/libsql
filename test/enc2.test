@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.1 2004/05/22 10:33:04 danielk1977 Exp $
+# $Id: enc2.test,v 1.2 2004/05/26 10:11:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -101,7 +101,7 @@ do_test $t.8 {
 
 do_test $t.9 {
   sqlite3_finalize $STMT
-} {}
+} SQLITE_OK
 
 do_test $t.99 {
   db close

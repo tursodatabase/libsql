@@ -327,6 +327,7 @@ struct Vdbe {
   Mem *aStack;        /* The operand stack, except string values */
   Mem *pTos;          /* Top entry in the operand stack */
   Mem **apArg;        /* Arguments to currently executing user function */
+  Mem *aColName;      /* Column names to return */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   void **azColName16; /* UTF-16 encoded equivalent of azColName */
   int nCursor;        /* Number of slots in apCsr[] */
@@ -401,3 +402,4 @@ int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeSetEncoding(Mem *, u8);
 int sqlite3VdbeMemCopy(Mem*, const Mem*);
 int sqlite3VdbeMemNulTerminate(Mem *);
+int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, int);
