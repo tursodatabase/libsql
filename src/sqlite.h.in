@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.37 2003/01/13 23:27:33 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.38 2003/01/14 02:49:28 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -521,23 +521,23 @@ int sqlite_set_authorizer(
 **
 **                                          Arg-3           Arg-4
 */
-#define SQLITE_COPY                  0   /* Table Name      NULL            */
+#define SQLITE_COPY                  0   /* Table Name      File Name       */
 #define SQLITE_CREATE_INDEX          1   /* Index Name      Table Name      */
 #define SQLITE_CREATE_TABLE          2   /* Table Name      NULL            */
 #define SQLITE_CREATE_TEMP_INDEX     3   /* Index Name      Table Name      */
 #define SQLITE_CREATE_TEMP_TABLE     4   /* Table Name      NULL            */
-#define SQLITE_CREATE_TEMP_TRIGGER   5   /* Trigger Name    NULL            */
+#define SQLITE_CREATE_TEMP_TRIGGER   5   /* Trigger Name    Table Name      */
 #define SQLITE_CREATE_TEMP_VIEW      6   /* View Name       NULL            */
-#define SQLITE_CREATE_TRIGGER        7   /* Trigger Name    NULL            */
+#define SQLITE_CREATE_TRIGGER        7   /* Trigger Name    Table Name      */
 #define SQLITE_CREATE_VIEW           8   /* View Name       NULL            */
 #define SQLITE_DELETE                9   /* Table Name      NULL            */
-#define SQLITE_DROP_INDEX           10   /* Index Name      NULL            */
+#define SQLITE_DROP_INDEX           10   /* Index Name      Table Name      */
 #define SQLITE_DROP_TABLE           11   /* Table Name      NULL            */
-#define SQLITE_DROP_TEMP_INDEX      12   /* Index Name      NULL            */
+#define SQLITE_DROP_TEMP_INDEX      12   /* Index Name      Table Name      */
 #define SQLITE_DROP_TEMP_TABLE      13   /* Table Name      NULL            */
-#define SQLITE_DROP_TEMP_TRIGGER    14   /* Trigger Name    NULL            */
+#define SQLITE_DROP_TEMP_TRIGGER    14   /* Trigger Name    Table Name      */
 #define SQLITE_DROP_TEMP_VIEW       15   /* View Name       NULL            */
-#define SQLITE_DROP_TRIGGER         16   /* Trigger Name    NULL            */
+#define SQLITE_DROP_TRIGGER         16   /* Trigger Name    Table Name      */
 #define SQLITE_DROP_VIEW            17   /* View Name       NULL            */
 #define SQLITE_INSERT               18   /* Table Name      NULL            */
 #define SQLITE_PRAGMA               19   /* Pragma Name     1st arg or NULL */

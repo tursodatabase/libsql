@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.121 2003/01/13 23:27:32 drh Exp $
+** $Id: build.c,v 1.122 2003/01/14 02:49:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -333,6 +333,7 @@ void sqliteStartTable(
   if( zName==0 ) return;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0) ){
+    sqliteFree(zName);
     return;
   }
   {
@@ -351,6 +352,7 @@ void sqliteStartTable(
       }
     }
     if( sqliteAuthCheck(pParse, code, zName, 0) ){
+      sqliteFree(zName);
       return;
     }
   }
@@ -1122,6 +1124,9 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     if( sqliteAuthCheck(pParse, code, pTable->zName, 0) ){
       return;
     }
+    if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTable->zName, 0) ){
+      return;
+    }
   }
 #endif
   if( pTable->readOnly ){
@@ -1702,7 +1707,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       return;
     }
     if( pTab->isTemp ) code = SQLITE_DROP_TEMP_INDEX;
-    if( sqliteAuthCheck(pParse, code, pIndex->zName, 0) ){
+    if( sqliteAuthCheck(pParse, code, pIndex->zName, pTab->zName) ){
       return;
     }
   }
@@ -1896,15 +1901,19 @@ void sqliteCopy(
   Vdbe *v;
   int addr, end;
   Index *pIdx;
+  char *zFile = 0;
   sqlite *db = pParse->db;
+
 
   zTab = sqliteTableNameFromToken(pTableName);
   if( sqlite_malloc_failed || zTab==0 ) goto copy_cleanup;
   pTab = sqliteTableNameToTable(pParse, zTab);
   sqliteFree(zTab);
   if( pTab==0 ) goto copy_cleanup;
-  if( sqliteAuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0)
-      || sqliteAuthCheck(pParse, SQLITE_COPY, pTab->zName, 0) ){
+  zFile = sqliteStrNDup(pFilename->z, pFilename->n);
+  sqliteDequote(zFile);
+  if( sqliteAuthCheck(pParse, SQLITE_INSERT, pTab->zName, zFile)
+      || sqliteAuthCheck(pParse, SQLITE_COPY, pTab->zName, zFile) ){
     goto copy_cleanup;
   }
   v = sqliteGetVdbe(pParse);
@@ -1964,6 +1973,7 @@ void sqliteCopy(
   }
   
 copy_cleanup:
+  sqliteFree(zFile);
   return;
 }
 

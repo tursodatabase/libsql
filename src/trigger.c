@@ -106,6 +106,9 @@ void sqliteCreateTrigger(
       if( sqliteAuthCheck(pParse, code, zName, tab->zName) ){
         goto trigger_cleanup;
       }
+      if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(tab->isTemp), 0)){
+        goto trigger_cleanup;
+      }
     }
 #endif
   }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_set_authorizer() API.
 #
-# $Id: auth.test,v 1.2 2003/01/13 23:27:34 drh Exp $
+# $Id: auth.test,v 1.3 2003/01/14 02:49:28 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23,8 +23,7 @@ do_test auth-1.1 {
   db close
   set ::DB [sqlite db test.db]
   proc auth {code arg1 arg2} {
-    if {$code=="SQLITE_INSERT" 
-          && [string compare -nocase $arg1 sqlite_master]==0} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
     return SQLITE_OK
@@ -35,23 +34,26 @@ do_test auth-1.1 {
 do_test auth-1.2 {
   execsql {SELECT name FROM sqlite_master}
 } {}
-do_test auth-1.3 {
+do_test auth-1.3.1 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
       return SQLITE_DENY
     }
     return SQLITE_OK
   }
   catchsql {CREATE TABLE t1(a,b,c)}
 } {1 {not authorized}}
+do_test auth-1.3.2 {
+  set ::authargs
+} {t1 {}}
 do_test auth-1.4 {
   execsql {SELECT name FROM sqlite_master}
 } {}
 
 do_test auth-1.5 {
   proc auth {code arg1 arg2} {
-    if {$code=="SQLITE_INSERT" 
-          && [string compare -nocase $arg1 sqlite_temp_master]==0} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
       return SQLITE_DENY
     }
     return SQLITE_OK
@@ -61,23 +63,26 @@ do_test auth-1.5 {
 do_test auth-1.6 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {}
-do_test auth-1.7 {
+do_test auth-1.7.1 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
       return SQLITE_DENY
     }
     return SQLITE_OK
   }
   catchsql {CREATE TEMP TABLE t1(a,b,c)}
 } {1 {not authorized}}
+do_test auth-1.7.2 {
+   set ::authargs
+} {t1 {}}
 do_test auth-1.8 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {}
 
 do_test auth-1.9 {
   proc auth {code arg1 arg2} {
-    if {$code=="SQLITE_INSERT" 
-          && [string compare -nocase $arg1 sqlite_master]==0} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
     return SQLITE_OK
@@ -90,6 +95,7 @@ do_test auth-1.10 {
 do_test auth-1.11 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
       return SQLITE_IGNORE
     }
     return SQLITE_OK
@@ -101,8 +107,7 @@ do_test auth-1.12 {
 } {}
 do_test auth-1.13 {
   proc auth {code arg1 arg2} {
-    if {$code=="SQLITE_INSERT" 
-          && [string compare -nocase $arg1 sqlite_temp_master]==0} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
       return SQLITE_IGNORE
     }
     return SQLITE_OK
@@ -115,6 +120,7 @@ do_test auth-1.14 {
 do_test auth-1.15 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
       return SQLITE_IGNORE
     }
     return SQLITE_OK
@@ -128,7 +134,8 @@ do_test auth-1.16 {
 do_test auth-1.17 {
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TABLE"} {
-      return SQLITE_DEBY
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
     }
     return SQLITE_OK
   }
@@ -137,20 +144,1370 @@ do_test auth-1.17 {
 do_test auth-1.18 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
-do_test auth-1.19 {
+do_test auth-1.19.1 {
+  set ::authargs {}
   proc auth {code arg1 arg2} {
     if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
-      return SQLITE_DEBY
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
     }
     return SQLITE_OK
   }
   catchsql {CREATE TABLE t2(a,b,c)}
 } {0 {}}
+do_test auth-1.19.2 {
+  set ::authargs
+} {}
 do_test auth-1.20 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 
+do_test auth-1.21.1 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {1 {not authorized}}
+do_test auth-1.21.2 {
+  set ::authargs
+} {t2 {}}
+do_test auth-1.22 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.23.1 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {0 {}}
+do_test auth-1.23.2 {
+  set ::authargs
+} {t2 {}}
+do_test auth-1.24 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
 
+do_test auth-1.25 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {1 {not authorized}}
+do_test auth-1.26 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.27 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_TABLE"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {0 {}}
+do_test auth-1.28 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.29 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="t2"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t2 VALUES(1,2,3)}
+} {1 {not authorized}}
+do_test auth-1.30 {
+  execsql {SELECT * FROM t2}
+} {}
+do_test auth-1.31 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="t2"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t2 VALUES(1,2,3)}
+} {0 {}}
+do_test auth-1.32 {
+  execsql {SELECT * FROM t2}
+} {}
+do_test auth-1.33 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="t1"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {INSERT INTO t2 VALUES(1,2,3)}
+} {0 {}}
+do_test auth-1.34 {
+  execsql {SELECT * FROM t2}
+} {1 2 3}
+
+do_test auth-1.35 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2}
+} {1 {access to t2.b is prohibited}}
+do_test auth-1.36 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2}
+} {0 {1 {} 3}}
+do_test auth-1.37 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2 WHERE b=2}
+} {0 {}}
+do_test auth-1.38 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="a"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2 WHERE b=2}
+} {0 {{} 2 3}}
+do_test auth-1.39 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2 WHERE b IS NULL}
+} {0 {1 {} 3}}
+do_test auth-1.40 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT a,c FROM t2 WHERE b IS NULL}
+} {1 {access to t2.b is prohibited}}
+  
+do_test auth-1.41 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t2 SET a=11}
+} {0 {}}
+do_test auth-1.42 {
+  execsql {SELECT * FROM t2}
+} {11 2 3}
+do_test auth-1.43 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t2 SET b=22, c=33}
+} {1 {not authorized}}
+do_test auth-1.44 {
+  execsql {SELECT * FROM t2}
+} {11 2 3}
+do_test auth-1.45 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {UPDATE t2 SET b=22, c=33}
+} {0 {}}
+do_test auth-1.46 {
+  execsql {SELECT * FROM t2}
+} {11 2 33}
+
+do_test auth-1.47 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DELETE FROM t2 WHERE a=11}
+} {1 {not authorized}}
+do_test auth-1.48 {
+  execsql {SELECT * FROM t2}
+} {11 2 33}
+do_test auth-1.49 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DELETE FROM t2 WHERE a=11}
+} {0 {}}
+do_test auth-1.50 {
+  execsql {SELECT * FROM t2}
+} {11 2 33}
+
+do_test auth-1.51 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_SELECT"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2}
+} {1 {not authorized}}
+do_test auth-1.52 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_SELECT"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2}
+} {0 {}}
+do_test auth-1.53 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_SELECT"} {
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2}
+} {0 {11 2 33}}
+
+set f [open data1.txt w]
+puts $f "7:8:9"
+close $f
+do_test auth-1.54 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_COPY"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {COPY t2 FROM 'data1.txt' USING DELIMITERS ':'}
+} {1 {not authorized}}
+do_test auth-1.55 {
+  set ::authargs
+} {t2 data1.txt}
+do_test auth-1.56 {
+  execsql {SELECT * FROM t2}
+} {11 2 33}
+do_test auth-1.57 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_COPY"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {COPY t2 FROM 'data1.txt' USING DELIMITERS ':'}
+} {0 {}}
+do_test auth-1.58 {
+  set ::authargs
+} {t2 data1.txt}
+do_test auth-1.59 {
+  execsql {SELECT * FROM t2}
+} {11 2 33}
+do_test auth-1.60 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_COPY"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {COPY t2 FROM 'data1.txt' USING DELIMITERS ':'}
+} {0 {}}
+do_test auth-1.61 {
+  set ::authargs
+} {t2 data1.txt}
+do_test auth-1.62 {
+  execsql {SELECT * FROM t2}
+} {11 2 33 7 8 9}
+
+do_test auth-1.63 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+       return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {1 {not authorized}}
+do_test auth-1.64 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.65 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
+       return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {1 {not authorized}}
+do_test auth-1.66 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.67 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+       return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {1 {not authorized}}
+do_test auth-1.68 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.69 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t1"} {
+       return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {1 {not authorized}}
+do_test auth-1.70 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.71 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+       return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {0 {}}
+do_test auth-1.72 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.73 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
+       return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t2}
+} {0 {}}
+do_test auth-1.74 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.75 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+       return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {0 {}}
+do_test auth-1.76 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.77 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="t1"} {
+       return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TABLE t1}
+} {0 {}}
+do_test auth-1.78 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.79 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_VIEW"} {
+      set ::authargs [list $arg1 $arg2] 
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {1 {not authorized}}
+do_test auth-1.80 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.81 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.82 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_VIEW"} {
+      set ::authargs [list $arg1 $arg2] 
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {0 {}}
+do_test auth-1.83 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.84 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+
+do_test auth-1.85 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_VIEW"} {
+      set ::authargs [list $arg1 $arg2] 
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TEMPORARY VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {1 {not authorized}}
+do_test auth-1.86 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.87 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.88 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_VIEW"} {
+      set ::authargs [list $arg1 $arg2] 
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TEMPORARY VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {0 {}}
+do_test auth-1.89 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.90 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.91 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {1 {not authorized}}
+do_test auth-1.92 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.93 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {0 {}}
+do_test auth-1.94 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+
+do_test auth-1.95 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TEMPORARY VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {1 {not authorized}}
+do_test auth-1.96 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.97 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE TEMPORARY VIEW v1 AS SELECT a+1,b+1 FROM t2}
+} {0 {}}
+do_test auth-1.98 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.99 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE VIEW v2 AS SELECT a+1,b+1 FROM t2;
+    DROP VIEW v2
+  }
+} {1 {not authorized}}
+do_test auth-1.100 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 v2}
+do_test auth-1.101 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v2}
+} {1 {not authorized}}
+do_test auth-1.102 {
+  set ::authargs
+} {v2 {}}
+do_test auth-1.103 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 v2}
+do_test auth-1.104 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v2}
+} {0 {}}
+do_test auth-1.105 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 v2}
+do_test auth-1.106 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v2}
+} {0 {}}
+do_test auth-1.107 {
+  set ::authargs
+} {v2 {}}
+do_test auth-1.108 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 v2}
+do_test auth-1.109 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v2}
+} {0 {}}
+do_test auth-1.110 {
+  set ::authargs
+} {v2 {}}
+do_test auth-1.111 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+
+
+do_test auth-1.112 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TEMP VIEW v1 AS SELECT a+1,b+1 FROM t1;
+    DROP VIEW v1
+  }
+} {1 {not authorized}}
+do_test auth-1.113 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 v1}
+do_test auth-1.114 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v1}
+} {1 {not authorized}}
+do_test auth-1.115 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.116 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 v1}
+do_test auth-1.117 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v1}
+} {0 {}}
+do_test auth-1.118 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 v1}
+do_test auth-1.119 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v1}
+} {0 {}}
+do_test auth-1.120 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.121 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 v1}
+do_test auth-1.122 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_VIEW"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP VIEW v1}
+} {0 {}}
+do_test auth-1.123 {
+  set ::authargs
+} {v1 {}}
+do_test auth-1.124 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.125 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r2 DELETE on t2 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {1 {not authorized}}
+do_test auth-1.126 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.127 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.128 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r2 DELETE on t2 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {1 {not authorized}}
+do_test auth-1.129 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.130 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r2 DELETE on t2 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.131 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.132 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.133 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r2 DELETE on t2 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.134 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.135 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r2 DELETE on t2 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.136 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.137 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 r2}
+
+do_test auth-1.138 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r1 DELETE on t1 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {1 {not authorized}}
+do_test auth-1.139 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.140 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.141 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r1 DELETE on t1 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {1 {not authorized}}
+do_test auth-1.142 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.143 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r1 DELETE on t1 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.144 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.145 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.146 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r1 DELETE on t1 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.147 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.148 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    CREATE TRIGGER r1 DELETE on t1 BEGIN
+        SELECT NULL;
+    END;
+  }
+} {0 {}}
+do_test auth-1.149 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.150 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 r1}
+
+do_test auth-1.151 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r2}
+} {1 {not authorized}}
+do_test auth-1.152 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 r2}
+do_test auth-1.153 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r2}
+} {1 {not authorized}}
+do_test auth-1.154 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.155 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 r2}
+do_test auth-1.156 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r2}
+} {0 {}}
+do_test auth-1.157 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 r2}
+do_test auth-1.158 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r2}
+} {0 {}}
+do_test auth-1.159 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.160 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 r2}
+do_test auth-1.161 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r2}
+} {0 {}}
+do_test auth-1.162 {
+  set ::authargs
+} {r2 t2}
+do_test auth-1.163 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+
+do_test auth-1.164 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r1}
+} {1 {not authorized}}
+do_test auth-1.165 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 r1}
+do_test auth-1.166 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r1}
+} {1 {not authorized}}
+do_test auth-1.167 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.168 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 r1}
+do_test auth-1.169 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r1}
+} {0 {}}
+do_test auth-1.170 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 r1}
+do_test auth-1.171 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r1}
+} {0 {}}
+do_test auth-1.172 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.173 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 r1}
+do_test auth-1.174 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP TRIGGER r1}
+} {0 {}}
+do_test auth-1.175 {
+  set ::authargs
+} {r1 t1}
+do_test auth-1.176 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.177 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i2 ON t2(a)}
+} {1 {not authorized}}
+do_test auth-1.178 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.179 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.180 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i2 ON t2(a)}
+} {1 {not authorized}}
+do_test auth-1.181 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.182 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i2 ON t2(b)}
+} {0 {}}
+do_test auth-1.183 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.184 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.185 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i2 ON t2(b)}
+} {0 {}}
+do_test auth-1.186 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+do_test auth-1.187 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i2 ON t2(a)}
+} {0 {}}
+do_test auth-1.188 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.189 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 i2}
+
+do_test auth-1.190 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i1 ON t1(a)}
+} {1 {not authorized}}
+do_test auth-1.191 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.192 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.193 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i1 ON t1(b)}
+} {1 {not authorized}}
+do_test auth-1.194 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.195 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i1 ON t1(b)}
+} {0 {}}
+do_test auth-1.196 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.197 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.198 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i1 ON t1(c)}
+} {0 {}}
+do_test auth-1.199 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+do_test auth-1.200 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {CREATE INDEX i1 ON t1(a)}
+} {0 {}}
+do_test auth-1.201 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.202 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 i1}
+
+do_test auth-1.203 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i2}
+} {1 {not authorized}}
+do_test auth-1.204 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 i2}
+do_test auth-1.205 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i2}
+} {1 {not authorized}}
+do_test auth-1.206 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.207 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 i2}
+do_test auth-1.208 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i2}
+} {0 {}}
+do_test auth-1.209 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 i2}
+do_test auth-1.210 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i2}
+} {0 {}}
+do_test auth-1.211 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.212 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2 i2}
+do_test auth-1.213 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i2}
+} {0 {}}
+do_test auth-1.214 {
+  set ::authargs
+} {i2 t2}
+do_test auth-1.215 {
+  execsql {SELECT name FROM sqlite_master}
+} {t2}
+
+do_test auth-1.216 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i1}
+} {1 {not authorized}}
+do_test auth-1.217 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 i1}
+do_test auth-1.218 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i1}
+} {1 {not authorized}}
+do_test auth-1.219 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.220 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 i1}
+do_test auth-1.221 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i1}
+} {0 {}}
+do_test auth-1.222 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 i1}
+do_test auth-1.223 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i1}
+} {0 {}}
+do_test auth-1.224 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.225 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1 i1}
+do_test auth-1.226 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_DROP_TEMP_INDEX"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {DROP INDEX i1}
+} {0 {}}
+do_test auth-1.227 {
+  set ::authargs
+} {i1 t1}
+do_test auth-1.228 {
+  execsql {SELECT name FROM sqlite_temp_master}
+} {t1}
+
+do_test auth-1.229 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_PRAGMA"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {PRAGMA full_column_names=on}
+} {1 {not authorized}}
+do_test auth-1.230 {
+  set ::authargs
+} {full_column_names on}
+do_test auth-1.231 {
+  execsql2 {SELECT a FROM t2}
+} {a 11 a 7}
+do_test auth-1.232 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_PRAGMA"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {PRAGMA full_column_names=on}
+} {0 {}}
+do_test auth-1.233 {
+  set ::authargs
+} {full_column_names on}
+do_test auth-1.234 {
+  execsql2 {SELECT a FROM t2}
+} {a 11 a 7}
+do_test auth-1.235 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_PRAGMA"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {PRAGMA full_column_names=on}
+} {0 {}}
+do_test auth-1.236 {
+  execsql2 {SELECT a FROM t2}
+} {t2.a 11 t2.a 7}
+do_test auth-1.237 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_PRAGMA"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {PRAGMA full_column_names=OFF}
+} {0 {}}
+do_test auth-1.238 {
+  set ::authargs
+} {full_column_names OFF}
+do_test auth-1.239 {
+  execsql2 {SELECT a FROM t2}
+} {a 11 a 7}
 
 
 } ;# End of the "if( db command exists )"
