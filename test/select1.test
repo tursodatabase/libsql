@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.40 2005/01/18 17:20:10 drh Exp $
+# $Id: select1.test,v 1.41 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -585,11 +585,13 @@ do_test select1-9.2 {
   db eval {SELECT * FROM test1 WHERE f1<0} r {}
   set r(*)
 } {f1 f2}
-do_test select1-9.3 {
-  set r(*) {}
-  db eval {SELECT * FROM test1 WHERE f1<(select count(*) from test2)} r {}
-  set r(*)
-} {f1 f2}
+ifcapable subquery {
+  do_test select1-9.3 {
+    set r(*) {}
+    db eval {SELECT * FROM test1 WHERE f1<(select count(*) from test2)} r {}
+    set r(*)
+  } {f1 f2}
+}
 do_test select1-9.4 {
   set r(*) {}
   db eval {SELECT * FROM test1 ORDER BY f1} r {}
@@ -701,26 +703,28 @@ do_test select1-11.11 {
     SELECT t3.* FROM t3 AS x, t4;
   }
 } {1 {no such table: t3}}
-do_test select1-11.12 {
-  execsql2 {
-    SELECT t3.* FROM t3, (SELECT max(a), max(b) FROM t4)
-  }
-} {a 1 b 2}
-do_test select1-11.13 {
-  execsql2 {
-    SELECT t3.* FROM (SELECT max(a), max(b) FROM t4), t3
-  }
-} {a 1 b 2}
-do_test select1-11.14 {
-  execsql2 {
-    SELECT * FROM t3, (SELECT max(a), max(b) FROM t4) AS 'tx'
-  }
-} {a 1 b 2 max(a) 3 max(b) 4}
-do_test select1-11.15 {
-  execsql2 {
-    SELECT y.*, t3.* FROM t3, (SELECT max(a), max(b) FROM t4) AS y
-  }
-} {max(a) 3 max(b) 4 a 1 b 2}
+ifcapable subquery {
+  do_test select1-11.12 {
+    execsql2 {
+      SELECT t3.* FROM t3, (SELECT max(a), max(b) FROM t4)
+    }
+  } {a 1 b 2}
+  do_test select1-11.13 {
+    execsql2 {
+      SELECT t3.* FROM (SELECT max(a), max(b) FROM t4), t3
+    }
+  } {a 1 b 2}
+  do_test select1-11.14 {
+    execsql2 {
+      SELECT * FROM t3, (SELECT max(a), max(b) FROM t4) AS 'tx'
+    }
+  } {a 1 b 2 max(a) 3 max(b) 4}
+  do_test select1-11.15 {
+    execsql2 {
+      SELECT y.*, t3.* FROM t3, (SELECT max(a), max(b) FROM t4) AS y
+    }
+  } {max(a) 3 max(b) 4 a 1 b 2}
+}
 do_test select1-11.16 {
   execsql2 {
     SELECT y.* FROM t3 as y, t4 as z
@@ -765,16 +769,18 @@ do_test select1-12.6 {
 } {1 2 3 4}
 } ;# ifcapable compound
 
-do_test select1-12.7 {
-  execsql {
-    SELECT * FROM t3 WHERE a=(SELECT 1);
-  }
-} {1 2}
-do_test select1-12.8 {
-  execsql {
-    SELECT * FROM t3 WHERE a=(SELECT 2);
-  }
-} {}
+ifcapable subquery {
+  do_test select1-12.7 {
+    execsql {
+      SELECT * FROM t3 WHERE a=(SELECT 1);
+    }
+  } {1 2}
+  do_test select1-12.8 {
+    execsql {
+      SELECT * FROM t3 WHERE a=(SELECT 2);
+    }
+  } {}
+}
 
 ifcapable compound {
 do_test select1-12.9 {

@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.17 2004/11/04 04:42:28 drh Exp $
+# $Id: rowid.test,v 1.18 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -273,8 +273,16 @@ do_test rowid-4.6 {
   }
 } {4}
 
-do_test rowid-5.1 {
-  execsql {DELETE FROM t1 WHERE _rowid_ IN (SELECT oid FROM t1 WHERE x>8)}
+do_test rowid-5.1.1 {
+  ifcapable subquery {
+    execsql {DELETE FROM t1 WHERE _rowid_ IN (SELECT oid FROM t1 WHERE x>8)}
+  } else {
+    set oids [execsql {SELECT oid FROM t1 WHERE x>8}]
+    set where "_rowid_ = [join $oids { OR _rowid_ = }]"
+    execsql "DELETE FROM t1 WHERE $where"
+  }
+} {}
+do_test rowid-5.1.2 {
   execsql {SELECT max(x) FROM t1}
 } {8}
 
@@ -346,20 +354,23 @@ do_test rowid-7.5 {
     SELECT b FROM t2 ORDER BY b;
   }
 } {11 55 66 77 88 99}
-do_test rowid-7.6 {
-  execsql {
-    SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647);
-  }
-} {11}
-do_test rowid-7.7 {
-  execsql {
-    INSERT INTO t2(b) VALUES(22);
-    INSERT INTO t2(b) VALUES(33);
-    INSERT INTO t2(b) VALUES(44);
-    INSERT INTO t2(b) VALUES(55);
-    SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647) ORDER BY b;
-  }
-} {11 22 33 44 55}
+ifcapable subquery {
+  do_test rowid-7.6 {
+    execsql {
+      SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647);
+    }
+  } {11}
+  do_test rowid-7.7 {
+    execsql {
+      INSERT INTO t2(b) VALUES(22);
+      INSERT INTO t2(b) VALUES(33);
+      INSERT INTO t2(b) VALUES(44);
+      INSERT INTO t2(b) VALUES(55);
+      SELECT b FROM t2 WHERE a NOT IN(1,2,1000000,1000001,2147483647) 
+          ORDER BY b;
+    }
+  } {11 22 33 44 55}
+}
 do_test rowid-7.8 {
   execsql {
     DELETE FROM t2 WHERE a!=2;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.16 2005/01/15 00:40:43 drh Exp $
+# $Id: update.test,v 1.17 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -483,18 +483,20 @@ do_test update-10.10 {
 
 # Make sure we can handle a subquery in the where clause.
 #
-do_test update-11.1 {
-  execsql {
-    UPDATE t1 SET e=e+1 WHERE b IN (SELECT b FROM t1);
-    SELECT b,e FROM t1;
-  }
-} {2 14 3 7}
-do_test update-11.2 {
-  execsql {
-    UPDATE t1 SET e=e+1 WHERE a IN (SELECT a FROM t1);
-    SELECT a,e FROM t1;
-  }
-} {1 15 2 8}
+ifcapable subquery {
+  do_test update-11.1 {
+    execsql {
+      UPDATE t1 SET e=e+1 WHERE b IN (SELECT b FROM t1);
+      SELECT b,e FROM t1;
+    }
+  } {2 14 3 7}
+  do_test update-11.2 {
+    execsql {
+      UPDATE t1 SET e=e+1 WHERE a IN (SELECT a FROM t1);
+      SELECT a,e FROM t1;
+    }
+  } {1 15 2 8}
+}
 
 integrity_check update-12.1
 

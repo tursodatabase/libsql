@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.27 2005/01/11 18:13:57 drh Exp $
+# $Id: where.test,v 1.28 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,8 +29,19 @@ do_test where-1.0 {
     set y [expr {$i*$i + 2*$i + 1}]
     execsql "INSERT INTO t1 VALUES($w,$x,$y)"
   }
+
+  ifcapable subquery {
+    execsql {
+      INSERT INTO t2 SELECT 101-w, x, (SELECT max(y) FROM t1)+1-y, y FROM t1;
+    }
+  } else {
+    set maxy [execsql {select max(y) from t1}]
+    execsql "
+      INSERT INTO t2 SELECT 101-w, x, $maxy+1-y, y FROM t1;
+    "
+  }
+
   execsql {
-    INSERT INTO t2 SELECT 101-w, x, (SELECT max(y) FROM t1)+1-y, y FROM t1;
     CREATE INDEX i1w ON t1(w);
     CREATE INDEX i1xy ON t1(x,y);
     CREATE INDEX i2p ON t2(p);
@@ -291,85 +302,88 @@ do_test where-4.4 {
 } {99}
 
 # Verify that IN operators in a WHERE clause are handled correctly.
+# Omit these tests if the build is not capable of sub-queries.
 #
-do_test where-5.1 {
-  count {
-    SELECT * FROM t1 WHERE rowid IN (1,2,3,1234) order by 1;
-  }
-} {1 0 4 2 1 9 3 1 16 3}
-do_test where-5.2 {
-  count {
-    SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
-  }
-} {1 0 4 2 1 9 3 1 16 199}
-do_test where-5.3 {
-  count {
-    SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
-  }
-} {1 0 4 2 1 9 3 1 16 13}
-do_test where-5.4 {
-  count {
-    SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
-  }
-} {1 0 4 2 1 9 3 1 16 199}
-do_test where-5.5 {
-  count {
-    SELECT * FROM t1 WHERE rowid IN 
-       (select rowid from t1 where rowid IN (-1,2,4))
-    ORDER BY 1;
-  }
-} {2 1 9 4 2 25 3}
-do_test where-5.6 {
-  count {
-    SELECT * FROM t1 WHERE rowid+0 IN 
-       (select rowid from t1 where rowid IN (-1,2,4))
-    ORDER BY 1;
-  }
-} {2 1 9 4 2 25 201}
-do_test where-5.7 {
-  count {
-    SELECT * FROM t1 WHERE w IN 
-       (select rowid from t1 where rowid IN (-1,2,4))
-    ORDER BY 1;
-  }
-} {2 1 9 4 2 25 9}
-do_test where-5.8 {
-  count {
-    SELECT * FROM t1 WHERE w+0 IN 
-       (select rowid from t1 where rowid IN (-1,2,4))
-    ORDER BY 1;
-  }
-} {2 1 9 4 2 25 201}
-do_test where-5.9 {
-  count {
-    SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;
-  }
-} {2 1 9 3 1 16 7}
-do_test where-5.10 {
-  count {
-    SELECT * FROM t1 WHERE x+0 IN (1,7) ORDER BY 1;
-  }
-} {2 1 9 3 1 16 199}
-do_test where-5.11 {
-  count {
-    SELECT * FROM t1 WHERE y IN (6400,8100) ORDER BY 1;
-  }
-} {79 6 6400 89 6 8100 199}
-do_test where-5.12 {
-  count {
-    SELECT * FROM t1 WHERE x=6 AND y IN (6400,8100) ORDER BY 1;
-  }
-} {79 6 6400 89 6 8100 74}
-do_test where-5.13 {
-  count {
-    SELECT * FROM t1 WHERE x IN (1,7) AND y NOT IN (6400,8100) ORDER BY 1;
-  }
-} {2 1 9 3 1 16 7}
-do_test where-5.14 {
-  count {
-    SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,10) ORDER BY 1;
-  }
-} {2 1 9 7}
+ifcapable subquery {
+  do_test where-5.1 {
+    count {
+      SELECT * FROM t1 WHERE rowid IN (1,2,3,1234) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 3}
+  do_test where-5.2 {
+    count {
+      SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 199}
+  do_test where-5.3 {
+    count {
+      SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 13}
+  do_test where-5.4 {
+    count {
+      SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 199}
+  do_test where-5.5 {
+    count {
+      SELECT * FROM t1 WHERE rowid IN 
+         (select rowid from t1 where rowid IN (-1,2,4))
+      ORDER BY 1;
+    }
+  } {2 1 9 4 2 25 3}
+  do_test where-5.6 {
+    count {
+      SELECT * FROM t1 WHERE rowid+0 IN 
+         (select rowid from t1 where rowid IN (-1,2,4))
+      ORDER BY 1;
+    }
+  } {2 1 9 4 2 25 201}
+  do_test where-5.7 {
+    count {
+      SELECT * FROM t1 WHERE w IN 
+         (select rowid from t1 where rowid IN (-1,2,4))
+      ORDER BY 1;
+    }
+  } {2 1 9 4 2 25 9}
+  do_test where-5.8 {
+    count {
+      SELECT * FROM t1 WHERE w+0 IN 
+         (select rowid from t1 where rowid IN (-1,2,4))
+      ORDER BY 1;
+    }
+  } {2 1 9 4 2 25 201}
+  do_test where-5.9 {
+    count {
+      SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;
+    }
+  } {2 1 9 3 1 16 7}
+  do_test where-5.10 {
+    count {
+      SELECT * FROM t1 WHERE x+0 IN (1,7) ORDER BY 1;
+    }
+  } {2 1 9 3 1 16 199}
+  do_test where-5.11 {
+    count {
+      SELECT * FROM t1 WHERE y IN (6400,8100) ORDER BY 1;
+    }
+  } {79 6 6400 89 6 8100 199}
+  do_test where-5.12 {
+    count {
+      SELECT * FROM t1 WHERE x=6 AND y IN (6400,8100) ORDER BY 1;
+    }
+  } {79 6 6400 89 6 8100 74}
+  do_test where-5.13 {
+    count {
+      SELECT * FROM t1 WHERE x IN (1,7) AND y NOT IN (6400,8100) ORDER BY 1;
+    }
+  } {2 1 9 3 1 16 7}
+  do_test where-5.14 {
+    count {
+      SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,10) ORDER BY 1;
+    }
+  } {2 1 9 7}
+}
 
 # This procedure executes the SQL.  Then it checks to see if the OP_Sort
 # opcode was executed.  If an OP_Sort did occur, then "sort" is appended
@@ -428,11 +442,13 @@ do_test where-6.7 {
     SELECT * FROM t3 WHERE b>0 ORDER BY a LIMIT 3
   }
 } {1 100 4 2 99 9 3 98 16 sort}
-do_test where-6.8 {
-  cksort {
-    SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
-  }
-} {1 100 4 2 99 9 3 98 16 sort}
+ifcapable subquery {
+  do_test where-6.8 {
+    cksort {
+      SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
+    }
+  } {1 100 4 2 99 9 3 98 16 sort}
+}
 do_test where-6.9.1 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3

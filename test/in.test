@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.12 2004/05/27 17:22:56 drh Exp $
+# $Id: in.test,v 1.13 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,6 +53,14 @@ do_test in-1.7 {
   execsql {SELECT a+ 100*(a BETWEEN 1 and 3) FROM t1 ORDER BY b}
 } {101 102 103 4 5 6 7 8 9 10}
 
+# The rest of this file concentrates on testing the IN operator.
+# Skip this if the library is compiled with SQLITE_OMIT_SUBQUERY 
+# (because the IN operator is unavailable).
+#
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 # Testing of the IN operator using static lists on the right-hand side.
 #

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.35 2004/11/23 22:16:40 drh Exp $
+# $Id: table.test,v 1.36 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -514,8 +514,14 @@ do_test table-11.2 {
 # Test that when creating a table using CREATE TABLE AS, column types are
 # assigned correctly for (SELECT ...) and 'x AS y' expressions.
 do_test table-12.1 {
-  execsql {
-    CREATE TABLE t8 AS SELECT b, h, a as i, (SELECT f FROM t7) as j FROM t7;
+  ifcapable subquery {
+    execsql {
+      CREATE TABLE t8 AS SELECT b, h, a as i, (SELECT f FROM t7) as j FROM t7;
+    }
+  } else {
+    execsql {
+      CREATE TABLE t8 AS SELECT b, h, a as i, f as j FROM t7;
+    }
   }
 } {}
 do_test table-12.2 {

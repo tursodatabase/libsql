@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate4.test,v 1.6 2004/12/19 00:11:36 drh Exp $
+# $Id: collate4.test,v 1.7 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -371,34 +371,36 @@ do_test collate4-2.1.5 {
     SELECT * FROM collate4t2, collate4t1 WHERE b = a;
   }
 } {A A 4}
-do_test collate4-2.1.6 {
-  count {
-    SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
-  }
-} {a A 10}
-do_test collate4-2.1.7 {
-  execsql {
-    DROP INDEX collate4i1;
-    CREATE INDEX collate4i1 ON collate4t1(a);
-  }
-  count {
-    SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
-  }
-} {a A 6}
-do_test collate4-2.1.8 {
-  count {
-    SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
-  }
-} {a A 5}
-do_test collate4-2.1.9 {
-  execsql {
-    DROP INDEX collate4i1;
-    CREATE INDEX collate4i1 ON collate4t1(a COLLATE TEXT);
-  }
-  count {
-    SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
-  }
-} {a A 9}
+ifcapable subquery {
+  do_test collate4-2.1.6 {
+    count {
+      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
+    }
+  } {a A 10}
+  do_test collate4-2.1.7 {
+    execsql {
+      DROP INDEX collate4i1;
+      CREATE INDEX collate4i1 ON collate4t1(a);
+    }
+    count {
+      SELECT a FROM collate4t1 WHERE a IN (SELECT * FROM collate4t2);
+    }
+  } {a A 6}
+  do_test collate4-2.1.8 {
+    count {
+      SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
+    }
+  } {a A 5}
+  do_test collate4-2.1.9 {
+    execsql {
+      DROP INDEX collate4i1;
+      CREATE INDEX collate4i1 ON collate4t1(a COLLATE TEXT);
+    }
+    count {
+      SELECT a FROM collate4t1 WHERE a IN ('z', 'a');
+    }
+  } {a A 9}
+}
 do_test collate4-2.1.10 {
   execsql {
     DROP TABLE collate4t1;

@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.14 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: minmax.test,v 1.15 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -104,7 +104,12 @@ do_test minmax-2.3 {
 } {0}
 
 do_test minmax-3.0 {
-  execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  ifcapable subquery {
+    execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  } else {
+    db function max_a_t2 {execsql {SELECT max(a) FROM t2}}
+    execsql {INSERT INTO t2 VALUES(max_a_t2()+1,999)}
+  }
   set sqlite_search_count 0
   execsql {SELECT max(a) FROM t2}
 } {21}
@@ -112,10 +117,17 @@ do_test minmax-3.1 {
   set sqlite_search_count
 } {0}
 do_test minmax-3.2 {
-  execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  ifcapable subquery {
+    execsql {INSERT INTO t2 VALUES((SELECT max(a) FROM t2)+1,999)}
+  } else {
+    db function max_a_t2 {execsql {SELECT max(a) FROM t2}}
+    execsql {INSERT INTO t2 VALUES(max_a_t2()+1,999)}
+  }
   set sqlite_search_count 0
-  execsql {
-    SELECT b FROM t2 WHERE a=(SELECT max(a) FROM t2)
+  ifcapable subquery {
+    execsql { SELECT b FROM t2 WHERE a=(SELECT max(a) FROM t2) }
+  } else {
+    execsql { SELECT b FROM t2 WHERE a=max_a_t2() }
   }
 } {999}
 do_test minmax-3.3 {
@@ -222,21 +234,25 @@ do_test minmax-7.1 {
     SELECT max(x) FROM t1;
   }
 } 20
-do_test minmax-7.2 {
-  execsql {
-    SELECT * FROM (SELECT max(x) FROM t1);
-  }
-} 20
+ifcapable subquery {
+  do_test minmax-7.2 {
+    execsql {
+      SELECT * FROM (SELECT max(x) FROM t1);
+    }
+  } 20
+}
 do_test minmax-7.3 {
   execsql {
     SELECT min(x) FROM t1;
   }
 } 1
-do_test minmax-7.4 {
-  execsql {
-    SELECT * FROM (SELECT min(x) FROM t1);
-  }
-} 1
+ifcapable subquery {
+  do_test minmax-7.4 {
+    execsql {
+      SELECT * FROM (SELECT min(x) FROM t1);
+    }
+  } 1
+}
 
 # Make sure min(x) and max(x) work correctly when the datatype is
 # TEXT instead of NUMERIC.  Ticket #623.
@@ -319,11 +335,13 @@ do_test minmax-10.6 {
     SELECT count(x) FROM t6;
   }
 } 0
-do_test minmax-10.7 {
-  execsql {
-    SELECT (SELECT min(x) FROM t6), (SELECT max(x) FROM t6);
-  }
-} {{} {}}
+ifcapable subquery {
+  do_test minmax-10.7 {
+    execsql {
+      SELECT (SELECT min(x) FROM t6), (SELECT max(x) FROM t6);
+    }
+  } {{} {}}
+}
 do_test minmax-10.8 {
   execsql {
     SELECT min(x), max(x) FROM t6;
@@ -349,11 +367,13 @@ do_test minmax-10.10 {
     SELECT count(x) FROM t6;
   }
 } 0
-do_test minmax-10.11 {
-  execsql {
-    SELECT (SELECT min(x) FROM t6), (SELECT max(x) FROM t6);
-  }
-} {{} {}}
+ifcapable subquery {
+  do_test minmax-10.11 {
+    execsql {
+      SELECT (SELECT min(x) FROM t6), (SELECT max(x) FROM t6);
+    }
+  } {{} {}}
+}
 do_test minmax-10.12 {
   execsql {
     SELECT min(x), max(x) FROM t6;

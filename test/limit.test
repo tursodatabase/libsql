@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.21 2005/01/20 02:17:02 danielk1977 Exp $
+# $Id: limit.test,v 1.22 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -79,36 +79,56 @@ do_test limit-2.2 {
     SELECT count(*) FROM t2;
   }
 } 2
-do_test limit-2.3 {
-  execsql {
-    SELECT count(*) FROM t1 WHERE rowid IN (SELECT rowid FROM t1 LIMIT 2);
-  }
-} 2
+ifcapable subquery {
+  do_test limit-2.3 {
+    execsql {
+      SELECT count(*) FROM t1 WHERE rowid IN (SELECT rowid FROM t1 LIMIT 2);
+    }
+  } 2
+}
 
-do_test limit-3.1 {
-  execsql {
-    SELECT z FROM (SELECT y*10+x AS z FROM t1 ORDER BY x LIMIT 10)
-    ORDER BY z LIMIT 5;
-  }
-} {50 51 52 53 54}
+ifcapable subquery {
+  do_test limit-3.1 {
+    execsql {
+      SELECT z FROM (SELECT y*10+x AS z FROM t1 ORDER BY x LIMIT 10)
+      ORDER BY z LIMIT 5;
+    }
+  } {50 51 52 53 54}
+}
 
 do_test limit-4.1 {
-  execsql {
-    BEGIN;
-    CREATE TABLE t3(x);
-    INSERT INTO t3 SELECT x FROM t1 ORDER BY x LIMIT 10 OFFSET 1;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
-    END;
-    SELECT count(*) FROM t3;
+  ifcapable subquery { 
+    execsql {
+      BEGIN;
+      CREATE TABLE t3(x);
+      INSERT INTO t3 SELECT x FROM t1 ORDER BY x LIMIT 10 OFFSET 1;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      INSERT INTO t3 SELECT x+(SELECT max(x) FROM t3) FROM t3;
+      END;
+      SELECT count(*) FROM t3;
+    }
+  } else {
+    execsql {
+      BEGIN;
+      CREATE TABLE t3(x);
+      INSERT INTO t3 SELECT x FROM t1 ORDER BY x LIMIT 10 OFFSET 1;
+    }
+    for {set i 0} {$i<10} {incr i} {
+      set max_x_t3 [execsql {SELECT max(x) FROM t3}]
+      execsql "INSERT INTO t3 SELECT x+$max_x_t3 FROM t3;"
+    }
+    execsql {
+      END;
+      SELECT count(*) FROM t3;
+    }
   }
 } {10240}
 do_test limit-4.2 {
@@ -320,35 +340,45 @@ do_test limit-8.3 {
 # Make sure limits on multiple subqueries work correctly.
 # Ticket #1035
 #
-do_test limit-9.1 {
-  execsql {
-    SELECT * FROM (SELECT * FROM t6 LIMIT 3);
-  }
-} {1 2 3}
-do_test limit-9.2 {
-  execsql {
-    CREATE TABLE t7 AS SELECT * FROM t6;
-    SELECT * FROM (SELECT * FROM t7 LIMIT 3);
-  }
-} {1 2 3}
-ifcapable compound {
-  do_test limit-9.3 {
+ifcapable subquery {
+  do_test limit-9.1 {
     execsql {
-      SELECT * FROM (SELECT * FROM t6 LIMIT 3)
-      UNION
-      SELECT * FROM (SELECT * FROM t7 LIMIT 3)
-      ORDER BY 1
+      SELECT * FROM (SELECT * FROM t6 LIMIT 3);
     }
   } {1 2 3}
-  do_test limit-9.4 {
+}
+do_test limit-9.2.1 {
+  execsql {
+    CREATE TABLE t7 AS SELECT * FROM t6;
+  }
+} {}
+ifcapable subquery {
+  do_test limit-9.2.2 {
     execsql {
-      SELECT * FROM (SELECT * FROM t6 LIMIT 3)
-      UNION
-      SELECT * FROM (SELECT * FROM t7 LIMIT 3)
-      ORDER BY 1
-      LIMIT 2
+      SELECT * FROM (SELECT * FROM t7 LIMIT 3);
     }
-  } {1 2}
+  } {1 2 3}
+}
+ifcapable compound {
+  ifcapable subquery {
+    do_test limit-9.3 {
+      execsql {
+        SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+        UNION
+        SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+        ORDER BY 1
+      }
+    } {1 2 3}
+    do_test limit-9.4 {
+      execsql {
+        SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+        UNION
+        SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+        ORDER BY 1
+        LIMIT 2
+      }
+    } {1 2}
+  }
   do_test limit-9.5 {
     catchsql {
       SELECT * FROM t6 LIMIT 3

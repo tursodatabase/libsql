@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join2.test,v 1.1 2004/01/24 20:18:13 drh Exp $
+# $Id: join2.test,v 1.2 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,11 +63,13 @@ do_test join2-1.6 {
       t1 NATURAL LEFT OUTER JOIN t2 NATURAL JOIN t3
   }
 } {1 11 111 1111}
-do_test join2-1.6 {
-  execsql {
-    SELECT * FROM
-      t1 NATURAL LEFT OUTER JOIN (t2 NATURAL JOIN t3)
-  }
-} {1 11 111 1111 2 22 {} {} 3 33 {} {}}
+ifcapable subquery {
+  do_test join2-1.7 {
+    execsql {
+      SELECT * FROM
+        t1 NATURAL LEFT OUTER JOIN (t2 NATURAL JOIN t3)
+    }
+  } {1 11 111 1111 2 22 {} {} 3 33 {} {}}
+}
 
 finish_test

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.41 2005/01/11 17:46:42 drh Exp $
+# $Id: expr.test,v 1.42 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -500,12 +500,18 @@ test_expr2 expr-7.46 {((123||'xabcdefghijklmnopqrstuvwyxz01234567890'||a) BETWEE
 
 test_expr2 expr-7.50 {((a between 1 and 2 OR 0) AND 1) OR 0} {1 2}
 test_expr2 expr-7.51 {((a not between 3 and 100 OR 0) AND 1) OR 0} {1 2}
-test_expr2 expr-7.52 {((a in (1,2) OR 0) AND 1) OR 0} {1 2}
-test_expr2 expr-7.53 {((a not in (3,4,5,6,7,8,9,10) OR 0) AND a<11) OR 0} {1 2}
+
+ifcapable subquery {
+  test_expr2 expr-7.52 {((a in (1,2) OR 0) AND 1) OR 0} {1 2}
+  test_expr2 expr-7.53 \
+      {((a not in (3,4,5,6,7,8,9,10) OR 0) AND a<11) OR 0} {1 2}
+}
 test_expr2 expr-7.54 {((a>0 OR 0) AND a<3) OR 0} {1 2}
-test_expr2 expr-7.55 {((a in (1,2) OR 0) IS NULL AND 1) OR 0} {{}}
-test_expr2 expr-7.56 {((a not in (3,4,5,6,7,8,9,10) IS NULL OR 0) AND 1) OR 0} \
-   {{}}
+ifcapable subquery {
+  test_expr2 expr-7.55 {((a in (1,2) OR 0) IS NULL AND 1) OR 0} {{}}
+  test_expr2 expr-7.56 \
+      {((a not in (3,4,5,6,7,8,9,10) IS NULL OR 0) AND 1) OR 0} {{}}
+}
 test_expr2 expr-7.57 {((a>0 IS NULL OR 0) AND 1) OR 0} {{}}
 
 test_expr2 expr-7.58  {(a||'')<='1'}                  {1}

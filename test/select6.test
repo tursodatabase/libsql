@@ -12,10 +12,16 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.15 2004/11/22 15:05:59 danielk1977 Exp $
+# $Id: select6.test,v 1.16 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Omit this whole file if the library is build without subquery support.
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 do_test select6-1.0 {
   execsql {

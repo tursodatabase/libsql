@@ -12,7 +12,7 @@
 # of this file is testing the interaction of manifest types, type affinity
 # and comparison expressions.
 #
-# $Id: types2.test,v 1.4 2004/07/19 00:39:46 drh Exp $
+# $Id: types2.test,v 1.5 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -196,38 +196,40 @@ test_bool types2-4.26 {o1='500'} {'500' > o1} 0
 test_bool types2-4.27 {o1='500'} {500.0 > o1} 0
 test_bool types2-4.28 {o1='500'} {'500.0' > o1} 1
 
-# types2-5.* - The 'IN (x, y....)' operator with no index.
-# 
-# Compare literals against literals (always a numeric comparison).
-test_bool types2-5.1 {} {(NULL IN ('10.0', 20)) ISNULL} 1
-test_bool types2-5.2 {} {10 IN ('10.0', 20)} 1
-test_bool types2-5.3 {} {'10' IN ('10.0', 20)} 1
-test_bool types2-5.4 {} {10 IN (10.0, 20)} 1
-test_bool types2-5.5 {} {'10.0' IN (10, 20)} 1
-
-# Compare literals against a column with TEXT affinity
-test_bool types2-5.6 {t1='10.0'} {t1 IN (10.0, 20)} 1
-test_bool types2-5.7 {t1='10.0'} {t1 IN (10, 20)} 0
-test_bool types2-5.8 {t1='10'} {t1 IN (10.0, 20)} 0
-test_bool types2-5.9 {t1='10'} {t1 IN (20, '10.0')} 0
-test_bool types2-5.10 {t1=10} {t1 IN (20, '10')} 1
-
-# Compare literals against a column with NUMERIC affinity
-test_bool types2-5.11 {n1='10.0'} {n1 IN (10.0, 20)} 1
-test_bool types2-5.12 {n1='10.0'} {n1 IN (10, 20)} 1
-test_bool types2-5.13 {n1='10'} {n1 IN (10.0, 20)} 1
-test_bool types2-5.14 {n1='10'} {n1 IN (20, '10.0')} 1
-test_bool types2-5.15 {n1=10} {n1 IN (20, '10')} 1
-
-# Compare literals against a column with affinity NONE
-test_bool types2-5.16 {o1='10.0'} {o1 IN (10.0, 20)} 0
-test_bool types2-5.17 {o1='10.0'} {o1 IN (10, 20)} 0
-test_bool types2-5.18 {o1='10'} {o1 IN (10.0, 20)} 0
-test_bool types2-5.19 {o1='10'} {o1 IN (20, '10.0')} 0
-test_bool types2-5.20 {o1=10} {o1 IN (20, '10')} 0
-test_bool types2-5.21 {o1='10.0'} {o1 IN (10, 20, '10.0')} 1
-test_bool types2-5.22 {o1='10'} {o1 IN (10.0, 20, '10')} 1
-test_bool types2-5.23 {o1=10} {n1 IN (20, '10', 10)} 1
+ifcapable subquery {
+  # types2-5.* - The 'IN (x, y....)' operator with no index.
+  # 
+  # Compare literals against literals (always a numeric comparison).
+  test_bool types2-5.1 {} {(NULL IN ('10.0', 20)) ISNULL} 1
+  test_bool types2-5.2 {} {10 IN ('10.0', 20)} 1
+  test_bool types2-5.3 {} {'10' IN ('10.0', 20)} 1
+  test_bool types2-5.4 {} {10 IN (10.0, 20)} 1
+  test_bool types2-5.5 {} {'10.0' IN (10, 20)} 1
+  
+  # Compare literals against a column with TEXT affinity
+  test_bool types2-5.6 {t1='10.0'} {t1 IN (10.0, 20)} 1
+  test_bool types2-5.7 {t1='10.0'} {t1 IN (10, 20)} 0
+  test_bool types2-5.8 {t1='10'} {t1 IN (10.0, 20)} 0
+  test_bool types2-5.9 {t1='10'} {t1 IN (20, '10.0')} 0
+  test_bool types2-5.10 {t1=10} {t1 IN (20, '10')} 1
+  
+  # Compare literals against a column with NUMERIC affinity
+  test_bool types2-5.11 {n1='10.0'} {n1 IN (10.0, 20)} 1
+  test_bool types2-5.12 {n1='10.0'} {n1 IN (10, 20)} 1
+  test_bool types2-5.13 {n1='10'} {n1 IN (10.0, 20)} 1
+  test_bool types2-5.14 {n1='10'} {n1 IN (20, '10.0')} 1
+  test_bool types2-5.15 {n1=10} {n1 IN (20, '10')} 1
+  
+  # Compare literals against a column with affinity NONE
+  test_bool types2-5.16 {o1='10.0'} {o1 IN (10.0, 20)} 0
+  test_bool types2-5.17 {o1='10.0'} {o1 IN (10, 20)} 0
+  test_bool types2-5.18 {o1='10'} {o1 IN (10.0, 20)} 0
+  test_bool types2-5.19 {o1='10'} {o1 IN (20, '10.0')} 0
+  test_bool types2-5.20 {o1=10} {o1 IN (20, '10')} 0
+  test_bool types2-5.21 {o1='10.0'} {o1 IN (10, 20, '10.0')} 1
+  test_bool types2-5.22 {o1='10'} {o1 IN (10.0, 20, '10')} 1
+  test_bool types2-5.23 {o1=10} {n1 IN (20, '10', 10)} 1
+}
 
 # Tests named types2-6.* use the same infrastructure as the types2-2.*
 # tests. The contents of the vals array is repeated here for easy 
@@ -236,17 +238,19 @@ test_bool types2-5.23 {o1=10} {n1 IN (20, '10', 10)} 1
 # set vals [list 10 10.0 '10' '10.0' 20 20.0 '20' '20.0' 30 30.0 '30' '30.0']
 #                1  2    3    4      5  6    7    8      9  10   11   12
 
-test_boolset types2-6.1 {o IN ('10', 30)} {3 9 10}
-test_boolset types2-6.2 {o IN (20.0, 30.0)} {5 6 9 10}
-test_boolset types2-6.3 {t IN ('10', 30)} {1 3 9 11}
-test_boolset types2-6.4 {t IN (20.0, 30.0)} {6 8 10 12}
-test_boolset types2-6.5 {n IN ('10', 30)} {1 2 3 4 9 10 11 12}
-test_boolset types2-6.6 {n IN (20.0, 30.0)} {5 6 7 8 9 10 11 12}
-test_boolset types2-6.7 {i IN ('10', 30)} {1 2 3 4 9 10 11 12}
-test_boolset types2-6.8 {i IN (20.0, 30.0)} {5 6 7 8 9 10 11 12}
+ifcapable subquery {
+  test_boolset types2-6.1 {o IN ('10', 30)} {3 9 10}
+  test_boolset types2-6.2 {o IN (20.0, 30.0)} {5 6 9 10}
+  test_boolset types2-6.3 {t IN ('10', 30)} {1 3 9 11}
+  test_boolset types2-6.4 {t IN (20.0, 30.0)} {6 8 10 12}
+  test_boolset types2-6.5 {n IN ('10', 30)} {1 2 3 4 9 10 11 12}
+  test_boolset types2-6.6 {n IN (20.0, 30.0)} {5 6 7 8 9 10 11 12}
+  test_boolset types2-6.7 {i IN ('10', 30)} {1 2 3 4 9 10 11 12}
+  test_boolset types2-6.8 {i IN (20.0, 30.0)} {5 6 7 8 9 10 11 12}
 
-# Also test than IN(x, y, z) works on a rowid:
-test_boolset types2-6.9 {rowid IN (1, 6, 10)} {1 6 10}
+  # Also test than IN(x, y, z) works on a rowid:
+  test_boolset types2-6.9 {rowid IN (1, 6, 10)} {1 6 10}
+}
 
 # Tests types2-7.* concentrate on expressions of the form 
 # "x IN (SELECT...)" with no index.
@@ -259,29 +263,31 @@ execsql {
   INSERT INTO t3 VALUES('1.0', '1.0', '1.0', '1.0');
 }
 
-test_bool types2-7.1 {i1=1} {i1 IN (SELECT i FROM t3)} 1
-test_bool types2-7.2 {i1='2.0'} {i1 IN (SELECT i FROM t3)} 1
-test_bool types2-7.3 {i1='2.0'} {i1 IN (SELECT n FROM t3)} 1
-test_bool types2-7.4 {i1='2.0'} {i1 IN (SELECT t FROM t3)} 1
-test_bool types2-7.5 {i1='2.0'} {i1 IN (SELECT o FROM t3)} 1
-
-test_bool types2-7.6 {n1=1} {n1 IN (SELECT n FROM t3)} 1
-test_bool types2-7.7 {n1='2.0'} {n1 IN (SELECT i FROM t3)} 1
-test_bool types2-7.8 {n1='2.0'} {n1 IN (SELECT n FROM t3)} 1
-test_bool types2-7.9 {n1='2.0'} {n1 IN (SELECT t FROM t3)} 1
-test_bool types2-7.10 {n1='2.0'} {n1 IN (SELECT o FROM t3)} 1
-
-test_bool types2-7.6 {t1=1} {t1 IN (SELECT t FROM t3)} 1
-test_bool types2-7.7 {t1='2.0'} {t1 IN (SELECT t FROM t3)} 0
-test_bool types2-7.8 {t1='2.0'} {t1 IN (SELECT n FROM t3)} 1
-test_bool types2-7.9 {t1='2.0'} {t1 IN (SELECT i FROM t3)} 1
-test_bool types2-7.10 {t1='2.0'} {t1 IN (SELECT o FROM t3)} 0
-test_bool types2-7.11 {t1='1.0'} {t1 IN (SELECT t FROM t3)} 1
-test_bool types2-7.12 {t1='1.0'} {t1 IN (SELECT o FROM t3)} 1
-
-test_bool types2-7.13 {o1=2} {o1 IN (SELECT o FROM t3)} 1
-test_bool types2-7.14 {o1='2'} {o1 IN (SELECT o FROM t3)} 0
-test_bool types2-7.15 {o1='2'} {o1 IN (SELECT o||'' FROM t3)} 1
+ifcapable subquery {
+  test_bool types2-7.1 {i1=1} {i1 IN (SELECT i FROM t3)} 1
+  test_bool types2-7.2 {i1='2.0'} {i1 IN (SELECT i FROM t3)} 1
+  test_bool types2-7.3 {i1='2.0'} {i1 IN (SELECT n FROM t3)} 1
+  test_bool types2-7.4 {i1='2.0'} {i1 IN (SELECT t FROM t3)} 1
+  test_bool types2-7.5 {i1='2.0'} {i1 IN (SELECT o FROM t3)} 1
+  
+  test_bool types2-7.6 {n1=1} {n1 IN (SELECT n FROM t3)} 1
+  test_bool types2-7.7 {n1='2.0'} {n1 IN (SELECT i FROM t3)} 1
+  test_bool types2-7.8 {n1='2.0'} {n1 IN (SELECT n FROM t3)} 1
+  test_bool types2-7.9 {n1='2.0'} {n1 IN (SELECT t FROM t3)} 1
+  test_bool types2-7.10 {n1='2.0'} {n1 IN (SELECT o FROM t3)} 1
+  
+  test_bool types2-7.6 {t1=1} {t1 IN (SELECT t FROM t3)} 1
+  test_bool types2-7.7 {t1='2.0'} {t1 IN (SELECT t FROM t3)} 0
+  test_bool types2-7.8 {t1='2.0'} {t1 IN (SELECT n FROM t3)} 1
+  test_bool types2-7.9 {t1='2.0'} {t1 IN (SELECT i FROM t3)} 1
+  test_bool types2-7.10 {t1='2.0'} {t1 IN (SELECT o FROM t3)} 0
+  test_bool types2-7.11 {t1='1.0'} {t1 IN (SELECT t FROM t3)} 1
+  test_bool types2-7.12 {t1='1.0'} {t1 IN (SELECT o FROM t3)} 1
+  
+  test_bool types2-7.13 {o1=2} {o1 IN (SELECT o FROM t3)} 1
+  test_bool types2-7.14 {o1='2'} {o1 IN (SELECT o FROM t3)} 0
+  test_bool types2-7.15 {o1='2'} {o1 IN (SELECT o||'' FROM t3)} 1
+}
 
 # set vals [list 10 10.0 '10' '10.0' 20 20.0 '20' '20.0' 30 30.0 '30' '30.0']
 #                1  2    3    4      5  6    7    8      9  10   11   12
@@ -289,17 +295,19 @@ execsql {
   CREATE TABLE t4(i INTEGER, n NUMERIC, t VARCHAR(20), o LARGE BLOB);
   INSERT INTO t4 VALUES(10, 20, 20, 30);
 }
-test_boolset types2-8.1 {i IN (SELECT i FROM t4)} {1 2 3 4}
-test_boolset types2-8.2 {n IN (SELECT i FROM t4)} {1 2 3 4}
-test_boolset types2-8.3 {t IN (SELECT i FROM t4)} {1 2 3 4}
-test_boolset types2-8.4 {o IN (SELECT i FROM t4)} {1 2 3 4}
-test_boolset types2-8.5 {i IN (SELECT t FROM t4)} {5 6 7 8}
-test_boolset types2-8.6 {n IN (SELECT t FROM t4)} {5 6 7 8}
-test_boolset types2-8.7 {t IN (SELECT t FROM t4)} {5 7}
-test_boolset types2-8.8 {o IN (SELECT t FROM t4)} {7}
-test_boolset types2-8.9 {i IN (SELECT o FROM t4)} {9 10 11 12}
-test_boolset types2-8.6 {n IN (SELECT o FROM t4)} {9 10 11 12}
-test_boolset types2-8.7 {t IN (SELECT o FROM t4)} {9 11}
-test_boolset types2-8.8 {o IN (SELECT o FROM t4)} {9 10}
+ifcapable subquery {
+  test_boolset types2-8.1 {i IN (SELECT i FROM t4)} {1 2 3 4}
+  test_boolset types2-8.2 {n IN (SELECT i FROM t4)} {1 2 3 4}
+  test_boolset types2-8.3 {t IN (SELECT i FROM t4)} {1 2 3 4}
+  test_boolset types2-8.4 {o IN (SELECT i FROM t4)} {1 2 3 4}
+  test_boolset types2-8.5 {i IN (SELECT t FROM t4)} {5 6 7 8}
+  test_boolset types2-8.6 {n IN (SELECT t FROM t4)} {5 6 7 8}
+  test_boolset types2-8.7 {t IN (SELECT t FROM t4)} {5 7}
+  test_boolset types2-8.8 {o IN (SELECT t FROM t4)} {7}
+  test_boolset types2-8.9 {i IN (SELECT o FROM t4)} {9 10 11 12}
+  test_boolset types2-8.6 {n IN (SELECT o FROM t4)} {9 10 11 12}
+  test_boolset types2-8.7 {t IN (SELECT o FROM t4)} {9 11}
+  test_boolset types2-8.8 {o IN (SELECT o FROM t4)} {9 10}
+}
 
 finish_test

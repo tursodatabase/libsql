@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.15 2005/01/18 17:40:04 drh Exp $
+# $Id: join.test,v 1.16 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -117,18 +117,21 @@ do_test join-1.12 {
     SELECT * FROM t1 natural inner join t2;
   }
 } {1 2 3 4 2 3 4 5}
-do_test join-1.13 {
-  execsql2 {
-    SELECT * FROM t1 NATURAL JOIN 
-      (SELECT b as 'c', c as 'd', d as 'e' FROM t2) as t3
-  }
-} {a 1 b 2 c 3 d 4 e 5}
-do_test join-1.14 {
-  execsql2 {
-    SELECT * FROM (SELECT b as 'c', c as 'd', d as 'e' FROM t2) as 'tx'
-        NATURAL JOIN t1
-  }
-} {c 3 d 4 e 5 a 1 b 2}
+
+ifcapable subquery {
+  do_test join-1.13 {
+    execsql2 {
+      SELECT * FROM t1 NATURAL JOIN 
+        (SELECT b as 'c', c as 'd', d as 'e' FROM t2) as t3
+    }
+  } {a 1 b 2 c 3 d 4 e 5}
+  do_test join-1.14 {
+    execsql2 {
+      SELECT * FROM (SELECT b as 'c', c as 'd', d as 'e' FROM t2) as 'tx'
+          NATURAL JOIN t1
+    }
+  } {c 3 d 4 e 5 a 1 b 2}
+}
 
 do_test join-1.15 {
   execsql {

@@ -186,11 +186,13 @@ do_test null-8.1 {
     SELECT x FROM t4 WHERE y=NULL;
   }
 } {}
-do_test null-8.2 {
-  execsql {
-    SELECT x FROM t4 WHERE y IN (33,NULL);
-  }
-} {}
+ifcapable subquery {
+  do_test null-8.2 {
+    execsql {
+      SELECT x FROM t4 WHERE y IN (33,NULL);
+    }
+  } {}
+}
 do_test null-8.3 {
   execsql {
     SELECT x FROM t4 WHERE y<33 ORDER BY x;
@@ -212,11 +214,13 @@ do_test null-8.11 {
     SELECT x FROM t4 WHERE y=NULL;
   }
 } {}
-do_test null-8.12 {
-  execsql {
-    SELECT x FROM t4 WHERE y IN (33,NULL);
-  }
-} {}
+ifcapable subquery {
+  do_test null-8.12 {
+    execsql {
+      SELECT x FROM t4 WHERE y IN (33,NULL);
+    }
+  } {}
+}
 do_test null-8.13 {
   execsql {
     SELECT x FROM t4 WHERE y<33 ORDER BY x;

@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.9 2004/06/19 03:33:57 danielk1977 Exp $
+# $Id: tableapi.test,v 1.10 2005/01/21 03:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -83,9 +83,15 @@ do_test tableapi-2.6 {
   sqlite3_get_table_printf $::dbx {
     INSERT INTO xyz VALUES(52,NULL)
   } {}
-  sqlite3_get_table_printf $::dbx {
-    SELECT * FROM xyz WHERE a IN (42,50,52) ORDER BY a DESC
-  } {}
+  ifcapable subquery {
+    sqlite3_get_table_printf $::dbx {
+      SELECT * FROM xyz WHERE a IN (42,50,52) ORDER BY a DESC
+    } {}
+  } else {
+    sqlite3_get_table_printf $::dbx {
+      SELECT * FROM xyz WHERE a=42 OR a=50 OR a=52 ORDER BY a DESC
+    } {}
+  }
 } {0 3 2 a b 52 NULL 50 (50) 42 (42)}
 do_test tableapi-2.7 {
   sqlite3_get_table_printf $::dbx {
@@ -140,9 +146,15 @@ do_test tableapi-3.6 {
   sqlite3_get_table_printf $::dbx {
     INSERT INTO xyz VALUES(52,NULL)
   } {}
-  sqlite3_get_table_printf $::dbx {
-    SELECT * FROM xyz WHERE a IN (42,50,52) ORDER BY a DESC
-  } {}
+  ifcapable subquery {
+    sqlite3_get_table_printf $::dbx {
+      SELECT * FROM xyz WHERE a IN (42,50,52) ORDER BY a DESC
+    } {}
+  } else {
+    sqlite3_get_table_printf $::dbx {
+      SELECT * FROM xyz WHERE a=42 OR a=50 OR a=52 ORDER BY a DESC
+    } {}
+  }
 } {0 3 2 a b 52 NULL 50 (50) 42 (42)}
 do_test tableapi-3.7 {
   sqlite3_get_table_printf $::dbx {
