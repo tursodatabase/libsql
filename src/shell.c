@@ -12,13 +12,16 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.50 2002/04/13 23:42:24 drh Exp $
+** $Id: shell.c,v 1.51 2002/04/18 02:46:52 persicom Exp $
 */
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "sqlite.h"
 #include <ctype.h>
+#include <pwd.h>
+#include <sys/types.h>
+
 #if !defined(_WIN32) && !defined(WIN32)
 # include <signal.h>
 #endif
@@ -37,6 +40,19 @@
 ** by the SIGINT handler to interrupt database processing.
 */
 static sqlite *db = 0;
+
+/*
+** This is the name of our program. It is set in main(), used
+** in a number of other places, mostly for error messages.
+*/
+static char *Argv0;
+
+/*
+** Prompt strings. Initialized in main. Settable with
+**   .prompt main continue
+*/
+static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
+static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 
 /*
 ** This routine reads a line of text from standard input, stores
@@ -104,15 +120,21 @@ static char *one_input_line(const char *zPrior, FILE *in){
     return getline(0, in);
   }
   if( zPrior && zPrior[0] ){
-    zPrompt = "   ...> ";
+    zPrompt = continuePrompt;
   }else{
-    zPrompt = "sqlite> ";
+    zPrompt = mainPrompt;
   }
   zResult = readline(zPrompt);
   if( zResult ) add_history(zResult);
   return zResult;
 }
 
+struct previous_mode_data {
+  int valid;        /* Is there legit data in here? */
+  int mode;
+  int showHeader;
+  int colWidth[100];
+};
 /*
 ** An pointer to an instance of this structure is passed from
 ** the main program to the callback.  This is used to communicate
@@ -129,6 +151,11 @@ struct callback_data {
   char separator[20];    /* Separator character for MODE_List */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
+  char nullvalue[20];    /* The text to print when a NULL comes back from the database */
+  struct previous_mode_data explainPrev;
+                         /* Holds the mode information just before .explain ON */
+  char outfile[FILENAME_MAX];
+                         /* Filename for *out */
 };
 
 /*
@@ -140,6 +167,16 @@ struct callback_data {
 #define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
 #define MODE_Html     4  /* Generate an XHTML table */
 #define MODE_Insert   5  /* Generate SQL "insert" statements */
+#define MODE_NUM_OF   6
+
+char *modeDescr[MODE_NUM_OF] = {
+  "line",
+  "column",
+  "list",
+  "semi",
+  "html",
+  "insert"
+};
 
 /*
 ** Number of elements in an array
@@ -251,7 +288,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       if( p->cnt++>0 ) fprintf(p->out,"\n");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%*s = %s\n", w, azCol[i], azArg[i] ? azArg[i] : 0);
+        fprintf(p->out,"%*s = %s\n", w, azCol[i], azArg[i] ? azArg[i] : p->nullvalue);
       }
       break;
     }
@@ -267,7 +304,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           if( w<=0 ){
             w = strlen(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen(azArg && azArg[i] ? azArg[i] : "");
+            n = strlen(azArg && azArg[i] ? azArg[i] : p->nullvalue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -300,7 +337,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
            w = 10;
         }
         fprintf(p->out,"%-*.*s%s",w,w,
-            azArg[i] ? azArg[i] : "", i==nArg-1 ? "\n": "  ");
+            azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
       }
       break;
     }
@@ -314,7 +351,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         char *z = azArg[i];
-        if( z==0 ) z = "";
+        if( z==0 ) z = p->nullvalue;
         fprintf(p->out, "%s", z);
         if( i<nArg-1 ){
           fprintf(p->out, "%s", p->separator);
@@ -338,7 +375,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
         fprintf(p->out,"<TD>");
-        output_html_string(p->out, azArg[i] ? azArg[i] : "");
+        output_html_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
         fprintf(p->out,"</TD>\n");
       }
       fprintf(p->out,"</TD></TR>\n");
@@ -435,20 +472,37 @@ static char zHelp[] =
   ".dump ?TABLE? ...      Dump the database in an text format\n"
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
-  ".explain               Set output mode suitable for EXPLAIN\n"
-  ".header ON|OFF         Turn display of headers on or off\n"
+  ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
+  "                       \"off\" will revert to the output mode that was\n"
+  "                       previously in effect\n"
+  ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
-  ".mode MODE             Set mode to one of \"line\", \"column\", \n"
+  ".mode MODE             Set mode to one of \"line(s)\", \"column(s)\", \n"
   "                       \"insert\", \"list\", or \"html\"\n"
   ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
+  ".nullvalue STRING      Print STRING instead of nothing for NULL data\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
+  ".prompt MAIN CONTINUE  Replace the standard prompts\n"
+  "                       \"sqlite > \" and \"   ...> \"\n"
+  "                       with the strings MAIN and CONTINUE\n"
+  "                       CONTINUE is optional.\n"
+  "                       Special characters are:\n"
+  ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".reindex ?TABLE?       Rebuild indices\n"
 /*  ".rename OLD NEW        Change the name of a table or index\n" */
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
+  ".show                  Show the current values for the following:\n"
+  "                       .echo\n"
+  "                       .explain\n"
+  "                       .mode\n"
+  "                       .nullvalue\n"
+  "                       .output\n"
+  "                       .separator\n"
+  "                       .width\n"
   ".tables ?PATTERN?      List names of tables matching a pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
@@ -539,17 +593,51 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     exit(0);
   }else
 
-  if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
-    p->mode = MODE_Column;
-    p->showHeader = 1;
-    p->colWidth[0] = 4;
-    p->colWidth[1] = 12;
-    p->colWidth[2] = 10;
-    p->colWidth[3] = 10;
-    p->colWidth[4] = 35;
+  if( c=='e' && strncmp(azArg[0], "explain", n)==0 && nArg>1){
+    int j;
+    char *z = azArg[1];
+    int val = atoi(azArg[1]);
+    for(j=0; z[j]; j++){
+      if( isupper(z[j]) ) z[j] = tolower(z[j]);
+    }
+    if( strcmp(z,"on")==0 ){
+      val = 1;
+    }else if( strcmp(z,"yes")==0 ){
+      val = 1;
+    }
+    if(val == 1) {
+      if(!p->explainPrev.valid) {
+        p->explainPrev.valid = 1;
+        p->explainPrev.mode = p->mode;
+        p->explainPrev.showHeader = p->showHeader;
+        memcpy(p->explainPrev.colWidth,p->colWidth,sizeof(p->colWidth));
+      }
+      /* We could put this code under the !p->explainValid
+      ** condition so that it does not execute if we are already in
+      ** explain mode. However, always executing it allows us an easy
+      ** was to reset to explain mode in case the user previously
+      ** did an .explain followed by a .width, .mode or .header
+      ** command.
+      */
+      p->mode = MODE_Column;
+      p->showHeader = 1;
+      memset(p->colWidth,0,ArraySize(p->colWidth));
+      p->colWidth[0] = 4;
+      p->colWidth[1] = 12;
+      p->colWidth[2] = 10;
+      p->colWidth[3] = 10;
+      p->colWidth[4] = 35;
+    }else if (p->explainPrev.valid) {
+      p->explainPrev.valid = 0;
+      p->mode = p->explainPrev.mode;
+      p->showHeader = p->explainPrev.showHeader;
+      memcpy(p->colWidth,p->explainPrev.colWidth,sizeof(p->colWidth));
+    }
   }else
 
-  if( c=='h' && strncmp(azArg[0], "header", n)==0 && nArg>1 ){
+  if( c=='h' && (strncmp(azArg[0], "header", n)==0
+                 ||
+                 strncmp(azArg[0], "headers", n)==0 )&& nArg>1 ){
     int j;
     char *z = azArg[1];
     int val = atoi(azArg[1]);
@@ -588,9 +676,13 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg>=2 ){
     int n2 = strlen(azArg[1]);
-    if( strncmp(azArg[1],"line",n2)==0 ){
+    if( strncmp(azArg[1],"line",n2)==0
+        ||
+        strncmp(azArg[1],"lines",n2)==0 ){
       p->mode = MODE_Line;
-    }else if( strncmp(azArg[1],"column",n2)==0 ){
+    }else if( strncmp(azArg[1],"column",n2)==0
+              ||
+              strncmp(azArg[1],"columns",n2)==0 ){
       p->mode = MODE_Column;
     }else if( strncmp(azArg[1],"list",n2)==0 ){
       p->mode = MODE_List;
@@ -608,19 +700,40 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }
   }else
 
+  if( c=='n' && strncmp(azArg[0], "nullvalue", n)==0 && nArg==2 ) {
+    sprintf(p->nullvalue, "%.*s", (int)ArraySize(p->nullvalue)-1, azArg[1]);
+  }else
+
   if( c=='o' && strncmp(azArg[0], "output", n)==0 && nArg==2 ){
     if( p->out!=stdout ){
       fclose(p->out);
     }
     if( strcmp(azArg[1],"stdout")==0 ){
       p->out = stdout;
+      strcpy(p->outfile,"stdout");
     }else{
       p->out = fopen(azArg[1], "w");
       if( p->out==0 ){
         fprintf(stderr,"can't write to \"%s\"\n", azArg[1]);
         p->out = stdout;
+      } else {
+         strcpy(p->outfile,azArg[1]);
       }
     }
+  }else
+
+  if( c=='p' && strncmp(azArg[0], "prompt", n)==0 && nArg==2 || nArg==3){
+    if( nArg >= 2) {
+      strncpy(mainPrompt,azArg[1],(int)ArraySize(mainPrompt)-1);
+    }
+    if( nArg >= 3) {
+      strncpy(continuePrompt,azArg[2],(int)ArraySize(continuePrompt)-1);
+    }
+  }else
+
+  if( c=='q' && strncmp(azArg[0], "quit", n)==0 ){
+    sqlite_close(db);
+    exit(0);
   }else
 
   if( c=='r' && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
@@ -713,6 +826,21 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     sprintf(p->separator, "%.*s", (int)ArraySize(p->separator)-1, azArg[1]);
   }else
 
+  if( c=='s' && strncmp(azArg[0], "show", n)==0){
+    int i;
+    fprintf(p->out,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
+    fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" : "off");
+    fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
+    fprintf(p->out,"%9.9s: %s\n","nullvalue", p->nullvalue);
+    fprintf(p->out,"%9.9s: %s\n","output", strlen(p->outfile) ? p->outfile : "stdout");
+    fprintf(p->out,"%9.9s: %s\n","separator", p->separator);
+    fprintf(p->out,"%9.9s: ","width");
+    for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
+        fprintf(p->out,"%d ",p->colWidth[i]);
+    }
+    fprintf(p->out,"\n\n");
+  }else
+
   if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
     char **azResult;
     int nRow, rc;
@@ -771,12 +899,11 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   {
-    fprintf(stderr, "unknown command: \"%s\". Enter \".help\" for help\n",
+    fprintf(stderr, "unknown command or invalid arguments: \"%s\". Enter \".help\" for help\n",
       azArg[0]);
   }
 }
 
-static char *Argv0;
 static void process_input(struct callback_data *p, FILE *in){
   char *zLine;
   char *zSql = 0;
@@ -829,20 +956,106 @@ static void process_input(struct callback_data *p, FILE *in){
   }
 }
 
+static void process_sqliterc(struct callback_data *p,
+                             char *sqliterc_override){
+
+  char *home_dir = NULL;
+  char *sqliterc = sqliterc_override;
+  struct passwd *pwent;
+  uid_t uid = getuid();
+  FILE *in = NULL;
+
+  if (sqliterc == NULL) {
+    /* Figure out the user's home directory */
+    while( (pwent=getpwent()) != NULL) {
+      if(pwent->pw_uid == uid) {
+        home_dir = pwent->pw_dir;
+        break;
+      }
+    }
+
+    if (!home_dir) {
+      home_dir = getenv("HOME");
+      if (!home_dir) {
+        home_dir = getenv("HOMEPATH"); /* Windows? */
+      }
+      if (!home_dir) {
+        printf("Cannot find home directory from which to load .sqliterc\n");
+        return;
+      }
+    }
+
+    /* With the home directory, open the init file and process */
+    sqliterc = (char *)calloc(strlen(home_dir) +
+                              strlen("/.sqliterc") +
+                              1,
+                              sizeof(char));
+    if( sqliterc==0 ){
+      fprintf(stderr,"%s: out of memory!\n", Argv0);
+      exit(1);
+    }
+    sprintf(sqliterc,"%s/.sqliterc",home_dir);
+  }
+  in = fopen(sqliterc,"r");
+  if(!in) {
+    /* File either had an error or was not found. Since I cannot
+     * tell, I cannot bark. */
+    return;
+  } else {
+    printf("Loading resources from %s\n",sqliterc);
+    process_input(p,in);
+    close (in);
+  }
+  return;
+}
+
+void main_init(struct callback_data *data) {
+  memset(data, 0, sizeof(*data));
+  data->mode = MODE_List;
+  strcpy(data->separator,"|");
+  data->showHeader = 0;
+  strcpy(mainPrompt,"sqlite> ");
+  strcpy(continuePrompt,"   ...> ");
+}
+
 int main(int argc, char **argv){
   char *zErrMsg = 0;
   struct callback_data data;
+  int origArgc = argc;
+  char **origArgv = argv;
 
   Argv0 = argv[0];
-  memset(&data, 0, sizeof(data));
-  data.mode = MODE_List;
-  strcpy(data.separator,"|");
-  data.showHeader = 0;
+  main_init(&data);
+  process_sqliterc(&data,NULL);
+
 #ifdef SIGINT
   signal(SIGINT, interrupt_handler);
 #endif
   while( argc>=2 && argv[1][0]=='-' ){
-    if( strcmp(argv[1],"-html")==0 ){
+    if( argc>=3 && strcmp(argv[1],"-init")==0 ){
+      /* If we get a -init to do, we have to pretend that
+      ** it replaced the .sqliterc file. Soooo, in order to
+      ** do that we need to start from scratch...*/
+      main_init(&data);
+
+      /* treat this file as the sqliterc... */
+      process_sqliterc(&data,argv[2]);
+
+      /* fix up the command line so we do not re-read
+      ** the option next time around... */
+      {
+        int i = 1;
+        for(i=1;i<=argc-2;i++) {
+          argv[i] = argv[i+2];
+        }
+      }
+      origArgc-=2;
+
+      /* and reset the command line options to be re-read.*/
+      argv = origArgv;
+      argc = origArgc;
+
+    }else if( strcmp(argv[1],"-html")==0 ){
       data.mode = MODE_Html;
       argc--;
       argv++;
@@ -860,6 +1073,10 @@ int main(int argc, char **argv){
       argv++;
     }else if( argc>=3 && strcmp(argv[1],"-separator")==0 ){
       sprintf(data.separator,"%.*s",(int)sizeof(data.separator)-1,argv[2]);
+      argc -= 2;
+      argv += 2;
+    }else if( argc>=3 && strcmp(argv[1],"-nullvalue")==0 ){
+      sprintf(data.nullvalue,"%.*s",(int)sizeof(data.nullvalue)-1,argv[2]);
       argc -= 2;
       argv += 2;
     }else if( strcmp(argv[1],"-header")==0 ){

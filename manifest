@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#19:\sDo\snot\scall\ssqliteOsSync()\sif\sthe\sonly\schanges\swere\nchanges\sto\sTEMP\stables.\s(CVS\s530)
-D 2002-04-18T01:56:58
+C General:\r\no\sAdded\sglobal\sstatic\schars\smainPrompt\sand\scontinuePrompt.\r\no\sMoved\sArgv0\sdeclaration\sto\shead\sof\sfile.\sNeeded\sin\sdo_meta_command,\r\n\s\spreviously\sfound\sbelow\sthat.\r\no\sAdded\sstruct\sprevious_mode_data\sto\ssupport\snew\s.explain\stoggle\r\n\s\sfunctionality.\r\no\sAdded\snullvalue,\sexplainPrev\sand\soutfile\smembers\sto\r\n\s\sstruct\scallback_data.\r\no\sAdded\smodeDescr\sarray\sfor\snumber/text\stranslation\sofdisplay\smodes.\r\no\sModified\szHelp\sto\smatch\snew\sfunctionality.\r\n\r\ncallback():\r\no\sAdded\ssupport\sfor\s.nullvalue\r\n\r\ndo_meta_command():\r\no\sOutput\sfilename\sis\snow\ssaved\sto\scallback\sstruct.\sIf\susing\sstdout,\r\n\s\sthen\sthe\sstring\s"stdout"\sis\ssaved.\r\no\sExplain\sis\snow\sa\stoggle.\sWhen\sit\sis\sturned\son,\sthe\scurrent\svalues\sof\r\n\s\smode,\sheader\sand\scolWidth\sare\ssaved\sif\snot\salready\sin\sexplain\smode.\r\n\s\sWhen\sturned\soff,\sthose\svalues\sare\srestored.\r\no\sAllow\s.mode\splurals\scolumns\sand\slines\sand\sdot\scommand\splural\r\n\s\s.headers.\r\no\sAdded\sprocessing\sfor\snew\skeywords\s.quit,\s.nullvalue,\s.show,\s.prompt.\r\n\r\nmain():\r\no\sAdded\s-init\sas\san\soption\sto\soverride\s.sqliterc.\r\no\sAdded\s-nullvalue\sas\sa\scommand\sline\soption.\r\no\sProcesses\s.sqliterc.\r\n\r\nmain_init():\r\no\sGenesis.\sMoved\ssome\sinitialization\scode\shere\sfrom\sinside\smain()\sso\r\n\s\sthat\sit\scan\sbe\scalled\sinitially\sby\smain\sand\sagain\sif\s-init\sis\r\n\s\sspecified.\r\n\r\none_input_line():\r\no\sNow\stakes\sprompts\sfrom\ssettable\svalues.\r\n\r\nprocess_sqliterc():\r\no\sGenesis.\sRead\s.sqliterc\sfrom\suser's\shome\sdirectory\sand\spass\sit\sto\r\n\s\sprocess_input().\sFile\sshould\scontain\smeta\scommands\sfor\ssetups.\s(CVS\s531)
+D 2002-04-18T02:46:52
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -39,7 +39,7 @@ F src/parse.y 9a8a2311dd95101bb02b3991042e619eea49729a
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
-F src/shell.c 66bf0478c35343d9b795e435b54b45a4ab29f2ef
+F src/shell.c 33e2574f368b86429a4c024904f8b59fb1e85d2d
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
 F src/sqliteInt.h e47ca9267a4c4a98e9f8d90c2df994a18f23d699
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7edd13468e24d79939f0fa1e58f3b686422ca826
-R d6ef54d3be3cb5d13a1592b37489d27e
-U drh
-Z aa513408483afd37049a6b0b765b2614
+P 33da20b9c1a8eef16ad7ab5929bb8937c75090f2
+R 22639d7fa7e5265cffcc98ada271b214
+U persicom
+Z 815a973506ea65e8eef7ca2e9e1c8d70
