@@ -1,5 +1,5 @@
-C Unix\sversion\sof\ssqlite3OsLock().\s(CVS\s1520)
-D 2004-06-01T14:09:29
+C Fix\sanother\swebsite\stypo.\s(CVS\s1521)
+D 2004-06-02T00:08:56
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -210,11 +210,11 @@ F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 19cf0c1bf73c4b534dfafc95b3eacff4825740b4
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
-F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
+F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a84ece250035d02e399ec208aded524c20c12737
-R 3b5d7842c2050c5f20aa6a72a163fd62
-U danielk1977
-Z e93eb17e32e32c7486f10dc44fff52c2
+P 023d1760c1a720632b25c98d14bf521ab91861e2
+R 5a6a7e0dc4da60097c6d0b9613de9a3a
+U drh
+Z 18ef1953bc240ed2b92d7ff4b96c3997

@@ -1,4 +1,4 @@
-set rcsid {$Id: support.tcl,v 1.1 2004/05/31 16:04:08 drh Exp $}
+set rcsid {$Id: support.tcl,v 1.2 2004/06/02 00:08:56 drh Exp $}
 source common.tcl
 header {SQLite Support Options}
 puts {
@@ -37,8 +37,8 @@ If you would like professional support for SQLite
 or if you want custom modifications to SQLite performed by the
 original author, these services are available for a modest fee.
 For additional information visit
-<a href="http://www.hwaci.com/sw/sqlite/support.html">
-http://www.hwaci.com/sw/sqlite/support.html</a> or contact:</p>
+<a href="http://www.hwaci.com/sw/sqlite/prosupport.html">
+http://www.hwaci.com/sw/sqlite/prosupport.html</a> or contact:</p>
 
 <blockquote>
 D. Richard Hipp <br />
