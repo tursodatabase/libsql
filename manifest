@@ -1,5 +1,5 @@
-C Additional\sattach\stesting.\s\sI\snow\sbelieve\sthat\sticket\s#317\swas\sfixed\nby\scheck-in\s(981).\s(CVS\s985)
-D 2003-05-17T19:23:52
+C Fix\ssegfault\sthat\soccurs\swhen\sopening\sa\snon-existing\sdatabase\sin\sthe\sshell\nthen\simmediately\sdoing\s".q".\s(CVS\s986)
+D 2003-05-19T23:55:30
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c ec64704e61286948f39157617f1ce2f506dd1b74
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 15d921308065c9320363af6f43c01d9f09ea7118
-F src/shell.c 2565cb32cd862024bcfd88400e05437636cf21a1
+F src/shell.c b63089a91d6584df06eaa2e53ea1150c68ab1e61
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h 3ba355793a1e0b891cfa414901759189c9287a18
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c8c823b068916711857fa67db10fb479999b55c2
-R bc3167929b77207fc599db40b8510a4e
+P 24191373796b7fd6255ef9b70ce2344326308113
+R 0ad195f6ccdfb80921d558f2c3b71dfc
 U drh
-Z 07eb60187b21aabbdcf71968529d48bd
+Z 12c0806bd04cf1493cea64fc795aa255
