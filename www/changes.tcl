@@ -21,6 +21,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 July 22 (3.0.3 beta)} {
+<li>The second beta release for SQLite 3.0.</li>
+<li>Add support for "PRAGMA page_size" to adjust the page size of
+the database.</li>
+<li>Various bug fixes and documentation updates.</li>
+}
+
 chng {2004 June 30 (3.0.2 beta)} {
 <li>The first beta release for SQLite 3.0.</li>
 }
