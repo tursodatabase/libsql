@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jun 19 (2.5.1)} {
+<li>The query optimizer now attempts to implement the ORDER BY clause
+    using an index.  Sorting is still used if not suitable index is
+    available.</li>
+}
+
 chng {2002 Jun 17 (2.5.0)} {
 <li>Added support for row triggers.</li>
 <li>Added SQL-92 compliant handling of NULLs.</li>

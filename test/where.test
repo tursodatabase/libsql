@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.8 2002/06/14 22:38:43 drh Exp $
+# $Id: where.test,v 1.9 2002/06/19 14:27:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -168,7 +168,7 @@ do_test where-1.36 {
 } {1 2 3 6}
 do_test where-1.37 {
   count {SELECT w FROM t1 WHERE w+1<=4 ORDER BY w}
-} {1 2 3 99}
+} {1 2 3 199}
 
 
 # Do the same kind of thing except use a join as the data source.
@@ -272,7 +272,7 @@ do_test where-5.2 {
   count {
     SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
   }
-} {1 0 4 2 1 9 3 1 16 99}
+} {1 0 4 2 1 9 3 1 16 199}
 do_test where-5.3 {
   count {
     SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
@@ -282,7 +282,7 @@ do_test where-5.4 {
   count {
     SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
   }
-} {1 0 4 2 1 9 3 1 16 99}
+} {1 0 4 2 1 9 3 1 16 199}
 do_test where-5.5 {
   count {
     SELECT * FROM t1 WHERE rowid IN 
@@ -296,7 +296,7 @@ do_test where-5.6 {
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 99}
+} {2 1 9 4 2 25 199}
 do_test where-5.7 {
   count {
     SELECT * FROM t1 WHERE w IN 
@@ -310,7 +310,7 @@ do_test where-5.8 {
        (select rowid from t1 where rowid IN (-1,2,4))
     ORDER BY 1;
   }
-} {2 1 9 4 2 25 99}
+} {2 1 9 4 2 25 199}
 do_test where-5.9 {
   count {
     SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;
@@ -320,12 +320,12 @@ do_test where-5.10 {
   count {
     SELECT * FROM t1 WHERE x+0 IN (1,7) ORDER BY 1;
   }
-} {2 1 9 3 1 16 99}
+} {2 1 9 3 1 16 199}
 do_test where-5.11 {
   count {
     SELECT * FROM t1 WHERE y IN (6400,8100) ORDER BY 1;
   }
-} {79 6 6400 89 6 8100 99}
+} {79 6 6400 89 6 8100 199}
 do_test where-5.12 {
   count {
     SELECT * FROM t1 WHERE x=6 AND y IN (6400,8100) ORDER BY 1;
@@ -342,6 +342,106 @@ do_test where-5.14 {
   }
 } {2 1 9 6}
 
+# This procedure executes the SQL.  Then it checks the generated program
+# for the SQL and appends a "nosort" to the result if the program contains the
+# SortCallback opcode.  If the program does not contain the SortCallback
+# opcode it appends "sort"
+#
+proc cksort {sql} {
+  set data [execsql $sql]
+  set prog [execsql "EXPLAIN $sql"]
+  if {[regexp SortCallback $prog]} {set x sort} {set x nosort}
+  lappend data $x
+  return $data
+}
+# Check out the logic that attempts to implement the ORDER BY clause
+# using an index rather than by sorting.
+#
+do_test where-6.1 {
+  execsql {
+    CREATE TABLE t3(a,b,c);
+    CREATE INDEX t3a ON t3(a);
+    CREATE INDEX t3bc ON t3(b,c);
+    CREATE INDEX t3acb ON t3(a,c,b);
+    INSERT INTO t3 SELECT w, 101-w, y FROM t1;
+    SELECT count(*), sum(a), sum(b), sum(c) FROM t3;
+  }
+} {100 5050 5050 348550}
+do_test where-6.2 {
+  cksort {
+    SELECT * FROM t3 ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 nosort}
+do_test where-6.3 {
+  cksort {
+    SELECT * FROM t3 ORDER BY a+1 LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 sort}
+do_test where-6.4 {
+  cksort {
+    SELECT * FROM t3 WHERE a<10 ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 nosort}
+do_test where-6.5 {
+  cksort {
+    SELECT * FROM t3 WHERE a>0 AND a<10 ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 nosort}
+do_test where-6.6 {
+  cksort {
+    SELECT * FROM t3 WHERE a>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 nosort}
+do_test where-6.7 {
+  cksort {
+    SELECT * FROM t3 WHERE b>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 sort}
+do_test where-6.8 {
+  cksort {
+    SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
+  }
+} {1 100 4 2 99 9 3 98 16 sort}
+do_test where-6.9 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.10 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.11 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a,c LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.12 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a,c,b LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.13 {
+  cksort {
+    SELECT * FROM t3 WHERE a>0 ORDER BY a DESC LIMIT 3
+  }
+} {100 1 10201 99 2 10000 98 3 9801 sort}
+do_test where-6.14 {
+  cksort {
+    SELECT * FROM t3 ORDER BY b LIMIT 3
+  }
+} {100 1 10201 99 2 10000 98 3 9801 nosort}
+do_test where-6.15 {
+  cksort {
+    SELECT t3.a, t1.x FROM t3, t1 WHERE t3.a=t1.w ORDER BY t3.a LIMIT 3
+  }
+} {1 0 2 1 3 1 nosort}
+do_test where-6.16 {
+  cksort {
+    SELECT t3.a, t1.x FROM t3, t1 WHERE t3.a=t1.w ORDER BY t1.x, t3.a LIMIT 3
+  }
+} {1 0 2 1 3 1 sort}
 
 
 finish_test

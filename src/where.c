@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.52 2002/06/14 22:38:43 drh Exp $
+** $Id: where.c,v 1.53 2002/06/19 14:27:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -25,14 +25,14 @@
 typedef struct ExprInfo ExprInfo;
 struct ExprInfo {
   Expr *p;                /* Pointer to the subexpression */
-  int indexable;          /* True if this subexprssion is usable by an index */
-  int idxLeft;            /* p->pLeft is a column in this table number. -1 if
+  u8 indexable;           /* True if this subexprssion is usable by an index */
+  short int idxLeft;      /* p->pLeft is a column in this table number. -1 if
                           ** p->pLeft is not the column of any table */
-  int idxRight;           /* p->pRight is a column in this table number. -1 if
+  short int idxRight;     /* p->pRight is a column in this table number. -1 if
                           ** p->pRight is not the column of any table */
-  unsigned prereqLeft;    /* Tables referenced by p->pLeft */
-  unsigned prereqRight;   /* Tables referenced by p->pRight */
-  unsigned prereqAll;     /* Tables referenced by this expression in any way */
+  unsigned prereqLeft;    /* Bitmask of tables referenced by p->pLeft */
+  unsigned prereqRight;   /* Bitmask of tables referenced by p->pRight */
+  unsigned prereqAll;     /* Bitmask of tables referenced by p */
 };
 
 /*
@@ -69,15 +69,17 @@ static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
 /*
 ** This routine walks (recursively) an expression tree and generates
 ** a bitmask indicating which tables are used in that expression
-** tree.  Bit 0 of the mask is set if table 0 is used.  But 1 is set
-** if table 1 is used.  And so forth.
+** tree.  Bit 0 of the mask is set if table base+0 is used.  Bit 1
+** is set if table base+1 is used.  And so forth.
 **
 ** In order for this routine to work, the calling function must have
 ** previously invoked sqliteExprResolveIds() on the expression.  See
 ** the header comment on that routine for additional information.
 **
 ** "base" is the cursor number (the value of the iTable field) that
-** corresponds to the first entry in the table list. 
+** corresponds to the first entry in the list of tables that appear
+** in the FROM clause of a SELECT.  For UPDATE and DELETE statements
+** there is just a single table with "base" as the cursor number.
 */
 static int exprTableUsage(int base, Expr *p){
   unsigned int mask = 0;
@@ -149,7 +151,64 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 }
 
 /*
-** Generating the beginning of the loop used for WHERE clause processing.
+** pOrderBy is an ORDER BY clause from a SELECT statement.  pTab is the
+** left-most table in the FROM clause of that same SELECT statement and
+** the table has a cursor number of "base".
+**
+** This routine attempts to find an index for pTab that generates the
+** correct record sequence for the given ORDER BY clause.  The return value
+** is a pointer to an index that does the job.  NULL is returned if the
+** table has no index that will generate the correct sort order.
+**
+** If there are two or more indices that generate the correct sort order
+** and pPreferredIdx is one of those indices, then return pPreferredIdx.
+*/
+static Index *findSortingIndex(
+  Table *pTab,            /* The table to be sorted */
+  int base,               /* Cursor number for pTab */
+  ExprList *pOrderBy,     /* The ORDER BY clause */
+  Index *pPreferredIdx    /* Use this index, if possible and not NULL */
+){
+  int i;
+  Index *pMatch;
+  Index *pIdx;
+
+  assert( pOrderBy!=0 );
+  assert( pOrderBy->nExpr>0 );
+  for(i=0; i<pOrderBy->nExpr; i++){
+    Expr *p;
+    if( (pOrderBy->a[i].sortOrder & SQLITE_SO_DIRMASK)!=SQLITE_SO_ASC ){
+      /* Indices can only be used for ascending sort order */
+      return 0;
+    }
+    p = pOrderBy->a[i].pExpr;
+    if( p->op!=TK_COLUMN || p->iTable!=base ){
+      /* Can not use an index sort on anything that is not a column in the
+      ** left-most table of the FROM clause */
+      return 0;
+    }
+  }
+
+  /* If we get this far, it means the ORDER BY clause consists only of
+  ** ascending columns in the left-most table of the FROM clause.  Now
+  ** check for a matching index.
+  */
+  pMatch = 0;
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    if( pIdx->nColumn<pOrderBy->nExpr ) continue;
+    for(i=0; i<pOrderBy->nExpr; i++){
+      if( pOrderBy->a[i].pExpr->iColumn!=pIdx->aiColumn[i] ) break;
+    }
+    if( i>=pOrderBy->nExpr ){
+      pMatch = pIdx;
+      if( pIdx==pPreferredIdx ) break;
+    }
+  }
+  return pMatch;
+}
+
+/*
+** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an (opaque) structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
 ** should invoke sqliteWhereEnd() with the return value of this function
@@ -204,17 +263,34 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 **          ...
 **          flag = 1
 **      end
-**      if flag==0 goto start
+**      if flag==0 then
+**        move the row2 cursor to a null row
+**        goto start
+**      fi
 **    end
 **
-** In words, if the right
+** ORDER BY CLAUSE PROCESSING
+**
+** *ppOrderBy is a pointer to the ORDER BY clause of a SELECT statement,
+** if there is one.  If there is no ORDER BY clause or if this routine
+** is called from an UPDATE or DELETE statement, then ppOrderBy is NULL.
+**
+** If an index can be used so that the natural output order of the table
+** scan is correct for the ORDER BY clause, then that index is used and
+** *ppOrderBy is set to NULL.  This is an optimization that prevents an
+** unnecessary sort of the result set if an index appropriate for the
+** ORDER BY clause already exists.
+**
+** If the where clause loops cannot be arranged to provide the correct
+** output order, then the *ppOrderBy is unchanged.
 */
 WhereInfo *sqliteWhereBegin(
   Parse *pParse,       /* The parser context */
   int base,            /* VDBE cursor index for left-most table in pTabList */
   SrcList *pTabList,   /* A list of all tables to be scanned */
   Expr *pWhere,        /* The WHERE clause */
-  int pushKey          /* If TRUE, leave the table key on the stack */
+  int pushKey,         /* If TRUE, leave the table key on the stack */
+  ExprList **ppOrderBy /* An ORDER BY clause, or NULL */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -235,7 +311,7 @@ WhereInfo *sqliteWhereBegin(
   */
   assert( pushKey==0 || pTabList->nSrc==1 );
   
-  /* Allocate space for aOrder[] and aiMem[]. */
+  /* Allocate space for aOrder[] */
   aOrder = sqliteMalloc( sizeof(int) * pTabList->nSrc );
 
   /* Allocate and initialize the WhereInfo structure that will become the
@@ -496,6 +572,42 @@ WhereInfo *sqliteWhereBegin(
     }
   }
 
+  /* Check to see if the ORDER BY clause is or can be satisfied by the
+  ** use of an index on the first table.
+  */
+  if( ppOrderBy && *ppOrderBy && pTabList->nSrc>0 ){
+     Index *pSortIdx;
+     Index *pIdx;
+     Table *pTab;
+
+     pTab = pTabList->a[0].pTab;
+     pIdx = pWInfo->a[0].pIdx;
+     if( pIdx && pWInfo->a[0].score==4 ){
+       /* If there is already an index on the left-most column and it is
+       ** an equality index, then either sorting is not helpful, or the
+       ** index is an IN operator, in which case the index does not give
+       ** the correct sort order.  Either way, pretend that no suitable
+       ** index is found.
+       */
+       pSortIdx = 0;
+     }else if( iDirectEq[0]>=0 || iDirectLt[0]>=0 || iDirectGt[0]>=0 ){
+       /* If the left-most column is accessed using its ROWID, then do
+       ** not try to sort by index.
+       */
+       pSortIdx = 0;
+     }else{
+       pSortIdx = findSortingIndex(pTab, base, *ppOrderBy, pIdx);
+     }
+     if( pSortIdx && (pIdx==0 || pIdx==pSortIdx) ){
+       if( pIdx==0 ){
+         pWInfo->a[0].pIdx = pSortIdx;
+         pWInfo->a[0].iCur = pParse->nTab++;
+         pWInfo->peakNTab = pParse->nTab;
+       }
+       *ppOrderBy = 0;
+     }
+  }
+
   /* Open all tables in the pTabList and all indices used by those tables.
   */
   for(i=0; i<pTabList->nSrc; i++){
@@ -577,7 +689,7 @@ WhereInfo *sqliteWhereBegin(
       haveKey = 0;
       sqliteVdbeAddOp(v, OP_NotExists, base+idx, brk);
       pLevel->op = OP_Noop;
-    }else if( pIdx!=0 && pLevel->score%4==0 ){
+    }else if( pIdx!=0 && pLevel->score>0 && pLevel->score%4==0 ){
       /* Case 2:  There is an index and all terms of the WHERE clause that
       **          refer to the index use the "==" or "IN" operators.
       */
@@ -730,6 +842,10 @@ WhereInfo *sqliteWhereBegin(
       **         form "x=5 AND y<10" then this case is used.  Only the
       **         right-most column can be an inequality - the rest must
       **         use the "==" operator.
+      **
+      **         This case is also used when there are no WHERE clause
+      **         constraints but an index is selected anyway, in order
+      **         to force the output order to conform to an ORDER BY.
       */
       int score = pLevel->score;
       int nEqColumn = score/4;
