@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.116 2004/10/07 00:32:40 drh Exp $
+** $Id: shell.c,v 1.117 2004/10/26 00:08:11 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -882,6 +882,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     data.colWidth[0] = 3;
     data.colWidth[1] = 15;
     data.colWidth[2] = 58;
+    data.cnt = 0;
     sqlite3_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
