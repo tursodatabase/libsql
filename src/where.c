@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.124 2004/12/25 01:03:14 drh Exp $
+** $Id: where.c,v 1.125 2005/01/03 01:27:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -496,7 +496,7 @@ static void codeEqualityTerm(
 
 /*
 ** Generate the beginning of the loop used for WHERE clause processing.
-** The return value is a pointer to an (opaque) structure that contains
+** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
 ** should invoke sqlite3WhereEnd() with the return value of this function
 ** in order to complete the WHERE clause processing.
@@ -729,7 +729,8 @@ WhereInfo *sqlite3WhereBegin(
     ** the "best" index.  pBestIdx is left set to NULL if no indices
     ** are usable.
     **
-    ** The best index is determined as follows.  For each of the
+    ** The best index is the one with the highest score.  The score
+    ** for the index is determined as follows.  For each of the
     ** left-most terms that is fixed by an equality operator, add
     ** 32 to the score.  The right-most term of the index may be
     ** constrained by an inequality.  Add 4 if for an "x<..." constraint
@@ -1368,7 +1369,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
 
-  /* Close all of the cursors
+  /* Close all of the cursors that were opend by sqlite3WhereBegin.
   */
   pLevel = pWInfo->a;
   pTabItem = pTabList->a;
@@ -1383,7 +1384,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeAddOp(v, OP_Close, pLevel->iIdxCur, 0);
     }
 
-    /* Make all cursor substitutions for cases where we want to use
+    /* Make cursor substitutions for cases where we want to use
     ** just the index and never reference the table.
     ** 
     ** Calls to the code generator in between sqlite3WhereBegin and

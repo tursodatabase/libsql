@@ -1,5 +1,5 @@
-C Fix\sticket\s#1046\sby\sremoving\scode\sand\ssimplifying\sthe\squery\soptimizer.\nRemarkably,\sthis\ssimplification\salso\smakes\sthe\soptimizer\sdo\sa\sbetter\sjob.\nTicket\s#1051\swas\sfixed\sas\sa\sside-effect.\s(CVS\s2172)
-D 2004-12-25T01:03:14
+C Fix\scomment\stypos.\s\sno\scode\schanges.\s(CVS\s2173)
+D 2005-01-03T01:27:19
 F Makefile.in 02a184d734a2b4bbbc1ecc2e3ef504fcb13de069
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -62,7 +62,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 080c0d1d684ff6154a2f042347f34bc07e50590c
 F src/shell.c e8f4f486cbf6e60d81173146ac8a6522c930fa51
 F src/sqlite.h.in 0d5e48e506845b74a845c9470e01d3f472b59611
-F src/sqliteInt.h ef924e4a1a4b69d68f01af3242ab080de6069131
+F src/sqliteInt.h e571e6d80c13bd0534a894817a0269c8a34b49d7
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 3a4044ef609565c8cc51e887d8b96933ba9f3b5c
 F src/test1.c b7d94c54e58f95452387a5cabdf98b2be8059f29
@@ -82,7 +82,7 @@ F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
 F src/vdbeaux.c a7c4c90786e2633b38f2d89f3dc49aed747454e4
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
-F src/where.c 5307677f772a7b44628e65383c30697dee9a63f3
+F src/where.c 204553d66f0ec1b2568a756392971bc791519511
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 772e22cbd69463be41c2e73b4fd4eb33946193c4
-R 1a0697c736404780d6feff68a7939368
+P 5fd1f4711885e3dd6fb2c2700287f78bb0ea178a
+R 0242a7014f9b3ead71379ef2b143122a
 U drh
-Z 1ae722789e543e8f74d632edf76f862b
+Z f5db4f704ae7fce7e134443d572b308b

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.349 2004/12/25 01:03:14 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.350 2005/01/03 01:27:19 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -914,7 +914,7 @@ struct WhereLevel {
   Index *pIdx;         /* Index used.  NULL if no index */
   int iTabCur;         /* The VDBE cursor used to access the table */
   int iIdxCur;         /* The VDBE cursor used to acesss pIdx */
-  int score;           /* How well this indexed scored */
+  int score;           /* How well this index scored */
   int brk;             /* Jump here to break out of the loop */
   int cont;            /* Jump here to continue with the next loop cycle */
   int op, p1, p2;      /* Opcode used to terminate the loop */
