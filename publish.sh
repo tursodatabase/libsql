@@ -21,6 +21,7 @@ make clean
 make sqlite
 strip sqlite
 mv sqlite sqlite.bin
+rm -f sqlite.bin.gz
 gzip sqlite.bin
 
 # Build the tclsqlite.so shared library for import into tclsh or wish
@@ -36,6 +37,7 @@ gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
 mv tclsqlite.so ..
 cd ..
+rm -f tclsqlite.so
 gzip tclsqlite.so
 
 # Build the tclsqlite.dll shared library that can be imported into tclsh
@@ -91,10 +93,12 @@ cd ..
 tar czf $ORIGIN/sqlite.tar.gz sqlite
 cd $ORIGIN
 vers=`cat $srcdir/VERSION`
+rm -f sqlite-$vers.tar.gz
 ln sqlite.tar.gz sqlite-$vers.tar.gz
 
 # Build the website
 #
 cp $srcdir/../historical/* .
+rm -rf doc
 make doc
 ln sqlite.bin.gz sqlite.zip sqlite*.tar.gz tclsqlite.so.gz tclsqlite.zip doc

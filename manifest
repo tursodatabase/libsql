@@ -1,5 +1,5 @@
-C More\schanges\sprior\sto\srelease\s2.0.2.\s\sMostly\scomment\schanges.\s\sBut\sthere\nwas\salso\sa\sminor\schange\sto\stemptable.test\sso\sthat\sit\swould\swork\sunder\nWindows.\s(CVS\s282)
-D 2001-10-09T12:39:24
+C Remove\sfiles\sbefore\srebuilding.\s(CVS\s283)
+D 2001-10-09T12:44:43
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 1e54087c0390c4ce0bb5be43e14ba028283751e6
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -17,7 +17,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 502b907fa9e0214309406fa5f520b3d3c14f9c1d
+F publish.sh badcd69b8e3a8bc69b162c4c9d7c209b2a0b119e
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 7e9c33a714ed1630562f89ad19847f5f28bd6d4d
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
@@ -113,7 +113,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 765359c77ebae22e42b78636e70a57b010aaa18e
-R 00a3f33de80cb8fb5006abe2246012c5
+P 864349de6fba5b38a3fbf7ab502922937b1b61e5
+R 647534ac8825a9fc750e08c5fb7ae1e0
 U drh
-Z 8201536b58eae125c25ac9ac5ab95d7d
+Z 72d85a2a24079acd1f703ea4e59b255f
