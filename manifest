@@ -1,5 +1,5 @@
-C Typo\sin\schange\slog\sfixed.\s(CVS\s330)
-D 2001-12-15T03:00:42
+C Version\s2.1.7\s(CVS\s454)
+D 2001-12-15T03:05:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 71cb9e8ad7616b1f84dc04700685bd4dc157d2db
+P 3a31daf6465b989a2b0790a2d1ba22ff955486a0
 R fe372d30b06d43519de0595e4ea6a38e
 U drh
-Z f4a47802b842236115c5e5fd7c8aef7b
+Z 1ebde59941b4e5e9dcfe12e6c3caef81
