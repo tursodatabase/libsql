@@ -1,5 +1,5 @@
-C More\schanges\sfor\s2.0.7.\s(CVS\s293)
-D 2001-10-22T02:58:09
+C Version\s2.0.7\s(CVS\s463)
+D 2001-10-22T03:00:00
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -114,7 +114,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P a835658e507fc7d0c684959c0f0afb9018b6a8d4
+P f8328a5f11801c5124f9a8dace22df3c1cfb2191
 R 123ebf892398ed7efe52cb42cd131987
 U drh
-Z 5aa86d25974fbc02d84e2fe588bbca94
+Z b312054a8667af4612baea400c53bbff
