@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.200 2003/10/18 09:37:26 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.201 2003/11/01 01:53:54 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1159,6 +1159,7 @@ IdList *sqliteIdListDup(IdList*);
 Select *sqliteSelectDup(Select*);
 FuncDef *sqliteFindFunction(sqlite*,const char*,int,int,int);
 void sqliteRegisterBuiltinFunctions(sqlite*);
+void sqliteRegisterDateTimeFunctions(sqlite*);
 int sqliteSafetyOn(sqlite*);
 int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);

@@ -1,0 +1,123 @@
+# 2003 October 31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing date and time functions.
+#
+# $Id: date.test,v 1.1 2003/11/01 01:53:54 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc datetest {tnum expr result} {
+  do_test date-$tnum [subst {
+    execsql "SELECT coalesce($expr,'NULL')"
+  }] [list $result]
+}
+
+datetest 1.1 julianday('2000-01-01') 2451544.5
+datetest 1.2 julianday('1970-01-01') 2440587.5
+datetest 1.3 julianday('1910-04-20') 2418781.5
+datetest 1.4 julianday('1986-02-09') 2446470.5
+datetest 1.5 julianday('12:00:00') 2451545
+datetest 1.6 {julianday('2000-01-01 12:00:00')} 2451545
+datetest 1.7 {julianday('2000-01-01 12:00')} 2451545
+datetest 1.8 julianday('bogus') NULL
+datetest 1.9 julianday('1999-12-31') 2451543.5
+datetest 1.10 julianday('1999-12-32') NULL
+datetest 1.11 julianday('1999-13-01') NULL
+datetest 1.12 julianday('2003-02-31') 2452701.5
+datetest 1.13 julianday('2003-03-03') 2452701.5
+datetest 1.14 julianday('+2000-01-01') NULL
+datetest 1.15 julianday('200-01-01') NULL
+datetest 1.16 julianday('2000-1-01') NULL
+datetest 1.17 julianday('2000-01-1') NULL
+datetest 1.18 {julianday('2000-01-01     12:00:00')} 2451545
+datetest 1.19 {julianday('2000-01-01 12:00:00.1')}   2451545.00000116
+datetest 1.20 {julianday('2000-01-01 12:00:00.01')}  2451545.00000012
+datetest 1.21 {julianday('2000-01-01 12:00:00.001')} 2451545.00000001
+datetest 1.22 {julianday('2000-01-01 12:00:00.')} NULL
+datetest 1.23 julianday(12345.6) 12345.6
+datetest 1.24 {julianday('2001-01-01 12:00:00 bogus')} NULL
+datetest 1.25 {julianday('2001-01-01 bogus')} NULL
+
+datetest 2.1 datetime(0,'unixepoch') {1970-01-01 00:00:00}
+datetest 2.2 datetime(946684800,'unixepoch') {2000-01-01 00:00:00}
+datetest 2.3 {date('2003-10-22','weekday 0')} 2003-10-26
+datetest 2.4 {date('2003-10-22','weekday 1')} 2003-10-27
+datetest 2.5 {date('2003-10-22','weekday 2')} 2003-10-28
+datetest 2.6 {date('2003-10-22','weekday 3')} 2003-10-22
+datetest 2.7 {date('2003-10-22','weekday 4')} 2003-10-23
+datetest 2.8 {date('2003-10-22','weekday 5')} 2003-10-24
+datetest 2.9 {date('2003-10-22','weekday 6')} 2003-10-25
+datetest 2.10 {date('2003-10-22','weekday 7')} NULL
+datetest 2.11 {date('2003-10-22','weekday 5.5')} NULL
+datetest 2.12 {datetime('2003-10-22 12:34','weekday 0')} {2003-10-26 00:00:00}
+datetest 2.13 {datetime('2003-10-22 12:34','start of month')} \
+   {2003-10-01 00:00:00}
+datetest 2.14 {datetime('2003-10-22 12:34','start of year')} \
+   {2003-01-01 00:00:00}
+datetest 2.15 {datetime('2003-10-22 12:34','start of day')} \
+   {2003-10-22 00:00:00}
+datetest 2.16 time('12:34:56.43') 12:34:56
+datetest 2.17 {datetime('2003-10-22 12:34','1 day')} {2003-10-23 12:34:00}
+datetest 2.18 {datetime('2003-10-22 12:34','+1 day')} {2003-10-23 12:34:00}
+datetest 2.19 {datetime('2003-10-22 12:34','+1.25 day')} {2003-10-23 18:34:00}
+datetest 2.20 {datetime('2003-10-22 12:34','-1.0 day')} {2003-10-21 12:34:00}
+datetest 2.21 {datetime('2003-10-22 12:34','1 month')} {2003-11-22 12:34:00}
+datetest 2.22 {datetime('2003-10-22 12:34','11 month')} {2004-09-22 12:34:00}
+datetest 2.23 {datetime('2003-10-22 12:34','-13 month')} {2002-09-22 12:34:00}
+datetest 2.24 {datetime('2003-10-22 12:34','1.5 months')} {2003-12-07 12:34:00}
+datetest 2.25 {datetime('2003-10-22 12:34','-5 years')} {1998-10-22 12:34:00}
+datetest 2.26 {datetime('2003-10-22 12:34','+10.5 minutes')} \
+  {2003-10-22 12:44:30}
+datetest 2.27 {datetime('2003-10-22 12:34','-1.25 hours')} \
+  {2003-10-22 11:19:00}
+datetest 2.28 {datetime('2003-10-22 12:34','11.25 seconds')} \
+  {2003-10-22 12:34:11}
+datetest 2.29 {datetime('2003-10-22 12:24','+5 bogus')} NULL
+
+
+datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
+datetest 3.2 {strftime('%f','2003-10-31 12:34:56.432')} 56.432
+datetest 3.3 {strftime('%H','2003-10-31 12:34:56.432')} 12
+datetest 3.4 {strftime('%j','2003-10-31 12:34:56.432')} 304
+datetest 3.5 {strftime('%J','2003-10-31 12:34:56.432')} 2452944.024264259
+datetest 3.6 {strftime('%m','2003-10-31 12:34:56.432')} 10
+datetest 3.7 {strftime('%M','2003-10-31 12:34:56.432')} 34
+datetest 3.8 {strftime('%s','2003-10-31 12:34:56.432')} 1067603696
+datetest 3.9 {strftime('%S','2003-10-31 12:34:56.432')} 56
+datetest 3.10 {strftime('%w','2003-10-31 12:34:56.432')} 5
+datetest 3.11 {strftime('%W','2003-10-31 12:34:56.432')} 44
+datetest 3.12 {strftime('%Y','2003-10-31 12:34:56.432')} 2003
+datetest 3.13 {strftime('%%','2003-10-31 12:34:56.432')} %
+datetest 3.14 {strftime('%_','2003-10-31 12:34:56.432')} NULL
+datetest 3.15 {strftime('%Y-%m-%d','2003-10-31')} 2003-10-31
+proc repeat {n txt} {
+  set x {} 
+  while {$n>0} {
+    append x $txt
+    incr n -1
+  }
+  return $x
+}
+datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
+datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
+    [repeat 200 abc10123]
+
+set now [clock format [clock seconds] -format "%Y-%m-%d" -gmt 1]
+datetest 4.1 {date('now')} $now
+
+datetest 5.1 {datetime('1994-04-16 14:00:00 -05:00')} {1994-04-16 09:00:00}
+datetest 5.2 {datetime('1994-04-16 14:00:00 +05:15')} {1994-04-16 19:15:00}
+datetest 5.3 {datetime('1994-04-16 05:00:00 -08:30')} {1994-04-15 20:30:00}
+datetest 5.4 {datetime('1994-04-16 14:00:00 +11:55')} {1994-04-17 01:55:00}
+
+finish_test

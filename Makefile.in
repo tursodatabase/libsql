@@ -79,7 +79,7 @@ endif
 
 # Object files for the SQLite library.
 #
-LIBOBJ = attach.lo auth.lo btree.lo build.lo copy.lo \
+LIBOBJ = attach.lo auth.lo btree.lo build.lo copy.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os.lo pager.lo parse.lo pragma.lo \
          printf.lo random.lo select.lo table.lo tokenize.lo \
@@ -101,6 +101,7 @@ SRC = \
   $(TOP)/src/btree_rb.c \
   $(TOP)/src/build.c \
   $(TOP)/src/copy.c \
+  $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
@@ -287,6 +288,9 @@ where.lo:	$(TOP)/src/where.c $(HDR)
 
 copy.lo:	$(TOP)/src/copy.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/copy.c
+
+date.lo:	$(TOP)/src/date.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/date.c
 
 delete.lo:	$(TOP)/src/delete.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/delete.c
