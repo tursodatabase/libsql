@@ -72,6 +72,7 @@ struct Cursor {
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
   Bool intKey;          /* True if the table requires integer keys */
   Bool zeroData;        /* True if table contains keys only - no data */
+  Bool incrKey;         /* Searches on the table simulate OP_IncrKey */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
   int nData;            /* Number of bytes in pData */
@@ -322,5 +323,5 @@ int sqlite3VdbeSerialPut(unsigned char *, const Mem *);
 int sqlite3VdbeSerialGet(const unsigned char *, u64, Mem *);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(BtCursor*, int , const unsigned char*, int, int*);
+int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int, int*);
 int sqlite3VdbeIdxRowid(BtCursor *, i64 *);

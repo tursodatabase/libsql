@@ -12,9 +12,60 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.97 2004/05/11 07:11:53 danielk1977 Exp $
+** $Id: insert.c,v 1.98 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
+
+/*
+** Set P3 of the most recently inserted opcode to a column affinity
+** string for table pTab. A column affinity string has one character
+** for each column in the table, according to the affinity of the column:
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+*/
+int sqlite3AddRecordType(Vdbe *v, Table *pTab){
+  assert( pTab );
+ 
+  /* The first time a column affinity string for a particular table
+  ** is required, it is allocated and populated here. It is then 
+  ** stored as a member of the Table structure for subsequent use.
+  **
+  ** The column affinity string will eventually be deleted by
+  ** sqlite3DeleteTable() when the Table structure itself is cleaned up.
+  */
+  if( !pTab->zColAff ){
+    char *zColAff;
+    int i;
+
+    zColAff = sqliteMalloc(pTab->nCol+1);
+    if( !zColAff ){
+      return SQLITE_NOMEM;
+    }
+
+    for(i=0; i<pTab->nCol; i++){
+      if( pTab->aCol[i].sortOrder&SQLITE_SO_TEXT ){
+        zColAff[i] = 't';
+      }else{
+        zColAff[i] = 'n';
+      }
+    }
+    zColAff[pTab->nCol] = '\0';
+
+    pTab->zColAff = zColAff;
+  }
+
+  /* Set the memory management at the vdbe to P3_STATIC, as the column
+  ** affinity string is managed as part of the Table structure.
+  */
+  sqlite3VdbeChangeP3(v, -1, pTab->zColAff, P3_STATIC);
+  return SQLITE_OK;
+}
+
 
 /*
 ** This routine is call to handle SQL of the following forms:
@@ -216,6 +267,7 @@ void sqlite3Insert(
       srcTab = pParse->nTab++;
       sqlite3VdbeResolveLabel(v, iInsertBlock);
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      sqlite3AddRecordType(v, pTab);
       sqlite3VdbeAddOp(v, OP_NewRecno, srcTab, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3VdbeAddOp(v, OP_PutIntKey, srcTab, 0);
@@ -394,6 +446,7 @@ void sqlite3Insert(
       }
     }
     sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+    sqlite3AddRecordType(v, pTab);
     sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
 
     /* Fire BEFORE or INSTEAD OF triggers */
@@ -883,6 +936,7 @@ void sqlite3CompleteInsertion(
     sqlite3VdbeAddOp(v, OP_IdxPut, base+i+1, 0);
   }
   sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+  sqlite3AddRecordType(v, pTab);
   if( newIdx>=0 ){
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.95 2004/05/10 10:34:52 danielk1977 Exp $
+** $Id: shell.c,v 1.96 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -80,7 +80,7 @@ static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
 /*
 ** Determines if a string is a number of not.
 */
-extern int sqlite3IsNumber(const char*);
+extern int sqlite3IsNumber(const char*, int*);
 
 /*
 ** This routine reads a line of text from standard input, stores
@@ -392,7 +392,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         char *zSep = i>0 ? ",": "";
         if( azArg[i]==0 ){
           fprintf(p->out,"%sNULL",zSep);
-        }else if( sqlite3IsNumber(azArg[i]) ){
+        }else if( sqlite3IsNumber(azArg[i], 0) ){
           fprintf(p->out,"%s%s",zSep, azArg[i]);
         }else{
           if( zSep[0] ) fprintf(p->out,"%s",zSep);

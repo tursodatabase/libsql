@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.287 2004/05/13 13:38:52 danielk1977 Exp $
+** $Id: vdbe.c,v 1.288 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -285,8 +285,8 @@ static void popStack(Mem **ppTos, int N){
 ** Under Linux (RedHat 7.2) this routine is much faster than atoi()
 ** for converting strings into integers.
 */
-static int toInt(const char *zNum, int *pNum){
-  int v = 0;
+static int toInt(const char *zNum, i64 *pNum){
+  i64 v = 0;
   int neg;
   int i, c;
   if( *zNum=='-' ){
@@ -302,7 +302,8 @@ static int toInt(const char *zNum, int *pNum){
     v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
-  return c==0 && i>0 && (i<10 || (i==10 && memcmp(zNum,"2147483647",10)<=0));
+  return c==0 && i>0 && 
+      (i<10 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0));
 }
 
 /*
@@ -421,6 +422,68 @@ static int expandCursorArraySize(Vdbe *p, int mxCursor){
   return 0;
 }
 
+/*
+** Apply any conversion required by the supplied column affinity to
+** memory cell pRec. affinity may be one of:
+**
+** SQLITE_AFF_NUM
+** SQLITE_AFF_TEXT
+** SQLITE_AFF_NONE
+** SQLITE_AFF_INTEGER
+**
+*/
+static void applyAffinity(Mem *pRec, int affinity){
+  switch( affinity ){
+    case SQLITE_SO_NUM:
+      if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
+        /* pRec does not have a valid integer or real representation. 
+        ** Attempt a conversion if pRec has a string representation and
+        ** it looks like a number.
+        */
+        int realnum;
+        if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum) ){
+          if( realnum ){
+            Realify(pRec);
+          }else{
+            Integerify(pRec);
+          }
+        }
+      }
+      break;
+    case SQLITE_SO_TEXT:
+      /* Only attempt the conversion if there is an integer or real
+      ** representation (blob and NULL do not get converted) but no string
+      ** representation.
+      */
+      if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
+        Stringify(pRec);
+      }
+      pRec->flags &= ~(MEM_Real|MEM_Int);
+
+      break;
+
+/*
+    case SQLITE_AFF_INTEGER:
+    case SQLITE_AFF_NONE:
+      break;
+*/
+    default:
+      assert(0);
+  }
+}
+
+/*
+** This function interprets the character 'affinity' according to the 
+** following table and calls the applyAffinity() function.
+*/
+static void applyAffinityByChar(Mem *pRec, char affinity){
+  switch( affinity ){
+    case 'n': return applyAffinity(pRec, SQLITE_SO_NUM);
+    case 't': return applyAffinity(pRec, SQLITE_SO_TEXT);
+    default: assert(0);
+  }
+}
+
 #ifdef VDBE_PROFILE
 /*
 ** The following routine only works on pentium-class processors.
@@ -498,6 +561,9 @@ int sqlite3VdbeExec(
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
+
+  /* FIX ME. */
+  expandCursorArraySize(p, 100);
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
@@ -1213,7 +1279,7 @@ case OP_ForceInt: {
   int v;
   assert( pTos>=p->aStack );
   if( (pTos->flags & (MEM_Int|MEM_Real))==0
-         && ((pTos->flags & MEM_Str)==0 || sqlite3IsNumber(pTos->z)==0) ){
+         && ((pTos->flags & MEM_Str)==0 || sqlite3IsNumber(pTos->z, 0)==0) ){
     Release(pTos);
     pTos--;
     pc = pOp->p2 - 1;
@@ -1256,10 +1322,10 @@ case OP_MustBeInt: {
     }
     pTos->i = i;
   }else if( pTos->flags & MEM_Str ){
-    int v;
+    i64 v;
     if( !toInt(pTos->z, &v) ){
       double r;
-      if( !sqlite3IsNumber(pTos->z) ){
+      if( !sqlite3IsNumber(pTos->z, 0) ){
         goto mismatch;
       }
       Realify(pTos);
@@ -1406,7 +1472,7 @@ case OP_Le:
 case OP_Gt:
 case OP_Ge: {
   Mem *pNos = &pTos[-1];
-  int c, v;
+  i64 c, v;
   int ft, fn;
   assert( pNos>=p->aStack );
   ft = pTos->flags;
@@ -2023,7 +2089,7 @@ case OP_Column: {
   break;
 }
 
-/* Opcode MakeRecord3 P1 * *
+/* Opcode MakeRecord P1 * P3
 **
 ** This opcode (not yet in use) is a replacement for the current
 ** OP_MakeRecord that supports the SQLite3 manifest typing feature.
@@ -2034,6 +2100,20 @@ case OP_Column: {
 ** details of the format are irrelavant as long as the OP_Column
 ** opcode can decode the record later.  Refer to source code
 ** comments for the details of the record format.
+**
+** P3 may be a string that is P1 characters long.  The nth character of the
+** string indicates the column affinity that should be used for the nth
+** field of the index key (i.e. the first character of P3 corresponds to the
+** lowest element on the stack).
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+**
+** If P3 is NULL then all index fields have the affinity NONE.
 */
 case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
@@ -2056,18 +2136,24 @@ case OP_MakeRecord: {
   int nField = pOp->p1;
   unsigned char *zNewRecord;
   unsigned char *zCsr;
+  char *zAffinity;
   Mem *pRec;
   int nBytes;    /* Space required for this record */
 
   Mem *pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
+  zAffinity = pOp->p3;
 
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
   nBytes = sqlite3VarintLen(nField);
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    u64 serial_type;
+    if( zAffinity ){
+      applyAffinityByChar(pRec, zAffinity[pRec-pData0]);
+    }
+    serial_type = sqlite3VdbeSerialType(pRec);
     nBytes += sqlite3VdbeSerialTypeLen(serial_type);
     nBytes += sqlite3VarintLen(serial_type);
   }
@@ -2213,7 +2299,7 @@ case OP_MakeKey2: {
       Stringify(pRec);
       pRec->flags &= ~(MEM_Int|MEM_Real);
       nByte += pRec->n+1;
-    }else if( (flags & (MEM_Real|MEM_Int))!=0 || sqlite3IsNumber(pRec->z) ){
+    }else if( (flags & (MEM_Real|MEM_Int))!=0 || sqlite3IsNumber(pRec->z, 0) ){
       if( (flags & (MEM_Real|MEM_Int))==MEM_Int ){
         pRec->r = pRec->i;
       }else if( (flags & (MEM_Real|MEM_Int))==0 ){
@@ -2285,15 +2371,43 @@ case OP_MakeKey2: {
   break;
 }
 
-/* Opcode: MakeIdxKey3 P1 P2 *
+/* Opcode: MakeKey P1 P2 P3
+**
+** Convert the top P1 entries of the stack into a single entry suitable
+** for use as the key in an index. If P2 is not zero, then the original 
+** entries are popped off the stack. If P2 is zero, the original entries
+** remain on the stack.
+**
+** P3 is interpreted in the same way as for MakeIdxKey.
+*/
+/* Opcode: MakeIdxKey P1 P2 P3
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  In addition, take one additional integer
 ** off of the stack, treat that integer as an eight-byte record number, and
 ** append the integer to the key as a varint.  Thus a total of P1+1 entries
 ** are popped from the stack for this instruction and a single entry is
-** pushed back.  The first P1 entries that are popped are strings and the
-** last entry (the lowest on the stack) is an integer record number.
+** pushed back.  
+**
+** If P2 is not zero and one or more of the P1 entries that go into the
+** generated key is NULL, then jump to P2 after the new key has been
+** pushed on the stack.  In other words, jump to P2 if the key is
+** guaranteed to be unique.  This jump can be used to skip a subsequent
+** uniqueness test.
+**
+** P3 may be a string that is P1 characters long.  The nth character of the
+** string indicates the column affinity that should be used for the nth
+** field of the index key (i.e. the first character of P3 corresponds to the
+** lowest element on the stack).
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+**
+** If P3 is NULL then all index fields have the affinity NUMERIC.
 */
 case OP_MakeKey:
 case OP_MakeIdxKey: {
@@ -2306,25 +2420,46 @@ case OP_MakeIdxKey: {
   int containsNull = 0;
   char *zKey;      /* The new key */
   int offset = 0;
+  char *zAffinity = pOp->p3;
  
+  assert( zAffinity );
   nField = pOp->p1;
   pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
 
   addRowid = ((pOp->opcode==OP_MakeIdxKey)?1:0);
 
-  /* Calculate the number of bytes required for the new index key and
-  ** store that number in nByte. Also set rowid to the record number to
-  ** append to the index key.
+  /* Loop through the P1 elements that will make up the new index
+  ** key. Call applyAffinity() to perform any conversion required
+  ** the column affinity string P3 to modify stack elements in place.
+  ** Set containsNull to 1 if a NULL value is encountered.
+  **
+  ** Once the value has been coerced, figure out how much space is required
+  ** to store the coerced values serial-type and blob, and add this
+  ** quantity to nByte.
+  **
+  ** TODO: Figure out if the in-place coercion causes a problem for
+  ** OP_MakeKey when P2 is 0 (used by DISTINCT).
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u64 serial_type = sqlite3VdbeSerialType(pRec);
-    if( serial_type==0 ){
+    u64 serial_type;
+    if( zAffinity ){
+      applyAffinityByChar(pRec, zAffinity[pRec-pData0]);
+    }else{
+      applyAffinity(pRec, SQLITE_SO_NUM);
+    }
+    if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
+    serial_type = sqlite3VdbeSerialType(pRec);
     nByte += sqlite3VarintLen(serial_type);
     nByte += sqlite3VdbeSerialTypeLen(serial_type);
   }
+
+  /* If we have to append a varint rowid to this record, set 'rowid'
+  ** to the value of the rowid and increase nByte by the amount of space
+  ** required to store it and the 0x00 seperator byte.
+  */
   if( addRowid ){
     pRec = &pTos[0-nField];
     assert( pRec>=p->aStack );
@@ -2366,7 +2501,10 @@ case OP_MakeIdxKey: {
   pTos->z = zKey;
   pTos->n = nByte;
 
-  if( pOp->p2 && containsNull ){
+  /* If P2 is non-zero, and if the key contains a NULL value, and if this
+  ** was an OP_MakeIdxKey instruction, not OP_MakeKey, jump to P2.
+  */
+  if( pOp->p2 && containsNull && addRowid ){
     pc = pOp->p2 - 1;
   }
   break;
@@ -2379,6 +2517,7 @@ case OP_MakeIdxKey: {
 ** byte of that key by one.  This is used so that the MoveTo opcode
 ** will move to the first entry greater than the key rather than to
 ** the key itself.
+**
 */
 case OP_IncrKey: {
   assert( pTos>=p->aStack );
@@ -2388,6 +2527,11 @@ case OP_IncrKey: {
   ** are always free to modify the string in place.
   */
   assert( pTos->flags & (MEM_Dyn|MEM_Short) );
+  /*
+  ** FIX ME: This technique is now broken due to manifest types in index
+  ** keys.
+  */
+  assert(0);
   pTos->z[pTos->n-1]++;
   break;
 }
@@ -2684,7 +2828,7 @@ case OP_OpenWrite: {
     ** sqlite3VdbeKeyCompare(). If the table being opened is of type
     ** INTKEY, the btree layer won't call the comparison function anyway.
     */
-    rc = sqlite3BtreeCursor(pX, p2, wrFlag, sqlite3VdbeKeyCompare, 0,
+    rc = sqlite3BtreeCursor(pX, p2, wrFlag, sqlite3VdbeKeyCompare, pCur,
         &pCur->pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
@@ -2817,6 +2961,11 @@ case OP_Close: {
 ** If there are no records greater than the key and P2 is not zero,
 ** then an immediate jump to P2 is made.
 **
+** If P3 is not NULL, then the cursor is left pointing at the first
+** record that is greater than the key of which the key is not a prefix.
+** This is the same effect that executing OP_IncrKey on the key value
+** before OP_MoveTo used to have.
+**
 ** See also: Found, NotFound, Distinct, MoveLt
 */
 /* Opcode: MoveLt P1 P2 *
@@ -2826,6 +2975,11 @@ case OP_Close: {
 ** less than the key popped from the stack.
 ** If there are no records less than than the key and P2
 ** is not zero then an immediate jump to P2 is made.
+**
+** If P3 is not NULL, and keys exist in the index of which the stack key
+** is a prefix, leave the cursor pointing at the largest of these.
+** This is the same effect that executing OP_IncrKey on the key value
+** before OP_MoveLt used to have.
 **
 ** See also: MoveTo
 */
@@ -2842,6 +2996,7 @@ case OP_MoveTo: {
     pC->nullRow = 0;
     if( pC->intKey ){
       i64 iKey;
+      assert( !pOp->p3 );
       Integerify(pTos);
       iKey = intToKey(pTos->i);
       if( pOp->p2==0 && pOp->opcode==OP_MoveTo ){
@@ -2855,11 +3010,16 @@ case OP_MoveTo: {
       pC->lastRecno = pTos->i;
       pC->recnoIsValid = res==0;
     }else{
+      if( pOp->p3 ){
+        pC->incrKey = 1;
+      }
       Stringify(pTos);
       sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
+      pC->incrKey = 0;
       pC->recnoIsValid = 0;
     }
     pC->deferredMoveto = 0;
+    pC->incrKey = 0;
     sqlite3_search_count++;
     oc = pOp->opcode;
     if( oc==OP_MoveTo && res<0 ){
@@ -3015,7 +3175,7 @@ case OP_IsUnique: {
         break;
       }
     }
-    rc = sqlite3VdbeIdxKeyCompare(pCrsr, len, zKey, 0, &res); 
+    rc = sqlite3VdbeIdxKeyCompare(pCx, len, zKey, 0, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3645,8 +3805,8 @@ case OP_IdxPut: {
       while( res!=0 ){
         int c;
         sqlite3BtreeKeySize(pCrsr, &n);
-        if( n==nKey 
-            && sqlite3VdbeIdxKeyCompare(pCrsr, len, zKey, 0, &c)==SQLITE_OK
+        if( n==nKey && 
+            sqlite3VdbeIdxKeyCompare(&p->aCsr[i], len, zKey, 0, &c)==SQLITE_OK
             && c==0
         ){
           rc = SQLITE_CONSTRAINT;
@@ -3711,19 +3871,24 @@ case OP_IdxRecno: {
   assert( i>=0 && i<p->nCursor );
   pTos++;
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    u64 sz;
-    int len;
-    char buf[9];
+    i64 rowid;
 
     assert( p->aCsr[i].deferredMoveto==0 );
     assert( p->aCsr[i].intKey==0 );
+    rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
+    pTos->flags = MEM_Int;
+    pTos->i = rowid;
 
+#if 0
     /* Read the final 9 bytes of the key into buf[]. If the whole key is
     ** less than 9 bytes then just load the whole thing. Set len to the 
     ** number of bytes read.
     */
     sqlite3BtreeKeySize(pCrsr, &sz);
-    len = ((sz>9)?9:sz);
+    len = ((sz>10)?10:sz);
     rc = sqlite3BtreeKey(pCrsr, sz-len, len, buf);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -3747,6 +3912,7 @@ case OP_IdxRecno: {
       pTos->flags = MEM_Int;
       pTos->i = sz;
     }
+#endif
   }else{
     pTos->flags = MEM_Null;
   }
@@ -3788,10 +3954,15 @@ case OP_IdxGE: {
   assert( pTos>=p->aStack );
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int res, rc;
+    Cursor *pC = &p->aCsr[i];
  
     Stringify(pTos);
     assert( p->aCsr[i].deferredMoveto==0 );
-    rc = sqlite3VdbeIdxKeyCompare(pCrsr, pTos->n, pTos->z, 0, &res);
+    if( pOp->p3 ){
+      pC->incrKey = 1;
+    }
+    rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, pTos->z, 0, &res);
+    pC->incrKey = 0;
     if( rc!=SQLITE_OK ){
       break;
     }
@@ -3828,12 +3999,13 @@ case OP_IdxIsNull: {
   z = pTos->z;
   n = pTos->n;
   for(k=0; k<n && i>0; i--){
-    if( z[k]=='a' ){
+    u64 serial_type;
+    k += sqlite3GetVarint(&z[k], &serial_type);
+    if( serial_type==6 ){   /* Serial type 6 is a NULL */
       pc = pOp->p2-1;
       break;
     }
-    while( k<n && z[k] ){ k++; }
-    k++;
+    k += sqlite3VdbeSerialTypeLen(serial_type);
   }
   Release(pTos);
   pTos--;
@@ -3955,7 +4127,9 @@ case OP_IntegrityCk: {
   aRoot = sqliteMallocRaw( sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
-    toInt((char*)sqliteHashKey(i), &aRoot[j]);
+    i64 root64;
+    toInt((char*)sqliteHashKey(i), &root64);
+    aRoot[j] = root64;
   }
   aRoot[j] = 0;
   sqlite3HashClear(&pSet->hash);

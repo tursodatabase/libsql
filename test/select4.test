@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.14 2004/05/13 05:16:17 danielk1977 Exp $
+# $Id: select4.test,v 1.15 2004/05/14 11:00:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -197,13 +197,9 @@ do_test select4-4.1.1 {
   }
 } {5}
 
-# Update for sqlite 3:
-# Change the "UNION ALL SELECT 6" in each of the select statements
-# for the next three test cases to "UNION ALL SELECT '6'". This is
-# to accomadate manifest typing.
 do_test select4-4.1.2 {
   execsql {
-    SELECT DISTINCT log FROM t1 UNION ALL SELECT '6'
+    SELECT DISTINCT log FROM t1 UNION ALL SELECT 6
     INTERSECT
     SELECT n FROM t1 WHERE log=3
     ORDER BY log;
@@ -212,7 +208,7 @@ do_test select4-4.1.2 {
 do_test select4-4.1.3 {
   execsql {
     CREATE TABLE t2 AS
-      SELECT DISTINCT log FROM t1 UNION ALL SELECT '6'
+      SELECT DISTINCT log FROM t1 UNION ALL SELECT 6
       INTERSECT
       SELECT n FROM t1 WHERE log=3
       ORDER BY log;
@@ -223,7 +219,7 @@ execsql {DROP TABLE t2}
 do_test select4-4.1.4 {
   execsql {
     CREATE TABLE t2 AS
-      SELECT DISTINCT log FROM t1 UNION ALL SELECT '6'
+      SELECT DISTINCT log FROM t1 UNION ALL SELECT 6
       INTERSECT
       SELECT n FROM t1 WHERE log=3
       ORDER BY log DESC;
@@ -473,19 +469,16 @@ do_test select4-7.4 {
 } {n 1 log 0 n 2 log 1}
 
 # Make sure DISTINCT works appropriately on TEXT and NUMERIC columns.
-#
-# Update for sqlite v3:
-# Insert X+0.0 instead of X to make sure X has manifest type NUMERIC.
 do_test select4-8.1 {
   execsql {
     BEGIN;
     CREATE TABLE t3(a text, b float, c text);
-    INSERT INTO t3 VALUES(1, 1.1 + 0.0, '1.1');
-    INSERT INTO t3 VALUES(2, 1.10 + 0.0, '1.10');
-    INSERT INTO t3 VALUES(3, 1.10 + 0.0, '1.1');
-    INSERT INTO t3 VALUES(4, 1.1 + 0.0, '1.10');
-    INSERT INTO t3 VALUES(5, 1.2 + 0.0, '1.2');
-    INSERT INTO t3 VALUES(6, 1.3 + 0.0, '1.3');
+    INSERT INTO t3 VALUES(1, 1.1, '1.1');
+    INSERT INTO t3 VALUES(2, 1.10, '1.10');
+    INSERT INTO t3 VALUES(3, 1.10, '1.1');
+    INSERT INTO t3 VALUES(4, 1.1, '1.10');
+    INSERT INTO t3 VALUES(5, 1.2, '1.2');
+    INSERT INTO t3 VALUES(6, 1.3, '1.3');
     COMMIT;
   }
   execsql {

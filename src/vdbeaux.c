@@ -1054,6 +1054,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     }else{
       sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,sizeof(i64),&res);
     }
+    p->incrKey = 0;
     p->lastRecno = keyToInt(p->movetoTarget);
     p->recnoIsValid = res==0;
     if( res<0 ){
@@ -1347,9 +1348,12 @@ int compareMemCells(Mem *pMem1, Mem *pMem2){
       return 0;
     }
 
-    if( pMem1->i < pMem2->i ) return -1;
-    if( pMem1->i > pMem2->i ) return 1;
-    return 0;
+    return (pMem1->i - pMem2->i);
+  }
+
+  rc = (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
+  if( rc ){
+    return rc;
   }
 
   /* Both values must be strings or blobs. If only one is a string, then
@@ -1357,18 +1361,12 @@ int compareMemCells(Mem *pMem1, Mem *pMem2){
   ** returns 0 and one value is longer than the other, then that value
   ** is greater.
   */
-  rc = (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
-  if( rc ){
-    return rc;
-  }
   rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
   if( rc ){
     return rc;
   }
 
-  if( pMem1->n < pMem2->n ) return -1;
-  if( pMem1->n > pMem2->n ) return 1;
-  return 0;
+  return (pMem1->n - pMem2->n);
 }
 
 /*
@@ -1386,10 +1384,11 @@ int compareMemCells(Mem *pMem1, Mem *pMem2){
 ** compared to.
 */
 int sqlite3VdbeKeyCompare(
-  void *userData,                         /* not used yet */
+  void *userData,
   int nKey1, const void *pKey1, 
   int nKey2, const void *pKey2
 ){
+  Cursor *pC = (Cursor *)userData;
   int offset1 = 0;
   int offset2 = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
@@ -1413,6 +1412,7 @@ int sqlite3VdbeKeyCompare(
     */
     if( !serial_type1 || !serial_type2 ){
       assert( !serial_type1 && !serial_type2 );
+      assert( !pC || !pC->incrKey );
       sqlite3GetVarint(&aKey1[offset1], &serial_type1);
       sqlite3GetVarint(&aKey2[offset2], &serial_type2);
       return ( (i64)serial_type1 - (i64)serial_type2 );
@@ -1438,12 +1438,24 @@ int sqlite3VdbeKeyCompare(
     }
   }
 
+  /* One of the keys ran out of fields, but all the fields up to that point
+  ** were equal. If the incrKey flag is true, then the second key is
+  ** treated as larger.
+  */
+  if( pC && pC->incrKey ){
+    assert( offset2==nKey2 );
+    return -1;
+  }
+
   if( offset1<nKey1 ){
     return 1;
   }
   if( offset2<nKey2 ){
     return -1;
   }
+
+return_result:
+
   return 0;
 }
 
@@ -1455,7 +1467,7 @@ int sqlite3VdbeKeyCompare(
 int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   i64 sz;
   int rc;
-  char buf[9];
+  char buf[10];
   int len;
   u64 r;
 
@@ -1463,24 +1475,33 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   if( rc!=SQLITE_OK ){
     return rc;
   }
-  len = ((sz>9)?9:sz);
-  assert( len>=2 );
+  len = ((sz>10)?10:sz);
+
+  /* If there are less than 2 bytes in the key, this cannot be
+  ** a valid index entry. In practice this comes up for a query
+  ** of the sort "SELECT max(x) FROM t1;" when t1 is an empty table
+  ** with an index on x. In this case just call the rowid 0.
+  */
+  if( len<2 ){
+    *rowid = 0;
+    return SQLITE_OK;
+  }
 
   rc = sqlite3BtreeKey(pCur, sz-len, len, buf);
   if( rc!=SQLITE_OK ){
     return rc;
   }
 
-  len = len - 2;
-  while( buf[len] && --len );
+  len--;
+  while( buf[len-1] && --len );
 
-  sqlite3GetVarint(buf, &r);
+  sqlite3GetVarint(&buf[len], &r);
   *rowid = r;
   return SQLITE_OK;
 }
 
 int sqlite3VdbeIdxKeyCompare(
-  BtCursor *pCur, 
+  Cursor *pC, 
   int nKey, const unsigned char *pKey,
   int ignorerowid,
   int *res
@@ -1490,6 +1511,7 @@ int sqlite3VdbeIdxKeyCompare(
   int freeCellKey = 0;
   int rc;
   int len;
+  BtCursor *pCur = pC->pCursor;
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
   if( nCellKey<=0 ){
@@ -1518,7 +1540,7 @@ int sqlite3VdbeIdxKeyCompare(
     nKey--;
     while( pKey[nKey] && --nKey );
   }
-  *res = sqlite3VdbeKeyCompare(0, len, pCellKey, nKey, pKey);
+  *res = sqlite3VdbeKeyCompare(pC, len, pCellKey, nKey, pKey);
   
   if( freeCellKey ){
     sqliteFree(pCellKey);

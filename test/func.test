@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.16 2002/11/04 19:32:26 drh Exp $
+# $Id: func.test,v 1.17 2004/05/14 11:00:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -167,7 +167,7 @@ do_test func-4.3 {
 } {0 {2 1.2345678901234 2}}
 do_test func-4.4 {
   catchsql {SELECT abs(c) FROM t1 ORDER BY a}
-} {0 {3 12345.67890 5}}
+} {0 {3 12345.6789 5}}
 do_test func-4.4.1 {
   execsql {SELECT abs(a) FROM t2}
 } {1 {} 345 {} 67890}

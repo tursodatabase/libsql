@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.91 2004/05/10 10:37:19 danielk1977 Exp $
+** $Id: where.c,v 1.92 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -799,19 +799,22 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
       sqlite3VdbeAddOp(v, OP_MakeKey, nColumn, 0);
       sqlite3AddIdxKeyType(v, pIdx);
+      sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
       if( nColumn==pIdx->nColumn || pLevel->bRev ){
-        sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
         testOp = OP_IdxGT;
       }else{
+/*
         sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
         sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
         sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
+*/
         testOp = OP_IdxGE;
       }
       if( pLevel->bRev ){
         /* Scan in reverse order */
-        sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
+        /* sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0); */
         sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
+        sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, OP_IdxLT, pLevel->iCur, brk);
         pLevel->op = OP_Prev;
@@ -820,6 +823,9 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_MoveTo, pLevel->iCur, brk);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, testOp, pLevel->iCur, brk);
+        if( testOp==OP_IdxGE ){
+          sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+        }
         pLevel->op = OP_Next;
       }
       sqlite3VdbeAddOp(v, OP_RowKey, pLevel->iCur, 0);
@@ -1004,11 +1010,16 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
         sqlite3VdbeAddOp(v, OP_MakeKey, nCol, 0);
         sqlite3AddIdxKeyType(v, pIdx);
+/*
         if( leFlag ){
           sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
         }
+*/
         if( pLevel->bRev ){
           sqlite3VdbeAddOp(v, OP_MoveLt, pLevel->iCur, brk);
+          if( !geFlag ){
+            sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+          }
         }else{
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
         }
@@ -1060,15 +1071,20 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeAddOp(v, OP_Goto, 0, brk);
         sqlite3VdbeAddOp(v, OP_MakeKey, nCol, 0);
         sqlite3AddIdxKeyType(v, pIdx);
+/*
         if( !geFlag ){
           sqlite3VdbeAddOp(v, OP_IncrKey, 0, 0);
         }
+*/
         if( pLevel->bRev ){
           pLevel->iMem = pParse->nMem++;
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
           testOp = OP_IdxLT;
         }else{
           sqlite3VdbeAddOp(v, OP_MoveTo, pLevel->iCur, brk);
+          if( !geFlag ){
+            sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+          }
         }
       }else if( pLevel->bRev ){
         testOp = OP_Noop;
@@ -1084,6 +1100,9 @@ WhereInfo *sqlite3WhereBegin(
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
         sqlite3VdbeAddOp(v, testOp, pLevel->iCur, brk);
+        if( (leFlag && !pLevel->bRev) || (!geFlag && pLevel->bRev) ){
+          sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
+        }
       }
       sqlite3VdbeAddOp(v, OP_RowKey, pLevel->iCur, 0);
       sqlite3VdbeAddOp(v, OP_IdxIsNull, nEqColumn + (score & 1), cont);

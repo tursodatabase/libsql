@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.231 2004/05/12 11:24:03 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.232 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -520,6 +520,7 @@ struct Table {
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
   Trigger *pTrigger; /* List of SQL triggers on this table */
   FKey *pFKey;       /* Linked list of all foreign keys in this table */
+  char *zColAff;     /* String defining the affinity of each column */
 };
 
 /*
@@ -1110,7 +1111,7 @@ extern int always_code_trigger_setup;
 int sqlite3StrICmp(const char *, const char *);
 int sqlite3StrNICmp(const char *, const char *, int);
 int sqlite3HashNoCase(const char *, int);
-int sqlite3IsNumber(const char*);
+int sqlite3IsNumber(const char*, int*);
 int sqlite3Compare(const char *, const char *);
 int sqlite3SortCompare(const char *, const char *);
 void sqlite3RealToSortable(double r, char *);
@@ -1289,5 +1290,6 @@ void sqlite3utf16to16be(void *pData, int N);
 int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3VarintLen(u64 v);
+int sqlite3AddRecordType(Vdbe*, Table*);
 
 

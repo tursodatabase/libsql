@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.182 2004/05/12 11:24:03 danielk1977 Exp $
+** $Id: build.c,v 1.183 2004/05/14 11:00:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -350,6 +350,9 @@ void sqlite3DeleteTable(sqlite *db, Table *pTable){
   }
   sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
+  if( pTable->zColAff ){
+    sqliteFree(pTable->zColAff);
+  }
   sqlite3SelectDelete(pTable->pSelect);
   sqliteFree(pTable);
 }
