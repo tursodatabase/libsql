@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.101 2004/02/12 19:01:05 drh Exp $
+** $Id: btree.c,v 1.102 2004/02/14 17:35:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2724,7 +2724,8 @@ static int fileBtreeDelete(BtCursor *pCur){
     getTempCursor(pCur, &leafCur);
     rc = fileBtreeNext(&leafCur, &notUsed);
     if( rc!=SQLITE_OK ){
-      return SQLITE_CORRUPT;
+      if( rc!=SQLITE_NOMEM ) rc = SQLITE_CORRUPT;
+      return rc;
     }
     rc = sqlitepager_write(leafCur.pPage);
     if( rc ) return rc;

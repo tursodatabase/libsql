@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.152 2004/02/14 16:31:03 drh Exp $
+** $Id: main.c,v 1.153 2004/02/14 17:35:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -615,7 +615,7 @@ int sqlite_exec(
     pVm = 0;
     rc = sqlite_compile(db, zSql, &zLeftover, &pVm, pzErrMsg);
     if( rc!=SQLITE_OK ){
-      assert( pVm==0 );
+      assert( pVm==0 || sqlite_malloc_failed );
       return rc;
     }
     if( pVm==0 ){
