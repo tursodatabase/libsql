@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.204 2004/08/29 01:31:05 drh Exp $
+** $Id: select.c,v 1.205 2004/08/29 16:25:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1280,30 +1280,11 @@ static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
 }
 
 /*
-** FIX ME:
-**    +  Omit the ppOpenTemp parameter from multiSelectOpenTempAddr().
-**    +  Attach pOpenList to the right-most term always.
-**    +  Make sure Select.ppOpenTemp is initialized to NULL
+** Add the address "addr" to the set of all OpenTemp opcode addresses
+** that are being accumulated in p->ppOpenTemp.
 */
-
-/*
-** Add the address "addr" to the set of all opcode addresses contained
-** in the pOpenTemp list for the whole compound select.  If no pOpenTemp
-** list has been created yet, then create a new one and make *ppOpenTemp
-** point to it.  If the pOpenTemp list already exists, leave *ppOpenTemp
-** unchanged and just add the new address to the existing list.
-*/
-static int multiSelectOpenTempAddr(Select *p, int addr, IdList **ppOpenTemp){
-  IdList *pList;
-  if( !p->ppOpenTemp ){
-    /* Create a new list */
-    *ppOpenTemp = sqlite3IdListAppend(0, 0);
-    p->ppOpenTemp = ppOpenTemp;
-  }else{
-    /* Add a new element onto the end of the existing list */
-    *p->ppOpenTemp = sqlite3IdListAppend(*p->ppOpenTemp, 0);
-  }
-  pList = *p->ppOpenTemp;
+static int multiSelectOpenTempAddr(Select *p, int addr){
+  IdList *pList = *p->ppOpenTemp = sqlite3IdListAppend(*p->ppOpenTemp, 0);
   if( pList==0 ){
     return SQLITE_NOMEM;
   }
@@ -1373,6 +1354,9 @@ static int multiSelect(
   Select *pPrior;       /* Another SELECT immediately to our left */
   Vdbe *v;              /* Generate code to this VDBE */
   IdList *pOpenTemp = 0;/* OP_OpenTemp opcodes that need a KeyInfo */
+  int aAddr[5];         /* Addresses of SetNumColumns operators */
+  int nAddr = 0;        /* Number used */
+  int nCol;             /* Number of columns in the result set */
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
@@ -1403,7 +1387,11 @@ static int multiSelect(
     goto multi_select_end;
   }
 
-  /* PART OF FIX:
+  /* If *p this is the right-most select statement, then initialize
+  ** p->ppOpenTemp to point to pOpenTemp.  If *p is not the right most
+  ** statement then p->ppOpenTemp will have already been initialized
+  ** by a prior call to this same procedure.  Pass along the pOpenTemp
+  ** pointer to pPrior, the next statement to our left.
   */
   if( p->ppOpenTemp==0 ){
     p->ppOpenTemp = &pOpenTemp;
@@ -1415,15 +1403,8 @@ static int multiSelect(
   if( eDest==SRT_TempTable ){
     assert( p->pEList );
     sqlite3VdbeAddOp(v, OP_OpenTemp, iParm, 0);
-
-    /* FIX ME:
-    ** p->pEList->nExpr might contain a "*" and so might not be the 
-    ** correct number.  Go ahead and code the SetNumColumns instruction
-    ** here, but also record its address.   Change the P2 value of the
-    ** instruction to the number of columns after sqlite3Select() has
-    ** been called to code the subquery and has modified pEList->nExpr
-    ** to be the correct value. */
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, p->pEList->nExpr);
+    assert( nAddr==0 );
+    aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, 0);
     eDest = SRT_Table;
   }
 
@@ -1434,7 +1415,6 @@ static int multiSelect(
       if( p->pOrderBy==0 ){
         pPrior->nLimit = p->nLimit;
         pPrior->nOffset = p->nOffset;
-        /* pPrior->ppOpenTemp = p->ppOpenTemp; // FIX */
         rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
         if( rc ){
           goto multi_select_end;
@@ -1480,24 +1460,22 @@ static int multiSelect(
         }
         addr = sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 0);
         if( p->op!=TK_ALL ){
-          rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+          rc = multiSelectOpenTempAddr(p, addr);
           if( rc!=SQLITE_OK ){
             goto multi_select_end;
           }
           sqlite3VdbeAddOp(v, OP_KeyAsData, unionTab, 1);
         }
+	assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
+        aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, unionTab, 0);
         assert( p->pEList );
       }
 
       /* Code the SELECT statements to our left
       */
-      /* pPrior->ppOpenTemp = p->ppOpenTemp; // FIX */
       rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
-      }
-      if( p->op==TK_ALL ){
-        sqlite3VdbeAddOp(v, OP_SetNumColumns, unionTab, pPrior->pEList->nExpr);
       }
 
       /* Code the current SELECT statement
@@ -1570,16 +1548,17 @@ static int multiSelect(
       }
 
       addr = sqlite3VdbeAddOp(v, OP_OpenTemp, tab1, 0);
-      rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+      rc = multiSelectOpenTempAddr(p, addr);
       if( rc!=SQLITE_OK ){
         goto multi_select_end;
       }
       sqlite3VdbeAddOp(v, OP_KeyAsData, tab1, 1);
+      assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
+      aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, tab1, 0);
       assert( p->pEList );
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
-      /* pPrior->ppOpenTemp = p->ppOpenTemp; // FIX */
       rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
@@ -1588,11 +1567,13 @@ static int multiSelect(
       /* Code the current SELECT into temporary table "tab2"
       */
       addr = sqlite3VdbeAddOp(v, OP_OpenTemp, tab2, 0);
-      rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+      rc = multiSelectOpenTempAddr(p, addr);
       if( rc!=SQLITE_OK ){
         goto multi_select_end;
       }
       sqlite3VdbeAddOp(v, OP_KeyAsData, tab2, 1);
+      assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
+      aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, tab2, 0);
       p->pPrior = 0;
       nLimit = p->nLimit;
       p->nLimit = -1;
@@ -1634,6 +1615,10 @@ static int multiSelect(
       break;
     }
   }
+
+  /* Make sure all SELECTs in the statement have the same number of elements
+  ** in their result sets.
+  */
   assert( p->pEList && pPrior->pEList );
   if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
     sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
@@ -1642,16 +1627,29 @@ static int multiSelect(
     goto multi_select_end;
   }
 
+  /* Set the number of columns in temporary tables
+  */
+  nCol = p->pEList->nExpr;
+  while( nAddr>0 ){
+    nAddr--;
+    sqlite3VdbeChangeP2(v, aAddr[nAddr], nCol);
+  }
+
   /* Compute collating sequences used by either the ORDER BY clause or
   ** by any temporary tables needed to implement the compound select.
   ** Attach the KeyInfo structure to all temporary tables.  Invoke the
   ** ORDER BY processing if there is an ORDER BY clause.
+  **
+  ** This section is run by the right-most SELECT statement only.
+  ** SELECT statements to the left always skip this part.  The right-most
+  ** SELECT might also skip this part if it has no ORDER BY clause and
+  ** no temp tables are required.
   */
   if( p->pOrderBy || (pOpenTemp && pOpenTemp->nId>0) ){
-    int nCol = p->pEList->nExpr;  /* Number of columns in the result set */
     int i;                        /* Loop counter */
     KeyInfo *pKeyInfo;            /* Collating sequence for the result set */
 
+    assert( p->ppOpenTemp == &pOpenTemp );
     pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nCol*sizeof(CollSeq*));
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
@@ -2367,21 +2365,6 @@ int sqlite3Select(
   */
   if( eDest==SRT_Callback ){
     generateColumnNames(pParse, pTabList, pEList);
-  }
-
-  /* If the destination is SRT_Union, then set the number of columns in
-  ** the records that will be inserted into the temporary table. The caller
-  ** couldn't do this, in case the select statement is of the form 
-  ** "SELECT * FROM ....". 
-  **
-  ** We need to do this before we start inserting records into the 
-  ** temporary table (which has had OP_KeyAsData executed on it), because
-  ** it is required by the key comparison function. So do it now, even
-  ** though this means that OP_SetNumColumns may be executed on the same
-  ** cursor more than once.
-  */
-  if( eDest==SRT_Union ){
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, iParm, pEList->nExpr);
   }
 
   /* Generate code for all sub-queries in the FROM clause

@@ -1,0 +1,50 @@
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing compute SELECT statements and nested
+# views.
+#
+# $Id: select7.test,v 1.1 2004/08/29 16:25:04 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# A 3-way INTERSECT.  Ticket #875
+do_test select7-1.1 {
+  execsql {
+    create temp table t1(x);
+    insert into t1 values('amx');
+    insert into t1 values('anx');
+    insert into t1 values('amy');
+    insert into t1 values('bmy');
+    select * from t1 where x like 'a__'
+      intersect select * from t1 where x like '_m_'
+      intersect select * from t1 where x like '__x';
+  }
+} {amx}
+
+
+# Nested views do not handle * properly.  Ticket #826.
+#
+do_test select7-2.1 {
+  execsql {
+    CREATE TABLE x(id integer primary key, a TEXT NULL);
+    INSERT INTO x (a) VALUES ('first');
+    CREATE TABLE tempx(id integer primary key, a TEXT NULL);
+    INSERT INTO tempx (a) VALUES ('t-first');
+    CREATE VIEW tv1 AS SELECT x.id, tx.id FROM x JOIN tempx tx ON tx.id=x.id;
+    CREATE VIEW tv1b AS SELECT x.id, tx.id FROM x JOIN tempx tx on tx.id=x.id;
+    CREATE VIEW tv2 AS SELECT * FROM tv1 UNION SELECT * FROM tv1b;
+    SELECT * FROM tv2;
+  }
+} {1 1}
+
+
+finish_test

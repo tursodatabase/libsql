@@ -1,5 +1,5 @@
-C Progress\stoward\sfixing\siproblems\swith\scompound\sselects.\s(CVS\s1911)
-D 2004-08-29T01:31:05
+C Corrections\sto\stransient\stable\shandling\sin\scompound\sselect\sstatments.\nTickets\s#826\sand\s#875.\s(CVS\s1912)
+D 2004-08-29T16:25:04
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/parse.y 581a2ce014b843506805b2470c02b7865ad034d5
 F src/pragma.c a7cea75286fcff6666a5412b04478fcf0ecef5c4
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 5fa9db32e24f4c0f0ead43cfa59a6cfc3a452a15
+F src/select.c 400b2dcc8e05c0101a65a370f7ebb33c9c85f0b3
 F src/shell.c 42f65424a948f197f389e13bc7aaa3cf24dafd0c
 F src/sqlite.h.in d619f3dd276845c2ff3fbeaed1d037563fc419f0
 F src/sqliteInt.h c7ed161ecc40f9fd0f080fbcc00e34bd7d6735ee
@@ -162,6 +162,7 @@ F test/select3.test 9de435aa84fc406708cd8dc1b1d60e7f27cea685
 F test/select4.test 86e72fc3b07de4fe11439aa419e37db3c49467e2
 F test/select5.test 94db800bbeff2e426c0175e07f7a71d4617853b5
 F test/select6.test 7a4c572ada0c2f969cecacd76f1f5c1533a22bbb
+F test/select7.test c71c822a82c80bbd55558b4b69d35442dfe22ffd
 F test/sort.test 35e9d6bd6930969050606c8feb9c6745469720e3
 F test/subselect.test 50f98723f00e97b1839d36410ee63597ca82d775
 F test/table.test fd9a0f4992230e4ca89cd37ae3191a12750df1d0
@@ -244,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d50c47b4995bd9b58e1293aa6513361cffc6babe
-R e1fb8ddf0dd95f67094014c0c3248f2f
+P 307478593d5d96b79386da222c7742ea2eaa5467
+R dce15d87c754e08c36b4d1c93058acb6
 U drh
-Z 1e45c8abb4ae3be9c92dd0026a2f0205
+Z c4c7da99c7cb81b57cec03f3f74114d2
