@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.142 2004/05/18 10:06:25 danielk1977 Exp $
+** $Id: btree.c,v 1.143 2004/05/18 12:50:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3191,14 +3191,14 @@ static int balance(MemPage *pPage){
       apNew[minI] = pT;
     }
   }
-  TRACE(("BALANCE: old: %d %d %d  new: %d %d %d %d\n",
+  TRACE(("BALANCE: old: %d %d %d  new: %d(%d) %d(%d) %d(%d) %d(%d)\n",
     pgnoOld[0], 
     nOld>=2 ? pgnoOld[1] : 0,
     nOld>=3 ? pgnoOld[2] : 0,
-    pgnoNew[0],
-    nNew>=2 ? pgnoNew[1] : 0,
-    nNew>=3 ? pgnoNew[2] : 0,
-    nNew>=4 ? pgnoNew[3] : 0));
+    pgnoNew[0], szNew[0],
+    nNew>=2 ? pgnoNew[1] : 0, nNew>=2 ? szNew[1] : 0,
+    nNew>=3 ? pgnoNew[2] : 0, nNew>=3 ? szNew[2] : 0,
+    nNew>=4 ? pgnoNew[3] : 0, nNew>=4 ? szNew[3] : 0));
 
 
   /*
