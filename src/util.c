@@ -14,13 +14,13 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.125 2005/01/12 07:15:06 danielk1977 Exp $
+** $Id: util.c,v 1.126 2005/01/13 02:14:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
-#if SQLITE_DEBUG>2 && defined(__GLIBC__)
+#if SQLITE_MEMDEBUG>2 && defined(__GLIBC__)
 #include <execinfo.h>
 void print_stack_trace(){
   void *bt[30];
@@ -44,10 +44,10 @@ void print_stack_trace(){
 int sqlite3_malloc_failed = 0;
 
 /*
-** If SQLITE_TEST is defined, then use versions of malloc() and
+** If SQLITE_MEMDEBUG is defined, then use versions of malloc() and
 ** free() that track memory usage and check for buffer overruns.
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_MEMDEBUG
 
 /*
 ** For keeping track of the number of mallocs and frees.   This
@@ -60,7 +60,7 @@ int sqlite3_nMalloc;         /* Number of sqliteMalloc() calls */
 int sqlite3_nFree;           /* Number of sqliteFree() calls */
 int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 int sqlite3_iMallocReset = -1; /* When iMallocFail reaches 0, set to this */
-#if SQLITE_DEBUG>1
+#if SQLITE_MEMDEBUG>1
 static int memcnt = 0;
 #endif
 
@@ -81,7 +81,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
     sqlite3_iMallocFail--;
     if( sqlite3_iMallocFail==0 ){
       sqlite3_malloc_failed++;
-#if SQLITE_DEBUG>1
+#if SQLITE_MEMDEBUG>1
       fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
               n, zFile,line);
 #endif
@@ -102,7 +102,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   for(i=0; i<N_GUARD; i++) pi[k+1+N_GUARD+i] = 0xdead3344;
   p = &pi[N_GUARD+1];
   memset(p, bZero==0, n);
-#if SQLITE_DEBUG>1
+#if SQLITE_MEMDEBUG>1
   print_stack_trace();
   fprintf(stderr,"%06d malloc %d bytes at 0x%x from %s:%d\n",
       ++memcnt, n, (int)p, zFile,line);
@@ -156,7 +156,7 @@ void sqlite3Free_(void *p, char *zFile, int line){
       }
     }
     memset(pi, 0xff, (k+N_GUARD*2+1)*sizeof(int));
-#if SQLITE_DEBUG>1
+#if SQLITE_MEMDEBUG>1
     fprintf(stderr,"%06d free %d bytes at 0x%x from %s:%d\n",
          ++memcnt, n, (int)p, zFile,line);
 #endif
@@ -210,7 +210,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   }
   memset(oldPi, 0xab, (oldK+N_GUARD+2)*sizeof(int));
   free(oldPi);
-#if SQLITE_DEBUG>1
+#if SQLITE_MEMDEBUG>1
   print_stack_trace();
   fprintf(stderr,"%06d realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n",
     ++memcnt, oldN, n, (int)oldP, (int)p, zFile, line);
@@ -245,13 +245,13 @@ char *sqlite3StrNDup_(const char *z, int n, char *zFile, int line){
 void sqlite3FreeX(void *p){
   sqliteFree(p);
 }
-#endif /* SQLITE_DEBUG */
+#endif /* SQLITE_MEMDEBUG */
 
 /*
 ** The following versions of malloc() and free() are for use in a
 ** normal build.
 */
-#if !defined(SQLITE_TEST)
+#if !defined(SQLITE_MEMDEBUG)
 
 /*
 ** Allocate new memory and set it to zero.  Return NULL if
@@ -329,7 +329,7 @@ char *sqlite3StrNDup(const char *z, int n){
   }
   return zNew;
 }
-#endif /* !defined(SQLITE_TEST) */
+#endif /* !defined(SQLITE_MEMDEBUG) */
 
 /*
 ** Create a string from the 2nd and subsequent arguments (up to the

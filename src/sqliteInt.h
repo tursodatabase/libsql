@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.352 2005/01/12 07:15:05 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.353 2005/01/13 02:14:25 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -231,7 +231,7 @@ struct BusyHandler {
 ** each malloc() and free().  This output can be analyzed
 ** by an AWK script to determine if there are any leaks.
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_MEMDEBUG
 # define sqliteMalloc(X)    sqlite3Malloc_(X,1,__FILE__,__LINE__)
 # define sqliteMallocRaw(X) sqlite3Malloc_(X,0,__FILE__,__LINE__)
 # define sqliteFree(X)      sqlite3Free_(X,__FILE__,__LINE__)
@@ -257,7 +257,7 @@ extern int sqlite3_malloc_failed;
 ** The following global variables are used for testing and debugging
 ** only.  They only work if SQLITE_DEBUG is defined.
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_MEMDEBUG
 extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
 extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
@@ -1280,7 +1280,7 @@ int sqlite3IsNumber(const char*, int*, u8);
 int sqlite3Compare(const char *, const char *);
 int sqlite3SortCompare(const char *, const char *);
 void sqlite3RealToSortable(double r, char *);
-#ifdef SQLITE_TEST
+#ifdef SQLITE_MEMDEBUG
   void *sqlite3Malloc_(int,int,char*,int);
   void sqlite3Free_(void*,char*,int);
   void *sqlite3Realloc_(void*,int,char*,int);

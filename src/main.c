@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.270 2005/01/12 12:44:04 danielk1977 Exp $
+** $Id: main.c,v 1.271 2005/01/13 02:14:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -378,7 +378,7 @@ const char *sqlite3_libversion(void){ return sqlite3_version; }
 ** This is the default collating function named "BINARY" which is always
 ** available.
 */
-static int binaryCollatingFunc(
+static int binCollFunc(
   void *NotUsed,
   int nKey1, const void *pKey1,
   int nKey2, const void *pKey2
@@ -1101,7 +1101,6 @@ static int openDatabase(
 ){
   sqlite3 *db;
   int rc, i;
-  char *zErrMsg = 0;
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite3) );
@@ -1126,11 +1125,9 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binaryCollatingFunc);
-  sqlite3_create_collation(db, "BINARY", SQLITE_UTF16LE, 0,binaryCollatingFunc);
-  sqlite3_create_collation(db, "BINARY", SQLITE_UTF16BE, 0,binaryCollatingFunc);
-  db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0);
-  if( !db->pDfltColl ){
+  if( sqlite3_create_collation(db, "BINARY", SQLITE_UTF8, 0,binCollFunc) ||
+      sqlite3_create_collation(db, "BINARY", SQLITE_UTF16, 0,binCollFunc) ||
+      !(db->pDfltColl = sqlite3FindCollSeq(db, db->enc, "BINARY", 6, 0)) ){
     rc = db->errCode;
     assert( rc!=SQLITE_OK );
     db->magic = SQLITE_MAGIC_CLOSED;

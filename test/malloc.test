@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.17 2005/01/12 13:04:55 danielk1977 Exp $
+# $Id: malloc.test,v 1.18 2005/01/13 02:14:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -485,7 +485,8 @@ do_malloc_test 10 -sqlprep {
 # This block tests malloc() failures that occur within calls to
 # sqlite3_create_function().
 do_malloc_test 11  -tclbody {
-  if {[string match [sqlite3_create_function $::DB] SQLITE_NOMEM]==0} {
+  set rc [sqlite3_create_function $::DB]
+  if {[string match $rc SQLITE_NOMEM]} {
     error "out of memory"
   }
 }

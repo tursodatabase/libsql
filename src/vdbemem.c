@@ -34,13 +34,20 @@
 ** between formats.
 */
 int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
+  int rc;
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
 #ifdef SQLITE_OMIT_UTF16
   return SQLITE_ERROR;
 #else
-  return sqlite3VdbeMemTranslate(pMem, desiredEnc);
+  rc = sqlite3VdbeMemTranslate(pMem, desiredEnc);
+  if( rc==SQLITE_NOMEM ){
+    sqlite3VdbeMemRelease(pMem);
+    pMem->flags = MEM_Null;
+    pMem->z = 0;
+  }
+  return rc;
 #endif
 }
 
