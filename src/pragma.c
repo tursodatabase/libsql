@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.76 2004/11/11 05:10:44 danielk1977 Exp $
+** $Id: pragma.c,v 1.77 2004/11/12 16:12:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -725,32 +725,32 @@ void sqlite3Pragma(
     }
   }else
   /*
-  **   PRAGMA [database.]schema_cookie
-  **   PRAGMA [database.]schema_cookie = <integer>
+  **   PRAGMA [database.]schema_version
+  **   PRAGMA [database.]schema_version = <integer>
   **
-  **   PRAGMA [database.]user_cookie
-  **   PRAGMA [database.]user_cookie = <integer>
+  **   PRAGMA [database.]user_version
+  **   PRAGMA [database.]user_version = <integer>
   **
-  ** The pragma's schema_cookie and user_cookie are used to set or get
-  ** the value of the schema-cookie and user-cookie, respectively. Both
-  ** the schema-cookie and the user-cookie are 32-bit signed integers
+  ** The pragma's schema_version and user_version are used to set or get
+  ** the value of the schema-version and user-version, respectively. Both
+  ** the schema-version and the user-version are 32-bit signed integers
   ** stored in the database header.
   **
   ** The schema-cookie is usually only manipulated internally by SQLite. It
   ** is incremented by SQLite whenever the database schema is modified (by
-  ** creating or dropping a table or index). The schema cookie is used by
+  ** creating or dropping a table or index). The schema version is used by
   ** SQLite each time a query is executed to ensure that the internal cache
   ** of the schema used when compiling the SQL query matches the schema of
   ** the database against which the compiled query is actually executed.
-  ** Subverting this mechanism by using "PRAGMA schema_cookie" to modify
-  ** the schema-cookie is potentially dangerous and may lead to program
+  ** Subverting this mechanism by using "PRAGMA schema_version" to modify
+  ** the schema-version is potentially dangerous and may lead to program
   ** crashes or database corruption. Use with caution!
   **
-  ** The user-cookie is not used internally by SQLite. It may be used by
+  ** The user-version is not used internally by SQLite. It may be used by
   ** applications for any purpose.
   */
-  if( sqlite3StrICmp(zLeft, "schema_cookie")==0 ||
-      sqlite3StrICmp(zLeft, "user_cookie")==0 ){
+  if( sqlite3StrICmp(zLeft, "schema_version")==0 ||
+      sqlite3StrICmp(zLeft, "user_version")==0 ){
 
     int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
     if( zLeft[0]=='s' || zLeft[0]=='S' ){

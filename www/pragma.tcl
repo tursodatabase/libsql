@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.2 2004/11/11 05:10:44 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.3 2004/11/12 16:12:00 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -34,8 +34,8 @@ different in the following important respects:
 <li>Pragmas used to <a href="#modify">modify the operation</a> of the 
     SQLite library in some manner, or to query for the current mode of 
     operation.
-<li>Pragmas used to <a href="#cookie">query or modify the databases two 
-    cookie values</a>, the schema-cookie and the user-cookie.
+<li>Pragmas used to <a href="#version">query or modify the databases two 
+    version values</a>, the schema-version and the user-version.
 <li>Pragmas used to <a href="#debug">debug the library</a> and verify that
     database files are not corrupted.
 </ul>
@@ -249,33 +249,33 @@ puts {
 </ul>
 }
 
-Section {Pragmas to query/modify cookie values} cookie
+Section {Pragmas to query/modify version values} version
 
 puts {
 
 <ul>
-<li><p><b>PRAGMA [database.]schema_cookie; 
-       <br>PRAGMA [database.]schema_cookie = </b><i>integer </i><b>;
-       <br>PRAGMA [database.]user_cookie;
-       <br>PRAGMA [database.]user_cookie = </b><i>integer </i><b>;</b>
+<li><p><b>PRAGMA [database.]schema_version; 
+       <br>PRAGMA [database.]schema_version = </b><i>integer </i><b>;
+       <br>PRAGMA [database.]user_version;
+       <br>PRAGMA [database.]user_version = </b><i>integer </i><b>;</b>
 
   
-<p>    The pragmas schema_cookie and user_cookie are used to set or get
-       the value of the schema-cookie and user-cookie, respectively. Both
-       the schema-cookie and the user-cookie are 32-bit signed integers
+<p>    The pragmas schema_version and user_version are used to set or get
+       the value of the schema-version and user-version, respectively. Both
+       the schema-version and the user-version are 32-bit signed integers
        stored in the database header.</p>
   
-<p>    The schema-cookie is usually only manipulated internally by SQLite.  
+<p>    The schema-version is usually only manipulated internally by SQLite.  
        It is incremented by SQLite whenever the database schema is modified 
-       (by creating or dropping a table or index). The schema cookie is 
+       (by creating or dropping a table or index). The schema version is 
        used by SQLite each time a query is executed to ensure that the 
        internal cache of the schema used when compiling the SQL query matches 
        the schema of the database against which the compiled query is actually 
-       executed.  Subverting this mechanism by using "PRAGMA schema_cookie" 
-       to modify the schema-cookie is potentially dangerous and may lead 
+       executed.  Subverting this mechanism by using "PRAGMA schema_version" 
+       to modify the schema-version is potentially dangerous and may lead 
        to program crashes or database corruption. Use with caution!</p>
   
-<p>    The user-cookie is not used internally by SQLite. It may be used by
+<p>    The user-version is not used internally by SQLite. It may be used by
        applications for any purpose.</p>
 </li>
 </ul>

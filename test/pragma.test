@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.22 2004/11/11 05:10:44 danielk1977 Exp $
+# $Id: pragma.test,v 1.23 2004/11/12 16:12:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -368,38 +368,38 @@ do_test pragma-7.3 {
 
 
 #----------------------------------------------------------------------
-# Test cases pragma-8.* test the "PRAGMA schema_cookie" and "PRAGMA
-# user_cookie" statements.
+# Test cases pragma-8.* test the "PRAGMA schema_version" and "PRAGMA
+# user_version" statements.
 #
-# pragma-8.1: PRAGMA schema_cookie
-# pragma-8.2: PRAGMA user_cookie
+# pragma-8.1: PRAGMA schema_version
+# pragma-8.2: PRAGMA user_version
 #
 
-# First check that we can set the schema cookie and then retrieve the
+# First check that we can set the schema version and then retrieve the
 # same value.
 do_test pragma-8.1.1 {
   execsql {
-    PRAGMA schema_cookie = 105;
+    PRAGMA schema_version = 105;
   }
 } {}
 do_test pragma-8.1.2 {
   execsql {
-    PRAGMA schema_cookie;
+    PRAGMA schema_version;
   }
 } 105
 do_test pragma-8.1.3 {
   execsql {
-    PRAGMA schema_cookie = 106;
+    PRAGMA schema_version = 106;
   }
 } {}
 do_test pragma-8.1.4 {
   execsql {
-    PRAGMA schema_cookie;
+    PRAGMA schema_version;
   }
 } 106
 
-# Check that creating a table modifies the schema-cookie (this is really
-# to verify that the value being read is in fact the schema cookie).
+# Check that creating a table modifies the schema-version (this is really
+# to verify that the value being read is in fact the schema version).
 do_test pragma-8.1.5 {
   execsql {
     CREATE TABLE t4(a, b, c);
@@ -409,12 +409,12 @@ do_test pragma-8.1.5 {
 } {1 2 3}
 do_test pragma-8.1.6 {
   execsql {
-    PRAGMA schema_cookie;
+    PRAGMA schema_version;
   }
 } 107
 
 # Now open a second connection to the database. Ensure that changing the
-# schema-cookie using the first connection forces the second connection
+# schema-version using the first connection forces the second connection
 # to reload the schema. This has to be done using the C-API test functions,
 # because the TCL API accounts for SCHEMA_ERROR and retries the query.
 do_test pragma-8.1.7 {
@@ -425,7 +425,7 @@ do_test pragma-8.1.7 {
 } {1 2 3}
 do_test pragma-8.1.8 {
   execsql {
-    PRAGMA schema_cookie = 108;
+    PRAGMA schema_version = 108;
   }
 } {}
 do_test pragma-8.1.9 {
@@ -436,28 +436,28 @@ do_test pragma-8.1.10 {
   sqlite3_finalize $::STMT
 } SQLITE_SCHEMA
 
-# Make sure the schema-cookie can be manipulated in an attached database.
+# Make sure the schema-version can be manipulated in an attached database.
 file delete -force test2.db
 file delete -force test2.db-journal
 do_test pragma-8.1.11 {
   execsql {
     ATTACH 'test2.db' AS aux;
     CREATE TABLE aux.t1(a, b, c);
-    PRAGMA aux.schema_cookie = 205;
+    PRAGMA aux.schema_version = 205;
   }
 } {}
 do_test pragma-8.1.12 {
   execsql {
-    PRAGMA aux.schema_cookie;
+    PRAGMA aux.schema_version;
   }
 } 205
 do_test pragma-8.1.13 {
   execsql {
-    PRAGMA schema_cookie;
+    PRAGMA schema_version;
   }
 } 108
 
-# And check that modifying the schema-cookie in an attached database
+# And check that modifying the schema-version in an attached database
 # forces the second connection to reload the schema.
 do_test pragma-8.1.14 {
   set ::DB2 [sqlite3 db2 test.db]
@@ -468,7 +468,7 @@ do_test pragma-8.1.14 {
 } {}
 do_test pragma-8.1.15 {
   execsql {
-    PRAGMA aux.schema_cookie = 206;
+    PRAGMA aux.schema_version = 206;
   }
 } {}
 do_test pragma-8.1.16 {
@@ -482,92 +482,92 @@ do_test pragma-8.1.18 {
   db2 close
 } {}
 
-# Now test that the user-cookie can be read and written (and that we aren't
-# accidentally manipulating the schema-cookie instead).
+# Now test that the user-version can be read and written (and that we aren't
+# accidentally manipulating the schema-version instead).
 do_test pragma-8.2.1 {
   execsql {
-    PRAGMA user_cookie;
+    PRAGMA user_version;
   }
 } {0}
 do_test pragma-8.2.2 {
   execsql {
-    PRAGMA user_cookie = 2;
+    PRAGMA user_version = 2;
   }
 } {}
 do_test pragma-8.2.3 {
   execsql {
-    PRAGMA user_cookie;
+    PRAGMA user_version;
   }
 } {2}
 do_test pragma-8.2.4 {
   execsql {
-    PRAGMA schema_cookie;
+    PRAGMA schema_version;
   }
 } {108}
 
-# Check that the user-cookie in the auxilary database can be manipulated (
+# Check that the user-version in the auxilary database can be manipulated (
 # and that we aren't accidentally manipulating the same in the main db).
 do_test pragma-8.2.5 {
   execsql {
-    PRAGMA aux.user_cookie;
+    PRAGMA aux.user_version;
   }
 } {0}
 do_test pragma-8.2.6 {
   execsql {
-    PRAGMA aux.user_cookie = 3;
+    PRAGMA aux.user_version = 3;
   }
 } {}
 do_test pragma-8.2.7 {
   execsql {
-    PRAGMA aux.user_cookie;
+    PRAGMA aux.user_version;
   }
 } {3}
 do_test pragma-8.2.8 {
   execsql {
-    PRAGMA main.user_cookie;
+    PRAGMA main.user_version;
   }
 } {2}
 
-# Now check that a ROLLBACK resets the user-cookie if it has been modified
+# Now check that a ROLLBACK resets the user-version if it has been modified
 # within a transaction.
 do_test pragma-8.2.9 {
   execsql {
     BEGIN;
-    PRAGMA aux.user_cookie = 10;
-    PRAGMA user_cookie = 11;
+    PRAGMA aux.user_version = 10;
+    PRAGMA user_version = 11;
   }
 } {}
 do_test pragma-8.2.10 {
   execsql {
-    PRAGMA aux.user_cookie;
+    PRAGMA aux.user_version;
   }
 } {10}
 do_test pragma-8.2.11 {
   execsql {
-    PRAGMA main.user_cookie;
+    PRAGMA main.user_version;
   }
 } {11}
 do_test pragma-8.2.12 {
   execsql {
     ROLLBACK;
-    PRAGMA aux.user_cookie;
+    PRAGMA aux.user_version;
   }
 } {3}
 do_test pragma-8.2.13 {
   execsql {
-    PRAGMA main.user_cookie;
+    PRAGMA main.user_version;
   }
 } {2}
 
-# Try a negative value for the user-cookie
+# Try a negative value for the user-version
 do_test pragma-8.2.14 {
   execsql {
-    PRAGMA user_cookie = -450;
+    PRAGMA user_version = -450;
   }
 } {}
 do_test pragma-8.2.15 {
   execsql {
-    PRAGMA user_cookie;
+    PRAGMA user_version;
   }
 } {-450}
 
