@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.8 2000/06/05 02:07:04 drh Exp $
+** $Id: shell.c,v 1.9 2000/06/07 00:12:25 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -365,7 +365,9 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     data.showHeader = 0;
     data.mode = MODE_List;
     if( nArg>1 ){
-      sprintf(zSql, "SELECT sql FROM sqlite_master WHERE name LIKE '%.900s'",
+      sprintf(zSql, "SELECT sql FROM sqlite_master "
+                    "WHERE tbl_name LIKE '%.800s'"
+                    "ORDER BY type DESC, name",
          azArg[1]);
     }else{
       sprintf(zSql, "SELECT sql FROM sqlite_master "

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.24 2000/06/06 22:13:55 drh Exp $
+** $Id: vdbe.c,v 1.25 2000/06/07 00:12:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -2375,9 +2375,9 @@ int sqliteVdbeExec(
         zNewKey = sqliteMalloc( nByte );
         if( zNewKey==0 ) goto no_mem;
         j = 0;
-        k = nField-1;
+        k = 0;
         for(i=p->tos-nField+1; i<=p->tos; i++){
-          zNewKey[j++] = pOp->p3[k--];
+          zNewKey[j++] = pOp->p3[k++];
           memcpy(&zNewKey[j], p->zStack[i], p->aStack[i].n-1);
           j += p->aStack[i].n-1;
           zNewKey[j++] = 0;

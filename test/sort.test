@@ -1,0 +1,95 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the CREATE TABLE statement.
+#
+# $Id: sort.test,v 1.1 2000/06/07 00:12:25 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a bunch of data to sort against
+#
+do_test sort-1.0 {
+  set fd [open data.txt w]
+  puts $fd "1\tone\t0\tI\t3.141592653"
+  puts $fd "2\ttwo\t1\tII\t2.15"
+  puts $fd "3\tthree\t1\tIII\t4221.0"
+  puts $fd "4\tfour\t2\tIV\t-0.0013442"
+  puts $fd "5\tfive\t2\tV\t-11"
+  puts $fd "6\tsix\t2\tVI\t0.123"
+  puts $fd "7\tseven\t2\tVII\t123.0"
+  puts $fd "8\teight\t3\tVIII\t-1.6"
+  close $fd
+  execsql {
+    CREATE TABLE t1(
+       n int,
+       v varchar(10),
+       log int,
+       roman varchar(10),
+       flt real
+    );
+    COPY t1 FROM 'data.txt'
+  }
+  file delete data.txt
+  execsql {SELECT count(*) FROM t1}
+} {8}
+
+do_test sort-1.1 {
+  execsql {SELECT n FROM t1 ORDER BY n}
+} {1 2 3 4 5 6 7 8}
+do_test sort-1.2 {
+  execsql {SELECT n FROM t1 ORDER BY n DESC}
+} {8 7 6 5 4 3 2 1}
+do_test sort-1.3a {
+  execsql {SELECT v FROM t1 ORDER BY v}
+} {eight five four one seven six three two}
+do_test sort-1.3b {
+  execsql {SELECT n FROM t1 ORDER BY v}
+} {8 5 4 1 7 6 3 2}
+do_test sort-1.4 {
+  execsql {SELECT n FROM t1 ORDER BY v DESC}
+} {2 3 6 7 1 4 5 8}
+do_test sort-1.5 {
+  execsql {SELECT flt FROM t1 ORDER BY flt}
+} {-11 -1.6 -0.0013442 0.123 2.15 3.141592653 123.0 4221.0}
+do_test sort-1.6 {
+  execsql {SELECT flt FROM t1 ORDER BY flt DESC}
+} {4221.0 123.0 3.141592653 2.15 0.123 -0.0013442 -1.6 -11}
+do_test sort-1.7 {
+  execsql {SELECT roman FROM t1 ORDER BY roman}
+} {I II III IV V VI VII VIII}
+do_test sort-1.8 {
+  execsql {SELECT n FROM t1 ORDER BY log, flt}
+} {1 2 3 5 4 6 7 8}
+do_test sort-1.9 {
+  execsql {SELECT n FROM t1 ORDER BY log, flt DESC}
+} {1 3 2 7 6 4 5 8}
+do_test sort-1.10 {
+  execsql {SELECT n FROM t1 ORDER BY log DESC, flt}
+} {8 5 4 6 7 2 3 1}
+do_test sort-1.11 {
+  execsql {SELECT n FROM t1 ORDER BY log DESC, flt DESC}
+} {8 7 6 4 5 3 2 1}
+
+finish_test
