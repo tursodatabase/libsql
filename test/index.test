@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.23 2003/06/15 23:42:25 drh Exp $
+# $Id: index.test,v 1.24 2003/09/27 00:41:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -473,22 +473,22 @@ do_test index-14.8 {
   execsql {
     SELECT c FROM t6 WHERE a<'abc';
   }
-} {3 5 2 1}
+} {5 2 1}
 do_test index-14.9 {
   execsql {
     SELECT c FROM t6 WHERE a<='abc';
   }
-} {3 5 2 1 4}
+} {5 2 1 4}
 do_test index-14.10 {
   execsql {
     SELECT c FROM t6 WHERE a<='';
   }
-} {3 5 2 1}
+} {5 2 1}
 do_test index-14.11 {
   execsql {
     SELECT c FROM t6 WHERE a<'';
   }
-} {3 5}
+} {5}
 integrity_check index-14.12
 
 do_test index-15.1 {

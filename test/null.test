@@ -173,6 +173,64 @@ do_test null-7.2 {
   }
 } {1 2 3}
 
+# Ticket #461 - Make sure nulls are handled correctly when doing a
+# lookup using an index.
+#
+do_test null-8.1 {
+  execsql {
+    CREATE TABLE t4(x,y);
+    INSERT INTO t4 VALUES(1,11);
+    INSERT INTO t4 VALUES(2,NULL);
+    SELECT x FROM t4 WHERE y=NULL;
+  }
+} {}
+do_test null-8.2 {
+  execsql {
+    SELECT x FROM t4 WHERE y IN (33,NULL);
+  }
+} {}
+do_test null-8.3 {
+  execsql {
+    SELECT x FROM t4 WHERE y<33 ORDER BY x;
+  }
+} {1}
+do_test null-8.4 {
+  execsql {
+    SELECT x FROM t4 WHERE y>6 ORDER BY x;
+  }
+} {1}
+do_test null-8.5 {
+  execsql {
+    SELECT x FROM t4 WHERE y!=33 ORDER BY x;
+  }
+} {1}
+do_test null-8.11 {
+  execsql {
+    CREATE INDEX t4i1 ON t4(y);
+    SELECT x FROM t4 WHERE y=NULL;
+  }
+} {}
+do_test null-8.12 {
+  execsql {
+    SELECT x FROM t4 WHERE y IN (33,NULL);
+  }
+} {}
+do_test null-8.13 {
+  execsql {
+    SELECT x FROM t4 WHERE y<33 ORDER BY x;
+  }
+} {1}
+do_test null-8.14 {
+  execsql {
+    SELECT x FROM t4 WHERE y>6 ORDER BY x;
+  }
+} {1}
+do_test null-8.15 {
+  execsql {
+    SELECT x FROM t4 WHERE y!=33 ORDER BY x;
+  }
+} {1}
+
 
 
 finish_test

@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.81 2003/07/16 00:54:31 drh Exp $
+** $Id: where.c,v 1.82 2003/09/27 00:41:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -766,7 +766,7 @@ WhereInfo *sqliteWhereBegin(
           ){
             if( pX->op==TK_EQ ){
               sqliteExprCode(pParse, pX->pRight);
-              aExpr[k].p = 0;
+              /* aExpr[k].p = 0; // See ticket #461 */
               break;
             }
             if( pX->op==TK_IN && nColumn==1 ){
@@ -783,7 +783,7 @@ WhereInfo *sqliteWhereBegin(
                 pLevel->inOp = OP_Next;
                 pLevel->inP1 = pX->iTable;
               }
-              aExpr[k].p = 0;
+              /* aExpr[k].p = 0; // See ticket #461 */
               break;
             }
           }
@@ -793,7 +793,7 @@ WhereInfo *sqliteWhereBegin(
              && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
           ){
             sqliteExprCode(pParse, aExpr[k].p->pLeft);
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
         }
@@ -935,7 +935,7 @@ WhereInfo *sqliteWhereBegin(
              && aExpr[k].p->pLeft->iColumn==pIdx->aiColumn[j]
           ){
             sqliteExprCode(pParse, aExpr[k].p->pRight);
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
           if( aExpr[k].idxRight==iCur
@@ -944,7 +944,7 @@ WhereInfo *sqliteWhereBegin(
              && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
           ){
             sqliteExprCode(pParse, aExpr[k].p->pLeft);
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
         }
@@ -981,7 +981,7 @@ WhereInfo *sqliteWhereBegin(
           ){
             sqliteExprCode(pParse, pExpr->pRight);
             leFlag = pExpr->op==TK_LE;
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
           if( aExpr[k].idxRight==iCur
@@ -991,7 +991,7 @@ WhereInfo *sqliteWhereBegin(
           ){
             sqliteExprCode(pParse, pExpr->pLeft);
             leFlag = pExpr->op==TK_GE;
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
         }
@@ -1036,7 +1036,7 @@ WhereInfo *sqliteWhereBegin(
           ){
             sqliteExprCode(pParse, pExpr->pRight);
             geFlag = pExpr->op==TK_GE;
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
           if( aExpr[k].idxRight==iCur
@@ -1046,7 +1046,7 @@ WhereInfo *sqliteWhereBegin(
           ){
             sqliteExprCode(pParse, pExpr->pLeft);
             geFlag = pExpr->op==TK_LE;
-            aExpr[k].p = 0;
+            /* aExpr[k].p = 0; // See ticket #461 */
             break;
           }
         }
