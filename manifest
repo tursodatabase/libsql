@@ -1,9 +1,9 @@
-C Rework\sparts\sof\sthe\spragma\sdocumentation.\s\sTicket\s#1081.\s(CVS\s2354)
-D 2005-02-19T13:05:48
+C Prepare\sfor\sthe\srelease\sof\s3.1.3.\s(CVS\s2355)
+D 2005-02-19T13:46:25
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
-F VERSION 9e556d0985199b130268c3b8e5615b90dda7e829
+F VERSION 998707be66c3e323090b91e4da181b2b0e848ee5
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -240,7 +240,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl f01802bf3413c603f320e396b951979942ba4ee0
 F www/capi3ref.tcl c5a3ae75fc3505c034f3c4bbb62ab94cf359ac39
-F www/changes.tcl 34c1ddc0920970e2d8f50dbfe7685bdcda66eece
+F www/changes.tcl fba1b5c968e6df123561e91b102b3a3a12eb5266
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 65b26bdfc964b66c5f0af841718a52f9795ceb05
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -256,7 +256,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
-F www/index.tcl e4e44a17a73510fdb5de7d3002815e7524e23433
+F www/index.tcl c09198bfea01ecb547e232d9a1f98667b5056f25
 F www/lang.tcl 0e5aeb09864b9ae0746d8afaa6377193f1553486
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 76cacb4a39d2dd79a27624a8bd1ff65eeedd4ac8
-R 0ac2f46a61ccb1df27a10469653c076c
+P 25141d9e213005940c4e57deca408e09c3e615d1
+R 66e9f65bf977012e90f1427d0383db2c
 U drh
-Z ec850b159f313c6a7d5ae471f77f9052
+Z 1d5ae0d2081524e714be8e21e4e98abb

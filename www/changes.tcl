@@ -21,6 +21,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 February 19 (3.1.3)} {
+<li>Fix a problem with VACUUM on databases from which tables containing
+AUTOINCREMENT have been dropped.</li>
+<li>Add forward compatibility to the future version 3.2 database file
+format.</li>
+<li>Documentation updates</li>
+}
+
 chng {2005 February 15 (3.1.2)} {
 <li>Fix a bug that can lead to database corruption if there are two
 open connections to the same database and one connection does a VACUUM

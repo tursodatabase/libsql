@@ -61,6 +61,10 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Feb-19} {Version 3.1.3 Released} {
+  Version 3.1.3 cleans up some minor issues discovered in version 3.1.2.
+}
+
 newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
   A critical bug in the VACUUM command that can lead to database
   corruption has been fixed in both the 2.x branch and the main
@@ -103,4 +107,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.107 2005/02/15 13:38:46 drh Exp $}
+footer {$Id: index.tcl,v 1.108 2005/02/19 13:46:25 drh Exp $}
