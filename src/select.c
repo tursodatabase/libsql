@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.148 2004/01/19 04:57:53 jplyon Exp $
+** $Id: select.c,v 1.149 2004/01/24 20:18:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,6 +42,9 @@ Select *sqliteSelectNew(
     sqliteExprDelete(pHaving);
     sqliteExprListDelete(pOrderBy);
   }else{
+    if( pEList==0 ){
+      pEList = sqliteExprListAppend(0, sqliteExpr(TK_ALL,0,0,0), 0);
+    }
     pNew->pEList = pEList;
     pNew->pSrc = pSrc;
     pNew->pWhere = pWhere;
@@ -777,8 +780,9 @@ static int fillInColumnList(Parse*, Select*);
 */
 Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   Table *pTab;
-  int i;
+  int i, j;
   ExprList *pEList;
+  Column *aCol;
 
   if( fillInColumnList(pParse, pSelect) ){
     return 0;
@@ -791,17 +795,27 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   pEList = pSelect->pEList;
   pTab->nCol = pEList->nExpr;
   assert( pTab->nCol>0 );
-  pTab->aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
+  pTab->aCol = aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
   for(i=0; i<pTab->nCol; i++){
-    Expr *p;
+    Expr *p, *pR;
     if( pEList->a[i].zName ){
-      pTab->aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
-    }else if( (p=pEList->a[i].pExpr)->span.z && p->span.z[0] ){
+      aCol[i].zName = sqliteStrDup(pEList->a[i].zName);
+    }else if( (p=pEList->a[i].pExpr)->op==TK_DOT 
+               && (pR=p->pRight)!=0 && pR->token.z && pR->token.z[0] ){
+      int cnt;
+      sqliteSetNString(&aCol[i].zName, pR->token.z, pR->token.n, 0);
+      for(j=cnt=0; j<i; j++){
+        if( sqliteStrICmp(aCol[j].zName, aCol[i].zName)==0 ){
+          int n;
+          char zBuf[30];
+          sprintf(zBuf,"_%d",++cnt);
+          n = strlen(zBuf);
+          sqliteSetNString(&aCol[i].zName, pR->token.z, pR->token.n, zBuf, n,0);
+          j = -1;
+        }
+      }
+    }else if( p->span.z && p->span.z[0] ){
       sqliteSetNString(&pTab->aCol[i].zName, p->span.z, p->span.n, 0);
-    }else if( p->op==TK_DOT && p->pRight && p->pRight->token.z &&
-           p->pRight->token.z[0] ){
-      sqliteSetNString(&pTab->aCol[i].zName, 
-           p->pRight->token.z, p->pRight->token.n, 0);
     }else{
       char zBuf[30];
       sprintf(zBuf, "column%d", i+1);

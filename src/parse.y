@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.106 2004/01/15 03:30:25 drh Exp $
+** @(#) $Id: parse.y,v 1.107 2004/01/24 20:18:13 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -366,7 +366,8 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
     else { sqliteIdListDelete(U); }
   }
 }
-seltablist(A) ::= stl_prefix(X) LP select(S) RP as(Z) on_opt(N) using_opt(U). {
+seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
+                  as(Z) on_opt(N) using_opt(U). {
   A = sqliteSrcListAppend(X,0,0);
   A->a[A->nSrc-1].pSelect = S;
   if( Z.n ) sqliteSrcListAddAlias(A,&Z);
@@ -378,6 +379,17 @@ seltablist(A) ::= stl_prefix(X) LP select(S) RP as(Z) on_opt(N) using_opt(U). {
     if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
     else { sqliteIdListDelete(U); }
   }
+}
+
+// A seltablist_paren nonterminal represents anything in a FROM that
+// is contained inside parentheses.  This can be either a subquery or
+// a grouping of table and subqueries.
+//
+%type seltablist_paren {Select*}
+%destructor seltablist_paren {sqliteSelectDelete($$);}
+seltablist_paren(A) ::= select(S).      {A = S;}
+seltablist_paren(A) ::= seltablist(F).  {
+   A = sqliteSelectNew(0,F,0,0,0,0,0,-1,0);
 }
 
 %type dbnm {Token}
@@ -666,16 +678,14 @@ expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
 }
 expr(A) ::= expr(X) IN nm(Y) dbnm(D). {
   SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
-  ExprList *pList = sqliteExprListAppend(0, sqliteExpr(TK_ALL,0,0,0), 0);
   A = sqliteExpr(TK_IN, X, 0, 0);
-  if( A ) A->pSelect = sqliteSelectNew(pList,pSrc,0,0,0,0,0,-1,0);
+  if( A ) A->pSelect = sqliteSelectNew(0,pSrc,0,0,0,0,0,-1,0);
   sqliteExprSpan(A,&X->span,D.z?&D:&Y);
 }
 expr(A) ::= expr(X) NOT IN nm(Y) dbnm(D). {
   SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
-  ExprList *pList = sqliteExprListAppend(0, sqliteExpr(TK_ALL,0,0,0), 0);
   A = sqliteExpr(TK_IN, X, 0, 0);
-  if( A ) A->pSelect = sqliteSelectNew(pList,pSrc,0,0,0,0,0,-1,0);
+  if( A ) A->pSelect = sqliteSelectNew(0,pSrc,0,0,0,0,0,-1,0);
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&X->span,D.z?&D:&Y);
 }
