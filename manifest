@@ -1,5 +1,5 @@
-C Always\suse\s"(char*)0"\sto\sterminate\sthe\sargument\slist\sof\ssqliteSetString().\nThis\sis\sneeded\sfor\s64-bit\ssystems\sthat\suse\sa\s32-bit\sinteger\sby\sdefault.\s(CVS\s1126)
-D 2003-12-06T21:43:56
+C Fail\san\sATTACH\sif\sthe\sauxiliary\sdatabase\sis\slocked.\s\sTicket\s#514.\s(CVS\s1127)
+D 2003-12-06T22:22:36
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F src/attach.c 9f78b4aaac02a2b09ff108e92cbaee3199e7962a
+F src/attach.c 9a3764bbccb1c8b39321630006fbaa0fb8bd1822
 F src/auth.c c59ad0dab501888f8b1fccc25e2f5965d2265116
 F src/btree.c bcb466c2939582a3a62f577cd8a9e5d637f3698d
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
@@ -69,7 +69,7 @@ F src/vdbeaux.c 877ae44ab42f43d38e8cd989087627508a4c98dd
 F src/where.c d01a3506f3c1e3a205028068c8a14d713872c633
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
-F test/attach2.test 6f98cc2b929d88dc5f82d95d04e9b89b3b5dead3
+F test/attach2.test d0105f4e8b1debf0ac25ed7df986b5854620e172
 F test/auth.test b7d6bdeffa804b96b7bcac2712e5f71ce014a1b8
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P e5e6a8481b2225e826c8e890ddc44f06759fe72b
-R 486b33d90c9358024a2965d7fdcc35e3
+P 656c90387a4a714b4f31040ece9b0e15e30934af
+R 9ba0dba1a5b0b6a0c4f493ffeeb808ce
 U drh
-Z 6d642432b480eb97ee7365de7928480a
+Z 4d2d90a1bb0f4a7af58cf43ec43a116f
