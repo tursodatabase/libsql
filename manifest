@@ -1,5 +1,5 @@
-C :-)\s(CVS\s18)
-D 2000-05-30T19:22:26
+C :-)\s(CVS\s19)
+D 2000-05-30T20:17:49
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -19,7 +19,7 @@ F src/tokenize.c e176b2c1c38e11482ee3419d6b50b733860a1587
 F src/util.c 2a0314dcc9de230526380765339071a5b304d70d
 F src/vdbe.c 117ce5541143e3af9dccdc15c22c4920a7b9bdb4
 F src/vdbe.h 03de26632f2e608c2a44a40262fbba21a8bdfd81
-F src/where.c be3973952e9bb5d2bb0bc5523b03f5d1f9e9d6f9
+F src/where.c 2c8de69c4cf5a620ed380d3d6bb658bbbe8da5d5
 F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
 F test/copy.test 641bd3cfaab61c4ee32889587e21e4c70788a97a
 F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
@@ -38,7 +38,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 2466d1b2e26c6f354b0acedee12025309a216799
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 97a0fb780ea1992c4d681cc0301bbfa1a06c2fb0
-R acfb1fc3d2b41afa7db1dd81b628bbd3
+P 2d41caec807a6ab83b67e59c849ebbda004f2869
+R d274f71e9bf0807a8f2c186fb0e9f965
 U drh
-Z 3db5ecf0eb5f7fb4a1980c5de63d9edb
+Z 1247bb7c9fa8cc79296726f95e563a76
