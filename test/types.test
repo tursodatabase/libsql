@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.8 2004/06/30 02:35:51 danielk1977 Exp $
+# $Id: types.test,v 1.9 2004/06/30 03:08:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,6 +60,7 @@ set values {
   { '5'    integer integer text text    }
   { 'abc'  text    text    text text    }
   { NULL   null    null    null null    }
+  { X'00'  blob    blob    blob blob    }
 }
 
 # This code tests that the storage classes specified above (in the $values

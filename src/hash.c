@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.12 2004/05/08 08:23:25 danielk1977 Exp $
+** $Id: hash.c,v 1.13 2004/06/30 03:08:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -65,6 +65,7 @@ void sqlite3HashClear(Hash *pH){
   pH->count = 0;
 }
 
+#if 0 /* NOT USED */
 /*
 ** Hash and comparison functions when the mode is SQLITE_HASH_INT
 */
@@ -74,6 +75,7 @@ static int intHash(const void *pKey, int nKey){
 static int intCompare(const void *pKey1, int n1, const void *pKey2, int n2){
   return n2 - n1;
 }
+#endif
 
 #if 0 /* NOT USED */
 /*
@@ -131,7 +133,7 @@ static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 */
 static int (*hashFunction(int keyClass))(const void*,int){
   switch( keyClass ){
-    case SQLITE_HASH_INT:     return &intHash;
+    /* case SQLITE_HASH_INT:     return &intHash; // NOT USED */
     /* case SQLITE_HASH_POINTER: return &ptrHash; // NOT USED */
     case SQLITE_HASH_STRING:  return &strHash;
     case SQLITE_HASH_BINARY:  return &binHash;;
@@ -148,7 +150,7 @@ static int (*hashFunction(int keyClass))(const void*,int){
 */
 static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
   switch( keyClass ){
-    case SQLITE_HASH_INT:     return &intCompare;
+    /* case SQLITE_HASH_INT:     return &intCompare; // NOT USED */
     /* case SQLITE_HASH_POINTER: return &ptrCompare; // NOT USED */
     case SQLITE_HASH_STRING:  return &strCompare;
     case SQLITE_HASH_BINARY:  return &binCompare;
@@ -354,6 +356,3 @@ void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   new_elem->data = data;
   return 0;
 }
-
-
-

@@ -1,5 +1,5 @@
-C Allow\sstrings\sthat\slook\slike\sintegers\sto\sbe\sinserted\sinto\sIPK\scolumns\sin\sa\nUTF-16\sdatabase.\s(CVS\s1771)
-D 2004-06-30T02:43:38
+C Improved\stest\scoverage\sof\sfunc.c\sand\shash.c.\s(CVS\s1772)
+D 2004-06-30T03:08:25
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -34,7 +34,7 @@ F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
 F src/func.c 5a15cfb0f1d9e5abbd42407205d5d6e2b0c09fb2
-F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
+F src/hash.c 148e3512f1b4e90f8477f852c70b36a137b116a7
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
@@ -110,7 +110,7 @@ F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test d0d9b8591d6c7779c5c6707ac6cb3a4aad3fa13b
-F test/enc3.test 315f302ed9a6042be76710eb6aa70e4551e9aa73
+F test/enc3.test 2ae80b11adf5b2c171d2e17214dabd356b9672c1
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test 7653394d854a8e3eb97c7f03c39610f8dc23922b
@@ -170,7 +170,7 @@ F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 97c11d3cf43d752b172809bb82536372ee5e399c
-F test/types.test 41aa7ad65b6e7dc07fd1a06acc218dc6e8118578
+F test/types.test fdf7920c9d3aabbba25c11daa48c872d1870bce9
 F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6c5c11e07e157c15cf99078fce2a1bc478e287ce
-R 14246f7d7f22b609d5a0a3a797ff4d4e
-U danielk1977
-Z adc7c0dacafe07864f76f8b32f42db60
+P e5e39764038311cbb3555b5bd41de2563a89113e
+R 6128bf7e6957bc36be00e553f4313e2a
+U drh
+Z 6dcdf7a54d5c2b70e5fcf38318bf29ad
