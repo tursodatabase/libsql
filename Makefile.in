@@ -185,6 +185,9 @@ changes.html:	$(TOP)/www/changes.tcl
 fileformat.html:	$(TOP)/www/fileformat.tcl
 	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
 
+lang.html:	$(TOP)/www/lang.tcl
+	tclsh $(TOP)/www/lang.tcl >lang.html
+
 # Files to be published on the website.
 #
 PUBLISH = \
@@ -193,6 +196,7 @@ PUBLISH = \
   sqlite.html \
   changes.html \
   fileformat.html \
+  lang.html \
   c_interface.html
 
 website:	$(PUBLISH)
