@@ -25,7 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2004 January 14 (2.8.10)} {
+chng {2004 January 14 (2.8.11)} {
+<li>Fix a bug in how the IN operator handles NULLs in subqueries.  The bug
+    was introduced by the previous release.</li>
+}
+
+chng {2004 January 13 (2.8.10)} {
 <li>Fix a potential database corruption problem on Unix caused by the fact
     that all posix advisory locks are cleared whenever you close() a file.
     The work around it to embargo all close() calls while locks are 

@@ -1,9 +1,9 @@
-C Ignore\sNULLs\sin\sa\ssubquery\sas\sthe\sright\soperand\sof\sIN.\s\sTicket\s#565.\s(CVS\s1175)
-D 2004-01-14T13:38:54
+C Bump\sthe\sversion\snumber\sfor\sthe\snext\srelease.\s(CVS\s1176)
+D 2004-01-14T13:43:43
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION a75b9ec90a5128523232814b489185903db7572e
+F VERSION a0fc82af9cd12412056d37a3954fcd80f1df56ee
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -160,7 +160,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 17d8bd9e7b4fbdca47c30c8b9bcb728c351d55c0
-F www/changes.tcl ed2c8b9d0b7ead5ed8a057b368a07b4c2a99eb12
+F www/changes.tcl b9aa2cfe7ff8a29e6313ca48cd90a0763ce1da44
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0fe2b810f114a909b844e50ad37a25e6ed8c7271
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 8bef75ab85197d926d924ae689769207df9a12f8
-R e82ff4a32b69424b4777ea2b0ae9dce2
+P c9e7996fb9080b715e9b273a3ac3ed3744e10a77
+R 7743767b16f5b5e66e4c5fdeadd3f02e
 U drh
-Z d5289e7823f77fbba88fcb8d1e6b3c9f
+Z e83af2b131fb41e672ef775a1cf90655
