@@ -1162,6 +1162,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
       db->autoCommit = 1;
     }
   }
+  p->autoCommitOn = 0;
 
   /* If xFunc is not NULL, then it is one of sqlite3BtreeRollback,
   ** sqlite3BtreeRollbackStmt or sqlite3BtreeCommitStmt. Call it once on

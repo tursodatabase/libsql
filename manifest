@@ -1,5 +1,5 @@
-C Change\sthe\scollation\ssequence\sinterface\sto\sallow\scollation\ssequences\sthat\nuse\sUTF-16\sin\snon-native\sbyte\sorder\sto\sbe\sregistered.\s(CVS\s1559)
-D 2004-06-10T02:16:02
+C When\sin\sPAGER_RESERVED\sstate,\sdon't\swrite\sto\sthe\smain\sfile\swhen\srolling\nback\sa\sstatement\stransaction.\s(CVS\s1560)
+D 2004-06-10T04:32:17
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/os_unix.c 1d6f3d1a87d4aa0e4490bcc47b3f0ff9b2e37e7a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 6b8f9fcc683bb888e07fc485372803baa68faadb
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 88a7160c749435c03a4154996cd851196c0a87c2
+F src/pager.c 778379c031daa20d134a934d5753c19b606c10db
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 6ab13748a415bf8e8f2dd79e5f713fbe72dfd3f4
@@ -74,7 +74,7 @@ F src/vdbe.c 90e0e6bdbdf9b77c66f2500374b5784d30c323fa
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h d41605853332bdbd600d7ecd60e1f54bbaea174e
 F src/vdbeapi.c 4ac95766b0515538037a7aec172ed26142f97cf9
-F src/vdbeaux.c 6f5b26a6b4d9c9f0f99a9f75dce9460e5a90542e
+F src/vdbeaux.c 73764dadcdbf79aa2d948f863eae07b18589e663
 F src/vdbemem.c 5b2fab8b5a830e5204413b808c4a2d8335189f21
 F src/where.c 32578882a245f8ac3303c5cea4664cd51fc73891
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -158,7 +158,7 @@ F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
 F test/trans.test 4a26c6fa3639202c334521954c17d8abe8a1c8e8
 F test/trigger1.test 99b7cd9a568ac60aa04bbc3b9db9575ffa97709a
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
-F test/trigger3.test 895301736db4f0f111815f43502d9bdb150cc722
+F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/types.test 6c49e574970866558365a025b44c9fd8a162ef0d
 F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
@@ -218,7 +218,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 28c3cc088018833f507535b8d227232776cff204
-R f9fbe975e7140b57b35e8b9f5b97fbe5
+P b8aaa3a29e0ddef357ab1b3b0b9f87ed390f2f36
+R ad810f31dbb79cebb57b3882d1073a25
 U danielk1977
-Z 419742ffbc029c96384373534fdaa6dc
+Z 5213c6eb04cd03f6a07cc2df587564de

@@ -13,12 +13,6 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set sqlite_os_trace 1
-execsql {
- PRAGMA vdbe_listing=on;
- PRAGMA sql_trace=on;
- PRAGMA vdbe_trace=on;
-}
 
 # Test that we can cause ROLLBACK, FAIL and ABORT correctly
 # catchsql { DROP TABLE tbl; }
@@ -52,7 +46,6 @@ do_test trigger3-1.2 {
 do_test trigger3-1.3 {
     execsql {SELECT * FROM tbl}
 } {}
-exit
 
 # FAIL
 do_test trigger3-2.1 {
