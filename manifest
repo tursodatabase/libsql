@@ -1,5 +1,5 @@
-C Fix\sa\sbug\son\ssystems\swhere\smalloc(0)\sreturn\sNULL.\nAdd\scode\sto\sdetect\sthis\sbug\seven\son\ssystems\swere\sit\sused\snot\sto\noccur.\s(CVS\s190)
-D 2001-03-14T12:35:57
+C :-)\s(CVS\s191)
+D 2001-03-14T12:54:12
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -80,7 +80,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl c433eed27374aef00c4d4a9b6d072a182db4abd0
+F www/changes.tcl a8cbb3496ae35184fabc5f7b47242bf33a5637d1
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P d44abe54eb4a0c5eedf8f3ff59704ddb8dd68faf
-R 6e3a5f2798796558e4d2cf33207362f9
+P bda83e2b75843b9a078c2f4e64fcd4d2145a716b
+R 360be56ced6760c85770c34d6c105ac8
 U drh
-Z e11df66d76fd940262c38944939091a9
+Z 11764c2ac7cf09579b8a73b31946574a

@@ -19,7 +19,7 @@ proc chng {date desc} {
 
 chng {2001 Mar 14 19 (1.0.24)} {
 <li>Fix a bug which was causing 
-    the UPDATE command was failing on systems where "malloc(0)" returns
+    the UPDATE command to fail on systems where "malloc(0)" returns
     NULL.  The problem does not appear Windows, Linux, or HPUX but does 
     cause the library to fail on QNX.
     </li>
