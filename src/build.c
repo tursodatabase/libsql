@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.150 2003/04/29 16:20:45 drh Exp $
+** $Id: build.c,v 1.151 2003/05/01 16:56:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1763,7 +1763,12 @@ void sqliteCreateIndex(
       sqliteVdbeAddOp(v, OP_Rewind, 2, lbl2);
       lbl1 = sqliteVdbeAddOp(v, OP_Recno, 2, 0);
       for(i=0; i<pIndex->nColumn; i++){
-        sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i]);
+        int iCol = pIndex->aiColumn[i];
+        if( pTab->iPKey==iCol ){
+          sqliteVdbeAddOp(v, OP_Dup, i, 0);
+        }else{
+          sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i]);
+        }
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
       if( db->file_format>=4 ) sqliteAddIdxKeyType(v, pIndex);

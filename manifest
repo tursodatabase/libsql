@@ -1,5 +1,5 @@
-C In\sthe\sshell\stool,\sdelay\sopening\sthe\sdatabase\suntil\sit\sis\sneeded\sbut\salso\nmake\ssure\sit\sis\sopened\sbefore\strying\sto\suse\sthe\s"db"\spointer.\s\sTicket\s#302.\s(CVS\s945)
-D 2003-04-30T11:38:26
+C Correctly\screate\san\sindex\sthat\suses\san\sINTEGER\sPRIMARY\sKEY\sas\sone\sof\scolumns\nto\sbe\sindexed.\s(CVS\s946)
+D 2003-05-01T16:56:03
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F src/auth.c 3be3c7434592117f049703966b940e0b07088ae2
 F src/btree.c 077d75aee4ed63f3628698611ba43c87097d458d
 F src/btree.h 23c50e00709de16a5dce1fcea9c0429cc955ff0e
 F src/btree_rb.c 8e00e40be264716e1929987878672e55d9e0e76d
-F src/build.c 6312904cbf07862c0b80317540f467cde86cbb03
+F src/build.c d35b7a6595af2ab07083b7f63bd5d22578b3c189
 F src/copy.c 44b13fd4d2444fb53bff8a5ecee1c5f6f86a8263
 F src/delete.c 0f7c26aaebc417ad66a2a1099e59cc4056512c31
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8211f57b38b87a42c856e267bd243984b5abf9cc
-R 8d1a651464b57a75eca847d54be66b6a
+P 20fcead42bc875f13eec52971530342ff00c5eda
+R 7ac507f145c490883ec534eb0c6164c6
 U drh
-Z 1057a8e7247edddeca55cdc3ce6cad4c
+Z a8877957a40cc5dcaf456e37a442b5a4
