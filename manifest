@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sspecify\sa\salternative\stemporary\sfile\sdirectory\susing\sthe\n"sqlite_temp_directory"\sglobal\svariable.\s(CVS\s1885)
-D 2004-08-14T17:10:11
+C The\scommand-line\sshell\sshould\savoid\swriting\schanges\sinto\sstring\sconstants.\s(CVS\s1886)
+D 2004-08-14T18:18:44
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/pragma.c 5cf335adfdac453a2d03ab0c82f93847c43bea81
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c cbed45f4af76ad7fdfc0a0df6878b2b3827ae1d4
-F src/shell.c 69d8036a8871c53603016cc6d240a3efaa9584df
+F src/shell.c 42f65424a948f197f389e13bc7aaa3cf24dafd0c
 F src/sqlite.h.in 7fa206b3c7740d891d087cd87c36f6885ce03e70
 F src/sqliteInt.h 251662c89dd35c4ed745681ff00758d19ffd0906
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 98edbdd5176704a3a8cbcb19614b51c59d748fda
-R 982c1729c0a5e72a7a4f118d1decb57a
+P fce56ba6a3c53843fabdfad4f545e35a83a01aa9
+R b1881f94fad0c59172cf45c286e4715e
 U drh
-Z 0b11b5a9cffe643b71abfc4d5fdccfb3
+Z bc92f5f0cf522e7edc05817456da33d7
