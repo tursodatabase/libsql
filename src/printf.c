@@ -72,6 +72,8 @@ enum et_type {    /* The type of the format field */
 /* The rest are extensions, not normally found in printf() */
    etCHARLIT,          /* Literal characters.  %' */
    etSQLESCAPE,        /* Strings with '\'' doubled.  %q */
+   etSQLESCAPE2,       /* Strings with '\'' doubled and enclosed in '',
+                          NULL pointers replaced by SQL NULL.  %Q */
    etORDINAL           /* 1st, 2nd, 3rd and so forth */
 };
 
@@ -96,6 +98,7 @@ static et_info fmtinfo[] = {
   { 'd',  10,  "0123456789",       1,    0, etRADIX,      },
   { 's',   0,  0,                  0,    0, etSTRING,     }, 
   { 'q',   0,  0,                  0,    0, etSQLESCAPE,  },
+  { 'Q',   0,  0,                  0,    0, etSQLESCAPE2, },
   { 'c',   0,  0,                  0,    0, etCHARX,      },
   { 'o',   8,  "01234567",         0,  "0", etRADIX,      },
   { 'u',  10,  "0123456789",       0,    0, etRADIX,      },
@@ -553,24 +556,29 @@ static int vxprintf(
         if( precision>=0 && precision<length ) length = precision;
         break;
       case etSQLESCAPE:
+      case etSQLESCAPE2:
         {
-          int i, j, n, c;
+          int i, j, n, c, isnull;
           char *arg = va_arg(ap,char*);
-          if( arg==0 ) arg = "(NULL)";
+          isnull = arg==0;
+          if( isnull ) arg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
           for(i=n=0; (c=arg[i])!=0; i++){
             if( c=='\'' )  n++;
           }
-          n += i + 1;
+          n += i + 1 + ((!isnull && xtype==etSQLESCAPE2) ? 2 : 0);
           if( n>etBUFSIZE ){
             bufpt = zExtra = sqliteMalloc( n );
             if( bufpt==0 ) return -1;
           }else{
             bufpt = buf;
           }
-          for(i=j=0; (c=arg[i])!=0; i++){
+          j = 0;
+          if( !isnull && xtype==etSQLESCAPE2 ) bufpt[j++] = '\'';
+          for(i=0; (c=arg[i])!=0; i++){
             bufpt[j++] = c;
             if( c=='\'' ) bufpt[j++] = c;
           }
+          if( !isnull && xtype==etSQLESCAPE2 ) bufpt[j++] = '\'';
           bufpt[j] = 0;
           length = j;
           if( precision>=0 && precision<length ) length = precision;

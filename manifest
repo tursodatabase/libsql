@@ -1,5 +1,5 @@
-C Changed\ssqlite_mprintf_str\sto\sallow\sa\sNULL\sstring\sparameter.\nCommand\stemplate\snow\sis\scmd\sFORMAT\sINT\sINT\s?STRING?.\sWhen\nSTRING\somitted\sa\sNULL\sis\spassed\sto\ssqlite_mprintf.\s(CVS\s620)
-D 2002-06-16T04:54:29
+C Added\s%Q\sformat\sspecifier:\slike\s%q\sbut\sautomatic\senclosing\sin\nsingle\squotes,\sNULL\spointers\sreplaced\sby\sNULL\sw/o\ssingle-quotes.\s(CVS\s621)
+D 2002-06-16T04:55:48
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -35,7 +35,7 @@ F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 42920305d49666419358b469e4ec522ac867a39f
-F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
+F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 6c3a92d7a0bdf3448265d530cc0e6f6e5a764997
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 699cf362083043615eb88635a228bfa46a315c9c
-R e8c65548643704a0ca06e48f56b72d31
+P 8bc711571d752a81957007be22ed8a3c6877f676
+R b88f44ec684ed6abc5b7b24fd62abad4
 U chw
-Z d2eb26e5d1d3f143fd19e7582867015a
+Z fa4085981e2ff6e4da01d48425d29821
