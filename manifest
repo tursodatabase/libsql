@@ -1,6 +1,6 @@
-C More\schanges\sdirected\sat\sgetting\sthings\sto\swork\son\s64-bit\splatforms.\s(CVS\s1950)
-D 2004-09-08T20:13:05
-F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
+C Update\sthe\smakefile\sso\sthat\sutil.c\sgets\sthe\s-DSQLITE_DEBUG=1\sflag\swhen\nbuilding\sthe\stest\sfixture.\s(CVS\s1951)
+D 2004-09-08T21:12:50
+F Makefile.in 7f481bb8cdb032491df611526e6f4eb6af79691d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION d28cfc2e7714a747851e50cc1a5ee8ab0ded7a78
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 2eb2826d6bd82d54e768902e5e1929e550409273
+F main.mk 8a090784820241a245b96a0079712775a7f4405a
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 39755d216608e9d12e1055433549f820f63608a7
-R 6047026f7d4b4901b427c44c73fb5a78
+P 5a3f823c1430376ed127d627d408ab284815c1a4
+R 297ecada65ad27191ae6f0d42e4f3bb3
 U drh
-Z 166d384819d94bfe62b3a98a4987d656
+Z 8dd5ebabab6ec7e3d2fa2d8075f23b85

@@ -127,6 +127,7 @@ TESTSRC = \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/utf.c \
+  $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/md5.c
 
