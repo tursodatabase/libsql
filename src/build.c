@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.263 2004/11/05 03:56:02 drh Exp $
+** $Id: build.c,v 1.264 2004/11/05 05:10:29 drh Exp $
 =======
-** $Id: build.c,v 1.263 2004/11/05 03:56:02 drh Exp $
+** $Id: build.c,v 1.264 2004/11/05 05:10:29 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -1635,52 +1635,20 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
 ** if a root-page of another table is moved by the btree-layer whilst
 ** erasing iTable (this can happen with an auto-vacuum database).
 */ 
-static void destroyRootPage(Vdbe *v, int iTable, int iDb){
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  int base;
-  /* If SQLITE_OMIT_AUTOVACUUM is not defined, then OP_Destroy pushes
-  ** an integer onto the stack. If this integer is non-zero, then it is
-  ** the root page number of a table moved to location iTable. The 
-  ** following writes VDBE code to modify the sqlite_master table to
-  ** reflect this. It is assumed that cursor number 0 is a write-cursor
-  ** opened on the sqlite_master table.
-  */
-  static /*const*/ VdbeOpList updateMaster[] = {
-    /* If the Op_Destroy pushed a 0 onto the stack, then skip the following
-    ** code. sqlite_master does not need updating in this case.
-    */
-    { OP_Dup,        0, 0,        0},
-    { OP_Integer,    0, 0,        0},
-    { OP_Eq,         0, ADDR(17), 0},
-
-    /* Search for the sqlite_master row containing root-page iTable. */
-    { OP_Rewind,     0, ADDR(8), 0}, 
-    { OP_Dup,        0, 0,       0}, /* 4 */
-    { OP_Column,     0, 3,       0}, /* 5 */
-    { OP_Eq,         0, ADDR(9), 0},
-    { OP_Next,       0, ADDR(4), 0},
-    { OP_Halt,       SQLITE_CORRUPT, OE_Fail, 0}, /* 8 */
-    { OP_Recno,      0, 0,       0}, /* 9 */
-
-    /* Cursor 0 now points at the row that will be updated. The top of
-    ** the stack is the rowid of that row. The next value on the stack is 
-    ** the new value for the root-page field.
-    */
-    { OP_Column,     0, 0,       0}, /* 10 */
-    { OP_Column,     0, 1,       0},
-    { OP_Column,     0, 2,       0},
-    { OP_Integer,    4, 0,       0}, /* 13 */
-    { OP_Column,     0, 4,       0},
-    { OP_MakeRecord, 5, 0,       0},
-    { OP_PutIntKey,  0, 0,       0}  /* 16 */
-  };
-#endif
-
+static void destroyRootPage(Parse *pParse, int iTable, int iDb){
+  Vdbe *v = sqlite3GetVdbe(pParse);
   sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
-  /* sqlite3VdbeAddOp(v, OP_Pop, 1, 0); */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  base = sqlite3VdbeAddOpList(v, ArraySize(updateMaster), updateMaster);
-  sqlite3VdbeChangeP1(v, base+13, iTable);
+  /* OP_Destroy pushes an integer onto the stack. If this integer
+  ** is non-zero, then it is the root page number of a table moved to
+  ** location iTable. The following code modifis the sqlite_master table to
+  ** reflect this.
+  **
+  ** The "#0" in the SQL is a special constant that means whatever value
+  ** is on the top of the stack.  See sqlite3RegisterExpr().
+  */
+  sqlite3NestedParse(pParse, "UPDATE %Q.%Q SET rootpage=#0 WHERE rootpage=%d",
+     pParse->db->aDb[iDb].zName, SCHEMA_TABLE(iDb), iTable);
 #endif
 }
 
@@ -1690,9 +1658,10 @@ static void destroyRootPage(Vdbe *v, int iTable, int iDb){
 ** in case a root-page belonging to another table is moved by the btree layer
 ** is also added (this can happen with an auto-vacuum database).
 */
-static void destroyTable(Vdbe *v, Table *pTab){
+static void destroyTable(Parse *pParse, Table *pTab){
+  Vdbe *v = pParse->pVdbe;
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  destroyRootPage(v, pTab->tnum, pTab->iDb);
+  destroyRootPage(pParse, pTab->tnum, pTab->iDb);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     destroyRootPage(v, pIdx->tnum, pIdx->iDb);
   }
@@ -1731,7 +1700,7 @@ static void destroyTable(Vdbe *v, Table *pTab){
       }
     }
     if( iLargest==0 ) return;
-    destroyRootPage(v, iLargest, pTab->iDb);
+    destroyRootPage(pParse, iLargest, pTab->iDb);
     iDestroyed = iLargest;
   }
 #endif
@@ -1827,7 +1796,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
         "DELETE FROM %Q.%Q WHERE tbl_name=%Q and type!='trigger'",
         db->aDb[pTab->iDb].zName, SCHEMA_TABLE(pTab->iDb), pTab->zName);
     if( !isView ){
-      destroyTable(v, pTab);
+      destroyTable(pParse, pTab);
     }
     sqlite3VdbeOp3(v, OP_DropTable, pTab->iDb, 0, pTab->zName, 0);
   }
