@@ -1,5 +1,5 @@
-C Fix\sthe\sspelling\sof\ssqliteRegisterBuiltinFunctions().\s(CVS\s613)
-D 2002-06-09T10:14:19
+C Add\sRAISE()\sfunction,\swhich\sallows\smore\sadvanced\sflow-control\sin\strigger\sprograms\s(ticket\s#55)\s(CVS\s614)
+D 2002-06-11T02:25:41
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -21,38 +21,38 @@ F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 8b86be8f234c1c5dab3186f69cee2544ec9d7257
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 36e42718a7a94f554ea39508993378482f5335c7
-F src/delete.c a2b098cbbf518e6b641847e26de85827793bc523
+F src/delete.c 15789fc723a6776309945b13a79f9a0e78275fc0
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
-F src/expr.c cd2e3311c84533fad19336d3bbfdc3be3400d377
+F src/expr.c 2dcfcd0b032206954a307d7e2731bf070d58835b
 F src/func.c b8d0fd3011f53ea0e46b6bab857612eb36b5d1ea
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 4b0bd94296fea46ef1b2ed8bfd05e12a38ce2c90
+F src/insert.c 3a90bb98cd246f88cc26c44f24d5b47760bc5cba
 F src/main.c 3a4e53122c0b0d0a5719b73fa9ec642761291ba1
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y 3b4989cb81ab2f441ef6c7cbb203829838eb299e
+F src/parse.y 42920305d49666419358b469e4ec522ac867a39f
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 1d5cb1ae0bb3376bedfde7ae22e6e927e4d0b5e2
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 470056bd21902e15f5ac459f09f64a717657332b
+F src/sqliteInt.h 93e0ad1b37658391de6f211f65e7924a2064aa4d
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
-F src/tokenize.c 35c63867d03fcaf81fe520f8d8206981d0c7270e
-F src/trigger.c d02f8e3510c7c2ad948a0e8c3bb0cca8adaf80c5
-F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
+F src/tokenize.c 890ca022d45f1798dadc300a798951597428853e
+F src/trigger.c 21342af6ac031fece39c8fc6eabd1739ca5327c1
+F src/update.c 05431e23a9c83502fd7911e771c8366fc2b90b4c
 F src/util.c 7cf46b5612f5d12601c697374b9c6b38b2332ce8
-F src/vdbe.c b315d7ad5086164bb8d8aee8bc9edeafcb68b8ea
+F src/vdbe.c 836f2c4f823c94c3c3454125d9ba9283e8b22dda
 F src/vdbe.h 1742d6f8b40f40879475b4c41cf4f9980ceb0e21
 F src/where.c b7c653054d4941d17f3112776ebcaf00d9613cb7
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
@@ -103,6 +103,7 @@ F test/tester.tcl dc1b56bd628b487e4d75bfd1e7480b5ed8810ac6
 F test/trans.test ae0b9a82d5d34122c3a3108781eb8d078091ccee
 F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
 F test/trigger2.test c12759a0d7ba6488d9d24c96a1352ddee995c1ab
+F test/trigger3.test b4aca721ba92956c7fa16bb0158254f3c1b73efa
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
@@ -136,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2a710e18176c486525f0abb06644a511a2cd1d7a
-R e2c1bfb01c44cc3c89a1b280cee79956
-U drh
-Z bd401167cac426bd14d74027f33bb932
+P 74d297d97e66452acc5c21048ee8ddf2a90c846f
+R 5c5b230772c3601ecd48523835df13e1
+U danielk1977
+Z a3a6e123a401efc55c5086c35a87d954

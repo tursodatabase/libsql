@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.60 2002/06/06 18:54:40 drh Exp $
+** $Id: insert.c,v 1.61 2002/06/11 02:25:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -235,6 +235,7 @@ void sqliteInsert(
     iCont = sqliteVdbeCurrentAddr(v);
   }
 
+  endOfLoop = sqliteVdbeMakeLabel(v);
   if( row_triggers_exist ){
 
     /* build the new.* reference row */
@@ -262,7 +263,7 @@ void sqliteInsert(
 
     /* Fire BEFORE triggers */
     if( sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_BEFORE, pTab, newIdx, -1, 
-        onError) ){
+        onError, endOfLoop) ){
       goto insert_cleanup;
     }
 
@@ -336,7 +337,6 @@ void sqliteInsert(
     /* Generate code to check constraints and generate index keys and
     ** do the insertion.
     */
-    endOfLoop = sqliteVdbeMakeLabel(v);
     sqliteGenerateConstraintChecks(pParse, pTab, base, 0,0,0,onError,endOfLoop);
     sqliteCompleteInsertion(pParse, pTab, base, 0,0,0);
 
@@ -358,7 +358,7 @@ void sqliteInsert(
 
     /* Code AFTER triggers */
     if( sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_AFTER, pTab, newIdx, -1, 
-          onError) ){
+          onError, endOfLoop) ){
       goto insert_cleanup;
     }
   }

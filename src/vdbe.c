@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.154 2002/06/08 23:25:09 drh Exp $
+** $Id: vdbe.c,v 1.155 2002/06/11 02:25:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1395,6 +1395,10 @@ case OP_Halt: {
   if( pOp->p1!=SQLITE_OK ){
     rc = pOp->p1;
     errorAction = pOp->p2;
+    if( pOp->p3 ){
+	sqliteSetString(pzErrMsg, pOp->p3, 0);
+	goto cleanup;
+    }
     goto abort_due_to_error;
   }else{
     pc = p->nOp-1;

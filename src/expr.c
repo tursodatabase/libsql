@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.70 2002/06/09 01:16:01 drh Exp $
+** $Id: expr.c,v 1.71 2002/06/11 02:25:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -204,7 +204,7 @@ SrcList *sqliteSrcListDup(SrcList *p){
   if( pNew==0 ) return 0;
   pNew->nSrc = p->nSrc;
   pNew->a = sqliteMalloc( p->nSrc*sizeof(p->a[0]) );
-  if( pNew->a==0 ) return 0;
+  if( pNew->a==0 && p->nSrc != 0 ) return 0;
   for(i=0; i<p->nSrc; i++){
     pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
     pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
@@ -1014,6 +1014,28 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
         sqliteVdbeAddOp(v, OP_String, 0, 0);
       }
       sqliteVdbeResolveLabel(v, expr_end_label);
+      break;
+    }
+    case TK_RAISE: {
+      if( !pParse->trigStack ){
+        sqliteSetNString(&pParse->zErrMsg, 
+		"RAISE() may only be used within a trigger-program", -1, 0);
+        pParse->nErr++;
+	return;
+      }
+      if( pExpr->iColumn == OE_Rollback ||
+	  pExpr->iColumn == OE_Abort ||
+	  pExpr->iColumn == OE_Fail ){
+	  char * msg = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
+	  sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn);
+	  sqliteDequote(msg);
+	  sqliteVdbeChangeP3(v, -1, msg, 0);
+	  sqliteFree(msg);
+      } else {
+	  assert( pExpr->iColumn == OE_Ignore );
+	  sqliteVdbeAddOp(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
+	  sqliteVdbeChangeP3(v, -1, "(IGNORE jump)", -1);
+      }
     }
     break;
   }

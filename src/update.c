@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.43 2002/05/24 02:04:34 drh Exp $
+** $Id: update.c,v 1.44 2002/06/11 02:25:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -243,7 +243,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
 
     if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, pTab, 
-          newIdx, oldIdx, onError) ){
+          newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
     }
   }
@@ -350,7 +350,7 @@ void sqliteUpdate(
     pParse->nTab = base;
 
     if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, pTab, 
-          newIdx, oldIdx, onError) ){
+          newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
     }
   }

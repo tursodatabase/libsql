@@ -480,14 +480,18 @@ static int codeTriggerProgram(
     pParse->trigStack->orconf = orconf;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
-	sqliteSelect(pParse, pTriggerStep->pSelect, SRT_Discard, 0, 0, 0, 0);
+	Select * ss = sqliteSelectDup(pTriggerStep->pSelect);		  
+	assert(ss);
+	assert(ss->pSrc);
+	sqliteSelect(pParse, ss, SRT_Discard, 0, 0, 0, 0);
+	sqliteSelectDelete(ss);
 	break;
       }
       case TK_UPDATE: {
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPush, 0, 0);
         sqliteUpdate(pParse, &pTriggerStep->target, 
-        sqliteExprListDup(pTriggerStep->pExprList), 
-        sqliteExprDup(pTriggerStep->pWhere), orconf);
+		sqliteExprListDup(pTriggerStep->pExprList), 
+		sqliteExprDup(pTriggerStep->pWhere), orconf);
         sqliteVdbeAddOp(pParse->pVdbe, OP_ListPop, 0, 0);
         break;
       }
@@ -543,7 +547,8 @@ int sqliteCodeRowTrigger(
   Table *pTab,         /* The table to code triggers from */
   int newIdx,          /* The indice of the "new" row to access */
   int oldIdx,          /* The indice of the "old" row to access */
-  int orconf           /* ON CONFLICT policy */
+  int orconf,          /* ON CONFLICT policy */
+  int ignoreJump       /* Instruction to jump to for RAISE(IGNORE) */
 ){
   Trigger * pTrigger;
   TriggerStack * pTriggerStack;
@@ -588,6 +593,7 @@ int sqliteCodeRowTrigger(
       pTriggerStack->oldIdx = oldIdx;
       pTriggerStack->pTab = pTab;
       pTriggerStack->pNext = pParse->trigStack;
+      pTriggerStack->ignoreJump = ignoreJump;
       pParse->trigStack = pTriggerStack;
 
       /* code the WHEN clause */
@@ -735,14 +741,14 @@ void sqliteViewTriggers(
     sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
 
     sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, 
-        pTab, newIdx, oldIdx, orconf);
+        pTab, newIdx, oldIdx, orconf, endOfLoop);
     sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, 
-        pTab, newIdx, oldIdx, orconf);
+        pTab, newIdx, oldIdx, orconf, endOfLoop);
   }else{
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, oldIdx, 
-        orconf);
+        orconf, endOfLoop);
     sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, oldIdx, 
-        orconf);
+        orconf, endOfLoop);
   }
 
   sqliteVdbeAddOp(v, OP_Next, oldIdx, startOfLoop);

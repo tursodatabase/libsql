@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.72 2002/06/06 19:04:16 drh Exp $
+** @(#) $Id: parse.y,v 1.73 2002/06/11 02:25:42 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -120,7 +120,7 @@ id(A) ::= ID(X).         {A = X;}
   ABORT AFTER ASC BEFORE BEGIN CASCADE CLUSTER CONFLICT
   COPY DEFERRED DELIMITERS DESC EACH END EXPLAIN FAIL FOR
   FULL IGNORE IMMEDIATE INITIALLY INSTEAD MATCH JOIN KEY
-  OF OFFSET PARTIAL PRAGMA REPLACE RESTRICT ROW STATEMENT
+  OF OFFSET PARTIAL PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
   TEMP TRIGGER VACUUM VIEW.
 
 // And "ids" is an identifer-or-string.
@@ -755,6 +755,19 @@ trigger_cmd(A) ::= DELETE FROM ids(X) where_opt(Y).
 
 // SELECT
 trigger_cmd(A) ::= select(X).  {A = sqliteTriggerSelectStep(X); }
+
+// The special RAISE expression that may occur in trigger programs
+expr(A) ::= RAISE(X) LP IGNORE RP(Y).  { A = sqliteExpr(TK_RAISE, 0, 0, 0); 
+    A->iColumn = OE_Ignore; sqliteExprSpan(A, &X, &Y);}
+expr(A) ::= RAISE(X) LP ROLLBACK COMMA ids(Z) RP(Y).  
+{ A = sqliteExpr(TK_RAISE, 0, 0, &Z); 
+    A->iColumn = OE_Rollback; sqliteExprSpan(A, &X, &Y);}
+expr(A) ::= RAISE(X) LP ABORT COMMA ids(Z) RP(Y).  
+{ A = sqliteExpr(TK_RAISE, 0, 0, &Z); 
+    A->iColumn = OE_Abort; sqliteExprSpan(A, &X, &Y);}
+expr(A) ::= RAISE(X) LP FAIL COMMA ids(Z) RP(Y).  
+{ A = sqliteExpr(TK_RAISE, 0, 0, &Z); 
+    A->iColumn = OE_Fail; sqliteExprSpan(A, &X, &Y);}
 
 ////////////////////////  DROP TRIGGER statement //////////////////////////////
 cmd ::= DROP TRIGGER ids(X). {

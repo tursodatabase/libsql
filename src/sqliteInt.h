@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.122 2002/06/09 10:14:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.123 2002/06/11 02:25:42 danielk1977 Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -764,6 +764,7 @@ struct TriggerStack {
   int newIdx;          /* Index of vdbe cursor to "new" temp table */
   int oldIdx;          /* Index of vdbe cursor to "old" temp table */
   int orconf;          /* Current orconf policy */
+  int ignoreJump;      /* where to jump to for a RAISE(IGNORE) */
   Trigger *pTrigger;
 
   TriggerStack *pNext;
@@ -895,7 +896,8 @@ void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, Token*,
                          int, Expr*, TriggerStep*, char const*,int);
 void sqliteDropTrigger(Parse*, Token*, int);
 int sqliteTriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
-int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, int);
+int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
+                         int, int);
 void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
 TriggerStep *sqliteTriggerSelectStep(Select*);
 TriggerStep *sqliteTriggerInsertStep(Token*, IdList*, ExprList*, Select*, int);
