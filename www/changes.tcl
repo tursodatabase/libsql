@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Oct 19 (1.0.14)} {
+<li>Added a "memory:" backend driver that stores its database in an
+    in-memory hash table.</li>
+}
+
 chng {2000 Oct 18 (1.0.13)} {
 <li>Break out the GDBM driver into a separate file in anticipation
     to added new drivers.</li>

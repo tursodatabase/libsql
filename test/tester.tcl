@@ -23,13 +23,27 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.6 2000/09/21 13:01:37 drh Exp $
+# $Id: tester.tcl,v 1.7 2000/10/19 14:10:09 drh Exp $
 
 # Create a test database
 #
-file delete -force testdb
-file mkdir testdb
-sqlite db testdb
+if {![info exists dbprefix]} {
+  if {[info exists env(SQLITE_PREFIX)]} {
+    set dbprefix $env(SQLITE_PREFIX):
+  } else {
+    set dbprefix "gdbm:"
+  }
+}
+switch $dbprefix {
+  gdbm: {
+   file delete -force testdb
+   file mkdir testdb
+  }
+  memory: {
+   # do nothing
+  }
+}
+sqlite db ${dbprefix}testdb
 
 # Abort early if this script has been run before.
 #
@@ -39,12 +53,17 @@ if {[info exists nTest]} return
 #
 set nErr 0
 set nTest 0
+set skip_test 0
 
 # Invoke the do_test procedure to run a single test 
 #
 proc do_test {name cmd expected} {
-  global argv nErr nTest
-  if {[llength $argv]==0} {
+  global argv nErr nTest skip_test
+  if {$skip_test} {
+    set skip_test 0
+    return
+  }
+  if {[llength $argv]==0} { 
     set go 1
   } else {
     set go 0
@@ -57,7 +76,7 @@ proc do_test {name cmd expected} {
   }
   if {!$go} return
   incr nTest
-  puts -nonewline $name...
+  puts -nonewline $::dbprefix$name...
   flush stdout
   if {[catch {uplevel #0 "$cmd;\n"} result]} {
     puts "\nError: $result"
@@ -68,6 +87,29 @@ proc do_test {name cmd expected} {
   } else {
     puts " Ok"
   }
+}
+
+# Skip a test based on the dbprefix
+#
+proc skipif {args} {
+  foreach a $args {
+    if {$::dbprefix==$a} {
+      set ::skip_test 1
+      return
+    }
+  }
+}
+
+# Run the next test only if the dbprefix is among the listed arguments
+#
+proc testif {args} {
+  foreach a $args {
+    if {$::dbprefix==$a} {
+      set ::skip_test 0
+      return
+    }
+  }
+  set ::skip_test 1
 }
 
 # Run this routine last

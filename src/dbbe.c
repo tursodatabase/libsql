@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.20 2000/10/19 01:49:02 drh Exp $
+** $Id: dbbe.c,v 1.21 2000/10/19 14:10:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -56,11 +56,9 @@ Dbbe *sqliteDbbeOpen(
   if( strncmp(zName, "gdbm:", 5)==0 ){
     return sqliteGdbmOpen(&zName[5], writeFlag, createFlag, pzErrMsg);
   }
-#if 0
   if( strncmp(zName, "memory:", 7)==0 ){
     extern Dbbe *sqliteMemOpen(const char*,int,int,char**);
     return sqliteMemOpen(&zName[7], writeFlag, createFlag, pzErrMsg);
   }
-#endif
   return sqliteGdbmOpen(zName, writeFlag, createFlag, pzErrMsg);
 }

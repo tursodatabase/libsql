@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.7 2000/08/02 13:47:42 drh Exp $
+# $Id: index.test,v 1.8 2000/10/19 14:10:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,12 +39,14 @@ do_test index-1.1b {
   execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
            WHERE name='index1'}
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
+skipif memory:
 do_test index-1.1c {
   db close
   sqlite db testdb
   execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
            WHERE name='index1'}
 } {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
+skipif memory:
 do_test index-1.1d {
   db close
   sqlite db testdb
@@ -106,6 +108,7 @@ set r {}
 for {set i 1} {$i<100} {incr i} {
   lappend r testdb/index$i.tbl
 }
+skipif memory:
 do_test index-3.2 {
   execsql {INSERT INTO test1 VALUES(1,2,3,4,5)}
   lsort -dictionary [glob testdb/index*.tbl]
@@ -223,6 +226,10 @@ do_test index-7.1 {
   for {set i 1} {$i<20} {incr i} {
     execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
   }
+  execsql {SELECT count(*) FROM test1}
+} {19}
+skipif memory:
+do_test index-7.1b {
   lsort -dictionary [glob testdb/test1*.tbl]
 } {testdb/test1.tbl testdb/test1__primary_key.tbl}
 do_test index-7.2 {
