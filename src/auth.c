@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.4 2003/01/31 17:21:50 drh Exp $
+** $Id: auth.c,v 1.5 2003/04/16 20:24:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -91,12 +91,24 @@ void sqliteAuthRead(
 ){
   sqlite *db = pParse->db;
   int rc;
-  Table *pTab;
-  const char *zCol;
+  Table *pTab;          /* The table being read */
+  const char *zCol;     /* Name of the column of the table */
+  int iSrc;             /* Index in pTabList->a[] of table being read */
+
   if( db->xAuth==0 ) return;
   assert( pExpr->op==TK_COLUMN );
-  assert( pExpr->iTable>=base && pExpr->iTable<base+pTabList->nSrc );
-  pTab = pTabList->a[pExpr->iTable-base].pTab;
+  iSrc = pExpr->iTable - base;
+  if( iSrc>=0 && iSrc<pTabList->nSrc ){
+    pTab = pTabList->a[iSrc].pTab;
+  }else{
+    /* This must be an attempt to read the NEW or OLD pseudo-tables
+    ** of a trigger.
+    */
+    TriggerStack *pStack = pParse->trigStack;
+    assert( pStack!=0 );
+    assert( pExpr->iTable==pStack->newIdx || pExpr->iTable==pStack->oldIdx );
+    pTab = pStack->pTab;
+  }
   if( pTab==0 ) return;
   if( pExpr->iColumn>=0 ){
     assert( pExpr->iColumn<pTab->nCol );

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.124 2003/04/16 01:28:16 drh Exp $
+** $Id: main.c,v 1.125 2003/04/16 20:24:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1034,6 +1034,10 @@ void *sqlite_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
 ** Register functions to be invoked when a transaction is started or when
 ** a transaction commits.  If either function returns non-zero, then the
 ** corresponding operation aborts with a constraint error.
+**
+** EXPERIMENTAL.  This API is under evaluation and is not yet an
+** official part of the SQLite interface.  This means it could change
+** or be deleted in future releases.
 */
 void *sqlite_begin_hook(
   sqlite *db,

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.6 2003/04/05 03:42:27 drh Exp $
+# $Id: auth.test,v 1.7 2003/04/16 20:24:52 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1658,6 +1658,35 @@ do_test auth-2.11 {
   }
   catchsql {SELECT * FROM t2, t3}
 } {0 {11 2 33 {} 55 66 7 8 9 {} 55 66}}
+
+# Make sure the OLD and NEW pseudo-tables of a trigger get authorized.
+#
+do_test auth-3.1 {
+  proc auth {code arg1 arg2} {
+    return SQLITE_OK
+  }
+  execsql {
+    CREATE TABLE tx(a1,a2,b1,b2,c1,c2);
+    CREATE TRIGGER r1 AFTER UPDATE ON t2 FOR EACH ROW BEGIN
+      INSERT INTO tx VALUES(OLD.a,NEW.a,OLD.b,NEW.b,OLD.c,NEW.c);
+    END;
+    UPDATE t2 SET a=a+1;
+    SELECT * FROM tx;
+  }
+} {11 12 2 2 33 33 7 8 8 8 9 9}
+do_test auth-3.2 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="c"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  execsql {
+    DELETE FROM tx;
+    UPDATE t2 SET a=a+100;
+    SELECT * FROM tx;
+  }
+} {12 112 2 2 {} {} 8 108 8 8 {} {}}
 
 } ;# End of the "if( db command exists )"
 
