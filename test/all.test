@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.27 2005/01/13 11:07:54 danielk1977 Exp $
+# $Id: all.test,v 1.28 2005/01/16 11:07:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,9 +61,13 @@ set EXCLUDE {
 # SQLITE_DEFAULT_AUTOVACUUM macro is defined to true (because they depend
 # on tables being allocated starting at page 2).
 #
+# Also corrupt.test doesn't work, because currently SQLite can't detect
+# corruption in pointer-map pages.
+#
 ifcapable default_autovacuum {
   lappend EXCLUDE btree2.test
   lappend EXCLUDE btree4.test
+  lappend EXCLUDE corrupt.test
 }
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {

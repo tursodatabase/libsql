@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.236 2005/01/16 09:06:34 danielk1977 Exp $
+** $Id: btree.c,v 1.237 2005/01/16 11:07:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3070,6 +3070,9 @@ static int allocatePage(
           if( rc==SQLITE_OK ){
             sqlite3pager_dont_rollback((*ppPage)->aData);
             rc = sqlite3pager_write((*ppPage)->aData);
+            if( rc!=SQLITE_OK ){
+              releasePage(*ppPage);
+            }
           }
           searchList = 0;
         }
@@ -3098,6 +3101,9 @@ static int allocatePage(
     rc = getPage(pBt, *pPgno, ppPage);
     if( rc ) return rc;
     rc = sqlite3pager_write((*ppPage)->aData);
+    if( rc!=SQLITE_OK ){
+      releasePage(*ppPage);
+    }
     TRACE(("ALLOCATE: %d from end of file\n", *pPgno));
   }
 
@@ -4294,6 +4300,7 @@ static int balance_shallower(MemPage *pPage){
     assert( pPage->nOverflow==0 );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
+      int i;
       for(i=0; i<pPage->nCell; i++){ 
         rc = ptrmapPutOvfl(pPage, i);
         if( rc!=SQLITE_OK ){

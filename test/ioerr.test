@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.14 2005/01/16 09:06:34 danielk1977 Exp $
+# $Id: ioerr.test,v 1.15 2005/01/16 11:07:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -199,7 +199,7 @@ do_ioerr_test 3 -tclprep {
   UPDATE abc SET a = randstr(90,90);
   COMMIT;
   CREATE TABLE abc3(a);
-}
+} 
 
 # Test IO errors that can occur retrieving a record header that flows over
 # onto an overflow page.
@@ -217,8 +217,12 @@ do_ioerr_test 4 -tclprep {
 
 # Test IO errors that may occur during a multi-file commit.
 #
-# Test 8 is excluded when auto-vacuum is enabled for the same reason
-# as in test cases ioerr-1.XXX
+# Tests 8 and 17 are excluded when auto-vacuum is enabled for the same 
+# reason as in test cases ioerr-1.XXX
+set ex ""
+if {[string match [execsql {pragma auto_vacuum}] 1]} {
+  set ex [list 8 17]
+}
 do_ioerr_test 5 -sqlprep {
   ATTACH 'test2.db' AS test2;
 } -sqlbody {
@@ -226,7 +230,7 @@ do_ioerr_test 5 -sqlprep {
   CREATE TABLE t1(a,b,c);
   CREATE TABLE test2.t2(a,b,c);
   COMMIT;
-} -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 8 : 0]
+} -exclude $ex
 
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
@@ -252,7 +256,7 @@ if {$tcl_platform(platform)=="unix" && [file exists ./crashtest]} {
 
 # Test handling of IO errors that occur while rolling back hot journal
 # files.
-do_ioerr_test 14 -tclprep {
+do_ioerr_test 7 -tclprep {
   db close
   sqlite3 db2 test2.db
   db2 eval {
