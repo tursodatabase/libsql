@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sSQLITE_MISUSE\sdetection\slogic.\s\sAlso\sadded\stest\scases\nfor\sthis\slogic,\sincluding\sthe\snew\stest\sfile\s"misuse.test".\s(CVS\s559)
-D 2002-05-10T13:14:07
+C Update\sthe\smisuse.test\sscript\sso\sthat\sit\swill\swork\sunder\sWindows.\s\sChanges\nto\sthe\sspeed\stesting\sscript\sto\ssupport\sversion\s2.4.12.\s(CVS\s560)
+D 2002-05-10T14:37:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -76,7 +76,7 @@ F test/main.test e121fed34ebf67f595290776162e322b08470127
 F test/malloc.test 70fdd0812e2a57eb746aaf015350f58bb8eee0b1
 F test/minmax.test fb6ab400271ae1f5bc88617c2882f2f081ea8e6d
 F test/misc1.test a03214118429b40ca5548bc1fae0ebd5c34dabe6
-F test/misuse.test 3ef43523b24cf1a7f56c2d344ec3025f60c6fce4
+F test/misuse.test 2c401721fbbe01897a80cef12e2fbbad4ca8a807
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
 F test/pragma.test 0b9675ef1f5ba5b43abfa337744445fc5b01a34a
@@ -110,7 +110,7 @@ F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
-F tool/speedtest.tcl 8287851340fd4a9500a69e9b10fb5ed9e6b0d0c3
+F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a05fabd2df1cb38c555a7b2f31b0ca687db500c2
-R b30599eb63bdfc63e05ba22c1fe53652
+P f42907ce457e012592f8c043dc6c915e87258b35
+R 3b5832b01c3219f88712622031d79de7
 U drh
-Z b94dda4b81c12e0efb3453e43d29b6de
+Z cc3ac64d3e10830979d9b55160a880d9

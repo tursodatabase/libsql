@@ -49,11 +49,19 @@ proc runtest {title} {
   exec sync; after $delay;
   set t [time "exec ./sqlite248 s2k.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
-  puts [format $format {SQLite 2.4:} $t]
+  puts [format $format {SQLite 2.4.8:} $t]
   exec sync; after $delay;
   set t [time "exec ./sqlite248 sns.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
-  puts [format $format {SQLite 2.4 (nosync):} $t]
+  puts [format $format {SQLite 2.4.8 (nosync):} $t]
+  exec sync; after $delay;
+  set t [time "exec ./sqlite2412 s2kb.db <$sqlfile" 1]
+  set t [expr {[lindex $t 0]/1000000.0}]
+  puts [format $format {SQLite 2.4.12:} $t]
+  exec sync; after $delay;
+  set t [time "exec ./sqlite2412 snsb.db <$sqlfile" 1]
+  set t [expr {[lindex $t 0]/1000000.0}]
+  puts [format $format {SQLite 2.4.12 (nosync):} $t]
 #  set t [time "exec ./sqlite-t1 st1.db <$sqlfile" 1]
 #  set t [expr {[lindex $t 0]/1000000.0}]
 #  puts [format $format {SQLite 2.4 (test):} $t]
@@ -79,6 +87,7 @@ puts $fd {
 }
 close $fd
 exec ./sqlite248 s2k.db <2kinit.sql
+exec ./sqlite2412 s2kb.db <2kinit.sql
 set fd [open nosync-init.sql w]
 puts $fd {
   PRAGMA default_cache_size=2000;
@@ -86,6 +95,7 @@ puts $fd {
 }
 close $fd
 exec ./sqlite248 sns.db <nosync-init.sql
+exec ./sqlite2412 snsb.db <nosync-init.sql
 set ones {zero one two three four five six seven eight nine
           ten eleven twelve thirteen fourteen fifteen sixteen seventeen
           eighteen nineteen}
