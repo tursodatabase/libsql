@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.184 2004/05/16 11:15:36 danielk1977 Exp $
+** $Id: build.c,v 1.185 2004/05/16 11:57:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -787,7 +787,7 @@ char sqlite3AffinityType(const char *zType, int nType){
     {"TEXT", 4, SQLITE_AFF_TEXT}
   };
 
-  for(n=0; n<(nType-3); n++){
+  for(n=0; n<(nType-2); n++){
     for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
       if( 0==sqlite3StrNICmp(zType, substrings[i].zSub, substrings[i].nSub) ){
         return substrings[i].affinity;

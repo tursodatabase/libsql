@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.294 2004/05/16 11:15:40 danielk1977 Exp $
+** $Id: vdbe.c,v 1.295 2004/05/16 11:57:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1518,7 +1518,7 @@ case OP_Ge: {
   if( flags&MEM_Null ){
     popStack(&pTos, 2);
     if( pOp->p2 ){
-      if( pOp->p1 ) pc = pOp->p2-1;
+      if( (pOp->p1&0xFF) ) pc = pOp->p2-1;
     }else{
       pTos++;
       pTos->flags = MEM_Null;
