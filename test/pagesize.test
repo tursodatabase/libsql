@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the page_size PRAGMA.
 #
-# $Id: pagesize.test,v 1.3 2004/09/05 00:33:44 drh Exp $
+# $Id: pagesize.test,v 1.4 2004/10/22 16:22:59 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -61,7 +61,7 @@ do_test pagesize-1.7 {
   
 
 
-foreach PGSZ {512 2000 2048 3000 4096} {
+foreach PGSZ {512 515 516 751 2000 2001 2002 2003 2004 2048 3000 4096} {
   do_test pagesize-2.$PGSZ.1 {
     db close
     file delete -force test.db

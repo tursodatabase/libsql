@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.167 2004/10/05 02:41:43 drh Exp $
+** @(#) $Id: pager.c,v 1.168 2004/10/22 16:22:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -111,6 +111,12 @@
 #endif
 
 /*
+** This macro rounds values up so that if the value is an address it
+** is guaranteed to be an address that is aligned to an 8-byte boundary.
+*/
+#define FORCE_ALIGNMENT(X)   (((X)+7)&~7)
+
+/*
 ** Each in-memory image of a page begins with the following header.
 ** This header is only visible to this pager module.  The client
 ** code that calls pager sees only the data that follows the header.
@@ -143,7 +149,7 @@ struct PgHdr {
   u8 alwaysRollback;             /* Disable dont_rollback() for this page */
   short int nRef;                /* Number of users of this page */
   PgHdr *pDirty;                 /* Dirty pages sorted by PgHdr.pgno */
-  /* pPager->pageSize bytes of page data follow this header */
+  /* pPager->psAligned bytes of page data follow this header */
   /* Pager.nExtra bytes of local data follow the page data */
 };
 
@@ -179,9 +185,9 @@ struct PgHistory {
 */
 #define PGHDR_TO_DATA(P)  ((void*)(&(P)[1]))
 #define DATA_TO_PGHDR(D)  (&((PgHdr*)(D))[-1])
-#define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->pageSize])
+#define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->psAligned])
 #define PGHDR_TO_HIST(P,PGR)  \
-            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->pageSize+(PGR)->nExtra])
+            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->psAligned+(PGR)->nExtra])
 
 /*
 ** How big to make the hash table used for locating in-memory pages
@@ -214,6 +220,7 @@ struct Pager {
   void (*xDestructor)(void*,int); /* Call this routine when freeing pages */
   void (*xReiniter)(void*,int);   /* Call this routine when reloading pages */
   int pageSize;               /* Number of bytes in a page */
+  int psAligned;              /* pageSize rounded up to a multiple of 8 */
   int nPage;                  /* Total number of in-memory pages */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
@@ -1503,6 +1510,7 @@ int sqlite3pager_open(
   pPager->nRef = 0;
   pPager->dbSize = memDb-1;
   pPager->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
+  pPager->psAligned = FORCE_ALIGNMENT(pPager->pageSize);
   pPager->stmtSize = 0;
   pPager->stmtJSize = 0;
   pPager->nPage = 0;
@@ -1518,7 +1526,7 @@ int sqlite3pager_open(
   pPager->pFirst = 0;
   pPager->pFirstSynced = 0;
   pPager->pLast = 0;
-  pPager->nExtra = nExtra;
+  pPager->nExtra = FORCE_ALIGNMENT(nExtra);
   pPager->sectorSize = PAGER_SECTOR_SIZE;
   pPager->pBusyHandler = 0;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
@@ -1564,6 +1572,7 @@ void sqlite3pager_set_reiniter(Pager *pPager, void (*xReinit)(void*,int)){
 void sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
   assert( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE );
   pPager->pageSize = pageSize;
+  pPager->psAligned = FORCE_ALIGNMENT(pageSize);
 }
 
 /*
@@ -2133,7 +2142,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     pPager->nMiss++;
     if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || pPager->memDb ){
       /* Create a new page */
-      pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->pageSize 
+      pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->psAligned
                               + sizeof(u32) + pPager->nExtra
                               + pPager->memDb*sizeof(PgHistory) );
       if( pPg==0 ){
