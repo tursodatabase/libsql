@@ -1,5 +1,5 @@
-C Update\sversion\snumber\sand\schange\slog\sfor\sthe\s2.6.2\srelease.\s(CVS\s698)
-D 2002-07-31T00:37:37
+C Version\s2.6.2\s(CVS\s699)
+D 2002-07-31T00:38:07
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -143,7 +143,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 04973fc2a6a0c93877de7e564618e0e9fcffc06c
+P 4f196de07d258dc44b6fd20d776120e2aadd3224
 R 6fc4add27e1daff3e73e47693ab2e9a0
 U drh
-Z e68689418f1541ac98d8b59320c5aba4
+Z 57e7cf48960b18de6fc8c07074fa6766
