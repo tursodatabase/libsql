@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.19 2005/01/13 11:07:54 danielk1977 Exp $
+# $Id: malloc.test,v 1.20 2005/01/13 13:35:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,6 +36,7 @@ if {[info command sqlite_malloc_stat]==""} {
 #     -sqlprep          SQL script to run to prepare test.
 #     -tclbody          TCL script to run with malloc failure simulation.
 #     -sqlbody          TCL script to run with malloc failure simulation.
+#     -cleanup          TCL script to run after the test.
 #
 # This command runs a series of tests to verify SQLite's ability
 # to handle an out-of-memory condition gracefully. It is assumed
@@ -95,47 +96,33 @@ proc do_malloc_test {tn args} {
         lappend v $v2
       }
     } {1 1}
+
+    if {[info exists ::mallocopts(-cleanup)]} {
+      catch $::mallocopts(-cleanup)
+    }
   }
   unset ::mallocopts
 }
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-1.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i [expr {$i%4}]
-     set v [catch {sqlite3 db test.db} msg]
-     if {$v} {
-       set msg ""
-     } else {
-       set v [catch {execsql {
-          CREATE TABLE t1(
-             a int, b float, c double, d text, e varchar(20),
-             primary key(a,b,c)
-          );
-          CREATE INDEX i1 ON t1(a,b);
-          INSERT INTO t1 VALUES(1,2.3,4.5,'hi','there');
-          INSERT INTO t1 VALUES(6,7.0,0.8,'hello','out yonder');
-          SELECT * FROM t1;
-          SELECT avg(b) FROM t1 GROUP BY a HAVING b>20.0;
-          DELETE FROM t1 WHERE a IN (SELECT min(a) FROM t1);
-          SELECT count(*) FROM t1;
-       }} msg]
-     }
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 1 -tclprep {
+  db close
+} -tclbody {
+  if {[catch {sqlite3 db test.db}]} {
+    error "out of memory"
+  }
+} -sqlbody {
+  CREATE TABLE t1(
+     a int, b float, c double, d text, e varchar(20),
+     primary key(a,b,c)
+  );
+  CREATE INDEX i1 ON t1(a,b);
+  INSERT INTO t1 VALUES(1,2.3,4.5,'hi','there');
+  INSERT INTO t1 VALUES(6,7.0,0.8,'hello','out yonder');
+  SELECT * FROM t1;
+  SELECT avg(b) FROM t1 GROUP BY a HAVING b>20.0;
+  DELETE FROM t1 WHERE a IN (SELECT min(a) FROM t1);
+  SELECT count(*) FROM t1;
+} 
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-1.X {
@@ -143,55 +130,25 @@ do_test malloc-1.X {
   set sqlite_open_file_count
 } {0}
 
-set fd [open ./data.tmp w]
-for {set i 1} {$i<=20} {incr i} {
-  puts $fd "$i\t[expr {$i*$i}]\t[expr {100-$i}]  abcdefghijklmnopqrstuvwxyz"
-}
-close $fd
-
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-2.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i
-     set v [catch {sqlite3 db test.db} msg]
-     if {$v} {
-       set msg ""
-     } else {
-       set v [catch {execsql {
-         CREATE TABLE t1(a int, b int, c int);
-         CREATE INDEX i1 ON t1(a,b);
-         INSERT INTO t1 VALUES(1,1,'99 abcdefghijklmnopqrstuvwxyz');
-         INSERT INTO t1 VALUES(2,4,'98 abcdefghijklmnopqrstuvwxyz');
-         INSERT INTO t1 VALUES(3,9,'97 abcdefghijklmnopqrstuvwxyz');
-         INSERT INTO t1 VALUES(4,16,'96 abcdefghijklmnopqrstuvwxyz');
-         INSERT INTO t1 VALUES(5,25,'95 abcdefghijklmnopqrstuvwxyz');
-         INSERT INTO t1 VALUES(6,36,'94 abcdefghijklmnopqrstuvwxyz');
-         SELECT 'stuff', count(*) as 'other stuff', max(a+10) FROM t1;
-         UPDATE t1 SET b=b||b||b||b;
-         UPDATE t1 SET b=a WHERE a in (10,12,22);
-         INSERT INTO t1(c,b,a) VALUES(20,10,5);
-         INSERT INTO t1 SELECT * FROM t1
-             WHERE a IN (SELECT a FROM t1 WHERE a<10);
-         DELETE FROM t1 WHERE a>=10;
-         DROP INDEX i1;
-         DELETE FROM t1;
-       }} msg]
-     }
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 2 -sqlbody {
+  CREATE TABLE t1(a int, b int, c int);
+  CREATE INDEX i1 ON t1(a,b);
+  INSERT INTO t1 VALUES(1,1,'99 abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t1 VALUES(2,4,'98 abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t1 VALUES(3,9,'97 abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t1 VALUES(4,16,'96 abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t1 VALUES(5,25,'95 abcdefghijklmnopqrstuvwxyz');
+  INSERT INTO t1 VALUES(6,36,'94 abcdefghijklmnopqrstuvwxyz');
+  SELECT 'stuff', count(*) as 'other stuff', max(a+10) FROM t1;
+  UPDATE t1 SET b=b||b||b||b;
+  UPDATE t1 SET b=a WHERE a in (10,12,22);
+  INSERT INTO t1(c,b,a) VALUES(20,10,5);
+  INSERT INTO t1 SELECT * FROM t1
+      WHERE a IN (SELECT a FROM t1 WHERE a<10);
+  DELETE FROM t1 WHERE a>=10;
+  DROP INDEX i1;
+  DELETE FROM t1;
+} 
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-2.X {
@@ -199,46 +156,23 @@ do_test malloc-2.X {
   set sqlite_open_file_count
 } {0}
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-3.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i
-     set v [catch {sqlite3 db test.db} msg]
-     if {$v} {
-       set msg ""
-     } else {
-       set v [catch {execsql {
-         BEGIN TRANSACTION;
-         CREATE TABLE t1(a int, b int, c int);
-         CREATE INDEX i1 ON t1(a,b);
-         INSERT INTO t1 VALUES(1,1,99);
-         INSERT INTO t1 VALUES(2,4,98);
-         INSERT INTO t1 VALUES(3,9,97);
-         INSERT INTO t1 VALUES(4,16,96);
-         INSERT INTO t1 VALUES(5,25,95);
-         INSERT INTO t1 VALUES(6,36,94);
-         INSERT INTO t1(c,b,a) VALUES(20,10,5);
-         DELETE FROM t1 WHERE a>=10;
-         DROP INDEX i1;
-         DELETE FROM t1;
-         ROLLBACK;
-       }} msg]
-     }
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 3 -sqlbody {
+  BEGIN TRANSACTION;
+  CREATE TABLE t1(a int, b int, c int);
+  CREATE INDEX i1 ON t1(a,b);
+  INSERT INTO t1 VALUES(1,1,99);
+  INSERT INTO t1 VALUES(2,4,98);
+  INSERT INTO t1 VALUES(3,9,97);
+  INSERT INTO t1 VALUES(4,16,96);
+  INSERT INTO t1 VALUES(5,25,95);
+  INSERT INTO t1 VALUES(6,36,94);
+  INSERT INTO t1(c,b,a) VALUES(20,10,5);
+  DELETE FROM t1 WHERE a>=10;
+  DROP INDEX i1;
+  DELETE FROM t1;
+  ROLLBACK;
+} 
+
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-3.X {
@@ -246,47 +180,23 @@ do_test malloc-3.X {
   set sqlite_open_file_count
 } {0}
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-4.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i
-     set v [catch {sqlite3 db test.db} msg]
-     if {$v} {
-       set msg ""
-     } else {
-       set v [catch {execsql {
-         BEGIN TRANSACTION;
-         CREATE TABLE t1(a int, b int, c int);
-         CREATE INDEX i1 ON t1(a,b);
-         INSERT INTO t1 VALUES(1,1,99);
-         INSERT INTO t1 VALUES(2,4,98);
-         INSERT INTO t1 VALUES(3,9,97);
-         INSERT INTO t1 VALUES(4,16,96);
-         INSERT INTO t1 VALUES(5,25,95);
-         INSERT INTO t1 VALUES(6,36,94);
-         UPDATE t1 SET b=a WHERE a in (10,12,22);
-         INSERT INTO t1 SELECT * FROM t1
-             WHERE a IN (SELECT a FROM t1 WHERE a<10);
-         DROP INDEX i1;
-         DELETE FROM t1;
-         COMMIT;
-       }} msg]
-     }
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 4 -sqlbody {
+  BEGIN TRANSACTION;
+  CREATE TABLE t1(a int, b int, c int);
+  CREATE INDEX i1 ON t1(a,b);
+  INSERT INTO t1 VALUES(1,1,99);
+  INSERT INTO t1 VALUES(2,4,98);
+  INSERT INTO t1 VALUES(3,9,97);
+  INSERT INTO t1 VALUES(4,16,96);
+  INSERT INTO t1 VALUES(5,25,95);
+  INSERT INTO t1 VALUES(6,36,94);
+  UPDATE t1 SET b=a WHERE a in (10,12,22);
+  INSERT INTO t1 SELECT * FROM t1
+     WHERE a IN (SELECT a FROM t1 WHERE a<10);
+  DROP INDEX i1;
+  DELETE FROM t1;
+  COMMIT;
+} 
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-4.X {
@@ -294,40 +204,16 @@ do_test malloc-4.X {
   set sqlite_open_file_count
 } {0}
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-5.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite_malloc_fail $i
-     set v [catch {sqlite3 db test.db} msg]
-     if {$v} {
-       set msg ""
-     } else {
-       set v [catch {execsql {
-         BEGIN TRANSACTION;
-         CREATE TABLE t1(a,b);
-         CREATE TABLE t2(x,y);
-         CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
-           INSERT INTO t2(x,y) VALUES(new.rowid,1);
-         END;
-         INSERT INTO t1(a,b) VALUES(2,3);
-         COMMIT;
-       }} msg]
-     }
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 5 -sqlbody {
+  BEGIN TRANSACTION;
+  CREATE TABLE t1(a,b);
+  CREATE TABLE t2(x,y);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+  INSERT INTO t2(x,y) VALUES(new.rowid,1);
+  END;
+  INSERT INTO t1(a,b) VALUES(2,3);
+  COMMIT;
+} 
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-5.X {
@@ -335,79 +221,37 @@ do_test malloc-5.X {
   set sqlite_open_file_count
 } {0}
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-6.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite3 db test.db
-     execsql {
-         BEGIN TRANSACTION;
-         CREATE TABLE t1(a);
-         INSERT INTO t1 VALUES(1);
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         INSERT INTO t1 SELECT a*2 FROM t1;
-         DELETE FROM t1 where rowid%5 = 0;
-         COMMIT;
-     }
-     sqlite_malloc_fail $i
-     set v [catch {execsql {
-       VACUUM;
-     }} msg]
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 6 -sqlprep {
+  BEGIN TRANSACTION;
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  INSERT INTO t1 SELECT a*2 FROM t1;
+  DELETE FROM t1 where rowid%5 = 0;
+  COMMIT;
+} -sqlbody {
+  VACUUM;
+} 
 
-for {set go 1; set i 1} {$go} {incr i} {
-  do_test malloc-7.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-     sqlite3 db test.db
-     execsql {
-       CREATE TABLE t1(a, b);
-       INSERT INTO t1 VALUES(1, 2);
-       INSERT INTO t1 VALUES(3, 4);
-       INSERT INTO t1 VALUES(5, 6);
-       INSERT INTO t1 VALUES(7, randstr(1200,1200));
-     }
-     sqlite_malloc_fail $i
-     set v [catch {execsql {
-       SELECT min(a) FROM t1 WHERE a<6 GROUP BY b;
-       SELECT a FROM t1 WHERE a<6 ORDER BY a;
-       SELECT b FROM t1 WHERE a>6;
-     }} msg]
-     set leftover [lindex [sqlite_malloc_stat] 2]
-     if {$leftover>0} {
-       if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-       set ::go 0
-       set v {1 1}
-     } else {
-       set v2 [expr {$msg=="" || $msg=="out of memory"}]
-       if {!$v2} {puts "\nError message returned: $msg"}
-       lappend v $v2
-     }
-  } {1 1}
-}
+do_malloc_test 7 -sqlprep {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t1 VALUES(5, 6);
+  INSERT INTO t1 VALUES(7, randstr(1200,1200));
+} -sqlbody {
+  SELECT min(a) FROM t1 WHERE a<6 GROUP BY b;
+  SELECT a FROM t1 WHERE a<6 ORDER BY a;
+  SELECT b FROM t1 WHERE a>6;
+} 
 
 # This block is designed to test that some malloc failures that may
 # occur in vdbeapi.c. Specifically, if a malloc failure that occurs
@@ -421,43 +265,32 @@ for {set go 1; set i 1} {$go} {incr i} {
 #
 # These tests only run if UTF-16 support is compiled in.
 #
-for {set go 1; set i 1} {$go && $::sqlite_options(utf16)} {incr i} {
-  do_test malloc-8.$i {
-     sqlite_malloc_fail 0
-     catch {db close}
-     catch {file delete -force test.db}
-     catch {file delete -force test.db-journal}
-
-     set ::DB [sqlite3 db test.db]
-     set sql "SELECT '[string repeat abc 20]', '[string repeat def 20]', ?"
-     set ::STMT [sqlite3_prepare $::DB $sql -1 X]
-     sqlite3_step $::STMT
-
-     if { $::tcl_platform(byteOrder)=="littleEndian" } {
-       set ::bomstr "\xFF\xFE"
-     } else {
-       set ::bomstr "\xFE\xFF"
-     }
-     append ::bomstr [encoding convertto unicode "123456789_123456789_12345678"]
-
-     sqlite_malloc_fail $i
-     catch {
-       sqlite3_column_text16 $::STMT 0
-       sqlite3_column_int $::STMT 0
-       sqlite3_column_text16 $::STMT 1
-       sqlite3_column_double $::STMT 1
-       sqlite3_reset $::STMT
-       sqlite3_bind_text16 $::STMT 1 $::bomstr 60
-       
-     } msg
-     sqlite3_finalize $::STMT
-     if {[lindex [sqlite_malloc_stat] 2]>0} {
-       set ::go 0
-     }
-     expr 0
-  } {0}
+if {$::sqlite_options(utf16)} {
+  do_malloc_test 8 -tclprep {
+    set sql "SELECT '[string repeat abc 20]', '[string repeat def 20]', ?"
+    set ::STMT [sqlite3_prepare $::DB $sql -1 X]
+    sqlite3_step $::STMT
+    if { $::tcl_platform(byteOrder)=="littleEndian" } {
+      set ::bomstr "\xFF\xFE"
+    } else {
+      set ::bomstr "\xFE\xFF"
+    }
+    append ::bomstr [encoding convertto unicode "123456789_123456789_12345678"]
+  } -tclbody {
+    sqlite3_column_text16 $::STMT 0
+    sqlite3_column_int $::STMT 0
+    sqlite3_column_text16 $::STMT 1
+    sqlite3_column_double $::STMT 1
+    sqlite3_reset $::STMT
+    sqlite3_bind_text16 $::STMT 1 $::bomstr 60
+    catch {sqlite3_finalize $::STMT}
+    if {[lindex [sqlite_malloc_stat] 2]<=0} {
+      error "out of memory"
+    }
+  } -cleanup {
+    sqlite3_finalize $::STMT
+  }
 }
-
 
 # This block tests that malloc() failures that occur whilst commiting
 # a multi-file transaction are handled correctly.
