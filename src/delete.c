@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.23 2002/01/22 03:13:42 drh Exp $
+** $Id: delete.c,v 1.24 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -151,24 +151,7 @@ void sqliteDeleteFrom(
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
-    sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
-    if( pTab->pIndex ){
-      for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-        int j;
-        sqliteVdbeAddOp(v, OP_Recno, base, 0);
-        for(j=0; j<pIdx->nColumn; j++){
-          int idx = pIdx->aiColumn[j];
-          if( idx==pTab->iPKey ){
-            sqliteVdbeAddOp(v, OP_Dup, j, 0);
-          }else{
-            sqliteVdbeAddOp(v, OP_Column, base, idx);
-          }
-        }
-        sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-        sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
-      }
-    }
-    sqliteVdbeAddOp(v, OP_Delete, base, 0);
+    sqliteGenerateRowDelete(v, pTab, base);
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
     sqliteVdbeResolveLabel(v, end);
     sqliteVdbeAddOp(v, OP_ListReset, 0, 0);
@@ -191,4 +174,52 @@ delete_from_cleanup:
   sqliteIdListDelete(pTabList);
   sqliteExprDelete(pWhere);
   return;
+}
+
+/*
+** This routine generates VDBE code that causes a single row of a
+** single table to be deleted.
+**
+** The VDBE must be in a particular state when this routine is called.
+** These are the requirements:
+**
+**   1.  A read/write cursor pointing to pTab, the table containing the row
+**       to be deleted, must be opened as cursor number "base".
+**
+**   2.  Read/write cursors for all indices of pTab must be open as
+**       cursor number base+i for the i-th index.
+**
+**   3.  The record number of the row to be deleted must be on the top
+**       of the stack.
+**
+** This routine pops the top of the stack to remove the record number
+** and then generates code to remove both the table record and all index
+** entries that point to that record.
+*/
+void sqliteGenerateRowDelete(
+  Vdbe *v,           /* Generate code into this VDBE */
+  Table *pTab,       /* Table containing the row to be deleted */
+  int base           /* Cursor number for the table */
+){
+  int i;
+  Index *pIdx;
+
+  sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
+  if( pTab->pIndex ){
+    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+      int j;
+      sqliteVdbeAddOp(v, OP_Recno, base, 0);
+      for(j=0; j<pIdx->nColumn; j++){
+        int idx = pIdx->aiColumn[j];
+        if( idx==pTab->iPKey ){
+          sqliteVdbeAddOp(v, OP_Dup, j, 0);
+        }else{
+          sqliteVdbeAddOp(v, OP_Column, base, idx);
+        }
+      }
+      sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+      sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
+    }
+  }
+  sqliteVdbeAddOp(v, OP_Delete, base, 0);
 }

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.108 2002/01/28 15:53:05 drh Exp $
+** $Id: vdbe.c,v 1.109 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -379,6 +379,17 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
 void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
   if( p && addr>=0 && p->nOp>addr && p->aOp ){
     p->aOp[addr].p1 = val;
+  }
+}
+
+/*
+** Change the value of the P2 operand for a specific instruction.
+** This routine is useful for setting a jump destination.
+*/
+void sqliteVdbeChangeP2(Vdbe *p, int addr, int val){
+  assert( val>=0 );
+  if( p && addr>=0 && p->nOp>addr && p->aOp ){
+    p->aOp[addr].p2 = val;
   }
 }
 
@@ -853,31 +864,31 @@ static char *zOpName[] = { 0,
   "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
   "OpenWrite",         "OpenAux",           "OpenWrAux",         "Close",
   "MoveTo",            "NewRecno",          "PutIntKey",         "PutStrKey",
-  "Distinct",          "Found",             "NotFound",          "NotExists",
-  "Delete",            "Column",            "KeyAsData",         "Recno",
-  "FullKey",           "Rewind",            "Next",              "Destroy",
-  "Clear",             "CreateIndex",       "CreateTable",       "Reorganize",
-  "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
-  "IdxGE",             "MemLoad",           "MemStore",          "ListWrite",
-  "ListRewind",        "ListRead",          "ListReset",         "SortPut",
-  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
-  "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
-  "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
-  "SetFound",          "SetNotFound",       "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
-  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
-  "NullCallback",      "Integer",           "String",            "Pop",
-  "Dup",               "Pull",              "MustBeInt",         "Add",
-  "AddImm",            "Subtract",          "Multiply",          "Divide",
-  "Remainder",         "BitAnd",            "BitOr",             "BitNot",
-  "ShiftLeft",         "ShiftRight",        "AbsValue",          "Precision",
-  "Min",               "Max",               "Like",              "Glob",
-  "Eq",                "Ne",                "Lt",                "Le",
-  "Gt",                "Ge",                "IsNull",            "NotNull",
-  "Negative",          "And",               "Or",                "Not",
-  "Concat",            "Noop",              "Strlen",            "Substr",
-  "Limit",           
+  "Distinct",          "Found",             "NotFound",          "IsUnique",
+  "NotExists",         "Delete",            "Column",            "KeyAsData",
+  "Recno",             "FullKey",           "Rewind",            "Next",
+  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
+  "Reorganize",        "IdxPut",            "IdxDelete",         "IdxRecno",
+  "IdxGT",             "IdxGE",             "MemLoad",           "MemStore",
+  "ListWrite",         "ListRewind",        "ListRead",          "ListReset",
+  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
+  "SortNext",          "SortCallback",      "SortReset",         "FileOpen",
+  "FileRead",          "FileColumn",        "AggReset",          "AggFocus",
+  "AggIncr",           "AggNext",           "AggSet",            "AggGet",
+  "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
+  "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
+  "If",                "Halt",              "ColumnCount",       "ColumnName",
+  "Callback",          "NullCallback",      "Integer",           "String",
+  "Pop",               "Dup",               "Pull",              "Push",
+  "MustBeInt",         "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Precision",         "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",            "Limit",           
 };
 
 /*
@@ -1138,17 +1149,26 @@ case OP_Goto: {
   break;
 }
 
-/* Opcode:  Halt * * *
+/* Opcode:  Halt P1 * *
 **
 ** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
 **
-** There is an implied Halt instruction inserted at the very end of
+** P1 is the result code returned by sqlite_exec().  For a normal
+** halt, this should be SQLITE_OK (0).  For errors, it can be some
+** other value.
+**
+** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
 ** is the same as executing Halt.
 */
 case OP_Halt: {
-  pc = p->nOp-1;
+  if( pOp->p1!=SQLITE_OK ){
+    rc = pOp->p1;
+    goto abort_due_to_error;
+  }else{
+    pc = p->nOp-1;
+  }
   break;
 }
 
@@ -1195,13 +1215,18 @@ case OP_Pop: {
   break;
 }
 
-/* Opcode: Dup P1 * *
+/* Opcode: Dup P1 P2 *
 **
 ** A copy of the P1-th element of the stack 
 ** is made and pushed onto the top of the stack.
 ** The top of the stack is element 0.  So the
 ** instruction "Dup 0 0 0" will make a copy of the
 ** top of the stack.
+**
+** If the content of the P1-th element is a dynamically
+** allocated string, then a new copy of that string
+** is made if P2==0.  If P2!=0, then just a pointer
+** to the string is copied.
 **
 ** Also see the Pull instruction.
 */
@@ -1212,7 +1237,7 @@ case OP_Dup: {
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   memcpy(&aStack[j], &aStack[i], sizeof(aStack[i])-NBFS);
   if( aStack[j].flags & STK_Str ){
-    if( aStack[j].flags & STK_Static ){
+    if( pOp->p2 || (aStack[j].flags & STK_Static)!=0 ){
       zStack[j] = zStack[i];
       aStack[j].flags = STK_Str | STK_Static;
     }else if( aStack[i].n<=NBFS ){
@@ -1262,6 +1287,33 @@ case OP_Pull: {
   }else{
     zStack[to] = aStack[to].z;
   }
+  break;
+}
+
+/* Opcode: Push P1 * *
+**
+** Overwrite the value of the P1-th element down on the
+** stack (P1==0 is the top of the stack) with the value
+** of the top of the stack.  The pop the top of the stack.
+*/
+case OP_Push: {
+  int from = p->tos;
+  int to = p->tos - pOp->p1;
+  int i;
+  Stack ts;
+  char *tz;
+  VERIFY( if( to<0 ) goto not_enough_stack; )
+  if( aStack[to].flags & STK_Dyn ){
+    sqliteFree(zStack[to]);
+  }
+  aStack[to] = aStack[from];
+  if( aStack[to].flags & (STK_Dyn|STK_Static) ){
+    zStack[to] = zStack[from];
+  }else{
+    zStack[to] = aStack[to].z;
+  }
+  aStack[from].flags &= ~STK_Dyn;
+  p->tos--;
   break;
 }
 
@@ -2010,8 +2062,8 @@ case OP_IsNull: {
 
 /* Opcode: NotNull * P2 *
 **
-** Pop a single value from the stack.  If the value popped is not an
-** empty string, then jump to p2.  Otherwise continue to the next 
+** Pop a single value from the stack.  If the value popped is not
+** NULL, then jump to p2.  Otherwise continue to the next 
 ** instruction.
 */
 case OP_NotNull: {
@@ -2675,7 +2727,7 @@ case OP_MoveTo: {
 ** The difference between this operation and Distinct is that
 ** Distinct does not pop the key from the stack.
 **
-** See also: Distinct, Found, MoveTo, NotExists
+** See also: Distinct, Found, MoveTo, NotExists, IsUnique
 */
 case OP_Distinct:
 case OP_NotFound:
@@ -2698,6 +2750,66 @@ case OP_Found: {
   }
   if( pOp->opcode!=OP_Distinct ){
     POPSTACK;
+  }
+  break;
+}
+
+/* Opcode: IsUnique P1 P2 *
+**
+** The top of the stack is an index key created using MakeIdxKey.  If
+** there does not exist an entry in P1 that exactly matches the top of
+** the stack, then jump immediately to P2.  If there are no entries
+** in P1 that match all but the last four bytes of the top of the stack
+** then also jump to P2.  The index key on the top of the stack is
+** unchanged.
+**
+** If there is an entry in P1 which differs from the index key on the
+** top of the stack only in the last four bytes, then do not jump. 
+** Instead, push the last four bytes of the existing P1 entry onto the
+** stack and fall through.  This new stack element is the record number
+** of an existing entry this preventing the index key on the stack from
+** being a unique key.
+**
+** See also: Distinct, NotFound, NotExists
+*/
+case OP_IsUnique: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  BtCursor *pCrsr;
+
+  VERIFY( if( tos<0 ) goto not_enough_stack; )
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+    int res, rc;
+    int v1, v2;
+    char *zKey = zStack[tos];
+    int nKey = aStack[tos].n;
+    if( Stringify(p, tos) ) goto no_mem;
+    assert( aStack[tos].n >= 4 );
+    rc = sqliteBtreeMoveto(pCrsr, zKey, nKey-4, &res);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( res<0 ){
+      rc = sqliteBtreeNext(pCrsr, &res);
+      if( res ){
+        pc = pOp->p2 - 1;
+        break;
+      }
+    }
+    rc = sqliteBtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &res);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( res>0 ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+    sqliteBtreeKey(pCrsr, nKey - 4, 4, (char*)&v1);
+    memcpy((char*)&v2, &zKey[nKey-4], 4);
+    if( v1==v2 ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+    tos = ++p->tos;
+    VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+    aStack[tos].i = keyToInt(v1);
+    aStack[tos].flags = STK_Int;
   }
   break;
 }

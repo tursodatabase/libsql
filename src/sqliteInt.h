@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.79 2002/01/22 14:11:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.80 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -233,7 +233,23 @@ struct Table {
   u8 isCommit;     /* True if creation of this table has been committed */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
   u8 hasPrimKey;   /* True if there exists a primary key */
+  u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
 };
+
+/*
+** SQLite supports three different ways to resolve a UNIQUE contraint
+** error.  (1) It can abort the transaction return SQLITE_CONSTRAINT.
+** (2) It can decide to not do the INSERT or UPDATE that was causing
+** the constraint violation. (3) It can delete existing records from
+** the table so that the pending INSERT or UPDATE will work without
+** a constraint error.  The following there symbolic values are used
+** to record which type of action to take.
+*/
+#define OE_None    0   /* There is no constraint to check */
+#define OE_Abort   1   /* Abort and rollback. */
+#define OE_Ignore  2   /* Ignore the error. Do not do the INSERT or UPDATE */
+#define OE_Replace 3   /* Delete existing record, then do INSERT or UPDATE */
+#define OE_Default 9   /* Do whatever the default action is */
 
 /*
 ** Each SQL index is represented in memory by an
@@ -260,9 +276,10 @@ struct Index {
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
   int tnum;        /* Page containing root of this index in database file */
-  u8 isUnique;     /* True if keys must all be unique */
+  u8 isUnique;     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 isCommit;     /* True if creation of this index has been committed */
   u8 isDropped;    /* True if a DROP INDEX has executed on this index */
+  u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Index *pNext;    /* The next index associated with the same table */
 };
 
@@ -483,13 +500,14 @@ void sqliteCommitInternalChanges(sqlite*);
 void sqliteRollbackInternalChanges(sqlite*);
 void sqliteStartTable(Parse*,Token*,Token*,int);
 void sqliteAddColumn(Parse*,Token*);
-void sqliteAddNotNull(Parse*);
+void sqliteAddNotNull(Parse*, int);
+void sqliteAddPrimaryKey(Parse*, IdList*, int);
 void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
 void sqliteEndTable(Parse*,Token*);
 void sqliteDropTable(Parse*, Token*);
 void sqliteDeleteTable(sqlite*, Table*);
-void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*);
+void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);
 IdList *sqliteIdListAppend(IdList*, Token*);
 void sqliteIdListAddAlias(IdList*, Token*);
 void sqliteIdListDelete(IdList*);
@@ -500,7 +518,7 @@ Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqliteSelectDelete(Select*);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);
-void sqliteUpdate(Parse*, Token*, ExprList*, Expr*);
+void sqliteUpdate(Parse*, Token*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, IdList*, Expr*, int);
 void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);

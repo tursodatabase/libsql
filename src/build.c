@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.66 2002/01/28 15:53:05 drh Exp $
+** $Id: build.c,v 1.67 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -517,12 +517,13 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
 ** been seen on a column.  This routine sets the notNull flag on
 ** the column currently under construction.
 */
-void sqliteAddNotNull(Parse *pParse){
+void sqliteAddNotNull(Parse *pParse, int onError){
   Table *p;
   int i;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
-  if( i>=0 ) p->aCol[i].notNull = 1;
+  if( onError==OE_Default ) onError = OE_Abort;
+  if( i>=0 ) p->aCol[i].notNull = onError;
 }
 
 /*
@@ -599,7 +600,7 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 ** If the key is not an INTEGER PRIMARY KEY, then create a unique
 ** index for the key.  No index is created for INTEGER PRIMARY KEYs.
 */
-void sqliteAddPrimaryKey(Parse *pParse, IdList *pList){
+void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
   int iCol = -1;
@@ -621,11 +622,13 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList){
   if( iCol>=0 && iCol<pTab->nCol ){
     zType = pTab->aCol[iCol].zType;
   }
+  if( onError==OE_Default ) onError = OE_Abort;
   if( pParse->db->file_format>=1 && 
            zType && sqliteStrICmp(zType, "INTEGER")==0 ){
     pTab->iPKey = iCol;
+    pTab->keyConf = onError;
   }else{
-    sqliteCreateIndex(pParse, 0, 0, pList, 1, 0, 0);
+    sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0);
   }
 }
 
@@ -850,7 +853,7 @@ void sqliteCreateIndex(
   Token *pName,    /* Name of the index.  May be NULL */
   Token *pTable,   /* Name of the table to index.  Use pParse->pNewTable if 0 */
   IdList *pList,   /* A list of columns to be indexed */
-  int isUnique,    /* True if all entries in this index must be unique */
+  int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
@@ -967,7 +970,7 @@ void sqliteCreateIndex(
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nId;
-  pIndex->isUnique = isUnique;
+  pIndex->onError = pIndex->isUnique = onError;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -1000,8 +1003,24 @@ void sqliteCreateIndex(
     }
     db->flags |= SQLITE_InternChanges;
   }
-  pIndex->pNext = pTab->pIndex;
-  pTab->pIndex = pIndex;
+
+  /* When adding an index to the list of indices for a table, make
+  ** sure all indices labeled OE_Replace come after all those labeled
+  ** OE_Ignore.  This is necessary for the correct operation of UPDATE
+  ** and INSERT.
+  */
+  if( onError!=OE_Replace || pTab->pIndex==0
+       || pTab->pIndex->onError==OE_Replace){
+    pIndex->pNext = pTab->pIndex;
+    pTab->pIndex = pIndex;
+  }else{
+    Index *pOther = pTab->pIndex;
+    while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
+      pOther = pOther->pNext;
+    }
+    pIndex->pNext = pOther->pNext;
+    pOther->pNext = pIndex;
+  }
 
   /* If the initFlag is 1 it means we are reading the SQL off the
   ** "sqlite_master" table on the disk.  So do not write to the disk
@@ -1086,7 +1105,7 @@ void sqliteCreateIndex(
         sqliteVdbeAddOp(v, OP_Column, 2, pIndex->aiColumn[i]);
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
-      sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->isUnique);
+      sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->onError!=OE_None);
       sqliteVdbeAddOp(v, OP_Next, 2, lbl1);
       sqliteVdbeResolveLabel(v, lbl2);
       sqliteVdbeAddOp(v, OP_Close, 2, 0);
@@ -1392,7 +1411,7 @@ void sqliteCopy(
         sqliteVdbeAddOp(v, OP_FileColumn, pIdx->aiColumn[j], 0);
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-      sqliteVdbeAddOp(v, OP_IdxPut, i, pIdx->isUnique);
+      sqliteVdbeAddOp(v, OP_IdxPut, i, pIdx->onError!=OE_None);
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
     sqliteVdbeResolveLabel(v, end);
@@ -1682,7 +1701,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
-        sqliteVdbeAddOp(v, OP_Integer, pIdx->isUnique, 0);
+        sqliteVdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0);
 	++i;
 	pIdx = pIdx->pNext;

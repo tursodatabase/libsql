@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.42 2002/01/06 17:07:40 drh Exp $
+** @(#) $Id: parse.y,v 1.43 2002/01/29 18:41:25 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -103,6 +103,10 @@ id(A) ::= ID(X).         {A = X;}
 id(A) ::= TEMP(X).       {A = X;}
 id(A) ::= OFFSET(X).     {A = X;}
 id(A) ::= KEY(X).        {A = X;}
+id(A) ::= ABORT(X).      {A = X;}
+id(A) ::= IGNORE(X).     {A = X;}
+id(A) ::= REPLACE(X).    {A = X;}
+id(A) ::= CONFLICT(X).   {A = X;}
 
 // And "ids" is an identifer-or-string.
 //
@@ -138,10 +142,10 @@ carg ::= DEFAULT NULL.
 // In addition to the type name, we also care about the primary key and
 // UNIQUE constraints.
 //
-ccons ::= NOT NULL.                  {sqliteAddNotNull(pParse);}
-ccons ::= PRIMARY KEY sortorder.     {sqliteAddPrimaryKey(pParse, 0);}
-ccons ::= UNIQUE.                    {sqliteCreateIndex(pParse,0,0,0,1,0,0);}
-ccons ::= CHECK LP expr RP.
+ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
+ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
+ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
+ccons ::= CHECK LP expr RP onconf.
 
 // For the time being, the only constraint we care about is the primary
 // key and UNIQUE.  Both create indices.
@@ -152,9 +156,25 @@ conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT ids.
-tcons ::= PRIMARY KEY LP idxlist(X) RP. {sqliteAddPrimaryKey(pParse,X);}
-tcons ::= UNIQUE LP idxlist(X) RP.      {sqliteCreateIndex(pParse,0,0,X,1,0,0);}
-tcons ::= CHECK expr.
+tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
+                                             {sqliteAddPrimaryKey(pParse,X,R);}
+tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
+                                       {sqliteCreateIndex(pParse,0,0,X,R,0,0);}
+tcons ::= CHECK expr onconf.
+
+// The following is a non-standard extension that allows us to declare the
+// default behavior when there is a constraint conflict.
+//
+%type onconf {int}
+%type onconf_u {int}
+%type confresolve {int}
+onconf(A) ::= confresolve(X).                { A = X; }
+onconf(A) ::= onconf_u(X).                   { A = X; }
+onconf_u(A) ::= ON CONFLICT confresolve(X).  { A = X; }
+onconf_u(A) ::= .                            { A = OE_Default; }
+confresolve(A) ::= ABORT.                    { A = OE_Abort; }
+confresolve(A) ::= IGNORE.                   { A = OE_Ignore; }
+confresolve(A) ::= REPLACE.                  { A = OE_Replace; }
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //
@@ -293,8 +313,8 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE ids(X) SET setlist(Y) where_opt(Z).
-    {sqliteUpdate(pParse,&X,Y,Z);}
+cmd ::= UPDATE onconf_u(R) ids(X) SET setlist(Y) where_opt(Z).
+    {sqliteUpdate(pParse,&X,Y,Z,R);}
 
 setlist(A) ::= setlist(Z) COMMA ids(X) EQ expr(Y).
     {A = sqliteExprListAppend(Z,Y,&X);}
@@ -302,10 +322,10 @@ setlist(A) ::= ids(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= INSERT INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
-               {sqliteInsert(pParse, &X, Y, 0, F);}
-cmd ::= INSERT INTO ids(X) inscollist_opt(F) select(S).
-               {sqliteInsert(pParse, &X, 0, S, F);}
+cmd ::= INSERT onconf(R) INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
+               {sqliteInsert(pParse, &X, Y, 0, F, R);}
+cmd ::= INSERT onconf(R) INTO ids(X) inscollist_opt(F) select(S).
+               {sqliteInsert(pParse, &X, 0, S, F, R);}
 
 
 %type itemlist {ExprList*}
@@ -499,12 +519,16 @@ expritem(A) ::= .                       {A = 0;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) uniqueflag(U) INDEX ids(X) ON ids(Y) LP idxlist(Z) RP(E).
-    {sqliteCreateIndex(pParse, &X, &Y, Z, U, &S, &E);}
+cmd ::= CREATE(S) uniqueflag(U) INDEX ids(X)
+        ON ids(Y) LP idxlist(Z) RP(E) onconf(R). {
+  if( U!=OE_None ) U = R;
+  if( U==OE_Default) U = OE_Abort;
+  sqliteCreateIndex(pParse, &X, &Y, Z, U, &S, &E);
+}
 
 %type uniqueflag {int}
-uniqueflag(A) ::= UNIQUE.   { A = 1; }
-uniqueflag(A) ::= .         { A = 0; }
+uniqueflag(A) ::= UNIQUE.  { A = OE_Abort; }
+uniqueflag(A) ::= .        { A = OE_None; }
 
 %type idxlist {IdList*}
 %destructor idxlist {sqliteIdListDelete($$);}

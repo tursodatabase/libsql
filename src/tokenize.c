@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.32 2001/11/06 04:00:19 drh Exp $
+** $Id: tokenize.c,v 1.33 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -38,6 +38,7 @@ struct Keyword {
 ** These are the keywords
 */
 static Keyword aKeywordTable[] = {
+  { "ABORT",             0, TK_ABORT,            0 },
   { "ALL",               0, TK_ALL,              0 },
   { "AND",               0, TK_AND,              0 },
   { "AS",                0, TK_AS,               0 },
@@ -48,6 +49,7 @@ static Keyword aKeywordTable[] = {
   { "CHECK",             0, TK_CHECK,            0 },
   { "CLUSTER",           0, TK_CLUSTER,          0 },
   { "COMMIT",            0, TK_COMMIT,           0 },
+  { "CONFLICT",          0, TK_CONFLICT,         0 },
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
   { "COPY",              0, TK_COPY,             0 },
   { "CREATE",            0, TK_CREATE,           0 },
@@ -64,6 +66,7 @@ static Keyword aKeywordTable[] = {
   { "GLOB",              0, TK_GLOB,             0 },
   { "GROUP",             0, TK_GROUP,            0 },
   { "HAVING",            0, TK_HAVING,           0 },
+  { "IGNORE",            0, TK_IGNORE,           0 },
   { "IN",                0, TK_IN,               0 },
   { "INDEX",             0, TK_INDEX,            0 },
   { "INSERT",            0, TK_INSERT,           0 },
@@ -83,6 +86,7 @@ static Keyword aKeywordTable[] = {
   { "ORDER",             0, TK_ORDER,            0 },
   { "PRAGMA",            0, TK_PRAGMA,           0 },
   { "PRIMARY",           0, TK_PRIMARY,          0 },
+  { "REPLACE",           0, TK_REPLACE,          0 },
   { "ROLLBACK",          0, TK_ROLLBACK,         0 },
   { "SELECT",            0, TK_SELECT,           0 },
   { "SET",               0, TK_SET,              0 },

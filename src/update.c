@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.28 2002/01/28 15:53:05 drh Exp $
+** $Id: update.c,v 1.29 2002/01/29 18:41:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,7 +23,8 @@ void sqliteUpdate(
   Parse *pParse,         /* The parser context */
   Token *pTableName,     /* The table in which we should change things */
   ExprList *pChanges,    /* Things to be changed */
-  Expr *pWhere           /* The WHERE clause.  May be null */
+  Expr *pWhere,          /* The WHERE clause.  May be null */
+  int onError            /* How to handle constraint errors */
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
