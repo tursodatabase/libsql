@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.31 2002/07/13 17:18:37 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.32 2002/07/30 17:42:10 drh Exp $}
 
 puts {<html>
 <head>
@@ -301,6 +301,9 @@ is used incorrectly.  Examples of incorrect usage include calling
 <b>sqlite_exec()</b> after the database has been closed using
 <b>sqlite_close()</b> or calling <b>sqlite_exec()</b> with the same
 database pointer simultaneously from two separate threads.
+This error code will also be returned under Unix if <b>sqlite_exec()</b>
+is called while a transaction is pending that was started in another
+process or thread that has a different process ID.  
 </p></dd>
 </dl>
 </blockquote>
@@ -790,6 +793,37 @@ SQLite now implements all of its built-in functions using this
 interface.  For additional information and examples on how to create
 new SQL functions, review the SQLite source code in the file
 <b>func.c</b>.
+</p>
+
+<h2>Multi-Threading And SQLite</h2>
+
+<p>
+If SQLite is compiled with the THREADSAFE preprocessor macro set to 1,
+then it is safe to use SQLite from two or more threads of the same process
+at the same time.  But each thread should have its own <b>sqlite*</b>
+pointer returned from <b>sqlite_open()</b>.  It is never safe for two
+or more threads to access the same <b>sqlite*</b> pointer at the same time.
+</p>
+
+<p>
+In precompiled SQLite libraries available on the website, the Unix
+versions are compiled with THREADSAFE turned off but the windows
+versions are compiled with THREADSAFE turned on.  If you need something
+different that this you will have to recompile.
+</p>
+
+<p>
+Under Unix, an <b>sqlite*</b> pointer should not be carried across a
+<b>fork()</b> system call into the child process.  The child process
+should open its own copy of the database after the <b>fork()</b>.
+</p>
+
+<p>
+When using LinuxThreads (where each thread has its own process ID)
+it is illegal to start a transaction in one thread and then attempt
+to read or write the database from a different thread.  This
+restriction does not apply to Posix threads where all threads share
+the same process ID.
 </p>
 
 <h2>Usage Examples</h2>

@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#71:\sCorrectly\shandle\sCR\sand\sCRLF\sline\sterminators\sin\sthe\ninput\sfiles\sfor\sthe\sCOPY\scommand.\s(CVS\s694)
-D 2002-07-30T17:20:40
+C Fix\sfor\sticket\s#111:\sUpdate\sthe\sdocumentation\sto\sexplain\sthat\syou\smay\snot\r\nstart\sa\stransaction\sin\sone\sthread\sand\scomplete\sit\sin\sanother\sthread\sunder\r\nLinux\sThreads\swhere\seach\sthread\shas\sits\sown\sprocess\sID.\s(CVS\s695)
+D 2002-07-30T17:42:10
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -126,13 +126,13 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/c_interface.tcl 580c03f096a16c0cf7ce18e0483daace4a602b46
+F www/c_interface.tcl 59338ef6b9d6cff504659010a361e863f554b0ef
 F www/changes.tcl c920fe01975e4eac1333e075134aa857b6ebee32
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 06e95342a101fde3ce59dbf128233a178502587e
+F www/faq.tcl 688070c1a02ceca82274675f77ef7ae723395b88
 F www/formatchng.tcl 502847353450adaf76d187d87374bce20dd07e0e
 F www/index.tcl 17384c30e0ddccaac4cd775be4e3b18fa8a248eb
 F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c080ed01ea51628b86050762f097e702e3aeafdf
-R 2c19fd10fe86bd88ef844a3055d315b5
+P be1315755ef801b5ec07f469134e0d33a3ece990
+R a079c5e56f534c0ce7676afdebb45812
 U drh
-Z e835230fdc0a66edc7f339264e4e0fbb
+Z 60f9e91154609c6dea4c51f07544d2bf
