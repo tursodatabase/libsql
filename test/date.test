@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.12 2005/01/15 01:52:33 drh Exp $
+# $Id: date.test,v 1.13 2005/03/21 00:43:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -47,7 +47,11 @@ datetest 1.14 julianday('+2000-01-01') NULL
 datetest 1.15 julianday('200-01-01') NULL
 datetest 1.16 julianday('2000-1-01') NULL
 datetest 1.17 julianday('2000-01-1') NULL
-datetest 1.18 {julianday('2000-01-01     12:00:00')} 2451545.0
+datetest 1.18.1 {julianday('2000-01-01     12:00:00')} 2451545.0
+datetest 1.18.2 {julianday('2000-01-01T12:00:00')} 2451545.0
+datetest 1.18.3 {julianday('2000-01-01 T12:00:00')} 2451545.0
+datetest 1.18.4 {julianday('2000-01-01T 12:00:00')} 2451545.0
+datetest 1.18.4 {julianday('2000-01-01 T 12:00:00')} 2451545.0
 datetest 1.19 {julianday('2000-01-01 12:00:00.1')}   2451545.00000116
 datetest 1.20 {julianday('2000-01-01 12:00:00.01')}  2451545.00000012
 datetest 1.21 {julianday('2000-01-01 12:00:00.001')} 2451545.00000001
