@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.48 2002/07/16 17:22:51 drh Exp $
+** $Id: update.c,v 1.49 2002/07/21 23:09:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -218,7 +218,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
 
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum);
+    sqliteVdbeAddOp(v, (pTab->isTemp?OP_OpenAux:OP_Open), base, pTab->tnum);
     sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
     sqliteVdbeAddOp(v, OP_Integer, 13, 0);

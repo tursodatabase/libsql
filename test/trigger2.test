@@ -54,6 +54,7 @@ source $testdir/tester.tcl
 set ii 0
 foreach tbl_defn [ list \
 	{CREATE TABLE tbl (a, b);} \
+	{CREATE TEMP TABLE tbl (a, b);} \
 	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} \
         {CREATE TABLE tbl (a, b PRIMARY KEY);} \
 	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} ] {
