@@ -1,5 +1,5 @@
-C Bug\sfix.\s\sRaised\sversion\snumber\sto\s2.0.4.\s(CVS\s288)
-D 2001-10-13T21:56:34
+C Version\s2.0.4\s(CVS\s466)
+D 2001-10-13T22:00:00
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 582916b263aa40a70521dfb3d99d574028abd47b
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -114,7 +114,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P a8fee23f86c268c1bdb3575f3f6069da18de12a8
+P 26972afd645e21e0d16de9a0bb0d03754e909044
 R 4a79f4243a1c67e525408e6bb2f97ed5
 U drh
-Z ed2168af0cd1e05e4de01b47bbc410da
+Z bda58aec2ebf892c3a56d60499b5a93d
