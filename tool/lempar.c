@@ -76,8 +76,8 @@
 */
 struct yyActionEntry {
   YYCODETYPE   lookahead;   /* The value of the look-ahead token */
+  YYCODETYPE   next;        /* Next entry + 1. Zero at end of collision chain */
   YYACTIONTYPE action;      /* Action to take for this look-ahead */
-  struct yyActionEntry *next; /* Next look-ahead with the same hash, or NULL */
 };
 static struct yyActionEntry yyActionTable[] = {
 %%
@@ -89,15 +89,14 @@ static struct yyActionEntry yyActionTable[] = {
 **
 **  +  A pointer to the start of the action hash table in yyActionTable.
 **
-**  +  A mask used to hash the look-ahead token.  The mask is an integer
-**     which is one less than the size of the hash table.  
+**  +  The number of entries in the action hash table.
 **
 **  +  The default action.  This is the action to take if no entry for
 **     the given look-ahead is found in the action hash table.
 */
 struct yyStateEntry {
   struct yyActionEntry *hashtbl; /* Start of the hash table in yyActionTable */
-  int mask;                      /* Mask used for hashing the look-ahead */
+  YYCODETYPE nEntry;             /* Number of entries in action hash table */
   YYACTIONTYPE actionDefault;    /* Default action if look-ahead not found */
 };
 static struct yyStateEntry yyStateTable[] = {
@@ -297,13 +296,16 @@ static int yy_find_parser_action(
  
   /* if( pParser->idx<0 ) return YY_NO_ACTION;  */
   pState = &yyStateTable[pParser->top->stateno];
-  if( iLookAhead!=YYNOCODE ){
-    pAction = &pState->hashtbl[iLookAhead & pState->mask];
-    while( pAction ){
+  if( pState->nEntry==0 ){
+    return pState->actionDefault;
+  }else if( iLookAhead!=YYNOCODE ){
+    pAction = &pState->hashtbl[iLookAhead % pState->nEntry];
+    while( 1 ){
       if( pAction->lookahead==iLookAhead ) return pAction->action;
-      pAction = pAction->next;
+      if( pAction->next==0 ) return pState->actionDefault;
+      pAction = &pState->hashtbl[pAction->next-1];
     }
-  }else if( pState->mask!=0 || pState->hashtbl->lookahead!=YYNOCODE ){
+  }else if( pState->hashtbl->lookahead!=YYNOCODE ){
     return YY_NO_ACTION;
   }
   return pState->actionDefault;

@@ -2927,6 +2927,20 @@ int mhflag;                 /* True if generating makeheaders output */
   *plineno = lineno;
 }
 
+/*
+** Return the name of a C datatype able to represent values between
+** 0 and N, inclusive.
+*/
+static const char *minimum_size_type(int N){
+  if( N<=255 ){
+    return "unsigned char";
+  }else if( N<65535 ){
+    return "unsigned short int";
+  }else{
+    return "unsigned int";
+  }
+}
+
 /* Generate C source code for the parser */
 void ReportTable(lemp, mhflag)
 struct lemon *lemp;
@@ -2978,10 +2992,10 @@ int mhflag;     /* Output in makeheaders format if true */
   /* Generate the defines */
   fprintf(out,"/* \001 */\n");
   fprintf(out,"#define YYCODETYPE %s\n",
-    lemp->nsymbol>250?"int":"unsigned char");  lineno++;
+    minimum_size_type(lemp->nsymbol+5)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
-    lemp->nstate+lemp->nrule>250?"int":"unsigned char");  lineno++;
+    minimum_size_type(lemp->nstate+lemp->nrule+5));  lineno++;
   print_stack_union(out,lemp,&lineno,mhflag);
   if( lemp->stacksize ){
     if( atoi(lemp->stacksize)<=0 ){
@@ -3027,13 +3041,16 @@ int mhflag;     /* Output in makeheaders format if true */
   ** structure:
   **   struct yyActionEntry {
   **       YYCODETYPE            lookahead;
+  **       YYCODETYPE            next;
   **       YYACTIONTYPE          action;
-  **       struct yyActionEntry *next;
   **   }
   **
   ** The entries are grouped into hash tables, one hash table for each
-  ** parser state.  The hash table has a size which is the smallest
-  ** power of two needed to hold all entries.
+  ** parser state.  The hash table has a size which is the number of
+  ** entries in that table.  In case of a collision, the "next" value
+  ** contains one more than the index into the hash table of the next
+  ** entry in the collision chain.  A "next" value of 0 means the end
+  ** of the chain has been reached.
   */
   tablecnt = 0;
 
@@ -3053,8 +3070,7 @@ int mhflag;     /* Output in makeheaders format if true */
         stp->naction++;
       }
     }
-    tablesize = 1;
-    while( tablesize<stp->naction ) tablesize += tablesize;
+    tablesize = stp->naction;
     assert( tablesize<= sizeof(table)/sizeof(table[0]) );
     for(j=0; j<tablesize; j++){
       table[j] = 0;
@@ -3069,7 +3085,7 @@ int mhflag;     /* Output in makeheaders format if true */
       if( ap->sp->index==lemp->nsymbol ){
         stp->tabdfltact = action;
       }else if( action>=0 ){
-        h = ap->sp->index & (tablesize-1);
+        h = ap->sp->index % tablesize;
         ap->collide = table[h];
         table[h] = ap;
       }
@@ -3089,22 +3105,13 @@ int mhflag;     /* Output in makeheaders format if true */
     /* Print the hash table */
     fprintf(out,"/* State %d */\n",stp->index); lineno++;
     for(j=0; j<tablesize; j++){
-      if( table[j]==0 ){
-        fprintf(out,
-          "  {YYNOCODE,0,0}, /* Unused */\n");
-      }else{
-        fprintf(out,"  {%4d,%4d, ",
+      assert( table[j]!=0 );
+      fprintf(out,"  {%4d,%4d,%4d}, /* ",
           table[j]->sp->index,
+          collide[j]+1,
           compute_action(lemp,table[j]));
-        if( collide[j]>=0 ){
-          fprintf(out,"&yyActionTable[%4d] }, /* ",
-            collide[j] + tablecnt);
-        }else{
-          fprintf(out,"0                    }, /* ");
-        }
-        PrintAction(table[j],out,22);
-        fprintf(out," */\n"); 
-      }
+      PrintAction(table[j],out,22);
+      fprintf(out," */\n"); 
       lineno++;
     }
 
@@ -3119,18 +3126,15 @@ int mhflag;     /* Output in makeheaders format if true */
   ** Each entry is an element of the following structure:
   **    struct yyStateEntry {
   **      struct yyActionEntry *hashtbl;
-  **      int mask;
+  **      YYCODETYPE nEntry;
   **      YYACTIONTYPE actionDefault;
   **    }
   */
   for(i=0; i<lemp->nstate; i++){
-    int tablesize;
     stp = lemp->sorted[i];
-    tablesize = 1;
-    while( tablesize<stp->naction ) tablesize += tablesize;
-    fprintf(out,"  { &yyActionTable[%d], %d, %d},\n",
+    fprintf(out,"  { &yyActionTable[%d],%4d,%4d },\n",
       stp->tabstart,
-      tablesize - 1,
+      stp->naction,
       stp->tabdfltact); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);

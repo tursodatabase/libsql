@@ -1,5 +1,5 @@
-C Bug\sfix\sin\slemon:\s3-way\sconflicts\s(SHIFT/REDUCE/REDUCE)\swere\snot\sdetected\sor\nresolved.\s\sThis\sis\snow\sfixed.\s\sAlso,\stable\scompression\sworks\sa\slittle\sbetter.\s(CVS\s388)
-D 2002-02-23T18:45:13
+C Modify\slemon\sto\suse\smuch\sless\smemory\sfor\sits\sparser\stables.\s\sThis\sreduces\nthe\ssize\sof\sthe\slibrary\sby\s50K,\swhich\sis\simportant\sfor\san\sembedded\slibrary.\s(CVS\s389)
+D 2002-02-23T19:39:47
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -99,8 +99,8 @@ F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
 F test/where.test 032d581c3de4893eba33b569e581c46b941bb02a
-F tool/lemon.c 7502222a5d704d9d5d1ac437f73667855d687862
-F tool/lempar.c 9b604e6a8b3d55c0b9cbcb130a7302fb8bafe2b9
+F tool/lemon.c d4b4e127e70633be1bbea49c2ccba5cdb4b77a5f
+F tool/lempar.c 2ff255186fffb38a43a9f7b010e87eee6308edcc
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -125,7 +125,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 39fed2df11382b9855d518502a6c2ca200fa66b8
-R bbf759a9eca350d9e39199c34c6ab1fb
+P 8da0ac9a8bb859377613dd18f4f423eb49c7338b
+R a10568441a27cde980e4058838f315f0
 U drh
-Z 95f9230334dd6740861a9a25c1c709f1
+Z 77767b7d4f55ba40f2761ab26d448e78
