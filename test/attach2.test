@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.17 2004/06/14 09:35:17 danielk1977 Exp $
+# $Id: attach2.test,v 1.18 2004/06/14 09:41:18 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -304,8 +304,6 @@ db close
 db2 close
 file delete -force test2.db
 
-if 0 {
-
 # These tests - attach2-5.* - check that the master journal file is deleted
 # correctly when a multi-file transaction is committed or rolled back.
 #
@@ -342,9 +340,6 @@ do_test attach2-5.5 {
 } {test.db test.db2}
 
 db close
-
-}
-
 
 finish_test
 

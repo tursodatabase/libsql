@@ -1114,8 +1114,6 @@ static int vdbeCommit(sqlite *db){
       }
     }
     sqlite3OsClose(&master);
-    sqliteFree(zMaster);
-    zMaster = 0;
 
     /* Delete the master journal file. This commits the transaction. After
     ** doing this the directory is synced again before any individual
@@ -1123,6 +1121,8 @@ static int vdbeCommit(sqlite *db){
     */
     rc = sqlite3OsDelete(zMaster);
     assert( rc==SQLITE_OK );
+    sqliteFree(zMaster);
+    zMaster = 0;
     rc = sqlite3OsSyncDirectory(zMainFile);
     if( rc!=SQLITE_OK ){
       /* This is not good. The master journal file has been deleted, but

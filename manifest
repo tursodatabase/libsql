@@ -1,5 +1,5 @@
-C Ensure\smaster\sjournal\sfile\sis\sdeleted\swhen\sa\stransaction\sis\scommitted.\s(CVS\s1586)
-D 2004-06-14T09:35:17
+C Bugfix\sfor\sprevious\scheckin.\s(CVS\s1587)
+D 2004-06-14T09:41:18
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -75,12 +75,12 @@ F src/vdbe.c e6b6702fb2c2e2702e312f52c2cc08353c580736
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
-F src/vdbeaux.c 71f78da2fa03782ff1e1e8a6c0cb9515476dcc63
+F src/vdbeaux.c 79b0dc52fc950c6e66c6259504796350ea5c5964
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
 F src/where.c 7fee7aeb9278f27324f228c55ab453b5f183b486
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
-F test/attach2.test e05d729cb0caba21cfd22f31514e4c5a8fb5ca46
+F test/attach2.test 579d6cb94cb944e0d87a2bf8d6696e2036847e6a
 F test/attach3.test 8259ab833b5dcdf4acd75d9653f42f703ce2e013
 F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
 F test/bigfile.test 5b079dfe7354a6c43b92a3ea5e49e4e5d88c789e
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 80c299f8839d920c61854f575498340b28db98d7
-R 2a26bd56f402531968f23465e08b6082
+P cb3cbe00be9a42e974688016a056053cedb55eef
+R 837b917ea55d1682247e8b038a972e40
 U danielk1977
-Z 8b29c6d3832661f7081a99e40be4ebed
+Z 76731c0455af5162b7baf7a2c3fcabe1
