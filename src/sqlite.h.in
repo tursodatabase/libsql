@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.128 2005/01/22 03:03:54 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.129 2005/02/02 01:13:38 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -309,7 +309,7 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** pass the result data pointer to sqlite3_free_table() in order to 
 ** release the memory that was malloc-ed.  Because of the way the 
 ** malloc() happens, the calling function must not try to call 
-** malloc() directly.  Only sqlite3_free_table() is able to release 
+** free() directly.  Only sqlite3_free_table() is able to release 
 ** the memory properly and safely.
 **
 ** The return value of this routine is the same as from sqlite3_exec().
