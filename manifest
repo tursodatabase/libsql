@@ -1,5 +1,5 @@
-C Move\sthe\ssqlite3_exec()\sfunction\sto\slegacy.c.\s(CVS\s1455)
-D 2004-05-25T23:35:18
+C Add\sfile\slegacy.c\swith\sold\sAPIs.\s(CVS\s1456)
+D 2004-05-26T00:01:35
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,6 +36,7 @@ F src/func.c e67a36ae28ee3495d02261f74989a7bb192658fd
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 48bb15bff280767684a0f9ee4ae5973c9504f880
+F src/legacy.c 706484c32e86b95d65aeb31f661c0e4a3649b862
 F src/main.c 843361d68f275bc9dd3494897a105b34ad80e019
 F src/md5.c 32ec4d879e9b34d6a597ae8bda684d8e395003f4
 F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
@@ -202,7 +203,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8f6b20c2938ded7ab9e400494c02370ecf7e9311
-R d7e2aba31e181ad39960b2f1be066f14
+P 9385ad5ca82c82d9ef699102ca0b53661d02a052
+R c7261e32f74427f74b17e0e0b0e6d6f2
 U danielk1977
-Z 651dbe0e74604e5a9ec8c254d6d50b80
+Z db7575fd9fa9fef8fcd2c82fe508a21b
