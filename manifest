@@ -1,5 +1,5 @@
-C Compile-time\soption\sto\slimit\sthe\ssize\sof\sAUTOINCREMENT\srowids\sto\s32-bits.\s(CVS\s2349)
-D 2005-02-17T00:03:07
+C Fix\stypos\sin\sdocumentation\sfor\spragma\sshort_column_names.\sTicket\s#1130.\s(CVS\s2350)
+D 2005-02-18T01:15:23
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -264,7 +264,7 @@ F www/oldnews.tcl 1e4c67ca29b4d9621fca846e75702dd9ae9c9868
 F www/omitted.tcl 9f332aea97b47ec53234f4cd9aa4b4a6da8641ec
 F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
-F www/pragma.tcl f2f507d50755fea3636fbb956048aac4b14ee837
+F www/pragma.tcl a4162c4672b9f9944e10282e893acc06968aac11
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 1f8fb33df0d5bebf29508af763db3ee019c45967
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
@@ -273,7 +273,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P d5eb25d8d0d444ab98b26f7f1ac763919e692806
-R 1437f9ebc073df7aac84814cf952caaa
-U drh
-Z d1a958ef419bfdc9162ae87175aeda5a
+P c5366deaf5beca9c99558c0f375ba73f817acd92
+R b75a67c7136a5c5600c1249b41513257
+U danielk1977
+Z 6cb6073f29d2f0c0fa8b11d17ae22e19
