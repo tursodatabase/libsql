@@ -302,5 +302,7 @@ int sqlite3VdbeByteSwap(int);
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
 
+int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
+
 
 

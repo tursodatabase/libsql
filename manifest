@@ -1,5 +1,5 @@
-C More\sbtree.c\sbug\sfixing.\s\sIt's\sgetting\scloser\sbut\sstill\snot\sthere\syet.\nMove\sobsolete\stest\sscripts\sinto\sthe\sattic.\s(CVS\s1331)
-D 2004-05-09T20:40:11
+C Add\sa\stemporary\ssqlite2BtreeKeyCompare()\sfunction\sto\shelp\sget\nregression\stests\spassing\sagain.\s(CVS\s1332)
+D 2004-05-09T23:23:57
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c fa9a58234406d84eeb900517d0c0adc4b2da051a
 F src/auth.c a2a46e3ed7799134cf3d2dd5ae6650115f26b653
 F src/btree.c b4c04b7867ccabaa1b04d5691a1bc6d0a27e6c6b
-F src/btree.h 825034a68947baf99507f04f318f417013dcd3a3
+F src/btree.h 7c3939a2e5f782c1ebac3bf43c02a16febad6df1
 F src/btree_rb.c 47e5b5ec90846af392b5668b34648198ba459561
 F src/build.c 21b6645c966970dac51bcccfa8650403a3f56210
 F src/copy.c 3c33157f6b4919d6851602b78008c67d466cdadd
@@ -63,10 +63,10 @@ F src/update.c 475465fc0582160dadf5455b05235cb13c9e21f9
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 0c31a53b848648271d0910c2604b4d8ae516ebb1
 F src/vacuum.c 91ba5a23eca2d9a8a11191cef577d417f9318976
-F src/vdbe.c 9b089e0b20e7ee4dea416eb86520dffa0c04f02a
+F src/vdbe.c bf7d4826cbf18c49b7ac1a5ddbc70db65ac35487
 F src/vdbe.h 2dc4d1161b64f5684faa6a2d292e318a185ecb2e
-F src/vdbeInt.h 4563dc1c9f05a842cbbc7759e4cc7f3779f53547
-F src/vdbeaux.c 81d95af2651777f7960c2cca18613aa3aa95403e
+F src/vdbeInt.h 19926d40956eea309f58bc569f9ae02f62350db2
+F src/vdbeaux.c 2789bdd1f9b510b35b0102174a5b73b8267c4f71
 F src/where.c 6db0291280f2c642bae2c69a70750325b53717a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test ba8261d38da6b6a7d4f78ec543c548c4418582ef
@@ -187,7 +187,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9f1caa530e69aaf202debac36b6a46d707f362d7
-R 18442ae74dd8b81b683a8a5bfb177026
-U drh
-Z 472c41ca52356c30cd6f2f2fdbf61b10
+P 9379c7c9cf8b0770a0c8d1feb5ffdba342173589
+R f3af99fed24e4ae37a57f15e0ab75548
+U danielk1977
+Z d8cf5004a19237d514fe82cdbc9ee318
