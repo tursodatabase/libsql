@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.14 2005/01/29 08:32:46 danielk1977 Exp $
+# $Id: misc4.test,v 1.15 2005/01/30 09:17:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -159,4 +159,19 @@ ifcapable view {
   } {a 1 b 2 a:1 1 c 3}
 }
 
+# Ticket #1086
+do_test misc4-6.1 {
+  execsql {
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(1);
+    CREATE TABLE def(d, e, f, PRIMARY KEY(d, e));
+  }
+} {}
+do_test misc4-6.2 {
+  execsql {
+    SELECT a FROM abc LEFT JOIN def ON (abc.a=def.d);
+  }
+} {1}
+
 finish_test
+

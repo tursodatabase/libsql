@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.132 2005/01/29 08:32:45 danielk1977 Exp $
+** $Id: where.c,v 1.133 2005/01/30 09:17:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1428,6 +1428,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         }else if( pOp->opcode==OP_Recno ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRecno;
+        }else if( pOp->opcode==OP_NullRow ){
+          pOp->opcode = OP_Noop;
         }
       }
     }
