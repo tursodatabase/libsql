@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.22 2001/09/19 13:22:40 drh Exp $
+** @(#) $Id: pager.c,v 1.23 2001/09/19 13:58:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -636,12 +636,12 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* If a journal file exists, try to play it back.
     */
     if( sqliteOsFileExists(pPager->zJournal) ){
-       int rc, readOnly;
+       int rc;
 
        /* Open the journal for exclusive access.  Return SQLITE_BUSY if
        ** we cannot get exclusive access to the journal file
        */
-       rc = sqliteOsOpenReadWrite(pPager->zJournal, &pPager->jfd, &readOnly);
+       rc = sqliteOsOpenReadOnly(pPager->zJournal, &pPager->jfd);
        if( rc==SQLITE_OK ){
          pPager->journalOpen = 1;
        }

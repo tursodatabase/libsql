@@ -40,6 +40,7 @@ int sqliteOsDelete(const char*);
 int sqliteOsFileExists(const char*);
 int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
 int sqliteOsOpenExclusive(const char*, OsFile*);
+int sqliteOsOpenReadOnly(const char*, OsFile*);
 int sqliteOsTempFileName(char*);
 int sqliteOsClose(OsFile);
 int sqliteOsRead(OsFile, void*, int amt);

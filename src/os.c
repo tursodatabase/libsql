@@ -28,9 +28,9 @@
 # define OS_WIN 0
 #endif
 #if OS_UNIX
+# include <unistd.h>
 # include <fcntl.h>
 # include <sys/stat.h>
-# include <unistd.h>
 # include <time.h>
 #endif
 #if OS_WIN
@@ -172,6 +172,39 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *pResult){
      0,
      NULL,
      CREATE_ALWAYS,
+     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
+     NULL
+  );
+  if( h==INVALID_HANDLE_VALUE ){
+    return SQLITE_CANTOPEN;
+  }
+  *pResult = h;
+  return SQLITE_OK;
+#endif
+}
+
+/*
+** Attempt to open a new file for read-only access.
+**
+** On success, write the file handle into *pResult and return SQLITE_OK.
+**
+** On failure, return SQLITE_CANTOPEN.
+*/
+int sqliteOsOpenReadOnly(const char *zFilename, OsFile *pResult){
+#if OS_UNIX
+  int fd = open(zFilename, O_RDONLY);
+  if( fd<0 ){
+    return SQLITE_CANTOPEN;
+  }
+  *pResult = fd;
+  return SQLITE_OK;
+#endif
+#if OS_WIN
+  HANDLE h = CreateFile(zFilename,
+     GENERIC_READ,
+     0,
+     NULL,
+     OPEN_EXISTING,
      FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
      NULL
   );
@@ -357,15 +390,10 @@ int sqliteOsLock(OsFile id, int wrlock){
 #if OS_UNIX
   int rc;
   struct flock lock;
-memset(&lock, 0, sizeof(lock));
   lock.l_type = wrlock ? F_WRLCK : F_RDLCK;
   lock.l_whence = SEEK_SET;
-  lock.l_start = 0L;
-  lock.l_len = 1024L;
-printf("LOCK %s %d\n",wrlock?"WRITE":"READ",id);
+  lock.l_start = lock.l_len = 0L;
   rc = fcntl(id, F_SETLK, &lock);
-fcntl(id, F_GETLK, &lock);
-printf("rc=%d why=%d\n",rc,lock.l_type);
   return rc==0 ? SQLITE_OK : SQLITE_BUSY;
 #endif
 #if OS_WIN
@@ -385,9 +413,7 @@ int sqliteOsUnlock(OsFile id){
   struct flock lock;
   lock.l_type = F_UNLCK;
   lock.l_whence = SEEK_SET;
-  lock.l_start = 0L;
-  lock.l_len = 1L;
-printf("UNLOCK %d\n",id);
+  lock.l_start = lock.l_len = 0L;
   rc = fcntl(id, F_SETLK, &lock);
   return rc==0 ? SQLITE_OK : SQLITE_IOERR;
 #endif

@@ -1,5 +1,5 @@
-C Trying\sto\sget\sthe\sOS\sabstraction\slayer\sto\swork.\s(CVS\s256)
-D 2001-09-19T13:22:39
+C Add\sthe\sOpenReadOnly()\sOS\smethod\sto\sfix\sa\sbug\sin\sthe\spager.\s(CVS\s257)
+D 2001-09-19T13:58:44
 F Makefile.in 1d9592c4aeedd3643b2e1dfa037ce5faf54805a3
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 3861a21803fcd9eb92a403027b0da2bb7add4de1
@@ -16,9 +16,9 @@ F src/expr.c 343a515a4abaf60e9e26c7412aa8c43fd3eae97d
 F src/insert.c b34860ea58525754f18bde652f74161295ca2455
 F src/main.c 5e5794eea3316dd3a63c112ccdcc997b9118f345
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c 6ed6f61915807b1b4578398b4e797e55b12db4ab
-F src/os.h 2528414d4d441e86cf458b7520ed7f629d446d70
-F src/pager.c 28c8a641601b81a11454de3015d3d796e31ea182
+F src/os.c 43735db052288f8bfee56e09dfa293c202ff93a3
+F src/os.h 6d627d8629a204c474cf13aa098654658378a81f
+F src/pager.c a77c7fd3f33c0c6834a042b9b0d4a8128553532e
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 2bcf47bb8e6afd8bc10aebd555fa07b73905bee4
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
@@ -96,7 +96,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 22132ce18cad31482cdb9b380cedc3f53bc532b8
-R f2b9b288263979b8bf39b2aa8c086069
+P abff526d005b3b46904de091753cc79548739ad8
+R 4864863de07f710a3f6b561c261f5e5d
 U drh
-Z a1f7206e19ddb2d1a7062a107b29fcdc
+Z e4c492c8b9528b70a7181a2203d31493
