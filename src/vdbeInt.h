@@ -219,7 +219,7 @@ struct Keylist {
   int nUsed;        /* Next unwritten slot in aKey[] */
   int nRead;        /* Next unread slot in aKey[] */
   Keylist *pNext;   /* Next block of keys */
-  int aKey[1];      /* One or more keys.  Extra space allocated as needed */
+  i64 aKey[1];      /* One or more keys.  Extra space allocated as needed */
 };
 
 /*
