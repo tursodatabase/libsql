@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sLEFT\sOUTER\sJOIN\sincluding\sthe\sexpanded\sSQL92\sjoin\nsyntax.\sThe\sbasic\sfunctionality\sis\sthere\sbut\sthere\sis\sstill\sa\slot\sof\stesting\nto\sdo.\s(CVS\s587)
-D 2002-05-24T20:31:37
+C Additional\stesting\sof\sLEFT\sOUTER\sJOIN.\s(CVS\s588)
+D 2002-05-25T00:18:21
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,11 +37,11 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y c681da701bf142967325b8791f22418e2d81552d
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 8f0ec9de36a22d167402af6ff8936e142ada4a11
+F src/select.c bbf00ee2b4412c7249baf0ba737ba6a93fe82e78
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 5b71407c8546514168ae6984c18c5d035a2643ce
+F src/sqliteInt.h 9d565908e2ca53c54d1a0ae445cba039ee018aba
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
@@ -71,7 +71,7 @@ F test/insert.test 58d44c19b3557f67f4aeb5110ed9ef02038c3684
 F test/insert2.test eb8481878a7f52ccb4e3346f87550f5afdd77f76
 F test/intpkey.test 31b5f28b2c44273e6695cf36ab2e4133aee7753c
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
-F test/join.test 905f4b13f8505f6b5b25af82ef11180860e6b180
+F test/join.test ea6a4097e4fcebbb16eac7ec819569e759336a74
 F test/limit.test 6f98bcefc92209103bb3764c81975a6ec21d6702
 F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e238643efdbe1394c7ff85e34e486f7c6082b6cc
-R b59d515c126e5f1a822d5f6777b2906b
+P 99bd1f5b9a1a20bfeefe15c00d96a34a5f40923e
+R 289d0473700b92bde61e98c6617d8be0
 U drh
-Z 38ee23869a9185b6bcb4ab87628c02b5
+Z f910247eaeb3d662acb5a7b6aeac9b33

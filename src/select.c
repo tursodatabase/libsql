@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.84 2002/05/24 20:31:37 drh Exp $
+** $Id: select.c,v 1.85 2002/05/25 00:18:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,9 +81,9 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     int code;
   } keywords[] = {
     { "natural", 7, JT_NATURAL },
-    { "left",    4, JT_LEFT },
-    { "right",   5, JT_RIGHT },
-    { "full",    4, JT_FULL },
+    { "left",    4, JT_LEFT|JT_OUTER },
+    { "right",   5, JT_RIGHT|JT_OUTER },
+    { "full",    4, JT_LEFT|JT_RIGHT|JT_OUTER },
     { "outer",   5, JT_OUTER },
     { "inner",   5, JT_INNER },
     { "cross",   5, JT_INNER },
@@ -92,7 +92,7 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   apAll[0] = pA;
   apAll[1] = pB;
   apAll[2] = pC;
-  for(i=0; apAll[i]; i++){
+  for(i=0; i<3 && apAll[i]; i++){
     p = apAll[i];
     for(j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++){
       if( p->n==keywords[j].nChar 
@@ -108,8 +108,7 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   }
   if(
      (jointype & (JT_INNER|JT_OUTER))==(JT_INNER|JT_OUTER) ||
-     (jointype & JT_ERROR)!=0 ||
-     (jointype & JT_RIGHT)==JT_RIGHT
+     (jointype & JT_ERROR)!=0
   ){
     static Token dummy = { 0, 0 };
     char *zSp1 = " ", *zSp2 = " ";
@@ -117,6 +116,11 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     if( pC==0 ){ pC = &dummy; zSp2 = 0; }
     sqliteSetNString(&pParse->zErrMsg, "unknown or unsupported join type: ", 0,
        pA->z, pA->n, zSp1, 1, pB->z, pB->n, zSp2, 1, pC->z, pC->n, 0);
+    pParse->nErr++;
+    jointype = JT_INNER;
+  }else if( jointype & JT_RIGHT ){
+    sqliteSetString(&pParse->zErrMsg, 
+      "RIGHT and FULL OUTER JOINs are not currently supported", 0);
     pParse->nErr++;
     jointype = JT_INNER;
   }
