@@ -1,5 +1,5 @@
-C Do\snot\srecord\sthe\sinserted\srowid\son\swhen\sdoing\san\sINSERT\swithin\sa\strigger.\nTicket\s#290.\s(CVS\s906)
-D 2003-04-15T14:01:43
+C Added\s\sbtree_rb.c\s(CVS\s907)
+D 2003-04-15T17:22:30
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,6 +23,7 @@ F src/attach.c 8c98e2c0ca434b94deca1b8694c72bd0303a9a87
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 9949031b6087e9d1b43b359b84c68a491086984f
 F src/btree.h 5cb871546bd6fa58396a6f033e2b29b388241e1b
+F src/btree_rb.c 85727e7ba6277a55385bf86ff5da6d1093dd8978
 F src/build.c daed1dacdb70e5d4def9df2e34a1cabeeb8467c9
 F src/copy.c ddd204d5dddac09d71a07f4ceded4c9926d5512b
 F src/delete.c 58d698779a6b7f819718ecd45b310a9de8537088
@@ -161,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7902e4778ec86e25ad949ae7a6d55b63ac0e85f3
-R dd4a1ed15ab6eb4c2551ae58dad32820
-U drh
-Z 207b6a42d8bab1444378577acd311c3c
+P 96a717661a3b7108fe0cacb588d81fd8e91eb640
+R cbe58bcf88d6fb97e9a813f970d2df5a
+U paul
+Z df689c3d6a38a6ae7133718deb76cd51
