@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.32 2004/09/13 13:46:01 drh Exp $
+# $Id: tclsqlite.test,v 1.33 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -170,24 +170,29 @@ do_test tcl-3.4 {
   set rc [catch {db onecolumn {SELECT bogus}} errmsg]
   lappend rc $errmsg
 } {1 {no such column: bogus}}
-do_test tcl-3.5 {
-  set b 50
-  set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
-  lappend rc $msg
-} {0 41}
-do_test tcl-3.6 {
-  set b 500
-  set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
-  lappend rc $msg
-} {0 {}}
-do_test tcl-3.7 {
-  set b 500
-  set rc [catch {db one {
-    INSERT INTO t1 VALUES(99,510);
-    SELECT * FROM t1 WHERE b>$b
-  }} msg]
-  lappend rc $msg
-} {0 99}
+ifcapable {tclvar} {
+  do_test tcl-3.5 {
+    set b 50
+    set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
+    lappend rc $msg
+  } {0 41}
+  do_test tcl-3.6 {
+    set b 500
+    set rc [catch {db one {SELECT * FROM t1 WHERE b>$b}} msg]
+    lappend rc $msg
+  } {0 {}}
+  do_test tcl-3.7 {
+    set b 500
+    set rc [catch {db one {
+      INSERT INTO t1 VALUES(99,510);
+      SELECT * FROM t1 WHERE b>$b
+    }} msg]
+    lappend rc $msg
+  } {0 99}
+}
+ifcapable {!tclvar} {
+   execsql {INSERT INTO t1 VALUES(99,510)}
+}
 
 # Turn the busy handler on and off
 #
@@ -203,40 +208,42 @@ do_test tcl-4.2 {
   db busy
 } {}
 
-# Parsing of TCL variable names within SQL into bound parameters.
-#
-do_test tcl-5.1 {
-  execsql {CREATE TABLE t3(a,b,c)}
-  catch {unset x}
-  set x(1) 5
-  set x(2) 7
-  execsql {
-    INSERT INTO t3 VALUES($::x(1),$::x(2),$::x(3));
-    SELECT * FROM t3
-  }
-} {5 7 {}}
-do_test tcl-5.2 {
-  execsql {
-    SELECT typeof(a), typeof(b), typeof(c) FROM t3
-  }
-} {text text null}
-do_test tcl-5.3 {
-  catch {unset x}
-  set x [binary format h12 686900686f00]
-  execsql {
-    UPDATE t3 SET a=$::x;
-  }
-  db eval {
-    SELECT a FROM t3
-  } break
-  binary scan $a h12 adata
-  set adata
-} {686900686f00}
-do_test tcl-5.4 {
-  execsql {
-    SELECT typeof(a), typeof(b), typeof(c) FROM t3
-  }
-} {blob text null}
+ifcapable {tclvar} {
+  # Parsing of TCL variable names within SQL into bound parameters.
+  #
+  do_test tcl-5.1 {
+    execsql {CREATE TABLE t3(a,b,c)}
+    catch {unset x}
+    set x(1) 5
+    set x(2) 7
+    execsql {
+      INSERT INTO t3 VALUES($::x(1),$::x(2),$::x(3));
+      SELECT * FROM t3
+    }
+  } {5 7 {}}
+  do_test tcl-5.2 {
+    execsql {
+      SELECT typeof(a), typeof(b), typeof(c) FROM t3
+    }
+  } {text text null}
+  do_test tcl-5.3 {
+    catch {unset x}
+    set x [binary format h12 686900686f00]
+    execsql {
+      UPDATE t3 SET a=$::x;
+    }
+    db eval {
+      SELECT a FROM t3
+    } break
+    binary scan $a h12 adata
+    set adata
+  } {686900686f00}
+  do_test tcl-5.4 {
+    execsql {
+      SELECT typeof(a), typeof(b), typeof(c) FROM t3
+    }
+  } {blob text null}
+}
 
 # Operation of "break" and "continue" within row scripts
 #

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.421 2004/11/03 13:59:06 drh Exp $
+** $Id: vdbe.c,v 1.422 2004/11/03 16:27:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -68,6 +68,15 @@ int sqlite3_search_count = 0;
 ** in an ordinary build.
 */
 int sqlite3_interrupt_count = 0;
+
+/*
+** The next global variable is incremented each type the OP_Sort opcode
+** is executed.  The test procedures use this information to make sure that
+** sorting is occurring or not occuring at appropriate times.   This variable
+** has no function other than to help verify the correct operation of the
+** library.
+*/
+int sqlite3_sort_count = 0;
 
 /*
 ** Release the memory associated with the given stack level.  This
@@ -3951,6 +3960,7 @@ case OP_Sort: {
   KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
   Sorter *pElem;
   Sorter *apSorter[NSORT];
+  sqlite3_sort_count++;
   pKeyInfo->enc = p->db->enc;
   for(i=0; i<NSORT; i++){
     apSorter[i] = 0;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.29 2004/07/24 03:30:49 drh Exp $
+# $Id: table.test,v 1.30 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -254,7 +254,9 @@ do_test table-5.2 {
 # Make sure an EXPLAIN does not really create a new table
 #
 do_test table-5.3 {
-  execsql {EXPLAIN CREATE TABLE test1(f1 int)}
+  ifcapable {explain} {
+    execsql {EXPLAIN CREATE TABLE test1(f1 int)}
+  }
   execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
@@ -262,7 +264,9 @@ do_test table-5.3 {
 #
 do_test table-5.4 {
   execsql {CREATE TABLE test1(f1 int)}
-  execsql {EXPLAIN DROP TABLE test1}
+  ifcapable {explain} {
+    execsql {EXPLAIN DROP TABLE test1}
+  }
   execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {test1}
 
@@ -281,7 +285,7 @@ do_test table-7.1 {
     CREATE TABLE weird(
       desc text,
       asc text,
-      explain int,
+      key int,
       [14_vac] boolean,
       fuzzy_dog_12 varchar(10),
       begin blob,
@@ -300,7 +304,7 @@ do_test table-7.3 {
   execsql2 {
     SELECT * FROM weird;
   }
-} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
+} {desc a asc b key 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
 
 # Try out the CREATE TABLE AS syntax
 #
@@ -310,7 +314,7 @@ breakpoint
     CREATE TABLE t2 AS SELECT * FROM weird;
     SELECT * FROM t2;
   }
-} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
+} {desc a asc b key 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
 do_test table-8.1.1 {
   execsql {
     SELECT sql FROM sqlite_master WHERE name='t2';
@@ -318,7 +322,7 @@ do_test table-8.1.1 {
 } {{CREATE TABLE t2(
   "desc" text,
   "asc" text,
-  "explain" int,
+  "key" int,
   "14_vac" boolean,
   fuzzy_dog_12 varchar(10),
   "begin" blob,
@@ -363,7 +367,7 @@ do_test table-8.6 {
   execsql2 {
     SELECT * FROM t2;
   }
-} {desc a asc b explain 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
+} {desc a asc b key 9 14_vac 0 fuzzy_dog_12 xyz begin hi end y'all}
 do_test table-8.7 {
   catchsql {
     SELECT * FROM t5;
@@ -385,6 +389,7 @@ do_test table-9.1 {
 
 # Check the foreign key syntax.
 #
+ifcapable {foreignkey} {
 do_test table-10.1 {
   catchsql {
     CREATE TABLE t6(a REFERENCES t4(a) NOT NULL);
@@ -476,7 +481,7 @@ do_test table-10.13 {
     );
   }
 } {1 {unknown column "x" in foreign key definition}}
-
+} ;# endif foreignkey
 
 # Test for the "typeof" function. More tests for the
 # typeof() function are found in bind.test and types.test.

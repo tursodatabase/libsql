@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.19 2004/09/02 14:57:09 drh Exp $
+# $Id: capi2.test,v 1.20 2004/11/03 16:27:02 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -594,10 +594,12 @@ do_test capi2-7.11a {
   execsql {SELECT count(*) FROM t1}
 } {4}
 
-do_test capi2-7.12 {
-  set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
-  lindex $x 0
-} {0}
+ifcapable {explain} {
+  do_test capi2-7.12 {
+    set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
+    lindex $x 0
+  } {0}
+}
 
 # Ticket #261 - make sure we can finalize before the end of a query.
 #

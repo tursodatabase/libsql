@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.12 2004/08/20 18:34:20 drh Exp $
+# $Id: misc3.test,v 1.13 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -236,20 +236,22 @@ do_test misc4-5.2 {
   }
 } {1 one cat 2 two {} 3 three {} 4 four dog}
 
-# Ticket #626:  make sure EXPLAIN prevents BEGIN and COMMIT from working.
-#
-do_test misc3-6.1 {
-  execsql {EXPLAIN BEGIN}
-  catchsql {BEGIN}
-} {0 {}}
-do_test misc3-6.2 {
-  execsql {EXPLAIN COMMIT}
-  catchsql {COMMIT}
-} {0 {}}
-do_test misc3-6.3 {
-  execsql {BEGIN; EXPLAIN ROLLBACK}
-  catchsql {ROLLBACK}
-} {0 {}}
+ifcapable {explain} {
+  # Ticket #626:  make sure EXPLAIN prevents BEGIN and COMMIT from working.
+  #
+  do_test misc3-6.1 {
+    execsql {EXPLAIN BEGIN}
+    catchsql {BEGIN}
+  } {0 {}}
+  do_test misc3-6.2 {
+    execsql {EXPLAIN COMMIT}
+    catchsql {COMMIT}
+  } {0 {}}
+  do_test misc3-6.3 {
+    execsql {BEGIN; EXPLAIN ROLLBACK}
+    catchsql {ROLLBACK}
+  } {0 {}}
+}
 
 # Ticket #640:  vdbe stack overflow with a LIMIT clause on a SELECT inside
 # of a trigger.

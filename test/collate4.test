@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate4.test,v 1.3 2004/07/18 21:33:02 drh Exp $
+# $Id: collate4.test,v 1.4 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,9 +35,9 @@ proc count sql {
 # opcode it appends "sort"
 #
 proc cksort {sql} {
+  set ::sqlite_sort_count 0
   set data [execsql $sql]
-  set prog [execsql "EXPLAIN $sql"]
-  if {[regexp Sort $prog]} {set x sort} {set x nosort}
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
   return $data
 }

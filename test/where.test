@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.22 2004/08/20 18:34:20 drh Exp $
+# $Id: where.test,v 1.23 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -356,15 +356,17 @@ do_test where-5.14 {
   }
 } {2 1 9 7}
 
-# This procedure executes the SQL.  Then it checks the generated program
-# for the SQL and appends a "nosort" to the result if the program contains the
-# SortCallback opcode.  If the program does not contain the SortCallback
-# opcode it appends "sort"
+# This procedure executes the SQL.  Then it checks to see if the OP_Sort
+# opcode was executed.  If an OP_Sort did occur, then "sort" is appended
+# to the result.  If no OP_Sort happened, then "nosort" is appended.
+#
+# This procedure is used to check to make sure sorting is or is not
+# occurring as expected.
 #
 proc cksort {sql} {
+  set ::sqlite_sort_count 0
   set data [execsql $sql]
-  set prog [execsql "EXPLAIN $sql"]
-  if {[regexp Sort $prog]} {set x sort} {set x nosort}
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
   return $data
 }
@@ -501,17 +503,6 @@ do_test where-6.16 {
     SELECT t3.a, t1.x FROM t3, t1 WHERE t3.a=t1.w ORDER BY t1.x, t3.a LIMIT 3
   }
 } {1 0 2 1 3 1 sort}
-#### Version 3 does not work this way:
-#do_test where-6.17 {
-#  cksort {
-#    SELECT y FROM t1 ORDER BY w COLLATE text LIMIT 3;
-#  }
-#} {4 121 10201 sort}
-#do_test where-6.18 {
-#  cksort {
-#    SELECT y FROM t1 ORDER BY w COLLATE numeric LIMIT 3;
-#  }
-#} {4 9 16 sort}
 do_test where-6.19 {
   cksort {
     SELECT y FROM t1 ORDER BY w LIMIT 3;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.18 2004/07/20 00:20:23 drh Exp $
+# $Id: view.test,v 1.19 2004/11/03 16:27:02 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -203,7 +203,10 @@ do_test view-5.2 {
 } {1 22 4 55}
 
 # Verify that the view v5 gets flattened.  see sqliteFlattenSubquery().
+# This will only work if EXPLAIN is enabled.
 # Ticket #272
+#
+ifcapable {explain} {
 do_test view-5.3 {
   lsearch [execsql {
     EXPLAIN SELECT * FROM v5;
@@ -239,6 +242,7 @@ do_test view-5.9 {
     EXPLAIN SELECT * FROM t1 AS a, v5 AS b, t2 AS c WHERE a.x=b.v AND b.w=c.y;
   }] OpenTemp
 } {-1}
+} ;# endif explain
 
 do_test view-6.1 {
   execsql {

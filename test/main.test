@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.16 2004/08/20 18:34:20 drh Exp $
+# $Id: main.test,v 1.17 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,13 +151,15 @@ do_test main-1.27.2 {
        UPDATE pqr SET a=5;
   }
 } {0}
-do_test main-1.27.3 {
-  db complete {
-    /* */ EXPLAIN -- A comment
-    CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
-       UPDATE pqr SET a=5;
-  }
-} {0}
+ifcapable {explain} {
+  do_test main-1.27.3 {
+    db complete {
+      /* */ EXPLAIN -- A comment
+      CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
+         UPDATE pqr SET a=5;
+    }
+  } {0}
+}
 do_test main-1.27.4 {
   db complete {
     BOGUS token
@@ -165,13 +167,15 @@ do_test main-1.27.4 {
        UPDATE pqr SET a=5;
   }
 } {1}
-do_test main-1.27.5 {
-  db complete {
-    EXPLAIN 
-    CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
-       UPDATE pqr SET a=5;
-  }
-} {0}
+ifcapable {explain} {
+  do_test main-1.27.5 {
+    db complete {
+      EXPLAIN 
+      CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
+         UPDATE pqr SET a=5;
+    }
+  } {0}
+}
 do_test main-1.28 {
   db complete {
     CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.18 2004/06/19 00:16:31 drh Exp $
+# $Id: insert.test,v 1.19 2004/11/03 16:27:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -222,13 +222,15 @@ do_test insert-5.2 {
     SELECT * FROM t4;
   }
 } {1 2}
-do_test insert-5.3 {
-  # verify that a temporary table is used to copy t4 to t4
-  set x [execsql {
-    EXPLAIN INSERT INTO t4 SELECT x+2 FROM t4;
-  }]
-  expr {[lsearch $x OpenTemp]>0}
-} {1}
+ifcapable {explain} {
+  do_test insert-5.3 {
+    # verify that a temporary table is used to copy t4 to t4
+    set x [execsql {
+      EXPLAIN INSERT INTO t4 SELECT x+2 FROM t4;
+    }]
+    expr {[lsearch $x OpenTemp]>0}
+  } {1}
+}
 
 do_test insert-5.4 {
   # Verify that table "test1" begins on page 3.  This should be the same
@@ -254,13 +256,15 @@ do_test insert-5.6 {
     SELECT * FROM t4
   }
 } {1 2 8}
-do_test insert-5.7 {
-  # verify that no temporary table is used to copy test1 to t4
-  set x [execsql {
-    EXPLAIN INSERT INTO t4 SELECT one FROM test1;
-  }]
-  expr {[lsearch $x OpenTemp]>0}
-} {0}
+ifcapable {explain} {
+  do_test insert-5.7 {
+    # verify that no temporary table is used to copy test1 to t4
+    set x [execsql {
+      EXPLAIN INSERT INTO t4 SELECT one FROM test1;
+    }]
+    expr {[lsearch $x OpenTemp]>0}
+  } {0}
+}
 
 # Ticket #334:  REPLACE statement corrupting indices.
 #

@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable {!foreignkey} {
+  finish_test
+  return
+}
+
 # Create a table and some data to work with.
 #
 do_test fkey1-1.0 {
