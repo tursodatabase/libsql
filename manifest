@@ -1,5 +1,5 @@
-C Version\s2.8.0\s(CVS\s870)
-D 2003-02-16T22:49:48
+C Fix\sthe\sparsing\sof\sthe\sLIMIT\sclause\swhen\sthe\slimit\sand\soffset\sare\sseparated\nby\sa\scomma.\s\sThe\soffset\scomes\sbefore\sthe\slimit\sin\sthat\scase.\sTicket\s#245.\s(CVS\s872)
+D 2003-02-20T00:44:52
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/os.c b12203e1cc4f3be170d312f624df8cc6e0d1e4d2
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
 F src/pager.c 47509f6b2dbf1cba46e52602c1dacf04f9d66e10
 F src/pager.h e5b8e301a732007766dc04880c764d7ee1aa34dd
-F src/parse.y cdaed5009423d851708848bd279147c268e6022e
+F src/parse.y 4c4b2ff3d20d4a2afb51f05ac18edde20a173abe
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d12d4c12d6536deccdede90b482d24f0590f5dc8
@@ -79,7 +79,7 @@ F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test e0e283b0cbeaa97eeee183e1cdb91fa73d720866
 F test/ioerr.test 45c8feebe608d7f456fea27ff27a0aaaf0b9c636
 F test/join.test 178b25dc3c5be6cbdd195b904e66bee62475d0bf
-F test/limit.test 9f26f874bc765df5b3f5c92d26d1b12eac6d4cf9
+F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8192c937d524fef703d7ba2eb608c3d74e20440f
-R b51128b47f94629659cb0a963e38da71
+P 5db98b3f4048fc8cd28d8fd225f2b0221ccf1d17
+R 8776043362c8c9062e2ce89efb27c5e7
 U drh
-Z 991ba419e8e6de043b838f542dfeabad
+Z 7efa93af63d1c797dd26115959a7737f
