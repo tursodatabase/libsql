@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.68 2003/04/03 19:35:02 drh Exp $
+** $Id: shell.c,v 1.69 2003/04/17 02:54:14 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -71,6 +71,11 @@ static char *Argv0;
 */
 static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
 static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
+
+/*
+** Determines if a string is a number of not.
+*/
+extern int sqliteIsNumber(const char*);
 
 /*
 ** This routine reads a line of text from standard input, stores
@@ -169,9 +174,11 @@ struct callback_data {
   char separator[20];    /* Separator character for MODE_List */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
-  char nullvalue[20];    /* The text to print when a NULL comes back from the database */
+  char nullvalue[20];    /* The text to print when a NULL comes back from
+                         ** the database */
   struct previous_mode_data explainPrev;
-                         /* Holds the mode information just before .explain ON */
+                         /* Holds the mode information just before
+                         ** .explain ON */
   char outfile[FILENAME_MAX];
                          /* Filename for *out */
 };
@@ -200,31 +207,6 @@ char *modeDescr[MODE_NUM_OF] = {
 ** Number of elements in an array
 */
 #define ArraySize(X)  (sizeof(X)/sizeof(X[0]))
-
-/*
-** Return TRUE if the string supplied is a number of some kinds.
-*/
-static int is_numeric(const char *z){
-  int seen_digit = 0;
-  if( *z=='-' || *z=='+' ){
-    z++;
-  }
-  while( isdigit(*z) ){
-    seen_digit = 1;
-    z++;
-  }
-  if( seen_digit && *z=='.' ){
-    z++;
-    while( isdigit(*z) ){ z++; }
-  }
-  if( seen_digit && (*z=='e' || *z=='E')
-   && (isdigit(z[1]) || ((z[1]=='-' || z[1]=='+') && isdigit(z[2])))
-  ){
-    z+=2;
-    while( isdigit(*z) ){ z++; }
-  }
-  return seen_digit && *z==0;
-}
 
 /*
 ** Output the given string as a quoted string using SQL quoting conventions.
@@ -403,7 +385,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         char *zSep = i>0 ? ",": "";
         if( azArg[i]==0 ){
           fprintf(p->out,"%sNULL",zSep);
-        }else if( is_numeric(azArg[i]) ){
+        }else if( sqliteIsNumber(azArg[i]) ){
           fprintf(p->out,"%s%s",zSep, azArg[i]);
         }else{
           if( zSep[0] ) fprintf(p->out,"%s",zSep);

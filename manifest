@@ -1,5 +1,5 @@
-C Rollback\sif\sa\scommit\shook\sfails.\s(CVS\s912)
-D 2003-04-16T21:03:14
+C Change\sthe\sshell\sto\suse\sthe\ssqliteIsNumber()\sroutine\sfor\sdetermining\sif\nvalues\sare\snumeric.\s\sModified\sos.c\sso\sthat\sit\sshould\snow\swork\swith\sDJGPP\s-\nthough\sI\shave\sno\sway\sof\stesting\sthis.\s(CVS\s913)
+D 2003-04-17T02:54:14
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 45d27e3e8447bff4025db2f0dc3bb4e318e602f4
 F src/main.c e48b3b019cf34503655e9737bcb859443ab6718c
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c c33ebb320921b8df6d09ea19fe846348df86a0c9
+F src/os.c 7274951ed6894f383cb889342267ded07caf339b
 F src/os.h aa52f0c9da321ff6134d19f2ca959e18e33615d0
 F src/pager.c df4c81350cbd80c1ab48341ae0768ba78d99ad49
 F src/pager.h e3702f7d384921f6cd5ce0b3ed589185433e9f6c
@@ -44,7 +44,7 @@ F src/pragma.c aef327bd597e15f0d31f45b042bd2797cca65039
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 14e2e2a512f4edfc75fb310ebcb502ff3ee87402
-F src/shell.c 97f397c0c108176ccbc52ea5b8ec688f995eba7a
+F src/shell.c 6980eadda7506f741ab42fd9d32613e2fdabafa9
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f49c2cdec7d24cb03e496a1ca519e16306495ee1
 F src/sqliteInt.h b3d4e485ab646970e8b0d268771486683aceab12
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f04bd43254b3ba3fccc842214115d4c298e28138
-R ba05498314c5f31c57ab60797b0329b3
+P 5cea7554ae9d36434cd7261b5b40f3d467b836f1
+R 02865a72582f56772c59d063e3ecf5aa
 U drh
-Z a431049f257620a5d96f06bc4fc52099
+Z e1cf076e54a9004f700a5082c4a00108

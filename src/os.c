@@ -31,7 +31,11 @@
 # ifndef O_NOFOLLOW
 #  define O_NOFOLLOW 0
 # endif
+# ifndef O_BINARY
+#  define O_BINARY 0
+# endif
 #endif
+
 
 #if OS_WIN
 # include <winbase.h>
@@ -45,6 +49,16 @@
 # include <Folders.h>
 # include <Timer.h>
 # include <OSUtils.h>
+#endif
+
+/*
+** The DJGPP compiler environment looks mostly like Unix, but it
+** lacks the fcntl() system call.  So redefine fcntl() to be something
+** that always succeeds.  This means that locking does not occur under
+** DJGPP.  But its DOS - what did you expect?
+*/
+#ifdef __DJGPP__
+# define fcntl(A,B,C) 0
 #endif
 
 /*
@@ -311,9 +325,9 @@ int sqliteOsOpenReadWrite(
   int *pReadonly
 ){
 #if OS_UNIX
-  id->fd = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE, 0644);
+  id->fd = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
   if( id->fd<0 ){
-    id->fd = open(zFilename, O_RDONLY|O_LARGEFILE);
+    id->fd = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
     if( id->fd<0 ){
       return SQLITE_CANTOPEN; 
     }
@@ -435,7 +449,8 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
   }
-  id->fd = open(zFilename, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE, 0600);
+  id->fd = open(zFilename,
+                O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY, 0600);
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
@@ -520,7 +535,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 */
 int sqliteOsOpenReadOnly(const char *zFilename, OsFile *id){
 #if OS_UNIX
-  id->fd = open(zFilename, O_RDONLY|O_LARGEFILE);
+  id->fd = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
   if( id->fd<0 ){
     return SQLITE_CANTOPEN;
   }
