@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.58 2004/05/26 23:25:31 drh Exp $
+** $Id: func.c,v 1.59 2004/05/27 03:12:55 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -46,7 +46,7 @@ static void minmaxFunc(
       iBest = i;
     }
   }
-  sqlite3_result(context, argv[iBest]);
+  sqlite3_result_value(context, argv[iBest]);
 }
 
 /*
@@ -76,7 +76,6 @@ static void lengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  const char *z;
   int len;
 
   assert( argc==1 );
@@ -84,13 +83,13 @@ static void lengthFunc(
     case SQLITE3_BLOB:
     case SQLITE3_INTEGER:
     case SQLITE3_FLOAT: {
-      sqlite3_result_int32(context, sqlite3_value_bytes(argv[0]));
+      sqlite3_result_int(context, sqlite3_value_bytes(argv[0]));
       break;
     }
     case SQLITE3_TEXT: {
       const char *z = sqlite3_value_text(argv[0]);
       for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
-      sqlite3_result_int32(context, len);
+      sqlite3_result_int(context, len);
       break;
     }
     default: {
@@ -104,7 +103,6 @@ static void lengthFunc(
 ** Implementation of the abs() function
 */
 static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *z;
   assert( argc==1 );
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE3_INTEGER: {
@@ -228,7 +226,7 @@ static void ifnullFunc(
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result(context, argv[i]);
+      sqlite3_result_value(context, argv[i]);
       break;
     }
   }
@@ -244,7 +242,7 @@ static void randomFunc(
 ){
   int r;
   sqlite3Randomness(sizeof(r), &r);
-  sqlite3_result_int32(context, r);
+  sqlite3_result_int(context, r);
 }
 
 /*
@@ -270,7 +268,7 @@ static void change_count(
   sqlite3_value **argv
 ){
   sqlite *db = sqlite3_user_data(context);
-  sqlite3_result_int32(context, sqlite3_changes(db));
+  sqlite3_result_int(context, sqlite3_changes(db));
 }
 
 /*
@@ -284,7 +282,7 @@ static void last_statement_change_count(
   sqlite3_value **argv
 ){
   sqlite *db = sqlite3_user_data(context);
-  sqlite3_result_int32(context, sqlite3_last_statement_changes(db));
+  sqlite3_result_int(context, sqlite3_last_statement_changes(db));
 }
 
 /*
@@ -304,7 +302,7 @@ static void likeFunc(
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   if( zA && zB ){
-    sqlite3_result_int32(context, sqlite3LikeCompare(zA, zB));
+    sqlite3_result_int(context, sqlite3LikeCompare(zA, zB));
   }
 }
 
@@ -321,7 +319,7 @@ static void globFunc(sqlite3_context *context, int arg, sqlite3_value **argv){
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   if( zA && zB ){
-    sqlite3_result_int32(context, sqlite3GlobCompare(zA, zB));
+    sqlite3_result_int(context, sqlite3GlobCompare(zA, zB));
   }
 }
 
@@ -336,7 +334,7 @@ static void nullifFunc(
   sqlite3_value **argv
 ){
   if( sqlite3MemCompare(argv[0], argv[1], 0)!=0 ){
-    sqlite3_result(context, argv[0]);
+    sqlite3_result_value(context, argv[0]);
   }
 }
 
@@ -372,7 +370,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
     case SQLITE3_INTEGER:
     case SQLITE3_FLOAT: {
-      sqlite3_result(context, argv[0]);
+      sqlite3_result_value(context, argv[0]);
       break;
     }
     case SQLITE3_BLOB:  /*** FIX ME.  Use a BLOB encoding ***/
@@ -577,7 +575,7 @@ static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void countFinalize(sqlite3_context *context){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  sqlite3_result_int32(context, p ? p->n : 0);
+  sqlite3_result_int(context, p ? p->n : 0);
 }
 
 /*
@@ -623,7 +621,7 @@ static void minMaxFinalize(sqlite3_context *context){
   sqlite3_value *pRes;
   pRes = (sqlite3_value *)sqlite3_aggregate_context(context, sizeof(Mem));
   if( pRes->flags ){
-    sqlite3_result(context, pRes);
+    sqlite3_result_value(context, pRes);
   }
 }
 

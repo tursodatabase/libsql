@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.128 2004/05/26 16:54:43 drh Exp $
+** $Id: expr.c,v 1.129 2004/05/27 03:12:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1224,13 +1224,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
-      /* FIX ME: The following is a temporary hack. */
-      if( 0==sqlite3StrNICmp(zId, "classof", nId) ){
-        assert( nExpr==1 );
-        sqlite3VdbeAddOp(v, OP_Class, nExpr, 0);
-      }else{
-        sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_FUNCDEF);
-      }
+      sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_FUNCDEF);
       break;
     }
     case TK_SELECT: {

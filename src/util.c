@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.89 2004/05/27 01:53:56 drh Exp $
+** $Id: util.c,v 1.90 2004/05/27 03:12:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -740,7 +740,7 @@ int sqlite3FitsIn64Bits(const char *zNum){
 */
 int sqlite3GetInt64(const char *zNum, i64 *pValue){
   if( sqlite3FitsIn64Bits(zNum) ){
-    sqlite3atoi64(zNum, pValue, TEXT_Utf8);
+    sqlite3atoi64(zNum, pValue);
     return 1;
   }
   return 0;

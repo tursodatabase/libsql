@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.82 2004/05/26 23:25:31 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.83 2004/05/27 03:12:55 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -605,6 +605,13 @@ int sqlite3_prepare16(
 );
 
 /*
+** Pointers to the following two opaque structures are used to communicate
+** with the implementations of user-defined functions.
+*/
+typedef struct sqlite3_context sqlite3_context;
+typedef struct Mem sqlite3_value;
+
+/*
 ** In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
 ** one or more literals can be replace by a wildcard "?" or ":N:" where
 ** N is an integer.  These value of these wildcard literals can be set
@@ -624,14 +631,14 @@ int sqlite3_prepare16(
 ** an sqlite3_prepare() or sqlite3_reset().  Unbound wildcards are interpreted
 ** as NULL.
 */
-void sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
-void sqlite3_bind_double(sqlite3_stmt*, int, double);
-void sqlite3_bind_int(sqlite3_stmt*, int, int);
-void sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
-void sqlite3_bind_null(sqlite3_stmt*, int);
-void sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
-void sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
-void sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
+int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
+int sqlite3_bind_double(sqlite3_stmt*, int, double);
+int sqlite3_bind_int(sqlite3_stmt*, int, int);
+int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
+int sqlite3_bind_null(sqlite3_stmt*, int);
+int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
+int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
+int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 
 /*
 ** Return the number of columns in the result set returned by the compiled
@@ -738,11 +745,11 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** Values are stored in the database in one of the following fundamental
 ** types.
 */
-#define SQLITE_INTEGER  1
-#define SQLITE_FLOAT    2
-#define SQLITE_TEXT     3
-#define SQLITE_BLOB     4
-#define SQLITE_NULL     5
+#define SQLITE3_INTEGER  1
+#define SQLITE3_FLOAT    2
+#define SQLITE3_TEXT     3
+#define SQLITE3_BLOB     4
+#define SQLITE3_NULL     5
 
 /*
 ** The next group of routines returns information about the information
@@ -801,14 +808,14 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** _text()     Return the value as UTF-8 text.
 ** _text16()   Return the value as UTF-16 text.
 */
-void *sqlite3_column_blob(sqlite3_stmt*, int iCol)
-int sqlite3_column_bytes(sqlite3_stmt*, int iCol)
-int sqlite3_column_bytes16(sqlite3_stmt*, int iCol)
-double sqlite3_column_double(sqlite3_stmt*, int iCol)
-int sqlite3_column_int(sqlite3_stmt*, int iCol)
-long long int sqlite3_column_int64(sqlite3_stmt*, int iCol)
-const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol)
-const void *sqlite3_column_text16(sqlite3_stmt*, int iCol)
+const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
+int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
+int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
+double sqlite3_column_double(sqlite3_stmt*, int iCol);
+int sqlite3_column_int(sqlite3_stmt*, int iCol);
+long long int sqlite3_column_int64(sqlite3_stmt*, int iCol);
+const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
+const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 int sqlite3_column_type(sqlite3_stmt*, int iCol);
 
 /*
@@ -835,13 +842,6 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 ** the sqlite3_bind_*() API retain their values.
 */
 int sqlite3_reset(sqlite3_stmt *pStmt);
-
-/*
-** Pointers to the following two opaque structures are used to communicate
-** with the implementations of user-defined functions.
-*/
-typedef struct sqlite3_context sqlite3_context;
-typedef struct Mem sqlite3_value;
 
 /*
 ** The following two functions are used to add user functions or aggregates
@@ -909,14 +909,14 @@ int sqlite3_aggregate_count(sqlite3_context*);
 ** sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
 ** column number.
 */
-void *sqlite3_value_blob(sqlite3_value*)
-int sqlite3_value_bytes(sqlite3_value*)
-int sqlite3_value_bytes16(sqlite3_value*)
-double sqlite3_value_double(sqlite3_value*)
-int sqlite3_value_int(sqlite3_value*)
-long long int sqlite3_value_int64(sqlite3_value*)
-const unsigned char *sqlite3_value_text(sqlite3_value*)
-const void *sqlite3_value_text16(sqlite3_value*)
+const void *sqlite3_value_blob(sqlite3_value*);
+int sqlite3_value_bytes(sqlite3_value*);
+int sqlite3_value_bytes16(sqlite3_value*);
+double sqlite3_value_double(sqlite3_value*);
+int sqlite3_value_int(sqlite3_value*);
+long long int sqlite3_value_int64(sqlite3_value*);
+const unsigned char *sqlite3_value_text(sqlite3_value*);
+const void *sqlite3_value_text16(sqlite3_value*);
 int sqlite3_value_type(sqlite3_value*);
 
 /*

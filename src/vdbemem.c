@@ -35,22 +35,20 @@
 ** between formats.
 */
 int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
-  u8 oldEnd;    /* 
-
   /* If this is not a string, or if it is a string but the encoding is
   ** already correct, do nothing. */
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
 
-  if( pMem->enc==TEXT_Utf8 || desiredEnd==TEXT_Utf8 ){
+  if( pMem->enc==TEXT_Utf8 || desiredEnc==TEXT_Utf8 ){
     /* If the current encoding does not match the desired encoding, then
     ** we will need to do some translation between encodings.
     */
     char *z;
     int n;
     int rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc,
-                                 (void **)&z, &n, desiredEnd);
+                                 (void **)&z, &n, desiredEnc);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -67,7 +65,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     /* Must be translating between UTF-16le and UTF-16be. */
     int i;
     u8 *pFrom, *pTo;
-    sqlite3VdbeMemMakeWritable(pMem);
+    sqlite3VdbeMemMakeWriteable(pMem);
     for(i=0, pFrom=pMem->z, pTo=&pMem->z[1]; i<pMem->n; i+=2, pFrom++, pTo++){
       u8 temp = *pFrom;
       *pFrom = *pTo;
@@ -83,7 +81,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 **
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
-int sqlite3VdbeMemMakeDynamicify(Mem *pMem){
+int sqlite3VdbeMemDynamicify(Mem *pMem){
   int n;
   u8 *z;
   if( (pMem->flags & (MEM_Ephem|MEM_Static|MEM_Short))==0 ){
@@ -91,7 +89,7 @@ int sqlite3VdbeMemMakeDynamicify(Mem *pMem){
   }
   assert( (pMem->flags & MEM_Dyn)==0 );
   assert( pMem->flags & (MEM_Str|MEM_Blob) );
-  z = sqliteMallocRaw( n+2 )
+  z = sqliteMallocRaw( n+2 );
   if( z==0 ){
     return SQLITE_NOMEM;
   }
@@ -101,6 +99,7 @@ int sqlite3VdbeMemMakeDynamicify(Mem *pMem){
   z[n+1] = 0;
   pMem->z = z;
   pMem->flags &= ~(MEM_Ephem|MEM_Static|MEM_Short);
+  return SQLITE_OK;
 }
 
 /*
@@ -109,7 +108,7 @@ int sqlite3VdbeMemMakeDynamicify(Mem *pMem){
 **
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
-int sqlite3VdbeMemMakeWritable(Mem *pMem){
+int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   int n;
   u8 *z;
   if( (pMem->flags & (MEM_Ephem|MEM_Static))==0 ){
@@ -121,7 +120,7 @@ int sqlite3VdbeMemMakeWritable(Mem *pMem){
     z = pMem->zShort;
     pMem->flags |= MEM_Short|MEM_Term;
   }else{
-    z = sqliteMallocRaw( n+2 )
+    z = sqliteMallocRaw( n+2 );
     if( z==0 ){
       return SQLITE_NOMEM;
     }
@@ -132,18 +131,19 @@ int sqlite3VdbeMemMakeWritable(Mem *pMem){
   z[n+1] = 0;
   pMem->z = z;
   pMem->flags &= ~(MEM_Ephem|MEM_Static);
+  return SQLITE_OK;
 }
 
 /*
 ** Make sure the given Mem is \u0000 terminated.
 */
 int sqlite3VdbeMemNulTerminate(Mem *pMem){
-  if( (pMem->flags & MEM_Term)!=0 || pMem->flags & (MEM_Str|MEM_Blob))==0 ){
+  if( (pMem->flags & MEM_Term)!=0 || (pMem->flags & (MEM_Str|MEM_Blob))==0 ){
     return SQLITE_OK;   /* Nothing to do */
   }
   /* Only static or ephemeral strings can be unterminated */
   assert( (pMem->flags & (MEM_Static|MEM_Ephem))!=0 );
-  sqlite3VdbeMemMakeWriteable(pMem);
+  return sqlite3VdbeMemMakeWriteable(pMem);
 }
 
 /*
@@ -186,12 +186,21 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
       sqlite3_snprintf(NBFS, z, "%lld", pMem->i);
     }
     pMem->n = strlen(z);
-    pMem->z = n;
+    pMem->z = z;
     pMem->enc = TEXT_Utf8;
     pMem->flags |= MEM_Str | MEM_Short | MEM_Term;
-    sqlite3VdbeMemChangeEncoding(pMem, enc);
+    sqlite3VdbeChangeEncoding(pMem, enc);
   }
   return rc;
+}
+
+/*
+** Release any memory held by the Mem
+*/
+static void releaseMem(Mem *p){
+  if( p->flags & MEM_Dyn ){
+    sqliteFree(p);
+  }
 }
 
 /*
@@ -205,7 +214,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
     pMem->i = (i64)pMem->r;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
-       || sqlite3VdbeNulTerminate(pMem) ){
+       || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
     assert( pMem->z );
@@ -213,9 +222,10 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
   }else{
     pMem->i = 0;
   }
-  Release(pMem);
+  releaseMem(pMem);
   pMem->flags = MEM_Int;
   pMem->type = SQLITE3_INTEGER;
+  return SQLITE_OK;
 }
 
 /*
@@ -229,28 +239,20 @@ int sqlite3VdbeMemRealify(Mem *pMem){
     pMem->flags |= MEM_Real;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
-       || sqlite3VdbeNulTerminate(pMem) ){
+       || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
     assert( pMem->z );
     pMem->r = sqlite3AtoF(pMem->z, 0);
-    Release(pMem);
+    releaseMem(pMem);
     pMem->flags = MEM_Real;
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE3_FLOAT;
   }else{
     pMem->r = 0.0;
     pMem->flags = MEM_Real;
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE3_FLOAT;
   }
-}
-
-/*
-** Release any memory held by the Mem
-*/
-static void releaseMem(Mem *p){
-  if( p->flags & MEM_Dyn ){
-    sqliteFree(p);
-  }
+  return SQLITE_OK;
 }
 
 /*
@@ -308,8 +310,6 @@ int sqlite3VdbeMemSetStr(
   u8 enc,             /* Encoding of z.  0 for BLOBs */
   int eCopy           /* True if this function should make a copy of z */
 ){
-  Mem tmp;
-
   releaseMem(pMem);
   if( !z ){
     pMem->flags = MEM_Null;
@@ -350,8 +350,9 @@ int sqlite3VdbeMemSetStr(
       assert(0);
   }
   if( eCopy ){
-    sqlite3VdbeMemMakeWriteable(pMem);
+    return sqlite3VdbeMemMakeWriteable(pMem);
   }
+  return SQLITE_OK;
 }
 
 /*

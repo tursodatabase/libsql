@@ -44,17 +44,17 @@ int sqlite3_value_bytes16(sqlite3_value *pVal){
 }
 double sqlite3_value_double(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
-  Realify(pMem, flagsToEnc(pMem->flags));
+  sqlite3VdbeMemRealify(pMem);
   return pMem->r;
 }
 int sqlite3_value_int(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
-  Integerify(pMem, flagsToEnc(pMem->flags));
+  sqlite3VdbeMemIntegerify(pMem);
   return (int)pVal->i;
 }
 long long int sqlite3_value_int64(sqlite3_value *pVal){
   Mem *pMem = (Mem *)pVal;
-  Integerify(pMem, flagsToEnc(pMem->flags));
+  sqlite3VdbeMemIntegerify(pMem);
   return pVal->i;
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
@@ -67,10 +67,10 @@ const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
     /* If there is already a string representation, make sure it is in
     ** encoded in UTF-8.
     */
-    SetEncoding(pVal, MEM_Utf8|MEM_Term);
+    sqlite3VdbeChangeEncoding(pVal, TEXT_Utf8);
   }else if( !(pVal->flags&MEM_Blob) ){
     /* Otherwise, unless this is a blob, convert it to a UTF-8 string */
-    Stringify(pVal, TEXT_Utf8);
+    sqlite3VdbeMemStringify(pVal, TEXT_Utf8);
   }
 
   return pVal->z;
@@ -85,15 +85,17 @@ const void *sqlite3_value_text16(sqlite3_value* pVal){
     /* If there is already a string representation, make sure it is in
     ** encoded in UTF-16 machine byte order.
     */
-    SetEncoding(pVal, encToFlags(TEXT_Utf16)|MEM_Term);
+    sqlite3VdbeChangeEncoding(pVal, TEXT_Utf16);
   }else if( !(pVal->flags&MEM_Blob) ){
     /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
-    Stringify(pVal, TEXT_Utf16);
+    sqlite3VdbeMemStringify(pVal, TEXT_Utf16);
   }
 
   return (const void *)(pVal->z);
 }
 int sqlite3_value_type(sqlite3_value* pVal){
+  return pVal->type;
+#if 0
   int f = ((Mem *)pVal)->flags;
   if( f&MEM_Null ){
     return SQLITE3_NULL;
@@ -111,6 +113,7 @@ int sqlite3_value_type(sqlite3_value* pVal){
     return SQLITE3_BLOB;
   }
   assert(0);
+#endif
 }
 
 /**************************** sqlite3_result_  *******************************
@@ -124,7 +127,7 @@ void sqlite3_result_blob(
   int eCopy
 ){
   assert( n>0 );
-  MemSetStr(&pCtx->s, z, n, 0, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, eCopy);
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
   sqlite3VdbeMemSetDouble(&pCtx->s, rVal);
@@ -137,14 +140,14 @@ void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf16, 1);
 }
-void sqlite3_result_int32(sqlite3_context *pCtx, int iVal){
+void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
   sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
 }
 void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
   sqlite3VdbeMemSetInt64(&pCtx->s, iVal);
 }
 void sqlite3_result_null(sqlite3_context *pCtx){
-  sqilte3VdbeMemSetNull(&pCtx->s);
+  sqlite3VdbeMemSetNull(&pCtx->s);
 }
 void sqlite3_result_text(
   sqlite3_context *pCtx, 
@@ -152,7 +155,7 @@ void sqlite3_result_text(
   int n,
   int eCopy
 ){
-  MemSetStr(&pCtx->s, z, n, TEXT_Utf8, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf8, eCopy);
 }
 void sqlite3_result_text16(
   sqlite3_context *pCtx, 
@@ -160,7 +163,7 @@ void sqlite3_result_text16(
   int n, 
   int eCopy
 ){
-  MemSetStr(&pCtx->s, z, n, TEXT_Utf16, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, TEXT_Utf16, eCopy);
 }
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   sqlite3VdbeMemCopy(&pCtx->s, pValue);
@@ -442,7 +445,7 @@ static int vdbeUnbind(Vdbe *p, int i){
 ** Bind a blob value to an SQL statement variable.
 */
 int sqlite3_bind_blob(
-  sqlite3_stmt *p, 
+  sqlite3_stmt *pStmt, 
   int i, 
   const void *zData, 
   int nData, 
@@ -463,10 +466,9 @@ int sqlite3_bind_blob(
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
-  Mem *pVar;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    sqlite3VdbeMemSetReal(&p->apVar[i-1], rValue);
+    sqlite3VdbeMemSetDouble(&p->apVar[i-1], rValue);
   }
   return SQLITE_OK;
 }
@@ -478,7 +480,7 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, long long int iValue){
   Vdbe *p = (Vdbe *)pStmt;
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    sqlite3VdbeMemSetInt(&p->apVar[i-1], iValue);
+    sqlite3VdbeMemSetInt64(&p->apVar[i-1], iValue);
   }
   return rc;
 }
@@ -505,7 +507,7 @@ int sqlite3_bind_text(
   if( rc ){
     return rc;
   }
-  rc = sqlite3VdbeSetEncoding(pVar, p->db->enc);
+  rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
   return rc;
 }
 int sqlite3_bind_text16(
@@ -517,13 +519,13 @@ int sqlite3_bind_text16(
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
-  int rc;
+  int rc, txt_enc;
 
   rc = vdbeUnbind(p, i);
   if( rc ){
     return rc;
   }
-  Mem *pVar = &p->apVar[i-1];
+  pVar = &p->apVar[i-1];
 
   /* There may or may not be a byte order mark at the start of the UTF-16.
   ** Either way set 'txt_enc' to the TEXT_Utf16* value indicating the 
@@ -542,6 +544,6 @@ int sqlite3_bind_text16(
   if( rc ){
     return rc;
   }
-  rc = sqlite3VdbeSetEncoding(pVar, p->db->enc);
+  rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
   return rc;
 }

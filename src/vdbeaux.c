@@ -571,7 +571,7 @@ int sqlite3VdbeList(
     Op *pOp = &p->aOp[i];
     Mem *pMem = p->aStack;
     pMem->flags = MEM_Int;
-    pMem->type = SQLITE3_INT;
+    pMem->type = SQLITE3_INTEGER;
     pMem->i = i;                                /* Program counter */
     pMem++;
 
@@ -584,17 +584,17 @@ int sqlite3VdbeList(
 
     pMem->flags = MEM_Int;
     pMem->i = pOp->p1;                          /* P1 */
-    pMem->type = SQLITE3_INT;
+    pMem->type = SQLITE3_INTEGER;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->i = pOp->p2;                          /* P2 */
-    pMem->type = SQLITE_INT;
+    pMem->type = SQLITE3_INTEGER;
     pMem++;
 
     pMem->flags = MEM_Short|MEM_Str|MEM_Term;   /* P3 */
     pMem->z = displayP3(pOp, pMem->zShort, sizeof(pMem->zShort));
-    pMem->type = SQLITE_TEXT;
+    pMem->type = SQLITE3_TEXT;
     pMem->enc = TEXT_Utf8;
 
     p->nResColumn = 5;
@@ -886,9 +886,9 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
 
   pColName = &(p->aColName[idx]);
   if( N==0 ){
-    rc = MemSetStr(pColName, zName, -1, TEXT_Utf8, 1);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, TEXT_Utf8, 1);
   }else{
-    rc = MemSetStr(pColName, zName, N, TEXT_Utf8, N>0);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, N, TEXT_Utf8, N>0);
   }
   if( rc==SQLITE_OK && N==P3_DYNAMIC ){
     pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
