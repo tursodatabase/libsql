@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.265 2004/11/05 05:20:40 drh Exp $
+** $Id: build.c,v 1.266 2004/11/05 05:23:59 drh Exp $
 =======
-** $Id: build.c,v 1.265 2004/11/05 05:20:40 drh Exp $
+** $Id: build.c,v 1.266 2004/11/05 05:23:59 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -1663,7 +1663,7 @@ static void destroyTable(Parse *pParse, Table *pTab){
 #ifdef SQLITE_OMIT_AUTOVACUUM
   destroyRootPage(pParse, pTab->tnum, pTab->iDb);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    destroyRootPage(v, pIdx->tnum, pIdx->iDb);
+    destroyRootPage(pParse, pIdx->tnum, pIdx->iDb);
   }
 #else
   /* If the database may be auto-vacuum capable (if SQLITE_OMIT_AUTOVACUUM
