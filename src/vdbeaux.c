@@ -22,11 +22,11 @@
 
 /*
 ** When debugging the code generator in a symbolic debugger, one can
-** set the sqlite_vdbe_addop_trace to 1 and all opcodes will be printed
+** set the sqlite3_vdbe_addop_trace to 1 and all opcodes will be printed
 ** as they are added to the instruction stream.
 */
 #ifndef NDEBUG
-int sqlite_vdbe_addop_trace = 0;
+int sqlite3_vdbe_addop_trace = 0;
 #endif
 
 
@@ -100,7 +100,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
 #ifndef NDEBUG
-  if( sqlite_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+  if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
 }
@@ -226,7 +226,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p3 = pIn->p3;
       pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
 #ifndef NDEBUG
-      if( sqlite_vdbe_addop_trace ){
+      if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
 #endif
@@ -391,24 +391,24 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 ** The following group or routines are employed by installable functions
 ** to return their results.
 **
-** The sqlite_set_result_string() routine can be used to return a string
+** The sqlite3_set_result_string() routine can be used to return a string
 ** value or to return a NULL.  To return a NULL, pass in NULL for zResult.
 ** A copy is made of the string before this routine returns so it is safe
 ** to pass in an ephemeral string.
 **
-** sqlite_set_result_error() works like sqlite_set_result_string() except
+** sqlite3_set_result_error() works like sqlite3_set_result_string() except
 ** that it signals a fatal error.  The string argument, if any, is the
 ** error message.  If the argument is NULL a generic substitute error message
 ** is used.
 **
-** The sqlite_set_result_int() and sqlite_set_result_double() set the return
+** The sqlite3_set_result_int() and sqlite3_set_result_double() set the return
 ** value of the user function to an integer or a double.
 **
 ** These routines are defined here in vdbe.c because they depend on knowing
 ** the internals of the sqlite_func structure which is only defined in 
 ** this source file.
 */
-char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
+char *sqlite3_set_result_string(sqlite_func *p, const char *zResult, int n){
   assert( !p->isStep );
   if( p->s.flags & MEM_Dyn ){
     sqliteFree(p->s.z);
@@ -437,7 +437,7 @@ char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
   }
   return p->s.z;
 }
-void sqlite_set_result_int(sqlite_func *p, int iResult){
+void sqlite3_set_result_int(sqlite_func *p, int iResult){
   assert( !p->isStep );
   if( p->s.flags & MEM_Dyn ){
     sqliteFree(p->s.z);
@@ -445,7 +445,7 @@ void sqlite_set_result_int(sqlite_func *p, int iResult){
   p->s.i = iResult;
   p->s.flags = MEM_Int;
 }
-void sqlite_set_result_double(sqlite_func *p, double rResult){
+void sqlite3_set_result_double(sqlite_func *p, double rResult){
   assert( !p->isStep );
   if( p->s.flags & MEM_Dyn ){
     sqliteFree(p->s.z);
@@ -453,9 +453,9 @@ void sqlite_set_result_double(sqlite_func *p, double rResult){
   p->s.r = rResult;
   p->s.flags = MEM_Real;
 }
-void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
+void sqlite3_set_result_error(sqlite_func *p, const char *zMsg, int n){
   assert( !p->isStep );
-  sqlite_set_result_string(p, zMsg, n);
+  sqlite3_set_result_string(p, zMsg, n);
   p->isError = 1;
 }
 
@@ -463,7 +463,7 @@ void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
 ** Extract the user data from a sqlite_func structure and return a
 ** pointer to it.
 */
-void *sqlite_user_data(sqlite_func *p){
+void *sqlite3_user_data(sqlite_func *p){
   assert( p && p->pFunc );
   return p->pFunc->pUserData;
 }
@@ -477,7 +477,7 @@ void *sqlite_user_data(sqlite_func *p){
 ** the internals of the sqlite_func structure which is only defined in
 ** this source file.
 */
-void *sqlite_aggregate_context(sqlite_func *p, int nByte){
+void *sqlite3_aggregate_context(sqlite_func *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   if( p->pAgg==0 ){
     if( nByte<=NBFS ){
@@ -498,7 +498,7 @@ void *sqlite_aggregate_context(sqlite_func *p, int nByte){
 ** the internals of the sqlite_func structure which is only defined in
 ** this source file.
 */
-int sqlite_aggregate_count(sqlite_func *p){
+int sqlite3_aggregate_count(sqlite_func *p){
   assert( p && p->pFunc && p->pFunc->xStep );
   return p->cnt;
 }
@@ -559,7 +559,7 @@ int sqlite3VdbeList(
       p->rc = SQLITE_INTERRUPT;
     }
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, sqlite_error_string(p->rc), (char*)0);
+    sqlite3SetString(&p->zErrMsg, sqlite3_error_string(p->rc), (char*)0);
   }else{
     sprintf(p->zArgv[0],"%d",i);
     sprintf(p->zArgv[2],"%d", p->aOp[i].p1);
@@ -836,7 +836,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   int i;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
     return SQLITE_MISUSE;
   }
   if( p->zErrMsg ){
@@ -847,7 +847,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     }
     p->zErrMsg = 0;
   }else if( p->rc ){
-    sqlite3SetString(pzErrMsg, sqlite_error_string(p->rc), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3_error_string(p->rc), (char*)0);
   }
   Cleanup(p);
   if( p->rc!=SQLITE_OK ){
@@ -886,7 +886,7 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
       db->aDb[i].inTrans = 1;
     }
   }
-  assert( p->pTos<&p->aStack[p->pc] || sqlite_malloc_failed==1 );
+  assert( p->pTos<&p->aStack[p->pc] || sqlite3_malloc_failed==1 );
 #ifdef VDBE_PROFILE
   {
     FILE *out = fopen("vdbe_profile.out", "a");
@@ -922,14 +922,14 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqlite *db;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3SetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), (char*)0);
+    sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
     return SQLITE_MISUSE;
   }
   db = p->db;
   rc = sqlite3VdbeReset(p, pzErrMsg);
   sqlite3VdbeDelete(p);
   if( db->want_to_close && db->pVdbe==0 ){
-    sqlite_close(db);
+    sqlite3_close(db);
   }
   if( rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
@@ -945,7 +945,7 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 **
 ** This routine overrides any prior call.
 */
-int sqlite_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
+int sqlite3_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
   Vdbe *p = (Vdbe*)pVm;
   if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
     return SQLITE_MISUSE;
@@ -1047,14 +1047,14 @@ int sqlite3VdbeByteSwap(int x){
 int sqlite3VdbeCursorMoveto(Cursor *p){
   if( p->deferredMoveto ){
     int res;
-    extern int sqlite_search_count;
+    extern int sqlite3_search_count;
     sqlite3BtreeMoveto(p->pCursor, (char*)&p->movetoTarget, sizeof(int), &res);
     p->lastRecno = keyToInt(p->movetoTarget);
     p->recnoIsValid = res==0;
     if( res<0 ){
       sqlite3BtreeNext(p->pCursor, &res);
     }
-    sqlite_search_count++;
+    sqlite3_search_count++;
     p->deferredMoveto = 0;
   }
   return SQLITE_OK;

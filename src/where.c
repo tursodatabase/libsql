@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.90 2004/05/08 08:23:47 danielk1977 Exp $
+** $Id: where.c,v 1.91 2004/05/10 10:37:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -389,7 +389,7 @@ WhereInfo *sqlite3WhereBegin(
   ** return value.
   */
   pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
-  if( sqlite_malloc_failed ){
+  if( sqlite3_malloc_failed ){
     sqliteFree(pWInfo);
     return 0;
   }
