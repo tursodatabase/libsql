@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.111 2004/08/14 18:18:44 drh Exp $
+** $Id: shell.c,v 1.112 2004/08/30 01:54:05 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -556,6 +556,27 @@ static char * appendText(char *zIn, char const *zAppend, char quote){
   return zIn;
 }
 
+
+/*
+** Execute a query statement that has a single result column.  Print
+** that result column on a line by itself with a semicolon terminator.
+*/
+static int run_table_dump_query(FILE *out, sqlite3 *db, const char *zSelect){
+  sqlite3_stmt *pSelect;
+  int rc;
+  rc = sqlite3_prepare(db, zSelect, -1, &pSelect, 0);
+  if( rc!=SQLITE_OK || !pSelect ){
+    return rc;
+  }
+  rc = sqlite3_step(pSelect);
+  while( rc==SQLITE_ROW ){
+    fprintf(out, "%s;\n", sqlite3_column_text(pSelect, 0));
+    rc = sqlite3_step(pSelect);
+  }
+  return sqlite3_finalize(pSelect);
+}
+
+
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -578,7 +599,6 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 
   if( strcmp(zType, "table")==0 ){
     sqlite3_stmt *pTableInfo = 0;
-    sqlite3_stmt *pSelect = 0;
     char *zSelect = 0;
     char *zTableInfo = 0;
     char *zTmp = 0;
@@ -618,24 +638,42 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
     zSelect = appendText(zSelect, zTable, '"');
 
-    rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
+    rc = run_table_dump_query(p->out, p->db, zSelect);
+    if( rc==SQLITE_CORRUPT ){
+      zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
+      rc = run_table_dump_query(p->out, p->db, zSelect);
+    }
     if( zSelect ) free(zSelect);
-    if( rc!=SQLITE_OK || !pSelect ){
-      return 1;
-    }
-
-    rc = sqlite3_step(pSelect);
-    while( rc==SQLITE_ROW ){
-      fprintf(p->out, "%s;\n", sqlite3_column_text(pSelect, 0));
-      rc = sqlite3_step(pSelect);
-    }
-    rc = sqlite3_finalize(pSelect);
     if( rc!=SQLITE_OK ){
       return 1;
     }
   }
-
   return 0;
+}
+
+/*
+** Run zQuery.  Update dump_callback() as the callback routine.
+** If we get a SQLITE_CORRUPT error, rerun the query after appending
+** "ORDER BY rowid DESC" to the end.
+*/
+static int run_schema_dump_query(
+  struct callback_data *p, 
+  const char *zQuery,
+  char **pzErrMsg
+){
+  int rc;
+  rc = sqlite3_exec(p->db, zQuery, dump_callback, p, pzErrMsg);
+  if( rc==SQLITE_CORRUPT ){
+    char *zQ2;
+    int len = strlen(zQuery);
+    if( pzErrMsg ) sqlite3_free(*pzErrMsg);
+    zQ2 = malloc( len+100 );
+    if( zQ2==0 ) return rc;
+    sprintf(zQ2, "%s ORDER BY rowid DESC", zQuery);
+    rc = sqlite3_exec(p->db, zQ2, dump_callback, p, pzErrMsg);
+    free(zQ2);
+  }
+  return rc;
 }
 
 /*
@@ -799,22 +837,26 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     open_db(p);
     fprintf(p->out, "BEGIN TRANSACTION;\n");
     if( nArg==1 ){
-      sqlite3_exec(p->db,
+      run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE type!='meta' AND sql NOT NULL "
-        "ORDER BY substr(type,2,1), name",
-        dump_callback, p, &zErrMsg
+        "WHERE sql NOT NULL AND type=='table'", 0
+      );
+      run_schema_dump_query(p, 
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE sql NOT NULL AND type!='table' AND type!='meta'", 0
       );
     }else{
       int i;
-      for(i=1; i<nArg && zErrMsg==0; i++){
+      for(i=1; i<nArg; i++){
         zShellStatic = azArg[i];
-        sqlite3_exec(p->db,
+        run_schema_dump_query(p,
           "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOT NULL "
-          "ORDER BY substr(type,2,1), name",
-          dump_callback, p, &zErrMsg
-        );
+          "WHERE tbl_name LIKE shellstatic() AND type=='table'"
+          "  AND sql NOT NULL", 0);
+        run_schema_dump_query(p,
+          "SELECT name, type, sql FROM sqlite_master "
+          "WHERE tbl_name LIKE shellstatic() AND type!='table'"
+          "  AND type!='meta' AND sql NOT NULL", 0);
         zShellStatic = 0;
       }
     }
