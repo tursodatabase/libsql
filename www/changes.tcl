@@ -20,6 +20,8 @@ proc chng {date desc} {
 chng {2000 Aug 22 (Version 1.0.2)} {
 <li>In the sqlite shell, print the "Database opened READ ONLY" message
     to stderr instead of stdout.</li>
+<li>In the sqlite shell, now print the version number on initial startup.</li>
+<li>Add the <b>sqlite_version[]</b> string constant to the library</li>
 }
 
 chng {2000 Aug 18 (Version 1.0.1)} {
