@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.198 2003/09/06 22:18:08 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.199 2003/09/27 13:39:39 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -635,7 +635,6 @@ struct Expr {
 ** The following are the meanings of bits in the Expr.flags field.
 */
 #define EP_FromJoin     0x0001  /* Originated in ON or USING clause of a join */
-#define EP_Oracle8Join  0x0002  /* Carries the Oracle8 "(+)" join operator */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 

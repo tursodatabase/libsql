@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.82 2003/09/27 00:41:28 drh Exp $
+** $Id: where.c,v 1.83 2003/09/27 13:39:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -25,8 +25,6 @@ typedef struct ExprInfo ExprInfo;
 struct ExprInfo {
   Expr *p;                /* Pointer to the subexpression */
   u8 indexable;           /* True if this subexprssion is usable by an index */
-  u8 oracle8join;         /* -1 if left side contains "(+)".  +1 if right side
-                          ** contains "(+)".  0 if neither contains "(+)" */
   short int idxLeft;      /* p->pLeft is a column in this table number. -1 if
                           ** p->pLeft is not the column of any table */
   short int idxRight;     /* p->pRight is a column in this table number. -1 if
