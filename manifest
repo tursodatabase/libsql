@@ -1,5 +1,5 @@
-C Working\sbetter\swith\sWin95.\nContinued\swork\son\sthe\snew\sdb.c\sbackend.\s(CVS\s181)
-D 2001-01-31T13:28:09
+C Version\s1.0.19\s(CVS\s483)
+D 2001-02-06T14:00:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -84,7 +84,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P df0ff304855bd18c7a3517c500e891b6d006be6a
+P f9c55a900032ed6babd86170dcb5257e33da950f
 R 75bfcecb552e742e2d0e7291a0cc0ff8
 U drh
-Z 2209296f97803a14f066750193d05e6b
+Z d11ba544455ac1e0f515aae9371d36e0
