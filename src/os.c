@@ -62,6 +62,24 @@
 #endif
 
 /*
+** Macros used to determine whether or not to use threads.  The
+** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
+** Posix threads and SQLITE_W32_THREADS is defined if we are
+** synchronizing using Win32 threads.
+*/
+#if OS_UNIX && defined(THREADSAFE) && THREADSAFE
+# include <pthread.h>
+# define SQLITE_UNIX_THREADS 1
+#endif
+#if OS_WIN && defined(THREADSAFE) && THREADSAFE
+# define SQLITE_W32_THREADS 1
+#endif
+#if OS_MAC && defined(THREADSAFE) && THREADSAFE
+# include <Multiprocessing.h>
+# define SQLITE_MACOS_MULTITASKING 1
+#endif
+
+/*
 ** Macros for performance tracing.  Normally turned off
 */
 #if 0
@@ -155,6 +173,9 @@ static unsigned int elapse;
 struct inodeKey {
   dev_t dev;   /* Device number */
   ino_t ino;   /* Inode number */
+#ifdef SQLITE_UNIX_THREADS
+  pthread_t thread_id;   /* Which thread are we */
+#endif
 };
 
 /*
@@ -190,6 +211,9 @@ static struct lockInfo *findLockInfo(int fd){
   memset(&key, 0, sizeof(key));
   key.dev = statbuf.st_dev;
   key.ino = statbuf.st_ino;
+#ifdef SQLITE_UNIX_THREADS
+  key.thread_id = pthread_self();
+#endif
   pInfo = (struct lockInfo*)sqliteHashFind(&lockHash, &key, sizeof(key));
   if( pInfo==0 ){
     struct lockInfo *pOld;
@@ -1466,24 +1490,6 @@ int sqliteOsSleep(int ms){
   return (int)((ticks*50)/3);
 #endif
 }
-
-/*
-** Macros used to determine whether or not to use threads.  The
-** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
-** Posix threads and SQLITE_W32_THREADS is defined if we are
-** synchronizing using Win32 threads.
-*/
-#if OS_UNIX && defined(THREADSAFE) && THREADSAFE
-# include <pthread.h>
-# define SQLITE_UNIX_THREADS 1
-#endif
-#if OS_WIN && defined(THREADSAFE) && THREADSAFE
-# define SQLITE_W32_THREADS 1
-#endif
-#if OS_MAC && defined(THREADSAFE) && THREADSAFE
-# include <Multiprocessing.h>
-# define SQLITE_MACOS_MULTITASKING 1
-#endif
 
 /*
 ** Static variables used for thread synchronization

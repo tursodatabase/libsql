@@ -112,6 +112,7 @@ TESTSRC = \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
+  $(TOP)/src/test4.c \
   $(TOP)/src/md5.c
 
 # Header files used by all library source files.
@@ -312,7 +313,7 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture$(EXE) \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libsqlite.a $(LIBTCL)
+		libsqlite.a $(LIBTCL) $(THREADLIB)
 
 fulltest:	testfixture$(EXE) sqlite$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test
