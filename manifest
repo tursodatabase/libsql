@@ -1,5 +1,5 @@
-C Remove\scode\sfor\sSQL\scursors.\s(CVS\s2312)
-D 2005-02-04T04:07:17
+C Detect\sand\sreport\sa\ssubtle\scase\sof\sdatabase\sfile\scorruption.\s(CVS\s2313)
+D 2005-02-04T21:13:01
 F Makefile.in f867ff4c3353a3b10ecf823f338876a47fc7def0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -74,7 +74,7 @@ F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
 F src/vacuum.c 14d1c346234fc64b326c19ea1ffe8f9e4c73d19a
-F src/vdbe.c b3e920b1df4fe6e57dd3789bea08277821dee286
+F src/vdbe.c ce4dea911a2ebc45c965e4747ada0547a75583bb
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 332a531d06a610e6597b02105fcda767313f0225
-R 0db554372b05850054db90220e676ec2
-U danielk1977
-Z afbed611780de363a0c619320e406df8
+P 2eb90870556c90b8d85da3d5eb7554f74ec922c2
+R 9fde37ae6ab0b7787ca0100acb8f8c8c
+U drh
+Z 9898815e66bf58e67c97b824ac2a83df

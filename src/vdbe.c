@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.450 2005/02/04 04:07:18 danielk1977 Exp $
+** $Id: vdbe.c,v 1.451 2005/02/04 21:13:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2873,6 +2873,11 @@ case OP_NewRecno: {
     int res, rx=SQLITE_OK, cnt;
     i64 x;
     cnt = 0;
+    if( (sqlite3BtreeFlags(pC->pCursor)&(BTREE_INTKEY|BTREE_ZERODATA)) !=
+          BTREE_INTKEY ){
+      rc = SQLITE_CORRUPT;
+      goto abort_due_to_error;
+    }
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_INTKEY)!=0 );
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_ZERODATA)==0 );
 
