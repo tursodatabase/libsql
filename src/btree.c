@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.94 2003/06/04 16:24:39 drh Exp $
+** $Id: btree.c,v 1.95 2003/06/17 02:57:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -471,8 +471,10 @@ static int allocateSpace(Btree *pBt, MemPage *pPage, int nByte){
   FreeBlk *p;
   u16 *pIdx;
   int start;
-  int cnt = 0;
   int iSize;
+#ifndef NDEBUG
+  int cnt = 0;
+#endif
 
   assert( sqlitepager_iswriteable(pPage) );
   assert( nByte==ROUNDUP(nByte) );

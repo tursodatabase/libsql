@@ -1,5 +1,5 @@
-C Fix\scompiler\serrors\sand\swarnings\swin\sSQLITE_OMIT_AUTHORIZATION\sis\sdefined.\nTicket\s#353.\s(CVS\s1029)
-D 2003-06-16T19:18:12
+C Remove\sunused\svariable.\s\sTicket\s#355.\s(CVS\s1030)
+D 2003-06-17T02:57:18
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 9f78b4aaac02a2b09ff108e92cbaee3199e7962a
 F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
-F src/btree.c 6656625305e5e99adda818a772bf7432a7b15d97
+F src/btree.c ba1cc0c71c3d2742b9a9047832335dc7d3656c45
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c a0dd64f840417b13637160599bd2740c8a340366
 F src/build.c 936d10b33b326546280690bee7f20efaf19a6fe8
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P eca1398eaac67d772aff2676a470d9a6d96a93ca
-R 015f150cc6dea5018fc2d07f0c7a83bd
+P 6920b633c2e4a94ee5de7d2db3933a873ee3513b
+R 2461ecf1634ca64718874d80a89b0476
 U drh
-Z ce84144fcdc23848168f756561c10df5
+Z 77374d9cfdfe95b412a1c7d387e72705
