@@ -1,5 +1,5 @@
-C Fix\sunitialised\svariable\sin\ssqlite3VdbeFinalize().\s(CVS\s1747)
-D 2004-06-27T23:50:22
+C Fix\sa\sseg-fault\scaused\sby\sa\smalloc()\sfailure.\s(CVS\s1748)
+D 2004-06-28T00:17:32
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c a8fb39c94ae4ef6606d5216b6f05d9b86f6901b2
 F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
-F src/vdbe.c b750a731c90567b77ed6e0cd455ac868953d3a72
+F src/vdbe.c 5125bfa9876def934abe4579126fabb31c33fd2a
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
 F src/vdbeapi.c e92bda928f2fe93a9a77a62bd95642563bbcdea1
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 792b3c75e7764bab1473c0d6efc76f1164c943bf
-R 934c210b1f919ecd1582e47e2f492ca6
+P 9501587944f1009aa0b4fa431bb19e7ec993a077
+R 5975ce31da67586d4994606172856aed
 U danielk1977
-Z 4c3421e111b9a49abc87050fd99ce2a5
+Z 08353d362da820f90e49ba5ec669d79e
