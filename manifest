@@ -1,5 +1,5 @@
-C Reduce\sthe\sspace\sallocated\sfor\sthe\sruntime\svirtual\smachine\sstack.\s(CVS\s2428)
-D 2005-03-29T08:26:13
+C Change\s'stack'\sto\sthe\smore\sdescriptive\s'no-push'\sin\svdbe.c.\s(CVS\s2429)
+D 2005-03-29T13:07:00
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -19,7 +19,7 @@ F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 3acc5ae52addd43fd1858fe99fca54a49bca6a56
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
-F mkopcodeh.awk d3d6dfcef5a7b69398627aec581d1ec52561517d
+F mkopcodeh.awk 7563ad235670e864ead95cf672be3fe081450ae0
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
 F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -75,11 +75,11 @@ F src/update.c 42823d00865c9fe4f01b3c62647858726345a28e
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
-F src/vdbe.c 68c8f34cbf7c05418c93e900d46f81b09500353a
+F src/vdbe.c cb701319876cb1332a7372feaaa1310cd463c9f6
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
-F src/vdbeInt.h 39beecdfb017d3e042fe60974691abd573a5c5a2
+F src/vdbeInt.h 97b62807bd001efd82006460ad8a8d72d1c8d36d
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
-F src/vdbeaux.c b28883d9efc9d4c1ec26c0d2473d5d8febc8178e
+F src/vdbeaux.c f07ea8a5c3f4b2bb7505f21753ea966d2f04d4d0
 F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
 F src/where.c c4b227458e8993decb515ed9a2fe2d4f5f8e3125
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P c41d55443c2dd532147962b87f542fb7d37075fd
-R d1e86050613dbac2624d4c64006d314d
+P 7d6818da33a87076d1faf35ffc15a3aada0533b3
+R b2b5f4cce8b0df2fc23078e18d925b30
 U danielk1977
-Z d987ab454820e190643b62f4a4339773
+Z 5e718761fcd6175855385aab184db7fd

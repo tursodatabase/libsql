@@ -44,8 +44,8 @@
       used[op[name]] = 1
       sameas[op[name]] = sym
     }
-    if($i=="stack"){
-      stack[name] = 1
+    if($i=="no-push"){
+      nopush[name] = 1
     }
   }
 }
@@ -85,27 +85,26 @@ END {
   # Generate the 10 16-bit bitmasks used by function opcodeUsesStack()
   # in vdbeaux.c. See comments in that function for details.
   # 
-  stack[0] = 0              # 0..15
-  stack[1] = 0              # 16..31
-  stack[2] = 0              # 32..47
-  stack[3] = 0              # 48..63
-  stack[4] = 0              # 64..79
-  stack[5] = 0              # 80..95
-  stack[6] = 0              # 96..111
-  stack[7] = 0              # 112..127
-  stack[8] = 0              # 128..143
-  stack[9] = 0              # 144..159
+  nopush[0] = 0              # 0..15
+  nopush[1] = 0              # 16..31
+  nopush[2] = 0              # 32..47
+  nopush[3] = 0              # 48..63
+  nopush[4] = 0              # 64..79
+  nopush[5] = 0              # 80..95
+  nopush[6] = 0              # 96..111
+  nopush[7] = 0              # 112..127
+  nopush[8] = 0              # 128..143
+  nopush[9] = 0              # 144..159
   for(name in op){
-    if( stack[name] ){
+    if( nopush[name] ){
       n = op[name]
       j = n%16
       i = ((n - j)/16)
-      stack[i] = stack[i] + (2^j)
+      nopush[i] = nopush[i] + (2^j)
     }
   }
   printf "\n"
   for(i=0; i<10; i++){
-    printf "#define STACK_MASK_%d %d\n", i, stack[i]
+    printf "#define NOPUSH_MASK_%d %d\n", i, nopush[i]
   }
-
 }

@@ -170,11 +170,11 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
 ** Return non-zero if opcode 'op' is guarenteed not to push more values
 ** onto the VDBE stack than it pops off.
 */
-static int opcodeUsesStack(u8 op){
-  /* The 10 STACK_MASK_n constants are defined in the automatically
+static int opcodeNoPush(u8 op){
+  /* The 10 NOPUSH_MASK_n constants are defined in the automatically
   ** generated header file opcodes.h. Each is a 16-bit bitmask, one
   ** bit corresponding to each opcode implemented by the virtual
-  ** machine in vdbe.c. The bit is true if the word "stack" appears
+  ** machine in vdbe.c. The bit is true if the word "no-push" appears
   ** in a comment on the same line as the "case OP_XXX:" in 
   ** sqlite3VdbeExec() in vdbe.c.
   **
@@ -182,7 +182,7 @@ static int opcodeUsesStack(u8 op){
   ** to grow the stack when it is executed. Otherwise, it may grow the
   ** stack by at most one entry.
   **
-  ** STACK_MASK_0 corresponds to opcodes 0 to 15. STACK_MASK_1 contains
+  ** NOPUSH_MASK_0 corresponds to opcodes 0 to 15. NOPUSH_MASK_1 contains
   ** one bit for opcodes 16 to 31, and so on.
   **
   ** 16-bit bitmasks (rather than 32-bit) are specified in opcodes.h 
@@ -192,18 +192,18 @@ static int opcodeUsesStack(u8 op){
   ** IEEE floats.
   */ 
   static u32 masks[5] = {
-    STACK_MASK_0 + (STACK_MASK_1<<16),
-    STACK_MASK_2 + (STACK_MASK_3<<16),
-    STACK_MASK_4 + (STACK_MASK_5<<16),
-    STACK_MASK_6 + (STACK_MASK_7<<16),
-    STACK_MASK_8 + (STACK_MASK_9<<16)
+    NOPUSH_MASK_0 + (NOPUSH_MASK_1<<16),
+    NOPUSH_MASK_2 + (NOPUSH_MASK_3<<16),
+    NOPUSH_MASK_4 + (NOPUSH_MASK_5<<16),
+    NOPUSH_MASK_6 + (NOPUSH_MASK_7<<16),
+    NOPUSH_MASK_8 + (NOPUSH_MASK_9<<16)
   };
   return (masks[op>>5] & (1<<(op&0x1F)));
 }
 
 #ifndef NDEBUG
-int sqlite3VdbeOpcodeUsesStack(u8 op){
-  return opcodeUsesStack(op);
+int sqlite3VdbeOpcodeNoPush(u8 op){
+  return opcodeNoPush(op);
 }
 #endif
 
@@ -239,7 +239,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
     }
 
-    if( opcodeUsesStack(opcode) ){
+    if( opcodeNoPush(opcode) ){
       nMaxStack--;
     }
 
