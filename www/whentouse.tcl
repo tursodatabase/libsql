@@ -1,16 +1,9 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.2 2004/10/10 17:24:55 drh Exp $}
-
-puts {<html>
-<head><title>Appropriate Uses of SQLite</title></head>
-<body bgcolor=white>
-<h1 align=center>Appropriate Uses Of SQLite</h1>
-}
-puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] UTC)
-</p>"
+set rcsid {$Id: whentouse.tcl,v 1.3 2005/01/03 01:33:00 drh Exp $}
+source common.tcl
+header {Appropriate Uses For SQLite}
 
 puts {
 <p>
@@ -67,7 +60,8 @@ medium traffic websites (which is to say, 99.9% of all websites).
 The amount of web traffic that SQLite can handle depends, of course,
 on how heavily the website uses its database.  Generally
 speaking, any site that gets fewer than a 100000 hits/day should work
-fine.  The 100000 hits/day figure is a conservative estimate, not a
+fine with SQLite.
+The 100000 hits/day figure is a conservative estimate, not a
 hard upper bound.
 SQLite has been demonstrated to work with 10 times that amount
 of traffic.</p>
@@ -89,7 +83,7 @@ works well as an embedded database in downloadable consumer applications.
 SQLite has been used with great success as the on-disk file format
 for desktop applications such as financial analysis tools, CAD
 packages, record keeping programs, and so forth.  The traditional
-File/Open operation does an sqlite_open() and executes a
+File/Open operation does an sqlite3_open() and executes a
 BEGIN TRANSACTION to get exclusive access to the content.  File/Save
 does a COMMIT followed by another BEGIN TRANSACTION.  The use
 of transactions guarantees that updates to the application file are atomic,
@@ -108,7 +102,8 @@ in surprising little code.
 <li><p><b>Replacement for <i>ad hoc</i> disk files</b></p>
 
 <p>Many programs use fopen(), fread(), and fwrite() to create and
-manage files of data in home-grown formats.  SQLite works well as a
+manage files of data in home-grown formats.  SQLite works 
+particularly well as a
 replacement for these <i>ad hoc</i> data files.</p>
 </li>
 
@@ -117,7 +112,7 @@ replacement for these <i>ad hoc</i> data files.</p>
 <p>
 For programs that have a lot of data that must be sifted and sorted
 in diverse ways, it is often easier and quicker to load the data into
-an in-memory SQLite database and use query with joins and ORDER BY
+an in-memory SQLite database and use queries with joins and ORDER BY
 clauses to extract the data in the form and order needed rather than
 to try to code the same operations manually.
 Using an SQL database internally in this way also gives the program
@@ -131,7 +126,7 @@ having to recode every query.
 <p>
 Experienced SQL users can employ
 the command-line <b>sqlite</b> program to analyze miscellaneous
-datasets. Raw data can be imported using the COPY command, then that
+datasets. Raw data can be imported from CSV files, then that
 data can be sliced and diced to generate a myriad of summary
 reports.  Possible uses include website log analysis, sports
 statistics analysis, compilation of programming metrics, and
@@ -142,8 +137,8 @@ analysis of experimental results.
 You can also do the same thing with a enterprise client/server
 database, of course.  The advantages to using SQLite in this situation
 are that SQLite is much easier to set up and the resulting database 
-is a single file that you can store on a floppy disk or email to
-a colleague.
+is a single file that you can store on a floppy disk or flash-memory stick
+or email to a colleague.
 </p>
 </li>
 
@@ -245,8 +240,8 @@ all other processes are prevented from reading any other part of the
 database.
 For many situations, this is not a problem.  Each application
 does its database work quickly and moves on, and no lock lasts for more
-than a few dozen milliseconds.  But there are some problems that require
-more concurrency, and those problems will need to seek a different
+than a few dozen milliseconds.  But there are some applications that require
+more concurrency, and those applications may need to seek a different
 solution.
 </p>
 </li>
@@ -254,13 +249,4 @@ solution.
 </ul>
 
 }
-
-
-puts {
-<p><hr /></p>
-<p>
-<a href="index.html"><img src="/goback.jpg" border=0 />
-Back to the SQLite home page</a>
-</p>
-
-</body></html>}
+footer $rcsid

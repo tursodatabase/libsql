@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.8 2004/11/20 06:05:56 danielk1977 Exp $}
+set rcsid {$Id: docs.tcl,v 1.9 2005/01/03 01:33:00 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -17,6 +17,12 @@ proc doc {name url desc} {
   puts {<td align="top" align="left">}
   puts $desc
   puts {</td></tr>}
+}
+
+doc {Appropriate Uses For SQLite} {whentouse.html} {
+  This document describes situations where SQLite is an approriate
+  database engine to use versus situations where a client/server
+  database engine might be a better choice.
 }
 
 doc {SQLite In 5 Minutes Or Less} {quickstart.html} {
@@ -59,6 +65,7 @@ doc {Locking And Concurrency<br>In SQLite Version 3} {lockingv3.html} {
 
 doc {Version 2 DataTypes } {datatypes.html} {
   A description of how SQLite version 2 handles SQL datatypes.
+  Short summary:  Everything is a string.
 }
 doc {Version 3 DataTypes } {datatype3.html} {
   SQLite version 3 introduces the concept of manifest typing, where the

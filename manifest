@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.\s\sTicket\s#1052.\s(CVS\s2174)
-D 2005-01-03T01:28:51
+C Fix\stypos\sin\scomments\sin\stest\scode.\r\n(Oops.\s\sThis\scheck-in\salso\spicked\sup\ssome\sunrelated\r\nchanges\sto\sdocumentation.)\s(CVS\s2175)
+D 2005-01-03T01:33:00
 F Makefile.in 02a184d734a2b4bbbc1ecc2e3ef504fcb13de069
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -84,7 +84,7 @@ F src/vdbeaux.c a7c4c90786e2633b38f2d89f3dc49aed747454e4
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
 F src/where.c 4eb44da11a733b8cb5fe251827fbdf3f1f3efb1c
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
-F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
+F test/all.test 853e7030ab20a602eeb7a155124ae37f24ff9ffd
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
 F test/attach.test f39069efd4394422798f249df9a31489aa941ee1
 F test/attach2.test eeb987770f4dbe68bd29afdbc2e8cff0142e6eb5
@@ -146,7 +146,7 @@ F test/lock.test 32fe28e5030f25f23bcf6beef440675b0d848413
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test 5f9deae11b93336da1ccc5f91cf8be075c91ddf1
-F test/malloc.test b4674cbb5a72b113eedaaf64fcd5c062e9957ded
+F test/malloc.test c20b7208d8d123e1185b3cbe54c6fdde3c060c55
 F test/memdb.test 532aac7128a3da494cddc4461d76c6e3988f771b
 F test/memleak.test f1fa233f8295dd1d955a00d5e5ee857850f27f29
 F test/minmax.test e7048476940df0af11d0f2cf687572f557cd0b29
@@ -182,7 +182,7 @@ F test/table.test b8b0bee2ac2f3d36a674bc68344c1bdd80e99a18
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
 F test/tclsqlite.test 8b9dae3b68a899e5cbaebe6bb51cfc27f2503c6d
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
-F test/tester.tcl e7ebedf60c8ebbb0a9af4950981babfbb80cc9a7
+F test/tester.tcl 071ad70ee2c1d3393e20baabaac03f07e7925cfe
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
@@ -206,7 +206,7 @@ F test/where.test cbe22fb2e241a896fa5dcc732fda512be011ba52
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 250b30bcf3f1f422a2cad24b1597314777058a4b
 F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
-F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
+F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 336eb50b0849dbf99b1d5462d9c37291b01b2b43
 F tool/mkkeywordhash.c 408dccad57ed50dc67a9a1ee7fd258e0f0a07bd2
@@ -229,7 +229,7 @@ F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
-F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
+F www/capi3.tcl 9676103393dbf1c313b5618c9da59033f82cd924
 F www/capi3ref.tcl c5a3ae75fc3505c034f3c4bbb62ab94cf359ac39
 F www/changes.tcl f2b34859843d9f06a0611eb6d44af767891b09ef
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
@@ -240,7 +240,7 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/docs.tcl 95ec3aac01fe0ff514509a6478b239973eb10c8e
+F www/docs.tcl 09e5eccffad783fe65fac87772f5265e9bb64abe
 F www/download.tcl 4d8ff8c882063b864d004c524e4e7456858f09a5
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl abe360e630d8134bc6242c5e3664969c397eac6e
@@ -262,8 +262,8 @@ F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
 F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
-F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 4165217e5114f5377f0823c63ff2aba879927ce7
-R 4256e9938158c4257c938a7c19c2fe04
+F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
+P 9fb1402f0835b214c9174866653e95416b32f860
+R 1b8ce1bf62029a52efe7aa66908b9708
 U drh
-Z 8379ed370e2d153591bc88062fba4b49
+Z d8b73f30bf9c57bb9c0d09a4ed6f32df

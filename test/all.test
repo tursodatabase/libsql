@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.22 2004/08/31 13:45:12 drh Exp $
+# $Id: all.test,v 1.23 2005/01/03 01:33:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,7 +81,7 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
 }
 
 # Do one last test to look for a memory leak in the library.  This will
-# only work if SQLite is compiled with the -DMEMORY_DEBUG=1 flag.
+# only work if SQLite is compiled with the -DSQLITE_DEBUG=1 flag.
 #
 if {$LeakList!=""} {
   puts -nonewline memory-leak-test...
