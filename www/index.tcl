@@ -58,31 +58,34 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2004-Jun-30} {Version 3.0.2 (beta) Released} {
-  The first beta release of SQLite version 3.0 is now available.
+newsitem {2004-Jly-22} {Version 3.0.3 (beta)} {
+  The second beta release of SQLite version 3.0 is now available.
+  This new beta fixes many bugs and adds support for databases with
+  varying page sizes.  The next 3.0 release will probably be called
+  a final or stable release.
+
   Version 3.0 adds support for internationalization and a new
   more compact file format. 
   <a href="version3.html">Details.</a>
-  As of this release, the API and file format are frozen.  All
+  The API and file format have been fixed since 3.0.2.  All
   regression tests pass (over 100000 tests) and the test suite
   exercises over 95% of the code.
 
   SQLite version 3.0 is made possible in part by AOL
   developers supporting and embracing great Open-Source Software.
 }
-  
 
-newsitem {2004-Jun-25} {Website hacked} {
-  The www.sqlite.org website was hacked sometime around 2004-Jun-22
-  because the lead SQLite developer failed to properly patch CVS.
-  Evidence suggests that the attacker was unable to elevate privileges
-  above user "cvs".  Nevertheless, as a precaution the entire website
-  has been reconstructed from scratch on a fresh machine.  All services
-  should be back to normal as of 2004-Jun-28.
+newsitem {2004-Jly-22} {Version 2.8.15} {
+  SQLite version 2.8.15 is a maintenance release for the version 2.8
+  series.  Version 2.8 continues to be maintained with bug fixes, but
+  no new features will be added to version 2.8.  All the changes in
+  this release are minor.  If you are not having problems, there is
+  there is no reason to upgrade.
 }
+  
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.90 2004/06/30 22:35:07 drh Exp $}
+footer {$Id: index.tcl,v 1.91 2004/07/22 19:06:32 drh Exp $}

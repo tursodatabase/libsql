@@ -1,5 +1,5 @@
-C Version\s3.0.3\s(CVS\s1860)
-D 2004-07-22T18:54:05
+C Home\spage\supdates.\s(CVS\s1861)
+D 2004-07-22T19:06:32
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -223,12 +223,12 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
-F www/index.tcl 963cc54d5ad111de44e1af7f2a22ab2ec152095d
+F www/index.tcl a8cda15a9f6d96bcbfe85bcb530518e807368414
 F www/lang.tcl b2ba401104a76e7842469b33a968f5eda9bd462b
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
-F www/oldnews.tcl a4c1e52f500337565d020a4ce55c2671984c7d86
+F www/oldnews.tcl 2b69b71c1c154ec8c2ffd46d604c4172b6523ce0
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
@@ -239,7 +239,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 23c2ec459101d45c17e6e4cc6a20ed1b981cfd35
-R 9f643945fe51e64682dfcc93cccdf0fd
+P 068b15ae2a5187d9fc1e88c8c3fd21d647733788
+R fc88a818b5909dc4d4132616865487d0
 U drh
-Z bd1faa193d134f4b9062c0491fef712a
+Z 93b763a273687565702f371a2eb11088
