@@ -1,5 +1,5 @@
-C Bug\sfix:\sCREATE\sTABLE,\sfollowed\sby\sDROP\sTABLE\swithin\sthe\ssame\stransaction\sis\nworking\snow.\s(CVS\s378)
-D 2002-02-18T22:49:59
+C Added\sa\sC\swrapper\sprogram\sto\stest\sthreading\sunder\sUnix.\s(CVS\s379)
+D 2002-02-18T22:50:27
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -46,6 +46,7 @@ F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
 F src/test1.c 33efd350dca27c52c58c553c04fd3a6a51f13c1f
 F src/test2.c d410dbd8a90faa466c3ab694fa0aa57f5a773aa6
 F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
+F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 9e98f94469694a763992860596137e78dbae0cc0
 F src/update.c 95459f94a061860bf8e5716b3426a5ba85c79103
 F src/util.c f31f3d6198a0d1296a16f5a6ceec423a932cbbf6
@@ -123,7 +124,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 78a50971e9adc8739e7888201c79465a40e1a152
-R ec588117a78704be8b36ea36b54ef170
+P 553579f936b3a4477c6adfd991adccd06280bfd2
+R 68572ee64467deeafdfca67210cb5aaa
 U drh
-Z 76dfc832e7d97e5e1ad7b5a7cf543e04
+Z d4976e5cb119f987def7a2de13fb4da7
