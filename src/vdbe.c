@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.253 2004/01/31 19:22:56 drh Exp $
+** $Id: vdbe.c,v 1.254 2004/01/31 20:20:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -146,6 +146,7 @@ int sqlite_step(
 static int AggInsert(Agg *p, char *zKey, int nKey){
   AggElem *pElem, *pOld;
   int i;
+  Mem *pMem;
   pElem = sqliteMalloc( sizeof(AggElem) + nKey +
                         (p->nMem-1)*sizeof(pElem->aMem[0]) );
   if( pElem==0 ) return 1;
@@ -158,8 +159,8 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
     sqliteFree(pOld);
     return 0;
   }
-  for(i=0; i<p->nMem; i++){
-    pElem->aMem[i].flags = MEM_Null;
+  for(i=0, pMem=pElem->aMem; i<p->nMem; i++, pMem++){
+    pMem->flags = MEM_Null;
   }
   p->pCurrent = pElem;
   return 0;
@@ -768,7 +769,6 @@ case OP_Pull: {
   int i;
   Mem ts;
 
-  /* Deephemeralize(pFrom); *** not needed */
   ts = *pFrom;
   Deephemeralize(pTos);
   for(i=0; i<pOp->p1; i++, pFrom++){
@@ -778,16 +778,13 @@ case OP_Pull: {
     if( pFrom->flags & MEM_Short ){
       assert( pFrom->flags & MEM_Str );
       assert( pFrom->z==pFrom[1].zShort );
-      assert( (pTos->flags & (MEM_Dyn|MEM_Static|MEM_Ephem))==0 );
       pFrom->z = pFrom->zShort;
     }
   }
   *pTos = ts;
-  /* assert( (pTos->flags & MEM_Ephem)==0 ); *** not needed */
   if( pTos->flags & MEM_Short ){
     assert( pTos->flags & MEM_Str );
     assert( pTos->z==pTos[-pOp->p1].zShort );
-    assert( (pTos->flags & (MEM_Dyn|MEM_Static|MEM_Ephem))==0 );
     pTos->z = pTos->zShort;
   }
   break;
@@ -4253,9 +4250,7 @@ case OP_FileColumn: {
 */
 case OP_MemStore: {
   int i = pOp->p1;
-  char *zOld;
   Mem *pMem;
-  int flags;
   assert( pTos>=p->aStack );
   if( i>=p->nMem ){
     int nOld = p->nMem;
@@ -4276,28 +4271,21 @@ case OP_MemStore: {
       memset(&p->aMem[nOld], 0, sizeof(p->aMem[0])*(p->nMem-nOld));
     }
   }
+  Deephemeralize(pTos);
   pMem = &p->aMem[i];
-  flags = pMem->flags;
-  if( flags & MEM_Dyn ){
-    zOld = pMem->z;
-  }else{
-    zOld = 0;
-  }
+  Release(pMem);
   *pMem = *pTos;
-  flags = pMem->flags;
-  if( flags & MEM_Dyn ){
+  if( pMem->flags & MEM_Dyn ){
     if( pOp->p2 ){
       pTos->flags = MEM_Null;
     }else{
-      /* OR: perhaps just make the stack ephermeral */
       pMem->z = sqliteMallocRaw( pMem->n );
       if( pMem->z==0 ) goto no_mem;
       memcpy(pMem->z, pTos->z, pMem->n);
     }
-  }else if( flags & MEM_Short ){
+  }else if( pMem->flags & MEM_Short ){
     pMem->z = pMem->zShort;
   }
-  if( zOld ) sqliteFree(zOld);
   if( pOp->p2 ){
     Release(pTos);
     pTos--;
@@ -4466,27 +4454,19 @@ case OP_AggFocus: {
 */
 case OP_AggSet: {
   AggElem *pFocus = AggInFocus(p->agg);
+  Mem *pMem;
   int i = pOp->p2;
   assert( pTos>=p->aStack );
   if( pFocus==0 ) goto no_mem;
-  assert( i>=0 );
-  assert( i<p->agg.nMem );
-  if( i<p->agg.nMem ){
-    Mem *pMem = &pFocus->aMem[i];
-    char *zOld;
-    if( pMem->flags & MEM_Dyn ){
-      zOld = pMem->z;
-    }else{
-      zOld = 0;
-    }
-    Deephemeralize(pTos);
-    *pMem = *pTos;
-    if( pMem->flags & MEM_Dyn ){
-      pTos->flags = MEM_Null;
-    }else if( pMem->flags & MEM_Short ){
-      pMem->z = pMem->zShort;
-    }
-    if( zOld ) sqliteFree(zOld);
+  assert( i>=0 && i<p->agg.nMem );
+  Deephemeralize(pTos);
+  pMem = &pFocus->aMem[i];
+  Release(pMem);
+  *pMem = *pTos;
+  if( pMem->flags & MEM_Dyn ){
+    pTos->flags = MEM_Null;
+  }else if( pMem->flags & MEM_Short ){
+    pMem->z = pMem->zShort;
   }
   Release(pTos);
   pTos--;
@@ -4501,17 +4481,15 @@ case OP_AggSet: {
 */
 case OP_AggGet: {
   AggElem *pFocus = AggInFocus(p->agg);
+  Mem *pMem;
   int i = pOp->p2;
   if( pFocus==0 ) goto no_mem;
-  assert( i>=0 );
+  assert( i>=0 && i<p->agg.nMem );
   pTos++;
-  assert( i<p->agg.nMem );
-  if( i<p->agg.nMem ){
-    Mem *pMem = &pFocus->aMem[i];
-    *pTos = *pMem;
-    pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
-    pTos->flags |= MEM_Ephem;
-  }
+  pMem = &pFocus->aMem[i];
+  *pTos = *pMem;
+  pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
+  pTos->flags |= MEM_Ephem;
   break;
 }
 
