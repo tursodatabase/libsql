@@ -1,5 +1,5 @@
-C Documenting\sthe\sTCL\sinterface\s(CVS\s149)
-D 2000-09-30T22:46:06
+C Version\s1.0.8\s(CVS\s494)
+D 2000-09-30T23:00:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 2fe404a488607712e569d69974d7929bae06ad1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -73,7 +73,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 21ecd82eaea3ce3d08593a9a2d2bfdb3c1f7b547
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P ed5f5404ad804aec21ad971d59af834929381b5b
+P 7e0bacedf928095b29e7166eacd2356e8169d6dd
 R 3e751dc5aea8f130e00211562c95fd7d
 U drh
-Z 7e17d7124dec057be794cd1546e45e70
+Z 96e782ab6ce077a32cb4132dcba512bf
