@@ -24,23 +24,31 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.9 2000/06/07 23:51:50 drh Exp $
+** $Id: insert.c,v 1.10 2000/06/17 13:12:40 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
-** This routine is call to handle SQL of the following form:
+** This routine is call to handle SQL of the following forms:
 **
 **    insert into TABLE (IDLIST) values(EXPRLIST)
+**    insert into TABLE (IDLIST) select
 **
-** The parameters are the table name and the expression list.
+** The IDLIST following the table name is always optional.  If omitted,
+** then a list of all columns for the table is substituted.  The IDLIST
+** appears in the pField parameter.  pField is NULL if IDLIST is omitted.
+**
+** The pList parameter holds EXPRLIST in the first form of the INSERT
+** statement above, and pSelect is NULL.  For the second form, pList is
+** NULL and pSelect is a pointer to the select statement used to generate
+** data for the insert.
 */
 void sqliteInsert(
   Parse *pParse,        /* Parser context */
   Token *pTableName,    /* Name of table into which we are inserting */
   ExprList *pList,      /* List of values to be inserted */
   Select *pSelect,      /* A SELECT statement to use as the data source */
-  IdList *pField        /* Field name corresponding to pList.  Might be NULL */
+  IdList *pField        /* Field names corresponding to IDLIST. */
 ){
   Table *pTab;          /* The table to insert into */
   char *zTab;           /* Name of the table into which we are inserting */
@@ -52,6 +60,8 @@ void sqliteInsert(
   int base;             /* First available cursor */
   int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
 
+  /* Locate the table into which we will be inserting new information.
+  */
   zTab = sqliteTableNameFromToken(pTableName);
   pTab = sqliteFindTable(pParse->db, zTab);
   sqliteFree(zTab);
@@ -67,8 +77,18 @@ void sqliteInsert(
     pParse->nErr++;
     goto insert_cleanup;
   }
+
+  /* Allocate a VDBE
+  */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
+
+  /* Figure out how many columns of data are supplied.  If the data
+  ** is comming from a SELECT statement, then this step has to generate
+  ** all the code to implement the SELECT statement and leave the data
+  ** in a temporary table.  If data is coming from an expression list,
+  ** then we just have to count the number of expressions.
+  */
   if( pSelect ){
     int rc;
     srcTab = pParse->nTab++;
@@ -82,6 +102,10 @@ void sqliteInsert(
     assert( pList );
     nField = pList->nExpr;
   }
+
+  /* Make sure the number of columns in the source data matches the number
+  ** of columns to be inserted into the table.
+  */
   if( pField==0 && nField!=pTab->nCol ){
     char zNum1[30];
     char zNum2[30];
@@ -103,6 +127,11 @@ void sqliteInsert(
     pParse->nErr++;
     goto insert_cleanup;
   }
+
+  /* If the INSERT statement included an IDLIST term, then make sure
+  ** all elements of the IDLIST really are columns of the table and 
+  ** remember the column indices.
+  */
   if( pField ){
     for(i=0; i<pField->nId; i++){
       pField->a[i].idx = -1;
@@ -122,16 +151,29 @@ void sqliteInsert(
       }
     }
   }
+
+  /* Open cursors into the table that is received the new data and
+  ** all indices of that table.
+  */
   base = pParse->nTab;
   sqliteVdbeAddOp(v, OP_Open, base, 1, pTab->zName, 0);
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
     sqliteVdbeAddOp(v, OP_Open, idx+base, 1, pIdx->zName, 0);
   }
+
+  /* If the data source is a SELECT statement, then we have to create
+  ** a loop because there might be multiple rows of data.  If the data
+  ** source is an expression list, then exactly one row will be inserted
+  ** and the loop is not used.
+  */
   if( srcTab>=0 ){
     sqliteVdbeAddOp(v, OP_Rewind, srcTab, 0, 0, 0);
     iBreak = sqliteVdbeMakeLabel(v);
     iCont = sqliteVdbeAddOp(v, OP_Next, srcTab, iBreak, 0, 0);
   }
+
+  /* Create a new entry in the table and fill it with data.
+  */
   sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
   if( pTab->pIndex ){
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
@@ -159,7 +201,10 @@ void sqliteInsert(
   }
   sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
   sqliteVdbeAddOp(v, OP_Put, base, 0, 0, 0);
-  /* sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0); */
+
+  /* Create appropriate entries for the new data row in all indices
+  ** of the table.
+  */
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
     if( pIdx->pNext ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
@@ -188,8 +233,10 @@ void sqliteInsert(
     }
     sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_PutIdx, idx+base, 0, 0, 0);
-    /* sqliteVdbeAddOp(v, OP_Close, idx, 0, 0, 0); */
   }
+
+  /* The bottom of the loop, if the data source is a SELECT statement
+  */
   if( srcTab>=0 ){
     sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, iBreak);

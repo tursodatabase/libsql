@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.  The routines in this file handle
-** the following kinds of rules:
+** the following kinds of syntax:
 **
 **     CREATE TABLE
 **     DROP TABLE
@@ -33,14 +33,14 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.17 2000/06/08 13:36:40 drh Exp $
+** $Id: build.c,v 1.18 2000/06/17 13:12:39 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** This routine is called after a single SQL statement has been
-** parsed and we want to execute the code to implement 
-** the statement.  Prior action routines should have already
+** parsed and we want to execute the VDBE code to implement 
+** that statement.  Prior action routines should have already
 ** constructed VDBE code to do the work of the SQL statement.
 ** This routine just has to execute the VDBE code.
 **
@@ -132,8 +132,8 @@ Table *sqliteFindTable(sqlite *db, char *zName){
 
 /*
 ** Locate the in-memory structure that describes the
-** format of a particular index table given the name
-** of that table.  Return NULL if not found.
+** format of a particular index given the name
+** of that index.  Return NULL if not found.
 */
 Index *sqliteFindIndex(sqlite *db, char *zName){
   Index *p;
@@ -197,7 +197,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 }
 
 /*
-** Construct the name of a user table from a token.
+** Construct the name of a user table or index from a token.
 **
 ** Space to hold the name is obtained from sqliteMalloc() and must
 ** be freed by the calling function.
@@ -295,9 +295,9 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 **
 ** The table structure is added to the internal hash tables.  
 **
-** An entry for the table is made in the master table, unless 
-** initFlag==1.  When initFlag==1, it means we are reading the
-** master table because we just connected to the database, so 
+** An entry for the table is made in the master table on disk,
+** unless initFlag==1.  When initFlag==1, it means we are reading
+** the master table because we just connected to the database, so 
 ** the entry for this table already exists in the master table.
 ** We do not want to create it again.
 */
@@ -377,7 +377,9 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     return;
   }
 
-  /* Generate code to remove the table and its reference in sys_master */
+  /* Generate code to remove the table from the master table
+  ** on disk.
+  */
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
@@ -407,7 +409,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     }
   }
 
-  /* Remove the table structure and free its memory.
+  /* Remove the in-memory table structure and free its memory.
   **
   ** Exception: if the SQL statement began with the EXPLAIN keyword,
   ** then no changes are made.
@@ -433,14 +435,14 @@ void sqliteDropTable(Parse *pParse, Token *pName){
 ** be NULL for a primary key.  In that case, use pParse->pNewTable as the 
 ** table to be indexed.
 **
-** pList is a list of fields to be indexed.  pList will be NULL if the
-** most recently added field of the table is labeled as the primary key.
+** pList is a list of columns to be indexed.  pList will be NULL if the
+** most recently added column of the table is labeled as the primary key.
 */
 void sqliteCreateIndex(
   Parse *pParse,   /* All information about this parse */
   Token *pName,    /* Name of the index.  May be NULL */
   Token *pTable,   /* Name of the table to index.  Use pParse->pNewTable if 0 */
-  IdList *pList,   /* A list of fields to be indexed */
+  IdList *pList,   /* A list of columns to be indexed */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
@@ -490,7 +492,7 @@ void sqliteCreateIndex(
   }
 
   /* If pList==0, it means this routine was called to make a primary
-  ** key out of the last field added to the table under construction.
+  ** key out of the last column added to the table under construction.
   ** So create a fake list to simulate this.
   */
   if( pList==0 ){
@@ -516,9 +518,9 @@ void sqliteCreateIndex(
   pIndex->pTable = pTab;
   pIndex->nField = pList->nId;
 
-  /* Scan the names of the fields of the table to be indexed and
-  ** load the field indices into the Index structure.  Report an error
-  ** if any field is not found.
+  /* Scan the names of the columns of the table to be indexed and
+  ** load the column indices into the Index structure.  Report an error
+  ** if any column is not found.
   */
   for(i=0; i<pList->nId; i++){
     for(j=0; j<pTab->nCol; j++){
@@ -526,7 +528,7 @@ void sqliteCreateIndex(
     }
     if( j>=pTab->nCol ){
       sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
-        " has no field named ", pList->a[i].zName, 0);
+        " has no column named ", pList->a[i].zName, 0);
       pParse->nErr++;
       sqliteFree(pIndex);
       goto exit_create_index;

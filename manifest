@@ -1,17 +1,17 @@
-C :-)\s(CVS\s100)
-D 2000-06-16T20:51:26
+C :-)\s(CVS\s101)
+D 2000-06-17T13:12:39
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 4dc16840f68e3b599915e1ec8463d365474dd286
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure c366a0402bce79ef11fe1bf703ad6ce4ff6afbb0 x
 F configure.in 1085ff994a334b131325de906ed318e926673588
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 925a785da2758269cb8773691e157ea5269178ba
-F src/dbbe.c 4129779d7199c05200482046182f718a122f8c96
-F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
-F src/delete.c c267b93f7ccb5493b677fa18201880267c699aa8
-F src/expr.c a6797a4bd02b22835ffbbab8bd63dd91cc60ca3d
-F src/insert.c ac4edfff474589c00b2490f206317dc5822122e5
+F src/build.c 9ce11eafbab395b7d19bc5722d1a8955961889b0
+F src/dbbe.c ae5e77f010ba1b68a65aa3cd55c8578eda523dd2
+F src/dbbe.h 9a678ae524c2daad22e959111edd4494e6144dbc
+F src/delete.c 2d5758055ff546453385524d856feb1b51ea7b8a
+F src/expr.c 88ff9ea12a23a3f0dfaf117670524bdc160af597
+F src/insert.c b1434c7c7c387c69e467d993e9d05460f1047bcc
 F src/main.c e3297835b8e38ca726ac73f2c2bdb7cf08103197
 F src/parse.y 766844e4c695d560b4df5b5999162d5e167e3c90
 F src/select.c 3a12d76074fa57d7c39c4436bdeb8d7e1eb6fdf4
@@ -20,7 +20,7 @@ F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
 F src/sqliteInt.h 19954bd2f75632849b265b9d7163a67391ec5148
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
 F src/tokenize.c 77ff8164a8751994bc9926ce282847f653ac0c16
-F src/update.c d8d90df714bac99c68446a0c49f3d957ca6fc3c8
+F src/update.c d75df0f725eb8f47c67f1745bf485607cd98cea3
 F src/util.c 38e4bb5edf6fa92e677698c45785bf73c69b9e9f
 F src/vdbe.c 00b2ab7e0c0df2ac6eb4bf659656afc30e76c66b
 F src/vdbe.h 5f58611b19799de2dbcdefa4eef33a255cfa8d0d
@@ -31,7 +31,7 @@ F test/dbbe.test 0a8e4293cf816e590dcbb01be4cd4e8f7f95bdc8
 F test/delete.test 30edd2c7484274fb2e7dbc4a1ac769bb330b322e
 F test/expr.test 09b55ccf81cb8cc2f9cd83d592a2ba187ee48ba8
 F test/in.test 962a605b6a3a619214f84d1950dfc44fcf0d8b8f
-F test/index.test 79550e86e5c6954f8b7a8a8c5221224dfd8c3f11
+F test/index.test 620ceab7165dd078d1266bdc2cac6147f04534ac
 F test/insert.test 66f4c3bd600fec8eb1e733b928cbe6fa885eff0c
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
 F test/main.test b7366cc6f3690915a11834bc1090deeff08acaf9
@@ -64,7 +64,7 @@ F www/index.tcl 4116afce6a8c63d68882d2b00aa10b079e0129cd
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 3cdc4bb2515fcfcbe853e3f0c91cd9199e82dadd
 F www/sqlite.tcl 5420eab24b539928f80ea9b3088e2549d34f438d
-P ac38f460c8f5b9e5bb9d3cf2549f1787055f05cf
-R eb3ea9e7c9df77f640bf4616de9a692b
+P 1d4fe5599ed0bae18dba5842ab7ea1d34b8ec3ad
+R b71b1893baf0b52983e937418e80f686
 U drh
-Z 1e0f1e829cfb4a46f528efe2fb7a735b
+Z 91a05b26d5f5bffca90c2fad680404b8

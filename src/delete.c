@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.4 2000/06/07 23:51:50 drh Exp $
+** $Id: delete.c,v 1.5 2000/06/17 13:12:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -45,8 +45,8 @@ void sqliteDeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
 
-  /* Locate the table which we want to update.  This table has to be
-  ** put in an IdList structure because some of the subroutines will
+  /* Locate the table which we want to delete.  This table has to be
+  ** put in an IdList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
   ** an IdList* parameter instead of just a Table* parameger.
   */
@@ -91,7 +91,7 @@ void sqliteDeleteFrom(
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1);
   if( pWInfo==0 ) goto delete_from_cleanup;
 
-  /* Remember the index of every item to be deleted.
+  /* Remember the key of every item to be deleted.
   */
   sqliteVdbeAddOp(v, OP_ListWrite, 0, 0, 0, 0);
 
@@ -99,7 +99,9 @@ void sqliteDeleteFrom(
   */
   sqliteWhereEnd(pWInfo);
 
-  /* Delete every item identified in the list.
+  /* Delete every item whose key was written to the list during the
+  ** database scan.  We have to delete items after the scan is complete
+  ** because deleting an item can change the scan order.
   */
   base = pParse->nTab;
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);

@@ -21,9 +21,10 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** This file contains C code routines used for processing expressions
+** This file contains routines used for analyzing expressions and
+** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.16 2000/06/16 20:51:26 drh Exp $
+** $Id: expr.c,v 1.17 2000/06/17 13:12:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -59,7 +60,7 @@ static int isConstant(Expr *p){
 **
 ** These operators have to be processed before field names are
 ** resolved because each such operator increments pParse->nTab
-** to reserve a cursor number for its own use.  But pParse->nTab
+** to reserve cursor numbers for its own use.  But pParse->nTab
 ** needs to be constant once we begin resolving field names.
 **
 ** Actually, the processing of IN-SELECT is only started by this
@@ -439,7 +440,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
-** expression and leave the result on the stack.
+** expression and leave the result on the top of stack.
 */
 void sqliteExprCode(Parse *pParse, Expr *pExpr){
   Vdbe *v = pParse->pVdbe;
@@ -542,7 +543,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
         sqliteFree(z);
         break;
       }
-      /* Fall true into TK_NOT */
+      /* Fall through into TK_NOT */
     }
     case TK_NOT: {
       sqliteExprCode(pParse, pExpr->pLeft);

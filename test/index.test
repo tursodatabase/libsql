@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.4 2000/06/08 16:54:40 drh Exp $
+# $Id: index.test,v 1.5 2000/06/17 13:12:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,22 +65,22 @@ do_test index-2.1 {
   lappend v $msg
 } {1 {no such table: test1}}
 
-# Try adding an index on a field of a table where the table
-# exists but the field does not.
+# Try adding an index on a column of a table where the table
+# exists but the column does not.
 #
 do_test index-2.1 {
   execsql {CREATE TABLE test1(f1 int, f2 int, f3 int)}
   set v [catch {execsql {CREATE INDEX index1 ON test1(f4)}} msg]
   lappend v $msg
-} {1 {table test1 has no field named f4}}
+} {1 {table test1 has no column named f4}}
 
-# Try an index with some fields that match and others that do now.
+# Try an index with some columns that match and others that do now.
 #
 do_test index-2.2 {
   set v [catch {execsql {CREATE INDEX index1 ON test1(f1, f2, f4, f3)}} msg]
   execsql {DROP TABLE test1}
   lappend v $msg
-} {1 {table test1 has no field named f4}}
+} {1 {table test1 has no column named f4}}
 
 # Try creating a bunch of indices on the same table
 #

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.5 2000/06/07 23:51:51 drh Exp $
+** $Id: update.c,v 1.6 2000/06/17 13:12:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -52,7 +52,7 @@ void sqliteUpdate(
                          ** aXRef[i]==-1 if the i-th field is not changed. */
 
   /* Locate the table which we want to update.  This table has to be
-  ** put in an IdList structure because some of the subroutines will
+  ** put in an IdList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
   ** an IdList* parameter instead of just a Table* parameger.
   */
@@ -104,7 +104,6 @@ void sqliteUpdate(
     }
     for(j=0; j<pTab->nCol; j++){
       if( strcmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
-        /* pChanges->a[i].idx = j; */
         aXRef[j] = i;
         break;
       }
@@ -167,7 +166,7 @@ void sqliteUpdate(
 
   /* Loop over every record that needs updating.  We have to load
   ** the old data for each record to be updated because some fields
-  ** might not change and we will need to copy the old value, therefore.
+  ** might not change and we will need to copy the old value.
   ** Also, the old data is needed to delete the old index entires.
   */
   end = sqliteVdbeMakeLabel(v);

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** This file contains code to implement the database baseend (DBBE)
+** This file contains code to implement the database backend (DBBE)
 ** for sqlite.  The database backend is the interface between
 ** sqlite and the code that does the actually reading and writing
 ** of information to the disk.
@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.13 2000/06/08 15:10:47 drh Exp $
+** $Id: dbbe.c,v 1.14 2000/06/17 13:12:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -40,7 +40,12 @@
 #include <time.h>
 
 /*
-** Each open database file is an instance of this structure.
+** Information about each open disk file is an instance of this 
+** structure.  There will only be one such structure for each
+** disk file.  If the VDBE opens the same file twice (as will happen
+** for a self-join, for example) then two DbbeTable structures are
+** created but there is only a single BeFile structure with an
+** nRef of 2.
 */
 typedef struct BeFile BeFile;
 struct BeFile {
@@ -53,9 +58,13 @@ struct BeFile {
 };
 
 /*
-** The following are state variables for the RC4 algorithm.  We
-** use RC4 as a random number generator.  Each call to RC4 gives
+** The following structure holds the current state of the RC4 algorithm.
+** We use RC4 as a random number generator.  Each call to RC4 gives
 ** a random 8-bit number.
+**
+** Nothing in this file or anywhere else in SQLite does any kind of
+** encryption.  The RC4 algorithm is being used as a PRNG (pseudo-random
+** number generator) not as an encryption device.
 */
 struct rc4 {
   int i, j;
@@ -76,8 +85,12 @@ struct Dbbe {
 };
 
 /*
-** Each file within the database is an instance of this
-** structure.
+** An cursor into a database file is an instance of the following structure.
+** There can only be a single BeFile structure for each disk file, but
+** there can be multiple DbbeTable structures.  Each DbbeTable represents
+** a cursor pointing to a particular part of the open BeFile.  The
+** BeFile.nRef field hold a count of the number of DbbeTable structures
+** associated with the same disk file.
 */
 struct DbbeTable {
   Dbbe *pBe;         /* The database of which this record is a part */
@@ -89,16 +102,17 @@ struct DbbeTable {
 };
 
 /*
-** Initialize the RC4 algorithm.
+** Initialize the RC4 PRNG.  "seed" is a pointer to some random
+** data used to initialize the PRNG.  
 */
-static void rc4init(struct rc4 *p, char *key, int keylen){
+static void rc4init(struct rc4 *p, char *seed, int seedlen){
   int i;
   char k[256];
   p->j = 0;
   p->i = 0;
   for(i=0; i<256; i++){
     p->s[i] = i;
-    k[i] = key[i%keylen];
+    k[i] = seed[i%seedlen];
   }
   for(i=0; i<256; i++){
     int t;
@@ -110,7 +124,7 @@ static void rc4init(struct rc4 *p, char *key, int keylen){
 }
 
 /*
-** Get a single 8-bit random value from the RC4 algorithm.
+** Get a single 8-bit random value from the RC4 PRNG.
 */
 static int rc4byte(struct rc4 *p){
   int t;
@@ -233,7 +247,10 @@ static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable){
 }
 
 /*
-** Generate a random filename with the given prefix.
+** Generate a random filename with the given prefix.  The new filename
+** is written into zBuf[].  The calling function must insure that
+** zBuf[] is big enough to hold the prefix plus 20 or so extra
+** characters.
 **
 ** Very random names are chosen so that the chance of a
 ** collision with an existing filename is very very small.
