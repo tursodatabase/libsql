@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.168 2004/06/15 02:13:27 drh Exp $
+** $Id: btree.c,v 1.169 2004/06/15 02:44:19 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1283,6 +1283,23 @@ int sqlite3BtreeCommit(Btree *pBt){
   return rc;
 }
 
+#ifndef NDEBUG
+/*
+** Return the number of write-cursors open on this handle. This is for use
+** in assert() expressions, so it is only compiled if NDEBUG is not
+** defined.
+*/
+static int countWriteCursors(Btree *pBt){
+  BtCursor *pCur;
+  int r = 0;
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    if( pCur->wrFlag ) r++;
+  }
+  return r;
+}
+#endif
+
+#if 0
 /*
 ** Invalidate all cursors
 */
@@ -1299,6 +1316,7 @@ static void invalidateCursors(Btree *pBt){
     }
   }
 }
+#endif
 
 #ifdef SQLITE_TEST
 /*
@@ -1338,7 +1356,7 @@ int sqlite3BtreeRollback(Btree *pBt){
     if( getPage(pBt, 1, &pPage1)==SQLITE_OK ){
       releasePage(pPage1);
     }
-    invalidateCursors(pBt);
+    assert( countWriteCursors(pBt)==0 );
   }
   pBt->inTrans = TRANS_NONE;
   pBt->inStmt = 0;
@@ -1399,7 +1417,7 @@ int sqlite3BtreeRollbackStmt(Btree *pBt){
   int rc;
   if( pBt->inStmt==0 || pBt->readOnly ) return SQLITE_OK;
   rc = sqlite3pager_stmt_rollback(pBt->pPager);
-  invalidateCursors(pBt);
+  assert( countWriteCursors(pBt)==0 );
   pBt->inStmt = 0;
   return rc;
 }

@@ -11,11 +11,63 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.12 2004/05/21 10:08:55 danielk1977 Exp $
+# $Id: capi2.test,v 1.13 2004/06/15 02:44:20 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# proc sqlite_step {stmt N VALS COLS} {
+#   upvar $VALS vals
+#   upvar $COLS cols
+#   upvar $N n
+#   set vals [list]
+#   set cols [list]
+# 
+#   set n [sqlite3_column_count $stmt]
+# 
+#   set rc [sqlite3_step $stmt]
+#   for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
+#     lappend cols [sqlite3_column_name $stmt $i]
+#   }
+#   for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
+#     lappend cols [sqlite3_column_decltype $stmt $i]
+#   }
+# 
+#   for {set i 0} {$i < [sqlite3_data_count $stmt]} {incr i} {
+#     lappend vals [sqlite3_column_text $stmt $i]
+#   }
+# 
+#   return $rc
+# }
+
+# Return the text values from the current row pointed at by STMT as a list.
+proc get_row_values {STMT} {
+  set VALUES [list]
+  for {set i 0} {$i < [sqlite3_data_count $STMT]} {incr i} {
+    lappend VALUES [sqlite3_column_text $STMT $i]
+  }
+  return $VALUES
+}
+
+# Return the column names followed by declaration types for the result set
+# of the SQL statement STMT.
+#
+# i.e. for:
+# CREATE TABLE abc(a text, b integer); 
+# SELECT * FROM abc;
+#
+# The result is {a b text integer}
+proc get_column_names {STMT} {
+  set VALUES [list]
+  for {set i 0} {$i < [sqlite3_column_count $STMT]} {incr i} {
+    lappend VALUES [sqlite3_column_name $STMT $i]
+  }
+  for {set i 0} {$i < [sqlite3_column_count $STMT]} {incr i} {
+    lappend VALUES [sqlite3_column_decltype $STMT $i]
+  }
+  return $VALUES
+}
 
 # Check basic functionality
 #
@@ -27,38 +79,41 @@ do_test capi2-1.1 {
   set TAIL
 } {}
 do_test capi2-1.2 {
-  sqlite_step $VM N VALUES COLNAMES
+  sqlite3_step $VM
 } {SQLITE_ROW}
 do_test capi2-1.3 {
-  set N
+  sqlite3_data_count $VM
 } {2}
 do_test capi2-1.4 {
-  set VALUES
+  get_row_values $VM
 } {t1 1}
 do_test capi2-1.5 {
-  set COLNAMES
+  get_column_names $VM
 } {name rowid text INTEGER}
 do_test capi2-1.6 {
-  set N x
-  set VALUES y
-  set COLNAMES z
-  sqlite_step $VM N VALUES COLNAMES
+  sqlite3_step $VM 
 } {SQLITE_DONE}
 do_test capi2-1.7 {
-  list $N $VALUES $COLNAMES
+  list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
 } {2 {} {name rowid text INTEGER}}
 do_test capi2-1.8 {
-  set N x
-  set VALUES y
-  set COLNAMES z
-  sqlite_step $VM N VALUES COLNAMES
+  sqlite3_step $VM
 } {SQLITE_MISUSE}
+
+# Update: In v2, once SQLITE_MISUSE is returned the statement handle cannot
+# be interrogated for more information. However in v3, since the column
+# count, names and types are determined at compile time, these are still
+# accessible after an SQLITE_MISUSE error.
 do_test capi2-1.9 {
-  list $N $VALUES $COLNAMES
-} {0 {} {}}
+  list [sqlite3_column_count $VM] [get_row_values $VM] [get_column_names $VM]
+} {2 {} {name rowid text INTEGER}}
 do_test capi2-1.10 {
+  sqlite3_data_count $VM
+} {0}
+
+do_test capi2-1.11 {
   sqlite3_finalize $VM
-} {}
+} {SQLITE_OK}
 
 # Check to make sure that the "tail" of a multi-statement SQL script
 # is returned by sqlite3_prepare.
@@ -76,16 +131,20 @@ do_test capi2-2.1 {
     -- A comment at the end
   }
 do_test capi2-2.2 {
-  set r [sqlite_step $VM n val colname]
-  lappend r $n $val $colname
+  set r [sqlite3_step $VM]
+  lappend r [sqlite3_column_count $VM] \
+            [get_row_values $VM] \
+            [get_column_names $VM]
 } {SQLITE_ROW 2 {t1 1} {name rowid text INTEGER}}
 do_test capi2-2.3 {
-  set r [sqlite_step $VM n val colname]
-  lappend r $n $val $colname
+  set r [sqlite3_step $VM]
+  lappend r [sqlite3_column_count $VM] \
+            [get_row_values $VM] \
+            [get_column_names $VM]
 } {SQLITE_DONE 2 {} {name rowid text INTEGER}}
 do_test capi2-2.4 {
   sqlite3_finalize $VM
-} {}
+} {SQLITE_OK}
 do_test capi2-2.5 {
   set VM [sqlite3_prepare $DB $SQL -1 SQL]
   set SQL
@@ -93,12 +152,14 @@ do_test capi2-2.5 {
     -- A comment at the end
   }
 do_test capi2-2.6 {
-  set r [sqlite_step $VM n val colname]
-  lappend r $n $val $colname
+  set r [sqlite3_step $VM]
+  lappend r [sqlite3_column_count $VM] \
+            [get_row_values $VM] \
+            [get_column_names $VM]
 } {SQLITE_DONE 2 {} {name rowid text INTEGER}}
 do_test capi2-2.7 {
   sqlite3_finalize $VM
-} {}
+} {SQLITE_OK}
 do_test capi2-2.8 {
   set VM [sqlite3_prepare $DB $SQL -1 SQL]
   list $SQL $VM
@@ -143,14 +204,14 @@ do_test capi2-3.6 {
   lappend rc $TAIL
 } {0 {}}
 do_test capi2-3.7 {
-  set N {}
-  set VALUE {}
-  set COLNAME {}
-  list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM] \
+       [sqlite3_column_count $VM] \
+       [get_row_values $VM] \
+       [get_column_names $VM]
 } {SQLITE_ROW 1 {{}} {5/0 NUMERIC}}
 do_test capi2-3.8 {
   sqlite3_finalize $VM
-} {}
+} {SQLITE_OK}
 do_test capi2-3.9 {
   execsql {CREATE UNIQUE INDEX i1 ON t1(a)}
   set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(1,2,3)} -1 TAIL]
@@ -158,44 +219,56 @@ do_test capi2-3.9 {
 } {}
 do_test capi2-3.9b {db changes} {0}
 do_test capi2-3.10 {
-  set N {}
-  set VALUE {}
-  set COLNAME {}
-  list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM] \
+       [sqlite3_column_count $VM] \
+       [get_row_values $VM] \
+       [get_column_names $VM]
 } {SQLITE_DONE 0 {} {}}
-do_test capi2-3.10b {db changes} {1}
+
+# Update for v3 - the change has not actually happened until the query is
+# finalized. Is this going to cause trouble for anyone? Lee Nelson maybe?
+do_test capi2-3.10b {sqlite3_changes $DB} {1}
 do_test capi2-3.11 {
   sqlite3_finalize $VM
-} {}
-do_test capi2-3.11b {db changes} {1}
+} {SQLITE_OK}
+do_test capi2-3.11b {sqlite3_changes $DB} {1}
 do_test capi2-3.12 {
-  list [catch {sqlite3_finalize $VM} msg] [set msg]
-} {1 {(21) library routine called out of sequence}}
+  sqlite3_finalize $VM
+} {SQLITE_MISUSE}
 do_test capi2-3.13 {
   set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(1,3,4)} -1 TAIL]
-  list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM] \
+       [sqlite3_column_count $VM] \
+       [get_row_values $VM] \
+       [get_column_names $VM]
 } {SQLITE_ERROR 0 {} {}}
 do_test capi2-3.13b {db changes} {0}
 do_test capi2-3.14 {
-  list [catch {sqlite3_finalize $VM} msg] [set msg]
-} {1 {(19) column a is not unique}}
+  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
+} {SQLITE_CONSTRAINT {column a is not unique}}
 do_test capi2-3.15 {
   set VM [sqlite3_prepare $DB {CREATE TABLE t2(a NOT NULL, b)} -1 TAIL]
   set TAIL
 } {}
 do_test capi2-3.16 {
-  list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM] \
+       [sqlite3_column_count $VM] \
+       [get_row_values $VM] \
+       [get_column_names $VM]
 } {SQLITE_DONE 0 {} {}}
 do_test capi2-3.17 {
-  list [catch {sqlite3_finalize $VM} msg] [set msg]
-} {0 {}}
+  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
+} {SQLITE_OK {not an error}}
 do_test capi2-3.18 {
   set VM [sqlite3_prepare $DB {INSERT INTO t2 VALUES(NULL,2)} -1 TAIL]
-  list [sqlite_step $VM N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM] \
+       [sqlite3_column_count $VM] \
+       [get_row_values $VM] \
+       [get_column_names $VM]
 } {SQLITE_ERROR 0 {} {}}
 do_test capi2-3.19 {
-  list [catch {sqlite3_finalize $VM} msg] [set msg]
-} {1 {(19) t2.a may not be NULL}}
+  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
+} {SQLITE_CONSTRAINT {t2.a may not be NULL}}
 
 # Two or more virtual machines exists at the same time.
 #
@@ -212,32 +285,41 @@ do_test capi2-4.3 {
   set TAIL
 } {}
 do_test capi2-4.4 {
-  list [sqlite_step $VM2 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM2] \
+       [sqlite3_column_count $VM2] \
+       [get_row_values $VM2] \
+       [get_column_names $VM2]
 } {SQLITE_DONE 0 {} {}}
 do_test capi2-4.5 {
   execsql {SELECT * FROM t2 ORDER BY a}
 } {2 3}
 do_test capi2-4.6 {
-  list [catch {sqlite3_finalize $VM2} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM2
+} {SQLITE_OK}
 do_test capi2-4.7 {
-  list [sqlite_step $VM3 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM3] \
+       [sqlite3_column_count $VM3] \
+       [get_row_values $VM3] \
+       [get_column_names $VM3]
 } {SQLITE_DONE 0 {} {}}
 do_test capi2-4.8 {
   execsql {SELECT * FROM t2 ORDER BY a}
 } {2 3 3 4}
 do_test capi2-4.9 {
-  list [catch {sqlite3_finalize $VM3} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM3
+} {SQLITE_OK}
 do_test capi2-4.10 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_DONE 0 {} {}}
 do_test capi2-4.11 {
   execsql {SELECT * FROM t2 ORDER BY a}
 } {1 2 2 3 3 4}
 do_test capi2-4.12 {
-  list [catch {sqlite3_finalize $VM1} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM1
+} {SQLITE_OK}
 
 # Interleaved SELECTs
 #
@@ -245,44 +327,74 @@ do_test capi2-5.1 {
   set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
   set VM2 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
   set VM3 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 2 {2 3} {a b {} {}}}
 do_test capi2-5.2 {
-  list [sqlite_step $VM2 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM2] \
+       [sqlite3_column_count $VM2] \
+       [get_row_values $VM2] \
+       [get_column_names $VM2]
 } {SQLITE_ROW 2 {2 3} {a b {} {}}}
 do_test capi2-5.3 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 2 {3 4} {a b {} {}}}
 do_test capi2-5.4 {
-  list [sqlite_step $VM3 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM3] \
+       [sqlite3_column_count $VM3] \
+       [get_row_values $VM3] \
+       [get_column_names $VM3]
 } {SQLITE_ROW 2 {2 3} {a b {} {}}}
 do_test capi2-5.5 {
-  list [sqlite_step $VM3 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM3] \
+       [sqlite3_column_count $VM3] \
+       [get_row_values $VM3] \
+       [get_column_names $VM3]
 } {SQLITE_ROW 2 {3 4} {a b {} {}}}
 do_test capi2-5.6 {
-  list [sqlite_step $VM3 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM3] \
+       [sqlite3_column_count $VM3] \
+       [get_row_values $VM3] \
+       [get_column_names $VM3]
 } {SQLITE_ROW 2 {1 2} {a b {} {}}}
 do_test capi2-5.7 {
-  list [sqlite_step $VM3 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM3] \
+       [sqlite3_column_count $VM3] \
+       [get_row_values $VM3] \
+       [get_column_names $VM3]
 } {SQLITE_DONE 2 {} {a b {} {}}}
 do_test capi2-5.8 {
-  list [catch {sqlite3_finalize $VM3} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM3
+} {SQLITE_OK}
 do_test capi2-5.9 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 2 {1 2} {a b {} {}}}
 do_test capi2-5.10 {
-  list [catch {sqlite3_finalize $VM1} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM1
+} {SQLITE_OK}
 do_test capi2-5.11 {
-  list [sqlite_step $VM2 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM2] \
+       [sqlite3_column_count $VM2] \
+       [get_row_values $VM2] \
+       [get_column_names $VM2]
 } {SQLITE_ROW 2 {3 4} {a b {} {}}}
 do_test capi2-5.12 {
-  list [sqlite_step $VM2 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM2] \
+       [sqlite3_column_count $VM2] \
+       [get_row_values $VM2] \
+       [get_column_names $VM2]
 } {SQLITE_ROW 2 {1 2} {a b {} {}}}
 do_test capi2-5.11 {
-  list [catch {sqlite3_finalize $VM2} msg] [set msg]
-} {0 {}}  
+  sqlite3_finalize $VM2
+} {SQLITE_OK}
 
 # Check for proper SQLITE_BUSY returns.
 #
@@ -301,76 +413,114 @@ do_test capi2-6.1 {
   sqlite db2 test.db
   execsql {BEGIN} db2
 } {}
-do_test capi2-6.2 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
-} {SQLITE_BUSY 0 {} {}}
+# Update for v3: BEGIN doesn't write-lock the database. It is quite
+# difficult to get v3 to write-lock the database, which causes a few
+# problems for test scripts.
+#
+# do_test capi2-6.2 {
+#   list [sqlite3_step $VM1] \
+#        [sqlite3_column_count $VM1] \
+#        [get_row_values $VM1] \
+#        [get_column_names $VM1]
+# } {SQLITE_BUSY 0 {} {}}
 do_test capi2-6.3 {
   execsql {COMMIT} db2
 } {}
 do_test capi2-6.4 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 1 {x counter}}
 do_test capi2-6.5 {
-  catchsql {BEGIN} db2
+  catchsql {INSERT INTO t3 VALUES(10);} db2
 } {1 {database is locked}}
 do_test capi2-6.6 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 2 {x counter}}
 do_test capi2-6.7 {
   execsql {SELECT * FROM t2} db2
 } {2 3 3 4 1 2}
 do_test capi2-6.8 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 3 {x counter}}
 do_test capi2-6.9 {
   execsql {SELECT * FROM t2} 
 } {2 3 3 4 1 2}
 do_test capi2-6.10 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 4 {x counter}}
 do_test capi2-6.11 {
   execsql {BEGIN}
 } {}
 do_test capi2-6.12 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 5 {x counter}}
-# execsql {pragma vdbe_trace=on}
 do_test capi2-6.13 {
   catchsql {UPDATE t3 SET x=x+1}
 } {1 {database table is locked}}
 do_test capi2-6.14 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 6 {x counter}}
-# puts [list [catch {sqlite3_finalize $VM1} msg] [set msg]]; exit
 do_test capi2-6.15 {
   execsql {SELECT * FROM t1}
 } {1 2 3}
 do_test capi2-6.16 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 7 {x counter}}
 do_test capi2-6.17 {
   catchsql {UPDATE t1 SET b=b+1}
 } {0 {}}
 do_test capi2-6.18 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 8 {x counter}}
 do_test capi2-6.19 {
   execsql {SELECT * FROM t1}
 } {1 3 3}
 do_test capi2-6.20 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 9 {x counter}}
 do_test capi2-6.21 {
   execsql {ROLLBACK; SELECT * FROM t1}
 } {1 2 3}
 do_test capi2-6.22 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 10 {x counter}}
 do_test capi2-6.23 {
-  execsql {BEGIN TRANSACTION ON CONFLICT ROLLBACK;}
+  execsql {BEGIN TRANSACTION;}
 } {}
 do_test capi2-6.24 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 11 {x counter}}
 do_test capi2-6.25 {
   execsql {
@@ -379,7 +529,10 @@ do_test capi2-6.25 {
   }
 } {1 2 3 2 3 4}
 do_test capi2-6.26 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 12 {x counter}}
 do_test capi2-6.27 {
   catchsql {
@@ -388,11 +541,14 @@ do_test capi2-6.27 {
   }
 } {1 {column a is not unique}}
 do_test capi2-6.28 {
-  list [sqlite_step $VM1 N VALUE COLNAME] [set N] [set VALUE] [set COLNAME]
+  list [sqlite3_step $VM1] \
+       [sqlite3_column_count $VM1] \
+       [get_row_values $VM1] \
+       [get_column_names $VM1]
 } {SQLITE_ROW 1 13 {x counter}}
 do_test capi2-6.99 {
-  list [catch {sqlite3_finalize $VM1} msg] [set msg]
-} {0 {}}
+  sqlite3_finalize $VM1
+} {SQLITE_OK}
 catchsql {ROLLBACK}
 
 do_test capi2-7.1 {
@@ -415,13 +571,13 @@ do_test capi2-7.4 {
     INSERT INTO t1 SELECT a+1,b+1,c+1 FROM t1;
   }
 } {0 1}
-do_test capi2-7.4b {db changes} {1}
+do_test capi2-7.4b {sqlite3_changes $DB} {1}
 do_test capi2-7.5 {
   stepsql $DB {
     UPDATE t1 SET a=a+10;
   }
 } {0 2}
-do_test capi2-7.5b {db changes} {2}
+do_test capi2-7.5b {sqlite3_changes $DB} {2}
 do_test capi2-7.6 {
   stepsql $DB {
     SELECT * FROM t1;
@@ -433,7 +589,7 @@ do_test capi2-7.7 {
   }
 } {0 2}
 do_test capi2-7.8 {
-  db changes
+  sqlite3_changes $DB
 } {2}
 do_test capi2-7.9 {
   stepsql $DB {
@@ -447,7 +603,7 @@ do_test capi2-7.10 {
   }
 } {0 4 1 2 3 2 3 4 3 4 5 4 5 6}
 do_test capi2-7.11 {
-  db changes
+  sqlite3_changes $DB
 } {0}
 do_test capi2-7.12 {
   set x [stepsql $DB {EXPLAIN SELECT * FROM t1}]
@@ -459,16 +615,16 @@ do_test capi2-7.12 {
 do_test capi2-8.1 {
   set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
   sqlite3_finalize $VM1
-} {}
+} {SQLITE_OK}
   
 # Tickets #384 and #385 - make sure the TAIL argument to sqlite3_prepare
 # and all of the return pointers in sqlite_step can be null.
 #
 do_test capi2-9.1 {
   set VM1 [sqlite3_prepare $DB {SELECT * FROM t2} -1 DUMMY]
-  sqlite_step $VM1
+  sqlite3_step $VM1
   sqlite3_finalize $VM1
-} {}
+} {SQLITE_OK}
 
 db2 close
 

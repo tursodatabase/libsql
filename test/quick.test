@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.21 2004/06/14 23:46:48 danielk1977 Exp $
+# $Id: quick.test,v 1.22 2004/06/15 02:44:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,10 +31,6 @@ set EXCLUDE {
 lappend EXCLUDE ioerr.test        ;# seg-faults (?)
 lappend EXCLUDE memdb.test        ;# fails - malformed database
 lappend EXCLUDE version.test      ;# This is obsolete.
-
-# Some tests fail in these file as a result of the partial manifest types
-# implementation.
-lappend EXCLUDE capi2.test 
 
 if {[sqlite -has-codec]} {
   lappend EXCLUDE \

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.76 2004/06/12 09:25:23 danielk1977 Exp $
+** $Id: test1.c,v 1.77 2004/06/15 02:44:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -773,9 +773,6 @@ static int test_finalize(
 
   rc = sqlite3_finalize(pStmt);
   Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
-  if( rc ){
-    return TCL_ERROR;
-  }
   return TCL_OK;
 }
 
@@ -809,10 +806,27 @@ static int test_reset(
 }
 
 /*
-** Usage:  sqlite3_reset   VM 
+** Usage:  sqlite3_changes DB
 **
-** Reset a virtual machine and prepare it to be run again.
+** Return the number of changes made to the database by the last SQL
+** execution.
 */
+static int test_changes(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_changes(db)));
+  return TCL_OK;
+}
 
 /*
 ** This is the "static_bind_value" that variables are bound to when
@@ -1466,7 +1480,7 @@ static int test_step(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   rc = sqlite3_step(pStmt);
 
-  if( rc!=SQLITE_DONE && rc!=SQLITE_ROW ) return TCL_ERROR;
+  /* if( rc!=SQLITE_DONE && rc!=SQLITE_ROW ) return TCL_ERROR; */
   Tcl_SetResult(interp, (char *)errorName(rc), 0);
   return TCL_OK;
 }
@@ -1953,7 +1967,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_prepare16",             test_prepare16     ,0 },
      { "sqlite3_finalize",              test_finalize      ,0 },
      { "sqlite3_reset",                 test_reset         ,0 },
-     { "sqlite3_step",                  test_step,0 },
+     { "sqlite3_changes",               test_changes       ,0 },
+     { "sqlite3_step",                  test_step          ,0 },
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },
