@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.101 2003/09/23 10:25:33 drh Exp $
+** $Id: expr.c,v 1.102 2003/12/10 03:13:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -267,8 +267,8 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
   }
   if( pList->a && (pExpr || pName) ){
     i = pList->nExpr++;
+    memset(&pList->a[i], 0, sizeof(pList->a[i]));
     pList->a[i].pExpr = pExpr;
-    pList->a[i].zName = 0;
     if( pName ){
       sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
       sqliteDequote(pList->a[i].zName);

@@ -1,5 +1,5 @@
-C Fix\sthe\scode\sgenerator\sto\sa\svoid\sa\sVDBE\sstack\soverflow\son\s3-way\sjoins.\nTicket\s#519.\s(CVS\s1129)
-D 2003-12-10T01:31:21
+C Fix\sa\sbulk-memory\sinitialization\sproblem\sin\sthe\sexpression\slist\slogic.\s(CVS\s1130)
+D 2003-12-10T03:13:44
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c acb75ff7849ca923837a9d3ef6b2d3e111a32fb0
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
-F src/expr.c d4d8eca6363a6e680361e5d2a934b78e5c7b7fa3
+F src/expr.c a14401a54e5923f3e52b6d04a83813d150f43f33
 F src/func.c 82a749b9a03ae9834a90854464f93e29f902799b
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 614cbbafa180469744421f8fbe56cb392f48d05f
-R bbe1d83090ef4c5c0c7c0fb5cceefdc4
+P 230a4ff2c8a3927533baf5b22edc9f25490d5443
+R feaa66e13b9b631cf93d8592dd8e6a87
 U drh
-Z 54bb7506abb69e543e32a232bf0d99d4
+Z 89b38e0291450fb7d54128a58c14c43f
