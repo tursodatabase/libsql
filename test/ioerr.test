@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.5 2004/06/19 00:16:31 drh Exp $
+# $Id: ioerr.test,v 1.6 2004/10/01 14:38:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -106,16 +106,9 @@ for {set n 1} {$go} {incr n} {
     set ::sqlite_io_error_pending $n
   }] $n
   do_test ioerr-2.$n.3 {
-if {$n==41} {
-  # set sqlite_os_trace 1
-  breakpoint
-}
     set r [catch {db eval {
       VACUUM;
     }} msg]
-    # puts "error_pending=$::sqlite_io_error_pending"
-    # if {$r} {puts $msg}
-set sqlite_os_trace 0
     set ::go [expr {$::sqlite_io_error_pending<=0}]
     expr {$::sqlite_io_error_pending>0 || $r!=0}
     set ::sqlite_io_error_pending 0

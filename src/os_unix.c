@@ -646,6 +646,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
+  SimulateDiskfullError;
   TIMER_START;
   while( amt>0 && (wrote = write(id->h, pBuf, amt))>0 ){
     amt -= wrote;
