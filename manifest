@@ -1,5 +1,5 @@
-C Incremental\scheck-in\sof\schanges\sthat\swill\sultimately\slead\sto\sa\nworking\sautoincrement.\s(CVS\s2056)
-D 2004-11-05T00:43:12
+C Pop\sthe\svalue\spushed\sby\sOP_Destroy\sif\sSQLITE_OMIT_AUTOVACUUM\sis\sdefined.\s(CVS\s2057)
+D 2004-11-05T01:24:13
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 1b172b9d58608eeba1022e858fedce351c7090f5
 F src/btree.h 3166388fa58c5594d8064d38b43440d79da38fb6
-F src/build.c e72d6f76373998063cd85d592e7a402b8e24b721
+F src/build.c 6e00bcc31c003dc0bf783f777aae7698fdad219a
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
 F src/delete.c 832adc6fe1c07b7e28e1b4c1038d2b06f7397dd4
 F src/expr.c 3a43e508a3dc213703808bbcbb17633b88b57d17
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 158a2d16a8630e3b5892120f6ea68f2b0dc47eb3
-R 7e671e2bcee0e6583c9f1a1b858bd032
-U drh
-Z 257ce5d18cf67227ffb08447220e1214
+P 10c3d88305e404b9e4cc4eef0b8e5dc7864a5937
+R 55c62c93629a83443d5cecea7a9680ce
+U danielk1977
+Z 0115f45c7d1aac8b14a4bee705da57a2

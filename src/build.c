@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.261 2004/11/05 00:43:12 drh Exp $
+** $Id: build.c,v 1.262 2004/11/05 01:24:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1668,6 +1668,7 @@ static void destroyRootPage(Vdbe *v, int iTable, int iDb){
 #endif
 
   sqlite3VdbeAddOp(v, OP_Destroy, iTable, iDb);
+  sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
 #ifndef SQLITE_OMIT_AUTOVACUUM
   base = sqlite3VdbeAddOpList(v, ArraySize(updateMaster), updateMaster);
   sqlite3VdbeChangeP1(v, base+13, iTable);
