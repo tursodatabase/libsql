@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.29 2001/10/22 02:58:10 drh Exp $
+** @(#) $Id: pager.c,v 1.30 2001/11/10 13:51:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -605,7 +605,7 @@ static int syncAllPages(Pager *pPager){
 /*
 ** Acquire a page.
 **
-** A read lock on the disk file is obtained when the first page acquired. 
+** A read lock on the disk file is obtained when the first page is acquired. 
 ** This read lock is dropped when the last page is released.
 **
 ** A _get works for any page number greater than 0.  If the database

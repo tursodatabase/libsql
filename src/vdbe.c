@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.96 2001/11/08 00:45:22 drh Exp $
+** $Id: vdbe.c,v 1.97 2001/11/10 13:51:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1098,7 +1098,7 @@ int sqliteVdbeExec(
 ** we transition back to normal indentation.
 *****************************************************************************/
 
-/* Opcode:  Goto P2 * *
+/* Opcode:  Goto * P2 *
 **
 ** An unconditional jump to address P2.
 ** The next instruction executed will be 

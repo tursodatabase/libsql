@@ -13,11 +13,16 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.11 2001/09/16 00:13:27 drh Exp $
+** @(#) $Id: pager.h,v 1.12 2001/11/10 13:51:09 drh Exp $
 */
 
 /*
 ** The size of one page
+**
+** You can change this value to another (reasonable) power of two
+** such as 512, 2048, 4096, or 8192 and things will still work.  But
+** experiments show that a page size of 1024 gives the best speed.
+** (The speed differences are minimal.)
 */
 #define SQLITE_PAGE_SIZE 1024
 
