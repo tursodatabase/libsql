@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.73 2004/05/27 17:22:56 drh Exp $
+** $Id: tokenize.c,v 1.74 2004/05/27 23:56:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -694,3 +694,18 @@ int sqlite3_complete(const char *zSql){
   }
   return state==0;
 }
+
+/*
+** This routine is the same as the sqlite3_complete() routine described
+** above, except that the parameter is required to be UTF-16 encoded, not
+** UTF-8.
+*/
+int sqlite3_complete16(const void *zSql){
+  int rc;
+  char *zSql8 = sqlite3utf16to8(zSql, -1, SQLITE3_BIGENDIAN);
+  if( !zSql8 ) return 0;
+  rc = sqlite3_complete(zSql8);
+  sqliteFree(zSql8);
+  return rc;
+}
+

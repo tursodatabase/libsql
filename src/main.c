@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.194 2004/05/26 16:54:43 drh Exp $
+** $Id: main.c,v 1.195 2004/05/27 23:56:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1098,6 +1098,88 @@ int sqlite3_open16(
   }
 
   sqliteFree(zFilename8);
+  return rc;
+}
+
+/*
+** Open a new database handle.
+*/
+int sqlite3_open_vararg(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  ...                     /* Option strings */
+){
+  va_list ap;
+  const char **aOpts = 0;
+  int nOpts = 0;
+  int rc;
+
+  /* Count the arguments */
+  va_start(ap, ppDb);
+  while( va_arg(ap, const char *) ) nOpts++;
+  va_end(ap);
+
+  /* If there are more than zero arguments, construct an array */
+  if( nOpts ){
+    aOpts = (const char **)sqliteMalloc(sizeof(const char *)*nOpts+1);
+    if( !aOpts ){
+      *ppDb = 0;
+      return SQLITE_NOMEM;
+    }
+    va_start(ap, ppDb);
+    nOpts = 0;
+    while( va_arg(ap, const char *) ){
+      aOpts[nOpts] = va_arg(ap, const char *);
+      nOpts++;
+    }
+    aOpts[nOpts] = 0;
+    va_end(ap);
+  }
+  
+  /* Call the regular sqlite3_open() */
+  rc = sqlite3_open(filename, ppDb, aOpts);
+  if( aOpts ) sqliteFree(aOpts);
+  return rc;
+}
+
+/*
+** Open a new database handle.
+*/
+int sqlite3_open16_vararg(
+  const void *filename,   /* Database filename (UTF-16) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  ...                     /* Option strings */
+){
+  va_list ap;
+  const char **aOpts = 0;
+  int nOpts = 0;
+  int rc;
+
+  /* Count the arguments */
+  va_start(ap, ppDb);
+  while( va_arg(ap, const char *) ) nOpts++;
+  va_end(ap);
+
+  /* If there are more than zero arguments, construct an array */
+  if( nOpts ){
+    aOpts = (const char **)sqliteMalloc(sizeof(const char *)*nOpts+1);
+    if( !aOpts ){
+      *ppDb = 0;
+      return SQLITE_NOMEM;
+    }
+    va_start(ap, ppDb);
+    nOpts = 0;
+    while( va_arg(ap, const char *) ){
+      aOpts[nOpts] = va_arg(ap, const char *);
+      nOpts++;
+    }
+    aOpts[nOpts] = 0;
+    va_end(ap);
+  }
+  
+  /* Call the regular sqlite3_open16() */
+  rc = sqlite3_open16(filename, ppDb, aOpts);
+  if( aOpts ) sqliteFree(aOpts);
   return rc;
 }
 

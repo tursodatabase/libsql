@@ -1300,7 +1300,7 @@ int sqlite3VdbeSerialGet(
   /* String or blob */
   assert( serial_type>=12 );
   len = sqlite3VdbeSerialTypeLen(serial_type);
-  pMem->z = buf;
+  pMem->z = (char *)buf;
   pMem->n = len;
   if( serial_type&0x01 ){
     pMem->flags = MEM_Str | MEM_Ephem;
