@@ -1,5 +1,5 @@
-C Double-quoted\sstrings\sresolve\sto\scolumn\snames\sif\spossible.\s\sSingle-quoted\nstrings\scontinue\sto\sbe\sinterpreted\sas\sstring\sliterals.\s(CVS\s576)
-D 2002-05-21T13:43:04
+C Fix\sfor\sticket\s#47:\sUse\sa\scast\sto\savoid\sa\swarning\sabout\sdiscarding\sa\s"const"\ninside\sof\shash.c.\s(CVS\s577)
+D 2002-05-21T23:44:30
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -25,7 +25,7 @@ F src/delete.c c2eae01b76d5418d4ff1768659dfb199c38f0641
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 01e1e395392284a3a480c90bd60b3a0fa99aab38
 F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
-F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
+F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 5b6586bb5d8306280253829f42f5f98b1455e757
 F src/main.c 3f0db74a3e8385322a3b69f51bea6ce19caeff19
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3399b01219b9e75b93587b5634d199d9e6fb6e42
-R 11e5246ab7bc31d3891976630a69eee3
+P 55e7d65496624c8e48673d8747f3123786bfedbc
+R c60459d19b1418931f84fad300373577
 U drh
-Z 5b4da1c5d40f9084cbbd43db1688a090
+Z 64d1f209f3e121fdef2277757506d4cb
