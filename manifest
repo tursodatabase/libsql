@@ -1,5 +1,5 @@
-C Get\sVACUUM\sworking\sagain\s-\swith\stest\scases.\s\sSome\sother\sminor\scleanups.\s(CVS\s931)
-D 2003-04-25T02:43:08
+C Explicit\scasts\sto\ssquelch\sbogus\swarnings\sfor\svc++.\s\sTicket\s#194.\s(CVS\s932)
+D 2003-04-25T03:13:25
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
 F src/auth.c a4afd27964fb9f661147115790c8ae2ee230ebcc
-F src/btree.c b9487cceb9ea78af9cbae9def34114902f511736
+F src/btree.c 3de765f186a5d07d8764f970ecd07d83ccfdc51d
 F src/btree.h dc899dd3a10ec9a0c9b51308610d2f53e36b4820
 F src/btree_rb.c b427e6f2df7807cd338636259efadb4e43dba669
 F src/build.c d5a26baeffa5bc49b4b7009a7723c6ab7e1b02d9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 206b17397b1d2b55179c935927ff1d8215728c32
-R ee4f9dd4d9d805754b2a7a86e47142bb
+P 5afb88008fed253e6d1fc0ed5172370b61d3727b
+R f2421cf3a297d027e70ffbccdb3ba489
 U drh
-Z eedc7e5fec762d2a0f0ca33e2eecb73f
+Z 38db8e55b84708279a57f38314d421c3
