@@ -18,10 +18,12 @@ proc chng {date desc} {
 }
 
 chng {2000 June 12} {
-<li>Added a <b>fcnt()</b> function which is designed to help write better.
-    test scripts.  This function is not useful for anything other than
-    testing and debugging, as far as I know.</li>
-<li>Added a few more tests that take advantage of the new fcnt() function.
+<li>Added the fcnt() function to the SQL interpreter.  The fcnt() function
+    returns the number of database "Fetch" operations that have occurred.
+    This function is designed for use in test scripts to verify that
+    queries are efficient and appropriately optimized.  Fcnt() has no other
+    useful purpose, as far as I know.</li>
+<li>Added a bunch more tests that take advantage of the new fcnt() function.
     The new tests did not uncover any new problems.</li>
 }
 
