@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.7 2001/05/24 21:06:36 drh Exp $
+** @(#) $Id: pager.c,v 1.8 2001/06/02 02:40:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -74,6 +74,8 @@
 
 /*
 ** Each in-memory image of a page begins with the following header.
+** This header is only visible to this pager module.  The client
+** code that calls pager sees only the data that follows the header.
 */
 typedef struct PgHdr PgHdr;
 struct PgHdr {

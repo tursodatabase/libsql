@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.9 2001/05/28 00:41:15 drh Exp $
+** $Id: btree.c,v 1.10 2001/06/02 02:40:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -40,7 +40,7 @@ typedef unsigned char u8;
 /*
 ** Forward declarations of structures used only in this file.
 */
-typedef struct Page1Header Page1Header;
+typedef struct PageOne PageOne;
 typedef struct MemPage MemPage;
 typedef struct PageHdr PageHdr;
 typedef struct Cell Cell;
@@ -58,26 +58,31 @@ typedef struct OverflowPage OverflowPage;
 #define ROUNDUP(X)  ((X+3) & ~3)
 
 /*
-** The first page of the database file contains some additional
-** information used for housekeeping and sanity checking.  Otherwise,
-** the first page is just like any other.  The additional information
-** found on the first page is described by the following structure.
+** This is a magic string that appears at the beginning of every
+** SQLite database in order to identify the fail as a real database.
 */
-struct Page1Header {
-  u32 magic1;       /* A magic number to verify the file really is a database */
-  u32 magic2;       /* A second magic number to be extra sure */
-  Pgno firstList;   /* First free page in a list of all free pages */
-};
-#define MAGIC_1  0x7264dc61
-#define MAGIC_2  0x54e55d9e
+static const char zMagicHeader[] = 
+   "** This file contains an SQLite 2.0 database **"
+#define MAGIC_SIZE (sizeof(zMagicHeader))
 
 /*
-** Each database page has a header as follows:
+** The first page of the database file contains a magic header string
+** to identify the file as an SQLite database file.  It also contains
+** a pointer to the first free page of the file.  Page 2 contains the
+** root of the BTree.
 **
-**      page1_header          Optional instance of Page1Header structure
-**      rightmost_pgno        Page number of the right-most child page
-**      first_cell            Index into MemPage.aDisk of first cell
-**      first_free            Index of first free block
+** Remember that pages are numbered beginning with 1.  (See pager.c
+** for additional information.)  Page 0 does not exist and a page
+** number of 0 is used to mean "no such page".
+*/
+struct PageOne {
+  char zMagic[MAGIC_SIZE]; /* String that identifies the file as a database */
+  Pgno firstList;          /* First free page in a list of all free pages */
+};
+
+/*
+** Each database page has a header that is an instance of this
+** structure.
 **
 ** MemPage.pHdr always points to the rightmost_pgno.  First_free is
 ** 0 if there is no free space on this page.  Otherwise, first_free is
@@ -95,11 +100,15 @@ struct PageHdr {
   u16 firstFree;    /* Index in MemPage.aDisk[] of the first free block */
 };
 
-
 /*
 ** Entries on a page of the database are called "Cells".  Each Cell
 ** has a header and data.  This structure defines the header.  The
-** definition of the complete Cell including the data is given below.
+** key and data (collectively the "payload") follow this header on
+** the database page.
+**
+** A definition of the complete Cell structure is given below.  The
+** header for the cell must be defined separately in order to do some
+** of the sizing #defines that follow.
 */
 struct CellHdr {
   Pgno leftChild; /* Child page that comes before this cell */
@@ -110,7 +119,7 @@ struct CellHdr {
 
 /*
 ** The minimum size of a complete Cell.  The Cell must contain a header
-** and at least 4 bytes of data.
+** and at least 4 bytes of payload.
 */
 #define MIN_CELL_SIZE  (sizeof(CellHdr)+4)
 
@@ -124,6 +133,8 @@ struct CellHdr {
 ** The maximum amount of data (in bytes) that can be stored locally for a
 ** database entry.  If the entry contains more data than this, the
 ** extra goes onto overflow pages.
+**
+** This number is chosen so that at least 4 cells will fit on every page.
 */
 #define MX_LOCAL_PAYLOAD \
   ((SQLITE_PAGE_SIZE-sizeof(PageHdr))/4-(sizeof(CellHdr)+sizeof(Pgno)))
@@ -137,7 +148,7 @@ struct CellHdr {
 ** page number of the first overflow page.
 **
 ** Though this structure is fixed in size, the Cell on the database
-** page varies in size.  Very cell has a CellHdr and at least 4 bytes
+** page varies in size.  Every cell has a CellHdr and at least 4 bytes
 ** of payload space.  Additional payload bytes (up to the maximum of
 ** MX_LOCAL_PAYLOAD) and the Cell.ovfl value are allocated only as
 ** needed.
@@ -171,7 +182,7 @@ struct FreeBlk {
 ** Each overflow page is an instance of the following structure.
 **
 ** Unused pages in the database are also represented by instances of
-** the OverflowPage structure.  The Page1Header.freeList field is the
+** the OverflowPage structure.  The PageOne.freeList field is the
 ** page number of the first page in a linked list of unused database
 ** pages.
 */
@@ -182,27 +193,26 @@ struct OverflowPage {
 
 /*
 ** For every page in the database file, an instance of the following structure
-** is stored in memory.  The aDisk[] array contains the data obtained from
-** the disk.  The rest is auxiliary data that held in memory only.  The
-** auxiliary data is only valid for regular database pages - the auxiliary
-** data is meaningless for overflow pages and pages on the freelist.
+** is stored in memory.  The aDisk[] array contains the raw bits read from
+** the disk.  The rest is auxiliary information that held in memory only. The
+** auxiliary info is only valid for regular database pages - it is not
+** used for overflow pages and pages on the freelist.
 **
-** Of particular interest in the auxiliary data is the apCell[] entry.  Each
+** Of particular interest in the auxiliary info is the apCell[] entry.  Each
 ** apCell[] entry is a pointer to a Cell structure in aDisk[].  The cells are
 ** put in this array so that they can be accessed in constant time, rather
-** than in linear time which would be needed if we walked the linked list.
+** than in linear time which would be needed if we had to walk the linked 
+** list on every access.
 **
 ** The pParent field points back to the parent page.  This allows us to
 ** walk up the BTree from any leaf to the root.  Care must be taken to
 ** unref() the parent page pointer when this page is no longer referenced.
-** The pageDestructor() routine handles that.
+** The pageDestructor() routine handles that chore.
 */
 struct MemPage {
   char aDisk[SQLITE_PAGE_SIZE];  /* Page data stored on disk */
   int isInit;                    /* True if auxiliary data is initialized */
   MemPage *pParent;              /* The parent of this page.  NULL for root */
-  int idxStart;                  /* Index in aDisk[] of real data */
-  PageHdr *pHdr;                 /* Points to aDisk[idxStart] */
   int nFree;                     /* Number of free bytes in aDisk[] */
   int nCell;                     /* Number of entries on this page */
   Cell *apCell[MX_CELL];         /* All data entires in sorted order */
@@ -221,7 +231,7 @@ struct MemPage {
 struct Btree {
   Pager *pPager;        /* The page cache */
   BtCursor *pCursor;    /* A list of all open cursors */
-  MemPage *page1;       /* First page of the database */
+  PageOne *page1;       /* First page of the database */
   int inTrans;          /* True if a transaction is in progress */
 };
 typedef Btree Bt;
@@ -244,8 +254,8 @@ struct BtCursor {
 ** Compute the total number of bytes that a Cell needs on the main
 ** database page.  The number returned includes the Cell header,
 ** local payload storage, and the pointer to overflow pages (if
-** applicable).  The point of this routine is that it does not
-** include payload storage on overflow pages.
+** applicable).  Additional spaced allocated on overflow pages
+** is NOT included in the value returned from this routine.
 */
 static int cellSize(Cell *pCell){
   int n = pCell->h.nKey + pCell->h.nData;
@@ -269,8 +279,8 @@ static void defragmentPage(MemPage *pPage){
   FreeBlk *pFBlk;
   char newPage[SQLITE_PAGE_SIZE];
 
-  pc = ROUNDUP(pPage->idxStart + sizeof(PageHdr));
-  pPage->pHdr->firstCell = pc;
+  pc = sizeof(PageHdr);
+  ((PageHdr*)pPage)->firstCell = pc;
   memcpy(newPage, pPage->aDisk, pc);
   for(i=0; i<pPage->nCell; i++){
     Cell *pCell = &pPage->apCell[i];
@@ -285,36 +295,36 @@ static void defragmentPage(MemPage *pPage){
   pFBlk = &pPage->aDisk[pc];
   pFBlk->iSize = SQLITE_PAGE_SIZE - pc;
   pFBlk->iNext = 0;
-  pPage->pHdr->firstFree = pc;
+  ((PageHdr*)pPage)->firstFree = pc;
   memset(&pFBlk[1], 0, SQLITE_PAGE_SIZE - pc - sizeof(FreeBlk));
 }
 
 /*
 ** Allocate space on a page.  The space needs to be at least
-** nByte bytes in size.  (Actually, all allocations are rounded
-** up to the next even multiple of 4.)  Return the index into
-** pPage->aDisk[] of the first byte of the new allocation.
-** Or return 0 if there is not enough free space on the page to
-** satisfy the allocation request.
+** nByte bytes in size.  nByte must be a multiple of 4.
+**
+** Return the index into pPage->aDisk[] of the first byte of
+** the new allocation. Or return 0 if there is not enough free
+** space on the page to satisfy the allocation request.
 **
 ** If the page contains nBytes of free space but does not contain
 ** nBytes of contiguous free space, then defragementPage() is
 ** called to consolidate all free space before allocating the
 ** new chunk.
 */
-static int allocSpace(MemPage *pPage, int nByte){
+static int allocateSpace(MemPage *pPage, int nByte){
   FreeBlk *p;
   u16 *pIdx;
   int start;
 
   assert( nByte==ROUNDUP(nByte) );
   if( pPage->nFree<nByte ) return 0;
-  pIdx = &pPage->pHdr->firstFree;
+  pIdx = &((PageHdr*)pPage)->firstFree;
   p = (FreeBlk*)&pPage->aDisk[*pIdx];
   while( p->iSize<nByte ){
     if( p->iNext==0 ){
       defragmentPage(pPage);
-      pIdx = &pPage->pHdr->firstFree;
+      pIdx = &((PageHdr*)pPage)->firstFree;
     }else{
       pIdx = &p->iNext;
     }
@@ -351,7 +361,7 @@ static void freeSpace(MemPage *pPage, int start, int size){
 
   assert( size == ROUNDUP(size) );
   assert( start == ROUNDUP(start) );
-  pIdx = &pPage->pHdr->firstFree;
+  pIdx = &((PageHdr*)pPage)->firstFree;
   idx = *pIdx;
   while( idx!=0 && idx<start ){
     pFBlk = (FreeBlk*)&pPage->aDisk[idx];
@@ -384,7 +394,9 @@ static void freeSpace(MemPage *pPage, int start, int size){
 /*
 ** Initialize the auxiliary information for a disk block.
 **
-** The pParent field is always
+** The pParent parameter must be a pointer to the MemPage which
+** is the parent of the page being initialized.  The root of the
+** BTree (page 2) has no parent and so for that page, pParent==NULL.
 **
 ** Return SQLITE_OK on success.  If we see that the page does
 ** not contained a well-formed database page, then return 
@@ -408,15 +420,13 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, MemPage *pParent){
     sqlitepager_ref(pParent);
   }
   if( pPage->isInit ) return SQLITE_OK;
-  pPage->idxStart = (pgnoThis==1) ? sizeof(Page1Header) : 0;
-  pPage->pHdr = (PageHdr*)&pPage->aDisk[pPage->idxStart];
   pPage->isInit = 1;
   pPage->nCell = 0;
-  freeSpace = SQLITE_PAGE_SIZE - pPage->idxStart - sizeof(PageHeader);
-  idx = pPage->pHdr->firstCell;
+  freeSpace = SQLITE_PAGE_SIZE - sizeof(PageHdr);
+  idx = ((PageHdr*)pPage)->firstCell;
   while( idx!=0 ){
     if( idx>SQLITE_PAGE_SIZE-MN_CELL_SIZE ) goto page_format_error;
-    if( idx<pPage->idxStart + sizeof(PageHeader) ) goto page_format_error;
+    if( idx<sizeof(PageHdr) ) goto page_format_error;
     pCell = (Cell*)&pPage->aDisk[idx];
     sz = cellSize(pCell);
     if( idx+sz > SQLITE_PAGE_SIZE ) goto page_format_error;
@@ -425,10 +435,10 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, MemPage *pParent){
     idx = pCell->h.iNext;
   }
   pPage->nFree = 0;
-  idx = pPage->pHdr->firstFree;
+  idx = ((PageHdr*)pPage)->firstFree;
   while( idx!=0 ){
     if( idx>SQLITE_PAGE_SIZE-sizeof(FreeBlk) ) goto page_format_error;
-    if( idx<pPage->idxStart + sizeof(PageHeader) ) goto page_format_error;
+    if( idx<sizeof(PageHdr) ) goto page_format_error;
     pFBlk = (FreeBlk*)&pPage->aDisk[idx];
     pPage->nFree += pFBlk->iSize;
     if( pFBlk->iNext <= idx ) goto page_format_error;
@@ -439,6 +449,51 @@ static int initPage(MemPage *pPage, Pgno pgnoThis, MemPage *pParent){
 
 page_format_error:
   return SQLITE_CORRUPT;
+}
+
+/*
+** Recompute the MemPage.apCell[], MemPage.nCell, and MemPage.nFree parameters
+** for a cell after the content has be changed significantly.
+**
+** The computation here is similar to initPage() except that in this case
+** the MemPage.aDisk[] field has been set up internally (instead of 
+** having been read from disk) so we do not need to do as much error
+** checking.
+*/
+static void reinitPage(MemPage *pPage){
+  Cell *pCell;
+
+  pPage->nCell = 0;
+  idx = ((PageHdr*)pPage)->firstCell;
+  while( idx!=0 ){
+    pCell = (Cell*)&pPage->aDisk[idx];
+    sz = cellSize(pCell);
+    pPage->apCell[pPage->nCell++] = pCell;
+    idx = pCell->h.iNext;
+  }
+  pPage->nFree = 0;
+  idx = ((PageHdr*)pPage)->firstFree;
+  while( idx!=0 ){
+    pFBlk = (FreeBlk*)&pPage->aDisk[idx];
+    pPage->nFree += pFBlk->iSize;
+    idx = pFBlk->iNext;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Initialize a database page so that it holds no entries at all.
+*/
+static void zeroPage(MemPage *pPage){
+  PageHdr *pHdr;
+  FreeBlk *pFBlk;
+  memset(pPage, 0, SQLITE_PAGE_SIZE);
+  pHdr = (PageHdr*)pPage;
+  pHdr->firstCell = 0;
+  pHdr->firstFree = sizeof(*pHdr);
+  pFBlk = (FreeBlk*)&pHdr[1];
+  pFBlk->iNext = 0;
+  pFBlk->iSize = SQLITE_PAGE_SIZE - sizeof(*pHdr);
 }
 
 /*
@@ -511,15 +566,13 @@ static int lockBtree(Btree *pBt){
   if( pBt->page1 ) return SQLITE_OK;
   rc = sqlitepager_get(pBt->pPager, 1, &pBt->page1);
   if( rc!=SQLITE_OK ) return rc;
-  rc = initPage(pBt->page1, 1, 0);
-  if( rc!=SQLITE_OK ) goto page1_init_failed;
 
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
   if( sqlitepager_pagecount(pBt->pPager)>0 ){
-    Page1Header *pP1 = (Page1Header*)pBt->page1;
-    if( pP1->magic1!=MAGIC_1 || pP1->magic2!=MAGIC_2 ){
+    PageOne *pP1 = pBt->page1;
+    if( strcmp(pP1->zMagic1,zMagicHeader)!=0 ){
       rc = SQLITE_CORRUPT;
       goto page1_init_failed;
     }
@@ -607,9 +660,16 @@ int sqliteBtreeCursor(Btree *pBt, BtCursor **ppCur){
   }
   pCur = sqliteMalloc( sizeof(*pCur) );
   if( pCur==0 ){
-    *ppCur = 0;
-    unlockBtree(pBt);
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+    goto create_cursor_exception;
+  }
+  rc = sqlitepager_get(pBt->pPager, 2, &pCur->pPage);
+  if( rc!=SQLITE_OK ){
+    goto create_cursor_exception;
+  }
+  rc = initPage(pCur->pPage, 2, 0);
+  if( rc!=SQLITE_OK ){
+    goto create_cursor_exception;
   }
   pCur->pPrev = 0;
   pCur->pNext = pBt->pCursor;
@@ -618,20 +678,23 @@ int sqliteBtreeCursor(Btree *pBt, BtCursor **ppCur){
   }
   pBt->pCursor = pCur;
   pCur->pBt = pBt;
-  rc = sqlitepager_get(pBt->pPager, 1, &pCur->pPage);
-  if( rc!=SQLITE_OK ){
-    sqliteFree(pCur);
-    *ppCur = 0;
-    return rc;
-  }
-  initPage(pCur->pPage, 1, 0);
   pCur->idx = 0;
   *ppCur = pCur;
   return SQLITE_OK;
+
+create_cursor_exception:
+  *ppCur = 0;
+  if( pCur ){
+    if( pCur->pPage ) sqlitepager_unref(pCur->pPage);
+    sqliteFree(pCur);
+  }
+  unlinkBtree(pBt);
+  return rc;
 }
 
 /*
-** Close a cursor. 
+** Close a cursor.  The lock on the database file is released
+** when the last cursor is closed.
 */
 int sqliteBtreeCloseCursor(BtCursor *pCur){
   Btree *pBt = pCur->pBt;
@@ -645,9 +708,7 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
     pCur->pNext->pPrev = pCur->pPrev;
   }
   sqlitepager_unref(pCur->pPage);
-  if( pBt->pCursor==0 && pBt->inTrans==0 ){
-    unlockBtree(pBt);
-  }
+  unlockBtree(pBt);
   sqliteFree(pCur);
 }
 
@@ -655,7 +716,7 @@ int sqliteBtreeCloseCursor(BtCursor *pCur){
 ** Make a temporary cursor by filling in the fields of pTempCur.
 ** The temporary cursor is not on the cursor list for the Btree.
 */
-static void createTemporaryCursor(BtCursor *pCur, BtCursor *pTempCur){
+static void CreateTemporaryCursor(BtCursor *pCur, BtCursor *pTempCur){
   memcpy(pTempCur, pCur, sizeof(*pCur));
   pTempCur->pNext = 0;
   pTempCur->pPrev = 0;
@@ -663,17 +724,19 @@ static void createTemporaryCursor(BtCursor *pCur, BtCursor *pTempCur){
 }
 
 /*
-** Delete a temporary cursor such as was made by the createTemporaryCursor()
+** Delete a temporary cursor such as was made by the CreateTemporaryCursor()
 ** function above.
 */
-static void destroyTemporaryCursor(BeCursor *pCur){
+static void DestroyTemporaryCursor(BeCursor *pCur){
   sqlitepager_unref(pCur->pPage);
 }
 
 /*
-** Write the number of bytes of key for the entry the cursor is
-** pointing to into *pSize.  Return SQLITE_OK.  Failure is not
-** possible.
+** Set *pSize to the number of bytes of key in the entry the
+** cursor currently points to.  Always return SQLITE_OK.
+** Failure is not possible.  If the cursor is not currently
+** pointing to an entry (which can happen, for example, if
+** the database is empty) then *pSize is set to 0.
 */
 int sqliteBtreeKeySize(BtCursor *pCur, int *pSize){
   Cell *pCell;
@@ -716,10 +779,9 @@ static int getPayload(BtCursor *pCur, int offset, int amt, char *zBuf){
     offset += a;
     zBuf += a;
     amt -= a;
-    if( amt>0 ){
-      assert( a==ROUNDUP(a) );
-      nextPage = *(Pgno*)&aPayload[a];
-    }
+  }
+  if( amt>0 ){
+    nextPage = pCur->pPage->apCell[pCur->idx].ovfl;
   }
   while( amt>0 && nextPage ){
     OverflowPage *pOvfl;
@@ -734,10 +796,10 @@ static int getPayload(BtCursor *pCur, int offset, int amt, char *zBuf){
         a = OVERFLOW_SIZE - offset;
       }
       memcpy(zBuf, &pOvfl->aPayload[offset], a);
-      offset += a;
       amt -= a;
       zBuf += a;
     }
+    offset -= OVERFLOW_SIZE;
     sqlitepager_unref(pOvfl);
   }
   return amt==0 ? SQLITE_OK : SQLITE_CORRUPT;
@@ -764,13 +826,17 @@ int sqliteBtreeKey(BtCursor *pCur, int offset, int amt, char *zBuf){
   }
   pCell = pPage->apCell[pCur->idx];
   if( amt+offset > pCell->h.nKey ){
+    return SQLITE_ERROR;
+  }
   return getPayload(pCur, offset, amt, zBuf);
 }
 
 /*
-** Write the number of bytes of data on the entry that the cursor
-** is pointing to into *pSize.  Return SQLITE_OK.  Failure is
-** not possible.
+** Set *pSize to the number of bytes of data in the entry the
+** cursor currently points to.  Always return SQLITE_OK.
+** Failure is not possible.  If the cursor is not currently
+** pointing to an entry (which can happen, for example, if
+** the database is empty) then *pSize is set to 0.
 */
 int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
   Cell *pCell;
@@ -807,7 +873,9 @@ int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
     return SQLITE_ERROR;
   }
   pCell = pPage->apCell[pCur->idx];
-  if( amt+offset > pCell->h.nKey ){
+  if( amt+offset > pCell->h.nData ){
+    return SQLITE_ERROR;
+  }
   return getPayload(pCur, offset + pCell->h.nKey, amt, zBuf);
 }
 
@@ -830,7 +898,7 @@ static int compareKey(BtCursor *pCur, char *pKey, int nKeyOrig, int *pResult){
 
   assert( pCur->pPage );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
-  pCell = &pCur->pPage->apCell[pCur->idx];
+  pCell = pCur->pPage->apCell[pCur->idx];
   if( nKey > pCell->h.nKey ){
     nKey = pCell->h.nKey;
   }
@@ -898,17 +966,15 @@ static int moveToChild(BtCursor *pCur, int newPgno){
 ** pCur->idx is set to the cell index that contains the pointer
 ** to the page we are coming from.  If we are coming from the
 ** right-most child page then pCur->idx is set to one more than
-** the largets cell index.
+** the largest cell index.
 */
 static int moveToParent(BtCursor *pCur){
   Pgno oldPgno;
   MemPage *pParent;
 
   pParent = pCur->pPage->pParent;
+  if( pParent==0 ) return SQLITE_INTERNAL;
   oldPgno = sqlitepager_pagenumber(pCur->pPage);
-  if( pParent==0 ){
-    return SQLITE_INTERNAL;
-  }
   sqlitepager_ref(pParent);
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pParent;
@@ -927,8 +993,10 @@ static int moveToParent(BtCursor *pCur){
 */
 static int moveToRoot(BtCursor *pCur){
   MemPage *pNew;
-  pNew = pCur->pBt->page1;
-  sqlitepager_ref(pNew);
+  int rc;
+
+  rc = sqlitepager_get(pCur->pBt->pPager, 2, &pNew);
+  if( rc ) return rc;
   sqlitepager_unref(pCur->pPage);
   pCur->pPage = pNew;
   pCur->idx = 0;
@@ -955,17 +1023,23 @@ static int moveToLeftmost(BtCursor *pCur){
 ** Return a success code.
 **
 ** If an exact match is not found, then the cursor is always
-** left point at a root page which would hold the entry if it
+** left pointing at a leaf page which would hold the entry if it
 ** were present.  The cursor might point to an entry that comes
 ** before or after the key.
 **
-** If pRes!=NULL, then *pRes is written with an integer code to
-** describe the results.  *pRes is set to 0 if the cursor is left 
-** pointing at an entry that exactly matches pKey.  *pRes is made
-** negative if the cursor is on the largest entry less than pKey.
-** *pRes is set positive if the cursor is on the smallest entry
-** greater than pKey.  *pRes is not changed if the return value
-** is something other than SQLITE_OK;
+** The result of comparing the key with the entry to which the
+** cursor is left pointing is stored in pCur->iMatch.  The same
+** value is also written to *pRes if pRes!=NULL.  The meaning of
+** this value is as follows:
+**
+**     *pRes<0      The cursor is left pointing at an entry that
+**                  is larger than pKey.
+**
+**     *pRes==0     The cursor is left pointing at an entry that
+**                  exactly matches pKey.
+**
+**     *pRes>0      The cursor is left pointing at an entry that
+**                  is smaller than pKey.
 */
 int sqliteBtreeMoveto(BtCursor *pCur, void *pKey, int nKey, int *pRes){
   int rc;
@@ -995,7 +1069,7 @@ int sqliteBtreeMoveto(BtCursor *pCur, void *pKey, int nKey, int *pRes){
     }
     assert( lwr==upr+1 );
     if( lwr>=pPage->nCell ){
-      chldPg = pPage->pHdr->rightChild;
+      chldPg = ((PageHdr*)pPage)->rightChild;
     }else{
       chldPg = pPage->apCell[lwr]->h.leftChild;
     }
@@ -1007,12 +1081,14 @@ int sqliteBtreeMoveto(BtCursor *pCur, void *pKey, int nKey, int *pRes){
     rc = moveToChild(pCur, chldPg);
     if( rc ) return rc;
   }
+  /* NOT REACHED */
 }
 
 /*
-** Advance the cursor to the next entry in the database.  If pRes!=NULL
-** then set *pRes=0 on success and set *pRes=1 if the cursor was
-** pointing to the last entry in the database.
+** Advance the cursor to the next entry in the database.  If
+** successful and pRes!=NULL then set *pRes=0.  If the cursor
+** was already pointing to the last entry in the database before
+** this routine was called, then set *pRes=1 if pRes!=NULL.
 */
 int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   int rc;
@@ -1023,8 +1099,8 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
   }
   pCur->idx++;
   if( pCur->idx>=pCur->pPage->nCell ){
-    if( pPage->pHdr->rightChild ){
-      rc = moveToChild(pCur, pPage->pHdr->rightChild);
+    if( ((PageHdr*)pPage)->rightChild ){
+      rc = moveToChild(pCur, ((PageHdr*)pPage)->rightChild);
       if( rc ) return rc;
       rc = moveToLeftmost(pCur);
       if( rc ) return rc;
@@ -1061,7 +1137,7 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
 ** Do not invoke sqlitepager_unref() on *ppPage if an error is returned.
 */
 static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
-  Page1Header *pPage1 = (Page1Header*)pBt->page1;
+  PageOne *pPage1 = pBt->page1;
   if( pPage1->freeList ){
     OverflowPage *pOvfl;
     rc = sqlitepager_write(pPage1);
@@ -1093,7 +1169,7 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
 ** needs to do that.
 */
 static int freePage(Btree *pBt, void *pPage, Pgno pgno){
-  Page1Header *pPage1 = (Page1Header*)pBt->page1;
+  PageOne *pPage1 = pBt->page1;
   OverflowPage *pOvfl = (OverflowPage*)pPage;
   int rc;
   int needOvflUnref = 0;
@@ -1119,6 +1195,8 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
   pOvfl->next = pPage1->freeList;
   pPage1->freeList = pgno;
   memset(pOvfl->aPayload, 0, OVERFLOW_SIZE);
+  pPage->isInit = 0;
+  assert( pPage->pParent==0 );
   rc = sqlitepager_unref(pOvfl);
   return rc;
 }
@@ -1130,7 +1208,6 @@ static int freePage(Btree *pBt, void *pPage, Pgno pgno){
 static int clearCell(Btree *pBt, Cell *pCell){
   Pager *pPager = pBt->pPager;
   OverflowPage *pOvfl;
-  Page1Header *pPage1 = (Page1Header*)pBt->page1;
   Pgno ovfl, nextOvfl;
   int rc;
 
@@ -1143,7 +1220,8 @@ static int clearCell(Btree *pBt, Cell *pCell){
     rc = sqlitepager_get(pPager, ovfl, &pOvfl);
     if( rc ) return rc;
     nextOvfl = pOvfl->next;
-    freePage(pBt, pOvfl, ovfl);
+    rc = freePage(pBt, pOvfl, ovfl);
+    if( rc ) return rc;
     ovfl = nextOvfl;
     sqlitepager_unref(pOvfl);
   }
@@ -1209,6 +1287,39 @@ static int fillInCell(
 }
 
 /*
+** Change the MemPage.pParent pointer on the page whose number is
+** given in the second argument sot that MemPage.pParent holds the
+** pointer in the third argument.
+*/
+static void reparentPage(Pager *pPager, Pgno pgno, MemPage *pNewParent){
+  MemPage *pThis;
+
+  assert( pPager!=0 && pgno!=0 );
+  pThis = sqlitepager_lookup(pPager, pgno);
+  if( pThis && pThis->pParent!=pNewParent ){
+    if( pThis->pParent ) sqlitepager_unref(pThis->pParent);
+    pThis->pParent = pNewParent;
+    if( pNewParent ) sqlitepager_ref(pNewParent);
+  }
+}
+
+/*
+** Reparent all children of the given page to be the given page.
+** In other words, for every child of pPage, invoke reparentPage()
+** to make sure that child knows that pPage is its parent.
+**
+** This routine gets called after you memcpy() one page into
+** another.
+*/
+static void reparentChildPages(Pager *pPager, Page *pPage){
+  int i;
+  for(i=0; i<pPage->nCell; i++){
+    reparentPage(pPager, pPage->apCell[i]->leftChild, pPage);
+  }
+  reparentPage(pPager, ((PageHdr*)pPage)->rightChild, pPage);
+}
+
+/*
 ** Attempt to move N or more bytes out of the page that the cursor
 ** points to into the left sibling page.  (The left sibling page
 ** contains cells that are less than the cells on this page.)  The
@@ -1222,7 +1333,7 @@ static int fillInCell(
 **    (3) some kind of file I/O error occurred
 **
 ** Note that a partial rotation may have occurred even if this routine
-** returns FALSE.  Failure means we could not rotation a fill N bytes.
+** returns FALSE.  Failure means we could not rotation a full N bytes.
 ** If it is possible to rotation some smaller number M, then the 
 ** rotation occurs but we still return false.
 **
@@ -1268,6 +1379,36 @@ static int rotateRight(BtCursor *pCur, int N){
 }
 
 /*
+** Append a cell onto the end of a page.
+**
+** The child page of the cell is reparented if pPager!=NULL.
+*/
+static void appendCell(
+  Pager *pPager,      /* The page cache.  Needed for reparenting */
+  Cell *pSrc,         /* The Cell to be copied onto a new page */
+  MemPage *pPage      /* The page into which the cell is copied */
+){
+  int pc;
+  int sz;
+  Cell *pDest;
+
+  sz = cellSize(pSrc);
+  pc = allocateSpace(pPage, sz);
+  assert( pc>0 ){
+  pDest = pPage->apCell[pPage->nCell] = &pPage->aDisk[pc];
+  memcpy(pDest, pSrc, sz);
+  pDest->h.iNext = 0;
+  if( pPage->nCell>0 ){
+    pPage->apCell[pPage->nCell-1]->h.iNext = pc;
+  }else{
+    ((PageHdr*)pPage)->firstCell = pc;
+  }
+  if( pPager && pDest->h.leftChild ){
+    reparentPage(pPager, pDest->h.leftChild, pPage);
+  }
+}
+
+/*
 ** Split a single database page into two roughly equal-sized pages.
 **
 ** The input is an existing page and a new Cell.  The Cell might contain
@@ -1291,7 +1432,73 @@ static int split(
   Cell *pCenter,      /* Write the cell that divides the two pages here */
   MemPage **ppOut     /* If not NULL, put larger cells in new page at *ppOut */
 ){
-  
+  MemPage *pLeft, *pRight;
+  Pgno pgnoLeft, pgnoRight;
+  PageHdr *pHdr;
+  int rc;
+  Pager *pPager = pCur->pBt->pPager;
+  MemPage tempPage;
+
+  /* Allocate pages to hold cells after the split and make pRight and 
+  ** pLeft point to the newly allocated pages.
+  */
+  rc = allocatePage(pCur->pBt, &pLeft, &pgnoLeft);
+  if( rc ) return rc;
+  if( ppOut ){
+    rc = allocatePage(pCur->pBt, &pRight, &pgnoRight);
+    if( rc ){
+      freePage(pCur->pBt, pLeft, pgnoLeft);
+      return rc;
+    }
+    *ppOut = pRight;
+  }else{
+    *ppOut = tempPage;
+  }
+
+  /* Copy the smaller cells from the original page into the left page
+  ** of the split.
+  */
+  zeroPage(pLeft);
+  if( pCur->idx==0 && pCur->match>0 ){
+    appendCell(pPager, pNewCell, pLeft);
+  }
+  do{
+    assert( i<pPage->nCell );
+    appendCell(pPager, pPage->apCell[i++], pLeft);
+    if( pCur->idx==i && pCur->iMatch>0 ){
+      appendCell(pPager, pNewCell, Left);
+    }
+  }while( pc < SQLITE_PAGE_SIZE/2 );
+
+  /* Copy the middle entry into *pCenter
+  */
+  assert( i<pPage->nCell );
+  memcpy(pCenter, pPage->aCell[i], cellSize(pPage->aCell[i]));
+  i++;
+  pHdr = (PageHdr*)pLeft;
+  pHdr->rightChild = pCenter->h.leftChild;
+  if( pHdr->rightChild ){
+    reparentPage(pPager, pHdr->rightChild, pLeft);
+  }
+  pCenter->h.leftChild = pgnoLeft;
+ 
+  /* Copy the larger cells from the original page into the right
+  ** page of the split
+  */
+  zeroPage(pRight);
+  while( i<pPage->nCell ){
+    appendCell(0, pPage->apCell[i++], pRight);
+  }
+
+  /* If ppOut==NULL then copy the temporary right page over top of
+  ** the original input page.
+  */
+  if( ppOut==0 ){
+    pRight->pParent = pPage->pParent;
+    pRight->isInit = 1;
+    memcpy(pPage, pRight, sizeof(*pPage));
+  }
+  reparentChildPages(pPager, pPage);
 }
 
 /*
@@ -1310,6 +1517,7 @@ static void unlinkCell(BtCursor *pCur){
   int i;             /* Loop counter */
 
   pPage = pCur->pPage;
+  sqlitepager_write(pPage);
   idx = pCur->idx;
   pCell = pPage->apCell[idx];
   if( idx==0 ){
@@ -1333,7 +1541,7 @@ static void unlinkCell(BtCursor *pCur){
 ** database page that pCur points to.  The calling routine has made
 ** sure it will fit.  All this routine needs to do is add the Cell
 ** to the page.  The addToPage() routine should be used for cases
-** were it is not know if the new cell will fit.
+** were it is not known if the new cell will fit.
 **
 ** The new cell is added to the page either before or after the cell
 ** to which the cursor is pointing.  The new cell is added before
@@ -1407,6 +1615,8 @@ static int addToPage(BtCursor *pCur, Cell *pNewCell){
 
   for(;;){
     MemPage *pPage = pCur->pPage;
+    rc = sqlitepager_write(pPage);
+    if( rc ) return rc;
     int sz = cellSize(pNewCell);
     if( sz<=pPage->nFree ){
       insertCell(pCur, pNewCell);
@@ -1422,7 +1632,7 @@ static int addToPage(BtCursor *pCur, Cell *pNewCell){
       pHdr = pPage->pHdr;
       pHdr->right = sqlitepager_pagenumber(pRight);
       sqlitepager_unref(pRight);
-      pHdr->firstCell = pc = pPage->idxStart + sizeof(*pHdr);
+      pHdr->firstCell = pc = sizeof(*pHdr);
       sz = cellSize(&centerCell);
       memcpy(&pPage->aDisk[pc], &centerCell, sz);
       pc += sz;
@@ -1466,6 +1676,8 @@ int sqliteBtreeInsert(
 
   rc = sqliteBtreeMoveTo(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
+  rc = sqlitepager_write(pCur->pPage);
+  if( rc ) return rc;
   rc = fillInCell(pBt, &newCell, pKey, nKey, pData, nData);
   if( rc ) return rc;
   if( loc==0 ){
@@ -1478,23 +1690,51 @@ int sqliteBtreeInsert(
 }
 
 /*
-** Check the page given as the argument to see if it is less than
+** Check the page at which the cursor points to see if it is less than
 ** half full.  If it is less than half full, then try to increase
 ** its fill factor by grabbing cells from siblings or by merging
 ** the page with siblings.
 */
-static int refillPage(Btree *pBt, MemPage *pPage){
+static int refillPage(BtCursor *pCur){
+  MemPage *pPage;
+  BtCursor tempCur;
+  int rc;
+  Pager *pPager;
+
+  pPage = pCur->pPage;
   if( pPage->nFree < SQLITE_PAGE_SIZE/2 ){
     return SQLITE_OK;
   }
+  rc = sqlitepager_write(pPage);
+  if( rc ) return rc;
+  pPager = pCur->pBt->pPager;
+
   if( pPage->nCell==0 ){
+    /* The page being refilled is the root of the BTree and it has
+    ** no entries of its own.  If there is a child page, then make the
+    ** child become the new root.
+    */
+    MemPage *pChild;
+    Pgno pgnoChild;
     assert( pPage->pParent==0 );
-    if( pPage->pHdr->rightChild ){
-      
+    assert( sqlitepager_pagenumber(pPage)==2 );
+    pgnoChild = ((PageHdr*)pPage)->rightChild;
+    if( pgnoChild==0 ){
+      return SQLITE_OK;
     }
+    rc = sqlitepager_get(pPager, pgno, &pChild);
+    if( rc ) return rc;
+    memcpy(pPage, pChild, SQLITE_PAGE_SIZE);
+    memset(&pPage->aDisk[SQLITE_PAGE_SIZE], 0, EXTRA_SIZE);
+    freePage(pCur->pBt, pChild, pgnoChild);
+    sqlitepager_unref(pChild);
+    rc = initPage(pPage, 2, 0);
+    reparentChildPages(pPager, pPage);
     return SQLITE_OK;
   }
+
   /** merge with siblings **/
+
   /** borrow from siblings **/
 }
 
@@ -1506,7 +1746,7 @@ static int refillPage(Btree *pBt, MemPage *pPage){
 ** If the size of pNewContent is greater than the current size of the
 ** cursor cell then the page that cursor points to might have to split.
 */
-static int replaceContent(BtCursor *pCur, Cell *pNewContent){
+static int ReplaceContentOfCell(BtCursor *pCur, Cell *pNewContent){
   Cell *pCell;       /* The cell whose content will be changed */
   Pgno pgno;         /* Temporary storage for a page number */
 
@@ -1522,19 +1762,24 @@ static int replaceContent(BtCursor *pCur, Cell *pNewContent){
 }
 
 /*
-** Delete the record that the cursor is pointing to.
+** Delete the entry that the cursor is pointing to.
 **
-** The cursor is left point at either the next or the previous
-** entry.  If left pointing to the next entry, then the pCur->bSkipNext
-** flag is set which forces the next call to sqliteBtreeNext() to be
-** a no-op.  That way, you can always call sqliteBtreeNext() after
-** a delete and the cursor will be left pointing to the first entry
-** after the deleted entry.
+** The cursor is left pointing at either the next or the previous
+** entry.  If the cursor is left pointing to the next entry, then 
+** the pCur->bSkipNext flag is set which forces the next call to 
+** sqliteBtreeNext() to be a no-op.  That way, you can always call
+** sqliteBtreeNext() after a delete and the cursor will be left
+** pointing to the first entry after the deleted entry.
 */
 int sqliteBtreeDelete(BtCursor *pCur){
   MemPage *pPage = pCur->pPage;
   Cell *pCell;
   int rc;
+  if( pCur->idx >= pPage->nCell ){
+    return SQLITE_ERROR;  /* The cursor is not pointing to anything */
+  }
+  rc = sqlitepager_write(pPage);
+  if( rc ) return rc;
   pCell = pPage->apCell[pCur->idx];
   if( pPage->pHdr->rightChild ){
     /* The entry to be deleted is not on a leaf page.  Non-leaf entries 
@@ -1545,14 +1790,14 @@ int sqliteBtreeDelete(BtCursor *pCur){
     ** entry, then delete the next entry.
     */
     BtCursor origCur;
-    createTemporaryCursor(pCur, &origCur);
+    CreateTemporaryCursor(pCur, &origCur);
     rc = sqliteBtreeNext(pCur, 0);
     if( rc==SQLITE_OK ){
       pPage = pCur->pPage;
       pCell = pPage->apCell[pCur->idx];
-      rc = replaceContent(&origCur, pCell);
+      rc = ReplaceContentOfCell(&origCur, pCell);
     }
-    destroyTemporaryCursor(&origCur);
+    DestroyTemporaryCursor(&origCur);
     if( rc ) return rc;
   }
   rc = clearCell(pCell);
@@ -1563,6 +1808,6 @@ int sqliteBtreeDelete(BtCursor *pCur){
   }else{
     pCur->idx--;
   }
-  rc = refillPage(pCur->pBt, pPage);
+  rc = refillPage(pCur);
   return rc;
 }
