@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.80 2004/11/21 01:02:01 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.81 2005/01/10 06:39:57 danielk1977 Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -887,7 +887,8 @@ Section expression expr
 
 Syntax {expr} {
 <expr> <binary-op> <expr> |
-<expr> <like-op> <expr> |
+<expr> <like-op> <expr> [ESCAPE <expr>] |
+<expr> <glob-op> <expr> |
 <unary-op> <expr> |
 ( <expr> ) |
 <column-name> |
@@ -904,7 +905,9 @@ Syntax {expr} {
 ( <select-statement> ) |
 CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END
 } {like-op} {
-LIKE | GLOB | NOT LIKE | NOT GLOB
+LIKE | NOT LIKE
+} {glob-op} {
+GLOB | NOT GLOB
 }
 
 puts {
@@ -950,21 +953,48 @@ operand modulo its right operand.</p>"
 puts {
 
 <a name="like"></a>
+<p>The LIKE operator does a pattern matching comparison. The operand
+to the right contains the pattern, the left hand operand contains the
+string to match against the pattern. 
+}
+puts "A percent symbol [Operator %] in the pattern matches any
+sequence of zero or more characters in the string.  An underscore
+[Operator _] in the pattern matches any single character in the
+string.  Any other character matches itself or it's lower/upper case
+equivalent (i.e. case-insensitive matching).  (A bug: SQLite only
+understands upper/lower case for 7-bit Latin characters.  Hence the
+LIKE operator is case sensitive for 8-bit iso8859 characters or UTF-8
+characters.  For example, the expression <b>'a'&nbsp;LIKE&nbsp;'A'</b>
+is TRUE but <b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).</p>"
+
+puts {
+<p>If the optional ESCAPE clause is present, then the expression
+following the ESCAPE keyword must evaluate to a string consisting of
+a single character. This character may be used in the LIKE pattern
+to include literal percent or underscore characters. The escape
+character followed by a percent symbol, underscore or itself matches a
+literal percent symbol, underscore or escape character in the string,
+respectively. The infix LIKE operator is implemented by calling the
+user function <a href="#likeFunc"> like(<i>X</i>,<i>Y</i>)</a>.</p>
+}
+
+puts {
 <p>The LIKE operator does a wildcard comparison.  The operand
 to the right contains the wildcards.}
 puts "A percent symbol [Operator %] in the right operand
 matches any sequence of zero or more characters on the left.
 An underscore [Operator _] on the right
 matches any single character on the left."
-puts {The LIKE operator is
-not case sensitive and will match upper case characters on one
-side against lower case characters on the other.
+
+puts {
+The LIKE operator is not case sensitive and will match upper case
+characters on one side against lower case characters on the other.  
 (A bug: SQLite only understands upper/lower case for 7-bit Latin
-characters.  Hence the LIKE operator is case sensitive for
-8-bit iso8859 characters or UTF-8 characters.  For example,
-the expression <b>'a'&nbsp;LIKE&nbsp;'A'</b> is TRUE but
-<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).  The infix 
-LIKE operator is identical the user function <a href="#likeFunc">
+characters.  Hence the LIKE operator is case sensitive for 8-bit
+iso8859 characters or UTF-8 characters.  For example, the expression
+<b>'a'&nbsp;LIKE&nbsp;'A'</b> is TRUE but
+<b>'&aelig;'&nbsp;LIKE&nbsp;'&AElig;'</b> is FALSE.).  The infix LIKE
+operator is identical the user function <a href="#likeFunc">
 like(<i>X</i>,<i>Y</i>)</a>.
 </p>
 
@@ -1067,13 +1097,20 @@ characters is returned, not the number of bytes.</td>
 
 <tr>
 <a name="likeFunc"></a>
-<td valign="top" align="right">like(<i>X</i>,<i>Y</i>)</td>
-<td valign="top">This function is used to implement the
-"<b>X LIKE Y</b>" syntax of SQL.  The
-<a href="capi3ref.html#sqlite3_create_function">sqlite_create_function()</a> 
-interface can
-be used to override this function and thereby change the operation
-of the <a href="#like">LIKE</a> operator.</td>
+<td valign="top" align="right">like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
+<td valign="top">
+This function is used to implement the "<b>X LIKE Y [ESCAPE Z]</b>"
+syntax of SQL. If the optional ESCAPE clause is present, then the
+user-function is invoked with three arguments. Otherwise, it is
+invoked with two arguments only. The 
+<a href="capi3ref.html#sqlite3_create_function">
+sqlite_create_function()</a> interface can be used to override this
+function and thereby change the operation of the <a
+href= "#like">LIKE</a> operator. When doing this, it may be important
+to override both the two and three argument versions of the like() 
+function. Otherwise, different code may be called to implement the
+LIKE operator depending on whether or not an ESCAPE clause was 
+specified.</td>
 </tr>
 
 <tr>

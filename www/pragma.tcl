@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.7 2004/12/20 19:01:34 tpoindex Exp $}
+set rcsid {$Id: pragma.tcl,v 1.8 2005/01/10 06:39:57 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -108,6 +108,17 @@ puts {
     the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
     pragma to check the cache size permanently.</p></li>
 
+<a name="pragma_count_changes"></a>
+<li><p><b>PRAGMA count_changes;
+       <br>PRAGMA count_changes = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query or change the count-changes flag. Normally, when the
+    count-changes flag is not set, INSERT, UPDATE and DELETE statements
+    return no data. When count-changes is set, each of these commands 
+    returns a single row of data consisting of one integer value - the
+    number of rows inserted, modified or deleted by the command. The 
+    returned change count does not include any insertions, modifications
+    or deletions performed by triggers.</p>
+
 <a name="pragma_default_cache_size"></a>
 <li><p><b>PRAGMA default_cache_size;
        <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
@@ -121,13 +132,98 @@ puts {
     you can set the cache size once and that setting is retained and reused
     every time you reopen the database.</p></li>
 
-<a name="pragma_default_synchronous"></a>
-<li><p><b>PRAGMA default_synchronous;
-       <br>PRAGMA default_synchronous = FULL; </b>(2)<b>
-       <br>PRAGMA default_synchronous = NORMAL; </b>(1)<b>
-       <br>PRAGMA default_synchronous = OFF; </b>(0)</p>
-    <p>Query or change the setting of the "synchronous" flag in
-    the database.  The first (query) form will return the setting as an 
+<a name="pragma_empty_result_callbacks"></a>
+<li><p><b>PRAGMA empty_result_callbacks;
+       <br>PRAGMA empty_result_callbacks = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query or change the empty-result-callbacks flag.</p> 
+    <p>The empty-result-callbacks flag affects the sqlite3_exec API only.
+    Normally, when the empty-result-callbacks flag is cleared, the
+    callback function supplied to the sqlite3_exec() call is not invoked
+    for commands that return zero rows of data. When empty-result-callbacks
+    is set in this situation, the callback function is invoked exactly once,
+    with the third parameter set to 0 (NULL). This is to enable programs  
+    that use the sqlite3_exec() API to retrieve column-names even when
+    a query returns no data.
+    </p>
+
+<a name="pragma_encoding"></a>
+<li><p><b>PRAGMA encoding;
+       <br>PRAGMA encoding = "UTF-8";
+       <br>PRAGMA encoding = "UTF-16";
+       <br>PRAGMA encoding = "UTF-16le";
+       <br>PRAGMA encoding = "UTF-16be";</b></p>
+    <p>In it's first form, if the main database has already been
+    created, then this pragma returns the text encoding used by the
+    main database, one of "UTF-8", "UTF-16le" (little-endian UTF-16
+    encoding) or "UTF-16be" (big-endian UTF-16 encoding).  If the main
+    database has not already been created, then the value returned is the
+    text encoding that will be used to create the main database, if 
+    it is created by this session.</p>
+    <p>The second and subsequent forms of this pragma are only useful if
+    the main database has not already been created. In this case the 
+    pragma sets the encoding that the main database will be created with if
+    it is created by this session. The string "UTF-16" is interpreted
+    as "UTF-16 encoding using native machine byte-ordering".</p>
+    <p>Databases created by the ATTACH command always use the same encoding
+    as the main database.</p>
+</li>
+
+<a name="pragma_full_column_names"></a>
+<li><p><b>PRAGMA full_column_names;
+       <br>PRAGMA full_column_names = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query or change the full-column-names flag. This flag affects
+    the way SQLite names columns of data returned by SELECT statements
+    when the expression for the column is a table-column name or the
+    wildcard "*".  Normally, such result columns are named
+    <table-name/alias>.<column-name> if the SELECT statement joins two or
+    more tables together, or simply <column-name> if the SELECT
+    statement queries a single table. When the full-column-names flag
+    is set, such columns are always named <table-name/alias>.<column-name>,
+    regardless of whether or not a join is performed.
+    </p>
+    <p>If both the short-column-names and full-column-names are set,
+    then the behaviour associated with the full-column-names flag is
+    exhibited.
+    </p>
+</li>
+
+<a name="pragma_page_size"></a>
+<li><p><b>PRAGMA page_size;
+       <br>PRAGMA page_size = </b><i>bytes</i><b>;</b></p>
+    <p>Query or set the page-size of the database. The page-size
+    may only be set if the database has not yet been created. The page
+    size must be a power of two greater than or equal to 512 and less
+    than or equal to 8192. The upper limit may be modified by setting
+    the value of macro SQLITE_MAX_PAGE_SIZE during compilation.
+    </p>
+</li>
+
+<a name="pragma_short_column_names"></a>
+<li><p><b>PRAGMA full_column_names;
+       <br>PRAGMA full_column_names = </b><i>0 | 1</i><b>;</b></p>
+    <p>Query or change the short-column-names flag. This flag affects
+    the way SQLite names columns of data returned by SELECT statements
+    when the expression for the column is a table-column name or the
+    wildcard "*".  Normally, such result columns are named
+    <table-name/alias>.<column-name> if the SELECT statement joins two or
+    more tables together, or simply <column-name> if the SELECT
+    statement queries a single table. When the short-column-names flag
+    is set, such columns are always named <column-name>, regardless of
+    whether or not a join is performed.
+    </p>
+    <p>If both the short-column-names and full-column-names are set,
+    then the behaviour associated with the full-column-names flag is
+    exhibited.
+    </p>
+</li>
+
+<a name="pragma_synchronous"></a>
+<li><p><b>PRAGMA synchronous;
+       <br>PRAGMA synchronous = FULL; </b>(2)<b>
+       <br>PRAGMA synchronous = NORMAL; </b>(1)<b>
+       <br>PRAGMA synchronous = OFF; </b>(0)</p>
+    <p>Query or change the setting of the "synchronous" flag.  
+    The first (query) form will return the setting as an 
     integer.  When synchronous is FULL (2), the SQLite database engine will
     pause at critical moments to make sure that data has actually been 
     written to the disk surface before continuing.  This ensures that if
@@ -148,57 +244,8 @@ puts {
     crashes or the computer loses power before that data has been written
     to the disk surface.  On the other hand, some
     operations are as much as 50 or more times faster with synchronous OFF.
-    </p>
-    <p>This pragma changes the synchronous mode persistently.  Once changed,
-    the mode stays as set even if the database is closed and reopened.  The
-    <a href="#pragma_synchronous"><b>synchronous</b></a> pragma does the same 
-    thing but only applies the setting to the current session.
-    
     </p></li>
 
-<a name="pragma_default_temp_store"></a>
-<li><p><b>PRAGMA default_temp_store;
-       <br>PRAGMA default_temp_store = DEFAULT; </b>(0)<b>
-       <br>PRAGMA default_temp_store = MEMORY; </b>(2)<b>
-       <br>PRAGMA default_temp_store = FILE;</b> (1)</p>
-    <p>Query or change the setting of the "<b>temp_store</b>" flag stored in
-    the database.  When temp_store is DEFAULT (0), the compile-time value
-    of the symbol TEMP_STORE is used for the temporary database.  
-    When temp_store is MEMORY (2), an in-memory database is used.  
-    When temp_store is FILE (1), a temporary database file on disk will be used.
-    It is possible for the library compile-time symbol TEMP_STORE to override 
-    this setting.  The following table summarizes this:</p>
-
-<table cellpadding="2">
-<tr><th>TEMP_STORE</th><th>temp_store</th><th>temp database location</th></tr>
-<tr><td align="center">0</td><td align="center"><em>any</em></td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">0</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">0</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">2</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
-</table>
-
-    <p>This pragma changes the temp_store mode for whenever the database
-    is opened in the future.  The temp_store mode for the current session
-    is unchanged.  Use the 
-    <a href="#pragma_temp_store"><b>temp_store</b></a> pragma to change the
-    temp_store mode for the current session.</p></li>
-
-<a name="pragma_synchronous"></a>
-<li><p><b>PRAGMA synchronous;
-       <br>PRAGMA synchronous = FULL; </b>(2)<b>
-       <br>PRAGMA synchronous = NORMAL; </b>(1)<b>
-       <br>PRAGMA synchronous = OFF;</b> (0)</p>
-    <p>Query or change the setting of the "synchronous" flag affecting
-    the database for the duration of the current database connection.
-    The synchronous flag reverts to its default value when the database
-    is closed and reopened.  For additional information on the synchronous
-    flag, see the description of the <a href="#pragma_default_synchronous">
-    <b>default_synchronous</b></a> pragma.</p>
-    </li>
 
 <a name="pragma_temp_store"></a>
 <li><p><b>PRAGMA temp_store;
@@ -211,14 +258,41 @@ puts {
     is closed and reopened.  For additional information on the temp_store
     flag, see the description of the <a href="#pragma_default_temp_store">
     <b>default_temp_store</b></a> pragma.  Note that it is possible for 
-    the library compile-time options to override this setting.  See
-    PRAGMA <a href="#pragma_temp_store_directory">temp_store_directory</a>
-    for further temporary storage options when <b>FILE</b> is specified.</p>
+    the library compile-time options to override this setting.  
 
-    <p>When the temp_store setting is changed, all existing temporary
-    tables, indices, triggers, and viewers are immediately deleted.
-    </p>
-    </li>
+<a name="pragma_temp_store"></a>
+<li><p><b>PRAGMA temp_store;
+       <br>PRAGMA temp_store = DEFAULT; </b>(0)<b>
+       <br>PRAGMA temp_store = MEMORY; </b>(2)<b>
+       <br>PRAGMA temp_store = FILE;</b> (1)</p>
+    <p>Query or change the setting of the "<b>temp_store</b>" parameter.
+    When temp_store is DEFAULT (0), the compile-time value of the
+    symbol TEMP_STORE is used for the temporary database.  When
+    temp_store is MEMORY (2), an in-memory database is used.  
+    When temp_store is FILE (1), a temporary database file on disk
+    will be used. See PRAGMA <a href="#pragma_temp_store_directory">
+    temp_store_directory</a> for further temporary storage options when 
+    <b>FILE</b> is specified. When the temp_store setting is changed,
+    all existing temporary tables, indices, triggers, and viewers are
+    immediately deleted.</p>
+
+    <p>It is possible for the library compile-time symbol
+    TEMP_STORE to override this setting.  The following table summarizes 
+    this:</p>
+
+<table cellpadding="2">
+<tr><th>TEMP_STORE</th><th>temp_store</th><th>temp database location</th></tr>
+<tr><td align="center">0</td><td align="center"><em>any</em></td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">0</td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">1</td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">2</td><td align="center">memory</td></tr>
+<tr><td align="center">2</td><td align="center">0</td><td align="center">memory</td></tr>
+<tr><td align="center">2</td><td align="center">1</td><td align="center">file</td></tr>
+<tr><td align="center">2</td><td align="center">2</td><td align="center">memory</td></tr>
+<tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
+</table>
+</li>
+<br>
 
 <a name="pragma_temp_store_directory"></a>
 <li><p><b>PRAGMA temp_store_directory;
