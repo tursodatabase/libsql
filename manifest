@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sargument\sto\sctype.h\smacros\sis\salways\san\sunsigned\scharacter.\nTicket\s#839.\s(CVS\s1881)
-D 2004-08-08T20:22:17
+C Fix\sproblems\sin\sthe\shandling\sof\smalloc\sfailures.\s(CVS\s1882)
+D 2004-08-08T23:39:19
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -29,16 +29,16 @@ F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c cfa5ed01838247be40c113cac528286675940801
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
-F src/build.c b6689d0c3b01d8552fb6dcd3b071be0b4194ca69
+F src/build.c 951a36b246d9f38f2340562bfdd6a96bf7433530
 F src/date.c a164e3a58f61306e82c5626e5fa16f861a9a7084
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c f4a883c00ff3fea1aa2bae4694c3b3984dcf6757
+F src/expr.c f11a1e5c489bc8f5cc83b10aa80f21e85f48141e
 F src/func.c 7e2eeebe219aa612ce7a04c74ae6d57379c6656b
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c bedcba371401395033a1a1c578d8fdc3fec87bec
-F src/legacy.c 09b45fd3104da3175684d445f9be4e3c3a50c763
+F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
 F src/main.c 41da595846e299b757cc413d18de804f97f68748
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
@@ -68,18 +68,18 @@ F src/test2.c f4c2f3928f1998fd8cb75a81e33a60e025ea85d4
 F src/test3.c 94d0a2a90bccd85802488cb42c69ec8afd2e4646
 F src/test4.c c38766914e924091516030b6a8b677d849c08bf0
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
-F src/tokenize.c bc7a80e4cf54f42ea4b030c62261c4243133af84
+F src/tokenize.c 174d24d24129206be4923582189d772a70e2634c
 F src/trigger.c 360cf8f12edd4eb3a8a2895b136aac238c3cf44e
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
-F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
+F src/utf.c 3d8f7bffcbefcced69a436c9e0a1c7eb9e0bb4fa
 F src/util.c c1d903777e6d2e647d1c898db37d15fe3a1cc172
 F src/vacuum.c 9978a5760c2c430bc5b5e66505a02dad76f25813
-F src/vdbe.c 6eb69df6de99f69efcb2b50a914ebbb5cad867de
+F src/vdbe.c 281af7f601a3220e86be2152eeb2ec6d82a6f71a
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h 3d8e08c54dcb5ca2169db8bb3a37b81a12efaecd
 F src/vdbeapi.c 3be4ccab4ba6c21d60feffc48e22cf8c1643c6d5
 F src/vdbeaux.c 892a49f7bf8c46222108d6a9ba081ac578375744
-F src/vdbemem.c d4fa40d0dc1906e6c246092c990077da373e2b26
+F src/vdbemem.c 68fefaf83adb48fe44135da01502c9327f6172b0
 F src/where.c cf8a54641eea01f1af5d09529ad69166db92f658
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test 8fd75d2939528e1ae2a5030dfe738cd7fa8520eb
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fc879a9b1d05ddb8f8c552c1d334597e41b29b27
-R ceec00facf1ec0be155668de66e15a7f
+P b065973898c06a81c69b70b3fa91c79334bd9b9a
+R 0b02700d4a6d7dfba8a8c6401c0a506f
 U drh
-Z 81e48ab08dabe4361601dbea6019899e
+Z f08c63eee1429bf392e3830a7cc69c02

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.407 2004/08/07 23:54:48 drh Exp $
+** $Id: vdbe.c,v 1.408 2004/08/08 23:39:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1956,7 +1956,9 @@ case OP_Column: {
     zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, aType[p2], pTos);
-  sqlite3VdbeMemMakeWriteable(pTos);
+  if( sqlite3VdbeMemMakeWriteable(pTos)==SQLITE_NOMEM ){
+    goto no_mem;
+  }
   pTos->enc = db->enc;
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
@@ -3749,6 +3751,7 @@ case OP_ParseSchema: {
   zSql = sqlite3MPrintf(
      "SELECT name, rootpage, sql, %d FROM '%q'.%s WHERE %s",
      pOp->p1, db->aDb[iDb].zName, zMaster, pOp->p3);
+  if( zSql==0 ) goto no_mem;
   sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;

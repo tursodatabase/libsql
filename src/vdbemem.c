@@ -302,15 +302,18 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 ** Copy the contents of memory cell pFrom into pTo.
 */
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
+  int rc;
   sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(*pFrom)-sizeof(pFrom->zShort));
   pTo->xDel = 0;
   if( pTo->flags & (MEM_Str|MEM_Blob) ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTo->flags |= MEM_Ephem;
-    sqlite3VdbeMemMakeWriteable(pTo);
+    rc = sqlite3VdbeMemMakeWriteable(pTo);
+  }else{
+    rc = SQLITE_OK;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
