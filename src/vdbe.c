@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.121 2002/02/21 12:01:27 drh Exp $
+** $Id: vdbe.c,v 1.122 2002/02/23 23:45:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -137,6 +137,16 @@ typedef struct Mem Mem;
 #define STK_Real      0x0008   /* Value is a real number */
 #define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
 #define STK_Static    0x0020   /* zStack[] points to a static string */
+
+/*
+** The "context" argument for a user-defined function.
+*/
+struct UserFuncContext {
+  Stack s;       /* Small string, integer, and floating point values go here */
+  char *z;       /* Space for holding dynamic string results */
+  int isError;   /* Set to true for an error */
+};
+typedef struct UserFuncContext UserFuncContext;
 
 /*
 ** An Agg structure describes an Aggregator.  Each Agg consists of
@@ -490,6 +500,73 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   }
   while( j>0 && isspace(z[j-1]) ){ j--; }
   z[j] = 0;
+}
+
+/*
+** The following group or routines are employed by user-defined functions
+** to return their results.
+**
+** The sqlite_set_result_string() routine can be used to return a string
+** value or to return a NULL.  To return a NULL, pass in NULL for zResult.
+** A copy is made of the string before this routine returns so it is safe
+** to pass in a ephemeral string.
+**
+** sqlite_set_result_error() works like sqlite_set_result_string() except
+** that it signals a fatal error.  The string argument, if any, is the
+** error message.  If the argument is NULL a generic substitute error message
+** is used.
+**
+** The sqlite_set_result_int() and sqlite_set_result_double() set the return
+** value of the user function to an integer or a double.
+*/
+char *sqlite_set_result_string(void *context, const char *zResult, int n){
+  UserFuncContext *p = (UserFuncContext*)context;
+  if( p->s.flags & STK_Dyn ){
+    sqliteFree(p->z);
+  }
+  if( zResult==0 ){
+    p->s.flags = STK_Null;
+    n = 0;
+    p->z = 0;
+  }else{
+    if( n<0 ) n = strlen(zResult);
+    if( n<NBFS-1 ){
+      memcpy(p->s.z, zResult, n);
+      p->s.z[n] = 0;
+      p->s.flags = STK_Str;
+      p->z = p->s.z;
+    }else{
+      p->z = sqliteMalloc( n+1 );
+      if( p->z ){
+        memcpy(p->z, zResult, n);
+        p->z[n] = 0;
+      }
+      p->s.flags = STK_Str | STK_Dyn;
+    }
+  }
+  p->s.n = n;
+  return p->z;
+}
+void sqlite_set_result_int(void *context, int iResult){
+  UserFuncContext *p = (UserFuncContext*)context;
+  if( p->s.flags & STK_Dyn ){
+    sqliteFree(p->z);
+  }
+  p->s.i = iResult;
+  p->s.flags = STK_Int;
+}
+void sqlite_set_result_double(void *context, double rResult){
+  UserFuncContext *p = (UserFuncContext*)context;
+  if( p->s.flags & STK_Dyn ){
+    sqliteFree(p->z);
+  }
+  p->s.r = rResult;
+  p->s.flags = STK_Real;
+}
+void sqlite_set_result_error(void *context, const char *zMsg, int n){
+  UserFuncContext *p = (UserFuncContext*)context;
+  sqlite_set_result_string(context, zMsg, n);
+  p->isError = 1;
 }
 
 /*
@@ -891,7 +968,7 @@ static char *zOpName[] = { 0,
   "Le",                "Gt",                "Ge",                "IsNull",
   "NotNull",           "Negative",          "And",               "Or",
   "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",            "Limit",           
+  "Substr",            "UserFunc",          "UserAgg",           "Limit",
 };
 
 /*
@@ -1691,6 +1768,47 @@ case OP_Max: {
     Release(p, tos);
   }
   p->tos = nos;
+  break;
+}
+
+/* Opcode: UserFunc P1 * P3
+**
+** Invoke a user function (P3 is a pointer to the function) with
+** P1 string arguments taken from the stack.  Pop all arguments from
+** the stack and push back the result.
+*/
+case OP_UserFunc: {
+  int n, i;
+  UserFuncContext ctx;
+  void (*xFunc)(void*,int,const char**);
+  n = pOp->p1;
+  VERIFY( if( n<=0 ) goto bad_instruction; )
+  VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
+  for(i=p->tos-n+1; i<=p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      if( Stringify(p, i) ) goto no_mem;
+    }
+  }
+  xFunc = (void(*)(void*,int,const char**))pOp->p3;
+  ctx.s.flags = STK_Null;
+  ctx.isError = 0;
+  xFunc((void*)&ctx, n, (const char**)&zStack[p->tos-n+1]);
+  PopStack(p, n);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos] = ctx.s;
+  if( ctx.s.flags & STK_Dyn ){
+    zStack[p->tos] = ctx.z;
+  }else if( ctx.s.flags & STK_Str ){
+    zStack[p->tos] = aStack[p->tos].z;
+  }else{
+    zStack[p->tos] = 0;
+  }
+  if( ctx.isError ){
+    sqliteSetString(pzErrMsg, 
+       zStack[p->tos] ? zStack[p->tos] : "user function error", 0);
+    rc = SQLITE_ERROR;
+  }
   break;
 }
 

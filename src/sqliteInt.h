@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.90 2002/02/23 02:32:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.91 2002/02/23 23:45:45 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -130,7 +130,7 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 /*
 ** Integer identifiers for built-in SQL functions.
 */
-#define FN_Unknown    0
+#define FN_Unknown    0      /* Not a built-in.  Might be user defined */
 #define FN_Count      1
 #define FN_Min        2
 #define FN_Max        3
@@ -158,6 +158,7 @@ typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 typedef struct Select Select;
 typedef struct AggExpr AggExpr;
+typedef struct UserFunc UserFunc;
 
 /*
 ** Each database is an instance of the following structure
@@ -176,6 +177,7 @@ struct sqlite {
   Hash idxHash;                 /* All (named) indices indexed by name */
   Hash tblDrop;                 /* Uncommitted DROP TABLEs */
   Hash idxDrop;                 /* Uncommitted DROP INDEXs */
+  Hash userFunc;                /* User defined functions */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
   int onError;                  /* Default conflict algorithm */
@@ -198,9 +200,18 @@ struct sqlite {
 #define SQLITE_ResultDetails  0x00000100  /* Details added to result set */
 
 /*
-** Current file format version
+** Each user-defined function is defined by an instance of the following
+** structure.  A pointer to this structure is stored in the sqlite.userFunc
+** hash table.  When multiple functions have the same name, the hash table
+** points to a linked list of these structures.
 */
-#define SQLITE_FileFormat 2
+struct UserFunc {
+  void (*xFunc)(void*,int,const char**);   /* Regular function */
+  void *(*xStep)(void*,int,const char**);  /* Aggregate function step */
+  void (*xFinalize)(void*,void*);          /* Aggregate function finializer */
+  int nArg;                                /* Number of arguments */
+  UserFunc *pNext;                         /* Next function with same name */
+};
 
 /*
 ** information about each column of an SQL table is held in an instance
@@ -634,3 +645,4 @@ void sqliteEndWriteOperation(Parse*);
 void sqliteExprMoveStrings(Expr*, int);
 void sqliteExprListMoveStrings(ExprList*, int);
 void sqliteSelectMoveStrings(Select*, int);
+UserFunc *sqliteFindUserFunction(sqlite*,const char*,int,int,int);

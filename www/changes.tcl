@@ -25,6 +25,9 @@ chng {2002 Feb * (2.3.4)} {
 <li>Automatically generated ROWIDs are now sequential.</li>
 <li>Do not allow dot-commands of the command-line shell to occur in the
     middle of a real SQL command.</li>
+<li>Modifications to the "lemon" parser generator so that the parser tables
+    are 4 times smaller.</li>
+<li>Added support for user-defined functions implemented in C.</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {

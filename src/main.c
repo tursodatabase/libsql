@@ -14,8 +14,9 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.61 2002/02/21 12:01:27 drh Exp $
+** $Id: main.c,v 1.62 2002/02/23 23:45:45 drh Exp $
 */
+#include <ctype.h>
 #include "sqliteInt.h"
 #include "os.h"
 
@@ -293,6 +294,30 @@ const char sqlite_encoding[] = "iso8859";
 #endif
 
 /*
+** Implementation of the upper() and lower() SQL functions.
+*/
+static void upperFunc(void *context, int argc, const char **argv){
+  char *z;
+  int i;
+  if( argc<1 || argv[0]==0 ) return;
+  z = sqlite_set_result_string(context, argv[0], -1);
+  if( z==0 ) return;
+  for(i=0; z[i]; i++){
+    if( islower(z[i]) ) z[i] = toupper(z[i]);
+  }
+}
+static void lowerFunc(void *context, int argc, const char **argv){
+  char *z;
+  int i;
+  if( argc<1 || argv[0]==0 ) return;
+  z = sqlite_set_result_string(context, argv[0], -1);
+  if( z==0 ) return;
+  for(i=0; z[i]; i++){
+    if( isupper(z[i]) ) z[i] = tolower(z[i]);
+  }
+}
+
+/*
 ** Open a new SQLite database.  Construct an "sqlite" structure to define
 ** the state of this database and return a pointer to that structure.
 **
@@ -313,6 +338,9 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
+  sqliteHashInit(&db->userFunc, SQLITE_HASH_STRING, 1);
+  sqlite_create_function(db, "upper", 1, upperFunc);
+  sqlite_create_function(db, "lower", 1, lowerFunc);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
   
@@ -408,11 +436,20 @@ int sqlite_last_insert_rowid(sqlite *db){
 ** Close an existing SQLite database
 */
 void sqlite_close(sqlite *db){
+  HashElem *i;
   sqliteBtreeClose(db->pBe);
   clearHashTable(db, 0);
   if( db->pBeTemp ){
     sqliteBtreeClose(db->pBeTemp);
   }
+  for(i=sqliteHashFirst(&db->userFunc); i; i=sqliteHashNext(i)){
+    UserFunc *pFunc, *pNext;
+    for(pFunc = (UserFunc*)sqliteHashData(i); pFunc; pFunc=pNext){
+      pNext = pFunc->pNext;
+      sqliteFree(pFunc);
+    }
+  }
+  sqliteHashClear(&db->userFunc);
   sqliteFree(db);
 }
 
@@ -613,3 +650,47 @@ void sqlite_freemem(void *p){ free(p); }
 */
 const char *sqlite_libversion(void){ return sqlite_version; }
 const char *sqlite_libencoding(void){ return sqlite_encoding; }
+
+/*
+** Create new user-defined functions.  The sqlite_create_function()
+** routine creates a regular function and sqlite_create_aggregate()
+** creates an aggregate function.
+**
+** Passing a NULL xFunc argument or NULL xStep and xFinalize arguments
+** disables the function.  Calling sqlite_create_function() with the
+** same name and number of arguments as a prior call to
+** sqlite_create_aggregate() disables the prior call to
+** sqlite_create_aggregate(), and vice versa.
+**
+** If nArg is -1 it means that this function will accept any number
+** of arguments, including 0.
+*/
+int sqlite_create_function(
+  sqlite *db,          /* Add the function to this database connection */
+  const char *zName,   /* Name of the function to add */
+  int nArg,            /* Number of arguments */
+  void (*xFunc)(void*,int,const char**)  /* Implementation of the function */
+){
+  UserFunc *p;
+  if( db==0 || zName==0 ) return 1;
+  p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  p->xFunc = xFunc;
+  p->xStep = 0;
+  p->xFinalize = 0;
+  return 0;
+}
+int sqlite_create_aggregate(
+  sqlite *db,          /* Add the function to this database connection */
+  const char *zName,   /* Name of the function to add */
+  int nArg,            /* Number of arguments */
+  void *(*xStep)(void*,int,const char**), /* The step function */
+  void (*xFinalize)(void*,void*)          /* The finalizer */
+){
+  UserFunc *p;
+  if( db==0 || zName==0 ) return 1;
+  p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  p->xFunc = 0;
+  p->xStep = xStep;
+  p->xFinalize = xFinalize;
+  return 0;
+}

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.44 2002/02/21 12:01:28 drh Exp $
+** $Id: vdbe.h,v 1.45 2002/02/23 23:45:46 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -198,13 +198,14 @@ typedef struct VdbeOp VdbeOp;
 #define OP_Not               113
 #define OP_Concat            114
 #define OP_Noop              115
-
 #define OP_Strlen            116
 #define OP_Substr            117
+#define OP_UserFunc          118
+#define OP_UserAgg           119
 
-#define OP_Limit             118
+#define OP_Limit             120
 
-#define OP_MAX               118
+#define OP_MAX               120
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation

@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.6 2002/01/14 09:28:20 drh Exp $
+** $Id: hash.c,v 1.7 2002/02/23 23:45:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -286,7 +286,7 @@ void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.
 */
-void *sqliteHashInsert(Hash *pH, void *pKey, int nKey, void *data){
+void *sqliteHashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   int hraw;             /* Raw hash value of the key */
   int h;                /* the hash of the key modulo hash table size */
   HashElem *elem;       /* Used to loop thru the element list */
@@ -320,7 +320,7 @@ void *sqliteHashInsert(Hash *pH, void *pKey, int nKey, void *data){
     }
     memcpy((void*)new_elem->pKey, pKey, nKey);
   }else{
-    new_elem->pKey = pKey;
+    new_elem->pKey = (const void*)pKey;
   }
   new_elem->nKey = nKey;
   pH->count++;

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.42 2002/02/23 02:32:10 drh Exp $
+** $Id: expr.c,v 1.43 2002/02/23 23:45:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -606,29 +606,40 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int no_such_func = 0;
       int too_many_args = 0;
       int too_few_args = 0;
+      int wrong_num_args = 0;
       int is_agg = 0;
       int i;
       pExpr->iColumn = id;
       switch( id ){
-        case FN_Unknown: { 
-          no_such_func = 1;
+        case FN_Unknown: {
+          UserFunc *pUser = sqliteFindUserFunction(pParse->db,
+             pExpr->token.z, pExpr->token.n, n, 0);
+          if( pUser==0 ){
+            pUser = sqliteFindUserFunction(pParse->db,
+               pExpr->token.z, pExpr->token.n, -1, 0);
+            if( pUser==0 ){
+              no_such_func = 1;
+            }else{
+              wrong_num_args = 1;
+            }
+          }else{
+            is_agg = pUser->xFunc==0;
+          }
           break;
         }
         case FN_Count: { 
-          no_such_func = !allowAgg;
           too_many_args = n>1;
           is_agg = 1;
           break;
         }
         case FN_Max:
         case FN_Min: {
-          too_few_args = allowAgg ? n<1 : n<2;
+          too_few_args = n<1;
           is_agg = n==1;
           break;
         }
         case FN_Avg:
         case FN_Sum: {
-          no_such_func = !allowAgg;
           too_many_args = n>1;
           too_few_args = n<1;
           is_agg = 1;
@@ -652,7 +663,13 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         }
         default: break;
       }
-      if( no_such_func ){
+      if( is_agg && !allowAgg ){
+        sqliteSetNString(&pParse->zErrMsg, "misuse of aggregate function ", -1,
+           pExpr->token.z, pExpr->token.n, "()", 2, 0);
+        pParse->nErr++;
+        nErr++;
+        is_agg = 0;
+      }else if( no_such_func ){
         sqliteSetNString(&pParse->zErrMsg, "no such function: ", -1,
            pExpr->token.z, pExpr->token.n, 0);
         pParse->nErr++;
@@ -664,6 +681,12 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         nErr++;
       }else if( too_few_args ){
         sqliteSetNString(&pParse->zErrMsg, "too few arguments to function ",-1,
+           pExpr->token.z, pExpr->token.n, "()", 2, 0);
+        pParse->nErr++;
+        nErr++;
+      }else if( wrong_num_args ){
+        sqliteSetNString(&pParse->zErrMsg, 
+           "wrong number of arguments to function ",-1,
            pExpr->token.z, pExpr->token.n, "()", 2, 0);
         pParse->nErr++;
         nErr++;
@@ -884,6 +907,18 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
             sqliteExprCode(pParse, pList->a[i].pExpr);
           }
           sqliteVdbeAddOp(v, OP_Substr, 0, 0);
+          break;
+        }
+        case FN_Unknown: {
+          UserFunc *pUser;
+          pUser = sqliteFindUserFunction(pParse->db,
+                      pExpr->token.z, pExpr->token.n, pList->nExpr, 0);
+          assert( pUser!=0 );
+          for(i=0; i<pList->nExpr; i++){
+            sqliteExprCode(pParse, pList->a[i].pExpr);
+          }
+          sqliteVdbeAddOp(v, OP_UserFunc, pList->nExpr, 0);
+          sqliteVdbeChangeP3(v, -1, (char*)pUser->xFunc, P3_POINTER);
           break;
         }
         default: {
@@ -1244,4 +1279,53 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
     }
   }
   return nErr;
+}
+
+/*
+** Locate a user function given a name and a number of arguments.
+** Return a pointer to the UserFunc structure that defines that
+** function, or return NULL if the function does not exist.
+**
+** If the createFlag argument is true, then a new (blank) UserFunc
+** structure is created and liked into the "db" structure if a
+** no matching function previously existed.  When createFlag is true
+** and the nArg parameter is -1, then only a function that accepts
+** any number of arguments will be returned.
+**
+** If createFlag is false and nArg is -1, then the first valid
+** function found is returned.  A function is valid if either xFunc
+** or xStep is non-zero.
+*/
+UserFunc *sqliteFindUserFunction(
+  sqlite *db,        /* An open database */
+  const char *zName, /* Name of the function.  Not null-terminated */
+  int nName,         /* Number of characters in the name */
+  int nArg,          /* Number of arguments.  -1 means any number */
+  int createFlag     /* Create new entry if true and does not otherwise exist */
+){
+  UserFunc *pFirst, *p, *pMaybe;
+  pFirst = p = (UserFunc*)sqliteHashFind(&db->userFunc, zName, nName);
+  if( !createFlag && nArg<0 ){
+    while( p && p->xFunc==0 && p->xStep==0 ){ p = p->pNext; }
+    return p;
+  }
+  pMaybe = 0;
+  while( p && p->nArg!=nArg ){
+    if( p->nArg<0 && !createFlag && (p->xFunc || p->xStep) ) pMaybe = p;
+    p = p->pNext;
+  }
+  if( p && !createFlag && p->xFunc==0 && p->xStep==0 ){
+    return 0;
+  }
+  if( p==0 && pMaybe ){
+    assert( createFlag==0 );
+    return pMaybe;
+  }
+  if( p==0 && createFlag ){
+    p = sqliteMalloc( sizeof(*p) );
+    p->nArg = nArg;
+    p->pNext = pFirst;
+    sqliteHashInsert(&db->userFunc, zName, nName, (void*)p);
+  }
+  return p;
 }

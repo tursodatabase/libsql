@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.25 2002/01/16 21:00:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.26 2002/02/23 23:45:45 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -361,6 +361,41 @@ int sqlite_get_table_vprintf(
   char **errmsg,         /* Error msg written here */
   va_list ap             /* Arguments to the format string */
 );
+
+/*
+** Use the following routines to create new user-defined functions.  See
+** the documentation for details.
+*/
+int sqlite_create_function(
+  sqlite*,               /* Database where the new function is registered */
+  const char *zName,     /* Name of the new function */
+  int nArg,              /* Number of arguments.  -1 means any number */
+  void (*xFunc)(void*,int,const char**)  /* C code to implement the function */
+);
+int sqlite_create_aggregate(
+  sqlite*,               /* Database where the new function is registered */
+  const char *zName,     /* Name of the function */
+  int nArg,              /* Number of arguments */
+  void *(*xStep)(void*,int,const char**), /* Called for each row */
+  void (*xFinalize)(void*,void*)          /* Called once to get final result */
+);
+
+/*
+** The user function implementations call one of the following four routines
+** in order to return their results.  The first parameter to each of these
+** routines is a copy of the first argument to xFunc() or the second argument
+** to xFinalize().  The second parameter to these routines is the result
+** to be returned.  A NULL can be passed as the second parameter to
+** sqlite_set_result_string() in order to return a NULL result.
+**
+** The 3rd argument to _string and _error is the number of characters to
+** take from the string.  If this argument is negative, then all characters
+** up to and including the first '\000' are used.
+*/
+char *sqlite_set_result_string(void*,const char*,int);
+void sqlite_set_result_int(void*,int);
+void sqlite_set_result_double(void*,double);
+void sqlite_set_result_error(void*,const char*,int);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
