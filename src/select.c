@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.9 2000/06/06 01:50:43 drh Exp $
+** $Id: select.c,v 1.10 2000/06/06 13:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -165,6 +165,15 @@ int sqliteSelect(
 
   /* Resolve the field names and do a semantics check on all the expressions.
   */
+  for(i=0; i<pEList->nExpr; i++){
+    sqliteExprResolveInSelect(pParse, pEList->a[i].pExpr);
+  }
+  if( pWhere ) sqliteExprResolveInSelect(pParse, pWhere);
+  if( pOrderBy ){
+    for(i=0; i<pOrderBy->nExpr; i++){
+      sqliteExprResolveInSelect(pParse, pOrderBy->a[i].pExpr);
+    }
+  }
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
       return 1;

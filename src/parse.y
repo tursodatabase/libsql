@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.11 2000/06/06 01:50:43 drh Exp $
+** @(#) $Id: parse.y,v 1.12 2000/06/06 13:54:15 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -108,7 +108,7 @@ ccons ::= NOT NULL.
 ccons ::= PRIMARY KEY sortorder.  
    {sqliteCreateIndex(pParse,0,0,0,0,0);}
 ccons ::= UNIQUE.
-ccons ::= CHECK expr.
+ccons ::= CHECK LP expr RP.
 
 // For the time being, the only constraint we care about is the primary
 // key.
@@ -301,7 +301,15 @@ expr(A) ::= expr(X) GE expr(Y).    {A = sqliteExpr(TK_GE, X, Y, 0);}
 expr(A) ::= expr(X) NE expr(Y).    {A = sqliteExpr(TK_NE, X, Y, 0);}
 expr(A) ::= expr(X) EQ expr(Y).    {A = sqliteExpr(TK_EQ, X, Y, 0);}
 expr(A) ::= expr(X) LIKE expr(Y).  {A = sqliteExpr(TK_LIKE, X, Y, 0);}
+expr(A) ::= expr(X) NOT LIKE expr(Y).  {
+  A = sqliteExpr(TK_LIKE, X, Y, 0);
+  A = sqliteExpr(TK_NOT, A, 0, 0);
+}
 expr(A) ::= expr(X) GLOB expr(Y).  {A = sqliteExpr(TK_GLOB,X,Y,0);}
+expr(A) ::= expr(X) NOT GLOB expr(Y).  {
+  A = sqliteExpr(TK_GLOB, X, Y, 0);
+  A = sqliteExpr(TK_NOT, A, 0, 0);
+}
 expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
@@ -321,6 +329,13 @@ expr(A) ::= expr(W) BETWEEN expr(X) AND expr(Y). {
   A = sqliteExpr(TK_BETWEEN, W, 0, 0);
   A->pList = pList;
 }
+expr(A) ::= expr(W) NOT BETWEEN expr(X) AND expr(Y). {
+  ExprList *pList = sqliteExprListAppend(0, X, 0);
+  pList = sqliteExprListAppend(pList, Y, 0);
+  A = sqliteExpr(TK_BETWEEN, W, 0, 0);
+  A->pList = pList;
+  A = sqliteExpr(TK_NOT, A, 0, 0);
+}
 expr(A) ::= expr(X) IN LP exprlist(Y) RP.  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pList = Y;
@@ -328,6 +343,16 @@ expr(A) ::= expr(X) IN LP exprlist(Y) RP.  {
 expr(A) ::= expr(X) IN LP select(Y) RP.  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pSelect = Y;
+}
+expr(A) ::= expr(X) NOT IN LP exprlist(Y) RP.  {
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  A->pList = Y;
+  A = sqliteExpr(TK_NOT, A, 0, 0);
+}
+expr(A) ::= expr(X) NOT IN LP select(Y) RP.  {
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  A->pSelect = Y;
+  A = sqliteExpr(TK_NOT, A, 0, 0);
 }
 
 

@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.16 2000/06/06 01:50:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.17 2000/06/06 13:54:15 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -314,3 +314,4 @@ char *sqliteTableNameFromToken(Token*);
 int sqliteExprCheck(Parse*, Expr*, int, int*);
 int sqliteFuncId(Token*);
 int sqliteExprResolveIds(Parse*, IdList*, Expr*);
+void sqliteExprResolveInSelect(Parse*, Expr*);

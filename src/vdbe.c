@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.19 2000/06/06 03:31:22 drh Exp $
+** $Id: vdbe.c,v 1.20 2000/06/06 13:54:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -795,7 +795,7 @@ int sqliteVdbeList(
   azField[3] = zP2;
   azField[5] = 0;
   rc = SQLITE_OK;
-  if( pzErrMsg ){ *pzErrMsg = 0; }
+  /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
     sprintf(zAddr,"%d",i);
     sprintf(zP1,"%d", p->aOp[i].p1);
@@ -878,7 +878,7 @@ int sqliteVdbeExec(
     p->trace = stderr;
   }
 #endif
-  if( pzErrMsg ){ *pzErrMsg = 0; }
+  /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
     pOp = &p->aOp[pc];
     if( p->trace ){

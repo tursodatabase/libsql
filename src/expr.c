@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.8 2000/06/06 03:31:22 drh Exp $
+** $Id: expr.c,v 1.9 2000/06/06 13:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -50,6 +50,38 @@ static int isConstant(Expr *p){
     }
   }
   return 1;
+}
+
+/*
+** Walk the expression tree and process operators of the form:
+**
+**       expr IN (SELECT ...)
+**
+** These operators have to be processed before field names are
+** resolved because each such operator increments pParse->nTab
+** to reserve a cursor number for its own use.  But pParse->nTab
+** needs to be constant once we begin resolving field names.
+**
+** Actually, the processing of IN-SELECT is only started by this
+** routine.  This routine allocates a cursor number to the IN-SELECT
+** and then moves on.  The code generation is done by 
+** sqliteExprResolveIds() which must be called afterwards.
+*/
+void sqliteExprResolveInSelect(Parse *pParse, Expr *pExpr){
+  if( pExpr==0 ) return;
+  if( pExpr->op==TK_IN && pExpr->pSelect!=0 ){
+    pExpr->iTable = pParse->nTab++;
+  }else{
+    if( pExpr->pLeft ) sqliteExprResolveInSelect(pParse, pExpr->pLeft);
+    if( pExpr->pRight ) sqliteExprResolveInSelect(pParse, pExpr->pRight);
+    if( pExpr->pList ){
+      int i;
+      ExprList *pList = pExpr->pList;
+      for(i=0; i<pList->nExpr; i++){
+        sqliteExprResolveInSelect(pParse, pList->a[i].pExpr);
+      }
+    }
+  }
 }
 
 /*
@@ -186,11 +218,10 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         /* Case 1:     expr IN (SELECT ...)
         **
         ** Generate code to write the results of the select into a temporary
-        ** table.  The cursor number of the temporary table is stored in 
-        ** iTable.
+        ** table.  The cursor number of the temporary table has already
+        ** been put in iTable by sqliteExprResolveInSelect().
         */
-        pExpr->iTable = pParse->nTab++;
-        sqliteVdbeAddOp(v, OP_Open, pExpr->iTable, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Open, pExpr->iTable, 1, 0, 0);
         if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
@@ -201,13 +232,13 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         int i, iSet;
         for(i=0; i<pExpr->pList->nExpr; i++){
           Expr *pE2 = pExpr->pList->a[i].pExpr;
-          if( sqliteExprCheck(pParse, pE2, 0, 0) ){
-            return 1;
-          }
           if( !isConstant(pE2) ){
             sqliteSetString(&pParse->zErrMsg,
               "right-hand side of IN operator must be constant", 0);
             pParse->nErr++;
+            return 1;
+          }
+          if( sqliteExprCheck(pParse, pE2, 0, 0) ){
             return 1;
           }
         }
@@ -248,12 +279,12 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
 
     /* For all else, just recursively walk the tree */
     default: {
-      if( pExpr->pLeft 
-            && sqliteExprResolveIds(pParse, pTabList, pExpr->pLeft) ){
+      if( pExpr->pLeft
+      && sqliteExprResolveIds(pParse, pTabList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pRight 
-            && sqliteExprResolveIds(pParse, pTabList, pExpr->pRight) ){
+      && sqliteExprResolveIds(pParse, pTabList, pExpr->pRight) ){
         return 1;
       }
       if( pExpr->pList ){
@@ -512,7 +543,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_IN: {
       int addr;
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Integer, 1, 0, 0, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       addr = sqliteVdbeCurrentAddr(v);
       if( pExpr->pSelect ){
@@ -520,7 +551,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       }else{
         sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+2, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_AddImm, 1, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
       break;
     }
     case TK_BETWEEN: {

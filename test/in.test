@@ -1,0 +1,150 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the IN and BETWEEN operator.
+#
+# $Id: in.test,v 1.1 2000/06/06 13:54:16 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Generate the test data we will need for the first squences of tests.
+#
+do_test in-1.0 {
+  set fd [open data1.txt w]
+  for {set i 1} {$i<=10} {incr i} {
+    puts $fd "$i\t[expr {int(pow(2,$i))}]"
+  }
+  close $fd
+  execsql {
+    CREATE TABLE t1(a int, b int);
+    COPY t1 FROM 'data1.txt';
+  }
+  file delete -force data1.txt
+  execsql {SELECT count(*) FROM t1}
+} {10}
+
+# Do basic testing of BETWEEN.
+#
+do_test in-1.1 {
+  execsql {SELECT a FROM t1 WHERE b BETWEEN 10 AND 50 ORDER BY a}
+} {4 5}
+do_test in-1.2 {
+  execsql {SELECT a FROM t1 WHERE b NOT BETWEEN 10 AND 50 ORDER BY a}
+} {1 2 3 6 7 8 9 10}
+do_test in-1.3 {
+  execsql {SELECT a FROM t1 WHERE b BETWEEN a AND a*5 ORDER BY a}
+} {1 2 3 4}
+do_test in-1.4 {
+  execsql {SELECT a FROM t1 WHERE b NOT BETWEEN a AND a*5 ORDER BY a}
+} {5 6 7 8 9 10}
+do_test in-1.6 {
+  execsql {SELECT a FROM t1 WHERE b BETWEEN a AND a*5 OR b=512 ORDER BY a}
+} {1 2 3 4 9}
+do_test in-1.7 {
+  execsql {SELECT a+ 100*(a BETWEEN 1 and 3) FROM t1 ORDER BY b}
+} {101 102 103 4 5 6 7 8 9 10}
+
+
+# Testing of the IN operator using static lists on the right-hand side.
+#
+do_test in-2.1 {
+  execsql {SELECT a FROM t1 WHERE b IN (8,12,16,24,32) ORDER BY a}
+} {3 4 5}
+do_test in-2.2 {
+  execsql {SELECT a FROM t1 WHERE b NOT IN (8,12,16,24,32) ORDER BY a}
+} {1 2 6 7 8 9 10}
+do_test in-2.3 {
+  execsql {SELECT a FROM t1 WHERE b IN (8,12,16,24,32) OR b=512 ORDER BY a}
+} {3 4 5 9}
+do_test in-2.4 {
+  execsql {SELECT a FROM t1 WHERE b NOT IN (8,12,16,24,32) OR b=512 ORDER BY a}
+} {1 2 6 7 8 9 10}
+do_test in-2.5 {
+  execsql {SELECT a+100*(b IN (8,16,24)) FROM t1 ORDER BY b}
+} {1 2 103 104 5 6 7 8 9 10}
+
+do_test in-2.6 {
+  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (b+10,20)}} msg]
+  lappend v $msg
+} {1 {right-hand side of IN operator must be constant}}
+do_test in-2.7 {
+  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (max(5,10,b),20)}} msg]
+  lappend v $msg
+} {1 {right-hand side of IN operator must be constant}}
+do_test in-2.8 {
+  execsql {SELECT a FROM t1 WHERE b IN (8*2,64/2) ORDER BY b}
+} {4 5}
+do_test in-2.9 {
+  set v [catch {execsql {SELECT a FROM t1 WHERE b IN (xyz(5,10),20)}} msg]
+  lappend v $msg
+} {1 {no such function: xyz}}
+do_test in-2.10 {
+  set v [catch {execsql {SELECT a FROM t1 WHERE min(0,b IN (a,30))}} msg]
+  lappend v $msg
+} {1 {right-hand side of IN operator must be constant}}
+do_test in-2.11 {
+  set v [catch {execsql {SELECT a FROM t1 WHERE c IN (10,20)}} msg]
+  lappend v $msg
+} {1 {no such field: c}}
+
+# Testing the IN operator where the right-hand side is a SELECT
+#
+do_test in-3.1 {
+  execsql {
+    SELECT a FROM t1
+    WHERE b IN (SELECT b FROM t1 WHERE a<5)
+    ORDER BY a
+  }
+} {1 2 3 4}
+do_test in-3.2 {
+  execsql {
+    SELECT a FROM t1
+    WHERE b IN (SELECT b FROM t1 WHERE a<5) OR b==512
+    ORDER BY a
+  }
+} {1 2 3 4 9}
+do_test in-3.3 {
+  execsql {
+    SELECT a + 100*(b IN (SELECT b FROM t1 WHERE a<5)) FROM t1 ORDER BY b
+  }
+} {101 102 103 104 5 6 7 8 9 10}
+
+# Make sure the UPDATE and DELETE commands work with IN-SELECT
+#
+do_test in-4.1 {
+  execsql {
+    UPDATE t1 SET b=b*2 
+    WHERE b IN (SELECT b FROM t1 WHERE a>8)
+  }
+  execsql {SELECT b FROM t1 ORDER BY b}
+} {2 4 8 16 32 64 128 256 1024 2048}
+do_test in-4.2 {
+  execsql {
+    DELETE FROM t1 WHERE b IN (SELECT b FROM t1 WHERE a>8)
+  }
+  execsql {SELECT a FROM t1 ORDER BY a}
+} {1 2 3 4 5 6 7 8}
+
+
+finish_test

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.2 2000/06/02 01:17:37 drh Exp $
+** $Id: delete.c,v 1.3 2000/06/06 13:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,6 +43,7 @@ void sqliteDeleteFrom(
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Index *pIdx;           /* For looping over indices of the table */
+  int base;              /* Index of the first available table cursor */
 
   /* Locate the table which we want to update.  This table has to be
   ** put in an IdList structure because some of the subroutines will
@@ -70,6 +71,7 @@ void sqliteDeleteFrom(
   /* Resolve the field names in all the expressions.
   */
   if( pWhere ){
+    sqliteExprResolveInSelect(pParse, pWhere);
     if( sqliteExprResolveIds(pParse, pTabList, pWhere) ){
       goto delete_from_cleanup;
     }
@@ -102,27 +104,28 @@ void sqliteDeleteFrom(
 
   /* Delete every item identified in the list.
   */
+  base = pParse->nTab;
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Open, 0, 1, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_Open, base, 1, pTab->zName, 0);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-    sqliteVdbeAddOp(v, OP_Open, i, 1, pIdx->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, base+i, 1, pIdx->zName, 0);
   }
   end = sqliteVdbeMakeLabel(v);
   addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
   if( pTab->pIndex ){
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Fetch, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Fetch, base, 0, 0, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
       int j;
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       for(j=0; j<pIdx->nField; j++){
-        sqliteVdbeAddOp(v, OP_Field, 0, pIdx->aiField[j], 0, 0);
+        sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiField[j], 0, 0);
       }
       sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_DeleteIdx, i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_DeleteIdx, base+i, 0, 0, 0);
     }
   }
-  sqliteVdbeAddOp(v, OP_Delete, 0, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_Delete, base, 0, 0, 0);
   sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
   sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
 

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.3 2000/06/03 18:06:53 drh Exp $
+** $Id: update.c,v 1.4 2000/06/06 13:54:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -45,6 +45,7 @@ void sqliteUpdate(
   Vdbe *v;               /* The virtual database engine */
   Index *pIdx;           /* For looping over indices */
   int nIdx;              /* Number of indices that need updating */
+  int base;              /* Index of first available table cursor */
   Index **apIdx = 0;     /* An array of indices that need updating too */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th field of the table.
@@ -80,6 +81,12 @@ void sqliteUpdate(
   ** WHERE clause and in the new values.  Also find the field index
   ** for each field to be updated in the pChanges array.
   */
+  if( pWhere ){
+    sqliteExprResolveInSelect(pParse, pWhere);
+  }
+  for(i=0; i<pChanges->nExpr; i++){
+    sqliteExprResolveInSelect(pParse, pChanges->a[i].pExpr);
+  }
   if( pWhere ){
     if( sqliteExprResolveIds(pParse, pTabList, pWhere) ){
       goto update_cleanup;
@@ -155,9 +162,10 @@ void sqliteUpdate(
   ** open every index that needs updating.
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Open, 0, 1, pTab->zName, 0);
+  base = pParse->nTab;
+  sqliteVdbeAddOp(v, OP_Open, base, 1, pTab->zName, 0);
   for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_Open, i+1, 1, apIdx[i]->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, base+i+1, 1, apIdx[i]->zName, 0);
   }
 
   /* Loop over every record that needs updating.  We have to load
@@ -168,7 +176,7 @@ void sqliteUpdate(
   end = sqliteVdbeMakeLabel(v);
   addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
   sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Fetch, 0, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_Fetch, base, 0, 0, 0);
 
   /* Delete the old indices for the current record.
   */
@@ -176,10 +184,10 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
     pIdx = apIdx[i];
     for(j=0; j<pIdx->nField; j++){
-      sqliteVdbeAddOp(v, OP_Field, 0, pIdx->aiField[j], 0, 0);
+      sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiField[j], 0, 0);
     }
     sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_DeleteIdx, i+1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_DeleteIdx, base+i+1, 0, 0, 0);
   }
 
   /* Compute a completely new data for this record.  
@@ -187,7 +195,7 @@ void sqliteUpdate(
   for(i=0; i<pTab->nCol; i++){
     j = aXRef[i];
     if( j<0 ){
-      sqliteVdbeAddOp(v, OP_Field, 0, i, 0, 0);
+      sqliteVdbeAddOp(v, OP_Field, base, i, 0, 0);
     }else{
       sqliteExprCode(pParse, pChanges->a[j].pExpr);
     }
@@ -202,13 +210,13 @@ void sqliteUpdate(
       sqliteVdbeAddOp(v, OP_Dup, j+pTab->nCol-pIdx->aiField[j], 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nField, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_PutIdx, i+1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_PutIdx, base+i+1, 0, 0, 0);
   }
 
   /* Write the new data back into the database.
   */
   sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_Put, base, 0, 0, 0);
 
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.
