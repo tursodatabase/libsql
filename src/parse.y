@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.16 2000/06/07 23:51:50 drh Exp $
+** @(#) $Id: parse.y,v 1.17 2000/06/08 13:36:40 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -271,16 +271,14 @@ itemlist(A) ::= item(X).     {A = sqliteExprListAppend(0,X,0);}
 item(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 item(A) ::= PLUS INTEGER(X). {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 item(A) ::= MINUS INTEGER(X). {
-  A = sqliteExpr(TK_INTEGER, 0, 0, 0);
-  A->token.z = 0;
-  sqliteSetNString(&A->token.z, "-", 1, X.z, X.n, 0);
+  A = sqliteExpr(TK_UMINUS, 0, 0, 0);
+  A->pLeft = sqliteExpr(TK_INTEGER, 0, 0, &X);
 }
 item(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 item(A) ::= PLUS FLOAT(X).   {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 item(A) ::= MINUS FLOAT(X).  {
-  A = sqliteExpr(TK_FLOAT, 0, 0, 0);
-  A->token.z = 0;
-  sqliteSetNString(&A->token.z, "-", 1, X.z, X.n, 0);
+  A = sqliteExpr(TK_UMINUS, 0, 0, 0);
+  A->pLeft = sqliteExpr(TK_FLOAT, 0, 0, &X);
 }
 item(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
 item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}

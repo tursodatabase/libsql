@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.21 2000/06/08 11:25:01 drh Exp $
+** $Id: select.c,v 1.22 2000/06/08 13:36:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -144,6 +144,7 @@ static int selectInnerLoop(
     }
     zSortOrder[pOrderBy->nExpr] = 0;
     sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, 0);
+    sqliteFree(zSortOrder);
     sqliteVdbeAddOp(v, OP_SortPut, 0, 0, 0, 0);
   }else 
 
@@ -378,12 +379,12 @@ static int matchOrderbyToColumn(
     for(j=0; j<pEList->nExpr; j++){
       if( pEList->a[i].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
         char *zName = pEList->a[i].zName;
-        char *zLabel = 0;
-        sqliteSetNString(&zLabel, pE->token.z, pE->token.n, 0);
+        char *zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
         sqliteDequote(zLabel);
         if( sqliteStrICmp(zName, zLabel)==0 ){ 
           match = 1; 
         }
+        sqliteFree(zLabel);
       }
       if( match==0 && sqliteExprCompare(pE, pEList->a[i].pExpr) ){
         match = 1;

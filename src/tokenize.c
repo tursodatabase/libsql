@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.9 2000/06/07 02:04:23 drh Exp $
+** $Id: tokenize.c,v 1.10 2000/06/08 13:36:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -328,6 +328,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
         ** special SQL comments.  Check for the special comments
         ** here and take approriate action if found.
         */
+#ifndef NDEBUG
         char *z = pParse->sLastToken.z;
         if( sqliteStrNICmp(z,"--parser-trace-on--",19)==0 ){
           trace = stderr;
@@ -339,7 +340,26 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
           pParse->db->flags |= SQLITE_VdbeTrace;
         }else if( sqliteStrNICmp(z,"--vdbe-trace-off--", 18)==0 ){
           pParse->db->flags &= ~SQLITE_VdbeTrace;
+#ifdef MEMORY_DEBUG
+        }else if( sqliteStrNICmp(z,"--malloc-file=",14)==0 ){
+          sqlite_iMallocFail = atoi(&z[14]);
+        }else if( sqliteStrNICmp(z,"--malloc-stats--", 16)==0 ){
+          if( pParse->xCallback ){
+            static char *azName[4] = {"malloc", "free", "to_fail", 0 };
+            char *azArg[4];
+            char zVal[3][30];
+            sprintf(zVal[0],"%d", sqlite_nMalloc);
+            sprintf(zVal[1],"%d", sqlite_nFree);
+            sprintf(zVal[2],"%d", sqlite_iMallocFail);
+            azArg[0] = zVal[0];
+            azArg[1] = zVal[1];
+            azArg[2] = zVal[2];
+            azArg[3] = 0;
+            pParse->xCallback(pParse->pArg, 3, azArg, azName);
+          }
+#endif
         }
+#endif
         break;
       }
       case TK_ILLEGAL:
@@ -349,31 +369,36 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
         break;
       default:
         sqliteParser(pEngine, tokenType, pParse->sLastToken, pParse);
-        if( pParse->zErrMsg ){
+        if( pParse->zErrMsg && pParse->sErrToken.z ){
           sqliteSetNString(pzErrMsg, "near \"", -1, 
              pParse->sErrToken.z, pParse->sErrToken.n,
              "\": ", -1,
              pParse->zErrMsg, -1,
              0);
           nErr++;
+          sqliteFree(pParse->zErrMsg);
+          pParse->zErrMsg = 0;
         }
         break;
     }
   }
   if( nErr==0 ){
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
-    if( pParse->zErrMsg ){
+    if( pParse->zErrMsg && pParse->sErrToken.z ){
        sqliteSetNString(pzErrMsg, "near \"", -1, 
           pParse->sErrToken.z, pParse->sErrToken.n,
           "\": ", -1,
           pParse->zErrMsg, -1,
           0);
        nErr++;
+       sqliteFree(pParse->zErrMsg);
+       pParse->zErrMsg = 0;
     }
   }
   sqliteParserFree(pEngine, free);
   if( pParse->zErrMsg ){
     if( pzErrMsg ){
+      sqliteFree(*pzErrMsg);
       *pzErrMsg = pParse->zErrMsg;
     }else{
       sqliteFree(pParse->zErrMsg);

@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.4 2000/05/31 17:59:27 drh Exp $
+# $Id: tester.tcl,v 1.5 2000/06/08 13:36:41 drh Exp $
 
 # Create a test database
 #
@@ -74,6 +74,7 @@ proc do_test {name cmd expected} {
 #
 proc finish_test {} {
   global nTest nErr
+  catch {db close}
   puts "$nErr errors out of $nTest tests"
   exit $nErr
 }

@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.12 2000/06/08 11:25:01 drh Exp $
+** $Id: expr.c,v 1.13 2000/06/08 13:36:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -118,8 +118,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
     case TK_ID: {
       int cnt = 0;   /* Number of matches */
       int i;         /* Loop counter */
-      char *z = 0;
-      sqliteSetNString(&z, pExpr->token.z, pExpr->token.n, 0);
+      char *z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
       for(i=0; i<pTabList->nId; i++){
         int j;
         Table *pTab = pTabList->a[i].pTab;
@@ -159,10 +158,8 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       pRight = pExpr->pRight;
       assert( pLeft && pLeft->op==TK_ID );
       assert( pRight && pRight->op==TK_ID );
-      zLeft = 0;
-      sqliteSetNString(&zLeft, pLeft->token.z, pLeft->token.n, 0);
-      zRight = 0;
-      sqliteSetNString(&zRight, pRight->token.z, pRight->token.n, 0);
+      zLeft = sqliteStrNDup(pLeft->token.z, pLeft->token.n);
+      zRight = sqliteStrNDup(pRight->token.z, pRight->token.n);
       for(i=0; i<pTabList->nId; i++){
         int j;
         char *zTab;
@@ -512,8 +509,23 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
       break;
     }
-    case TK_NOT:
     case TK_UMINUS: {
+      assert( pExpr->pLeft );
+      if( pExpr->pLeft->op==TK_INTEGER ){
+        int i = atoi(pExpr->pLeft->token.z);
+        sqliteVdbeAddOp(v, OP_Integer, -i, 0, 0, 0);
+        break;
+      }else if( pExpr->pLeft->op==TK_FLOAT ){
+        Token *p = &pExpr->pLeft->token;
+        char *z = sqliteMalloc( p->n + 2 );
+        sprintf(z, "-%.*s", p->n, p->z);
+        sqliteVdbeAddOp(v, OP_String, 0, 0, z, 0);
+        sqliteFree(z);
+        break;
+      }
+      /* Fall true into TK_NOT */
+    }
+    case TK_NOT: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
       break;

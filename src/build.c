@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.16 2000/06/07 23:51:50 drh Exp $
+** $Id: build.c,v 1.17 2000/06/08 13:36:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -191,6 +191,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
     pNext = pIndex->pNext;
     sqliteDeleteIndex(db, pIndex);
   }
+  sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
   sqliteFree(pTable);
 }
@@ -202,8 +203,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 ** be freed by the calling function.
 */
 char *sqliteTableNameFromToken(Token *pName){
-  char *zName = 0;
-  sqliteSetNString(&zName, pName->z, pName->n, 0);
+  char *zName = sqliteStrNDup(pName->z, pName->n);
   sqliteDequote(zName);
   return zName;
 }

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.27 2000/06/07 15:39:04 drh Exp $
+** $Id: vdbe.c,v 1.28 2000/06/08 13:36:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -254,7 +254,7 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   }
   p->aOp[i].p2 = p2;
   if( p3 && p3[0] ){
-    sqliteSetString(&p->aOp[i].p3, p3, 0);
+    p->aOp[i].p3 = sqliteStrDup(p3);
   }else{
     p->aOp[i].p3 = 0;
   }
@@ -523,8 +523,7 @@ static int hardStringify(Vdbe *p, int i){
     p->aStack[i].flags |= STK_Str;
     return 0;
   }
-  p->zStack[i] = 0;
-  sqliteSetString(&p->zStack[i], zBuf, 0);
+  p->zStack[i] = sqliteStrDup(zBuf);
   if( p->zStack[i]==0 ) return 1;
   p->aStack[i].n = strlen(p->zStack[i])+1;
   p->aStack[i].flags |= STK_Str|STK_Dyn;
@@ -846,7 +845,6 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
   return sHead.pNext;
 }
 
-
 /*
 ** Execute the program in the VDBE.
 **
@@ -886,11 +884,17 @@ int sqliteVdbeExec(
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
     pOp = &p->aOp[pc];
+
+    /* Only allow tracing if NDEBUG is not defined.
+    */
+#ifndef NDEBUG
     if( p->trace ){
       fprintf(p->trace,"%4d %-12s %4d %4d %s\n",
         pc, zOpName[pOp->opcode], pOp->p1, pOp->p2,
            pOp->p3 ? pOp->p3 : "");
     }
+#endif
+
     switch( pOp->opcode ){
       /* Opcode:  Goto P2 * *
       **
@@ -1893,7 +1897,6 @@ int sqliteVdbeExec(
       */
       case OP_KeyAsData: {
         int i = pOp->p1;
-        VdbeTable *pTab;
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           p->aTab[i].keyAsData = pOp->p2;
         }
@@ -2683,6 +2686,7 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         int tos = p->tos;
         Mem *pMem;
+        char *zOld;
         if( tos<0 ) goto not_enough_stack;
         if( i>=p->nMem ){
           int nOld = p->nMem;
@@ -2695,14 +2699,16 @@ int sqliteVdbeExec(
         }
         pMem = &p->aMem[i];
         if( pMem->s.flags & STK_Dyn ){
-          sqliteFree(pMem->z);
+          zOld = pMem->z;
+        }else{
+          zOld = 0;
         }
         pMem->s = p->aStack[tos];
         if( pMem->s.flags & STK_Str ){
-          pMem->z = 0;
-          sqliteSetString(&pMem->z, p->zStack[tos], 0);
+          pMem->z = sqliteStrNDup(p->zStack[tos], pMem->s.n);
           pMem->s.flags |= STK_Dyn;
         }
+        if( zOld ) sqliteFree(zOld);
         PopStack(p, 1);
         break;
       }
@@ -2824,6 +2830,12 @@ int sqliteVdbeExec(
         if( pFocus==0 ) goto no_mem;
         if( i>=0 && i<p->agg.nMem ){
           Mem *pMem = &pFocus->aMem[i];
+          char *zOld;
+          if( pMem->s.flags & STK_Dyn ){
+            zOld = pMem->z;
+          }else{
+            zOld = 0;
+          }
           pMem->s = p->aStack[tos];
           if( pMem->s.flags & STK_Str ){
             pMem->z = sqliteMalloc( p->aStack[tos].n );
@@ -2831,6 +2843,7 @@ int sqliteVdbeExec(
             memcpy(pMem->z, p->zStack[tos], pMem->s.n);
             pMem->s.flags |= STK_Str|STK_Dyn;
           }
+          if( zOld ) sqliteFree(zOld);
         }
         PopStack(p, 1);
         break;
@@ -2973,6 +2986,13 @@ int sqliteVdbeExec(
         break;
       }
     }
+
+    /* The following code adds nothing to the actual functionality
+    ** of the program.  It is only here for testing and debugging.
+    ** On the other hand, it does burn CPU cycles every time through
+    ** the evaluator loop.  So we can leave it out when NDEBUG is defined.
+    */
+#ifndef NDEBUG
     if( pc<-1 || pc>=p->nOp ){
       sqliteSetString(pzErrMsg, "jump destination out of range", 0);
       rc = SQLITE_INTERNAL;
@@ -2999,6 +3019,7 @@ int sqliteVdbeExec(
       }
       fprintf(p->trace,"\n");
     }
+#endif
   }
 
 cleanup:

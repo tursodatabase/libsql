@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.22 2000/06/07 23:51:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.23 2000/06/08 13:36:40 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -40,9 +40,21 @@
 # define sqliteMalloc(X)    sqliteMalloc_(X,__FILE__,__LINE__)
 # define sqliteFree(X)      sqliteFree_(X,__FILE__,__LINE__)
 # define sqliteRealloc(X,Y) sqliteRealloc_(X,Y,__FILE__,__LINE__)
+# define sqliteStrDup(X)    sqliteStrDup_(X,__FILE__,__LINE__)
+# define sqliteStrNDup(X,Y) sqliteStrNDup_(X,Y,__FILE__,__LINE__)
   void sqliteStrRealloc(char**);
 #else
 # define sqliteStrRealloc(X)
+#endif
+
+/*
+** The following global variables are used for testing and debugging
+** only.  Thy only work if MEMORY_DEBUG is defined.
+*/
+#ifdef MEMORY_DEBUG
+int sqlite_nMalloc;         /* Number of sqliteMalloc() calls */
+int sqlite_nFree;           /* Number of sqliteFree() calls */
+int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 #endif
 
 /*
@@ -306,10 +318,14 @@ int sqliteSortCompare(const char *, const char *);
   void *sqliteMalloc_(int,char*,int);
   void sqliteFree_(void*,char*,int);
   void *sqliteRealloc_(void*,int,char*,int);
+  char *sqliteStrDup_(const char*,char*,int);
+  char *sqliteStrNDup_(const char*, int,char*,int);
 #else
   void *sqliteMalloc(int);
   void sqliteFree(void*);
   void *sqliteRealloc(void*,int);
+  char *sqliteStrDup(const char*);
+  char *sqliteStrNDup(const char*, int);
 #endif
 int sqliteGetToken(const char*, int *);
 void sqliteSetString(char **, const char *, ...);

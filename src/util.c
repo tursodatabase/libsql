@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.11 2000/06/05 16:01:39 drh Exp $
+** $Id: util.c,v 1.12 2000/06/08 13:36:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -43,6 +43,11 @@ void *sqliteMalloc_(int n, char *zFile, int line){
   void *p;
   int *pi;
   int k;
+  sqlite_nMalloc++;
+  if( sqlite_iMallocFail>=0 ){
+    sqlite_iMallocFail--;
+    if( sqlite_iMallocFail==0 ) return 0;
+  }
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (3+k)*sizeof(int));
   if( pi==0 ) return 0;
@@ -65,6 +70,7 @@ void sqliteFree_(void *p, char *zFile, int line){
     int *pi, k, n;
     pi = p;
     pi -= 2;
+    sqlite_nFree++;
     if( pi[0]!=0xdead1122 ){
       fprintf(stderr,"Low-end memory corruption at 0x%x\n", (int)p);
       return;
@@ -123,7 +129,7 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   memset(oldPi, 0, (oldK+3)*sizeof(int));
   free(oldPi);
 #if MEMORY_DEBUG>1
-  fprintf(stderr,"realloc %d->%d bytes at 0x%x->0x%x at %s:%d\n", oldN, n,
+  fprintf(stderr,"realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n", oldN, n,
     (int)oldP, (int)p, zFile, line);
 #endif
   return p;
@@ -141,6 +147,24 @@ void sqliteStrRealloc(char **pz){
   sqliteFree(*pz);
   *pz = zNew;
 }
+
+/*
+** Make a copy of a string in memory obtained from sqliteMalloc()
+*/
+char *sqliteStrDup_(const char *z, char *zFile, int line){
+  char *zNew = sqliteMalloc_(strlen(z)+1, zFile, line);
+  if( zNew ) strcpy(zNew, z);
+  return zNew;
+}
+char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
+  char *zNew = sqliteMalloc_(n+1, zFile, line);
+  if( zNew ){
+    memcpy(zNew, z, n);
+    zNew[n] = 0;
+  }
+  return zNew;
+}
+
 
 #else  /* !defined(MEMORY_DEBUG) */
 /*
@@ -178,6 +202,23 @@ void *sqliteRealloc(void *p, int n){
   }
   return realloc(p, n);
 }
+
+/*
+** Make a copy of a string in memory obtained from sqliteMalloc()
+*/
+char *sqliteStrDup(const char *z){
+  char *zNew = sqliteMalloc(strlen(z)+1);
+  if( zNew ) strcpy(zNew, z);
+  return zNew;
+}
+char *sqliteStrNDup(const char *z, int n){
+  char *zNew = sqliteMalloc(n+1);
+  if( zNew ){
+    memcpy(zNew, z, n);
+    zNew[n] = 0;
+  }
+  return zNew;
+}
 #endif /* MEMORY_DEBUG */
 
 /*
@@ -210,6 +251,11 @@ void sqliteSetString(char **pz, const char *zFirst, ...){
     zResult += strlen(zResult);
   }
   va_end(ap);
+#ifdef MEMORY_DEBUG
+#if MEMORY_DEBUG>1
+  fprintf(stderr,"string at 0x%x is %s\n", (int)*pz, *pz);
+#endif
+#endif
 }
 
 /*
@@ -243,6 +289,11 @@ void sqliteSetNString(char **pz, ...){
     zResult += n;
   }
   *zResult = 0;
+#ifdef MEMORY_DEBUG
+#if MEMORY_DEBUG>1
+  fprintf(stderr,"string at 0x%x is %s\n", (int)*pz, *pz);
+#endif
+#endif
   va_end(ap);
 }
 
