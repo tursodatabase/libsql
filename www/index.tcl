@@ -61,18 +61,19 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2004-Oct-11} {Version 3.0.8} {
+  Version 3.0.8 of SQLite contains versions code optimizations and minor
+  bug fixes and adds support for DEFERRED, IMMEDIATE, and EXCLUSIVE
+  transactions.  This is an incremental release.  There is no reason
+  to upgrade from version 3.0.7 if that version is working for you.
+}
+
 newsitem {2004-Oct-10} {SQLite at the 11<sup><small>th</small></sup>
 Annual Tcl/Tk Conference} {
   There will be a talk on the use of SQLite in Tcl/Tk at the
   11<sup><small>th</small></sup> Tcl/Tk Conference this week in
   New Orleans.  Visit <a href="http://www.tcl.tk/community/tcl2004/">
   http://www.tcl.tk/</a> for details.
-}
-
-newsitem {2004-Sep-18} {Version 3.0.7} {
-  Version 3.0 has now been in use by multiple projects for several
-  months with no major difficulties.   We consider it stable and
-  ready for production use. 
 }
 
 
@@ -89,4 +90,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.100 2004/10/11 21:49:07 drh Exp $}
+footer {$Id: index.tcl,v 1.101 2004/10/11 22:26:00 drh Exp $}

@@ -21,6 +21,21 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 October 11 (3.0.8)} {
+<li>Add support for DEFERRED, IMMEDIATE, and EXCLUSIVE transactions.</li>
+<li>Allow new user-defined functions to be created when there are
+already one or more precompiled SQL statements.<li>
+<li>Fix portability problems for Mingw/MSYS.</li>
+<li>Fix a byte alignment problem on 64-bit Sparc machines.</li>
+<li>Fix the ".import" command of the shell so that it ignores \r
+characters at the end of lines.</li>
+<li>The "csv" mode option in the shell puts strings inside double-quotes.</li>
+<li>Fix typos in documentation.</li>
+<li>Convert array constants in the code to have type "const".</li>
+<li>Numerous code optimizations, specially optimizations designed to
+make the code footprint smaller.</li>
+}
+
 chng {2004 September 18 (3.0.7)} {
 <li>The BTree module allocates large buffers using malloc() instead of
     off of the stack, in order to play better on machines with limited
