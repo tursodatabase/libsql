@@ -1,6 +1,6 @@
-C Minor\sfix\sfor\s'make\sdoc'.\s(CVS\s1681)
-D 2004-06-24T01:30:44
-F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
+C make\sdoc\sdirectory\searlier\sin\sbuild;\ssee\s(1667)\s(CVS\s1682)
+D 2004-06-24T14:17:45
+F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 34009b3459559db331ace9f14f8bb7f94cfbb787
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0a26b9158095f0995fce2f0ccdfb383ab26c76a5
-R 2334459ae060c779df0c7d3f0dad87cd
-U danielk1977
-Z 19bd2d41d742043379404961708e6caf
+P 31fe5cbd870916b2445dec83cdd8e031ef43c177
+R 05dec542b10e6fb128a878b581ef151f
+U dougcurrie
+Z 23662d678047f4a7e02ba7ddbda54ab8
