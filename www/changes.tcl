@@ -21,6 +21,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 June 30 (3.0.2 beta)} {
+<li>The first beta release for SQLite 3.0.</li>
+}
+
 chng {2004 June 22 (3.0.1 alpha)} {
 <li><font color="red"><b>
     *** Alpha Release - Research And Testing Use Only ***</b></font>
