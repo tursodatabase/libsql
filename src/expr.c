@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.182 2005/01/19 23:24:50 drh Exp $
+** $Id: expr.c,v 1.183 2005/01/20 01:51:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1280,6 +1280,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
 
       pNC = pCoder->pNC;
       if( pNC ) nRef = pNC->nRef;
+      sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
       v = sqlite3GetVdbe(pParse);
       addr = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
       pExpr->iColumn = pParse->nMem++;
