@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.223 2003/05/17 17:35:12 drh Exp $
+** $Id: vdbe.c,v 1.224 2003/06/02 06:15:59 jplyon Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3382,6 +3382,11 @@ case OP_VerifyCookie: {
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2.  If P2==0 then take the root page number from the stack.
 **
+** The P3 value is the name of the table or index being opened.
+** The P3 value is not actually used by this opcode and may be
+** omitted.  But the code generator usually inserts the index or
+** table name into P3 to make the code easier to read.
+**
 ** This instruction works just like OpenRead except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only
 ** cursors or a single read/write cursor but not both.
@@ -3890,7 +3895,7 @@ case OP_NewRecno: {
 
 /* Opcode: PutIntKey P1 P2 *
 **
-** Write an entry into the database file P1.  A new entry is
+** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The key must
@@ -3902,7 +3907,7 @@ case OP_NewRecno: {
 */
 /* Opcode: PutStrKey P1 * *
 **
-** Write an entry into the database file P1.  A new entry is
+** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The key must
@@ -4384,13 +4389,13 @@ case OP_Next: {
 
 /* Opcode: IdxPut P1 P2 P3
 **
-** The top of the stack hold an SQL index key made using the
+** The top of the stack holds a SQL index key made using the
 ** MakeIdxKey instruction.  This opcode writes that key into the
 ** index P1.  Data for the entry is nil.
 **
 ** If P2==1, then the key must be unique.  If the key is not unique,
 ** the program aborts with a SQLITE_CONSTRAINT error and the database
-** is rolled back.  If P3 is not null, then it because part of the
+** is rolled back.  If P3 is not null, then it becomes part of the
 ** error message returned with the SQLITE_CONSTRAINT.
 */
 case OP_IdxPut: {
@@ -4690,7 +4695,8 @@ case OP_ListWrite: {
 
 /* Opcode: ListRewind * * *
 **
-** Rewind the temporary buffer back to the beginning.
+** Rewind the temporary buffer back to the beginning.  This is 
+** now a no-op.
 */
 case OP_ListRewind: {
   /* This is now a no-op */
