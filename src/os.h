@@ -104,6 +104,7 @@
     struct lockInfo *pLock;  /* Information about locks on this inode */
     int fd;                  /* The file descriptor */
     int locked;              /* True if this user holds the lock */
+    int dirfd;               /* File descriptor for the directory */
   };
 # define SQLITE_TEMPNAME_SIZE 200
 # if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -156,6 +157,7 @@ int sqliteOsFileRename(const char*, const char*);
 int sqliteOsOpenReadWrite(const char*, OsFile*, int*);
 int sqliteOsOpenExclusive(const char*, OsFile*, int);
 int sqliteOsOpenReadOnly(const char*, OsFile*);
+int sqliteOsOpenDirectory(const char*, OsFile*);
 int sqliteOsTempFileName(char*);
 int sqliteOsClose(OsFile*);
 int sqliteOsRead(OsFile*, void*, int amt);
