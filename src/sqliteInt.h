@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.164 2003/03/20 01:16:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.165 2003/03/27 12:51:25 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -200,7 +200,12 @@ struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
   int schema_cookie;   /* Database schema version number for this file */
+  Hash tblHash;        /* All tables indexed by name */
+  Hash idxHash;        /* All (named) indices indexed by name */
+  Hash trigHash;       /* All triggers indexed by name */
+  Hash aFKey;          /* Foreign keys indexed by to-table */
   u8 inTrans;          /* True if a transaction is underway for this backend */
+  u16 flags;           /* Flags associated with this database */
 };
 
 /*
@@ -231,11 +236,7 @@ struct sqlite {
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
-  Hash tblHash;                 /* All tables indexed by name */
-  Hash idxHash;                 /* All (named) indices indexed by name */
-  Hash trigHash;                /* All triggers indexed by name */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
-  Hash aFKey;                   /* Foreign keys indexed by to-table */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
   int onError;                  /* Default conflict algorithm */
@@ -329,26 +330,27 @@ struct Column {
 ** Each SQL table is represented in memory by an instance of the
 ** following structure.
 **
-** Expr.zName is the name of the table.  The case of the original
+** Table.zName is the name of the table.  The case of the original
 ** CREATE TABLE statement is stored, but case is not significant for
 ** comparisons.
 **
-** Expr.nCol is the number of columns in this table.  Expr.aCol is a
+** Table.nCol is the number of columns in this table.  Table.aCol is a
 ** pointer to an array of Column structures, one for each column.
 **
-** If the table has an INTEGER PRIMARY KEY, then Expr.iPKey is the index of
-** the column that is that key.   Otherwise Expr.iPKey is negative.  Note
+** If the table has an INTEGER PRIMARY KEY, then Table.iPKey is the index of
+** the column that is that key.   Otherwise Table.iPKey is negative.  Note
 ** that the datatype of the PRIMARY KEY must be INTEGER for this field to
 ** be set.  An INTEGER PRIMARY KEY is used as the rowid for each row of
 ** the table.  If a table has no INTEGER PRIMARY KEY, then a random rowid
-** is generated for each row of the table.  Expr.hasPrimKey is true if
+** is generated for each row of the table.  Table.hasPrimKey is true if
 ** the table has any PRIMARY KEY, INTEGER or otherwise.
 **
-** Expr.tnum is the page number for the root BTree page of the table in the
-** database file.  If Expr.isTemp is true, then this page occurs in the
-** auxiliary database file, not the main database file.  If Expr.isTransient
+** Table.tnum is the page number for the root BTree page of the table in the
+** database file.  If Table.iDb is the index of the database table backend
+** in sqlite.aDb[].  0 is for the main database and 1 is for the file that
+** holds temporary tables and indices.  If Table.isTransient
 ** is true, then the table is stored in a file that is automatically deleted
-** when the VDBE cursor to the table is closed.  In this case Expr.tnum 
+** when the VDBE cursor to the table is closed.  In this case Table.tnum 
 ** refers VDBE cursor number that holds the table open, not to the root
 ** page number.  Transient tables are used to hold the results of a
 ** sub-query that appears instead of a real table name in the FROM clause 
@@ -363,7 +365,7 @@ struct Table {
   int tnum;        /* Root BTree node for this table (see note above) */
   Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isTemp;       /* Index into sqlite.aDb[] of the backend for this table */
+  u8 iDb;          /* Index into sqlite.aDb[] of the backend for this table */
   u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
@@ -479,6 +481,7 @@ struct Index {
   u8 isUnique;     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
+  u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
   Index *pNext;    /* The next index associated with the same table */
 };
 
@@ -604,6 +607,12 @@ struct IdList {
 ** The following structure describes the FROM clause of a SELECT statement.
 ** Each table or subquery in the FROM clause is a separate element of
 ** the SrcList.a[] array.
+**
+** With the addition of multiple database support, the following structure
+** can also be used to describe a particular table such as the table that
+** is modified by an INSERT, DELETE, or UPDATE statement.  In standard SQL,
+** such a table must be a simple name: ID.  But in SQLite, the table can
+** now be identified by a database name, a dot, then the table name: ID.ID.
 */
 struct SrcList {
   int nSrc;        /* Number of tables or subqueries in the FROM clause */
@@ -765,7 +774,7 @@ struct Parse {
                        ** while generating expressions.  Normally false */
   u8 schemaVerified;   /* True if an OP_VerifySchema has been coded someplace
                        ** other than after an OP_Transaction */
-  u8 isTemp;           /* True if parsing temporary tables */
+  u8 iDb;              /* Index of database whose schema is being parsed */
   u8 useCallback;      /* True if callbacks should be used to report results */
   int newTnum;         /* Table number to use when reparsing CREATE TABLEs */
   int nErr;            /* Number of errors seen */
@@ -807,6 +816,7 @@ struct Parse {
 struct Trigger {
   char *name;             /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
+  int iDb;                /* Database containing this trigger               */
   int op;                 /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   int tr_tm;              /* One of TK_BEFORE, TK_AFTER */
   Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
@@ -973,7 +983,6 @@ void sqliteAddCollateType(Parse*, int);
 void sqliteEndTable(Parse*,Token*,Select*);
 void sqliteCreateView(Parse*,Token*,Token*,Select*,int);
 int sqliteViewGetColumnNames(Parse*,Table*);
-void sqliteViewResetAll(sqlite*);
 void sqliteDropTable(Parse*, Token*, int);
 void sqliteDeleteTable(sqlite*, Table*);
 void sqliteInsert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
@@ -983,8 +992,8 @@ SrcList *sqliteSrcListAppend(SrcList*, Token*, Token*);
 void sqliteSrcListAddAlias(SrcList*, Token*);
 void sqliteIdListDelete(IdList*);
 void sqliteSrcListDelete(SrcList*);
-void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, int, Token*, Token*);
-void sqliteDropIndex(Parse*, Token*);
+void sqliteCreateIndex(Parse*,Token*,SrcList*,IdList*,int,int,Token*,Token*);
+void sqliteDropIndex(Parse*, SrcList*);
 void sqliteAddKeyType(Vdbe*, ExprList*);
 void sqliteAddIdxKeyType(Vdbe*, Index*);
 int sqliteSelect(Parse*, Select*, int, int, Select*, int, int*);
@@ -992,7 +1001,7 @@ Select *sqliteSelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqliteSelectDelete(Select*);
 void sqliteSelectUnbind(Select*);
-Table *sqliteTableNameToTable(Parse*, const char*);
+Table *sqliteTableNameToTable(Parse*, const char*, const char*);
 void sqliteDeleteFrom(Parse*, SrcList*, Expr*);
 void sqliteUpdate(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, int, SrcList*, Expr*, int, ExprList**);
@@ -1000,10 +1009,10 @@ void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int, int);
 void sqliteExprIfFalse(Parse*, Expr*, int, int);
-Table *sqliteFindTable(sqlite*,const char*);
-Index *sqliteFindIndex(sqlite*,const char*);
+Table *sqliteFindTable(sqlite*,const char*, const char*);
+Index *sqliteFindIndex(sqlite*,const char*, const char*);
 void sqliteUnlinkAndDeleteIndex(sqlite*,Index*);
-void sqliteCopy(Parse*, Token*, Token*, Token*, int);
+void sqliteCopy(Parse*, SrcList*, Token*, Token*, int);
 void sqliteVacuum(Parse*, Token*);
 int sqliteGlobCompare(const unsigned char*,const unsigned char*);
 int sqliteLikeCompare(const unsigned char*,const unsigned char*);
@@ -1043,9 +1052,9 @@ int sqliteSafetyOn(sqlite*);
 int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);
 void sqliteChangeCookie(sqlite*, Vdbe*);
-void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, Token*, 
+void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, SrcList*, 
                          int, Expr*, TriggerStep*, Token*);
-void sqliteDropTrigger(Parse*, Token*, int);
+void sqliteDropTrigger(Parse*, SrcList*, int);
 int sqliteTriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
 int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
                          int, int);

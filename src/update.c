@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.55 2003/03/20 01:16:59 drh Exp $
+** $Id: update.c,v 1.56 2003/03/27 12:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,6 +28,7 @@ void sqliteUpdate(
 ){
   int i, j;              /* Loop counters */
   char *zTab;            /* Name of the table to be updated */
+  char *zDb;             /* Name of the database holding zTab */
   Table *pTab;           /* The table to be updated */
   int addr;              /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -59,8 +60,9 @@ void sqliteUpdate(
    * defined 
    */
   zTab = pTabList->a[0].zName;
+  zDb = pTabList->a[0].zDatabase;
   if( zTab != 0 ){
-    pTab = sqliteFindTable(pParse->db, zTab);
+    pTab = sqliteFindTable(pParse->db, zTab, zDb);
     if( pTab ){
       row_triggers_exist = 
         sqliteTriggersExist(pParse, pTab->pTrigger, 
@@ -82,7 +84,7 @@ void sqliteUpdate(
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab);
+  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab, zDb);
   if( pTab==0 ) goto update_cleanup;
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
@@ -197,7 +199,7 @@ void sqliteUpdate(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
-  sqliteBeginWriteOperation(pParse, 1, !row_triggers_exist && pTab->isTemp);
+  sqliteBeginWriteOperation(pParse, 1, !row_triggers_exist && pTab->iDb==1);
 
   /* Begin the database scan
   */
@@ -229,7 +231,7 @@ void sqliteUpdate(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
 
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
     sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
@@ -275,7 +277,7 @@ void sqliteUpdate(
   ** action, then we need to open all indices because we might need
   ** to be deleting some records.
   */
-  sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+  sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
   sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
   if( onError==OE_Replace ){
     openAll = 1;
@@ -290,7 +292,7 @@ void sqliteUpdate(
   }
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( openAll || aIdxUsed[i] ){
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, base+i+1, pIdx->tnum);
       assert( pParse->nTab>base+i+1 );
     }

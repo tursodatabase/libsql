@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.127 2003/03/19 03:14:02 drh Exp $
+** $Id: select.c,v 1.128 2003/03/27 12:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -912,7 +912,8 @@ static int fillInColumnList(Parse *pParse, Select *p){
     }else{
       /* An ordinary table or view name in the FROM clause */
       pTabList->a[i].pTab = pTab = 
-        sqliteFindTable(pParse->db, pTabList->a[i].zName);
+        sqliteFindTable(pParse->db, pTabList->a[i].zName,
+                                    pTabList->a[i].zDatabase);
       if( pTab==0 ){
         sqliteSetString(&pParse->zErrMsg, "no such table: ", 
            pTabList->a[i].zName, 0);
@@ -1830,13 +1831,13 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     sqliteCodeVerifySchema(pParse);
   }
   base = p->base;
-  sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+  sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
   sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
   sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
   if( pIdx==0 ){
     sqliteVdbeAddOp(v, seekOp, base, 0);
   }else{
-    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenRead, base+1, pIdx->tnum);
     sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     sqliteVdbeAddOp(v, seekOp, base+1, 0);

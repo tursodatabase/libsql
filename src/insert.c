@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.74 2003/03/20 01:16:59 drh Exp $
+** $Id: insert.c,v 1.75 2003/03/27 12:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -93,6 +93,7 @@ void sqliteInsert(
 ){
   Table *pTab;          /* The table to insert into */
   char *zTab;           /* Name of the table into which we are inserting */
+  char *zDb;            /* Name of the database holding zTab */
   int i, j, idx;        /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -120,10 +121,9 @@ void sqliteInsert(
   assert( pTabList->nSrc==1 );
   zTab = pTabList->a[0].zName;
   if( zTab==0 ) goto insert_cleanup;
-  pTab = sqliteFindTable(pParse->db, zTab);
+  zDb = pTabList->a[0].zDatabase;
+  pTab = sqliteTableNameToTable(pParse, zTab, zDb);
   if( pTab==0 ){
-    sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
-    pParse->nErr++;
     goto insert_cleanup;
   }
   if( sqliteAuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0) ){
@@ -162,7 +162,7 @@ void sqliteInsert(
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
   sqliteBeginWriteOperation(pParse, pSelect || row_triggers_exist,
-         !row_triggers_exist && pTab->isTemp);
+         !row_triggers_exist && pTab->iDb==1);
 
   /* if there are row triggers, allocate a temp table for new.* references. */
   if( row_triggers_exist ){
@@ -196,7 +196,7 @@ void sqliteInsert(
     ** should be written into a temporary table.  Set to FALSE if each
     ** row of the SELECT can be written directly into the result table.
     */
-    opCode = pTab->isTemp ? OP_OpenTemp : OP_OpenRead;
+    opCode = pTab->iDb==1 ? OP_OpenTemp : OP_OpenRead;
     useTempTable = row_triggers_exist || sqliteVdbeFindOp(v,opCode,pTab->tnum);
 
     if( useTempTable ){
@@ -327,11 +327,11 @@ void sqliteInsert(
   /* Open tables and indices if there are no row triggers */
   if( !row_triggers_exist ){
     base = pParse->nTab;
-    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
@@ -389,11 +389,11 @@ void sqliteInsert(
     /* Open the tables and indices for the INSERT */
     if( !pTab->pSelect ){
       base = pParse->nTab;
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-        sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+        sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
         sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
         sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
       }

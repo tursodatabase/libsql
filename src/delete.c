@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.47 2003/03/20 01:16:59 drh Exp $
+** $Id: delete.c,v 1.48 2003/03/27 12:51:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -22,11 +22,15 @@
 ** table is writeable.  Generate an error and return NULL if not.  If
 ** everything checks out, return a pointer to the Table structure.
 */
-Table *sqliteTableNameToTable(Parse *pParse, const char *zTab){
+Table *sqliteTableNameToTable(Parse *pParse, const char *zTab, const char *zDb){
   Table *pTab;
-  pTab = sqliteFindTable(pParse->db, zTab);
+  pTab = sqliteFindTable(pParse->db, zTab, zDb);
   if( pTab==0 ){
-    sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
+    if( zDb==0 || zDb[0]==0 ){
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
+    }else{
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", zDb, ".", zTab, 0);
+    }
     pParse->nErr++;
     return 0;
   }
@@ -52,6 +56,7 @@ void sqliteDeleteFrom(
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   char *zTab;            /* Name of the table from which we are deleting */
+  char *zDb;             /* Name of database containing table zTab */
   int end, addr;         /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -73,8 +78,9 @@ void sqliteDeleteFrom(
   ** defined 
   */
   zTab = pTabList->a[0].zName;
+  zDb = pTabList->a[0].zDatabase;
   if( zTab != 0 ){
-    pTab = sqliteFindTable(pParse->db, zTab);
+    pTab = sqliteFindTable(pParse->db, zTab, zDb);
     if( pTab ){
       row_triggers_exist = 
         sqliteTriggersExist(pParse, pTab->pTrigger, 
@@ -95,7 +101,7 @@ void sqliteDeleteFrom(
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab);
+  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab, zDb);
   if( pTab==0 ){
     goto delete_from_cleanup;
   }
@@ -129,7 +135,7 @@ void sqliteDeleteFrom(
     goto delete_from_cleanup;
   }
   sqliteBeginWriteOperation(pParse, row_triggers_exist,
-       !row_triggers_exist && pTab->isTemp);
+       !row_triggers_exist && pTab->iDb==1);
 
   /* Initialize the counter of the number of rows deleted, if
   ** we are counting rows.
@@ -148,7 +154,7 @@ void sqliteDeleteFrom(
       ** entries in the table. */
       int endOfLoop = sqliteVdbeMakeLabel(v);
       int addr;
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
       sqliteVdbeAddOp(v, OP_Rewind, base, sqliteVdbeCurrentAddr(v)+2);
       addr = sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
@@ -156,9 +162,9 @@ void sqliteDeleteFrom(
       sqliteVdbeResolveLabel(v, endOfLoop);
       sqliteVdbeAddOp(v, OP_Close, base, 0);
     }
-    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->isTemp);
+    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->iDb);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pTab->isTemp);
+      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pIdx->iDb);
     }
   }
 
@@ -195,7 +201,7 @@ void sqliteDeleteFrom(
     if( row_triggers_exist ){
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
       sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
       sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
@@ -225,10 +231,10 @@ void sqliteDeleteFrom(
     ** cursors are opened only once on the outside the loop.
     */
     pParse->nTab = base + 1;
-    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
     for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, pParse->nTab++, pIdx->tnum);
     }
 

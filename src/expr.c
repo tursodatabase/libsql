@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.89 2003/03/20 01:16:59 drh Exp $
+** $Id: expr.c,v 1.90 2003/03/27 12:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -493,16 +493,29 @@ int sqliteExprResolveIds(
       break; 
     }
   
-    /* A table name and column name:  ID.ID */
+    /* A table name and column name:     ID.ID
+    ** Or a database, table and column:  ID.ID.ID
+    */
     case TK_DOT: {
       int cnt = 0;             /* Number of matches */
       int cntTab = 0;          /* Number of matching tables */
       int i;                   /* Loop counter */
       Expr *pLeft, *pRight;    /* Left and right subbranches of the expr */
       char *zLeft, *zRight;    /* Text of an identifier */
+      char *zDb;               /* Name of database holding table */
+      sqlite *db = pParse->db;
 
-      pLeft = pExpr->pLeft;
       pRight = pExpr->pRight;
+      if( pRight->op==TK_ID ){
+        pLeft = pExpr->pLeft;
+        zDb = 0;
+      }else{
+        Expr *pDb = pExpr->pLeft;
+        assert( pDb && pDb->op==TK_ID && pDb->token.z );
+        zDb = sqliteStrNDup(pDb->token.z, pDb->token.n);
+        pLeft = pRight->pLeft;
+        pRight = pRight->pRight;
+      }
       assert( pLeft && pLeft->op==TK_ID && pLeft->token.z );
       assert( pRight && pRight->op==TK_ID && pRight->token.z );
       zLeft = sqliteStrNDup(pLeft->token.z, pLeft->token.n);
@@ -510,8 +523,10 @@ int sqliteExprResolveIds(
       if( zLeft==0 || zRight==0 ){
         sqliteFree(zLeft);
         sqliteFree(zRight);
+        sqliteFree(zDb);
         return 1;
       }
+      sqliteDequote(zDb);
       sqliteDequote(zLeft);
       sqliteDequote(zRight);
       pExpr->iTable = -1;
@@ -523,10 +538,14 @@ int sqliteExprResolveIds(
         assert( pTab->nCol>0 );
         if( pTabList->a[i].zAlias ){
           zTab = pTabList->a[i].zAlias;
+          if( sqliteStrICmp(zTab, zLeft)!=0 ) continue;
         }else{
           zTab = pTab->zName;
+          if( zTab==0 || sqliteStrICmp(zTab, zLeft)!=0 ) continue;
+          if( zDb!=0 && sqliteStrICmp(db->aDb[pTab->iDb].zName, zDb)!=0 ){
+            continue;
+          }
         }
-        if( zTab==0 || sqliteStrICmp(zTab, zLeft)!=0 ) continue;
         if( 0==(cntTab++) ) pExpr->iTable = i + base;
         for(j=0; j<pTab->nCol; j++){
           if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
@@ -577,6 +596,7 @@ int sqliteExprResolveIds(
         pExpr->iColumn = -1;
         pExpr->dataType = SQLITE_SO_NUM;
       }
+      sqliteFree(zDb);
       sqliteFree(zLeft);
       sqliteFree(zRight);
       if( cnt==0 ){
@@ -592,9 +612,9 @@ int sqliteExprResolveIds(
         pParse->nErr++;
         return 1;
       }
-      sqliteExprDelete(pLeft);
+      sqliteExprDelete(pExpr->pLeft);
       pExpr->pLeft = 0;
-      sqliteExprDelete(pRight);
+      sqliteExprDelete(pExpr->pRight);
       pExpr->pRight = 0;
       pExpr->op = TK_COLUMN;
       sqliteAuthRead(pParse, pExpr, pTabList, base);

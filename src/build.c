@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.133 2003/03/20 01:16:58 drh Exp $
+** $Id: build.c,v 1.134 2003/03/27 12:51:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -113,9 +113,14 @@ void sqliteExec(Parse *pParse){
 ** a particular database table given the name
 ** of that table.  Return NULL if not found.
 */
-Table *sqliteFindTable(sqlite *db, const char *zName){
-  Table *p;
-  p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
+Table *sqliteFindTable(sqlite *db, const char *zName, const char *zDatabase){
+  Table *p = 0;
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( zDatabase!=0 && sqliteStrICmp(zDatabase, db->aDb[i].zName) ) continue;
+    p = sqliteHashFind(&db->aDb[i].tblHash, zName, strlen(zName)+1);
+    if( p ) break;
+  }
   return p;
 }
 
@@ -124,9 +129,14 @@ Table *sqliteFindTable(sqlite *db, const char *zName){
 ** a particular index given the name of that index.
 ** Return NULL if not found.
 */
-Index *sqliteFindIndex(sqlite *db, const char *zName){
-  Index *p;
-  p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
+Index *sqliteFindIndex(sqlite *db, const char *zName, const char *zDb){
+  Index *p = 0;
+  int i;
+  for(i=0; i<db->nDb; i++){
+    if( zDb && sqliteStrICmp(zDb, db->aDb[i].zName) ) continue;
+    p = sqliteHashFind(&db->aDb[i].idxHash, zName, strlen(zName)+1);
+    if( p ) break;
+  }
   return p;
 }
 
@@ -140,10 +150,13 @@ Index *sqliteFindIndex(sqlite *db, const char *zName){
 */
 static void sqliteDeleteIndex(sqlite *db, Index *p){
   Index *pOld;
+
   assert( db!=0 && p->zName!=0 );
-  pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
+  pOld = sqliteHashInsert(&db->aDb[p->iDb].idxHash, p->zName,
+                          strlen(p->zName)+1, 0);
   if( pOld!=0 && pOld!=p ){
-    sqliteHashInsert(&db->idxHash, pOld->zName, strlen(pOld->zName)+1, pOld);
+    sqliteHashInsert(&db->aDb[p->iDb].idxHash, pOld->zName,
+                     strlen(pOld->zName)+1, pOld);
   }
   sqliteFree(p);
 }
@@ -176,23 +189,27 @@ void sqliteResetInternalSchema(sqlite *db){
   HashElem *pElem;
   Hash temp1;
   Hash temp2;
+  int i;
 
-  sqliteHashClear(&db->aFKey);
-  temp1 = db->tblHash;
-  temp2 = db->trigHash;
-  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
-  sqliteHashClear(&db->idxHash);
-  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-    Trigger *pTrigger = sqliteHashData(pElem);
-    sqliteDeleteTrigger(pTrigger);
+  for(i=0; i<db->nDb; i++){
+    Db *pDb = &db->aDb[i];
+    temp1 = pDb->tblHash;
+    temp2 = pDb->trigHash;
+    sqliteHashInit(&pDb->trigHash, SQLITE_HASH_STRING, 0);
+    sqliteHashClear(&pDb->aFKey);
+    sqliteHashClear(&pDb->idxHash);
+    for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
+      Trigger *pTrigger = sqliteHashData(pElem);
+      sqliteDeleteTrigger(pTrigger);
+    }
+    sqliteHashClear(&temp2);
+    sqliteHashInit(&pDb->tblHash, SQLITE_HASH_STRING, 0);
+    for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
+      Table *pTab = sqliteHashData(pElem);
+      sqliteDeleteTable(db, pTab);
+    }
+    sqliteHashClear(&temp1);
   }
-  sqliteHashClear(&temp2);
-  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
-  for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
-    Table *pTab = sqliteHashData(pElem);
-    sqliteDeleteTable(db, pTab);
-  }
-  sqliteHashClear(&temp1);
   db->flags &= ~(SQLITE_Initialized|SQLITE_InternChanges);
 }
 
@@ -241,6 +258,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
+    assert( pIndex->iDb==pTable->iDb || (pTable->iDb==0 && pIndex->iDb==1) );
     sqliteDeleteIndex(db, pIndex);
   }
 
@@ -249,7 +267,9 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   */
   for(pFKey=pTable->pFKey; pFKey; pFKey=pNextFKey){
     pNextFKey = pFKey->pNextFrom;
-    assert( sqliteHashFind(&db->aFKey,pFKey->zTo,strlen(pFKey->zTo)+1)!=pFKey );
+    assert( pTable->iDb<db->nDb );
+    assert( sqliteHashFind(&db->aDb[pTable->iDb].aFKey,
+                           pFKey->zTo, strlen(pFKey->zTo)+1)!=pFKey );
     sqliteFree(pFKey);
   }
 
@@ -273,14 +293,15 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
   Table *pOld;
   FKey *pF1, *pF2;
+  int i = p->iDb;
   assert( db!=0 );
-  pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
+  pOld = sqliteHashInsert(&db->aDb[i].tblHash, p->zName, strlen(p->zName)+1, 0);
   assert( pOld==0 || pOld==p );
   for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
     int nTo = strlen(pF1->zTo) + 1;
-    pF2 = sqliteHashFind(&db->aFKey, pF1->zTo, nTo);
+    pF2 = sqliteHashFind(&db->aDb[i].aFKey, pF1->zTo, nTo);
     if( pF2==pF1 ){
-      sqliteHashInsert(&db->aFKey, pF1->zTo, nTo, pF1->pNextTo);
+      sqliteHashInsert(&db->aDb[i].aFKey, pF1->zTo, nTo, pF1->pNextTo);
     }else{
       while( pF2 && pF2->pNextTo!=pF1 ){ pF2=pF2->pNextTo; }
       if( pF2 ){
@@ -347,7 +368,9 @@ void sqliteStartTable(
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
   if( zName==0 ) return;
+  if( pParse->iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
+  assert( (isTemp & 1)==isTemp );
   if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0) ){
     sqliteFree(zName);
     return;
@@ -378,7 +401,7 @@ void sqliteStartTable(
   /* Before trying to create a temporary table, make sure the Btree for
   ** holding temporary tables is open.
   */
-  if( isTemp && db->aDb[1].pBt==0 ){
+  if( isTemp && db->aDb[1].pBt==0 && !pParse->explain ){
     int rc = sqliteBtreeOpen(0, 0, MAX_PAGES, &db->aDb[1].pBt);
     if( rc!=SQLITE_OK ){
       sqliteSetString(&pParse->zErrMsg, "unable to open a temporary database "
@@ -402,26 +425,18 @@ void sqliteStartTable(
   **
   ** If we are re-reading the sqlite_master table because of a schema
   ** change and a new permanent table is found whose name collides with
-  ** an existing temporary table, then ignore the new permanent table.
-  ** We will continue parsing, but the pParse->nameClash flag will be set
-  ** so we will know to discard the table record once parsing has finished.
+  ** an existing temporary table, that is not an error.
   */
-  pTable = sqliteFindTable(db, zName);
-  if( pTable!=0 ){
-    if( pTable->isTemp && pParse->initFlag ){
-      pParse->nameClash = 1;
-    }else{
-      sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
-          " already exists", 0, 0);
-      sqliteFree(zName);
-      pParse->nErr++;
-      return;
-    }
-  }else{
-    pParse->nameClash = 0;
+  pTable = sqliteFindTable(db, zName, 0);
+  if( pTable!=0 && (pTable->iDb==isTemp || !pParse->initFlag) ){
+    sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
+        " already exists", 0, 0);
+    sqliteFree(zName);
+    pParse->nErr++;
+    return;
   }
-  if( (pIdx = sqliteFindIndex(db, zName))!=0 &&
-          (!pIdx->pTable->isTemp || !pParse->initFlag) ){
+  if( (pIdx = sqliteFindIndex(db, zName, 0))!=0 &&
+          (pIdx->iDb==0 || !pParse->initFlag) ){
     sqliteSetString(&pParse->zErrMsg, "there is already an index named ", 
        zName, 0);
     sqliteFree(zName);
@@ -438,7 +453,7 @@ void sqliteStartTable(
   pTable->aCol = 0;
   pTable->iPKey = -1;
   pTable->pIndex = 0;
-  pTable->isTemp = isTemp;
+  pTable->iDb = isTemp ? 1 : pParse->iDb;
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
 
@@ -624,7 +639,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
     pTab->iPKey = iCol;
     pTab->keyConf = onError;
   }else{
-    sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0);
+    sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0, 0);
     pList = 0;
   }
 
@@ -778,7 +793,7 @@ static char *createTableStmt(Table *p){
   n += 35 + 6*p->nCol;
   zStmt = sqliteMallocRaw( n );
   if( zStmt==0 ) return 0;
-  strcpy(zStmt, p->isTemp ? "CREATE TEMP TABLE " : "CREATE TABLE ");
+  strcpy(zStmt, p->iDb==1 ? "CREATE TEMP TABLE " : "CREATE TABLE ");
   k = strlen(zStmt);
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
@@ -859,7 +874,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     if( v==0 ) return;
     if( p->pSelect==0 ){
       /* A regular table */
-      sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
+      sqliteVdbeAddOp(v, OP_CreateTable, 0, p->iDb);
       sqliteVdbeChangeP3(v, -1, (char *)&p->tnum, P3_POINTER);
     }else{
       /* A view */
@@ -891,12 +906,12 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
-    if( !p->isTemp ){
+    if( !p->iDb ){
       sqliteChangeCookie(db, v);
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( pSelect ){
-      sqliteVdbeAddOp(v, OP_Integer, p->isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, p->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
       pParse->nTab = 2;
       sqliteSelect(pParse, pSelect, SRT_Table, 1, 0, 0, 0);
@@ -906,19 +921,19 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
 
   /* Add the table to the in-memory representation of the database.
   */
-  assert( pParse->nameClash==0 || pParse->initFlag==1 );
-  if( pParse->explain==0 && pParse->nameClash==0 && pParse->nErr==0 ){
+  if( pParse->explain==0 && pParse->nErr==0 ){
     Table *pOld;
     FKey *pFKey;
-    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
+    pOld = sqliteHashInsert(&db->aDb[p->iDb].tblHash, 
+                            p->zName, strlen(p->zName)+1, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
     for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       int nTo = strlen(pFKey->zTo) + 1;
-      pFKey->pNextTo = sqliteHashFind(&db->aFKey, pFKey->zTo, nTo);
-      sqliteHashInsert(&db->aFKey, pFKey->zTo, nTo, pFKey);
+      pFKey->pNextTo = sqliteHashFind(&db->aDb[p->iDb].aFKey, pFKey->zTo, nTo);
+      sqliteHashInsert(&db->aDb[p->iDb].aFKey, pFKey->zTo, nTo, pFKey);
     }
     pParse->pNewTable = 0;
     db->nTable++;
@@ -1038,7 +1053,7 @@ int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
     pSelTab->nCol = 0;
     pSelTab->aCol = 0;
     sqliteDeleteTable(0, pSelTab);
-    pParse->db->flags |= SQLITE_UnresetViews;
+    pParse->db->aDb[pTable->iDb].flags |= SQLITE_UnresetViews;
   }else{
     pTable->nCol = 0;
     nErr++;
@@ -1074,16 +1089,16 @@ static void sqliteViewResetColumnNames(Table *pTable){
 /*
 ** Clear the column names from every VIEW.
 */
-void sqliteViewResetAll(sqlite *db){
+static void sqliteViewResetAll(sqlite *db, int idx){
   HashElem *i;
-  if( (db->flags & SQLITE_UnresetViews)==0 ) return;
-  for(i=sqliteHashFirst(&db->tblHash); i; i=sqliteHashNext(i)){
+  if( (db->aDb[idx].flags & SQLITE_UnresetViews)==0 ) return;
+  for(i=sqliteHashFirst(&db->aDb[idx].tblHash); i; i=sqliteHashNext(i)){
     Table *pTab = sqliteHashData(i);
     if( pTab->pSelect ){
       sqliteViewResetColumnNames(pTab);
     }
   }
-  db->flags &= ~SQLITE_UnresetViews;
+  db->aDb[idx].flags &= ~SQLITE_UnresetViews;
 }
 
 /*
@@ -1095,7 +1110,7 @@ Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
   Table *pTab;
   zName = sqliteTableNameFromToken(pTok);
   if( zName==0 ) return 0;
-  pTab = sqliteFindTable(pParse->db, zName);
+  pTab = sqliteFindTable(pParse->db, zName, 0);
   sqliteFree(zName);
   if( pTab==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
@@ -1114,24 +1129,26 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   Vdbe *v;
   int base;
   sqlite *db = pParse->db;
+  int iDb;
 
   if( pParse->nErr || sqlite_malloc_failed ) return;
   pTable = sqliteTableFromToken(pParse, pName);
   if( pTable==0 ) return;
+  iDb = pTable->iDb;
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->isTemp),0)){
+  if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->iDb),0)){
     return;
   }
   {
     int code;
     if( isView ){
-      if( pTable->isTemp ){
+      if( iDb==1 ){
         code = SQLITE_DROP_TEMP_VIEW;
       }else{
         code = SQLITE_DROP_VIEW;
       }
     }else{
-      if( pTable->isTemp ){
+      if( iDb==1 ){
         code = SQLITE_DROP_TEMP_TABLE;
       }else{
         code = SQLITE_DROP_TABLE;
@@ -1181,15 +1198,17 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     };
     Index *pIdx;
     Trigger *pTrigger;
-    sqliteBeginWriteOperation(pParse, 0, pTable->isTemp);
-    sqliteOpenMasterTable(v, pTable->isTemp);
+    sqliteBeginWriteOperation(pParse, 0, pTable->iDb);
+    sqliteOpenMasterTable(v, pTable->iDb);
     /* Drop all triggers associated with the table being dropped */
     pTrigger = pTable->pTrigger;
     while( pTrigger ){
-      Token tt;
-      tt.z = pTable->pTrigger->name;
-      tt.n = strlen(pTable->pTrigger->name);
-      sqliteDropTrigger(pParse, &tt, 1);
+      SrcList *pNm;
+      assert( pTrigger->iDb==pTable->iDb );
+      pNm = sqliteSrcListAppend(0, 0, 0);
+      pNm->a[0].zName = sqliteStrDup(pTrigger->name);
+      pNm->a[0].zDatabase = sqliteStrDup(db->aDb[pTable->iDb].zName);
+      sqliteDropTrigger(pParse, pNm, 1);
       if( pParse->explain ){
         pTrigger = pTrigger->pNext;
       }else{
@@ -1198,14 +1217,14 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
     sqliteVdbeChangeP3(v, base+1, pTable->zName, 0);
-    if( !pTable->isTemp ){
+    if( !pTable->iDb ){
       sqliteChangeCookie(db, v);
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
     if( !isView ){
-      sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->isTemp);
+      sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->iDb);
       for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
-        sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->isTemp);
+        sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->iDb);
       }
     }
     sqliteEndWriteOperation(pParse);
@@ -1220,7 +1239,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     sqliteUnlinkAndDeleteTable(db, pTable);
     db->flags |= SQLITE_InternChanges;
   }
-  sqliteViewResetAll(db);
+  sqliteViewResetAll(db, iDb);
 }
 
 /*
@@ -1403,9 +1422,10 @@ void sqliteDeferForeignKey(Parse *pParse, int isDeferred){
 void sqliteCreateIndex(
   Parse *pParse,   /* All information about this parse */
   Token *pName,    /* Name of the index.  May be NULL */
-  Token *pTable,   /* Name of the table to index.  Use pParse->pNewTable if 0 */
+  SrcList *pTable, /* Name of the table to index.  Use pParse->pNewTable if 0 */
   IdList *pList,   /* A list of columns to be indexed */
   int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  int isTemp,      /* True if this is a temporary index */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
@@ -1415,7 +1435,6 @@ void sqliteCreateIndex(
   int i, j;
   Token nullId;             /* Fake token for an empty ID list */
   sqlite *db = pParse->db;
-  int hideName = 0;         /* Do not put table name in the hash table */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
 
@@ -1424,15 +1443,17 @@ void sqliteCreateIndex(
   */
   if( pTable!=0 ){
     assert( pName!=0 );
-    pTab =  sqliteTableFromToken(pParse, pTable);
+    assert( pTable->nSrc==1 );
+    pTab =  sqliteTableNameToTable(pParse, 
+                 pTable->a[0].zName, pTable->a[0].zDatabase);
   }else{
     assert( pName==0 );
     pTab =  pParse->pNewTable;
   }
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
-  if( pTab->readOnly ){
+  if( !isTemp && (pTab->readOnly || pTab->iDb>=2) ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
-      " may not have new indices added", 0);
+      " may not have non-temporary indices added", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -1441,7 +1462,12 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
+  if( pTab->iDb==1 ){
+    isTemp = 1;
+  }
 
+
+#if 0
   /* If this index is created while re-reading the schema from sqlite_master
   ** but the table associated with this index is a temporary table, it can
   ** only mean that the table that this index is really associated with is
@@ -1449,9 +1475,10 @@ void sqliteCreateIndex(
   ** Since its table has been suppressed, we need to also suppress the
   ** index.
   */
-  if( pParse->initFlag && !pParse->isTemp && pTab->isTemp ){
+  if( pParse->initFlag && !pParse->isTemp && pTab->iDb ){
     goto exit_create_index;
   }
+#endif
 
   /*
   ** Find the name of the index.  Make sure there is not already another
@@ -1460,40 +1487,30 @@ void sqliteCreateIndex(
   ** Exception:  If we are reading the names of permanent indices from the
   ** sqlite_master table (because some other process changed the schema) and
   ** one of the index names collides with the name of a temporary table or
-  ** index, then we will continue to process this index, but we will not
-  ** store its name in the hash table.  Set the hideName flag to accomplish
-  ** this.
+  ** index, then we will continue to process this index.
   **
   ** If pName==0 it means that we are
   ** dealing with a primary key or UNIQUE constraint.  We have to invent our
   ** own name.
   */
-  if( pName ){
+  if( pName && !pParse->initFlag ){
     Index *pISameName;    /* Another index with the same name */
     Table *pTSameName;    /* A table with same name as the index */
-    zName = sqliteTableNameFromToken(pName);
+    zName = sqliteStrNDup(pName->z, pName->n);
     if( zName==0 ) goto exit_create_index;
-    if( (pISameName = sqliteFindIndex(db, zName))!=0 ){
-      if( pISameName->pTable->isTemp && pParse->initFlag ){
-        hideName = 1;
-      }else{
-        sqliteSetString(&pParse->zErrMsg, "index ", zName, 
-           " already exists", 0);
-        pParse->nErr++;
-        goto exit_create_index;
-      }
+    if( (pISameName = sqliteFindIndex(db, zName, 0))!=0 ){
+      sqliteSetString(&pParse->zErrMsg, "index ", zName, 
+         " already exists", 0);
+      pParse->nErr++;
+      goto exit_create_index;
     }
-    if( (pTSameName = sqliteFindTable(db, zName))!=0 ){
-      if( pTSameName->isTemp && pParse->initFlag ){
-        hideName = 1;
-      }else{
-        sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
-           zName, 0);
-        pParse->nErr++;
-        goto exit_create_index;
-      }
+    if( (pTSameName = sqliteFindTable(db, zName, 0))!=0 ){
+      sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
+         zName, 0);
+      pParse->nErr++;
+      goto exit_create_index;
     }
-  }else{
+  }else if( pName==0 ){
     char zBuf[30];
     int n;
     Index *pLoop;
@@ -1502,17 +1519,20 @@ void sqliteCreateIndex(
     zName = 0;
     sqliteSetString(&zName, "(", pTab->zName, " autoindex ", zBuf, 0);
     if( zName==0 ) goto exit_create_index;
-    hideName = sqliteFindIndex(db, zName)!=0;
+  }else{
+    zName = sqliteStrNDup(pName->z, pName->n);
   }
 
   /* Check for authorization to create an index.
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(pTab->isTemp), 0) ){
+  assert( isTemp==0 || isTemp==1 );
+  assert( pTab->iDb==pParse->iDb || isTemp==1 );
+  if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0) ){
     goto exit_create_index;
   }
   i = SQLITE_CREATE_INDEX;
-  if( pTab->isTemp ) i = SQLITE_CREATE_TEMP_INDEX;
+  if( isTemp ) i = SQLITE_CREATE_TEMP_INDEX;
   if( sqliteAuthCheck(pParse, i, zName, pTab->zName) ){
     goto exit_create_index;
   }
@@ -1542,6 +1562,7 @@ void sqliteCreateIndex(
   pIndex->nColumn = pList->nId;
   pIndex->onError = pIndex->isUnique = onError;
   pIndex->autoIndex = pName==0;
+  pIndex->iDb = isTemp ? 1 : pParse->iDb;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -1564,9 +1585,10 @@ void sqliteCreateIndex(
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
-  if( !pParse->explain && !hideName ){
+  if( !pParse->explain ){
     Index *p;
-    p = sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(zName)+1, pIndex);
+    p = sqliteHashInsert(&db->aDb[isTemp].idxHash, 
+                         pIndex->zName, strlen(zName)+1, pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */
       sqliteFree(pIndex);
@@ -1622,7 +1644,6 @@ void sqliteCreateIndex(
     int lbl1, lbl2;
     int i;
     int addr;
-    int isTemp = pTab->isTemp;
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
@@ -1653,7 +1674,7 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
-      sqliteVdbeAddOp(v, OP_Integer, isTemp, 0);
+      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
       sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
       lbl2 = sqliteVdbeMakeLabel(v);
@@ -1683,6 +1704,7 @@ void sqliteCreateIndex(
   /* Clean up before exiting */
 exit_create_index:
   sqliteIdListDelete(pList);
+  sqliteSrcListDelete(pTable);
   sqliteFree(zName);
   return;
 }
@@ -1691,39 +1713,41 @@ exit_create_index:
 ** This routine will drop an existing named index.  This routine
 ** implements the DROP INDEX statement.
 */
-void sqliteDropIndex(Parse *pParse, Token *pName){
+void sqliteDropIndex(Parse *pParse, SrcList *pName){
   Index *pIndex;
-  char *zName;
   Vdbe *v;
   sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) return;
-  zName = sqliteTableNameFromToken(pName);
-  if( zName==0 ) return;
-  pIndex = sqliteFindIndex(db, zName);
-  sqliteFree(zName);
+  assert( pName->nSrc==1 );
+  pIndex = sqliteFindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
-    sqliteSetNString(&pParse->zErrMsg, "no such index: ", 0, 
-        pName->z, pName->n, 0);
+    sqliteSetString(&pParse->zErrMsg, "no such index: ", pName->a[0].zName, 0);
     pParse->nErr++;
-    return;
+    goto exit_drop_index;
   }
   if( pIndex->autoIndex ){
     sqliteSetString(&pParse->zErrMsg, "index associated with UNIQUE "
       "or PRIMARY KEY constraint cannot be dropped", 0);
     pParse->nErr++;
-    return;
+    goto exit_drop_index;
+  }
+  if( pIndex->iDb>1 ){
+    sqliteSetString(&pParse->zErrMsg, "cannot alter schema of attached "
+       "databases", 0);
+    pParse->nErr++;
+    goto exit_drop_index;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_INDEX;
     Table *pTab = pIndex->pTable;
-    if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTab->isTemp), 0) ){
-      return;
+    if( sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pIndex->iDb), 0) ){
+      goto exit_drop_index;
     }
-    if( pTab->isTemp ) code = SQLITE_DROP_TEMP_INDEX;
+    if( pIndex->iDb ) code = SQLITE_DROP_TEMP_INDEX;
     if( sqliteAuthCheck(pParse, code, pIndex->zName, pTab->zName) ){
-      return;
+      goto exit_drop_index;
     }
   }
 #endif
@@ -1743,17 +1767,16 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       { OP_Delete,     0, 0,       0}, /* 8 */
     };
     int base;
-    Table *pTab = pIndex->pTable;
 
-    sqliteBeginWriteOperation(pParse, 0, pTab->isTemp);
-    sqliteOpenMasterTable(v, pTab->isTemp);
+    sqliteBeginWriteOperation(pParse, 0, pIndex->iDb);
+    sqliteOpenMasterTable(v, pIndex->iDb);
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqliteVdbeChangeP3(v, base+1, pIndex->zName, 0);
-    if( !pTab->isTemp ){
+    if( pIndex->iDb==0 ){
       sqliteChangeCookie(db, v);
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
-    sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pTab->isTemp);
+    sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb);
     sqliteEndWriteOperation(pParse);
   }
 
@@ -1763,6 +1786,9 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     sqliteUnlinkAndDeleteIndex(db, pIndex);
     db->flags |= SQLITE_InternChanges;
   }
+
+exit_drop_index:
+  sqliteSrcListDelete(pName);
 }
 
 /*
@@ -1943,13 +1969,12 @@ void sqliteSrcListDelete(SrcList *pList){
 */
 void sqliteCopy(
   Parse *pParse,       /* The parser context */
-  Token *pTableName,   /* The name of the table into which we will insert */
+  SrcList *pTableName, /* The name of the table into which we will insert */
   Token *pFilename,    /* The file from which to obtain information */
   Token *pDelimiter,   /* Use this as the field delimiter */
   int onError          /* What to do if a constraint fails */
 ){
   Table *pTab;
-  char *zTab;
   int i;
   Vdbe *v;
   int addr, end;
@@ -1958,10 +1983,10 @@ void sqliteCopy(
   sqlite *db = pParse->db;
 
 
-  zTab = sqliteTableNameFromToken(pTableName);
-  if( sqlite_malloc_failed || zTab==0 ) goto copy_cleanup;
-  pTab = sqliteTableNameToTable(pParse, zTab);
-  sqliteFree(zTab);
+  if( sqlite_malloc_failed  ) goto copy_cleanup;
+  assert( pTableName->nSrc==1 );
+  pTab = sqliteTableNameToTable(pParse, pTableName->a[0].zName,
+                                pTableName->a[0].zDatabase);
   if( pTab==0 ) goto copy_cleanup;
   zFile = sqliteStrNDup(pFilename->z, pFilename->n);
   sqliteDequote(zFile);
@@ -1971,15 +1996,16 @@ void sqliteCopy(
   }
   v = sqliteGetVdbe(pParse);
   if( v ){
-    sqliteBeginWriteOperation(pParse, 1, pTab->isTemp);
+    sqliteBeginWriteOperation(pParse, 1, pTab->iDb==1);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenWrite, 0, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      sqliteVdbeAddOp(v, OP_Integer, pTab->isTemp, 0);
+      assert( pIdx->iDb==1 || pIdx->iDb==pTab->iDb );
+      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, i, pIdx->tnum);
       sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
@@ -2026,6 +2052,7 @@ void sqliteCopy(
   }
   
 copy_cleanup:
+  sqliteSrcListDelete(pTableName);
   sqliteFree(zFile);
   return;
 }
@@ -2487,7 +2514,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqliteStrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
-    pTab = sqliteFindTable(db, zRight);
+    pTab = sqliteFindTable(db, zRight, 0);
     if( pTab ){
       static VdbeOp tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "cid"},
@@ -2517,7 +2544,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqliteStrICmp(zLeft, "index_info")==0 ){
     Index *pIdx;
     Table *pTab;
-    pIdx = sqliteFindIndex(db, zRight);
+    pIdx = sqliteFindIndex(db, zRight, 0);
     if( pIdx ){
       static VdbeOp tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "seqno"},
@@ -2542,7 +2569,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqliteStrICmp(zLeft, "index_list")==0 ){
     Index *pIdx;
     Table *pTab;
-    pTab = sqliteFindTable(db, zRight);
+    pTab = sqliteFindTable(db, zRight, 0);
     if( pTab ){
       v = sqliteGetVdbe(pParse);
       pIdx = pTab->pIndex;

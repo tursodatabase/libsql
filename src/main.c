@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.116 2003/03/20 01:16:59 drh Exp $
+** $Id: main.c,v 1.117 2003/03/27 12:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -67,7 +67,7 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
         memset(&sParse, 0, sizeof(sParse));
         sParse.db = pData->db;
         sParse.initFlag = 1;
-        sParse.isTemp = argv[4][0] - '0';
+        sParse.iDb = atoi(argv[4]);
         sParse.newTnum = atoi(argv[2]);
         sParse.useCallback = 1;
         sqliteRunParser(&sParse, argv[3], pData->pzErrMsg);
@@ -78,7 +78,12 @@ int sqliteInitCallback(void *pInit, int argc, char **argv, char **azColName){
         ** been created when we processed the CREATE TABLE.  All we have
         ** to do here is record the root page number for that index.
         */
-        Index *pIndex = sqliteFindIndex(pData->db, argv[1]);
+        int iDb;
+        Index *pIndex;
+
+        iDb = atoi(argv[4]);
+        assert( iDb>=0 && iDb<pData->db->nDb );
+        pIndex = sqliteFindIndex(pData->db, argv[1], pData->db->aDb[iDb].zName);
         if( pIndex==0 || pIndex->tnum!=0 ){
           /* This can occur if there exists an index on a TEMP table which
           ** has the same name as another index on a permanent index.  Since
@@ -118,7 +123,7 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   Trigger *pTrig;
   char *zErr = 0;
 
-  pTab = sqliteFindTable(pData->db, argv[0]);
+  pTab = sqliteFindTable(pData->db, argv[0], 0);
   assert( pTab!=0 );
   assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
   if( pTab ){
@@ -141,7 +146,7 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   ** cause the structure that pTab points to be deleted.  In case that
   ** happened, we need to refetch pTab.
   */
-  pTab = sqliteFindTable(pData->db, argv[0]);
+  pTab = sqliteFindTable(pData->db, argv[0], 0);
   if( pTab ){
     assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
     pTab->pTrigger = pTrig;  /* Re-enable triggers */
@@ -234,7 +239,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   initData.db = db;
   initData.pzErrMsg = pzErrMsg;
   sqliteInitCallback(&initData, 5, azArg, 0);
-  pTab = sqliteFindTable(db, MASTER_NAME);
+  pTab = sqliteFindTable(db, MASTER_NAME, "main");
   if( pTab ){
     pTab->readOnly = 1;
   }
@@ -242,7 +247,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   azArg[3] = temp_master_schema;
   azArg[4] = "1";
   sqliteInitCallback(&initData, 5, azArg, 0);
-  pTab = sqliteFindTable(db, TEMP_MASTER_NAME);
+  pTab = sqliteFindTable(db, TEMP_MASTER_NAME, "temp");
   if( pTab ){
     pTab->readOnly = 1;
   }
@@ -347,22 +352,24 @@ const char sqlite_encoding[] = "iso8859";
 */
 sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqlite *db;
-  int rc;
+  int rc, i;
 
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
   if( pzErrMsg ) *pzErrMsg = 0;
   if( db==0 ) goto no_mem_on_open;
-  sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
-  sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
-  sqliteHashInit(&db->trigHash, SQLITE_HASH_STRING, 0);
-  sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
-  sqliteHashInit(&db->aFKey, SQLITE_HASH_STRING, 1);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
   db->aDb = db->aDbStatic;
+  sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
+  for(i=0; i<db->nDb; i++){
+    sqliteHashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);
+    sqliteHashInit(&db->aDb[i].idxHash, SQLITE_HASH_STRING, 0);
+    sqliteHashInit(&db->aDb[i].trigHash, SQLITE_HASH_STRING, 0);
+    sqliteHashInit(&db->aDb[i].aFKey, SQLITE_HASH_STRING, 1);
+  }
   
   /* Open the backend database driver */
   rc = sqliteBtreeOpen(zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
@@ -486,7 +493,6 @@ void sqlite_close(sqlite *db){
     }
   }
   sqliteHashClear(&db->aFunc);
-  sqliteHashClear(&db->aFKey);
   sqliteFree(db);
 }
 

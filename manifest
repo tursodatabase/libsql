@@ -1,5 +1,5 @@
-C Re-generated.\s(CVS\s882)
-D 2003-03-24T09:42:16
+C Changes\sto\sthe\s"sqlite"\sstructure\sthat\sallow\ssimultaneous\soperations\son\nmultiple\sdatabase\sfiles.\s\sMany\sregession\stests\spass\s-\sbut\snot\sall\sof\sthem.\nDo\snot\suse\sthis\sversion\sexcept\sfor\sdebugging\sSQLite\sitself.\s(CVS\s883)
+D 2003-03-27T12:51:24
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,28 +22,28 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 327819bb858d534072f5004973f8bcdd50f133d6
 F src/btree.h 8209bfadf5845d4fdaa60f471bb360f894cd4095
-F src/build.c a965338bee81ce20fb0ce38419e9a9d159e720f0
-F src/delete.c 96a0ae021f960a7f2dbb3d1456802624deacfd3c
+F src/build.c abd5da38923bba6c5dc14d0e24b8e05f68ff459b
+F src/delete.c e1552bd5a26418c32b8516cb5602bf5473651c68
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
-F src/expr.c 8af430cdbcb6122dd0320c8860602bd4cc778486
-F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
+F src/expr.c eae205a27ec45232f234f281f8827c3be58b303d
+F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 1f31bdec48bd3915615e7251b74c27dcfaee9b88
-F src/main.c 66cd7ff4fc9f43719aaa2bc22db5babd8f437a9f
+F src/insert.c 8d23a2d9995d5bee5b7eb44cb9dc354e0874e70a
+F src/main.c e0d9a86541f0644be5c875c6d8f5062c325c653d
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c dfed46091f69cd2d1e601f8a214d41344f2b00b6
 F src/os.h aa52f0c9da321ff6134d19f2ca959e18e33615d0
 F src/pager.c dd1dfa4d929a58b44175f3117360ff1553671173
 F src/pager.h 97d9a8cc5103750efd8037d71ebfb41849ef2f2f
-F src/parse.y 7a9f333e7b09b0584fb4cc3799f8828f612e282e
+F src/parse.y 243cfc277d0e5ce87086c015e717dec98d6648a7
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 06ddc007c20862b3beb8c1c2504db664335d6706
+F src/select.c afdc06d4606d14ab5793ef480206def6b02a2f19
 F src/shell.c 0d260a007e0668fc7dda2b0c89bd597ef2966ec6
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
-F src/sqliteInt.h ad95c947582d0584240ed413c5f1e9df71749ebe
+F src/sqliteInt.h c4338bc3c75784840d51fd8a744a63e444ec496d
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 8167d40fd34036701e07492d07a6f9e5c4015241
 F src/test1.c 7ad4e6308dde0bf5a0f0775ce20cb2ec37a328f8
@@ -51,12 +51,12 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 675b4718d17c69fe7609dc8e85e426ef002be811
-F src/trigger.c aafc83ea108ec6a1b501b31b7fb6cebcd4725fd1
-F src/update.c 5c644629cc73993ba762bf186944816581213bd1
+F src/trigger.c 578e9d07c5b0d07374f85d7f311126cf9c9d6bcf
+F src/update.c 785e0e1c8df2043dc96ad7c298fb11aaa3ebc8af
 F src/util.c 73b668d1ed468df650dc00685a5e4ffa6887feb4
 F src/vdbe.c 7171dbe873760f403b2501e96fd3d1bd852b3ce8
 F src/vdbe.h ed43771f1dc2b994d5c484fdf2eab357c6ef0ee3
-F src/where.c 3111c1c209023e4f6b7b7eb0df48cef0010967c3
+F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/auth.test 33e8b9680eb0ce521c54096fff1c9ab506c7dfb8
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b1ca4e13dcab92cc532f4051f24bf5b1be251463
-R e880aa98002065d15c576e440b78c820
-U a.rottmann
-Z f0092f1365d37d9048c83d0706e14c28
+P f0c5bcf72cf393ea4c5cd126d085cb959eebd5f2
+R 6683142d762d7951c57ba32402494ae2
+U drh
+Z fa7baaef0faab26ced3760ebfbc99fb5

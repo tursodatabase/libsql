@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.92 2003/03/20 01:16:59 drh Exp $
+** @(#) $Id: parse.y,v 1.93 2003/03/27 12:51:25 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -96,8 +96,8 @@ create_table ::= CREATE(X) temp(T) TABLE nm(Y). {
    sqliteStartTable(pParse,&X,&Y,T,0);
 }
 %type temp {int}
-temp(A) ::= TEMP.  {A = pParse->isTemp || !pParse->initFlag;}
-temp(A) ::= .      {A = pParse->isTemp;}
+temp(A) ::= TEMP.  {A = 1;}
+temp(A) ::= .      {A = 0;}
 create_table_args ::= LP columnlist conslist_opt RP(X). {
   sqliteEndTable(pParse,&X,0);
 }
@@ -176,7 +176,7 @@ carg ::= DEFAULT NULL.
 ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
-ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
+ccons ::= UNIQUE onconf(R).           {sqliteCreateIndex(pParse,0,0,0,R,0,0,0);}
 ccons ::= CHECK LP expr RP onconf.
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqliteCreateForeignKey(pParse,0,&T,TA,R);}
@@ -223,7 +223,7 @@ tcons ::= CONSTRAINT nm.
 tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
                                              {sqliteAddPrimaryKey(pParse,X,R);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
-                                       {sqliteCreateIndex(pParse,0,0,X,R,0,0);}
+                                     {sqliteCreateIndex(pParse,0,0,X,R,0,0,0);}
 tcons ::= CHECK expr onconf.
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
@@ -528,6 +528,13 @@ expr(A) ::= nm(X) DOT nm(Y). {
   Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
   A = sqliteExpr(TK_DOT, temp1, temp2, 0);
 }
+expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
+  Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
+  Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
+  Expr *temp3 = sqliteExpr(TK_ID, 0, 0, &Z);
+  Expr *temp4 = sqliteExpr(TK_DOT, temp2, temp3, 0);
+  A = sqliteExpr(TK_DOT, temp1, temp4, 0);
+}
 expr(A) ::= expr(B) ORACLE_OUTER_JOIN. 
                              {A = B; ExprSetProperty(A,EP_Oracle8Join);}
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
@@ -692,11 +699,12 @@ expritem(A) ::= .                       {A = 0;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X)
-        ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
+cmd ::= CREATE(S) temp(T) uniqueflag(U) INDEX nm(X)
+        ON nm(Y) dbnm(D) LP idxlist(Z) RP(E) onconf(R). {
+  SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqliteCreateIndex(pParse, &X, &Y, Z, U, &S, &E);
+  sqliteCreateIndex(pParse, &X, pSrc, Z, U, T, &S, &E);
 }
 
 %type uniqueflag {int}
@@ -718,15 +726,17 @@ idxitem(A) ::= nm(X).                        {A = X;}
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //
 
-cmd ::= DROP INDEX nm(X).      {sqliteDropIndex(pParse, &X);}
+cmd ::= DROP INDEX nm(X) dbnm(Y).   {
+  sqliteDropIndex(pParse, sqliteSrcListAppend(0,&X,&Y));
+}
 
 
 ///////////////////////////// The COPY command ///////////////////////////////
 //
-cmd ::= COPY orconf(R) nm(X) FROM nm(Y) USING DELIMITERS STRING(Z).
-    {sqliteCopy(pParse,&X,&Y,&Z,R);}
-cmd ::= COPY orconf(R) nm(X) FROM nm(Y).
-    {sqliteCopy(pParse,&X,&Y,0,R);}
+cmd ::= COPY orconf(R) nm(X) dbnm(D) FROM nm(Y) USING DELIMITERS STRING(Z).
+    {sqliteCopy(pParse,sqliteSrcListAppend(0,&X,&D),&Y,&Z,R);}
+cmd ::= COPY orconf(R) nm(X) dbnm(D) FROM nm(Y).
+    {sqliteCopy(pParse,sqliteSrcListAppend(0,&X,&D),&Y,0,R);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
@@ -749,13 +759,15 @@ plus_opt ::= PLUS.
 plus_opt ::= .
 
 //////////////////////////// The CREATE TRIGGER command /////////////////////
-cmd ::= CREATE(A) TRIGGER nm(B) trigger_time(C) trigger_event(D) ON nm(E) 
+cmd ::= CREATE(A) TRIGGER nm(B) trigger_time(C) trigger_event(D) 
+                  ON nm(E) dbnm(DB)
                   foreach_clause(F) when_clause(G)
                   BEGIN trigger_cmd_list(S) END(Z). {
+  SrcList *pTab = sqliteSrcListAppend(0, &E, &DB);
   Token all;
   all.z = A.z;
   all.n = (Z.z - A.z) + Z.n;
-  sqliteCreateTrigger(pParse, &B, C, D.a, D.b, &E, F, G, S, &all);
+  sqliteCreateTrigger(pParse, &B, C, D.a, D.b, pTab, F, G, S, &all);
 }
 
 %type trigger_time  {int}
@@ -828,8 +840,8 @@ expr(A) ::= RAISE(X) LP FAIL COMMA nm(Z) RP(Y).  {
 }
 
 ////////////////////////  DROP TRIGGER statement //////////////////////////////
-cmd ::= DROP TRIGGER nm(X). {
-    sqliteDropTrigger(pParse,&X,0);
+cmd ::= DROP TRIGGER nm(X) dbnm(D). {
+    sqliteDropTrigger(pParse,sqliteSrcListAppend(0,&X,&D),0);
 }
 
 //////////////////////// ATTACH DATABASE file AS name /////////////////////////
