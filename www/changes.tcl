@@ -21,12 +21,12 @@ chng {2000 Oct 16 (1.0.11)} {
 <li>Added the <b>sqlite_interrupt()</b> interface.</li>
 <li>In the shell, <b>sqlite_interrupt()</b> is invoked when the
     user presses Control-C</li>
-<li>Fixed bugs in the return value of <b>sqlite_exec()</b>.</li>
+<li>Fixed some instances where <b>sqlite_exec()</b> was
+    returning the wrong error code.</li>
 }
 
 chng {2000 Oct 11 (1.0.10)} {
 <li>Added notes on how to compile for Windows95/98.</li>
-<li>Add Doug Lea's memory allocator to the distribution, for completeness.</li>
 <li>Removed a few variables that were not being used.  Etc.</li>
 }
 
