@@ -13,7 +13,7 @@
 # the B+tree tables.  B+trees store all data on the leaves rather
 # that storing data with keys on interior nodes.
 #
-# $Id: btree6.test,v 1.1 2004/05/12 19:18:17 drh Exp $
+# $Id: btree6.test,v 1.2 2004/05/12 21:11:27 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -112,8 +112,8 @@ for {set i 1} {$i<=100} {incr i} {
     btree_integrity_check $b1 1 $tab
   } {}
   do_test btree6-1.$i.3 {
-    random_deletes $cur 190
-    incr cnt -190
+    random_deletes $cur 90
+    incr cnt -90
     check_table $cur $cnt
   } {}
   do_test btree6-1.$i.4 {
