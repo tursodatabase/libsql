@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.451 2005/02/04 21:13:01 drh Exp $
+** $Id: vdbe.c,v 1.452 2005/02/05 06:49:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1660,11 +1660,20 @@ case OP_NotNull: {            /* same as TK_NOTNULL */
 ** opcode must be called to set the number of fields in the table.
 **
 ** This opcode sets the number of columns for cursor P1 to P2.
+**
+** If OP_KeyAsData is to be applied to cursor P1, it must be executed
+** before this op-code.
 */
 case OP_SetNumColumns: {
+  Cursor *pC;
   assert( (pOp->p1)<p->nCursor );
   assert( p->apCsr[pOp->p1]!=0 );
-  p->apCsr[pOp->p1]->nField = pOp->p2;
+  pC = p->apCsr[pOp->p1];
+  pC->nField = pOp->p2;
+  if( (!pC->keyAsData && pC->zeroData) || (pC->keyAsData && pC->intKey) ){
+    rc = SQLITE_CORRUPT;
+    goto abort_due_to_error;
+  }
   break;
 }
 

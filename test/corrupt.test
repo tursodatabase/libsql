@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.5 2005/02/04 04:07:18 danielk1977 Exp $
+# $Id: corrupt.test,v 1.6 2005/02/05 06:49:55 danielk1977 Exp $
 
 catch {file delete -force test.db}
 catch {file delete -force test.db-journal}
@@ -111,5 +111,62 @@ for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
     set x {}
   } {}
 }  
+
+#------------------------------------------------------------------------
+# For these tests, swap the rootpage entries of t1 (a table) and t1i1 (an
+# index on t1) in sqlite_master. Then perform a few different queries
+# and make sure this is detected as corruption.
+#
+do_test corrupt-3.1 {
+  db close
+  copy_file test.bu test.db
+  sqlite3 db test.db
+  execsql {
+    SELECT name, rootpage FROM sqlite_master
+  }
+} {t1 2 t1i1 85 t2 177}
+do_test corrupt-3.2 {
+  set t1_r [execsql {SELECT rootpage FROM sqlite_master WHERE name = 't1i1'}]
+  set t1i1_r [execsql {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
+  set cookie [expr [execsql {PRAGMA schema_version}] + 1]
+  execsql "
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_master SET rootpage = $t1_r WHERE name = 't1';
+    UPDATE sqlite_master SET rootpage = $t1i1_r WHERE name = 't1i1';
+    PRAGMA writable_schema = 0;
+    PRAGMA schema_version = $cookie;
+    SELECT name, rootpage FROM sqlite_master;
+  "
+} {t1 85 t1i1 2 t2 177}
+
+# This one tests the case caught by code in checkin [2313].
+do_test corrupt-3.3 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    INSERT INTO t1 VALUES('abc');
+  }
+} {1 {database disk image is malformed}}
+do_test corrupt-3.4 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM t1;
+  }
+} {1 {database disk image is malformed}}
+do_test corrupt-3.5 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM t1 WHERE oid = 10;
+  }
+} {1 {database disk image is malformed}}
+do_test corrupt-3.6 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM t1 WHERE x = 'abcde';
+  }
+} {1 {database disk image is malformed}}
 
 finish_test
