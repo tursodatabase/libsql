@@ -1,5 +1,5 @@
-C Update\sioerr.test\sto\sbe\smore\sdeterministic.\s(CVS\s2287)
-D 2005-01-29T08:36:45
+C Fix\sa\stest\sbug\scausing\sa\ssegfault\sin\sbind.test.\s(CVS\s2288)
+D 2005-01-29T09:00:49
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -96,7 +96,7 @@ F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 8feb1cfb4d8177c639cd1e0b8c41d3c88a2a1518
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test bc33135f91d1b59572ad2bcbc84d2201c5d4455d
+F test/bind.test a88917a3d2865f31006e2acb2fd7534dcd15140d
 F test/blob.test fc41fe95bdc10da51f0dee73ce86e75ce1d6eb9d
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
 F test/btree2.test dbce930b549d5ac883a7d8905c976209ea241db3
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P b1b50f315873a8614920d1e3af4a07fb29a7ff6a
-R c3256f9f49536d2780189347e9c7bebb
+P d0b16bae6555f723400821b22916b66609a26b9c
+R b950a7e4797caf8753adc11674aec7a2
 U danielk1977
-Z 7c3f10c0ef2167d26758ae5865b86487
+Z 114fe59f1960db4ca9978e693524a2bb
