@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#542.\s(CVS\s1151)
-D 2003-12-31T17:25:48
+C Fix\sa\sbug\sin\sthe\sSQLITE_PROFILE\sconditional\scompilation.\s(CVS\s1152)
+D 2003-12-31T17:57:11
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -66,7 +66,7 @@ F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
 F src/vdbe.c a16a084ca40edeec3a2e490d6f672fc84f851dd9
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 2824bf88895b901b3a8c9e44527c67530e1c0dcb
-F src/vdbeaux.c 877ae44ab42f43d38e8cd989087627508a4c98dd
+F src/vdbeaux.c 8f0df877ddbfc3f6500f78d2f8f1aeea24f1e964
 F src/where.c 724c7b82938b2b52602e583c1c3a719eec17003c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 646244008fb8a6eef4169291d75da59fa1ab26f9
-R dab4b04b9fc18d60100a347ab3bbab19
+P 458cfa5ba82f2d676e398437a4b1d26d77582d10
+R b980ec76c7ec657224f75a4c68144d8e
 U drh
-Z 6ce37cab4698249fe8ccfb6ca759c651
+Z aea9e91ef67be7707f7bac1602611fde

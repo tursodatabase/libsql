@@ -622,9 +622,12 @@ void sqliteVdbeMakeReady(
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
 #ifdef VDBE_PROFILE
-  for(i=0; i<p->nOp; i++){
-    p->aOp[i].cnt = 0;
-    p->aOp[i].cycles = 0;
+  {
+    int i;
+    for(i=0; i<p->nOp; i++){
+      p->aOp[i].cnt = 0;
+      p->aOp[i].cycles = 0;
+    }
   }
 #endif
 }
