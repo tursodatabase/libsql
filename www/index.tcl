@@ -61,6 +61,18 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Jan-21} {Version 3.1.0 (alpha) Released} {
+  Version 3.1.0 (alpha) is now available on the
+  website.  Verison 3.1.0 is fully backwards compatible with the 3.0 series
+  and features many new features including Autovacuum and correlated
+  subqueries.  See the
+  <a href="http://www.sqlite.org/releasenotes310.html">release notes</a>
+  for details.
+
+  This is an alpha release.  A beta release is expected in about a week
+  with the first stable release to follow after two more weeks.
+}
+
 newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
   There was a talk on the architecture of SQLite and how to optimize
   SQLite queries at the 2004 International PHP Conference in Frankfurt,
@@ -69,13 +81,6 @@ newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
   Slides</a> from that talk are available.
 }
 
-
-newsitem {2004-Oct-11} {Version 3.0.8} {
-  Version 3.0.8 of SQLite contains several code optimizations and minor
-  bug fixes and adds support for DEFERRED, IMMEDIATE, and EXCLUSIVE
-  transactions.  This is an incremental release.  There is no reason
-  to upgrade from version 3.0.7 if that version is working for you.
-}
 
 newsitem {2004-Oct-10} {SQLite at the 11<sup><small>th</small></sup>
 Annual Tcl/Tk Conference} {
@@ -100,4 +105,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.103 2004/11/11 19:32:40 drh Exp $}
+footer {$Id: index.tcl,v 1.104 2005/01/21 18:19:28 drh Exp $}
