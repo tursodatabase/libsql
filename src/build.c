@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.155 2003/05/31 16:21:12 drh Exp $
+** $Id: build.c,v 1.156 2003/07/01 18:13:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1693,8 +1693,8 @@ void sqliteCreateIndex(
   */
   if( !pParse->explain ){
     Index *p;
-    p = sqliteHashInsert(&db->aDb[isTemp].idxHash, 
-                         pIndex->zName, strlen(zName)+1, pIndex);
+    p = sqliteHashInsert(&db->aDb[pIndex->iDb].idxHash, 
+                         pIndex->zName, strlen(pIndex->zName)+1, pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */
       sqliteFree(pIndex);
