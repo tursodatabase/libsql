@@ -135,7 +135,7 @@ void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
-  sqlite *db;
+  sqlite3 *db;
   int rc;
 
   if( p==0 || p->magic!=VDBE_MAGIC_RUN ){

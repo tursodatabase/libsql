@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.27 2004/09/05 23:23:42 drh Exp $
+** $Id: attach.c,v 1.28 2004/09/06 17:24:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -33,7 +33,7 @@ void sqlite3Attach(
   Db *aNew;
   int rc, i;
   char *zFile, *zName;
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
 
   v = sqlite3GetVdbe(pParse);
@@ -154,7 +154,7 @@ void sqlite3Attach(
 */
 void sqlite3Detach(Parse *pParse, Token *pDbname){
   int i;
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
   Db *pDb = 0;
 
@@ -206,7 +206,7 @@ int sqlite3FixInit(
   const char *zType,  /* "view", "trigger", or "index" */
   const Token *pName  /* Name of the view, trigger, or index */
 ){
-  sqlite *db;
+  sqlite3 *db;
 
   if( iDb<0 || iDb==1 ) return 0;
   db = pParse->db;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.318 2004/09/01 03:06:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.319 2004/09/06 17:24:13 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -142,8 +142,6 @@ typedef UINTPTR_TYPE uptr;         /* Big enough to hold a pointer */
 extern const int sqlite3one;
 #define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 #define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
-
-typedef struct sqlite sqlite;
 
 /*
 ** An instance of the following structure is used to store the busy-handler
@@ -347,7 +345,7 @@ struct Db {
 ** internal function sqlite3Error() is used to set these variables
 ** consistently.
 */
-struct sqlite {
+struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
   Db aDbStatic[2];              /* Static space for the 2 default backends */
@@ -970,7 +968,7 @@ struct AggExpr {
 ** carry around information that is global to the entire parse.
 */
 struct Parse {
-  sqlite *db;          /* The main database structure */
+  sqlite3 *db;         /* The main database structure */
   int rc;              /* Return code from execution */
   char *zErrMsg;       /* An error message */
   Token sErrToken;     /* The token at which the error occurred */
@@ -1022,7 +1020,7 @@ struct AuthContext {
  * struct Trigger. 
  *
  * Pointers to instances of struct Trigger are stored in two ways.
- * 1. In the "trigHash" hash table (part of the sqlite* that represents the 
+ * 1. In the "trigHash" hash table (part of the sqlite3* that represents the 
  *    database). This allows Trigger structures to be retrieved by name.
  * 2. All triggers associated with a single table form a linked list, using the
  *    pNext member of struct Trigger. A pointer to the first element of the
@@ -1158,7 +1156,7 @@ struct DbFixer {
 ** from sqlite3Init and OP_ParseSchema into the sqlite3InitCallback.
 */
 typedef struct {
-  sqlite *db;         /* The database being initialized */
+  sqlite3 *db;        /* The database being initialized */
   char **pzErrMsg;    /* Error message stored here */
 } InitData;
 
@@ -1214,13 +1212,13 @@ Expr *sqlite3ExprFunction(ExprList*, Token*);
 void sqlite3ExprDelete(Expr*);
 ExprList *sqlite3ExprListAppend(ExprList*,Expr*,Token*);
 void sqlite3ExprListDelete(ExprList*);
-int sqlite3Init(sqlite*, char**);
+int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
 void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
-void sqlite3ResetInternalSchema(sqlite*, int);
+void sqlite3ResetInternalSchema(sqlite3*, int);
 void sqlite3BeginParse(Parse*,int);
-void sqlite3RollbackInternalChanges(sqlite*);
-void sqlite3CommitInternalChanges(sqlite*);
+void sqlite3RollbackInternalChanges(sqlite3*);
+void sqlite3CommitInternalChanges(sqlite3*);
 Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
 void sqlite3OpenMasterTable(Vdbe *v, int);
 void sqlite3StartTable(Parse*,Token*,Token*,Token*,int,int);
@@ -1234,7 +1232,7 @@ void sqlite3EndTable(Parse*,Token*,Select*);
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int);
 int sqlite3ViewGetColumnNames(Parse*,Table*);
 void sqlite3DropTable(Parse*, SrcList*, int);
-void sqlite3DeleteTable(sqlite*, Table*);
+void sqlite3DeleteTable(sqlite3*, Table*);
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
 IdList *sqlite3IdListAppend(IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
@@ -1263,14 +1261,14 @@ void sqlite3ExprCode(Parse*, Expr*);
 int sqlite3ExprCodeExprList(Parse*, ExprList*);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
-Table *sqlite3FindTable(sqlite*,const char*, const char*);
+Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 Table *sqlite3LocateTable(Parse*,const char*, const char*);
-Index *sqlite3FindIndex(sqlite*,const char*, const char*);
-void sqlite3UnlinkAndDeleteTable(sqlite*,int,const char*);
-void sqlite3UnlinkAndDeleteIndex(sqlite*,int,const char*);
-void sqlite3UnlinkAndDeleteTrigger(sqlite*,int,const char*);
+Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
+void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
+void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
+void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
 void sqlite3Vacuum(Parse*, Token*);
-int sqlite3RunVacuum(char**, sqlite*);
+int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprCompare(Expr*, Expr*);
@@ -1280,7 +1278,7 @@ int sqlite3ExprResolveAndCheck(Parse*,SrcList*,ExprList*,Expr*,int,int*);
 int sqlite3ExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);
-void sqlite3RollbackAll(sqlite*);
+void sqlite3RollbackAll(sqlite3*);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3BeginTransaction(Parse*);
 void sqlite3CommitTransaction(Parse*);
@@ -1288,8 +1286,8 @@ void sqlite3RollbackTransaction(Parse*);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
-void sqlite3GenerateRowDelete(sqlite*, Vdbe*, Table*, int, int);
-void sqlite3GenerateRowIndexDelete(sqlite*, Vdbe*, Table*, int, char*);
+void sqlite3GenerateRowDelete(sqlite3*, Vdbe*, Table*, int, int);
+void sqlite3GenerateRowIndexDelete(sqlite3*, Vdbe*, Table*, int, char*);
 void sqlite3GenerateIndexKey(Vdbe*, Index*, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqlite3CompleteInsertion(Parse*, Table*, int, char*, int, int, int);
@@ -1302,13 +1300,13 @@ ExprList *sqlite3ExprListDup(ExprList*);
 SrcList *sqlite3SrcListDup(SrcList*);
 IdList *sqlite3IdListDup(IdList*);
 Select *sqlite3SelectDup(Select*);
-FuncDef *sqlite3FindFunction(sqlite*,const char*,int,int,u8,int);
-void sqlite3RegisterBuiltinFunctions(sqlite*);
-void sqlite3RegisterDateTimeFunctions(sqlite*);
-int sqlite3SafetyOn(sqlite*);
-int sqlite3SafetyOff(sqlite*);
-int sqlite3SafetyCheck(sqlite*);
-void sqlite3ChangeCookie(sqlite*, Vdbe*, int);
+FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
+void sqlite3RegisterBuiltinFunctions(sqlite3*);
+void sqlite3RegisterDateTimeFunctions(sqlite3*);
+int sqlite3SafetyOn(sqlite3*);
+int sqlite3SafetyOff(sqlite3*);
+int sqlite3SafetyCheck(sqlite3*);
+void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
 void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,
                          int,Expr*,int);
 void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
@@ -1340,7 +1338,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 #endif
 void sqlite3Attach(Parse*, Token*, Token*, int, Token*);
 void sqlite3Detach(Parse*, Token*);
-int sqlite3BtreeFactory(const sqlite *db, const char *zFilename,
+int sqlite3BtreeFactory(const sqlite3 *db, const char *zFilename,
                        int omitJournal, int nCache, Btree **ppBtree);
 int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
@@ -1367,13 +1365,13 @@ char const *sqlite3AffinityString(char affinity);
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
-void sqlite3Error(sqlite *, int, const char*,...);
+void sqlite3Error(sqlite3*, int, const char*,...);
 void *sqlite3HexToBlob(const char *z);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold);
 int sqlite3ReadSchema(Parse *pParse);
-CollSeq *sqlite3FindCollSeq(sqlite *,u8 enc, const char *,int,int);
+CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char *,int,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
@@ -1387,7 +1385,7 @@ int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew();
-sqlite3_value *sqlite3GetTransientValue(sqlite *db);
+sqlite3_value *sqlite3GetTransientValue(sqlite3*db);
 extern const unsigned char sqlite3UpperToLower[];
 
 #endif

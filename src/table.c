@@ -118,7 +118,7 @@ malloc_failed:
 ** the calling procedure is finished using it.
 */
 int sqlite3_get_table(
-  sqlite *db,                 /* The database on which the SQL executes */
+  sqlite3 *db,                /* The database on which the SQL executes */
   const char *zSql,           /* The SQL to be executed */
   char ***pazResult,          /* Write the result table here */
   int *pnRow,                 /* Write the number of rows in the result here */

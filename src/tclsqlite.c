@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.103 2004/08/26 00:56:05 drh Exp $
+** $Id: tclsqlite.c,v 1.104 2004/09/06 17:24:13 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -205,7 +205,7 @@ static int DbCommitHandler(void *cd){
 
 static void tclCollateNeeded(
   void *pCtx,
-  sqlite *db,
+  sqlite3 *db,
   int enc,
   const char *zName
 ){
@@ -367,7 +367,7 @@ static Tcl_Obj *dbTextToObj(char const *zText){
 ** whenever one of those connection-specific commands is executed
 ** in Tcl.  For example, if you run Tcl code like this:
 **
-**       sqlite db1  "my_database"
+**       sqlite3 db1  "my_database"
 **       db1 close
 **
 ** The first command opens a connection to the "my_database" database
@@ -1073,7 +1073,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 }
 
 /*
-**   sqlite DBNAME FILENAME ?MODE? ?-key KEY?
+**   sqlite3 DBNAME FILENAME ?MODE? ?-key KEY?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -1088,16 +1088,16 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 **
 ** For testing purposes, we also support the following:
 **
-**  sqlite -encoding
+**  sqlite3 -encoding
 **
 **       Return the encoding used by LIKE and GLOB operators.  Choices
 **       are UTF-8 and iso8859.
 **
-**  sqlite -version
+**  sqlite3 -version
 **
 **       Return the version number of the SQLite library.
 **
-**  sqlite -tcl-uses-utf
+**  sqlite3 -tcl-uses-utf
 **
 **       Return "1" if compiled with a Tcl uses UTF-8.  Return "0" if
 **       not.  Used by tests to make sure the library was compiled 
@@ -1190,7 +1190,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   */
 #ifdef SQLITE_TEST
   {
-    extern void Md5_Register(sqlite*);
+    extern void Md5_Register(sqlite3*);
 #ifdef SQLITE_DEBUG
     int mallocfail = sqlite3_iMallocFail;
     sqlite3_iMallocFail = 0;

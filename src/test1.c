@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.100 2004/08/29 23:42:14 drh Exp $
+** $Id: test1.c,v 1.101 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -65,9 +65,9 @@ static const char * errorName(int rc){
 }
 
 /*
-** Decode a pointer to an sqlite object.
+** Decode a pointer to an sqlite3 object.
 */
-static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite **ppDb){
+static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
   if( sscanf(zA, PTR_FMT, (void**)ppDb)!=1 && 
       (zA[0]!='0' || zA[1]!='x' || sscanf(&zA[2], PTR_FMT, (void**)ppDb)!=1)
   ){
@@ -168,7 +168,7 @@ static int test_exec_printf(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   Tcl_DString str;
   int rc;
   char *zErr = 0;
@@ -229,7 +229,7 @@ static int test_get_table_printf(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   Tcl_DString str;
   int rc;
   char *zErr = 0;
@@ -278,7 +278,7 @@ static int test_last_rowid(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   char zBuf[30];
 
   if( argc!=2 ){
@@ -302,7 +302,7 @@ static int test_key(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   const char *zKey;
   int nKey;
   if( argc!=3 ){
@@ -330,7 +330,7 @@ static int test_rekey(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   const char *zKey;
   int nKey;
   if( argc!=3 ){
@@ -358,7 +358,7 @@ static int sqlite_test_close(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -452,7 +452,7 @@ static void sqlite3ExecFunc(
 ){
   struct dstr x;
   memset(&x, 0, sizeof(x));
-  sqlite3_exec((sqlite*)sqlite3_user_data(context),
+  sqlite3_exec((sqlite3*)sqlite3_user_data(context),
       sqlite3_value_text(argv[0]),
       execFuncCallback, &x, 0);
   sqlite3_result_text(context, x.z, x.nUsed, SQLITE_TRANSIENT);
@@ -480,9 +480,9 @@ static int test_create_function(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   sqlite3_value *pVal;
-  extern void Md5_Register(sqlite*);
+  extern void Md5_Register(sqlite3*);
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -540,7 +540,7 @@ static int test_create_aggregate(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME\"", 0);
@@ -846,7 +846,7 @@ static int test_register_func(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite *db;
+  sqlite3 *db;
   int rc;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
@@ -1681,7 +1681,7 @@ static int test_errmsg(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite *db;
+  sqlite3 *db;
   const char *zErr;
 
   if( objc!=2 ){
@@ -1710,7 +1710,7 @@ static int test_errmsg16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite *db;
+  sqlite3 *db;
   const void *zErr;
   int bytes;
 

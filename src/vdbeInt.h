@@ -295,7 +295,7 @@ struct Context {
 ** is really a pointer to an instance of this structure.
 */
 struct Vdbe {
-  sqlite *db;         /* The whole database */
+  sqlite3 *db;        /* The whole database */
   Vdbe *pPrev,*pNext; /* Linked list of VDBEs with the same Vdbe.db */
   FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
@@ -356,7 +356,7 @@ struct Vdbe {
 */
 void sqlite3VdbeFreeCursor(Cursor*);
 void sqlite3VdbeSorterReset(Vdbe*);
-int sqlite3VdbeAggReset(sqlite *, Agg *, KeyInfo *);
+int sqlite3VdbeAggReset(sqlite3*, Agg *, KeyInfo *);
 void sqlite3VdbeKeylistFree(Keylist*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);

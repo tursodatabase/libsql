@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.11 2004/08/08 20:22:18 drh Exp $
+** $Id: test4.c,v 1.12 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -40,7 +40,7 @@ struct Thread {
   /* The next group of fields are writable by the thread but read-only to the
   ** master. */
   int completed;        /* Number of operations completed */
-  sqlite *db;           /* Open database */
+  sqlite3 *db;           /* Open database */
   sqlite3_stmt *pStmt;     /* Pending operation */
   char *zErr;           /* operation error */
   char *zStaticErr;     /* Static error message */
@@ -591,7 +591,7 @@ static int tcl_thread_swap(
   const char **argv      /* Text of each argument */
 ){
   int i, j;
-  sqlite *temp;
+  sqlite3 *temp;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " ID1 ID2", 0);

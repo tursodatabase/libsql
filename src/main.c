@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.258 2004/09/02 15:53:57 drh Exp $
+** $Id: main.c,v 1.259 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -53,7 +53,7 @@ static void corruptSchema(InitData *pData, const char *zExtra){
 */
 int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   InitData *pData = (InitData*)pInit;
-  sqlite *db = pData->db;
+  sqlite3 *db = pData->db;
   int iDb;
 
   assert( argc==4 );
@@ -113,7 +113,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
 ** auxiliary databases.  Return one of the SQLITE_ error codes to
 ** indicate success or failure.
 */
-static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
+static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   int rc;
   BtCursor *curMain;
   int size;
@@ -309,7 +309,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
 ** After the database is initialized, the SQLITE_Initialized
 ** bit is set in the flags field of the sqlite structure. 
 */
-int sqlite3Init(sqlite *db, char **pzErrMsg){
+int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   int i, rc;
   
   if( db->init.busy ) return SQLITE_OK;
@@ -417,14 +417,14 @@ static int nocaseCollatingFunc(
 /*
 ** Return the ROWID of the most recent insert
 */
-sqlite_int64 sqlite3_last_insert_rowid(sqlite *db){
+sqlite_int64 sqlite3_last_insert_rowid(sqlite3 *db){
   return db->lastRowid;
 }
 
 /*
 ** Return the number of changes in the most recent call to sqlite3_exec().
 */
-int sqlite3_changes(sqlite *db){
+int sqlite3_changes(sqlite3 *db){
   return db->nChange;
 }
 
@@ -438,7 +438,7 @@ int sqlite3_total_changes(sqlite3 *db){
 /*
 ** Close an existing SQLite database
 */
-int sqlite3_close(sqlite *db){
+int sqlite3_close(sqlite3 *db){
   HashElem *i;
   int j;
 
@@ -512,7 +512,7 @@ int sqlite3_close(sqlite *db){
 /*
 ** Rollback all database files.
 */
-void sqlite3RollbackAll(sqlite *db){
+void sqlite3RollbackAll(sqlite3 *db){
   int i;
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
@@ -625,7 +625,7 @@ int sqlite3_busy_handler(
 ** be invoked every nOps opcodes.
 */
 void sqlite3_progress_handler(
-  sqlite *db, 
+  sqlite3 *db, 
   int nOps,
   int (*xProgress)(void*), 
   void *pArg
@@ -659,7 +659,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 /*
 ** Cause any pending operation to stop at its earliest opportunity.
 */
-void sqlite3_interrupt(sqlite *db){
+void sqlite3_interrupt(sqlite3 *db){
   db->flags |= SQLITE_Interrupt;
 }
 
@@ -761,7 +761,7 @@ int sqlite3_create_function16(
 ** trace is a pointer to a function that is invoked at the start of each
 ** sqlite3_exec().
 */
-void *sqlite3_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
+void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
   void *pOld = db->pTraceArg;
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
@@ -775,7 +775,7 @@ void *sqlite3_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
 ** rollback.
 */
 void *sqlite3_commit_hook(
-  sqlite *db,               /* Attach the hook to this database */
+  sqlite3 *db,              /* Attach the hook to this database */
   int (*xCallback)(void*),  /* Function to invoke on each commit */
   void *pArg                /* Argument to the function */
 ){
@@ -812,7 +812,7 @@ void *sqlite3_commit_hook(
 **           3               any             memory
 */
 int sqlite3BtreeFactory(
-  const sqlite *db,	    /* Main database when opening aux otherwise 0 */
+  const sqlite3 *db,        /* Main database when opening aux otherwise 0 */
   const char *zFilename,    /* Name of the file containing the BTree database */
   int omitJournal,          /* if TRUE then do not journal this file */
   int nCache,               /* How many pages in the page cache */
@@ -930,7 +930,7 @@ int sqlite3_errcode(sqlite3 *db){
 ** Check schema cookies in all databases.  If any cookie is out
 ** of date, return 0.  If all schema cookies are current, return 1.
 */
-static int schemaIsValid(sqlite *db){
+static int schemaIsValid(sqlite3 *db){
   int iDb;
   int rc;
   BtCursor *curTemp;
@@ -1118,7 +1118,7 @@ static int openDatabase(
   char *zErrMsg = 0;
 
   /* Allocate the sqlite data structure */
-  db = sqliteMalloc( sizeof(sqlite) );
+  db = sqliteMalloc( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;

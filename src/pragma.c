@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.63 2004/09/05 23:23:42 drh Exp $
+** $Id: pragma.c,v 1.64 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -95,7 +95,7 @@ static int getTempStore(const char *z){
 */
 static int changeTempStorage(Parse *pParse, const char *zStorageType){
   int ts = getTempStore(zStorageType);
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   if( db->temp_store==ts ) return SQLITE_OK;
   if( db->aDb[1].pBt!=0 ){
     if( db->flags & SQLITE_InTrans ){
@@ -147,7 +147,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
   int i;
   for(i=0; i<sizeof(aPragma)/sizeof(aPragma[0]); i++){
     if( sqlite3StrICmp(zLeft, aPragma[i].zName)==0 ){
-      sqlite *db = pParse->db;
+      sqlite3 *db = pParse->db;
       Vdbe *v;
       if( zRight==0 ){
         v = sqlite3GetVdbe(pParse);
@@ -193,7 +193,7 @@ void sqlite3Pragma(
   const char *zDb = 0;   /* The database name */
   Token *pId;            /* Pointer to <id> token */
   int iDb;               /* Database index for <database> */
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   Db *pDb;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;

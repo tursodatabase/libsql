@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.116 2004/08/29 23:42:14 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.117 2004/09/06 17:24:13 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -44,7 +44,7 @@ const char *sqlite3_libversion();
 ** Each open sqlite database is represented by an instance of the
 ** following opaque structure.
 */
-typedef struct sqlite sqlite3;
+typedef struct sqlite3 sqlite3;
 
 
 /*

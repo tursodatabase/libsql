@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.206 2004/09/01 03:06:35 drh Exp $
+** $Id: select.c,v 1.207 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -565,7 +565,7 @@ static void generateSortTail(
   KeyInfo *pInfo;
   ExprList *pOrderBy;
   int nCol, i;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   if( eDest==SRT_Sorter ) return;
   pOrderBy = p->pOrderBy;
@@ -720,7 +720,7 @@ static void generateColumnNames(
 ){
   Vdbe *v = pParse->pVdbe;
   int i, j;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int fullNames, shortNames;
 
   /* If this is an EXPLAIN, skip this step */
@@ -1253,7 +1253,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   KeyInfo *pKeyInfo;
   int nColumn;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int i;
   Vdbe *v = pParse->pVdbe;
   int addr;

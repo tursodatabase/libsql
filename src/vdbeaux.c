@@ -33,7 +33,7 @@ int sqlite3_vdbe_addop_trace = 0;
 /*
 ** Create a new virtual database engine.
 */
-Vdbe *sqlite3VdbeCreate(sqlite *db){
+Vdbe *sqlite3VdbeCreate(sqlite3 *db){
   Vdbe *p;
   p = sqliteMalloc( sizeof(Vdbe) );
   if( p==0 ) return 0;
@@ -451,7 +451,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
 ){
-  sqlite *db = p->db;
+  sqlite3 *db = p->db;
   int i;
   int rc = SQLITE_OK;
 
@@ -698,7 +698,7 @@ void freeAggElem(AggElem *pElem, Agg *pAgg){
 ** delete the contents of the table used for aggregate information, ready
 ** for the next round of aggregate processing.
 */
-int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
+int sqlite3VdbeAggReset(sqlite3 *db, Agg *pAgg, KeyInfo *pKeyInfo){
   int rc = 0;
   BtCursor *pCsr = pAgg->pCsr;
 
@@ -925,7 +925,7 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
 ** write-transaction spanning more than one database file, this routine
 ** takes care of the master journal trickery.
 */
-static int vdbeCommit(sqlite *db){
+static int vdbeCommit(sqlite3 *db){
   int i;
   int nTrans = 0;  /* Number of databases with an active write-transaction */
   int rc = SQLITE_OK;
@@ -1137,7 +1137,7 @@ static void abortOtherActiveVdbes(Vdbe *pVdbe){
 ** This is a no-op if NDEBUG is defined.
 */
 #ifndef NDEBUG
-static void checkActiveVdbeCnt(sqlite *db){
+static void checkActiveVdbeCnt(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
   p = db->pVdbe;
@@ -1166,7 +1166,7 @@ static void checkActiveVdbeCnt(sqlite *db){
 ** means the close did not happen and needs to be repeated.
 */
 int sqlite3VdbeHalt(Vdbe *p){
-  sqlite *db = p->db;
+  sqlite3 *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
 
@@ -1322,7 +1322,7 @@ int sqlite3VdbeReset(Vdbe *p){
 */
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
-  sqlite *db = p->db;
+  sqlite3 *db = p->db;
 
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
     rc = sqlite3VdbeReset(p);

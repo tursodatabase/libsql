@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.30 2004/09/05 00:33:43 drh Exp $
+** $Id: vacuum.c,v 1.31 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -91,7 +91,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pTableName){
 /*
 ** This routine implements the OP_Vacuum opcode of the VDBE.
 */
-int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
+int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int rc = SQLITE_OK;     /* Return code from service routines */
 #if !defined(SQLITE_OMIT_VACUUM) || SQLITE_OMIT_VACUUM
   const char *zFilename;  /* full pathname of the database file */

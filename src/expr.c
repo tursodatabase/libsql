@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.159 2004/09/01 03:06:35 drh Exp $
+** $Id: expr.c,v 1.160 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -601,7 +601,7 @@ static int lookupName(
   int i, j;            /* Loop counters */
   int cnt = 0;         /* Number of matching column names */
   int cntTab = 0;      /* Number of matching table names */
-  sqlite *db = pParse->db;  /* The database */
+  sqlite3 *db = pParse->db;  /* The database */
 
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
   zDb = sqlite3NameFromToken(pDbToken);
@@ -1767,7 +1767,7 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 ** match that requested.
 */
 FuncDef *sqlite3FindFunction(
-  sqlite *db,        /* An open database */
+  sqlite3 *db,       /* An open database */
   const char *zName, /* Name of the function.  Not null-terminated */
   int nName,         /* Number of characters in the name */
   int nArg,          /* Number of arguments.  -1 means any number */

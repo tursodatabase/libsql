@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.87 2004/08/31 13:45:12 drh Exp $
+** $Id: update.c,v 1.88 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,7 +39,7 @@ void sqlite3Update(
   int nIdx;              /* Number of indices that need updating */
   int nIdxTotal;         /* Total number of indices */
   int iCur;              /* VDBE Cursor number of pTab */
-  sqlite *db;            /* The database structure */
+  sqlite3 *db;           /* The database structure */
   Index **apIdx = 0;     /* An array of indices that need updating too */
   char *aIdxUsed = 0;    /* aIdxUsed[i]==1 if the i-th index is used */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.250 2004/08/31 13:45:11 drh Exp $
+** $Id: build.c,v 1.251 2004/09/06 17:24:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -50,7 +50,7 @@ void sqlite3BeginParse(Parse *pParse, int explainFlag){
 ** no VDBE code was generated.
 */
 void sqlite3FinishCoding(Parse *pParse){
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
 
   if( sqlite3_malloc_failed ) return;
@@ -124,7 +124,7 @@ void sqlite3FinishCoding(Parse *pParse){
 **
 ** See also sqlite3LocateTable().
 */
-Table *sqlite3FindTable(sqlite *db, const char *zName, const char *zDatabase){
+Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
   assert( zName!=0 );
@@ -184,7 +184,7 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 ** TEMP first, then MAIN, then any auxiliary databases added
 ** using the ATTACH command.
 */
-Index *sqlite3FindIndex(sqlite *db, const char *zName, const char *zDb){
+Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
   assert( (db->flags & SQLITE_Initialized) || db->init.busy );
@@ -213,7 +213,7 @@ static void freeIndex(Index *p){
 ** it is not unlinked from the Table that it indexes.
 ** Unlinking from the Table must be done by the calling function.
 */
-static void sqliteDeleteIndex(sqlite *db, Index *p){
+static void sqliteDeleteIndex(sqlite3 *db, Index *p){
   Index *pOld;
 
   assert( db!=0 && p->zName!=0 );
@@ -231,7 +231,7 @@ static void sqliteDeleteIndex(sqlite *db, Index *p){
 ** the index from the index hash table and free its memory
 ** structures.
 */
-void sqlite3UnlinkAndDeleteIndex(sqlite *db, int iDb, const char *zIdxName){
+void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
   Index *pIndex;
   int len;
 
@@ -263,7 +263,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite *db, int iDb, const char *zIdxName){
 ** files.  If iDb>=2 then reset the internal schema for only the
 ** single file indicated.
 */
-void sqlite3ResetInternalSchema(sqlite *db, int iDb){
+void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   HashElem *pElem;
   Hash temp1;
   Hash temp2;
@@ -334,7 +334,7 @@ void sqlite3ResetInternalSchema(sqlite *db, int iDb){
 ** schema changes during the transaction, then we have to reset the
 ** internal hash tables and reload them from disk.
 */
-void sqlite3RollbackInternalChanges(sqlite *db){
+void sqlite3RollbackInternalChanges(sqlite3 *db){
   if( db->flags & SQLITE_InternChanges ){
     sqlite3ResetInternalSchema(db, 0);
   }
@@ -343,7 +343,7 @@ void sqlite3RollbackInternalChanges(sqlite *db){
 /*
 ** This routine is called when a commit occurs.
 */
-void sqlite3CommitInternalChanges(sqlite *db){
+void sqlite3CommitInternalChanges(sqlite3 *db){
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -379,7 +379,7 @@ static void sqliteResetColumnNames(Table *pTable){
 ** the table are deleted, but it is assumed they have already been
 ** unlinked.
 */
-void sqlite3DeleteTable(sqlite *db, Table *pTable){
+void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   Index *pIndex, *pNext;
   FKey *pFKey, *pNextFKey;
 
@@ -417,7 +417,7 @@ void sqlite3DeleteTable(sqlite *db, Table *pTable){
 ** Unlink the given table from the hash tables and the delete the
 ** table structure with all its indices and foreign keys.
 */
-void sqlite3UnlinkAndDeleteTable(sqlite *db, int iDb, const char *zTabName){
+void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   Table *p;
   FKey *pF1, *pF2;
   Db *pDb;
@@ -579,7 +579,7 @@ void sqlite3StartTable(
   Table *pTable;
   Index *pIdx;
   char *zName;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   Vdbe *v;
   int iDb;         /* Database number to create the table in */
   Token *pName;    /* Unqualified name of the table to create */
@@ -922,7 +922,7 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
 ** each collation sequence structure.
 */
 static CollSeq * findCollSeqEntry(
-  sqlite *db,
+  sqlite3 *db,
   const char *zName,
   int nName,
   int create
@@ -957,7 +957,7 @@ static CollSeq * findCollSeqEntry(
 ** new entry.  Otherwise return NULL.
 */
 CollSeq *sqlite3FindCollSeq(
-  sqlite *db,
+  sqlite3 *db,
   u8 enc,
   const char *zName,
   int nName,
@@ -975,7 +975,7 @@ CollSeq *sqlite3FindCollSeq(
 ** in the database text encoding of name zName, length nName.
 ** If the collation sequence
 */
-static void callCollNeeded(sqlite *db, const char *zName, int nName){
+static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( nName<0 ) nName = strlen(zName);
   if( db->xCollNeeded ){
@@ -1005,7 +1005,7 @@ static int synthCollSeq(Parse *pParse, CollSeq *pColl){
   CollSeq *pColl2;
   char *z = pColl->zName;
   int n = strlen(z);
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int i;
   static const u8 aEnc[] = { SQLITE_UTF16BE, SQLITE_UTF16LE, SQLITE_UTF8 };
   for(i=0; i<3; i++){
@@ -1165,7 +1165,7 @@ char sqlite3AffinityType(const char *zType, int nType){
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
 */
-void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
+void sqlite3ChangeCookie(sqlite3 *db, Vdbe *v, int iDb){
   sqlite3VdbeAddOp(v, OP_Integer, db->aDb[iDb].schema_cookie+1, 0);
   sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
 }
@@ -1281,7 +1281,7 @@ static char *createTableStmt(Table *p){
 */
 void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   Table *p;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   if( (pEnd==0 && pSelect==0) || pParse->nErr || sqlite3_malloc_failed ) return;
   p = pParse->pNewTable;
@@ -1542,7 +1542,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 /*
 ** Clear the column names from every VIEW in database idx.
 */
-static void sqliteViewResetAll(sqlite *db, int idx){
+static void sqliteViewResetAll(sqlite3 *db, int idx){
   HashElem *i;
   if( !DbHasProperty(db, idx, DB_UnresetViews) ) return;
   for(i=sqliteHashFirst(&db->aDb[idx].tblHash); i; i=sqliteHashNext(i)){
@@ -1562,7 +1562,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   Table *pTab;
   Vdbe *v;
   int base;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int iDb;
 
   if( pParse->nErr || sqlite3_malloc_failed ) goto exit_drop_table;
@@ -1835,7 +1835,7 @@ void sqlite3CreateIndex(
   Token nullId;    /* Fake token for an empty ID list */
   DbFixer sFix;    /* For assigning database names to pTable */
   int isTemp;      /* True for a temporary index */
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   int iDb;          /* Index of the database that is being written */
   Token *pName = 0; /* Unqualified name of the index to create */
@@ -2182,7 +2182,7 @@ exit_create_index:
 void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   Index *pIndex;
   Vdbe *v;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   if( pParse->nErr || sqlite3_malloc_failed ) return;
   assert( pName->nSrc==1 );
@@ -2405,7 +2405,7 @@ void sqlite3SrcListDelete(SrcList *pList){
 ** Begin a transaction
 */
 void sqlite3BeginTransaction(Parse *pParse){
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
@@ -2421,7 +2421,7 @@ void sqlite3BeginTransaction(Parse *pParse){
 ** Commit a transaction
 */
 void sqlite3CommitTransaction(Parse *pParse){
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
@@ -2438,7 +2438,7 @@ void sqlite3CommitTransaction(Parse *pParse){
 ** Rollback a transaction
 */
 void sqlite3RollbackTransaction(Parse *pParse){
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
@@ -2501,7 +2501,7 @@ static int sqlite3OpenTempDatabase(Parse *pParse){
 ** early in the code, before we know if any database tables will be used.
 */
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
-  sqlite *db;
+  sqlite3 *db;
   Vdbe *v;
   int mask;
 
@@ -2576,7 +2576,7 @@ void sqlite3EndWriteOperation(Parse *pParse){
 ** Return the transient sqlite3_value object used for encoding conversions
 ** during SQL compilation.
 */
-sqlite3_value *sqlite3GetTransientValue(sqlite *db){
+sqlite3_value *sqlite3GetTransientValue(sqlite3 *db){
   if( !db->pValue ){
     db->pValue = sqlite3ValueNew();
   }

@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.34 2004/08/17 10:42:55 drh Exp $
+** $Id: date.c,v 1.35 2004/09/06 17:24:12 drh Exp $
 **
 ** NOTES:
 **
@@ -870,7 +870,7 @@ static void strftimeFunc(
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-void sqlite3RegisterDateTimeFunctions(sqlite *db){
+void sqlite3RegisterDateTimeFunctions(sqlite3 *db){
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
   static struct {
      char *zName;

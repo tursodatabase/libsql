@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.115 2004/09/05 23:23:42 drh Exp $
+** $Id: util.c,v 1.116 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -452,7 +452,7 @@ void sqlite3SetNString(char **pz, ...){
 ** should be called with err_code set to SQLITE_OK and zFormat set
 ** to NULL.
 */
-void sqlite3Error(sqlite *db, int err_code, const char *zFormat, ...){
+void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
   if( db && (db->pErr || (db->pErr = sqlite3ValueNew())) ){
     db->errCode = err_code;
     if( zFormat ){
@@ -782,7 +782,7 @@ int sqlite3FitsIn64Bits(const char *zNum){
 ** call to sqlite3_close(db) and db has been deallocated.  And we do
 ** not want to write into deallocated memory.
 */
-int sqlite3SafetyOn(sqlite *db){
+int sqlite3SafetyOn(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_BUSY;
     return 0;
@@ -798,7 +798,7 @@ int sqlite3SafetyOn(sqlite *db){
 ** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
 ** when this routine is called.
 */
-int sqlite3SafetyOff(sqlite *db){
+int sqlite3SafetyOff(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
     return 0;
@@ -818,7 +818,7 @@ int sqlite3SafetyOff(sqlite *db){
 ** This routine is used to try to detect when API routines are called
 ** at the wrong time or in the wrong sequence.
 */
-int sqlite3SafetyCheck(sqlite *db){
+int sqlite3SafetyCheck(sqlite3 *db){
   if( db->pVdbe!=0 ){
     db->magic = SQLITE_MAGIC_ERROR;
     return 1;

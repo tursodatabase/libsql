@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.112 2004/08/21 17:54:45 drh Exp $
+** $Id: where.c,v 1.113 2004/09/06 17:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -270,7 +270,7 @@ static Index *findSortingIndex(
   Index *pMatch;
   Index *pIdx;
   int sortOrder;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   assert( pOrderBy!=0 );
   assert( pOrderBy->nExpr>0 );

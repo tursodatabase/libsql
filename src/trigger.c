@@ -53,7 +53,7 @@ void sqlite3BeginTrigger(
   Trigger *pTrigger;
   Table *pTab;
   char *zName = 0;        /* Name of the trigger */
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int iDb;                /* The database to store the trigger in */
   Token *pName;           /* The unqualified db name */
   DbFixer sFix;
@@ -191,7 +191,7 @@ void sqlite3FinishTrigger(
   Token *pAll             /* Token that describes the complete CREATE TRIGGER */
 ){
   Trigger *nt = 0;          /* The trigger whose construction is finishing up */
-  sqlite *db = pParse->db;  /* The database */
+  sqlite3 *db = pParse->db;  /* The database */
   DbFixer sFix;
 
   if( pParse->nErr || pParse->pNewTrigger==0 ) goto triggerfinish_cleanup;
@@ -419,7 +419,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   const char *zDb;
   const char *zName;
   int nName;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
 
   if( sqlite3_malloc_failed ) goto drop_trigger_cleanup;
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
@@ -463,7 +463,7 @@ static Table *tableOfTrigger(sqlite3 *db, Trigger *pTrigger){
 void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   Table   *pTable;
   Vdbe *v;
-  sqlite *db = pParse->db;
+  sqlite3 *db = pParse->db;
   int iDb;
 
   iDb = pTrigger->iDb;
