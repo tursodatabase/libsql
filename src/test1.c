@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.122 2005/01/13 02:14:25 danielk1977 Exp $
+** $Id: test1.c,v 1.123 2005/01/19 23:24:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2830,8 +2830,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },
   };
+  static int bitmask_size = sizeof(Bitmask)*8;
   int i;
   extern int sqlite3_os_trace;
+ 
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
@@ -2856,6 +2858,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   Tcl_LinkVar(interp, "sqlite_temp_directory",
       (char*)&sqlite3_temp_directory, TCL_LINK_STRING);
+  Tcl_LinkVar(interp, "bitmask_size",
+      (char*)&bitmask_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   set_options(interp);
   return TCL_OK;
 }

@@ -146,6 +146,7 @@ do_test trigger1-1.10 {
     drop table t1;
   }
 } {2 b 4 d}
+
 do_test trigger1-1.11 {
   execsql {
     create table t1(a,b);

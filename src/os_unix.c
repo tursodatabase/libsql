@@ -691,8 +691,17 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
 ** The fsync() system call does not work as advertised on many
 ** unix systems.  The following procedure is an attempt to make
 ** it work better.
+**
+** The SQLITE_NO_SYNC macro disables all fsync()s.  This is useful
+** for testing when we want to run through the test suite quickly.
+** You are strongly advised *not* to deploy with SQLITE_NO_SYNC
+** enabled, however, since with SQLITE_NO_SYNC enabled, an OS crash
+** or power failure will likely corrupt the database file.
 */
 static int full_fsync(int fd){
+#ifdef SQLITE_NO_SYNC
+  return SQLITE_OK;
+#else
   int rc;
 #ifdef F_FULLFSYNC
   rc = fcntl(fd, F_FULLFSYNC, 0);
@@ -701,6 +710,7 @@ static int full_fsync(int fd){
   rc = fsync(fd);
 #endif
   return rc;
+#endif
 }
 
 /*

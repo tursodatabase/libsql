@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.294 2005/01/18 14:45:48 drh Exp $
+** $Id: build.c,v 1.295 2005/01/19 23:24:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -884,7 +884,7 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
   }else{
     sqlite3ExprDelete(pCol->pDflt);
     pCol->pDflt = sqlite3ExprDup(pExpr);
-    sqlite3ExprResolveNames(pParse,0,0,pExpr,0,0);
+    sqlite3ExprResolveNames(pParse,0,0,0,pExpr,0,0);
   }
   sqlite3ExprDelete(pExpr);
 }
@@ -1423,7 +1423,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3VdbeAddOp(v, OP_Integer, p->iDb, 0);
       sqlite3VdbeAddOp(v, OP_OpenWrite, 1, 0);
       pParse->nTab = 2;
-      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0);
+      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0, 0);
       sqlite3VdbeAddOp(v, OP_Close, 1, 0);
       if( pParse->nErr==0 ){
         pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.356 2005/01/18 14:45:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.357 2005/01/19 23:24:51 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -787,6 +787,12 @@ struct Token {
 ** marker (a question mark character '?' in the original SQL) then the
 ** Expr.iTable holds the index number for that variable.
 **
+** If the expression is a subquery then Expr.iColumn holds an integer
+** register number containing the result of the subquery.  If the
+** subquery gives a constant result, then iTable is -1.  If the subquery
+** gives a different answer at different times during statement processing
+** then iTable is the address of a subroutine that computes the subquery.
+**
 ** The Expr.pSelect field points to a SELECT statement.  The SELECT might
 ** be the right operand of an IN operator.  Or, if a scalar SELECT appears
 ** in an expression the opcode is TK_SELECT and Expr.pSelect is the only
@@ -1392,7 +1398,8 @@ void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
-int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*, char *aff);
+int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*,
+                  char *aff, NameContext*);
 Select *sqlite3SelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqlite3SelectDelete(Select*);
@@ -1422,8 +1429,8 @@ char *sqlite3NameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
-int sqlite3ExprResolveNames(Parse*, SrcList*, ExprList*, Expr*, int, int);
-int sqlite3ExprCodeSubquery(Parse*, Expr*);
+int sqlite3ExprResolveNames(Parse*, SrcList*, ExprList*, NameContext*,
+                            Expr*, int, int);
 int sqlite3ExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);

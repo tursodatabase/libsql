@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.228 2005/01/18 17:40:04 drh Exp $
+** $Id: select.c,v 1.229 2005/01/19 23:24:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -664,7 +664,7 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
   int j;
   if( pExpr==0 || pTabList==0 ) return 0;
 
-  sqlite3ExprResolveNames(pParse, pTabList, 0, pExpr, 1, 0);
+  sqlite3ExprResolveNames(pParse, pTabList, 0, 0, pExpr, 1, 0);
   switch( pExpr->op ){
     case TK_COLUMN: {
       Table *pTab;
@@ -1468,7 +1468,7 @@ static int multiSelect(
       if( p->pOrderBy==0 ){
         pPrior->nLimit = p->nLimit;
         pPrior->nOffset = p->nOffset;
-        rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
+        rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff, 0);
         if( rc ){
           goto multi_select_end;
         }
@@ -1477,7 +1477,7 @@ static int multiSelect(
         p->iOffset = pPrior->iOffset;
         p->nLimit = -1;
         p->nOffset = 0;
-        rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff);
+        rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff, 0);
         p->pPrior = pPrior;
         if( rc ){
           goto multi_select_end;
@@ -1526,7 +1526,7 @@ static int multiSelect(
 
       /* Code the SELECT statements to our left
       */
-      rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0, aff);
+      rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0, aff, 0);
       if( rc ){
         goto multi_select_end;
       }
@@ -1545,7 +1545,7 @@ static int multiSelect(
       p->nLimit = -1;
       nOffset = p->nOffset;
       p->nOffset = 0;
-      rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0, aff);
+      rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0, aff, 0);
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
       p->nLimit = nLimit;
@@ -1614,7 +1614,7 @@ static int multiSelect(
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
-      rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0, aff);
+      rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0, aff, 0);
       if( rc ){
         goto multi_select_end;
       }
@@ -1634,7 +1634,7 @@ static int multiSelect(
       p->nLimit = -1;
       nOffset = p->nOffset;
       p->nOffset = 0;
-      rc = sqlite3Select(pParse, p, SRT_Union, tab2, 0, 0, 0, aff);
+      rc = sqlite3Select(pParse, p, SRT_Union, tab2, 0, 0, 0, aff, 0);
       p->pPrior = pPrior;
       p->nLimit = nLimit;
       p->nOffset = nOffset;
@@ -2216,6 +2216,7 @@ static int processOrderGroupBy(
   ExprList *pOrderBy,   /* The ORDER BY or GROUP BY clause to be processed */
   SrcList *pTabList,    /* The FROM clause */
   ExprList *pEList,     /* The result set */
+  NameContext *pNC,     /* Name context for enclosing query */
   int isAgg,            /* True if aggregate functions are involved */
   const char *zType     /* Either "ORDER" or "GROUP", as appropriate */
 ){
@@ -2228,7 +2229,7 @@ static int processOrderGroupBy(
       sqlite3ExprDelete(pE);
       pE = pOrderBy->a[i].pExpr = sqlite3ExprDup(pEList->a[iCol-1].pExpr);
     }
-    if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pE, isAgg, 1) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pNC, pE, isAgg, 1) ){
       return 1;
     }
     if( sqlite3ExprIsConstant(pE) ){
@@ -2307,7 +2308,8 @@ int sqlite3Select(
   Select *pParent,       /* Another SELECT for which this is a sub-query */
   int parentTab,         /* Index in pParent->pSrc of this query */
   int *pParentAgg,       /* True if pParent uses aggregate functions */
-  char *aff              /* If eDest is SRT_Union, the affinity string */
+  char *aff,             /* If eDest is SRT_Union, the affinity string */
+  NameContext *pNC       /* Namespace of the next outer query */
 ){
   int i;
   WhereInfo *pWInfo;
@@ -2390,12 +2392,12 @@ int sqlite3Select(
   */
   for(i=0; i<pEList->nExpr; i++){
     Expr *pX = pEList->a[i].pExpr;
-    if( sqlite3ExprResolveNames(pParse, pTabList, 0, pX, 1, 1) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, 0, pNC, pX, 1, 1) ){
       goto select_end;
     }
     if( ExprHasProperty(pX, EP_Agg) ) isAgg = 1;
   }
-  if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pWhere, 0, 1) ){
+  if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pNC, pWhere, 0, 1) ){
     goto select_end;
   }
   if( pHaving ){
@@ -2403,7 +2405,7 @@ int sqlite3Select(
       sqlite3ErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
       goto select_end;
     }
-    if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pHaving, 1, 1) ){
+    if( sqlite3ExprResolveNames(pParse, pTabList, pEList, pNC, pHaving, 1, 1) ){
       goto select_end;
     }
     if( ExprHasProperty(pHaving, EP_Agg) ) isAgg = 1;
@@ -2412,8 +2414,8 @@ int sqlite3Select(
     sqlite3ErrorMsg(pParse, "GROUP BY may only be used on aggregate queries");
     goto select_end;
   }
-  if( processOrderGroupBy(pParse, pOrderBy, pTabList, pEList, isAgg, "ORDER")
-   || processOrderGroupBy(pParse, pGroupBy, pTabList, pEList, isAgg, "GROUP")
+  if( processOrderGroupBy(pParse,pOrderBy,pTabList,pEList,pNC,isAgg,"ORDER")
+   || processOrderGroupBy(pParse,pGroupBy,pTabList,pEList,pNC,isAgg,"GROUP")
   ){
     goto select_end;
   }
@@ -2465,7 +2467,7 @@ int sqlite3Select(
       needRestoreContext = 0;
     }
     sqlite3Select(pParse, pTabList->a[i].pSelect, SRT_TempTable, 
-                 pTabList->a[i].iCursor, p, i, &isAgg, 0);
+                 pTabList->a[i].iCursor, p, i, &isAgg, 0, 0);
     if( needRestoreContext ){
       pParse->zAuthContext = zSavedAuthContext;
     }

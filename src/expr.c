@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.181 2005/01/18 17:20:10 drh Exp $
+** $Id: expr.c,v 1.182 2005/01/19 23:24:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1095,6 +1095,9 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
   return 0;
 }
 
+/* Forward declaration */
+static int sqlite3ExprCodeSubquery(Parse*, NameContext*, Expr*);
+
 /*
 ** This routine walks an expression tree and resolves references to
 ** table columns.  Nodes of the form ID.ID or ID resolve into an
@@ -1117,12 +1120,13 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
 ** property on the expression.
 */
 int sqlite3ExprResolveNames(
-  Parse *pParse,     /* The parser context */
-  SrcList *pSrcList, /* List of tables used to resolve column names */
-  ExprList *pEList,  /* List of expressions used to resolve "AS" */
-  Expr *pExpr,       /* The expression to be analyzed. */
-  int allowAgg,      /* True to allow aggregate expressions */
-  int codeSubquery   /* If true, then generate code for subqueries too */
+  Parse *pParse,          /* The parser context */
+  SrcList *pSrcList,      /* List of tables used to resolve column names */
+  ExprList *pEList,       /* List of expressions used to resolve "AS" */
+  NameContext *pNC,       /* Namespace of enclosing statement */
+  Expr *pExpr,            /* The expression to be analyzed. */
+  int allowAgg,           /* True to allow aggregate expressions */
+  int codeSubquery        /* If true, then generate code for subqueries too */
 ){
   NameContext sNC;
 
@@ -1132,17 +1136,28 @@ int sqlite3ExprResolveNames(
   sNC.pParse = pParse;
   sNC.pEList = pEList;
   sNC.allowAgg = allowAgg;
+  sNC.pNext = pNC;
   walkExprTree(pExpr, nameResolverStep, &sNC);
   if( sNC.hasAgg ){
     ExprSetProperty(pExpr, EP_Agg);
   }
   if( sNC.nErr>0 ){
     ExprSetProperty(pExpr, EP_Error);
-  }else if( codeSubquery  && sqlite3ExprCodeSubquery(pParse, pExpr) ){
+  }else if( codeSubquery  && sqlite3ExprCodeSubquery(pParse, &sNC, pExpr) ){
     return 1;
   }
   return ExprHasProperty(pExpr, EP_Error);
 }
+
+/*
+** A pointer instance of this structure is used to pass information
+** through walkExprTree into codeSubqueryStep().
+*/
+typedef struct QueryCoder QueryCoder;
+struct QueryCoder {
+  Parse *pParse;       /* The parsing context */
+  NameContext *pNC;    /* Namespace of first enclosing query */
+};
 
 
 /*
@@ -1167,7 +1182,8 @@ int sqlite3ExprResolveNames(
 ** additional information.
 */
 static int codeSubqueryStep(void *pArg, Expr *pExpr){
-  Parse *pParse = (Parse*)pArg;
+  QueryCoder *pCoder = (QueryCoder*)pArg;
+  Parse *pParse = pCoder->pParse;
 
   switch( pExpr->op ){
     case TK_IN: {
@@ -1207,7 +1223,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
         int iParm = pExpr->iTable +  (((int)affinity)<<16);
         ExprList *pEList;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
-        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0, 0);
+        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0, 0, 0);
         pEList = pExpr->pSelect->pEList;
         if( pEList && pEList->nExpr>0 ){ 
           keyInfo.aColl[0] = binaryCompareCollSeq(pParse, pExpr->pLeft,
@@ -1237,7 +1253,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
               "right-hand side of IN operator must be constant");
             return 2;
           }
-          if( sqlite3ExprResolveNames(pParse, 0, 0, pE2, 0, 0) ){
+          if( sqlite3ExprResolveNames(pParse, 0, 0, 0, pE2, 0, 0) ){
             return 2;
           }
 
@@ -1257,8 +1273,27 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.
       */
+      NameContext *pNC;
+      int nRef;
+      Vdbe *v;
+      int addr;
+
+      pNC = pCoder->pNC;
+      if( pNC ) nRef = pNC->nRef;
+      v = sqlite3GetVdbe(pParse);
+      addr = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
       pExpr->iColumn = pParse->nMem++;
-      sqlite3Select(pParse, pExpr->pSelect, SRT_Mem,pExpr->iColumn,0,0,0,0);
+      sqlite3Select(pParse, pExpr->pSelect, SRT_Mem,pExpr->iColumn,0,0,0,0,pNC);
+      if( pNC && pNC->nRef>nRef ){
+        /* Subquery value changes.  Evaluate at each use */
+        pExpr->iTable = addr+1;
+        sqlite3VdbeAddOp(v, OP_Return, 0, 0);
+        sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
+      }else{
+        /* Subquery value is constant.  evaluate only once. */
+        pExpr->iTable = -1;
+        sqlite3VdbeChangeP2(v, addr, addr+1);
+      }
       return 1;
     }
   }
@@ -1269,8 +1304,15 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
 ** Generate code to evaluate subqueries and IN operators contained
 ** in expression pExpr.
 */
-int sqlite3ExprCodeSubquery(Parse *pParse, Expr *pExpr){
-  walkExprTree(pExpr, codeSubqueryStep, pParse);
+static int sqlite3ExprCodeSubquery(
+  Parse *pParse,       /* Parser */
+  NameContext *pNC,    /* First enclosing namespace.  Often NULL */
+  Expr *pExpr          /* Subquery to be coded */
+){
+  QueryCoder sCoder;
+  sCoder.pParse = pParse;
+  sCoder.pNC = pNC;
+  walkExprTree(pExpr, codeSubqueryStep, &sCoder);
   return 0;
 }
 
@@ -1478,6 +1520,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_SELECT: {
+      if( pExpr->iTable>=0 ){
+        sqlite3VdbeAddOp(v, OP_Gosub, 0, pExpr->iTable);
+        VdbeComment((v, "# run subquery"));
+      }
       sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
       VdbeComment((v, "# load subquery result"));
       break;

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.129 2005/01/17 22:08:19 drh Exp $
+** $Id: where.c,v 1.130 2005/01/19 23:24:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,8 +103,8 @@ struct ExprInfo {
 */
 typedef struct ExprMaskSet ExprMaskSet;
 struct ExprMaskSet {
-  int n;                          /* Number of assigned cursor values */
-  int ix[sizeof(Bitmask)*8-1];    /* Cursor assigned to each bit */
+  int n;                        /* Number of assigned cursor values */
+  int ix[sizeof(Bitmask)*8];    /* Cursor assigned to each bit */
 };
 
 /*
@@ -152,8 +152,8 @@ static int exprSplit(int nSlot, ExprInfo *aSlot, Expr *pExpr){
 #define initMaskSet(P)  memset(P, 0, sizeof(*P))
 
 /*
-** Return the bitmask for the given cursor number.  Assign a new bitmask
-** if this is the first time the cursor has been seen.
+** Return the bitmask for the given cursor number.  Return 0 if
+** iCursor is not in the set.
 */
 static Bitmask getMask(ExprMaskSet *pMaskSet, int iCursor){
   int i;
@@ -162,12 +162,16 @@ static Bitmask getMask(ExprMaskSet *pMaskSet, int iCursor){
       return ((Bitmask)1)<<i;
     }
   }
-  if( i==pMaskSet->n && i<ARRAYSIZE(pMaskSet->ix) ){
-    pMaskSet->n++;
-    pMaskSet->ix[i] = iCursor;
-    return ((Bitmask)1)<<i;
-  }
   return 0;
+}
+
+/*
+** Create a new mask for cursor iCursor.
+*/
+static void createMask(ExprMaskSet *pMaskSet, int iCursor){
+  if( pMaskSet->n<ARRAYSIZE(pMaskSet->ix) ){
+    pMaskSet->ix[pMaskSet->n++] = iCursor;
+  }
 }
 
 /*
@@ -192,7 +196,6 @@ static Bitmask exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
   if( p==0 ) return 0;
   if( p->op==TK_COLUMN ){
     mask = getMask(pMaskSet, p->iTable);
-    if( mask==0 ) mask = -1;
     return mask;
   }
   if( p->pRight ){
@@ -598,6 +601,15 @@ WhereInfo *sqlite3WhereBegin(
   struct SrcList_item *pTabItem;  /* A single entry from pTabList */
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
 
+  /* The number of terms in the FROM clause is limited by the number of
+  ** bits in a Bitmask 
+  */
+  if( pTabList->nSrc>sizeof(Bitmask)*8 ){
+    sqlite3ErrorMsg(pParse, "at most %d tables in a join",
+       sizeof(Bitmask)*8);
+    return 0;
+  }
+
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.  If the aExpr[]
   ** array fills up, the last entry might point to an expression which
@@ -611,7 +623,7 @@ WhereInfo *sqlite3WhereBegin(
        "than %d terms allowed", (int)ARRAYSIZE(aExpr)-1);
     return 0;
   }
-  
+    
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
   */
@@ -634,28 +646,12 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Analyze all of the subexpressions.
   */
+  for(i=0; i<pTabList->nSrc; i++){
+    createMask(&maskSet, pTabList->a[i].iCursor);
+  }
   for(pTerm=aExpr, i=0; i<nExpr; i++, pTerm++){
     TriggerStack *pStack;
     exprAnalyze(pTabList, &maskSet, pTerm);
-
-    /* If we are executing a trigger body, remove all references to
-    ** new.* and old.* tables from the prerequisite masks.
-    */
-    if( (pStack = pParse->trigStack)!=0 ){
-      int x;
-      if( (x=pStack->newIdx) >= 0 ){
-        Bitmask mask = ~getMask(&maskSet, x);
-        pTerm->prereqRight &= mask;
-        pTerm->prereqLeft &= mask;
-        pTerm->prereqAll &= mask;
-      }
-      if( (x=pStack->oldIdx) >= 0 ){
-        Bitmask mask = ~getMask(&maskSet, x);
-        pTerm->prereqRight &= mask;
-        pTerm->prereqLeft &= mask;
-        pTerm->prereqAll &= mask;
-      }
-    }
   }
 
   /* Figure out what index to use (if any) for each nested loop.

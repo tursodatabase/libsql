@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.158 2004/11/22 19:12:21 drh Exp $
+** @(#) $Id: parse.y,v 1.159 2005/01/19 23:24:50 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -317,7 +317,7 @@ cmd ::= DROP VIEW fullname(X). {
 //////////////////////// The SELECT statement /////////////////////////////////
 //
 cmd ::= select(X).  {
-  sqlite3Select(pParse, X, SRT_Callback, 0, 0, 0, 0, 0);
+  sqlite3Select(pParse, X, SRT_Callback, 0, 0, 0, 0, 0, 0);
   sqlite3SelectDelete(X);
 }
 
