@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Feb * (2.3.3)} {
+<li>Allow identifiers to be quoted in square brackets, for compatibility
+    with MS-Access.</li>
+}
+
 chng {2002 Feb 14 (2.3.2)} {
 <li>Bug fix: There was an incorrect assert() in pager.c.  The real code was
     all correct (as far as is known) so everything should work OK if you

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.36 2002/01/22 14:11:30 drh Exp $
+** $Id: util.c,v 1.37 2002/02/14 21:42:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -349,13 +349,22 @@ void sqliteSetNString(char **pz, ...){
 ** the quote characters.  The conversion is done in-place.  If the
 ** input does not begin with a quote character, then this routine
 ** is a no-op.
+**
+** 2002-Feb-14: This routine is extended to remove MS-Access style
+** brackets from around identifers.  For example:  "[a-b-c]" becomes
+** "a-b-c".
 */
 void sqliteDequote(char *z){
   int quote;
   int i, j;
   if( z==0 ) return;
   quote = z[0];
-  if( quote!='\'' && quote!='"' ) return;
+  switch( quote ){
+    case '\'':  break;
+    case '"':   break;
+    case '[':   quote = ']';  break;
+    default:    return;
+  }
   for(i=1, j=0; z[i]; i++){
     if( z[i]==quote ){
       if( z[i+1]==quote ){
