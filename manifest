@@ -1,5 +1,5 @@
-C Disable\san\sassert\swhich\s(as\sit\sturns\sout)\sis\snot\salways\strue.\s\sTicket\s#615.\s(CVS\s1269)
-D 2004-02-25T02:20:41
+C Shell\sprogram\ssaves\scommand-line\shistory\son\sa\s".quit".\s\sTicket\s#614.\s(CVS\s1270)
+D 2004-02-25T02:25:37
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/pragma.c 621d319580e9e23712ec232e8be1786cdae06b36
 F src/printf.c f201a5a316afc474d29d51e07501536e8998194d
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
 F src/select.c 902000034e44817e2822d72870c15eff842dea9e
-F src/shell.c c3d3404fa82bb0808444fda9884d1bb572fd18b9
+F src/shell.c b19e750ffcccf49b626f4b6fefe89c1dbae47e82
 F src/sqlite.h.in 64f016cd5ce190643a0f47760188fdf4e0b2227e
 F src/sqliteInt.h 1ef4dcb7a5525c91e3d338f9435c84930c11aeb2
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5b0147aece7785373e6f7439c32e5f58c6b12562
-R 0b8a6493f559fa4934fa13ad5002da5d
+P 2773c1d384b750eee037e6ccc61bc56b5204d690
+R 0db21680d5ef4195f5f788c1fac8a4e6
 U drh
-Z 2e9a980f55f5d4bf5ce99a47ed1e1a30
+Z fc9bb8b14a2a77a5af04e35290967ca1
