@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.1 2000/05/29 14:26:01 drh Exp $
+** $Id: build.c,v 1.2 2000/05/29 17:44:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -243,7 +243,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   char **pz;
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
-    p->azCol = sqliteRealloc( p->azCol, p->nCol+8);
+    p->azCol = sqliteRealloc( p->azCol, (p->nCol+8)*sizeof(p->azCol[0]));
   }
   if( p->azCol==0 ){
     p->nCol = 0;
@@ -288,9 +288,9 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       { OP_Open,        0, 0, MASTER_NAME },
       { OP_New,         0, 0, 0},
       { OP_String,      0, 0, "table"     },
-      { OP_String,      0, 0, 0},            /* 2 */
       { OP_String,      0, 0, 0},            /* 3 */
       { OP_String,      0, 0, 0},            /* 4 */
+      { OP_String,      0, 0, 0},            /* 5 */
       { OP_MakeRecord,  4, 0, 0},
       { OP_Put,         0, 0, 0},
       { OP_Close,       0, 0, 0},
@@ -304,9 +304,9 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     if( v==0 ) return;
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
     base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
-    sqliteVdbeChangeP3(v, base+2, p->zName, 0);
     sqliteVdbeChangeP3(v, base+3, p->zName, 0);
-    sqliteVdbeChangeP3(v, base+4, pParse->sFirstToken.z, n);
+    sqliteVdbeChangeP3(v, base+4, p->zName, 0);
+    sqliteVdbeChangeP3(v, base+5, pParse->sFirstToken.z, n);
   }
 }
 

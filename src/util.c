@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.1 2000/05/29 14:26:02 drh Exp $
+** $Id: util.c,v 1.2 2000/05/29 17:44:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -38,6 +38,7 @@
 */
 void *sqliteMalloc(int n){
   void *p = malloc(n);
+  /* printf("alloc 0x%x size: %d bytes\n", (int)p, n); */
   if( p==0 ) return 0;
   memset(p, 0, n);
   return p;
@@ -47,7 +48,10 @@ void *sqliteMalloc(int n){
 ** Free memory previously obtained from sqliteMalloc()
 */
 void sqliteFree(void *p){
-  if( p ) free(p);
+  if( p ){
+    /* printf("free 0x%x\n", (int)p); */
+    free(p);
+  }
 }
 
 /*

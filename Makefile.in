@@ -44,14 +44,14 @@ LIBOBJ = build.o dbbe.o main.o parse.o tokenize.o util.o vdbe.o where.o
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	libsqlite.a sqlite
+all:	libsqlite.a sqlite.h sqlite
 # libtclsqlite.a tclsqlite
 
 libsqlite.a:	$(LIBOBJ)
 	$(AR) libsqlite.a $(LIBOBJ)
 	$(RANLIB) libsqlite.a
 
-sqlite:	$(TOP)/src/shell.c libsqlite.a $(TOP)/src/sqlite.h
+sqlite:	$(TOP)/src/shell.c libsqlite.a sqlite.h
 	$(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
 		libsqlite.a $(LIBGDBM) $(LIBREADLINE)
 
@@ -88,6 +88,9 @@ parse.c:	$(TOP)/src/parse.y lemon
 	cp $(TOP)/src/parse.y .
 	./lemon parse.y
 
+sqlite.h:	$(TOP)/src/sqlite.h
+	cp $(TOP)/src/sqlite.h .
+
 tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/tokenize.c
 
@@ -100,6 +103,24 @@ vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/where.c
 
+TARBALL = \
+  sqlite/doc/*.html \
+  sqlite/src/*.h \
+  sqlite/src/*.c \
+  sqlite/tool/*.c \
+  sqlite/tool/*.awk \
+  sqlite/configure \
+  sqlite/*.in
+
+sqlite.tar.gz:	
+	pwd=`pwd`; cd $(TOP)/..; tar czf $$pwd/sqlite.tar.gz $(TARBALL)
+
+index.html:	$(TOP)/www/index.tcl sqlite.tar.gz
+	tclsh $(TOP)/www/index.tcl >index.html
+
+sqlite.html:	$(TOP)/www/sqlite.tcl
+	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
+
 clean:	
-	rm -f *.o sqlite libsqlite.a
-	rm -f lemon lempar.c parse.*
+	rm -f *.o sqlite libsqlite.a sqlite.h
+	rm -f lemon lempar.c parse.* sqlite.tar.gz

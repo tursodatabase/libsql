@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.1 2000/05/29 14:26:01 drh Exp $
+** $Id: shell.c,v 1.2 2000/05/29 17:44:25 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -221,7 +221,8 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     data.showHeader = 0;
     data.mode = MODE_List;
     sprintf(zSql, "SELECT name FROM sqlite_master "
-                  "WHERE type='index' AND tbl_name='%.900s'", azArg[1]);
+                  "WHERE type='index' AND tbl_name='%.00s' "
+                  "ORDER BY name", azArg[1]);
     sqlite_exec(db, zSql, callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
@@ -283,7 +284,8 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='t' && strncmp(azArg[0], "tables", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
-    static char zSql[] = "SELECT name FROM sqlite_master WHERE type='table'";
+    static char zSql[] = 
+      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name";
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
@@ -344,6 +346,7 @@ int main(int argc, char **argv){
       );
     }
     while( (zLine = readline(istty ? (zSql==0 ? "sql> " : ".... ") : 0))!=0 ){
+      add_history(zLine);
       if( zLine && zLine[0]=='.' ){
         do_meta_command(zLine, db, &data);
         free(zLine);

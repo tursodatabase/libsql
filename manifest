@@ -1,19 +1,19 @@
-C initial\scheck-in\sof\sthe\snew\sversion\s(CVS\s1)
-D 2000-05-29T14:26:00
-F Makefile.in 4bd5c67a3a2816e930df4b22df8c1631ee87ff0c
+C :-)\s(CVS\s2)
+D 2000-05-29T17:44:25
+F Makefile.in bab6ff58d847d1b9eb25d4cbf671e4ebd0c74256
 F configure 8faba4d0194321e5f61a64e842c65eab0f68e6d8 x
 F configure.in 4fc2947d631037bd340b112d6193847d7ac827ae
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 64016990ebbbcbc848165551732a1f9f397bd150
+F src/build.c 45dc91016e13dec70620b049a53ba785b4a0c76b
 F src/dbbe.c ab05293e89525041eaab8b4aca10516db3648792
 F src/dbbe.h bedeb3a0985bb584458e7849fb59927e99e751e6
 F src/main.c 25cce7bce0eb3ba10bada7c05f4b38dc6dbbc86f
-F src/shell.c de770d16aae1ea219e7a9ab5147a4437c23b4a6c
+F src/shell.c 125f84ea5f8b725ba474d4702b575d062cc94d92
 F src/sqlite.h 2397c17a8f4ca90c09acab0100dc7e2f8f441b69
 F src/sqliteInt.h 0365970442441b5e9b74e1e828afdeac7b0662be
 F src/tclsqlite.c 6eca1c1b8713048245d295ed18dca71c91d4931f
 F src/tokenize.c ab578d90ec6ab117b7ade6e6cfbcb5b0f9cad500
-F src/util.c 370c2339bb9ff82645804a4c62506149392fd032
+F src/util.c b2e2a4dc55f7cbd41a7d9e0a8473eedd3b2691c8
 F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
 F src/where.c 67ffea57920e16b33c580e9a9b9855b3ec9dea7b
@@ -23,7 +23,9 @@ F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
-P 704b122e5308587b60b47a5c2fff40c593d4bf8f
-R 33c985d67f2f41286bc65b8529a1ae84
+F www/index.tcl 3785d894fe5fc0976bb7400ab307b4aef34fbf60
+F www/sqlite.tcl c24416391358ade2e74fffeaca8eb0b0e8b1d1ac
+P 6f3655f79f9b6fc9fb7baaa10a7e0f2b6a512dfa
+R 6b1f63772187c94801897db097691461
 U drh
-Z a9e2b0f2d67c72179e4ea5172821c6d6
+Z 084e3a79b4f63a91b5e2b285235fe69b
