@@ -1,5 +1,5 @@
-C The\ssqlite_trace()\sAPI\sonly\sworks\sfor\scommands\sstarted\sby\sthe\suser,\snot\sfor\nSQL\scommands\srun\sduring\sinitialization.\s(CVS\s1298)
-D 2004-03-17T18:44:46
+C Fix\sa\sVDBE\sstack\soverflow\sthat\soccurs\swhen\sthe\sleft-hand\sside\sof\san\sIN\nexpression\sis\sNULL\sand\sthe\sresult\sis\sstored\son\sthe\sstack\srather\sthan\sused\nto\scontrol\sa\sjump.\s\sTicket\s#668.\s(CVS\s1299)
+D 2004-03-17T23:32:08
 F Makefile.in 5d50a7d2a6a641e90a0312fc30d4e9c96b3903da
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/copy.c 750e13828c3e4a293123e36aaa7cf0f22466248a
 F src/date.c f055419d602bde622c70f831350b6b52f2235de0
 F src/delete.c 82001c74882319f94dab5f6b92a27311b31092ae
 F src/encode.c fc8c51f0b61bc803ccdec092e130bebe762b0a2f
-F src/expr.c 95ea5d47d11b5085aaeeb77d60b17c2cba13383a
+F src/expr.c 938e4d341ce6766a5ee14b31d119ce1f99f478b6
 F src/func.c 34fead7a33e82095f6412d3fafd379d47864b3be
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
@@ -110,7 +110,7 @@ F test/memleak.test 4d5d374c8ea1fc5ac634aed58cac1047848ce65e
 F test/minmax.test 9dcf52f713b1b9e61d0a88a51eb8bb2e3c52d0ab
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
-F test/misc3.test 3eac0f13a3d8ae71c1c5ec884b0192bd68ae7e5f
+F test/misc3.test 3b5e369514a3ba3f919fb7eafa7d027440b5079e
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 72205a371ce5be4eac0a77d5d2fa8ccb23bb988f
-R 99d9abce4fbd17d2074c2e743660ebc3
+P 0a12473c4ae370ec34f1f431dd6d7d6ffa25d41a
+R 78357d97f8c7b89c610dec1a1190b368
 U drh
-Z 0b52db8f82add9da6aef2ec7c65ba20e
+Z 1080973831d1d9ef12eb93cdd69e8b88

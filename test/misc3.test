@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.9 2004/03/02 18:37:42 drh Exp $
+# $Id: misc3.test,v 1.10 2004/03/17 23:32:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -286,5 +286,19 @@ do_test misc3-7.3 {
   }
 } 32
 
+# Ticket #668:  VDBE stack overflow occurs when the left-hand side
+# of an IN expression is NULL and the result is used as an integer, not
+# as a jump.
+#
+do_test misc-8.1 {
+  execsql {
+    SELECT count(CASE WHEN b IN ('abc','xyz') THEN 'x' END) FROM t3
+  }
+} {2}
+do_test misc-8.2 {
+  execsql {
+    SELECT count(*) FROM t3 WHERE 1+(b IN ('abc','xyz'))==2
+  }
+} {2}
 
 finish_test
