@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.65 2003/07/20 01:16:48 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.66 2004/01/19 05:09:24 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -205,8 +205,8 @@ are committed at the conclusion of the command.
 
 <p>
 Transactions can be started manually using the BEGIN
-command. Such transactions usually persist until the next
-COMMIT or ROLLBACK command. But a transaction will also 
+command.  Such transactions usually persist until the next
+COMMIT or ROLLBACK command.  But a transaction will also 
 ROLLBACK if the database is closed or if an error occurs
 and the ROLLBACK conflict resolution algorithm is specified.
 See the documention on the <a href="#conflict">ON CONFLICT</a>
@@ -236,18 +236,18 @@ Syntax {comment} {<SQL-comment> | <C-comment>
 
 puts {
 <p> Comments aren't SQL commands, but can occur in SQL queries. They are 
-treated as whitespace by the parser. They can begin anywhere whitespace 
+treated as whitespace by the parser.  They can begin anywhere whitespace 
 can be found, including inside expressions that span multiple lines.
 </p>
 
 <p> SQL comments only extend to the end of the current line.</p>
 
-<p> C comments can span any number of lines. If there is no terminating
-delimiter, they extend to the end of the input. This is not treated as 
-an error. A new SQL statement can begin on a line after a multiline 
-comment ends. C comments can be embedded anywhere whitespace can occur, 
+<p> C comments can span any number of lines.  If there is no terminating
+delimiter, they extend to the end of the input.  This is not treated as
+an error.  A new SQL statement can begin on a line after a multiline
+comment ends.  C comments can be embedded anywhere whitespace can occur,
 including inside expressions, and in the middle of other SQL statements.
-C comments do not nest. SQL comments inside a C comment will be ignored.
+C comments do not nest.  SQL comments inside a C comment will be ignored.
 </p>
 }
 
@@ -295,7 +295,7 @@ puts "\"[Operator \\.]\".</p>"
 Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
-CREATE [TEMP | TEMPORARY] [UNIQUE] INDEX <index-name> 
+CREATE [UNIQUE] INDEX <index-name> 
 ON [<database-name> .] <table-name> ( <column-name> [, <column-name>]* )
 [ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
@@ -336,8 +336,8 @@ all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
 
-<p>Non-temporary indexes cannot be added on tables in attached 
-databases.  They are removed with the <a href="#dropindex">DROP INDEX</a> 
+<p>Indexes cannot be added on tables in attached databases.
+Indexes are removed with the <a href="#dropindex">DROP INDEX</a> 
 command.</p>
 }
 
@@ -364,8 +364,8 @@ UNIQUE [ <conflict-clause> ] |
 CHECK ( <expr> ) [ <conflict-clause> ] |
 DEFAULT <value>
 } {constraint} {
-PRIMARY KEY ( <name> [, <name>]* ) [ <conflict-clause> ]|
-UNIQUE ( <name> [, <name>]* ) [ <conflict-clause> ] |
+PRIMARY KEY ( <column-list> ) [ <conflict-clause> ] |
+UNIQUE ( <column-list> ) [ <conflict-clause> ] |
 CHECK ( <expr> ) [ <conflict-clause> ]
 } {conflict-clause} {
 ON CONFLICT <conflict-algorithm>
@@ -681,6 +681,11 @@ CREATE INDEX</a> statement.  The index named is completely removed from
 the disk.  The only way to recover the index is to reenter the
 appropriate CREATE INDEX command.  Non-temporary indexes on tables in 
 an attached database cannot be dropped.</p>
+
+<p>The DROP INDEX statement does not reduce the size of the database 
+file.  Empty space in the database is retained for later INSERTs.  To 
+remove free space in the database, use the <a href="#vacuum">VACUUM</a> 
+command.</p>
 }
 
 
@@ -697,6 +702,11 @@ table name.  It is completely removed from the database schema and the
 disk file.  The table can not be recovered.  All indices associated 
 with the table are also deleted.  Non-temporary tables in an attached 
 database cannot be dropped.</p>
+
+<p>The DROP TABLE statement does not reduce the size of the database 
+file.  Empty space in the database is retained for later INSERTs.  To 
+remove free space in the database, use the <a href="#vacuum">VACUUM</a> 
+command.</p>
 }
 
 
@@ -761,12 +771,12 @@ Syntax {expr} {
 <database-name> . <table-name> . <column-name> |
 <literal-value> |
 <function-name> ( <expr-list> | STAR ) |
-<expr> (+) |
 <expr> ISNULL |
 <expr> NOTNULL |
 <expr> [NOT] BETWEEN <expr> AND <expr> |
 <expr> [NOT] IN ( <value-list> ) |
 <expr> [NOT] IN ( <select-statement> ) |
+<expr> [NOT] IN [<database-name> .] <table-name> |
 ( <select-statement> ) |
 CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END
 } {like-op} {
@@ -854,15 +864,6 @@ act like read-only columns.  A row key can be used anywhere a regular
 column can be used, except that you cannot change the value
 of a row key in an UPDATE or INSERT statement.
 "SELECT * ..." does not return the row key.</p>
-
-<p>SQLite supports a minimal Oracle8 outer join behavior. A column 
-expression of the form "column" or "table.column" can be followed by 
-the special "<b>(+)</b>" operator.  If the table of the column expression 
-is the second or subsequent table in a join, then that table becomes 
-the left table in a LEFT OUTER JOIN.  The expression that uses that 
-table becomes part of the ON clause for the join.
-The exact Oracle8 behavior is not implemented, but it is possible to 
-construct queries that will work correctly for both SQLite and Oracle8.</p>
 
 <p>SELECT statements can appear in expressions as either the
 right-hand operand of the IN operator or as a scalar quantity.
@@ -1318,16 +1319,29 @@ is returned it is as an integer.</p>
        <br>PRAGMA default_temp_store = DEFAULT; </b>(0)<b>
        <br>PRAGMA default_temp_store = MEMORY; </b>(2)<b>
        <br>PRAGMA default_temp_store = FILE;</b> (1)</p>
-    <p>Query or change the setting of the "temp_store" flag stored in
-    the database.  When temp_store is DEFAULT (0), the compile-time default 
-    is used for the temporary database.  When temp_store is MEMORY (2), an 
-    in-memory database is used.  When temp_store is FILE (1), a temporary 
-    database file on disk will be used.  Note that it is possible for 
-    the library compile-time options to override this setting.  Once 
-    the temporary database is in use, its location cannot be changed.</p>
+    <p>Query or change the setting of the "<b>temp_store</b>" flag stored in
+    the database.  When temp_store is DEFAULT (0), the compile-time value
+    of the symbol TEMP_STORE is used for the temporary database.  
+    When temp_store is MEMORY (2), an in-memory database is used.  
+    When temp_store is FILE (1), a temporary database file on disk will be used.  
+    Once the temporary database is in use, its location cannot be changed.  
+    It is possible for the library compile-time symbol TEMP_STORE to override 
+    this setting.  The following table summarizes this:</p>
+
+<table cellpadding="2">
+<tr><th>TEMP_STORE</th><th>temp_store</th><th>temp database location</th></tr>
+<tr><td align="center">0</td><td align="center"><em>any</em></td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">0</td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">1</td><td align="center">file</td></tr>
+<tr><td align="center">1</td><td align="center">2</td><td align="center">memory</td></tr>
+<tr><td align="center">2</td><td align="center">0</td><td align="center">memory</td></tr>
+<tr><td align="center">2</td><td align="center">1</td><td align="center">file</td></tr>
+<tr><td align="center">2</td><td align="center">2</td><td align="center">memory</td></tr>
+<tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
+</table>
 
     <p>This pragma changes the temp_store mode persistently.  Once changed,
-    the mode stays as set even if the database is closed and reopened.  The
+    the mode stays set even if the database is closed and reopened.  The
     <a href="#pragma_temp_store"><b>temp_store</b></a> pragma does the same 
     thing but only applies the setting to the current session.</p></li>
 
@@ -1341,6 +1355,12 @@ is returned it is as an integer.</p>
     fourth "<b>columnNames</b>" parameters are valid and can be used to
     determine the number and names of the columns that would have been in
     the result set had the set not been empty.</p></li>
+
+<li><p><b>PRAGMA foreign_key_list(</b><i>table-name</i><b>);</b></p>
+    <p>For each foreign key that references a column in the argument
+    table, invoke the callback function with information about that
+    foreign key. The callback function will be invoked once for each
+    column in each foreign key.</p></li>
 
 <li><p><b>PRAGMA full_column_names = ON; </b>(1)<b>
        <br>PRAGMA full_column_names = OFF;</b> (0)</p>
@@ -1615,12 +1635,21 @@ In version 1.0 of SQLite, the VACUUM command would invoke
 <p>
 VACUUM became a no-op when the GDBM backend was removed from
 SQLITE in version 2.0.0.
-VACUUM was reimplimented in version 2.8.1.  It now cleans
+VACUUM was reimplimented in version 2.8.1.
+The index or table name argument is now ignored.
+</p>
+
+<p>When an object (table, index, or trigger) is dropped from the 
+database, it leaves behind empty space.  This makes the database 
+file larger than it needs to be, but can speed up inserts.  In time 
+inserts and deletes can leave the database file structure fragmented, 
+which slows down disk access to the database contents.
+
+The VACUUM command cleans
 the database by copying its contents to a temporary database file and 
-reloading the original database file from the copy.  This will eliminate 
-free pages,  align table data to be contiguous, and otherwise clean up 
-the database file structure.  The index or table name argument is now
-ignored.</p>
+reloading the original database file from the copy.  This eliminates 
+free pages,  aligns table data to be contiguous, and otherwise cleans 
+up the database file structure.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>
@@ -1630,7 +1659,7 @@ command has no effect on an in-memory database.</p>
 Section {SQLite keywords} keywords
 
 puts {
-<p>The following keywords are used by SQLite. Most are either reserved 
+<p>The following keywords are used by SQLite.  Most are either reserved 
 words in SQL-92 or were listed as potential reserved words.  Those which 
 aren't are shown in italics.  Not all of these words are actually used
 by SQLite.  Keywords are not reserved in SQLite.  Any keyword can be used 
