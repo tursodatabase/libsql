@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.24 2003/03/27 12:51:25 drh Exp $
+** $Id: func.c,v 1.25 2003/05/13 01:52:32 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -324,8 +324,7 @@ static void randStr(sqlite_func *context, int argc, const char **argv){
   }
   n = iMin;
   if( iMax>iMin ){
-    r = sqliteRandomInteger();
-    if( r<0 ) r = -r;
+    r = sqliteRandomInteger() & 0x7fffffff;
     n += r%(iMax + 1 - iMin);
   }
   r = 0;
