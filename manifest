@@ -1,5 +1,5 @@
-C Fix\stwo\smore\smemory\sleaks.\s(CVS\s1603)
-D 2004-06-16T07:45:24
+C Fix\shandling\sof\sa\sfailed\smalloc()\sin\svarious\splaces\s(CVS\s1604)
+D 2004-06-16T10:39:24
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,12 +33,12 @@ F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
 F src/delete.c 911221aadb35d610c84fadb32e71c52990827e58
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 7c19fbc4495f8978439c20528cf3e070df068427
-F src/func.c 60bf9412807f95d4694863114ae7009d817de45f
+F src/func.c be055fc63f1ae59c6a5dc4901240669f2a21f40c
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 68c7f3ddd6a7f1e5596d6996da1a2861b3789a3a
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c da573d5b157dbb376349efcb4ff2cbe830f80c80
+F src/main.c adac42394fb42aa47e3fdc5d9354d21f4bdaf29a
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -224,7 +224,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e9a77f8972128550f6ff98dcf854eb7680eaee8b
-R 925b12cad91290c34145812d35712b79
+P 98b48704a1ce983677cdb269c24f7bca4ed606f7
+R f0197c8c4720736cb4c2834534e1d0e2
 U danielk1977
-Z 728cd56f54fcbd121f4ed570a3126bce
+Z 6139ebf902566b13c2ee3227a615ae8b

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.69 2004/06/15 13:36:30 danielk1977 Exp $
+** $Id: func.c,v 1.70 2004/06/16 10:39:24 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -904,8 +904,7 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
   Mem *pArg  = (Mem *)argv[0];
   Mem *pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
 
-  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
-
+  if( !pBest || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   if( pBest->flags ){
     CollSeq *pColl = sqlite3GetFuncCollSeq(context);
     /* This step function is used for both the min() and max() aggregates,

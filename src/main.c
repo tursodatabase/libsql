@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.222 2004/06/15 16:51:01 danielk1977 Exp $
+** $Id: main.c,v 1.223 2004/06/16 10:39:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -471,6 +471,10 @@ int sqlite3_last_statement_changes(sqlite *db){
 void sqlite3_close(sqlite *db){
   HashElem *i;
   int j;
+
+  if( !db ){
+    return;
+  }
   db->want_to_close = 1;
 
   /* FIX ME: db->magic may be set to SQLITE_MAGIC_CLOSED if the database
@@ -892,6 +896,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 }
 
 int sqlite3_errcode(sqlite3 *db){
+  if( !db ) return SQLITE_NOMEM;
   return db->errCode;
 }
 
@@ -937,6 +942,8 @@ int sqlite3_prepare(
   char *zErrMsg = 0;
   int rc = SQLITE_OK;
 
+  assert( ppStmt );
+  *ppStmt = 0;
   if( sqlite3SafetyOn(db) ){
     rc = SQLITE_MISUSE;
     goto prepare_out;
@@ -995,8 +1002,6 @@ int sqlite3_prepare(
   if( sParse.rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
   }
-  assert( ppStmt );
-  *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
   if( pzTail ) *pzTail = sParse.zTail;
   rc = sParse.rc;
 
@@ -1013,6 +1018,12 @@ prepare_out:
   if( sqlite3SafetyOff(db) ){
     rc = SQLITE_MISUSE;
   }
+  if( rc==SQLITE_OK ){
+    *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
+  }else if( sParse.pVdbe ){
+    sqlite3_finalize(sParse.pVdbe);
+  }
+
   if( zErrMsg ){
     sqlite3Error(db, rc, "%s", zErrMsg);
     sqliteFree(zErrMsg);
