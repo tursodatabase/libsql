@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.85 2003/06/14 11:42:58 drh Exp $
+** @(#) $Id: pager.c,v 1.86 2003/07/07 10:47:10 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1520,6 +1520,7 @@ static int pager_open_journal(Pager *pPager){
   assert( pPager->state==SQLITE_WRITELOCK );
   assert( pPager->journalOpen==0 );
   assert( pPager->useJournal );
+  sqlitepager_pagecount(pPager);
   pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
   if( pPager->aInJournal==0 ){
     sqliteOsReadLock(&pPager->fd);
@@ -1539,7 +1540,6 @@ static int pager_open_journal(Pager *pPager){
   pPager->needSync = 0;
   pPager->alwaysRollback = 0;
   pPager->nRec = 0;
-  sqlitepager_pagecount(pPager);
   if( pPager->errMask!=0 ){
     rc = pager_errcode(pPager);
     return rc;
