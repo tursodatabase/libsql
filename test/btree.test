@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.19 2004/05/08 10:56:20 drh Exp $
+# $Id: btree.test,v 1.20 2004/05/08 20:07:40 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -827,28 +827,31 @@ do_test btree-10.2 {
   lindex [btree_pager_stats $::b1] 1
 } {2}
 do_test btree-10.3 {
-  for {set i 1} {$i<=20} {incr i} {
+  for {set i 1} {$i<=30} {incr i} {
     set key [format %03d $i]
     set data "*** $key *** $key *** $key *** $key ***"
     btree_insert $::c1 $key $data
   }
   select_keys $::c1
-} {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
-#btree_page_dump $::b1 7
-btree_page_dump $::b1 1
-#btree_page_dump $::b1 6
+} {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030}
+#btree_tree_dump $::b1 2
 do_test btree-10.4 {
-  btree_move_to $::c1 011
+  # The divider entry is 012.  This is found by uncommenting the 
+  # btree_tree_dump call above and looking at the tree.  If the page size
+  # changes, this test will no longer work.
+  btree_move_to $::c1 012
   btree_delete $::c1
   select_keys $::c1
-} {001 002 003 004 005 006 007 008 009 010 012 013 014 015 016 017 018 019 020}
-#btree_tree_dump $::b1 2
+} {001 002 003 004 005 006 007 008 009 010 011 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030}
 #btree_pager_ref_dump $::b1
-for {set i 1} {$i<=20} {incr i} {
+#btree_tree_dump $::b1 2
+for {set i 1} {$i<=30} {incr i} {
+  # Check the number of unreference pages.  This should be 3 in most cases,
+  # but 2 when the cursor is pointing to the divider entry which is now 013.
   do_test btree-10.5.$i {
     btree_move_to $::c1 [format %03d $i]
     lindex [btree_pager_stats $::b1] 1
-  } {2}
+  } [expr {$i==13?2:3}]
   #btree_pager_ref_dump $::b1
   #btree_tree_dump $::b1 2
 }
@@ -857,18 +860,31 @@ for {set i 1} {$i<=20} {incr i} {
 #
 catch {unset ::data}
 catch {unset ::key}
-for {set i 21} {$i<=1000} {incr i} {
+for {set i 31} {$i<=1000} {incr i} {
+if {$i==88} {
+set pager_refinfo_enable 1
+btree_tree_dump $b1 2
+btree_pager_ref_dump $b1
+btree_cursor_list $b1
+}
   do_test btree-11.1.$i.1 {
     set key [format %03d $i]
     set ::data "*** $key *** $key *** $key *** $key ***"
     btree_insert $::c1 $key $data
+    btree_move_to $::c1 $key
     btree_key $::c1
   } [format %03d $i]
+if {$i==88} {
+btree_pager_ref_dump $b1
+btree_cursor_list $b1
+btree_tree_dump $b1 2
+exit
+}
   do_test btree-11.1.$i.2 {
     btree_data $::c1
   } $::data
   set ::key [format %03d [expr {$i/2}]]
-  if {$::key=="011"} {set ::key 010}
+  if {$::key=="012"} {set ::key 013}
   do_test btree-11.1.$i.3 {
     btree_move_to $::c1 $::key
     btree_key $::c1
