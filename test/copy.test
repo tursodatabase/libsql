@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.11 2002/06/25 13:16:04 drh Exp $
+# $Id: copy.test,v 1.12 2002/07/30 17:20:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,6 +38,14 @@ close $f
 set f [open data5.txt w]
 puts $f "11|22|33"
 puts $f "22|33|11"
+close $f
+set f [open dataX.txt w]
+puts -nonewline $f "11|22|33\r"
+puts -nonewline $f "22|33|44\r\n"
+puts -nonewline $f "33|44|55\n"
+puts -nonewline $f "44|55|66\r"
+puts -nonewline $f "55|66|77\r\n"
+puts -nonewline $f "66|77|88\n"
 close $f
 
 # Try to COPY into a non-existant table.
@@ -226,10 +234,20 @@ do_test copy-5.7 {
   }
 } {0}
 
-integrity_check copy-6.0
+do_test copy-6.1 {
+  execsql {
+    PRAGMA count_changes=off;
+    CREATE TABLE t2(a,b,c);
+    COPY t2 FROM 'dataX.txt' USING DELIMITERS '|';
+    SELECT * FROM t2;
+  }
+} {11 22 33 22 33 44 33 44 55 44 55 66 55 66 77 66 77 88}
+
+integrity_check copy-7.1
 
 # Cleanup 
 #
-file delete -force data1.txt data2.txt data3.txt data4.txt data5.txt data6.txt
+file delete -force data1.txt data2.txt data3.txt data4.txt data5.txt \
+                   data6.txt dataX.txt
 
 finish_test

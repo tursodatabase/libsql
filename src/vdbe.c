@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.165 2002/07/18 00:34:12 drh Exp $
+** $Id: vdbe.c,v 1.166 2002/07/30 17:20:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1239,6 +1239,32 @@ static int byteSwap(int x){
 #else
 # define VERIFY(X) X
 #endif
+
+/*
+** The following routine works like a replacement for the standard
+** library routine fgets().  The difference is in how end-of-line (EOL)
+** is handled.  Standard fgets() uses LF for EOL under unix, CRLF
+** under windows, and CR under mac.  This routine accepts any of these
+** character sequences as an EOL mark.  The EOL mark is replaced by
+** a single LF character in zBuf.
+*/
+static char *vdbe_fgets(char *zBuf, int nBuf, FILE *in){
+  int i, c;
+  for(i=0; i<nBuf-1 && (c=getc(in))!=EOF; i++){
+    zBuf[i] = c;
+    if( c=='\r' || c=='\n' ){
+      if( c=='\r' ){
+        zBuf[i] = '\n';
+        c = getc(in);
+        if( c!=EOF && c!='\n' ) ungetc(c, in);
+      }
+      i++;
+      break;
+    }
+  }
+  zBuf[i]  = 0;
+  return i>0 ? zBuf : 0;
+}
 
 /*
 ** Execute the program in the VDBE.
@@ -4470,7 +4496,7 @@ case OP_FileRead: {
       }
       p->zLine = zLine;
     }
-    if( fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
+    if( vdbe_fgets(&p->zLine[n], p->nLineAlloc-n, p->pFile)==0 ){
       eol = 1;
       p->zLine[n] = 0;
     }else{

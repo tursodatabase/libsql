@@ -1,5 +1,5 @@
-C UPDATE\striggers\son\sTEMP\stables\swere\sbroken.\s(CVS\s693)
-D 2002-07-21T23:09:55
+C Fix\sfor\sticket\s#71:\sCorrectly\shandle\sCR\sand\sCRLF\sline\sterminators\sin\sthe\ninput\sfiles\sfor\sthe\sCOPY\scommand.\s(CVS\s694)
+D 2002-07-30T17:20:40
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -40,8 +40,8 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c a43eabfc2e3e4d67660027f016889935f706deab
 F src/shell.c 37a8405aec5740726c4ee18826c1ff5fd2c29b96
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
-F src/sqliteInt.h a7a088cd9e69e9dbefe0fdfe411bb6387b50f384
+F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
+F src/sqliteInt.h d0a54982e1eb01f9b05aa9329e8d569acb0996ea
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c c502819c209011659e1bbb428cbac5670cce7f79
 F src/test1.c 456cb080db85056be723e770435d9509afc3a83a
@@ -52,7 +52,7 @@ F src/tokenize.c b5500e193a82b5b9888fbf947efd90d3b4858178
 F src/trigger.c d88ab4d68d68955c217b38fb6717e090fbbf54a4
 F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c 7a99e754c44dd220e881122e30581c08b6d6adef
-F src/vdbe.c 7433a7811fbbb7cfec4f12c142913b4d8a02231e
+F src/vdbe.c b35ea5d6af6c4649d6cda171d326352ff616875d
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
 F src/where.c 6a43aa6c80eab12221eeca754cba852a9ecd1e13
 F test/all.test f296d27fff6aca72348af15092154f879d1fc7d4
@@ -61,7 +61,7 @@ F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 4518cc3c1c40c4ba74220d9ee814257ae7d09c47
-F test/copy.test 92e21ebea11319c3f70448d3763fdaa0e2f1c21f
+F test/copy.test 55d60a4d5ed342a0fa08b7cd07d46d43ea0d0d7f
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
 F test/expr.test 5fadd0bc87c223b424ce6752b576c1df346abf1f
 F test/func.test cae5f27e09736cfdcc978c3719ac1345405b848c
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 610b7bc70a12b271994255bd01a76b3525421535
-R 8d04659c9e44b4da98d3cabd50c7863c
-U danielk1977
-Z 554b81b4d4eac0c4e8ece2aa3bada3ab
+P c080ed01ea51628b86050762f097e702e3aeafdf
+R 2c19fd10fe86bd88ef844a3055d315b5
+U drh
+Z e835230fdc0a66edc7f339264e4e0fbb
