@@ -23,14 +23,12 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.43 2001/09/13 13:46:57 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.44 2001/09/13 14:46:10 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
 #include "parse.h"
-#ifndef DISABLE_GDBM
-#include <gdbm.h>
-#endif
+#include "btree.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -182,7 +180,7 @@ struct Table {
   int tnum;        /* Page containing root for this table */
   int readOnly;    /* True if this table should not be written by the user */
   int isCommit;    /* True if creation of this table has been committed */
-  int isDelete;    /* True if deletion of this table has not been comitted */    
+  int isDelete;    /* True if this table is being deleted */
 };
 
 /*
@@ -210,6 +208,7 @@ struct Index {
   int nColumn;     /* Number of columns in the table used by this index */
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
+  int tnum;        /* Page containing root of this index in database file */
   int isUnique;    /* True if keys must all be unique */
   int isCommit;    /* True if creation of this index has been committed */
   int isDelete;    /* True if deletion of this index has not been comitted */
@@ -445,7 +444,6 @@ Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
 int sqliteRandomInteger(void);
 void sqliteRandomName(char*,char*);
-char *sqliteDbbeNameToFile(const char*,const char*,const char*);
 void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);

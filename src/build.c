@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.29 2001/09/13 13:46:56 drh Exp $
+** $Id: build.c,v 1.30 2001/09/13 14:46:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,17 +49,18 @@
 */
 void sqliteExec(Parse *pParse){
   int rc = SQLITE_OK;
+  sqlite *db = pParse->db;
   if( sqlite_malloc_failed ) return;
   if( pParse->pVdbe ){
     if( pParse->explain ){
       rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
                           &pParse->zErrMsg);
     }else{
-      FILE *trace = (pParse->db->flags & SQLITE_VdbeTrace)!=0 ? stderr : 0;
+      FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stderr : 0;
       sqliteVdbeTrace(pParse->pVdbe, trace);
       rc = sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                          &pParse->zErrMsg, pParse->db->pBusyArg,
-                          pParse->db->xBusyCallback);
+                          &pParse->zErrMsg, db->pBusyArg,
+                          db->xBusyCallback);
     }
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
@@ -258,7 +259,7 @@ void sqliteCommitInternalChanges(sqlite *db){
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
   for(i=0; i<N_HASH; i++){
     Table *pTable, *pNext;
-    for(pTable = apTblHash[i]; pTable; pTable=pNext){
+    for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
       pNext = pTable->pHash;
       if( pTable->isDelete ){
         sqliteDeleteTable(db, pTable);
@@ -269,7 +270,7 @@ void sqliteCommitInternalChanges(sqlite *db){
   }
   for(i=0; i<N_HASH; i++){
     Index *pIndex, *pNext;
-    for(pIndex = apIdxHash[i]; pIndex; pIndex=pNext){
+    for(pIndex = db->apIdxHash[i]; pIndex; pIndex=pNext){
       pNext = pIndex->pHash;
       if( pIndex->isDelete ){
         sqliteUnlinkAndDeleteIndex(db, pIndex);
@@ -294,7 +295,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
   for(i=0; i<N_HASH; i++){
     Table *pTable, *pNext;
-    for(pTable = apTblHash[i]; pTable; pTable=pNext){
+    for(pTable = db->apTblHash[i]; pTable; pTable=pNext){
       pNext = pTable->pHash;
       if( !pTable->isCommit ){
         sqliteDeleteTable(db, pTable);
@@ -305,7 +306,7 @@ void sqliteRollbackInternalChanges(sqlite *db){
   }
   for(i=0; i<N_HASH; i++){
     Index *pIndex, *pNext;
-    for(pIndex = apIdxHash[i]; pIndex; pIndex=pNext){
+    for(pIndex = db->apIdxHash[i]; pIndex; pIndex=pNext){
       pNext = pIndex->pHash;
       if( !pIndex->isCommit ){
         sqliteUnlinkAndDeleteIndex(db, pIndex);
@@ -343,11 +344,12 @@ char *sqliteTableNameFromToken(Token *pName){
 void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   Table *pTable;
   char *zName;
+  sqlite *db = pParse->db;
 
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
   if( zName==0 ) return;
-  pTable = sqliteFindTable(pParse->db, zName);
+  pTable = sqliteFindTable(db, zName);
   if( pTable!=0 ){
     sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
         " already exists", 0, 0);
@@ -355,7 +357,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
     pParse->nErr++;
     return;
   }
-  if( sqliteFindIndex(pParse->db, zName) ){
+  if( sqliteFindIndex(db, zName) ){
     sqliteSetString(&pParse->zErrMsg, "there is already an index named ", 
        zName, 0);
     sqliteFree(zName);
@@ -369,9 +371,9 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   pTable->nCol = 0;
   pTable->aCol = 0;
   pTable->pIndex = 0;
-  if( pParse->pNewTable ) sqliteDeleteTable(pParse->db, pParse->pNewTable);
+  if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
-  if( !pParse->initFlag && (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( !pParse->initFlag && (db->flags & SQLITE_InTrans)==0 ){
     Vdbe *v = sqliteGetVdbe(pParse);
     if( v ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
@@ -442,6 +444,7 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 void sqliteEndTable(Parse *pParse, Token *pEnd){
   Table *p;
   int h;
+  sqlite *db = pParse->db;
 
   if( pEnd==0 || pParse->nErr || sqlite_malloc_failed ) return;
   p = pParse->pNewTable;
@@ -451,10 +454,10 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   */
   if( pParse->explain==0 ){
     h = sqliteHashNoCase(p->zName, 0) % N_HASH;
-    p->pHash = pParse->db->apTblHash[h];
-    pParse->db->apTblHash[h] = p;
+    p->pHash = db->apTblHash[h];
+    db->apTblHash[h] = p;
     pParse->pNewTable = 0;
-    pParse->db->nTable++;
+    db->nTable++;
     db->flags |= SQLITE_InternChanges;
   }
 
@@ -484,7 +487,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     sqliteVdbeChangeP3(v, base+5, p->zName, 0);
     sqliteVdbeChangeP3(v, base+6, pParse->sFirstToken.z, n);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
@@ -515,7 +518,6 @@ Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
 */
 void sqliteDropTable(Parse *pParse, Token *pName){
   Table *pTable;
-  int h;
   Vdbe *v;
   int base;
 
@@ -569,7 +571,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   */
   if( !pParse->explain ){
     pTable->isDelete = 1;
-    db->flags |= SQLITE_InternChanges;
+    pParse->db->flags |= SQLITE_InternChanges;
   }
 }
 
@@ -595,6 +597,7 @@ void sqliteCreateIndex(
   char *zName = 0;
   int i, j, h;
   Token nullId;    /* Fake token for an empty ID list */
+  sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
 
@@ -625,13 +628,13 @@ void sqliteCreateIndex(
     sqliteSetString(&zName, pTab->zName, "__primary_key", 0);
   }
   if( zName==0 ) goto exit_create_index;
-  if( sqliteFindIndex(pParse->db, zName) ){
+  if( sqliteFindIndex(db, zName) ){
     sqliteSetString(&pParse->zErrMsg, "index ", zName, 
        " already exists", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
-  if( sqliteFindTable(pParse->db, zName) ){
+  if( sqliteFindTable(db, zName) ){
     sqliteSetString(&pParse->zErrMsg, "there is already a table named ",
        zName, 0);
     pParse->nErr++;
@@ -684,8 +687,8 @@ void sqliteCreateIndex(
   */
   if( pParse->explain==0 ){
     h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
-    pIndex->pHash = pParse->db->apIdxHash[h];
-    pParse->db->apIdxHash[h] = pIndex;
+    pIndex->pHash = db->apIdxHash[h];
+    db->apIdxHash[h] = pIndex;
     pIndex->pNext = pTab->pIndex;
     pTab->pIndex = pIndex;
     db->flags |= SQLITE_InternChanges;
@@ -721,7 +724,7 @@ void sqliteCreateIndex(
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
-    if( pTable!=0 && (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_Open, 0, pTab->tnum, pTab->zName, 0);
@@ -738,7 +741,7 @@ void sqliteCreateIndex(
     lbl1 = sqliteVdbeMakeLabel(v);
     lbl2 = sqliteVdbeMakeLabel(v);
     sqliteVdbeAddOp(v, OP_Next, 0, lbl2, 0, lbl1);
-    sqliteVdbeAddOp(v, OP_GetRecno, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Recno, 0, 0, 0, 0);
     for(i=0; i<pIndex->nColumn; i++){
       sqliteVdbeAddOp(v, OP_Column, 0, pIndex->aiColumn[i], 0, 0);
     }
@@ -748,7 +751,7 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
     sqliteVdbeAddOp(v, OP_Close, 1, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Close, 0, 0, 0, 0);
-    if( pTable!=0 && (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( pTable!=0 && (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
@@ -773,11 +776,12 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   Index *pIndex;
   char *zName;
   Vdbe *v;
+  sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) return;
   zName = sqliteTableNameFromToken(pName);
   if( zName==0 ) return;
-  pIndex = sqliteFindIndex(pParse->db, zName);
+  pIndex = sqliteFindIndex(db, zName);
   sqliteFree(zName);
   if( pIndex==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such index: ", 0, 
@@ -796,19 +800,19 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       { OP_Dup,        0, 0,       0},
       { OP_Column,     0, 1,       0},
       { OP_Ne,         0, ADDR(2), 0},
-      { OP_Key,        0, 0,       0},
+      { OP_Recno,      0, 0,       0},
       { OP_Delete,     0, 0,       0},
       { OP_Destroy,    0, 0,       0}, /* 8 */
       { OP_Close,      0, 0,       0},
     };
     int base;
 
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
     sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
@@ -952,10 +956,11 @@ void sqliteCopy(
   Vdbe *v;
   int addr, end;
   Index *pIdx;
+  sqlite *db = pParse->db;
 
   zTab = sqliteTableNameFromToken(pTableName);
   if( sqlite_malloc_failed || zTab==0 ) goto copy_cleanup;
-  pTab = sqliteFindTable(pParse->db, zTab);
+  pTab = sqliteFindTable(db, zTab);
   sqliteFree(zTab);
   if( pTab==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
@@ -971,7 +976,7 @@ void sqliteCopy(
   }
   v = sqliteGetVdbe(pParse);
   if( v ){
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
@@ -1010,7 +1015,7 @@ void sqliteCopy(
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, end);
-    if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
     }
   }
@@ -1027,6 +1032,7 @@ copy_cleanup:
 void sqliteVacuum(Parse *pParse, Token *pTableName){
   char *zName;
   Vdbe *v;
+  sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( pTableName ){
@@ -1034,15 +1040,15 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   }else{
     zName = 0;
   }
-  if( zName && sqliteFindIndex(pParse->db, zName)==0
-    && sqliteFindTable(pParse->db, zName)==0 ){
+  if( zName && sqliteFindIndex(db, zName)==0
+    && sqliteFindTable(db, zName)==0 ){
     sqliteSetString(&pParse->zErrMsg, "no such table or index: ", zName, 0);
     pParse->nErr++;
     goto vacuum_cleanup;
   }
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto vacuum_cleanup;
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
   }
   if( zName ){
@@ -1052,7 +1058,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
     Table *pTab;
     Index *pIdx;
     for(h=0; h<N_HASH; h++){
-      for(pTab=pParse->db->apTblHash[h]; pTab; pTab=pTab->pHash){
+      for(pTab=db->apTblHash[h]; pTab; pTab=pTab->pHash){
         sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pTab->zName, 0);
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, pIdx->zName, 0);
@@ -1060,7 +1066,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
       }
     }
   }
-  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+  if( (db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
   }
 
@@ -1073,7 +1079,6 @@ vacuum_cleanup:
 ** Begin a transaction
 */
 void sqliteBeginTransaction(Parse *pParse){
-  int rc;
   sqlite *db;
   Vdbe *v;
 
@@ -1091,7 +1096,6 @@ void sqliteBeginTransaction(Parse *pParse){
 ** Commit a transaction
 */
 void sqliteCommitTransaction(Parse *pParse){
-  int rc;
   sqlite *db;
   Vdbe *v;
 
@@ -1109,7 +1113,6 @@ void sqliteCommitTransaction(Parse *pParse){
 ** Rollback a transaction
 */
 void sqliteRollbackTransaction(Parse *pParse){
-  int rc;
   sqlite *db;
   Vdbe *v;
 

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.14 2001/09/13 13:46:56 drh Exp $
+** $Id: insert.c,v 1.15 2001/09/13 14:46:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -98,7 +98,7 @@ void sqliteInsert(
   if( pSelect ){
     int rc;
     srcTab = pParse->nTab++;
-    sqliteVdbeAddOp(v, OP_OpenTbl, srcTab, 1, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenTemp, srcTab, 0, 0, 0);
     rc = sqliteSelect(pParse, pSelect, SRT_Table, srcTab);
     if( rc || pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
     assert( pSelect->pEList );
@@ -163,9 +163,9 @@ void sqliteInsert(
   ** all indices of that table.
   */
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_Open, base, pTab->tnum, pTab->zName, 0);
   for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-    sqliteVdbeAddOp(v, OP_OpenIdx, idx+base, 1, pIdx->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, idx+base, pIdx->tnum, pIdx->zName, 0);
   }
 
   /* If the data source is a SELECT statement, then we have to create
@@ -181,7 +181,7 @@ void sqliteInsert(
 
   /* Create a new entry in the table and fill it with data.
   */
-  sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_NewRecno, 0, 0, 0, 0);
   if( pTab->pIndex ){
     sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
   }
@@ -201,7 +201,7 @@ void sqliteInsert(
         sqliteVdbeAddOp(v, OP_String, 0, 0, zDflt, 0);
       }
     }else if( srcTab>=0 ){
-      sqliteVdbeAddOp(v, OP_Field, srcTab, i, 0, 0); 
+      sqliteVdbeAddOp(v, OP_Column, srcTab, i, 0, 0); 
     }else{
       sqliteExprCode(pParse, pList->a[j].pExpr);
     }
@@ -233,7 +233,7 @@ void sqliteInsert(
           sqliteVdbeAddOp(v, OP_String, 0, 0, zDflt, 0);
         }
       }else if( srcTab>=0 ){
-        sqliteVdbeAddOp(v, OP_Field, srcTab, idx, 0, 0); 
+        sqliteVdbeAddOp(v, OP_Column, srcTab, idx, 0, 0); 
       }else{
         sqliteExprCode(pParse, pList->a[j].pExpr);
       }

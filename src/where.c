@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.16 2001/09/13 13:46:57 drh Exp $
+** $Id: where.c,v 1.17 2001/09/13 14:46:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -300,7 +300,7 @@ WhereInfo *sqliteWhereBegin(
     sqliteVdbeAddOp(v, OP_Open, base+i, pTabList->a[i].pTab->tnum,
          pTabList->a[i].pTab->zName, 0);
     if( i<ARRAYSIZE(aIdx) && aIdx[i]!=0 ){
-      sqliteVdbeAddOp(v, OP_Open, base+pTabList->nId+i, aIdx[i]->tnum
+      sqliteVdbeAddOp(v, OP_Open, base+pTabList->nId+i, aIdx[i]->tnum,
           aIdx[i]->zName, 0);
     }
   }
@@ -351,7 +351,7 @@ WhereInfo *sqliteWhereBegin(
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqliteVdbeAddOp(v, OP_Fetch, base+idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0, 0, 0);
         haveKey = 0;
       }
     }else if( pIdx==0 ){
@@ -392,7 +392,7 @@ WhereInfo *sqliteWhereBegin(
       if( i==pTabList->nId-1 && pushKey ){
         haveKey = 1;
       }else{
-        sqliteVdbeAddOp(v, OP_Fetch, base+idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0, 0, 0);
         haveKey = 0;
       }
     }
@@ -407,7 +407,7 @@ WhereInfo *sqliteWhereBegin(
       if( (aExpr[j].prereqLeft & loopMask)!=aExpr[j].prereqLeft ) continue;
       if( haveKey ){
         haveKey = 0;
-        sqliteVdbeAddOp(v, OP_Fetch, base+idx, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0, 0, 0);
       }
       sqliteExprIfFalse(pParse, aExpr[j].p, cont);
       aExpr[j].p = 0;
@@ -416,7 +416,7 @@ WhereInfo *sqliteWhereBegin(
   }
   pWInfo->iContinue = cont;
   if( pushKey && !haveKey ){
-    sqliteVdbeAddOp(v, OP_Key, base, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Recno, base, 0, 0, 0);
   }
   sqliteFree(aOrder);
   return pWInfo;

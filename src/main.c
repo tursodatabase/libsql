@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.30 2001/09/13 13:46:56 drh Exp $
+** $Id: main.c,v 1.31 2001/09/13 14:46:10 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -233,7 +233,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
       }
     }
     sqliteFree(db);
-    return rc;
+    return 0;
   }
 
   /* Assume file format 1 unless the database says otherwise */

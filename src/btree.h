@@ -24,8 +24,10 @@
 ** This header file defines the interface that the sqlite B-Tree file
 ** subsystem.
 **
-** @(#) $Id: btree.h,v 1.11 2001/09/13 13:46:56 drh Exp $
+** @(#) $Id: btree.h,v 1.12 2001/09/13 14:46:10 drh Exp $
 */
+#ifndef _BTREE_H_
+#define _BTREE_H_
 
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
@@ -62,6 +64,8 @@ int sqliteBtreeUpdateMeta(Btree*, int*);
 #ifdef SQLITE_TEST
 int sqliteBtreePageDump(Btree*, int, int);
 int sqliteBtreeCursorDump(BtCursor*, int*);
-Pager *sqliteBtreePager(Btree*);
+struct Pager *sqliteBtreePager(Btree*);
 char *sqliteBtreeSanityCheck(Btree*, int*, int);
 #endif
+
+#endif /* _BTREE_H_ */

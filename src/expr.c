@@ -24,7 +24,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.25 2001/07/23 14:33:04 drh Exp $
+** $Id: expr.c,v 1.26 2001/09/13 14:46:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -246,7 +246,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         ** table.  The cursor number of the temporary table has already
         ** been put in iTable by sqliteExprResolveInSelect().
         */
-        sqliteVdbeAddOp(v, OP_OpenIdx, pExpr->iTable, 1, 0, 0);
+        sqliteVdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 0, 0, 0);
         if( sqliteSelect(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable) );
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
@@ -515,9 +515,9 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       if( pParse->useAgg ){
         sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
       }else if( pExpr->iColumn>=0 ){
-        sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iColumn, 0, 0);
+        sqliteVdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn, 0, 0);
       }else{
-        sqliteVdbeAddOp(v, OP_Key, pExpr->iTable, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_FullKey, pExpr->iTable, 0, 0, 0);
       }
       break;
     }

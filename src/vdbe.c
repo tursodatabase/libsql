@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.60 2001/09/13 13:46:57 drh Exp $
+** $Id: vdbe.c,v 1.61 2001/09/13 14:46:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -194,7 +194,7 @@ struct Keylist {
 */
 struct Vdbe {
   sqlite *db;         /* The whole database */
-  Dbbe *pBe;          /* Opaque context structure used by DB backend */
+  Btree *pBt;         /* Opaque context structure used by DB backend */
   FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
   int nOpAlloc;       /* Number of slots allocated for aOp[] */
@@ -235,7 +235,7 @@ Vdbe *sqliteVdbeCreate(sqlite *db){
   Vdbe *p;
   p = sqliteMalloc( sizeof(Vdbe) );
   if( p==0 ) return 0;
-  p->pBe = db->pBe;
+  p->pBt = db->pBe;
   p->db = db;
   return p;
 }
@@ -881,20 +881,20 @@ static char *zOpName[] = { 0,
   "ListRewind",        "ListRead",          "ListClose",         "SortOpen",
   "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
   "SortNext",          "SortKey",           "SortCallback",      "SortClose",
-  "FileOpen",          "FileRead",          "FileField",         "FileClose",
+  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
   "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
   "AggSet",            "AggGet",            "SetInsert",         "SetFound",
   "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "Integer",           "String",
-  "Null",              "Pop",               "Dup",               "Pull",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Min",               "Max",               "Like",
-  "Glob",              "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",          
+  "MakeIdxKey",        "Goto",              "If",                "Halt",
+  "ColumnCount",       "ColumnName",        "Callback",          "Integer",
+  "String",            "Null",              "Pop",               "Dup",
+  "Pull",              "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",          
 };
 
 /*
@@ -1038,9 +1038,8 @@ int sqliteVdbeExec(
   int pc;                    /* The program counter */
   Op *pOp;                   /* Current operation */
   int rc;                    /* Value to return */
-  Dbbe *pBe = p->pBe;        /* The backend driver */
+  Btree *pBt = p->pBt;       /* The backend driver */
   sqlite *db = p->db;        /* The database */
-  int rollbackOnError = 0;   /* If TRUE, rollback if the script fails.
   char **zStack;             /* Text stack */
   Stack *aStack;             /* Additional stack information */
   char zBuf[100];            /* Space to sprintf() an integer */
@@ -1920,7 +1919,7 @@ case OP_MakeIdxKey: {
   }
   zNewKey[j++] = 0;
   Integerify(p, p->tos-nField);
-  memcpy(&zNewKey[j], aStack[p->tos-nField].i, sizeof(int));
+  memcpy(&zNewKey[j], &aStack[p->tos-nField].i, sizeof(int));
   PopStack(p, nField+1);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -1940,7 +1939,7 @@ case OP_MakeIdxKey: {
 ** database.
 */
 case OP_Transaction: {
-  rc = sqliteBtreeBeginTrans(pBe);
+  rc = sqliteBtreeBeginTrans(pBt);
   break;
 }
 
@@ -1951,7 +1950,7 @@ case OP_Transaction: {
 ** are allowed until another transaction is started.
 */
 case OP_Commit: {
-  rc = sqliteBtreeCommit(pBe);
+  rc = sqliteBtreeCommit(pBt);
   if( rc==SQLITE_OK ){
     sqliteCommitInternalChanges(db);
   }else{
@@ -1968,7 +1967,7 @@ case OP_Commit: {
 ** are allowed until another transaction is started.
 */
 case OP_Rollback: {
-  rc = sqliteBtreeRollback(pBe);
+  rc = sqliteBtreeRollback(pBt);
   sqliteRollbackInternalChanges(db);
   break;
 }
@@ -1999,8 +1998,8 @@ case OP_Open: {
     sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
   }
   memset(&p->aCsr[i], 0, sizeof(Cursor));
-  do {
-    rc = sqliteBtreeOpenCursor(pBe, pOp->p2, &p->aCsr[i].pCursor);
+  do{
+    rc = sqliteBtreeCursor(pBt, pOp->p2, &p->aCsr[i].pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){
@@ -2029,7 +2028,6 @@ case OP_Open: {
 ** cursor is closed.
 */
 case OP_OpenTemp: {
-  int busy = 0;
   int i = pOp->p1;
   Cursor *pCx;
   VERIFY( if( i<0 ) goto bad_instruction; )
@@ -2046,7 +2044,7 @@ case OP_OpenTemp: {
   memset(pCx, 0, sizeof(*pCx));
   rc = sqliteBtreeOpen(0, 0, 100, &pCx->pBt);
   if( rc==SQLITE_OK ){
-    rc = sqliteBtreeOpenCursor(pCx->pBt, 2, &pCx->pCursor);
+    rc = sqliteBtreeCursor(pCx->pBt, 2, &pCx->pCursor);
   }
   if( rc==SQLITE_OK ){
     rc = sqliteBtreeBeginTrans(pCx->pBt);
@@ -2091,14 +2089,13 @@ case OP_MoveTo: {
   if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
     int res;
     if( aStack[tos].flags & STK_Int ){
-      sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(int), 
-                     (char*)&aStack[tos].i, &res);
+      sqliteBtreeMoveto(p->aCsr[i].pCursor, 
+          (char*)&aStack[tos].i, sizeof(int), &res);
       p->aCsr[i].lastRecno = aStack[tos].i;
       p->aCsr[i].recnoIsValid = 1;
     }else{
       if( Stringify(p, tos) ) goto no_mem;
-      pBex->Fetch(p->aCsr[i].pCursor, aStack[tos].n, 
-                     zStack[tos], &res);
+      sqliteBtreeMoveto(p->aCsr[i].pCursor, zStack[tos], aStack[tos].n, &res);
       p->aCsr[i].recnoIsValid = 0;
     }
     p->nFetch++;
@@ -2161,12 +2158,12 @@ case OP_Found: {
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
     int res, rx;
     if( aStack[tos].flags & STK_Int ){
-      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(int), 
-                                    (char*)&aStack[tos].i, &res);
+      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, 
+           (char*)&aStack[tos].i, sizeof(int), &res);
     }else{
       if( Stringify(p, tos) ) goto no_mem;
-      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor,aStack[tos].n, 
-                                     zStack[tos], &res);
+      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor,
+         zStack[tos], aStack[tos].n, &res);
     }
     alreadyExists = rx==SQLITE_OK && res==0;
   }
@@ -2198,7 +2195,7 @@ case OP_NewRecno: {
     cnt = 0;
     do{
       v = sqliteRandomInteger();
-      rx = sqliteBtreeMoveTo(p->aCsr[i].pCursor, sizeof(v), &v, &res);
+      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
     }while( cnt<10 && rx==SQLITE_OK && res==0 );
   }
@@ -2233,9 +2230,8 @@ case OP_Put: {
       nKey = sizeof(int);
       zKey = (char*)&aStack[nos].i;
     }
-    rc = sqliteBtreeInsert(p->aCsr[i].pCursor, nKey, zKey,
-                        aStack[tos].n, zStack[tos]);
-    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
+                        zStack[tos], aStack[tos].n);
   }
   POPSTACK;
   POPSTACK;
@@ -2250,6 +2246,7 @@ case OP_Put: {
 case OP_Delete: {
   int tos = p->tos;
   int i = pOp->p1;
+  int res;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
     char *zKey;
@@ -2262,8 +2259,8 @@ case OP_Delete: {
       nKey = aStack[tos].n;
       zKey = zStack[tos];
     }
-    rc = sqliteBtreeDelete(p->aCsr[i].pCursor, nKey, zKey);
-    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    rc = sqliteBtreeMoveto(p->aCsr[i].pCursor, zKey, nKey, &res);
+    rc = sqliteBtreeDelete(p->aCsr[i].pCursor);
   }
   POPSTACK;
   break;
@@ -2301,7 +2298,6 @@ case OP_KeyAsData: {
 ** data.
 */
 case OP_Column: {
-  int *pAddr;
   int amt, offset, nCol, payloadSize;
   int aHdr[10];
   const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
@@ -2314,7 +2310,7 @@ case OP_Column: {
   VERIFY( if( NeedStack(p, tos) ) goto no_mem; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int (*xSize)(BtCursor*, int*);
-    int (*xRead)(BtCursor*, int, int, void*);
+    int (*xRead)(BtCursor*, int, int, char*);
 
     /* Use different access functions depending on whether the information
     ** is coming from the key or the data of the record.
@@ -2340,7 +2336,7 @@ case OP_Column: {
       goto abort_due_to_error;
     }
     if( p2+1<mxHdr ){
-      (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), aHdr);
+      (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), (char*)aHdr);
       nCol = aHdr[0];
       offset = aHdr[p2];
       if( p2 == nCol-1 ){
@@ -2349,13 +2345,13 @@ case OP_Column: {
         amt = aHdr[p2+1] - offset;
       }
     }else{
-      sqliteBtreeData(pCrsr, 0, sizeof(int), &nCol);
+      sqliteBtreeData(pCrsr, 0, sizeof(int), (char*)&nCol);
       nCol /= sizeof(int);
       if( p2 == nCol-1 ){
-        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int), &offset);
+        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int), (char*)&offset);
         amt = payloadSize - offset;
       }else{
-        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int)*2, aHdr);
+        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int)*2, (char*)aHdr);
         offset = aHdr[0];
         amt = aHdr[1] - offset;
       }
@@ -2396,7 +2392,7 @@ case OP_Recno: {
     if( p->aCsr[i].recnoIsValid ){
       v = p->aCsr[i].lastRecno;
     }else{
-      sqliteBtreeKey(pCrsr, 0, sizeof(int), &v);
+      sqliteBtreeKey(pCrsr, 0, sizeof(int), (char*)&v);
     }
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
@@ -2506,7 +2502,7 @@ case OP_BeginIdx: {
     pCrsr->zBuf = &pCrsr->zKey[pCrsr->nKey+1];
     strncpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
     pCrsr->zKey[aStack[tos].n] = 0;
-    rx = sqliteBtreeMoveTo(pCrsr->pCursor, aStack[tos].n, zStack[tos], &res);
+    rx = sqliteBtreeMoveto(pCrsr->pCursor, zStack[tos], aStack[tos].n, &res);
     pCrsr->atFirst = rx==SQLITE_OK && res>0;
     pCrsr->recnoIsValid = 0;
   }
@@ -2526,16 +2522,16 @@ case OP_NextIdx: {
   int i = pOp->p1;
   int tos = ++p->tos;
   Cursor *pCrsr;
-  BtCursr *pCur;
+  BtCursor *pCur;
   int rx, res, size;
 
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   zStack[tos] = 0;
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = &p->aCsr[i])->pCursor)!=0 ){
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = &p->aCsr[i])->pCursor!=0 ){
     pCur = pCrsr->pCursor;
     rx = sqliteBtreeNext(pCur, &res);
     if( rx!=SQLITE_OK ) goto abort_due_to_error;
-    sqliteBtreeKeySzie(pCur, &size);
+    sqliteBtreeKeySize(pCur, &size);
     if( res>0 || size!=pCrsr->nKey+sizeof(int) ||
       sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
       strncmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
@@ -2544,7 +2540,7 @@ case OP_NextIdx: {
       POPSTACK;
     }else{
       int recno;
-      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(int), &recno);
+      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(int), (char*)&recno);
       p->aCsr[i].lastRecno = aStack[tos].i = recno;
       p->aCsr[i].recnoIsValid = 1;
       aStack[tos].flags = STK_Int;
@@ -2565,7 +2561,7 @@ case OP_PutIdx: {
   BtCursor *pCrsr;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    sqliteBtreePut(pCrsr, aStack[tos].n, zStack[tos], 0, "");
+    sqliteBtreeInsert(pCrsr, zStack[tos], aStack[tos].n, "", 0);
   }
   POPSTACK;
   break;
@@ -2583,7 +2579,7 @@ case OP_DeleteIdx: {
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int rx, res;
-    rx = sqliteBtreeMoveTo(pCrsr, aStack[tos].n, zStack[tos], &res);
+    rx = sqliteBtreeMoveto(pCrsr, zStack[tos], aStack[tos].n, &res);
     if( rx==SQLITE_OK && res==0 ){
       sqliteBtreeDelete(pCrsr);
     }
@@ -2598,7 +2594,7 @@ case OP_DeleteIdx: {
 ** file is given by P1.
 */
 case OP_Destroy: {
-  sqliteBtreeDropTable(pBe, pOp->p1);
+  sqliteBtreeDropTable(pBt, pOp->p1);
   break;
 }
 
@@ -3115,12 +3111,12 @@ fileread_jump:
   break;
 }
 
-/* Opcode: FileField P1 * *
+/* Opcode: FileColumn P1 * *
 **
 ** Push onto the stack the P1-th field of the most recently read line
 ** from the input file.
 */
-case OP_FileField: {
+case OP_FileColumn: {
   int i = pOp->p1;
   char *z;
   VERIFY( if( NeedStack(p, p->tos+1) ) goto no_mem; )
@@ -3628,7 +3624,7 @@ default: {
 cleanup:
   Cleanup(p);
   if( rc!=SQLITE_OK && (db->flags & SQLITE_InTrans)!=0 ){
-    sqliteBtreeRollback(pBe);
+    sqliteBtreeRollback(pBt);
     sqliteRollbackInternalChanges(db);
     db->flags &= ~SQLITE_InTrans;
   }
@@ -3645,7 +3641,7 @@ no_mem:
   /* Jump to here for any other kind of fatal error.  The "rc" variable
   ** should hold the error number.
   */
-abort_due_to_err:
+abort_due_to_error:
   sqliteSetString(pzErrMsg, sqliteErrStr(rc), 0);
   goto cleanup;
 

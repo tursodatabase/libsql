@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.22 2001/09/13 13:46:56 drh Exp $
+** $Id: btree.c,v 1.23 2001/09/13 14:46:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -726,7 +726,7 @@ int sqliteBtreeBeginTrans(Btree *pBt){
       return rc;
     }
   }
-  if( !sqlitepager_isreadonly(pBt) ){
+  if( !sqlitepager_isreadonly(pBt->pPager) ){
     rc = sqlitepager_write(pBt->page1);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -2012,7 +2012,7 @@ balance_cleanup:
 */
 int sqliteBtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
-  const void *pKey,  int nKey,   /* The key of the new record */
+  const void *pKey, int nKey,    /* The key of the new record */
   const void *pData, int nData   /* The data of the new record */
 ){
   Cell newCell;

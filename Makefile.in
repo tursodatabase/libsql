@@ -47,7 +47,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
+LIBOBJ = btree.o build.o delete.o expr.o insert.o \
          main.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
@@ -55,16 +55,14 @@ LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
 #
 SRC = \
   $(TOP)/src/btree.c \
+  $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
-  $(TOP)/src/dbbe.c \
-  $(TOP)/src/dbbe.h \
-  $(TOP)/src/dbbegdbm.c \
-  $(TOP)/src/dbbemem.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
   $(TOP)/src/pager.c \
+  $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -121,30 +119,21 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 #
 HDR = \
    sqlite.h  \
+   $(TOP)/src/btree.h \
    $(TOP)/src/sqliteInt.h  \
-   $(TOP)/src/dbbe.h  \
    $(TOP)/src/vdbe.h  \
    parse.h
 
-btree.o:	$(TOP)/src/btree.c $(HDR)
+btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/build.c
 
-dbbe.o:	$(TOP)/src/dbbe.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/dbbe.c
-
-dbbegdbm.o:	$(TOP)/src/dbbegdbm.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/dbbegdbm.c
-
-dbbemem.o:	$(TOP)/src/dbbemem.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/dbbemem.c
-
 main.o:	$(TOP)/src/main.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/main.c
 
-pager.o:	$(TOP)/src/pager.c $(HDR)
+pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/pager.c
 
 parse.o:	parse.c $(HDR)
