@@ -1,5 +1,5 @@
-C Fix\shandling\sof\sa\sfailed\smalloc()\sin\svarious\splaces\s(CVS\s1604)
-D 2004-06-16T10:39:24
+C Fix\shandling\sof\sa\sfailed\smalloc()\sin\svarious\splaces\s(CVS\s1605)
+D 2004-06-16T10:39:52
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,11 +48,11 @@ F src/os_unix.c 8832c78dd95c115b1690054354d90321a791950d
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 337e973ee77797aaab4787e3477a5945fcd97266
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 48356cb434928994ce3c0aac2a6d95e80722c7b3
+F src/pager.c 72b5ab4fcc60d07d4a078434247bba1e3617d90d
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c be8ed53611971f8c93f66cd31129af89e6d58997
-F src/printf.c 63b15f1ea9fe3daa066bb7430fd20d4a2d717dc8
+F src/printf.c 060199ba9768c9d146f8897d33d250e6ff2adaef
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 7036757825668f28e446fea3fc97775f16667f35
 F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
@@ -66,12 +66,12 @@ F src/test3.c beafd0ccf7b9ae784744be1b1e66ffe8f64c25da
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 13ac1db35b03acbc197ceb245fe862da5ebf2369
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
-F src/trigger.c 3ff6f24e5273767117126b712eaae24c3d6466aa
+F src/trigger.c 9b08b80da4f98434babaa48b215a4af29059dc1e
 F src/update.c 6133c876aa126e1771cda165fd992bb0d2f8eb38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 6e93dad9a17b34f37fc270ba871b224240168bf0
 F src/vacuum.c f9561c8095407a970af4e6a304b77c4083433d3e
-F src/vdbe.c 208705994c0b3b160cb941a5a410838bd5559cf9
+F src/vdbe.c fc94f84e43a2f2d27b85a79ce7bea9ffbccc9954
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h 4e636b1b6c18d1d85b085fe0e5a19d45ad85f382
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
@@ -224,7 +224,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 98b48704a1ce983677cdb269c24f7bca4ed606f7
-R f0197c8c4720736cb4c2834534e1d0e2
+P 7d8edce4c12d075acbc6bac6758aabb2769f983a
+R be28934235640c9ed3003a5c5e30f6a4
 U danielk1977
-Z 6139ebf902566b13c2ee3227a615ae8b
+Z 36276b8c3fee19808c53a65120310e72

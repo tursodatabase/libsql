@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.375 2004/06/15 16:51:01 danielk1977 Exp $
+** $Id: vdbe.c,v 1.376 2004/06/16 10:39:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3205,9 +3205,8 @@ case OP_PutStrKey: {
         pTos->flags = MEM_Null;
       }else{
         pC->pData = sqliteMallocRaw( pC->nData+2 );
-        if( pC->pData ){
-          memcpy(pC->pData, pTos->z, pC->nData);
-        }
+        if( !pC->pData ) goto no_mem;
+        memcpy(pC->pData, pTos->z, pC->nData);
         pC->pData[pC->nData] = 0;
         pC->pData[pC->nData+1] = 0;
       }
