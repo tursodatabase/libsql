@@ -1,6 +1,5 @@
-
 /*
-** 2001 September 15
+** 2005 January 20
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -10,10 +9,10 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains C code routines that are called by the parser
-** to handle SELECT statements in SQLite.
+** This file contains C code routines that are not a part of the official
+** SQLite API.  These routines are unsupported.
 **
-** $Id: experimental.c,v 1.2 2005/01/20 01:17:44 danielk1977 Exp $
+** $Id: experimental.c,v 1.3 2005/03/02 05:18:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,4 +34,3 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 int sqlite3_sleep(int ms){
   return sqlite3OsSleep(ms);
 }
-
