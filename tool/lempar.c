@@ -64,20 +64,27 @@
 ** functions that take a state number and lookahead value and return an
 ** action integer.  
 **
-** The action integer is a number N between
-** 0 and YYNSTATE-1 mean shift the look-ahead and go to state N.
-** Numbers between YYNSTATE and YYNSTATE+YYNRULE-1 mean reduce by
-** rule N-YYNSTATE.  Number YYNSTATE+YYNRULE means that a syntax
-** error has occurred.  Number YYNSTATE+YYNRULE+1 means the parser
-** accepts its input.
+** Suppose the action integer is N.  Then the action is determined as
+** follows
 **
-** The action table is constructed as a single large hash table with
-** a perfect hash.  Given state S and lookahead X, the action is computed
-** as
+**   0 <= N < YYNSTATE                  Shift N.  That is, push the lookahead
+**                                      token onto the stack and goto state N.
+**
+**   YYNSTATE <= N < YYNSTATE+YYNRULE   Reduce by rule N-YYNSTATE.
+**
+**   N == YYNSTATE+YYNRULE              A syntax error has occurred.
+**
+**   N == YYNSTATE+YYNRULE+1            The parser accepts its input.
+**
+**   N == YYNSTATE+YYNRULE+2            No such action.  Denotes unused
+**                                      slots in the yy_action[] table.
+**
+** The action table is constructed as a single large table named yy_action[].
+** Given state S and lookahead X, the action is computed as
 **
 **      yy_action[ yy_shift_ofst[S] + X ]
 **
-** If the index yy_shift_ofst[S]+X is out of range or if the value
+** If the index value yy_shift_ofst[S]+X is out of range or if the value
 ** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X or if yy_shift_ofst[S]
 ** is equal to YY_SHIFT_USE_DFLT, it means that the action is not in the table
 ** and that yy_default[S] should be used instead.  

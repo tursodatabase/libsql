@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.78 2003/08/22 02:34:30 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.79 2003/10/22 22:15:28 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -70,7 +70,8 @@ three functions and one opaque structure.</li>
 <li>Automated test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux and Windows.</li>
-<li>Sources are in the public domain.  Use for any purpose.</li>
+<li>Sources are in the <a href="copyright.html">public domain</a>.
+    Use for any purpose.</li>
 </ul>
 </p>
 }
@@ -149,17 +150,23 @@ another important source of information.  </p>
 }
 
 puts {
-<table align="right">
-<tr><td align="center">
-<a href="http://www.yahoogroups.com/subscribe/sqlite">
-<img src="http://www.egroups.com/img/ui/join.gif" border=0 /><br />
-Click to subscribe to sqlite</a>
-</td></tr>
-</table>
 <a name="mailinglist" />
 <h2>Mailing List</h2>
-<p>A mailing list has been set up on yahooGroups for discussion of
-SQLite design issues or for asking questions about SQLite.</p>
+<p>A mailing list has been set up for discussion of
+SQLite design issues or for asking questions about SQLite.
+To subscribe send an email to
+<a href="mailto:sqlite-users-subscribe@sqlite.org">
+sqlite-users-subscribe@sqlite.org</a>.
+If you would prefer to get digests rather than individual
+emails, send a message to to
+<a href="mailto:sqlite-users-digest-subscribe@sqlite.org">
+sqlite-users-digest-subscribe@sqlite.org</a>.
+For additional information about operating and using this
+mailing list, send a message to
+<a href="mailto:sqlite-users-help@sqlite.org">
+sqlite-users-help@sqlite.org</a> and instructions will be
+sent by to you by return email.
+</p>
 }
 
 puts {<h2>Professional Support and Custom Modifications</h2>}

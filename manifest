@@ -1,5 +1,5 @@
-C Fix\sbugs\sin\slemon\sassociated\swith\sthe\schange\sto\sa\sperfect\shash\stable.\s(CVS\s1113)
-D 2003-10-21T16:34:42
+C Comment\schanges\sto\sthe\slemon\sparser\stemplate.\s\sChange\ssome\ssqliteMalloc()\scalls\nto\ssqliteMallocRaw()\sfor\sspeed.\s\sUpdate\sthe\swebsite\stemplate.\s(CVS\s1114)
+D 2003-10-22T22:15:28
 F Makefile.in ab585a91e34bc33928a1b6181fa2f6ebd4fb17e1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F src/attach.c 9f78b4aaac02a2b09ff108e92cbaee3199e7962a
 F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c ba1cc0c71c3d2742b9a9047832335dc7d3656c45
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
-F src/btree_rb.c 550ce12841a87380554abae4442571567463de3a
+F src/btree_rb.c 67d154ffb0fac27a4a7eab9118ece6eaafeb49c9
 F src/build.c 9def3a3b8fba59325ed686049b88c2e7aff9af12
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
@@ -59,7 +59,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c e14db6bfa972a7c449c80788fcdbc0fdc11b17d7
 F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
-F src/util.c f16efa2d60bfd4e31ae06b07ed149557e828d294
+F src/util.c cc95dd360fac09a059b2ab98e4c333d1a2308db5
 F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
 F src/vdbe.c 0928a242ced0b5d26292f3949fdab26fa4dc327d
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
@@ -139,7 +139,7 @@ F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c e37dcb5b8cdb16f4ac98338134bf8d8cd28e399f
-F tool/lempar.c 043b18f4e82012f48240e44aa68d9b95bdf431cc
+F tool/lempar.c 686d85ff4b11a790f52dd033612e6890a2a10f3c
 F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
@@ -163,7 +163,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 88d3b95d9cd8e374772daa3a646c4d107e7f3e9b
 F www/fileformat.tcl ae6ccf3ffddb180a5af173cd6ee102169629762b
 F www/formatchng.tcl ca6cc1cb1bef9bc36f0619049d3c95e749bc6983
-F www/index.tcl 2915a79faaaf7441976948ae095da6ff63aff5c0
+F www/index.tcl 3530ab3c43e2f34f114d16495d19cc1751d12446
 F www/lang.tcl 5f39bbda1ba38a28f18f97bd98c81f40355393b2
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 9cb56d98c0c623074cda4360a415f3f0a7074c90
@@ -174,7 +174,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 4f955c00076b16166ff837749efb84201eab3c3a
-R 476d560510b73636a2e46afa340dadeb
+P c0d1b26966aeb445fea5792e5a9e93632e758c2a
+R 2cd08c2a268077f9c1fb1e5464683f42
 U drh
-Z e55c6ef0dbc0e0ad2050ca7323671ea5
+Z e34714b150e14d157798b16491a3dc4f

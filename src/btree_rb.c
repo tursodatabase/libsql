@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.16 2003/08/27 22:57:08 drh Exp $
+** $Id: btree_rb.c,v 1.17 2003/10/22 22:15:28 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -754,7 +754,7 @@ static int memRbtreeInsert(
 
   /* Take a copy of the input data now, in case we need it for the 
    * replace case */
-  pData = sqliteMalloc(nData);
+  pData = sqliteMallocRaw(nData);
   memcpy(pData, pDataInput, nData);
 
   /* Move the cursor to a node near the key to be inserted. If the key already
@@ -772,7 +772,7 @@ static int memRbtreeInsert(
   if( match ){
     BtRbNode *pNode = sqliteMalloc(sizeof(BtRbNode));
     pNode->nKey = nKey;
-    pNode->pKey = sqliteMalloc(nKey);
+    pNode->pKey = sqliteMallocRaw(nKey);
     memcpy(pNode->pKey, pKey, nKey);
     pNode->nData = nData;
     pNode->pData = pData; 
@@ -807,7 +807,7 @@ static int memRbtreeInsert(
       pOp->eOp = ROLLBACK_DELETE;
       pOp->iTab = pCur->iTree;
       pOp->nKey = pNode->nKey;
-      pOp->pKey = sqliteMalloc( pOp->nKey );
+      pOp->pKey = sqliteMallocRaw( pOp->nKey );
       memcpy( pOp->pKey, pNode->pKey, pOp->nKey );
       btreeLogRollbackOp(pCur->pRbtree, pOp);
     }
@@ -821,7 +821,7 @@ static int memRbtreeInsert(
       BtRollbackOp *pOp = sqliteMalloc( sizeof(BtRollbackOp) );
       pOp->iTab = pCur->iTree;
       pOp->nKey = pCur->pNode->nKey;
-      pOp->pKey = sqliteMalloc( pOp->nKey );
+      pOp->pKey = sqliteMallocRaw( pOp->nKey );
       memcpy( pOp->pKey, pCur->pNode->pKey, pOp->nKey );
       pOp->nData = pCur->pNode->nData;
       pOp->pData = pCur->pNode->pData;
@@ -1028,7 +1028,7 @@ static int memRbtreeClearTable(Rbtree* tree, int n)
         sqliteFree( pNode->pKey );
         sqliteFree( pNode->pData );
       }else{
-        BtRollbackOp *pRollbackOp = sqliteMalloc(sizeof(BtRollbackOp));
+        BtRollbackOp *pRollbackOp = sqliteMallocRaw(sizeof(BtRollbackOp));
         pRollbackOp->eOp = ROLLBACK_INSERT;
         pRollbackOp->iTab = n;
         pRollbackOp->nKey = pNode->nKey;
