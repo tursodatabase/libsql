@@ -1,5 +1,5 @@
-C Version\s2.7.5\s(CVS\s806)
-D 2002-12-28T01:26:07
+C If\scompiled\swith\sthe\s-DVDBE_PROFILE=1\soption,\sspecial\scode\sis\sinserted\sthat\nuses\sthe\spentium\sRDTSC\sinstruction\sto\scompute\svery\sprecise\sruntimes\son\sall\nVDBE\sopcodes.\s\s(This\sonly\sworks\son\si586\sprocessors,\sof\scourse.)\s\sThe\sresults\nare\swritten\sinto\sthe\svdbe_profile.out\sfile\sfor\sanalysis.\sHopefully,\sthis\nnew\sfeature\swill\sreveal\shot\sspots\sthat\scan\sbe\soptimized\sto\smake\sthe\sVDBE\srun\nfaster.\s(CVS\s807)
+D 2003-01-01T23:06:21
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,8 +52,8 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c 8f19c71e45d1a5a3ff2e9a3eef8f36296d87ea43
-F src/vdbe.c aa6165ae4f2303795e4c5531293576c541363e40
-F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
+F src/vdbe.c 0baebb3f0c624e59bf6710cd9fc15db01c7fc31e
+F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b0864cc9c89a3c2350ac46634ef3c420f97d11c0
-R c140ba28091bbfab511edfabbd2b5376
+P ee95eefe12c48f28412461125c231122e0d4277a
+R c487959d68c24b3808f56b254c4d4b49
 U drh
-Z 438f9127f8c98ed0533abf3177ee5b63
+Z 2e2dd169d3dae32e223fb4d52d6a727e

@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.187 2002/12/04 22:29:29 drh Exp $
+** $Id: vdbe.c,v 1.188 2003/01/01 23:06:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1299,7 +1299,7 @@ static char *vdbe_fgets(char *zBuf, int nBuf, FILE *in){
   return i>0 ? zBuf : 0;
 }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(VDBE_PROFILE)
 /*
 ** Print a single opcode.  This routine is used for debugging only.
 */
@@ -1337,6 +1337,22 @@ static int expandCursorArraySize(Vdbe *p, int mxCursor){
   }
   return 0;
 }
+
+#ifdef VDBE_PROFILE
+/*
+** The following routine only works on pentium-class processors.
+** It uses the RDTSC opcode to read cycle count value out of the
+** processor and returns that value.  This can be used for high-res
+** profiling.
+*/
+__inline__ unsigned long long int hwtime(void){
+  unsigned long long int x;
+  __asm__("rdtsc\n\t"
+          "mov %%edx, %%ecx\n\t"
+          :"=A" (x));
+  return x;
+}
+#endif
 
 /*
 ** Execute the program in the VDBE.
@@ -1386,6 +1402,9 @@ int sqliteVdbeExec(
   char zBuf[100];             /* Space to sprintf() an integer */
   int returnStack[100];     /* Return address stack for OP_Gosub & OP_Return */
   int returnDepth = 0;      /* Next unused element in returnStack[] */
+#ifdef VDBE_PROFILE
+  unsigned long long start;
+#endif
 
 
   /* No instruction ever pushes more than a single element onto the
@@ -1399,6 +1418,15 @@ int sqliteVdbeExec(
   zStack = p->zStack;
   aStack = p->aStack;
   p->tos = -1;
+#ifdef VDBE_PROFILE
+  {
+    int i;
+    for(i=0; i<p->nOp; i++){
+      p->aOp[i].cnt = 0;
+      p->aOp[i].cycles = 0;
+    }
+  }
+#endif
 
   /* Initialize the aggregrate hash table.
   */
@@ -1414,6 +1442,9 @@ int sqliteVdbeExec(
   if( sqlite_malloc_failed ) goto no_mem;
   for(pc=0; !sqlite_malloc_failed && rc==SQLITE_OK && pc<p->nOp
              VERIFY(&& pc>=0); pc++){
+#ifdef VDBE_PROFILE
+    start = hwtime();
+#endif
     pOp = &p->aOp[pc];
 
     /* Interrupt processing if requested.
@@ -4065,22 +4096,24 @@ case OP_Rewind: {
 case OP_Prev:
 case OP_Next: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( VERIFY( i>=0 && i<p->nCursor && ) 
+      (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
     int res;
-    if( p->aCsr[i].nullRow ){
+    if( pC->nullRow ){
       res = 1;
     }else{
       rc = pOp->opcode==OP_Next ? sqliteBtreeNext(pCrsr, &res) :
                                   sqliteBtreePrevious(pCrsr, &res);
-      p->aCsr[i].nullRow = res;
+      pC->nullRow = res;
     }
     if( res==0 ){
       pc = pOp->p2 - 1;
       sqlite_search_count++;
     }
-    p->aCsr[i].recnoIsValid = 0;
+    pC->recnoIsValid = 0;
   }
   break;
 }
@@ -5321,6 +5354,11 @@ default: {
 *****************************************************************************/
     }
 
+#ifdef VDBE_PROFILE
+    pOp->cycles += hwtime() - start;
+    pOp->cnt++;
+#endif
+
     /* The following code adds nothing to the actual functionality
     ** of the program.  It is only here for testing and debugging.
     ** On the other hand, it does burn CPU cycles every time through
@@ -5417,6 +5455,28 @@ cleanup:
   sqliteBtreeCommitCkpt(pBt);
   if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
   assert( p->tos<pc || sqlite_malloc_failed==1 );
+#ifdef VDBE_PROFILE
+  {
+    FILE *out = fopen("vdbe_profile.out", "a");
+    if( out ){
+      int i;
+      fprintf(out, "---- ");
+      for(i=0; i<p->nOp; i++){
+        fprintf(out, "%02x", p->aOp[i].opcode);
+      }
+      fprintf(out, "\n");
+      for(i=0; i<p->nOp; i++){
+        fprintf(out, "%6d %10lld %8lld ",
+           p->aOp[i].cnt,
+           p->aOp[i].cycles,
+           p->aOp[i].cnt>0 ? p->aOp[i].cycles/p->aOp[i].cnt : 0
+        );
+        vdbePrintOp(out, i, &p->aOp[i]);
+      }
+      fclose(out);
+    }
+  }
+#endif
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
