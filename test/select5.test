@@ -24,7 +24,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.2 2000/06/08 11:25:01 drh Exp $
+# $Id: select5.test,v 1.3 2000/06/08 16:26:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -58,5 +58,54 @@ do_test select5-1.2 {
 do_test select5-1.3 {
   execsql {SELECT count(*), y FROM t1 GROUP BY y ORDER BY count(*), y}
 } {1 9 1 10 2 8 4 7 8 6 15 5}
+
+# Some error messages associated with aggregates and GROUP BY
+#
+do_test select5-2.1 {
+  set v [catch {execsql {
+    SELECT y, count(*) FROM t1 GROUP BY z ORDER BY y
+  }} msg]
+  lappend v $msg
+} {1 {no such field: z}}
+do_test select5-2.2 {
+  set v [catch {execsql {
+    SELECT y, count(*) FROM t1 GROUP BY z(y) ORDER BY y
+  }} msg]
+  lappend v $msg
+} {1 {no such function: z}}
+do_test select5-2.3 {
+  set v [catch {execsql {
+    SELECT y, count(*) FROM t1 GROUP BY y HAVING count(*)<3 ORDER BY y
+  }} msg]
+  lappend v $msg
+} {0 {8 2 9 1 10 1}}
+do_test select5-2.4 {
+  set v [catch {execsql {
+    SELECT y, count(*) FROM t1 GROUP BY y HAVING z(y)<3 ORDER BY y
+  }} msg]
+  lappend v $msg
+} {1 {no such function: z}}
+do_test select5-2.5 {
+  set v [catch {execsql {
+    SELECT y, count(*) FROM t1 GROUP BY y HAVING count(*)<z ORDER BY y
+  }} msg]
+  lappend v $msg
+} {1 {no such field: z}}
+
+# Get the Agg function to rehash in vdbe.c
+#
+do_test select5-3.1 {
+  execsql {
+    SELECT x, count(*), avg(y) FROM t1 GROUP BY x HAVING x<4 ORDER BY x
+  }
+} {1 1 5 2 1 5 3 1 5}
+
+# Run the AVG() function when the count is zero.
+#
+do_test select5-4.1 {
+  execsql {
+    SELECT avg(x) FROM t1 WHERE x>100
+  }
+} {}
 
 finish_test

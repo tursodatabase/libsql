@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.1 2000/05/30 03:12:22 drh Exp $
+# $Id: update.test,v 1.2 2000/06/08 16:26:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -110,6 +110,32 @@ do_test update-3.12 {
   execsql {SELECT * FROM test1 WHERE f1=1025}
 } {1025 11}
 
+# Error messages
+#
+do_test update-4.1 {
+  set v [catch {execsql {
+    UPDATE test1 SET x=11 WHERE f1=1025
+  }} msg]
+  lappend v $msg
+} {1 {no such field: x}}
+do_test update-4.2 {
+  set v [catch {execsql {
+    UPDATE test1 SET f1=x(11) WHERE f1=1025
+  }} msg]
+  lappend v $msg
+} {1 {no such function: x}}
+do_test update-4.3 {
+  set v [catch {execsql {
+    UPDATE test1 SET f1=11 WHERE x=1025
+  }} msg]
+  lappend v $msg
+} {1 {no such field: x}}
+do_test update-4.4 {
+  set v [catch {execsql {
+    UPDATE test1 SET f1=11 WHERE x(f1)=1025
+  }} msg]
+  lappend v $msg
+} {1 {no such function: x}}
 
 
 

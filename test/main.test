@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.1 2000/06/07 15:11:27 drh Exp $
+# $Id: main.test,v 1.2 2000/06/08 16:26:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,5 +61,50 @@ do_test main-2.0 {
   set v [catch {sqlite db testdb} msg]
   lappend v $msg
 } {0 {}}
+
+# Here are some tests for tokenize.c.  
+#
+do_test main-3.1 {
+  catch {db close}
+  file delete -force testdb
+  sqlite db testdb
+  set v [catch {execsql {SELECT * from T1 where x!!5}} msg]
+  lappend v $msg
+} {1 {unrecognized token: "!!"}}
+do_test main-3.2 {
+  catch {db close}
+  file delete -force testdb
+  sqlite db testdb
+  set v [catch {execsql {SELECT * from T1 where ~x}} msg]
+  lappend v $msg
+} {1 {unrecognized token: "~"}}
+
+do_test main-3.3 {
+  catch {db close}
+  file delete -force testdb
+  sqlite db testdb
+  execsql {
+    create table T1(X REAL);
+    insert into T1 values(.5);
+    insert into T1 values(0.5e2);
+    insert into T1 values(0.5e-002);
+    insert into T1 values(5e-002);
+    insert into T1 values(-5.0e-2);
+    insert into T1 values(-5.1e-2);
+    insert into T1 values(.5e2);
+    insert into T1 values(.5E+02);
+    insert into T1 values(5E+02);
+    insert into T1 values(5.E+03);
+    select x*10 from T1 order by x*5;
+  }
+} {-0.51 -0.5 0.05 0.5 5 500 500 500 5000 50000}
+do_test main-3.4 {
+  set v [catch {execsql {create bogus}} msg]
+  lappend v $msg
+} {1 {near "bogus": syntax error}}
+do_test main-3.5 {
+  set v [catch {execsql {create}} msg]
+  lappend v $msg
+} {1 {near "create": syntax error}}
 
 finish_test

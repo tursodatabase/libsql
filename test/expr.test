@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.6 2000/06/07 15:23:56 drh Exp $
+# $Id: expr.test,v 1.7 2000/06/08 16:26:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,6 +144,7 @@ test_expr expr-5.5b {t1='ac', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.6 {t1='abxyzzyc', t2='A%C'} {t1 LIKE t2} 1
 test_expr expr-5.7 {t1='abxyzzy', t2='A%C'} {t1 LIKE t2} 0
 test_expr expr-5.8 {t1='abxyzzycx', t2='A%C'} {t1 LIKE t2} 0
+test_expr expr-5.8b {t1='abxyzzycy', t2='A%CX'} {t1 LIKE t2} 0
 test_expr expr-5.9 {t1='abc', t2='A%_C'} {t1 LIKE t2} 1
 test_expr expr-5.9b {t1='ac', t2='A%_C'} {t1 LIKE t2} 0
 test_expr expr-5.10 {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} 1
@@ -161,7 +162,20 @@ test_expr expr-6.8 {t1='abxyzzyc', t2='a*c'} {t1 GLOB t2} 1
 test_expr expr-6.9 {t1='abxyzzy', t2='a*c'} {t1 GLOB t2} 0
 test_expr expr-6.10 {t1='abxyzzycx', t2='a*c'} {t1 GLOB t2} 0
 test_expr expr-6.11 {t1='abc', t2='xyz'} {t1 NOT GLOB t2} 1
-test_expr expr-6.12 {t1='abc', t2='a?c'} {t1 NOT GLOB t2} 0
+test_expr expr-6.12 {t1='abc', t2='abc'} {t1 NOT GLOB t2} 0
+test_expr expr-6.13 {t1='abc', t2='a[bx]c'} {t1 GLOB t2} 1
+test_expr expr-6.14 {t1='abc', t2='a[cx]c'} {t1 GLOB t2} 0
+test_expr expr-6.15 {t1='abc', t2='a[a-d]c'} {t1 GLOB t2} 1
+test_expr expr-6.16 {t1='abc', t2='a[^a-d]c'} {t1 GLOB t2} 0
+test_expr expr-6.17 {t1='abc', t2='a[A-Dc]c'} {t1 GLOB t2} 0
+test_expr expr-6.18 {t1='abc', t2='a[^A-Dc]c'} {t1 GLOB t2} 1
+test_expr expr-6.19 {t1='abc', t2='a[]b]c'} {t1 GLOB t2} 1
+test_expr expr-6.20 {t1='abc', t2='a[^]b]c'} {t1 GLOB t2} 0
+test_expr expr-6.21 {t1='abcdefg', t2='a*[de]g'} {t1 GLOB t2} 0
+test_expr expr-6.22 {t1='abcdefg', t2='a*[^de]g'} {t1 GLOB t2} 1
+test_expr expr-6.23 {t1='abcdefg', t2='a*?g'} {t1 GLOB t2} 1
+test_expr expr-6.24 {t1='ac', t2='a*c'} {t1 GLOB t2} 1
+test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
 
 # The sqliteExprIfFalse and sqliteExprIfTrue routines are only
 # executed as part of a WHERE clause.  Create a table suitable
