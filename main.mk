@@ -54,13 +54,10 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-# LIBOBJ = btree.o hash.o os.o pager.o random.o \
-#         util.o tclsqlite.o utf.o
-
-
 LIBOBJ = attach.o auth.o btree.o build.o copy.o date.o delete.o \
          expr.o func.o hash.o insert.o \
-         main.o opcodes.o os.o pager.o parse.o pragma.o printf.o random.o \
+         main.o opcodes.o os_mac.o os_unix.o os_win.o \
+         pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
          vacuum.o vdbe.o vdbeaux.o where.o tclsqlite.o utf.o
 
@@ -82,7 +79,9 @@ SRC = \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
-  $(TOP)/src/os.c \
+  $(TOP)/src/os_mac.c \
+  $(TOP)/src/os_unix.c \
+  $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
@@ -109,19 +108,12 @@ SRC = \
 
 # Source code to the test files.
 #
-TESTSRC_SUBSET = \
-   $(TOP)/src/os.c \
-   $(TOP)/src/pager.c \
-   $(TOP)/src/test1.c \
-   $(TOP)/src/test2.c \
-   $(TOP)/src/test3.c \
-   $(TOP)/src/test5.c \
-   $(TOP)/src/md5.c
-
 TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/func.c \
-  $(TOP)/src/os.c \
+  $(TOP)/src/os_mac.c \
+  $(TOP)/src/os_unix.c \
+  $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
@@ -140,6 +132,9 @@ HDR = \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
+   $(TOP)/src/os_mac.h \
+   $(TOP)/src/os_unix.h \
+   $(TOP)/src/os_win.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
    parse.h
@@ -191,48 +186,19 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
+# Rules to build individual files
+#
+attach.o:	$(TOP)/src/attach.c $(HDR)
+	$(TCCX) -c $(TOP)/src/attach.c
+
+auth.o:	$(TOP)/src/auth.c $(HDR)
+	$(TCCX) -c $(TOP)/src/auth.c
+
 btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(TCCX) -c $(TOP)/src/btree.c
 
-btree_rb.o:	$(TOP)/src/btree_rb.c $(HDR)
-	$(TCCX) -c $(TOP)/src/btree_rb.c
-
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCCX) -c $(TOP)/src/build.c
-
-main.o:	$(TOP)/src/main.c $(HDR)
-	$(TCCX) -c $(TOP)/src/main.c
-
-pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
-	$(TCCX) -c $(TOP)/src/pager.c
-
-opcodes.o:	opcodes.c
-	$(TCCX) -c opcodes.c
-
-opcodes.c:	$(TOP)/src/vdbe.c
-	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
-	echo 'char *sqlite3OpcodeNames[] = { "???", ' >>opcodes.c
-	grep '^case OP_' $(TOP)/src/vdbe.c | \
-	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
-	echo '};' >>opcodes.c
-
-opcodes.h:	$(TOP)/src/vdbe.h
-	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
-	grep '^case OP_' $(TOP)/src/vdbe.c | \
-	  sed -e 's/://' | \
-	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
-
-os.o:	$(TOP)/src/os.c $(HDR)
-	$(TCCX) -c $(TOP)/src/os.c
-
-parse.o:	parse.c $(HDR)
-	$(TCCX) -c parse.c
-
-parse.h:	parse.c
-
-parse.c:	$(TOP)/src/parse.y lemon
-	cp $(TOP)/src/parse.y .
-	./lemon parse.y
 
 # The config.h file will contain a single #define that tells us how
 # many bytes are in a pointer.  This only works if a pointer is the
@@ -249,35 +215,6 @@ config.h:
 	./temp >config.h
 	echo >>config.h
 	rm -f temp.c temp
-
-sqlite.h:	$(TOP)/src/sqlite.h.in 
-	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-            -e s/--ENCODING--/$(ENCODING)/ \
-                 $(TOP)/src/sqlite.h.in >sqlite.h
-
-tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
-	$(TCCX) -c $(TOP)/src/tokenize.c
-
-trigger.o:	$(TOP)/src/trigger.c $(HDR)
-	$(TCCX) -c $(TOP)/src/trigger.c
-
-utf.o:	$(TOP)/src/utf.c $(HDR)
-	$(TCCX) -c $(TOP)/src/utf.c
-
-util.o:	$(TOP)/src/util.c $(HDR)
-	$(TCCX) -c $(TOP)/src/util.c
-
-vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
-	$(TCCX) -c $(TOP)/src/vacuum.c
-
-vdbe.o:	$(TOP)/src/vdbe.c $(VDBEHDR)
-	$(TCCX) -c $(TOP)/src/vdbe.c
-
-vdbeaux.o:	$(TOP)/src/vdbeaux.c $(VDBEHDR)
-	$(TCCX) -c $(TOP)/src/vdbeaux.c
-
-where.o:	$(TOP)/src/where.c $(HDR)
-	$(TCCX) -c $(TOP)/src/where.c
 
 copy.o:	$(TOP)/src/copy.c $(HDR)
 	$(TCCX) -c $(TOP)/src/copy.c
@@ -303,20 +240,46 @@ hash.o:	$(TOP)/src/hash.c $(HDR)
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCCX) -c $(TOP)/src/insert.c
 
-random.o:	$(TOP)/src/random.c $(HDR)
-	$(TCCX) -c $(TOP)/src/random.c
 
-select.o:	$(TOP)/src/select.c $(HDR)
-	$(TCCX) -c $(TOP)/src/select.c
+main.o:	$(TOP)/src/main.c $(HDR)
+	$(TCCX) -c $(TOP)/src/main.c
 
-table.o:	$(TOP)/src/table.c $(HDR)
-	$(TCCX) -c $(TOP)/src/table.c
+pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
+	$(TCCX) -c $(TOP)/src/pager.c
 
-update.o:	$(TOP)/src/update.c $(HDR)
-	$(TCCX) -c $(TOP)/src/update.c
+opcodes.o:	opcodes.c
+	$(TCCX) -c opcodes.c
 
-tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
+opcodes.c:	$(TOP)/src/vdbe.c
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
+	echo 'char *sqlite3OpcodeNames[] = { "???", ' >>opcodes.c
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
+	echo '};' >>opcodes.c
+
+opcodes.h:	$(TOP)/src/vdbe.h
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/://' | \
+	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
+
+os_mac.o:	$(TOP)/src/os_mac.c $(HDR)
+	$(TCCX) -c $(TOP)/src/os_mac.c
+
+os_unix.o:	$(TOP)/src/os_unix.c $(HDR)
+	$(TCCX) -c $(TOP)/src/os_unix.c
+
+os_win.o:	$(TOP)/src/os_win.c $(HDR)
+	$(TCCX) -c $(TOP)/src/os_win.c
+
+parse.o:	parse.c $(HDR)
+	$(TCCX) -c parse.c
+
+parse.h:	parse.c
+
+parse.c:	$(TOP)/src/parse.y lemon
+	cp $(TOP)/src/parse.y .
+	./lemon parse.y
 
 pragma.o:	$(TOP)/src/pragma.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/pragma.c
@@ -324,12 +287,52 @@ pragma.o:	$(TOP)/src/pragma.c $(HDR)
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/printf.c
 
-attach.o:	$(TOP)/src/attach.c $(HDR)
-	$(TCCX) -c $(TOP)/src/attach.c
+random.o:	$(TOP)/src/random.c $(HDR)
+	$(TCCX) -c $(TOP)/src/random.c
 
-auth.o:	$(TOP)/src/auth.c $(HDR)
-	$(TCCX) -c $(TOP)/src/auth.c
+select.o:	$(TOP)/src/select.c $(HDR)
+	$(TCCX) -c $(TOP)/src/select.c
 
+sqlite.h:	$(TOP)/src/sqlite.h.in 
+	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
+            -e s/--ENCODING--/$(ENCODING)/ \
+                 $(TOP)/src/sqlite.h.in >sqlite.h
+
+table.o:	$(TOP)/src/table.c $(HDR)
+	$(TCCX) -c $(TOP)/src/table.c
+
+tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
+	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
+
+tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
+	$(TCCX) -c $(TOP)/src/tokenize.c
+
+trigger.o:	$(TOP)/src/trigger.c $(HDR)
+	$(TCCX) -c $(TOP)/src/trigger.c
+
+update.o:	$(TOP)/src/update.c $(HDR)
+	$(TCCX) -c $(TOP)/src/update.c
+
+utf.o:	$(TOP)/src/utf.c $(HDR)
+	$(TCCX) -c $(TOP)/src/utf.c
+
+util.o:	$(TOP)/src/util.c $(HDR)
+	$(TCCX) -c $(TOP)/src/util.c
+
+vacuum.o:	$(TOP)/src/vacuum.c $(HDR)
+	$(TCCX) -c $(TOP)/src/vacuum.c
+
+vdbe.o:	$(TOP)/src/vdbe.c $(VDBEHDR)
+	$(TCCX) -c $(TOP)/src/vdbe.c
+
+vdbeaux.o:	$(TOP)/src/vdbeaux.c $(VDBEHDR)
+	$(TCCX) -c $(TOP)/src/vdbeaux.c
+
+where.o:	$(TOP)/src/where.c $(HDR)
+	$(TCCX) -c $(TOP)/src/where.c
+
+# Rules for building test programs and for running tests
+#
 tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
 		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBTCL)
@@ -345,11 +348,13 @@ fulltest:	testfixture$(EXE) sqlite$(EXE)
 test:	testfixture$(EXE) sqlite$(EXE)
 	./testfixture$(EXE) $(TOP)/test/quick.test
 
-index.html:	$(TOP)/www/index.tcl last_change
-	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
+# Rules used to build documentation
+#
+arch.html:	$(TOP)/www/arch.tcl
+	tclsh $(TOP)/www/arch.tcl >arch.html
 
-sqlite.html:	$(TOP)/www/sqlite.tcl
-	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
+arch.png:	$(TOP)/www/arch.png
+	cp $(TOP)/www/arch.png .
 
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
@@ -357,17 +362,32 @@ c_interface.html:	$(TOP)/www/c_interface.tcl
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
 
+conflict.html:	$(TOP)/www/conflict.tcl
+	tclsh $(TOP)/www/conflict.tcl >conflict.html
+
+datatypes.html:	$(TOP)/www/datatypes.tcl
+	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+
+download.html:	$(TOP)/www/download.tcl
+	tclsh $(TOP)/www/download.tcl >download.html
+
+faq.html:	$(TOP)/www/faq.tcl
+	tclsh $(TOP)/www/faq.tcl >faq.html
+
+fileformat.html:	$(TOP)/www/fileformat.tcl
+	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
+
+formatchng.html:	$(TOP)/www/formatchng.tcl
+	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
+
+index.html:	$(TOP)/www/index.tcl last_change
+	tclsh $(TOP)/www/index.tcl `cat $(TOP)/VERSION` >index.html
+
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
 
-vdbe.html:	$(TOP)/www/vdbe.tcl
-	tclsh $(TOP)/www/vdbe.tcl >vdbe.html
-
-arch.html:	$(TOP)/www/arch.tcl
-	tclsh $(TOP)/www/arch.tcl >arch.html
-
-arch.png:	$(TOP)/www/arch.png
-	cp $(TOP)/www/arch.png .
+omitted.html:	$(TOP)/www/omitted.tcl
+	tclsh $(TOP)/www/omitted.tcl >omitted.html
 
 opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 	tclsh $(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c >opcode.html
@@ -375,69 +395,56 @@ opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 mingw.html:	$(TOP)/www/mingw.tcl
 	tclsh $(TOP)/www/mingw.tcl >mingw.html
 
-tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
-	tclsh $(TOP)/www/tclsqlite.tcl >tclsqlite.html
-
-speed.html:	$(TOP)/www/speed.tcl
-	tclsh $(TOP)/www/speed.tcl >speed.html
-
-faq.html:	$(TOP)/www/faq.tcl
-	tclsh $(TOP)/www/faq.tcl >faq.html
-
-formatchng.html:	$(TOP)/www/formatchng.tcl
-	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
-
-conflict.html:	$(TOP)/www/conflict.tcl
-	tclsh $(TOP)/www/conflict.tcl >conflict.html
-
-download.html:	$(TOP)/www/download.tcl
-	tclsh $(TOP)/www/download.tcl >download.html
-
-omitted.html:	$(TOP)/www/omitted.tcl
-	tclsh $(TOP)/www/omitted.tcl >omitted.html
-
-datatypes.html:	$(TOP)/www/datatypes.tcl
-	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+nulls.html:	$(TOP)/www/nulls.tcl
+	tclsh $(TOP)/www/nulls.tcl >nulls.html
 
 quickstart.html:	$(TOP)/www/quickstart.tcl
 	tclsh $(TOP)/www/quickstart.tcl >quickstart.html
 
-fileformat.html:	$(TOP)/www/fileformat.tcl
-	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
+speed.html:	$(TOP)/www/speed.tcl
+	tclsh $(TOP)/www/speed.tcl >speed.html
 
-nulls.html:	$(TOP)/www/nulls.tcl
-	tclsh $(TOP)/www/nulls.tcl >nulls.html
+sqlite.html:	$(TOP)/www/sqlite.tcl
+	tclsh $(TOP)/www/sqlite.tcl >sqlite.html
+
+tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
+	tclsh $(TOP)/www/tclsqlite.tcl >tclsqlite.html
+
+vdbe.html:	$(TOP)/www/vdbe.tcl
+	tclsh $(TOP)/www/vdbe.tcl >vdbe.html
 
 
 # Files to be published on the website.
 #
 DOC = \
-  index.html \
-  sqlite.html \
-  changes.html \
-  lang.html \
-  opcode.html \
   arch.html \
   arch.png \
-  vdbe.html \
+  changes.html \
   c_interface.html \
-  mingw.html \
-  tclsqlite.html \
-  download.html \
-  speed.html \
-  faq.html \
-  formatchng.html \
   conflict.html \
-  omitted.html \
   datatypes.html \
-  quickstart.html \
+  download.html \
+  faq.html \
   fileformat.html \
-  nulls.html
+  formatchng.html \
+  index.html \
+  lang.html \
+  mingw.html \
+  nulls.html \
+  omitted.html \
+  opcode.html \
+  quickstart.html \
+  speed.html \
+  sqlite.html \
+  tclsqlite.html \
+  vdbe.html 
 
 doc:	$(DOC)
 	mkdir -p doc
 	mv $(DOC) doc
 
+# Standard install and cleanup targets
+#
 install:	sqlite libsqlite.a sqlite.h
 	mv sqlite /usr/bin
 	mv libsqlite.a /usr/lib

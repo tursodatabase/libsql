@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.184 2004/05/22 09:21:21 danielk1977 Exp $
+** $Id: main.c,v 1.185 2004/05/22 17:41:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -28,6 +28,12 @@ typedef struct {
   sqlite *db;         /* The database being initialized */
   char **pzErrMsg;    /* Error message stored here */
 } InitData;
+
+/*
+** The following constant value is used by the SQLITE3_BIGENDIAN and
+** SQLITE3_LITTLEENDIAN macros.
+*/
+const int sqlite3one = 1;
 
 /*
 ** Fill the InitData structure with an error message that indicates
@@ -1335,4 +1341,3 @@ int sqlite3_reset_new(sqlite3_stmt *pStmt){
   sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0);
   return rc;
 }
-

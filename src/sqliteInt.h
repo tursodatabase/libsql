@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.245 2004/05/22 03:05:34 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.246 2004/05/22 17:41:59 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -128,6 +128,14 @@ typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
 typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
+
+/*
+** Macros to determine whether the machine is big or little endian,
+** evaluated at runtime.
+*/
+extern const int sqlite3one;
+#define SQLITE3_BIGENDIAN    (*(char *)(&sqlite3one)==0)
+#define SQLITE3_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
 
 /*
 ** Defer sourcing vdbe.h until after the "u8" typedef is defined.

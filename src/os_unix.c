@@ -1,5 +1,5 @@
 /*
-** 2001 September 16
+** 2004 May 22
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -10,45 +10,28 @@
 **
 ******************************************************************************
 **
-** This file contains code that is specific to particular operating
-** systems.  The purpose of this file is to provide a uniform abstraction
-** on which the rest of SQLite can operate.
+** This file contains code that is specific to Unix systems.
 */
 #include "os.h"          /* Must be first to enable large file support */
+#if OS_UNIX              /* This file is used on unix only */
 #include "sqliteInt.h"
 
-#if OS_UNIX
-# include <time.h>
-# include <errno.h>
-# include <unistd.h>
-# ifndef O_LARGEFILE
-#  define O_LARGEFILE 0
-# endif
-# ifdef SQLITE_DISABLE_LFS
-#  undef O_LARGEFILE
-#  define O_LARGEFILE 0
-# endif
-# ifndef O_NOFOLLOW
-#  define O_NOFOLLOW 0
-# endif
-# ifndef O_BINARY
-#  define O_BINARY 0
-# endif
+
+#include <time.h>
+#include <errno.h>
+#include <unistd.h>
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
 #endif
-
-
-#if OS_WIN
-# include <winbase.h>
+#ifdef SQLITE_DISABLE_LFS
+# undef O_LARGEFILE
+# define O_LARGEFILE 0
 #endif
-
-#if OS_MAC
-# include <extras.h>
-# include <path2fss.h>
-# include <TextUtils.h>
-# include <FinderRegistry.h>
-# include <Folders.h>
-# include <Timer.h>
-# include <OSUtils.h>
+#ifndef O_NOFOLLOW
+# define O_NOFOLLOW 0
+#endif
+#ifndef O_BINARY
+# define O_BINARY 0
 #endif
 
 /*
@@ -67,53 +50,18 @@
 ** Posix threads and SQLITE_W32_THREADS is defined if we are
 ** synchronizing using Win32 threads.
 */
-#if OS_UNIX && defined(THREADSAFE) && THREADSAFE
+#if defined(THREADSAFE) && THREADSAFE
 # include <pthread.h>
 # define SQLITE_UNIX_THREADS 1
 #endif
-#if OS_WIN && defined(THREADSAFE) && THREADSAFE
-# define SQLITE_W32_THREADS 1
-#endif
-#if OS_MAC && defined(THREADSAFE) && THREADSAFE
-# include <Multiprocessing.h>
-# define SQLITE_MACOS_MULTITASKING 1
-#endif
+
 
 /*
-** Macros for performance tracing.  Normally turned off
+** Include code that is common to all os_*.c files
 */
-#if 0
-static int last_page = 0;
-__inline__ unsigned long long int hwtime(void){
-  unsigned long long int x;
-  __asm__("rdtsc\n\t"
-          "mov %%edx, %%ecx\n\t"
-          :"=A" (x));
-  return x;
-}
-static unsigned long long int g_start;
-static unsigned int elapse;
-#define TIMER_START       g_start=hwtime()
-#define TIMER_END         elapse=hwtime()-g_start
-#define SEEK(X)           last_page=(X)
-#define TRACE1(X)         fprintf(stderr,X)
-#define TRACE2(X,Y)       fprintf(stderr,X,Y)
-#define TRACE3(X,Y,Z)     fprintf(stderr,X,Y,Z)
-#define TRACE4(X,Y,Z,A)   fprintf(stderr,X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B) fprintf(stderr,X,Y,Z,A,B)
-#else
-#define TIMER_START
-#define TIMER_END
-#define SEEK(X)
-#define TRACE1(X)
-#define TRACE2(X,Y)
-#define TRACE3(X,Y,Z)
-#define TRACE4(X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B)
-#endif
+#include "os_common.h"
 
 
-#if OS_UNIX
 /*
 ** Here is the dirt on POSIX advisory locks:  ANSI STD 1003.1 (1996)
 ** section 6.5.2.2 lines 483 through 490 specify that when a process
@@ -354,49 +302,11 @@ int findLockInfo(
   return 0;
 }
 
-#endif  /** POSIX advisory lock work-around **/
-
-/*
-** If we compile with the SQLITE_TEST macro set, then the following block
-** of code will give us the ability to simulate a disk I/O error.  This
-** is used for testing the I/O recovery logic.
-*/
-#ifdef SQLITE_TEST
-int sqlite3_io_error_pending = 0;
-#define SimulateIOError(A)  \
-   if( sqlite3_io_error_pending ) \
-     if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); return A; }
-static void local_ioerr(){
-  sqlite3_io_error_pending = 0;  /* Really just a place to set a breakpoint */
-}
-#else
-#define SimulateIOError(A)
-#endif
-
-/*
-** When testing, keep a count of the number of open files.
-*/
-#ifdef SQLITE_TEST
-int sqlite3_open_file_count = 0;
-#define OpenCounter(X)  sqlite3_open_file_count+=(X)
-#else
-#define OpenCounter(X)
-#endif
-
-
 /*
 ** Delete the named file
 */
 int sqlite3OsDelete(const char *zFilename){
-#if OS_UNIX
   unlink(zFilename);
-#endif
-#if OS_WIN
-  DeleteFile(zFilename);
-#endif
-#if OS_MAC
-  unlink(zFilename);
-#endif
   return SQLITE_OK;
 }
 
@@ -404,42 +314,8 @@ int sqlite3OsDelete(const char *zFilename){
 ** Return TRUE if the named file exists.
 */
 int sqlite3OsFileExists(const char *zFilename){
-#if OS_UNIX
   return access(zFilename, 0)==0;
-#endif
-#if OS_WIN
-  return GetFileAttributes(zFilename) != 0xffffffff;
-#endif
-#if OS_MAC
-  return access(zFilename, 0)==0;
-#endif
 }
-
-
-#if 0 /* NOT USED */
-/*
-** Change the name of an existing file.
-*/
-int sqliteOsFileRename(const char *zOldName, const char *zNewName){
-#if OS_UNIX
-  if( link(zOldName, zNewName) ){
-    return SQLITE_ERROR;
-  }
-  unlink(zOldName);
-  return SQLITE_OK;
-#endif
-#if OS_WIN
-  if( !MoveFile(zOldName, zNewName) ){
-    return SQLITE_ERROR;
-  }
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  /**** FIX ME ***/
-  return SQLITE_ERROR;
-#endif
-}
-#endif /* NOT USED */
 
 /*
 ** Attempt to open a file for both reading and writing.  If that
@@ -459,7 +335,6 @@ int sqlite3OsOpenReadWrite(
   OsFile *id,
   int *pReadonly
 ){
-#if OS_UNIX
   int rc;
   id->dirfd = -1;
   id->fd = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
@@ -483,87 +358,6 @@ int sqlite3OsOpenReadWrite(
   TRACE3("OPEN    %-3d %s\n", id->fd, zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  HANDLE h = CreateFile(zFilename,
-     GENERIC_READ | GENERIC_WRITE,
-     FILE_SHARE_READ | FILE_SHARE_WRITE,
-     NULL,
-     OPEN_ALWAYS,
-     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
-     NULL
-  );
-  if( h==INVALID_HANDLE_VALUE ){
-    h = CreateFile(zFilename,
-       GENERIC_READ,
-       FILE_SHARE_READ,
-       NULL,
-       OPEN_ALWAYS,
-       FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
-       NULL
-    );
-    if( h==INVALID_HANDLE_VALUE ){
-      return SQLITE_CANTOPEN;
-    }
-    *pReadonly = 1;
-  }else{
-    *pReadonly = 0;
-  }
-  id->h = h;
-  id->locked = 0;
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  FSSpec fsSpec;
-# ifdef _LARGE_FILE
-  HFSUniStr255 dfName;
-  FSRef fsRef;
-  if( __path2fss(zFilename, &fsSpec) != noErr ){
-    if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
-      return SQLITE_CANTOPEN;
-  }
-  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
-    return SQLITE_CANTOPEN;
-  FSGetDataForkName(&dfName);
-  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
-                 fsRdWrShPerm, &(id->refNum)) != noErr ){
-    if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
-                   fsRdWrPerm, &(id->refNum)) != noErr ){
-      if (FSOpenFork(&fsRef, dfName.length, dfName.unicode,
-                   fsRdPerm, &(id->refNum)) != noErr )
-        return SQLITE_CANTOPEN;
-      else
-        *pReadonly = 1;
-    } else
-      *pReadonly = 0;
-  } else
-    *pReadonly = 0;
-# else
-  __path2fss(zFilename, &fsSpec);
-  if( !sqlite3OsFileExists(zFilename) ){
-    if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
-      return SQLITE_CANTOPEN;
-  }
-  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNum)) != noErr ){
-    if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrPerm, &(id->refNum)) != noErr ){
-      if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdPerm, &(id->refNum)) != noErr )
-        return SQLITE_CANTOPEN;
-      else
-        *pReadonly = 1;
-    } else
-      *pReadonly = 0;
-  } else
-    *pReadonly = 0;
-# endif
-  if( HOpenRF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNumRF)) != noErr){
-    id->refNumRF = -1;
-  }
-  id->locked = 0;
-  id->delOnClose = 0;
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
 }
 
 
@@ -582,7 +376,6 @@ int sqlite3OsOpenReadWrite(
 ** On failure, return SQLITE_CANTOPEN.
 */
 int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
-#if OS_UNIX
   int rc;
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
@@ -608,61 +401,6 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   TRACE3("OPEN-EX %-3d %s\n", id->fd, zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  HANDLE h;
-  int fileflags;
-  if( delFlag ){
-    fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS 
-                     | FILE_FLAG_DELETE_ON_CLOSE;
-  }else{
-    fileflags = FILE_FLAG_RANDOM_ACCESS;
-  }
-  h = CreateFile(zFilename,
-     GENERIC_READ | GENERIC_WRITE,
-     0,
-     NULL,
-     CREATE_ALWAYS,
-     fileflags,
-     NULL
-  );
-  if( h==INVALID_HANDLE_VALUE ){
-    return SQLITE_CANTOPEN;
-  }
-  id->h = h;
-  id->locked = 0;
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  FSSpec fsSpec;
-# ifdef _LARGE_FILE
-  HFSUniStr255 dfName;
-  FSRef fsRef;
-  __path2fss(zFilename, &fsSpec);
-  if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
-    return SQLITE_CANTOPEN;
-  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
-    return SQLITE_CANTOPEN;
-  FSGetDataForkName(&dfName);
-  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
-                 fsRdWrPerm, &(id->refNum)) != noErr )
-    return SQLITE_CANTOPEN;
-# else
-  __path2fss(zFilename, &fsSpec);
-  if( HCreate(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, 'SQLI', cDocumentFile) != noErr )
-    return SQLITE_CANTOPEN;
-  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrPerm, &(id->refNum)) != noErr )
-    return SQLITE_CANTOPEN;
-# endif
-  id->refNumRF = -1;
-  id->locked = 0;
-  id->delOnClose = delFlag;
-  if (delFlag)
-    id->pathToDel = sqlite3OsFullPathname(zFilename);
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
 }
 
 /*
@@ -673,7 +411,6 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 ** On failure, return SQLITE_CANTOPEN.
 */
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
-#if OS_UNIX
   int rc;
   id->dirfd = -1;
   id->fd = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
@@ -691,50 +428,6 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   TRACE3("OPEN-RO %-3d %s\n", id->fd, zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  HANDLE h = CreateFile(zFilename,
-     GENERIC_READ,
-     0,
-     NULL,
-     OPEN_EXISTING,
-     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,
-     NULL
-  );
-  if( h==INVALID_HANDLE_VALUE ){
-    return SQLITE_CANTOPEN;
-  }
-  id->h = h;
-  id->locked = 0;
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  FSSpec fsSpec;
-# ifdef _LARGE_FILE
-  HFSUniStr255 dfName;
-  FSRef fsRef;
-  if( __path2fss(zFilename, &fsSpec) != noErr )
-    return SQLITE_CANTOPEN;
-  if( FSpMakeFSRef(&fsSpec, &fsRef) != noErr )
-    return SQLITE_CANTOPEN;
-  FSGetDataForkName(&dfName);
-  if( FSOpenFork(&fsRef, dfName.length, dfName.unicode,
-                 fsRdPerm, &(id->refNum)) != noErr )
-    return SQLITE_CANTOPEN;
-# else
-  __path2fss(zFilename, &fsSpec);
-  if( HOpenDF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdPerm, &(id->refNum)) != noErr )
-    return SQLITE_CANTOPEN;
-# endif
-  if( HOpenRF(fsSpec.vRefNum, fsSpec.parID, fsSpec.name, fsRdWrShPerm, &(id->refNumRF)) != noErr){
-    id->refNumRF = -1;
-  }
-  id->locked = 0;
-  id->delOnClose = 0;
-  OpenCounter(+1);
-  return SQLITE_OK;
-#endif
 }
 
 /*
@@ -757,7 +450,6 @@ int sqlite3OsOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
-#if OS_UNIX
   if( id->fd<0 ){
     /* Do not open the directory if the corresponding file is not already
     ** open. */
@@ -769,7 +461,6 @@ int sqlite3OsOpenDirectory(
     return SQLITE_CANTOPEN; 
   }
   TRACE3("OPENDIR %-3d %s\n", id->dirfd, zDirname);
-#endif
   return SQLITE_OK;
 }
 
@@ -778,7 +469,6 @@ int sqlite3OsOpenDirectory(
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
 int sqlite3OsTempFileName(char *zBuf){
-#if OS_UNIX
   static const char *azDirs[] = {
      "/var/tmp",
      "/usr/tmp",
@@ -808,71 +498,6 @@ int sqlite3OsTempFileName(char *zBuf){
     }
     zBuf[j] = 0;
   }while( access(zBuf,0)==0 );
-#endif
-#if OS_WIN
-  static char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  char zTempPath[SQLITE_TEMPNAME_SIZE];
-  GetTempPath(SQLITE_TEMPNAME_SIZE-30, zTempPath);
-  for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
-  zTempPath[i] = 0;
-  for(;;){
-    sprintf(zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
-    j = strlen(zBuf);
-    sqlite3Randomness(15, &zBuf[j]);
-    for(i=0; i<15; i++, j++){
-      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-    }
-    zBuf[j] = 0;
-    if( !sqlite3OsFileExists(zBuf) ) break;
-  }
-#endif
-#if OS_MAC
-  static char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  char zTempPath[SQLITE_TEMPNAME_SIZE];
-  char zdirName[32];
-  CInfoPBRec infoRec;
-  Str31 dirName;
-  memset(&infoRec, 0, sizeof(infoRec));
-  memset(zTempPath, 0, SQLITE_TEMPNAME_SIZE);
-  if( FindFolder(kOnSystemDisk, kTemporaryFolderType,  kCreateFolder,
-       &(infoRec.dirInfo.ioVRefNum), &(infoRec.dirInfo.ioDrParID)) == noErr ){
-    infoRec.dirInfo.ioNamePtr = dirName;
-    do{
-      infoRec.dirInfo.ioFDirIndex = -1;
-      infoRec.dirInfo.ioDrDirID = infoRec.dirInfo.ioDrParID;
-      if( PBGetCatInfoSync(&infoRec) == noErr ){
-        CopyPascalStringToC(dirName, zdirName);
-        i = strlen(zdirName);
-        memmove(&(zTempPath[i+1]), zTempPath, strlen(zTempPath));
-        strcpy(zTempPath, zdirName);
-        zTempPath[i] = ':';
-      }else{
-        *zTempPath = 0;
-        break;
-      }
-    } while( infoRec.dirInfo.ioDrDirID != fsRtDirID );
-  }
-  if( *zTempPath == 0 )
-    getcwd(zTempPath, SQLITE_TEMPNAME_SIZE-24);
-  for(;;){
-    sprintf(zBuf, "%s"TEMP_FILE_PREFIX, zTempPath);
-    j = strlen(zBuf);
-    sqlite3Randomness(15, &zBuf[j]);
-    for(i=0; i<15; i++, j++){
-      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-    }
-    zBuf[j] = 0;
-    if( !sqlite3OsFileExists(zBuf) ) break;
-  }
-#endif
   return SQLITE_OK; 
 }
 
@@ -880,7 +505,6 @@ int sqlite3OsTempFileName(char *zBuf){
 ** Close a file.
 */
 int sqlite3OsClose(OsFile *id){
-#if OS_UNIX
   sqlite3OsUnlock(id);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
@@ -911,27 +535,6 @@ int sqlite3OsClose(OsFile *id){
   TRACE2("CLOSE   %-3d\n", id->fd);
   OpenCounter(-1);
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  CloseHandle(id->h);
-  OpenCounter(-1);
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  if( id->refNumRF!=-1 )
-    FSClose(id->refNumRF);
-# ifdef _LARGE_FILE
-  FSCloseFork(id->refNum);
-# else
-  FSClose(id->refNum);
-# endif
-  if( id->delOnClose ){
-    unlink(id->pathToDel);
-    sqliteFree(id->pathToDel);
-  }
-  OpenCounter(-1);
-  return SQLITE_OK;
-#endif
 }
 
 /*
@@ -940,7 +543,6 @@ int sqlite3OsClose(OsFile *id){
 ** wrong.
 */
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
-#if OS_UNIX
   int got;
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
@@ -954,36 +556,6 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   }else{
     return SQLITE_IOERR;
   }
-#endif
-#if OS_WIN
-  DWORD got;
-  SimulateIOError(SQLITE_IOERR);
-  TRACE2("READ %d\n", last_page);
-  if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
-    got = 0;
-  }
-  if( got==(DWORD)amt ){
-    return SQLITE_OK;
-  }else{
-    return SQLITE_IOERR;
-  }
-#endif
-#if OS_MAC
-  int got;
-  SimulateIOError(SQLITE_IOERR);
-  TRACE2("READ %d\n", last_page);
-# ifdef _LARGE_FILE
-  FSReadFork(id->refNum, fsAtMark, 0, (ByteCount)amt, pBuf, (ByteCount*)&got);
-# else
-  got = amt;
-  FSRead(id->refNum, &got, pBuf);
-# endif
-  if( got==amt ){
-    return SQLITE_OK;
-  }else{
-    return SQLITE_IOERR;
-  }
-#endif
 }
 
 /*
@@ -991,7 +563,6 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 ** or some other error code on failure.
 */
 int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
-#if OS_UNIX
   int wrote = 0;
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
@@ -1006,44 +577,6 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
     return SQLITE_FULL;
   }
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  int rc;
-  DWORD wrote;
-  SimulateIOError(SQLITE_IOERR);
-  TRACE2("WRITE %d\n", last_page);
-  while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
-    amt -= wrote;
-    pBuf = &((char*)pBuf)[wrote];
-  }
-  if( !rc || amt>(int)wrote ){
-    return SQLITE_FULL;
-  }
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  OSErr oserr;
-  int wrote = 0;
-  SimulateIOError(SQLITE_IOERR);
-  TRACE2("WRITE %d\n", last_page);
-  while( amt>0 ){
-# ifdef _LARGE_FILE
-    oserr = FSWriteFork(id->refNum, fsAtMark, 0,
-                        (ByteCount)amt, pBuf, (ByteCount*)&wrote);
-# else
-    wrote = amt;
-    oserr = FSWrite(id->refNum, &wrote, pBuf);
-# endif
-    if( wrote == 0 || oserr != noErr)
-      break;
-    amt -= wrote;
-    pBuf = &((char*)pBuf)[wrote];
-  }
-  if( oserr != noErr || amt>wrote ){
-    return SQLITE_FULL;
-  }
-  return SQLITE_OK;
-#endif
 }
 
 /*
@@ -1051,42 +584,8 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 */
 int sqlite3OsSeek(OsFile *id, off_t offset){
   SEEK(offset/1024 + 1);
-#if OS_UNIX
   lseek(id->fd, offset, SEEK_SET);
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  {
-    LONG upperBits = offset>>32;
-    LONG lowerBits = offset & 0xffffffff;
-    DWORD rc;
-    rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
-    /* TRACE3("SEEK rc=0x%x upper=0x%x\n", rc, upperBits); */
-  }
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-  {
-    off_t curSize;
-    if( sqlite3OsFileSize(id, &curSize) != SQLITE_OK ){
-      return SQLITE_IOERR;
-    }
-    if( offset >= curSize ){
-      if( sqlite3OsTruncate(id, offset+1) != SQLITE_OK ){
-        return SQLITE_IOERR;
-      }
-    }
-# ifdef _LARGE_FILE
-    if( FSSetForkPosition(id->refNum, fsFromStart, offset) != noErr ){
-# else
-    if( SetFPos(id->refNum, fsFromStart, offset) != noErr ){
-# endif
-      return SQLITE_IOERR;
-    }else{
-      return SQLITE_OK;
-    }
-  }
-#endif
 }
 
 /*
@@ -1101,7 +600,6 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 ** will not roll back - possibly leading to database corruption.
 */
 int sqlite3OsSync(OsFile *id){
-#if OS_UNIX
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->fd);
   if( fsync(id->fd) ){
@@ -1115,28 +613,6 @@ int sqlite3OsSync(OsFile *id){
     }
     return SQLITE_OK;
   }
-#endif
-#if OS_WIN
-  if( FlushFileBuffers(id->h) ){
-    return SQLITE_OK;
-  }else{
-    return SQLITE_IOERR;
-  }
-#endif
-#if OS_MAC
-# ifdef _LARGE_FILE
-  if( FSFlushFork(id->refNum) != noErr ){
-# else
-  ParamBlockRec params;
-  memset(&params, 0, sizeof(ParamBlockRec));
-  params.ioParam.ioRefNum = id->refNum;
-  if( PBFlushFileSync(&params) != noErr ){
-# endif
-    return SQLITE_IOERR;
-  }else{
-    return SQLITE_OK;
-  }
-#endif
 }
 
 /*
@@ -1144,35 +620,13 @@ int sqlite3OsSync(OsFile *id){
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){
   SimulateIOError(SQLITE_IOERR);
-#if OS_UNIX
   return ftruncate(id->fd, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
-#endif
-#if OS_WIN
-  {
-    LONG upperBits = nByte>>32;
-    SetFilePointer(id->h, nByte, &upperBits, FILE_BEGIN);
-    SetEndOfFile(id->h);
-  }
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-# ifdef _LARGE_FILE
-  if( FSSetForkSize(id->refNum, fsFromStart, nByte) != noErr){
-# else
-  if( SetEOF(id->refNum, nByte) != noErr ){
-# endif
-    return SQLITE_IOERR;
-  }else{
-    return SQLITE_OK;
-  }
-#endif
 }
 
 /*
 ** Determine the current size of a file in bytes
 */
 int sqlite3OsFileSize(OsFile *id, off_t *pSize){
-#if OS_UNIX
   struct stat buf;
   SimulateIOError(SQLITE_IOERR);
   if( fstat(id->fd, &buf)!=0 ){
@@ -1180,102 +634,8 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
   }
   *pSize = buf.st_size;
   return SQLITE_OK;
-#endif
-#if OS_WIN
-  DWORD upperBits, lowerBits;
-  SimulateIOError(SQLITE_IOERR);
-  lowerBits = GetFileSize(id->h, &upperBits);
-  *pSize = (((off_t)upperBits)<<32) + lowerBits;
-  return SQLITE_OK;
-#endif
-#if OS_MAC
-# ifdef _LARGE_FILE
-  if( FSGetForkSize(id->refNum, pSize) != noErr){
-# else
-  if( GetEOF(id->refNum, pSize) != noErr ){
-# endif
-    return SQLITE_IOERR;
-  }else{
-    return SQLITE_OK;
-  }
-#endif
 }
 
-#if OS_WIN
-/*
-** Return true (non-zero) if we are running under WinNT, Win2K or WinXP.
-** Return false (zero) for Win95, Win98, or WinME.
-**
-** Here is an interesting observation:  Win95, Win98, and WinME lack
-** the LockFileEx() API.  But we can still statically link against that
-** API as long as we don't call it win running Win95/98/ME.  A call to
-** this routine is used to determine if the host is Win95/98/ME or
-** WinNT/2K/XP so that we will know whether or not we can safely call
-** the LockFileEx() API.
-*/
-int isNT(void){
-  static int osType = 0;   /* 0=unknown 1=win95 2=winNT */
-  if( osType==0 ){
-    OSVERSIONINFO sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    GetVersionEx(&sInfo);
-    osType = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
-  }
-  return osType==2;
-}
-#endif
-
-/*
-** Windows file locking notes:  [similar issues apply to MacOS]
-**
-** We cannot use LockFileEx() or UnlockFileEx() on Win95/98/ME because
-** those functions are not available.  So we use only LockFile() and
-** UnlockFile().
-**
-** LockFile() prevents not just writing but also reading by other processes.
-** (This is a design error on the part of Windows, but there is nothing
-** we can do about that.)  So the region used for locking is at the
-** end of the file where it is unlikely to ever interfere with an
-** actual read attempt.
-**
-** A database read lock is obtained by locking a single randomly-chosen 
-** byte out of a specific range of bytes. The lock byte is obtained at 
-** random so two separate readers can probably access the file at the 
-** same time, unless they are unlucky and choose the same lock byte.
-** A database write lock is obtained by locking all bytes in the range.
-** There can only be one writer.
-**
-** A lock is obtained on the first byte of the lock range before acquiring
-** either a read lock or a write lock.  This prevents two processes from
-** attempting to get a lock at a same time.  The semantics of 
-** sqlite3OsReadLock() require that if there is already a write lock, that
-** lock is converted into a read lock atomically.  The lock on the first
-** byte allows us to drop the old write lock and get the read lock without
-** another process jumping into the middle and messing us up.  The same
-** argument applies to sqlite3OsWriteLock().
-**
-** On WinNT/2K/XP systems, LockFileEx() and UnlockFileEx() are available,
-** which means we can use reader/writer locks.  When reader writer locks
-** are used, the lock is placed on the same range of bytes that is used
-** for probabilistic locking in Win95/98/ME.  Hence, the locking scheme
-** will support two or more Win95 readers or two or more WinNT readers.
-** But a single Win95 reader will lock out all WinNT readers and a single
-** WinNT reader will lock out all other Win95 readers.
-**
-** Note: On MacOS we use the resource fork for locking.
-**
-** The following #defines specify the range of bytes used for locking.
-** N_LOCKBYTE is the number of bytes available for doing the locking.
-** The first byte used to hold the lock while the lock is changing does
-** not count toward this number.  FIRST_LOCKBYTE is the address of
-** the first byte in the range of bytes used for locking.
-*/
-#define N_LOCKBYTE       10239
-#if OS_MAC
-# define FIRST_LOCKBYTE   (0x000fffff - N_LOCKBYTE)
-#else
-# define FIRST_LOCKBYTE   (0xffffffff - N_LOCKBYTE)
-#endif
 
 /*
 ** Change the status of the lock on the file "id" to be a readlock.
@@ -1287,7 +647,6 @@ int isNT(void){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsReadLock(OsFile *id){
-#if OS_UNIX
   int rc;
   sqlite3OsEnterMutex();
   if( id->pLock->cnt>0 ){
@@ -1319,83 +678,6 @@ int sqlite3OsReadLock(OsFile *id){
   }
   sqlite3OsLeaveMutex();
   return rc;
-#endif
-#if OS_WIN
-  int rc;
-  if( id->locked>0 ){
-    rc = SQLITE_OK;
-  }else{
-    int lk;
-    int res;
-    int cnt = 100;
-    sqlite3Randomness(sizeof(lk), &lk);
-    lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
-    while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
-      Sleep(1);
-    }
-    if( res ){
-      UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-      if( isNT() ){
-        OVERLAPPED ovlp;
-        ovlp.Offset = FIRST_LOCKBYTE+1;
-        ovlp.OffsetHigh = 0;
-        ovlp.hEvent = 0;
-        res = LockFileEx(id->h, LOCKFILE_FAIL_IMMEDIATELY, 
-                          0, N_LOCKBYTE, 0, &ovlp);
-      }else{
-        res = LockFile(id->h, FIRST_LOCKBYTE+lk, 0, 1, 0);
-      }
-      UnlockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0);
-    }
-    if( res ){
-      id->locked = lk;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_BUSY;
-    }
-  }
-  return rc;
-#endif
-#if OS_MAC
-  int rc;
-  if( id->locked>0 || id->refNumRF == -1 ){
-    rc = SQLITE_OK;
-  }else{
-    int lk;
-    OSErr res;
-    int cnt = 5;
-    ParamBlockRec params;
-    sqlite3Randomness(sizeof(lk), &lk);
-    lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
-    memset(&params, 0, sizeof(params));
-    params.ioParam.ioRefNum = id->refNumRF;
-    params.ioParam.ioPosMode = fsFromStart;
-    params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
-    params.ioParam.ioReqCount = 1;
-    while( cnt-->0 && (res = PBLockRangeSync(&params))!=noErr ){
-      UInt32 finalTicks;
-      Delay(1, &finalTicks); /* 1/60 sec */
-    }
-    if( res == noErr ){
-      params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
-      params.ioParam.ioReqCount = N_LOCKBYTE;
-      PBUnlockRangeSync(&params);
-      params.ioParam.ioPosOffset = FIRST_LOCKBYTE+lk;
-      params.ioParam.ioReqCount = 1;
-      res = PBLockRangeSync(&params);
-      params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
-      params.ioParam.ioReqCount = 1;
-      PBUnlockRangeSync(&params);
-    }
-    if( res == noErr ){
-      id->locked = lk;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_BUSY;
-    }
-  }
-  return rc;
-#endif
 }
 
 /*
@@ -1405,7 +687,6 @@ int sqlite3OsReadLock(OsFile *id){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsWriteLock(OsFile *id){
-#if OS_UNIX
   int rc;
   sqlite3OsEnterMutex();
   if( id->pLock->cnt==0 || (id->pLock->cnt==1 && id->locked==1) ){
@@ -1430,82 +711,6 @@ int sqlite3OsWriteLock(OsFile *id){
   }
   sqlite3OsLeaveMutex();
   return rc;
-#endif
-#if OS_WIN
-  int rc;
-  if( id->locked<0 ){
-    rc = SQLITE_OK;
-  }else{
-    int res;
-    int cnt = 100;
-    while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
-      Sleep(1);
-    }
-    if( res ){
-      if( id->locked>0 ){
-        if( isNT() ){
-          UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-        }else{
-          res = UnlockFile(id->h, FIRST_LOCKBYTE + id->locked, 0, 1, 0);
-        }
-      }
-      if( res ){
-        res = LockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-      }else{
-        res = 0;
-      }
-      UnlockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0);
-    }
-    if( res ){
-      id->locked = -1;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_BUSY;
-    }
-  }
-  return rc;
-#endif
-#if OS_MAC
-  int rc;
-  if( id->locked<0 || id->refNumRF == -1 ){
-    rc = SQLITE_OK;
-  }else{
-    OSErr res;
-    int cnt = 5;
-    ParamBlockRec params;
-    memset(&params, 0, sizeof(params));
-    params.ioParam.ioRefNum = id->refNumRF;
-    params.ioParam.ioPosMode = fsFromStart;
-    params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
-    params.ioParam.ioReqCount = 1;
-    while( cnt-->0 && (res = PBLockRangeSync(&params))!=noErr ){
-      UInt32 finalTicks;
-      Delay(1, &finalTicks); /* 1/60 sec */
-    }
-    if( res == noErr ){
-      params.ioParam.ioPosOffset = FIRST_LOCKBYTE + id->locked;
-      params.ioParam.ioReqCount = 1;
-      if( id->locked==0 
-            || PBUnlockRangeSync(&params)==noErr ){
-        params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
-        params.ioParam.ioReqCount = N_LOCKBYTE;
-        res = PBLockRangeSync(&params);
-      }else{
-        res = afpRangeNotLocked;
-      }
-      params.ioParam.ioPosOffset = FIRST_LOCKBYTE;
-      params.ioParam.ioReqCount = 1;
-      PBUnlockRangeSync(&params);
-    }
-    if( res == noErr ){
-      id->locked = -1;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_BUSY;
-    }
-  }
-  return rc;
-#endif
 }
 
 /*
@@ -1515,7 +720,6 @@ int sqlite3OsWriteLock(OsFile *id){
 ** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqlite3OsUnlock(OsFile *id){
-#if OS_UNIX
   int rc;
   if( !id->locked ) return SQLITE_OK;
   sqlite3OsEnterMutex();
@@ -1558,45 +762,6 @@ int sqlite3OsUnlock(OsFile *id){
   sqlite3OsLeaveMutex();
   id->locked = 0;
   return rc;
-#endif
-#if OS_WIN
-  int rc;
-  if( id->locked==0 ){
-    rc = SQLITE_OK;
-  }else if( isNT() || id->locked<0 ){
-    UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }else{
-    UnlockFile(id->h, FIRST_LOCKBYTE+id->locked, 0, 1, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }
-  return rc;
-#endif
-#if OS_MAC
-  int rc;
-  ParamBlockRec params;
-  memset(&params, 0, sizeof(params));
-  params.ioParam.ioRefNum = id->refNumRF;
-  params.ioParam.ioPosMode = fsFromStart;
-  if( id->locked==0 || id->refNumRF == -1 ){
-    rc = SQLITE_OK;
-  }else if( id->locked<0 ){
-    params.ioParam.ioPosOffset = FIRST_LOCKBYTE+1;
-    params.ioParam.ioReqCount = N_LOCKBYTE;
-    PBUnlockRangeSync(&params);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }else{
-    params.ioParam.ioPosOffset = FIRST_LOCKBYTE+id->locked;
-    params.ioParam.ioReqCount = 1;
-    PBUnlockRangeSync(&params);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }
-  return rc;
-#endif
 }
 
 /*
@@ -1618,23 +783,12 @@ int sqlite3OsRandomSeed(char *zBuf){
   ** tests repeatable.
   */
   memset(zBuf, 0, 256);
-#if OS_UNIX && !defined(SQLITE_TEST)
+#if !defined(SQLITE_TEST)
   {
     int pid;
     time((time_t*)zBuf);
     pid = getpid();
     memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
-  }
-#endif
-#if OS_WIN && !defined(SQLITE_TEST)
-  GetSystemTime((LPSYSTEMTIME)zBuf);
-#endif
-#if OS_MAC
-  {
-    int pid;
-    Microseconds((UnsignedWide*)zBuf);
-    pid = getpid();
-    memcpy(&zBuf[sizeof(UnsignedWide)], &pid, sizeof(pid));
   }
 #endif
   return SQLITE_OK;
@@ -1644,7 +798,6 @@ int sqlite3OsRandomSeed(char *zBuf){
 ** Sleep for a little while.  Return the amount of time slept.
 */
 int sqlite3OsSleep(int ms){
-#if OS_UNIX
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
   usleep(ms*1000);
   return ms;
@@ -1652,32 +805,13 @@ int sqlite3OsSleep(int ms){
   sleep((ms+999)/1000);
   return 1000*((ms+999)/1000);
 #endif
-#endif
-#if OS_WIN
-  Sleep(ms);
-  return ms;
-#endif
-#if OS_MAC
-  UInt32 finalTicks;
-  UInt32 ticks = (((UInt32)ms+16)*3)/50;  /* 1/60 sec per tick */
-  Delay(ticks, &finalTicks);
-  return (int)((ticks*50)/3);
-#endif
 }
 
 /*
 ** Static variables used for thread synchronization
 */
 static int inMutex = 0;
-#ifdef SQLITE_UNIX_THREADS
-  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-#ifdef SQLITE_W32_THREADS
-  static CRITICAL_SECTION cs;
-#endif
-#ifdef SQLITE_MACOS_MULTITASKING
-  static MPCriticalRegionID criticalRegion;
-#endif
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 ** The following pair of routine implement mutual exclusion for
@@ -1691,32 +825,6 @@ void sqlite3OsEnterMutex(){
 #ifdef SQLITE_UNIX_THREADS
   pthread_mutex_lock(&mutex);
 #endif
-#ifdef SQLITE_W32_THREADS
-  static int isInit = 0;
-  while( !isInit ){
-    static long lock = 0;
-    if( InterlockedIncrement(&lock)==1 ){
-      InitializeCriticalSection(&cs);
-      isInit = 1;
-    }else{
-      Sleep(1);
-    }
-  }
-  EnterCriticalSection(&cs);
-#endif
-#ifdef SQLITE_MACOS_MULTITASKING
-  static volatile int notInit = 1;
-  if( notInit ){
-    if( notInit == 2 ) /* as close as you can get to thread safe init */
-      MPYield();
-    else{
-      notInit = 2;
-      MPCreateCriticalRegion(&criticalRegion);
-      notInit = 0;
-    }
-  }
-  MPEnterCriticalRegion(criticalRegion, kDurationForever);
-#endif
   assert( !inMutex );
   inMutex = 1;
 }
@@ -1725,12 +833,6 @@ void sqlite3OsLeaveMutex(){
   inMutex = 0;
 #ifdef SQLITE_UNIX_THREADS
   pthread_mutex_unlock(&mutex);
-#endif
-#ifdef SQLITE_W32_THREADS
-  LeaveCriticalSection(&cs);
-#endif
-#ifdef SQLITE_MACOS_MULTITASKING
-  MPExitCriticalRegion(criticalRegion);
 #endif
 }
 
@@ -1741,7 +843,6 @@ void sqlite3OsLeaveMutex(){
 ** is no longer needed.
 */
 char *sqlite3OsFullPathname(const char *zRelative){
-#if OS_UNIX
   char *zFull = 0;
   if( zRelative[0]=='/' ){
     sqlite3SetString(&zFull, zRelative, (char*)0);
@@ -1751,33 +852,6 @@ char *sqlite3OsFullPathname(const char *zRelative){
                     (char*)0);
   }
   return zFull;
-#endif
-#if OS_WIN
-  char *zNotUsed;
-  char *zFull;
-  int nByte;
-  nByte = GetFullPathName(zRelative, 0, 0, &zNotUsed) + 1;
-  zFull = sqliteMalloc( nByte );
-  if( zFull==0 ) return 0;
-  GetFullPathName(zRelative, nByte, zFull, &zNotUsed);
-  return zFull;
-#endif
-#if OS_MAC
-  char *zFull = 0;
-  if( zRelative[0]==':' ){
-    char zBuf[_MAX_PATH+1];
-    sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), &(zRelative[1]),
-                    (char*)0);
-  }else{
-    if( strchr(zRelative, ':') ){
-      sqlite3SetString(&zFull, zRelative, (char*)0);
-    }else{
-    char zBuf[_MAX_PATH+1];
-      sqlite3SetString(&zFull, getcwd(zBuf, sizeof(zBuf)), zRelative, (char*)0);
-    }
-  }
-  return zFull;
-#endif
 }
 
 /*
@@ -1794,21 +868,9 @@ int sqlite3_current_time = 0;
 ** return 0.  Return 1 if the time and date cannot be found.
 */
 int sqlite3OsCurrentTime(double *prNow){
-#if OS_UNIX
   time_t t;
   time(&t);
   *prNow = t/86400.0 + 2440587.5;
-#endif
-#if OS_WIN
-  FILETIME ft;
-  /* FILETIME structure is a 64-bit value representing the number of 
-     100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
-  */
-  double now;
-  GetSystemTimeAsFileTime( &ft );
-  now = ((double)ft.dwHighDateTime) * 4294967296.0; 
-  *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
-#endif
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
     *prNow = sqlite3_current_time/86400.0 + 2440587.5;
@@ -1817,5 +879,4 @@ int sqlite3OsCurrentTime(double *prNow){
   return 0;
 }
 
-
-
+#endif /* OS_UNIX */

@@ -18,47 +18,6 @@
 #define _SQLITE_OS_H_
 
 /*
-** Helpful hint:  To get this to compile on HP/UX, add -D_INCLUDE_POSIX_SOURCE
-** to the compiler command line.
-*/
-
-/*
-** These #defines should enable >2GB file support on Posix if the
-** underlying operating system supports it.  If the OS lacks
-** large file support, or if the OS is windows, these should be no-ops.
-**
-** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
-** on the compiler command line.  This is necessary if you are compiling
-** on a recent machine (ex: RedHat 7.2) but you want your code to work
-** on an older machine (ex: RedHat 6.0).  If you compile on RedHat 7.2
-** without this option, LFS is enable.  But LFS does not exist in the kernel
-** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
-** portability you should omit LFS.
-**
-** Similar is true for MacOS.  LFS is only supported on MacOS 9 and later.
-*/
-#ifndef SQLITE_DISABLE_LFS
-# define _LARGE_FILE       1
-# ifndef _FILE_OFFSET_BITS
-#   define _FILE_OFFSET_BITS 64
-# endif
-# define _LARGEFILE_SOURCE 1
-#endif
-
-/*
-** Temporary files are named starting with this prefix followed by 16 random
-** alphanumeric characters, and no file extension. They are stored in the
-** OS's standard temporary file directory, and are deleted prior to exit.
-** If sqlite is being embedded in another program, you may wish to change the
-** prefix to reflect your program's name, so that if your program exits
-** prematurely, old temporary files can be easily identified. This can be done
-** using -DTEMP_FILE_PREFIX=myprefix_ on the compiler command line.
-*/
-#ifndef TEMP_FILE_PREFIX
-# define TEMP_FILE_PREFIX "sqlite_"
-#endif
-
-/*
 ** Figure out if we are dealing with Unix, Windows or MacOS.
 **
 ** N.B. MacOS means Mac Classic (or Carbon). Treat Darwin (OS X) as Unix.
@@ -96,78 +55,31 @@
 #endif
 
 /*
-** A handle for an open file is stored in an OsFile object.
+** Invoke the appropriate operating-system specific header file.
 */
 #if OS_UNIX
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <fcntl.h>
-# include <unistd.h>
-  typedef struct OsFile OsFile;
-  struct OsFile {
-    struct openCnt *pOpen;    /* Info about all open fd's on this inode */
-    struct lockInfo *pLock;   /* Info about locks on this inode */
-    int fd;                   /* The file descriptor */
-    int locked;               /* True if this instance holds the lock */
-    int dirfd;                /* File descriptor for the directory */
-  };
-# define SQLITE_TEMPNAME_SIZE 200
-# if defined(HAVE_USLEEP) && HAVE_USLEEP
-#  define SQLITE_MIN_SLEEP_MS 1
-# else
-#  define SQLITE_MIN_SLEEP_MS 1000
-# endif
+# include "os_unix.h"
 #endif
-
 #if OS_WIN
-#include <windows.h>
-#include <winbase.h>
-  typedef struct OsFile OsFile;
-  struct OsFile {
-    HANDLE h;               /* Handle for accessing the file */
-    int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
-  };
-# if defined(_MSC_VER) || defined(__BORLANDC__)
-    typedef __int64 off_t;
-# else
-#  if !defined(_CYGWIN_TYPES_H)
-     typedef long long off_t;
-#    if defined(__MINGW32__)
-#      define	_OFF_T_
-#    endif
-#  endif
-# endif
-# define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
-# define SQLITE_MIN_SLEEP_MS 1
+# include "os_win.h"
 #endif
-
 #if OS_MAC
-# include <unistd.h>
-# include <Files.h>
-  typedef struct OsFile OsFile;
-  struct OsFile {
-    SInt16 refNum;           /* Data fork/file reference number */
-    SInt16 refNumRF;         /* Resource fork reference number (for locking) */
-    int locked;              /* 0: unlocked, <0: write lock, >0: read lock */
-    int delOnClose;          /* True if file is to be deleted on close */
-    char *pathToDel;         /* Name of file to delete on close */
-  };
-# ifdef _LARGE_FILE
-    typedef SInt64 off_t;
-# else
-    typedef SInt32 off_t;
-# endif
-# define SQLITE_TEMPNAME_SIZE _MAX_PATH
-# define SQLITE_MIN_SLEEP_MS 17
+# include "os_mac.h"
 #endif
 
 /*
-** Macros to determine whether the machine is big or little endian,
-** evaluated at runtime.
+** Temporary files are named starting with this prefix followed by 16 random
+** alphanumeric characters, and no file extension. They are stored in the
+** OS's standard temporary file directory, and are deleted prior to exit.
+** If sqlite is being embedded in another program, you may wish to change the
+** prefix to reflect your program's name, so that if your program exits
+** prematurely, old temporary files can be easily identified. This can be done
+** using -DTEMP_FILE_PREFIX=myprefix_ on the compiler command line.
 */
-static const int sqlite3_one = 1;
-#define SQLITE3_BIGENDIAN (*(char *)(&sqlite3_one)==0)
-#define SQLITE3_LITTLEENDIAN (*(char *)(&sqlite3_one)==1)
+#ifndef TEMP_FILE_PREFIX
+# define TEMP_FILE_PREFIX "sqlite_"
+#endif
+
 
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
@@ -194,9 +106,4 @@ void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 char *sqlite3OsFullPathname(const char*);
 
-
-
 #endif /* _SQLITE_OS_H_ */
-
-
-

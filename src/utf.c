@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.7 2004/05/22 03:05:34 danielk1977 Exp $
+** $Id: utf.c,v 1.8 2004/05/22 17:41:59 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -49,11 +49,8 @@
 ** replacement character U+FFFD for each pair of bytes that cannot be
 ** interpeted as part of a valid unicode character.
 */
-
 #include <assert.h>
-#include <unistd.h>
 #include "sqliteInt.h"
-#include "os.h"
 
 typedef struct UtfString UtfString;
 struct UtfString {
@@ -590,5 +587,3 @@ int sqlite3utfTranslate(
   }
   return SQLITE_OK;
 }
- 
-
