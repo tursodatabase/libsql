@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.6 2001/09/28 23:11:24 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.7 2001/11/01 14:41:34 drh Exp $}
 
 puts {<html>
 <head>
@@ -117,22 +117,18 @@ Each memory location can hold an arbitrary string.  The memory
 cells are typically used to hold the result of a scalar SELECT
 that is part of a larger expression.</p>
 
-<p>The virtual machine contains an arbitrary number of sorters.
-Each sorter is able to accumulate records, sort those records,
-then play the records back in sorted order.  Sorters are used
-to implement the ORDER BY clause of a SELECT statement.  The
-fact that the virtual machine allows multiple sorters is an
-historical accident.  In practice no more than one sorter
-(sorter number 0) ever gets used.</p>
+<p>The virtual machine contains a single sorter.
+The sorter is able to accumulate records, sort those records,
+then play the records back in sorted order.  The sorter is used
+to implement the ORDER BY clause of a SELECT statement.</p>
 
-<p>The virtual machine may contain an arbitrary number of "Lists".
-Each list stores a list of integers.  Lists are used to hold the
+<p>The virtual machine contains a single "Lists".
+The list stores a list of integers.  Lists are used to hold the
 rowids for records of a database table that needs to be modified.
 The WHERE clause of an UPDATE or DELETE statement scans through
 the table and writes the rowid of every record to be modified
-into a list.  Then the list is played back and the table is modified
-in a separate step.  It is necessary to do this in two steps since
-making a change to a database table can alter the scan order.</p>
+into the list.  Then the list is played back and the table is modified
+in a separate step.</p>
 
 <p>The virtual machine can contain an arbitrary number of "Sets".
 Each set holds an arbitrary number of strings.  Sets are used to

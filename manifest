@@ -1,8 +1,8 @@
-C Comment\schanges\sonly.\s(CVS\s296)
-D 2001-11-01T13:52:53
+C Remove\scruft:\srestrict\sthe\snumber\sof\ssorters\sand\slists\sin\sthe\sVDBE\sto\sone\nsince\sno\smore\sthan\sone\swas\sever\sused\sanyway.\s\sThis\seliminates\sseveral\nop-codes\sand\ssimplifies\sthe\simplementation\sof\sseveral\sothers.\s(CVS\s297)
+D 2001-11-01T14:41:34
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
-F README 93d2977cc5c6595c448de16bdefc312b9d401533
+F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 46489bc13fe8b494327fecb3c9a05f4db2e284b3
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
@@ -17,12 +17,12 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh badcd69b8e3a8bc69b162c4c9d7c209b2a0b119e
+F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c f5b3bf49c98a90754097e8f0a946931d9cc857ef
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
 F src/build.c 8857c16751a5e9c5ee845e1b3cf2da78935c8cb3
-F src/delete.c 6fe2191c49c4a31336e2fac11b3ad665ddcd4246
+F src/delete.c a4c13c444544f315703d5fbed6419c8786f66581
 F src/expr.c 2dd0252ced345c1e64db015b94dc6b5d7a57eef3
 F src/hash.c d0110e6da70a5962e21575fccf8206f7d9d75e00
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
@@ -36,7 +36,7 @@ F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 148e4cd134d3cbd816dcb0df50e49e498faa6ba4
 F src/printf.c 167fbfb192b4dce48154398f22dbc614e9f5d088
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c d14511afacf788bf4a0c517011c2c53038539388
+F src/select.c c34b02eafaa69fde6b4428df7861c3417b3079f9
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f2c40c869ff40ad3e60d8a3b1f72777fa28b32fc
@@ -47,10 +47,10 @@ F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
 F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 8f4c2b5e7fb471ba194979fb4dd5f947402fd792
-F src/update.c c916182c6bfbc8a6f20c24920c4560fece6c9569
+F src/update.c 4eeb154a2da8a934d180e2d9e4211ac0a7a4ce8b
 F src/util.c aa4d2de60cb2445239b71c79c3a8c0b7c0d3336a
-F src/vdbe.c 4b0df66646648a7f60037926015ec2c181536f53
-F src/vdbe.h f8407fd6b644bc001b1e7c65460c9962f6a15f6b
+F src/vdbe.c 9e4fd512dd3e66d37f5b53ae88138fda4f9aa227
+F src/vdbe.h 4a587ec56943d34698edf507ad5a746e87cb8cf4
 F src/where.c 22fe910c7c8e2736eb37e9861343e90c0b513c86
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test a35f2de9948b24e427fb292c35947795efe182d0
@@ -102,19 +102,19 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 995d934eb54762d766923241a5a2e6023a0f3c6e
+F www/changes.tcl 37ca708eb350dc41fcf3ea0ae8ecc705c0c218bf
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl 7c7df8d73c751897b643018fd21317269f10e023
+F www/index.tcl b9d166d09fa4237d31d78be49f2b8b205e6e7678
 F www/lang.tcl 1899ec4fb77cd69de335ebd998253de869f34d8e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
-F www/opcode.tcl 4365ad9798872491dbd7d3071510ebe461785ac3
+F www/opcode.tcl 7989ed328316454c7030dcdb60f09ae1e017286d
 F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P f65df59e554c281ad1efa830f13f87488eb16845
-R 50f675a2d3f94fcb2f093eaf90b1247b
+P b2cb118fb7c6713684d32a48a7ba8ffffe596687
+R 11be61d659c8d3b7f97b8d20e188eb7e
 U drh
-Z 77ddce4c95e7ba412288de1a3a02ea29
+Z 1756e792427d370fb3a08a33a148f36d

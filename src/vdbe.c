@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.90 2001/11/01 13:52:54 drh Exp $
+** $Id: vdbe.c,v 1.91 2001/11/01 14:41:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -187,10 +187,8 @@ struct Vdbe {
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   int nCursor;        /* Number of slots in aCsr[] */
   Cursor *aCsr;       /* On element of this array for each open cursor */
-  int nList;          /* Number of slots in apList[] */
-  Keylist **apList;   /* For each Keylist */
-  int nSort;          /* Number of slots in apSort[] */
-  Sorter **apSort;    /* An open sorter list */
+  Keylist *pList;     /* A list of ROWIDs */
+  Sorter *pSort;      /* A linked list of objects to be sorted */
   FILE *pFile;        /* At most one open file handler */
   int nField;         /* Number of file fields */
   char **azField;     /* Data for each file field */
@@ -719,6 +717,19 @@ static void closeAllCursors(Vdbe *p){
 }
 
 /*
+** Remove any elements that remain on the sorter for the VDBE given.
+*/
+static void SorterReset(Vdbe *p){
+  while( p->pSort ){
+    Sorter *pSorter = p->pSort;
+    p->pSort = pSorter->pNext;
+    sqliteFree(pSorter->zKey);
+    sqliteFree(pSorter->pData);
+    sqliteFree(pSorter);
+  }
+}
+
+/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, lists, and/or
@@ -738,25 +749,11 @@ static void Cleanup(Vdbe *p){
   sqliteFree(p->aMem);
   p->aMem = 0;
   p->nMem = 0;
-  for(i=0; i<p->nList; i++){
-    KeylistFree(p->apList[i]);
-    p->apList[i] = 0;
+  if( p->pList ){
+    KeylistFree(p->pList);
+    p->pList = 0;
   }
-  sqliteFree(p->apList);
-  p->apList = 0;
-  p->nList = 0;
-  for(i=0; i<p->nSort; i++){
-    Sorter *pSorter;
-    while( (pSorter = p->apSort[i])!=0 ){
-      p->apSort[i] = pSorter->pNext;
-      sqliteFree(pSorter->zKey);
-      sqliteFree(pSorter->pData);
-      sqliteFree(pSorter);
-    }
-  }
-  sqliteFree(p->apSort);
-  p->apSort = 0;
-  p->nSort = 0;
+  SorterReset(p);
   if( p->pFile ){
     if( p->pFile!=stdin ) fclose(p->pFile);
     p->pFile = 0;
@@ -822,26 +819,25 @@ static char *zOpName[] = { 0,
   "Rewind",            "Next",              "Destroy",           "Clear",
   "CreateIndex",       "CreateTable",       "Reorganize",        "BeginIdx",
   "NextIdx",           "PutIdx",            "DeleteIdx",         "MemLoad",
-  "MemStore",          "ListOpen",          "ListWrite",         "ListRewind",
-  "ListRead",          "ListClose",         "SortOpen",          "SortPut",
-  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
-  "SortKey",           "SortCallback",      "SortClose",         "FileOpen",
-  "FileRead",          "FileColumn",        "FileClose",         "AggReset",
-  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
-  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
-  "SetClear",          "MakeRecord",        "MakeKey",           "MakeIdxKey",
-  "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "NullCallback",      "Integer",
-  "String",            "Null",              "Pop",               "Dup",
-  "Pull",              "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Precision",         "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",          
+  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
+  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortCallback",      "SortReset",
+  "FileOpen",          "FileRead",          "FileColumn",        "FileClose",
+  "AggReset",          "AggFocus",          "AggIncr",           "AggNext",
+  "AggSet",            "AggGet",            "SetInsert",         "SetFound",
+  "SetNotFound",       "SetClear",          "MakeRecord",        "MakeKey",
+  "MakeIdxKey",        "Goto",              "If",                "Halt",
+  "ColumnCount",       "ColumnName",        "Callback",          "NullCallback",
+  "Integer",           "String",            "Null",              "Pop",
+  "Dup",               "Pull",              "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Remainder",
+  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
+  "ShiftRight",        "AbsValue",          "Precision",         "Min",
+  "Max",               "Like",              "Glob",              "Eq",
+  "Ne",                "Lt",                "Le",                "Gt",
+  "Ge",                "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Strlen",            "Substr",          
 };
 
 /*
@@ -3085,50 +3081,23 @@ case OP_Reorganize: {
   break;
 }
 
-/* Opcode: ListOpen P1 * *
-**
-** Open a "List" structure used for temporary storage of integer 
-** record numbers.  P1 will server as a handle to this list for future
-** interactions.  If another list with the P1 handle is
-** already opened, the prior list is closed and a new one opened
-** in its place.
-*/
-case OP_ListOpen: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i>=p->nList ){
-    int j;
-    Keylist **apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
-    if( apList==0 ){ goto no_mem; }
-    p->apList = apList;
-    for(j=p->nList; j<=i; j++) p->apList[j] = 0;
-    p->nList = i+1;
-  }else if( p->apList[i] ){
-    KeylistFree(p->apList[i]);
-    p->apList[i] = 0;
-  }
-  break;
-}
-
-/* Opcode: ListWrite P1 * *
+/* Opcode: ListWrite * * *
 **
 ** Write the integer on the top of the stack
-** into the temporary storage list P1.
+** into the temporary storage list.
 */
 case OP_ListWrite: {
-  int i = pOp->p1;
   Keylist *pKeylist;
-  VERIFY( if( i<0 || i>=p->nList ) goto bad_instruction; )
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  pKeylist = p->apList[i];
+  pKeylist = p->pList;
   if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
     pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(pKeylist->aKey[0]) );
     if( pKeylist==0 ) goto no_mem;
     pKeylist->nKey = 1000;
     pKeylist->nRead = 0;
     pKeylist->nUsed = 0;
-    pKeylist->pNext = p->apList[i];
-    p->apList[i] = pKeylist;
+    pKeylist->pNext = p->pList;
+    p->pList = pKeylist;
   }
   Integerify(p, p->tos);
   pKeylist->aKey[pKeylist->nUsed++] = aStack[p->tos].i;
@@ -3136,28 +3105,24 @@ case OP_ListWrite: {
   break;
 }
 
-/* Opcode: ListRewind P1 * *
+/* Opcode: ListRewind * * *
 **
-** Rewind the temporary buffer P1 back to the beginning.
+** Rewind the temporary buffer back to the beginning.
 */
 case OP_ListRewind: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
   /* This is now a no-op */
   break;
 }
 
-/* Opcode: ListRead P1 P2 *
+/* Opcode: ListRead * P2 *
 **
-** Attempt to read an integer from temporary storage buffer P1
+** Attempt to read an integer from the temporary storage buffer
 ** and push it onto the stack.  If the storage buffer is empty, 
 ** push nothing but instead jump to P2.
 */
 case OP_ListRead: {
-  int i = pOp->p1;
   Keylist *pKeylist;
-  VERIFY(if( i<0 || i>=p->nList ) goto bad_instruction;)
-  pKeylist = p->apList[i];
+  pKeylist = p->pList;
   if( pKeylist!=0 ){
     VERIFY(
       if( pKeylist->nRead<0 
@@ -3170,7 +3135,7 @@ case OP_ListRead: {
     aStack[p->tos].flags = STK_Int;
     zStack[p->tos] = 0;
     if( pKeylist->nRead>=pKeylist->nUsed ){
-      p->apList[i] = pKeylist->pNext;
+      p->pList = pKeylist->pNext;
       sqliteFree(pKeylist);
     }
   }else{
@@ -3179,54 +3144,33 @@ case OP_ListRead: {
   break;
 }
 
-/* Opcode: ListClose P1 * *
+/* Opcode: ListReset * * *
 **
-** Close the temporary storage buffer and discard its contents.
+** Reset the temporary storage buffer so that it holds nothing.
 */
-case OP_ListClose: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  VERIFY( if( i>=p->nList ) goto bad_instruction; )
-  KeylistFree(p->apList[i]);
-  p->apList[i] = 0;
-  break;
-}
-
-/* Opcode: SortOpen P1 * *
-**
-** Create a new sorter with index P1
-*/
-case OP_SortOpen: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i>=p->nSort ){
-    int j;
-    Sorter **apSort = sqliteRealloc( p->apSort, (i+1)*sizeof(Sorter*) );
-    if( apSort==0 ){ goto no_mem; }
-    p->apSort = apSort;
-    for(j=p->nSort; j<=i; j++) p->apSort[j] = 0;
-    p->nSort = i+1;
+case OP_ListReset: {
+  if( p->pList ){
+    KeylistFree(p->pList);
+    p->pList = 0;
   }
   break;
 }
 
-/* Opcode: SortPut P1 * *
+/* Opcode: SortPut * * *
 **
 ** The TOS is the key and the NOS is the data.  Pop both from the stack
 ** and put them on the sorter.
 */
 case OP_SortPut: {
-  int i = pOp->p1;
   int tos = p->tos;
   int nos = tos - 1;
   Sorter *pSorter;
-  VERIFY( if( i<0 || i>=p->nSort ) goto bad_instruction; )
   VERIFY( if( tos<1 ) goto not_enough_stack; )
   if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
   pSorter = sqliteMalloc( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
-  pSorter->pNext = p->apSort[i];
-  p->apSort[i] = pSorter;
+  pSorter->pNext = p->pSort;
+  p->pSort = pSorter;
   pSorter->nKey = aStack[tos].n;
   pSorter->zKey = zStack[tos];
   pSorter->nData = aStack[nos].n;
@@ -3283,7 +3227,7 @@ case OP_SortMakeRec: {
   break;
 }
 
-/* Opcode: SortMakeKey P1 * P3
+/* Opcode: SortMakeKey * * P3
 **
 ** Convert the top few entries of the stack into a sort key.  The
 ** number of stack entries consumed is the number of characters in 
@@ -3330,59 +3274,54 @@ case OP_SortMakeKey: {
   break;
 }
 
-/* Opcode: Sort P1 * *
+/* Opcode: Sort * * *
 **
-** Sort all elements on the given sorter.  The algorithm is a
+** Sort all elements on the sorter.  The algorithm is a
 ** mergesort.
 */
 case OP_Sort: {
-  int j;
-  j = pOp->p1;
-  VERIFY( if( j<0 ) goto bad_instruction; )
-  if( j<p->nSort ){
-    int i;
-    Sorter *pElem;
-    Sorter *apSorter[NSORT];
-    for(i=0; i<NSORT; i++){
-      apSorter[i] = 0;
-    }
-    while( p->apSort[j] ){
-      pElem = p->apSort[j];
-      p->apSort[j] = pElem->pNext;
-      pElem->pNext = 0;
-      for(i=0; i<NSORT-1; i++){
-        if( apSorter[i]==0 ){
-          apSorter[i] = pElem;
-          break;
-        }else{
-          pElem = Merge(apSorter[i], pElem);
-          apSorter[i] = 0;
-        }
-      }
-      if( i>=NSORT-1 ){
-        apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem);
-      }
-    }
-    pElem = 0;
-    for(i=0; i<NSORT; i++){
-      pElem = Merge(apSorter[i], pElem);
-    }
-    p->apSort[j] = pElem;
+  int i;
+  Sorter *pElem;
+  Sorter *apSorter[NSORT];
+  for(i=0; i<NSORT; i++){
+    apSorter[i] = 0;
   }
+  while( p->pSort ){
+    pElem = p->pSort;
+    p->pSort = pElem->pNext;
+    pElem->pNext = 0;
+    for(i=0; i<NSORT-1; i++){
+    if( apSorter[i]==0 ){
+        apSorter[i] = pElem;
+        break;
+      }else{
+        pElem = Merge(apSorter[i], pElem);
+        apSorter[i] = 0;
+      }
+    }
+    if( i>=NSORT-1 ){
+      apSorter[NSORT-1] = Merge(apSorter[NSORT-1],pElem);
+    }
+  }
+  pElem = 0;
+  for(i=0; i<NSORT; i++){
+    pElem = Merge(apSorter[i], pElem);
+  }
+  p->pSort = pElem;
   break;
 }
 
-/* Opcode: SortNext P1 P2 *
+/* Opcode: SortNext * P2 *
 **
-** Push the data for the topmost element in the given sorter onto the
-** stack, then remove the element from the sorter.
+** Push the data for the topmost element in the sorter onto the
+** stack, then remove the element from the sorter.  If the sorter
+** is empty, push nothing on the stack and instead jump immediately 
+** to instruction P2.
 */
 case OP_SortNext: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  if( VERIFY( i<p->nSort && ) p->apSort[i]!=0 ){
-    Sorter *pSorter = p->apSort[i];
-    p->apSort[i] = pSorter->pNext;
+  Sorter *pSorter = p->pSort;
+  if( pSorter!=0 ){
+    p->pSort = pSorter->pNext;
     p->tos++;
     VERIFY( NeedStack(p, p->tos); )
     zStack[p->tos] = pSorter->pData;
@@ -3396,28 +3335,7 @@ case OP_SortNext: {
   break;
 }
 
-#if 0 /* NOT USED */
-/* Opcode: SortKey P1 * *
-**
-** Push the key for the topmost element of the sorter onto the stack.
-** But don't change the sorter an any other way.
-*/
-case OP_SortKey: {
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i<p->nSort && p->apSort[i]!=0 ){
-    Sorter *pSorter = p->apSort[i];
-    p->tos++;
-    VERIFY( NeedStack(p, p->tos); )
-    sqliteSetString(&zStack[p->tos], pSorter->zKey, 0);
-    aStack[p->tos].n = pSorter->nKey;
-    aStack[p->tos].flags = STK_Str|STK_Dyn;
-  }
-  break;
-}
-#endif /* NOT USED */
-
-/* Opcode: SortCallback P1 P2 *
+/* Opcode: SortCallback * P2 *
 **
 ** The top of the stack contains a callback record built using
 ** the SortMakeRec operation with the same P1 value as this
@@ -3438,22 +3356,12 @@ case OP_SortCallback: {
   break;
 }
 
-/* Opcode: SortClose P1 * *
+/* Opcode: SortReset * * *
 **
-** Close the given sorter and remove all its elements.
+** Remove any elements that remain on the sorter.
 */
-case OP_SortClose: {
-  Sorter *pSorter;
-  int i = pOp->p1;
-  VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i<p->nSort ){
-     while( (pSorter = p->apSort[i])!=0 ){
-       p->apSort[i] = pSorter->pNext;
-       sqliteFree(pSorter->zKey);
-       sqliteFree(pSorter->pData);
-       sqliteFree(pSorter);
-     }
-  }
+case OP_SortReset: {
+  SorterReset(p);
   break;
 }
 

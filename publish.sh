@@ -90,7 +90,8 @@ zip sqlite.zip sqlite.exe
 ORIGIN=`pwd`
 cd $srcdir
 cd ..
-tar czf $ORIGIN/sqlite.tar.gz sqlite
+EXCLUDE=`find sqlite -print | grep CVS | sed 's,sqlite/, --exclude sqlite/,'`
+tar czf $ORIGIN/sqlite.tar.gz $EXCLUDE sqlite
 cd $ORIGIN
 vers=`cat $srcdir/VERSION`
 rm -f sqlite-$vers.tar.gz

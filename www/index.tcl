@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.45 2001/10/31 15:44:47 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.46 2001/11/01 14:41:34 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -16,7 +16,7 @@ puts {</p>}
 
 puts {<h2>Introduction</h2>
 
-<p>SQLite is a C library that implements an SQL database engine.
+<p>SQLite is a C library that implements an embeddable SQL database engine.
 Programs that link with the SQLite library can have SQL database
 access without running a separate RDBMS process.
 The distribution comes with a standalone command-line
@@ -64,8 +64,10 @@ puts {<h2>Current Status</h2>
 <p>A <a href="changes.html">change history</a> is available online.
 The latest source code is
 <a href="download.html">available for download</a>.
-There are currently no <em>known</em> memory leaks or debilitating bugs
+There are currently no known memory leaks or bugs
 in the library.
+SQLite is currently being used in several mission-critical
+applications.
 </p>
 
 <p>
@@ -158,32 +160,6 @@ $ make test                  <i> Optional: run regression tests </i>
 </pre></blockquote>
 }
 
-puts {<h2>Command-line Usage Example</h2>
-
-<p>Download the source archive and compile the <b>sqlite</b>
-program as described above.  Then type:</p>
-
-<blockquote><pre>
-bash$ sqlite ~/newdb              <i>Directory ~/newdb created automatically</i>
-sqlite> create table t1(
-   ...>    a int,
-   ...>    b varchar(20)
-   ...>    c text
-   ...> );                        <i>End each SQL statement with a ';'</i>
-sqlite> insert into t1
-   ...> values(1,'hi','y''all');
-sqlite> select * from t1;
-1|hello|world
-sqlite> .mode columns             <i>Special commands begin with '.'</i>
-sqlite> .header on                <i>Type ".help" for a list of commands</i>
-sqlite> select * from t1;
-a      b       c
------- ------- -------
-1      hi      y'all
-sqlite> .exit
-base$
-</pre></blockquote>
-}
 puts {<h2>Related Sites</h2>
 
 <ul>

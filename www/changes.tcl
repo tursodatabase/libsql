@@ -19,6 +19,10 @@ proc chng {date desc} {
 
 chng {2001 Oct ?? (2.0.8)} {
 <li>Documentation updates</li>
+<li>Simplify the design of the VDBE by restricting the number of sorters
+    and lists to 1.
+    In practice, no more than one sorter and one list was every used anyhow.
+    </li>
 }
 
 chng {2001 Oct 21 (2.0.7)} {
