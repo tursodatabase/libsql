@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.149 2002/11/20 11:55:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.150 2002/12/04 20:01:06 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -614,6 +614,7 @@ struct WhereLevel {
   int iLeftJoin;       /* Memory cell used to implement LEFT OUTER JOIN */
   int top;             /* First instruction of interior of the loop */
   int inOp, inP1, inP2;/* Opcode used to implement an IN operator */
+  int bRev;            /* Do the scan in the reverse direction */
 };
 
 /*

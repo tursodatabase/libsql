@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.185 2002/12/02 04:25:21 drh Exp $
+** $Id: vdbe.c,v 1.186 2002/12/04 20:01:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3354,8 +3354,19 @@ case OP_Close: {
 ** If there are no records greater than the key and P2 is not zero,
 ** then an immediate jump to P2 is made.
 **
-** See also: Found, NotFound, Distinct
+** See also: Found, NotFound, Distinct, MoveLt
 */
+/* Opcode: MoveLt P1 P2 *
+**
+** Pop the top of the stack and use its value as a key.  Reposition
+** cursor P1 so that it points to the entry with the largest key that is
+** less than the key popped from the stack.
+** If there are no records less than than the key and P2
+** is not zero then an immediate jump to P2 is made.
+**
+** See also: MoveTo
+*/
+case OP_MoveLt:
 case OP_MoveTo: {
   int i = pOp->p1;
   int tos = p->tos;
@@ -3363,7 +3374,7 @@ case OP_MoveTo: {
 
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( i>=0 && i<p->nCursor && (pC = &p->aCsr[i])->pCursor!=0 ){
-    int res;
+    int res, oc;
     if( aStack[tos].flags & STK_Int ){
       int iKey = intToKey(aStack[tos].i);
       sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
@@ -3376,8 +3387,15 @@ case OP_MoveTo: {
     }
     pC->nullRow = 0;
     sqlite_search_count++;
-    if( res<0 ){
+    oc = pOp->opcode;
+    if( oc==OP_MoveTo && res<0 ){
       sqliteBtreeNext(pC->pCursor, &res);
+      pC->recnoIsValid = 0;
+      if( res && pOp->p2>0 ){
+        pc = pOp->p2 - 1;
+      }
+    }else if( oc==OP_MoveLt && res>=0 ){
+      sqliteBtreePrevious(pC->pCursor, &res);
       pC->recnoIsValid = 0;
       if( res && pOp->p2>0 ){
         pc = pOp->p2 - 1;
@@ -4026,7 +4044,17 @@ case OP_Rewind: {
 ** table or index.  If there are no more key/value pairs then fall through
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
+**
+** See also: Prev
 */
+/* Opcode: Prev P1 P2 *
+**
+** Back up cursor P1 so that it points to the previous key/data pair in its
+** table or index.  If there is no previous key/value pairs then fall through
+** to the following instruction.  But if the cursor backup was successful,
+** jump immediately to P2.
+*/
+case OP_Prev:
 case OP_Next: {
   int i = pOp->p1;
   BtCursor *pCrsr;
@@ -4036,7 +4064,8 @@ case OP_Next: {
     if( p->aCsr[i].nullRow ){
       res = 1;
     }else{
-      rc = sqliteBtreeNext(pCrsr, &res);
+      rc = pOp->opcode==OP_Next ? sqliteBtreeNext(pCrsr, &res) :
+                                  sqliteBtreePrevious(pCrsr, &res);
       p->aCsr[i].nullRow = res;
     }
     if( res==0 ){
@@ -4164,6 +4193,15 @@ case OP_IdxRecno: {
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
 */
+/* Opcode: IdxLT P1 P2 *
+**
+** Compare the top of the stack against the key on the index entry that
+** cursor P1 is currently pointing to.  Ignore the last 4 bytes of the
+** index entry.  If the index entry is less than the top of the stack
+** then jump to P2.  Otherwise fall through to the next instruction.
+** In either case, the stack is popped once.
+*/
+case OP_IdxLT:
 case OP_IdxGT:
 case OP_IdxGE: {
   int i= pOp->p1;
@@ -4178,7 +4216,9 @@ case OP_IdxGE: {
     if( rc!=SQLITE_OK ){
       break;
     }
-    if( pOp->opcode==OP_IdxGE ){
+    if( pOp->opcode==OP_IdxLT ){
+      res = -res;
+    }else if( pOp->opcode==OP_IdxGE ){
       res++;
     }
     if( res>0 ){

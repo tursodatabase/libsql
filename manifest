@@ -1,5 +1,5 @@
-C Add\sthe\ssqliteBtreePrevious()\sroutine\sto\sthe\sBTree\smodule\sAPI.\s\sThis\sis\nin\santicipation\sof\simplementing\sreverse\sorder\ssearching\sof\sa\stable.\s(CVS\s794)
-D 2002-12-04T13:40:26
+C Scan\sthe\stable\sbackwards\sif\sthere\sis\san\sORDER\sBY\s...\sDESC\sclause\sthat\scan\nbe\ssatisfied\sby\san\sindex.\s(CVS\s795)
+D 2002-12-04T20:01:06
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -41,7 +41,7 @@ F src/select.c cc8640e5d4e3ec1a8de58fde6b2fdd6f846b7263
 F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
-F src/sqliteInt.h 74198ccddb3443514f0218de1f5a6668c3dbbe59
+F src/sqliteInt.h 4eb6290304c9225752ca9cc4fdda5bc480d14176
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
@@ -52,9 +52,9 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c 2c2472a93d0708920384c05d6099b637ab2229ce
+F src/vdbe.c 84b224d0ecfb2555a976f074924dd3e6d3d91dfb
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
-F src/where.c 1de1a326235bb7f9ef7d3d58c08c0ac73dcd3acf
+F src/where.c d48077fb86c1d06390f974d348ace081c824dd32
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
 F test/bigfile.test 38d1071817caceb636c613e3546082b90e749a49
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 33c6fd6b3dc271fa1f2d4500b4f76c736accefce
-R 95b809b99d60048286e99535c505d1d3
+P 0ad1d93879bee0d34b122591c025192a51b8490f
+R fb6076c646238a5812fd1b3f4dc5ed25
 U drh
-Z 472fffa55f48afcc8bd95b1b6e83536c
+Z 76431d0a75d4131ab7844f1098b48161
