@@ -38,8 +38,9 @@
 typedef struct OsFile OsFile;
 struct OsFile {
   HANDLE h;               /* Handle for accessing the file */
-  int locktype;           /* Type of lock currently held on this file */
-  int sharedLockByte;     /* Randomly chosen byte used as a shared lock */
+  unsigned char locktype; /* Type of lock currently held on this file */
+  unsigned char isOpen;   /* True if needs to be closed */
+  short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
 };
 
 

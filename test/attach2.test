@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.20 2004/06/19 09:08:16 danielk1977 Exp $
+# $Id: attach2.test,v 1.21 2004/06/21 18:14:47 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -366,9 +366,3 @@ do_test attach2-6.4 {
 db close
 
 finish_test
-
-
-
-
-
-

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.229 2004/06/21 10:45:07 danielk1977 Exp $
+** $Id: build.c,v 1.230 2004/06/21 18:14:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -991,45 +991,25 @@ static void callCollNeeded(sqlite *db, const char *zName, int nName){
 ** possible.
 */
 static int synthCollSeq(Parse *pParse, CollSeq *pColl){
-  CollSeq *pColl2 = 0;
+  CollSeq *pColl2;
   char *z = pColl->zName;
   int n = strlen(z);
-  switch( pParse->db->enc ){
-    case SQLITE_UTF16LE:
-      pColl2 = sqlite3FindCollSeq(pParse->db, SQLITE_UTF16BE, z, n, 0);
-      assert( pColl2 );
-      if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db, SQLITE_UTF8, z, n, 0);
-      assert( pColl2 );
-      break;
-
-    case SQLITE_UTF16BE:
-      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16LE, z, n, 0);
-      assert( pColl2 );
-      if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF8, z, n, 0);
-      assert( pColl2 );
-      break;
-
-    case SQLITE_UTF8:
-      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16BE, z, n, 0);
-      assert( pColl2 );
-      if( pColl2->xCmp ) break;
-      pColl2 = sqlite3FindCollSeq(pParse->db,SQLITE_UTF16LE, z, n, 0);
-      assert( pColl2 );
-      break;
-  }
-  if( pColl2->xCmp ){
-    memcpy(pColl, pColl2, sizeof(CollSeq));
-  }else{
-    if( pParse->nErr==0 ){
-      sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", 
-          -1, z, n, 0);
+  sqlite *db = pParse->db;
+  int i;
+  static const u8 aEnc[] = { SQLITE_UTF16BE, SQLITE_UTF16LE, SQLITE_UTF8 };
+  for(i=0; i<3; i++){
+    pColl2 = sqlite3FindCollSeq(db, aEnc[i], z, n, 0);
+    if( pColl2->xCmp!=0 ){
+      memcpy(pColl, pColl2, sizeof(CollSeq));
+      return SQLITE_OK;
     }
-    pParse->nErr++;
-    return SQLITE_ERROR;
   }
-  return SQLITE_OK;
+  if( pParse->nErr==0 ){
+    sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", 
+        -1, z, n, 0);
+  }
+  pParse->nErr++;
+  return SQLITE_ERROR;
 }
 
 /*
@@ -1056,6 +1036,11 @@ int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
   return SQLITE_OK;
 }
 
+/*
+** Call sqlite3CheckCollSeq() for all collating sequences in an index,
+** in order to verify that all the necessary collating sequences are
+** loaded.
+*/
 int sqlite3CheckIndexCollSeq(Parse *pParse, Index *pIdx){
   if( pIdx ){
     int i;
@@ -1124,7 +1109,7 @@ char sqlite3AffinityType(const char *zType, int nType){
   int n, i;
   struct {
     const char *zSub;  /* Keywords substring to search for */
-    int nSub;          /* length of zSub */
+    char nSub;         /* length of zSub */
     char affinity;     /* Affinity to return if it matches */
   } substrings[] = {
     {"INT",  3, SQLITE_AFF_INTEGER},
@@ -1294,12 +1279,6 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   if( p==0 ) return;
 
   assert( !db->init.busy || !pSelect );
-
-  /* If the table is generated from a SELECT, then construct the
-  ** list of columns and the text of the table.
-  */
-  if( pSelect ){
-  }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.

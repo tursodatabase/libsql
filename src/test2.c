@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.22 2004/06/15 11:40:09 danielk1977 Exp $
+** $Id: test2.c,v 1.23 2004/06/21 18:14:47 drh Exp $
 */
 #include "os.h"
 #include "sqliteInt.h"
@@ -499,6 +499,7 @@ static int fake_big_file(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+  memset(&fd, 0, sizeof(fd));
   rc = sqlite3OsOpenReadWrite(argv[2], &fd, &readOnly);
   if( rc ){
     Tcl_AppendResult(interp, "open failed: ", errorName(rc), 0);

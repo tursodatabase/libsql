@@ -1036,6 +1036,7 @@ static int vdbeCommit(sqlite *db){
 
     /* Open the master journal. */
     assert( strlen(zMaster)<db->nMaster );
+    memset(&master, 0, sizeof(master));
     rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){
       sqliteFree(zMaster);
@@ -1789,6 +1790,3 @@ void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
 void sqlite3VdbeCountChanges(Vdbe *p){
   p->changeCntOn = 1;
 }
-
-
-

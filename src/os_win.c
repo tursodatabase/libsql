@@ -64,7 +64,9 @@ int sqlite3OsOpenReadWrite(
   OsFile *id,
   int *pReadonly
 ){
-  HANDLE h = CreateFile(zFilename,
+  HANDLE h;
+  assert( !id->isOpen );
+  h = CreateFile(zFilename,
      GENERIC_READ | GENERIC_WRITE,
      FILE_SHARE_READ | FILE_SHARE_WRITE,
      NULL,
@@ -91,6 +93,7 @@ int sqlite3OsOpenReadWrite(
   id->h = h;
   id->locktype = NO_LOCK;
   id->sharedLockByte = 0;
+  id->isOpen = 1;
   OpenCounter(+1);
   TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -114,6 +117,7 @@ int sqlite3OsOpenReadWrite(
 int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   HANDLE h;
   int fileflags;
+  assert( !id->isOpen );
   if( delFlag ){
     fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS 
                      | FILE_FLAG_DELETE_ON_CLOSE;
@@ -134,6 +138,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   id->h = h;
   id->locktype = NO_LOCK;
   id->sharedLockByte = 0;
+  id->isOpen = 1;
   OpenCounter(+1);
   TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -147,7 +152,9 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 ** On failure, return SQLITE_CANTOPEN.
 */
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
-  HANDLE h = CreateFile(zFilename,
+  HANDLE h;
+  assert( !id->isOpen );
+  h = CreateFile(zFilename,
      GENERIC_READ,
      0,
      NULL,
@@ -161,6 +168,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   id->h = h;
   id->locktype = NO_LOCK;
   id->sharedLockByte = 0;
+  id->isOpen = 1;
   OpenCounter(+1);
   TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
@@ -221,9 +229,12 @@ int sqlite3OsTempFileName(char *zBuf){
 ** Close a file.
 */
 int sqlite3OsClose(OsFile *id){
-  TRACE2("CLOSE %d\n", id->h);
-  CloseHandle(id->h);
-  OpenCounter(-1);
+  if( id->isOpen ){
+    TRACE2("CLOSE %d\n", id->h);
+    CloseHandle(id->h);
+    OpenCounter(-1);
+    id->isOpen = 0;
+  }
   return SQLITE_OK;
 }
 
@@ -234,6 +245,7 @@ int sqlite3OsClose(OsFile *id){
 */
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE3("READ %d lock=%d\n", id->h, id->locktype);
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
@@ -253,6 +265,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int rc;
   DWORD wrote;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE3("WRITE %d lock=%d\n", id->h, id->locktype);
   while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
@@ -272,6 +285,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
   LONG upperBits = offset>>32;
   LONG lowerBits = offset & 0xffffffff;
   DWORD rc;
+  assert( id->isOpen );
   SEEK(offset/1024 + 1);
   rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
   TRACE3("SEEK %d %lld\n", id->h, offset);
@@ -282,6 +296,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 ** Make sure all writes to a particular file are committed to disk.
 */
 int sqlite3OsSync(OsFile *id){
+  assert( id->isOpen );
   TRACE3("SYNC %d lock=%d\n", id->h, id->locktype);
   if( FlushFileBuffers(id->h) ){
     return SQLITE_OK;
@@ -304,6 +319,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){
   LONG upperBits = nByte>>32;
+  assert( id->isOpen );
   TRACE3("TRUNCATE %d %lld\n", id->h, nByte);
   SimulateIOError(SQLITE_IOERR);
   SetFilePointer(id->h, nByte, &upperBits, FILE_BEGIN);
@@ -316,6 +332,7 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 */
 int sqlite3OsFileSize(OsFile *id, off_t *pSize){
   DWORD upperBits, lowerBits;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   lowerBits = GetFileSize(id->h, &upperBits);
   *pSize = (((off_t)upperBits)<<32) + lowerBits;
@@ -408,6 +425,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   int newLocktype;       /* Set id->locktype to this value before exiting */
   int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
 
+  assert( id->isOpen );
   TRACE5("LOCK %d %d was %d(%d)\n",
           id->h, locktype, id->locktype, id->sharedLockByte);
 
@@ -520,6 +538,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
 */
 int sqlite3OsCheckReservedLock(OsFile *id){
   int rc;
+  assert( id->isOpen );
   if( id->locktype>=RESERVED_LOCK ){
     rc = 1;
     TRACE3("TEST WR-LOCK %d %d (local)\n", id->h, rc);
@@ -545,6 +564,7 @@ int sqlite3OsCheckReservedLock(OsFile *id){
 */
 int sqlite3OsUnlock(OsFile *id, int locktype){
   int rc, type;
+  assert( id->isOpen );
   assert( locktype<=SHARED_LOCK );
   TRACE5("UNLOCK %d to %d was %d(%d)\n", id->h, locktype,
           id->locktype, id->sharedLockByte);

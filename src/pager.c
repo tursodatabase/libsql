@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.132 2004/06/18 23:21:47 dougcurrie Exp $
+** @(#) $Id: pager.c,v 1.133 2004/06/21 18:14:47 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -613,6 +613,7 @@ static int pager_delmaster(const char *zMaster){
   /* Open the master journal file exclusively in case some other process
   ** is running this routine also. Not that it makes too much difference.
   */
+  memset(&master, 0, sizeof(master));
   rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   master_open = 1;
@@ -652,6 +653,7 @@ static int pager_delmaster(const char *zMaster){
         int nMaster;
         off_t jsz;
 
+        memset(&journal, 0, sizeof(journal));
         rc = sqlite3OsOpenReadOnly(zJournal, &journal);
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&journal);
@@ -1095,14 +1097,14 @@ int sqlite3pager_open(
   char zTemp[SQLITE_TEMPNAME_SIZE];
 
   *ppPager = 0;
+  memset(&fd, 0, sizeof(fd));
   if( sqlite3_malloc_failed ){
     return SQLITE_NOMEM;
   }
   if( zFilename && zFilename[0] ){
     if( strcmp(zFilename,":memory:")==0 ){
       memDb = 1;
-      zFullPathname = sqliteMalloc(4);
-      if( zFullPathname ) strcpy(zFullPathname, "");
+      zFullPathname = sqliteStrDup("");
       rc = SQLITE_OK;
     }else{
       zFullPathname = sqlite3OsFullPathname(zFilename);
@@ -1122,15 +1124,15 @@ int sqlite3pager_open(
     return SQLITE_NOMEM;
   }
   if( rc!=SQLITE_OK ){
-    if( tempFile ) sqlite3OsClose(&fd);
-    if( zFullPathname ) sqliteFree(zFullPathname);
+    sqlite3OsClose(&fd);
+    sqliteFree(zFullPathname);
     return rc;
   }
   nameLen = strlen(zFullPathname);
   pPager = sqliteMalloc( sizeof(*pPager) + nameLen*3 + 30 );
   if( pPager==0 ){
-    if( tempFile ) sqlite3OsClose(&fd);
-    if( zFullPathname ) sqliteFree(zFullPathname);
+    sqlite3OsClose(&fd);
+    sqliteFree(zFullPathname);
     return SQLITE_NOMEM;
   }
   SET_PAGER(pPager);
@@ -1371,9 +1373,7 @@ int sqlite3pager_close(Pager *pPager){
     pNext = pPg->pNextAll;
     sqliteFree(pPg);
   }
-  if( !pPager->memDb ){
-    sqlite3OsClose(&pPager->fd);
-  }
+  sqlite3OsClose(&pPager->fd);
   assert( pPager->journalOpen==0 );
   /* Temp files are automatically deleted by the OS
   ** if( pPager->tempFile ){

@@ -341,6 +341,7 @@ int sqlite3OsOpenReadWrite(
   int *pReadonly
 ){
   int rc;
+  assert( !id->isOpen );
   id->dirfd = -1;
   id->h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
   if( id->h<0 ){
@@ -360,6 +361,7 @@ int sqlite3OsOpenReadWrite(
     return SQLITE_NOMEM;
   }
   id->locktype = 0;
+  id->isOpen = 1;
   TRACE3("OPEN    %-3d %s\n", id->h, zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
@@ -382,6 +384,7 @@ int sqlite3OsOpenReadWrite(
 */
 int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   int rc;
+  assert( !id->isOpen );
   if( access(zFilename, 0)==0 ){
     return SQLITE_CANTOPEN;
   }
@@ -400,6 +403,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
     return SQLITE_NOMEM;
   }
   id->locktype = 0;
+  id->isOpen = 1;
   if( delFlag ){
     unlink(zFilename);
   }
@@ -417,6 +421,7 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
 */
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   int rc;
+  assert( !id->isOpen );
   id->dirfd = -1;
   id->h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
   if( id->h<0 ){
@@ -430,6 +435,7 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
     return SQLITE_NOMEM;
   }
   id->locktype = 0;
+  id->isOpen = 1;
   TRACE3("OPEN-RO %-3d %s\n", id->h, zFilename);
   OpenCounter(+1);
   return SQLITE_OK;
@@ -455,7 +461,7 @@ int sqlite3OsOpenDirectory(
   const char *zDirname,
   OsFile *id
 ){
-  if( id->h<0 ){
+  if( !id->isOpen ){
     /* Do not open the directory if the corresponding file is not already
     ** open. */
     return SQLITE_CANTOPEN;
@@ -510,6 +516,7 @@ int sqlite3OsTempFileName(char *zBuf){
 ** Close a file.
 */
 int sqlite3OsClose(OsFile *id){
+  if( !id->isOpen ) return SQLITE_OK;
   sqlite3OsUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
@@ -537,6 +544,7 @@ int sqlite3OsClose(OsFile *id){
   releaseLockInfo(id->pLock);
   releaseOpenCnt(id->pOpen);
   sqlite3OsLeaveMutex();
+  id->isOpen = 0;
   TRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -549,6 +557,7 @@ int sqlite3OsClose(OsFile *id){
 */
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   int got;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
   got = read(id->h, pBuf, amt);
@@ -569,6 +578,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
 */
 int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TIMER_START;
   while( amt>0 && (wrote = write(id->h, pBuf, amt))>0 ){
@@ -588,6 +598,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 ** Move the read/write pointer in a file.
 */
 int sqlite3OsSeek(OsFile *id, off_t offset){
+  assert( id->isOpen );
   SEEK(offset/1024 + 1);
   lseek(id->h, offset, SEEK_SET);
   return SQLITE_OK;
@@ -605,6 +616,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 ** will not roll back - possibly leading to database corruption.
 */
 int sqlite3OsSync(OsFile *id){
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
   if( fsync(id->h) ){
@@ -641,6 +653,7 @@ int sqlite3OsSyncDirectory(const char *zDirname){
 ** Truncate an open file to a specified size
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   return ftruncate(id->h, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
 }
@@ -650,6 +663,7 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 */
 int sqlite3OsFileSize(OsFile *id, off_t *pSize){
   struct stat buf;
+  assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   if( fstat(id->h, &buf)!=0 ){
     return SQLITE_IOERR;
@@ -667,6 +681,7 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 int sqlite3OsCheckReservedLock(OsFile *id){
   int r = 0;
 
+  assert( id->isOpen );
   sqlite3OsEnterMutex(); /* Needed because id->pLock is shared across threads */
 
   /* Check if a thread in this process holds such a lock */
@@ -724,6 +739,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   struct flock lock;
   int s;
 
+  assert( id->isOpen );
   TRACE6("LOCK %d %d was %d(%d,%d)\n",
           id->h, locktype, id->locktype, pLock->locktype, pLock->cnt);
 
@@ -869,6 +885,7 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   struct lockInfo *pLock;
   struct flock lock;
 
+  assert( id->isOpen );
   TRACE6("UNLOCK %d %d was %d(%d,%d)\n",
           id->h, locktype, id->locktype, id->pLock->locktype, id->pLock->cnt);
 

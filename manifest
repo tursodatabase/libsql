@@ -1,5 +1,5 @@
-C Remove\sunused\sOP_UtfXX\sopcodes.\s(CVS\s1650)
-D 2004-06-21T11:30:56
+C Fix\san\suninitialized\svariable.\s\sThe\svariable\swas\sharmless,\sbut\spedantic\nerror\schecking\sin\sMSVC\sraised\san\sexception\son\sit.\s(CVS\s1651)
+D 2004-06-21T18:14:46
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,9 +28,9 @@ F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c ffcd0cd8cd8aac1a45d852c6364c6b5b07cd9dc4
+F src/build.c ee7548a4dfc446d4312c217d74badbd2898a7eef
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
-F src/delete.c 19287dd204569519636a04eca2b66c49c26e9266
+F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c a0372aa8d27ce9a82f6419c066b47f0500ec50a6
 F src/func.c 3d32878eeb4c6a9977c72ec19984d329b6954c7e
@@ -44,11 +44,11 @@ F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_unix.c 47176c8e9b90ba751b2c110b6384936572ff3abc
-F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
-F src/os_win.c 337e973ee77797aaab4787e3477a5945fcd97266
-F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c d627c5e46084b0c757a16cec2c17adcc8046f8ee
+F src/os_unix.c 3d3553d71cbf1430a40985a7581ca27b85723ee1
+F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
+F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
+F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
+F src/pager.c f42526a134d56f5ee4b4217211dd36b3c8f00963
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
@@ -61,7 +61,7 @@ F src/sqliteInt.h b379bc549c9d812090d6c33ff5f229b34346ac0c
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
 F src/test1.c ee426e026ad9223483e7a84bb68849fc6e9f542e
-F src/test2.c db0a0c30b59f1639cb8c2572be06439402833cc8
+F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
@@ -75,12 +75,12 @@ F src/vdbe.c 5da73f61016b1874d935b522bab6ca8b5aa15216
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h c0740932621a8d4aac20e0c4235ce44eb5e8dce6
 F src/vdbeapi.c 8a9421341e09b506a934132c9015f26362ae8c0e
-F src/vdbeaux.c b89e05d8a1be4a27ba98c0ae369642c12a2cb44f
+F src/vdbeaux.c bf1f5a48b4d2f4f0ee6e5f00dca491855e81cd02
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
-F test/attach2.test 4462c2e652e3d3ac2a9c86d08eebcd648038ae7d
+F test/attach2.test 3cd1d4a69e0ec307d0b68a44a96c9c8e1e253d65
 F test/attach3.test c4cc0b806783ce3d860af6b80c947f93ffb14270
 F test/auth.test a211eab0542ec024b578d771b09242dd9bb1aba3
 F test/bigfile.test a1101b46528ad7282fb9b323d25da18672a3bd0a
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4d02df63496091a1e643601f84313f42130d6282
-R a5c7b81b886ce0dc51fd23c906f18801
-U danielk1977
-Z 7e03b6c5873537e5aac7ef83e2a8f46a
+P 84d6354fce8332b2fb4365ee23b9c9b7c012db9f
+R cb4496210314b23d636b73b949f5346a
+U drh
+Z f5c808fd6c82bca1e41b10c166ff7e8f
