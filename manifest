@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#41:\sBetter\shandling\sof\sCREATE\sTRIGGER\sin\sthe\ssqlite_complete()\nfunction.\s(CVS\s567)
-D 2002-05-15T14:17:45
+C Fix\sa\stypo\sin\sthe\sc_interface.html\sdocumentation\sfile.\s(CVS\s568)
+D 2002-05-15T23:26:23
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -118,7 +118,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
-F www/c_interface.tcl d8c0cdd533a80fc6af480ad50a952c46423c1786
+F www/c_interface.tcl badaceafef1cccbdca3bfcb09c1bf2391859e431
 F www/changes.tcl d1057bb733c574d9dca73578daf78a3128a61426
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b10346818b25940c6dc85e94de8e36d20954161c
-R 8c54c69d6079e01fd5f95accd48faacf
+P f45c4b767a6b1451787836060235ff7499dea0de
+R 890b5588a46cb60b323a93043d1e0f01
 U drh
-Z f5897975828e35ff1e0f4db008fa1bf2
+Z 74a5eab30aba43ca5ee47b7427dcf401

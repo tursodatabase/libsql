@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.28 2002/05/10 13:14:08 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.29 2002/05/15 23:26:23 drh Exp $}
 
 puts {<html>
 <head>
@@ -387,7 +387,7 @@ header file that comes in the source tree.</p>
 
 <p>Every row of an SQLite table has a unique integer key.  If the
 table has a column labeled INTEGER PRIMARY KEY, then that column
-servers as the key.  If there is no INTEGER PRIMARY KEY column then
+serves as the key.  If there is no INTEGER PRIMARY KEY column then
 the key is a unique integer.  The key for a row can be accessed in
 a SELECT statement or used in a WHERE or ORDER BY clause using any
 of the names "ROWID", "OID", or "_ROWID_".</p>
