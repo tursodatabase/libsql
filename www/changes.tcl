@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Dec 16 (2.1.8)} {
+<li>Added the ability to specify "*" as part of a larger column list in
+    the result section of a SELECT statement.  For example:
+    <nobr>"<b>SELECT rowid, * FROM table1;</b>"</nobr>.</li>
+<li>Updates to comments and documentation.</li>
+}
+
 chng {2001 Dec 14 (2.1.7)} {
 <li>Fix a bug in <b>CREATE TEMPORARY TABLE</b> which was causing the
     table to be initially allocated in the main database file instead

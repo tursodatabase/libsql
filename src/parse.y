@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.38 2001/11/06 04:00:18 drh Exp $
+** @(#) $Id: parse.y,v 1.39 2001/12/16 20:05:06 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -198,8 +198,9 @@ distinct(A) ::= ALL.        {A = 0;}
 distinct(A) ::= .           {A = 0;}
 
 // selcollist is a list of expressions that are to become the return
-// values of the SELECT statement.  In the case of "SELECT * FROM ..."
-// the selcollist value is NULL.  
+// values of the SELECT statement.  The "*" in statements like
+// "SELECT * FROM ..." is encoded as a special expression with an
+// opcode of TK_ALL.
 //
 %type selcollist {ExprList*}
 %destructor selcollist {sqliteExprListDelete($$);}
@@ -207,9 +208,11 @@ distinct(A) ::= .           {A = 0;}
 %destructor sclp {sqliteExprListDelete($$);}
 sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
-selcollist(A) ::= STAR.                      {A = 0;}
 selcollist(A) ::= sclp(P) expr(X).           {A = sqliteExprListAppend(P,X,0);}
 selcollist(A) ::= sclp(P) expr(X) as ids(Y). {A = sqliteExprListAppend(P,X,&Y);}
+selcollist(A) ::= sclp(P) STAR. {
+  A = sqliteExprListAppend(P, sqliteExpr(TK_ALL, 0, 0, 0), 0);
+}
 as ::= .
 as ::= AS.
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.49 2001/11/07 16:48:27 drh Exp $
+** $Id: select.c,v 1.50 2001/12/16 20:05:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -318,7 +318,7 @@ static const char *selectOpName(int id){
 ** in pParse and return non-zero.
 */
 static int fillInColumnList(Parse *pParse, Select *p){
-  int i, j;
+  int i, j, k;
   IdList *pTabList;
   ExprList *pEList;
 
@@ -353,34 +353,52 @@ static int fillInColumnList(Parse *pParse, Select *p){
     }
   }
 
-  /* If the list of columns to retrieve is "*" then replace it with
-  ** a list of all columns from all tables.
+  /* For every "*" that occurs in the column list, insert the names of
+  ** all columns in all tables.  The parser inserted a special expression
+  ** with the TK_ALL operator for each "*" that it found in the column list.
+  ** The following code just has to locate the TK_ALL expressions and expand
+  ** each one to the list of all columns in all tables.
   */
-  if( pEList==0 ){
-    for(i=0; i<pTabList->nId; i++){
-      Table *pTab = pTabList->a[i].pTab;
-      for(j=0; j<pTab->nCol; j++){
-        Expr *pExpr = sqliteExpr(TK_DOT, 0, 0, 0);
-        if( pExpr==0 ) break;
-        pExpr->pLeft = sqliteExpr(TK_ID, 0, 0, 0);
-        if( pExpr->pLeft==0 ){ sqliteExprDelete(pExpr); break; }
-        if( pTabList->a[i].zAlias && pTabList->a[i].zAlias[0] ){
-          pExpr->pLeft->token.z = pTabList->a[i].zAlias;
-          pExpr->pLeft->token.n = strlen(pTabList->a[i].zAlias);
-        }else{
-          pExpr->pLeft->token.z = pTab->zName;
-          pExpr->pLeft->token.n = strlen(pTab->zName);
+  for(k=0; k<pEList->nExpr; k++){
+    if( pEList->a[k].pExpr->op==TK_ALL ) break;
+  }
+  if( k<pEList->nExpr ){
+    struct ExprList_item *a = pEList->a;
+    ExprList *pNew = 0;
+    for(k=0; k<pEList->nExpr; k++){
+      if( a[k].pExpr->op!=TK_ALL ){
+        pNew = sqliteExprListAppend(pNew, a[k].pExpr, 0);
+        pNew->a[pNew->nExpr-1].zName = a[k].zName;
+        a[k].pExpr = 0;
+        a[k].zName = 0;
+      }else{
+        for(i=0; i<pTabList->nId; i++){
+          Table *pTab = pTabList->a[i].pTab;
+          for(j=0; j<pTab->nCol; j++){
+            Expr *pExpr = sqliteExpr(TK_DOT, 0, 0, 0);
+            if( pExpr==0 ) break;
+            pExpr->pLeft = sqliteExpr(TK_ID, 0, 0, 0);
+            if( pExpr->pLeft==0 ){ sqliteExprDelete(pExpr); break; }
+            if( pTabList->a[i].zAlias && pTabList->a[i].zAlias[0] ){
+              pExpr->pLeft->token.z = pTabList->a[i].zAlias;
+              pExpr->pLeft->token.n = strlen(pTabList->a[i].zAlias);
+            }else{
+              pExpr->pLeft->token.z = pTab->zName;
+              pExpr->pLeft->token.n = strlen(pTab->zName);
+            }
+            pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
+            if( pExpr->pRight==0 ){ sqliteExprDelete(pExpr); break; }
+            pExpr->pRight->token.z = pTab->aCol[j].zName;
+            pExpr->pRight->token.n = strlen(pTab->aCol[j].zName);
+            pExpr->span.z = "";
+            pExpr->span.n = 0;
+            pNew = sqliteExprListAppend(pNew, pExpr, 0);
+          }
         }
-        pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
-        if( pExpr->pRight==0 ){ sqliteExprDelete(pExpr); break; }
-        pExpr->pRight->token.z = pTab->aCol[j].zName;
-        pExpr->pRight->token.n = strlen(pTab->aCol[j].zName);
-        pExpr->span.z = "";
-        pExpr->span.n = 0;
-        pEList = sqliteExprListAppend(pEList, pExpr, 0);
       }
     }
-    p->pEList = pEList;
+    sqliteExprListDelete(pEList);
+    p->pEList = pNew;
   }
   return 0;
 }

@@ -1,9 +1,9 @@
-C Comment\sand\sdocumentation\schanges.\s(CVS\s331)
-D 2001-12-15T14:22:19
+C Added\sthe\sability\sto\ssay\sthings\slike\s"SELECT\srowid,\s*\sFROM\stable1;"\s(CVS\s332)
+D 2001-12-16T20:05:05
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION b971ae09c25173d53f5df4cfc62821ff99fc1bfe
+F VERSION 380c16915706a90410eb148b6266d51f0d49ad8b
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -33,10 +33,10 @@ F src/os.c 07882cde5c61f26751b8ee76fd84726c1f7e453c
 F src/os.h 00a18e0ae1139a64f1d3ead465ae2b9ff43f3db2
 F src/pager.c dde0eb5bf9af0ac0ff8a4429b2bee2aec2194ec9
 F src/pager.h f78d064c780855ff70beacbeba0e2324471b26fe
-F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
+F src/parse.y 23ff6728eb2f5d3052fe8b1c311bfd55d9fb0944
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c fa1c7144a9ad7ce3f16373b443bc25e764af4be7
+F src/select.c 76a8fafb29935865ddbef263ee90f1398d950d8b
 F src/shell.c 407095aaeeae78f42deb3e846b1ad77f8ed3b4ef
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
@@ -76,7 +76,7 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test ba56df896cb913b70d06661d960869e310fe426e
-F test/select1.test 13aa0a5545209a73d1073cb9062a1b9075b734ae
+F test/select1.test 7423a9dbb81b6d282b13cbe10be64d1216dec155
 F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 5e1fe8e5a4e63fb2827ab3b89527e0fd4ae35259
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
@@ -104,7 +104,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58922228e8fdb0f6af3561a051ee8ccec6dbfd17
-F www/changes.tcl 0b921ad20b5dd262e5a9594691b9708a311e5912
+F www/changes.tcl 7718ad82090404f6a2a062dd534670996c2b82cc
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0d44465347125c8e7e962ffb67213f9953a9b7ab
-R f9524b24c72db56ae24d23e4dfe8d2a7
+P e8595579a5218aa3f344f967a23ac52ea89daca1
+R 0e3b3ee92605e01cba0081d64199478c
 U drh
-Z c454c32fd5ff2d794a364b8c8ca2dfec
+Z 9f8a16e7e900ed26b3f50785c874bb79

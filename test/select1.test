@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.15 2001/11/06 14:10:42 drh Exp $
+# $Id: select1.test,v 1.16 2001/12/16 20:05:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,6 +54,15 @@ do_test select1-1.7 {
 do_test select1-1.8 {
   execsql {SELECT * FROM test1}
 } {11 22}
+do_test select1-1.8.1 {
+  execsql {SELECT *, * FROM test1}
+} {11 22 11 22}
+do_test select1-1.8.2 {
+  execsql {SELECT *, min(f1,f2), max(f1,f2) FROM test1}
+} {11 22 11 22}
+do_test select1-1.8.3 {
+  execsql {SELECT 'one', *, 'two', * FROM test1}
+} {one 11 22 two 11 22}
 
 execsql {CREATE TABLE test2(r1 real, r2 real)}
 execsql {INSERT INTO test2(r1,r2) VALUES(1.1,2.2)}
@@ -61,6 +70,12 @@ execsql {INSERT INTO test2(r1,r2) VALUES(1.1,2.2)}
 do_test select1-1.9 {
   execsql {SELECT * FROM test1, test2}
 } {11 22 1.1 2.2}
+do_test select1-1.9.1 {
+  execsql {SELECT *, 'hi' FROM test1, test2}
+} {11 22 1.1 2.2 hi}
+do_test select1-1.9.2 {
+  execsql {SELECT 'one', *, 'two', * FROM test1, test2}
+} {one 11 22 1.1 2.2 two 11 22 1.1 2.2}
 do_test select1-1.10 {
   execsql {SELECT test1.f1, test2.r1 FROM test1, test2}
 } {11 1.1}
