@@ -1,5 +1,5 @@
-C Updates\sto\sAPI\sdocumentation\sand\scomments\sin\ssqlite3.h.\s(CVS\s2155)
-D 2004-12-07T02:14:51
+C Remove\sthe\sunused\ssqlite3_context.isStep\selement.\s(CVS\s2156)
+D 2004-12-07T12:29:18
 F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c fa113d624d38bcb36700a0244b47f39d57d34efb
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c aa7975d778491ab144ae3921a7791cd51a733e8b
+F src/build.c 306e49e1f6f19741a40c1bbc23140027aa4f8cc9
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
 F src/delete.c 9083377a4c5b152b4466021592f32e3e8a3819e3
@@ -76,11 +76,11 @@ F src/update.c d79d1936c5603b3ce2ee22557618b6baad67efba
 F src/utf.c e45ce11be6922408cd381561721f6cca7d3b992a
 F src/util.c 4a8db4e97a3cfda12ad8dda3e77dd2d00ad1de5e
 F src/vacuum.c 705256e1111521fa04f0029de7f1667bc131d015
-F src/vdbe.c b6caad985b7804b8158ab01b2021f1890570b7f3
+F src/vdbe.c fb9260cd92556d1a32538af1b1b761232337aff1
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
-F src/vdbeInt.h 6017100adff362b8dfa37a69e3f1431f084bfa5b
+F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
 F src/vdbeapi.c 74be7f96c0a1ac275661f8b32276ac521d9ce37c
-F src/vdbeaux.c dc06bbb8511d07f8d45ed2ea760f35f0736a690c
+F src/vdbeaux.c a7c4c90786e2633b38f2d89f3dc49aed747454e4
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
 F src/where.c f9d3b6f2243a0eb9065fa4c465fe0831a64b7db7
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
@@ -262,7 +262,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P f7415a0d6433980ff6c25cf2238f5e9881c38873
-R 3e773cbf7b112fee9ee1223a2128d596
+P 46584348f3cc10c0c6e9ba42110a6c03caf1497e
+R 993dd8bd273e62b479ee8b37d9936fc4
 U drh
-Z 5d04f9ad0daf17e058e901e2fe7ea384
+Z 96d5b22a935bba53de9bbed3780ad692

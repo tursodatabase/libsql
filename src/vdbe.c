@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.431 2004/11/23 01:47:30 drh Exp $
+** $Id: vdbe.c,v 1.432 2004/12/07 12:29:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -380,7 +380,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf, int nBuf){
 #ifdef VDBE_PROFILE
 /*
 ** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read cycle count value out of the
+** It uses the RDTSC opcode to read the cycle count value out of the
 ** processor and returns that value.  This can be used for high-res
 ** profiling.
 */
@@ -1156,7 +1156,6 @@ case OP_Function: {
   ctx.s.z = 0;
   ctx.s.xDel = 0;
   ctx.isError = 0;
-  ctx.isStep = 0;
   if( ctx.pFunc->needCollSeq ){
     assert( pOp>p->aOp );
     assert( pOp[-1].p3type==P3_COLLSEQ );
@@ -3644,7 +3643,7 @@ case OP_IdxIsNull: {
 ** value of the root page that moved - its value before the move occurred -
 ** is pushed onto the stack.  If no page movement was required (because
 ** the table being dropped was already the last one in the database) then
-** a zero is pushed onto the stack.  If AUTOVACUUM is disabled at 
+** a zero is pushed onto the stack.  If AUTOVACUUM is disabled
 ** then a zero is pushed onto the stack.
 **
 ** See also: Clear
@@ -4241,7 +4240,6 @@ case OP_AggFunc: {
   ctx.pAgg = pMem->z;
   ctx.cnt = ++pMem->i;
   ctx.isError = 0;
-  ctx.isStep = 1;
   ctx.pColl = 0;
   if( ctx.pFunc->needCollSeq ){
     assert( pOp>p->aOp );
@@ -4404,7 +4402,6 @@ case OP_AggNext: {
       ctx.s.z = pMem->zShort;
       ctx.pAgg = (void*)pMem->z;
       ctx.cnt = pMem->i;
-      ctx.isStep = 0;
       ctx.pFunc = pFunc;
       pFunc->xFinalize(&ctx);
       pMem->z = ctx.pAgg;

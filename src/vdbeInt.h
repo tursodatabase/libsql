@@ -220,7 +220,6 @@ struct sqlite3_context {
   Mem s;            /* The return value is stored here */
   void *pAgg;       /* Aggregate context */
   u8 isError;       /* Set to true for an error */
-  u8 isStep;        /* Current in the step function */
   int cnt;          /* Number of times that the step function has been called */
   CollSeq *pColl;
 };

@@ -699,9 +699,8 @@ void freeAggElem(AggElem *pElem, Agg *pAgg){
       ctx.s.flags = MEM_Null;
       ctx.pAgg = pMem->z;
       ctx.cnt = pMem->i;
-      ctx.isStep = 0;
       ctx.isError = 0;
-      (*pAgg->apFunc[i]->xFinalize)(&ctx);
+      (*ctx.pFunc->xFinalize)(&ctx);
       pMem->z = ctx.pAgg;
       if( pMem->z!=0 && pMem->z!=pMem->zShort ){
         sqliteFree(pMem->z);
