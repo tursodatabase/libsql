@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.299 2004/05/18 22:17:46 drh Exp $
+** $Id: vdbe.c,v 1.300 2004/05/19 10:35:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -852,14 +852,41 @@ case OP_Real: {
 */
 case OP_Variable: {
   int j = pOp->p1 - 1;
-  pTos++;
-  if( j>=0 && j<p->nVar && p->azVar[j]!=0 ){
-    pTos->z = p->azVar[j];
-    pTos->n = p->anVar[j];
-    pTos->flags = MEM_Str | MEM_Static;
-  }else{
-    pTos->flags = MEM_Null;
+  Mem *pVar;
+  assert( j>=0 && j<p->nVar );
+
+  /* If we need to translate between text encodings, do it now. If this is
+  ** required, then put the new string in p->azVar. This way, if the
+  ** variable is used again, even after the virtual machine is reset, the
+  ** conversion won't have to be done again.
+  **
+  ** TODO: This is where we need to support databases that use other than
+  ** UTF-8 on disk.
+  */
+  pVar = &p->azVar[j];
+  if( pVar->flags&MEM_Str && !(pVar->flags&MEM_Utf8) ){
+    char *zUtf8;
+    assert( pVar->flags&(MEM_Utf16le|MEM_Utf16be) );
+    zUtf8 = sqlite3utf16to8(pVar->z, pVar->n);
+    if( !zUtf8 ){
+      goto no_mem;
+    }
+    Release(pVar);
+    pVar->z = zUtf8;
+    pVar->n = strlen(zUtf8)+1;
+    pVar->flags = MEM_Str|MEM_Dyn;
   }
+
+  /* Copy the value in pVar to the top of the stack. If pVar is a string or
+  ** a blob just store a pointer to the same memory, do not make a copy.
+  */
+  pTos++;
+  memcpy(pTos, pVar, sizeof(*pVar)-NBFS);
+  if( pTos->flags&(MEM_Str|MEM_Blob) ){
+    pTos->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Short);
+    pTos->flags |= MEM_Static;
+  }
+
   break;
 }
 
@@ -5166,7 +5193,7 @@ default: {
     /* Sanity checking on the top element of the stack */
     if( pTos>=p->aStack ){
       assert( pTos->flags!=0 );  /* Must define some type */
-      if( pTos->flags & MEM_Str ){
+      if( pTos->flags & (MEM_Str|MEM_Blob) ){
         int x = pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
         assert( x!=0 );            /* Strings must define a string subtype */
         assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.84 2004/05/18 22:03:43 drh Exp $
+** $Id: util.c,v 1.85 2004/05/19 10:34:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1180,3 +1180,4 @@ int sqlite3VarintLen(u64 v){
   }while( v!=0 && i<9 );
   return i;
 }
+

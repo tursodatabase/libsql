@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.63 2004/05/10 16:18:48 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.64 2004/05/19 10:34:52 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -861,6 +861,16 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out);
 */
 int sqlite_decode_binary(const unsigned char *in, unsigned char *out);
 
+typedef sqlite_vm sqlite3_stmt;
+
+int sqlite3_bind_int32(sqlite3_stmt*, int i, int iValue);
+int sqlite3_bind_int64(sqlite3_stmt*, int i, long long int iValue);
+int sqlite3_bind_double(sqlite3_stmt*, int i, double iValue);
+int sqlite3_bind_null(sqlite3_stmt*, int i);
+int sqlite3_bind_text(sqlite3_stmt*, int i, const char*, int n, int eCopy);
+int sqlite3_bind_text16(sqlite3_stmt*, int i, const void*, int, int eCopy);
+int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy);
+
 #if 0
 
 /*
@@ -886,14 +896,6 @@ int sqlite3_prepare(sqlite3*, const char*, sqlite3_stmt**, const char**);
 int sqlite3_prepare16(sqlite3*, const void*, sqlite3_stmt**, const void**);
 int sqlite3_finalize(sqlite3_stmt*);
 int sqlite3_reset(sqlite3_stmt*);
-
-int sqlite3_bind_int32(sqlite3_stmt*, int iParm, int iValue);
-int sqlite3_bind_int64(sqlite3_stmt*, int iParm, long long int iValue);
-int sqlite3_bind_double(sqlite3_stmt*, int iParm, double iValue);
-int sqlite3_bind_null(sqlite3_stmt*, int iParm);
-int sqlite3_bind_text(sqlite3_stmt*, int i, const char*, int n, int eCopy);
-int sqlite3_bind_text16(sqlite3_stmt*, int i, const void*, int, int eCopy);
-int sqlite3_bind_blob(sqlite3_stmt*, int i, const void*, int n, int eCopy);
 
 int sqlite3_step(sqlite3_stmt*);
 

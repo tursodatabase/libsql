@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.3 2004/05/08 08:23:40 danielk1977 Exp $
+** $Id: utf.c,v 1.4 2004/05/19 10:34:57 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -192,9 +192,9 @@ static int writeUtf8(UtfString *pStr, u32 code){
     {0x0010FFFF, 3, 0xF7, 0xF0},
     {0x00000000, 0, 0x00, 0x00}
   };
-  static const struct Utf8WriteTblRow *pRow = &utf8tbl[0];
+  struct Utf8WriteTblRow *pRow = &utf8tbl[0];
 
-  while( code<=pRow->max_code ){
+  while( code>pRow->max_code ){
     assert( pRow->max_code );
     pRow++;
   }
@@ -367,7 +367,7 @@ unsigned char *sqlite3utf16to8(const void *pData, int N){
   ** this now.
   */
   out.n = (in.n*1.5) + 1;
-  out.pZ = sqliteMalloc(in.n);
+  out.pZ = sqliteMalloc(out.n);
   if( !out.pZ ){
     return 0;
   }
@@ -402,7 +402,7 @@ static void *utf8toUtf16(const unsigned char *pIn, int N, int big_endian){
   ** this now.
   */
   out.n = (in.n*2) + 2;
-  out.pZ = sqliteMalloc(in.n);
+  out.pZ = sqliteMalloc(out.n);
   if( !out.pZ ){
     return 0;
   }
@@ -451,10 +451,20 @@ static void utf16to16(void *pData, int N, int big_endian){
   }
 
   if( readUtf16Bom(&inout)!=big_endian ){
-    swab(&inout.pZ[inout.c], inout.pZ, inout.n-inout.c);
+    /* swab(&inout.pZ[inout.c], inout.pZ, inout.n-inout.c); */
+    int i;
+    for(i=0; i<(inout.n-inout.c); i += 2){
+      char c1 = inout.pZ[i+inout.c];
+      char c2 = inout.pZ[i+inout.c+1];
+      inout.pZ[i] = c2;
+      inout.pZ[i+1] = c1;
+    }
   }else if( inout.c ){
     memmove(inout.pZ, &inout.pZ[inout.c], inout.n-inout.c);
   }
+
+  inout.pZ[inout.n-inout.c] = 0x00;
+  inout.pZ[inout.n-inout.c+1] = 0x00;
 }
 
 /*
