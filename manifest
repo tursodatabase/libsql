@@ -1,14 +1,14 @@
-C Reset\spCur->eSkip\son\sa\sMoveTo\s(CVS\s922)
-D 2003-04-20T11:41:04
-F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
+C Align\sconfig\svars\scontrolling\sin-memory\sDB\swith\scode\s(CVS\s923)
+D 2003-04-20T11:46:35
+F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
-F configure 21b2d9997812b8134fe6281aca659af23fd92131 x
-F configure.ac 6bd07419ebca8993cd117a2fb58629c2b506d71c
+F configure df43f93754fd81b151e8c6d81b750bf0e9480a8a x
+F configure.ac a158f37fc6b15821406e4d5d4f9a0ed35b8b0e6b
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7084e05093e72f6e5b65ff0b574336898396826f
-R c8c3aa1616b589f8a100a47f5c0c5e8a
+P d983accf4a702158f03742fb11959d0fd035a4b4
+R 9c9140e8f7e38e6951b9567de707f4f1
 U paul
-Z cdfdd9c553e34df80f45529e35a33325
+Z e6994638a8674e314247f6f23259eed8

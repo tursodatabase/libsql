@@ -467,7 +467,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LN_S ECHO RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP EGREP LIBTOOL INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA program_prefix VERSION BUILD_CC BUILD_CFLAGS BUILD_LIBS TARGET_CC TARGET_CFLAGS TARGET_LINK TARGET_LFLAGS TARGET_RANLIB TARGET_AR ENCODING ALLOWATTACHMEM INCOREDB TEMPDBINCORE BUILD_EXEEXT OS_UNIX OS_WIN TARGET_EXEEXT TARGET_LIBS TARGET_TCL_LIBS TARGET_TCL_INC TARGET_READLINE_LIBS TARGET_READLINE_INC TARGET_HAVE_READLINE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT LN_S ECHO RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CPP EGREP LIBTOOL INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA program_prefix VERSION BUILD_CC BUILD_CFLAGS BUILD_LIBS TARGET_CC TARGET_CFLAGS TARGET_LINK TARGET_LFLAGS TARGET_RANLIB TARGET_AR ENCODING ALLOWATTACHMEM INMEMORYDB TEMP_STORE BUILD_EXEEXT OS_UNIX OS_WIN TARGET_EXEEXT TARGET_LIBS TARGET_TCL_LIBS TARGET_TCL_INC TARGET_READLINE_LIBS TARGET_READLINE_INC TARGET_HAVE_READLINE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1434,7 +1434,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.14 $
+# $Revision: 1.15 $
 
 #########
 # Programs needed
@@ -8252,18 +8252,16 @@ if test "${enable_incore_db+set}" = set; then
   enableval="$enable_incore_db"
 
 else
-  enable_incore-db=yes
+  enable_incore_db=yes
 fi;
 echo "$as_me:$LINENO: checking whether to support incore databases for attach and open" >&5
 echo $ECHO_N "checking whether to support incore databases for attach and open... $ECHO_C" >&6
-if test "$enable_incore-db" = "no"; then
-  INCOREDB=0
-  ALLOWATTACHMEM=0
+if test "$enable_incore_db" = "no"; then
+  INMEMORYDB=0
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 else
-  INCOREDB=1
-  ALLOWATTACHMEM=1
+  INMEMORYDB=1
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 fi
@@ -8277,35 +8275,36 @@ if test "${enable_tempdb_in_ram+set}" = set; then
   enableval="$enable_tempdb_in_ram"
 
 else
-  enable_tempdb-in-ram=no
+  enable_tempdb_in_ram=no
 fi;
 echo "$as_me:$LINENO: checking whether to use an in-ram database for temporary tables" >&5
 echo $ECHO_N "checking whether to use an in-ram database for temporary tables... $ECHO_C" >&6
-case "$enable_tempdb-in-ram" in
+case "$enable_tempdb_in_ram" in
   never )
-    TEMPDBINCORE=0
+    TEMP_STORE=0
     echo "$as_me:$LINENO: result: never" >&5
 echo "${ECHO_T}never" >&6
   ;;
   no )
-    INCOREDB=1
-    TEMPDBINCORE=1
+    INMEMORYDB=1
+    TEMP_STORE=1
     echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
   ;;
   always )
-    INCOREDB=1
-    TEMPDBINCORE=3
+    INMEMORYDB=1
+    TEMP_STORE=3
     echo "$as_me:$LINENO: result: always" >&5
 echo "${ECHO_T}always" >&6
   ;;
   * )
-    INCOREDB=1
-    TEMPDBINCORE=2
+    INMEMORYDB=1
+    TEMP_STORE=2
     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   ;;
 esac
+
 
 
 
@@ -9927,8 +9926,8 @@ s,@TARGET_RANLIB@,$TARGET_RANLIB,;t t
 s,@TARGET_AR@,$TARGET_AR,;t t
 s,@ENCODING@,$ENCODING,;t t
 s,@ALLOWATTACHMEM@,$ALLOWATTACHMEM,;t t
-s,@INCOREDB@,$INCOREDB,;t t
-s,@TEMPDBINCORE@,$TEMPDBINCORE,;t t
+s,@INMEMORYDB@,$INMEMORYDB,;t t
+s,@TEMP_STORE@,$TEMP_STORE,;t t
 s,@BUILD_EXEEXT@,$BUILD_EXEEXT,;t t
 s,@OS_UNIX@,$OS_UNIX,;t t
 s,@OS_WIN@,$OS_WIN,;t t

@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.3 $
+# $Revision: 1.4 $
 
 #########
 # Programs needed
@@ -309,15 +309,13 @@ AC_SUBST(ENCODING)
 # Do we want to support in-ram databases for ATTACH DATABASE and sqlite_open
 #
 AC_ARG_ENABLE(incore-db, 
-[  --enable-incore-db           Support incore database],,enable_incore-db=yes)
+[  --enable-incore-db           Support incore database],,enable_incore_db=yes)
 AC_MSG_CHECKING([whether to support incore databases for attach and open])
-if test "$enable_incore-db" = "no"; then
-  INCOREDB=0
-  ALLOWATTACHMEM=0
+if test "$enable_incore_db" = "no"; then
+  INMEMORYDB=0
   AC_MSG_RESULT([no])
 else
-  INCOREDB=1
-  ALLOWATTACHMEM=1
+  INMEMORYDB=1
   AC_MSG_RESULT([yes])
 fi
 AC_SUBST(ALLOWATTACHMEM)
@@ -326,31 +324,32 @@ AC_SUBST(ALLOWATTACHMEM)
 # Do we want temporary databases in memory
 #
 AC_ARG_ENABLE(tempdb-in-ram, 
-[  --enable-tempdb-in-ram     Use an in-ram database for temporary tables],,enable_tempdb-in-ram=no)
+[  --enable-tempdb-in-ram     Use an in-ram database for temporary tables],,enable_tempdb_in_ram=no)
 AC_MSG_CHECKING([whether to use an in-ram database for temporary tables])
-case "$enable_tempdb-in-ram" in
+case "$enable_tempdb_in_ram" in
   never ) 
-    TEMPDBINCORE=0
+    TEMP_STORE=0
     AC_MSG_RESULT([never])
   ;;
   no ) 
-    INCOREDB=1
-    TEMPDBINCORE=1
+    INMEMORYDB=1
+    TEMP_STORE=1
     AC_MSG_RESULT([no])
   ;;
   always ) 
-    INCOREDB=1
-    TEMPDBINCORE=3
+    INMEMORYDB=1
+    TEMP_STORE=3
     AC_MSG_RESULT([always])
   ;;
   * ) 
-    INCOREDB=1
-    TEMPDBINCORE=2
+    INMEMORYDB=1
+    TEMP_STORE=2
     AC_MSG_RESULT([yes])
   ;;
 esac
-AC_SUBST(INCOREDB)
-AC_SUBST(TEMPDBINCORE)
+
+AC_SUBST(INMEMORYDB)
+AC_SUBST(TEMP_STORE)
 
 ###########
 # Lots of things are different if we are compiling for Windows using
