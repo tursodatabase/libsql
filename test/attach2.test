@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.24 2004/08/18 15:58:24 drh Exp $
+# $Id: attach2.test,v 1.25 2004/08/18 16:05:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -64,7 +64,7 @@ do_test attach2-2.1 {
 do_test attach2-2.2 {
   # make sure test2.db did get attached.
   db_list db
-} {0 main 1 temp 2 t2}
+} {0 main 2 t2}
 db2 eval {COMMIT}
 
 do_test attach2-2.5 {

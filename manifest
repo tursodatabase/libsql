@@ -1,5 +1,5 @@
-C Be\smore\sagressive\sabout\snot\screating\sor\sopening\sthe\sTEMP\sdatabase\sif\sthere\nare\sno\sTEMP\stables.\s(CVS\s1891)
-D 2004-08-18T15:58:23
+C Better\sdebug\slogging\sof\sthe\spager.\s(CVS\s1892)
+D 2004-08-18T16:05:19
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,7 +51,7 @@ F src/os_unix.c 3239a45dbd2f50195bfc97f1ed35cb8fe5a3f60c
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c 4581ffaf7d6a293d731937bc2b019089aebf7507
+F src/pager.c 6f36dae72437a16bd8a40ac2541b6966b5bc9b98
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 589b1a39b23092888adfa9ec1f3ded8a35e8e006
 F src/pragma.c 5cf335adfdac453a2d03ab0c82f93847c43bea81
@@ -83,7 +83,7 @@ F src/vdbemem.c 68fefaf83adb48fe44135da01502c9327f6172b0
 F src/where.c cf8a54641eea01f1af5d09529ad69166db92f658
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test feb2ce54e78688df4c84553416d5aec3b2a0112e
-F test/attach2.test 2c8d19ebc4adcfe57e81f09d7db725b3225dd0db
+F test/attach2.test 9be9656bc1e929b224861960299920c76d45b14d
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test e74b015545f608c06d5b84d17acdf7146eb818af
 F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5914a11caa4c6e778cd7ca010427897c8f971552
-R 8a254f0aacfe54a496a1247e0e7c2d22
+P 6b2b6b2dbd821070a2781685c4b63a50bc8f5cae
+R 7a82009cfca716de658bd46e436375ca
 U drh
-Z b7fbfb8a44478969990732752926ee73
+Z 7be61bbeb15fa842d9f627b0bce20f13

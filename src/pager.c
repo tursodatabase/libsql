@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.156 2004/08/18 15:58:23 drh Exp $
+** @(#) $Id: pager.c,v 1.157 2004/08/18 16:05:19 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2519,7 +2519,6 @@ int sqlite3pager_write(void *pData){
         if( pHist->pOrig ){
           memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
         }
-        pPg->inJournal = 1;
       }else{
         u32 cksum;
         CODEC(pPager, pData, pPg->pgno, 7);
@@ -2543,7 +2542,6 @@ int sqlite3pager_write(void *pData){
         assert( pPager->aInJournal!=0 );
         pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
         pPg->needSync = !pPager->noSync;
-        pPg->inJournal = 1;
         if( pPager->stmtInUse ){
           pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
           page_add_to_stmt_list(pPg);
@@ -2557,6 +2555,7 @@ int sqlite3pager_write(void *pData){
     if( pPg->needSync ){
       pPager->needSync = 1;
     }
+    pPg->inJournal = 1;
   }
 
   /* If the statement journal is open and the page is not in it,
