@@ -47,13 +47,14 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
+LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
          main.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/dbbe.c \
   $(TOP)/src/dbbe.h \
@@ -84,7 +85,8 @@ SRC = \
 #
 TESTSRC = \
   $(TOP)/src/test1.c \
-  $(TOP)/src/test2.c
+  $(TOP)/src/test2.c \
+  $(TOP)/src/test3.c
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -117,9 +119,14 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 HDR = \
    sqlite.h  \
    $(TOP)/src/sqliteInt.h  \
+   $(TOP)/src/btree.h \
    $(TOP)/src/dbbe.h  \
+   $(TOP)/src/pager.h \
    $(TOP)/src/vdbe.h  \
    parse.h
+
+btree.o:	$(TOP)/src/btree.c $(HDR)
+	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/build.c
@@ -201,7 +208,7 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 
 testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c $(TOP)/src/btree.c \
 		libsqlite.a $(LIBGDBM) $(LIBTCL)
 
 test:	testfixture sqlite

@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.8 2001/06/02 02:40:57 drh Exp $
+** @(#) $Id: pager.c,v 1.9 2001/06/22 19:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -562,7 +562,8 @@ Pgno sqlitepager_pagenumber(void *pData){
 ** currently on the freelist (the reference count is zero) then
 ** remove it from the freelist.
 */
-static void sqlitepager_ref(PgHdr *pPg){
+int sqlitepager_ref(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
   if( pPg->nRef==0 ){
     /* The page is currently on the freelist.  Remove it. */
     if( pPg->pPrevFree ){
@@ -578,6 +579,7 @@ static void sqlitepager_ref(PgHdr *pPg){
     pPg->pPager->nRef++;
   }
   pPg->nRef++;
+  return SQLITE_OK;
 }
 
 /*

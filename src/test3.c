@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.1 2001/06/02 02:40:57 drh Exp $
+** $Id: test3.c,v 1.2 2001/06/22 19:15:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -71,8 +71,7 @@ static int btree_open(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  BTree *pBt;
-  int nPage;
+  Btree *pBt;
   int rc;
   char zBuf[100];
   if( argc!=2 ){
@@ -155,7 +154,7 @@ static int btree_rollback(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  Btree *pBt
+  Btree *pBt;
   int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -239,22 +238,406 @@ static int btree_drop_table(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  Pager *pPager;
+  Btree *pBt;
   int iTable;
-  char zBuf[100];
+  int rc;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " ID TABLENUM\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  if( Tcl_GetInt(interp, argv[2], &iTable ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
   rc = sqliteBtreeDropTable(pBt, iTable);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
+}
+
+/*
+** Usage:   btree_get_meta ID
+**
+** Return meta data
+*/
+static int btree_get_meta(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int rc;
+  int i;
+  int aMeta[SQLITE_N_BTREE_META];
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  rc = sqliteBtreeGetMeta(pBt, aMeta);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  for(i=0; i<SQLITE_N_BTREE_META; i++){
+    char zBuf[30];
+    sprintf(zBuf,"%d",aMeta[i]);
+    Tcl_AppendElement(interp, zBuf);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_update_meta ID METADATA...
+**
+** Return meta data
+*/
+static int btree_update_meta(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int rc;
+  int i;
+  int aMeta[SQLITE_N_BTREE_META];
+
+  if( argc!=2+SQLITE_N_BTREE_META ){
+    char zBuf[30];
+    sprintf(zBuf,"%d",SQLITE_N_BTREE_META);
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID METADATA...\" (METADATA is ", zBuf, " integers)", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  for(i=0; i<SQLITE_N_BTREE_META; i++){
+    if( Tcl_GetInt(interp, argv[i+2], &aMeta[i]) ) return TCL_ERROR;
+  }
+  rc = sqliteBtreeUpdateMeta(pBt, aMeta);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_page_dump ID PAGENUM
+**
+** Print a disassembly of a page on standard output
+*/
+static int btree_page_dump(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int iPage;
+  int rc;
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
+  rc = sqliteBtreePageDump(pBt, iPage);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_cursor ID TABLENUM
+**
+** Create a new cursor.  Return the ID for the cursor.
+*/
+static int btree_cursor(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int iTable;
+  BtCursor *pCur;
+  int rc;
+  char zBuf[30];
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID TABLENUM\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
+  rc = sqliteBtreeCursor(pBt, iTable, &pCur);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"0x%x", (int)pCur);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_close_cursor ID
+**
+** Close a cursor opened using btree_cursor.
+*/
+static int btree_close_cursor(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeCloseCursor(pCur);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_move_to ID KEY
+**
+** Move the cursor to the entry with the given key.
+*/
+static int btree_move_to(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int res;
+  char zBuf[20];
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID KEY\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeMoveto(pCur, argv[2], strlen(argv[2]), &res);  
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_delete ID
+**
+** Delete the entry that the cursor is pointing to
+*/
+static int btree_delete(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeDelete(pCur);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_insert ID KEY DATA
+**
+** Create a new entry with the given key and data.  If an entry already
+** exists with the same key the old entry is overwritten.
+*/
+static int btree_insert(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+
+  if( argc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID KEY DATA\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeInsert(pCur, argv[2], strlen(argv[2]),
+                         argv[3], strlen(argv[3]));
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_next ID
+**
+** Move the cursor to the next entry in the table.
+*/
+static int btree_next(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeNext(pCur, 0);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_key ID
+**
+** Return the key for the entry at which the cursor is pointing.
+*/
+static int btree_key(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int n;
+  char *zBuf;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  sqliteBtreeKeySize(pCur, &n);
+  zBuf = malloc( n+1 );
+  rc = sqliteBtreeKey(pCur, 0, n, zBuf);
+  if( rc ){
+    free(zBuf);
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  zBuf[n] = 0;
+  Tcl_AppendResult(interp, zBuf, 0);
+  free(zBuf);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_data ID
+**
+** Return the data for the entry at which the cursor is pointing.
+*/
+static int btree_data(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int n;
+  char *zBuf;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  sqliteBtreeDataSize(pCur, &n);
+  zBuf = malloc( n+1 );
+  rc = sqliteBtreeData(pCur, 0, n, zBuf);
+  if( rc ){
+    free(zBuf);
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  zBuf[n] = 0;
+  Tcl_AppendResult(interp, zBuf, 0);
+  free(zBuf);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_cursor_dump ID
+**
+** Return two integers which are the page number and cell index for
+** the given cursor.
+*/
+static int btree_cursor_dump(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int aResult[2];
+  char zBuf[50];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeCursorDump(pCur, aResult);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"%d %d",aResult[0], aResult[1]);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
 }
 
 /*
@@ -269,5 +652,17 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_rollback", btree_rollback, 0, 0);
   Tcl_CreateCommand(interp, "btree_create_table", btree_create_table, 0, 0);
   Tcl_CreateCommand(interp, "btree_drop_table", btree_drop_table, 0, 0);
+  Tcl_CreateCommand(interp, "btree_get_meta", btree_get_meta, 0, 0);
+  Tcl_CreateCommand(interp, "btree_update_meta", btree_update_meta, 0, 0);
+  Tcl_CreateCommand(interp, "btree_page_dump", btree_page_dump, 0, 0);
+  Tcl_CreateCommand(interp, "btree_cursor", btree_cursor, 0, 0);
+  Tcl_CreateCommand(interp, "btree_close_cursor", btree_close_cursor, 0, 0);
+  Tcl_CreateCommand(interp, "btree_move_to", btree_move_to, 0, 0);
+  Tcl_CreateCommand(interp, "btree_delete", btree_delete, 0, 0);
+  Tcl_CreateCommand(interp, "btree_insert", btree_insert, 0, 0);
+  Tcl_CreateCommand(interp, "btree_next", btree_next, 0, 0);
+  Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
+  Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
+  Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
   return TCL_OK;
 }
