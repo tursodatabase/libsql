@@ -1,5 +1,5 @@
-C Add\sinitial\stest\scases\sfor\sthe\snew\ssqlite_bind()\sAPI.\s\sFix\sbugs\sthat\sthe\snew\ntest\scases\sfound.\s(CVS\s1096)
-D 2003-09-06T22:45:21
+C Add\stest\scases\sthat\scheck\sout\ssqlite_get_table()\son\squeries\swith\sresults\ssets\ncontaining\s100\scolumns.\s(CVS\s1097)
+D 2003-09-09T00:47:47
 F Makefile.in 0cf2ffb6dc35694895e0dac488bc1259b6a4eb90
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -121,7 +121,7 @@ F test/select6.test 670026a06c358cc867ace7b1de6020e43adc7245
 F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
-F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
+F test/tableapi.test d881e787779a175238b72f55b5e50d3a85ab47a6
 F test/tclsqlite.test 964fd2f6c11d384ab784c2afe52130f34261ce2d
 F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
 F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
@@ -173,7 +173,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 990bb11898a539bb0795a4a216fcd989943a0fb2
-R 6da2f2a85b603ea97d6c239837738421
+P f6c4908e9b5b6ac9adc4af50dc5110dbb655dae3
+R f7938d35621546ffe8cfa85d2210afbb
 U drh
-Z c1f9b620226847ab0edd9da7114bd24b
+Z d4864a97177572787e9b3823564d9aff
