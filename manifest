@@ -1,5 +1,5 @@
-C Rework\sthe\sfix\sto\sticket\s#461\sso\sthat\swe\sdo\snot\shave\sto\sdo\sredundant\stests\nof\sWHERE\sclause\sterms\slooking\sfor\sNULLs.\s\sSee\salso\scheck-in\s(1103).\s(CVS\s1167)
-D 2004-01-07T20:37:52
+C Remove\sunused\scode\sand\stighten\sexisting\scode\sto\smake\sthe\slibrary\sa\slittle\nsmaller.\s(CVS\s1168)
+D 2004-01-08T02:17:32
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,13 +28,13 @@ F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c e4084b6a12270674b0cd7034655f55e6a2639c78
 F src/build.c a7493c433de5b552f9535d8fa7ed80aaf135491e
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
-F src/date.c eef0ccd9d0b1d9fe74ed2ae8e247578be3f49bc4
+F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
 F src/expr.c abb40922fa9995aca06f999ed35d2061d44650d6
 F src/func.c 62cf8fae8147c0301d1c6a4a94fe0a78f7aa5b33
-F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
-F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
+F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
+F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
 F src/main.c 3dd3cae00bade294011da5a3cf9ff660a610c545
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
@@ -58,7 +58,7 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/test4.c dcbbbb382626fd466a7c46907f74db35fc8bad64
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
-F src/tokenize.c 5597df1fd76d6947e7da824856ac1910e2055729
+F src/tokenize.c 8c95dcd2620b18dc0db1cdc97f9e111d11e55fe0
 F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 64995b5949a5d377629ffd2598747bc771cade1e
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 03636c94a542b1f90a3acfbe65a9c2976872073f
-R 747698ac4eca9128ab63b6b98ff5a6c2
+P 5fd581787e88173f0303f870fc956ec9285cca4e
+R 42e0a61dd74faeac7023df4a5dc43247
 U drh
-Z af269badac40ad362e9b5738b29d6b42
+Z 17125e9495da03df5ae68d60c6a8dbf2

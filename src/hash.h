@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.5 2002/06/08 23:25:09 drh Exp $
+** $Id: hash.h,v 1.6 2004/01/08 02:17:33 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -71,7 +71,7 @@ struct HashElem {
 ** if the copyKey parameter to HashInit is 1.  
 */
 #define SQLITE_HASH_INT       1
-#define SQLITE_HASH_POINTER   2
+/* #define SQLITE_HASH_POINTER   2 // NOT USED */
 #define SQLITE_HASH_STRING    3
 #define SQLITE_HASH_BINARY    4
 
