@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan 8 (2.2.1)} {
+chng {2002 Jan 9 (2.2.1)} {
 <li>Bug fix: An attempt to delete a single row of a table with a WHERE
     clause of "ROWID=x" when no such rowid exists was causing an error.</li>
 <li>Bug fix: Passing in a NULL as the 3rd parameter to <b>sqlite_open()</b>
