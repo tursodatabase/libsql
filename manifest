@@ -1,5 +1,5 @@
-C Back\sout\schanges\sallowing\swrites\sto\stables\sthat\shave\sopen\scursors.\s(CVS\s2133)
-D 2004-11-22T10:02:10
+C Back\sout\schanges\sallowing\swrites\sto\stables\sthat\shave\sopen\scursors.\s(CVS\s2134)
+D 2004-11-22T10:02:22
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -101,9 +101,8 @@ F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
-F test/btree8.test d4e5932e54ae10f934d92ebaff94b594923d9ebc
-F test/capi2.test cd5e149564094bda9a587e70ec5949863222cd23
-F test/capi3.test c53e4eea686dacad8a1239c0d584fe63e6e601dc
+F test/capi2.test 8279d1d5ca1f9b518d78fefd01fd58958c7240d6
+F test/capi3.test 3b33bf7c8836028835354c055989314e9c969c5c
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 12fd658d8f5106a8a5c8a77d66919d8c89394036
@@ -117,7 +116,7 @@ F test/crash.test 48b481769dd0ead25b0dfc0150853bfa39a3b65c
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test dda578ec1857837156bd8b32f8e09d81d7d7881c
 F test/delete.test fc29491f6a7ac899ce29f4549a104809e245d9a6
-F test/delete2.test 04a19e248d88156324ae964676bb4584b65b46f4
+F test/delete2.test e382b6a97787197eb8b93dd4ccd37797c3725ea3
 F test/diskfull.test e2f6cfd868713ead06dc82b84a4938e868128fc0
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test 6d1a2650e9da43eab499d18ca694a0cb6ec69dee
@@ -140,17 +139,16 @@ F test/join4.test 8dec387d06b3a4685e1104048065cf5236b99b93
 F test/lastinsert.test b6a1db3e1ce2d3f0d6afe99d445084f543b6feaa
 F test/laststmtchanges.test 07cbdabc52407c29e40abc25050f2434f044a6b1
 F test/limit.test 4798e0196186e4c9b0f3ce90c1efd196877a1d17
-F test/lock.test ba72c211499b0874c56643b9ede1df4018bb20de
+F test/lock.test 32fe28e5030f25f23bcf6beef440675b0d848413
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/lock4.test 07768b4d4e942693d6036f1e6502199a3fa22a4f
 F test/main.test 5f9deae11b93336da1ccc5f91cf8be075c91ddf1
 F test/malloc.test b4674cbb5a72b113eedaaf64fcd5c062e9957ded
 F test/memdb.test c9ccd02cd9ce9d2cdcd5a712efecf24e7b93b7fa
 F test/memleak.test f1fa233f8295dd1d955a00d5e5ee857850f27f29
 F test/minmax.test c0f92d3f7b11656221735385f2c8b1878bbbdaf6
 F test/misc1.test 744f60d1025fa978708b96cb222a07a1feb1524a
-F test/misc2.test 851e63fcc849b0c155cb02eb06537ea93b7f24b2
+F test/misc2.test d3bea4b809efaa4319299e55c50ee987b4f6470c
 F test/misc3.test 928a2f1e1189924ed14e1ae074e34f40688bdf94
 F test/misc4.test d005a75f095bb04db09a5d096144405ae566b622
 F test/misuse.test 2d7c46160f7c214f761fc5d030684a37ae8832a6
@@ -261,7 +259,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 711e8d7695dfc74b3f1ee00591dcdda2cd7fc7d5
-R 435be4c4df18ad02a5220daa06c920af
+P 91acd87e52509a8f78894d0f4b625b54376cac21
+R 3f35736f01d9cae236fc378ee100c137
 U danielk1977
-Z 690d6154f35eb3573c00acd3211a6213
+Z 78e9f3a6a9971c738e9a8b2edd14f6b6

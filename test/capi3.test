@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.25 2004/11/20 20:18:55 drh Exp $
+# $Id: capi3.test,v 1.26 2004/11/22 10:02:22 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -760,15 +760,11 @@ do_test capi3-12.2 {
   }
 } {0 {}}
 
-# The following test used to report "database is locked". As of 3.10 
-# this is no longer the case, the INSERT is legal. The inserted row
-# will be returned after all others (because the scan is being done
-# in rowid order).
 do_test capi3-12.3 {
   catchsql {
     INSERT INTO t2 VALUES(4);
   }
-} {0 {}}
+} {1 {database table is locked}}
 do_test capi3-12.4 {
   catchsql {
     BEGIN;
@@ -780,14 +776,11 @@ do_test capi3-12.5 {
 } {SQLITE_ROW}
 do_test capi3-12.6 {
   sqlite3_step $STMT
-} {SQLITE_ROW}
-do_test capi3-12.7 {
-  sqlite3_step $STMT
 } {SQLITE_DONE}
-do_test capi3-12.8 {
+do_test capi3-12.7 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3-12.9 {
+do_test capi3-12.8 {
   execsql {
     COMMIT;
     SELECT a FROM t1;

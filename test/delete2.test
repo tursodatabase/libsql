@@ -29,7 +29,7 @@
 # The solution to the problem was to detect that the table is locked
 # before the index entry is deleted.
 #
-# $Id: delete2.test,v 1.3 2004/11/16 15:50:21 danielk1977 Exp $
+# $Id: delete2.test,v 1.4 2004/11/22 10:02:23 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -66,26 +66,27 @@ do_test delete2-1.4 {
 } SQLITE_ROW
 integrity_check delete2-1.5
 
-# Try to delete a row from the table. Before version 3.10 the DELETE
-# would fail because of the SELECT active on the table. In 3.10 the
-# DELETE is legal.
+# Try to delete a row from the table. The delete should fail.
 #
 do_test delete2-1.6 {
   catchsql {
     DELETE FROM q WHERE rowid=1
   }
-} {0 {}}
+} {1 {database table is locked}}
 integrity_check delete2-1.7
 do_test delete2-1.8 {
   execsql {
     SELECT * FROM q;
   }
-} {goodbye id.2 again id.3}
+} {hello id.1 goodbye id.2 again id.3}
 
+# Finalize the query, thus clearing the lock on the table.  Then
+# retry the delete.  The delete should work this time.
+#
 do_test delete2-1.9 {
   sqlite3_finalize $STMT
   catchsql {
-    DELETE FROM q WHERE rowid=2
+    DELETE FROM q WHERE rowid=1
   }
 } {0 {}}
 integrity_check delete2-1.10
@@ -93,6 +94,6 @@ do_test delete2-1.11 {
   execsql {
     SELECT * FROM q;
   }
-} {again id.3}
+} {goodbye id.2 again id.3}
 
 finish_test
