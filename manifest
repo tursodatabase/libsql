@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell:\simportments\sto\sthe\s"help"\smessage\sand\sbetter\nerror\schecking\sin\sthe\snew\s.import\scommand.\s(CVS\s1877)
-D 2004-08-04T15:16:55
+C Fix\sa\sbug\sin\sthe\slogic\sthat\sconverts\snumbers\sinto\sstrings\sinside\sthe\sVM.\nTicket\s#844\s(CVS\s1878)
+D 2004-08-06T17:00:41
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -79,7 +79,7 @@ F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h 3d8e08c54dcb5ca2169db8bb3a37b81a12efaecd
 F src/vdbeapi.c 3be4ccab4ba6c21d60feffc48e22cf8c1643c6d5
 F src/vdbeaux.c daf40a292ec458ed962845a8d95d5c96bc242e04
-F src/vdbemem.c bbf621377343bee046547712a144a94f387bb1eb
+F src/vdbemem.c d4fa40d0dc1906e6c246092c990077da373e2b26
 F src/where.c cf8a54641eea01f1af5d09529ad69166db92f658
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test 8fd75d2939528e1ae2a5030dfe738cd7fa8520eb
@@ -175,6 +175,7 @@ F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 97c11d3cf43d752b172809bb82536372ee5e399c
+F test/trigger5.test 25ba4d352282cd05753496a50f0bd23162cc97b9
 F test/types.test db5483a8dc5c8fadc737c3ab36d9cbd96ba25e14
 F test/types2.test f23c147a2ab3e51d5dbcfa9987200db5acba7aa7
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
@@ -240,7 +241,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P add266ccc3146fa56572d109e84c8a79dc3df2ca
-R 674b4df64dead6e35bf0c60489ccd67c
+P ed489f776aed2de2f16e5c4b93ec6bc872118fb2
+R 1933144a8249667917769df988afd9c1
 U drh
-Z 8d01172e36dc4738ad87459856f6ce34
+Z 30e88cd8d59cb46c1aab06cd7ac96696

@@ -162,7 +162,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   ** 
   ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
   */
-  if( fg & MEM_Real || (pMem->type==SQLITE_FLOAT) ){
+  if( fg & MEM_Real ){
     sqlite3_snprintf(NBFS, z, "%.15g", pMem->r);
   }else{
     assert( fg & MEM_Int );
