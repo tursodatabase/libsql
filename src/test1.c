@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.130 2005/02/17 00:03:07 drh Exp $
+** $Id: test1.c,v 1.131 2005/02/26 17:31:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2032,7 +2032,7 @@ static int test_complete16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifndef SQLITE_OMIT_UTF16
+#if !defined(SQLITE_OMIT_COMPLETE) && !defined(SQLITE_OMIT_UTF16)
   char *zBuf;
 
   if( objc!=2 ){
@@ -2042,7 +2042,7 @@ static int test_complete16(
 
   zBuf = Tcl_GetByteArrayFromObj(objv[1], 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_complete16(zBuf)));
-#endif /* SQLITE_OMIT_UTF16 */
+#endif /* SQLITE_OMIT_COMPLETE && SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -2721,6 +2721,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "bloblit", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "bloblit", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_COMPLETE
+  Tcl_SetVar2(interp, "sqlite_options", "complete", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "complete", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_COMPOUND_SELECT

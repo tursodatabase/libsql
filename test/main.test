@@ -11,10 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.19 2005/01/11 17:46:42 drh Exp $
+# $Id: main.test,v 1.20 2005/02/26 17:31:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Only do the next group of tests if the sqlite3_complete API is available
+#
+ifcapable {complete} {
 
 # Tests of the sqlite_complete() function.
 #
@@ -238,6 +242,8 @@ do_test main-1.35 {
 do_test main-1.36 {
   db complete {hi there/***/;}
 } {1}
+
+} ;# end ifcapable {complete}
 
 
 # Try to open a database with a corrupt database file.

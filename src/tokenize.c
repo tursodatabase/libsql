@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.100 2005/01/31 12:42:29 danielk1977 Exp $
+** $Id: tokenize.c,v 1.101 2005/02/26 17:31:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -431,6 +431,11 @@ abort_parse:
   return nErr;
 }
 
+/* The sqlite3_complete() API may be omitted (to save code space) by
+** defining the following symbol.
+*/
+#ifndef SQLITE_OMIT_COMPLETE
+
 /*
 ** Token types used by the sqlite3_complete() routine.  See the header
 ** comments on that procedure for additional information.
@@ -662,3 +667,4 @@ int sqlite3_complete16(const void *zSql){
   return rc;
 }
 #endif /* SQLITE_OMIT_UTF16 */
+#endif /* SQLITE_OMIT_COMPLETE */

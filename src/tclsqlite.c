@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.118 2005/01/25 04:27:55 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.119 2005/02/26 17:31:27 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -729,6 +729,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** built-in "info complete" command of Tcl.
   */
   case DB_COMPLETE: {
+#ifndef SQLITE_OMIT_COMPLETE
     Tcl_Obj *pResult;
     int isComplete;
     if( objc!=3 ){
@@ -738,6 +739,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     isComplete = sqlite3_complete( Tcl_GetStringFromObj(objv[2], 0) );
     pResult = Tcl_GetObjResult(interp);
     Tcl_SetBooleanObj(pResult, isComplete);
+#endif
     break;
   }
 

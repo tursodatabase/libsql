@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.37 2005/01/24 00:28:43 drh Exp $
+# $Id: tclsqlite.test,v 1.38 2005/02/26 17:31:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -96,10 +96,12 @@ do_test tcl-1.12 {
   set v [catch {db commit_hook a b c} msg]
   lappend v $msg
 } {1 {wrong # args: should be "db commit_hook ?CALLBACK?"}}
-do_test tcl-1.13 {
-  set v [catch {db complete} msg]
-  lappend v $msg
-} {1 {wrong # args: should be "db complete SQL"}}
+ifcapable {complete} {
+  do_test tcl-1.13 {
+    set v [catch {db complete} msg]
+    lappend v $msg
+  } {1 {wrong # args: should be "db complete SQL"}}
+}
 do_test tcl-1.14 {
   set v [catch {db eval} msg]
   lappend v $msg

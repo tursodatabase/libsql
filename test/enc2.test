@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.21 2005/02/13 23:34:25 drh Exp $
+# $Id: enc2.test,v 1.22 2005/02/26 17:31:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -448,11 +448,13 @@ proc utf16 {utf8} {
   append utf16 "\x00\x00"
   return $utf16
 }
-do_test enc2-8.1 {
-  sqlite3_complete16 [utf16 "SELECT * FROM t1;"]
-} {1}
-do_test enc2-8.2 {
-  sqlite3_complete16 [utf16 "SELECT * FROM"]
-} {0}
+ifcapable {complete} {
+  do_test enc2-8.1 {
+    sqlite3_complete16 [utf16 "SELECT * FROM t1;"]
+  } {1}
+  do_test enc2-8.2 {
+    sqlite3_complete16 [utf16 "SELECT * FROM"]
+  } {0}
+}
 
 finish_test

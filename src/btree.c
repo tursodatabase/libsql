@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.248 2005/02/15 16:23:02 drh Exp $
+** $Id: btree.c,v 1.249 2005/02/26 17:31:27 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1843,7 +1843,10 @@ static int autoVacuumCommit(Btree *pBt, Pgno *nTrunc){
 
     rc = ptrmapGet(pBt, iDbPage, &eType, &iPtrPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
-    assert( eType!=PTRMAP_ROOTPAGE );
+    if( eType==PTRMAP_ROOTPAGE ){
+      rc = SQLITE_CORRUPT;
+      goto autovacuum_out;
+    }
 
     /* If iDbPage is free, do not swap it.  */
     if( eType==PTRMAP_FREEPAGE ){
@@ -4690,12 +4693,12 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
         return rc;
       }
       rc = ptrmapGet(pBt, pgnoRoot, &eType, &iPtrPage);
-      assert( eType!=PTRMAP_ROOTPAGE );
-      assert( eType!=PTRMAP_FREEPAGE );
-      if( rc!=SQLITE_OK ){
+      if( rc!=SQLITE_OK || eType==PTRMAP_ROOTPAGE || eType==PTRMAP_FREEPAGE ){
         releasePage(pRoot);
         return rc;
       }
+      assert( eType!=PTRMAP_ROOTPAGE );
+      assert( eType!=PTRMAP_FREEPAGE );
       rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove);
       releasePage(pRoot);
       if( rc!=SQLITE_OK ){

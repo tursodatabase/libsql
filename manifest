@@ -1,5 +1,5 @@
-C Revised\sman\spage\sfrom\sBill\sBumgarner.\s(CVS\s2360)
-D 2005-02-24T04:51:51
+C Fix\san\sassertion\sfault\sthat\scan\soccur\swhile\sautovacuuming\sa\scorrupt\sdatabase\nfile.\s\sAdd\sthe\sSQLITE_OMIT_COMPLETE\scompile-time\sparameter.\s(CVS\s2361)
+D 2005-02-26T17:31:27
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -30,7 +30,7 @@ F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 6dab3d91aa4bf5c24e874145a2a547070c8c1883
 F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c 5c6e81855deec3d1eac5ae03e4c8db6c2595421f
+F src/btree.c 2a9c2c8a9f5a2762f0c770bc9c3f69c689d79d81
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
 F src/build.c a8792b2f866c1ccc32f4977f4ff61d787d60ddfb
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
@@ -63,13 +63,13 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h f95cc4becd7b27293aae8f8c4ed2f6ef44830fbb
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 101994a2c4c0eaa69f1de9bfe4a02167f6049e7d
-F src/test1.c 8b3c7c1765920d8f313c1d74015a6a67c0cd3111
+F src/tclsqlite.c 29e56ecdb94c4066dbe6b088d12cc2404bc9597e
+F src/test1.c 99bfdba919ae278933178a52769115feb20557d9
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c bbeee5e30019261fe2d36330d2bf70d9d7c3eee9
+F src/tokenize.c 103cbaa932c790f540f8eceb63cd3010e117bdff
 F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
@@ -124,7 +124,7 @@ F test/delete.test fc29491f6a7ac899ce29f4549a104809e245d9a6
 F test/delete2.test e382b6a97787197eb8b93dd4ccd37797c3725ea3
 F test/diskfull.test e2f6cfd868713ead06dc82b84a4938e868128fc0
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
-F test/enc2.test af13bb35708413ee86d6dd95032634c5bbfb8466
+F test/enc2.test d1ab077b84f4d3099246915422b1ab6b81481e0a
 F test/enc3.test f6a5f0b7b7f3a88f030d3143729b87cd5c86d837
 F test/expr.test 54d9d1cc05eb731fa62daa70f2d7163f8a03c54d
 F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
@@ -150,7 +150,7 @@ F test/limit.test 270b076f31c5c32f7187de5727e74da4de43e477
 F test/lock.test a19aab9a963273fe61c1058e3d1b648d6a0a2425
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/main.test a60a1d234b5f5784097973bd395514ca56003ef1
+F test/main.test febb69416071134dc38b9b1971c0c2e5b0ca3ff8
 F test/malloc.test b7bc72bb1627e09d6003f58de9bcd6e4be839753
 F test/memdb.test 1860e060be810bf0775bc57408a5b7c4954bcaea
 F test/memleak.test c0af09191af44a7501ec2494fdd079ac538a256c
@@ -188,7 +188,7 @@ F test/subquery.test 6274cce7617bc7f625490759cbe4f0c0eef24895
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test a2a58cae70ef2511cbf27d40fb8f570106a2677e
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
-F test/tclsqlite.test 4b26cad242ef5c634fd52e0465c723d9e0c00901
+F test/tclsqlite.test 4ac312b47632596516353948b59089b02312aed7
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl 69c0dc1accaf0ff26bff62b33e13590a4ecba17d
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 4ae1a9fc2c484e59ef1e58972aa25772cede1187
-R c802c0e424f21e7076793d055c12815a
+P 5c99bea5a480edc7b15ae80be952b212e730d452
+R 9aed6907317152f4462ba568d557eca0
 U drh
-Z 324630e2f2ee77b9bd66c6a7c14bc93a
+Z c94cdcca709d3e72a871ddb7b503aa8a
