@@ -62,18 +62,22 @@ ENCODING = @ENCODING@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = auth.lo btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
-         main.lo opcodes.lo os.lo pager.lo parse.lo printf.lo random.lo \
-         select.lo table.lo tokenize.lo update.lo util.lo vacuum.lo vdbe.lo \
+LIBOBJ = attach.lo auth.lo btree.lo build.lo copy.lo \
+         delete.lo expr.lo func.lo hash.lo insert.lo \
+         main.lo opcodes.lo os.lo pager.lo parse.lo pragma.lo \
+         printf.lo random.lo select.lo table.lo tokenize.lo \
+         update.lo util.lo vacuum.lo vdbe.lo \
          where.lo trigger.lo
 
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
+  $(TOP)/src/copy.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
@@ -85,6 +89,7 @@ SRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
+  $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/select.c \
@@ -241,6 +246,9 @@ vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
 where.lo:	$(TOP)/src/where.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/where.c
 
+copy.lo:	$(TOP)/src/copy.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/copy.c
+
 delete.lo:	$(TOP)/src/delete.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/delete.c
 
@@ -277,8 +285,14 @@ vacuum.lo:	$(TOP)/src/vacuum.c $(HDR)
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
+pragma.lo:	$(TOP)/src/pragma.c $(HDR)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/pragma.c
+
 printf.lo:	$(TOP)/src/printf.c $(HDR)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+
+attach.lo:	$(TOP)/src/attach.c $(HDR)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/attach.c
 
 auth.lo:	$(TOP)/src/auth.c $(HDR)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/auth.c

@@ -54,18 +54,21 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = auth.o btree.o build.o delete.o expr.o func.o hash.o insert.o \
-         main.o opcodes.o os.o pager.o parse.o printf.o random.o \
+LIBOBJ = attach.o auth.o btree.o build.o copy.o delete.o \
+         expr.o func.o hash.o insert.o \
+         main.o opcodes.o os.o pager.o parse.o pragma.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
          vacuum.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
+  $(TOP)/src/copy.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
@@ -77,6 +80,7 @@ SRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
+  $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/select.c \
@@ -236,6 +240,9 @@ vdbe.o:	$(TOP)/src/vdbe.c $(HDR)
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCCX) -c $(TOP)/src/where.c
 
+copy.o:	$(TOP)/src/copy.c $(HDR)
+	$(TCCX) -c $(TOP)/src/copy.c
+
 delete.o:	$(TOP)/src/delete.c $(HDR)
 	$(TCCX) -c $(TOP)/src/delete.c
 
@@ -266,8 +273,14 @@ update.o:	$(TOP)/src/update.c $(HDR)
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
+pragma.o:	$(TOP)/src/pragma.c $(HDR)
+	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/pragma.c
+
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+
+attach.o:	$(TOP)/src/attach.c $(HDR)
+	$(TCCX) -c $(TOP)/src/attach.c
 
 auth.o:	$(TOP)/src/auth.c $(HDR)
 	$(TCCX) -c $(TOP)/src/auth.c
