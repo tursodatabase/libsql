@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.11 2003/08/23 22:40:54 drh Exp $
+** $Id: pragma.c,v 1.12 2003/12/16 03:44:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -555,11 +555,10 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     int i, j, addr;
 
     /* Code that initializes the integrity check program.  Set the
-    ** error message to an empty string and register the callback
-    ** column name.
+    ** error count 0
     */
     static VdbeOp initCode[] = {
-      { OP_String,      0, 0,        ""},
+      { OP_Integer,     0, 0,        0},
       { OP_MemStore,    0, 1,        0},
       { OP_ColumnName,  0, 0,        "integrity_check"},
     };
@@ -578,15 +577,13 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Dup,         0, 1,        0},
       { OP_String,      0, 0,        "ok"},
       { OP_StrEq,       0, 12,       0},    /* 10 */
-      { OP_MemLoad,     0, 0,        0},
+      { OP_MemIncr,     0, 0,        0},
       { OP_String,      0, 0,        "*** in database "},
       { OP_String,      0, 0,        0},    /* 13 */
       { OP_String,      0, 0,        " ***\n"},
-      { OP_Pull,        4, 0,        0},
-      { OP_Concat,      5, 1,        0},
-      { OP_MemStore,    0, 1,        0},
-      { OP_Integer,     0, 0,        0},
-      { OP_Pop,         1, 0,        0},
+      { OP_Pull,        3, 0,        0},
+      { OP_Concat,      4, 1,        0},
+      { OP_Callback,    1, 0,        0},
     };
 
     /* Code that appears at the end of the integrity check.  If no error
@@ -595,10 +592,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     */
     static VdbeOp endCode[] = {
       { OP_MemLoad,     0, 0,        0},
-      { OP_Dup,         0, 1,        0},
-      { OP_String,      0, 0,        ""},
-      { OP_StrNe,       0, 0,        0},    /* 3 */
-      { OP_Pop,         1, 0,        0},
+      { OP_Integer,     0, 0,        0},
+      { OP_Ne,          0, 0,        0},    /* 2 */
       { OP_String,      0, 0,        "ok"},
       { OP_Callback,    1, 0,        0},
     };
@@ -617,7 +612,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeChangeP2(v, addr+3, addr+7);
       sqliteVdbeChangeP2(v, addr+6, addr+4);
       sqliteVdbeChangeP2(v, addr+7, i);
-      sqliteVdbeChangeP2(v, addr+10, addr+ArraySize(checkDb)-1);
+      sqliteVdbeChangeP2(v, addr+10, addr+ArraySize(checkDb));
       sqliteVdbeChangeP3(v, addr+13, db->aDb[i].zName, P3_STATIC);
 
       /* Make sure all the indices are constructed correctly.
@@ -645,14 +640,13 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int k, jmp2;
           static VdbeOp idxErr[] = {
-            { OP_MemLoad,     0,  0,  0},
+            { OP_MemIncr,     0,  0,  0},
             { OP_String,      0,  0,  "rowid "},
             { OP_Recno,       1,  0,  0},
             { OP_String,      0,  0,  " missing from index "},
             { OP_String,      0,  0,  0},    /* 4 */
-            { OP_String,      0,  0,  "\n"},
-            { OP_Concat,      6,  0,  0},
-            { OP_MemStore,    0,  1,  0},
+            { OP_Concat,      4,  0,  0},
+            { OP_Callback,    1,  0,  0},
           };
           sqliteVdbeAddOp(v, OP_Recno, 1, 0);
           for(k=0; k<pIdx->nColumn; k++){
@@ -682,12 +676,11 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
              { OP_MemLoad,      1,  0,  0},
              { OP_MemLoad,      2,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 7 */
-             { OP_MemLoad,      0,  0,  0},
+             { OP_MemIncr,      0,  0,  0},
              { OP_String,       0,  0,  "wrong # of entries in index "},
              { OP_String,       0,  0,  0},  /* 10 */
-             { OP_String,       0,  0,  "\n"},
-             { OP_Concat,       4,  0,  0},
-             { OP_MemStore,     0,  1,  0},
+             { OP_Concat,       2,  0,  0},
+             { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;
           addr = sqliteVdbeAddOpList(v, ArraySize(cntIdx), cntIdx);
@@ -701,7 +694,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       } 
     }
     addr = sqliteVdbeAddOpList(v, ArraySize(endCode), endCode);
-    sqliteVdbeChangeP2(v, addr+3, addr+ArraySize(endCode)-1);
+    sqliteVdbeChangeP2(v, addr+2, addr+ArraySize(endCode));
   }else
 
   {}

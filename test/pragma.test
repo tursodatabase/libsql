@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.6 2003/07/27 17:26:23 drh Exp $
+# $Id: pragma.test,v 1.7 2003/12/16 03:44:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -264,8 +264,6 @@ do_test pragma-3.2 {
   btree_commit $db
   btree_close $db
   execsql {PRAGMA integrity_check}
-} {{rowid 1 missing from index i2
-wrong # of entries in index i2
-}}
+} {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
 
 finish_test

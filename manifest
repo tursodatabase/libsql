@@ -1,5 +1,5 @@
-C Updates\sto\sthe\shomepage\s-\sfix\sthe\sCVS\saccess\sinstructions.\s(CVS\s1131)
-D 2003-12-15T17:51:19
+C Improvements\sto\sthe\sway\sPRAGMA\sintegrity_check\sworks.\s\sMore\slikely\sto\soutput\nuserful\sinformation\swhen\sgiven\sa\scorrupt\sdatabase.\s(CVS\s1132)
+D 2003-12-16T03:44:48
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 9a3764bbccb1c8b39321630006fbaa0fb8bd1822
 F src/auth.c c59ad0dab501888f8b1fccc25e2f5965d2265116
-F src/btree.c bcb466c2939582a3a62f577cd8a9e5d637f3698d
+F src/btree.c 89a77be5ca8bb229f9e230de534098ea5b06c2c1
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c e4084b6a12270674b0cd7034655f55e6a2639c78
 F src/build.c a7493c433de5b552f9535d8fa7ed80aaf135491e
@@ -43,7 +43,7 @@ F src/os.h 729395fefcca4b81ae056aa9ff67b72bb40dd9e0
 F src/pager.c 62702dff51d50694d039bc210f31990d1fbba2dd
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y c65aa6c5508763806ac9734b0589b93480ec7e7a
-F src/pragma.c cee60f17679210e8acd30d5bdee855716d0c898c
+F src/pragma.c deec7342741e371f3042adaee53fcc324c5dd1d4
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
@@ -109,7 +109,7 @@ F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
-F test/pragma.test e7cb7ffd765c9158868b0b7a3771d54a0d5f5072
+F test/pragma.test 17ff54f4abe187fa1e9dd20afef63d14c650d737
 F test/printf.test 3ed02f1361402c0767492cd5cef4650e61df8308
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P d6549954408b01e5eaf865b9100739c94de28f16
-R edcd3752c4dbf2f82999564759ef2959
+P 653a7dd97ed95e66bd2973169735ee73ee348576
+R 435a13e877cf1f013db1660aef5f3d2f
 U drh
-Z ee4c4b73919cef5782114fea0f6ce2ec
+Z b27d1bd5a7237f952a32b8adb3b13abd
