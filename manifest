@@ -1,5 +1,5 @@
-C os_win.c\sis\snow\sworking\swith\sthe\snew\slocking\sprotocol.\s(CVS\s1581)
-D 2004-06-13T23:07:04
+C Update\sthe\sfile\schange\scounter\sjust\sbefore\seach\stransaction\sis\scommitted.\s(CVS\s1582)
+D 2004-06-14T05:10:43
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/os_unix.c 7ece785e36c4ecb57c73db8d374b56912d742c4a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c d4009586dfd0543ca8956ff0be30f9d23e2cbbdd
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 4a2d3c871169385f7fe65c37919ced82cb3d34ed
+F src/pager.c feb44bd0279f77319079c1fddf9be927b052d028
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c e288bd122d3ca41ec2032475abde1ff5fa3095f4
@@ -71,7 +71,7 @@ F src/update.c 6133c876aa126e1771cda165fd992bb0d2f8eb38
 F src/utf.c e16737b3fc4201bf7ce9bd8ced5250596aa31b76
 F src/util.c 90375fa253137562d536ccdd40b297f0fd7413fc
 F src/vacuum.c b921eb778842592e1fb48a9d4cef7e861103878f
-F src/vdbe.c c71e47262d3d3539a20a489a03b9cde15ef3acb7
+F src/vdbe.c e6b6702fb2c2e2702e312f52c2cc08353c580736
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c5ebc1c05eccc2c0697b6047a504954e11960f73
-R 4b53e920198647f93177549edf4e8baf
-U drh
-Z 362250ddf90f1c6b39b6cc80b805170c
+P 77c5eaa10a9d2e2bb8f89b7434d6e6efbacf35e9
+R 728fa94fee79e66b965ca32e2cd56d1b
+U danielk1977
+Z 982942d9d284a3b9c20e3e9aaf713011

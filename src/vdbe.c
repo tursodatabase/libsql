@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.370 2004/06/12 20:12:51 drh Exp $
+** $Id: vdbe.c,v 1.371 2004/06/14 05:10:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2136,7 +2136,7 @@ case OP_Column: {
 **  't'            TEXT
 **  'o'            NONE
 **
-** If P3 is NULL then datatype coercion occurs.
+** If P3 is NULL then no datatype coercion occurs.
 */
 /* Opcode MakeRecord P1 * P3
 **

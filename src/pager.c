@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.124 2004/06/12 01:43:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.125 2004/06/14 05:10:43 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -71,6 +71,13 @@ static Pager *mainPager = 0;
 **                       threads can be reading or writing while one
 **                       process is writing.
 **
+**   PAGER_SYNCED        The pager moves to this state from PAGER_EXCLUSIVE
+**                       after all dirty pages have been written to the
+**                       database file and the file has been synced to
+**                       disk. All that remains to do is to remove the
+**                       journal file and the transaction will be
+**                       committed.
+**
 ** The page cache comes up in PAGER_UNLOCK.  The first time a
 ** sqlite3pager_get() occurs, the state transitions to PAGER_SHARED.
 ** After all pages have been released using sqlite_page_unref(),
@@ -87,6 +94,7 @@ static Pager *mainPager = 0;
 #define PAGER_SHARED      1
 #define PAGER_RESERVED    2
 #define PAGER_EXCLUSIVE   3
+#define PAGER_SYNCED      4
 
 
 /*
@@ -323,8 +331,8 @@ static int write32bits(OsFile *fd, u32 val){
 }
 
 /*
-** Write a 32-bit integer into a page header right before the
-** page data.  This will overwrite the PgHdr.pDirty pointer.
+** Write the 32-bit integer 'val' into the page identified by page header
+** 'p' at offset 'offset'.
 */
 static void store32bits(u32 val, PgHdr *p, int offset){
   unsigned char *ac;
@@ -333,6 +341,16 @@ static void store32bits(u32 val, PgHdr *p, int offset){
   ac[1] = (val>>16) & 0xff;
   ac[2] = (val>>8) & 0xff;
   ac[3] = val & 0xff;
+}
+
+/*
+** Read a 32-bit integer at offset 'offset' from the page identified by
+** page header 'p'.
+*/
+static u32 retrieve32bits(PgHdr *p, int offset){
+  unsigned char *ac;
+  ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
+  return (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
 }
 
 
@@ -532,7 +550,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     }
   }
 
-  assert( pPager->state==PAGER_RESERVED || pPager->state==PAGER_EXCLUSIVE );
+  assert( pPager->state==PAGER_RESERVED || pPager->state>=PAGER_EXCLUSIVE );
 
   /* If the pager is in RESERVED state, then there must be a copy of this
   ** page in the pager cache. In this case just update the pager cache,
@@ -546,9 +564,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** and the main file. The page is then marked not dirty.
   */
   pPg = pager_lookup(pPager, pgno);
-  assert( pPager->state==PAGER_EXCLUSIVE || pPg );
+  assert( pPager->state>=PAGER_EXCLUSIVE || pPg );
   TRACE2("PLAYBACK page %d\n", pgno);
-  if( pPager->state==PAGER_EXCLUSIVE ){
+  if( pPager->state>=PAGER_EXCLUSIVE ){
     sqlite3OsSeek(&pPager->fd, (pgno-1)*(off_t)SQLITE_PAGE_SIZE);
     rc = sqlite3OsWrite(&pPager->fd, aData, SQLITE_PAGE_SIZE);
   }
@@ -564,7 +582,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     if( pPager->xDestructor ){  /*** FIX ME:  Should this be xReinit? ***/
       pPager->xDestructor(pData, pPager->pageSize);
     }
-    if( pPager->state==PAGER_EXCLUSIVE ){
+    if( pPager->state>=PAGER_EXCLUSIVE ){
       pPg->dirty = 0;
       pPg->needSync = 0;
     }
@@ -1315,6 +1333,7 @@ int sqlite3pager_close(Pager *pPager){
   PgHdr *pPg, *pNext;
   switch( pPager->state ){
     case PAGER_RESERVED:
+    case PAGER_SYNCED: 
     case PAGER_EXCLUSIVE: {
       sqlite3pager_rollback(pPager);
       if( !pPager->memDb ){
@@ -2628,6 +2647,35 @@ void sqlite3pager_set_codec(
 }
 
 /*
+** This routine is called to increment the database file change-counter,
+** stored at byte 24 of the pager file.
+*/
+static int pager_incr_changecounter(Pager *pPager){
+  void *pPage;
+  PgHdr *pPgHdr;
+  u32 change_counter;
+  int rc;
+
+  /* Open page 1 of the file for writing. */
+  rc = sqlite3pager_get(pPager, 1, &pPage);
+  if( rc!=SQLITE_OK ) return rc;
+  rc = sqlite3pager_write(pPage);
+  if( rc!=SQLITE_OK ) return rc;
+
+  /* Read the current value at byte 24. */
+  pPgHdr = DATA_TO_PGHDR(pPage);
+  change_counter = retrieve32bits(pPgHdr, 24);
+
+  /* Increment the value just read and write it back to byte 24. */
+  change_counter++;
+  store32bits(change_counter, pPgHdr, 24);
+
+  /* Release the page reference. */
+  sqlite3pager_unref(pPage);
+  return SQLITE_OK;
+}
+
+/*
 ** Sync the database file for the pager pPager. zMaster points to the name
 ** of a master journal file that should be written into the individual
 ** journal file. zMaster may be NULL, which is interpreted as no master
@@ -2644,12 +2692,15 @@ void sqlite3pager_set_codec(
 int sqlite3pager_sync(Pager *pPager, const char *zMaster){
   int rc = SQLITE_OK;
 
-  /* If this is an in-memory db, or no pages have been written to, this
-  ** function is a no-op.
+  /* If this is an in-memory db, or no pages have been written to, or this
+  ** function has already been called, it is a no-op.
   */
-  if( !pPager->memDb && pPager->dirtyCache ){
+  if( pPager->state!=PAGER_SYNCED && !pPager->memDb && pPager->dirtyCache ){
     PgHdr *pPg;
     assert( pPager->journalOpen );
+
+    rc = pager_incr_changecounter(pPager);
+    if( rc!=SQLITE_OK ) goto sync_exit;
 
     /* Sync the journal file */
     rc = syncJournal(pPager, zMaster);
@@ -2660,10 +2711,12 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster){
     rc = pager_write_pagelist(pPg);
     if( rc!=SQLITE_OK ) goto sync_exit;
 
-    /* If any pages were actually written, sync the database file */
-    if( pPg && !pPager->noSync ){
+    /* Sync the database file. */
+    if( !pPager->noSync ){
       rc = sqlite3OsSync(&pPager->fd);
     }
+
+    pPager->state = PAGER_SYNCED;
   }
 
 sync_exit:
