@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.85 2003/05/17 17:35:12 drh Exp $
+** $Id: insert.c,v 1.86 2003/06/01 01:10:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -293,10 +293,14 @@ void sqliteInsert(
         }
       }
       if( j>=pTab->nCol ){
-        sqliteErrorMsg(pParse, "table %S has no column named %s",
-            pTabList, 0, pColumn->a[i].zName);
-        pParse->nErr++;
-        goto insert_cleanup;
+        if( sqliteIsRowid(pColumn->a[i].zName) ){
+          keyColumn = i;
+        }else{
+          sqliteErrorMsg(pParse, "table %S has no column named %s",
+              pTabList, 0, pColumn->a[i].zName);
+          pParse->nErr++;
+          goto insert_cleanup;
+        }
       }
     }
   }
@@ -482,7 +486,8 @@ void sqliteInsert(
     /* Generate code to check constraints and generate index keys and
     ** do the insertion.
     */
-    sqliteGenerateConstraintChecks(pParse, pTab, base, 0,0,0,onError,endOfLoop);
+    sqliteGenerateConstraintChecks(pParse, pTab, base, 0, keyColumn>=0,
+                                   0, onError, endOfLoop);
     sqliteCompleteInsertion(pParse, pTab, base, 0,0,0,
                             after_triggers ? newIdx : -1);
   }
@@ -660,7 +665,6 @@ void sqliteGenerateConstraintChecks(
   */
   for(i=0; i<nCol; i++){
     if( i==pTab->iPKey ){
-      /* Fix me: Make sure the INTEGER PRIMARY KEY is not NULL. */
       continue;
     }
     onError = pTab->aCol[i].notNull;
@@ -714,7 +718,7 @@ void sqliteGenerateConstraintChecks(
   ** Also, if the conflict resolution policy is REPLACE, then we
   ** can skip this test.
   */
-  if( (recnoChng || !isUpdate) && pTab->iPKey>=0 ){
+  if( /* (recnoChng || !isUpdate) && pTab->iPKey>=0 */ recnoChng ){
     onError = pTab->keyConf;
     if( overrideError!=OE_Default ){
       onError = overrideError;
@@ -723,6 +727,7 @@ void sqliteGenerateConstraintChecks(
     }else if( onError==OE_Default ){
       onError = OE_Abort;
     }
+    
     if( onError!=OE_Replace ){
       if( isUpdate ){
         sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
@@ -732,6 +737,10 @@ void sqliteGenerateConstraintChecks(
       sqliteVdbeAddOp(v, OP_Dup, nCol, 1);
       jumpInst2 = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
       switch( onError ){
+        default: {
+          onError = OE_Abort;
+          /* Fall thru into the next case */
+        }
         case OE_Rollback:
         case OE_Abort:
         case OE_Fail: {
@@ -744,7 +753,6 @@ void sqliteGenerateConstraintChecks(
           sqliteVdbeAddOp(v, OP_Goto, 0, ignoreDest);
           break;
         }
-        default: assert(0);
       }
       contAddr = sqliteVdbeCurrentAddr(v);
       sqliteVdbeChangeP2(v, jumpInst2, contAddr);

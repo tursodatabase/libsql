@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.10 2003/04/15 19:22:24 drh Exp $
+# $Id: rowid.test,v 1.11 2003/06/01 01:10:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -87,32 +87,44 @@ do_test rowid-1.9 {
   expr {$v==$v2}
 } {1}
 
-# We cannot update or insert the ROWID column
+# We can insert or update the ROWID column.
 #
 do_test rowid-2.1 {
-  set v [catch {execsql {INSERT INTO t1(rowid,x,y) VALUES(1234,5,6)}} msg]
-  lappend v $msg
-} {1 {table t1 has no column named rowid}}
+  catchsql {
+    INSERT INTO t1(rowid,x,y) VALUES(1234,5,6);
+    SELECT rowid, * FROM t1;
+  }
+} {0 {1 1 2 2 3 4 1234 5 6}}
 do_test rowid-2.2 {
-  set v [catch {execsql {UPDATE t1 SET rowid=12345 WHERE x==1}}]
-  lappend v $msg
-} {1 {table t1 has no column named rowid}}
+  catchsql {
+    UPDATE t1 SET rowid=12345 WHERE x==1;
+    SELECT rowid, * FROM t1
+  }
+} {0 {2 3 4 1234 5 6 12345 1 2}}
 do_test rowid-2.3 {
-  set v [catch {execsql {INSERT INTO t1(oid,x,y) VALUES(1234,5,6)}} msg]
-  lappend v $msg
-} {1 {table t1 has no column named oid}}
+  catchsql {
+    INSERT INTO t1(y,x,oid) VALUES(8,7,1235);
+    SELECT rowid, * FROM t1 WHERE rowid>1000;
+  }
+} {0 {1234 5 6 1235 7 8 12345 1 2}}
 do_test rowid-2.4 {
-  set v [catch {execsql {UPDATE t1 SET oid=12345 WHERE x==1}}]
-  lappend v $msg
-} {1 {table t1 has no column named oid}}
+  catchsql {
+    UPDATE t1 SET oid=12346 WHERE x==1;
+    SELECT rowid, * FROM t1;
+  }
+} {0 {2 3 4 1234 5 6 1235 7 8 12346 1 2}}
 do_test rowid-2.5 {
-  set v [catch {execsql {INSERT INTO t1(_rowid_,x,y) VALUES(1234,5,6)}} msg]
-  lappend v $msg
-} {1 {table t1 has no column named _rowid_}}
+  catchsql {
+    INSERT INTO t1(x,_rowid_,y) VALUES(9,1236,10);
+    SELECT rowid, * FROM t1 WHERE rowid>1000;
+  }
+} {0 {1234 5 6 1235 7 8 1236 9 10 12346 1 2}}
 do_test rowid-2.6 {
-  set v [catch {execsql {UPDATE t1 SET _rowid_=12345 WHERE x==1}}]
-  lappend v $msg
-} {1 {table t1 has no column named _rowid_}}
+  catchsql {
+    UPDATE t1 SET _rowid_=12347 WHERE x==1;
+    SELECT rowid, * FROM t1 WHERE rowid>1000;
+  }
+} {0 {1234 5 6 1235 7 8 1236 9 10 12347 1 2}}
 
 # But we can use ROWID in the WHERE clause of an UPDATE that does not
 # change the ROWID.
@@ -122,13 +134,13 @@ do_test rowid-2.7 {
   set sql "UPDATE t1 SET x=2 WHERE OID==$x2rowid(3)"
   execsql $sql
   execsql {SELECT x FROM t1 ORDER BY x}
-} {1 2}
+} {1 2 5 7 9}
 do_test rowid-2.8 {
   global x2rowid
   set sql "UPDATE t1 SET x=3 WHERE _rowid_==$x2rowid(3)"
   execsql $sql
   execsql {SELECT x FROM t1 ORDER BY x}
-} {1 3}
+} {1 3 5 7 9}
 
 # We cannot index by ROWID
 #
