@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.16 2003/09/27 00:56:33 drh Exp $
+# $Id: copy.test,v 1.17 2004/02/17 18:26:57 dougcurrie Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,7 @@ puts $f "11|22|33"
 puts $f "22|33|11"
 close $f
 set f [open dataX.txt w]
+fconfigure $f -translation binary 
 puts -nonewline $f "11|22|33\r"
 puts -nonewline $f "22|33|44\r\n"
 puts -nonewline $f "33|44|55\n"
