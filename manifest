@@ -1,5 +1,5 @@
-C Trying\sto\sget\ssome\stests\sin\sprintf.test\sto\spass\son\s64-bit\ssystems.\s(CVS\s1952)
-D 2004-09-09T00:35:30
+C Fix\sa\ssegfault\sin\sthe\sauthorizer\swhen\sit\sis\sgiven\sa\sSELECT\sstatement\swith\nno\sFROM\sclause.\s\sTicket\s#896.\s(CVS\s1954)
+D 2004-09-09T13:55:50
 F Makefile.in 7f481bb8cdb032491df611526e6f4eb6af79691d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
-F src/auth.c 038d7c7c2224fa92f0125c0c30c90f7b2ca8c39a
+F src/auth.c 65408baa7e6621520882478dfa1e6b8c1d6c1850
 F src/btree.c 470e00b08688f065c2e62a6dcd3fb18880e8e309
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c 662f4e56a64aacadc97c481492b08c842b9ec0f4
@@ -86,7 +86,7 @@ F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/attach.test feb2ce54e78688df4c84553416d5aec3b2a0112e
 F test/attach2.test 32ca2c1a5a347a7404219a11f9f84739a63d2582
 F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
-F test/auth.test e74b015545f608c06d5b84d17acdf7146eb818af
+F test/auth.test 300024c28fd0aac163a135b94504dffe82f06952
 F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test d7e7f44817a6dbe0faedbb699ad2b559e5a3a7bb
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8d0c9a8d94930056817a99d9504e804a200eda73
-R fa16565e97b0b79526316711808f2881
+P b12fc46dcd5aa901fc781a17d49f8f110fed5b8d
+R 4e362028b1b398fb77b07e3b80575dd1
 U drh
-Z 3b34ac8e9ed662e375ce442bf1156fe9
+Z ddb1e86004c5f01cb0335ceb4c0dafa3
