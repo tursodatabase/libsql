@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.382 2004/06/21 06:50:29 danielk1977 Exp $
+** $Id: vdbe.c,v 1.383 2004/06/21 09:06:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -768,11 +768,11 @@ case OP_String: {
 
 /* Opcode: HexBlob * * P3
 **
-** P3 is an SQL hex encoding of a blob. The blob is pushed
-** onto the vdbe stack.
+** P3 is an UTF-8 SQL hex encoding of a blob. The blob is pushed onto the
+** vdbe stack.
 **
-** The first time this instruction executes, in transforms
-** itself into a 'Blob' opcode with a binary blob as P3.
+** The first time this instruction executes, in transforms itself into a
+** 'Blob' opcode with a binary blob as P3.
 */
 case OP_HexBlob: {
   pOp->opcode = OP_Blob;
@@ -1018,6 +1018,38 @@ case OP_Callback: {
   return SQLITE_ROW;
 }
 
+/* Opcode: Concat8 P1 P2 P3
+**
+** P3 points to a nul terminated UTF-8 string. When it is executed for
+** the first time, P3 is converted to the native database encoding and
+** the opcode replaced with Concat (see Concat for details of processing).
+*/
+case OP_Concat8: {
+  pOp->opcode = OP_Concat;
+
+  if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
+    Mem tmp;
+    tmp.flags = MEM_Null;
+    sqlite3VdbeMemSetStr(&tmp, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
+    if( SQLITE_OK!=sqlite3VdbeChangeEncoding(&tmp, db->enc) ||
+        SQLITE_OK!=sqlite3VdbeMemDynamicify(&tmp) 
+    ){
+      goto no_mem;
+    }
+    assert( tmp.flags|MEM_Dyn );
+    assert( !tmp.xDel );
+    pOp->p3type = P3_DYNAMIC;
+    pOp->p3 = tmp.z;
+    /* Don't call sqlite3VdbeMemRelease() on &tmp, the dynamic allocation
+    ** is cleaned up when the vdbe is deleted. 
+    */
+  }
+
+  /* If it wasn't already, P3 has been converted to the database text
+  ** encoding. Fall through to OP_Concat to process this instruction.
+  */
+}
+
 /* Opcode: Concat P1 P2 P3
 **
 ** Look at the first P1 elements of the stack.  Append them all 
@@ -1038,16 +1070,15 @@ case OP_Concat: {
   Mem *pTerm;
   Mem mSep;     /* Memory cell containing the seperator string, if any */
 
-  /* FIX ME: Eventually, P3 will be in database native encoding. But for
-  ** now it is always UTF-8. So set up zSep to hold the native encoding of
-  ** P3.
-  */
   if( pOp->p3 ){
     mSep.z = pOp->p3;
-    mSep.n = strlen(mSep.z);
+    if( db->enc==SQLITE_UTF8 ){
+      mSep.n = strlen(mSep.z);
+    }else{
+      mSep.n = sqlite3utf16ByteLen(mSep.z, -1);
+    }
     mSep.flags = MEM_Str|MEM_Static|MEM_Term;
-    mSep.enc = SQLITE_UTF8;
-    sqlite3VdbeChangeEncoding(&mSep, db->enc);
+    mSep.enc = db->enc;
   }else{
     mSep.flags = MEM_Null;
     mSep.n = 0;
@@ -3614,38 +3645,6 @@ case OP_IdxRecno: {
       pTos->flags = MEM_Int;
       pTos->i = rowid;
     }
-
-#if 0
-    /* Read the final 9 bytes of the key into buf[]. If the whole key is
-    ** less than 9 bytes then just load the whole thing. Set len to the 
-    ** number of bytes read.
-    */
-    sqlite3BtreeKeySize(pCrsr, &sz);
-    len = ((sz>10)?10:sz);
-    rc = sqlite3BtreeKey(pCrsr, sz-len, len, buf);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
-    }
-
-    len--;
-    if( buf[len]&0x80 ){
-      /* If the last byte read has the 0x80 bit set, then the key does
-      ** not end with a varint. Push a NULL onto the stack instead.
-      */
-      pTos->flags = MEM_Null;
-    }else{
-      /* Find the start of the varint by searching backwards for a 0x00
-      ** byte. If one does not exists, then intepret the whole 9 bytes as a
-      ** varint.
-      */
-      while( len && buf[len-1] ){
-        len--;
-      }
-      sqlite3GetVarint32(&buf[len], &sz);
-      pTos->flags = MEM_Int;
-      pTos->i = sz;
-    }
-#endif
   }else{
     pTos->flags = MEM_Null;
   }
@@ -4039,11 +4038,6 @@ case OP_ContextPush: {
 
   p->contextStack[p->contextStackDepth - 1].lastRowid = p->db->lastRowid;
   p->contextStack[p->contextStackDepth - 1].nChange = p->nChange;
-
-#if 0
-  p->contextStack[p->contextStackDepth - 1].lsChange = p->db->lsChange;
-  p->contextStack[p->contextStackDepth - 1].csChange = p->db->csChange;
-#endif
   break;
 }
 
@@ -4058,10 +4052,6 @@ case OP_ContextPop: {
   p->contextStackDepth--;
   p->db->lastRowid = p->contextStack[p->contextStackDepth].lastRowid;
   p->nChange = p->contextStack[p->contextStackDepth].nChange;
-#if 0
-  p->db->lsChange = p->contextStack[p->contextStackDepth].lsChange;
-  p->db->csChange = p->contextStack[p->contextStackDepth].csChange;
-#endif
   if( p->contextStackDepth == 0 ){
     sqliteFree(p->contextStack);
     p->contextStack = 0;

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.227 2004/06/19 17:33:07 drh Exp $
+** $Id: build.c,v 1.228 2004/06/21 09:06:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1379,7 +1379,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       n = Addr(pEnd->z) - Addr(pParse->sNameToken.z) + 1;
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeChangeP3(v, -1, pParse->sNameToken.z, n);
-      sqlite3VdbeAddOp(v, OP_Concat, 2, 0);
+      sqlite3VdbeAddOp(v, OP_Concat8, 2, 0);
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
@@ -2178,7 +2178,7 @@ void sqlite3CreateIndex(
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       n = Addr(pEnd->z) - Addr(pName->z) + 1;
       sqlite3VdbeChangeP3(v, -1, pName->z, n);
-      sqlite3VdbeAddOp(v, OP_Concat, 2, 0);
+      sqlite3VdbeAddOp(v, OP_Concat8, 2, 0);
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
