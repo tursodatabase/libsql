@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jun 24 (2.5.3)} {
+<li>Bug fix:  Database corruption can occur due to the optimization
+    that was introduced in version 2.4.0 (checking [410]).  The problem
+    should now be fixed.  The use of versions 2.4.0 through 2.5.2 is
+    not recommended.</li>
+}
+
 chng {2002 Jun 24 (2.5.2)} {
 <li>Added the new <b>SQLITE_TEMP_MASTER</b> table which records the schema
     for temporary tables in the same way that <b>SQLITE_MASTER</b> does for

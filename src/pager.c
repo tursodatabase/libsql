@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.46 2002/05/30 12:27:03 drh Exp $
+** @(#) $Id: pager.c,v 1.47 2002/06/25 14:43:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1195,7 +1195,18 @@ void sqlitepager_dont_write(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
   pPg = pager_lookup(pPager, pgno);
   if( pPg && pPg->dirty ){
-    pPg->dirty = 0;
+    if( pPager->dbSize==(int)pPg->pgno && pPager->origDbSize<pPager->dbSize ){
+      /* If this pages is the last page in the file and the file has grown
+      ** during the current transaction, then do NOT mark the page as clean.
+      ** When the database file grows, we must make sure that the last page
+      ** gets written at least once so that the disk file will be the correct
+      ** size. If you do not write this page and the size of the file
+      ** on the disk ends up being too small, that can lead to database
+      ** corruption during the next transaction.
+      */
+    }else{
+      pPg->dirty = 0;
+    }
   }
 }
 

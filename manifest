@@ -1,9 +1,9 @@
-C Enhance\sthe\sINTEGRITY_CHECK\spragma\sto\stest\sthe\sauxiliary\sdatabase\sfile\sin\naddition\sto\sthe\smain\sdatabase\sfile.\s(CVS\s642)
-D 2002-06-25T13:16:03
+C Bug\sfix:\sWhen\sthe\sdatabase\sfile\sgrows\sin\ssize\sduring\sa\stransaction,\smake\ssure\nthe\slast\spage\sof\sthe\sfile\sgets\swritten\sto\sdisk\seven\sif\sthat\spage\sis\son\sthe\nfree\slist\sand\scontains\sno\sdata.\s\sOtherwise\sthe\sdisk\sfile\swill\sbe\stoo\ssmall\nwhich\scan\slead\sto\sdatabase\scorruption\sin\ssubsequent\stransactions.\s(CVS\s643)
+D 2002-06-25T14:43:58
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 2ca20d4461e9496d4ae27191e7273a12369ff17c
+F VERSION 97bfa91ca72b5d914131a988ca9b75bc52c40553
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -32,7 +32,7 @@ F src/main.c 43d5f4e38108129a13cf42c59087e6e20b3596ad
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
-F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
+F src/pager.c 58ae9f569b3c664ea9205c6f6da432e3ae180f56
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y c75ea2580de675bcb80ff8b7c10c0a15e02a21ab
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
@@ -122,7 +122,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58cf4d128dcae08d91d0011c6d4d11de323f470f
-F www/changes.tcl 08de0b1b50d3651ac3bd6b0d44c9ebe0072b55b3
+F www/changes.tcl a096bde48589a4c1fae69e85d72d3c41fdd186cd
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ac64065d0c5e2de0f71238d55b2c14bb5c5c194c
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 756310cad23668785eac679ef0842d1f37c306ee
-R 86bdc4dd43fde89d9869884f7454049a
+P 52eba4de301121f254174b74042015bf6069ef11
+R 40d3bf2fd98ee726a822a60d13e6ec24
 U drh
-Z 4de554b1388a65f2a11731d055d158e3
+Z a933713559c7d8b5cd51a8205ff4246e
