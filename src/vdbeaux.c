@@ -1048,6 +1048,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
   if( p->deferredMoveto ){
     int res;
     extern int sqlite3_search_count;
+    assert( p->intKey );
     if( p->intKey ){
       sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
     }else{

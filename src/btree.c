@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.126 2004/05/11 02:10:07 danielk1977 Exp $
+** $Id: btree.c,v 1.127 2004/05/11 09:31:32 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3436,7 +3436,12 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable){
 /*
 ** Read the meta-information out of a database file.  Meta[0]
 ** is the number of free pages currently in the database.  Meta[1]
-** through meta[15] are available for use by higher layers.
+** through meta[15] are available for use by higher layers.  Meta[0]
+** is read-only, the others are read/write.
+** 
+** The schema layer numbers meta values differently.  At the schema
+** layer (and the SetCookie and ReadCookie opcodes) the number of
+** free pages is not visible.  So Cookie[0] is the same as Meta[1].
 */
 int sqlite3BtreeGetMeta(Btree *pBt, int idx, u32 *pMeta){
   int rc;

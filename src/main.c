@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.172 2004/05/11 09:05:49 drh Exp $
+** $Id: main.c,v 1.173 2004/05/11 09:31:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -138,7 +138,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   Table *pTab;
   char *azArg[6];
   char zDbNum[30];
-  int meta[SQLITE_N_BTREE_META];
+  int meta[10];
   InitData initData;
 
   /*
@@ -210,12 +210,24 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     return rc;
   }
 
-  /* Get the database meta information
+  /* Get the database meta information.
+  **
+  ** Meta values are as follows:
+  **    meta[0]   Schema cookie.  Changes with each schema change.
+  **    meta[1]   File format of schema layer.
+  **    meta[2]   Size of the page cache.
+  **    meta[3]   Synchronous setting.  1:off, 2:normal, 3:full
+  **    meta[4]
+  **    meta[5]   Pragma temp_store value.  See comments on BtreeFactory
+  **    meta[6]
+  **    meta[7]
+  **    meta[8]
+  **    meta[9]
   */
   if( rc==SQLITE_OK ){
     int i;
-    for(i=0; rc==SQLITE_OK && i<SQLITE_N_BTREE_META; i++){
-      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i, &meta[i]);
+    for(i=0; rc==SQLITE_OK && i<sizeof(meta)/sizeof(meta[0]); i++){
+      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, &meta[i]);
     }
     if( rc ){
       sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
@@ -225,16 +237,16 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   }else{
     memset(meta, 0, sizeof(meta));
   }
-  db->aDb[iDb].schema_cookie = meta[1];
+  db->aDb[iDb].schema_cookie = meta[0];
   if( iDb==0 ){
-    db->next_cookie = meta[1];
-    db->file_format = meta[2];
-    size = meta[3];
+    db->next_cookie = meta[0];
+    db->file_format = meta[1];
+    size = meta[2];
     if( size==0 ){ size = MAX_PAGES; }
     db->cache_size = size;
-    db->safety_level = meta[4];
-    if( meta[6]>0 && meta[6]<=2 && db->temp_store==0 ){
-      db->temp_store = meta[6];
+    db->safety_level = meta[3];
+    if( meta[5]>0 && meta[5]<=2 && db->temp_store==0 ){
+      db->temp_store = meta[5];
     }
     if( db->safety_level==0 ) db->safety_level = 2;
 
@@ -249,8 +261,8 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
       sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
       return SQLITE_ERROR;
     }
-  }else if( db->file_format!=meta[2] ){
-    if( meta[2]==0 ){
+  }else if( db->file_format!=meta[1] ){
+    if( meta[1]==0 ){
       sqlite3SetString(pzErrMsg, "cannot attach empty database: ",
          db->aDb[iDb].zName, (char*)0);
     }else{
@@ -262,7 +274,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     return SQLITE_FORMAT;
   }
   sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
-  sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[4]==0 ? 2 : meta[4]);
+  sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[3]==0 ? 2 : meta[3]);
 
   /* Read the schema information out of the schema tables
   */

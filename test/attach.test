@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.14 2004/05/10 23:29:51 drh Exp $
+# $Id: attach.test,v 1.15 2004/05/11 09:31:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23,7 +23,7 @@ for {set i 2} {$i<=15} {incr i} {
   file delete -force test$i.db-journal
 }
 
-set btree_trace 1
+set btree_trace 0
 do_test attach-1.1 {
   execsql {
     CREATE TABLE t1(a,b);

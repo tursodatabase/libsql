@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.280 2004/05/11 08:48:11 danielk1977 Exp $
+** $Id: vdbe.c,v 1.281 2004/05/11 09:31:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2532,7 +2532,14 @@ case OP_ReadCookie: {
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( db->aDb[pOp->p1].pBt!=0 );
-  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, pOp->p2+1, &iMeta);
+  /* The indexing of meta values at the schema layer is off by one from
+  ** the indexing in the btree layer.  The btree considers meta[0] to
+  ** be the number of free pages in the database (a read-only value)
+  ** and meta[1] to be the schema cookie.  The schema layer considers
+  ** meta[1] to be the schema cookie.  So we have to shift the index
+  ** by one in the following statement.
+  */
+  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1 + pOp->p2, &iMeta);
   pTos++;
   pTos->i = iMeta;
   pTos->flags = MEM_Int;
@@ -2555,6 +2562,7 @@ case OP_SetCookie: {
   assert( db->aDb[pOp->p1].pBt!=0 );
   assert( pTos>=p->aStack );
   Integerify(pTos);
+  /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(db->aDb[pOp->p1].pBt, 1+pOp->p2, (int)pTos->i);
   Release(pTos);
   pTos--;
@@ -2935,8 +2943,8 @@ case OP_Found: {
 ** using MakeIdxKey.  Call it K.  This instruction pops R from the
 ** stack but it leaves K unchanged.
 **
-** P1 is an index.  So all but the last eight bytes of K are an
-** index string.  The last eight bytes of K are a record number.
+** P1 is an index.  So all but the last four bytes of K are an
+** index string.  The last four bytes of K are a record number.
 **
 ** This instruction asks if there is an entry in P1 where the
 ** index string matches K but the record number is different
@@ -2953,7 +2961,7 @@ case OP_IsUnique: {
   Mem *pNos = &pTos[-1];
   Cursor *pCx;
   BtCursor *pCrsr;
-  i64 R;
+  int R;
 
   /* Pop the value R off the top of the stack
   */
@@ -2966,7 +2974,7 @@ case OP_IsUnique: {
   pCrsr = pCx->pCursor;
   if( pCrsr!=0 ){
     int res, rc;
-    i64 v;         /* The record number on the P1 entry that matches K */
+    int v;         /* The record number on the P1 entry that matches K */
     char *zKey;    /* The value of K */
     int nKey;      /* Number of bytes in K */
 
@@ -2975,14 +2983,13 @@ case OP_IsUnique: {
     Stringify(pNos);
     zKey = pNos->z;
     nKey = pNos->n;
-    assert( nKey >= 8 );
+    assert( nKey >= 4 );
 
-    /* Search for an entry in P1 where all but the last eight bytes match K.
+    /* Search for an entry in P1 where all but the last four bytes match K.
     ** If there is no such entry, jump immediately to P2.
     */
     assert( p->aCsr[i].deferredMoveto==0 );
-    assert( p->aCsr[i].intKey==0 );
-    rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-8, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, zKey, nKey-4, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
       rc = sqlite3BtreeNext(pCrsr, &res);
@@ -2992,7 +2999,7 @@ case OP_IsUnique: {
       }
     }
     /* FIX ME - the sqlite2BtreeKeyCompare() function is a temporary hack */
-    rc = sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-8, 8, &res); 
+    rc = sqlite2BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3000,11 +3007,11 @@ case OP_IsUnique: {
     }
 
     /* At this point, pCrsr is pointing to an entry in P1 where all but
-    ** the last eight bytes of the key match K.  Check to see if the last
-    ** eight bytes of the key are different from R.  If the last four
+    ** the last for bytes of the key match K.  Check to see if the last
+    ** four bytes of the key are different from R.  If the last four
     ** bytes equal R then jump immediately to P2.
     */
-    sqlite3BtreeKey(pCrsr, nKey - sizeof(i64), sizeof(i64), (char*)&v);
+    sqlite3BtreeKey(pCrsr, nKey - 4, 4, (char*)&v);
     v = keyToInt(v);
     if( v==R ){
       pc = pOp->p2 - 1;
@@ -3433,8 +3440,8 @@ case OP_Column: {
     if( pC->nullRow ){
       payloadSize = 0;
     }else if( pC->keyAsData ){
-      assert( !pC->intKey );
       u64 pl64;
+      assert( !pC->intKey );
       sqlite3BtreeKeySize(pCrsr, &pl64);
       payloadSize = pl64;
     }else{
@@ -5091,9 +5098,9 @@ default: {
         if( pTos[i].flags & MEM_Null ){
           fprintf(p->trace, " NULL");
         }else if( (pTos[i].flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
-          fprintf(p->trace, " si:%d", pTos[i].i);
+          fprintf(p->trace, " si:%lld", pTos[i].i);
         }else if( pTos[i].flags & MEM_Int ){
-          fprintf(p->trace, " i:%d", pTos[i].i);
+          fprintf(p->trace, " i:%lld", pTos[i].i);
         }else if( pTos[i].flags & MEM_Real ){
           fprintf(p->trace, " r:%g", pTos[i].r);
         }else if( pTos[i].flags & MEM_Str ){

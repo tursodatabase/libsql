@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\supgrade_3_schema\ssubroutine\sfrom\smain.c.\s(CVS\s1356)
-D 2004-05-11T09:05:49
+C Fix\san\soffset\sproblem\sin\sthe\smeta\svalues\sthat\swas\scausing\sproblems\sfor\nmany\stests.\s(CVS\s1357)
+D 2004-05-11T09:31:32
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 4e9ed30d1239e077d94efe3d6b9a5ee205e2f979
+F src/btree.c 35df9e6d3a30bbe2d32d6b08f51e2a16b835c6e8
 F src/btree.h 578dc465c801cf4e7666efbb0fa1c46a54758008
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c 97d8b3fc6c48fcd355fcfe7b2e291f6e57159d62
@@ -36,7 +36,7 @@ F src/func.c 6cf6501f092b41c8cd9368b09c287016c0576438
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1e63d2774c4d893363e0c072f19d4c92a4ab982d
-F src/main.c 170992aeeec83b260ef5cfb1e56ecf94b6d79b46
+F src/main.c 4cbf83c0933fe713c4afd3dc5e401621f28f0304
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
@@ -63,13 +63,13 @@ F src/update.c 6ca82fc4a0fb4d7f134e961921c906f6f3c8bc74
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 778a8cd03ad6e52778602d20a3132c7d2d1b0a0c
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c b9a499da850260eca461883b50319036338e4d25
+F src/vdbe.c 85da2e53c38c334c055a8da480eb1bff74c19e94
 F src/vdbe.h 2dc4d1161b64f5684faa6a2d292e318a185ecb2e
 F src/vdbeInt.h ff85e432a43eb7533b17c9cece2baaf813ba8711
-F src/vdbeaux.c feee0e94cd5fe520cd024287446d8b387a221a4b
+F src/vdbeaux.c cf24281436ef850da84d706f0e560ad12e9a332a
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test 76f096f384221f775cc0a856e51d5a35f9ee1541
+F test/attach.test 3afaf8e3dfaf8e576070126ab087ceb9a71734c2
 F test/attach2.test ce61e6185b3cd891cc0e9a4c868fcc65eb92fc55
 F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6dc6004684a97fbdba2f2dce94086dc2c4967a42
-R 2f7606b77bec37379c738329814fe8c4
+P b5d2771ee0e9c77967b4a64a97dcd56c067bc7b8
+R 1b4242c65713f0f29255a1791a6ffefa
 U drh
-Z 1c7a05de9e42438d1c26640df8e9bcae
+Z 8117037867ee67a6186c1779813eefbc
