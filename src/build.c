@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.24 2000/10/16 22:06:42 drh Exp $
+** $Id: build.c,v 1.25 2001/01/15 22:51:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -341,7 +341,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   */
   if( !pParse->initFlag ){
     static VdbeOp addTable[] = {
-      { OP_Open,        0, 1, MASTER_NAME },
+      { OP_OpenTbl,     0, 1, MASTER_NAME },
       { OP_New,         0, 0, 0},
       { OP_String,      0, 0, "table"     },
       { OP_String,      0, 0, 0},            /* 3 */
@@ -416,7 +416,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
-      { OP_Open,       0, 1,        MASTER_NAME },
+      { OP_OpenTbl,    0, 1,        MASTER_NAME },
       { OP_ListOpen,   0, 0,        0},
       { OP_String,     0, 0,        0}, /* 2 */
       { OP_Next,       0, ADDR(10), 0}, /* 3 */
@@ -593,7 +593,7 @@ void sqliteCreateIndex(
   */
   if( pParse->initFlag==0 ){
     static VdbeOp addTable[] = {
-      { OP_Open,        2, 1, MASTER_NAME},
+      { OP_OpenTbl,     2, 1, MASTER_NAME},
       { OP_New,         2, 0, 0},
       { OP_String,      0, 0, "index"},
       { OP_String,      0, 0, 0},  /* 3 */
@@ -610,8 +610,8 @@ void sqliteCreateIndex(
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
-    sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
-    sqliteVdbeAddOp(v, OP_Open, 1, 1, pIndex->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenTbl, 0, 0, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenIdx, 1, 1, pIndex->zName, 0);
     if( pStart && pEnd ){
       int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
@@ -670,7 +670,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
-      { OP_Open,       0, 1,       MASTER_NAME},
+      { OP_OpenTbl,      0, 1,       MASTER_NAME},
       { OP_ListOpen,   0, 0,       0},
       { OP_String,     0, 0,       0}, /* 2 */
       { OP_Next,       0, ADDR(9), 0}, /* 3 */
@@ -843,9 +843,9 @@ void sqliteCopy(
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    sqliteVdbeAddOp(v, OP_Open, 0, 1, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenTbl, 0, 1, pTab->zName, 0);
     for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      sqliteVdbeAddOp(v, OP_Open, i, 1, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_OpenIdx, i, 1, pIdx->zName, 0);
     }
     end = sqliteVdbeMakeLabel(v);
     addr = sqliteVdbeAddOp(v, OP_FileRead, pTab->nCol, end, 0, 0);

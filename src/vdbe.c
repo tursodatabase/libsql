@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.50 2001/01/13 14:34:07 drh Exp $
+** $Id: vdbe.c,v 1.51 2001/01/15 22:51:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -786,29 +786,29 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "Open",           "Close",          "Fetch",          "Fcnt",
-  "New",            "Put",            "Distinct",       "Found",
-  "NotFound",       "Delete",         "Field",          "KeyAsData",
-  "Key",            "Rewind",         "Next",           "Destroy",
-  "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
-  "DeleteIdx",      "MemLoad",        "MemStore",       "ListOpen",
-  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
-  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
-  "Sort",           "SortNext",       "SortKey",        "SortCallback",
-  "SortClose",      "FileOpen",       "FileRead",       "FileField",
-  "FileClose",      "AggReset",       "AggFocus",       "AggIncr",
-  "AggNext",        "AggSet",         "AggGet",         "SetInsert",
-  "SetFound",       "SetNotFound",    "SetClear",       "MakeRecord",
-  "MakeKey",        "Goto",           "If",             "Halt",
-  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
-  "String",         "Null",           "Pop",            "Dup",
-  "Pull",           "Add",            "AddImm",         "Subtract",
-  "Multiply",       "Divide",         "Min",            "Max",
-  "Like",           "Glob",           "Eq",             "Ne",
-  "Lt",             "Le",             "Gt",             "Ge",
-  "IsNull",         "NotNull",        "Negative",       "And",
-  "Or",             "Not",            "Concat",         "Noop",
-  "Strlen",         "Substr",       
+  "OpenIdx",        "OpenTbl",        "Close",          "Fetch",
+  "Fcnt",           "New",            "Put",            "Distinct",
+  "Found",          "NotFound",       "Delete",         "Field",
+  "KeyAsData",      "Key",            "Rewind",         "Next",
+  "Destroy",        "Reorganize",     "ResetIdx",       "NextIdx",
+  "PutIdx",         "DeleteIdx",      "MemLoad",        "MemStore",
+  "ListOpen",       "ListWrite",      "ListRewind",     "ListRead",
+  "ListClose",      "SortOpen",       "SortPut",        "SortMakeRec",
+  "SortMakeKey",    "Sort",           "SortNext",       "SortKey",
+  "SortCallback",   "SortClose",      "FileOpen",       "FileRead",
+  "FileField",      "FileClose",      "AggReset",       "AggFocus",
+  "AggIncr",        "AggNext",        "AggSet",         "AggGet",
+  "SetInsert",      "SetFound",       "SetNotFound",    "SetClear",
+  "MakeRecord",     "MakeKey",        "Goto",           "If",
+  "Halt",           "ColumnCount",    "ColumnName",     "Callback",
+  "Integer",        "String",         "Null",           "Pop",
+  "Dup",            "Pull",           "Add",            "AddImm",
+  "Subtract",       "Multiply",       "Divide",         "Min",
+  "Max",            "Like",           "Glob",           "Eq",
+  "Ne",             "Lt",             "Le",             "Gt",
+  "Ge",             "IsNull",         "NotNull",        "Negative",
+  "And",            "Or",             "Not",            "Concat",
+  "Noop",           "Strlen",         "Substr",       
 };
 
 /*
@@ -1782,7 +1782,7 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: Open P1 P2 P3
+      /* Opcode: OpenIdx P1 P2 P3
       **
       ** Open a new cursor for the database file named P3.  Give the
       ** cursor an identifier P1.  The P1 values need not be
@@ -1798,8 +1798,28 @@ int sqliteVdbeExec(
       ** If P3 is null or an empty string, a temporary database file
       ** is created.  This temporary database file is automatically 
       ** deleted when the cursor is closed.
+      **
+      ** The database file opened must be able to map arbitrary length
+      ** keys into arbitrary data.  A similar opcode, OpenTbl, opens
+      ** a database file that maps integer keys into arbitrary length
+      ** data.  This opcode opens database files used as
+      ** SQL indices and OpenTbl opens database files used for SQL
+      ** tables.
       */
-      case OP_Open: {
+      /* Opcode: OpenTbl P1 P2 P3
+      **
+      ** This works just like the OpenIdx operation except that the database
+      ** file that is opened is one that will only accept integers as
+      ** keys.  Some database backends are able to operate more efficiently
+      ** if keys are always integers.  So if SQLite knows in advance that
+      ** all keys will be integers, it uses this opcode rather than Open
+      ** in order to give the backend an opportunity to run faster.
+      **
+      ** This opcode opens database files used for storing SQL tables.
+      ** The OpenIdx opcode opens files used for SQL indices.
+      */
+      case OP_OpenIdx: 
+      case OP_OpenTbl: {
         int busy = 0;
         int i = pOp->p1;
         VERIFY( if( i<0 ) goto bad_instruction; )
@@ -1813,7 +1833,8 @@ int sqliteVdbeExec(
           pBex->CloseCursor(p->aCsr[i].pCursor);
         }
         do {
-          rc = pBex->OpenCursor(pBe,pOp->p3,pOp->p2,&p->aCsr[i].pCursor);
+          rc = pBex->OpenCursor(pBe,pOp->p3, pOp->p2,
+                                pOp->opcode==OP_OpenTbl, &p->aCsr[i].pCursor);
           switch( rc ){
             case SQLITE_BUSY: {
               if( xBusy==0 || (*xBusy)(pBusyArg, pOp->p3, ++busy)==0 ){

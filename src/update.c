@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.8 2000/06/21 13:59:12 drh Exp $
+** $Id: update.c,v 1.9 2001/01/15 22:51:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -159,9 +159,9 @@ void sqliteUpdate(
   */
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
   base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_Open, base, 1, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
   for(i=0; i<nIdx; i++){
-    sqliteVdbeAddOp(v, OP_Open, base+i+1, 1, apIdx[i]->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenIdx, base+i+1, 1, apIdx[i]->zName, 0);
   }
 
   /* Loop over every record that needs updating.  We have to load

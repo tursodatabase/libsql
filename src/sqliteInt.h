@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.34 2001/01/13 14:34:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.35 2001/01/15 22:51:11 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -422,5 +422,7 @@ Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
 int sqliteRandomInteger(void);
 void sqliteRandomName(char*,char*);
-int sqliteDbbeOpenTempFile(Dbbe*, FILE**);
+int sqliteDbbeOpenTempFile(const char*, Dbbe*, FILE**);
 void sqliteDbbeCloseTempFile(Dbbe*, FILE*);
+void sqliteDbbeCloseAllTempFiles(Dbbe*);
+char *sqliteDbbeNameToFile(const char*,const char*,const char*);

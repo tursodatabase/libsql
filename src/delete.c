@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.6 2000/06/21 13:59:11 drh Exp $
+** $Id: delete.c,v 1.7 2001/01/15 22:51:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -105,9 +105,9 @@ void sqliteDeleteFrom(
   */
   base = pParse->nTab;
   sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Open, base, 1, pTab->zName, 0);
+  sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-    sqliteVdbeAddOp(v, OP_Open, base+i, 1, pIdx->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenIdx, base+i, 1, pIdx->zName, 0);
   }
   end = sqliteVdbeMakeLabel(v);
   addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);

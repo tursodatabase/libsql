@@ -26,9 +26,10 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.23 2001/01/13 14:34:06 drh Exp $
+** $Id: main.c,v 1.24 2001/01/15 22:51:11 drh Exp $
 */
 #include "sqliteInt.h"
+#include <unistd.h>
 
 /*
 ** This is the callback routine for the code that initializes the
@@ -123,7 +124,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** database scheme.
   */
   static VdbeOp initProg[] = {
-    { OP_Open,     0, 0,  MASTER_NAME},
+    { OP_OpenTbl,    0, 0,  MASTER_NAME},
     { OP_Next,     0, 9,  0},           /* 1 */
     { OP_Field,    0, 0,  0},
     { OP_String,   0, 0,  "meta"},
@@ -321,7 +322,6 @@ int sqlite_exec(
   char **pzErrMsg             /* Write error messages here */
 ){
   Parse sParse;
-  int rc;
 
   if( pzErrMsg ) *pzErrMsg = 0;
   if( (db->flags & SQLITE_Initialized)==0 ){

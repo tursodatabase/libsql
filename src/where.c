@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.9 2000/08/22 18:29:34 drh Exp $
+** $Id: where.c,v 1.10 2001/01/15 22:51:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -271,9 +271,9 @@ WhereInfo *sqliteWhereBegin(
   /* Open all tables in the pTabList and all indices in aIdx[].
   */
   for(i=0; i<pTabList->nId; i++){
-    sqliteVdbeAddOp(v, OP_Open, base+i, 0, pTabList->a[i].pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_OpenTbl, base+i, 0, pTabList->a[i].pTab->zName, 0);
     if( i<ARRAYSIZE(aIdx) && aIdx[i]!=0 ){
-      sqliteVdbeAddOp(v, OP_Open, base+pTabList->nId+i, 0, aIdx[i]->zName, 0);
+      sqliteVdbeAddOp(v, OP_OpenIdx, base+pTabList->nId+i, 0, aIdx[i]->zName,0);
     }
   }
   memcpy(pWInfo->aIdx, aIdx, sizeof(aIdx));

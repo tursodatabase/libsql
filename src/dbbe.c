@@ -30,9 +30,10 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.22 2001/01/13 14:34:06 drh Exp $
+** $Id: dbbe.c,v 1.23 2001/01/15 22:51:10 drh Exp $
 */
 #include "sqliteInt.h"
+#include <unistd.h>
 
 /*
 ** This routine opens a new database.  It looks at the first
@@ -70,13 +71,12 @@ Dbbe *sqliteDbbeOpen(
 ** and then immediately unlinking the file.  That works great
 ** under Unix, but fails when we try to port to Windows.
 */
-int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
+int sqliteDbbeOpenTempFile(const char *zDir, Dbbe *pBe, FILE **ppFile){
   char *zFile;         /* Full name of the temporary file */
   char zBuf[50];       /* Base name of the temporary file */
   int i;               /* Loop counter */
   int limit;           /* Prevent an infinite loop */
   int rc = SQLITE_OK;  /* Value returned by this function */
-  char *zDir;          /* Directory to hold the file */
 
   for(i=0; i<pBe->nTemp; i++){
     if( pBe->apTemp[i]==0 ) break;
@@ -92,10 +92,6 @@ int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
   }
   limit = 4;
   zFile = 0;
-  zDir = pBe->zDir;
-  if( zDir==0 ){
-    zDir = "./";
-  }
   do{
     sqliteRandomName(zBuf, "/_temp_file_");
     sqliteFree(zFile);
@@ -148,4 +144,55 @@ void sqliteDbbeCloseAllTempFiles(Dbbe *pBe){
   }
   sqliteFree(pBe->azTemp);
   sqliteFree(pBe->apTemp);
+}
+
+/*
+** Translate the name of an SQL table (or index) into the name 
+** of a file that holds the key/data pairs for that table or
+** index.  Space to hold the filename is obtained from
+** sqliteMalloc() and must be freed by the calling function.
+**
+** zDir is the name of the directory in which the file should
+** be located.  zSuffix is the filename extension to use for
+** the file.
+*/
+char *sqliteDbbeNameToFile(
+  const char *zDir,      /* Directory containing the file */
+  const char *zTable,    /* Name of the SQL table that the file contains */
+  const char *zSuffix    /* Suffix for the file.  Includes the "." */
+){
+  char *zFile = 0;
+  int i, k, c;
+  int nChar = 0;
+
+  for(i=0; (c = zTable[i])!=0; i++){
+    if( !isalnum(c) && c!='_' ){
+      nChar += 3;
+    }else{
+      nChar ++;
+    }
+  }
+  nChar += strlen(zDir) + strlen(zSuffix) + 2;
+  zFile = sqliteMalloc( nChar );
+  if( zFile==0 ) return 0;
+  for(i=0; (c = zDir[i])!=0; i++){
+    zFile[i] = c;
+  }
+  zFile[i++] = '/';
+  for(k=0; (c = zTable[k])!=0; k++){
+    if( isupper(c) ){
+      zFile[i++] = tolower(c);
+    }else if( isalnum(c) || c=='_' ){
+      zFile[i++] = c;
+    }else{
+      zFile[i++] = '~';
+      zFile[i++] = "0123456789abcdef"[c & 0xf];
+      zFile[i++] = "0123456789abcdef"[(c>>8)&0xf];
+    }
+  }
+  for(k=0; (c = zSuffix[k])!=0; k++){
+    zFile[i++] = c;
+  }
+  zFile[i] = 0;
+  return zFile;
 }

@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.2 2001/01/13 14:34:06 drh Exp $
+** $Id: dbbegdbm.c,v 1.3 2001/01/15 22:51:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -66,6 +66,7 @@ struct Dbbex {
   Dbbe dbbe;         /* The base class */
   int write;         /* True for write permission */
   BeFile *pOpen;     /* List of open files */
+  char *zDir;        /* Directory hold the database */
 };
 
 /*
@@ -86,13 +87,6 @@ struct DbbeCursor {
 };
 
 /*
-**
-*/
-struct DbbeList {
-  FILE *pOut;
-  Dbbe *pDbbe;
-};
-/*
 ** The "mkdir()" function only takes one argument under Windows.
 */
 #if OS_WIN
@@ -110,7 +104,6 @@ static void sqliteGdbmCloseCursor(DbbeCursor *pCursr);
 static void sqliteGdbmClose(Dbbe *pDbbe){
   Dbbex *pBe = (Dbbex*)pDbbe;
   BeFile *pFile, *pNext;
-  int i;
   for(pFile=pBe->pOpen; pFile; pFile=pNext){
     pNext = pFile->pNext;
     gdbm_close(pFile->dbf);
@@ -131,9 +124,9 @@ static void sqliteGdbmClose(Dbbe *pDbbe){
 static char *sqliteFileOfTable(Dbbex *pBe, const char *zTable){
   char *zFile = 0;
   int i;
-  sqliteSetString(&zFile, pBe->dbbe.zDir, "/", zTable, ".tbl", 0);
+  sqliteSetString(&zFile, pBe->zDir, "/", zTable, ".tbl", 0);
   if( zFile==0 ) return 0;
-  for(i=strlen(pBe->dbbe.zDir)+1; zFile[i]; i++){
+  for(i=strlen(pBe->zDir)+1; zFile[i]; i++){
     int c = zFile[i];
     if( isupper(c) ){
       zFile[i] = tolower(c);
@@ -172,6 +165,7 @@ static int sqliteGdbmOpenCursor(
   Dbbe *pDbbe,            /* The database the table belongs to */
   const char *zTable,     /* The SQL name of the file to be opened */
   int writeable,          /* True to open for writing */
+  int intKeyOnly,         /* True if only integer keys are used */
   DbbeCursor **ppCursr    /* Write the resulting table pointer here */
 ){
   char *zFile;            /* Name of the table file */
@@ -330,7 +324,7 @@ static int sqliteGdbmReorganizeTable(Dbbe *pBe, const char *zTable){
   DbbeCursor *pCrsr;
   int rc;
 
-  rc = sqliteGdbmOpenCursor(pBe, zTable, 1, &pCrsr);
+  rc = sqliteGdbmOpenCursor(pBe, zTable, 1, 0, &pCrsr);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -494,7 +488,6 @@ static int sqliteGdbmNew(DbbeCursor *pCursr){
   int iKey;
   datum key;
   int go = 1;
-  int i;
 
   if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return 1;
   while( go ){
@@ -511,8 +504,13 @@ static int sqliteGdbmNew(DbbeCursor *pCursr){
 ** Write an entry into the table.  Overwrite any prior entry with the
 ** same key.
 */
-static int
-sqliteGdbmPut(DbbeCursor *pCursr, int nKey,char *pKey,int nData,char *pData){
+static int sqliteGdbmPut(
+  DbbeCursor *pCursr,  /* Write to the database associated with this cursor */
+  int nKey,            /* Number of bytes in the key */
+  char *pKey,          /* The data for the key */
+  int nData,           /* Number of bytes of data */
+  char *pData          /* The data */
+){
   datum data, key;
   int rc;
   if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return SQLITE_ERROR;
@@ -544,6 +542,15 @@ static int sqliteGdbmDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
+** Open a temporary file.  The file is located in the same directory
+** as the rest of the database.
+*/
+static int sqliteGdbmOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
+  Dbbex *pBe = (Dbbex*)pDbbe;
+  return sqliteDbbeOpenTempFile(pBe->zDir, pDbbe, ppFile);
+}
+
+/*
 ** This variable contains pointers to all of the access methods
 ** used to implement the GDBM backend.
 */
@@ -566,7 +573,7 @@ static struct DbbeMethods gdbmMethods = {
   /*             New */   sqliteGdbmNew,
   /*             Put */   sqliteGdbmPut,
   /*          Delete */   sqliteGdbmDelete,
-  /*    OpenTempFile */   sqliteDbbeOpenTempFile,
+  /*    OpenTempFile */   sqliteGdbmOpenTempFile,
   /*   CloseTempFile */   sqliteDbbeCloseTempFile
 };
 
@@ -623,8 +630,8 @@ Dbbe *sqliteGdbmOpen(
     return 0;
   }
   pNew->dbbe.x = &gdbmMethods;
-  pNew->dbbe.zDir = (char*)&pNew[1];
-  strcpy(pNew->dbbe.zDir, zName);
+  pNew->zDir = (char*)&pNew[1];
+  strcpy(pNew->zDir, zName);
   pNew->write = writeFlag;
   pNew->pOpen = 0;
   return &pNew->dbbe;

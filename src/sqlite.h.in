@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.7 2000/11/28 20:47:20 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.8 2001/01/15 22:51:11 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -138,6 +138,7 @@ int sqlite_exec(
 #define SQLITE_NOMEM     6    /* A malloc() failed */
 #define SQLITE_READONLY  7    /* Attempt to write a readonly database */
 #define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR     9    /* Disk full or other I/O error */
 
 /* This function causes any pending database operation to abort and
 ** return at its earliest opportunity.  This routine is typically

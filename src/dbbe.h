@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.9 2001/01/13 14:34:06 drh Exp $
+** $Id: dbbe.h,v 1.10 2001/01/15 22:51:10 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -81,10 +81,16 @@ struct DbbeMethods {
   ** an appropriate path and extension to the filename to locate the 
   ** actual file.
   **
+  ** The keyType parameter is TRUE if this table will only be accessed
+  ** using integer keys.  This parameter allows the database backend to
+  ** use a faster algorithm for the special case of integer keys, if it
+  ** wants to.
+  **
   ** If zName is 0 or "", then a temporary file is created that
   ** will be deleted when closed.
   */
-  int (*OpenCursor)(Dbbe*, const char *zName, int writeable, DbbeCursor**);
+  int (*OpenCursor)(Dbbe*, const char *zName, int writeable, 
+                    int intKeyOnly, DbbeCursor**);
 
   /* Delete a table from the database */
   void (*DropTable)(Dbbe*, const char *zTableName);
@@ -164,7 +170,6 @@ struct DbbeMethods {
 */
 struct Dbbe {
   struct DbbeMethods *x; /* Backend-specific methods for database access */
-  char *zDir;            /* The directory containing the database file(s) */
   int nTemp;             /* Number of temporary files created */
   FILE **apTemp;         /* Space to hold temporary file pointers */
   char **azTemp;         /* Names of the temporary files */

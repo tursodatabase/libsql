@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.6 2001/01/13 14:34:06 drh Exp $
+** $Id: dbbemem.c,v 1.7 2001/01/15 22:51:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -339,6 +339,7 @@ typedef struct MTable MTable;
 struct MTable {
   char *zName;            /* Name of the table */
   int delOnClose;         /* Delete when closing */
+  int intKeyOnly;         /* Use only integer keys on this table */
   Array data;             /* The data in this stable */
 };
 
@@ -391,9 +392,8 @@ static void deleteMTable(MTable *p){
 */
 static void sqliteMemClose(Dbbe *pDbbe){
   Dbbex *pBe = (Dbbex*)pDbbe;
-  MTable *pTble, *pNext;
-  int i;
-  ArrayElem *j, *k;
+  MTable *pTble;
+  ArrayElem *j;
   for(j=ArrayFirst(&pBe->tables); j; j=ArrayNext(j)){
     pTble = ArrayData(j);
     deleteMTable(pTble);
@@ -452,14 +452,13 @@ static int sqliteMemOpenCursor(
   Dbbe *pDbbe,            /* The database the table belongs to */
   const char *zTable,     /* The SQL name of the file to be opened */
   int writeable,          /* True to open for writing */
+  int intKeyOnly,         /* True if only integer keys are used */
   DbbeCursor **ppCursr    /* Write the resulting table pointer here */
 ){
   DbbeCursor *pCursr;     /* The new table cursor */
   char *zName;            /* Canonical table name */
   MTable *pTble;          /* The underlying data file for this table */
   int rc = SQLITE_OK;     /* Return value */
-  int rw_mask;            /* Permissions mask for opening a table */
-  int mode;               /* Mode for opening a table */
   Dbbex *pBe = (Dbbex*)pDbbe;
 
   *ppCursr = 0;
@@ -494,8 +493,10 @@ static int sqliteMemOpenCursor(
       pTble->zName = 0;
       pTble->delOnClose = 1;
     }
+    pTble->intKeyOnly = intKeyOnly;
     ArrayInit(&pTble->data);
   }else{
+    assert( pTble->intKeyOnly==intKeyOnly );
     sqliteFree(zName);
   }
   pCursr->pBe = pBe;
@@ -513,7 +514,6 @@ static void sqliteMemDropTable(Dbbe *pDbbe, const char *zTable){
   char *zName;            /* Name of the table file */
   Datum key, data;
   MTable *pTble;
-  ArrayElem *i;
   Dbbex *pBe = (Dbbex*)pDbbe;
 
   zName = sqliteNameOfTable(zTable);
@@ -565,6 +565,7 @@ static int sqliteMemFetch(DbbeCursor *pCursr, int nKey, char *pKey){
   Datum key;
   key.n = nKey;
   key.p = pKey;
+  assert( nKey==4 || pCursr->pTble->intKeyOnly==0 );
   pCursr->elem = ArrayFindElement(&pCursr->pTble->data, key);
   return pCursr->elem!=0;
 }
@@ -665,7 +666,6 @@ static int sqliteMemNew(DbbeCursor *pCursr){
   int iKey;
   Datum key;
   int go = 1;
-  int i;
 
   while( go ){
     iKey = sqliteRandomInteger();
@@ -681,14 +681,18 @@ static int sqliteMemNew(DbbeCursor *pCursr){
 ** Write an entry into the table.  Overwrite any prior entry with the
 ** same key.
 */
-static int
-sqliteMemPut(DbbeCursor *pCursr, int nKey,char *pKey, int nData, char *pData){
+static int sqliteMemPut(
+  DbbeCursor *pCursr,       /* Write new entry into this database table */
+  int nKey, char *pKey,     /* The key of the new entry */
+  int nData, char *pData    /* The data of the new entry */
+){
   Datum data, key;
   data.n = nData;
   data.p = sqliteMalloc( data.n );
   memcpy(data.p, pData, data.n);
   key.n = nKey;
   key.p = pKey;
+  assert( nKey==4 || pCursr->pTble->intKeyOnly==0 );
   data = ArrayInsert(&pCursr->pTble->data, key, data);
   if( data.p ){
     sqliteFree(data.p);
@@ -710,6 +714,26 @@ static int sqliteMemDelete(DbbeCursor *pCursr, int nKey, char *pKey){
     sqliteFree(data.p);
   }
   return SQLITE_OK;
+}
+
+/*
+** Open a temporary file.  The file is located in the current working
+** directory.
+*/
+static int sqliteMemOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
+  const char *zTemps[] = { "/usr/tmp", "/var/tmp", "/tmp", "/temp", 0};
+  const char *zDir;
+  int i;
+  struct stat statbuf;
+  for(i=0; zTemps[i]; i++){
+    zDir = zTemps[i];
+    if( stat("/usr/tmp", &statbuf)==0 && S_ISDIR(statbuf.st_mode) 
+      && access("/usr/tmp", W_OK|X_OK)==0 ){
+        break;
+    }
+  }
+  if( zDir==0 ) zDir = ".";
+  return sqliteDbbeOpenTempFile(zDir, pDbbe, ppFile);
 }
 
 /*
@@ -735,7 +759,7 @@ static struct DbbeMethods memoryMethods = {
   /*             New */   sqliteMemNew,
   /*             Put */   sqliteMemPut,
   /*          Delete */   sqliteMemDelete,
-  /*    OpenTempFile */   sqliteDbbeOpenTempFile,
+  /*    OpenTempFile */   sqliteMemOpenTempFile,
   /*   CloseTempFile */   sqliteDbbeCloseTempFile
 };
 
@@ -763,6 +787,5 @@ Dbbe *sqliteMemOpen(
   }
   ArrayInit(&pNew->tables);
   pNew->dbbe.x = &memoryMethods;
-  pNew->dbbe.zDir = 0;
   return &pNew->dbbe;
 }
