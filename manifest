@@ -1,5 +1,5 @@
-C Pop\sthe\svalue\spushed\sby\sOP_Destroy\sif\sSQLITE_OMIT_AUTOVACUUM\sis\sdefined.\s(CVS\s2057)
-D 2004-11-05T01:24:13
+C Fix\sbug\sintroduced\swith\s(2057).\s(CVS\s2058)
+D 2004-11-05T01:45:14
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 1b172b9d58608eeba1022e858fedce351c7090f5
+F src/btree.c 832ea4553803ff18e6cfc299cb5bf266d3f100aa
 F src/btree.h 3166388fa58c5594d8064d38b43440d79da38fb6
 F src/build.c 6e00bcc31c003dc0bf783f777aae7698fdad219a
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 10c3d88305e404b9e4cc4eef0b8e5dc7864a5937
-R 55c62c93629a83443d5cecea7a9680ce
+P b0c103340ad27533d3e5b2f1b18557fd9c8b55df
+R 03fae3dd272be36dc35894b6aa50fefb
 U danielk1977
-Z 0115f45c7d1aac8b14a4bee705da57a2
+Z 809037e96143592365a1e575bfe4ff28

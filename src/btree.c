@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.205 2004/11/05 00:43:12 drh Exp $
+** $Id: btree.c,v 1.206 2004/11/05 01:45:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1754,7 +1754,9 @@ static int autoVacuumCommit(Btree *pBt){
     if( rc!=SQLITE_OK ) goto autovacuum_out;
     assert( eType!=PTRMAP_ROOTPAGE );
 
-    /* If iDbPage is a free or pointer map page, do not swap it. */
+    /* If iDbPage is a free or pointer map page, do not swap it.
+    ** Instead, make sure the page is in the journal file.
+    */
     if( eType==PTRMAP_FREEPAGE || PTRMAP_ISPAGE(pgsz, iDbPage) ){
       continue;
     }
@@ -2956,10 +2958,14 @@ static int freePage(MemPage *pPage){
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
   /* If the database supports auto-vacuum, write an entry in the pointer-map
-  ** to indicate that the page is free.
+  ** to indicate that the page is free. Also make sure the page is in
+  ** the journal file.
   */
   if( pBt->autoVacuum ){
     rc = ptrmapPut(pBt, pPage->pgno, PTRMAP_FREEPAGE, 0);
+    if( rc ) return rc;
+    rc = sqlite3pager_write(pPage->aData);
+    if( rc ) return rc;
   }
 #endif
 
@@ -4254,9 +4260,14 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     ** not really necessary, but it avoids complications in dealing with
     ** a free-list in the code below.
     ** TODO: This may need to be revisited.
+    ** TODO2: Actually this is no-good. running the auto-vacuum routine
+    **        involves truncating the database, which means the journal-file
+    **        must be synced(). No-good.
     */
+/*
     rc = autoVacuumCommit(pBt);
     if( rc!=SQLITE_OK ) return rc;
+*/
 
     /* Read the value of meta[3] from the database to determine where the
     ** root page of the new table should go. meta[3] is the largest root-page
@@ -4276,7 +4287,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
     ** be moved to the allocated page (unless the allocated page happens
     ** to reside at pgnoRoot).
     */
-    rc = allocatePage(pBt, &pPageMove, &pgnoMove, 0);
+    rc = allocatePage(pBt, &pPageMove, &pgnoMove, 1);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -4292,6 +4303,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
       }
       rc = ptrmapGet(pBt, pgnoRoot, &eType, &iPtrPage);
       assert( eType!=PTRMAP_ROOTPAGE );
+      assert( eType!=PTRMAP_FREEPAGE );
       if( rc!=SQLITE_OK ){
         releasePage(pRoot);
         return rc;
