@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.206 2004/01/06 01:13:47 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.207 2004/01/07 03:04:27 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -118,6 +118,15 @@ typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
 typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
+
+/*
+** Most C compilers these days recognize "long double", don't they?
+** Just in case we encounter one that does not, we will create a macro
+** for long double so that it can be easily changed to just "double".
+*/
+#ifndef LONGDOUBLE_TYPE
+# define LONGDOUBLE_TYPE long double
+#endif
 
 /*
 ** This macro casts a pointer to an integer.  Useful for doing
