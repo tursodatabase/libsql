@@ -1,9 +1,9 @@
-C The\sBTree\schanges\sare\snow\sintegrated\sand\sthe\swhole\sthing\scompiles\sand\nlinks.\sI\shave\snot\syet\stried\sto\srun\sit,\sthough.\s(CVS\s239)
-D 2001-09-13T14:46:10
+C The\snew\sBtree\scode\sruns,\sbut\sit\sdoes\snot\syet\swork.\s(CVS\s240)
+D 2001-09-13T15:21:32
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ecb2370b5cb34d390af1fcb3118ea6d84a253ca
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 00453ed53ff28fe8e701e1609e81f1b9df12adab
+F VERSION 05e17b646a817240c206186f94f8f4c70974d5dc
 F configure d2051345f49f7e48604423da26e086a745c86a47 x
 F configure.in e7465c88bbfb76882f97769c2dd90dbba8eca5db
 F doc/lemon.html 3ddeef6e5dee69a2bb6f5d8e4975b58f2fd8e11c
@@ -12,7 +12,7 @@ F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
 F notes/notes2.txt 7e3fafd5e25906c1fe1e95f13b089aa398ca403e
 F notes/notes2b.txt 1c17a5b7f6b44a75cd3eb98ed2c24db1eefb06c3
 F notes/notes3.txt 71e47be517e3d2578b3b9343a45b772d43b7ba16
-F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
+F src/TODO f0ea267ab55c4d15127c1ac1667edbf781147438
 F src/btree.c 9f22b51681bcc0026ea300134e4e2f1f40fc0800
 F src/btree.h 2427961c702dd0755ec70f529cf3db32707d689b
 F src/build.c 58020177a1b96455284899774442833a81c5ae9c
@@ -27,7 +27,7 @@ F src/ex/pg.h 23a4ac807b0546ec2bb6239ec8bd3e06926572cd
 F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c 83b6a7ed4cf502249f192b698517e9a9b8f05303
 F src/insert.c 1072c0dd7782c17af735df37f447630d4d577ba1
-F src/main.c b7a2da8375ca61d4464610368608e7fd0566b950
+F src/main.c c5f8931674ac1fa8e8c6e0062d3c5700e204f3b7
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/pager.c 05a2177c99a835c3efec1e4187556e2e29311d4a
 F src/pager.h 238aa88bafe33911bf9b0b365f35afd0a261cd46
@@ -47,7 +47,7 @@ F src/test3.c 147b42ec368a10e9f267e7466d30c46e76d7f278
 F src/tokenize.c 0118b57702cb6550769316e8443b06760b067acf
 F src/update.c ea8f2c0712cd4cd19314a26ef4766866013facda
 F src/util.c c77668fef860cfd2e4e682ef4f3ed8f9e68c551b
-F src/vdbe.c f502b592d1cc94f68e9e4b3fa130361cb3038b0c
+F src/vdbe.c d5f0a2de6427cd4843c13e093b0039e5fac05e0f
 F src/vdbe.h 6ee941ecd78b7b224607517fd060d6547910dc10
 F src/where.c b9f6d2c029983e9db9521474c876f9a039e7fb6c
 F test/all.test 21d55a97e39e7ec5776751dc9dd8b1b51ef4a048
@@ -108,7 +108,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 6ecc8b20d4f402f45f03d46d8d4fa40dea666e97
-R 9f3dc1f51d7a55174d7eb7f5f17c9756
+P a0a1e701abc52a164d9b09a5426eb12af1fe6a4c
+R 472be17e965b4d5d7fba15c027cd1366
 U drh
-Z 89f03479b34b99fd737e2528660926bd
+Z d550eba50f66b2bb3dd421288cbb8ffd

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.61 2001/09/13 14:46:11 drh Exp $
+** $Id: vdbe.c,v 1.62 2001/09/13 15:21:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2598,6 +2598,66 @@ case OP_Destroy: {
   break;
 }
 
+/* Opcode: CreateTable * * *
+**
+** Allocate a new table in the main database file.  Push the page number
+** for the root page of the new table onto the stack.
+**
+** The root page number is also written to a memory location which has
+** be set up by the parser.  The difference between CreateTable and
+** CreateIndex is that each writes its root page number into a different
+** memory location.  This writing of the page number into a memory location
+** is used by the SQL parser to record the page number in its internal
+** data structures.
+*/
+case OP_CreateTable: {
+  int i = ++p->tos;
+  int pgno;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  if( p->pTableRoot==0 ){
+    rc = SQLITE_INTERNAL;
+    goto abort_due_to_error;
+  }
+  rc = sqliteBtreeCreateTable(pBt, &pgno);
+  if( rc==SQLITE_OK ){
+    aStack[i].i = pgno;
+    aStack[i].flags = STK_Int;
+    *p->pTableRoot = pgno;
+    p->pTableRoot = 0;
+  }
+  break;
+}
+
+/* Opcode: CreateIndex * * *
+**
+** Allocate a new Index in the main database file.  Push the page number
+** for the root page of the new table onto the stack.
+**
+** The root page number is also written to a memory location which has
+** be set up by the parser.  The difference between CreateTable and
+** CreateIndex is that each writes its root page number into a different
+** memory location.  This writing of the page number into a memory location
+** is used by the SQL parser to record the page number in its internal
+** data structures.
+*/
+case OP_CreateIndex: {
+  int i = ++p->tos;
+  int pgno;
+  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  if( p->pIndexRoot==0 ){
+    rc = SQLITE_INTERNAL;
+    goto abort_due_to_error;
+  }
+  rc = sqliteBtreeCreateTable(pBt, &pgno);
+  if( rc==SQLITE_OK ){
+    aStack[i].i = pgno;
+    aStack[i].flags = STK_Int;
+    *p->pIndexRoot = pgno;
+    p->pIndexRoot = 0;
+  }
+  break;
+}
+
 /* Opcode: Reorganize P1 * *
 **
 ** Compress, optimize, and tidy up table or index whose root page in the
@@ -3623,6 +3683,10 @@ default: {
 
 cleanup:
   Cleanup(p);
+  if( p->pTableRoot || p->pIndexRoot ){
+    rc = SQLITE_INTERNAL;
+    sqliteSetString(pzErrMsg, "table or index root page not set", 0);
+  }
   if( rc!=SQLITE_OK && (db->flags & SQLITE_InTrans)!=0 ){
     sqliteBtreeRollback(pBt);
     sqliteRollbackInternalChanges(db);

@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.31 2001/09/13 14:46:10 drh Exp $
+** $Id: main.c,v 1.32 2001/09/13 15:21:32 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -182,6 +182,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     pTab = sqliteFindTable(db, MASTER_NAME);
     if( pTab ){
       pTab->readOnly = 1;
+      pTab->tnum = 2;
     }
     db->flags |= SQLITE_Initialized;
     sqliteCommitInternalChanges(db);
