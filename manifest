@@ -1,6 +1,6 @@
-C Record\sthe\sdatabase\sname\sin\saddition\sto\sthe\stable\sname\sfor\sDELETE,\sINSERT,\nand\sUPDATE\sstatements.\s(CVS\s879)
-D 2003-03-20T01:16:58
-F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
+C Added\spkg-config\ssupport.\s(CVS\s880)
+D 2003-03-24T09:39:32
+F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
@@ -8,7 +8,7 @@ F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
 F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
-F configure.ac 38e2e5594cab99eb3a753b0614fcc36f4ddbbb48
+F configure.ac 222ba4ebf74c05114a2b4922843ec57e3d41b7c8
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -18,6 +18,7 @@ F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
+F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 327819bb858d534072f5004973f8bcdd50f133d6
 F src/btree.h 8209bfadf5845d4fdaa60f471bb360f894cd4095
@@ -155,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 875da9eed981bfa27b98e95025f9fdbed74b4098
-R 08491389f4b4be3f29552d1284957d26
-U drh
-Z 9eb95d01444da0b85f74b43fda15e074
+P a5d8fc95ee58dc3205a0bbbcadaa3b9c902a941b
+R a8fe95c2de5f541cf49bf9d25d653c41
+U a.rottmann
+Z 04b1b20eb280020ef59c5860e69b752c
