@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.20 2005/01/13 13:35:58 danielk1977 Exp $
+# $Id: malloc.test,v 1.21 2005/01/19 03:52:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -354,6 +354,7 @@ if {$tcl_platform(platform)=="unix"} {
   }
 }
 
+if {$tcl_platform(platform)!="windows"} {
 do_malloc_test 14 -tclprep {
   catch {db close}
   sqlite3 db2 test2.db
@@ -372,6 +373,7 @@ do_malloc_test 14 -tclprep {
   db eval {
     SELECT * FROM t1;
   }  
+}
 }
 
 # Ensure that no file descriptors were leaked.
