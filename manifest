@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#45:\sAllow\san\sUPDATE\sstatement\sto\schange\sthe\sINTEGER\sPRIMARY\sKEY\nto\sitself\swithout\striggering\sa\sconstraint\serror.\s(CVS\s573)
-D 2002-05-21T12:56:43
+C Modify\sthe\sshell\sso\sthat\swhen\sit\sis\sdoing\sa\s".dump"\sit\salways\suses\ssingle\nquotes\sand\snot\sdouble\squotes\sfor\squoting\sliteral\sstrings.\s\sThis\sis\sfor\nportability\sto\sother\sdatabases\sthat\sonly\ssupport\ssingle\squote\sstring\sliterals.\s(CVS\s574)
+D 2002-05-21T13:02:24
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -38,7 +38,7 @@ F src/parse.y 964a7cc954e3b84e9de54692648fb70bee1c0ba8
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 1b623a7d826ec7c245bc542b665d61724da2a62d
-F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
+F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
 F src/sqliteInt.h aa18969cf0426fa6bb42c2f2c5baf1179710376e
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 37dbdd551e88440933066133ec9cc1e10b03fc1a
-R dd36d2d9056aabd6c21f44ccd0344249
+P 592da1346872e1373bd13525d05d0f33c1056709
+R 5638c8cae4ddcb726be8720dd9e1a853
 U drh
-Z 0984c384f62431e003b1702d17aa1b7d
+Z ceb2821fff2339f48ed3c9973b432282

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.56 2002/04/21 19:06:22 drh Exp $
+** $Id: shell.c,v 1.57 2002/05/21 13:02:24 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -223,15 +223,11 @@ static int is_numeric(const char *z){
 static void output_quoted_string(FILE *out, const char *z){
   int i;
   int nSingle = 0;
-  int nDouble = 0;
   for(i=0; z[i]; i++){
     if( z[i]=='\'' ) nSingle++;
-    else if( z[i]=='"' ) nDouble++;
   }
   if( nSingle==0 ){
     fprintf(out,"'%s'",z);
-  }else if( nDouble==0 ){
-    fprintf(out,"\"%s\"",z);
   }else{
     fprintf(out,"'");
     while( *z ){
