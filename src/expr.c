@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.148 2004/06/23 12:15:55 danielk1977 Exp $
+** $Id: expr.c,v 1.149 2004/06/23 12:35:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1764,7 +1764,7 @@ FuncDef *sqlite3FindFunction(
     **
     ** A larger value of 'matchqual' indicates a more desirable match.
     */
-    if( (p->xStep||p->xFunc ) && (p->nArg==-1||p->nArg==nArg||nArg==-1) ){
+    if( p->nArg==-1 || p->nArg==nArg || nArg==-1 ){
       int match = 1;          /* Quality of this match */
       if( p->nArg==nArg || nArg==-1 ){
         match = 4;

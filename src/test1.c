@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.85 2004/06/23 12:15:55 danielk1977 Exp $
+** $Id: test1.c,v 1.86 2004/06/23 12:35:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1091,14 +1091,20 @@ static int test_function(
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
-  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF8, 
-      interp, val?test_function_utf8:0, 0, 0);
+  if( val ){
+    sqlite3_create_function(db, "test_function", 1, SQLITE_UTF8, 
+        interp, test_function_utf8, 0, 0);
+  }
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
-  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16LE, 
-      interp, val?test_function_utf16le:0, 0, 0);
+  if( val ){
+    sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16LE, 
+        interp, test_function_utf16le, 0, 0);
+  }
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
-  sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16BE, 
-      interp, val?test_function_utf16be:0, 0, 0);
+  if( val ){
+    sqlite3_create_function(db, "test_function", 1, SQLITE_UTF16BE, 
+        interp, test_function_utf16be, 0, 0);
+  }
 
   return TCL_OK;
 bad_args:

@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.13 2004/06/23 12:15:55 danielk1977 Exp $
+# $Id: enc2.test,v 1.14 2004/06/23 12:35:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -285,13 +285,16 @@ do_test enc2-6.1 {
     SELECT test_function('sqlite')
   }
 } {{UTF-8 sqlite}}
-
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.2 {
   add_test_function $DB 0 1 0
   execsql {
     SELECT test_function('sqlite')
   }
 } {{UTF-16LE sqlite}}
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.3 {
   add_test_function $DB 0 0 1
   execsql {
@@ -314,13 +317,16 @@ do_test enc2-6.4 {
     SELECT test_function('sqlite')
   }
 } {{UTF-16LE sqlite}}
-
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.5 {
   add_test_function $DB 0 1 0
   execsql {
     SELECT test_function('sqlite')
   }
 } {{UTF-16LE sqlite}}
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.6 {
   add_test_function $DB 0 0 1
   execsql {
@@ -343,13 +349,16 @@ do_test enc2-6.8 {
     SELECT test_function('sqlite')
   }
 } {{UTF-16BE sqlite}}
-
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.9 {
   add_test_function $DB 0 1 0
   execsql {
     SELECT test_function('sqlite')
   }
 } {{UTF-16LE sqlite}}
+db close
+set DB [sqlite3 db test.db]
 do_test enc2-6.10 {
   add_test_function $DB 0 0 1
   execsql {
