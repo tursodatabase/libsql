@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.48 2002/02/27 19:00:21 drh Exp $
+** $Id: expr.c,v 1.49 2002/02/28 00:41:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -631,47 +631,6 @@ int sqliteExprResolveIds(
   return 0;
 }
 
-#if 0 /* NOT USED */
-/*
-** Compare a token against a string.  Return TRUE if they match.
-*/
-static int sqliteTokenCmp(Token *pToken, const char *zStr){
-  int n = strlen(zStr);
-  if( n!=pToken->n ) return 0;
-  return sqliteStrNICmp(pToken->z, zStr, n)==0;
-}
-#endif
-
-/*
-** Convert a function name into its integer identifier.  Return the
-** identifier.  Return FN_Unknown if the function name is unknown.
-*/
-int sqliteFuncId(Token *pToken){
-  static const struct {
-     char *zName;
-     int len;
-     int id;
-  } aFunc[] = {
-     { "count",  5, FN_Count  },
-     { "min",    3, FN_Min    },
-     { "max",    3, FN_Max    },
-     { "sum",    3, FN_Sum    },
-     { "avg",    3, FN_Avg    },
-     { "length", 6, FN_Length },
-     { "substr", 6, FN_Substr },
-     { "abs",    3, FN_Abs    },
-     { "round",  5, FN_Round  },
-  };
-  int i;
-  for(i=0; i<ArraySize(aFunc); i++){
-    if( aFunc[i].len==pToken->n 
-     && sqliteStrNICmp(pToken->z, aFunc[i].zName, aFunc[i].len)==0 ){
-       return aFunc[i].id;
-    }
-  }
-  return FN_Unknown;
-}
-
 /*
 ** Error check the functions in an expression.  Make sure all
 ** function names are recognized and all functions have the correct
@@ -686,67 +645,24 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
   if( pExpr==0 ) return 0;
   switch( pExpr->op ){
     case TK_FUNCTION: {
-      int id = sqliteFuncId(&pExpr->token);
       int n = pExpr->pList ? pExpr->pList->nExpr : 0;
       int no_such_func = 0;
-      int too_many_args = 0;
-      int too_few_args = 0;
       int wrong_num_args = 0;
       int is_agg = 0;
       int i;
-      pExpr->iColumn = id;
-      switch( id ){
-        case FN_Unknown: {
-          UserFunc *pUser = sqliteFindUserFunction(pParse->db,
-             pExpr->token.z, pExpr->token.n, n, 0);
-          if( pUser==0 ){
-            pUser = sqliteFindUserFunction(pParse->db,
-               pExpr->token.z, pExpr->token.n, -1, 0);
-            if( pUser==0 ){
-              no_such_func = 1;
-            }else{
-              wrong_num_args = 1;
-            }
-          }else{
-            is_agg = pUser->xFunc==0;
-          }
-          break;
+      FuncDef *pDef;
+
+      pDef = sqliteFindFunction(pParse->db, pExpr->token.z, pExpr->token.n,n,0);
+      if( pDef==0 ){
+        pDef = sqliteFindFunction(pParse->db,
+           pExpr->token.z, pExpr->token.n, -1, 0);
+        if( pDef==0 ){
+          no_such_func = 1;
+        }else{
+          wrong_num_args = 1;
         }
-        case FN_Count: { 
-          too_many_args = n>1;
-          is_agg = 1;
-          break;
-        }
-        case FN_Max:
-        case FN_Min: {
-          too_few_args = n<1;
-          is_agg = n==1;
-          break;
-        }
-        case FN_Avg:
-        case FN_Sum: {
-          too_many_args = n>1;
-          too_few_args = n<1;
-          is_agg = 1;
-          break;
-        }
-        case FN_Abs:
-        case FN_Length: {
-          too_few_args = n<1;
-          too_many_args = n>1;
-          break;
-        }
-        case FN_Round: {
-          too_few_args = n<1;
-          too_many_args = n>2;
-          break;
-        }
-        case FN_Substr: {
-          too_few_args = n<3;
-          too_many_args = n>3;
-          break;
-        }
-        default: break;
+      }else{
+        is_agg = pDef->xFunc==0;
       }
       if( is_agg && !allowAgg ){
         sqliteSetNString(&pParse->zErrMsg, "misuse of aggregate function ", -1,
@@ -757,16 +673,6 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       }else if( no_such_func ){
         sqliteSetNString(&pParse->zErrMsg, "no such function: ", -1,
            pExpr->token.z, pExpr->token.n, 0);
-        pParse->nErr++;
-        nErr++;
-      }else if( too_many_args ){
-        sqliteSetNString(&pParse->zErrMsg, "too many arguments to function ",-1,
-           pExpr->token.z, pExpr->token.n, "()", 2, 0);
-        pParse->nErr++;
-        nErr++;
-      }else if( too_few_args ){
-        sqliteSetNString(&pParse->zErrMsg, "too few arguments to function ",-1,
-           pExpr->token.z, pExpr->token.n, "()", 2, 0);
         pParse->nErr++;
         nErr++;
       }else if( wrong_num_args ){
@@ -943,74 +849,20 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_AGG_FUNCTION: {
       sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
-      if( pExpr->iColumn==FN_Avg ){
-        assert( pParse->iAggCount>=0 && pParse->iAggCount<pParse->nAgg );
-        sqliteVdbeAddOp(v, OP_AggGet, 0, pParse->iAggCount);
-        sqliteVdbeAddOp(v, OP_Divide, 0, 0);
-      }
       break;
     }
     case TK_FUNCTION: {
-      int id = pExpr->iColumn;
-      int op;
       int i;
       ExprList *pList = pExpr->pList;
-      switch( id ){
-        case FN_Min: 
-        case FN_Max: {
-          op = id==FN_Min ? OP_Min : OP_Max;
-          for(i=0; i<pList->nExpr; i++){
-            sqliteExprCode(pParse, pList->a[i].pExpr);
-            if( i>0 ){
-              sqliteVdbeAddOp(v, op, 0, 0);
-            }
-          }
-          break;
-        }
-        case FN_Abs: {
-          sqliteExprCode(pParse, pList->a[0].pExpr);
-          sqliteVdbeAddOp(v, OP_AbsValue, 0, 0);
-          break;
-        }
-        case FN_Round: {
-          if( pList->nExpr==2 ){
-            sqliteExprCode(pParse, pList->a[1].pExpr);
-          }else{
-            sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-          }
-          sqliteExprCode(pParse, pList->a[0].pExpr);
-          sqliteVdbeAddOp(v, OP_Precision, 0, 0);
-          break;
-        }
-        case FN_Length: {
-          sqliteExprCode(pParse, pList->a[0].pExpr);
-          sqliteVdbeAddOp(v, OP_Strlen, 0, 0);
-          break;
-        }
-        case FN_Substr: {
-          for(i=0; i<pList->nExpr; i++){
-            sqliteExprCode(pParse, pList->a[i].pExpr);
-          }
-          sqliteVdbeAddOp(v, OP_Substr, 0, 0);
-          break;
-        }
-        case FN_Unknown: {
-          UserFunc *pUser;
-          pUser = sqliteFindUserFunction(pParse->db,
+      FuncDef *pDef;
+      pDef = sqliteFindFunction(pParse->db,
                       pExpr->token.z, pExpr->token.n, pList->nExpr, 0);
-          assert( pUser!=0 );
-          for(i=0; i<pList->nExpr; i++){
-            sqliteExprCode(pParse, pList->a[i].pExpr);
-          }
-          sqliteVdbeAddOp(v, OP_UserFunc, pList->nExpr, 0);
-          sqliteVdbeChangeP3(v, -1, (char*)pUser, P3_POINTER);
-          break;
-        }
-        default: {
-          /* Can't happen! */
-          break;
-        }
+      assert( pDef!=0 );
+      for(i=0; i<pList->nExpr; i++){
+        sqliteExprCode(pParse, pList->a[i].pExpr);
       }
+      sqliteVdbeAddOp(v, OP_Function, pList->nExpr, 0);
+      sqliteVdbeChangeP3(v, -1, (char*)pDef, P3_POINTER);
       break;
     }
     case TK_SELECT: {
@@ -1315,21 +1167,6 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_AGG_FUNCTION: {
-      if( pExpr->iColumn==FN_Count || pExpr->iColumn==FN_Avg ){
-        if( pParse->iAggCount>=0 ){
-          i = pParse->iAggCount;
-        }else{
-          i = appendAggInfo(pParse);
-          if( i<0 ) return 1;
-          pParse->aAgg[i].isAgg = 1;
-          pParse->aAgg[i].pExpr = 0;
-          pParse->iAggCount = i;
-        }
-        if( pExpr->iColumn==FN_Count ){
-          pExpr->iAgg = i;
-          break;
-        }
-      }
       aAgg = pParse->aAgg;
       for(i=0; i<pParse->nAgg; i++){
         if( !aAgg[i].isAgg ) continue;
@@ -1342,12 +1179,8 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         if( i<0 ) return 1;
         pParse->aAgg[i].isAgg = 1;
         pParse->aAgg[i].pExpr = pExpr;
-        if( pExpr->iColumn==FN_Unknown ){
-          pParse->aAgg[i].pUser = sqliteFindUserFunction(pParse->db,
+        pParse->aAgg[i].pFunc = sqliteFindFunction(pParse->db,
              pExpr->token.z, pExpr->token.n, pExpr->pList->nExpr, 0);
-        }else{
-          pParse->aAgg[i].pUser = 0;
-        }
       }
       pExpr->iAgg = i;
       break;
@@ -1374,10 +1207,10 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 
 /*
 ** Locate a user function given a name and a number of arguments.
-** Return a pointer to the UserFunc structure that defines that
+** Return a pointer to the FuncDef structure that defines that
 ** function, or return NULL if the function does not exist.
 **
-** If the createFlag argument is true, then a new (blank) UserFunc
+** If the createFlag argument is true, then a new (blank) FuncDef
 ** structure is created and liked into the "db" structure if a
 ** no matching function previously existed.  When createFlag is true
 ** and the nArg parameter is -1, then only a function that accepts
@@ -1387,15 +1220,15 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 ** function found is returned.  A function is valid if either xFunc
 ** or xStep is non-zero.
 */
-UserFunc *sqliteFindUserFunction(
+FuncDef *sqliteFindFunction(
   sqlite *db,        /* An open database */
   const char *zName, /* Name of the function.  Not null-terminated */
   int nName,         /* Number of characters in the name */
   int nArg,          /* Number of arguments.  -1 means any number */
   int createFlag     /* Create new entry if true and does not otherwise exist */
 ){
-  UserFunc *pFirst, *p, *pMaybe;
-  pFirst = p = (UserFunc*)sqliteHashFind(&db->userFunc, zName, nName);
+  FuncDef *pFirst, *p, *pMaybe;
+  pFirst = p = (FuncDef*)sqliteHashFind(&db->aFunc, zName, nName);
   if( p && !createFlag && nArg<0 ){
     while( p && p->xFunc==0 && p->xStep==0 ){ p = p->pNext; }
     return p;
@@ -1416,7 +1249,7 @@ UserFunc *sqliteFindUserFunction(
     p = sqliteMalloc( sizeof(*p) );
     p->nArg = nArg;
     p->pNext = pFirst;
-    sqliteHashInsert(&db->userFunc, zName, nName, (void*)p);
+    sqliteHashInsert(&db->aFunc, zName, nName, (void*)p);
   }
   return p;
 }

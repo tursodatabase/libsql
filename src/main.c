@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.65 2002/02/27 19:00:22 drh Exp $
+** $Id: main.c,v 1.66 2002/02/28 00:41:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -313,7 +313,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
-  sqliteHashInit(&db->userFunc, SQLITE_HASH_STRING, 1);
+  sqliteHashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
   sqliteRegisterBuildinFunctions(db);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
@@ -416,14 +416,14 @@ void sqlite_close(sqlite *db){
   if( db->pBeTemp ){
     sqliteBtreeClose(db->pBeTemp);
   }
-  for(i=sqliteHashFirst(&db->userFunc); i; i=sqliteHashNext(i)){
-    UserFunc *pFunc, *pNext;
-    for(pFunc = (UserFunc*)sqliteHashData(i); pFunc; pFunc=pNext){
+  for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
+    FuncDef *pFunc, *pNext;
+    for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
       pNext = pFunc->pNext;
       sqliteFree(pFunc);
     }
   }
-  sqliteHashClear(&db->userFunc);
+  sqliteHashClear(&db->aFunc);
   sqliteFree(db);
 }
 
@@ -646,9 +646,9 @@ int sqlite_create_function(
   void (*xFunc)(sqlite_func*,int,const char**),  /* The implementation */
   void *pUserData      /* User data */
 ){
-  UserFunc *p;
+  FuncDef *p;
   if( db==0 || zName==0 ) return 1;
-  p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
   p->xStep = 0;
@@ -664,9 +664,9 @@ int sqlite_create_aggregate(
   void (*xFinalize)(sqlite_func*),              /* The finalizer */
   void *pUserData      /* User data */
 ){
-  UserFunc *p;
+  FuncDef *p;
   if( db==0 || zName==0 ) return 1;
-  p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = 0;
   p->xStep = xStep;

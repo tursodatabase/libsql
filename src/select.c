@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.68 2002/02/27 19:00:22 drh Exp $
+** $Id: select.c,v 1.69 2002/02/28 00:41:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -78,7 +78,6 @@ static void sqliteAggregateInfoReset(Parse *pParse){
   sqliteFree(pParse->aAgg);
   pParse->aAgg = 0;
   pParse->nAgg = 0;
-  pParse->iAggCount = -1;
   pParse->useAgg = 0;
 }
 
@@ -847,8 +846,14 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
   if( pExpr->pList==0 || pExpr->pList->nExpr!=1 ) return 0;
-  if( pExpr->iColumn!=FN_Min && pExpr->iColumn!=FN_Max ) return 0;
-  seekOp = pExpr->iColumn==FN_Min ? OP_Rewind : OP_Last;
+  if( pExpr->token.n!=3 ) return 0;
+  if( sqliteStrNICmp(pExpr->token.z,"min",3)==0 ){
+    seekOp = OP_Rewind;
+  }else if( sqliteStrNICmp(pExpr->token.z,"max",3)==0 ){
+    seekOp = OP_Last;
+  }else{
+    return 0;
+  }
   pExpr = pExpr->pList->a[0].pExpr;
   if( pExpr->op!=TK_COLUMN ) return 0;
   iCol = pExpr->iColumn;
@@ -1151,7 +1156,7 @@ int sqliteSelect(
   */
   sqliteAggregateInfoReset(pParse);
   if( isAgg ){
-    assert( pParse->nAgg==0 && pParse->iAggCount<0 );
+    assert( pParse->nAgg==0 );
     for(i=0; i<pEList->nExpr; i++){
       if( sqliteExprAnalyzeAggregates(pParse, pEList->a[i].pExpr) ){
         goto select_end;
@@ -1198,27 +1203,15 @@ int sqliteSelect(
   if( isAgg ){
     sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
     for(i=0; i<pParse->nAgg; i++){
-      UserFunc *pUser;
-      if( (pUser = pParse->aAgg[i].pUser)!=0 && pUser->xFinalize!=0 ){
+      FuncDef *pFunc;
+      if( (pFunc = pParse->aAgg[i].pFunc)!=0 && pFunc->xFinalize!=0 ){
         sqliteVdbeAddOp(v, OP_AggInit, 0, i);
-        sqliteVdbeChangeP3(v, -1, (char*)pUser, P3_POINTER);
+        sqliteVdbeChangeP3(v, -1, (char*)pFunc, P3_POINTER);
       }
     }
     if( pGroupBy==0 ){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeAddOp(v, OP_AggFocus, 0, 0);
-      for(i=0; i<pParse->nAgg; i++){
-        Expr *pE;
-        if( !pParse->aAgg[i].isAgg ) continue;
-        pE = pParse->aAgg[i].pExpr;
-        assert( pE==0 || pE->op==TK_AGG_FUNCTION );
-        assert( pE==0 || (pE->pList!=0 && pE->pList->nExpr==1) );
-        if( pE==0 || pE->iColumn==FN_Sum ){
-          sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-          sqliteVdbeAddOp(v, OP_AggSet, 0, i);
-          continue;
-        }
-      }
     }
   }
 
@@ -1268,36 +1261,20 @@ int sqliteSelect(
     }
     for(i=0; i<pParse->nAgg; i++){
       Expr *pE;
-      int op, j;
+      int j;
       if( !pParse->aAgg[i].isAgg ) continue;
       pE = pParse->aAgg[i].pExpr;
-      if( pE==0 ){
-        sqliteVdbeAddOp(v, OP_AggIncr, 1, i);
-        continue;
-      }
       assert( pE->op==TK_AGG_FUNCTION );
-      assert( pE->pList!=0 );
-      for(j=0; j<pE->pList->nExpr; j++){
-        sqliteExprCode(pParse, pE->pList->a[j].pExpr);
+      if( pE->pList ){
+        for(j=0; j<pE->pList->nExpr; j++){
+          sqliteExprCode(pParse, pE->pList->a[j].pExpr);
+        }
       }
-      switch( pE->iColumn ){
-        case FN_Min:      op = OP_Min;     break;
-        case FN_Max:      op = OP_Max;     break;
-        case FN_Avg:      op = OP_Add;     break;
-        case FN_Sum:      op = OP_Add;     break;
-        case FN_Unknown:  op = OP_AggFunc; break;
-      }
-      if( op!=OP_AggFunc ){
-        sqliteVdbeAddOp(v, OP_AggGet, 0, i);
-        sqliteVdbeAddOp(v, op, 0, 0);
-        sqliteVdbeAddOp(v, OP_AggSet, 0, i);
-      }else{
-        sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList->nExpr);
-        assert( pParse->aAgg[i].pUser!=0 );
-        assert( pParse->aAgg[i].pUser->xStep!=0 );
-        sqliteVdbeChangeP3(v, -1, (char*)pParse->aAgg[i].pUser, P3_POINTER);
-      }
+      sqliteVdbeAddOp(v, OP_Integer, i, 0);
+      sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList->nExpr);
+      assert( pParse->aAgg[i].pFunc!=0 );
+      assert( pParse->aAgg[i].pFunc->xStep!=0 );
+      sqliteVdbeChangeP3(v, -1, (char*)pParse->aAgg[i].pFunc, P3_POINTER);
     }
   }
 

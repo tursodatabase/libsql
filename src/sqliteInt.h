@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.95 2002/02/27 19:00:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.96 2002/02/28 00:41:11 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -128,21 +128,6 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 #define ArraySize(X)    (sizeof(X)/sizeof(X[0]))
 
 /*
-** Integer identifiers for built-in SQL functions.
-*/
-#define FN_Unknown    0      /* Not a built-in.  Might be user defined */
-#define FN_Count      1
-#define FN_Min        2
-#define FN_Max        3
-#define FN_Sum        4
-#define FN_Avg        5
-#define FN_Fcnt       6
-#define FN_Length     7
-#define FN_Substr     8
-#define FN_Abs        9
-#define FN_Round      10
-
-/*
 ** Forward references to structures
 */
 typedef struct Column Column;
@@ -158,7 +143,7 @@ typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 typedef struct Select Select;
 typedef struct AggExpr AggExpr;
-typedef struct UserFunc UserFunc;
+typedef struct FuncDef FuncDef;
 
 /*
 ** Each database is an instance of the following structure
@@ -177,7 +162,7 @@ struct sqlite {
   Hash idxHash;                 /* All (named) indices indexed by name */
   Hash tblDrop;                 /* Uncommitted DROP TABLEs */
   Hash idxDrop;                 /* Uncommitted DROP INDEXs */
-  Hash userFunc;                /* User defined functions */
+  Hash aFunc;                   /* All functions that can be in SQL exprs */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
   int onError;                  /* Default conflict algorithm */
@@ -200,18 +185,18 @@ struct sqlite {
 #define SQLITE_ResultDetails  0x00000100  /* Details added to result set */
 
 /*
-** Each user-defined function is defined by an instance of the following
-** structure.  A pointer to this structure is stored in the sqlite.userFunc
+** Each SQL function is defined by an instance of the following
+** structure.  A pointer to this structure is stored in the sqlite.aFunc
 ** hash table.  When multiple functions have the same name, the hash table
 ** points to a linked list of these structures.
 */
-struct UserFunc {
+struct FuncDef {
   void (*xFunc)(sqlite_func*,int,const char**);   /* Regular function */
   void *(*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
   void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
   int nArg;                                  /* Number of arguments */
   void *pUserData;                           /* User data parameter */
-  UserFunc *pNext;                           /* Next function with same name */
+  FuncDef *pNext;                            /* Next function with same name */
 };
 
 /*
@@ -510,7 +495,7 @@ struct Select {
 struct AggExpr {
   int isAgg;        /* if TRUE contains an aggregate function */
   Expr *pExpr;      /* The expression */
-  UserFunc *pUser;  /* User-defined aggregate function */
+  FuncDef *pFunc;   /* Information about the aggregate function */
 };
 
 /*
@@ -541,7 +526,6 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nAgg;            /* Number of aggregate expressions */
   AggExpr *aAgg;       /* An array of aggregate expressions */
-  int iAggCount;       /* Index of the count(*) aggregate in aAgg[] */
   int useAgg;          /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
   int schemaVerified;  /* True if an OP_VerifySchema has been coded someplace
@@ -652,5 +636,5 @@ Expr *sqliteExprDup(Expr*);
 ExprList *sqliteExprListDup(ExprList*);
 IdList *sqliteIdListDup(IdList*);
 Select *sqliteSelectDup(Select*);
-UserFunc *sqliteFindUserFunction(sqlite*,const char*,int,int,int);
+FuncDef *sqliteFindFunction(sqlite*,const char*,int,int,int);
 void sqliteRegisterBuildinFunctions(sqlite*);
