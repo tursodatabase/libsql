@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.14 2004/02/25 02:20:42 drh Exp $
+# $Id: pager.test,v 1.15 2004/04/26 14:10:22 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -305,7 +305,7 @@ for {set i 1} {$i<20} {incr i} {
       page_write $gx "Page-$j v$i"
       page_unref $gx
       if {$j==$i} {
-        pager_ckpt_begin $p1
+        pager_stmt_begin $p1
       }
     }
   } {}
@@ -346,12 +346,12 @@ for {set i 1} {$i<20} {incr i} {
       page_write $gx "Page-$j v$i"
       page_unref $gx
       if {$j==$i} {
-        pager_ckpt_begin $p1
+        pager_stmt_begin $p1
       }
     }
   } {}
   do_test pager-4.5.$i.7 {
-    pager_ckpt_rollback $p1
+    pager_stmt_rollback $p1
     for {set j 2} {$j<=20} {incr j} {
       set gx [page_get $p1 $j]
       set value [page_read $gx]
@@ -373,12 +373,12 @@ for {set i 1} {$i<20} {incr i} {
       page_write $gx "Page-$j v$i"
       page_unref $gx
       if {$j==$i} {
-        pager_ckpt_begin $p1
+        pager_stmt_begin $p1
       }
     }
   } {}
   do_test pager-4.5.$i.9 {
-    pager_ckpt_commit $p1
+    pager_stmt_commit $p1
     for {set j 2} {$j<=20} {incr j} {
       set gx [page_get $p1 $j]
       set value [page_read $gx]
@@ -406,6 +406,7 @@ do_test pager-4.99 {
 
 } ;# end if( not mem: and has pager_open command );
 
+if 0 {
 # Ticket #615: an assertion fault inside the pager.  It is a benign
 # fault, but we might as well test for it.
 #
@@ -418,6 +419,6 @@ do_test pager-5.1 {
     COMMIT;
   }
 } {}
-
+}
 
 finish_test

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.74 2004/02/22 17:49:34 drh Exp $
+** $Id: util.c,v 1.75 2004/04/26 14:10:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -405,6 +405,7 @@ void sqliteSetNString(char **pz, ...){
   va_end(ap);
 }
 
+#if 0
 /*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
 ** The following formatting characters are allowed:
@@ -423,6 +424,7 @@ void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
   pParse->zErrMsg = sqliteVMPrintf(zFormat, ap);
   va_end(ap);
 }
+#endif
 
 /*
 ** Convert an SQL-style quoted string into a normal string by removing

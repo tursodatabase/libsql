@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.36 2004/02/10 02:57:59 drh Exp $
+** @(#) $Id: btree.h,v 1.37 2004/04/26 14:10:21 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -23,134 +23,61 @@
 */
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
-typedef struct BtOps BtOps;
-typedef struct BtCursorOps BtCursorOps;
 
 
-/*
-** An instance of the following structure contains pointers to all
-** methods against an open BTree.  Alternative BTree implementations
-** (examples: file based versus in-memory) can be created by substituting
-** different methods.  Users of the BTree cannot tell the difference.
-**
-** In C++ we could do this by defining a virtual base class and then
-** creating subclasses for each different implementation.  But this is
-** C not C++ so we have to be a little more explicit.
+int sqlite3BtreeOpen(const char *zFilename, Btree **, int nCache, int flags);
+
+/* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the
+** following values.
 */
-struct BtOps {
-    int (*Close)(Btree*);
-    int (*SetCacheSize)(Btree*, int);
-    int (*SetSafetyLevel)(Btree*, int);
-    int (*BeginTrans)(Btree*);
-    int (*Commit)(Btree*);
-    int (*Rollback)(Btree*);
-    int (*BeginCkpt)(Btree*);
-    int (*CommitCkpt)(Btree*);
-    int (*RollbackCkpt)(Btree*);
-    int (*CreateTable)(Btree*, int*);
-    int (*CreateIndex)(Btree*, int*);
-    int (*DropTable)(Btree*, int);
-    int (*ClearTable)(Btree*, int);
-    int (*Cursor)(Btree*, int iTable, int wrFlag, BtCursor **ppCur);
-    int (*GetMeta)(Btree*, int*);
-    int (*UpdateMeta)(Btree*, int*);
-    char *(*IntegrityCheck)(Btree*, int*, int);
-    const char *(*GetFilename)(Btree*);
-    int (*Copyfile)(Btree*,Btree*);
-    struct Pager *(*Pager)(Btree*);
-#ifdef SQLITE_TEST
-    int (*PageDump)(Btree*, int, int);
-#endif
-};
+#define BTREE_OMIT_JOURNAL  1  /* Do not use journal.  No argument */
+#define BTREE_MEMORY        2  /* In-memory DB.  No argument */
 
-/*
-** An instance of this structure defines all of the methods that can
-** be executed against a cursor.
+int sqlite3BtreeClose(Btree*);
+int sqlite3BtreeSetCacheSize(Btree*,int);
+int sqlite3BtreeSetSafetyLevel(Btree*,int);
+int sqlite3BtreeBeginTrans(Btree*);
+int sqlite3BtreeCommit(Btree*);
+int sqlite3BtreeRollback(Btree*);
+int sqlite3BtreeBeginStmt(Btree*);
+int sqlite3BtreeCommitStmt(Btree*);
+int sqlite3BtreeRollbackStmt(Btree*);
+int sqlite3BtreeCreateTable(Btree*, int*, int flags);
+
+/* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
+** of the following flags:
 */
-struct BtCursorOps {
-    int (*Moveto)(BtCursor*, const void *pKey, int nKey, int *pRes);
-    int (*Delete)(BtCursor*);
-    int (*Insert)(BtCursor*, const void *pKey, int nKey,
-                             const void *pData, int nData);
-    int (*First)(BtCursor*, int *pRes);
-    int (*Last)(BtCursor*, int *pRes);
-    int (*Next)(BtCursor*, int *pRes);
-    int (*Previous)(BtCursor*, int *pRes);
-    int (*KeySize)(BtCursor*, int *pSize);
-    int (*Key)(BtCursor*, int offset, int amt, char *zBuf);
-    int (*KeyCompare)(BtCursor*, const void *pKey, int nKey,
-                                 int nIgnore, int *pRes);
-    int (*DataSize)(BtCursor*, int *pSize);
-    int (*Data)(BtCursor*, int offset, int amt, char *zBuf);
-    int (*CloseCursor)(BtCursor*);
-#ifdef SQLITE_TEST
-    int (*CursorDump)(BtCursor*, int*);
-#endif
-};
+#define BTREE_INTKEY     1      /* Table has only 64-bit integer keys */
+#define BTREE_ZERODATA   2      /* Table has keys only - no data */
 
-/*
-** The number of 4-byte "meta" values contained on the first page of each
-** database file.
-*/
-#define SQLITE_N_BTREE_META 10
+int sqlite3BtreeDropTable(Btree*, int);
+int sqlite3BtreeClearTable(Btree*, int);
+int sqlite3BtreeGetMeta(Btree*, int idx, u32 *pValue);
+int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 
-int sqliteBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
-int sqliteRbtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
+int sqlite3BtreeCursor(
+  Btree*,                              /* BTree containing table to open */
+  int iTable,                          /* Index of root page */
+  int wrFlag,                          /* 1 for writing.  0 for read-only */
+  int(*)(void*,int,const void*,int,const void*),  /* Key comparison function */
+  void*,                               /* First argument to compare function */
+  BtCursor **ppCursor                  /* Returned cursor */
+);
 
-#define btOps(pBt) (*((BtOps **)(pBt)))
-#define btCOps(pCur) (*((BtCursorOps **)(pCur)))
-
-#define sqliteBtreeClose(pBt)              (btOps(pBt)->Close(pBt))
-#define sqliteBtreeSetCacheSize(pBt, sz)   (btOps(pBt)->SetCacheSize(pBt, sz))
-#define sqliteBtreeSetSafetyLevel(pBt, sl) (btOps(pBt)->SetSafetyLevel(pBt, sl))
-#define sqliteBtreeBeginTrans(pBt)         (btOps(pBt)->BeginTrans(pBt))
-#define sqliteBtreeCommit(pBt)             (btOps(pBt)->Commit(pBt))
-#define sqliteBtreeRollback(pBt)           (btOps(pBt)->Rollback(pBt))
-#define sqliteBtreeBeginCkpt(pBt)          (btOps(pBt)->BeginCkpt(pBt))
-#define sqliteBtreeCommitCkpt(pBt)         (btOps(pBt)->CommitCkpt(pBt))
-#define sqliteBtreeRollbackCkpt(pBt)       (btOps(pBt)->RollbackCkpt(pBt))
-#define sqliteBtreeCreateTable(pBt,piTable)\
-                (btOps(pBt)->CreateTable(pBt,piTable))
-#define sqliteBtreeCreateIndex(pBt, piIndex)\
-                (btOps(pBt)->CreateIndex(pBt, piIndex))
-#define sqliteBtreeDropTable(pBt, iTable) (btOps(pBt)->DropTable(pBt, iTable))
-#define sqliteBtreeClearTable(pBt, iTable)\
-                (btOps(pBt)->ClearTable(pBt, iTable))
-#define sqliteBtreeCursor(pBt, iTable, wrFlag, ppCur)\
-                (btOps(pBt)->Cursor(pBt, iTable, wrFlag, ppCur))
-#define sqliteBtreeMoveto(pCur, pKey, nKey, pRes)\
-                (btCOps(pCur)->Moveto(pCur, pKey, nKey, pRes))
-#define sqliteBtreeDelete(pCur)           (btCOps(pCur)->Delete(pCur))
-#define sqliteBtreeInsert(pCur, pKey, nKey, pData, nData) \
-                (btCOps(pCur)->Insert(pCur, pKey, nKey, pData, nData))
-#define sqliteBtreeFirst(pCur, pRes)      (btCOps(pCur)->First(pCur, pRes))
-#define sqliteBtreeLast(pCur, pRes)       (btCOps(pCur)->Last(pCur, pRes))
-#define sqliteBtreeNext(pCur, pRes)       (btCOps(pCur)->Next(pCur, pRes))
-#define sqliteBtreePrevious(pCur, pRes)   (btCOps(pCur)->Previous(pCur, pRes))
-#define sqliteBtreeKeySize(pCur, pSize)   (btCOps(pCur)->KeySize(pCur, pSize) )
-#define sqliteBtreeKey(pCur, offset, amt, zBuf)\
-                (btCOps(pCur)->Key(pCur, offset, amt, zBuf))
-#define sqliteBtreeKeyCompare(pCur, pKey, nKey, nIgnore, pRes)\
-                (btCOps(pCur)->KeyCompare(pCur, pKey, nKey, nIgnore, pRes))
-#define sqliteBtreeDataSize(pCur, pSize)  (btCOps(pCur)->DataSize(pCur, pSize))
-#define sqliteBtreeData(pCur, offset, amt, zBuf)\
-                (btCOps(pCur)->Data(pCur, offset, amt, zBuf))
-#define sqliteBtreeCloseCursor(pCur)      (btCOps(pCur)->CloseCursor(pCur))
-#define sqliteBtreeGetMeta(pBt, aMeta)    (btOps(pBt)->GetMeta(pBt, aMeta))
-#define sqliteBtreeUpdateMeta(pBt, aMeta) (btOps(pBt)->UpdateMeta(pBt, aMeta))
-#define sqliteBtreeIntegrityCheck(pBt, aRoot, nRoot)\
-                (btOps(pBt)->IntegrityCheck(pBt, aRoot, nRoot))
-#define sqliteBtreeGetFilename(pBt)       (btOps(pBt)->GetFilename(pBt))
-#define sqliteBtreeCopyFile(pBt1, pBt2)   (btOps(pBt1)->Copyfile(pBt1, pBt2))
-#define sqliteBtreePager(pBt)             (btOps(pBt)->Pager(pBt))
-
-#ifdef SQLITE_TEST
-#define sqliteBtreePageDump(pBt, pgno, recursive)\
-                (btOps(pBt)->PageDump(pBt, pgno, recursive))
-#define sqliteBtreeCursorDump(pCur, aResult)\
-                (btCOps(pCur)->CursorDump(pCur, aResult))
-int btree_native_byte_order;
-#endif /* SQLITE_TEST */
+int sqlite3BtreeCursorClose(BtCursor*);
+int sqlite3BtreeMoveto(BtCursor*, const void *pKey, u64 nKey, int *pRes);
+int sqlite3BtreeDelete(BtCursor*);
+int sqlite3BtreeInsert(BtCursor*, const void *pKey, u64 nKey,
+                                  const void *pData, int nData);
+int sqlite3BtreeFirst(BtCursor*, int *pRes);
+int sqlite3BtreeLast(BtCursor*, int *pRes);
+int sqlite3BtreeNext(BtCursor*, int *pRes);
+int sqlite3BtreePrevious(BtCursor*, int *pRes);
+int sqlite3BtreeKeySize(BtCursor*, u64 *pSize);
+int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
+void *sqlite3BtreeKeyFetch(BtCursor*);
+int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
+int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
 
 
 #endif /* _BTREE_H_ */
