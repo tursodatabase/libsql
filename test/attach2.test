@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.10 2004/05/31 08:26:49 danielk1977 Exp $
+# $Id: attach2.test,v 1.11 2004/05/31 12:34:54 danielk1977 Exp $
 #
 
 
@@ -146,7 +146,94 @@ db close
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
 }
+
+# Tests attach2-4.* test that read-locks work correctly with attached
+# databases.
+do_test attach2-4.1 {
+  sqlite db test.db
+  sqlite db2 test.db
+  execsql {ATTACH 'test2.db' as file2}
+  execsql {ATTACH 'test2.db' as file2} db2
+} {}
+
+do_test attach2-4.2 {
+  # Handle 'db' read-locks the main file
+  execsql {BEGIN}
+  execsql {SELECT * FROM t1}
+} {}
+do_test attach2-4.3 {
+  execsql {SELECT * FROM t1} db2
+} {}
+do_test attach2-4.4 {
+  set r [catch { 
+    execsql {
+      INSERT INTO t1 VALUES(1, 2)
+    } db2 
+  } msg]
+  list $r $msg
+} {1 {database is locked}}
+do_test attach2-4.5 {
+  # Handle 'db2' write-locks file2
+  execsql {BEGIN} db2
+  execsql {INSERT INTO file2.t1 VALUES(1, 2)} db2
+} {}
+do_test attach2-4.6 {
+  set r [catch { 
+    execsql {
+      SELECT * FROM file2.t1;
+    } 
+  } msg]
+  list $r $msg
+} {1 {database is locked}}
+do_test attach2-4.7 {
+  # Ensure handle 'db' retains the lock on the main file after
+  # failing to obtain a read-lock on file2.
+  set r [catch { 
+    execsql {
+      INSERT INTO t1 VALUES(1, 2)
+    } db2 
+  } msg]
+  list $r $msg
+} {1 {database is locked}}
+do_test attach2-4.8 {
+  # Read lock the main file with db2. Now both handles have a read lock
+  # on the main file, db2 has a write-lock on file2.
+  execsql {SELECT * FROM t1} db2
+} {}
+do_test attach2-4.9 {
+  # Try to upgrade the handle 'db' lock.
+  set r [catch { 
+    execsql {
+      INSERT INTO t1 VALUES(1, 2)
+    } 
+  } msg]
+  list $r $msg
+} {1 {database is locked}}
+do_test attach2-4.10 {
+  # Release the locks held by handle 'db2'
+  execsql {COMMIT} db2
+} {}
+do_test attach2-4.11 {
+  execsql {SELECT * FROM file2.t1}
+} {1 2}
+do_test attach2-4.12 {
+  execsql {INSERT INTO t1 VALUES(1, 2)}
+} {}
+do_test attach2-4.13 {
+  # Release the locks held by handle 'db'
+  execsql {ROLLBACK}
+} {}
+do_test attach2-4.14 {
+  execsql {SELECT * FROM t1} db2
+} {}
+
+db close
+db2 close
 file delete -force test2.db
 
-
 finish_test
+
+
+
+
+

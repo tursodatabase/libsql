@@ -1,5 +1,5 @@
-C Use\sread-only\stransactions.\s(CVS\s1504)
-D 2004-05-31T11:51:45
+C Some\stest\scases\sfor\sread\slocks\s(CVS\s1505)
+D 2004-05-31T12:34:54
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -78,7 +78,7 @@ F src/vdbemem.c 627d714c347f6af8092cc48ae1c06fd774a1ad9c
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cbc9c5286e614171a68da3f0b05ccba313fd4c5d
-F test/attach2.test 617583b73005638100721b4178c28d0b9df67494
+F test/attach2.test e98aab312722d05fc1837bf103baeebc582c64f8
 F test/attach3.test d384ac2e59f305743f73aec4b3d97b36fa5c6975
 F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 5f869fbfc029eb2601d1d967685517d007d002a4
-R 62350eb9f403c6ef305bb359dbc711d8
+P 6c100887eeb32631e1aa914a69db959e1f58f192
+R 1d8f5d0a6729c7e39d4d87422195d60b
 U danielk1977
-Z 89534b52ebf7a971be3266cc25c2b9c8
+Z 3129e3edc85b79121f4ae67280793a64
