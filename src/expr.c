@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.63 2002/05/24 02:04:33 drh Exp $
+** $Id: expr.c,v 1.64 2002/05/26 20:54:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -818,7 +818,13 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_REM:
     case TK_BITAND:
     case TK_BITOR:
-    case TK_SLASH: {
+    case TK_SLASH:
+    case TK_LT:
+    case TK_LE:
+    case TK_GT:
+    case TK_GE:
+    case TK_NE:
+    case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, 0);
@@ -835,21 +841,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, OP_Concat, 2, 0);
-      break;
-    }
-    case TK_LT:
-    case TK_LE:
-    case TK_GT:
-    case TK_GE:
-    case TK_NE:
-    case TK_EQ: {
-      int dest;
-      sqliteVdbeAddOp(v, OP_Integer, 1, 0);
-      sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteExprCode(pParse, pExpr->pRight);
-      dest = sqliteVdbeCurrentAddr(v) + 2;
-      sqliteVdbeAddOp(v, op, 0, dest);
-      sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
     case TK_UMINUS: {
@@ -881,7 +872,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       dest = sqliteVdbeCurrentAddr(v) + 2;
-      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, op, 1, dest);
       sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
@@ -913,20 +904,27 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
       addr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_NotNull, -1, addr+4);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, addr+6);
       if( pExpr->pSelect ){
-        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, addr+2);
+        sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, addr+6);
       }else{
-        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+2);
+        sqliteVdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+6);
       }
       sqliteVdbeAddOp(v, OP_AddImm, -1, 0);
       break;
     }
     case TK_BETWEEN: {
-      int lbl = sqliteVdbeMakeLabel(v);
-      sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-      sqliteExprIfFalse(pParse, pExpr, lbl);
-      sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
-      sqliteVdbeResolveLabel(v, lbl);
+      sqliteExprCode(pParse, pExpr->pLeft);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
+      sqliteVdbeAddOp(v, OP_Ge, 0, 0);
+      sqliteVdbeAddOp(v, OP_Pull, 1, 0);
+      sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
+      sqliteVdbeAddOp(v, OP_Le, 0, 0);
+      sqliteVdbeAddOp(v, OP_And, 0, 0);
       break;
     }
     case TK_AS: {
@@ -935,44 +933,54 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_CASE: {
       int expr_end_label;
-      int next_when_label;
+      int null_result_label;
+      int jumpInst;
+      int addr;
+      int nExpr;
       int i;
 
       assert(pExpr->pList);
       assert((pExpr->pList->nExpr % 2) == 0);
       assert(pExpr->pList->nExpr > 0);
-      expr_end_label = sqliteVdbeMakeLabel(pParse->pVdbe);
+      nExpr = pExpr->pList->nExpr;
+      expr_end_label = sqliteVdbeMakeLabel(v);
+      null_result_label = sqliteVdbeMakeLabel(v);
       if( pExpr->pLeft ){
         sqliteExprCode(pParse, pExpr->pLeft);
+        sqliteVdbeAddOp(v, OP_IsNull, -1, expr_end_label);
       }
-      for(i=0; i<pExpr->pList->nExpr; i=i+2){
-        if( i!=0 ){
-          sqliteVdbeResolveLabel(pParse->pVdbe, next_when_label);
-        }
-        next_when_label = sqliteVdbeMakeLabel(pParse->pVdbe);
+      for(i=0; i<nExpr; i=i+2){
+        sqliteExprCode(pParse, pExpr->pList->a[i].pExpr);
+        sqliteVdbeAddOp(v, OP_IsNull, -1, null_result_label);
         if( pExpr->pLeft ){
-          sqliteVdbeAddOp(pParse->pVdbe, OP_Dup, 0, 1);
-          sqliteExprCode(pParse, pExpr->pList->a[i].pExpr);
-          sqliteVdbeAddOp(pParse->pVdbe, OP_Ne, 0, next_when_label);
+          sqliteVdbeAddOp(v, OP_Dup, 1, 1);
+          jumpInst = sqliteVdbeAddOp(v, OP_Ne, 0, 0);
         }else{
-          sqliteExprIfFalse(pParse, pExpr->pList->a[i].pExpr, next_when_label);
-        }
-        if( pExpr->pLeft ){
-          sqliteVdbeAddOp(pParse->pVdbe, OP_Pop, 1, 0);
+          jumpInst = sqliteVdbeAddOp(v, OP_IfNot, 0, 0);
         }
         sqliteExprCode(pParse, pExpr->pList->a[i+1].pExpr);
-        sqliteVdbeAddOp(pParse->pVdbe, OP_Goto, 0, expr_end_label);
-      }
-      sqliteVdbeResolveLabel(pParse->pVdbe, next_when_label);
-      if( pExpr->pLeft ){
-        sqliteVdbeAddOp(pParse->pVdbe, OP_Pop, 1, 0);
+        sqliteVdbeAddOp(v, OP_Goto, 0, expr_end_label);
+        if( i>=nExpr-2 ){
+          sqliteVdbeResolveLabel(v, null_result_label);
+          sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+          if( pExpr->pRight!=0 ){
+            sqliteVdbeAddOp(v, OP_String, 0, 0);
+            sqliteVdbeAddOp(v, OP_Goto, 0, expr_end_label);
+          }
+        }
+        addr = sqliteVdbeCurrentAddr(v);
+        sqliteVdbeChangeP2(v, jumpInst, addr);
       }
       if( pExpr->pRight ){
         sqliteExprCode(pParse, pExpr->pRight);
       }else{
-        sqliteVdbeAddOp(pParse->pVdbe, OP_String, 0, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
       }
-      sqliteVdbeResolveLabel(pParse->pVdbe, expr_end_label);
+      sqliteVdbeResolveLabel(v, expr_end_label);
+      if( pExpr->pLeft ){
+        sqliteVdbeAddOp(v, OP_Pull, 1, 0);
+        sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      }
     }
     break;
   }
@@ -982,8 +990,11 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
 ** Generate code for a boolean expression such that a jump is made
 ** to the label "dest" if the expression is true but execution
 ** continues straight thru if the expression is false.
+**
+** If the expression evaluates to NULL (neither true nor false), then
+** take the jump if the jumpIfNull flag is true.
 */
-void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
+void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
   if( v==0 || pExpr==0 ) return;
@@ -1001,18 +1012,18 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
   switch( pExpr->op ){
     case TK_AND: {
       int d2 = sqliteVdbeMakeLabel(v);
-      sqliteExprIfFalse(pParse, pExpr->pLeft, d2);
-      sqliteExprIfTrue(pParse, pExpr->pRight, dest);
+      sqliteExprIfFalse(pParse, pExpr->pLeft, d2, !jumpIfNull);
+      sqliteExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
       sqliteVdbeResolveLabel(v, d2);
       break;
     }
     case TK_OR: {
-      sqliteExprIfTrue(pParse, pExpr->pLeft, dest);
-      sqliteExprIfTrue(pParse, pExpr->pRight, dest);
+      sqliteExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
+      sqliteExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
       break;
     }
     case TK_NOT: {
-      sqliteExprIfFalse(pParse, pExpr->pLeft, dest);
+      sqliteExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
     case TK_LT:
@@ -1023,17 +1034,22 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, op, jumpIfNull, dest);
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, op, 1, dest);
       break;
     }
     case TK_IN: {
+      int addr;
       sqliteExprCode(pParse, pExpr->pLeft);
+      addr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_NotNull, -1, addr+3);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, jumpIfNull ? dest : addr+4);
       if( pExpr->pSelect ){
         sqliteVdbeAddOp(v, OP_Found, pExpr->iTable, dest);
       }else{
@@ -1042,21 +1058,21 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
       break;
     }
     case TK_BETWEEN: {
-      int lbl = sqliteVdbeMakeLabel(v);
+      int addr;
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
-      sqliteVdbeAddOp(v, OP_Lt, 0, lbl);
+      addr = sqliteVdbeAddOp(v, OP_Lt, !jumpIfNull, 0);
       sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqliteVdbeAddOp(v, OP_Le, 0, dest);
+      sqliteVdbeAddOp(v, OP_Le, jumpIfNull, dest);
       sqliteVdbeAddOp(v, OP_Integer, 0, 0);
-      sqliteVdbeResolveLabel(v, lbl);
+      sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
       sqliteVdbeAddOp(v, OP_Pop, 1, 0);
       break;
     }
     default: {
       sqliteExprCode(pParse, pExpr);
-      sqliteVdbeAddOp(v, OP_If, 0, dest);
+      sqliteVdbeAddOp(v, OP_If, jumpIfNull, dest);
       break;
     }
   }
@@ -1066,8 +1082,11 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
 ** Generate code for a boolean expression such that a jump is made
 ** to the label "dest" if the expression is false but execution
 ** continues straight thru if the expression is true.
+**
+** If the expression evaluates to NULL (neither true nor false) then
+** jump if jumpIfNull is true or fall through if jumpIfNull is false.
 */
-void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
+void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
   if( v==0 || pExpr==0 ) return;
@@ -1084,19 +1103,19 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
   }
   switch( pExpr->op ){
     case TK_AND: {
-      sqliteExprIfFalse(pParse, pExpr->pLeft, dest);
-      sqliteExprIfFalse(pParse, pExpr->pRight, dest);
+      sqliteExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
+      sqliteExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
       break;
     }
     case TK_OR: {
       int d2 = sqliteVdbeMakeLabel(v);
-      sqliteExprIfTrue(pParse, pExpr->pLeft, d2);
-      sqliteExprIfFalse(pParse, pExpr->pRight, dest);
+      sqliteExprIfTrue(pParse, pExpr->pLeft, d2, !jumpIfNull);
+      sqliteExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
       sqliteVdbeResolveLabel(v, d2);
       break;
     }
     case TK_NOT: {
-      sqliteExprIfTrue(pParse, pExpr->pLeft, dest);
+      sqliteExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
     case TK_LT:
@@ -1107,17 +1126,22 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
     case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, op, jumpIfNull, dest);
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteVdbeAddOp(v, op, 0, dest);
+      sqliteVdbeAddOp(v, op, 1, dest);
       break;
     }
     case TK_IN: {
+      int addr;
       sqliteExprCode(pParse, pExpr->pLeft);
+      addr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeAddOp(v, OP_NotNull, -1, addr+3);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      sqliteVdbeAddOp(v, OP_Goto, 0, jumpIfNull ? dest : addr+4);
       if( pExpr->pSelect ){
         sqliteVdbeAddOp(v, OP_NotFound, pExpr->iTable, dest);
       }else{
@@ -1131,17 +1155,17 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
       sqliteExprCode(pParse, pExpr->pList->a[0].pExpr);
       addr = sqliteVdbeCurrentAddr(v);
-      sqliteVdbeAddOp(v, OP_Ge, 0, addr+3);
+      sqliteVdbeAddOp(v, OP_Ge, !jumpIfNull, addr+3);
       sqliteVdbeAddOp(v, OP_Pop, 1, 0);
       sqliteVdbeAddOp(v, OP_Goto, 0, dest);
       sqliteExprCode(pParse, pExpr->pList->a[1].pExpr);
-      sqliteVdbeAddOp(v, OP_Gt, 0, dest);
+      sqliteVdbeAddOp(v, OP_Gt, jumpIfNull, dest);
       break;
     }
     default: {
       sqliteExprCode(pParse, pExpr);
       sqliteVdbeAddOp(v, OP_Not, 0, 0);
-      sqliteVdbeAddOp(v, OP_If, 0, dest);
+      sqliteVdbeAddOp(v, OP_If, jumpIfNull, dest);
       break;
     }
   }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.19 2002/03/24 13:13:29 drh Exp $
+# $Id: expr.test,v 1.20 2002/05/26 20:54:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,8 +22,7 @@ execsql {CREATE TABLE test1(i1 int, i2 int, r1 real, r2 real, t1 text, t2 text)}
 execsql {INSERT INTO test1 VALUES(1,2,1.1,2.2,'hello','world')}
 proc test_expr {name settings expr result} {
   do_test $name [format {
-    execsql {UPDATE test1 SET %s}
-    execsql {SELECT %s FROM test1}
+    execsql {BEGIN; UPDATE test1 SET %s; SELECT %s FROM test1; ROLLBACK;}
   } $settings $expr] $result
 }
 
@@ -63,7 +62,7 @@ test_expr expr-1.33 {i1=1, i2=2} {i1=1 OR i2=1} {1}
 test_expr expr-1.34 {i1=1, i2=2} {i1=2 OR i2=2} {1}
 test_expr expr-1.35 {i1=1, i2=2} {i1-i2=-1} {1}
 test_expr expr-1.36 {i1=1, i2=0} {not i1} {0}
-test_expr expr-1.37 {i1=1, i2=NULL} {not i2} {1}
+test_expr expr-1.37 {i1=1, i2=0} {not i2} {1}
 test_expr expr-1.38 {i1=1} {-i1} {-1}
 test_expr expr-1.39 {i1=1} {+i1} {1}
 test_expr expr-1.40 {i1=1, i2=2} {+(i2+i1)} {3}
@@ -320,8 +319,8 @@ proc test_expr2 {name expr result} {
 test_expr2 expr-7.2  {a<10 AND a>8}                  {9}
 test_expr2 expr-7.3  {a<=10 AND a>=8}                {8 9 10}
 test_expr2 expr-7.4  {a>=8 AND a<=10}                {8 9 10}
-test_expr2 expr-7.5  {a>=20 OR a<=1}                 {{} 1 20}
-test_expr2 expr-7.6  {b!=4 AND a<=3}                 {{} 1 3}
+test_expr2 expr-7.5  {a>=20 OR a<=1}                 {1 20}
+test_expr2 expr-7.6  {b!=4 AND a<=3}                 {1 3}
 test_expr2 expr-7.7  {b==8 OR b==16 OR b==32}        {3 4 5}
 test_expr2 expr-7.8  {NOT b<>8 OR b==1024}           {3 10}
 test_expr2 expr-7.9  {b LIKE '10%'}                  {10 20}
@@ -332,13 +331,13 @@ test_expr2 expr-7.13 {b GLOB '*1[456]'}              {4}
 test_expr2 expr-7.14 {a ISNULL}                      {{}}
 test_expr2 expr-7.15 {a NOTNULL AND a<3}             {1 2}
 test_expr2 expr-7.16 {a AND a<3}                     {1 2}
-test_expr2 expr-7.17 {NOT a}                         {{}}
+test_expr2 expr-7.17 {NOT a}                         {}
 test_expr2 expr-7.18 {a==11 OR (b>1000 AND b<2000)}  {10 11}
-test_expr2 expr-7.19 {a<=1 OR a>=20}                 {{} 1 20}
-test_expr2 expr-7.20 {a<1 OR a>20}                   {{}}
-test_expr2 expr-7.21 {a>19 OR a<1}                   {{} 20}
+test_expr2 expr-7.19 {a<=1 OR a>=20}                 {1 20}
+test_expr2 expr-7.20 {a<1 OR a>20}                   {}
+test_expr2 expr-7.21 {a>19 OR a<1}                   {20}
 test_expr2 expr-7.22 {a!=1 OR a=100} \
-                         {{} 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
+                         {2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
 test_expr2 expr-7.23 {(a notnull AND a<4) OR a==8}   {1 2 3 8}
 test_expr2 expr-7.24 {a LIKE '2_' OR a==8}           {8 20}
 test_expr2 expr-7.25 {a GLOB '2?' OR a==8}           {8 20}

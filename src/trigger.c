@@ -587,7 +587,7 @@ int sqliteCodeRowTrigger(
         sqliteExprDelete(whenExpr);
         return 1;
       }
-      sqliteExprIfFalse(pParse, whenExpr, endTrigger);
+      sqliteExprIfFalse(pParse, whenExpr, endTrigger, 1);
       sqliteExprDelete(whenExpr);
 
       codeTriggerProgram(pParse, pTrigger->step_list, orconf); 

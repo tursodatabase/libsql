@@ -77,7 +77,7 @@ foreach tbl_defn [ list \
 
     CREATE TRIGGER before_update_row BEFORE UPDATE ON tbl FOR EACH ROW 
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  old.a, old.b, 
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  new.a, new.b);
@@ -85,7 +85,7 @@ foreach tbl_defn [ list \
 
     CREATE TRIGGER after_update_row AFTER UPDATE ON tbl FOR EACH ROW 
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  old.a, old.b, 
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  new.a, new.b);
@@ -94,7 +94,7 @@ foreach tbl_defn [ list \
     CREATE TRIGGER conditional_update_row AFTER UPDATE ON tbl FOR EACH ROW
       WHEN old.a = 1
       BEGIN
-      INSERT INTO clog VALUES ( (SELECT max(idx) + 1 FROM clog), 
+      INSERT INTO clog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM clog), 
 	  old.a, old.b, 
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  new.a, new.b);
@@ -120,7 +120,7 @@ foreach tbl_defn [ list \
     INSERT INTO tbl VALUES (300, 200);
     CREATE TRIGGER delete_before_row BEFORE DELETE ON tbl FOR EACH ROW
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  old.a, old.b, 
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  0, 0);
@@ -128,7 +128,7 @@ foreach tbl_defn [ list \
 
     CREATE TRIGGER delete_after_row AFTER DELETE ON tbl FOR EACH ROW
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  old.a, old.b, 
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  0, 0);
@@ -148,7 +148,7 @@ foreach tbl_defn [ list \
     DELETE FROM rlog;
     CREATE TRIGGER insert_before_row BEFORE INSERT ON tbl FOR EACH ROW
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  0, 0,
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  new.a, new.b);
@@ -156,7 +156,7 @@ foreach tbl_defn [ list \
 
     CREATE TRIGGER insert_after_row AFTER INSERT ON tbl FOR EACH ROW
       BEGIN
-      INSERT INTO rlog VALUES ( (SELECT max(idx) + 1 FROM rlog), 
+      INSERT INTO rlog VALUES ( (SELECT coalesce(max(idx),0) + 1 FROM rlog), 
 	  0, 0,
 	  (SELECT sum(a) FROM tbl), (SELECT sum(b) FROM tbl), 
 	  new.a, new.b);

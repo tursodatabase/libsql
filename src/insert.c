@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.58 2002/05/24 02:04:33 drh Exp $
+** $Id: insert.c,v 1.59 2002/05/26 20:54:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -290,14 +290,12 @@ void sqliteInsert(
       if( srcTab>=0 ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
       }else{
-        int addr;
         sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
 
         /* If the PRIMARY KEY expression is NULL, then use OP_NewRecno
         ** to generate a unique primary key value.
         */
-        addr = sqliteVdbeAddOp(v, OP_Dup, 0, 1);
-        sqliteVdbeAddOp(v, OP_NotNull, 0, addr+4);
+        sqliteVdbeAddOp(v, OP_NotNull, -1, sqliteVdbeCurrentAddr(v)+3);
         sqliteVdbeAddOp(v, OP_Pop, 1, 0);
         sqliteVdbeAddOp(v, OP_NewRecno, base, 0);
       }
@@ -499,7 +497,7 @@ void sqliteGenerateConstraintChecks(
   int iCur;
   Index *pIdx;
   int seenReplace = 0;
-  int jumpInst;
+  int jumpInst1, jumpInst2;
   int contAddr;
   int hasTwoRecnos = (isUpdate && recnoChng);
 
@@ -527,7 +525,7 @@ void sqliteGenerateConstraintChecks(
       onError = OE_Abort;
     }
     sqliteVdbeAddOp(v, OP_Dup, nCol-1-i, 1);
-    addr = sqliteVdbeAddOp(v, OP_NotNull, 0, 0);
+    addr = sqliteVdbeAddOp(v, OP_NotNull, 1, 0);
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
@@ -565,14 +563,13 @@ void sqliteGenerateConstraintChecks(
       if( onError==OE_Default ) onError = OE_Abort;
     }
     if( onError!=OE_Replace ){
-      int jumpInst2;
       if( isUpdate ){
         sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
         sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
-        jumpInst2 = sqliteVdbeAddOp(v, OP_Eq, 0, 0);
+        jumpInst1 = sqliteVdbeAddOp(v, OP_Eq, 0, 0);
       }
       sqliteVdbeAddOp(v, OP_Dup, nCol, 1);
-      jumpInst = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
+      jumpInst2 = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
       switch( onError ){
         case OE_Rollback:
         case OE_Abort:
@@ -588,9 +585,9 @@ void sqliteGenerateConstraintChecks(
         default: assert(0);
       }
       contAddr = sqliteVdbeCurrentAddr(v);
-      sqliteVdbeChangeP2(v, jumpInst, contAddr);
+      sqliteVdbeChangeP2(v, jumpInst2, contAddr);
       if( isUpdate ){
-        sqliteVdbeChangeP2(v, jumpInst2, contAddr);
+        sqliteVdbeChangeP2(v, jumpInst1, contAddr);
         sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
         sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
       }
@@ -609,7 +606,7 @@ void sqliteGenerateConstraintChecks(
         sqliteVdbeAddOp(v, OP_Dup, i+extra+nCol-idx, 1);
       }
     }
-    sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
+    jumpInst1 = sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
     onError = pIdx->onError;
     if( onError==OE_None ) continue;
     if( overrideError!=OE_Default ){
@@ -619,7 +616,7 @@ void sqliteGenerateConstraintChecks(
       if( onError==OE_Default ) onError = OE_Abort;
     }
     sqliteVdbeAddOp(v, OP_Dup, extra+nCol+1+hasTwoRecnos, 1);
-    jumpInst = sqliteVdbeAddOp(v, OP_IsUnique, base+iCur+1, 0);
+    jumpInst2 = sqliteVdbeAddOp(v, OP_IsUnique, base+iCur+1, 0);
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
@@ -645,7 +642,8 @@ void sqliteGenerateConstraintChecks(
       default: assert(0);
     }
     contAddr = sqliteVdbeCurrentAddr(v);
-    sqliteVdbeChangeP2(v, jumpInst, contAddr);
+    sqliteVdbeChangeP2(v, jumpInst1, contAddr);
+    sqliteVdbeChangeP2(v, jumpInst2, contAddr);
   }
 }
 

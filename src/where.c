@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.47 2002/05/24 20:31:38 drh Exp $
+** $Id: where.c,v 1.48 2002/05/26 20:54:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -199,7 +199,7 @@ WhereInfo *sqliteWhereBegin(
   ** expression and either jump over all of the code or fall thru.
   */
   if( pWhere && sqliteExprIsConstant(pWhere) ){
-    sqliteExprIfFalse(pParse, pWhere, pWInfo->iBreak);
+    sqliteExprIfFalse(pParse, pWhere, pWInfo->iBreak, 1);
   }
 
   /* Split the WHERE clause into as many as 32 separate subexpressions
@@ -795,7 +795,7 @@ WhereInfo *sqliteWhereBegin(
         haveKey = 0;
         sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
       }
-      sqliteExprIfFalse(pParse, aExpr[j].p, cont);
+      sqliteExprIfFalse(pParse, aExpr[j].p, cont, 1);
       aExpr[j].p = 0;
     }
     brk = cont;

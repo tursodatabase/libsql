@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.85 2002/05/25 00:18:21 drh Exp $
+** $Id: select.c,v 1.86 2002/05/26 20:54:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -325,13 +325,12 @@ static int selectInnerLoop(
   ** and this row has been seen before, then do not make this row
   ** part of the result.
   */
-  if( distinct>=0 ){
-    int lbl = sqliteVdbeMakeLabel(v);
+  if( distinct>=0 && pEList && pEList->nExpr>0 ){
+    sqliteVdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqliteVdbeCurrentAddr(v)+7);
     sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
-    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl);
+    sqliteVdbeAddOp(v, OP_Distinct, distinct, sqliteVdbeCurrentAddr(v)+3);
     sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
-    sqliteVdbeResolveLabel(v, lbl);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeAddOp(v, OP_PutStrKey, distinct, 0);
   }
@@ -359,8 +358,8 @@ static int selectInnerLoop(
   ** table iParm.
   */
   if( eDest==SRT_Union ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-    sqliteVdbeAddOp(v, OP_String, iParm, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 1);
+    sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
   }else 
 
@@ -378,7 +377,7 @@ static int selectInnerLoop(
   ** the temporary table iParm.
   */
   if( eDest==SRT_Except ){
-    int addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    int addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 1);
     sqliteVdbeAddOp(v, OP_NotFound, iParm, addr+3);
     sqliteVdbeAddOp(v, OP_Delete, iParm, 0);
   }else 
@@ -389,6 +388,7 @@ static int selectInnerLoop(
   */
   if( eDest==SRT_Set ){
     assert( nColumn==1 );
+    sqliteVdbeAddOp(v, OP_IsNull, -1, sqliteVdbeCurrentAddr(v)+3);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
   }else 
@@ -1738,7 +1738,7 @@ int sqliteSelect(
     startagg = sqliteVdbeAddOp(v, OP_AggNext, 0, endagg);
     pParse->useAgg = 1;
     if( pHaving ){
-      sqliteExprIfFalse(pParse, pHaving, startagg);
+      sqliteExprIfFalse(pParse, pHaving, startagg, 1);
     }
     if( selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                     startagg, endagg) ){

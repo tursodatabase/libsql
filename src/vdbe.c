@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.148 2002/05/24 20:31:37 drh Exp $
+** $Id: vdbe.c,v 1.149 2002/05/26 20:54:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1068,17 +1068,17 @@ static char *zOpName[] = { 0,
   "AggFunc",           "AggInit",           "AggPush",           "AggPop",
   "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
   "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
-  "If",                "Halt",              "ColumnCount",       "ColumnName",
-  "Callback",          "NullCallback",      "Integer",           "String",
-  "Pop",               "Dup",               "Pull",              "Push",
-  "MustBeInt",         "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Function",
-  "Limit",           
+  "If",                "IfNot",             "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "NullCallback",      "Integer",
+  "String",            "Pop",               "Dup",               "Pull",
+  "Push",              "MustBeInt",         "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Remainder",
+  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
+  "ShiftRight",        "AbsValue",          "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Function",          "Limit",           
 };
 
 /*
@@ -1280,6 +1280,7 @@ int sqliteVdbeExec(
   sqlite *db = p->db;        /* The database */
   char **zStack;             /* Text stack */
   Stack *aStack;             /* Additional stack information */
+  unsigned uniqueCnt = 0;     /* Used by OP_MakeRecord when P2!=0 */
   int errorAction = OE_Abort; /* Recovery action to do in case of an error */
   int undoTransOnError = 0;   /* If error, either ROLLBACK or COMMIT */
   char zBuf[100];             /* Space to sprintf() an integer */
@@ -1719,6 +1720,7 @@ case OP_Concat: {
 ** and push the result back onto the stack.  If either element
 ** is a string then it is converted to a double using the atof()
 ** function before the addition.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Multiply * * *
 **
@@ -1726,6 +1728,7 @@ case OP_Concat: {
 ** and push the result back onto the stack.  If either element
 ** is a string then it is converted to a double using the atof()
 ** function before the multiplication.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Subtract * * *
 **
@@ -1735,6 +1738,7 @@ case OP_Concat: {
 ** and push the result back onto the stack.  If either element
 ** is a string then it is converted to a double using the atof()
 ** function before the subtraction.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Divide * * *
 **
@@ -1744,6 +1748,7 @@ case OP_Concat: {
 ** and push the result back onto the stack.  If either element
 ** is a string then it is converted to a double using the atof()
 ** function before the division.  Division by zero returns NULL.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Remainder * * *
 **
@@ -1753,6 +1758,7 @@ case OP_Concat: {
 ** and push the remainder after division onto the stack.  If either element
 ** is a string then it is converted to a double using the atof()
 ** function before the division.  Division by zero returns NULL.
+** If either operand is NULL, the result is NULL.
 */
 case OP_Add:
 case OP_Subtract:
@@ -1762,7 +1768,11 @@ case OP_Remainder: {
   int tos = p->tos;
   int nos = tos - 1;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
+  if( ((aStack[tos].flags | aStack[nos].flags) & STK_Null)!=0 ){
+    POPSTACK;
+    Release(p, nos);
+    aStack[nos].flags = STK_Null;
+  }else if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
     int a, b;
     a = aStack[tos].i;
     b = aStack[nos].i;
@@ -1838,7 +1848,9 @@ case OP_Function: {
   VERIFY( if( n<0 ) goto bad_instruction; )
   VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
   for(i=p->tos-n+1; i<=p->tos; i++){
-    if( (aStack[i].flags & STK_Null)==0 ){
+    if( aStack[i].flags & STK_Null ){
+      zStack[i] = 0;
+    }else{
       if( Stringify(p, i) ) goto no_mem;
     }
   }
@@ -1872,24 +1884,28 @@ case OP_Function: {
 ** Pop the top two elements from the stack.  Convert both elements
 ** to integers.  Push back onto the stack the bit-wise AND of the
 ** two elements.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: BitOr * * *
 **
 ** Pop the top two elements from the stack.  Convert both elements
 ** to integers.  Push back onto the stack the bit-wise OR of the
 ** two elements.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: ShiftLeft * * *
 **
 ** Pop the top two elements from the stack.  Convert both elements
 ** to integers.  Push back onto the stack the top element shifted
 ** left by N bits where N is the second element on the stack.
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: ShiftRight * * *
 **
 ** Pop the top two elements from the stack.  Convert both elements
 ** to integers.  Push back onto the stack the top element shifted
 ** right by N bits where N is the second element on the stack.
+** If either operand is NULL, the result is NULL.
 */
 case OP_BitAnd:
 case OP_BitOr:
@@ -1899,6 +1915,12 @@ case OP_ShiftRight: {
   int nos = tos - 1;
   int a, b;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( (aStack[tos].flags | aStack[nos].flags) & STK_Null ){
+    POPSTACK;
+    Release(p,nos);
+    aStack[nos].flags = STK_Null;
+    break;
+  }
   Integerify(p, tos);
   Integerify(p, nos);
   a = aStack[tos].i;
@@ -1973,40 +1995,82 @@ mismatch:
   break;
 }
 
-/* Opcode: Eq * P2 *
+/* Opcode: Eq P1 P2 *
 **
 ** Pop the top two elements from the stack.  If they are equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
-/* Opcode: Ne * P2 *
+/* Opcode: Ne P1 P2 *
 **
 ** Pop the top two elements from the stack.  If they are not equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
-/* Opcode: Lt * P2 *
+/* Opcode: Lt P1 P2 *
 **
 ** Pop the top two elements from the stack.  If second element (the
 ** next on stack) is less than the first (the top of stack), then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 ** In other words, jump if NOS<TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
-/* Opcode: Le * P2 *
+/* Opcode: Le P1 P2 *
 **
 ** Pop the top two elements from the stack.  If second element (the
 ** next on stack) is less than or equal to the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS<=TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
-/* Opcode: Gt * P2 *
+/* Opcode: Gt P1 P2 *
 **
 ** Pop the top two elements from the stack.  If second element (the
 ** next on stack) is greater than the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS>TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
-/* Opcode: Ge * P2 *
+/* Opcode: Ge P1 P2 *
 **
 ** Pop the top two elements from the stack.  If second element (the next
 ** on stack) is greater than or equal to the first (the top of stack),
 ** then jump to instruction P2. In other words, jump if NOS>=TOS.
+**
+** If either operand is NULL (and thus if the result is unknown) then
+** take the jump if P1 is true.
+**
+** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
+** stack if the jump would have been taken, or a 0 if not.  Push a
+** NULL if either operand was NULL.
 */
 case OP_Eq:
 case OP_Ne:
@@ -2021,7 +2085,17 @@ case OP_Ge: {
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   ft = aStack[tos].flags;
   fn = aStack[nos].flags;
-  if( (ft & fn & STK_Int)==STK_Int ){
+  if( (ft | fn) & STK_Null ){
+    POPSTACK;
+    POPSTACK;
+    if( pOp->p2 ){
+      if( pOp->p1 ) pc = pOp->p2-1;
+    }else{
+      p->tos++;
+      aStack[nos].flags = STK_Null;
+    }
+    break;
+  }else if( (ft & fn & STK_Int)==STK_Int ){
     c = aStack[nos].i - aStack[tos].i;
   }else if( (ft & STK_Int)!=0 && (fn & STK_Str)!=0 && isInteger(zStack[nos]) ){
     Integerify(p, nos);
@@ -2043,7 +2117,13 @@ case OP_Ge: {
   }
   POPSTACK;
   POPSTACK;
-  if( c ) pc = pOp->p2-1;
+  if( pOp->p2 ){
+    if( c ) pc = pOp->p2-1;
+  }else{
+    p->tos++;
+    aStack[nos].flags = STK_Int;
+    aStack[nos].i = c;
+  }
   break;
 }
 
@@ -2052,12 +2132,14 @@ case OP_Ge: {
 ** Pop two values off the stack.  Take the logical AND of the
 ** two values and push the resulting boolean value back onto the
 ** stack. 
+** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Or * * *
 **
 ** Pop two values off the stack.  Take the logical OR of the
 ** two values and push the resulting boolean value back onto the
 ** stack. 
+** If either operand is NULL, the result is NULL.
 */
 case OP_And:
 case OP_Or: {
@@ -2065,6 +2147,12 @@ case OP_Or: {
   int nos = tos - 1;
   int c;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
+  if( (aStack[tos].flags | aStack[nos].flags) & STK_Null ){
+    POPSTACK;
+    Release(p, nos);     
+    aStack[nos].flags = STK_Null;
+    break;
+  }
   Integerify(p, tos);
   Integerify(p, nos);
   if( pOp->opcode==OP_And ){
@@ -2082,12 +2170,14 @@ case OP_Or: {
 /* Opcode: Negative * * *
 **
 ** Treat the top of the stack as a numeric quantity.  Replace it
-** with its additive inverse.
+** with its additive inverse.  If the top of the stack is NULL
+** its value is unchanged.
 */
 /* Opcode: AbsValue * * *
 **
 ** Treat the top of the stack as a numeric quantity.  Replace it
-** with its absolute value.
+** with its absolute value. If the top of the stack is NULL
+** its value is unchanged.
 */
 case OP_Negative:
 case OP_AbsValue: {
@@ -2105,6 +2195,8 @@ case OP_AbsValue: {
       aStack[tos].i = -aStack[tos].i;
     }
     aStack[tos].flags = STK_Int;
+  }else if( aStack[tos].flags & STK_Null ){
+    /* Do nothing */
   }else{
     Realify(p, tos);
     Release(p, tos);
@@ -2119,11 +2211,13 @@ case OP_AbsValue: {
 /* Opcode: Not * * *
 **
 ** Interpret the top of the stack as a boolean value.  Replace it
-** with its complement.
+** with its complement.  If the top of the stack is NULL its value
+** is unchanged.
 */
 case OP_Not: {
   int tos = p->tos;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  if( aStack[tos].flags & STK_Null ) break;  /* Do nothing to NULLs */
   Integerify(p, tos);
   Release(p, tos);
   aStack[tos].i = !aStack[tos].i;
@@ -2134,11 +2228,13 @@ case OP_Not: {
 /* Opcode: BitNot * * *
 **
 ** Interpret the top of the stack as an value.  Replace it
-** with its ones-complement.
+** with its ones-complement.  If the top of the stack is NULL its
+** value is unchanged.
 */
 case OP_BitNot: {
   int tos = p->tos;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  if( aStack[tos].flags & STK_Null ) break;  /* Do nothing to NULLs */
   Integerify(p, tos);
   Release(p, tos);
   aStack[tos].i = ~aStack[tos].i;
@@ -2155,60 +2251,92 @@ case OP_Noop: {
   break;
 }
 
-/* Opcode: If * P2 *
+/* Opcode: If P1 P2 *
 **
 ** Pop a single boolean from the stack.  If the boolean popped is
 ** true, then jump to p2.  Otherwise continue to the next instruction.
 ** An integer is false if zero and true otherwise.  A string is
 ** false if it has zero length and true otherwise.
+**
+** If the value popped of the stack is NULL, then take the jump if P1
+** is true and fall through if P1 is false.
 */
-case OP_If: {
+/* Opcode: IfNot P1 P2 *
+**
+** Pop a single boolean from the stack.  If the boolean popped is
+** false, then jump to p2.  Otherwise continue to the next instruction.
+** An integer is false if zero and true otherwise.  A string is
+** false if it has zero length and true otherwise.
+**
+** If the value popped of the stack is NULL, then take the jump if P1
+** is true and fall through if P1 is false.
+*/
+case OP_If:
+case OP_IfNot: {
   int c;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  Integerify(p, p->tos);
-  c = aStack[p->tos].i;
+  if( aStack[p->tos].flags & STK_Null ){
+    c = pOp->p1;
+  }else{
+    Integerify(p, p->tos);
+    c = aStack[p->tos].i;
+    if( pOp->opcode==OP_IfNot ) c = !c;
+  }
   POPSTACK;
   if( c ) pc = pOp->p2-1;
   break;
 }
 
-/* Opcode: IsNull * P2 *
+/* Opcode: IsNull P1 P2 *
 **
-** Pop a single value from the stack.  If the value popped is NULL
-** then jump to p2.  Otherwise continue to the next 
-** instruction.
+** If any of the top abs(P1) values on the stack are NULL, then jump
+** to P2.  The stack is popped P1 times if P1>0.  If P1<0 then all values
+** are left unchanged on the stack.
 */
 case OP_IsNull: {
-  int c;
-  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  c = (aStack[p->tos].flags & STK_Null)!=0;
-  POPSTACK;
-  if( c ) pc = pOp->p2-1;
+  int i, cnt;
+  cnt = pOp->p1;
+  if( cnt<0 ) cnt = -cnt;
+  VERIFY( if( p->tos+1-cnt<0 ) goto not_enough_stack; )
+  for(i=0; i<cnt; i++){
+    if( aStack[p->tos-i].flags & STK_Null ){
+      pc = pOp->p2-1;
+      break;
+    }
+  }
+  if( pOp->p1>0 ) PopStack(p, cnt);
   break;
 }
 
-/* Opcode: NotNull * P2 *
+/* Opcode: NotNull P1 P2 *
 **
-** Pop a single value from the stack.  If the value popped is not
-** NULL, then jump to p2.  Otherwise continue to the next 
-** instruction.
+** Jump to P2 if the top value on the stack is not NULL.  Pop the
+** stack if P1 is greater than zero.  If P1 is less than or equal to
+** zero then leave the value on the stack.
 */
 case OP_NotNull: {
-  int c;
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  c = (aStack[p->tos].flags & STK_Null)==0;
-  POPSTACK;
-  if( c ) pc = pOp->p2-1;
+  if( (aStack[p->tos].flags & STK_Null)==0 ) pc = pOp->p2-1;
+  if( pOp->p1>0 ){ POPSTACK; }
   break;
 }
 
-/* Opcode: MakeRecord P1 * *
+/* Opcode: MakeRecord P1 P2 *
 **
 ** Convert the top P1 entries of the stack into a single entry
 ** suitable for use as a data record in a database table.  The
 ** details of the format are irrelavant as long as the OP_Column
 ** opcode can decode the record later.  Refer to source code
 ** comments for the details of the record format.
+**
+** If P2 is true (non-zero) and one or more of the P1 entries
+** that go into building the record is NULL, then add some extra
+** bytes to the record to make it distinct for other entries created
+** during the same run of the VDBE.  The extra bytes added are a
+** counter that is reset with each run of the VDBE, so records
+** created this way will not necessarily be distinct across runs.
+** But they should be distinct for transient tables (created using
+** OP_OpenTemp) which is what they are intended for.
 */
 case OP_MakeRecord: {
   char *zNewRecord;
@@ -2217,6 +2345,8 @@ case OP_MakeRecord: {
   int i, j;
   int idxWidth;
   u32 addr;
+  int addUnique = 0;   /* True to cause bytes to be added to make the
+                       ** generated record distinct */
 
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2240,11 +2370,14 @@ case OP_MakeRecord: {
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
   nByte = 0;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    if( (aStack[i].flags & STK_Null)==0 ){
+    if( (aStack[i].flags & STK_Null) ){
+      addUnique = pOp->p2;
+    }else{
       if( Stringify(p, i) ) goto no_mem;
       nByte += aStack[i].n;
     }
   }
+  if( addUnique ) nByte += sizeof(uniqueCnt);
   if( nByte + nField + 1 < 256 ){
     idxWidth = 1;
   }else if( nByte + 2*nField + 2 < 65536 ){
@@ -2260,7 +2393,7 @@ case OP_MakeRecord: {
   zNewRecord = sqliteMalloc( nByte );
   if( zNewRecord==0 ) goto no_mem;
   j = 0;
-  addr = idxWidth*(nField+1);
+  addr = idxWidth*(nField+1) + addUnique*sizeof(uniqueCnt);
   for(i=p->tos-nField+1; i<=p->tos; i++){
     zNewRecord[j++] = addr & 0xff;
     if( idxWidth>1 ){
@@ -2279,6 +2412,11 @@ case OP_MakeRecord: {
     if( idxWidth>2 ){
       zNewRecord[j++] = (addr>>16)&0xff;
     }
+  }
+  if( addUnique ){
+    memcpy(&zNewRecord[j], &uniqueCnt, sizeof(uniqueCnt));
+    uniqueCnt++;
+    j += sizeof(uniqueCnt);
   }
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( (aStack[i].flags & STK_Null)==0 ){
@@ -2311,7 +2449,7 @@ case OP_MakeRecord: {
 **
 ** See also: MakeIdxKey, SortMakeKey
 */
-/* Opcode: MakeIdxKey P1 * *
+/* Opcode: MakeIdxKey P1 P2 *
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  In addition, take one additional integer
@@ -2327,6 +2465,12 @@ case OP_MakeRecord: {
 ** in the stack is the first field and the top of the stack becomes the
 ** last.
 **
+** If P2 is not zero and one or more of the P1 entries that go into the
+** generated key is NULL, then jump to P2 after the new key has been
+** pushed on the stack.  In other words, jump to P2 if the key is
+** guaranteed to be unique.  This jump can be used to skip a subsequent
+** uniqueness test.
+**
 ** See also:  MakeKey, SortMakeKey
 */
 case OP_MakeIdxKey:
@@ -2336,6 +2480,7 @@ case OP_MakeKey: {
   int nField;
   int addRowid;
   int i, j;
+  int containsNull = 0;
 
   addRowid = pOp->opcode==OP_MakeIdxKey;
   nField = pOp->p1;
@@ -2347,6 +2492,7 @@ case OP_MakeKey: {
     char *z;
     if( flags & STK_Null ){
       nByte += 2;
+      containsNull = 1;
     }else if( flags & STK_Real ){
       z = aStack[i].z;
       sqliteRealToSortable(aStack[i].r, &z[1]);
@@ -2406,8 +2552,11 @@ case OP_MakeKey: {
     Integerify(p, p->tos-nField);
     iKey = intToKey(aStack[p->tos-nField].i);
     memcpy(&zNewKey[j], &iKey, sizeof(u32));
+    PopStack(p, nField+1);
+    if( pOp->p2 && containsNull ) pc = pOp->p2 - 1;
+  }else{
+    if( pOp->p2==0 ) PopStack(p, nField+addRowid);
   }
-  if( pOp->p2==0 ) PopStack(p, nField+addRowid);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
   aStack[p->tos].n = nByte;
@@ -4373,7 +4522,9 @@ case OP_AggFunc: {
   VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
   VERIFY( if( aStack[p->tos].flags!=STK_Int ) goto bad_instruction; )
   for(i=p->tos-n; i<p->tos; i++){
-    if( (aStack[i].flags & STK_Null)==0 ){
+    if( aStack[i].flags & STK_Null ){
+      zStack[i] = 0;
+    }else{
       if( Stringify(p, i) ) goto no_mem;
     }
   }

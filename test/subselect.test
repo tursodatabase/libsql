@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that are part of
 # expressions.
 #
-# $Id: subselect.test,v 1.4 2001/09/16 00:13:28 drh Exp $
+# $Id: subselect.test,v 1.5 2002/05/26 20:54:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,9 +55,8 @@ do_test subselect-1.3c {
 # NULL as the result.  Check it out.
 #
 do_test subselect-1.4 {
-  execsql {INSERT INTO t1 VALUES(NULL,8)}
-  execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=5)}
-} {8}
+  execsql {SELECT b from t1 where a = coalesce((SELECT a FROM t1 WHERE b=5),1)}
+} {2}
 
 # Try multiple subselects within a single expression.
 #
