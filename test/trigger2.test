@@ -554,29 +554,29 @@ do_test trig-7.1 {
 
   CREATE VIEW abcd AS SELECT a, b, c, d FROM ab, cd;
 
-  CREATE TRIGGER before_update BEFORE UPDATE ON abcd BEGIN
+  CREATE TRIGGER before_update INSTEAD OF UPDATE ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	old.a, old.b, old.c, old.d, new.a, new.b, new.c, new.d);
   END;
-  CREATE TRIGGER after_update AFTER UPDATE ON abcd BEGIN
+  CREATE TRIGGER after_update INSTEAD OF UPDATE ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	old.a, old.b, old.c, old.d, new.a, new.b, new.c, new.d);
   END;
 
-  CREATE TRIGGER before_delete BEFORE DELETE ON abcd BEGIN
+  CREATE TRIGGER before_delete INSTEAD OF DELETE ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	old.a, old.b, old.c, old.d, 0, 0, 0, 0);
   END;
-  CREATE TRIGGER after_delete AFTER DELETE ON abcd BEGIN
+  CREATE TRIGGER after_delete INSTEAD OF DELETE ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	old.a, old.b, old.c, old.d, 0, 0, 0, 0);
   END;
 
-  CREATE TRIGGER before_insert BEFORE INSERT ON abcd BEGIN
+  CREATE TRIGGER before_insert INSTEAD OF INSERT ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	0, 0, 0, 0, new.a, new.b, new.c, new.d);
   END;
-   CREATE TRIGGER after_insert AFTER INSERT ON abcd BEGIN
+   CREATE TRIGGER after_insert INSTEAD OF INSERT ON abcd BEGIN
     INSERT INTO tlog VALUES(NULL, 
 	0, 0, 0, 0, new.a, new.b, new.c, new.d);
    END;
@@ -592,7 +592,9 @@ do_test trig-7.2 {
   }
 } [ list 1 1 2 3 4 100 25 3 4 \
          2 1 2 3 4 100 25 3 4 \
- 3 1 2 3 4 0 0 0 0 4 1 2 3 4 0 0 0 0 \
- 5 0 0 0 0 10 20 30 40 6 0 0 0 0 10 20 30 40 ]
+	 3 1 2 3 4 0 0 0 0 \
+	 4 1 2 3 4 0 0 0 0 \
+	 5 0 0 0 0 10 20 30 40 \
+	 6 0 0 0 0 10 20 30 40 ]
 
 finish_test

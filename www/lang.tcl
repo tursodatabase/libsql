@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.36 2002/05/26 23:24:41 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.37 2002/05/28 06:55:27 danielk1977 Exp $}
 
 puts {<html>
 <head>
@@ -455,6 +455,15 @@ CREATE TRIGGER update_customer_address UPDATE OF address ON customers
 puts {
 <p>With this trigger installed, executing the statement:</p>
 }
+puts {
+<p>Note that currently, triggers may behave oddly when created on tables
+  with INTEGER PRIMARY KEY fields. If a BEFORE trigger program modifies the 
+  INTEGER PRIMARY KEY field of a row that will be subsequently updated by the
+  statement that causes the trigger to fire, then the update may not occur. 
+  The workaround is to declare the table with a PRIMARY KEY column instead
+  of an INTEGER PRIMARY KEY column.</p>
+}
+
 Example {
 UPDATE customers SET address = '1 Main St.' WHERE name = 'Jack Jones';
 }
@@ -517,6 +526,12 @@ Syntax {sql-command} {
 DROP TABLE <table-name>
 }
 
+puts {
+<p>The DROP TABLE statement consists of the keywords "DROP TABLE" followed
+by the name of the table.  The table named is completely removed from
+the disk.  The table can not be recovered.  All indices associated with
+the table are also deleted.</p>}
+
 Section {DROP TRIGGER} droptrigger
 Syntax {sql-statement} {
 DROP TRIGGER <trigger-name>
@@ -525,12 +540,6 @@ puts {
   <p>Used to drop a trigger from the database schema. Note that triggers
   are automatically dropped when the associated table is dropped.</p>
 }
-
-puts {
-<p>The DROP TABLE statement consists of the keywords "DROP TABLE" followed
-by the name of the table.  The table named is completely removed from
-the disk.  The table can not be recovered.  All indices associated with
-the table are also deleted.</p>}
 
 Section {DROP VIEW} dropview
 
