@@ -9,6 +9,24 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
+  A critical bug in the VACUUM command that can lead to database
+  corruption has been fixed in both the 2.x branch and the main
+  3.x line.  This bug has existed in all prior versions of SQLite.
+  Even though it is unlikely you will ever encounter this bug,
+  it is suggested that all users upgrade.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1116">
+  ticket #1116</a>. for additional information.
+
+  Version 3.1.2 is also the first stable release of the 3.1
+  series.  SQLite 3.1 features added support for correlated
+  subqueries, autovacuum, autoincrement, ALTER TABLE, and
+  other enhancements.  See the 
+  <a href="http://www.sqlite.org/releasenotes310.html">release notes
+  for version 3.1.0</a> for a detailed description of the
+  changes available in the 3.1 series.
+}
+
 newsitem {2005-Feb-01} {Version 3.1.1 (beta) Released} {
   Version 3.1.1 (beta) is now available on the
   website.  Verison 3.1.1 is fully backwards compatible with the 3.0 series
@@ -31,11 +49,30 @@ newsitem {2005-Jan-21} {Version 3.1.0 (alpha) Released} {
   with the first stable release to follow after two more weeks.
 }
 
+newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
+  There was a talk on the architecture of SQLite and how to optimize
+  SQLite queries at the 2004 International PHP Conference in Frankfurt,
+  Germany.
+  <a href="http://www.sqlite.org/php2004/page-001.html">
+  Slides</a> from that talk are available.
+}
+
 newsitem {2004-Oct-11} {Version 3.0.8} {
   Version 3.0.8 of SQLite contains several code optimizations and minor
   bug fixes and adds support for DEFERRED, IMMEDIATE, and EXCLUSIVE
   transactions.  This is an incremental release.  There is no reason
   to upgrade from version 3.0.7 if that version is working for you.
+}
+
+
+newsitem {2004-Oct-10} {SQLite at the 11<sup><small>th</small></sup>
+Annual Tcl/Tk Conference} {
+  There will be a talk on the use of SQLite in Tcl/Tk at the
+  11<sup><small>th</small></sup> Tcl/Tk Conference this week in
+  New Orleans.  Visit <a href="http://www.tcl.tk/community/tcl2004/">
+  http://www.tcl.tk/</a> for details.
+  <a href="http://www.sqlite.org/tclconf2004/page-001.html">
+  Slides</a> from the talk are available.
 }
 
 newsitem {2004-Sep-18} {Version 3.0.7} {
@@ -159,4 +196,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.10 2005/02/15 12:51:16 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.11 2005/03/17 03:33:17 drh Exp $}

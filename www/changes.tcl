@@ -21,6 +21,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 March 16 (3.1.6)} {
+<li>Fix a bug that could cause database corruption when inserting
+    record into tables with around 125 columns.</li>
+<li>sqlite3_step() is now much more likely to invoke the busy handler
+    and less likely to return SQLITE_BUSY.</li>
+<li>Fix memory leaks that used to occur after a malloc() failure.</li>
+}
+
 chng {2005 March 11 (3.1.5)} {
 <li>The ioctl on OS-X to control syncing to disk is F_FULLFSYNC,
     not F_FULLSYNC.  The previous release had it wrong.</li>

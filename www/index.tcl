@@ -61,6 +61,14 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Mar-16} {Version 3.1.6} {
+  Version 3.1.6 fixes a critical bug that can cause database corruption
+  when inserting rows into tables with around 125 columns. This bug was
+  introduced in version 3.0.0.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1163">Ticket #1163</a>
+  for additional information.
+}
+
 newsitem {2005-Mar-11} {Versions 3.1.4 and 3.1.5 Released} {
   Version 3.1.4 fixes a critical bug that could cause database corruption
   if the autovacuum mode of version 3.1.0 is turned on (it is off by
@@ -77,47 +85,10 @@ newsitem {2005-Mar-11} {Versions 3.1.4 and 3.1.5 Released} {
 newsitem {2005-Feb-19} {Version 3.1.3 Released} {
   Version 3.1.3 cleans up some minor issues discovered in version 3.1.2.
 }
-
-newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
-  A critical bug in the VACUUM command that can lead to database
-  corruption has been fixed in both the 2.x branch and the main
-  3.x line.  This bug has existed in all prior versions of SQLite.
-  Even though it is unlikely you will ever encounter this bug,
-  it is suggested that all users upgrade.  See
-  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1116">
-  ticket #1116</a>. for additional information.
-
-  Version 3.1.2 is also the first stable release of the 3.1
-  series.  SQLite 3.1 features added support for correlated
-  subqueries, autovacuum, autoincrement, ALTER TABLE, and
-  other enhancements.  See the 
-  <a href="http://www.sqlite.org/releasenotes310.html">release notes
-  for version 3.1.0</a> for a detailed description of the
-  changes available in the 3.1 series.
-}
-
-newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
-  There was a talk on the architecture of SQLite and how to optimize
-  SQLite queries at the 2004 International PHP Conference in Frankfurt,
-  Germany.
-  <a href="http://www.sqlite.org/php2004/page-001.html">
-  Slides</a> from that talk are available.
-}
-
-
-newsitem {2004-Oct-10} {SQLite at the 11<sup><small>th</small></sup>
-Annual Tcl/Tk Conference} {
-  There will be a talk on the use of SQLite in Tcl/Tk at the
-  11<sup><small>th</small></sup> Tcl/Tk Conference this week in
-  New Orleans.  Visit <a href="http://www.tcl.tk/community/tcl2004/">
-  http://www.tcl.tk/</a> for details.
-  <a href="http://www.sqlite.org/tclconf2004/page-001.html">
-  Slides</a> from the talk are available.
-}
   
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.110 2005/03/11 17:55:32 drh Exp $}
+footer {$Id: index.tcl,v 1.111 2005/03/17 03:33:17 drh Exp $}
