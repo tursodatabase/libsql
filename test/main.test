@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.13 2003/04/26 02:31:54 drh Exp $
+# $Id: main.test,v 1.14 2003/05/04 17:58:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,19 +138,46 @@ do_test main-1.26 {
        UPDATE pqr SET a=5;
   }
 } {0}
-do_test main-1.27 {
+do_test main-1.27.1 {
   db complete {
     CREATE -- a comment
     TRIGGERX xyz AFTER DELETE backend BEGIN
        UPDATE pqr SET a=5;
   }
 } {1}
+do_test main-1.27.2 {
+  db complete {
+    CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {0}
+do_test main-1.27.3 {
+  db complete {
+    /* */ EXPLAIN -- A comment
+    CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {0}
+do_test main-1.27.4 {
+  db complete {
+    BOGUS token
+    CREATE  TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {1}
+do_test main-1.27.5 {
+  db complete {
+    EXPLAIN 
+    CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
+       UPDATE pqr SET a=5;
+  }
+} {0}
 do_test main-1.28 {
   db complete {
     CREATE TEMP TRIGGER xyz AFTER DELETE backend BEGIN
        UPDATE pqr SET a=5;
   }
-} {1}
+} {0}
 do_test main-1.29 {
   db complete {
     CREATE TRIGGER xyz AFTER DELETE backend BEGIN
@@ -166,6 +193,11 @@ do_test main-1.30 {
 do_test main-1.31 {
   db complete {
      CREATE TABLE /* In comment ; */ hi;
+  }
+} {1}
+do_test main-1.31 {
+  db complete {
+     CREATE TABLE /* In comment ; */;
   }
 } {1}
 do_test main-1.32 {
@@ -196,6 +228,9 @@ do_test main-1.34 {
 } {1}
 do_test main-1.35 {
   db complete {hi /**/ there;}
+} {1}
+do_test main-1.36 {
+  db complete {hi there/***/;}
 } {1}
 
 

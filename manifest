@@ -1,5 +1,5 @@
-C Added\sshell\scommand\s".databases"\sto\slist\sname\sand\sfile\sof\sopen\sones.\nAdded\sseveral\smissing\sshell\scommands.\s(CVS\s954)
-D 2003-05-04T07:31:10
+C Fix\sdeficiencies\sin\ssqlite_complete()\spointed\sout\sby\sR.\sDennis\sCote.\s(CVS\s955)
+D 2003-05-04T17:58:26
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c c230a8c216f6788095d46f0e270406a93aae45af
-F src/main.c 5265058c9a598b4714dc9e528152b81fcb31e7ad
+F src/main.c 16e68905793b118552a9cf43a9f77ca1d9e395a9
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 94b618c0c0a76210e53857d77c96d2f042dc33b1
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -54,7 +54,7 @@ F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
-F src/tokenize.c 067d1a477a94af7712ca74e09aaa6bd0f7299527
+F src/tokenize.c 65b99ca0c4b8bc89f9d4530762288eea7c5bca62
 F src/trigger.c 8ee811986080de60d9d883ad96daffea82014f27
 F src/update.c dc3b680b4cf2cb6d839950b68d632850746639b9
 F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
@@ -90,7 +90,7 @@ F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test c97267c19294bf1fa4e81087edad179828bced88
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
-F test/main.test a028743affca67670e24c97527d1f4ad4bc2aad3
+F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memdb.test 3acf1453a5705d1aa524d3027667ca3d9c77c69f
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 741a5a8d3975fb5db18914b7879b12aead59279b
-R dd130a1f7dd3e8a6528c790b087edc44
-U jplyon
-Z 8e9e207bfa04e253d2be1e2c73c48742
+P dd57d6ae6a247824e44a6073bc7e73ecb3c500fd
+R afd858f78403413353ccd46911cf14bc
+U drh
+Z 317ec3dddb2f5501f438a98dd3716c3d
