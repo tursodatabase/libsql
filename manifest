@@ -1,5 +1,5 @@
-C Defer\sthe\sexclusive\sdb\slock\suntil\sthe\spager\scache\sis\sflushed\sto\sdisk.\s41\ntests\snow\sfail.\s(CVS\s1528)
-D 2004-06-04T10:38:30
+C Critical\sbugs\sfixed\sin\sbtree.c.\s\sIncompatible\sfile\sformat\schange.\s\sUnrelated\ncomment\sfix\sin\sselect.c\s(CVS\s1530)
+D 2004-06-05T00:01:45
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 39dfc3954a7af77be42ef7fb19ab22c1fa644a83
+F src/btree.c b8a253fbbcca4da758d1d21232e873d8d5c46eb5
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
 F src/build.c e12e602f06e37a0fbcb49af17cba68ad85e101b6
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
@@ -53,7 +53,7 @@ F src/parse.y 27c1ce09f9d309be91f9e537df2fb00892990af4
 F src/pragma.c 1b58d852b84b36a8b84e2245dd29b63c377414ec
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
+F src/select.c 02d711160100ef3a730060f7cfb5bc85fde06d72
 F src/shell.c a9e2ad8f6c1d39b04bad61a0ec655e9a3a360b50
 F src/sqlite.h.in 8236db65bc6d8f5f47dc5a5e86c4a9bce42f2adf
 F src/sqliteInt.h 99f2b4ff4ed28123890a0c71359fec3d2c5901c9
@@ -91,6 +91,7 @@ F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
+F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
 F test/capi2.test 8fb64e8ab7f78b8254cd4d04bb96822167f731b2
 F test/capi3.test b6fe8a66d2ffe28d4faaaec154a143131e8ff631
 F test/conflict.test 45ce1e44ea748944aed233df8c278a9e1c4c87cc
@@ -214,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ff70b6d2b60c143e3ada0606ceff97571998c7e3
-R 0c89db702f37cfc005476b7d72917d3b
-U danielk1977
-Z 2dc315e5203a158a5157a45199e1dfe1
+P d2f69e5ef2f261a00bb8427a4e2a1638ecfd17a9
+R eb52d3018295ee3de4004fb563723044
+U drh
+Z ceec225131100608a50f7e5d2660779f

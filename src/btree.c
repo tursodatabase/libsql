@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.157 2004/06/04 06:22:01 danielk1977 Exp $
+** $Id: btree.c,v 1.158 2004/06/05 00:01:45 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -271,8 +271,8 @@ struct MemPage {
   u8 hasData;          /* True if this page stores data */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
-  u8 maxLocal;         /* Copy of Btree.maxLocal or Btree.maxLeaf */
-  u8 minLocal;         /* Copy of Btree.minLocal or Btree.minLeaf */
+  u16 maxLocal;        /* Copy of Btree.maxLocal or Btree.maxLeaf */
+  u16 minLocal;        /* Copy of Btree.minLocal or Btree.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
   u16 idxParent;       /* Index in parent of this node */
   u16 nFree;           /* Number of free bytes on the page */
@@ -280,7 +280,7 @@ struct MemPage {
   struct _OvflCell {   /* Cells that will not fit on aData[] */
     u8 *pCell;           /* Pointers to the body of the overflow cell */
     u16 idx;             /* Insert this cell before idx-th non-overflow cell */
-  } aOvfl[3];
+  } aOvfl[5];
   struct Btree *pBt;   /* Pointer back to BTree structure */
   u8 *aData;           /* Pointer back to the start of the page */
   Pgno pgno;           /* Page number for this page */
@@ -307,8 +307,8 @@ struct Btree {
   u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
   u8 minEmbedFrac;      /* Minimum payload as % of total page size */
   u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
-  int pageSize;         /* Total number of bytes on a page */
-  int usableSize;       /* Number of usable bytes on each page */
+  u16 pageSize;         /* Total number of bytes on a page */
+  u16 usableSize;       /* Number of usable bytes on each page */
   int maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
   int minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   int maxLeaf;          /* Maximum local payload in a LEAFDATA table */
@@ -2807,16 +2807,16 @@ static int balance_nonroot(MemPage *pPage){
   MemPage *apOld[NB];          /* pPage and up to two siblings */
   Pgno pgnoOld[NB];            /* Page numbers for each page in apOld[] */
   MemPage *apCopy[NB];         /* Private copies of apOld[] pages */
-  MemPage *apNew[NB+1];        /* pPage and up to NB siblings after balancing */
-  Pgno pgnoNew[NB+1];          /* Page numbers for each page in apNew[] */
+  MemPage *apNew[NB+2];        /* pPage and up to NB siblings after balancing */
+  Pgno pgnoNew[NB+2];          /* Page numbers for each page in apNew[] */
   int idxDiv[NB];              /* Indices of divider cells in pParent */
   u8 *apDiv[NB];               /* Divider cells in pParent */
-  int cntNew[NB+1];            /* Index in aCell[] of cell after i-th page */
-  int szNew[NB+1];             /* Combined size of cells place on i-th page */
+  int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
+  int szNew[NB+2];             /* Combined size of cells place on i-th page */
   u8 *apCell[(MX_CELL+2)*NB];  /* All cells from pages being balanced */
   int szCell[(MX_CELL+2)*NB];  /* Local size of all cells */
   u8 aCopy[NB][MX_PAGE_SIZE+sizeof(MemPage)];  /* Space for apCopy[] */
-  u8 aSpace[MX_PAGE_SIZE*4];   /* Space to copies of divider cells */
+  u8 aSpace[MX_PAGE_SIZE*5];   /* Space to copies of divider cells */
 
   /* 
   ** Find the parent page.
@@ -3090,14 +3090,15 @@ static int balance_nonroot(MemPage *pPage){
       apNew[minI] = pT;
     }
   }
-  TRACE(("BALANCE: old: %d %d %d  new: %d(%d) %d(%d) %d(%d) %d(%d)\n",
+  TRACE(("BALANCE: old: %d %d %d  new: %d(%d) %d(%d) %d(%d) %d(%d) %d(%d)\n",
     pgnoOld[0], 
     nOld>=2 ? pgnoOld[1] : 0,
     nOld>=3 ? pgnoOld[2] : 0,
     pgnoNew[0], szNew[0],
     nNew>=2 ? pgnoNew[1] : 0, nNew>=2 ? szNew[1] : 0,
     nNew>=3 ? pgnoNew[2] : 0, nNew>=3 ? szNew[2] : 0,
-    nNew>=4 ? pgnoNew[3] : 0, nNew>=4 ? szNew[3] : 0));
+    nNew>=4 ? pgnoNew[3] : 0, nNew>=4 ? szNew[3] : 0,
+    nNew>=5 ? pgnoNew[4] : 0, nNew>=5 ? szNew[4] : 0));
 
 
   /*
@@ -3723,11 +3724,16 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   u16 idx;
   int hdr;
   int nCell;
+  int isInit;
   unsigned char *data;
   char range[20];
   unsigned char payload[20];
 
   rc = getPage(pBt, (Pgno)pgno, &pPage);
+  isInit = pPage->isInit;
+  if( pPage->isInit==0 ){
+    initPage(pPage, 0);
+  }
   if( rc ){
     return rc;
   }
@@ -3801,6 +3807,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
     }
     sqlite3BtreePageDump(pBt, get4byte(&data[hdr+8]), 1);
   }
+  pPage->isInit = isInit;
   sqlite3pager_unref(data);
   fflush(stdout);
   return SQLITE_OK;
@@ -4247,5 +4254,3 @@ int sqlite3BtreeSync(Btree *pBt, const char *zMaster){
   }
   return SQLITE_OK;
 }
-
-

@@ -1,0 +1,58 @@
+# 2004 Jun 4	
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is btree database backend.
+#
+# $Id: btree7.test,v 1.1 2004/06/05 00:01:46 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Stress the balance routine by trying to create situations where
+# 3 neighboring nodes split into 5.
+#
+set bigdata _123456789    ;#  10
+append bigdata $bigdata   ;#  20
+append bigdata $bigdata   ;#  40
+append bigdata $bigdata   ;#  80
+append bigdata $bigdata   ;# 160
+append bigdata $bigdata   ;# 320
+append bigdata $bigdata   ;# 640
+set data450 [string range $bigdata 0 449]
+do_test btree7-1.1 {
+  execsql "
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y TEXT);
+    INSERT INTO t1 VALUES(1, '$bigdata');
+    INSERT INTO t1 VALUES(2, '$bigdata');
+    INSERT INTO t1 VALUES(3, '$data450');
+    INSERT INTO t1 VALUES(5, '$data450');
+    INSERT INTO t1 VALUES(8, '$bigdata');
+    INSERT INTO t1 VALUES(9, '$bigdata');
+  "
+} {}
+#puts [execsql {select * from sqlite_master}]
+#set bt [btree_open test.db 2000 0]
+#btree_tree_dump $bt 2
+do_test btree7-1.2 {
+  execsql {PRAGMA integrity_check}
+} {ok}
+do_test btree7-1.3 {
+  execsql "
+    INSERT INTO t1 VALUES(4, '$bigdata');
+  "
+} {}
+#btree_tree_dump $bt 2
+do_test btree7-1.4 {
+  execsql {PRAGMA integrity_check}
+} {ok}
+
+finish_test
