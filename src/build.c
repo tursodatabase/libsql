@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.176.2.1 2004/06/26 14:40:05 drh Exp $
+** $Id: build.c,v 1.176.2.2 2004/07/20 00:50:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1537,7 +1537,7 @@ void sqliteCreateIndex(
   if( pName && !db->init.busy ){
     Index *pISameName;    /* Another index with the same name */
     Table *pTSameName;    /* A table with same name as the index */
-    zName = sqliteStrNDup(pName->z, pName->n);
+    zName = sqliteTableNameFromToken(pName);
     if( zName==0 ) goto exit_create_index;
     if( (pISameName = sqliteFindIndex(db, zName, 0))!=0 ){
       sqliteErrorMsg(pParse, "index %s already exists", zName);
