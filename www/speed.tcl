@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.7 2002/08/06 12:05:01 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.8 2002/08/24 18:24:58 drh Exp $ }
 
 puts {<html>
 <head>
@@ -19,22 +19,25 @@ puts {
 <h2>Executive Summary</h2>
 
 <p>A series of tests were run to measure the relative performance of
-SQLite 2.4.0, PostgreSQL, and MySQL
+SQLite 2.7.0, PostgreSQL 7.1.3, and MySQL 3.23.41.
 The following are general
 conclusions drawn from these experiments:
 </p>
 
 <ul>
 <li><p>
-  SQLite 2.4.0 is significantly faster than PostgreSQL
+  SQLite 2.7.0 is significantly faster than PostgreSQL 7.1.3
   for most common operations.
 </p></li>
 <li><p>
-  The speed of SQLite 2.4.0 is similar to MySQL.
+  The speed of SQLite 2.7.0 is similar to MySQL 3.23.41.
   This is true in spite of the
   fact that SQLite contains full transaction support whereas the
   version of MySQL tested did not.
 </p></li>
+<li><p>
+  These tests did not attempt to measure multi-user performance or
+  optimization of complex queries involving multiple joins and subqueries.
 </ul>
 
 <h2>Test Environment</h2>
@@ -47,15 +50,22 @@ a stock kernel.
 
 <p>
 The PostgreSQL and MySQL servers used were as delivered by default on
-RedHat 7.2.  No effort was made to tune these engines.  Note in particular
+RedHat 7.2.  (PostgreSQL version 7.1.3 and MySQL version 3.23.41.)
+No effort was made to tune these engines.  Note in particular
 the the default MySQL configuration on RedHat 7.2 does not support
 transactions.  Not having to support transactions gives MySQL a
-big advantage, but SQLite is still able to hold its own on most
-tests.
+big speed advantage, but SQLite is still able to hold its own on most
+tests.  On the other hand, I am told that the default PostgreSQL
+configuration is unnecessarily conservative (it is designed to
+work on a machine with 8MB of RAM) and that PostgreSQL could
+be made to run a lot faster with some knowledgable configuration
+tuning.  I have not, however, been able to personally confirm
+these reports.
 </p>
 
 <p>
-SQLite was compiled with -O6 optimization and with
+SQLite was tested in the same configuration that it appears
+on the website.  It was compiled with -O6 optimization and with
 the -DNDEBUG=1 switch which disables the many "assert()" statements
 in the SQLite code.  The -DNDEBUG=1 compiler option roughly doubles
 the speed of SQLite.
@@ -100,10 +110,10 @@ INSERT INTO t1 VALUES(999,24322,'twenty four thousand three hundred twenty two')
 INSERT INTO t1 VALUES(1000,94142,'ninety four thousand one hundred forty two');<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.027</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.113</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;8.409</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.188</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.613</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.086</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;8.672</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.286</td></tr>
 </table>
 
 <p>SQLite must close and reopen the database file, and thus invalidate
@@ -123,10 +133,10 @@ INSERT INTO t2 VALUES(25000,473330,'four hundred seventy three thousand three hu
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.175</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.444</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;0.858</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.739</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.430</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.025</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.885</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.753</td></tr>
 </table>
 
 <p>
@@ -147,10 +157,10 @@ SELECT count(*), avg(b) FROM t2 WHERE b>=9800 AND b<10800;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=9900 AND b<10900;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.773</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.023</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;6.281</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;6.247</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;3.274</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.624</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.585</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.443</td></tr>
 </table>
 
 <p>
@@ -163,7 +173,6 @@ store data as binary values where appropriate and can forego
 this conversion effort.
 </p>
 
-
 <h2>Test 4: 100 SELECTs on a string comparison</h2>
 <blockquote>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one%';<br>
@@ -175,10 +184,10 @@ SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%ninety nine%';<br>
 SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%one hundred%';<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;16.726</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.237</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;6.137</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;6.112</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;14.511</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.616</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.966</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.918</td></tr>
 </table>
 
 <p>
@@ -191,10 +200,10 @@ compariable to or better then PostgreSQL and MySQL.
 <blockquote>
 CREATE INDEX i2a ON t2(a);<br>CREATE INDEX i2b ON t2(b);
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.510</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.352</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;0.809</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.720</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.483</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.304</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.779</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.637</td></tr>
 </table>
 
 <p>
@@ -214,10 +223,10 @@ SELECT count(*), avg(b) FROM t2 WHERE b>=499800 AND b<499900;<br>
 SELECT count(*), avg(b) FROM t2 WHERE b>=499900 AND b<500000;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.318</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.555</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;1.289</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.273</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;4.939</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.335</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;1.165</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.144</td></tr>
 </table>
 
 <p>
@@ -237,10 +246,10 @@ UPDATE t1 SET b=b*2 WHERE a>=9990 AND a<10000;<br>
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.828</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;9.272</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;0.915</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.889</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.536</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;7.281</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.817</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.726</td></tr>
 </table>
 
 <p>
@@ -259,10 +268,10 @@ UPDATE t2 SET b=423958 WHERE a=25000;<br>
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;28.021</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;8.565</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;10.939</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;11.199</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;29.318</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;7.514</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;7.681</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;7.852</td></tr>
 </table>
 
 <p>
@@ -282,10 +291,10 @@ UPDATE t2 SET c='three hundred forty seven thousand three hundred ninety three' 
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;48.739</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;7.059</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;7.868</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;6.720</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;50.020</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;5.841</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.346</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;5.393</td></tr>
 </table>
 
 <p>
@@ -297,47 +306,53 @@ SQLite is slightly faster than MySQL.
 <blockquote>
 BEGIN;<br>INSERT INTO t1 SELECT * FROM t2;<br>INSERT INTO t2 SELECT * FROM t1;<br>COMMIT;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;54.822</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.512</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;4.423</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;2.386</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;57.834</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.335</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.073</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;2.085</td></tr>
 </table>
 
 <p>
 The poor performance of PostgreSQL in this case appears to be due to its
-synchronous behavior.  The CPU was mostly idle during the 55 second run.
+synchronous behavior.  The CPU was mostly idle the test run.  Presumably,
+PostgreSQL was spending most of its time waiting on disk I/O to complete.
+</p>
+
+<p>
+SQLite is slower than MySQL because it creates a temporary table to store
+the result of the query, then does an insert from the temporary table.
+A future enhancement that moves data directly from teh query into the
+insert table should double the speed of SQLite.
 </p>
 
 <h2>Test 11: DELETE without an index</h2>
 <blockquote>
 DELETE FROM t2 WHERE c LIKE '%fifty%';
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.734</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.888</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;5.405</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.731</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.733</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.768</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;5.418</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.668</td></tr>
 </table>
-
 
 <h2>Test 12: DELETE with an index</h2>
 <blockquote>
 DELETE FROM t2 WHERE a>10 AND a<20000;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.318</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.600</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;1.436</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.775</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.867</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;2.068</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;1.453</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.745</td></tr>
 </table>
-
 
 <h2>Test 13: A big INSERT after a big DELETE</h2>
 <blockquote>
 INSERT INTO t2 SELECT * FROM t1;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;63.867</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.839</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;3.971</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.993</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;66.099</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.663</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;4.029</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;1.729</td></tr>
 </table>
 
 <p>
@@ -357,20 +372,20 @@ INSERT INTO t1 VALUES(3000,97817,'ninety seven thousand eight hundred seventeen'
 COMMIT;<br>
 
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.209</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.031</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;0.298</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.282</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;1.168</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.866</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.288</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.155</td></tr>
 </table>
 
 <h2>Test 15: DROP TABLE</h2>
 <blockquote>
 DROP TABLE t1;<br>DROP TABLE t2;
 </blockquote><table border=0 cellpadding=0 cellspacing=0>
-<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.105</td></tr>
-<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.015</td></tr>
-<tr><td>SQLite 2.4:</td><td align="right">&nbsp;&nbsp;&nbsp;0.472</td></tr>
-<tr><td>SQLite 2.4 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.232</td></tr>
+<tr><td>PostgreSQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.100</td></tr>
+<tr><td>MySQL:</td><td align="right">&nbsp;&nbsp;&nbsp;0.012</td></tr>
+<tr><td>SQLite 2.7.0:</td><td align="right">&nbsp;&nbsp;&nbsp;0.572</td></tr>
+<tr><td>SQLite 2.7.0 (nosync):</td><td align="right">&nbsp;&nbsp;&nbsp;0.168</td></tr>
 </table>
 
 <p>

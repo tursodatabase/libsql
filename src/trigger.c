@@ -13,6 +13,24 @@
 #include "sqliteInt.h"
 
 /*
+** Delete a linked list of TriggerStep structures.
+*/
+static void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
+  while( pTriggerStep ){
+    TriggerStep * pTmp = pTriggerStep;
+    pTriggerStep = pTriggerStep->pNext;
+
+    if( pTmp->target.dyn ) sqliteFree(pTmp->target.z);
+    sqliteExprDelete(pTmp->pWhere);
+    sqliteExprListDelete(pTmp->pExprList);
+    sqliteSelectDelete(pTmp->pSelect);
+    sqliteIdListDelete(pTmp->pIdList);
+
+    sqliteFree(pTmp);
+  }
+}
+
+/*
 ** This is called by the parser when it sees a CREATE TRIGGER statement. See
 ** comments surrounding struct Trigger in sqliteInt.h for a description of 
 ** how triggers are stored.
@@ -27,13 +45,10 @@ void sqliteCreateTrigger(
   int foreach,        /* One of TK_ROW or TK_STATEMENT */
   Expr *pWhen,        /* WHEN clause */
   TriggerStep *pStepList, /* The triggered program */
-  char const *zData,  /* The string data to make persistent */
-  int zDataLen
+  Token *pAll             /* Token that describes the complete CREATE TRIGGER */
 ){
   Trigger *nt;
   Table   *tab;
-  int offset;
-  TriggerStep *ss;
 
   /* Check that: 
   ** 1. the trigger name does not already exist.
@@ -98,28 +113,15 @@ void sqliteCreateTrigger(
   if( nt==0 ) goto trigger_cleanup;
   nt->name = sqliteStrNDup(pName->z, pName->n);
   nt->table = sqliteStrNDup(pTableName->z, pTableName->n);
-  nt->strings = sqliteStrNDup(zData, zDataLen);
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   nt->op = op;
   nt->tr_tm = tr_tm;
-  nt->pWhen = pWhen;
-  nt->pColumns = pColumns;
+  nt->pWhen = sqliteExprDup(pWhen);
+  sqliteExprDelete(pWhen);
+  nt->pColumns = sqliteIdListDup(pColumns);
+  sqliteIdListDelete(pColumns);
   nt->foreach = foreach;
   nt->step_list = pStepList;
-  offset = (int)(nt->strings - zData);
-  sqliteExprMoveStrings(nt->pWhen, offset);
-
-  ss = nt->step_list;
-  while( ss ){
-    sqliteSelectMoveStrings(ss->pSelect, offset);
-    if( ss->target.z ){
-      ss->target.z += offset;
-    }
-    sqliteExprMoveStrings(ss->pWhere, offset);
-    sqliteExprListMoveStrings(ss->pExprList, offset);
-
-    ss = ss->pNext;
-  }
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
@@ -148,7 +150,7 @@ void sqliteCreateTrigger(
                        P3_STATIC);
     sqliteVdbeChangeP3(v, addr+2, nt->name, 0); 
     sqliteVdbeChangeP3(v, addr+3, nt->table, 0); 
-    sqliteVdbeChangeP3(v, addr+5, nt->strings, 0);
+    sqliteVdbeChangeP3(v, addr+5, pAll->z, pAll->n);
     if( !tab->isTemp ){
       sqliteChangeCookie(pParse->db, v);
     }
@@ -165,7 +167,6 @@ void sqliteCreateTrigger(
     tab->pTrigger = nt;
     return;
   }else{
-    sqliteFree(nt->strings);
     sqliteFree(nt->name);
     sqliteFree(nt->table);
     sqliteFree(nt);
@@ -175,20 +176,43 @@ trigger_cleanup:
 
   sqliteIdListDelete(pColumns);
   sqliteExprDelete(pWhen);
-  {
-    TriggerStep * pp;
-    TriggerStep * nn;
+  sqliteDeleteTriggerStep(pStepList);
+}
 
-    pp = pStepList;
-    while( pp ){
-      nn = pp->pNext;
-      sqliteExprDelete(pp->pWhere);
-      sqliteExprListDelete(pp->pExprList);
-      sqliteSelectDelete(pp->pSelect);
-      sqliteIdListDelete(pp->pIdList);
-      sqliteFree(pp);
-      pp = nn;
-    }
+/*
+** Make a copy of all components of the given trigger step.  This has
+** the effect of copying all Expr.token.z values into memory obtained
+** from sqliteMalloc().  As initially created, the Expr.token.z values
+** all point to the input string that was fed to the parser.  But that
+** string is ephemeral - it will go away as soon as the sqlite_exec()
+** call that started the parser exits.  This routine makes a persistent
+** copy of all the Expr.token.z strings so that the TriggerStep structure
+** will be valid even after the sqlite_exec() call returns.
+*/
+static void sqlitePersistTriggerStep(TriggerStep *p){
+  if( p->target.z ){
+    p->target.z = sqliteStrNDup(p->target.z, p->target.n);
+    p->target.dyn = 1;
+  }
+  if( p->pSelect ){
+    Select *pNew = sqliteSelectDup(p->pSelect);
+    sqliteSelectDelete(p->pSelect);
+    p->pSelect = pNew;
+  }
+  if( p->pWhere ){
+    Expr *pNew = sqliteExprDup(p->pWhere);
+    sqliteExprDelete(p->pWhere);
+    p->pWhere = pNew;
+  }
+  if( p->pExprList ){
+    ExprList *pNew = sqliteExprListDup(p->pExprList);
+    sqliteExprListDelete(p->pExprList);
+    p->pExprList = pNew;
+  }
+  if( p->pIdList ){
+    IdList *pNew = sqliteIdListDup(p->pIdList);
+    sqliteIdListDelete(p->pIdList);
+    p->pIdList = pNew;
   }
 }
 
@@ -206,6 +230,7 @@ TriggerStep *sqliteTriggerSelectStep(Select *pSelect){
   pTriggerStep->op = TK_SELECT;
   pTriggerStep->pSelect = pSelect;
   pTriggerStep->orconf = OE_Default;
+  sqlitePersistTriggerStep(pTriggerStep);
 
   return pTriggerStep;
 }
@@ -236,6 +261,7 @@ TriggerStep *sqliteTriggerInsertStep(
   pTriggerStep->pIdList = pColumn;
   pTriggerStep->pExprList = pEList;
   pTriggerStep->orconf = orconf;
+  sqlitePersistTriggerStep(pTriggerStep);
 
   return pTriggerStep;
 }
@@ -259,6 +285,7 @@ TriggerStep *sqliteTriggerUpdateStep(
   pTriggerStep->pExprList = pEList;
   pTriggerStep->pWhere = pWhere;
   pTriggerStep->orconf = orconf;
+  sqlitePersistTriggerStep(pTriggerStep);
 
   return pTriggerStep;
 }
@@ -276,6 +303,7 @@ TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
   pTriggerStep->target  = *pTableName;
   pTriggerStep->pWhere = pWhere;
   pTriggerStep->orconf = OE_Default;
+  sqlitePersistTriggerStep(pTriggerStep);
 
   return pTriggerStep;
 }
@@ -286,24 +314,11 @@ TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
 void sqliteDeleteTrigger(Trigger *pTrigger){
   TriggerStep *pTriggerStep;
 
-  pTriggerStep = pTrigger->step_list;
-  while( pTriggerStep ){
-    TriggerStep * pTmp = pTriggerStep;
-    pTriggerStep = pTriggerStep->pNext;
-
-    sqliteExprDelete(pTmp->pWhere);
-    sqliteExprListDelete(pTmp->pExprList);
-    sqliteSelectDelete(pTmp->pSelect);
-    sqliteIdListDelete(pTmp->pIdList);
-
-    sqliteFree(pTmp);
-  }
-
+  sqliteDeleteTriggerStep(pTrigger->step_list);
   sqliteFree(pTrigger->name);
   sqliteFree(pTrigger->table);
   sqliteExprDelete(pTrigger->pWhen);
   sqliteIdListDelete(pTrigger->pColumns);
-  sqliteFree(pTrigger->strings);
   sqliteFree(pTrigger);
 }
 

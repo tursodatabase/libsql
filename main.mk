@@ -126,8 +126,8 @@ last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
           | awk '{print $$5,$$6}' >last_change
 
-libsqlite.a:	$(LIBOBJ) tclsqlite.o
-	$(AR) libsqlite.a $(LIBOBJ) tclsqlite.o
+libsqlite.a:	$(LIBOBJ)
+	$(AR) libsqlite.a $(LIBOBJ)
 	$(RANLIB) libsqlite.a
 
 sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h

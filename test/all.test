@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.16 2002/08/11 20:10:49 drh Exp $
+# $Id: all.test,v 1.17 2002/08/24 18:24:57 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,7 @@ set EXCLUDE {
   quick.test
   malloc.test
   misuse.test
+  memleak.test
 }
 #  btree2.test
 

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.34 2002/08/15 11:48:14 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.35 2002/08/24 18:24:57 drh Exp $}
 
 puts {<html>
 <head>
@@ -716,6 +716,7 @@ routine.  The string pointer that these routines return should be freed
 by passing it to <b>sqlite_freemem()</b>.
 </p>
 
+<a name="cfunc">
 <h2>Adding New SQL Functions</h2>
 
 <p>Beginning with version 2.4.0, SQLite allows the SQL language to be
@@ -760,7 +761,14 @@ parameter is an open SQLite database on which the functions should
 be registered, <b>zName</b> is the name of the new function,
 <b>nArg</b> is the number of arguments, and <b>pUserData</b> is
 a pointer which is passed through unchanged to the C implementation
-of the function.
+of the function.  Both routines return 0 on success and non-zero
+if there are any errors.
+</p>
+
+<p>
+The length of a function name may not exceed 255 characters.
+Any attempt to create a function whose name exceeds 255 characters
+in length will result in an error.
 </p>
 
 <p>

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.79 2002/07/18 00:34:12 drh Exp $
+** $Id: expr.c,v 1.80 2002/08/24 18:24:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -34,15 +34,16 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;
   if( pToken ){
+    assert( pToken->dyn==0 );
     pNew->token = *pToken;
+    pNew->token.base = 1;
+  }else if( pLeft && pRight ){
+    sqliteExprSpan(pNew, &pLeft->token, &pRight->token);
   }else{
+    pNew->token.dyn = 0;
+    pNew->token.base = 1;
     pNew->token.z = 0;
     pNew->token.n = 0;
-  }
-  if( pLeft && pRight ){
-    sqliteExprSpan(pNew, &pLeft->span, &pRight->span);
-  }else{
-    pNew->span = pNew->token;
   }
   return pNew;
 }
@@ -53,8 +54,17 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
 */
 void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   if( pExpr ){
-    pExpr->span.z = pLeft->z;
-    pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
+    assert( pExpr->token.dyn==0 );
+    if( pLeft->dyn==0 && pRight->dyn==0 ){
+      pExpr->token.z = pLeft->z;
+      pExpr->token.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
+      pExpr->token.base = 0;
+    }else{
+      pExpr->token.z = 0;
+      pExpr->token.n = 0;
+      pExpr->token.dyn = 0;
+      pExpr->token.base = 0;
+    }
   }
 }
 
@@ -71,8 +81,18 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
   }
   pNew->op = TK_FUNCTION;
   pNew->pList = pList;
+
+  /* Expr.token.n is the length of the entire function
+  ** call, including the function arguments.  The parser
+  ** will extend token.n to cover the either length of the string.
+  ** Expr.nFuncName is the length of just the function name.
+  */
+  pNew->token.dyn = 0;
+  pNew->token.base = 1;
   if( pToken ){
+    assert( pToken->dyn==0 );
     pNew->token = *pToken;
+    pNew->nFuncName = pToken->n>255 ? 255 : pToken->n;
   }else{
     pNew->token.z = 0;
     pNew->token.n = 0;
@@ -85,6 +105,7 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
 */
 void sqliteExprDelete(Expr *p){
   if( p==0 ) return;
+  if( p->token.dyn && p->token.z ) sqliteFree((char*)p->token.z);
   if( p->pLeft ) sqliteExprDelete(p->pLeft);
   if( p->pRight ) sqliteExprDelete(p->pRight);
   if( p->pList ) sqliteExprListDelete(p->pList);
@@ -92,79 +113,12 @@ void sqliteExprDelete(Expr *p){
   sqliteFree(p);
 }
 
-/*
-** The following group of functions are used to translate the string
-** pointers of tokens in expression from one buffer to another.
-**
-** Normally, the Expr.token.z and Expr.span.z fields point into the
-** original input buffer of an SQL statement.  This is usually OK
-** since the SQL statement is executed and the expression is deleted
-** before the input buffer is freed.  Making the tokens point to the
-** original input buffer saves many calls to malloc() and thus helps
-** the library to run faster. 
-**
-** But sometimes we need an expression to persist past the time when
-** the input buffer is freed.  (Example: The SELECT clause of a
-** CREATE VIEW statement contains expressions that must persist for
-** the life of the view.)  When that happens we have to make a
-** persistent copy of the input buffer and translate the Expr.token.z
-** and Expr.span.z fields to point to the copy rather than the 
-** original input buffer.  The following group of routines handle that
-** translation.
-**
-** The "offset" parameter is the distance from the original input buffer
-** to the persistent copy.  These routines recursively walk the entire
-** expression tree and shift all tokens by "offset" amount.
-**
-** The work of figuring out the appropriate "offset" and making the
-** presistent copy of the input buffer is done by the calling routine.
-*/
-void sqliteExprMoveStrings(Expr *p, int offset){
-  if( p==0 ) return;
-  if( !p->staticToken ){
-    if( p->token.z ) p->token.z += offset;
-    if( p->span.z ) p->span.z += offset;
-  }
-  if( p->pLeft ) sqliteExprMoveStrings(p->pLeft, offset);
-  if( p->pRight ) sqliteExprMoveStrings(p->pRight, offset);
-  if( p->pList ) sqliteExprListMoveStrings(p->pList, offset);
-  if( p->pSelect ) sqliteSelectMoveStrings(p->pSelect, offset);
-}
-void sqliteExprListMoveStrings(ExprList *pList, int offset){
-  int i;
-  if( pList==0 ) return;
-  for(i=0; i<pList->nExpr; i++){
-    sqliteExprMoveStrings(pList->a[i].pExpr, offset);
-  }
-}
-static void sqliteSrcListMoveStrings(SrcList *pSrc, int offset){
-  int i;
-  if( pSrc==0 ) return;
-  for(i=0; i<pSrc->nSrc; i++){
-    sqliteSelectMoveStrings(pSrc->a[i].pSelect, offset);
-    sqliteExprMoveStrings(pSrc->a[i].pOn, offset);
-  }
-}
-void sqliteSelectMoveStrings(Select *pSelect, int offset){
-  if( pSelect==0 ) return;
-  sqliteExprListMoveStrings(pSelect->pEList, offset);
-  sqliteSrcListMoveStrings(pSelect->pSrc, offset);
-  sqliteExprMoveStrings(pSelect->pWhere, offset);
-  sqliteExprListMoveStrings(pSelect->pGroupBy, offset);
-  sqliteExprMoveStrings(pSelect->pHaving, offset);
-  sqliteExprListMoveStrings(pSelect->pOrderBy, offset);
-  sqliteSelectMoveStrings(pSelect->pPrior, offset);
-}
 
 /*
 ** The following group of routines make deep copies of expressions,
 ** expression lists, ID lists, and select statements.  The copies can
 ** be deleted (by being passed to their respective ...Delete() routines)
 ** without effecting the originals.
-**
-** Note, however, that the Expr.token.z and Expr.span.z fields point to
-** string space that is allocated separately from the expression tree
-** itself.  These routines do NOT duplicate that string space.
 **
 ** The expression list, ID, and source lists return by sqliteExprListDup(),
 ** sqliteIdListDup(), and sqliteSrcListDup() can not be further expanded 
@@ -178,11 +132,37 @@ Expr *sqliteExprDup(Expr *p){
   pNew = sqliteMalloc( sizeof(*p) );
   if( pNew==0 ) return 0;
   memcpy(pNew, p, sizeof(*pNew));
+  /* Only make a copy of the token if it is a base token (meaning that
+  ** it covers a single term of an expression - not two or more terms)
+  ** or if it is already dynamically allocated.  So, for example, in
+  ** a complex expression like "a+b+c", the token "b" would be duplicated
+  ** but "a+b" would not be. */
+  if( p->token.z!=0 && (p->token.base || p->token.dyn) ){
+    pNew->token.z = sqliteStrDup(p->token.z);
+    pNew->token.dyn = 1;
+  }else{
+    pNew->token.z = 0;
+    pNew->token.n = 0;
+    pNew->token.dyn = 0;
+  }
   pNew->pLeft = sqliteExprDup(p->pLeft);
   pNew->pRight = sqliteExprDup(p->pRight);
   pNew->pList = sqliteExprListDup(p->pList);
   pNew->pSelect = sqliteSelectDup(p->pSelect);
   return pNew;
+}
+void sqliteTokenCopy(Token *pTo, Token *pFrom){
+  if( pTo->dyn ) sqliteFree((char*)pTo->z);
+  pTo->base = pFrom->base;
+  if( pFrom->z ){
+    pTo->n = pFrom->n;
+    pTo->z = sqliteStrNDup(pFrom->z, pFrom->n);
+    pTo->dyn = 1;
+  }else{
+    pTo->n = 0;
+    pTo->z = 0;
+    pTo->dyn = 0;
+  }
 }
 ExprList *sqliteExprListDup(ExprList *p){
   ExprList *pNew;
@@ -194,7 +174,14 @@ ExprList *sqliteExprListDup(ExprList *p){
   pNew->a = sqliteMalloc( p->nExpr*sizeof(p->a[0]) );
   if( pNew->a==0 ) return 0;
   for(i=0; i<p->nExpr; i++){
-    pNew->a[i].pExpr = sqliteExprDup(p->a[i].pExpr);
+    Expr *pNewExpr, *pOldExpr;
+    pNew->a[i].pExpr = pNewExpr = sqliteExprDup(pOldExpr = p->a[i].pExpr);
+    if( pOldExpr->token.z!=0 && pNewExpr && pNewExpr->token.z==0 ){
+      /* Always make a copy of the token for top-level expressions in the
+      ** expression list.  The logic in SELECT processing that determines
+      ** the names of columns in the result set needs this information */
+      sqliteTokenCopy(&pNew->a[i].pExpr->token, &p->a[i].pExpr->token);
+    }
     pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
     pNew->a[i].sortOrder = p->a[i].sortOrder;
     pNew->a[i].isAgg = p->a[i].isAgg;
@@ -362,6 +349,9 @@ int sqliteExprIsInteger(Expr *p, int *pValue){
         return 1;
       }
       break;
+    }
+    case TK_UPLUS: {
+      return sqliteExprIsInteger(p->pLeft, pValue);
     }
     case TK_UMINUS: {
       int v;
@@ -713,6 +703,39 @@ int sqliteExprResolveIds(
 }
 
 /*
+** pExpr is a node that defines a function of some kind.  It might
+** be a syntactic function like "count(x)" or it might be a function
+** that implements an operator, like "a LIKE b".  
+**
+** This routine makes *pzName point to the name of the function and 
+** *pnName hold the number of characters in the function name.
+*/
+static void getFunctionName(Expr *pExpr, const char **pzName, int *pnName){
+  switch( pExpr->op ){
+    case TK_FUNCTION: {
+      *pzName = pExpr->token.z;
+      *pnName = pExpr->nFuncName;
+      break;
+    }
+    case TK_LIKE: {
+      *pzName = "like";
+      *pnName = 4;
+      break;
+    }
+    case TK_GLOB: {
+      *pzName = "glob";
+      *pnName = 4;
+      break;
+    }
+    default: {
+      *pzName = "can't happen";
+      *pnName = 12;
+      break;
+    }
+  }
+}
+
+/*
 ** Error check the functions in an expression.  Make sure all
 ** function names are recognized and all functions have the correct
 ** number of arguments.  Leave an error message in pParse->zErrMsg
@@ -725,6 +748,8 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
   int nErr = 0;
   if( pExpr==0 ) return 0;
   switch( pExpr->op ){
+    case TK_GLOB:
+    case TK_LIKE:
     case TK_FUNCTION: {
       int n = pExpr->pList ? pExpr->pList->nExpr : 0;  /* Number of arguments */
       int no_such_func = 0;       /* True if no such function exists */
@@ -732,16 +757,16 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int wrong_num_args = 0;     /* True if wrong number of arguments */
       int is_agg = 0;             /* True if is an aggregate function */
       int i;
+      int nId;                    /* Number of characters in function name */
+      const char *zId;            /* The function name. */
       FuncDef *pDef;
 
-      pDef = sqliteFindFunction(pParse->db,
-         pExpr->token.z, pExpr->token.n, n, 0);
+      getFunctionName(pExpr, &zId, &nId);
+      pDef = sqliteFindFunction(pParse->db, zId, nId, n, 0);
       if( pDef==0 ){
-        pDef = sqliteFindFunction(pParse->db,
-           pExpr->token.z, pExpr->token.n, -1, 0);
+        pDef = sqliteFindFunction(pParse->db, zId, nId, -1, 0);
         if( pDef==0 ){
-          if( n==1 && pExpr->token.n==6
-               && sqliteStrNICmp(pExpr->token.z, "typeof", 6)==0 ){
+          if( n==1 && nId==6 && sqliteStrNICmp(zId, "typeof", 6)==0 ){
             is_type_of = 1;
           }else {
             no_such_func = 1;
@@ -754,19 +779,17 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       }
       if( is_agg && !allowAgg ){
         sqliteSetNString(&pParse->zErrMsg, "misuse of aggregate function ", -1,
-           pExpr->token.z, pExpr->token.n, "()", 2, 0);
+           zId, nId, "()", 2, 0);
         pParse->nErr++;
         nErr++;
         is_agg = 0;
       }else if( no_such_func ){
-        sqliteSetNString(&pParse->zErrMsg, "no such function: ", -1,
-           pExpr->token.z, pExpr->token.n, 0);
+        sqliteSetNString(&pParse->zErrMsg, "no such function: ", -1, zId,nId,0);
         pParse->nErr++;
         nErr++;
       }else if( wrong_num_args ){
         sqliteSetNString(&pParse->zErrMsg, 
-           "wrong number of arguments to function ",-1,
-           pExpr->token.z, pExpr->token.n, "()", 2, 0);
+           "wrong number of arguments to function ", -1, zId, nId, "()", 2, 0);
         pParse->nErr++;
         nErr++;
       }
@@ -849,6 +872,7 @@ int sqliteExprType(Expr *p){
     case TK_NOTNULL:
     case TK_NOT:
     case TK_UMINUS:
+    case TK_UPLUS:
     case TK_BITAND:
     case TK_BITOR:
     case TK_BITNOT:
@@ -859,6 +883,8 @@ int sqliteExprType(Expr *p){
     case TK_FLOAT:
     case TK_IN:
     case TK_BETWEEN:
+    case TK_GLOB:
+    case TK_LIKE:
       return SQLITE_SO_NUM;
 
     case TK_STRING:
@@ -1031,6 +1057,19 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_Concat, 2, 0);
       break;
     }
+    case TK_UPLUS: {
+      Expr *pLeft = pExpr->pLeft;
+      if( pLeft && pLeft->op==TK_INTEGER ){
+        sqliteVdbeAddOp(v, OP_Integer, atoi(pLeft->token.z), 0);
+        sqliteVdbeChangeP3(v, -1, pLeft->token.z, pLeft->token.n);
+      }else if( pLeft && pLeft->op==TK_FLOAT ){
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        sqliteVdbeChangeP3(v, -1, pLeft->token.z, pLeft->token.n);
+      }else{
+        sqliteExprCode(pParse, pExpr->pLeft);
+      }
+      break;
+    }
     case TK_UMINUS: {
       assert( pExpr->pLeft );
       if( pExpr->pLeft->op==TK_FLOAT || pExpr->pLeft->op==TK_INTEGER ){
@@ -1068,13 +1107,17 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       break;
     }
+    case TK_GLOB:
+    case TK_LIKE:
     case TK_FUNCTION: {
       int i;
       ExprList *pList = pExpr->pList;
       int nExpr = pList ? pList->nExpr : 0;
       FuncDef *pDef;
-      pDef = sqliteFindFunction(pParse->db,
-                      pExpr->token.z, pExpr->token.n, nExpr, 0);
+      int nId;
+      const char *zId;
+      getFunctionName(pExpr, &zId, &nId);
+      pDef = sqliteFindFunction(pParse->db, zId, nId, nExpr, 0);
       assert( pDef!=0 );
       for(i=0; i<nExpr; i++){
         sqliteExprCode(pParse, pList->a[i].pExpr);
@@ -1402,9 +1445,16 @@ int sqliteExprCompare(Expr *pA, Expr *pB){
   if( pA->pSelect || pB->pSelect ) return 0;
   if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 0;
   if( pA->token.z ){
+    int n;
     if( pB->token.z==0 ) return 0;
-    if( pB->token.n!=pA->token.n ) return 0;
-    if( sqliteStrNICmp(pA->token.z, pB->token.z, pA->token.n)!=0 ) return 0;
+    if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
+      n = pA->nFuncName;
+      if( pB->nFuncName!=n ) return 0;
+    }else{
+      n = pA->token.n;
+      if( pB->token.n!=n ) return 0;
+    }
+    if( sqliteStrNICmp(pA->token.z, pB->token.z, n)!=0 ) return 0;
   }
   return 1;
 }
@@ -1475,7 +1525,7 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         pParse->aAgg[i].isAgg = 1;
         pParse->aAgg[i].pExpr = pExpr;
         pParse->aAgg[i].pFunc = sqliteFindFunction(pParse->db,
-             pExpr->token.z, pExpr->token.n,
+             pExpr->token.z, pExpr->nFuncName,
              pExpr->pList ? pExpr->pList->nExpr : 0, 0);
       }
       pExpr->iAgg = i;

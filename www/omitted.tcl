@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.2 2002/08/15 13:45:17 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.3 2002/08/24 18:24:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -45,16 +45,28 @@ feature {CHECK constraints} {
 
 feature {Variable subqueries} {
   Subqueries must be static.  They are evaluated only once.  They may not,
-  therefore, refer to variables in the containing query.
+  therefore, refer to variables in the main query.
 }
 
 feature {FOREIGN KEY constraints} {
   FOREIGN KEY constraints are parsed but are not enforced.
 }
 
+feature {Complete trigger support} {
+  There is some support for triggers but it is not complete.  Missing
+  subfeatures include FOR EACH STATEMENT triggers (currently all triggers
+  must be FOR EACH ROW), INSTEAD OF triggers on tables (currently 
+  INSTEAD OF triggers are only allowed on views), and recursive
+  triggers - triggers that trigger themselves.
+}
+
 feature {ALTER TABLE} {
   To change a table you have to delete it (saving its contents to a temporary
   table) and recreate it from scratch.
+}
+
+feature {Nested transactions} {
+  The current implementation only allows a single active transaction.
 }
 
 feature {The COUNT(DISTINCT X) function} {

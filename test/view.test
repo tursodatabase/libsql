@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.8 2002/07/16 02:05:45 drh Exp $
+# $Id: view.test,v 1.9 2002/08/24 18:24:57 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -264,5 +264,34 @@ do_test view-7.6 {
     SELECT * FROM test;
   }
 } {1 2 3}
+
+do_test view-8.1 {
+  execsql {
+    CREATE VIEW v6 AS SELECT pqr, xyz FROM v1;
+    SELECT * FROM v6 ORDER BY xyz;
+  }
+} {7 2 13 5 19 8 27 12}
+if 0 {
+do_test view-8.2 {
+  db close
+  sqlite db test.db
+  execsql {
+    SELECT * FROM v6 ORDER BY xyz;
+  }
+} {7 2 13 5 19 8 27 12}
+do_test view-8.3 {
+  execsql {
+    CREATE VIEW v7 AS SELECT pqr+xyz AS a FROM v6;
+    SELECT * FROM v7 ORDER BY a;
+  }
+} {9 18 27 39}
+do_test view-8.4 {
+  execsql { PRAGMA vdbe_trace=on;
+    CREATE VIEW v8 AS SELECT max(cnt) FROM
+      (SELECT a%2 AS eo, count(*) AS cnt FROM t1 GROUP BY eo);
+    SELECT * FROM v8;
+  }
+} 3
+}
 
 finish_test

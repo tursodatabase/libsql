@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.109 2002/08/18 20:28:07 drh Exp $
+** $Id: build.c,v 1.110 2002/08/24 18:24:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -844,10 +844,10 @@ void sqliteCreateView(
   Select *pSelect,   /* A SELECT statement that will become the new view */
   int isTemp         /* TRUE for a TEMPORARY view */
 ){
-  Token sEnd;
   Table *p;
+  int n;
   const char *z;
-  int n, offset;
+  Token sEnd;
 
   sqliteStartTable(pParse, pBegin, pName, isTemp);
   p = pParse->pNewTable;
@@ -860,12 +860,20 @@ void sqliteCreateView(
     sqliteExprListDelete(pSelect->pOrderBy);
     pSelect->pOrderBy = 0;
   }
-  p->pSelect = pSelect;
+  /* Make a copy of the entire SELECT statement that defines the view.
+  ** This will force all the Expr.token.z values to be dynamically
+  ** allocated rather than point to the input string - which means that
+  ** they will persist after the current sqlite_exec() call returns.
+  */
+  p->pSelect = sqliteSelectDup(pSelect);
+  sqliteSelectDelete(pSelect);
   if( !pParse->initFlag ){
-    if( sqliteViewGetColumnNames(pParse, p) ){
-      return;
-    }
+    sqliteViewGetColumnNames(pParse, p);
   }
+
+  /* Locate the end of the CREATE VIEW statement.  Make sEnd point to
+  ** the end.
+  */
   sEnd = pParse->sLastToken;
   if( sEnd.z[0]!=0 && sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
@@ -876,12 +884,9 @@ void sqliteCreateView(
   while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;
-  z = p->pSelect->zSelect = sqliteStrNDup(z, n);
-  if( z ){
-    offset = ((int)z) - (int)pBegin->z;
-    sqliteSelectMoveStrings(p->pSelect, offset);
-    sqliteEndTable(pParse, &sEnd, 0);
-  }
+
+  /* Use sqliteEndTable() to add the view to the SQLITE_MASTER table */
+  sqliteEndTable(pParse, &sEnd, 0);
   return;
 }
 

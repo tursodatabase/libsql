@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.142 2002/08/02 10:36:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.143 2002/08/24 18:24:55 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -391,11 +391,19 @@ struct Index {
 
 /*
 ** Each token coming out of the lexer is an instance of
-** this structure.
+** this structure.  Tokens are also used as part of an expression.
+**
+** A "base" token is a real single token such as would come out of the
+** lexer.  There are also compound tokens which are aggregates of one
+** or more base tokens.  Compound tokens are used to name columns in the
+** result set of a SELECT statement.  In the expression "a+b+c", "b"
+** is a base token but "a+b" is a compound token.
 */
 struct Token {
   const char *z;      /* Text of the token.  Not NULL-terminated! */
-  int n;              /* Number of characters in this token */
+  unsigned dyn  : 1;  /* True for malloced memory, false for static */
+  unsigned base : 1;  /* True for a base token, false for compounds */
+  unsigned n    : 30; /* Number of characters in this token */
 };
 
 /*
@@ -411,10 +419,10 @@ struct Token {
 ** Expr.pRight and Expr.pLeft are subexpressions.  Expr.pList is a list
 ** of argument if the expression is a function.
 **
-** Expr.token is the operator token for this node.  Expr.span is the complete
-** subexpression represented by this node and all its decendents.  These
-** fields are used for error reporting and for reconstructing the text of
-** an expression to use as the column name in a SELECT statement.
+** Expr.token is the operator token for this node.  For some expressions
+** that have subexpressions, Expr.token can be the complete text that gave
+** rise to the Expr.  In the latter case, the token is marked as being
+** a compound token.
 **
 ** An expression of the form ID or ID.ID refers to a column in a table.
 ** For such expressions, Expr.op is set to TK_COLUMN and Expr.iTable is
@@ -435,13 +443,12 @@ struct Token {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   u8 dataType;           /* Either SQLITE_SO_TEXT or SQLITE_SO_NUM */
-  u8 isJoinExpr;         /* Origina is the ON or USING phrase of a join */
-  u8 staticToken;        /* Expr.token.z points to static memory */
+  u8 isJoinExpr;         /* Origin is the ON or USING phrase of a join */
+  u8 nFuncName;          /* Number of characters in a function name */
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as function arguments
                          ** or in "<expr> IN (<expr-list)" */
   Token token;           /* An operand token */
-  Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table. */
   int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull
@@ -677,11 +684,6 @@ struct Parse {
  *    linked list is stored as the "pTrigger" member of the associated
  *    struct Table.
  *
- * The "strings" member of struct Trigger contains a pointer to the memory 
- * referenced by the various Token structures referenced indirectly by the
- * "pWhen", "pColumns" and "step_list" members. (ie. the memory allocated for
- * use in conjunction with the sqliteExprMoveStrings() etc. interface).
- *
  * The "step_list" member points to the first element of a linked list
  * containing the SQL statements specified as the trigger program.
  *
@@ -708,7 +710,6 @@ struct Trigger {
   int foreach;            /* One of TK_ROW or TK_STATEMENT */
 
   TriggerStep *step_list; /* Link list of trigger program steps             */
-  char *strings;          /* pointer to allocation of Token strings */
   Trigger *pNext;         /* Next trigger associated with the table */
 };
 
@@ -920,10 +921,8 @@ void sqliteGenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
 void sqliteBeginWriteOperation(Parse*, int);
 void sqliteEndWriteOperation(Parse*);
-void sqliteExprMoveStrings(Expr*, int);
-void sqliteExprListMoveStrings(ExprList*, int);
-void sqliteSelectMoveStrings(Select*, int);
 Expr *sqliteExprDup(Expr*);
+void sqliteTokenCopy(Token*, Token*);
 ExprList *sqliteExprListDup(ExprList*);
 SrcList *sqliteSrcListDup(SrcList*);
 IdList *sqliteIdListDup(IdList*);
@@ -935,7 +934,7 @@ int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);
 void sqliteChangeCookie(sqlite*, Vdbe*);
 void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, Token*, 
-                         int, Expr*, TriggerStep*, char const*,int);
+                         int, Expr*, TriggerStep*, Token*);
 void sqliteDropTrigger(Parse*, Token*, int);
 int sqliteTriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
 int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 

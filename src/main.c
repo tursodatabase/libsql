@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.97 2002/08/13 23:02:57 drh Exp $
+** $Id: main.c,v 1.98 2002/08/24 18:24:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -795,8 +795,11 @@ int sqlite_create_function(
   void *pUserData      /* User data */
 ){
   FuncDef *p;
+  int nName;
   if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
-  p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
+  nName = strlen(zName);
+  if( nName>255 ) return 1;
+  p = sqliteFindFunction(db, zName, nName, nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
   p->xStep = 0;
@@ -813,8 +816,11 @@ int sqlite_create_aggregate(
   void *pUserData      /* User data */
 ){
   FuncDef *p;
+  int nName;
   if( db==0 || zName==0 || sqliteSafetyCheck(db) ) return 1;
-  p = sqliteFindFunction(db, zName, strlen(zName), nArg, 1);
+  nName = strlen(zName);
+  if( nName>255 ) return 1;
+  p = sqliteFindFunction(db, zName, nName, nArg, 1);
   if( p==0 ) return 1;
   p->xFunc = 0;
   p->xStep = xStep;
