@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Mar 14 19 (1.0.24)} {
+<li>Fix a bug which was causing 
+    the UPDATE command was failing on systems where "malloc(0)" returns
+    NULL.  The problem does not appear Windows, Linux, or HPUX but does 
+    cause the library to fail on QNX.
+    </li>
+}
+
 chng {2001 Feb 19 (1.0.23)} {
 <li>An unrelated (and minor) bug from Mark Muranwski fixed.  The algorithm
     for figuring out where to put temporary files for a "memory:" database

@@ -1,9 +1,9 @@
-C Documentation\supdates\sonly\s(CVS\s189)
-D 2001-02-20T13:06:31
+C Fix\sa\sbug\son\ssystems\swhere\smalloc(0)\sreturn\sNULL.\nAdd\scode\sto\sdetect\sthis\sbug\seven\son\ssystems\swere\sit\sused\snot\sto\noccur.\s(CVS\s190)
+D 2001-03-14T12:35:57
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 5383ee1612cb9a5eeef8f9f925777798a509f326
+F VERSION 404ea684e576d2b596e185903cea48b3e984c7fd
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -38,8 +38,8 @@ F src/table.c 5be76051a8ed6f6bfa641f4adc52529efa34fbf9
 F src/tclsqlite.c 2a925e1835c348f07dd17c87d95ae9a577833407
 F src/test.file 55ca6286e3e4f4fba5d0448333fa99fc5a404a73
 F src/tokenize.c c7ad428f38e56342eb2025320480b5ae9ece1b90
-F src/update.c 9692fbac8e95fdbc5318d39db576aa6c57b9c8ab
-F src/util.c 0298100e6427a4b644f767ede12276fa7170fbb6
+F src/update.c 8365b3922ea098330d1e20862d6e64911e4e03d0
+F src/util.c f4573201fc2b581dbf601c53787349310b7da150
 F src/vdbe.c e8254ae39d2f42a3f85b168b67a493ae206f4bf4
 F src/vdbe.h 031b7dd7d6f94c51dc37cdf26efe43d1619bb672
 F src/where.c 478fde7c930969ca428de2d80b137959d25ee2fb
@@ -80,7 +80,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl f4d2d919d87329555efb0639d2a9b9e2be46715c
+F www/changes.tcl c433eed27374aef00c4d4a9b6d072a182db4abd0
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P cbfa44c32365a1c9d10c9fcfeebad2fea139aafb
-R 51dbb4fe2655a1b43c87ea8ebca2b24f
+P d44abe54eb4a0c5eedf8f3ff59704ddb8dd68faf
+R 6e3a5f2798796558e4d2cf33207362f9
 U drh
-Z 14d4e5ae0729dab203dc2cf30932cb57
+Z e11df66d76fd940262c38944939091a9

@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.17 2000/12/10 18:23:51 drh Exp $
+** $Id: util.c,v 1.18 2001/03/14 12:35:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -60,6 +60,7 @@ void *sqliteMalloc_(int n, char *zFile, int line){
     sqlite_iMallocFail--;
     if( sqlite_iMallocFail==0 ) return 0;
   }
+  if( n==0 ) return 0;
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (3+k)*sizeof(int));
   if( pi==0 ) return 0;
