@@ -43,19 +43,13 @@ int sqlite3_value_bytes16(sqlite3_value *pVal){
   return 0;
 }
 double sqlite3_value_double(sqlite3_value *pVal){
-  Mem *pMem = (Mem *)pVal;
-  sqlite3VdbeMemRealify(pMem);
-  return pMem->r;
+  return sqlite3VdbeRealValue((Mem*)pVal);
 }
 int sqlite3_value_int(sqlite3_value *pVal){
-  Mem *pMem = (Mem *)pVal;
-  sqlite3VdbeMemIntegerify(pMem);
-  return (int)pVal->i;
+  return sqlite3VdbeIntValue((Mem*)pVal);
 }
 sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
-  Mem *pMem = (Mem *)pVal;
-  sqlite3VdbeMemIntegerify(pMem);
-  return pVal->i;
+  return sqlite3VdbeIntValue((Mem*)pVal);
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const char *)sqlite3ValueText(pVal, SQLITE_UTF8);

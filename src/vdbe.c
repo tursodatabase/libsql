@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.389 2004/06/26 08:38:25 danielk1977 Exp $
+** $Id: vdbe.c,v 1.390 2004/06/27 01:56:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -115,17 +115,15 @@ int sqlite3_interrupt_count = 0;
 ** Any prior string or real representation is invalidated.  
 ** NULLs are converted into 0.
 */
-#define Integerify(P, enc) \
-    if((P)->flags!=MEM_Int){ sqlite3VdbeMemIntegerify(P); }
+#define Integerify(P) sqlite3VdbeMemIntegerify(P)
 
 /*
-** Get a valid Real representation for the given stack element.
+** Convert P so that it has type MEM_Real.
 **
-** Any prior string or integer representation is retained.
+** Any prior string or integer representation is invalidated.
 ** NULLs are converted into 0.0.
 */
-#define Realify(P,enc) \
-    if(((P)->flags&MEM_Real)==0){ sqlite3VdbeMemRealify(P); }
+#define Realify(P) sqlite3VdbeMemRealify(P)
 
 /*
 ** Argument pMem points at a memory cell that will be passed to a
@@ -304,9 +302,9 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
         sqlite3VdbeMemNulTerminate(pRec);
         if( pRec->flags&MEM_Str && sqlite3IsNumber(pRec->z, &realnum, enc) ){
           if( realnum ){
-            Realify(pRec, enc);
+            Realify(pRec);
           }else{
-            Integerify(pRec, enc);
+            Integerify(pRec);
           }
         }
       }
@@ -686,7 +684,8 @@ case OP_Integer: {
     pTos->z = pOp->p3;
     pTos->n = strlen(pTos->z);
     pTos->enc = SQLITE_UTF8;
-    Integerify(pTos, 0);
+    pTos->i = sqlite3VdbeIntValue(pTos);
+    pTos->flags |= MEM_Int;
   }
   break;
 }
@@ -701,7 +700,8 @@ case OP_Real: {
   pTos->z = pOp->p3;
   pTos->n = strlen(pTos->z);
   pTos->enc = SQLITE_UTF8;
-  Realify(pTos, 0);
+  pTos->r = sqlite3VdbeRealValue(pTos);
+  pTos->flags |= MEM_Real;
   break;
 }
 
@@ -1162,10 +1162,8 @@ case OP_Remainder: {
     pTos->flags = MEM_Int;
   }else{
     double a, b;
-    Realify(pTos, db->enc);
-    Realify(pNos, db->enc);
-    a = pTos->r;
-    b = pNos->r;
+    a = sqlite3VdbeRealValue(pTos);
+    b = sqlite3VdbeRealValue(pNos);
     switch( pOp->opcode ){
       case OP_Add:         b += a;       break;
       case OP_Subtract:    b -= a;       break;
@@ -1339,10 +1337,8 @@ case OP_ShiftRight: {
     pTos->flags = MEM_Null;
     break;
   }
-  Integerify(pTos, db->enc);
-  Integerify(pNos, db->enc);
-  a = pTos->i;
-  b = pNos->i;
+  a = sqlite3VdbeIntValue(pTos);
+  b = sqlite3VdbeIntValue(pNos);
   switch( pOp->opcode ){
     case OP_BitAnd:      a &= b;     break;
     case OP_BitOr:       a |= b;     break;
@@ -1350,13 +1346,6 @@ case OP_ShiftRight: {
     case OP_ShiftRight:  a >>= b;    break;
     default:   /* CANT HAPPEN */     break;
   }
-  /* FIX ME: Because constant P3 values sometimes need to be translated,
-  ** the following assert() can fail. When P3 is always in the native text
-  ** encoding, this assert() will be valid again. Until then, the Release()
-  ** is neeed instead.
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  assert( (pNos->flags & MEM_Dyn)==0 );
-  */
   Release(pTos);
   pTos--;
   Release(pTos);
@@ -1374,7 +1363,7 @@ case OP_ShiftRight: {
 */
 case OP_AddImm: {
   assert( pTos>=p->aStack );
-  Integerify(pTos, db->enc);
+  Integerify(pTos);
   pTos->i += pOp->p1;
   break;
 }
@@ -1402,7 +1391,7 @@ case OP_ForceInt: {
   if( pTos->flags & MEM_Int ){
     v = pTos->i + (pOp->p1!=0);
   }else{
-    Realify(pTos, db->enc);
+    Realify(pTos);
     v = (int)pTos->r;
     if( pTos->r>(double)v ) v++;
     if( pOp->p1 && pTos->r==(double)v ) v++;
@@ -1446,7 +1435,7 @@ case OP_MustBeInt: {
       if( !sqlite3IsNumber(pTos->z, 0, db->enc) ){
         goto mismatch;
       }
-      Realify(pTos, db->enc);
+      Realify(pTos);
       v = (int)pTos->r;
       r = (double)v;
       if( r!=pTos->r ){
@@ -1609,13 +1598,13 @@ case OP_Or: {
   if( pTos->flags & MEM_Null ){
     v1 = 2;
   }else{
-    Integerify(pTos, db->enc);
+    Integerify(pTos);
     v1 = pTos->i==0;
   }
   if( pNos->flags & MEM_Null ){
     v2 = 2;
   }else{
-    Integerify(pNos, db->enc);
+    Integerify(pNos);
     v2 = pNos->i==0;
   }
   if( pOp->opcode==OP_And ){
@@ -1666,8 +1655,7 @@ case OP_AbsValue: {
   }else if( pTos->flags & MEM_Null ){
     /* Do nothing */
   }else{
-    Realify(pTos, db->enc);
-    Release(pTos);
+    Realify(pTos);
     if( pOp->opcode==OP_Negative || pTos->r<0.0 ){
       pTos->r = -pTos->r;
     }
@@ -1685,8 +1673,8 @@ case OP_AbsValue: {
 case OP_Not: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos, db->enc);
-  Release(pTos);
+  Integerify(pTos);
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos->i = !pTos->i;
   pTos->flags = MEM_Int;
   break;
@@ -1701,8 +1689,8 @@ case OP_Not: {
 case OP_BitNot: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  Integerify(pTos, db->enc);
-  Release(pTos);
+  Integerify(pTos);
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos->i = ~pTos->i;
   pTos->flags = MEM_Int;
   break;
@@ -1744,16 +1732,9 @@ case OP_IfNot: {
   if( pTos->flags & MEM_Null ){
     c = pOp->p1;
   }else{
-    Integerify(pTos, db->enc);
-    c = pTos->i;
+    c = sqlite3VdbeIntValue(pTos);
     if( pOp->opcode==OP_IfNot ) c = !c;
   }
-  /* FIX ME: Because constant P3 values sometimes need to be translated,
-  ** the following assert() can fail. When P3 is always in the native text
-  ** encoding, this assert() will be valid again. Until then, the Release()
-  ** is neeed instead.
-  assert( (pTos->flags & MEM_Dyn)==0 ); 
-  */
   Release(pTos);
   pTos--;
   if( c ) pc = pOp->p2-1;
@@ -2144,7 +2125,7 @@ case OP_MakeRecord: {
   if( addRowid ){
     pRowid = &pTos[0-nField];
     assert( pRowid>=p->aStack );
-    Integerify(pRowid, db->enc);
+    Integerify(pRowid);
     serial_type = sqlite3VdbeSerialType(pRowid);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
@@ -2360,10 +2341,10 @@ case OP_SetCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( db->aDb[pOp->p1].pBt!=0 );
   assert( pTos>=p->aStack );
-  Integerify(pTos, db->enc);
+  Integerify(pTos);
   /* See note about index shifting on OP_ReadCookie */
   rc = sqlite3BtreeUpdateMeta(db->aDb[pOp->p1].pBt, 1+pOp->p2, (int)pTos->i);
-  Release(pTos);
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   break;
 }
@@ -2447,8 +2428,9 @@ case OP_OpenWrite: {
   Cursor *pCur;
   
   assert( pTos>=p->aStack );
-  Integerify(pTos, db->enc);
+  Integerify(pTos);
   iDb = pTos->i;
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   assert( iDb>=0 && iDb<db->nDb );
   pX = db->aDb[iDb].pBt;
@@ -2456,8 +2438,9 @@ case OP_OpenWrite: {
   wrFlag = pOp->opcode==OP_OpenWrite;
   if( p2<=0 ){
     assert( pTos>=p->aStack );
-    Integerify(pTos, db->enc);
+    Integerify(pTos);
     p2 = pTos->i;
+    assert( (pTos->flags & MEM_Dyn)==0 );
     pTos--;
     if( p2<2 ){
       sqlite3SetString(&p->zErrMsg, "root page number less than 2", (char*)0);
@@ -2657,12 +2640,12 @@ case OP_MoveGt: {
     if( pC->intKey ){
       i64 iKey;
       assert( !pOp->p3 );
-      Integerify(pTos, db->enc);
+      Integerify(pTos);
       iKey = intToKey(pTos->i);
       if( pOp->p2==0 && pOp->opcode==OP_MoveGe ){
         pC->movetoTarget = iKey;
         pC->deferredMoveto = 1;
-        Release(pTos);
+        assert( (pTos->flags & MEM_Dyn)==0 );
         pTos--;
         break;
       }
@@ -2801,8 +2784,9 @@ case OP_IsUnique: {
   /* Pop the value R off the top of the stack
   */
   assert( pNos>=p->aStack );
-  Integerify(pTos, db->enc);
+  Integerify(pTos);
   R = pTos->i;
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   assert( i>=0 && i<=p->nCursor );
   pCx = p->apCsr[i];
@@ -3851,9 +3835,9 @@ case OP_ListWrite: {
     pKeylist->pNext = p->pList;
     p->pList = pKeylist;
   }
-  Integerify(pTos, db->enc);
+  Integerify(pTos);
   pKeylist->aKey[pKeylist->nUsed++] = pTos->i;
-  Release(pTos);
+  assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   break;
 }

@@ -1,5 +1,5 @@
-C Coverage\stesting\sof\spragma.c.\s(CVS\s1744)
-D 2004-06-26T19:35:30
+C Fix\sa\sbug\sin\sthe\shandling\sof\sMems\sinside\sof\svdbe.c.\s(CVS\s1745)
+D 2004-06-27T01:56:33
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,12 +73,12 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c a8fb39c94ae4ef6606d5216b6f05d9b86f6901b2
 F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
-F src/vdbe.c 423b55e65501ef2b60d8dedabe8d76d06ea62d99
+F src/vdbe.c b750a731c90567b77ed6e0cd455ac868953d3a72
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
-F src/vdbeInt.h 22ab717b69074fe7a28f64e35a39bd436ad9d150
-F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
+F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
+F src/vdbeapi.c e92bda928f2fe93a9a77a62bd95642563bbcdea1
 F src/vdbeaux.c e7201e3f129439bc64d2ff79b54001adc2c95539
-F src/vdbemem.c d37e4033f7350e542f715c061bffe23feb51bc9e
+F src/vdbemem.c e8ae1f56ad16d5b01119e8dc1d25e913e06c3128
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test d591e074013248176402a16a0fb6fc82d241bad5
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
@@ -96,7 +96,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test 429b96cfef5b51a7d512cfb4b5b3e453384af293
 F test/capi2.test fe61f341e953f73c29bacfcbdaf688cd7b0e0d38
-F test/capi3.test 6528034f21c4e8e404032124cb58b14ce934598c
+F test/capi3.test ac53507f69b14fe026634afa09e6512f678f161d
 F test/collate1.test 2ee4fa3a47a652ccf56c5ddf65dcc44d9bad82ef
 F test/collate2.test c1a3b41f761b28853c5696037f92de928f93233b
 F test/collate3.test e60b428e07ec945492ba90ff1c895902ee3a8a50
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b69b4fe8adff83a26e3566613bea8b477a26e8a4
-R 72fd52c0e274fc83fa1945dfd7a6deb8
+P 0f9c0f0aa9188c46c65cb92203687f37884f685a
+R 890a4b373e4b15aa9e98bea1cb54b3e0
 U drh
-Z 03157110b37f81d3fef2f16d6fba5e75
+Z bd1af074bc92b88e71778888aba3c921

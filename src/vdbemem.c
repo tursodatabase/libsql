@@ -207,50 +207,76 @@ void sqlite3VdbeMemRelease(Mem *p){
 }
 
 /*
-** Convert the Mem to have representation MEM_Int only.  All
-** prior representations are invalidated.  NULL is converted into 0.
+** Return some kind of integer value which is the best we can do
+** at representing the value that *pMem describes as an integer.
+** If pMem is an integer, then the value is exact.  If pMem is
+** a floating-point then the value returned is the integer part.
+** If pMem is a string or blob, then we make an attempt to convert
+** it into a integer and return that.  If pMem is NULL, return 0.
+**
+** If pMem is a string, its encoding might be changed.
 */
-int sqlite3VdbeMemIntegerify(Mem *pMem){
+i64 sqlite3VdbeIntValue(Mem *pMem){
   int flags = pMem->flags;
   if( flags & MEM_Int ){
-    /* Do nothing */
+    return pMem->i;
   }else if( flags & MEM_Real ){
-    pMem->i = (i64)pMem->r;
+    return (i64)pMem->r;
   }else if( flags & (MEM_Str|MEM_Blob) ){
+    i64 value;
     if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
     assert( pMem->z );
-    sqlite3atoi64(pMem->z, &pMem->i);
+    sqlite3atoi64(pMem->z, &value);
+    return value;
   }else{
-    pMem->i = 0;
+    return 0;
   }
-  pMem->flags |= MEM_Int;
+}
+
+/*
+** Convert pMem to type integer.  Invalidate any prior representations.
+*/
+int sqlite3VdbeMemIntegerify(Mem *pMem){
+  pMem->i = sqlite3VdbeIntValue(pMem);
+  sqlite3VdbeMemRelease(pMem);
+  pMem->flags = MEM_Int;
   return SQLITE_OK;
 }
 
 /*
-** Add MEM_Real to the set of representations for pMem.  Prior
-** prior representations other than MEM_Null retained.  NULL is
-** converted into 0.0.
+** Return the best representation of pMem that we can get into a
+** double.  If pMem is already a double or an integer, return its
+** value.  If it is a string or blob, try to convert it to a double.
+** If it is a NULL, return 0.0.
 */
-int sqlite3VdbeMemRealify(Mem *pMem){
+double sqlite3VdbeRealValue(Mem *pMem){
   if( pMem->flags & MEM_Real ){
-    /* Do nothing */
-  }else if( (pMem->flags & MEM_Int) && pMem->type!=SQLITE_TEXT ){
-    pMem->r = pMem->i;
+    return pMem->r;
+  }else if( pMem->flags & MEM_Int ){
+    return (double)pMem->i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
     }
     assert( pMem->z );
-    pMem->r = sqlite3AtoF(pMem->z, 0);
+    return sqlite3AtoF(pMem->z, 0);
   }else{
-    pMem->r = 0.0;
+    return 0.0;
   }
-  pMem->flags |= MEM_Real;
+}
+
+/*
+** Convert pMem so that it is of type MEM_Real.  Invalidate any
+** prior representations.
+*/
+int sqlite3VdbeMemRealify(Mem *pMem){
+  pMem->r = sqlite3VdbeRealValue(pMem);
+  sqlite3VdbeMemRelease(pMem);
+  pMem->flags = MEM_Real;
   return SQLITE_OK;
 }
 
@@ -599,6 +625,9 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
   /* MEM_Null excludes all other types */
   assert( (pMem->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
           || (pMem->flags&MEM_Null)==0 );
+  if( (pMem->flags & (MEM_Int|MEM_Real))==(MEM_Int|MEM_Real) ){
+    assert( pMem->r==pMem->i );
+  }
 }
 #endif
 
@@ -623,6 +652,9 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   return (const void *)(pVal->z);
 }
 
+/*
+** Create a new sqlite3_value object.
+*/
 sqlite3_value* sqlite3ValueNew(){
   Mem *p = sqliteMalloc(sizeof(*p));
   if( p ){
@@ -632,6 +664,9 @@ sqlite3_value* sqlite3ValueNew(){
   return p;
 }
 
+/*
+** Change the string value of an sqlite3_value object
+*/
 void sqlite3ValueSetStr(
   sqlite3_value *v, 
   int n, 
@@ -642,12 +677,19 @@ void sqlite3ValueSetStr(
   if( v ) sqlite3VdbeMemSetStr((Mem *)v, z, n, enc, xDel);
 }
 
+/*
+** Free an sqlite3_value object
+*/
 void sqlite3ValueFree(sqlite3_value *v){
   if( !v ) return;
   sqlite3ValueSetStr(v, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
   sqliteFree(v);
 }
 
+/*
+** Return the number of bytes in the sqlite3_value object assuming
+** that it uses the encoding "enc"
+*/
 int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   Mem *p = (Mem*)pVal;
   if( (p->flags & MEM_Blob)!=0 || sqlite3ValueText(pVal, enc) ){
