@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.109 2004/08/04 15:16:55 drh Exp $
+** $Id: shell.c,v 1.110 2004/08/08 20:22:18 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -488,9 +488,9 @@ static void set_table_name(struct callback_data *p, const char *zName){
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  needQuote = !isalpha(*zName) && *zName!='_';
+  needQuote = !isalpha((unsigned char)*zName) && *zName!='_';
   for(i=n=0; zName[i]; i++, n++){
-    if( !isalnum(zName[i]) && zName[i]!='_' ){
+    if( !isalnum((unsigned char)zName[i]) && zName[i]!='_' ){
       needQuote = 1;
       if( zName[i]=='\'' ) n++;
     }
@@ -754,7 +754,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   /* Parse the input line into tokens.
   */
   while( zLine[i] && nArg<ArraySize(azArg) ){
-    while( isspace(zLine[i]) ){ i++; }
+    while( isspace((unsigned char)zLine[i]) ){ i++; }
     if( zLine[i]==0 ) break;
     if( zLine[i]=='\'' || zLine[i]=='"' ){
       int delim = zLine[i++];
@@ -766,7 +766,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
     }else{
       azArg[nArg++] = &zLine[i];
-      while( zLine[i] && !isspace(zLine[i]) ){ i++; }
+      while( zLine[i] && !isspace((unsigned char)zLine[i]) ){ i++; }
       if( zLine[i] ) zLine[i++] = 0;
       resolve_backslashes(azArg[nArg-1]);
     }
@@ -831,7 +831,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     char *z = azArg[1];
     int val = atoi(azArg[1]);
     for(j=0; z[j]; j++){
-      if( isupper(z[j]) ) z[j] = tolower(z[j]);
+      z[j] = tolower((unsigned char)z[j]);
     }
     if( strcmp(z,"on")==0 ){
       val = 1;
@@ -850,7 +850,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     char *z = nArg>=2 ? azArg[1] : "1";
     int val = atoi(z);
     for(j=0; z[j]; j++){
-      if( isupper(z[j]) ) z[j] = tolower(z[j]);
+      z[j] = tolower((unsigned char)z[j]);
     }
     if( strcmp(z,"on")==0 ){
       val = 1;
@@ -894,7 +894,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     char *z = azArg[1];
     int val = atoi(azArg[1]);
     for(j=0; z[j]; j++){
-      if( isupper(z[j]) ) z[j] = tolower(z[j]);
+      z[j] = tolower((unsigned char)z[j]);
     }
     if( strcmp(z,"on")==0 ){
       val = 1;
@@ -1295,7 +1295,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 ** z[] is N characters long.
 */
 static int _ends_with_semicolon(const char *z, int N){
-  while( N>0 && isspace(z[N-1]) ){ N--; }
+  while( N>0 && isspace((unsigned char)z[N-1]) ){ N--; }
   return N>0 && z[N-1]==';';
 }
 
@@ -1304,7 +1304,7 @@ static int _ends_with_semicolon(const char *z, int N){
 */
 static int _all_whitespace(const char *z){
   for(; *z; z++){
-    if( isspace(*z) ) continue;
+    if( isspace(*(unsigned char*)z) ) continue;
     if( *z=='/' && z[1]=='*' ){
       z += 2;
       while( *z && (*z!='*' || z[1]!='/') ){ z++; }
@@ -1330,7 +1330,7 @@ static int _all_whitespace(const char *z){
 */
 static int _is_command_terminator(const char *zLine){
   extern int sqlite3StrNICmp(const char*,const char*,int);
-  while( isspace(*zLine) ){ zLine++; };
+  while( isspace(*(unsigned char*)zLine) ){ zLine++; };
   if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ) return 1;  /* Oracle */
   if( sqlite3StrNICmp(zLine,"go",2)==0 && _all_whitespace(&zLine[2]) ){
     return 1;  /* SQL Server */
@@ -1369,7 +1369,7 @@ static void process_input(struct callback_data *p, FILE *in){
     }
     if( zSql==0 ){
       int i;
-      for(i=0; zLine[i] && isspace(zLine[i]); i++){}
+      for(i=0; zLine[i] && isspace((unsigned char)zLine[i]); i++){}
       if( zLine[i]!=0 ){
         nSql = strlen(zLine);
         zSql = malloc( nSql+1 );

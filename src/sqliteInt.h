@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.314 2004/08/07 23:54:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.315 2004/08/08 20:22:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -700,9 +700,9 @@ struct Index {
 ** and Token.n when Token.z==0.
 */
 struct Token {
-  const char *z;      /* Text of the token.  Not NULL-terminated! */
-  unsigned dyn  : 1;  /* True for malloced memory, false for static */
-  unsigned n    : 31; /* Number of characters in this token */
+  const unsigned char *z; /* Text of the token.  Not NULL-terminated! */
+  unsigned dyn  : 1;      /* True for malloced memory, false for static */
+  unsigned n    : 31;     /* Number of characters in this token */
 };
 
 /*

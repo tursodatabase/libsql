@@ -532,7 +532,7 @@ void sqlite3VdbePrintSql(Vdbe *p){
   pOp = &p->aOp[nOp-2];
   if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
     const char *z = pOp->p3;
-    while( isspace(*z) ) z++;
+    while( isspace(*(u8*)z) ) z++;
     printf("SQL: [%s]\n", z);
   }
 #endif

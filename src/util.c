@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.111 2004/07/15 13:23:22 drh Exp $
+** $Id: util.c,v 1.112 2004/08/08 20:22:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -596,23 +596,23 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
   int incr = (enc==SQLITE_UTF8?1:2);
   if( enc==SQLITE_UTF16BE ) z++;
   if( *z=='-' || *z=='+' ) z += incr;
-  if( !isdigit(*z) ){
+  if( !isdigit(*(u8*)z) ){
     return 0;
   }
   z += incr;
   if( realnum ) *realnum = 0;
-  while( isdigit(*z) ){ z += incr; }
+  while( isdigit(*(u8*)z) ){ z += incr; }
   if( *z=='.' ){
     z += incr;
-    if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z += incr; }
+    if( !isdigit(*(u8*)z) ) return 0;
+    while( isdigit(*(u8*)z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   if( *z=='e' || *z=='E' ){
     z += incr;
     if( *z=='+' || *z=='-' ) z += incr;
-    if( !isdigit(*z) ) return 0;
-    while( isdigit(*z) ){ z += incr; }
+    if( !isdigit(*(u8*)z) ) return 0;
+    while( isdigit(*(u8*)z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   return *z==0;
@@ -639,14 +639,14 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
   }else if( *z=='+' ){
     z++;
   }
-  while( isdigit(*z) ){
+  while( isdigit(*(u8*)z) ){
     v1 = v1*10.0 + (*z - '0');
     z++;
   }
   if( *z=='.' ){
     LONGDOUBLE_TYPE divisor = 1.0;
     z++;
-    while( isdigit(*z) ){
+    while( isdigit(*(u8*)z) ){
       v1 = v1*10.0 + (*z - '0');
       divisor *= 10.0;
       z++;
@@ -664,7 +664,7 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
     }else if( *z=='+' ){
       z++;
     }
-    while( isdigit(*z) ){
+    while( isdigit(*(u8*)z) ){
       eval = eval*10 + *z - '0';
       z++;
     }

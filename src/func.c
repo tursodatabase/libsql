@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.79 2004/07/18 23:06:54 drh Exp $
+** $Id: func.c,v 1.80 2004/08/08 20:22:18 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -208,7 +208,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
-    if( islower(z[i]) ) z[i] = toupper(z[i]);
+    z[i] = toupper(z[i]);
   }
   sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
@@ -221,7 +221,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
   for(i=0; z[i]; i++){
-    if( isupper(z[i]) ) z[i] = tolower(z[i]);
+    z[i] = tolower(z[i]);
   }
   sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
@@ -691,7 +691,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 */
 static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char zResult[8];
-  const char *zIn;
+  const u8 *zIn;
   int i, j;
   static const unsigned char iCode[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -704,7 +704,7 @@ static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv
     1, 2, 6, 2, 3, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 0,
   };
   assert( argc==1 );
-  zIn = sqlite3_value_text(argv[0]);
+  zIn = (u8*)sqlite3_value_text(argv[0]);
   for(i=0; zIn[i] && !isalpha(zIn[i]); i++){}
   if( zIn[i] ){
     zResult[0] = toupper(zIn[i]);

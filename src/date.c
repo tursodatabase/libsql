@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.32 2004/07/20 00:39:15 drh Exp $
+** $Id: date.c,v 1.33 2004/08/08 20:22:17 drh Exp $
 **
 ** NOTES:
 **
@@ -104,7 +104,7 @@ static int getDigits(const char *zDate, ...){
     pVal = va_arg(ap, int*);
     val = 0;
     while( N-- ){
-      if( !isdigit(*zDate) ){
+      if( !isdigit(*(u8*)zDate) ){
         return cnt;
       }
       val = val*10 + *zDate - '0';
@@ -145,7 +145,7 @@ static int getValue(const char *z, double *pR){
 static int parseTimezone(const char *zDate, DateTime *p){
   int sgn = 0;
   int nHr, nMn;
-  while( isspace(*zDate) ){ zDate++; }
+  while( isspace(*(u8*)zDate) ){ zDate++; }
   p->tz = 0;
   if( *zDate=='-' ){
     sgn = -1;
@@ -160,7 +160,7 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
-  while( isspace(*zDate) ){ zDate++; }
+  while( isspace(*(u8*)zDate) ){ zDate++; }
   return *zDate!=0;
 }
 
@@ -184,10 +184,10 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
       return 1;
     }
     zDate += 2;
-    if( *zDate=='.' && isdigit(zDate[1]) ){
+    if( *zDate=='.' && isdigit((u8)zDate[1]) ){
       double rScale = 1.0;
       zDate++;
-      while( isdigit(*zDate) ){
+      while( isdigit(*(u8*)zDate) ){
         ms = ms*10.0 + *zDate - '0';
         rScale *= 10.0;
         zDate++;
@@ -272,7 +272,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
     return 1;
   }
   zDate += 10;
-  while( isspace(*zDate) ){ zDate++; }
+  while( isspace(*(u8*)zDate) ){ zDate++; }
   if( parseHhMmSs(zDate, p)==0 ){
     /* We got the time */
   }else if( *zDate==0 ){
@@ -575,7 +575,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         const char *z2 = z;
         DateTime tx;
         int day;
-        if( !isdigit(*z2) ) z2++;
+        if( !isdigit(*(u8*)z2) ) z2++;
         memset(&tx, 0, sizeof(tx));
         if( parseHhMmSs(z2, &tx) ) break;
         computeJD(&tx);
@@ -590,7 +590,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         break;
       }
       z += n;
-      while( isspace(z[0]) ) z++;
+      while( isspace(*(u8*)z) ) z++;
       n = strlen(z);
       if( n>10 || n<3 ) break;
       if( z[n-1]=='s' ){ z[n-1] = 0; n--; }

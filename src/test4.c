@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.10 2004/06/08 00:02:35 danielk1977 Exp $
+** $Id: test4.c,v 1.11 2004/08/08 20:22:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -106,7 +106,7 @@ static void *thread_main(void *pArg){
 ** the interpreter and return -1.
 */
 static int parse_thread_id(Tcl_Interp *interp, const char *zArg){
-  if( zArg==0 || zArg[0]==0 || zArg[1]!=0 || !isupper(zArg[0]) ){
+  if( zArg==0 || zArg[0]==0 || zArg[1]!=0 || !isupper((unsigned char)zArg[0]) ){
     Tcl_AppendResult(interp, "thread ID must be an upper case letter", 0);
     return -1;
   }

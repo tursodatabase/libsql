@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.244 2004/07/26 00:31:09 drh Exp $
+** $Id: build.c,v 1.245 2004/08/08 20:22:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1209,7 +1209,8 @@ static int identLength(const char *z){
 ** Write an identifier onto the end of the given string.  Add
 ** quote characters as needed.
 */
-static void identPut(char *z, int *pIdx, char *zIdent){
+static void identPut(char *z, int *pIdx, char *zSignedIdent){
+  unsigned char *zIdent = (unsigned char*)zSignedIdent;
   int i, j, needQuote;
   i = *pIdx;
   for(j=0; zIdent[j]; j++){
@@ -1439,7 +1440,7 @@ void sqlite3CreateView(
 ){
   Table *p;
   int n;
-  const char *z;
+  const unsigned char *z;
   Token sEnd;
   DbFixer sFix;
   Token *pName;
@@ -1478,7 +1479,7 @@ void sqlite3CreateView(
   }
   sEnd.n = 0;
   n = sEnd.z - pBegin->z;
-  z = pBegin->z;
+  z = (const unsigned char*)pBegin->z;
   while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;

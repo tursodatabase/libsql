@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.3 2004/05/26 23:25:31 drh Exp $
+** $Id: legacy.c,v 1.4 2004/08/08 20:22:18 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -108,7 +108,7 @@ int sqlite3_exec(
         if( rc!=SQLITE_SCHEMA ){
           nRetry = 0;
           zSql = zLeftover;
-          while( isspace(zSql[0]) ) zSql++;
+          while( isspace((unsigned char)zSql[0]) ) zSql++;
         }
         break;
       }
