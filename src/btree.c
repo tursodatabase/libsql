@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.97 2003/12/16 03:44:48 drh Exp $
+** $Id: btree.c,v 1.98 2004/01/01 12:33:43 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3159,8 +3159,6 @@ struct IntegrityCk {
   Pager *pPager; /* The associated pager.  Also accessible by pBt->pPager */
   int nPage;     /* Number of pages in the database */
   int *anRef;    /* Number of times each page is referenced */
-  int nTreePage; /* Number of BTree pages */
-  int nByte;     /* Number of bytes of data stored on BTree pages */
   char *zErrMsg; /* An error message.  NULL of no errors seen. */
 };
 
@@ -3404,11 +3402,6 @@ static int checkTreePage(
     checkAppendMsg(pCheck, zContext, zMsg);
   }
 #endif
-
-  /* Update freespace totals.
-  */
-  pCheck->nTreePage++;
-  pCheck->nByte += USABLE_SPACE - pPage->nFree;
 
   sqlitepager_unref(pPage);
   return depth;
