@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.9 2003/03/19 03:14:03 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.10 2004/02/18 16:56:32 drh Exp $}
 
 puts {<html>
 <head>
@@ -20,7 +20,7 @@ puts {
 
 <table align="right" border="1" cellpadding="15" cellspacing="1">
 <tr><th>Block Diagram Of SQLite</th></tr>
-<tr><td><img src="arch.png"></td></tr>
+<tr><td><img src="arch2.gif"></td></tr>
 </table>
 <p>This document describes the architecture of the SQLite library.
 The information here is useful to those who want to understand or
@@ -33,11 +33,30 @@ and how they interrelate is shown at the right.  The text that
 follows will provide a quick overview of each of these components.
 </p>
 
+<h2>History</h2>
+
+<p>
+There are two main C interfaces to the SQLite library:
+<b>sqlite_exec()</b> and <b>sqlite_compile()</b>.  Prior to
+version 2.8.0 (2003-Feb-16) only sqlite_exec() was supported.
+For version 2.8.0, the sqlite_exec and sqlite_compile methods
+existed as peers.  Beginning with version 2.8.13, the sqlite_compile
+method is the primary interface, and sqlite_exec is implemented
+using sqlite_compile.  Externally, there are API extensions but
+not changes that break backwards compatibility.  But internally,
+the plumbing is very different.  The diagram at the right shows
+the structure of SQLite for version 2.8.13 and following.
+</p>
+
 <h2>Interface</h2>
 
-<p>Most of the public interface to the SQLite library is implemented by
-four functions found in the <b>main.c</b> source file.  The
+<p>Much of the public interface to the SQLite library is implemented by
+functions found in the <b>main.c</b> source file though some routines are
+scattered about in other files where they can have access to data 
+structures with file scope.  The
 <b>sqlite_get_table()</b> routine is implemented in <b>table.c</b>.
+<b>sqlite_step()</b> is found in <b>vdbe.c</b>.  
+<b>sqlite_mprintf()</b> is found in <b>printf.c</b>.
 The Tcl interface is implemented by <b>tclsqlite.c</b>.  More
 information on the C interface to SQLite is
 <a href="c_interface.html">available separately</a>.<p>
@@ -47,6 +66,10 @@ symbols in the SQLite library begin with the prefix <b>sqlite</b>.
 Those symbols that are intended for external use (in other words,
 those symbols which form the API for SQLite) begin
 with <b>sqlite_</b>.</p>
+
+<h2>SQL Command Process</h2>
+
+<p>
 
 <h2>Tokenizer</h2>
 
@@ -117,7 +140,20 @@ source file <b>vdbe.c</b>.  The virtual machine also has
 its own header file <b>vdbe.h</b> that defines an interface
 between the virtual machine and the rest of the SQLite library.</p>
 
-<h2>B-tree Driver</h2>
+<h2>Backend</h2>
+
+<p>The backend is an abstraction layer that presents a uniform interface
+to the virtual machine for either the B-Tree drivers for disk-based
+databases or the Red/Black Tree driver for in-memory databases.
+The <b>btree.h</b> source file contains the details.</p>
+
+<h2>Red/Black Tree</h2>
+
+<p>In-memory databases are stored in a red/black tree implementation
+contain in the <b>btree_rb.c</b> source file.
+</p>
+
+<h2>B-Tree</h2>
 
 <p>An SQLite database is maintained on disk using a B-tree implementation
 found in the <b>btree.c</b> source file.  A separate B-tree is used for
