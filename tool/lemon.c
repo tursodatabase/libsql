@@ -2999,6 +2999,115 @@ struct lemon *lemp;
   return ret;
 }
 
+/*
+** Append text to a dynamically allocated string.  If zText is 0 then
+** reset the string to be empty again.  Always return the complete text
+** of the string (which is overwritten with each call).
+*/
+PRIVATE char *append_str(char *zText, int n, int p1, int p2){
+  static char *z = 0;
+  static int alloced = 0;
+  static int used = 0;
+  int i, c;
+  char zInt[40];
+
+  if( zText==0 ){
+    used = 0;
+    return z;
+  }
+  if( n<=0 ) n = strlen(zText);
+  if( n+sizeof(zInt)*2+used >= alloced ){
+    alloced = n + sizeof(zInt)*2 + used + 200;
+    z = realloc(z,  alloced);
+  }
+  if( z==0 ) return "";
+  while( n-- > 0 ){
+    c = *(zText++);
+    if( c=='%' && zText[0]=='d' ){
+      sprintf(zInt, "%d", p1);
+      p1 = p2;
+      strcpy(&z[used], zInt);
+      used += strlen(&z[used]);
+      zText++;
+      n--;
+    }else{
+      z[used++] = c;
+    }
+  }
+  z[used] = 0;
+  return z;
+}
+
+/*
+** zCode is a string that is the action associated with a rule.  Expand
+** the symbols in this string so that the refer to elements of the parser
+** stack.  Return a new string stored in space obtained from malloc.
+*/
+PRIVATE char *translate_code(struct lemon *lemp, struct rule *rp){
+  char *cp, *xp;
+  int i;
+  char lhsused = 0;    /* True if the LHS element has been used */
+  char used[MAXRHS];   /* True for each RHS element which is used */
+
+  for(i=0; i<rp->nrhs; i++) used[i] = 0;
+  lhsused = 0;
+
+  append_str(0,0,0,0);
+  for(cp=rp->code; *cp; cp++){
+    if( isalpha(*cp) && (cp==rp->code || (!isalnum(cp[-1]) && cp[-1]!='_')) ){
+      char saved;
+      for(xp= &cp[1]; isalnum(*xp) || *xp=='_'; xp++);
+      saved = *xp;
+      *xp = 0;
+      if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){
+        append_str("yygotominor.yy%d",-1,rp->lhs->dtnum,0);
+        cp = xp;
+        lhsused = 1;
+      }else{
+        for(i=0; i<rp->nrhs; i++){
+          if( rp->rhsalias[i] && strcmp(cp,rp->rhsalias[i])==0 ){
+            append_str("yymsp[%d].minor.yy%d",-1,
+                       i-rp->nrhs+1,rp->rhs[i]->dtnum);
+            cp = xp;
+            used[i] = 1;
+            break;
+          }
+        }
+      }
+      *xp = saved;
+    }
+    append_str(cp, 1, 0, 0);
+  } /* End loop */
+
+  /* Check to make sure the LHS has been used */
+  if( rp->lhsalias && !lhsused ){
+    ErrorMsg(lemp->filename,rp->ruleline,
+      "Label \"%s\" for \"%s(%s)\" is never used.",
+        rp->lhsalias,rp->lhs->name,rp->lhsalias);
+    lemp->errorcnt++;
+  }
+
+  /* Generate destructor code for RHS symbols which are not used in the
+  ** reduce code */
+  for(i=0; i<rp->nrhs; i++){
+    if( rp->rhsalias[i] && !used[i] ){
+      ErrorMsg(lemp->filename,rp->ruleline,
+        "Label %s for \"%s(%s)\" is never used.",
+        rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
+      lemp->errorcnt++;
+    }else if( rp->rhsalias[i]==0 ){
+      if( has_destructor(rp->rhs[i],lemp) ){
+        append_str("  yy_destructor(%d,&yymsp[%d].minor);\n", -1,
+           rp->rhs[i]->index,i-rp->nrhs+1);
+      }else{
+        /* No destructor defined for this term */
+      }
+    }
+  }
+  cp = append_str(0,0,0,0);
+  rp->code = Strsafe(cp);
+}
+
 /* 
 ** Generate code which executes when the rule "rp" is reduced.  Write
 ** the code to "out".  Make sure lineno stays up-to-date.
@@ -3009,74 +3118,20 @@ struct rule *rp;
 struct lemon *lemp;
 int *lineno;
 {
- char *cp, *xp;
+ char *cp;
  int linecnt = 0;
- int i;
- char lhsused = 0;    /* True if the LHS element has been used */
- char used[MAXRHS];   /* True for each RHS element which is used */
-
- for(i=0; i<rp->nrhs; i++) used[i] = 0;
- lhsused = 0;
 
  /* Generate code to do the reduce action */
  if( rp->code ){
    fprintf(out,"#line %d \"%s\"\n{",rp->line,lemp->filename);
+   fprintf(out,"%s",rp->code);
    for(cp=rp->code; *cp; cp++){
-     if( isalpha(*cp) && (cp==rp->code || (!isalnum(cp[-1]) && cp[-1]!='_')) ){
-       char saved;
-       for(xp= &cp[1]; isalnum(*xp) || *xp=='_'; xp++);
-       saved = *xp;
-       *xp = 0;
-       if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){
-         fprintf(out,"yygotominor.yy%d",rp->lhs->dtnum);
-         cp = xp;
-         lhsused = 1;
-       }else{
-         for(i=0; i<rp->nrhs; i++){
-           if( rp->rhsalias[i] && strcmp(cp,rp->rhsalias[i])==0 ){
-             fprintf(out,"yymsp[%d].minor.yy%d",i-rp->nrhs+1,rp->rhs[i]->dtnum);
-             cp = xp;
-             used[i] = 1;
-             break;
-           }
-         }
-       }
-       *xp = saved;
-     }
      if( *cp=='\n' ) linecnt++;
-     fputc(*cp,out);
    } /* End loop */
    (*lineno) += 3 + linecnt;
    fprintf(out,"}\n#line %d \"%s\"\n",*lineno,lemp->outname);
  } /* End if( rp->code ) */
 
- /* Check to make sure the LHS has been used */
- if( rp->lhsalias && !lhsused ){
-   ErrorMsg(lemp->filename,rp->ruleline,
-     "Label \"%s\" for \"%s(%s)\" is never used.",
-       rp->lhsalias,rp->lhs->name,rp->lhsalias);
-   lemp->errorcnt++;
- }
-
- /* Generate destructor code for RHS symbols which are not used in the
- ** reduce code */
- for(i=0; i<rp->nrhs; i++){
-   if( rp->rhsalias[i] && !used[i] ){
-     ErrorMsg(lemp->filename,rp->ruleline,
-       "Label %s for \"%s(%s)\" is never used.",
-       rp->rhsalias[i],rp->rhs[i]->name,rp->rhsalias[i]);
-     lemp->errorcnt++;
-   }else if( rp->rhsalias[i]==0 ){
-     if( has_destructor(rp->rhs[i],lemp) ){
-       fprintf(out,"  yy_destructor(%d,&yymsp[%d].minor);\n",
-          rp->rhs[i]->index,i-rp->nrhs+1); (*lineno)++;
-     }else{
-       fprintf(out,"        /* No destructor defined for %s */\n",
-        rp->rhs[i]->name);
-        (*lineno)++;
-     }
-   }
- }
  return;
 }
 
@@ -3569,6 +3624,18 @@ int mhflag;     /* Output in makeheaders format if true */
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
     fprintf(out,"    case %d:\n",sp->index); lineno++;
+
+    /* Combine duplicate destructors into a single case */
+    for(j=i+1; j<lemp->nsymbol; j++){
+      struct symbol *sp2 = lemp->symbols[j];
+      if( sp2 && sp2->type!=TERMINAL && sp2->destructor
+          && sp2->dtnum==sp->dtnum
+          && strcmp(sp->destructor,sp2->destructor)==0 ){
+         fprintf(out,"    case %d:\n",sp2->index); lineno++;
+         sp2->destructor = 0;
+      }
+    }
+
     emit_destructor_code(out,lemp->symbols[i],lemp,&lineno);
     fprintf(out,"      break;\n"); lineno++;
   }
@@ -3604,7 +3671,18 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Generate code which execution during each REDUCE action */
   for(rp=lemp->rule; rp; rp=rp->next){
+    if( rp->code ) translate_code(lemp, rp);
+  }
+  for(rp=lemp->rule; rp; rp=rp->next){
+    struct rule *rp2;
+    if( rp->code==0 ) continue;
     fprintf(out,"      case %d:\n",rp->index); lineno++;
+    for(rp2=rp->next; rp2; rp2=rp2->next){
+      if( rp2->code==rp->code ){
+        fprintf(out,"      case %d:\n",rp2->index); lineno++;
+        rp2->code = 0;
+      }
+    }
     emit_code(out,rp,lemp,&lineno);
     fprintf(out,"        break;\n"); lineno++;
   }

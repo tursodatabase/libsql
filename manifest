@@ -1,5 +1,5 @@
-C Add\sthe\s'%ifdef'\scapability\sto\slemon.\s\sOther\sminor\schanges.\s(CVS\s1836)
-D 2004-07-20T12:45:22
+C Lemon\scollapses\scommon\sdestructors\sand\sreduce\sactions\sinto\sa\ssingle\scase.\s(CVS\s1837)
+D 2004-07-20T14:06:52
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,13 +47,13 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c 6bf10100de2ca199a91fe7ac6474561c8a7166ae
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c ee607890d9062b51e27de56e9cb14a7f5a598d8c
+F src/os_unix.c 02a08065f90ca2737514cdc19d60eb3c4b98fa6b
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 53a310a7539c7550dc7cbad8e46c62926a40fb31
 F src/pager.h 269b6cfc114dba0148203446e41dd19f9647dd53
-F src/parse.y 51c8e696276c409618e66a4ccf316fcff245506e
+F src/parse.y 1c22ccb2b60237a7263873892a4d580ea5e53536
 F src/pragma.c 8326df8c400f573eb43004dfb8e53e5102acb3e4
 F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -185,7 +185,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test ca5c296989d3045f121be9a67588ff88c64874a8
 F test/where.test 9c5752b807b78078fab8da6f52e689832579ca20
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c b771c5147d0e7eb3240f5be754deb5c87d0aae6a
+F tool/lemon.c 9ebd2cae1a1b7ab9786e54772413954a4210b2a5
 F tool/lempar.c 0b5e7a58634e0d448929b8e85f7981c2aa708d57
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 826b6797a9f08c69b9378cb403d746e91a54dcde
-R 81fe5ff7dba086ebc8b9e46590e3934b
+P 522ff721ccc33c4b89072fed4e451f0df82e8140
+R e671edd7c958b648f09895c28b19b648
 U drh
-Z b94ed056d995c2892f36ab8ddb7dedb9
+Z 365b5316c2e2676737e040bedd0d4f8a

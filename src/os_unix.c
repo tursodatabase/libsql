@@ -61,7 +61,7 @@
 */
 #include "os_common.h"
 
-#if defined(THREADSAFE) && defined(__linux__)
+#if defined(THREADSAFE) && THREADSAFE && defined(__linux__)
 #define getpid pthread_self
 #endif
 
