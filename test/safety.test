@@ -1,0 +1,69 @@
+# 2005 January 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the sqlite3SafetyOn and sqlite3SafetyOff
+# functions.  Those routines are not strictly necessary - they are
+# designed to detect misuse of the library.
+#
+# $Id: safety.test,v 1.1 2005/01/11 15:28:33 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test safety-1.1 {
+  db close
+  set DB [sqlite3 db test.db]
+  db eval {CREATE TABLE t1(a)}
+  sqlite_set_magic $DB SQLITE_MAGIC_BUSY
+  catchsql {
+    SELECT name FROM sqlite_master;
+  }
+} {1 {library routine called out of sequence}}
+do_test safety-1.2 {
+  sqlite_set_magic $DB SQLITE_MAGIC_OPEN
+  catchsql {
+    SELECT name FROM sqlite_master
+  }
+} {0 t1}
+
+do_test safety-2.1 {
+  proc safety_on {} "sqlite_set_magic $DB SQLITE_MAGIC_BUSY"
+  db function safety_on safety_on
+  catchsql {
+    SELECT safety_on(), name FROM sqlite_master
+  }
+} {1 {library routine called out of sequence}}
+do_test safety-2.2 {
+  catchsql {
+    SELECT 'hello'
+  }
+} {1 {library routine called out of sequence}}
+do_test safety-2.3 {
+  sqlite3_close $DB
+} {SQLITE_MISUSE}
+do_test safety-2.4 {
+  sqlite_set_magic $DB SQLITE_MAGIC_OPEN
+  execsql {
+    SELECT name FROM sqlite_master
+  }
+} {t1}
+
+do_test safety-3.1 {
+  set rc [catch {
+    db eval {SELECT name FROM sqlite_master} {
+      sqlite_set_magic $DB SQLITE_MAGIC_BUSY
+    }
+  } msg]
+  lappend rc $msg
+} {1 {library routine called out of sequence}}
+sqlite_set_magic $DB SQLITE_MAGIC_OPEN
+
+finish_test

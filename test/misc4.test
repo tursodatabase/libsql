@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.8 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: misc4.test,v 1.9 2005/01/11 15:28:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,6 +98,5 @@ do_test misc4-3.1 {
   }
 } {{} {} 1 x 1 z}
 } ;# ifcapable compound
-
 
 finish_test

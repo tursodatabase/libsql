@@ -1,5 +1,5 @@
-C Test\scases\sto\simprove\scoverage\sof\svdbe.c.\s(CVS\s2193)
-D 2005-01-11T13:02:34
+C Improved\stest\scoverage\sfor\sutil.c.\s(CVS\s2194)
+D 2005-01-11T15:28:33
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -65,7 +65,7 @@ F src/sqlite.h.in 0d5e48e506845b74a845c9470e01d3f472b59611
 F src/sqliteInt.h a362fd46ba14f67e8e088d30ecbbe228545c43fe
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 354d3e4525c7b29c8f50b1a0125d55c63c916fbc
-F src/test1.c b7d94c54e58f95452387a5cabdf98b2be8059f29
+F src/test1.c ad1b46266b357c283981b2a289cf29bdb35cb26a
 F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c a72f20066cccd5a7b9f20b7b78fa9b05b47b3020
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -74,7 +74,7 @@ F src/tokenize.c 2ad3d1ae1a0a70746db0b31a0a74f58050a3c39a
 F src/trigger.c 98f3b07c08ba01b34cff139ef9687883d325ae8e
 F src/update.c 0979397c41ac29c54fe0cc687a356d8629a633af
 F src/utf.c e45ce11be6922408cd381561721f6cca7d3b992a
-F src/util.c 29f43c4a7b9ff29302f7899f793be6836b6cd7f9
+F src/util.c bf42625f35492864faa6fe14aa5a858de25cc2a0
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
 F src/vdbe.c 8ef389f567e233768a845e7dffacb21308e4f3e8
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
@@ -156,7 +156,7 @@ F test/minmax.test e7048476940df0af11d0f2cf687572f557cd0b29
 F test/misc1.test 744f60d1025fa978708b96cb222a07a1feb1524a
 F test/misc2.test bc852f1622d98b610d1f3e2ceb36ed7271256050
 F test/misc3.test 928a2f1e1189924ed14e1ae074e34f40688bdf94
-F test/misc4.test c683ab8182172474c804b346f8a39ca786322250
+F test/misc4.test 7edc2542eadd98555c2d25c222b88a93124975ae
 F test/misuse.test 2d7c46160f7c214f761fc5d030684a37ae8832a6
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5a945790ef21b24fd602fe2c7a23847b903f8687
@@ -172,6 +172,7 @@ F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
 F test/reindex.test 3552c6b944a3fab28cfd3049c04c65cb79419757
 F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test 1ce3f1520d2082b0363e7d9bdef904cb72b9efe8
+F test/safety.test 907b64fee719554a3622853812af3886fddbbb4f
 F test/select1.test 524d4323f3921db16138f8b1765f1cc44e030bf4
 F test/select2.test 91a2225926039b0d1687840735c284dbbf89f0bc
 F test/select3.test 9de435aa84fc406708cd8dc1b1d60e7f27cea685
@@ -266,7 +267,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P ce8e4e885a46cec35b64a81925eb330048ea5cbb
-R 44bedd6ab22a6b83aa2c8db7d5317250
-U danielk1977
-Z edff517034081f5d7cb31d6aed3503e0
+P a6b45722071bde543c4ea28a432339d8708a5cac
+R b0945886e1d424e5155d631ce7e7c70d
+U drh
+Z b50ef0a8c73264bba1e64798ccde8b34

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.123 2004/12/25 01:03:14 drh Exp $
+** $Id: util.c,v 1.124 2005/01/11 15:28:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -926,10 +926,9 @@ static int hexToInt(int h){
     return h - '0';
   }else if( h>='a' && h<='f' ){
     return h - 'a' + 10;
-  }else if( h>='A' && h<='F' ){
-    return h - 'A' + 10;
   }else{
-    return 0;
+    assert( h>='A' && h<='F' );
+    return h - 'A' + 10;
   }
 }
 #endif /* (!SQLITE_OMIT_BLOB_LITERAL && !SQLITE_HAS_CODEC) || SQLITE_TEST */
