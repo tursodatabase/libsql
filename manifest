@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sleft\souter\sjoin\slogic.\s(CVS\s758)
-D 2002-09-30T12:36:26
+C Remove\sthe\scall\sto\ssrand()\sand\sadd\sbetter\scomments\sto\sthe\ssqliteOsRandomSeed()\nroutine.\s\sTicket\s#163.\s(CVS\s759)
+D 2002-10-12T13:44:00
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c ff7c05ef88fa1374e5540ce20173ae8e1836f8a4
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 091a89297bf80927cde146cd1dbf89c908864f3a
+F src/os.c a099c7058e79f86edce9ca1f812078cdabe47a2c
 F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
 F src/pager.c 592e5931fdc65e952a6c3e152bc822580856532a
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 015425001813971f6d4c97c18d64c7f14fa1955f
-R 958c29732ae80c7acd4bb4c9f1286758
+P 6c0f44bd6374010f7a4a091e585eb36e0665f96f
+R 5d988e98e73febc16900dcc2d7b1140f
 U drh
-Z 500e5882699f5a41ba2a1838914ec9af
+Z 4347cb15b61079c5bf526a0f73fa4ac4

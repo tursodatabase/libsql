@@ -788,10 +788,11 @@ int sqliteOsUnlock(OsFile *id){
 }
 
 /*
-** Get information to seed the random number generator.
+** Get information to seed the random number generator.  The seed
+** is written into the buffer zBuf[256].  The calling function must
+** supply a sufficiently large buffer.
 */
 int sqliteOsRandomSeed(char *zBuf){
-  static int once = 1;
 #ifdef SQLITE_TEST
   /* When testing, always use the same random number sequence.
   ** This makes the tests repeatable.
@@ -807,12 +808,6 @@ int sqliteOsRandomSeed(char *zBuf){
 #if OS_WIN && !defined(SQLITE_TEST)
   GetSystemTime((LPSYSTEMTIME)zBuf);
 #endif
-  if( once ){
-    int seed;
-    memcpy(&seed, zBuf, sizeof(seed));
-    srand(seed);
-    once = 0;
-  }
   return SQLITE_OK;
 }
 
