@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.73 2003/02/15 23:09:17 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.74 2003/05/17 01:39:40 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An Embeddable SQL Database Engine</title></head>
@@ -36,8 +36,8 @@ puts {
 Quick Links:
 <ul>
 <li><a href="download.html">Download</a></li>
-<li><a href="http://cvs.hwaci.com:2080/sqlite/timeline">Change Log</a></li>
-<li><a href="http://cvs.hwaci.com:2080/sqlite/tktnew">Report a bug</a></li>
+<li><a href="http://cvs.hwaci.com/sqlite/timeline">Change Log</a></li>
+<li><a href="http://cvs.hwaci.com/sqlite/tktnew">Report a bug</a></li>
 <li><a href="quickstart.html">Quick start</a></li>
 </ul>
 </td></tr></table>
@@ -77,12 +77,12 @@ puts {<h2>Current Status</h2>
 
 <p>A <a href="changes.html">Change Summary</a> is available on this
 website.  You can also access a detailed
-<a href="http://cvs.hwaci.com:2080/sqlite/timeline">change history</a>,
-<a href="http://cvs.hwaci.com:2080/sqlite/rptview?rn=2">view open bugs</a>,
+<a href="http://cvs.hwaci.com/sqlite/timeline">change history</a>,
+<a href="http://cvs.hwaci.com/sqlite/rptview?rn=2">view open bugs</a>,
 or
-<a href="http://cvs.hwaci.com:2080/sqlite/tktnew">report new bugs</a>
+<a href="http://cvs.hwaci.com/sqlite/tktnew">report new bugs</a>
 at the
-<a href="http://cvs.hwaci.com:2080/sqlite/">CVS server</a>.</p>
+<a href="http://cvs.hwaci.com/sqlite/">CVS server</a>.</p>
 
 <p>Complete source code and precompiled binaries for the latest release are
 <a href="download.html">available for download</a> on this site.  You
@@ -111,22 +111,6 @@ for additional information.
 </p>
 }
 
-puts {<h2>Major Database File Format Change - Version 2.6.0 - 2002 July 17</h2>
-
-<p>Beginning with version 2.6.0, the SQLite database file format changed
-in an incompatible way.  If you open a database file from version 2.5.6
-or earlier with version 2.6.0 or later of the library, then the file format
-will be converted automatically.  This is an irreversible operation.  Once
-the conversion occurs, you will no longer be able to access the database
-file from older versions of the library.  If the database is large, the
-conversion might take some time. (Allow 1 to 2 seconds per megabyte
-of database under Linux.) If the database is read-only,
-the conversion cannot occur and the attempt to open the database will
-fail.
-It is suggested that you make backup copies of older database files
-before attempting to open them with version 2.6.0 or later of the library.</p>
-}
-
 puts {<h2>Documentation</h2>
 
 <p>The following documentation is currently available:</p>
@@ -151,11 +135,14 @@ puts {<h2>Documentation</h2>
     <a href="fileformat.html">database file format</a> used by SQLite.
 <li>A <a href="speed.html">speed comparison</a> between SQLite, PostgreSQL,
     and MySQL.</li>
+<li>User-written documentation is available on the
+    <a href="http://cvs.hwaci.com/sqlite/wiki">SQLite Wiki</a>.  Please
+    contribute if you can.</li>
 </ul>
 </p>
 
 <p>The SQLite source code is 30% comment.  These comments are
-another important source of information. </p>
+another important source of information.  </p>
 
 }
 
@@ -225,8 +212,8 @@ using SQLite, visit the Wiki documentation at:
 </p>
 
 <blockquote>
-<a href="http://cvs.hwaci.com:2080/sqlite/wiki">
-http://cvs.hwaci.com:2080/sqlite/wiki</a>
+<a href="http://cvs.hwaci.com/sqlite/wiki">
+http://cvs.hwaci.com/sqlite/wiki</a>
 </blockquote>
 }
 

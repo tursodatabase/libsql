@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.57 2003/05/10 02:54:02 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.58 2003/05/17 01:39:40 drh Exp $}
 
 puts {<html>
 <head>
@@ -21,7 +21,7 @@ language.  But it does <a href="omitted.html">omit some features</a>
 while at the same time
 adding a few features of its own.  This document attempts to
 describe percisely what parts of the SQL language SQLite does
-and does not support.  A list of <a href="#keywords">keywords<a/> is 
+and does not support.  A list of <a href="#keywords">keywords</a> is 
 given at the end.</p>
 
 <p>In all of the syntax diagrams that follow, literal text is shown in
@@ -1149,7 +1149,7 @@ If a NOT NULL constraint violation occurs, the NULL value is replaced
 by the default value for that column.  If the column has no default
 value, then the ABORT algorithm is used.</p>
 
-<p>When this conflict resolution strategy delete rows in order to
+<p>When this conflict resolution strategy deletes rows in order to
 statisfy a constraint, it does not invoke delete triggers on those
 rows.  But that may change in a future release.</p>
 
@@ -1163,12 +1163,12 @@ in order from lowest to highest precedence:
 
 <ol>
 <li><p>
-On a BEGIN TRANSACTION command.
+On individual constraints within a CREATE TABLE or CREATE INDEX
+statement.
 </p></li>
 
 <li><p>
-On individual constraints within a CREATE TABLE or CREATE INDEX
-statement.
+On a BEGIN TRANSACTION command.
 </p></li>
 
 <li><p>
@@ -1177,9 +1177,9 @@ In the OR clause of a COPY, INSERT, or UPDATE command.
 </ol>
 
 <p>The algorithm specified in the OR clause of a COPY, INSERT, or UPDATE
-overrides any algorithm specified by a CREATE TABLE or CREATE INDEX.
-The algorithm specified within a CREATE TABLE or CREATE INDEX will, in turn,
-override the algorithm specified by a BEGIN TRANSACTION command.
+overrides any algorithm specified on the BEGIN TRANSACTION command and
+the algorithm specified on the BEGIN TRANSACTION command overrides the
+algorithm specified in the a CREATE TABLE or CREATE INDEX.
 If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 
 }

@@ -1,9 +1,9 @@
-C Escape\sbackslashes\sin\secho\scommands\sin\sthe\smakefiles.\s\sTickets\s#311,\s#282,\s#256.\s(CVS\s977)
-D 2003-05-17T00:24:21
+C Bump\sthe\sversion\snumber\sto\s2.8.1.\s\sUpdate\sdocumentation\sprior\sto\srelease.\s(CVS\s978)
+D 2003-05-17T01:39:40
 F Makefile.in 14d22c39109f6212b1fcc15aee6d05b20ac68476
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
+F VERSION 861f3b65982ad74cf5a8ddc9ce5df857c4c7a3bf
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
@@ -146,7 +146,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 5b54a6f65b70b02da2f6df4f8a23a4b10032e89e
-F www/changes.tcl 7eb04deffbe116cdb558443f8f7df74ebd021daa
+F www/changes.tcl 3c4a94fe05cffa6bc09ee94d5858f847e82eb2d5
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -154,8 +154,8 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 12d1788d4abcfe1ff3054e17605df2418883bf6f
 F www/fileformat.tcl d9b586416c0d099b82e02e469d532c9372f98f3f
 F www/formatchng.tcl cbaf0f410096c71f86a7537cf9249fa04b9a659c
-F www/index.tcl b155eba45136d19e7aa6ba979d4093180c335cf7
-F www/lang.tcl bb945a1081928d9de8f08fa15632ac42c73c0c13
+F www/index.tcl a34315cada875af0b098b4c45981da8ab33fe7b6
+F www/lang.tcl 4a22a96cfc3f8eae430cb4a0996d7c7855b07586
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl 29497dac2bc5b437aa7e2e94577dad4d8933ed26
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f1d955efd91093994db43a1540080d32442d5ac0
-R 03992ccc785874fa02ae390fd264aa6c
+P d614861b8ad9e661b8f08131b95d730e2c2c35c2
+R c76d9b8ab613a0380e0dfbca7054b976
 U drh
-Z 260c30646225745d6845b061a282070d
+Z bb2218ce727ba25eecc329f2efd70f2c
