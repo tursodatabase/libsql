@@ -34,13 +34,45 @@ Example:
 $ ./testfixture ../sqlite/test/select1.test 2> memtrace.out
 $ tclsh $argv0 ?-r <malloc-number>? ./testfixture memtrace.out
 "
-if { [llength $argv]!=2 && [llength $argv]!=4 } {
-  set prg [file tail $argv0]
+
+
+proc usage {} {
+  set prg [file tail $::argv0]
   puts "Usage: $prg ?-r <malloc-number>? <binary file> <mem trace file>"
   puts ""
-  puts [string trim $doco]
+  puts [string trim $::doco]
   exit -1
 }
+
+proc shift {listvar} {
+  upvar $listvar l
+  set ret [lindex $l 0]
+  set l [lrange $l 1 end]
+  return $ret
+}
+
+# Argument handling. The following vars are set:
+#
+# $exe       - the name of the executable (i.e. "testfixture" or "./sqlite3")
+# $memfile   - the name of the file containing the trace output.
+# $report_at - The malloc number to stop and report at. Or -1 to read 
+#              all of $memfile.
+#
+set report_at -1
+while {[llength $argv]>2} {
+  set arg [shift argv]
+  switch -- $arg {
+    "-r" {
+      set report_at [shift argv]
+    }
+    default {
+      usage
+    }
+  }
+}
+if {[llength $argv]!=2} usage
+set exe [lindex $argv 0]
+set memfile [lindex $argv 1]
 
 # If stack traces are enabled, the 'addr2line' program is called to
 # translate a binary stack address into a human-readable form.
@@ -68,17 +100,6 @@ set iPeak 0                ;# nMalloc when nPeak was set.
 #     {<number-of-bytes> <malloc id> <stack trace>}
 #
 array unset memmap
-
-# The executable program being analyzed.
-if {[llength $argv]==2} {
-  set exe [lindex $argv 0]
-  set memfile [lindex $argv 1]
-  set report_at -1
-} else {
-  set exe [lindex $argv 2]
-  set memfile [lindex $argv 3]
-  set report_at [lindex $argv 1]
-}
 
 proc process_input {input_file array_name} {
   upvar $array_name mem 

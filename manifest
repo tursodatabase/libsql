@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_TEMPDB\scompile\stime\smacro.\s(CVS\s2427)
-D 2005-03-29T03:10:59
+C Reduce\sthe\sspace\sallocated\sfor\sthe\sruntime\svirtual\smachine\sstack.\s(CVS\s2428)
+D 2005-03-29T08:26:13
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -19,7 +19,7 @@ F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 3acc5ae52addd43fd1858fe99fca54a49bca6a56
 F mkdll.sh 5ec23622515d5bf8969404e80cfb5e220ddf0512
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
-F mkopcodeh.awk e4d010870a3e98fd4323635c31565a3ca8584741
+F mkopcodeh.awk d3d6dfcef5a7b69398627aec581d1ec52561517d
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
 F publish.sh ed0aba4ffdfadb36597d03ce8efdae96efc038cb
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -75,11 +75,11 @@ F src/update.c 42823d00865c9fe4f01b3c62647858726345a28e
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 02bc2750336b021b3f10e61538f665c4b0033b5d
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
-F src/vdbe.c e93a28aaa2a59c398ae243c2dc3b2da10cf1c5d2
+F src/vdbe.c 68c8f34cbf7c05418c93e900d46f81b09500353a
 F src/vdbe.h 7f586cb6d6b57764e5aac1f87107d6a95ddce24c
-F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
+F src/vdbeInt.h 39beecdfb017d3e042fe60974691abd573a5c5a2
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
-F src/vdbeaux.c 0932f570d276992c7b3ee989589b6ff9056f97e7
+F src/vdbeaux.c b28883d9efc9d4c1ec26c0d2473d5d8febc8178e
 F src/vdbemem.c 4e853ce3151eaf7906150da85a1b3ce1fe5e8da8
 F src/where.c c4b227458e8993decb515ed9a2fe2d4f5f8e3125
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -173,7 +173,7 @@ F test/pagesize.test 1b826d1608fd86d2303aa895b5586052ad07eba1
 F test/pragma.test effcf2f0dea35223cbaa6bf40c47d0796ba39e40
 F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 16496001da445e6534afb94562c286708316d82f x
-F test/quick.test e9fdedf06bd06ff22fcbf6895c4f62fcbeb9e6b4
+F test/quick.test a94d12658a2b590c1a5be580bef09bbb04c1266b
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 94cd981ee3a627d9f6466f69dcf1f7dbfe695d7a
@@ -221,7 +221,7 @@ F tool/lemon.c c88936c67f6411608db8fa4254d254f509fa40f6
 F tool/lempar.c e8b0eb00a6b905ce2ebd55965ed243574482cd5f
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
-F tool/memleak3.tcl 2b1ab290badf3b26f9ba433baf7fad8def14aea8
+F tool/memleak3.tcl 009da0ea82dc5893edca76cf1a21fb7260e9412e
 F tool/mkkeywordhash.c 02ac5c523fd6d55364cd70aded5c36ba6651a6bf
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 78df3d040443414ae5b440eeabc0c8c205ab311d
-R ab70e88fa1e907bd768a36809abb74cd
+P c41d55443c2dd532147962b87f542fb7d37075fd
+R d1e86050613dbac2624d4c64006d314d
 U danielk1977
-Z a20882d0dd8ba8be64666597fc85c766
+Z d987ab454820e190643b62f4a4339773

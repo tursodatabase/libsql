@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.35 2005/03/29 03:11:00 danielk1977 Exp $
+# $Id: quick.test,v 1.36 2005/03/29 08:26:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,7 +19,6 @@ proc finish_test {} {}
 set ISQUICK 1
 
 set EXCLUDE {
-  alter.test
   all.test
   btree2.test
   btree3.test
