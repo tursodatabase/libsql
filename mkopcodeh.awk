@@ -39,6 +39,7 @@
     if($i=="same" && $(i+1)=="as"){
       op[name] = tk[$(i+2)]
       used[op[name]] = 1
+      sameas[op[name]] = $(i+2)
     }
   }
 }
@@ -57,7 +58,12 @@ END {
     }
     used[op[name]] = 1;
     if( op[name]>max ) max = op[name]
-    printf "#define %-30s %d\n", name, op[name]
+    printf "#define %-25s %15d", name, op[name]
+    if( sameas[op[name]] ) {
+      printf "   /*same as %-12s*/", sameas[op[name]]
+    } 
+    printf "\n"
+
   }
   seenUnused = 0;
   for(i=1; i<max; i++){
@@ -66,7 +72,7 @@ END {
         printf "\n/* The following opcode values are never used */\n"
         seenUnused = 1
       }
-      printf "/*#define OP_?          %d  -- Not Used */\n", i
+      printf "#define %-25s %15d\n", sprintf( "OP_NotUsed_%-3d", i ), i
     }
   }
 }

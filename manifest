@@ -1,5 +1,5 @@
-C Update\schange\slog\sfor\sversion\s3.1.0.\s(CVS\s2256)
-D 2005-01-21T17:03:50
+C Change\sto\smkopcodeh.awk\sto\saccomodate\swindows\ssystems.\s(CVS\s2257)
+D 2005-01-21T17:07:23
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -19,7 +19,7 @@ F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 612a0bdbc23797754186ea366ff54512081d17fb
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
-F mkopcodeh.awk ee454cdee1da38b485c5e8cca84e5727c07158ba
+F mkopcodeh.awk cc36b29ff7c996cc482f91a6fd3fa33297b075d5
 F mkso.sh 125868def279650a07d3f0f5e8476fecf99613fd
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 17122c7e8e9cae36f1ffa7b42bd69d702980ac6a
-R 52675c0b34bb0b46d99c674c05fb7484
+P 4d9b858746084c2636ba618108775b9be2eff0a5
+R b294ab96a83b2891d9812a17ce9a70c9
 U drh
-Z f6d2db5d32591dc13c3638acc2048e05
+Z 4c64a14703470895094994113ac63b9b
