@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.34 2004/05/10 16:18:48 drh Exp $
+** $Id: test3.c,v 1.35 2004/05/11 00:58:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -863,7 +863,8 @@ static int btree_eof(
 /*
 ** Usage:   btree_keysize ID
 **
-** Return the number of bytes of key.  
+** Return the number of bytes of key.  For an INTKEY table, this
+** returns the key itself.
 */
 static int btree_keysize(
   void *NotUsed,
@@ -961,6 +962,80 @@ static int btree_data(
   Tcl_AppendResult(interp, zBuf, 0);
   free(zBuf);
   return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_fetch_key ID AMT
+**
+** Use the sqlite3BtreeKeyFetch() routine to get AMT bytes of the key.
+** If sqlite3BtreeKeyFetch() fails, return an empty string.
+*/
+static int btree_fetch_key(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  int n;
+  u64 nKey;
+  const char *zBuf;
+  char zStatic[1000];
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID AMT\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
+  sqlite3BtreeKeySize(pCur, &nKey);
+  zBuf = sqlite3BtreeKeyFetch(pCur, n);
+  if( zBuf ){
+    assert( nKey<sizeof(zStatic) );
+    if( n>0 ) nKey = n;
+    memcpy(zStatic, zBuf, (int)nKey); 
+    zStatic[nKey] = 0;
+    Tcl_AppendResult(interp, zStatic, 0);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_fetch_data ID AMT
+**
+** Use the sqlite3BtreeDataFetch() routine to get AMT bytes of the key.
+** If sqlite3BtreeDataFetch() fails, return an empty string.
+*/
+static int btree_fetch_data(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  BtCursor *pCur;
+  int n;
+  u32 nData;
+  const char *zBuf;
+  char zStatic[1000];
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID AMT\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &n) ) return TCL_ERROR;
+  sqlite3BtreeDataSize(pCur, &nData);
+  zBuf = sqlite3BtreeDataFetch(pCur, n);
+  if( zBuf ){
+    assert( nData<sizeof(zStatic) );
+    if( n>0 ) nData = n;
+    memcpy(zStatic, zBuf, (int)nData); 
+    zStatic[nData] = 0;
+    Tcl_AppendResult(interp, zStatic, 0);
+  }
+  return TCL_OK;
 }
 
 /*
@@ -1096,6 +1171,8 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_keysize",            (Tcl_CmdProc*)btree_keysize            },
      { "btree_key",                (Tcl_CmdProc*)btree_key                },
      { "btree_data",               (Tcl_CmdProc*)btree_data               },
+     { "btree_fetch_key",          (Tcl_CmdProc*)btree_fetch_key          },
+     { "btree_fetch_data",         (Tcl_CmdProc*)btree_fetch_data         },
      { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
      { "btree_last",               (Tcl_CmdProc*)btree_last               },

@@ -1073,7 +1073,8 @@ int sqlite2BtreeKeyCompare(
   int nIgnore,          /* Ignore this many bytes at the end of pCur */
   int *pResult          /* Write the result here */
 ){
-  void *pCellKey;
+  const void *pCellKey;
+  void *pMallocedKey;
   u64 nCellKey;
   int rc;
 
@@ -1084,18 +1085,18 @@ int sqlite2BtreeKeyCompare(
     return SQLITE_OK;
   }
 
-  pCellKey = sqlite3BtreeKeyFetch(pCur);
+  pCellKey = sqlite3BtreeKeyFetch(pCur, nCellKey);
   if( pCellKey ){
     *pResult = memcmp(pCellKey, pKey, nKey>nCellKey?nCellKey:nKey);
     return SQLITE_OK;
   }
 
-  pCellKey = sqliteMalloc( nCellKey );
-  if( pCellKey==0 ) return SQLITE_NOMEM;
+  pMallocedKey = sqliteMalloc( nCellKey );
+  if( pMallocedKey==0 ) return SQLITE_NOMEM;
 
-  rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
-  *pResult = memcmp(pCellKey, pKey, nKey>nCellKey?nCellKey:nKey);
-  sqliteFree(pCellKey);
+  rc = sqlite3BtreeKey(pCur, 0, nCellKey, pMallocedKey);
+  *pResult = memcmp(pMallocedKey, pKey, nKey>nCellKey?nCellKey:nKey);
+  sqliteFree(pMallocedKey);
 
   return rc;
 }
@@ -1246,7 +1247,7 @@ int sqlite3VdbeDeserialize(
     pMem->i = 0;
 
     for(ii=0; ii<bytes; ii++){
-      pMem->i = pMem->i<<8 + zBuf[ii+ret];
+      pMem->i = (pMem->i<<8) + zBuf[ii+ret];
     }
 
     /* If this is a 1, 2 or 4 byte integer, extend the sign-bit if need be. */

@@ -1,5 +1,5 @@
-C Change\sto\sOP_PutIntKey\sto\suse\snew\sbtree\sAPI.\s(CVS\s1346)
-D 2004-05-11T00:28:43
+C Updates\sto\ssqlite3BtreeKeyFetch()\sand\ssqlite3BtreeDataFetch().\s(CVS\s1347)
+D 2004-05-11T00:58:56
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,8 +23,8 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c fa9a58234406d84eeb900517d0c0adc4b2da051a
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 38cff183ac4f1d1a2e3079c9eeda7137d103e06e
-F src/btree.h 91343fe6893b8bc35f496bbcecec095a803e5763
+F src/btree.c ac2de2cfaf183e15ae6e58e52530b37a7de02a0f
+F src/btree.h 578dc465c801cf4e7666efbb0fa1c46a54758008
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c 8d9965b3ce5dcc1bd4dac60bd0f14524fea269cb
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
@@ -54,7 +54,7 @@ F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c a38bf2263a097fcc9603e818c291151de1782c11
 F src/test1.c 79956f70dddd1a28f8577bbd61c8cf28e5875eb8
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
-F src/test3.c bcc9a49e8d2cb7864efb964974e1807f3e0c30c4
+F src/test3.c e238a8ded4d7842cb369a7e03ab1fd0bcee5f15a
 F src/test4.c b3fab9aea7a8940a8a7386ce1c7e2157b09bd296
 F src/test5.c eb39aac8fed61bd930b92613cd705c145244074a
 F src/tokenize.c e7536dd31205d5afb76c1bdc832dea009c7a3847
@@ -66,7 +66,7 @@ F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
 F src/vdbe.c c6c763868eec22a5d7b23357a89fa7792cc9575b
 F src/vdbe.h 2dc4d1161b64f5684faa6a2d292e318a185ecb2e
 F src/vdbeInt.h d5786e1c4f7dadac24e3baeed9847dbfed3016de
-F src/vdbeaux.c 943484a2437b6cf40d1ffd3d62e48b5c9a043c5a
+F src/vdbeaux.c 7162f1390620257e25070da1ac2b4ec83e472752
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 76f096f384221f775cc0a856e51d5a35f9ee1541
@@ -78,7 +78,7 @@ F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
 F test/btree.test ed5781db83b6c1de02e62781d44915a9abe3450a
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
-F test/btree5.test a677d181b3995dc07a6da12c2abdcd4c37ab7a3d
+F test/btree5.test 56977bd84ec64a8bc6ffdaa36b6621c2103c10e2
 F test/capi2.test ec96e0e235d87b53cbaef3d8e3e0f8ccf32c71ca
 F test/conflict.test 0911bb2f079046914a6e9c3341b36658c4e2103e
 F test/copy.test f07ea8d60878da7a67416ab62f78e9706b9d3c45
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P bc5a2dafa1df74ba6403b4751ac1c33b0fee2884
-R 8e699e3ea26654772e1f0482b7621587
-U danielk1977
-Z e970f7cae661bb80a4780d6bbbd8aa7f
+P c080fed7b58e754bb34afe597ff3b2f399c7d313
+R 8d721f5b30f9e9c24be64343355846eb
+U drh
+Z c086113e1e7bdfbe291de2f300b02c98

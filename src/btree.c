@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.124 2004/05/10 23:29:49 drh Exp $
+** $Id: btree.c,v 1.125 2004/05/11 00:58:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1417,6 +1417,41 @@ int sqlite3BtreeKeySize(BtCursor *pCur, u64 *pSize){
 }
 
 /*
+** Set *pSize to the number of bytes of data in the entry the
+** cursor currently points to.  Always return SQLITE_OK.
+** Failure is not possible.  If the cursor is not currently
+** pointing to an entry (which can happen, for example, if
+** the database is empty) then *pSize is set to 0.
+*/
+int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
+  MemPage *pPage;
+  unsigned char *cell;
+  u64 size;
+
+  if( !pCur->isValid ){
+    return pCur->status ? pCur->status : SQLITE_INTERNAL;
+  }
+  pPage = pCur->pPage;
+  assert( pPage!=0 );
+  assert( pPage->isInit );
+  pageIntegrity(pPage);
+  if( pPage->zeroData ){
+    *pSize = 0;
+  }else{
+    assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
+    cell = pPage->aCell[pCur->idx];
+    cell += 2;   /* Skip the offset to the next cell */
+    if( !pPage->leaf ){
+      cell += 4;  /* Skip the child pointer */
+    }
+    getVarint(cell, &size);
+    assert( (size & 0x00000000ffffffff)==size );
+    *pSize = (u32)size;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Read payload information from the entry that the pCur cursor is
 ** pointing to.  Begin reading the payload at "offset" and read
 ** a total of "amt" bytes.  Put the result in zBuf.
@@ -1534,93 +1569,6 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 }
 
 /*
-** Return a pointer to the key of record that cursor pCur
-** is point to if the entire key is in contiguous memory.
-** If the key is split up among multiple tables, return 0.
-** If pCur is not pointing to a valid entry return 0.
-**
-** The pointer returned is ephemeral.  The key may move
-** or be destroyed on the next call to any Btree routine.
-**
-** This routine is used to do quick key comparisons in the
-** common case where the entire key fits in the payload area
-** of a cell and does not overflow onto secondary pages.  If
-** this routine returns 0 for a valid cursor, the caller will
-** need to allocate a buffer big enough to hold the whole key
-** then use sqlite3BtreeKey() to copy the key value into the
-** buffer.  That is substantially slower.  But fortunately,
-** most keys are small enough to fit in the payload area so
-** the slower method is rarely needed.
-*/
-void *sqlite3BtreeKeyFetch(BtCursor *pCur){
-  unsigned char *aPayload;
-  MemPage *pPage;
-  Btree *pBt;
-  u64 nData, nKey;
-
-  assert( pCur!=0 );
-  if( !pCur->isValid ){
-    return 0;
-  }
-  assert( pCur->pPage!=0 );
-  assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
-  pBt = pCur->pBt;
-  pPage = pCur->pPage;
-  pageIntegrity(pPage);
-  assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-  assert( pPage->intKey==0 );
-  aPayload = pPage->aCell[pCur->idx];
-  aPayload += 2;  /* Skip the next cell index */
-  if( !pPage->leaf ){
-    aPayload += 4;  /* Skip the child pointer */
-  }
-  if( !pPage->zeroData ){
-    aPayload += getVarint(aPayload, &nData);
-  }
-  aPayload += getVarint(aPayload, &nKey);
-  if( nKey>pBt->maxLocal ){
-    return 0;
-  }
-  return aPayload;
-}
-
-
-/*
-** Set *pSize to the number of bytes of data in the entry the
-** cursor currently points to.  Always return SQLITE_OK.
-** Failure is not possible.  If the cursor is not currently
-** pointing to an entry (which can happen, for example, if
-** the database is empty) then *pSize is set to 0.
-*/
-int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  MemPage *pPage;
-  unsigned char *cell;
-  u64 size;
-
-  if( !pCur->isValid ){
-    return pCur->status ? pCur->status : SQLITE_INTERNAL;
-  }
-  pPage = pCur->pPage;
-  assert( pPage!=0 );
-  assert( pPage->isInit );
-  pageIntegrity(pPage);
-  if( pPage->zeroData ){
-    *pSize = 0;
-  }else{
-    assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-    cell = pPage->aCell[pCur->idx];
-    cell += 2;   /* Skip the offset to the next cell */
-    if( !pPage->leaf ){
-      cell += 4;  /* Skip the child pointer */
-    }
-    getVarint(cell, &size);
-    assert( (size & 0x00000000ffffffff)==size );
-    *pSize = (u32)size;
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** Read part of the data associated with cursor pCur.  Exactly
 ** "amt" bytes will be transfered into pBuf[].  The transfer
 ** begins at "offset".
@@ -1639,6 +1587,101 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
   return getPayload(pCur, offset, amt, pBuf, 1);
 }
+
+/*
+** Return a pointer to payload information from the entry that the 
+** pCur cursor is pointing to.  The pointer is to the beginning of
+** the key if skipKey==0 and it points to the beginning of data if
+** skipKey==1.
+**
+** At least amt bytes of information must be available on the local
+** page or else this routine returns NULL.  If amt<0 then the entire
+** key/data must be available.
+**
+** This routine is an optimization.  It is common for the entire key
+** and data to fit on the local page and for there to be no overflow
+** pages.  When that is so, this routine can be used to access the
+** key and data without making a copy.  If the key and/or data spills
+** onto overflow pages, then getPayload() must be used to reassembly
+** the key/data and copy it into a preallocated buffer.
+**
+** The pointer returned by this routine looks directly into the cached
+** page of the database.  The data might change or move the next time
+** any btree routine is called.
+*/
+static const unsigned char *fetchPayload(
+  BtCursor *pCur,      /* Cursor pointing to entry to read from */
+  int amt,             /* Amount requested */
+  int skipKey          /* read beginning at data if this is true */
+){
+  unsigned char *aPayload;
+  MemPage *pPage;
+  Btree *pBt;
+  u64 nData, nKey;
+  int maxLocal;
+
+  assert( pCur!=0 && pCur->pPage!=0 );
+  assert( pCur->isValid );
+  pBt = pCur->pBt;
+  pPage = pCur->pPage;
+  pageIntegrity(pPage);
+  assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
+  aPayload = pPage->aCell[pCur->idx];
+  aPayload += 2;  /* Skip the next cell index */
+  if( !pPage->leaf ){
+    aPayload += 4;  /* Skip the child pointer */
+  }
+  if( pPage->zeroData ){
+    nData = 0;
+  }else{
+    aPayload += getVarint(aPayload, &nData);
+  }
+  aPayload += getVarint(aPayload, &nKey);
+  if( pPage->intKey ){
+    nKey = 0;
+  }
+  maxLocal = pBt->maxLocal;
+  if( skipKey ){
+    aPayload += nKey;
+    maxLocal -= nKey;
+    if( amt<0 ) amt = nData;
+    assert( amt<=nData );
+  }else{
+    if( amt<0 ) amt = nKey;
+    assert( amt<=nKey );
+  }
+  if( amt>maxLocal ){
+    return 0;  /* If any of the data is not local, return nothing */
+  }
+  return aPayload;
+}
+
+
+/*
+** Return a pointer to the first amt bytes of the key or data
+** for record that cursor pCur is point to if the entire request
+** exists in contiguous memory on the main tree page.  If any
+** any part of the request is on an overflow page, return 0.
+** If pCur is not pointing to a valid entry return 0.
+**
+** If amt<0 then return the entire key or data.
+**
+** The pointer returned is ephemeral.  The key/data may move
+** or be destroyed on the next call to any Btree routine.
+**
+** These routines is used to get quick access to key and data
+** in the common case where no overflow pages are used.
+**
+** It is a fatal error to call these routines with amt values that
+** are larger than the key/data size.
+*/
+const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int amt){
+  return (const void*)fetchPayload(pCur, amt, 0);
+}
+const void *sqlite3BtreeDataFetch(BtCursor *pCur, int amt){
+  return (const void*)fetchPayload(pCur, amt, 1);
+}
+
 
 /*
 ** Move the cursor down to a new child page.  The newPgno argument is the
@@ -1907,7 +1950,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
     upr = pPage->nCell-1;
     pageIntegrity(pPage);
     while( lwr<=upr ){
-      void *pCellKey;
+      const void *pCellKey;
       u64 nCellKey;
       pCur->idx = (lwr+upr)/2;
       sqlite3BtreeKeySize(pCur, &nCellKey);
@@ -1919,10 +1962,10 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
         }else{
           c = 0;
         }
-      }else if( (pCellKey = sqlite3BtreeKeyFetch(pCur))!=0 ){
+      }else if( (pCellKey = sqlite3BtreeKeyFetch(pCur, nCellKey))!=0 ){
         c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
       }else{
-        pCellKey = sqliteMalloc( nCellKey );
+        u8 *pCellKey = sqliteMalloc( nCellKey );
         if( pCellKey==0 ) return SQLITE_NOMEM;
         rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
         c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);

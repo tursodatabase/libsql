@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree5.test,v 1.1 2004/05/10 18:45:10 drh Exp $
+# $Id: btree5.test,v 1.2 2004/05/11 00:58:56 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -116,8 +116,24 @@ proc check_table {N} {
   btree_first $c1
   set cnt 0
   while {![btree_eof $c1]} {
-    if {[btree_data $c1] ne "data-for-[btree_key $c1]"} {
+    if {[set data [btree_data $c1]] ne "data-for-[btree_key $c1]"} {
       return "wrong data for entry $cnt"
+    }
+    set n [string length $data]
+    set fdata1 [btree_fetch_data $c1 $n]
+    set fdata2 [btree_fetch_data $c1 -1]
+    if {$fdata1 ne "" && $fdata1 ne $data} {
+puts "fdata1=[list $fdata1] data=[list $data]"
+      return "DataFetch returned the wrong value with amt=$n"
+    }
+    if {$fdata1 ne $fdata2} {
+      return "DataFetch returned the wrong value when amt=-1"
+    }
+    if {$n>10} {
+      set fdata3 [btree_fetch_data $c1 10]
+      if {$fdata3 ne [string range $data 0 9]} {
+        return "DataFetch returned the wrong value when amt=10"
+      }
     }
     incr cnt
     btree_next $c1
