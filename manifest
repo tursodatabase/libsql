@@ -1,28 +1,31 @@
-C hi\s(CVS\s1716)
-D 2001-02-06T14:10:27
+C Perpare\sto\sfork\sSQLite2.0\sdevelop\sinto\sa\sseparate\stree\s(CVS\s183)
+D 2001-02-11T16:56:24
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 05e17b646a817240c206186f94f8f4c70974d5dc
+F VERSION 153302ac968751d918e44c3f26774dcfe50ddc0a
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F doc/report1.txt ad0a41513479f1be0355d1f3f074e66779ff2282
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
 F src/build.c 7aa5879bf58ea6bbff22c26c59d1130021fa6ca4
-F src/db.c fff070e77423bbf98f5b138f23c605006a61066d
-F src/db.h 6c8b8b6777f7c55b37cb851e9fe4bc3f379920c0
 F src/dbbe.c 162d29b09ac379f160892c5795efc14099dcc8eb
 F src/dbbe.h 0435a36906a839cce062608f51bd9d3e79878fec
 F src/dbbegdbm.c 5bfcb1b4ee47a98c5eae83041e9716cd3233fd0e
 F src/dbbemem.c 215e107830ddf0d5a565bb7c20dd7200a925ef75
 F src/delete.c b83dc815f83220a82df13f1f1f479187d305fe6a
+F src/ex/README b745b00acce2d892f60c40111dacdfc48e0c1c7a
+F src/ex/db.c f1419ae6c93e40b5ac6e39fe7efd95d868e6f9d7
+F src/ex/db.h 3f2933ee20c147fe494835786e4c6f3a562def4e
+F src/ex/dbbebdb1.c 61ed414307f829478614def33de640bbe5b2f770
+F src/ex/dbbemird.c b00aef85656fa0a101dac2c32e12922ad106715a
+F src/ex/pg.c 2bbf6a94f37226d06337868b6bf4d7affc60197f
+F src/ex/pg.h 23a4ac807b0546ec2bb6239ec8bd3e06926572cd
 F src/expr.c 49bc261fdc4f4fb91c74cd668a9a952c00e85931
 F src/insert.c 4bc1cab84f7805d560a1417734a532843e30b762
-F src/main.c 92fcd6d967ceee1f96a5b9543779eef6e9b56913
+F src/main.c 5afe29c425b875acede20f609485866eb5b276f6
 F src/parse.y 25ee4d8efccc4b247c32fe4ab194e3dd8fd5a4ee
-F src/pg.c 2981173b2a752ef3578168e7af1a32ff22b70db6
-F src/pg.h a95c4803a1aae99449aa2c0a1af0c8d863a3f340
 F src/printf.c af0dc65c293427272e1949c7807b1d88f10004fd
 F src/random.c b36c3f57dc80c8f354e6bfbf39cf1e1de021d54a
 F src/select.c 0cadab95c8011ddbffe804de94f12f3c0e317863
@@ -33,7 +36,7 @@ F src/sqliteInt.h fd513fa6b7ac94919f85ebfa183aaa194284ce16
 F src/table.c 5be76051a8ed6f6bfa641f4adc52529efa34fbf9
 F src/tclsqlite.c 2a925e1835c348f07dd17c87d95ae9a577833407
 F src/test.file 55ca6286e3e4f4fba5d0448333fa99fc5a404a73
-F src/tokenize.c 6843f1d7a5d2ee08ceb10bdecfcc8684131ffcf7
+F src/tokenize.c c7ad428f38e56342eb2025320480b5ae9ece1b90
 F src/update.c 9692fbac8e95fdbc5318d39db576aa6c57b9c8ab
 F src/util.c 0298100e6427a4b644f767ede12276fa7170fbb6
 F src/vdbe.c 6e613f25b0fe1c81b097f46a8fe68c68c39a6abf
@@ -75,7 +78,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl cb276a239c98524731e2780c70deb01b2e7e4bcc
+F www/changes.tcl 2bd34627e9dc459f53d7e11630d92660be974b10
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
@@ -85,7 +88,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 29305c3c9eb805a1f5beb82ad50cba1d3bbd3465
-R b22c18ed2ce590a98ae62ee327d6d335
+P 5128135c7e12f763722981ad39ecb7835db49142
+R ab8718eb81b6e7a57fbb613590282f19
 U drh
-Z 85d522fbac6369cd564c9bf8a4621677
+Z 4c71efe3f5c2467e23cd148f67512b61

@@ -21,20 +21,31 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: pg.h,v 1.3 2001/01/21 00:58:09 drh Exp $
+** $Id: db.h,v 1.1 2001/02/11 16:56:24 drh Exp $
 */
 
-typedef struct Pgr Pgr;
-#define SQLITE_PAGE_SIZE 1024
+typedef struct Db Db;
+typedef struct DbCursor DbCursor;
 
+int sqliteDbOpen(const char *filename, Db**);
+int sqliteDbClose(Db*);
+int sqliteDbBeginTransaction(Db*);
+int sqliteDbCommit(Db*);
+int sqliteDbRollback(Db*);
 
-int sqlitePgOpen(const char *filename, Pgr **pp);
-int sqlitePgClose(Pgr*);
-int sqlitePgBeginTransaction(Pgr*);
-int sqlitePgCommit(Pgr*);
-int sqlitePgRollback(Pgr*);
-int sqlitePgGet(Pgr*, u32 pgno, void **);
-int sqlitePgUnref(void*);
-int sqlitePgTouch(void*);
-int sqlitePgCount(Pgr*, u32*);
-u32 sqlitePgNum(void*);
+int sqliteDbCreateTable(Db*, int *pTblno);
+int sqliteDbDropTable(Db*, int tblno);
+
+int sqliteDbCursorOpen(Db*, int tblno, DbCursor**);
+int sqliteDbCursorClose(DbCursor*);
+
+int sqliteDbCursorFirst(DbCursor*);
+int sqliteDbCursorNext(DbCursor*);
+int sqliteDbCursorDatasize(DbCursor*);
+int sqliteDbCursorKeysize(DbCursor*);
+int sqliteDbCursorRead(DbCursor*, int amt, int offset, void *buf);
+int sqliteDbCursorReadKey(DbCursor*, int amt, int offset, void *buf);
+int sqliteDbCursorWrite(DbCursor*, int amt, int offset, const void *buf);
+
+int sqliteDbCursorFind(DbCursor*, int nKey, const void *pKey, int createFlag);
+int sqliteDbCursorResize(DbCursor*, int nData);

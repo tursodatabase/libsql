@@ -1,0 +1,9 @@
+This directory is intended to hold "experimental" files.
+
+The code in this directory does not necessary work.  It may
+or may not be added to future SQLite releases.  We just need
+a place to put ideas and works-in-progress and so this 
+directory was created.
+
+If you are interested in the production versions of SQLite,
+you can safely ignore this directory.

@@ -17,6 +17,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Feb 11 (1.0.20)} {
+<li>Merge development changes into the main trunk.  Future work toward
+    using a BTree file structure will use a separate CVS source tree.  This
+    CVS tree will continue to support the GDBM version of SQLite only.</li>
+}
+
+chng {2001 Feb 6 (1.0.19)} {
+<li>Fix a strange (but valid) C declaration that was causing problems
+    for QNX.  No logical changes.</li>
+}
+
 chng {2001 Jan 4 (1.0.18)} {
 <li>Print the offending SQL statement when an error occurs.</li>
 <li>Do not require commas between constraints in CREATE TABLE statements.</li>

@@ -1,0 +1,618 @@
+/*
+** Copyright (c) 2000 D. Richard Hipp
+**
+** This program is free software; you can redistribute it and/or
+** modify it under the terms of the GNU General Public
+** License as published by the Free Software Foundation; either
+** version 2 of the License, or (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+** General Public License for more details.
+** 
+** You should have received a copy of the GNU General Public
+** License along with this library; if not, write to the
+** Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+** Boston, MA  02111-1307, USA.
+**
+** Author contact information:
+**   drh@hwaci.com
+**   http://www.hwaci.com/drh/
+**
+*************************************************************************
+** This file contains code to implement the database backend (DBBE)
+** for sqlite.  The database backend is the interface between
+** sqlite and the code that does the actually reading and writing
+** of information to the disk.
+**
+** This file uses Berkeley Database version 1.85 as the database backend.
+**
+** $Id: dbbebdb1.c,v 1.1 2001/02/11 16:56:24 drh Exp $
+*/
+#ifdef USE_BDB2
+
+#include "sqliteInt.h"
+#include <sys/types.h>
+#include <limits.h>
+#include <db.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <time.h>
+
+/*
+** Information about each open disk file is an instance of this 
+** structure.  There will only be one such structure for each
+** disk file.  If the VDBE opens the same file twice (as will happen
+** for a self-join, for example) then two DbbeCursor structures are
+** created but there is only a single BeFile structure with an
+** nRef of 2.
+*/
+typedef struct BeFile BeFile;
+struct BeFile {
+  char *zName;            /* Name of the file */
+  DB dbf;                 /* The file itself */
+  int nRef;               /* Number of references */
+  int delOnClose;         /* Delete when closing */
+  int writeable;          /* Opened for writing */
+  DbbeCursor *pCursor; /* Which of several DbbeCursors has the file cursor */
+  BeFile *pNext, *pPrev;  /* Next and previous on list of open files */
+};
+
+/*
+** The following structure contains all information used by BDB2
+** database driver.  This is a subclass of the Dbbe structure.
+*/
+typedef struct Dbbex Dbbex;
+struct Dbbex {
+  Dbbe dbbe;         /* The base class */
+  int write;         /* True for write permission */
+  BeFile *pOpen;     /* List of open files */
+  char *zDir;        /* Directory hold the database */
+};
+
+/*
+** An cursor into a database file is an instance of the following structure.
+** There can only be a single BeFile structure for each disk file, but
+** there can be multiple DbbeCursor structures.  Each DbbeCursor represents
+** a cursor pointing to a particular part of the open BeFile.  The
+** BeFile.nRef field hold a count of the number of DbbeCursor structures
+** associated with the same disk file.
+*/
+struct DbbeCursor {
+  Dbbex *pBe;        /* The database of which this record is a part */
+  BeFile *pFile;     /* The database file for this table */
+  DBT key;           /* Most recently used key */
+  DBT data;          /* Most recent data */
+  int needRewind;    /* Next key should be the first */
+  int readPending;   /* The fetch hasn't actually been done yet */
+};
+
+/*
+** The "mkdir()" function only takes one argument under Windows.
+*/
+#if OS_WIN
+# define mkdir(A,B) mkdir(A)
+#endif
+
+/*
+** Forward declaration
+*/
+static void sqliteBdb1CloseCursor(DbbeCursor *pCursr);
+
+/*
+** Completely shutdown the given database.  Close all files.  Free all memory.
+*/
+static void sqliteBdb1Close(Dbbe *pDbbe){
+  Dbbex *pBe = (Dbbex*)pDbbe;
+  BeFile *pFile, *pNext;
+  for(pFile=pBe->pOpen; pFile; pFile=pNext){
+    pNext = pFile->pNext;
+    (*pFile->dbf)(pFile->dbf);
+    memset(pFile, 0, sizeof(*pFile));   
+    sqliteFree(pFile);
+  }
+  sqliteDbbeCloseAllTempFiles(pDbbe);
+  memset(pBe, 0, sizeof(*pBe));
+  sqliteFree(pBe);
+}
+
+/*
+** Translate the name of an SQL table (or index) into the name 
+** of a file that holds the key/data pairs for that table or
+** index.  Space to hold the filename is obtained from
+** sqliteMalloc() and must be freed by the calling function.
+*/
+static char *sqliteFileOfTable(Dbbex *pBe, const char *zTable){
+  return sqliteDbbeNameToFile(pBe->zDir, zTable, ".tbl");
+}
+
+/*
+** Open a new table cursor.  Write a pointer to the corresponding
+** DbbeCursor structure into *ppCursr.  Return an integer success
+** code:
+**
+**    SQLITE_OK          It worked!
+**
+**    SQLITE_NOMEM       sqliteMalloc() failed
+**
+**    SQLITE_PERM        Attempt to access a file for which file
+**                       access permission is denied
+**
+**    SQLITE_BUSY        Another thread or process is already using
+**                       the corresponding file and has that file locked.
+**
+**    SQLITE_READONLY    The current thread already has this file open
+**                       readonly but you are trying to open for writing.
+**                       (This can happen if a SELECT callback tries to
+**                       do an UPDATE or DELETE.)
+**
+** If zTable is 0 or "", then a temporary database file is created and
+** a cursor to that temporary file is opened.  The temporary file
+** will be deleted from the disk when it is closed.
+*/
+static int sqliteBdb1OpenCursor(
+  Dbbe *pDbbe,            /* The database the table belongs to */
+  const char *zTable,     /* The SQL name of the file to be opened */
+  int writeable,          /* True to open for writing */
+  int intKeyOnly,         /* True if only integer keys are used */
+  DbbeCursor **ppCursr    /* Write the resulting table pointer here */
+){
+  char *zFile;            /* Name of the table file */
+  DbbeCursor *pCursr;     /* The new table cursor */
+  BeFile *pFile;          /* The underlying data file for this table */
+  int rc = SQLITE_OK;     /* Return value */
+  int open_flags;         /* Flags passed to dbopen() */
+  Dbbex *pBe = (Dbbex*)pDbbe;
+
+  *ppCursr = 0;
+  pCursr = sqliteMalloc( sizeof(*pCursr) );
+  if( pCursr==0 ) return SQLITE_NOMEM;
+  if( zTable ){
+    zFile = sqliteFileOfTable(pBe, zTable);
+    for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
+      if( strcmp(pFile->zName,zFile)==0 ) break;
+    }
+  }else{
+    pFile = 0;
+    zFile = 0;
+  }
+  if( pFile==0 ){
+    if( writeable ){
+      open_flags = O_RDWR|O_CREAT
+    }else{
+      open_flags = O_RDONLY;
+    }
+    pFile = sqliteMalloc( sizeof(*pFile) );
+    if( pFile==0 ){
+      sqliteFree(zFile);
+      return SQLITE_NOMEM;
+    }
+    if( zFile ){
+      if( !writeable || pBe->write ){
+        pFile->dbf = dbopen(zFile, open_flags, DB_HASH, 0);
+      }else{
+        pFile->dbf = 0;
+      }
+    }else{
+      int limit;
+      char zRandom[50];
+      zFile = 0;
+      limit = 5;
+      do {
+        sqliteRandomName(zRandom, "_temp_table_");
+        sqliteFree(zFile);
+        zFile = sqliteFileOfTable(pBe, zRandom);
+        pFile->dbf = dbopen(zFile, open_flags, DB_HASH, 0);
+      }while( pFile->dbf==0 && limit-- >= 0);
+      pFile->delOnClose = 1;
+    }
+    pFile->writeable = writeable;
+    pFile->zName = zFile;
+    pFile->nRef = 1;
+    pFile->pPrev = 0;
+    if( pBe->pOpen ){
+      pBe->pOpen->pPrev = pFile;
+    }
+    pFile->pCursor = 0;
+    pFile->pNext = pBe->pOpen;
+    pBe->pOpen = pFile;
+    if( pFile->dbf==0 ){
+      if( !writeable && access(zFile,0) ){
+        /* Trying to read a non-existant file.  This is OK.  All the
+        ** reads will return empty, which is what we want. */
+        rc = SQLITE_OK;   
+      }else if( pBe->write==0 ){
+        rc = SQLITE_READONLY;
+      }else if( access(zFile,W_OK|R_OK) ){
+        rc = SQLITE_PERM;
+      }else{
+        rc = SQLITE_BUSY;
+      }
+    }
+  }else{
+    sqliteFree(zFile);
+    pFile->nRef++;
+    if( writeable && !pFile->writeable ){
+      rc = SQLITE_READONLY;
+    }
+  }
+  pCursr->pBe = pBe;
+  pCursr->pFile = pFile;
+  pCursr->readPending = 0;
+  pCursr->needRewind = 1;
+  if( rc!=SQLITE_OK ){
+    sqliteBdb1CloseCursor(pCursr);
+    *ppCursr = 0;
+  }else{
+    *ppCursr = pCursr;
+  }
+  return rc;
+}
+
+/*
+** Drop a table from the database.  The file on the disk that corresponds
+** to this table is deleted.
+*/
+static void sqliteBdb1DropTable(Dbbe *pBe, const char *zTable){
+  char *zFile;            /* Name of the table file */
+
+  zFile = sqliteFileOfTable((Dbbex*)pBe, zTable);
+  unlink(zFile);
+  sqliteFree(zFile);
+}
+
+/*
+** Close a cursor previously opened by sqliteBdb1OpenCursor().
+**
+** There can be multiple cursors pointing to the same open file.
+** The underlying file is not closed until all cursors have been
+** closed.  This routine decrements the BeFile.nref field of the
+** underlying file and closes the file when nref reaches 0.
+*/
+static void sqliteBdb1CloseCursor(DbbeCursor *pCursr){
+  BeFile *pFile;
+  Dbbex *pBe;
+  if( pCursr==0 ) return;
+  pFile = pCursr->pFile;
+  pBe = pCursr->pBe;
+  if( pFile->pCursor==pCursr ){
+    pFile->pCursor = 0;
+  }
+  pFile->nRef--;
+  if( pFile->dbf!=NULL ){
+    (*pFile->dbf->sync)(pFile->dbf, 0);
+  }
+  if( pFile->nRef<=0 ){
+    if( pFile->dbf!=NULL ){
+      (*pFile->dbf->close)(pFile->dbf);
+    }
+    if( pFile->pPrev ){
+      pFile->pPrev->pNext = pFile->pNext;
+    }else{
+      pBe->pOpen = pFile->pNext;
+    }
+    if( pFile->pNext ){
+      pFile->pNext->pPrev = pFile->pPrev;
+    }
+    if( pFile->delOnClose ){
+      unlink(pFile->zName);
+    }
+    sqliteFree(pFile->zName);
+    memset(pFile, 0, sizeof(*pFile));
+    sqliteFree(pFile);
+  }
+  if( pCursr->key.dptr ) free(pCursr->key.dptr); ######
+  if( pCursr->data.dptr ) free(pCursr->data.dptr); ######
+  memset(pCursr, 0, sizeof(*pCursr));
+  sqliteFree(pCursr);
+}
+
+/*
+** Reorganize a table to reduce search times and disk usage.
+*/
+static int sqliteBdb1ReorganizeTable(Dbbe *pBe, const char *zTable){
+  /* No-op */
+  return SQLITE_OK;
+}
+
+/*
+** Clear the given datum
+*/
+static void datumClear(datum *p){
+  if( p->dptr ) free(p->dptr); ########
+  p->data = 0;
+  p->size = 0;
+}
+
+/*
+** Fetch a single record from an open cursor.  Return 1 on success
+** and 0 on failure.
+*/
+static int sqliteBdb1Fetch(DbbeCursor *pCursr, int nKey, char *pKey){
+  DBT key;
+  key.size = nKey;
+  key.data = pKey;
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  if( pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, key);
+  }
+  return pCursr->data.dptr!=0;
+}
+
+/*
+** Return 1 if the given key is already in the table.  Return 0
+** if it is not.
+*/
+static int sqliteBdb1Test(DbbeCursor *pCursr, int nKey, char *pKey){
+  DBT key;
+  int result = 0;
+  key.dsize = nKey;
+  key.dptr = pKey;
+  if( pCursr->pFile && pCursr->pFile->dbf ){
+    result = gdbm_exists(pCursr->pFile->dbf, key);
+  }
+  return result;
+}
+
+/*
+** Copy bytes from the current key or data into a buffer supplied by
+** the calling function.  Return the number of bytes copied.
+*/
+static
+int sqliteBdb1CopyKey(DbbeCursor *pCursr, int offset, int size, char *zBuf){
+  int n;
+  if( offset>=pCursr->key.dsize ) return 0;
+  if( offset+size>pCursr->key.dsize ){
+    n = pCursr->key.dsize - offset;
+  }else{
+    n = size;
+  }
+  memcpy(zBuf, &pCursr->key.dptr[offset], n);
+  return n;
+}
+static
+int sqliteBdb1CopyData(DbbeCursor *pCursr, int offset, int size, char *zBuf){
+  int n;
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
+  }
+  if( offset>=pCursr->data.dsize ) return 0;
+  if( offset+size>pCursr->data.dsize ){
+    n = pCursr->data.dsize - offset;
+  }else{
+    n = size;
+  }
+  memcpy(zBuf, &pCursr->data.dptr[offset], n);
+  return n;
+}
+
+/*
+** Return a pointer to bytes from the key or data.  The data returned
+** is ephemeral.
+*/
+static char *sqliteBdb1ReadKey(DbbeCursor *pCursr, int offset){
+  if( offset<0 || offset>=pCursr->key.dsize ) return "";
+  return &pCursr->key.dptr[offset];
+}
+static char *sqliteBdb1ReadData(DbbeCursor *pCursr, int offset){
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
+  }
+  if( offset<0 || offset>=pCursr->data.dsize ) return "";
+  return &pCursr->data.dptr[offset];
+}
+
+/*
+** Return the total number of bytes in either data or key.
+*/
+static int sqliteBdb1KeyLength(DbbeCursor *pCursr){
+  return pCursr->key.dsize;
+}
+static int sqliteBdb1DataLength(DbbeCursor *pCursr){
+  if( pCursr->readPending && pCursr->pFile && pCursr->pFile->dbf ){
+    pCursr->data = gdbm_fetch(pCursr->pFile->dbf, pCursr->key);
+    pCursr->readPending = 0;
+  }
+  return pCursr->data.dsize;
+}
+
+/*
+** Make is so that the next call to sqliteNextKey() finds the first
+** key of the table.
+*/
+static int sqliteBdb1Rewind(DbbeCursor *pCursr){
+  pCursr->needRewind = 1;
+  return SQLITE_OK;
+}
+
+/*
+** Read the next key from the table.  Return 1 on success.  Return
+** 0 if there are no more keys.
+*/
+static int sqliteBdb1NextKey(DbbeCursor *pCursr){
+  DBT nextkey;
+  int rc;
+  if( pCursr==0 || pCursr->pFile==0 || pCursr->pFile->dbf==0 ){
+    pCursr->readPending = 0;
+    return 0;
+  }
+  if( pCursr->needRewind ){
+    nextkey = gdbm_firstkey(pCursr->pFile->dbf);
+    pCursr->needRewind = 0;
+  }else{
+    nextkey = gdbm_nextkey(pCursr->pFile->dbf, pCursr->key);
+  }
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  pCursr->key = nextkey;
+  if( pCursr->key.dptr ){
+    pCursr->readPending = 1;
+    rc = 1;
+  }else{
+    pCursr->needRewind = 1;
+    pCursr->readPending = 0;
+    rc = 0;
+  }
+  return rc;
+}
+
+/*
+** Get a new integer key.
+*/
+static int sqliteBdb1New(DbbeCursor *pCursr){
+  int iKey;
+  DBT key;
+  int go = 1;
+
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return 1;
+  while( go ){
+    iKey = sqliteRandomInteger();
+    if( iKey==0 ) continue;
+    key.dptr = (char*)&iKey;
+    key.dsize = 4;
+    go = gdbm_exists(pCursr->pFile->dbf, key);
+  }
+  return iKey;
+}   
+
+/*
+** Write an entry into the table.  Overwrite any prior entry with the
+** same key.
+*/
+static int sqliteBdb1Put(
+  DbbeCursor *pCursr,  /* Write to the database associated with this cursor */
+  int nKey,            /* Number of bytes in the key */
+  char *pKey,          /* The data for the key */
+  int nData,           /* Number of bytes of data */
+  char *pData          /* The data */
+){
+  DBT data, key;
+  int rc;
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return SQLITE_ERROR;
+  data.dsize = nData;
+  data.dptr = pData;
+  key.dsize = nKey;
+  key.dptr = pKey;
+  rc = gdbm_store(pCursr->pFile->dbf, key, data, GDBM_REPLACE);
+  if( rc ) rc = SQLITE_ERROR;
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  return rc;
+}
+
+/*
+** Remove an entry from a table, if the entry exists.
+*/
+static int sqliteBdb1Delete(DbbeCursor *pCursr, int nKey, char *pKey){
+  DBT key;
+  int rc;
+  datumClear(&pCursr->key);
+  datumClear(&pCursr->data);
+  if( pCursr->pFile==0 || pCursr->pFile->dbf==0 ) return SQLITE_ERROR;
+  key.dsize = nKey;
+  key.dptr = pKey;
+  rc = gdbm_delete(pCursr->pFile->dbf, key);
+  if( rc ) rc = SQLITE_ERROR;
+  return rc;
+}
+
+/*
+** Open a temporary file.  The file is located in the same directory
+** as the rest of the database.
+*/
+static int sqliteBdb1OpenTempFile(Dbbe *pDbbe, FILE **ppFile){
+  Dbbex *pBe = (Dbbex*)pDbbe;
+  return sqliteDbbeOpenTempFile(pBe->zDir, pDbbe, ppFile);
+}
+
+/*
+** This variable contains pointers to all of the access methods
+** used to implement the GDBM backend.
+*/
+static struct DbbeMethods gdbmMethods = {
+  /* n         Close */   sqliteBdb1Close,
+  /*      OpenCursor */   sqliteBdb1OpenCursor,
+  /*       DropTable */   sqliteBdb1DropTable,
+  /* ReorganizeTable */   sqliteBdb1ReorganizeTable,
+  /*     CloseCursor */   sqliteBdb1CloseCursor,
+  /*           Fetch */   sqliteBdb1Fetch,
+  /*            Test */   sqliteBdb1Test,
+  /*         CopyKey */   sqliteBdb1CopyKey,
+  /*        CopyData */   sqliteBdb1CopyData,
+  /*         ReadKey */   sqliteBdb1ReadKey,
+  /*        ReadData */   sqliteBdb1ReadData,
+  /*       KeyLength */   sqliteBdb1KeyLength,
+  /*      DataLength */   sqliteBdb1DataLength,
+  /*         NextKey */   sqliteBdb1NextKey,
+  /*          Rewind */   sqliteBdb1Rewind,
+  /*             New */   sqliteBdb1New,
+  /*             Put */   sqliteBdb1Put,
+  /*          Delete */   sqliteBdb1Delete,
+  /*    OpenTempFile */   sqliteBdb1OpenTempFile,
+  /*   CloseTempFile */   sqliteDbbeCloseTempFile
+};
+
+
+/*
+** This routine opens a new database.  For the GDBM driver
+** implemented here, the database name is the name of the directory
+** containing all the files of the database.
+**
+** If successful, a pointer to the Dbbe structure is returned.
+** If there are errors, an appropriate error message is left
+** in *pzErrMsg and NULL is returned.
+*/
+Dbbe *sqliteBdb1Open(
+  const char *zName,     /* The name of the database */
+  int writeFlag,         /* True if we will be writing to the database */
+  int createFlag,        /* True to create database if it doesn't exist */
+  char **pzErrMsg        /* Write error messages (if any) here */
+){
+  Dbbex *pNew;
+  struct stat statbuf;
+  char *zMaster;
+
+  if( !writeFlag ) createFlag = 0;
+  if( stat(zName, &statbuf)!=0 ){
+    if( createFlag ) mkdir(zName, 0750);
+    if( stat(zName, &statbuf)!=0 ){
+      sqliteSetString(pzErrMsg, createFlag ? 
+         "can't find or create directory \"" : "can't find directory \"",
+         zName, "\"", 0);
+      return 0;
+    }
+  }
+  if( !S_ISDIR(statbuf.st_mode) ){
+    sqliteSetString(pzErrMsg, "not a directory: \"", zName, "\"", 0);
+    return 0;
+  }
+  if( access(zName, writeFlag ? (X_OK|W_OK|R_OK) : (X_OK|R_OK)) ){
+    sqliteSetString(pzErrMsg, "access permission denied", 0);
+    return 0;
+  }
+  zMaster = 0;
+  sqliteSetString(&zMaster, zName, "/" MASTER_NAME ".tbl", 0);
+  if( stat(zMaster, &statbuf)==0
+   && access(zMaster, writeFlag ? (W_OK|R_OK) : R_OK)!=0 ){
+    sqliteSetString(pzErrMsg, "access permission denied for ", zMaster, 0);
+    sqliteFree(zMaster);
+    return 0;
+  }
+  sqliteFree(zMaster);
+  pNew = sqliteMalloc(sizeof(Dbbex) + strlen(zName) + 1);
+  if( pNew==0 ){
+    sqliteSetString(pzErrMsg, "out of memory", 0);
+    return 0;
+  }
+  pNew->dbbe.x = &gdbmMethods;
+  pNew->zDir = (char*)&pNew[1];
+  strcpy(pNew->zDir, zName);
+  pNew->write = writeFlag;
+  pNew->pOpen = 0;
+  return &pNew->dbbe;
+}
