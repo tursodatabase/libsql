@@ -1,5 +1,5 @@
-C A\sfew\smore\sbugfixes.\sTest\scases\spass\snow.\s(CVS\s1472)
-D 2004-05-27T10:30:53
+C Alter\sthe\sTcl\seval\ssub-command\sso\sthat\sit\ssupports\sblobs.\s(CVS\s1473)
+D 2004-05-27T12:11:32
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -58,7 +58,7 @@ F src/shell.c ed4d237b3e52a0a42512bfcc53530e46de20c28f
 F src/sqlite.h.in cda883efb11c6f767eaf3fea06b3e3419d9cfe7f
 F src/sqliteInt.h dbf4fd06e89cdab13f4f1129d76bf79a38ec2b39
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
-F src/tclsqlite.c 86daf7bf6ba715bf0f0c7a47beb1d947a15cb868
+F src/tclsqlite.c 6fab79639917c37dce1ddb2e9dcf3bc1b09001ec
 F src/test1.c 08da53d31d5b3eb11ac988f933fc6efa508712e4
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
 F src/test3.c 5e4a6d596f982f6f47a5f9f75ede9b4a3b739968
@@ -205,7 +205,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 67a140cf78d99e38ccd94751c4f8ead1a2b96859
-R 382aedd8344dcd75ae00b092ce46368c
+P c9e3015faffb650d8dbf1f7f95a7057a36361bac
+R f916301fbb891efd9f50955fcfaa0d10
 U danielk1977
-Z f32afbbe0a3d491153953c08c35e38ee
+Z c10836444240fdf809d1ebf5efde5c0a

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.73 2004/05/26 23:25:31 drh Exp $
+** $Id: tclsqlite.c,v 1.74 2004/05/27 12:11:32 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -57,6 +57,7 @@ struct SqliteDb {
   char *zAuth;          /* The authorization callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
+  int nChange;         /* Database changes for the most recent eval */
 };
 
 /*
@@ -660,7 +661,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_WrongNumArgs(interp, 2, objv, "");
       return TCL_ERROR;
     }
-    nChange = sqlite3_changes(pDb->db);
+    /* nChange = sqlite3_changes(pDb->db); */
+    nChange = pDb->nChange;
     pResult = Tcl_GetObjResult(interp);
     Tcl_SetIntObj(pResult, nChange);
     break;
@@ -772,6 +774,100 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** that have the same name as the fields extracted by the query.
   */
   case DB_EVAL: {
+    char const *zSql;
+    char const *zLeft;
+    sqlite3_stmt *pStmt;
+    Tcl_Obj *pRet = 0;
+
+    if( objc!=5 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
+      return TCL_ERROR;
+    }
+
+    pDb->nChange = 0;
+    zSql = Tcl_GetStringFromObj(objv[2], 0);
+    while( zSql[0] ){
+      int i;
+  
+      if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
+        Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_STATIC);
+        rc = TCL_ERROR;
+        break;
+      }
+  
+      if( pStmt && objc==5 ){
+        Tcl_Obj *pColList = Tcl_NewObj();
+        Tcl_IncrRefCount(pColList);
+
+        for(i=0; i<sqlite3_column_count(pStmt); i++){
+          Tcl_ListObjAppendElement(interp, pColList,
+              Tcl_NewStringObj(sqlite3_column_name(pStmt, i), -1)
+          );
+        }
+        Tcl_ObjSetVar2(interp,objv[3],Tcl_NewStringObj("*",-1),pColList,0);
+      }
+
+      while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+        for(i=0; i<sqlite3_column_count(pStmt); i++){
+          Tcl_Obj *pVal;
+          
+          /* Set pVal to contain the i'th column of this row. */
+          if( SQLITE3_BLOB!=sqlite3_column_type(pStmt, i) ){
+            pVal = Tcl_NewStringObj(sqlite3_column_text(pStmt, i), -1);
+          }else{
+            pVal = Tcl_NewByteArrayObj(
+              sqlite3_column_blob(pStmt, i),
+              sqlite3_column_bytes(pStmt, i)
+            );
+          }
+  
+          if( objc==5 ){
+            Tcl_Obj *pName = Tcl_NewStringObj(sqlite3_column_name(pStmt, i), -1);
+            Tcl_IncrRefCount(pName);
+            if( !strcmp("", Tcl_GetString(objv[3])) ){
+              Tcl_ObjSetVar2(interp, pName, 0, pVal, 0);
+            }else{
+              Tcl_ObjSetVar2(interp, objv[3], pName, pVal, 0);
+            }
+            Tcl_DecrRefCount(pName);
+          }else{
+            if( !pRet ){
+              pRet = Tcl_NewObj();
+              Tcl_IncrRefCount(pRet);
+            }
+            Tcl_ListObjAppendElement(interp, pRet, pVal);
+          }
+        }
+  
+        if( objc==5 ){
+          rc = Tcl_EvalObjEx(interp, objv[4], 0);
+          if( rc!=TCL_ERROR ) rc = TCL_OK;
+        }
+      }
+       
+      if( pStmt && SQLITE_SCHEMA==sqlite3_finalize(pStmt) ){
+        continue;
+      }
+  
+      if( pStmt && SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+        Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_STATIC);
+        rc = TCL_ERROR;
+        break;
+      }
+
+      pDb->nChange += sqlite3_changes(pDb->db);
+      zSql = zLeft;
+    }
+
+    if( rc==TCL_OK && pRet ){
+      Tcl_SetObjResult(interp, pRet);
+      Tcl_DecrRefCount(pRet);
+    }
+
+    break;
+  }
+#if 0
+  case DB_EVAL: {
     CallbackData cbData;
     char *zErrMsg;
     char *zSql;
@@ -839,6 +935,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #endif
     return rc;
   }
+#endif
 
   /*
   **     $db function NAME SCRIPT
