@@ -40,7 +40,8 @@ void sqlite3DeleteTriggerStep(TriggerStep *pTriggerStep){
 */
 void sqlite3BeginTrigger(
   Parse *pParse,      /* The parse context of the CREATE TRIGGER statement */
-  Token *pName,       /* The name of the trigger */
+  Token *pName1,      /* The name of the trigger */
+  Token *pName2,      /* The name of the trigger */
   int tr_tm,          /* One of TK_BEFORE, TK_AFTER, TK_INSTEAD */
   int op,             /* One of TK_INSERT, TK_UPDATE, TK_DELETE */
   IdList *pColumns,   /* column list if this is an UPDATE OF trigger */
@@ -49,76 +50,100 @@ void sqlite3BeginTrigger(
   Expr *pWhen,        /* WHEN clause */
   int isTemp          /* True if the TEMPORARY keyword is present */
 ){
-  Trigger *nt;
-  Table   *tab;
+  Trigger *pTrigger;
+  Table *pTab;
   char *zName = 0;        /* Name of the trigger */
   sqlite *db = pParse->db;
-  int iDb;                /* When database to store the trigger in */
+  int iDb;                /* The database to store the trigger in */
+  Token *pName;           /* The unqualified db name */
   DbFixer sFix;
 
-  /* Check that: 
-  ** 1. the trigger name does not already exist.
-  ** 2. the table (or view) does exist in the same database as the trigger.
-  ** 3. that we are not trying to create a trigger on the sqlite_master table
-  ** 4. That we are not trying to create an INSTEAD OF trigger on a table.
-  ** 5. That we are not trying to create a BEFORE or AFTER trigger on a view.
+  if( isTemp ){
+    /* If TEMP was specified, then the trigger name may not be qualified. */
+    if( pName2 && pName2->n>0 ){
+      sqlite3ErrorMsg(pParse, "temporary trigger may not have qualified name");
+      goto trigger_cleanup;
+    }
+    iDb = 1;
+    pName = pName1;
+  }else{
+    /* Figure out the db that the the trigger will be created in */
+    iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
+    if( iDb<0 ){
+      goto trigger_cleanup;
+    }
+  }
+
+  /* If the trigger name was unqualified, and the table is a temp table,
+  ** then set iDb to 1 to create the trigger in the temporary database.
+  ** If sqlite3SrcListLookup() returns 0, indicating the table does not
+  ** exist, the error is caught by the block below.
   */
+  pTab = sqlite3SrcListLookup(pParse, pTableName);
+  if( pName2->n==0 && pTab && pTab->iDb==1 ){
+    iDb = 1;
+  }
+
+  /* Ensure the table name matches database name and that the table exists */
   if( sqlite3_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
-  if( db->init.busy
-   && sqlite3FixInit(&sFix, pParse, db->init.iDb, "trigger", pName)
-   && sqlite3FixSrcList(&sFix, pTableName)
-  ){
+  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", pName) && 
+      sqlite3FixSrcList(&sFix, pTableName) ){
     goto trigger_cleanup;
   }
-  tab = sqlite3SrcListLookup(pParse, pTableName);
-  if( !tab ){
-    goto trigger_cleanup;
-  }
-  iDb = isTemp ? 1 : tab->iDb;
-  if( iDb>=2 && !db->init.busy ){
-    sqlite3ErrorMsg(pParse, "triggers may not be added to auxiliary "
-       "database %s", db->aDb[tab->iDb].zName);
+  pTab = sqlite3SrcListLookup(pParse, pTableName);
+  if( !pTab ){
+    /* The table does not exist. */
     goto trigger_cleanup;
   }
 
+  /* Check that no trigger of the specified name exists */
   zName = sqliteStrNDup(pName->z, pName->n);
   sqlite3Dequote(zName);
   if( sqlite3HashFind(&(db->aDb[iDb].trigHash), zName,pName->n+1) ){
     sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;
   }
-  if( sqlite3StrNICmp(tab->zName, "sqlite_", 7)==0 ){
+
+  /* Do not create a trigger on a system table */
+  if( (iDb!=1 && sqlite3StrICmp(pTab->zName, MASTER_NAME)==0) || 
+      (iDb==1 && sqlite3StrICmp(pTab->zName, TEMP_MASTER_NAME)==0) 
+  ){
     sqlite3ErrorMsg(pParse, "cannot create trigger on system table");
     pParse->nErr++;
     goto trigger_cleanup;
   }
-  if( tab->pSelect && tr_tm != TK_INSTEAD ){
+
+  /* INSTEAD of triggers are only for views and views only support INSTEAD
+  ** of triggers.
+  */
+  if( pTab->pSelect && tr_tm!=TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create %s trigger on view: %S", 
         (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName, 0);
     goto trigger_cleanup;
   }
-  if( !tab->pSelect && tr_tm == TK_INSTEAD ){
+  if( !pTab->pSelect && tr_tm==TK_INSTEAD ){
     sqlite3ErrorMsg(pParse, "cannot create INSTEAD OF"
         " trigger on table: %S", pTableName, 0);
     goto trigger_cleanup;
   }
+
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_CREATE_TRIGGER;
-    const char *zDb = db->aDb[tab->iDb].zName;
+    const char *zDb = db->aDb[pTab->iDb].zName;
     const char *zDbTrig = isTemp ? db->aDb[1].zName : zDb;
-    if( tab->iDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
-    if( sqlite3AuthCheck(pParse, code, zName, tab->zName, zDbTrig) ){
+    if( pTab->iDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
+    if( sqlite3AuthCheck(pParse, code, zName, pTab->zName, zDbTrig) ){
       goto trigger_cleanup;
     }
-    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(tab->iDb), 0, zDb)){
+    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(pTab->iDb), 0, zDb)){
       goto trigger_cleanup;
     }
   }
 #endif
 
-  /* INSTEAD OF triggers can only appear on views and BEGIN triggers
+  /* INSTEAD OF triggers can only appear on views and BEFORE triggers
   ** cannot appear on views.  So we might as well translate every
   ** INSTEAD OF trigger into a BEFORE trigger.  It simplifies code
   ** elsewhere.
@@ -128,22 +153,22 @@ void sqlite3BeginTrigger(
   }
 
   /* Build the Trigger object */
-  nt = (Trigger*)sqliteMalloc(sizeof(Trigger));
-  if( nt==0 ) goto trigger_cleanup;
-  nt->name = zName;
+  pTrigger = (Trigger*)sqliteMalloc(sizeof(Trigger));
+  if( pTrigger==0 ) goto trigger_cleanup;
+  pTrigger->name = zName;
   zName = 0;
-  nt->table = sqliteStrDup(pTableName->a[0].zName);
+  pTrigger->table = sqliteStrDup(pTableName->a[0].zName);
   if( sqlite3_malloc_failed ) goto trigger_cleanup;
-  nt->iDb = iDb;
-  nt->iTabDb = tab->iDb;
-  nt->op = op;
-  nt->tr_tm = tr_tm;
-  nt->pWhen = sqlite3ExprDup(pWhen);
-  nt->pColumns = sqlite3IdListDup(pColumns);
-  nt->foreach = foreach;
-  sqlite3TokenCopy(&nt->nameToken,pName);
+  pTrigger->iDb = iDb;
+  pTrigger->iTabDb = pTab->iDb;
+  pTrigger->op = op;
+  pTrigger->tr_tm = tr_tm;
+  pTrigger->pWhen = sqlite3ExprDup(pWhen);
+  pTrigger->pColumns = sqlite3IdListDup(pColumns);
+  pTrigger->foreach = foreach;
+  sqlite3TokenCopy(&pTrigger->nameToken,pName);
   assert( pParse->pNewTrigger==0 );
-  pParse->pNewTrigger = nt;
+  pParse->pNewTrigger = pTrigger;
 
 trigger_cleanup:
   sqliteFree(zName);
@@ -198,7 +223,7 @@ void sqlite3FinishTrigger(
     /* Make an entry in the sqlite_master table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
-    sqlite3BeginWriteOperation(pParse, 0, 0);
+    sqlite3BeginWriteOperation(pParse, 0, nt->iDb);
     sqlite3OpenMasterTable(v, nt->iDb);
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqlite3VdbeChangeP3(v, addr+2, nt->name, 0); 
@@ -425,11 +450,6 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   sqlite *db = pParse->db;
 
   assert( pTrigger->iDb<db->nDb );
-  if( pTrigger->iDb>=2 ){
-    sqlite3ErrorMsg(pParse, "triggers may not be removed from "
-       "auxiliary database %s", db->aDb[pTrigger->iDb].zName);
-    return;
-  }
   pTable = sqlite3FindTable(db, pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
   assert(pTable);
   assert( pTable->iDb==pTrigger->iDb || pTrigger->iDb==1 );
@@ -438,7 +458,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
     int code = SQLITE_DROP_TRIGGER;
     const char *zDb = db->aDb[pTrigger->iDb].zName;
     const char *zTab = SCHEMA_TABLE(pTrigger->iDb);
-    if( pTrigger->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
+    if( pTrigger->iDb==1 ) code = SQLITE_DROP_TEMP_TRIGGER;
     if( sqlite3AuthCheck(pParse, code, pTrigger->name, pTable->zName, zDb) ||
       sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       return;
@@ -462,7 +482,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
       { OP_Next,       0, ADDR(1),  0}, /* 8 */
     };
 
-    sqlite3BeginWriteOperation(pParse, 0, 0);
+    sqlite3BeginWriteOperation(pParse, 0, pTrigger->iDb);
     sqlite3OpenMasterTable(v, pTrigger->iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);

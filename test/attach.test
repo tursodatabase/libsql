@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.16 2004/05/11 09:57:35 drh Exp $
+# $Id: attach.test,v 1.17 2004/05/29 02:37:20 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -488,7 +488,7 @@ do_test attach-5.1 {
       SELECT 'no-op';
     END;
   } db2
-} {1 {triggers may not be added to auxiliary database orig}}
+} {1 {trigger r1 cannot reference objects in database orig}}
 do_test attach-5.2 {
   catchsql {
     CREATE TABLE t5(x,y);

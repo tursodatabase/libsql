@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.345 2004/05/28 16:00:22 drh Exp $
+** $Id: vdbe.c,v 1.346 2004/05/29 02:37:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2142,12 +2142,12 @@ case OP_MakeRecord: {
   pTos++;
   pTos->n = nByte;
   if( nByte<=sizeof(zTemp) ){
-    assert( zNewRecord==zTemp );
+    assert( zNewRecord==(unsigned char *)zTemp );
     pTos->z = pTos->zShort;
     memcpy(pTos->zShort, zTemp, nByte);
     pTos->flags = MEM_Blob | MEM_Short;
   }else{
-    assert( zNewRecord!=zTemp );
+    assert( zNewRecord!=(unsigned char *)zTemp );
     pTos->z = zNewRecord;
     pTos->flags = MEM_Blob | MEM_Dyn;
   }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.260 2004/05/28 16:00:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.261 2004/05/29 02:37:19 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -229,7 +229,7 @@ extern int sqlite3_iMallocFail;   /* Fail sqliteMalloc() after this many calls *
 /*
 ** The name of the schema table.
 */
-#define SCHEMA_TABLE(x)  (x?TEMP_MASTER_NAME:MASTER_NAME)
+#define SCHEMA_TABLE(x)  (x==1?TEMP_MASTER_NAME:MASTER_NAME)
 
 /*
 ** A convenience macro that returns the number of elements in
@@ -1221,7 +1221,8 @@ void sqlite3SrcListAddAlias(SrcList*, Token*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(IdList*);
 void sqlite3SrcListDelete(SrcList*);
-void sqlite3CreateIndex(Parse*,Token*,Token*,Token*,IdList*,int,Token*,Token*);
+void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,IdList*,int,Token*,
+                        Token*);
 void sqlite3DropIndex(Parse*, SrcList*);
 void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
@@ -1286,7 +1287,8 @@ int sqlite3SafetyOn(sqlite*);
 int sqlite3SafetyOff(sqlite*);
 int sqlite3SafetyCheck(sqlite*);
 void sqlite3ChangeCookie(sqlite*, Vdbe*, int);
-void sqlite3BeginTrigger(Parse*, Token*,int,int,IdList*,SrcList*,int,Expr*,int);
+void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,
+                         int,Expr*,int);
 void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
 void sqlite3DropTrigger(Parse*, SrcList*);
 void sqlite3DropTriggerPtr(Parse*, Trigger*, int);
@@ -1352,3 +1354,4 @@ void sqlite3Error(sqlite *, int, const char*,...);
 int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
 u8 sqlite3UtfReadBom(const void *zData, int nData);
 void *sqlite3HexToBlob(const char *z);
+int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.197 2004/05/28 16:00:22 drh Exp $
+** $Id: build.c,v 1.198 2004/05/29 02:37:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -425,7 +425,7 @@ int findDb(sqlite3 *db, Token *pName){
   return -1;
 }
 
-static int resolveSchemaName(
+int sqlite3TwoPartName(
   Parse *pParse, 
   Token *pName1, 
   Token *pName2, 
@@ -501,7 +501,7 @@ void sqlite3StartTable(
   ** set to the index of the database that the table or view is to be
   ** created in.
   */
-  iDb = resolveSchemaName(pParse, pName1, pName2, &pName);
+  iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   if( iDb<0 ) return;
   if( isTemp && iDb>1 ){
     /* If creating a temp table, the name may not be qualified */
@@ -1166,7 +1166,7 @@ void sqlite3CreateView(
     sqlite3SelectDelete(pSelect);
     return;
   }
-  resolveSchemaName(pParse, pName1, pName2, &pName);
+  sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   if( sqlite3FixInit(&sFix, pParse, p->iDb, "view", pName)
     && sqlite3FixSelect(&sFix, pSelect)
   ){
@@ -1606,7 +1606,7 @@ void sqlite3CreateIndex(
   Parse *pParse,   /* All information about this parse */
   Token *pName1,   /* First part of index name. May be NULL */
   Token *pName2,   /* Second part of index name. May be NULL */
-  Token *pTblName, /* Name of the table to index. Use pParse->pNewTable if 0 */
+  SrcList *pTblName, /* Name of the table to index. Use pParse->pNewTable if 0 */
   IdList *pList,   /* A list of columns to be indexed */
   int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
@@ -1624,50 +1624,38 @@ void sqlite3CreateIndex(
   int iDb;          /* Index of the database that is being written */
   Token *pName = 0; /* Unqualified name of the index to create */
 
-/*
   if( pParse->nErr || sqlite3_malloc_failed ) goto exit_create_index;
-  if( db->init.busy 
-     && sqlite3FixInit(&sFix, pParse, db->init.iDb, "index", pName)
-     && sqlite3FixSrcList(&sFix, pTable)
-  ){
-    goto exit_create_index;
-  }
-*/
 
   /*
   ** Find the table that is to be indexed.  Return early if not found.
   */
   if( pTblName!=0 ){
-    char *zTblName;
 
     /* Use the two-part index name to determine the database 
-    ** to search for the table. If no database name is specified, 
-    ** iDb is set to 0. In this case search both the temp and main
-    ** databases for the named table.
+    ** to search for the table. 'Fix' the table name to this db
+    ** before looking up the table.
     */
     assert( pName1 && pName2 );
-    iDb = resolveSchemaName(pParse, pName1, pName2, &pName);
+    iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
     if( iDb<0 ) goto exit_create_index;
 
-    /* Now search for the table in the database iDb. If iDb is
-    ** zero, then search both the "main" and "temp" databases.
+    /* If the index name was unqualified, check if the the table
+    ** is a temp table. If so, set the database to 1.
     */
-    zTblName = sqlite3TableNameFromToken(pTblName);
-    if( !zTblName ){
-      pParse->nErr++;
-      pParse->rc = SQLITE_NOMEM;
+    pTab = sqlite3SrcListLookup(pParse, pTblName);
+    if( pName2 && pName2->n==0 && pTab && pTab->iDb==1 ){
+      iDb = 1;
+    }
+
+    if( sqlite3FixInit(&sFix, pParse, iDb, "index", pName) &&
+        sqlite3FixSrcList(&sFix, pTblName)
+    ){
       goto exit_create_index;
     }
-    assert( pName1!=0 );
-    if( iDb==0 ){
-      pTab = sqlite3FindTable(db, zTblName, "temp");
-    }
-    if( !pTab ){
-      pTab = sqlite3LocateTable(pParse, zTblName, db->aDb[iDb].zName);
-    }
-    sqliteFree( zTblName );
+    pTab = sqlite3LocateTable(pParse, pTblName->a[0].zName, 
+        pTblName->a[0].zDatabase);
     if( !pTab ) goto exit_create_index;
-    iDb = pTab->iDb;
+    assert( iDb==pTab->iDb );
   }else{
     assert( pName==0 );
     pTab =  pParse->pNewTable;
@@ -1679,12 +1667,6 @@ void sqlite3CreateIndex(
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
   }
-/*
-  if( pTab->iDb>=2 && db->init.busy==0 ){
-    sqlite3ErrorMsg(pParse, "table %s may not have indices added", pTab->zName);
-    goto exit_create_index;
-  }
-*/
   if( pTab->pSelect ){
     sqlite3ErrorMsg(pParse, "views may not be indexed");
     goto exit_create_index;

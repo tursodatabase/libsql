@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.75 2004/05/27 13:35:20 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.76 2004/05/29 02:37:19 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -74,182 +74,6 @@ struct CallbackData {
   int nColName;             /* Number of entries in the azColName[] array */
   char **azColName;         /* Column names translated to UTF-8 */
 };
-
-#ifdef UTF_TRANSLATION_NEEDED
-/*
-** Called for each row of the result.
-**
-** This version is used when TCL expects UTF-8 data but the database
-** uses the ISO8859 format.  A translation must occur from ISO8859 into
-** UTF-8.
-*/
-static int DbEvalCallback(
-  void *clientData,      /* An instance of CallbackData */
-  int nCol,              /* Number of columns in the result */
-  char ** azCol,         /* Data for each column */
-  char ** azN            /* Name for each column */
-){
-  CallbackData *cbData = (CallbackData*)clientData;
-  int i, rc;
-  Tcl_DString dCol;
-  Tcl_DStringInit(&dCol);
-  if( cbData->azColName==0 ){
-    assert( cbData->once );
-    cbData->once = 0;
-    if( cbData->zArray[0] ){
-      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
-    }
-    cbData->azColName = malloc( nCol*sizeof(char*) );
-    if( cbData->azColName==0 ){ return 1; }
-    cbData->nColName = nCol;
-    for(i=0; i<nCol; i++){
-      Tcl_ExternalToUtfDString(NULL, azN[i], -1, &dCol);
-      cbData->azColName[i] = malloc( Tcl_DStringLength(&dCol) + 1 );
-      if( cbData->azColName[i] ){
-        strcpy(cbData->azColName[i], Tcl_DStringValue(&dCol));
-      }else{
-        return 1;
-      }
-      if( cbData->zArray[0] ){
-        Tcl_SetVar2(cbData->interp, cbData->zArray, "*",
-             Tcl_DStringValue(&dCol), TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
-        if( azN[nCol]!=0 ){
-          Tcl_DString dType;
-          Tcl_DStringInit(&dType);
-          Tcl_DStringAppend(&dType, "typeof:", -1);
-          Tcl_DStringAppend(&dType, Tcl_DStringValue(&dCol), -1);
-          Tcl_DStringFree(&dCol);
-          Tcl_ExternalToUtfDString(NULL, azN[i+nCol], -1, &dCol);
-          Tcl_SetVar2(cbData->interp, cbData->zArray, 
-               Tcl_DStringValue(&dType), Tcl_DStringValue(&dCol),
-               TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
-          Tcl_DStringFree(&dType);
-        }
-      }
-      
-      Tcl_DStringFree(&dCol);
-    }
-  }
-  if( azCol!=0 ){
-    if( cbData->zArray[0] ){
-      for(i=0; i<nCol; i++){
-        char *z = azCol[i];
-        if( z==0 ) z = "";
-        Tcl_DStringInit(&dCol);
-        Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
-        Tcl_SetVar2(cbData->interp, cbData->zArray, cbData->azColName[i], 
-              Tcl_DStringValue(&dCol), 0);
-        Tcl_DStringFree(&dCol);
-      }
-    }else{
-      for(i=0; i<nCol; i++){
-        char *z = azCol[i];
-        if( z==0 ) z = "";
-        Tcl_DStringInit(&dCol);
-        Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
-        Tcl_SetVar(cbData->interp, cbData->azColName[i],
-                   Tcl_DStringValue(&dCol), 0);
-        Tcl_DStringFree(&dCol);
-      }
-    }
-  }
-  rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
-  if( rc==TCL_CONTINUE ) rc = TCL_OK;
-  cbData->tcl_rc = rc;
-  return rc!=TCL_OK;
-}
-#endif /* UTF_TRANSLATION_NEEDED */
-
-#ifndef UTF_TRANSLATION_NEEDED
-/*
-** Called for each row of the result.
-**
-** This version is used when either of the following is true:
-**
-**    (1) This version of TCL uses UTF-8 and the data in the
-**        SQLite database is already in the UTF-8 format.
-**
-**    (2) This version of TCL uses ISO8859 and the data in the
-**        SQLite database is already in the ISO8859 format.
-*/
-static int DbEvalCallback(
-  void *clientData,      /* An instance of CallbackData */
-  int nCol,              /* Number of columns in the result */
-  char ** azCol,         /* Data for each column */
-  char ** azN            /* Name for each column */
-){
-  CallbackData *cbData = (CallbackData*)clientData;
-  int i, rc;
-  if( azCol==0 || (cbData->once && cbData->zArray[0]) ){
-    Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
-    for(i=0; i<nCol; i++){
-      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", azN[i],
-         TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
-      if( azN[nCol] ){
-        char *z = sqlite3_mprintf("typeof:%s", azN[i]);
-        Tcl_SetVar2(cbData->interp, cbData->zArray, z, azN[i+nCol],
-           TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
-        sqlite3_freemem(z);
-      }
-    }
-    cbData->once = 0;
-  }
-  if( azCol!=0 ){
-    if( cbData->zArray[0] ){
-      for(i=0; i<nCol; i++){
-        char *z = azCol[i];
-        if( z==0 ) z = "";
-        Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], z, 0);
-      }
-    }else{
-      for(i=0; i<nCol; i++){
-        char *z = azCol[i];
-        if( z==0 ) z = "";
-        Tcl_SetVar(cbData->interp, azN[i], z, 0);
-      }
-    }
-  }
-  rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
-  if( rc==TCL_CONTINUE ) rc = TCL_OK;
-  cbData->tcl_rc = rc;
-  return rc!=TCL_OK;
-}
-#endif
-
-/*
-** This is an alternative callback for database queries.  Instead
-** of invoking a TCL script to handle the result, this callback just
-** appends each column of the result to a list.  After the query
-** is complete, the list is returned.
-*/
-static int DbEvalCallback2(
-  void *clientData,      /* An instance of CallbackData */
-  int nCol,              /* Number of columns in the result */
-  char ** azCol,         /* Data for each column */
-  char ** azN            /* Name for each column */
-){
-  Tcl_Obj *pList = (Tcl_Obj*)clientData;
-  int i;
-  if( azCol==0 ) return 0;
-  for(i=0; i<nCol; i++){
-    Tcl_Obj *pElem;
-    if( azCol[i] && *azCol[i] ){
-#ifdef UTF_TRANSLATION_NEEDED
-      Tcl_DString dCol;
-      Tcl_DStringInit(&dCol);
-      Tcl_ExternalToUtfDString(NULL, azCol[i], -1, &dCol);
-      pElem = Tcl_NewStringObj(Tcl_DStringValue(&dCol), -1);
-      Tcl_DStringFree(&dCol);
-#else
-      pElem = Tcl_NewStringObj(azCol[i], -1);
-#endif
-    }else{
-      pElem = Tcl_NewObj();
-    }
-    Tcl_ListObjAppendElement(0, pList, pElem);
-  }
-  return 0;
-}
 
 /*
 ** This is a second alternative callback for database queries.  A the
@@ -474,6 +298,26 @@ static int auth_callback(
   return rc;
 }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
+
+/*
+** zText is a pointer to text obtained via an sqlite3_result_text()
+** or similar interface. This routine returns a Tcl string object, 
+** reference count set to 0, containing the text. If a translation
+** between iso8859 and UTF-8 is required, it is preformed.
+*/
+static Tcl_Obj *dbTextToObj(char const *zText){
+  Tcl_Obj *pVal;
+#ifdef UTF_TRANSLATION_NEEDED
+  Tcl_DString dCol;
+  Tcl_DStringInit(&dCol);
+  Tcl_ExternalToUtfDString(NULL, zText, -1, &dCol);
+  pVal = Tcl_NewStringObj(Tcl_DStringValue(&dCol), -1);
+  Tcl_DStringFree(&dCol);
+#else
+  pVal = Tcl_NewStringObj(zText, -1);
+#endif
+  return pVal;
+}
 
 /*
 ** The "sqlite" command below creates a new Tcl command for each
@@ -777,7 +621,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     char const *zSql;
     char const *zLeft;
     sqlite3_stmt *pStmt;
-    Tcl_Obj *pRet = 0;
+
+    Tcl_Obj *pRet = Tcl_NewObj();
+    Tcl_IncrRefCount(pRet);
 
     if( objc!=5 && objc!=3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
@@ -790,7 +636,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       int i;
   
       if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
-        Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_STATIC);
+        Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         rc = TCL_ERROR;
         break;
       }
@@ -801,7 +647,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
         for(i=0; i<sqlite3_column_count(pStmt); i++){
           Tcl_ListObjAppendElement(interp, pColList,
-              Tcl_NewStringObj(sqlite3_column_name(pStmt, i), -1)
+              dbTextToObj(sqlite3_column_name(pStmt, i))
           );
         }
         Tcl_ObjSetVar2(interp,objv[3],Tcl_NewStringObj("*",-1),pColList,0);
@@ -813,14 +659,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           
           /* Set pVal to contain the i'th column of this row. */
           if( SQLITE3_BLOB!=sqlite3_column_type(pStmt, i) ){
-            pVal = Tcl_NewStringObj(sqlite3_column_text(pStmt, i), -1);
+            pVal = dbTextToObj(sqlite3_column_text(pStmt, i));
           }else{
             int bytes = sqlite3_column_bytes(pStmt, i);
             pVal = Tcl_NewByteArrayObj(sqlite3_column_blob(pStmt, i), bytes);
           }
   
           if( objc==5 ){
-            Tcl_Obj *pName = Tcl_NewStringObj(sqlite3_column_name(pStmt, i), -1);
+            Tcl_Obj *pName = dbTextToObj(sqlite3_column_name(pStmt, i));
             Tcl_IncrRefCount(pName);
             if( !strcmp("", Tcl_GetString(objv[3])) ){
               Tcl_ObjSetVar2(interp, pName, 0, pVal, 0);
@@ -829,10 +675,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             }
             Tcl_DecrRefCount(pName);
           }else{
-            if( !pRet ){
-              pRet = Tcl_NewObj();
-              Tcl_IncrRefCount(pRet);
-            }
             Tcl_ListObjAppendElement(interp, pRet, pVal);
           }
         }
@@ -848,7 +690,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
   
       if( pStmt && SQLITE_OK!=sqlite3_errcode(pDb->db) ){
-        Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_STATIC);
+        Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         rc = TCL_ERROR;
         break;
       }
@@ -857,83 +699,13 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zSql = zLeft;
     }
 
-    if( rc==TCL_OK && pRet ){
+    if( rc==TCL_OK ){
       Tcl_SetObjResult(interp, pRet);
-      Tcl_DecrRefCount(pRet);
     }
+    Tcl_DecrRefCount(pRet);
 
     break;
   }
-#if 0
-  case DB_EVAL: {
-    CallbackData cbData;
-    char *zErrMsg;
-    char *zSql;
-#ifdef UTF_TRANSLATION_NEEDED
-    Tcl_DString dSql;
-    int i;
-#endif
-
-    if( objc!=5 && objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
-      return TCL_ERROR;
-    }
-    pDb->interp = interp;
-    zSql = Tcl_GetStringFromObj(objv[2], 0);
-#ifdef UTF_TRANSLATION_NEEDED
-    Tcl_DStringInit(&dSql);
-    Tcl_UtfToExternalDString(NULL, zSql, -1, &dSql);
-    zSql = Tcl_DStringValue(&dSql);
-#endif
-    Tcl_IncrRefCount(objv[2]);
-    if( objc==5 ){
-      cbData.interp = interp;
-      cbData.once = 1;
-      cbData.zArray = Tcl_GetStringFromObj(objv[3], 0);
-      cbData.pCode = objv[4];
-      cbData.tcl_rc = TCL_OK;
-      cbData.nColName = 0;
-      cbData.azColName = 0;
-      zErrMsg = 0;
-      Tcl_IncrRefCount(objv[3]);
-      Tcl_IncrRefCount(objv[4]);
-      rc = sqlite3_exec(pDb->db, zSql, DbEvalCallback, &cbData, &zErrMsg);
-      Tcl_DecrRefCount(objv[4]);
-      Tcl_DecrRefCount(objv[3]);
-      if( cbData.tcl_rc==TCL_BREAK ){ cbData.tcl_rc = TCL_OK; }
-    }else{
-      Tcl_Obj *pList = Tcl_NewObj();
-      cbData.tcl_rc = TCL_OK;
-      rc = sqlite3_exec(pDb->db, zSql, DbEvalCallback2, pList, &zErrMsg);
-      Tcl_SetObjResult(interp, pList);
-    }
-    pDb->rc = rc;
-    if( rc==SQLITE_ABORT ){
-      if( zErrMsg ) free(zErrMsg);
-      rc = cbData.tcl_rc;
-    }else if( zErrMsg ){
-      Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
-      free(zErrMsg);
-      rc = TCL_ERROR;
-    }else if( rc!=SQLITE_OK ){
-      Tcl_AppendResult(interp, sqlite3_error_string(rc), 0);
-      rc = TCL_ERROR;
-    }else{
-    }
-    Tcl_DecrRefCount(objv[2]);
-#ifdef UTF_TRANSLATION_NEEDED
-    Tcl_DStringFree(&dSql);
-    if( objc==5 && cbData.azColName ){
-      for(i=0; i<cbData.nColName; i++){
-        if( cbData.azColName[i] ) free(cbData.azColName[i]);
-      }
-      free(cbData.azColName);
-      cbData.azColName = 0;
-    }
-#endif
-    return rc;
-  }
-#endif
 
   /*
   **     $db function NAME SCRIPT

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.122 2004/05/28 12:33:31 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.123 2004/05/29 02:37:19 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -730,10 +730,11 @@ expritem(A) ::= .                       {A = 0;}
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
 cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X) dbnm(D)
-        ON nm(Y) LP idxlist(Z) RP(E) onconf(R). {
+        ON nm(Y) dbnm(C) LP idxlist(Z) RP(E) onconf(R). {
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqlite3CreateIndex(pParse, &X, &D, &Y, Z, U, &S, &E);
+  sqlite3CreateIndex(pParse, &X, &D, sqlite3SrcListAppend(0,&Y,&C),
+      Z, U, &S, &E);
 }
 
 %type uniqueflag {int}
@@ -788,10 +789,10 @@ cmd ::= CREATE(A) trigger_decl BEGIN trigger_cmd_list(S) END(Z). {
   sqlite3FinishTrigger(pParse, S, &all);
 }
 
-trigger_decl ::= temp(T) TRIGGER nm(B) trigger_time(C) trigger_event(D)
+trigger_decl ::= temp(T) TRIGGER nm(B) dbnm(Z) trigger_time(C) trigger_event(D)
                  ON nm(E) dbnm(DB) foreach_clause(F) when_clause(G). {
   SrcList *pTab = sqlite3SrcListAppend(0, &E, &DB);
-  sqlite3BeginTrigger(pParse, &B, C, D.a, D.b, pTab, F, G, T);
+  sqlite3BeginTrigger(pParse, &B, &Z, C, D.a, D.b, pTab, F, G, T);
 }
 
 %type trigger_time  {int}
