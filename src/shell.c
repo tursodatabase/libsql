@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.77 2003/05/04 18:30:59 drh Exp $
+** $Id: shell.c,v 1.78 2003/05/11 20:07:05 jplyon Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -198,7 +198,7 @@ struct callback_data {
 #define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
 #define MODE_Html     4  /* Generate an XHTML table */
 #define MODE_Insert   5  /* Generate SQL "insert" statements */
-#define MODE_NUM_OF   6
+#define MODE_NUM_OF   6  /* The number of modes (not a mode itself) */
 
 char *modeDescr[MODE_NUM_OF] = {
   "line",
@@ -563,16 +563,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   n = strlen(azArg[0]);
   c = azArg[0][0];
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 ){
-    int i;
+    struct callback_data data;
+    char *zErrMsg = 0;
     open_db(p);
-    fprintf(p->out, "[Name]\t[File]\n");
-    for(i=0; i<db->nDb; i++){
-      sqlite *db = p->db;
-      Db *pDb = &db->aDb[i];
-      BtOps* pOps = btOps(pDb->pBt);
-      const char *zName = pDb->zName;
-      const char *zFilename = pOps->GetFilename(pDb->pBt);
-      fprintf(p->out, "%s\t%s\n", zName, zFilename);
+    memcpy(&data, p, sizeof(data));
+    data.showHeader = 0;
+    data.mode = MODE_Column;
+    sqlite_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
+    if( zErrMsg ){
+      fprintf(stderr,"Error: %s\n", zErrMsg);
+      free(zErrMsg);
     }
   }else
 
