@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.377 2004/06/16 12:02:54 danielk1977 Exp $
+** $Id: vdbe.c,v 1.378 2004/06/17 07:53:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2092,66 +2092,6 @@ case OP_Column: {
   break;
 }
 
-/* Opcode: MakeKey P1 P2 P3
-**
-** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index. If P2 is zero, then the original 
-** entries are popped off the stack. If P2 is not zero, the original 
-** entries remain on the stack.
-**
-** P3 is interpreted in the same way as for MakeIdxKey.
-*/
-/* Opcode: MakeIdxKey P1 P2 P3
-**
-** Convert the top P1 entries of the stack into a single entry suitable
-** for use as the key in an index.  In addition, take one additional integer
-** off of the stack, treat that integer as an eight-byte record number, and
-** append the integer to the key as a varint.  Thus a total of P1+1 entries
-** are popped from the stack for this instruction and a single entry is
-** pushed back.  
-**
-** If P2 is not zero and one or more of the P1 entries that go into the
-** generated key is NULL, then jump to P2 after the new key has been
-** pushed on the stack.  In other words, jump to P2 if the key is
-** guaranteed to be unique.  This jump can be used to skip a subsequent
-** uniqueness test.
-**
-** P3 may be a string that is P1 characters long.  The nth character of the
-** string indicates the column affinity that should be used for the nth
-** field of the index key (i.e. the first character of P3 corresponds to the
-** lowest element on the stack).
-**
-**  Character      Column affinity
-**  ------------------------------
-**  'n'            NUMERIC
-**  'i'            INTEGER
-**  't'            TEXT
-**  'o'            NONE
-**
-** If P3 is NULL then no datatype coercion occurs.
-*/
-/* Opcode MakeRecord P1 * P3
-**
-** Convert the top P1 entries of the stack into a single entry
-** suitable for use as a data record in a database table.  The
-** details of the format are irrelavant as long as the OP_Column
-** opcode can decode the record later.  Refer to source code
-** comments for the details of the record format.
-**
-** P3 may be a string that is P1 characters long.  The nth character of the
-** string indicates the column affinity that should be used for the nth
-** field of the index key (i.e. the first character of P3 corresponds to the
-** lowest element on the stack).
-**
-**  Character      Column affinity
-**  ------------------------------
-**  'n'            NUMERIC
-**  'i'            INTEGER
-**  't'            TEXT
-**  'o'            NONE
-**
-** If P3 is NULL then all index fields have the affinity NONE.
-*/
 /* Opcode MakeRecord P1 P2 P3
 **
 ** Convert the top abs(P1) entries of the stack into a single entry
@@ -2165,8 +2105,12 @@ case OP_Column: {
 ** The original stack entries are popped from the stack if P1>0 but
 ** remain on the stack if P1<0.
 **
-** If P2 is not zero and one or more of the entries are NULL, then jump
-** to P2.  This feature can be used to skip a uniqueness test on indices.
+** The P2 argument is divided into two 16-bit words before it is processed.
+** If the hi-word is non-zero, then an extra integer is read from the stack
+** and appended to the record as a varint.  If the low-word of P2 is not
+** zero and one or more of the entries are NULL, then jump to the value of
+** the low-word of P2.  This feature can be used to skip a uniqueness test
+** on indices.
 **
 ** P3 may be a string that is P1 characters long.  The nth character of the
 ** string indicates the column affinity that should be used for the nth
@@ -2182,8 +2126,6 @@ case OP_Column: {
 **
 ** If P3 is NULL then all index fields have the affinity NONE.
 */
-case OP_MakeKey:
-case OP_MakeIdxKey:
 case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2200,24 +2142,32 @@ case OP_MakeRecord: {
   ** hdr-size field is also a varint which is the offset from the beginning
   ** of the record to data0.
   */
-  int nField = pOp->p1;
   unsigned char *zNewRecord;
   unsigned char *zCsr;
-  char *zAffinity;
   Mem *pRec;
   Mem *pRowid = 0;
-  int nData = 0;     /* Number of bytes of data space */
-  int nHdr = 0;      /* Number of bytes of header space */
-  int nByte = 0;     /* Space required for this record */
-  int addRowid;      /* True to append a rowid column at the end */
-  u32 serial_type;   /* Type field */
-  int containsNull;  /* True if any of the data fields are NULL */
-  char zTemp[NBFS];  /* Space to hold small records */
+  int nData = 0;         /* Number of bytes of data space */
+  int nHdr = 0;          /* Number of bytes of header space */
+  int nByte = 0;         /* Space required for this record */
+  u32 serial_type;       /* Type field */
+  int containsNull = 0;  /* True if any of the data fields are NULL */
+  char zTemp[NBFS];      /* Space to hold small records */
+  Mem *pData0;
 
-  Mem *pData0 = &pTos[1-nField];
-  assert( pData0>=p->aStack );
+  int leaveOnStack;      /* If true, leave the entries on the stack */
+  int nField;            /* Number of fields in the record */
+  int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
+  int addRowid;          /* True to append a rowid column at the end */
+  char *zAffinity;       /* The affinity string for the record */
+
+  leaveOnStack = ((pOp->p1<0)?1:0);
+  nField = pOp->p1 * (leaveOnStack?-1:1);
+  jumpIfNull = (pOp->p2 & 0x00FFFFFF);
+  addRowid = ((pOp->p2>>24) & 0x0000FFFF)?1:0;
   zAffinity = pOp->p3;
-  addRowid = pOp->opcode==OP_MakeIdxKey;
+
+  pData0 = &pTos[1-nField];
+  assert( pData0>=p->aStack );
   containsNull = 0;
 
   /* Loop through the elements that will make up the record to figure
@@ -2293,8 +2243,8 @@ case OP_MakeRecord: {
     goto abort_due_to_error;
   }
 
-  /* Pop nField entries from the stack and push the new entry on */
-  if( addRowid || pOp->p2==0 ){
+  /* Pop entries off the stack if required. Push the new record on. */
+  if( !leaveOnStack ){
     popStack(&pTos, nField+addRowid);
   }
   pTos++;
@@ -2311,11 +2261,9 @@ case OP_MakeRecord: {
     pTos->xDel = 0;
   }
 
-  /* If P2 is non-zero, and if the key contains a NULL value, and if this
-  ** was an OP_MakeIdxKey instruction, not OP_MakeKey, jump to P2.
-  */
-  if( pOp->p2 && containsNull && addRowid ){
-    pc = pOp->p2 - 1;
+  /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
+  if( jumpIfNull && containsNull ){
+    pc = jumpIfNull - 1;
   }
   break;
 }

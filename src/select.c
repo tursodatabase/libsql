@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.191 2004/06/16 12:02:47 danielk1977 Exp $
+** $Id: select.c,v 1.192 2004/06/17 07:53:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -316,7 +316,7 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
   for(i=0; i<pOrderBy->nExpr; i++){
     sqlite3ExprCode(pParse, pOrderBy->a[i].pExpr);
   }
-  sqlite3VdbeAddOp(v, OP_MakeKey, pOrderBy->nExpr, 0);
+  sqlite3VdbeAddOp(v, OP_MakeRecord, pOrderBy->nExpr, 0);
   sqlite3VdbeAddOp(v, OP_SortPut, 0, 0);
 }
 
@@ -384,8 +384,9 @@ static int selectInnerLoop(
 #if NULL_ALWAYS_DISTINCT
     sqlite3VdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqlite3VdbeCurrentAddr(v)+7);
 #endif
-    /* Deliberately leave the affinity string off of the following OP_MakeKey */
-    sqlite3VdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
+    /* Deliberately leave the affinity string off of the following
+    ** OP_MakeRecord */
+    sqlite3VdbeAddOp(v, OP_MakeRecord, pEList->nExpr * -1, 0);
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
@@ -452,7 +453,7 @@ static int selectInnerLoop(
         char aff = (iParm>>16)&0xFF;
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
         affStr = sqlite3AffinityString(aff);
-        sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC);
         sqlite3VdbeAddOp(v, OP_String8, 0, 0);
         sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       }
@@ -579,7 +580,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
-      sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, "n", P3_STATIC);
+      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, "n", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       break;
@@ -2514,9 +2515,9 @@ int sqlite3Select(
       for(i=0; i<pGroupBy->nExpr; i++){
         sqlite3ExprCode(pParse, pGroupBy->a[i].pExpr);
       }
-      /* No affinity string is attached to the following OP_MakeKey 
+      /* No affinity string is attached to the following OP_MakeRecord 
       ** because we do not need to do any coercion of datatypes. */
-      sqlite3VdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0);
+      sqlite3VdbeAddOp(v, OP_MakeRecord, pGroupBy->nExpr, 0);
       lbl1 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, lbl1);
       for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){

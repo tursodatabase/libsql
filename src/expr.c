@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.143 2004/06/16 12:00:50 danielk1977 Exp $
+** $Id: expr.c,v 1.144 2004/06/17 07:53:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -911,7 +911,7 @@ int sqlite3ExprResolveIds(
 
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2);
-          sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
+          sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC);
           sqlite3VdbeAddOp(v, OP_String8, 0, 0);
           sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
         }
@@ -1314,7 +1314,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for
-      ** P3 of OP_MakeKey.
+      ** P3 of OP_MakeRecord.
       */
       affStr = sqlite3AffinityString(comparisonAffinity(pExpr));
 
@@ -1329,7 +1329,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
-      sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC); /* addr + 4 */
+      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, affStr, P3_STATIC); /* addr + 4 */
       sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
       sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);                  /* addr + 6 */
 
