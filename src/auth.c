@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.12 2004/02/22 18:40:57 drh Exp $
+** $Id: auth.c,v 1.12.2.1 2004/06/14 11:58:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -174,7 +174,7 @@ int sqliteAuthCheck(
   sqlite *db = pParse->db;
   int rc;
 
-  if( db->xAuth==0 ){
+  if( db->init.busy || db->xAuth==0 ){
     return SQLITE_OK;
   }
   rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext);

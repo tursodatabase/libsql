@@ -1,5 +1,5 @@
-C Version\s2.8.14\s(CVS\s1554)
-D 2004-06-09T23:20:06
+C Do\snot\sauthenticate\sstatements\swhen\sreading\sthe\sschema.\s\sBackport\sof\sbug\nfix\sin\s(1588)\sto\sversion\s2.\s(CVS\s1591)
+D 2004-06-14T11:58:37
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 026702566f941bf2bb158a0aaa86bfeb65910aa6
-F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
+F src/auth.c f73ae6f7260e3409e9b164a2bb9efffc38054081
 F src/btree.c 08a05b925b348c05d79b9b062b79e50d565678de
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7538d2e5297bdeaf07c6d6e37053c654501ef286
-R 4b97b7f3ad71d7fa0ea85a53f9d1556a
+P 7d3937743f88acad8859fbbbb1c03271a939bc0b
+R 18025706e1348c88f79d57e0222aa7e4
 U drh
-Z 6e7d236761f1e0f27c9fd9bb6ff1ebec
+Z 1300c540e4cc9cf82e1d8566d79bb8e0
