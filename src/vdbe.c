@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.277 2004/05/11 04:54:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.278 2004/05/11 06:17:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2245,8 +2245,8 @@ case OP_MakeRecord: {
 **
 ** Convert the top P1 entries of the stack into a single entry suitable
 ** for use as the key in an index.  In addition, take one additional integer
-** off of the stack, treat that integer as a four-byte record number, and
-** append the four bytes to the key.  Thus a total of P1+1 entries are
+** off of the stack, treat that integer as an eight-byte record number, and
+** append the integer to the key.  Thus a total of P1+1 entries are
 ** popped from the stack for this instruction and a single entry is pushed
 ** back.  The first P1 entries that are popped are strings and the last
 ** entry (the lowest on the stack) is an integer record number.
@@ -2319,7 +2319,7 @@ case OP_MakeKey: {
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
-  if( addRowid ) nByte += sizeof(u32);
+  if( addRowid ) nByte += sizeof(i64);
   if( nByte<=NBFS ){
     zNewKey = zTemp;
   }else{
@@ -2344,12 +2344,13 @@ case OP_MakeKey: {
     }
   }
   if( addRowid ){
-    u32 iKey;
+    i64 iKey;
     pRec = &pTos[-nField];
     assert( pRec>=p->aStack );
     Integerify(pRec);
+    /* TODO */
     iKey = intToKey(pRec->i);
-    memcpy(&zNewKey[j], &iKey, sizeof(u32));
+    memcpy(&zNewKey[j], &iKey, sizeof(i64));
     popStack(&pTos, nField+1);
     if( pOp->p2 && containsNull ) pc = pOp->p2 - 1;
   }else{
@@ -3355,7 +3356,10 @@ case OP_RowData: {
       pTos->flags = MEM_Null;
       break;
     }else if( pC->keyAsData || pOp->opcode==OP_RowKey ){
-      /* TODO: sqlite3BtreeKeySize(pCrsr, &n); */
+      i64 n64;
+      assert( !pC->intKey );
+      sqlite3BtreeKeySize(pCrsr, &n64);
+      n = n64;
     }else{
       sqlite3BtreeDataSize(pCrsr, &n);
     }
@@ -3804,14 +3808,15 @@ case OP_IdxRecno: {
   assert( i>=0 && i<p->nCursor );
   pTos++;
   if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    int v;
-    int sz;
+    i64 v;
+    u64 sz;
     assert( p->aCsr[i].deferredMoveto==0 );
-    /* TODO: sqlite3BtreeKeySize(pCrsr, &sz); */
-    if( sz<sizeof(u32) ){
+    assert( p->aCsr[i].intKey==0 );
+    sqlite3BtreeKeySize(pCrsr, &sz);
+    if( sz<sizeof(i64) ){
       pTos->flags = MEM_Null;
     }else{
-      sqlite3BtreeKey(pCrsr, sz - sizeof(u32), sizeof(u32), (char*)&v);
+      sqlite3BtreeKey(pCrsr, sz - sizeof(i64), sizeof(i64), (char*)&v);
       v = keyToInt(v);
       pTos->i = v;
       pTos->flags = MEM_Int;

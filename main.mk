@@ -110,6 +110,15 @@ SRC = \
 # Source code to the test files.
 #
 TESTSRC = \
+   $(TOP)/src/os.c \
+   $(TOP)/src/pager.c \
+   $(TOP)/src/test1.c \
+   $(TOP)/src/test2.c \
+   $(TOP)/src/test3.c \
+   $(TOP)/src/test5.c \
+   $(TOP)/src/md5.c
+
+TESTSRC_ORIG = \
   $(TOP)/src/btree.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os.c \

@@ -1048,7 +1048,11 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
   if( p->deferredMoveto ){
     int res;
     extern int sqlite3_search_count;
-    sqlite3BtreeMoveto(p->pCursor, (char*)&p->movetoTarget, sizeof(int), &res);
+    if( p->intKey ){
+      sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
+    }else{
+      sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,sizeof(i64),&res);
+    }
     p->lastRecno = keyToInt(p->movetoTarget);
     p->recnoIsValid = res==0;
     if( res<0 ){
