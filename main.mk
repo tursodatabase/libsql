@@ -302,6 +302,9 @@ omitted.html:	$(TOP)/www/omitted.tcl
 datatypes.html:	$(TOP)/www/datatypes.tcl
 	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
 
+quickstart.html:	$(TOP)/www/quickstart.tcl
+	tclsh $(TOP)/www/quickstart.tcl >quickstart.html
+
 
 # Files to be published on the website.
 #
@@ -324,7 +327,8 @@ DOC = \
   formatchng.html \
   conflict.html \
   omitted.html \
-  datatypes.html
+  datatypes.html \
+  quickstart.html
 
 doc:	$(DOC)
 	mkdir -p doc

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.3 2002/08/15 11:48:14 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.4 2002/08/15 13:45:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -70,7 +70,7 @@ CREATE TABLE ex2(
   i TIMESTAMP,
   j NUMERIC(10,5)
   k VARYING CHARACTER (24),
-  l NATIVE VARYING CHAR(16)
+  l NATIONAL VARYING CHARACTER(16)
 );
 </pre></blockquote>
 

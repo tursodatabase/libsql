@@ -1,7 +1,7 @@
 #
 # Run this script to generated a omitted.html output file
 #
-set rcsid {$Id: omitted.tcl,v 1.1 2002/08/14 00:08:14 drh Exp $}
+set rcsid {$Id: omitted.tcl,v 1.2 2002/08/15 13:45:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -20,7 +20,13 @@ puts {
 <p>
 Rather than try to list all the features of SQL92 that SQLite does
 support, it is much easier to list those that it does not.
-The following are features of of SQL92 that SQLite does not implement.
+Unsupported features of SQL92 are shown below.</p>
+
+<p>
+The order of this list gives some hint as to when a feature might
+be added to SQLite.  Those features near the top of the list are
+likely to be added in the near future.  There are no immediate
+plans to add features near the bottom of the list.
 </p>
 
 <table cellpadding="10">
@@ -28,12 +34,8 @@ The following are features of of SQL92 that SQLite does not implement.
 
 proc feature {name desc} {
   puts "<tr><td valign=\"top\"><b><nobr>$name</nobr></b></td>"
+  puts "<td width=\"10\">&nbsp;</th>"
   puts "<td valign=\"top\">$desc</td></tr>"
-}
-
-feature {RIGHT and FULL OUTER JOIN} {
-  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or
-  FULL OUTER JOIN.
 }
 
 feature {CHECK constraints} {
@@ -41,23 +43,13 @@ feature {CHECK constraints} {
   NOT NULL and UNIQUE constraints are enforced, however.
 }
 
+feature {Variable subqueries} {
+  Subqueries must be static.  They are evaluated only once.  They may not,
+  therefore, refer to variables in the containing query.
+}
+
 feature {FOREIGN KEY constraints} {
-  FOREIGN KEY constraints are parsed but are ignored.
-}
-
-feature {GRANT and REVOKE} {
-  Since SQLite reads and writes an ordinary disk file, the
-  only access permissions that can be applied are the normal
-  file access permissions of the underlying operating system.
-  The GRANT and REVOKE commands commonly found on client/server
-  RDBMSes are not implemented because they would be meaningless
-  for an embedded database engine.
-}
-
-feature {DELETE, INSERT, and UPDATE on VIEWs} {
-  VIEWs in SQLite are read-only.  But you can create a trigger
-  that fires on an attempt to DELETE, INSERT, or UPDATE a view and do
-  what you need in the body of the trigger.
+  FOREIGN KEY constraints are parsed but are not enforced.
 }
 
 feature {ALTER TABLE} {
@@ -70,9 +62,25 @@ feature {The COUNT(DISTINCT X) function} {
   &nbsp;&nbsp;SELECT count(x) FROM (SELECT DISTINCT x FROM tbl);
 }
 
-feature {Variable subqueries} {
-  Subqueries must be static.  They are evaluated only once.  They must not,
-  therefore, refer to variables in the containing query.
+feature {RIGHT and FULL OUTER JOIN} {
+  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or
+  FULL OUTER JOIN.
+}
+
+feature {Writing to VIEWs} {
+  VIEWs in SQLite are read-only.  You may not execute a DELETE, INSERT, or
+  UPDATE statement on a view. But you can create a trigger
+  that fires on an attempt to DELETE, INSERT, or UPDATE a view and do
+  what you need in the body of the trigger.
+}
+
+feature {GRANT and REVOKE} {
+  Since SQLite reads and writes an ordinary disk file, the
+  only access permissions that can be applied are the normal
+  file access permissions of the underlying operating system.
+  The GRANT and REVOKE commands commonly found on client/server
+  RDBMSes are not implemented because they would be meaningless
+  for an embedded database engine.
 }
 
 puts {

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.65 2002/08/14 00:08:13 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.66 2002/08/15 13:45:17 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -38,6 +38,7 @@ Quick Links:
 <li><a href="download.html">Download</a></li>
 <li><a href="http://cvs.hwaci.com:2080/sqlite/timeline">Change Log</a></li>
 <li><a href="http://cvs.hwaci.com:2080/sqlite/tktnew">Report a bug</a></li>
+<li><a href="quickstart.html">Quick start</a></li>
 </ul>
 </td></tr></table>
 </td></tr>
@@ -129,6 +130,8 @@ puts {<h2>Documentation</h2>
 <p>The following documentation is currently available:</p>
 
 <p><ul>
+<li>A <a href="quickstart.html">Quick Start</a> guide to using SQLite in
+    5 minutes or less.</li>
 <li><a href="faq.html">Frequently Asked Questions</a> are available online.</li>
 <li>Information on the <a href="sqlite.html">sqlite</a>
     command-line utility.</li>

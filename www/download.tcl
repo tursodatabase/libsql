@@ -1,34 +1,34 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.5 2002/03/30 14:15:52 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.6 2002/08/15 13:45:17 drh Exp $}
 
 puts {<html>
 <head><title>SQLite Download Page</title></head>
 <body bgcolor=white>
-<h1 align=center>SQLite Download Page</h1>}
-#<p align=center>}
-#puts "This page was last modified on [lrange $rcsid 3 4] UTC<br>"
-#set vers [lindex $argv 0]
-#puts "The latest SQLite version is <b>$vers</b>"
-#puts " created on [exec cat last_change] UTC"
-#puts {</p>}
+<h1 align=center>SQLite Download Page</h1>
+<table width="100%" cellpadding="5">
+}
 
-puts {<h2>Precompiled Binaries For Linux</h2>}
 
 proc Product {file desc} {
   if {![file exists $file]} return
   set size [file size $file]
   puts [subst {
-<table cellpadding="15">
 <tr>
-<td width="200" align="right" valign="top">
-<a href="$file">$file</a><br>($size bytes)
-</td>
+<td width="10"></td>
+<td align="right" valign="top">
+<a href="$file">$file</a><br>($size bytes)</td>
+<td width="5"></td>
 <td valign="top">[string trim $desc]</td>
-</tr>
-</table>}]
+</tr>}]
 }
+
+proc Heading {title} {
+  puts "<tr><td colspan=4><big><b>$title</b></big></td></tr>"
+}
+
+Heading {Precompiled Binaries for Linux}
 
 Product sqlite.bin.gz {
   A command-line program for accessing and modifing SQLite databases.
@@ -59,7 +59,7 @@ foreach name [lsort -dict [glob -nocomplain sqlite-*.i386.rpm]] {
   }
 }
 
-puts {<h2>Precompiled Binaries For Windows</h2>}
+Heading {Precompiled Binaries For Windows}
 
 Product sqlite.zip {
   A command-line program for accessing and modifing SQLite databases.
@@ -75,7 +75,7 @@ Product sqlitedll.zip {
   The only external dependency is MSVCRT.DLL.
 }
 
-puts {<h2>Source Code</h2>}
+Heading {Source Code}
 
 Product {sqlite_source.zip} {
   This ZIP archive contains pure C source code for the SQLite library.
@@ -97,6 +97,7 @@ foreach name [lsort -dict -decreasing [glob -nocomplain sqlite-*.tar.gz]] {
 }
 
 puts {
+</table>
 <p><hr /></p>
 <p>
 <a href="index.html"><img src="/goback.jpg" border=0 />
