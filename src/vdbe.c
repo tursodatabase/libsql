@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.316 2004/05/22 03:05:34 danielk1977 Exp $
+** $Id: vdbe.c,v 1.317 2004/05/22 07:27:46 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -523,7 +523,7 @@ const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
     return 0;
   }
 
-  if( !pVal->flags&MEM_Blob ){
+  if( !(pVal->flags&MEM_Blob) ){
     Stringify(pVal);
     SetEncoding(pVal, MEM_Utf8|MEM_Term);
   }
@@ -1336,7 +1336,7 @@ case OP_Integer: {
   pTos->flags = MEM_Int;
   if( pOp->p3 ){
     pTos->z = pOp->p3;
-    pTos->flags |= MEM_Utf8 | MEM_Str | MEM_Static;
+    pTos->flags |= MEM_Utf8 | MEM_Str | MEM_Static | MEM_Term;
     pTos->n = strlen(pOp->p3)+1;
     if( pTos->i==0 ){
       sqlite3GetInt64(pTos->z, &pTos->i);
@@ -1377,7 +1377,7 @@ case OP_Real: {
   pTos->r = sqlite3AtoF(z, 0);
   pTos->z = z;
   pTos->n = strlen(z)+1;
-  pTos->flags = MEM_Real|MEM_Str|MEM_Static|MEM_Utf8;
+  pTos->flags = MEM_Real|MEM_Str|MEM_Static|MEM_Utf8|MEM_Term;
   break;
 }
 
@@ -1484,8 +1484,8 @@ case OP_Pull: {
   Deephemeralize(pTos);
   for(i=0; i<pOp->p1; i++, pFrom++){
     Deephemeralize(&pFrom[1]);
-    *pFrom = pFrom[1];
     assert( (pFrom->flags & MEM_Ephem)==0 );
+    *pFrom = pFrom[1];
     if( pFrom->flags & MEM_Short ){
       assert( pFrom->flags & (MEM_Str|MEM_Blob) );
       assert( pFrom->z==pFrom[1].zShort );
@@ -2326,7 +2326,7 @@ case OP_Class: {
   };
 
   Release(pTos);
-  pTos->flags = MEM_Str|MEM_Static|MEM_Utf8;
+  pTos->flags = MEM_Str|MEM_Static|MEM_Utf8|MEM_Term;
 
   for(i=0; i<5; i++){
     if( classes[i].mask&flags ){
@@ -2335,6 +2335,7 @@ case OP_Class: {
     }
   }
   assert( i<5 );
+  pTos->n = strlen(classes[i].zClass);
   break;
 }
 
@@ -2399,7 +2400,12 @@ case OP_Column: {
     u64 colType;    /* The serial type of the value being read. */
 
     assert( &pTos[i-1]>=p->aStack );
-    assert( pTos[i].flags & MEM_Blob );
+
+    /* FIX ME: I don't understand this either. How is it related to
+    ** OP_SortNext? (I thought it would be the commented out assert())
+    */
+    /* assert( pTos[i].flags & MEM_Blob ); */
+    assert( pTos[i].flags & (MEM_Blob|MEM_Str) );
     assert( pTos[i-1].flags & MEM_Int );
 
     if( pTos[i].n==0 ){
@@ -4755,7 +4761,11 @@ case OP_SortNext: {
     pTos++;
     pTos->z = pSorter->pData;
     pTos->n = pSorter->nData;
-    pTos->flags = MEM_Blob|MEM_Dyn;
+    /* FIX ME: I don't understand this. What does the sorter return? 
+    ** I thought it would be the commented out flags.
+    */
+    /* pTos->flags = MEM_Blob|MEM_Dyn; */
+    pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{
@@ -4934,7 +4944,7 @@ case OP_FileColumn: {
   if( z ){
     pTos->n = strlen(z) + 1;
     pTos->z = z;
-    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem;
+    pTos->flags = MEM_Utf8 | MEM_Str | MEM_Ephem | MEM_Term;
   }else{
     pTos->flags = MEM_Null;
   }

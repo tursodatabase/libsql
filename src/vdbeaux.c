@@ -641,12 +641,25 @@ int sqlite3VdbeList(
      0
   };
 
-  assert( p->popStack==0 );
   assert( p->explain );
+
+  /* Even though this opcode does not put dynamic strings onto the
+  ** the stack, they may become dynamic if the user calls
+  ** sqlite3_column_data16(), causing a translation to UTF-16 encoding.
+  */
+  if( p->pTos==&p->aStack[4] ){
+    for(i=0; i<5; i++){
+      if( p->aStack[i].flags & MEM_Dyn ){
+        sqliteFree(p->aStack[i].z);
+      }
+      p->aStack[i].flags = 0;
+    }
+  }
+
   p->azColName = azColumnNames;
-  p->azResColumn = p->zArgv;
-  for(i=0; i<5; i++) p->zArgv[i] = p->aStack[i].zShort;
-  i = p->pc;
+  p->resOnStack = 0;
+
+  i = p->pc++;
   if( i>=p->nOp ){
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
@@ -661,16 +674,25 @@ int sqlite3VdbeList(
     sqlite3SetString(&p->zErrMsg, sqlite3_error_string(p->rc), (char*)0);
   }else{
     Op *pOp = &p->aOp[i];
-    sprintf(p->zArgv[0],"%d",i);
-    sprintf(p->zArgv[2],"%d", pOp->p1);
-    sprintf(p->zArgv[3],"%d", pOp->p2);
-    p->zArgv[4] =
-          displayP3(pOp, p->aStack[4].zShort, sizeof(p->aStack[4].zShort));
-    p->zArgv[1] = sqlite3OpcodeNames[pOp->opcode];
-    p->pc = i+1;
-    p->azResColumn = p->zArgv;
+    p->aStack[0].flags = MEM_Int;
+    p->aStack[0].i = i;                                /* Program counter */
+    p->aStack[1].flags = MEM_Static|MEM_Str|MEM_Utf8|MEM_Term;
+    p->aStack[1].z = sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
+    p->aStack[2].flags = MEM_Int;
+    p->aStack[2].i = pOp->p1;                          /* P1 */
+    p->aStack[3].flags = MEM_Int;
+    p->aStack[3].i = pOp->p2;                          /* P2 */
+    p->aStack[4].flags = MEM_Str|MEM_Utf8|MEM_Term;    /* P3 */
+    p->aStack[4].z = displayP3(pOp, p->aStack[4].zShort, NBFS);
+    if( p->aStack[4].z==p->aStack[4].zShort ){
+      p->aStack[4].flags |= MEM_Short;
+    }else{
+      p->aStack[4].flags |= MEM_Static;
+    }
     p->nResColumn = 5;
+    p->pTos = &p->aStack[4];
     p->rc = SQLITE_OK;
+    p->resOnStack = 1;
     rc = SQLITE_ROW;
   }
   return rc;

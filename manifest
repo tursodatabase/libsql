@@ -1,5 +1,5 @@
-C Steps\stowards\sUTF-16\sdatabases.\sSome\stests\sare\sfailing\sbecause\sof\sthis\ncommit.\s(CVS\s1433)
-D 2004-05-22T03:05:34
+C A\sfew\sbugfixes\srelated\sto\sUTF-16\sdatabases.\ssqlite3_open()\sstill\sassumes\sa\nUTF-8\sdatabase,\sand\ssqlite3_open16()\sstill\sassumes\sa\sUTF-16\sdb.\s(CVS\s1434)
+D 2004-05-22T07:27:46
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,10 +64,10 @@ F src/update.c 1a5e9182596f3ea8c7a141e308a3d2a7e5689fee
 F src/utf.c 537e1c98cddc623628d44497ec02c2246cf66dea
 F src/util.c 5cbeb452da09cfc7248de9948c15b14d840723f7
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 91e6663c690f5208fadca0bd06b4878aed61f239
+F src/vdbe.c 3ce76c80887e5a5a0a850b2cb7ea1e353c113e36
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
 F src/vdbeInt.h f40e8048d644c8389cda16f46479376f763d56e6
-F src/vdbeaux.c 8e993bfd0f943163548ce3e09797ce5503d2366f
+F src/vdbeaux.c d3dfb6d40eb1fdf2626896e8b13fe7b50134ff12
 F src/where.c efe5d25fe18cd7381722457898cd863e84097a0c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8069caca82bc4d40d8ac95bafdd91a18a70ab1e0
-R f44ee6ced05cfe974110947781c41eee
+P c4a8246864eee7cb993ab7b703324d92c284d72a
+R 92babf97adb0222e27f8107a93f8fb2a
 U danielk1977
-Z 35da3b16c198243de8a20489bd428c37
+Z c69763de411eab46b3116a06db08807c
