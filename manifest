@@ -1,5 +1,5 @@
-C Update\sthe\stest\slogic\sand\sthe\scomments\son\sthe\sencoder.c\smodule.\s(CVS\s546)
-D 2002-04-25T23:06:47
+C Fix\sfor\sticket\s#28:\sExport\sthe\s"sqlite_changes"\sfunction\sin\sWindows\sDLLs.\s(CVS\s547)
+D 2002-04-26T09:47:21
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -16,7 +16,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 0b9da5898bf5997f30d6f80de4880072db7e5718
+F publish.sh d115bd49631e3bb0d799e7dc1da51f9866d67647
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 6b339cb747b45f8e7ea0335b06291b6d52067b31
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
@@ -132,7 +132,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 57f7c59713299b03b10ba9c1a5883e2c08a8b138
-R 1d03be9386f27dabc02ae6f5664f26fc
+P 18c28519d973944756694b2c213bfef3153f4b1b
+R 2d6fab377f325966b8f3f4627b42b359
 U drh
-Z 518e7e975793406e2b9482ce10c2312d
+Z 3841c5ff7d19de6d1820c7833baa6b1c

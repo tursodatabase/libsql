@@ -99,6 +99,7 @@ sqlite_get_table_vprintf
 sqlite_freemem
 sqlite_libversion
 sqlite_libencoding
+sqlite_changes
 sqliteMalloc
 sqliteFree
 sqliteRealloc
