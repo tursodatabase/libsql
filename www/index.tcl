@@ -61,7 +61,7 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2004-Sep-10} {SQLite at the 11<sup><small>th</small></sup>
+newsitem {2004-Oct-10} {SQLite at the 11<sup><small>th</small></sup>
 Annual Tcl/Tk Conference} {
   There will be a talk on the use of SQLite in Tcl/Tk at the
   11<sup><small>th</small></sup> Tcl/Tk Conference this week in
@@ -89,4 +89,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.99 2004/10/10 18:00:47 drh Exp $}
+footer {$Id: index.tcl,v 1.100 2004/10/11 21:49:07 drh Exp $}
