@@ -1,5 +1,5 @@
-C Check\sthe\svalidity\sof\sthe\sdatabase\sconnection\sbefore\sthe\strace\scallback,\nnot\safterwards.\s(CVS\s837)
-D 2003-01-18T17:04:09
+C Do\snot\sreport\san\serror\sif\sthe\sinput\sto\sthe\ssqlite\sshell\sends\sin\sa\scomment.\nTicket\s#211.\s(CVS\s838)
+D 2003-01-18T17:05:01
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,7 +39,7 @@ F src/parse.y 58655a50817f93ddd0bc3d8949e267729396949c
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 5ce75c1381d8ec3b89ea4d7eb5171bc57785e610
-F src/shell.c c9946847b81b8b7f32ad195498dafbc623c6874f
+F src/shell.c cbb29252f0bd7b144d1e3126e64e17e5a314f2fd
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 90657185cff387069d17c5b876a87a6a7a3b6f10
 F src/sqliteInt.h 1df32c9bcf08e30b5b8b978fd587fac018273c33
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f67bff8ff3db9694f87daf1a549d24ea9612da6b
-R effe9d0228ec9a51eeb8838dab1ee578
+P 960a2e4af3b940d74a82f98e8bf19aeec88a05ce
+R 401c88fefa12fdbc2635d9394c8dc749
 U drh
-Z 762142889e27f0dfcfbf3d94a2871c9d
+Z d11acb4a94d33c83e2103e12a2cf5085

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.64 2003/01/08 13:02:53 drh Exp $
+** $Id: shell.c,v 1.65 2003/01/18 17:05:01 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -913,6 +913,20 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 }
 
 /*
+** Skip over an SQL comments and whitespace.  Return a pointer to the text that
+** follows the comments and whitespace.
+*/
+static char *skip_whitespace(char *z){
+  while( isspace(*z) ){ z++; }
+  while( z[0]=='-' && z[1]=='-' ){
+    z += 2;
+    while( *z && *z!='\n' ){ z++; }
+    while( isspace(*z) ){ z++; }
+  }
+  return z;
+}
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -976,7 +990,8 @@ static void process_input(struct callback_data *p, FILE *in){
     }
   }
   if( zSql ){
-    printf("Incomplete SQL: %s\n", zSql);
+    char *zTail = skip_whitespace(zSql);
+    if( zTail && zTail[0] ) printf("Incomplete SQL: %s\n", zSql);
     free(zSql);
   }
 }
