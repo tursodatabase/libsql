@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.183 2005/01/20 01:51:26 drh Exp $
+** $Id: expr.c,v 1.184 2005/01/20 13:03:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -953,11 +953,6 @@ static void getFunctionName(Expr *pExpr, const char **pzName, int *pnName){
       *pnName = 17;
       break;
     }
-    default: {
-      *pzName = "can't happen";
-      *pnName = 12;
-      break;
-    }
   }
 }
 
@@ -1379,12 +1374,14 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }
+#ifndef SQLITE_OMIT_BLOB_LITERAL
     case TK_BLOB: {
       assert( TK_BLOB==OP_HexBlob );
       sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z+1, pExpr->token.n-1);
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }
+#endif
     case TK_NULL: {
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       break;
@@ -1622,6 +1619,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeResolveLabel(v, expr_end_label);
       break;
     }
+#ifndef SQLITE_OMIT_TRIGGER
     case TK_RAISE: {
       if( !pParse->trigStack ){
         sqlite3ErrorMsg(pParse,
@@ -1642,6 +1640,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
          VdbeComment((v, "# raise(IGNORE)"));
       }
     }
+#endif
     break;
   }
 }

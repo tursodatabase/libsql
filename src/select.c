@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.229 2005/01/19 23:24:50 drh Exp $
+** $Id: select.c,v 1.230 2005/01/20 13:03:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -434,6 +434,7 @@ static int selectInnerLoop(
   }
 
   switch( eDest ){
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
     /* In this mode, write each query result to the key of the temporary
     ** table iParm.
     */
@@ -442,21 +443,6 @@ static int selectInnerLoop(
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
-      break;
-    }
-
-    /* Store the result as data using a unique key.
-    */
-    case SRT_Table:
-    case SRT_TempTable: {
-      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-      if( pOrderBy ){
-        pushOntoSorter(pParse, v, pOrderBy);
-      }else{
-        sqlite3VdbeAddOp(v, OP_NewRecno, iParm, 0);
-        sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-        sqlite3VdbeAddOp(v, OP_PutIntKey, iParm, 0);
-      }
       break;
     }
 
@@ -470,6 +456,22 @@ static int selectInnerLoop(
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_NotFound, iParm, addr+3);
       sqlite3VdbeAddOp(v, OP_Delete, iParm, 0);
+      break;
+    }
+#endif
+
+    /* Store the result as data using a unique key.
+    */
+    case SRT_Table:
+    case SRT_TempTable: {
+      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      if( pOrderBy ){
+        pushOntoSorter(pParse, v, pOrderBy);
+      }else{
+        sqlite3VdbeAddOp(v, OP_NewRecno, iParm, 0);
+        sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
+        sqlite3VdbeAddOp(v, OP_PutIntKey, iParm, 0);
+      }
       break;
     }
 
@@ -665,6 +667,13 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
   if( pExpr==0 || pTabList==0 ) return 0;
 
   sqlite3ExprResolveNames(pParse, pTabList, 0, 0, pExpr, 1, 0);
+
+  /* The TK_AS operator can only occur in ORDER BY, GROUP BY, HAVING,
+  ** and LIMIT clauses.  But pExpr originates in the result set of a
+  ** SELECT.  So pExpr can never contain an AS operator.
+  */
+  assert( pExpr->op!=TK_AS );
+
   switch( pExpr->op ){
     case TK_COLUMN: {
       Table *pTab;
@@ -686,13 +695,6 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
       zType = columnType(pParse, pS->pSrc, pS->pEList->a[0].pExpr); 
       break;
     }
-    case TK_AS:
-      /* The TK_AS operator can only occur in ORDER BY, GROUP BY, HAVING,
-      ** and LIMIT clauses.  But pExpr originates in the result set of a
-      ** SELECT.  So pExpr can never contain an AS operator.
-      */
-      assert( 0 );
-      /* Fall thru */
     default:
       zType = 0;
   }
@@ -737,10 +739,12 @@ static void generateColumnNames(
   sqlite3 *db = pParse->db;
   int fullNames, shortNames;
 
+#ifdef SQLITE_OMIT_EXPLAIN
   /* If this is an EXPLAIN, skip this step */
   if( pParse->explain ){
     return;
   }
+#endif
 
   assert( v!=0 );
   if( pParse->colNamesSet || v==0 || sqlite3_malloc_failed ) return;
@@ -1120,6 +1124,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
 ** will be left pointing to a deallocated Table structure after the
 ** DROP and a coredump will occur the next time the VIEW is used.
 */
+#if 0
 void sqlite3SelectUnbind(Select *p){
   int i;
   SrcList *pSrc = p->pSrc;
@@ -1138,6 +1143,7 @@ void sqlite3SelectUnbind(Select *p){
     }
   }
 }
+#endif
 
 /*
 ** This routine associates entries in an ORDER BY expression list with
