@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.6 2000/06/01 11:16:52 drh Exp $
+** $Id: vdbe.c,v 1.7 2000/06/02 01:17:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -452,16 +452,18 @@ int sqliteVdbeList(
   azField[2] = zP1;
   azField[3] = zP2;
   azField[5] = 0;
-  rc = 0;
+  rc = SQLITE_OK;
   if( pzErrMsg ){ *pzErrMsg = 0; }
-  for(i=0; rc==0 && i<p->nOp; i++){
+  for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
     sprintf(zAddr,"%d",i);
     sprintf(zP1,"%d", p->aOp[i].p1);
     sprintf(zP2,"%d", p->aOp[i].p2);
     azField[4] = p->aOp[i].p3;
     if( azField[4]==0 ) azField[4] = "";
     azField[1] = zOpName[p->aOp[i].opcode];
-    rc = xCallback(pArg, 5, azField, azColumnNames);
+    if( xCallback(pArg, 5, azField, azColumnNames) ){
+      rc = SQLITE_ABORT;
+    }
   }
   return rc;
 }
@@ -566,8 +568,15 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
 ** The return parameter is the number of errors.
 **
 ** If the callback every returns non-zero, then the program exits
-** immediately.  No error message is written but the return value
-** from the callback because the return value of this routine.
+** immediately.  No error message but the function does return SQLITE_ABORT.
+**
+** A memory allocation error causes this routine to return SQLITE_NOMEM
+** and abandon furture processing.
+**
+** Other fatal errors return SQLITE_ERROR.
+**
+** If a database file could not be opened because it is locked by
+** another database instance, then this routine returns SQLITE_BUSY.
 */
 int sqliteVdbeExec(
   Vdbe *p,                   /* The VDBE */
@@ -581,9 +590,9 @@ int sqliteVdbeExec(
   char zBuf[100];            /* Space to sprintf() and integer */
 
   p->tos = -1;
-  rc = 0;
+  rc = SQLITE_OK;
   if( pzErrMsg ){ *pzErrMsg = 0; }
-  for(pc=0; rc==0 && pc<p->nOp && pc>=0; pc++){
+  for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
     pOp = &p->aOp[pc];
     if( p->trace ){
       fprintf(p->trace,"%4d %-12s %4d %4d %s\n",
@@ -599,12 +608,7 @@ int sqliteVdbeExec(
       ** the program.
       */
       case OP_Goto: {
-        pc = pOp->p2;
-        if( pc<0 || pc>p->nOp ){
-          sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-          rc = 1;
-        }
-        pc--;
+        pc = pOp->p2 - 1;
         break;
       }
 
@@ -743,7 +747,9 @@ int sqliteVdbeExec(
           if( Stringify(p, j) ) goto no_mem;
         }
         p->zStack[p->tos+1] = 0;
-        rc = xCallback(pArg, pOp->p1, &p->zStack[i], p->azColName);
+        if( xCallback(pArg, pOp->p1, &p->zStack[i], p->azColName)!=0 ){
+          rc = SQLITE_ABORT;
+        }
         PopStack(p, pOp->p1);
         break;
       }
@@ -821,7 +827,7 @@ int sqliteVdbeExec(
             default: {
               if( a==0 ){ 
                 sqliteSetString(pzErrMsg, "division by zero", 0);
-                rc = 1;
+                rc = SQLITE_ERROR;
                 goto cleanup;
               }
               b /= a;
@@ -843,7 +849,7 @@ int sqliteVdbeExec(
             default: {
               if( a==0.0 ){ 
                 sqliteSetString(pzErrMsg, "division by zero", 0);
-                rc = 1;
+                rc = SQLITE_ERROR;
                 goto cleanup;
               }
               b /= a;
@@ -1293,7 +1299,7 @@ int sqliteVdbeExec(
         break;
       }
 
-      /*  Open P1 P3 P2
+      /* Opcode: Open P1 P2 P3
       **
       ** Open a new database table named P3.  Give it an identifier P1.
       ** Open readonly if P2==0 and for reading and writing if P2!=0.
@@ -1316,7 +1322,7 @@ int sqliteVdbeExec(
         }else if( p->aTab[i].pTable ){
           sqliteDbbeCloseTable(p->aTab[i].pTable);
         }
-        p->aTab[i].pTable = sqliteDbbeOpenTable(p->pBe, pOp->p3, pOp->p2);
+        rc = sqliteDbbeOpenTable(p->pBe, pOp->p3, pOp->p2, &p->aTab[i].pTable);
         p->aTab[i].index = 0;
         break;
       }
@@ -1351,7 +1357,8 @@ int sqliteVdbeExec(
             sqliteDbbeFetch(p->aTab[i].pTable, sizeof(int), 
                            (char*)&p->iStack[tos]);
           }else{
-            sqliteDbbeFetch(p->aTab[i].pTable, p->iStack[tos], p->zStack[tos]);
+            sqliteDbbeFetch(p->aTab[i].pTable, p->iStack[tos], 
+                           p->zStack[tos]);
           }
         }
         PopStack(p, 1);
@@ -1380,12 +1387,7 @@ int sqliteVdbeExec(
           }
         }
         if( !alreadyExists ){
-          pc = pOp->p2;
-          if( pc<0 || pc>p->nOp ){
-            sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-            rc = 1;
-          }
-          pc--;
+          pc = pOp->p2 - 1;
         }
         break;
       }
@@ -1536,12 +1538,7 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         if( i>=0 && i<p->nTable && p->aTab[i].pTable!=0 ){
           if( sqliteDbbeNextKey(p->aTab[i].pTable)==0 ){
-            pc = pOp->p2;
-            if( pc<0 || pc>p->nOp ){
-              sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-              rc = 1;
-            }
-            pc--;
+            pc = pOp->p2 - 1;
           }
         }
         break;
@@ -1587,12 +1584,7 @@ int sqliteVdbeExec(
           }
           if( j>=nIdx ){
             j = -1;
-            pc = pOp->p2;
-            if( pc<0 || pc>p->nOp ){
-              sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-              rc = 1;
-            }
-            pc--;
+            pc = pOp->p2 - 1;
             PopStack(p, 1);
           }
           p->aTab[i].index = j+1;
@@ -1721,7 +1713,7 @@ int sqliteVdbeExec(
         }else if( p->apList[i] ){
           sqliteDbbeCloseTempFile(p->pBe, p->apList[i]);
         }
-        p->apList[i] = sqliteDbbeOpenTempFile(p->pBe);
+        rc = sqliteDbbeOpenTempFile(p->pBe, &p->apList[i]);
         break;
       }
 
@@ -1772,12 +1764,7 @@ int sqliteVdbeExec(
           p->iStack[p->tos] = val;
           p->zStack[p->tos] = 0;
         }else{
-          pc = pOp->p2;
-          if( pc<0 || pc>p->nOp ){
-            sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-            rc = 1;
-          }
-          pc--;
+          pc = pOp->p2 - 1;
         }
         break;
       }
@@ -1980,12 +1967,7 @@ int sqliteVdbeExec(
           sqliteFree(pSorter->zKey);
           sqliteFree(pSorter);
         }else{
-          pc = pOp->p2;
-          if( pc<0 || pc>p->nOp ){
-            sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-            rc = 1;
-          }
-          pc--;
+          pc = pOp->p2 - 1;
         }
         break;
       }
@@ -2018,7 +2000,9 @@ int sqliteVdbeExec(
       case OP_SortCallback: {
         int i = p->tos;
         if( i<0 ) goto not_enough_stack;
-        rc = xCallback(pArg, pOp->p1, (char**)p->zStack[i], p->azColName);
+        if( xCallback(pArg, pOp->p1, (char**)p->zStack[i], p->azColName) ){
+          rc = SQLITE_ABORT;
+        }
         PopStack(p, 1);
         break;
       }
@@ -2060,7 +2044,7 @@ int sqliteVdbeExec(
         }
         if( p->pFile==0 ){
           sqliteSetString(pzErrMsg,"unable to open file: ", pOp->p3, 0);
-          rc = 1;
+          rc = SQLITE_ERROR;
           goto cleanup;
         }
         break;
@@ -2160,12 +2144,7 @@ int sqliteVdbeExec(
         /* If we reach end-of-file, or if anything goes wrong, jump here.
         ** This code will cause a jump to P2 */
       fileread_jump:
-        pc = pOp->p2;
-        if( pc<0 || pc>p->nOp ){
-          sqliteSetString(pzErrMsg, "jump destination out of range", 0);
-          rc = 1;
-        }
-        pc--;
+        pc = pOp->p2 - 1;
         break;
       }
 
@@ -2195,9 +2174,13 @@ int sqliteVdbeExec(
       default: {
         sprintf(zBuf,"%d",pOp->opcode);
         sqliteSetString(pzErrMsg, "unknown opcode ", zBuf, 0);
-        rc = 1;
+        rc = SQLITE_INTERNAL;
         break;
       }
+    }
+    if( pc<-1 || pc>=p->nOp ){
+      sqliteSetString(pzErrMsg, "jump destination out of range", 0);
+      rc = SQLITE_INTERNAL;
     }
     if( p->trace && p->tos>=0 ){
       int i;
@@ -2231,7 +2214,7 @@ no_mem:
 not_enough_stack:
   sprintf(zBuf,"%d",pc);
   sqliteSetString(pzErrMsg, "too few operands on stack at ", zBuf, 0);
-  rc = 1;
+  rc = SQLITE_INTERNAL;
   goto cleanup;
 
   /* Jump here if an illegal or illformed instruction is executed.
@@ -2239,7 +2222,7 @@ not_enough_stack:
 bad_instruction:
   sprintf(zBuf,"%d",pc);
   sqliteSetString(pzErrMsg, "illegal operation at ", zBuf, 0);
-  rc = 1;
+  rc = SQLITE_INTERNAL;
   goto cleanup;
 
 }

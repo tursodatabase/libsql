@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.2 2000/05/31 22:58:39 drh Exp $
+** $Id: main.c,v 1.3 2000/06/02 01:17:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -51,14 +51,17 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
 }
 
 /*
-** Open a new SQLite database.  Construct an "sqlite" structure to define
-** the state of this database and return a pointer to that structure.
+** Attempt to read the database schema and initialize internal
+** data structures.  Return one of the SQLITE_ error codes to
+** indicate success or failure.
 */
-sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
-  sqlite *db;
+static int sqliteInit(sqlite *db, char **pzErrMsg){
   Vdbe *vdbe;
-  Table *pTab;
-  char *azArg[2];
+  int rc;
+
+  /*
+  ** The master database table has a structure like this
+  */
   static char master_schema[] = 
      "CREATE TABLE " MASTER_NAME " (\n"
      "  type text,\n"
@@ -116,7 +119,44 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     { OP_Halt,     0, 0,  0},           /* 16 */
   };
 
-  /* Allocate space to hold the main database structure */
+  /* Create a virtual machine to run the initialization program.  Run
+  ** the program.  The delete the virtual machine.
+  */
+  vdbe = sqliteVdbeCreate(db->pBe);
+  sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
+  rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg);
+  sqliteVdbeDelete(vdbe);
+  if( rc==SQLITE_OK ){
+    Table *pTab;
+    char *azArg[2];
+    azArg[0] = master_schema;
+    azArg[1] = 0;
+    sqliteOpenCb(db, 1, azArg, 0);
+    pTab = sqliteFindTable(db, MASTER_NAME);
+    if( pTab ){
+      pTab->readOnly = 1;
+    }
+    db->flags |= SQLITE_Initialized;
+  }else{
+    sqliteStrRealloc(pzErrMsg);
+  }
+  return rc;
+}
+
+/*
+** Open a new SQLite database.  Construct an "sqlite" structure to define
+** the state of this database and return a pointer to that structure.
+**
+** An attempt is made to initialize the in-memory data structures that
+** hold the database schema.  But if this fails (because the schema file
+** is locked) then that step is deferred until the first call to
+** sqlite_exec().
+*/
+sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
+  sqlite *db;
+  int rc;
+
+  /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
   if( pzErrMsg ) *pzErrMsg = 0;
   if( db==0 ){
@@ -132,20 +172,12 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     return 0;
   }
 
-  /* Create a virtual machine to run the initialization program.  Run
-  ** the program.  The delete the virtual machine.
-  */
-  azArg[0] = master_schema;
-  azArg[1] = 0;
-  sqliteOpenCb(db, 1, azArg, 0);
-  pTab = sqliteFindTable(db, MASTER_NAME);
-  if( pTab ){
-    pTab->readOnly = 1;
+  /* Attempt to read the schema */
+  rc = sqliteInit(db, pzErrMsg);
+  if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
+    sqlite_close(db);
+    return 0;
   }
-  vdbe = sqliteVdbeCreate(db->pBe);
-  sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
-  sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg);
-  sqliteVdbeDelete(vdbe);
   return db;
 }
 
@@ -208,14 +240,18 @@ int sqlite_exec(
   char **pzErrMsg             /* Write error messages here */
 ){
   Parse sParse;
-  int nErr;
+  int rc;
 
   if( pzErrMsg ) *pzErrMsg = 0;
+  if( (db->flags & SQLITE_Initialized)==0 ){
+    int rc = sqliteInit(db, pzErrMsg);
+    if( rc!=SQLITE_OK ) return rc;
+  }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
-  nErr = sqliteRunParser(&sParse, zSql, pzErrMsg);
+  rc = sqliteRunParser(&sParse, zSql, pzErrMsg);
   sqliteStrRealloc(pzErrMsg);
-  return nErr;
+  return rc;
 }

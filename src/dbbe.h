@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.3 2000/05/31 20:00:52 drh Exp $
+** $Id: dbbe.h,v 1.4 2000/06/02 01:17:37 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -63,7 +63,7 @@ void sqliteDbbeClose(Dbbe*);
 ** If zTableName is 0 or "", then a temporary table is created that
 ** will be deleted when closed.
 */
-DbbeTable *sqliteDbbeOpenTable(Dbbe*, const char *zTableName, int writeable);
+int sqliteDbbeOpenTable(Dbbe*, const char *zName, int writeable, DbbeTable **);
 
 /* Delete a table from the database */
 void sqliteDbbeDropTable(Dbbe*, const char *zTableName);
@@ -122,7 +122,7 @@ int sqliteDbbePut(DbbeTable*, int nKey, char *pKey, int nData, char *pData);
 int sqliteDbbeDelete(DbbeTable*, int nKey, char *pKey);
 
 /* Open a file suitable for temporary storage */
-FILE *sqliteDbbeOpenTempFile(Dbbe*);
+int sqliteDbbeOpenTempFile(Dbbe*, FILE**);
 
 /* Close a temporary file */
 void sqliteDbbeCloseTempFile(Dbbe *, FILE *);

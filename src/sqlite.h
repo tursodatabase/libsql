@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h,v 1.1 2000/05/29 14:26:01 drh Exp $
+** @(#) $Id: sqlite.h,v 1.2 2000/06/02 01:17:38 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -75,8 +75,7 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** invoked once for each row of the query result.  This callback
 ** should normally return 0.  If the callback returns a non-zero
 ** value then the query is aborted, all subsequent SQL statements
-** are skipped and the sqlite_exec() function returns the same
-** value that the callback returned.
+** are skipped and the sqlite_exec() function returns the SQLITE_ABORT.
 **
 ** The 4th parameter is an arbitrary pointer that is passed
 ** to the callback function as its first parameter.
@@ -95,7 +94,12 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** message is written into memory obtained from malloc() and
 ** *errmsg is made to point to that message.  If errmsg==NULL,
 ** then no error message is ever written.  The return value is
-** non-zero if an error occurs.
+** SQLITE_ERROR if an error occurs.
+**
+** If the query could not be executed because a database file is
+** locked or busy, then this function returns SQLITE_BUSY.  If
+** the query could not be executed because a file is missing or
+** has incorrect permissions, this function returns SQLITE_ERROR.
 */
 int sqlite_exec(
   sqlite*,                      /* An open database */
@@ -104,6 +108,16 @@ int sqlite_exec(
   void *,                       /* 1st argument to callback function */
   char **errmsg                 /* Error msg written here */
 );
+
+/*
+** Return values fro sqlite_exec()
+*/
+#define SQLITE_OK        0    /* Successful result */
+#define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
+#define SQLITE_ERROR     2    /* SQL error or missing database */
+#define SQLITE_ABORT     3    /* Callback routine requested an abort */
+#define SQLITE_BUSY      4    /* One or more database files are locked */
+#define SQLITE_NOMEM     5    /* A malloc() failed */
 
 
 /* This function returns true if the given input string comprises

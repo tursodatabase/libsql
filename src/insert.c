@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.1 2000/05/31 15:34:53 drh Exp $
+** $Id: insert.c,v 1.2 2000/06/02 01:17:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -104,7 +104,7 @@ void sqliteInsert(
   v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
   if( v ){
     Index *pIdx;
-    sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
+    sqliteVdbeAddOp(v, OP_Open, 0, 1, pTab->zName, 0);
     sqliteVdbeAddOp(v, OP_New, 0, 0, 0, 0);
     if( pTab->pIndex ){
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
@@ -130,7 +130,7 @@ void sqliteInsert(
       if( pIdx->pNext ){
         sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       }
-      sqliteVdbeAddOp(v, OP_Open, 0, 0, pIdx->zName, 0);
+      sqliteVdbeAddOp(v, OP_Open, 0, 1, pIdx->zName, 0);
       for(i=0; i<pIdx->nField; i++){
         int idx = pIdx->aiField[i];
         if( pField==0 ){

@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.7 2000/05/31 22:58:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.8 2000/06/02 01:17:38 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -101,6 +101,14 @@ struct sqlite {
 ** Possible values for the flags field of sqlite
 */
 #define SQLITE_VdbeTrace    0x00000001
+#define SQLITE_Initialized  0x00000002
+
+/*
+** Values for SQLITE_OK, SQLITE_ERROR, etc are defined in sqlite.h.
+** The following are several new return codes that are used internally
+** only.  Take care that these values do not overlap.
+*/
+#define SQLITE_READONLY   6    /* Table already opened as read-only */
 
 /*
 ** Each table is represented in memory by

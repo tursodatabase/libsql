@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.6 2000/05/31 22:58:39 drh Exp $
+** $Id: dbbe.c,v 1.7 2000/06/02 01:17:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -48,6 +48,7 @@ struct BeFile {
   GDBM_FILE dbf;          /* The file itself */
   int nRef;               /* Number of references */
   int delOnClose;         /* Delete when closing */
+  int writeable;          /* Opened for writing */
   BeFile *pNext, *pPrev;  /* Next and previous on list of open files */
 };
 
@@ -128,21 +129,40 @@ static int rc4byte(struct rc4 *p){
 */
 Dbbe *sqliteDbbeOpen(
   const char *zName,     /* The name of the database */
-  int write,             /* True if we will be writing to the database */
-  int create,            /* True to create database if it doesn't exist */
+  int writeFlag,         /* True if we will be writing to the database */
+  int createFlag,        /* True to create database if it doesn't exist */
   char **pzErrMsg        /* Write error messages (if any) here */
 ){
   Dbbe *pNew;
   struct stat statbuf;
+  char *zMaster;
 
+  if( !writeFlag ) createFlag = 0;
   if( stat(zName, &statbuf)!=0 ){
-    sqliteSetString(pzErrMsg, "can't find file \"", zName, "\"", 0);
-    return 0;
+    if( createFlag ) mkdir(zName, 0750);
+    if( stat(zName, &statbuf)!=0 ){
+      sqliteSetString(pzErrMsg, "can't find or make directory \"", 
+         zName, "\"", 0);
+      return 0;
+    }
   }
   if( !S_ISDIR(statbuf.st_mode) ){
     sqliteSetString(pzErrMsg, "not a directory: \"", zName, "\"", 0);
     return 0;
   }
+  if( access(zName, writeFlag ? (X_OK|W_OK|R_OK) : (X_OK|R_OK)) ){
+    sqliteSetString(pzErrMsg, "access permission denied", 0);
+    return 0;
+  }
+  zMaster = 0;
+  sqliteSetString(&zMaster, zName, "/" MASTER_NAME, 0);
+  if( stat(zMaster, &statbuf)==0
+   && access(zMaster, writeFlag ? (W_OK|R_OK) : R_OK)!=0 ){
+    sqliteSetString(pzErrMsg, "access permission denied for ", zMaster, 0);
+    sqliteFree(zMaster);
+    return 0;
+  }
+  sqliteFree(zMaster);
   pNew = sqliteMalloc(sizeof(Dbbe) + strlen(zName) + 1);
   if( pNew==0 ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
@@ -150,7 +170,7 @@ Dbbe *sqliteDbbeOpen(
   }
   pNew->zDir = (char*)&pNew[1];
   strcpy(pNew->zDir, zName);
-  pNew->write = write;
+  pNew->write = writeFlag;
   pNew->pOpen = 0;
   time(&statbuf.st_ctime);
   rc4init(&pNew->rc4, (char*)&statbuf, sizeof(statbuf));
@@ -212,17 +232,22 @@ static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
 /*
 ** Open a new table cursor
 */
-DbbeTable *sqliteDbbeOpenTable(
+int sqliteDbbeOpenTable(
   Dbbe *pBe,              /* The database the table belongs to */
   const char *zTable,     /* The name of the table */
-  int writeable           /* True to open for writing */
+  int writeable,          /* True to open for writing */
+  DbbeTable **ppTable     /* Write the resulting table pointer here */
 ){
   char *zFile;            /* Name of the table file */
   DbbeTable *pTable;      /* The new table cursor */
   BeFile *pFile;          /* The underlying data file for this table */
+  int rc = SQLITE_OK;     /* Return value */
+  int rw_mask;            /* Permissions mask for opening a table */
+  int mode;               /* Mode for opening a table */
 
+  *ppTable = 0;
   pTable = sqliteMalloc( sizeof(*pTable) );
-  if( pTable==0 ) return 0;
+  if( pTable==0 ) return SQLITE_NOMEM;
   if( zTable ){
     zFile = sqliteFileOfTable(pBe, zTable);
     for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
@@ -233,21 +258,20 @@ DbbeTable *sqliteDbbeOpenTable(
     zFile = 0;
   }
   if( pFile==0 ){
+    if( writeable ){
+      rw_mask = GDBM_WRCREAT | GDBM_FAST;
+      mode = 0640;
+    }else{
+      rw_mask = GDBM_READER;
+      mode = 0640;
+    }
     pFile = sqliteMalloc( sizeof(*pFile) );
     if( pFile==0 ){
       sqliteFree(zFile);
-      return 0;
+      return SQLITE_NOMEM;
     }
-    pFile->zName = zFile;
-    pFile->nRef = 1;
-    pFile->pPrev = 0;
-    if( pBe->pOpen ){
-      pBe->pOpen->pPrev = pFile;
-    }
-    pFile->pNext = pBe->pOpen;
-    pBe->pOpen = pFile;
     if( pFile->zName ){
-      pFile->dbf = gdbm_open(pFile->zName, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
+      pFile->dbf = gdbm_open(pFile->zName, 0, rw_mask, mode, 0);
     }else{
       int limit;
       struct rc4 *pRc4;
@@ -259,20 +283,35 @@ DbbeTable *sqliteDbbeOpenTable(
         randomName(&pBe->rc4, zRandom, "_temp_table_");
         sqliteFree(zFile);
         zFile = sqliteFileOfTable(pBe, zRandom);
-        pFile->dbf = gdbm_open(zFile, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
+        pFile->dbf = gdbm_open(zFile, 0, rw_mask, mode, 0);
       }while( pFile->dbf==0 && limit-- >= 0);
-      pFile->zName = zFile;
       pFile->delOnClose = 1;
+    }
+    pFile->writeable = writeable;
+    pFile->zName = zFile;
+    pFile->nRef = 1;
+    pFile->pPrev = 0;
+    if( pBe->pOpen ){
+      pBe->pOpen->pPrev = pFile;
+    }
+    pFile->pNext = pBe->pOpen;
+    pBe->pOpen = pFile;
+    if( pFile->dbf==0 ){
+      rc = SQLITE_BUSY;
     }
   }else{
     sqliteFree(zFile);
     pFile->nRef++;
+    if( writeable && !pFile->writeable ){
+      rc = SQLITE_READONLY;
+    }
   }
   pTable->pBe = pBe;
   pTable->pFile = pFile;
   pTable->readPending = 0;
   pTable->needRewind = 1;
-  return pTable;
+  *ppTable = pTable;
+  return rc;
 }
 
 /*
@@ -293,7 +332,9 @@ void sqliteDbbeReorganizeTable(Dbbe *pBe, const char *zTable){
   char *zFile;            /* Name of the table file */
   DbbeTable *pTab;
 
-  pTab = sqliteDbbeOpenTable(pBe, zTable, 1);
+  if( sqliteDbbeOpenTable(pBe, zTable, 1, &pTab)!=SQLITE_OK ){
+    return;
+  }
   if( pTab && pTab->pFile && pTab->pFile->dbf ){
     gdbm_reorganize(pTab->pFile->dbf);
   }
@@ -448,7 +489,7 @@ int sqliteDbbeDataLength(DbbeTable *pTable){
 */
 int sqliteDbbeRewind(DbbeTable *pTable){
   pTable->needRewind = 1;
-  return 0;
+  return SQLITE_OK;
 }
 
 /*
@@ -512,15 +553,17 @@ int sqliteDbbeNew(DbbeTable *pTable){
 */
 int sqliteDbbePut(DbbeTable *pTable, int nKey,char *pKey,int nData,char *pData){
   datum data, key;
-  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return 0;
+  int rc;
+  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return SQLITE_ERROR;
   data.dsize = nData;
   data.dptr = pData;
   key.dsize = nKey;
   key.dptr = pKey;
-  gdbm_store(pTable->pFile->dbf, key, data, GDBM_REPLACE);
+  rc = gdbm_store(pTable->pFile->dbf, key, data, GDBM_REPLACE);
+  if( rc ) rc = SQLITE_ERROR;
   datumClear(&pTable->key);
   datumClear(&pTable->data);
-  return 1;
+  return rc;
 }
 
 /*
@@ -528,23 +571,26 @@ int sqliteDbbePut(DbbeTable *pTable, int nKey,char *pKey,int nData,char *pData){
 */
 int sqliteDbbeDelete(DbbeTable *pTable, int nKey, char *pKey){
   datum key;
+  int rc;
   datumClear(&pTable->key);
   datumClear(&pTable->data);
-  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return 0;
+  if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return SQLITE_ERROR;
   key.dsize = nKey;
   key.dptr = pKey;
-  gdbm_delete(pTable->pFile->dbf, key);
-  return 1;
+  rc = gdbm_delete(pTable->pFile->dbf, key);
+  if( rc ) rc = SQLITE_ERROR;
+  return rc;
 }
 
 /*
 ** Open a temporary file.
 */
-FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
+int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
   char *zFile;
   char zBuf[50];
   int i, j;
   int limit;
+  int rc = SQLITE_OK;
 
   for(i=0; i<pBe->nTemp; i++){
     if( pBe->apTemp[i]==0 ) break;
@@ -553,7 +599,10 @@ FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
     pBe->nTemp++;
     pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
   }
-  if( pBe->apTemp==0 ) return 0;
+  if( pBe->apTemp==0 ){
+    *ppFile = 0;
+    return SQLITE_NOMEM;
+  }
   limit = 4;
   zFile = 0;
   do{
@@ -562,9 +611,12 @@ FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
     zFile = 0;
     sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
   }while( access(zFile,0)==0 && limit-- >= 0 );
-  pBe->apTemp[i] = fopen(zFile, "w+");
+  *ppFile = pBe->apTemp[i] = fopen(zFile, "w+");
+  if( pBe->apTemp[i]==0 ){
+    rc = SQLITE_ERROR;
+  }
   sqliteFree(zFile);
-  return pBe->apTemp[i];
+  return rc;
 }
 
 /*

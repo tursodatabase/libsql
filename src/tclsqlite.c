@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.3 2000/05/30 13:44:20 drh Exp $
+** $Id: tclsqlite.c,v 1.4 2000/06/02 01:17:38 drh Exp $
 */
 #include "sqlite.h"
 #include <tcl.h>
@@ -201,7 +201,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
     return TCL_ERROR;
   }
   if( argc==3 ){
-    mode = 0;
+    mode = 0666;
   }else if( Tcl_GetInt(interp, argv[3], &mode)!=TCL_OK ){
     return TCL_ERROR;
   }
