@@ -1,5 +1,5 @@
-C Incremental\sbtree.c\schanges.\s(CVS\s1312)
-D 2004-05-03T19:49:33
+C Added\stemplate\sfor\sthe\sutf.c\sfile\scontaining\sconversion\sroutines.\s(CVS\s1313)
+D 2004-05-04T15:00:47
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,6 +59,7 @@ F src/test4.c 6e3e31acfaf21d66420fc35fda5b17dc0000cc8d
 F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c 4c50328ebc127852bde8e2950eb8933234802c21
+F src/utf.c 8d74ddbfffdc1f2e87bfc11b8c1e2a806313a715
 F src/util.c b2287b07ddf55ef7aaa8888a9473123995a69f40
 F src/vacuum.c a4e8464c9f6d60659c5343e9d62c742463227820
 F src/vdbe.c 7c33f761fdc799633468766fb53eda4301daa6b3
@@ -188,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0eee3b5cd400e9548437632ec1dfe625a3fca9cf
-R 4e56ff31d4947da66d5a46115140d57d
+P fdc629dbbf974024215969e0bd3def4597258812
+R 862d1dd5fd20c7467c3bdf6faef3043d
 U drh
-Z 57bf0fd86b068e3d5bb631ec9f2832d0
+Z b159d386ddf509db1096e77212da2220
