@@ -1,4 +1,4 @@
-C Minor\sfollow-on\schanges\sto\sthe\srecent\sATTACH\spatch.\s(CVS\s892)
+C Minor\sfollow-on\schanges\sto\sthe\srecent\sATTACH\spatch.\s(CVS\s893)
 D 2003-03-31T13:36:09
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1d3fc977211abdc7ba3fd51d661863e8ce5aef69
+P e80afe75b33d4eacb40ef6128cf688f7c3253984
 R 8452f551322a2a47e2174b852766e085
 U drh
-Z 6062850ebc36422b5dc928e90d3f98bb
+Z 7162b736d28f6cc7cea678e58590971b
