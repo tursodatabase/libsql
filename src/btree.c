@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.219 2004/11/16 15:50:20 danielk1977 Exp $
+** $Id: btree.c,v 1.220 2004/11/17 10:22:03 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3951,6 +3951,18 @@ static int balance_nonroot(MemPage *pPage){
     /* If the cursor is not valid, do not do anything with it. */
     if( !pCur->isValid ) continue;
 
+    /* If the cursor pointed to one of the cells moved around during the
+    ** balancing, then set variable iCell to the index of the cell in apCell.
+    ** This is used by the block below to figure out where the cell was
+    ** moved to, and adjust the cursor appropriately.
+    **
+    ** If the cursor points to the parent page, but the cell was not involved
+    ** in the balance, then declare the cache of the cell-parse invalid, as a
+    ** defragmentation may of occured during  the balance. Also, if the index
+    ** of the cell is greater than that of the divider cells, then it may
+    ** need to be adjusted (in case there are now more or less divider cells
+    ** than there were before the balancing).
+    */
     for(i=0; iCell<0 && i<nOld; i++){
       if( pgno==apCopy[i]->pgno ){
         iCell = nCellCnt + pCur->idx;
@@ -3958,7 +3970,6 @@ static int balance_nonroot(MemPage *pPage){
       }
       nCellCnt += (apCopy[i]->nCell + apCopy[i]->nOverflow) + (leafData?0:1);
     }
-
     if( pgno==pParent->pgno ){
       assert( !leafData );
       assert( iCell==-1 );
@@ -3971,10 +3982,14 @@ static int balance_nonroot(MemPage *pPage){
         TRACE(("BALANCE: Cursor %p migrates from %d,%d to %d,%d\n", 
             pCur, pgno, pCur->idx, pgno, pCur->idx+(nNew-nOld)));
         pCur->idx += (nNew-nOld);
-        pCur->info.nSize = 0;
       }
+      pCur->info.nSize = 0;
     }
 
+    /* If iCell is greater than or equal to zero, then pCur points at a
+    ** cell that was moved around during the balance. Figure out where
+    ** the cell was moved to and adjust pCur to match.
+    */
     if( iCell>=0 ){
       int idxNew;
       Pgno pgnoNew;
@@ -4247,6 +4262,7 @@ static int balance_deeper(MemPage *pPage){
   cdata = pChild->aData;
   memcpy(cdata, &data[hdr], pPage->cellOffset+2*pPage->nCell-hdr);
   memcpy(&cdata[brk], &data[brk], usableSize-brk);
+  assert( pChild->isInit==0 );
   rc = initPage(pChild, pPage);
   if( rc ) return rc;
   memcpy(pChild->aOvfl, pPage->aOvfl, pPage->nOverflow*sizeof(pPage->aOvfl[0]));
@@ -4524,8 +4540,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     }
     rc = sqlite3pager_write(leafCur.pPage->aData);
     if( rc ) goto delete_out;
-    TRACE(("DELETE: table=%d delete internal from %d replace from leaf %d\n",
-       pCur->pgnoRoot, pPage->pgno, leafCur.pPage->pgno));
+    TRACE(("DELETE: table=%d delete internal from %d,%d replace "
+        "from leaf %d,%d\n", pCur->pgnoRoot, pPage->pgno, idx, 
+        leafCur.pPage->pgno, leafCur.idx));
 
     /* Drop the cell from the internal page. Make a copy of the cell from
     ** the leaf page into memory obtained from malloc(). Insert it into
@@ -4549,6 +4566,10 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     /* If there are any cursors that point to the leaf-cell, move them
     ** so that they point at internal cell. This is easiest done by
     ** calling BtreePrevious().
+    **
+    ** Also, any cursors that point to the internal page have their
+    ** cached parses invalidated, as the insertCell() above may have 
+    ** caused a defragmation.
     */
     for(pCur2=pBt->pCursor; pCur2; pCur2 = pCur2->pNext){
       if( pCur2->pPage==leafCur.pPage && pCur2->idx==leafCur.idx ){
@@ -4563,6 +4584,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         assert( pCur2->idx==idx );
         pCur2->delShift = delShiftSave;
       }
+      if( pCur2->pPage==pPage ){
+        pCur2->info.nSize = 0;
+      }
     }
 
     /* Balance the internal page. Free the memory allocated for the 
@@ -4575,8 +4599,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 
     for(pCur2=pBt->pCursor; pCur2; pCur2 = pCur2->pNext){
       if( pCur2->pPage==leafCur.pPage && pCur2->idx>leafCur.idx ){
-        TRACE(("DELETE: Cursor %p migrates from %d,%d to %d,%d\n", 
-            pCur2, pPage->pgno, pCur2->idx, pPage->pgno, pCur2->idx-1));
+        TRACE(("DELETE: Cursor %p migrates from %d,%d to %d,%d\n", pCur2, 
+            leafCur.pPage->pgno,pCur2->idx,leafCur.pPage->pgno, pCur2->idx-1));
         pCur2->idx--;
         pCur2->info.nSize = 0;
       }
@@ -4988,7 +5012,7 @@ int sqlite3BtreeFlags(BtCursor *pCur){
 ** is used for debugging and testing only.
 */
 #ifdef SQLITE_TEST
-int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
+static int btreePageDump(Btree *pBt, int pgno, int recursive, MemPage *pParent){
   int rc;
   MemPage *pPage;
   int i, j, c;
@@ -5004,7 +5028,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   rc = getPage(pBt, (Pgno)pgno, &pPage);
   isInit = pPage->isInit;
   if( pPage->isInit==0 ){
-    initPage(pPage, 0);
+    initPage(pPage, pParent);
   }
   if( rc ){
     return rc;
@@ -5074,15 +5098,18 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   if( recursive && !pPage->leaf ){
     for(i=0; i<nCell; i++){
       unsigned char *pCell = findCell(pPage, i);
-      sqlite3BtreePageDump(pBt, get4byte(pCell), 1);
+      btreePageDump(pBt, get4byte(pCell), 1, pPage);
       idx = get2byte(pCell);
     }
-    sqlite3BtreePageDump(pBt, get4byte(&data[hdr+8]), 1);
+    btreePageDump(pBt, get4byte(&data[hdr+8]), 1, pPage);
   }
   pPage->isInit = isInit;
   sqlite3pager_unref(data);
   fflush(stdout);
   return SQLITE_OK;
+}
+int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
+  return btreePageDump(pBt, pgno, recursive, 0);
 }
 #endif
 
