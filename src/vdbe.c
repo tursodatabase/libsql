@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.67 2001/09/15 00:57:29 drh Exp $
+** $Id: vdbe.c,v 1.68 2001/09/15 13:15:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -456,7 +456,7 @@ int sqliteVdbeMakeLabel(Vdbe *p){
   i = p->nLabel++;
   if( i>=p->nLabelAlloc ){
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(int));
+    p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
   if( p->aLabel==0 ){
     p->nLabel = 0;
@@ -1774,22 +1774,24 @@ case OP_NotNull: {
 ** Convert the top P1 entries of the stack into a single entry
 ** suitable for use as a data record in a database table.  To do this
 ** all entries (except NULLs) are converted to strings and 
-** concatenated.  The null-terminators are preserved by the concatation
-** and serve as a boundry marker between columns.  The lowest entry
+** concatenated.  The null-terminators are included on all string
+** except for NULL columns which are represented by zero bytes.
+** The lowest entry
 ** on the stack is the first in the concatenation and the top of
 ** the stack is the last.  After all columns are concatenated, an
-** index header is added.  The index header consists of P1 integers
+** index header is added.  The index header consists of P1 16-bit integers
 ** which hold the offset of the beginning of each column data from the
-** beginning of the completed record including the header.  Header
-** entries for NULL fields point to where the first byte of the column
-** would have been stored if the column had held any bytes.
+** beginning of the completed record including the header.
+**
+** The OP_Column opcode is used to unpack a record manufactured with
+** the opcode.
 */
 case OP_MakeRecord: {
   char *zNewRecord;
   int nByte;
   int nField;
   int i, j;
-  int addr;
+  u16 addr;
 
   nField = pOp->p1;
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
@@ -1800,14 +1802,18 @@ case OP_MakeRecord: {
       nByte += aStack[i].n;
     }
   }
-  nByte += sizeof(int)*nField;
+  nByte += sizeof(addr)*nField;
+  if( nByte>65535 ){
+    rc = SQLITE_TOOBIG;
+    goto abort_due_to_error;
+  }
   zNewRecord = sqliteMalloc( nByte );
   if( zNewRecord==0 ) goto no_mem;
   j = 0;
-  addr = sizeof(int)*nField;
+  addr = sizeof(addr)*nField;
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    memcpy(&zNewRecord[j], (char*)&addr, sizeof(int));
-    j += sizeof(int);
+    memcpy(&zNewRecord[j], (char*)&addr, sizeof(addr));
+    j += sizeof(addr);
     if( (aStack[i].flags & STK_Null)==0 ){
       addr += aStack[i].n;
     }
@@ -1906,7 +1912,7 @@ case OP_MakeIdxKey: {
 
   nField = pOp->p1;
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
-  nByte = sizeof(int);
+  nByte = sizeof(u32);
   for(i=p->tos-nField+1; i<=p->tos; i++){
     if( aStack[i].flags & STK_Null ){
       nByte++;
@@ -1927,7 +1933,7 @@ case OP_MakeIdxKey: {
   }
   zNewKey[j++] = 0;
   Integerify(p, p->tos-nField);
-  memcpy(&zNewKey[j], &aStack[p->tos-nField].i, sizeof(int));
+  memcpy(&zNewKey[j], &aStack[p->tos-nField].i, sizeof(u32));
   PopStack(p, nField+1);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -2369,15 +2375,12 @@ case OP_KeyAsData: {
 
 /* Opcode: Column P1 P2 *
 **
-** Interpret the data in the most recent fetch from cursor P1
-** is a structure built using the MakeRecord instruction.
-** Push onto the stack the value of the P2-th field of that
-** structure.
-** 
-** The value pushed is a pointer to the data stored in the cursor.
-** The value will go away the next time the cursor is modified in
-** any way.  Make a copy of the string (using
-** "Concat 1 0 0") if it needs to persist longer than that.
+** Interpret the data that cursor P1 points to as
+** a structure built using the MakeRecord instruction.
+** (See the MakeRecord opcode for additional information about
+** the format of the data.)
+** Push onto the stack the value of the P2-th column contained
+** in the data.
 **
 ** If the KeyAsData opcode has previously executed on this cursor,
 ** then the field might be extracted from the key rather than the
@@ -2385,7 +2388,7 @@ case OP_KeyAsData: {
 */
 case OP_Column: {
   int amt, offset, nCol, payloadSize;
-  int aHdr[10];
+  u16 aHdr[10];
   static const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
   int i = pOp->p1;
   int p2 = pOp->p2;
@@ -2417,14 +2420,14 @@ case OP_Column: {
     ** three times.
     */
     (*xSize)(pCrsr, &payloadSize);
-    if( payloadSize < sizeof(int)*(p2+1) ){
+    if( payloadSize < sizeof(aHdr[0])*(p2+1) ){
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
     }
     if( p2+1<mxHdr ){
       (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), (char*)aHdr);
       nCol = aHdr[0];
-      nCol /= sizeof(int);
+      nCol /= sizeof(aHdr[0]);
       offset = aHdr[p2];
       if( p2 == nCol-1 ){
         amt = payloadSize - offset;
@@ -2432,13 +2435,14 @@ case OP_Column: {
         amt = aHdr[p2+1] - offset;
       }
     }else{
-      sqliteBtreeData(pCrsr, 0, sizeof(int), (char*)&nCol);
-      nCol /= sizeof(int);
+      sqliteBtreeData(pCrsr, 0, sizeof(aHdr[0]), (char*)aHdr);
+      nCol = aHdr[0]/sizeof(aHdr[0]);
       if( p2 == nCol-1 ){
-        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int), (char*)&offset);
+        (*xRead)(pCrsr, sizeof(aHdr[0])*p2, sizeof(aHdr[0]), (char*)aHdr);
+        offset = aHdr[0];
         amt = payloadSize - offset;
       }else{
-        (*xRead)(pCrsr, sizeof(int)*p2, sizeof(int)*2, (char*)aHdr);
+        (*xRead)(pCrsr, sizeof(aHdr[0])*p2, sizeof(aHdr[0])*2, (char*)aHdr);
         offset = aHdr[0];
         amt = aHdr[1] - offset;
       }
@@ -2447,6 +2451,10 @@ case OP_Column: {
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
     }
+
+    /* amt and offset now hold the offset to the start of data and the
+    ** amount of data.  Go get the data and put it on the stack.
+    */
     if( amt==0 ){
       aStack[tos].flags = STK_Null;
     }else{
@@ -2480,7 +2488,7 @@ case OP_Recno: {
     if( p->aCsr[i].recnoIsValid ){
       v = p->aCsr[i].lastRecno;
     }else{
-      sqliteBtreeKey(pCrsr, 0, sizeof(int), (char*)&v);
+      sqliteBtreeKey(pCrsr, 0, sizeof(u32), (char*)&v);
     }
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
@@ -2626,7 +2634,7 @@ case OP_NextIdx: {
       if( rx!=SQLITE_OK ) goto abort_due_to_error;
     }
     sqliteBtreeKeySize(pCur, &size);
-    if( res>0 || size!=pCrsr->nKey+sizeof(int) ||
+    if( res>0 || size!=pCrsr->nKey+sizeof(u32) ||
       sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
       strncmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
     ){
@@ -2634,7 +2642,7 @@ case OP_NextIdx: {
       POPSTACK;
     }else{
       int recno;
-      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(int), (char*)&recno);
+      sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(u32), (char*)&recno);
       p->aCsr[i].lastRecno = aStack[tos].i = recno;
       p->aCsr[i].recnoIsValid = 1;
       aStack[tos].flags = STK_Int;
@@ -2812,7 +2820,7 @@ case OP_ListWrite: {
   VERIFY( if( p->tos<0 ) goto not_enough_stack; )
   pKeylist = p->apList[i];
   if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
-    pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(int) );
+    pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(pKeylist->aKey[0]) );
     if( pKeylist==0 ) goto no_mem;
     pKeylist->nKey = 1000;
     pKeylist->nRead = 0;
@@ -3774,11 +3782,23 @@ default: {
         }else if( aStack[i].flags & STK_Real ){
           fprintf(p->trace, " r:%g", aStack[i].r);
         }else if( aStack[i].flags & STK_Str ){
-          if( aStack[i].flags & STK_Dyn ){
-            fprintf(p->trace, " z:[%.11s]", zStack[i]);
-          }else{
-            fprintf(p->trace, " s:[%.11s]", zStack[i]);
+          int j, k;
+          char zBuf[100];
+          zBuf[0] = ' ';
+          zBuf[1] = (aStack[i].flags & STK_Dyn)!=0 ? 'z' : 's';
+          zBuf[2] = ':';
+          k = 3;
+          for(j=0; j<15 && j<aStack[i].n; j++){
+            int c = zStack[i][j];
+            if( c==0 && j==aStack[i].n-1 ) break;
+            if( isprint(c) && !isspace(c) ){
+              zBuf[k++] = c;
+            }else{
+              zBuf[k++] = '.';
+            }
           }
+          zBuf[k++] = 0;
+          fprintf(p->trace, "%s", zBuf);
         }else{
           fprintf(p->trace, " ???");
         }

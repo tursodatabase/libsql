@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.48 2001/09/15 00:57:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.49 2001/09/15 13:15:13 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
@@ -42,9 +42,12 @@
 #define TEMP_PAGES   25
 
 /*
-** The paging system deals with 32-bit integers.
+** Integers of known sizes.  These typedefs much change for architectures
+** where the sizes very.
 */
-typedef unsigned int u32;
+typedef unsigned int u32;             /* 4-byte unsigned integer */
+typedef unsigned short int u16;       /* 2-byte unsigned integer */
+typedef unsigned char u8;             /* 1-byte unsigned integer */
 
 /*
 ** If memory allocation problems are found, recompile with

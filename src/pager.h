@@ -25,13 +25,19 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.9 2001/09/14 18:54:09 drh Exp $
+** @(#) $Id: pager.h,v 1.10 2001/09/15 13:15:13 drh Exp $
 */
 
 /*
 ** The size of one page
 */
 #define SQLITE_PAGE_SIZE 1024
+
+/*
+** Maximum number of pages in one database.  (This is a limitation of
+** imposed by 4GB files size limits.)
+*/
+#define SQLITE_MAX_PAGE 1073741823
 
 /*
 ** The type used to represent a page number.  The first page in a file

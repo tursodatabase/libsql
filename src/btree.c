@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.27 2001/09/14 18:54:08 drh Exp $
+** $Id: btree.c,v 1.28 2001/09/15 13:15:13 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -73,9 +73,12 @@
 ** Change these typedefs when porting to new architectures.
 */
 typedef unsigned int uptr;
-/*  typedef unsigned int u32; -- already defined in sqliteInt.h */
-typedef unsigned short int u16;
-typedef unsigned char u8;
+
+/* There are already definedin sqliteInt.h...
+** typedef unsigned int u32;
+** typedef unsigned short int u16;
+** typedef unsigned char u8;
+*/
 
 /*
 ** This macro casts a pointer to an integer.  Useful for doing
