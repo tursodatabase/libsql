@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.146 2004/06/28 01:16:46 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.147 2004/06/28 04:52:30 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -424,10 +424,10 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
   rc = sqlite3OsRead(pJrnl, aMagic, 8);
   if( rc!=SQLITE_OK || memcmp(aMagic, aJournalMagic, 8) ) return rc;
 
-  rc = sqlite3OsSeek(pJrnl, szJ-12-len);
+  rc = sqlite3OsSeek(pJrnl, szJ-16-len);
   if( rc!=SQLITE_OK ) return rc;
 
-  *pzMaster = (char *)sqliteMalloc(len);
+  *pzMaster = (char *)sqliteMalloc(len+1);
   if( !*pzMaster ){
     return SQLITE_NOMEM;
   }
@@ -440,12 +440,18 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
 
   /* See if the checksum matches the master journal name */
   for(i=0; i<len; i++){
-    cksum -= *pzMaster[i];
+    cksum -= (*pzMaster)[i];
   }
-  if( !cksum ){
+  if( cksum ){
+    /* If the checksum doesn't add up, then one or more of the disk sectors
+    ** containing the master journal filename is corrupted. This means
+    ** definitely roll back, so just return SQLITE_OK and report a (nul)
+    ** master-journal filename.
+    */
     sqliteFree(*pzMaster);
     *pzMaster = 0;
   }
+  (*pzMaster)[len] = '\0';
    
   return SQLITE_OK;
 }
@@ -913,7 +919,7 @@ static int pager_delmaster(const char *zMaster){
   ** is running this routine also. Not that it makes too much difference.
   */
   memset(&master, 0, sizeof(master));
-  rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
+  rc = sqlite3OsOpenReadOnly(zMaster, &master);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   master_open = 1;
   rc = sqlite3OsFileSize(&master, &nMasterJournal);
@@ -1166,6 +1172,9 @@ static int pager_playback(Pager *pPager){
   pager_reload_cache(pPager);
 
 end_playback:
+  if( rc==SQLITE_OK ){
+    rc = pager_unwritelock(pPager);
+  }
   if( zMaster ){
     /* If there was a master journal and this routine will return true,
     ** see if it is possible to delete the master journal. If errors 
@@ -1175,9 +1184,6 @@ end_playback:
       pager_delmaster(zMaster);
     }
     sqliteFree(zMaster);
-  }
-  if( rc==SQLITE_OK ){
-    rc = pager_unwritelock(pPager);
   }
 
   /* The Pager.sectorSize variable may have been updated while rolling
