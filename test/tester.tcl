@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.39 2004/10/30 20:23:10 drh Exp $
+# $Id: tester.tcl,v 1.40 2004/11/03 13:59:06 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -242,5 +242,6 @@ proc integrity_check {name} {
 #
 proc ifcapable {expr code} {
   regsub -all {[a-z]+} $expr {$::sqlite_options(&)} e2
-  if $e2 {uplevel 1 $code}
+  if !($e2) return
+  return -code [catch {uplevel 1 $code}]
 }

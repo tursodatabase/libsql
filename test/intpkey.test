@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.19 2004/10/18 21:34:47 drh Exp $
+# $Id: intpkey.test,v 1.20 2004/11/03 13:59:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -506,11 +506,13 @@ do_test intpkey-13.3 {
     INSERT INTO t1 VALUES('1.5',3,4);
   }
 } {1 {datatype mismatch}}
-do_test intpkey-13.4 {
-  catchsql {
-    INSERT INTO t1 VALUES(x'123456',3,4);
-  }
-} {1 {datatype mismatch}}
+ifcapable {bloblit} {
+  do_test intpkey-13.4 {
+    catchsql {
+      INSERT INTO t1 VALUES(x'123456',3,4);
+    }
+  } {1 {datatype mismatch}}
+}
 do_test intpkey-13.5 {
   catchsql {
     INSERT INTO t1 VALUES('+1234567890',3,4);

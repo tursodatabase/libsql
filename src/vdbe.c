@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.420 2004/10/31 02:22:50 drh Exp $
+** $Id: vdbe.c,v 1.421 2004/11/03 13:59:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -713,6 +713,7 @@ case OP_String: {
   break;
 }
 
+#ifndef SQLITE_OMIT_BLOB_LITERAL
 /* Opcode: HexBlob * * P3
 **
 ** P3 is an UTF-8 SQL hex encoding of a blob. The blob is pushed onto the
@@ -742,6 +743,7 @@ case OP_HexBlob: {            /* same as TK_BLOB */
 
   /* Fall through to the next case, OP_Blob. */
 }
+#endif /* SQLITE_OMIT_BLOB_LITERAL */
 
 /* Opcode: Blob P1 * P3
 **

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.146 2004/11/03 03:59:57 drh Exp $
+** @(#) $Id: parse.y,v 1.147 2004/11/03 13:59:05 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
