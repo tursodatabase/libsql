@@ -1,5 +1,5 @@
-C Document\sthe\sSHOW_DATATYPES\spragma\sand\sadd\stests\sfor\sit\sto\sthe\stest\ssuite.\nMake\ssure\sdatatypes\sare\sshow\seven\sfor\saliased\scolumns.\nTickets\s#220\sand\s#221.\s(CVS\s822)
-D 2003-01-11T14:19:52
+C Fix\stwo\scompiler\swarnings\sfrom\sOS-X.\s(CVS\s823)
+D 2003-01-11T14:25:40
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c f355fa02bb53cdaa417ea1c34a43de1129a57e94
 F src/delete.c 1c677cad4879485c2aea5ef40f417b3ec3f7be12
-F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
+F src/encode.c 09d1fe8a2e97ff94cce496e2909e2ebc8947960b
 F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
 F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
@@ -54,7 +54,7 @@ F src/update.c ab3182eae676d7f198354df6a54e8611aac6ae9c
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
 F src/vdbe.c e1f66bb2f56bf3cd974d5a385bfd03ace5c108a5
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
-F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
+F src/where.c 8cbdba90cdcf61d448e9115135a2c49e5bc71648
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 86deb12d68026913d181f9498144fa56445899f2
-R c01866c76545ca162ef63d830c027659
+P e84d3afe7b9153d003fdcca98221f446c004ffa2
+R 88c74dbafc42cc36f311514cad54068d
 U drh
-Z 9785e9756356084c0f8bc12f51b8fd40
+Z 9a29d224db25224da4d0f0c850682af0

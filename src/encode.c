@@ -15,8 +15,9 @@
 ** data in an SQLite database.  The code in this file is used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.3 2002/09/16 11:44:06 drh Exp $
+** $Id: encode.c,v 1.4 2003/01/11 14:25:40 drh Exp $
 */
+#include <string.h>
 
 /*
 ** Encode a binary buffer "in" of size n bytes so that it contains

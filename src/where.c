@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.69 2002/12/04 21:50:16 drh Exp $
+** $Id: where.c,v 1.70 2003/01/11 14:25:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -348,7 +348,7 @@ WhereInfo *sqliteWhereBegin(
   nExpr = exprSplit(ARRAYSIZE(aExpr), aExpr, pWhere);
   if( nExpr==ARRAYSIZE(aExpr) ){
     char zBuf[50];
-    sprintf(zBuf, "%d", ARRAYSIZE(aExpr)-1);
+    sprintf(zBuf, "%d", (int)ARRAYSIZE(aExpr)-1);
     sqliteSetString(&pParse->zErrMsg, "WHERE clause too complex - no more "
        "than ", zBuf, " terms allowed", 0);
     pParse->nErr++;
