@@ -1,9 +1,9 @@
-C Fix\sproblem\sin\sthe\scode\sgenerator\swere\sincorrect\scode\swas\sbeing\screated\sif\r\nthe\sSQL\ssource\scontained\sa\snegative\sinteger\sthat\swas\stoo\slarge\sto\sfit\sin\r\na\s32-bit\ssigned\sinteger\svariable.\s\sTicket\s#552.\s(CVS\s1157)
-D 2004-01-06T01:13:46
+C Increase\sthe\sversion\snumber\sand\supdate\sthe\schange\slog\sprior\sto\sthe\snext\nrelease.\s(CVS\s1158)
+D 2004-01-06T01:27:00
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 37237c64d9e5b103d462e341e4ac3b4f2a6e43dd
+F VERSION 6f1138baacda841b1a41452ccd142ddd138cef21
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -160,7 +160,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 17d8bd9e7b4fbdca47c30c8b9bcb728c351d55c0
-F www/changes.tcl 875be0b0d82546d7947f9df3d9a94ba94a6fcaee
+F www/changes.tcl 2581dab84a93c6ba8a743eb6e7b44457c8d5b255
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0fe2b810f114a909b844e50ad37a25e6ed8c7271
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 23fa407d50741bc0719259792398f28c1d0f12c2
-R 26f4e6dd4d46b029d5b74bd24795dcf2
+P b8381d9fe99273507e8626638110646801afef06
+R 9c3dd499ef31e5b7bc1f91ca182990f4
 U drh
-Z 323e2dfe44fbdbec4fff461f02b92003
+Z 4ae77a65485f694e65593b5225d3c0ff

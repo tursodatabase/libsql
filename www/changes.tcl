@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 January 5 (2.8.9)} {
+<li>Fix a 32-bit integer overflow problem that could result in corrupt
+    indices in a database if large negative numbers (less than -2147483648)
+    were inserted into a indexed numeric column.</li>
+<li>Fix a locking problem on multi-threaded Linux implementations.</li>
+<li>Always use "." instead of "," as the decimal point even if the locale
+    requests ",".</li>
+<li>Added UTC to localtime conversions to the experimental date/time
+    functions.</li>
+<li>Bug fixes to date/time functions.</li>
+}
+
 chng {2003 December 17 (2.8.8)} {
 <li>Fix a critical bug introduced into 2.8.0 which could cause
     database corruption.</li>
