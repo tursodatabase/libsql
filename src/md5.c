@@ -356,7 +356,7 @@ int Md5_Init(Tcl_Interp *interp){
 ** During testing, the special md5sum() aggregate function is available.
 ** inside SQLite.  The following routines implement that function.
 */
-static void md5step(sqlite_func *context, int argc, const char **argv){
+static void md5step(sqlite_func *context, int argc, sqlite3_value **argv){
   MD5Context *p;
   int i;
   if( argc<1 ) return;
@@ -366,8 +366,9 @@ static void md5step(sqlite_func *context, int argc, const char **argv){
     MD5Init(p);
   }
   for(i=0; i<argc; i++){
-    if( argv[i] ){
-      MD5Update(p, (unsigned char*)argv[i], strlen(argv[i]));
+    const char *zData = sqlite3_value_data(argv[i]);
+    if( zData ){
+      MD5Update(p, zData, strlen(zData));
     }
   }
 }

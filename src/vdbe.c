@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.326 2004/05/24 12:39:02 danielk1977 Exp $
+** $Id: vdbe.c,v 1.327 2004/05/24 23:48:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2006,26 +2006,6 @@ case OP_ColumnName: {
 ** 3rd parameter.
 */
 case OP_Callback: {
-#if 0
-  int i;
-  char **azArgv = p->zArgv;
-  Mem *pCol;
-
-  pCol = &pTos[1-pOp->p1];
-  assert( pCol>=p->aStack );
-  for(i=0; i<pOp->p1; i++, pCol++){
-    if( pCol->flags & MEM_Null ){
-      azArgv[i] = 0;
-    }else{
-      Stringify(pCol, db->enc);
-      azArgv[i] = pCol->z;
-    }
-  }
-
-  azArgv[i] = 0;
-  p->azResColumn = azArgv;
-#endif
-
   int i;
   assert( p->nResColumn==pOp->p1 );
 
@@ -2276,7 +2256,7 @@ case OP_Function: {
   int n = pOp->p1;
 
   n = pOp->p1;
-  apVal = sqliteMalloc(sizeof(sqlite3_value*)*n);
+  apVal = p->apArg;
   assert( apVal || n==0 );
 
   pArg = &pTos[1-n];
@@ -2313,7 +2293,6 @@ case OP_Function: {
     SetEncoding(pTos, encToFlags(db->enc)|MEM_Term);
   }
 
-  if( apVal ) sqliteFree(apVal);
   break;
 }
 
@@ -5619,22 +5598,20 @@ case OP_AggFunc: {
   int n = pOp->p2;
   int i;
   Mem *pMem, *pRec;
-  char **azArgv = p->zArgv;
   sqlite_func ctx;
+  sqlite3_value **apVal;
 
   assert( n>=0 );
   assert( pTos->flags==MEM_Int );
   pRec = &pTos[-n];
   assert( pRec>=p->aStack );
+
+  apVal = p->apArg;
+  assert( apVal || n==0 );
+
   for(i=0; i<n; i++, pRec++){
-    if( pRec->flags & MEM_Null ){
-      azArgv[i] = 0;
-    }else{
-      Stringify(pRec, db->enc);
+      apVal[i] = pRec;
       SetEncodingFlags(pRec, db->enc);
-      SetEncoding(pRec, MEM_Utf8|MEM_Term);
-      azArgv[i] = pRec->z;
-    }
   }
   i = pTos->i;
   assert( i>=0 && i<p->agg.nMem );
@@ -5645,7 +5622,7 @@ case OP_AggFunc: {
   ctx.cnt = ++pMem->i;
   ctx.isError = 0;
   ctx.isStep = 1;
-  (ctx.pFunc->xStep)(&ctx, n, (const char**)azArgv);
+  (ctx.pFunc->xStep)(&ctx, n, apVal);
   pMem->z = ctx.pAgg;
   pMem->flags = MEM_AggCtx;
   popStack(&pTos, n+1);

@@ -293,7 +293,7 @@ struct Vdbe {
   int *aLabel;        /* Space to hold the labels */
   Mem *aStack;        /* The operand stack, except string values */
   Mem *pTos;          /* Top entry in the operand stack */
-  char **zArgv;       /* Text values used by the callback */
+  Mem **apArg;        /* Arguments to currently executing user function */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   void **azColName16; /* UTF-16 encoded equivalent of azColName */
   int nCursor;        /* Number of slots in apCsr[] */

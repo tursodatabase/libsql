@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.51 2004/05/24 12:55:55 danielk1977 Exp $
+** $Id: func.c,v 1.52 2004/05/24 23:48:26 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -444,12 +444,12 @@ struct SumCtx {
 /*
 ** Routines used to compute the sum or average.
 */
-static void sumStep(sqlite_func *context, int argc, const char **argv){
+static void sumStep(sqlite_func *context, int argc, sqlite3_value **argv){
   SumCtx *p;
   if( argc<1 ) return;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p && argv[0] ){
-    p->sum += sqlite3AtoF(argv[0], 0);
+  if( p && SQLITE3_NULL!=sqlite3_value_type(argv[0]) ){
+    p->sum += sqlite3_value_float(argv[0]);
     p->cnt++;
   }
 }
@@ -516,10 +516,10 @@ struct CountCtx {
 /*
 ** Routines to implement the count() aggregate function.
 */
-static void countStep(sqlite_func *context, int argc, const char **argv){
+static void countStep(sqlite_func *context, int argc, sqlite3_value **argv){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( (argc==0 || argv[0]) && p ){
+  if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0])) && p ){
     p->n++;
   }
 }   
@@ -542,26 +542,28 @@ struct MinMaxCtx {
 /*
 ** Routines to implement min() and max() aggregate functions.
 */
-static void minmaxStep(sqlite_func *context, int argc, const char **argv){
+static void minmaxStep(sqlite_func *context, int argc, sqlite3_value **argv){
   MinMaxCtx *p;
   int (*xCompare)(const char*, const char*);
   int mask;    /* 0 for min() or 0xffffffff for max() */
+  const char *zArg0 = sqlite3_value_data(argv[0]);
+  const char *zArg1 = sqlite3_value_data(argv[1]);
 
   assert( argc==2 );
-  if( argv[1][0]=='n' ){
+  if( zArg1[0]=='n' ){
     xCompare = sqlite3Compare;
   }else{
     xCompare = strcmp;
   }
   mask = (int)sqlite3_user_data(context);
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p==0 || argc<1 || argv[0]==0 ) return;
-  if( p->z==0 || (xCompare(argv[0],p->z)^mask)<0 ){
+  if( p==0 || argc<1 || zArg0==0 ) return;
+  if( p->z==0 || (xCompare(zArg0,p->z)^mask)<0 ){
     int len;
     if( !p->zBuf[0] ){
       sqliteFree(p->z);
     }
-    len = strlen(argv[0]);
+    len = strlen(zArg0);
     if( len < sizeof(p->zBuf)-1 ){
       p->z = &p->zBuf[1];
       p->zBuf[0] = 1;
@@ -570,7 +572,7 @@ static void minmaxStep(sqlite_func *context, int argc, const char **argv){
       p->zBuf[0] = 0;
       if( p->z==0 ) return;
     }
-    strcpy(p->z, argv[0]);
+    strcpy(p->z, zArg0);
   }
 }
 static void minMaxFinalize(sqlite_func *context){
@@ -636,7 +638,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     signed char nArg;
     signed char dataType;
     u8 argType;
-    void (*xStep)(sqlite_func*,int,const char**);
+    void (*xStep)(sqlite_func*,int,sqlite3_value**);
     void (*xFinalize)(sqlite_func*);
   } aAggs[] = {
     { "min",    1, 0,              0, minmaxStep,   minMaxFinalize },

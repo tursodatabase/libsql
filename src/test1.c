@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.48 2004/05/24 12:39:02 danielk1977 Exp $
+** $Id: test1.c,v 1.49 2004/05/24 23:48:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -431,10 +431,10 @@ typedef struct CountCtx CountCtx;
 struct CountCtx {
   int n;
 };
-static void countStep(sqlite_func *context, int argc, const char **argv){
+static void countStep(sqlite_func *context, int argc, sqlite3_value **argv){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( (argc==0 || argv[0]) && p ){
+  if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0]) ) && p ){
     p->n++;
   }
 }   

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.73 2004/05/24 12:39:02 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.74 2004/05/24 23:48:27 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -439,7 +439,7 @@ int sqlite3_create_aggregate(
   sqlite*,                  /* Database where the new function is registered */
   const char *zName,        /* Name of the function */
   int nArg,                 /* Number of arguments */
-  void (*xStep)(sqlite_func*,int,const char**), /* Called for each row */
+  void (*xStep)(sqlite_func*,int,sqlite3_value**), /* Called for each row */
   void (*xFinalize)(sqlite_func*),       /* Called once to get final result */
   void *pUserData           /* Available via the sqlite3_user_data() call */
 );

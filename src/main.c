@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.186 2004/05/24 12:39:02 danielk1977 Exp $
+** $Id: main.c,v 1.187 2004/05/24 23:48:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -882,7 +882,7 @@ int sqlite3_create_aggregate(
   sqlite *db,          /* Add the function to this database connection */
   const char *zName,   /* Name of the function to add */
   int nArg,            /* Number of arguments */
-  void (*xStep)(sqlite_func*,int,const char**), /* The step function */
+  void (*xStep)(sqlite_func*,int,sqlite3_value**), /* The step function */
   void (*xFinalize)(sqlite_func*),              /* The finalizer */
   void *pUserData      /* User data */
 ){

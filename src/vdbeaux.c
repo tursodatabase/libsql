@@ -732,11 +732,11 @@ void sqlite3VdbeMakeReady(
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
-      n*(sizeof(p->aStack[0]) + 2*sizeof(char*))     /* aStack and zArgv */
+      n*(sizeof(p->aStack[0])+sizeof(Mem*)+sizeof(char*)) /* aStack, apArg */
       + p->nVar*sizeof(Mem)                          /* apVar */
     );
-    p->zArgv = (char**)&p->aStack[n];
-    p->azColName = (char**)&p->zArgv[n];
+    p->apArg = (Mem **)&p->aStack[n];
+    p->azColName = (char**)&p->apArg[n];
     p->apVar = (Mem *)&p->azColName[n];
     for(n=0; n<p->nVar; n++){
       p->apVar[n].flags = MEM_Null;
