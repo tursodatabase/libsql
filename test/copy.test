@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.1 2000/05/30 17:30:36 drh Exp $
+# $Id: copy.test,v 1.2 2000/06/03 18:06:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -94,6 +94,32 @@ do_test copy-1.6 {
   execsql {COPY test1 FROM 'data5.txt' USING DELIMITERS '|'}
   execsql {SELECT * FROM test1 ORDER BY one}
 } {11 22 33 22 33 11}
+do_test copy-1.7 {
+  execsql {DELETE FROM test1}
+  execsql {COPY test1 FROM 'data4.txt' USING DELIMITERS '|'}
+  execsql {SELECT * FROM test1 ORDER BY one}
+} {{11 } { 22 } { 33} {22 } { 33 } { 11}}
+
+# Try copying into a table that has one or more indices.
+#
+execsql {DELETE FROM test1}
+execsql {CREATE INDEX index1 ON test1(one)}
+execsql {CREATE INDEX index2 ON test1(two)}
+execsql {CREATE INDEX index3 ON test1(three)}
+do_test copy-1.8 {
+  execsql {COPY test1 from 'data1.txt'}
+  execsql {SELECT * FROM test1 WHERE one=11}
+} {11 22 33}
+do_test copy-1.8b {
+  execsql {SELECT * FROM test1 WHERE one=22}
+} {22 33 11}
+do_test copy-1.8c {
+  execsql {SELECT * FROM test1 WHERE two=22}
+} {11 22 33}
+do_test copy-1.8d {
+  execsql {SELECT * FROM test1 WHERE three=11}
+} {22 33 11}
+
 
 # Try inserting really long data
 #

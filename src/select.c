@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.4 2000/06/02 01:51:20 drh Exp $
+** $Id: select.c,v 1.5 2000/06/03 18:06:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -165,12 +165,12 @@ void sqliteSelect(
 
         zTab = pTabList->a[p->iTable].zAlias;
         if( zTab==0 ) zTab = pTab->zName;
-        sqliteSetString(&zName, zTab, ".", pTab->azCol[p->iField], 0);
+        sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iField].zName, 0);
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
         sqliteFree(zName);
       }else{
         Table *pTab = pTabList->a[0].pTab;
-        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, pTab->azCol[p->iField], 0);
+        sqliteVdbeAddOp(v, OP_ColumnName, i, 0, pTab->aCol[p->iField].zName, 0);
       }
     }
   }

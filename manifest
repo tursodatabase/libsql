@@ -1,41 +1,42 @@
-C :-)\s(CVS\s45)
-D 2000-06-02T23:22:40
+C added\sdefault\svalues\s(CVS\s46)
+D 2000-06-03T18:06:52
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 3d367d6699f6fb987d0041a9d3b4dbf4308c8983
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c 44a99167e5aebd04a65c607dc8556c13d9bccdb0
+F src/build.c 15c4f3844774baa882435223119a18c33810ee94
 F src/dbbe.c ae8b5d2cdb4fa7dd11313059984be9457fa77f63
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
-F src/expr.c fb0972a54cc0230b6d4ce02c80ae07d0e1876e01
-F src/insert.c 747aad76e48a811c6fd30336514df84104587c3f
+F src/expr.c baab49f0db860d27fdc41e6cd0bde1c437189ac8
+F src/insert.c 62951015437a96d388f43b591437d489719872fb
 F src/main.c ed15e0132659ace7f44ea2dbcdd21c232af3dbd5
-F src/parse.y 16322c46ec117082ef745715f7a4761f2491a0b2
-F src/select.c ce21eb2db2c621c097f03c21ff8d18804fb9897d
+F src/parse.y 64d9e4808993e9384ba9557f7168ac3dab6cb89f
+F src/select.c 2f4ae48deae2c5c94a89b3bc4fef2fe96c575e9f
 F src/shell.c bd658f9208bc20ce565c3f687836155772ca939a
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h 0b7a533a389ccead699ea149ff3f8d61831d0c0a
+F src/sqliteInt.h 606a1614000f4e1cf208fe656bfabc5bd2957c7e
 F src/tclsqlite.c 10c00c460246cfba375b768c90b22bfe3c774c8f
 F src/tokenize.c 15c229fee77325334c6814652e429b0930eba6c1
-F src/update.c 1f7284e00921352c3ae699fb60f2c2fbf8098212
+F src/update.c 3f05d5082fd2c34f15d1e4a4db17355ad8807a78
 F src/util.c c22846f23b9311ca0e68f076686493bac7b20d5d
 F src/vdbe.c a584da66af8b44b0236bece378c4dc8ef333f814
 F src/vdbe.h ab574c91c6328c5795f68b84074fbcf860eae70e
 F src/where.c bed9a8360cbfbf712bdc397c8e22216a5e5f9800
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
-F test/copy.test 641bd3cfaab61c4ee32889587e21e4c70788a97a
-F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
+F test/copy.test 6b218a41dc6469491049b50ee105f76282f2547d
+F test/delete.test 9b2515aa621fb5df46c640fdef39c876b9a5fc4b
 F test/expr.test f3fc925935533082911dfa5fde9b22e382b3132f
-F test/index.test 8d4f26901a5582daa353fe3c8266cbf4a53af830
-F test/insert.test 161bc67a4189738c559e3569323ceae31f4d49d6
+F test/index.test 9f99dca2d904b8de330863a978587f136e2df65a
+F test/insert.test b4c186ffa4b97a231643726f3bcee29815b24eaf
 F test/select1.test a0b00df77e85adff75c338e487718c5d31f69e3a
 F test/select2.test ebb5497babf02982304841f2eacc985bcc17691e
 F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
 F test/tester.tcl 44690d463c1dc83a4c76ccde07cc146a988600f6
 F test/update.test 69459302ea75cafac1479e60b0e36efb88123c0e
+F test/vacuum.test 8becf5cfeb897108b35cdd996793e7f1df2f28fd
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/lemon.c 1f0e96515c12e9e413f5b8fdebc79ddcf18ddc9d
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
@@ -46,7 +47,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 7d6ed774362dea0c9687d4efbafd939c1c48fd81
 F www/index.tcl 0096a3e00b1364fb2c3e06941aa8c31454b6d06a
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P cd83d3cfeb26ebf0d33e7113d0ee549c9cfd55c5
-R 5705bb5aa8e116fe9b24a61fe0df9e9a
+P 3e88142e908de02b5c8243c47dc9ca237cb7f011
+R 75efbb82189fa0b34c50ac1e66e30b8e
 U drh
-Z 34ab52e330faf4fc4a55a2f7524e8453
+Z c2845300f99ec90b3961e47b3598d5e7

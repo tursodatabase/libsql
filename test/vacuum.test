@@ -1,0 +1,80 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the VACUUM statement.
+#
+# $Id: vacuum.test,v 1.1 2000/06/03 18:06:54 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Try to vacuum a non-existant table.
+#
+do_test vacuum-1.1 {
+  set v [catch {execsql {VACUUM dummy1}} msg]
+  lappend v $msg
+} {1 {no such table or index: dummy1}}
+
+# It is OK to vacuum sqlite_master...
+#
+do_test vacuum-1.2 {
+  set v [catch {execsql {VACUUM sqlite_master}} msg]
+  lappend v $msg
+} {0 {}}
+
+# Create some tables and indices to test against.
+#
+execsql {CREATE TABLE test1(a int)}
+execsql {CREATE TABLE test2(b int)}
+execsql {CREATE INDEX index1 ON test1(a)}
+execsql {INSERT INTO test1 VALUES(1)}
+execsql {INSERT INTO test1 VALUES(1)}
+execsql {INSERT INTO test1 VALUES(2)}
+execsql {INSERT INTO test1 VALUES(3)}
+execsql {INSERT INTO test2 VALUES(4)}
+
+do_test vacuum-1.3 {
+  set b1 [file mtime testdb/test1.tbl]
+  set b2 [file mtime testdb/test2.tbl]
+  set b3 [file mtime testdb/index1.tbl]
+  after 1000
+  execsql {VACUUM test1}
+  set a1 [file mtime testdb/test1.tbl]
+  set a2 [file mtime testdb/test2.tbl]
+  set a3 [file mtime testdb/index1.tbl]
+  expr {$a1>$b1 && $a2==$b2 && $a3==$b3}
+} {1}
+do_test vacuum-1.4 {
+  set b1 [file mtime testdb/test1.tbl]
+  set b2 [file mtime testdb/test2.tbl]
+  set b3 [file mtime testdb/index1.tbl]
+  after 1000
+  execsql {VACUUM}
+  set a1 [file mtime testdb/test1.tbl]
+  set a2 [file mtime testdb/test2.tbl]
+  set a3 [file mtime testdb/index1.tbl]
+  expr {$a1>$b1 && $a2>$b2 && $a3>$b3}
+} {1}
+
+
+finish_test

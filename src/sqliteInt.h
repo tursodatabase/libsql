@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.10 2000/06/02 13:28:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.11 2000/06/03 18:06:53 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -77,6 +77,7 @@
 /*
 ** Forward references to structures
 */
+typedef struct Column Column;
 typedef struct Table Table;
 typedef struct Index Index;
 typedef struct Instruction Instruction;
@@ -104,6 +105,16 @@ struct sqlite {
 #define SQLITE_Initialized  0x00000002
 
 /*
+** information about each column of a table is held in an instance
+** of this structure.
+*/
+struct Column {
+  char *zName;        /* Name of this column */
+  char *zDflt;        /* Default value of this column */
+  int notNull;        /* True if there is a NOT NULL constraing */
+};
+
+/*
 ** Each table is represented in memory by
 ** an instance of the following structure
 */
@@ -111,8 +122,8 @@ struct Table {
   char *zName;        /* Name of the table */
   Table *pHash;       /* Next table with same hash on zName */
   int nCol;           /* Number of columns in this table */
+  Column *aCol;       /* Information about each column */
   int readOnly;       /* True if this table should not be written by the user */
-  char **azCol;       /* Name of each column */
   Index *pIndex;      /* List of indices on this table. */
 };
 
@@ -126,6 +137,7 @@ struct Index {
   int nField;         /* Number of fields in the table indexed by this index */
   int *aiField;       /* Indices of fields used by this index.  1st is 0 */
   Table *pTable;      /* The table being indexed */
+  int isUnique;       /* True if keys must all be unique */
   Index *pNext;       /* The next index associated with the same table */
 };
 
@@ -244,6 +256,7 @@ ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);
 void sqliteExprListDelete(ExprList*);
 void sqliteStartTable(Parse*,Token*,Token*);
 void sqliteAddColumn(Parse*,Token*);
+void sqliteAddDefaultValue(Parse*,Token*,int);
 void sqliteEndTable(Parse*,Token*);
 void sqliteDropTable(Parse*, Token*);
 void sqliteDeleteTable(sqlite*, Table*);

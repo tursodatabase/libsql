@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.13 2000/06/02 13:27:59 drh Exp $
+** $Id: build.c,v 1.14 2000/06/03 18:06:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -181,13 +181,14 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   Index *pIndex, *pNext;
   if( pTable==0 ) return;
   for(i=0; i<pTable->nCol; i++){
-    if( pTable->azCol[i] ) sqliteFree(pTable->azCol[i]);
+    sqliteFree(pTable->aCol[i].zName);
+    sqliteFree(pTable->aCol[i].zDflt);
   }
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
     sqliteDeleteIndex(db, pIndex);
   }
-  sqliteFree(pTable->azCol);
+  sqliteFree(pTable->aCol);
   sqliteFree(pTable);
 }
 
@@ -239,7 +240,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
   pTable->zName = zName;
   pTable->pHash = 0;
   pTable->nCol = 0;
-  pTable->azCol = 0;
+  pTable->aCol = 0;
   pTable->pIndex = 0;
   if( pParse->pNewTable ) sqliteDeleteTable(pParse->db, pParse->pNewTable);
   pParse->pNewTable = pTable;
@@ -253,15 +254,35 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   char **pz;
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
-    p->azCol = sqliteRealloc( p->azCol, (p->nCol+8)*sizeof(p->azCol[0]));
+    p->aCol = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
   }
-  if( p->azCol==0 ){
+  if( p->aCol==0 ){
     p->nCol = 0;
     return;
   }
-  pz = &p->azCol[p->nCol++];
-  *pz = 0;
+  memset(&p->aCol[p->nCol], 0, sizeof(p->aCol[0]));
+  pz = &p->aCol[p->nCol++].zName;
   sqliteSetNString(pz, pName->z, pName->n, 0);
+  sqliteDequote(*pz);
+}
+
+/*
+** The given token is the default value for the last column added to
+** the table currently under construction.  If "minusFlag" is true, it
+** means the value token was preceded by a minus sign.
+*/
+void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
+  Table *p;
+  int i;
+  char **pz;
+  if( (p = pParse->pNewTable)==0 ) return;
+  i = p->nCol-1;
+  pz = &p->aCol[i].zDflt;
+  if( minusFlag ){
+    sqliteSetNString(pz, "-", 1, pVal->z, pVal->n, 0);
+  }else{
+    sqliteSetNString(pz, pVal->z, pVal->n, 0);
+  }
   sqliteDequote(*pz);
 }
 
@@ -475,7 +496,7 @@ void sqliteCreateIndex(
   ** So create a fake list to simulate this.
   */
   if( pList==0 ){
-    nullId.z = pTab->azCol[pTab->nCol-1];
+    nullId.z = pTab->aCol[pTab->nCol-1].zName;
     nullId.n = strlen(nullId.z);
     pList = sqliteIdListAppend(0, &nullId);
     if( pList==0 ) goto exit_create_index;
@@ -503,7 +524,7 @@ void sqliteCreateIndex(
   */
   for(i=0; i<pList->nId; i++){
     for(j=0; j<pTab->nCol; j++){
-      if( sqliteStrICmp(pList->a[i].zName, pTab->azCol[j])==0 ) break;
+      if( sqliteStrICmp(pList->a[i].zName, pTab->aCol[j].zName)==0 ) break;
     }
     if( j>=pTab->nCol ){
       sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 

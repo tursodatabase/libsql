@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.2 2000/05/30 03:12:22 drh Exp $
+# $Id: index.test,v 1.3 2000/06/03 18:06:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,15 +127,18 @@ do_test index-3.4 {
 # an index on that table.  Verify that we can select values
 # from the table correctly using the index.
 #
+# Note that the index names "index9" and "indext" are chosen because
+# they both have the same hash.
+#
 do_test index-4.1 {
   execsql {CREATE TABLE test1(cnt int, power int)}
   for {set i 1} {$i<20} {incr i} {
     execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
   }
-  execsql {CREATE INDEX index1 ON test1(cnt)}
-  execsql {CREATE INDEX index2 ON test1(cnt)}
+  execsql {CREATE INDEX index9 ON test1(cnt)}
+  execsql {CREATE INDEX indext ON test1(power)}
   execsql {SELECT name FROM sqlite_master ORDER BY name}
-} {index1 index2 test1}
+} {index9 indext test1}
 do_test index-4.2 {
   execsql {SELECT cnt FROM test1 WHERE power=4}
 } {2}
@@ -146,7 +149,36 @@ do_test index-4.4 {
   execsql {SELECT power FROM test1 WHERE cnt=6}
 } {64}
 do_test index-4.5 {
+  execsql {DROP INDEX indext}
+  execsql {SELECT power FROM test1 WHERE cnt=6}
+} {64}
+do_test index-4.6 {
+  execsql {SELECT cnt FROM test1 WHERE power=1024}
+} {10}
+do_test index-4.7 {
+  execsql {CREATE INDEX indext ON test1(cnt)}
+  execsql {SELECT power FROM test1 WHERE cnt=6}
+} {64}
+do_test index-4.8 {
+  execsql {SELECT cnt FROM test1 WHERE power=1024}
+} {10}
+do_test index-4.9 {
+  execsql {DROP INDEX index9}
+  execsql {SELECT power FROM test1 WHERE cnt=6}
+} {64}
+do_test index-4.10 {
+  execsql {SELECT cnt FROM test1 WHERE power=1024}
+} {10}
+do_test index-4.11 {
+  execsql {DROP INDEX indext}
+  execsql {SELECT power FROM test1 WHERE cnt=6}
+} {64}
+do_test index-4.12 {
+  execsql {SELECT cnt FROM test1 WHERE power=1024}
+} {10}
+do_test index-4.13 {
   execsql {DROP TABLE test1}
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
 } {}
 
 # Do not allow indices to be added to sqlite_master
@@ -205,13 +237,24 @@ do_test index-7.4 {
   execsql {SELECT name FROM sqlite_master}
 } {}
 
-# Make sure we cannot drop a non-existant table.
+# Make sure we cannot drop a non-existant index.
 #
 do_test index-8.1 {
   set v [catch {execsql {DROP INDEX index1}} msg]
   lappend v $msg
 } {1 {no such index: index1}}
 
-
+# Make sure we don't actually create an index when the EXPLAIN keyword
+# is used.
+#
+do_test index-9.1 {
+  execsql {CREATE TABLE tab1(a int)}
+  execsql {EXPLAIN CREATE INDEX idx1 ON tab1(a)}
+  execsql {SELECT name FROM sqlite_master WHERE tbl_name='tab1'}
+} {tab1}
+do_test index-9.2 {
+  execsql {CREATE INDEX idx1 ON tab1(a)}
+  execsql {SELECT name FROM sqlite_master WHERE tbl_name='tab1' ORDER BY name}
+} {idx1 tab1}
 
 finish_test
