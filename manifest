@@ -1,5 +1,5 @@
-C Perform\supdates\sin\ssearch\sorder.\s\sTicket\s#602.\s(CVS\s1221)
-D 2004-02-10T13:41:52
+C Adjustments\sto\sthe\scodec\sin\sthe\spager.\s(CVS\s1222)
+D 2004-02-10T23:51:06
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/main.c 6ec57b0f146572033c70493417d251365a7b4fbe
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
 F src/os.h 8d02b622153d2df442da1ec37cdd6b1bd9804a25
-F src/pager.c cde4fd5a47b5109a26d44ac9daac94c0ea8e100d
+F src/pager.c 3678afeb3f8ff4af3e4538e4a586b01198458046
 F src/pager.h b618354fa6270a87e0105be8aeaa0a0c7c545ee2
 F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
@@ -183,7 +183,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d0624d257789ac3f4cd3a7473bb741030c999b65
-R ebe97ced16ef0c70fcbd5351d23e8ea5
+P cf1cec74ae039cd7cbc8a1032d29f067dedb4210
+R 33a0bad7d3175733647a431c861739f1
 U drh
-Z c5b53421362378360594d03b5da09dfe
+Z 19f14306e79d3dfba9d27638424ae996

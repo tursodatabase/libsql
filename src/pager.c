@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.97 2004/02/10 01:54:28 drh Exp $
+** @(#) $Id: pager.c,v 1.98 2004/02/10 23:51:06 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -563,7 +563,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
     pPg->dirty = 0;
     pPg->needSync = 0;
     if( pPager->xCodec ){
-      pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pPg), 2);
+      pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pPg), 3);
     }
   }
   return rc;
@@ -726,7 +726,7 @@ static int pager_playback(Pager *pPager, int useJournalSize){
         rc = sqliteOsRead(&pPager->fd, zBuf, SQLITE_PAGE_SIZE);
         if( rc ) break;
         if( pPager->xCodec ){
-          pPager->xCodec(pPager->pCodecArg, zBuf, 0);
+          pPager->xCodec(pPager->pCodecArg, zBuf, 2);
         }
       }else{
         memset(zBuf, 0, SQLITE_PAGE_SIZE);
@@ -1248,7 +1248,7 @@ static int pager_write_pagelist(PgHdr *pList){
     assert( pList->dirty );
     sqliteOsSeek(&pPager->fd, (pList->pgno-1)*(off_t)SQLITE_PAGE_SIZE);
     if( pPager->xCodec ){
-      pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pList), 1);
+      pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pList), 6);
     }
     rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pList), SQLITE_PAGE_SIZE);
     if( pPager->xCodec ){
@@ -1524,7 +1524,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
           memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
         }
       }else if( pPager->xCodec ){
-        pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pPg), 0);
+        pPager->xCodec(pPager->pCodecArg, PGHDR_TO_DATA(pPg), 3);
       }
     }
   }else{
@@ -1808,7 +1808,7 @@ int sqlitepager_write(void *pData){
       }
       rc = sqliteOsWrite(&pPager->jfd, &((char*)pData)[-4], szPg);
       if( pPager->xCodec ){
-        pPager->xCodec(pPager->pCodecArg, pData, 2);
+        pPager->xCodec(pPager->pCodecArg, pData, 0);
       }
       if( journal_format>=JOURNAL_FORMAT_3 ){
         *(u32*)PGHDR_TO_EXTRA(pPg) = saved;
