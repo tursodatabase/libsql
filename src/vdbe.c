@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.411 2004/08/29 17:30:50 drh Exp $
+** $Id: vdbe.c,v 1.412 2004/08/31 13:45:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -908,42 +908,10 @@ case OP_Callback: {
   return SQLITE_ROW;
 }
 
-/* Opcode: Concat8 P1 P2 P3
-**
-** P3 points to a nul terminated UTF-8 string. When it is executed for
-** the first time, P3 is converted to the native database encoding and
-** the opcode replaced with Concat (see Concat for details of processing).
-*/
-case OP_Concat8: {
-  pOp->opcode = OP_Concat;
-
-  if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
-    Mem tmp;
-    tmp.flags = MEM_Null;
-    sqlite3VdbeMemSetStr(&tmp, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
-    if( SQLITE_OK!=sqlite3VdbeChangeEncoding(&tmp, db->enc) ||
-        SQLITE_OK!=sqlite3VdbeMemDynamicify(&tmp) 
-    ){
-      goto no_mem;
-    }
-    assert( tmp.flags|MEM_Dyn );
-    assert( !tmp.xDel );
-    pOp->p3type = P3_DYNAMIC;
-    pOp->p3 = tmp.z;
-    /* Don't call sqlite3VdbeMemRelease() on &tmp, the dynamic allocation
-    ** is cleaned up when the vdbe is deleted. 
-    */
-  }
-
-  /* If it wasn't already, P3 has been converted to the database text
-  ** encoding. Fall through to OP_Concat to process this instruction.
-  */
-}
-
 /* Opcode: Concat P1 P2 *
 **
-** Look at the first P1 elements of the stack.  Append them all 
-** together with the lowest element first.  The original P1 elements
+** Look at the first P1+2 elements of the stack.  Append them all 
+** together with the lowest element first.  The original P1+2 elements
 ** are popped from the stack if P2==0 and retained if P2==1.  If
 ** any element of the stack is NULL, then the result is NULL.
 **
@@ -958,7 +926,7 @@ case OP_Concat: {
   Mem *pTerm;
 
   /* Loop through the stack elements to see how long the result will be. */
-  nField = pOp->p1;
+  nField = pOp->p1 + 2;
   pTerm = &pTos[1-nField];
   nByte = 0;
   for(i=0; i<nField; i++, pTerm++){

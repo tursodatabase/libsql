@@ -219,7 +219,7 @@ void sqlite3FinishTrigger(
       { OP_Integer,    0, 0,  0          },
       { OP_String8,    0, 0,  "CREATE TRIGGER "},
       { OP_String8,    0, 0,  0          },  /* 6: SQL */
-      { OP_Concat8,    2, 0,  0          }, 
+      { OP_Concat,     0, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  "tttit"    },
       { OP_PutIntKey,  0, 0,  0          },
     };

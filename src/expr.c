@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.157 2004/08/21 17:54:45 drh Exp $
+** $Id: expr.c,v 1.158 2004/08/31 13:45:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1147,8 +1147,9 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_RSHIFT:   op = OP_ShiftRight; break;
     case TK_REM:      op = OP_Remainder;  break;
     case TK_FLOAT:    op = OP_Real;       break;
-    case TK_STRING:   op = OP_String8;     break;
+    case TK_STRING:   op = OP_String8;    break;
     case TK_BLOB:     op = OP_HexBlob;    break;
+    case TK_CONCAT:   op = OP_Concat;     break;
     default: op = 0; break;
   }
   switch( pExpr->op ){
@@ -1209,16 +1210,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_BITOR:
     case TK_SLASH:
     case TK_LSHIFT:
-    case TK_RSHIFT: {
-      sqlite3ExprCode(pParse, pExpr->pLeft);
-      sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, 0, 0);
-      break;
-    }
+    case TK_RSHIFT: 
     case TK_CONCAT: {
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, OP_Concat8, 2, 0);
+      sqlite3VdbeAddOp(v, op, 0, 0);
       break;
     }
     case TK_UMINUS: {

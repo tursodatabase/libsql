@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.60 2004/08/21 17:54:45 drh Exp $
+** $Id: pragma.c,v 1.61 2004/08/31 13:45:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -577,7 +577,7 @@ void sqlite3Pragma(
          sqlite3MPrintf("*** in database %s ***\n", db->aDb[i].zName),
          P3_DYNAMIC);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp(v, OP_Concat8, 2, 1);
+      sqlite3VdbeAddOp(v, OP_Concat, 0, 1);
       sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
 
       /* Make sure all the indices are constructed correctly.
@@ -602,7 +602,7 @@ void sqlite3Pragma(
             { OP_Recno,       1,  0,  0},
             { OP_String8,     0,  0,  " missing from index "},
             { OP_String8,     0,  0,  0},    /* 4 */
-            { OP_Concat8,     4,  0,  0},
+            { OP_Concat,      2,  0,  0},
             { OP_Callback,    1,  0,  0},
           };
           sqlite3GenerateIndexKey(v, pIdx, 1);
@@ -626,7 +626,7 @@ void sqlite3Pragma(
              { OP_MemIncr,      0,  0,  0},
              { OP_String8,      0,  0,  "wrong # of entries in index "},
              { OP_String8,      0,  0,  0},  /* 10 */
-             { OP_Concat8,      2,  0,  0},
+             { OP_Concat,       0,  0,  0},
              { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;

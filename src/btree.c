@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.183 2004/08/30 16:52:18 drh Exp $
+** $Id: btree.c,v 1.184 2004/08/31 13:45:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4075,7 +4075,7 @@ static void checkList(
     }
     if( isFreeList ){
       int n = get4byte(&pOvfl[4]);
-      if( n>=pCheck->pBt->usableSize/4-8 ){
+      if( n>pCheck->pBt->usableSize/4-8 ){
         sprintf(zMsg, "freelist leaf count too big on page %d", iPage);
         checkAppendMsg(pCheck, zContext, zMsg);
         N--;
