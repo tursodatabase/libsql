@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.15 2004/11/18 02:04:10 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.16 2004/11/20 21:02:14 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -510,7 +510,7 @@ int sqlite3_create_function16(
  used.
 
  The third parameter is the number of arguments that the function or
- aggregate takes. If this parameter is negative, then the function or
+ aggregate takes. If this parameter is -1 then the function or
  aggregate may take any number of arguments.
 
  The fourth parameter, eTextRep, specifies what type of text arguments
