@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.30 2001/02/19 18:24:22 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.31 2001/02/19 23:28:37 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -64,7 +64,7 @@ for memory leaks and is found to be clean.</p>
 <p><b>Important Note:</b>  A bug was found in the processing of UPDATE
 statements when the WHERE clause contained some terms that could be 
 satisfied using indices and other terms which could not.  The problem
-was fixed in version 1.0.21.  Users of prior versions of SQLite should
+was fixed in version 1.0.22.  Users of prior versions of SQLite should
 consider upgrading.</p>
 
 <p>
