@@ -1,5 +1,5 @@
-C Remove\sfiles\sbefore\srebuilding.\s(CVS\s283)
-D 2001-10-09T12:44:43
+C The\ssqlite_busy_timeout()\sfunction\swas\sinterpreting\sits\ssecond\sargument\nas\sseconds,\snot\smilliseconds\sas\sadvertised.\s\sThis\spatch\sfixes\sthe\sproblem.\s(CVS\s284)
+D 2001-10-09T13:46:01
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 1e54087c0390c4ce0bb5be43e14ba028283751e6
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -27,7 +27,7 @@ F src/expr.c 2f68829d983ec3f92eeb8b89ce4b9e5704169a80
 F src/hash.c bf36fb4cba114015123b0050f137d2c4553778a1
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c a48ba850461b203fb8dbc7add83fc6b6a9cf47f3
-F src/main.c 87b2fca50cbe8b400e1443b2c73693e18d9911cb
+F src/main.c ece73e5a44fab98144c4a93084d68b4fc413ba66
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c a83f4cb85e4d3b98c1659a799f9e318fcaf1c76c
 F src/os.h bed702c9e3b768bc3cb1b12c90b83d099c1546be
@@ -113,7 +113,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 864349de6fba5b38a3fbf7ab502922937b1b61e5
-R 647534ac8825a9fc750e08c5fb7ae1e0
+P 6307641d463eefd5ec346d299830e822acbc0938
+R 811a44282886ed3bd9485148120cee71
 U drh
-Z 72d85a2a24079acd1f703ea4e59b255f
+Z d80a90e04324de94315b0535882a46bf
