@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.5 2001/10/15 00:44:36 drh Exp $
+# $Id: insert2.test,v 1.6 2002/02/03 19:06:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -82,5 +82,40 @@ do_test insert2-1.4 {
   lappend r [execsql {SELECT cnt FROM t1 WHERE log=3}]
   lappend r [execsql {SELECT log FROM t1 WHERE cnt=4 ORDER BY log}]
 } {0 1 1 1 2 2 3 4 4 8 5 4 4 {3 5}}
+
+do_test insert2-2.0 {
+  execsql {
+    CREATE TABLE t3(a,b,c);
+    CREATE TABLE t4(x,y);
+    INSERT INTO t4 VALUES(1,2);
+    SELECT * FROM t4;
+  }
+} {1 2}
+do_test insert2-2.1 {
+  execsql {
+    INSERT INTO t3(a,c) SELECT * FROM t4;
+    SELECT * FROM t3;
+  }
+} {1 {} 2}
+do_test insert2-2.2 {
+  execsql {
+    DELETE FROM t3;
+    INSERT INTO t3(c,b) SELECT * FROM t4;
+    SELECT * FROM t3;
+  }
+} {{} 2 1}
+do_test insert2-2.3 {
+  execsql {
+    DELETE FROM t3;
+    INSERT INTO t3(c,a,b) SELECT x, 'hi', y FROM t4;
+    SELECT * FROM t3;
+  }
+} {hi 2 1}
+
+do_test insert2-4.0 {
+  set x [execsql {PRAGMA sanity_check}]
+  if {$x==""} {set x ok}
+  set x
+} {ok}
 
 finish_test

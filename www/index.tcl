@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.52 2002/01/29 18:41:26 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.53 2002/02/03 19:06:04 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -64,8 +64,7 @@ puts {<h2>Current Status</h2>
 <p>A <a href="changes.html">change history</a> is available online.
 The latest source code is
 <a href="download.html">available for download</a>.
-There are currently no known memory leaks or bugs
-in version 2.2.5 of the library.
+For a list of recently discovered bugs, refer to the change history.
 </p>
 
 <p>

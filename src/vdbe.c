@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.116 2002/02/03 03:34:09 drh Exp $
+** $Id: vdbe.c,v 1.117 2002/02/03 19:06:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3493,7 +3493,7 @@ case OP_CreateTable: {
 ** This opcode is used for testing purposes only.
 */
 case OP_SanityCheck: {
-#if 1  /* This opcode used for testing only */
+#ifndef NDEBUG  /* This opcode used for testing only */
   int nRoot;
   int *aRoot;
   int tos = ++p->tos;
@@ -3503,10 +3503,8 @@ case OP_SanityCheck: {
   HashElem *i;
   char *z;
 
-  if( iSet<0 || iSet>=p->nSet ){
-    goto bad_instruction;
-  }
-  VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
+  if( iSet<0 || iSet>=p->nSet ) goto bad_instruction;
+  if( NeedStack(p, p->tos) ) goto no_mem;
   pSet = &p->aSet[iSet];
   nRoot = sqliteHashCount(&pSet->hash);
   aRoot = sqliteMalloc( sizeof(int)*(nRoot+1) );
@@ -3525,7 +3523,8 @@ case OP_SanityCheck: {
     aStack[tos].n = strlen(z) + 1;
     aStack[tos].flags = STK_Str | STK_Dyn;
   }
-#endif /* SQLITE_TEST */
+  sqliteFree(aRoot);
+#endif /* !define(NDEBUG) */
   break;
 }
 

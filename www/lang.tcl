@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.21 2002/02/03 00:56:11 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.22 2002/02/03 19:06:04 drh Exp $}
 
 puts {<html>
 <head>
@@ -624,7 +624,7 @@ the command made prior to encountering the constraint violation
 are preserved and are not backed out.  For example, if an UPDATE
 statement encountered a constraint violation on the 100th row that
 it attempts to update, then the first 99 row changes are preserved
-by change to rows 100 and beyond never occur.</p></dd>
+but changes to rows 100 and beyond never occur.</p></dd>
 
 <dt><b>IGNORE</b></dt>
 <dd><p>When a constraint violation occurs, the one row that contains
@@ -637,7 +637,11 @@ normally.  No error is returned.</p></dd>
 <dd><p>When a UNIQUE constraint violation occurs, the pre-existing row
 that is causing the constraint violation is removed prior to inserting
 or updating the current row.  Thus the insert or update always occurs.
-The command continues executing normally.  No error is returned.</p></dd>
+The command continues executing normally.  No error is returned.</p>
+<p>If a NOT NULL constraint violation occurs, the NULL value is replaced
+by the default value for that column.  If the column has no default
+value, then the ABORT algorithm is used.</p>
+</dd>
 </dl>
 
 <p>
@@ -735,6 +739,15 @@ with caution.</p>
     SQLite library on and off.  This is used for debugging.
     This only works if the library is compiled without the NDEBUG macro.
     </p></li>
+
+<li><p><b>PRAGMA sanity_check;</b></p>
+    <p>The command does an integrity check of the entire database.  It
+    looks for out-of-order records, missing pages, and malformed records.
+    If any problems are found, then a single string is returned which is
+    a description of all problems.  If everything is in order, "ok" is
+    returned.  This command is used for testing and debugging only and
+    is not available if the library is compiled 
+    with the -DNDEBUG=1 compiler option.</p>
 
 <li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
     <p>For each column in the named table, invoke the callback function

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.8 2002/01/31 15:54:23 drh Exp $
+# $Id: copy.test,v 1.9 2002/02/03 19:06:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -207,6 +207,30 @@ do_test copy-5.4 {
     SELECT * FROM t1;
   }
 } {0 {22 33 11 33 22 44}}
+
+do_test copy-5.5 {
+  execsql {
+    DELETE FROM t1;
+    PRAGMA count_changes=on;
+    COPY t1 FROM 'data5.txt' USING DELIMITERS '|';
+  }
+} {2}
+do_test copy-5.6 {
+  execsql {
+    COPY OR REPLACE t1 FROM 'data5.txt' USING DELIMITERS '|';
+  }
+} {2}
+do_test copy-5.7 {
+  execsql {
+    COPY OR IGNORE t1 FROM 'data5.txt' USING DELIMITERS '|';
+  }
+} {0}
+
+do_test copy-6.0 {
+  set x [execsql {PRAGMA sanity_check}]
+  if {$x==""} {set x ok}
+  set x
+} {ok}
  
 
 # Cleanup 

@@ -17,7 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan 30 (2.3.0 beta)} {
+chng {2002 Jan 30 (2.3.0)} {
+<li>Fix a serious bug in the INSERT command which was causing data to go
+    into the wrong columns if the data source was a SELECT and the INSERT
+    clauses specified its columns in some order other than the default.</li>
 <li>Added the ability to resolve constraint conflicts is ways other than
     an abort and rollback.  See the documentation on the "ON CONFLICT"
     clause for details.</li>
@@ -28,6 +31,7 @@ chng {2002 Jan 30 (2.3.0 beta)} {
 <li>NOT NULL constraints are honored.</li>
 <li>The COPY command puts NULLs in columns whose data is '\N'.</li>
 <li>In the COPY command, backslash can now be used to escape a newline.</li>
+<li>Added the SANITY_CHECK pragma.</li>
 }
 
 chng {2002 Jan 28 (2.2.5)} {
