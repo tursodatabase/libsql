@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\ssqlite3_freemem\sAPI\sfunction\sto\sjust\ssqlite3_free.\s(CVS\s1512)
-D 2004-05-31T19:34:33
+C Synchronize\slemon.c\sto\sthe\sversion\son\sthe\s2.8\sbranch.\s(CVS\s1513)
+D 2004-05-31T23:13:45
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -165,7 +165,7 @@ F test/version.test 2ba212ba06380e65e476bdf2fcd390e8b05af5a0
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test 9c5752b807b78078fab8da6f52e689832579ca20
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c f4fb7226c930435e994441a470ed60a7c540f518
+F tool/lemon.c db6a3bfaf3388c0f7aea3adb5e05acddcd427016
 F tool/lempar.c 0b5e7a58634e0d448929b8e85f7981c2aa708d57
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -212,7 +212,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P adf7e29ff60dc559f64832fadb09f0b9decc0e76
-R 35dba1e1591a2b1e6f000ae81b864894
+P f3b80bbb97ed0b0c1cf634068f28f23802ec71a8
+R d129c1da630241ec087f33fd2514dd7b
 U drh
-Z 43fbc82bf31fc6953836ccd5c4550934
+Z da82754f0587159beaceb9f3b45617ea
