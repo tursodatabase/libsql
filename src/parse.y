@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.30 2001/09/16 00:13:27 drh Exp $
+** @(#) $Id: parse.y,v 1.31 2001/09/27 03:22:33 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -124,7 +124,7 @@ carg ::= DEFAULT NULL.
 // In addition to the type name, we also care about the primary key.
 //
 ccons ::= NOT NULL.
-ccons ::= PRIMARY KEY sortorder.     {sqliteCreateIndex(pParse,0,0,0,0,0);}
+ccons ::= PRIMARY KEY sortorder.     {sqliteCreateIndex(pParse,0,0,0,1,0,0);}
 ccons ::= UNIQUE.
 ccons ::= CHECK LP expr RP.
 
@@ -137,7 +137,7 @@ conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT ids.
-tcons ::= PRIMARY KEY LP idxlist(X) RP. {sqliteCreateIndex(pParse,0,0,X,0,0);}
+tcons ::= PRIMARY KEY LP idxlist(X) RP. {sqliteCreateIndex(pParse,0,0,X,1,0,0);}
 tcons ::= UNIQUE LP idlist RP.
 tcons ::= CHECK expr.
 idlist ::= idlist COMMA ids.
@@ -445,10 +445,12 @@ expritem(A) ::= expr(X).                {A = X;}
 expritem(A) ::= .                       {A = 0;}
 
 
-cmd ::= CREATE(S) uniqueflag INDEX ids(X) ON ids(Y) LP idxlist(Z) RP(E).
-    {sqliteCreateIndex(pParse, &X, &Y, Z, &S, &E);}
-uniqueflag ::= UNIQUE.
-uniqueflag ::= .
+cmd ::= CREATE(S) uniqueflag(U) INDEX ids(X) ON ids(Y) LP idxlist(Z) RP(E).
+    {sqliteCreateIndex(pParse, &X, &Y, Z, U, &S, &E);}
+
+%type uniqueflag {int}
+uniqueflag(A) ::= UNIQUE.   { A = 1; }
+uniqueflag(A) ::= .         { A = 0; }
 
 %type idxlist {IdList*}
 %destructor idxlist {sqliteIdListDelete($$);}

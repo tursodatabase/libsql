@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.54 2001/09/23 19:46:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.55 2001/09/27 03:22:33 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -190,9 +190,9 @@ struct Table {
   Column *aCol;    /* Information about each column */
   Index *pIndex;   /* List of SQL indexes on this table. */
   int tnum;        /* Page containing root for this table */
-  int readOnly;    /* True if this table should not be written by the user */
-  int isCommit;    /* True if creation of this table has been committed */
-  int isDelete;    /* True if this table is being deleted */
+  u8 readOnly;     /* True if this table should not be written by the user */
+  u8 isCommit;     /* True if creation of this table has been committed */
+  u8 isDelete;     /* True if this table is being deleted */
 };
 
 /*
@@ -220,9 +220,9 @@ struct Index {
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
   int tnum;        /* Page containing root of this index in database file */
-  int isUnique;    /* True if keys must all be unique */
-  int isCommit;    /* True if creation of this index has been committed */
-  int isDelete;    /* True if deletion of this index has not been comitted */
+  u8 isUnique;     /* True if keys must all be unique */
+  u8 isCommit;     /* True if creation of this index has been committed */
+  u8 isDelete;     /* True if deletion of this index has not been comitted */
   Index *pNext;    /* The next index associated with the same table */
 };
 
@@ -431,7 +431,7 @@ void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*);
 IdList *sqliteIdListAppend(IdList*, Token*);
 void sqliteIdListAddAlias(IdList*, Token*);
 void sqliteIdListDelete(IdList*);
-void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, Token*, Token*);
+void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, int, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
 int sqliteSelect(Parse*, Select*, int, int);
 Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,int);
@@ -463,4 +463,3 @@ void sqliteBeginTransaction(Parse*);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);
 char *sqlite_mprintf(const char *, ...);
-const char *sqliteErrStr(int);

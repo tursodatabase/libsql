@@ -18,6 +18,8 @@ proc chng {date desc} {
 }
 
 chng {2001 Sep 22 (2.0-beta-1)} {
+<li>SQLite now honors the UNIQUE keyword in CREATE UNIQUE INDEX.  Primary
+    keys are required to unique indices.</li>
 <li>Fixes to the rollback and locking behavior</li>
 }
 

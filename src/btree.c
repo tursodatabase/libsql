@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.30 2001/09/23 02:35:53 drh Exp $
+** $Id: btree.c,v 1.31 2001/09/27 03:22:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1070,26 +1070,35 @@ int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
 }
 
 /*
-** Compare the key for the entry that pCur points to against the 
-** given key (pKey,nKeyOrig).  Put the comparison result in *pResult.
-** The result is negative if pCur<pKey, zero if they are equal and
-** positive if pCur>pKey.
+** Compare the first nKey bytes of the key of the entry that pCur
+** points to against the first nKey bytes of pKey.  Set *pRes to
+** show the comparison results:
 **
-** SQLITE_OK is returned on success.  If part of the cursor key
-** is on overflow pages and we are unable to access those overflow
-** pages, then some other value might be returned to indicate the
-** reason for the error.
+**    *pRes<0    This means pCur<pKey
+**
+**    *pRes==0   This means pCur==pKey for all nKey bytes
+**
+**    *pRes>0    This means pCur>pKey
+**
+** If pCur contains N bytes where N<nKey and the N bytes of pCur
+** match the first N bytes of pKey, then *pRes<0 is returned.
+** If pCur differs from pKey in the first N bytes, then *pRes<0
+** or *pRes>0 depending on the difference.
+**
+** If pCur contains M bytes where M>nKey then only the first nKey
+** bytes of pCur are used in the comparison.  The result is the same
+** as it would be if pCur were truncated to nKey bytes.
 */
-static int compareKey(
-  BtCursor *pCur,      /* Points to the entry against which we are comparing */
-  const char *pKey,    /* The comparison key */
-  int nKeyOrig,        /* Number of bytes in the comparison key */
-  int *pResult         /* Write the comparison results here */
+int sqliteBtreeKeyCompare(
+  BtCursor *pCur,
+  const void *pKey,
+  int nKey,
+  int *pResult
 ){
   Pgno nextPage;
-  int nKey = nKeyOrig;
   int n, c, rc;
   Cell *pCell;
+  const char *zKey  = (const char*)pKey;
 
   assert( pCur->pPage );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
@@ -1101,12 +1110,12 @@ static int compareKey(
   if( n>MX_LOCAL_PAYLOAD ){
     n = MX_LOCAL_PAYLOAD;
   }
-  c = memcmp(pCell->aPayload, pKey, n);
+  c = memcmp(pCell->aPayload, zKey, n);
   if( c!=0 ){
     *pResult = c;
     return SQLITE_OK;
   }
-  pKey += n;
+  zKey += n;
   nKey -= n;
   nextPage = pCell->ovfl;
   while( nKey>0 ){
@@ -1123,16 +1132,52 @@ static int compareKey(
     if( n>OVERFLOW_SIZE ){
       n = OVERFLOW_SIZE;
     }
-    c = memcmp(pOvfl->aPayload, pKey, n);
+    c = memcmp(pOvfl->aPayload, zKey, n);
     sqlitepager_unref(pOvfl);
     if( c!=0 ){
       *pResult = c;
       return SQLITE_OK;
     }
     nKey -= n;
-    pKey += n;
+    zKey += n;
   }
-  c = pCell->h.nKey - nKeyOrig;
+  *pResult = c;
+  return SQLITE_OK;
+}
+
+/*
+** Compare the key for the entry that pCur points to against the 
+** given key (pKey,nKeyOrig).  Put the comparison result in *pResult.
+** The result is negative if pCur<pKey, zero if they are equal and
+** positive if pCur>pKey.
+**
+** Shorter strings are considered less than longer strings if they
+** are otherwise equal.  All bytes of both pCur and pKey are considered
+** in this comparison.  This is different from sqliteBtreeKeyCompare()
+** which only considers the first nKeyOrig bytes of pCur.
+**
+** SQLITE_OK is returned on success.  If part of the cursor key
+** is on overflow pages and we are unable to access those overflow
+** pages, then some other value might be returned to indicate the
+** reason for the error.
+*/
+static int compareKey(
+  BtCursor *pCur,      /* Points to the entry against which we are comparing */
+  const char *pKey,    /* The comparison key */
+  int nKeyOrig,        /* Number of bytes in the comparison key */
+  int *pResult         /* Write the comparison results here */
+){
+  int rc, c;
+  
+  rc = sqliteBtreeKeyCompare(pCur, pKey, nKeyOrig, &c);
+  if( rc!=SQLITE_OK ) return rc;
+  if( c==0 ){
+    Cell *pCell;
+    assert( pCur->pPage );
+    assert( pCur->pPage->nCell>pCur->idx && pCur->idx>=0 );
+    pCell = pCur->pPage->apCell[pCur->idx];
+    c = pCell->h.nKey - nKeyOrig;
+  }
   *pResult = c;
   return SQLITE_OK;
 }

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.41 2001/09/24 03:12:40 drh Exp $
+** $Id: build.c,v 1.42 2001/09/27 03:22:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -645,6 +645,7 @@ void sqliteCreateIndex(
   Token *pName,    /* Name of the index.  May be NULL */
   Token *pTable,   /* Name of the table to index.  Use pParse->pNewTable if 0 */
   IdList *pList,   /* A list of columns to be indexed */
+  int isUnique,    /* True if all entries in this index must be unique */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
@@ -724,6 +725,7 @@ void sqliteCreateIndex(
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nId;
+  pIndex->isUnique = isUnique;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -833,7 +835,7 @@ void sqliteCreateIndex(
       sqliteVdbeAddOp(v, OP_Column, 0, pIndex->aiColumn[i], 0, 0);
     }
     sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_PutIdx, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_PutIdx, 1, pIndex->isUnique, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, lbl1, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, lbl2);
     sqliteVdbeAddOp(v, OP_Close, 1, 0, 0, 0);
@@ -1106,7 +1108,7 @@ void sqliteCopy(
         sqliteVdbeAddOp(v, OP_FileColumn, pIdx->aiColumn[j], 0, 0, 0);
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_PutIdx, i, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_PutIdx, i, pIdx->isUnique, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, end);

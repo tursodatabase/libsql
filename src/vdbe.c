@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.77 2001/09/24 03:12:40 drh Exp $
+** $Id: vdbe.c,v 1.78 2001/09/27 03:22:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -67,7 +67,6 @@ struct Cursor {
   Btree *pBt;           /* Separate file holding temporary table */
   char *zKey;           /* Key used in BeginIdx and NextIdx operators */
   int nKey;             /* Number of bytes in zKey[] */
-  char *zBuf;           /* Buffer space used to hold a copy of zKey[] */
 };
 typedef struct Cursor Cursor;
 
@@ -2619,9 +2618,8 @@ case OP_BeginIdx: {
     if( Stringify(p, tos) ) goto no_mem;
     if( pCrsr->zKey ) sqliteFree(pCrsr->zKey);
     pCrsr->nKey = aStack[tos].n;
-    pCrsr->zKey = sqliteMalloc( 2*pCrsr->nKey );
+    pCrsr->zKey = sqliteMalloc( pCrsr->nKey );
     if( pCrsr->zKey==0 ) goto no_mem;
-    pCrsr->zBuf = &pCrsr->zKey[pCrsr->nKey];
     memcpy(pCrsr->zKey, zStack[tos], aStack[tos].n);
     pCrsr->zKey[aStack[tos].n] = 0;
     rx = sqliteBtreeMoveto(pCrsr->pCursor, zStack[tos], aStack[tos].n, &res);
@@ -2662,8 +2660,8 @@ case OP_NextIdx: {
     }
     sqliteBtreeKeySize(pCur, &size);
     if( res>0 || size!=pCrsr->nKey+sizeof(u32) ||
-      sqliteBtreeKey(pCur, 0, pCrsr->nKey, pCrsr->zBuf)!=pCrsr->nKey ||
-      memcmp(pCrsr->zKey, pCrsr->zBuf, pCrsr->nKey)!=0
+      sqliteBtreeKeyCompare(pCur, pCrsr->zKey, pCrsr->nKey, &res)!=SQLITE_OK ||
+      res!=0
     ){
       pc = pOp->p2 - 1;
       POPSTACK;
@@ -2679,11 +2677,16 @@ case OP_NextIdx: {
   break;
 }
 
-/* Opcode: PutIdx P1 * *
+/* Opcode: PutIdx P1 P2 P3
 **
 ** The top of the stack hold an SQL index key made using the
 ** MakeIdxKey instruction.  This opcode writes that key into the
 ** index P1.  Data for the entry is nil.
+**
+** If P2==1, then the key must be unique.  If the key is not unique,
+** the program aborts with a SQLITE_CONSTRAINT error and the database
+** is rolled back.  If P3 is not null, then it because part of the
+** error message returned with the SQLITE_CONSTRAINT.
 */
 case OP_PutIdx: {
   int i = pOp->p1;
@@ -2691,7 +2694,35 @@ case OP_PutIdx: {
   BtCursor *pCrsr;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    rc = sqliteBtreeInsert(pCrsr, zStack[tos], aStack[tos].n, "", 0);
+    int nKey = aStack[tos].n;
+    const char *zKey = zStack[tos];
+    if( pOp->p2 ){
+      int res, n;
+      assert( aStack[tos].n >= 4 );
+      rc = sqliteBtreeMoveto(pCrsr, zKey, nKey-4, &res);
+      if( rc!=SQLITE_OK ) goto abort_due_to_error;
+      while( res!=0 ){
+        int c;
+        sqliteBtreeKeySize(pCrsr, &n);
+        if( n==nKey
+           && sqliteBtreeKeyCompare(pCrsr, zKey, nKey-4, &c)==SQLITE_OK
+           && c==0
+        ){
+          rc = SQLITE_CONSTRAINT;
+          if( pOp->p3 && pOp->p3[0] ){
+            sqliteSetString(pzErrMsg, "duplicate index entry: ", pOp->p3,0);
+          }
+          goto abort_due_to_error;
+        }
+        if( res<0 ){
+          sqliteBtreeNext(pCrsr, &res);
+          res = +1;
+        }else{
+          break;
+        }
+      }
+    }
+    rc = sqliteBtreeInsert(pCrsr, zKey, nKey, "", 0);
   }
   POPSTACK;
   break;
