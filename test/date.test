@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.8 2004/07/18 22:22:44 drh Exp $
+# $Id: date.test,v 1.9 2004/08/20 18:34:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,14 +21,14 @@ proc datetest {tnum expr result} {
     execsql "SELECT coalesce($expr,'NULL')"
   }] [list $result]
 }
-
+set tcl_precision 15
 datetest 1.1 julianday('2000-01-01') 2451544.5
 datetest 1.2 julianday('1970-01-01') 2440587.5
 datetest 1.3 julianday('1910-04-20') 2418781.5
 datetest 1.4 julianday('1986-02-09') 2446470.5
-datetest 1.5 julianday('12:00:00') 2451545
-datetest 1.6 {julianday('2000-01-01 12:00:00')} 2451545
-datetest 1.7 {julianday('2000-01-01 12:00')} 2451545
+datetest 1.5 julianday('12:00:00') 2451545.0
+datetest 1.6 {julianday('2000-01-01 12:00:00')} 2451545.0
+datetest 1.7 {julianday('2000-01-01 12:00')} 2451545.0
 datetest 1.8 julianday('bogus') NULL
 datetest 1.9 julianday('1999-12-31') 2451543.5
 datetest 1.10 julianday('1999-12-32') NULL
@@ -39,7 +39,7 @@ datetest 1.14 julianday('+2000-01-01') NULL
 datetest 1.15 julianday('200-01-01') NULL
 datetest 1.16 julianday('2000-1-01') NULL
 datetest 1.17 julianday('2000-01-1') NULL
-datetest 1.18 {julianday('2000-01-01     12:00:00')} 2451545
+datetest 1.18 {julianday('2000-01-01     12:00:00')} 2451545.0
 datetest 1.19 {julianday('2000-01-01 12:00:00.1')}   2451545.00000116
 datetest 1.20 {julianday('2000-01-01 12:00:00.01')}  2451545.00000012
 datetest 1.21 {julianday('2000-01-01 12:00:00.001')} 2451545.00000001
@@ -216,13 +216,13 @@ set sqlite_current_time 0
 
 # Negative years work.  Example:  '-4713-11-26' is JD 1.5.
 #
-datetest 9.1 {julianday('-4713-11-24 12:00:00')} {0}
-datetest 9.2 {julianday(datetime(5))} {5}
-datetest 9.3 {julianday(datetime(10))} {10}
-datetest 9.4 {julianday(datetime(100))} {100}
-datetest 9.5 {julianday(datetime(1000))} {1000}
-datetest 9.6 {julianday(datetime(10000))} {10000}
-datetest 9.7 {julianday(datetime(100000))} {100000}
+datetest 9.1 {julianday('-4713-11-24 12:00:00')} {0.0}
+datetest 9.2 {julianday(datetime(5))} {5.0}
+datetest 9.3 {julianday(datetime(10))} {10.0}
+datetest 9.4 {julianday(datetime(100))} {100.0}
+datetest 9.5 {julianday(datetime(1000))} {1000.0}
+datetest 9.6 {julianday(datetime(10000))} {10000.0}
+datetest 9.7 {julianday(datetime(100000))} {100000.0}
 
 # datetime() with just an HH:MM:SS correctly inserts the date 2000-01-01.
 #

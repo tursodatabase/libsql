@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.98 2004/08/20 16:02:39 drh Exp $
+** $Id: test1.c,v 1.99 2004/08/20 18:34:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2389,6 +2389,31 @@ static int test_sqlite3OsTempFileName(
 }
 
 /*
+** Usage:  tcl_variable_type VARIABLENAME
+**
+** Return the name of the internal representation for the
+** value of the given variable.
+*/
+static int tcl_variable_type(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_Obj *pVar;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "VARIABLE");
+    return TCL_ERROR;
+  }
+  pVar = Tcl_GetVar2Ex(interp, Tcl_GetString(objv[1]), 0, TCL_LEAVE_ERR_MSG);
+  if( pVar==0 ) return TCL_ERROR;
+  if( pVar->typePtr ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(pVar->typePtr->name, -1));
+  }
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -2482,6 +2507,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "add_test_function",       test_function, 0           },
      { "sqlite3_crashparams",     sqlite3_crashparams, 0     },
      { "sqlite3_test_errstr",     test_errstr, 0             },
+     { "tcl_variable_type",       tcl_variable_type, 0       },
 
   };
   int i;

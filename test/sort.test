@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.14 2004/06/27 21:31:40 drh Exp $
+# $Id: sort.test,v 1.15 2004/08/20 18:34:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,10 +62,10 @@ do_test sort-1.4 {
 } {2 3 6 7 1 4 5 8}
 do_test sort-1.5 {
   execsql {SELECT flt FROM t1 ORDER BY flt}
-} {-11 -1.6 -0.0013442 0.123 2.15 3.141592653 123 4221}
+} {-11 -1.6 -0.0013442 0.123 2.15 3.141592653 123.0 4221.0}
 do_test sort-1.6 {
   execsql {SELECT flt FROM t1 ORDER BY flt DESC}
-} {4221 123 3.141592653 2.15 0.123 -0.0013442 -1.6 -11}
+} {4221.0 123.0 3.141592653 2.15 0.123 -0.0013442 -1.6 -11}
 do_test sort-1.7 {
   execsql {SELECT roman FROM t1 ORDER BY roman}
 } {I II III IV V VI VII VIII}
@@ -353,7 +353,7 @@ do_test sort-8.1 {
     INSERT INTO t5 VALUES(100.0,'A2');
     SELECT * FROM t5 ORDER BY a, b;
   }
-} {100 A1 100 A2}
+} {100 A1 100.0 A2}
 
 # BLOBs should sort after TEXT
 #

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.99 2004/08/20 16:02:39 drh Exp $
+** $Id: tclsqlite.c,v 1.100 2004/08/20 18:34:20 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -59,7 +59,6 @@ struct SqlCollate {
 ** that has been opened by the SQLite TCL interface.
 */
 typedef struct SqliteDb SqliteDb;
-typedef struct SqlStmt SqlStmt;
 struct SqliteDb {
   sqlite3 *db;          /* The "real" database structure */
   Tcl_Interp *interp;   /* The interpreter used for this database */
@@ -72,19 +71,6 @@ struct SqliteDb {
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;  /* Collation needed script */
-  SqlStmt *pStmtList;   /* List of all prepared statements */
-};
-
-/*
-** Each prepared statement is an instance of the following structure.
-*/
-struct SqlStmt {
-  SqliteDb *pDb;        /* The database that this statement is part of */
-  SqlStmt *pAll;        /* Next statement in list of all for pDb */
-  SqlStmt **ppPrev;     /* Previous pAll pointer */
-  sqlite3_stmt *pVm;    /* Compiled statement. */
-  int nBind;            /* Number of bindings in this statement */
-  char *azBindVar[1];   /* Name of variables for each binding */
 };
 
 /*
@@ -122,12 +108,6 @@ static int DbEvalCallback3(
 */
 static void DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
-  SqlStmt *pStmt, *pNextStmt;
-  for(pStmt=pDb->pStmtList; pStmt; pStmt=pNextStmt){
-    pNextStmt = pStmt->pAll;
-    sqlite3_finalize(pStmt->pVm);
-    Tcl_Free(pStmt);
-  }
   sqlite3_close(pDb->db);
   while( pDb->pFunc ){
     SqlFunc *pFunc = pDb->pFunc;
@@ -716,74 +696,171 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     char const *zSql;
     char const *zLeft;
     sqlite3_stmt *pStmt;
+    Tcl_Obj *pArray;       /* Name of array into which results are written */
+    Tcl_Obj *pScript;      /* Script to run for each result set */
 
     Tcl_Obj *pRet = Tcl_NewObj();
     Tcl_IncrRefCount(pRet);
 
-    if( objc<3 || objc>5 || objc==4 ){
+    if( objc<3 || objc>5 ){
       Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
       return TCL_ERROR;
+    }
+    if( objc==3 ){
+      pArray = pScript = 0;
+    }else if( objc==4 ){
+      pArray = 0;
+      pScript = objv[3];
+    }else{
+      pArray = objv[3];
+      if( Tcl_GetString(pArray)[0]==0 ) pArray = 0;
+      pScript = objv[4];
     }
 
     zSql = Tcl_GetStringFromObj(objv[2], 0);
     while( zSql[0] ){
-      int i;
+      int i;      /* Loop counter */
+      int nVar;   /* Number of wildcards in the SQL */
+      int nCol;   /* Number of columns in the result set */
+      Tcl_Obj **apColName = 0;   /* Array of column names */
   
+      /* Compile a single SQL statement */
       if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
         Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         rc = TCL_ERROR;
         break;
       }
-  
-      if( pStmt && objc==5 ){
-        Tcl_Obj *pColList = Tcl_NewObj();
-        Tcl_IncrRefCount(pColList);
-
-        for(i=0; i<sqlite3_column_count(pStmt); i++){
-          Tcl_ListObjAppendElement(interp, pColList,
-              dbTextToObj(sqlite3_column_name(pStmt, i))
-          );
+      if( pStmt==0 ){
+        if( SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+          Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
+          rc = TCL_ERROR;
+          break;
+        }else{
+          zSql = zLeft;
+          continue;
         }
-        Tcl_ObjSetVar2(interp,objv[3],Tcl_NewStringObj("*",-1),pColList,0);
       }
 
+      /* Bind values to wildcards that begin with $ */  
+      nVar = sqlite3_bind_parameter_count(pStmt);
+      for(i=1; i<=nVar; i++){
+        const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
+        if( zVar[0]=='$' ){
+          Tcl_Obj *pVar = Tcl_GetVar2Ex(interp, &zVar[1], 0, 0);
+          if( pVar ){
+            int n;
+            u8 *data;
+            char *zType = pVar->typePtr ? pVar->typePtr->name : "";
+            char c = zType[0];
+            if( c=='b' && strcmp(zType,"bytearray")==0 ){
+              data = Tcl_GetByteArrayFromObj(pVar, &n);
+              sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
+            }else if( (c=='b' && strcmp(zType,"boolean")==0) ||
+                  (c=='i' && strcmp(zType,"int")==0) ){
+              Tcl_GetIntFromObj(interp, pVar, &n);
+              sqlite3_bind_int(pStmt, i, n);
+            }else if( c=='d' && strcmp(zType,"double")==0 ){
+              double r;
+              Tcl_GetDoubleFromObj(interp, pVar, &r);
+              sqlite3_bind_double(pStmt, i, r);
+            }else{
+              data = Tcl_GetStringFromObj(pVar, &n);
+              sqlite3_bind_text(pStmt, i, data, n, SQLITE_STATIC);
+            }
+          }
+        }
+      }
+   
+
+      /* Compute column names */
+      nCol = sqlite3_column_count(pStmt);
+      if( pScript ){
+        apColName = (Tcl_Obj**)Tcl_Alloc( sizeof(Tcl_Obj*)*nCol );
+        if( apColName==0 ) break;
+        for(i=0; i<nCol; i++){
+          apColName[i] = dbTextToObj(sqlite3_column_name(pStmt,i));
+          Tcl_IncrRefCount(apColName[i]);
+        }
+      }
+
+      /* If results are being stored in an array variable, then create
+      ** the array(*) entry for that array
+      */
+      if( pArray ){
+        Tcl_Obj *pColList = Tcl_NewObj();
+        Tcl_IncrRefCount(pColList);
+        for(i=0; i<nCol; i++){
+          Tcl_ListObjAppendElement(interp, pColList, apColName[i]);
+        }
+        Tcl_ObjSetVar2(interp, pArray, Tcl_NewStringObj("*",-1), pColList,0);
+      }
+
+      /* Execute the SQL
+      */
       while( pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
-        for(i=0; i<sqlite3_column_count(pStmt); i++){
+        for(i=0; i<nCol; i++){
           Tcl_Obj *pVal;
           
           /* Set pVal to contain the i'th column of this row. */
-          if( SQLITE_BLOB!=sqlite3_column_type(pStmt, i) ){
-            pVal = dbTextToObj(sqlite3_column_text(pStmt, i));
-          }else{
-            int bytes = sqlite3_column_bytes(pStmt, i);
-            pVal = Tcl_NewByteArrayObj(sqlite3_column_blob(pStmt, i), bytes);
+          switch( sqlite3_column_type(pStmt, i) ){
+            case SQLITE_BLOB: {
+              int bytes = sqlite3_column_bytes(pStmt, i);
+              pVal = Tcl_NewByteArrayObj(sqlite3_column_blob(pStmt, i), bytes);
+              break;
+            }
+            case SQLITE_INTEGER: {
+              sqlite_int64 v = sqlite3_column_int64(pStmt, i);
+              if( v>=-2147483647 && v<=2147483647 ){
+                pVal = Tcl_NewIntObj(v);
+              }else{
+                pVal = Tcl_NewWideIntObj(v);
+              }
+              break;
+            }
+            case SQLITE_FLOAT: {
+              double r = sqlite3_column_double(pStmt, i);
+              pVal = Tcl_NewDoubleObj(r);
+              break;
+            }
+            default: {
+              pVal = dbTextToObj(sqlite3_column_text(pStmt, i));
+              break;
+            }
           }
   
-          if( objc==5 ){
-            Tcl_Obj *pName = dbTextToObj(sqlite3_column_name(pStmt, i));
-            Tcl_IncrRefCount(pName);
-            if( !strcmp("", Tcl_GetString(objv[3])) ){
-              Tcl_ObjSetVar2(interp, pName, 0, pVal, 0);
+          if( pScript ){
+            if( pArray==0 ){
+              Tcl_ObjSetVar2(interp, apColName[i], 0, pVal, 0);
             }else{
-              Tcl_ObjSetVar2(interp, objv[3], pName, pVal, 0);
+              Tcl_ObjSetVar2(interp, pArray, apColName[i], pVal, 0);
             }
-            Tcl_DecrRefCount(pName);
           }else{
             Tcl_ListObjAppendElement(interp, pRet, pVal);
           }
         }
   
-        if( objc==5 ){
-          rc = Tcl_EvalObjEx(interp, objv[4], 0);
+        if( pScript ){
+          rc = Tcl_EvalObjEx(interp, pScript, 0);
           if( rc!=TCL_ERROR ) rc = TCL_OK;
         }
       }
-       
-      if( pStmt && SQLITE_SCHEMA==sqlite3_finalize(pStmt) ){
+
+      /* Free the column name objects */
+      if( pScript ){
+        for(i=0; i<nCol; i++){
+          Tcl_DecrRefCount(apColName[i]);
+        }
+        Tcl_Free((char*)apColName);
+      }
+
+      /* Finalize the statement.  If the result code is SQLITE_SCHEMA, then
+      ** try again to execute the same statement
+      */
+      if( SQLITE_SCHEMA==sqlite3_finalize(pStmt) ){
         continue;
       }
   
-      if( pStmt && SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+      if( SQLITE_OK!=sqlite3_errcode(pDb->db) ){
         Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
         rc = TCL_ERROR;
         break;
@@ -1124,13 +1201,13 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** for additional information.
 */
 int Sqlite3_Init(Tcl_Interp *interp){
-  Tcl_InitStubs(interp, "8.0", 0);
+  Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite3", "3.0");
   return TCL_OK;
 }
 int Tclsqlite3_Init(Tcl_Interp *interp){
-  Tcl_InitStubs(interp, "8.0", 0);
+  Tcl_InitStubs(interp, "8.4", 0);
   Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
   Tcl_PkgProvide(interp, "sqlite3", "3.0");
   return TCL_OK;

@@ -106,11 +106,15 @@ foreach tbl_defn {
   }
 
   do_test trigger2-1.$ii.1 {
-    execsql { 
+    set r {}
+    foreach v [execsql { 
       UPDATE tbl SET a = a * 10, b = b * 10;
       SELECT * FROM rlog ORDER BY idx;
       SELECT * FROM clog ORDER BY idx;
+    }] {
+      lappend r [expr {int($v)}]
     }
+    set r
   } [list 1 1 2  4  6 10 20 \
           2 1 2 13 24 10 20 \
 	  3 3 4 13 24 30 40 \
@@ -139,10 +143,14 @@ foreach tbl_defn {
     END;
   }
   do_test trigger2-1.$ii.2 {
-    execsql {
+    set r {}
+    foreach v [execsql {
       DELETE FROM tbl;
       SELECT * FROM rlog;
+    }] {
+      lappend r [expr {int($v)}]
     }
+    set r
   } [list 1 100 100 400 300 0 0 \
           2 100 100 300 200 0 0 \
           3 300 200 300 200 0 0 \
@@ -178,8 +186,8 @@ foreach tbl_defn {
 
       SELECT * FROM rlog;
     }
-  } [list 1 0 0 0 0 5 6 \
-          2 0 0 5 6 5 6 ]
+  } [list 1 0 0 0.0 0.0 5 6 \
+          2 0 0 5.0 6.0 5 6 ]
 
   do_test trigger2-1.$ii.4 {
     execsql {

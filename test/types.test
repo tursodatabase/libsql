@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.10 2004/07/22 15:02:26 drh Exp $
+# $Id: types.test,v 1.11 2004/08/20 18:34:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -219,7 +219,7 @@ do_test types-2.2.2 {
   execsql {
     SELECT a FROM t2;
   }
-} {0 12345.678 -12345.678}
+} {0.0 12345.678 -12345.678}
 
 # Check that all the record sizes are as we expected.
 do_test types-2.2.3 {

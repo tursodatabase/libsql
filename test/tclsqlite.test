@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.29 2004/08/20 16:02:39 drh Exp $
+# $Id: tclsqlite.test,v 1.30 2004/08/20 18:34:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -184,5 +184,40 @@ do_test tcl-4.2 {
   db busy {}
   db busy
 } {}
+
+# Parsing of TCL variable names within SQL into bound parameters.
+#
+do_test tcl-5.1 {
+  execsql {CREATE TABLE t3(a,b,c)}
+  catch {unset x}
+  set x(1) 5
+  set x(2) 7
+  execsql {
+    INSERT INTO t3 VALUES($::x(1),$::x(2),$::x(3));
+    SELECT * FROM t3
+  }
+} {5 7 {}}
+do_test tcl-5.2 {
+  execsql {
+    SELECT typeof(a), typeof(b), typeof(c) FROM t3
+  }
+} {text text null}
+do_test tcl-5.3 {
+  catch {unset x}
+  set x [binary format h12 686900686f00]
+  execsql {
+    UPDATE t3 SET a=$::x;
+  }
+  db eval {
+    SELECT a FROM t3
+  } break
+  binary scan $a h12 adata
+  set adata
+} {686900686f00}
+do_test tcl-5.4 {
+    execsql {
+    SELECT typeof(a), typeof(b), typeof(c) FROM t3
+  }
+} {blob text null}
 
 finish_test

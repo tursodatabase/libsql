@@ -520,7 +520,8 @@ int sqlite3_bind_text16(
 ** This routine is added to support DBD::SQLite.  
 */
 int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
-  return ((Vdbe*)pStmt)->nVar;
+  Vdbe *p = (Vdbe*)pStmt;
+  return p ? p->nVar : 0;
 }
 
 /*
@@ -531,7 +532,7 @@ int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
   Vdbe *p = (Vdbe*)pStmt;
-  if( i<1 || i>p->nVar ){
+  if( p==0 || i<1 || i>p->nVar ){
     return 0;
   }
   if( !p->okVar ){

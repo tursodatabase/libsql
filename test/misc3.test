@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.11 2004/05/20 03:30:11 drh Exp $
+# $Id: misc3.test,v 1.12 2004/08/20 18:34:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -72,13 +72,13 @@ do_test misc3-1.2 {
 #
 do_test misc3-2.1 {
   execsql {SELECT 2e-25*0.5e25}
-} 1
+} 1.0
 do_test misc3-2.2 {
   execsql {SELECT 2.0e-25*000000.500000000000000000000000000000e+00025}
-} 1
+} 1.0
 do_test misc3-2.3 {
   execsql {SELECT 000000000002e-0000000025*0.5e25}
-} 1
+} 1.0
 do_test misc3-2.4 {
   execsql {SELECT 2e-25*0.5e250}
 } 1e+225
