@@ -1,5 +1,5 @@
-C Always\sfill\sin\sthe\s5th\sparameter\sto\ssqlite_exec\sif\sthere\sis\san\serror.\s(CVS\s742)
-D 2002-09-03T19:43:24
+C Fix\sfor\sticket\s#146:\sCorrectly\shandle\sreads\sof\sunused\sdisk\sblocks\sat\sthe\nend\sof\sthe\sfile.\s(CVS\s743)
+D 2002-09-05T16:08:27
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,9 +30,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c a2f5455009904476b43ec5304a181b505235f72f
 F src/main.c 367c0d2c72457dacddea28b5ba6634ffeaa9aa67
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 00d10655e1dc9a52b4aabca58c8d8e45048057b0
+F src/os.c 091a89297bf80927cde146cd1dbf89c908864f3a
 F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
-F src/pager.c 4b0169e91b34f6ff91e8feb57545c43e4d6eb370
+F src/pager.c b5365348606252dee8d831912d916218df8f8720
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 818b03a73f6b3b8b284b515c5b1d9998d4663dc3
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -151,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P dd8867fc479891ed8fa36c5cf2359e49c6754a8c
-R cad73f796bba24cb230a5c691e09b6af
+P 7f8fd5c75d614f81ef87f0fc952c341cbc5076d0
+R e7c2b185d8c4a6f19fc472c4852f3827
 U drh
-Z 60c2dd392b7d08c0b58d2cfa671b9836
+Z fa53bc156cff8bbf22e6de1d4e9ed324

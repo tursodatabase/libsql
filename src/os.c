@@ -479,8 +479,12 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
   SimulateIOError(SQLITE_IOERR);
   TRACE2("READ %d\n", last_page);
   got = read(id->fd, pBuf, amt);
-  if( got<0 ) got = 0;
-  return got==amt ? SQLITE_OK : SQLITE_IOERR;
+  /* if( got<0 ) got = 0; */
+  if( got==amt ){
+    return SQLITE_OK;
+  }else{
+    return SQLITE_IOERR;
+  }
 #endif
 #if OS_WIN
   DWORD got;
@@ -488,7 +492,11 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
-  return got==amt ? SQLITE_OK : SQLITE_IOERR;
+  if( got==amt ){
+    return SQLITE_OK;
+  }else{
+    return SQLITE_IOERR;
+  }
 #endif
 }
 
@@ -498,17 +506,27 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 */
 int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_UNIX
-  int wrote;
+  int wrote = 0;
   SimulateIOError(SQLITE_IOERR);
   TRACE2("WRITE %d\n", last_page);
-  wrote = write(id->fd, pBuf, amt);
-  if( wrote<amt ) return SQLITE_FULL;
+  while( amt>0 && (wrote = write(id->fd, pBuf, amt))>0 ){
+    amt -= wrote;
+    pBuf = &((char*)pBuf)[wrote];
+  }
+  if( amt>0 ){
+    return SQLITE_FULL;
+  }
   return SQLITE_OK;
 #endif
 #if OS_WIN
+  int rc;
   DWORD wrote;
   SimulateIOError(SQLITE_IOERR);
-  if( !WriteFile(id->h, pBuf, amt, &wrote, 0) || (int)wrote<amt ){
+  while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
+    amt -= wrote;
+    pBuf = &((char*)pBuf)[wrote];
+  }
+  if( !rc || amt>(int)wrote ){
     return SQLITE_FULL;
   }
   return SQLITE_OK;
@@ -537,10 +555,18 @@ int sqliteOsSync(OsFile *id){
   SimulateIOError(SQLITE_IOERR);
   TRACE1("SYNC\n");
 #if OS_UNIX
-  return fsync(id->fd)==0 ? SQLITE_OK : SQLITE_IOERR;
+  if( fsync(id->fd) ){
+    return SQLITE_IOERR;
+  }else{
+    return SQLITE_OK;
+  }
 #endif
 #if OS_WIN
-  return FlushFileBuffers(id->h) ? SQLITE_OK : SQLITE_IOERR;
+  if( FlushFileBuffers(id->h) ){
+    return SQLITE_OK;
+  }else{
+    return SQLITE_IOERR;
+  }
 #endif
 }
 

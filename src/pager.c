@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.51 2002/08/13 00:01:17 drh Exp $
+** @(#) $Id: pager.c,v 1.52 2002/09/05 16:08:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1003,7 +1003,13 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       sqliteOsSeek(&pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
       rc = sqliteOsRead(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
       if( rc!=SQLITE_OK ){
-        return rc;
+        int fileSize;
+        if( sqliteOsFileSize(&pPager->fd,&fileSize)!=SQLITE_OK
+               || fileSize>=pgno*SQLITE_PAGE_SIZE ){
+          return rc;
+        }else{
+          memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
+        }
       }
     }
     if( pPager->nExtra>0 ){
@@ -1155,7 +1161,9 @@ int sqlitepager_begin(void *pData){
     }
     if( rc!=SQLITE_OK ){
       rc = pager_unwritelock(pPager);
-      if( rc==SQLITE_OK ) rc = SQLITE_FULL;
+      if( rc==SQLITE_OK ){
+        rc = SQLITE_FULL;
+      }
     }
   }
   return rc;
@@ -1363,7 +1371,9 @@ int sqlitepager_commit(Pager *pPager){
 
   if( pPager->errMask==PAGER_ERR_FULL ){
     rc = sqlitepager_rollback(pPager);
-    if( rc==SQLITE_OK ) rc = SQLITE_FULL;
+    if( rc==SQLITE_OK ){
+      rc = SQLITE_FULL;
+    }
     return rc;
   }
   if( pPager->errMask!=0 ){
