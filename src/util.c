@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.2 2000/05/29 17:44:25 drh Exp $
+** $Id: util.c,v 1.3 2000/05/29 23:30:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -67,6 +67,7 @@ void *sqliteRealloc(void *p, int n){
     sqliteFree(p);
     return 0;
   }
+  /* printf("realloc 0x%x size: %d bytes\n", (int)p, n); */
   return realloc(p, n);
 }
 

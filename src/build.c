@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.2 2000/05/29 17:44:25 drh Exp $
+** $Id: build.c,v 1.3 2000/05/29 23:30:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -243,7 +243,7 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   char **pz;
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
-    p->azCol = sqliteRealloc( p->azCol, (p->nCol+8)*sizeof(p->azCol[0]));
+    p->azCol = sqliteRealloc( p->azCol, (p->nCol+9)*sizeof(p->azCol[0]));
   }
   if( p->azCol==0 ){
     p->nCol = 0;
@@ -319,8 +319,8 @@ static Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
   Table *pTab = sqliteFindTable(pParse->db, zName);
   sqliteFree(zName);
   if( pTab==0 ){
-    sqliteSetNString(&pParse->zErrMsg, "no such table: \"", 0, 
-        pTok->z, pTok->n, "\"", 1, 0);
+    sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
+        pTok->z, pTok->n, 0);
     pParse->nErr++;
   }
   return pTab;
@@ -430,8 +430,8 @@ void sqliteCreateIndex(
   }
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
   if( pTab->readOnly ){
-    sqliteSetString(&pParse->zErrMsg, "table \"", pTab->zName, 
-      "\" may not have new indices added", 0);
+    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
+      " may not have new indices added", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -495,8 +495,8 @@ void sqliteCreateIndex(
       if( sqliteStrICmp(pList->a[i].zName, pTab->azCol[j])==0 ) break;
     }
     if( j>=pTab->nCol ){
-      sqliteSetString(&pParse->zErrMsg, "table being indexed has no field "
-        "named \"", pList->a[i].zName, "\"", 0);
+      sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
+        " has no field named ", pList->a[i].zName, 0);
       pParse->nErr++;
       sqliteFree(pIndex);
       goto exit_create_index;
@@ -530,9 +530,9 @@ void sqliteCreateIndex(
       { OP_Open,        0, 0, MASTER_NAME},
       { OP_New,         0, 0, 0},
       { OP_String,      0, 0, "index"},
-      { OP_String,      0, 0, 0},  /* 2 */
       { OP_String,      0, 0, 0},  /* 3 */
       { OP_String,      0, 0, 0},  /* 4 */
+      { OP_String,      0, 0, 0},  /* 5 */
       { OP_MakeRecord,  4, 0, 0},
       { OP_Put,         0, 0, 0},
       { OP_Close,       0, 0, 0},
@@ -550,9 +550,9 @@ void sqliteCreateIndex(
       int base;
       n = (int)pEnd->z - (int)pStart->z + 1;
       base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
-      sqliteVdbeChangeP3(v, base+2, pIndex->zName, 0);
-      sqliteVdbeChangeP3(v, base+3, pTab->zName, 0);
-      sqliteVdbeChangeP3(v, base+4, pStart->z, n);
+      sqliteVdbeChangeP3(v, base+3, pIndex->zName, 0);
+      sqliteVdbeChangeP3(v, base+4, pTab->zName, 0);
+      sqliteVdbeChangeP3(v, base+5, pStart->z, n);
     }
     sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
     sqliteVdbeAddOp(v, OP_Open, 1, 0, pIndex->zName, 0);

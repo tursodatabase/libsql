@@ -1,0 +1,204 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the CREATE INDEX statement.
+#
+# $Id: crtidx.test,v 1.1 2000/05/29 23:30:51 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a basic index and verify it is added to sqlite_master
+#
+do_test crtidx-1.1 {
+  execsql {CREATE TABLE test1(f1 int, f2 int, f3 int)}
+  execsql {CREATE INDEX index1 ON test1(f1)}
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {index1 test1}
+do_test crtidx-1.1b {
+  execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
+           WHERE name='index1'}
+} {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
+do_test crtidx-1.1c {
+  db close
+  sqlite db testdb
+  execsql {SELECT name, sql, tbl_name, type FROM sqlite_master 
+           WHERE name='index1'}
+} {index1 {CREATE INDEX index1 ON test1(f1)} test1 index}
+do_test crtidx-1.1d {
+  db close
+  sqlite db testdb
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {index1 test1}
+
+# Verify that the index dies with the table
+#
+do_test crtidx-1.2 {
+  execsql {DROP TABLE test1}
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {}
+
+# Try adding an index to a table that does not exist
+#
+do_test crtidx-2.1 {
+  set v [catch {execsql {CREATE INDEX index1 ON test1(f1)}} msg]
+  lappend v $msg
+} {1 {no such table: test1}}
+
+# Try adding an index on a field of a table where the table
+# exists but the field does not.
+#
+do_test crtidx-2.1 {
+  execsql {CREATE TABLE test1(f1 int, f2 int, f3 int)}
+  set v [catch {execsql {CREATE INDEX index1 ON test1(f4)}} msg]
+  lappend v $msg
+} {1 {table test1 has no field named f4}}
+
+# Try an index with some fields that match and others that do now.
+#
+do_test crtidx-2.2 {
+  set v [catch {execsql {CREATE INDEX index1 ON test1(f1, f2, f4, f3)}} msg]
+  execsql {DROP TABLE test1}
+  lappend v $msg
+} {1 {table test1 has no field named f4}}
+
+# Try creating a bunch of indices on the same table
+#
+set r {}
+for {set i 1} {$i<100} {incr i} {
+  lappend r index$i
+}
+do_test crtidx-3.1 {
+  execsql {CREATE TABLE test1(f1 int, f2 int, f3 int, f4 int, f5 int)}
+  for {set i 1} {$i<100} {incr i} {
+    set sql "CREATE INDEX index$i ON test1(f[expr {($i%5)+1}])"
+    execsql $sql
+  }
+  execsql {SELECT name FROM sqlite_master 
+           WHERE type='index' AND tbl_name='test1'
+           ORDER BY name}
+} $r
+
+# Add a single entry to the table.  Verify that files are created
+# for every index.
+#
+set r {}
+for {set i 1} {$i<100} {incr i} {
+  lappend r testdb/index$i.tbl
+}
+do_test crtidx-3.2 {
+  execsql {INSERT INTO test1 VALUES(1,2,3,4,5)}
+  lsort -dictionary [glob testdb/index*.tbl]
+} $r
+
+# Verify that all the indices go away when we drop the table.
+#
+do_test crtidx-3.3 {
+  execsql {DROP TABLE test1}
+  execsql {SELECT name FROM sqlite_master 
+           WHERE type='index' AND tbl_name='test1'
+           ORDER BY name}
+} {}
+do_test crtidx-3.4 {
+  lsort -dictionary [glob -nocomplain testdb/index*.tbl]
+} {}
+
+# Create a table and insert values into that table.  Then create
+# an index on that table.  Verify that we can select values
+# from the table correctly using the index.
+#
+do_test crtidx-4.1 {
+  execsql {CREATE TABLE test1(cnt int, power int)}
+  for {set i 1} {$i<20} {incr i} {
+    execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+  }
+  execsql {CREATE INDEX index1 ON test1(cnt)}
+  execsql {CREATE INDEX index2 ON test1(cnt)}
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {index1 index2 test1}
+do_test crtidx-4.2 {
+  execsql {SELECT cnt FROM test1 WHERE power=4}
+} {2}
+do_test crtidx-4.3 {
+  execsql {SELECT cnt FROM test1 WHERE power=1024}
+} {10}
+do_test crtidx-4.4 {
+  execsql {SELECT power FROM test1 WHERE cnt=6}
+} {64}
+do_test crtidx-4.5 {
+  execsql {DROP TABLE test1}
+} {}
+
+# Do not allow indices to be added to sqlite_master
+#
+do_test crtidx-5.1 {
+  set v [catch {execsql {CREATE INDEX index1 ON sqlite_master(name)}} msg]
+  lappend v $msg
+} {1 {table sqlite_master may not have new indices added}}
+do_test crtidx-5.2 {
+  execsql {SELECT name FROM sqlite_master}
+} {}
+
+# Do not allow indices with duplicate names to be added
+#
+do_test crtidx-6.1 {
+  execsql {CREATE TABLE test1(f1 int, f2 int)}
+  execsql {CREATE TABLE test2(g1 real, g2 real)}
+  execsql {CREATE INDEX index1 ON test1(f1)}
+  set v [catch {execsql {CREATE INDEX index1 ON test2(g1)}} msg]
+  lappend v $msg
+} {1 {index "index1" already exists}}
+do_test crtidx-6.1b {
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {index1 test1 test2}
+do_test crtidx-6.2 {
+  set v [catch {execsql {CREATE INDEX test1 ON test2(g1)}} msg]
+  lappend v $msg
+} {1 {there is already a table named "test1"}}
+do_test crtidx-6.2b {
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {index1 test1 test2}
+do_test crtidx-6.3 {
+  execsql {DROP TABLE test1}
+  execsql {DROP TABLE test2}
+  execsql {SELECT name FROM sqlite_master ORDER BY name}
+} {}
+
+# Create a primary key
+#
+do_test crtidx-7.1 {
+  execsql {CREATE TABLE test1(f1 int, f2 int primary key)}
+  for {set i 1} {$i<20} {incr i} {
+    execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+  }
+  lsort -dictionary [glob testdb/test1*.tbl]
+} {testdb/test1.tbl testdb/test1__primary_key.tbl}
+do_test crtidx-7.2 {
+  execsql {SELECT f1 FROM test1 WHERE f2=65536}
+} {16}
+do_test crtidx-7.3 {
+  set code [execsql {EXPLAIN SELECT f1 FROM test1 WHERE f2=65536}]
+  expr {[lsearch $code test1__primary_key]>0}
+} {1}
+
+finish_test
