@@ -1,9 +1,9 @@
-C Version\s2.0.0\s(CVS\s470)
-D 2001-09-28T23:15:00
+C The\s.dump\soutput\suses\sINSERT\sinstead\sof\sCOPY\snow.\s\sExpression\ssyntax\nof\sthe\sform\s"expr\sNOT\sNULL"\sis\snow\ssupported.\s(CVS\s276)
+D 2001-10-01T14:29:23
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 7179523fdf3d6e7933ec843e2352dcfc9785c700
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
-F VERSION 3861a21803fcd9eb92a403027b0da2bb7add4de1
+F VERSION 1fb7be12efaa1608dc63e784e33082ae0ac7919b
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -33,11 +33,11 @@ F src/os.c 45376582c41dc8829330816d56b8e9e6cd1b7972
 F src/os.h 0f478e2fef5ec1612f94b59b163d4807d4c77d6d
 F src/pager.c 0fe02b63a89d8eebb42ad30529d0c7cc918ecb94
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
-F src/parse.y 7a61488cb52da8b3da094aadb391b42d59a25602
+F src/parse.y 5ead6fe1e7c5f13220030f41ce68af155b54c6ab
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
 F src/random.c 708a23f69f40d6f2ae5ce1a04e6a4055d4a6ecec
 F src/select.c 7d90a6464906419fde96c0707a4cf4f3280db318
-F src/shell.c 977ec6b6479c8b8b6e05323d5026a6f4bd73aa54
+F src/shell.c cd2ae9f22dec5e4e5411e6253abfc3e240b4e030
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 08151912b382ded315b5c8fc6288d9d7a9332aa4
 F src/sqliteInt.h 3ead85324704b79b2ae6799d6af3e5fd710756d9
@@ -100,7 +100,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl 8e8d9e66e8467c5751116c3427296bde77f474a6
-F www/changes.tcl 47619693c843174b57d41482fcd00e2e70d41fd0
+F www/changes.tcl d7169a77887928e83f8a0d2c22f6b60c212afd0b
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/index.tcl 998f61fe69be9f1b04e403c8efb75bca92710e83
@@ -111,7 +111,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 4b4bfc6290f05c6672338690911f68fd8bb418c9
-R 50ffde789836ed27912ab4a11f3cd02b
+P c0a8a1fb4224c63bcbb438cfd2ca0d4e0bb5b824
+R 56826905453f8d467277c7046d36715b
 U drh
-Z a438430725f024febbccaf23542689eb
+Z a2a4bc82e41106d3d020ca0bfe23edb2

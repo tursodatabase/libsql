@@ -17,6 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct 1 (2.0.1)} {
+<li>The ".dump" output from the shell does not work if there are embedded
+    newlines anywhere in the data.  This is an old bug that was carried
+    forward from version 1.0.  To fix it, the ".dump" output no longer
+    uses the COPY command.  It instead generates INSERT statements.</li>
+<li>Extend the expression syntax to support "expr NOT NULL" (with a
+    space between the "NOT" and the "NULL") in addition to "expr NOTNULL"
+    (with no space).</li>
+}
+
 chng {2001 Sep 28 (2.0.0)} {
 <li>Automatically build binaries for Linux and Windows and put them on
     the website.</li>

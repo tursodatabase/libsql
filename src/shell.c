@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.34 2001/09/27 15:11:54 drh Exp $
+** $Id: shell.c,v 1.35 2001/10/01 14:29:23 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -127,7 +127,7 @@ struct callback_data {
   int mode;              /* An output mode setting */
   int showHeader;        /* True to show column names in List or Column mode */
   int escape;            /* Escape this character when in MODE_List */
-  char zDestTable[250];  /* Name of destination table when MODE_Insert */
+  char *zDestTable;      /* Name of destination table when MODE_Insert */
   char separator[20];    /* Separator character for MODE_List */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
@@ -353,7 +353,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       break;
     }
     case MODE_Insert: {
-      fprintf(p->out,"INSERT INTO '%s' VALUES(",p->zDestTable);
+      fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
         if( azArg[i]==0 ){
@@ -372,6 +372,44 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 }
 
 /*
+** Set the destination table field of the callback_data structure to
+** the name of the table given.  Escape any quote characters in the
+** table name.
+*/
+static void set_table_name(struct callback_data *p, const char *zName){
+  int i, n;
+  int needQuote;
+  char *z;
+
+  if( p->zDestTable ){
+    free(p->zDestTable);
+    p->zDestTable = 0;
+  }
+  if( zName==0 ) return;
+  needQuote = !isalpha(*zName) && *zName!='_';
+  for(i=n=0; zName[i]; i++, n++){
+    if( !isalnum(zName[i]) && zName[i]!='_' ){
+      needQuote = 1;
+      if( zName[i]=='\'' ) n++;
+    }
+  }
+  if( needQuote ) n += 2;
+  z = p->zDestTable = malloc( n+1 );
+  if( z==0 ){
+    fprintf(stderr,"Out of memory!\n");
+    exit(1);
+  }
+  n = 0;
+  if( needQuote ) z[n++] = '\'';
+  for(i=0; zName[i]; i++){
+    z[n++] = zName[i];
+    if( zName[i]=='\'' ) z[n++] = '\'';
+  }
+  if( needQuote ) z[n++] = '\'';
+  z[n] = 0;
+}
+
+/*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
 ** the table type ("index" or "table") and SQL to create the table.
@@ -384,17 +422,15 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   if( strcmp(azArg[1],"table")==0 ){
     struct callback_data d2;
     d2 = *p;
-    d2.mode = MODE_List;
-    d2.escape = '\t';
-    strcpy(d2.separator,"\t");
-    fprintf(p->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
+    d2.mode = MODE_Insert;
+    d2.zDestTable = 0;
+    set_table_name(&d2, azArg[0]);
     sqlite_exec_printf(p->db, 
        "SELECT * FROM '%q'",
        callback, &d2, 0, azArg[0]
     );
-    fprintf(p->out, "\\.\n");
+    set_table_name(&d2, 0);
   }
-  fprintf(p->out, "VACUUM '%s';\n", azArg[0]);
   return 0;
 }
 
@@ -462,10 +498,11 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   c = azArg[0][0];
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
+    fprintf(p->out, "BEGIN TRANSACTION;\n");
     if( nArg==1 ){
       sqlite_exec(db,
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE type!='meta' "
+        "WHERE type!='meta' AND sql NOT NULL "
         "ORDER BY tbl_name, type DESC, name",
         dump_callback, p, &zErrMsg
       );
@@ -474,7 +511,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       for(i=1; i<nArg && zErrMsg==0; i++){
         sqlite_exec_printf(db, 
           "SELECT name, type, sql FROM sqlite_master "
-          "WHERE tbl_name LIKE '%q' AND type!='meta' "
+          "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOT NULL "
           "ORDER BY type DESC, name",
           dump_callback, p, &zErrMsg, azArg[i]
         );
@@ -484,6 +521,8 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
+    }else{
+      fprintf(p->out, "COMMIT;\n");
     }
   }else
 
@@ -564,11 +603,13 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }else if( strncmp(azArg[1],"html",n2)==0 ){
       p->mode = MODE_Html;
     }else if( strncmp(azArg[1],"insert",n2)==0 ){
+      char *zTab;
+      int k, n;
       p->mode = MODE_Insert;
       if( nArg>=3 ){
-        sprintf(p->zDestTable,"%.*s", (int)(sizeof(p->zDestTable)-1), azArg[2]);
+        set_table_name(p, azArg[2]);
       }else{
-        sprintf(p->zDestTable,"table");
+        set_table_name(p, "table");
       }
     }else {
       fprintf(stderr,"mode should be on of: column html insert line list\n");
@@ -658,14 +699,14 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       }else{
         sqlite_exec_printf(db,
           "SELECT sql FROM sqlite_master "
-          "WHERE tbl_name LIKE '%q' AND type!='meta'"
+          "WHERE tbl_name LIKE '%q' AND type!='meta' AND sql NOTNULL "
           "ORDER BY type DESC, name",
           callback, &data, &zErrMsg, azArg[1]);
       }
     }else{
       sqlite_exec(db,
          "SELECT sql FROM sqlite_master "
-         "WHERE type!='meta' "
+         "WHERE type!='meta' AND sql NOTNULL "
          "ORDER BY tbl_name, type DESC, name",
          callback, &data, &zErrMsg
       );
@@ -878,6 +919,7 @@ int main(int argc, char **argv){
       process_input(&data, stdin);
     }
   }
+  set_table_name(&data, 0);
   sqlite_close(db);
   return 0;
 }
