@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.52 2002/03/02 17:04:08 drh Exp $
+** $Id: expr.c,v 1.53 2002/03/03 03:42:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,10 +85,8 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
 */
 void sqliteExprDelete(Expr *p){
   if( p==0 ) return;
-  if( p->op!=TK_AS ){
-    if( p->pLeft ) sqliteExprDelete(p->pLeft);
-    if( p->pRight ) sqliteExprDelete(p->pRight);
-  }
+  if( p->pLeft ) sqliteExprDelete(p->pLeft);
+  if( p->pRight ) sqliteExprDelete(p->pRight);
   if( p->pList ) sqliteExprListDelete(p->pList);
   if( p->pSelect ) sqliteSelectDelete(p->pSelect);
   sqliteFree(p);
@@ -409,7 +407,7 @@ int sqliteExprResolveIds(
             assert( pExpr->pLeft==0 && pExpr->pRight==0 );
             pExpr->op = TK_AS;
             pExpr->iColumn = j;
-            pExpr->pLeft = pEList->a[j].pExpr;
+            pExpr->pLeft = sqliteExprDup(pEList->a[j].pExpr);
           }
         } 
       }

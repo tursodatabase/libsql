@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.5 2002/03/03 03:11:15 drh Exp $
+# $Id: select6.test,v 1.6 2002/03/03 03:42:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -166,7 +166,6 @@ do_test sqlite6-3.2 {
     ORDER BY [a.q]
   }
 } {1 1 1 2 2 3 3 4 7 4 8 15 5 5 20}
-
 do_test select6-3.3 {
   execsql {
     SELECT a,b,a+b FROM (SELECT avg(x) as 'a', avg(y) as 'b' FROM t1)

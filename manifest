@@ -1,5 +1,5 @@
-C Additional\stests\sof\sflattening\s(CVS\s413)
-D 2002-03-03T03:11:15
+C Fix\sa\smemory\sleak\sin\sexpression\sprocessing.\s(CVS\s414)
+D 2002-03-03T03:42:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.c e732bb03715f326a25e0b6fea2e778e063ec3893
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 2f6d3136e6b824b2b446c54db2d2be5703033203
 F src/delete.c bf569eeb66dc851966b5681e5154d5fe2aee92c2
-F src/expr.c 17e3db6f115d60530a55530e3046312196c5eb36
+F src/expr.c 178248fd4815bbd46c266f87ff0a52a96dff23a3
 F src/func.c 5b4d9707b0c8f463824c1f04547b524cba24bf7b
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
@@ -87,7 +87,7 @@ F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test 4eeb20b272eb74fc8ec84cf1eef38a059e286f19
+F test/select6.test ae124c15db9ee4a2bca21e6a14e95e861f290056
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 17b0b6eafa3faaee5545b7a94e6c1ff73f0880f3
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 000441c8fec48cc172894eb767ae9549b8ed8c34
-R 24805131582f86d48311ce93e94f3f8a
+P e1d93c5923195507642d882fff8cd85c454f69ee
+R ff7bf4f99d51069c40ce44488417e03c
 U drh
-Z 3a153c17836fc93f2d1c0f6283ce9159
+Z 29e2db61809076cbb2296b019a75fdb3
