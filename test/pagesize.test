@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the page_size PRAGMA.
 #
-# $Id: pagesize.test,v 1.2 2004/09/02 15:49:08 drh Exp $
+# $Id: pagesize.test,v 1.3 2004/09/05 00:33:44 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -30,27 +30,131 @@ do_test pagesize-1.3 {
     PRAGMA page_size;
   }
 } 1024
+
 do_test pagesize-1.4 {
   db close
   file delete -force test.db
   sqlite3 db test.db
   execsql {
-    PRAGMA page_size=2048;
-    CREATE TABLE t1(a);
+    PRAGMA page_size=511;
     PRAGMA page_size;
   }
-} 2048
+} 1024
 do_test pagesize-1.5 {
-  db close
-  sqlite3 db test.db
   execsql {
-    PRAGMA page_size
+    PRAGMA page_size=512;
+    PRAGMA page_size;
   }
-} 2048
+} 512
 do_test pagesize-1.6 {
-  file size test.db
-} 4096
+  execsql {
+    PRAGMA page_size=8192;
+    PRAGMA page_size;
+  }
+} 8192
+do_test pagesize-1.7 {
+  execsql {
+    PRAGMA page_size=65537;
+    PRAGMA page_size;
+  }
+} 8192
+  
 
 
+foreach PGSZ {512 2000 2048 3000 4096} {
+  do_test pagesize-2.$PGSZ.1 {
+    db close
+    file delete -force test.db
+    sqlite3 db test.db
+    execsql "PRAGMA page_size=$PGSZ"
+    execsql {
+      CREATE TABLE t1(x);
+      PRAGMA page_size;
+    }
+  } $PGSZ
+  do_test pagesize-2.$PGSZ.2 {
+    db close
+    sqlite3 db test.db
+    execsql {
+      PRAGMA page_size
+    }
+  } $PGSZ
+  do_test pagesize-2.$PGSZ.3 {
+    file size test.db
+  } [expr {$PGSZ*2}]
+  do_test pagesize-2.$PGSZ.4 {
+    execsql {VACUUM}
+  } {}
+  integrity_check pagesize-2.$PGSZ.5
+  do_test pagesize-2.$PGSZ.6 {
+    db close
+    sqlite3 db test.db
+    execsql {PRAGMA page_size}
+  } $PGSZ
+  do_test pagesize-2.$PGSZ.7 {
+    execsql {
+      INSERT INTO t1 VALUES(randstr(10,9000));
+      INSERT INTO t1 VALUES(randstr(10,9000));
+      INSERT INTO t1 VALUES(randstr(10,9000));
+      BEGIN;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      SELECT count(*) FROM t1;
+    }
+  } 48
+  do_test pagesize-2.$PGSZ.8 {
+    execsql {
+      ROLLBACK;
+      SELECT count(*) FROM t1;
+    }
+  } 3
+  integrity_check pagesize-2.$PGSZ.9
+  do_test pagesize-2.$PGSZ.10 {
+    db close
+    sqlite3 db test.db
+    execsql {PRAGMA page_size}
+  } $PGSZ
+  do_test pagesize-2.$PGSZ.11 {
+    execsql {
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      INSERT INTO t1 SELECT x||x FROM t1;
+      SELECT count(*) FROM t1;
+    }
+  } 192
+  do_test pagesize-2.$PGSZ.12 {
+    execsql {
+      BEGIN;
+      DELETE FROM t1 WHERE rowid%5!=0;
+      SELECT count(*) FROM t1;
+    }
+  } 38
+  do_test pagesize-2.$PGSZ.13 {
+    execsql {
+      ROLLBACK;
+      SELECT count(*) FROM t1;
+    }
+  } 192
+  integrity_check pagesize-2.$PGSZ.14
+  do_test pagesize-2.$PGSZ.15 {
+    execsql {
+      DELETE FROM t1 WHERE rowid%5!=0;
+      VACUUM;
+      SELECT count(*) FROM t1;
+    }
+  } 38
+  do_test pagesize-2.$PGSZ.16 {
+    execsql {
+      DROP TABLE t1;
+      VACUUM;
+    }
+  } {}
+  integrity_check pagesize-2.$PGSZ.17
+}
 
 finish_test

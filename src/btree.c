@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.187 2004/09/03 23:32:19 drh Exp $
+** $Id: btree.c,v 1.188 2004/09/05 00:33:43 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1145,7 +1145,7 @@ int sqlite3BtreeSetPageSize(Btree *pBt, int pageSize, int nReserve){
   if( nReserve<0 ){
     nReserve = pBt->pageSize - pBt->usableSize;
   }
-  if( pageSize>512 && pageSize<SQLITE_MAX_PAGE_SIZE ){
+  if( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE ){
     pBt->pageSize = pageSize;
     sqlite3pager_set_pagesize(pBt->pPager, pageSize);
   }
@@ -1225,7 +1225,6 @@ static int lockBtree(Btree *pBt){
   }
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE(pBt) );
   pBt->pPage1 = pPage1;
-  pBt->pageSizeFixed = 1;
   return SQLITE_OK;
 
 page1_init_failed:
@@ -1283,6 +1282,7 @@ static int newDatabase(Btree *pBt){
   data[23] = pBt->minLeafFrac;
   memset(&data[24], 0, 100-24);
   zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
+  pBt->pageSizeFixed = 1;
   return SQLITE_OK;
 }
 

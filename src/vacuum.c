@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.29 2004/09/02 15:27:42 drh Exp $
+** $Id: vacuum.c,v 1.30 2004/09/05 00:33:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -98,6 +98,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   int nFilename;          /* number of characters  in zFilename[] */
   char *zTemp = 0;        /* a temporary file in same directory as zFilename */
   int i;                  /* Loop counter */
+  Btree *pMain;           /* The database being vacuumed */
   Btree *pTemp;
   char *zSql = 0;
 
@@ -111,7 +112,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   /* Get the full pathname of the database file and create a
   ** temporary filename in the same directory as the original file.
   */
-  zFilename = sqlite3BtreeGetFilename(db->aDb[0].pBt);
+  pMain = db->aDb[0].pBt;
+  zFilename = sqlite3BtreeGetFilename(pMain);
   assert( zFilename );
   if( zFilename[0]=='\0' ){
     /* The in-memory database. Do nothing. Return directly to avoid causing
@@ -150,7 +152,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   sqliteFree(zSql);
   zSql = 0;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  execSql(db, "PRAGMA vacuum_db.synchronous = off;");
+  assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
+  pTemp = db->aDb[db->nDb-1].pBt;
+  sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), 0);
+  assert( sqlite3BtreeGetPageSize(pTemp)==sqlite3BtreeGetPageSize(pMain) );
+  execSql(db, "PRAGMA vacuum_db.synchronous=OFF");
 
   /* Begin a transaction */
   rc = execSql(db, "BEGIN;");
@@ -206,9 +212,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** opened for writing. This way, the SQL transaction used to create the
   ** temporary database never needs to be committed.
   */
-  pTemp = db->aDb[db->nDb-1].pBt;
   if( sqlite3BtreeIsInTrans(pTemp) ){
-    Btree *pMain = db->aDb[0].pBt;
     u32 meta;
 
     assert( 0==sqlite3BtreeIsInTrans(pMain) );
