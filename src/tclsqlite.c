@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.34 2002/06/26 20:06:06 drh Exp $
+** $Id: tclsqlite.c,v 1.35 2002/07/06 16:32:15 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -267,7 +267,7 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
-  static char *DB_strs[] = {
+  static const char *DB_strs[] = {
     "busy",               "changes",           "close",
     "complete",           "eval",              "last_insert_rowid",
     "open_aux_file",      "timeout",           0
@@ -703,7 +703,7 @@ int TCLSH_MAIN(int argc, char **argv){
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
     if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
-      char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
+      const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = interp->result;
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;

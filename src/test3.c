@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.15 2002/06/26 20:06:06 drh Exp $
+** $Id: test3.c,v 1.16 2002/07/06 16:32:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -67,7 +67,7 @@ static int btree_open(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  rc = sqliteBtreeOpen(argv[1], 0666, 10, &pBt);
+  rc = sqliteBtreeOpen(argv[1], 0666, 1000, &pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -667,6 +667,8 @@ static int btree_next(
 ){
   BtCursor *pCur;
   int rc;
+  int res = 0;
+  char zBuf[100];
 
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -674,11 +676,45 @@ static int btree_next(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqliteBtreeNext(pCur, 0);
+  rc = sqliteBtreeNext(pCur, &res);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
+  sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return SQLITE_OK;
+}
+
+/*
+** Usage:   btree_first ID
+**
+** Move the cursor to the first entry in the table.
+*/
+static int btree_first(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int rc;
+  int res = 0;
+  char zBuf[100];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  rc = sqliteBtreeFirst(pCur, &res);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sprintf(zBuf,"%d",res);
+  Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }
 
@@ -759,6 +795,35 @@ static int btree_data(
 }
 
 /*
+** Usage:   btree_payload_size ID
+**
+** Return the number of bytes of payload
+*/
+static int btree_payload_size(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  BtCursor *pCur;
+  int n1, n2;
+  char zBuf[50];
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
+  sqliteBtreeKeySize(pCur, &n1);
+  sqliteBtreeDataSize(pCur, &n2);
+  sprintf(zBuf, "%d", n1+n2);
+  Tcl_AppendResult(interp, zBuf, 0);
+  free(zBuf);
+  return SQLITE_OK;
+}
+
+/*
 ** Usage:   btree_cursor_dump ID
 **
 ** Return eight integers containing information about the entry the
@@ -832,6 +897,8 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_next", btree_next, 0, 0);
   Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
   Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
+  Tcl_CreateCommand(interp, "btree_payload_size", btree_payload_size, 0, 0);
+  Tcl_CreateCommand(interp, "btree_first", btree_first, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
   Tcl_CreateCommand(interp, "btree_integrity_check", btree_integrity_check,0,0);
   Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,

@@ -25,6 +25,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jly 6 (2.5.5)} {
+<li>Fix a bug which could cause database corruption during a rollback.
+    This bugs was introduced in version 2.4.0 by the freelist
+    optimization of checking [410].</li>
+<li>Fix a bug in aggregate functions for VIEWs.</li>
+<li>Other minor changes and enhancements.</li>
+}
+
 chng {2002 Jly 1 (2.5.4)} {
 <li>Make the "AS" keyword optional again.</li>
 <li>The datatype of columns now appear in the 4th argument to the
