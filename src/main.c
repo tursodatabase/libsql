@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.233 2004/06/22 12:13:55 drh Exp $
+** $Id: main.c,v 1.234 2004/06/26 06:37:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -218,9 +218,9 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   **    meta[0]   Schema cookie.  Changes with each schema change.
   **    meta[1]   File format of schema layer.
   **    meta[2]   Size of the page cache.
-  **    meta[3]   Synchronous setting.  1:off, 2:normal, 3:full
+  **    meta[3]
   **    meta[4]   Db text encoding. 1:UTF-8 3:UTF-16 LE 4:UTF-16 BE
-  **    meta[5]   Pragma temp_store value.  See comments on BtreeFactory
+  **    meta[5]
   **    meta[6]   
   **    meta[7]
   **    meta[8]
@@ -265,16 +265,11 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     }
   }
 
-  if( iDb==0 ){
-    size = meta[2];
-    if( size==0 ){ size = MAX_PAGES; }
-    db->cache_size = size;
-    db->safety_level = meta[3];
-    if( meta[5]>0 && meta[5]<=2 && db->temp_store==0 ){
-      db->temp_store = meta[5];
-    }
-    if( db->safety_level==0 ) db->safety_level = 2;
+  size = meta[2];
+  if( size==0 ){ size = MAX_PAGES; }
+  db->aDb[iDb].cache_size = size;
 
+  if( iDb==0 ){
     db->file_format = meta[1];
     if( db->file_format==0 ){
       /* This happens if the database was initially empty */
@@ -291,8 +286,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     return SQLITE_ERROR;
   }
 
-  sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->cache_size);
-  sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt, meta[3]==0 ? 2 : meta[3]);
+  sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->aDb[iDb].cache_size);
 
   /* Read the schema information out of the schema tables
   */
@@ -807,22 +801,6 @@ void *sqlite3_commit_hook(
 ** the connection is closed.)  If zFilename is NULL then the database
 ** is for temporary use only and is deleted as soon as the connection
 ** is closed.
-**
-** A temporary database can be either a disk file (that is automatically
-** deleted when the file is closed) or a set of red-black trees held in memory,
-** depending on the values of the TEMP_STORE compile-time macro and the
-** db->temp_store variable, according to the following chart:
-**
-**       TEMP_STORE     db->temp_store     Location of temporary database
-**       ----------     --------------     ------------------------------
-**           0               any             file
-**           1                1              file
-**           1                2              memory
-**           1                0              file
-**           2                1              file
-**           2                2              memory
-**           2                0              memory
-**           3               any             memory
 */
 int sqlite3BtreeFactory(
   const sqlite *db,	    /* Main database when opening aux otherwise 0 */
@@ -837,7 +815,10 @@ int sqlite3BtreeFactory(
   if( omitJournal ){
     btree_flags |= BTREE_OMIT_JOURNAL;
   }
-  if( !zFilename ){
+  if( !zFilename || !strcmp(zFilename, ":memory:") ){
+    /* If zFilename is NULL or the magic string ":memory:" then the
+    ** new btree storest data in main memory, not a file.
+    */
     btree_flags |= BTREE_MEMORY;
   }
 
@@ -1127,12 +1108,6 @@ static int openDatabase(
   sqlite3_create_collation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc);
 
   /* Open the backend database driver */
-  if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
-    db->temp_store = 2;
-    db->nMaster = 0;    /* Disable atomic multi-file commit for :memory: */
-  }else{
-    db->nMaster = -1;   /* Size of master journal filename initially unknown */
-  }
   rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     sqlite3Error(db, rc, 0);
@@ -1141,6 +1116,11 @@ static int openDatabase(
   }
   db->aDb[0].zName = "main";
   db->aDb[1].zName = "temp";
+
+  /* The default safety_level for the main database is 'full' for the temp
+  ** database it is 'NONE'. This matches the pager layer defaults.  */
+  db->aDb[0].safety_level = 3;
+  db->aDb[1].safety_level = 1;
 
   /* Register all built-in functions, but do not attempt to read the
   ** database schema yet. This is delayed until the first time the database

@@ -12,10 +12,20 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.13 2004/06/19 00:16:31 drh Exp $
+# $Id: pragma.test,v 1.14 2004/06/26 06:37:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Test organization:
+#
+# pragma-1.*: Test cache_size, default_cache_size and synchronous on main db.
+# pragma-2.*: Test synchronous on attached db.
+# pragma-3.*: Test detection of table/index inconsistency by integrity_check.
+# pragma-4.*: Test cache_size and default_cache_size on attached db.
+# pragma-5.*: Test that pragma synchronous may not be used inside of a
+#             transaction.
+#
 
 # Delete the preexisting database to avoid the special setup
 # that the "all.test" script does.
@@ -29,18 +39,16 @@ do_test pragma-1.1 {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {2000 2000 1 1}
+} {2000 2000 2}
 do_test pragma-1.2 {
   execsql {
     PRAGMA cache_size=1234;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {1234 2000 1 1}
+} {1234 2000 2}
 do_test pragma-1.3 {
   db close
   sqlite3 db test.db
@@ -48,36 +56,32 @@ do_test pragma-1.3 {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {2000 2000 1 1}
+} {2000 2000 2}
 do_test pragma-1.4 {
   execsql {
     PRAGMA synchronous=OFF;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {2000 2000 0 1}
+} {2000 2000 0}
 do_test pragma-1.5 {
   execsql {
     PRAGMA cache_size=4321;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {4321 2000 0 1}
+} {4321 2000 0}
 do_test pragma-1.6 {
   execsql {
     PRAGMA synchronous=ON;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {4321 2000 1 1}
+} {4321 2000 1}
 do_test pragma-1.7 {
   db close
   sqlite3 db test.db
@@ -85,84 +89,78 @@ do_test pragma-1.7 {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {2000 2000 1 1}
+} {2000 2000 2}
 do_test pragma-1.8 {
-  execsql {
-    PRAGMA default_synchronous=OFF;
-    PRAGMA cache_size;
-    PRAGMA default_cache_size;
-    PRAGMA synchronous;
-    PRAGMA default_synchronous;
-  }
-} {2000 2000 0 0}
-do_test pragma-1.9 {
   execsql {
     PRAGMA default_cache_size=123;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {123 123 0 0}
-do_test pragma-1.10 {
+} {123 123 2}
+do_test pragma-1.9 {
   db close
   set ::DB [sqlite3 db test.db]
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {123 123 0 0}
-do_test pragma-1.11 {
+} {123 123 2}
+do_test pragma-1.10 {
   execsql {
     PRAGMA synchronous=NORMAL;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {123 123 1 0}
-do_test pragma-1.12 {
+} {123 123 1}
+do_test pragma-1.11 {
   execsql {
     PRAGMA synchronous=FULL;
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {123 123 2 0}
-do_test pragma-1.13 {
+} {123 123 2}
+do_test pragma-1.12 {
   db close
   set ::DB [sqlite3 db test.db]
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
-    PRAGMA default_synchronous;
   }
-} {123 123 0 0}
-do_test pragma-1.14 {
+} {123 123 2}
+
+# Test modifying the safety_level of an attached database.
+do_test pragma-2.1 {
+  file delete -force test2.db
+  file delete -force test2.db-journal
   execsql {
-    PRAGMA default_synchronous=FULL;
-    PRAGMA cache_size;
-    PRAGMA default_cache_size;
-    PRAGMA synchronous;
-    PRAGMA default_synchronous;
-  }
-} {123 123 2 2}
-do_test pragma-1.15 {
-  db close
-  set ::DB [sqlite3 db test.db]
+    ATTACH 'test2.db' AS aux;
+  } 
+} {}
+do_test pragma-2.2 {
   execsql {
-    PRAGMA cache_size;
-    PRAGMA default_cache_size;
-    PRAGMA synchronous;
-    PRAGMA default_synchronous;
-  }
-} {123 123 2 2}
+    pragma aux.synchronous;
+  } 
+} {2}
+do_test pragma-2.3 {
+  execsql {
+    pragma aux.synchronous = OFF;
+    pragma aux.synchronous;
+    pragma synchronous;
+  } 
+} {0 2}
+do_test pragma-2.4 {
+  execsql {
+    pragma aux.synchronous = ON;
+    pragma synchronous;
+    pragma aux.synchronous;
+  } 
+} {2 1}
 
 # Construct a corrupted index and make sure the integrity_check
 # pragma finds it.
@@ -192,150 +190,73 @@ do_test pragma-3.2 {
 } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
 }; # endif has-codec
 
-# Test the temp_store and default_temp_store pragmas
-#
+do_test pragma-3.3 {
+  execsql {
+    DROP INDEX i2;
+  } 
+} {}
+
+# Test modifying the cache_size of an attached database.
+do_test pragma-4.1 {
+  execsql {
+    pragma aux.cache_size;
+    pragma aux.default_cache_size;
+  } 
+} {2000 2000}
 do_test pragma-4.2 {
   execsql {
-    PRAGMA temp_store='default';
-    PRAGMA temp_store;
-  }
-} {0}
+    pragma aux.cache_size = 50;
+    pragma aux.cache_size;
+    pragma aux.default_cache_size;
+  } 
+} {50 2000}
 do_test pragma-4.3 {
   execsql {
-    PRAGMA temp_store='file';
-    PRAGMA temp_store;
-  }
-} {1}
+    pragma aux.default_cache_size = 456;
+    pragma aux.cache_size;
+    pragma aux.default_cache_size;
+  } 
+} {456 456}
 do_test pragma-4.4 {
   execsql {
-    PRAGMA temp_store='memory';
-    PRAGMA temp_store;
-  }
-} {2}
+    pragma cache_size;
+    pragma default_cache_size;
+  } 
+} {123 123}
 do_test pragma-4.5 {
   execsql {
-    PRAGMA default_temp_store='default';
-    PRAGMA default_temp_store;
-  }
-} {0}
+    DETACH aux;
+    ATTACH 'test3.db' AS aux;
+    pragma aux.cache_size;
+    pragma aux.default_cache_size;
+  } 
+} {2000 2000}
 do_test pragma-4.6 {
   execsql {
-    PRAGMA temp_store;
-  }
-} {2}
-do_test pragma-4.7 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA temp_store;
-  }
-} {0}
-do_test pragma-4.8 {
-  execsql {
-    PRAGMA default_temp_store;
-  }
-} {0}
-do_test pragma-4.9 {
-  execsql {
-    PRAGMA default_temp_store='file';
-    PRAGMA default_temp_store;
-  }
-} {1}
-do_test pragma-4.10 {
-  execsql {
-    PRAGMA temp_store;
-  }
-} {0}
-do_test pragma-4.11 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA temp_store;
-  }
-} {1}
-do_test pragma-4.12 {
-  execsql {
-    PRAGMA default_temp_store;
-  }
-} {1}
-do_test pragma-4.13 {
-  execsql {
-    PRAGMA default_temp_store='memory';
-    PRAGMA default_temp_store;
-  }
-} {2}
-do_test pragma-4.14 {
-  execsql {
-    PRAGMA temp_store;
-  }
-} {1}
-do_test pragma-4.15 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA temp_store;
-  }
-} {2}
-do_test pragma-4.16 {
-  execsql {
-    PRAGMA default_temp_store;
-  }
-} {2}
-do_test pragma-4.17 {
-  execsql {
-    PRAGMA temp_store='file';
-    PRAGMA temp_store
-  }
-} {1}
-do_test pragma-4.18 {
-  execsql {
-    PRAGMA default_temp_store
-  }
-} {2}
-do_test pragma-4.19 {
-  db close
-  sqlite3 db test.db
-  execsql {
-    PRAGMA temp_store
-  }
-} {2}
+    DETACH aux;
+    ATTACH 'test2.db' AS aux;
+    pragma aux.cache_size;
+    pragma aux.default_cache_size;
+  } 
+} {456 456}
 
-# Changing the TEMP_STORE deletes any existing temporary tables
-#
-do_test pragma-4.20 {
-  execsql {SELECT name FROM sqlite_temp_master}
-} {}
-do_test pragma-4.21 {
+# Test that modifying the sync-level in the middle of a transaction is
+# disallowed.
+do_test pragma-5.0 {
   execsql {
-    CREATE TEMP TABLE test1(a,b,c);
-    SELECT name FROM sqlite_temp_master;
-  }
-} {test1}
-do_test pragma-4.22 {
-  execsql {
-    PRAGMA temp_store='file';
-    SELECT name FROM sqlite_temp_master;
-  }
-} {}
-do_test pragma-4.23 {
-  execsql {
-    CREATE TEMP TABLE test1(a,b,c);
-    SELECT name FROM sqlite_temp_master;
-  }
-} {test1}
-do_test pragma-4.24 {
-  execsql {
-    PRAGMA temp_store='memory';
-    SELECT name FROM sqlite_temp_master;
-  }
-} {}
-do_test pragma-4.25 {
+    pragma synchronous;
+  } 
+} {2}
+do_test pragma-5.1 {
   catchsql {
     BEGIN;
-    PRAGMA temp_store='default';
-    COMMIT;
-  }
-} {1 {temporary storage cannot be changed from within a transaction}}
-catchsql {COMMIT}
+    pragma synchronous = OFF;
+  } 
+} {1 {Safety level may not be changed inside a transaction}}
+do_test pragma-5.2 {
+  execsql {
+    pragma synchronous;
+  } 
+} {2}
 
 finish_test

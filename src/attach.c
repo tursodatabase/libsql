@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.17 2004/06/19 16:06:11 drh Exp $
+** $Id: attach.c,v 1.18 2004/06/26 06:37:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -84,6 +84,7 @@ void sqlite3Attach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey)
   sqlite3HashInit(&aNew->trigHash, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&aNew->aFKey, SQLITE_HASH_STRING, 1);
   aNew->zName = zName;
+  aNew->safety_level = 3;
   rc = sqlite3BtreeFactory(db, zFile, 0, MAX_PAGES, &aNew->pBt);
   if( rc ){
     sqlite3ErrorMsg(pParse, "unable to open database: %s", zFile);

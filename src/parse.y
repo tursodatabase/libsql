@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.127 2004/06/09 09:55:18 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.128 2004/06/26 06:37:07 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -782,12 +782,14 @@ cmd ::= VACUUM nm(X).         {sqlite3Vacuum(pParse,&X);}
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
-cmd ::= PRAGMA ids(X) EQ nm(Y).         {sqlite3Pragma(pParse,&X,&Y,0);}
-cmd ::= PRAGMA ids(X) EQ ON(Y).          {sqlite3Pragma(pParse,&X,&Y,0);}
-cmd ::= PRAGMA ids(X) EQ plus_num(Y).    {sqlite3Pragma(pParse,&X,&Y,0);}
-cmd ::= PRAGMA ids(X) EQ minus_num(Y).   {sqlite3Pragma(pParse,&X,&Y,1);}
-cmd ::= PRAGMA ids(X) LP nm(Y) RP.      {sqlite3Pragma(pParse,&X,&Y,0);}
-cmd ::= PRAGMA ids(X).                   {sqlite3Pragma(pParse,&X,&X,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ nm(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ ON(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ plus_num(Y). {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y). {
+  sqlite3Pragma(pParse,&X,&Z,&Y,1);
+}
+cmd ::= PRAGMA nm(X) dbnm(Z) LP nm(Y) RP. {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z).  {sqlite3Pragma(pParse,&X,&Z,0,0);}
 plus_num(A) ::= plus_opt number(X).   {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
 number(A) ::= INTEGER(X).  {A = X;}

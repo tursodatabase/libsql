@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.52 2004/06/21 09:06:42 danielk1977 Exp $
+** $Id: pragma.c,v 1.53 2004/06/26 06:37:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -72,46 +72,6 @@ static int getSafetyLevel(char *z){
 }
 
 /*
-** Interpret the given string as a temp db location. Return 1 for file
-** backed temporary databases, 2 for the Red-Black tree in memory database
-** and 0 to use the compile-time default.
-*/
-static int getTempStore(const char *z){
-  if( z[0]>='0' && z[0]<='2' ){
-    return z[0] - '0';
-  }else if( sqlite3StrICmp(z, "file")==0 ){
-    return 1;
-  }else if( sqlite3StrICmp(z, "memory")==0 ){
-    return 2;
-  }else{
-    return 0;
-  }
-}
-
-/*
-** If the TEMP database is open, close it and mark the database schema
-** as needing reloading.  This must be done when using the TEMP_STORE
-** or DEFAULT_TEMP_STORE pragmas.
-*/
-static int changeTempStorage(Parse *pParse, const char *zStorageType){
-  int ts = getTempStore(zStorageType);
-  sqlite *db = pParse->db;
-  if( db->temp_store==ts ) return SQLITE_OK;
-  if( db->aDb[1].pBt!=0 ){
-    if( !db->autoCommit ){
-      sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
-        "from within a transaction");
-      return SQLITE_ERROR;
-    }
-    sqlite3BtreeClose(db->aDb[1].pBt);
-    db->aDb[1].pBt = 0;
-    sqlite3ResetInternalSchema(db, 0);
-  }
-  db->temp_store = ts;
-  return SQLITE_OK;
-}
-
-/*
 ** Check to see if zRight and zLeft refer to a pragma that queries
 ** or changes one of the flags in db->flags.  Return 1 if so and 0 if not.
 ** Also, implement the pragma.
@@ -157,27 +117,43 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 **
 ** Pragmas are of this form:
 **
-**      PRAGMA id = value
+**      PRAGMA [database.]id [= value]
 **
 ** The identifier might also be a string.  The value is a string, and
 ** identifier, or a number.  If minusFlag is true, then the value is
 ** a number that was preceded by a minus sign.
 */
-void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
-  char *zLeft = 0;
-  char *zRight = 0;
+void sqlite3Pragma(
+  Parse *pParse, 
+  Token *pId1,        /* First part of [database.]id field */
+  Token *pId2,        /* Second part of [database.]id field, or NULL */
+  Token *pValue,      /* Token for <value>, or NULL */
+  int minusFlag       /* True if a '-' sign preceded <value> */
+){
+  char *zLeft = 0;       /* Nul-terminated UTF-8 string <id> */
+  char *zRight = 0;      /* Nul-terminated UTF-8 string <value>, or NULL */
+  const char *zDb = 0;   /* The database name */
+  Token *pId;            /* Pointer to <id> token */
+  int iDb;               /* Database index for <database> */
   sqlite *db = pParse->db;
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
 
-  zLeft = sqlite3NameFromToken(pLeft);
+  /* Interpret the [database.] part of the pragma statement. iDb is the
+  ** index of the database this pragma is being applied to in db.aDb[]. */
+  iDb = sqlite3TwoPartName(pParse, pId1, pId2, &pId);
+  if( iDb<0 ) return;
+
+  zLeft = sqlite3NameFromToken(pId);
   if( minusFlag ){
     zRight = 0;
-    sqlite3SetNString(&zRight, "-", 1, pRight->z, pRight->n, 0);
+    sqlite3SetNString(&zRight, "-", 1, pValue->z, pValue->n, 0);
   }else{
-    zRight = sqlite3NameFromToken(pRight);
+    zRight = sqlite3NameFromToken(pValue);
   }
-  if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, 0) ){
+
+  zDb = ((iDb>0)?db->aDb[iDb].zName:0);
+  if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, zDb) ){
     goto pragma_out;
   }
  
@@ -199,7 +175,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static VdbeOpList getCacheSize[] = {
-      { OP_ReadCookie,  0, 2,        0},
+      { OP_ReadCookie,  0, 2,        0},  /* 0 */
       { OP_AbsValue,    0, 0,        0},
       { OP_Dup,         0, 0,        0},
       { OP_Integer,     0, 0,        0},
@@ -212,24 +188,25 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       pParse->nErr++;
       goto pragma_out;
     }
-    if( pRight->z==pLeft->z ){
+    if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "cache_size", P3_STATIC);
       addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP1(v, addr+5, MAX_PAGES);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      sqlite3BeginWriteOperation(pParse, 0, 0);
+      sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3VdbeAddOp(v, OP_Integer, size, 0);
-      sqlite3VdbeAddOp(v, OP_ReadCookie, 0, 2);
+      sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 2);
       addr = sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
       sqlite3VdbeAddOp(v, OP_Ge, 0, addr+3);
       sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
-      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 2);
+      sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 2);
       sqlite3EndWriteOperation(pParse);
-      db->cache_size = db->cache_size<0 ? -size : size;
-      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
+      db->aDb[iDb].cache_size = size;
+      sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->aDb[iDb].cache_size);
     }
   }else
 
@@ -255,9 +232,9 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       pParse->nErr++;
       goto pragma_out;
     }
-    if( pRight->z==pLeft->z ){
-      int size = db->cache_size;;
-      if( size<0 ) size = -size;
+    if( !zRight ){
+      int size = db->aDb[iDb].cache_size;
+      assert( size>0 );
       sqlite3VdbeAddOp(v, OP_Integer, size, 0);
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "cache_size", P3_STATIC);
@@ -265,77 +242,8 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
-      if( db->cache_size<0 ) size = -size;
-      db->cache_size = size;
-      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
-    }
-  }else
-
-  /*
-  **  PRAGMA default_synchronous
-  **  PRAGMA default_synchronous=ON|OFF|NORMAL|FULL
-  **
-  ** The first form returns the persistent value of the "synchronous" setting
-  ** that is stored in the database.  This is the synchronous setting that
-  ** is used whenever the database is opened unless overridden by a separate
-  ** "synchronous" pragma.  The second form changes the persistent and the
-  ** local synchronous setting to the value given.
-  **
-  ** If synchronous is OFF, SQLite does not attempt any fsync() systems calls
-  ** to make sure data is committed to disk.  Write operations are very fast,
-  ** but a power failure can leave the database in an inconsistent state.
-  ** If synchronous is ON or NORMAL, SQLite will do an fsync() system call to
-  ** make sure data is being written to disk.  The risk of corruption due to
-  ** a power loss in this mode is negligible but non-zero.  If synchronous
-  ** is FULL, extra fsync()s occur to reduce the risk of corruption to near
-  ** zero, but with a write performance penalty.  The default mode is NORMAL.
-  */
-  if( sqlite3StrICmp(zLeft,"default_synchronous")==0 ){
-    static VdbeOpList getSync[] = {
-      { OP_ReadCookie,  0, 3,        0},
-      { OP_Dup,         0, 0,        0},
-      { OP_If,          0, 0,        0},  /* 2 */
-      { OP_ReadCookie,  0, 2,        0},
-      { OP_Integer,     0, 0,        0},
-      { OP_Lt,          0, 5,        0},
-      { OP_AddImm,      1, 0,        0},
-      { OP_Callback,    1, 0,        0},
-      { OP_Halt,        0, 0,        0},
-      { OP_AddImm,     -1, 0,        0},  /* 9 */
-      { OP_Callback,    1, 0,        0}
-    };
-    int addr;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
-      pParse->nErr++;
-      goto pragma_out;
-    }
-    if( pRight->z==pLeft->z ){
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
-      addr = sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
-      sqlite3VdbeChangeP2(v, addr+2, addr+9);
-    }else{
-      int size = db->cache_size;
-      if( size<0 ) size = -size;
-      sqlite3BeginWriteOperation(pParse, 0, 0);
-      sqlite3VdbeAddOp(v, OP_ReadCookie, 0, 2);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-      addr = sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Ne, 0, addr+3);
-      sqlite3VdbeAddOp(v, OP_AddImm, MAX_PAGES, 0);
-      sqlite3VdbeAddOp(v, OP_AbsValue, 0, 0);
-      db->safety_level = getSafetyLevel(zRight)+1;
-      if( db->safety_level==1 ){
-        sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
-        size = -size;
-      }
-      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 2);
-      sqlite3VdbeAddOp(v, OP_Integer, db->safety_level, 0);
-      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 3);
-      sqlite3EndWriteOperation(pParse);
-      db->cache_size = size;
-      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
-      sqlite3BtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
+      db->aDb[iDb].cache_size = size;
+      sqlite3BtreeSetCacheSize(db->aDb[iDb].pBt, db->aDb[iDb].cache_size);
     }
   }else
 
@@ -356,19 +264,19 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       pParse->nErr++;
       goto pragma_out;
     }
-    if( pRight->z==pLeft->z ){
+    if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_Integer, db->safety_level-1, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, db->aDb[iDb].safety_level-1, 0);
       sqlite3VdbeAddOpList(v, ArraySize(getSync), getSync);
     }else{
-      int size = db->cache_size;
-      if( size<0 ) size = -size;
-      db->safety_level = getSafetyLevel(zRight)+1;
-      if( db->safety_level==1 ) size = -size;
-      db->cache_size = size;
-      sqlite3BtreeSetCacheSize(db->aDb[0].pBt, db->cache_size);
-      sqlite3BtreeSetSafetyLevel(db->aDb[0].pBt, db->safety_level);
+      if( !db->autoCommit ){
+        sqlite3ErrorMsg(pParse, 
+            "Safety level may not be changed inside a transaction");
+      }else{
+        db->aDb[iDb].safety_level = getSafetyLevel(zRight)+1;
+        sqlite3BtreeSetSafetyLevel(db->aDb[iDb].pBt,db->aDb[iDb].safety_level);
+      }
     }
   }else
 
@@ -386,6 +294,18 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     /* The flagPragma() call also generates any necessary code */
   }else
 
+  /*
+  **   PRAGMA table_info(<table>)
+  **
+  ** Return a single row for each column of the named table. The columns of
+  ** the returned data set are:
+  **
+  ** cid:        Column id (numbered from left to right, starting at 0)
+  ** name:       Column name
+  ** type:       Column declaration type.
+  ** notnull:    True if 'NOT NULL' is part of column declaration
+  ** dflt_value: The default value for the column, if any.
+  */
   if( sqlite3StrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
     if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
@@ -527,67 +447,6 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqlite3VdbeOp3(v, OP_String8, 0, 0,
            sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
       sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
-    }
-  }else
-
-
-  /*
-  **   PRAGMA temp_store
-  **   PRAGMA temp_store = "default"|"memory"|"file"
-  **
-  ** Return or set the local value of the temp_store flag.  Changing
-  ** the local value does not make changes to the disk file and the default
-  ** value will be restored the next time the database is opened.
-  **
-  ** Note that it is possible for the library compile-time options to
-  ** override this setting
-  */
-  if( sqlite3StrICmp(zLeft, "temp_store")==0 ){
-    static VdbeOpList getTmpDbLoc[] = {
-      { OP_Callback,    1, 0,        0},
-    };
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
-      pParse->nErr++;
-      goto pragma_out;
-    }
-    if( pRight->z==pLeft->z ){
-      sqlite3VdbeAddOp(v, OP_Integer, db->temp_store, 0);
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, "temp_store", P3_STATIC);
-      sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
-    }else{
-      changeTempStorage(pParse, zRight);
-    }
-  }else
-
-  /*
-  **   PRAGMA default_temp_store
-  **   PRAGMA default_temp_store = "default"|"memory"|"file"
-  **
-  ** Return or set the value of the persistent temp_store flag.  Any
-  ** change does not take effect until the next time the database is
-  ** opened.
-  **
-  ** Note that it is possible for the library compile-time options to
-  ** override this setting
-  */
-  if( sqlite3StrICmp(zLeft, "default_temp_store")==0 ){
-    static VdbeOpList getTmpDbLoc[] = {
-      { OP_ReadCookie,  0, 5,        0},
-      { OP_Callback,    1, 0,        0}};
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
-      pParse->nErr++;
-      goto pragma_out;
-    }
-    if( pRight->z==pLeft->z ){
-      sqlite3VdbeSetNumCols(v, 1);
-      sqlite3VdbeSetColName(v, 0, "temp_store", P3_STATIC);
-      sqlite3VdbeAddOpList(v, ArraySize(getTmpDbLoc), getTmpDbLoc);
-    }else{
-      sqlite3BeginWriteOperation(pParse, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Integer, getTempStore(zRight), 0);
-      sqlite3VdbeAddOp(v, OP_SetCookie, 0, 5);
-      sqlite3EndWriteOperation(pParse);
     }
   }else
 
@@ -779,7 +638,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
     struct EncName *pEnc;
     encnames[6].enc = encnames[7].enc = SQLITE_UTF16NATIVE;
-    if( pRight->z==pLeft->z ){    /* "PRAGMA encoding" */
+    if( !zRight ){    /* "PRAGMA encoding" */
       if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
         pParse->nErr++;
         goto pragma_out;
