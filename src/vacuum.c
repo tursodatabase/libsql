@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.3 2003/04/18 02:31:04 drh Exp $
+** $Id: vacuum.c,v 1.4 2003/04/25 02:43:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -41,6 +41,7 @@ struct vacuumStruct {
   sqlite *dbNew;       /* New database */
   Parse *pParse;       /* The parser context */
   const char *zTable;  /* Name of a table being copied */
+  const char *zPragma; /* Pragma to execute with results */
   dynStr s1, s2;       /* Two dynamic strings */
 };
 
@@ -161,6 +162,24 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
 }
 
 /*
+** This callback is used to transfer PRAGMA settings from one database
+** to the other.  The value in argv[0] should be passed to a pragma
+** identified by ((vacuumStruct*)pArg)->zPragma.
+*/
+static int vacuumCallback3(void *pArg, int argc, char **argv, char **NotUsed){
+  vacuumStruct *p = (vacuumStruct*)pArg;
+  int rc = 0;
+  char zBuf[200];
+  assert( argc==1 );
+  assert( argv[0]!=0 );
+  assert( strlen(p->zPragma)<100 );
+  assert( strlen(argv[0])<30 );
+  sprintf(zBuf,"PRAGMA %s=%s;", p->zPragma, argv[0]);
+  rc = execsql(p->pParse, p->dbNew, zBuf);
+  return rc;
+}
+
+/*
 ** Generate a random name of 20 character in length.
 */
 static void randomName(char *zBuf){
@@ -198,6 +217,14 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   char *zSql = 0;
   int safety = 0;
   vacuumStruct sVac;
+
+  /* These are all of the pragmas that need to be transferred over
+  ** to the new database */
+  static const char *zPragma[] = {
+     "default_synchronous",
+     "default_cache_size",
+     /* "default_temp_store", */
+  };
 
   /* Initial error checks
   */
@@ -256,14 +283,17 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   sVac.dbOld = db;
   sVac.dbNew = dbNew;
   sVac.pParse = pParse;
+  for(i=0; i<sizeof(zPragma)/sizeof(zPragma[0]); i++){
+    char zBuf[200];
+    assert( strlen(zPragma[i])<100 );
+    sprintf(zBuf, "PRAGMA %s;", zPragma[i]);
+    sVac.zPragma = zPragma[i];
+    rc = sqlite_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
+    if( rc ) goto vacuum_error;
+  }
   rc = sqlite_exec(db, "SELECT type, name, sql FROM sqlite_master "
            "WHERE sql NOT NULL", vacuumCallback1, &sVac, &zErrMsg);
-  if( rc ){
-    if( pParse->zErrMsg==0 ){
-      sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
-    }
-    goto end_of_vacuum;
-  }
+  if( rc ) goto vacuum_error;
 
   if( sqliteOsFileRename(zFilename, zTemp2) ){
     sqliteErrorMsg(pParse, "unable to rename database file");
@@ -285,6 +315,12 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   if( sqliteOsDelete(zTemp2) ){
     sqliteErrorMsg(pParse, "unable to delete old database: %s", zTemp2);
   }
+  sqliteBtreeClose(db->aDb[0].pBt);
+  zTemp2[nFilename] = 0;
+  if( sqliteBtreeOpen(zTemp2, 0, MAX_PAGES, &db->aDb[0].pBt) ){
+     sqliteErrorMsg(pParse, "unable to reopen database after vacuuming");
+  }
+  sqliteResetInternalSchema(db, 0);
 
 end_of_vacuum:
   sqlite_exec(db, "COMMIT", 0, 0, 0);
@@ -298,5 +334,12 @@ end_of_vacuum:
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
   if( zErrMsg ) sqlite_freemem(zErrMsg);
+  return;
+
+vacuum_error:
+  if( pParse->zErrMsg==0 ){
+    sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
+  }
+  goto end_of_vacuum;
 #endif
 }

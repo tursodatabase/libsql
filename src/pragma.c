@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.4 2003/04/22 20:30:39 drh Exp $
+** $Id: pragma.c,v 1.5 2003/04/25 02:43:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -71,9 +71,11 @@ static int getSafetyLevel(char *z){
 ** and 0 to use the compile-time default.
 */
 static int getTempStore(char *z){
-  if (sqliteStrICmp(z, "file") == 0) {
+  if( z[0]>='0' || z[0]<='2' ){
+    return z[0] - '0';
+  }else if( sqliteStrICmp(z, "file")==0 ){
     return 1;
-  }else if(sqliteStrICmp(z, "memory") == 0) {
+  }else if( sqliteStrICmp(z, "memory")==0 ){
     return 2;
   }else{
     return 0;

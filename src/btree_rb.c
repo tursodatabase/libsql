@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.7 2003/04/24 01:45:04 drh Exp $
+** $Id: btree_rb.c,v 1.8 2003/04/25 02:43:08 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1327,7 +1327,7 @@ static struct Pager *memBtreePager(Btree* tree)
 ** Return the full pathname of the underlying database file.
 */
 static const char *memBtreeGetFilename(Btree *pBt){
-  return ":memory:";
+  return 0;  /* A NULL return indicates there is no underlying file */
 }
 
 /*
