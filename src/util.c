@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.19 2001/04/04 21:10:19 drh Exp $
+** $Id: util.c,v 1.20 2001/04/05 15:57:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -725,91 +725,60 @@ int sqliteSortCompare(const char *a, const char *b){
   return res;
 }
 
+#ifdef SQLITE_UTF8
 /*
-** When the first byte of a UTF-8 character is used as the
-** index of the following array, then the value is the number
-** of bytes in the whole UTF-8 character.  This matrix assumes
-** a well-formed UTF-8 string.  All bets are off if the input
-** is not well-formed.
+** X is a pointer to the first byte of a UTF-8 character.  Increment
+** X so that it points to the next character.  This only works right
+** if X points to a well-formed UTF-8 string.
 */
-static const unsigned char utf8_width[] = {
-        /* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
-/* 0x */   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 1x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 2x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 3x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 4x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 5x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 6x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 7x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 8x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* 9x */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* Ax */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* Bx */   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-/* Cx */   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-/* Dx */   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-/* Ex */   3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-/* Fx */   4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 1, 1,
-};
+#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
+#define sqliteCharVal(X)   sqlite_utf8_to_int(X)
 
+#else /* !defined(SQLITE_UTF8) */
 /*
-** This routine computes the number of bytes to the start of the
-** next UTF-8 character.  We could just do 
-**
-**      z += utf8_width[*z]
-**
-** accomplish the same thing, if we know that z was a well-formed
-** UTF-8 string.  If it is not, then z might be incremented past
-** its null terminator.  This function, though slower, will never
-** increment z past its terminator.
+** For iso8859 encoding, the next character is just the next byte.
 */
-static int utf8_char_size(const unsigned char *z){
-  int i, n = utf8_width[*z];
-  for(i=1; i<n && z[i]!=0; i++){}
-  return i;
-}
+#define sqliteNextChar(X)  (++(X));
+#define sqliteCharVal(X)   ((int)*(X))
 
+#endif /* defined(SQLITE_UTF8) */
+
+
+#ifdef SQLITE_UTF8
 /*
-** Convert the UTF-8 character pointed to by the input parameter
-** into a 31-bit UCS character and return an integer holding the
-** 31-bit UCS character.
+** Convert the UTF-8 character to which z points into a 31-bit
+** UCS character.  This only works right if z points to a well-formed
+** UTF-8 string.
 */
-static int utf8_to_int(const unsigned char *z){
-  int n = utf8_width[*z];
+static int sqlite_utf8_to_int(const unsigned char *z){
   int c;
-  switch( n ){
-    case 0: {
-      return 0;
-    }
-    case 1: {
-      return *z;
-    }
-    case 2: {
-      c = 0x1f & *(z++);
-      break;
-    }
-    case 3: {
-      c = 0x0f & *(z++);
-      break;
-    }
-    case 4: {
-      c = 0x07 & *(z++);
-      break;
-    }
-    case 5: {
-      c = 0x03 & *(z++);
-      break;
-    }
-    case 6: {
-      c = 0x01 & *(z++);
-      break;
-    }
-  }
-  while( (--n) > 0 ){
-    c = (c<<6) | (0x3f & *(z++));
+  static const int initVal[] = {
+      0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,
+     15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,
+     30,  31,  32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,
+     45,  46,  47,  48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,
+     60,  61,  62,  63,  64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,
+     75,  76,  77,  78,  79,  80,  81,  82,  83,  84,  85,  86,  87,  88,  89,
+     90,  91,  92,  93,  94,  95,  96,  97,  98,  99, 100, 101, 102, 103, 104,
+    105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
+    120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134,
+    135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
+    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164,
+    165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
+    180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,   0,   1,   2,
+      3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,  16,  17,
+     18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,   0,
+      1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,
+      0,   1,   2,   3,   4,   5,   6,   7,   0,   1,   2,   3,   0,   1, 254,
+    255,
+  };
+  c = initVal[*(z++)];
+  while( (0xc0&*z)==0x80 ){
+    c = (c<<6) | (0x3f&*(z++));
   }
   return c;
 }
+#endif
 
 /*
 ** Compare two UTF-8 strings for equality where the first string can
@@ -852,7 +821,7 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
         while( (c=zPattern[1]) == '*' || c == '?' ){
           if( c=='?' ){
             if( *zString==0 ) return 0;
-            zString += utf8_char_size(zString);
+            sqliteNextChar(zString);
           }
           zPattern++;
         }
@@ -860,7 +829,7 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
         c = UpperToLower[c];
         if( c=='[' ){
           while( *zString && sqliteGlobCompare(&zPattern[1],zString)==0 ){
-            zString += utf8_char_size(zString);
+            sqliteNextChar(zString);
           }
           return *zString!=0;
         }else{
@@ -868,13 +837,13 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
             while( c2 != 0 && c2 != c ){ c2 = *++zString; }
             if( c2==0 ) return 0;
             if( sqliteGlobCompare(&zPattern[1],zString) ) return 1;
-            zString += utf8_char_size(zString);
+            sqliteNextChar(zString);
           }
           return 0;
         }
       case '?': {
         if( *zString==0 ) return 0;
-        zString += utf8_char_size(zString);
+        sqliteNextChar(zString);
         zPattern++;
         break;
       }
@@ -882,7 +851,7 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
         int prior_c = 0;
         seen = 0;
         invert = 0;
-        c = utf8_to_int(zString);
+        c = sqliteCharVal(zString);
         if( c==0 ) return 0;
         c2 = *++zPattern;
         if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
@@ -890,10 +859,10 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
           if( c==']' ) seen = 1;
           c2 = *++zPattern;
         }
-        while( (c2 = utf8_to_int(zPattern))!=0 && c2!=']' ){
+        while( (c2 = sqliteCharVal(zPattern))!=0 && c2!=']' ){
           if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 && prior_c>0 ){
             zPattern++;
-            c2 = utf8_to_int(zPattern);
+            c2 = sqliteCharVal(zPattern);
             if( c>=prior_c && c<=c2 ) seen = 1;
             prior_c = 0;
           }else if( c==c2 ){
@@ -902,10 +871,10 @@ sqliteGlobCompare(const unsigned char *zPattern, const unsigned char *zString){
           }else{
             prior_c = c2;
           }
-          zPattern += utf8_char_size(zPattern);
+          sqliteNextChar(zPattern);
         }
         if( c2==0 || (seen ^ invert)==0 ) return 0;
-        zString += utf8_char_size(zString);
+        sqliteNextChar(zString);
         zPattern++;
         break;
       }
@@ -940,7 +909,7 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
         while( (c=zPattern[1]) == '%' || c == '_' ){
           if( c=='_' ){
             if( *zString==0 ) return 0;
-            zString += utf8_char_size(zString);
+            sqliteNextChar(zString);
           }
           zPattern++;
         }
@@ -950,13 +919,13 @@ sqliteLikeCompare(const unsigned char *zPattern, const unsigned char *zString){
           while( c2 != 0 && c2 != c ){ c2 = UpperToLower[*++zString]; }
           if( c2==0 ) return 0;
           if( sqliteLikeCompare(&zPattern[1],zString) ) return 1;
-          zString += utf8_char_size(zString);
+          sqliteNextChar(zString);
         }
         return 0;
       }
       case '_': {
         if( *zString==0 ) return 0;
-        zString += utf8_char_size(zString);
+        sqliteNextChar(zString);
         zPattern++;
         break;
       }

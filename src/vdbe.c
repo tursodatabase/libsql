@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.55 2001/04/04 21:22:14 drh Exp $
+** $Id: vdbe.c,v 1.56 2001/04/05 15:57:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -3284,7 +3284,7 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: Length * * *
+      /* Opcode: Strlen * * *
       **
       ** Interpret the top of the stack as a string.  Replace the top of
       ** stack with an integer which is the length of the string.
@@ -3294,7 +3294,14 @@ int sqliteVdbeExec(
         int len;
         VERIFY( if( tos<0 ) goto not_enough_stack; )
         Stringify(p, tos);
+#ifdef SQLITE_UTF8
+        {
+          char *z = zStack[tos];
+          for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
+        }
+#else
         len = aStack[tos].n-1;
+#endif
         POPSTACK;
         p->tos++;
         aStack[tos].i = len;
@@ -3345,7 +3352,18 @@ int sqliteVdbeExec(
         }
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
         Stringify(p, p->tos);
+
+        /* "n" will be the number of characters in the input string.
+        ** For iso8859, the number of characters is the number of bytes.
+        ** Buf for UTF-8, some characters can use multiple bytes and the
+        ** situation is more complex. 
+        */
+#ifdef SQLITE_UTF8
+        z = zStack[p->tos];
+        for(n=0; *z; z++){ if( (0xc0&*z)!=0x80 ) n++; }
+#else
         n = aStack[p->tos].n - 1;
+#endif
         if( start<0 ){
           start += n + 1;
           if( start<0 ){
@@ -3360,6 +3378,27 @@ int sqliteVdbeExec(
         if( cnt > n ){
           cnt = n;
         }
+
+        /* At this point, "start" is the index of the first character to
+        ** extract and "cnt" is the number of characters to extract.  We
+        ** need to convert units on these variable from characters into
+        ** bytes.  For iso8859, the conversion is a no-op, but for UTF-8
+        ** we have to do a little work.
+        */
+#ifdef SQLITE_UTF8
+        {
+          int c_start = start;
+          int c_cnt = cnt;
+          int i;
+          z = zStack[p->tos];
+          for(start=i=0; i<c_start; i++){
+            while( (0xc0&z[++start])==0x80 ){}
+          }
+          for(cnt=i=0; i<c_cnt; i++){
+            while( (0xc0&z[(++cnt)+start])==0x80 ){}
+          }
+        }
+#endif
         z = sqliteMalloc( cnt+1 );
         if( z==0 ) goto no_mem;
         strncpy(z, &zStack[p->tos][start], cnt);

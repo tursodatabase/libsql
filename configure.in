@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.8 $
+# $Revision: 1.9 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -308,6 +308,21 @@ else
   cross=1
   AC_MSG_RESULT(no)
 fi
+
+##########
+# Are we using UTF-8 or iso8859 encodings?
+#
+AC_ARG_ENABLE(utf8, 
+[  --enable-utf8           Use UTF-8 encodings],,enable_utf8=no)
+AC_MSG_CHECKING([character encoding])
+if test "$enable_utf8" = "no"; then
+  ENCODING=ISO8859
+  AC_MSG_RESULT([iso8859])
+else
+  ENCODING=UTF8
+  AC_MSG_RESULT([UTF-8])
+fi
+AC_SUBST(ENCODING)
 
 ###########
 # Lots of things are different if we are compiling for Windows using

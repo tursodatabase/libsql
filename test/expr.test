@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.11 2001/04/04 21:10:19 drh Exp $
+# $Id: expr.test,v 1.12 2001/04/05 15:57:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -160,20 +160,32 @@ test_expr expr-5.11 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
 test_expr expr-5.12 {t1='abc', t2='ABC'} {t1 NOT LIKE t2} 0
 
 # The following tests only work on versions of TCL that support
-# Unicode.
+# Unicode and SQLite configured for UTF-8 support.
 #
-test_expr expr-5.13 "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} 1
-test_expr expr-5.14 "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} 1
-test_expr expr-5.15 "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} 1
-test_expr expr-5.16 "t1='a\uFFFFc', t2='A_C'" {t1 LIKE t2} 1
-test_expr expr-5.17 "t1='a\u0080', t2='A__'" {t1 LIKE t2} 0
-test_expr expr-5.18 "t1='a\u07FF', t2='A__'" {t1 LIKE t2} 0
-test_expr expr-5.19 "t1='a\u0800', t2='A__'" {t1 LIKE t2} 0
-test_expr expr-5.20 "t1='a\uFFFF', t2='A__'" {t1 LIKE t2} 0
-test_expr expr-5.21 "t1='ax\uABCD', t2='A_\uABCD'" {t1 LIKE t2} 1
-test_expr expr-5.22 "t1='ax\u1234', t2='A%\u1234'" {t1 LIKE t2} 1
-test_expr expr-5.23 "t1='ax\uFEDC', t2='A_%'" {t1 LIKE t2} 1
-test_expr expr-5.24 "t1='ax\uFEDCy\uFEDC', t2='A%\uFEDC'" {t1 LIKE t2} 1
+if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
+  test_expr expr-5.13 "t1='a\u0080c', t2='A_C'" {t1 LIKE t2} 1
+  test_expr expr-5.14 "t1='a\u07FFc', t2='A_C'" {t1 LIKE t2} 1
+  test_expr expr-5.15 "t1='a\u0800c', t2='A_C'" {t1 LIKE t2} 1
+  test_expr expr-5.16 "t1='a\uFFFFc', t2='A_C'" {t1 LIKE t2} 1
+  test_expr expr-5.17 "t1='a\u0080', t2='A__'" {t1 LIKE t2} 0
+  test_expr expr-5.18 "t1='a\u07FF', t2='A__'" {t1 LIKE t2} 0
+  test_expr expr-5.19 "t1='a\u0800', t2='A__'" {t1 LIKE t2} 0
+  test_expr expr-5.20 "t1='a\uFFFF', t2='A__'" {t1 LIKE t2} 0
+  test_expr expr-5.21 "t1='ax\uABCD', t2='A_\uABCD'" {t1 LIKE t2} 1
+  test_expr expr-5.22 "t1='ax\u1234', t2='A%\u1234'" {t1 LIKE t2} 1
+  test_expr expr-5.23 "t1='ax\uFEDC', t2='A_%'" {t1 LIKE t2} 1
+  test_expr expr-5.24 "t1='ax\uFEDCy\uFEDC', t2='A%\uFEDC'" {t1 LIKE t2} 1
+}
+
+# Theses tests are for when SQLite assumes iso8859 characters.
+#
+if {$::sqlite_encoding=="iso8859"} {
+  catch {encoding system iso8859-1}
+  test_expr expr-5.50 "t1='a\266c', t2='A_C'"  {t1 LIKE t2} 1
+  test_expr expr-5.51 "t1='a\347', t2='A_'"  {t1 LIKE t2} 1
+  test_expr expr-5.52 "t1='ax\351', t2='A_\351'"  {t1 LIKE t2} 1
+  test_expr expr-5.53 "t1='ax\241', t2='A_%'"  {t1 LIKE t2} 1
+}
 
 test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
 test_expr expr-6.2 {t1='abc', t2='ABC'} {t1 GLOB t2} 0
@@ -203,23 +215,43 @@ test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
 
 # These tests only work on versions of TCL that support Unicode
 #
-test_expr expr-6.26 "t1='a\u0080c', t2='a?c'" {t1 GLOB t2} 1
-test_expr expr-6.27 "t1='a\u07ffc', t2='a?c'" {t1 GLOB t2} 1
-test_expr expr-6.28 "t1='a\u0800c', t2='a?c'" {t1 GLOB t2} 1
-test_expr expr-6.29 "t1='a\uffffc', t2='a?c'" {t1 GLOB t2} 1
-test_expr expr-6.30 "t1='a\u1234', t2='a?'" {t1 GLOB t2} 1
-test_expr expr-6.31 "t1='a\u1234', t2='a??'" {t1 GLOB t2} 0
-test_expr expr-6.32 "t1='ax\u1234', t2='a?\u1234'" {t1 GLOB t2} 1
-test_expr expr-6.33 "t1='ax\u1234', t2='a*\u1234'" {t1 GLOB t2} 1
-test_expr expr-6.34 "t1='ax\u1234y\u1234', t2='a*\u1234'" {t1 GLOB t2} 1
-test_expr expr-6.35 "t1='a\u1234b', t2='a\[x\u1234y\]b'" {t1 GLOB t2} 1
-test_expr expr-6.36 "t1='a\u1234b', t2='a\[\u1233-\u1235\]b'" {t1 GLOB t2} 1
-test_expr expr-6.37 "t1='a\u1234b', t2='a\[\u1234-\u124f\]b'" {t1 GLOB t2} 1
-test_expr expr-6.38 "t1='a\u1234b', t2='a\[\u1235-\u124f\]b'" {t1 GLOB t2} 0
-test_expr expr-6.39 "t1='a\u1234b', t2='a\[a-\u1235\]b'" {t1 GLOB t2} 1
-test_expr expr-6.40 "t1='a\u1234b', t2='a\[a-\u1234\]b'" {t1 GLOB t2} 1
-test_expr expr-6.41 "t1='a\u1234b', t2='a\[a-\u1233\]b'" {t1 GLOB t2} 0
+if {"\u1234"!="u1234" && $::sqlite_encoding=="UTF-8"} {
+  test_expr expr-6.26 "t1='a\u0080c', t2='a?c'" {t1 GLOB t2} 1
+  test_expr expr-6.27 "t1='a\u07ffc', t2='a?c'" {t1 GLOB t2} 1
+  test_expr expr-6.28 "t1='a\u0800c', t2='a?c'" {t1 GLOB t2} 1
+  test_expr expr-6.29 "t1='a\uffffc', t2='a?c'" {t1 GLOB t2} 1
+  test_expr expr-6.30 "t1='a\u1234', t2='a?'" {t1 GLOB t2} 1
+  test_expr expr-6.31 "t1='a\u1234', t2='a??'" {t1 GLOB t2} 0
+  test_expr expr-6.32 "t1='ax\u1234', t2='a?\u1234'" {t1 GLOB t2} 1
+  test_expr expr-6.33 "t1='ax\u1234', t2='a*\u1234'" {t1 GLOB t2} 1
+  test_expr expr-6.34 "t1='ax\u1234y\u1234', t2='a*\u1234'" {t1 GLOB t2} 1
+  test_expr expr-6.35 "t1='a\u1234b', t2='a\[x\u1234y\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.36 "t1='a\u1234b', t2='a\[\u1233-\u1235\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.37 "t1='a\u1234b', t2='a\[\u1234-\u124f\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.38 "t1='a\u1234b', t2='a\[\u1235-\u124f\]b'" {t1 GLOB t2} 0
+  test_expr expr-6.39 "t1='a\u1234b', t2='a\[a-\u1235\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.40 "t1='a\u1234b', t2='a\[a-\u1234\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.41 "t1='a\u1234b', t2='a\[a-\u1233\]b'" {t1 GLOB t2} 0
+}
 
+# Theses tests are for when SQLite assumes iso8859 characters.
+#
+if {$::sqlite_encoding=="iso8859"} {
+  catch {encoding system iso8859-1}
+  test_expr expr-6.50 "t1='a\266c', t2='a?c'" {t1 GLOB t2} 1
+  test_expr expr-6.51 "t1='a\266', t2='a?'" {t1 GLOB t2} 1
+  test_expr expr-6.52 "t1='a\266', t2='a??'" {t1 GLOB t2} 0
+  test_expr expr-6.53 "t1='ax\266', t2='a??'" {t1 GLOB t2} 1
+  test_expr expr-6.54 "t1='ax\266', t2='a?\266'" {t1 GLOB t2} 1
+  test_expr expr-6.55 "t1='ax\266y\266', t2='a*\266'" {t1 GLOB t2} 1
+  test_expr expr-6.56 "t1='a\266b', t2='a\[x\266y\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.57 "t1='a\266b', t2='a\[\260-\270\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.58 "t1='a\266b', t2='a\[\266-\270\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.59 "t1='a\266b', t2='a\[\267-\270\]b'" {t1 GLOB t2} 0
+  test_expr expr-6.60 "t1='a\266b', t2='a\[x-\267\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.61 "t1='a\266b', t2='a\[x-\266\]b'" {t1 GLOB t2} 1
+  test_expr expr-6.62 "t1='a\266b', t2='a\[x-\265\]b'" {t1 GLOB t2} 0
+}
 
 # The sqliteExprIfFalse and sqliteExprIfTrue routines are only
 # executed as part of a WHERE clause.  Create a table suitable

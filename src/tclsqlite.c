@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.14 2001/04/03 16:53:22 drh Exp $
+** $Id: tclsqlite.c,v 1.15 2001/04/05 15:57:13 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -57,6 +57,16 @@ struct CallbackData {
 };
 
 /*
+** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
+** have to do a translation when going between the two.  Set the 
+** UTF_TRANSLATION_NEEDED macro to indicate that we need to do
+** this translation.  
+*/
+#if defined(TCL_UTF_MAX) && !defined(SQLITE_UTF8)
+# define UTF_TRANSLATION_NEEDED 1
+#endif
+
+/*
 ** Called for each row of the result.
 */
 static int DbEvalCallback(
@@ -67,6 +77,9 @@ static int DbEvalCallback(
 ){
   CallbackData *cbData = (CallbackData*)clientData;
   int i, rc;
+#ifdef UTF_TRANSLATION_NEEDED
+  Tcl_DString dCol;
+#endif
   if( cbData->zArray[0] ){
     if( cbData->once ){
       Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
@@ -78,13 +91,28 @@ static int DbEvalCallback(
     for(i=0; i<nCol; i++){
       char *z = azCol[i];
       if( z==0 ) z = "";
+#ifdef UTF_TRANSLATION_NEEDED
+      Tcl_DStringInit(&dCol);
+      Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
+      Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], 
+            Tcl_DStringValue(&dCol), 0);
+      Tcl_DStringFree(&dCol);
+#else
       Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], z, 0);
+#endif
     }
   }else{
     for(i=0; i<nCol; i++){
       char *z = azCol[i];
       if( z==0 ) z = "";
+#ifdef UTF_TRANSLATION_NEEDED
+      Tcl_DStringInit(&dCol);
+      Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
+      Tcl_SetVar(cbData->interp, azN[i], Tcl_DStringValue(&dCol), 0);
+      Tcl_DStringFree(&dCol);
+#else
       Tcl_SetVar(cbData->interp, azN[i], z, 0);
+#endif
     }
   }
   cbData->once = 0;
@@ -111,7 +139,15 @@ static int DbEvalCallback2(
   for(i=0; i<nCol; i++){
     Tcl_Obj *pElem;
     if( azCol[i] && *azCol[i] ){
+#ifdef UTF_TRANSLATION_NEEDED
+      Tcl_DString dCol;
+      Tcl_DStringInit(&dCol);
+      Tcl_ExternalToUtfDString(NULL, azCol[i], -1, &dCol);
+      pElem = Tcl_NewStringObj(Tcl_DStringValue(&dCol), -1);
+      Tcl_DStringFree(&dCol);
+#else
       pElem = Tcl_NewStringObj(azCol[i], -1);
+#endif
     }else{
       pElem = Tcl_NewObj();
     }
@@ -268,6 +304,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     char *zErrMsg;
     char *zSql;
     int rc;
+#ifdef UTF_TRANSLATION_NEEDED
+    Tcl_DString dSql;
+#endif
 
     if( objc!=5 && objc!=3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
@@ -275,6 +314,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     pDb->interp = interp;
     zSql = Tcl_GetStringFromObj(objv[2], 0);
+#ifdef UTF_TRANSLATION_NEEDED
+    Tcl_DStringInit(&dSql);
+    Tcl_UtfToExternalDString(NULL, zSql, -1, &dSql);
+    zSql = Tcl_DStringValue(&dSql);
+#endif
     Tcl_IncrRefCount(objv[2]);
     if( objc==5 ){
       cbData.interp = interp;
@@ -303,6 +347,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       rc = cbData.tcl_rc;
     }
     Tcl_DecrRefCount(objv[2]);
+#ifdef UTF_TRANSLATION_NEEDED
+    Tcl_DStringFree(&dSql);
+#endif
     return rc;
   }
 
@@ -382,6 +429,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
 */
 int Sqlite_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite", DbMain, 0, 0);
+  Tcl_SetVar(interp,"sqlite_encoding",sqlite_encoding,TCL_GLOBAL_ONLY);
   Tcl_PkgProvide(interp, "sqlite", "1.0");
   return TCL_OK;
 }
@@ -430,6 +478,7 @@ static char zMainloop[] =
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
+  Tcl_FindExecutable(argv[0]);
   interp = Tcl_CreateInterp();
   Sqlite_Init(interp);
   if( argc>=2 ){

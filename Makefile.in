@@ -139,7 +139,9 @@ parse.c:	$(TOP)/src/parse.y lemon
 	./lemon parse.y
 
 sqlite.h:	$(TOP)/src/sqlite.h.in 
-	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ $(TOP)/src/sqlite.h.in >sqlite.h
+	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
+            -e s/--ENCODING--/@ENCODING@/ \
+                 $(TOP)/src/sqlite.h.in >sqlite.h
 
 tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/tokenize.c

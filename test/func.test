@@ -23,21 +23,18 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.1 2000/08/28 16:22:00 drh Exp $
+# $Id: func.test,v 1.2 2001/04/05 15:57:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Create a table to work with.
 #
-execsql {CREATE TABLE tbl1(t1 text)}
-foreach word {this program is free software} {
-  execsql "INSERT INTO tbl1 VALUES('$word')"
-}
-
-# Make sure the table was created properly.
-#
 do_test func-0.0 {
+  execsql {CREATE TABLE tbl1(t1 text)}
+  foreach word {this program is free software} {
+    execsql "INSERT INTO tbl1 VALUES('$word')"
+  }
   execsql {SELECT t1 FROM tbl1 ORDER BY t1}
 } {free is program software this}
 
@@ -88,5 +85,52 @@ do_test func-2.7 {
 do_test func-2.8 {
   execsql {SELECT t1 FROM tbl1 ORDER BY substr(t1,2,20)}
 } {this software free program is}
+
+# Only do the following tests if TCL has UTF-8 capabilities and
+# the UTF-8 encoding is turned on in the SQLite library.
+#
+if {$::sqlite_encoding=="UTF-8" && "\u1234"!="u1234"} {
+
+# Put some UTF-8 characters in the database
+#
+do_test func-3.0 {
+  execsql {DELETE FROM tbl1}
+  foreach word "contains UTF-8 characters hi\u1234ho" {
+    execsql "INSERT INTO tbl1 VALUES('$word')"
+  }
+  execsql {SELECT t1 FROM tbl1 ORDER BY t1}
+} "characters contains hi\u1234ho UTF-8"
+do_test func-3.1 {
+  execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
+} {10 8 5 5}
+do_test func-3.2 {
+  execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
+} {ch co hi UT}
+do_test func-3.3 {
+  execsql {SELECT substr(t1,1,3) FROM tbl1 ORDER BY t1}
+} "cha con hi\u1234 UTF"
+do_test func-3.4 {
+  execsql {SELECT substr(t1,2,2) FROM tbl1 ORDER BY t1}
+} "ha on i\u1234 TF"
+do_test func-3.5 {
+  execsql {SELECT substr(t1,2,3) FROM tbl1 ORDER BY t1}
+} "har ont i\u1234h TF-"
+do_test func-3.6 {
+  execsql {SELECT substr(t1,3,2) FROM tbl1 ORDER BY t1}
+} "ar nt \u1234h F-"
+do_test func-3.7 {
+  execsql {SELECT substr(t1,4,2) FROM tbl1 ORDER BY t1}
+} "ra ta ho -8"
+do_test func-3.8 {
+  execsql {SELECT substr(t1,-1,1) FROM tbl1 ORDER BY t1}
+} "s s o 8"
+do_test func-3.9 {
+  execsql {SELECT substr(t1,-3,2) FROM tbl1 ORDER BY t1}
+} "er in \u1234h F-"
+do_test func-3.10 {
+  execsql {SELECT substr(t1,-4,3) FROM tbl1 ORDER BY t1}
+} "ter ain i\u1234h TF-"
+
+} ;# End sqlite_encoding==UTF-8 and \u1234!=u1234
 
 finish_test

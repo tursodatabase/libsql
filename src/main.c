@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.25 2001/02/11 16:56:24 drh Exp $
+** $Id: main.c,v 1.26 2001/04/05 15:57:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -189,6 +189,16 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
 ** The version of the library
 */
 const char sqlite_version[] = SQLITE_VERSION;
+
+/*
+** Does the library expect data to be encoded as UTF-8 or iso8859?  The
+** following global constant always lets us know.
+*/
+#ifdef SQLITE_UTF8
+char sqlite_encoding[] = "UTF-8";
+#else
+char sqlite_encoding[] = "iso8859";
+#endif
 
 /*
 ** Open a new SQLite database.  Construct an "sqlite" structure to define

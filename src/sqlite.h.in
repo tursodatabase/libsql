@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.10 2001/04/03 16:53:22 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.11 2001/04/05 15:57:13 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -41,6 +41,21 @@
 ** the same version.
 */
 extern const char sqlite_version[];
+
+/*
+** The SQLITE_UTF8 macro is defined if the library expects to see
+** UTF-8 encoded data.  The SQLITE_ISO8859 macro is defined if the
+** iso8859 encoded should be used.
+*/
+#define SQLITE_--ENCODING-- 1
+
+/*
+** The following constant holds one of two strings, "UTF-8" or "iso8859",
+** depending on which character encoding the SQLite library expects to
+** see.  The character encoding makes a difference for the LIKE and GLOB
+** operators and for the LENGTH() and SUBSTR() functions.
+*/
+extern char sqlite_encoding[];
 
 /*
 ** Each open sqlite database is represented by an instance of the
