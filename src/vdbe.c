@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.214 2003/04/15 14:01:43 drh Exp $
+** $Id: vdbe.c,v 1.215 2003/04/15 19:22:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -79,6 +79,11 @@ typedef unsigned char Bool;
 ** 
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
+**
+** If the Cursor.isTriggerRow flag is set it means that this cursor is
+** really a single row that represents the NEW or OLD pseudo-table of
+** a row trigger.  The data for the row is stored in Cursor.pData and
+** the rowid is in Cursor.iKey.
 */
 struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
@@ -90,7 +95,11 @@ struct Cursor {
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
   Bool nextRowidValid;  /* True if the nextRowid field is valid */
+  Bool pseudoTable;     /* This is a NEW or OLD pseudo-tables of a trigger */
   Btree *pBt;           /* Separate file holding temporary table */
+  int nData;            /* Number of bytes in pData */
+  char *pData;          /* Data for a NEW or OLD pseudo-table */
+  int iKey;             /* Key for the NEW or OLD pseudo-table row */
 };
 typedef struct Cursor Cursor;
 
@@ -1123,6 +1132,7 @@ static void cleanupCursor(Cursor *pCx){
   if( pCx->pBt ){
     sqliteBtreeClose(pCx->pBt);
   }
+  sqliteFree(pCx->pData);
   memset(pCx, 0, sizeof(Cursor));
 }
 
@@ -3522,6 +3532,29 @@ case OP_OpenTemp: {
   break;
 }
 
+/* Opcode: OpenPseudo P1 * *
+**
+** Open a new cursor that points to a fake table that contains a single
+** row of data.  Any attempt to write a second row of data causes the
+** first row to be deleted.  All data is deleted when the cursor is
+** closed.
+**
+** A pseudo-table created by this opcode is useful for holding the
+** NEW or OLD tables in a trigger.
+*/
+case OP_OpenPseudo: {
+  int i = pOp->p1;
+  Cursor *pCx;
+  VERIFY( if( i<0 ) goto bad_instruction; )
+  if( expandCursorArraySize(p, i) ) goto no_mem;
+  pCx = &p->aCsr[i];
+  cleanupCursor(pCx);
+  memset(pCx, 0, sizeof(*pCx));
+  pCx->nullRow = 1;
+  pCx->pseudoTable = 1;
+  break;
+}
+
 /*
 ** Opcode: RenameCursor P1 P2 *
 **
@@ -3550,7 +3583,7 @@ case OP_RenameCursor: {
 */
 case OP_Close: {
   int i = pOp->p1;
-  if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+  if( i>=0 && i<p->nCursor ){
     cleanupCursor(&p->aCsr[i]);
   }
   break;
@@ -3584,7 +3617,9 @@ case OP_MoveTo: {
   Cursor *pC;
 
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( i>=0 && i<p->nCursor && (pC = &p->aCsr[i])->pCursor!=0 ){
+  assert( i>=0 && i<p->nCursor );
+  pC = &p->aCsr[i];
+  if( pC->pCursor!=0 ){
     int res, oc;
     if( aStack[tos].flags & STK_Int ){
       int iKey = intToKey(aStack[tos].i);
@@ -3926,6 +3961,8 @@ case OP_NewRecno: {
 ** entry is overwritten.  The data is the value on the top of the
 ** stack.  The key is the next value down on the stack.  The key must
 ** be a string.  The stack is popped twice by this instruction.
+**
+** P1 may not be a pseudo-table opened using the OpenPseudo opcode.
 */
 case OP_PutIntKey:
 case OP_PutStrKey: {
@@ -3934,7 +3971,8 @@ case OP_PutStrKey: {
   int i = pOp->p1;
   Cursor *pC;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+  if( VERIFY( i>=0 && i<p->nCursor && )
+      ((pC = &p->aCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     char *zKey;
     int nKey, iKey;
     if( pOp->opcode==OP_PutStrKey ){
@@ -3954,8 +3992,30 @@ case OP_PutStrKey: {
         pC->nextRowidValid = 0;
       }
     }
-    rc = sqliteBtreeInsert(pC->pCursor, zKey, nKey,
-                        zStack[tos], aStack[tos].n);
+    if( pC->pseudoTable ){
+      /* PutStrKey does not work for pseudo-tables.
+      ** The following assert makes sure we are not trying to use
+      ** PutStrKey on a pseudo-table
+      */
+      assert( pOp->opcode==OP_PutIntKey );
+      sqliteFree(pC->pData);
+      pC->iKey = iKey;
+      pC->nData = aStack[tos].n;
+      if( aStack[tos].flags & STK_Dyn ){
+        pC->pData = zStack[tos];
+        zStack[tos] = 0;
+        aStack[tos].flags = STK_Null;
+      }else{
+        pC->pData = sqliteMallocRaw( pC->nData );
+        if( pC->pData ){
+          memcpy(pC->pData, zStack[tos], pC->nData);
+        }
+      }
+      pC->nullRow = 0;
+    }else{
+      rc = sqliteBtreeInsert(pC->pCursor, zKey, nKey,
+                          zStack[tos], aStack[tos].n);
+    }
     pC->recnoIsValid = 0;
   }
   POPSTACK;
@@ -3974,11 +4034,15 @@ case OP_PutStrKey: {
 **
 ** The row change counter is incremented if P2==1 and is unmodified
 ** if P2==0.
+**
+** If P1 is a pseudo-table, then this instruction is a no-op.
 */
 case OP_Delete: {
   int i = pOp->p1;
   Cursor *pC;
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+  assert( i>=0 && i<p->nCursor );
+  pC = &p->aCsr[i];
+  if( pC->pCursor!=0 ){
     rc = sqliteBtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
   }
@@ -3995,8 +4059,61 @@ case OP_Delete: {
 */
 case OP_KeyAsData: {
   int i = pOp->p1;
-  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
-    p->aCsr[i].keyAsData = pOp->p2;
+  assert( i>=0 && i<p->nCursor );
+  p->aCsr[i].keyAsData = pOp->p2;
+  break;
+}
+
+/* Opcode: RowData P1 * *
+**
+** Push onto the stack the complete row data for cursor P1.
+** There is no interpretation of the data.  It is just copied
+** onto the stack exactly as it is found in the database file.
+**
+** If the cursor is not pointing to a valid row, a NULL is pushed
+** onto the stack.
+*/
+case OP_RowData: {
+  int i = pOp->p1;
+  int tos = ++p->tos;
+  Cursor *pC;
+  int n;
+
+  assert( i>=0 && i<p->nCursor );
+  pC = &p->aCsr[i];
+  if( pC->nullRow ){
+    aStack[tos].flags = STK_Null;
+  }else if( pC->pCursor!=0 ){
+    BtCursor *pCrsr = pC->pCursor;
+    if( pC->nullRow ){
+      aStack[tos].flags = STK_Null;
+      break;
+    }else if( pC->keyAsData ){
+      sqliteBtreeKeySize(pCrsr, &n);
+    }else{
+      sqliteBtreeDataSize(pCrsr, &n);
+    }
+    aStack[tos].n = n;
+    if( n<=NBFS ){
+      aStack[tos].flags = STK_Str;
+      zStack[tos] = aStack[tos].z;
+    }else{
+      char *z = sqliteMallocRaw( n );
+      if( z==0 ) goto no_mem;
+      aStack[tos].flags = STK_Str | STK_Dyn;
+      zStack[tos] = z;
+    }
+    if( pC->keyAsData ){
+      sqliteBtreeKey(pCrsr, 0, n, zStack[tos]);
+    }else{
+      sqliteBtreeData(pCrsr, 0, n, zStack[tos]);
+    }
+  }else if( pC->pseudoTable ){
+    aStack[tos].n = pC->nData;
+    zStack[tos] = pC->pData;
+    aStack[tos].flags = STK_Str|STK_Ephem;
+  }else{
+    aStack[tos].flags = STK_Null;
   }
   break;
 }
@@ -4031,12 +4148,13 @@ case OP_Column: {
   int idxWidth;
   unsigned char aHdr[10];
 
+  assert( i<p->nCursor );
   if( i<0 ){
     VERIFY( if( tos+i<0 ) goto bad_instruction; )
     VERIFY( if( (aStack[tos+i].flags & STK_Str)==0 ) goto bad_instruction; )
     zRec = zStack[tos+i];
     payloadSize = aStack[tos+i].n;
-  }else if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
+  }else if( (pC = &p->aCsr[i])->pCursor!=0 ){
     zRec = 0;
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
@@ -4046,6 +4164,10 @@ case OP_Column: {
     }else{
       sqliteBtreeDataSize(pCrsr, &payloadSize);
     }
+  }else if( pC->pseudoTable ){
+    payloadSize = pC->nData;
+    zRec = pC->pData;
+    assert( payloadSize==0 || zRec!=0 );
   }else{
     payloadSize = 0;
   }
@@ -4135,22 +4257,24 @@ case OP_Column: {
 case OP_Recno: {
   int i = pOp->p1;
   int tos = ++p->tos;
-  BtCursor *pCrsr;
+  Cursor *pC;
+  int v;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    int v;
-    if( p->aCsr[i].recnoIsValid ){
-      v = p->aCsr[i].lastRecno;
-    }else if( p->aCsr[i].nullRow ){
-      aStack[tos].flags = STK_Null;
-      break;
-    }else{
-      sqliteBtreeKey(pCrsr, 0, sizeof(u32), (char*)&v);
-      v = keyToInt(v);
-    }
-    aStack[tos].i = v;
-    aStack[tos].flags = STK_Int;
+  assert( i>=0 && i<p->nCursor );
+  if( (pC = &p->aCsr[i])->recnoIsValid ){
+    v = pC->lastRecno;
+  }else if( pC->nullRow ){
+    aStack[tos].flags = STK_Null;
+    break;
+  }else if( pC->pseudoTable ){
+    v = keyToInt(pC->iKey);
+  }else{
+    assert( pC->pCursor!=0 );
+    sqliteBtreeKey(pC->pCursor, 0, sizeof(u32), (char*)&v);
+    v = keyToInt(v);
   }
+  aStack[tos].i = v;
+  aStack[tos].flags = STK_Int;
   break;
 }
 
@@ -4162,6 +4286,8 @@ case OP_Recno: {
 ** Compare this opcode to Recno.  The Recno opcode extracts the first
 ** 4 bytes of the key and pushes those bytes onto the stack as an
 ** integer.  This instruction pushes the entire key as a string.
+**
+** This opcode may not be used on a pseudo-table.
 */
 case OP_FullKey: {
   int i = pOp->p1;
@@ -4169,6 +4295,7 @@ case OP_FullKey: {
   BtCursor *pCrsr;
 
   VERIFY( if( !p->aCsr[i].keyAsData ) goto bad_instruction; )
+  VERIFY( if( p->aCsr[i].pseudoTable ) goto bad_instruction; )
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int amt;
     char *z;
@@ -4201,12 +4328,10 @@ case OP_FullKey: {
 */
 case OP_NullRow: {
   int i = pOp->p1;
-  BtCursor *pCrsr;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    p->aCsr[i].nullRow = 1;
-    p->aCsr[i].recnoIsValid = 0;
-  }
+  assert( i>=0 && i<p->nCursor );
+  p->aCsr[i].nullRow = 1;
+  p->aCsr[i].recnoIsValid = 0;
   break;
 }
 
@@ -4220,15 +4345,20 @@ case OP_NullRow: {
 */
 case OP_Last: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  assert( i>=0 && i<p->nCursor );
+  pC = &p->aCsr[i];
+  if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     sqliteBtreeLast(pCrsr, &res);
     p->aCsr[i].nullRow = res;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
+  }else{
+    pC->nullRow = 0;
   }
   break;
 }
@@ -4243,16 +4373,21 @@ case OP_Last: {
 */
 case OP_Rewind: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
 
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  assert( i>=0 && i<p->nCursor );
+  pC = &p->aCsr[i];
+  if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     sqliteBtreeFirst(pCrsr, &res);
-    p->aCsr[i].atFirst = res==0;
-    p->aCsr[i].nullRow = res;
+    pC->atFirst = res==0;
+    pC->nullRow = res;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
+  }else{
+    pC->nullRow = 0;
   }
   break;
 }
@@ -4279,8 +4414,9 @@ case OP_Next: {
   BtCursor *pCrsr;
 
   CHECK_FOR_INTERRUPT;
-  if( VERIFY( pOp->p1>=0 && pOp->p1<p->nCursor && ) 
-      (pCrsr = (pC = &p->aCsr[pOp->p1])->pCursor)!=0 ){
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = &p->aCsr[pOp->p1];
+  if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     if( pC->nullRow ){
       res = 1;
@@ -4293,8 +4429,10 @@ case OP_Next: {
       pc = pOp->p2 - 1;
       sqlite_search_count++;
     }
-    pC->recnoIsValid = 0;
+  }else{
+    pC->nullRow = 1;
   }
+  pC->recnoIsValid = 0;
   break;
 }
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.78 2003/04/03 01:50:44 drh Exp $
+** $Id: insert.c,v 1.79 2003/04/15 19:22:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,7 +110,9 @@ void sqliteInsert(
   int iCntMem;          /* Memory cell used for the row counter */
 
   int row_triggers_exist = 0; /* True if there are FOR EACH ROW triggers */
-  int newIdx = -1;
+  int before_triggers;        /* True if there are BEFORE triggers */
+  int after_triggers;         /* True if there are AFTER triggers */
+  int newIdx = -1;            /* Cursor for the NEW table */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto insert_cleanup;
   db = pParse->db;
@@ -132,10 +134,11 @@ void sqliteInsert(
   *  (a) the table is not read-only, 
   *  (b) that if it is a view then ON INSERT triggers exist
   */
-  row_triggers_exist = 
-    sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, 
-        TK_BEFORE, TK_ROW, 0) ||
-    sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, TK_AFTER, TK_ROW, 0);
+  before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, 
+                                       TK_BEFORE, TK_ROW, 0);
+  after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT,
+                                       TK_AFTER, TK_ROW, 0);
+  row_triggers_exist = before_triggers || after_triggers;
   if( pTab->readOnly || (pTab->pSelect && !row_triggers_exist) ){
     sqliteErrorMsg(pParse, "%s %s may not be modified",
       pTab->pSelect ? "view" : "table",
@@ -311,7 +314,7 @@ void sqliteInsert(
   /* Open the temp table for FOR EACH ROW triggers
   */
   if( row_triggers_exist ){
-    sqliteVdbeAddOp(v, OP_OpenTemp, newIdx, 0);
+    sqliteVdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
   }
     
   /* Initialize the count of rows to be inserted
@@ -350,11 +353,33 @@ void sqliteInsert(
     sqliteVdbeResolveLabel(v, iInsertBlock);
   }
 
+  /* Run the BEFORE triggers, if there are any
+  */
   endOfLoop = sqliteVdbeMakeLabel(v);
-  if( row_triggers_exist ){
+  if( before_triggers ){
 
-    /* build the new.* reference row */
-    sqliteVdbeAddOp(v, OP_Integer, 13, 0);
+    /* build the NEW.* reference row.  Note that if there is an INTEGER
+    ** PRIMARY KEY into which a NULL is being inserted, that NULL will be
+    ** translated into a unique ID for the row.  But on a BEFORE trigger,
+    ** we do not know what the unique ID will be (because the insert has
+    ** not happened yet) so we substitute a rowid of -1
+    */
+    if( keyColumn<0 ){
+      sqliteVdbeAddOp(v, OP_Integer, -1, 0);
+    }else if( useTempTable ){
+      sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
+    }else if( pSelect ){
+      sqliteVdbeAddOp(v, OP_Dup, nColumn - keyColumn - 1, 1);
+    }else{
+      sqliteExprCode(pParse, pList->a[keyColumn].pExpr);
+      sqliteVdbeAddOp(v, OP_NotNull, -1, sqliteVdbeCurrentAddr(v)+3);
+      sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+      sqliteVdbeAddOp(v, OP_Integer, -1, 0);
+      sqliteVdbeAddOp(v, OP_MustBeInt, 0, 0);
+    }
+
+    /* Create the new column data
+    */
     for(i=0; i<pTab->nCol; i++){
       if( pColumn==0 ){
         j = i;
@@ -383,8 +408,12 @@ void sqliteInsert(
         onError, endOfLoop) ){
       goto insert_cleanup;
     }
+  }
 
-    /* Open the tables and indices for the INSERT */
+  /* If any triggers exists, the opening of tables and indices is deferred
+  ** until now.
+  */
+  if( row_triggers_exist ){
     if( !pTab->pSelect ){
       base = pParse->nTab;
       sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
@@ -459,7 +488,8 @@ void sqliteInsert(
     ** do the insertion.
     */
     sqliteGenerateConstraintChecks(pParse, pTab, base, 0,0,0,onError,endOfLoop);
-    sqliteCompleteInsertion(pParse, pTab, base, 0,0,0);
+    sqliteCompleteInsertion(pParse, pTab, base, 0,0,0,
+                            after_triggers ? newIdx : -1);
 
     /* Update the count of rows that are inserted
     */
@@ -807,7 +837,8 @@ void sqliteCompleteInsertion(
   int base,           /* Index of a read/write cursor pointing at pTab */
   char *aIdxUsed,     /* Which indices are used.  NULL means all are used */
   int recnoChng,      /* True if the record number will change */
-  int isUpdate        /* True for UPDATE, False for INSERT */
+  int isUpdate,       /* True for UPDATE, False for INSERT */
+  int newIdx          /* Index of NEW table for triggers.  -1 if none */
 ){
   int i;
   Vdbe *v;
@@ -823,6 +854,11 @@ void sqliteCompleteInsertion(
     sqliteVdbeAddOp(v, OP_IdxPut, base+i+1, 0);
   }
   sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+  if( newIdx>=0 ){
+    sqliteVdbeAddOp(v, OP_Dup, 1, 0);
+    sqliteVdbeAddOp(v, OP_Dup, 1, 0);
+    sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
+  }
   sqliteVdbeAddOp(v, OP_PutIntKey, base, pParse->trigStack?0:1);
   if( isUpdate && recnoChng ){
     sqliteVdbeAddOp(v, OP_Pop, 1, 0);

@@ -714,10 +714,10 @@ void sqliteViewTriggers(
 
   /* Allocate temp tables */
   oldIdx = pParse->nTab++;
-  sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
+  sqliteVdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
   if( pChanges ){
     newIdx = pParse->nTab++;
-    sqliteVdbeAddOp(v, OP_OpenTemp, newIdx, 0);
+    sqliteVdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
   }
 
   /* Snapshot the view */

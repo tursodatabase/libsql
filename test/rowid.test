@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.9 2003/04/15 14:01:44 drh Exp $
+# $Id: rowid.test,v 1.10 2003/04/15 19:22:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -403,7 +403,7 @@ do_test rowid-8.8 {
   execsql {
     SELECT rowid, * FROM t4;
   }
-} {1 1 2 133 3 {}}
+} {1 1 2 133 3 134}
 
 
 finish_test

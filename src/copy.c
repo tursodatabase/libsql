@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.1 2003/04/06 21:08:24 drh Exp $
+** $Id: copy.c,v 1.2 2003/04/15 19:22:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -94,7 +94,7 @@ void sqliteCopy(
       }
     }
     sqliteGenerateConstraintChecks(pParse, pTab, 0, 0, 0, 0, onError, addr);
-    sqliteCompleteInsertion(pParse, pTab, 0, 0, 0, 0);
+    sqliteCompleteInsertion(pParse, pTab, 0, 0, 0, 0, -1);
     if( (db->flags & SQLITE_CountRows)!=0 ){
       sqliteVdbeAddOp(v, OP_AddImm, 1, 0);  /* Increment row count */
     }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.58 2003/03/31 02:12:48 drh Exp $
+** $Id: update.c,v 1.59 2003/04/15 19:22:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -47,7 +47,9 @@ void sqliteUpdate(
   Expr *pRecnoExpr;      /* Expression defining the new record number */
   int openAll;           /* True if all indices need to be opened */
 
-  int row_triggers_exist = 0;
+  int before_triggers;         /* True if there are any BEFORE triggers */
+  int after_triggers;          /* True if there are any AFTER triggers */
+  int row_triggers_exist = 0;  /* True if any row triggers exist */
 
   int newIdx      = -1;  /* index of trigger "new" temp table       */
   int oldIdx      = -1;  /* index of trigger "old" temp table       */
@@ -64,11 +66,13 @@ void sqliteUpdate(
   if( zTab != 0 ){
     pTab = sqliteFindTable(pParse->db, zTab, zDb);
     if( pTab ){
-      row_triggers_exist = 
+      before_triggers =
         sqliteTriggersExist(pParse, pTab->pTrigger, 
-            TK_UPDATE, TK_BEFORE, TK_ROW, pChanges) ||
+            TK_UPDATE, TK_BEFORE, TK_ROW, pChanges);
+      after_triggers = 
         sqliteTriggersExist(pParse, pTab->pTrigger, 
             TK_UPDATE, TK_AFTER, TK_ROW, pChanges);
+      row_triggers_exist = before_triggers || after_triggers;
     }
 
     if( row_triggers_exist &&  pTab->pSelect ){
@@ -219,50 +223,56 @@ void sqliteUpdate(
   }
 
   if( row_triggers_exist ){
-    int ii;
+    /* Create pseudo-tables for NEW and OLD
+    */
+    sqliteVdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
+    sqliteVdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
 
-    sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
-    sqliteVdbeAddOp(v, OP_OpenTemp, newIdx, 0);
-
+    /* The top of the update loop for when there are triggers.
+    */
     sqliteVdbeAddOp(v, OP_ListRewind, 0, 0);
     addr = sqliteVdbeAddOp(v, OP_ListRead, 0, 0);
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
 
+    /* Open a cursor and make it point to the record that is
+    ** being updated.
+    */
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
     sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
     sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
     sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
-    sqliteVdbeAddOp(v, OP_Integer, 13, 0);
-    for(ii = 0; ii < pTab->nCol; ii++){
-      if( ii == pTab->iPKey ){
-	sqliteVdbeAddOp(v, OP_Recno, base, 0);
-      }else{
-	sqliteVdbeAddOp(v, OP_Column, base, ii);
-      }
-    }
-    sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+    /* Generate the OLD table
+    */
+    sqliteVdbeAddOp(v, OP_Recno, base, 0);
+    sqliteVdbeAddOp(v, OP_RowData, base, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
 
-    sqliteVdbeAddOp(v, OP_Integer, 13, 0);
-    for(ii = 0; ii < pTab->nCol; ii++){
-      if( aXRef[ii] < 0 ){
-        if( ii == pTab->iPKey ){
-          sqliteVdbeAddOp(v, OP_Recno, base, 0);
-	}else{
-          sqliteVdbeAddOp(v, OP_Column, base, ii);
-	}
+    /* Generate the NEW table
+    */
+    if( chngRecno ){
+      sqliteExprCode(pParse, pRecnoExpr);
+    }else{
+      sqliteVdbeAddOp(v, OP_Recno, base, 0);
+    }
+    for(i=0; i<pTab->nCol; i++){
+      if( i==pTab->iPKey ){
+        sqliteVdbeAddOp(v, OP_String, 0, 0);
+        continue;
+      }
+      j = aXRef[i];
+      if( j<0 ){
+        sqliteVdbeAddOp(v, OP_Column, base, i);
       }else{
-        sqliteExprCode(pParse, pChanges->a[aXRef[ii]].pExpr);
+        sqliteExprCode(pParse, pChanges->a[j].pExpr);
       }
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
     sqliteVdbeAddOp(v, OP_Close, base, 0);
 
-    sqliteVdbeAddOp(v, OP_Rewind, oldIdx, 0);
-    sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
-
+    /* Fire the BEFORE triggers
+    */
     if( sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, pTab, 
           newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
@@ -350,7 +360,7 @@ void sqliteUpdate(
 
   /* Create the new index entries and the new record.
   */
-  sqliteCompleteInsertion(pParse, pTab, base, aIdxUsed, chngRecno, 1);
+  sqliteCompleteInsertion(pParse, pTab, base, aIdxUsed, chngRecno, 1, -1);
 
   /* Increment the row counter 
   */

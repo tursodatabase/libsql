@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.50 2003/03/31 02:12:47 drh Exp $
+** $Id: delete.c,v 1.51 2003/04/15 19:22:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -71,8 +71,10 @@ void sqliteDeleteFrom(
   int base;              /* Index of the first available table cursor */
   sqlite *db;            /* Main database structure */
 
-  int row_triggers_exist = 0;
-  int oldIdx = -1;
+  int row_triggers_exist = 0;  /* True if any triggers exist */
+  int before_triggers;         /* True if there are BEFORE triggers */
+  int after_triggers;          /* True if there are AFTER triggers */
+  int oldIdx = -1;             /* Cursor for the OLD table of AFTER triggers */
 
   if( pParse->nErr || sqlite_malloc_failed ){
     pTabList = 0;
@@ -89,11 +91,11 @@ void sqliteDeleteFrom(
   if( zTab != 0 ){
     pTab = sqliteFindTable(pParse->db, zTab, zDb);
     if( pTab ){
-      row_triggers_exist = 
-        sqliteTriggersExist(pParse, pTab->pTrigger, 
-            TK_DELETE, TK_BEFORE, TK_ROW, 0) ||
-        sqliteTriggersExist(pParse, pTab->pTrigger, 
-            TK_DELETE, TK_AFTER, TK_ROW, 0);
+      before_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+                             TK_DELETE, TK_BEFORE, TK_ROW, 0);
+      after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
+                             TK_DELETE, TK_AFTER, TK_ROW, 0);
+      row_triggers_exist = before_triggers || after_triggers;
     }
     if( row_triggers_exist &&  pTab->pSelect ){
       /* Just fire VIEW triggers */
@@ -195,6 +197,12 @@ void sqliteDeleteFrom(
     */
     sqliteWhereEnd(pWInfo);
 
+    /* Open the pseudo-table used to store OLD if there are triggers.
+    */
+    if( row_triggers_exist ){
+      sqliteVdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
+    }
+
     /* Delete every item whose key was written to the list during the
     ** database scan.  We have to delete items after the scan is complete
     ** because deleting an item can change the scan order.
@@ -211,20 +219,11 @@ void sqliteDeleteFrom(
       sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
       sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
       sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
-      sqliteVdbeAddOp(v, OP_OpenTemp, oldIdx, 0);
 
-      sqliteVdbeAddOp(v, OP_Integer, 13, 0);
-      for(i = 0; i<pTab->nCol; i++){
-        if( i==pTab->iPKey ){ 
-          sqliteVdbeAddOp(v, OP_Recno, base, 0);
-	} else {
-          sqliteVdbeAddOp(v, OP_Column, base, i);
-	}
-      }
-      sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
+      sqliteVdbeAddOp(v, OP_Recno, base, 0);
+      sqliteVdbeAddOp(v, OP_RowData, base, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
       sqliteVdbeAddOp(v, OP_Close, base, 0);
-      sqliteVdbeAddOp(v, OP_Rewind, oldIdx, 0);
 
       sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,

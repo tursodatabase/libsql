@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.172 2003/04/15 01:19:49 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.173 2003/04/15 19:22:24 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -85,7 +85,7 @@
 ** a minimum.
 */
 /* #define SQLITE_OMIT_AUTHORIZATION  1 */
-#define SQLITE_OMIT_INMEMORYDB     1
+/* #define SQLITE_OMIT_INMEMORYDB     1 */
 /* #define SQLITE_OMIT_TRACE          1 */
 /* #define SQLITE_OMIT_VACUUM         1 */
 
@@ -1088,7 +1088,7 @@ int sqliteIsRowid(const char*);
 void sqliteGenerateRowDelete(sqlite*, Vdbe*, Table*, int, int);
 void sqliteGenerateRowIndexDelete(sqlite*, Vdbe*, Table*, int, char*);
 void sqliteGenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
-void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
+void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int, int);
 void sqliteBeginWriteOperation(Parse*, int, int);
 void sqliteEndWriteOperation(Parse*);
 Expr *sqliteExprDup(Expr*);
