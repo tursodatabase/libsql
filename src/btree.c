@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.231 2005/01/12 07:15:05 danielk1977 Exp $
+** $Id: btree.c,v 1.232 2005/01/14 13:50:12 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3556,7 +3556,57 @@ static void assemblePage(
 #define NB (NN*2+1)      /* Total pages involved in the balance */
 
 /* Forward reference */
-static int balance(MemPage*);
+static int balance(MemPage*, int);
+
+static int balance_quick(MemPage *pPage, MemPage *pParent){
+  int rc;
+  MemPage *pNew;
+  Pgno pgnoNew;
+  u8 *pCell;
+  int szCell;
+  CellInfo info;
+
+  u8 parentCell[64];              /* How big should this be? */
+  int parentIdx = pParent->nCell;
+  int parentSize;
+
+  /* Allocate a new page. Insert the overflow cell from pPage
+  ** into it. Then remove the overflow cell from pPage.
+  */
+  rc = allocatePage(pPage->pBt, &pNew, &pgnoNew, 0, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  pCell = pPage->aOvfl[0].pCell;
+  szCell = cellSizePtr(pPage, pCell);
+  zeroPage(pNew, pPage->aData[0]);
+  assemblePage(pNew, 1, &pCell, &szCell);
+  pPage->nOverflow = 0;
+
+  /* pPage is currently the right-child of pParent. Change this
+  ** so that the right-child is the new page allocated above and
+  ** pPage is the next-to-right child. Then balance() the parent
+  ** page, in case it is now overfull.
+  */
+  parseCellPtr(pPage, findCell(pPage, pPage->nCell-1), &info);
+  rc = fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, &parentSize);
+  if( rc!=SQLITE_OK ){
+    return SQLITE_OK;
+  }
+  assert( parentSize<64 );
+  rc = insertCell(pParent, parentIdx, parentCell, parentSize, 0, 4);
+  if( rc!=SQLITE_OK ){
+    return SQLITE_OK;
+  }
+  put4byte(findOverflowCell(pParent,parentIdx), pPage->pgno);
+  put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew);
+
+  pNew->pParent = pParent;
+  sqlite3pager_ref(pParent->aData);
+
+  releasePage(pNew);
+  return balance(pParent, 0);
+}
 
 /*
 ** This routine redistributes Cells on pPage and up to NN*2 siblings
@@ -3629,6 +3679,18 @@ static int balance_nonroot(MemPage *pPage){
   sqlite3pager_write(pParent->aData);
   assert( pParent );
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
+
+#ifdef SQLITE_BALANCE_QUICK
+  if( pPage->leaf &&
+      pPage->intKey &&
+      pPage->leafData &&
+      pPage->nOverflow==1 &&
+      pPage->aOvfl[0].idx==pPage->nCell &&
+      get4byte(&pParent->aData[pParent->hdrOffset+8])==pPage->pgno
+  ){
+    return balance_quick(pPage, pParent);
+  }
+#endif
 
   /*
   ** Allocate space for memory structures
@@ -3995,7 +4057,7 @@ static int balance_nonroot(MemPage *pPage){
   assert( pParent->isInit );
   /* assert( pPage->isInit ); // No! pPage might have been added to freelist */
   /* pageIntegrity(pPage);    // No! pPage might have been added to freelist */ 
-  rc = balance(pParent);
+  rc = balance(pParent, 0);
   
   /*
   ** Cleanup before returning.
@@ -4154,7 +4216,7 @@ static int balance_deeper(MemPage *pPage){
 ** Decide if the page pPage needs to be balanced.  If balancing is
 ** required, call the appropriate balancing routine.
 */
-static int balance(MemPage *pPage){
+static int balance(MemPage *pPage, int insert){
   int rc = SQLITE_OK;
   if( pPage->pParent==0 ){
     if( pPage->nOverflow>0 ){
@@ -4164,7 +4226,8 @@ static int balance(MemPage *pPage){
       rc = balance_shallower(pPage);
     }
   }else{
-    if( pPage->nOverflow>0 || pPage->nFree>pPage->pBt->usableSize*2/3 ){
+    if( pPage->nOverflow>0 || 
+        (!insert && pPage->nFree>pPage->pBt->usableSize*2/3) ){
       rc = balance_nonroot(pPage);
     }
   }
@@ -4268,7 +4331,7 @@ int sqlite3BtreeInsert(
   }
   rc = insertCell(pPage, pCur->idx, newCell, szNew, 0, 0);
   if( rc!=SQLITE_OK ) goto end_insert;
-  rc = balance(pPage);
+  rc = balance(pPage, 1);
   /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
   if( rc==SQLITE_OK ){
@@ -4354,17 +4417,17 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     rc = insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell, 0);
     if( rc!=SQLITE_OK ) return rc;
     put4byte(findOverflowCell(pPage, pCur->idx), pgnoChild);
-    rc = balance(pPage);
+    rc = balance(pPage, 0);
     sqliteFree(tempCell);
     if( rc ) return rc;
     dropCell(leafCur.pPage, leafCur.idx, szNext);
-    rc = balance(leafCur.pPage);
+    rc = balance(leafCur.pPage, 0);
     releaseTempCursor(&leafCur);
   }else{
     TRACE(("DELETE: table=%d delete from leaf %d\n",
        pCur->pgnoRoot, pPage->pgno));
     dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
-    rc = balance(pPage);
+    rc = balance(pPage, 0);
   }
   moveToRoot(pCur);
   return rc;
@@ -5281,6 +5344,11 @@ char *sqlite3BtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
     return 0;
   }
   sCheck.anRef = sqliteMallocRaw( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
+  if( !sCheck.anRef ){
+    unlockBtreeIfUnused(pBt);
+    return sqlite3MPrintf("Unable to malloc %d bytes", 
+        (sCheck.nPage+1)*sizeof(sCheck.anRef[0]));
+  }
   for(i=0; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
   i = PENDING_BYTE_PAGE(pBt);
   if( i<=sCheck.nPage ){
