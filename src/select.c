@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.65 2002/02/23 02:32:10 drh Exp $
+** $Id: select.c,v 1.66 2002/02/24 03:25:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1101,6 +1101,13 @@ int sqliteSelect(
   */
   if( isAgg ){
     sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
+    for(i=0; i<pParse->nAgg; i++){
+      UserFunc *pUser;
+      if( (pUser = pParse->aAgg[i].pUser)!=0 && pUser->xFinalize!=0 ){
+        sqliteVdbeAddOp(v, OP_AggFinalizer, 0, i);
+        sqliteVdbeChangeP3(v, -1, (char*)pUser->xFinalize, P3_POINTER);
+      }
+    }
     if( pGroupBy==0 ){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeAddOp(v, OP_AggFocus, 0, 0);
@@ -1165,7 +1172,7 @@ int sqliteSelect(
     }
     for(i=0; i<pParse->nAgg; i++){
       Expr *pE;
-      int op;
+      int op, j;
       if( !pParse->aAgg[i].isAgg ) continue;
       pE = pParse->aAgg[i].pExpr;
       if( pE==0 ){
@@ -1173,20 +1180,29 @@ int sqliteSelect(
         continue;
       }
       assert( pE->op==TK_AGG_FUNCTION );
-      assert( pE->pList!=0 && pE->pList->nExpr==1 );
-      sqliteExprCode(pParse, pE->pList->a[0].pExpr);
+      assert( pE->pList!=0 );
+      for(j=0; j<pE->pList->nExpr; j++){
+        sqliteExprCode(pParse, pE->pList->a[j].pExpr);
+      }
       sqliteVdbeAddOp(v, OP_AggGet, 0, i);
       switch( pE->iColumn ){
-        case FN_Min:  op = OP_Min;   break;
-        case FN_Max:  op = OP_Max;   break;
-        case FN_Avg:  op = OP_Add;   break;
-        case FN_Sum:  op = OP_Add;   break;
+        case FN_Min:      op = OP_Min;     break;
+        case FN_Max:      op = OP_Max;     break;
+        case FN_Avg:      op = OP_Add;     break;
+        case FN_Sum:      op = OP_Add;     break;
+        case FN_Unknown:  op = OP_AggFunc; break;
       }
-      sqliteVdbeAddOp(v, op, 0, 0);
+      if( op!=OP_AggFunc ){
+        sqliteVdbeAddOp(v, op, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList->nExpr);
+        assert( pParse->aAgg[i].pUser!=0 );
+        assert( pParse->aAgg[i].pUser->xStep!=0 );
+        sqliteVdbeChangeP3(v,-1,(char*)pParse->aAgg[i].pUser->xStep,P3_POINTER);
+      }
       sqliteVdbeAddOp(v, OP_AggSet, 0, i);
     }
   }
-
 
   /* End the database scan loop.
   */

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.92 2002/02/24 01:55:17 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.93 2002/02/24 03:25:16 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -509,6 +509,7 @@ struct Select {
 struct AggExpr {
   int isAgg;        /* if TRUE contains an aggregate function */
   Expr *pExpr;      /* The expression */
+  UserFunc *pUser;  /* User-defined aggregate function */
 };
 
 /*

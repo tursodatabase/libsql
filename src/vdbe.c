@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.122 2002/02/23 23:45:45 drh Exp $
+** $Id: vdbe.c,v 1.123 2002/02/24 03:25:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -138,6 +138,12 @@ typedef struct Mem Mem;
 #define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
 #define STK_Static    0x0020   /* zStack[] points to a static string */
 
+/* The following STK_ value appears only in AggElem.aMem.s.flag fields.
+** It indicates that the corresponding AggElem.aMem.z points to a
+** user-defined aggregate context that needs to be finalized.
+*/
+#define STK_AggCtx    0x0040   /* zStack[] points to an user function context */
+
 /*
 ** The "context" argument for a user-defined function.
 */
@@ -162,6 +168,7 @@ struct Agg {
   AggElem *pCurrent;   /* The AggElem currently in focus */
   HashElem *pSearch;   /* The hash element for pCurrent */
   Hash hash;           /* Hash table of all aggregate elements */
+  void (**axFinalize)(void*,void*);  /* Array of nMem finalizers */
 };
 struct AggElem {
   char *zKey;          /* The key to this AggElem */
@@ -577,14 +584,19 @@ static void AggReset(Agg *pAgg){
   HashElem *p;
   for(p = sqliteHashFirst(&pAgg->hash); p; p = sqliteHashNext(p)){
     AggElem *pElem = sqliteHashData(p);
+    assert( pAgg->axFinalize!=0 );
     for(i=0; i<pAgg->nMem; i++){
       if( pElem->aMem[i].s.flags & STK_Dyn ){
         sqliteFree(pElem->aMem[i].z);
+      }else if( pAgg->axFinalize[i] && (pElem->aMem[i].s.flags & STK_AggCtx) ){
+        (pAgg->axFinalize[i])((void*)pElem->aMem[i].z, 0);
       }
     }
     sqliteFree(pElem);
   }
   sqliteHashClear(&pAgg->hash);
+  sqliteFree(pAgg->axFinalize);
+  pAgg->axFinalize = 0;
   pAgg->pCurrent = 0;
   pAgg->pSearch = 0;
   pAgg->nMem = 0;
@@ -954,21 +966,22 @@ static char *zOpName[] = { 0,
   "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
   "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
   "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "SetInsert",
-  "SetFound",          "SetNotFound",       "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
-  "Halt",              "ColumnCount",       "ColumnName",        "Callback",
-  "NullCallback",      "Integer",           "String",            "Pop",
-  "Dup",               "Pull",              "Push",              "MustBeInt",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Remainder",         "BitAnd",            "BitOr",
-  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
-  "Precision",         "Min",               "Max",               "Like",
-  "Glob",              "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",            "UserFunc",          "UserAgg",           "Limit",
+  "AggNext",           "AggSet",            "AggGet",            "AggFinalizer",
+  "AggFunc",           "SetInsert",         "SetFound",          "SetNotFound",
+  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
+  "Goto",              "If",                "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "NullCallback",      "Integer",
+  "String",            "Pop",               "Dup",               "Pull",
+  "Push",              "MustBeInt",         "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Remainder",
+  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
+  "ShiftRight",        "AbsValue",          "Precision",         "Min",
+  "Max",               "Like",              "Glob",              "Eq",
+  "Ne",                "Lt",                "Le",                "Gt",
+  "Ge",                "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Strlen",            "Substr",            "UserFunc",
+  "Limit",           
 };
 
 /*
@@ -4300,6 +4313,63 @@ case OP_MemLoad: {
 case OP_AggReset: {
   AggReset(&p->agg);
   p->agg.nMem = pOp->p2;
+  p->agg.axFinalize = sqliteMalloc( p->agg.nMem*sizeof(p->agg.axFinalize[0]) );
+  break;
+}
+
+/* Opcode: AggFinalizer * P2 P3
+**
+** Register a finializer function for the P2-th column of the aggregate.
+** The P3 parameter is a pointer to the finalizer.
+** There should be one instance of this opcode immediately following
+** each AggReset for each user defined aggregate function that is used
+** in a SELECT.
+**
+** All finalizers must be registered so that user-defined aggregate
+** function contexts can be deallocated if the VDBE aborts.
+*/
+case OP_AggFinalizer: {
+  int i = pOp->p2;
+  VERIFY( if( p->agg.nMem<=i ) goto bad_instruction; );
+  p->agg.axFinalize[i] = (void(*)(void*,void*))pOp->p3;
+  break;
+}
+
+/* Opcode: AggFunc * P2 P3
+**
+** Execute the step function for a user-defined aggregate.  The
+** function has P2 arguments.  P3 is a pointer to the step function.
+**
+** The top of the stack should be the function context.  The P2
+** parameters occur below the function context on the stack.  The
+** revised function context remains on the stack after this op-code
+** finishes.
+*/
+case OP_AggFunc: {
+  int n = pOp->p2;
+  int i;
+  void *pCtx;
+  void *(*xStep)(void*,int,const char**);
+
+  if( aStack[p->tos].flags & STK_AggCtx ){
+    pCtx = zStack[p->tos];
+  }else{
+    pCtx = 0;
+  }
+  VERIFY( if( n<=0 ) goto bad_instruction; )
+  VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
+  for(i=p->tos-n; i<p->tos; i++){
+    if( (aStack[i].flags & STK_Null)==0 ){
+      if( Stringify(p, i) ) goto no_mem;
+    }
+  }
+  xStep = (void*(*)(void*,int,const char**))pOp->p3;
+  pCtx = xStep(pCtx, n, (const char**)&zStack[p->tos-n]);
+  PopStack(p, n+1);
+  VERIFY( NeedStack(p, p->tos+1); )
+  p->tos++;
+  aStack[p->tos].flags = STK_AggCtx;
+  zStack[p->tos] = (char*)pCtx;
   break;
 }
 
@@ -4393,7 +4463,7 @@ case OP_AggSet: {
       pMem->z = zStack[tos];
       zStack[tos] = 0;
       aStack[tos].flags = 0;
-    }else if( pMem->s.flags & STK_Static ){
+    }else if( pMem->s.flags & (STK_Static|STK_AggCtx) ){
       pMem->z = zStack[tos];
     }else if( pMem->s.flags & STK_Str ){
       pMem->z = pMem->s.z;
@@ -4446,7 +4516,28 @@ case OP_AggNext: {
   if( p->agg.pSearch==0 ){
     pc = pOp->p2 - 1;
   } else {
+    int i;
+    UserFuncContext ctx;
+    void *pCtx;
+    Mem *aMem;
+    int nErr = 0;
     p->agg.pCurrent = sqliteHashData(p->agg.pSearch);
+    aMem = p->agg.pCurrent->aMem;
+    for(i=0; i<p->agg.nMem; i++){
+      if( p->agg.axFinalize[i]==0 ) continue;
+      if( (aMem[i].s.flags & STK_AggCtx)==0 ) continue;
+      ctx.s.flags = STK_Null;
+      ctx.z = 0;
+      pCtx = (void*)aMem[i].z;
+      (*p->agg.axFinalize[i])(pCtx, &ctx);
+      aMem[i].s = ctx.s;
+      aMem[i].z = ctx.z;
+      if( (aMem[i].s.flags & STK_Str) &&
+              (aMem[i].s.flags & (STK_Dyn|STK_Static))==0 ){
+        aMem[i].z = aMem[i].s.z;
+      }
+      nErr += ctx.isError;
+    }
   }
   break;
 }
