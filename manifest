@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sthe\sWatCom\sC\scompiler:\s\sArrays\smust\scontain\sat\sleast\sone\nelement.\s\ssqlite3FreeX\sdeclared\sproperly.\s\sDon't\sallow\srun-time\sexpression\n(the\sSQLITE_UTF16NATIVE\smacro)\sin\san\sarray\sinitializer.\s(CVS\s1640)
-D 2004-06-19T15:22:56
+C Clear\sup\sanother\szero-length\sarray.\s\sThis\sseems\sto\sfix\sthe\ssegfault\sin\nfunc-13.4\stoo.\s(CVS\s1641)
+D 2004-06-19T15:40:23
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c a5191011b7429dff939df631b8bdcc1714b8d7aa
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 9ae0e55a230802da35a55fd6e87533cca0301af9
-F src/func.c b7a8b55200d34bf01fe2a52462db27399f291777
+F src/func.c 21985e3b20749a18fdf3ae77b455815f730be0b9
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1428887f4a7515a7d34e82aaeb76297c79ba378b
@@ -71,11 +71,11 @@ F src/update.c f9a03233577e0c3d57234d1957963875fc941da2
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c 1b3743413e11cae51a899dc03fa9b829a3a1f160
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 324ad6157f9bd0a770be70a4e7dca2cb0d27bd82
+F src/vdbe.c 3931b2e4dfb23c8808fb4efc4880dda08c8915ad
 F src/vdbe.h 9ad64674c4c7acd6744174cab5d34013413ef0d3
-F src/vdbeInt.h e472de98c61e9e183402bfa00542e0abd26e825c
-F src/vdbeapi.c 2163463b13468b2b8651fbf71a2b8548ea071e37
-F src/vdbeaux.c cf9caac1163ea384e49b11cb0d405082eef8741d
+F src/vdbeInt.h d007ccada5e3043816097242a560ed6c7f6483ce
+F src/vdbeapi.c 0ef00cd2a3764363e957f8e9c6bc90d12989ee3a
+F src/vdbeaux.c d2d95f1b9341bd3861e5229cb24a821715824449
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 99d0436e0ee1c917b2b7bbf005f05288b535648a
-R db0065ad2b92a7ca2b665309ece9eeec
+P fbfc3c95a8abf25bb9e2b44cfeb7186c5b0591d7
+R 8b1896930be175cc145ac47aedd2f4cb
 U drh
-Z 991debb39d796778891cff3d4f612b44
+Z 4a06f27d3dc21ce0ad6cfd96c4ae0233

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.72 2004/06/19 08:18:09 danielk1977 Exp $
+** $Id: func.c,v 1.73 2004/06/19 15:40:23 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -308,7 +308,7 @@ struct LikePattern {
   struct LikeState {
     int val;           /* Unicode codepoint or -1 for any char i.e. '_' */
     int failstate;     /* State to jump to if next char is not val */
-  } aState[0];
+  } aState[1];
 };
 typedef struct LikePattern LikePattern;
 
@@ -1093,4 +1093,3 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
   }
   sqlite3RegisterDateTimeFunctions(db);
 }
-

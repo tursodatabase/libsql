@@ -1310,6 +1310,25 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
 }
 
 /*
+** Call the destructor for each auxdata entry in pVdbeFunc for which
+** the corresponding bit in mask is set.  Auxdata entries beyond 31
+** are always destroyed.  To destroy all auxdata entries, call this
+** routine with mask==-1.
+*/
+void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
+  int i;
+  for(i=0; i<pVdbeFunc->nAux; i++){
+    struct AuxData *pAux = &pVdbeFunc->apAux[i];
+    if( (i>31 || !(mask&(1<<i))) && pAux->pAux ){
+      if( pAux->xDelete ){
+        pAux->xDelete(pAux->pAux);
+      }
+      pAux->pAux = 0;
+    }
+  }
+}
+
+/*
 ** Delete an entire VDBE.
 */
 void sqlite3VdbeDelete(Vdbe *p){
@@ -1338,12 +1357,7 @@ void sqlite3VdbeDelete(Vdbe *p){
     if( pOp->p3type==P3_VDBEFUNC ){
       int j;
       VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
-      for(j=0; j<pVdbeFunc->nAux; j++){
-        struct AuxData *pAuxData = &pVdbeFunc->apAux[j];
-        if( pAuxData->pAux && pAuxData->xDelete ){
-          pAuxData->xDelete(pAuxData->pAux);
-        }
-      }
+      sqlite3VdbeDeleteAuxData(pVdbeFunc, -1);
       sqliteFree(pVdbeFunc);
     }
 #ifndef NDEBUG

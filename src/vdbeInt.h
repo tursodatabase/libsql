@@ -373,6 +373,7 @@ int sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*);
 int sqlite3VdbeSerialPut(unsigned char*, Mem*);
 int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
+void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);

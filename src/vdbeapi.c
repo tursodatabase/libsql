@@ -218,7 +218,7 @@ void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
   if( !pVdbeFunc || iArg>=pVdbeFunc->nAux || iArg<0 ){
     return 0;
   }
-  return pCtx->pVdbeFunc->apAux[iArg].pAux;
+  return pVdbeFunc->apAux[iArg].pAux;
 }
 
 /*
@@ -233,18 +233,19 @@ void sqlite3_set_auxdata(
   void (*xDelete)(void*)
 ){
   struct AuxData *pAuxData;
+  VdbeFunc *pVdbeFunc;
   if( iArg<0 ) return;
 
-  if( !pCtx->pVdbeFunc || pCtx->pVdbeFunc->nAux<=iArg ){
-    VdbeFunc *pVdbeFunc;
-    int nMalloc = sizeof(VdbeFunc)+sizeof(struct AuxData)*iArg;
-    pCtx->pVdbeFunc = pVdbeFunc = sqliteRealloc(pCtx->pVdbeFunc, nMalloc);
+  pVdbeFunc = pCtx->pVdbeFunc;
+  if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
+    int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
+    pCtx->pVdbeFunc = pVdbeFunc = sqliteRealloc(pVdbeFunc, nMalloc);
     if( !pVdbeFunc ) return;
     pVdbeFunc->nAux = iArg+1;
     pVdbeFunc->pFunc = pCtx->pFunc;
   }
 
-  pAuxData = &pCtx->pVdbeFunc->apAux[iArg];
+  pAuxData = &pVdbeFunc->apAux[iArg];
   if( pAuxData->pAux && pAuxData->xDelete ){
     pAuxData->xDelete(pAuxData->pAux);
   }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.380 2004/06/19 09:35:37 danielk1977 Exp $
+** $Id: vdbe.c,v 1.381 2004/06/19 15:40:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1309,16 +1309,7 @@ case OP_Function: {
   ** immediately call the destructor for any non-static values.
   */
   if( ctx.pVdbeFunc ){
-    int mask = pOp->p2;
-    for(i=0; i<ctx.pVdbeFunc->nAux; i++){
-      struct AuxData *pAux = &ctx.pVdbeFunc->apAux[i];
-      if( (i>31 || !(mask&(1<<i))) && pAux->pAux ){
-        if( pAux->xDelete ){
-          pAux->xDelete(pAux->pAux);
-        }
-        pAux->pAux = 0;
-      }
-    }
+    sqlite3VdbeDeleteAuxData(ctx.pVdbeFunc, pOp->p2);
     pOp->p3 = (char *)ctx.pVdbeFunc;
     pOp->p3type = P3_VDBEFUNC;
   }
