@@ -1,5 +1,5 @@
-C Preserve\sblank\slines\sin\sthe\smiddle\sof\sSQL\sstatements\sin\sthe\sshell.\nTicket\s#352\s(CVS\s1026)
-D 2003-06-16T00:16:41
+C Do\snot\sflatten\sa\ssubquery\swhich\sis\sthe\sright\sterm\sof\sa\sLEFT\sOUTER\sJOIN\nif\sthe\ssubquery\scontains\sa\sWHERE\sclause.\s\sTicket\s#350.\s(CVS\s1027)
+D 2003-06-16T00:40:35
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/parse.y 917250e5d86bdee752355e6617ea2e8ee12438bf
 F src/pragma.c 3b4f5a800e7a2145bc1930f323232e297d4eb782
 F src/printf.c 12ab57e638c8201033c96717df7af59e06933314
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 76b3a5cda76421cfe82d6a96c72308c2518cb2f9
+F src/select.c 29c53228a4e66bfcebd797b7539678fcd0e2cf64
 F src/shell.c 3ed268908fd69c8fd4b28dbe415075cbf0e3991a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 54619fa5df4c83b22def66bb3d24808fd03dcbae
@@ -87,7 +87,7 @@ F test/insert.test a17b7f7017097afb2727aa5b67ceeb7ab0a120a1
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
-F test/join.test 16c91ec27170c20e2a10796775e62c5c3dcbda44
+F test/join.test 54e770b74fc8cfc7769d5d0bb05657085641b3c4
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 38461a7acb5281edd7078b1b3f227bb45f281757
-R 46499a749b6ee84c69c37552983b6d8c
+P bcf5eeecdfd9897bc7c257119d7515fd34d222c1
+R ffe0cc5608b1ae6c3500625d1dc9cf93
 U drh
-Z b3ef2420e7aa106912624a6b067565c3
+Z d81db5180d17921ff4a8ae510148f465

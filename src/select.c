@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.140 2003/05/31 16:21:13 drh Exp $
+** $Id: select.c,v 1.141 2003/06/16 00:40:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1578,6 +1578,9 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList){
 **
 **  (11)  The subquery and the outer query do not both have ORDER BY clauses.
 **
+**  (12)  The subquery is not the right term of a LEFT OUTER JOIN or the
+**        subquery has no WHERE clause.  (added by ticket #350)
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -1634,6 +1637,24 @@ static int flattenSubquery(
   ** which is not at all the same thing.
   */
   if( pSubSrc->nSrc>1 && iFrom>0 && (pSrc->a[iFrom-1].jointype & JT_OUTER)!=0 ){
+    return 0;
+  }
+
+  /* Restriction 12:  If the subquery is the right operand of a left outer
+  ** join, make sure the subquery has no WHERE clause.
+  ** An examples of why this is not allowed:
+  **
+  **         t1 LEFT OUTER JOIN (SELECT * FROM t2 WHERE t2.x>0)
+  **
+  ** If we flatten the above, we would get
+  **
+  **         (t1 LEFT OUTER JOIN t2) WHERE t2.x>0
+  **
+  ** But the t2.x>0 test will always fail on a NULL row of t2, which
+  ** effectively converts the OUTER JOIN into an INNER JOIN.
+  */
+  if( iFrom>0 && (pSrc->a[iFrom-1].jointype & JT_OUTER)!=0 
+      && pSub->pWhere!=0 ){
     return 0;
   }
 
