@@ -1,5 +1,5 @@
-C Coverage\stests\sfor\svacuum.c\s(CVS\s1776)
-D 2004-06-30T09:49:23
+C Make\ssure\svacuum.test\scloses\sall\sfiles.\s(CVS\s1777)
+D 2004-06-30T10:54:30
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -175,7 +175,7 @@ F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test 0416ace6131f3003d1e823f04ac0bb5b53315431
+F test/vacuum.test 51d3a52535f77af6fb6fa7e742230f4958a708c1
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test b42c98499ae9fbf578cd7a4b020d23057c8825fb
 F test/where.test 9c5752b807b78078fab8da6f52e689832579ca20
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fa19c77bf045787faa4cdc40bcfbd9eeae8594ae
-R 6e782cee555b8abc4fb19017e23b5110
+P 152e9940b919a53fcd0da4091dbf75ab8ef15b38
+R 7c0d14b9c00314801ef156d50cb14232
 U danielk1977
-Z 135637c42a81cf49b10a663d51dc227f
+Z 744e63435b1a53bb66bf937c6227be06
