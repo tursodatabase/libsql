@@ -1,15 +1,15 @@
-C One\smore\sfix\sto\sthe\snew\sHH:MM:SS\smodifier.\s\sThis\stime\sadd\ssome\stest\nprocedures\stoo.\s(CVS\s1280)
-D 2004-02-29T01:08:18
+C Updated\saclocal.m4\sand\sconfigure.\s(CVS\s1281)
+D 2004-02-29T15:18:31
 F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 8323c161a43094e2340bc1e57b99dacf10176301
-F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
+F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure 2a71bcba74ccdfbdf29759c1ca00917bc2d6ec67 x
+F configure 6a156e79aaddba2e0e6816972d99989f48cc1699 x
 F configure.ac 684143ce9ee7bafc4291d0e17f2dfdc70514d1d6
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e20d51f94ed67b8864a435e5735f61f396662c21
-R f6cfaacb2696207417d341bc6d9eaa35
-U drh
-Z 78e3b4d83ccc7f48feaa7210a8b39c81
+P 7b3b8968ee9a5349dd6e9ae1e7a311bf8906607c
+R 0d80fa4753fe7d79951a6a308e451a7b
+U a.rottmann
+Z 7c3910c4546d27b133fb0c8d342cad4e
