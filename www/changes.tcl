@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 June 4 (2.8.3)} {
+<li>Fix a problem that will corrupt the indices on a table if you
+    do an INSERT OR REPLACE or an UPDATE OR REPLACE on a table that
+    contains an INTEGER PRIMARY KEY plus one or more indices.</li>
+<li>Fix a bug in windows locking code so that locks work correctly
+    when simultaneously accessed by Win95 and WinNT systems.</li>
+<li>Add the ability for INSERT and UPDATE statements to refer to the
+    "rowid" (or "_rowid_" or "oid") columns.</li>
+<li>Other important bug fixes</li>
+}
+
 chng {2003 May 17 (2.8.2)} {
 <li>Fix a problem that will corrupt the database file if you drop a
     table from the main database that has a TEMP index.</li>

@@ -1,9 +1,9 @@
-C Disable\sthe\sunreadable\sfile\stest\s(attach-6.2)\sunder\swindows\sbecause\sof\nproblems\sin\sthe\sOS.\s(CVS\s1000)
-D 2003-06-04T12:31:53
+C Update\sthe\sversion\snumber\sto\s2.8.3.\s(CVS\s1001)
+D 2003-06-04T12:40:44
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 17a91274e8604eecfb3f1821abaa4c310ceb8d93
+F VERSION c17038403a026f011620ae647ad73bf04038fdd4
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
@@ -146,7 +146,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 5b54a6f65b70b02da2f6df4f8a23a4b10032e89e
-F www/changes.tcl c1041b34f4a45b93f231fb4b55a7952654742dff
+F www/changes.tcl ea1ca3050a9b2ad807b54b63cec9f0cf03d27d31
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e813faae0e4086571d13c769f793add7f1f979af
-R 7a171aa05de27c25e9ddf0ac9a9d987c
+P 4bfb30d20bdd33c6e26c8fb8392a75d3cf2ee4bd
+R e31e8c7cdbafc68dc5929b52631fff51
 U drh
-Z 09fdaaa7530512cf34b726cc19e00b04
+Z 1a2c76b1d33298ed0c0f5c672ce3dd86
