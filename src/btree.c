@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.122 2004/05/10 16:18:48 drh Exp $
+** $Id: btree.c,v 1.123 2004/05/10 18:45:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1762,6 +1762,7 @@ static int moveToRoot(BtCursor *pCur){
     assert( pRoot->pgno==1 );
     subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+6]);
     assert( subpage>0 );
+    pCur->isValid = 1;
     rc = moveToChild(pCur, subpage);
   }
   pCur->isValid = pCur->pPage->nCell>0;
@@ -3497,7 +3498,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
     printf("ERROR: next cell index out of range: %d\n", idx);
   }
   if( !pPage->leaf ){
-    printf("right_child: %d\n", get4byte(&data[6]));
+    printf("right_child: %d\n", get4byte(&data[hdr+6]));
   }
   nFree = 0;
   i = 0;
@@ -3524,6 +3525,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
     sqlite3BtreePageDump(pBt, get4byte(&data[hdr+6]), 1);
   }
   sqlite3pager_unref(data);
+  fflush(stdout);
   return SQLITE_OK;
 }
 #endif
