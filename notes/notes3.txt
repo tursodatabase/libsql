@@ -24,7 +24,7 @@ Secondary access routines:
   int sqlite_table(sqlite*, int *nrow, int *ncolumn, const char ***argv);
   void sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
 
-Access routines that are implement derived from primary and sec
+Access routines that are derived from primary and secondary:
   
   char *sqlite_mprintf(const char *zFormat, ...);
   int sqlite_compile_vprintf(sqlite*, const char *zFormat, va_list);

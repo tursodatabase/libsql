@@ -515,6 +515,9 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 
 <p>Lemon supports the following special directives:
 <ul>
+<li><tt>%code</tt>
+<li><tt>%default_destructor</tt>
+<li><tt>%default_type</tt>
 <li><tt>%destructor</tt>
 <li><tt>%extra_argument</tt>
 <li><tt>%include</tt>
@@ -535,6 +538,35 @@ other than that, the order of directives in Lemon is arbitrary.</p>
 </ul>
 Each of these directives will be described separately in the
 following sections:</p>
+
+<h4>The <tt>%code</tt> directive</h4>
+
+<p>The %code directive is used to specify addition C/C++ code that
+is added to the end of the main output file.  This is similar to
+the %include directive except that %include is inserted at the
+beginning of the main output file.</p>
+
+<p>%code is typically used to include some action routines or perhaps
+a tokenizer as part of the output file.</p>
+
+<h4>The <tt>%default_destructor</tt> directive</h4>
+
+<p>The %default_destructor directive specifies a destructor to 
+use for non-terminals that do not have their own destructor
+specified by a separate %destructor directive.  See the documentation
+on the %destructor directive below for additional information.</p>
+
+<p>In some grammers, many different non-terminal symbols have the
+same datatype and hence the same destructor.  This directive is
+a convenience way to specify the same destructor for all those
+non-terminals using a single statement.</p>
+
+<h4>The <tt>%default_type</tt> directive</h4>
+
+<p>The %default_type directive specifies the datatype of non-terminal
+symbols that do no have their own datatype defined using a separate
+%type directive.  See the documentation on %type below for addition
+information.</p>
 
 <h4>The <tt>%destructor</tt> directive</h4>
 
@@ -607,9 +639,9 @@ in the most recent call to Parse().</p>
 
 <p>The %include directive specifies C code that is included at the
 top of the generated parser.  You can include any text you want --
-the Lemon parser generator copies to blindly.  If you have multiple
-%include directives in your grammar file, their values are concatenated
-before being put at the beginning of the generated parser.</p>
+the Lemon parser generator copies it blindly.  If you have multiple
+%include directives in your grammar file the value of the last
+%include directive overwrites all the others.</p.
 
 <p>The %include directive is very handy for getting some extra #include
 preprocessor statements at the beginning of the generated parser.
