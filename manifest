@@ -1,5 +1,5 @@
-C Change\sthe\sversion\snumber\sfor\srelease\s2.7.1.\s(CVS\s736)
-D 2002-08-31T17:02:26
+C Version\s2.7.1\s(CVS\s737)
+D 2002-08-31T17:02:43
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6ffedb90a6478af6548db5298368eeca2b708cdc
+P b7f788fcc4a26ae42196a209d2e94672321dc154
 R c5c569997115d1f2c07a9211654c4fdd
 U drh
-Z 91f8cbd799d7775e2646290252521d5a
+Z 53b53adb384374736e4596208d092298
