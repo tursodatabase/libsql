@@ -1,5 +1,5 @@
-C Use\sthe\snew\sform\sof\sthe\ssqlite3_create_function()\sAPI.\s(CVS\s1460)
-D 2004-05-26T06:18:37
+C Remove\sthe\sshow_datatypes\spragma.\s(CVS\s1461)
+D 2004-05-26T06:58:44
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 48bb15bff280767684a0f9ee4ae5973c9504f880
 F src/legacy.c a856d2d5317ed2ac93c2c6cbba7d4faa564a5b20
-F src/main.c bb49b5a4394e94a56ea25d71bfdfb924bd43b7b6
+F src/main.c 2f144d7576413d73e146cb6f9fc33d5169610f8c
 F src/md5.c 833671b541a76fc0e62404433c9176706eeacdf0
 F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
@@ -50,16 +50,16 @@ F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
 F src/parse.y 567718866b94d58a6c7681cc45ba7987771d583a
-F src/pragma.c 02b57adda458874eddc2bd71d56d02e496759a97
+F src/pragma.c aa6a887017a512aba8c6bd9cd7c235b536a2b2f3
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 42996047868542619a8879bce3b446d92c81ead0
 F src/shell.c ed4d237b3e52a0a42512bfcc53530e46de20c28f
 F src/sqlite.h.in c36ab3d4dc1b863ba0cf79905210180b8059a839
-F src/sqliteInt.h 6559811caeae0d1855e0b973e363a8c5141e566b
+F src/sqliteInt.h 323281bd04c7f988c6873777750acaa1f6b3b9a6
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 2700a35f494e8fc5ad2742bcae09d2cb66a295ab
-F src/test1.c d23bf61826665d1c6df0d1e565cdf0b7a065e6ce
+F src/test1.c d2e0b5e8a12dc70fa011748c01e4a7ef38cc5a8e
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
 F src/test3.c 5e4a6d596f982f6f47a5f9f75ede9b4a3b739968
 F src/test4.c 014478492bddb3f9b4a3151b05f9ac708fe279fb
@@ -127,7 +127,7 @@ F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test 548968643d91c1c43a3a3eb1a232e9ca87b4069e
 F test/pager2.test 7ff175a28484fd324df9315dfe35f6fb159910ec
-F test/pragma.test e763be8238c8a5a0cd8b75e8eec70b957da6081b
+F test/pragma.test 1b6792d4af550ca4973096d77fc278dd6c32c4dd
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test 8800cd2f6b45ce2cafadb0e3d5161688c61c946a
@@ -203,7 +203,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 17e7db488dac6b30d174f2272edf1046c2bb9990
-R 113d8544ffd910b3c5420bd788cff980
+P 0317bef4b0c219ca2888c90553201e53230fb360
+R 250b3406a1267384090bf13650dde2b6
 U danielk1977
-Z bc1bc018e744dabad71dcba7ffcd3363
+Z 468d6cd88bf024746a793243f549c65d

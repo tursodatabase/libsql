@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.30 2004/05/26 00:01:54 drh Exp $
+** $Id: pragma.c,v 1.31 2004/05/26 06:58:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -119,7 +119,6 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "vdbe_trace",               SQLITE_VdbeTrace     },
     { "full_column_names",        SQLITE_FullColNames  },
     { "short_column_names",       SQLITE_ShortColNames },
-    { "show_datatypes",           SQLITE_ReportTypes   },
     { "count_changes",            SQLITE_CountRows     },
     { "empty_result_callbacks",   SQLITE_NullCallback  },
   };

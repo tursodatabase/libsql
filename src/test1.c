@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.55 2004/05/26 06:18:38 danielk1977 Exp $
+** $Id: test1.c,v 1.56 2004/05/26 06:58:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -717,35 +717,6 @@ static int rememberDataTypes(void *pArg, int nCol, char **argv, char **colv){
   }
   Tcl_SetObjResult(interp, pList);
   return 1;
-}
-
-/*
-** Invoke an SQL statement but ignore all the data in the result.  Instead,
-** return a list that consists of the datatypes of the various columns.
-**
-** This only works if "PRAGMA show_datatypes=on" has been executed against
-** the database connection.
-*/
-static int sqlite_datatypes(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite *db;
-  int rc;
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " DB SQL", 0);
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_exec(db, argv[2], rememberDataTypes, interp, 0);
-  if( rc!=0 && rc!=SQLITE_ABORT ){
-    Tcl_AppendResult(interp, sqlite3_error_string(rc), 0);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
 }
 
 /*
@@ -1551,7 +1522,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
      { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                  (Tcl_CmdProc*)sqlite_abort          },
-     { "sqlite_datatypes",              (Tcl_CmdProc*)sqlite_datatypes      },
 #ifdef MEMORY_DEBUG
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },

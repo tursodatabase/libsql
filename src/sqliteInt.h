@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.251 2004/05/25 12:05:57 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.252 2004/05/26 06:58:44 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -444,8 +444,6 @@ struct sqlite {
                                           /*   the count using a callback. */
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
-#define SQLITE_ReportTypes    0x00000200  /* Include information on datatypes */
-                                          /*   in 4th argument of callback */
 
 /*
 ** Possible values for the sqlite.magic field.
