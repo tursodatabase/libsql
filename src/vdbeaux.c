@@ -1521,7 +1521,7 @@ int sqlite3VdbeIdxKeyCompare(
 
   pCellKey = (unsigned char *)sqlite3BtreeKeyFetch(pCur, nCellKey);
   if( !pCellKey ){
-    pCellKey = (unsigned char *)sqliteMalloc(nCellKey);
+    pCellKey = (unsigned char *)sqliteMallocRaw(nCellKey);
     if( !pCellKey ){
       return SQLITE_NOMEM;
     }
@@ -1547,6 +1547,3 @@ int sqlite3VdbeIdxKeyCompare(
   }
   return SQLITE_OK;
 }
-
-
-

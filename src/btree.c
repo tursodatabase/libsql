@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.135 2004/05/14 12:17:46 drh Exp $
+** $Id: btree.c,v 1.136 2004/05/14 15:27:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -741,18 +741,20 @@ static int initPage(
   int c, pc, i, hdr;
   unsigned char *data;
   int usableSize;
-  int sumCell = 0;       /* Total size of all cells */
+  /* int sumCell = 0;       // Total size of all cells */
+
 
   assert( pPage->pBt!=0 );
   assert( pParent==0 || pParent->pBt==pPage->pBt );
   assert( pPage->pgno==sqlite3pager_pagenumber(pPage->aData) );
   assert( pPage->aData == &((unsigned char*)pPage)[-pPage->pBt->pageSize] );
   assert( pPage->pParent==0 || pPage->pParent==pParent );
+  assert( pPage->pParent==pParent || !pPage->isInit );
+  if( pPage->isInit ) return SQLITE_OK;
   if( pPage->pParent==0 && pParent!=0 ){
     pPage->pParent = pParent;
     sqlite3pager_ref(pParent->aData);
   }
-  if( pPage->isInit ) return SQLITE_OK;
   pPage->nCell = pPage->nCellAlloc = 0;
   assert( pPage->hdrOffset==(pPage->pgno==1 ? 100 : 0) );
   hdr = pPage->hdrOffset;
@@ -782,7 +784,7 @@ static int initPage(
   pc = get2byte(&data[hdr+3]);
   for(i=0; pc>0; i++){
     pPage->aCell[i] = &data[pc];
-    sumCell += cellSize(pPage, &data[pc]);
+    /* sumCell += cellSize(pPage, &data[pc]); */
     pc = get2byte(&data[pc]);
   }
 
@@ -801,10 +803,11 @@ static int initPage(
   if( pPage->nFree>=usableSize ) return SQLITE_CORRUPT;
 
   /* Sanity check:  Cells and freespace and header must sum to the size
-  ** a page. */
+  ** a page.
   if( sumCell+pPage->nFree+hdr+10-pPage->leaf*4 != usableSize ){
     return SQLITE_CORRUPT;
   }
+  */
 
   pPage->isInit = 1;
   pageIntegrity(pPage);
@@ -879,7 +882,7 @@ static int getAndInitPage(
 ){
   int rc;
   rc = getPage(pBt, pgno, ppPage);
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && (*ppPage)->isInit==0 ){
     rc = initPage(*ppPage, pParent);
   }
   return rc;

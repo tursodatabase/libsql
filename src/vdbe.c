@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.290 2004/05/14 12:16:11 danielk1977 Exp $
+** $Id: vdbe.c,v 1.291 2004/05/14 15:27:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2001,7 +2001,7 @@ case OP_Column: {
       /* This code will run very infrequently (e.g. tables with several
       ** hundred columns).
       */
-      zData = (char *)sqliteMalloc(offset+max_space);
+      zData = (char *)sqliteMallocRaw(offset+max_space);
       if( !zData ){
         rc = SQLITE_NOMEM;
         goto abort_due_to_error;
@@ -2023,7 +2023,7 @@ case OP_Column: {
   ** the serial types for the record. At the end of this block variable
   ** offset is set to the offset to the start of Data0 in the record.
   */
-  aTypes = (u64 *)sqliteMalloc(sizeof(u64)*nFields);
+  aTypes = (u64 *)sqliteMallocRaw(sizeof(u64)*nFields);
   if( !aTypes ){
     if( freeZdata ){
       sqliteFree(zData);
@@ -2058,7 +2058,7 @@ case OP_Column: {
       zData = (char *)sqlite3BtreeDataFetch(pCrsr, offset+len);
     }
     if( !zData && len>0 ){
-      zData = (char *)sqliteMalloc(len);
+      zData = (char *)sqliteMallocRaw(len);
       if( !zData ){
         sqliteFree(aTypes);
         rc = SQLITE_NOMEM;
@@ -2164,7 +2164,7 @@ case OP_MakeRecord: {
   }
 
   /* Allocate space for the new record. */
-  zNewRecord = sqliteMalloc(nBytes);
+  zNewRecord = sqliteMallocRaw(nBytes);
   if( !zNewRecord ){
     rc = SQLITE_NOMEM;
     goto abort_due_to_error;
@@ -2304,7 +2304,7 @@ case OP_MakeIdxKey: {
   }
 
   /* Allocate space for the new key */
-  zKey = (char *)sqliteMalloc(nByte);
+  zKey = (char *)sqliteMallocRaw(nByte);
   if( !zKey ){
     rc = SQLITE_NOMEM;
     goto abort_due_to_error;

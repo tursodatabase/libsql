@@ -1,5 +1,5 @@
-C Table\s1\sof\sa\sdatabase\s(the\ssqlite_master\stable)\sdefaults\sto\suse\sB+trees.\s(CVS\s1378)
-D 2004-05-14T12:17:46
+C Performance\simprovements\s(CVS\s1379)
+D 2004-05-14T15:27:28
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 4f1c77b78efce07f17b335251316e8c028827049
+F src/btree.c 085a020c22aceb08c42004ffdbfc4daad68fd7eb
 F src/btree.h 6f51ad0ffebfba71295fcacdbe86007512200050
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c e93f443a20eab57ffb77ff6244b1e09a1f7d9390
@@ -63,10 +63,10 @@ F src/update.c 0441f8b64d616ef244583449e66c984e536c6c9b
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 58407b133dfe0b21af23e0aa89c058a2b3d8cb0f
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c b63179da52797686c75c010ba742ceb8d197a3d1
+F src/vdbe.c fff79c08b3063d8d6f7b600fc6896c255c72238c
 F src/vdbe.h 94457ca73bae972dc61bca33a4dccc2e6e14e2f8
 F src/vdbeInt.h 03f4c3642482570a697a42a9bbb12908c6535bbe
-F src/vdbeaux.c d8dc16e7bfb6201a2e2e4c020ba813e295de717f
+F src/vdbeaux.c 4590e8f5e064ee1e269a0b969f6f28118daf325d
 F src/where.c 6957bbd333cc7ffa7b3878adbe67a095319daa54
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -191,7 +191,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c6604a94d25d148fbb42b47ae9a8195e4697c681
-R e9a50b542329deb82612b2b06751e47c
+P 45b60de5c7deb83d10ab54759434e32847f0c2ef
+R 623a239c3e485e25d3fc8763ec1b417b
 U drh
-Z a20ab9adf0eaf642c04b312d2e365440
+Z c81eb274ca540aa5e441cb23ee2aa0aa
