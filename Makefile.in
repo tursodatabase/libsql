@@ -97,6 +97,7 @@ SRC = \
   $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
+  $(TOP)/src/btree_rb.c \
   $(TOP)/src/build.c \
   $(TOP)/src/copy.c \
   $(TOP)/src/delete.c \
@@ -187,7 +188,7 @@ target_source:	$(SRC) $(HDR)
 	mkdir tsrc
 	cp $(SRC) $(HDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c tsrc
+	cp parse.c opcodes.c tsrc
 
 # Rules to build the LEMON compiler generator
 #

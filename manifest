@@ -1,6 +1,6 @@
-C Add\sa\sprototype\sfor\sthe\ssqlite_vmprintf()\sfunction\sto\ssqlite.h.\s(CVS\s1008)
-D 2003-06-06T15:44:01
-F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
+C Add\sbtree_rb.c\sand\sopcodes.c\sto\sthe\ssource\sbuilt\sby\sthe\s"target_source"\starget\nof\sthe\smain\smakefile.\s(CVS\s1009)
+D 2003-06-06T16:13:41
+F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION c17038403a026f011620ae647ad73bf04038fdd4
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d01e6fbdde314f2edfcd43fcda3dc8bedb6bf2ba
-R af0151c4aadf0e4deb4d695b7bb1ee7b
+P 048cf55c7da92e363f6a2ab594e17280c9573410
+R 24123d17093bb9adb37edb5fe60ff41b
 U drh
-Z dc35f13e2b46a0752ae6dd9ce93b5233
+Z 96edff991735bfd9ca5acb39a9aa9cd1
