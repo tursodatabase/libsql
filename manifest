@@ -1,5 +1,5 @@
-C Ensure\stests\spass\swhen\sSQLITE_OMIT_COMPOUND_SELECT\sis\sdefined.\s(CVS\s2138)
-D 2004-11-22T13:35:41
+C Fix\sa\scouple\sof\sextra\stest-suite\sproblems\swith\sSQLITE_OMIT_VIEW.\s(CVS\s2139)
+D 2004-11-22T15:05:59
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -148,7 +148,7 @@ F test/memdb.test 532aac7128a3da494cddc4461d76c6e3988f771b
 F test/memleak.test f1fa233f8295dd1d955a00d5e5ee857850f27f29
 F test/minmax.test e7048476940df0af11d0f2cf687572f557cd0b29
 F test/misc1.test 744f60d1025fa978708b96cb222a07a1feb1524a
-F test/misc2.test a655f2453d8b96fedca93b70fab6719cb4e99faa
+F test/misc2.test bc852f1622d98b610d1f3e2ceb36ed7271256050
 F test/misc3.test 928a2f1e1189924ed14e1ae074e34f40688bdf94
 F test/misc4.test c683ab8182172474c804b346f8a39ca786322250
 F test/misuse.test 2d7c46160f7c214f761fc5d030684a37ae8832a6
@@ -171,7 +171,7 @@ F test/select2.test 91a2225926039b0d1687840735c284dbbf89f0bc
 F test/select3.test 9de435aa84fc406708cd8dc1b1d60e7f27cea685
 F test/select4.test 1ae6f2bd6177d4428df8644eb95d09f4568fb149
 F test/select5.test 94db800bbeff2e426c0175e07f7a71d4617853b5
-F test/select6.test fe1c2bfb6921f26468424709bd1427122fb4d494
+F test/select6.test c00d300d90f0ae3fa4e4f4336c71b2345bfa819c
 F test/select7.test b952604c22a5644a065e9e99dc904b5a65565f07
 F test/sort.test 87882e6c72a75d45e98a1c802c1ded0eac557d85
 F test/subselect.test ff3850d0aab1443dafa4ecbdab1d01e58e7b366d
@@ -259,7 +259,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 53894988ac1ad44ec65a1e1c420e2a26eb4c2efd
-R ae883046a665a42e48d31753b3268782
+P 007be591b7829f9ff38e4b14ba5a5043796c2ff3
+R 1c97dc6e7d25c4381776d03b54293b3e
 U danielk1977
-Z a08446cec18a32e6982c35ed9dfce9a2
+Z b013ca9ef6a11eef0f25e62a5e497296

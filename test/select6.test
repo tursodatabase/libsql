@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.14 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: select6.test,v 1.15 2004/11/22 15:05:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -402,6 +402,9 @@ do_test select6-8.2 {
     WHERE  y=p
   }
 } {1 1 11 111 2 2 22 222 2 2 22 222}
+# If view support is omitted from the build, then so is the query 
+# "flattener". So omit this test and test select6-8.6 in that case.
+ifcapable view {
 do_test select6-8.3 {
   is_flat {
     SELECT y, p, q, r FROM
@@ -410,6 +413,7 @@ do_test select6-8.3 {
     WHERE  y=p
   }
 } {1}
+} ;# ifcapable view
 do_test select6-8.4 {
   execsql {
     SELECT DISTINCT y, p, q, r FROM
@@ -429,6 +433,7 @@ do_test select6-8.5 {
     WHERE e.r=f.z
   }
 } {1 1 11 111 111}
+ifcapable view {
 do_test select6-8.6 {
   is_flat {
     SELECT * FROM 
@@ -440,6 +445,7 @@ do_test select6-8.6 {
     WHERE e.r=f.z
   }
 } {1}
+} ;# ifcapable view
 
 
 finish_test
