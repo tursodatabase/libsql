@@ -13,263 +13,368 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.4 2002/01/31 15:54:23 drh Exp $
+# $Id: conflict.test,v 1.5 2002/02/03 00:56:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Create a table with three fields, two of which must be
-# UNIQUE.
+# Create tables for the first group of tests.
 #
-do_test conflict-1.1 {
+do_test conflict-1.0 {
   execsql {
     CREATE TABLE t1(a, b, c, UNIQUE(a,b));
-    INSERT INTO t1 VALUES(1,2,3);
+    CREATE TABLE t2(x);
     SELECT c FROM t1 ORDER BY c;
   }
-} {3}
-do_test conflict-1.2 {
-  catchsql {
-    INSERT INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
-do_test conflict-1.3 {
-  catchsql {
-    INSERT OR IGNORE INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 3}
-do_test conflict-1.4 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 4}
-do_test conflict-1.5 {
-  catchsql {
-    INSERT OR ABORT INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
-do_test conflict-1.6 {
-  catchsql {
-    INSERT OR IGNORE INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 4}
-do_test conflict-1.7 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 5}
-do_test conflict-1.8 {
-  catchsql {
-    INSERT OR ABORT INTO t1 VALUES(1,2,6);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
+} {}
 
-do_test conflict-1.9 {
-  execsql {
-    BEGIN;
-    CREATE TABLE t2(a,b,c);
-    INSERT INTO t2 VALUES(1,2,11);
-    INSERT INTO t2 VALUES(1,2,12);
-    INSERT INTO t2 VALUES(1,2,13);
-    INSERT INTO t2 VALUES(1,2,14);
-    INSERT INTO t2 VALUES(1,3,21);
-    INSERT INTO t2 VALUES(1,3,22);
-    INSERT INTO t2 VALUES(1,3,23);
-    INSERT INTO t2 VALUES(1,3,24);
-    COMMIT;
-    SELECT count(*) FROM t2;
-  }
-} 8
-do_test conflict-1.10 {
-  catchsql {
-    INSERT OR IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 {5 21}}
-do_test conflict-1.11 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 {14 24}}
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf   The conflict resolution algorithm on the BEGIN statement
+#   cmd    An INSERT or REPLACE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "c" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t2
+#
+foreach {i conf cmd t0 t1 t2} {
+  1 {}       INSERT                  1 {}  1
+  2 {}       {INSERT OR IGNORE}      0 3   1
+  3 {}       {INSERT OR REPLACE}     0 4   1
+  4 {}       REPLACE                 0 4   1
+  5 {}       {INSERT OR FAIL}        1 {}  1
+  6 {}       {INSERT OR ABORT}       1 {}  1
+  7 {}       {INSERT OR ROLLBACK}    1 {}  {}
+  8 IGNORE   INSERT                  0 3   1
+  9 IGNORE   {INSERT OR IGNORE}      0 3   1
+ 10 IGNORE   {INSERT OR REPLACE}     0 4   1
+ 11 IGNORE   REPLACE                 0 4   1
+ 12 IGNORE   {INSERT OR FAIL}        1 {}  1
+ 13 IGNORE   {INSERT OR ABORT}       1 {}  1
+ 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
+ 15 REPLACE  INSERT                  0 4   1
+ 16 FAIL     INSERT                  1 {}  1
+ 17 ABORT    INSERT                  1 {}  1
+ 18 ROLLBACK INSERT                  1 {}  {}
+} {
+  do_test conflict-1.$i {
+    if {$conf!=""} {set conf "ON CONFLICT $conf"}
+    set r0 [catch {execsql [subst {
+      DELETE FROM t1;
+      DELETE FROM t2;
+      INSERT INTO t1 VALUES(1,2,3);
+      BEGIN $conf;
+      INSERT INTO t2 VALUES(1); 
+      $cmd INTO t1 VALUES(1,2,4);
+    }]} r1]
+    execsql {COMMIT}
+    if {$r0} {set r1 {}} {set r1 [execsql {SELECT c FROM t1}]}
+    set r2 [execsql {SELECT x FROM t2}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
 
-###### Fix me!
-do_test conflict-1.12 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 {14 24}}
-
-do_test conflict-1.13 {
-  execsql {
-    BEGIN;
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES(1,2,3);
-    INSERT INTO t1 VALUES(1,3,4);
-    INSERT INTO t1 VALUES(2,3,5);
-    COMMIT;
-    SELECT * FROM t1 ORDER BY c;
-  }
-} {1 2 3 1 3 4 2 3 5}
-do_test conflict-1.14 {
-  catchsql {
-    UPDATE OR ABORT t1 SET b=3 WHERE b=2;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}};
-do_test conflict-1.15 {
-  catchsql {
-    UPDATE t1 SET b=3 WHERE b=2;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}};
-do_test conflict-1.16 {
-  catchsql {
-    UPDATE OR IGNORE t1 SET b=3 WHERE b=2;
-    SELECT * FROM t1 ORDER BY c;
-  }
-} {0 {1 2 3 1 3 4 2 3 5}}
-do_test conflict-1.17 {
-  catchsql {
-    UPDATE OR REPLACE t1 SET b=3 WHERE b=2;
-    SELECT * FROM t1 ORDER BY c;
-  }
-} {0 {1 3 3 2 3 5}}
-
-do_test conflict-2.1 {
+# Create tables for the first group of tests.
+#
+do_test conflict-2.0 {
   execsql {
     DROP TABLE t1;
     DROP TABLE t2;
-    CREATE TABLE t1(a integer primary key, b, c, UNIQUE(a,b));
-    CREATE INDEX t1b ON t1(b);
-    CREATE INDEX t1bc ON t1(b,c);
-    INSERT INTO t1 VALUES(1,2,3);
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, UNIQUE(a,b));
+    CREATE TABLE t2(x);
     SELECT c FROM t1 ORDER BY c;
   }
-} {3}
-do_test conflict-2.2 {
-  catchsql {
-    INSERT INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
-do_test conflict-2.3 {
-  catchsql { 
-    INSERT OR IGNORE INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 3}
-do_test conflict-2.4 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 VALUES(1,2,4);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 4}
-do_test conflict-2.5 {
-  catchsql {
-    INSERT OR ABORT INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
-do_test conflict-2.6 {
-  catchsql {
-    INSERT OR IGNORE INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 4}
-do_test conflict-2.7 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 VALUES(1,2,5);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 5}
-do_test conflict-2.8 {
-  catchsql {
-    INSERT OR ABORT INTO t1 VALUES(1,2,6);
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {1 {constraint failed}}
+} {}
 
-do_test conflict-2.9 {
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf   The conflict resolution algorithm on the BEGIN statement
+#   cmd    An INSERT or REPLACE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "c" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t2
+#
+foreach {i conf cmd t0 t1 t2} {
+  1 {}       INSERT                  1 {}  1
+  2 {}       {INSERT OR IGNORE}      0 3   1
+  3 {}       {INSERT OR REPLACE}     0 4   1
+  4 {}       REPLACE                 0 4   1
+  5 {}       {INSERT OR FAIL}        1 {}  1
+  6 {}       {INSERT OR ABORT}       1 {}  1
+  7 {}       {INSERT OR ROLLBACK}    1 {}  {}
+  8 IGNORE   INSERT                  0 3   1
+  9 IGNORE   {INSERT OR IGNORE}      0 3   1
+ 10 IGNORE   {INSERT OR REPLACE}     0 4   1
+ 11 IGNORE   REPLACE                 0 4   1
+ 12 IGNORE   {INSERT OR FAIL}        1 {}  1
+ 13 IGNORE   {INSERT OR ABORT}       1 {}  1
+ 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
+ 15 REPLACE  INSERT                  0 4   1
+ 16 FAIL     INSERT                  1 {}  1
+ 17 ABORT    INSERT                  1 {}  1
+ 18 ROLLBACK INSERT                  1 {}  {}
+} {
+  do_test conflict-2.$i {
+    if {$conf!=""} {set conf "ON CONFLICT $conf"}
+    set r0 [catch {execsql [subst {
+      DELETE FROM t1;
+      DELETE FROM t2;
+      INSERT INTO t1 VALUES(1,2,3);
+      BEGIN $conf;
+      INSERT INTO t2 VALUES(1); 
+      $cmd INTO t1 VALUES(1,2,4);
+    }]} r1]
+    execsql {COMMIT}
+    if {$r0} {set r1 {}} {set r1 [execsql {SELECT c FROM t1}]}
+    set r2 [execsql {SELECT x FROM t2}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
+
+# Create tables for the first group of tests.
+#
+do_test conflict-3.0 {
   execsql {
-    BEGIN;
-    CREATE TABLE t2(a,b,c INTEGER PRIMARY KEY);
-    INSERT INTO t2 VALUES(1,2,11);
-    INSERT INTO t2 VALUES(1,2,12);
-    INSERT INTO t2 VALUES(1,2,13);
-    INSERT INTO t2 VALUES(1,2,14);
-    INSERT INTO t2 VALUES(2,2,21);
-    INSERT INTO t2 VALUES(2,2,22);
-    INSERT INTO t2 VALUES(2,2,23);
-    INSERT INTO t2 VALUES(2,2,24);
-    COMMIT;
-    SELECT count(*) FROM t2;
-  }
-} 8
-do_test conflict-2.10 {
-  catchsql {
-    INSERT OR IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
+    DROP TABLE t1;
+    DROP TABLE t2;
+    CREATE TABLE t1(a, b, c INTEGER PRIMARY KEY, UNIQUE(a,b));
+    CREATE TABLE t2(x);
     SELECT c FROM t1 ORDER BY c;
   }
-} {0 {5 21}}
-do_test conflict-2.11 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 {14 24}}
+} {}
 
-###### Fix me!
-do_test conflict-2.12 {
-  catchsql {
-    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
-    SELECT c FROM t1 ORDER BY c;
-  }
-} {0 {14 24}}
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf   The conflict resolution algorithm on the BEGIN statement
+#   cmd    An INSERT or REPLACE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "c" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t2
+#
+foreach {i conf cmd t0 t1 t2} {
+  1 {}       INSERT                  1 {}  1
+  2 {}       {INSERT OR IGNORE}      0 3   1
+  3 {}       {INSERT OR REPLACE}     0 4   1
+  4 {}       REPLACE                 0 4   1
+  5 {}       {INSERT OR FAIL}        1 {}  1
+  6 {}       {INSERT OR ABORT}       1 {}  1
+  7 {}       {INSERT OR ROLLBACK}    1 {}  {}
+  8 IGNORE   INSERT                  0 3   1
+  9 IGNORE   {INSERT OR IGNORE}      0 3   1
+ 10 IGNORE   {INSERT OR REPLACE}     0 4   1
+ 11 IGNORE   REPLACE                 0 4   1
+ 12 IGNORE   {INSERT OR FAIL}        1 {}  1
+ 13 IGNORE   {INSERT OR ABORT}       1 {}  1
+ 14 IGNORE   {INSERT OR ROLLBACK}    1 {}  {}
+ 15 REPLACE  INSERT                  0 4   1
+ 16 FAIL     INSERT                  1 {}  1
+ 17 ABORT    INSERT                  1 {}  1
+ 18 ROLLBACK INSERT                  1 {}  {}
+} {
+  do_test conflict-3.$i {
+    if {$conf!=""} {set conf "ON CONFLICT $conf"}
+    set r0 [catch {execsql [subst {
+      DELETE FROM t1;
+      DELETE FROM t2;
+      INSERT INTO t1 VALUES(1,2,3);
+      BEGIN $conf;
+      INSERT INTO t2 VALUES(1); 
+      $cmd INTO t1 VALUES(1,2,4);
+    }]} r1]
+    execsql {COMMIT}
+    if {$r0} {set r1 {}} {set r1 [execsql {SELECT c FROM t1}]}
+    set r2 [execsql {SELECT x FROM t2}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
 
-do_test conflict-2.13 {
+do_test conflict-4.0 {
   execsql {
-    BEGIN;
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES(1,2,3);
-    INSERT INTO t1 VALUES(2,3,4);
-    INSERT INTO t1 VALUES(3,3,5);
-    COMMIT;
-    SELECT * FROM t1 ORDER BY c;
+    DROP TABLE t2;
+    CREATE TABLE t2(x);
+    SELECT x FROM t2;
   }
-} {1 2 3 2 3 4 3 3 5}
-do_test conflict-2.14 {
-  catchsql {
-    UPDATE OR ABORT t1 SET a=2, b=3 WHERE b=2;
-    SELECT c FROM t1 ORDER BY c;
+} {}
+
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf1  The conflict resolution algorithm on the UNIQUE constraint
+#   conf2  The conflict resolution algorithm on the BEGIN statement
+#   cmd    An INSERT or REPLACE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "c" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t2
+#
+foreach {i conf1 conf2 cmd t0 t1 t2} {
+  1 {}       {}       INSERT                  1 {}  1
+  2 REPLACE  {}       INSERT                  0 4   1
+  3 IGNORE   {}       INSERT                  0 3   1
+  4 FAIL     {}       INSERT                  1 {}  1
+  5 ABORT    {}       INSERT                  1 {}  1
+  6 ROLLBACK {}       INSERT                  1 {}  {}
+  7 REPLACE  {}       {INSERT OR IGNORE}      0 3   1
+  8 IGNORE   {}       {INSERT OR REPLACE}     0 4   1
+  9 FAIL     {}       {INSERT OR IGNORE}      0 3   1
+ 10 ABORT    {}       {INSERT OR REPLACE}     0 4   1
+ 11 ROLLBACK {}       {INSERT OR IGNORE }     0 3   1
+ 12 REPLACE  IGNORE   INSERT                  0 4   1
+ 13 IGNORE   REPLACE  INSERT                  0 3   1
+ 14 FAIL     IGNORE   INSERT                  1 {}  1
+ 15 ABORT    REPLACE  INSERT                  1 {}  1
+ 16 ROLLBACK IGNORE   INSERT                  1 {}  {}
+} {
+  do_test conflict-4.$i {
+    if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
+    if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
+    set r0 [catch {execsql [subst {
+      DROP TABLE t1;
+      CREATE TABLE t1(a,b,c,UNIQUE(a,b) $conf1);
+      DELETE FROM t2;
+      INSERT INTO t1 VALUES(1,2,3);
+      BEGIN $conf2;
+      INSERT INTO t2 VALUES(1); 
+      $cmd INTO t1 VALUES(1,2,4);
+    }]} r1]
+    execsql {COMMIT}
+    if {$r0} {set r1 {}} {set r1 [execsql {SELECT c FROM t1}]}
+    set r2 [execsql {SELECT x FROM t2}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
+
+do_test conflict-5.0 {
+  execsql {
+    DROP TABLE t2;
+    CREATE TABLE t2(x);
+    SELECT x FROM t2;
   }
-} {1 {constraint failed}};
-do_test conflict-2.15 {
-  catchsql {
-    UPDATE t1 SET a=2, b=3 WHERE b=2;
-    SELECT c FROM t1 ORDER BY c;
+} {}
+
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf1  The conflict resolution algorithm on the NOT NULL constraint
+#   conf2  The conflict resolution algorithm on the BEGIN statement
+#   cmd    An INSERT or REPLACE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "c" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t2
+#
+foreach {i conf1 conf2 cmd t0 t1 t2} {
+  1 {}       {}       INSERT                  1 {}  1
+  2 REPLACE  {}       INSERT                  0 5   1
+  3 IGNORE   {}       INSERT                  0 {}  1
+  4 FAIL     {}       INSERT                  1 {}  1
+  5 ABORT    {}       INSERT                  1 {}  1
+  6 ROLLBACK {}       INSERT                  1 {}  {}
+  7 REPLACE  {}       {INSERT OR IGNORE}      0 {}  1
+  8 IGNORE   {}       {INSERT OR REPLACE}     0 5   1
+  9 FAIL     {}       {INSERT OR IGNORE}      0 {}  1
+ 10 ABORT    {}       {INSERT OR REPLACE}     0 5   1
+ 11 ROLLBACK {}       {INSERT OR IGNORE}      0 {}  1
+ 12 {}       {}       {INSERT OR IGNORE}      0 {}  1
+ 13 {}       {}       {INSERT OR REPLACE}     0 5   1
+ 14 {}       {}       {INSERT OR FAIL}        1 {}  1
+ 15 {}       {}       {INSERT OR ABORT}       1 {}  1
+ 16 {}       {}       {INSERT OR ROLLBACK}    1 {}  {}
+ 17 {}       IGNORE   INSERT                  0 {}  1
+ 18 {}       REPLACE  INSERT                  0 5   1
+ 19 {}       FAIL     INSERT                  1 {}  1
+ 20 {}       ABORT    INSERT                  1 {}  1
+ 21 {}       ROLLBACK INSERT                  1 {}  {}
+ 22 REPLACE  FAIL     INSERT                  0 5   1
+ 23 IGNORE   ROLLBACK INSERT                  0 {}  1
+} {
+  if {$t0} {set t1 {constraint failed}}
+  do_test conflict-5.$i {
+    if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
+    if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
+    set r0 [catch {execsql [subst {
+      DROP TABLE t1;
+      CREATE TABLE t1(a,b,c NOT NULL $conf1 DEFAULT 5);
+      DELETE FROM t2;
+      BEGIN $conf2;
+      INSERT INTO t2 VALUES(1); 
+      $cmd INTO t1 VALUES(1,2,NULL);
+    }]} r1]
+    execsql {COMMIT}
+    if {!$r0} {set r1 [execsql {SELECT c FROM t1}]}
+    set r2 [execsql {SELECT x FROM t2}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
+
+do_test conflict-6.0 {
+  execsql {
+    DROP TABLE t2;
+    CREATE TABLE t2(a,b,c);
+    INSERT INTO t2 VALUES(1,2,1);
+    INSERT INTO t2 VALUES(2,3,2);
+    INSERT INTO t2 VALUES(3,4,1);
+    INSERT INTO t2 VALUES(4,5,4);
+    SELECT c FROM t2 ORDER BY b;
+    CREATE TABLE t3(x);
+    INSERT INTO t3 VALUES(1);
   }
-} {1 {constraint failed}};
-do_test conflict-2.16 {
-  catchsql {
-    UPDATE OR IGNORE t1 SET a=2, b=3 WHERE b=2;
-    SELECT * FROM t1 ORDER BY c;
-  }
-} {0 {1 2 3 2 3 4 3 3 5}}
-do_test conflict-2.17 {
-  catchsql {
-    UPDATE OR REPLACE t1 SET a=2, b=3 WHERE b=2;
-    SELECT * FROM t1 ORDER BY c;
-  }
-} {0 {2 3 3 3 3 5}}
+} {1 2 1 4}
+
+# Six columns of configuration data as follows:
+#
+#   i      The reference number of the test
+#   conf1  The conflict resolution algorithm on the UNIQUE constraint
+#   conf2  The conflict resolution algorithm on the BEGIN statement
+#   cmd    An UPDATE command to execute against table t1
+#   t0     True if there is an error from $cmd
+#   t1     Content of "b" column of t1 assuming no error in $cmd
+#   t2     Content of "x" column of t3
+#
+foreach {i conf1 conf2 cmd t0 t1 t2} {
+  1 {}       {}       UPDATE                  1 {6 7 8 9}  1
+  2 REPLACE  {}       UPDATE                  0 {7 6 9}    1
+  3 IGNORE   {}       UPDATE                  0 {6 7 3 9}  1
+  4 FAIL     {}       UPDATE                  1 {6 7 3 4}  1
+  5 ABORT    {}       UPDATE                  1 {1 2 3 4}  1
+  6 ROLLBACK {}       UPDATE                  1 {1 2 3 4}  0
+  7 REPLACE  {}       {UPDATE OR IGNORE}      0 {6 7 3 9}  1
+  8 IGNORE   {}       {UPDATE OR REPLACE}     0 {7 6 9}    1
+  9 FAIL     {}       {UPDATE OR IGNORE}      0 {6 7 3 9}  1
+ 10 ABORT    {}       {UPDATE OR REPLACE}     0 {7 6 9}    1
+ 11 ROLLBACK {}       {UPDATE OR IGNORE}      0 {6 7 3 9}   1
+ 12 {}       {}       {UPDATE OR IGNORE}      0 {6 7 3 9}  1
+ 13 {}       {}       {UPDATE OR REPLACE}     0 {7 6 9}    1
+ 14 {}       {}       {UPDATE OR FAIL}        1 {6 7 3 4}  1
+ 15 {}       {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1
+ 16 {}       {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0
+ 17 {}       IGNORE   UPDATE                  0 {6 7 3 9}  1
+ 18 {}       REPLACE  UPDATE                  0 {7 6 9}    1
+ 19 {}       FAIL     UPDATE                  1 {6 7 3 4}  1
+ 20 {}       ABORT    UPDATE                  1 {1 2 3 4}  1
+ 21 {}       ROLLBACK UPDATE                  1 {1 2 3 4}  0
+ 22 REPLACE  FAIL     UPDATE                  0 {7 6 9}    1
+ 23 IGNORE   ROLLBACK UPDATE                  0 {6 7 3 9}  1
+} {
+  if {$t0} {set t1 {constraint failed}}
+  do_test conflict-6.$i {
+    if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
+    if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
+    set r0 [catch {execsql [subst {
+      DROP TABLE t1;
+      CREATE TABLE t1(a,b,c, UNIQUE(a) $conf1);
+      INSERT INTO t1 SELECT * FROM t2;
+      UPDATE t3 SET x=0;
+      BEGIN $conf2;
+      $cmd t3 SET x=1;
+      $cmd t1 SET a=c+5;
+    }]} r1]
+    execsql {COMMIT}
+    if {!$r0} {set r1 [execsql {SELECT a FROM t1 ORDER BY b}]}
+    set r2 [execsql {SELECT x FROM t3}]
+    list $r0 $r1 $r2
+  } [list $t0 $t1 $t2]
+}
 
 
 finish_test

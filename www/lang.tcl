@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.20 2002/01/31 15:54:23 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.21 2002/02/03 00:56:11 drh Exp $}
 
 puts {<html>
 <head>
@@ -42,6 +42,7 @@ foreach {section} [lsort -index 0 -dictionary {
   {{DROP TABLE} droptable}
   {{DROP INDEX} dropindex}
   {INSERT insert}
+  {REPLACE replace}
   {DELETE delete}
   {UPDATE update}
   {SELECT select}
@@ -61,7 +62,7 @@ the sequel.</p>
 }
 
 proc Syntax {args} {
-  puts {<table cellpadding="15">}
+  puts {<table cellpadding="10">}
   foreach {rule body} $args {
     puts "<tr><td align=\"right\" valign=\"top\">"
     puts "<i><font color=\"#ff3434\">$rule</font></i>&nbsp;::=</td>"
@@ -105,7 +106,7 @@ proc Example {text} {
 Section {BEGIN TRANSACTION} createindex
 
 Syntax {sql-statement} {
-BEGIN [TRANSACTION [<name>]]
+BEGIN [TRANSACTION [<name>]] [ON CONFLICT <conflict-algorithm>]
 }
 Syntax {sql-statement} {
 END [TRANSACTION [<name>]]
@@ -119,9 +120,7 @@ ROLLBACK [TRANSACTION [<name>]]
 
 puts {
 <p>Beginning in version 2.0, SQLite supports transactions with
-rollback and atomic commit.  However, only a single level of
-transaction is allowed.  Transactions may not be nested.
-</p>
+rollback and atomic commit.</p>
 
 <p>
 No changes can be made to the database except within a transaction.
@@ -132,52 +131,32 @@ are committed at the conclusion of the command.
 </p>
 
 <p>
-Transactions can be started manually using the BEGIN TRANSACTION
-command. Such transactions persist until a COMMIT or ROLLBACK
-or until an error occurs or the database is closed.  If an
-error is encountered or the database is closed, the transaction
-is automatically rolled back.  The END TRANSACTION command is
-a alias for COMMIT.
+Transactions can be started manually using the BEGIN
+command. Such transactions usually persist until the next
+COMMIT or ROLLBACK command. But a transaction will also 
+ROLLBACK if the database is closed or if an error occurs
+and the ROLLBACK conflict resolution algorithm is specified.
+See the documention on the <a href="#conflict">ON CONFLICT</a>
+clause for additional information about the ROLLBACK
+conflict resolution algorithm.
 </p>
-}
 
-Section {ON CONFLICT clause} conflict
-
-Syntax {conflict-clause} {
-ON CONFLICT <algorithm>
-} {algorithm} {
-ABORT | IGNORE | REPLACE
-}
-
-puts {
-<p>The ON CONFLICT clause is not a separate SQL command.  It is a
-non-standard clause that can appear in many other SQL commands.
-It is given its own section in this document because it is not
-part of standard SQL and therefore might not be familiar.</p>
-
-<p>The ON CONFLICT clause specifies an algorithm used to resolve
-constraint conflicts.  The default algorithm is ABORT.  When the
-ABORT algorithm is in use, any constraint violation causes the
-command to abort and the current transaction to be rolled back.
-This is the only behavior exhibited by most SQL engines.  But
-SQLite allows two alternative behaviors: IGNORE and REPLACE.
-The IGNORE algorithm means that when a constraint violation occurs
-on a COPY, INSERT or UPDATE, the particular row that caused the constraint
-violation is not inserted or changed, but other rows effected by the
-COPY, INSERT, or UPDATE are insert or changed as usual.
-The command is not aborted and no rollback occurs.
-If the algorithm is REPLACE, then SQLite tries to
-delete preexisting rows from the table to remove the constraint
-violation before inserting or changing the row.</p>
-
-<p>For additional information, see 
-<a href="conflict.html">conflict.html</a>.</p>
+<p>
+The optional ON CONFLICT clause at the end of a BEGIN statement
+can be used to changed the default conflict resolution algorithm.
+The normal default is ABORT.  If an alternative is specified by
+the ON CONFLICT clause of a BEGIN, then that alternative is used
+as the default for all commands within the transaction.  The default
+algorithm is overridden by ON CONFLICT clauses on individual
+constraints within the CREATE TABLE or CREATE INDEX statements
+and by the OR clauses on COPY, INSERT, and UPDATE commands.
+</p>
 }
 
 Section COPY copy
 
 Syntax {sql-statement} {
-COPY [ <conflict-clause> ] <table-name> FROM <filename>
+COPY [ OR <conflict-algorithm> ] <table-name> FROM <filename>
 [ USING DELIMITERS <delim> ]
 }
 
@@ -219,7 +198,7 @@ Section {CREATE INDEX} createindex
 Syntax {sql-statement} {
 CREATE [UNIQUE] INDEX <index-name> 
 ON <table-name> ( <column-name> [, <column-name>]* )
-[ <conflict-clause> ]
+[ ON CONFLICT <conflict-algorithm> ]
 } {column-name} {
 <name> [ ASC | DESC ]
 }
@@ -282,6 +261,8 @@ DEFAULT <value>
 PRIMARY KEY ( <name> [, <name>]* ) [ <conflict-clause> ]|
 UNIQUE ( <name> [, <name>]* ) [ <conflict-clause> ] |
 CHECK ( <expr> ) [ <conflict-clause> ]
+} {conflict-clause} {
+ON CONFLICT <conflict-algorithm>
 }
 
 puts {
@@ -563,8 +544,8 @@ The "<b>count(*)</b>" syntax is supported but
 Section INSERT insert
 
 Syntax {sql-statement} {
-INSERT [ <conflict-clause> ] INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
-INSERT [ <conflict-clause> ] INTO <table-name> [( <column-list> )] <select-statement>
+INSERT [OR <conflict-algorithm>] INTO <table-name> [(<column-list>)] VALUES(<value-list>) |
+INSERT [OR <conflict-algorithm>] INTO <table-name> [(<column-list>)] <select-statement>
 }
 
 puts {
@@ -590,7 +571,199 @@ the ORDER BY is ignored.</p>
 <p>The optional conflict-clause allows the specification of an alternative
 constraint conflict resolution algorithm to use during this one command.
 See the section titled
-<a href="#conflict">ON CONFLICT</a> for additional information.</p>
+<a href="#conflict">ON CONFLICT</a> for additional information.
+For compatibility with MySQL, the parser allows the use of the
+single keyword "REPLACE" as an alias for "INSERT OR REPLACE".
+</p>
+}
+
+Section {ON CONFLICT clause} conflict
+
+Syntax {conflict-clause} {
+ON CONFLICT <conflict-algorithm>
+} {conflict-algorithm} {
+ROLLBACK | ABORT | FAIL | IGNORE | REPLACE
+}
+
+puts {
+<p>The ON CONFLICT clause is not a separate SQL command.  It is a
+non-standard clause that can appear in many other SQL commands.
+It is given its own section in this document because it is not
+part of standard SQL and therefore might not be familiar.</p>
+
+<p>The syntax for the ON CONFLICT clause is as shown above for
+the CREATE TABLE, CREATE INDEX, and BEGIN TRANSACTION commands.
+For the COPY, INSERT, and UPDATE commands, the keywords
+"ON CONFLICT" are replaced by "OR", to make the syntax seem more
+natural.  But the meaning of the clause is the same either way.</p>
+
+<p>The ON CONFLICT clause specifies an algorithm used to resolve
+constraint conflicts.  There are five choices: ROLLBACK, ABORT,
+FAIL, IGNORE, and REPLACE. The default algorithm is ABORT.  This
+is what they mean:</p>
+
+<dl>
+<dt><b>ROLLBACK</b></dt>
+<dd><p>When a constraint violation occurs, an immediate ROLLBACK
+occurs, thus ending the current transaction, and the command aborts
+with a return code of SQLITE_CONSTRAINT.  If no transaction is
+active (other than the implied transaction that is created on every
+command) then this algorithm works the same as ABORT.</p></dd>
+
+<dt><b>ABORT</b></dt>
+<dd><p>When a constraint violation occurs, the command backs out
+any prior changes it might have made and aborts with a return code
+of SQLITE_CONSTRAINT.  But no ROLLBACK is executed so changes
+from prior commands within the same transaction
+are preserved.  This is the default behavior.</p></dd>
+
+<dt><b>FAIL</b></dt>
+<dd><p>When a constraint violation occurs, the command aborts with a
+return code SQLITE_CONSTRAINT.  But any changes to the database that
+the command made prior to encountering the constraint violation
+are preserved and are not backed out.  For example, if an UPDATE
+statement encountered a constraint violation on the 100th row that
+it attempts to update, then the first 99 row changes are preserved
+by change to rows 100 and beyond never occur.</p></dd>
+
+<dt><b>IGNORE</b></dt>
+<dd><p>When a constraint violation occurs, the one row that contains
+the constraint violation is not inserted or changed.  But the command
+continues executing normally.  Other rows before and after the row that
+contained the constraint violation continue to be inserted or updated
+normally.  No error is returned.</p></dd>
+
+<dt><b>REPLACE</b></dt>
+<dd><p>When a UNIQUE constraint violation occurs, the pre-existing row
+that is causing the constraint violation is removed prior to inserting
+or updating the current row.  Thus the insert or update always occurs.
+The command continues executing normally.  No error is returned.</p></dd>
+</dl>
+
+<p>
+The conflict resolution algorithm can be specified in three places,
+in order from lowest to highest precedence:
+</p>
+
+<ol>
+<li><p>
+On a BEGIN TRANSACTION command.
+</p></li>
+
+<li><p>
+On individual constraints within a CREATE TABLE or CREATE INDEX
+statement.
+</p></li>
+
+<li><p>
+In the OR clause of a COPY, INSERT, or UPDATE command.
+</p></li>
+</ol>
+
+<p>The algorithm specified in the OR clause of a COPY, INSERT, or UPDATE
+overrides any algorithm specified by a CREATE TABLE or CREATE INDEX.
+The algorithm specified within a CREATE TABLE or CREATE INDEX will, in turn,
+override the algorithm specified by a BEGIN TRANSACTION command.
+If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
+
+}
+# <p>For additional information, see 
+# <a href="conflict.html">conflict.html</a>.</p>
+
+
+Section PRAGMA pragma
+
+Syntax {sql-statement} {
+PRAGMA <name> = <value> |
+PRAGMA <function>(<arg>)
+}
+
+puts {
+<p>The PRAGMA command is used to modify the operation of the SQLite library.
+The pragma command is experimental and specific pragma statements may
+removed or added in future releases of SQLite.  Use this command
+with caution.</p>
+
+<p>The current implementation supports the following pragmas:</p>
+
+<ul>
+<li><p><b>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
+    <p>Change the maximum number of database disk pages that SQLite
+    will hold in memory at once.  Each page uses about 1.5K of RAM.
+    The default cache size is 100.  If you are doing UPDATEs or DELETEs
+    that change many rows of a database and you do not mind if SQLite
+    uses more memory, you can increase the cache size for a possible speed
+    improvement.</p></li>
+
+<li><p><b>PRAGMA count_changes = ON;
+       <br>PRAGMA count_changes = OFF;</b></p>
+    <p>When on, the COUNT_CHANGES pragma causes the callback function to
+    be invoked once for each DELETE, INSERT, or UPDATE operation.  The
+    argument is the number of rows that were changed.</p>
+
+<li><p><b>PRAGMA empty_result_callbacks = ON;
+       <br>PRAGMA empty_result_callbacks = OFF;</b></p>
+    <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
+    function to be invoked once for each query that has an empty result
+    set.  The third "<b>argv</b>" parameter to the callback is set to NULL
+    because there is no data to report.  But the second "<b>argc</b>" and
+    fourth "<b>columnNames</b>" parameters are valid and can be used to
+    determine the number and names of the columns that would have been in
+    the result set had the set not been empty.</p>
+
+<li><p><b>PRAGMA full_column_names = ON;
+       <br>PRAGMA full_column_names = OFF;</b></p>
+    <p>The column names reported in an SQLite callback are normally just
+    the name of the column itself, except for joins when "TABLE.COLUMN"
+    is used.  But when full_column_names is turned on, column names are
+    always reported as "TABLE.COLUMN" even for simple queries.</p></li>
+
+<li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
+    <p>For each column that the named index references, invoke the 
+    callback function
+    once with information about that column, including the column name,
+    and the column number.</p>
+
+<li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
+    <p>For each index on the named table, invoke the callback function
+    once with information about that index.  Arguments include the
+    index name and a flag to indicate whether or not the index must be
+    unique.</p>
+
+<li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
+    <p>Turn tracing of the SQL parser inside of the
+    SQLite library on and off.  This is used for debugging.
+    This only works if the library is compiled without the NDEBUG macro.
+    </p></li>
+
+<li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
+    <p>For each column in the named table, invoke the callback function
+    once with information about that column, including the column name,
+    data type, whether or not the column can be NULL, and the default
+    value for the column.</p>
+
+<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
+    <p>Turn tracing of the virtual database engine inside of the
+    SQLite library on and off.  This is used for debugging.</p></li>
+</ul>
+
+<p>No error message is generated if an unknown pragma is issued.
+Unknown pragmas are ignored.</p>
+}
+
+Section REPLACE replace
+
+Syntax {sql-statement} {
+REPLACE INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
+REPLACE INTO <table-name> [( <column-list> )] <select-statement>
+}
+
+puts {
+<p>The REPLACE command is an alias for the "INSERT OR REPLACE" variant
+of the <a href="#insert">INSERT command</a>.  This alias is provided for
+compatibility with MySQL.  See the 
+<a href="#insert">INSERT command</a> documentation for additional
+information.</p>  
 }
 
 Section SELECT select
@@ -675,7 +848,7 @@ are connected into a compound, they group from left to right.</p>
 Section UPDATE update
 
 Syntax {sql-statement} {
-UPDATE [ <conflict-clause> ] <table-name>
+UPDATE [ OR <conflict-algorithm> ] <table-name>
 SET <assignment> [, <assignment>] 
 [WHERE <expression>]
 } {assignment} {
@@ -713,89 +886,6 @@ the database backend and VACUUM has become a no-op.
 </p>
 }
 
-Section PRAGMA pragma
-
-Syntax {sql-statement} {
-PRAGMA <name> = <value> |
-PRAGMA <function>(<arg>)
-}
-
-puts {
-<p>The PRAGMA command is used to modify the operation of the SQLite library.
-The pragma command is experimental and specific pragma statements may
-removed or added in future releases of SQLite.  Use this command
-with caution.</p>
-
-<p>The current implementation supports the following pragmas:</p>
-
-<ul>
-<li><p><b>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
-    <p>Change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses about 1.5K of RAM.
-    The default cache size is 100.  If you are doing UPDATEs or DELETEs
-    that change many rows of a database and you do not mind if SQLite
-    uses more memory, you can increase the cache size for a possible speed
-    improvement.</p></li>
-
-<li><p><b>PRAGMA count_changes = ON;
-       <br>PRAGMA count_changes = OFF;</b></p>
-    <p>When on, the COUNT_CHANGES pragma causes the callback function to
-    be invoked once for each DELETE, INSERT, or UPDATE operation.  The
-    argument is the number of rows that were changed.</p>
-
-<li><p><b>PRAGMA empty_result_callbacks = ON;
-       <br>PRAGMA empty_result_callbacks = OFF;</b></p>
-    <p>When on, the EMPTY_RESULT_CALLBACKS pragma causes the callback
-    function to be invoked once for each query that has an empty result
-    set.  The third "<b>argv</b>" parameter to the callback is set to NULL
-    because there is no data to report.  But the second "<b>argc</b>" and
-    fourth "<b>columnNames</b>" parameters are valid and can be used to
-    determine the number and names of the columns that would have been in
-    the result set had the set not been empty.</p>
-
-<li><p><b>PRAGMA full_column_names = ON;
-       <br>PRAGMA full_column_names = OFF;</b></p>
-    <p>The column names reported in an SQLite callback are normally just
-    the name of the column itself, except for joins when "TABLE.COLUMN"
-    is used.  But when full_column_names is turned on, column names are
-    always reported as "TABLE.COLUMN" even for simple queries.</p></li>
-
-<li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
-    <p>For each column that the named index references, invoke the 
-    callback function
-    once with information about that column, including the column name,
-    and the column number.</p>
-
-<li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
-    <p>For each index on the named table, invoke the callback function
-    once with information about that index.  Arguments include the
-    index name and a flag to indicate whether or not the index must be
-    unique.</p>
-
-<li><p><b>PRAGMA parser_trace = ON;<br>PRAGMA parser_trace = OFF;</b></p>
-    <p>Turn tracing of the SQL parser inside of the
-    SQLite library on and off.  This is used for debugging.
-    This only works if the library is compiled without the NDEBUG macro.
-    </p></li>
-
-<li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
-    <p>For each column in the named table, invoke the callback function
-    once with information about that column, including the column name,
-    data type, whether or not the column can be NULL, and the default
-    value for the column.</p>
-
-<li><p><b>PRAGMA vdbe_trace = ON;<br>PRAGMA vdbe_trace = OFF;</b></p>
-    <p>Turn tracing of the virtual database engine inside of the
-    SQLite library on and off.  This is used for debugging.</p></li>
-</ul>
-
-<p>No error message is generated if an unknown pragma is issued.
-Unknown pragmas are ignored.</p>
-}
-
-puts {
-<p></p>
-}
 
 puts {
 <p><hr /></p>

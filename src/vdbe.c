@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.114 2002/02/02 18:49:21 drh Exp $
+** $Id: vdbe.c,v 1.115 2002/02/03 00:56:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4511,10 +4511,9 @@ cleanup:
         break;
       }
     }
-  }else{
-    sqliteBtreeCommitCkpt(pBt);
-    if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
-  }   
+  }
+  sqliteBtreeCommitCkpt(pBt);
+  if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()

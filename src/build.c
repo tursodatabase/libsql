@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.71 2002/02/02 18:49:20 drh Exp $
+** $Id: build.c,v 1.72 2002/02/03 00:56:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -518,7 +518,6 @@ void sqliteAddNotNull(Parse *pParse, int onError){
   int i;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
-  if( onError==OE_Default ) onError = OE_Abort;
   if( i>=0 ) p->aCol[i].notNull = onError;
 }
 
@@ -618,7 +617,6 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   if( iCol>=0 && iCol<pTab->nCol ){
     zType = pTab->aCol[iCol].zType;
   }
-  if( onError==OE_Default ) onError = OE_Abort;
   if( pParse->db->file_format>=1 && 
            zType && sqliteStrICmp(zType, "INTEGER")==0 ){
     pTab->iPKey = iCol;
@@ -854,7 +852,6 @@ void sqliteCreateIndex(
   int hideName = 0;         /* Do not put table name in the hash table */
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
-  if( onError==OE_Default ) onError = OE_Abort;
 
   /*
   ** Find the table that is to be indexed.  Return early if not found.

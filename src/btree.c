@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.47 2002/02/02 18:49:20 drh Exp $
+** $Id: btree.c,v 1.48 2002/02/03 00:56:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -816,7 +816,9 @@ int sqliteBtreeRollback(Btree *pBt){
 */
 int sqliteBtreeBeginCkpt(Btree *pBt){
   int rc;
-  if( !pBt->inTrans || pBt->inCkpt ) return SQLITE_ERROR;
+  if( !pBt->inTrans || pBt->inCkpt ){
+    return SQLITE_ERROR;
+  }
   rc = sqlitepager_ckpt_begin(pBt->pPager);
   pBt->inCkpt = 1;
   return rc;
@@ -834,6 +836,7 @@ int sqliteBtreeCommitCkpt(Btree *pBt){
   }else{
     rc = SQLITE_OK;
   }
+  pBt->inCkpt = 0;
   return rc;
 }
 
@@ -856,6 +859,7 @@ int sqliteBtreeRollbackCkpt(Btree *pBt){
     }
   }
   rc = sqlitepager_ckpt_rollback(pBt->pPager);
+  pBt->inCkpt = 0;
   return rc;
 }
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.40 2002/02/02 18:49:20 drh Exp $
+** $Id: insert.c,v 1.41 2002/02/03 00:56:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -396,9 +396,6 @@ void sqliteGenerateConstraintChecks(
   v = sqliteGetVdbe(pParse);
   assert( v!=0 );
   nCol = pTab->nCol;
-  if( overrideError==OE_Default ){
-    overrideError = pParse->db->onError;
-  }
 
   /* Test all NOT NULL constraints.
   */
@@ -412,7 +409,8 @@ void sqliteGenerateConstraintChecks(
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = pParse->db->onError;
+      if( onError==OE_Default ) onError = OE_Abort;
     }
     if( onError==OE_Replace && pTab->aCol[i].zDflt==0 ){
       onError = OE_Abort;
@@ -447,35 +445,37 @@ void sqliteGenerateConstraintChecks(
 
   /* Test all UNIQUE constraints.  Add index records as we go.
   */
-  if( (recnoChng || !isUpdate) && pTab->iPKey>=0 && pTab->keyConf!=OE_Replace 
-      && overrideError!=OE_Replace ){
-    sqliteVdbeAddOp(v, OP_Dup, nCol, 1);
-    jumpInst = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
+  if( (recnoChng || !isUpdate) && pTab->iPKey>=0 ){
     onError = pTab->keyConf;
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = pParse->db->onError;
+      if( onError==OE_Default ) onError = OE_Abort;
     }
-    switch( onError ){
-      case OE_Rollback:
-      case OE_Abort:
-      case OE_Fail: {
-        sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, onError);
-        break;
+    if( onError!=OE_Replace ){
+      sqliteVdbeAddOp(v, OP_Dup, nCol, 1);
+      jumpInst = sqliteVdbeAddOp(v, OP_NotExists, base, 0);
+      switch( onError ){
+        case OE_Rollback:
+        case OE_Abort:
+        case OE_Fail: {
+          sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, onError);
+          break;
+        }
+        case OE_Ignore: {
+          sqliteVdbeAddOp(v, OP_Pop, nCol+1+hasTwoRecnos, 0);
+          sqliteVdbeAddOp(v, OP_Goto, 0, ignoreDest);
+          break;
+        }
+        default: assert(0);
       }
-      case OE_Ignore: {
-        sqliteVdbeAddOp(v, OP_Pop, nCol+1+hasTwoRecnos, 0);
-        sqliteVdbeAddOp(v, OP_Goto, 0, ignoreDest);
-        break;
+      contAddr = sqliteVdbeCurrentAddr(v);
+      sqliteVdbeChangeP2(v, jumpInst, contAddr);
+      if( isUpdate ){
+        sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
+        sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
       }
-      default: assert(0);
-    }
-    contAddr = sqliteVdbeCurrentAddr(v);
-    sqliteVdbeChangeP2(v, jumpInst, contAddr);
-    if( isUpdate ){
-      sqliteVdbeAddOp(v, OP_Dup, nCol+1, 1);
-      sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
     }
   }
   extra = 0;
@@ -497,7 +497,8 @@ void sqliteGenerateConstraintChecks(
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
-      onError = OE_Abort;
+      onError = pParse->db->onError;
+      if( onError==OE_Default ) onError = OE_Abort;
     }
     sqliteVdbeAddOp(v, OP_Dup, extra+nCol+1+hasTwoRecnos, 1);
     jumpInst = sqliteVdbeAddOp(v, OP_IsUnique, base+iCur+1, 0);
