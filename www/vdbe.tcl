@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.8 2001/11/21 02:21:13 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.9 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 The Virtual Database Engine of SQLite
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 puts {

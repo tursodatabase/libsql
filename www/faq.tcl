@@ -1,6 +1,8 @@
 #
 # Run this script to generated a faq.html output file
 #
+set rcsid {$Id: faq.tcl,v 1.2 2001/11/24 13:23:05 drh Exp $}
+
 puts {<html>
 <head>
   <title>SQLite Frequently Asked Questions</title>
@@ -8,6 +10,10 @@ puts {<html>
 <body bgcolor="white">
 <h1 align="center">Frequently Asked Questions</h1>
 }
+puts "<p align=center>
+(This page was last modified on [lrange $rcsid 3 4] UTC)
+</p>"
+
 
 set cnt 1
 proc faq {question answer} {
@@ -130,7 +136,7 @@ faq {
   a typical command for transferring an SQLite databases between two
   machines:
 <blockquote><pre>
-echo .dump | sqlite from.db | ssh sparc 'sqlite to.db'
+echo .dump | sqlite from.db | ssh sparc sqlite to.db
 </pre></blockquote>
   The command above assumes the name of the destination machine is
   <b>sparc</b> and that you have SSH running on both the source and
@@ -138,6 +144,94 @@ echo .dump | sqlite from.db | ssh sparc 'sqlite to.db'
   <b>sqlite</b> command in a temporary file, move the temporary file
   to the destination machine, then run the second <b>sqlite</b> command
   while redirecting input from the temporary file.</p>
+}
+
+faq {
+  Can multiple applications or multiple instances of the same
+  application access a single database file at the same time?
+} {
+  <p>Multiple processes can have the same database open at the same
+  time.  On unix systems, multiple processes can be doing a SELECT
+  at the same time.  But only one process can be making changes to
+  the database at once.  On windows, only a single process can be
+  reading from the database at one time since Win95/98/ME does not
+  support reader/writer locks.</p>
+
+  <p>The locking mechanism used to control simultaneous access might
+  not work correctly if the database file is kept on an NFS filesystem.
+  You should avoid putting SQLite database files on NFS if multiple
+  processes might try to access the file at the same time.</p>
+
+  <p>Locking in SQLite is very course-grained.  SQLite locks the
+  entire database.  Big database servers (PostgreSQL, MySQL, Oracle, etc.)
+  generally have finer grained locking, such as locking on a single
+  table or a single row within a table.  If you have a massively
+  parallel database application, you should consider using a big database
+  server instead of SQLite.</p>
+
+  <p>When SQLite tries to access a file that is locked by another
+  process, the default behavior is to return SQLITE_BUSY.  You can
+  adjust this behavior from C code using the <b>sqlite_busy_handler()</b> or
+  <b>sqlite_busy_timeout()</b> API functions.  See the API documentation
+  for details.</p>
+}
+
+faq {
+  Is SQLite threadsafe?
+} {
+  <p>Almost.  In the source file named "<b>os.c</b>" there are two functions
+  named <b>sqliteOsEnterMutex()</b> and <b>sqliteOsLeaveMutex()</b>.  In
+  the default distribution these functions are stubs.  They do not do anything.
+  If you change them so that they actually implement a mutex, then SQLite
+  will be threadsafe.  But because these routines are stubs, the default
+  SQLite distribution is not threadsafe.</p>
+}
+
+faq {
+  How do I list all tables/indices contained in an SQLite database
+} {
+  <p>If you are running the <b>sqlite</b> command-line access program
+  you can type "<b>.tables</b>" to get a list of all tables.  Or you
+  can type "<b>.schema</b>" to see the complete database schema including
+  all tables and indices.  Either of these commands can be followed by
+  a LIKE pattern that will restrict the tables that are displayed.</p>
+
+  <p>From within a C/C++ program (or a script using Tcl/Ruby/Perl/Python
+  bindings) you can get access to table and index names by doing a SELECT
+  on a special table named "<b>SQLITE_MASTER</b>".  Every SQLite database
+  has an SQLITE_MASTER table that defines the schema for the database.
+  The SQLITE_MASTER table looks like this:</p>
+<blockquote><pre>
+CREATE TABLE sqlite_master (
+  type TEXT,
+  name TEXT,
+  tbl_name TEXT,
+  rootpage INTEGER,
+  sql TEXT
+);
+</pre></blockquote>
+  <p>For tables, the <b>type</b> field will always be <b>'table'</b> and the
+  <b>name</b> field will be the name of the table.  So to get a list of
+  all tables in the database, use the following SELECT command:</p>
+<blockquote><pre>
+SELECT name FROM sqlite_master
+WHERE type='table'
+ORDER BY name;
+</pre></blockquote>
+  <p>For indices, <b>type</b> is equal to <b>'index'</b>, <b>name</b> is the
+  name of the index and <b>tbl_name</b> is the name of the table to which
+  the index belongs.  For both tables and indices, the <b>sql</b> field is
+  the text of the original CREATE TABLE or CREATE INDEX statement that
+  created the table or index.  For automatically created indices (used
+  to implement the PRIMARY KEY or UNIQUE constraints) the <b>sql</b> field
+  is NULL.</p>
+
+  <p>The SQLITE_MASTER table is read-only.  You cannot change this table
+  using UPDATE, INSERT, or DELETE.  The table is automatically updated by
+  CREATE TABLE, CREATE INDEX, DROP TABLE, and DROP INDEX commands.</p>
+
+  <p>Temporary tables do not appear in the SQLITE_MASTER table.  At this time
+  there is no way to get a listing of temporary tables and indices.</p>
 }
 
 # End of questions and answers.

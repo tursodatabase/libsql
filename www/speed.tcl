@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.4 2001/10/31 15:44:48 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.5 2001/11/24 13:23:05 drh Exp $ }
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 Database Speed Comparison
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 puts {

@@ -1,17 +1,17 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.48 2001/11/24 00:31:47 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.49 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
 <body bgcolor=white>
 <h1 align=center>SQLite: An SQL Database Engine In A C Library</h1>
 <p align=center>}
-puts "This page was last modified on [lrange $rcsid 3 4] GMT<br>"
+puts "This page was last modified on [lrange $rcsid 3 4] UTC<br>"
 set vers [lindex $argv 0]
 puts "The latest SQLite version is <b>$vers</b>"
-puts " created on [exec cat last_change] GMT"
+puts " created on [exec cat last_change] UTC"
 puts {</p>}
 
 puts {<h2>Introduction</h2>

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.7 2001/11/01 14:41:34 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.8 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 SQLite Virtual Machine Opcodes
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 set fd [open [lindex $argv 0] r]

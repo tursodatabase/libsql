@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the crosscompile.html file.
 #
-set rcsid {$Id: mingw.tcl,v 1.2 2000/07/31 19:16:32 drh Exp $}
+set rcsid {$Id: mingw.tcl,v 1.3 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 Notes On How To Build MinGW As A Cross-Compiler
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 puts {

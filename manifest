@@ -1,5 +1,5 @@
-C Version\s2.1.3\s(CVS\s458)
-D 2001-11-24T00:45:00
+C Update\sthe\sFAQ.\s\sChange\sthe\sGMT\stimezone\slabel\sto\sUTC\son\sall\sfiles.\s(CVS\s318)
+D 2001-11-24T13:23:05
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -102,22 +102,22 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
-F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
+F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
+F www/c_interface.tcl 1b05a758844273509800b04aa38841fab8dd9891
 F www/changes.tcl 0a54872839461f49b7300b36571d342f0ef0d4fb
-F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
-F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
+F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
+F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 55c7fbb5490d045a3e8223e41b51d8b93310b52c
-F www/index.tcl 7e1afccc37548b7107f666105749bfe7d99d267b
-F www/lang.tcl f0e953bfeaaba4c33117ec4bca639dd71ba0e13e
-F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
-F www/opcode.tcl 7989ed328316454c7030dcdb60f09ae1e017286d
-F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
-F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
-F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
-F www/vdbe.tcl eb4e1768cffa266cbbb7133488022a7a6cb278d9
-P fc2aae04578c305304a45ec6b76d3ab216cc7526
-R 4107b50dd67a5b31593969d21ca32f97
+F www/faq.tcl f1fd488bef706934f6e13cc56bc642ae09c72515
+F www/index.tcl 6d6d847dd3e39e9aa7b0c9b8f3144819ff3f9f51
+F www/lang.tcl 87ba01664d4ae7126a4a25bcf04407c8ea5a626b
+F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
+F www/opcode.tcl 1d60621d3550b9723447bd2dc6875d97290bec5f
+F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
+F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
+F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
+F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
+P 974d42839b6ced9c9b9ea14abec0c4723388a991
+R 510051e75409b6b257f01060b1675252
 U drh
-Z e3ec2c565db6eedb5055591c44e9acbb
+Z 99119da7cfe58575444c98fda1901651

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.4 2001/09/20 01:44:44 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.5 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 The Tcl interface to the SQLite library
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 puts {

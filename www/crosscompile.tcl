@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the crosscompile.html file.
 #
-set rcsid {$Id: crosscompile.tcl,v 1.4 2001/01/31 13:28:09 drh Exp $}
+set rcsid {$Id: crosscompile.tcl,v 1.5 2001/11/24 13:23:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -12,7 +12,7 @@ puts {<html>
 Notes On How To Compile SQLite Using The MinGW Cross-Compiler
 </h1>}
 puts "<p align=center>
-(This page was last modified on [lrange $rcsid 3 4] GMT)
+(This page was last modified on [lrange $rcsid 3 4] UTC)
 </p>"
 
 puts {
