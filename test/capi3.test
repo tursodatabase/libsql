@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.15 2004/06/29 08:59:35 danielk1977 Exp $
+# $Id: capi3.test,v 1.16 2004/06/29 13:18:24 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -135,6 +135,12 @@ do_test capi3-3.5 {
 do_test capi3-3.6 {
   sqlite3_close $db2
 } {SQLITE_MISUSE}
+do_test capi3-3.6 {
+  sqlite3_errmsg $db2
+} {library routine called out of sequence}
+do_test capi3-3.6 {
+  utf8 [sqlite3_errmsg16 $db2]
+} {library routine called out of sequence}
 
 # rename sqlite3_open ""
 # rename sqlite3_open_old sqlite3_open
@@ -474,4 +480,119 @@ do_test capi3-7.2 {
   }
 } {1 {unsupported file format}}
 
+# Now test that the library correctly handles bogus entries in the
+# sqlite_master table (schema corruption).
+do_test capi3-8.1 {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t1(a);
+  }
+  db close
+} {}
+do_test capi3-8.2 {
+  set ::bt [btree_open test.db 10 0]
+  btree_begin_transaction $::bt
+  set ::bc [btree_cursor $::bt 1 1]
+
+  # Build a 5-field row record consisting of 5 null records. This is
+  # officially black magic.
+  set data [binary format c6 {6 0 0 0 0 0}]
+  btree_insert $::bc 5 $data
+
+  btree_close_cursor $::bc
+  btree_commit $::bt
+  btree_close $::bt
+} {}
+do_test capi3-8.3 {
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM sqlite_master;
+  }
+} {1 {malformed database schema}}
+do_test capi3-8.4 {
+  set ::bt [btree_open test.db 10 0]
+  btree_begin_transaction $::bt
+  set ::bc [btree_cursor $::bt 1 1]
+
+  # Build a 5-field row record. The first field is a string 'table', and
+  # subsequent fields are all NULL. Replace the other broken record with
+  # this one and try to read the schema again.
+  set data [binary format c6a5 {6 23 0 0 0 0} table]
+  btree_insert $::bc 5 $data
+
+  btree_close_cursor $::bc
+  btree_commit $::bt
+  btree_close $::bt
+} {}
+do_test capi3-8.5 {
+  db close 
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM sqlite_master;
+  }
+} {1 {malformed database schema}}
+db close
+file delete -force test.db
+
+# Test the english language string equivalents for sqlite error codes
+set code2english [list \
+SQLITE_OK         {not an error} \
+SQLITE_ERROR      {SQL logic error or missing database} \
+SQLITE_INTERNAL   {internal SQLite implementation flaw} \
+SQLITE_PERM       {access permission denied} \
+SQLITE_ABORT      {callback requested query abort} \
+SQLITE_BUSY       {database is locked} \
+SQLITE_LOCKED     {database table is locked} \
+SQLITE_NOMEM      {out of memory} \
+SQLITE_READONLY   {attempt to write a readonly database} \
+SQLITE_INTERRUPT  {interrupted} \
+SQLITE_IOERR      {disk I/O error} \
+SQLITE_CORRUPT    {database disk image is malformed} \
+SQLITE_NOTFOUND   {table or record not found} \
+SQLITE_FULL       {database is full} \
+SQLITE_CANTOPEN   {unable to open database file} \
+SQLITE_PROTOCOL   {database locking protocol failure} \
+SQLITE_EMPTY      {table contains no data} \
+SQLITE_SCHEMA     {database schema has changed} \
+SQLITE_TOOBIG     {too much data for one table row} \
+SQLITE_CONSTRAINT {constraint failed} \
+SQLITE_MISMATCH   {datatype mismatch} \
+SQLITE_MISUSE     {library routine called out of sequence} \
+SQLITE_NOLFS      {kernel lacks large file support} \
+SQLITE_AUTH       {authorization denied} \
+SQLITE_FORMAT     {auxiliary database format error} \
+SQLITE_RANGE      {bind index out of range} \
+SQLITE_NOTADB     {file is encrypted or is not a database} \
+unknownerror      {unknown error} \
+]
+
+set test_number 1
+foreach {code english} $code2english {
+  do_test capi3-9.$test_number "sqlite3_test_errstr $code" $english
+  incr test_number
+}
+
+# Test the error message when a "real" out of memory occurs.
+set sqlite_malloc_fail 1
+do_test capi3-10-1 {
+  set ::DB [sqlite3 db test.db]
+  sqlite_malloc_fail 1
+  catchsql {
+    select * from sqlite_master;
+  }
+} {1 {out of memory}}
+do_test capi3-10-2 {
+  sqlite3_errmsg $::DB
+} {out of memory}
+do_test capi3-10-3 {
+  utf8 [sqlite3_errmsg16 $::DB]
+} {out of memory}
+db close
+sqlite_malloc_fail 0
+
 finish_test
+
+
+

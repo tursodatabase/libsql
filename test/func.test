@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.26 2004/06/24 00:20:05 danielk1977 Exp $
+# $Id: func.test,v 1.27 2004/06/29 13:18:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -439,5 +439,17 @@ do_test func-13.7 {
   }
   lappend res [sqlite3_finalize $STMT]
 } {{0 0} {1 0} SQLITE_OK}
+
+# Make sure that a function with a very long name is rejected
+do_test func-14.1 {
+  catch {
+    db function [string repeat X 254] {return "hello"}
+  } 
+} {0}
+do_test func-14.2 {
+  catch {
+    db function [string repeat X 256] {return "hello"}
+  }
+} {1}
 
 finish_test

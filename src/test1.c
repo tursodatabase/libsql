@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.89 2004/06/26 09:50:12 danielk1977 Exp $
+** $Id: test1.c,v 1.90 2004/06/29 13:18:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -76,6 +76,7 @@ static const char * errorName(int rc){
     case SQLITE_RANGE:      zName = "SQLITE_RANGE";       break;
     case SQLITE_ROW:        zName = "SQLITE_ROW";         break;
     case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
+    case SQLITE_NOTADB:     zName = "SQLITE_NOTADB";        break;
     default:                zName = "SQLITE_Unknown";     break;
   }
   return zName;
@@ -437,17 +438,25 @@ static int test_create_function(
   char **argv            /* Text of each argument */
 ){
   sqlite *db;
+  sqlite3_value *pVal;
   extern void Md5_Register(sqlite*);
+
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_coalesce", -1, SQLITE_UTF8, 0, 
+  sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
       ifnullFunc, 0, 0);
-  sqlite3_create_function(db, "x_sqlite_exec", 1, SQLITE_UTF8, db,
-      sqlite3ExecFunc, 0, 0);
+
+  /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
+  ** because it is not tested anywhere else. */
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
+  sqlite3_create_function16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
+      1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
+  sqlite3ValueFree(pVal);
   return TCL_OK;
 }
 
@@ -984,6 +993,7 @@ static int test_collate(
 ){
   sqlite3 *db;
   int val;
+  sqlite3_value *pVal;
 
   if( objc!=5 ) goto bad_args;
   pTestCollateInterp = interp;
@@ -996,14 +1006,50 @@ static int test_collate(
   sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
         (void *)SQLITE_UTF16LE, val?test_collate_func:0);
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
-  sqlite3_create_collation(db, "test_collate", SQLITE_UTF16BE, 
-        (void *)SQLITE_UTF16BE, val?test_collate_func:0);
+
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
+  sqlite3_create_collation16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), 
+        SQLITE_UTF16BE, (void *)SQLITE_UTF16BE, val?test_collate_func:0);
+  sqlite3ValueFree(pVal);
   
   return TCL_OK;
 
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
       Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+  return TCL_ERROR;
+}
+
+static void test_collate_needed_cb(
+  void *pCtx, 
+  sqlite3 *db,
+  int eTextRep,
+  const void *notUsed
+){
+  int enc = db->enc;
+  sqlite3_create_collation(
+      db, "test_collate", db->enc, (void *)enc, test_collate_func);
+}
+
+/*
+** Usage: add_test_collate_needed DB
+*/
+static int test_collate_needed(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+
+  if( objc!=2 ) goto bad_args;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  sqlite3_collation_needed16(db, 0, test_collate_needed_cb);
+  return TCL_OK;
+
+bad_args:
+  Tcl_WrongNumArgs(interp, 1, objv, "DB");
   return TCL_ERROR;
 }
 
@@ -1134,6 +1180,34 @@ bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
       Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
   return TCL_ERROR;
+}
+
+/*
+** Usage:         test_errstr <err code>
+**
+** Test that the english language string equivalents for sqlite error codes
+** are sane. The parameter is an integer representing an sqlite error code.
+** The result is a list of two elements, the string representation of the
+** error code and the english language explanation.
+*/
+static int test_errstr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char *zCode;
+  int i;
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "<error code>");
+  }
+
+  zCode = Tcl_GetString(objv[1]);
+  for(i=0; i<200; i++){
+    if( 0==strcmp(errorName(i), zCode) ) break;
+  }
+  Tcl_SetResult(interp, (char *)sqlite3ErrStr(i), 0);
+  return TCL_OK;
 }
 
 static int sqlite3_crashparams(
@@ -2219,10 +2293,14 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3OsOpenReadWrite",test_sqlite3OsOpenReadWrite, 0 },
      { "sqlite3OsClose",        test_sqlite3OsClose, 0 },
      { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
-     { "sqlite3OsUnlock",       test_sqlite3OsUnlock, 0 },
-     { "add_test_collate",      test_collate, 0         },
-     { "add_test_function",     test_function, 0         },
-     { "sqlite3_crashparams",     sqlite3_crashparams, 0         },
+   
+     /* Custom test interfaces */
+     { "sqlite3OsUnlock",         test_sqlite3OsUnlock, 0    },
+     { "add_test_collate",        test_collate, 0            },
+     { "add_test_collate_needed", test_collate_needed, 0     },
+     { "add_test_function",       test_function, 0           },
+     { "sqlite3_crashparams",     sqlite3_crashparams, 0     },
+     { "sqlite3_test_errstr",     test_errstr, 0             },
 
   };
   int i;

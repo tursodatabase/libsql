@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.45 2004/06/26 08:38:25 danielk1977 Exp $
+** $Id: test3.c,v 1.46 2004/06/29 13:18:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -750,35 +750,35 @@ static int btree_delete(
 ** exists with the same key the old entry is overwritten.
 */
 static int btree_insert(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
 ){
   BtCursor *pCur;
   int rc;
 
-  if( argc!=4 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID KEY DATA\"", 0);
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ID KEY DATA");
     return TCL_ERROR;
   }
-  if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
-/*
-    int iKey;
-    if( Tcl_GetInt(interp, argv[2], &iKey) ) return TCL_ERROR;
-*/
-    i64 iKey;
-    Tcl_Obj *obj = Tcl_NewStringObj(argv[2], -1);
-    Tcl_IncrRefCount(obj);
-    if( Tcl_GetWideIntFromObj(interp, obj, &iKey) ) return TCL_ERROR;
-    Tcl_DecrRefCount(obj);
 
-    rc = sqlite3BtreeInsert(pCur, 0, iKey, argv[3], strlen(argv[3]));
+  if( Tcl_GetIntFromObj(interp, objv[1], (int*)&pCur) ) return TCL_ERROR;
+  if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
+    i64 iKey;
+    int len;
+    unsigned char *pBuf;
+    if( Tcl_GetWideIntFromObj(interp, objv[2], &iKey) ) return TCL_ERROR;
+    pBuf = Tcl_GetByteArrayFromObj(objv[3], &len);
+    rc = sqlite3BtreeInsert(pCur, 0, iKey, pBuf, len);
   }else{
-    rc = sqlite3BtreeInsert(pCur, argv[2], strlen(argv[2]),
-                         argv[3], strlen(argv[3]));
+    int keylen;
+    int dlen;
+    unsigned char *pKBuf;
+    unsigned char *pDBuf;
+    pKBuf = Tcl_GetByteArrayFromObj(objv[2], &keylen);
+    pDBuf = Tcl_GetByteArrayFromObj(objv[3], &dlen);
+    rc = sqlite3BtreeInsert(pCur, pKBuf, keylen, pDBuf, dlen);
   }
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -1319,7 +1319,6 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
      { "btree_move_to",            (Tcl_CmdProc*)btree_move_to            },
      { "btree_delete",             (Tcl_CmdProc*)btree_delete             },
-     { "btree_insert",             (Tcl_CmdProc*)btree_insert             },
      { "btree_next",               (Tcl_CmdProc*)btree_next               },
      { "btree_prev",               (Tcl_CmdProc*)btree_prev               },
      { "btree_eof",                (Tcl_CmdProc*)btree_eof                },
@@ -1349,5 +1348,11 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      TCL_LINK_INT);
   Tcl_LinkVar(interp, "btree_trace", (char*)&sqlite3_btree_trace,
      TCL_LINK_INT);
+
+  /* The btree_insert command is implemented using the tcl 'object'
+  ** interface, not the string interface like the other commands in this
+  ** file. This is so binary data can be inserted into btree tables.
+  */
+  Tcl_CreateObjCommand(interp, "btree_insert", btree_insert, 0, 0);
   return TCL_OK;
 }

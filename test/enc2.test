@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.15 2004/06/28 11:52:46 drh Exp $
+# $Id: enc2.test,v 1.16 2004/06/29 13:18:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -260,6 +260,19 @@ do_test enc2-5.11 {
   lappend res $::test_collate_enc
 } {one two three four five UTF-8}
 
+# Also test that a UTF-16 collation factory works.
+do_test enc2-6-12 {
+  add_test_collate $DB 0 0 0
+  catchsql {
+    SELECT * FROM t5 ORDER BY 1 COLLATE test_collate
+  }
+} {1 {no such collation sequence: test_collate}}
+do_test enc2-5.13 {
+  add_test_collate_needed $DB 
+  set res [execsql {SELECT * FROM t5 ORDER BY 1 COLLATE test_collate}]
+  lappend res $::test_collate_enc
+} {one two three four five UTF-16BE}
+
 db close
 file delete -force test.db
 
@@ -367,6 +380,7 @@ do_test enc2-6.10 {
     SELECT test_function('sqlite')
   }
 } {{UTF-16BE sqlite}}
+
 
 db close
 file delete -force test.db
