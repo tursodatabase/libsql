@@ -73,6 +73,7 @@ void sqliteVdbeTrace(Vdbe *p, FILE *trace){
 */
 int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
   int i;
+  VdbeOp *pOp;
 
   i = p->nOp;
   p->nOp++;
@@ -89,19 +90,49 @@ int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2){
     p->aOp = aNew;
     memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
   }
-  p->aOp[i].opcode = op;
-  p->aOp[i].p1 = p1;
+  pOp = &p->aOp[i];
+  pOp->opcode = op;
+  pOp->p1 = p1;
   if( p2<0 && (-1-p2)<p->nLabel && p->aLabel[-1-p2]>=0 ){
     p2 = p->aLabel[-1-p2];
   }
-  p->aOp[i].p2 = p2;
-  p->aOp[i].p3 = 0;
-  p->aOp[i].p3type = P3_NOTUSED;
+  pOp->p2 = p2;
+  pOp->p3 = 0;
+  pOp->p3type = P3_NOTUSED;
 #ifndef NDEBUG
   if( sqlite_vdbe_addop_trace ) sqliteVdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
 }
+
+/*
+** Add an opcode that includes the p3 value.
+*/
+int sqliteVdbeOp3(Vdbe *p, int op, int p1, int p2, const char *zP3, int p3type){
+  int addr = sqliteVdbeAddOp(p, op, p1, p2);
+  sqliteVdbeChangeP3(p, addr, zP3, p3type);
+  return addr;
+}
+
+/*
+** Add multiple opcodes.  The list is terminated by an opcode of 0.
+*/
+int sqliteVdbeCode(Vdbe *p, ...){
+  int addr;
+  va_list ap;
+  int opcode, p1, p2;
+  va_start(ap, p);
+  addr = p->nOp;
+  while( (opcode = va_arg(ap,int))!=0 ){
+    p1 = va_arg(ap,int);
+    p2 = va_arg(ap,int);
+    sqliteVdbeAddOp(p, opcode, p1, p2);
+  }
+  va_end(ap);
+  return addr;
+}
+
+
 
 /*
 ** Create a new symbolic label for an instruction that has yet to be

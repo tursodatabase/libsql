@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.17 2004/02/21 14:00:29 drh Exp $
+** $Id: pragma.c,v 1.18 2004/02/22 20:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -106,12 +106,11 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
       sqlite *db = pParse->db;
       Vdbe *v;
       if( strcmp(zLeft,zRight)==0 && (v = sqliteGetVdbe(pParse))!=0 ){
-        sqliteVdbeAddOp(v, OP_ColumnName, 0, 1);
-        sqliteVdbeChangeP3(v, -1, aPragma[i].zName, P3_STATIC);
-        sqliteVdbeAddOp(v, OP_ColumnName, 1, 0);
-        sqliteVdbeChangeP3(v, -1, "boolean", P3_STATIC);
-        sqliteVdbeAddOp(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0);
-        sqliteVdbeAddOp(v, OP_Callback, 1, 0);
+        sqliteVdbeOp3(v, OP_ColumnName, 0, 1, aPragma[i].zName, P3_STATIC);
+        sqliteVdbeOp3(v, OP_ColumnName, 1, 0, "boolean", P3_STATIC);
+        sqliteVdbeCode(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0,
+                          OP_Callback, 1, 0,
+                          0);
       }else if( getBoolean(zRight) ){
         db->flags |= aPragma[i].mask;
       }else{
@@ -358,14 +357,12 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteViewGetColumnNames(pParse, pTab);
       for(i=0; i<pTab->nCol; i++){
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zName, P3_STATIC);
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, 
-           pTab->aCol[i].zType ? pTab->aCol[i].zType : "numeric", P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zName, 0);
+        sqliteVdbeOp3(v, OP_String, 0, 0,
+           pTab->aCol[i].zType ? pTab->aCol[i].zType : "numeric", 0);
         sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0,
+           pTab->aCol[i].zDflt, P3_STATIC);
         sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].isPrimKey, 0);
         sqliteVdbeAddOp(v, OP_Callback, 6, 0);
       }
@@ -389,9 +386,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         int cnum = pIdx->aiColumn[i];
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_Integer, cnum, 0);
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
         assert( pTab->nCol>cnum );
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[cnum].zName, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[cnum].zName, 0);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0);
       }
     }
@@ -416,8 +412,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
       while(pIdx){
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pIdx->zName, 0);
         sqliteVdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0);
         ++i;
@@ -450,13 +445,10 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         for(j=0; j<pFK->nCol; j++){
           sqliteVdbeAddOp(v, OP_Integer, i, 0);
           sqliteVdbeAddOp(v, OP_Integer, j, 0);
-          sqliteVdbeAddOp(v, OP_String, 0, 0);
-          sqliteVdbeChangeP3(v, -1, pFK->zTo, P3_STATIC);
-          sqliteVdbeAddOp(v, OP_String, 0, 0);
-          sqliteVdbeChangeP3(v, -1, pTab->aCol[pFK->aCol[j].iFrom].zName,
-                             P3_STATIC);
-          sqliteVdbeAddOp(v, OP_String, 0, 0);
-          sqliteVdbeChangeP3(v, -1, pFK->aCol[j].zCol, P3_STATIC);
+          sqliteVdbeOp3(v, OP_String, 0, 0, pFK->zTo, 0);
+          sqliteVdbeOp3(v, OP_String, 0, 0,
+                           pTab->aCol[pFK->aCol[j].iFrom].zName, 0);
+          sqliteVdbeOp3(v, OP_String, 0, 0, pFK->aCol[j].zCol, 0);
           sqliteVdbeAddOp(v, OP_Callback, 5, 0);
         }
         ++i;
@@ -478,11 +470,9 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       if( db->aDb[i].pBt==0 ) continue;
       assert( db->aDb[i].zName!=0 );
       sqliteVdbeAddOp(v, OP_Integer, i, 0);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, db->aDb[i].zName, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, sqliteBtreeGetFilename(db->aDb[i].pBt),
-           P3_STATIC);
+      sqliteVdbeOp3(v, OP_String, 0, 0, db->aDb[i].zName, 0);
+      sqliteVdbeOp3(v, OP_String, 0, 0,
+           sqliteBtreeGetFilename(db->aDb[i].pBt), 0);
       sqliteVdbeAddOp(v, OP_Callback, 3, 0);
     }
   }else
@@ -633,13 +623,11 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
         if( pTab->pIndex==0 ) continue;
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
-        sqliteVdbeAddOp(v, OP_OpenRead, 1, pTab->tnum);
-        sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+        sqliteVdbeOp3(v, OP_OpenRead, 1, pTab->tnum, pTab->zName, 0);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           if( pIdx->tnum==0 ) continue;
           sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-          sqliteVdbeAddOp(v, OP_OpenRead, j+2, pIdx->tnum);
-          sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+          sqliteVdbeOp3(v, OP_OpenRead, j+2, pIdx->tnum, pIdx->zName, 0);
         }
         sqliteVdbeAddOp(v, OP_Integer, 0, 0);
         sqliteVdbeAddOp(v, OP_MemStore, 1, 1);

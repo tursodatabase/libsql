@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.92 2004/02/20 22:53:39 rdc Exp $
+** $Id: insert.c,v 1.93 2004/02/22 20:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -331,12 +331,11 @@ void sqliteInsert(
   if( !row_triggers_exist ){
     base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
-    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+    sqliteVdbeOp3(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, P3_STATIC);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
       sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
-      sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+      sqliteVdbeOp3(v, OP_OpenWrite, idx+base, pIdx->tnum,
+                       pIdx->zName, P3_STATIC);
     }
     pParse->nTab += idx;
   }
@@ -391,8 +390,7 @@ void sqliteInsert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
       }else if( pSelect ){
@@ -417,12 +415,11 @@ void sqliteInsert(
   if( row_triggers_exist && !isView ){
     base = pParse->nTab;
     sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
-    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+    sqliteVdbeOp3(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, P3_STATIC);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
       sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
-      sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+      sqliteVdbeOp3(v, OP_OpenWrite, idx+base, pIdx->tnum,
+                       pIdx->zName, P3_STATIC);
     }
     pParse->nTab += idx;
   }
@@ -472,8 +469,7 @@ void sqliteInsert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, j); 
       }else if( pSelect ){
@@ -542,8 +538,7 @@ void sqliteInsert(
   ** Return the number of rows inserted.
   */
   if( db->flags & SQLITE_CountRows ){
-    sqliteVdbeAddOp(v, OP_ColumnName, 0, 1);
-    sqliteVdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
+    sqliteVdbeOp3(v, OP_ColumnName, 0, 1, "rows inserted", P3_STATIC);
     sqliteVdbeAddOp(v, OP_MemLoad, iCntMem, 0);
     sqliteVdbeAddOp(v, OP_Callback, 1, 0);
   }
@@ -699,8 +694,7 @@ void sqliteGenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqliteVdbeAddOp(v, OP_String, 0, 0);
-        sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
+        sqliteVdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
         sqliteVdbeAddOp(v, OP_Push, nCol-i, 0);
         break;
       }
@@ -742,8 +736,8 @@ void sqliteGenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
-        sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, onError);
-        sqliteVdbeChangeP3(v, -1, "PRIMARY KEY must be unique", P3_STATIC);
+        sqliteVdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError,
+                         "PRIMARY KEY must be unique", P3_STATIC);
         break;
       }
       case OE_Replace: {
@@ -840,8 +834,7 @@ void sqliteGenerateConstraintChecks(
         }
         strcpy(&zErrMsg[n1], 
             pIdx->nColumn>1 ? " are not unique" : " is not unique");
-        sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, onError);
-        sqliteVdbeChangeP3(v, -1, sqliteStrDup(zErrMsg), P3_DYNAMIC);
+        sqliteVdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError, zErrMsg, 0);
         break;
       }
       case OE_Ignore: {

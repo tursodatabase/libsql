@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.173 2004/02/22 18:56:49 drh Exp $
+** $Id: build.c,v 1.174 2004/02/22 20:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -928,24 +928,16 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     if( v==0 ) return;
     if( p->pSelect==0 ){
       /* A regular table */
-      sqliteVdbeAddOp(v, OP_CreateTable, 0, p->iDb);
-      sqliteVdbeChangeP3(v, -1, (char *)&p->tnum, P3_POINTER);
+      sqliteVdbeOp3(v, OP_CreateTable, 0, p->iDb, (char*)&p->tnum, P3_POINTER);
     }else{
       /* A view */
       sqliteVdbeAddOp(v, OP_Integer, 0, 0);
     }
     p->tnum = 0;
     sqliteVdbeAddOp(v, OP_Pull, 1, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    if( p->pSelect==0 ){
-      sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
-    }else{
-      sqliteVdbeChangeP3(v, -1, "view", P3_STATIC);
-    }
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, p->zName, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, p->zName, 0);
+    sqliteVdbeOp3(v, OP_String, 0, 0, p->pSelect==0?"table":"view", P3_STATIC);
+    sqliteVdbeOp3(v, OP_String, 0, 0, p->zName, 0);
+    sqliteVdbeOp3(v, OP_String, 0, 0, p->zName, 0);
     sqliteVdbeAddOp(v, OP_Dup, 4, 0);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     if( pSelect ){
@@ -1133,12 +1125,12 @@ int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
 */
 static void sqliteViewResetColumnNames(Table *pTable){
   int i;
-  if( pTable==0 || pTable->pSelect==0 ) return;
-  if( pTable->nCol==0 ) return;
-  for(i=0; i<pTable->nCol; i++){
-    sqliteFree(pTable->aCol[i].zName);
-    sqliteFree(pTable->aCol[i].zDflt);
-    sqliteFree(pTable->aCol[i].zType);
+  Column *pCol;
+  assert( pTable!=0 && pTable->pSelect!=0 );
+  for(i=0, pCol=pTable->aCol; i<pTable->nCol; i++, pCol++){
+    sqliteFree(pCol->zName);
+    sqliteFree(pCol->zDflt);
+    sqliteFree(pCol->zType);
   }
   sqliteFree(pTable->aCol);
   pTable->aCol = 0;
@@ -1700,19 +1692,17 @@ void sqliteCreateIndex(
       sqliteOpenMasterTable(v, isTemp);
     }
     sqliteVdbeAddOp(v, OP_NewRecno, 0, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, "index", P3_STATIC);
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, pIndex->zName, strlen(pIndex->zName));
-    sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeChangeP3(v, -1, pTab->zName, 0);
-    addr = sqliteVdbeAddOp(v, OP_CreateIndex, 0, isTemp);
-    sqliteVdbeChangeP3(v, addr, (char*)&pIndex->tnum, P3_POINTER);
+    sqliteVdbeOp3(v, OP_String, 0, 0, "index", P3_STATIC);
+    sqliteVdbeOp3(v, OP_String, 0, 0, pIndex->zName, 0);
+    sqliteVdbeOp3(v, OP_String, 0, 0, pTab->zName, 0);
+    sqliteVdbeOp3(v, OP_CreateIndex, 0, isTemp,(char*)&pIndex->tnum,P3_POINTER);
     pIndex->tnum = 0;
     if( pTable ){
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, isTemp, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0);
+      sqliteVdbeCode(v,
+          OP_Dup,       0,      0,
+          OP_Integer,   isTemp, 0,
+          OP_OpenWrite, 1,      0,
+      0);
     }
     addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
     if( pStart && pEnd ){
@@ -1723,8 +1713,7 @@ void sqliteCreateIndex(
     sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
     if( pTable ){
       sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
-      sqliteVdbeChangeP3(v, -1, pTab->zName, 0);
+      sqliteVdbeOp3(v, OP_OpenRead, 2, pTab->tnum, pTab->zName, 0);
       lbl2 = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Rewind, 2, lbl2);
       lbl1 = sqliteVdbeAddOp(v, OP_Recno, 2, 0);
@@ -1738,8 +1727,8 @@ void sqliteCreateIndex(
       }
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
       if( db->file_format>=4 ) sqliteAddIdxKeyType(v, pIndex);
-      sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->onError!=OE_None);
-      sqliteVdbeChangeP3(v, -1, "indexed columns are not unique", P3_STATIC);
+      sqliteVdbeOp3(v, OP_IdxPut, 1, pIndex->onError!=OE_None,
+                      "indexed columns are not unique", P3_STATIC);
       sqliteVdbeAddOp(v, OP_Next, 2, lbl1);
       sqliteVdbeResolveLabel(v, lbl2);
       sqliteVdbeAddOp(v, OP_Close, 2, 0);

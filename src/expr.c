@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.110 2004/02/22 18:40:57 drh Exp $
+** $Id: expr.c,v 1.111 2004/02/22 20:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -717,9 +717,10 @@ int sqliteExprResolveIds(
             case TK_FLOAT:
             case TK_INTEGER:
             case TK_STRING: {
-              int addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0);
+              int addr;
               assert( pE2->token.z );
-              sqliteVdbeChangeP3(v, addr, pE2->token.z, pE2->token.n);
+              addr = sqliteVdbeOp3(v, OP_SetInsert, iSet, 0,
+                                  pE2->token.z, pE2->token.n);
               sqliteVdbeDequoteP3(v, addr);
               break;
             }
@@ -1166,8 +1167,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       for(i=0; i<nExpr; i++){
         sqliteExprCode(pParse, pList->a[i].pExpr);
       }
-      sqliteVdbeAddOp(v, OP_Function, nExpr, 0);
-      sqliteVdbeChangeP3(v, -1, (char*)pDef, P3_POINTER);
+      sqliteVdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
       break;
     }
     case TK_SELECT: {
@@ -1257,15 +1257,13 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->iColumn == OE_Rollback ||
 	  pExpr->iColumn == OE_Abort ||
 	  pExpr->iColumn == OE_Fail ){
-	  char * msg = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
-	  sqliteVdbeAddOp(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn);
-	  sqliteDequote(msg);
-	  sqliteVdbeChangeP3(v, -1, msg, 0);
-	  sqliteFree(msg);
+	  sqliteVdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
+                           pExpr->token.z, pExpr->token.n);
+	  sqliteVdbeDequoteP3(v, -1);
       } else {
 	  assert( pExpr->iColumn == OE_Ignore );
-	  sqliteVdbeAddOp(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
-	  sqliteVdbeChangeP3(v, -1, "(IGNORE jump)", 0);
+	  sqliteVdbeOp3(v, OP_Goto, 0, pParse->trigStack->ignoreJump,
+                           "(IGNORE jump)", 0);
       }
     }
     break;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.157 2004/02/20 14:50:58 drh Exp $
+** $Id: select.c,v 1.158 2004/02/22 20:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -338,9 +338,7 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
     sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
   }
   zSortOrder[pOrderBy->nExpr] = 0;
-  sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0);
-  sqliteVdbeChangeP3(v, -1, zSortOrder, strlen(zSortOrder));
-  sqliteFree(zSortOrder);
+  sqliteVdbeOp3(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, P3_DYNAMIC);
   sqliteVdbeAddOp(v, OP_SortPut, 0, 0);
 }
 
@@ -363,8 +361,7 @@ void sqliteAddKeyType(Vdbe *v, ExprList *pEList){
     zType[i] = sqliteExprType(pEList->a[i].pExpr)==SQLITE_SO_NUM ? 'n' : 't';
   }
   zType[i] = 0;
-  sqliteVdbeChangeP3(v, -1, zType, nColumn);
-  sqliteFree(zType);
+  sqliteVdbeChangeP3(v, -1, zType, P3_DYNAMIC);
 }
 
 /*
@@ -672,8 +669,7 @@ static void generateColumnTypes(
         zType = "NUMERIC";
       }
     }
-    sqliteVdbeAddOp(v, OP_ColumnName, i + pEList->nExpr, 0);
-    sqliteVdbeChangeP3(v, -1, zType, 0);
+    sqliteVdbeOp3(v, OP_ColumnName, i + pEList->nExpr, 0, zType, 0);
   }
 }
 
@@ -704,8 +700,7 @@ static void generateColumnNames(
     if( p==0 ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
-      sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
+      sqliteVdbeOp3(v, OP_ColumnName, i, p2, zName, 0);
       continue;
     }
     if( p->op==TK_COLUMN && pTabList ){
@@ -723,8 +718,7 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
       }
       if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
-        int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, p2);
-        sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
+        int addr = sqliteVdbeOp3(v,OP_ColumnName, i, p2, p->span.z, p->span.n);
         sqliteVdbeCompressSpace(v, addr);
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
@@ -733,23 +727,18 @@ static void generateColumnNames(
         zTab = pTabList->a[j].zAlias;
         if( fullNames || zTab==0 ) zTab = pTab->zName;
         sqliteSetString(&zName, zTab, ".", zCol, 0);
-        sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
-        sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
-        sqliteFree(zName);
+        sqliteVdbeOp3(v, OP_ColumnName, i, p2, zName, P3_DYNAMIC);
       }else{
-        sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
-        sqliteVdbeChangeP3(v, -1, zCol, 0);
+        sqliteVdbeOp3(v, OP_ColumnName, i, p2, zCol, 0);
       }
     }else if( p->span.z && p->span.z[0] ){
-      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, p2);
-      sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
+      int addr = sqliteVdbeOp3(v,OP_ColumnName, i, p2, p->span.z, p->span.n);
       sqliteVdbeCompressSpace(v, addr);
     }else{
       char zName[30];
       assert( p->op!=TK_COLUMN || pTabList==0 );
       sprintf(zName, "column%d", i+1);
-      sqliteVdbeAddOp(v, OP_ColumnName, i, p2);
-      sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
+      sqliteVdbeOp3(v, OP_ColumnName, i, p2, zName, 0);
     }
   }
 }
@@ -1910,15 +1899,13 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   base = p->pSrc->a[0].iCursor;
   computeLimitRegisters(pParse, p);
   sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-  sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
-  sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+  sqliteVdbeOp3(v, OP_OpenRead, base, pTab->tnum, pTab->zName, 0);
   cont = sqliteVdbeMakeLabel(v);
   if( pIdx==0 ){
     sqliteVdbeAddOp(v, seekOp, base, 0);
   }else{
     sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenRead, base+1, pIdx->tnum);
-    sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
+    sqliteVdbeOp3(v, OP_OpenRead, base+1, pIdx->tnum, pIdx->zName, P3_STATIC);
     sqliteVdbeAddOp(v, seekOp, base+1, 0);
     sqliteVdbeAddOp(v, OP_IdxRecno, base+1, 0);
     sqliteVdbeAddOp(v, OP_Close, base+1, 0);
@@ -2277,8 +2264,7 @@ int sqliteSelect(
     for(i=0; i<pParse->nAgg; i++){
       FuncDef *pFunc;
       if( (pFunc = pParse->aAgg[i].pFunc)!=0 && pFunc->xFinalize!=0 ){
-        sqliteVdbeAddOp(v, OP_AggInit, 0, i);
-        sqliteVdbeChangeP3(v, -1, (char*)pFunc, P3_POINTER);
+        sqliteVdbeOp3(v, OP_AggInit, 0, i, (char*)pFunc, P3_POINTER);
       }
     }
     if( pGroupBy==0 ){
