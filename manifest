@@ -1,9 +1,9 @@
-C Version\s2.4.5\s(CVS\s514)
-D 2002-04-02T02:00:02
+C Fix\sfor\sbug\s#8:\sCorrectly\shandle\sterms\sof\sa\sWHERE\sclause\sin\sa\sjoin\swhere\sthe\nterm\sdoes\snot\suse\sa\scomparison\soperator.\s(CVS\s515)
+D 2002-04-02T13:26:10
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 15676b83c5cca5728ec7721e28925685d89e118d
+F VERSION ed0299de5b86deca846fdb0f8b99aaae85f27f47
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -54,7 +54,7 @@ F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
 F src/vdbe.c 3cebe9f77cac311a3c537587258946d04a09c58f
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
-F src/where.c e6292ab9d41aa55005bcca75e6d5e69139fad61b
+F src/where.c 9d36f6c9fea4af71501770c13089f824cb9b033c
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -85,7 +85,7 @@ F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 286db944717afa9a9bf829dd85e59185c65d5435
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 572d53f7b28c35a1efdce207f7579523358ba637
-F test/select2.test 7b59fb17647eda8c7e21d790d4045e30699982af
+F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
@@ -116,7 +116,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 7ba1054ca1c3119f305f7bbaa6a69bbff2f52410
+F www/changes.tcl 563071eacf1c0fc03521bf874438274d83445c78
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bdd8ce584e16fe288a7e8386f897cb36a60e8431
-R fc0491616bb288b6a30cabaf5c86972c
+P b18a7b777cf22249c81b74baafa1a74ad5a1836b
+R 1e8462f1dea7fa55f9cf92098e6e2f92
 U drh
-Z 00cce635d4791c94263f5a9b1d451c13
+Z eea47fa742ba88e928e7aaf7fc434491

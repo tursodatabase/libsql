@@ -25,9 +25,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Apr 02 (2.4.6)} {
+<li>Bug fix: Correctly handle terms in the WHERE clause of a join that
+    do not contain a comparison operator.</li>
+}
+
 chng {2002 Apr 01 (2.4.5)} {
 <li>Bug fix: Correctly handle functions that appear in the WHERE clause
-    of a SELECT.</li>
+    of a join.</li>
 <li>When the PRAGMA vdbe_trace=ON is set, correctly print the P3 operand
     value when it is a pointer to a structure rather than a pointer to
     a string.</li>
