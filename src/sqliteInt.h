@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.284 2004/06/12 01:43:27 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.285 2004/06/12 09:25:21 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -473,7 +473,7 @@ struct sqlite {
 struct FuncDef {
   char *zName;         /* SQL name of the function */
   int nArg;            /* Number of arguments.  -1 means unlimited */
-  int iPrefEnc;        /* Preferred text encoding */
+  u8 iPrefEnc;         /* Preferred text encoding (SQLITE_UTF8, 16LE, 16BE) */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
@@ -1324,7 +1324,7 @@ ExprList *sqlite3ExprListDup(ExprList*);
 SrcList *sqlite3SrcListDup(SrcList*);
 IdList *sqlite3IdListDup(IdList*);
 Select *sqlite3SelectDup(Select*);
-FuncDef *sqlite3FindFunction(sqlite*,const char*,int,int,int,int);
+FuncDef *sqlite3FindFunction(sqlite*,const char*,int,int,u8,int);
 void sqlite3RegisterBuiltinFunctions(sqlite*);
 void sqlite3RegisterDateTimeFunctions(sqlite*);
 int sqlite3SafetyOn(sqlite*);
@@ -1407,6 +1407,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckIndexCollSeq(Parse *, Index *);
+int sqlite3CheckObjectName(Parse *, const char *);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);

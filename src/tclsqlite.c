@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.84 2004/06/12 01:43:27 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.85 2004/06/12 09:25:22 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -277,7 +277,8 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   if( rc ){
     sqlite3_result_error(context, Tcl_GetStringResult(p->interp), -1); 
   }else{
-    sqlite3_result_text(context, Tcl_GetStringResult(p->interp), -1, 1);
+    sqlite3_result_text(context, Tcl_GetStringResult(p->interp), -1, 
+        SQLITE_TRANSIENT);
   }
 }
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -784,7 +785,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pFunc->pNext = pDb->pFunc;
     pFunc->zScript = (char*)&pFunc[1];
     strcpy(pFunc->zScript, zScript);
-    sqlite3_create_function(pDb->db, zName, -1, 0, 0, pFunc, tclSqlFunc, 0, 0);
+    sqlite3_create_function(pDb->db, zName, -1, SQLITE_UTF8, 0, 
+        pFunc, tclSqlFunc, 0, 0);
     break;
   }
 

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.27 2004/05/28 12:33:32 danielk1977 Exp $
+# $Id: index.test,v 1.28 2004/06/12 09:25:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -220,7 +220,7 @@ do_test index-7.3 {
     SELECT name FROM sqlite_master 
     WHERE type='index' AND tbl_name='test1'
   }
-} {{(test1 autoindex 1)}}
+} {sqlite_autoindex_test1_1}
 do_test index-7.4 {
   execsql {DROP table test1}
   execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
@@ -518,4 +518,89 @@ do_test index-15.2 {
 } {8 5 2 1 3 6 11 9 10 4 7}
 integrity_check index-15.1
 
+# The following tests - index-16.* - test that when a table definition
+# includes qualifications that specify the same constraint twice only a
+# single index is generated to enforce the constraint.
+#
+# For example: "CREATE TABLE abc( x PRIMARY KEY, UNIQUE(x) );"
+#
+do_test index-16.1 {
+  execsql {
+    CREATE TABLE t7(c UNIQUE PRIMARY KEY);
+    SELECT count(*) FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {1}
+do_test index-16.2 {
+  execsql {
+    DROP TABLE t7;
+    CREATE TABLE t7(c UNIQUE PRIMARY KEY);
+    SELECT count(*) FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {1}
+do_test index-16.3 {
+  execsql {
+    DROP TABLE t7;
+    CREATE TABLE t7(c PRIMARY KEY, UNIQUE(c) );
+    SELECT count(*) FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {1}
+do_test index-16.4 {
+  execsql {
+    DROP TABLE t7;
+    CREATE TABLE t7(c, d , UNIQUE(c, d), PRIMARY KEY(c, d) );
+    SELECT count(*) FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {1}
+do_test index-16.5 {
+  execsql {
+    DROP TABLE t7;
+    CREATE TABLE t7(c, d , UNIQUE(c), PRIMARY KEY(c, d) );
+    SELECT count(*) FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {2}
+
+# Test that automatically create indices are named correctly. The current
+# convention is: "sqlite_autoindex_<table name>_<integer>"
+#
+# Then check that it is an error to try to drop any automtically created
+# indices.
+do_test index-17.1 {
+  execsql {
+    DROP TABLE t7;
+    CREATE TABLE t7(c, d UNIQUE, UNIQUE(c), PRIMARY KEY(c, d) );
+    SELECT name FROM sqlite_master WHERE tbl_name = 't7' AND type = 'index';
+  }
+} {sqlite_autoindex_t7_1 sqlite_autoindex_t7_2 sqlite_autoindex_t7_3}
+do_test index-17.2 {
+  catchsql {
+    DROP INDEX sqlite_autoindex_t7_1;
+  }
+} {1 {index associated with UNIQUE or PRIMARY KEY constraint cannot be dropped}}
+
+# The following tests ensure that it is not possible to explicitly name
+# a schema object with a name beginning with "sqlite_". Granted that is a
+# little outside the focus of this test scripts, but this has got to be
+# tested somewhere.
+do_test index-18.1 {
+  catchsql {
+    CREATE TABLE sqlite_t1(a, b, c);
+  }
+} {1 {object name reserved for internal use: sqlite_t1}}
+do_test index-18.2 {
+  catchsql {
+    CREATE INDEX sqlite_i1 ON t7(c);
+  }
+} {1 {object name reserved for internal use: sqlite_i1}}
+do_test index-18.3 {
+  catchsql {
+    CREATE VIEW sqlite_v1 AS SELECT * FROM t7;
+  }
+} {1 {object name reserved for internal use: sqlite_v1}}
+do_test index-18.4 {
+  catchsql {
+    CREATE TRIGGER sqlite_tr1 BEFORE INSERT ON t7 BEGIN SELECT 1; END;
+  }
+} {1 {object name reserved for internal use: sqlite_tr1}}
+
 finish_test
+

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.75 2004/06/10 14:01:08 danielk1977 Exp $
+** $Id: test1.c,v 1.76 2004/06/12 09:25:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -341,7 +341,8 @@ static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result_text(context, sqlite3_value_text(argv[i]), -1, 1);
+      sqlite3_result_text(context, sqlite3_value_text(argv[i]), -1,
+          SQLITE_TRANSIENT);
       break;
     }
   }
@@ -416,7 +417,7 @@ static void sqlite3ExecFunc(
   sqlite3_exec((sqlite*)sqlite3_user_data(context),
       sqlite3_value_text(argv[0]),
       execFuncCallback, &x, 0);
-  sqlite3_result_text(context, x.z, x.nUsed, 1);
+  sqlite3_result_text(context, x.z, x.nUsed, SQLITE_TRANSIENT);
   sqliteFree(x.z);
 }
 
@@ -449,8 +450,9 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_coalesce", -1, 0, 0, 0, ifnullFunc, 0, 0);
-  sqlite3_create_function(db, "x_sqlite3_exec", 1, 0, 0, db,
+  sqlite3_create_function(db, "x_coalesce", -1, SQLITE_UTF8, 0, 0, 
+      ifnullFunc, 0, 0);
+  sqlite3_create_function(db, "x_sqlite3_exec", 1, SQLITE_UTF8, 0, db,
       sqlite3ExecFunc, 0, 0);
   return TCL_OK;
 }
@@ -499,8 +501,10 @@ static int test_create_aggregate(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_count", 0, 0, 0, 0, 0,countStep,countFinalize);
-  sqlite3_create_function(db, "x_count", 1, 0, 0, 0, 0,countStep,countFinalize);
+  sqlite3_create_function(db, "x_count", 0, SQLITE_UTF8, 0, 0, 0,
+      countStep,countFinalize);
+  sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0, 0,
+      countStep,countFinalize);
   return TCL_OK;
 }
 
@@ -693,7 +697,8 @@ static void testFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       }else if( sqlite3StrICmp(zArg0,"int64")==0 ){
         sqlite3_result_int64(context, sqlite3_value_int64(argv[1]));
       }else if( sqlite3StrICmp(zArg0,"string")==0 ){
-        sqlite3_result_text(context, sqlite3_value_text(argv[1]), -1, 1);
+        sqlite3_result_text(context, sqlite3_value_text(argv[1]), -1,
+            SQLITE_TRANSIENT);
       }else if( sqlite3StrICmp(zArg0,"double")==0 ){
         sqlite3_result_double(context, sqlite3_value_double(argv[1]));
       }else if( sqlite3StrICmp(zArg0,"null")==0 ){
@@ -735,7 +740,8 @@ static int test_register_func(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_create_function(db, argv[2], -1, 0, 0, 0, testFunc, 0, 0);
+  rc = sqlite3_create_function(db, argv[2], -1, SQLITE_UTF8, 0, 0, 
+      testFunc, 0, 0);
   if( rc!=0 ){
     Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
     return TCL_ERROR;
@@ -845,7 +851,7 @@ static int test_bind(
   }else if( strcmp(argv[4],"static")==0 ){
     rc = sqlite3_bind_text(pStmt, idx, sqlite_static_bind_value, -1, 0);
   }else if( strcmp(argv[4],"normal")==0 ){
-    rc = sqlite3_bind_text(pStmt, idx, argv[3], -1, 1);
+    rc = sqlite3_bind_text(pStmt, idx, argv[3], -1, SQLITE_TRANSIENT);
   }else{
     Tcl_AppendResult(interp, "4th argument should be "
         "\"null\" or \"static\" or \"normal\"", 0);
@@ -1122,7 +1128,7 @@ static int test_bind_text(
   value = Tcl_GetString(objv[3]);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_text(pStmt, idx, value, bytes, 1);
+  rc = sqlite3_bind_text(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1154,7 +1160,7 @@ static int test_bind_text16(
   value = Tcl_GetByteArrayFromObj(objv[3], 0);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, 1);
+  rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, SQLITE_TRANSIENT);
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1186,7 +1192,7 @@ static int test_bind_blob(
   value = Tcl_GetString(objv[3]);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_blob(pStmt, idx, value, bytes, 1);
+  rc = sqlite3_bind_blob(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1891,6 +1897,7 @@ static int test_sqlite3OsUnlock(
   }
   return TCL_OK;
 }
+
 
 /*
 ** Register commands with the TCL interpreter.

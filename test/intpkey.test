@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.15 2004/05/27 17:22:56 drh Exp $
+# $Id: intpkey.test,v 1.16 2004/06/12 09:25:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,7 @@ do_test intpkey-1.1 {
     SELECT name FROM sqlite_master
     WHERE type='index' AND tbl_name='t1';
   }
-} {{(t1 autoindex 1)}}
+} {sqlite_autoindex_t1_1}
 
 # Now create a table with an integer primary key and verify that
 # there is no associated index.

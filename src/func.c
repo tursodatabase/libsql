@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.67 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: func.c,v 1.68 2004/06/12 09:25:14 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -75,7 +75,7 @@ static void typeofFunc(
     case SQLITE_FLOAT:   z = "real";    break;
     case SQLITE_BLOB:    z = "blob";    break;
   }
-  sqlite3_result_text(context, z, -1, 0);
+  sqlite3_result_text(context, z, -1, SQLITE_STATIC);
 }
 
 /*
@@ -174,7 +174,7 @@ static void substrFunc(
   }
   while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
   if( p2<0 ) p2 = 0;
-  sqlite3_result_text(context, &z[p1], p2, 1);
+  sqlite3_result_text(context, &z[p1], p2, SQLITE_TRANSIENT);
 }
 
 /*
@@ -194,7 +194,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   r = sqlite3_value_double(argv[0]);
   sprintf(zBuf,"%.*f",n,r);
-  sqlite3_result_text(context, zBuf, -1, 1);
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
 
 /*
@@ -210,7 +210,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   for(i=0; z[i]; i++){
     if( islower(z[i]) ) z[i] = toupper(z[i]);
   }
-  sqlite3_result_text(context, z, -1, 1);
+  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
 }
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
@@ -223,7 +223,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   for(i=0; z[i]; i++){
     if( isupper(z[i]) ) z[i] = tolower(z[i]);
   }
-  sqlite3_result_text(context, z, -1, 1);
+  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
   sqliteFree(z);
 }
 
@@ -586,7 +586,7 @@ static void versionFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_result_text(context, sqlite3_version, -1, 0);
+  sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
 }
 
 /*
@@ -604,7 +604,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( argc<1 ) return;
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_NULL: {
-      sqlite3_result_text(context, "NULL", 4, 0);
+      sqlite3_result_text(context, "NULL", 4, SQLITE_STATIC);
       break;
     }
     case SQLITE_INTEGER:
@@ -634,7 +634,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         zText[(nBlob*2)+3] = '\0';
         zText[0] = 'X';
         zText[1] = '\'';
-        sqlite3_result_text(context, zText, -1, 1);
+        sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
         sqliteFree(zText);
       }
       break;
@@ -656,7 +656,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       }
       z[j++] = '\'';
       z[j] = 0;
-      sqlite3_result_text(context, z, j, 1);
+      sqlite3_result_text(context, z, j, SQLITE_TRANSIENT);
       sqliteFree(z);
     }
   }
@@ -695,9 +695,9 @@ static void soundexFunc(sqlite3_context *context, int argc, sqlite3_value **argv
       zResult[j++] = '0';
     }
     zResult[j] = 0;
-    sqlite3_result_text(context, zResult, 4, 1);
+    sqlite3_result_text(context, zResult, 4, SQLITE_TRANSIENT);
   }else{
-    sqlite3_result_text(context, "?000", 4, 0);
+    sqlite3_result_text(context, "?000", 4, SQLITE_STATIC);
   }
 }
 #endif
@@ -741,7 +741,49 @@ static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
     zBuf[i] = zSrc[zBuf[i]%(sizeof(zSrc)-1)];
   }
   zBuf[n] = 0;
-  sqlite3_result_text(context, zBuf, n, 1);
+  sqlite3_result_text(context, zBuf, n, SQLITE_TRANSIENT);
+}
+
+/*
+** The following two SQL functions are used to test returning a text
+** result with a destructor. Function 'test_destructor' takes one argument
+** and returns the same argument interpreted as TEXT. A destructor is
+** passed with the sqlite3_result_text() call.
+**
+** SQL function 'test_destructor_count' returns the number of outstanding 
+** allocations made by 'test_destructor';
+**
+** WARNING: Not threadsafe.
+*/
+static int test_destructor_count_var = 0;
+static void destructor(void *p){
+  char *zVal = (char *)p;
+  assert(zVal);
+  zVal--;
+  sqliteFree(zVal);
+  test_destructor_count_var--;
+}
+static void test_destructor(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  char *zVal;
+  test_destructor_count_var++;
+  assert( nArg==1 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  zVal = sqliteMalloc(sqlite3_value_bytes(argv[0]) + 2);
+  assert( zVal );
+  zVal++;
+  strcpy(zVal, sqlite3_value_text(argv[0]));
+  sqlite3_result_text(pCtx, zVal, -1, destructor);
+}
+static void test_destructor_count(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  sqlite3_result_int(pCtx, test_destructor_count_var);
 }
 #endif
 
@@ -905,37 +947,40 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
      u8 needCollSeq;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
-    { "min",                        -1, 0, 0, 1, minmaxFunc },
-    { "min",                         0, 0, 0, 1, 0          },
-    { "max",                        -1, 2, 0, 1, minmaxFunc },
-    { "max",                         0, 2, 0, 1, 0          },
-    { "typeof",                      1, 0, 0, 0, typeofFunc },
-    { "length",                      1, 0, 0, 0, lengthFunc },
-    { "substr",                      3, 0, 0, 0, substrFunc },
-    { "abs",                         1, 0, 0, 0, absFunc    },
-    { "round",                       1, 0, 0, 0, roundFunc  },
-    { "round",                       2, 0, 0, 0, roundFunc  },
-    { "upper",                       1, 0, 0, 0, upperFunc  },
-    { "lower",                       1, 0, 0, 0, lowerFunc  },
-    { "coalesce",                   -1, 0, 0, 0, ifnullFunc },
-    { "coalesce",                    0, 0, 0, 0, 0          },
-    { "coalesce",                    1, 0, 0, 0, 0          },
-    { "ifnull",                      2, 0, 0, 1, ifnullFunc },
-    { "random",                     -1, 0, 0, 0, randomFunc },
-    { "like",                        2, 0, 0, 0, likeFunc   }, /* UTF-8 */
-    { "like",                        2, 2, 1, 0, likeFunc   }, /* UTF-16 */
-    { "glob",                        2, 0, 0, 0, globFunc   },
-    { "nullif",                      2, 0, 0, 0, nullifFunc },
-    { "sqlite_version",              0, 0, 0, 0, versionFunc},
-    { "quote",                       1, 0, 0, 0, quoteFunc  },
-    { "last_insert_rowid",           0, 1, 0, 0, last_insert_rowid },
-    { "change_count",                0, 1, 0, 0, change_count      },
-    { "last_statement_change_count", 0, 1, 0, 0, last_statement_change_count },
+    { "min",                        -1, 0, SQLITE_UTF8, 1, minmaxFunc },
+    { "min",                         0, 0, SQLITE_UTF8, 1, 0          },
+    { "max",                        -1, 2, SQLITE_UTF8, 1, minmaxFunc },
+    { "max",                         0, 2, SQLITE_UTF8, 1, 0          },
+    { "typeof",                      1, 0, SQLITE_UTF8, 0, typeofFunc },
+    { "length",                      1, 0, SQLITE_UTF8, 0, lengthFunc },
+    { "substr",                      3, 0, SQLITE_UTF8, 0, substrFunc },
+    { "abs",                         1, 0, SQLITE_UTF8, 0, absFunc    },
+    { "round",                       1, 0, SQLITE_UTF8, 0, roundFunc  },
+    { "round",                       2, 0, SQLITE_UTF8, 0, roundFunc  },
+    { "upper",                       1, 0, SQLITE_UTF8, 0, upperFunc  },
+    { "lower",                       1, 0, SQLITE_UTF8, 0, lowerFunc  },
+    { "coalesce",                   -1, 0, SQLITE_UTF8, 0, ifnullFunc },
+    { "coalesce",                    0, 0, SQLITE_UTF8, 0, 0          },
+    { "coalesce",                    1, 0, SQLITE_UTF8, 0, 0          },
+    { "ifnull",                      2, 0, SQLITE_UTF8, 1, ifnullFunc },
+    { "random",                     -1, 0, SQLITE_UTF8, 0, randomFunc },
+    { "like",                        2, 0, SQLITE_UTF8, 0, likeFunc   },
+    { "like",                        2, 2, SQLITE_UTF16,0, likeFunc   },
+    { "glob",                        2, 0, SQLITE_UTF8, 0, globFunc   },
+    { "nullif",                      2, 0, SQLITE_UTF8, 0, nullifFunc },
+    { "sqlite_version",              0, 0, SQLITE_UTF8, 0, versionFunc},
+    { "quote",                       1, 0, SQLITE_UTF8, 0, quoteFunc  },
+    { "last_insert_rowid",           0, 1, SQLITE_UTF8, 0, last_insert_rowid },
+    { "change_count",                0, 1, SQLITE_UTF8, 0, change_count      },
+    { "last_statement_change_count", 0, 1, SQLITE_UTF8, 0, 
+       last_statement_change_count },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",                     1, 0, 0, 0, soundexFunc},
+    { "soundex",                     1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",                     2, 0, 0, 0, randStr    },
+    { "randstr",                     2, 0, SQLITE_UTF8, 0, randStr    },
+    { "test_destructor",             1, 0, SQLITE_UTF8, 0, test_destructor},
+    { "test_destructor_count", 0, 0, SQLITE_UTF8, 0, test_destructor_count},
 #endif
   };
   static struct {
@@ -980,11 +1025,11 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
       case 1: pArg = db; break;
       case 2: pArg = (void *)(-1); break;
     }
-    sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, 0, 0, pArg,
-        0, aAggs[i].xStep, aAggs[i].xFinalize);
+    sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
+        0, pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
     if( aAggs[i].needCollSeq ){
       FuncDef *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
-          strlen(aAggs[i].zName), aAggs[i].nArg, 0, 0);
+          strlen(aAggs[i].zName), aAggs[i].nArg, SQLITE_UTF8, 0);
       if( pFunc && aAggs[i].needCollSeq ){
         pFunc->needCollSeq = 1;
       }

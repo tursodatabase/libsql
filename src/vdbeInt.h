@@ -136,6 +136,7 @@ struct Mem {
   double r;           /* Real value */
   char *z;            /* String or BLOB value */
   char zShort[NBFS];  /* Space for short strings */
+  void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
 };
 typedef struct Mem Mem;
 
@@ -373,7 +374,7 @@ int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
 int sqlite3VdbeMemCopy(Mem*, const Mem*);
 int sqlite3VdbeMemNulTerminate(Mem*);
-int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, int);
+int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, long long int);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
@@ -383,6 +384,7 @@ int sqlite3VdbeMemStringify(Mem*, int);
 int sqlite3VdbeMemIntegerify(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
+void sqlite3VdbeMemRelease(Mem *p);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 #endif

@@ -97,9 +97,12 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
 
-  /* Check that no trigger of the specified name exists */
-  zName = sqliteStrNDup(pName->z, pName->n);
-  sqlite3Dequote(zName);
+  /* Check that the trigger name is not reserved and that no trigger of the
+  ** specified name exists */
+  zName = sqlite3TableNameFromToken(pName);
+  if( !zName || SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
+    goto trigger_cleanup;
+  }
   if( sqlite3HashFind(&(db->aDb[iDb].trigHash), zName,pName->n+1) ){
     sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;

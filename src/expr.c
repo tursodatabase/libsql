@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.140 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: expr.c,v 1.141 2004/06/12 09:25:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1012,12 +1012,12 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;
-      int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
+      int enc = pParse->db->enc;
 
       getFunctionName(pExpr, &zId, &nId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, iPrefEnc, 0);
+      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
-        pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, iPrefEnc, 0);
+        pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, enc, 0);
         if( pDef==0 ){
           no_such_func = 1;
         }else{
@@ -1280,10 +1280,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       const char *zId;
       int p2 = 0;
       int i;
-      int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
+      u8 enc = pParse->db->enc;
       CollSeq *pColl = 0;
       getFunctionName(pExpr, &zId, &nId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, iPrefEnc, 0);
+      pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
       for(i=0; i<nExpr && i<32; i++){
@@ -1296,7 +1296,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       }
       if( pDef->needCollSeq ){
         if( !pColl ) pColl = pParse->db->pDfltColl; 
-        sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, pColl, P3_COLLSEQ);
+        sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, (char *)pColl, P3_COLLSEQ);
       }
       sqlite3VdbeOp3(v, OP_Function, nExpr, p2, (char*)pDef, P3_FUNCDEF);
       break;
@@ -1724,14 +1724,14 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         }
       }
       if( i>=pParse->nAgg ){
-        int iPrefEnc = (pParse->db->enc==SQLITE_UTF8)?0:1;
+        u8 enc = pParse->db->enc;
         i = appendAggInfo(pParse);
         if( i<0 ) return 1;
         pParse->aAgg[i].isAgg = 1;
         pParse->aAgg[i].pExpr = pExpr;
         pParse->aAgg[i].pFunc = sqlite3FindFunction(pParse->db,
              pExpr->token.z, pExpr->token.n,
-             pExpr->pList ? pExpr->pList->nExpr : 0, iPrefEnc, 0);
+             pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
       }
       pExpr->iAgg = i;
       break;
@@ -1781,53 +1781,68 @@ FuncDef *sqlite3FindFunction(
   const char *zName, /* Name of the function.  Not null-terminated */
   int nName,         /* Number of characters in the name */
   int nArg,          /* Number of arguments.  -1 means any number */
-  int eTextRep,      /* True to retrieve UTF-16 versions. */
+  u8 enc,            /* Preferred text encoding */
   int createFlag     /* Create new entry if true and does not otherwise exist */
 ){
   FuncDef *p;         /* Iterator variable */
   FuncDef *pFirst;    /* First function with this name */
   FuncDef *pBest = 0; /* Best match found so far */
-  int matchqual = 0;  
+  int bestmatch = 0;  
 
-  /* Normalize argument values to simplify comparisons below. */
-  if( eTextRep ) eTextRep = 1;
+
+  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   if( nArg<-1 ) nArg = -1;
 
   pFirst = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, nName);
   for(p=pFirst; p; p=p->pNext){
-    if( 1 || p->xFunc || p->xStep ){
-      if( p->nArg==nArg && p->iPrefEnc==eTextRep ){
-        /* A perfect match. */
-        pBest = p;
-        matchqual = 4;
-        break;
+    /* During the search for the best function definition, bestmatch is set
+    ** as follows to indicate the quality of the match with the definition
+    ** pointed to by pBest:
+    **
+    ** 0: pBest is NULL. No match has been found.
+    ** 1: A variable arguments function that prefers UTF-8 when a UTF-16
+    **    encoding is requested, or vice versa.
+    ** 2: A variable arguments function that uses UTF-16BE when UTF-16LE is
+    **    requested, or vice versa.
+    ** 3: A variable arguments function using the same text encoding.
+    ** 4: A function with the exact number of arguments requested that
+    **    prefers UTF-8 when a UTF-16 encoding is requested, or vice versa.
+    ** 5: A function with the exact number of arguments requested that
+    **    prefers UTF-16LE when UTF-16BE is requested, or vice versa.
+    ** 6: An exact match.
+    **
+    ** A larger value of 'matchqual' indicates a more desirable match.
+    */
+    if( p->nArg==-1 || p->nArg==nArg || nArg==-1 ){
+      int match = 1;          /* Quality of this match */
+      if( p->nArg==nArg || nArg==-1 ){
+        match = 4;
       }
-      if( p->nArg==nArg ){
-        /* Number of arguments matches, but not the text encoding */
-        pBest = p;
-        matchqual = 3;
+      if( enc==p->iPrefEnc ){
+        match += 2;
       }
-      else if( (p->nArg<0) || (nArg<0) ){
-        if( matchqual<2 && p->iPrefEnc==eTextRep ){
-          /* Matched a varargs function with correct text encoding */
-          pBest = p;
-          matchqual = 2;
-        }
-        if( matchqual<1 ){
-          /* Matched a varargs function with incorrect text encoding */
-          pBest = p;
-          matchqual = 1;
-        }
+      else if( (enc==SQLITE_UTF16LE && p->iPrefEnc==SQLITE_UTF16BE) ||
+               (enc==SQLITE_UTF16BE && p->iPrefEnc==SQLITE_UTF16LE) ){
+        match += 1;
+      }
+
+      if( match>bestmatch ){
+        pBest = p;
+        bestmatch = match;
       }
     }
   }
 
-  if( createFlag && matchqual<4 && 
+  /* If the createFlag parameter is true, and the seach did not reveal an
+  ** exact match for the name, number of arguments and encoding, then add a
+  ** new entry to the hash table and return it.
+  */
+  if( createFlag && bestmatch<6 && 
       (pBest = sqliteMalloc(sizeof(*pBest)+nName+1)) ){
     pBest->nArg = nArg;
     pBest->pNext = pFirst;
     pBest->zName = (char*)&pBest[1];
-    pBest->iPrefEnc = eTextRep;
+    pBest->iPrefEnc = enc;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;
     sqlite3HashInsert(&db->aFunc, pBest->zName, nName, (void*)pBest);

@@ -544,9 +544,7 @@ int sqlite3VdbeList(
   */
   if( p->pTos==&p->aStack[4] ){
     for(i=0; i<5; i++){
-      if( p->aStack[i].flags & MEM_Dyn ){
-        sqliteFree(p->aStack[i].z);
-      }
+      sqlite3VdbeMemRelease(&p->aStack[i]);
       p->aStack[i].flags = 0;
     }
   }
@@ -701,54 +699,6 @@ void sqlite3VdbeSorterReset(Vdbe *p){
 }
 
 /*
-** Reset an Agg structure.  Delete all its contents. 
-**
-** For installable aggregate functions, if the step function has been
-** called, make sure the finalizer function has also been called.  The
-** finalizer might need to free memory that was allocated as part of its
-** private context.  If the finalizer has not been called yet, call it
-** now.
-*/
-#if 0
-void sqlite3VdbeAggReset(Agg *pAgg){
-  int i;
-  HashElem *p;
-  for(p = sqliteHashFirst(&pAgg->hash); p; p = sqliteHashNext(p)){
-    AggElem *pElem = sqliteHashData(p);
-    assert( pAgg->apFunc!=0 );
-    for(i=0; i<pAgg->nMem; i++){
-      Mem *pMem = &pElem->aMem[i];
-      if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
-        sqlite3_context ctx;
-        ctx.pFunc = pAgg->apFunc[i];
-        ctx.s.flags = MEM_Null;
-        ctx.pAgg = pMem->z;
-        ctx.cnt = pMem->i;
-        ctx.isStep = 0;
-        ctx.isError = 0;
-        (*pAgg->apFunc[i]->xFinalize)(&ctx);
-        if( pMem->z!=0 && pMem->z!=pMem->zShort ){
-          sqliteFree(pMem->z);
-        }
-        if( ctx.s.flags & MEM_Dyn ){
-          sqliteFree(ctx.s.z);
-        }
-      }else if( pMem->flags & MEM_Dyn ){
-        sqliteFree(pMem->z);
-      }
-    }
-    sqliteFree(pElem);
-  }
-  sqlite3HashClear(&pAgg->hash);
-  sqliteFree(pAgg->apFunc);
-  pAgg->apFunc = 0;
-  pAgg->pCurrent = 0;
-  pAgg->pSearch = 0;
-  pAgg->nMem = 0;
-}
-#endif
-
-/*
 ** Reset an Agg structure.  Delete all its contents.
 **
 ** For installable aggregate functions, if the step function has been
@@ -806,8 +756,8 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
           if( pMem->z!=0 && pMem->z!=pMem->z ){
             sqliteFree(pMem->z);
           }
-        }else if( pMem->flags&MEM_Dyn ){
-          sqliteFree(pMem->z);
+        }else{
+          sqlite3VdbeMemRelease(pMem);
         }
       }
       sqliteFree(pElem);
@@ -915,9 +865,7 @@ static void Cleanup(Vdbe *p){
   if( p->aStack ){
     Mem *pTos = p->pTos;
     while( pTos>=p->aStack ){
-      if( pTos->flags & MEM_Dyn ){
-        sqliteFree(pTos->z);
-      }
+      sqlite3VdbeMemRelease(pTos);
       pTos--;
     }
     p->pTos = pTos;
@@ -925,9 +873,7 @@ static void Cleanup(Vdbe *p){
   closeAllCursors(p);
   if( p->aMem ){
     for(i=0; i<p->nMem; i++){
-      if( p->aMem[i].flags & MEM_Dyn ){
-        sqliteFree(p->aMem[i].z);
-      }
+      sqlite3VdbeMemRelease(&p->aMem[i]);
     }
   }
   sqliteFree(p->aMem);
@@ -985,7 +931,10 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 **
 ** This call must be made after a call to sqlite3VdbeSetNumCols().
 **
-** Parameter N may be either P3_DYNAMIC or P3_STATIC.
+** If N==P3_STATIC  it means that zName is a pointer to a constant static
+** string and we can just copy the pointer. If it is P3_DYNAMIC, then 
+** the string is freed using sqliteFree() when the vdbe is finished with
+** it. Otherwise, N bytes of zName are copied.
 */
 int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   int rc;
@@ -1007,13 +956,14 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   }
 
   pColName = &(p->aColName[idx]);
-  if( N==0 ){
-    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, 1);
+  if( N==P3_DYNAMIC || N==P3_STATIC ){
+    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
   }else{
-    rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8, N>0);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8,SQLITE_TRANSIENT);
   }
   if( rc==SQLITE_OK && N==P3_DYNAMIC ){
     pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
+    pColName->xDel = 0;
   }
   return rc;
 }
@@ -1396,9 +1346,7 @@ void sqlite3VdbeDelete(Vdbe *p){
 #endif
   }
   for(i=0; i<p->nVar; i++){
-    if( p->apVar[i].flags&MEM_Dyn ){
-      sqliteFree(p->apVar[i].z);
-    }
+    sqlite3VdbeMemRelease(&p->apVar[i]);
   }
   if( p->azColName16 ){
     for(i=0; i<p->nResColumn; i++){
@@ -1678,12 +1626,8 @@ int sqlite3VdbeRecordCompare(
     d2 += sqlite3VdbeSerialGet(&aKey2[d2], serial_type2, &mem2);
 
     rc = sqlite3MemCompare(&mem1, &mem2, i<nField ? pKeyInfo->aColl[i] : 0);
-    if( mem1.flags&MEM_Dyn ){
-      sqliteFree(mem1.z);
-    }
-    if( mem2.flags&MEM_Dyn ){
-      sqliteFree(mem2.z);
-    }
+    sqlite3VdbeMemRelease(&mem1);
+    sqlite3VdbeMemRelease(&mem2);
     if( rc!=0 ){
       break;
     }
@@ -1753,9 +1697,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
   sqlite3VdbeSerialGet(&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.i;
-  if( m.flags & MEM_Dyn ){
-    sqliteFree(m.z);
-  }
+  sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
 
@@ -1791,8 +1733,6 @@ int sqlite3VdbeIdxKeyCompare(
   }
   lenRowid = sqlite3VdbeIdxRowidLen(m.n, m.z);
   *res = sqlite3VdbeRecordCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
-  if( m.flags & MEM_Dyn ){
-    sqliteFree(m.z);
-  }
+  sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.217 2004/06/12 01:43:26 danielk1977 Exp $
+** $Id: main.c,v 1.218 2004/06/12 09:25:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -495,10 +495,11 @@ void sqlite3_close(sqlite *db){
     }
   }
 
-  for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
+  for(i=sqliteHashFirst(&db->aCollSeq); i; i=sqliteHashNext(i)){
     CollSeq *pColl = (CollSeq *)sqliteHashData(i);
-    /* sqliteFree(pColl); */
+    sqliteFree(pColl);
   }
+  sqlite3HashClear(&db->aCollSeq);
 
   sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
@@ -567,7 +568,6 @@ const char *sqlite3ErrStr(int rc){
 */
 static int sqliteDefaultBusyCallback(
  void *Timeout,           /* Maximum amount of time to wait */
- const char *NotUsed,     /* The name of the table that is busy */
  int count                /* Number of times table has been busy */
 ){
 #if SQLITE_MIN_SLEEP_MS==1
@@ -678,7 +678,7 @@ int sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
-  int eTextRep,
+  int enc,
   int iCollateArg,
   void *pUserData,
   void (*xFunc)(sqlite3_context*,int,sqlite3_value **),
@@ -696,8 +696,28 @@ int sqlite3_create_function(
       (255<(nName = strlen(zFunctionName))) ){
     return SQLITE_ERROR;
   }
+  
+  /* If SQLITE_UTF16 is specified as the encoding type, transform this
+  ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
+  ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
+  **
+  ** If SQLITE_ANY is specified, add three versions of the function
+  ** to the hash table.
+  */
+  if( enc==SQLITE_UTF16 ){
+    enc = SQLITE_UTF16NATIVE;
+  }else if( enc==SQLITE_ANY ){
+    int rc;
+    rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF8,
+        iCollateArg, pUserData, xFunc, xStep, xFinal);
+    if( rc!=SQLITE_OK ) return rc;
+    rc = sqlite3_create_function(db, zFunctionName, nArg, SQLITE_UTF16LE,
+        iCollateArg, pUserData, xFunc, xStep, xFinal);
+    if( rc!=SQLITE_OK ) return rc;
+    enc = SQLITE_UTF16BE;
+  }
 
-  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, eTextRep, 1);
+  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
   if( p==0 ) return 1;
   p->xFunc = xFunc;
   p->xStep = xStep;
@@ -804,7 +824,7 @@ int sqlite3BtreeFactory(
   }
 
   return sqlite3BtreeOpen(zFilename, ppBtree, nCache, btree_flags,
-      &db->busyHandler);
+      (void *)&db->busyHandler);
 }
 
 /*
@@ -1182,6 +1202,9 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
   return rc;
 }
 
+/*
+** Register a new collation sequence with the database handle db.
+*/
 int sqlite3_create_collation(
   sqlite3* db, 
   const char *zName, 
@@ -1191,10 +1214,19 @@ int sqlite3_create_collation(
 ){
   CollSeq *pColl;
   int rc = SQLITE_OK;
+  
+  /* If SQLITE_UTF16 is specified as the encoding type, transform this
+  ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
+  ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
+  */
+  if( enc==SQLITE_UTF16 ){
+    enc = SQLITE_UTF16NATIVE;
+  }
+
   if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF16LE && enc!=SQLITE_UTF16BE ){
     sqlite3Error(db, SQLITE_ERROR, 
         "Param 3 to sqlite3_create_collation() must be one of "
-        "SQLITE_UTF8, SQLITE_UTF16LE or SQLITE_UTF16BE"
+        "SQLITE_UTF8, SQLITE_UTF16, SQLITE_UTF16LE or SQLITE_UTF16BE"
     );
     return SQLITE_ERROR;
   }
@@ -1209,6 +1241,9 @@ int sqlite3_create_collation(
   return rc;
 }
 
+/*
+** Register a new collation sequence with the database handle db.
+*/
 int sqlite3_create_collation16(
   sqlite3* db, 
   const char *zName, 
@@ -1223,6 +1258,10 @@ int sqlite3_create_collation16(
   return rc;
 }
 
+/*
+** Register a collation sequence factory callback with the database handle
+** db. Replace any previously installed collation sequence factory.
+*/
 int sqlite3_collation_needed(
   sqlite3 *db, 
   void *pCollNeededArg, 
@@ -1233,6 +1272,11 @@ int sqlite3_collation_needed(
   db->pCollNeededArg = pCollNeededArg;
   return SQLITE_OK;
 }
+
+/*
+** Register a collation sequence factory callback with the database handle
+** db. Replace any previously installed collation sequence factory.
+*/
 int sqlite3_collation_needed16(
   sqlite3 *db, 
   void *pCollNeededArg, 

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.367 2004/06/12 01:43:27 danielk1977 Exp $
+** $Id: vdbe.c,v 1.368 2004/06/12 09:25:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -73,7 +73,7 @@ int sqlite3_interrupt_count = 0;
 ** Release the memory associated with the given stack level.  This
 ** leaves the Mem.flags field in an inconsistent state.
 */
-#define Release(P) if((P)->flags&MEM_Dyn){ sqliteFree((P)->z); }
+#define Release(P) if((P)->flags&MEM_Dyn){ sqlite3VdbeMemRelease(P); }
 
 /*
 ** Convert the given stack entity into a string if it isn't one
@@ -822,6 +822,7 @@ case OP_Variable: {
 
   pTos++;
   memcpy(pTos, &p->apVar[j], sizeof(*pTos)-NBFS);
+  pTos->xDel = 0;
   if( pTos->flags&(MEM_Str|MEM_Blob) ){
     pTos->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Short);
     pTos->flags |= MEM_Static;
@@ -912,6 +913,7 @@ case OP_Dup: {
   assert( pFrom<=pTos && pFrom>=p->aStack );
   pTos++;
   memcpy(pTos, pFrom, sizeof(*pFrom)-NBFS);
+  pTos->xDel = 0;
   if( pTos->flags & (MEM_Str|MEM_Blob) ){
     if( pOp->p2 && (pTos->flags & (MEM_Dyn|MEM_Ephem)) ){
       pTos->flags &= ~MEM_Dyn;
@@ -1120,6 +1122,7 @@ case OP_Concat: {
     pTos++;
     pTos->n = j;
     pTos->flags = MEM_Str|MEM_Dyn|MEM_Term;
+    pTos->xDel = 0;
     pTos->enc = db->enc;
     pTos->z = zNew;
   }
@@ -2282,6 +2285,7 @@ case OP_MakeRecord: {
     assert( zNewRecord!=(unsigned char *)zTemp );
     pTos->z = zNewRecord;
     pTos->flags = MEM_Blob | MEM_Dyn;
+    pTos->xDel = 0;
   }
 
   /* If P2 is non-zero, and if the key contains a NULL value, and if this
@@ -3308,6 +3312,7 @@ case OP_RowData: {
       char *z = sqliteMallocRaw( n );
       if( z==0 ) goto no_mem;
       pTos->flags = MEM_Blob | MEM_Dyn;
+      pTos->xDel = 0;
       pTos->z = z;
     }
     if( pC->keyAsData || pOp->opcode==OP_RowKey ){
@@ -3393,6 +3398,7 @@ case OP_FullKey: {
       z = sqliteMallocRaw( amt );
       if( z==0 ) goto no_mem;
       pTos->flags = MEM_Blob | MEM_Dyn;
+      pTos->xDel = 0;
     }else{
       z = pTos->zShort;
       pTos->flags = MEM_Blob | MEM_Short;
@@ -3919,6 +3925,7 @@ case OP_IntegrityCk: {
     pTos->z = z;
     pTos->n = strlen(z);
     pTos->flags = MEM_Str | MEM_Dyn | MEM_Term;
+    pTos->xDel = 0;
   }
   pTos->enc = SQLITE_UTF8;
   sqlite3VdbeChangeEncoding(pTos, db->enc);
@@ -4163,6 +4170,7 @@ case OP_SortNext: {
     pTos->z = pSorter->pData;
     pTos->n = pSorter->nData;
     pTos->flags = MEM_Blob|MEM_Dyn|MEM_Term;
+    pTos->xDel = 0;
     pTos->enc = 0;
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
@@ -4252,6 +4260,7 @@ case OP_MemLoad: {
   assert( i>=0 && i<p->nMem );
   pTos++;
   memcpy(pTos, &p->aMem[i], sizeof(pTos[0])-NBFS);;
+  pTos->xDel = 0;
   if( pTos->flags & (MEM_Str|MEM_Blob) ){
     pTos->flags |= MEM_Ephem;
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
@@ -4456,6 +4465,7 @@ case OP_AggGet: {
   pTos++;
   pMem = &pFocus->aMem[i];
   *pTos = *pMem;
+  pTos->xDel = 0;
   if( pTos->flags & (MEM_Str|MEM_Blob) ){
     pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTos->flags |= MEM_Ephem;

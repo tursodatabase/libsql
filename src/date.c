@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.28 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: date.c,v 1.29 2004/06/12 09:25:14 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -692,7 +692,7 @@ static void datetimeFunc(
     computeYMD_HMS(&x);
     sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d",x.Y, x.M, x.D, x.h, x.m,
            (int)(x.s));
-    sqlite3_result_text(context, zBuf, -1, 1);
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
 
@@ -711,7 +711,7 @@ static void timeFunc(
     char zBuf[100];
     computeHMS(&x);
     sprintf(zBuf, "%02d:%02d:%02d", x.h, x.m, (int)x.s);
-    sqlite3_result_text(context, zBuf, -1, 1);
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
 
@@ -730,7 +730,7 @@ static void dateFunc(
     char zBuf[100];
     computeYMD(&x);
     sprintf(zBuf, "%04d-%02d-%02d", x.Y, x.M, x.D);
-    sqlite3_result_text(context, zBuf, -1, 1);
+    sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
 
@@ -854,7 +854,7 @@ static void strftimeFunc(
     }
   }
   z[j] = 0;
-  sqlite3_result_text(context, z, -1, 1);
+  sqlite3_result_text(context, z, -1, SQLITE_TRANSIENT);
   if( z!=zBuf ){
     sqliteFree(z);
   }
@@ -885,7 +885,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite *db){
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg, 0, 0, 0,
-        aFuncs[i].xFunc, 0, 0);
+    sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
+        SQLITE_UTF8, 0, 0, aFuncs[i].xFunc, 0, 0);
   }
 }

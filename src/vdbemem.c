@@ -54,9 +54,8 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    if( pMem->flags&MEM_Dyn ){
-      sqliteFree(pMem->z);
-    }
+    sqlite3VdbeMemRelease(pMem);
+
     /* Result of sqlite3utfTranslate is currently always dynamically
     ** allocated and nul terminated. This might be altered as a performance
     ** enhancement later.
@@ -65,6 +64,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     pMem->n = n;
     pMem->flags &= ~(MEM_Ephem | MEM_Short | MEM_Static);
     pMem->flags |= MEM_Str | MEM_Dyn | MEM_Term;
+    pMem->xDel = 0;
   }else{
     /* Must be translating between UTF-16le and UTF-16be. */
     int i;
@@ -98,6 +98,7 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
     return SQLITE_NOMEM;
   }
   pMem->flags |= MEM_Dyn|MEM_Term;
+  pMem->xDel = 0;
   memcpy(z, pMem->z, n );
   z[n] = 0;
   z[n+1] = 0;
@@ -129,6 +130,7 @@ int sqlite3VdbeMemMakeWriteable(Mem *pMem){
       return SQLITE_NOMEM;
     }
     pMem->flags |= MEM_Dyn|MEM_Term;
+    pMem->xDel = 0;
   }
   memcpy(z, pMem->z, n );
   z[n] = 0;
@@ -199,12 +201,19 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
 }
 
 /*
-** Release any memory held by the Mem
+** Release any memory held by the Mem. This may leave the Mem in an
+** inconsistent state, for example with (Mem.z==0) and
+** (Mem.type==SQLITE_TEXT).
 */
-static void releaseMem(Mem *p){
+void sqlite3VdbeMemRelease(Mem *p){
   if( p->flags & MEM_Dyn ){
-    sqliteFree(p->z);
+    if( p->xDel ){
+      p->xDel((void *)p->z);
+    }else{
+      sqliteFree(p->z);
+    }
     p->z = 0;
+    p->xDel = 0;
   }
 }
 
@@ -260,7 +269,7 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 ** Delete any previous value and set the value stored in *pMem to NULL.
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
-  releaseMem(pMem);
+  sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Null;
   pMem->type = SQLITE_NULL;
 }
@@ -270,7 +279,7 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
 ** manifest type INTEGER.
 */
 void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
-  releaseMem(pMem);
+  sqlite3VdbeMemRelease(pMem);
   pMem->i = val;
   pMem->flags = MEM_Int;
   pMem->type = SQLITE_INTEGER;
@@ -281,7 +290,7 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 ** manifest type REAL.
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
-  releaseMem(pMem);
+  sqlite3VdbeMemRelease(pMem);
   pMem->r = val;
   pMem->flags = MEM_Real;
   pMem->type = SQLITE_FLOAT;
@@ -291,8 +300,9 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 ** Copy the contents of memory cell pFrom into pTo.
 */
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
-  releaseMem(pTo);
+  sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(*pFrom)-sizeof(pFrom->zShort));
+  pTo->xDel = 0;
   if( pTo->flags & (MEM_Str|MEM_Blob) ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
     pTo->flags |= MEM_Ephem;
@@ -309,9 +319,9 @@ int sqlite3VdbeMemSetStr(
   const char *z,      /* String pointer */
   int n,              /* Bytes in string, or negative */
   u8 enc,             /* Encoding of z.  0 for BLOBs */
-  int eCopy           /* True if this function should make a copy of z */
+  void (*xDel)(void*) /* Destructor function */
 ){
-  releaseMem(pMem);
+  sqlite3VdbeMemRelease(pMem);
   if( !z ){
     pMem->flags = MEM_Null;
     pMem->type = SQLITE_NULL;
@@ -319,14 +329,19 @@ int sqlite3VdbeMemSetStr(
   }
 
   pMem->z = (char *)z;
-  if( eCopy ){
+  if( xDel==SQLITE_STATIC ){
+    pMem->flags = MEM_Static;
+  }else if( xDel==SQLITE_TRANSIENT ){
     pMem->flags = MEM_Ephem;
   }else{
-    pMem->flags = MEM_Static;
+    pMem->flags = MEM_Dyn;
+    pMem->xDel = xDel;
   }
+
   pMem->enc = enc;
   pMem->type = enc==0 ? SQLITE_BLOB : SQLITE_TEXT;
   pMem->n = n;
+
   switch( enc ){
     case 0:
       pMem->flags |= MEM_Blob;
@@ -352,7 +367,7 @@ int sqlite3VdbeMemSetStr(
     default:
       assert(0);
   }
-  if( eCopy ){
+  if( xDel==SQLITE_TRANSIENT ){
     return sqlite3VdbeMemMakeWriteable(pMem);
   }
   return SQLITE_OK;
@@ -510,6 +525,7 @@ int sqlite3VdbeMemFromBtree(
         return SQLITE_NOMEM;
       }
       pMem->flags = MEM_Blob|MEM_Dyn|MEM_Term;
+      pMem->xDel = 0;
     }else{
       zData = &(pMem->zShort[0]);
       pMem->flags = MEM_Blob|MEM_Short|MEM_Term;
@@ -611,24 +627,7 @@ sqlite3_value* sqlite3ValueNew(){
 }
 
 void sqlite3ValueSetStr(sqlite3_value *v, int n, const void *z, u8 enc){
-  Mem *p = (Mem *)v;
-  if( p->z && p->flags&MEM_Dyn ){
-    sqliteFree(p->z);
-  }
-  p->z = (char *)z;
-  p->n = n;
-  p->enc = enc;
-  p->type = SQLITE_TEXT;
-  p->flags = (MEM_Str|MEM_Static);
-
-  if( p->n<0 ){
-    if( enc==SQLITE_UTF8 ){
-      p->n = strlen(p->z);
-    }else{
-      p->n = sqlite3utf16ByteLen(p->z, -1);
-    }
-  }
-  return;
+  sqlite3VdbeMemSetStr((Mem *)v, z, n, enc, SQLITE_STATIC);
 }
 
 void sqlite3ValueFree(sqlite3_value *v){

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.188 2004/06/11 13:19:21 danielk1977 Exp $
+** $Id: select.c,v 1.189 2004/06/12 09:25:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -706,7 +706,7 @@ static void generateColumnNames(
     if( p==0 ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      sqlite3VdbeSetColName(v, i, zName, 0);
+      sqlite3VdbeSetColName(v, i, zName, strlen(zName));
       continue;
     }
     if( p->op==TK_COLUMN && pTabList ){
@@ -725,7 +725,6 @@ static void generateColumnNames(
       }
       if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
         sqlite3VdbeSetColName(v, i, p->span.z, p->span.n);
-        /* sqlite3VdbeCompressSpace(v, addr); */
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
         char *zTab;

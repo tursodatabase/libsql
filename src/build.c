@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.217 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: build.c,v 1.218 2004/06/12 09:25:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -480,6 +480,21 @@ int sqlite3TwoPartName(
 }
 
 /*
+** This routine is used to check if the UTF-8 string zName is a legal
+** unqualified name for a new schema object (table, index, view or
+** trigger). All names are legal except those that begin with the string
+** "sqlite_" (in upper, lower or mixed case). This portion of the namespace
+** is reserved for internal use.
+*/
+int sqlite3CheckObjectName(Parse *pParse, const char *zName){
+  if( !pParse->db->init.busy && 0==sqlite3StrNICmp(zName, "sqlite_", 7) ){
+    sqlite3ErrorMsg(pParse, "object name reserved for internal use: %s", zName);
+    return SQLITE_ERROR;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
 ** to a CREATE TABLE statement.  In particular, this routine is called
@@ -541,6 +556,9 @@ void sqlite3StartTable(
 
   pParse->sNameToken = *pName;
   zName = sqlite3TableNameFromToken(pName);
+  if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
+    return;
+  }
   if( zName==0 ) return;
   if( db->init.iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -1854,7 +1872,7 @@ void sqlite3CreateIndex(
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
   Table *pTab = 0; /* Table to be indexed */
-  Index *pIndex;   /* The index to be created */
+  Index *pIndex = 0; /* The index to be created */
   char *zName = 0;
   int i, j;
   Token nullId;    /* Fake token for an empty ID list */
@@ -1927,30 +1945,33 @@ void sqlite3CreateIndex(
   ** dealing with a primary key or UNIQUE constraint.  We have to invent our
   ** own name.
   */
-  if( pName && !db->init.busy ){
-    Index *pISameName;    /* Another index with the same name */
-    Table *pTSameName;    /* A table with same name as the index */
-    zName = sqliteStrNDup(pName->z, pName->n);
+  if( pName ){
+    zName = sqlite3TableNameFromToken(pName);
     if( zName==0 ) goto exit_create_index;
-    if( (pISameName = sqlite3FindIndex(db, zName, db->aDb[iDb].zName))!=0 ){
-      sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+    if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
     }
-    if( (pTSameName = sqlite3FindTable(db, zName, 0))!=0 ){
-      sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
-      goto exit_create_index;
+    if( !db->init.busy ){
+      Index *pISameName;    /* Another index with the same name */
+      Table *pTSameName;    /* A table with same name as the index */
+      if( (pISameName = sqlite3FindIndex(db, zName, db->aDb[iDb].zName))!=0 ){
+        sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+        goto exit_create_index;
+      }
+      if( (pTSameName = sqlite3FindTable(db, zName, 0))!=0 ){
+        sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
+        goto exit_create_index;
+      }
     }
   }else if( pName==0 ){
     char zBuf[30];
     int n;
     Index *pLoop;
     for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
-    sprintf(zBuf,"%d)",n);
+    sprintf(zBuf,"_%d",n);
     zName = 0;
-    sqlite3SetString(&zName, "(", pTab->zName, " autoindex ", zBuf, (char*)0);
+    sqlite3SetString(&zName, "sqlite_autoindex_", pTab->zName, zBuf, (char*)0);
     if( zName==0 ) goto exit_create_index;
-  }else{
-    zName = sqliteStrNDup(pName->z, pName->n);
   }
 
   /* Check for authorization to create an index.
@@ -2006,7 +2027,6 @@ void sqlite3CreateIndex(
     if( j>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "table %s has no column named %s",
         pTab->zName, pList->a[i].zName);
-      sqliteFree(pIndex);
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
@@ -2025,6 +2045,46 @@ void sqlite3CreateIndex(
   }
   pIndex->keyInfo.nField = pList->nExpr;
 
+  if( pTab==pParse->pNewTable ){
+    /* This routine has been called to create an automatic index as a
+    ** result of a PRIMARY KEY or UNIQUE clause on a column definition, or
+    ** a PRIMARY KEY or UNIQUE clause following the column definitions.
+    ** i.e. one of:
+    **
+    ** CREATE TABLE t(x PRIMARY KEY, y);
+    ** CREATE TABLE t(x, y, UNIQUE(x, y));
+    **
+    ** Either way, check to see if the table already has such an index. If
+    ** so, don't bother creating this one. This only applies to
+    ** automatically created indices. Users can do as they wish with
+    ** explicit indices.
+    */
+    Index *pIdx;
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      int k;
+      assert( pIdx->onError!=OE_None );
+      assert( pIdx->autoIndex );
+      assert( pIndex->onError!=OE_None );
+
+      if( pIdx->nColumn!=pIndex->nColumn ) continue;
+      for(k=0; k<pIdx->nColumn; k++){
+        if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
+        if( pIdx->keyInfo.aColl[k]!=pIndex->keyInfo.aColl[k] ) break;
+      }
+      if( k==pIdx->nColumn ){
+        /* FIX ME: It's possible the onError of the old index should be
+        ** adjusted. For example in the statement:
+        **
+        ** CREATE TABLE t (x UNIQUE, UNIQUE(x) ON CONFLICT ROLLBACK);
+        **
+        ** The Index.onError should be upgraded from OE_Abort to
+        ** OE_Rollback when the second UNIQUE is parsed.
+        */
+        goto exit_create_index;
+      }
+    }
+  }
+
   /* Link the new Index structure to its table and to the other
   ** in-memory database structures. 
   */
@@ -2034,28 +2094,9 @@ void sqlite3CreateIndex(
                          pIndex->zName, strlen(pIndex->zName)+1, pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */
-      sqliteFree(pIndex);
       goto exit_create_index;
     }
     db->flags |= SQLITE_InternChanges;
-  }
-
-  /* When adding an index to the list of indices for a table, make
-  ** sure all indices labeled OE_Replace come after all those labeled
-  ** OE_Ignore.  This is necessary for the correct operation of UPDATE
-  ** and INSERT.
-  */
-  if( onError!=OE_Replace || pTab->pIndex==0
-       || pTab->pIndex->onError==OE_Replace){
-    pIndex->pNext = pTab->pIndex;
-    pTab->pIndex = pIndex;
-  }else{
-    Index *pOther = pTab->pIndex;
-    while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
-      pOther = pOther->pNext;
-    }
-    pIndex->pNext = pOther->pNext;
-    pOther->pNext = pIndex;
   }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
@@ -2145,8 +2186,28 @@ void sqlite3CreateIndex(
     }
   }
 
+  /* When adding an index to the list of indices for a table, make
+  ** sure all indices labeled OE_Replace come after all those labeled
+  ** OE_Ignore.  This is necessary for the correct operation of UPDATE
+  ** and INSERT.
+  */
+  if( onError!=OE_Replace || pTab->pIndex==0
+       || pTab->pIndex->onError==OE_Replace){
+    pIndex->pNext = pTab->pIndex;
+    pTab->pIndex = pIndex;
+  }else{
+    Index *pOther = pTab->pIndex;
+    while( pOther->pNext && pOther->pNext->onError!=OE_Replace ){
+      pOther = pOther->pNext;
+    }
+    pIndex->pNext = pOther->pNext;
+    pOther->pNext = pIndex;
+  }
+  pIndex = 0;
+
   /* Clean up before exiting */
 exit_create_index:
+  if( pIndex ) sqliteFree(pIndex);
   sqlite3ExprListDelete(pList);
   /* sqlite3SrcListDelete(pTable); */
   sqliteFree(zName);

@@ -63,6 +63,12 @@ const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
 const void *sqlite3_value_text16(sqlite3_value* pVal){
   return sqlite3ValueText(pVal, SQLITE_UTF16NATIVE);
 }
+const void *sqlite3_value_text16be(sqlite3_value *pVal){
+  return sqlite3ValueText(pVal, SQLITE_UTF16BE);
+}
+const void *sqlite3_value_text16le(sqlite3_value *pVal){
+  return sqlite3ValueText(pVal, SQLITE_UTF16LE);
+}
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;
 }
@@ -75,21 +81,21 @@ void sqlite3_result_blob(
   sqlite3_context *pCtx, 
   const void *z, 
   int n, 
-  int eCopy
+  void (*xDel)(void *)
 ){
   assert( n>0 );
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, xDel);
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
   sqlite3VdbeMemSetDouble(&pCtx->s, rVal);
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, 1);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, 1);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
   sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
@@ -104,17 +110,33 @@ void sqlite3_result_text(
   sqlite3_context *pCtx, 
   const char *z, 
   int n,
-  int eCopy
+  void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, xDel);
 }
 void sqlite3_result_text16(
   sqlite3_context *pCtx, 
   const void *z, 
   int n, 
-  int eCopy
+  void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, eCopy);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, xDel);
+}
+void sqlite3_result_text16be(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  void (*xDel)(void *)
+){
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16BE, xDel);
+}
+void sqlite3_result_text16le(
+  sqlite3_context *pCtx, 
+  const void *z, 
+  int n, 
+  void (*xDel)(void *)
+){
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16LE, xDel);
 }
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   sqlite3VdbeMemCopy(&pCtx->s, pValue);
@@ -404,9 +426,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   }
   i--;
   pVar = &p->apVar[i];
-  if( pVar->flags&MEM_Dyn ){
-    sqliteFree(pVar->z);
-  }
+  sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
   sqlite3Error(p->db, SQLITE_OK, 0);
   return SQLITE_OK;
@@ -420,7 +440,7 @@ int sqlite3_bind_blob(
   int i, 
   const void *zData, 
   int nData, 
-  int eCopy
+  void (*xDel)(void*)
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
@@ -431,7 +451,7 @@ int sqlite3_bind_blob(
     return rc;
   }
   pVar = &p->apVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, 0, eCopy);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, 0, xDel);
   return rc;
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
@@ -463,7 +483,7 @@ int sqlite3_bind_text(
   int i, 
   const char *zData, 
   int nData, 
-  int eCopy
+  void (*xDel)(void*)
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
@@ -474,7 +494,7 @@ int sqlite3_bind_text(
     return rc;
   }
   pVar = &p->apVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF8, eCopy);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF8, xDel);
   if( rc ){
     return rc;
   }
@@ -486,7 +506,7 @@ int sqlite3_bind_text16(
   int i, 
   const void *zData, 
   int nData, 
-  int eCopy
+  void (*xDel)(void*)
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
@@ -511,7 +531,7 @@ int sqlite3_bind_text16(
   }else{
     txt_enc = SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE;
   }
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, eCopy);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, xDel);
   if( rc ){
     return rc;
   }

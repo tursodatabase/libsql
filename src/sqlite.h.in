@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.100 2004/06/12 01:43:27 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.101 2004/06/12 09:25:20 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -604,13 +604,13 @@ typedef struct Mem sqlite3_value;
 ** an sqlite3_prepare() or sqlite3_reset().  Unbound wildcards are interpreted
 ** as NULL.
 */
-int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, int eCopy);
+int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 int sqlite3_bind_double(sqlite3_stmt*, int, double);
 int sqlite3_bind_int(sqlite3_stmt*, int, int);
 int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
 int sqlite3_bind_null(sqlite3_stmt*, int);
-int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, int eCopy);
-int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, int eCopy);
+int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
+int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
 int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 
 /*
@@ -833,12 +833,12 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** aggregate takes. If this parameter is negative, then the function or
 ** aggregate may take any number of arguments.
 **
-** If the fourth parameter is non-zero, this indicates that the function is
-** more likely to handle text in UTF-16 encoding than UTF-8. This does not
-** change the behaviour of the programming interface. However, if two
-** versions of the same function are registered, one with eTextRep non-zero
-** and the other zero, SQLite invokes the version likely to minimize
-** conversions between unicode encodings.
+** The fourth parameter is one of SQLITE_UTF* values defined below,
+** indicating the encoding that the function is most likely to handle
+** values in.  This does not change the behaviour of the programming
+** interface. However, if two versions of the same function are registered
+** with different encoding values, SQLite invokes the version likely to
+** minimize conversions between text encodings.
 **
 ** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
 ** pointers to user implemented C functions that implement the user
@@ -897,6 +897,8 @@ int sqlite3_value_int(sqlite3_value*);
 long long int sqlite3_value_int64(sqlite3_value*);
 const unsigned char *sqlite3_value_text(sqlite3_value*);
 const void *sqlite3_value_text16(sqlite3_value*);
+const void *sqlite3_value_text16le(sqlite3_value*);
+const void *sqlite3_value_text16be(sqlite3_value*);
 int sqlite3_value_type(sqlite3_value*);
 
 /*
@@ -948,19 +950,24 @@ void *sqlite3_user_data(sqlite3_context*);
 void *sqlite3_get_auxdata(sqlite3_context*, int);
 void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
 
+#define SQLITE_STATIC      ((void(*)(void *))0)
+#define SQLITE_TRANSIENT   ((void(*)(void *))-1)
+
 /*
 ** User-defined functions invoke the following routines in order to
 ** set their return value.
 */
-void sqlite3_result_blob(sqlite3_context*, const void*, int n, int eCopy);
+void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
 void sqlite3_result_double(sqlite3_context*, double);
 void sqlite3_result_error(sqlite3_context*, const char*, int);
 void sqlite3_result_error16(sqlite3_context*, const void*, int);
 void sqlite3_result_int(sqlite3_context*, int);
 void sqlite3_result_int64(sqlite3_context*, long long int);
 void sqlite3_result_null(sqlite3_context*);
-void sqlite3_result_text(sqlite3_context*, const char*, int n, int eCopy);
-void sqlite3_result_text16(sqlite3_context*, const void*, int n, int eCopy);
+void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
+void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
+void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
+void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
 void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 
 /*
