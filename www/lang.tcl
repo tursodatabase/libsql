@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.62 2003/06/15 10:29:25 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.63 2003/06/15 23:49:39 drh Exp $}
 
 puts {<html>
 <head>
@@ -1363,7 +1363,8 @@ is returned it is as an integer.</p>
 
 <li><p><b>PRAGMA integrity_check;</b></p>
     <p>The command does an integrity check of the entire database.  It
-    looks for out-of-order records, missing pages, and malformed records.
+    looks for out-of-order records, missing pages, malformed records, and
+    corrupt indices.
     If any problems are found, then a single string is returned which is
     a description of all problems.  If everything is in order, "ok" is
     returned.</p></li>
@@ -1607,12 +1608,14 @@ In version 1.0 of SQLite, the VACUUM command would invoke
 <b>gdbm_reorganize()</b> to clean up the backend database file.</p>
 
 <p>
-VACUUM became a no-op for version 2.0.0 of SQLite. 
-The command was reactivated with version 2.8.1.  It now cleans
-the database by copying its contents to a temporary database file, and 
-reloading the database file from it.  This will eliminate free pages, 
-align table data to be contiguous, and otherwise clean up the database 
-file structure.  The index or table name argument is now ignored.</p>
+VACUUM became a no-op when the GDBM backend was removed from
+SQLITE in version 2.0.0.
+VACUUM was reimplimented in version 2.8.1.  It now cleans
+the database by copying its contents to a temporary database file and 
+reloading the original database file from the copy.  This will eliminate 
+free pages,  align table data to be contiguous, and otherwise clean up 
+the database file structure.  The index or table name argument is now
+ignored.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>
