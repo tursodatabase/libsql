@@ -1,4 +1,4 @@
-C Remove\sdefault_synchronous\sand\stemp_store\spragmas.\sAllow\sthe\ssafety-level\nand\scache-size\sto\sbe\sset\sfor\sattached\sdatabases.\s(CVS\s1735)
+C Remove\sdefault_synchronous\sand\stemp_store\spragmas.\sAllow\sthe\ssafety-level\nand\scache-size\sto\sbe\sset\sfor\sattached\sdatabases.\s(CVS\s1736)
 D 2004-06-26T06:37:07
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 02bd3acd7efde9cc6b67c97e98db9f4b62d27877
+P 212de3ce66f746036cb2267a9f924fd55fa2f37a
 R 609621fb2d8c2cbffc869dbeea94770a
 U danielk1977
-Z 231b7ef4aa565faa68238895f77436c5
+Z a1f3d16e3f6a21f6f1c6570aa621e99e
