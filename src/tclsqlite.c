@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.45 2003/03/30 19:17:03 drh Exp $
+** $Id: tclsqlite.c,v 1.46 2003/04/03 15:46:04 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -51,6 +51,8 @@ struct SqliteDb {
   sqlite *db;           /* The "real" database structure */
   Tcl_Interp *interp;   /* The interpreter used for this database */
   char *zBusy;          /* The busy callback routine */
+  char *zBegin;         /* The begin-transaction callback routine */
+  char *zCommit;        /* The commit-transaction callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
   int rc;               /* Return code of most recent sqlite_exec() */
 };
@@ -260,6 +262,12 @@ static void DbDeleteCmd(void *db){
   if( pDb->zBusy ){
     Tcl_Free(pDb->zBusy);
   }
+  if( pDb->zBegin ){
+    Tcl_Free(pDb->zBegin);
+  }
+  if( pDb->zCommit ){
+    Tcl_Free(pDb->zCommit);
+  }
   Tcl_Free((char*)pDb);
 }
 
@@ -286,6 +294,39 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
     return 0;
   }
   return 1;
+}
+
+/*
+** This routine is called when a new transaction is started.  The
+** TCL script in pDb->zBegin is executed.  If it returns non-zero or
+** if it throws an exception, the transaction is aborted.
+*/
+static int DbBeginHandler(void *cd){
+  SqliteDb *pDb = (SqliteDb*)cd;
+  int rc;
+
+  rc = Tcl_Eval(pDb->interp, pDb->zBegin);
+  if( rc!=TCL_OK || atoi(Tcl_GetStringResult(pDb->interp)) ){
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** This routine is called when a transaction is committed.  The
+** TCL script in pDb->zCommit is executed.  If it returns non-zero or
+** if it throws an exception, the transaction is rolled back instead
+** of being committed.
+*/
+static int DbCommitHandler(void *cd){
+  SqliteDb *pDb = (SqliteDb*)cd;
+  int rc;
+
+  rc = Tcl_Eval(pDb->interp, pDb->zCommit);
+  if( rc!=TCL_OK || atoi(Tcl_GetStringResult(pDb->interp)) ){
+    return 1;
+  }
+  return 0;
 }
 
 /*
@@ -328,15 +369,16 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *pDb = (SqliteDb*)cd;
   int choice;
   static const char *DB_strs[] = {
-    "busy",               "changes",           "close",
-    "complete",           "errorcode",         "eval",
-    "function",           "last_insert_rowid", "timeout",
-    0                    
+    "begin_hook",         "busy",              "changes",
+    "close",              "commit_hook",       "complete",
+    "errorcode",          "eval",              "function",
+    "last_insert_rowid",  "timeout",           0
   };
   enum DB_enum {
-    DB_BUSY,              DB_CHANGES,          DB_CLOSE,
-    DB_COMPLETE,          DB_ERRORCODE,        DB_EVAL,
-    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_TIMEOUT,          
+    DB_BEGIN_HOOK,        DB_BUSY,             DB_CHANGES,
+    DB_CLOSE,             DB_COMMIT_HOOK,      DB_COMPLETE,
+    DB_ERRORCODE,         DB_EVAL,             DB_FUNCTION,
+    DB_LAST_INSERT_ROWID, DB_TIMEOUT,          
   };
 
   if( objc<2 ){
@@ -348,6 +390,43 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   switch( (enum DB_enum)choice ){
+
+  /*    $db begin_callback ?CALLBACK?
+  **
+  ** Invoke the given callback at the beginning of every SQL transaction.
+  ** If the callback throws an exception or returns non-zero, then the
+  ** transaction is aborted.  If CALLBACK is an empty string, the callback
+  ** is disabled.
+  */
+  case DB_BEGIN_HOOK: {
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+    }else if( objc==2 ){
+      if( pDb->zBegin ){
+        Tcl_AppendResult(interp, pDb->zBegin, 0);
+      }
+    }else{
+      char *zBegin;
+      int len;
+      if( pDb->zBegin ){
+        Tcl_Free(pDb->zBegin);
+      }
+      zBegin = Tcl_GetStringFromObj(objv[2], &len);
+      if( zBegin && len>0 ){
+        pDb->zBegin = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zBegin, zBegin);
+      }else{
+        pDb->zBegin = 0;
+      }
+      if( pDb->zBegin ){
+        pDb->interp = interp;
+        sqlite_begin_hook(pDb->db, DbBeginHandler, pDb);
+      }else{
+        sqlite_begin_hook(pDb->db, 0, 0);
+      }
+    }
+    break;
+  }
 
   /*    $db busy ?CALLBACK?
   **
@@ -410,6 +489,43 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   */
   case DB_CLOSE: {
     Tcl_DeleteCommand(interp, Tcl_GetStringFromObj(objv[0], 0));
+    break;
+  }
+
+  /*    $db commit_hook ?CALLBACK?
+  **
+  ** Invoke the given callback just before committing every SQL transaction.
+  ** If the callback throws an exception or returns non-zero, then the
+  ** transaction is aborted.  If CALLBACK is an empty string, the callback
+  ** is disabled.
+  */
+  case DB_COMMIT_HOOK: {
+    if( objc>3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+    }else if( objc==2 ){
+      if( pDb->zCommit ){
+        Tcl_AppendResult(interp, pDb->zCommit, 0);
+      }
+    }else{
+      char *zCommit;
+      int len;
+      if( pDb->zCommit ){
+        Tcl_Free(pDb->zCommit);
+      }
+      zCommit = Tcl_GetStringFromObj(objv[2], &len);
+      if( zCommit && len>0 ){
+        pDb->zCommit = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zCommit, zCommit);
+      }else{
+        pDb->zCommit = 0;
+      }
+      if( pDb->zCommit ){
+        pDb->interp = interp;
+        sqlite_commit_hook(pDb->db, DbCommitHandler, pDb);
+      }else{
+        sqlite_commit_hook(pDb->db, 0, 0);
+      }
+    }
     break;
   }
 

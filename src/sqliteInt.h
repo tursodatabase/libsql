@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.169 2003/03/31 13:36:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.170 2003/04/03 15:46:04 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -244,6 +244,10 @@ struct sqlite {
   int nTable;                   /* Number of tables in the database */
   void *pBusyArg;               /* 1st Argument to the busy callback */
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
+  void *pBeginArg;              /* Argument to the xBeginCallback() */
+  int (*xBeginCallback)(void*); /* Invoked at every transaction start */
+  void *pCommitArg;             /* Argument to xCommitCallback() */   
+  int (*xCommitCallback)(void*);/* Invoked at every commit. */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
