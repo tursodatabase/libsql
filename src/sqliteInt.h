@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.75 2002/01/06 17:07:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.76 2002/01/09 03:20:00 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -179,6 +179,8 @@ struct sqlite {
   int (*xBusyCallback)(void *,const char*,int);  /* The busy callback */
   Hash tblHash;                 /* All tables indexed by name */
   Hash idxHash;                 /* All (named) indices indexed by name */
+  Hash tblDrop;                 /* Uncommitted DROP TABLEs */
+  Hash idxDrop;                 /* Uncommitted DROP INDEXs */
   int nextRowid;                /* Next generated rowID */
 };
 
@@ -228,7 +230,6 @@ struct Table {
   int tnum;        /* Page containing root for this table */
   u8 readOnly;     /* True if this table should not be written by the user */
   u8 isCommit;     /* True if creation of this table has been committed */
-  u8 isDelete;     /* True if this table is being deleted */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
   u8 hasPrimKey;   /* True if there exists a primary key */
 };
@@ -260,7 +261,7 @@ struct Index {
   int tnum;        /* Page containing root of this index in database file */
   u8 isUnique;     /* True if keys must all be unique */
   u8 isCommit;     /* True if creation of this index has been committed */
-  u8 isDelete;     /* True if deletion of this index has not been comitted */
+  u8 isDropped;    /* True if a DROP INDEX has executed on this index */
   Index *pNext;    /* The next index associated with the same table */
 };
 

@@ -303,12 +303,16 @@ doc:	$(DOC)
 install:	sqlite libsqlite.la sqlite.h
 	$(LIBTOOL) $(INSTALL) libsqlite.la $(prefix)/lib
 	$(LIBTOOL) $(INSTALL) sqlite $(prefix)/bin
-	$(INSTALL) sqlite.h $(prefix)/include
+	$(INSTALL) -m 0644 sqlite.h $(prefix)/include
 
 clean:	
 	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h
-	rm -rf .libs .deps
+	rm -rf .libs .deps 
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -f testfixture test.db
+	rm -rf doc
+
+distclean:	clean
+	rm -f config.log config.status

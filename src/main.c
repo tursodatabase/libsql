@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.53 2002/01/06 17:07:40 drh Exp $
+** $Id: main.c,v 1.54 2002/01/09 03:20:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -268,6 +268,8 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( db==0 ) goto no_mem_on_open;
   sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
   sqliteHashInit(&db->idxHash, SQLITE_HASH_STRING, 0);
+  sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
+  sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   db->nextRowid = sqliteRandomInteger();
   
   /* Open the backend database driver */
@@ -318,6 +320,8 @@ no_mem_on_open:
 static void clearHashTable(sqlite *db, int preserveTemps){
   HashElem *pElem;
   Hash temp1;
+  assert( sqliteHashFirst(&db->tblDrop)==0 ); /* There can not be uncommitted */
+  assert( sqliteHashFirst(&db->idxDrop)==0 ); /*   DROP TABLEs or DROP INDEXs */
   temp1 = db->tblHash;
   sqliteHashInit(&db->tblHash, SQLITE_HASH_STRING, 0);
   sqliteHashClear(&db->idxHash);

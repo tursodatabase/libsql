@@ -1,6 +1,6 @@
-C Added\sa\smanpage\sfrom\sA.\sRottmann.\s(CVS\s341)
-D 2002-01-07T19:58:44
-F Makefile.in 4b445b9a47f454ecd05220d803ee1b48a81f45ac
+C Working\son\sa\sbug:\sDropping\sand\srecreating\sa\stable\swithin\sa\stransaction\ncauses\san\sassertion\sfailure.\s(CVS\s342)
+D 2002-01-09T03:19:59
+F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 6565c509ed61af074681258bd346dca53ad38128
@@ -21,13 +21,13 @@ F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
 F src/btree.h 9ead7f54c270d8a554e59352ca7318fdaf411390
-F src/build.c 6c01002e98204ad2b993d0d043ee56c8c7dc8692
+F src/build.c 66195e45353b1c56ee12ba74a5743cb7a487f65e
 F src/delete.c f7690efc09ad6a2f1f3f0490e1b0cbb676bb95cf
 F src/expr.c 8169261ac56e96c860407a8773ca10b779e32328
 F src/hash.c 838a6f2af547dfdc5ff2b438e8f981ea4b74f224
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c 813c37719866c583e6ca7660f94f10230f4e385d
-F src/main.c 567e472a1ca22f7d9970b1f96b9be91d45ccd7e2
+F src/main.c 46c752711300f1994be4162aaa59cbfb9db0c11e
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 07882cde5c61f26751b8ee76fd84726c1f7e453c
 F src/os.h 00a18e0ae1139a64f1d3ead465ae2b9ff43f3db2
@@ -40,7 +40,7 @@ F src/select.c bddd8b5d07ffdae0d798c10b20dc7167469a3904
 F src/shell.c f8008f0607f9523ca0f9562b8975c1bcc427d2b3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in a4c11d38d62b1bfbd50a5804edee8ca54c1adc9b
-F src/sqliteInt.h 5b613b2c30965051135641e98e41b066cc0f8245
+F src/sqliteInt.h 7a7c5213a422e29883dcfe4c07d1f1def24f03fd
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c b82e4faeae89fdb7304b3c970979ade299336a1f
 F src/test1.c 41eabe255970ef947263b94145c9b2766bab8675
@@ -51,7 +51,7 @@ F src/update.c f9f48e78c13c79e32a55840414bea84479f9848d
 F src/util.c 8e9ca72d8288cae39c57c6f397abd14a56b14a38
 F src/vdbe.c b27b256a5930da1e8fc347a272357be72de0f853
 F src/vdbe.h e5cc6fb13d1905a4339db4d6dba4ab393c0765fa
-F src/where.c ed7343344a30d62eb91464f1580490b80a6275ac
+F src/where.c a9b286ac7323e7ebed5d3d217b3963acf1e6a355
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 6ab4dc5f595905a276ef588fad3c9236dc07a47b
@@ -89,7 +89,7 @@ F test/tableapi.test 51d0c209aa6b1158cb952ec917c656d4ce66e9e4
 F test/tclsqlite.test feca0f2b23ba51d202d67d71e10ba7a8a1621f82
 F test/temptable.test 37acd9e39781c2ff7cff2ba741b6b27ce020a44a
 F test/tester.tcl 96db1b49157388edb57e11bf33285e3811a897e4
-F test/trans.test 855337b8a178c73c433fcf8ee88e4b2f5efff0d9
+F test/trans.test 5f8543d3df10600b36732ebed5b46030073913a1
 F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
@@ -105,7 +105,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 9123810452845783fac8e3184929463d9e70d609
-F www/changes.tcl 9bb023d26ece0f6083816beb29ff03d17eeb7977
+F www/changes.tcl 9419dcf548bcdd46e85ec07b72447c8b53d495c9
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7910bc7885ddbd90400c3c50014bba499e34d53d
-R 4c30dbc37ad8cfa8a80bc76fe7f8ae94
+P 7deb62241300ff23af5a78dd855f0f69e5f16ffd
+R 4f050fe6f09f01448c2bd7cd3c521994
 U drh
-Z 041af271d808d5bcd7b358a0634b5942
+Z 333823479478d2952c0013142638bffb

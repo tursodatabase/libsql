@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.61 2001/12/22 14:49:25 drh Exp $
+** $Id: build.c,v 1.62 2002/01/09 03:20:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -146,7 +146,7 @@ void sqliteExprDelete(Expr *p){
 */
 Table *sqliteFindTable(sqlite *db, char *zName){
   Table *p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
-  return (p==0 || p->isDelete) ? 0 : p;
+  return p;
 }
 
 /*
@@ -156,22 +156,25 @@ Table *sqliteFindTable(sqlite *db, char *zName){
 */
 Index *sqliteFindIndex(sqlite *db, char *zName){
   Index *p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
-  return (p==0 || p->isDelete) ? 0 : p;
+  return p;
 }
 
 /*
 ** Remove the given index from the index hash table, and free
 ** its memory structures.
 **
-** The index is removed from the database hash table if db!=NULL.
+** The index is removed from the database hash tables if db!=NULL.
 ** But the index is not unlinked from the Table that it indexes.
 ** Unlinking from the Table must be done by the calling function.
 */
-static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
-  if( pIndex->zName && db ){
-    sqliteHashInsert(&db->idxHash, pIndex->zName, strlen(pIndex->zName)+1, 0);
+static void sqliteDeleteIndex(sqlite *db, Index *p){
+  if( p->zName && db ){
+    Index *pOld;
+    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
+    assert( pOld==0 || pOld==p );
+    sqliteHashInsert(&db->idxDrop, p, 0, 0);
   }
-  sqliteFree(pIndex);
+  sqliteFree(p);
 }
 
 /*
@@ -190,6 +193,27 @@ void sqliteUnlinkAndDeleteIndex(sqlite *db, Index *pIndex){
     }
   }
   sqliteDeleteIndex(db, pIndex);
+}
+
+/*
+** Move the given index to the pending DROP INDEX queue if it has
+** been committed.  If this index was never committed, then just
+** delete it.
+**
+** Indices on the pending drop queue are deleted when a COMMIT is
+** executed.  If a ROLLBACK occurs, the indices are moved back into
+** the main index hash table.
+*/
+void sqlitePendingDropIndex(sqlite *db, Index *p){
+  if( !p->isCommit ){
+    sqliteUnlinkAndDeleteIndex(db, p);
+  }else{
+    Index *pOld;
+    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
+    assert( pOld==p );
+    sqliteHashInsert(&db->idxDrop, p, 0, p);
+    p->isDropped = 1;
+  }
 }
 
 /*
@@ -225,13 +249,42 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 
 /*
 ** Unlink the given table from the hash tables and the delete the
-** table structure and all its indices.
+** table structure with all its indices.
 */
-static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
-  if( pTable->zName && db ){
-    sqliteHashInsert(&db->tblHash, pTable->zName, strlen(pTable->zName)+1, 0);
+static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
+  if( p->zName && db ){
+    Table *pOld;
+    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
+    assert( pOld==0 || pOld==p );
+    sqliteHashInsert(&db->tblDrop, p, 0, 0);
   }
-  sqliteDeleteTable(db, pTable);
+  sqliteDeleteTable(db, p);
+}
+
+/*
+** Move the given table to the pending DROP TABLE queue if it has
+** been committed.  If this table was never committed, then just
+** delete it.  Do the same for all its indices.
+**
+** Table on the drop queue are not actually deleted until a COMMIT
+** statement is executed.  If a ROLLBACK occurs instead of a COMMIT,
+** then the tables on the drop queue are moved back into the main
+** hash table.
+*/
+void sqlitePendingDropTable(sqlite *db, Table *pTbl){
+  if( !pTbl->isCommit ){
+    sqliteUnlinkAndDeleteTable(db, pTbl);
+  }else{
+    Table *pOld;
+    Index *pIndex, *pNext;
+    pOld = sqliteHashInsert(&db->tblHash, pTbl->zName, strlen(pTbl->zName)+1,0);
+    assert( pOld==pTbl );
+    sqliteHashInsert(&db->tblDrop, pTbl, 0, pTbl);
+    for(pIndex = pTbl->pIndex; pIndex; pIndex=pNext){
+      pNext = pIndex->pNext;
+      sqlitePendingDropIndex(db, pIndex);
+    }
+  }
 }
 
 /*
@@ -241,45 +294,34 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *pTable){
 ** When executing CREATE TABLE and CREATE INDEX statements, the Table
 ** and Index structures are created and added to the hash tables, but
 ** the "isCommit" field is not set.  This routine sets those fields.
-** When executing DROP TABLE and DROP INDEX, the "isDelete" fields of
-** Table and Index structures is set but the structures are not unlinked
-** from the hash tables nor deallocated.  This routine handles that
-** deallocation. 
+** When executing DROP TABLE and DROP INDEX, the table or index structures
+** are moved out of tblHash and idxHash into tblDrop and idxDrop.  This
+** routine deletes the structure in tblDrop and idxDrop.
 **
 ** See also: sqliteRollbackInternalChanges()
 */
 void sqliteCommitInternalChanges(sqlite *db){
-  Hash toDelete;
   HashElem *pElem;
   if( (db->flags & SQLITE_InternChanges)==0 ) return;
-  sqliteHashInit(&toDelete, SQLITE_HASH_POINTER, 0);
   db->schema_cookie = db->next_cookie;
   for(pElem=sqliteHashFirst(&db->tblHash); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTable = sqliteHashData(pElem);
-    if( pTable->isDelete ){
-      sqliteHashInsert(&toDelete, pTable, 0, pTable);
-    }else{
-      pTable->isCommit = 1;
-    }
+    pTable->isCommit = 1;
   }
-  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+  for(pElem=sqliteHashFirst(&db->tblDrop); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTable = sqliteHashData(pElem);
-    sqliteUnlinkAndDeleteTable(db, pTable);
+    sqliteDeleteTable(db, pTable);
   }
-  sqliteHashClear(&toDelete);
+  sqliteHashClear(&db->tblDrop);
   for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
     Index *pIndex = sqliteHashData(pElem);
-    if( pIndex->isDelete ){
-      sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
-    }else{
-      pIndex->isCommit = 1;
-    }
+    pIndex->isCommit = 1;
   }
-  for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
+  while( (pElem=sqliteHashFirst(&db->idxDrop))!=0 ){
     Index *pIndex = sqliteHashData(pElem);
     sqliteUnlinkAndDeleteIndex(db, pIndex);
   }
-  sqliteHashClear(&toDelete);
+  sqliteHashClear(&db->idxDrop);
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -301,8 +343,6 @@ void sqliteRollbackInternalChanges(sqlite *db){
     Table *pTable = sqliteHashData(pElem);
     if( !pTable->isCommit ){
       sqliteHashInsert(&toDelete, pTable, 0, pTable);
-    }else{
-      pTable->isDelete = 0;
     }
   }
   for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
@@ -310,12 +350,17 @@ void sqliteRollbackInternalChanges(sqlite *db){
     sqliteUnlinkAndDeleteTable(db, pTable);
   }
   sqliteHashClear(&toDelete);
+  for(pElem=sqliteHashFirst(&db->tblDrop); pElem; pElem=sqliteHashNext(pElem)){
+    Table *pOld, *p = sqliteHashData(pElem);
+    assert( p->isCommit );
+    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
+    assert( pOld==0 || pOld==p );
+  }
+  sqliteHashClear(&db->tblDrop);
   for(pElem=sqliteHashFirst(&db->idxHash); pElem; pElem=sqliteHashNext(pElem)){
     Index *pIndex = sqliteHashData(pElem);
     if( !pIndex->isCommit ){
       sqliteHashInsert(&toDelete, pIndex, 0, pIndex);
-    }else{
-      pIndex->isDelete = 0;
     }
   }
   for(pElem=sqliteHashFirst(&toDelete); pElem; pElem=sqliteHashNext(pElem)){
@@ -323,6 +368,14 @@ void sqliteRollbackInternalChanges(sqlite *db){
     sqliteUnlinkAndDeleteIndex(db, pIndex);
   }
   sqliteHashClear(&toDelete);
+  for(pElem=sqliteHashFirst(&db->idxDrop); pElem; pElem=sqliteHashNext(pElem)){
+    Index *pOld, *p = sqliteHashData(pElem);
+    assert( p->isCommit );
+    p->isDropped = 0;
+    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, p);
+    assert( pOld==0 || pOld==p );
+  }
+  sqliteHashClear(&db->idxDrop);
   db->flags &= ~SQLITE_InternChanges;
 }
 
@@ -640,7 +693,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
     Table *pOld;
     pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, p);
     if( pOld ){
-      assert( p==pOld );  /* Malloc must have failed */
+      assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
     pParse->pNewTable = 0;
@@ -776,14 +829,16 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     }
   }
 
-  /* Mark the in-memory Table structure as being deleted.  The actually
-  ** deletion occurs inside of sqliteCommitInternalChanges().
+  /* Move the table (and all its indices) to the pending DROP queue.
+  ** Or, if the table was never committed, just delete it.  If the table
+  ** has been committed and is placed on the pending DROP queue, then the
+  ** delete will occur when sqliteCommitInternalChanges() executes.
   **
   ** Exception: if the SQL statement began with the EXPLAIN keyword,
   ** then no changes should be made.
   */
   if( !pParse->explain ){
-    pTable->isDelete = 1;
+    sqlitePendingDropTable(db, pTable);
     db->flags |= SQLITE_InternChanges;
   }
 }
@@ -1066,7 +1121,8 @@ exit_create_index:
 }
 
 /*
-** This routine will drop an existing named index.
+** This routine will drop an existing named index.  This routine
+** implements the DROP INDEX statement.
 */
 void sqliteDropIndex(Parse *pParse, Token *pName){
   Index *pIndex;
@@ -1123,11 +1179,14 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     }
   }
 
-  /* Mark the internal Index structure for deletion by the
-  ** sqliteCommitInternalChanges routine.
+  /* Move the index onto the pending DROP queue.  Or, if the index was
+  ** never committed, just delete it.  Indices on the pending DROP queue
+  ** get deleted by sqliteCommitInternalChanges() when the user executes
+  ** a COMMIT.  Or if a rollback occurs, the elements of the DROP queue
+  ** are moved back into the main hash table.
   */
   if( !pParse->explain ){
-    pIndex->isDelete = 1;
+    sqlitePendingDropIndex(db, pIndex);
     db->flags |= SQLITE_InternChanges;
   }
 }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.7 2001/09/24 03:12:41 drh Exp $
+# $Id: trans.test,v 1.8 2002/01/09 03:20:00 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -405,5 +405,130 @@ do_test trans-5.23 {
     SELECT * FROM t2;
   }
 } {1 2 3}
+
+# Try to DROP and CREATE tables and indices with the same name
+# within a transaction.  Make sure ROLLBACK works.
+#
+do_test trans-6.1 {
+  execsql2 {
+    INSERT INTO t1 VALUES(1,2,3);
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    CREATE TABLE t1(p,q,r);
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {a 1 b 2 c 3}
+do_test trans-6.2 {
+  execsql2 {
+    INSERT INTO t1 VALUES(1,2,3);
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    CREATE TABLE t1(p,q,r);
+    COMMIT;
+    SELECT * FROM t1;
+  }
+} {}
+do_test trans-6.3 {
+  execsql2 {
+    INSERT INTO t1 VALUES(1,2,3);
+    SELECT * FROM t1;
+  }
+} {p 1 q 2 r 3}
+do_test trans-6.4 {
+  execsql2 {
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(4,5,6);
+    SELECT * FROM t1;
+    DROP TABLE t1;
+  }
+} {a 4 b 5 c 6}
+do_test trans-6.5 {
+  execsql2 {
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {p 1 q 2 r 3}
+do_test trans-6.6 {
+  execsql2 {
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(4,5,6);
+    SELECT * FROM t1;
+    DROP TABLE t1;
+  }
+} {a 4 b 5 c 6}
+do_test trans-6.7 {
+  catchsql {
+    COMMIT;
+    SELECT * FROM t1;
+  }
+} {1 {no such table: t1}}
+
+do_test trans-6.8 {
+  execsql {
+    CREATE TABLE t1(a integer primary key,b,c);
+    INSERT INTO t1 VALUES(1,-2,-3);
+    INSERT INTO t1 VALUES(4,-5,-6);
+    SELECT * FROM t1;
+  }
+} {1 -2 -3 4 -5 -6}
+do_test trans-6.9 {
+  execsql {
+    CREATE INDEX i1 ON t1(b);
+    SELECT * FROM t1 WHERE b<1;
+  }
+} {4 -5 -6 1 -2 -3}
+do_test trans-6.10 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP INDEX i1;
+    SELECT * FROM t1 WHERE b<1;
+    ROLLBACK;
+  }
+} {1 -2 -3 4 -5 -6}
+do_test trans-6.11 {
+  execsql {
+    SELECT * FROM t1 WHERE b<1;
+  }
+} {4 -5 -6 1 -2 -3}
+do_test trans-6.12 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP TABLE t1;
+    ROLLBACK;
+    SELECT * FROM t1 WHERE b<1;
+  }
+} {4 -5 -6 1 -2 -3}
+
+do_test trans-6.13 {
+  execsql {
+    BEGIN TRANSACTION;
+    DROP INDEX i1;
+    CREATE INDEX i1 ON t1(c);
+    SELECT * FROM t1 WHERE b<1;
+  }
+} {1 -2 -3 4 -5 -6}
+do_test trans-6.14 {
+  execsql {
+    SELECT * FROM t1 WHERE c<1;
+  }
+} {4 -5 -6 1 -2 -3}
+do_test trans-6.15 {
+  execsql {
+    ROLLBACK;
+    SELECT * FROM t1 WHERE b<1;
+  }
+} {4 -5 -6 1 -2 -3}
+do_test trans-6.16 {
+  execsql {
+    SELECT * FROM t1 WHERE c<1;
+  }
+} {1 -2 -3 4 -5 -6}
+
+
 
 finish_test

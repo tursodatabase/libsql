@@ -17,11 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan 4 (2.2.1)} {
+chng {2002 Jan 8 (2.2.1)} {
 <li>Bug fix: An attempt to delete a single row of a table with a WHERE
     clause of "ROWID=x" when no such rowid exists was causing an error.</li>
 <li>Bug fix: Passing in a NULL as the 3rd parameter to <b>sqlite_open()</b>
     would sometimes cause a coredump.</li>
+<li>Bug fix: DROP TABLE followed by a CREATE TABLE with the same name all
+    within a single transaction was causing a coredump.</li>
+<li>Makefile updates from A. Rottmann</li>
 }
 
 chng {2001 Dec 22 (2.2.0)} {

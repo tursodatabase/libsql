@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.31 2002/01/06 17:07:41 drh Exp $
+** $Id: where.c,v 1.32 2002/01/09 03:20:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -302,6 +302,7 @@ WhereInfo *sqliteWhereBegin(
       int gtMask = 0;  /* Index columns covered by an x>... constraing */
       int nEq, m, score;
 
+      if( pIdx->isDropped ) continue;   /* Ignore dropped indices */
       if( pIdx->nColumn>32 ) continue;  /* Ignore indices too many columns */
       for(j=0; j<nExpr; j++){
         if( aExpr[j].idxLeft==idx 
