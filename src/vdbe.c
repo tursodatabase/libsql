@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.234 2003/07/22 09:24:45 danielk1977 Exp $
+** $Id: vdbe.c,v 1.235 2003/07/27 17:16:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -997,8 +997,10 @@ static void hardRelease(Vdbe *p, int i){
 }
 
 /*
-** Return TRUE if zNum is an integer and write
-** the value of the integer into *pNum.
+** Return TRUE if zNum is a 32-bit signed integer and write
+** the value of the integer into *pNum.  If zNum is not an integer
+** or is an integer that is too large to be expressed with just 32
+** bits, then return false.
 **
 ** Under Linux (RedHat 7.2) this routine is much faster than atoi()
 ** for converting strings into integers.
@@ -1006,6 +1008,7 @@ static void hardRelease(Vdbe *p, int i){
 static int toInt(const char *zNum, int *pNum){
   int v = 0;
   int neg;
+  int i, c;
   if( *zNum=='-' ){
     neg = 1;
     zNum++;
@@ -1015,13 +1018,11 @@ static int toInt(const char *zNum, int *pNum){
   }else{
     neg = 0;
   }
-  if( *zNum==0 ) return 0;
-  while( isdigit(*zNum) ){
-    v = v*10 + *zNum - '0';
-    zNum++;
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
+    v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
-  return *zNum==0;
+  return c==0 && i>0 && (i<10 || (i==10 && memcmp(zNum,"2147483647",10)<=0));
 }
 
 /*

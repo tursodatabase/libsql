@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.4 2003/07/09 16:34:56 drh Exp $
+# $Id: misc2.test,v 1.5 2003/07/27 17:16:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,3 +61,40 @@ do_test misc2-3.1 {
     SELECT t1.b+t2.b AS a, t1.a, t2.a FROM t1, t2 WHERE a==10
   }
 } {1 {ambiguous column name: a}}
+
+# Make sure 32-bit integer overflow is handled properly in queries.
+# ticket #408
+#
+do_test misc2-4.1 {
+  execsql {
+    INSERT INTO t1 VALUES(4000000000,'a','b');
+    SELECT a FROM t1 WHERE a>1;
+  }
+} {4000000000}
+do_test misc2-4.2 {
+  execsql {
+    INSERT INTO t1 VALUES(2147483648,'b2','c2');
+    INSERT INTO t1 VALUES(2147483647,'b3','c3');
+    SELECT a FROM t1 WHERE a>2147483647;
+  }
+} {4000000000 2147483648}
+do_test misc2-4.3 {
+  execsql {
+    SELECT a FROM t1 WHERE a<2147483648;
+  }
+} {1 2147483647}
+do_test misc2-4.4 {
+  execsql {
+    SELECT a FROM t1 WHERE a<=2147483648;
+  }
+} {1 2147483648 2147483647}
+do_test misc2-4.5 {
+  execsql {
+    SELECT a FROM t1 WHERE a<10000000000;
+  }
+} {1 4000000000 2147483648 2147483647}
+do_test misc2-4.6 {
+  execsql {
+    SELECT a FROM t1 WHERE a<1000000000000 ORDER BY 1;
+  }
+} {1 2147483647 2147483648 4000000000}
