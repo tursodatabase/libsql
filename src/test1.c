@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.34 2004/02/21 19:02:30 drh Exp $
+** $Id: test1.c,v 1.35 2004/02/21 19:41:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -533,6 +533,36 @@ static int sqlite_mprintf_double(
 }
 
 /*
+** Usage:  sqlite_mprintf_str FORMAT DOUBLE DOUBLE
+**
+** Call mprintf with a single double argument which is the product of the
+** two arguments given above.  This is used to generate overflow and underflow
+** doubles to test that they are converted properly.
+*/
+static int sqlite_mprintf_scaled(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int i;
+  double r[2];
+  char *z;
+  if( argc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FORMAT DOUBLE DOUBLE\"", 0);
+    return TCL_ERROR;
+  }
+  for(i=2; i<4; i++){
+    if( Tcl_GetDouble(interp, argv[i], &r[i-2]) ) return TCL_ERROR;
+  }
+  z = sqlite_mprintf(argv[1], r[0]*r[1]);
+  Tcl_AppendResult(interp, z, 0);
+  sqlite_freemem(z);
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite_malloc_fail N
 **
 ** Rig sqliteMalloc() to fail on the N-th call.  Turn off this mechanism
@@ -952,6 +982,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_mprintf_int",             (Tcl_CmdProc*)sqlite_mprintf_int    },
      { "sqlite_mprintf_str",             (Tcl_CmdProc*)sqlite_mprintf_str    },
      { "sqlite_mprintf_double",          (Tcl_CmdProc*)sqlite_mprintf_double },
+     { "sqlite_mprintf_scaled",          (Tcl_CmdProc*)sqlite_mprintf_scaled },
      { "sqlite_mprintf_z_test",          (Tcl_CmdProc*)test_mprintf_z        },
      { "sqlite_open",                    (Tcl_CmdProc*)sqlite_test_open      },
      { "sqlite_last_insert_rowid",       (Tcl_CmdProc*)test_last_rowid       },
