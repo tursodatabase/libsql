@@ -25,6 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jly 1 (2.5.4)} {
+<li>Make the "AS" keyword optional again.</li>
+<li>The datatype of columns now appear in the 4th argument to the
+    callback.</li>
+<li>Added the <b>sqlite_open_aux_file()</b> API, though it is still
+    mostly undocumented and untested.</li>
+<li>Added additional test cases and fixed a few bugs that those
+    test cases found.</li>
+}
+
 chng {2002 Jun 24 (2.5.3)} {
 <li>Bug fix:  Database corruption can occur due to the optimization
     that was introduced in version 2.4.0 (check-in [410]).  The problem

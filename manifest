@@ -1,9 +1,9 @@
-C Fix\sfor\stickets\s#90\sand\s#89:\sMake\sthe\sAS\skeyword\soptional\sagain.\s(CVS\s654)
-D 2002-07-01T12:27:09
+C Update\sthe\schange\slog\sand\sthe\sversion\snumber\sfor\sthe\snext\srelease.\s(CVS\s655)
+D 2002-07-01T12:34:36
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 97bfa91ca72b5d914131a988ca9b75bc52c40553
+F VERSION 234ab45c950d48430049273c90ebfd05b6db152f
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -122,7 +122,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 58cf4d128dcae08d91d0011c6d4d11de323f470f
-F www/changes.tcl 6909e3dd543ef4461d61cbb7801000fcb697929c
+F www/changes.tcl 84effe7d89ffb8dbf442fef3cf43c9f7d48e320f
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8924a7f5bab790ab552332d6359028d0d1825e4a
-R ad6a9eb588fa8773b80d0e8d3383a433
+P 1f8a73b1c3833e3924196458d4c1ecca90f63662
+R 261767fcc4e66f8e3e7a27a84ebcaa52
 U drh
-Z b747e9af845dbd1dc48cbbd19d5e8f64
+Z abe638954d53965cc56ced2ee43653d3
