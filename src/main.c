@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.181 2004/05/21 11:39:05 danielk1977 Exp $
+** $Id: main.c,v 1.182 2004/05/22 03:05:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1151,7 +1151,7 @@ int sqlite3_prepare16(
   char const *zTail8 = 0;
   int rc;
 
-  zSql8 = sqlite3utf16to8(zSql, nBytes);
+  zSql8 = sqlite3utf16to8(zSql, nBytes, SQLITE3_BIGENDIAN);
   if( !zSql8 ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     return SQLITE_NOMEM;
@@ -1197,6 +1197,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
   db->aDb = db->aDbStatic;
+  db->enc = def_enc;
   /* db->flags |= SQLITE_ShortColNames; */
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
@@ -1252,6 +1253,7 @@ int sqlite3_open_new(
   const char **options
 ){
   return openDatabase(zFilename, ppDb, options, TEXT_Utf8);
+  /* return openDatabase(zFilename, ppDb, options, TEXT_Utf16le); */
 }
 
 sqlite *sqlite3_open(const char *zFilename, int mode, char **pzErrMsg){
@@ -1280,7 +1282,7 @@ int sqlite3_open16(
 
   assert( ppDb );
 
-  zFilename8 = sqlite3utf16to8(zFilename, -1);
+  zFilename8 = sqlite3utf16to8(zFilename, -1, SQLITE3_BIGENDIAN);
   if( !zFilename8 ){
     *ppDb = 0;
     return SQLITE_NOMEM;
@@ -1337,7 +1339,7 @@ int sqlite3_open16(const void *filename, sqlite3 **pDb, const char **options){
   int rc;
   char * filename8;
 
-  filename8 = sqlite3utf16to8(filename, -1);
+  filename8 = sqlite3utf16to8(filename, -1, SQLITE3_BIGENDIAN);
   if( !filename8 ){
     return SQLITE_NOMEM;
   }

@@ -147,23 +147,24 @@ typedef struct Mem Mem;
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
+#define MEM_Struct    0x0020   /* Value is some kind of struct */
 
-#define MEM_Term      0x1000   /* String has a nul terminator character */
+#define MEM_Utf8      0x0040   /* String uses UTF-8 encoding */
+#define MEM_Utf16be   0x0080   /* String uses UTF-16 big-endian */
+#define MEM_Utf16le   0x0100   /* String uses UTF-16 little-endian */
+#define MEM_Term      0x0200   /* String has a nul terminator character */
 
-#define MEM_Utf8      0x0020   /* String uses UTF-8 encoding */
-#define MEM_Utf16be   0x0040   /* String uses UTF-16 big-endian */
-#define MEM_Utf16le   0x0080   /* String uses UTF-16 little-endian */
+#define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Static    0x0800   /* Mem.z points to a static string */
+#define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
+#define MEM_Short     0x2000   /* Mem.z points to Mem.zShort */
 
-#define MEM_Dyn       0x0100   /* Need to call sqliteFree() on Mem.z */
-#define MEM_Static    0x0200   /* Mem.z points to a static string */
-#define MEM_Ephem     0x0400   /* Mem.z points to an ephemeral string */
-#define MEM_Short     0x0800   /* Mem.z points to Mem.zShort */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** aggregate function context that needs to be finalized.
 */
-#define MEM_AggCtx    0x1000   /* Mem.z points to an agg function context */
+#define MEM_AggCtx    0x4000   /* Mem.z points to an agg function context */
 
 /*
 ** The "context" argument for a installable function.  A pointer to an
@@ -329,9 +330,9 @@ int sqlite3VdbeCursorMoveto(Cursor*);
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
 int sqlite3VdbeSerialTypeLen(u64);
-u64 sqlite3VdbeSerialType(const Mem *);
-int sqlite3VdbeSerialPut(unsigned char *, const Mem *);
-int sqlite3VdbeSerialGet(const unsigned char *, u64, Mem *);
+u64 sqlite3VdbeSerialType(Mem *);
+int sqlite3VdbeSerialPut(unsigned char *, Mem *);
+int sqlite3VdbeSerialGet(const unsigned char *, u64, Mem *, u8 enc);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
 int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);
@@ -341,3 +342,5 @@ int sqlite3VdbeKeyCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeRowCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
+int sqlite3VdbeSetEncoding(Mem *, u8);
+

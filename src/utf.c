@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.6 2004/05/20 11:00:52 danielk1977 Exp $
+** $Id: utf.c,v 1.7 2004/05/22 03:05:34 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -53,6 +53,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include "sqliteInt.h"
+#include "os.h"
 
 typedef struct UtfString UtfString;
 struct UtfString {
@@ -92,13 +93,13 @@ struct UtfString {
 /*
 ** Read the BOM from the start of *pStr, if one is present. Return zero
 ** for little-endian, non-zero for big-endian. If no BOM is present, return
-** the machines native byte order.
+** the value of the parameter "big_endian".
 **
 ** Return values:
 **     1 -> big-endian string
 **     0 -> little-endian string
 */
-static int readUtf16Bom(UtfString *pStr){
+static int readUtf16Bom(UtfString *pStr, int big_endian){
   /* The BOM must be the first thing read from the string */
   assert( pStr->c==0 );
 
@@ -121,7 +122,7 @@ static int readUtf16Bom(UtfString *pStr){
     }
   }
 
-  return SQLITE3_NATIVE_BIGENDIAN;
+  return big_endian;
 }
 
 
@@ -375,8 +376,10 @@ int sqlite3utf16ByteLen(const void *pZ, int nChar){
     str.c = 0;
     str.n = -1;
 
-    /* Check for a BOM */
-    big_endian = readUtf16Bom(&str);
+    /* Check for a BOM. We just ignore it if there is one, it's only read
+    ** so that it is not counted as a character. 
+    */
+    big_endian = readUtf16Bom(&str, 0);
     ret = 0-str.c;
 
     while( code!=0 && nRead<nChar ){
@@ -400,10 +403,9 @@ int sqlite3utf16ByteLen(const void *pZ, int nChar){
 **
 ** The returned UTF-8 string is always \000 terminated.
 */
-unsigned char *sqlite3utf16to8(const void *pData, int N){
+unsigned char *sqlite3utf16to8(const void *pData, int N, int big_endian){
   UtfString in;
   UtfString out;
-  int big_endian;
 
   out.pZ = 0;
 
@@ -426,7 +428,7 @@ unsigned char *sqlite3utf16to8(const void *pData, int N){
   }
   out.c = 0;
 
-  big_endian = readUtf16Bom(&in);
+  big_endian = readUtf16Bom(&in, big_endian);
   while( in.c<in.n ){
     writeUtf8(&out, readUtf16(&in, big_endian));
   }
@@ -503,7 +505,7 @@ static void utf16to16(void *pData, int N, int big_endian){
     inout.n = sqlite3utf16ByteLen(inout.pZ, -1);
   }
 
-  if( readUtf16Bom(&inout)!=big_endian ){
+  if( readUtf16Bom(&inout, SQLITE3_BIGENDIAN)!=big_endian ){
     /* swab(&inout.pZ[inout.c], inout.pZ, inout.n-inout.c); */
     int i;
     for(i=0; i<(inout.n-inout.c); i += 2){
@@ -554,6 +556,39 @@ void sqlite3utf16to16be(void *pData, int N){
   utf16to16(pData, N, 1);
 }
 
+/*
+** This function is used to translate between UTF-8 and UTF-16. The
+** result is returned in dynamically allocated memory.
+*/
+int sqlite3utfTranslate(
+  const void *zData,
+  int nData,
+  u8 enc1,
+  void **zOut,
+  int *nOut,
+  u8 enc2
+){
+  assert( enc1==TEXT_Utf8 || enc1==TEXT_Utf16le || enc1==TEXT_Utf16be );
+  assert( enc2==TEXT_Utf8 || enc2==TEXT_Utf16le || enc2==TEXT_Utf16be );
+  assert( 
+    (enc1==TEXT_Utf8 && (enc2==TEXT_Utf16le || enc2==TEXT_Utf16be)) ||
+    (enc2==TEXT_Utf8 && (enc1==TEXT_Utf16le || enc1==TEXT_Utf16be))
+  );
 
-
+  if( enc1==TEXT_Utf8 ){
+    if( enc2==TEXT_Utf16le ){
+      *zOut = sqlite3utf8to16le(zData, nData);
+    }else{
+      *zOut = sqlite3utf8to16be(zData, nData);
+    }
+    if( !(*zOut) ) return SQLITE_NOMEM;
+    *nOut = sqlite3utf16ByteLen(*zOut, -1)+2;
+  }else{
+    *zOut = sqlite3utf16to8(zData, nData, enc1==TEXT_Utf16be);
+    if( !(*zOut) ) return SQLITE_NOMEM;
+    *nOut = strlen(*zOut)+1;
+  }
+  return SQLITE_OK;
+}
+ 
 

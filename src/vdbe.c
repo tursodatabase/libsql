@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.315 2004/05/21 13:39:51 drh Exp $
+** $Id: vdbe.c,v 1.316 2004/05/22 03:05:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -68,6 +68,32 @@ int sqlite3_search_count = 0;
 ** in an ordinary build.
 */
 int sqlite3_interrupt_count = 0;
+
+/*
+** NulTermify
+** Stringify
+** Integerify
+** Realify
+** SetEncoding
+** Release
+*/
+struct MemRecord {
+  char *zData;    /* Serialized record */
+  int nField;     /* Number of fields in the header */
+  int nHeader;    /* Number of bytes in the entire header */
+  u64 *aType;     /* Type values for all entries in the record */
+};
+typedef struct MemRecord MemRecord;
+
+/*
+** Transform the value stored in pMem, which must be a blob into a
+** MemRecord. An Mem cell used to store a MemRecord works as follows:
+**
+** Mem.z points at a MemRecord struct
+*/
+static int Recordify(Mem *pMem){
+  return 0;
+}
 
 #define NulTermify(P) if(((P)->flags & MEM_Str)==0){hardStringify(P);} \
                       else if(((P)->flags & MEM_Term)==0){hardNulTermify(P);}
@@ -180,85 +206,152 @@ static void hardRealify(Mem *pStack){
 }
 
 /*
+** Parmameter "flags" is the value of the flags for a string Mem object.
+** Return one of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be, depending
+** on the encoding indicated by the flags value.
+*/
+static u8 flagsToEnc(int flags){
+  if( flags&MEM_Utf8 ){
+    assert( !(flags&(MEM_Utf16be|MEM_Utf16le)) );
+    return TEXT_Utf8;
+  }
+  if( flags&MEM_Utf16le ){
+    assert( !(flags&(MEM_Utf8|MEM_Utf16be)) );
+    return TEXT_Utf16le;
+  }
+  assert( flags&MEM_Utf16be );
+  assert( !(flags&(MEM_Utf8|MEM_Utf16le)) );
+  return TEXT_Utf16be;
+}
+
+/*
+** Parameter "enc" is one of TEXT_Utf8, TEXT_Utf16le or TEXT_Utf16be.
+** Return the corresponding MEM_Utf* value.
+*/
+static int encToFlags(u8 enc){
+  switch( enc ){
+    case TEXT_Utf8: return MEM_Utf8;
+    case TEXT_Utf16be: return MEM_Utf16be;
+    case TEXT_Utf16le: return MEM_Utf16le;
+  }
+  assert(0);
+}
+
+/*
 ** If pMem is a string object, this routine sets the encoding of the string
 ** (to one of UTF-8 or UTF16) and whether or not the string is
 ** nul-terminated. If pMem is not a string object, then this routine is
 ** a no-op.
 **
-** If argument "utf16" is true, then this routine will attempt to convert
-** the string to native byte order UTF-16 encoding. Otherwise, the
-** conversion is to UTF-8 encoding. If the "term" argument is true, then a
-** nul terminator is added to the string if it does not already have one.
-**
-**
+** The second argument, "flags" consists of one of MEM_Utf8, MEM_Utf16le
+** or MEM_Utf16be, possible ORed with MEM_Term. If necessary this function 
+** manipulates the value stored by pMem so that it matches the flags passed
+** in "flags".
 **
 ** SQLITE_OK is returned if the conversion is successful (or not required).
 ** SQLITE_NOMEM may be returned if a malloc() fails during conversion
 ** between formats.
 */
-static int SetEncoding(Mem *pMem, int flags){
-  int f;
-  if( !(pMem->flags&MEM_Str) ){
+int SetEncoding(Mem *pMem, int flags){
+  u8 enc1;    /* Current string encoding (TEXT_Utf* value) */
+  u8 enc2;    /* Required string encoding (TEXT_Utf* value) */
+
+  /* If this is not a string, do nothing. */
+  if( !(pMem->flags&MEM_Str) || pMem->flags&MEM_Int || pMem->flags&MEM_Real ){
     return SQLITE_OK;
   }
 
-  f = (pMem->flags)&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be|MEM_Term);
-  assert( flags==(flags&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be|MEM_Term)));
-  if( f==flags ){
-    return SQLITE_OK;
-  }
+  enc1 = flagsToEnc(pMem->flags);
+  enc2 = flagsToEnc(flags);
 
-  if( (SQLITE3_BIGENDIAN    && (f&MEM_Utf16le)) ||
-      (SQLITE3_LITTLEENDIAN && (f&MEM_Utf16be)) ){
-    int i;
-    for(i=0; i<pMem->n; i+=2){
-      char c = pMem->z[i];
-      pMem->z[i] = pMem->z[i+1];
-      pMem->z[i+1] = c;
+  if( enc1!=enc2 ){
+    /* If the current encoding does not match the desired encoding, then
+    ** we will need to do some translation between encodings.
+    */
+    char *z;
+    int n;
+    int rc = sqlite3utfTranslate(pMem->z, pMem->n, enc1, (void **)&z, &n, enc2);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
-  }
 
-  if( (flags&MEM_Utf8) && (f&(MEM_Utf16le|MEM_Utf16be)) ){
-    char *z = sqlite3utf16to8(pMem->z, pMem->n); 
-    if( !z ){
-      return SQLITE_NOMEM;
-    }
-    Release(pMem);
+    /* Result of sqlite3utfTranslate is currently always dynamically
+    ** allocated and nul terminated. This might be altered as a performance
+    ** enhancement later.
+    */
     pMem->z = z;
-    pMem->n = strlen(z)+1;
-    pMem->flags = (MEM_Utf8|MEM_Dyn|MEM_Str|MEM_Term);
-    return SQLITE_OK;
+    pMem->n = n;
+    pMem->flags = (MEM_Str | MEM_Dyn | MEM_Term | flags);
   }
 
-  if( (flags&MEM_Utf16le) && (f&MEM_Utf8) ){
-    char *z = sqlite3utf8to16le(pMem->z, pMem->n); 
-    if( !z ){
-      return SQLITE_NOMEM;
+  if( (flags&MEM_Term) && !(pMem->flags&MEM_Term) ){
+    /* If we did not do any translation, but currently the string is
+    ** not nul terminated (and is required to be), then we add the
+    ** nul terminator now. We never have to do this if we translated
+    ** the encoding of the string, as the translation functions return
+    ** nul terminated values.
+    */
+    int f = pMem->flags;
+    int nulTermLen = 2;     /* The number of 0x00 bytes to append */
+    if( enc2==MEM_Utf8 ){
+      nulTermLen = 1;
     }
-    Release(pMem);
-    pMem->z = z;
-    pMem->n = sqlite3utf16ByteLen(z, -1) + 2;
-    pMem->flags = (MEM_Utf16le|MEM_Dyn|MEM_Str|MEM_Term);
-    return SQLITE_OK;
-  }
 
-  if( (flags&MEM_Utf16be) && (f&MEM_Utf8) ){
-    char *z = sqlite3utf8to16be(pMem->z, pMem->n); 
-    if( !z ){
-      return SQLITE_NOMEM;
+    if( pMem->n+nulTermLen<=NBFS ){
+      /* If the string plus the nul terminator will fit in the Mem.zShort
+      ** buffer, and it is not already stored there, copy it there.
+      */
+      if( !(f&MEM_Short) ){
+        memcpy(pMem->z, pMem->zShort, pMem->n);
+        if( f&MEM_Dyn ){
+          sqliteFree(pMem->z);
+        }
+        pMem->z = pMem->zShort;
+        pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Dyn);
+        pMem->flags |= MEM_Short;
+      }
+    }else{
+      /* Otherwise we have to malloc for memory. If the string is already
+      ** dynamic, use sqliteRealloc(). Otherwise sqliteMalloc() enough
+      ** space for the string and the nul terminator, and copy the string
+      ** data there.
+      */
+      if( f&MEM_Dyn ){
+        pMem->z = (char *)sqliteRealloc(pMem->z, pMem->n+nulTermLen);
+        if( !pMem->z ){
+          return SQLITE_NOMEM;
+        }
+      }else{
+        char *z = (char *)sqliteMalloc(pMem->n+nulTermLen);
+        memcpy(z, pMem->z, pMem->n);
+        pMem->z = z;
+        pMem->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
+        pMem->flags |= MEM_Dyn;
+      }
     }
-    Release(pMem);
-    pMem->z = z;
-    pMem->n = sqlite3utf16ByteLen(z, -1) + 2;
-    pMem->flags = (MEM_Utf16be|MEM_Dyn|MEM_Str|MEM_Term);
-    return SQLITE_OK;
-  }
 
-  if( (flags&MEM_Term) && !(f&&MEM_Term) ){
-    NulTermify(pMem);
+    /* pMem->z now points at the string data, with enough space at the end
+    ** to insert the nul nul terminator. pMem->n has not yet been updated.
+    */
+    memcpy(&pMem->z[pMem->n], "\0\0", nulTermLen);
+    pMem->n += nulTermLen;
+    pMem->flags |= MEM_Term;
   }
-
   return SQLITE_OK;
+}
+
+int sqlite3VdbeSetEncoding(Mem *pMem, u8 enc){
+  switch( enc ){
+    case TEXT_Utf8:
+      return SetEncoding(pMem, MEM_Utf8);
+    case TEXT_Utf16le:
+      return SetEncoding(pMem, MEM_Utf16le);
+    case TEXT_Utf16be:
+      return SetEncoding(pMem, MEM_Utf16be);
+    default:
+      assert(0);
+  }
+  return SQLITE_INTERNAL;
 }
 
 /*
@@ -840,11 +933,11 @@ static void applyAffinity(Mem *pRec, char affinity){
   }
 }
 
+#ifndef NDEBUG
 /*
 ** Write a nice string representation of the contents of cell pMem
 ** into buffer zBuf, length nBuf.
 */
-#ifndef NDEBUG
 void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
   char *zCsr = zBuf;
   int f = pMem->flags;
@@ -865,7 +958,8 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
       c = 's';
     }
 
-    zCsr += sprintf(zCsr, "%c[", c);
+    zCsr += sprintf(zCsr, "%c", c);
+    zCsr += sprintf(zCsr, "%d[", pMem->n);
     for(i=0; i<16 && i<pMem->n; i++){
       zCsr += sprintf(zCsr, "%02X ", ((int)pMem->z[i] & 0xFF));
     }
@@ -876,10 +970,47 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
     }
 
     zCsr += sprintf(zCsr, "]");
+    *zCsr = '\0';
+  }else if( f & MEM_Str ){
+    int j, k;
+    zBuf[0] = ' ';
+    if( f & MEM_Dyn ){
+      zBuf[1] = 'z';
+      assert( (f & (MEM_Static|MEM_Ephem))==0 );
+    }else if( f & MEM_Static ){
+      zBuf[1] = 't';
+      assert( (f & (MEM_Dyn|MEM_Ephem))==0 );
+    }else if( f & MEM_Ephem ){
+      zBuf[1] = 'e';
+      assert( (f & (MEM_Static|MEM_Dyn))==0 );
+    }else{
+      zBuf[1] = 's';
+    }
+    k = 2;
+    k += sprintf(&zBuf[k], "%d", pMem->n);
+    zBuf[k++] = '[';
+    for(j=0; j<15 && j<pMem->n; j++){
+      u8 c = pMem->z[j];
+      if( c==0 && j==pMem->n-1 ) break;
+/*
+            zBuf[k++] = "0123456789ABCDEF"[c>>4];
+            zBuf[k++] = "0123456789ABCDEF"[c&0xf];
+*/
+      if( c>=0x20 && c<0x7f ){
+        zBuf[k++] = c;
+      }else{
+        zBuf[k++] = '.';
+      }
+    }
+    zBuf[k++] = ']';
+    zBuf[k++] = 0;
   }
-
-  *zCsr = '\0';
 }
+
+/* Temporary - this is useful in conjunction with prettyPrintMem whilst
+** debugging. 
+*/
+char zGdbBuf[100];
 #endif
 
 /*
@@ -1264,37 +1395,13 @@ case OP_Variable: {
   Mem *pVar;
   assert( j>=0 && j<p->nVar );
 
-  /* If we need to translate between text encodings, do it now. If this is
-  ** required, then put the new string in p->apVar. This way, if the
-  ** variable is used again, even after the virtual machine is reset, the
-  ** conversion won't have to be done again.
-  **
-  ** FIX ME: This is where we need to support databases that use other than
-  ** UTF-8 on disk.
+  /* Ensure the variable string (if it is a string) is UTF-8 encoded and
+  ** nul terminated. Do the transformation on the variable before it 
+  ** is copied onto the stack, in case it is used again before this VDBE is
+  ** finalized.
   */
   pVar = &p->apVar[j];
-  if( pVar->flags&MEM_Str && !(pVar->flags&MEM_Utf8) ){
-    char *zUtf8;
-    assert( pVar->flags&(MEM_Utf16le|MEM_Utf16be) );
-    zUtf8 = sqlite3utf16to8(pVar->z, pVar->n);
-    if( !zUtf8 ){
-      goto no_mem;
-    }
-    Release(pVar);
-    pVar->z = zUtf8;
-    pVar->n = strlen(zUtf8)+1;
-    pVar->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
-  }
-
-  /* Ensure that the variable value is nul terminated. Again, do this in
-  ** place.
-  **
-  ** FIX ME: The rest of the vdbe will soon understand MEM_Term, making
-  ** this step unnecessary.
-  */
-  if( pVar->flags&MEM_Str ){
-    NulTermify(pVar);
-  }
+  SetEncoding(pVar, MEM_Utf8|MEM_Term);
 
   /* Copy the value in pVar to the top of the stack. If pVar is a string or
   ** a blob just store a pointer to the same memory, do not make a copy.
@@ -1531,7 +1638,7 @@ case OP_Concat: {
   }
   pTos++;
   pTos->n = nByte;
-  pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8;
+  pTos->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
   pTos->z = zNew;
   break;
 }
@@ -1693,6 +1800,9 @@ case OP_Function: {
   popStack(&pTos, n);
   pTos++;
   *pTos = ctx.s;
+  if( pTos->flags & MEM_Str ){
+    pTos->flags |= MEM_Term;
+  }
   if( pTos->flags & MEM_Short ){
     pTos->z = pTos->zShort;
   }
@@ -2311,7 +2421,11 @@ case OP_Column: {
     }
     off += off2;
     
-    sqlite3VdbeSerialGet(&zRec[off], colType, pTos);
+    sqlite3VdbeSerialGet(&zRec[off], colType, pTos, p->db->enc);
+    rc = SetEncoding(pTos, MEM_Utf8|MEM_Term);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     break;
   }
 
@@ -2422,7 +2536,11 @@ case OP_Column: {
     getBtreeMem(pCrsr, offset, len, pC->keyAsData, &sMem);
     zData = sMem.z;
   }
-  sqlite3VdbeSerialGet(zData, pC->aType[p2], pTos);
+  sqlite3VdbeSerialGet(zData, pC->aType[p2], pTos, p->db->enc);
+  rc = SetEncoding(pTos, MEM_Utf8|MEM_Term);
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
 
   Release(&sMem);
   break;
@@ -2491,6 +2609,7 @@ case OP_MakeRecord: {
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0]);
     }
+    SetEncoding(pRec, encToFlags(p->db->enc));
     serial_type = sqlite3VdbeSerialType(pRec);
     nBytes += sqlite3VdbeSerialTypeLen(serial_type);
     nBytes += sqlite3VarintLen(serial_type);
@@ -2614,6 +2733,7 @@ case OP_MakeIdxKey: {
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
+    SetEncoding(pRec, encToFlags(p->db->enc));
     serial_type = sqlite3VdbeSerialType(pRec);
     nByte += sqlite3VarintLen(serial_type);
     nByte += sqlite3VdbeSerialTypeLen(serial_type);
@@ -2645,7 +2765,8 @@ case OP_MakeIdxKey: {
   
   /* Build the key in the buffer pointed to by zKey. */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    offset += sqlite3PutVarint(&zKey[offset], sqlite3VdbeSerialType(pRec));
+    u64 serial_type = sqlite3VdbeSerialType(pRec);
+    offset += sqlite3PutVarint(&zKey[offset], serial_type);
     offset += sqlite3VdbeSerialPut(&zKey[offset], pRec);
   }
   if( addRowid ){
@@ -2968,6 +3089,7 @@ case OP_OpenWrite: {
     pCur->pKeyInfo = (KeyInfo*)pOp->p3;
     if( pCur->pKeyInfo ){
       pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
+      pCur->pKeyInfo->enc = p->db->enc;
     }else{
       pCur->pIncrKey = &pCur->bogusIncrKey;
     }
@@ -3051,6 +3173,7 @@ case OP_OpenTemp: {
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeKeyCompare,
             pOp->p3, &pCx->pCursor);
         pCx->pKeyInfo = (KeyInfo*)pOp->p3;
+        pCx->pKeyInfo->enc = p->db->enc;
         pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
     }else{
@@ -3824,7 +3947,8 @@ case OP_IdxColumn: {
   }
 
   pTos++;
-  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos);
+  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos, p->db->enc);
+  SetEncoding(pTos, MEM_Utf8|MEM_Term);
   if( freeZData ){
     sqliteFree(zData);
   }
@@ -4585,6 +4709,7 @@ case OP_SortPut: {
 case OP_Sort: {
   int i;
   KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
+  pKeyInfo->enc = p->db->enc;
   Sorter *pElem;
   Sorter *apSorter[NSORT];
   for(i=0; i<NSORT; i++){
@@ -5237,38 +5362,6 @@ default: {
           fprintf(p->trace, " i:%lld", pTos[i].i);
         }else if( pTos[i].flags & MEM_Real ){
           fprintf(p->trace, " r:%g", pTos[i].r);
-        }else if( pTos[i].flags & MEM_Str ){
-          int j, k;
-          char zBuf[100];
-          zBuf[0] = ' ';
-          if( pTos[i].flags & MEM_Dyn ){
-            zBuf[1] = 'z';
-            assert( (pTos[i].flags & (MEM_Static|MEM_Ephem))==0 );
-          }else if( pTos[i].flags & MEM_Static ){
-            zBuf[1] = 't';
-            assert( (pTos[i].flags & (MEM_Dyn|MEM_Ephem))==0 );
-          }else if( pTos[i].flags & MEM_Ephem ){
-            zBuf[1] = 'e';
-            assert( (pTos[i].flags & (MEM_Static|MEM_Dyn))==0 );
-          }else{
-            zBuf[1] = 's';
-          }
-          zBuf[2] = '[';
-          k = 3;
-          for(j=0; j<15 && j<pTos[i].n; j++){
-            u8 c = pTos[i].z[j];
-            if( c==0 && j==pTos[i].n-1 ) break;
-            zBuf[k++] = "0123456789ABCDEF"[c>>4];
-            zBuf[k++] = "0123456789ABCDEF"[c&0xf];
-            if( c>=0x20 && c<0x7f ){
-              zBuf[k++] = c;
-            }else{
-              zBuf[k++] = '.';
-            }
-          }
-          zBuf[k++] = ']';
-          zBuf[k++] = 0;
-          fprintf(p->trace, "%s", zBuf);
         }else{
           char zBuf[100];
           prettyPrintMem(pTos, zBuf, 100);

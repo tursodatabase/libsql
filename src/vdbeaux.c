@@ -1135,7 +1135,7 @@ int sqlite3_bind_int64(sqlite3_stmt *p, int i, long long int iValue){
     pVar->flags = MEM_Int;
     pVar->i = iValue;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -1199,7 +1199,13 @@ int sqlite3_bind_text16(
   int nData, 
   int eCopy
 ){
-  int flags = MEM_Str|MEM_Utf16le|MEM_Utf16be;
+  int flags;
+  
+  if( SQLITE3_BIGENDIAN ){
+    flags = MEM_Str|MEM_Utf16be;
+  }else{
+    flags = MEM_Str|MEM_Utf16le;
+  }
 
   if( zData ){
     /* If nData is less than zero, measure the length of the string. 
@@ -1362,7 +1368,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 /*
 ** Return the serial-type for the value stored in pMem.
 */
-u64 sqlite3VdbeSerialType(const Mem *pMem){
+u64 sqlite3VdbeSerialType(Mem *pMem){
   int flags = pMem->flags;
 
   if( flags&MEM_Null ){
@@ -1380,12 +1386,13 @@ u64 sqlite3VdbeSerialType(const Mem *pMem){
     return 5;
   }
   if( flags&MEM_Str ){
-    /* We assume that the string is NULL-terminated. We don't store the
-    ** NULL-terminator - it is implied by the string storage class.
-    */
+    u64 t;
     assert( pMem->n>0 );
-    assert( pMem->z[pMem->n-1]=='\0' );
-    return (pMem->n*2 + 11); /* (pMem->n-1)*2 + 13 */
+    t = (pMem->n*2) + 13;
+    if( pMem->flags&MEM_Term ){
+      t -= ((pMem->flags&MEM_Utf8)?2:4);
+    }
+    return t;
   }
   if( flags&MEM_Blob ){
     return (pMem->n*2 + 12);
@@ -1415,7 +1422,7 @@ int sqlite3VdbeSerialTypeLen(u64 serial_type){
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
 */ 
-int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
+int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
   u64 serial_type = sqlite3VdbeSerialType(pMem);
   int len;
 
@@ -1454,7 +1461,12 @@ int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.  Return the number of bytes read.
 */ 
-int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
+int sqlite3VdbeSerialGet(
+  const unsigned char *buf, 
+  u64 serial_type, 
+  Mem *pMem,
+  u8 enc
+){
   int len;
 
   assert( serial_type!=0 );
@@ -1486,7 +1498,7 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
       pMem->r = *(double*)&v;
     }else{
       pMem->flags = MEM_Int;
-      pMem->i = *(int*)&v;
+      pMem->i = *(i64*)&v;
     }
     return len;
   }
@@ -1495,8 +1507,19 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   assert( serial_type>=12 );
   len = sqlite3VdbeSerialTypeLen(serial_type);
   if( serial_type&0x01 ){
-    pMem->flags = MEM_Str|MEM_Utf8;
-    pMem->n = len+1;
+    switch( enc ){
+      case TEXT_Utf8:
+        pMem->flags = MEM_Str|MEM_Utf8|MEM_Term;
+        break;
+      case TEXT_Utf16le:
+        pMem->flags = MEM_Str|MEM_Utf16le|MEM_Term;
+        break;
+      case TEXT_Utf16be:
+        pMem->flags = MEM_Str|MEM_Utf16be|MEM_Term;
+        break;
+      assert(0);
+    }
+    pMem->n = len+(enc==TEXT_Utf8?1:2);
   }else{
     pMem->flags = MEM_Blob;
     pMem->n = len;
@@ -1516,6 +1539,9 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   memcpy(pMem->z, buf, len); 
   if( pMem->flags&MEM_Str ){
     pMem->z[len] = '\0';
+    if( enc!=TEXT_Utf8 ){
+      pMem->z[len+1] = '\0';
+    }
   }
 
   return len;
@@ -1635,6 +1661,7 @@ int sqlite3VdbeKeyCompare(
   int offset2 = 0;
   int i = 0;
   int rc = 0;
+  u8 enc = pKeyInfo->enc;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
   
@@ -1675,8 +1702,8 @@ int sqlite3VdbeKeyCompare(
     ** the file is corrupted.  Then read the value from each key into mem1
     ** and mem2 respectively.
     */
-    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
-    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
+    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1, enc);
+    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2, enc);
 
     rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){
@@ -1734,6 +1761,7 @@ int sqlite3VdbeRowCompare(
   int toffset1 = 0;
   int toffset2 = 0;
   int i;
+  u8 enc = pKeyInfo->enc;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   const unsigned char *aKey2 = (const unsigned char *)pKey2;
 
@@ -1764,8 +1792,8 @@ int sqlite3VdbeRowCompare(
     ** the file is corrupted.  Then read the value from each key into mem1
     ** and mem2 respectively.
     */
-    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
-    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
+    offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1, enc);
+    offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2, enc);
 
     rc = sqlite3MemCompare(&mem1, &mem2, pKeyInfo->aColl[i]);
     if( mem1.flags&MEM_Dyn ){

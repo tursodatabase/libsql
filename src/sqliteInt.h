@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.244 2004/05/21 10:08:54 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.245 2004/05/22 03:05:34 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -282,7 +282,6 @@ struct Db {
   u16 flags;           /* Flags associated with this database */
   void *pAux;          /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
-  u8 textEnc;          /* Text encoding for this database. */
 };
 
 /*
@@ -415,6 +414,7 @@ struct sqlite {
   int errCode;                  /* Most recent error code (SQLITE_*) */
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
   void *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
+  u8 enc;                       /* Text encoding for this database. */
 };
 
 /*
@@ -652,6 +652,7 @@ struct FKey {
 ** otherwise be equal, then return a result as if the second key larger.
 */
 struct KeyInfo {
+  u8 enc;             /* Text encoding - one of the TEXT_Utf* values */
   u8 incrKey;         /* Increase 2nd key by epsilon before comparison */
   int nField;         /* Number of entries in aColl[] */
   u8 *aSortOrder;     /* If defined an aSortOrder[i] is true, sort DESC */
@@ -1341,7 +1342,7 @@ char *sqlite3_snprintf(int,char*,const char*,...);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3GetInt64(const char *, i64*);
 int sqlite3FitsIn64Bits(const char *);
-unsigned char *sqlite3utf16to8(const void *pData, int N);
+unsigned char *sqlite3utf16to8(const void *pData, int N, int big_endian);
 void *sqlite3utf8to16be(const unsigned char *pIn, int N);
 void *sqlite3utf8to16le(const unsigned char *pIn, int N);
 void sqlite3utf16to16le(void *pData, int N);
@@ -1361,4 +1362,4 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
 void sqlite3Error(sqlite *, int, const char*,...);
-
+int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
