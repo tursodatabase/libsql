@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.391 2004/06/28 00:17:32 danielk1977 Exp $
+** $Id: vdbe.c,v 1.392 2004/06/28 01:11:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1819,7 +1819,7 @@ case OP_SetNumColumns: {
 */
 case OP_IdxColumn:
 case OP_Column: {
-  int payloadSize;   /* Number of bytes in the record */
+  u32 payloadSize;   /* Number of bytes in the record */
   int p1 = pOp->p1;  /* P1 value of the opcode */
   int p2 = pOp->p2;  /* column number to retrieve */
   Cursor *pC = 0;    /* The VDBE cursor */
@@ -2319,7 +2319,7 @@ case OP_ReadCookie: {
   ** meta[1] to be the schema cookie.  So we have to shift the index
   ** by one in the following statement.
   */
-  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1 + pOp->p2, &iMeta);
+  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1 + pOp->p2, (u32 *)&iMeta);
   pTos++;
   pTos->i = iMeta;
   pTos->flags = MEM_Int;
@@ -2368,7 +2368,7 @@ case OP_SetCookie: {
 case OP_VerifyCookie: {
   int iMeta;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1, &iMeta);
+  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1, (u32 *)&iMeta);
   if( rc==SQLITE_OK && iMeta!=pOp->p2 ){
     sqlite3SetString(&p->zErrMsg, "database schema has changed", (char*)0);
     rc = SQLITE_SCHEMA;
@@ -2956,7 +2956,7 @@ case OP_NewRecno: {
         if( res ){
           v = 1;
         }else{
-          sqlite3BtreeKeySize(pC->pCursor, (u64*)&v);
+          sqlite3BtreeKeySize(pC->pCursor, &v);
           v = keyToInt(v);
           if( v==0x7fffffffffffffff ){
             pC->useRandomRowid = 1;
@@ -3188,7 +3188,7 @@ case OP_RowKey:
 case OP_RowData: {
   int i = pOp->p1;
   Cursor *pC;
-  int n;
+  u32 n;
 
   pTos++;
   assert( i>=0 && i<p->nCursor );
@@ -3262,7 +3262,7 @@ case OP_Recno: {
     break;
   }else{
     assert( pC->pCursor!=0 );
-    sqlite3BtreeKeySize(pC->pCursor, (u64*)&v);
+    sqlite3BtreeKeySize(pC->pCursor, &v);
     v = keyToInt(v);
   }
   pTos->i = v;
@@ -3292,7 +3292,7 @@ case OP_FullKey: {
   assert( !p->apCsr[i]->pseudoTable );
   pTos++;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
-    u64 amt;
+    i64 amt;
     char *z;
 
     sqlite3VdbeCursorMoveto(pC);

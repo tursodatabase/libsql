@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.173 2004/06/26 08:38:25 danielk1977 Exp $
+** $Id: btree.c,v 1.174 2004/06/28 01:11:46 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -443,7 +443,7 @@ static void parseCellPtr(
   }else{
     nPayload = 0;
   }
-  n += getVarint(&pCell[n], &pInfo->nKey);
+  n += getVarint(&pCell[n], (u64 *)&pInfo->nKey);
   pInfo->nHeader = n;
   pInfo->nData = nPayload;
   if( !pPage->intKey ){

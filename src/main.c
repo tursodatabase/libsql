@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.236 2004/06/26 10:02:16 danielk1977 Exp $
+** $Id: main.c,v 1.237 2004/06/28 01:11:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -232,7 +232,7 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   if( rc==SQLITE_OK ){
     int i;
     for(i=0; rc==SQLITE_OK && i<sizeof(meta)/sizeof(meta[0]); i++){
-      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, &meta[i]);
+      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, (u32 *)&meta[i]);
     }
     if( rc ){
       sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
@@ -923,7 +923,7 @@ static int schemaIsValid(sqlite *db){
     if( pBt==0 ) continue;
     rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, 0, &curTemp);
     if( rc==SQLITE_OK ){
-      rc = sqlite3BtreeGetMeta(pBt, 1, &cookie);
+      rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
       if( rc==SQLITE_OK && cookie!=db->aDb[iDb].schema_cookie ){
         allOk = 0;
       }

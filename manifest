@@ -1,5 +1,5 @@
-C Fix\sa\sseg-fault\scaused\sby\sa\smalloc()\sfailure.\s(CVS\s1748)
-D 2004-06-28T00:17:32
+C Fix\sa\sbunch\sof\sharmless\swarnings.\s(CVS\s1749)
+D 2004-06-28T01:11:46
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,21 +24,21 @@ F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def 26f4e7b0a3fbaa55701e020fdec429f1594e2866
-F src/attach.c b105aeb8c82fbd097c5067dddde90d5f7fadf8dd
+F src/attach.c 73b16e608fc662e8602639e946582832b6f2902b
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c d485d1b2f00d9957a58dae15ad718da0a8596267
+F src/btree.c ad428c56e42d748a0c1441fbbd93e41df407c31d
 F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
-F src/build.c 98466ddf5e3142783d0c628992836c3c382c9233
+F src/build.c 574cdd30922ead0ababc717865aef9948c17701d
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c db0e1fdcf967f6db6b2d4503cdbdbccde8c61e52
+F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
 F src/func.c c38c8bcaf118204baf343711b9e7f5bf804ed9c3
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 37b6d15942b6d7b69b92686b32d6bae9d41a3e9b
+F src/main.c 6d27d09c9984d9b68a53b95fc2e327a19cd28851
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -73,11 +73,11 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c a8fb39c94ae4ef6606d5216b6f05d9b86f6901b2
 F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
-F src/vdbe.c 5125bfa9876def934abe4579126fabb31c33fd2a
+F src/vdbe.c 5a381d4a4cd1c5b7325a3f6756bb3d051f81c6e6
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
 F src/vdbeInt.h d83fd7389838453d8392915c21f432014afc99cf
 F src/vdbeapi.c e92bda928f2fe93a9a77a62bd95642563bbcdea1
-F src/vdbeaux.c 1e3d0e724fdcfc1261da067454f05db778e3ba08
+F src/vdbeaux.c f9b1b3d4d2f1c31f6db1ae1536e17e4eb5454205
 F src/vdbemem.c e8ae1f56ad16d5b01119e8dc1d25e913e06c3128
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test d591e074013248176402a16a0fb6fc82d241bad5
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 9501587944f1009aa0b4fa431bb19e7ec993a077
-R 5975ce31da67586d4994606172856aed
+P e28d42cb5e274b871f54add0e046d6e153060e21
+R 66a75445f0f574c8e7b5d4ad10988339
 U danielk1977
-Z 08353d362da820f90e49ba5ec669d79e
+Z e6fa8ff2dabd246e980e0df72da05b85

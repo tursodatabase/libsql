@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.149 2004/06/23 12:35:15 danielk1977 Exp $
+** $Id: expr.c,v 1.150 2004/06/28 01:11:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -26,6 +26,7 @@ char const *sqlite3AffinityString(char affinity){
     default:
       assert(0);
   }
+  return 0;
 }
 
 
