@@ -1,5 +1,5 @@
-C Do\snot\sinclude\sthe\sP3\sparameter\son\sOP_Integer\sopcodes\sif\sthe\sinteger\swill\sfit\nin\s32\sbits.\s\sThe\sP3\sconversion\sis\sslow.\s(CVS\s1494)
-D 2004-05-30T01:38:43
+C Faster\sversion\sof\ssqlite3VdbeSerialGet.\s(CVS\s1495)
+D 2004-05-30T01:51:52
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/vdbe.c c9658279c8d46760afab9714fd988ef052d02b88
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h c2bcd6e5a6e6a3753e4c5a368629c3a625719bfc
 F src/vdbeapi.c 0c5d64c81871cb4fe5407e639604ee95738b6942
-F src/vdbeaux.c 79dbad52ba653c0f26adcab1a054432669775b0d
+F src/vdbeaux.c 419f62488256ac083a996893a46d55180347f3c2
 F src/vdbemem.c d5f96663627d54ee8ea47f182c92faa57a015704
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cbcaece7f45a0bc994e6c54a996afa4e6529da6a
-R 258b847515a631fd85af8a899101683c
+P fcd84ebabca72023e76e6954514948aa9a3ab999
+R 3f1817a302e026eaf4a3f04c4eee66ee
 U drh
-Z b2fca084d3ec68b05f90cc6a90870693
+Z 2739751628cd79cb153057eaa6054ddd

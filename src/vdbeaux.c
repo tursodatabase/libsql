@@ -1172,18 +1172,6 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
     static u8 aSize[] = { 0, 1, 2, 4, 8, 8, 0, };
     return aSize[serial_type];
   }
-#if 0
-  switch(serial_type){
-    case 6: return 0;                  /* NULL */
-    case 1: return 1;                  /* 1 byte integer */
-    case 2: return 2;                  /* 2 byte integer */
-    case 3: return 4;                  /* 4 byte integer */
-    case 4: return 8;                  /* 8 byte integer */
-    case 5: return 8;                  /* 8 byte float */
-  }
-  assert( serial_type>=12 );
-  return ((serial_type-12)>>1);        /* text or blob */
-#endif
 }
 
 /*
@@ -1237,24 +1225,12 @@ int sqlite3VdbeSerialGet(
 ){
   int len;
 
+  len = sqlite3VdbeSerialTypeLen(serial_type);
   assert( serial_type!=0 );
-
-  /* memset(pMem, 0, sizeof(pMem)); */
-  pMem->flags = 0;
-  pMem->z = 0;
-
-  /* NULL */
-  if( serial_type==6 ){
-    pMem->flags = MEM_Null;
-    pMem->type = SQLITE3_NULL;
-    return 0;
-  }
- 
-  /* Integer and Real */
   if( serial_type<=5 ){
+    /* Integer and Real */
     u64 v = 0;
     int n;
-    len = sqlite3VdbeSerialTypeLen(serial_type);
 
     if( buf[0]&0x80 ){
       v = -1;
@@ -1271,18 +1247,21 @@ int sqlite3VdbeSerialGet(
       pMem->i = *(i64*)&v;
       pMem->type = SQLITE3_INTEGER;
     }
-    return len;
-  }
-
-  /* String or blob */
-  assert( serial_type>=12 );
-  len = sqlite3VdbeSerialTypeLen(serial_type);
-  pMem->z = (char *)buf;
-  pMem->n = len;
-  if( serial_type&0x01 ){
-    pMem->flags = MEM_Str | MEM_Ephem;
+  }else if( serial_type>=12 ){
+    /* String or blob */
+    pMem->z = (char *)buf;
+    pMem->n = len;
+    if( serial_type&0x01 ){
+      pMem->flags = MEM_Str | MEM_Ephem;
+    }else{
+      pMem->flags = MEM_Blob | MEM_Ephem;
+    }
   }else{
-    pMem->flags = MEM_Blob | MEM_Ephem;
+    /* NULL */
+    assert( serial_type==6 );
+    assert( len==0 );
+    pMem->flags = MEM_Null;
+    pMem->type = SQLITE3_NULL;
   }
   return len;
 }
