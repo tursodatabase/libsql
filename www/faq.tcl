@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.27 2004/11/10 05:48:57 danielk1977 Exp $}
+set rcsid {$Id: faq.tcl,v 1.28 2005/01/26 10:39:58 danielk1977 Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -423,6 +423,58 @@ faq {
 
   <blockquote><pre>
     INSERT INTO xyz VALUES('5 O''clock');
+  </pre></blockquote>
+}
+
+faq {What is an SQLITE_SCHEMA error, and why am I getting one?} {
+  <p>In version 3 of SQLite, an SQLITE_SCHEMA error is returned when a 
+  prepared SQL statement is no longer valid and cannot be executed.
+  When this occurs, the statement must be recompiled from SQL using 
+  the sqlite3_prepare() API. In SQLite 3, an SQLITE_SCHEMA error can
+  only occur when using the sqlite3_prepare()/sqlite3_step()/sqlite3_finalize()
+  API to execute SQL, not when using the sqlite3_exec(). This was not
+  the case in version 2.</p>
+
+  <p>The most common reason for a prepared statement to become invalid
+  is that the schema of the database was modified after the SQL was 
+  prepared (possibly by another process).  The other reasons this can 
+  happen are:</p> 
+  <ul>
+  <li>A database was DETACHed.
+  <li>A user-function definition was deleted or changed.
+  <li>A collation sequence definition was deleted or changed.
+  <li>The authorization function was changed.
+  </ul>
+
+  <p>In all cases, the solution is to recompile the statement from SQL
+  and attempt to execute it again. Because a prepared statement can be
+  invalidated by another process changing the database schema, all code
+  that uses the sqlite3_prepare()/sqlite3_step()/sqlite3_finalize()
+  API should be prepared to handle SQLITE_SCHEMA errors. An example
+  of one approach to this follows:</p>
+
+  <blockquote><pre>
+
+    int rc;
+    sqlite3_stmt *pStmt;
+    char zSql[] = "SELECT .....";
+
+    do {
+      /* Compile the statement from SQL. Assume success. */
+      sqlite3_prepare(pDb, zSql, -1, &pStmt, 0);
+
+      while( SQLITE_ROW==sqlite3_step(pStmt) ){
+        /* Do something with the row of available data */
+      }
+
+      /* Finalize the statement. If an SQLITE_SCHEMA error has
+      ** occured, then the above call to sqlite3_step() will have
+      ** returned SQLITE_ERROR. sqlite3_finalize() will return
+      ** SQLITE_SCHEMA. In this case the loop will execute again.
+      */
+      rc = sqlite3_finalize(pStmt);
+    } while( rc==SQLITE_SCHEMA );
+    
   </pre></blockquote>
 }
 

@@ -1,5 +1,5 @@
-C Allow\sGROUP\sBY\son\snon-aggregate\squeries.\sTicket\s#1064\s(CVS\s2276)
-D 2005-01-26T03:58:36
+C Add\san\sentry\sto\sfaq.tcl\sregarding\sSQLITE_SCHEMA\serrors.\s(CVS\s2277)
+D 2005-01-26T10:39:58
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -251,7 +251,7 @@ F www/different.tcl 051086bc273a36808dc08d58ed098611fb53e315
 F www/docs.tcl 09e5eccffad783fe65fac87772f5265e9bb64abe
 F www/download.tcl 9263a5418c7c0945ff86c1011b8a048f1db3ef2a
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl abe360e630d8134bc6242c5e3664969c397eac6e
+F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl 2ac775d5247922fd0f5d62178b28d41ccaed7d01
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P cabab62bc10568d435806a7059fad7274f0dd4c8
-R ffae8f42ca0f009f38563fe1ef5cdd78
+P 0642d3e3d6636a5f922f75c05252c9c1372d3936
+R ff98b5bb4857d018624b47a08a862aa2
 U danielk1977
-Z d9bb33809efa4982a979cf246654c1ed
+Z 0d80c050a8433757427c9d87cf25f2e2
