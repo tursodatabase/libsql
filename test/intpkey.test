@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.18 2004/06/30 04:02:12 drh Exp $
+# $Id: intpkey.test,v 1.19 2004/10/18 21:34:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -371,7 +371,7 @@ do_test intpkey-5.1 {
     SELECT * FROM t1 WHERE a=0;
   }
 } {0 zero entry 0}
-do_test intpkey=5.2 {
+do_test intpkey-5.2 {
   execsql {
     SELECT rowid, a FROM t1
   }
