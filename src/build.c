@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.102 2002/07/08 22:03:32 drh Exp $
+** $Id: build.c,v 1.103 2002/07/11 12:18:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2041,6 +2041,14 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       db->flags |= SQLITE_FullColNames;
     }else{
       db->flags &= ~SQLITE_FullColNames;
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "show_datatypes")==0 ){
+    if( getBoolean(zRight) ){
+      db->flags |= SQLITE_ReportTypes;
+    }else{
+      db->flags &= ~SQLITE_ReportTypes;
     }
   }else
 

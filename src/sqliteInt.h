@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.135 2002/07/08 22:03:32 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.136 2002/07/11 12:18:17 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -230,6 +230,8 @@ struct sqlite {
 #define SQLITE_ResultDetails  0x00000100  /* Details added to result set */
 #define SQLITE_UnresetViews   0x00000200  /* True if one or more views have */
                                           /*   defined column names */
+#define SQLITE_ReportTypes    0x00000400  /* Include information on datatypes */
+                                          /*   in 4th argument of callback */
 
 /*
 ** Possible values for the sqlite.magic field.
