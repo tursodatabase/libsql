@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.8 2004/02/24 01:04:12 drh Exp $
+# $Id: misc3.test,v 1.9 2004/03/02 18:37:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -250,5 +250,41 @@ do_test misc3-6.3 {
   execsql {BEGIN; EXPLAIN ROLLBACK}
   catchsql {ROLLBACK}
 } {0 {}}
+
+# Ticket #640:  vdbe stack overflow with a LIMIT clause on a SELECT inside
+# of a trigger.
+#
+do_test misc3-7.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE y1(a);
+    CREATE TABLE y2(b);
+    CREATE TABLE y3(c);
+    CREATE TRIGGER r1 AFTER DELETE ON y1 FOR EACH ROW BEGIN
+      INSERT INTO y3(c) SELECT b FROM y2 ORDER BY b LIMIT 1;
+    END;
+    INSERT INTO y1 VALUES(1);
+    INSERT INTO y1 VALUES(2);
+    INSERT INTO y1 SELECT a+2 FROM y1;
+    INSERT INTO y1 SELECT a+4 FROM y1;
+    INSERT INTO y1 SELECT a+8 FROM y1;
+    INSERT INTO y1 SELECT a+16 FROM y1;
+    INSERT INTO y2 SELECT a FROM y1;
+    COMMIT;
+    SELECT count(*) FROM y1;
+  }
+} 32
+do_test misc3-7.2 {
+  execsql {
+    DELETE FROM y1;
+    SELECT count(*) FROM y1;
+  }
+} 0
+do_test misc3-7.3 {
+  execsql {
+    SELECT count(*) FROM y3;
+  }
+} 32
+
 
 finish_test

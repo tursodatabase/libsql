@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.159 2004/02/25 13:47:33 drh Exp $
+** $Id: select.c,v 1.160 2004/03/02 18:37:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -564,18 +564,19 @@ static void generateSortTail(
   int eDest,       /* Write the sorted results here */
   int iParm        /* Optional parameter associated with eDest */
 ){
-  int end = sqliteVdbeMakeLabel(v);
+  int end1 = sqliteVdbeMakeLabel(v);
+  int end2 = sqliteVdbeMakeLabel(v);
   int addr;
   if( eDest==SRT_Sorter ) return;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
-  addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
+  addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end1);
   if( p->iOffset>=0 ){
     sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr+4);
     sqliteVdbeAddOp(v, OP_Pop, 1, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   }
   if( p->iLimit>=0 ){
-    sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, end);
+    sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, end2);
   }
   switch( eDest ){
     case SRT_Callback: {
@@ -601,7 +602,7 @@ static void generateSortTail(
     case SRT_Mem: {
       assert( nColumn==1 );
       sqliteVdbeAddOp(v, OP_MemStore, iParm, 1);
-      sqliteVdbeAddOp(v, OP_Goto, 0, end);
+      sqliteVdbeAddOp(v, OP_Goto, 0, end1);
       break;
     }
     case SRT_Subroutine: {
@@ -619,7 +620,9 @@ static void generateSortTail(
     }
   }
   sqliteVdbeAddOp(v, OP_Goto, 0, addr);
-  sqliteVdbeResolveLabel(v, end);
+  sqliteVdbeResolveLabel(v, end2);
+  sqliteVdbeAddOp(v, OP_Pop, 1, 0);
+  sqliteVdbeResolveLabel(v, end1);
   sqliteVdbeAddOp(v, OP_SortReset, 0, 0);
 }
 
