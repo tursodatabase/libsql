@@ -332,6 +332,9 @@ speed.html:	$(TOP)/www/speed.tcl
 faq.html:	$(TOP)/www/faq.tcl
 	tclsh $(TOP)/www/faq.tcl >faq.html
 
+formatchng.html:	$(TOP)/www/formatchng.tcl
+	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
+
 download.html:	$(TOP)/www/download.tcl
 	tclsh $(TOP)/www/download.tcl >download.html
 
@@ -353,7 +356,8 @@ DOC = \
   tclsqlite.html \
   download.html \
   speed.html \
-  faq.html
+  faq.html \
+  formatchng.html
 
 doc:	$(DOC)
 	mkdir -p doc

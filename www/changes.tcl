@@ -17,7 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Dec 16 (2.1.8)} {
+chng {2001 Dec 22 (2.2.0)} {
+<li>Columns of type INTEGER PRIMARY KEY are actually used as the primary
+    key in underlying B-Tree representation of the table.</li>
+<li>Several obscure, unrelated bugs were found and fixed while 
+    implemented the integer primary key change of the previous bullet.</li>
 <li>Added the ability to specify "*" as part of a larger column list in
     the result section of a SELECT statement.  For example:
     <nobr>"<b>SELECT rowid, * FROM table1;</b>"</nobr>.</li>

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.4 2001/12/15 14:22:19 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.5 2001/12/22 19:27:41 drh Exp $}
 
 puts {<html>
 <head>
@@ -44,6 +44,43 @@ COMMIT;
 </pre></blockquote>
   There are other ways of simulating the effect of AUTOINCREMENT but
   this approach seems to be the easiest and most efficient.
+
+  <p><i>New in SQLite version 2.2.0:</i>
+  If one of the columns in a table has type INTEGER PRIMARY KEY and
+  you do an INSERT on that table that does not specify a value for
+  the primary key, then a unique random number is inserted automatically
+  in that column.  This automatically generated key is random, not 
+  sequential, but you can still use it as a unique identifier.</p>
+
+  <p>Here is an example of how the INTEGER PRIMARY KEY feature can be
+  used:</p>
+
+  <blockquote><pre>
+CREATE TABLE ex2(
+  cnum INTEGER PRIMARY KEY,
+  name TEXT,
+  email TEXT
+);
+INSERT INTO ex2(name,email) VALUES('drh','drh@hwaci.com');
+INSERT INTO ex2(name,email) VALUES('alle','alle@hwaci.com');
+SELECT * FROM ex1;
+</pre></blockquote>
+
+  <p>Notice that the primary key column <b>cnum</b> is not specified on
+  the INSERT statements.  The output of the SELECT on the last line will
+  be something like this:</p>
+
+  <blockquote>
+     1597027670|drh|drh@hwaci.com<br>
+     1597027853|alle|alle@hwaci.com
+  </blockquote>
+
+  <p>The randomly generated keys in this case are 1597027670 and
+  1597027853.  You will probably get different keys every time you
+  try this.  The keys will often be ascending, but this is not always
+  the case and you cannot count on that behavior.  The keys will never
+  be sequential.  If you need sequential keys, use the counter implemention
+  described first.</p>
 }
 
 faq {
@@ -54,7 +91,10 @@ faq {
   integer columns, floating point numbers in boolean columns, or dates
   in character columns.  The datatype you assign to a column in the
   CREATE TABLE command is (mostly) ignored.  Every column is able to hold
-  an arbitrary length string.</p>
+  an arbitrary length string.  (There is one exception: Columns of
+  type INTEGER PRIMARY KEY may only hold an integer.  An error will result
+  if you try to put anything other than an integer into an
+  INTEGER PRIMARY KEY column.)</p>
 
   <p>Because SQLite ignores data types, you can omit the data type definition
   from columns in CREATE TABLE statements.  For example, instead of saying
@@ -176,6 +216,12 @@ faq {
   If you change them so that they actually implement a mutex, then SQLite
   will be threadsafe.  But because these routines are stubs, the default
   SQLite distribution is not threadsafe.</p>
+
+  <p>"Threadsafe" in the previous paragraph means that two or more threads
+  can run SQLite at the same time on different "<b>sqlite</b>" structures
+  returned from separate calls to <b>sqlite_open()</b>.  It is never safe
+  to use the same <b>sqlite</b> structure pointer simultaneously in two
+  or more threads.</p>
 }
 
 faq {

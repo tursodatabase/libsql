@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.17 2001/11/24 13:50:53 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.18 2001/12/22 19:27:41 drh Exp $}
 
 puts {<html>
 <head>
@@ -239,11 +239,24 @@ datatype for that column, then one or more optional column constraints.
 The datatype for the column is ignored.  All information
 is stored as null-terminated strings.
 The UNIQUE constraint causes an index to be created on the specified
-columns.  This index must contain unique keys.  The PRIMARY KEY constraint
-is an alias for UNIQUE.
+columns.  This index must contain unique keys.
 The DEFAULT constraint
 specifies a default value to use when doing an INSERT.
 </p>
+
+<p>Specifying a PRIMARY KEY normally just creates a UNIQUE index
+on the primary key.  However, if primary key is on a single column
+that has datatype INTEGER, then that column is used internally
+as the actual key of the B-Tree for the table.  This means that the column
+may only hold unique integer values.  (Except for this one case,
+SQLite ignores the datatype specification of columns and allows
+any kind of data to be put in a column regardless of its declared
+datatype.)  If a table does not have an INTEGER PRIMARY KEY column,
+then the B-Tree key will be a randomly generated integer.  The
+B-Tree key for a row can always be accessed using one of the
+special names "<b>ROWID</b>", "<b>OID</b>", or "<b>_ROWID_</b>".
+This is true regardless of whether or not there is an INTEGER
+PRIMARY KEY.</p>
 
 <p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
 and "TABLE" then the table that is created is only visible to the

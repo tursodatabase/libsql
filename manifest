@@ -1,7 +1,7 @@
-C Bug\sfixing\sin\sthe\snew\sinteger\sprimary\skey\scode.\s(CVS\s334)
-D 2001-12-22T14:49:25
+C Update\sdocumentation\sfor\sthe\s2.2.0\srelease.\s(CVS\s335)
+D 2001-12-22T19:27:40
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
-F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
+F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 353ee68ca2468dce6464d331044643d350fd256f
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
@@ -65,7 +65,7 @@ F test/in.test 9323681388be301dc73f370b4cd62c5a33f79d1e
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test a5c122aa726f1cef6f07d6767e8fd6f220994c11
 F test/insert2.test d6901ca931e308fea7fca8c95ebe7dc957cc9fc2
-F test/intpkey.test 1f3b36bcf772597809fb445202af77d1d17bb39f
+F test/intpkey.test 3f765f69c39af45f9324edcc6e14b201654e9790
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/limit.test a930f3eba2a7691c8397ccab33710b931589566a
 F test/lock.test 19593689260c419efe7ced55b1418653a4b7bcd1
@@ -104,21 +104,22 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
-F www/c_interface.tcl 58922228e8fdb0f6af3561a051ee8ccec6dbfd17
-F www/changes.tcl 7718ad82090404f6a2a062dd534670996c2b82cc
+F www/c_interface.tcl 9123810452845783fac8e3184929463d9e70d609
+F www/changes.tcl a57ebb01b6bc941b5494a7b169576881c524cc53
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 5c6fba68e238a52b4d9d86b0a63ed2d706fc7f1f
-F www/index.tcl 6d6d847dd3e39e9aa7b0c9b8f3144819ff3f9f51
-F www/lang.tcl 6482d90e40fb5ee004a86cf98f3007312a75444e
+F www/faq.tcl f475a9ca61697d6d9cdae5497fa1a539df3f7e05
+F www/formatchng.tcl d96e5e937dcbbebd481720aa08745ca5a906a63f
+F www/index.tcl bcb4ee777b9beef64b5482f12660d89960b486d6
+F www/lang.tcl 6843fd3f85cba95fd199a350533ce742c706603c
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 236a54d289e858a1e0505a20d907a2a40c01b521
-R 5707cbf46f7d3e66441cb3379d943ba9
+P 29cab124b4f7eae9d9feb60d2f3a2c443fd9b9aa
+R c48343b6602223daa3e4640e717ebad9
 U drh
-Z 49b0682a1be06cb764aeb1e921e472ac
+Z df1fb6885750227397b1a0fd9aad25a2
