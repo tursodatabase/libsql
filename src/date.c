@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.40 2004/11/10 11:55:12 danielk1977 Exp $
+** $Id: date.c,v 1.41 2004/11/11 01:50:30 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -925,11 +925,10 @@ static void ctimestampFunc(
 ** are included instead. This is to support column declarations that
 ** include "DEFAULT CURRENT_TIME" etc.
 **
-** This function uses the C-library functions time(), localtime_r()
+** This function uses the C-library functions time(), gmtime()
 ** and strftime(). The format string to pass to strftime() is supplied
 ** as the user-data for the function.
 */
-
 static void currentTimeFunc(
   sqlite3_context *context,
   int argc,

@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.8 2004/10/10 17:24:55 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.9 2004/11/11 01:50:30 danielk1977 Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -299,6 +299,7 @@ modes, as follows:</P>
 	false.</P>
 </UL>
 
+<a name="collation"></a>
 <h3>7. User-defined Collation Sequences</h3>
 
 <p>

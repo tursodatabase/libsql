@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.75 2004/11/10 05:48:57 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.76 2004/11/11 01:50:30 danielk1977 Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -399,11 +399,19 @@ See <a href="datatype3.html">Datatypes In SQLite Version 3</a> for
 additional information.
 The UNIQUE constraint causes an index to be created on the specified
 columns.  This index must contain unique keys.
-The DEFAULT constraint
-specifies a default value to use when doing an INSERT.
-The COLLATE clause specifies what text collating function to use
-when comparing text entries for the column.  The built-in BINARY
-collating function is used by default.
+The COLLATE clause specifies what text <a href="datatype3.html#collation">
+collating function</a> to use when comparing text entries for the column.  
+The built-in BINARY collating function is used by default.
+<p>
+The DEFAULT constraint specifies a default value to use when doing an INSERT.
+The value may be NULL, a string constant, a number, or one of the special
+case-independant keywords CURRENT_TIME, CURRENT_DATE or CURRENT_TIMESTAMP.
+If the value is NULL, a string constant or number, it is literally inserted
+into the column whenever an INSERT statement that does not specify a value
+for the column is executed. If the value is CURRENT_TIME, CURRENT_DATE or
+CURRENT_TIMESTAMP, then the current UTC date and/or time is inserted into
+the columns. For CURRENT_TIME, the format is HH:MM:SS. For CURRENT_DATE, 
+YYYY-MM-DD. The format for CURRENT_TIMESTAMP is "YYYY-MM-DD HH:MM:SS".
 </p>
 
 <p>Specifying a PRIMARY KEY normally just creates a UNIQUE index
