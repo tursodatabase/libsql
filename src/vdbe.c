@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.454 2005/02/08 07:50:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.455 2005/02/17 00:03:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2890,11 +2890,15 @@ case OP_NewRecno: {
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_INTKEY)!=0 );
     assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_ZERODATA)==0 );
 
+#ifdef SQLITE_32BIT_ROWID
+#   define MAX_ROWID 0x7fffffff
+#else
     /* Some compilers complain about constants of the form 0x7fffffffffffffff.
     ** Others complain about 0x7ffffffffffffffffLL.  The following macro seems
     ** to provide the constant while making all compilers happy.
     */
-#   define MAX_I64  ( (((u64)0x7fffffff)<<32) | (u64)0xffffffff )
+#   define MAX_ROWID  ( (((u64)0x7fffffff)<<32) | (u64)0xffffffff )
+#endif
 
     if( !pC->useRandomRowid ){
       if( pC->nextRowidValid ){
@@ -2906,7 +2910,7 @@ case OP_NewRecno: {
         }else{
           sqlite3BtreeKeySize(pC->pCursor, &v);
           v = keyToInt(v);
-          if( v==MAX_I64 ){
+          if( v==MAX_ROWID ){
             pC->useRandomRowid = 1;
           }else{
             v++;
@@ -2921,7 +2925,7 @@ case OP_NewRecno: {
         pMem = &p->aMem[pOp->p2];
         Integerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P2) holds an integer */
-        if( pMem->i==MAX_I64 || pC->useRandomRowid ){
+        if( pMem->i==MAX_ROWID || pC->useRandomRowid ){
           rc = SQLITE_FULL;
           goto abort_due_to_error;
         }
@@ -2932,7 +2936,7 @@ case OP_NewRecno: {
       }
 #endif
 
-      if( v<MAX_I64 ){
+      if( v<MAX_ROWID ){
         pC->nextRowidValid = 1;
         pC->nextRowid = v+1;
       }else{
