@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.9 2000/06/02 01:51:20 drh Exp $
+** $Id: vdbe.c,v 1.10 2000/06/02 15:05:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -747,8 +747,10 @@ int sqliteVdbeExec(
           if( Stringify(p, j) ) goto no_mem;
         }
         p->zStack[p->tos+1] = 0;
-        if( xCallback(pArg, pOp->p1, &p->zStack[i], p->azColName)!=0 ){
-          rc = SQLITE_ABORT;
+        if( xCallback!=0 ){
+          if( xCallback(pArg, pOp->p1, &p->zStack[i], p->azColName)!=0 ){
+            rc = SQLITE_ABORT;
+          }
         }
         PopStack(p, pOp->p1);
         break;
@@ -2022,8 +2024,10 @@ int sqliteVdbeExec(
       case OP_SortCallback: {
         int i = p->tos;
         if( i<0 ) goto not_enough_stack;
-        if( xCallback(pArg, pOp->p1, (char**)p->zStack[i], p->azColName) ){
-          rc = SQLITE_ABORT;
+        if( xCallback!=0 ){
+          if( xCallback(pArg, pOp->p1, (char**)p->zStack[i], p->azColName) ){
+            rc = SQLITE_ABORT;
+          }
         }
         PopStack(p, 1);
         break;

@@ -23,12 +23,13 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select2.test,v 1.3 2000/06/02 14:38:47 drh Exp $
+# $Id: select2.test,v 1.4 2000/06/02 15:05:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-puts "Glob: [glob -nocomplain *.txt]"
+# Create a table with some data
+#
 execsql {CREATE TABLE tbl1(f1 int, f2 int)}
 set f [open ./testdata1.txt w]
 for {set i 0} {$i<=30} {incr i} {
@@ -36,7 +37,7 @@ for {set i 0} {$i<=30} {incr i} {
 }
 close $f
 execsql {COPY tbl1 FROM './testdata1.txt'}
-# file delete -force ./testdata1.txt
+file delete -force ./testdata1.txt
 
 # Do a second query inside a first.
 #
@@ -54,7 +55,6 @@ do_test select2-1.1 {
   set r
 } {0: 0 7 8 9 1: 0 1 8 9 2: 0 1 2 9 3: 0 1 2 3 4: 2 3 4 5: 3 4 5 6: 4 5 6 7: 5 6 7 8: 6 7 8}
 
-
 do_test select2-1.2 {
   set sql {SELECT DISTINCT f1 FROM tbl1 WHERE f1>3 AND f1<5}
   set r {}
@@ -68,5 +68,42 @@ do_test select2-1.2 {
   }
   set r
 } {4: 2 3 4}
+
+# Create a largish table
+#
+execsql {CREATE TABLE tbl2(f1 int, f2 int, f3 int)}
+set f [open ./testdata1.txt w]
+for {set i 1} {$i<=30000} {incr i} {
+  puts $f "$i\t[expr {$i*2}]\t[expr {$i*3}]"
+}
+close $f
+execsql {COPY tbl2 FROM './testdata1.txt'}
+file delete -force ./testdata1.txt
+
+do_test select2-2.1 {
+  execsql {SELECT count(*) FROM tbl2}
+} {30000}
+do_test select2-2.2 {
+  execsql {SELECT count(*) FROM tbl2 WHERE f2>1000}
+} {29500}
+
+do_test select2-3.1 {
+  execsql {SELECT f1 FROM tbl2 WHERE f2==1000}
+} {500}
+
+execsql {CREATE INDEX idx1 ON tbl2(f2)}
+
+do_test select2-3.2 {
+  execsql {SELECT f1 FROM tbl2 WHERE f2==1000}
+} {500}
+
+# Make sure queries run faster with an index than without
+#
+do_test select2-3.3 {
+  set t1 [lindex [time {execsql {SELECT f1 from tbl2 WHERE f2==2000}} 1] 0]
+  execsql {DROP INDEX idx1}
+  set t2 [lindex [time {execsql {SELECT f1 FROM tbl2 WHERE f2==2000}} 1] 0]
+  expr {$t1*25 < $t2}
+} {1}
 
 finish_test
