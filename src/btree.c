@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.226 2005/01/07 08:56:44 danielk1977 Exp $
+** $Id: btree.c,v 1.227 2005/01/08 12:42:39 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4487,6 +4487,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
       pRoot = pPageMove;
     } 
 
+    /* Update the pointer-map and meta-data with the new root-page number. */
     rc = ptrmapPut(pBt, pgnoRoot, PTRMAP_ROOTPAGE, 0);
     if( rc ){
       releasePage(pRoot);
@@ -4497,6 +4498,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
       releasePage(pRoot);
       return rc;
     }
+
   }else{
     rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
     if( rc ) return rc;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.57 2004/11/10 11:55:12 danielk1977 Exp $
+** $Id: test3.c,v 1.58 2005/01/08 12:42:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -514,10 +514,10 @@ static int btree_pager_stats(
   }
   pBt = sqlite3TextToPtr(argv[1]);
   a = sqlite3pager_stats(sqlite3BtreePager(pBt));
-  for(i=0; i<9; i++){
+  for(i=0; i<11; i++){
     static char *zName[] = {
       "ref", "page", "max", "size", "state", "err",
-      "hit", "miss", "ovfl",
+      "hit", "miss", "ovfl", "read", "write"
     };
     char zBuf[100];
     Tcl_AppendElement(interp, zName[i]);
@@ -1321,6 +1321,45 @@ static int btree_varint_test(
 }
 
 /*
+** usage:   btree_from_db  DB-HANDLE
+**
+** This command returns the btree handle for the main database associated
+** with the database-handle passed as the argument. Example usage:
+**
+** sqlite3 db test.db
+** set bt [btree_from_db db]
+*/
+static int btree_from_db(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  char zBuf[100];
+  Tcl_CmdInfo info;
+  sqlite3 *db;
+  Btree *pBt;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " DB-HANDLE\"", 0);
+    return TCL_ERROR;
+  }
+
+  if( 1!=Tcl_GetCommandInfo(interp, argv[1], &info) ){
+    Tcl_AppendResult(interp, "No such db-handle: \"", argv[1], "\"", 0);
+    return TCL_ERROR;
+  }
+  db = *((sqlite3 **)info.objClientData);
+  assert( db );
+
+  pBt = db->aDb[0].pBt;
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", pBt);
+  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest3_Init(Tcl_Interp *interp){
@@ -1366,6 +1405,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_begin_statement",    (Tcl_CmdProc*)btree_begin_statement    },
      { "btree_commit_statement",   (Tcl_CmdProc*)btree_commit_statement   },
      { "btree_rollback_statement", (Tcl_CmdProc*)btree_rollback_statement },
+     { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
   };
   int i;
 

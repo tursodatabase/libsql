@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.179 2004/11/24 01:16:43 drh Exp $
+** @(#) $Id: pager.c,v 1.180 2005/01/08 12:42:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -244,6 +244,7 @@ struct Pager {
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
+  int nRead,nWrite;           /* Database pages read/written */
   void (*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
   u8 journalOpen;             /* True if journal file descriptors is valid */
@@ -2067,6 +2068,7 @@ static int pager_write_pagelist(PgHdr *pList){
       TRACE3("STORE %d page %d\n", PAGERID(pPager), pList->pgno);
       rc = sqlite3OsWrite(&pPager->fd, PGHDR_TO_DATA(pList), pPager->pageSize);
       CODEC(pPager, PGHDR_TO_DATA(pList), pList->pgno, 0);
+      pPager->nWrite++;
     }
 #ifndef NDEBUG
     else{
@@ -2350,6 +2352,8 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
         }else{
           memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
         }
+      }else{
+        pPager->nRead++;
       }
     }
   }else{
@@ -3006,7 +3010,7 @@ int sqlite3pager_isreadonly(Pager *pPager){
 ** This routine is used for testing and analysis only.
 */
 int *sqlite3pager_stats(Pager *pPager){
-  static int a[9];
+  static int a[11];
   a[0] = pPager->nRef;
   a[1] = pPager->nPage;
   a[2] = pPager->mxPage;
@@ -3016,6 +3020,8 @@ int *sqlite3pager_stats(Pager *pPager){
   a[6] = pPager->nHit;
   a[7] = pPager->nMiss;
   a[8] = pPager->nOvfl;
+  a[9] = pPager->nRead;
+  a[10] = pPager->nWrite;
   return a;
 }
 
