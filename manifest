@@ -1,5 +1,5 @@
-C Refinements\sto\sthe\sLIMIT\spatch\s(1823)\sfor\sticket\s#749.\s(CVS\s1825)
-D 2004-07-19T23:38:11
+C Correct\shandling\sof\sviews\son\stables\swith\squoted\scolumn\snames.\s\sTicket\s#756.\s(CVS\s1826)
+D 2004-07-20T00:20:23
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/parse.y 51c8e696276c409618e66a4ccf316fcff245506e
 F src/pragma.c 8326df8c400f573eb43004dfb8e53e5102acb3e4
 F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c b8d0a8325552e46bf295ccfdad54668404fad88b
+F src/select.c 540ac0efcb306651dd6e36fecdb8ca71dbd553b9
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
 F src/sqlite.h.in aaf46c8d458efd8aca694ec4f18c6ecf616ee55e
 F src/sqliteInt.h aeae6793d1db335ec1179ad9f26b0affc0ec658a
@@ -160,7 +160,7 @@ F test/select4.test 86e72fc3b07de4fe11439aa419e37db3c49467e2
 F test/select5.test 3f3f0f31e674fa61f8a3bdb6af1517dfae674081
 F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test 30fb9ea782a78da849a562d53233ec62d421bf61
-F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
+F test/subselect.test cca16490d78613174bf90a8416fc21a383ec7c71
 F test/table.test b6d07f04c4157d1f2a37fb7febe36b250d468e31
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
 F test/tclsqlite.test 0ef39b0228a32601432cec20208ec4b35e9b5cdb
@@ -182,7 +182,7 @@ F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
 F test/vacuum.test 51d3a52535f77af6fb6fa7e742230f4958a708c1
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
-F test/view.test b42c98499ae9fbf578cd7a4b020d23057c8825fb
+F test/view.test ca5c296989d3045f121be9a67588ff88c64874a8
 F test/where.test 9c5752b807b78078fab8da6f52e689832579ca20
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c db6a3bfaf3388c0f7aea3adb5e05acddcd427016
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e6bc8aa80824a9156e78fc99b5ac7045b97d29c3
-R a1595d94360f07506cd424fa5219917d
+P 9d4f43f030438b3e7358032de2e04132b80e04a8
+R f6d5cb858e9d94be2a57f054d5f27a76
 U drh
-Z 4dcf250616b0eecc7cd0cb15ba666c1d
+Z 63352bdf4c2e275ac64e907b7f18028a
