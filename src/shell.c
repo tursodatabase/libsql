@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.73 2003/04/26 03:03:07 drh Exp $
+** $Id: shell.c,v 1.74 2003/04/29 18:01:28 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -923,6 +923,21 @@ static int _all_whitespace(const char *z){
 }
 
 /*
+** Return TRUE if the line typed in is an SQL command terminator other
+** than a semi-colon.  The SQL Server style "go" command is understood
+** as is the Oracle "/".
+*/
+static int _is_command_terminator(const char *zLine){
+  extern int sqliteStrNICmp(const char*,const char*,int);
+  while( isspace(*zLine) ){ zLine++; };
+  if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ) return 1;  /* Oracle */
+  if( sqliteStrNICmp(zLine,"go",2)==0 && _all_whitespace(&zLine[2]) ){
+    return 1;  /* SQL Server */
+  }
+  return 0;
+}
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -947,6 +962,9 @@ static void process_input(struct callback_data *p, FILE *in){
       free(zLine);
       if( rc ) break;
       continue;
+    }
+    if( _is_command_terminator(zLine) ){
+      strcpy(zLine,";");
     }
     if( zSql==0 ){
       int i;

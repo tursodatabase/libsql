@@ -1,5 +1,5 @@
-C Allow\sthe\sASC\sor\sDESC\skeyword\sto\sappear\safter\sa\scolumn\sname\sin\sa\sCREATE\sINDEX\nstatement.\s\sSQLite\sindices\sare\saways\sASC\s(ascending)\sregardless\sof\swhich\nkeyword\sis\sused.\s(CVS\s943)
-D 2003-04-29T17:19:18
+C Accept\sa\s"/"\sor\s"go"\son\sa\sline\sby\sitself\sas\san\sSQL\sstatement\sterminator\nin\sthe\scommand-line\sshell.\s\sThis\sallows\sSQL\sServer\sand\sOracle\sscripts\sto\nbe\splayed\sinto\sSQLite\swithout\schange.\s(CVS\s944)
+D 2003-04-29T18:01:28
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d1c876b9078894bc956cf1a5b38abd1a5abaf70b
-F src/shell.c 6557e37e6c34564b72d6b98da23a88eb6ed88d59
+F src/shell.c 4dc33c49cc69ef864c1e19283b7b683a7639a251
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h faf133e1441b7c7b93ad5d8a58201d4849033b75
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c6bf62e41cf44e8ebf740b103204b00e8b826c90
-R 04afb247e830abab3943a6061d0bbc42
+P 1a0c542088618ba24d1efae9b13a8eca104d6cc8
+R b08733b79775152cc384c5b58062cc88
 U drh
-Z 338ae139004152359560f097d0453d1b
+Z 5e48773d80f83c12274e19cd1dafe308
