@@ -1,5 +1,5 @@
-C Shell\sprogram\ssaves\scommand-line\shistory\son\sa\s".quit".\s\sTicket\s#614.\s(CVS\s1270)
-D 2004-02-25T02:25:37
+C Fix\sthe\sreturn\stype\sof\ssqliteRunVacuum.\s\sTicket\s#627.\s(CVS\s1271)
+D 2004-02-25T02:33:35
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,7 +61,7 @@ F src/tokenize.c 6676b946fd8825b67ab52140af4fdc57a70bda48
 F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c 4c50328ebc127852bde8e2950eb8933234802c21
 F src/util.c 122bc174f6c8c2eb6a9127d9f13c4c74f83b85e4
-F src/vacuum.c d9e80c2b36ee1f623dbf1bdf3cedad24a23f87ac
+F src/vacuum.c db5f58cb53c8c79169d74bc0413e6d7e185ac532
 F src/vdbe.c af187d86cb1bcc1ead227245350d1693c28c77a2
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2773c1d384b750eee037e6ccc61bc56b5204d690
-R 0db21680d5ef4195f5f788c1fac8a4e6
+P 114b72f8608b8e08fad863a1446fb1ef59610efd
+R e0dfbd5e11231f51ee512fc59088c2fb
 U drh
-Z fc9bb8b14a2a77a5af04e35290967ca1
+Z ea543ed6ac4d345acdce58082a3273de
