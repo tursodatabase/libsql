@@ -1,5 +1,5 @@
-C Avoid\sopening\sa\stemp\stable\sfor\saggregate\squeries\swith\sno\sGROUP\sBY\sclause.\s(CVS\s1649)
-D 2004-06-21T10:45:07
+C Remove\sunused\sOP_UtfXX\sopcodes.\s(CVS\s1650)
+D 2004-06-21T11:30:56
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -71,7 +71,7 @@ F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c e31e35d3d76cab7a02045095064897eca49cbce3
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 206ac8aa50978ff2870c3e53dc3564dff5ae8d33
+F src/vdbe.c 5da73f61016b1874d935b522bab6ca8b5aa15216
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h c0740932621a8d4aac20e0c4235ce44eb5e8dce6
 F src/vdbeapi.c 8a9421341e09b506a934132c9015f26362ae8c0e
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P bbd3e93348bc3a1178f5278c6cf0b82e75bbf642
-R 721de3571b9dffe04fab1715f24d4561
+P 4d02df63496091a1e643601f84313f42130d6282
+R a5c7b81b886ce0dc51fd23c906f18801
 U danielk1977
-Z c3a890995f7791045ca127dcbcc39544
+Z 7e03b6c5873537e5aac7ef83e2a8f46a

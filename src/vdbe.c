@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.384 2004/06/21 10:45:09 danielk1977 Exp $
+** $Id: vdbe.c,v 1.385 2004/06/21 11:30:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -832,58 +832,6 @@ case OP_Variable: {
     pTos->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Short);
     pTos->flags |= MEM_Static;
   }
-  break;
-}
-
-/* Opcode: Utf16le_8 * * *
-**
-** The element on the top of the stack must be a little-endian UTF-16
-** encoded string. It is translated in-place to UTF-8.
-*/
-case OP_Utf16le_8: {
-  rc = SQLITE_INTERNAL;
-  break;
-}
-
-/* Opcode: Utf16be_8 * * *
-**
-** The element on the top of the stack must be a big-endian UTF-16
-** encoded string. It is translated in-place to UTF-8.
-*/
-case OP_Utf16be_8: {
-  rc = SQLITE_INTERNAL;
-  break;
-}
-
-/* Opcode: Utf8_16be * * *
-**
-** The element on the top of the stack must be a UTF-8 encoded
-** string. It is translated to big-endian UTF-16.
-*/
-case OP_Utf8_16be: {
-  rc = SQLITE_INTERNAL;
-  break;
-}
-
-/* Opcode: Utf8_16le * * *
-**
-** The element on the top of the stack must be a UTF-8 encoded
-** string. It is translated to little-endian UTF-16.
-*/
-case OP_Utf8_16le: {
-  rc = SQLITE_INTERNAL;
-  break;
-}
-
-/*
-** Opcode: UtfSwab
-**
-** The element on the top of the stack must be an UTF-16 encoded
-** string. Every second byte is exchanged, so as to translate
-** the string from little-endian to big-endian or vice versa.
-*/
-case OP_UtfSwab: {
-  rc = SQLITE_INTERNAL;
   break;
 }
 
