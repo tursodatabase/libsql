@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.313 2005/03/16 12:15:21 danielk1977 Exp $
+** $Id: build.c,v 1.314 2005/03/17 05:03:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1413,7 +1413,12 @@ static char *createTableStmt(Table *p){
 ** "CREATE TABLE ... AS SELECT ..." statement.  The column names of
 ** the new table will match the result set of the SELECT.
 */
-void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
+void sqlite3EndTable(
+  Parse *pParse,          /* Parse context */
+  Token *pCons,           /* The ',' token after the last column defn. */
+  Token *pEnd,            /* The final ')' token in the CREATE TABLE */
+  Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
+){
   Table *p;
   sqlite3 *db = pParse->db;
 
@@ -1567,6 +1572,14 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
+
+#ifndef SQLITE_OMIT_ALTERTABLE
+    if( !p->pSelect ){
+      assert( !pSelect && pCons && pEnd );
+      if( pCons->z==0 ) pCons = pEnd;
+      p->addColOffset = 13 + (pCons->z - pParse->sNameToken.z);
+    }
+#endif
   }
 }
 
@@ -1629,7 +1642,7 @@ void sqlite3CreateView(
   sEnd.n = 1;
 
   /* Use sqlite3EndTable() to add the view to the SQLITE_MASTER table */
-  sqlite3EndTable(pParse, &sEnd, 0);
+  sqlite3EndTable(pParse, 0, &sEnd, 0);
   return;
 }
 #endif /* SQLITE_OMIT_VIEW */

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.168 2005/03/16 12:15:21 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.169 2005/03/17 05:03:40 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -114,11 +114,11 @@ create_table ::= CREATE(X) temp(T) TABLE nm(Y) dbnm(Z). {
 %type temp {int}
 temp(A) ::= TEMP.  {A = 1;}
 temp(A) ::= .      {A = 0;}
-create_table_args ::= LP columnlist conslist_opt RP(X). {
-  sqlite3EndTable(pParse,&X,0);
+create_table_args ::= LP columnlist conslist_opt(X) RP(Y). {
+  sqlite3EndTable(pParse,&X,&Y,0);
 }
 create_table_args ::= AS select(S). {
-  sqlite3EndTable(pParse,0,S);
+  sqlite3EndTable(pParse,0,0,S);
   sqlite3SelectDelete(S);
 }
 columnlist ::= columnlist COMMA column.
@@ -128,8 +128,15 @@ columnlist ::= column.
 // column.  The type is always just "text".  But the code will accept
 // an elaborate typename.  Perhaps someday we'll do something with it.
 //
-column ::= columnid type carglist. 
-columnid ::= nm(X).                {sqlite3AddColumn(pParse,&X);}
+column(A) ::= columnid(X) type carglist. {
+  A.z = X.z;
+  A.n = (pParse->sLastToken.z-X.z) + pParse->sLastToken.n;
+}
+columnid(A) ::= nm(X). {
+  sqlite3AddColumn(pParse,&X);
+  A = X;
+}
+
 
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
@@ -223,7 +230,7 @@ ccons ::= NOT NULL onconf(R).               {sqlite3AddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R) autoinc(I).
                                      {sqlite3AddPrimaryKey(pParse,0,R,I);}
 ccons ::= UNIQUE onconf(R).          {sqlite3CreateIndex(pParse,0,0,0,0,R,0,0);}
-ccons ::= CHECK LP expr RP onconf.
+ccons ::= CHECK LP expr(X) RP onconf. {sqlite3ExprDelete(X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
@@ -263,8 +270,8 @@ init_deferred_pred_opt(A) ::= INITIALLY IMMEDIATE.    {A = 0;}
 // For the time being, the only constraint we care about is the primary
 // key and UNIQUE.  Both create indices.
 //
-conslist_opt ::= .
-conslist_opt ::= COMMA conslist.
+conslist_opt(A) ::= .                   {A.n = 0; A.z = 0;}
+conslist_opt(A) ::= COMMA(X) conslist.  {A = X;}
 conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
@@ -975,4 +982,12 @@ cmd ::= REINDEX nm(X) dbnm(Y).  {sqlite3Reindex(pParse, &X, &Y);}
 cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
   sqlite3AlterRenameTable(pParse,X,&Z);
 }
+cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column(Y). {
+  sqlite3AlterFinishAddColumn(pParse, &Y);
+}
+add_column_fullname ::= fullname(X). {
+  sqlite3AlterBeginAddColumn(pParse, X);
+}
+kwcolumn_opt ::= .
+kwcolumn_opt ::= COLUMNKW.
 %endif

@@ -1,5 +1,5 @@
-C Version\s3.1.6\s(CVS\s2392)
-D 2005-03-17T04:01:24
+C Add\sthe\sALTER\sTABLE\s...\sADD\sCOLUMN\scommand.\s(CVS\s2393)
+D 2005-03-17T05:03:39
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -27,12 +27,12 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c 6dab3d91aa4bf5c24e874145a2a547070c8c1883
+F src/alter.c 85a23fc9a565c0e065d05d1d89744fcc6dee1c65
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 1d9b2179ccac13970c883da6ae3758cc72978bb0
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c 66bf13d2d478d43b9b490bebf07ea62524d80993
+F src/build.c a5688630ba792987dca4daa62aae5ea30d1fad67
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c d70d54a84695de92efc05b9db7d3684cd21d9094
 F src/experimental.c 50c1e3b34f752f4ac10c36f287db095c2b61766d
@@ -54,14 +54,14 @@ F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 26a642c1238615bdea53d458ab6a4df7ca070a08
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
-F src/parse.y 5c8336e7df0d843976c2aa0f63010d479d9cdba5
+F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 69e6093d52e871a243477e9746f820456538dd03
 F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
-F src/sqliteInt.h b59243adc43f0326ca7d8ce0b7ebd3cc70bd670d
+F src/sqliteInt.h 9b2aa887e79b2ecadc24f0b30363b9ec1e5b51e3
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 29e56ecdb94c4066dbe6b088d12cc2404bc9597e
 F src/test1.c dd3e4961f3b9b235a68d4af5d77a06eb7be73184
@@ -86,6 +86,7 @@ F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
+F test/alter3.test ed4b8d4f1ce429d313221cc827d9a18392e51620
 F test/attach.test e6bda19cc954fd84836fadbd70d80134cb17918a
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -259,7 +260,7 @@ F www/faq.tcl 1e348dec52dc0f21f4216fd6918c69c56daa4cfd
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl a53c9b092ab528cc4b9755ccd78e23ca796bafe0
-F www/lang.tcl 0e5aeb09864b9ae0746d8afaa6377193f1553486
+F www/lang.tcl 21cb28bee6a522ab9a376e33f15a048638d6db97
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -276,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 3f45cf3516be9919fe2c0673d6f445fa83d42126
-R ecdf32cee3676fed33ab83ee414d13b7
-U drh
-Z f31b75bb74fc3f7add0a909524577db3
+P 6a3f4e4be6f294f756ed882f220f579252735f3f
+R 6d3cd1539c542074a3e7518c7b23a719
+U danielk1977
+Z c3ddc11776f2cb70a8848ec00f552873

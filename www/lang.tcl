@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.84 2005/02/19 12:44:16 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.85 2005/03/17 05:03:40 danielk1977 Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -139,16 +139,23 @@ proc Section {name label} {
 Section {ALTER TABLE} altertable
 
 Syntax {sql-statement} {
-ALTER TABLE [<database-name> .] <table-name> RENAME TO <new-table-name>
+ALTER TABLE [<database-name> .] <table-name> <alteration>
+} {alteration} {
+RENAME TO <new-table-name>
+} {alteration} {
+ADD [COLUMN] <column-def>
 }
 
 puts {
 <p>SQLite's version of the ALTER TABLE command allows the user to 
-rename an existing table. The table identified by 
-<i>[database-name.]table-name</i> is renamed to
-<i>new-table-name</i>. This command cannot be used to move a
-table between attached databases, only to rename a table within
-the same database.</p>
+rename or add a new column to an existing table. It is not possible
+to remove a column from a table.
+</p>
+
+<p>The RENAME TO syntax is used to rename the table identified by 
+<i>[database-name.]table-name</i> to <i>new-table-name</i>. This command 
+cannot be used to move a table between attached databases, only to rename 
+a table within the same database.</p>
 
 <p>If the table being renamed has triggers or indices, then these remain
 attached to the table after it has been renamed. However, if there are
@@ -157,6 +164,18 @@ the table being renamed, these are not automatically modified to use the new
 table name. If this is required, the triggers or view definitions must be
 dropped and recreated to use the new table name by hand.
 </p>
+
+<p>The ADD [COLUMN] syntax is used to add a new column to an existing table.
+The new column is always appended to the end of the list of existing columns.
+<i>Column-def</i> may take any of the forms permissable in a CREATE TABLE 
+statement, with the following restrictions:
+<ul>
+<li>The column may not have a PRIMARY KEY or UNIQUE constraint.</li>
+<li>The column may not have a default value of CURRENT_TIME, CURRENT_DATE 
+    or CURRENT_TIMESTAMP.</li>
+<li>If a NOT NULL constraint is specified, then the column must have a
+    default value other than NULL.
+</ul>
 }
 
 Section {ATTACH DATABASE} attach
