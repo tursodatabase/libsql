@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.4 2005/01/20 22:48:49 drh Exp $}
+set rcsid {$Id: whentouse.tcl,v 1.5 2005/03/19 03:41:58 drh Exp $}
 source common.tcl
 header {Appropriate Uses For SQLite}
 
@@ -35,7 +35,7 @@ that some people find useful, such as high concurrency, fine-grained
 access control, a rich set of built-in functions, stored procedures,
 esoteric SQL language features, XML and/or Java extensions,
 tera- or peta-byte scalability, and so forth.  If you need some of these
-latter of features and do not mind the added complexity that they
+features and do not mind the added complexity that they
 bring, then SQLite is probably not the database for you.
 SQLite is not intended to be an enterprise database engine.  It
 not designed to compete with Oracle or PostgreSQL.

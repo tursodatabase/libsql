@@ -1,4 +1,4 @@
-set rcsid {$Id: different.tcl,v 1.3 2005/03/12 15:55:11 drh Exp $}
+set rcsid {$Id: different.tcl,v 1.4 2005/03/19 03:41:58 drh Exp $}
 source common.tcl
 header {Distinctive Features Of SQLite}
 puts {
@@ -139,7 +139,7 @@ feature flex {Variable-length records} {
 
 feature readable {Readable source code} {
   The source code to SQLite is designed to be readable and accessible to
-  the average programmer.  All procedures and and data structures and many
+  the average programmer.  All procedures and data structures and many
   automatic variables are carefully commented with useful information about
   what they do.  Boilerplate commenting is omitted.
 }
@@ -162,7 +162,7 @@ feature vdbe {SQL statements compile into virtual machine code} {
   part that executes the virtual machine code and computes a result.)
   The virtual machine allows the developers to see clearly and in an
   easily readable form what SQLite is trying to do with each statement
-  it compiles, which is a tremendous help in debuggings.
+  it compiles, which is a tremendous help in debugging.
   Depending on how it is compiled, SQLite also has the capability of
   tracing the execution of the virtual machine - printing each
   virtual machine instruction and its result as it executes.

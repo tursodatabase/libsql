@@ -1,5 +1,5 @@
-C Updates\sto\scomments\sand\sdocumentation.\s\sNo\schanges\sto\scode.\s(CVS\s2398)
-D 2005-03-19T01:41:21
+C Fix\stypos\sin\sdocumentation.\s(CVS\s2399)
+D 2005-03-19T03:41:58
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -252,7 +252,7 @@ F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl 1d14f70ab73075556b95e76a5c13e5b03f7f6c47
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/different.tcl 1bff4f968e7080f33148d91ca800f803838f320f
+F www/different.tcl f9f573553f4b6854797120b9caba758ae7da240a
 F www/docs.tcl 95f464d6ae02fe265a845ba60d44e053ab5cb5d5
 F www/download.tcl 3af00c0e8fd915961707cddb4c2260f5cf59f3c1
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -276,8 +276,8 @@ F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
 F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
-F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P f2f31919fdd181c79b86f849d46c60f1ed7a0db1
-R 2c95303c62832891365e2218b3260666
+F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
+P e53c77268cd16802bd8c6fc4c6cd5280dc12f9c1
+R 0d34799a6d013756241b74ca09f6edb9
 U drh
-Z d7dae444341619a35be06d3f102e8b38
+Z 79192b57d19e830ea2fe10543e7bbe47
