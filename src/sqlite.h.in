@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.56 2004/02/12 19:01:05 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.57 2004/02/12 20:49:36 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -785,6 +785,7 @@ sqlite *sqlite_open_encrypted(
   const char *zFilename,   /* Name of the encrypted database */
   const void *pKey,        /* Pointer to the key */
   int nKey,                /* Number of bytes in the key */
+  int *pErrcode,           /* Write error code here */
   char **pzErrmsg          /* Write error message here */
 );
 
