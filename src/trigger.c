@@ -760,7 +760,10 @@ int sqlite3CodeRowTrigger(
         fire_this = 0;
       }
     }
-
+ 
+    /* FIX ME:  Can we not omit the sqliteMalloc() and make pTriggerStack
+    ** point to a stack variable?
+    */
     if( fire_this && (pTriggerStack = sqliteMalloc(sizeof(TriggerStack)))!=0 ){
       int endTrigger;
       SrcList dummyTablist;

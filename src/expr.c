@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.162 2004/09/19 00:50:21 drh Exp $
+** $Id: expr.c,v 1.163 2004/09/19 02:15:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -241,7 +241,8 @@ void sqlite3ExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   assert( pRight!=0 );
   assert( pLeft!=0 );
   if( !sqlite3_malloc_failed && pRight->z && pLeft->z ){
-    if( pLeft->dyn==0 && pRight->dyn==0 ){
+    assert( pLeft->dyn==0 || pLeft->z[pLeft->n]==0 );
+    if( pLeft->z[pLeft->n]!=0 && pRight->dyn==0 ){
       pExpr->span.z = pLeft->z;
       pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
     }else{
@@ -1241,6 +1242,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       }else if( pExpr->iColumn>=0 ){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
+        VdbeComment((v, "# %T", &pExpr->span));
       }else{
         sqlite3VdbeAddOp(v, OP_Recno, pExpr->iTable, 0);
       }
@@ -1370,6 +1372,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_SELECT: {
       sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
+      VdbeComment((v, "# load subquery result"));
       break;
     }
     case TK_IN: {
@@ -1469,20 +1472,20 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( !pParse->trigStack ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
-        pParse->nErr++;
 	return;
       }
-      if( pExpr->iColumn == OE_Rollback ||
-	  pExpr->iColumn == OE_Abort ||
-	  pExpr->iColumn == OE_Fail ){
-	  sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
-                           pExpr->token.z, pExpr->token.n);
-	  sqlite3VdbeDequoteP3(v, -1);
+      if( pExpr->iColumn!=OE_Ignore ){
+         assert( pExpr->iColumn==OE_Rollback ||
+                 pExpr->iColumn == OE_Abort ||
+                 pExpr->iColumn == OE_Fail );
+         sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
+                        pExpr->token.z, pExpr->token.n);
+         sqlite3VdbeDequoteP3(v, -1);
       } else {
-	  assert( pExpr->iColumn == OE_Ignore );
-          sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
-	  sqlite3VdbeOp3(v, OP_Goto, 0, pParse->trigStack->ignoreJump,
-                           "(IGNORE jump)", 0);
+         assert( pExpr->iColumn == OE_Ignore );
+         sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
+         sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
+         VdbeComment((v, "# raise(IGNORE)"));
       }
     }
     break;

@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.113 2004/09/06 17:24:13 drh Exp $
+** $Id: where.c,v 1.114 2004/09/19 02:15:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -734,9 +734,7 @@ WhereInfo *sqlite3WhereBegin(
 
     pTab = pTabList->a[i].pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
-    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeAddOp(v, OP_OpenRead, pTabList->a[i].iCursor, pTab->tnum);
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, pTabList->a[i].iCursor, pTab->nCol);
+    sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
     if( (pIx = pWInfo->a[i].pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);
@@ -763,6 +761,7 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->iLeftJoin = pParse->nMem++;
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+      VdbeComment((v, "# init LEFT JOIN no-match flag"));
     }
 
     pIdx = pLevel->pIdx;
@@ -1141,6 +1140,7 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->top = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iLeftJoin, 1);
+      VdbeComment((v, "# record LEFT JOIN hit"));
       for(pTerm=aExpr, j=0; j<nExpr; j++, pTerm++){
         if( pTerm->p==0 ) continue;
         if( (pTerm->prereqAll & loopMask)!=pTerm->prereqAll ) continue;

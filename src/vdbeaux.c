@@ -304,6 +304,21 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   }
 }
 
+#ifndef NDEBUG
+/*
+** Replace the P3 field of the most recently coded instruction with
+** comment text.
+*/
+void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  assert( p->nOp>0 );
+  assert( p->aOp[p->nOp-1].p3==0 );
+  va_start(ap, zFormat);
+  sqlite3VdbeChangeP3(p, -1, sqlite3VMPrintf(zFormat, ap), P3_DYNAMIC);
+  va_end(ap);
+}
+#endif
+
 /*
 ** If the P3 operand to the specified instruction appears
 ** to be a quoted string token, then this procedure removes 

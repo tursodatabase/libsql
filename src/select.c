@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.208 2004/09/08 15:09:41 drh Exp $
+** $Id: select.c,v 1.209 2004/09/19 02:15:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -344,9 +344,11 @@ static void codeLimiter(
       sqlite3VdbeAddOp(v, OP_Pop, nPop, 0);
     }
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
+    VdbeComment((v, "# skip OFFSET records"));
   }
   if( p->iLimit>=0 ){
     sqlite3VdbeAddOp(v, OP_MemIncr, p->iLimit, iBreak);
+    VdbeComment((v, "# exit when LIMIT reached"));
   }
 }
 
@@ -415,6 +417,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
+    VdbeComment((v, "# skip indistinct records"));
     sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutStrKey, distinct, 0);
     if( pOrderBy==0 ){
@@ -1223,6 +1226,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
     if( v==0 ) return;
     sqlite3VdbeAddOp(v, OP_Integer, -p->nLimit, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
+    VdbeComment((v, "# LIMIT counter"));
     p->iLimit = iMem;
   }
   if( p->nOffset>0 ){
@@ -1231,6 +1235,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
     if( v==0 ) return;
     sqlite3VdbeAddOp(v, OP_Integer, -p->nOffset, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
+    VdbeComment((v, "# OFFSET counter"));
     p->iOffset = iMem;
   }
 }
@@ -2107,9 +2112,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   base = pSrc->a[0].iCursor;
   computeLimitRegisters(pParse, p);
   if( pSrc->a[0].pSelect==0 ){
-    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqlite3VdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, base, pTab->nCol);
+    sqlite3OpenTableForReading(v, base, pTab);
   }
   cont = sqlite3VdbeMakeLabel(v);
   if( pIdx==0 ){
