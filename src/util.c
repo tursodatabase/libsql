@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.110 2004/06/30 12:49:46 danielk1977 Exp $
+** $Id: util.c,v 1.111 2004/07/15 13:23:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -574,7 +574,7 @@ int sqlite3StrICmp(const char *zLeft, const char *zRight){
   a = (unsigned char *)zLeft;
   b = (unsigned char *)zRight;
   while( *a!=0 && UpperToLower[*a]==UpperToLower[*b]){ a++; b++; }
-  return *a - *b;
+  return UpperToLower[*a] - UpperToLower[*b];
 }
 int sqlite3StrNICmp(const char *zLeft, const char *zRight, int N){
   register unsigned char *a, *b;

@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\swindows\sbuild\sprocess\swithin\sthe\spublish.sh\sscript\s(CVS\s1792)
-D 2004-07-01T11:25:35
+C Fix\sthe\sreturn\stype\son\ssqliteStrICmp\swhen\sthe\sinput\sstrings\sare\snot\nequal.\s\sTicket\s#804.\s(CVS\s1794)
+D 2004-07-15T13:23:22
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -71,7 +71,7 @@ F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 6aaf6d79cc2157c70a06031dd1531707d644cfb4
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
-F src/util.c a373ba2f631181b3302f3c2ebdfc9772833c6a17
+F src/util.c 2aacc79b7bf5df5859813dafd3bf3258f67a5234
 F src/vacuum.c b8546f4921719458cc537b9e736df52a8256399c
 F src/vdbe.c ed98f1d70b0d7126c603b086137af85c7b9d7855
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 26a559b65835d3da4c853ed87ccdc6bfdf37461c
-R a665a27a6510323a0651f21f51e533c4
+P cda795a1d5549231b767114febd9980c9c70d4d2
+R 55fe007906fbb723a3aa10c7a5b5aec7
 U drh
-Z ecfa9470d2d7ced8aa370bb7591fa175
+Z 679a0d6cb5fbe99afc15185b01eebe74
