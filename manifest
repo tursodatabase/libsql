@@ -1,5 +1,5 @@
-C Update\sconfiguration\sand\smake\sfiles\sfor\smingw/msys\son\sWindows\s(CVS\s1141)
-D 2003-12-19T20:09:52
+C Fix\ssome\sminor\sproblems\swith\sthe\snew\stest4.c\smodule\sused\sfor\sdoing\sthread\ntesting.\s(CVS\s1142)
+D 2003-12-20T04:00:53
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -56,7 +56,7 @@ F src/tclsqlite.c dcd18d1f0d51ac4863d1f9059f614f903bc1fffe
 F src/test1.c f9d5816610f7ec4168ab7b098d5207a5708712b6
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
-F src/test4.c 99d0b1d2736b0e61fed996a3e41614f626d7b56b
+F src/test4.c dcbbbb382626fd466a7c46907f74db35fc8bad64
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c d10e7f0b4d8634f6f37237b4e65314e3e5a3a34b
 F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P b1890a5b9c1222086b3aae92e49eb090a17a6492
-R a1aa8a82da10cb4689366953e43d5c93
-U dougcurrie
-Z a47af7e2d89d970bd8a8e5822bcce85c
+P 1e9689672c94e5ab89f07099c1402e157c8b02c1
+R a1fd48855a547ffbdcf831309e005755
+U drh
+Z d63babfeaee4d16e2d4a389b00f50ce6
