@@ -1,5 +1,5 @@
-C Fix\sdeficiencies\sin\ssqlite_complete()\spointed\sout\sby\sR.\sDennis\sCote.\s(CVS\s955)
-D 2003-05-04T17:58:26
+C Shell\scommand-line\sparsing\senhancements\ssuggested\sby\sMike\sHall.\s(CVS\s956)
+D 2003-05-04T18:30:59
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -44,7 +44,7 @@ F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 3fe63e3a29df661ba72a67eecd77e8ee82801def
-F src/shell.c c53ff468787109cf178c6b14ecb7a78654018fd1
+F src/shell.c 89a14538b40fbfa15b0ad10b3367aab272bd9f15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
 F src/sqliteInt.h a3d84942dacaf72fbe1426adfbd37e8cf5f57e97
@@ -54,7 +54,7 @@ F src/test1.c 4596acd9d9f2a49fda0160a8a6dee5bfc7c6c325
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
-F src/tokenize.c 65b99ca0c4b8bc89f9d4530762288eea7c5bca62
+F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
 F src/trigger.c 8ee811986080de60d9d883ad96daffea82014f27
 F src/update.c dc3b680b4cf2cb6d839950b68d632850746639b9
 F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P dd57d6ae6a247824e44a6073bc7e73ecb3c500fd
-R afd858f78403413353ccd46911cf14bc
+P 54b33a5ed9f7a89435c2f1395a3177e8c778bb8a
+R 930631e910c36602dc612ec54d800b90
 U drh
-Z 317ec3dddb2f5501f438a98dd3716c3d
+Z d822521ca3d5d75a1584b57c79080393

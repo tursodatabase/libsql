@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.59 2003/05/04 17:58:26 drh Exp $
+** $Id: tokenize.c,v 1.60 2003/05/04 18:30:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -565,7 +565,7 @@ int sqlite_complete(const char *zSql){
   ** next state.
   */
   static const u8 trans[7][8] = {
-                     /* Token:
+                     /* Token:                                                */
      /* State:       **  EXPLAIN  CREATE  TEMP  TRIGGER  END  SEMI  WS  OTHER */
      /* 0   START: */ {       1,      2,    3,       3,   3,    0,  0,     3, },
      /* 1 EXPLAIN: */ {       3,      2,    3,       3,   3,    0,  1,     3, },
@@ -629,10 +629,10 @@ int sqlite_complete(const char *zSql){
         break;
       }
       default: {
-        if( isIdChar[*zSql] ){
+        if( isIdChar[(u8)*zSql] ){
           /* Keywords and unquoted identifiers */
           int nId;
-          for(nId=1; isIdChar[zSql[nId]]; nId++){}
+          for(nId=1; isIdChar[(u8)zSql[nId]]; nId++){}
           switch( *zSql ){
             case 'c': case 'C': {
               if( nId==6 && sqliteStrNICmp(zSql, "create", 6)==0 ){

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.76 2003/05/04 07:25:58 jplyon Exp $
+** $Id: shell.c,v 1.77 2003/05/04 18:30:59 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1135,6 +1135,32 @@ static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
 }
 
 /*
+** Show available command line options
+*/
+static const char zOptions[] = 
+  "   -init filename       read/process named file\n"
+  "   -echo                print commands before execution\n"
+  "   -[no]header          turn headers on or off\n"
+  "   -column              set output mode to 'column'\n"
+  "   -html                set output mode to HTML\n"
+  "   -line                set output mode to 'line'\n"
+  "   -list                set output mode to 'list'\n"
+  "   -separator 'x'       set output field separator (|)\n"
+  "   -nullvalue 'text'    set text string for NULL values\n"
+  "   -version             show SQLite version\n"
+  "   -help                show this text, also show dot-commands\n"
+;
+static void usage(int showDetail){
+  fprintf(stderr, "Usage: %s [OPTIONS] FILENAME [SQL]\n", Argv0);
+  if( showDetail ){
+    fprintf(stderr, "Options are:\n%s", zOptions);
+  }else{
+    fprintf(stderr, "Use the -help option for additional information\n");
+  }
+  exit(1);
+}
+
+/*
 ** Initialize the state information in data
 */
 void main_init(struct callback_data *data) {
@@ -1178,11 +1204,7 @@ int main(int argc, char **argv){
       i++;
     }
   }
-  if( i!=argc-1 && i!=argc-2 ){
-    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", Argv0);
-    exit(1);
-  }
-  data.zDbFilename = argv[i];
+  data.zDbFilename = i<argc ? argv[i] : ":memory:";
   data.out = stdout;
 
   /* Go ahead and open the database file if it already exists.  If the
@@ -1260,13 +1282,21 @@ int main(int argc, char **argv){
       data.echoOn = 1;
       argc--;
       argv++;
+    }else if( strcmp(argv[1],"-version")==0 ){
+      printf("%s\n", sqlite_version);
+      return 1;
+    }else if( strcmp(argv[1],"-help")==0 ){
+      usage(1);
     }else{
       fprintf(stderr,"%s: unknown option: %s\n", Argv0, argv[1]);
+      fprintf(stderr,"Use -help for a list of options.\n");
       return 1;
     }
   }
 
-  if( argc==3 ){
+  if( argc<2 ){
+    usage(0);
+  }else if( argc==3 ){
     /* Run just the command that follows the database name
     */
     if( argv[2][0]=='.' ){
