@@ -1,5 +1,5 @@
-C Correctly\shandle\sjoins\sof\smore\sthan\s32\stables.\s\sTicket\s#806.\s(CVS\s1812)
-D 2004-07-19T02:12:14
+C Use\s'sqlite3.pc'\sinstead\sof\s'sqlite.pc'\s(CVS\s1814)
+D 2004-07-19T03:23:12
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,6 +24,7 @@ F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def 7610bb4092dcfa7db8fe6d9a92d3e51adce23566
+F sqlite3.pc.in fb53657cd7e3f86ecd24d93d8938182885852984
 F src/attach.c 5e37aaac0907edad5da8ba785b94f04fbb4003d7
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 3ed3c19e43bb243f502ee614f6ad0a52e53362a7
@@ -235,7 +236,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c22f9feb1bb00d1d54a8a87b557195573463fda9
-R 1646b9502928ce02dfdd04c6f59d8761
-U drh
-Z df39cc0ffd3a848ee5498bfd77294794
+P 880644097004cba1e215a5697d0553b3b98c9884
+R 8ca1f30cf6ef42c006c54b8cd1399aec
+U dougcurrie
+Z fd713d919f8df3ab40c66579698e9f14
