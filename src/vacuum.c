@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.20 2004/05/31 10:01:35 danielk1977 Exp $
+** $Id: vacuum.c,v 1.21 2004/06/03 16:08:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -196,7 +196,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
     u32 meta;
 
     assert( 0==sqlite3BtreeIsInTrans(pMain) );
-    rc = sqlite3BtreeBeginTrans(db->aDb[0].pBt, 1);
+    rc = sqlite3BtreeBeginTrans(db->aDb[0].pBt, 1, 0);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
     /* Copy Btree meta values 3 and 4. These correspond to SQL layer meta 

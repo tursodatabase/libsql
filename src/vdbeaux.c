@@ -895,6 +895,150 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   return rc;
 }
 
+/*
+** A read or write transaction may or may not be active on database handle
+** db. If a transaction is active, commit it. If there is a
+** write-transaction spanning more than one database file, this routine
+** takes care of the master journal trickery.
+*/
+static int vdbeCommit(sqlite *db){
+  int i;
+  int nTrans = 0;  /* Number of databases with an active write-transaction */
+  int rc = SQLITE_OK;
+  int needXcommit = 0;
+
+  for(i=0; i<db->nDb; i++){ 
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+      needXcommit = 1;
+      if( i!=1 ) nTrans++;
+    }
+  }
+
+  /* If there are any write-transactions at all, invoke the commit hook */
+  if( needXcommit && db->xCommitCallback ){
+    if( db->xCommitCallback(db->pCommitArg) ){
+      return SQLITE_CONSTRAINT;
+    }
+  }
+
+  /* The simple case - if less than two databases have write-transactions
+  ** active, there is no need for the master-journal.
+  */
+  if( nTrans<2 ){
+    for(i=0; i<db->nDb; i++){ 
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        int rc2 = sqlite3BtreeCommit(db->aDb[i].pBt);
+        if( rc==SQLITE_OK ) rc = rc2;
+      }
+    }
+  }
+
+  /* The complex case - There is a multi-file write-transaction active.
+  ** This requires a master journal file to ensure the transaction is
+  ** committed atomicly.
+  */
+  else{
+    char *zMaster = 0;   /* File-name for the master journal */
+    char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
+    OsFile master;
+
+    /* Select a master journal file name */
+    do {
+      int random;
+      if( zMaster ){
+        sqliteFree(zMaster);
+      }    
+      sqlite3Randomness(sizeof(random), &random);
+      zMaster = sqlite3_mprintf("%s%d", zMainFile, random);
+      if( !zMaster ){
+        return SQLITE_NOMEM;
+      }
+    }while( sqlite3OsFileExists(zMaster) );
+
+    /* Open the master journal. */
+    rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(zMaster);
+      return rc;
+    }
+ 
+    /* Write the name of each database file in the transaction into the new
+    ** master journal file. If an error occurs at this point close
+    ** and delete the master journal file. All the individual journal files
+    ** still have 'null' as the master journal pointer, so they will roll
+    ** back independantly if a failure occurs.
+    */
+    for(i=0; i<db->nDb; i++){ 
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+        char const *zFile = sqlite3BtreeGetFilename(pBt);
+        rc = sqlite3OsWrite(&master, zFile, strlen(zFile));
+        if( rc!=SQLITE_OK ){
+          sqlite3OsClose(&master);
+          sqlite3OsDelete(zMaster);
+          sqliteFree(zMaster);
+          return rc;
+        }
+        rc = sqlite3OsWrite(&master, "\0", 1);
+        if( rc!=SQLITE_OK ){
+          sqlite3OsClose(&master);
+          sqlite3OsDelete(zMaster);
+          sqliteFree(zMaster);
+          return rc;
+        }
+      }
+    }
+
+    /* Sync the master journal file */
+    rc = sqlite3OsSync(&master);
+    sqlite3OsClose(&master);
+
+    /* Sync all the db files involved in the transaction. The same call
+    ** sets the master journal pointer in each individual journal. If
+    ** an error occurs here, do not delete the master journal file.
+    **
+    ** If the error occurs during the first call to sqlite3BtreeSync(),
+    ** then there is a chance that the master journal file will be
+    ** orphaned. But we cannot delete it, in case the master journal
+    ** file name was written into the journal file before the failure
+    ** occured.
+    */
+    for(i=0; i<db->nDb; i++){ 
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+        rc = sqlite3BtreeSync(pBt, zMaster);
+        if( rc!=SQLITE_OK ){
+          sqliteFree(zMaster);
+          return rc;
+        }
+      }
+    }
+    sqliteFree(zMaster);
+    zMaster = 0;
+
+    /* Delete the master journal file. This commits the transaction. */
+    rc = sqlite3OsDelete(zMaster);
+    assert( rc==SQLITE_OK );
+
+    /* All files and directories have already been synced, so the following
+    ** calls to sqlite3BtreeCommit() are only closing files and deleting
+    ** journals. If something goes wrong while this is happening we don't
+    ** really care. The integrity of the transaction is already guarenteed,
+    ** but some stray 'cold' journals may be lying around. Returning an
+    ** error code won't help matters.
+    */
+    for(i=0; i<db->nDb; i++){ 
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        sqlite3BtreeCommit(pBt);
+      }
+    }
+  }
+  return SQLITE_OK;
+}
+
 /* 
 ** This routine checks that the sqlite3.activeVdbeCnt count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
@@ -932,7 +1076,6 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   sqlite *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
-  int needXcommit = 0;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(SQLITE_MISUSE), (char*)0);
@@ -956,14 +1099,24 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   }
   Cleanup(p);
 
-  /* Figure out which function to call on the btree backends that
-  ** have active transactions.
+  /* What is done now depends on the exit status of the vdbe, the value of
+  ** the sqlite.autoCommit flag and whether or not there are any other
+  ** queries in progress. A transaction or statement transaction may need
+  ** to be committed or rolled back on each open database file.
   */
   checkActiveVdbeCnt(db);
   if( db->autoCommit && db->activeVdbeCnt==1 ){
     if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
-      xFunc = sqlite3BtreeCommit;
-      needXcommit = 1;
+      /* The auto-commit flag is true, there are no other active queries
+      ** using this handle and the vdbe program was successful or hit an
+      ** 'OR FAIL' constraint. This means a commit is required, which is
+      ** handled a little differently from the other options.
+      */
+      p->rc = vdbeCommit(db);
+      if( p->rc!=SQLITE_OK ){
+        sqlite3Error(p->db, p->rc, 0);
+        xFunc = sqlite3BtreeRollback;
+      }
     }else{
       xFunc = sqlite3BtreeRollback;
     }
@@ -978,19 +1131,14 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     }
   }
 
-  for(i=0; xFunc && i<db->nDb; i++){
+  /* If xFunc is not NULL, then it is one of sqlite3BtreeRollback,
+  ** sqlite3BtreeRollbackStmt or sqlite3BtreeCommitStmt. Call it once on
+  ** each backend. If an error occurs and the return code is still
+  ** SQLITE_OK, set the return code to the new error value.
+  */
+  for(i=0; xFunc && i<db->nDb; i++){ 
     int rc;
     Btree *pBt = db->aDb[i].pBt;
-    if( sqlite3BtreeIsInTrans(pBt) ){
-      if( db->xCommitCallback && needXcommit ){
-        if( db->xCommitCallback(db->pCommitArg)!=0 ){
-          p->rc = SQLITE_CONSTRAINT;
-          sqlite3Error(db, SQLITE_CONSTRAINT, 0);
-          xFunc = sqlite3BtreeRollback;
-        }
-        needXcommit = 0;
-      }
-    }
     if( pBt ){
       rc = xFunc(pBt);
       if( p->rc==SQLITE_OK ) p->rc = rc;

@@ -114,5 +114,6 @@ void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 char *sqlite3OsFullPathname(const char*);
 int sqlite3OsLock(OsFile*, int);
+int sqlite3OsCheckWriteLock(OsFile *id);
 
 #endif /* _SQLITE_OS_H_ */

@@ -56,13 +56,16 @@
 ** of an open file handle.  It is defined differently for each architecture.
 **
 ** This is the definition for Unix.
+**
+** OsFile.locktype takes one of the values SHARED_LOCK, RESERVED_LOCK,
+** PENDING_LOCK or EXCLUSIVE_LOCK.
 */
 typedef struct OsFile OsFile;
 struct OsFile {
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
   int fd;                   /* The file descriptor */
-  int locked;               /* True if this instance holds the lock */
+  int locktype;             /* The type of lock held on this fd */
   int dirfd;                /* File descriptor for the directory */
 };
 

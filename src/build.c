@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.205 2004/05/31 18:51:58 drh Exp $
+** $Id: build.c,v 1.206 2004/06/03 16:08:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -556,7 +556,7 @@ void sqlite3StartTable(
       return;
     }
     if( db->flags & !db->autoCommit ){
-      rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1);
+      rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1, 0);
       if( rc!=SQLITE_OK ){
         sqlite3ErrorMsg(pParse, "unable to get a write lock on "
           "the temporary database file");

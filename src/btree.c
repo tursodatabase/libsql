@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.155 2004/06/02 01:22:02 drh Exp $
+** $Id: btree.c,v 1.156 2004/06/03 16:08:41 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1200,8 +1200,13 @@ static int newDatabase(Btree *pBt){
 **      sqlite3BtreeInsert()
 **      sqlite3BtreeDelete()
 **      sqlite3BtreeUpdateMeta()
+**
+** If wrflag is true, then nMaster specifies the maximum length of
+** a master journal file name supplied later via sqlite3BtreeSync().
+** This is so that appropriate space can be allocated in the journal file
+** when it is created..
 */
-int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
+int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag, int nMaster){
   int rc = SQLITE_OK;
 
   /* If the btree is already in a write-transaction, or it
@@ -1221,7 +1226,7 @@ int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
   }
 
   if( rc==SQLITE_OK && wrflag ){
-    rc = sqlite3pager_begin(pBt->pPage1->aData);
+    rc = sqlite3pager_begin(pBt->pPage1->aData, 0);
     if( rc==SQLITE_OK ){
       rc = newDatabase(pBt);
     }
@@ -2073,7 +2078,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
     upr = pPage->nCell-1;
     pageIntegrity(pPage);
     while( lwr<=upr ){
-      const void *pCellKey;
+      void *pCellKey;
       i64 nCellKey;
       pCur->idx = (lwr+upr)/2;
       pCur->info.nSize = 0;
@@ -2088,13 +2093,13 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
         }
       }else{
         int available;
-        pCellKey = fetchPayload(pCur, &available, 0);
+        pCellKey = (void *)fetchPayload(pCur, &available, 0);
         if( available>=nCellKey ){
           c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
         }else{
           pCellKey = sqliteMallocRaw( nCellKey );
           if( pCellKey==0 ) return SQLITE_NOMEM;
-          rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
+          rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
           c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
           sqliteFree(pCellKey);
           if( rc ) return rc;
@@ -4220,3 +4225,26 @@ int sqlite3BtreeIsInTrans(Btree *pBt){
 int sqlite3BtreeIsInStmt(Btree *pBt){
   return (pBt && pBt->inStmt);
 }
+
+/*
+** This call is a no-op if no write-transaction is currently active on pBt.
+**
+** Otherwise, sync the database file for the btree pBt. zMaster points to
+** the name of a master journal file that should be written into the
+** individual journal file, or is NULL, indicating no master journal file 
+** (single database transaction).
+**
+** When this is called, the master journal should already have been
+** created, populated with this journal pointer and synced to disk.
+**
+** Once this is routine has returned, the only thing required to commit
+** the write-transaction for this database file is to delete the journal.
+*/
+int sqlite3BtreeSync(Btree *pBt, const char *zMaster){
+  if( pBt->inTrans==TRANS_WRITE ){
+    return sqlite3pager_sync(pBt->pPager, zMaster);
+  }
+  return SQLITE_OK;
+}
+
+
