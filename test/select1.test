@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.26 2002/05/24 20:31:38 drh Exp $
+# $Id: select1.test,v 1.27 2002/05/27 01:04:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -188,8 +188,8 @@ do_test select1-2.13 {
 } {0 34}
 do_test select1-2.13.1 {
   execsql {SELECT coalesce(max(a),'xyzzy') FROM t3}
-} {abc}
-do_test select1-2.13.1 {
+} {xyzzy}
+do_test select1-2.13.2 {
   execsql {SELECT max(coalesce(a,'xyzzy')) FROM t3}
 } {xyzzy}
 do_test select1-2.14 {
@@ -468,10 +468,12 @@ do_test select1-8.3 {
 } {11 33}
 do_test select1-8.4 {
   execsql {
-    SELECT f1/(f1-11), min(f1/(f1-11),5), max(f1/(f1-33),6)
+    SELECT coalesce(f1/(f1-11),'x'),
+           coalesce(min(f1/(f1-11),5),'y'),
+           coalesce(max(f1/(f1-33),6),'z')
     FROM test1 ORDER BY f1
   }
-} {{} {} 6 1.5 1.5 6}
+} {x y 6 1.5 1.5 z}
 do_test select1-8.5 {
   execsql {
     SELECT min(1,2,3), -max(1,2,3)

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.149 2002/05/26 20:54:34 drh Exp $
+** $Id: vdbe.c,v 1.150 2002/05/27 01:04:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2132,38 +2132,47 @@ case OP_Ge: {
 ** Pop two values off the stack.  Take the logical AND of the
 ** two values and push the resulting boolean value back onto the
 ** stack. 
-** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Or * * *
 **
 ** Pop two values off the stack.  Take the logical OR of the
 ** two values and push the resulting boolean value back onto the
 ** stack. 
-** If either operand is NULL, the result is NULL.
 */
 case OP_And:
 case OP_Or: {
   int tos = p->tos;
   int nos = tos - 1;
-  int c;
+  int v1, v2;    /* 0==TRUE, 1==FALSE, 2==UNKNOWN or NULL */
+
   VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( (aStack[tos].flags | aStack[nos].flags) & STK_Null ){
-    POPSTACK;
-    Release(p, nos);     
-    aStack[nos].flags = STK_Null;
-    break;
-  }
-  Integerify(p, tos);
-  Integerify(p, nos);
-  if( pOp->opcode==OP_And ){
-    c = aStack[tos].i && aStack[nos].i;
+  if( aStack[tos].flags & STK_Null ){
+    v1 = 2;
   }else{
-    c = aStack[tos].i || aStack[nos].i;
+    Integerify(p, tos);
+    v1 = aStack[tos].i==0;
+  }
+  if( aStack[nos].flags & STK_Null ){
+    v2 = 2;
+  }else{
+    Integerify(p, nos);
+    v2 = aStack[nos].i==0;
+  }
+  if( pOp->opcode==OP_And ){
+    static const unsigned char and_logic[] = { 0, 1, 2, 1, 1, 1, 2, 1, 2 };
+    v1 = and_logic[v1*3+v2];
+  }else{
+    static const unsigned char or_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
+    v1 = or_logic[v1*3+v2];
   }
   POPSTACK;
-  Release(p, nos);     
-  aStack[nos].i = c;
-  aStack[nos].flags = STK_Int;
+  Release(p, nos);
+  if( v1==2 ){
+    aStack[nos].flags = STK_Null;
+  }else{
+    aStack[nos].i = v1==0;
+    aStack[nos].flags = STK_Int;
+  }
   break;
 }
 

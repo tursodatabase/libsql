@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.1 2002/02/19 22:42:06 drh Exp $
+# $Id: minmax.test,v 1.2 2002/05/27 01:04:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,5 +122,11 @@ do_test minmax-3.3 {
   set sqlite_search_count
 } {0}
 
+do_test minmax-4.1 {
+  execsql {
+    SELECT coalesce(min(x),-1), coalesce(max(x),-1) FROM
+      (SELECT * FROM t1 UNION SELECT NULL as 'x', NULL as 'y')
+  }
+} {-1 -1}
 
 finish_test

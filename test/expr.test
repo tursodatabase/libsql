@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.20 2002/05/26 20:54:34 drh Exp $
+# $Id: expr.test,v 1.21 2002/05/27 01:04:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -82,6 +82,47 @@ test_expr expr-1.53 {i1=099999999999, i2=99999999999} {i1<i2} 0
 test_expr expr-1.54 {i1=099999999999, i2=99999999999} {i1=i2} 1
 test_expr expr-1.55 {i1=099999999999, i2=99999999999} {i1>i2} 0
 test_expr expr-1.56 {i1=25, i2=11} {i1%i2} 3
+test_expr expr-1.58 {i1=NULL, i2=1} {coalesce(i1+i2,99)} 99
+test_expr expr-1.59 {i1=1, i2=NULL} {coalesce(i1+i2,99)} 99
+test_expr expr-1.60 {i1=NULL, i2=NULL} {coalesce(i1+i2,99)} 99
+test_expr expr-1.61 {i1=NULL, i2=1} {coalesce(i1-i2,99)} 99
+test_expr expr-1.62 {i1=1, i2=NULL} {coalesce(i1-i2,99)} 99
+test_expr expr-1.63 {i1=NULL, i2=NULL} {coalesce(i1-i2,99)} 99
+test_expr expr-1.64 {i1=NULL, i2=1} {coalesce(i1*i2,99)} 99
+test_expr expr-1.65 {i1=1, i2=NULL} {coalesce(i1*i2,99)} 99
+test_expr expr-1.66 {i1=NULL, i2=NULL} {coalesce(i1*i2,99)} 99
+test_expr expr-1.67 {i1=NULL, i2=1} {coalesce(i1/i2,99)} 99
+test_expr expr-1.68 {i1=1, i2=NULL} {coalesce(i1/i2,99)} 99
+test_expr expr-1.69 {i1=NULL, i2=NULL} {coalesce(i1/i2,99)} 99
+test_expr expr-1.70 {i1=NULL, i2=1} {coalesce(i1<i2,99)} 99
+test_expr expr-1.71 {i1=1, i2=NULL} {coalesce(i1>i2,99)} 99
+test_expr expr-1.72 {i1=NULL, i2=NULL} {coalesce(i1<=i2,99)} 99
+test_expr expr-1.73 {i1=NULL, i2=1} {coalesce(i1>=i2,99)} 99
+test_expr expr-1.74 {i1=1, i2=NULL} {coalesce(i1!=i2,99)} 99
+test_expr expr-1.75 {i1=NULL, i2=NULL} {coalesce(i1==i2,99)} 99
+test_expr expr-1.76 {i1=NULL, i2=NULL} {coalesce(not i1,99)} 99
+test_expr expr-1.77 {i1=NULL, i2=NULL} {coalesce(-i1,99)} 99
+test_expr expr-1.78 {i1=NULL, i2=NULL} {coalesce(i1 IS NULL AND i2=5,99)} 99
+test_expr expr-1.79 {i1=NULL, i2=NULL} {coalesce(i1 IS NULL OR i2=5,99)} 1
+test_expr expr-1.80 {i1=NULL, i2=NULL} {coalesce(i1=5 AND i2 IS NULL,99)} 99
+test_expr expr-1.81 {i1=NULL, i2=NULL} {coalesce(i1=5 OR i2 IS NULL,99)} 1
+test_expr expr-1.82 {i1=NULL, i2=3} {coalesce(min(i1,i2,1),99)} 99
+test_expr expr-1.83 {i1=NULL, i2=3} {coalesce(max(i1,i2,1),99)} 99
+test_expr expr-1.84 {i1=3, i2=NULL} {coalesce(min(i1,i2,1),99)} 99
+test_expr expr-1.85 {i1=3, i2=NULL} {coalesce(max(i1,i2,1),99)} 99
+test_expr expr-1.86 {i1=3, i2=8} {5 between i1 and i2} 1
+test_expr expr-1.87 {i1=3, i2=8} {5 not between i1 and i2} 0
+test_expr expr-1.88 {i1=3, i2=8} {55 between i1 and i2} 0
+test_expr expr-1.89 {i1=3, i2=8} {55 not between i1 and i2} 1
+test_expr expr-1.90 {i1=3, i2=NULL} {5 between i1 and i2} {{}}
+test_expr expr-1.91 {i1=3, i2=NULL} {5 not between i1 and i2} {{}}
+test_expr expr-1.92 {i1=3, i2=NULL} {2 between i1 and i2} 0
+test_expr expr-1.93 {i1=3, i2=NULL} {2 not between i1 and i2} 1
+test_expr expr-1.94 {i1=NULL, i2=8} {2 between i1 and i2} {{}}
+test_expr expr-1.95 {i1=NULL, i2=8} {2 not between i1 and i2} {{}}
+test_expr expr-1.94 {i1=NULL, i2=8} {55 between i1 and i2} 0
+test_expr expr-1.95 {i1=NULL, i2=8} {55 not between i1 and i2} 1
+
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
@@ -107,6 +148,7 @@ test_expr expr-2.21 {r1=2.34, r2=2.34} {r2==r1} 1
 test_expr expr-2.22 {r1=1.23, r2=2.34} {min(r1,r2,r1+r2,r1-r2)} {-1.11}
 test_expr expr-2.23 {r1=1.23, r2=2.34} {max(r1,r2,r1+r2,r1-r2)} {3.57}
 test_expr expr-2.24 {r1=25.0, r2=11.0} {r1%r2} 3
+test_expr expr-2.25 {r1=1.23, r2=NULL} {coalesce(r1+r2,99.0)} 99.0
 
 test_expr expr-3.1 {t1='abc', t2='xyz'} {t1<t2} 1
 test_expr expr-3.2 {t1='xyz', t2='abc'} {t1<t2} 0
@@ -205,6 +247,11 @@ if {[sqlite -encoding]=="iso8859"} {
     test_expr expr-5.53 "t1='ax\241', t2='A_%'"  {t1 LIKE t2} 1
   }
 }
+test_expr expr-5.54 {t1='abc', t2=NULL} {t1 LIKE t2} {{}}
+test_expr expr-5.55 {t1='abc', t2=NULL} {t1 NOT LIKE t2} {{}}
+test_expr expr-5.56 {t1='abc', t2=NULL} {t2 LIKE t1} {{}}
+test_expr expr-5.57 {t1='abc', t2=NULL} {t2 NOT LIKE t1} {{}}
+
 
 test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
 test_expr expr-6.2 {t1='abc', t2='ABC'} {t1 GLOB t2} 0
@@ -231,21 +278,6 @@ test_expr expr-6.22 {t1='abcdefg', t2='a*[^de]g'} {t1 GLOB t2} 1
 test_expr expr-6.23 {t1='abcdefg', t2='a*?g'} {t1 GLOB t2} 1
 test_expr expr-6.24 {t1='ac', t2='a*c'} {t1 GLOB t2} 1
 test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
-
-test_expr expr-case.1 {i1=1, i2=2} \
-	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} ne
-test_expr expr-case.2 {i1=2, i2=2} \
-	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} eq
-test_expr expr-case.3 {i1=2} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} two
-test_expr expr-case.4 {i1=3} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} error
-test_expr expr-case.5 {i1=3} \
-	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' END} {{}}
-test_expr expr-case.6 {i1=7} \
-	{ CASE WHEN i1 < 5 THEN 'low' 
-	       WHEN i1 < 10 THEN 'medium' 
-               WHEN i1 < 15 THEN 'high' ELSE 'error' END} medium
 
 
 # These tests only work on versions of TCL that support Unicode
@@ -295,6 +327,36 @@ if {[sqlite -encoding]=="iso8859"} {
     test_expr expr-6.62 "t1='a\266b', t2='a\[x-\265\]b'" {t1 GLOB t2} 0
   }
 }
+test_expr expr-6.63 {t1=NULL, t2='a*?c'} {t1 GLOB t2} {{}}
+test_expr expr-6.64 {t1='ac', t2=NULL} {t1 GLOB t2} {{}}
+test_expr expr-6.65 {t1=NULL, t2='a*?c'} {t1 NOT GLOB t2} {{}}
+test_expr expr-6.66 {t1='ac', t2=NULL} {t1 NOT GLOB t2} {{}}
+
+test_expr expr-case.1 {i1=1, i2=2} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} ne
+test_expr expr-case.2 {i1=2, i2=2} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} eq
+test_expr expr-case.3 {i1=NULL, i2=2} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} {{}}
+test_expr expr-case.4 {i1=2, i2=NULL} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} {{}}
+test_expr expr-case.5 {i1=2} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} two
+test_expr expr-case.6 {i1=1} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} one
+test_expr expr-case.7 {i1=2} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} {{}}
+test_expr expr-case.8 {i1=3} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN NULL THEN 'two' ELSE 'error' END} {{}}
+test_expr expr-case.9 {i1=3} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} error
+test_expr expr-case.10 {i1=3} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' END} {{}}
+test_expr expr-case.11 {i1=7} \
+	{ CASE WHEN i1 < 5 THEN 'low' 
+	       WHEN i1 < 10 THEN 'medium' 
+               WHEN i1 < 15 THEN 'high' ELSE 'error' END} medium
+
 
 # The sqliteExprIfFalse and sqliteExprIfTrue routines are only
 # executed as part of a WHERE clause.  Create a table suitable
@@ -344,5 +406,36 @@ test_expr2 expr-7.25 {a GLOB '2?' OR a==8}           {8 20}
 test_expr2 expr-7.26 {a isnull OR a=8}               {{} 8}
 test_expr2 expr-7.27 {a notnull OR a=8} \
                           {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
+test_expr2 expr-7.28 {a<0 OR b=0} {{}}
+test_expr2 expr-7.29 {b=0 OR a<0} {{}}
+test_expr2 expr-7.30 {a<0 AND b=0} {}
+test_expr2 expr-7.31 {b=0 AND a<0} {}
+test_expr2 expr-7.32 {a IS NULL AND (a<0 OR b=0)} {{}}
+test_expr2 expr-7.33 {a IS NULL AND (b=0 OR a<0)} {{}}
+test_expr2 expr-7.34 {a IS NULL AND (a<0 AND b=0)} {}
+test_expr2 expr-7.35 {a IS NULL AND (b=0 AND a<0)} {}
+test_expr2 expr-7.32 {(a<0 OR b=0) AND a IS NULL} {{}}
+test_expr2 expr-7.33 {(b=0 OR a<0) AND a IS NULL} {{}}
+test_expr2 expr-7.34 {(a<0 AND b=0) AND a IS NULL} {}
+test_expr2 expr-7.35 {(b=0 AND a<0) AND a IS NULL} {}
+test_expr2 expr-7.36 {a<2 OR (a<0 OR b=0)} {{} 1}
+test_expr2 expr-7.37 {a<2 OR (b=0 OR a<0)} {{} 1}
+test_expr2 expr-7.38 {a<2 OR (a<0 AND b=0)} {1}
+test_expr2 expr-7.39 {a<2 OR (b=0 AND a<0)} {1}
+test_expr2 expr-7.40 {((a<2 OR a IS NULL) AND b<3) OR b>1e10} {{} 1}
+test_expr2 expr-7.41 {a BETWEEN -1 AND 1} {1}
+test_expr2 expr-7.42 {a NOT BETWEEN 2 AND 100} {1}
+
+test_expr2 expr-7.50 {((a between 1 and 2 OR 0) AND 1) OR 0} {1 2}
+test_expr2 expr-7.51 {((a not between 3 and 100 OR 0) AND 1) OR 0} {1 2}
+test_expr2 expr-7.52 {((a in (1,2) OR 0) AND 1) OR 0} {1 2}
+test_expr2 expr-7.53 {((a not in (3,4,5,6,7,8,9,10) OR 0) AND a<11) OR 0} {1 2}
+test_expr2 expr-7.54 {((a>0 OR 0) AND a<3) OR 0} {1 2}
+test_expr2 expr-7.55 {((a in (1,2) OR 0) IS NULL AND 1) OR 0} {{}}
+test_expr2 expr-7.56 {((a not in (3,4,5,6,7,8,9,10) IS NULL OR 0) AND 1) OR 0} \
+   {{}}
+test_expr2 expr-7.57 {((a>0 IS NULL OR 0) AND 1) OR 0} {{}}
+
+
 
 finish_test

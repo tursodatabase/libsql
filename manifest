@@ -1,5 +1,5 @@
-C Require\sthe\sINSTEAD\sOF\ssyntax\sto\screate\striggers\son\sdatabase\sviews.\s(CVS\s591)
-D 2002-05-26T23:24:41
+C Bug\sfixes\sand\sadditional\stest\scases\sfor\sthe\sdistinct-NULL\spatch.\s(CVS\s592)
+D 2002-05-27T01:04:51
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -52,7 +52,7 @@ F src/tokenize.c facec7dc0b4a13e17ad67702f548dac2f7c6a732
 F src/trigger.c b7a93ffa7b91dafff433e6c87d603bfb1d50e3ee
 F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
 F src/util.c a9f6e6f03e8b7137204ac15b35a58f321e38037e
-F src/vdbe.c caa269517b2392986c8f55401f272e76b9de82d9
+F src/vdbe.c ccbee9fb9b98a2fc75400865d69531da36cbf0f1
 F src/vdbe.h b8706429131c14b307a07aab7e47f95a9da53610
 F src/where.c b054f2f23127bd57eb5f973bcd38764b875d73fe
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
@@ -63,8 +63,8 @@ F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 5149646703d3930c9111068b5cda7e2e938476e3
 F test/copy.test b3cefcb520c64d7e7dfedbab06b4d4c31fa5b99a
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
-F test/expr.test bfb773721e69566d2a7565c7f03b466e1f33a53f
-F test/func.test d34e461f0acb0cf2978a4b3a3e098460f2ea8fbc
+F test/expr.test 518ee35ec8d2c8883544d75a031219c75391fb21
+F test/func.test 1505ac9ebc11ca5c0300192d1519a542d5cbcfe1
 F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test 58d44c19b3557f67f4aeb5110ed9ef02038c3684
@@ -76,7 +76,7 @@ F test/limit.test 6f98bcefc92209103bb3764c81975a6ec21d6702
 F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
-F test/minmax.test fb6ab400271ae1f5bc88617c2882f2f081ea8e6d
+F test/minmax.test c50bcc760433acd7ca8e22bc4c525b9ae82762e2
 F test/misc1.test df281e9b26cd1db5808939c7cf2703072d555be0
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
@@ -86,10 +86,10 @@ F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
 F test/quick.test 6f023c7a73fc413e6d65b7a1879c79764038dc05
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
-F test/select1.test 6ba20b52d563b7fb917d8a61a7560d02f90a1a52
+F test/select1.test 4e1ac9cc3cbf5b3ceae388fb3d4ca1b9f9a1cc15
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
-F test/select4.test 0bc0065102573c6b71003292fd4a5def63923c61
+F test/select4.test 2ea8c7b7feceb853da167a39e4cce996a5c3ad88
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
@@ -135,7 +135,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 46ce1a9ab6e527958ebc757fa2175c488299cd84
-R 35b518a6cb0a7aed91c92408e7bd6686
-U danielk1977
-Z 9e3f1ec0355281ef07dac5144d661dfb
+P d9e48cd5180e2aae7672b9d54e18c37d0fe5258a
+R fc93e940356a8b3ec291e98d6e7a4c6b
+U drh
+Z b54c0b1652f6c89ad5dde6fb5c2177ec

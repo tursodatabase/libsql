@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.7 2002/05/26 20:54:35 drh Exp $
+# $Id: select4.test,v 1.8 2002/05/27 01:04:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -289,6 +289,14 @@ do_test select4-6.6 {
     );
   }
 } {1 2}
+
+# Test distinctness of NULL in other ways.
+#
+do_test select4-6.7 {
+  execsql {
+    SELECT NULL EXCEPT SELECT NULL
+  }
+} {{}}
 
 
 # Make sure column names are correct when a compound select appears as
