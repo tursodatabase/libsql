@@ -1,5 +1,5 @@
-C :-)\s(CVS\s41)
-D 2000-06-02T15:51:18
+C :-)\s(CVS\s42)
+D 2000-06-02T18:52:13
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in b0553e870e5daa6279af4dc09101322db16a49f1
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -37,7 +37,7 @@ F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
 F test/tester.tcl 44690d463c1dc83a4c76ccde07cc146a988600f6
 F test/update.test 69459302ea75cafac1479e60b0e36efb88123c0e
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
-F tool/lemon.c cff35578b3c4d1491021b6418016639ebe21b1a5
+F tool/lemon.c f5aa4410571b598ff68aa09ee4023e8c17084c32
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
 F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -46,7 +46,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 7d6ed774362dea0c9687d4efbafd939c1c48fd81
 F www/index.tcl 0096a3e00b1364fb2c3e06941aa8c31454b6d06a
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P 939adb4d373842db0dde6ea00ee2c40316db5ac3
-R 8bc9db44ee8f3e80e7f2168157037fa9
+P 90cfd6174ba508090c87c52973342101559c82b1
+R 23a70f6bf3fcdc69c42db5126263b464
 U drh
-Z 81b19f0e75d058f5ec3704b0ee7cf22e
+Z c91b06a3b166e537a4c6430dfd5e1bcb

@@ -2994,7 +2994,8 @@ int mhflag;     /* Output in makeheaders format if true */
   if( lemp->arg && lemp->arg[0] ){
     int i;
     i = strlen(lemp->arg);
-    while( i>=1 && isalnum(lemp->arg[i-1]) ) i--;
+    while( i>=1 && isspace(lemp->arg[i-1]) ) i--;
+    while( i>=1 && (isalnum(lemp->arg[i-1]) || lemp->arg[i-1]=='_') ) i--;
     fprintf(out,"#define %sARGDECL ,%s\n",name,&lemp->arg[i]);  lineno++;
     fprintf(out,"#define %sXARGDECL %s;\n",name,lemp->arg);  lineno++;
     fprintf(out,"#define %sANSIARGDECL ,%s\n",name,lemp->arg);  lineno++;
