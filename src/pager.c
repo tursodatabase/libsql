@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.56 2002/11/09 00:33:16 drh Exp $
+** @(#) $Id: pager.c,v 1.57 2002/11/10 23:32:57 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -74,6 +74,8 @@ struct PgHdr {
   int nRef;                      /* Number of users of this page */
   PgHdr *pNextFree, *pPrevFree;  /* Freelist of pages where nRef==0 */
   PgHdr *pNextAll, *pPrevAll;    /* A list of all pages */
+  PgHdr *pNextCkpt, *pPrevCkpt;  /* List of pages in the checkpoint journal */
+  PgHdr *pSort;                  /* Next in list of pages to be written */
   u8 inJournal;                  /* TRUE if has been written to journal */
   u8 inCkpt;                     /* TRUE if written to the checkpoint journal */
   u8 dirty;                      /* TRUE if we need to write back changes */
@@ -130,6 +132,7 @@ struct Pager {
   u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pAll;                /* List of all pages */
+  PgHdr *pCkpt;               /* List of pages in the checkpoint journal */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
 };
 
@@ -251,6 +254,45 @@ static int pager_errcode(Pager *pPager){
   if( pPager->errMask & PAGER_ERR_MEM )     rc = SQLITE_NOMEM;
   if( pPager->errMask & PAGER_ERR_CORRUPT ) rc = SQLITE_CORRUPT;
   return rc;
+}
+
+/*
+** Add or remove a page from the list of all pages that are in the
+** checkpoint journal.
+**
+** The Pager keeps a separate list of pages that are currently in
+** the checkpoint journal.  This helps the sqlitepager_ckpt_commit()
+** routine run MUCH faster for the common case where there are many
+** pages in memory but only a few are in the checkpoint journal.
+*/
+static void page_add_to_ckpt_list(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  if( pPg->inCkpt ) return;
+  assert( pPg->pPrevCkpt==0 && pPg->pNextCkpt==0 );
+  pPg->pPrevCkpt = 0;
+  if( pPager->pCkpt ){
+    pPager->pCkpt->pPrevCkpt = pPg;
+  }
+  pPg->pNextCkpt = pPager->pCkpt;
+  pPager->pCkpt = pPg;
+  pPg->inCkpt = 1;
+}
+static void page_remove_from_ckpt_list(PgHdr *pPg){
+  if( !pPg->inCkpt ) return;
+  if( pPg->pPrevCkpt ){
+    assert( pPg->pPrevCkpt->pNextCkpt==pPg );
+    pPg->pPrevCkpt->pNextCkpt = pPg->pNextCkpt;
+  }else{
+    assert( pPg->pPager->pCkpt==pPg );
+    pPg->pPager->pCkpt = pPg->pNextCkpt;
+  }
+  if( pPg->pNextCkpt ){
+    assert( pPg->pNextCkpt->pPrevCkpt==pPg );
+    pPg->pNextCkpt->pPrevCkpt = pPg->pPrevCkpt;
+  }
+  pPg->pNextCkpt = 0;
+  pPg->pPrevCkpt = 0;
+  pPg->inCkpt = 0;
 }
 
 /*
@@ -753,6 +795,41 @@ int sqlitepager_ref(void *pData){
 }
 
 /*
+** The parameters are pointers to the head of two sorted lists
+** of page headers.  Merge these two lists together and return
+** a single sorted list.  This routine forms the core of the 
+** merge-sort algorithm that sorts dirty pages into accending
+** order prior to writing them back to the disk.
+**
+** In the case of a tie, left sorts in front of right.
+**
+** Headers are sorted in order of ascending page number.
+*/
+static PgHdr *page_merge(PgHdr *pLeft, PgHdr *pRight){
+  PgHdr sHead;
+  PgHdr *pTail;
+  pTail = &sHead;
+  pTail->pSort = 0;
+  while( pLeft && pRight ){
+    if( pLeft->pgno<=pRight->pgno ){
+      pTail->pSort = pLeft;
+      pLeft = pLeft->pSort;
+    }else{
+      pTail->pSort = pRight;
+      pRight = pRight->pSort;
+    }
+    pTail = pTail->pSort;
+  }
+  if( pLeft ){
+    pTail->pSort = pLeft;
+  }else if( pRight ){
+    pTail->pSort = pRight;
+  }
+  return sHead.pSort;
+}
+
+
+/*
 ** Sync the journal and then write all free dirty pages to the database
 ** file.
 **
@@ -768,10 +845,24 @@ int sqlitepager_ref(void *pData){
 ** If we are writing to temporary database, there is no need to preserve
 ** the integrity of the journal file, so we can save time and skip the
 ** fsync().
+**
+** This routine goes to the extra trouble of sorting all the dirty
+** pages by their page number prior to writing them.  Tests show that
+** writing pages in order by page number gives a modest speed improvement
+** under Linux.  
 */
 static int syncAllPages(Pager *pPager){
   PgHdr *pPg;
+  PgHdr *pToWrite;
+# define NSORT 28
+  Pgno lastPgno;
+  int i;
+  PgHdr *apSorter[NSORT];
   int rc = SQLITE_OK;
+
+  /* Sync the journal before modifying the main database
+  ** (assuming there is a journal and it needs to be synced.)
+  */
   if( pPager->needSync ){
     if( !pPager->tempFile ){
       rc = sqliteOsSync(&pPager->jfd);
@@ -779,13 +870,57 @@ static int syncAllPages(Pager *pPager){
     }
     pPager->needSync = 0;
   }
+
+  /* Create a list of all dirty pages
+  */
+  pToWrite = 0;
   for(pPg=pPager->pFirst; pPg; pPg=pPg->pNextFree){
     if( pPg->dirty ){
-      sqliteOsSeek(&pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
-      rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
-      if( rc!=SQLITE_OK ) break;
-      pPg->dirty = 0;
+      pPg->pSort = pToWrite;
+      pToWrite = pPg;
     }
+  }
+
+  /* Sort the list of dirty pages into accending order by
+  ** page number
+  */
+  for(i=0; i<NSORT; i++){
+    apSorter[i] = 0;
+  }
+  while( pToWrite ){
+    pPg = pToWrite;
+    pToWrite = pPg->pSort;
+    pPg->pSort = 0;
+    for(i=0; i<NSORT-1; i++){
+      if( apSorter[i]==0 ){
+        apSorter[i] = pPg;
+        break;
+      }else{
+        pPg = page_merge(apSorter[i], pPg);
+        apSorter[i] = 0;
+      }
+    }
+    if( i>=NSORT-1 ){
+      apSorter[NSORT-1] = page_merge(apSorter[NSORT-1],pPg);
+    }
+  }
+  pToWrite = 0;
+  for(i=0; i<NSORT; i++){
+    pToWrite = page_merge(apSorter[i], pToWrite);
+  }
+
+  /* Write all dirty pages back to the database and mark
+  ** them all clean.
+  */
+  lastPgno = 0;
+  for(pPg=pToWrite; pPg; pPg=pPg->pSort){
+    if( lastPgno==0 || pPg->pgno!=lastPgno-1 ){
+      sqliteOsSeek(&pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
+    }
+    rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+    if( rc!=SQLITE_OK ) break;
+    pPg->dirty = 0;
+    lastPgno = pPg->pgno;
   }
   return rc;
 }
@@ -984,10 +1119,11 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     }else{
       pPg->inJournal = 0;
     }
-    if( pPager->aInCkpt && (int)pgno<=pPager->ckptSize ){
-      pPg->inCkpt = (pPager->aInCkpt[pgno/8] & (1<<(pgno&7)))!=0;
+    if( pPager->aInCkpt && (int)pgno<=pPager->ckptSize
+             && (pPager->aInCkpt[pgno/8] & (1<<(pgno&7)))!=0 ){
+      page_add_to_ckpt_list(pPg);
     }else{
-      pPg->inCkpt = 0;
+      page_remove_from_ckpt_list(pPg);
     }
     pPg->dirty = 0;
     pPg->nRef = 1;
@@ -1248,7 +1384,7 @@ int sqlitepager_write(void *pData){
     pPg->inJournal = 1;
     if( pPager->ckptInUse ){
       pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-      pPg->inCkpt = 1;
+      page_add_to_ckpt_list(pPg);
     }
   }
 
@@ -1268,7 +1404,7 @@ int sqlitepager_write(void *pData){
     }
     assert( pPager->aInCkpt!=0 );
     pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    pPg->inCkpt = 1;
+    page_add_to_ckpt_list(pPg);
   }
 
   /* Update the database size and return.
@@ -1352,14 +1488,14 @@ void sqlitepager_dont_rollback(void *pData){
     pPg->inJournal = 1;
     if( pPager->ckptInUse ){
       pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-      pPg->inCkpt = 1;
+      page_add_to_ckpt_list(pPg);
     }
   }
   if( pPager->ckptInUse && !pPg->inCkpt && (int)pPg->pgno<=pPager->ckptSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
     assert( pPager->aInCkpt!=0 );
     pPager->aInCkpt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    pPg->inCkpt = 1;
+    page_add_to_ckpt_list(pPg);
   }
 }
 
@@ -1521,15 +1657,19 @@ ckpt_begin_failed:
 */
 int sqlitepager_ckpt_commit(Pager *pPager){
   if( pPager->ckptInUse ){
-    PgHdr *pPg;
+    PgHdr *pPg, *pNext;
     sqliteOsSeek(&pPager->cpfd, 0);
     sqliteOsTruncate(&pPager->cpfd, 0);
     pPager->ckptInUse = 0;
     sqliteFree( pPager->aInCkpt );
     pPager->aInCkpt = 0;
-    for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+    for(pPg=pPager->pCkpt; pPg; pPg=pNext){
+      pNext = pPg->pNextCkpt;
+      assert( pPg->inCkpt );
       pPg->inCkpt = 0;
+      pPg->pPrevCkpt = pPg->pNextCkpt = 0;
     }
+    pPager->pCkpt = 0;
   }
   return SQLITE_OK;
 }
