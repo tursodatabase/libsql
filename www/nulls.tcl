@@ -1,7 +1,7 @@
 #
 # Run this script to generated a nulls.html output file
 #
-set rcsid {$Id: nulls.tcl,v 1.3 2003/07/07 00:10:40 drh Exp $}
+set rcsid {$Id: nulls.tcl,v 1.4 2003/08/13 11:29:24 drh Exp $}
 
 puts {<html>
 <head>
@@ -33,6 +33,7 @@ was to make SQLite work like all the other engines.
 A SQL test script was developed and run by volunteers on various
 SQL RDBMSes and the results of those tests were used to deduce
 how each engine processed NULL values.
+The original tests were run in May of 2002.
 A copy of the test script is found at the end of this document.
 </p>
 
@@ -54,6 +55,29 @@ purposes of the SELECT DISTINCT and UNION.  To do so, one should
 change the value of the NULL_ALWAYS_DISTINCT #define in the
 <tt>sqliteInt.h</tt> source file and recompile.
 </p>
+
+<blockquote>
+<p>
+<i>Update 2003-07-13:</i>
+Since this document was originally written some of the database engines
+tested have been updated and users have been kind enough to send in
+corrections to the chart below.  The original data showed a wide variety
+of behaviors, but over time the range of behaviors has converged toward
+the PostgreSQL/Oracle model.  The only significant difference 
+is that Informix and MS-SQL both threat NULLs as
+indistinct in a UNIQUE column.
+</p>
+
+<p>
+The fact that NULLs are distinct for UNIQUE columns but are indistinct for
+SELECT DISTINCT and UNION continues to be puzzling.  It seems that NULLs
+should be either distinct everywhere or nowhere.  And the SQL standards
+documents suggest that NULLs should be distinct everywhere.  Yet as of
+this writing, no SQL engine tested treats NULLs as distinct in a SELECT
+DISTINCT statement or in a UNION.
+</p>
+</blockquote>
+
 
 <p>
 The following table shows the results of the NULL handling experiments.
@@ -172,19 +196,19 @@ The following table shows the results of the NULL handling experiments.
 </tr>
 <tr><td>nulls are distinct in SELECT DISTINCT</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
-<td valign="center" align="center" bgcolor="#aaaad2">(Note 1)</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No (Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>nulls are distinct in a UNION</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 3)</td>
-<td valign="center" align="center" bgcolor="#aaaad2">(Note 1)</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No (Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>"CASE WHEN null THEN 1 ELSE 0 END" is 0?</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
-<td valign="center" align="center" bgcolor="#aaaad2">(Note 2)</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 5)</td>
 </tr>
@@ -206,7 +230,8 @@ The following table shows the results of the NULL handling experiments.
 <tr>
 <td valign="top" rowspan=5>Notes:&nbsp;&nbsp;</td>
 <td>1.&nbsp;</td>
-<td>Firebird omits all NULLs from SELECT DISTINCT and from UNION.</td>
+<td>Older versions of firebird omits all NULLs from SELECT DISTINCT
+and from UNION.</td>
 </tr>
 <tr><td>2.&nbsp;</td>
 <td>Test data unavailable.</td>
