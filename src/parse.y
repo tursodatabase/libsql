@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.156 2004/11/13 15:59:15 drh Exp $
+** @(#) $Id: parse.y,v 1.157 2004/11/17 16:41:30 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -169,6 +169,7 @@ id(A) ::= ID(X).         {A = X;}
 %right NOT.
 %left IS LIKE GLOB BETWEEN IN ISNULL NOTNULL NE EQ.
 %left GT LE LT GE.
+%right ESCAPE.
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left STAR SLASH REM.
@@ -637,14 +638,21 @@ likeop(A) ::= LIKE.     {A.opcode = TK_LIKE; A.not = 0;}
 likeop(A) ::= GLOB.     {A.opcode = TK_GLOB; A.not = 0;}
 likeop(A) ::= NOT LIKE. {A.opcode = TK_LIKE; A.not = 1;}
 likeop(A) ::= NOT GLOB. {A.opcode = TK_GLOB; A.not = 1;}
-expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE]  {
+%type escape {Expr*}
+escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
+escape(X) ::= .               [ESCAPE] {X = 0;}
+expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE]  {
   ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
   pList = sqlite3ExprListAppend(pList, X, 0);
+  if( E ){
+    pList = sqlite3ExprListAppend(pList, E, 0);
+  }
   A = sqlite3ExprFunction(pList, 0);
   if( A ) A->op = OP.opcode;
   if( OP.not ) A = sqlite3Expr(TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A, &X->span, &Y->span);
 }
+
 expr(A) ::= expr(X) ISNULL(E). {
   A = sqlite3Expr(TK_ISNULL, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);

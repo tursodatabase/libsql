@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.87 2004/11/14 21:56:30 drh Exp $
+** $Id: func.c,v 1.88 2004/11/17 16:41:30 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -347,10 +347,11 @@ static const struct compareInfo likeInfo = { '%', '_',   0, 1 };
 **
 **         abc[*]xyz        Matches "abc*xyz" only
 */
-int patternCompare(
+static int patternCompare(
   const u8 *zPattern,              /* The glob pattern */
   const u8 *zString,               /* The string to compare against the glob */
-  const struct compareInfo *pInfo  /* Information about how to do the compare */
+  const struct compareInfo *pInfo, /* Information about how to do the compare */
+  const int esc                    /* The escape character */
 ){
   register int c;
   int invert;
@@ -360,9 +361,10 @@ int patternCompare(
   u8 matchAll = pInfo->matchAll;
   u8 matchSet = pInfo->matchSet;
   u8 noCase = pInfo->noCase; 
+  int prevEscape = 0;     /* True if the previous character was 'escape' */
 
   while( (c = *zPattern)!=0 ){
-    if( c==matchAll ){
+    if( !prevEscape && c==matchAll ){
       while( (c=zPattern[1]) == matchAll || c == matchOne ){
         if( c==matchOne ){
           if( *zString==0 ) return 0;
@@ -370,9 +372,15 @@ int patternCompare(
         }
         zPattern++;
       }
+      if( c && sqlite3ReadUtf8(&zPattern[1])==esc ){
+        u8 const *zTemp = &zPattern[1];
+        sqliteNextChar(zTemp);
+        c = *zTemp;
+      }
       if( c==0 ) return 1;
       if( c==matchSet ){
-        while( *zString && patternCompare(&zPattern[1],zString,pInfo)==0 ){
+        assert( esc==0 );   /* This is GLOB, not LIKE */
+        while( *zString && patternCompare(&zPattern[1],zString,pInfo,esc)==0 ){
           sqliteNextChar(zString);
         }
         return *zString!=0;
@@ -386,17 +394,18 @@ int patternCompare(
             while( c2 != 0 && c2 != c ){ c2 = *++zString; }
           }
           if( c2==0 ) return 0;
-          if( patternCompare(&zPattern[1],zString,pInfo) ) return 1;
+          if( patternCompare(&zPattern[1],zString,pInfo,esc) ) return 1;
           sqliteNextChar(zString);
         }
         return 0;
       }
-    }else if( c==matchOne ){
+    }else if( !prevEscape && c==matchOne ){
       if( *zString==0 ) return 0;
       sqliteNextChar(zString);
       zPattern++;
     }else if( c==matchSet ){
       int prior_c = 0;
+      assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
       seen = 0;
       invert = 0;
       c = sqliteCharVal(zString);
@@ -424,6 +433,9 @@ int patternCompare(
       if( c2==0 || (seen ^ invert)==0 ) return 0;
       sqliteNextChar(zString);
       zPattern++;
+    }else if( !prevEscape && sqlite3ReadUtf8(zPattern)==esc){
+      prevEscape = 1;
+      sqliteNextChar(zPattern);
     }else{
       if( noCase ){
         if( sqlite3UpperToLower[c] != sqlite3UpperToLower[*zString] ) return 0;
@@ -432,6 +444,7 @@ int patternCompare(
       }
       zPattern++;
       zString++;
+      prevEscape = 0;
     }
   }
   return *zString==0;
@@ -457,8 +470,21 @@ static void likeFunc(
 ){
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
+  int escape = 0;
+  if( argc==3 ){
+    /* The escape character string must consist of a single UTF-8 character.
+    ** Otherwise, return an error.
+    */
+    const unsigned char *zEsc = sqlite3_value_text(argv[2]);
+    if( sqlite3utf8CharLen(zEsc, -1)!=1 ){
+      sqlite3_result_error(context, 
+          "ESCAPE expression must be a single character", -1);
+      return;
+    }
+    escape = sqlite3ReadUtf8(zEsc);
+  }
   if( zA && zB ){
-    sqlite3_result_int(context, patternCompare(zA, zB, &likeInfo));
+    sqlite3_result_int(context, patternCompare(zA, zB, &likeInfo, escape));
   }
 }
 
@@ -469,13 +495,13 @@ static void likeFunc(
 **
 **       A GLOB B
 **
-** is implemented as glob(A,B).
+** is implemented as glob(B,A).
 */
 static void globFunc(sqlite3_context *context, int arg, sqlite3_value **argv){
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   if( zA && zB ){
-    sqlite3_result_int(context, patternCompare(zA, zB, &globInfo));
+    sqlite3_result_int(context, patternCompare(zA, zB, &globInfo, 0));
   }
 }
 
@@ -992,6 +1018,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "ifnull",             2, 0, SQLITE_UTF8,    1, ifnullFunc },
     { "random",            -1, 0, SQLITE_UTF8,    0, randomFunc },
     { "like",               2, 0, SQLITE_UTF8,    0, likeFunc   },
+    { "like",               3, 0, SQLITE_UTF8,    0, likeFunc   },
     { "glob",               2, 0, SQLITE_UTF8,    0, globFunc   },
     { "nullif",             2, 0, SQLITE_UTF8,    1, nullifFunc },
     { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.39 2004/11/15 01:40:48 drh Exp $
+# $Id: expr.test,v 1.40 2004/11/17 16:41:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -267,6 +267,45 @@ test_expr expr-5.55 {t1='abc', t2=NULL} {t1 NOT LIKE t2} {{}}
 test_expr expr-5.56 {t1='abc', t2=NULL} {t2 LIKE t1} {{}}
 test_expr expr-5.57 {t1='abc', t2=NULL} {t2 NOT LIKE t1} {{}}
 
+# LIKE expressions that use ESCAPE characters.
+test_expr expr-5.58 {t1='abc', t2='A_C'}   {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.59 {t1='a_c', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.60 {t1='abc', t2='A7_C'}  {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.61 {t1='a7Xc', t2='A7_C'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.62 {t1='abcde', t2='A%E'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.63 {t1='abcde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.64 {t1='a7cde', t2='A7%E'} {t1 LIKE t2 ESCAPE '7'} 0
+test_expr expr-5.65 {t1='a7cde', t2='A77%E'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.66 {t1='abc7', t2='A%77'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.67 {t1='abc_', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} 1
+test_expr expr-5.68 {t1='abc7', t2='A%7_'} {t1 LIKE t2 ESCAPE '7'} 0
+
+# These are the same test as the block above, but using a multi-byte 
+# character as the escape character.
+if {"\u1234"!="u1234"} {
+  test_expr expr-5.69 "t1='abc', t2='A_C'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.70 "t1='a_c', t2='A\u1234_C'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.71 "t1='abc', t2='A\u1234_C'" \
+       "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.72 "t1='a\u1234Xc', t2='A\u1234_C'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.73 "t1='abcde', t2='A%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.74 "t1='abcde', t2='A\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.75 "t1='a\u1234cde', t2='A\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+  test_expr expr-5.76 "t1='a\u1234cde', t2='A\u1234\u1234%E'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.77 "t1='abc\u1234', t2='A%\u1234\u1234'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.78 "t1='abc_', t2='A%\u1234_'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 1
+  test_expr expr-5.79 "t1='abc\u1234', t2='A%\u1234_'" \
+      "t1 LIKE t2 ESCAPE '\u1234'" 0
+}
 
 test_expr expr-6.1 {t1='abc', t2='xyz'} {t1 GLOB t2} 0
 test_expr expr-6.2 {t1='abc', t2='ABC'} {t1 GLOB t2} 0
