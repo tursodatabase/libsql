@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.8 2003/02/20 01:48:13 drh Exp $
+# $Id: join.test,v 1.9 2003/05/06 20:35:17 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -376,5 +376,31 @@ do_test join-7.1 {
     SELECT coalesce(t8.a,999) from t7 LEFT JOIN t8 on y=a;
   }
 } {1 999 999 2 131 130 999}
+
+# Make sure a left join where the right table is really a view that
+# is itself a join works right.  Ticket #306.
+#
+do_test join-8.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t9(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t9 VALUES(1,11);
+    INSERT INTO t9 VALUES(2,22);
+    CREATE TABLE t10(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t10 VALUES(1,2);
+    INSERT INTO t10 VALUES(3,3);    
+    CREATE TABLE t11(p INTEGER PRIMARY KEY, q);
+    INSERT INTO t11 VALUES(2,111);
+    INSERT INTO t11 VALUES(3,333);    
+    CREATE VIEW v10_11 AS SELECT x, q FROM t10, t11 WHERE t10.y=t11.p;
+    COMMIT;
+    SELECT * FROM t9 LEFT JOIN v10_11 ON( a=x );
+  }
+} {1 11 1 111 2 22 {} {}}
+do_test join-8.2 {
+  execsql {
+    SELECT * FROM v10_11 LEFT JOIN t9 ON( a=x );
+  }
+} {1 111 1 11 3 333 {} {}}
 
 finish_test

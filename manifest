@@ -1,5 +1,5 @@
-C Added\stests\strying\s(unsuccessfully)\sto\sreproduce\sticket\s#304.\s(CVS\s957)
-D 2003-05-04T20:42:56
+C Restrain\sthe\sflattener\sin\sthe\spresence\sof\souter\sjoins.\s\sTicket\s#306.\s(CVS\s958)
+D 2003-05-06T20:35:16
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
 F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 3fe63e3a29df661ba72a67eecd77e8ee82801def
+F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
 F src/shell.c 89a14538b40fbfa15b0ad10b3367aab272bd9f15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in eec06462cba262c0ee03f38462a18a4bc66dda4e
@@ -87,7 +87,7 @@ F test/insert.test 5697ba098e4d8a6f0151f281b7e39dec9c439e05
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 39f49fd993350f7f3ab255e5cfbf9a09d8f8800e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
-F test/join.test c97267c19294bf1fa4e81087edad179828bced88
+F test/join.test 16c91ec27170c20e2a10796775e62c5c3dcbda44
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ffde644361e1d8e2a44a235ff23ad3b43d640df2
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5656fe48b192dc84cb5977f826ff99d81684791f
-R cdec87c4eaf662069dea6dbf74494ed5
+P fda637f453d35b74f676997fcf056a948ccd771b
+R ce92f17887cce1b923da966e242b319f
 U drh
-Z 054b394f2a79b867a0d598db2de3f85c
+Z ab57ff50799dad75d8d41943b87540c0

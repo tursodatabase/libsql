@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.137 2003/05/02 16:04:17 drh Exp $
+** $Id: select.c,v 1.138 2003/05/06 20:35:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1555,7 +1555,8 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList){
 **
 **   (2)  The subquery is not an aggregate or the outer query is not a join.
 **
-**   (3)  (No longer a restriction)
+**   (3)  The subquery is not the right operand of a left outer join, or
+**        the subquery is not itself a join.  (Ticket #306)
 **
 **   (4)  The subquery is not DISTINCT or the outer query is not a join.
 **
@@ -1620,6 +1621,22 @@ static int flattenSubquery(
   if( (p->isDistinct || p->nLimit>=0) && subqueryIsAgg ) return 0;
   if( p->pOrderBy && pSub->pOrderBy ) return 0;
 
+  /* Restriction 3:  If the subquery is a join, make sure the subquery is 
+  ** not used as the right operand of an outer join.  Examples of why this
+  ** is not allowed:
+  **
+  **         t1 LEFT OUTER JOIN (t2 JOIN t3)
+  **
+  ** If we flatten the above, we would get
+  **
+  **         (t1 LEFT OUTER JOIN t2) JOIN t3
+  **
+  ** which is not at all the same thing.
+  */
+  if( pSubSrc->nSrc>1 && iFrom>0 && (pSrc->a[iFrom-1].jointype & JT_OUTER)!=0 ){
+    return 0;
+  }
+
   /* If we reach this point, it means flattening is permitted for the
   ** iFrom-th entry of the FROM clause in the outer query.
   */
@@ -1635,6 +1652,7 @@ static int flattenSubquery(
   iParent = pSrc->a[iFrom].iCursor;
   {
     int nSubSrc = pSubSrc->nSrc;
+    int jointype = pSrc->a[iFrom].jointype;
 
     if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
       sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
@@ -1655,6 +1673,7 @@ static int flattenSubquery(
       pSrc->a[i+iFrom] = pSubSrc->a[i];
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
+    pSrc->a[iFrom+nSubSrc-1].jointype = jointype;
   }
 
   /* Now begin substituting subquery result set expressions for 
