@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.10 2004/05/27 17:22:56 drh Exp $
+# $Id: select3.test,v 1.11 2004/06/11 13:19:22 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,7 +78,7 @@ do_test select3-2.7 {
   execsql {
     SELECT log*2+1 AS x, count(*) AS y FROM t1 GROUP BY x ORDER BY y
   }
-} {1 1 3 1 5 2 7 4 9 8 11 15}
+} {3 1 1 1 5 2 7 4 9 8 11 15}
 do_test select3-2.8 {
   execsql {
     SELECT log*2+1 AS x, count(*) AS y FROM t1 GROUP BY x ORDER BY 10-(x+y)

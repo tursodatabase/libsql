@@ -49,7 +49,8 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
     int n;
     int rc;
 
-    rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc, &z, &n, desiredEnc);
+    rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc, (void **)&z, 
+        &n, desiredEnc);
     if( rc!=SQLITE_OK ){
       return rc;
     }

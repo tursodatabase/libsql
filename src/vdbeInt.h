@@ -223,9 +223,15 @@ typedef struct AggElem AggElem;
 struct Agg {
   int nMem;            /* Number of values stored in each AggElem */
   AggElem *pCurrent;   /* The AggElem currently in focus */
+  FuncDef **apFunc;    /* Information about aggregate functions */
+#if 0
   HashElem *pSearch;   /* The hash element for pCurrent */
   Hash hash;           /* Hash table of all aggregate elements */
-  FuncDef **apFunc;    /* Information about aggregate functions */
+#endif
+  Btree *pBtree;       /* The temporary btree used to group elements */
+  BtCursor *pCsr;      /* Read/write cursor to the table in pBtree */
+  int nTab;            /* Root page of the table in pBtree */
+  u8 searching;        /* True between the first AggNext and AggReset */
 };
 struct AggElem {
   char *zKey;          /* The key to this AggElem */
@@ -344,7 +350,7 @@ struct Vdbe {
 */
 void sqlite3VdbeCleanupCursor(Cursor*);
 void sqlite3VdbeSorterReset(Vdbe*);
-void sqlite3VdbeAggReset(Agg*);
+int sqlite3VdbeAggReset(sqlite *, Agg *, KeyInfo *);
 void sqlite3VdbeKeylistFree(Keylist*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);

@@ -651,8 +651,6 @@ void sqlite3VdbeMakeReady(
     }
   }
 
-  sqlite3HashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
-  p->agg.pSearch = 0;
 #ifdef SQLITE_DEBUG
   if( (p->db->flags & SQLITE_VdbeListing)!=0
     || sqlite3OsFileExists("vdbe_explain")
@@ -711,6 +709,7 @@ void sqlite3VdbeSorterReset(Vdbe *p){
 ** private context.  If the finalizer has not been called yet, call it
 ** now.
 */
+#if 0
 void sqlite3VdbeAggReset(Agg *pAgg){
   int i;
   HashElem *p;
@@ -747,6 +746,120 @@ void sqlite3VdbeAggReset(Agg *pAgg){
   pAgg->pSearch = 0;
   pAgg->nMem = 0;
 }
+#endif
+
+/*
+** Reset an Agg structure.  Delete all its contents.
+**
+** For installable aggregate functions, if the step function has been
+** called, make sure the finalizer function has also been called.  The
+** finalizer might need to free memory that was allocated as part of its
+** private context.  If the finalizer has not been called yet, call it
+** now.
+**
+** If db is NULL, then this is being called from sqliteVdbeReset(). In
+** this case clean up all references to the temp-table used for
+** aggregates (if it was ever opened).
+**
+** If db is not NULL, then this is being called from with an OP_AggReset
+** opcode. Open the temp-table, if it has not already been opened and
+** delete the contents of the table used for aggregate information, ready
+** for the next round of aggregate processing.
+*/
+int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
+  int i;
+  int rc = 0;
+  BtCursor *pCsr = pAgg->pCsr;
+
+  assert( (pCsr && pAgg->nTab>0) || (!pCsr && pAgg->nTab==0)
+         || sqlite3_malloc_failed );
+
+  /* If pCsr is not NULL, then the table used for aggregate information
+  ** is open. Loop through it and free the AggElem* structure pointed at
+  ** by each entry. If the finalizer has not been called for an AggElem,
+  ** do that too. Finally, clear the btree table itself.
+  */
+  if( pCsr ){
+    int res;
+    assert( pAgg->pBtree );
+    assert( pAgg->nTab>0 );
+
+    rc=sqlite3BtreeFirst(pCsr, &res);
+    while( res==0 && rc==SQLITE_OK ){
+      AggElem *pElem;
+      rc = sqlite3BtreeData(pCsr, 0, sizeof(AggElem*), (char *)&pElem);
+      if( res!=SQLITE_OK ){
+        return rc;
+      }
+      assert( pAgg->apFunc!=0 );
+      for(i=0; i<pAgg->nMem; i++){
+        Mem *pMem = &pElem->aMem[i];
+        if( pAgg->apFunc[i] && (pMem->flags & MEM_AggCtx)!=0 ){
+          sqlite3_context ctx;
+          ctx.pFunc = pAgg->apFunc[i];
+          ctx.s.flags = MEM_Null;
+          ctx.pAgg = pMem->z;
+          ctx.cnt = pMem->i;
+          ctx.isStep = 0;
+          ctx.isError = 0;
+          (*pAgg->apFunc[i]->xFinalize)(&ctx);
+          if( pMem->z!=0 && pMem->z!=pMem->z ){
+            sqliteFree(pMem->z);
+          }
+        }else if( pMem->flags&MEM_Dyn ){
+          sqliteFree(pMem->z);
+        }
+      }
+      sqliteFree(pElem);
+      rc=sqlite3BtreeNext(pCsr, &res);
+    }
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
+    sqlite3BtreeCloseCursor(pCsr);
+    sqlite3BtreeClearTable(pAgg->pBtree, pAgg->nTab);
+  }
+
+  /* If db is not NULL and we have not yet and we have not yet opened
+  ** the temporary btree then do so and create the table to store aggregate
+  ** information.
+  **
+  ** If db is NULL, then close the temporary btree if it is open.
+  */
+  if( db ){
+    if( !pAgg->pBtree ){
+      assert( pAgg->nTab==0 );
+      rc = sqlite3BtreeFactory(db, 0, 0, TEMP_PAGES, &pAgg->pBtree);
+      if( rc!=SQLITE_OK ) return rc;
+      sqlite3BtreeBeginTrans(pAgg->pBtree, 1, 0);
+      rc = sqlite3BtreeCreateTable(pAgg->pBtree, &pAgg->nTab, 0);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    assert( pAgg->nTab!=0 );
+
+    rc = sqlite3BtreeCursor(pAgg->pBtree, pAgg->nTab, 1,
+        sqlite3VdbeRecordCompare, pKeyInfo, &pAgg->pCsr);
+    if( rc!=SQLITE_OK ) return rc;
+  }else{
+    if( pAgg->pBtree ){
+      sqlite3BtreeClose(pAgg->pBtree);
+      pAgg->pBtree = 0;
+      pAgg->nTab = 0;
+    }
+    pAgg->pCsr = 0;
+  }
+
+  if( pAgg->apFunc ){ 
+    sqliteFree(pAgg->apFunc);
+    pAgg->apFunc = 0;
+  }
+  pAgg->pCurrent = 0;
+  pAgg->nMem = 0;
+  pAgg->searching = 0;
+  return SQLITE_OK;
+}
+
 
 /*
 ** Delete a keylist
@@ -839,7 +952,7 @@ static void Cleanup(Vdbe *p){
     p->zLine = 0;
   }
   p->nLineAlloc = 0;
-  sqlite3VdbeAggReset(&p->agg);
+  sqlite3VdbeAggReset(0, &p->agg, 0);
   if( p->keylistStack ){
     int ii;
     for(ii = 0; ii < p->keylistStackDepth; ii++){

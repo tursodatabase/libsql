@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.187 2004/06/11 10:51:35 danielk1977 Exp $
+** $Id: select.c,v 1.188 2004/06/11 13:19:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2441,7 +2441,7 @@ int sqlite3Select(
   /* Reset the aggregator
   */
   if( isAgg ){
-    sqlite3VdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
+    int addr = sqlite3VdbeAddOp(v, OP_AggReset, 0, pParse->nAgg);
     for(i=0; i<pParse->nAgg; i++){
       FuncDef *pFunc;
       if( (pFunc = pParse->aAgg[i].pFunc)!=0 && pFunc->xFinalize!=0 ){
@@ -2451,6 +2451,21 @@ int sqlite3Select(
     if( pGroupBy==0 ){
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, 0);
+    }else{
+      int sz = sizeof(KeyInfo) + pGroupBy->nExpr*sizeof(CollSeq*);
+      KeyInfo *pKey = (KeyInfo *)sqliteMalloc(sz);
+      if( 0==pKey ){
+        goto select_end;
+      }
+      pKey->enc = pParse->db->enc;
+      pKey->nField = pGroupBy->nExpr;
+      for(i=0; i<pGroupBy->nExpr; i++){
+        pKey->aColl[i] = sqlite3ExprCollSeq(pParse, pGroupBy->a[i].pExpr);
+        if( !pKey->aColl[i] ){
+          pKey->aColl[i] = pParse->db->pDfltColl;
+        }
+      }
+      sqlite3VdbeChangeP3(v, addr, (char *)pKey, P3_KEYINFO_HANDOFF);
     }
   }
 

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.364 2004/06/11 10:51:37 danielk1977 Exp $
+** $Id: vdbe.c,v 1.365 2004/06/11 13:19:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -160,23 +160,25 @@ static void _storeTypeInfo(Mem *pMem){
 ** Return 0 on success and 1 if memory is exhausted.
 */
 static int AggInsert(Agg *p, char *zKey, int nKey){
-  AggElem *pElem, *pOld;
+  AggElem *pElem;
   int i;
-  Mem *pMem;
+  int rc;
   pElem = sqliteMalloc( sizeof(AggElem) + nKey +
                         (p->nMem-1)*sizeof(pElem->aMem[0]) );
-  if( pElem==0 ) return 1;
+  if( pElem==0 ) return SQLITE_NOMEM;
   pElem->zKey = (char*)&pElem->aMem[p->nMem];
   memcpy(pElem->zKey, zKey, nKey);
   pElem->nKey = nKey;
-  pOld = sqlite3HashInsert(&p->hash, pElem->zKey, pElem->nKey, pElem);
-  if( pOld!=0 ){
-    assert( pOld==pElem );  /* Malloc failed on insert */
-    sqliteFree(pOld);
-    return 0;
+
+  assert( p->pCsr );
+  rc = sqlite3BtreeInsert(p->pCsr, zKey, nKey, &pElem, sizeof(AggElem*));
+  if( rc!=SQLITE_OK ){
+    sqliteFree(pElem);
+    return rc;
   }
-  for(i=0, pMem=pElem->aMem; i<p->nMem; i++, pMem++){
-    pMem->flags = MEM_Null;
+
+  for(i=0; i<p->nMem; i++){
+    pElem->aMem[i].flags = MEM_Null;
   }
   p->pCurrent = pElem;
   return 0;
@@ -185,6 +187,7 @@ static int AggInsert(Agg *p, char *zKey, int nKey){
 /*
 ** Get the AggElem currently in focus
 */
+#if 0
 #define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
 static AggElem *_AggInFocus(Agg *p){
   HashElem *pElem = sqliteHashFirst(&p->hash);
@@ -193,6 +196,32 @@ static AggElem *_AggInFocus(Agg *p){
     pElem = sqliteHashFirst(&p->hash);
   }
   return pElem ? sqliteHashData(pElem) : 0;
+}
+#endif
+/*
+** Store a pointer to the AggElem currently in focus in *ppElem. Return
+** SQLITE_OK if successful, otherwise an error-code.
+*/
+static int AggInFocus(Agg *p, AggElem **ppElem){
+  int rc;
+  int res;
+
+  if( p->pCurrent ){
+    *ppElem = p->pCurrent;
+    return SQLITE_OK;
+  }
+
+  rc = sqlite3BtreeFirst(p->pCsr, &res);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+  if( res!=0 ){
+    rc = AggInsert(p,"",1);
+    *ppElem = p->pCurrent;
+  }else{
+    rc = sqlite3BtreeData(p->pCsr, 0, 4, (char *)ppElem);
+  }
+  return rc;
 }
 
 /*
@@ -1298,7 +1327,9 @@ case OP_Function: {
     for(i=0; i<ctx.pVdbeFunc->nAux; i++){
       struct AuxData *pAux = &ctx.pVdbeFunc->apAux[i];
       if( (i>31 || !(mask&(1<<i))) && pAux->pAux ){
-        pAux->xDelete(pAux->pAux);
+        if( pAux->xDelete ){
+          pAux->xDelete(pAux->pAux);
+        }
         pAux->pAux = 0;
       }
     }
@@ -4259,13 +4290,18 @@ case OP_MemIncr: {
   break;
 }
 
-/* Opcode: AggReset * P2 *
+/* Opcode: AggReset * P2 P3
 **
 ** Reset the aggregator so that it no longer contains any data.
-** Future aggregator elements will contain P2 values each.
+** Future aggregator elements will contain P2 values each and be sorted
+** using the KeyInfo structure pointed to by P3.
 */
 case OP_AggReset: {
-  sqlite3VdbeAggReset(&p->agg);
+  assert( !pOp->p3 || pOp->p3type==P3_KEYINFO );
+  rc = sqlite3VdbeAggReset(db, &p->agg, (KeyInfo *)pOp->p3);
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
   p->agg.nMem = pOp->p2;
   p->agg.apFunc = sqliteMalloc( p->agg.nMem*sizeof(p->agg.apFunc[0]) );
   if( p->agg.apFunc==0 ) goto no_mem;
@@ -4356,21 +4392,29 @@ case OP_AggFunc: {
 ** in between an AggNext and an AggReset.
 */
 case OP_AggFocus: {
-  AggElem *pElem;
   char *zKey;
   int nKey;
-
+  int res;
   assert( pTos>=p->aStack );
   Stringify(pTos, db->enc);
   zKey = pTos->z;
   nKey = pTos->n;
-  pElem = sqlite3HashFind(&p->agg.hash, zKey, nKey);
-  if( pElem ){
-    p->agg.pCurrent = pElem;
+  rc = sqlite3BtreeMoveto(p->agg.pCsr, zKey, nKey, &res);
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
+  if( res==0 ){
+    rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
+        (char *)&p->agg.pCurrent);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     pc = pOp->p2 - 1;
   }else{
-    AggInsert(&p->agg, zKey, nKey);
-    if( sqlite3_malloc_failed ) goto no_mem;
+    rc = AggInsert(&p->agg, zKey, nKey);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
   }
   Release(pTos);
   pTos--;
@@ -4383,9 +4427,11 @@ case OP_AggFocus: {
 ** aggregate.  String values are duplicated into new memory.
 */
 case OP_AggSet: {
-  AggElem *pFocus = AggInFocus(p->agg);
-  Mem *pMem;
+  AggElem *pFocus;
   int i = pOp->p2;
+  Mem *pMem;
+  rc = AggInFocus(&p->agg, &pFocus);
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   assert( pTos>=p->aStack );
   if( pFocus==0 ) goto no_mem;
   assert( i>=0 && i<p->agg.nMem );
@@ -4409,9 +4455,11 @@ case OP_AggSet: {
 ** string values will be ephemeral.
 */
 case OP_AggGet: {
-  AggElem *pFocus = AggInFocus(p->agg);
+  AggElem *pFocus;
   Mem *pMem;
   int i = pOp->p2;
+  rc = AggInFocus(&p->agg, &pFocus);
+  if( rc!=SQLITE_OK ) goto abort_due_to_error;
   if( pFocus==0 ) goto no_mem;
   assert( i>=0 && i<p->agg.nMem );
   pTos++;
@@ -4440,19 +4488,28 @@ case OP_AggGet: {
 ** in between an AggNext and an AggReset.
 */
 case OP_AggNext: {
+  int res;
   CHECK_FOR_INTERRUPT;
-  if( p->agg.pSearch==0 ){
-    p->agg.pSearch = sqliteHashFirst(&p->agg.hash);
+  if( p->agg.searching==0 ){
+    p->agg.searching = 1;
+    rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
   }else{
-    p->agg.pSearch = sqliteHashNext(p->agg.pSearch);
+    rc = sqlite3BtreeNext(p->agg.pCsr, &res);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
   }
-  if( p->agg.pSearch==0 ){
+  if( res!=0 ){
     pc = pOp->p2 - 1;
-  } else {
+  }else{
     int i;
     sqlite3_context ctx;
     Mem *aMem;
-    p->agg.pCurrent = sqliteHashData(p->agg.pSearch);
+
+    rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
+        (char *)&p->agg.pCurrent);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     aMem = p->agg.pCurrent->aMem;
     for(i=0; i<p->agg.nMem; i++){
       int freeCtx;
