@@ -127,6 +127,7 @@ void sqliteBeginTrigger(
   nt->table = sqliteStrDup(pTableName->a[0].zName);
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   nt->iDb = iDb;
+  nt->iTabDb = tab->iDb;
   nt->op = op;
   nt->tr_tm = tr_tm;
   nt->pWhen = sqliteExprDup(pWhen);
@@ -184,7 +185,7 @@ void sqliteFinishTrigger(
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
     sqliteBeginWriteOperation(pParse, 0, 0);
-    sqliteOpenMasterTable(v, nt->iDb==1);
+    sqliteOpenMasterTable(v, nt->iDb);
     addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
     sqliteVdbeChangeP3(v, addr+2, nt->name, 0); 
     sqliteVdbeChangeP3(v, addr+3, nt->table, 0); 
@@ -359,18 +360,18 @@ void sqliteDeleteTrigger(Trigger *pTrigger){
 /*
  * This function is called to drop a trigger from the database schema. 
  *
- * This may be called directly from the parser, or from within 
- * sqliteDropTable(). In the latter case the "nested" argument is true.
+ * This may be called directly from the parser and therefore identifies
+ * the trigger by name.  The sqliteDropTriggerPtr() routine does the
+ * same job as this routine except it take a spointer to the trigger
+ * instead of the trigger name.
  *
  * Note that this function does not delete the trigger entirely. Instead it
  * removes it from the internal schema and places it in the trigDrop hash 
  * table. This is so that the trigger can be restored into the database schema
  * if the transaction is rolled back.
  */
-void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
+void sqliteDropTrigger(Parse *pParse, SrcList *pName){
   Trigger *pTrigger;
-  Table   *pTable;
-  Vdbe *v;
   int i;
   const char *zDb;
   const char *zName;
@@ -392,13 +393,29 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     sqliteErrorMsg(pParse, "no such trigger: %S", pName, 0);
     goto drop_trigger_cleanup;
   }
+  sqliteDropTriggerPtr(pParse, pTrigger, 0);
+
+drop_trigger_cleanup:
+  sqliteSrcListDelete(pName);
+}
+
+/*
+** Drop a trigger given a pointer to that trigger.  If nested is false,
+** then also generate code to remove the trigger from the SQLITE_MASTER
+** table.
+*/
+void sqliteDropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
+  Table   *pTable;
+  Vdbe *v;
+  sqlite *db = pParse->db;
+
   assert( pTrigger->iDb<db->nDb );
   if( pTrigger->iDb>=2 ){
     sqliteErrorMsg(pParse, "triggers may not be removed from "
        "auxiliary database %s", db->aDb[pTrigger->iDb].zName);
-    goto drop_trigger_cleanup;
+    return;
   }
-  pTable = sqliteFindTable(db, pTrigger->table, db->aDb[pTrigger->iDb].zName);
+  pTable = sqliteFindTable(db, pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
   assert(pTable);
   assert( pTable->iDb==pTrigger->iDb || pTrigger->iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -409,7 +426,7 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     if( pTrigger->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
     if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName, zDb) ||
       sqliteAuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
-      goto drop_trigger_cleanup;
+      return;
     }
   }
 #endif
@@ -432,7 +449,7 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     sqliteBeginWriteOperation(pParse, 0, 0);
     sqliteOpenMasterTable(v, pTrigger->iDb);
     base = sqliteVdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
-    sqliteVdbeChangeP3(v, base+1, zName, 0);
+    sqliteVdbeChangeP3(v, base+1, pTrigger->name, 0);
     if( pTrigger->iDb==0 ){
       sqliteChangeCookie(db, v);
     }
@@ -444,6 +461,8 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
    * If this is not an "explain", then delete the trigger structure.
    */
   if( !pParse->explain ){
+    const char *zName = pTrigger->name;
+    int nName = strlen(zName);
     if( pTable->pTrigger == pTrigger ){
       pTable->pTrigger = pTrigger->pNext;
     }else{
@@ -460,9 +479,6 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     sqliteHashInsert(&(db->aDb[pTrigger->iDb].trigHash), zName, nName+1, 0);
     sqliteDeleteTrigger(pTrigger);
   }
-
-drop_trigger_cleanup:
-  sqliteSrcListDelete(pName);
 }
 
 /*

@@ -30,9 +30,16 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test trigger1-1.1 {
+do_test trigger1-1.1.2 {
    catchsql {
      CREATE TRIGGER trig UPDATE ON no_such_table BEGIN
+       SELECT * from sqlite_master;
+     END;
+   } 
+} {1 {no such table: no_such_table}}
+do_test trigger1-1.1.2 {
+   catchsql {
+     CREATE TEMP TRIGGER trig UPDATE ON no_such_table BEGIN
        SELECT * from sqlite_master;
      END;
    } 
@@ -266,5 +273,39 @@ do_test trigger-3.9 {
     SELECT * FROM t1 UNION ALL SELECT * FROM t2;
   }
 } {1 2 3 4 5 6 3 4}
+
+do_test trigger-4.1 {
+  execsql {
+    CREATE TEMP TRIGGER r1 BEFORE INSERT ON t1 BEGIN
+      INSERT INTO t2 VALUES(NEW.a,NEW.b);
+    END;
+    INSERT INTO t1 VALUES(7,8);
+    SELECT * FROM t2;
+  }
+} {3 4 7 8}
+do_test trigger-4.2 {
+  sqlite db2 test.db
+  execsql {
+    INSERT INTO t1 VALUES(9,10);
+  } db2;
+  db2 close
+  execsql {
+    SELECT * FROM t2;
+  }
+} {3 4 7 8}
+do_test trigger-4.3 {
+  execsql {
+    DROP TABLE t1;
+    SELECT * FROM t2;
+  };
+} {3 4 7 8}
+do_test trigger-4.4 {
+  db close
+  sqlite db test.db
+  execsql {
+    SELECT * FROM t2;
+  };
+} {3 4 7 8}
+
 
 finish_test
