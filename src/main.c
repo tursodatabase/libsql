@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.126 2003/04/17 22:57:54 drh Exp $
+** $Id: main.c,v 1.127 2003/04/23 12:25:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -723,9 +723,7 @@ static int sqliteMain(
   sParse.pArg = pArg;
   sParse.useDb = -1;
   sParse.useCallback = ppVm==0;
-#ifndef SQLITE_OMIT_TRACE
   if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
-#endif
   sqliteRunParser(&sParse, zSql, pzErrMsg);
   if( sqlite_malloc_failed ){
     sqliteSetString(pzErrMsg, "out of memory", 0);
@@ -1023,43 +1021,9 @@ int sqlite_function_type(sqlite *db, const char *zName, int dataType){
 ** sqlite_exec().
 */
 void *sqlite_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
-#ifndef SQLITE_OMIT_TRACE
   void *pOld = db->pTraceArg;
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
-  return pOld;
-#else
-  return 0;
-#endif
-}
-
-/*
-** Register functions to be invoked when a transaction is started or when
-** a transaction commits.  If either function returns non-zero, then the
-** corresponding operation aborts with a constraint error.
-**
-** EXPERIMENTAL.  This API is under evaluation and is not yet an
-** official part of the SQLite interface.  This means it could change
-** or be deleted in future releases.
-*/
-void *sqlite_begin_hook(
-  sqlite *db,
-  int (*xCallback)(void*),
-  void *pArg
-){
-  void *pOld = db->pBeginArg;
-  db->xBeginCallback = xCallback;
-  db->pBeginArg = pArg;
-  return pOld;
-}
-void *sqlite_commit_hook(
-  sqlite *db,
-  int (*xCallback)(void*),
-  void *pArg
-){
-  void *pOld = db->pCommitArg;
-  db->xCommitCallback = xCallback;
-  db->pCommitArg = pArg;
   return pOld;
 }
 
