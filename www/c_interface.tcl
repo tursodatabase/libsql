@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.24 2002/02/19 22:42:06 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.25 2002/03/04 02:26:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -640,6 +640,82 @@ INSERT INTO table1 VALUES('Hi y''all')
 When generating SQL on-the-fly from data that might contain a
 single-quote character ('), it is always a good idea to use the
 SQLite printf routines and the %q formatting option instead of <b>sprintf</b>.
+</p>
+
+<h2>Adding New SQL Functions</h2>
+
+<p>Beginning with version 2.4.0, SQLite allows the SQL language to be
+extended with new functions implemented as C code.  The following interface
+is used:
+</p>
+
+<blockquote><pre>
+typedef struct sqlite_func sqlite_func;
+
+int sqlite_create_function(
+  sqlite *db,
+  const char *zName,
+  int nArg,
+  void (*xFunc)(sqlite_func*,int,const char**),
+  void *pUserData
+);
+int sqlite_create_aggregate(
+  sqlite *db,
+  const char *zName,
+  int nArg,
+  void (*xStep)(sqlite_func*,int,const char**),
+  void (*xFinalize)(sqlite_func*),
+  void *pUserData
+);
+
+char *sqlite_set_result_string(sqlite_func*,const char*,int);
+void sqlite_set_result_int(sqlite_func*,int);
+void sqlite_set_result_double(sqlite_func*,double);
+void sqlite_set_result_error(sqlite_func*,const char*,int);
+
+void *sqlite_user_data(sqlite_func*);
+void *sqlite_aggregate_context(sqlite_func*, int nBytes);
+int sqlite_aggregate_count(sqlite_func*);
+</pre></blockquote>
+
+<p>
+The <b>sqlite_create_function()</b> interface is used to create 
+regular functions and <b>sqlite_create_aggregate()</b> is used to
+create new aggregate functions.  In both cases, the <b>db</b>
+parameter is an open SQLite database on which the functions should
+be registered, <b>zName</b> is the name of the new function,
+<b>nArg</b> is the number of arguments, and <b>pUserData</b> is
+a pointer which is passed through unchanged to the C implementation
+of the function.
+</p>
+
+<p>
+For regular functions, the <b>xFunc</b> callback is invoked once
+for each function call.  The implementation of xFunc should call
+one of the <b>sqlite_set_result_...</b> interfaces to return its
+result.  The <b>sqlite_user_data()</b> routine can be used to
+retrieve the <b>pUserData</b> pointer that was passed in when the
+function was registered.
+</p>
+
+<p>
+For aggregate functions, the <b>xStep</b> callback is invoked once
+for each row in the result and then <b>xFinalize</b> is invoked at the
+end to compute a final answer.  The xStep routine can use the
+<b>sqlite_aggregate_context()</b> interface to allocate memory that
+will be unique to that particular instance of the SQL function.
+This memory will be automatically deleted after xFinalize is called.
+The <b>sqlite_aggregate_count()</b> routine can be used to find out
+how many rows of data were passed to the aggregate.  The xFinalize
+callback should invoke one of the <b>sqlite_set_result_...</b>
+interfaces to set the final result of the aggregate.
+</p>
+
+<p>
+SQLite now implements all of its built-in functions using this
+interface.  For additional information and examples on how to create
+new SQL functions, review the SQLite source code in the file
+<b>func.c</b>.
 </p>
 
 <h2>Usage Examples</h2>

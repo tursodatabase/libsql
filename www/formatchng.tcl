@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.2 2002/01/30 16:17:25 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.3 2002/03/04 02:26:17 drh Exp $ }
 
 puts {<html>
 <head>
@@ -89,7 +89,21 @@ occurred since version 1.0.0:
   that are stored in the SQLITE_MASTER table.  If you create a database that
   contains this new syntax, then try to read that database using version 2.2.5
   or earlier, the parser will not understand the new syntax and you will get
-  an error.  Otherwise, databases for 2.2.x and 2.3.x are interchangeable.</p>
+  an error.  Otherwise, databases for 2.2.x and 2.3.x are interchangeable.</td>
+</tr>
+<tr>
+  <td valign="top">2.3.3 to 2.4.0</td>
+  <td valign="top">2002-Mar-?</td>
+  <td>Beginning with version 2.4.0, SQLite added support for views. 
+  Information about views is stored in the SQLITE_MASTER table.  If an older
+  version of SQLite attempts to read a database that contains VIEW information
+  in the SQLITE_MASTER table, the parser will not understand the new syntax
+  and you will get an error.  Also, the
+  way SQLite keeps track of unused disk blocks in the database file
+  changed slightly.
+  If an older version of SQLite attempts to write a database that
+  was previously written by version 2.4.0 or later, then it may leak disk
+  blocks.</td>
 </tr>
 </table>
 </blockquote>

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.26 2002/02/19 22:42:06 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.27 2002/03/04 02:26:17 drh Exp $}
 
 puts {<html>
 <head>
@@ -52,6 +52,8 @@ foreach {section} [lsort -index 0 -dictionary {
   {{BEGIN TRANSACTION} transaction}
   {PRAGMA pragma}
   {{ON CONFLICT clause} conflict}
+  {{CREATE VIEW} createview}
+  {{DROP VIEW} dropview}
 }] {
   puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
 }
@@ -342,6 +344,21 @@ in place of the original command.
 </p>
 }
 
+Section {CREATE VIEW} {createview}
+
+Syntax {sql-command} {
+CREATE VIEW <view-name> AS <select-statement>
+}
+
+puts {
+<p>The CREATE VIEW command assigns a name to a pre-packaged SELECT
+statement.  Once the view is created, it can be used in the FROM clause
+of another SELECT in place of a table name.
+</p>
+
+<p>You cannot COPY, INSERT or UPDATE a view.  Views are read-only.</p>
+}
+
 Section DELETE delete
 
 Syntax {sql-statement} {
@@ -385,6 +402,17 @@ by the name of the table.  The table named is completely removed from
 the disk.  The table can not be recovered.  All indices associated with
 the table are also deleted.</p>}
 
+Section {DROP VIEW} dropview
+
+Syntax {sql-command} {
+DROP VIEW <view-name>
+}
+
+puts {
+<p>The DROP VIEW statement consists of the keywords "DROP TABLE" followed
+by the name of the view.  The view named is removed from the database.
+But no actual data is modified.</p>}
+
 Section EXPLAIN explain
 
 Syntax {sql-statement} {
@@ -420,8 +448,8 @@ Syntax {expression} {
 <expression> NOTNULL |
 <expression> [NOT] BETWEEN <expression> AND <expression> |
 <expression> [NOT] IN ( <value-list> ) |
-<expression> [NOT] IN ( <select> ) |
-( <select> )
+<expression> [NOT] IN ( <select-statement> ) |
+( <select-statement> )
 } {like-op} {
 LIKE | GLOB | NOT LIKE | NOT GLOB
 }
@@ -518,37 +546,125 @@ SELECT becomes the value used in the expression.  If the SELECT yields
 more than one result row, all rows after the first are ignored.  If
 the SELECT yeilds no rows, then the value of the SELECT is NULL.</p>
 
-<p>The expression syntax currently supports the following
-functions:</p>
+<p>Both simple and aggregate functions are supported.  A simple
+function can be used in any expression.  Simple functions return
+a result immediately based on their inputs.  Aggregate functions
+may only be used in a SELECT statement.  Aggregate functions compute
+their result across all rows of the result set.</p>
 
-<blockquote><pre>
-<font color="#2c2cf0"><big>count    min       max       sum
-avg      length    substr    abs       round</big></font>
-</pre></blockquote>
+<p>The following simple functions are currently supported:</p>
+
+<table border=0 cellpadding=10>
+<tr>
+<td valign="top" align="right" width=120>abs(<i>X</i>)</td>
+<td valign="top">Return the absolute value of argument <i>X</i>.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">coelasce(<i>X</i>,<i>Y</i>,...)</td>
+<td valign="top">Return a copy of the first non-NULL argument.  If
+all arguments are NULL then NULL is returned.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">length(<i>X</i>)</td>
+<td valign="top">Return the string length of <i>X</i> in characters.
+If SQLite is configured to support UTF-8, then the number of UTF-8
+characters is returned, not the number of bytes.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">lower(<i>X</i>)</td>
+<td valign="top">Return a copy of string <i>X</i> will all characters
+converted to lower case.  The C library <b>tolower()</b> routine is used
+for the conversion, which means that this function might not
+work correctly on UTF-8 characters.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">max(<i>X</i>,<i>Y</i>,...)</td>
+<td valign="top">Return the argument with the maximum value.  Arguments
+may be strings in addition to numbers.  The maximum value is determined
+by the usual sort order.  Note that <b>max()</b> is a simple function when
+it has 2 or more arguments but converts to an aggregate function if given
+only a single argument.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">min(<i>X</i>,<i>Y</i>,...)</td>
+<td valign="top">Return the argument with the minimum value.  Arguments
+may be strings in addition to numbers.  The mminimum value is determined
+by the usual sort order.  Note that <b>min()</b> is a simple function when
+it has 2 or more arguments but converts to an aggregate function if given
+only a single argument.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">random(*)</td>
+<td valign="top">Return a random integer between -2147483648 and
++2147483647.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">round(<i>X</i>)<br>round(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Round off the number <i>X</i> to <i>Y</i> digits to the
+right of the decimal point.  If the <i>Y</i> argument is omitted, 0 is 
+assumed.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">subst(<i>X</i>,<i>Y</i>,<i>Z</i>)</td>
+<td valign="top">Return a substring of input string <i>X</i> that begins
+with the <i>Y</i>-th character and which is <i>Z</i> characters long.
+The left-most character of <i>X</i> is number 1.  If <i>Y</i> is negative
+the the first character of the substring is found by counting from the
+right rather than the left.  If SQLite is configured to support UTF-8,
+then characters indices refer to actual UTF-8 characters, not bytes.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">upper(<i>X</i>)</td>
+<td valign="top">Return a copy of input string <i>X</i> converted to all
+upper-case letters.  The implementation of this function uses the C library
+routine <b>toupper()</b> which means it may not work correctly on 
+UTF-8 strings.</td>
+</tr>
+</table>
 
 <p>
-The functions <b>count</b>, <b>sum</b>, and <b>avg</b> and the functions
-<b>min</b> and <b>max</b> used with only one argument are all aggregate
-functions.  This means that they are computed across all rows of the result.
-The functions <b>min</b> and <b>max</b>
-with two or more arguments and all other functions
-are non-aggregates.  Non-aggregate functions
-are computed separately for each row of the result.
+The following aggregate functions are supported:
 </p>
 
-<p>
-The <b>round</b> function can take either 1 or 2 arguments.  The
-first argument is the floating point value that is rounded.  The
-second argument is the number of digits to the right of the
-decimal point to preserve.  If the second argument is omitted,
-zero is assumed.  So round(1.23456,2) is 1.23 and
-round(12.34,0) and round(12.34) both evaluate to 12.
-</p>
+<table border=0 cellpadding=10>
+<tr>
+<td valign="top" align="right" width=120>avg(<i>X</i>)</td>
+<td valign="top">Return the average value of all <i>X</i> within a group.</td>
+</tr>
 
-<p>
-The "<b>count(*)</b>" syntax is supported but
-"<b>count(distinct</b> <i>COLUMN-NAME</i><b>)</b>" is not.
-</p>
+<tr>
+<td valign="top" align="right">count(<i>X</i>)<br>count(*)</td>
+<td valign="top">The first form return a count of the number of times
+that <i>X</i> is not NULL in a group.  The second form (with no argument)
+returns the total number of rows in the group.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">max(<i>X</i>)</td>
+<td valign="top">Return the maximum value of all values in the group.
+The usual sort order is used to determine the maximum.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">min(<i>X</i>)</td>
+<td valign="top">Return the minimum value of all values in the group.
+The usual sort order is used to determine the minimum.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">sum(<i>X</i>)</td>
+<td valign="top">Return the numeric sum of all values in the group.</td>
+</tr>
+</table>
 }
 
 Section INSERT insert

@@ -1,9 +1,9 @@
-C More\sbugs\sfixed\sfor\sviews.\s(CVS\s416)
-D 2002-03-03T23:06:01
+C Updates\sto\sthe\sdocumentation.\s\sChanged\sversion\snumber\sto\s2.4.0-beta1\s(CVS\s417)
+D 2002-03-04T02:26:16
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 80c0f75cf7de338f1c6c31c07f5576d21f764431
+F VERSION bb1eea85a80e8034130db85d6c0857abe42c9460
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -21,10 +21,10 @@ F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c d25ea795a0f7017bc2099c437e6cc01d4c31b22d
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
-F src/build.c 5b91d41cbeed1da348a43a8af3eb5a7ce5812673
+F src/build.c e11b0daa79ba894c7476c33372b1dc42b13471e6
 F src/delete.c 577da499162291c1855f0b304b211bffcf9da945
 F src/expr.c e12ca550536c0bae7a3acef49dfa3068fe5f0900
-F src/func.c 5b4d9707b0c8f463824c1f04547b524cba24bf7b
+F src/func.c 87516e7dc37190c24af77593931a5d09d797520a
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 42bfd145efd428d7e5f200dd49ea0b816fc30d79
@@ -111,23 +111,23 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
-F www/c_interface.tcl 63efc40f09e2f0d8fea43d174103248b160fdf0e
-F www/changes.tcl 18df8bc8dbcefbfd9538ce476d4fcbc193ac3352
+F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
+F www/changes.tcl cdd351b0f358bc23ca6243f3ca52c35ca1bede26
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl c6d1d6d69a9083734ee73d1b5ee4253ae8f10074
-F www/formatchng.tcl 2d9a35c787823b48d72a5c64bb5414a43e26d5ad
+F www/formatchng.tcl 5cffc0ebd00b3085c976a527eeeef70db4ccc7a7
 F www/index.tcl eacd99bcc3132d6e6b74a51422d415cc0bf7bfdf
-F www/lang.tcl 01e47b43cb81cd24bd2918a2e1bd31a959097279
+F www/lang.tcl db13f9a9c5ce7a400fa7ae021cd99dc6b05fd74a
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6121e5ab9328c90c64d40ade3de73ad11d4aaf4e
-R 83a8a52daf3c29d4bf2f935e98a598c9
+P 813077623087ffc6cd506f57cf6d1e3d9239f806
+R fe676fb38cbe5a2068c89e56308a155d
 U drh
-Z 8a99e2c5584a6641ebfdb027f72777c2
+Z 9a81a81e1e363e5bb6c841e14ddef308

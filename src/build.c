@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.83 2002/03/03 23:06:01 drh Exp $
+** $Id: build.c,v 1.84 2002/03/04 02:26:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1508,20 +1508,9 @@ void sqliteCopy(
 
   zTab = sqliteTableNameFromToken(pTableName);
   if( sqlite_malloc_failed || zTab==0 ) goto copy_cleanup;
-  pTab = sqliteFindTable(db, zTab);
+  pTab = sqliteTableNameToTable(pParse, zTab);
   sqliteFree(zTab);
-  if( pTab==0 ){
-    sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
-        pTableName->z, pTableName->n, 0);
-    pParse->nErr++;
-    goto copy_cleanup;
-  }
-  if( pTab->readOnly ){
-    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-        " may not be modified", 0);
-    pParse->nErr++;
-    goto copy_cleanup;
-  }
+  if( pTab==0 ) goto copy_cleanup;
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;

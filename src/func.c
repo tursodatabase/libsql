@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.13 2002/03/02 19:00:31 drh Exp $
+** $Id: func.c,v 1.14 2002/03/04 02:26:16 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -242,6 +242,7 @@ struct StdDevCtx {
   double sum2;    /* Sum of the squares of terms */
 };
 
+#if 0   /* Omit because math library is required */
 /*
 ** Routines used to compute the standard deviation as an aggregate.
 */
@@ -263,6 +264,7 @@ static void stdDevFinalize(sqlite_func *context){
        sqrt((p->sum2 - p->sum*p->sum/rN)/(rN-1.0)));
   }
 }
+#endif
 
 /*
 ** The following structure keeps track of state information for the
@@ -396,7 +398,9 @@ void sqliteRegisterBuildinFunctions(sqlite *db){
     { "avg",    1, sumStep,      avgFinalize    },
     { "count",  0, countStep,    countFinalize  },
     { "count",  1, countStep,    countFinalize  },
+#if 0
     { "stddev", 1, stdDevStep,   stdDevFinalize },
+#endif
   };
   int i;
 

@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Feb * (2.3.4)} {
+chng {2002 Mar * (2.4.0)} {
 <li>Change the name of the sanity_check PRAGMA to <b>integrity_check</b>
     and make it available in all compiles.</li>
 <li>SELECT min() or max() of an indexed column with no WHERE or GROUP BY
@@ -28,8 +28,16 @@ chng {2002 Feb * (2.3.4)} {
 <li>Modifications to the "lemon" parser generator so that the parser tables
     are 4 times smaller.</li>
 <li>Added support for user-defined functions implemented in C.</li>
+<li>Added support for new functions: <b>coalesce()</b>, <b>lower()</b>,
+    <b>upper()</b>, and <b>random()</b>
 <li>Added support for VIEWs.</li>
 <li>Added the subquery flattening optimizer.</li>
+<li>Modified the B-Tree and Pager modules so that disk pages that do not
+    contain real data (free pages) are not journalled and are not
+    written from memory back to the disk when they change.  This does not 
+    impact database integrity, since the
+    pages contain no real data, but it does make large INSERT operations
+    about 2.5 times faster and large DELETEs about 5 times faster.</li>
 }
 
 chng {2002 Feb 18 (2.3.3)} {
