@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\svdbeInt.h.\s\sThis\swas\spotentially\sa\sserious\smistake,\sbut\swe\sgot\nlucky\sand\sit\sis\sbenign.\s(CVS\s2418)
-D 2005-03-23T01:48:48
+C Correctly\sallocate\snew\scolumns\sarray\sin\sALTER\sTABLE\s..\sADD\sCOLUMN.\sTicket\s#1183.\s(CVS\s2419)
+D 2005-03-27T01:56:31
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -27,7 +27,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c 8ee27ba2d09f26030c145a780ec8a93cd876d315
+F src/alter.c f0b637b850dce24997105b526e9c68720e6711fb
 F src/attach.c 3615dbe960cbee4aa5ea300b8a213dad36527b0f
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c c33c0e6833eb8ac0f0941c1f8e722f7c70dbef57
@@ -86,7 +86,7 @@ F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
 F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
-F test/alter3.test 244f86314558a56a3e79c17eee6fb497fa60645b
+F test/alter3.test db854cd5565a007336fbcd901c73e48c6d95bb06
 F test/attach.test e6bda19cc954fd84836fadbd70d80134cb17918a
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -278,7 +278,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 35ace66f3ebefd4cd1455c923199511ab3b72bb6
-R 4ba6e353433ed3b9a4de1ad1305ee81e
-U drh
-Z baa3cf4075d33884f3f8891f31513410
+P f0d64dc8aa65b25af551e6e5f07746bd77c8112a
+R 93fef3478cb27e538ca03d0eaca7e793
+U danielk1977
+Z 9d9c3def40d044e2fb4f7873a3f87cc5

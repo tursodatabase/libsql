@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.4 2005/03/19 14:45:49 drh Exp $
+** $Id: alter.c,v 1.5 2005/03/27 01:56:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -521,7 +521,9 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   if( !pNew ) goto exit_begin_add_column;
   pParse->pNewTable = pNew;
   pNew->nCol = pTab->nCol;
-  nAlloc = ((pNew->nCol)/8)+8;
+  assert( pNew->nCol>0 );
+  nAlloc = (((pNew->nCol-1)/8)*8)+8;
+  assert( nAlloc>=pNew->nCol && nAlloc%8==0 && nAlloc-pNew->nCol<8 );
   pNew->aCol = (Column *)sqliteMalloc(sizeof(Column)*nAlloc);
   pNew->zName = sqliteStrDup(pTab->zName);
   if( !pNew->aCol || !pNew->zName ){

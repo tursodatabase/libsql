@@ -13,18 +13,18 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.3 2005/03/17 12:33:14 drh Exp $
+# $Id: alter3.test,v 1.4 2005/03/27 01:56:31 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
+
+source $testdir/tester.tcl
 
 # If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
 ifcapable !altertable {
   finish_test
   return
 }
-
-source $testdir/tester.tcl
 
 # Test Organisation:
 # ------------------
@@ -336,4 +336,29 @@ ifcapable vacuum {
   } {1}
 }
 
+# Ticket #1183 - Make sure adding columns to large tables does not cause
+# memory corruption (as was the case before this bug was fixed).
+do_test alter3-8.1 {
+  execsql {
+    CREATE TABLE t4(c1);
+  }
+} {}
+do_test alter3-8.2 {
+  set cols c1
+  for {set i 2} {$i < 100} {incr i} {
+    execsql "
+      ALTER TABLE t4 ADD c$i
+    "
+    lappend cols c$i
+  }
+  set ::sql "CREATE TABLE t4([join $cols {, }])"
+  list 
+} {}
+do_test alter3-8.2 {
+  execsql {
+    SELECT sql FROM sqlite_master WHERE name = 't4';
+  }
+} [list $::sql]
+
 finish_test
+
