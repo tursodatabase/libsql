@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\sthat\scould\scause\sproblems\swhen\scomparing\r\ntwo\sNULLs.\s(CVS\s757)
-D 2002-09-30T01:31:22
+C Fix\sa\sbug\sin\sthe\sleft\souter\sjoin\slogic.\s(CVS\s758)
+D 2002-09-30T12:36:26
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c cd28b33c6849c9722ab72758b7b86989bc64fa27
 F src/vdbe.c ac4ccc17d965e5754144cfec493093cf4272c126
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
-F src/where.c 53959c9d94adaf93b409271815e26eafa6ddd515
+F src/where.c 8ff2acfcb9bb15a057512bd6207b259feed57a2c
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
@@ -73,7 +73,7 @@ F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test f3620158fd7963af1306b01047277f10ae91a30b
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
-F test/join.test 90a620f2a2d015e5139d5a4cde0eeb4cf62523bf
+F test/join.test 05d2cd1af855e3720e0465668d2923b228d29556
 F test/limit.test 9f26f874bc765df5b3f5c92d26d1b12eac6d4cf9
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 59ba43449a53fb32e2dd4259285af8b4206c298a
-R d79b2721fab09e8fee709d7d8b7736bc
+P 015425001813971f6d4c97c18d64c7f14fa1955f
+R 958c29732ae80c7acd4bb4c9f1286758
 U drh
-Z 7449bf236d3644b4386fd46c627627ae
+Z 500e5882699f5a41ba2a1838914ec9af

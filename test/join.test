@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.5 2002/07/31 19:50:28 drh Exp $
+# $Id: join.test,v 1.6 2002/09/30 12:36:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -283,5 +283,21 @@ do_test join-4.10 {
   }
 } {}
 
+do_test join-5.1 {
+  execsql {
+    BEGIN;
+    create table centros (id integer primary key, centro);
+    INSERT INTO centros VALUES(1,'xxx');
+    create table usuarios (id integer primary key, nombre, apellidos,
+    idcentro integer);
+    INSERT INTO usuarios VALUES(1,'a','aa',1);
+    INSERT INTO usuarios VALUES(2,'b','bb',1);
+    INSERT INTO usuarios VALUES(3,'c','cc',NULL);
+    create index idcentro on usuarios (idcentro);
+    END;
+    select usuarios.id, usuarios.nombre, centros.centro from
+    usuarios left outer join centros on usuarios.idcentro = centros.id;
+  }
+} {1 a xxx 2 b xxx 3 c {}}
 
 finish_test
