@@ -1,9 +1,9 @@
-C Version\s1.0.22\s(CVS\s481)
-D 2001-02-19T23:30:00
+C Fix\sa\stemp\sfile\sproblem\son\smemory:\s(CVS\s188)
+D 2001-02-19T23:48:17
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 938ab9b6f1cfff5e424d42ea4a7602a8f30d3e71
+F VERSION 5383ee1612cb9a5eeef8f9f925777798a509f326
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -13,7 +13,7 @@ F src/build.c 7aa5879bf58ea6bbff22c26c59d1130021fa6ca4
 F src/dbbe.c 162d29b09ac379f160892c5795efc14099dcc8eb
 F src/dbbe.h 0435a36906a839cce062608f51bd9d3e79878fec
 F src/dbbegdbm.c 5bfcb1b4ee47a98c5eae83041e9716cd3233fd0e
-F src/dbbemem.c 215e107830ddf0d5a565bb7c20dd7200a925ef75
+F src/dbbemem.c 576a0a0ad675063a1dd2c4aae68233232bd2deac
 F src/delete.c b83dc815f83220a82df13f1f1f479187d305fe6a
 F src/ex/README b745b00acce2d892f60c40111dacdfc48e0c1c7a
 F src/ex/db.c f1419ae6c93e40b5ac6e39fe7efd95d868e6f9d7
@@ -80,7 +80,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 11be2d5826eb7d6efd629751d3b483c1ed78ba14
-F www/changes.tcl 57b964f3c1cbbeed1f99d1c20e1fddee46b68ce4
+F www/changes.tcl f4d2d919d87329555efb0639d2a9b9e2be46715c
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P b91854a67f5e3835aafbbb1f9c528f4011ffc3f9
-R 8ce7a777296ba6864c759a01f9a5ff43
+P ec861066e3e6d3bfee83997fa7018d0291e22d90
+R c6e68d8e0acc79309e138f6bca7eae27
 U drh
-Z 6dd2b18d8aa8806c2fbbf36976ceb8fe
+Z 4af33740c9032505b6f05dd3857ea37e

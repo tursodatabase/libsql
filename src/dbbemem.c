@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.7 2001/01/15 22:51:10 drh Exp $
+** $Id: dbbemem.c,v 1.8 2001/02/19 23:48:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -727,8 +727,8 @@ static int sqliteMemOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
   struct stat statbuf;
   for(i=0; zTemps[i]; i++){
     zDir = zTemps[i];
-    if( stat("/usr/tmp", &statbuf)==0 && S_ISDIR(statbuf.st_mode) 
-      && access("/usr/tmp", W_OK|X_OK)==0 ){
+    if( stat(zDir, &statbuf)==0 && S_ISDIR(statbuf.st_mode) 
+      && access(zDir, W_OK|X_OK)==0 ){
         break;
     }
   }

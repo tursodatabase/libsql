@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Feb 19 (1.0.23)} {
+<li>An unrelated (and minor) bug from Mark Muranwski fixed.  The algorithm
+    for figuring out where to put temporary files for a "memory:" database
+    was not working quite right.
+    </li>
+}
+
 chng {2001 Feb 19 (1.0.22)} {
 <li>The previous fix was not quite right.  This one seems to work better.
     </li>
