@@ -24,7 +24,7 @@ chng {2000 June 8} {
 }
 
 chng {2000 June 6} {
-<li>Added outer join operators: <B>UNION</b>, <b>UNION ALL</B>,
+<li>Added compound select operators: <B>UNION</b>, <b>UNION ALL</B>,
 <b>INTERSECT</b>, and <b>EXCEPT</b></li>
 <li>Added support for using <b>(SELECT ...)</b> within expressions</li>
 <li>Added support for <b>IN</b> and <b>BETWEEN</b> operators</li>
