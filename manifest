@@ -1,5 +1,5 @@
-C Initial\scheck-in\sof\sthe\scode\sfor\sthe\snew\ssqlite_set_authorizer()\sAPI\sfunction.\nThe\scode\sis\smostly\suntested\sat\sthis\spoint.\s(CVS\s827)
-D 2003-01-12T18:02:17
+C Forgot\sto\sinclude\sthe\snew\s"auth.c"\ssource\sfile\sin\sthe\sprevious\scheckin.\s(CVS\s828)
+D 2003-01-12T18:07:49
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,6 +18,7 @@ F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
+F src/auth.c 1ba84533dedc0aff1697bdea0bd63844bed49c48
 F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 3136d7fc765cc2feee2ad987bac1c1696fdc0f0e
@@ -152,7 +153,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0deaf563fd9784bf0795107cd10e6b3269dfecea
-R 0161ffe233937639f6afc181720e6e82
+P 52d5007f64d0af5286b2a0e1f0b9e53c86bece3f
+R 1a3038845af2798949c6e7c2b6282e0e
 U drh
-Z 0354e92c05e165e223123b5629b1da94
+Z ce72280da87725f92833f0d83598931c
