@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.12 2004/09/15 13:38:11 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.13 2004/09/30 13:43:14 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -540,15 +540,17 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 api {} {
 int sqlite3_errcode(sqlite3 *db);
 } {
- Return the error code for the most recent sqlite3_* API call associated
- with sqlite3 handle 'db'. SQLITE_OK is returned if the most recent 
- API call was successful.
+ Return the error code for the most recent failed sqlite3_* API call associated
+ with sqlite3 handle 'db'.  If a prior API call failed but the most recent
+ API call succeeded, the return value from this routine is undefined. 
 
  Calls to many sqlite3_* functions set the error code and string returned
  by sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
  (overwriting the previous values). Note that calls to sqlite3_errcode(),
  sqlite3_errmsg() and sqlite3_errmsg16() themselves do not affect the
- results of future invocations.
+ results of future invocations.  Calls to API routines that do not return
+ an error code (examples: sqlite3_data_count() or sqlite3_mprintf()) do
+ not change the error code returned by this routine.
 
  Assuming no other intervening sqlite3_* API calls are made, the error
  code returned by this function is associated with the same error as

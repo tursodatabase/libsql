@@ -154,6 +154,7 @@ int sqlite3_get_table(
       }
       sqliteFree(res.zErrMsg);
     }
+    db->errCode = res.rc;
     return res.rc;
   }
   sqliteFree(res.zErrMsg);

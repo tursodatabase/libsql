@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.118 2004/09/25 14:39:19 drh Exp $
+** $Id: util.c,v 1.119 2004/09/30 13:43:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -746,19 +746,21 @@ int sqlite3SafetyOff(sqlite3 *db){
 }
 
 /*
-** Check to make sure we are not currently executing an sqlite3_exec().
-** If we are currently in an sqlite3_exec(), return true and set
-** sqlite.magic to SQLITE_MAGIC_ERROR.  This will cause a complete
-** shutdown of the database.
-**
-** This routine is used to try to detect when API routines are called
-** at the wrong time or in the wrong sequence.
+** Check to make sure we have a valid db pointer.  This test is not
+** foolproof but it does provide some measure of protection against
+** misuse of the interface such as passing in db pointers that are
+** NULL or which have been previously closed.  If this routine returns
+** TRUE it means that the db pointer is invalid and should not be
+** dereferenced for any reason.  The calling function should invoke
+** SQLITE_MISUSE immediately.
 */
 int sqlite3SafetyCheck(sqlite3 *db){
-  if( db->pVdbe!=0 ){
-    db->magic = SQLITE_MAGIC_ERROR;
-    return 1;
-  }
+  int magic;
+  if( db==0 ) return 1;
+  magic = db->magic;
+  if( magic!=SQLITE_MAGIC_CLOSED &&
+         magic!=SQLITE_MAGIC_OPEN &&
+         magic!=SQLITE_MAGIC_BUSY ) return 1;
   return 0;
 }
 

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.18 2004/09/09 13:55:50 drh Exp $
+** $Id: auth.c,v 1.19 2004/09/30 13:43:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -87,7 +87,7 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
   sqlite3ErrorMsg(pParse, "illegal return value (%d) from the "
     "authorization function - should be SQLITE_OK, SQLITE_IGNORE, "
     "or SQLITE_DENY", rc);
-  pParse->rc = SQLITE_MISUSE;
+  pParse->rc = SQLITE_ERROR;
 }
 
 /*

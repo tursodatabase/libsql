@@ -13,7 +13,7 @@
 # This file implements tests for the SQLITE_MISUSE detection logic.
 # This test file leaks memory and file descriptors.
 #
-# $Id: misuse.test,v 1.6 2004/06/26 09:50:12 danielk1977 Exp $
+# $Id: misuse.test,v 1.7 2004/09/30 13:43:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -94,6 +94,9 @@ do_test misuse-2.1 {
 do_test misuse-2.2 {
   catchsql2 {SELECT * FROM t1}
 } {0 {a b 1 2}}
+
+# We used to disallow creating new function from within an exec().
+# But now this is acceptable.
 do_test misuse-2.3 {
   set v [catch {
     db eval {SELECT * FROM t1} {} {
@@ -101,15 +104,15 @@ do_test misuse-2.3 {
     }
   } msg]
   lappend v $msg
-} {1 {library routine called out of sequence}}
+} {0 {}}
 do_test misuse-2.4 {
   catchsql2 {SELECT * FROM t1}
-} {1 {library routine called out of sequence}}
+} {0 {a b 1 2}}
 do_test misuse-2.5 {
   catchsql {
     SELECT * FROM t1
   }
-} {1 {library routine called out of sequence}}
+} {0 {1 2}}
 
 # Attempt to register a new SQL aggregate while an sqlite_exec() is active.
 #
@@ -123,6 +126,9 @@ do_test misuse-3.1 {
 do_test misuse-3.2 {
   catchsql2 {SELECT * FROM t1}
 } {0 {a b 1 2}}
+
+# We used to disallow creating new function from within an exec().
+# But now this is acceptable.
 do_test misuse-3.3 {
   set v [catch {
     db eval {SELECT * FROM t1} {} {
@@ -130,15 +136,15 @@ do_test misuse-3.3 {
     }
   } msg]
   lappend v $msg
-} {1 {library routine called out of sequence}}
+} {0 {}}
 do_test misuse-3.4 {
   catchsql2 {SELECT * FROM t1}
-} {1 {library routine called out of sequence}}
+} {0 {a b 1 2}}
 do_test misuse-3.5 {
   catchsql {
     SELECT * FROM t1
   }
-} {1 {library routine called out of sequence}}
+} {0 {1 2}}
 
 # Attempt to close the database from an sqlite_exec callback.
 #

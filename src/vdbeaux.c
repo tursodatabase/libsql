@@ -1274,7 +1274,7 @@ int sqlite3VdbeHalt(Vdbe *p){
 */
 int sqlite3VdbeReset(Vdbe *p){
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
+    sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }
 
@@ -1288,7 +1288,7 @@ int sqlite3VdbeReset(Vdbe *p){
   ** main database structure.
   */
   if( p->zErrMsg ){
-    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg, 0);
+    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg);
     sqliteFree(p->zErrMsg);
     p->zErrMsg = 0;
   }else if( p->rc ){

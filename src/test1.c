@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.103 2004/09/08 20:13:05 drh Exp $
+** $Id: test1.c,v 1.104 2004/09/30 13:43:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -52,10 +52,33 @@ static const char * errorName(int rc){
     case SQLITE_RANGE:      zName = "SQLITE_RANGE";       break;
     case SQLITE_ROW:        zName = "SQLITE_ROW";         break;
     case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
-    case SQLITE_NOTADB:     zName = "SQLITE_NOTADB";        break;
+    case SQLITE_NOTADB:     zName = "SQLITE_NOTADB";      break;
     default:                zName = "SQLITE_Unknown";     break;
   }
   return zName;
+}
+
+/*
+** Convert an sqlite3_stmt* into an sqlite3*.  This depends on the
+** fact that the sqlite3* is the first field in the Vdbe structure.
+*/
+#define StmtToDb(X)   (*(sqlite3**)(X))
+
+/*
+** Check a return value to make sure it agrees with the results
+** from sqlite3_errcode.
+*/
+int sqlite3TestErrCode(Tcl_Interp *interp, sqlite3 *db, int rc){
+  if( rc!=SQLITE_MISUSE && rc!=SQLITE_OK && sqlite3_errcode(db)!=rc ){
+    char zBuf[200];
+    int r2 = sqlite3_errcode(db);
+    sprintf(zBuf, "error code %s (%d) does not match sqlite3_errcode %s (%d)",
+       errorName(rc), rc, errorName(r2), r2);
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, zBuf, 0);
+    return 1;
+  }
+  return 0;
 }
 
 /*
@@ -160,6 +183,7 @@ static int test_exec_printf(
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
   Tcl_DStringFree(&str);
   if( zErr ) free(zErr);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -234,6 +258,7 @@ static int test_get_table_printf(
   }
   sqlite3_free_table(aResult);
   if( zErr ) free(zErr);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -451,6 +476,7 @@ static int test_create_function(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
+  int rc;
   sqlite3 *db;
   sqlite3_value *pVal;
   extern void Md5_Register(sqlite3*);
@@ -461,16 +487,20 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
-      ifnullFunc, 0, 0);
+  rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
+        ifnullFunc, 0, 0);
 
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
   ** because it is not tested anywhere else. */
-  pVal = sqlite3ValueNew();
-  sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
-  sqlite3_create_function16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
-      1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
-  sqlite3ValueFree(pVal);
+  if( rc==SQLITE_OK ){
+    pVal = sqlite3ValueNew();
+    sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
+    rc = sqlite3_create_function16(db, 
+              sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
+              1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
+    sqlite3ValueFree(pVal);
+  }
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -512,16 +542,20 @@ static int test_create_aggregate(
   char **argv            /* Text of each argument */
 ){
   sqlite3 *db;
+  int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite3_create_function(db, "x_count", 0, SQLITE_UTF8, 0, 0,
+  rc = sqlite3_create_function(db, "x_count", 0, SQLITE_UTF8, 0, 0,
       countStep,countFinalize);
-  sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
-      countStep,countFinalize);
+  if( rc==SQLITE_OK ){
+    sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
+        countStep,countFinalize);
+  }
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -831,6 +865,7 @@ static int test_register_func(
     Tcl_AppendResult(interp, sqlite3ErrStr(rc), 0);
     return TCL_ERROR;
   }
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -847,6 +882,7 @@ static int test_finalize(
 ){
   sqlite3_stmt *pStmt;
   int rc;
+  sqlite3 *db;
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -856,8 +892,10 @@ static int test_finalize(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
+  db = StmtToDb(pStmt);
   rc = sqlite3_finalize(pStmt);
   Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
 
@@ -884,6 +922,7 @@ static int test_reset(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
   rc = sqlite3_reset(pStmt);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc ){
     return TCL_ERROR;
   }
@@ -956,6 +995,7 @@ static int test_bind(
         "\"null\" or \"static\" or \"normal\"", 0);
     return TCL_ERROR;
   }
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc ){
     char zBuf[50];
     sprintf(zBuf, "(%d) ", rc);
@@ -1045,25 +1085,28 @@ static int test_collate(
   sqlite3 *db;
   int val;
   sqlite3_value *pVal;
+  int rc;
 
   if( objc!=5 ) goto bad_args;
   pTestCollateInterp = interp;
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
-  sqlite3_create_collation(db, "test_collate", SQLITE_UTF8, 
-        (void *)SQLITE_UTF8, val?test_collate_func:0);
-  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
-  sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
-        (void *)SQLITE_UTF16LE, val?test_collate_func:0);
-  if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
+  rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF8, 
+          (void *)SQLITE_UTF8, val?test_collate_func:0);
+  if( rc==SQLITE_OK ){
+    if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+    rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
+            (void *)SQLITE_UTF16LE, val?test_collate_func:0);
+    if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
 
-  pVal = sqlite3ValueNew();
-  sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
-  sqlite3_create_collation16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), 
-        SQLITE_UTF16BE, (void *)SQLITE_UTF16BE, val?test_collate_func:0);
-  sqlite3ValueFree(pVal);
-  
+    pVal = sqlite3ValueNew();
+    sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3_create_collation16(db, sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), 
+          SQLITE_UTF16BE, (void *)SQLITE_UTF16BE, val?test_collate_func:0);
+    sqlite3ValueFree(pVal);
+  }
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 
 bad_args:
@@ -1093,10 +1136,12 @@ static int test_collate_needed(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3 *db;
+  int rc;
 
   if( objc!=2 ) goto bad_args;
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  sqlite3_collation_needed16(db, 0, test_collate_needed_cb);
+  rc = sqlite3_collation_needed16(db, 0, test_collate_needed_cb);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 
 bad_args:
@@ -1335,6 +1380,7 @@ static int test_bind_int(
   if( Tcl_GetIntFromObj(interp, objv[3], &value) ) return TCL_ERROR;
 
   rc = sqlite3_bind_int(pStmt, idx, value);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1372,6 +1418,7 @@ static int test_bind_int64(
   if( Tcl_GetWideIntFromObj(interp, objv[3], &value) ) return TCL_ERROR;
 
   rc = sqlite3_bind_int64(pStmt, idx, value);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1409,6 +1456,7 @@ static int test_bind_double(
   if( Tcl_GetDoubleFromObj(interp, objv[3], &value) ) return TCL_ERROR;
 
   rc = sqlite3_bind_double(pStmt, idx, value);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1443,6 +1491,7 @@ static int test_bind_null(
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
 
   rc = sqlite3_bind_null(pStmt, idx);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1482,6 +1531,7 @@ static int test_bind_text(
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_bind_text(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1521,6 +1571,7 @@ static int test_bind_text16(
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, SQLITE_TRANSIENT);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1559,6 +1610,7 @@ static int test_bind_blob(
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_bind_blob(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
   }
@@ -1757,6 +1809,7 @@ static int test_prepare(
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_prepare(db, zSql, bytes, &pStmt, &zTail);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( zTail ){
     if( bytes>=0 ){
       bytes = bytes - (zTail-zSql);
@@ -1796,7 +1849,8 @@ static int test_prepare16(
   const void *zTail = 0;
   Tcl_Obj *pTail = 0;
   sqlite3_stmt *pStmt = 0;
-  char zBuf[50];
+  char zBuf[50]; 
+  int rc;
   int bytes;                /* The integer specified as arg 3 */
   int objlen;               /* The byte-array length of arg 2 */
 
@@ -1809,7 +1863,9 @@ static int test_prepare16(
   zSql = Tcl_GetByteArrayFromObj(objv[2], &objlen);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  if( SQLITE_OK!=sqlite3_prepare16(db, zSql, bytes, &pStmt, &zTail) ){
+  rc = sqlite3_prepare16(db, zSql, bytes, &pStmt, &zTail);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( rc ){
     return TCL_ERROR;
   }
 
