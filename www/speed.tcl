@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the speed.html file.
 #
-set rcsid {$Id: speed.tcl,v 1.12 2003/06/05 15:05:35 drh Exp $ }
+set rcsid {$Id: speed.tcl,v 1.13 2003/06/29 16:11:13 drh Exp $ }
 
 puts {<html>
 <head>
@@ -28,7 +28,7 @@ conclusions drawn from these experiments:
 <li><p>
   SQLite 2.7.6 is significantly faster (sometimes as much as 10 or
   20 times faster) than the default PostgreSQL 7.1.3 installation
-  on RedHat 7.3 for most common operations.  
+  on RedHat 7.2 for most common operations.  
 </p></li>
 <li><p>
   SQLite 2.7.6 is often faster (sometimes
@@ -187,7 +187,7 @@ have to do any fsync()s until the very end.  When unshackled in
 this way, SQLite is much faster than either PostgreSQL and MySQL.
 </p>
 
-<h2>Test 3: 25000 INSERTs into an indexed tablel</h2>
+<h2>Test 3: 25000 INSERTs into an indexed table</h2>
 <blockquote>
 BEGIN;<br>
 CREATE TABLE t3(a INTEGER, b INTEGER, c VARCHAR(100));<br>

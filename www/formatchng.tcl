@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.8 2003/02/13 02:54:04 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.9 2003/06/29 16:11:13 drh Exp $ }
 
 puts {<html>
 <head>
@@ -154,7 +154,7 @@ occurred since version 1.0.0:
   indices on "text" columns occur in a different order for version
   2.7.0 and later database.  Hence version 2.6.3 and earlier of SQLite 
   will be unable to read a 2.7.0 or later database.  But version 2.7.0
-  and later of SQLite will read earlier database version.</p>
+  and later of SQLite will read earlier databases.</p>
   </td>
 </tr>
 <tr>

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.10 2003/06/07 08:57:58 jplyon Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.11 2003/06/29 16:11:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -105,16 +105,17 @@ INSERT with the special keyword "EXPLAIN".  The EXPLAIN keyword
 will cause <b>sqlite</b> to print the VDBE program rather than 
 execute it.  We have:</p>
 }
-
 proc Code {body} {
-  puts {<blockquote><pre>}
+  puts {<blockquote><tt>}
   regsub -all {&} [string trim $body] {\&amp;} body
   regsub -all {>} $body {\&gt;} body
   regsub -all {<} $body {\&lt;} body
-  regsub -all {\(\(\(} $body {<font color="#00671f"><u>} body
-  regsub -all {\)\)\)} $body {</u></font>} body
+  regsub -all {\(\(\(} $body {<b>} body
+  regsub -all {\)\)\)} $body {</b>} body
+  regsub -all { } $body {\&nbsp;} body
+  regsub -all \n $body <br>\n body
   puts $body
-  puts {</pre></blockquote>}
+  puts {</tt></blockquote>}
 }
 
 Code {

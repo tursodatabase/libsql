@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: sqlite.tcl,v 1.20 2003/05/10 02:54:57 jplyon Exp $}
+set rcsid {$Id: sqlite.tcl,v 1.21 2003/06/29 16:11:13 drh Exp $}
 
 puts {<html>
 <head>
@@ -35,14 +35,16 @@ with a single table named "tbl1", you might do this:</p>
 }
 
 proc Code {body} {
-  puts {<blockquote><pre>}
+  puts {<blockquote><tt>}
   regsub -all {&} [string trim $body] {\&amp;} body
   regsub -all {>} $body {\&gt;} body
   regsub -all {<} $body {\&lt;} body
-  regsub -all {\(\(\(} $body {<font color="#00671f"><u>} body
-  regsub -all {\)\)\)} $body {</u></font>} body
+  regsub -all {\(\(\(} $body {<b>} body
+  regsub -all {\)\)\)} $body {</b>} body
+  regsub -all { } $body {\&nbsp;} body
+  regsub -all \n $body <br>\n body
   puts $body
-  puts {</pre></blockquote>}
+  puts {</tt></blockquote>}
 }
 
 Code {
@@ -59,10 +61,6 @@ sqlite>
 }
 
 puts {
-<p>(In the example above, and in all subsequent examples, the commands
-you type are underlined and shown with a green tint and the responses
-from the computer are shown in black without underlining.)</p>
-
 <p>You can terminate the sqlite program by typing your systems
 End-Of-File character (usually a Control-D) or the interrupt
 character (usually a Control-C).</p>
