@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.96 2003/04/21 18:48:46 drh Exp $
+** @(#) $Id: parse.y,v 1.97 2003/04/29 17:19:18 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -721,7 +721,7 @@ idxlist_opt(A) ::= .                         {A = 0;}
 idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
 idxlist(A) ::= idxlist(X) COMMA idxitem(Y).  {A = sqliteIdListAppend(X,&Y);}
 idxlist(A) ::= idxitem(Y).                   {A = sqliteIdListAppend(0,&Y);}
-idxitem(A) ::= nm(X).                        {A = X;}
+idxitem(A) ::= nm(X) sortorder.              {A = X;}
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //

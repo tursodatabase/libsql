@@ -1,5 +1,5 @@
-C The\ssqlite_complete()\sfunction\sshould\signore\scarriage-return\scharacters.\r\n(Oops\s-\ssome\sunrelated\sedits\salso\smade\sit\sinto\sthis\scheck-in.)\s(CVS\s942)
-D 2003-04-29T16:20:45
+C Allow\sthe\sASC\sor\sDESC\skeyword\sto\sappear\safter\sa\scolumn\sname\sin\sa\sCREATE\sINDEX\nstatement.\s\sSQLite\sindices\sare\saways\sASC\s(ascending)\sregardless\sof\swhich\nkeyword\sis\sused.\s(CVS\s943)
+D 2003-04-29T17:19:18
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,7 +39,7 @@ F src/os.c 94b618c0c0a76210e53857d77c96d2f042dc33b1
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
-F src/parse.y 15ae47e7dd84304c1c6ae9205558405127977541
+F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
 F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 333011ffddc0be91f76811458f03ad1ec0331b51
-R 0f531c31d482e6152a0fa4a44f822132
+P c6bf62e41cf44e8ebf740b103204b00e8b826c90
+R 04afb247e830abab3943a6061d0bbc42
 U drh
-Z 98118f7ba2b9dbbb905b5ea8fd220094
+Z 338ae139004152359560f097d0453d1b
