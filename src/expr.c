@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.138 2004/06/10 10:50:17 danielk1977 Exp $
+** $Id: expr.c,v 1.139 2004/06/11 10:51:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -386,6 +386,7 @@ Select *sqlite3SelectDup(Select *p){
   pNew->zSelect = 0;
   pNew->iLimit = -1;
   pNew->iOffset = -1;
+  pNew->ppOpenTemp = 0;
   return pNew;
 }
 
@@ -1280,6 +1281,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       int p2 = 0;
       int i;
       int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
+      CollSeq *pColl = 0;
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, iPrefEnc, 0);
       assert( pDef!=0 );
@@ -1288,6 +1290,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         if( sqlite3ExprIsConstant(pList->a[i].pExpr) ){
           p2 |= (1<<i);
         }
+        if( pDef->needCollSeq && !pColl ){
+          pColl = sqlite3ExprCollSeq(pParse, pList->a[i].pExpr);
+        }
+      }
+      if( pDef->needCollSeq ){
+        if( !pColl ) pColl = pParse->db->pDfltColl; 
+        sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, pColl, P3_COLLSEQ);
       }
       sqlite3VdbeOp3(v, OP_Function, nExpr, p2, (char*)pDef, P3_FUNCDEF);
       break;

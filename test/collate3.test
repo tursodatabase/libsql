@@ -1,15 +1,17 @@
+# 2001 September 15
 #
-# The author or author's hereby grant to the public domain a non-exclusive,
-# fully paid-up, perpetual, license in the software and all related
-# intellectual property to make, have made, use, have used, reproduce,
-# prepare derivative works, distribute, perform and display the work.  
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
 #
-#*************************************************************************
-# This file implements regression tests for SQLite library. The
-# focus of this file is testing that when the user tries to use an 
-# unknown or undefined collation type SQLite handles this correctly.
-# Also some other error cases are tested.
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
 #
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is page cache subsystem.
+#
+# $Id: collate3.test,v 1.2 2004/06/11 10:51:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -107,10 +109,6 @@ do_test collate3-2.6 {
     SELECT * FROM collate3t1;
   }
 } {0 {}}
-
-# FIX ME
-if 0 {
-
 do_test collate3-2.7 {
   catchsql {
     SELECT * FROM collate3t1 GROUP BY c1;
@@ -121,6 +119,7 @@ do_test collate3-2.8 {
     SELECT DISTINCT c1 FROM collate3t1;
   }
 } {1 {no such collation sequence: string_compare}} 
+
 do_test collate3-2.9 {
   catchsql {
     SELECT c1 FROM collate3t1 UNION SELECT c1 FROM collate3t1;
@@ -166,9 +165,6 @@ do_test collate3-2.17 {
     SELECT c1 FROM collate3t1 UNION ALL SELECT c1 FROM collate3t1 ORDER BY 1;
   }
 } {1 {no such collation sequence: string_compare}} 
-
-}
-
 
 #
 # Create an index that uses a collation sequence then close and

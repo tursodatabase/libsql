@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.186 2004/06/10 10:50:25 danielk1977 Exp $
+** $Id: select.c,v 1.187 2004/06/11 10:51:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1229,29 +1229,67 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 ** KeyInfo structure.  The number of columns in the KeyInfo is determined
 ** by the result set of the SELECT statement in the second argument.
 **
+** Specifically, this routine is called to open an index table for
+** DISTINCT, UNION, INTERSECT and EXCEPT select statements (but not 
+** UNION ALL).
+**
 ** Make the new table a KeyAsData table if keyAsData is true.
+**
+** The value returned is the address of the OP_OpenTemp instruction.
 */
-static void openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
+static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   KeyInfo *pKeyInfo;
   int nColumn;
   sqlite *db = pParse->db;
   int i;
   Vdbe *v = pParse->pVdbe;
+  int addr;
 
   if( fillInColumnList(pParse, p) ){
-    return;
+    return 0;
   }
   nColumn = p->pEList->nExpr;
   pKeyInfo = sqliteMalloc( sizeof(*pKeyInfo)+nColumn*sizeof(CollSeq*) );
-  if( pKeyInfo==0 ) return;
+  if( pKeyInfo==0 ) return 0;
+  pKeyInfo->enc = pParse->db->enc;
   pKeyInfo->nField = nColumn;
   for(i=0; i<nColumn; i++){
-    pKeyInfo->aColl[i] = db->pDfltColl;
+    pKeyInfo->aColl[i] = sqlite3ExprCollSeq(pParse, p->pEList->a[i].pExpr);
+    if( !pKeyInfo->aColl[i] ){
+      pKeyInfo->aColl[i] = db->pDfltColl;
+    }
   }
-  sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
+  addr = sqlite3VdbeOp3(v, OP_OpenTemp, iTab, 0, 
+      (char*)pKeyInfo, P3_KEYINFO_HANDOFF);
   if( keyAsData ){
     sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
   }
+  return addr;
+}
+
+static int multiSelectOpenTempAddr(Select *p, int addr, IdList **ppOpenTemp){
+  if( !p->ppOpenTemp ){
+    *ppOpenTemp = sqlite3IdListAppend(0, 0);
+    p->ppOpenTemp = ppOpenTemp;
+  }else{
+    *p->ppOpenTemp = sqlite3IdListAppend(*p->ppOpenTemp, 0);
+  }
+  if( !(*p->ppOpenTemp) ){
+    return SQLITE_NOMEM;
+  }
+  (*p->ppOpenTemp)->a[(*p->ppOpenTemp)->nId-1].idx = addr;
+  return SQLITE_OK;
+}
+
+static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
+  CollSeq *pRet = 0;
+  if( p->pPrior ){
+    pRet = multiSelectCollSeq(pParse, p->pPrior, iCol);
+  }
+  if( !pRet ){
+    pRet = sqlite3ExprCollSeq(pParse, p->pEList->a[iCol].pExpr);
+  }
+  return pRet;
 }
 
 /*
@@ -1294,25 +1332,7 @@ static int multiSelect(
   int rc = SQLITE_OK;  /* Success code from a subroutine */
   Select *pPrior;     /* Another SELECT immediately to our left */
   Vdbe *v;            /* Generate code to this VDBE */
-#if 0 /* NOT USED */
-  char *affStr = 0;
-
-  if( !aff ){
-    int len;
-    rc = fillInColumnList(pParse, p);
-    if( rc!=SQLITE_OK ){
-      goto multi_select_end;
-    }
-    len = p->pEList->nExpr+1;
-    affStr = (char *)sqliteMalloc(p->pEList->nExpr+1);
-    if( !affStr ){
-      rc = SQLITE_NOMEM;
-      goto multi_select_end;
-    }
-    memset(affStr, (int)SQLITE_AFF_NUMERIC, len-1);
-    aff = affStr;
-  }
-#endif
+  IdList *pOpenTemp = 0;
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last SELECT in the series may have an ORDER BY or LIMIT.
@@ -1359,6 +1379,7 @@ static int multiSelect(
       if( p->pOrderBy==0 ){
         pPrior->nLimit = p->nLimit;
         pPrior->nOffset = p->nOffset;
+        pPrior->ppOpenTemp = p->ppOpenTemp;
         rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
         if( rc ){
           goto multi_select_end;
@@ -1384,6 +1405,7 @@ static int multiSelect(
       int priorOp;     /* The SRT_ operation to apply to prior selects */
       int nLimit, nOffset; /* Saved values of p->nLimit and p->nOffset */
       ExprList *pOrderBy;  /* The ORDER BY clause for the right SELECT */
+      int addr;
 
       priorOp = p->op==TK_ALL ? SRT_Table : SRT_Union;
       if( eDest==priorOp && p->pOrderBy==0 && p->nLimit<0 && p->nOffset==0 ){
@@ -1401,16 +1423,20 @@ static int multiSelect(
           rc = 1;
           goto multi_select_end;
         }
+        addr = sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 0);
         if( p->op!=TK_ALL ){
-          openTempIndex(pParse, p, unionTab, 1);
-        }else{
-          sqlite3VdbeAddOp(v, OP_OpenTemp, unionTab, 0);
+          rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+          if( rc!=SQLITE_OK ){
+            goto multi_select_end;
+          }
+          sqlite3VdbeAddOp(v, OP_KeyAsData, unionTab, 1);
         }
         assert( p->pEList );
       }
 
       /* Code the SELECT statements to our left
       */
+      pPrior->ppOpenTemp = p->ppOpenTemp;
       rc = sqlite3Select(pParse, pPrior, priorOp, unionTab, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
@@ -1468,9 +1494,6 @@ static int multiSelect(
         sqlite3VdbeAddOp(v, OP_Next, unionTab, iStart);
         sqlite3VdbeResolveLabel(v, iBreak);
         sqlite3VdbeAddOp(v, OP_Close, unionTab, 0);
-        if( p->pOrderBy ){
-          generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
-        }
       }
       break;
     }
@@ -1478,6 +1501,7 @@ static int multiSelect(
       int tab1, tab2;
       int iCont, iBreak, iStart;
       int nLimit, nOffset;
+      int addr;
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
@@ -1489,11 +1513,18 @@ static int multiSelect(
         rc = 1;
         goto multi_select_end;
       }
-      openTempIndex(pParse, p, tab1, 1);
+
+      addr = sqlite3VdbeAddOp(v, OP_OpenTemp, tab1, 0);
+      rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+      if( rc!=SQLITE_OK ){
+        goto multi_select_end;
+      }
+      sqlite3VdbeAddOp(v, OP_KeyAsData, tab1, 1);
       assert( p->pEList );
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
+      pPrior->ppOpenTemp = p->ppOpenTemp;
       rc = sqlite3Select(pParse, pPrior, SRT_Union, tab1, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
@@ -1501,7 +1532,12 @@ static int multiSelect(
 
       /* Code the current SELECT into temporary table "tab2"
       */
-      openTempIndex(pParse, p, tab2, 1);
+      addr = sqlite3VdbeAddOp(v, OP_OpenTemp, tab2, 0);
+      rc = multiSelectOpenTempAddr(p, addr, &pOpenTemp);
+      if( rc!=SQLITE_OK ){
+        goto multi_select_end;
+      }
+      sqlite3VdbeAddOp(v, OP_KeyAsData, tab2, 1);
       p->pPrior = 0;
       nLimit = p->nLimit;
       p->nLimit = -1;
@@ -1540,9 +1576,6 @@ static int multiSelect(
       sqlite3VdbeResolveLabel(v, iBreak);
       sqlite3VdbeAddOp(v, OP_Close, tab2, 0);
       sqlite3VdbeAddOp(v, OP_Close, tab1, 0);
-      if( p->pOrderBy ){
-        generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
-      }
       break;
     }
   }
@@ -1554,17 +1587,57 @@ static int multiSelect(
     goto multi_select_end;
   }
 
-multi_select_end:
-#if 0  /*** NOT USED ****/
-  if( affStr ){
-    if( rc!=SQLITE_OK ){
-      sqliteFree(affStr);
-    }else{
-      multiSelectAffinity(p, affStr);
-      sqlite3VdbeOp3(v, OP_Noop, 0, 0, affStr, P3_DYNAMIC);
+  if( p->pOrderBy || (pOpenTemp && pOpenTemp->nId>0) ){
+    int nCol = p->pEList->nExpr;
+    int i;
+    KeyInfo *pKeyInfo = sqliteMalloc(sizeof(*pKeyInfo)+nCol*sizeof(CollSeq*));
+    if( !pKeyInfo ){
+      rc = SQLITE_NOMEM;
+      goto multi_select_end;
+    }
+
+    pKeyInfo->enc = pParse->db->enc;
+    pKeyInfo->nField = nCol;
+
+    for(i=0; i<nCol; i++){
+      pKeyInfo->aColl[i] = multiSelectCollSeq(pParse, p, i);
+      if( !pKeyInfo->aColl[i] ){
+        pKeyInfo->aColl[i] = pParse->db->pDfltColl;
+      }
+    }
+
+    for(i=0; pOpenTemp && i<pOpenTemp->nId; i++){
+      int p3type = (i==0?P3_KEYINFO_HANDOFF:P3_KEYINFO);
+      int addr = pOpenTemp->a[i].idx;
+      sqlite3VdbeChangeP3(v, addr, (char *)pKeyInfo, p3type);
+    }
+
+    if( p->pOrderBy ){
+      for(i=0; i<p->pOrderBy->nExpr; i++){
+        Expr *pExpr = p->pOrderBy->a[i].pExpr;
+        char *zName = p->pOrderBy->a[i].zName;
+        assert( pExpr->op==TK_COLUMN && pExpr->iColumn<nCol );
+        assert( !pExpr->pColl );
+        if( zName ){
+          pExpr->pColl = sqlite3LocateCollSeq(pParse, zName, -1);
+        }else{
+          pExpr->pColl = pKeyInfo->aColl[pExpr->iColumn];
+        }
+      }
+      generateSortTail(pParse, p, v, p->pEList->nExpr, eDest, iParm);
+    }
+
+    if( !pOpenTemp ){
+      /* This happens for UNION ALL ... ORDER BY */
+      sqliteFree(pKeyInfo);
     }
   }
-#endif
+
+multi_select_end:
+  if( pOpenTemp ){
+    sqlite3IdListDelete(pOpenTemp);
+  }
+  p->ppOpenTemp = 0;
   return rc;
 }
 
@@ -1949,9 +2022,10 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   if( iCol<0 ){
     pIdx = 0;
   }else{
+    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->nColumn>=1 );
-      if( pIdx->aiColumn[0]==iCol ) break;
+      if( pIdx->aiColumn[0]==iCol && pIdx->keyInfo.aColl[0]==pColl ) break;
     }
     if( pIdx==0 ) return 0;
   }
@@ -2447,6 +2521,15 @@ int sqlite3Select(
       assert( pE->op==TK_AGG_FUNCTION );
       nExpr = sqlite3ExprCodeExprList(pParse, pE->pList);
       sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+      if( pDef->needCollSeq ){
+        CollSeq *pColl = 0;
+        int j;
+        for(j=0; !pColl && j<nExpr; j++){
+          pColl = sqlite3ExprCollSeq(pParse, pE->pList->a[j].pExpr);
+        }
+        if( !pColl ) pColl = pParse->db->pDfltColl;
+        sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, (char *)pColl, P3_COLLSEQ);
+      }
       sqlite3VdbeOp3(v, OP_AggFunc, 0, nExpr, (char*)pDef, P3_POINTER);
     }
   }

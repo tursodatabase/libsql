@@ -208,6 +208,7 @@ struct sqlite3_context {
   u8 isError;       /* Set to true for an error */
   u8 isStep;        /* Current in the step function */
   int cnt;          /* Number of times that the step function has been called */
+  CollSeq *pColl;
 };
 
 /*

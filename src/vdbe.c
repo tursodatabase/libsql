@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.363 2004/06/09 21:01:11 drh Exp $
+** $Id: vdbe.c,v 1.364 2004/06/11 10:51:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1218,6 +1218,22 @@ divide_by_zero:
   break;
 }
 
+/* Opcode: CollSeq * * P3
+**
+** P3 is a pointer to a CollSeq struct. If the next call to a user function
+** or aggregate calls sqlite3GetFuncCollSeq(), this collation sequence will
+** be returned. This is used by the built-in min(), max() and nullif()
+** built-in functions.
+**
+** The interface used by the implementation of the aforementioned functions
+** to retrieve the collation sequence set by this opcode is not available
+** publicly, only to user functions defined in func.c.
+*/
+case OP_CollSeq: {
+  assert( pOp->p3type==P3_COLLSEQ );
+  break;
+}
+
 /* Opcode: Function P1 P2 P3
 **
 ** Invoke a user function (P3 is a pointer to a Function structure that
@@ -1263,6 +1279,12 @@ case OP_Function: {
   ctx.s.z = 0;
   ctx.isError = 0;
   ctx.isStep = 0;
+  if( ctx.pFunc->needCollSeq ){
+    assert( pOp>p->aOp );
+    assert( pOp[-1].p3type==P3_COLLSEQ );
+    assert( pOp[-1].opcode==OP_CollSeq );
+    ctx.pColl = (CollSeq *)pOp[-1].p3;
+  }
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
@@ -4302,6 +4324,13 @@ case OP_AggFunc: {
   ctx.cnt = ++pMem->i;
   ctx.isError = 0;
   ctx.isStep = 1;
+  ctx.pColl = 0;
+  if( ctx.pFunc->needCollSeq ){
+    assert( pOp>p->aOp );
+    assert( pOp[-1].p3type==P3_COLLSEQ );
+    assert( pOp[-1].opcode==OP_CollSeq );
+    ctx.pColl = (CollSeq *)pOp[-1].p3;
+  }
   (ctx.pFunc->xStep)(&ctx, n, apVal);
   pMem->z = ctx.pAgg;
   pMem->flags = MEM_AggCtx;

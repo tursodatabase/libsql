@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.65 2004/06/08 00:39:01 danielk1977 Exp $
+** $Id: func.c,v 1.66 2004/06/11 10:51:32 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -25,6 +25,10 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 #include "os.h"
+
+static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
+  return context->pColl;
+}
 
 /*
 ** Implementation of the non-aggregate min() and max() functions
@@ -37,15 +41,18 @@ static void minmaxFunc(
   int i;
   int mask;    /* 0 for min() or 0xffffffff for max() */
   int iBest;
+  CollSeq *pColl;
 
   if( argc==0 ) return;
   mask = (int)sqlite3_user_data(context);
+  pColl = sqlite3GetFuncCollSeq(context);
+  assert( pColl );
   assert( mask==-1 || mask==0 );
   iBest = 0;
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   for(i=1; i<argc; i++){
     if( sqlite3_value_type(argv[i])==SQLITE_NULL ) return;
-    if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)>=0 ){
+    if( (sqlite3MemCompare(argv[iBest], argv[i], pColl)^mask)>=0 ){
       iBest = i;
     }
   }
@@ -564,7 +571,8 @@ static void nullifFunc(
   int argc,
   sqlite3_value **argv
 ){
-  if( sqlite3MemCompare(argv[0], argv[1], 0)!=0 ){
+  CollSeq *pColl = sqlite3GetFuncCollSeq(context);
+  if( sqlite3MemCompare(argv[0], argv[1], pColl)!=0 ){
     sqlite3_result_value(context, argv[0]);
   }
 }
@@ -857,6 +865,7 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
   if( SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
 
   if( pBest->flags ){
+    CollSeq *pColl = sqlite3GetFuncCollSeq(context);
     /* This step function is used for both the min() and max() aggregates,
     ** the only difference between the two being that the sense of the
     ** comparison is inverted. For the max() aggregate, the
@@ -866,7 +875,7 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
     ** aggregate, or 0 for min().
     */
     max = ((sqlite3_user_data(context)==(void *)-1)?1:0);
-    cmp = sqlite3MemCompare(pBest, pArg, 0);
+    cmp = sqlite3MemCompare(pBest, pArg, pColl);
     if( (max && cmp<0) || (!max && cmp>0) ){
       sqlite3VdbeMemCopy(pBest, pArg);
     }
@@ -893,54 +902,56 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
      signed char nArg;
      u8 argType;               /* 0: none.  1: db  2: (-1) */
      u8 eTextRep;              /* 1: UTF-16.  0: UTF-8 */
+     u8 needCollSeq;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
-    { "min",                        -1, 0, 0, minmaxFunc },
-    { "min",                         0, 0, 0, 0          },
-    { "max",                        -1, 2, 0, minmaxFunc },
-    { "max",                         0, 2, 0, 0          },
-    { "typeof",                      1, 0, 0, typeofFunc },
-    { "length",                      1, 0, 0, lengthFunc },
-    { "substr",                      3, 0, 0, substrFunc },
-    { "abs",                         1, 0, 0, absFunc    },
-    { "round",                       1, 0, 0, roundFunc  },
-    { "round",                       2, 0, 0, roundFunc  },
-    { "upper",                       1, 0, 0, upperFunc  },
-    { "lower",                       1, 0, 0, lowerFunc  },
-    { "coalesce",                   -1, 0, 0, ifnullFunc },
-    { "coalesce",                    0, 0, 0, 0          },
-    { "coalesce",                    1, 0, 0, 0          },
-    { "ifnull",                      2, 0, 0, ifnullFunc },
-    { "random",                     -1, 0, 0, randomFunc },
-    { "like",                        2, 0, 0, likeFunc   }, /* UTF-8 */
-    { "like",                        2, 2, 1, likeFunc   }, /* UTF-16 */
-    { "glob",                        2, 0, 0, globFunc   },
-    { "nullif",                      2, 0, 0, nullifFunc },
-    { "sqlite_version",              0, 0, 0, versionFunc},
-    { "quote",                       1, 0, 0, quoteFunc  },
-    { "last_insert_rowid",           0, 1, 0, last_insert_rowid },
-    { "change_count",                0, 1, 0, change_count      },
-    { "last_statement_change_count", 0, 1, 0, last_statement_change_count },
+    { "min",                        -1, 0, 0, 1, minmaxFunc },
+    { "min",                         0, 0, 0, 1, 0          },
+    { "max",                        -1, 2, 0, 1, minmaxFunc },
+    { "max",                         0, 2, 0, 1, 0          },
+    { "typeof",                      1, 0, 0, 0, typeofFunc },
+    { "length",                      1, 0, 0, 0, lengthFunc },
+    { "substr",                      3, 0, 0, 0, substrFunc },
+    { "abs",                         1, 0, 0, 0, absFunc    },
+    { "round",                       1, 0, 0, 0, roundFunc  },
+    { "round",                       2, 0, 0, 0, roundFunc  },
+    { "upper",                       1, 0, 0, 0, upperFunc  },
+    { "lower",                       1, 0, 0, 0, lowerFunc  },
+    { "coalesce",                   -1, 0, 0, 0, ifnullFunc },
+    { "coalesce",                    0, 0, 0, 0, 0          },
+    { "coalesce",                    1, 0, 0, 0, 0          },
+    { "ifnull",                      2, 0, 0, 1, ifnullFunc },
+    { "random",                     -1, 0, 0, 0, randomFunc },
+    { "like",                        2, 0, 0, 0, likeFunc   }, /* UTF-8 */
+    { "like",                        2, 2, 1, 0, likeFunc   }, /* UTF-16 */
+    { "glob",                        2, 0, 0, 0, globFunc   },
+    { "nullif",                      2, 0, 0, 0, nullifFunc },
+    { "sqlite_version",              0, 0, 0, 0, versionFunc},
+    { "quote",                       1, 0, 0, 0, quoteFunc  },
+    { "last_insert_rowid",           0, 1, 0, 0, last_insert_rowid },
+    { "change_count",                0, 1, 0, 0, change_count      },
+    { "last_statement_change_count", 0, 1, 0, 0, last_statement_change_count },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",                     1, 0, 0, soundexFunc},
+    { "soundex",                     1, 0, 0, 0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",                     2, 0, 0, randStr    },
+    { "randstr",                     2, 0, 0, 0, randStr    },
 #endif
   };
   static struct {
     char *zName;
     signed char nArg;
     u8 argType;
+    u8 needCollSeq;
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
     void (*xFinalize)(sqlite3_context*);
   } aAggs[] = {
-    { "min",    1, 0, minmaxStep,   minMaxFinalize },
-    { "max",    1, 2, minmaxStep,   minMaxFinalize },
-    { "sum",    1, 0, sumStep,      sumFinalize    },
-    { "avg",    1, 0, sumStep,      avgFinalize    },
-    { "count",  0, 0, countStep,    countFinalize  },
-    { "count",  1, 0, countStep,    countFinalize  },
+    { "min",    1, 0, 1, minmaxStep,   minMaxFinalize },
+    { "max",    1, 2, 1, minmaxStep,   minMaxFinalize },
+    { "sum",    1, 0, 0, sumStep,      sumFinalize    },
+    { "avg",    1, 0, 0, sumStep,      avgFinalize    },
+    { "count",  0, 0, 0, countStep,    countFinalize  },
+    { "count",  1, 0, 0, countStep,    countFinalize  },
 #if 0
     { "stddev", 1, 0, stdDevStep,   stdDevFinalize },
 #endif
@@ -955,6 +966,13 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     }
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, 0, pArg, aFuncs[i].xFunc, 0, 0);
+    if( aFuncs[i].needCollSeq ){
+      FuncDef *pFunc = sqlite3FindFunction(db, aFuncs[i].zName, 
+          strlen(aFuncs[i].zName), aFuncs[i].nArg, aFuncs[i].eTextRep, 0);
+      if( pFunc && aFuncs[i].needCollSeq ){
+        pFunc->needCollSeq = 1;
+      }
+    }
   }
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     void *pArg = 0;
@@ -964,6 +982,14 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     }
     sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, 0, 0, pArg,
         0, aAggs[i].xStep, aAggs[i].xFinalize);
+    if( aAggs[i].needCollSeq ){
+      FuncDef *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
+          strlen(aAggs[i].zName), aAggs[i].nArg, 0, 0);
+      if( pFunc && aAggs[i].needCollSeq ){
+        pFunc->needCollSeq = 1;
+      }
+    }
   }
   sqlite3RegisterDateTimeFunctions(db);
 }
+

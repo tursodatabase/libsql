@@ -1,14 +1,18 @@
 #
-# The author or author's hereby grant to the public domain a non-exclusive,
-# fully paid-up, perpetual, license in the software and all related
-# intellectual property to make, have made, use, have used, reproduce,
-# prepare derivative works, distribute, perform and display the work.  
+# 2001 September 15
 #
-#*************************************************************************
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this file is testing indices that use user-defined collation 
-# sequences.
+# focus of this script is page cache subsystem.
 #
+# $Id: collate4.test,v 1.2 2004/06/11 10:51:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -544,6 +548,13 @@ do_test collate4-3.15 {
   }
 } {}
 
+# Mimic the SQLite 2 collation type NUMERIC.
+db collate numeric numeric_collate
+proc numeric_collate {lhs rhs} {
+  if {$lhs == $rhs} {return 0} 
+  return [expr ($lhs>$rhs)?1:-1]
+}
+
 #
 # These tests - collate4-4.* check that min() and max() only ever 
 # use indices constructed with built-in collation type numeric.
@@ -551,17 +562,13 @@ do_test collate4-3.15 {
 # CHANGED:  min() and max() now use the collation type. If there
 # is an indice that can be used, it is used.
 #
-
-# FIX ME: min() and max() are currently broken.
-if 0 {
-
 do_test collate4-4.0 {
   execsql {
     CREATE TABLE collate4t1(a COLLATE TEXT);
-    INSERT INTO collate4t1 VALUES(2);
-    INSERT INTO collate4t1 VALUES(10);
-    INSERT INTO collate4t1 VALUES(20);
-    INSERT INTO collate4t1 VALUES(104);
+    INSERT INTO collate4t1 VALUES('2');
+    INSERT INTO collate4t1 VALUES('10');
+    INSERT INTO collate4t1 VALUES('20');
+    INSERT INTO collate4t1 VALUES('104');
   }
 } {}
 do_test collate4-4.1 {
@@ -613,217 +620,47 @@ do_test collate4-4.7 {
 #
 do_test collate4-4.8 {
   execsql {
-    CREATE TABLE collate4t1(a NUMERIC, b TEXT, 
-                            c COLLATE TEXT, d COLLATE NUMERIC);
-    INSERT INTO collate4t1 VALUES(11, 101, 1001, 10001);
-    INSERT INTO collate4t1 VALUES(20002, 2002, 202, 22);
+    CREATE TABLE collate4t1(a COLLATE TEXT, b COLLATE NUMERIC);
+    INSERT INTO collate4t1 VALUES('11', '101');
+    INSERT INTO collate4t1 VALUES('101', '11')
   }
 } {}
 do_test collate4-4.9 {
   execsql {
-    SELECT max(a, b, c) FROM collate4t1;
-  }
-} {11 202}
-do_test collate4-4.10 {
-  execsql {
-    SELECT max(c, b, a) FROM collate4t1;
-  }
-} {11 202}
-do_test collate4-4.11 {
-  execsql {
     SELECT max(a, b) FROM collate4t1;
   }
-} {101 20002}
+} {11 11}
+do_test collate4-4.10 {
+  execsql {
+    SELECT max(b, a) FROM collate4t1;
+  }
+} {101 101}
+do_test collate4-4.11 {
+  execsql {
+    SELECT max(a, '101') FROM collate4t1;
+  }
+} {11 101}
 do_test collate4-4.12 {
   execsql {
-    SELECT max(b, a) FROM collate4t1;
+    SELECT max('101', a) FROM collate4t1;
   }
-} {101 20002}
+} {11 101}
 do_test collate4-4.13 {
   execsql {
-    SELECT max(b, a) FROM collate4t1;
+    SELECT max(b, '101') FROM collate4t1;
   }
-} {101 20002}
+} {101 101}
 do_test collate4-4.14 {
   execsql {
-    SELECT max(b, '11') FROM collate4t1;
+    SELECT max('101', b) FROM collate4t1;
   }
-} {11 2002}
+} {101 101}
+
 do_test collate4-4.15 {
   execsql {
-    SELECT max('11', b) FROM collate4t1;
-  }
-} {11 2002}
-do_test collate4-4.16 {
-  execsql {
-    SELECT max(11, b) FROM collate4t1;
-  }
-} {101 2002}
-do_test collate4-4.17 {
-  execsql {
-    SELECT max(b, 11) FROM collate4t1;
-  }
-} {101 2002}
-do_test collate4-4.18 {
-  execsql {
-    SELECT max(c, d) FROM collate4t1;
-  }
-} {1001 22}
-do_test collate4-4.19 {
-  execsql {
-    SELECT max(d, c) FROM collate4t1;
-  }
-} {10001 202}
-do_test collate4-4.20 {
-  execsql {
     DROP TABLE collate4t1;
   }
 } {}
-
-}
-
-#
-# These tests - collate4-5.* - test the REINDEX command.
-#
-# FIX ME: Find out if version 3 needs REINDEX.
-if 0 {
-
-proc install_normal_collate {} {
-  db collate collate1 "string compare"
-}
-proc inverse_collate {l r} {
-  expr -1 * [string compare $l $r]
-}
-proc install_inverse_collate {} {
-  db collate collate1 inverse_collate 
-}
-install_normal_collate
-
-do_test collate4-5.0 {
-  execsql {
-    CREATE TABLE collate4t1(a COLLATE collate1);
-    INSERT INTO collate4t1 VALUES('A');
-    INSERT INTO collate4t1 VALUES(NULL);
-    INSERT INTO collate4t1 VALUES('B');
-    CREATE INDEX collate4i1 ON collate4t1(a);
-  }
-} {}
-do_test collate4-5.1 {
-  cksort {
-    SELECT * FROM collate4t1 ORDER BY 1;
-  }
-} {{} A B nosort}
-do_test collate4-5.2 {
-  install_inverse_collate
-  cksort {
-    SELECT * FROM collate4t1 ORDER BY 1;
-  }
-} {{} A B nosort}      ;# This is incorrect - because we need to REINDEX
-do_test collate4-5.3 {
-  install_inverse_collate
-  cksort {
-    REINDEX collate4t1;
-    SELECT * FROM collate4t1 ORDER BY 1;
-  }
-} {{} B A nosort}
-do_test collate4-5.4 {
-  install_normal_collate
-  cksort {
-    REINDEX;
-    SELECT * FROM collate4t1 ORDER BY 1;
-  }
-} {{} A B nosort}
-do_test collate4-5.5 {
-  install_inverse_collate
-  cksort {
-    REINDEX main.collate4t1;
-    SELECT * FROM collate4t1 ORDER BY 1;
-  }
-} {{} B A nosort}
-do_test collate4-5.6 {
-  catchsql {
-    REINDEX garbage;
-  }
-} {1 {no such table: garbage}}
-do_test collate4-5.7 {
-  execsql {
-    DROP TABLE collate4t1;
-    CREATE TEMP TABLE collate4t1(a COLLATE collate1, b COLLATE collate1);
-    CREATE INDEX collatei1 ON collate4t1(a);
-    CREATE INDEX collatei2 ON collate4t1(b);
-    INSERT INTO collate4t1 VALUES(1, 1);
-    INSERT INTO collate4t1 VALUES(NULL, NULL);
-    INSERT INTO collate4t1 VALUES(2, 2);
-  }
-} {}
-do_test collate4-5.8 {
-  cksort {
-    SELECT * FROM collate4t1 ORDER BY 1
-  }
-} {{} {} 2 2 1 1 nosort}
-do_test collate4-5.9 {
-  install_normal_collate
-  cksort {
-    REINDEX;
-    SELECT * FROM collate4t1 order by 2;
-  }
-} {{} {} 1 1 2 2 nosort}
-do_test collate4-5.10 {
-  install_inverse_collate
-  cksort {
-    REINDEX collate4t1;
-    SELECT * FROM collate4t1 order by 1;
-  }
-} {{} {} 2 2 1 1 nosort}
-do_test collate4-5.11 {
-  install_normal_collate
-  cksort {
-    REINDEX temp.collate4t1;
-    SELECT * FROM collate4t1 order by 2;
-  }
-} {{} {} 1 1 2 2 nosort}
-
-# This checks that if a REINDEX operation produces a conflict an error
-# is raised and the checkpoint rolled back.
-do_test collate4-5.12 {
-  execsql {
-    BEGIN;
-    CREATE UNIQUE INDEX collate4i3 ON collate4t1(a);
-    INSERT INTO collate4t1 VALUES(3, 3);
-  }
-  db collate collate1 "expr 0 ;"
-  catchsql {
-    REINDEX;
-  }
-} {1 {indexed columns are not unique}}
-do_test collate4-5.13 {
-  execsql {
-    COMMIT;
-    SELECT * FROM collate4t1;
-  }
-} {1 1 {} {} 2 2 3 3}
-
-# Do an EXPLAIN REINDEX, just in case it leaks memory or something.
-do_test collate4-5.14 {
-  execsql {
-    EXPLAIN REINDEX;
-  }
-  expr 0
-} {0}
-do_test collate4-5.15 {
-  execsql {
-    EXPLAIN REINDEX collate4t1;
-  }
-  expr 0
-} {0}
-
-do_test collate4-5.16 {
-  execsql {
-    DROP TABLE collate4t1;
-  }
-} {}
-
-}
 
 #
 # These tests - collate4.6.* - ensure that implict INTEGER PRIMARY KEY 
