@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#813.\s(CVS\s1818)
-D 2004-07-19T19:14:01
+C Remove\sdebugging\scode\sthat\swas\saccidently\sleft\sin\sjoin4.test.\s(CVS\s1819)
+D 2004-07-19T19:28:44
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -126,7 +126,7 @@ F test/ioerr.test 7d087bfd1a1a53442940e000df936e0df0c5b886
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
 F test/join2.test c97e4c5aa65dea462145529e58212a709b4722b8
 F test/join3.test 8d989e52413199065bd630b3d0a6b2329d173099
-F test/join4.test 9e8754291d412e68dbb04e460b9255fcb17d09a4
+F test/join4.test 8dec387d06b3a4685e1104048065cf5236b99b93
 F test/lastinsert.test 31382f88b9b0270333ac9e4a17f2c2f4732da718
 F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
 F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c6c13dc460094e6adea2b14849edf9f485238b99
-R 1efcd7bc4407c0074ce67844f3b21f8a
+P 88e4bfa154e33c627ff2abb15cc55a100359d370
+R d88cd5107405fcfcebcca1125e7b6d70
 U drh
-Z c2f019b3c66ef29f590cae938431831e
+Z 3d0bae37423036f70ee3028a9a8cd74b
