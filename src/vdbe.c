@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.342 2004/05/28 01:39:01 drh Exp $
+** $Id: vdbe.c,v 1.343 2004/05/28 08:21:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -403,66 +403,6 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
 */
 char zGdbBuf[100];
 #endif
-
-/*
-** Move data out of a btree key or data field and into a Mem structure.
-** The data or key is taken from the entry that pCur is currently pointing
-** to.  offset and amt determine what portion of the data or key to retrieve.
-** key is true to get the key or false to get data.  The result is written
-** into the pMem element.
-*/
-static int getBtreeMem(
-  BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
-  int offset,       /* Offset from the start of data to return bytes from. */
-  int amt,          /* Number of bytes to return. */
-  int key,          /* If true, retrieve from the btree key, not data. */
-  Mem *pMem         /* OUT: Return data in this Mem structure. */
-){
-  char *zData;
-
-  if( key ){
-    zData = (char *)sqlite3BtreeKeyFetch(pCur, offset+amt);
-  }else{
-    zData = (char *)sqlite3BtreeDataFetch(pCur, offset+amt);
-  }
-
-  if( zData ){
-    pMem->z = &zData[offset];
-    pMem->n = amt;
-    pMem->flags = MEM_Blob|MEM_Ephem;
-  }else{
-    int rc;
-    if( amt>NBFS-2 ){
-      zData = (char *)sqliteMallocRaw(amt+2);
-      if( !zData ){
-        return SQLITE_NOMEM;
-      }
-      pMem->flags = MEM_Blob|MEM_Dyn|MEM_Term;
-    }else{
-      zData = &(pMem->zShort[0]);
-      pMem->flags = MEM_Blob|MEM_Short|MEM_Term;
-    }
-    pMem->z = zData;
-    pMem->enc = 0;
-    pMem->type = SQLITE3_BLOB;
-
-    if( key ){
-      rc = sqlite3BtreeKey(pCur, offset, amt, zData);
-    }else{
-      rc = sqlite3BtreeData(pCur, offset, amt, zData);
-    }
-    zData[amt] = 0;
-    zData[amt+1] = 0;
-    if( rc!=SQLITE_OK ){
-      if( amt>NBFS ){
-        sqliteFree(zData);
-      }
-      return rc;
-    }
-  }
-
-  return SQLITE_OK;
-}
 
 
 #ifdef VDBE_PROFILE
@@ -1801,6 +1741,11 @@ case OP_SetNumColumns: {
   break;
 }
 
+/* Opcode: IdxColumn P1 * *
+**
+** P1 is a cursor opened on an index. Push the first field from the
+** current index key onto the stack.
+*/
 /* Opcode: Column P1 P2 *
 **
 ** Interpret the data that cursor P1 points to as a structure built using
@@ -1818,6 +1763,7 @@ case OP_SetNumColumns: {
 ** stack.  The column value is not copied. The number of columns in the
 ** record is stored on the stack just above the record itself.
 */
+case OP_IdxColumn:
 case OP_Column: {
   int payloadSize;   /* Number of bytes in the record */
   int p1 = pOp->p1;  /* P1 value of the opcode */
@@ -1921,7 +1867,7 @@ case OP_Column: {
 
     /* Get the complete header text */
     if( !zRec ){
-      rc = getBtreeMem(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, szHdr, pC->keyAsData, &sMem);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -1971,7 +1917,7 @@ case OP_Column: {
     zData = &zRec[aOffset[p2]];
   }else{
     len = sqlite3VdbeSerialTypeLen(aType[p2]);
-    getBtreeMem(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
+    sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
     zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, aType[p2], pTos);
@@ -1985,115 +1931,6 @@ case OP_Column: {
   if( !pC ){
     sqliteFree(aType);
   }
-  break;
-}
-
-/* Opcode MakeRecord P1 * P3
-**
-** Convert the top P1 entries of the stack into a single entry
-** suitable for use as a data record in a database table.  The
-** details of the format are irrelavant as long as the OP_Column
-** opcode can decode the record later.  Refer to source code
-** comments for the details of the record format.
-**
-** P3 may be a string that is P1 characters long.  The nth character of the
-** string indicates the column affinity that should be used for the nth
-** field of the index key (i.e. the first character of P3 corresponds to the
-** lowest element on the stack).
-**
-**  Character      Column affinity
-**  ------------------------------
-**  'n'            NUMERIC
-**  'i'            INTEGER
-**  't'            TEXT
-**  'o'            NONE
-**
-** If P3 is NULL then all index fields have the affinity NONE.
-*/
-case OP_MakeRecord: {
-  /* Assuming the record contains N fields, the record format looks
-  ** like this:
-  **
-  ** --------------------------------------------------------------------------
-  ** | header-siz | type 0 | type 1 | ... | type N-1 | data0 | ... | data N-1 | 
-  ** --------------------------------------------------------------------------
-  **
-  ** Data(0) is taken from the lowest element of the stack and data(N-1) is
-  ** the top of the stack.
-  **
-  ** Each type field is a varint representing the serial type of the 
-  ** corresponding data element (see sqlite3VdbeSerialType()). The
-  ** num-fields field is also a varint storing N.
-  ** 
-  ** TODO: Even when the record is short enough for Mem::zShort, this opcode
-  **   allocates it dynamically.
-  */
-  int nField = pOp->p1;
-  unsigned char *zNewRecord;
-  unsigned char *zCsr;
-  char *zAffinity;
-  Mem *pRec;
-  int nData = 0;     /* Number of bytes of data space */
-  int nHdr = 0;      /* Number of bytes of header space */
-  int nByte = 0;     /* Space required for this record */
-
-  Mem *pData0 = &pTos[1-nField];
-  assert( pData0>=p->aStack );
-  zAffinity = pOp->p3;
-
-  /* Loop through the elements that will make up the record to figure
-  ** out how much space is required for the new record.
-  */
-  for(pRec=pData0; pRec<=pTos; pRec++){
-    u32 serial_type;
-    if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
-    }
-    serial_type = sqlite3VdbeSerialType(pRec);
-    nData += sqlite3VdbeSerialTypeLen(serial_type);
-    nHdr += sqlite3VarintLen(serial_type);
-  }
-  nHdr += sqlite3VarintLen(nHdr);
-  nByte = nHdr+nData;
-
-  if( nByte>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
-  }
-
-  /* Allocate space for the new record. */
-  zNewRecord = sqliteMallocRaw(nByte);
-  if( !zNewRecord ){
-    goto no_mem;
-  }
-
-  /* Write the record */
-  zCsr = zNewRecord;
-  zCsr += sqlite3PutVarint(zCsr, nHdr);
-  for(pRec=pData0; pRec<=pTos; pRec++){
-    u32 serial_type = sqlite3VdbeSerialType(pRec);
-    zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
-  }
-  for(pRec=pData0; pRec<=pTos; pRec++){
-    zCsr += sqlite3VdbeSerialPut(zCsr, pRec);  /* serial data */
-  }
-
-  /* If zCsr has not been advanced exactly nByte bytes, then one
-  ** of the sqlite3PutVarint() or sqlite3VdbeSerialPut() calls above
-  ** failed. This indicates a corrupted memory cell or code bug.
-  */
-  if( zCsr!=(zNewRecord+nByte) ){
-    rc = SQLITE_INTERNAL;
-    goto abort_due_to_error;
-  }
-
-  /* Pop nField entries from the stack and push the new entry on */
-  popStack(&pTos, nField);
-  pTos++;
-  pTos->n = nByte;
-  pTos->z = zNewRecord;
-  pTos->flags = MEM_Blob | MEM_Dyn;
-
   break;
 }
 
@@ -2135,40 +1972,71 @@ case OP_MakeRecord: {
 **
 ** If P3 is NULL then datatype coercion occurs.
 */
+/* Opcode MakeRecord P1 * P3
+**
+** Convert the top P1 entries of the stack into a single entry
+** suitable for use as a data record in a database table.  The
+** details of the format are irrelavant as long as the OP_Column
+** opcode can decode the record later.  Refer to source code
+** comments for the details of the record format.
+**
+** P3 may be a string that is P1 characters long.  The nth character of the
+** string indicates the column affinity that should be used for the nth
+** field of the index key (i.e. the first character of P3 corresponds to the
+** lowest element on the stack).
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+**
+** If P3 is NULL then all index fields have the affinity NONE.
+*/
 case OP_MakeKey:
-case OP_MakeIdxKey: {
+case OP_MakeIdxKey:
+case OP_MakeRecord: {
+  /* Assuming the record contains N fields, the record format looks
+  ** like this:
+  **
+  ** --------------------------------------------------------------------------
+  ** | header-siz | type 0 | type 1 | ... | type N-1 | data0 | ... | data N-1 | 
+  ** --------------------------------------------------------------------------
+  **
+  ** Data(0) is taken from the lowest element of the stack and data(N-1) is
+  ** the top of the stack.
+  **
+  ** Each type field is a varint representing the serial type of the 
+  ** corresponding data element (see sqlite3VdbeSerialType()). The
+  ** num-fields field is also a varint storing N.
+  ** 
+  ** TODO: Even when the record is short enough for Mem::zShort, this opcode
+  **   allocates it dynamically.
+  */
+  int nField = pOp->p1;
+  unsigned char *zNewRecord;
+  unsigned char *zCsr;
+  char *zAffinity;
   Mem *pRec;
-  Mem *pData0;
-  int nField;
-  u64 rowid;
-  int nByte = 0;
-  int addRowid;
-  int containsNull = 0;
-  char *zKey;      /* The new key */
-  int offset = 0;
-  char *zAffinity = pOp->p3;
- 
-  nField = pOp->p1;
-  assert( zAffinity==0 || strlen(zAffinity)>=nField );
-  pData0 = &pTos[1-nField];
+  Mem *pRowid;
+  int nData = 0;     /* Number of bytes of data space */
+  int nHdr = 0;      /* Number of bytes of header space */
+  int nByte = 0;     /* Space required for this record */
+  int addRowid;      /* True to append a rowid column at the end */
+  u32 serial_type;   /* Type field */
+  int containsNull;  /* True if any of the data fields are NULL */
+
+  Mem *pData0 = &pTos[1-nField];
   assert( pData0>=p->aStack );
+  zAffinity = pOp->p3;
+  addRowid = pOp->opcode==OP_MakeIdxKey;
+  containsNull = 0;
 
-  addRowid = ((pOp->opcode==OP_MakeIdxKey)?1:0);
-
-  /* Loop through the P1 elements that will make up the new index
-  ** key. Call applyAffinity() to perform any conversion required
-  ** the column affinity string P3 to modify stack elements in place.
-  ** Set containsNull to 1 if a NULL value is encountered.
-  **
-  ** Once the value has been coerced, figure out how much space is required
-  ** to store the coerced values serial-type and blob, and add this
-  ** quantity to nByte.
-  **
-  ** TODO: Figure out if the in-place coercion causes a problem for
-  ** OP_MakeKey when P2 is 0 (used by DISTINCT).
+  /* Loop through the elements that will make up the record to figure
+  ** out how much space is required for the new record.
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u32 serial_type;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], db->enc);
     }
@@ -2176,8 +2044,8 @@ case OP_MakeIdxKey: {
       containsNull = 1;
     }
     serial_type = sqlite3VdbeSerialType(pRec);
-    nByte += sqlite3VarintLen(serial_type);
-    nByte += sqlite3VdbeSerialTypeLen(serial_type);
+    nData += sqlite3VdbeSerialTypeLen(serial_type);
+    nHdr += sqlite3VarintLen(serial_type);
   }
 
   /* If we have to append a varint rowid to this record, set 'rowid'
@@ -2185,45 +2053,63 @@ case OP_MakeIdxKey: {
   ** required to store it and the 0x00 seperator byte.
   */
   if( addRowid ){
-    pRec = &pTos[0-nField];
-    assert( pRec>=p->aStack );
-    Integerify(pRec, db->enc);
-    rowid = pRec->i;
-    nByte += sqlite3VarintLen(rowid);
-    nByte++;
+    pRowid = &pTos[0-nField];
+    assert( pRowid>=p->aStack );
+    Integerify(pRowid, db->enc);
+    serial_type = sqlite3VdbeSerialType(pRowid);
+    nData += sqlite3VdbeSerialTypeLen(serial_type);
+    nHdr += sqlite3VarintLen(serial_type);
   }
-  
+
+  /* Add the initial header varint and total the size */
+  nHdr += sqlite3VarintLen(nHdr);
+  nByte = nHdr+nData;
+
   if( nByte>MAX_BYTES_PER_ROW ){
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
   }
 
-  /* Allocate space for the new key */
-  zKey = (char *)sqliteMallocRaw(nByte);
-  if( !zKey ){
+  /* Allocate space for the new record. */
+  zNewRecord = sqliteMallocRaw(nByte);
+  if( !zNewRecord ){
     goto no_mem;
   }
-  
-  /* Build the key in the buffer pointed to by zKey. */
+
+  /* Write the record */
+  zCsr = zNewRecord;
+  zCsr += sqlite3PutVarint(zCsr, nHdr);
   for(pRec=pData0; pRec<=pTos; pRec++){
-    u32 serial_type = sqlite3VdbeSerialType(pRec);
-    offset += sqlite3PutVarint(&zKey[offset], serial_type);
-    offset += sqlite3VdbeSerialPut(&zKey[offset], pRec);
+    serial_type = sqlite3VdbeSerialType(pRec);
+    zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
   }
   if( addRowid ){
-    zKey[offset++] = '\0';
-    offset += sqlite3PutVarint(&zKey[offset], rowid);
+    zCsr += sqlite3PutVarint(zCsr, sqlite3VdbeSerialType(pRowid));
   }
-  assert( offset==nByte );
+  for(pRec=pData0; pRec<=pTos; pRec++){
+    zCsr += sqlite3VdbeSerialPut(zCsr, pRec);  /* serial data */
+  }
+  if( addRowid ){
+    zCsr += sqlite3VdbeSerialPut(zCsr, pRowid);
+  }
 
-  /* Pop the consumed values off the stack and push on the new key. */
-  if( addRowid||(pOp->p2==0) ){
+  /* If zCsr has not been advanced exactly nByte bytes, then one
+  ** of the sqlite3PutVarint() or sqlite3VdbeSerialPut() calls above
+  ** failed. This indicates a corrupted memory cell or code bug.
+  */
+  if( zCsr!=(zNewRecord+nByte) ){
+    rc = SQLITE_INTERNAL;
+    goto abort_due_to_error;
+  }
+
+  /* Pop nField entries from the stack and push the new entry on */
+  if( addRowid || pOp->p2==0 ){
     popStack(&pTos, nField+addRowid);
   }
   pTos++;
-  pTos->flags = MEM_Blob|MEM_Dyn;
-  pTos->z = zKey;
   pTos->n = nByte;
+  pTos->z = zNewRecord;
+  pTos->flags = MEM_Blob | MEM_Dyn;
 
   /* If P2 is non-zero, and if the key contains a NULL value, and if this
   ** was an OP_MakeIdxKey instruction, not OP_MakeKey, jump to P2.
@@ -2842,8 +2728,8 @@ case OP_Found: {
 **
 ** P1 is an index.  So it has no data and its key consists of a
 ** record generated by OP_MakeIdxKey.  This key contains one or more
-** fields followed by a varint ROWID.
-**
+** fields followed by a ROWID field.
+** 
 ** This instruction asks if there is an entry in P1 where the
 ** fields matches K but the rowid is different from R.
 ** If there is no such entry, then there is an immediate
@@ -2876,6 +2762,7 @@ case OP_IsUnique: {
     char *zKey;    /* The value of K */
     int nKey;      /* Number of bytes in K */
     int len;       /* Number of bytes in K without the rowid at the end */
+    int szRowid;   /* Size of the rowid column at the end of zKey */
 
     /* Make sure K is a string and make zKey point to K
     */
@@ -2883,9 +2770,8 @@ case OP_IsUnique: {
     zKey = pNos->z;
     nKey = pNos->n;
 
-    assert( nKey >= 2 );
-    len = nKey-2;
-    while( zKey[len] && --len );
+    szRowid = sqlite3VdbeIdxRowidLen(nKey, zKey);
+    len = nKey-szRowid;
 
     /* Search for an entry in P1 where all but the last four bytes match K.
     ** If there is no such entry, jump immediately to P2.
@@ -2909,8 +2795,8 @@ case OP_IsUnique: {
     }
 
     /* At this point, pCrsr is pointing to an entry in P1 where all but
-    ** the final varint (the rowid) matches K.  Check to see if the
-    ** final varint is different from R.  If it equals R then jump
+    ** the final entry (the rowid) matches K.  Check to see if the
+    ** final rowid column is different from R.  If it equals R then jump
     ** immediately to P2.
     */
     rc = sqlite3VdbeIdxRowid(pCrsr, &v);
@@ -3347,57 +3233,6 @@ case OP_Recno: {
   break;
 }
 
-/* Opcode: IdxColumn P1 * *
-**
-** P1 is a cursor opened on an index. Push the first field from the
-** current index key onto the stack.
-*/
-case OP_IdxColumn: {
-  char *zData;
-  i64 n;
-  u32 serial_type;
-  int len;
-  int freeZData = 0;
-  BtCursor *pCsr;
-
-  assert( 0==p->apCsr[pOp->p1]->intKey );
-  pCsr = p->apCsr[pOp->p1]->pCursor;
-  rc = sqlite3BtreeKeySize(pCsr, &n);
-  if( rc!=SQLITE_OK ){
-    goto abort_due_to_error;
-  }
-  if( n>10 ) n = 10;
-
-  zData = (char *)sqlite3BtreeKeyFetch(pCsr, n);
-  assert( zData );
-
-  len = sqlite3GetVarint32(zData, &serial_type);
-  n = sqlite3VdbeSerialTypeLen(serial_type);
-
-  zData = (char *)sqlite3BtreeKeyFetch(pCsr, len+n);
-  if( !zData ){
-    zData = (char *)sqliteMalloc(n);
-    if( !zData ){
-      goto no_mem;
-    }
-    rc = sqlite3BtreeKey(pCsr, len, n, zData);
-    if( rc!=SQLITE_OK ){
-      sqliteFree(zData);
-      goto abort_due_to_error;
-    }
-    freeZData = 1;
-    len = 0;
-  }
-
-  pTos++;
-  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos);
-  pTos->enc = db->enc;
-  if( freeZData ){
-    sqliteFree(zData);
-  }
-  break;
-}
-
 /* Opcode: FullKey P1 * *
 **
 ** Extract the complete key from the record that cursor P1 is currently
@@ -3592,21 +3427,15 @@ case OP_IdxPut: {
     if( pOp->p2 ){
       int res;
       int len;
-      u64 n;
    
       /* 'len' is the length of the key minus the rowid at the end */
-      len = nKey-2;
-      while( zKey[len] && --len );
+      len = nKey - sqlite3VdbeIdxRowidLen(nKey, zKey);
 
       rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
-      while( res!=0 ){
+      while( res!=0 && !sqlite3BtreeEof(pCrsr) ){
         int c;
-        sqlite3BtreeKeySize(pCrsr, &n);
-        if( n==nKey && 
-            sqlite3VdbeIdxKeyCompare(pC, len, zKey, &c)==SQLITE_OK
-            && c==0
-        ){
+        if( sqlite3VdbeIdxKeyCompare(pC, len, zKey, &c)==SQLITE_OK && c==0 ){
           rc = SQLITE_CONSTRAINT;
           if( pOp->p3 && pOp->p3[0] ){
             sqlite3SetString(&p->zErrMsg, pOp->p3, (char*)0);
@@ -3723,18 +3552,23 @@ case OP_IdxRecno: {
 
 /* Opcode: IdxGT P1 P2 *
 **
-** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the ROWID of the
-** index entry.  If the index entry is greater than the top of the stack
+** The top of the stack is an index entry that omits the ROWID.  Compare
+** the top of stack against the index that P1 is currently pointing to.
+** Ignore the ROWID on the P1 index.
+**
+** The top of the stack might have fewer columns that P1.
+**
+** If the P1 index entry is greater than the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
 */
 /* Opcode: IdxGE P1 P2 P3
 **
-** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the ROWID of the
-** index entry.  If the index in the cursor is greater than or equal to 
-** the top of the stack
+** The top of the stack is an index entry that omits the ROWID.  Compare
+** the top of stack against the index that P1 is currently pointing to.
+** Ignore the ROWID on the P1 index.
+**
+** If the P1 index entry is greater than or equal to the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
 **
@@ -3747,9 +3581,11 @@ case OP_IdxRecno: {
 */
 /* Opcode: IdxLT P1 P2 P3
 **
-** Compare the top of the stack against the key on the index entry that
-** cursor P1 is currently pointing to.  Ignore the ROWID of the
-** index entry.  If the index entry is less than the top of the stack
+** The top of the stack is an index entry that omits the ROWID.  Compare
+** the top of stack against the index that P1 is currently pointing to.
+** Ignore the ROWID on the P1 index.
+**
+** If the P1 index entry is less than  the top of the stack
 ** then jump to P2.  Otherwise fall through to the next instruction.
 ** In either case, the stack is popped once.
 **
@@ -3770,6 +3606,7 @@ case OP_IdxGE: {
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res, rc;
  
+    assert( pTos->flags & MEM_Blob );  /* Created using OP_Make*Key */
     Stringify(pTos, db->enc);
     assert( pC->deferredMoveto==0 );
     *pC->pIncrKey = pOp->p3!=0;
@@ -3806,19 +3643,19 @@ case OP_IdxIsNull: {
   int i = pOp->p1;
   int k, n;
   const char *z;
+  u32 serial_type;
 
   assert( pTos>=p->aStack );
   assert( pTos->flags & MEM_Blob );
   z = pTos->z;
   n = pTos->n;
-  for(k=0; k<n && i>0; i--){
-    u32 serial_type;
+  k = sqlite3GetVarint32(z, &serial_type);
+  for(; k<n && i>0; i--){
     k += sqlite3GetVarint32(&z[k], &serial_type);
     if( serial_type==6 ){   /* Serial type 6 is a NULL */
       pc = pOp->p2-1;
       break;
     }
-    k += sqlite3VdbeSerialTypeLen(serial_type);
   }
   Release(pTos);
   pTos--;

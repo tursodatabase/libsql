@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.130 2004/05/27 09:28:42 danielk1977 Exp $
+** $Id: expr.c,v 1.131 2004/05/28 08:21:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -824,6 +824,7 @@ int sqlite3ExprResolveIds(
       keyInfo.aColl[0] = pParse->db->pDfltColl;
       sqlite3VdbeOp3(v, OP_OpenTemp, pExpr->iTable, 0, \
            (char*)&keyInfo, P3_KEYINFO);
+      sqlite3VdbeAddOp(v, OP_SetNumColumns, pExpr->iTable, 1);
 
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)

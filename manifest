@@ -1,9 +1,9 @@
-C Remove\sthe\sencoding\sargument\sfrom\ssqlite3VdbeSerialGet.\s\sUse\sthe\s32-bit\nversion\sof\ssqlite3GetVarint\sfor\sschema-level\sparameters.\s(CVS\s1480)
-D 2004-05-28T01:39:01
+C Tables\sand\sindices\suse\sthe\ssame\srecord\sformat.\s(CVS\s1481)
+D 2004-05-28T08:21:02
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 4328de2a5fb5000699b907ca405cb9d84ba4e097
+F VERSION 4490ff094970c0e36eff0cbe2adcdb3a701f6ad6
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -30,7 +30,7 @@ F src/build.c 35cbeb439b49cca5eb5e8a1de010a5194f4523e8
 F src/date.c 0eb922af5c5f5e2455f8dc2f98023ed3e04a857e
 F src/delete.c 66c5ab98cbad7e6b315fc997bfe6c8080784a701
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 3f43cae2c8cf51ea8ee2abbf4dcc900b1326c5d6
+F src/expr.c 1f7b853b097806ff6b0a3edd884c9b6675698745
 F src/func.c 1fe0763675eb38b6e3992d3edfbec2271798b658
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -69,7 +69,7 @@ F src/update.c 96461bcf4e946697e83c09c77c7e61b545a2f66e
 F src/utf.c 59b5c8f06a4384a9f64933d6c57a2de02ce3673b
 F src/util.c d299404febd509556e720fbecadd880756b0f899
 F src/vacuum.c 8734f89742f246abd91dbd3e087fc153bddbfbad
-F src/vdbe.c ea44f5bef30c7fd8eeb28fb4aa5f05875566b369
+F src/vdbe.c c661752ea19a8b5a041d8c4f234e1524f6b3250e
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h 57b649105aeab1e39e77bdb3de3c1560deddc69e
 F src/vdbeapi.c b0bb1f98c899ba00c8a5cbca612c2a28a1bb79de
@@ -203,7 +203,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 203af2b2e3a25f4fe0e128e350c21834cad0bd7f
-R 2b74d4b0c22d8325d92f20886c62da43
+P 321f8c463520e99681de878b743027c570b73e35
+R b41c78025f27adccaab04283941e1081
 U drh
-Z e19993d4f4e147db54eb88d1ba253c94
+Z 03b836ac44307f3719b7ddd6c55ebe4b
