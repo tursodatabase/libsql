@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.5 2003/12/24 01:41:19 dougcurrie Exp $
+** $Id: date.c,v 1.6 2003/12/31 17:25:48 drh Exp $
 **
 ** NOTES:
 **
@@ -440,7 +440,7 @@ static int parseModifier(const char *zMod, DateTime *p){
   int n;
   double r;
   char z[30];
-  for(n=0; n<sizeof(z)-1; n++){
+  for(n=0; n<sizeof(z)-1 && zMod[n]; n++){
     z[n] = tolower(zMod[n]);
   }
   z[n] = 0;
