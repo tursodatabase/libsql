@@ -1,5 +1,5 @@
-C Make\sthe\sLIMIT\sclause\swork\seven\sif\sthe\sdestination\sof\sthe\sSELECT\sis\nsomething\sother\sthan\sa\scallback.\s\s(Ticket\s#66)\s(CVS\s619)
-D 2002-06-14T22:38:42
+C Changed\ssqlite_mprintf_str\sto\sallow\sa\sNULL\sstring\sparameter.\nCommand\stemplate\snow\sis\scmd\sFORMAT\sINT\sINT\s?STRING?.\sWhen\nSTRING\somitted\sa\sNULL\sis\spassed\sto\ssqlite_mprintf.\s(CVS\s620)
+D 2002-06-16T04:54:29
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -44,7 +44,7 @@ F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
 F src/sqliteInt.h 93e0ad1b37658391de6f211f65e7924a2064aa4d
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
-F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
+F src/test1.c 5cc4f0bbf38237e04e1b2077e285b41bfb4c4cbf
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7e10e60bb78b680bb822908a0b7763f8f5e3ee5a
-R 93cd20298bab2e582d79237e05fbb947
-U drh
-Z 34cf64c3405f1f55004d8bc22fcb2d56
+P 699cf362083043615eb88635a228bfa46a315c9c
+R e8c65548643704a0ca06e48f56b72d31
+U chw
+Z d2eb26e5d1d3f143fd19e7582867015a
