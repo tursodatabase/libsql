@@ -1,5 +1,5 @@
-C Comment\sout\sunused\sroutine\sin\sos_unix.c.\s(CVS\s1759)
-D 2004-06-29T11:08:20
+C Add\stesting\sfor\ssqlite3_trace()\sand\sfix\sa\sbug.\s(CVS\s1760)
+D 2004-06-29T11:26:59
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c b6b9e0b4ac6b2f22bb61fe093eabc78de62e8a7a
+F src/main.c 9c01890c4e928d31b8c754d67820c645b7b99f4f
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h 1e745e582138c01d995f190d7544da3e826f6b2f
@@ -61,7 +61,7 @@ F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
 F src/sqliteInt.h 4f8d44f04cc51cb421bf3c195247353a5be2e98f
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
-F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
+F src/tclsqlite.c a3b2acfe61677d9b49b199bfe043cc212d747412
 F src/test1.c 0eca68f6e70069aad7ad0fd91fda886926646786
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c bacc42bf41fa04d6faf7dd104b595b8bafb9aec9
@@ -164,6 +164,7 @@ F test/tester.tcl f36cc22d0532725073ca78272d7834d56dceb6d9
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
+F test/trace.test 0c5da18f986bf2c83b2669f2691931264cdaab6d
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
 F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
@@ -231,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f46251ee0a654e9aa927df31968f7792f771caa9
-R d4d6b611d4afd22aee43dded3239ed4c
+P 20db8124ace5fbfa99035ae28e5c98f4c5fcde00
+R d22897a28d331f978222e91e9a697838
 U drh
-Z 15420c5c1d1b1c4fee403f219d0530a7
+Z 73e3d176ba77297dc04534c51f5da9eb

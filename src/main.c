@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.240 2004/06/29 10:53:55 drh Exp $
+** $Id: main.c,v 1.241 2004/06/29 11:26:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -981,7 +981,7 @@ int sqlite3_prepare(
       char *tmpSql = sqliteStrNDup(zSql, sParse.zTail - zSql);
       if( tmpSql ){
         db->xTrace(db->pTraceArg, tmpSql);
-        free(tmpSql);
+        sqliteFree(tmpSql);
       }else{
         /* If a memory error occurred during the copy,
         ** trace entire SQL string and fall through to the

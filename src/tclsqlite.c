@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.90 2004/06/21 06:50:28 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.91 2004/06/29 11:26:59 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -858,6 +858,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   case DB_TRACE: {
     if( objc>3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+      return TCL_ERROR;
     }else if( objc==2 ){
       if( pDb->zTrace ){
         Tcl_AppendResult(interp, pDb->zTrace, 0);
