@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.18 2004/05/29 10:23:20 danielk1977 Exp $
+# $Id: attach.test,v 1.19 2004/05/31 08:26:49 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -347,6 +347,7 @@ do_test attach-3.7 {
 do_test attach-3.8 {
   execsql BEGIN
   execsql BEGIN db2
+  execsql {UPDATE t2 SET x=0 WHERE 0} db2
   catchsql {SELECT * FROM t2}
 } {1 {database is locked}}
 do_test attach-3.9 {
@@ -364,6 +365,11 @@ do_test attach-3.12 {
 do_test attach-3.13 {
   catchsql {UPDATE t2 SET x=x+1 WHERE x=50}
 } {1 {database is locked}}
+
+# Change for version 3. Transaction is no longer rolled back
+# for a locked database.
+execsql {ROLLBACK}
+
 do_test attach-3.14 {
   # Unable to reinitialize the schema tables because the aux database
   # is still locked.
@@ -438,11 +444,13 @@ do_test attach-4.8 {
   execsql {
     ATTACH DATABASE 'test2.db' AS db2;
     INSERT INTO db2.t3 VALUES(13,14);
+pragma vdbe_trace = on;
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }
 } {db2.6 db2.13 main.11}
 do_test attach-4.9 {
   execsql {
+pragma vdbe_trace = off;
     INSERT INTO main.t3 VALUES(15,16);
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }

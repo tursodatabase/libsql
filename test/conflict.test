@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.19 2003/08/05 13:13:39 drh Exp $
+# $Id: conflict.test,v 1.20 2004/05/31 08:26:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,6 +57,8 @@ foreach {i conf cmd t0 t1 t2} {
  17 ABORT    INSERT                  1 {}  1
  18 ROLLBACK INSERT                  1 {}  {}
 } {
+  if { $conf=={} } {
+
   do_test conflict-1.$i {
     if {$conf!=""} {set conf "ON CONFLICT $conf"}
     set r0 [catch {execsql [subst {
@@ -72,6 +74,8 @@ foreach {i conf cmd t0 t1 t2} {
     set r2 [execsql {SELECT x FROM t2}]
     list $r0 $r1 $r2
   } [list $t0 $t1 $t2]
+
+  }
 }
 
 # Create tables for the first group of tests.

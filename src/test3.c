@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.39 2004/05/30 20:46:09 drh Exp $
+** $Id: test3.c,v 1.40 2004/05/31 08:26:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -184,6 +184,87 @@ static int btree_commit(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   rc = sqlite3BtreeCommit(pBt);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_begin_statement ID
+**
+** Start a new statement transaction
+*/
+static int btree_begin_statement(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  Btree *pBt;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  rc = sqlite3BtreeBeginStmt(pBt);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_rollback_statement ID
+**
+** Rollback changes
+*/
+static int btree_rollback_statement(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  Btree *pBt;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  rc = sqlite3BtreeRollbackStmt(pBt);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_commit_statement ID
+**
+** Commit all changes
+*/
+static int btree_commit_statement(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  Btree *pBt;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  rc = sqlite3BtreeCommitStmt(pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -1257,6 +1338,9 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
      { "btree_breakpoint",         (Tcl_CmdProc*)btree_breakpoint         },
      { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
+     { "btree_begin_statement",    (Tcl_CmdProc*)btree_begin_statement    },
+     { "btree_commit_statement",   (Tcl_CmdProc*)btree_commit_statement   },
+     { "btree_rollback_statement", (Tcl_CmdProc*)btree_rollback_statement },
   };
   int i;
 

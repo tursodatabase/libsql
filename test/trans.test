@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.19 2004/03/08 13:26:18 drh Exp $
+# $Id: trans.test,v 1.20 2004/05/31 08:26:50 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -88,6 +88,7 @@ integrity_check trans-2.11
 do_test trans-3.1 {
   execsql {
     BEGIN;
+    UPDATE one SET a = 0 WHERE 0;
     SELECT a FROM one ORDER BY a;
   }
 } {1 2 3}
@@ -183,6 +184,7 @@ do_test trans-4.2 {
 do_test trans-4.3 {
   set v [catch {execsql {
     BEGIN TRANSACTION;
+    UPDATE two SET a = 0 WHERE 0;
     SELECT a FROM two ORDER BY a;
   } db} msg]
   lappend v $msg

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.350 2004/05/30 21:14:59 drh Exp $
+** $Id: vdbe.c,v 1.351 2004/05/31 08:26:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2196,9 +2196,40 @@ case OP_MakeRecord: {
 */
 case OP_Statement: {
   int i = pOp->p1;
-  if( i>=0 && i<db->nDb && db->aDb[i].pBt && db->aDb[i].inTrans==1 ){
-    rc = sqlite3BtreeBeginStmt(db->aDb[i].pBt);
-    if( rc==SQLITE_OK ) db->aDb[i].inTrans = 2;
+  Btree *pBt;
+  if( i>=0 && i<db->nDb && (pBt = db->aDb[i].pBt) && !(db->autoCommit) ){
+    assert( sqlite3BtreeIsInTrans(pBt) );
+    if( !sqlite3BtreeIsInStmt(pBt) ){
+      rc = sqlite3BtreeBeginStmt(pBt);
+    }
+  }
+  break;
+}
+
+/* Opcode: AutoCommit P1 P2 *
+**
+** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
+** back any currently active btree transactions.
+*/
+case OP_AutoCommit: {
+  u8 i = pOp->p1;
+  u8 rollback = pOp->p2;
+
+  assert( i==1 || i==0 );
+  assert( i==1 || rollback==0 );
+
+  if( i!=db->autoCommit ){
+    db->autoCommit = i;
+    if( pOp->p2 ){
+      sqlite3RollbackAll(db);
+    }
+  }else{
+    sqlite3SetString(&p->zErrMsg,
+        (!i)?"cannot start a transaction within a transaction":(
+        (rollback)?"cannot rollback - no transaction is active":
+                   "cannot commit - no transaction is active"), 0);
+         
+    rc = SQLITE_ERROR;
   }
   break;
 }
@@ -2222,15 +2253,18 @@ case OP_Statement: {
 case OP_Transaction: {
   int busy = 1;
   int i = pOp->p1;
+  Btree *pBt;
+
   assert( i>=0 && i<db->nDb );
-  if( db->aDb[i].inTrans ) break;
-  while( db->aDb[i].pBt!=0 && busy ){
+  pBt = db->aDb[i].pBt;
+
+  if( sqlite3BtreeIsInTrans(pBt) ) break;
+  while( pBt && busy /* && !sqlite3BtreeIsInTrans(pBt) */ ){
     rc = sqlite3BtreeBeginTrans(db->aDb[i].pBt);
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
           p->pc = pc;
-          p->undoTransOnError = 1;
           p->rc = SQLITE_BUSY;
           p->pTos = pTos;
           return SQLITE_BUSY;
@@ -2245,7 +2279,6 @@ case OP_Transaction: {
         /* Fall thru into the next case */
       }
       case SQLITE_OK: {
-        p->inTempTrans = 0;
         busy = 0;
         break;
       }
@@ -2254,58 +2287,6 @@ case OP_Transaction: {
       }
     }
   }
-  db->aDb[i].inTrans = 1;
-  p->undoTransOnError = 1;
-  break;
-}
-
-/* Opcode: Commit * * *
-**
-** Cause all modifications to the database that have been made since the
-** last Transaction to actually take effect.  No additional modifications
-** are allowed until another transaction is started.  The Commit instruction
-** deletes the journal file and releases the write lock on the database.
-** A read lock continues to be held if there are still cursors open.
-*/
-case OP_Commit: {
-  int i;
-  if( db->xCommitCallback!=0 ){
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse; 
-    if( db->xCommitCallback(db->pCommitArg)!=0 ){
-      rc = SQLITE_CONSTRAINT;
-    }
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  }
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-    if( db->aDb[i].inTrans ){
-      rc = sqlite3BtreeCommit(db->aDb[i].pBt);
-      db->aDb[i].inTrans = 0;
-    }
-  }
-  if( rc==SQLITE_OK ){
-    sqlite3CommitInternalChanges(db);
-  }else{
-    sqlite3RollbackAll(db);
-  }
-  break;
-}
-
-/* Opcode: Rollback P1 * *
-**
-** Cause all modifications to the database that have been made since the
-** last Transaction to be undone. The database is restored to its state
-** before the Transaction opcode was executed.  No additional modifications
-** are allowed until another transaction is started.
-**
-** P1 is the index of the database file that is committed.  An index of 0
-** is used for the main database and an index of 1 is used for the file used
-** to hold temporary tables.
-**
-** This instruction automatically closes all cursors and releases both
-** the read and write locks on the indicated database.
-*/
-case OP_Rollback: {
-  sqlite3RollbackAll(db);
   break;
 }
 
@@ -3568,12 +3549,16 @@ case OP_IdxRecno: {
 
     assert( pC->deferredMoveto==0 );
     assert( pC->intKey==0 );
-    rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
+    if( pC->nullRow ){
+      pTos->flags = MEM_Null;
+    }else{
+      rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
+      }
+      pTos->flags = MEM_Int;
+      pTos->i = rowid;
     }
-    pTos->flags = MEM_Int;
-    pTos->i = rowid;
 
 #if 0
     /* Read the final 9 bytes of the key into buf[]. If the whole key is

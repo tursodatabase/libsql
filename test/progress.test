@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the 'progress callback'.
 #
-# $Id: progress.test,v 1.1 2003/10/18 09:37:27 danielk1977 Exp $
+# $Id: progress.test,v 1.2 2004/05/31 08:26:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,11 +49,11 @@ do_test progress-1.0 {
 do_test progress1.1 {
   set counter 0
   db progress 1 "[namespace code {incr counter}] ; expr 1"
-  execsql {
+  set rc [catch {execsql {
     SELECT * FROM t1
-  }
-  set counter 
-} 1
+  }}]
+  list $counter $rc
+} {1 1}
 
 # Test that the query is rolled back when the progress callback returns
 # non-zero.
@@ -75,8 +75,8 @@ do_test progress1.2 {
   # some data will have been inserted into the table by the time the progress
   # callback abandons the query.
   db progress $five_rows "expr 1"
-  execsql {
-    INSERT INTO t1 SELECT a+10 FROM t1 WHERE a < 7
+  catchsql {
+    INSERT INTO t1 SELECT a+10 FROM t1 WHERE a < 9
   }
   execsql {
     SELECT count(*) FROM t1
@@ -93,7 +93,7 @@ do_test progress1.3 {
     INSERT INTO t1 VALUES(11)
   }
   db progress 1 "expr 1"
-  execsql {
+  catchsql {
     INSERT INTO t1 VALUES(12)
   }
   db progress 0 ""

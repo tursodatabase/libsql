@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.152 2004/05/30 20:46:09 drh Exp $
+** $Id: btree.c,v 1.153 2004/05/31 08:26:49 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4182,4 +4182,18 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
     sqlite3BtreeRollback(pBtTo);
   }
   return rc;  
+}
+
+/*
+** Return non-zero if a transaction is active.
+*/
+int sqlite3BtreeIsInTrans(Btree *pBt){
+  return (pBt && pBt->inTrans);
+}
+
+/*
+** Return non-zero if a statement transaction is active.
+*/
+int sqlite3BtreeIsInStmt(Btree *pBt){
+  return (pBt && pBt->inStmt);
 }

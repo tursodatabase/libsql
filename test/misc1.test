@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.24 2004/05/19 20:41:04 drh Exp $
+# $Id: misc1.test,v 1.25 2004/05/31 08:26:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -312,6 +312,7 @@ do_test misc1-10.10 {
 #
 do_test misc1-11.1 {
   execsql {BEGIN}
+  execsql {UPDATE t1 SET a=0 WHERE 0}
   sqlite db2 test.db
   set rc [catch {db2 eval {SELECT count(*) FROM t1}} msg]
   lappend rc $msg
@@ -454,6 +455,7 @@ do_test misc1-14.1 {
   file exists ./test.db-journal
 } {0}
 do_test misc1-14.2 {
+  execsql {UPDATE t1 SET a=0 WHERE 0}
   file exists ../test.db-journal
 } {1}
 do_test misc1-14.3 {

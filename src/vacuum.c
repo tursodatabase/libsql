@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.18 2004/05/29 10:43:07 danielk1977 Exp $
+** $Id: vacuum.c,v 1.19 2004/05/31 08:26:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -96,11 +96,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   int nFilename;          /* number of characters  in zFilename[] */
   char *zTemp = 0;        /* a temporary file in same directory as zFilename */
   int i;                  /* Loop counter */
+  Btree *pTemp;
 
   char *zSql = 0;
   sqlite3_stmt *pStmt = 0;
 
-  if( db->flags & SQLITE_InTrans ){
+  if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
        (char*)0);
     rc = SQLITE_ERROR;
@@ -189,19 +190,14 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   ** opened for writing. This way, the SQL transaction used to create the
   ** temporary database never needs to be committed.
   */
-
-  /* FIX ME: The above will be the case shortly. But for now, a transaction
-  ** will have been started on the main database file by the 'BEGIN'.
-  */
-/*
-  rc = sqlite3BtreeBeginTrans(db->aDb[0].pBt);
-  if( rc!=SQLITE_OK ) goto end_of_vacuum;
-*/
-
-  if( db->aDb[db->nDb-1].inTrans ){
-    Btree *pTemp = db->aDb[db->nDb-1].pBt;
+  pTemp = db->aDb[db->nDb-1].pBt;
+  if( sqlite3BtreeIsInTrans(pTemp) ){
     Btree *pMain = db->aDb[0].pBt;
     u32 meta;
+
+    assert( 0==sqlite3BtreeIsInTrans(pMain) );
+    rc = sqlite3BtreeBeginTrans(db->aDb[0].pBt);
+    if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
     /* Copy Btree meta values 3 and 4. These correspond to SQL layer meta 
     ** values 2 and 3, the default values of a couple of pragmas.
@@ -216,13 +212,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
     rc = sqlite3BtreeCopyFile(pMain, pTemp);
-
-    /* FIX ME: Remove the main btree from the transaction so that it is not
-    ** rolled back. This won't be required once the new 'auto-commit'
-    ** model is in place.
-    */
     rc = sqlite3BtreeCommit(pMain);
-    db->aDb[0].inTrans = 0;
   }
 
 end_of_vacuum:

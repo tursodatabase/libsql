@@ -659,12 +659,11 @@ void sqlite3VdbeMakeReady(
   }
 #endif
   p->pTos = &p->aStack[-1];
-  p->pc = 0;
+  p->pc = -1;
   p->rc = SQLITE_OK;
   p->uniqueCnt = 0;
   p->returnDepth = 0;
   p->errorAction = OE_Abort;
-  p->undoTransOnError = 0;
   p->popStack =  0;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
@@ -896,6 +895,32 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   return rc;
 }
 
+/* 
+** This routine checks that the sqlite3.activeVdbeCnt count variable
+** matches the number of vdbe's in the list sqlite3.pVdbe that are
+** currently active. An assertion fails if the two counts do not match.
+**
+** This is a no-op if NDEBUG is defined.
+*/
+#ifndef NDEBUG
+static void checkActiveVdbeCnt(sqlite *db){
+  Vdbe *p;
+  int cnt = 0;
+
+  p = db->pVdbe;
+  while( p ){
+    if( (p->magic==VDBE_MAGIC_RUN && p->pc>=0) || p->magic==VDBE_MAGIC_HALT ){
+      cnt++;
+    }
+    p = p->pNext;
+  }
+
+  assert( cnt==db->activeVdbeCnt );
+}
+#else
+#define checkActiveVdbeCnt(x)
+#endif
+
 /*
 ** Clean up a VDBE after execution but do not delete the VDBE just yet.
 ** Write any error messages into *pzErrMsg.  Return the result code.
@@ -906,10 +931,13 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
 int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   sqlite *db = p->db;
   int i;
+  int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
+  int needXcommit = 0;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
-    sqlite3Error(p->db, SQLITE_MISUSE, sqlite3_error_string(SQLITE_MISUSE),0);
+    sqlite3Error(p->db, SQLITE_MISUSE, 0 ,0);
+    db->activeVdbeCnt--;
     return SQLITE_MISUSE;
   }
   if( p->zErrMsg ){
@@ -922,48 +950,61 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
     p->zErrMsg = 0;
   }else if( p->rc ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(p->rc), (char*)0);
-    sqlite3Error(p->db, p->rc, "%s", sqlite3_error_string(p->rc) , 0);
+    sqlite3Error(p->db, p->rc, 0);
   }else{
     sqlite3Error(p->db, SQLITE_OK, 0);
   }
   Cleanup(p);
-  if( p->rc!=SQLITE_OK ){
-    switch( p->errorAction ){
-      case OE_Abort: {
-        if( !p->undoTransOnError ){
-          for(i=0; i<db->nDb; i++){
-            if( db->aDb[i].pBt ){
-              sqlite3BtreeRollbackStmt(db->aDb[i].pBt);
-            }
-          }
-          break;
-        }
-        /* Fall through to ROLLBACK */
-      }
-      case OE_Rollback: {
-        sqlite3RollbackAll(db);
-        db->flags &= ~SQLITE_InTrans;
-        db->onError = OE_Default;
-        break;
-      }
-      default: {
-        if( p->undoTransOnError ){
-          sqlite3RollbackAll(db);
-          db->flags &= ~SQLITE_InTrans;
-          db->onError = OE_Default;
-        }
-        break;
-      }
+
+  /* Figure out which function to call on the btree backends that
+  ** have active transactions.
+  */
+  checkActiveVdbeCnt(db);
+  if( db->autoCommit && db->activeVdbeCnt==1 ){
+    if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
+      xFunc = sqlite3BtreeCommit;
+      needXcommit = 1;
+    }else{
+      xFunc = sqlite3BtreeRollback;
     }
+  }else{
+    if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
+      xFunc = sqlite3BtreeCommitStmt;
+    }else if( p->errorAction==OE_Abort ){
+      xFunc = sqlite3BtreeRollbackStmt;
+    }else{
+      xFunc = sqlite3BtreeRollback;
+      db->autoCommit = 1;
+    }
+  }
+
+  for(i=0; xFunc && i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( sqlite3BtreeIsInTrans(pBt) ){
+      int rc;
+      if( db->xCommitCallback && needXcommit ){
+        if( db->xCommitCallback(db->pCommitArg)!=0 ){
+          p->rc = SQLITE_CONSTRAINT;
+          sqlite3Error(db, SQLITE_CONSTRAINT, 0);
+          xFunc = sqlite3BtreeRollback;
+        }
+        needXcommit = 0;
+      }
+      rc = xFunc(pBt);
+      if( p->rc==SQLITE_OK ) p->rc = rc;
+    }
+  }
+
+
+  if( p->rc!=SQLITE_OK ){
     sqlite3RollbackInternalChanges(db);
   }
-  for(i=0; i<db->nDb; i++){
-    if( db->aDb[i].pBt && db->aDb[i].inTrans==2 ){
-      sqlite3BtreeCommitStmt(db->aDb[i].pBt);
-      db->aDb[i].inTrans = 1;
-    }
+
+  if( (p->magic==VDBE_MAGIC_RUN && p->pc>=0) || p->magic==VDBE_MAGIC_HALT ){
+    db->activeVdbeCnt--;
   }
-  assert( p->pTos<&p->aStack[p->pc] || sqlite3_malloc_failed==1 );
+
+  assert( p->pTos<&p->aStack[p->pc<0?0:p->pc] || sqlite3_malloc_failed==1 );
 #ifdef VDBE_PROFILE
   {
     FILE *out = fopen("vdbe_profile.out", "a");

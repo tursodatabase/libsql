@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.200 2004/05/29 11:24:50 danielk1977 Exp $
+** $Id: build.c,v 1.201 2004/05/31 08:26:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -920,6 +920,15 @@ char sqlite3AffinityType(const char *zType, int nType){
 ** 1 chance in 2^32.  So we're safe enough.
 */
 void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
+  unsigned char r;
+  int *pSchemaCookie = &(db->aDb[iDb].schema_cookie);
+
+  sqlite3Randomness(1, &r);
+  *pSchemaCookie = *pSchemaCookie + r + 1;
+  db->flags |= SQLITE_InternChanges;
+  sqlite3VdbeAddOp(v, OP_Integer, *pSchemaCookie, 0);
+  sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
+/*
   if( db->next_cookie==db->aDb[0].schema_cookie ){
     unsigned char r;
     sqlite3Randomness(1, &r);
@@ -928,6 +937,7 @@ void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
     sqlite3VdbeAddOp(v, OP_Integer, db->next_cookie, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
   }
+*/
 }
 
 /*
@@ -1104,7 +1114,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     }
     sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
-    if( !p->iDb ){
+    if( p->iDb!=1 ){
       sqlite3ChangeCookie(db, v, p->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
@@ -1830,7 +1840,6 @@ void sqlite3CreateIndex(
     int n;
     Vdbe *v;
     int lbl1, lbl2;
-    int i;
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
@@ -2165,19 +2174,17 @@ void sqlite3SrcListDelete(SrcList *pList){
 */
 void sqlite3BeginTransaction(Parse *pParse, int onError){
   sqlite *db;
+  Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ) return;
-  if( db->flags & SQLITE_InTrans ){
-    sqlite3ErrorMsg(pParse, "cannot start a transaction within a transaction");
-    return;
-  }
-  sqlite3BeginWriteOperation(pParse, 0, 0);
-  if( !pParse->explain ){
-    db->flags |= SQLITE_InTrans;
-    db->onError = onError;
-  }
+
+  v = sqlite3GetVdbe(pParse);
+  if( !v ) return;
+  sqlite3VdbeAddOp(v, OP_AutoCommit, 0, 0);
+
+  /* FIX ME: Need to deal with onError */
 }
 
 /*
@@ -2185,20 +2192,15 @@ void sqlite3BeginTransaction(Parse *pParse, int onError){
 */
 void sqlite3CommitTransaction(Parse *pParse){
   sqlite *db;
+  Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ) return;
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqlite3ErrorMsg(pParse, "cannot commit - no transaction is active");
-    return;
-  }
-  if( !pParse->explain ){
-    db->flags &= ~SQLITE_InTrans;
-  }
-  sqlite3EndWriteOperation(pParse);
-  if( !pParse->explain ){
-    db->onError = OE_Default;
+
+  v = sqlite3GetVdbe(pParse);
+  if( v ){
+    sqlite3VdbeAddOp(v, OP_AutoCommit, 1, 0);
   }
 }
 
@@ -2212,17 +2214,10 @@ void sqlite3RollbackTransaction(Parse *pParse){
   if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
   if( pParse->nErr || sqlite3_malloc_failed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ) return;
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqlite3ErrorMsg(pParse, "cannot rollback - no transaction is active");
-    return; 
-  }
+
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp(v, OP_Rollback, 0, 0);
-  }
-  if( !pParse->explain ){
-    db->flags &= ~SQLITE_InTrans;
-    db->onError = OE_Default;
+    sqlite3VdbeAddOp(v, OP_AutoCommit, 1, 1);
   }
 }
 
@@ -2235,9 +2230,9 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
-  if( iDb!=1 && !DbHasProperty(db, iDb, DB_Cookie) ){
+  if( iDb!=1 && (iDb>63 || !(pParse->cookieMask & ((u64)1<<iDb))) ){
     sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, db->aDb[iDb].schema_cookie);
-    DbSetProperty(db, iDb, DB_Cookie);
+    pParse->cookieMask |= ((u64)1<<iDb);
   }
 }
 
@@ -2260,21 +2255,15 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** specified auxiliary database and the temp database are made writable.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
-  Vdbe *v;
-  sqlite *db = pParse->db;
-  if( DbHasProperty(db, iDb, DB_Locked) ) return;
-  v = sqlite3GetVdbe(pParse);
+  Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
-  if( !db->aDb[iDb].inTrans ){
-    sqlite3VdbeAddOp(v, OP_Transaction, iDb, 0);
-    DbSetProperty(db, iDb, DB_Locked);
-    sqlite3CodeVerifySchema(pParse, iDb);
-    if( iDb!=1 ){
-      sqlite3BeginWriteOperation(pParse, setStatement, 1);
-    }
-  }else if( setStatement ){
+  sqlite3VdbeAddOp(v, OP_Transaction, iDb, 0);
+  sqlite3CodeVerifySchema(pParse, iDb);
+  if( setStatement ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
-    DbSetProperty(db, iDb, DB_Locked);
+  }
+  if( iDb!=1 ){
+    sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
 }
 
@@ -2289,15 +2278,6 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
 ** call to sqlite3EndWriteOperation() at the conclusion of the statement.
 */
 void sqlite3EndWriteOperation(Parse *pParse){
-  Vdbe *v;
-  sqlite *db = pParse->db;
-  if( pParse->trigStack ) return; /* if this is in a trigger */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return;
-  if( db->flags & SQLITE_InTrans ){
-    /* A BEGIN has executed.  Do not commit until we see an explicit
-    ** COMMIT statement. */
-  }else{
-    sqlite3VdbeAddOp(v, OP_Commit, 0, 0);
-  }
+  /* Delete me! */
+  return;
 }

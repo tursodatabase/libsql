@@ -231,8 +231,8 @@ void sqlite3FinishTrigger(
     sqlite3VdbeChangeP3(v, addr+2, nt->name, 0); 
     sqlite3VdbeChangeP3(v, addr+3, nt->table, 0); 
     sqlite3VdbeChangeP3(v, addr+6, pAll->z, pAll->n);
-    if( nt->iDb==0 ){
-      sqlite3ChangeCookie(db, v, 0);
+    if( nt->iDb!=0 ){
+      sqlite3ChangeCookie(db, v, nt->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3EndWriteOperation(pParse);
@@ -488,8 +488,8 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
     sqlite3OpenMasterTable(v, pTrigger->iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);
-    if( pTrigger->iDb==0 ){
-      sqlite3ChangeCookie(db, v, 0);
+    if( pTrigger->iDb!=1 ){
+      sqlite3ChangeCookie(db, v, pTrigger->iDb);
     }
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
     sqlite3EndWriteOperation(pParse);
@@ -711,6 +711,7 @@ int sqlite3CodeRowTrigger(
 ){
   Trigger * pTrigger;
   TriggerStack * pTriggerStack;
+  u64 cookieMask = pParse->cookieMask;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
   assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER );
@@ -782,6 +783,7 @@ int sqlite3CodeRowTrigger(
     pTrigger = pTrigger->pNext;
   }
 
+  pParse->cookieMask = cookieMask;
   return 0;
 }
 

@@ -307,7 +307,6 @@ struct Vdbe {
   int rc;                 /* Value to return */
   unsigned uniqueCnt;     /* Used by OP_MakeRecord when P2!=0 */
   int errorAction;        /* Recovery action to do in case of an error */
-  int undoTransOnError;   /* If error, either ROLLBACK or COMMIT */
   int inTempTrans;        /* True if temp database is transactioned */
   int returnStack[100];   /* Return address stack for OP_Gosub & OP_Return */
   int returnDepth;        /* Next unused element in returnStack[] */

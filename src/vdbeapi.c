@@ -168,6 +168,10 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     p->rc = SQLITE_MISUSE;
     return SQLITE_MISUSE;
   }
+  if( p->pc<0 ){
+    db->activeVdbeCnt++;
+    p->pc = 0;
+  }
   if( p->explain ){
     rc = sqlite3VdbeList(p);
   }else{
@@ -378,7 +382,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
 */
 static int vdbeUnbind(Vdbe *p, int i){
   Mem *pVar;
-  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 ){
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
     sqlite3Error(p->db, SQLITE_MISUSE, 0);
     return SQLITE_MISUSE;
   }

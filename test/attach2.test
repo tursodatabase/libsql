@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.9 2004/05/21 10:08:55 danielk1977 Exp $
+# $Id: attach2.test,v 1.10 2004/05/31 08:26:49 danielk1977 Exp $
 #
 
 
@@ -51,6 +51,7 @@ db eval {DETACH t2}
 do_test attach2-2.1 {
   # lock test2.db then try to attach it.  Should get an error.
   db2 eval {BEGIN}
+  db2 eval {UPDATE t1 SET a = 0 WHERE 0}
   catchsql {
     ATTACH 'test2.db' AS t2;
   }
@@ -77,6 +78,7 @@ do_test attach2-2.5 {
 do_test attach2-2.6 {
   # lock test2.db and try to read from it.  should get an error.
   db2 eval BEGIN
+  db2 eval {UPDATE t1 SET a = 0 WHERE 0}
   catchsql {
     SELECT name FROM t2.sqlite_master;
   }
@@ -108,6 +110,10 @@ do_test attach2-2.10 {
 do_test attach2-2.11 {
   # when the write failed in the previous test, the transaction should
   # have rolled back.
+  # 
+  # Update for version 3: A transaction is no longer rolled back if a
+  #                       database is found to be busy.
+  execsql {rollback}
   db2 eval ROLLBACK
   execsql {
     SELECT * FROM t1

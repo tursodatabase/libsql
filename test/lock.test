@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.20 2004/02/14 16:31:04 drh Exp $
+# $Id: lock.test,v 1.21 2004/05/31 08:26:49 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -60,6 +60,7 @@ do_test lock-1.9 {
 } {2 1}
 do_test lock-1.10 {
   execsql {BEGIN TRANSACTION}
+  execsql {UPDATE t1 SET a = 0 WHERE 0}
   execsql {SELECT * FROM t1}
 } {2 1}
 do_test lock-1.11 {
@@ -155,7 +156,10 @@ integrity_check lock-1.23
 #
 do_test lock-2.1 {
   execsql {BEGIN TRANSACTION}
-  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  execsql {UPDATE t1 SET a = 0 WHERE 0}
+  execsql {BEGIN TRANSACTION} db2
+  set r [catch {execsql {UPDATE t1 SET a = 0 WHERE 0} db2} msg]
+  execsql {ROLLBACK} db2
   lappend r $msg
 } {1 {database is locked}}
 
@@ -222,6 +226,7 @@ do_test lock-2.6 {
 } {0 {9 8} {1 2 3}}
 do_test lock-2.7 {
   execsql {BEGIN TRANSACTION}
+  execsql {UPDATE t1 SET a = 0 WHERE 0}
   proc callback {file count} {
     lappend ::callback_value $count
     if {$count>2} {
@@ -230,7 +235,8 @@ do_test lock-2.7 {
   }
   set ::callback_value {}
   db2 busy callback
-  set r [catch {execsql {BEGIN TRANSACTION} db2} msg]
+  execsql {BEGIN TRANSACTION} db2
+  set r [catch {execsql {UPDATE t1 SET a = 0 WHERE 0} db2} msg]
   execsql {ROLLBACK} db2
   lappend r $msg
   lappend r $::callback_value
@@ -241,7 +247,9 @@ do_test lock-2.7 {
 do_test lock-2.8 {
   db2 timeout 400
   execsql BEGIN
+  execsql {UPDATE t1 SET a = 0 WHERE 0}
   catchsql BEGIN db2
+  catchsql {UPDATE t1 SET a = 0 WHERE 0} db2
 } {1 {database is locked}}
 do_test lock-2.9 {
   db2 timeout 0
@@ -267,6 +275,7 @@ do_test lock-4.1 {
   db2 close
   catch {db eval ROLLBACK}
   db eval BEGIN
+  db eval {UPDATE t1 SET a=0 WHERE 0}
   sqlite db2 ./test.db
   set rc [catch {db2 eval {SELECT * FROM t1}} msg]
   lappend rc $msg
