@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Dec 6 (2.1.5)} {
+<li>Fix for another problem (unrelated to the one fixed in 2.1.4) 
+    that sometimes causes <b>sqlite_exec()</b> to return SQLITE_PROTOCOL
+    unnecessarily.  This time the bug was
+    in the POSIX locking code and should not effect windows users.</li>
+}
+
 chng {2001 Dec 4 (2.1.4)} {
 <li>Sometimes <b>sqlite_exec()</b> would return SQLITE_PROTOCOL when it
     should have returned SQLITE_BUSY.</li>

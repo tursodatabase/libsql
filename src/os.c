@@ -594,14 +594,17 @@ int sqliteOsLock(OsFile id, int wrlock){
       id.pLock->cnt++;
     }
   }
-  sqliteOsLeaveMutex();      
   if( rc==SQLITE_OK && needSysLock ){ 
     struct flock lock;
     lock.l_type = wrlock ? F_WRLCK : F_RDLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = lock.l_len = 0L;
     rc = fcntl(id.fd, F_SETLK, &lock)==0 ? SQLITE_OK : SQLITE_BUSY;
+    if( rc ){
+      id.pLock->cnt = 0;
+    }
   }
+  sqliteOsLeaveMutex();      
   return rc;
 #endif
 #if OS_WIN
@@ -631,7 +634,6 @@ int sqliteOsUnlock(OsFile id){
     rc = SQLITE_OK;
     needSysUnlock = 0;
   }
-  sqliteOsLeaveMutex();
   if( needSysUnlock ){
     struct flock lock;
     lock.l_type = F_UNLCK;
@@ -639,6 +641,7 @@ int sqliteOsUnlock(OsFile id){
     lock.l_start = lock.l_len = 0L;
     rc = fcntl(id.fd, F_SETLK, &lock)==0 ? SQLITE_OK : SQLITE_IOERR;
   }
+  sqliteOsLeaveMutex();
   return rc;
 #endif
 #if OS_WIN
