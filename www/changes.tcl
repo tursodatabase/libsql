@@ -31,7 +31,7 @@ chng {2000 Sep 30 (1.0.8)} {
 
 chng {2000 Sep 29 (Not Released)} {
 <li>Added the <b>sqlite_get_table()</b> API</li>
-<li>Updated the documtation for due to the above change.</li>
+<li>Updated the documentation for due to the above change.</li>
 <li>Modified the <b>sqlite</b> shell to make use of the new
     sqlite_get_table() API in order to print a list of tables
     in multiple columns, similar to the way "ls" prints filenames.</li>

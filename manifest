@@ -1,5 +1,5 @@
-C Added\sthe\s_printf()\sinterface.\s(CVS\s150)
-D 2000-10-08T22:20:57
+C Documentation\schanges\sonly\s(CVS\s151)
+D 2000-10-09T12:57:01
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in f0b70aaa6717f9454c787dc74e5504c98ae7ea18
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -19,7 +19,7 @@ F src/printf.c 534954b942046761e0860c30a9031fa9d803ca3c
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c ef5d12129c824cb98238763e9e86ca1847e0c7bd
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 8d87c93de1b43c3cce984a4204d8de84e0a626b6
+F src/sqlite.h.in 7a11f9d131e9657d11dee5c23dfe458da91de8e2
 F src/sqliteInt.h b65fdecac7281aafb4c9ff3e79ea1b5546478385
 F src/table.c 12f0165b47178b54a675d25ed373ee7e798d6ff0
 F src/tclsqlite.c 7ccccae67fb36ed60ec98282953bf5dad0f9c16f
@@ -63,8 +63,8 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
-F www/c_interface.tcl 47d6b9b66510be10d3b482ce978a317a183477e5
-F www/changes.tcl c4f4584325dd55f7f4146bb9f5c5f9f7ce385302
+F www/c_interface.tcl 03f5fe8f2da9713aa1748f7e4ce34a0c35926ac9
+F www/changes.tcl 9f98c996ce4f60d082deab9b29c2d7f7981ea680
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
@@ -74,7 +74,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 384909e50f4ae2e84534f9a6505cfb5cc9f4d6ca
-R 20b739a1a421bb63bda38b88ca775180
+P f9372072a6d6caa15fa14ec722523944470fe155
+R 02bf6b83b2b17b70d381cfc976f772c2
 U drh
-Z 26c391a6fcfb2f70f6b3966c96a404f9
+Z f08dc918374728b7ea46d64bfcf40011

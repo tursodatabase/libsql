@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.4 2000/10/08 22:20:58 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.5 2000/10/09 12:57:01 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -127,7 +127,7 @@ int sqlite_exec(
 );
 
 /*
-** Return values fro sqlite_exec()
+** Return values for sqlite_exec()
 */
 #define SQLITE_OK        0    /* Successful result */
 #define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
@@ -199,7 +199,7 @@ void sqlite_busy_timeout(sqlite*, int ms);
 **        Cindy       | 21
 **
 ** If the 3rd argument were &azResult then after the function returns
-** azResult would contain the following data:
+** azResult will contain the following data:
 **
 **        azResult[0] = "Name";
 **        azResult[1] = "Age";
@@ -240,7 +240,7 @@ void sqlite_free_table(char **result);
 
 /*
 ** The following routines are wrappers around sqlite_exec() and
-** sqlite_get_table().  The only difference between the routine that
+** sqlite_get_table().  The only difference between the routines that
 ** follow and the originals is that the second argument to the 
 ** routines that follow is really a printf()-style format
 ** string describing the SQL to be executed.  Arguments to the format

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.9 2000/10/08 22:20:58 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.10 2000/10/09 12:57:01 drh Exp $}
 
 puts {<html>
 <head>
@@ -319,7 +319,7 @@ result code as <b>sqlite_exec()</b>.</p>
 
 <h2>Testing for a complete SQL statement</h2>
 
-<p>The last interface routine to SQLite is a convenience function used
+<p>The next interface routine to SQLite is a convenience function used
 to test whether or not a string forms a complete SQL statement.
 If the <b>sqlite_complete()</b> function returns true when its input
 is a string, then the argument forms a complete SQL statement.
@@ -432,7 +432,7 @@ meaning of single-quote within a string literal.
 <p>Consider an example.  Suppose you are trying to insert a string
 values into a database table where the string value was obtained from
 user input.  Suppose the string to be inserted is stored in a variable
-named zString.  The code to insert this string might look like this:</p>
+named zString.  The code to do the insertion might look like this:</p>
 
 <blockquote><pre>
 sqlite_exec_printf(db,
