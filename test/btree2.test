@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.5 2001/09/13 14:46:11 drh Exp $
+# $Id: btree2.test,v 1.6 2001/09/14 16:42:13 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -288,8 +288,8 @@ foreach {N L} {
   10 2
   50 2
   200 3
-  2000 5
 } {
+  # 2000 5
   puts "**** N=$N L=$L ****"
   set hash [md5file test2.bt]
   do_test btree2-$testno.1 [subst -nocommands {

@@ -22,7 +22,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.8 2001/09/13 21:53:10 drh Exp $
+# $Id: all.test,v 1.9 2001/09/14 16:42:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -42,7 +42,7 @@ if {[file exists ./sqlite_test_count]} {
 set LeakList {}
 
 
-for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
+for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
   foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     if {[file tail $testfile]=="all.test"} continue
     if {[file tail $testfile]=="malloc.test"} continue
@@ -65,6 +65,7 @@ if {$LeakList!=""} {
        puts "Expected: all values to be the same"
        puts "     Got: $LeakList"
        incr ::nErr
+       lappend ::failList memory-leak-test
        break
     }
   }

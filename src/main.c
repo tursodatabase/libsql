@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.34 2001/09/13 21:53:10 drh Exp $
+** $Id: main.c,v 1.35 2001/09/14 16:42:12 drh Exp $
 */
 #include "sqliteInt.h"
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -243,7 +243,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( db==0 ) goto no_mem_on_open;
   
   /* Open the backend database driver */
-  rc = sqliteBtreeOpen(zFilename, mode, 100, &db->pBe);
+  rc = sqliteBtreeOpen(zFilename, mode, MAX_PAGES, &db->pBe);
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {

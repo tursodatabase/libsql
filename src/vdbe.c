@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.65 2001/09/14 03:24:25 drh Exp $
+** $Id: vdbe.c,v 1.66 2001/09/14 16:42:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2009,7 +2009,9 @@ case OP_Open: {
     int j;
     p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
     if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
-    for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
+    for(j=p->nCursor; j<=i; j++){
+      memset(&p->aCsr[j], 0, sizeof(Cursor));
+    }
     p->nCursor = i+1;
   }else if( p->aCsr[i].pCursor ){
     sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
@@ -2052,14 +2054,16 @@ case OP_OpenTemp: {
     int j;
     p->aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
     if( p->aCsr==0 ){ p->nCursor = 0; goto no_mem; }
-    for(j=p->nCursor; j<=i; j++) p->aCsr[j].pCursor = 0;
+    for(j=p->nCursor; j<=i; j++){
+      memset(&p->aCsr[j], 0, sizeof(Cursor));
+    }
     p->nCursor = i+1;
   }else if( p->aCsr[i].pCursor ){
     sqliteBtreeCloseCursor(p->aCsr[i].pCursor);
   }
   pCx = &p->aCsr[i];
   memset(pCx, 0, sizeof(*pCx));
-  rc = sqliteBtreeOpen(0, 0, 100, &pCx->pBt);
+  rc = sqliteBtreeOpen(0, 0, TEMP_PAGES, &pCx->pBt);
   if( rc==SQLITE_OK ){
     rc = sqliteBtreeCursor(pCx->pBt, 2, &pCx->pCursor);
   }
@@ -2204,18 +2208,29 @@ case OP_Found: {
 */
 case OP_NewRecno: {
   int i = pOp->p1;
-  static int v = 0;
+  int v = 0;
   if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
     v = 0;
   }else{
     int res, rx, cnt;
+    static int x = 0;
+    union {
+       char zBuf[sizeof(int)];
+       int i;
+    } ux;
     cnt = 0;
     do{
-      if( v==0 || cnt>5 ){
-        v = sqliteRandomInteger();
+      if( x==0 || cnt>5 ){
+        x = sqliteRandomInteger();
       }else{
-        v += sqliteRandomByte() + 1;
+        x += sqliteRandomByte() + 1;
       }
+      if( x==0 ) continue;
+      ux.zBuf[3] = x&0xff;
+      ux.zBuf[2] = (x>>8)&0xff;
+      ux.zBuf[1] = (x>>16)&0xff;
+      ux.zBuf[0] = (x>>24)&0xff;
+      v = ux.i;
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
     }while( cnt<10 && rx==SQLITE_OK && res==0 );

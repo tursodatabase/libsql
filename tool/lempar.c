@@ -190,16 +190,21 @@ static char *yyTokenName[] = {
 #define YYTRACE(X)
 #endif
 
+
 /*
 ** This function returns the symbolic name associated with a token
 ** value.
 */
 const char *ParseTokenName(int tokenType){
+#ifndef NDEBUG
   if( tokenType>0 && tokenType<(sizeof(yyTokenName)/sizeof(yyTokenName[0])) ){
     return yyTokenName[tokenType];
   }else{
     return "Unknown";
   }
+#else
+  return "";
+#endif
 }
 
 /* 

@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.25 2001/09/14 03:24:24 drh Exp $
+** $Id: btree.c,v 1.26 2001/09/14 16:42:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1702,7 +1702,8 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   ** underfull.
   */
   assert( sqlitepager_iswriteable(pPage) );
-  if( !pPage->isOverfull && pPage->nFree<SQLITE_PAGE_SIZE/2 && pPage->nCell>=2){
+  if( !pPage->isOverfull && pPage->nFree<SQLITE_PAGE_SIZE/2 
+        && pPage->nCell>=2){
     relinkCellList(pPage);
     return SQLITE_OK;
   }

@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or to one writer.
 **
-** @(#) $Id: pager.c,v 1.16 2001/09/14 03:24:25 drh Exp $
+** @(#) $Id: pager.c,v 1.17 2001/09/14 16:42:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -103,7 +103,7 @@ struct PgHdr {
 ** How big to make the hash table used for locating in-memory pages
 ** by page number.  Knuth says this should be a prime number.
 */
-#define N_PG_HASH 101
+#define N_PG_HASH 907
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -1061,7 +1061,7 @@ int sqlitepager_iswriteable(void *pData){
 ** is returned.
 */
 int sqlitepager_commit(Pager *pPager){
-  int i, rc;
+  int rc;
   PgHdr *pPg;
 
   if( pPager->errMask==PAGER_ERR_FULL ){
@@ -1080,14 +1080,12 @@ int sqlitepager_commit(Pager *pPager){
   if( fsync(pPager->jfd) ){
     goto commit_abort;
   }
-  for(i=0; i<N_PG_HASH; i++){
-    for(pPg=pPager->aHash[i]; pPg; pPg=pPg->pNextHash){
-      if( pPg->dirty==0 ) continue;
-      rc = pager_seek(pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
-      if( rc!=SQLITE_OK ) goto commit_abort;
-      rc = pager_write(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
-      if( rc!=SQLITE_OK ) goto commit_abort;
-    }
+  for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+    if( pPg->dirty==0 ) continue;
+    rc = pager_seek(pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
+    if( rc!=SQLITE_OK ) goto commit_abort;
+    rc = pager_write(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+    if( rc!=SQLITE_OK ) goto commit_abort;
   }
   if( fsync(pPager->fd) ) goto commit_abort;
   rc = pager_unwritelock(pPager);

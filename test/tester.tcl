@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.16 2001/09/13 21:53:10 drh Exp $
+# $Id: tester.tcl,v 1.17 2001/09/14 16:42:13 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -68,6 +68,7 @@ set nErr 0
 set nTest 0
 set nProb 0
 set skip_test 0
+set failList {}
 
 # Invoke the do_test procedure to run a single test 
 #
@@ -95,11 +96,13 @@ proc do_test {name cmd expected} {
   if {[catch {uplevel #0 "$cmd;\n"} result]} {
     puts "\nError: $result"
     incr nErr
-    if {$nErr>10} {puts "*** Giving up..."; exit 1}
+    lappend ::failList $name
+    if {$nErr>10} {puts "*** Giving up..."; finalize_testing}
   } elseif {[string compare $result $expected]} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
     incr nErr
-    if {$nErr>10} {puts "*** Giving up..."; exit 1}
+    lappend ::failList $name
+    if {$nErr>10} {puts "*** Giving up..."; finalize_testing}
   } else {
     puts " Ok"
   }
@@ -160,10 +163,14 @@ proc memleak_check {} {
 # Run this routine last
 #
 proc finish_test {} {
+  finalize_testing
+}
+proc finalize_testing {} {
   global nTest nErr nProb
-  memleak_check
+  if {$nErr==0} memleak_check
   catch {db close}
   puts "$nErr errors out of $nTest tests"
+  puts "Failures on these tests: $::failList"
   if {$nProb>0} {
     puts "$nProb probabilistic tests also failed, but this does"
     puts "not necessarily indicate a malfunction."
