@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.88 2004/09/25 14:39:19 drh Exp $
+** $Id: tokenize.c,v 1.89 2004/09/25 15:25:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -52,7 +52,6 @@ static Keyword aKeywordTable[] = {
   { "CASCADE",           TK_CASCADE,      },
   { "CASE",              TK_CASE,         },
   { "CHECK",             TK_CHECK,        },
-  { "CLUSTER",           TK_CLUSTER,      },
   { "COLLATE",           TK_COLLATE,      },
   { "COMMIT",            TK_COMMIT,       },
   { "CONFLICT",          TK_CONFLICT,     },
@@ -160,11 +159,11 @@ int sqlite3KeywordCode(const char *z, int n){
     if( needInit ){
       int nk;
       nk = sizeof(aKeywordTable)/sizeof(aKeywordTable[0]);
-      for(i=0; i<nk; i++){
-        aKeywordTable[i].len = strlen(aKeywordTable[i].zName);
-        h = sqlite3HashNoCase(aKeywordTable[i].zName, aKeywordTable[i].len);
-        h %= KEY_HASH_SIZE;
-        aKeywordTable[i].iNext = aiHashTable[h];
+      for(i=0, p=aKeywordTable; i<nk; i++, p++){
+        const char *zName = p->zName;
+        int len = p->len = strlen(zName);
+        h = sqlite3HashNoCase(zName, len) % KEY_HASH_SIZE;
+        p->iNext = aiHashTable[h];
         aiHashTable[h] = i+1;
       }
       needInit = 0;
@@ -198,9 +197,6 @@ int sqlite3KeywordCode(const char *z, int n){
 */
 static const char isIdChar[] = {
 /* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 0x */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 1x */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 2x */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  /* 5x */
@@ -208,13 +204,14 @@ static const char isIdChar[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
 };
 
+#define IdChar(C)  (((c=C)&0x80)!=0 || (c>0x2f && isIdChar[c-0x30]))
 
 /*
 ** Return the length of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
 static int sqliteGetToken(const unsigned char *z, int *tokenType){
-  int i;
+  int i, c;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
       for(i=1; isspace(z[i]); i++){}
@@ -223,7 +220,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     }
     case '-': {
       if( z[1]=='-' ){
-        for(i=2; z[i] && z[i]!='\n'; i++){}
+        for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
         *tokenType = TK_COMMENT;
         return i;
       }
@@ -255,8 +252,8 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
         *tokenType = TK_SLASH;
         return 1;
       }
-      for(i=3; z[i] && (z[i]!='/' || z[i-1]!='*'); i++){}
-      if( z[i] ) i++;
+      for(i=3, c=z[2]; (c!='*' || z[i]!='/') && (c=z[i])!=0; i++){}
+      if( c ) i++;
       *tokenType = TK_COMMENT;
       return i;
     }
@@ -269,13 +266,13 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return 1 + (z[1]=='=');
     }
     case '<': {
-      if( z[1]=='=' ){
+      if( (c=z[1])=='=' ){
         *tokenType = TK_LE;
         return 2;
-      }else if( z[1]=='>' ){
+      }else if( c=='>' ){
         *tokenType = TK_NE;
         return 2;
-      }else if( z[1]=='<' ){
+      }else if( c=='<' ){
         *tokenType = TK_LSHIFT;
         return 2;
       }else{
@@ -284,10 +281,10 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       }
     }
     case '>': {
-      if( z[1]=='=' ){
+      if( (c=z[1])=='=' ){
         *tokenType = TK_GE;
         return 2;
-      }else if( z[1]=='>' ){
+      }else if( c=='>' ){
         *tokenType = TK_RSHIFT;
         return 2;
       }else{
@@ -327,8 +324,8 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     }
     case '\'': case '"': {
       int delim = z[0];
-      for(i=1; z[i]; i++){
-        if( z[i]==delim ){
+      for(i=1; (c=z[i])!=0; i++){
+        if( c==delim ){
           if( z[i+1]==delim ){
             i++;
           }else{
@@ -336,7 +333,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
           }
         }
       }
-      if( z[i] ) i++;
+      if( c ) i++;
       *tokenType = TK_STRING;
       return i;
     }
@@ -365,7 +362,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return i;
     }
     case '[': {
-      for(i=1; z[i] && z[i-1]!=']'; i++){}
+      for(i=1, c=z[0]; c!=']' && (c=z[i])!=0; i++){}
       *tokenType = TK_ID;
       return i;
     }
@@ -375,12 +372,11 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return i;
     }
     case ':': {
-      for(i=1; (z[i]&0x80)!=0 || isIdChar[z[i]]; i++){}
+      for(i=1; IdChar(z[i]); i++){}
       *tokenType = i>1 ? TK_VARIABLE : TK_ILLEGAL;
       return i;
     }
     case '$': {
-      int c;
       *tokenType = TK_VARIABLE;
       if( z[1]=='{' ){
         int nBrace = 1;
@@ -418,29 +414,29 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return i;
     } 
     case 'x': case 'X': {
-      if( z[1]=='\'' || z[1]=='"' ){
-        int delim = z[1];
+      if( (c=z[1])=='\'' || c=='"' ){
+        int delim = c;
         *tokenType = TK_BLOB;
-        for(i=2; z[i]; i++){
-          if( z[i]==delim ){
+        for(i=2; (c=z[i])!=0; i++){
+          if( c==delim ){
             if( i%2 ) *tokenType = TK_ILLEGAL;
             break;
           }
-          if( !isxdigit(z[i]) ){
+          if( !isxdigit(c) ){
             *tokenType = TK_ILLEGAL;
             return i;
           }
         }
-        if( z[i] ) i++;
+        if( c ) i++;
         return i;
       }
       /* Otherwise fall through to the next case */
     }
     default: {
-      if( (*z&0x80)==0 && !isIdChar[*z] ){
+      if( !IdChar(*z) ){
         break;
       }
-      for(i=1; (z[i]&0x80)!=0 || isIdChar[z[i]]; i++){}
+      for(i=1; IdChar(z[i]); i++){}
       *tokenType = sqlite3KeywordCode((char*)z, i);
       return i;
     }
@@ -692,10 +688,11 @@ int sqlite3_complete(const char *zSql){
         break;
       }
       default: {
-        if( isIdChar[(u8)*zSql] ){
+        int c;
+        if( IdChar((u8)*zSql) ){
           /* Keywords and unquoted identifiers */
           int nId;
-          for(nId=1; isIdChar[(u8)zSql[nId]]; nId++){}
+          for(nId=1; IdChar(zSql[nId]); nId++){}
           switch( *zSql ){
             case 'c': case 'C': {
               if( nId==6 && sqlite3StrNICmp(zSql, "create", 6)==0 ){
