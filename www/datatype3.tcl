@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.2 2004/05/31 18:51:59 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.3 2004/06/01 10:01:25 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -61,10 +61,10 @@ result of an expression at compile time.</P>
 In SQLite version 3, the type of a value is associated with the value
 itself, not with the column or variable in which the value is stored.
 (This is sometimes called
-<a href="http://www.cliki.net/manifest%20type%50system">
+<a href="http://www.cliki.net/manifest%20type%20system">
 manifest typing</a>.)
 All other SQL databases engines that we are aware of use the more
-restrict system of static typing where the type is associated with
+restrictive system of static typing where the type is associated with
 the container, not the value.
 </p>
 
@@ -82,10 +82,10 @@ a column is called its "affinity".
 <P>Each column in an SQLite 3 database is assigned one of the
 following type affinities:</P>
 <UL>
-	<LI><P>TEXT.</P>
-	<LI><P>NUMERIC.</P>
-	<LI><P>INTEGER.</P>
-	<LI><P>NONE.</P>
+	<LI>TEXT</LI>
+	<LI>NUMERIC</LI>
+	<LI>INTEGER</LI>
+	<LI>NONE</LI>
 </UL>
 
 <P>A column with TEXT affinity stores all data using storage classes
@@ -125,10 +125,9 @@ of the column, according to the following rules:</P>
 
 	<LI><P>If the datatype for a column
          contains the string &quot;BLOB&quot; or if
-        not datatype is specified then the column has affinity NONE.</P>
+        no datatype is specified then the column has affinity NONE.</P>
 
-	<LI><P>Otherwise, the affinity is NUMERIC.  Notice that a column
-        where no datatype is specified is given affinity NUMERIC.</P>
+	<LI><P>Otherwise, the affinity is NUMERIC.</P>
 </OL>
 
 <P>If a table is created using a "CREATE TABLE &lt;table&gt; AS
@@ -183,7 +182,7 @@ two values being compared, according to the following rules:</P>
 <P>SQLite may attempt to convert values between the numeric storage
 classes (INTEGER and REAL) and TEXT before performing a comparison.
 For binary comparisons, this is done in the cases enumerated below.
-The term “expression” used in the bullet points below means any
+The term "expression" used in the bullet points below means any
 SQL scalar expression or literal other than a column value.</P>
 <UL>
 	<LI><P>When a column value is compared to the result of an
