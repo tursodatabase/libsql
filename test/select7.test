@@ -10,7 +10,7 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.1 2004/08/29 16:25:04 drh Exp $
+# $Id: select7.test,v 1.2 2004/11/22 08:43:32 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -33,6 +33,7 @@ do_test select7-1.1 {
 
 # Nested views do not handle * properly.  Ticket #826.
 #
+ifcapable view {
 do_test select7-2.1 {
   execsql {
     CREATE TABLE x(id integer primary key, a TEXT NULL);
@@ -45,6 +46,7 @@ do_test select7-2.1 {
     SELECT * FROM tv2;
   }
 } {1 1}
+} ;# ifcapable view
 
 
 finish_test

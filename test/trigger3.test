@@ -137,6 +137,9 @@ do_test trigger3-6 {
 } {1 2 3 1 2 3 1 2 3}
 
 # Check that things also work for view-triggers
+
+ifcapable view {
+
 execsql {CREATE VIEW tbl_view AS SELECT * FROM tbl}
 execsql {
     CREATE TRIGGER tbl_view_insert INSTEAD OF INSERT ON tbl_view BEGIN
@@ -161,6 +164,8 @@ do_test trigger3-7.3 {
 	INSERT INTO tbl_view VALUES(3, 2, 3);
     }
 } {1 {View abort}}
+
+} ;# ifcapable view
 
 integrity_check trigger3-8.1
 

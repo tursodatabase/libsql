@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: sort.test,v 1.16 2004/11/03 13:59:06 drh Exp $
+# $Id: sort.test,v 1.17 2004/11/22 08:43:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -281,6 +281,10 @@ do_test sort-7.2 {
     SELECT b FROM t4 ORDER BY 1
   }
 } {1 11 12 2}
+
+# Omit tests sort-7.3 to sort-7.8 if view support was disabled at
+# compilatation time.
+ifcapable view {
 do_test sort-7.3 {
   execsql {
     CREATE VIEW v4 AS SELECT * FROM t4;
@@ -312,6 +316,8 @@ do_test sort-7.8 {
     SELECT b FROM t4 UNION SELECT b FROM v4 ORDER BY 1;
   }
 } {1 11 12 2}
+} ;# ifcapable view
+
 #### Version 3 works differently here:
 #do_test sort-7.9 {
 #  execsql {

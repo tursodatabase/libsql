@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.11 2003/09/27 13:39:40 drh Exp $
+# $Id: join.test,v 1.12 2004/11/22 08:43:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -328,6 +328,7 @@ do_test join-7.1 {
 # Make sure a left join where the right table is really a view that
 # is itself a join works right.  Ticket #306.
 #
+ifcapable view {
 do_test join-8.1 {
   execsql {
     BEGIN;
@@ -356,6 +357,7 @@ do_test join-8.3 {
     SELECT * FROM v10_11 LEFT JOIN t9 ON( a=x );
   }
 } {1 111 1 11 3 333 {} {}}
+} ;# ifcapable view
 
 # Ticket #350 describes a scenario where LEFT OUTER JOIN does not
 # function correctly if the right table in the join is really
@@ -381,6 +383,7 @@ do_test join-9.1 {
       SELECT * FROM t12 NATURAL LEFT JOIN (SELECT * FROM t13 WHERE b>0);
   }
 } {}
+ifcapable view {
 do_test join-9.2 {
   execsql {
     CREATE VIEW v13 AS SELECT * FROM t13 WHERE b>0;
@@ -389,5 +392,6 @@ do_test join-9.2 {
       SELECT * FROM t12 NATURAL LEFT JOIN v13;
   }
 } {}
+} ;# ifcapable view
 
 finish_test

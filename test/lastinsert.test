@@ -53,13 +53,20 @@ do_test lastinsert-1.3 {
 } {0 3}
 
 # LIRID unchanged after create table/view statements
-do_test lastinsert-1.4 {
+do_test lastinsert-1.4.1 {
     catchsql {
         create table t2 (k integer primary key, val1, val2, val3);
+        select last_insert_rowid();
+    }
+} {0 3}
+ifcapable view {
+do_test lastinsert-1.4.2 {
+    catchsql {
         create view v as select * from t1;
         select last_insert_rowid();
     }
 } {0 3}
+} ;# ifcapable view
 
 # All remaining tests involve triggers.  Skip them if triggers are not
 # supported in this build.
@@ -148,7 +155,10 @@ do_test lastinsert-3.4 {
 
 # ----------------------------------------------------------------------------
 # 4.x - tests with instead of insert trigger
+# These may not be run if either views or triggers were disabled at 
+# compile-time
 
+ifcapable {view && trigger} {
 # LIRID not changed after an insert into view containing an instead of trigger
 do_test lastinsert-4.1 {
     catchsql {
@@ -184,6 +194,7 @@ do_test lastinsert-4.4 {
         select val3 from t2;
     }
 } {0 1030}
+} ;# ifcapable (view && trigger)
 
 # ----------------------------------------------------------------------------
 # 5.x - tests with before delete trigger
@@ -191,8 +202,10 @@ do_test lastinsert-4.4 {
 # LIRID not changed after a delete on a table containing a before trigger
 do_test lastinsert-5.1 {
     catchsql {
+      drop trigger r1;  -- This was not created if views are disabled.
+    }
+    catchsql {
         delete from t2;
-        drop trigger r1;
         create trigger r1 before delete on t1 for each row begin
             insert into t2 values (77, last_insert_rowid(), NULL, NULL);
             update t2 set k=k+10, val2=100+last_insert_rowid();
@@ -226,7 +239,9 @@ do_test lastinsert-5.4 {
 
 # ----------------------------------------------------------------------------
 # 6.x - tests with instead of update trigger
+# These tests may not run if either views or triggers are disabled.
 
+ifcapable {view && trigger} {
 # LIRID not changed after an update on a view containing an instead of trigger
 do_test lastinsert-6.1 {
     catchsql {
@@ -262,10 +277,13 @@ do_test lastinsert-6.4 {
         select val3 from t2;
     }
 } {0 1032}
+} ;# ifcapable (view && trigger)
 
 # ----------------------------------------------------------------------------
 # 7.x - complex tests with temporary tables and nested instead of triggers
+# These do not run if views or triggers are disabled.
 
+ifcapable {trigger && view} {
 do_test lastinsert-7.1 {
     catchsql {
         drop table t1; drop table t2; drop trigger r1;
@@ -322,5 +340,7 @@ do_test lastinsert-7.6 {
         select rout from rid where k=2;
     }
 } {0 1205}
+
+} ;# ifcapable (view && trigger)
 
 finish_test

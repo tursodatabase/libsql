@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.14 2004/11/16 15:50:21 danielk1977 Exp $
+# $Id: misc2.test,v 1.15 2004/11/22 08:43:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,12 +49,14 @@ do_test misc2-2.1 {
     SELECT rowid, * FROM (SELECT * FROM t1, t2);
   }
 } {{} 1 2 3 7 8 9}
+ifcapable view {
 do_test misc2-2.2 {
   execsql {
     CREATE VIEW v1 AS SELECT * FROM t1, t2;
     SELECT rowid, * FROM v1;
   }
 } {{} 1 2 3 7 8 9}
+} ;# ifcapable view
 
 # Check name binding precedence.  Ticket #387
 #
@@ -106,6 +108,7 @@ do_test misc2-4.6 {
 # using a call to sqliteSrcListDup().  Ticket #416.  The following test
 # makes sure the problem has been fixed.
 #
+ifcapable view {
 do_test misc2-5.1 {
   execsql {
     CREATE TABLE x(a,b);
@@ -116,6 +119,7 @@ do_test misc2-5.1 {
     SELECT * from z;
   }
 } {}
+}
 
 # Make sure we can open a database with an empty filename.  What this
 # does is store the database in a temporary file that is deleted when

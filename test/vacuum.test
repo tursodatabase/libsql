@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.30 2004/11/22 05:26:28 danielk1977 Exp $
+# $Id: vacuum.test,v 1.31 2004/11/22 08:43:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -85,7 +85,7 @@ ifcapable vacuum {
   } {1}
 }
 do_test vacuum-1.4 {
-  execsql {
+  set sql_script {
     BEGIN;
     CREATE TABLE t2 AS SELECT * FROM t1;
     CREATE TABLE t3 AS SELECT * FROM t1;
@@ -96,6 +96,12 @@ do_test vacuum-1.4 {
     COMMIT;
     DROP TABLE t2;
   }
+  # If the library was compiled to omit view support, comment out the
+  # create view in the script $sql_script before executing it.
+  ifcapable !view {
+    regsub {CREATE VIEW} $sql_script {-- CREATE VIEW} sql_script
+  }
+  execsql $sql_script
   set ::size1 [file size test.db]
   set ::cksum [cksum]
   expr {$::cksum!=""}
@@ -106,6 +112,7 @@ do_test vacuum-1.5 {
   }
   cksum
 } $cksum
+
 ifcapable vacuum {
   do_test vacuum-1.6 {
     expr {[file size test.db]<$::size1}
@@ -171,8 +178,9 @@ do_test vacuum-4.2 {
 } SQLITE_OK
 
 # Ticket #515.  VACUUM after deleting and recreating the table that
-# a view refers to.
+# a view refers to. Omit this test if the library is not view-enabled.
 #
+ifcapable view {
 do_test vacuum-5.1 {
   db close
   file delete -force test.db
@@ -197,6 +205,7 @@ do_test vacuum-5.2 {
     VACUUM;
   }
 } {0 {}}
+} ;# ifcapable view
 
 # Ensure vacuum works with complicated tables names.
 do_test vacuum-6.1 {

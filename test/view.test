@@ -11,9 +11,15 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.19 2004/11/03 16:27:02 drh Exp $
+# $Id: view.test,v 1.20 2004/11/22 08:43:32 danielk1977 Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Omit this entire file if the library is not configured with views enabled.
+ifcapable !view {
+  finish_test
+  return
+}
 
 do_test view-1.0 {
   execsql {

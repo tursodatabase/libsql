@@ -12,7 +12,9 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-ifcapable {!trigger} {
+
+# If either views or triggers are disabled in this build, omit this file.
+ifcapable {!trigger || !view} {
   finish_test
   return
 }

@@ -44,7 +44,7 @@
 # trigger2-6.1[a-f]: INSERT statements
 # trigger2-6.2[a-f]: UPDATE statements
 #
-# 7. Triggers on views fire correctly.
+# 7. & 8. Triggers on views fire correctly.
 #
 
 set testdir [file dirname $argv0]
@@ -567,6 +567,8 @@ execsql {
 }
 
 # 7. Triggers on views
+ifcapable view {
+
 do_test trigger2-7.1 {
   execsql {
   CREATE TABLE ab(a, b);
@@ -709,6 +711,8 @@ do_test trigger2-8.6 {
     SELECT * FROM v1log;
   }
 } {3 103 5 205 4 304 9 109 11 211 10 310}
+
+} ;# ifcapable view
 
 integrity_check trigger2-9.9
 

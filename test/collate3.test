@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate3.test,v 1.4 2004/11/04 14:47:13 drh Exp $
+# $Id: collate3.test,v 1.5 2004/11/22 08:43:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -311,6 +311,7 @@ proc numeric_compare {lhs rhs} {
 
 # Check we can create a view that uses an explicit collation 
 # sequence and then close and re-open the database.
+ifcapable view {
 do_test collate3-4.9 {
   db collate user_defined numeric_compare
   execsql {
@@ -341,6 +342,7 @@ do_test collate3-4.12 {
     DROP TABLE collate3t1;
   }
 } {}
+} ;# ifcapable view
 
 #
 # Test the collation factory. In the code, the "no such collation sequence"

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.13 2004/11/10 15:27:38 danielk1977 Exp $
+# $Id: attach3.test,v 1.14 2004/11/22 08:43:32 danielk1977 Exp $
 #
 
 
@@ -122,6 +122,7 @@ do_test attach3-4.3 {
 } {t3}
 
 # Create a view in the auxilary database.
+ifcapable view {
 do_test attach3-5.1 {
   execsql {
     CREATE VIEW aux.v1 AS SELECT * FROM t3;
@@ -150,6 +151,7 @@ do_test attach3-6.2 {
     SELECT * FROM aux.sqlite_master WHERE name = 'v1';
   }
 } {}
+} ;# ifcapable view
 
 ifcapable {trigger} {
 # Create a trigger in the auxilary database.

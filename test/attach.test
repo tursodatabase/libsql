@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.29 2004/11/04 14:47:13 drh Exp $
+# $Id: attach.test,v 1.30 2004/11/22 08:43:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -520,6 +520,8 @@ do_test attach-4.9 {
     SELECT * FROM db2.t4 UNION ALL SELECT * FROM main.t4;
   }
 } {db2.6 db2.13 main.11 main.15}
+
+ifcapable view {
 do_test attach-4.10 {
   execsql {
     DETACH DATABASE db2;
@@ -546,6 +548,7 @@ do_test attach-4.13 {
     SELECT * FROM main.v3;
   }
 } {910 1112 1516}
+} ;# ifcapable view
 
 # Tests for the sqliteFix...() routines in attach.c
 #

@@ -193,6 +193,9 @@ do_test laststmtchanges-4.3 {
 
 # ----------------------------------------------------------------------------
 # 5.x - complex tests with temporary tables and nested instead of triggers
+# These tests cannot run if the library does not have view support enabled.
+
+ifcapable view {
 
 do_test laststmtchanges-5.1 {
     catchsql {
@@ -261,5 +264,7 @@ do_test laststmtchanges-5.5 {
         select n from n2;
     }
 } {0 {0 1 0 3}}
+
+} ;# ifcapable view
 
 finish_test
