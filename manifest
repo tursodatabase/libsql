@@ -1,5 +1,5 @@
-C Unsuccessful\sattempt\sto\sreproduce\sticket\s#807.\s(CVS\s1809)
-D 2004-07-18T23:47:53
+C When\scomparing\stwo\sexpressions\sdo\snot\sapply\saffinity\sto\seither\soperand.\nTicket\s#805.\s(CVS\s1810)
+D 2004-07-19T00:39:45
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/build.c ecc10d4e5232a49f55304dd9b90739f2771e34ef
 F src/date.c d42ea73a0b16d5dff9d97e10dc0c05671471b753
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
+F src/expr.c df21bde644eca66276eafe0c97734fc8f930f4ab
 F src/func.c b163fb49efec999eb7bf982f7de5b9be388301f3
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -134,10 +134,10 @@ F test/malloc.test 769b240d89a7ef3320d88919fdb6765f9395a51f
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
 F test/memleak.test 26571a04575461f39a7cf97a2ee2f7fb2f519ddb
 F test/minmax.test 6513f9a1bb85fd35ff72b34b7b6634fad6b1e69c
-F test/misc1.test a8eb48d38f7a64e75314a2946db68d2b77901b7d
+F test/misc1.test 72768ec8cabc952a4cfcddca43d566f9e0bce899
 F test/misc2.test 703734f5817215ca54e364833b3bf5ff36fcc21e
 F test/misc3.test eb488314990bfc0959221a1acc465013238bf168
-F test/misc4.test e0bf8fc91dc156a663e1b567a4f196f91242e51c
+F test/misc4.test f221d03868b4ae7f2028431034d3cf00cead7c26
 F test/misuse.test 2a64ce711419f2fd12806ed95af930fd4e7bb8f3
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -146,7 +146,7 @@ F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 212d810e02a51c0ff9784a19d55e35d23382005d
 F test/printf.test 428ad9be92963b68ba222dac4c19724cc4e304ea
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
-F test/quick.test bbe4abf7f434d71c0de26626c8cbb4858e1bcb18
+F test/quick.test 62cd0e248b3128c3e900d11d99c550aaec41db5f
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test b3d059f5c8d8874fa1c31030e0636f67405d20ea
@@ -173,7 +173,7 @@ F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test 70931be83fa3f563f7a5ca9e88b86f476af73948
 F test/trigger4.test 97c11d3cf43d752b172809bb82536372ee5e399c
 F test/types.test fdf7920c9d3aabbba25c11daa48c872d1870bce9
-F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
+F test/types2.test f23c147a2ab3e51d5dbcfa9987200db5acba7aa7
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
@@ -210,7 +210,7 @@ F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
-F www/datatype3.tcl dadcd0b09dc6fdf86d0c38499e310ae94cb586d7
+F www/datatype3.tcl 2bb7dbfa4dd518a6e5fb3cb1cd8296797976d205
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl 095b5718ec044156af477061566ea25632624b56
 F www/download.tcl b182424161c588891188500abea7a9ea054a508c
@@ -234,7 +234,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2464f79e5ddf65e90ed84ccd793995fc2f713400
-R 73b62d1ab33f4d5ef31ddf536f476cb2
+P d7e9772c74a2b9377f17149cc1baa3b2d0dfbfb8
+R 1a3746fc881442647db9802248e453ac
 U drh
-Z b31cc6f605ce47cd34d1f836b84341e1
+Z bcf75b34b3779312497eba95531e13ee

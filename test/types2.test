@@ -12,7 +12,7 @@
 # of this file is testing the interaction of manifest types, type affinity
 # and comparison expressions.
 #
-# $Id: types2.test,v 1.3 2004/05/20 12:41:20 drh Exp $
+# $Id: types2.test,v 1.4 2004/07/19 00:39:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,10 +60,13 @@ proc test_bool {testname vars expr res} {
 
 # Compare literals against literals. This should always use a numeric
 # comparison.
+#
+# Changed by ticket #805:  Use no affinity for literal comparisons.
+#
 test_bool types2-1.1 "" {500 = 500.0} 1
-test_bool types2-1.2 "" {'500' = 500.0} 1
-test_bool types2-1.3 "" {500 = '500.0'} 1
-test_bool types2-1.4 "" {'500' = '500.0'} 1
+test_bool types2-1.2 "" {'500' = 500.0} 0
+test_bool types2-1.3 "" {500 = '500.0'} 0
+test_bool types2-1.4 "" {'500' = '500.0'} 0
 
 # Compare literals against a column with TEXT affinity
 test_bool types2-1.5 {t1=500} {500 = t1} 1
@@ -157,10 +160,11 @@ test_boolset types2-3.3 {o < '20'} {1 2 3 4 5 6 9 10}
 test_boolset types2-3.3 {o < '20.0'} {1 2 3 4 5 6 7 9 10}
 
 # Compare literals against literals (always a numeric comparison).
+# Change (by ticket #805):  No affinity in comparisons
 test_bool types2-4.1 "" {500 > 60.0} 1
 test_bool types2-4.2 "" {'500' > 60.0} 1
-test_bool types2-4.3 "" {500 > '60.0'} 1
-test_bool types2-4.4 "" {'500' > '60.0'} 1
+test_bool types2-4.3 "" {500 > '60.0'} 0
+test_bool types2-4.4 "" {'500' > '60.0'} 0
 
 # Compare literals against a column with TEXT affinity
 test_bool types2-4.5 {t1=500.0} {t1 > 500} 1

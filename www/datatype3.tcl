@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.6 2004/06/17 19:04:17 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.7 2004/07/19 00:39:46 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -195,9 +195,10 @@ SQL scalar expression or literal other than a column value.</P>
 	affinity is applied to any values with storage class TEXT extracted
 	from the non-NUMERIC column.</P>
 
-	<LI><P>When the results of two expressions are compared, the NUMERIC
-	affinity is applied to both values before the comparison takes
-	place.</P>
+	<LI><P>When the results of two expressions are compared, the no
+        conversions occur.  The results are compared as is.  If a string
+        is compared to a number, the number will always be less than the
+        string.</P>
 </UL>
 
 <P>
