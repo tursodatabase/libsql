@@ -38,7 +38,8 @@
 typedef struct OsFile OsFile;
 struct OsFile {
   HANDLE h;               /* Handle for accessing the file */
-  int locked;             /* 0: unlocked, <0: write lock, >0: read lock */
+  int locktype;           /* Type of lock currently held on this file */
+  int sharedLockByte;     /* Randomly chosen byte used as a shared lock */
 };
 
 

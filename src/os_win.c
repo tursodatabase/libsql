@@ -35,6 +35,7 @@
 */
 int sqlite3OsDelete(const char *zFilename){
   DeleteFile(zFilename);
+  TRACE2("DELETE \"%s\"\n", zFilename);
   return SQLITE_OK;
 }
 
@@ -88,8 +89,9 @@ int sqlite3OsOpenReadWrite(
     *pReadonly = 0;
   }
   id->h = h;
-  id->locked = 0;
+  id->locktype = NO_LOCK;
   OpenCounter(+1);
+  TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
 }
 
@@ -129,8 +131,9 @@ int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
     return SQLITE_CANTOPEN;
   }
   id->h = h;
-  id->locked = 0;
+  id->locktype = NO_LOCK;
   OpenCounter(+1);
+  TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
 }
 
@@ -154,8 +157,9 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
     return SQLITE_CANTOPEN;
   }
   id->h = h;
-  id->locked = 0;
+  id->locktype = NO_LOCK;
   OpenCounter(+1);
+  TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return SQLITE_OK;
 }
 
@@ -206,6 +210,7 @@ int sqlite3OsTempFileName(char *zBuf){
     zBuf[j] = 0;
     if( !sqlite3OsFileExists(zBuf) ) break;
   }
+  TRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
 }
 
@@ -226,7 +231,7 @@ int sqlite3OsClose(OsFile *id){
 int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("READ %d\n", last_page);
+  TRACE2("READ %d\n", id->h);
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
@@ -245,7 +250,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int rc;
   DWORD wrote;
   SimulateIOError(SQLITE_IOERR);
-  TRACE2("WRITE %d\n", last_page);
+  TRACE2("WRITE %d\n", id->h);
   while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -265,7 +270,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
   DWORD rc;
   SEEK(offset/1024 + 1);
   rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
-  /* TRACE3("SEEK rc=0x%x upper=0x%x\n", rc, upperBits); */
+  TRACE3("SEEK %d %lld\n", id->h, offset);
   return SQLITE_OK;
 }
 
@@ -273,6 +278,7 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 ** Make sure all writes to a particular file are committed to disk.
 */
 int sqlite3OsSync(OsFile *id){
+  TRACE2("SYNC %d\n", id->h);
   if( FlushFileBuffers(id->h) ){
     return SQLITE_OK;
   }else{
@@ -285,6 +291,7 @@ int sqlite3OsSync(OsFile *id){
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){
   LONG upperBits = nByte>>32;
+  TRACE3("TRUNCATE %d %lld\n", id->h, nByte);
   SimulateIOError(SQLITE_IOERR);
   SetFilePointer(id->h, nByte, &upperBits, FILE_BEGIN);
   SetEndOfFile(id->h);
@@ -303,28 +310,6 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 }
 
 /*
-** Return true (non-zero) if we are running under WinNT, Win2K or WinXP.
-** Return false (zero) for Win95, Win98, or WinME.
-**
-** Here is an interesting observation:  Win95, Win98, and WinME lack
-** the LockFileEx() API.  But we can still statically link against that
-** API as long as we don't call it win running Win95/98/ME.  A call to
-** this routine is used to determine if the host is Win95/98/ME or
-** WinNT/2K/XP so that we will know whether or not we can safely call
-** the LockFileEx() API.
-*/
-int isNT(void){
-  static int osType = 0;   /* 0=unknown 1=win95 2=winNT */
-  if( osType==0 ){
-    OSVERSIONINFO sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    GetVersionEx(&sInfo);
-    osType = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
-  }
-  return osType==2;
-}
-
-/*
 ** Windows file locking notes:
 **
 ** We cannot use LockFileEx() or UnlockFileEx() on Win95/98/ME because
@@ -337,24 +322,18 @@ int isNT(void){
 ** end of the file where it is unlikely to ever interfere with an
 ** actual read attempt.
 **
-** A database read lock is obtained by locking a single randomly-chosen 
+** A SHARED_LOCK is obtained by locking a single randomly-chosen 
 ** byte out of a specific range of bytes. The lock byte is obtained at 
 ** random so two separate readers can probably access the file at the 
 ** same time, unless they are unlucky and choose the same lock byte.
-** A database write lock is obtained by locking all bytes in the range.
-** There can only be one writer.
-**
-** A lock is obtained on the first byte of the lock range before acquiring
-** either a read lock or a write lock.  This prevents two processes from
-** attempting to get a lock at a same time.  The semantics of 
-** sqlite3OsReadLock() require that if there is already a write lock, that
-** lock is converted into a read lock atomically.  The lock on the first
-** byte allows us to drop the old write lock and get the read lock without
-** another process jumping into the middle and messing us up.  The same
-** argument applies to sqlite3OsWriteLock().
+** An EXCLUSIVE_LOCK is obtained by locking all bytes in the range.
+** There can only be one writer.  A RESERVED_LOCK is obtained by locking
+** a single byte of the file that is designated as the reserved lock byte.
+** A PENDING_LOCK is obtained by locking a designated byte different from
+** the RESERVED_LOCK byte.
 **
 ** On WinNT/2K/XP systems, LockFileEx() and UnlockFileEx() are available,
-** which means we can use reader/writer locks.  When reader writer locks
+** which means we can use reader/writer locks.  When reader/writer locks
 ** are used, the lock is placed on the same range of bytes that is used
 ** for probabilistic locking in Win95/98/ME.  Hence, the locking scheme
 ** will support two or more Win95 readers or two or more WinNT readers.
@@ -362,107 +341,167 @@ int isNT(void){
 ** WinNT reader will lock out all other Win95 readers.
 **
 ** The following #defines specify the range of bytes used for locking.
-** N_LOCKBYTE is the number of bytes available for doing the locking.
-** The first byte used to hold the lock while the lock is changing does
-** not count toward this number.  FIRST_LOCKBYTE is the address of
-** the first byte in the range of bytes used for locking.
+** SHARED_SIZE is the number of bytes available in the pool from which
+** a random byte is selected for a shared lock.  The pool of bytes for
+** shared locks begins at SHARED_FIRST.  
 */
-#define N_LOCKBYTE       10239
-#define FIRST_LOCKBYTE   (0xffffffff - N_LOCKBYTE)
-
-int sqlite3OsLock(OsFile *id, int locktype){
-  return SQLITE_OK;
-}
-
-int sqlite3OsCheckWriteLock(OsFile *id){
-  return 0;
-}
+#define SHARED_SIZE       10238
+#define SHARED_FIRST      (0xffffffff - SHARED_SIZE + 1)
+#define RESERVED_BYTE     (SHARED_FIRST - 1)
+#define PENDING_BYTE      (RESERVED_BYTE - 1)
 
 /*
-** Change the status of the lock on the file "id" to be a readlock.
-** If the file was write locked, then this reduces the lock to a read.
-** If the file was read locked, then this acquires a new read lock.
+** Return true (non-zero) if we are running under WinNT, Win2K or WinXP.
+** Return false (zero) for Win95, Win98, or WinME.
 **
-** Return SQLITE_OK on success and SQLITE_BUSY on failure.  If this
-** library was compiled with large file support (LFS) but LFS is not
-** available on the host, then an SQLITE_NOLFS is returned.
+** Here is an interesting observation:  Win95, Win98, and WinME lack
+** the LockFileEx() API.  But we can still statically link against that
+** API as long as we don't call it win running Win95/98/ME.  A call to
+** this routine is used to determine if the host is Win95/98/ME or
+** WinNT/2K/XP so that we will know whether or not we can safely call
+** the LockFileEx() API.
 */
-int sqlite3OsReadLock(OsFile *id){
-  int rc;
-  if( id->locked>0 ){
-    rc = SQLITE_OK;
+static int isNT(void){
+  static int osType = 0;   /* 0=unknown 1=win95 2=winNT */
+  if( osType==0 ){
+    OSVERSIONINFO sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    GetVersionEx(&sInfo);
+    osType = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
+  }
+  return osType==2;
+}
+
+/*
+** Acquire a reader lock on the range of bytes from iByte...iByte+nByte-1.
+** Different API routines are called depending on whether or not this
+** is Win95 or WinNT.
+*/
+static int getReadLock(HANDLE h, unsigned int iByte, unsigned int nByte){
+  int res;
+  if( isNT() ){
+    OVERLAPPED ovlp;
+    ovlp.Offset = iByte;
+    ovlp.OffsetHigh = 0;
+    ovlp.hEvent = 0;
+    res = LockFileEx(h, LOCKFILE_FAIL_IMMEDIATELY, 0, nByte, 0, &ovlp);
   }else{
-    int lk;
-    int res;
-    int cnt = 100;
-    sqlite3Randomness(sizeof(lk), &lk);
-    lk = (lk & 0x7fffffff)%N_LOCKBYTE + 1;
-    while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
+    res = LockFile(h, iByte, 0, nByte, 0);
+  }
+  return res;
+}
+
+/*
+** Undo a readlock
+*/
+static int unlockReadLock(OsFile *id){
+  int res;
+  if( isNT() ){
+    res = UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+  }else{
+    res = UnlockFile(id->h, SHARED_FIRST + id->sharedLockByte, 0, 1, 0);
+  }
+  return res;
+}
+
+/*
+** Acquire a lock of the given type on the specified file.  If an
+** appropriate lock already exists, this routine is a no-op.  Return
+** SQLITE_OK on success and SQLITE_BUSY if another thread is already
+** holding a conflicting lock.
+*/
+int sqlite3OsLock(OsFile *id, int locktype){
+  int rc = SQLITE_OK;    /* Return code from subroutines */
+  int res = 1;           /* Result of a windows lock call */
+
+  TRACE4("LOCK %d %d was %d\n", id->h, locktype, id->locktype);
+
+  /* If there is already a lock of this type or more restrictive on the
+  ** OsFile, do nothing. Don't use the end_lock: exit path, as
+  ** sqlite3OsEnterMutex() hasn't been called yet.
+  */
+  if( id->locktype>=locktype ){
+    return SQLITE_OK;
+  }
+
+  /* Lock the PENDING_LOCK byte if we need to acquire a PENDING lock or
+  ** a SHARED lock.  If we are acquiring a SHARED lock, the acquisition of
+  ** the PENDING_LOCK byte is temporary.
+  */
+  if( id->locktype==NO_LOCK || locktype==PENDING_LOCK ){
+    int cnt = 4;
+    while( cnt-->0 && (res = LockFile(id->h, PENDING_BYTE, 0, 1, 0))==0 ){
+      /* Try 4 times to get the pending lock.  The pending lock might be
+      ** held by another reader process who will release it momentarily.
+      */
       Sleep(1);
     }
-    if( res ){
-      UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-      if( isNT() ){
-        OVERLAPPED ovlp;
-        ovlp.Offset = FIRST_LOCKBYTE+1;
-        ovlp.OffsetHigh = 0;
-        ovlp.hEvent = 0;
-        res = LockFileEx(id->h, LOCKFILE_FAIL_IMMEDIATELY, 
-                          0, N_LOCKBYTE, 0, &ovlp);
-      }else{
-        res = LockFile(id->h, FIRST_LOCKBYTE+lk, 0, 1, 0);
-      }
-      UnlockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0);
-    }
-    if( res ){
-      id->locked = lk;
-      rc = SQLITE_OK;
+  }
+
+  /* Acquire a shared lock
+  */
+  if( locktype>=SHARED_LOCK && id->locktype<SHARED_LOCK && res ){
+    if( isNT() ){
+      res = getReadLock(id->h, SHARED_FIRST, SHARED_SIZE);
     }else{
-      rc = SQLITE_BUSY;
+      int lk;
+      sqlite3Randomness(sizeof(lk), &lk);
+      id->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
+      res = LockFile(id->h, SHARED_FIRST+id->sharedLockByte, 0, 1, 0);
     }
+    if( locktype<PENDING_LOCK ){
+      UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
+    }
+  }
+
+  /* Acquire a RESERVED lock
+  */
+  if( locktype>=RESERVED_LOCK && id->locktype<RESERVED_LOCK && res ){
+    res = getReadLock(id->h, RESERVED_BYTE, 1);
+  }
+
+  /* Acquire an EXCLUSIVE lock
+  */
+  if( locktype==EXCLUSIVE_LOCK ){
+    if( id->locktype>=SHARED_LOCK ){
+      res = unlockReadLock(id);
+    }
+    if( res ){
+      res = LockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+    }else{
+      res = 0;
+    }
+  }
+
+  /* Update the state of the lock has held in the file descriptor then
+  ** return the appropriate result code.
+  */
+  if( res ){
+    id->locktype = locktype;
+    rc = SQLITE_OK;
+  }else{
+    TRACE2("LOCK FAILED %d\n", id->h);
+    rc = SQLITE_BUSY;
   }
   return rc;
 }
 
 /*
-** Change the lock status to be an exclusive or write lock.  Return
-** SQLITE_OK on success and SQLITE_BUSY on a failure.  If this
-** library was compiled with large file support (LFS) but LFS is not
-** available on the host, then an SQLITE_NOLFS is returned.
+** This routine checks if there is a RESERVED lock held on the specified
+** file by this or any other process. If such a lock is held, return
+** non-zero, otherwise zero.
 */
-int sqlite3OsWriteLock(OsFile *id){
+int sqlite3OsCheckWriteLock(OsFile *id){
   int rc;
-  if( id->locked<0 ){
-    rc = SQLITE_OK;
+  if( id->locktype>=RESERVED_LOCK ){
+    rc = 1;
   }else{
-    int res;
-    int cnt = 100;
-    while( cnt-->0 && (res = LockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0))==0 ){
-      Sleep(1);
-    }
-    if( res ){
-      if( id->locked>0 ){
-        if( isNT() ){
-          UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-        }else{
-          res = UnlockFile(id->h, FIRST_LOCKBYTE + id->locked, 0, 1, 0);
-        }
-      }
-      if( res ){
-        res = LockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-      }else{
-        res = 0;
-      }
-      UnlockFile(id->h, FIRST_LOCKBYTE, 0, 1, 0);
-    }
-    if( res ){
-      id->locked = -1;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_BUSY;
+    rc = getReadLock(id->h, RESERVED_BYTE, 1);
+    if( rc ){
+      UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
     }
   }
-  return rc;
+  return 0;
 }
 
 /*
@@ -473,18 +512,21 @@ int sqlite3OsWriteLock(OsFile *id){
 */
 int sqlite3OsUnlock(OsFile *id){
   int rc;
-  if( id->locked==0 ){
-    rc = SQLITE_OK;
-  }else if( isNT() || id->locked<0 ){
-    UnlockFile(id->h, FIRST_LOCKBYTE+1, 0, N_LOCKBYTE, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }else{
-    UnlockFile(id->h, FIRST_LOCKBYTE+id->locked, 0, 1, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
+  TRACE3("UNLOCK %d was %d\n", id->h, id->locktype);
+  if( id->locktype>=EXCLUSIVE_LOCK ){
+    UnlockFile(id->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   }
-  return rc;
+  if( id->locktype>=PENDING_LOCK ){
+    UnlockFile(id->h, PENDING_BYTE, 0, 1, 0);
+  }
+  if( id->locktype>=RESERVED_LOCK ){
+    UnlockFile(id->h, RESERVED_BYTE, 0, 1, 0);
+  }
+  if( id->locktype==SHARED_LOCK ){
+    unlockReadLock(id);
+  }
+  id->locktype = NO_LOCK;
+  return SQLITE_OK;
 }
 
 /*

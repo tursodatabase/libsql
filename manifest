@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_set_auxdata()\sand\ssqlite3_get_auxdata()\sAPIs.\s(CVS\s1532)
-D 2004-06-05T10:22:17
+C Added\ssqlite3OsLock\sfor\swin32.\s\sAssertion\sfault\sin\sattach.test.\s(CVS\s1533)
+D 2004-06-06T00:42:26
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c b8a253fbbcca4da758d1d21232e873d8d5c46eb5
+F src/btree.c 5ee4cad91bdf4e2f0a5dba3a8750283a965d6d27
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
 F src/build.c e12e602f06e37a0fbcb49af17cba68ad85e101b6
 F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
@@ -45,8 +45,8 @@ F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_unix.c a4feb70b23fa5272f53cd2c74588484b54294800
 F src/os_unix.h 7999f2246c6347707e98f7078871ea8ca605df3f
-F src/os_win.c 0f895f0491a983740c08af8e5d1986f3bc4629a4
-F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
+F src/os_win.c a5ab6da08ee90922c3e150afb814d8010383aa96
+F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
 F src/pager.c 944f6b071279887574081281f27bb2af88b42905
 F src/pager.h 0c7b5ac45c69e690c45d160d03bdc8fbd2d4657b
 F src/parse.y 27c1ce09f9d309be91f9e537df2fb00892990af4
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e82eb722b0e0b223ddaf7d85669792c33594f9da
-R 89202e63414e4abff52f3cb8f1936bee
-U danielk1977
-Z d38834ee375024a85c02b119ebf3aa3d
+P c2899b437366d879258ab4f6ae47868441010eca
+R 2034d14c2145fcc5ef775d02c0479e42
+U drh
+Z 2f61e1823db0bf2026ec8a2b5fdc4a80
