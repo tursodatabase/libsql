@@ -8,5 +8,5 @@ includedir=@includedir@
 Name: SQLite
 Description: SQL database engine
 Version: @VERSION@
-Libs: -L${libdir} -lsqlite
+Libs: -L${libdir} -lsqlite3
 Cflags: -I${includedir}
