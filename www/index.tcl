@@ -61,6 +61,14 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2004-Sep-10} {SQLite at the 11<sup><small>th</small></sup>
+Annual Tcl/Tk Conference} {
+  There will be a talk on the use of SQLite in Tcl/Tk at the
+  11<sup><small>th</small></sup> Tcl/Tk Conference this week in
+  New Orleans.  Visit <a href="http://www.tcl.tk/community/tcl2004/">
+  http://www.tcl.tk/</a> for details.
+}
+
 newsitem {2004-Sep-18} {Version 3.0.7} {
   Version 3.0 has now been in use by multiple projects for several
   months with no major difficulties.   We consider it stable and
@@ -81,4 +89,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.98 2004/10/07 19:03:02 drh Exp $}
+footer {$Id: index.tcl,v 1.99 2004/10/10 18:00:47 drh Exp $}

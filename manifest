@@ -1,5 +1,5 @@
-C Typos\sand\sspelling\serrors\sin\sdocumention.\s(CVS\s2014)
-D 2004-10-10T17:24:54
+C Documentation\supdates\s(CVS\s2015)
+D 2004-10-10T18:00:47
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -236,7 +236,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl bce6f03a9d00366e7f9eba9174167930b9f1b4ad
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
-F www/index.tcl ae29ea8a5bdde5a8031a9ac0935ac16dd921b4ef
+F www/index.tcl bd3a75ba43e777f00df33d3f9761efce3694deda
 F www/lang.tcl ba4fbca6342938f0240efdd84e83d5badcd72667
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 6d6246f150f27042b8ede0fe73ecca1aefd2c3e4
-R 88d9ee15725dd536964fb7018cab9c17
+P 16e2ace2db5c051aefe7f72504ad6c1cc5e7a0f4
+R 044fc47f5f0df07bfbaa4c878503df88
 U drh
-Z fed8782376658a7d3a3b9ac3e74ac16d
+Z fb6ef68b6b212d45c47bd957b29caef4
