@@ -25,6 +25,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 December 17 (2.8.8)} {
+<li>Fix a critical bug introduced into 2.8.0 which could cause
+    database corruption.</li>
+<li>Fix a problem with 3-way joins that do not use indices</li>
+<li>The VACUUM command now works with the non-callback API</li>
+<li>Improvements to the "PRAGMA integrity_check" command</li>
+}
+
 chng {2003 December 4 (2.8.7)} {
 <li>Added experimental sqlite_bind() and sqlite_reset() APIs.</li>
 <li>If the name of the database is an empty string, open a new database

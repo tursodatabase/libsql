@@ -1,9 +1,9 @@
-C Make\ssure\sthe\spagers\sin-memory\scache\sstates\sin\ssync\swith\sthe\sdisk\sfile.\nTicket\s#529.\s(CVS\s1133)
-D 2003-12-17T23:57:35
+C Bump\sthe\sversion\snumber\sand\supdate\sthe\schange\slog\sin\spreparation\sfor\sthe\nnext\srelease.\s(CVS\s1134)
+D 2003-12-18T00:02:44
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 3efaa76c9810cc1d4c6c777f48f433987cbb3662
+F VERSION 37237c64d9e5b103d462e341e4ac3b4f2a6e43dd
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -158,7 +158,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 17d8bd9e7b4fbdca47c30c8b9bcb728c351d55c0
-F www/changes.tcl e2d31395f6ba922712b94642679b344b95d6d8f7
+F www/changes.tcl 875be0b0d82546d7947f9df3d9a94ba94a6fcaee
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
@@ -177,7 +177,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P b92c31d6c138f9462730cecfe14f7dde19778e79
-R 5dac2c4103dd7d1b8becf54797b0f5a6
+P da00efb13fe8ccf1c27e4e1193df6b53de9463f4
+R d157db23c5020483a4deed7005809e7f
 U drh
-Z 3514ff5b1ce26349633380e9a1db39b1
+Z 05c469d3acd8683a76f6498fb5e46113
