@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.152 2004/02/12 15:31:21 drh Exp $
+** $Id: select.c,v 1.153 2004/02/13 16:22:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1526,25 +1526,29 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 static void substExprList(ExprList*,int,ExprList*);  /* Forward Decl */
 static void substExpr(Expr *pExpr, int iTable, ExprList *pEList){
   if( pExpr==0 ) return;
-  if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable && pExpr->iColumn>=0 ){
-    Expr *pNew;
-    assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
-    assert( pExpr->pLeft==0 && pExpr->pRight==0 && pExpr->pList==0 );
-    pNew = pEList->a[pExpr->iColumn].pExpr;
-    assert( pNew!=0 );
-    pExpr->op = pNew->op;
-    pExpr->dataType = pNew->dataType;
-    assert( pExpr->pLeft==0 );
-    pExpr->pLeft = sqliteExprDup(pNew->pLeft);
-    assert( pExpr->pRight==0 );
-    pExpr->pRight = sqliteExprDup(pNew->pRight);
-    assert( pExpr->pList==0 );
-    pExpr->pList = sqliteExprListDup(pNew->pList);
-    pExpr->iTable = pNew->iTable;
-    pExpr->iColumn = pNew->iColumn;
-    pExpr->iAgg = pNew->iAgg;
-    sqliteTokenCopy(&pExpr->token, &pNew->token);
-    sqliteTokenCopy(&pExpr->span, &pNew->span);
+  if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable ){
+    if( pExpr->iColumn<0 ){
+      pExpr->op = TK_NULL;
+    }else{
+      Expr *pNew;
+      assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
+      assert( pExpr->pLeft==0 && pExpr->pRight==0 && pExpr->pList==0 );
+      pNew = pEList->a[pExpr->iColumn].pExpr;
+      assert( pNew!=0 );
+      pExpr->op = pNew->op;
+      pExpr->dataType = pNew->dataType;
+      assert( pExpr->pLeft==0 );
+      pExpr->pLeft = sqliteExprDup(pNew->pLeft);
+      assert( pExpr->pRight==0 );
+      pExpr->pRight = sqliteExprDup(pNew->pRight);
+      assert( pExpr->pList==0 );
+      pExpr->pList = sqliteExprListDup(pNew->pList);
+      pExpr->iTable = pNew->iTable;
+      pExpr->iColumn = pNew->iColumn;
+      pExpr->iAgg = pNew->iAgg;
+      sqliteTokenCopy(&pExpr->token, &pNew->token);
+      sqliteTokenCopy(&pExpr->span, &pNew->span);
+    }
   }else{
     substExpr(pExpr->pLeft, iTable, pEList);
     substExpr(pExpr->pRight, iTable, pEList);

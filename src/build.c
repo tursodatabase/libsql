@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.166 2004/02/12 18:46:39 drh Exp $
+** $Id: build.c,v 1.167 2004/02/13 16:22:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -83,7 +83,14 @@ void sqliteExec(Parse *pParse){
 
   if( sqlite_malloc_failed ) return;
   xCallback = pParse->xCallback;
-  if( xCallback==0 && pParse->useCallback ) xCallback = fakeCallback;
+  if( xCallback==0 ){
+    if( pParse->useCallback ){
+      xCallback = fakeCallback;
+    }else if( v==0 ){
+      v = sqliteGetVdbe(pParse);
+      sqliteVdbeAddOp(v, OP_Halt, 0, 0);
+    }
+  }
   if( v && pParse->nErr==0 ){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqliteVdbeTrace(v, trace);
