@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the compile.html file.
 #
-set rcsid {$Id: compile.tcl,v 1.3 2005/01/21 08:13:15 danielk1977 Exp $ }
+set rcsid {$Id: compile.tcl,v 1.4 2005/02/09 01:40:25 danielk1977 Exp $ }
 source common.tcl
 header {Compilation Options For SQLite}
 
@@ -34,16 +34,31 @@ databases). In any case the compile-time default may be overridden by the
 "PRAGMA auto_vacuum" command.
 </p>
 
+<p><b>SQLITE_DEFAULT_CACHE_SIZE=<i>&lt;pages&gt;</i></b><br>
+This macro sets the default size of the page-cache for each attached
+database, in pages. This can be overridden by the "PRAGMA cache_size"
+comamnd. The default value is 2000.
+</p>
+
 <p><b>SQLITE_DEFAULT_PAGE_SIZE=<i>&lt;bytes&gt;</i></b><br>
 This macro is used to set the default page-size used when a
 database is created. The value assigned must be a power of 2. The
 default value is 1024. The compile-time default may be overridden at 
 runtime by the "PRAGMA page_size" command.
+</p>
+
+<p><b>SQLITE_DEFAULT_TEMP_CACHE_SIZE=<i>&lt;pages&gt;</i></b><br>
+This macro sets the default size of the page-cache for temporary files
+created by SQLite to store intermediate results, in pages. It does
+not affect the page-cache for the temp database, where tables created
+using "CREATE TEMP TABLE" are stored. The default value is 500.
+</p>
 
 <p><b>SQLITE_MAX_PAGE_SIZE=<i>&lt;bytes&gt;</i></b><br>
 This is used to set the maximum allowable page-size that can
 be specified by the "PRAGMA page_size" command. The default value
 is 8192.
+</p>
 
 <a name="omitfeatures"></a>
 <h2>Options To Omit Features</h2>

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.369 2005/02/08 07:50:42 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.370 2005/02/09 01:40:25 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -51,14 +51,21 @@
 
 /*
 ** The maximum number of in-memory pages to use for the main database
-** table and for temporary tables.
+** table and for temporary tables. Internally, the MAX_PAGES and 
+** TEMP_PAGES macros are used. To override the default values at
+** compilation time, the SQLITE_DEFAULT_CACHE_SIZE and 
+** SQLITE_DEFAULT_TEMP_CACHE_SIZE macros should be set.
 */
 #ifdef SQLITE_DEFAULT_CACHE_SIZE
 # define MAX_PAGES SQLITE_DEFAULT_CACHE_SIZE
 #else
 # define MAX_PAGES   2000
 #endif
-#define TEMP_PAGES   500
+#ifdef SQLITE_DEFAULT_TEMP_CACHE_SIZE
+# define TEMP_PAGES SQLITE_DEFAULT_TEMP_CACHE_SIZE
+#else
+# define TEMP_PAGES   500
+#endif
 
 /*
 ** If the following macro is set to 1, then NULL values are considered

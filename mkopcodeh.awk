@@ -60,7 +60,7 @@ END {
     if( op[name]>max ) max = op[name]
     printf "#define %-25s %15d", name, op[name]
     if( sameas[op[name]] ) {
-      printf "   /*same as %-12s*/", sameas[op[name]]
+      printf "   /* same as %-12s*/", sameas[op[name]]
     } 
     printf "\n"
 

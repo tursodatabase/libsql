@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.93 2005/01/28 01:29:08 drh Exp $
+** $Id: func.c,v 1.94 2005/02/09 01:40:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -925,8 +925,7 @@ static void test_error(
   int nArg,
   sqlite3_value **argv
 ){
-  // sqlite3_result_error(pCtx, sqlite3_value_text(argv[0]), 0);
-  sqlite3_result_error(pCtx, 0, 0);
+  sqlite3_result_error(pCtx, sqlite3_value_text(argv[0]), 0);
 }
 #endif /* SQLITE_TEST */
 

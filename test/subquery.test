@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.5 2005/02/08 07:50:42 danielk1977 Exp $
+# $Id: subquery.test,v 1.6 2005/02/09 01:40:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -240,11 +240,16 @@ do_test subquery-3.3.3 {
     SELECT max(a), (SELECT d FROM t2 WHERE a=c) FROM t1;
   }
 } {2 two}
-do_test subquery-3.3.3 {
+do_test subquery-3.3.4 {
   execsql {
     SELECT a, (SELECT (SELECT d FROM t2 WHERE a=c)) FROM t1 GROUP BY a;
   }
 } {1 one 2 two}
+do_test subquery-3.3.5 {
+  execsql {
+    SELECT a, (SELECT count(*) FROM t2 WHERE a=c) FROM t1;
+  }
+} {1 1 2 1}
 
 #------------------------------------------------------------------
 # These tests - subquery-4.* - use the TCL statement cache to try 
