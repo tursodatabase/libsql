@@ -5,7 +5,7 @@
 
 # Get the name of the database to analyze
 #
-set argv $argv0
+#set argv $argv0
 if {[llength $argv]!=1} {
   puts stderr "Usage: $argv0 database-name"
   exit 1
@@ -322,42 +322,103 @@ proc subreport {title where} {
   return 1
 }
 
+# Calculate the overhead in pages caused by auto-vacuum. 
+#
+# This procedure calculates and returns the number of pages used by the 
+# auto-vacuum 'pointer-map'. If the database does not support auto-vacuum,
+# then 0 is returned. The two arguments are the size of the database file in
+# bytes and the page size used by the database (also in bytes).
+proc autovacuum_overhead {filePages pageSize} {
+
+  # Read the value of meta 4. If non-zero, then the database supports
+  # auto-vacuum. It would be possible to use "PRAGMA auto_vacuum" instead,
+  # but that would not work if the SQLITE_OMIT_PRAGMA macro was defined
+  # when the library was built.
+  set meta4 [lindex [btree_get_meta $::DB] 4]
+
+  # If the database is not an auto-vacuum database or the file consists
+  # of one page only then there is no overhead for auto-vacuum. Return zero.
+  if {0==$meta4 || $filePages==1} {
+    return 0
+  }
+
+  # The number of entries on each pointer map page. The layout of the
+  # database file is one pointer-map page, followed by $ptrsPerPage other
+  # pages, followed by a pointer-map page etc. The first pointer-map page
+  # is the second page of the file overall.
+  set ptrsPerPage [expr double($pageSize/5)]
+
+  # Return the number of pointer map pages in the database.
+  return [expr int(ceil( ($filePages-1.0)/($ptrsPerPage+1.0) ))]
+}
+
 # Output summary statistics:
 #
 puts "/** Disk-Space Utilization Report For $file_to_analyze"
 puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
 puts ""
-statline {Page size in bytes} $pageSize
-set fsize [file size $file_to_analyze]
-set file_pgcnt [expr {$fsize/$pageSize}]
-set usedcnt [mem eval \
-              {SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM space_used}]
-set freecnt [expr {$file_pgcnt-$usedcnt}]
-set freecnt2 [lindex [btree_get_meta $DB] 0]
-statline {Pages in the whole file (measured)} $file_pgcnt
-set file_pgcnt2 [expr {$usedcnt+$freecnt2}]
-statline {Pages in the whole file (calculated)} $file_pgcnt2
-statline {Pages that store data} $usedcnt [percent $usedcnt $file_pgcnt]
-statline {Pages on the freelist (per header)}\
-   $freecnt2 [percent $freecnt2 $file_pgcnt]
-statline {Pages on the freelist (calculated)}\
-   $freecnt [percent $freecnt $file_pgcnt]
+
+# Variables:
+#
+# pageSize:      Size of each page in bytes.
+# file_bytes:    File size in bytes.
+# file_pgcnt:    Number of pages in the file.
+# file_pgcnt2:   Number of pages in the file (calculated).
+# av_pgcnt:      Pages consumed by the auto-vacuum pointer-map.
+# av_percent:    Percentage of the file consumed by auto-vacuum pointer-map.
+# inuse_pgcnt:   Data pages in the file.
+# inuse_percent: Percentage of pages used to store data.
+# free_pgcnt:    Free pages calculated as (<total pages> - <in-use pages>)
+# free_pgcnt2:   Free pages in the file according to the file header.
+# free_percent:  Percentage of file consumed by free pages (calculated).
+# free_percent2: Percentage of file consumed by free pages (header).
+# ntable:        Number of tables in the db.
+# nindex:        Number of indices in the db.
+# nautoindex:    Number of indices created automatically.
+# nmanindex:     Number of indices created manually.
+# user_payload:
+
+set file_bytes  [file size $file_to_analyze]
+set file_pgcnt  [expr {$file_bytes/$pageSize}]
+
+set av_pgcnt    [autovacuum_overhead $file_pgcnt $pageSize]
+set av_percent  [percent $av_pgcnt $file_pgcnt]
+
+set q {SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM space_used}
+set inuse_pgcnt   [expr [mem eval $q]]
+set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
+
+set free_pgcnt    [expr $file_pgcnt-$inuse_pgcnt-$av_pgcnt]
+set free_percent  [percent $free_pgcnt $file_pgcnt]
+set free_pgcnt2   [lindex [btree_get_meta $DB] 0]
+set free_percent2 [percent $free_pgcnt2 $file_pgcnt]
+
+set file_pgcnt2 [expr {$inuse_pgcnt+$free_pgcnt2+$av_pgcnt}]
 
 set ntable [db eval {SELECT count(*)+1 FROM sqlite_master WHERE type='table'}]
-statline {Number of tables in the database} $ntable
 set nindex [db eval {SELECT count(*) FROM sqlite_master WHERE type='index'}]
-set autoindex [db eval {SELECT count(*) FROM sqlite_master
-                        WHERE type='index' AND name LIKE '(% autoindex %)'}]
-set manindex [expr {$nindex-$autoindex}]
-statline {Number of indices} $nindex
-statline {Number of named indices} $manindex
-statline {Automatically generated indices} $autoindex
-set total_payload [mem eval "SELECT sum(payload) FROM space_used"]
-statline "Size of the file in bytes" $fsize
+set q {SELECT count(*) FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}
+set nautoindex [db eval $q]
+set nmanindex [expr {$nindex-$nautoindex}]
+
+# set total_payload [mem eval "SELECT sum(payload) FROM space_used"]
 set user_payload [mem one {SELECT sum(payload) FROM space_used
      WHERE NOT is_index AND name NOT LIKE 'sqlite_master'}]
-statline "Bytes of user payload stored" $user_payload \
-    [percent $user_payload $fsize]
+set user_payload_percent [percent $user_payload $file_bytes]
+
+statline {Page size in bytes} $pageSize
+statline {Pages in the whole file (measured)} $file_pgcnt
+statline {Pages in the whole file (calculated)} $file_pgcnt2
+statline {Pages that store data} $inuse_pgcnt $inuse_percent
+statline {Pages on the freelist (per header)} $free_pgcnt2 $free_percent2
+statline {Pages on the freelist (calculated)} $free_pgcnt $free_percent
+statline {Pages of auto-vacuum overhead} $av_pgcnt $av_percent
+statline {Number of tables in the database} $ntable
+statline {Number of indices} $nindex
+statline {Number of named indices} $nmanindex
+statline {Automatically generated indices} $nautoindex
+statline {Size of the file in bytes} $file_bytes
+statline {Bytes of user payload stored} $user_payload $user_payload_percent
 
 # Output table rankings
 #
@@ -421,6 +482,11 @@ Pages on the freelist
     The number of pages that are not currently in use but are reserved for
     future use.  The percentage at the right is the number of freelist pages
     divided by the total number of pages in the file.
+
+Pages of auto-vacuum overhead
+
+    The number of pages that store data used by the database to facilitate
+    auto-vacuum. This is zero for databases that do not support auto-vacuum.
 
 Number of tables in the database
 
