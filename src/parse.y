@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.107 2004/01/24 20:18:13 drh Exp $
+** @(#) $Id: parse.y,v 1.108 2004/02/12 17:28:13 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -838,11 +838,11 @@ trigger_cmd(A) ::= UPDATE orconf(R) nm(X) SET setlist(Y) where_opt(Z).
                { A = sqliteTriggerUpdateStep(&X, Y, Z, R); }
 
 // INSERT
-trigger_cmd(A) ::= INSERT orconf(R) INTO nm(X) inscollist_opt(F) 
+trigger_cmd(A) ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) 
   VALUES LP itemlist(Y) RP.  
 {A = sqliteTriggerInsertStep(&X, F, Y, 0, R);}
 
-trigger_cmd(A) ::= INSERT orconf(R) INTO nm(X) inscollist_opt(F) select(S).
+trigger_cmd(A) ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) select(S).
                {A = sqliteTriggerInsertStep(&X, F, 0, S, R);}
 
 // DELETE

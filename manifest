@@ -1,5 +1,5 @@
-C Remove\sunused\svariable.\s(CVS\s1230)
-D 2004-02-12T15:32:53
+C All\sREPLACE\sINTO\ssyntax\sinside\sof\striggers.\s\sTicket\s#610.\s(CVS\s1231)
+D 2004-02-12T17:28:13
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -42,7 +42,7 @@ F src/os.c f5fc4954725b2fcd852979f2746085fe8ca27710
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
 F src/pager.c 29ddad4dd454f0aaa98e2bcd327710ab9f02f833
 F src/pager.h 82332878799280145639a48d88cdb4058925e3f6
-F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
+F src/parse.y eb3af3b6e6ddd2b8023953180eddb88039eb99a9
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
@@ -136,7 +136,7 @@ F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
-F test/trigger1.test 3fe06daecf8334df840025e154e95fd4727600d7
+F test/trigger1.test d9f600448b9198e4936a86a186b20435a8faa1f2
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
@@ -184,7 +184,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 12c7a83f8e4055c4590983ef212648c781ebd963
-R 169c4550cb0c181c91ddd06ec37d21a9
+P 74b234264ba2910ebd38e7b7ebbc369108a235cb
+R 8051cc03a6a9028391110c6d16f628b3
 U drh
-Z 6f67ba3f9d362fc59a57f90014d40746
+Z b906184cf6ae67b6bcaab0c8e43b04f2
