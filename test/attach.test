@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.7 2003/06/03 01:47:12 drh Exp $
+# $Id: attach.test,v 1.8 2003/06/04 12:31:53 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -559,17 +559,18 @@ do_test attach-6.1 {
   }
 } {1 {cannot attach empty database: nosuch}}
 file delete -force no-such-file
-do_test attach-6.2 {
-  sqlite dbx cannot-read
-  dbx eval {CREATE TABLE t1(a,b,c)}
-  dbx close
-  catch {file attributes cannot-read -permission 0000}
-  catch {file attributes cannot-read -readonly 1}
-  catchsql {
-    ATTACH DATABASE 'cannot-read' AS noread;
-  }
-} {1 {unable to open database: cannot-read}}
-file delete -force cannot-read
+if {$tcl_platform(platform)=="unix"} {
+  do_test attach-6.2 {
+    sqlite dbx cannot-read
+    dbx eval {CREATE TABLE t1(a,b,c)}
+    dbx close
+    file attributes cannot-read -permission 0000
+    catchsql {
+      ATTACH DATABASE 'cannot-read' AS noread;
+    }
+  } {1 {unable to open database: cannot-read}}
+  file delete -force cannot-read
+}
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}

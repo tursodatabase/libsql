@@ -1,5 +1,5 @@
-C Avoid\scorrupting\sindices\swhen\sdoing\sa\sREPLACE\son\sa\stable\swith\san\nINTEGER\sPRIMARY\sKEY\sthat\salso\shas\sanother\sindex.\s\sTicket\s#334.\s(CVS\s999)
-D 2003-06-04T12:23:31
+C Disable\sthe\sunreadable\sfile\stest\s(attach-6.2)\sunder\swindows\sbecause\sof\nproblems\sin\sthe\sOS.\s(CVS\s1000)
+D 2003-06-04T12:31:53
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,7 +63,7 @@ F src/vdbe.c 4170cba0a05da0a93dcd674859fc1ce18f3fb0a3
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test 771334395ba0af08ec27b83f516978989e606e5a
+F test/attach.test fa2fd071e591e9b2254f69a1224059de525b16ca
 F test/auth.test dee78be1f4f920bd6b15c4c947ce4d01bfe2826d
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3e8889d7ce5e99fc855526fc1bb62ddbe282bfc5
-R 9165bb0816719b739dc59ff58a777b66
+P e813faae0e4086571d13c769f793add7f1f979af
+R 7a171aa05de27c25e9ddf0ac9a9d987c
 U drh
-Z 94bfab46c8d22deaac737964000d29aa
+Z 09fdaaa7530512cf34b726cc19e00b04
