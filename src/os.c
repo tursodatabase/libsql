@@ -130,6 +130,7 @@ static struct lockInfo *findLockInfo(int fd){
   struct lockInfo *pInfo;
   rc = fstat(fd, &statbuf);
   if( rc!=0 ) return 0;
+  memset(&key, 0, sizeof(key));
   key.dev = statbuf.st_dev;
   key.ino = statbuf.st_ino;
   pInfo = (struct lockInfo*)sqliteHashFind(&lockHash, &key, sizeof(key));

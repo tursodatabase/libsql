@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the UPDATE statement.
 #
-# $Id: update.test,v 1.7 2001/10/15 00:44:36 drh Exp $
+# $Id: update.test,v 1.8 2001/11/09 22:41:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -324,6 +324,7 @@ do_test update-7.2 {
   execsql {SELECT * FROM test1 ORDER BY f1,f2}
 } {6 64 7 128 8 89 8 257 8 888 9 512 10 1024 77 128 777 128}
 do_test update-7.3 {
+  # explain {UPDATE test1 SET f2=f2-1 WHERE f1==8 and F2<300}
   execsql {UPDATE test1 SET f2=f2-1 WHERE f1==8 and f2<800}
   execsql {SELECT * FROM test1 ORDER BY f1,f2}
 } {6 64 7 128 8 88 8 256 8 888 9 512 10 1024 77 128 777 128}

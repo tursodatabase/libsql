@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.20 2001/09/27 15:11:55 drh Exp $
+# $Id: tester.tcl,v 1.21 2001/11/09 22:41:45 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -181,6 +181,17 @@ proc catchsql {sql {db db}} {
   set r [catch {$db eval $sql} msg]
   lappend r $msg
   return $r
+}
+
+# Do an VDBE code dump on the SQL given
+#
+proc explain {sql {db db}} {
+  puts ""
+  puts "addr  opcode        p1       p2     p3             "
+  puts "----  ------------  ------  ------  ---------------"
+  $db eval "explain $sql" {} {
+    puts [format {%-4d  %-12.12s  %-6d  %-6d  %s} $addr $opcode $p1 $p2 $p3]
+  }
 }
 
 # Another procedure to execute SQL.  This one includes the field

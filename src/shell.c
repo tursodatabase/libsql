@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.37 2001/10/19 16:44:57 drh Exp $
+** $Id: shell.c,v 1.38 2001/11/09 22:41:45 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -547,6 +547,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
+    sqlite_close(db);
     exit(0);
   }else
 
