@@ -1,5 +1,5 @@
-C Fix\sa\sbad\smemory\sleak\sin\sthe\sin-memory\sdatabase\smodule.\s(CVS\s1039)
-D 2003-06-29T18:29:48
+C The\sprior\sfix\sof\sticket\s#360\swas\sincorrect\sand\scaused\sa\smemory\sleak.\s\sThis\ncheck-in\splugs\sthe\smemory\sleak\sand\scorrectly\sfixes\sticket\s#360.\s(CVS\s1040)
+D 2003-06-29T20:25:08
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 566c7780170dd11fb1ad5de3ba81f0dfea7cccf0
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
-F src/vdbe.c aa35237cd53a941e152bea3b3c28effaa3b46a80
+F src/vdbe.c f5d5779b1f1884e0922f70f459998f8f9a934097
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -96,7 +96,7 @@ F test/memdb.test cd4580f466f34c42354612a375c5adb90447e4c4
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test c7dc2f2bd702d8283e885a64ec0714be26cfb051
-F test/misc2.test c896dd7c875f11a1de11ddf249ee52edb0da95e1
+F test/misc2.test 5389f9aa90d6f3713880382d0ae42b8a5da82ffd
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -134,6 +134,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 93db920de9479657d04ca73e9368db7fc2969990
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 16ef9493dcd36146f806e75148f4bb0201a123ec
+F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -166,7 +167,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 0532e1a8f5a310bb19b55dc29aa5b1f1172a14da
-R 59392850afc02c8699556ed3526bfb9b
+P 9cca95937837333c91f5dee8c48178cf7e06d59f
+R e554dbb5c195efefdc6c47a14ad5d26c
 U drh
-Z 1045de8580d7f6762e47e878f632486d
+Z 2bc7ff7b967bfdee965a4b69cafc3802
