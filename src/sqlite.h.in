@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.77 2004/05/25 23:35:19 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.78 2004/05/26 00:07:25 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -586,54 +586,6 @@ int sqlite3_compile(
 );
 
 /*
-** After an SQL statement has been compiled, it is handed to this routine
-** to be executed.  This routine executes the statement as far as it can
-** go then returns.  The return value will be one of SQLITE_DONE,
-** SQLITE_ERROR, SQLITE_BUSY, SQLITE_ROW, or SQLITE_MISUSE.
-**
-** SQLITE_DONE means that the execute of the SQL statement is complete
-** an no errors have occurred.  sqlite3_step() should not be called again
-** for the same virtual machine.  *pN is set to the number of columns in
-** the result set and *pazColName is set to an array of strings that
-** describe the column names and datatypes.  The name of the i-th column
-** is (*pazColName)[i] and the datatype of the i-th column is
-** (*pazColName)[i+*pN].  *pazValue is set to NULL.
-**
-** SQLITE_ERROR means that the virtual machine encountered a run-time
-** error.  sqlite3_step() should not be called again for the same
-** virtual machine.  *pN is set to 0 and *pazColName and *pazValue are set
-** to NULL.  Use sqlite3_finalize() to obtain the specific error code
-** and the error message text for the error.
-**
-** SQLITE_BUSY means that an attempt to open the database failed because
-** another thread or process is holding a lock.  The calling routine
-** can try again to open the database by calling sqlite3_step() again.
-** The return code will only be SQLITE_BUSY if no busy handler is registered
-** using the sqlite3_busy_handler() or sqlite3_busy_timeout() routines.  If
-** a busy handler callback has been registered but returns 0, then this
-** routine will return SQLITE_ERROR and sqltie_finalize() will return
-** SQLITE_BUSY when it is called.
-**
-** SQLITE_ROW means that a single row of the result is now available.
-** The data is contained in *pazValue.  The value of the i-th column is
-** (*azValue)[i].  *pN and *pazColName are set as described in SQLITE_DONE.
-** Invoke sqlite3_step() again to advance to the next row.
-**
-** SQLITE_MISUSE is returned if sqlite3_step() is called incorrectly.
-** For example, if you call sqlite3_step() after the virtual machine
-** has halted (after a prior call to sqlite3_step() has returned SQLITE_DONE)
-** or if you call sqlite3_step() with an incorrectly initialized virtual
-** machine or a virtual machine that has been deleted or that is associated
-** with an sqlite structure that has been closed.
-*/
-int sqlite3_step(
-  sqlite_vm *pVm,              /* The virtual machine to execute */
-  int *pN,                     /* OUT: Number of columns in result */
-  const char ***pazValue,      /* OUT: Column data */
-  const char ***pazColName     /* OUT: Column names and datatypes */
-);
-
-/*
 ** This routine is called to delete a virtual machine after it has finished
 ** executing.  The return value is the result code.  SQLITE_OK is returned
 ** if the statement executed successfully and some other value is returned if
@@ -1123,7 +1075,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** SQLITE_DONE.  Or it could be the case the the same database connection
 ** is being used simulataneously by two or more threads.
 */
-int sqlite3_step_new(sqlite3_stmt*);
+int sqlite3_step(sqlite3_stmt*);
 
 
 /*

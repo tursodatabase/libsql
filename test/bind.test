@@ -11,11 +11,28 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.7 2004/05/24 12:55:55 danielk1977 Exp $
+# $Id: bind.test,v 1.8 2004/05/26 00:07:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+proc sqlite_step {stmt N VALS COLS} {
+  upvar VALS vals
+  upvar COLS cols
+  set vals [list]
+  set cols [list]
+
+  set rc [sqlite3_step $stmt]
+  for {set i 0} {$i < [sqlite3_column_count $stmt]} {incr i} {
+    lappend cols [sqlite3_column_name $stmt $i]
+  }
+  for {set i 0} {$i < [sqlite3_data_count $stmt]} {incr i} {
+    lappend vals [sqlite3_column_data $stmt $i]
+  }
+
+  return $rc
+}
 
 do_test bind-1.1 {
   db close

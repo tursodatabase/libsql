@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.52 2004/05/25 23:35:19 danielk1977 Exp $
+** $Id: test1.c,v 1.53 2004/05/26 00:07:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -759,68 +759,6 @@ static int sqlite_datatypes(
 }
 
 /*
-** Usage:  sqlite3_step  VM  ?NVAR?  ?VALUEVAR?  ?COLNAMEVAR?
-**
-** Step a virtual machine.  Return a the result code as a string.
-** Column results are written into three variables.
-*/
-#if 0
-static int test_step(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  char **argv            /* Text of each argument */
-){
-  sqlite_vm *vm;
-  int rc, i;
-  const char **azValue = 0;
-  const char **azColName = 0;
-  int N = 0;
-  char *zRc;
-  char zBuf[50];
-  if( argc<2 || argc>5 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " VM NVAR VALUEVAR COLNAMEVAR", 0);
-    return TCL_ERROR;
-  }
-  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite3_step(vm, argc>=3?&N:0, argc>=4?&azValue:0, argc==5?&azColName:0);
-  if( argc>=3 ){
-    sprintf(zBuf, "%d", N);
-    Tcl_SetVar(interp, argv[2], zBuf, 0);
-  }
-  if( argc>=4 ){
-    Tcl_SetVar(interp, argv[3], "", 0);
-    if( azValue ){
-      for(i=0; i<N; i++){
-        Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
-            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
-      }
-    }
-  }
-  if( argc==5 ){
-    Tcl_SetVar(interp, argv[4], "", 0);
-    if( azColName ){
-      for(i=0; i<N*2; i++){
-        Tcl_SetVar(interp, argv[4], azColName[i] ? azColName[i] : "",
-            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
-      }
-    }
-  }
-  switch( rc ){
-    case SQLITE_DONE:   zRc = "SQLITE_DONE";    break;
-    case SQLITE_BUSY:   zRc = "SQLITE_BUSY";    break;
-    case SQLITE_ROW:    zRc = "SQLITE_ROW";     break;
-    case SQLITE_ERROR:  zRc = "SQLITE_ERROR";   break;
-    case SQLITE_MISUSE: zRc = "SQLITE_MISUSE";  break;
-    default:            zRc = "unknown";        break;
-  }
-  Tcl_AppendResult(interp, zRc, 0);
-  return TCL_OK;
-}
-#endif
-
-/*
 ** Usage:  sqlite3_finalize  STMT 
 **
 ** Finalize a statement handle.
@@ -1416,7 +1354,7 @@ static int test_open16(
 **
 ** Advance the statement to the next row.
 */
-static int test_step_new(
+static int test_step(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1432,9 +1370,10 @@ static int test_step_new(
   }
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  rc = sqlite3_step_new(pStmt);
+  rc = sqlite3_step(pStmt);
 
   if( rc!=SQLITE_DONE && rc!=SQLITE_ROW ) return TCL_ERROR;
+  Tcl_SetResult(interp, errorName(rc), 0);
   return TCL_OK;
 }
 
@@ -1502,6 +1441,56 @@ static int test_column_data16(
   pRet = Tcl_NewByteArrayObj(sqlite3_column_data16(pStmt, col), len);
   Tcl_SetObjResult(interp, pRet);
 
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_count STMT 
+**
+** Return the number of columns returned by the sql statement STMT.
+*/
+static int test_column_count(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_column_count(pStmt)));
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_data_count STMT 
+**
+** Return the number of columns returned by the sql statement STMT.
+*/
+static int test_data_count(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_data_count(pStmt)));
   return TCL_OK;
 }
 
@@ -1577,7 +1566,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-/*{ "sqlite_step",                    (Tcl_CmdProc*)test_step * },*/
      { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
@@ -1601,9 +1589,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_open16",                (Tcl_ObjCmdProc*)test_open16        },
      { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize      },
      { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset         },
-     { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step_new      },
+     { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step},
      { "sqlite3_column_data",           (Tcl_ObjCmdProc*)test_column_data   },
      { "sqlite3_column_data16",         (Tcl_ObjCmdProc*)test_column_data16   },
+     { "sqlite3_column_count",          (Tcl_ObjCmdProc*)test_column_count   },
+     { "sqlite3_data_count",            (Tcl_ObjCmdProc*)test_data_count   },
      { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
   };
   int i;

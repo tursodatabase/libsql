@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.329 2004/05/25 23:35:19 danielk1977 Exp $
+** $Id: vdbe.c,v 1.330 2004/05/26 00:07:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -493,89 +493,10 @@ static void hardRealify(Mem *pStack, u8 enc){
 }
 
 /*
-** Advance the virtual machine to the next output row.
-**
-** The return vale will be either SQLITE_BUSY, SQLITE_DONE, 
-** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
-**
-** SQLITE_BUSY means that the virtual machine attempted to open
-** a locked database and there is no busy callback registered.
-** Call sqlite3_step() again to retry the open.  *pN is set to 0
-** and *pazColName and *pazValue are both set to NULL.
-**
-** SQLITE_DONE means that the virtual machine has finished
-** executing.  sqlite3_step() should not be called again on this
-** virtual machine.  *pN and *pazColName are set appropriately
-** but *pazValue is set to NULL.
-**
-** SQLITE_ROW means that the virtual machine has generated another
-** row of the result set.  *pN is set to the number of columns in
-** the row.  *pazColName is set to the names of the columns followed
-** by the column datatypes.  *pazValue is set to the values of each
-** column in the row.  The value of the i-th column is (*pazValue)[i].
-** The name of the i-th column is (*pazColName)[i] and the datatype
-** of the i-th column is (*pazColName)[i+*pN].
-**
-** SQLITE_ERROR means that a run-time error (such as a constraint
-** violation) has occurred.  The details of the error will be returned
-** by the next call to sqlite3_finalize().  sqlite3_step() should not
-** be called again on the VM.
-**
-** SQLITE_MISUSE means that the this routine was called inappropriately.
-** Perhaps it was called on a virtual machine that had already been
-** finalized or on one that had previously returned SQLITE_ERROR or
-** SQLITE_DONE.  Or it could be the case the the same database connection
-** is being used simulataneously by two or more threads.
-*/
-#if 0
-int sqlite3_step(
-  sqlite_vm *pVm,              /* The virtual machine to execute */
-  int *pN,                     /* OUT: Number of columns in result */
-  const char ***pazValue,      /* OUT: Column data */
-  const char ***pazColName     /* OUT: Column names and datatypes */
-){
-  sqlite3_stmt *pStmt = (sqlite3_stmt*)pVm;
-  int rc;
-
-  rc = sqlite3_step_new(pStmt);
-
-  if( pazValue ) *pazValue = 0;
-  if( pazColName ) *pazColName = 0;
-  if( pN ) *pN = 0;
-
-  if( rc==SQLITE_DONE || rc==SQLITE_ROW ){
-    int i;
-    int cols = sqlite3_column_count(pStmt) * (pazColName?1:0);
-    int vals = sqlite3_data_count(pStmt) * (pazValue?1:0);
-
-    /* Temporary memory leak */
-    if( cols ) *pazColName = sqliteMalloc(sizeof(char *)*cols * 2); 
-    if( pN ) *pN = cols;
-
-    for(i=0; i<cols; i++){
-      (*pazColName)[i] = sqlite3_column_name(pStmt, i);
-    }
-    for(i=cols; i<(2*cols); i++){
-      (*pazColName)[i] = sqlite3_column_decltype(pStmt, i-cols);
-    }
-
-    if( rc==SQLITE_ROW ){
-      if( vals ) *pazValue = sqliteMalloc(sizeof(char *)*vals); 
-      for(i=0; i<vals; i++){
-        (*pazValue)[i] = sqlite3_column_data(pStmt, i);
-      }
-    }
-  }
-
-  return rc;
-}
-#endif 
-
-/*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
 */
-int sqlite3_step_new(sqlite3_stmt *pStmt){
+int sqlite3_step(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
   sqlite *db;
   int rc;
