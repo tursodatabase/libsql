@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.3 2001/09/16 00:13:28 drh Exp $
+# $Id: select3.test,v 1.4 2002/01/22 03:13:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -69,6 +69,21 @@ do_test select3-2.4 {
 do_test select3-2.5 {
   execsql {SELECT log*2+1, avg(n)-min(n) FROM t1 GROUP BY log ORDER BY log}
 } {1 0 3 0 5 0.5 7 1.5 9 3.5 11 7}
+do_test select3-2.6 {
+  execsql {
+    SELECT log*2+1 as x, count(*) FROM t1 GROUP BY x ORDER BY x
+  }
+} {1 1 3 1 5 2 7 4 9 8 11 15}
+do_test select3-2.7 {
+  execsql {
+    SELECT log*2+1 AS x, count(*) AS y FROM t1 GROUP BY x ORDER BY y
+  }
+} {1 1 3 1 5 2 7 4 9 8 11 15}
+do_test select3-2.8 {
+  execsql {
+    SELECT log*2+1 AS x, count(*) AS y FROM t1 GROUP BY x ORDER BY 10-(x+y)
+  }
+} {11 15 9 8 7 4 5 2 3 1 1 1}
 
 # Cannot have a HAVING without a GROUP BY
 #
@@ -95,6 +110,14 @@ do_test select3-4.3 {
     SELECT log, count(*) FROM t1 
     GROUP BY log 
     HAVING count(*)>=4 
+    ORDER BY max(n)
+  }
+} {3 4 4 8 5 15}
+do_test select3-4.4 {
+  execsql {
+    SELECT log AS x, count(*) AS y FROM t1 
+    GROUP BY x
+    HAVING y>=4 
     ORDER BY max(n)
   }
 } {3 4 4 8 5 15}

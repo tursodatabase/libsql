@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.16 2001/12/16 20:05:06 drh Exp $
+# $Id: select1.test,v 1.17 2002/01/22 03:13:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -466,5 +466,39 @@ do_test select1-9.5 {
   set r(*)
 } {f1 f2}
 unset r
+
+# Check for ORDER BY clauses that refer to an AS name in the column list
+#
+do_test select1-10.1 {
+  execsql {
+    SELECT f1 AS x FROM test1 ORDER BY x
+  }
+} {11 33}
+do_test select1-10.2 {
+  execsql {
+    SELECT f1 AS x FROM test1 ORDER BY -x
+  }
+} {33 11}
+do_test select1-10.3 {
+  execsql {
+    SELECT f1-23 AS x FROM test1 ORDER BY abs(x)
+  }
+} {10 -12}
+do_test select1-10.4 {
+  execsql {
+    SELECT f1-23 AS x FROM test1 ORDER BY -abs(x)
+  }
+} {-12 10}
+do_test select1-10.5 {
+  execsql {
+    SELECT f1-22 AS x, f2-22 as y FROM test1
+  }
+} {-11 0 11 22}
+do_test select1-10.6 {
+  execsql {
+    SELECT f1-22 AS x, f2-22 as y FROM test1 WHERE x>0 AND y<50
+  }
+} {11 22}
+
 
 finish_test

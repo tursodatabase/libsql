@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.64 2002/01/10 14:31:49 drh Exp $
+** $Id: build.c,v 1.65 2002/01/22 03:13:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -125,18 +125,6 @@ Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
     pNew->token.n = 0;
   }
   return pNew;
-}
-
-/*
-** Recursively delete an expression tree.
-*/
-void sqliteExprDelete(Expr *p){
-  if( p==0 ) return;
-  if( p->pLeft ) sqliteExprDelete(p->pLeft);
-  if( p->pRight ) sqliteExprDelete(p->pRight);
-  if( p->pList ) sqliteExprListDelete(p->pList);
-  if( p->pSelect ) sqliteSelectDelete(p->pSelect);
-  sqliteFree(p);
 }
 
 /*

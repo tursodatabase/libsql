@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jan ?? (2.2.4)} {
+<li>The label to the right of an AS in the column list of a SELECT can now
+    be used as part of an expression in the WHERE, ORDER BY, GROUP BY, and/or
+    HAVING clauses.</li>
+}
+
 chng {2002 Jan 16 (2.2.3)} {
 <li>Fix warning messages in VC++ 7.0.  (Patches from nicolas352001)</li>
 <li>Make the library thread-safe.  (The code is there and appears to work

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.53 2002/01/04 03:09:30 drh Exp $
+** $Id: select.c,v 1.54 2002/01/22 03:13:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -698,7 +698,7 @@ int sqliteSelect(
   WhereInfo *pWInfo;
   Vdbe *v;
   int isAgg = 0;         /* True for select lists like "count(*)" */
-  ExprList *pEList;      /* List of columns to extract.  NULL means "*" */
+  ExprList *pEList;      /* List of columns to extract. */
   IdList *pTabList;      /* List of tables to select from */
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
@@ -798,7 +798,7 @@ int sqliteSelect(
   ** Resolve the column names and do a semantics check on all the expressions.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
+    if( sqliteExprResolveIds(pParse, pTabList, 0, pEList->a[i].pExpr) ){
       return 1;
     }
     if( sqliteExprCheck(pParse, pEList->a[i].pExpr, 1, &isAgg) ){
@@ -806,7 +806,7 @@ int sqliteSelect(
     }
   }
   if( pWhere ){
-    if( sqliteExprResolveIds(pParse, pTabList, pWhere) ){
+    if( sqliteExprResolveIds(pParse, pTabList, pEList, pWhere) ){
       return 1;
     }
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
@@ -816,7 +816,7 @@ int sqliteSelect(
   if( pOrderBy ){
     for(i=0; i<pOrderBy->nExpr; i++){
       Expr *pE = pOrderBy->a[i].pExpr;
-      if( sqliteExprResolveIds(pParse, pTabList, pE) ){
+      if( sqliteExprResolveIds(pParse, pTabList, pEList, pE) ){
         return 1;
       }
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
@@ -827,7 +827,7 @@ int sqliteSelect(
   if( pGroupBy ){
     for(i=0; i<pGroupBy->nExpr; i++){
       Expr *pE = pGroupBy->a[i].pExpr;
-      if( sqliteExprResolveIds(pParse, pTabList, pE) ){
+      if( sqliteExprResolveIds(pParse, pTabList, pEList, pE) ){
         return 1;
       }
       if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
@@ -842,7 +842,7 @@ int sqliteSelect(
       pParse->nErr++;
       return 1;
     }
-    if( sqliteExprResolveIds(pParse, pTabList, pHaving) ){
+    if( sqliteExprResolveIds(pParse, pTabList, pEList, pHaving) ){
       return 1;
     }
     if( sqliteExprCheck(pParse, pHaving, isAgg, 0) ){
