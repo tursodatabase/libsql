@@ -1042,4 +1042,22 @@ int sqlite3OsCurrentTime(double *prNow){
   return 0;
 }
 
+/*
+** Find the time that the file was last modified.  Write the
+** modification time and date as a Julian Day number into *prNow and
+** return SQLITE_OK.  Return SQLITE_ERROR if the modification
+** time cannot be found.
+*/
+int sqlite3OsFileModTime(OsFile *id, double *prNow){
+  int rc;
+  struct stat statbuf;
+  if( fstat(id->h, &statbuf)==0 ){
+    *prNow = statbuf.st_mtime/86400.0 + 2440587.5;
+    rc = SQLITE_OK;
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
 #endif /* OS_UNIX */

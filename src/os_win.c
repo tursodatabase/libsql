@@ -683,4 +683,27 @@ int sqlite3OsCurrentTime(double *prNow){
   return 0;
 }
 
+/*
+** Find the time that the file was last modified.  Write the
+** modification time and date as a Julian Day number into *prNow and
+** return SQLITE_OK.  Return SQLITE_ERROR if the modification
+** time cannot be found.
+*/
+int sqlite3OsFileModTime(OsFile *id, double *prMTime){
+  int rc;
+  FILETIME ft;
+  /* FILETIME structure is a 64-bit value representing the number of 
+  ** 100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
+  */
+  if( GetFileTime(id->h, 0, 0, &ft) ){
+    double t;
+    t = ((double)ft.dwHighDateTime) * 4294967296.0; 
+    *prMTime = (t + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
+    rc = SQLITE_OK;
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
 #endif /* OS_WIN */

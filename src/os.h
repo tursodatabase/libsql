@@ -160,6 +160,7 @@ int sqlite3OsFileSize(OsFile*, off_t *pSize);
 int sqlite3OsRandomSeed(char*);
 int sqlite3OsSleep(int ms);
 int sqlite3OsCurrentTime(double*);
+int sqlite3OsFileModTime(OsFile*, double*);
 void sqlite3OsEnterMutex(void);
 void sqlite3OsLeaveMutex(void);
 char *sqlite3OsFullPathname(const char*);
