@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.14 2003/04/17 12:44:25 drh Exp $
+# $Id: where.test,v 1.15 2003/04/19 16:34:06 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -706,6 +706,10 @@ do_test where-9.3 {
   }
 } {}
 
-
+do_test where-10.1 {
+  execsql {
+    SELECT 1 WHERE abs(random())<0
+  }
+} {}
 
 finish_test

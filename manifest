@@ -1,5 +1,5 @@
-C fix\sa\smemory\sleak\sin\sbtree_rb.c.\s(CVS\s918)
-D 2003-04-18T22:52:39
+C Bug\sin\sWHERE\sclause\sprocessing\sfixed.\s\sTicket\s#298.\s(CVS\s919)
+D 2003-04-19T16:34:05
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,7 +61,7 @@ F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
 F src/vacuum.c e24781e38db36d1c9f578b6b3613bf0989ebd63c
 F src/vdbe.c d453e8c95c9fac5a5e067c5c58243b3ae75699fc
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
-F src/where.c e5733f7d5e9cc4ed3590dc3401f779e7b7bb8127
+F src/where.c 89eca003346418093138159d79ca833ed9f2401b
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test b311c83e370e6b22b79a8279317039440ce64862
 F test/auth.test 8128cd750830cba01b7fd0fba8ddfa1722ea6291
@@ -126,7 +126,7 @@ F test/update.test 198360dfa14e65354dbcc66d5b98d8070780e42b
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
-F test/where.test c473910ac79aaff49ba1f4d832a6f6a27db0cda3
+F test/where.test 94adbfe53e5c9660b9756f23b29e3b2c3d2792a9
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 14fedcde9cf70aa6040b89de164cf8f56f92a4b9
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4ded1965eb83dee0f28c27ba935d615c77331571
-R 2320d7d2beaa3603b04f97d8f781e745
+P 1e3d0d094776c2a429fa2a3eebc036a0b6374862
+R 869f63511d353e87dc2dd3a60513ae60
 U drh
-Z b76abd0e65d7599880199d2a9894cd84
+Z 804a9e6e52c395fdc713233765cd05d5
