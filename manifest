@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\srollback\svalidation\slogic\s(code\sthat\sonly\sruns\sduring\ndebugging).\s\sThe\sproblem\swas\sintroduced\sby\scheck-in\s(835).\s(CVS\s849)
-D 2003-01-25T15:43:22
+C Version\s2.7.6\s(CVS\s850)
+D 2003-01-25T16:32:14
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -154,7 +154,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 18f4ffaa2ed89784a1ea3c61c864d20e18fa1e9f
+P b6ea0da76a27a4a67a3978c53405840518de2379
 R 4cf2a85c454063f72e76dc7b464fd72d
 U drh
-Z e18f1e76d391be3676abefbe5def4da4
+Z 7ed6fddf31ad03fda6646e399fd6e633
