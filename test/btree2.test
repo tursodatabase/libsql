@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.12 2004/05/09 20:40:11 drh Exp $
+# $Id: btree2.test,v 1.13 2004/05/10 16:18:48 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -73,7 +73,7 @@ do_test btree2-1.6 {
 #       for foreground and background tables.
 #
 #   2.  The union of the foreground an background tables consists of N entries
-#       where each entry an L-digit key.  (Actually, some keys can be longer 
+#       where each entry has an L-digit key. (Actually, some keys can be longer 
 #       than L characters, but they always start with L digits.)  The keys
 #       cover all integers between 1 and N.  Whenever an entry is added to
 #       the foreground it is removed form the background and vice versa.
@@ -149,10 +149,6 @@ proc check_invariants {} {
       set key [btree_key $::c4]
       if {[scan $key %d k]<1} {set k 0}
       if {$k!=$i} {
-        # puts "MISSING $i"
-        # puts {Page 3:}; btree_page_dump $::b 3
-        # puts {Page 4:}; btree_page_dump $::b 4
-        # exit
         return "Key $i is missing from both foreground and background"
       }
       set data [btree_data $::c4]
@@ -185,6 +181,32 @@ proc check_invariants {} {
     }
     if {[make_payload $k $L $datalen]!=$data} {
       return "Entry $i has an incorrect data"
+    }
+  }
+}
+
+# Look at all elements in both the foreground and background tables.
+# Make sure the key is always the same as the prefix of the data.
+#
+# This routine was used for hunting bugs.  It is not a part of standard
+# tests.
+#
+proc check_data {n key} {
+  global c3 c4
+  incr n -1
+  foreach c [list $c3 $c4] {
+    btree_first $c  ;# move_to $c $key
+    set cnt 0
+    while {![btree_eof $c]} {
+      set key [btree_key $c]
+      set data [btree_data $c]
+      if {[string range $key 0 $n] ne [string range $data 0 $n]} {
+        puts "key=[list $key] data=[list $data] n=$n"
+        puts "cursor info = [btree_cursor_info $c]"
+        btree_page_dump $::b [lindex [btree_cursor_info $c] 0]
+        exit
+      }
+      btree_next $c
     }
   }
 }
@@ -285,6 +307,7 @@ proc random_changes {n I K D} {
     }
   }
 }
+set btree_trace 0
 
 # Repeat this test sequence on database of various sizes
 #
@@ -397,7 +420,6 @@ foreach {N L} {
     set ::c4 [btree_cursor $::b 4 1]
     set ::c5 [btree_cursor $::b 5 1]
     set ::c6 [btree_cursor $::b 6 1]
-#if {$testid=="btree2-3.8.4"} {set btree_trace 1}
     do_test $testid.5 [subst {
       random_changes $n $I $K $D
     }] {}

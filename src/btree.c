@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.121 2004/05/10 10:34:34 danielk1977 Exp $
+** $Id: btree.c,v 1.122 2004/05/10 16:18:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -529,6 +529,7 @@ static void defragmentPage(MemPage *pPage){
 static int allocateSpace(MemPage *pPage, int nByte){
   int addr, pc, hdr;
   int size;
+  int nFrag;
   unsigned char *data;
 #ifndef NDEBUG
   int cnt = 0;
@@ -540,7 +541,8 @@ static int allocateSpace(MemPage *pPage, int nByte){
   if( nByte<4 ) nByte = 4;
   if( pPage->nFree<nByte || pPage->isOverfull ) return 0;
   hdr = pPage->hdrOffset;
-  if( data[hdr+5]>=60 ){
+  nFrag = data[hdr+5];
+  if( nFrag>=60 || nFrag>pPage->nFree-nByte ){
     defragmentPage(pPage);
   }
   addr = hdr+1;
@@ -1132,10 +1134,21 @@ void sqlite3BtreeCursorList(Btree *pBt){
 */
 int sqlite3BtreeRollback(Btree *pBt){
   int rc;
+  MemPage *pPage1;
   if( pBt->inTrans==0 ) return SQLITE_OK;
   pBt->inTrans = 0;
   pBt->inStmt = 0;
-  rc = pBt->readOnly ? SQLITE_OK : sqlite3pager_rollback(pBt->pPager);
+  if( pBt->readOnly ){
+    rc = SQLITE_OK;
+  }else{
+    rc = sqlite3pager_rollback(pBt->pPager);
+    /* The rollback may have destroyed the pPage1->aData value.  So
+    ** call getPage() on page 1 again to make sure pPage1->aData is
+    ** set correctly. */
+    if( getPage(pBt, 1, &pPage1)==SQLITE_OK ){
+      releasePage(pPage1);
+    }
+  }
   invalidateCursors(pBt);
   unlockBtreeIfUnused(pBt);
   return rc;
@@ -1281,6 +1294,10 @@ int sqlite3BtreeCursor(
     goto create_cursor_exception;
   }
   pCur->pgnoRoot = (Pgno)iTable;
+  if( iTable==1 && sqlite3pager_pagecount(pBt->pPager)==0 ){
+    rc = SQLITE_EMPTY;
+    goto create_cursor_exception;
+  }
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
@@ -2434,8 +2451,10 @@ static void dropCell(MemPage *pPage, int idx, int sz){
 ** content of the cell.
 **
 ** If the cell content will fit on the page, then put it there.  If it
-** will not fit, then just make pPage->aCell[i] point to the content
-** and set pPage->isOverfull.  
+** will not fit and pTemp is not NULL, then make a copy of the content
+** into pTemp, set pPage->aCell[i] point to pTemp, and set pPage->isOverfull.
+** If the content will not fit and pTemp is NULL, then make pPage->aCell[i]
+** point to pCell and set pPage->isOverfull.
 **
 ** Try to maintain the integrity of the linked list of cells.  But if
 ** the cell being inserted does not fit on the page, this will not be
@@ -2443,7 +2462,13 @@ static void dropCell(MemPage *pPage, int idx, int sz){
 ** pPage->aCell[] and set the pPage->needRelink flag so that we will
 ** know to rebuild the linked list later.
 */
-static void insertCell(MemPage *pPage, int i, unsigned char *pCell, int sz){
+static void insertCell(
+  MemPage *pPage,   /* Page into which we are copying */
+  int i,            /* Which cell on pPage to insert after */
+  u8 *pCell,        /* Text of the new cell to insert */
+  int sz,           /* Bytes of data in pCell */
+  u8 *pTemp         /* Temp storage space for pCell, if needed */
+){
   int idx, j;
   assert( i>=0 && i<=pPage->nCell );
   assert( sz==cellSize(pPage, pCell) );
@@ -2456,7 +2481,12 @@ static void insertCell(MemPage *pPage, int i, unsigned char *pCell, int sz){
   pPage->nCell++;
   if( idx<=0 ){
     pPage->isOverfull = 1;
-    pPage->aCell[i] = pCell;
+    if( pTemp ){
+      memcpy(pTemp, pCell, sz);
+    }else{
+      pTemp = pCell;
+    }
+    pPage->aCell[i] = pTemp;
   }else{
     u8 *data = pPage->aData;
     memcpy(&data[idx], pCell, sz);
@@ -2619,6 +2649,7 @@ static int balance(MemPage *pPage){
   int idxDiv[NB];              /* Indices of divider cells in pParent */
   u8 *apDiv[NB];               /* Divider cells in pParent */
   u8 aTemp[NB][MX_CELL_SIZE];  /* Temporary holding area for apDiv[] */
+  u8 aInsBuf[NB][MX_CELL_SIZE];/* Space to hold dividers cells during insert */
   int cntNew[NB+1];            /* Index in aCell[] of cell after i-th page */
   int szNew[NB+1];             /* Combined size of cells place on i-th page */
   u8 *apCell[(MX_CELL+2)*NB];  /* All cells from pages being balanced */
@@ -2678,7 +2709,7 @@ static int balance(MemPage *pPage){
             resizeCellArray(pPage, pChild->nCell);
             for(i=0; i<pChild->nCell; i++){
               insertCell(pPage, i, pChild->aCell[i], 
-                        cellSize(pChild, pChild->aCell[i]));
+                        cellSize(pChild, pChild->aCell[i]), 0);
             }
             freePage(pChild);
             TRACE(("BALANCE: child %d transfer to page 1\n", pChild->pgno));
@@ -2955,6 +2986,15 @@ static int balance(MemPage *pPage){
       apNew[minI] = pT;
     }
   }
+  TRACE(("BALANCE: old: %d %d %d  new: %d %d %d %d\n",
+    pgnoOld[0], 
+    nOld>=2 ? pgnoOld[1] : 0,
+    nOld>=3 ? pgnoOld[2] : 0,
+    pgnoNew[0],
+    nNew>=2 ? pgnoNew[1] : 0,
+    nNew>=3 ? pgnoNew[2] : 0,
+    nNew>=4 ? pgnoNew[3] : 0));
+
 
   /*
   ** Evenly distribute the data in apCell[] across the new pages.
@@ -2967,7 +3007,7 @@ static int balance(MemPage *pPage){
     resizeCellArray(pNew, cntNew[i] - j);
     while( j<cntNew[i] ){
       assert( pNew->nFree>=szCell[j] );
-      insertCell(pNew, pNew->nCell, apCell[j], szCell[j]);
+      insertCell(pNew, pNew->nCell, apCell[j], szCell[j], 0);
       j++;
     }
     assert( pNew->nCell>0 );
@@ -2975,12 +3015,15 @@ static int balance(MemPage *pPage){
     relinkCellList(pNew);
     if( i<nNew-1 && j<nCell ){
       u8 *pCell = apCell[j];
+      u8 *pTemp;
       if( !pNew->leaf ){
-        memcpy(&pNew->aData[6], &apCell[j][2], 4);
+        memcpy(&pNew->aData[6], pCell+2, 4);
+        pTemp = 0;
       }else{
         pCell -= 4;
+        pTemp = aInsBuf[i];
       }
-      insertCell(pParent, nxDiv, pCell, szCell[j]+leafCorrection);
+      insertCell(pParent, nxDiv, pCell, szCell[j]+leafCorrection, pTemp);
       put4byte(&pParent->aCell[nxDiv][2], pNew->pgno);
       j++;
       nxDiv++;
@@ -3133,7 +3176,7 @@ int sqlite3BtreeInsert(
   }else{
     assert( pPage->leaf );
   }
-  insertCell(pPage, pCur->idx, newCell, szNew);
+  insertCell(pPage, pCur->idx, newCell, szNew, 0);
   rc = balance(pPage);
   /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
@@ -3189,7 +3232,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     unsigned char *pNext;
     int szNext;
     int notUsed;
-    unsigned char tempbuf[4];
+    unsigned char tempCell[MX_CELL_SIZE];
     getTempCursor(pCur, &leafCur);
     rc = sqlite3BtreeNext(&leafCur, &notUsed);
     if( rc!=SQLITE_OK ){
@@ -3203,12 +3246,11 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     dropCell(pPage, pCur->idx, cellSize(pPage, pCell));
     pNext = leafCur.pPage->aCell[leafCur.idx];
     szNext = cellSize(leafCur.pPage, pNext);
-    memcpy(tempbuf, &pNext[-2], 4);
-    put4byte(&pNext[-2], pgnoChild);
-    insertCell(pPage, pCur->idx, &pNext[-4], szNext+4);
+    assert( sizeof(tempCell)>=szNext+4 );
+    insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell);
+    put4byte(pPage->aCell[pCur->idx]+2, pgnoChild);
     rc = balance(pPage);
     if( rc ) return rc;
-    memcpy(&pNext[-2], tempbuf, 4);
     dropCell(leafCur.pPage, leafCur.idx, szNext);
     rc = balance(leafCur.pPage);
     releaseTempCursor(&leafCur);
