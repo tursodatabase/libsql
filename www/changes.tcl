@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Mar 13 (2.4.1)} {
+<li>Using an unnamed subquery in a FROM clause would cause a segfault.</p>
+<li>The parser insist on seeing a semicolon or the end of input before
+    executing a statement.  This avoids an accidental disaster if the
+    WHERE keyword is misspelled in an UPDATE or DELETE statement.</li>
+}
+
+
 chng {2002 Mar 10 (2.4.0)} {
 <li>Change the name of the sanity_check PRAGMA to <b>integrity_check</b>
     and make it available in all compiles.</li>

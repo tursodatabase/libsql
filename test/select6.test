@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.6 2002/03/03 03:42:31 drh Exp $
+# $Id: select6.test,v 1.7 2002/03/13 18:54:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -278,6 +278,15 @@ do_test select6-5.1 {
     SELECT a,x,b FROM
       (SELECT x+3 AS 'a', x FROM t1 WHERE y=3) AS 'p',
       (SELECT x AS 'b' FROM t1 WHERE y=4) AS 'q'
+    WHERE a=b
+    ORDER BY a
+  }
+} {8 5 8 9 6 9 10 7 10}
+do_test select6-5.2 {
+  execsql {
+    SELECT a,x,b FROM
+      (SELECT x+3 AS 'a', x FROM t1 WHERE y=3),
+      (SELECT x AS 'b' FROM t1 WHERE y=4)
     WHERE a=b
     ORDER BY a
   }
