@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sand\supdate\sthe\schange\slog\sin\spreparation\sfor\nthe\s2.4.11\srelease.\s(CVS\s554)
-D 2002-05-08T11:57:10
+C Version\s2.4.11\s(CVS\s555)
+D 2002-05-08T12:03:51
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 08f27cb36805d38648274b6fe91dec43a5910057
+P f6e406aa0422d9b5a3cfe89b0d38def535f8fe9b
 R 17202f5bc5a2297c04fce252ad531823
 U drh
-Z e95099e689d5a48a1cef1b47b62cca61
+Z a3dfa73be4e80fdb0160fb03e523733c
