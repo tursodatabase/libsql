@@ -62,6 +62,10 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 #
 THREADSAFE = -DTHREADSAFE=@THREADSAFE@
 
+# The pthreads library if needed
+#
+LIBPTHREAD=@TARGET_THREAD_LIB@
+
 # Flags controlling use of the in memory btree implementation
 #
 # TEMP_STORE is 0 to force temporary tables to be in a file, 1 to
@@ -72,10 +76,6 @@ TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 
 # You should not have to change anything below this line
 ###############################################################################
-
-# The pthreads library is always defined, even if we don't need it.
-#
-LIBPTHREAD=-lpthread
 
 # Object files for the SQLite library.
 #

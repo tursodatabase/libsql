@@ -138,7 +138,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.10 $
+# $Revision: 1.11 $
 
 #########
 # Programs needed
@@ -304,6 +304,16 @@ else
   AC_MSG_RESULT([yes])
 fi
 AC_SUBST(THREADSAFE)
+
+if test "$THREADSAFE" = "1"; then
+  LIBS=""
+  AC_CHECK_LIB(pthread, pthread_create)
+  TARGET_THREAD_LIB="$LIBS"
+  LIBS=""
+else
+  TARGET_THREAD_LIB=""
+fi
+AC_SUBST(TARGET_THREAD_LIB)
 
 ##########
 # Do we want to support release

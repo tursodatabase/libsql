@@ -1,6 +1,6 @@
-C Add\scomments\sto\sunused\sP3\sfields\sof\sselected\sinstructions\swhen\sNDEBUG\sis\nnot\sdefined.\s\sThis\smakes\sVDBE\sprogram\sdumps\smore\sreadable\sduring\sdebugging.\s(CVS\s1973)
-D 2004-09-19T02:15:25
-F Makefile.in 76f8790c727cdbe2e1bef19c9c72b6e5da9cb9d8
+C Pthread\sis\snow\sconditionally\sincluded\sin\smakefile,\ssee\sticket\s#910\s(CVS\s1974)
+D 2004-09-20T14:57:23
+F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 0aeddfe96f008f6cbe2c7167a782f3133e118d8d
@@ -10,8 +10,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure d3720624693e6b18264e7776f7250dd472659a10 x
-F configure.ac 82b4d26ae0234e87019b5783b67bd5b807eb5820
+F configure 8f1b0d5cad4dadcc1677c737e35646abf6332794 x
+F configure.ac 5903493fe34908d768d4abaa3c0c9397e32e2bb5
 F doc/affinity.html bdc7560fa3d2284af59d8fb52041cddbb14578f5
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P eb9b501ad8b0fa0fd63a67ece05fe142d6a19114
-R c7e379274e1d8907f42f1545aa184a86
-U drh
-Z adae3eae9c54320f47912f08aac3df30
+P 4871c77f8fce36ff230e1f026f4e4e49492515e9
+R bede9b44ed7ebb616aa1848cfc38c778
+U dougcurrie
+Z fde2d4fad7076c6aba6215b69248b2e7
