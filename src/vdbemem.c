@@ -299,16 +299,32 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 }
 
 /*
-** Copy the contents of memory cell pFrom into pTo.
+** Make an shallow copy of pFrom into pTo.  Prior contents of
+** pTo are overwritten.  The pFrom->z field is not duplicated.  If
+** pFrom->z is used, then pTo->z points to the same thing as pFrom->z
+** and flags gets srcType (either MEM_Ephem or MEM_Static).
 */
-int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
-  int rc;
-  sqlite3VdbeMemRelease(pTo);
+void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   memcpy(pTo, pFrom, sizeof(*pFrom)-sizeof(pFrom->zShort));
   pTo->xDel = 0;
   if( pTo->flags & (MEM_Str|MEM_Blob) ){
-    pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
-    pTo->flags |= MEM_Ephem;
+    pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short|MEM_Ephem);
+    assert( srcType==MEM_Ephem || srcType==MEM_Static );
+    pTo->flags |= srcType;
+  }
+}
+
+/*
+** Make a full copy of pFrom into pTo.  Prior contents of pTo are
+** freed before the copy is made.
+*/
+int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
+  int rc;
+  if( pTo->flags & MEM_Dyn ){
+    sqlite3VdbeMemRelease(pTo);
+  }
+  sqlite3VdbeMemShallowCopy(pTo, pFrom, MEM_Ephem);
+  if( pTo->flags & MEM_Ephem ){
     rc = sqlite3VdbeMemMakeWriteable(pTo);
   }else{
     rc = SQLITE_OK;
@@ -318,16 +334,29 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
 
 /*
 ** Transfer the contents of pFrom to pTo. Any existing value in pTo is
-** deleted. pFrom contains an SQL NULL when this routine returns.
+** freed. If pFrom contains ephemeral data, a copy is made.
+**
+** pFrom contains an SQL NULL when this routine returns.  SQLITE_NOMEM
+** might be returned if pFrom held ephemeral data and we were unable
+** to allocate enough space to make a copy.
 */
 int sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
+  int rc;
+  if( pTo->flags & MEM_Dyn ){
+    sqlite3VdbeMemRelease(pTo);
+  }
   memcpy(pTo, pFrom, sizeof(Mem));
   if( pFrom->flags & MEM_Short ){
     pTo->z = pTo->zShort;
   }
   pFrom->flags = MEM_Null;
   pFrom->xDel = 0;
-  return SQLITE_OK;
+  if( pTo->flags & MEM_Ephem ){
+    rc = sqlite3VdbeMemMakeWriteable(pTo);
+  }else{
+    rc = SQLITE_OK;
+  }
+  return rc;
 }
 
 /*

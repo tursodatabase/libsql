@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.409 2004/08/21 17:54:45 drh Exp $
+** $Id: vdbe.c,v 1.410 2004/08/28 18:17:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -792,12 +792,7 @@ case OP_Variable: {
   assert( j>=0 && j<p->nVar );
 
   pTos++;
-  memcpy(pTos, &p->aVar[j], sizeof(*pTos)-NBFS);
-  pTos->xDel = 0;
-  if( pTos->flags&(MEM_Str|MEM_Blob) ){
-    pTos->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Short);
-    pTos->flags |= MEM_Static;
-  }
+  sqlite3VdbeMemShallowCopy(pTos, &p->aVar[j], MEM_Static);
   break;
 }
 
@@ -831,23 +826,9 @@ case OP_Dup: {
   Mem *pFrom = &pTos[-pOp->p1];
   assert( pFrom<=pTos && pFrom>=p->aStack );
   pTos++;
-  memcpy(pTos, pFrom, sizeof(*pFrom)-NBFS);
-  pTos->xDel = 0;
-  if( pTos->flags & (MEM_Str|MEM_Blob) ){
-    if( pOp->p2 && (pTos->flags & (MEM_Dyn|MEM_Ephem)) ){
-      pTos->flags &= ~MEM_Dyn;
-      pTos->flags |= MEM_Ephem;
-    }else if( pTos->flags & MEM_Short ){
-      memcpy(pTos->zShort, pFrom->zShort, pTos->n+2);
-      pTos->z = pTos->zShort;
-    }else if( (pTos->flags & MEM_Static)==0 ){
-      pTos->z = sqliteMallocRaw(pFrom->n+2);
-      if( sqlite3_malloc_failed ) goto no_mem;
-      memcpy(pTos->z, pFrom->z, pFrom->n);
-      memcpy(&pTos->z[pTos->n], "\0", 2);
-      pTos->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
-      pTos->flags |= MEM_Dyn|MEM_Term;
-    }
+  sqlite3VdbeMemShallowCopy(pTos, pFrom, MEM_Ephem);
+  if( pOp->p2 ){
+    Deephemeralize(pTos);
   }
   break;
 }
@@ -898,13 +879,7 @@ case OP_Push: {
   Mem *pTo = &pTos[-pOp->p1];
 
   assert( pTo>=p->aStack );
-  Deephemeralize(pTos);
-  Release(pTo);
-  *pTo = *pTos;
-  if( pTo->flags & MEM_Short ){
-    assert( pTo->z==pTos->zShort );
-    pTo->z = pTo->zShort;
-  }
+  sqlite3VdbeMemMove(pTo, pTos);
   pTos--;
   break;
 }
@@ -1240,12 +1215,11 @@ case OP_Function: {
   }
 
   /* Copy the result of the function to the top of the stack */
-  pTos++;
   sqlite3VdbeChangeEncoding(&ctx.s, db->enc);
-  *pTos = ctx.s;
-  if( pTos->flags & MEM_Short ){
-    pTos->z = pTos->zShort;
-  }
+  pTos++;
+  pTos->flags = 0;
+  sqlite3VdbeMemMove(pTos, &ctx.s);
+
   /* If the function returned an error, throw an exception */
   if( ctx.isError ){
     if( !(pTos->flags&MEM_Str) ){
@@ -1773,6 +1747,7 @@ case OP_Column: {
   sMem.flags = 0;
   assert( p1<p->nCursor );
   pTos++;
+  pTos->flags = MEM_Null;
 
   /* This block sets the variable payloadSize to be the total number of
   ** bytes in the record.
@@ -1937,6 +1912,9 @@ case OP_Column: {
 
   /* Get the column information.
   */
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
   if( zRec ){
     zData = &zRec[aOffset[p2]];
   }else{
@@ -1945,14 +1923,25 @@ case OP_Column: {
     zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, aType[p2], pTos);
-  if( sqlite3VdbeMemMakeWriteable(pTos)==SQLITE_NOMEM ){
-    goto no_mem;
-  }
   pTos->enc = db->enc;
-  if( rc!=SQLITE_OK ){
-    goto abort_due_to_error;
+
+  /* If we dynamically allocated space to hold the data (in the
+  ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
+  ** dynamically allocated space over to the pTos structure rather.
+  ** This prevents a memory copy.
+  */
+  if( (sMem.flags & MEM_Dyn)!=0 ){
+    assert( pTos->flags & MEM_Ephem );
+    assert( pTos->flags & (MEM_Str|MEM_Blob) );
+    assert( pTos->z==sMem.z );
+    assert( sMem.flags & MEM_Term );
+    pTos->flags &= ~MEM_Ephem;
+    pTos->flags |= MEM_Dyn|MEM_Term;
   }
-  Release(&sMem);
+
+  /* pTos->z might be pointing to sMem.zShort[].  Fix that so that we
+  ** can abandon sMem */
+  rc = sqlite3VdbeMemMakeWriteable(pTos);
 
   /* Release the aType[] memory if we are not dealing with cursor */
   if( !pC ){
@@ -3250,6 +3239,7 @@ case OP_FullKey: {
   assert( p->apCsr[i]->keyAsData );
   assert( !p->apCsr[i]->pseudoTable );
   pTos++;
+  pTos->flags = MEM_Null;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     i64 amt;
     char *z;
@@ -3506,6 +3496,7 @@ case OP_IdxRecno: {
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   pTos++;
+  pTos->flags = MEM_Null;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     i64 rowid;
 
@@ -3521,8 +3512,6 @@ case OP_IdxRecno: {
       pTos->flags = MEM_Int;
       pTos->i = rowid;
     }
-  }else{
-    pTos->flags = MEM_Null;
   }
   break;
 }
@@ -4019,8 +4008,6 @@ case OP_SortPut: {
   pSorter->zKey = pTos->z;
   pSorter->data.flags = MEM_Null;
   rc = sqlite3VdbeMemMove(&pSorter->data, pNos);
-  if( rc!=SQLITE_OK ) goto abort_due_to_error;
-  Deephemeralize(&pSorter->data);
   pTos -= 2;
   break;
 }
@@ -4080,7 +4067,6 @@ case OP_SortNext: {
     pTos++;
     pTos->flags = MEM_Null;
     rc = sqlite3VdbeMemMove(pTos, &pSorter->data);
-    assert( rc==SQLITE_OK );
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{
@@ -4109,18 +4095,9 @@ case OP_SortReset: {
 ** the original data remains on the stack.
 */
 case OP_MemStore: {
-  int i = pOp->p1;
-  Mem *pMem;
   assert( pTos>=p->aStack );
-  assert( i<p->nMem );
-  Deephemeralize(pTos);
-  pMem = &p->aMem[i];
-  Release(pMem);
-  *pMem = *pTos;
-  pTos->flags = MEM_Null;
-  if( pMem->flags & MEM_Short ){
-    pMem->z = pMem->zShort;
-  }
+  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], pTos);
   pTos--;
 
   /* If P2 is 0 then fall thru to the next opcode, OP_MemLoad, that will
@@ -4143,12 +4120,7 @@ case OP_MemLoad: {
   int i = pOp->p1;
   assert( i>=0 && i<p->nMem );
   pTos++;
-  memcpy(pTos, &p->aMem[i], sizeof(pTos[0])-NBFS);;
-  pTos->xDel = 0;
-  if( pTos->flags & (MEM_Str|MEM_Blob) ){
-    pTos->flags |= MEM_Ephem;
-    pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
-  }
+  sqlite3VdbeMemShallowCopy(pTos, &p->aMem[i], MEM_Ephem);
   break;
 }
 
@@ -4322,20 +4294,12 @@ case OP_AggFocus: {
 case OP_AggSet: {
   AggElem *pFocus;
   int i = pOp->p2;
-  Mem *pMem;
   rc = AggInFocus(&p->agg, &pFocus);
   if( rc!=SQLITE_OK ) goto abort_due_to_error;
   assert( pTos>=p->aStack );
   if( pFocus==0 ) goto no_mem;
   assert( i>=0 && i<p->agg.nMem );
-  Deephemeralize(pTos);
-  pMem = &pFocus->aMem[i];
-  Release(pMem);
-  *pMem = *pTos;
-  pTos->flags = MEM_Null;
-  if( pMem->flags & MEM_Short ){
-    pMem->z = pMem->zShort;
-  }
+  rc = sqlite3VdbeMemMove(&pFocus->aMem[i], pTos);
   pTos--;
   break;
 }
@@ -4348,23 +4312,19 @@ case OP_AggSet: {
 */
 case OP_AggGet: {
   AggElem *pFocus;
-  Mem *pMem;
   int i = pOp->p2;
   rc = AggInFocus(&p->agg, &pFocus);
   if( rc!=SQLITE_OK ) goto abort_due_to_error;
   if( pFocus==0 ) goto no_mem;
   assert( i>=0 && i<p->agg.nMem );
   pTos++;
-  pMem = &pFocus->aMem[i];
-  *pTos = *pMem;
-  pTos->xDel = 0;
-  if( pTos->flags & (MEM_Str|MEM_Blob) ){
-    pTos->flags &= ~(MEM_Dyn|MEM_Static|MEM_Short);
-    pTos->flags |= MEM_Ephem;
-  }
+  sqlite3VdbeMemShallowCopy(pTos, &pFocus->aMem[i], MEM_Ephem);
+  assert( (pTos->flags & MEM_Str)==0 || pTos->enc==db->enc );
+#if 0
   if( pTos->flags&MEM_Str ){
     sqlite3VdbeChangeEncoding(pTos, db->enc);
   }
+#endif
   break;
 }
 
