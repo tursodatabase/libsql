@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.23 2000/06/06 21:56:08 drh Exp $
+** $Id: vdbe.c,v 1.24 2000/06/06 22:13:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1966,8 +1966,14 @@ int sqliteVdbeExec(
         if( NeedStack(p, p->tos) ) goto no_mem;
         if( i>=0 && i<p->nTable && (pTab = p->aTab[i].pTable)!=0 ){
           char *z = sqliteDbbeReadKey(pTab, 0);
-          memcpy(&p->aStack[tos].i, z, sizeof(int));
-          p->aStack[tos].flags = STK_Int;
+          if( p->aTab[i].keyAsData ){
+            p->zStack[tos] = z;
+            p->aStack[tos].flags = STK_Str;
+            p->aStack[tos].n = sqliteDbbeKeyLength(pTab);
+          }else{
+            memcpy(&p->aStack[tos].i, z, sizeof(int));
+            p->aStack[tos].flags = STK_Int;
+          }
         }
         break;
       }

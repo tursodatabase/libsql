@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.13 2000/06/06 21:56:08 drh Exp $
+** $Id: select.c,v 1.14 2000/06/06 22:13:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -161,9 +161,8 @@ static int selectInnerLoop(
   ** the temporary table iParm.
   */
   if( eDest==SRT_Except ){
-    assert( pEList->nExpr==1 );
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nField, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Delete, iParm, 0, 0, 0);
   }else 
 
   /* If we are creating a set for an "expr IN (SELECT ...)" construct,
@@ -182,6 +181,7 @@ static int selectInnerLoop(
   ** of the scan loop.
   */
   if( eDest==SRT_Mem ){
+    assert( pEList->nExpr==1 );
     sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, iBreak, 0, 0);
   }else
@@ -306,7 +306,6 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     }
     case TK_INTERSECT: {
       int tab1, tab2;
-      Select *pPrior;
       int iCont, iBreak;
 
       tab1 = pParse->nTab++;
