@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.169 2004/05/10 23:29:50 drh Exp $
+** $Id: main.c,v 1.170 2004/05/11 07:11:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -388,44 +388,6 @@ int sqlite3Init(sqlite *db, char **pzErrMsg){
     sqlite3CommitInternalChanges(db);
   }
 
-  /* If the database is in formats 1 or 2, then upgrade it to
-  ** version 3.  This will reconstruct all indices.  If the
-  ** upgrade fails for any reason (ex: out of disk space, database
-  ** is read only, interrupt received, etc.) then fail the init.
-  */
-  if( rc==SQLITE_OK && db->file_format<3 ){
-    char *zErr = 0;
-    InitData initData;
-    int meta[SQLITE_N_BTREE_META];
-
-    db->magic = SQLITE_MAGIC_OPEN;
-    initData.db = db;
-    initData.pzErrMsg = &zErr;
-    db->file_format = 3;
-    rc = sqlite3_exec(db,
-      "BEGIN; SELECT name FROM sqlite_master WHERE type='table';",
-      upgrade_3_callback,
-      &initData,
-      &zErr);
-    if( rc==SQLITE_OK ){
-      int ii;
-      for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-        rc = sqlite3BtreeGetMeta(db->aDb[0].pBt, ii+1, &meta[ii]);
-      }
-      meta[2] = 4;
-      for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-        rc = sqlite3BtreeUpdateMeta(db->aDb[0].pBt, ii+1, meta[ii]);
-      }
-      sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    }
-    if( rc!=SQLITE_OK ){
-      sqlite3SetString(pzErrMsg, 
-        "unable to upgrade database to the version 2.6 format",
-        zErr ? ": " : 0, zErr, (char*)0);
-    }
-    sqlite3_freemem(zErr);
-  }
-
   if( rc!=SQLITE_OK ){
     db->flags &= ~SQLITE_Initialized;
   }
@@ -699,11 +661,6 @@ int sqlite3_compile(
         sqliteFree(*pzErrMsg);
         *pzErrMsg = 0;
       }
-    }
-    if( db->file_format<3 ){
-      sqlite3SafetyOff(db);
-      sqlite3SetString(pzErrMsg, "obsolete database file format", (char*)0);
-      return SQLITE_ERROR;
     }
   }
   assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );

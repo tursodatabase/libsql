@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.116 2004/05/10 10:34:37 danielk1977 Exp $
+** $Id: expr.c,v 1.117 2004/05/11 07:11:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1072,7 +1072,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      if( pParse->db->file_format>=4 && sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
+      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
         op += 6;  /* Convert numeric opcodes to text opcodes */
       }
       /* Fall through into the next case */
@@ -1334,7 +1334,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_EQ: {
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      if( pParse->db->file_format>=4 && sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
+      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
         op += 6;  /* Convert numeric opcodes to text opcodes */
       }
       sqlite3VdbeAddOp(v, op, jumpIfNull, dest);
@@ -1427,7 +1427,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      if( pParse->db->file_format>=4 && sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
+      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
         /* Convert numeric comparison opcodes into text comparison opcodes.
         ** This step depends on the fact that the text comparision opcodes are
         ** always 6 greater than their corresponding numeric comparison
