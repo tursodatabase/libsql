@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.458 2005/03/17 03:15:40 drh Exp $
+** $Id: vdbe.c,v 1.459 2005/03/17 03:52:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2091,7 +2091,7 @@ case OP_MakeRecord: {
   if( addRowid ){
     zCsr += sqlite3VdbeSerialPut(zCsr, pRowid);
   }
-  assert( zCsr<=(zNewRecord+nByte) );
+  assert( zCsr==(zNewRecord+nByte) );
 
   /* Pop entries off the stack if required. Push the new record on. */
   if( !leaveOnStack ){
