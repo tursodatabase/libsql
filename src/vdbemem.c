@@ -209,11 +209,12 @@ static void releaseMem(Mem *p){
 ** prior representations are invalidated.  NULL is converted into 0.
 */
 int sqlite3VdbeMemIntegerify(Mem *pMem){
-  if( pMem->flags & MEM_Int ){
+  int flags = pMem->flags;
+  if( flags & MEM_Int ){
     /* Do nothing */
-  }else if( pMem->flags & MEM_Real ){
+  }else if( flags & MEM_Real ){
     pMem->i = (i64)pMem->r;
-  }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
+  }else if( flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
       return SQLITE_NOMEM;
