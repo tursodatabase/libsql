@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.38 2002/06/06 23:30:59 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.39 2002/06/11 22:33:47 danielk1977 Exp $}
 
 puts {<html>
 <head>
@@ -455,14 +455,6 @@ CREATE TRIGGER update_customer_address UPDATE OF address ON customers
 puts {
 <p>With this trigger installed, executing the statement:</p>
 }
-puts {
-<p>Note that currently, triggers may behave oddly when created on tables
-  with INTEGER PRIMARY KEY fields. If a BEFORE trigger program modifies the 
-  INTEGER PRIMARY KEY field of a row that will be subsequently updated by the
-  statement that causes the trigger to fire, then the update may not occur. 
-  The workaround is to declare the table with a PRIMARY KEY column instead
-  of an INTEGER PRIMARY KEY column.</p>
-}
 
 Example {
 UPDATE customers SET address = '1 Main St.' WHERE name = 'Jack Jones';
@@ -472,6 +464,37 @@ puts {
 }
 Example {
 UPDATE orders SET address = '1 Main St.' WHERE customer_name = 'Jack Jones';
+}
+
+puts {
+<p>Note that currently, triggers may behave oddly when created on tables
+  with INTEGER PRIMARY KEY fields. If a BEFORE trigger program modifies the 
+  INTEGER PRIMARY KEY field of a row that will be subsequently updated by the
+  statement that causes the trigger to fire, then the update may not occur. 
+  The workaround is to declare the table with a PRIMARY KEY column instead
+  of an INTEGER PRIMARY KEY column.</p>
+}
+
+puts {
+<p>A special SQL function RAISE() may be used within a trigger-program, with the following syntax</p> 
+}
+Syntax {raise-function} {
+RAISE ( ABORT, <error-message> ) | 
+RAISE ( FAIL, <error-message> ) | 
+RAISE ( ROLLBACK, <error-message> ) | 
+RAISE ( IGNORE )
+}
+puts {
+<p>When one of the first three forms is called during trigger-program execution, the specified ON CONFLICT processing is performed (either ABORT, FAIL or 
+ ROLLBACK) and the current query terminates. An error code of SQLITE_CONSTRAINT is returned to the user, along with the specified error message.</p>
+
+<p>When RAISE(IGNORE) is called, the remainder of the current trigger program,
+the statement that caused the trigger program to execute and any subsequent
+    trigger programs that would of been executed are abandoned. No database
+    changes are rolled back.  If the statement that caused the trigger program
+    to execute is itself part of a trigger program, then that trigger program
+    resumes execution at the beginning of the next step.
+</p>
 }
 
 Section {CREATE VIEW} {createview}
