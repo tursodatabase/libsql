@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#136:\s\sAdded\sthe\sOP_RenameCursor\sVDBE\sinstruction\sand\sused\sit\nto\smake\scursor\snumbers\sright\son\snested\ssubqueries.\s\sAlso\sadded\sOP_Gosub\sand\nOP_Return\sbut\shave\snot\sactually\sused\sthem\sfor\sanything\syet.\s(CVS\s727)
-D 2002-08-25T19:20:40
+C Documentation\supdates\sprior\sto\sthe\sreleae\sof\s2.7.0.\s(CVS\s728)
+D 2002-08-25T20:11:19
 F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -128,7 +128,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl e76c9fd609326c34cd45cd040b508b0e21908800
-F www/changes.tcl 7326bd48555132ca7f21a0dec84dacea76eacc65
+F www/changes.tcl bb15b92cf350b00cd9e6b70ee5d0b2638e563f80
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -138,7 +138,7 @@ F www/faq.tcl 207d3e31597c63ed3bbecd58aaeaa38c53d39dd4
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl 33881038e9664a36e56df3b80ef0828594c8dcd9
-F www/lang.tcl d2be2be0328f5c2fea06add825a1e442a1f8ed55
+F www/lang.tcl bf9d830aa0042718ae157e25fc7539f5378c46ff
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/omitted.tcl 118062f40a203fcb88b8d68ef1d7c0073ac191ec
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
@@ -147,7 +147,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b957dafc26383af514795df18bc7b8f367c9bd21
-R 1508fec7d872ab78a02b8e4a6441e47b
+P c602603e7cd8dc5c8bb9db2748eacab650de5bf0
+R 1887224d7be529eb62028d618058de77
 U drh
-Z b7a5fabc6af8b4c88e87d19c813a614d
+Z f85ad7a4a68c1afc1c9866ad59b71b62

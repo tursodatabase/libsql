@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.44 2002/08/18 19:09:24 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.45 2002/08/25 20:11:19 drh Exp $}
 
 puts {<html>
 <head>
@@ -724,7 +724,10 @@ a result immediately based on their inputs.  Aggregate functions
 may only be used in a SELECT statement.  Aggregate functions compute
 their result across all rows of the result set.</p>
 
-<p>The following simple functions are currently supported:</p>
+<p>The functions shown below are available by default.  Additional
+functions may be written in C and added to the database engine using
+the <a href="c_interface.html#cfunc">sqlite_create_function()</a>
+API.</p>
 
 <table border=0 cellpadding=10>
 <tr>
@@ -739,6 +742,16 @@ all arguments are NULL then NULL is returned.</td>
 </tr>
 
 <tr>
+<td valign="top" align="right">glob(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">This function is used to implement the
+"<b>Y GLOB X</b>" syntax of SQLite.  The
+<a href="c_interface.html#cfunc">sqlite_create_function()</a> 
+interface can
+be used to override this function and thereby change the operation
+of the GLOB operator.</td>
+</tr>
+
+<tr>
 <td valign="top" align="right">last_insert_rowid()</td>
 <td valign="top">Return the ROWID of the last row insert from this
 connection to the database.  This is the same value that would be returned
@@ -750,6 +763,16 @@ from the <b>sqlite_last_insert_rowid()</b> API function.</td>
 <td valign="top">Return the string length of <i>X</i> in characters.
 If SQLite is configured to support UTF-8, then the number of UTF-8
 characters is returned, not the number of bytes.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">like(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">This function is used to implement the
+"<b>Y LIKE X</b>" syntax of SQL.  The
+<a href="c_interface.html#cfunc">sqlite_create_function()</a> 
+interface can
+be used to override this function and thereby change the operation
+of the LIKE operator.</td>
 </tr>
 
 <tr>
@@ -811,8 +834,9 @@ UTF-8 strings.</td>
 </table>
 
 <p>
-The following aggregate functions are supported:
-</p>
+The following aggregate functions are available by default.  Additional
+aggregate functions written in C may be added using the 
+<a href="c_interface.html#cfunc">sqlite_create_aggregate()</a> API.</p>
 
 <table border=0 cellpadding=10>
 <tr>
@@ -1172,7 +1196,9 @@ result is specified by the expression list in between the
 SELECT and FROM keywords.  Any arbitrary expression can be used
 as a result.  If a result expression is }
 puts "[Operator *] then all columns of all tables are substituted"
-puts {for that one expression.</p>
+puts {for that one expression.  If the expression is the name of}
+puts "a table followed by [Operator .*] then the result is all columns"
+puts {in that one table.</p>
 
 <p>The query is executed against one or more tables specified after
 the FROM keyword.  If multiple tables names are separated by commas,

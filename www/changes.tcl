@@ -25,12 +25,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Aug ?? (2.7.0)} {
+chng {2002 Aug 25 (2.7.0)} {
 <li>Make a distinction between numeric and text values when sorting.
     Text values sort according to memcmp().  Numeric values sort in
     numeric order.</li>
 <li>Allow multiple simulataneous readers under windows by simulating
     the reader/writers locks that are missing from Win95/98/ME.</li>
+<li>An error is now returned when trying to start a transaction if
+    another transaction is already active.</li>
 }
 
 chng {2002 Aug 12 (2.6.3)} {
