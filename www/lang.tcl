@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.70 2004/06/18 11:25:21 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.71 2004/07/18 20:52:32 drh Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -1092,8 +1092,9 @@ The usual sort order is used to determine the maximum.</td>
 
 <tr>
 <td valign="top" align="right">min(<i>X</i>)</td>
-<td valign="top">Return the minimum value of all values in the group.
-The usual sort order is used to determine the minimum.</td>
+<td valign="top">Return the minimum non-NULL value of all values in the group.
+The usual sort order is used to determine the minimum.  NULL is only returned
+if all values in the group are NULL.</td>
 </tr>
 
 <tr>

@@ -1,5 +1,5 @@
-C mprintf()\scorrectly\shandles\s"%s","".\s\sFix\sfor\sticket\s#812.\s(CVS\s1800)
-D 2004-07-17T21:56:10
+C min()\signores\sNULL\svalues.\s\sTicket\s#800.\s(CVS\s1802)
+D 2004-07-18T20:52:32
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c d8ee92a9c11113a013f7853acb55453a8e0b2e92
-F src/func.c 5a15cfb0f1d9e5abbd42407205d5d6e2b0c09fb2
+F src/func.c f4a69379de4109d8c07b1d57f7e983de9b2275f6
 F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
@@ -56,7 +56,7 @@ F src/parse.y 51c8e696276c409618e66a4ccf316fcff245506e
 F src/pragma.c 8326df8c400f573eb43004dfb8e53e5102acb3e4
 F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c f02a65af34231031896e8442161cb5251e191e75
+F src/select.c d92ac2324218633a489c1c2090bb7ef1fe8a7fae
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
 F src/sqlite.h.in aaf46c8d458efd8aca694ec4f18c6ecf616ee55e
 F src/sqliteInt.h aeae6793d1db335ec1179ad9f26b0affc0ec658a
@@ -113,7 +113,7 @@ F test/enc2.test 7a60971a62748be6b607b4b4380eb4c5e151a6ec
 F test/enc3.test 2ae80b11adf5b2c171d2e17214dabd356b9672c1
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
-F test/func.test 7653394d854a8e3eb97c7f03c39610f8dc23922b
+F test/func.test d47ff9da6cdc2c7c5e56733678c17e98a4630ee3
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
 F test/index.test b6941dd532815f278042b85f79b1a6dc16c4d729
@@ -133,13 +133,13 @@ F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
 F test/malloc.test 769b240d89a7ef3320d88919fdb6765f9395a51f
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
 F test/memleak.test 26571a04575461f39a7cf97a2ee2f7fb2f519ddb
-F test/minmax.test 3f87d1d49f7e9aa9ae80d35c47a1f5b034557899
+F test/minmax.test 82fa0957d4a42d1d4c0d52e3f8f579da064ce890
 F test/misc1.test a8eb48d38f7a64e75314a2946db68d2b77901b7d
 F test/misc2.test 703734f5817215ca54e364833b3bf5ff36fcc21e
 F test/misc3.test eb488314990bfc0959221a1acc465013238bf168
 F test/misuse.test 2a64ce711419f2fd12806ed95af930fd4e7bb8f3
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
-F test/null.test 64730a1c32955e5cc510b7632fed6b9929a4029a
+F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 212d810e02a51c0ff9784a19d55e35d23382005d
@@ -149,7 +149,7 @@ F test/quick.test bbe4abf7f434d71c0de26626c8cbb4858e1bcb18
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
 F test/rowid.test b3d059f5c8d8874fa1c31030e0636f67405d20ea
-F test/select1.test 813a270ac7996b31ff228e8109cd2d1e8c3fa255
+F test/select1.test 84b0d95f8bd0f5aaf695c08fdae7afc04b569436
 F test/select2.test 91a2225926039b0d1687840735c284dbbf89f0bc
 F test/select3.test ab2e583154ee230fa4b46b06512775a38cd9d8b0
 F test/select4.test 86e72fc3b07de4fe11439aa419e37db3c49467e2
@@ -218,7 +218,7 @@ F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
 F www/index.tcl 963cc54d5ad111de44e1af7f2a22ab2ec152095d
-F www/lang.tcl 5193e27d5ab92ffa98427ef0fcc55d7a7c0e3ac3
+F www/lang.tcl b2ba401104a76e7842469b33a968f5eda9bd462b
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 1d30d0dd46c2bd12ce3f7dc06492f3e27ab6bcee
-R a883873c22c5f6280ed24904f9fd2d42
+P 4f56db1149f65dc2edf6626fa20ae255a5f5280c
+R beb886faf235c8b436ba8b6f603f6da8
 U drh
-Z 687b24d8f66905314c3d6818e3ab8a29
+Z dc319bd193fd8ef78827da98718764c0
