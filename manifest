@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sparsing\sof\swildcards\sthat\sbegin\swith\s'$'.\s(CVS\s1901)
-D 2004-08-24T15:23:34
+C Host\sparameter\snames\sconform\sto\sSQL-2003.\s(CVS\s1902)
+D 2004-08-25T04:07:02
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -53,7 +53,7 @@ F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 6ecf24602f56ac98914685d449f6653903f36fec
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
-F src/parse.y 8b4cab1901900927f717d10885b7a1bd3375345b
+F src/parse.y 581a2ce014b843506805b2470c02b7865ad034d5
 F src/pragma.c a7cea75286fcff6666a5412b04478fcf0ecef5c4
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -62,13 +62,13 @@ F src/shell.c 42f65424a948f197f389e13bc7aaa3cf24dafd0c
 F src/sqlite.h.in de2be4043f0bfa16958d33392a3e7a5e7d4bd50b
 F src/sqliteInt.h c7ed161ecc40f9fd0f080fbcc00e34bd7d6735ee
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
-F src/tclsqlite.c 90de7fd34c4eb66e5c3223849b0042b4b55ce624
+F src/tclsqlite.c dbbcc553c78fbf928461fb951c7a59f05f46a212
 F src/test1.c b87fae63b2994c150a579c4101f302be48ad77bc
 F src/test2.c f4c2f3928f1998fd8cb75a81e33a60e025ea85d4
 F src/test3.c 94d0a2a90bccd85802488cb42c69ec8afd2e4646
 F src/test4.c c38766914e924091516030b6a8b677d849c08bf0
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
-F src/tokenize.c d8ea315961f30d5a62232a98ec81d7ec1a72b087
+F src/tokenize.c 32171c3d576c7ec6acd6cf15e55c00ac0b314769
 F src/trigger.c 8b147c6b8ae0bab3a13463a4ca9ab6ad61f1361d
 F src/update.c 151f1869ce532ed883f1ce26306f0b0fa7b2589a
 F src/utf.c 3d8f7bffcbefcced69a436c9e0a1c7eb9e0bb4fa
@@ -88,7 +88,7 @@ F test/attach3.test 6d060986ff004ebb89e1876a331d96c6bb62269e
 F test/auth.test e74b015545f608c06d5b84d17acdf7146eb818af
 F test/bigfile.test 62722ac4b420dfbcdceb137b8634e2cf2865fe27
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 8fd93bd2c828decc8208b71b6fa6cf4d15636d9e
+F test/bind.test 7968edd61eb83b6e09165e4ba38e327dace6fb35
 F test/blob.test 8727a7b46b2073a369cfc9bcb6f54dd366b9d884
 F test/btree.test 97b563e1ab999bf8764b129e8c4b4be0a116a52a
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
@@ -212,7 +212,7 @@ F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
-F www/capi3ref.tcl 460ae1d1dd88560f878234a5d000336788434238
+F www/capi3ref.tcl 740d222be4d66e8947b60a0627dd760a2e019e9f
 F www/changes.tcl 8c36aab96163bbb64f5f07a12606a242c0a820f2
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
@@ -243,7 +243,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P b6eb4bf8c7763ef73723fc3d3697af435c19bae4
-R 8c0203ae9b9fb401a60a066d64e9f953
+P 054dd8901dbfe64a8f61e7b99e23512057bad99a
+R d23910c2c69266eac96be9e2b599d41f
 U drh
-Z d6e1c40c23af021b5f4969f3b7403dcc
+Z 5aba1f7ee7cf5f46b8a50edb359ed966

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.83 2004/08/24 15:23:34 drh Exp $
+** $Id: tokenize.c,v 1.84 2004/08/25 04:07:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -374,14 +374,9 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return 1;
     }
     case ':': {
-      for(i=1; isdigit(z[i]); i++){}
-      if( i>1 && z[i]==':' ){
-        *tokenType = TK_VARIABLE;
-        return i+1;
-      }else{
-        *tokenType = TK_ILLEGAL;
-        return i;
-      }
+      for(i=1; (z[i]&0x80)!=0 || isIdChar[z[i]]; i++){}
+      *tokenType = i>1 ? TK_VARIABLE : TK_ILLEGAL;
+      return i;
     }
     case '$': {
       int c;

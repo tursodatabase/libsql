@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.8 2004/08/20 16:02:40 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.9 2004/08/25 04:07:03 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -80,14 +80,14 @@ api {} {
   #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
  In the SQL strings input to sqlite3_prepare() and sqlite3_prepare16(),
- one or more literals can be replace by a wildcard "?" or ":N:" where
- N is an integer.  The value of these wildcard literals can be set
- using these routines.
+ one or more literals can be replace by a wildcard "?" or ":AAA" where
+ AAA is an alphanumeric identifier.
+ The value of these wildcard literals (also called "host parameter names")
+ can be set using these routines.
 
  The first parameter is a pointer to the sqlite3_stmt
  structure returned from sqlite3_prepare().  The second parameter is the
- index of the wildcard.  The first "?" has an index of 1.  ":N:" wildcards
- use the index N.
+ index of the wildcard.  The first wildcard has an index of 1. 
 
  The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
  sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
@@ -114,7 +114,7 @@ api {} {
   const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int n);
 } {
   Return the name of the n-th wildcard in the precompiled statement.
-  Wildcards of the form ":N:" have a name which is the string ":N:".
+  Wildcards of the form ":AAA" have a name which is the string ":AAA".
   Wildcards of the form "?" have no name.
 
   If the value n is out of range or if the n-th wildcard is nameless,
