@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.26 2004/05/07 13:30:42 drh Exp $
+** $Id: test3.c,v 1.27 2004/05/07 17:57:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -329,9 +329,9 @@ static int btree_update_meta(
   Btree *pBt;
   int rc;
   int i;
-  int aMeta[SQLITE_N_BTREE_META-1];
+  int aMeta[SQLITE_N_BTREE_META];
 
-  if( argc!=2+SQLITE_N_BTREE_META ){
+  if( argc!=1+SQLITE_N_BTREE_META ){
     char zBuf[30];
     sprintf(zBuf,"%d",SQLITE_N_BTREE_META);
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -339,11 +339,11 @@ static int btree_update_meta(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
-  for(i=0; i<SQLITE_N_BTREE_META-1; i++){
-    if( Tcl_GetInt(interp, argv[i+2], &aMeta[i]) ) return TCL_ERROR;
+  for(i=1; i<SQLITE_N_BTREE_META; i++){
+    if( Tcl_GetInt(interp, argv[i+1], &aMeta[i]) ) return TCL_ERROR;
   }
-  for(i=0; i<SQLITE_N_BTREE_META-1; i++){
-    rc = sqlite3BtreeUpdateMeta(pBt, i+1, aMeta[i]);
+  for(i=1; i<SQLITE_N_BTREE_META; i++){
+    rc = sqlite3BtreeUpdateMeta(pBt, i, aMeta[i]);
     if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, errorName(rc), 0);
       return TCL_ERROR;
@@ -594,7 +594,13 @@ static int btree_move_to(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqlite3BtreeMoveto(pCur, argv[2], strlen(argv[2]), &res);  
+  if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
+    int iKey;
+    if( Tcl_GetInt(interp, argv[2], &iKey) ) return TCL_ERROR;
+    rc = sqlite3BtreeMoveto(pCur, 0, iKey, &res);
+  }else{
+    rc = sqlite3BtreeMoveto(pCur, argv[2], strlen(argv[2]), &res);  
+  }
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -655,8 +661,14 @@ static int btree_insert(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqlite3BtreeInsert(pCur, argv[2], strlen(argv[2]),
+  if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
+    int iKey;
+    if( Tcl_GetInt(interp, argv[2], &iKey) ) return TCL_ERROR;
+    rc = sqlite3BtreeInsert(pCur, 0, iKey, argv[3], strlen(argv[3]));
+  }else{
+    rc = sqlite3BtreeInsert(pCur, argv[2], strlen(argv[2]),
                          argv[3], strlen(argv[3]));
+  }
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -855,11 +867,8 @@ static int btree_key(
   }else{
     zBuf = malloc( n+1 );
     rc = sqlite3BtreeKey(pCur, 0, n, zBuf);
-    if( rc!=n ){
-      char zMsg[100];
-      free(zBuf);
-      sprintf(zMsg, "truncated key: got %d of %llu bytes", rc, n);
-      Tcl_AppendResult(interp, zMsg, 0);
+    if( rc ){
+      Tcl_AppendResult(interp, errorName(rc), 0);
       return TCL_ERROR;
     }
     zBuf[n] = 0;
@@ -894,11 +903,8 @@ static int btree_data(
   sqlite3BtreeDataSize(pCur, &n);
   zBuf = malloc( n+1 );
   rc = sqlite3BtreeData(pCur, 0, n, zBuf);
-  if( rc!=n ){
-    char zMsg[100];
-    free(zBuf);
-    sprintf(zMsg, "truncated data: got %d of %u bytes", rc, n);
-    Tcl_AppendResult(interp, zMsg, 0);
+  if( rc ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
   }
   zBuf[n] = 0;

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.110 2004/05/07 13:30:42 drh Exp $
+** $Id: btree.c,v 1.111 2004/05/07 17:57:50 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -57,7 +57,7 @@
 ** of that header is as follows:
 **
 **   OFFSET   SIZE    DESCRIPTION
-**      0      16     Header string: "SQLite version 3"
+**      0      16     Header string: "SQLite format 3\000"
 **     16       2     Page size in bytes.  
 **     18       1     File format write version
 **     19       1     File format read version
@@ -187,16 +187,16 @@ typedef struct MemPage MemPage;
 /*
 ** This is a magic string that appears at the beginning of every
 ** SQLite database in order to identify the file as a real database.
-**                                  0123456789 123456 */
-static const char zMagicHeader[] = "SQLite version 3";
+**                                  123456789 123456 */
+static const char zMagicHeader[] = "SQLite format 3";
 
 /*
 ** Page type flags.  An ORed combination of these flags appear as the
 ** first byte of every BTree page.
 */
-#define PTF_LEAF      0x01
+#define PTF_INTKEY    0x01
 #define PTF_ZERODATA  0x02
-#define PTF_INTKEY    0x04
+#define PTF_LEAF      0x04
 /* Idea for the future:  PTF_LEAFDATA */
 
 /*
@@ -210,6 +210,7 @@ static const char zMagicHeader[] = "SQLite version 3";
 ** The pageDestructor() routine handles that chore.
 */
 struct MemPage {
+  u32 notUsed;
   struct Btree *pBt;             /* Pointer back to BTree structure */
   unsigned char *aData;          /* Pointer back to the start of the page */
   u8 isInit;                     /* True if previously initialized */
@@ -326,10 +327,10 @@ static unsigned int getVarint(unsigned char *p, u64 *pResult){
 static unsigned int putVarint(unsigned char *p, u64 v){
   int i = 0;
   do{
-    p[i++] = v & 0x7f;
+    p[i++] = (v & 0x7f) | 0x80;
     v >>= 7;
   }while( v!=0 );
-  p[i-1] |= 0x80;
+  p[i-1] &= 0x7f;
   return i;
 }
 
@@ -354,7 +355,7 @@ static void parseCellHeader(
   }else{
     n += getVarint(&pCell[n], pnData);
   }
-  n += getVarint(pCell, pnKey);
+  n += getVarint(&pCell[n], pnKey);
   *pnHeader = n;
 }
 
@@ -489,9 +490,10 @@ static int allocateSpace(MemPage *pPage, int nByte){
   assert( pc>0 && size>=nByte );
   assert( pc+size<=pPage->pBt->pageSize );
   if( size>nByte+4 ){
-    put2byte(&data[addr], pc+nByte);
-    put2byte(&data[pc+size], get2byte(&data[pc]));
-    put2byte(&data[pc+size+2], size-nByte);
+    int newStart = pc+nByte;
+    put2byte(&data[addr], newStart);
+    put2byte(&data[newStart], get2byte(&data[pc]));
+    put2byte(&data[newStart+2], size-nByte);
   }else{
     put2byte(&data[addr], get2byte(&data[pc]));
     data[hdr+5] += size-nByte;
@@ -691,7 +693,7 @@ static int initPage(
   assert( pPage->pBt!=0 );
   assert( pParent==0 || pParent->pBt==pPage->pBt );
   assert( pPage->pgno==sqlite3pager_pagenumber(pPage->aData) );
-  assert( pPage->aData == &((unsigned char*)pPage)[pPage->pBt->pageSize] );
+  assert( pPage->aData == &((unsigned char*)pPage)[-pPage->pBt->pageSize] );
   assert( pPage->isInit==0 || pPage->pParent==pParent );
   if( pPage->isInit ) return SQLITE_OK;
   assert( pPage->pParent==0 );
@@ -700,7 +702,8 @@ static int initPage(
     sqlite3pager_ref(pParent->aData);
   }
   pPage->nCell = pPage->nCellAlloc = 0;
-  pPage->hdrOffset = hdr = pPage->pgno==1 ? 100 : 0;
+  assert( pPage->hdrOffset==(pPage->pgno==1 ? 100 : 0) );
+  hdr = pPage->hdrOffset;
   data = pPage->aData;
   c = data[hdr];
   pPage->intKey = (c & PTF_INTKEY)!=0;
@@ -722,8 +725,8 @@ static int initPage(
   pc = get2byte(&data[hdr+3]);
   for(i=0; pc>0; i++){
     pPage->aCell[i] = &data[pc];
-    pc = get2byte(&data[pc]);
     sumCell += cellSize(pPage, &data[pc]);
+    pc = get2byte(&data[pc]);
   }
 
   /* Compute the total free space on the page */
@@ -746,6 +749,7 @@ static int initPage(
     return SQLITE_CORRUPT;
   }
 
+  pPage->isInit = 1;
   return SQLITE_OK;
 }
 
@@ -762,12 +766,13 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3pager_iswriteable(data) );
   memset(&data[hdr], 0, pBt->pageSize - hdr);
   data[hdr] = flags;
-  first = hdr + 6 + 4*((flags&0x01)!=0);
+  first = hdr + 6 + 4*((flags&PTF_LEAF)==0);
   put2byte(&data[hdr+1], first);
   put2byte(&data[first+2], pBt->pageSize - first);
   sqliteFree(pPage->aCell);
   pPage->aCell = 0;
   pPage->nCell = 0;
+  pPage->nCellAlloc = 0;
   pPage->nFree = pBt->pageSize - first;
   pPage->intKey = (flags & PTF_INTKEY)!=0;
   pPage->leaf = (flags & PTF_LEAF)!=0;
@@ -789,8 +794,28 @@ static int getPage(Btree *pBt, Pgno pgno, MemPage **ppPage){
   pPage->aData = aData;
   pPage->pBt = pBt;
   pPage->pgno = pgno;
+  pPage->hdrOffset = pPage->pgno==1 ? 100 : 0;
   *ppPage = pPage;
   return SQLITE_OK;
+}
+
+/*
+** Get a page from the pager and initialize it.  This routine
+** is just a convenience wrapper around separate calls to
+** getPage() and initPage().
+*/
+static int getAndInitPage(
+  Btree *pBt,          /* The database file */
+  Pgno pgno,           /* Number of the page to get */
+  MemPage **ppPage,    /* Write the page pointer here */
+  MemPage *pParent     /* Parent of the page */
+){
+  int rc;
+  rc = getPage(pBt, pgno, ppPage);
+  if( rc==SQLITE_OK ){
+    rc = initPage(*ppPage, pParent);
+  }
+  return rc;
 }
 
 /*
@@ -988,7 +1013,7 @@ static int newDatabase(Btree *pBt){
   MemPage *pP1;
   unsigned char *data;
   int rc;
-  if( sqlite3pager_pagecount(pBt->pPager)>1 ) return SQLITE_OK;
+  if( sqlite3pager_pagecount(pBt->pPager)>0 ) return SQLITE_OK;
   pP1 = pBt->pPage1;
   assert( pP1!=0 );
   data = pP1->aData;
@@ -1231,11 +1256,7 @@ int sqlite3BtreeCursor(
     goto create_cursor_exception;
   }
   pCur->pgnoRoot = (Pgno)iTable;
-  rc = getPage(pBt, pCur->pgnoRoot, &pCur->pPage);
-  if( rc!=SQLITE_OK ){
-    goto create_cursor_exception;
-  }
-  rc = initPage(pCur->pPage, 0);
+  rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
   }
@@ -1338,7 +1359,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, u64 *pSize){
   }else{
     unsigned char *cell = pPage->aCell[pCur->idx];
     cell += 2;   /* Skip the offset to the next cell */
-    if( pPage->leaf ){
+    if( !pPage->leaf ){
       cell += 4;  /* Skip the child pointer */
     }
     if( !pPage->zeroData ){
@@ -1378,7 +1399,7 @@ static int getPayload(
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
   aPayload += 2;  /* Skip the next cell index */
-  if( pPage->leaf ){
+  if( !pPage->leaf ){
     aPayload += 4;  /* Skip the child pointer */
   }
   if( pPage->zeroData ){
@@ -1497,7 +1518,7 @@ void *sqlite3BtreeKeyFetch(BtCursor *pCur){
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
   aPayload += 2;  /* Skip the next cell index */
-  if( pPage->leaf ){
+  if( !pPage->leaf ){
     aPayload += 4;  /* Skip the child pointer */
   }
   if( !pPage->zeroData ){
@@ -1530,7 +1551,7 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
     u64 size;
     cell = pPage->aCell[pCur->idx];
     cell += 2;   /* Skip the offset to the next cell */
-    if( pPage->leaf ){
+    if( !pPage->leaf ){
       cell += 4;  /* Skip the child pointer */
     }
     getVarint(cell, &size);
@@ -1572,9 +1593,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   MemPage *pOldPage;
   Btree *pBt = pCur->pBt;
 
-  rc = getPage(pBt, newPgno, &pNewPage);
-  if( rc ) return rc;
-  rc = initPage(pNewPage, pCur->pPage);
+  rc = getAndInitPage(pBt, newPgno, &pNewPage, pCur->pPage);
   if( rc ) return rc;
   pNewPage->idxParent = pCur->idx;
   pOldPage = pCur->pPage;
@@ -1600,7 +1619,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
 static int isRootPage(MemPage *pPage){
   MemPage *pParent = pPage->pParent;
   assert( pParent==0 || pParent->isInit );
-  if( pParent || (pParent->pgno==1 && pParent->nCell==0) ) return 1;
+  if( pParent==0 || (pParent->pgno==1 && pParent->nCell==0) ) return 1;
   return 0;
 }
 
@@ -1666,9 +1685,7 @@ static int moveToRoot(BtCursor *pCur){
   int rc;
   Btree *pBt = pCur->pBt;
 
-  rc = getPage(pBt, pCur->pgnoRoot, &pRoot);
-  if( rc ) return rc;
-  rc = initPage(pRoot, 0);
+  rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0);
   if( rc ) return rc;
   releasePage(pCur->pPage);
   pCur->pPage = pRoot;
@@ -1807,7 +1824,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
       void *pCellKey;
       u64 nCellKey;
       pCur->idx = (lwr+upr)/2;
-      nCellKey = sqlite3BtreeKeySize(pCur, &nCellKey);
+      sqlite3BtreeKeySize(pCur, &nCellKey);
       if( pPage->intKey ){
         if( nCellKey<nKey ){
           c = -1;
@@ -2211,6 +2228,7 @@ static int fillInCell(
     if( n>nSrc ) n = nSrc;
     memcpy(pPayload, pSrc, n);
     nPayload -= n;
+    pPayload += n;
     nSrc -= n;
     spaceLeft -= n;
     if( nSrc==0 ){
@@ -2285,13 +2303,15 @@ static void reparentChildPages(MemPage *pPage){
 ** the linked list.
 */
 static void dropCell(MemPage *pPage, int idx, int sz){
-  int j;
+  int j, pc;
   assert( idx>=0 && idx<pPage->nCell );
   assert( sz==cellSize(pPage, pPage->aCell[idx]) );
   assert( sqlite3pager_iswriteable(pPage->aData) );
   assert( pPage->aCell[idx]>=pPage->aData );
   assert( pPage->aCell[idx]<&pPage->aData[pPage->pBt->pageSize-sz] );
-  freeSpace(pPage, idx, sz);
+  pc = Addr(pPage->aCell[idx]) - Addr(pPage->aData);
+  assert( pc>pPage->hdrOffset && pc+sz<=pPage->pBt->pageSize );
+  freeSpace(pPage, pc, sz);
   for(j=idx; j<pPage->nCell-1; j++){
     pPage->aCell[j] = pPage->aCell[j+1];
   }
@@ -2344,7 +2364,7 @@ static void relinkCellList(MemPage *pPage){
   assert( sqlite3pager_iswriteable(pPage->aData) );
   idxFrom = pPage->hdrOffset+3;
   for(i=0; i<pPage->nCell; i++){
-    int idx = Addr(pPage->aCell[i]) - Addr(pPage);
+    int idx = Addr(pPage->aCell[i]) - Addr(pPage->aData);
     assert( idx>pPage->hdrOffset && idx<pPage->pBt->pageSize );
     put2byte(&pPage->aData[idxFrom], idx);
     idxFrom = idx;
@@ -2620,9 +2640,7 @@ static int balance(MemPage *pPage){
     }else{
       break;
     }
-    rc = getPage(pBt, pgnoOld[i], &apOld[i]);
-    if( rc ) goto balance_cleanup;
-    rc = initPage(apOld[i], pParent);
+    rc = getAndInitPage(pBt, pgnoOld[i], &apOld[i], pParent);
     if( rc ) goto balance_cleanup;
     apOld[i]->idxParent = k;
     apCopy[i] = 0;
@@ -3053,7 +3071,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   rc = allocatePage(pBt, &pRoot, &pgnoRoot, 0);
   if( rc ) return rc;
   assert( sqlite3pager_iswriteable(pRoot->aData) );
-  zeroPage(pRoot, flags);
+  zeroPage(pRoot, flags | PTF_LEAF);
   sqlite3pager_unref(pRoot->aData);
   *piTable = (int)pgnoRoot;
   return SQLITE_OK;
@@ -3074,11 +3092,9 @@ static int clearDatabasePage(
   unsigned char *pCell;
   int i;
 
-  rc = getPage(pBt, pgno, &pPage);
+  rc = getAndInitPage(pBt, pgno, &pPage, pParent);
   if( rc ) return rc;
   rc = sqlite3pager_write(pPage->aData);
-  if( rc ) return rc;
-  rc = initPage(pPage, pParent);
   if( rc ) return rc;
   for(i=0; i<pPage->nCell; i++){
     pCell = pPage->aCell[i];
@@ -3183,8 +3199,8 @@ int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
   if( !pBt->inTrans ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
-  rc = sqlite3pager_get(pBt->pPager, 1, (void**)&pP1);
-  if( rc ) return rc;
+  assert( pBt->pPage1!=0 );
+  pP1 = pBt->pPage1->aData;
   rc = sqlite3pager_write(pP1);
   if( rc ) return rc;
   put4byte(&pP1[36 + idx*4], iMeta);
@@ -3218,7 +3234,7 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   printf("PAGE %d:  flags=0x%02x  frag=%d\n", pgno,
     pPage->aData[pPage->hdrOffset], pPage->aData[pPage->hdrOffset+5]);
   i = 0;
-  hdrOffset = pgno==1 ? 100 : 0;
+  assert( pPage->hdrOffset == (pgno==1 ? 100 : 0) );
   idx = get2byte(&pPage->aData[hdrOffset+3]);
   while( idx>0 && idx<=pBt->pageSize ){
     u64 nData, nKey;

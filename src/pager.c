@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.102 2004/04/26 14:10:21 drh Exp $
+** @(#) $Id: pager.c,v 1.103 2004/05/07 17:57:50 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -569,7 +569,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int format){
     */
     assert( pPg->nRef==0 || pPg->pgno==1 );
     memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
-    memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+    if( pPager->xDestructor ){
+      pPager->xDestructor(PGHDR_TO_DATA(pPg));
+    }
     pPg->dirty = 0;
     pPg->needSync = 0;
     CODEC(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);

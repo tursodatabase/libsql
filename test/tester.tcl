@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.29 2004/04/26 14:10:22 drh Exp $
+# $Id: tester.tcl,v 1.30 2004/05/07 17:57:50 drh Exp $
 
 if 0 {
 # Make sure tclsqlite was compiled correctly.  Abort now with an
@@ -110,7 +110,7 @@ proc do_test {name cmd expected} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
     incr nErr
     lappend ::failList $name
-    if {$nErr>100} {puts "*** Giving up..."; finalize_testing}
+    if {$nErr>=1} {puts "*** Giving up..."; finalize_testing}
   } else {
     puts " Ok"
   }
