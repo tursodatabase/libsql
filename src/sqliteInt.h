@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.264 2004/05/31 18:23:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.265 2004/05/31 18:51:58 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -134,8 +134,8 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 ** evaluated at runtime.
 */
 extern const int sqlite3one;
-#define SQLITE3_BIGENDIAN    (*(char *)(&sqlite3one)==0)
-#define SQLITE3_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
+#define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
+#define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
 
 /*
 ** Defer sourcing vdbe.h until after the "u8" typedef is defined.
@@ -324,7 +324,7 @@ struct Db {
 #define TEXT_Utf8          1
 #define TEXT_Utf16le       2
 #define TEXT_Utf16be       3
-#define TEXT_Utf16         (SQLITE3_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le)
+#define TEXT_Utf16         (SQLITE_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le)
 
 /*
 ** Each database is an instance of the following structure.

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.352 2004/05/31 10:01:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.353 2004/05/31 18:51:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -138,18 +138,18 @@ int sqlite3_interrupt_count = 0;
 static void _storeTypeInfo(Mem *pMem){
   int flags = pMem->flags;
   if( flags & MEM_Null ){
-    pMem->type = SQLITE3_NULL;
+    pMem->type = SQLITE_NULL;
   }
   else if( flags & MEM_Int ){
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE_INTEGER;
   }
   else if( flags & MEM_Real ){
-    pMem->type = SQLITE3_FLOAT;
+    pMem->type = SQLITE_FLOAT;
   }
   else if( flags & MEM_Str ){
-    pMem->type = SQLITE3_TEXT;
+    pMem->type = SQLITE_TEXT;
   }else{
-    pMem->type = SQLITE3_BLOB;
+    pMem->type = SQLITE_BLOB;
   }
 }
 

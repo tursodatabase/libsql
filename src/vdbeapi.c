@@ -497,7 +497,7 @@ int sqlite3_bind_text16(
     zData = (void *)(((u8 *)zData) + 2);
     nData -= 2;
   }else{
-    txt_enc = SQLITE3_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
+    txt_enc = SQLITE_BIGENDIAN?TEXT_Utf16be:TEXT_Utf16le;
   }
   rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, eCopy);
   if( rc ){

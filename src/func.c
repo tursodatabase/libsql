@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.61 2004/05/27 10:30:53 danielk1977 Exp $
+** $Id: func.c,v 1.62 2004/05/31 18:51:58 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -42,9 +42,9 @@ static void minmaxFunc(
   mask = (int)sqlite3_user_data(context);
   assert( mask==-1 || mask==0 );
   iBest = 0;
-  if( sqlite3_value_type(argv[0])==SQLITE3_NULL ) return;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   for(i=1; i<argc; i++){
-    if( sqlite3_value_type(argv[i])==SQLITE3_NULL ) return;
+    if( sqlite3_value_type(argv[i])==SQLITE_NULL ) return;
     if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)>=0 ){
       iBest = i;
     }
@@ -62,11 +62,11 @@ static void typeofFunc(
 ){
   const char *z = 0;
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE3_NULL:    z = "null";    break;
-    case SQLITE3_INTEGER: z = "integer"; break;
-    case SQLITE3_TEXT:    z = "text";    break;
-    case SQLITE3_FLOAT:   z = "real";    break;
-    case SQLITE3_BLOB:    z = "blob";    break;
+    case SQLITE_NULL:    z = "null";    break;
+    case SQLITE_INTEGER: z = "integer"; break;
+    case SQLITE_TEXT:    z = "text";    break;
+    case SQLITE_FLOAT:   z = "real";    break;
+    case SQLITE_BLOB:    z = "blob";    break;
   }
   sqlite3_result_text(context, z, -1, 0);
 }
@@ -83,13 +83,13 @@ static void lengthFunc(
 
   assert( argc==1 );
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE3_BLOB:
-    case SQLITE3_INTEGER:
-    case SQLITE3_FLOAT: {
+    case SQLITE_BLOB:
+    case SQLITE_INTEGER:
+    case SQLITE_FLOAT: {
       sqlite3_result_int(context, sqlite3_value_bytes(argv[0]));
       break;
     }
-    case SQLITE3_TEXT: {
+    case SQLITE_TEXT: {
       const char *z = sqlite3_value_text(argv[0]);
       for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
       sqlite3_result_int(context, len);
@@ -108,13 +108,13 @@ static void lengthFunc(
 static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE3_INTEGER: {
+    case SQLITE_INTEGER: {
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal<0 ) iVal = iVal * -1;
       sqlite3_result_int64(context, iVal);
       break;
     }
-    case SQLITE3_NULL: {
+    case SQLITE_NULL: {
       sqlite3_result_null(context);
       break;
     }
@@ -179,12 +179,12 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char zBuf[100];
   assert( argc==1 || argc==2 );
   if( argc==2 ){
-    if( SQLITE3_NULL==sqlite3_value_type(argv[1]) ) return;
+    if( SQLITE_NULL==sqlite3_value_type(argv[1]) ) return;
     n = sqlite3_value_int(argv[1]);
     if( n>30 ) n = 30;
     if( n<0 ) n = 0;
   }
-  if( SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
+  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   r = sqlite3_value_double(argv[0]);
   sprintf(zBuf,"%.*f",n,r);
   sqlite3_result_text(context, zBuf, -1, 1);
@@ -196,7 +196,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z;
   int i;
-  if( argc<1 || SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
+  if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
@@ -209,7 +209,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z;
   int i;
-  if( argc<1 || SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
+  if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
   if( z==0 ) return;
   strcpy(z, sqlite3_value_text(argv[0]));
@@ -232,7 +232,7 @@ static void ifnullFunc(
 ){
   int i;
   for(i=0; i<argc; i++){
-    if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
+    if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
       sqlite3_result_value(context, argv[i]);
       break;
     }
@@ -371,17 +371,17 @@ static void versionFunc(
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   if( argc<1 ) return;
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE3_NULL: {
+    case SQLITE_NULL: {
       sqlite3_result_text(context, "NULL", 4, 0);
       break;
     }
-    case SQLITE3_INTEGER:
-    case SQLITE3_FLOAT: {
+    case SQLITE_INTEGER:
+    case SQLITE_FLOAT: {
       sqlite3_result_value(context, argv[0]);
       break;
     }
-    case SQLITE3_BLOB:  /*** FIX ME.  Use a BLOB encoding ***/
-    case SQLITE3_TEXT: {
+    case SQLITE_BLOB:  /*** FIX ME.  Use a BLOB encoding ***/
+    case SQLITE_TEXT: {
       int i,j,n;
       const char *zArg = sqlite3_value_text(argv[0]);
       char *z;
@@ -504,7 +504,7 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   SumCtx *p;
   if( argc<1 ) return;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( p && SQLITE3_NULL!=sqlite3_value_type(argv[0]) ){
+  if( p && SQLITE_NULL!=sqlite3_value_type(argv[0]) ){
     p->sum += sqlite3_value_double(argv[0]);
     p->cnt++;
   }
@@ -575,7 +575,7 @@ struct CountCtx {
 static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0])) && p ){
+  if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0])) && p ){
     p->n++;
   }
 }   
@@ -604,7 +604,7 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
   Mem *pArg  = (Mem *)argv[0];
   Mem *pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));
 
-  if( SQLITE3_NULL==sqlite3_value_type(argv[0]) ) return;
+  if( SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
 
   if( pBest->flags ){
     /* This step function is used for both the min() and max() aggregates,

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.76 2004/05/29 02:37:19 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.77 2004/05/31 18:51:58 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -213,7 +213,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   Tcl_DStringInit(&cmd);
   Tcl_DStringAppend(&cmd, p->zScript, -1);
   for(i=0; i<argc; i++){
-    if( SQLITE3_NULL==sqlite3_value_type(argv[i]) ){
+    if( SQLITE_NULL==sqlite3_value_type(argv[i]) ){
       Tcl_DStringAppendElement(&cmd, "");
     }else{
       Tcl_DStringAppendElement(&cmd, sqlite3_value_text(argv[i]));
@@ -658,7 +658,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           Tcl_Obj *pVal;
           
           /* Set pVal to contain the i'th column of this row. */
-          if( SQLITE3_BLOB!=sqlite3_column_type(pStmt, i) ){
+          if( SQLITE_BLOB!=sqlite3_column_type(pStmt, i) ){
             pVal = dbTextToObj(sqlite3_column_text(pStmt, i));
           }else{
             int bytes = sqlite3_column_bytes(pStmt, i);

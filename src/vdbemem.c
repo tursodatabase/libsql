@@ -179,7 +179,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     ** FIX ME: It would be better if sqlite3_snprintf() could do UTF-16.
     */
     u8 *z = pMem->zShort;
-    if( fg & MEM_Real || (pMem->type==SQLITE3_FLOAT) ){
+    if( fg & MEM_Real || (pMem->type==SQLITE_FLOAT) ){
       sqlite3_snprintf(NBFS, z, "%.15g", pMem->r);
     }else{
       assert( fg & MEM_Int );
@@ -236,7 +236,7 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
 int sqlite3VdbeMemRealify(Mem *pMem){
   if( pMem->flags & MEM_Real ){
     /* Do nothing */
-  }else if( (pMem->flags & MEM_Int) && pMem->type!=SQLITE3_TEXT ){
+  }else if( (pMem->flags & MEM_Int) && pMem->type!=SQLITE_TEXT ){
     pMem->r = pMem->i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
     if( sqlite3VdbeChangeEncoding(pMem, TEXT_Utf8)
@@ -258,7 +258,7 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 void sqlite3VdbeMemSetNull(Mem *pMem){
   releaseMem(pMem);
   pMem->flags = MEM_Null;
-  pMem->type = SQLITE3_NULL;
+  pMem->type = SQLITE_NULL;
 }
 
 /*
@@ -269,7 +269,7 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   releaseMem(pMem);
   pMem->i = val;
   pMem->flags = MEM_Int;
-  pMem->type = SQLITE3_INTEGER;
+  pMem->type = SQLITE_INTEGER;
 }
 
 /*
@@ -280,7 +280,7 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
   releaseMem(pMem);
   pMem->r = val;
   pMem->flags = MEM_Real;
-  pMem->type = SQLITE3_FLOAT;
+  pMem->type = SQLITE_FLOAT;
 }
 
 /*
@@ -310,7 +310,7 @@ int sqlite3VdbeMemSetStr(
   releaseMem(pMem);
   if( !z ){
     pMem->flags = MEM_Null;
-    pMem->type = SQLITE3_NULL;
+    pMem->type = SQLITE_NULL;
     return SQLITE_OK;
   }
 
@@ -321,7 +321,7 @@ int sqlite3VdbeMemSetStr(
     pMem->flags = MEM_Static;
   }
   pMem->enc = enc;
-  pMem->type = enc==0 ? SQLITE3_BLOB : SQLITE3_TEXT;
+  pMem->type = enc==0 ? SQLITE_BLOB : SQLITE_TEXT;
   pMem->n = n;
   switch( enc ){
     case 0:
@@ -491,7 +491,7 @@ int sqlite3VdbeMemFromBtree(
     }
     pMem->z = zData;
     pMem->enc = 0;
-    pMem->type = SQLITE3_BLOB;
+    pMem->type = SQLITE_BLOB;
 
     if( key ){
       rc = sqlite3BtreeKey(pCur, offset, amt, zData);

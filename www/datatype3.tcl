@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.1 2004/05/31 18:22:26 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.2 2004/05/31 18:51:59 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -123,8 +123,9 @@ of the column, according to the following rules:</P>
 	column has TEXT affinity. Notice that the type VARCHAR contains the
 	string &quot;CHAR&quot; and is thus assigned TEXT affinity.</P>
 
-	<LI><P>If the datatype contains the string &quot;BLOB&quot;
-        then the column has affinity NONE.</P>
+	<LI><P>If the datatype for a column
+         contains the string &quot;BLOB&quot; or if
+        not datatype is specified then the column has affinity NONE.</P>
 
 	<LI><P>Otherwise, the affinity is NUMERIC.  Notice that a column
         where no datatype is specified is given affinity NUMERIC.</P>
@@ -138,10 +139,10 @@ and they are given no affinity.</P>
 
 <blockquote>
 <PRE>CREATE TABLE t1(
-    t  AFFINITY TEXT,
-    nu AFFINITY NUMERIC, 
-    i  AFFINITY INTEGER,
-    no AFFINITY NONE
+    t  TEXT,
+    nu NUMERIC, 
+    i  INTEGER,
+    no BLOB
 );
 
 -- Storage classes for the following row:
@@ -150,7 +151,8 @@ INSERT INTO t1 VALUES('500.0', '500.0', '500.0', '500.0');
 
 -- Storage classes for the following row:
 -- TEXT, REAL, INTEGER, REAL
-INSERT INTO t1 VALUES(500.0, 500.0, 500.0, 500.0);</PRE>
+INSERT INTO t1 VALUES(500.0, 500.0, 500.0, 500.0);
+</PRE>
 </blockquote>
 
 <h3>3. Comparison Expressions</h3>
@@ -201,17 +203,18 @@ SQL scalar expression or literal other than a column value.</P>
 <h4>3.1 Comparison Example</h4>
 
 <blockquote>
-<PRE>CREATE TABLE t1(
-    a AFFINITY TEXT,
-    b AFFINITY NUMERIC,
-    c AFFINITY NONE
+<PRE>
+CREATE TABLE t1(
+    a TEXT,
+    b NUMERIC,
+    c BLOB
 );
 
 -- Storage classes for the following row:
 -- TEXT, REAL, TEXT
 INSERT INTO t1 VALUES('500', '500', '500');
 
--- 60 and 40 are converted to “60” and “40” and values are compared as TEXT.
+-- 60 and 40 are converted to '60' and '40' and values are compared as TEXT.
 SELECT a &lt; 60, a &lt; 40 FROM t1;
 1|0
 
@@ -219,9 +222,11 @@ SELECT a &lt; 60, a &lt; 40 FROM t1;
 SELECT b &lt; 60, b &lt; 600 FROM t1;
 0|1
 
--- Both 60 and 600 (storage class NUMERIC) are less than '500' (storage class TEXT).
+-- Both 60 and 600 (storage class NUMERIC) are less than '500'
+-- (storage class TEXT).
 SELECT c &lt; 60, c &lt; 600 FROM t1;
-0|0</PRE>
+0|0
+</PRE>
 </blockquote>
 
 <P>

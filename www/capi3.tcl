@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.1 2004/05/31 18:22:26 drh Exp $}
+set rcsid {$Id: capi3.tcl,v 1.2 2004/05/31 18:51:59 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -88,6 +88,40 @@ the next call to any SQLite API function.  sqlite3_errmsg16() works like
 sqlite3_errmsg() except that it returns the error message represented
 as UTF-16 in host native byte order.
 </p>
+
+<p>
+The error codes for SQLite version 3 are unchanged from version2.
+They are as follows:
+</p>
+
+<blockquote><pre>
+#define SQLITE_OK           0   /* Successful result */
+#define SQLITE_ERROR        1   /* SQL error or missing database */
+#define SQLITE_INTERNAL     2   /* An internal logic error in SQLite */
+#define SQLITE_PERM         3   /* Access permission denied */
+#define SQLITE_ABORT        4   /* Callback routine requested an abort */
+#define SQLITE_BUSY         5   /* The database file is locked */
+#define SQLITE_LOCKED       6   /* A table in the database is locked */
+#define SQLITE_NOMEM        7   /* A malloc() failed */
+#define SQLITE_READONLY     8   /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
+#define SQLITE_CORRUPT     11   /* The database disk image is malformed */
+#define SQLITE_NOTFOUND    12   /* (Internal Only) Table or record not found */
+#define SQLITE_FULL        13   /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN    14   /* Unable to open the database file */
+#define SQLITE_PROTOCOL    15   /* Database lock protocol error */
+#define SQLITE_EMPTY       16   /* (Internal Only) Database table is empty */
+#define SQLITE_SCHEMA      17   /* The database schema changed */
+#define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
+#define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
+#define SQLITE_MISMATCH    20   /* Data type mismatch */
+#define SQLITE_MISUSE      21   /* Library used incorrectly */
+#define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
+#define SQLITE_AUTH        23   /* Authorization denied */
+#define SQLITE_ROW         100  /* sqlite_step() has another row ready */
+#define SQLITE_DONE        101  /* sqlite_step() has finished executing */
+</pre></blockquote>
 
 <h4>2.2 Executing SQL statements</h4>
 
@@ -193,11 +227,11 @@ of these:
 </p>
 
 <blockquote><pre>
-   #define SQLITE3_INTEGER  1
-   #define SQLITE3_FLOAT    2
-   #define SQLITE3_TEXT     3
-   #define SQLITE3_BLOB     4
-   #define SQLITE3_NULL     5
+   #define SQLITE_INTEGER  1
+   #define SQLITE_FLOAT    2
+   #define SQLITE_TEXT     3
+   #define SQLITE_BLOB     4
+   #define SQLITE_NULL     5
 </pre></blockquote>
 
 <p>

@@ -571,30 +571,30 @@ int sqlite3VdbeList(
     Op *pOp = &p->aOp[i];
     Mem *pMem = p->aStack;
     pMem->flags = MEM_Int;
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE_INTEGER;
     pMem->i = i;                                /* Program counter */
     pMem++;
 
     pMem->flags = MEM_Static|MEM_Str|MEM_Term;
     pMem->z = sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
     pMem->n = strlen(pMem->z);
-    pMem->type = SQLITE3_TEXT;
+    pMem->type = SQLITE_TEXT;
     pMem->enc = TEXT_Utf8;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->i = pOp->p1;                          /* P1 */
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE_INTEGER;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->i = pOp->p2;                          /* P2 */
-    pMem->type = SQLITE3_INTEGER;
+    pMem->type = SQLITE_INTEGER;
     pMem++;
 
     pMem->flags = MEM_Short|MEM_Str|MEM_Term;   /* P3 */
     pMem->z = displayP3(pOp, pMem->zShort, sizeof(pMem->zShort));
-    pMem->type = SQLITE3_TEXT;
+    pMem->type = SQLITE_TEXT;
     pMem->enc = TEXT_Utf8;
 
     p->nResColumn = 5;

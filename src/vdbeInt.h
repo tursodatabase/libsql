@@ -124,8 +124,8 @@ struct Sorter {
 **
 ** Each value has a manifest type. The manifest type of the value stored
 ** in a Mem struct is returned by the MemType(Mem*) macro. The type is
-** one of SQLITE3_NULL, SQLITE3_INTEGER, SQLITE3_REAL, SQLITE3_TEXT or
-** SQLITE3_BLOB.
+** one of SQLITE_NULL, SQLITE_INTEGER, SQLITE_REAL, SQLITE_TEXT or
+** SQLITE_BLOB.
 */
 struct Mem {
   i64 i;              /* Integer value */

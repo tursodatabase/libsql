@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.204 2004/05/31 11:51:45 danielk1977 Exp $
+** $Id: build.c,v 1.205 2004/05/31 18:51:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -886,6 +886,9 @@ char sqlite3AffinityType(const char *zType, int nType){
     {"BLOB", 4, SQLITE_AFF_NONE},
   };
 
+  if( nType==0 ){
+    return SQLITE_AFF_NONE;
+  }
   for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
     int c1 = substrings[i].zSub[0];
     int c2 = tolower(c1);

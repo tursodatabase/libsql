@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.198 2004/05/31 08:55:34 danielk1977 Exp $
+** $Id: main.c,v 1.199 2004/05/31 18:51:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -30,8 +30,8 @@ typedef struct {
 } InitData;
 
 /*
-** The following constant value is used by the SQLITE3_BIGENDIAN and
-** SQLITE3_LITTLEENDIAN macros.
+** The following constant value is used by the SQLITE_BIGENDIAN and
+** SQLITE_LITTLEENDIAN macros.
 */
 const int sqlite3one = 1;
 
@@ -692,7 +692,7 @@ int sqlite3_create_function16(
 ){
   int rc;
   char *zFunctionName8;
-  zFunctionName8 = sqlite3utf16to8(zFunctionName, -1, SQLITE3_BIGENDIAN);
+  zFunctionName8 = sqlite3utf16to8(zFunctionName, -1, SQLITE_BIGENDIAN);
   if( !zFunctionName8 ){
     return SQLITE_NOMEM;
   }
@@ -819,7 +819,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     };
     static char *outOfMemLe = &outOfMemBe[1];
 
-    if( SQLITE3_BIGENDIAN ){
+    if( SQLITE_BIGENDIAN ){
       return (void *)outOfMemBe;
     }else{
       return (void *)outOfMemLe;
@@ -827,7 +827,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   }
   if( !db->zErrMsg16 ){
     char const *zErr8 = sqlite3_errmsg(db);
-    if( SQLITE3_BIGENDIAN ){
+    if( SQLITE_BIGENDIAN ){
       db->zErrMsg16 = sqlite3utf8to16be(zErr8, -1);
     }else{
       db->zErrMsg16 = sqlite3utf8to16le(zErr8, -1);
@@ -960,7 +960,7 @@ int sqlite3_prepare16(
   char const *zTail8 = 0;
   int rc;
 
-  zSql8 = sqlite3utf16to8(zSql, nBytes, SQLITE3_BIGENDIAN);
+  zSql8 = sqlite3utf16to8(zSql, nBytes, SQLITE_BIGENDIAN);
   if( !zSql8 ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     return SQLITE_NOMEM;
@@ -1090,7 +1090,7 @@ int sqlite3_open16(
 
   assert( ppDb );
 
-  zFilename8 = sqlite3utf16to8(zFilename, -1, SQLITE3_BIGENDIAN);
+  zFilename8 = sqlite3utf16to8(zFilename, -1, SQLITE_BIGENDIAN);
   if( !zFilename8 ){
     *ppDb = 0;
     return SQLITE_NOMEM;
@@ -1098,7 +1098,7 @@ int sqlite3_open16(
 
   /* FIX ME: Also need to translate the option strings */
 
-  if( SQLITE3_BIGENDIAN ){
+  if( SQLITE_BIGENDIAN ){
     rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16be);
   }else{
     rc = openDatabase(zFilename8, ppDb, options, TEXT_Utf16le);

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.65 2004/05/27 14:23:36 danielk1977 Exp $
+** $Id: test1.c,v 1.66 2004/05/31 18:51:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -325,7 +325,7 @@ static int sqlite_test_close(
 static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   int i;
   for(i=0; i<argc; i++){
-    if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
+    if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
       sqlite3_result_text(context, sqlite3_value_text(argv[i]), -1, 1);
       break;
     }
@@ -450,7 +450,7 @@ struct CountCtx {
 static void countStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   CountCtx *p;
   p = sqlite3_aggregate_context(context, sizeof(*p));
-  if( (argc==0 || SQLITE3_NULL!=sqlite3_value_type(argv[0]) ) && p ){
+  if( (argc==0 || SQLITE_NULL!=sqlite3_value_type(argv[0]) ) && p ){
     p->n++;
   }
 }   
@@ -1399,19 +1399,19 @@ static int test_column_type(
 
   tp = sqlite3_column_type(pStmt, col);
   switch( tp ){
-    case SQLITE3_INTEGER: 
+    case SQLITE_INTEGER: 
       Tcl_SetResult(interp, "INTEGER", TCL_STATIC); 
       break;
-    case SQLITE3_NULL:
+    case SQLITE_NULL:
       Tcl_SetResult(interp, "NULL", TCL_STATIC); 
       break;
-    case SQLITE3_FLOAT:
+    case SQLITE_FLOAT:
       Tcl_SetResult(interp, "FLOAT", TCL_STATIC); 
       break;
-    case SQLITE3_TEXT:
+    case SQLITE_TEXT:
       Tcl_SetResult(interp, "TEXT", TCL_STATIC); 
       break;
-    case SQLITE3_BLOB:
+    case SQLITE_BLOB:
       Tcl_SetResult(interp, "BLOB", TCL_STATIC); 
       break;
     default:

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.85 2004/05/27 23:56:16 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.86 2004/05/31 18:51:58 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -768,11 +768,11 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** Values are stored in the database in one of the following fundamental
 ** types.
 */
-#define SQLITE3_INTEGER  1
-#define SQLITE3_FLOAT    2
-#define SQLITE3_TEXT     3
-#define SQLITE3_BLOB     4
-#define SQLITE3_NULL     5
+#define SQLITE_INTEGER  1
+#define SQLITE_FLOAT    2
+#define SQLITE_TEXT     3
+#define SQLITE_BLOB     4
+#define SQLITE_NULL     5
 
 /*
 ** The next group of routines returns information about the information
