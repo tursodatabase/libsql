@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.187 2005/01/29 08:32:45 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.188 2005/02/06 02:45:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -250,6 +250,7 @@ struct Pager {
   u8 journalOpen;             /* True if journal file descriptors is valid */
   u8 journalStarted;          /* True if header of journal is synced */
   u8 useJournal;              /* Use a rollback journal on this file */
+  u8 noReadlock;              /* Do not bother to obtain readlocks */
   u8 stmtOpen;                /* True if the statement subjournal is open */
   u8 stmtInUse;               /* True we are in a statement subtransaction */
   u8 stmtAutoopen;            /* Open stmt journal when main journal is opened*/
@@ -1483,7 +1484,7 @@ int sqlite3pager_open(
   Pager **ppPager,         /* Return the Pager structure here */
   const char *zFilename,   /* Name of the database file to open */
   int nExtra,              /* Extra bytes append to each in-memory page */
-  int useJournal           /* TRUE to use a rollback journal on this file */
+  int flags                /* flags controlling this file */
 ){
   Pager *pPager;
   char *zFullPathname = 0;
@@ -1494,6 +1495,8 @@ int sqlite3pager_open(
   int tempFile = 0;
   int memDb = 0;
   int readOnly = 0;
+  int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
+  int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   char zTemp[SQLITE_TEMPNAME_SIZE];
 
   *ppPager = 0;
@@ -1556,6 +1559,7 @@ int sqlite3pager_open(
 #endif
   pPager->journalOpen = 0;
   pPager->useJournal = useJournal && !memDb;
+  pPager->noReadlock = noReadlock && readOnly;
   pPager->stmtOpen = 0;
   pPager->stmtInUse = 0;
   pPager->nRef = 0;
@@ -2144,7 +2148,7 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 */
 int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   PgHdr *pPg;
-  int rc;
+  int rc, n;
 
   /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
   ** number greater than this, or zero, is requested.
@@ -2165,9 +2169,11 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   ** on the database file.
   */
   if( pPager->nRef==0 && !MEMDB ){
-    rc = pager_wait_on_lock(pPager, SHARED_LOCK);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( !pPager->noReadlock ){
+      rc = pager_wait_on_lock(pPager, SHARED_LOCK);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
     }
 
     /* If a journal file exists, and there is no RESERVED lock on the
@@ -2354,13 +2360,13 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     if( pPager->nExtra>0 ){
       memset(PGHDR_TO_EXTRA(pPg, pPager), 0, pPager->nExtra);
     }
-    sqlite3pager_pagecount(pPager);
+    n = sqlite3pager_pagecount(pPager);
     if( pPager->errMask!=0 ){
       sqlite3pager_unref(PGHDR_TO_DATA(pPg));
       rc = pager_errcode(pPager);
       return rc;
     }
-    if( pPager->dbSize<(int)pgno ){
+    if( n<(int)pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
       int rc;

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.279 2005/02/05 07:33:34 danielk1977 Exp $
+** $Id: main.c,v 1.280 2005/02/06 02:45:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -857,6 +857,9 @@ int sqlite3BtreeFactory(
   assert( ppBtree != 0);
   if( omitJournal ){
     btree_flags |= BTREE_OMIT_JOURNAL;
+  }
+  if( db->flags & SQLITE_NoReadlock ){
+    btree_flags |= BTREE_NO_READLOCK;
   }
   if( zFilename==0 ){
 #if TEMP_STORE==0

@@ -462,6 +462,18 @@ static void yy_reduce(
   }
 #endif /* NDEBUG */
 
+#ifndef NDEBUG
+  /* Silence complaints from purify about yygotominor being uninitialized
+  ** in some cases when it is copied into the stack after the following
+  ** switch.  yygotominor is uninitialized when a rule reduces that does
+  ** not set the value of its left-hand side nonterminal.  Leaving the
+  ** value of the nonterminal uninitialized is utterly harmless as long
+  ** as the value is never used.  So really the only thing this code
+  ** accomplishes is to quieten purify.  
+  */
+  memset(&yygotominor, 0, sizeof(yygotominor));
+#endif
+
   switch( yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
   ** follows:

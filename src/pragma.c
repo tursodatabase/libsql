@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.87 2005/02/04 04:07:17 danielk1977 Exp $
+** $Id: pragma.c,v 1.88 2005/02/06 02:45:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -148,6 +148,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "empty_result_callbacks",   SQLITE_NullCallback  },
     /* The following is VERY experimental */
     { "writable_schema",          SQLITE_WriteSchema   },
+    { "omit_readlock",            SQLITE_NoReadlock    },
   };
   int i;
   const struct sPragmaType *p;
