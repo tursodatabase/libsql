@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.7 2003/08/26 11:25:58 drh Exp $
+# $Id: misc2.test,v 1.8 2003/08/27 22:54:32 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -128,3 +128,54 @@ do_test misc2-6.1 {
     SELECT * FROM t1;
   }
 } {1 2}
+
+# Make sure we get an error message (not a segfault) on an attempt to
+# update a table from within the callback of a select on that same
+# table.
+#
+do_test misc2-7.1 {
+  db close
+  file delete -force test.db
+  sqlite db test.db
+  execsql {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+  }
+  set rc [catch {
+    db eval {SELECT rowid FROM t1} {} {
+      db eval "DELETE FROM t1 WHERE rowid=$rowid"
+    }
+  } msg]
+  lappend rc $msg
+} {1 {database table is locked}}
+do_test misc2-7.2 {
+  set rc [catch {
+    db eval {SELECT rowid FROM t1} {} {
+      db eval "INSERT INTO t1 VALUES(3)"
+    }
+  } msg]
+  lappend rc $msg
+} {1 {database table is locked}}
+do_test misc2-7.3 {
+  db close
+  file delete -force test.db
+  sqlite db :memory:
+  execsql {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+  }
+  set rc [catch {
+    db eval {SELECT rowid FROM t1} {} {
+      db eval "DELETE FROM t1 WHERE rowid=$rowid"
+    }
+  } msg]
+  lappend rc $msg
+} {1 {database table is locked}}
+do_test misc2-7.4 {
+  set rc [catch {
+    db eval {SELECT rowid FROM t1} {} {
+      db eval "INSERT INTO t1 VALUES(3)"
+    }
+  } msg]
+  lappend rc $msg
+} {1 {database table is locked}}
