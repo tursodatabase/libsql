@@ -1,5 +1,5 @@
-C Add\sthe\s"space_used.tcl"\sscript\sto\sthe\stools\sdirectory.\s\sThis\sscript\sis\sused\nto\smeasure\show\smuch\sdisk\sspace\sis\sused\sby\seach\stable\sand\sindex\sof\sa\sdatabase.\s(CVS\s789)
-D 2002-11-24T14:52:27
+C Fixed\slarge\sfile\ssupport\sunder\sLinux.\s\sI'm\sunable\sto\stest\sunder\sWindows.\nTicket\s#191.\s(CVS\s790)
+D 2002-12-01T02:00:58
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,9 +30,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
 F src/main.c f04f93b8928d6d85976e5137fea146a46de1fd6e
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c caf5a34b35a2d99a58457517261c879ac29b0a05
+F src/os.c b3160bb723aea31c12787aea70ee9161e8f18b72
 F src/os.h b7b79563fc55c6d58b703c88ade9ab1504c48bba
-F src/pager.c 691571c468e36212677ed0b1db475dba4dba46bf
+F src/pager.c 1ef5be147f7d5923275c0500fbad8f7463a14f9f
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -45,7 +45,7 @@ F src/sqliteInt.h 74198ccddb3443514f0218de1f5a6668c3dbbe59
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
-F src/test2.c 8f7d88895a49b3eed111469f2ab1071cb780ed12
+F src/test2.c e3a2e08729b3727b82590b265288d3bbac3e3740
 F src/test3.c 03d4f962f482599df9027a5814490c441a58cd99
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
@@ -56,6 +56,7 @@ F src/vdbe.c 7d46f087c1da55ba9be38f70d92a03c52c8a2ccb
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
+F test/bigfile.test 38d1071817caceb636c613e3546082b90e749a49
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
@@ -150,7 +151,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P dd5396a73a782b6abe9da3de43a5ee11e0dddbb2
-R f02620fdf50f08e680c6e4c887b23004
+P 83b2c27a568cd67cd5162d513766b23ff9fc2227
+R 525c357fc6616ffd36403b1889baba38
 U drh
-Z d6b1541e76d56cb79d446daffe01fa52
+Z 7562882b3aaedd7e2c8b415c77774707

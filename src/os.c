@@ -39,15 +39,17 @@
 /*
 ** Macros for performance tracing.  Normally turned off
 */
-#if 0
+#if 1
 static int last_page = 0;
-#define SEEK(X)     last_page=(X)
-#define TRACE1(X)   fprintf(stderr,X)
-#define TRACE2(X,Y) fprintf(stderr,X,Y)
+#define SEEK(X)       last_page=(X)
+#define TRACE1(X)     fprintf(stderr,X)
+#define TRACE2(X,Y)   fprintf(stderr,X,Y)
+#define TRACE3(X,Y,Z) fprintf(stderr,X,Y,Z)
 #else
 #define SEEK(X)
 #define TRACE1(X)
 #define TRACE2(X,Y)
+#define TRACE3(X,Y,Z)
 #endif
 
 
@@ -233,7 +235,7 @@ int sqliteOsFileExists(const char *zFilename){
 ** SQLITE_OK.
 **
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
-** *pResulst and *pReadonly unchanged.
+** *id and *pReadonly unchanged.
 */
 int sqliteOsOpenReadWrite(
   const char *zFilename,
@@ -495,6 +497,7 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 #if OS_WIN
   DWORD got;
   SimulateIOError(SQLITE_IOERR);
+  TRACE2("READ %d\n", last_page);
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
@@ -528,6 +531,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
   int rc;
   DWORD wrote;
   SimulateIOError(SQLITE_IOERR);
+  TRACE2("WRITE %d\n", last_page);
   while( amt>0 && (rc = WriteFile(id->h, pBuf, amt, &wrote, 0))!=0 && wrote>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -551,7 +555,10 @@ int sqliteOsSeek(OsFile *id, off_t offset){
 #if OS_WIN
   {
     LONG upperBits = offset>>32;
-    SetFilePointer(id->h, offset, &upperBits, FILE_BEGIN);
+    LONG lowerBits = offset & 0xffffffff;
+    DWORD rc;
+    rc = SetFilePointer(id->h, lowerBits, &upperBits, FILE_BEGIN);
+    TRACE3("SEEK rc=0x%x upper=0x%x\n", rc, upperBits);
   }
   return SQLITE_OK;
 #endif

@@ -13,8 +13,9 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.11 2002/11/09 00:33:17 drh Exp $
+** $Id: test2.c,v 1.12 2002/12/01 02:00:58 drh Exp $
 */
+#include "os.h"
 #include "sqliteInt.h"
 #include "pager.h"
 #include "tcl.h"
@@ -473,6 +474,53 @@ static int page_write(
 }
 
 /*
+** Usage:   fake_big_file  N  FILENAME
+**
+** Write a few bytes at the N megabyte point of FILENAME.  This will
+** create a large file.  If the file was a valid SQLite database, then
+** the next time the database is opened, SQLite will begin allocating
+** new pages after N.  If N is 2096 or bigger, this will test the
+** ability of SQLite to write to large files.
+*/
+static int fake_big_file(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int rc;
+  int n;
+  off_t offset;
+  OsFile fd;
+  int readOnly = 0;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " N-MEGABYTES FILE\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+  rc = sqliteOsOpenReadWrite(argv[2], &fd, &readOnly);
+  if( rc ){
+    Tcl_AppendResult(interp, "open failed: ", errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  offset = n;
+  offset *= 1024*1024;
+  rc = sqliteOsSeek(&fd, offset);
+  if( rc ){
+    Tcl_AppendResult(interp, "seek failed: ", errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  rc = sqliteOsWrite(&fd, "Hello, World!", 14);
+  if( rc ){
+    Tcl_AppendResult(interp, "write failed: ", errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  sqliteOsClose(&fd);
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest2_Init(Tcl_Interp *interp){
@@ -496,6 +544,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
     { "page_read",               (Tcl_CmdProc*)page_read           },
     { "page_write",              (Tcl_CmdProc*)page_write          },
     { "page_number",             (Tcl_CmdProc*)page_number         },
+    { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
