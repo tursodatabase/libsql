@@ -1,5 +1,5 @@
-C Pager\sis\sworking,\smostly.\s(CVS\s211)
-D 2001-04-15T00:37:09
+C Working\son\sthe\spager\s(CVS\s212)
+D 2001-04-15T02:27:25
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in ac01d6145714b0d1c9e99382caf03cf30d6f4c8d
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -26,7 +26,7 @@ F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c c4c24c3af1eba094a816522eb0e085bed518ee16
 F src/insert.c aa528e20a787af85432a61daaea6df394bd251d7
 F src/main.c 92ce30a89f622ba36cc8b7d912829e14a480722c
-F src/pager.c 52dc932c937cfd5ccdd3c40527ea57878994a99c
+F src/pager.c cc49d7e22a4fc0264f584d7938f990a1897f7edd
 F src/pager.h 8678d9a97fdf1c111b619a13a351e5c8ab97cb81
 F src/parse.y 8fc096948994a7ffbf61ba13129cc589f794a9cb
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
@@ -59,7 +59,7 @@ F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
 F test/lock.test bca7d53de73138b1f670a2fbdb1f481ff7eaa45a
 F test/main.test da635f9e078cd21ddf074e727381a715064489ff
 F test/malloc.test 3daa97f6a9577d8f4c6e468b274333af19ce5861
-F test/pager.test 2317ccf5821f15a637b84fa5f4d36b4c85a52a12
+F test/pager.test 4c27be3e0da89caa36fa3c2b84468785f330acca
 F test/printf.test 4c71871e1a75a2dacb673945fc13ddb30168798f
 F test/rowid.test 128453599def7435e988216f7fe89c7450b8a9a3
 F test/select1.test 223507655cdb4f9901d83fa7f5c5328e022c211f
@@ -101,7 +101,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 42c2f3fe68c8a6bab96e035371ecd64296c5491f
-R 558a8ad440acd3c96149b89f77d45a0d
+P f82fa7070ae281804c019e6b05cd767dadaf0827
+R 6b66dff388a84887995d516ce20e212a
 U drh
-Z 6080de1bb9d6e86286ceffe08ee69ef0
+Z cd993793033a1da271251878dcd01e6e

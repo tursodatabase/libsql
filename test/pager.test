@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.1 2001/04/15 00:37:21 drh Exp $
+# $Id: pager.test,v 1.2 2001/04/15 02:27:25 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -165,8 +165,47 @@ do_test pager-2.28 {
 do_test pager-2.29 {
   page_read $::g1
 } {Page-One}
-
 do_test pager-2.99 {
+  pager_close $::p1
+} {}
+
+do_test pager-3.1 {
+  set v [catch {
+    set ::p1 [pager_open ptf1.db 5]
+  } msg]
+  if {$v} {lappend v $msg}
+  set v
+} {0}
+do_test pager-3.2 {
+  pager_pagecount $::p1
+} {1}
+do_test pager-3.3 {
+  set v [catch {
+    set ::g(1) [page_get $::p1 1]
+  } msg]
+  if {$v} {lappend v $msg}
+  set v
+} {0}
+do_test pager-3.4 {
+  page_read $::g(1)
+} {Page-One}
+do_test pager-3.5 {
+  for {set i 2} {$i<=20} {incr i} {
+    set gx [page_get $::p1 $i]
+    page_write $gx "Page-$i"
+    page_unref $gx
+  }
+  pager_commit $::p1
+} {}
+for {set i 2} {$i<=20} {incr i} {
+  do_test pager-3.6.[expr {$i-1}] [subst {
+    set gx \[page_get $::p1 $i\]
+    set v \[page_read \$gx\]
+    page_unref \$gx
+    set v
+  }] "Page-$i"
+}
+do_test pager-3.99 {
   pager_close $::p1
 } {}
 

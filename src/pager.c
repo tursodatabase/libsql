@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or on writer.
 **
-** @(#) $Id: pager.c,v 1.3 2001/04/15 00:37:09 drh Exp $
+** @(#) $Id: pager.c,v 1.4 2001/04/15 02:27:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -456,7 +456,7 @@ int sqlitepager_open(Pager **ppPager, const char *zFilename, int mxPage){
   pPager->nRef = 0;
   pPager->dbSize = -1;
   pPager->nPage = 0;
-  pPager->mxPage = mxPage>10 ? mxPage : 10;
+  pPager->mxPage = mxPage>5 ? mxPage : 10;
   pPager->state = SQLITE_UNLOCK;
   pPager->errMask = 0;
   pPager->pFirst = 0;
@@ -620,6 +620,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         pPager->pAll->pPrevAll = pPg;
       }
       pPg->pPrevAll = 0;
+      pPager->pAll = pPg;
       pPager->nPage++;
     }else{
       /* Recycle an older page.  First locate the page to be recycled.
@@ -776,7 +777,7 @@ int sqlitepager_unref(void *pData){
 int sqlitepager_write(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
-  int rc;
+  int rc = SQLITE_OK;
 
   if( pPager->errMask ){ 
     return pager_errcode(pPager);
