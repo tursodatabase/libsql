@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.11 2003/07/18 01:25:35 drh Exp $
+# $Id: attach.test,v 1.12 2004/02/12 15:31:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -364,8 +364,12 @@ do_test attach-3.13 {
   catchsql {UPDATE t2 SET x=x+1 WHERE x=50}
 } {1 {database is locked}}
 do_test attach-3.14 {
-  # the "database is locked" error on the previous test should have
-  # caused a rollback.
+  # Unable to reinitialize the schema tables because the aux database
+  # is still locked.
+  catchsql {SELECT * FROM t1}
+} {1 {database is locked}}
+do_test attach-3.15 {
+  execsql COMMIT db2
   execsql {SELECT * FROM t1}
 } {1 2 3 4}
 

@@ -829,6 +829,7 @@ int sqliteVdbeReset(Vdbe *p, char **pzErrMsg){
   }
   Cleanup(p);
   if( p->rc!=SQLITE_OK ){
+    int saved_flags;
     switch( p->errorAction ){
       case OE_Abort: {
         if( !p->undoTransOnError ){

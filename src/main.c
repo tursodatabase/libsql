@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.147 2004/02/10 02:27:04 drh Exp $
+** $Id: main.c,v 1.148 2004/02/12 15:31:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -387,6 +387,9 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
     if( DbHasProperty(db, i, DB_SchemaLoaded) ) continue;
     assert( i!=1 );  /* Should have been initialized together with 0 */
     rc = sqliteInitOne(db, i, pzErrMsg);
+    if( rc ){
+      sqliteResetInternalSchema(db, i);
+    }
   }
   if( rc==SQLITE_OK ){
     db->flags |= SQLITE_Initialized;
@@ -422,7 +425,6 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
       sqliteSetString(pzErrMsg, 
         "unable to upgrade database to the version 2.6 format",
         zErr ? ": " : 0, zErr, (char*)0);
-      sqliteStrRealloc(pzErrMsg);
     }
     sqlite_freemem(zErr);
   }
@@ -584,7 +586,8 @@ void sqliteRollbackAll(sqlite *db){
       db->aDb[i].inTrans = 0;
     }
   }
-  sqliteRollbackInternalChanges(db);
+  sqliteResetInternalSchema(db, 0);
+  /* sqliteRollbackInternalChanges(db); */
 }
 
 /*

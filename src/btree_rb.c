@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.22 2004/02/11 02:18:06 drh Exp $
+** $Id: btree_rb.c,v 1.23 2004/02/12 15:31:21 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -723,13 +723,13 @@ static int memRbtreeCursor(
   pCur = *ppCur = sqliteMalloc(sizeof(RbtCursor));
   if( sqlite_malloc_failed ) return SQLITE_NOMEM;
   pCur->pTree  = sqliteHashFind(&tree->tblHash, 0, iTable);
+  assert( pCur->pTree );
   pCur->pRbtree = tree;
   pCur->iTree  = iTable;
   pCur->pOps = &sqliteRbtreeCursorOps;
   pCur->wrFlag = wrFlag;
   pCur->pShared = pCur->pTree->pCursors;
   pCur->pTree->pCursors = pCur;
-  
 
   assert( (*ppCur)->pTree );
   return SQLITE_OK;
