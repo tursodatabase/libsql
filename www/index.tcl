@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.10 2000/06/02 13:28:00 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.11 2000/06/02 15:51:18 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Built Atop GDBM</title></head>
@@ -141,6 +141,15 @@ puts {<h2>Related Sites</h2>
 
 <li><p><a href="http://www.postgresql.org/">PostgreSQL</a> is a
        full-blown SQL RDBMS that is also open source.</p></li>
+
+<li><p><a href="http://www.chordate.com/gadfly.html">Gadfly</a> is another
+       SQL library, similar to SQLite, except that Gadfly is written
+       in Python.</p></li>
+
+<li><p><a href="http://www.vogel-nest.de/tcl/qgdbm.html">Qgdbm</a> is
+       a wrapper around 
+       <a href="http://www.vogel-nest.de/tcl/tclgdbm.html">tclgdbm</a>
+       that provides SQL-like access to GDBM files.</p></li>
 </ul>}
 
 puts {
