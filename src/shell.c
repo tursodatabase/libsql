@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.99 2004/05/31 18:23:08 drh Exp $
+** $Id: shell.c,v 1.100 2004/05/31 19:34:33 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -576,7 +576,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3_exec(p->db, "PRAGMA database_list; ", callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_freemem(zErrMsg);
+      sqlite3_free(zErrMsg);
     }
   }else
 
@@ -604,7 +604,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_freemem(zErrMsg);
+      sqlite3_free(zErrMsg);
     }else{
       fprintf(p->out, "COMMIT;\n");
     }
@@ -710,7 +710,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     );
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_freemem(zErrMsg);
+      sqlite3_free(zErrMsg);
     }
   }else
 
@@ -794,7 +794,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }else if( strcmp(azArg[2], azArg[3]) ){
       fprintf(stderr,"2nd copy of new key does not match the 1st\n");
     }else{
-      sqlite3_freemem(p->zKey);
+      sqlite3_free(p->zKey);
       p->zKey = sqlite3_mprintf("%s", azArg[2]);
       sqlite_rekey(p->db, p->zKey, strlen(p->zKey));
     }
@@ -857,7 +857,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_freemem(zErrMsg);
+      sqlite3_free(zErrMsg);
     }
   }else
 
@@ -910,7 +910,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
-      sqlite3_freemem(zErrMsg);
+      sqlite3_free(zErrMsg);
     }
     if( rc==SQLITE_OK ){
       int len, maxlen = 0;
@@ -1060,7 +1060,7 @@ static void process_input(struct callback_data *p, FILE *in){
         if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
         if( zErrMsg!=0 ){
           printf("SQL error: %s\n", zErrMsg);
-          sqlite3_freemem(zErrMsg);
+          sqlite3_free(zErrMsg);
           zErrMsg = 0;
         }else{
           printf("SQL error: %s\n", sqlite3_error_string(rc));

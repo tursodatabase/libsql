@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.86 2004/05/31 18:51:58 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.87 2004/05/31 19:34:33 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -101,7 +101,7 @@ typedef int (*sqlite_callback)(void*,int,char**, char**);
 ** message is written into memory obtained from malloc() and
 ** *errmsg is made to point to that message.  The calling function
 ** is responsible for freeing the memory that holds the error
-** message.   Use sqlite3_freemem() for this.  If errmsg==NULL,
+** message.   Use sqlite3_free() for this.  If errmsg==NULL,
 ** then no error message is ever written.
 **
 ** The return value is is SQLITE_OK if there are no errors and
@@ -376,8 +376,6 @@ void sqlite3_free_table(char **result);
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
 void sqlite3_free(char *z);
-
-void sqlite3_freemem(void *z);
 
 /*
 ** Windows systems need functions to call to return the sqlite3_version

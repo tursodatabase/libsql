@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.8 2004/05/26 23:25:31 drh Exp $
+** $Id: test4.c,v 1.9 2004/05/31 19:34:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -77,7 +77,7 @@ static void *thread_main(void *pArg){
   while( p->opnum<=p->completed ) sched_yield();
   while( p->xOp ){
     if( p->zErr && p->zErr!=p->zStaticErr ){
-      sqlite3_freemem(p->zErr);
+      sqlite3_free(p->zErr);
       p->zErr = 0;
     }
     (*p->xOp)(p);
@@ -93,7 +93,7 @@ static void *thread_main(void *pArg){
     p->db = 0;
   }
   if( p->zErr && p->zErr!=p->zStaticErr ){
-    sqlite3_freemem(p->zErr);
+    sqlite3_free(p->zErr);
     p->zErr = 0;
   }
   p->completed++;

@@ -1,5 +1,5 @@
-C Change\sall\sSQLITE3\spreprocessor\smacros\sto\sSQLITE.\s\sDocumentation\supdates.\s(CVS\s1511)
-D 2004-05-31T18:51:58
+C Change\sthe\sname\sof\sthe\ssqlite3_freemem\sAPI\sfunction\sto\sjust\ssqlite3_free.\s(CVS\s1512)
+D 2004-05-31T19:34:33
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c b4aed6c790ecae05a345c684e178aa88dccd274b
+F src/main.c 2a5d141a8301888268d02d4366ea568ff440200f
 F src/md5.c 4302e84ae516c616bb079c4e6d038c0addb33481
 F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
@@ -53,15 +53,15 @@ F src/pragma.c 7f432dee3c94460638df1e5fffeb59a560943d13
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
-F src/shell.c b71bdc3586c1c254941a236f3461615fd032eab1
-F src/sqlite.h.in 88b6f09398c9e5b4d2dd7420597e0d6490a81b1f
+F src/shell.c cca774504cefa4cf4db27dce175081c6bb7993be
+F src/sqlite.h.in 3e2a7cdbfad6b8d1c7f2f3c363476d48388711b3
 F src/sqliteInt.h 950104baea45ee81c9113e3c41b5e9f30def9eaa
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8146beb4ade50cd83d3bf7a41c8ebddb9840e967
-F src/test1.c 187992df6d835d1d713dd154c6ea4a6929302378
+F src/test1.c 60a589a17ab104b2b4851e6860b08be0c7d753b9
 F src/test2.c 6195a1ca2c8d0d2d93644e86da3289b403486872
 F src/test3.c 86117b74ec7353d76f5cd85c144c7cda23a7e11b
-F src/test4.c 34848a9fd31aa65857b20a8bfc03aff77d8c3426
+F src/test4.c caf675e443460ec76b04d78e1688986c17c82cec
 F src/test5.c a894fbfa8a7dcdc2cbc0c38c11149cc5c8252cea
 F src/tokenize.c b68758abaccd8882c48209b7a54db975f17d498a
 F src/trigger.c 04b2c310d0d056b213609cab6df5fff03d5eaf88
@@ -212,7 +212,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4c37b6d2b78e88e2a9dfed4d764caeb0f626f92e
-R 89ae3d2c6e5f559c1b737a98efcaeabb
+P adf7e29ff60dc559f64832fadb09f0b9decc0e76
+R 35dba1e1591a2b1e6f000ae81b864894
 U drh
-Z b0d4078bb2a2022230156e75979ba4b4
+Z 43fbc82bf31fc6953836ccd5c4550934
