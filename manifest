@@ -1,5 +1,5 @@
-C Make\sthe\sautomatic\sdatabase\supgrade\swork\seven\sif\sthere\sare\striggers.\s\sAdd\ntests\sfor\sautomatic\supgrade\sand\sfor\sfailing\sif\sreading\sa\smore\sadvanced\sversion\nof\sthe\sdatabase.\s\sTicket\s#107.\s(CVS\s682)
-D 2002-07-18T01:27:18
+C Update\sdocumentation\sprior\sto\sthe\srelease\sof\s2.6.0.\s(CVS\s683)
+D 2002-07-18T02:07:08
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -107,7 +107,7 @@ F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/version.test c970e4196ac995d22ce51a9cb1f0285f8c950deb
+F test/version.test 7b3084bb0b225304d4f5eb8215973e6daf439bcb
 F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
 F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -127,14 +127,14 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 580c03f096a16c0cf7ce18e0483daace4a602b46
-F www/changes.tcl a6d732a78b451eab29a66a068dc07b359f32c5a8
+F www/changes.tcl 899174e0f3b0c32be054b9d09d9a3bddba82752b
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 06e95342a101fde3ce59dbf128233a178502587e
-F www/formatchng.tcl f604cde78f1ac9c29420136109b04407408e876e
-F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
+F www/formatchng.tcl 502847353450adaf76d187d87374bce20dd07e0e
+F www/index.tcl 17384c30e0ddccaac4cd775be4e3b18fa8a248eb
 F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 20d152fcddb4fa53556a9c93c7a869600a7c5183
-R 234db4e0b851adaa70ea9179904f5e16
+P 0493e39c1cbbe4a38e990a2370181a79606af222
+R b4dca914d3bc15b016390e11b1848c08
 U drh
-Z 8a3f7ec18696f6fb7843f936645bc3ff
+Z 7f7610a66e86d758a528a8b2f954025f

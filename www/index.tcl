@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.59 2002/04/12 13:11:53 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.60 2002/07/18 02:07:08 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -47,7 +47,7 @@ Quick Links:
 puts {<h2>Features</h2>
 
 <p><ul>
-<li>Implements a large subset of SQL92.</li>
+<li>Implements most of SQL92.</li>
 <li>A complete database (with multiple tables and indices) is
     stored in a single disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
@@ -64,6 +64,30 @@ three functions and one opaque structure.</li>
 <li>Sources are uncopyrighted.  Use for any purpose.</li>
 </ul>
 </p>
+}
+
+puts {<h2>Database File Format Change - 2002 July 17</h2>
+
+<p>Beginning with version 2.6.0, the SQLite database file format changed
+in an incompatible way.  If you open a database file from version 2.5.6
+or earlier with version 2.6.0 or later of the library, then the file format
+will be converted automatically.  This is an irreversible operation.  Once
+the conversion occurs, you will no longer be able to access the database
+file from older versions of the library.  If the database is large, the
+conversion might take some time. (Allow 1 to 2 seconds per megabyte
+of database under Linux.) If the database is read-only,
+the conversion cannot occur and the attempt to open the database will
+fail.
+It is suggested that you make backup copies of older database files
+before attempting to open them with version 2.6.0 or later of the library.</p>
+
+<center>
+<table width="50%" border=1 cellpadding=20 cellspacing=0>
+<tr><td>
+<b>Make backups of older database files before opening them
+with version 2.6.0 or later of SQLite</b></td></tr>
+</table>
+</center>
 }
 
 puts {<h2>Current Status</h2>

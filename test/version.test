@@ -12,7 +12,7 @@
 # focus of this file is testing the ability of the library to detect
 # past or future file format version numbers and respond appropriately.
 #
-# $Id: version.test,v 1.1 2002/07/18 01:27:19 drh Exp $
+# $Id: version.test,v 1.2 2002/07/18 02:07:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -164,6 +164,19 @@ do_test version-1.14 {
   }
 } {16 0}
 
-
+# Try to do an upgrade where the database file is read-only
+#
+do_test version-2.1 {
+  db close
+  set m2 [lreplace $::meta 2 2 2]
+  btree_begin_transaction $::bt
+  eval btree_update_meta $::bt $m2
+  btree_commit $::bt
+  btree_close $::bt
+  catch {file attributes test.db -permissions 0444}
+  catch {file attributes test.db -readonly 1}
+  set rc [catch {sqlite db test.db} msg]
+  lappend rc $msg
+} {1 {unable to upgrade database to the version 2.6 format}}
 
 finish_test

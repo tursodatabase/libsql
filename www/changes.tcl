@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Jly 7 (2.6.0)} {
+<li>Change the format of indices to correct a design flaw the originated
+    with version 2.1.0.  <font color="red">*** This is an incompatible
+    file format change ***</font>  When version 2.6.0 or later of the
+    library attempts to open a database file created by version 2.5.6 or
+    earlier, it will automatically and irreversibly convert the file format.
+    <b>Make backup copies of older database files before opening them with
+    version 2.6.0 of the library.</b>
+    </li>
+}
+
 chng {2002 Jly 7 (2.5.6)} {
 <li>Fix more problems with rollback.  Enhance the test suite to exercise
     the rollback logic extensively in order to prevent any future problems.
