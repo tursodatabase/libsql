@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.17 2004/12/07 02:14:52 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.18 2005/03/11 04:39:58 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -151,17 +151,34 @@ api {} {
 api {} {
   int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 } {
- This routine identifies a callback function that is invoked
- whenever an attempt is made to open a database table that is
- currently locked by another process or thread.  If the busy callback
- is NULL, then sqlite3_exec() returns SQLITE_BUSY immediately if
- it finds a locked table.  If the busy callback is not NULL, then
- sqlite3_exec() invokes the callback with two arguments.  The
+ This routine identifies a callback function that might be invoked
+ whenever an attempt is made to open a database table 
+ that another thread or process has locked.
+ If the busy callback is NULL, then SQLITE_BUSY is returned immediately
+ upon encountering the lock.
+ If the busy callback is not NULL, then the
+ callback might invoked with two arguments.  The
  second argument is the number of prior calls to the busy callback
  for the same lock.  If the
- busy callback returns 0, then sqlite3_exec() immediately returns
- SQLITE_BUSY.  If the callback returns non-zero, then sqlite3_exec()
- tries to open the table again and the cycle repeats.
+ busy callback returns 0, then no additional attempts are made to
+ access the database and SQLITE_BUSY is returned.
+ If the callback returns non-zero, then another attempt is made to open the
+ database for reading and the cycle repeats.
+
+ That a busy handler is registered does not guarantee that
+ it will be invoked when there is lock contention.
+ If SQLite determines that invoking the busy handler could result in
+ a deadlock, it will return SQLITE_BUSY instead.
+ Consider a scenario where one process is holding a read lock that
+ it is trying to promote to a reserved lock and
+ a second process is holding a reserved lock that it is trying
+ to promote to an exclusive lock.  The first process cannot proceed
+ because it is blocked by the second and the second process cannot
+ proceed because it is blocked by the first.  If both processes
+ invoke the busy handlers, neither will make any progress.  Therefore,
+ SQLite returns SQLITE_BUSY for the first process, hoping that this
+ will induce the first process to release its read lock and allow
+ the second process to proceed.
 
  The default busy callback is NULL.
 

@@ -21,6 +21,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 February 19 (3.1.4)} {
+<li>Fix a bug in autovacuum that could cause database corruption if
+a CREATE UNIQUE INDEX fails because of a constraint violation.
+This problem only occurs if the new autovacuum feature introduced in
+version 3.1 is turned on.</li>
+<li>The F_FULLSYNC ioctl (currently only supported on OS-X) is disabled
+if the synchronous pragma is set to something other than "full".</li>
+<li>Add additional forward compatibility to the future version 3.2 database 
+file format.</li>
+<li>Fix a bug in WHERE clauses of the form (rowid<'2')</li>
+<li>New SQLITE_OMIT_... compile-time options added</li>
+<li>Updates to the man page</li>
+<li>Remove the use of strcasecmp() from the shell</li>
+<li>Windows DLL exports symbols Tclsqlite_Init and Sqlite_Init</li>
+}
+
 chng {2005 February 19 (3.1.3)} {
 <li>Fix a problem with VACUUM on databases from which tables containing
 AUTOINCREMENT have been dropped.</li>

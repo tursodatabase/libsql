@@ -29,7 +29,7 @@ Features include:
     less than 250KB code space (gcc on i486)</li>
 <li><a href="speed.html">Faster</a> than popular client/server database
     engines for most common operations.</li>
-<li>Simple, easy to use <a href="c_interface.html">API</a>.</li>
+<li>Simple, easy to use <a href="capi3.html">API</a>.</li>
 <li><a href="tclsqlite.html">TCL bindings</a> included.
     Bindings for many other languages 
     <a href="http://www.sqlite.org/cvstrac/wiki?p=SqliteWrappers">
@@ -59,6 +59,18 @@ proc newsitem {date title text} {
   regsub -all "\n( *\n)+" $text "</p>\n\n<p>" txt
   puts "<p>$txt</p>"
   puts "<hr width=\"50%\">"
+}
+
+newsitem {2005-Mar-10} {Version 3.1.4 Released} {
+  Version 3.1.4 fixes a critical bug that could cause database corruption
+  if the autovacuum mode of version 3.1.0 is turned on (it is off by
+  default) and a CREATE UNIQUE INDEX is executed within a transaction but
+  fails because the indexed columns are not unique.  Anyone using the
+  autovacuum feature and unique indices should upgrade.
+
+  Other changes in version 3.1.4 include the ability to disable
+  the F_FULLSYNC ioctl() by setting "PRAGMA synchronous=on" instead
+  of the default "PRAGMA synchronous=full".
 }
 
 newsitem {2005-Feb-19} {Version 3.1.3 Released} {
@@ -107,4 +119,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.108 2005/02/19 13:46:25 drh Exp $}
+footer {$Id: index.tcl,v 1.109 2005/03/11 04:39:58 drh Exp $}

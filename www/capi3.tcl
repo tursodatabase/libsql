@@ -1,7 +1,14 @@
-set rcsid {$Id: capi3.tcl,v 1.8 2005/02/16 23:43:34 danielk1977 Exp $}
+set rcsid {$Id: capi3.tcl,v 1.9 2005/03/11 04:39:58 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
-puts {
+
+proc AddHyperlinks {txt} {
+  regsub -all {([^:alnum:>])(sqlite3_\w+)(\([^\)]*\))} $txt \
+      {\1<a href="capi3ref.html#\2">\2</a>\3} t2
+  puts $t2
+}
+
+AddHyperlinks {
 <h2>C/C++ Interface For SQLite Version 3</h2>
 
 <h3>1.0 Overview</h3>
@@ -193,14 +200,14 @@ can be executed again.
 </p>
 
 <p>
-The SQL statement may contain tokens of the form "?" or "?nnn" or ":nnn:"
-where "nnn" is an integer.  Such tokens represent unspecified literal values
-(or wildcards) to be filled in later by the 
+The SQL statement may contain tokens of the form "?" or "?nnn" or ":aaa"
+where "nnn" is an integer and "aaa" is an identifier.
+Such tokens represent unspecified literal values (or "wildcards")
+to be filled in later by the 
 <a href="capi3ref.html#sqlite3_bind_blob">sqlite3_bind</a> interface.
-Each wildcard as an associated number given
-by the "nnn" that follows the "?".  If the "?" is not followed by an
-integer, then its number one more than the number of prior wildcards
-in the same SQL statement.  It is allowed for the same wildcard
+Each wildcard has an associated number which is its sequence in the
+statement or the "nnn" in the case of a "?nnn" form. 
+It is allowed for the same wildcard
 to occur more than once in the same SQL statement, in which case
 all instance of that wildcard will be filled in with the same value.
 Unbound wildcards have a value of NULL.
@@ -273,7 +280,7 @@ then sqlite3_data_count() will return 0 whereas sqlite3_column_count() will
 continue to return the number of columns in the result set.
 </p>
 
-<p>Returned data is examined using the other sqlite3_column_XXX() functions, 
+<p>Returned data is examined using the other sqlite3_column_***() functions, 
 all of which take a column number as their second parameter. Columns are
 zero-indexed from left to right. Note that this is different to parameters,
 which are indexed starting at one.
