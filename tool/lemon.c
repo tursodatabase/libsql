@@ -2747,7 +2747,7 @@ struct lemon *lemp;
   struct action *ap;
   FILE *fp;
 
-  fp = file_open(lemp,".out","w");
+  fp = file_open(lemp,".out","wb");
   if( fp==0 ) return;
   fprintf(fp," \b");
   for(i=0; i<lemp->nstate; i++){
@@ -2914,7 +2914,7 @@ struct lemon *lemp;
     lemp->errorcnt++;
     return 0;
   }
-  in = fopen(tpltname,"r");
+  in = fopen(tpltname,"rb");
   if( in==0 ){
     fprintf(stderr,"Can't open the template file \"%s\".\n",templatename);
     lemp->errorcnt++;
@@ -3355,7 +3355,7 @@ int mhflag;     /* Output in makeheaders format if true */
 
   in = tplt_open(lemp);
   if( in==0 ) return;
-  out = file_open(lemp,".c","w");
+  out = file_open(lemp,".c","wb");
   if( out==0 ){
     fclose(in);
     return;
@@ -3764,7 +3764,7 @@ struct lemon *lemp;
 
   if( lemp->tokenprefix ) prefix = lemp->tokenprefix;
   else                    prefix = "";
-  in = file_open(lemp,".h","r");
+  in = file_open(lemp,".h","rb");
   if( in ){
     for(i=1; i<lemp->nterminal && fgets(line,LINESIZE,in); i++){
       sprintf(pattern,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
@@ -3776,7 +3776,7 @@ struct lemon *lemp;
       return;
     }
   }
-  out = file_open(lemp,".h","w");
+  out = file_open(lemp,".h","wb");
   if( out ){
     for(i=1; i<lemp->nterminal; i++){
       fprintf(out,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
