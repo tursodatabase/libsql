@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sinvolving\sbalance_shallow()\sand\sthe\ssqlite_master\stable.\s(CVS\s2143)
-D 2004-11-23T09:06:56
+C Have\stests\spass\swhen\sSQLITE_OMIT_SCHEMA_PRAGMAS\sis\sdefined.\s(CVS\s2144)
+D 2004-11-23T10:13:03
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -85,10 +85,10 @@ F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
 F src/where.c f9d3b6f2243a0eb9065fa4c465fe0831a64b7db7
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
-F test/attach.test a71117bab079c8a3a955e2d0270a76f9cb445935
-F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
+F test/attach.test f39069efd4394422798f249df9a31489aa941ee1
+F test/attach2.test eeb987770f4dbe68bd29afdbc2e8cff0142e6eb5
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
-F test/auth.test 050fe904ab1b2654b0dbb776035833d64bcde3da
+F test/auth.test ecc43fc5605ec562ef73874aa803d18c12d20fa6
 F test/autoinc.test c071e51ff167b8e889212273588d9cca71845b70
 F test/autovacuum.test a4e8da39a6268378c4f9fc17fe2df1d5be16d631
 F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
@@ -160,7 +160,7 @@ F test/pager.test 394455707a079804e8a4e431d12edce831a065f0
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 647f696a9cf7409df00a1e0047c2eb55585a1b85
 F test/pagesize.test 6f94b70ed9645dbe6314b627ae765c5dec8036d9
-F test/pragma.test ab309fb98bf4fe49481b9661354376cc56067f7e
+F test/pragma.test 5b0c3224170832784386e60140d923f099630ee1
 F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 91e5b8ae6663dc9e3e754b271f0384f0cae706e6
@@ -179,7 +179,7 @@ F test/sort.test 87882e6c72a75d45e98a1c802c1ded0eac557d85
 F test/subselect.test ff3850d0aab1443dafa4ecbdab1d01e58e7b366d
 F test/table.test 9e0d406073cb5752e25cee36a48a1c349f634b66
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
-F test/tclsqlite.test 5e262df81a638a058536fb6d6666f316843ac7b2
+F test/tclsqlite.test 861464afab6e28a0f3b236984cb24b0a7a20e508
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
 F test/tester.tcl e7ebedf60c8ebbb0a9af4950981babfbb80cc9a7
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -261,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 8b61d1ae1ca469b80f2b344d550c3b363448b193
-R 3b5021df085c0b0cbca8f147556371d1
+P 557be3ff5b1c46a3f3836ea3a9d9dede5dc46998
+R 795bf0d67acc367f1399bb179f72bd24
 U danielk1977
-Z bf1645a7f2a7f97f2983b5f556ee8c1a
+Z 6114e34e7feb3954d6ddf0262d880fc7

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.24 2004/11/14 21:56:31 drh Exp $
+# $Id: pragma.test,v 1.25 2004/11/23 10:13:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -305,6 +305,7 @@ catchsql {COMMIT;}
 
 # Test schema-query pragmas
 #
+ifcapable schema_pragmas {
 do_test pragma-6.1 {
   set res {}
   execsql {SELECT * FROM sqlite_temp_master}
@@ -340,9 +341,10 @@ do_test pragma-6.5 {
     pragma index_info(t3i1);
   }
 } {0 0 a 1 1 b}
-
+} ;# ifcapable schema_pragmas
 # Miscellaneous tests
 #
+ifcapable schema_pragmas {
 do_test pragma-7.1 {
   # Make sure a pragma knows to read the schema if it needs to
   db close
@@ -351,6 +353,7 @@ do_test pragma-7.1 {
     pragma index_list(t3);
   }
 } {0 t3i1 0 1 sqlite_autoindex_t3_1 1}
+} ;# ifcapable schema_pragmas
 ifcapable {utf16} {
   do_test pragma-7.2 {
     db close

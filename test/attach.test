@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.31 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: attach.test,v 1.32 2004/11/23 10:13:03 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -102,9 +102,11 @@ proc db_list {db} {
   }
   return $list
 }
+ifcapable schema_pragmas {
 do_test attach-1.11b {
   db_list db
 } {0 main 2 db2 3 db3 4 db4 5 db5 6 db6 7 db7 8 db8 9 db9}
+} ;# ifcapable schema_pragmas 
 do_test attach-1.12 {
   catchsql {
     ATTACH 'test.db' as db2;
@@ -150,8 +152,12 @@ do_test attach-1.20.1 {
   execsql {
     DETACH db5;
   }
+} {}
+ifcapable schema_pragmas {
+do_test attach-1.20.2 {
   db_list db
 } {0 main 2 db2 3 db3 4 db4 5 db6 6 db7 7 db8 8 db9 9 db10 10 db11}
+} ;# ifcapable schema_pragmas
 integrity_check attach-1.20.2
 execsql {select * from sqlite_temp_master}
 do_test attach-1.21 {
@@ -202,9 +208,11 @@ do_test attach-1.28 {
     DETACH db2;
   }
 } {0 {}}
+ifcapable schema_pragmas {
 do_test attach-1.29 {
   db_list db
 } {0 main 1 temp}
+} ;# ifcapable schema_pragmas
 
 ifcapable {trigger} {  # Only do the following tests if triggers are enabled
 do_test attach-2.1 {
@@ -249,9 +257,11 @@ do_test attach-2.7 {
     SELECT type, name, tbl_name FROM db2.sqlite_master;
   }
 } {table t2 t2 table tx tx trigger r1 t2}
+ifcapable schema_pragmas {
 do_test attach-2.8 {
   db_list db
 } {0 main 1 temp 2 db2}
+} ;# ifcapable schema_pragmas
 do_test attach-2.9 {
   execsql {
     CREATE INDEX i2 ON t2(x);
@@ -268,9 +278,11 @@ do_test attach-2.10 {
 #    SELECT * FROM t2 WHERE x>5;
 #  }
 #} {1 {database schema has changed}}
+ifcapable schema_pragmas {
 do_test attach-2.12 {
   db_list db
 } {0 main 1 temp 2 db2}
+} ;# ifcapable schema_pragmas
 do_test attach-2.13 {
   catchsql {
     SELECT * FROM t2 WHERE x>5;
