@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Nov 13 (2.1.1)} {
+<li>Bug fix: Sometimes arbirary strings were passed to the callback
+    function when the actual value of a column was NULL.</li>
+}
+
 chng {2001 Nov 12 (2.1.0)} {
 <li>Change the format of data records so that records up to 16MB in size
     can be stored.</li>

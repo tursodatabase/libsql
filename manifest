@@ -1,9 +1,9 @@
-C Bug\sfix:\sSometimes\sNULL\sresults\swere\snot\sbeing\spassed\sas\snulls\sto\sthe\ncallback\sfunction.\s(CVS\s312)
-D 2001-11-13T19:35:15
+C Bug\sfix:\sBe\ssure\sto\ssends\sNULLs\sto\sthe\scallback\swhen\sthe\scolumn\svalue\sis\sNULL.\s(CVS\s313)
+D 2001-11-13T19:36:55
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION f97b0f811f25906ab78f1aa58910db5757c64c58
+F VERSION d9c9ad4098db7cbc9f2ecb3ad59fdfb337996198
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -103,7 +103,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 7169a4de0144a6f5561fc59bc71f1dc504f8f5fb
+F www/changes.tcl cdfba8341564efea07cb1e554963f2f8c3f9793c
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 56d8390e47bbf8f97fa602863af4c65ac755964e
-R 1fa6790d1eea5ec12130e8c4925105cd
+P 94ce8282360d4a0dd2032564aae06f0f1902cb5b
+R 0a13d7b08edf071b64dd2f420eda4445
 U drh
-Z 8299d71f99165e45e838cc9c083f27eb
+Z 4e8da0eeb123fa0d40f2df74bd98f9ea
