@@ -1,5 +1,5 @@
-C Added\sdocumentation\sabout\sthe\snew\sCASE\sexpression.\s(CVS\s552)
-D 2002-05-06T11:47:33
+C Fix\sfor\stickets\s#32\sand\s#33:\sGenerate\sthe\snames\sof\sthe\sresult\sset\searly,\sbefore\ndoing\sthe\sflattening\soptimization\sor\sevaluating\ssubqueries.\s\sOtherwise,\sthe\nresult\sset\scolumn\snames\sare\sgenerated\sincorrectly\sor\safter\sthey\sare\sneeded.\s(CVS\s553)
+D 2002-05-08T11:54:15
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 5e9fe2cdbb398be036c43bfa71b0686fcbbe5f96
+F src/select.c 1b623a7d826ec7c245bc542b665d61724da2a62d
 F src/shell.c 5acbe59e137d60d8efd975c683dbea74ab626530
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in ffcacf73b5ed1a4939205d29a704a185758fa6a6
@@ -100,7 +100,7 @@ F test/trans.test ae0b9a82d5d34122c3a3108781eb8d078091ccee
 F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/view.test 4a8a9cf59b54409228c7b9b918ed8bf9bade1220
+F test/view.test 1536b58161e9cef544085d3928b53f17c9ed8424
 F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
 F tool/lemon.c 77d026f58d7715543786d457cf9432f9103e3f62
 F tool/lempar.c ee508b94607f74d591d60eda5c8014db4e144de5
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5772d31934ced7e35842d7c7689ff4878b7e80f5
-R b085b09618ae8814b296116bb7ca3dee
+P cc541b10302774b9004babbfb3a11b1f65d4b863
+R 054a35fac576992802ba562437446471
 U drh
-Z cddb6e7b9d73903f2cd270dc5481d839
+Z 04c420bf6c4394719a156e66dc666487

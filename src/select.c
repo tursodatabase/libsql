@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.80 2002/04/30 19:20:29 drh Exp $
+** $Id: select.c,v 1.81 2002/05/08 11:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -931,9 +931,10 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 ** the subquery before this routine runs.
 */
 int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
-  Select *pSub;
-  IdList *pSrc, *pSubSrc;
-  ExprList *pList;
+  Select *pSub;       /* The inner query or "subquery" */
+  IdList *pSrc;       /* The FROM clause of the outer query */
+  IdList *pSubSrc;    /* The FROM clause of the subquery */
+  ExprList *pList;    /* The result set of the outer query */
   int i;
   int iParent, iSub;
   Expr *pWhere;
@@ -954,7 +955,7 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   if( pSub->isDistinct && isAgg ) return 0;
   if( p->isDistinct && subqueryIsAgg ) return 0;
 
-  /* If we reach this point, it means flatting is permitted for the
+  /* If we reach this point, it means flattening is permitted for the
   ** i-th entry of the FROM clause in the outer query.
   */
   iParent = p->base + iFrom;
@@ -1332,6 +1333,22 @@ int sqliteSelect(
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto select_end;
 
+  /* Identify column names if we will be using in the callback.  This
+  ** step is skipped if the output is going to a table or a memory cell.
+  */
+  if( eDest==SRT_Callback ){
+    generateColumnNames(pParse, p->base, pTabList, pEList);
+  }
+
+  /* Set the limiter
+  */
+  if( p->nLimit<=0 ){
+    p->nOffset = 0;
+  }else{
+    if( p->nOffset<0 ) p->nOffset = 0;
+    sqliteVdbeAddOp(v, OP_Limit, p->nLimit, p->nOffset);
+  }
+
   /* Generate code for all sub-queries in the FROM clause
   */
   for(i=0; i<pTabList->nId; i++){
@@ -1390,23 +1407,6 @@ int sqliteSelect(
         }
       }
     }
-  }
-
-  /* Set the limiter
-  */
-  if( p->nLimit<=0 ){
-    p->nOffset = 0;
-  }else{
-    if( p->nOffset<0 ) p->nOffset = 0;
-    sqliteVdbeAddOp(v, OP_Limit, p->nLimit, p->nOffset);
-  }
-    
-
-  /* Identify column names if we will be using in the callback.  This
-  ** step is skipped if the output is going to a table or a memory cell.
-  */
-  if( eDest==SRT_Callback ){
-    generateColumnNames(pParse, p->base, pTabList, pEList);
   }
 
   /* Reset the aggregator
