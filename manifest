@@ -1,5 +1,5 @@
-C Make\ssure\smalloc(0)\salways\sreturns\sNULL.\s\sFix\sfor\sticket\s#171.\s(CVS\s764)
-D 2002-10-20T15:46:23
+C Work\saround\sa\sbug\sin\sthe\sBorland\sC\scompiler.\s\sTicket\s#172.\s(CVS\s765)
+D 2002-10-20T15:53:04
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -37,7 +37,7 @@ F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 818b03a73f6b3b8b284b515c5b1d9998d4663dc3
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 74a025cd6887b636fc06a79ff6246c4eb6826ec4
+F src/select.c 987e0c6134f157905f4531b4c0191ca078c81ef2
 F src/shell.c 9e9a6eb6bca07f01e6472a603f908a0127ea50ff
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d0af59fe6b9d5d026786e7cce1c49c208a0335cc
-R 70da8919be02ff08191d05376cb545cc
+P 4622b7ce8f4727a6405ddf4f0af701db86da86bf
+R be2bc0a24e02b5cac45ad5a3ae26a77c
 U drh
-Z 4581abd0f3d516911470f2cb2d447f4c
+Z 65dec2fc5948c9e002373b1beb73bd0e

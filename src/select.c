@@ -12,9 +12,10 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.112 2002/09/08 17:23:43 drh Exp $
+** $Id: select.c,v 1.113 2002/10/20 15:53:04 drh Exp $
 */
 #include "sqliteInt.h"
+
 
 /*
 ** Allocate a new Select structure and return a pointer to that
@@ -725,6 +726,11 @@ static const char *selectOpName(int id){
 }
 
 /*
+** Forward declaration
+*/
+static int fillInColumnList(Parse*, Select*);
+
+/*
 ** Given a SELECT statement, generate a Table structure that describes
 ** the result set of that SELECT.
 */
@@ -732,7 +738,6 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   Table *pTab;
   int i;
   ExprList *pEList;
-  static int fillInColumnList(Parse*, Select*);
 
   if( fillInColumnList(pParse, pSelect) ){
     return 0;
@@ -1286,12 +1291,12 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 ** to a column in table number iFrom, change that reference to the
 ** same column in table number iTo.
 */
+static void changeTablesInList(ExprList*, int, int);  /* Forward Declaration */
 static void changeTables(Expr *pExpr, int iFrom, int iTo){
   if( pExpr==0 ) return;
   if( pExpr->op==TK_COLUMN && pExpr->iTable==iFrom ){
     pExpr->iTable = iTo;
   }else{
-    static void changeTablesInList(ExprList*, int, int);
     changeTables(pExpr->pLeft, iFrom, iTo);
     changeTables(pExpr->pRight, iFrom, iTo);
     changeTablesInList(pExpr->pList, iFrom, iTo);
@@ -1320,6 +1325,7 @@ static void changeTablesInList(ExprList *pList, int iFrom, int iTo){
 ** changes to pExpr so that it refers directly to the source table
 ** of the subquery rather the result set of the subquery.
 */
+static void substExprList(ExprList*,int,ExprList*,int);  /* Forward Decl */
 static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
   if( pExpr==0 ) return;
   if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable && pExpr->iColumn>=0 ){
@@ -1344,7 +1350,6 @@ static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
       changeTables(pExpr, iSub, iTable);
     }
   }else{
-    static void substExprList(ExprList*,int,ExprList*,int);
     substExpr(pExpr->pLeft, iTable, pEList, iSub);
     substExpr(pExpr->pRight, iTable, pEList, iSub);
     substExprList(pExpr->pList, iTable, pEList, iSub);
