@@ -77,6 +77,8 @@ TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 # You should not have to change anything below this line
 ###############################################################################
 
+BEXE = @BUILD_EXEEXT@
+
 # Object files for the SQLite library.
 #
 LIBOBJ = attach.lo auth.lo btree.lo build.lo date.lo delete.lo \
@@ -211,17 +213,17 @@ sqlite3@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(VDBEHDR) 
+target_source:	$(SRC) parse.c opcodes.c keywordhash.c $(VDBEHDR) 
 	rm -rf tsrc
 	mkdir -p tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c opcodes.c tsrc
+	cp parse.c opcodes.c keywordhash.c tsrc
 	cp $(TOP)/sqlite3.def tsrc
 
 # Rules to build the LEMON compiler generator
 #
-lemon@BUILD_EXEEXT@:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
@@ -306,7 +308,7 @@ parse.lo:	parse.c $(HDR)
 
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon@BUILD_EXEEXT@
+parse.c:	$(TOP)/src/parse.y lemon$(BEXE)
 	cp $(TOP)/src/parse.y .
 	./lemon $(OPTS) parse.y
 
@@ -332,8 +334,12 @@ table.lo:	$(TOP)/src/table.c $(HDR)
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
-tokenize.lo:	$(TOP)/src/tokenize.c $(HDR)
+tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tokenize.c
+
+keywordhash.c:	$(TOP)/tool/mkkeywordhash.c
+	$(BCC) -o mkkeywordhash$(BEXE) $(OPTS) $(TOP)/tool/mkkeywordhash.c
+	./mkkeywordhash$(BEXE) >keywordhash.c
 
 trigger.lo:	$(TOP)/src/trigger.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/trigger.c
@@ -554,7 +560,8 @@ clean:
 	rm -f *.lo *.la *.o sqlite3@TARGET_EXEEXT@ libsqlite3.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps 
-	rm -f lemon@BUILD_EXEEXT@ lempar.c parse.* sqlite*.tar.gz
+	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
+	rm -f mkkeywordhash$(BEXE) keywordhash.c
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -f testfixture@TARGET_EXEEXT@ test.db

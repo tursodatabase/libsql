@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.145 2004/10/31 02:22:49 drh Exp $
+** @(#) $Id: parse.y,v 1.146 2004/11/03 03:59:57 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -150,6 +150,7 @@ id(A) ::= ID(X).         {A = X;}
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif
+  REINDEX RENAME AUTOINCR CDATE CTIME CTIMESTAMP ALTER
   .
 
 // Define operator precedence early so that this is the first occurance

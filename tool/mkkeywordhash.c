@@ -15,6 +15,7 @@ typedef struct Keyword Keyword;
 struct Keyword {
   char *zName;         /* The keyword name */
   char *zTokenType;    /* Token value for this keyword */
+  int mask;            /* Code this keyword if non-zero */
   int id;              /* Unique ID for this record */
   int hash;            /* Hash on the keyword */
   int offset;          /* Offset to start of name string */
@@ -26,111 +27,184 @@ struct Keyword {
 };
 
 /*
+** Define masks used to determine which keywords are allowed
+*/
+#ifdef SQLITE_OMIT_ALTER_TABLE
+#  define ALTER      0
+#else
+#  define ALTER      1
+#endif
+#define ALWAYS     2
+#ifdef SQLITE_OMIT_ATTACH
+#  define ATTACH     0
+#else
+#  define ATTACH     4
+#endif
+#ifdef SQLITE_OMIT_AUTOINCREMENT
+#  define AUTOINCR   0
+#else
+#  define AUTOINCR   8
+#endif
+#ifdef SQLITE_OMIT_COMPOUND_SELECT
+#  define COMPOUND   0
+#else
+#  define COMPOUND   16
+#endif
+#ifdef SQLITE_OMIT_CONFLICT_CLAUSE
+#  define CONFLICT   0
+#else
+#  define CONFLICT   32
+#endif
+#ifdef SQLITE_OMIT_EXPLAIN
+#  define EXPLAIN    0
+#else
+#  define EXPLAIN    64
+#endif
+#ifdef SQLITE_OMIT_FOREIGN_KEY
+#  define FKEY       0
+#else
+#  define FKEY       128
+#endif
+#ifdef SQLITE_OMIT_PRAGMA
+#  define PRAGMA     0
+#else
+#  define PRAGMA     256
+#endif
+#ifdef SQLITE_OMIT_REINDEX
+#  define REINDEX    0
+#else
+#  define REINDEX    512
+#endif
+#ifdef SQLITE_OMIT_TRIGGER
+#  define TRIGGER    0
+#else
+#  define TRIGGER    1024
+#endif
+#ifdef SQLITE_OMIT_VACUUM
+#  define VACUUM     0
+#else
+#  define VACUUM     2048
+#endif
+#ifdef SQLITE_OMIT_VIEW
+#  define VIEW       0
+#else
+#  define VIEW       4096
+#endif
+
+
+/*
 ** These are the keywords
 */
 static Keyword aKeywordTable[] = {
-  { "ABORT",            "TK_ABORT",        },
-  { "AFTER",            "TK_AFTER",        },
-  { "ALL",              "TK_ALL",          },
-  { "AND",              "TK_AND",          },
-  { "AS",               "TK_AS",           },
-  { "ASC",              "TK_ASC",          },
-  { "ATTACH",           "TK_ATTACH",       },
-  { "BEFORE",           "TK_BEFORE",       },
-  { "BEGIN",            "TK_BEGIN",        },
-  { "BETWEEN",          "TK_BETWEEN",      },
-  { "BY",               "TK_BY",           },
-  { "CASCADE",          "TK_CASCADE",      },
-  { "CASE",             "TK_CASE",         },
-  { "CHECK",            "TK_CHECK",        },
-  { "COLLATE",          "TK_COLLATE",      },
-  { "COMMIT",           "TK_COMMIT",       },
-  { "CONFLICT",         "TK_CONFLICT",     },
-  { "CONSTRAINT",       "TK_CONSTRAINT",   },
-  { "CREATE",           "TK_CREATE",       },
-  { "CROSS",            "TK_JOIN_KW",      },
-  { "DATABASE",         "TK_DATABASE",     },
-  { "DEFAULT",          "TK_DEFAULT",      },
-  { "DEFERRED",         "TK_DEFERRED",     },
-  { "DEFERRABLE",       "TK_DEFERRABLE",   },
-  { "DELETE",           "TK_DELETE",       },
-  { "DESC",             "TK_DESC",         },
-  { "DETACH",           "TK_DETACH",       },
-  { "DISTINCT",         "TK_DISTINCT",     },
-  { "DROP",             "TK_DROP",         },
-  { "END",              "TK_END",          },
-  { "EACH",             "TK_EACH",         },
-  { "ELSE",             "TK_ELSE",         },
-  { "EXCEPT",           "TK_EXCEPT",       },
-  { "EXCLUSIVE",        "TK_EXCLUSIVE",    },
-  { "EXPLAIN",          "TK_EXPLAIN",      },
-  { "FAIL",             "TK_FAIL",         },
-  { "FOR",              "TK_FOR",          },
-  { "FOREIGN",          "TK_FOREIGN",      },
-  { "FROM",             "TK_FROM",         },
-  { "FULL",             "TK_JOIN_KW",      },
-  { "GLOB",             "TK_GLOB",         },
-  { "GROUP",            "TK_GROUP",        },
-  { "HAVING",           "TK_HAVING",       },
-  { "IGNORE",           "TK_IGNORE",       },
-  { "IMMEDIATE",        "TK_IMMEDIATE",    },
-  { "IN",               "TK_IN",           },
-  { "INDEX",            "TK_INDEX",        },
-  { "INITIALLY",        "TK_INITIALLY",    },
-  { "INNER",            "TK_JOIN_KW",      },
-  { "INSERT",           "TK_INSERT",       },
-  { "INSTEAD",          "TK_INSTEAD",      },
-  { "INTERSECT",        "TK_INTERSECT",    },
-  { "INTO",             "TK_INTO",         },
-  { "IS",               "TK_IS",           },
-  { "ISNULL",           "TK_ISNULL",       },
-  { "JOIN",             "TK_JOIN",         },
-  { "KEY",              "TK_KEY",          },
-  { "LEFT",             "TK_JOIN_KW",      },
-  { "LIKE",             "TK_LIKE",         },
-  { "LIMIT",            "TK_LIMIT",        },
-  { "MATCH",            "TK_MATCH",        },
-  { "NATURAL",          "TK_JOIN_KW",      },
-  { "NOT",              "TK_NOT",          },
-  { "NOTNULL",          "TK_NOTNULL",      },
-  { "NULL",             "TK_NULL",         },
-  { "OF",               "TK_OF",           },
-  { "OFFSET",           "TK_OFFSET",       },
-  { "ON",               "TK_ON",           },
-  { "OR",               "TK_OR",           },
-  { "ORDER",            "TK_ORDER",        },
-  { "OUTER",            "TK_JOIN_KW",      },
-  { "PRAGMA",           "TK_PRAGMA",       },
-  { "PRIMARY",          "TK_PRIMARY",      },
-  { "RAISE",            "TK_RAISE",        },
-  { "REFERENCES",       "TK_REFERENCES",   },
-  { "REPLACE",          "TK_REPLACE",      },
-  { "RESTRICT",         "TK_RESTRICT",     },
-  { "RIGHT",            "TK_JOIN_KW",      },
-  { "ROLLBACK",         "TK_ROLLBACK",     },
-  { "ROW",              "TK_ROW",          },
-  { "SELECT",           "TK_SELECT",       },
-  { "SET",              "TK_SET",          },
-  { "STATEMENT",        "TK_STATEMENT",    },
-  { "TABLE",            "TK_TABLE",        },
-  { "TEMP",             "TK_TEMP",         },
-  { "TEMPORARY",        "TK_TEMP",         },
-  { "THEN",             "TK_THEN",         },
-  { "TRANSACTION",      "TK_TRANSACTION",  },
-  { "TRIGGER",          "TK_TRIGGER",      },
-  { "UNION",            "TK_UNION",        },
-  { "UNIQUE",           "TK_UNIQUE",       },
-  { "UPDATE",           "TK_UPDATE",       },
-  { "USING",            "TK_USING",        },
-  { "VACUUM",           "TK_VACUUM",       },
-  { "VALUES",           "TK_VALUES",       },
-  { "VIEW",             "TK_VIEW",         },
-  { "WHEN",             "TK_WHEN",         },
-  { "WHERE",            "TK_WHERE",        },
+  { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
+  { "AFTER",            "TK_AFTER",        TRIGGER                },
+  { "ALL",              "TK_ALL",          ALWAYS                 },
+  { "ALTER",            "TK_ALTER",        ALTER                  },
+  { "AND",              "TK_AND",          ALWAYS                 },
+  { "AS",               "TK_AS",           ALWAYS                 },
+  { "ASC",              "TK_ASC",          ALWAYS                 },
+  { "ATTACH",           "TK_ATTACH",       ATTACH                 },
+  { "AUTOINCREMENT",    "TK_AUTOINCR",     AUTOINCR               },
+  { "BEFORE",           "TK_BEFORE",       TRIGGER                },
+  { "BEGIN",            "TK_BEGIN",        ALWAYS                 },
+  { "BETWEEN",          "TK_BETWEEN",      ALWAYS                 },
+  { "BY",               "TK_BY",           ALWAYS                 },
+  { "CASCADE",          "TK_CASCADE",      FKEY                   },
+  { "CASE",             "TK_CASE",         ALWAYS                 },
+  { "CHECK",            "TK_CHECK",        ALWAYS                 },
+  { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
+  { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
+  { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
+  { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
+  { "CREATE",           "TK_CREATE",       ALWAYS                 },
+  { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
+  { "CURRENT_DATE",     "TK_CDATE",        ALWAYS                 },
+  { "CURRENT_TIME",     "TK_CTIME",        ALWAYS                 },
+  { "CURRENT_TIMESTAMP","TK_CTIMESTAMP",   ALWAYS                 },
+  { "DATABASE",         "TK_DATABASE",     ATTACH                 },
+  { "DEFAULT",          "TK_DEFAULT",      ALWAYS                 },
+  { "DEFERRED",         "TK_DEFERRED",     FKEY                   },
+  { "DEFERRABLE",       "TK_DEFERRABLE",   FKEY                   },
+  { "DELETE",           "TK_DELETE",       ALWAYS                 },
+  { "DESC",             "TK_DESC",         ALWAYS                 },
+  { "DETACH",           "TK_DETACH",       ATTACH                 },
+  { "DISTINCT",         "TK_DISTINCT",     ALWAYS                 },
+  { "DROP",             "TK_DROP",         ALWAYS                 },
+  { "END",              "TK_END",          ALWAYS                 },
+  { "EACH",             "TK_EACH",         TRIGGER                },
+  { "ELSE",             "TK_ELSE",         ALWAYS                 },
+  { "EXCEPT",           "TK_EXCEPT",       COMPOUND               },
+  { "EXCLUSIVE",        "TK_EXCLUSIVE",    ALWAYS                 },
+  { "EXPLAIN",          "TK_EXPLAIN",      EXPLAIN                },
+  { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
+  { "FOR",              "TK_FOR",          TRIGGER                },
+  { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
+  { "FROM",             "TK_FROM",         ALWAYS                 },
+  { "FULL",             "TK_JOIN_KW",      ALWAYS                 },
+  { "GLOB",             "TK_GLOB",         ALWAYS                 },
+  { "GROUP",            "TK_GROUP",        ALWAYS                 },
+  { "HAVING",           "TK_HAVING",       ALWAYS                 },
+  { "IGNORE",           "TK_IGNORE",       CONFLICT|TRIGGER       },
+  { "IMMEDIATE",        "TK_IMMEDIATE",    FKEY                   },
+  { "IN",               "TK_IN",           ALWAYS                 },
+  { "INDEX",            "TK_INDEX",        ALWAYS                 },
+  { "INITIALLY",        "TK_INITIALLY",    FKEY                   },
+  { "INNER",            "TK_JOIN_KW",      ALWAYS                 },
+  { "INSERT",           "TK_INSERT",       ALWAYS                 },
+  { "INSTEAD",          "TK_INSTEAD",      TRIGGER                },
+  { "INTERSECT",        "TK_INTERSECT",    COMPOUND               },
+  { "INTO",             "TK_INTO",         ALWAYS                 },
+  { "IS",               "TK_IS",           ALWAYS                 },
+  { "ISNULL",           "TK_ISNULL",       ALWAYS                 },
+  { "JOIN",             "TK_JOIN",         ALWAYS                 },
+  { "KEY",              "TK_KEY",          ALWAYS                 },
+  { "LEFT",             "TK_JOIN_KW",      ALWAYS                 },
+  { "LIKE",             "TK_LIKE",         ALWAYS                 },
+  { "LIMIT",            "TK_LIMIT",        ALWAYS                 },
+  { "MATCH",            "TK_MATCH",        ALWAYS                 },
+  { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
+  { "NOT",              "TK_NOT",          ALWAYS                 },
+  { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
+  { "NULL",             "TK_NULL",         ALWAYS                 },
+  { "OF",               "TK_OF",           ALWAYS                 },
+  { "OFFSET",           "TK_OFFSET",       ALWAYS                 },
+  { "ON",               "TK_ON",           ALWAYS                 },
+  { "OR",               "TK_OR",           ALWAYS                 },
+  { "ORDER",            "TK_ORDER",        ALWAYS                 },
+  { "OUTER",            "TK_JOIN_KW",      ALWAYS                 },
+  { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
+  { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
+  { "RAISE",            "TK_RAISE",        TRIGGER                },
+  { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
+  { "REINDEX",          "TK_REINDEX",      REINDEX                },
+  { "RENAME",           "TK_RENAME",       ALTER                  },
+  { "REPLACE",          "TK_REPLACE",      CONFLICT               },
+  { "RESTRICT",         "TK_RESTRICT",     FKEY                   },
+  { "RIGHT",            "TK_JOIN_KW",      ALWAYS                 },
+  { "ROLLBACK",         "TK_ROLLBACK",     ALWAYS                 },
+  { "ROW",              "TK_ROW",          TRIGGER                },
+  { "SELECT",           "TK_SELECT",       ALWAYS                 },
+  { "SET",              "TK_SET",          ALWAYS                 },
+  { "STATEMENT",        "TK_STATEMENT",    TRIGGER                },
+  { "TABLE",            "TK_TABLE",        ALWAYS                 },
+  { "TEMP",             "TK_TEMP",         ALWAYS                 },
+  { "TEMPORARY",        "TK_TEMP",         ALWAYS                 },
+  { "THEN",             "TK_THEN",         ALWAYS                 },
+  { "TRANSACTION",      "TK_TRANSACTION",  ALWAYS                 },
+  { "TRIGGER",          "TK_TRIGGER",      TRIGGER                },
+  { "UNION",            "TK_UNION",        COMPOUND               },
+  { "UNIQUE",           "TK_UNIQUE",       ALWAYS                 },
+  { "UPDATE",           "TK_UPDATE",       ALWAYS                 },
+  { "USING",            "TK_USING",        ALWAYS                 },
+  { "VACUUM",           "TK_VACUUM",       VACUUM                 },
+  { "VALUES",           "TK_VALUES",       ALWAYS                 },
+  { "VIEW",             "TK_VIEW",         VIEW                   },
+  { "WHEN",             "TK_WHEN",         ALWAYS                 },
+  { "WHERE",            "TK_WHERE",        ALWAYS                 },
 };
 
 /* Number of keywords */
-#define NKEYWORD (sizeof(aKeywordTable)/sizeof(aKeywordTable[0]))
+static int NKEYWORD = (sizeof(aKeywordTable)/sizeof(aKeywordTable[0]));
 
 /* An array to map all upper-case characters into their corresponding
 ** lower-case character. 
@@ -200,6 +274,16 @@ int main(int argc, char **argv){
   int count;
   int nChar;
   int aHash[1000];  /* 1000 is much bigger than NKEYWORD */
+
+  /* Remove entries from the list of keywords that have mask==0 */
+  for(i=j=0; i<NKEYWORD; i++){
+    if( aKeywordTable[i].mask==0 ) continue;
+    if( j<i ){
+      aKeywordTable[j] = aKeywordTable[i];
+    }
+    j++;
+  }
+  NKEYWORD = j;
 
   /* Fill in the lengths of strings and hashes for all entries. */
   for(i=0; i<NKEYWORD; i++){

@@ -1,6 +1,6 @@
-C Auto-vacuum\sbugfix:\sDo\snot\sattempt\sto\smove\sa\spointer-map\spage\sduring\sauto-vacuum.\s(CVS\s2044)
-D 2004-11-03T03:52:37
-F Makefile.in 9e90c685d69f09039015a6b1f3b0a48e9738c9e5
+C The\smakefile\snow\sruns\smkkeywordhash.c.\s\sKeywords\sthat\sare\sunused\sare\nomitted\sfrom\sthe\skeyword\shash\stable.\s(CVS\s2045)
+D 2004-11-03T03:59:57
+F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk c7c97f809e5e7897bc843db64f692c7ef9013a92
+F main.mk 594a756a761111da9415ca4b1ca7cbf3d269a3a3
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 14a794f7b206976afc416b30fe8e0fc97f3434e9
 F mkopcodeh.awk 4090944e4de0a2ccb99aa0083290f73bce4db406
@@ -54,7 +54,7 @@ F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 6b00c0d5aac601b9f556b8fdba25e69438245f1a
 F src/pager.h cbe4ba356d9dd3f30260f322b3dc77408164df14
-F src/parse.y 08f4971f89e651f47b3f83fe7369c7edde254331
+F src/parse.y 625750bf4b01a7c2b4c15e5367a7539a66e6c909
 F src/pragma.c 44e192eb5928157bdb015926f858a7c6e3ef6c98
 F src/printf.c 7a92adc00b758cd5ce087dae80181a8bbdb70ed2
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -69,7 +69,7 @@ F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c f423597e220b3d446a65c9cc0c49cb4eb00c0215
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
-F src/tokenize.c a0a999bf4800e7295ac66c8694f84414ceff1755
+F src/tokenize.c bf9de9689b3bb813d65784bf54472804bf9595e6
 F src/trigger.c f9a0a8d3a87238de1a934eeb7d0b6b1f13e6a55b
 F src/update.c ee15b7ba712c2292802eba2d465f039b5deada39
 F src/utf.c f4f83acd73389090e32d6589d307fc55d794c7ed
@@ -201,7 +201,7 @@ F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 336eb50b0849dbf99b1d5462d9c37291b01b2b43
-F tool/mkkeywordhash.c ed1f2a21a4e7f2757281c4cf7a8392c0e0ad2d5d
+F tool/mkkeywordhash.c f1cb22f47cc6c60d50ac4af19a55c0e8757ac92c
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P b7d953e1195897de4869ec241a65e8a3d1320efb
-R e185cf7676cc794eee9060c09350688b
-U danielk1977
-Z 0648ce34f782ce635735be96e8684487
+P bd50fbb5fecd1829c87e8ca72c458c71f590274b
+R c93f4ae3ede116e4f0e25ff57fd95e47
+U drh
+Z 2a91aed8200460991cb047467354dda3

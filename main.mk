@@ -181,12 +181,12 @@ objects: $(LIBOBJ_ORIG)
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(VDBEHDR) opcodes.c
+target_source:	$(SRC) $(VDBEHDR) opcodes.c keyworkhash.c
 	rm -rf tsrc
 	mkdir tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c opcodes.c tsrc
+	cp parse.c opcodes.c keywordhash.c tsrc
 	cp $(TOP)/sqlite3.def tsrc
 
 # Rules to build the LEMON compiler generator
@@ -302,8 +302,12 @@ table.o:	$(TOP)/src/table.c $(HDR)
 tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/tclsqlite.c
 
-tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
+tokenize.o:	$(TOP)/src/tokenize.c keywordhash.c $(HDR)
 	$(TCCX) -c $(TOP)/src/tokenize.c
+
+keywordhash.c:	$(TOP)/tool/mkkeywordhash.c
+	$(BCC) -o mkkeywordhash $(OPTS) $(TOP)/tool/mkkeywordhash.c
+	./mkkeywordhash >keywordhash.c
 
 trigger.o:	$(TOP)/src/trigger.c $(HDR)
 	$(TCCX) -c $(TOP)/src/trigger.c
@@ -527,7 +531,7 @@ install:	sqlite3 libsqlite3.a sqlite3.h
 
 clean:	
 	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
-	rm -f lemon lempar.c parse.* sqlite*.tar.gz
+	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.c
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc
