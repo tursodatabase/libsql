@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.38 2004/11/09 12:44:38 danielk1977 Exp $
+** $Id: date.c,v 1.39 2004/11/09 16:13:33 danielk1977 Exp $
 **
 ** NOTES:
 **
@@ -917,6 +917,45 @@ static void ctimestampFunc(
 }
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
 
+#ifdef SQLITE_OMIT_DATETIME_FUNCS
+/*
+** If the library is compiled to omit the full-scale date and time
+** handling (to get a smaller binary), the following minimal version
+** of the functions current_time(), current_date() and current_timestamp()
+** are included instead. This is to support column declarations that
+** include "DEFAULT CURRENT_TIME" etc.
+**
+** This function uses the C-library functions time(), localtime_r()
+** and strftime(). The format string to pass to strftime() is supplied
+** as the user-data for the function.
+*/
+
+static void currentTimeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  time_t t;
+  char *zFormat = (char *)sqlite3_user_data(context);
+  char zBuf[20];
+  struct tm now;
+
+#ifdef SQLITE_TEST
+  /* This test variable is located in os_XXX.c */
+extern int sqlite3_current_time;
+#endif
+  time(&t);
+#ifdef SQLITE_TEST
+  if( sqlite3_current_time ){
+    t = sqlite3_current_time;
+  }
+#endif
+  localtime_r(&t, &now);
+  strftime(zBuf, 20, zFormat, &now);
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+#endif
+
 /*
 ** This function registered all of the above C functions as SQL
 ** functions.  This should be the only routine in this file with
@@ -943,6 +982,21 @@ void sqlite3RegisterDateTimeFunctions(sqlite3 *db){
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
         SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
+  }
+#else
+  static const struct {
+     char *zName;
+     char *zFormat;
+  } aFuncs[] = {
+    { "current_time", "%H:%M:%S" },
+    { "current_date", "%Y-%m-%d" },
+    { "current_timestamp", "%Y-%m-%d %H:%M:%S" }
+  };
+  int i;
+
+  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
+    sqlite3_create_function(db, aFuncs[i].zName, 0, SQLITE_UTF8, 
+        aFuncs[i].zFormat, currentTimeFunc, 0, 0);
   }
 #endif
 }
