@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.268 2004/11/05 17:17:50 drh Exp $
+** $Id: build.c,v 1.269 2004/11/05 20:58:40 drh Exp $
 =======
-** $Id: build.c,v 1.268 2004/11/05 17:17:50 drh Exp $
+** $Id: build.c,v 1.269 2004/11/05 20:58:40 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -1420,38 +1420,6 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       }
     }
 
-#if 0  
-    sqlite3OpenMasterTable(v, p->iDb);
-
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->pSelect==0?"table":"view",P3_STATIC);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
-    sqlite3VdbeAddOp(v, OP_Pull, 3, 0);
-
-    if( pSelect ){
-      char *z = createTableStmt(p);
-      n = z ? strlen(z) : 0;
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      sqlite3VdbeChangeP3(v, -1, z, n);
-      sqliteFree(z);
-    }else{
-      if( p->pSelect ){
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, "CREATE VIEW ", P3_STATIC);
-      }else{
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, "CREATE TABLE ", P3_STATIC);
-      }
-      assert( pEnd!=0 );
-      n = Addr(pEnd->z) - Addr(pParse->sNameToken.z) + 1;
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      sqlite3VdbeChangeP3(v, -1, pParse->sNameToken.z, n);
-      sqlite3VdbeAddOp(v, OP_Concat, 0, 0);
-    }
-    sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
-    sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
-    sqlite3ChangeCookie(db, v, p->iDb);
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-#endif
-
     /* Compute the complete text of the CREATE statement */
     if( pSelect ){
       zStmt = createTableStmt(p);
@@ -1999,6 +1967,50 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
 }
 
 /*
+** Generate code that will erase and refill index *pIdx.  This is
+** used to initialize a newly created index or to recompute the
+** content of an index in response to a REINDEX command.
+**
+** if memRootPage is not negative, it means that the index is newly
+** created.  The memory cell specified by memRootPage contains the
+** root page number of the index.  If memRootPage is negative, then
+** the index already exists and must be cleared before being refilled and
+** the root page number of the index is taken from pIndex->tnum.
+*/
+static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
+  Table *pTab = pIndex->pTable;  /* The table that is indexed */
+  int iTab = pParse->nTab;       /* Btree cursor used for pTab */
+  int iIdx = pParse->nTab+1;     /* Btree cursor used for pIndex */
+  int addr1;                     /* Address of top of loop */
+  int tnum;                      /* Root page of index */
+  Vdbe *v;                       /* Generate code into this virtual machine */
+
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) return;
+  if( memRootPage>=0 ){
+    sqlite3VdbeAddOp(v, OP_MemLoad, memRootPage, 0);
+    tnum = 0;
+  }else{
+    tnum = pIndex->tnum;
+    sqlite3VdbeAddOp(v, OP_Clear, tnum, pIndex->iDb);
+  }
+  sqlite3VdbeAddOp(v, OP_Integer, pIndex->iDb, 0);
+  sqlite3VdbeOp3(v, OP_OpenWrite, iIdx, tnum,
+                    (char*)&pIndex->keyInfo, P3_KEYINFO);
+  sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+  sqlite3VdbeAddOp(v, OP_OpenRead, iTab, pTab->tnum);
+  sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pTab->nCol);
+  addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
+  sqlite3GenerateIndexKey(v, pIndex, iTab);
+  sqlite3VdbeOp3(v, OP_IdxPut, iIdx, pIndex->onError!=OE_None,
+                      "indexed columns are not unique", P3_STATIC);
+  sqlite3VdbeAddOp(v, OP_Next, iTab, addr1+1);
+  sqlite3VdbeChangeP2(v, addr1, sqlite3VdbeCurrentAddr(v));
+  sqlite3VdbeAddOp(v, OP_Close, iTab, 0);
+  sqlite3VdbeAddOp(v, OP_Close, iIdx, 0);
+}
+
+/*
 ** Create a new index for an SQL table.  pIndex is the name of the index 
 ** and pTable is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -2277,58 +2289,50 @@ void sqlite3CreateIndex(
   ** step can be skipped.
   */
   else if( db->init.busy==0 ){
-    int n;
     Vdbe *v;
-    int lbl1, lbl2;
+    char *zStmt;
+    int iMem = pParse->nMem++;
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
-    if( pTblName!=0 ){
-      sqlite3BeginWriteOperation(pParse, 0, iDb);
-      sqlite3OpenMasterTable(v, iDb);
-    }
-    sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, "index", P3_STATIC);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, pIndex->zName, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
+
+    /* Create the rootpage for the index
+    */
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3VdbeAddOp(v, OP_CreateIndex, iDb, 0);
-    if( pTblName ){
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-      sqlite3VdbeOp3(v, OP_OpenWrite, 1, 0,
-                     (char*)&pIndex->keyInfo, P3_KEYINFO);
-    }
-    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
+    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
+
+    /* Gather the complete text of the CREATE INDEX statement into
+    ** the zStmt variable
+    */
     if( pStart && pEnd ){
-      if( onError==OE_None ){
-        sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", P3_STATIC);
-      }else{
-        sqlite3VdbeChangeP3(v, -1, "CREATE UNIQUE INDEX ", P3_STATIC);
-      }
-      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
-      n = Addr(pEnd->z) - Addr(pName->z) + 1;
-      sqlite3VdbeChangeP3(v, -1, pName->z, n);
-      sqlite3VdbeAddOp(v, OP_Concat, 0, 0);
+      /* A named index with an explicit CREATE INDEX statement */
+      zStmt = sqlite3MPrintf("CREATE%s INDEX %.*q",
+        onError==OE_None ? "" : " UNIQUE",
+        Addr(pEnd->z) - Addr(pName->z) + 1,
+        pName->z);
+    }else{
+      /* An automatic index created by a PRIMARY KEY or UNIQUE constraint */
+      zStmt = sqlite3MPrintf("");
     }
-    sqlite3VdbeOp3(v, OP_MakeRecord, 5, 0, "tttit", P3_STATIC);
-    sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
+
+    /* Add an entry in sqlite_master for this index
+    */
+    sqlite3NestedParse(pParse, 
+        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#0,'%s');",
+        db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
+        pIndex->zName,
+        pTab->zName,
+        zStmt
+    );
+    sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+    sqliteFree(zStmt);
+
+    /* Fill the index with data and reparse the schema
+    */
     if( pTblName ){
-      sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqlite3VdbeAddOp(v, OP_OpenRead, 2, pTab->tnum);
-      /* VdbeComment((v, "%s", pTab->zName)); */
-      sqlite3VdbeAddOp(v, OP_SetNumColumns, 2, pTab->nCol);
-      lbl2 = sqlite3VdbeMakeLabel(v);
-      sqlite3VdbeAddOp(v, OP_Rewind, 2, lbl2);
-      lbl1 = sqlite3VdbeCurrentAddr(v);
-      sqlite3GenerateIndexKey(v, pIndex, 2);
-      sqlite3VdbeOp3(v, OP_IdxPut, 1, pIndex->onError!=OE_None,
-                      "indexed columns are not unique", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_Next, 2, lbl1);
-      sqlite3VdbeResolveLabel(v, lbl2);
-      sqlite3VdbeAddOp(v, OP_Close, 2, 0);
-      sqlite3VdbeAddOp(v, OP_Close, 1, 0);
+      sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(db, v, iDb);
-      sqlite3VdbeAddOp(v, OP_Close, 0, 0);
       sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
          sqlite3MPrintf("name='%q'", pIndex->zName), P3_DYNAMIC);
     }
