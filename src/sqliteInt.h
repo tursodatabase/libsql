@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.85 2002/02/17 00:30:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.86 2002/02/18 01:17:00 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -220,8 +220,33 @@ struct Column {
 };
 
 /*
-** Each SQL table is represented in memory by
-** an instance of the following structure.
+** Each SQL table is represented in memory by an instance of the
+** following structure.
+**
+** Expr.zName is the name of the table.  The case of the original
+** CREATE TABLE statement is stored, but case is not significant for
+** comparisons.
+**
+** Expr.nCol is the number of columns in this table.  Expr.aCol is a
+** pointer to an array of Column structures, one for each column.
+**
+** If the table has an INTEGER PRIMARY KEY, then Expr.iPKey is the index of
+** the column that is that key.   Otherwise Expr.iPKey is negative.  Note
+** that the datatype of the PRIMARY KEY must be INTEGER for this field to
+** be set.  An INTEGER PRIMARY KEY is used as the rowid for each row of
+** the table.  If a table has no INTEGER PRIMARY KEY, then a random rowid
+** is generated for each row of the table.  Expr.hasPrimKey is true if
+** the table has any PRIMARY KEY, INTEGER or otherwise.
+**
+** Expr.tnum is the page number for the root BTree page of the table in the
+** database file.  If Expr.isTemp is true, then this page occurs in the
+** auxiliary database file, not the main database file.  If Expr.isTransient
+** is true, then the table is stored in a file that is automatically deleted
+** when the VDBE cursor to the table is closed.  In this case Expr.tnum 
+** refers VDBE cursor number that holds the table open, not to the root
+** page number.  Transient tables are used to hold the results of a
+** sub-query that appears instead of a real table name in the FROM clause 
+** of a SELECT statement.
 */
 struct Table {
   char *zName;     /* Name of the table */
@@ -229,18 +254,18 @@ struct Table {
   Column *aCol;    /* Information about each column */
   int iPKey;       /* If not less then 0, use aCol[iPKey] as the primary key */
   Index *pIndex;   /* List of SQL indexes on this table. */
-  int tnum;        /* Page containing root for this table */
+  int tnum;        /* Root BTree node for this table (see note above) */
   u8 readOnly;     /* True if this table should not be written by the user */
   u8 isCommit;     /* True if creation of this table has been committed */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
+  u8 isTransient;  /* True if automatically deleted when VDBE finishes */
   u8 hasPrimKey;   /* True if there exists a primary key */
   u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
 };
 
 /*
-** SQLite supports 4 or 5 different ways to resolve a contraint
-** error.  (Only 4 are implemented as of this writing.  The fifth method
-** "ABORT" is planned.)  ROLLBACK processing means that a constraint violation
+** SQLite supports 5 different ways to resolve a contraint
+** error.  ROLLBACK processing means that a constraint violation
 ** causes the operation in proces to fail and for the current transaction
 ** to be rolled back.  ABORT processing means the operation in process
 ** fails and any prior changes from that one operation are backed out,
@@ -307,7 +332,37 @@ struct Token {
 
 /*
 ** Each node of an expression in the parse tree is an instance
-** of this structure
+** of this structure.
+**
+** Expr.op is the opcode.  The integer parser token codes are reused
+** as opcodes here.  For example, the parser defines TK_GE to be an integer
+** code representing the ">=" operator.  This same integer code is reused
+** to represent the greater-than-or-equal-to operator in the expression
+** tree.
+**
+** Expr.pRight and Expr.pLeft are subexpressions.  Expr.pList is a list
+** of argument if the expression is a function.
+**
+** Expr.token is the operator token for this node.  Expr.span is the complete
+** subexpression represented by this node and all its decendents.  These
+** fields are used for error reporting and for reconstructing the text of
+** an expression to use as the column name in a SELECT statement.
+**
+** An expression of the form ID or ID.ID refers to a column in a table.
+** For such expressions, Expr.op is set to TK_COLUMN and Expr.iTable is
+** the integer cursor number of a VDBE cursor pointing to that table and
+** Expr.iColumn is the column number for the specific column.  If the
+** expression is used as a result in an aggregate SELECT, then the
+** value is also stored in the Expr.iAgg column in the aggregate so that
+** it can be accessed after all aggregates are computed.
+**
+** If the expression is a function, the Expr.iTable is an integer code
+** representing which function.
+**
+** The Expr.pSelect field points to a SELECT statement.  The SELECT might
+** be the right operand of an IN operator.  Or, if a scalar SELECT appears
+** in an expression the opcode is TK_SELECT and Expr.pSelect is the only
+** operand.
 */
 struct Expr {
   int op;                /* Operation performed by this node */

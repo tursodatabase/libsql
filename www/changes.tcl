@@ -20,6 +20,7 @@ proc chng {date desc} {
 chng {2002 Feb * (2.3.3)} {
 <li>Allow identifiers to be quoted in square brackets, for compatibility
     with MS-Access.</li>
+<li>Added support for sub-queries in the FROM clause of a SELECT</li>
 }
 
 chng {2002 Feb 14 (2.3.2)} {

@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.34 2002/02/13 23:22:54 drh Exp $
+** $Id: where.c,v 1.35 2002/02/18 01:17:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -188,6 +188,7 @@ WhereInfo *sqliteWhereBegin(
   pWInfo->pTabList = pTabList;
   base = pWInfo->base = pParse->nTab;
   nCur = base + pTabList->nId;
+  pParse->nTab += nCur*2;
 
   /* Split the WHERE clause into as many as 32 separate subexpressions
   ** where each subexpression is separated by an AND operator.  Any additional
@@ -202,7 +203,7 @@ WhereInfo *sqliteWhereBegin(
   /* Analyze all of the subexpressions.
   */
   for(i=0; i<nExpr; i++){
-    exprAnalyze(pParse->nTab, &aExpr[i]);
+    exprAnalyze(base, &aExpr[i]);
   }
 
   /* Figure out a good nesting order for the tables.  aOrder[0] will
@@ -396,6 +397,7 @@ WhereInfo *sqliteWhereBegin(
     Table *pTab;
 
     pTab = pTabList->a[i].pTab;
+    if( pTab->isTransient ) continue;
     openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
     sqliteVdbeAddOp(v, openOp, base+i, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
@@ -771,8 +773,9 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
   int i;
   int base = pWInfo->base;
   WhereLevel *pLevel;
+  IdList *pTabList = pWInfo->pTabList;
 
-  for(i=pWInfo->pTabList->nId-1; i>=0; i--){
+  for(i=pTabList->nId-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqliteVdbeResolveLabel(v, pLevel->cont);
     if( pLevel->op!=OP_Noop ){
@@ -781,13 +784,15 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
     sqliteVdbeResolveLabel(v, pLevel->brk);
   }
   sqliteVdbeResolveLabel(v, pWInfo->iBreak);
-  for(i=0; i<pWInfo->pTabList->nId; i++){
+  for(i=0; i<pTabList->nId; i++){
+    if( pTabList->a[i].pTab->isTransient ) continue;
     pLevel = &pWInfo->a[i];
     sqliteVdbeAddOp(v, OP_Close, base+i, 0);
     if( pLevel->pIdx!=0 ){
       sqliteVdbeAddOp(v, OP_Close, pLevel->iCur, 0);
     }
   }
+  pWInfo->pParse->nTab = base;
   sqliteFree(pWInfo);
   return;
 }
