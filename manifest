@@ -1,5 +1,5 @@
-C Change\sthe\sPopStack()\sroutine\sso\sthat\sit\sdoesn't\sconfuse\sbounds\scheckers.\nTicket\s#222.\s(CVS\s825)
-D 2003-01-12T17:28:19
+C Remove\san\sunused\svariable\sfrom\sthe\sVDBE.\s\sTicket\s#223.\s(CVS\s826)
+D 2003-01-12T17:35:00
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c ab3182eae676d7f198354df6a54e8611aac6ae9c
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
-F src/vdbe.c 1585e3aadbf401d65195c2a6e9005a3fb4a9b7a2
+F src/vdbe.c e103bd5a154b1790dd344662dceb14566a51a879
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b2c1edb47f481cafe6718bafcdb517cca160a44d
-R 99e985ad455a114f0a0f01e3c1b1611a
+P fc11fa50b8f39f5e0b3674d7df832ffbca0d948f
+R 87a0a3cad3f27526e1ddc77d411afd4e
 U drh
-Z 729883f7b08f09197c247d0cde63e890
+Z 6813c7f1dfa42fe98f14f8fc0a2f75cc
