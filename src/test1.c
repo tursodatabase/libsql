@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.46 2004/05/22 09:21:21 danielk1977 Exp $
+** $Id: test1.c,v 1.47 2004/05/22 10:33:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1416,7 +1416,7 @@ static int test_step_new(
   sqlite3_stmt *pStmt;
   int rc;
 
-  if( objc!=3 ){
+  if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT", 0);
     return TCL_ERROR;
@@ -1425,7 +1425,74 @@ static int test_step_new(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   rc = sqlite3_step_new(pStmt);
 
-  if( rc!=SQLITE_OK ) return TCL_ERROR;
+  if( rc!=SQLITE_DONE && rc!=SQLITE_ROW ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_data STMT column
+**
+** Advance the statement to the next row.
+*/
+static int test_column_data(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  Tcl_Obj *pRet;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  if( SQLITE3_BLOB==sqlite3_column_type(pStmt, col) ){
+    int len = sqlite3_column_bytes(pStmt, col);
+    pRet = Tcl_NewByteArrayObj(sqlite3_column_data(pStmt, col), len);
+  }else{
+    pRet = Tcl_NewStringObj(sqlite3_column_data(pStmt, col), -1);
+  }
+  Tcl_SetObjResult(interp, pRet);
+
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_data16 STMT column
+**
+** Advance the statement to the next row.
+*/
+static int test_column_data16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  Tcl_Obj *pRet;
+  int len;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  len = sqlite3_column_bytes16(pStmt, col);
+  pRet = Tcl_NewByteArrayObj(sqlite3_column_data16(pStmt, col), len);
+  Tcl_SetObjResult(interp, pRet);
+
   return TCL_OK;
 }
 
@@ -1526,9 +1593,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
      { "sqlite3_open",                  (Tcl_ObjCmdProc*)test_open          },
      { "sqlite3_open16",                (Tcl_ObjCmdProc*)test_open16        },
-     { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize     },
-     { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset        },
+     { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize      },
+     { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset         },
      { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step_new      },
+     { "sqlite3_column_data",           (Tcl_ObjCmdProc*)test_column_data   },
+     { "sqlite3_column_data16",         (Tcl_ObjCmdProc*)test_column_data16   },
      { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
   };
   int i;

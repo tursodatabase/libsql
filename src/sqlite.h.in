@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.69 2004/05/22 09:21:21 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.70 2004/05/22 10:33:04 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -1291,7 +1291,7 @@ const void *sqlite3_column_data16(sqlite3_stmt*,int);
 /*
 ** The first parameter is a compiled SQL statement for which the most
 ** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
-** retrieves the length of the data in bytse returned by the
+** retrieves the length of the data in bytes returned by the
 ** sqlite3_column_data() routine for the same second parameter value.
 **
 ** If sqlite3_column_data() returns a UTF-8 string, then the length
@@ -1299,6 +1299,18 @@ const void *sqlite3_column_data16(sqlite3_stmt*,int);
 ** end of the UTF-8 string.
 */
 int sqlite3_column_bytes(sqlite3_stmt*,int);
+
+/*
+** The first parameter is a compiled SQL statement for which the most
+** recent call to sqlite3_step() has returned SQLITE_ROW. This routine
+** retrieves the length of the data in bytes returned by the
+** sqlite3_column_data() routine for the same second parameter value.
+**
+** If sqlite3_column_data() returns a UTF-16 string, then the length
+** returned by this function includes the nul terminator character (two
+** bytes) at the end of the UTF-16 string.
+*/
+int sqlite3_column_bytes16(sqlite3_stmt *, int);
 
 /*
 ** The first parameter is a compiled SQL statement for which the most

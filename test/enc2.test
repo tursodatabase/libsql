@@ -1,0 +1,129 @@
+# 2002 May 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The focus of
+# this file is testing the SQLite routines used for converting between the
+# various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
+# UTF-16be).
+#
+# $Id: enc2.test,v 1.1 2004/05/22 10:33:04 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+db close
+
+# Return the UTF-8 representation of the supplied UTF-16 string $str. 
+proc utf8 {str} {
+  # If $str ends in two 0x00 0x00 bytes, knock these off before
+  # converting to UTF-8 using TCL.
+  binary scan $str \c* vals
+  if {[lindex $vals end]==0 && [lindex $vals end-1]==0} {
+    set str [binary format \c* [lrange $vals 0 end-2]]
+  }
+
+  set r [encoding convertfrom unicode $str]
+  return $r
+}
+
+#
+# This proc contains all the tests in this file. It is run
+# three times. Each time the file 'test.db' contains a database
+# with the following contents:
+set dbcontents {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES('one', 'I', 1);
+}
+# This proc tests that we can open and manipulate the test.db 
+# database, and that it is possible to retreive values in
+# various text encodings.
+#
+proc run_test_script {t} {
+
+# Open the database and pull out a (the) row.
+do_test $t.1 {
+  set DB [sqlite db test.db]
+  execsql {SELECT * FROM t1}
+} {one I 1}
+
+# Insert some data
+do_test $t.2 {
+  execsql {INSERT INTO t1 VALUES('two', 'II', 2);}
+  execsql {SELECT * FROM t1}
+} {one I 1 two II 2}
+
+# Insert some data using the COPY command.
+do_test $t.3 {
+  set f [open data.txt w]
+  puts $f "three\tIII\t3"
+  puts $f "four\tIV\t4"
+  puts $f "five\tV\t5"
+  close $f
+  execsql {COPY t1 FROM 'data.txt'}
+  execsql {SELECT * FROM t1}
+} {one I 1 two II 2 three III 3 four IV 4 five V 5}
+
+# Use the index
+do_test $t.4 {
+  execsql {
+    SELECT * FROM t1 WHERE a = 'one';
+  }
+} {one I 1}
+do_test $t.5 {
+  execsql {
+    SELECT * FROM t1 WHERE a = 'four';
+  }
+} {four IV 4}
+do_test $t.6 {
+  execsql {
+    SELECT * FROM t1 WHERE a IN ('one', 'two');
+  }
+} {one I 1 two II 2}
+
+# Now check that we can retrieve data in both UTF-16 and UTF-8
+do_test $t.7 {
+  set STMT [sqlite3_prepare $DB "SELECT a FROM t1 WHERE c>3;" -1 TAIL]
+  sqlite3_step $STMT
+  sqlite3_column_data $STMT 0
+} {four}
+
+do_test $t.8 {
+  sqlite3_step $STMT
+  utf8 [sqlite3_column_data16 $STMT 0]
+} {five}
+
+do_test $t.9 {
+  sqlite3_finalize $STMT
+} {}
+
+do_test $t.99 {
+  db close
+} {}
+
+}
+
+# The three unicode encodings understood by SQLite.
+set encodings [list -utf8 -utf16be -utf16le]
+
+set i 1
+foreach enc $encodings {
+  file delete -force test.db
+  sqlite db test.db $enc
+  execsql $dbcontents
+  db close
+  run_test_script enc2-$i
+  incr i
+}
+
+finish_test
+
+
+
+

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.317 2004/05/22 07:27:46 danielk1977 Exp $
+** $Id: vdbe.c,v 1.318 2004/05/22 10:33:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -69,6 +69,7 @@ int sqlite3_search_count = 0;
 */
 int sqlite3_interrupt_count = 0;
 
+#if 0
 /*
 ** NulTermify
 ** Stringify
@@ -94,51 +95,7 @@ typedef struct MemRecord MemRecord;
 static int Recordify(Mem *pMem){
   return 0;
 }
-
-#define NulTermify(P) if(((P)->flags & MEM_Str)==0){hardStringify(P);} \
-                      else if(((P)->flags & MEM_Term)==0){hardNulTermify(P);}
-static int hardNulTermify(Mem *pStack){
-  int flags = pStack->flags;
-
-  assert( !(flags&MEM_Term) && (flags&MEM_Str) );
-  assert( flags&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be) );
-
-  if( flags&MEM_Utf8 ){
-    /* If the string is already dynamically allocated, use sqliteRealloc()
-    ** to allocate extra space for the terminator.
-    */
-    if( flags&MEM_Dyn ){
-      pStack->z = sqliteRealloc(pStack->z, pStack->n+1);
-      if( !pStack->z ){
-        return 1;
-      }
-    }
-
-    if( flags&(MEM_Static|MEM_Ephem|MEM_Short) ){
-      if( pStack->n+1<NBFS ){
-        if( flags&MEM_Short ){
-          memcpy(pStack->zShort, pStack->z, pStack->n);
-          pStack->flags = MEM_Short|MEM_Str|MEM_Utf8|MEM_Term;
-        }
-      }else{
-        char *z = sqliteMalloc(pStack->n+1);
-        if( !z ){
-          return 1;
-        }
-        memcpy(z, pStack->z, pStack->n);
-        pStack->z = z;
-        pStack->flags = MEM_Dyn|MEM_Str|MEM_Utf8|MEM_Term;
-      }
-    }
-
-    pStack->z[pStack->n] = '\0';
-    pStack->n++;
-  }else{
-    assert(0);
-  }
-
-  return 0;
-}
+#endif
 
 /*
 ** Convert the given stack entity into a string if it isn't one
@@ -532,12 +489,13 @@ const unsigned char *sqlite3_column_data(sqlite3_stmt *pStmt, int i){
 }
 
 /*
-** Return the number of bytes of data that will be returned by the
-** equivalent sqlite3_column_data() call.
+** Return the value of the 'i'th column of the current row of the currently
+** executing statement pStmt.
 */
-int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
-  Vdbe *pVm = (Vdbe *)pStmt;
+const void *sqlite3_column_data16(sqlite3_stmt *pStmt, int i){
   int vals;
+  Vdbe *pVm = (Vdbe *)pStmt;
+  Mem *pVal;
 
   vals = sqlite3_value_count(pStmt);
   if( i>=vals || i<0 ){
@@ -545,7 +503,46 @@ int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
     return 0;
   }
 
+  pVal = &pVm->pTos[(1-vals)+i];
+  if( pVal->flags&MEM_Null ){
+    return 0;
+  }
+
+  if( !(pVal->flags&MEM_Blob) ){
+    Stringify(pVal);
+    if( SQLITE3_BIGENDIAN ){
+      SetEncoding(pVal, MEM_Utf16be|MEM_Term);
+    }else{
+      SetEncoding(pVal, MEM_Utf16le|MEM_Term);
+    }
+  }
+
+  return pVal->z;
+}
+
+/*
+** Return the number of bytes of data that will be returned by the
+** equivalent sqlite3_column_data() call.
+*/
+int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
+  Vdbe *pVm = (Vdbe *)pStmt;
+
   if( sqlite3_column_data(pStmt, i) ){
+    int vals = sqlite3_value_count(pStmt);
+    return pVm->pTos[(1-vals)+i].n;
+  }
+  return 0;
+}
+
+/*
+** Return the number of bytes of data that will be returned by the
+** equivalent sqlite3_column_data16() call.
+*/
+int sqlite3_column_bytes16(sqlite3_stmt *pStmt, int i){
+  Vdbe *pVm = (Vdbe *)pStmt;
+
+  if( sqlite3_column_data16(pStmt, i) ){
+    int vals = sqlite3_value_count(pStmt);
     return pVm->pTos[(1-vals)+i].n;
   }
   return 0;
