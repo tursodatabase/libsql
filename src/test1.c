@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.96 2004/07/26 12:24:23 drh Exp $
+** $Id: test1.c,v 1.97 2004/08/14 17:10:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2339,6 +2339,26 @@ static int test_sqlite3OsUnlock(
   return TCL_OK;
 }
 
+/*
+** Usage:  sqlite3OsTempFileName
+*/
+static int test_sqlite3OsTempFileName(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char zFile[SQLITE_TEMPNAME_SIZE];
+  int rc;
+
+  rc = sqlite3OsTempFileName(zFile);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+    return TCL_ERROR;
+  }
+  Tcl_AppendResult(interp, zFile, 0);
+  return TCL_OK;
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -2424,6 +2444,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3OsOpenReadWrite",test_sqlite3OsOpenReadWrite, 0 },
      { "sqlite3OsClose",        test_sqlite3OsClose, 0 },
      { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
+     { "sqlite3OsTempFileName", test_sqlite3OsTempFileName, 0 },
    
      /* Custom test interfaces */
      { "sqlite3OsUnlock",         test_sqlite3OsUnlock, 0    },
@@ -2456,5 +2477,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_static_bind_value",
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
+  Tcl_LinkVar(interp, "sqlite_temp_directory",
+      (char*)&sqlite_temp_directory, TCL_LINK_STRING);
   return TCL_OK;
 }

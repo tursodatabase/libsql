@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.112 2004/08/01 00:10:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.113 2004/08/14 17:10:12 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -1114,6 +1114,19 @@ int sqlite3_rekey(
   sqlite3 *db,                   /* Database to be rekeyed */
   const void *pKey, int nKey     /* The new key */
 );
+
+/*
+** If the following global variable is made to point to a constant
+** string which is the name of a directory, then all temporary files
+** created by SQLite will be placed in that directory.  If this variable
+** is NULL pointer, then SQLite does a search for an appropriate temporary
+** file directory.
+**
+** This variable should only be changed when there are no open databases.
+** Once sqlite3_open() has been called, this variable should not be changed
+** until all database connections are closed.
+*/
+extern const char *sqlite_temp_directory;
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

@@ -569,11 +569,19 @@ int sqlite3OsOpenDirectory(
 }
 
 /*
+** If the following global variable points to a string which is the
+** name of a directory, then that directory will be used to store
+** temporary files.
+*/
+const char *sqlite_temp_directory = 0;
+
+/*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */
 int sqlite3OsTempFileName(char *zBuf){
   static const char *azDirs[] = {
+     0,
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
@@ -586,7 +594,9 @@ int sqlite3OsTempFileName(char *zBuf){
   int i, j;
   struct stat buf;
   const char *zDir = ".";
+  azDirs[0] = sqlite_temp_directory;
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
+    if( azDirs[i]==0 ) continue;
     if( stat(azDirs[i], &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
     if( access(azDirs[i], 07) ) continue;
