@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.42 2000/10/11 19:28:53 drh Exp $
+** $Id: vdbe.c,v 1.43 2000/10/16 22:06:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -169,6 +169,7 @@ struct SetElem {
 ** An instance of the virtual machine
 */
 struct Vdbe {
+  sqlite *db;         /* The whole database */
   Dbbe *pBe;          /* Opaque context structure used by DB backend */
   FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
@@ -204,11 +205,12 @@ struct Vdbe {
 /*
 ** Create a new virtual database engine.
 */
-Vdbe *sqliteVdbeCreate(Dbbe *pBe){
+Vdbe *sqliteVdbeCreate(sqlite *db){
   Vdbe *p;
 
   p = sqliteMalloc( sizeof(Vdbe) );
-  p->pBe = pBe;
+  p->pBe = db->pBe;
+  p->db = db;
   return p;
 }
 
@@ -836,6 +838,12 @@ int sqliteVdbeList(
   rc = SQLITE_OK;
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
+    if( p->db->flags & SQLITE_Interrupt ){
+      p->db->flags &= ~SQLITE_Interrupt;
+      sqliteSetString(pzErrMsg, "interrupted", 0);
+      rc = SQLITE_INTERRUPT;
+      break;
+    }
     sprintf(zAddr,"%d",i);
     sprintf(zP1,"%d", p->aOp[i].p1);
     sprintf(zP2,"%d", p->aOp[i].p2);
@@ -928,6 +936,15 @@ int sqliteVdbeExec(
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(pc=0; rc==SQLITE_OK && pc<p->nOp && pc>=0; pc++){
     pOp = &p->aOp[pc];
+
+    /* Interrupt processing if requested.
+    */
+    if( p->db->flags & SQLITE_Interrupt ){
+      p->db->flags &= ~SQLITE_Interrupt;
+      rc = SQLITE_INTERRUPT;
+      sqliteSetString(pzErrMsg, "interrupted", 0);
+      break;
+    }
 
     /* Only allow tracing if NDEBUG is not defined.
     */

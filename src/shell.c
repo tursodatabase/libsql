@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.26 2000/10/08 22:20:58 drh Exp $
+** $Id: shell.c,v 1.27 2000/10/16 22:06:42 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +32,9 @@
 #include "sqlite.h"
 #include <unistd.h>
 #include <ctype.h>
+#ifdef OS_UNIX
+# include <signal.h>
+#endif
 
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
 # include <readline/readline.h>
@@ -40,6 +43,13 @@
 # define readline getline
 # define add_history(X) 
 #endif
+
+/*
+** The following is the open SQLite database.  We make a pointer
+** to this database a static variable so that it can be accessed
+** by the SIGINT handler to interrupt database processing.
+*/
+static sqlite *db = 0;
 
 /*
 ** This routine reads a line of text from standard input, stores
@@ -227,6 +237,13 @@ static void output_html_string(FILE *out, const char *z){
     }
     z += i + 1;
   }
+}
+
+/*
+** This routine runs when the user presses Ctrl-C
+*/
+static void interrupt_handler(int NotUsed){
+  if( db ) sqlite_interrupt(db);
 }
 
 /*
@@ -447,7 +464,6 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( nArg==0 ) return;
   n = strlen(azArg[0]);
   c = azArg[0][0];
- 
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
     if( nArg==1 ){
@@ -669,7 +685,6 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 }
 
 int main(int argc, char **argv){
-  sqlite *db;
   char *zErrMsg = 0;
   char *argv0 = argv[0];
   struct callback_data data;
@@ -678,6 +693,9 @@ int main(int argc, char **argv){
   data.mode = MODE_List;
   strcpy(data.separator,"|");
   data.showHeader = 0;
+#ifdef SIGINT
+  signal(SIGINT, interrupt_handler);
+#endif
   while( argc>=2 && argv[1][0]=='-' ){
     if( strcmp(argv[1],"-html")==0 ){
       data.mode = MODE_Html;

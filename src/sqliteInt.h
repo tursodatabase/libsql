@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.30 2000/08/28 15:51:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.31 2000/10/16 22:06:42 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -135,8 +135,9 @@ struct sqlite {
 /*
 ** Possible values for the sqlite.flags.
 */
-#define SQLITE_VdbeTrace    0x00000001
-#define SQLITE_Initialized  0x00000002
+#define SQLITE_VdbeTrace    0x00000001  /* True to trace VDBE execution */
+#define SQLITE_Initialized  0x00000002  /* True after initialization */
+#define SQLITE_Interrupt    0x00000004  /* Cancel current operation */
 
 /*
 ** Current file format version
@@ -325,6 +326,7 @@ struct AggExpr {
 */
 struct Parse {
   sqlite *db;          /* The main database structure */
+  int rc;              /* Return code from execution */
   sqlite_callback xCallback;  /* The callback function */
   void *pArg;          /* First argument to the callback function */
   char *zErrMsg;       /* An error message */

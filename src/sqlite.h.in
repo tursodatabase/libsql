@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.5 2000/10/09 12:57:01 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.6 2000/10/16 22:06:42 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -130,13 +130,23 @@ int sqlite_exec(
 ** Return values for sqlite_exec()
 */
 #define SQLITE_OK        0    /* Successful result */
-#define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
-#define SQLITE_ERROR     2    /* SQL error or missing database */
+#define SQLITE_ERROR     1    /* SQL error or missing database */
+#define SQLITE_INTERNAL  2    /* An internal logic error in SQLite */
 #define SQLITE_PERM      3    /* Access permission denied */
 #define SQLITE_ABORT     4    /* Callback routine requested an abort */
 #define SQLITE_BUSY      5    /* One or more database files are locked */
 #define SQLITE_NOMEM     6    /* A malloc() failed */
 #define SQLITE_READONLY  7    /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT 8    /* Operation terminated by sqlite_interrupt() */
+
+/* This function causes any pending database operation to abort and
+** return at its earliest opportunity.  This routine is typically
+** called in response to a user include such as pressing "Cancel"
+** or Ctrl-C where the user wants a long query operation to halt
+** immediately.
+*/
+void sqlite_interrupt(sqlite*);
+
 
 /* This function returns true if the given input string comprises
 ** one or more complete SQL statements.

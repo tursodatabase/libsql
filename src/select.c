@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.26 2000/07/29 13:06:59 drh Exp $
+** $Id: select.c,v 1.27 2000/10/16 22:06:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -424,7 +424,7 @@ static int matchOrderbyToColumn(
 Vdbe *sqliteGetVdbe(Parse *pParse){
   Vdbe *v = pParse->pVdbe;
   if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db);
   }
   if( v==0 ){
     sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
@@ -818,7 +818,7 @@ int sqliteSelect(
   */
   v = pParse->pVdbe;
   if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db);
   }
   if( v==0 ){
     sqliteSetString(&pParse->zErrMsg, "out of memory", 0);

@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.13 2000/08/09 17:17:25 drh Exp $
+** $Id: tokenize.c,v 1.14 2000/10/16 22:06:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -298,7 +298,7 @@ int sqliteGetToken(const char *z, int *tokenType){
 
 /*
 ** Run the parser on the given SQL string.  The parser structure is
-** passed in.  Return the number of errors.
+** passed in.  An SQLITE_ status code.
 */
 int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   int nErr = 0;
@@ -311,6 +311,8 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   extern int sqliteParser(void*, int, ...);
   extern void sqliteParserTrace(FILE*, char *);
 
+  pParse->db->flags &= ~SQLITE_Interrupt;
+  pParse->rc = SQLITE_OK;
   i = 0;
   sqliteParseInfoReset(pParse);
   pEngine = sqliteParserAlloc((void*(*)(int))malloc);
@@ -322,6 +324,11 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   while( nErr==0 && i>=0 && zSql[i]!=0 ){
     int tokenType;
     
+    if( (pParse->db->flags & SQLITE_Interrupt)!=0 ){
+      pParse->rc = SQLITE_INTERRUPT;
+      sqliteSetString(pzErrMsg, "interrupt", 0);
+      break;
+    }
     pParse->sLastToken.z = &zSql[i];
     pParse->sLastToken.n = sqliteGetToken(&zSql[i], &tokenType);
     i += pParse->sLastToken.n;
@@ -391,7 +398,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
         break;
     }
   }
-  if( nErr==0 ){
+  if( nErr==0 && (pParse->db->flags & SQLITE_Interrupt)==0 ){
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
     if( pParse->zErrMsg && pParse->sErrToken.z ){
        sqliteSetNString(pzErrMsg, "near \"", -1, 
@@ -423,5 +430,9 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
     pParse->pNewTable = 0;
   }
   sqliteParseInfoReset(pParse);
+  sqliteStrRealloc(pzErrMsg);
+  if( nErr>0 && pParse->rc==SQLITE_OK ){
+    pParse->rc = SQLITE_ERROR;
+  }
   return nErr;
 }

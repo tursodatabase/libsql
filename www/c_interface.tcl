@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.10 2000/10/09 12:57:01 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.11 2000/10/16 22:06:43 drh Exp $}
 
 puts {<html>
 <head>
@@ -67,6 +67,8 @@ int sqlite_get_table(
 );
 
 void sqlite_free_table(char**);
+
+void sqlite_interrupt(sqlite*);
 
 int sqlite_complete(const char *sql);
 
@@ -263,6 +265,10 @@ a database file that was originally opened for reading only.  This can
 happen if the callback from a query attempts to update the table
 being queried.
 </p></dd>
+<dt>SQLITE_INTERRUPT</dt>
+<dd><p>This value is returned if a call to <b>sqlite_interrupt()</b>
+interrupts a database operation in progress.
+</p></dd>
 </dl>
 </blockquote>
 
@@ -316,6 +322,14 @@ to <b>sqlite_free_table()</b> when the table is no longer needed.</p>
 
 <p>The <b>sqlite_get_table()</b> routine returns the same integer
 result code as <b>sqlite_exec()</b>.</p>
+
+<h2>Interrupting an SQLite operation</h2>
+
+<p>The <b>sqlite_interrupt()</b> function can be called from a
+different thread or from a signal handler to the current database
+operation to exit at its first opportunity.  When this happens,
+the <b>sqlite_exec()</b> routine (or the equivalent) that started
+the database operation will return SQLITE_INTERRUPT.</p>
 
 <h2>Testing for a complete SQL statement</h2>
 

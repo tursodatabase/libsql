@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.23 2000/08/03 15:09:20 drh Exp $
+** $Id: build.c,v 1.24 2000/10/16 22:06:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -48,20 +48,22 @@
 ** no VDBE code was generated.
 */
 void sqliteExec(Parse *pParse){
+  int rc = SQLITE_OK;
   if( pParse->pVdbe ){
     if( pParse->explain ){
-      sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                     &pParse->zErrMsg);
+      rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
+                          &pParse->zErrMsg);
     }else{
       FILE *trace = (pParse->db->flags & SQLITE_VdbeTrace)!=0 ? stderr : 0;
       sqliteVdbeTrace(pParse->pVdbe, trace);
-      sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
-                     &pParse->zErrMsg, pParse->db->pBusyArg,
-                     pParse->db->xBusyCallback);
+      rc = sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
+                          &pParse->zErrMsg, pParse->db->pBusyArg,
+                          pParse->db->xBusyCallback);
     }
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
     pParse->colNamesSet = 0;
+    pParse->rc = rc;
   }
 }
 
