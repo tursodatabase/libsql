@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.13 2003/09/27 01:08:38 drh Exp $
+# $Id: vacuum.test,v 1.14 2003/12/07 00:24:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,6 @@ proc cksum {{db db}} {
   # puts $cksum-[file size test.db]
   return $cksum
 }
-
 do_test vacuum-1.1 {
   execsql {
     BEGIN;
@@ -136,7 +135,6 @@ do_test vacuum-3.1 {
 
 # Ticket #464.  Make sure VACUUM works with the sqlite_compile() API.
 #
-if 0 {
 do_test vacuum-4.1 {
   db close
   set DB [sqlite db test.db]
@@ -146,8 +144,33 @@ do_test vacuum-4.1 {
 do_test vacuum-4.2 {
   sqlite_finalize $VM
 } {}
-}
 
-catch {db2 close}
+# Ticket #515.  VACUUM after deleting and recreating the table that
+# a view refers to.
+#
+do_test vacuum-5.1 {
+  db close
+  file delete -force test.db
+  sqlite db test.db
+  catchsql {
+    CREATE TABLE Test (TestID int primary key);
+    INSERT INTO Test VALUES (NULL);
+    CREATE VIEW viewTest AS SELECT * FROM Test;
+
+    BEGIN;
+    CREATE TEMP TABLE tempTest (TestID int primary key, Test2 int NULL);
+    INSERT INTO tempTest SELECT TestID, 1 FROM Test;
+    DROP TABLE Test;
+    CREATE TABLE Test(TestID int primary key, Test2 int NULL);
+    INSERT INTO Test SELECT * FROM tempTest;
+    COMMIT;
+    VACUUM;
+  }
+} {0 {}}
+do_test vacuum-5.2 {
+  catchsql {
+    VACUUM;
+  }
+} {0 {}}
 
 # finish_test

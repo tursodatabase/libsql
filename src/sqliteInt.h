@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.203 2003/11/27 00:48:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.204 2003/12/07 00:24:35 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1125,6 +1125,7 @@ Index *sqliteFindIndex(sqlite*,const char*, const char*);
 void sqliteUnlinkAndDeleteIndex(sqlite*,Index*);
 void sqliteCopy(Parse*, SrcList*, Token*, Token*, int);
 void sqliteVacuum(Parse*, Token*);
+int sqliteRunVacuum(char**, sqlite*);
 int sqliteGlobCompare(const unsigned char*,const unsigned char*);
 int sqliteLikeCompare(const unsigned char*,const unsigned char*);
 char *sqliteTableNameFromToken(Token*);

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.243 2003/12/06 21:43:56 drh Exp $
+** $Id: vdbe.c,v 1.244 2003/12/07 00:24:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4648,6 +4648,19 @@ case OP_SetNext: {
   zStack[tos] = sqliteHashKey(pSet->prev);
   aStack[tos].n = sqliteHashKeysize(pSet->prev);
   aStack[tos].flags = STK_Str | STK_Ephem;
+  break;
+}
+
+/* Opcode: Vacuum * * *
+**
+** Vacuum the entire database.  This opcode will cause other virtual
+** machines to be created and run.  It may not be called from within
+** a transaction.
+*/
+case OP_Vacuum: {
+  if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
+  rc = sqliteRunVacuum(&p->zErrMsg, db);
+  if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
   break;
 }
 

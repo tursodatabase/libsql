@@ -1,5 +1,5 @@
-C Fail\san\sATTACH\sif\sthe\sauxiliary\sdatabase\sis\slocked.\s\sTicket\s#514.\s(CVS\s1127)
-D 2003-12-06T22:22:36
+C Make\sthe\sVACUUM\scommand\srun\sout\sof\sthe\sVDBE\slike\sall\sother\scommands.\n(Ticket\s#464).\s\sMake\sthe\sVACUUM\scommand\swork\seven\sif\sthere\sare\sVIEWs\nin\sthe\sSQLITE_MASTER\stable\sthat\scome\sbefore\stables\sthey\sreference.\n(Ticket\s#515)\s(CVS\s1128)
+D 2003-12-07T00:24:35
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -50,7 +50,7 @@ F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
 F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
-F src/sqliteInt.h 882aa33ee2aed7685449b899d917a316b9cc2c44
+F src/sqliteInt.h f8549cf426920e43efb105a08484768cdb73c808
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
 F src/tclsqlite.c 3efac6b5861ac149c41251d4d4c420c94be5ba6a
 F src/test1.c f9d5816610f7ec4168ab7b098d5207a5708712b6
@@ -61,8 +61,8 @@ F src/tokenize.c d10e7f0b4d8634f6f37237b4e65314e3e5a3a34b
 F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c cc95dd360fac09a059b2ab98e4c333d1a2308db5
-F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
-F src/vdbe.c d61f720a836a7c948356105b87b2512a9484cb3b
+F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
+F src/vdbe.c b40c2a7002c0c8e5a226666622f487e241dadf36
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 2824bf88895b901b3a8c9e44527c67530e1c0dcb
 F src/vdbeaux.c 877ae44ab42f43d38e8cd989087627508a4c98dd
@@ -70,7 +70,7 @@ F src/where.c d01a3506f3c1e3a205028068c8a14d713872c633
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
 F test/attach2.test d0105f4e8b1debf0ac25ed7df986b5854620e172
-F test/auth.test b7d6bdeffa804b96b7bcac2712e5f71ce014a1b8
+F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
@@ -135,7 +135,7 @@ F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 2ef5a6655f2966f0aef733a9f4495b3fe8e16809
-F test/vacuum.test a58776ef529e9bc21980ac120d6859d4ee34b578
+F test/vacuum.test 9447f1d7633b083c9b97f807fa05f9b27ada7503
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 656c90387a4a714b4f31040ece9b0e15e30934af
-R 9ba0dba1a5b0b6a0c4f493ffeeb808ce
+P ac428c8d4a731678cc26cf198689814a8a56d141
+R de0e25f496472fda102deb07f0a3f4c2
 U drh
-Z 4d2d90a1bb0f4a7af58cf43ec43a116f
+Z da3da18ef1bdac6a224ddd572daad46d

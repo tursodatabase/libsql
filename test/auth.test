@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.11 2003/11/27 00:49:23 drh Exp $
+# $Id: auth.test,v 1.12 2003/12/07 00:24:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1771,7 +1771,7 @@ do_test auth-2.10 {
   }
   catchsql {SELECT ROWID,b,c FROM t2}
 } {1 {illegal return value (1) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
-do_test auth-2.11 {
+do_test auth-2.11.1 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg2=="a"} {
       return SQLITE_IGNORE
@@ -1780,7 +1780,7 @@ do_test auth-2.11 {
   }
   catchsql {SELECT * FROM t2, t3}
 } {0 {{} 2 33 44 55 66 {} 8 9 44 55 66}}
-do_test auth-2.11 {
+do_test auth-2.11.2 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg2=="x"} {
       return SQLITE_IGNORE
