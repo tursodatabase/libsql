@@ -1241,11 +1241,9 @@ int sqlite3VdbeSerialGet(
     if( serial_type==5 ){
       pMem->flags = MEM_Real;
       pMem->r = *(double*)&v;
-      pMem->type = SQLITE3_FLOAT;
     }else{
       pMem->flags = MEM_Int;
       pMem->i = *(i64*)&v;
-      pMem->type = SQLITE3_INTEGER;
     }
   }else if( serial_type>=12 ){
     /* String or blob */
@@ -1261,7 +1259,6 @@ int sqlite3VdbeSerialGet(
     assert( serial_type==6 );
     assert( len==0 );
     pMem->flags = MEM_Null;
-    pMem->type = SQLITE3_NULL;
   }
   return len;
 }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.347 2004/05/29 11:24:50 danielk1977 Exp $
+** $Id: vdbe.c,v 1.348 2004/05/30 02:14:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -134,7 +134,8 @@ int sqlite3_interrupt_count = 0;
 ** stack variables.  This routine sets the pMem->enc and pMem->type
 ** variables used by the sqlite3_value_*() routines.
 */
-static void StoreTypeInfo(Mem *pMem, u8 db_enc){
+#define storeTypeInfo(A,B) _storeTypeInfo(A)
+static void _storeTypeInfo(Mem *pMem){
   int flags = pMem->flags;
   if( flags & MEM_Null ){
     pMem->type = SQLITE3_NULL;
@@ -669,7 +670,6 @@ case OP_Integer: {
   if( pOp->p3==0 ){
     pTos->flags = MEM_Int;
     pTos->i = pOp->p1;
-    pTos->type = SQLITE3_INTEGER;
   }else{
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
     pTos->z = pOp->p3;
@@ -994,7 +994,7 @@ case OP_Callback: {
   for(i=0; i<pOp->p1; i++){
     Mem *pVal = &pTos[0-i];
     sqlite3VdbeMemNulTerminate(pVal);
-    StoreTypeInfo(pVal, db->enc);
+    storeTypeInfo(pVal, db->enc);
   }
 
   p->resOnStack = 1;
@@ -1093,7 +1093,6 @@ case OP_Concat: {
     pTos->n = j;
     pTos->flags = MEM_Str|MEM_Dyn|MEM_Term;
     pTos->enc = db->enc;
-    pTos->type = SQLITE3_TEXT;
     pTos->z = zNew;
   }
   break;
@@ -1242,7 +1241,7 @@ case OP_Function: {
   pArg = &pTos[1-n];
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
-    StoreTypeInfo(pArg, db->enc);
+    storeTypeInfo(pArg, db->enc);
   }
 
   ctx.pFunc = (FuncDef*)pOp->p3;
@@ -1432,7 +1431,6 @@ case OP_MustBeInt: {
   }
   Release(pTos);
   pTos->flags = MEM_Int;
-  pTos->type = SQLITE3_INTEGER;
   break;
 
 mismatch:
@@ -4098,7 +4096,6 @@ case OP_SortNext: {
     pTos->n = pSorter->nData;
     pTos->flags = MEM_Blob|MEM_Dyn|MEM_Term;
     pTos->enc = 0;
-    pTos->type = SQLITE3_BLOB;
     sqliteFree(pSorter->zKey);
     sqliteFree(pSorter);
   }else{
@@ -4270,7 +4267,7 @@ case OP_AggFunc: {
 
   for(i=0; i<n; i++, pRec++){
     apVal[i] = pRec;
-    StoreTypeInfo(pRec, db->enc);
+    storeTypeInfo(pRec, db->enc);
   }
   i = pTos->i;
   assert( i>=0 && i<p->agg.nMem );

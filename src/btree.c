@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.149 2004/05/29 21:46:49 drh Exp $
+** $Id: btree.c,v 1.150 2004/05/30 02:14:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1505,14 +1505,13 @@ static void releaseTempCursor(BtCursor *pCur){
 ** Using this cache reduces the number of calls to parseCell().
 */
 static void getCellInfo(BtCursor *pCur){
-  MemPage *pPage = pCur->pPage;
   if( !pCur->infoValid ){
-    parseCell(pPage, pCur->idx, &pCur->info);
+    parseCell(pCur->pPage, pCur->idx, &pCur->info);
     pCur->infoValid = 1;
   }else{
 #ifndef NDEBUG
     CellInfo info;
-    parseCell(pPage, pCur->idx, &info);
+    parseCell(pCur->pPage, pCur->idx, &info);
     assert( memcmp(&info, &pCur->info, sizeof(info))==0 );
 #endif
   }
