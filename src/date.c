@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.16.2.1 2004/07/18 22:25:15 drh Exp $
+** $Id: date.c,v 1.16.2.2 2004/07/20 00:40:01 drh Exp $
 **
 ** NOTES:
 **
@@ -849,19 +849,18 @@ static void strftimeFunc(sqlite_func *context, int argc, const char **argv){
 ** external linkage.
 */
 void sqliteRegisterDateTimeFunctions(sqlite *db){
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
   static struct {
      char *zName;
      int nArg;
      int dataType;
      void (*xFunc)(sqlite_func*,int,const char**);
   } aFuncs[] = {
-#ifndef SQLITE_OMIT_DATETIME_FUNCS
     { "julianday", -1, SQLITE_NUMERIC, juliandayFunc   },
     { "date",      -1, SQLITE_TEXT,    dateFunc        },
     { "time",      -1, SQLITE_TEXT,    timeFunc        },
     { "datetime",  -1, SQLITE_TEXT,    datetimeFunc    },
     { "strftime",  -1, SQLITE_TEXT,    strftimeFunc    },
-#endif
   };
   int i;
 
@@ -872,4 +871,5 @@ void sqliteRegisterDateTimeFunctions(sqlite *db){
       sqlite_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
     }
   }
+#endif
 }

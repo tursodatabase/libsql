@@ -1,5 +1,5 @@
-C Correct\shandling\sof\sviews\son\stables\swith\squoted\scolumn\snames.\s\sTicket\s#756.\s(CVS\s1827)
-D 2004-07-20T00:20:47
+C Comment\sout\sall\sof\sdate/time\sfunctions\swith\sSQLITE_OMIT_DATETIME_FUNCS.\nTicket\s#784.\s(CVS\s1829)
+D 2004-07-20T00:40:01
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c af40501eedd7b673ffd5e02f3a4702c76596d64a
 F src/build.c cb1ab5ce737ae6b6fe141e256c5e7c524c78ed68
 F src/copy.c 750e13828c3e4a293123e36aaa7cf0f22466248a
-F src/date.c 6ccb9336f1faef639d52b0aa4d31244d665607fa
+F src/date.c 54befeafe3e2af041c22bcc49fd79f0396b75c4d
 F src/delete.c 82001c74882319f94dab5f6b92a27311b31092ae
 F src/encode.c fc8c51f0b61bc803ccdec092e130bebe762b0a2f
 F src/expr.c 8c3f5603c3e98b1c146d18076ba3e82cdbb59c11
@@ -189,7 +189,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P db5ae13db3edec82dd2ead3b76fc9f89f33b2dc2
-R e16d653d018602be1f19944b4f6597e0
+P ef0d5ebe96b9babe275d62ed6abe95652838de5f
+R cda82a4951d281d09e47e2d6fddf0eeb
 U drh
-Z 9b8e15d2f6d27acf7fe448eb52d58528
+Z 894b83d5da2df546db7a6341fe8948a8
