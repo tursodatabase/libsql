@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.80 2003/01/05 21:41:41 drh Exp $
+** $Id: btree.c,v 1.81 2003/01/24 12:14:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -674,6 +674,22 @@ int sqliteBtreeOpen(
 ){
   Btree *pBt;
   int rc;
+
+  /*
+  ** The following asserts make sure that structures used by the btree are
+  ** the right size.  This is to guard against size changes that result
+  ** when compiling on a different architecture.
+  */
+  assert( sizeof(u32)==4 );
+  assert( sizeof(u16)==2 );
+  assert( sizeof(Pgno)==4 );
+  assert( sizeof(PageHdr)==8 );
+  assert( sizeof(CellHdr)==12 );
+  assert( sizeof(FreeBlk)==4 );
+  assert( sizeof(OverflowPage)==SQLITE_PAGE_SIZE );
+  assert( sizeof(FreelistInfo)==OVERFLOW_SIZE );
+  assert( sizeof(ptr)==sizeof(char*) );
+  assert( sizeof(uptr)==sizeof(ptr) );
 
   pBt = sqliteMalloc( sizeof(*pBt) );
   if( pBt==0 ){

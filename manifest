@@ -1,5 +1,5 @@
-C Minor\srefinements\sto\sthe\spager.\s(CVS\s844)
-D 2003-01-22T01:26:44
+C Add\sasserts\sto\sbtree.c\sthat\scheck\sfor\sthe\scorrect\ssize\sof\svarious\stypedefs\nand\sstructures.\s\sTicket\s#233.\s(CVS\s845)
+D 2003-01-24T12:14:20
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -19,7 +19,7 @@ F publish.sh ce0bf7e235984bc156dc5d1a0c8092db4c8442f3
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/auth.c 9c2db0bc7707f2d2e227f47e3d557b41d44ade75
-F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
+F src/btree.c eb4f430b062500d7533c031097d3ff8824eca3ba
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 0454fd02e163865c82106dd52dec4a4caf908ebf
 F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
@@ -154,7 +154,7 @@ F www/speed.tcl 52759968401d81760fc01f9d3ab6242f6d2a7066
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 61869bb51b981a47d783cc8739833cc0c4733b0a
-R c183df5a3160c5a0bd4aa1d31253edd6
+P 19221dee5fee4c8800cbae309f009964c8d646a2
+R 5f54a128edf3ccd559b45b128151fef3
 U drh
-Z fa8ef383d1b8461b08c239cde8f9cd63
+Z a3694ca5aa529fbe36a1167d1cb0514e
