@@ -1,9 +1,9 @@
-C Initial\schecking\sof\stwo\snew\stest\sfiles:\sformat3.test\sand\smemleak.test.\s(CVS\s735)
-D 2002-08-31T16:52:45
+C Change\sthe\sversion\snumber\sfor\srelease\s2.7.1.\s(CVS\s736)
+D 2002-08-31T17:02:26
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION a8c86d12b1459b66b47ef640f3f0c87822c25901
+F VERSION 32d9c5fea1bc2db8fb2e5e460a166301d0c1a901
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -130,7 +130,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl e76c9fd609326c34cd45cd040b508b0e21908800
-F www/changes.tcl bb15b92cf350b00cd9e6b70ee5d0b2638e563f80
+F www/changes.tcl 8c14e76e382baae613314bd24821ea986fce3abe
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c5e0c6a782aedc4a273aaf8bc2ef60918797e5f1
-R 6ed2ff4a07aa3e2b4804dae71efd75e5
+P 6ffedb90a6478af6548db5298368eeca2b708cdc
+R c5c569997115d1f2c07a9211654c4fdd
 U drh
-Z e73ed8c27fc079694489e23a188ddf17
+Z 91f8cbd799d7775e2646290252521d5a

@@ -25,6 +25,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Aug 31 (2.7.1)} {
+<li>Fix a bug in the ORDER BY logic that was introduced in version 2.7.0</li>
+<li>C-style comments are now accepted by the tokenizer.</li>
+<li>INSERT runs a little faster when the source is a SELECT statement.</li>
+}
+
 chng {2002 Aug 25 (2.7.0)} {
 <li>Make a distinction between numeric and text values when sorting.
     Text values sort according to memcmp().  Numeric values sort in
