@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.39 2005/02/12 00:19:30 drh Exp $
+** $Id: vacuum.c,v 1.40 2005/02/16 03:27:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -211,13 +211,13 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   */
   rc = execExecSql(db, 
       "SELECT 'DELETE FROM vacuum_db.' || quote(name) || ';' "
-      "FROM sqlite_master WHERE name='sqlite_sequence' "
+      "FROM vacuum_db.sqlite_master WHERE name='sqlite_sequence' "
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execExecSql(db, 
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM ' || quote(name) || ';' "
-      "FROM sqlite_master WHERE name=='sqlite_sequence';"
+      "FROM vacuum_db.sqlite_master WHERE name=='sqlite_sequence';"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 

@@ -1,0 +1,42 @@
+# 2005 February 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the VACUUM statement.
+#
+# $Id: vacuum2.test,v 1.1 2005/02/16 03:27:08 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If the VACUUM statement is disabled in the current build, skip all
+# the tests in this file.
+#
+ifcapable {!vacuum} {
+  finish_test
+  return
+}
+if $AUTOVACUUM {
+  finish_test
+  return
+}
+
+# Ticket #1121 - make sure vacuum works if all autoincrement tables
+# have been deleted.
+#
+do_test vacuum2-1.1 {
+  execsql {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY AUTOINCREMENT, y);
+    DROP TABLE t1;
+    VACUUM;
+  }
+} {}
+
+finish_test

@@ -1,5 +1,5 @@
-C Move\sthe\sspecial\sbuilt-in\sSQL\sfunctions\sused\sby\sALTER\sTABLE\sout\sof\sfunc.c\nand\sinto\salter.c.\s(CVS\s2343)
-D 2005-02-15T21:36:18
+C Get\svacuum\sworking\son\sdatabase\sthat\sused\sto\shave\sautoincrement\stables\sbut\r\nwhere\sall\ssuch\stables\shave\sbeen\sdropped.\s\sTicket\s#1121.\s(CVS\s2344)
+D 2005-02-16T03:27:05
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -74,7 +74,7 @@ F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
-F src/vacuum.c ccb34e92fd662b2d975e3c8d8cfd229c9081cb78
+F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
 F src/vdbe.c d9ec62c9f63768b4d4f8513b25aded8faf2de17b
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
@@ -207,6 +207,7 @@ F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test 7669ca789d62c258b678e8aa7a22a57eac10f2cf
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
 F test/vacuum.test 76c4bc4589353d071e81c003a25338d02560474d
+F test/vacuum2.test 5d77e98c458bcdbeecc6327de5107179ba1aa095
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 306cc4342eb03c28de1a92c681836189e03e5af9
 F test/where.test ffb790dfda75d977bae7a1f5830351623f76861b
@@ -272,7 +273,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 90d6573c2631fac92b9e572e9e21698ae2480c9d
-R 384fca8815ea2fd0b9f2d663a9b9c24b
+P dbd11a0c581b447bb2f220a1a185d9fd36933ee3
+R 3e933ca53eeeb55c0d837e7fbde35ff0
 U drh
-Z 4a0adb18d6e3aab9863249bdabd00180
+Z 495b7f43a6bd00411892cdab27def873
