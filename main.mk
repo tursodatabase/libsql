@@ -212,7 +212,6 @@ config.h:
 	rm -f temp.c temp
 
 sqlite.h:	$(TOP)/src/sqlite.h.in 
-	$(BCC) -o temp temp.c
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
             -e s/--ENCODING--/$(ENCODING)/ \
                  $(TOP)/src/sqlite.h.in >sqlite.h

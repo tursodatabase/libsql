@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.19 2002/08/31 18:53:08 drh Exp $
+** $Id: test3.c,v 1.20 2002/11/24 14:52:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -822,7 +822,6 @@ static int btree_payload_size(
   sqliteBtreeDataSize(pCur, &n2);
   sprintf(zBuf, "%d", n1+n2);
   Tcl_AppendResult(interp, zBuf, 0);
-  free(zBuf);
   return SQLITE_OK;
 }
 
