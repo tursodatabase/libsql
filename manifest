@@ -1,5 +1,5 @@
-C better\shandling\sof\sexponential\snotation\s(CVS\s145)
-D 2000-09-14T01:21:10
+C Version\s1.0.5\s(CVS\s495)
+D 2000-09-14T01:25:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -71,7 +71,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 92346e003eba759251d23c296f97a7ad6299f5de
+P ea0e32828f5643eeb00b216a287d14f4826ddf2d
 R d838e77add09f4d92cf328c578007f7b
 U drh
-Z 003a64f816759573cb4ebb770e70d29a
+Z de8fe72d201ddf752c7db67bb8650632
