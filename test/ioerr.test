@@ -15,10 +15,12 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.7 2005/01/08 02:35:44 danielk1977 Exp $
+# $Id: ioerr.test,v 1.8 2005/01/10 12:59:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+set ::AV [execsql {pragma auto_vacuum}]
 
 set ::go 1
 for {set n 1} {$go} {incr n} {
@@ -30,7 +32,7 @@ for {set n 1} {$go} {incr n} {
   # file when the file on disk is only 1 page. The pager layer detects that
   # this has happened and suppresses the error returned by the OS layer.
   #
-  ifcapable default_autovacuum {
+  if {$::AV} {
     if {$n==8} continue
   } 
 
@@ -87,6 +89,7 @@ proc cksum {{db db}} {
 
 set ::go 1
 for {set n 1} {$go} {incr n} {
+  if {$n==24} breakpoint
   do_test ioerr-2.$n.1 {
     set ::sqlite_io_error_pending 0
     db close
@@ -104,6 +107,7 @@ for {set n 1} {$go} {incr n} {
       INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
       INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
       INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
+      INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
       CREATE TABLE t2 AS SELECT * FROM t1;
       CREATE TABLE t3 AS SELECT * FROM t1;
       COMMIT;

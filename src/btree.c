@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.228 2005/01/08 15:43:19 drh Exp $
+** $Id: btree.c,v 1.229 2005/01/10 12:59:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1661,12 +1661,16 @@ static void modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
 }
 
 
+/*
+** Move the open database page pDbPage to location iFreePage in the 
+** database. The pDbPage reference remains valid.
+*/
 static int relocatePage(
-  Btree *pBt, 
-  MemPage *pDbPage,
-  u8 eType,
-  Pgno iPtrPage,
-  Pgno iFreePage
+  Btree *pBt,              /* Btree */
+  MemPage *pDbPage,        /* Open page to move */
+  u8 eType,                /* Pointer map 'type' entry for pDbPage */
+  Pgno iPtrPage,           /* Pointer map 'page-no' entry for pDbPage */
+  Pgno iFreePage           /* The location to move pDbPage to */
 ){
   MemPage *pPtrPage;   /* The page that contains a pointer to pDbPage */
   Pgno iDbPage = pDbPage->pgno;
@@ -5231,13 +5235,23 @@ static int checkTreePage(
       int pc = get2byte(&data[cellStart+i*2]);
       int size = cellSizePtr(pPage, &data[pc]);
       int j;
-      for(j=pc+size-1; j>=pc; j--) hit[j]++;
+      if( (pc+size-1)>=usableSize || pc<0 ){
+        checkAppendMsg(pCheck, 0, 
+            "Corruption detected in cell %d on page %d",i,iPage,0);
+      }else{
+        for(j=pc+size-1; j>=pc; j--) hit[j]++;
+      }
     }
     for(cnt=0, i=get2byte(&data[hdr+1]); i>0 && i<usableSize && cnt<10000; 
            cnt++){
       int size = get2byte(&data[i+2]);
       int j;
-      for(j=i+size-1; j>=i; j--) hit[j]++;
+      if( (i+size-1)>=usableSize || i<0 ){
+        checkAppendMsg(pCheck, 0,  
+            "Corruption detected in cell %d on page %d",i,iPage,0);
+      }else{
+        for(j=i+size-1; j>=i; j--) hit[j]++;
+      }
       i = get2byte(&data[i]);
     }
     for(i=cnt=0; i<usableSize; i++){

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.436 2005/01/07 01:56:17 danielk1977 Exp $
+** $Id: vdbe.c,v 1.437 2005/01/10 12:59:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1879,7 +1879,10 @@ case OP_Column: {
     zData = &zRec[aOffset[p2]];
   }else{
     len = sqlite3VdbeSerialTypeLen(aType[p2]);
-    sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
+    rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     zData = sMem.z;
   }
   sqlite3VdbeSerialGet(zData, aType[p2], pTos);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.33 2004/11/10 15:27:38 danielk1977 Exp $
+# $Id: btree.test,v 1.34 2005/01/10 12:59:53 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -1032,6 +1032,31 @@ do_test btree-15.99 {
   lindex [btree_pager_stats $::b1] 1
 } {0}
 btree_pager_ref_dump $::b1
+
+# Miscellaneous tests.
+#
+# btree-16.1 - Check that a statement cannot be started if a transaction is not
+#              active.
+do_test btree-16.1 {
+  catch {btree_begin_statement $::b1} msg
+  set msg
+} SQLITE_ERROR
+
+do_test btree-16.2 {
+  btree_begin_transaction $::b1
+  set ::c1 [btree_cursor $::b1 2 1]
+  btree_insert $::c1 1 helloworld
+  btree_close_cursor $::c1
+  btree_commit $::b1
+} {}
+do_test btree-16.3 {
+  set ::c1 [btree_cursor $::b1 2 1]
+  btree_first $::c1
+} 0
+do_test btree-16.4 {
+  catch {btree_data $::c1 [expr [btree_payload_size $::c1] + 10]} msg
+  set msg
+} SQLITE_ERROR
 
 do_test btree-99.1 {
   btree_close $::b1

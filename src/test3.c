@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.58 2005/01/08 12:42:39 danielk1977 Exp $
+** $Id: test3.c,v 1.59 2005/01/10 12:59:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1020,7 +1020,7 @@ static int btree_key(
 }
 
 /*
-** Usage:   btree_data ID
+** Usage:   btree_data ID ?N?
 **
 ** Return the data for the entry at which the cursor is pointing.
 */
@@ -1035,13 +1035,17 @@ static int btree_data(
   u32 n;
   char *zBuf;
 
-  if( argc!=2 ){
+  if( argc!=2 && argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " ID\"", 0);
     return TCL_ERROR;
   }
   pCur = sqlite3TextToPtr(argv[1]);
-  sqlite3BtreeDataSize(pCur, &n);
+  if( argc==2 ){
+    sqlite3BtreeDataSize(pCur, &n);
+  }else{
+    n = atoi(argv[2]);
+  }
   zBuf = malloc( n+1 );
   rc = sqlite3BtreeData(pCur, 0, n, zBuf);
   if( rc ){
