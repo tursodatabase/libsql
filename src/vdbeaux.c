@@ -746,9 +746,10 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
           ctx.isError = 0;
           (*pAgg->apFunc[i]->xFinalize)(&ctx);
           pMem->z = ctx.pAgg;
-          if( pMem->z!=0 && pMem->z!=pMem->z ){
+          if( pMem->z!=0 && pMem->z!=pMem->zShort ){
             sqliteFree(pMem->z);
           }
+          sqlite3VdbeMemRelease(&ctx.s);
         }else{
           sqlite3VdbeMemRelease(pMem);
         }

@@ -14,11 +14,28 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.101 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: util.c,v 1.102 2004/06/16 07:45:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
+
+#if SQLITE_DEBUG>2 && defined(__GLIBC__)
+#include <execinfo.h>
+void print_stack_trace(){
+  void *bt[30];
+  int i;
+  int n = backtrace(bt, 30);
+
+  fprintf(stderr, "STACK: ");
+  for(i=0; i<n;i++){
+    fprintf(stderr, "%p ", bt[i]);
+  }
+  fprintf(stderr, "\n");
+}
+#else
+#define print_stack_trace()
+#endif
 
 /*
 ** If malloc() ever fails, this global variable gets set to 1.
@@ -82,6 +99,7 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   p = &pi[N_GUARD+1];
   memset(p, bZero==0, n);
 #if SQLITE_DEBUG>1
+  print_stack_trace();
   fprintf(stderr,"%06d malloc %d bytes at 0x%x from %s:%d\n",
       ++memcnt, n, (int)p, zFile,line);
 #endif
@@ -189,6 +207,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   memset(oldPi, 0xab, (oldK+N_GUARD+2)*sizeof(int));
   free(oldPi);
 #if SQLITE_DEBUG>1
+  print_stack_trace();
   fprintf(stderr,"%06d realloc %d to %d bytes at 0x%x to 0x%x at %s:%d\n",
     ++memcnt, oldN, n, (int)oldP, (int)p, zFile, line);
 #endif

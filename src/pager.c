@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.128 2004/06/15 11:40:09 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.129 2004/06/16 07:45:24 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -459,6 +459,7 @@ static void pager_reset(Pager *pPager){
 */
 static int pager_unwritelock(Pager *pPager){
   PgHdr *pPg;
+  assert( !pPager->memDb );
   if( pPager->state<PAGER_RESERVED ){
     return SQLITE_OK;
   }
@@ -1354,6 +1355,14 @@ int sqlite3pager_close(Pager *pPager){
     }
   }
   for(pPg=pPager->pAll; pPg; pPg=pNext){
+#ifndef NDEBUG
+    if( pPager->memDb ){
+      PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+      assert( !pPg->alwaysRollback );
+      assert( !pHist->pOrig );
+      assert( !pHist->pStmt );
+    }
+#endif
     pNext = pPg->pNextAll;
     sqliteFree(pPg);
   }
@@ -1939,6 +1948,7 @@ int sqlite3pager_unref(void *pData){
 */
 static int pager_open_journal(Pager *pPager){
   int rc;
+  assert( !pPager->memDb );
   assert( pPager->state>=PAGER_RESERVED );
   assert( pPager->journalOpen==0 );
   assert( pPager->useJournal );
@@ -2278,6 +2288,8 @@ int sqlite3pager_overwrite(Pager *pPager, Pgno pgno, void *pData){
 void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
 
+  if( pPager->memDb ) return;
+
   pPg = pager_lookup(pPager, pgno);
   pPg->alwaysRollback = 1;
   if( pPg && pPg->dirty ){
@@ -2374,6 +2386,14 @@ int sqlite3pager_commit(Pager *pPager){
       pPg->pPrevStmt = pPg->pNextStmt = 0;
       pPg = pPg->pDirty;
     }
+#ifndef NDEBUG
+    for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+      PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+      assert( !pPg->alwaysRollback );
+      assert( !pHist->pOrig );
+      assert( !pHist->pStmt );
+    }
+#endif
     pPager->pStmt = 0;
     pPager->state = PAGER_SHARED;
     return SQLITE_OK;
@@ -2437,7 +2457,13 @@ int sqlite3pager_rollback(Pager *pPager){
     PgHdr *p;
     for(p=pPager->pAll; p; p=p->pNextAll){
       PgHistory *pHist;
-      if( !p->alwaysRollback && !p->dirty ) continue;
+      assert( !p->alwaysRollback );
+      if( !p->dirty ){
+        assert( !((PgHistory *)PGHDR_TO_HIST(p, pPager))->pOrig );
+        assert( !((PgHistory *)PGHDR_TO_HIST(p, pPager))->pStmt );
+        continue;
+      }
+
       pHist = PGHDR_TO_HIST(p, pPager);
       if( pHist->pOrig ){
         memcpy(PGHDR_TO_DATA(p), pHist->pOrig, pPager->pageSize);
