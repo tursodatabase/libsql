@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.114 2002/09/25 19:04:07 drh Exp $
+** $Id: build.c,v 1.115 2002/10/20 16:00:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2305,12 +2305,13 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
       sqliteViewGetColumnNames(pParse, pTab);
       for(i=0; i<pTab->nCol; i++){
+        char *zType;
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zName, P3_STATIC);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, 
-           pTab->aCol[i].zType ? pTab->aCol[i].zType : "text", P3_STATIC);
+           pTab->aCol[i].zType ? pTab->aCol[i].zType : "numeric", P3_STATIC);
         sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);

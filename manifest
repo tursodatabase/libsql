@@ -1,5 +1,5 @@
-C Export\sthe\ssqlite_function_type\sfunction\sfrom\swindows\sDLLs.\s\sTicket\s#173.\s(CVS\s766)
-D 2002-10-20T15:55:02
+C The\s"table_info"\spragma\sreports\sunspecified\scolumn\stypes\sas\s"numeric"\sinstead\nof\s"text".\s\sFix\sfor\sticket\s#174.\s(CVS\s767)
+D 2002-10-20T16:00:28
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,7 +20,7 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/btree.c 8024b87635c2adf133f153f1bb595125ec1c7d7b
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
-F src/build.c 37e19378206b043ac6a0b7d53cf0726549a0bbdb
+F src/build.c 1559232f6878fd7f2b1c79aede0f7a33ececab07
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c e1327eb020a68ff7c49382e121ad4b71b3441b2a
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3ef2925650bfbeb4ee5dbd0aaf8e606fc4cd2be1
-R 6b6ab36ea62bd949a1c2d58f016b6b09
+P d5470dfe102ef9b1dac3b15a2f5cc225e3c26129
+R 7ecb20627c80bbfd79b6dbcc45bd92d1
 U drh
-Z 186adb525ff47dfccbb825db0d9dd635
+Z fbad8ba3d35f7e19e8e9a6b0f6544aa0
