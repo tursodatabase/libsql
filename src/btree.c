@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.90 2003/04/25 03:13:25 drh Exp $
+** $Id: btree.c,v 1.91 2003/04/25 13:22:52 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3490,10 +3490,34 @@ static const char *fileBtreeGetFilename(Btree *pBt){
 }
 
 /*
-** Change the name of the underlying database file.
+** Copy the complete content of pBtFrom into pBtTo.  A transaction
+** must be active for both files.
+**
+** The size of file pBtFrom may be reduced by this operation.
+** If anything goes wrong, the transaction on pBtFrom is rolled back.
 */
-static int fileBtreeChangeFilename(Btree *pBt, const char *zNew){
-  return sqlitepager_rename(pBt->pPager, zNew);
+static int fileBtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
+  int rc = SQLITE_OK;
+  Pgno i, nPage;
+
+  if( !pBtTo->inTrans || !pBtFrom->inTrans ) return SQLITE_ERROR;
+  if( pBtTo->needSwab!=pBtFrom->needSwab ) return SQLITE_ERROR;
+  if( pBtTo->pCursor ) return SQLITE_BUSY;
+  memcpy(pBtTo->page1, pBtFrom->page1, SQLITE_PAGE_SIZE);
+  sqlitepager_overwrite(pBtTo->pPager, 1, pBtFrom->page1);
+  nPage = sqlitepager_pagecount(pBtFrom->pPager);
+  for(i=2; i<=nPage; i++){
+    void *pPage;
+    rc = sqlitepager_get(pBtFrom->pPager, i, &pPage);
+    if( rc ) break;
+    sqlitepager_overwrite(pBtTo->pPager, i, pPage);
+    sqlitepager_unref(pPage);
+  }
+  if( !rc ) rc = sqlitepager_truncate(pBtTo->pPager, nPage);
+  if( rc ){
+    fileBtreeRollback(pBtTo);
+  }
+  return rc;  
 }
 
 /*
@@ -3521,7 +3545,7 @@ static BtOps sqliteBtreeOps = {
     fileBtreeUpdateMeta,
     fileBtreeIntegrityCheck,
     fileBtreeGetFilename,
-    fileBtreeChangeFilename,
+    fileBtreeCopyFile,
 #ifdef SQLITE_TEST
     fileBtreePageDump,
     fileBtreePager

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.81 2003/04/06 20:52:32 drh Exp $
+** @(#) $Id: pager.c,v 1.82 2003/04/25 13:22:53 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -925,6 +925,28 @@ int sqlitepager_pagecount(Pager *pPager){
     pPager->dbSize = n;
   }
   return n;
+}
+
+/*
+** Forward declaration
+*/
+static int syncAllPages(Pager*);
+
+/*
+** Truncate the file to the number of pages specified.
+*/
+int sqlitepager_truncate(Pager *pPager, Pgno nPage){
+  int rc;
+  if( pPager->dbSize<0 ) sqlitepager_pagecount(pPager);
+  if( nPage>=pPager->dbSize ){
+    return SQLITE_OK;
+  }
+  syncAllPages(pPager);
+  rc = sqliteOsTruncate(&pPager->fd, SQLITE_PAGE_SIZE*(off_t)nPage);
+  if( rc==SQLITE_OK ){
+    pPager->dbSize = nPage;
+  }
+  return rc;
 }
 
 /*
@@ -2035,43 +2057,6 @@ int sqlitepager_ckpt_rollback(Pager *pPager){
 */
 const char *sqlitepager_filename(Pager *pPager){
   return pPager->zFilename;
-}
-
-/*
-** Rename the database file
-*/
-int sqlitepager_rename(Pager *pPager, const char *zNewName){
-  char *zNew;
-  char *zJournal;
-  int nName;
-  int rc;
-
-  nName = strlen(zNewName);
-  zNew = sqliteMalloc( nName*2 + 30 );
-  if( zNew==0 ){
-    return SQLITE_NOMEM;
-  }
-  memcpy(zNew, zNewName, nName+1);
-  zJournal = &zNew[nName+1];
-  memcpy(zJournal, zNew, nName);
-  strcpy(&zJournal[nName], "-journal");
-  if( pPager->journalOpen ){
-    rc = sqliteOsFileRename(pPager->zJournal, zJournal);
-    if( rc ){
-      sqliteFree(zNew);
-      return rc;
-    }
-  }
-  rc = sqliteOsFileRename(pPager->zFilename, zNew);
-  if( rc ){
-    sqliteFree(zNew);
-    return rc;
-  }
-  if( pPager->zFilename!=(char*)&pPager[1] ){
-    sqliteFree(pPager->zFilename);
-  }
-  pPager->zFilename = zNew;
-  return SQLITE_OK;
 }
 
 #ifdef SQLITE_TEST

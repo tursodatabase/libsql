@@ -282,6 +282,7 @@ int sqliteOsFileExists(const char *zFilename){
 }
 
 
+#if 0 /* NOT USED */
 /*
 ** Change the name of an existing file.
 */
@@ -304,7 +305,7 @@ int sqliteOsFileRename(const char *zOldName, const char *zNewName){
   return SQLITE_ERROR;
 #endif
 }
-
+#endif /* NOT USED */
 
 /*
 ** Attempt to open a file for both reading and writing.  If that

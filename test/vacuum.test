@@ -11,23 +11,22 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.8 2003/04/25 02:43:08 drh Exp $
+# $Id: vacuum.test,v 1.9 2003/04/25 13:22:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-proc cksum {filename} {
-  set txt [db eval {SELECT name, type, sql FROM sqlite_master}]\n
-  foreach tbl [db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
-    append txt [db eval "SELECT * FROM $tbl"]\n
+proc cksum {{db db}} {
+  set txt [$db eval {SELECT name, type, sql FROM sqlite_master}]\n
+  foreach tbl [$db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    append txt [$db eval "SELECT * FROM $tbl"]\n
   }
   foreach prag {default_synchronous default_cache_size} {
-    append txt $prag-[db eval "PRAGMA $prag"]\n
+    append txt $prag-[$db eval "PRAGMA $prag"]\n
   }
-  # set fd [open $filename w]
-  # puts $fd $txt
-  # close $fd
-  return [string length $txt]-[md5 $txt]
+  set cksum [string length $txt]-[md5 $txt]
+  puts $cksum-[file size test.db]
+  return $cksum
 }
 
 do_test vacuum-1.1 {
@@ -49,14 +48,14 @@ do_test vacuum-1.1 {
     DROP TABLE t2;
   }
   set ::size1 [file size test.db]
-  set ::cksum [cksum vacuum1.txt]
+  set ::cksum [cksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.2 {
   execsql {
     VACUUM;
   }
-  cksum vacuum2.txt
+  cksum
 } $cksum
 do_test vacuum-1.3 {
   expr {[file size test.db]<$::size1}
@@ -74,14 +73,14 @@ do_test vacuum-1.4 {
     DROP TABLE t2;
   }
   set ::size1 [file size test.db]
-  set ::cksum [cksum vacuum3.txt]
+  set ::cksum [cksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.5 {
   execsql {
     VACUUM;
   }
-  cksum vacuum4.txt
+  cksum
 } $cksum
 do_test vacuum-1.6 {
   expr {[file size test.db]<$::size1}
@@ -94,6 +93,34 @@ do_test vacuum-2.1 {
     COMMIT;
   }
 } {1 {cannot VACUUM from within a transaction}}
-execsql COMMIT
+catch {db eval COMMIT}
+do_test vacuum-2.2 {
+  sqlite db2 test.db
+  execsql {
+    BEGIN;
+    CREATE TABLE t4 AS SELECT * FROM t1;
+    CREATE TABLE t5 AS SELECT * FROM t1;
+    COMMIT;
+    DROP TABLE t4;
+    DROP TABLE t5;
+  } db2
+  set ::cksum [cksum db2]
+  catchsql {
+    VACUUM
+  }
+} {1 {database schema has changed}}
+do_test vacuum-2.3 {
+  execsql {
+    VACUUM;
+  }
+  cksum
+} $cksum
+do_test vacuum-2.4 {
+  catch {db2 eval {SELECT count(*) FROM sqlite_master}}
+  cksum db2
+} $cksum
+
+
+catch {db2 close}
 
 # finish_test

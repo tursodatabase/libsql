@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.4 2003/04/25 02:43:08 drh Exp $
+** $Id: vacuum.c,v 1.5 2003/04/25 13:22:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -209,14 +209,13 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   const char *zFilename;  /* full pathname of the database file */
   int nFilename;          /* number of characters  in zFilename[] */
   char *zTemp = 0;        /* a temporary file in same directory as zFilename */
-  char *zTemp2;           /* Another temp file in the same directory */
   sqlite *dbNew = 0;      /* The new vacuumed database */
   sqlite *db;             /* The original database */
-  int rc, i;
-  char *zErrMsg = 0;
-  char *zSql = 0;
-  int safety = 0;
-  vacuumStruct sVac;
+  int rc = SQLITE_OK;     /* Return code from service routines */
+  int i;                  /* Loop counter */
+  char *zErrMsg = 0;      /* Error messages stored here */
+  int safety = 0;         /* TRUE if safety is off */
+  vacuumStruct sVac;      /* Information passed to callbacks */
 
   /* These are all of the pragmas that need to be transferred over
   ** to the new database */
@@ -248,20 +247,16 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
     return;
   }
   nFilename = strlen(zFilename);
-  zTemp = sqliteMalloc( 2*(nFilename+40) );
+  zTemp = sqliteMalloc( nFilename+100 );
   if( zTemp==0 ) return;
-  zTemp2 = &zTemp[nFilename+40];
   strcpy(zTemp, zFilename);
-  strcpy(zTemp2, zFilename);
   for(i=0; i<10; i++){
     zTemp[nFilename] = '-';
     randomName(&zTemp[nFilename+1]);
-    zTemp2[nFilename] = '-';
-    randomName(&zTemp2[nFilename+1]);
-    if( !sqliteOsFileExists(zTemp) && !sqliteOsFileExists(zTemp2) ) break;
+    if( !sqliteOsFileExists(zTemp) ) break;
   }
   if( i>=10 ){
-    sqliteErrorMsg(pParse, "unable to create a temporary database files "
+    sqliteErrorMsg(pParse, "unable to create a temporary database file "
        "in the same directory as the original database");
     goto end_of_vacuum;
   }
@@ -279,7 +274,9 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   }
   safety = 1;
   if( execsql(pParse, db, "BEGIN") ) goto end_of_vacuum;
-  if( execsql(pParse, dbNew, "BEGIN") ) goto end_of_vacuum;
+  if( execsql(pParse, dbNew, "PRAGMA synchronous=off; BEGIN") ){
+    goto end_of_vacuum;
+  }
   sVac.dbOld = db;
   sVac.dbNew = dbNew;
   sVac.pParse = pParse;
@@ -291,55 +288,33 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
     rc = sqlite_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
     if( rc ) goto vacuum_error;
   }
-  rc = sqlite_exec(db, "SELECT type, name, sql FROM sqlite_master "
-           "WHERE sql NOT NULL", vacuumCallback1, &sVac, &zErrMsg);
-  if( rc ) goto vacuum_error;
-
-  if( sqliteOsFileRename(zFilename, zTemp2) ){
-    sqliteErrorMsg(pParse, "unable to rename database file");
+  if( rc==SQLITE_OK ){
+    rc = sqlite_exec(db, "SELECT type, name, sql FROM sqlite_master "
+             "WHERE sql NOT NULL", vacuumCallback1, &sVac, &zErrMsg);
+  }
+  if( rc ){
+    if( pParse->zErrMsg==0 ){
+      sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
+    }
     goto end_of_vacuum;
   }
-  if( sqliteOsFileRename(zTemp, zFilename) ){
-    sqliteOsFileRename(zTemp2, zFilename);
-    sqliteErrorMsg(pParse, "unable to rename database file");
-    goto end_of_vacuum;
-  }
-  if( execsql(pParse, dbNew, "COMMIT;") ){
-    sqliteOsDelete(zFilename);
-    sqliteOsFileRename(zTemp2, zFilename);
-    goto end_of_vacuum;
-  }
-  execsql(pParse, db, "COMMIT;");  /* Nothing was written so its gotta work */
-  sqlite_close(dbNew);
-  dbNew = 0;
-  if( sqliteOsDelete(zTemp2) ){
-    sqliteErrorMsg(pParse, "unable to delete old database: %s", zTemp2);
-  }
-  sqliteBtreeClose(db->aDb[0].pBt);
-  zTemp2[nFilename] = 0;
-  if( sqliteBtreeOpen(zTemp2, 0, MAX_PAGES, &db->aDb[0].pBt) ){
-     sqliteErrorMsg(pParse, "unable to reopen database after vacuuming");
-  }
+  rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
+  sqlite_exec(db, "COMMIT", 0, 0, 0);
   sqliteResetInternalSchema(db, 0);
 
 end_of_vacuum:
   sqlite_exec(db, "COMMIT", 0, 0, 0);
-  if( safety) {
+  if( safety ) {
     sqliteSafetyOn(db);
   }
   if( dbNew ) sqlite_close(dbNew);
   sqliteOsDelete(zTemp);
   sqliteFree(zTemp);
-  sqliteFree(zSql);
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
   if( zErrMsg ) sqlite_freemem(zErrMsg);
   return;
 
 vacuum_error:
-  if( pParse->zErrMsg==0 ){
-    sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
-  }
-  goto end_of_vacuum;
 #endif
 }
