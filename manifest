@@ -1,5 +1,5 @@
-C add\ssqlite3_exec\sto\sdll\sexports\s(CVS\s1683)
-D 2004-06-24T14:43:57
+C add\sall\ssqlite3_\sfunctions\sin\scapi\sreference\sto\sdll\sexports\s(CVS\s1684)
+D 2004-06-24T15:09:45
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F publish.sh 4193d9022fb7cf9beecd313bed3d1d68b8386fbe
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
-F sqlite3.def 72b74fb742699c3071b683c301f196e9f6dc697c
+F sqlite3.def 26f4e7b0a3fbaa55701e020fdec429f1594e2866
 F src/attach.c 05102e2e8ac43ce639d07b47a99c7772a62420e6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c 0591368af031a0ecc4620140dfdaa177b82885a1
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 68c90d16b482a388e73ac1e7535bd0183d6a3c1a
-R 1cc2bb5b0a57e39325a69583b5f0e9ad
+P 6c6a84b5641f676d2bd1791863c1be849fbfbee4
+R 43f46ba6948f2e628c3bf85b1531987c
 U dougcurrie
-Z b770b88ac589364666f47c5a5a45dfd8
+Z 198e3137d2a170c09621256ad6052ddf
