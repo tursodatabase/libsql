@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.164.2.1 2004/06/19 04:23:25 danielk1977 Exp $
+** $Id: main.c,v 1.164.2.2 2004/06/26 14:40:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -873,7 +873,7 @@ static int sqliteDefaultBusyCallback(
   static const short int totals[] =
      { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228, 287};
 # define NDELAY (sizeof(delays)/sizeof(delays[0]))
-  int timeout = (int)Timeout;
+  int timeout = (int)(long)Timeout;
   int delay, prior;
 
   if( count <= NDELAY ){
@@ -890,7 +890,7 @@ static int sqliteDefaultBusyCallback(
   sqliteOsSleep(delay);
   return 1;
 #else
-  int timeout = (int)Timeout;
+  int timeout = (int)(long)Timeout;
   if( (count+1)*1000 > timeout ){
     return 0;
   }
@@ -943,7 +943,7 @@ void sqlite_progress_handler(
 */
 void sqlite_busy_timeout(sqlite *db, int ms){
   if( ms>0 ){
-    sqlite_busy_handler(db, sqliteDefaultBusyCallback, (void*)ms);
+    sqlite_busy_handler(db, sqliteDefaultBusyCallback, (void*)(long)ms);
   }else{
     sqlite_busy_handler(db, 0, 0);
   }

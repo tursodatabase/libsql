@@ -464,6 +464,11 @@ int sqliteOsOpenReadWrite(
   id->dirfd = -1;
   id->fd = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
   if( id->fd<0 ){
+#ifdef EISDIR
+    if( errno==EISDIR ){
+      return SQLITE_CANTOPEN;
+    }
+#endif
     id->fd = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
     if( id->fd<0 ){
       return SQLITE_CANTOPEN; 

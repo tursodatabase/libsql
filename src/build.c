@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.176 2004/04/23 17:04:44 drh Exp $
+** $Id: build.c,v 1.176.2.1 2004/06/26 14:40:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1034,7 +1034,7 @@ void sqliteCreateView(
     sEnd.z += sEnd.n;
   }
   sEnd.n = 0;
-  n = ((int)sEnd.z) - (int)pBegin->z;
+  n = sEnd.z - pBegin->z;
   z = pBegin->z;
   while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
   sEnd.z = &z[n-1];
