@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.9 2004/06/16 03:02:04 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.10 2004/06/18 11:29:36 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -26,6 +26,7 @@ proc Product {pattern desc} {
     puts "<td valign=\"top\">[string trim $d2]</td></tr>"
   }
 }
+cd doc
 
 proc Heading {title} {
   puts "<tr><td colspan=4><big><b>$title</b></big></td></tr>"
@@ -50,7 +51,6 @@ Product sqlite-VERSION.so.gz {
   <b>tclsqlite.so.gz</b> but without the TCL bindings.
 }
 
-cd doc
 Product sqlite-devel-VERSION-1.i386.rpm {
   RPM containing documentation, header files, and static library for
   SQLite version VERSION.
@@ -58,6 +58,11 @@ Product sqlite-devel-VERSION-1.i386.rpm {
 Product sqlite-VERSION-1.i386.rpm {
   RPM containing shared libraries and the <b>sqlite</b> command-line
   program for SQLite version VERSION.
+}
+
+Product sqlite_analyzer-VERSION.bin.gz {
+  An analysis program for database files generated using SQLite version
+  2.8.14 and earlier.
 }
 
 Heading {Precompiled Binaries For Windows}
@@ -75,6 +80,12 @@ Product sqlitedll-VERSION.zip {
   This is a DLL of the SQLite library without the TCL bindings.
   The only external dependency is MSVCRT.DLL.
 }
+
+Product sqlite_analyzer-VERSION.zip {
+  An analysis program for database files generated using SQLite version
+  VERSION.
+}
+
 
 Heading {Source Code}
 

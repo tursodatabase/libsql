@@ -1,9 +1,9 @@
-C Fix\stypos\sand\sminor\serrors\sin\slang.tcl.\s(CVS\s1616)
-D 2004-06-18T11:25:21
-F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
+C Update\sthe\sMakefile.in,\sversion\snumber,\schange\slog,\setc\sfor\sthe\s3.0.0\nrelease.\s(CVS\s1617)
+D 2004-06-18T11:29:36
+F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 4490ff094970c0e36eff0cbe2adcdb3a701f6ad6
+F VERSION 8c6981d7f982c3e2986fda2f34282264a4db344c
 F aclocal.m4 7daea4c35e88de30d5a3f6f7a2ab99720e803bbd
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -195,7 +195,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
 F www/capi3.tcl 9e6a4b21f464d84b385dd5e78292880fc74a47ab
 F www/capi3ref.tcl 68a03fa5c15f01d04fbb073f8153078f1ba6f672
-F www/changes.tcl cbe942607b2b9e5dc995395f37042dbb5a629c7f
+F www/changes.tcl 4d75f4c2a8bba2bb26b0fd4f3a48999e06b4025f
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
@@ -204,7 +204,7 @@ F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl dadcd0b09dc6fdf86d0c38499e310ae94cb586d7
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl 095b5718ec044156af477061566ea25632624b56
-F www/download.tcl 075e21eb50ec6a3f29cdf2a011770a02187592eb
+F www/download.tcl 3868640b7a898df260ca3bb94c37e956fe0183d4
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl f9a4c1a12864e129f6717d22313be01d5657e3aa
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 960f55f3ecbef4581c8cb7be860023ba10de4e96
-R a54f9360f1d233838325028d874d84d6
-U danielk1977
-Z dca5f137789ab1a1b476735e27fe6318
+P 61db159c7d1d971266e487d44e3eb5bf6ac9a8e3
+R e6fbb42a68049b9de9558297a2c68e0d
+U drh
+Z ecac902f72be9022c498944e0133e800
