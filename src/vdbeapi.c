@@ -350,21 +350,37 @@ int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
   return sqlite3_value_type( columnMem(pStmt,i) );
 }
 
+/*
+** Convert the N-th element of pStmt->pColName[] into a string using
+** xFunc() then return that string.  If N is out of range, return 0.
+** If useType is 1, then use the second set of N elements (the datatype
+** names) instead of the first set.
+*/
+static const void *columnName(
+  sqlite3_stmt *pStmt,
+  int N,
+  const void *(*xFunc)(Mem*),
+  int useType
+){
+  Vdbe *p = (Vdbe *)pStmt;
+  int n = sqlite3_column_count(pStmt);
+
+  if( p==0 || N>=n || N<0 ){
+    return 0;
+  }
+  if( useType ){
+    N += n;
+  }
+  return xFunc(&p->aColName[N]);
+}
+
 
 /*
 ** Return the name of the Nth column of the result set returned by SQL
 ** statement pStmt.
 */
 const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pColName;
-
-  if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    return 0;
-  }
-
-  pColName = &(p->aColName[N]);
-  return sqlite3_value_text(pColName);
+  return columnName(pStmt, N, (const void*(*)(Mem*))sqlite3_value_text, 0);
 }
 
 /*
@@ -372,15 +388,7 @@ const char *sqlite3_column_name(sqlite3_stmt *pStmt, int N){
 ** pStmt, encoded as UTF-16.
 */
 const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pColName;
-
-  if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    return 0;
-  }
-
-  pColName = &(p->aColName[N]);
-  return sqlite3_value_text16(pColName);
+  return columnName(pStmt, N, (const void*(*)(Mem*))sqlite3_value_text16, 0);
 }
 
 /*
@@ -388,15 +396,7 @@ const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
 ** of the result set of SQL statement pStmt, encoded as UTF-8.
 */
 const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int N){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pColName;
-
-  if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    return 0;
-  }
-
-  pColName = &(p->aColName[N+sqlite3_column_count(pStmt)]);
-  return sqlite3_value_text(pColName);
+  return columnName(pStmt, N, (const void*(*)(Mem*))sqlite3_value_text, 1);
 }
 
 /*
@@ -404,15 +404,7 @@ const char *sqlite3_column_decltype(sqlite3_stmt *pStmt, int N){
 ** of the result set of SQL statement pStmt, encoded as UTF-16.
 */
 const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pColName;
-
-  if( N>=sqlite3_column_count(pStmt) || N<0 ){
-    return 0;
-  }
-
-  pColName = &(p->aColName[N+sqlite3_column_count(pStmt)]);
-  return sqlite3_value_text16(pColName);
+  return columnName(pStmt, N, (const void*(*)(Mem*))sqlite3_value_text16, 1);
 }
 
 /******************************* sqlite3_bind_  ***************************
@@ -446,14 +438,15 @@ static int vdbeUnbind(Vdbe *p, int i){
 }
 
 /*
-** Bind a blob value to an SQL statement variable.
+** Bind a text or BLOB value.
 */
-int sqlite3_bind_blob(
+static int bindText(
   sqlite3_stmt *pStmt, 
   int i, 
   const void *zData, 
   int nData, 
-  void (*xDel)(void*)
+  void (*xDel)(void*),
+  int encoding
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
@@ -464,8 +457,28 @@ int sqlite3_bind_blob(
     return rc;
   }
   pVar = &p->aVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, 0, xDel);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
+  if( rc ){
+    return rc;
+  }
+  if( rc==SQLITE_OK && encoding!=0 ){
+    rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
+  }
   return rc;
+}
+
+
+/*
+** Bind a blob value to an SQL statement variable.
+*/
+int sqlite3_bind_blob(
+  sqlite3_stmt *pStmt, 
+  int i, 
+  const void *zData, 
+  int nData, 
+  void (*xDel)(void*)
+){
+  return bindText(pStmt, i, zData, nData, xDel, 0);
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   int rc;
@@ -498,21 +511,7 @@ int sqlite3_bind_text(
   int nData, 
   void (*xDel)(void*)
 ){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pVar;
-  int rc;
-
-  rc = vdbeUnbind(p, i);
-  if( rc || zData==0 ){
-    return rc;
-  }
-  pVar = &p->aVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF8, xDel);
-  if( rc ){
-    return rc;
-  }
-  rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
-  return rc;
+  return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF8);
 }
 int sqlite3_bind_text16(
   sqlite3_stmt *pStmt, 
@@ -521,22 +520,7 @@ int sqlite3_bind_text16(
   int nData, 
   void (*xDel)(void*)
 ){
-  Vdbe *p = (Vdbe *)pStmt;
-  Mem *pVar;
-  int rc;
-
-  rc = vdbeUnbind(p, i);
-  if( rc || zData==0 ){
-    return rc;
-  }
-  pVar = &p->aVar[i-1];
-
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF16NATIVE, xDel);
-  if( rc ){
-    return rc;
-  }
-  rc = sqlite3VdbeChangeEncoding(pVar, p->db->enc);
-  return rc;
+  return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF16NATIVE);
 }
 
 /*

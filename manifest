@@ -1,5 +1,5 @@
-C Save\sa\sfew\sbytes\sin\sutf.c.\s(CVS\s1981)
-D 2004-09-24T23:20:52
+C Size\soptimizations\sin\svdbeapi.c.\s(CVS\s1982)
+D 2004-09-24T23:59:12
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -77,7 +77,7 @@ F src/vacuum.c 257de36230cb988842f66eb08dc6c0250b8e05f3
 F src/vdbe.c 0542852785220807feb02b9dee1150ac2e592c8d
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 6017100adff362b8dfa37a69e3f1431f084bfa5b
-F src/vdbeapi.c f1e060aae5adace5f3a6ae2b0527cfe73e880f1c
+F src/vdbeapi.c 81ab9e84c55f5762f552904e6e5d309269b02017
 F src/vdbeaux.c dc3848209aee05b32636a9c1dd913a56ef8dac79
 F src/vdbemem.c ef9ac7d32acfe4bce5c5b408b1294c8d9e0cdb56
 F src/where.c 5d573333c07f259c8d3b8423d82ba774b78b63a9
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P eabc77c99b3e78b4c620a1736d9acfa6cb1e7b67
-R c07c37cfeb3c8a36c1a7b9c5d319b905
+P 8154d545e8ae3d22490b49ce4f327605883accaa
+R 508b9be36c846738b3d04606ced87a41
 U drh
-Z b991617d4e2790fa5a311f1ff33d427d
+Z da75a2e59bfb74cfb329258a940d48f5
