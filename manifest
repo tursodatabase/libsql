@@ -1,5 +1,5 @@
-C Allow\stime\smodifiers\sof\sthe\sform\sHH:MM:SS.SSS\swith\san\soption\s"+"\sor\s"-"\nprefix.\s\sThe\sspecified\samount\sof\stime\sis\sadded\sinto\sthe\sdate-time\sbegin\nmodified.\s(CVS\s1277)
-D 2004-02-29T00:40:32
+C Fix\sa\sbug\sin\sthe\sHH:MM:SS\smodifier\schange\sthat\swas\sjust\schecked\sin.\s(CVS\s1278)
+D 2004-02-29T00:48:09
 F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
 F src/build.c c8ab8b467d9a64254b0d4d42083f6313b3a980d1
 F src/copy.c 750e13828c3e4a293123e36aaa7cf0f22466248a
-F src/date.c 6cb69543021dfeef085c0b49086906b4e3d9dac4
+F src/date.c 1eaa50143359dba81b86209427bda4b194898ebc
 F src/delete.c 82001c74882319f94dab5f6b92a27311b31092ae
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c 95ea5d47d11b5085aaeeb77d60b17c2cba13383a
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e97089b7df3e2fbfcf36062099d02ecb75e9a870
-R e43012c1435f7b87cb5af95eb1f1d59c
+P 559002a52fe3c42fe71ffce364eff4a036ae6b83
+R 47d61c60e5cac681555c838e5c06245c
 U drh
-Z 25e5e801d04060bff00304ad2d736bd0
+Z b1c426865f411f94cb6b3032493b4773

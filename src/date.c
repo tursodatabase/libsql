@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.13 2004/02/29 00:40:32 drh Exp $
+** $Id: date.c,v 1.14 2004/02/29 00:48:09 drh Exp $
 **
 ** NOTES:
 **
@@ -579,6 +579,8 @@ static int parseModifier(const char *zMod, DateTime *p){
         memset(&tx, 0, sizeof(tx));
         if( parseHhMmSs(z2, &tx) ) break;
         computeJD(&tx);
+        computeJD(p);
+        clearYMD_HMS_TZ(p);
         if( z[0]=='-' ) tx.rJD = -tx.rJD;
         day = (int)tx.rJD;
         p->rJD += tx.rJD - day;
