@@ -95,27 +95,52 @@ static int crashseed(){
   return i;
 }
 
+static OsTestFile *pAllFiles = 0;
+
 /*
 ** Initialise the os_test.c specific fields of pFile.
 */
-static void initFile(OsFile *pFile){
+static void initFile(OsFile *id){
+  OsTestFile *pFile = (OsTestFile *)sqliteMalloc(sizeof(OsTestFile));
   pFile->nMaxWrite = 0; 
   pFile->nBlk = 0; 
   pFile->apBlk = 0; 
+  *id = pFile;
+  pFile->pNext = pAllFiles;
+  pAllFiles = pFile;
+}
+
+/*
+** Undo the work done by initFile. Delete the OsTestFile structure
+** and unlink the structure from the pAllFiles list.
+*/
+static void closeFile(OsFile *id){
+  OsTestFile *pFile = *id;
+  if( pFile==pAllFiles ){
+    pAllFiles = pFile->pNext;
+  }else{
+    OsTestFile *p;
+    for(p=pAllFiles; p->pNext!=pFile; p=p->pNext ){
+      assert( p );
+    }
+    p->pNext = pFile->pNext;
+  }
+  sqliteFree(pFile);
+  *id = 0;
 }
 
 /*
 ** Return the current seek offset from the start of the file. This
 ** is unix-only code.
 */
-static off_t osTell(OsFile *pFile){
+static off_t osTell(OsTestFile *pFile){
   return lseek(pFile->fd.h, 0, SEEK_CUR);
 }
 
 /*
 ** Load block 'blk' into the cache of pFile.
 */
-static int cacheBlock(OsFile *pFile, int blk){
+static int cacheBlock(OsTestFile *pFile, int blk){
   if( blk>=pFile->nBlk ){
     int n = ((pFile->nBlk * 2) + 100 + blk);
     pFile->apBlk = (u8 **)sqliteRealloc(pFile->apBlk, n * sizeof(u8*));
@@ -153,7 +178,7 @@ static int cacheBlock(OsFile *pFile, int blk){
 ** Write the cache of pFile to disk. If crash is non-zero, randomly
 ** skip blocks when writing. The cache is deleted before returning.
 */
-static int writeCache2(OsFile *pFile, int crash){
+static int writeCache2(OsTestFile *pFile, int crash){
   int i;
   int nMax = pFile->nMaxWrite;
   off_t offset;
@@ -197,13 +222,17 @@ static int writeCache2(OsFile *pFile, int crash){
 /*
 ** Write the cache to disk.
 */
-static int writeCache(OsFile *pFile){
-  if( crashseed() ){
-    /* FIX ME: writeCache2() should be called on all open files
-    ** here. */
-    writeCache2(pFile, 1);
+static int writeCache(OsTestFile *pFile){
+  int cs = crashseed();
+  if( cs==1 ){
+    /* FIX ME: writeCache2() should be called on all open files here. */
+    OsTestFile *pFile;
+    for(pFile=pAllFiles; pFile; pFile=pFile->pNext){
+      writeCache2(pFile, 1);
+    }
     exit(-1);
   }else{
+    if( cs>0 ) sqlite3SetCrashseed(cs-1);
     return writeCache2(pFile, 0);
   }
 }
@@ -212,9 +241,12 @@ static int writeCache(OsFile *pFile){
 ** Close the file.
 */
 int sqlite3OsClose(OsFile *id){
-  if( !id->fd.isOpen ) return SQLITE_OK;
-  writeCache(id);
-  sqlite3RealClose(&id->fd);
+  if( !(*id) ) return SQLITE_OK;
+  if( (*id)->fd.isOpen ){
+    writeCache(*id);
+    sqlite3RealClose(&(*id)->fd);
+  }
+  closeFile(id);
   return SQLITE_OK;
 }
 
@@ -225,8 +257,9 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   int i;
   u8 *zCsr;
   int rc = SQLITE_OK;
+  OsTestFile *pFile = *id;
 
-  offset = osTell(id);
+  offset = osTell(pFile);
   end = offset+amt;
   blk = (offset/BLOCKSIZE);
 
@@ -244,13 +277,13 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
       len = len - (BLOCK_OFFSET(i+1)-end);
     }
 
-    if( i<id->nBlk && id->apBlk[i]){
-      u8 *pBlk = id->apBlk[i];
+    if( i<pFile->nBlk && pFile->apBlk[i]){
+      u8 *pBlk = pFile->apBlk[i];
       memcpy(zCsr, &pBlk[off], len);
     }else{
-      rc = sqlite3RealSeek(&id->fd, BLOCK_OFFSET(i) + off);
+      rc = sqlite3RealSeek(&pFile->fd, BLOCK_OFFSET(i) + off);
       if( rc!=SQLITE_OK ) return rc;
-      rc = sqlite3RealRead(&id->fd, zCsr, len);
+      rc = sqlite3RealRead(&pFile->fd, zCsr, len);
       if( rc!=SQLITE_OK ) return rc;
     }
 
@@ -258,7 +291,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   }
   assert( zCsr==&((u8 *)pBuf)[amt] );
 
-  rc = sqlite3RealSeek(&id->fd, end);
+  rc = sqlite3RealSeek(&pFile->fd, end);
   return rc;
 }
 
@@ -269,8 +302,9 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
   int i;
   const u8 *zCsr;
   int rc = SQLITE_OK;
+  OsTestFile *pFile = *id;
 
-  offset = osTell(id);
+  offset = osTell(pFile);
   end = offset+amt;
   blk = (offset/BLOCKSIZE);
 
@@ -281,11 +315,11 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
     int len = 0;
 
     /* Make sure the block is in the cache */
-    rc = cacheBlock(id, i);
+    rc = cacheBlock(pFile, i);
     if( rc!=SQLITE_OK ) return rc;
 
     /* Write into the cache */
-    pBlk = id->apBlk[i];
+    pBlk = pFile->apBlk[i];
     assert( pBlk );
 
     if( BLOCK_OFFSET(i) < offset ){
@@ -298,12 +332,12 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
     memcpy(&pBlk[off], zCsr, len);
     zCsr += len;
   }
-  if( id->nMaxWrite<end ){
-    id->nMaxWrite = end;
+  if( pFile->nMaxWrite<end ){
+    pFile->nMaxWrite = end;
   }
   assert( zCsr==&((u8 *)pBuf)[amt] );
 
-  rc = sqlite3RealSeek(&id->fd, end);
+  rc = sqlite3RealSeek(&pFile->fd, end);
   return rc;
 }
 
@@ -312,9 +346,9 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
 ** real sync() function.
 */
 int sqlite3OsSync(OsFile *id){
-  int rc = writeCache(id);
+  int rc = writeCache(*id);
   if( rc!=SQLITE_OK ) return rc;
-  rc = sqlite3RealSync(&id->fd);
+  rc = sqlite3RealSync(&(*id)->fd);
   return rc;
 }
 
@@ -324,8 +358,8 @@ int sqlite3OsSync(OsFile *id){
 ** is written to disk.
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){
-  id->nMaxWrite = nByte;
-  return sqlite3RealTruncate(&id->fd, nByte);
+  (*id)->nMaxWrite = nByte;
+  return sqlite3RealTruncate(&(*id)->fd, nByte);
 }
 
 /*
@@ -333,9 +367,9 @@ int sqlite3OsTruncate(OsFile *id, off_t nByte){
 ** the file, then return this size instead of the on-disk size.
 */
 int sqlite3OsFileSize(OsFile *id, off_t *pSize){
-  int rc = sqlite3RealFileSize(&id->fd, pSize);
-  if( rc==SQLITE_OK && pSize && *pSize<id->nMaxWrite ){
-    *pSize = id->nMaxWrite;
+  int rc = sqlite3RealFileSize(&(*id)->fd, pSize);
+  if( rc==SQLITE_OK && pSize && *pSize<(*id)->nMaxWrite ){
+    *pSize = (*id)->nMaxWrite;
   }
   return rc;
 }
@@ -347,15 +381,15 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 */
 int sqlite3OsOpenReadWrite(const char *zFilename, OsFile *id, int *pReadonly){
   initFile(id);
-  return sqlite3RealOpenReadWrite(zFilename, &id->fd, pReadonly);
+  return sqlite3RealOpenReadWrite(zFilename, &(*id)->fd, pReadonly);
 }
 int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   initFile(id);
-  return sqlite3RealOpenExclusive(zFilename, &id->fd, delFlag);
+  return sqlite3RealOpenExclusive(zFilename, &(*id)->fd, delFlag);
 }
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
   initFile(id);
-  return sqlite3RealOpenReadOnly(zFilename, &id->fd);
+  return sqlite3RealOpenReadOnly(zFilename, &(*id)->fd);
 }
 
 /*
@@ -363,22 +397,22 @@ int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
 ** backend.
 */
 int sqlite3OsSeek(OsFile *id, off_t offset){
-  return sqlite3RealSeek(&id->fd, offset);
+  return sqlite3RealSeek(&(*id)->fd, offset);
 }
 int sqlite3OsCheckReservedLock(OsFile *id){
-  return sqlite3RealCheckReservedLock(&id->fd);
+  return sqlite3RealCheckReservedLock(&(*id)->fd);
 }
 int sqlite3OsLock(OsFile *id, int locktype){
-  return sqlite3RealLock(&id->fd, locktype);
+  return sqlite3RealLock(&(*id)->fd, locktype);
 }
 int sqlite3OsUnlock(OsFile *id, int locktype){
-  return sqlite3RealUnlock(&id->fd, locktype);
+  return sqlite3RealUnlock(&(*id)->fd, locktype);
 }
 int sqlite3OsFileModTime(OsFile *id, double *prNow){
-  return sqlite3RealFileModTime(&id->fd, prNow);
+  return sqlite3RealFileModTime(&(*id)->fd, prNow);
 }
 int sqlite3OsOpenDirectory(const char *zDirname, OsFile *id){
-  return sqlite3RealOpenDirectory(zDirname, &id->fd);
+  return sqlite3RealOpenDirectory(zDirname, &(*id)->fd);
 }
 
 #endif /* OS_TEST */

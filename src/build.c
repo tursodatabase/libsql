@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.230 2004/06/21 18:14:46 drh Exp $
+** $Id: build.c,v 1.231 2004/06/22 12:18:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -965,16 +965,16 @@ CollSeq *sqlite3FindCollSeq(
 ** If the collation sequence
 */
 static void callCollNeeded(sqlite *db, const char *zName, int nName){
-  char const *zExternal = 0;
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( nName<0 ) nName = strlen(zName);
   if( db->xCollNeeded ){
-    zExternal = sqliteStrNDup(zName, nName);
+    char *zExternal = sqliteStrNDup(zName, nName);
     if( !zExternal ) return;
     db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
     sqliteFree(zExternal);
   }
   if( db->xCollNeeded16 ){
+    char const *zExternal;
     sqlite3_value *pTmp = sqlite3GetTransientValue(db);
     sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF8, SQLITE_STATIC);
     zExternal = sqlite3ValueText(pTmp, SQLITE_UTF16NATIVE);

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.80 2004/06/19 08:18:23 danielk1977 Exp $
+** $Id: test1.c,v 1.81 2004/06/22 12:18:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -983,6 +983,27 @@ bad_args:
       Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
   return TCL_ERROR;
 }
+
+static int sqlite3_crashseed(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifdef OS_TEST
+  int seed;
+  if( objc!=2 ) goto bad_args;
+  if( Tcl_GetIntFromObj(interp, objv[2], &seed) ) return TCL_ERROR;
+  sqlite3SetCrashseed(seed);
+#endif
+  return TCL_OK;
+
+bad_args:
+  Tcl_AppendResult(interp, "wrong # args: should be \"",
+      Tcl_GetStringFromObj(objv[0], 0), "<seed>", 0);
+  return TCL_ERROR;
+}
+
 
 /*
 ** Usage:    breakpoint
@@ -1995,6 +2016,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3OsLock",         test_sqlite3OsLock, 0 },
      { "sqlite3OsUnlock",       test_sqlite3OsUnlock, 0 },
      { "add_test_collate",      test_collate, 0         },
+     { "sqlite3_crashseed",     sqlite3_crashseed, 0         },
 
   };
   int i;

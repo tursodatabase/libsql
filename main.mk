@@ -359,7 +359,7 @@ testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
 testfixturex:	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
-	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture$(EXE) \
+	$(TCCX) $(TCL_FLAGS) -DOS_TEST=1 -DTCLSH=1 -DSQLITE_TEST=1 -o testfixturex \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 

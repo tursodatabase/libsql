@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.134 2004/06/22 11:29:02 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.135 2004/06/22 12:18:32 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2786,7 +2786,7 @@ sync_exit:
 */
 int sqlite3pager_lockstate(Pager *pPager){
 #ifdef OS_TEST
-  return pPager->fd.fd.locktype;
+  return pPager->fd->fd.locktype;
 #else
   return pPager->fd.locktype;
 #endif
