@@ -1,12 +1,12 @@
-C file\sformat\schange\s(CVS\s122)
-D 2000-08-02T13:47:42
+C bug\sfix\s(CVS\s123)
+D 2000-08-03T15:09:20
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F configure 51063d594190fa085f909cefc9427241088bec4f x
 F configure.in a04f02ba61ed09a00e862b4f78b91b06a559e0b5
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
-F src/build.c afdbf21315526902577ebeb690737a27ab73c2a1
+F src/build.c 4d90e9e94750ca80249fc7958c617021d8bb7a50
 F src/dbbe.c 5c69d68fe8d9461e56d066f9a7f693636c02d0c7
 F src/dbbe.h 8718b718b36d37584e9bbdfccec10588fa91271f
 F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
@@ -59,7 +59,7 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl 0fe8d43635dd08a01479774520f54149550cdb74
+F www/changes.tcl 4a1aaaaad9a9b4cf3259264955c225b98a9d025d
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl 1c353d202cc75de55a916a1bab80e7b3cc5660ee
 F www/index.tcl 7982d6044d70c51d76e66fab0ce34091fa0fed66
@@ -68,7 +68,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 4110936f112092b3bbc134f0717b899aad6502ad
-R 27068e8e66b0ad6baca5a9255d7bc1a0
+P b7b90237945d3577caba3a2f5595e52b25027297
+R 45dde58542913e61e7cab05cfd34ec48
 U drh
-Z b61a3a088aa89de6d6b88a94a54cc74a
+Z bea34de057ed43e5dbbd37b540669064

@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 3} {
+<li>File format version number was being stored in sqlite_master.tcl
+    multiple times. This was harmless, but unnecessary. It is now fixed.</li>
+}
+
 chng {2000 Aug 2} {
 <li>The file format for indices was changed slightly in order to work
     around an inefficiency that can sometimes come up with GDBM when
