@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.4 2005/01/30 11:11:44 danielk1977 Exp $
+# $Id: subquery.test,v 1.5 2005/02/08 07:50:42 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -215,6 +215,36 @@ do_test subquery-3.2 {
     SELECT (SELECT t1.a) FROM t1;
   }
 } {1}
+
+# Test Cases subquery-3.3.* test correlated subqueries where the
+# parent query is an aggregate query. Ticket #1105 is an example
+# of such a query.
+#
+do_test subquery-3.3.1 {
+  execsql {
+    SELECT a, (SELECT b) FROM t1 GROUP BY a;
+  }
+} {1 2}
+do_test subquery-3.3.2 {
+  catchsql {DROP TABLE t2}
+  execsql {
+    CREATE TABLE t2(c, d);
+    INSERT INTO t2 VALUES(1, 'one');
+    INSERT INTO t2 VALUES(2, 'two');
+    SELECT a, (SELECT d FROM t2 WHERE a=c) FROM t1 GROUP BY a;
+  }
+} {1 one}
+do_test subquery-3.3.3 {
+  execsql {
+    INSERT INTO t1 VALUES(2, 4);
+    SELECT max(a), (SELECT d FROM t2 WHERE a=c) FROM t1;
+  }
+} {2 two}
+do_test subquery-3.3.3 {
+  execsql {
+    SELECT a, (SELECT (SELECT d FROM t2 WHERE a=c)) FROM t1 GROUP BY a;
+  }
+} {1 one 2 two}
 
 #------------------------------------------------------------------
 # These tests - subquery-4.* - use the TCL statement cache to try 

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.453 2005/02/05 12:48:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.454 2005/02/08 07:50:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4395,31 +4395,39 @@ case OP_AggSet: {
   break;
 }
 
-/* Opcode: AggGet * P2 *
+/* Opcode: AggGet P1 P2 *
 **
 ** Push a new entry onto the stack which is a copy of the P2-th field
 ** of the current aggregate.  Strings are not duplicated so
 ** string values will be ephemeral.
+**
+** If P1 is zero, then the value is pulled out of the current aggregate
+** in the current aggregate context. If P1 is greater than zero, then
+** the value is taken from the P1th outer aggregate context. (i.e. if
+** P1==1 then read from the aggregate context that will be restored
+** by the next OP_AggContextPop opcode).
 */
 case OP_AggGet: {
   AggElem *pFocus;
   int i = pOp->p2;
-  pFocus = p->pAgg->pCurrent;
+  Agg *pAgg = &p->pAgg[-pOp->p1];
+  assert( pAgg>=p->apAgg );
+  pFocus = pAgg->pCurrent;
   if( pFocus==0 ){
     int res;
     if( sqlite3_malloc_failed ) goto no_mem;
-    rc = sqlite3BtreeFirst(p->pAgg->pCsr, &res);
+    rc = sqlite3BtreeFirst(pAgg->pCsr, &res);
     if( rc!=SQLITE_OK ){
       return rc;
     }
     if( res!=0 ){
-      rc = AggInsert(p->pAgg, "", 1);
-      pFocus = p->pAgg->pCurrent;
+      rc = AggInsert(pAgg, "", 1);
+      pFocus = pAgg->pCurrent;
     }else{
-      rc = sqlite3BtreeData(p->pAgg->pCsr, 0, 4, (char *)&pFocus);
+      rc = sqlite3BtreeData(pAgg->pCsr, 0, 4, (char *)&pFocus);
     }
   }
-  assert( i>=0 && i<p->pAgg->nMem );
+  assert( i>=0 && i<pAgg->nMem );
   pTos++;
   sqlite3VdbeMemShallowCopy(pTos, &pFocus->aMem[i], MEM_Ephem);
   if( pTos->flags&MEM_Str ){

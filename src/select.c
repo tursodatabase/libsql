@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.239 2005/02/05 12:48:48 danielk1977 Exp $
+** $Id: select.c,v 1.240 2005/02/08 07:50:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1241,6 +1241,7 @@ static int matchOrderbyToColumn(
       pE->op = TK_COLUMN;
       pE->iColumn = iCol;
       pE->iTable = iTable;
+      pE->iAgg = -1;
       pOrderBy->a[i].done = 1;
     }
     if( iCol<0 && mustComplete ){
@@ -2095,6 +2096,9 @@ static int flattenSubquery(
   */
   p->isDistinct = p->isDistinct || pSub->isDistinct;
 
+  /*
+  ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;
+  */
   if( pSub->pLimit ){
     p->pLimit = pSub->pLimit;
     pSub->pLimit = 0;
@@ -2412,7 +2416,6 @@ int sqlite3SelectResolve(
 ** saveAggregateInfo() and restoreAggregateInfo().
 */ 
 struct AggregateInfo {
-  u8 useAgg;
   int nAgg;
   AggExpr *aAgg;
 };
@@ -2426,10 +2429,8 @@ typedef struct AggregateInfo AggregateInfo;
 static void saveAggregateInfo(Parse *pParse, AggregateInfo *pInfo){
   pInfo->aAgg = pParse->aAgg;
   pInfo->nAgg = pParse->nAgg;
-  pInfo->useAgg = pParse->useAgg;
   pParse->aAgg = 0;
   pParse->nAgg = 0;
-  pParse->useAgg = 0;
 }
 
 /*
@@ -2441,7 +2442,6 @@ static void restoreAggregateInfo(Parse *pParse, AggregateInfo *pInfo){
   sqliteFree(pParse->aAgg);
   pParse->aAgg = pInfo->aAgg;
   pParse->nAgg = pInfo->nAgg;
-  pParse->useAgg = pInfo->useAgg;
 }
   
 /*
@@ -2674,26 +2674,31 @@ int sqlite3Select(
   /* Do an analysis of aggregate expressions.
   */
   if( isAgg || pGroupBy ){
+    NameContext sNC;
+    memset(&sNC, 0, sizeof(sNC));
+    sNC.pParse = pParse;
+    sNC.pSrcList = pTabList;
+
     assert( pParse->nAgg==0 );
     isAgg = 1;
     for(i=0; i<pEList->nExpr; i++){
-      if( sqlite3ExprAnalyzeAggregates(pParse, pEList->a[i].pExpr) ){
+      if( sqlite3ExprAnalyzeAggregates(&sNC, pEList->a[i].pExpr) ){
         goto select_end;
       }
     }
     if( pGroupBy ){
       for(i=0; i<pGroupBy->nExpr; i++){
-        if( sqlite3ExprAnalyzeAggregates(pParse, pGroupBy->a[i].pExpr) ){
+        if( sqlite3ExprAnalyzeAggregates(&sNC, pGroupBy->a[i].pExpr) ){
           goto select_end;
         }
       }
     }
-    if( pHaving && sqlite3ExprAnalyzeAggregates(pParse, pHaving) ){
+    if( pHaving && sqlite3ExprAnalyzeAggregates(&sNC, pHaving) ){
       goto select_end;
     }
     if( pOrderBy ){
       for(i=0; i<pOrderBy->nExpr; i++){
-        if( sqlite3ExprAnalyzeAggregates(pParse, pOrderBy->a[i].pExpr) ){
+        if( sqlite3ExprAnalyzeAggregates(&sNC, pOrderBy->a[i].pExpr) ){
           goto select_end;
         }
       }
@@ -2765,8 +2770,9 @@ int sqlite3Select(
   */
   else{
     AggExpr *pAgg;
+    int lbl1 = 0;
+    pParse->fillAgg = 1;
     if( pGroupBy ){
-      int lbl1;
       for(i=0; i<pGroupBy->nExpr; i++){
         sqlite3ExprCode(pParse, pGroupBy->a[i].pExpr);
       }
@@ -2775,11 +2781,14 @@ int sqlite3Select(
       sqlite3VdbeAddOp(v, OP_MakeRecord, pGroupBy->nExpr, 0);
       lbl1 = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, lbl1);
-      for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
-        if( pAgg->isAgg ) continue;
-        sqlite3ExprCode(pParse, pAgg->pExpr);
-        sqlite3VdbeAddOp(v, OP_AggSet, 0, i);
-      }
+    }
+    for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
+      if( pAgg->isAgg ) continue;
+      sqlite3ExprCode(pParse, pAgg->pExpr);
+      sqlite3VdbeAddOp(v, OP_AggSet, 0, i);
+    }
+    pParse->fillAgg = 0;
+    if( lbl1<0 ){
       sqlite3VdbeResolveLabel(v, lbl1);
     }
     for(i=0, pAgg=pParse->aAgg; i<pParse->nAgg; i++, pAgg++){
@@ -2819,7 +2828,6 @@ int sqlite3Select(
     int endagg = sqlite3VdbeMakeLabel(v);
     int startagg;
     startagg = sqlite3VdbeAddOp(v, OP_AggNext, 0, endagg);
-    pParse->useAgg = 1;
     if( pHaving ){
       sqlite3ExprIfFalse(pParse, pHaving, startagg, 1);
     }
@@ -2830,7 +2838,6 @@ int sqlite3Select(
     sqlite3VdbeAddOp(v, OP_Goto, 0, startagg);
     sqlite3VdbeResolveLabel(v, endagg);
     sqlite3VdbeAddOp(v, OP_Noop, 0, 0);
-    pParse->useAgg = 0;
   }
 
   /* If there is an ORDER BY clause, then we need to sort the results

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.192 2005/02/05 12:48:48 danielk1977 Exp $
+** $Id: expr.c,v 1.193 2005/02/08 07:50:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -189,6 +189,7 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
   pNew->op = op;
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;
+  pNew->iAgg = -1;
   if( pToken ){
     assert( pToken->dyn==0 );
     pNew->span = pNew->token = *pToken;
@@ -589,25 +590,46 @@ void sqlite3ExprListDelete(ExprList *pList){
 ** The return value from this routine is 1 to abandon the tree walk
 ** and 0 to continue.
 */
+static int walkExprList(ExprList *, int (*)(void *, Expr*), void *);
 static int walkExprTree(Expr *pExpr, int (*xFunc)(void*,Expr*), void *pArg){
-  ExprList *pList;
   int rc;
   if( pExpr==0 ) return 0;
   rc = (*xFunc)(pArg, pExpr);
   if( rc==0 ){
     if( walkExprTree(pExpr->pLeft, xFunc, pArg) ) return 1;
     if( walkExprTree(pExpr->pRight, xFunc, pArg) ) return 1;
-    pList = pExpr->pList;
-    if( pList ){
-      int i;
-      struct ExprList_item *pItem;
-      for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
-        if( walkExprTree(pItem->pExpr, xFunc, pArg) ) return 1;
-      }
-    }
+    if( walkExprList(pExpr->pList, xFunc, pArg) ) return 1;
   }
   return rc>1;
 }
+
+/*
+** Call walkExprTree() for every expression in list p.
+*/
+static int walkExprList(ExprList *p, int (*xFunc)(void *, Expr*), void *pArg){
+  int i;
+  struct ExprList_item *pItem;
+  if( !p ) return 0;
+  for(i=p->nExpr, pItem=p->a; i>0; i--, pItem++){
+    if( walkExprTree(pItem->pExpr, xFunc, pArg) ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Call walkExprTree() for every expression in Select p, not including
+** expressions that are part of sub-selects in any FROM clause or the LIMIT
+** or OFFSET expressions..
+*/
+static int walkSelectExpr(Select *p, int (*xFunc)(void *, Expr*), void *pArg){
+  walkExprList(p->pEList, xFunc, pArg);
+  walkExprTree(p->pWhere, xFunc, pArg);
+  walkExprList(p->pGroupBy, xFunc, pArg);
+  walkExprTree(p->pHaving, xFunc, pArg);
+  walkExprList(p->pOrderBy, xFunc, pArg);
+  return 0;
+}
+
 
 /*
 ** This routine is designed as an xFunc for walkExprTree().
@@ -1356,8 +1378,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
   op = pExpr->op;
   switch( op ){
     case TK_COLUMN: {
-      if( pParse->useAgg ){
-        sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
+      if( !pParse->fillAgg && pExpr->iAgg>=0 ){
+        sqlite3VdbeAddOp(v, OP_AggGet, pExpr->iAggCtx, pExpr->iAgg);
       }else if( pExpr->iColumn>=0 ){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
 #ifndef NDEBUG
@@ -1968,48 +1990,63 @@ static int appendAggInfo(Parse *pParse){
 static int analyzeAggregate(void *pArg, Expr *pExpr){
   int i;
   AggExpr *aAgg;
-  Parse *pParse = (Parse*)pArg;
+  NameContext *pNC = (NameContext *)pArg;
+  Parse *pParse = pNC->pParse;
+  SrcList *pSrcList = pNC->pSrcList;
 
   switch( pExpr->op ){
     case TK_COLUMN: {
-      aAgg = pParse->aAgg;
-      for(i=0; i<pParse->nAgg; i++){
-        if( aAgg[i].isAgg ) continue;
-        if( aAgg[i].pExpr->iTable==pExpr->iTable
-         && aAgg[i].pExpr->iColumn==pExpr->iColumn ){
-          break;
+      for(i=0; pSrcList && i<pSrcList->nSrc; i++){
+        if( pExpr->iTable==pSrcList->a[i].iCursor ){
+          aAgg = pParse->aAgg;
+          for(i=0; i<pParse->nAgg; i++){
+            if( aAgg[i].isAgg ) continue;
+            if( aAgg[i].pExpr->iTable==pExpr->iTable
+             && aAgg[i].pExpr->iColumn==pExpr->iColumn ){
+              break;
+            }
+          }
+          if( i>=pParse->nAgg ){
+            i = appendAggInfo(pParse);
+            if( i<0 ) return 1;
+            pParse->aAgg[i].isAgg = 0;
+            pParse->aAgg[i].pExpr = pExpr;
+          }
+          pExpr->iAgg = i;
+          pExpr->iAggCtx = pNC->nDepth;
+          return 1;
         }
       }
-      if( i>=pParse->nAgg ){
-        i = appendAggInfo(pParse);
-        if( i<0 ) return 1;
-        pParse->aAgg[i].isAgg = 0;
-        pParse->aAgg[i].pExpr = pExpr;
-      }
-      pExpr->iAgg = i;
       return 1;
     }
     case TK_AGG_FUNCTION: {
-      aAgg = pParse->aAgg;
-      for(i=0; i<pParse->nAgg; i++){
-        if( !aAgg[i].isAgg ) continue;
-        if( sqlite3ExprCompare(aAgg[i].pExpr, pExpr) ){
-          break;
+      if( pNC->nDepth==0 ){
+        aAgg = pParse->aAgg;
+        for(i=0; i<pParse->nAgg; i++){
+          if( !aAgg[i].isAgg ) continue;
+          if( sqlite3ExprCompare(aAgg[i].pExpr, pExpr) ){
+            break;
+          }
         }
+        if( i>=pParse->nAgg ){
+          u8 enc = pParse->db->enc;
+          i = appendAggInfo(pParse);
+          if( i<0 ) return 1;
+          pParse->aAgg[i].isAgg = 1;
+          pParse->aAgg[i].pExpr = pExpr;
+          pParse->aAgg[i].pFunc = sqlite3FindFunction(pParse->db,
+               pExpr->token.z, pExpr->token.n,
+               pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
+        }
+        pExpr->iAgg = i;
+        return 1;
       }
-      if( i>=pParse->nAgg ){
-        u8 enc = pParse->db->enc;
-        i = appendAggInfo(pParse);
-        if( i<0 ) return 1;
-        pParse->aAgg[i].isAgg = 1;
-        pParse->aAgg[i].pExpr = pExpr;
-        pParse->aAgg[i].pFunc = sqlite3FindFunction(pParse->db,
-             pExpr->token.z, pExpr->token.n,
-             pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);
-      }
-      pExpr->iAgg = i;
-      return 1;
     }
+  }
+  if( pExpr->pSelect ){
+    pNC->nDepth++;
+    walkSelectExpr(pExpr->pSelect, analyzeAggregate, pNC);
+    pNC->nDepth--;
   }
   return 0;
 }
@@ -2025,10 +2062,10 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
 ** If errors are seen, leave an error message in zErrMsg and return
 ** the number of errors.
 */
-int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
-  int nErr = pParse->nErr;
-  walkExprTree(pExpr, analyzeAggregate, pParse);
-  return pParse->nErr - nErr;
+int sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
+  int nErr = pNC->pParse->nErr;
+  walkExprTree(pExpr, analyzeAggregate, pNC);
+  return pNC->pParse->nErr - nErr;
 }
 
 /*

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.368 2005/02/06 02:45:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.369 2005/02/08 07:50:42 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -812,8 +812,9 @@ struct Expr {
   Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table. */
-  int iAgg;              /* When op==TK_COLUMN and pParse->useAgg==TRUE, pull
+  int iAgg;              /* When op==TK_COLUMN and pParse->fillAgg==FALSE, pull
                          ** result from the iAgg-th element of the aggregator */
+  int iAggCtx;           /* The value to pass as P1 of OP_AggGet. */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
 };
@@ -1091,8 +1092,7 @@ struct Parse {
   int cookieValue[MAX_ATTACHED+2];  /* Values of cookies to verify */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   u32 writeMask;       /* Start a write transaction on these databases */
-  u8 useAgg;           /* If true, extract field values from the aggregator
-                       ** while generating expressions.  Normally false */
+  u8 fillAgg;          /* If true, ignore the Expr.iAgg field. Normally false */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -1410,7 +1410,7 @@ int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
 int sqlite3ExprResolveNames(NameContext *, Expr *);
-int sqlite3ExprAnalyzeAggregates(Parse*, Expr*);
+int sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 Vdbe *sqlite3GetVdbe(Parse*);
 void sqlite3Randomness(int, void*);
 void sqlite3RollbackAll(sqlite3*);
