@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.40 2004/05/31 15:06:29 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.41 2004/08/30 14:58:12 drh Exp $}
 source common.tcl
 header {The C language interface to the SQLite library}
 puts {
@@ -695,7 +695,7 @@ result.</p>
 <p>As an example, consider the following query:</p>
 
 <blockquote>
-SELECT employee_name, login, host FROM users WHERE logic LIKE 'd%';
+SELECT employee_name, login, host FROM users WHERE login LIKE 'd%';
 </blockquote>
 
 <p>This query will return the name, login and host computer name

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a nulls.html output file
 #
-set rcsid {$Id: nulls.tcl,v 1.6 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: nulls.tcl,v 1.7 2004/08/30 14:58:12 drh Exp $}
 source common.tcl
 header {NULL Handling in SQLite}
 puts {
@@ -107,7 +107,7 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<td valign="center" align="center" bgcolor="#aaaad2">(Note 4)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
@@ -239,7 +239,7 @@ and from UNION.</td>
 <td>MySQL version 3.23.41 does not support UNION.</td>
 </tr>
 <tr><td>4.&nbsp;</td>
-<td>SQL Anywhere and Borland Interbase 
+<td>DB2, SQL Anywhere, and Borland Interbase 
 do not allow NULLs in a UNIQUE column.</td>
 </tr>
 <tr><td>5.&nbsp;</td>

@@ -1,5 +1,5 @@
-C Remove\sthe\s\\001\scharacter\sthat\slemon\sinserts\sautomatically\sin\sits\r\noutput\sfile.\s\sThe\sneed\sfor\sthis\scharacter\shas\sexpired\sand\sit\screates\r\nconfusion\sfor\susers.\s\sTicket\s#877\s(CVS\s1920)
-D 2004-08-30T14:22:31
+C Documentation\supdates\s(CVS\s1921)
+D 2004-08-30T14:58:12
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -212,7 +212,7 @@ F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
+F www/c_interface.tcl 83b39203e1ded4c2dab97f42edf31279a308efcb
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
 F www/capi3ref.tcl bead38516efb0227ffa6ac76beb3f7ea405bb389
 F www/changes.tcl 27a1b9870ba4d81ff3cebfbcab7623390e6aab64
@@ -233,7 +233,7 @@ F www/index.tcl d5d79b45e0f3ff42dca73723c30232bb3c9e2e9a
 F www/lang.tcl b2ba401104a76e7842469b33a968f5eda9bd462b
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
-F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
+F www/nulls.tcl ede975a29def48838c606d4a0c0185d44f90a789
 F www/oldnews.tcl fbbdbb64ed602b0c92b03498578f7ac70f47753d
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
@@ -245,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d3f3acb77f4e9f597af5afac565916b9c5e1c5d6
-R f3cc352b4b8b201ee44a2f9128511428
+P acfc59186ac7452c0a74dc4ef8df9a1c94fc4f46
+R 075f7776d11844f668c581d38ba0ab40
 U drh
-Z 84e5ab499ab655e1a55718824c3e9d7d
+Z fcffcef9e3415aa6a29c8c8063b208d9
