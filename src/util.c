@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.130 2005/02/01 10:35:07 danielk1977 Exp $
+** $Id: util.c,v 1.131 2005/03/10 12:35:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -902,7 +902,7 @@ int sqlite3VarintLen(u64 v){
   return i;
 }
 
-#if (!defined(SQLITE_OMIT_BLOB_LITERAL) && !defined(SQLITE_HAS_CODEC)) \
+#if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC) \
     || defined(SQLITE_TEST)
 /*
 ** Translate a single byte of Hex into an integer.
@@ -917,7 +917,7 @@ static int hexToInt(int h){
     return h - 'A' + 10;
   }
 }
-#endif /* (!SQLITE_OMIT_BLOB_LITERAL && !SQLITE_HAS_CODEC) || SQLITE_TEST */
+#endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC || SQLITE_TEST */
 
 #if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
 /*

@@ -1,5 +1,5 @@
-C Fix\sa\sfile\scorruption\sbug\sin\sCREATE\sINDEX\sin\sauto-vacuum\sdatabases.\s(CVS\s2368)
-D 2005-03-09T13:09:44
+C Fix\sa\s#ifdef\sin\sutil.c.\s(CVS\s2369)
+D 2005-03-10T12:35:46
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -73,7 +73,7 @@ F src/tokenize.c 103cbaa932c790f540f8eceb63cd3010e117bdff
 F src/trigger.c 038c8e128d4551cd016426cd11bbf5c478816481
 F src/update.c 42823d00865c9fe4f01b3c62647858726345a28e
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
-F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
+F src/util.c a53b6fc6f09093ecba1ce593ca7cb1cb77b3a20b
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
 F src/vdbe.c 1bf34fb915afffd9b865a81770dc8cb99b3a04ac
 F src/vdbe.h 7e307333d74e134eff237bb9d45fe764e544ad6a
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 9d5abc1ddf6da37563c12d5a0401b89bb4e51c59
-R 7ebd6c17f19c475f5965e55f2c022589
-U danielk1977
-Z 9f3ce05c00f0a22bc7d46eacd8760d1e
+P 64c4c717d35c8fce9b4be073196c507f6d471188
+R 376a03a042ddb758e92aa5072636722f
+U drh
+Z 1a38fbee75c00acc8623c5176ebc1fe3
