@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.68 2003/01/16 13:42:43 drh Exp $
+** @(#) $Id: pager.c,v 1.69 2003/01/21 02:39:37 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -162,6 +162,7 @@ struct Pager {
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInCkpt;                /* One bit for each page in the database */
   PgHdr *pFirst, *pLast;      /* List of free pages */
+  PgHdr *pFirstSynced;        /* First free page with PgHdr.needSync==0 */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *pCkpt;               /* List of pages in the checkpoint journal */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
@@ -346,6 +347,7 @@ static void pager_reset(Pager *pPager){
     sqliteFree(pPg);
   }
   pPager->pFirst = 0;
+  pPager->pFirstSynced = 0;
   pPager->pLast = 0;
   pPager->pAll = 0;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
@@ -737,6 +739,7 @@ int sqlitepager_open(
   pPager->needSync = 0;
   pPager->noSync = pPager->tempFile || !useJournal;
   pPager->pFirst = 0;
+  pPager->pFirstSynced = 0;
   pPager->pLast = 0;
   pPager->nExtra = nExtra;
   memset(pPager->aHash, 0, sizeof(pPager->aHash));
@@ -837,6 +840,11 @@ Pgno sqlitepager_pagenumber(void *pData){
 static void _page_ref(PgHdr *pPg){
   if( pPg->nRef==0 ){
     /* The page is currently on the freelist.  Remove it. */
+    if( pPg==pPg->pPager->pFirstSynced ){
+      PgHdr *p = pPg->pNextFree;
+      while( p && p->needSync ){ p = p->pNextFree; }
+      pPg->pPager->pFirstSynced = p;
+    }
     if( pPg->pPrevFree ){
       pPg->pPrevFree->pNextFree = pPg->pNextFree;
     }else{
@@ -901,13 +909,29 @@ static int syncAllPages(Pager *pPager){
       pPager->journalStarted = 1;
     }
     pPager->needSync = 0;
+
+    /* Erase the needSync flag from every page.
+    */
+    for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+      pPg->needSync = 0;
+    }
+    pPager->pFirstSynced = pPager->pFirst;
   }
 
-  /* Erase the needSync flag from every page.
+#ifndef NDEBUG
+  /* If the Pager.needSync flag is clear then the PgHdr.needSync
+  ** flag must also be clear for all pages.  Verify that this
+  ** invariant is true.
   */
-  for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
-    pPg->needSync = 0;
+  else{
+    for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
+      assert( pPg->needSync==0 );
+    }
+    assert( pPager->pFirstSynced==pPager->pFirst );
   }
+#endif
+  
+
 
   return rc;
 }
@@ -1032,10 +1056,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       /* Find a page to recycle.  Try to locate a page that does not
       ** require us to do an fsync() on the journal.
       */
-      pPg = pPager->pFirst;
-      while( pPg && pPg->needSync ){
-        pPg = pPg->pNextFree;
-      }
+      pPg = pPager->pFirstSynced;
 
       /* If we could not find a page that does not require an fsync()
       ** on the journal file then fsync the journal file.  This is a
@@ -1083,6 +1104,11 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 
       /* Unlink the old page from the free list and the hash table
       */
+      if( pPg==pPager->pFirstSynced ){
+        PgHdr *p = pPg->pNextFree;
+        while( p && p->needSync ){ p = p->pNextFree; }
+        pPager->pFirstSynced = p;
+      }
       if( pPg->pPrevFree ){
         pPg->pPrevFree->pNextFree = pPg->pNextFree;
       }else{
@@ -1225,6 +1251,9 @@ int sqlitepager_unref(void *pData){
       pPg->pPrevFree->pNextFree = pPg;
     }else{
       pPager->pFirst = pPg;
+    }
+    if( pPg->needSync==0 && pPager->pFirstSynced==0 ){
+      pPager->pFirstSynced = pPg;
     }
     if( pPager->xDestructor ){
       pPager->xDestructor(pData);
@@ -1577,13 +1606,12 @@ int sqlitepager_commit(Pager *pPager){
   if( pPager->dirtyFile==0 ){
     /* Exit early (without doing the time-consuming sqliteOsSync() calls)
     ** if there have been no changes to the database file. */
+    assert( pPager->needSync==0 );
     rc = pager_unwritelock(pPager);
     pPager->dbSize = -1;
     return rc;
   }
   assert( pPager->journalOpen );
-  if( !pPager->journalStarted && !pPager->noSync ) pPager->needSync = 1;
-  assert( pPager->dirtyFile || !pPager->needSync );
   if( pPager->needSync && sqliteOsSync(&pPager->jfd)!=SQLITE_OK ){
     goto commit_abort;
   }

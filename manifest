@@ -1,5 +1,5 @@
-C Update\scomments.\s\sNo\schanges\sto\scode.\s(CVS\s841)
-D 2003-01-19T03:59:46
+C In\sthe\spager,\scache\sa\spointer\sto\sthe\sfirst\spage\son\sthe\sfreelist\sthat\sdoes\snot\nneed\sto\sbe\ssynced.\s\sThis\smakes\sa\sfetch\sof\sa\spage\sthat\sis\snot\sin\scache\sgo\sa\nlot\sfaster\swhen\sthe\scache\sis\sfull.\s\sThis\scheck-in\salso\sadds\ssome\sperformance\ninstrumentation\sto\sthe\sOS\slayer.\s(CVS\s842)
+D 2003-01-21T02:39:37
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,9 +31,9 @@ F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c db954e955970795819145a3649fd2ad116a58890
 F src/main.c ad3193c56da5acd31bc6cd48aa50dae1962d7c78
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c 3a652608c296cf639ce63bd31d255db862e45685
+F src/os.c ed27e178e0c4b71f2807da81b8851f0fadc50778
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
-F src/pager.c 081155624cff7bec54590133b69906a23f9b3659
+F src/pager.c f35799e6c5d9dbb9701f3a8945a557a34b8e4850
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y a4fbfbe3c4254c96dae8c33264fb54af755a3770
 F src/printf.c e8e9a0605602cb1a3a2dc754e0978fa9064ecee7
@@ -154,7 +154,7 @@ F www/speed.tcl 52759968401d81760fc01f9d3ab6242f6d2a7066
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 424cb2edb0c51b911791422ce7a9f5284a57f9ce
-R c412fddde0211bcedc2c913718bf3cae
+P f6a8706872c43cee3003b48bb427c7b74b1f89e7
+R 55e4cf10cd865df3b849840e7c63f464
 U drh
-Z 08ec0c344754362c114e2ab7933a5823
+Z 512b1f62fa409b79d94b59ec53fdbfdf

@@ -52,15 +52,32 @@
 */
 #if 0
 static int last_page = 0;
-#define SEEK(X)       last_page=(X)
-#define TRACE1(X)     fprintf(stderr,X)
-#define TRACE2(X,Y)   fprintf(stderr,X,Y)
-#define TRACE3(X,Y,Z) fprintf(stderr,X,Y,Z)
+__inline__ unsigned long long int hwtime(void){
+  unsigned long long int x;
+  __asm__("rdtsc\n\t"
+          "mov %%edx, %%ecx\n\t"
+          :"=A" (x));
+  return x;
+}
+static unsigned long long int g_start;
+static unsigned int elapse;
+#define TIMER_START       g_start=hwtime()
+#define TIMER_END         elapse=hwtime()-g_start
+#define SEEK(X)           last_page=(X)
+#define TRACE1(X)         fprintf(stderr,X)
+#define TRACE2(X,Y)       fprintf(stderr,X,Y)
+#define TRACE3(X,Y,Z)     fprintf(stderr,X,Y,Z)
+#define TRACE4(X,Y,Z,A)   fprintf(stderr,X,Y,Z,A)
+#define TRACE5(X,Y,Z,A,B) fprintf(stderr,X,Y,Z,A,B)
 #else
+#define TIMER_START
+#define TIMER_END
 #define SEEK(X)
 #define TRACE1(X)
 #define TRACE2(X,Y)
 #define TRACE3(X,Y,Z)
+#define TRACE4(X,Y,Z,A)
+#define TRACE5(X,Y,Z,A,B)
 #endif
 
 
@@ -664,8 +681,11 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
 #if OS_UNIX
   int got;
   SimulateIOError(SQLITE_IOERR);
-  TRACE3("READ    %-3d %d\n", id->fd, last_page);
+  TIMER_START;
   got = read(id->fd, pBuf, amt);
+  TIMER_END;
+  TRACE4("READ    %-3d %7d %d\n", id->fd, last_page, elapse);
+  SEEK(0);
   /* if( got<0 ) got = 0; */
   if( got==amt ){
     return SQLITE_OK;
@@ -712,11 +732,14 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_UNIX
   int wrote = 0;
   SimulateIOError(SQLITE_IOERR);
-  TRACE3("WRITE   %-3d %d\n", id->fd, last_page);
+  TIMER_START;
   while( amt>0 && (wrote = write(id->fd, pBuf, amt))>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
   }
+  TIMER_END;
+  TRACE4("WRITE   %-3d %7d %d\n", id->fd, last_page, elapse);
+  SEEK(0);
   if( amt>0 ){
     return SQLITE_FULL;
   }
