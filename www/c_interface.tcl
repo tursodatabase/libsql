@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.20 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.21 2001/11/24 13:36:30 drh Exp $}
 
 puts {<html>
 <head>
@@ -124,7 +124,7 @@ int Callback(void *pArg, int argc, char **argv, char **columnNames){
 <p>The first argument to the callback is just a copy of the fourth argument
 to <b>sqlite_exec()</b>  This parameter can be used to pass arbitrary
 information through to the callback function from client code.
-The second argument is the number columns in the query result.
+The second argument is the number of columns in the query result.
 The third argument is an array of pointers to strings where each string
 is a single column of the result for that record.  Note that the
 callback function reports a NULL value in the database as a NULL pointer,
@@ -279,9 +279,9 @@ schema.  This is the return code for such cases.  Retrying the
 command usually will clear the problem.
 </p></dd>
 <dt>SQLITE_TOOBIG</dt>
-<dd><p>SQLite cannot store more than about 64K of data in a single row
-of a single table.  If you attempt to store more than 64K in a single
-row, this is the return code you get.
+<dd><p>SQLite will not store more than about 1 megabyte of data in a single
+row of a single table.  If you attempt to store more than 1 megabyte
+in a single row, this is the return code you get.
 </p></dd>
 <dt>SQLITE_CONSTRAINT</dt>
 <dd><p>This constant is returned if the SQL statement would have violated
@@ -508,14 +508,14 @@ be changed at run-time.  This is a compile-time option only.  The
 <b>sqlite_encoding</b> character string just tells you how the library
 was compiled.</p>
 
-<h2>Changing the libraries response to locked files</h2>
+<h2>Changing the library's response to locked files</h2>
 
 <p>The <b>sqlite_busy_handler()</b> procedure can be used to register
 a busy callback with an open SQLite database.  The busy callback will
-be invoked whenever SQLite tries to open a file that is locked.
+be invoked whenever SQLite tries to access a database that is locked.
 The callback will typically do some other useful work, or perhaps sleep,
 in order to give the lock a chance to clear.  If the callback returns
-non-zero, then SQLite tries again to open the database and the cycle
+non-zero, then SQLite tries again to access the database and the cycle
 repeats.  If the callback returns zero, then SQLite aborts the current
 operation and returns SQLITE_BUSY.</p>
 
@@ -526,8 +526,8 @@ the first argument to the busy callback.  When SQLite invokes the
 busy callback, it sends it three arguments:  the generic pointer
 that was passed in as the third argument to <b>sqlite_busy_handler</b>,
 the name of the database table or index that the library is trying
-to open, and the number of times that the library has attempted to
-open the database table or index.</p>
+to access, and the number of times that the library has attempted to
+access the database table or index.</p>
 
 <p>For the common case where we want the busy callback to sleep,
 the SQLite library provides a convenience routine <b>sqlite_busy_timeout()</b>.

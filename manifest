@@ -1,5 +1,5 @@
-C Update\sthe\sFAQ.\s\sChange\sthe\sGMT\stimezone\slabel\sto\sUTC\son\sall\sfiles.\s(CVS\s318)
-D 2001-11-24T13:23:05
+C Typos\sfixed.\s(CVS\s319)
+D 2001-11-24T13:36:30
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template b6c3d3ba089e97e3a721e967f3151350f36cb42b
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -103,7 +103,7 @@ F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
-F www/c_interface.tcl 1b05a758844273509800b04aa38841fab8dd9891
+F www/c_interface.tcl 58922228e8fdb0f6af3561a051ee8ccec6dbfd17
 F www/changes.tcl 0a54872839461f49b7300b36571d342f0ef0d4fb
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 974d42839b6ced9c9b9ea14abec0c4723388a991
-R 510051e75409b6b257f01060b1675252
+P f1a5808288e4204aee03531de0b9e6646062bd94
+R 4de7db51acb6aa815308596ae350a438
 U drh
-Z 99119da7cfe58575444c98fda1901651
+Z 572a5ddf1573f772e8b3d29ccfb91ae8
