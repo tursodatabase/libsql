@@ -24,7 +24,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.1 2000/06/08 11:13:02 drh Exp $
+# $Id: select5.test,v 1.2 2000/06/08 11:25:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,5 +55,8 @@ do_test select5-1.1 {
 do_test select5-1.2 {
   execsql {SELECT y, count(*) FROM t1 GROUP BY y ORDER BY count(*), y}
 } {9 1 10 1 8 2 7 4 6 8 5 15}
+do_test select5-1.3 {
+  execsql {SELECT count(*), y FROM t1 GROUP BY y ORDER BY count(*), y}
+} {1 9 1 10 2 8 4 7 8 6 15 5}
 
 finish_test
