@@ -167,11 +167,13 @@ last_change:	$(SRC)
           | awk '{print $$5,$$6}' >last_change
 
 libsqlite.la:	$(LIBOBJ)
-	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(exec_prefix)/lib
+	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(exec_prefix)/lib \
+		-version-info "5:3:5"
 
 libtclsqlite.la:	tclsqlite.lo libsqlite.la
 	$(LIBTOOL) $(TCC) -o libtclsqlite.la tclsqlite.lo \
-		libsqlite.la $(LIBTCL) -rpath $(exec_prefix)/lib
+		libsqlite.la $(LIBTCL) -rpath $(exec_prefix)/lib \
+		-version-info "0:0:0"
 
 sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
@@ -451,4 +453,4 @@ clean:
 	rm -rf doc
 
 distclean:	clean
-	rm -f config.log config.status
+	rm -f config.log config.status libtool Makefile config.h

@@ -1,6 +1,6 @@
-C Bug\sfix:\ssqliteFree()\scalled\stwice\son\sthe\ssame\sallocation\sduring\serror\nhandling\sin\sattach.c.\s(CVS\s1020)
-D 2003-06-14T12:04:08
-F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
+C *\sAdded\s-version-info\sto\sshared\slibraries\n*\sRemove\sconfig.h\sand\slibtool\sin\sthe\sdistclean\starget\s(CVS\s1021)
+D 2003-06-14T19:29:09
+F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION c17038403a026f011620ae647ad73bf04038fdd4
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 66ac7aea3df8533a49c8c05ba57c5a7015626828
-R b06dcdd6b553a19e46a027e98a44ba32
-U drh
-Z 445a5a073c1f73d1fb50205ccb14b347
+P 9ec40935b9435ddc3749cab517387477e4045f6b
+R 12c201d65566c93a958812cc7bcd5528
+U a.rottmann
+Z d76a73e3bc96042e55286e1e7aa5b780
