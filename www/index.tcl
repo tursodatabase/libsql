@@ -61,14 +61,22 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Feb-01} {Version 3.1.1 (beta) Released} {
-  Version 3.1.1 (beta) is now available on the
-  website.  Verison 3.1.1 is fully backwards compatible with the 3.0 series
-  and features many new features including Autovacuum and correlated
-  subqueries.  The
-  <a href="http://www.sqlite.org/releasenotes310.html">release notes</a>
-  From version 3.1.0 apply equally to this release beta.  A stable release
-  is expected within a couple of weeks.
+newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
+  A critical bug in the VACUUM command that can lead to database
+  corruption has been fixed in both the 2.x branch and the main
+  3.x line.  This bug has existed in all prior versions of SQLite.
+  Even though it is unlikely you will ever encounter this bug,
+  it is suggested that all users upgrade.  See
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=1116">
+  ticket #1116</a>. for additional information.
+
+  Version 3.1.2 is also the first stable release of the 3.1
+  series.  SQLite 3.1 features added support for correlated
+  subqueries, autovacuum, autoincrement, ALTER TABLE, and
+  other enhancements.  See the 
+  <a href="www.sqlite.org/releasenotes310.html">release notes
+  for version 3.1.0</a> for a detailed description of the
+  changes available in the 3.1 series.
 }
 
 newsitem {2004-Nov-09} {SQLite at the 2004 International PHP Conference} {
@@ -89,18 +97,10 @@ Annual Tcl/Tk Conference} {
   <a href="http://www.sqlite.org/tclconf2004/page-001.html">
   Slides</a> from the talk are available.
 }
-
-newsitem {2004-Jly-22} {Version 2.8.15} {
-  SQLite version 2.8.15 is a maintenance release for the version 2.8
-  series.  Version 2.8 continues to be maintained with bug fixes, but
-  no new features will be added to version 2.8.  All the changes in
-  this release are minor.  If you are not having problems, there is
-  there is no reason to upgrade.
-}
   
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.105 2005/02/03 00:29:47 drh Exp $}
+footer {$Id: index.tcl,v 1.106 2005/02/15 12:51:16 drh Exp $}
