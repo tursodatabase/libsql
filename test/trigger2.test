@@ -430,7 +430,6 @@ execsql {
   DROP TABLE tbl;
 }
 
-
 # Handling of ON CONFLICT by INSERT statements inside triggers
 execsql {
   CREATE TABLE tbl (a primary key, b, c);

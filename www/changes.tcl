@@ -25,6 +25,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Aug 12 (2.6.3)} {
+<li>Add the ability to read both little-endian and big-endian databases.
+    So database created under SunOS or MacOSX can be read and written
+    under Linux or Windows and vice versa.</li>
+<li>Convert to the new website: http://www.sqlite.org/</li>
+<li>Allow transactions to span Linux Threads</li>
+<li>Bug fix in the processing of the ORDER BY clause for GROUP BY queries</li>
+}
+
 chng {2002 Jly 30 (2.6.2)} {
 <li>Text files read by the COPY command can now have line terminators
     of LF,  CRLF, or CR.</li>

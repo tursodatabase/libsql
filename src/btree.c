@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.69 2002/08/11 20:10:47 drh Exp $
+** $Id: btree.c,v 1.70 2002/08/13 00:01:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -76,6 +76,8 @@
 */
 #ifdef SQLITE_TEST
 int btree_native_byte_order = 1;
+#else
+# define btree_native_byte_order 1
 #endif
 
 /*
@@ -793,7 +795,6 @@ static int newDatabase(Btree *pBt){
     return rc;
   }
   strcpy(pP1->zMagic, zMagicHeader);
-#ifdef SQLITE_TEST
   if( btree_native_byte_order ){
     pP1->iMagic = MAGIC;
     pBt->needSwab = 0;
@@ -801,10 +802,6 @@ static int newDatabase(Btree *pBt){
     pP1->iMagic = swab32(MAGIC);
     pBt->needSwab = 1;
   }
-#else
-  pP1->iMagic = MAGIC;
-  pBt->needSwab = 0;
-#endif
   zeroPage(pBt, pRoot);
   sqlitepager_unref(pRoot);
   return SQLITE_OK;

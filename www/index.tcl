@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.62 2002/08/12 12:29:58 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.63 2002/08/13 00:01:18 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -49,45 +49,24 @@ puts {<h2>Features</h2>
 <p><ul>
 <li>Implements most of SQL92.</li>
 <li>A complete database (with multiple tables and indices) is
-    stored in a single byte-order independent disk file.</li>
+    stored in a single disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
-<li>Small memory footprint: less than 20K lines of C code.</li>
+<li>Database files can be freely shared between machines with
+    different byte orders.</li>
+<li>Small memory footprint: less than 25K lines of C code.</li>
 <li><a href="speed.html">Four times faster</a> than PostgreSQL.
     Twice as fast as SQLite 1.0.</li>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
 <li><a href="tclsqlite.html">TCL bindings</a> included.</li>
+<li>Simple, well-commented source code.</li>
 <li>A TCL-based test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Built and tested under Linux and Win2K.</li>
 <li>Sources are uncopyrighted.  Use for any purpose.</li>
 </ul>
 </p>
-}
-
-puts {<h2>Database File Format Change - 2002 July 17</h2>
-
-<p>Beginning with version 2.6.0, the SQLite database file format changed
-in an incompatible way.  If you open a database file from version 2.5.6
-or earlier with version 2.6.0 or later of the library, then the file format
-will be converted automatically.  This is an irreversible operation.  Once
-the conversion occurs, you will no longer be able to access the database
-file from older versions of the library.  If the database is large, the
-conversion might take some time. (Allow 1 to 2 seconds per megabyte
-of database under Linux.) If the database is read-only,
-the conversion cannot occur and the attempt to open the database will
-fail.
-It is suggested that you make backup copies of older database files
-before attempting to open them with version 2.6.0 or later of the library.</p>
-
-<center>
-<table width="50%" border=1 cellpadding=20 cellspacing=0>
-<tr><td>
-<b>Make backups of older database files before opening them
-with version 2.6.0 or later of SQLite</b></td></tr>
-</table>
-</center>
 }
 
 puts {<h2>Current Status</h2>
@@ -125,8 +104,25 @@ for SQLite change, it means that the underlying file format
 has changed.  See <a href="formatchng.html">formatchng.html</a>
 for additional information.
 </p>
+}
 
-<h2>Documentation</h2>
+puts {<h2>Database File Format Change - Version 2.6.0 - 2002 July 17</h2>
+
+<p>Beginning with version 2.6.0, the SQLite database file format changed
+in an incompatible way.  If you open a database file from version 2.5.6
+or earlier with version 2.6.0 or later of the library, then the file format
+will be converted automatically.  This is an irreversible operation.  Once
+the conversion occurs, you will no longer be able to access the database
+file from older versions of the library.  If the database is large, the
+conversion might take some time. (Allow 1 to 2 seconds per megabyte
+of database under Linux.) If the database is read-only,
+the conversion cannot occur and the attempt to open the database will
+fail.
+It is suggested that you make backup copies of older database files
+before attempting to open them with version 2.6.0 or later of the library.</p>
+}
+
+puts {<h2>Documentation</h2>
 
 <p>The following documentation is currently available:</p>
 
@@ -201,16 +197,17 @@ $ make test                  <i> Optional: run regression tests </i>
 
 puts {<h2>Related Sites</h2>
 
-<ul>
+<p>
+For information bindings of SQLite to other programming languages
+(Perl, Python, Ruby, PHP, etc.) and for a list of programs currently
+using SQLite, visit the Wiki documentation at:
+</p>
 
-<li><p>An ODBC driver for SQLite can be found at
-       <a href="http://www.ch-werner.de/sqliteodbc/">
-       http://www.ch-werner.de/sqliteodbc/</a>.</p></li>
-
-<li><p>A PHP module for SQLite can be found at
-       <a href="http://freshmeat.net/projects/sqlite-php">
-       http://freshmeat.net/projects/sqlite-php</a></li>
-</ul>}
+<blockquote>
+<a href="http://cvs.hwaci.com:2080/sqlite/wiki">
+http://cvs.hwaci.com:2080/sqlite/wiki</a>
+</blockquote>
+}
 
 puts {
 </body></html>}

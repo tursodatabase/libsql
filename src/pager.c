@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.50 2002/08/12 12:29:57 drh Exp $
+** @(#) $Id: pager.c,v 1.51 2002/08/13 00:01:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -177,6 +177,8 @@ static const unsigned char aJournalMagic[] = {
 */
 #ifdef SQLITE_TEST
 int pager_old_format = 0;
+#else
+# define pager_old_format 0
 #endif
 
 /*
@@ -187,7 +189,7 @@ int pager_old_format = 0;
 /*
 ** Enable reference count tracking here:
 */
-#if SQLITE_TEST
+#ifdef SQLITE_TEST
   int pager_refinfo_enable = 0;
   static void pager_refinfo(PgHdr *p){
     static int cnt = 0;
@@ -225,11 +227,9 @@ static int read32bits(Pager *pPager, OsFile *fd, u32 *pRes){
 */
 static int write32bits(OsFile *fd, u32 val){
   unsigned char ac[4];
-#ifdef SQLITE_TEST
   if( pager_old_format ){
     return sqliteOsWrite(fd, &val, 4);
   }
-#endif
   ac[0] = (val>>24) & 0xff;
   ac[1] = (val>>16) & 0xff;
   ac[2] = (val>>8) & 0xff;
@@ -482,7 +482,11 @@ static int pager_ckpt_playback(Pager *pPager){
   /* Copy original pages out of the checkpoint journal and back into the
   ** database file.
   */
-  pPager->journalFormat = SQLITE_NEW_JOURNAL_FORMAT;
+  if( pager_old_format ){
+    pPager->journalFormat = SQLITE_OLD_JOURNAL_FORMAT;
+  }else{
+    pPager->journalFormat = SQLITE_NEW_JOURNAL_FORMAT;
+  }
   for(i=nRec-1; i>=0; i--){
     rc = pager_playback_one_page(pPager, &pPager->cpfd);
     if( rc!=SQLITE_OK ) goto end_ckpt_playback;
@@ -1140,16 +1144,12 @@ int sqlitepager_begin(void *pData){
     pPager->state = SQLITE_WRITELOCK;
     sqlitepager_pagecount(pPager);
     pPager->origDbSize = pPager->dbSize;
-#ifdef SQLITE_TEST
     if( pager_old_format ){
       rc = sqliteOsWrite(&pPager->jfd, aOldJournalMagic,
                          sizeof(aOldJournalMagic));
     }else{
       rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
     }
-#else
-    rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
-#endif
     if( rc==SQLITE_OK ){
       rc = write32bits(&pPager->jfd, pPager->dbSize);
     }
@@ -1532,7 +1532,7 @@ int sqlitepager_ckpt_rollback(Pager *pPager){
   return rc;
 }
 
-#if SQLITE_TEST
+#ifdef SQLITE_TEST
 /*
 ** Print a listing of all referenced pages and their ref count.
 */
