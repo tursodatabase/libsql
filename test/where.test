@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.11 2002/10/22 23:38:04 drh Exp $
+# $Id: where.test,v 1.12 2002/12/04 21:50:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -415,11 +415,51 @@ do_test where-6.8 {
     SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
   }
 } {1 100 4 2 99 9 3 98 16 sort}
-do_test where-6.9 {
+do_test where-6.9.1 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
   }
 } {1 100 4 nosort}
+do_test where-6.9.2 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a,c LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.3 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY c LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.4 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a DESC LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.5 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a DESC, c DESC LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.6 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY c DESC LIMIT 3
+  }
+} {1 100 4 nosort}
+do_test where-6.9.7 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY c,a LIMIT 3
+  }
+} {1 100 4 sort}
+do_test where-6.9.8 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a DESC, c ASC LIMIT 3
+  }
+} {1 100 4 sort}
+do_test where-6.9.9 {
+  cksort {
+    SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a ASC, c DESC LIMIT 3
+  }
+} {1 100 4 sort}
 do_test where-6.10 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a LIMIT 3
@@ -438,6 +478,11 @@ do_test where-6.12 {
 do_test where-6.13 {
   cksort {
     SELECT * FROM t3 WHERE a>0 ORDER BY a DESC LIMIT 3
+  }
+} {100 1 10201 99 2 10000 98 3 9801 nosort}
+do_test where-6.13.1 {
+  cksort {
+    SELECT * FROM t3 WHERE a>0 ORDER BY -a LIMIT 3
   }
 } {100 1 10201 99 2 10000 98 3 9801 sort}
 do_test where-6.14 {
@@ -471,6 +516,77 @@ do_test where-6.19 {
   }
 } {4 9 16 nosort}
 
-
+# Tests for reverse-order sorting.
+#
+do_test where-7.1 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 ORDER BY y;
+  }
+} {8 9 10 11 12 13 14 15 nosort}
+do_test where-7.2 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 ORDER BY y DESC;
+  }
+} {15 14 13 12 11 10 9 8 nosort}
+do_test where-7.3 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>100 ORDER BY y LIMIT 3;
+  }
+} {10 11 12 nosort}
+do_test where-7.4 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>100 ORDER BY y DESC LIMIT 3;
+  }
+} {15 14 13 nosort}
+do_test where-7.5 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>121 ORDER BY y DESC;
+  }
+} {15 14 13 12 11 nosort}
+do_test where-7.6 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=121 ORDER BY y DESC;
+  }
+} {15 14 13 12 11 10 nosort}
+do_test where-7.7 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=121 AND y<196 ORDER BY y DESC;
+  }
+} {12 11 10 nosort}
+do_test where-7.8 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=121 AND y<=196 ORDER BY y DESC;
+  }
+} {13 12 11 10 nosort}
+do_test where-7.9 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>121 AND y<=196 ORDER BY y DESC;
+  }
+} {13 12 11 nosort}
+do_test where-7.10 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>100 AND y<196 ORDER BY y DESC;
+  }
+} {12 11 10 nosort}
+do_test where-7.11 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=121 AND y<196 ORDER BY y;
+  }
+} {10 11 12 nosort}
+do_test where-7.12 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>=121 AND y<=196 ORDER BY y;
+  }
+} {10 11 12 13 nosort}
+do_test where-7.13 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>121 AND y<=196 ORDER BY y;
+  }
+} {11 12 13 nosort}
+do_test where-7.14 {
+  cksort {
+    SELECT w FROM t1 WHERE x=3 AND y>100 AND y<196 ORDER BY y;
+  }
+} {10 11 12 nosort}
 
 finish_test

@@ -1,5 +1,5 @@
-C Scan\sthe\stable\sbackwards\sif\sthere\sis\san\sORDER\sBY\s...\sDESC\sclause\sthat\scan\nbe\ssatisfied\sby\san\sindex.\s(CVS\s795)
-D 2002-12-04T20:01:06
+C Fixes\sto\sthe\slogic\sthat\sdecides\sif\sthe\sORDER\sBY\scan\sbe\signored\sdue\sto\sthe\nuse\sof\san\sindex.\s\sTests\supdated.\s(CVS\s796)
+D 2002-12-04T21:50:16
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
 F src/vdbe.c 84b224d0ecfb2555a976f074924dd3e6d3d91dfb
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
-F src/where.c d48077fb86c1d06390f974d348ace081c824dd32
+F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
 F test/bigfile.test 38d1071817caceb636c613e3546082b90e749a49
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -67,7 +67,7 @@ F test/copy.test 55d60a4d5ed342a0fa08b7cd07d46d43ea0d0d7f
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
 F test/expr.test dea1cd62684a8bf116426447c948f5e8fb2c84b6
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
-F test/format3.test cbb168d446152fcf1dd85be299ad2d6cd507da4e
+F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/in.test 15428c85d141edda7543bfc3f9a32ce65193717b
 F test/index.test 2a5a1b654f50ca0768fb10ae44b72e6a776b1f18
@@ -115,7 +115,7 @@ F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
-F test/where.test 9c1c2c13cfff419ea38451e78cf3d0d238fabc27
+F test/where.test 9e6e7e0a8bc6eff879bf12a497d6529df7fa9852
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 022adc2830c2705828f744d2c59798bd462eb465
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0ad1d93879bee0d34b122591c025192a51b8490f
-R fb6076c646238a5812fd1b3f4dc5ed25
+P c7a3487981de0ed5b43ea3ff4d46ab4437068dca
+R ad809775145f9a28c47c1aa04b1e5814
 U drh
-Z 76431d0a75d4131ab7844f1098b48161
+Z 2d97197b4281b66cabb81cf1fc140ed8

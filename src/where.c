@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.68 2002/12/04 20:01:06 drh Exp $
+** $Id: where.c,v 1.69 2002/12/04 21:50:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -164,15 +164,25 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 **
 ** If there are two or more indices that generate the correct sort order
 ** and pPreferredIdx is one of those indices, then return pPreferredIdx.
+**
+** nEqCol is the number of columns of pPreferredIdx that are used as
+** equality constraints.  Any index returned must have exactly this same
+** set of columns.  The ORDER BY clause only matches index columns beyond the
+** the first nEqCol columns.
+**
+** All terms of the ORDER BY clause must be either ASC or DESC.  The
+** *pbRev value is set to 1 if the ORDER BY clause is all DESC and it is
+** set to 0 if the ORDER BY clause is all ASC.
 */
 static Index *findSortingIndex(
   Table *pTab,            /* The table to be sorted */
   int base,               /* Cursor number for pTab */
   ExprList *pOrderBy,     /* The ORDER BY clause */
   Index *pPreferredIdx,   /* Use this index, if possible and not NULL */
+  int nEqCol,             /* Number of index columns used with == constraints */
   int *pbRev              /* Set to 1 if ORDER BY is DESC */
 ){
-  int i;
+  int i, j;
   Index *pMatch;
   Index *pIdx;
   int sortOrder;
@@ -205,11 +215,17 @@ static Index *findSortingIndex(
   */
   pMatch = 0;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( pIdx->nColumn<pOrderBy->nExpr ) continue;
-    for(i=0; i<pOrderBy->nExpr; i++){
-      if( pOrderBy->a[i].pExpr->iColumn!=pIdx->aiColumn[i] ) break;
+    int nExpr = pOrderBy->nExpr;
+    if( pIdx->nColumn < nEqCol || pIdx->nColumn < nExpr ) continue;
+    for(i=j=0; i<nEqCol; i++){
+      if( pPreferredIdx->aiColumn[i]!=pIdx->aiColumn[i] ) break;
+      if( j<nExpr && pOrderBy->a[j].pExpr->iColumn==pIdx->aiColumn[i] ){ j++; }
     }
-    if( i>=pOrderBy->nExpr ){
+    if( i<nEqCol ) continue;
+    for(i=0; i+j<nExpr; i++){
+      if( pOrderBy->a[i+j].pExpr->iColumn!=pIdx->aiColumn[i+nEqCol] ) break;
+    }
+    if( i+j>=nExpr ){
       pMatch = pIdx;
       if( pIdx==pPreferredIdx ) break;
     }
@@ -621,7 +637,8 @@ WhereInfo *sqliteWhereBegin(
        */
        pSortIdx = 0;
      }else{
-       pSortIdx = findSortingIndex(pTab, base, *ppOrderBy, pIdx, &bRev);
+       int nEqCol = (pWInfo->a[0].score+4)/8;
+       pSortIdx = findSortingIndex(pTab, base, *ppOrderBy, pIdx, nEqCol, &bRev);
      }
      if( pSortIdx && (pIdx==0 || pIdx==pSortIdx) ){
        if( pIdx==0 ){
