@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.75 2001/09/23 19:46:52 drh Exp $
+** $Id: vdbe.c,v 1.76 2001/09/23 20:17:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -903,6 +903,22 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
     pTail->pNext = pRight;
   }
   return sHead.pNext;
+}
+
+/*
+** Convert an integer into a big-endian integer.  In other words,
+** make sure the most significant byte comes first.
+*/
+static int bigEndian(int x){
+  union {
+     char zBuf[sizeof(int)];
+     int i;
+  } ux;
+  ux.zBuf[3] = x&0xff;
+  ux.zBuf[2] = (x>>8)&0xff;
+  ux.zBuf[1] = (x>>16)&0xff;
+  ux.zBuf[0] = (x>>24)&0xff;
+  return ux.i;
 }
 
 /*
@@ -1834,6 +1850,7 @@ case OP_MakeIdxKey: {
   int nByte;
   int nField;
   int i, j;
+  u32 iKey;
 
   nField = pOp->p1;
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
@@ -1862,7 +1879,8 @@ case OP_MakeIdxKey: {
     }
   }
   Integerify(p, p->tos-nField);
-  memcpy(&zNewKey[j], &aStack[p->tos-nField].i, sizeof(u32));
+  iKey = bigEndian(aStack[p->tos-nField].i);
+  memcpy(&zNewKey[j], &iKey, sizeof(u32));
   PopStack(p, nField+1);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -2156,8 +2174,9 @@ case OP_MoveTo: {
   if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
     int res;
     if( aStack[tos].flags & STK_Int ){
+      int iKey = bigEndian(aStack[tos].i);
       sqliteBtreeMoveto(p->aCsr[i].pCursor, 
-          (char*)&aStack[tos].i, sizeof(int), &res);
+          (char*)&iKey, sizeof(int), &res);
       p->aCsr[i].lastRecno = aStack[tos].i;
       p->aCsr[i].recnoIsValid = 1;
     }else{
@@ -2231,8 +2250,9 @@ case OP_Found: {
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
     int res, rx;
     if( aStack[tos].flags & STK_Int ){
+      int iKey = bigEndian(aStack[tos].i);
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, 
-           (char*)&aStack[tos].i, sizeof(int), &res);
+           (char*)&iKey, sizeof(int), &res);
     }else{
       if( Stringify(p, tos) ) goto no_mem;
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor,
@@ -2280,30 +2300,25 @@ case OP_NewRecno: {
     ** larger than the previous rowid.  This has been shown experimentally
     ** to double the speed of the COPY operation.
     */
-    int res, rx, cnt;
-    int x;
+    int res, rx, cnt, x;
     union {
        char zBuf[sizeof(int)];
        int i;
     } ux;
     cnt = 0;
-    x = db->nextRowid;
+    v = db->nextRowid;
     do{
       if( cnt>5 ){
-        x = sqliteRandomInteger(db);
+        v = sqliteRandomInteger(db);
       }else{
-        x += sqliteRandomByte(db) + 1;
+        v += sqliteRandomByte(db) + 1;
       }
-      if( x==0 ) continue;
-      ux.zBuf[3] = x&0xff;
-      ux.zBuf[2] = (x>>8)&0xff;
-      ux.zBuf[1] = (x>>16)&0xff;
-      ux.zBuf[0] = (x>>24)&0xff;
-      v = ux.i;
-      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
+      if( v==0 ) continue;
+      x = bigEndian(v);
+      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &x, sizeof(int), &res);
       cnt++;
     }while( cnt<1000 && rx==SQLITE_OK && res==0 );
-    db->nextRowid = x;
+    db->nextRowid = v;
     if( rx==SQLITE_OK && res==0 ){
       rc = SQLITE_FULL;
       goto abort_due_to_error;
@@ -2331,14 +2346,15 @@ case OP_Put: {
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor!=0 ){
     char *zKey;
-    int nKey;
+    int nKey, iKey;
     if( (aStack[nos].flags & STK_Int)==0 ){
       if( Stringify(p, nos) ) goto no_mem;
       nKey = aStack[nos].n;
       zKey = zStack[nos];
     }else{
       nKey = sizeof(int);
-      zKey = (char*)&aStack[nos].i;
+      iKey = bigEndian(aStack[nos].i);
+      zKey = (char*)&iKey;
     }
     rc = sqliteBtreeInsert(p->aCsr[i].pCursor, zKey, nKey,
                         zStack[tos], aStack[tos].n);
@@ -2496,6 +2512,7 @@ case OP_Recno: {
       v = p->aCsr[i].lastRecno;
     }else{
       sqliteBtreeKey(pCrsr, 0, sizeof(u32), (char*)&v);
+      v = bigEndian(v);
     }
     aStack[tos].i = v;
     aStack[tos].flags = STK_Int;
@@ -2657,6 +2674,7 @@ case OP_NextIdx: {
     }else{
       int recno;
       sqliteBtreeKey(pCur, pCrsr->nKey, sizeof(u32), (char*)&recno);
+      recno = bigEndian(recno);
       p->aCsr[i].lastRecno = aStack[tos].i = recno;
       p->aCsr[i].recnoIsValid = 1;
       aStack[tos].flags = STK_Int;

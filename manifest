@@ -1,5 +1,5 @@
-C Additional\stest\scases\swith\slocking\sfixes.\s\sAlso,\smake\sthe\scode\sthread-safe.\s(CVS\s262)
-D 2001-09-23T19:46:52
+C RowIDs\sare\snow\salways\sexpressed\sin\snative\sbyte\sorder.\s(CVS\s263)
+D 2001-09-23T20:17:55
 F Makefile.in 18eea9a3486939fced70aa95b691be766c2c995d
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 6942aa44940d2972bd72f671a631060106e77f7e
@@ -16,7 +16,7 @@ F src/expr.c 343a515a4abaf60e9e26c7412aa8c43fd3eae97d
 F src/hash.c bf36fb4cba114015123b0050f137d2c4553778a1
 F src/hash.h 5f6e7c04c46ed015ab4e01797c2049b4af5b006d
 F src/insert.c 061e531d19869e26ba9202c6d069385237b4c102
-F src/main.c 49af06b7327c8b23b9331ce80b7e4bc9536ed2e1
+F src/main.c 00ff61d82189ad23fe2f2e6c355951f514cb1b5c
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 45376582c41dc8829330816d56b8e9e6cd1b7972
 F src/os.h 0f478e2fef5ec1612f94b59b163d4807d4c77d6d
@@ -38,7 +38,7 @@ F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 2ab07b85fde38d8fa2b4e73417b93e94f9cf8f5f
 F src/update.c 8de22957017e17c5e751ba71c4ea76c60f93aa2f
 F src/util.c 9c888445c1fd7896dab38fa62efc532f2364010a
-F src/vdbe.c b36ba796eca369d3dbd9272b277d520af03b9ae4
+F src/vdbe.c c5cd3a5340871a44236aba41d4265a23b5353859
 F src/vdbe.h dc1d441494ba560a1ff464e1c56beb8ca03844fc
 F src/where.c cce952b6a2459ac2296e3432876a4252d2fe3b87
 F test/all.test a2320eb40b462f25bd3e33115b1cabf3791450dd
@@ -97,7 +97,7 @@ F www/opcode.tcl 60222aeb57a7855b2582c374b8753cb5bb53c4ab
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 337b3d3b2a903328d9744c111979909a284b8348
-R e078b3cf3fce42ca9d1080ff6c3cabcb
+P bd7d6a64afa03cc64f6537f828d6c94975bf5f02
+R b2b493528f723aceed9a16e2be55169a
 U drh
-Z f237ccfe6f0011261f7c6612613f9d4f
+Z 2820f142fe995c5556d69539be23c55f
