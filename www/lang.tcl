@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.19 2002/01/30 16:17:25 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.20 2002/01/31 15:54:23 drh Exp $}
 
 puts {<html>
 <head>
@@ -332,6 +332,11 @@ resolution algorithm, then that algorithm is used in place of the
 default algorithm specified in the CREATE TABLE statement.
 See the section titled
 <a href="#conflict">ON CONFLICT</a> for additional information.</p>
+
+<p>CHECK constraints are ignored in the current implementation.
+Support for CHECK constraints may be added in the future.  As of
+version 2.3.0, NOT NULL, PRIMARY KEY, and UNIQUE constraints all
+work.</p>
 
 <p>There are no arbitrary limits on the number
 of columns or on the number of constraints in a table.

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.82 2002/01/30 16:17:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.83 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -183,6 +183,7 @@ struct sqlite {
   Hash idxDrop;                 /* Uncommitted DROP INDEXs */
   int lastRowid;                /* ROWID of most recent insert */
   int nextRowid;                /* Next generated rowID */
+  int onError;                  /* Default conflict algorithm */
 };
 
 /*
@@ -237,19 +238,31 @@ struct Table {
 };
 
 /*
-** SQLite supports three different ways to resolve a UNIQUE contraint
-** error.  (1) It can abort the transaction return SQLITE_CONSTRAINT.
-** (2) It can decide to not do the INSERT or UPDATE that was causing
-** the constraint violation. (3) It can delete existing records from
-** the table so that the pending INSERT or UPDATE will work without
-** a constraint error.  The following there symbolic values are used
-** to record which type of action to take.
+** SQLite supports 4 or 5 different ways to resolve a contraint
+** error.  (Only 4 are implemented as of this writing.  The fifth method
+** "ABORT" is planned.)  ROLLBACK processing means that a constraint violation
+** causes the operation in proces to fail and for the current transaction
+** to be rolled back.  ABORT processing means the operation in process
+** fails and any prior changes from that one operation are backed out,
+** but the transaction is not rolled back.  FAIL processing means that
+** the operation in progress stops and returns an error code.  But prior
+** changes due to the same operation are not backed out and no rollback
+** occurs.  IGNORE means that the particular row that caused the constraint
+** error is not inserted or updated.  Processing continues and no error
+** is returned.  REPLACE means that preexisting database rows that caused
+** a UNIQUE constraint violation are removed so that the new insert or
+** update can proceed.  Processing continues and no error is reported.
+** 
+** The following there symbolic values are used to record which type
+** of action to take.
 */
-#define OE_None    0   /* There is no constraint to check */
-#define OE_Abort   1   /* Abort and rollback. */
-#define OE_Ignore  2   /* Ignore the error. Do not do the INSERT or UPDATE */
-#define OE_Replace 3   /* Delete existing record, then do INSERT or UPDATE */
-#define OE_Default 9   /* Do whatever the default action is */
+#define OE_None     0   /* There is no constraint to check */
+#define OE_Rollback 1   /* Fail the operation and rollback the transaction */
+#define OE_Abort    2   /* Back out changes but do no rollback transaction */
+#define OE_Fail     3   /* Stop the operation but leave all prior changes */
+#define OE_Ignore   4   /* Ignore the error. Do not do the INSERT or UPDATE */
+#define OE_Replace  5   /* Delete existing record, then do INSERT or UPDATE */
+#define OE_Default  9   /* Do whatever the default action is */
 
 /*
 ** Each SQL index is represented in memory by an
@@ -542,7 +555,7 @@ void sqliteParseInfoReset(Parse*);
 Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
 int sqliteRandomInteger(void);
-void sqliteBeginTransaction(Parse*);
+void sqliteBeginTransaction(Parse*, int);
 void sqliteCommitTransaction(Parse*);
 void sqliteRollbackTransaction(Parse*);
 char *sqlite_mprintf(const char *, ...);
@@ -551,3 +564,5 @@ void sqliteGenerateRowDelete(Vdbe*, Table*, int);
 void sqliteGenerateRowIndexDelete(Vdbe*, Table*, int, char*);
 void sqliteGenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
 void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
+void sqliteBeginWriteOperation(Parse*);
+void sqliteEndWriteOperation(Parse*);

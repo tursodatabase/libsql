@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.31 2002/01/30 16:17:24 drh Exp $
+** $Id: update.c,v 1.32 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -161,11 +161,7 @@ void sqliteUpdate(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-    pParse->schemaVerified = 1;
-  }
+  sqliteBeginWriteOperation(pParse);
 
   /* Begin the database scan
   */
@@ -282,9 +278,7 @@ void sqliteUpdate(
   sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   sqliteVdbeChangeP2(v, addr, sqliteVdbeCurrentAddr(v));
   sqliteVdbeAddOp(v, OP_ListReset, 0, 0);
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-  }
+  sqliteEndWriteOperation(pParse);
 
   /*
   ** Return the number of rows that were changed.

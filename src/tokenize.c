@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.33 2002/01/29 18:41:25 drh Exp $
+** $Id: tokenize.c,v 1.34 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -62,6 +62,7 @@ static Keyword aKeywordTable[] = {
   { "END",               0, TK_END,              0 },
   { "EXCEPT",            0, TK_EXCEPT,           0 },
   { "EXPLAIN",           0, TK_EXPLAIN,          0 },
+  { "FAIL",              0, TK_FAIL,             0 },
   { "FROM",              0, TK_FROM,             0 },
   { "GLOB",              0, TK_GLOB,             0 },
   { "GROUP",             0, TK_GROUP,            0 },

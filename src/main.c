@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.56 2002/01/16 21:00:27 drh Exp $
+** $Id: main.c,v 1.57 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -276,6 +276,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   db->nextRowid = sqliteRandomInteger();
+  db->onError = OE_Default;
   
   /* Open the backend database driver */
   rc = sqliteBtreeOpen(zFilename, mode, MAX_PAGES, &db->pBe);

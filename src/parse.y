@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.44 2002/01/30 16:17:24 drh Exp $
+** @(#) $Id: parse.y,v 1.45 2002/01/31 15:54:22 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -56,7 +56,7 @@ explain ::= EXPLAIN.    {pParse->explain = 1;}
 
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
-cmd ::= BEGIN trans_opt.       {sqliteBeginTransaction(pParse);}
+cmd ::= BEGIN trans_opt onconf(R).  {sqliteBeginTransaction(pParse,R);}
 trans_opt ::= .
 trans_opt ::= TRANSACTION.
 trans_opt ::= TRANSACTION ids.
@@ -106,6 +106,7 @@ id(A) ::= KEY(X).        {A = X;}
 id(A) ::= ABORT(X).      {A = X;}
 id(A) ::= IGNORE(X).     {A = X;}
 id(A) ::= REPLACE(X).    {A = X;}
+id(A) ::= FAIL(X).       {A = X;}
 id(A) ::= CONFLICT(X).   {A = X;}
 
 // And "ids" is an identifer-or-string.
@@ -166,15 +167,17 @@ tcons ::= CHECK expr onconf.
 // default behavior when there is a constraint conflict.
 //
 %type onconf {int}
-%type onconf_u {int}
-%type confresolve {int}
-onconf(A) ::= confresolve(X).                { A = X; }
-onconf(A) ::= onconf_u(X).                   { A = X; }
-onconf_u(A) ::= ON CONFLICT confresolve(X).  { A = X; }
-onconf_u(A) ::= .                            { A = OE_Default; }
-confresolve(A) ::= ABORT.                    { A = OE_Abort; }
-confresolve(A) ::= IGNORE.                   { A = OE_Ignore; }
-confresolve(A) ::= REPLACE.                  { A = OE_Replace; }
+%type orconf {int}
+%type resolvetype {int}
+onconf(A) ::= .                              { A = OE_Default; }
+onconf(A) ::= ON CONFLICT resolvetype(X).    { A = X; }
+orconf(A) ::= .                              { A = OE_Default; }
+orconf(A) ::= OR resolvetype(X).             { A = X; }
+resolvetype(A) ::= ROLLBACK.                 { A = OE_Rollback; }
+resolvetype(A) ::= ABORT.                    { A = OE_Abort; }
+resolvetype(A) ::= FAIL.                     { A = OE_Fail; }
+resolvetype(A) ::= IGNORE.                   { A = OE_Ignore; }
+resolvetype(A) ::= REPLACE.                  { A = OE_Replace; }
 
 ////////////////////////// The DROP TABLE /////////////////////////////////////
 //
@@ -313,7 +316,7 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE onconf_u(R) ids(X) SET setlist(Y) where_opt(Z).
+cmd ::= UPDATE orconf(R) ids(X) SET setlist(Y) where_opt(Z).
     {sqliteUpdate(pParse,&X,Y,Z,R);}
 
 setlist(A) ::= setlist(Z) COMMA ids(X) EQ expr(Y).
@@ -322,9 +325,9 @@ setlist(A) ::= ids(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= INSERT onconf(R) INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
+cmd ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.
                {sqliteInsert(pParse, &X, Y, 0, F, R);}
-cmd ::= INSERT onconf(R) INTO ids(X) inscollist_opt(F) select(S).
+cmd ::= INSERT orconf(R) INTO ids(X) inscollist_opt(F) select(S).
                {sqliteInsert(pParse, &X, 0, S, F, R);}
 
 
@@ -548,9 +551,9 @@ cmd ::= DROP INDEX ids(X).      {sqliteDropIndex(pParse, &X);}
 
 ///////////////////////////// The COPY command ///////////////////////////////
 //
-cmd ::= COPY onconf_u(R) ids(X) FROM ids(Y) USING DELIMITERS STRING(Z).
+cmd ::= COPY orconf(R) ids(X) FROM ids(Y) USING DELIMITERS STRING(Z).
     {sqliteCopy(pParse,&X,&Y,&Z,R);}
-cmd ::= COPY onconf_u(R) ids(X) FROM ids(Y).
+cmd ::= COPY orconf(R) ids(X) FROM ids(Y).
     {sqliteCopy(pParse,&X,&Y,0,R);}
 
 ///////////////////////////// The VACUUM command /////////////////////////////

@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.3 2002/01/30 16:17:25 drh Exp $
+# $Id: conflict.test,v 1.4 2002/01/31 15:54:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,37 +36,37 @@ do_test conflict-1.2 {
 } {1 {constraint failed}}
 do_test conflict-1.3 {
   catchsql {
-    INSERT ON CONFLICT IGNORE INTO t1 VALUES(1,2,4);
+    INSERT OR IGNORE INTO t1 VALUES(1,2,4);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 3}
 do_test conflict-1.4 {
   catchsql {
-    INSERT ON CONFLICT REPLACE INTO t1 VALUES(1,2,4);
+    INSERT OR REPLACE INTO t1 VALUES(1,2,4);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 4}
 do_test conflict-1.5 {
   catchsql {
-    INSERT ON CONFLICT ABORT INTO t1 VALUES(1,2,5);
+    INSERT OR ABORT INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}}
 do_test conflict-1.6 {
   catchsql {
-    INSERT IGNORE INTO t1 VALUES(1,2,5);
+    INSERT OR IGNORE INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 4}
 do_test conflict-1.7 {
   catchsql {
-    INSERT REPLACE INTO t1 VALUES(1,2,5);
+    INSERT OR REPLACE INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 5}
 do_test conflict-1.8 {
   catchsql {
-    INSERT ON CONFLICT ABORT INTO t1 VALUES(1,2,6);
+    INSERT OR ABORT INTO t1 VALUES(1,2,6);
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}}
@@ -89,13 +89,13 @@ do_test conflict-1.9 {
 } 8
 do_test conflict-1.10 {
   catchsql {
-    INSERT IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
+    INSERT OR IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {5 21}}
 do_test conflict-1.11 {
   catchsql {
-    INSERT REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
+    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {14 24}}
@@ -103,7 +103,7 @@ do_test conflict-1.11 {
 ###### Fix me!
 do_test conflict-1.12 {
   catchsql {
-    INSERT REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
+    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {14 24}}
@@ -121,7 +121,7 @@ do_test conflict-1.13 {
 } {1 2 3 1 3 4 2 3 5}
 do_test conflict-1.14 {
   catchsql {
-    UPDATE ON CONFLICT ABORT t1 SET b=3 WHERE b=2;
+    UPDATE OR ABORT t1 SET b=3 WHERE b=2;
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}};
@@ -133,13 +133,13 @@ do_test conflict-1.15 {
 } {1 {constraint failed}};
 do_test conflict-1.16 {
   catchsql {
-    UPDATE ON CONFLICT IGNORE t1 SET b=3 WHERE b=2;
+    UPDATE OR IGNORE t1 SET b=3 WHERE b=2;
     SELECT * FROM t1 ORDER BY c;
   }
 } {0 {1 2 3 1 3 4 2 3 5}}
 do_test conflict-1.17 {
   catchsql {
-    UPDATE ON CONFLICT REPLACE t1 SET b=3 WHERE b=2;
+    UPDATE OR REPLACE t1 SET b=3 WHERE b=2;
     SELECT * FROM t1 ORDER BY c;
   }
 } {0 {1 3 3 2 3 5}}
@@ -163,37 +163,37 @@ do_test conflict-2.2 {
 } {1 {constraint failed}}
 do_test conflict-2.3 {
   catchsql { 
-    INSERT ON CONFLICT IGNORE INTO t1 VALUES(1,2,4);
+    INSERT OR IGNORE INTO t1 VALUES(1,2,4);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 3}
 do_test conflict-2.4 {
   catchsql {
-    INSERT ON CONFLICT REPLACE INTO t1 VALUES(1,2,4);
+    INSERT OR REPLACE INTO t1 VALUES(1,2,4);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 4}
 do_test conflict-2.5 {
   catchsql {
-    INSERT ON CONFLICT ABORT INTO t1 VALUES(1,2,5);
+    INSERT OR ABORT INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}}
 do_test conflict-2.6 {
   catchsql {
-    INSERT IGNORE INTO t1 VALUES(1,2,5);
+    INSERT OR IGNORE INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 4}
 do_test conflict-2.7 {
   catchsql {
-    INSERT REPLACE INTO t1 VALUES(1,2,5);
+    INSERT OR REPLACE INTO t1 VALUES(1,2,5);
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 5}
 do_test conflict-2.8 {
   catchsql {
-    INSERT ON CONFLICT ABORT INTO t1 VALUES(1,2,6);
+    INSERT OR ABORT INTO t1 VALUES(1,2,6);
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}}
@@ -216,13 +216,13 @@ do_test conflict-2.9 {
 } 8
 do_test conflict-2.10 {
   catchsql {
-    INSERT IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
+    INSERT OR IGNORE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {5 21}}
 do_test conflict-2.11 {
   catchsql {
-    INSERT REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
+    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {14 24}}
@@ -230,7 +230,7 @@ do_test conflict-2.11 {
 ###### Fix me!
 do_test conflict-2.12 {
   catchsql {
-    INSERT REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
+    INSERT OR REPLACE INTO t1 SELECT a,b,c FROM t2 ORDER BY c DESC;
     SELECT c FROM t1 ORDER BY c;
   }
 } {0 {14 24}}
@@ -248,7 +248,7 @@ do_test conflict-2.13 {
 } {1 2 3 2 3 4 3 3 5}
 do_test conflict-2.14 {
   catchsql {
-    UPDATE ON CONFLICT ABORT t1 SET a=2, b=3 WHERE b=2;
+    UPDATE OR ABORT t1 SET a=2, b=3 WHERE b=2;
     SELECT c FROM t1 ORDER BY c;
   }
 } {1 {constraint failed}};
@@ -260,13 +260,13 @@ do_test conflict-2.15 {
 } {1 {constraint failed}};
 do_test conflict-2.16 {
   catchsql {
-    UPDATE ON CONFLICT IGNORE t1 SET a=2, b=3 WHERE b=2;
+    UPDATE OR IGNORE t1 SET a=2, b=3 WHERE b=2;
     SELECT * FROM t1 ORDER BY c;
   }
 } {0 {1 2 3 2 3 4 3 3 5}}
 do_test conflict-2.17 {
   catchsql {
-    UPDATE ON CONFLICT REPLACE t1 SET a=2, b=3 WHERE b=2;
+    UPDATE OR REPLACE t1 SET a=2, b=3 WHERE b=2;
     SELECT * FROM t1 ORDER BY c;
   }
 } {0 {2 3 3 3 3 5}}

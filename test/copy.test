@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.7 2002/01/30 16:17:25 drh Exp $
+# $Id: copy.test,v 1.8 2002/01/31 15:54:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -194,7 +194,7 @@ do_test copy-5.3 {
   puts $fd "33|22|44"
   close $fd
   catchsql {
-    COPY ON CONFLICT IGNORE t1 FROM 'data6.txt' USING DELIMITERS '|';
+    COPY OR IGNORE t1 FROM 'data6.txt' USING DELIMITERS '|';
     SELECT * FROM t1;
   }
 } {0 {11 22 33 22 33 11}}
@@ -203,7 +203,7 @@ do_test copy-5.4 {
   puts $fd "33|22|44"
   close $fd
   catchsql {
-    COPY ON CONFLICT REPLACE t1 FROM 'data6.txt' USING DELIMITERS '|';
+    COPY OR REPLACE t1 FROM 'data6.txt' USING DELIMITERS '|';
     SELECT * FROM t1;
   }
 } {0 {22 33 11 33 22 44}}

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.112 2002/01/30 16:17:24 drh Exp $
+** $Id: vdbe.c,v 1.113 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1072,6 +1072,7 @@ int sqliteVdbeExec(
   sqlite *db = p->db;        /* The database */
   char **zStack;             /* Text stack */
   Stack *aStack;             /* Additional stack information */
+  int rollbackOnError = 1;   /* Do a ROLLBACK if an error is encountered */
   char zBuf[100];            /* Space to sprintf() an integer */
 
 
@@ -1149,14 +1150,20 @@ case OP_Goto: {
   break;
 }
 
-/* Opcode:  Halt P1 * *
+/* Opcode:  Halt P1 P2 *
 **
 ** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
 **
 ** P1 is the result code returned by sqlite_exec().  For a normal
 ** halt, this should be SQLITE_OK (0).  For errors, it can be some
-** other value.
+** other value.  If P1!=0 then P2 will determine whether or not to
+** rollback the current transaction.  Do not rollback if P2==OE_Fail.
+** Do the rollback if P2==OE_Rollback.  If P2==OE_Abort, then back
+** out all changes that have occurred during this execution of the
+** VDBE, but do not rollback the transaction.  (This last case has
+** not yet been implemented.  OE_Abort works like OE_Rollback for
+** now.  In the future that may change.)
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
@@ -1165,6 +1172,7 @@ case OP_Goto: {
 case OP_Halt: {
   if( pOp->p1!=SQLITE_OK ){
     rc = pOp->p1;
+    rollbackOnError = pOp->p2!=OE_Fail;
     goto abort_due_to_error;
   }else{
     pc = p->nOp-1;
@@ -4458,12 +4466,13 @@ default: {
 
 cleanup:
   Cleanup(p);
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_OK && rollbackOnError ){
     closeAllCursors(p);
     sqliteBtreeRollback(pBt);
     if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
     sqliteRollbackInternalChanges(db);
     db->flags &= ~SQLITE_InTrans;
+    db->onError = OE_Default;
   }
   return rc;
 

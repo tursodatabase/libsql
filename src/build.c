@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.69 2002/01/30 16:17:24 drh Exp $
+** $Id: build.c,v 1.70 2002/01/31 15:54:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -422,7 +422,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
       rc = sqliteBtreeBeginTrans(db->pBeTemp);
       if( rc!=SQLITE_OK ){
         sqliteSetNString(&pParse->zErrMsg, "unable to get a write lock on "
-          "the temporary datbase file", 0);
+          "the temporary database file", 0);
         pParse->nErr++;
         return;
       }
@@ -474,11 +474,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   if( pParse->pNewTable ) sqliteDeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
   if( !pParse->initFlag && (v = sqliteGetVdbe(pParse))!=0 ){
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
-    }
+    sqliteBeginWriteOperation(pParse);
     if( !isTemp ){
       sqliteVdbeAddOp(v, OP_SetCookie, db->file_format, 1);
       sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
@@ -738,9 +734,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
       sqliteVdbeAddOp(v, OP_Close, 0, 0);
     }
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-    }
+    sqliteEndWriteOperation(pParse);
   }
 }
 
@@ -802,11 +796,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
       { OP_Close,      0, 0,        0},
     };
     Index *pIdx;
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
-    }
+    sqliteBeginWriteOperation(pParse);
     if( !pTable->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
       sqliteVdbeChangeP3(v, base+2, pTable->zName, P3_STATIC);
@@ -817,9 +807,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
       sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->isTemp);
     }
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-    }
+    sqliteEndWriteOperation(pParse);
   }
 
   /* Move the table (and all its indices) to the pending DROP queue.
@@ -1057,11 +1045,7 @@ void sqliteCreateIndex(
     v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
     if( pTable!=0 ){
-      if( (db->flags & SQLITE_InTrans)==0 ){
-        sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-        sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-        pParse->schemaVerified = 1;
-      }
+      sqliteBeginWriteOperation(pParse);
       if( !isTemp ){
         sqliteVdbeAddOp(v, OP_OpenWrite, 0, 2);
         sqliteVdbeChangeP3(v, -1, MASTER_NAME, P3_STATIC);
@@ -1118,9 +1102,7 @@ void sqliteCreateIndex(
         sqliteVdbeAddOp(v, OP_SetCookie, db->next_cookie, 0);
         sqliteVdbeAddOp(v, OP_Close, 0, 0);
       }
-      if( (db->flags & SQLITE_InTrans)==0 ){
-        sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-      }
+      sqliteEndWriteOperation(pParse);
     }
   }
 
@@ -1173,11 +1155,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     int base;
     Table *pTab = pIndex->pTable;
 
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
-    }
+    sqliteBeginWriteOperation(pParse);
     if( !pTab->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
       sqliteVdbeChangeP3(v, base+2, pIndex->zName, P3_STATIC);
@@ -1185,9 +1163,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       sqliteVdbeChangeP1(v, base+10, db->next_cookie);
     }
     sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pTab->isTemp);
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-    }
+    sqliteEndWriteOperation(pParse);
   }
 
   /* Move the index onto the pending DROP queue.  Or, if the index was
@@ -1337,7 +1313,7 @@ void sqliteCopy(
 ){
   Table *pTab;
   char *zTab;
-  int i, j;
+  int i;
   Vdbe *v;
   int addr, end;
   Index *pIdx;
@@ -1362,11 +1338,7 @@ void sqliteCopy(
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-      sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-      pParse->schemaVerified = 1;
-    }
+    sqliteBeginWriteOperation(pParse);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
@@ -1411,9 +1383,7 @@ void sqliteCopy(
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
     sqliteVdbeResolveLabel(v, end);
     sqliteVdbeAddOp(v, OP_Noop, 0, 0);
-    if( (db->flags & SQLITE_InTrans)==0 ){
-      sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-    }
+    sqliteEndWriteOperation(pParse);
     if( db->flags & SQLITE_CountRows ){
       sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
       sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
@@ -1450,11 +1420,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   }
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto vacuum_cleanup;
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-    pParse->schemaVerified = 1;
-  }
+  sqliteBeginWriteOperation(pParse);
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0);
     sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
@@ -1472,9 +1438,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
       }
     }
   }
-  if( (db->flags & SQLITE_InTrans)==0 ){
-    sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-  }
+  sqliteEndWriteOperation(pParse);
 
 vacuum_cleanup:
   sqliteFree(zName);
@@ -1484,20 +1448,15 @@ vacuum_cleanup:
 /*
 ** Begin a transaction
 */
-void sqliteBeginTransaction(Parse *pParse){
+void sqliteBeginTransaction(Parse *pParse, int onError){
   sqlite *db;
-  Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( db->flags & SQLITE_InTrans ) return;
-  v = sqliteGetVdbe(pParse);
-  if( v ){
-    sqliteVdbeAddOp(v, OP_Transaction, 1, 0);
-    sqliteVdbeAddOp(v, OP_VerifyCookie, db->schema_cookie, 0);
-    pParse->schemaVerified = 1;
-  }
+  sqliteBeginWriteOperation(pParse);
   db->flags |= SQLITE_InTrans;
+  db->onError = onError;
 }
 
 /*
@@ -1505,16 +1464,13 @@ void sqliteBeginTransaction(Parse *pParse){
 */
 void sqliteCommitTransaction(Parse *pParse){
   sqlite *db;
-  Vdbe *v;
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( (db->flags & SQLITE_InTrans)==0 ) return;
-  v = sqliteGetVdbe(pParse);
-  if( v ){
-    sqliteVdbeAddOp(v, OP_Commit, 0, 0);
-  }
   db->flags &= ~SQLITE_InTrans;
+  sqliteEndWriteOperation(pParse);
+  db->onError = OE_Default;
 }
 
 /*
@@ -1532,7 +1488,45 @@ void sqliteRollbackTransaction(Parse *pParse){
     sqliteVdbeAddOp(v, OP_Rollback, 0, 0);
   }
   db->flags &= ~SQLITE_InTrans;
+  db->onError = OE_Default;
 }
+
+/*
+** Generate VDBE code that prepares for doing an operation that
+** might change the database.  If we are in the middle of a transaction,
+** then this sets a checkpoint.  If we are not in a transaction, then
+** start a transaction.
+*/
+void sqliteBeginWriteOperation(Parse *pParse){
+  Vdbe *v;
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return;
+  if( pParse->db->flags & SQLITE_InTrans ){
+    /* sqliteVdbeAddOp(v, OP_CheckPoint, 0, 0); */
+  }else{
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
+    pParse->schemaVerified = 1;
+  }
+}
+
+/*
+** Generate code that concludes an operation that may have changed
+** the database.  This is a companion function to BeginWriteOperation().
+** If a transaction was started, then commit it.  If a checkpoint was
+** started then commit that.
+*/
+void sqliteEndWriteOperation(Parse *pParse){
+  Vdbe *v;
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return;
+  if( pParse->db->flags & SQLITE_InTrans ){
+    /* Do Nothing */
+  }else{
+    sqliteVdbeAddOp(v, OP_Commit, 0, 0);
+  }
+}
+
 
 /*
 ** Interpret the given string as a boolean value.

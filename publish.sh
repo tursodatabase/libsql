@@ -28,7 +28,9 @@ gzip sqlite.bin
 # under Linux
 #
 make target_source
+rm sqlite_source.zip
 cd tsrc
+zip ../sqlite_source.zip *
 rm shell.c
 TCLDIR=/home/drh/tcltk/8.2linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a
@@ -36,9 +38,14 @@ OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1'
 gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
 mv tclsqlite.so ..
+rm tclsqlite.c
+gcc -fPIC -DNDEBUG=1 -O2 -I. -shared *.c -o sqlite.so
+strip sqlite.so
+mv sqlite.so ..
 cd ..
-rm -f tclsqlite.so.gz
+rm -f tclsqlite.so.gz sqlite.so.gz
 gzip tclsqlite.so
+gzip sqlite.so
 
 # Build the tclsqlite.dll shared library that can be imported into tclsh
 # or wish on windows.
@@ -69,9 +76,43 @@ i386-mingw32-dllwrap \
      -dllname tclsqlite.dll -lmsvcrt *.o $TCLSTUBLIB
 i386-mingw32-strip tclsqlite.dll
 mv tclsqlite.dll ..
+rm tclsqlite.o
+cat >sqlite.def <<\END_OF_FILE
+EXPORTS
+sqlite_open
+sqlite_close
+sqlite_exec
+sqlite_last_insert_rowid
+sqlite_error_string
+sqlite_interrupt
+sqlite_complete
+sqlite_busy_handler
+sqlite_busy_timeout
+sqlite_get_table
+sqlite_free_table
+sqlite_mprintf
+sqlite_vmprintf
+sqlite_exec_printf
+sqlite_exec_vprintf
+sqlite_get_table_printf
+sqlite_get_table_vprintf
+sqliteMalloc
+sqliteFree
+sqliteRealloc
+END_OF_FILE
+i386-mingw32-dllwrap \
+     --def sqlite.def -v --export-all \
+     --driver-name i386-mingw32-gcc \
+     --dlltool-name i386-mingw32-dlltool \
+     --as i386-mingw32-as \
+     --target i386-mingw32 \
+     -dllname sqlite.dll -lmsvcrt *.o
+i386-mingw32-strip sqlite.dll
+mv sqlite.dll sqlite.def ..
 cd ..
-rm -f tclsqlite.zip
+rm -f tclsqlite.zip sqlitedll.zip
 zip tclsqlite.zip tclsqlite.dll
+zip sqlitedll.zip sqlite.dll sqlite.def
 
 # Build the sqlite.exe executable for windows.
 #
@@ -103,3 +144,4 @@ cp $srcdir/../historical/* .
 rm -rf doc
 make doc
 ln sqlite.bin.gz sqlite.zip sqlite*.tar.gz tclsqlite.so.gz tclsqlite.zip doc
+ln sqlitedll.zip sqlite.so.gz sqlite_source.zip doc

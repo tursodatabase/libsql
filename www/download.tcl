@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.2 2001/11/24 13:23:05 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.3 2002/01/31 15:54:23 drh Exp $}
 
 puts {<html>
 <head><title>SQLite Download Page</title></head>
@@ -41,6 +41,11 @@ Product tclsqlite.so.gz {
   See <a href="tclsqlite.html">the documentation</a> for details.
 }
 
+Product sqlite.so.gz {
+  A precompiled shared-library for Linux.  This is the same as
+  <b>tclsqlite.so.gz</b> but without the TCL bindings.
+}
+
 puts {<h2>Precompiled Binaries For Windows</h2>}
 
 Product sqlite.zip {
@@ -52,8 +57,20 @@ Product tclsqlite.zip {
   tclsh or wish to get SQLite database access from Tcl/Tk.
   See <a href="tclsqlite.html">the documentation</a> for details.
 }
+Product sqlitedll.zip {
+  This is a DLL of the SQLite library without the TCL bindings.
+  The only external dependency is MSVCRT.DLL.
+}
 
 puts {<h2>Source Code</h2>}
+
+Product {sqlite_source.zip} {
+  This ZIP archive contains pure C source code for the SQLite library.
+  Unlike the tarballs below, all of the preprocessing has already been
+  done on these C source code, so you can just hand the files directly to
+  your favorite C compiler.  This file is provided as a service to
+  MS-Windows users who lack the build support infrastructure of Unix.
+}
 
 foreach name [lsort -dict -decreasing [glob -nocomplain sqlite-*.tar.gz]] {
   regexp {sqlite-(.*)\.tar\.gz} $name match vers
