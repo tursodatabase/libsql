@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.165 2004/02/11 09:46:31 drh Exp $
+** $Id: build.c,v 1.166 2004/02/12 18:46:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -280,10 +280,18 @@ void sqliteResetInternalSchema(sqlite *db, int iDb){
   ** schema hash tables and therefore do not have to make any changes
   ** to any of those tables.
   */
+  for(i=0; i<db->nDb; i++){
+    struct Db *pDb = &db->aDb[i];
+    if( pDb->pBt==0 ){
+      if( pDb->pAux && pDb->xFreeAux ) pDb->xFreeAux(pDb->pAux);
+      pDb->pAux = 0;
+    }
+  }
   for(i=j=2; i<db->nDb; i++){
-    if( db->aDb[i].pBt==0 ){
-      sqliteFree(db->aDb[i].zName);
-      db->aDb[i].zName = 0;
+    struct Db *pDb = &db->aDb[i];
+    if( pDb->pBt==0 ){
+      sqliteFree(pDb->zName);
+      pDb->zName = 0;
       continue;
     }
     if( j<i ){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.9 2004/01/20 11:54:03 drh Exp $
+** $Id: attach.c,v 1.10 2004/02/12 18:46:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,7 +23,7 @@
 ** The pFilename and pDbname arguments are the tokens that define the
 ** filename and dbname in the ATTACH statement.
 */
-void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
+void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey){
   Db *aNew;
   int rc, i;
   char *zFile, *zName;
@@ -91,6 +91,22 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   if( rc ){
     sqliteErrorMsg(pParse, "unable to open database: %s", zFile);
   }
+#if SQLITE_HAS_CODEC
+  {
+    extern int sqliteCodecAttach(sqlite*, int, void*, int);
+    char *zKey = 0;
+    int nKey;
+    if( pKey && pKey->z && pKey->n ){
+      sqliteSetNString(&zKey, pKey->z, pKey->n, 0);
+      sqliteDequote(zKey);
+      nKey = strlen(zKey);
+    }else{
+      zKey = 0;
+      nKey = 0;
+    }
+    sqliteCodecAttach(db, db->nDb-1, zKey, nKey);
+  }
+#endif
   sqliteFree(zFile);
   db->flags &= ~SQLITE_Initialized;
   if( pParse->nErr ) return;

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.108 2004/02/12 17:28:13 drh Exp $
+** @(#) $Id: parse.y,v 1.109 2004/02/12 18:46:39 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -880,9 +880,12 @@ cmd ::= DROP TRIGGER nm(X) dbnm(D). {
 }
 
 //////////////////////// ATTACH DATABASE file AS name /////////////////////////
-cmd ::= ATTACH database_kw_opt ids(F) AS nm(D). {
-  sqliteAttach(pParse, &F, &D);
+cmd ::= ATTACH database_kw_opt ids(F) AS nm(D) key_opt(K). {
+  sqliteAttach(pParse, &F, &D, &K);
 }
+%type key_opt {Token}
+key_opt(A) ::= USING ids(X).  { A = X; }
+key_opt(A) ::= .              { A.z = 0; A.n = 0; }
 
 database_kw_opt ::= DATABASE.
 database_kw_opt ::= .
