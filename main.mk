@@ -369,6 +369,9 @@ c_interface.html:	$(TOP)/www/c_interface.tcl
 capi3.html:	$(TOP)/www/capi3.tcl
 	tclsh $(TOP)/www/capi3.tcl >capi3.html
 
+capi3ref.html:	$(TOP)/www/capi3ref.tcl
+	tclsh $(TOP)/www/capi3ref.tcl >capi3ref.html
+
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
 
@@ -455,6 +458,7 @@ DOC = \
   arch.png \
   c_interface.html \
   capi3.html \
+  capi3ref.html \
   changes.html \
   copyright.html \
   copyright-release.html \
