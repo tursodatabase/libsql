@@ -647,7 +647,7 @@ int sqliteOsTempFileName(char *zBuf){
     sprintf(zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
     for(i=0; i<15; i++){
-      int n = sqliteRandomByte() % sizeof(zChars);
+      int n = sqliteRandomByte() % (sizeof(zChars) - 1);
       zBuf[j++] = zChars[n];
     }
     zBuf[j] = 0;
