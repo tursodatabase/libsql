@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 28 (Version 1.0.4)} {
+<li>Added functions <b>length()</b> and <b>substr()</b>.</li>
+<li>Fix a bug in the <b>sqlite</b> shell program that was causing
+    a coredump when the output mode was "column" and the first row
+    of data contained a NULL.</li>
+}
+
 chng {2000 Aug 22 (Version 1.0.3)} {
 <li>In the sqlite shell, print the "Database opened READ ONLY" message
     to stderr instead of stdout.</li>

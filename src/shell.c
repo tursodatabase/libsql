@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.23 2000/08/22 13:40:19 drh Exp $
+** $Id: shell.c,v 1.24 2000/08/28 16:21:59 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -253,9 +253,9 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
              w = 0;
           }
           if( w<=0 ){
-            w = strlen(azCol[i]);
+            w = strlen(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen(azArg[i]);
+            n = strlen(azArg[i] ? azArg[i] : "");
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){

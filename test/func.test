@@ -1,0 +1,92 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing built-in functions.
+#
+# $Id: func.test,v 1.1 2000/08/28 16:22:00 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table to work with.
+#
+execsql {CREATE TABLE tbl1(t1 text)}
+foreach word {this program is free software} {
+  execsql "INSERT INTO tbl1 VALUES('$word')"
+}
+
+# Make sure the table was created properly.
+#
+do_test func-0.0 {
+  execsql {SELECT t1 FROM tbl1 ORDER BY t1}
+} {free is program software this}
+
+# Check out the length() function
+#
+do_test func-1.0 {
+  execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
+} {4 2 7 8 4}
+do_test func-1.1 {
+  set r [catch {execsql {SELECT length(*) FROM tbl1 ORDER BY t1}} msg]
+  lappend r $msg
+} {1 {too few arguments to function length()}}
+do_test func-1.2 {
+  set r [catch {execsql {SELECT length(t1,5) FROM tbl1 ORDER BY t1}} msg]
+  lappend r $msg
+} {1 {too many arguments to function length()}}
+do_test func-1.3 {
+  execsql {SELECT length(t1), count(*) FROM tbl1 GROUP BY length(t1)
+           ORDER BY length(t1)}
+} {2 1 4 2 7 1 8 1}
+
+# Check out the substr() function
+#
+do_test func-2.0 {
+  execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
+} {fr is pr so th}
+do_test func-2.1 {
+  execsql {SELECT substr(t1,2,1) FROM tbl1 ORDER BY t1}
+} {r s r o h}
+do_test func-2.2 {
+  execsql {SELECT substr(t1,3,3) FROM tbl1 ORDER BY t1}
+} {ee {} ogr ftw is}
+do_test func-2.3 {
+  execsql {SELECT substr(t1,-1,1) FROM tbl1 ORDER BY t1}
+} {e s m e s}
+do_test func-2.4 {
+  execsql {SELECT substr(t1,-1,2) FROM tbl1 ORDER BY t1}
+} {e s m e s}
+do_test func-2.5 {
+  execsql {SELECT substr(t1,-2,1) FROM tbl1 ORDER BY t1}
+} {e i a r i}
+do_test func-2.6 {
+  execsql {SELECT substr(t1,-2,2) FROM tbl1 ORDER BY t1}
+} {ee is am re is}
+do_test func-2.7 {
+  execsql {SELECT substr(t1,-4,2) FROM tbl1 ORDER BY t1}
+} {fr {} gr wa th}
+do_test func-2.8 {
+  execsql {SELECT t1 FROM tbl1 ORDER BY substr(t1,2,20)}
+} {this software free program is}
+
+finish_test

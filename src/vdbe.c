@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.39 2000/08/28 15:51:44 drh Exp $
+** $Id: vdbe.c,v 1.40 2000/08/28 16:22:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -3185,20 +3185,23 @@ int sqliteVdbeExec(
         if( pOp->p1==0 ){
           if( p->tos<0 ) goto not_enough_stack;
           Integerify(p, p->tos);
-          start = p->aStack[p->tos].i;
+          start = p->aStack[p->tos].i - 1;
           PopStack(p, 1);
         }else{
-          start = pOp->p1;
+          start = pOp->p1 - 1;
         }
         if( p->tos<0 ) goto not_enough_stack;
         Stringify(p, p->tos);
         n = p->aStack[p->tos].n - 1;
         if( start<0 ){
-          start += n;
+          start += n + 1;
           if( start<0 ){
             cnt += start;
             start = 0;
           }
+        }
+        if( start>n ){
+          start = n;
         }
         if( cnt<0 ) cnt = 0;
         if( cnt > n ){
@@ -3206,7 +3209,7 @@ int sqliteVdbeExec(
         }
         z = sqliteMalloc( cnt+1 );
         if( z==0 ) goto no_mem;
-        strncpy(z, p->zStack[p->tos], cnt);
+        strncpy(z, &p->zStack[p->tos][start], cnt);
         z[cnt] = 0;
         PopStack(p, 1);
         p->tos++;
