@@ -14,9 +14,8 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.62 2002/02/23 23:45:45 drh Exp $
+** $Id: main.c,v 1.63 2002/02/24 01:55:17 drh Exp $
 */
-#include <ctype.h>
 #include "sqliteInt.h"
 #include "os.h"
 
@@ -294,30 +293,6 @@ const char sqlite_encoding[] = "iso8859";
 #endif
 
 /*
-** Implementation of the upper() and lower() SQL functions.
-*/
-static void upperFunc(void *context, int argc, const char **argv){
-  char *z;
-  int i;
-  if( argc<1 || argv[0]==0 ) return;
-  z = sqlite_set_result_string(context, argv[0], -1);
-  if( z==0 ) return;
-  for(i=0; z[i]; i++){
-    if( islower(z[i]) ) z[i] = toupper(z[i]);
-  }
-}
-static void lowerFunc(void *context, int argc, const char **argv){
-  char *z;
-  int i;
-  if( argc<1 || argv[0]==0 ) return;
-  z = sqlite_set_result_string(context, argv[0], -1);
-  if( z==0 ) return;
-  for(i=0; z[i]; i++){
-    if( isupper(z[i]) ) z[i] = tolower(z[i]);
-  }
-}
-
-/*
 ** Open a new SQLite database.  Construct an "sqlite" structure to define
 ** the state of this database and return a pointer to that structure.
 **
@@ -339,8 +314,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteHashInit(&db->tblDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->idxDrop, SQLITE_HASH_POINTER, 0);
   sqliteHashInit(&db->userFunc, SQLITE_HASH_STRING, 1);
-  sqlite_create_function(db, "upper", 1, upperFunc);
-  sqlite_create_function(db, "lower", 1, lowerFunc);
+  sqliteRegisterBuildinFunctions(db);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
   

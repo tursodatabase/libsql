@@ -1,7 +1,7 @@
-C Added\ssupport\sfor\suser-defined\snormal\sfunctions.\s\sSupport\sfor\suser-defined\naggregates\sis\spending.\s(CVS\s390)
-D 2002-02-23T23:45:45
-F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
-F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
+C Move\sthe\sbuild-in\sfunction\sdefinitions\sinto\sa\snew\ssource\sfile\s"func.c".\s(CVS\s391)
+D 2002-02-24T01:55:16
+F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
+F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
 F VERSION 80c0f75cf7de338f1c6c31c07f5576d21f764431
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
@@ -24,10 +24,11 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 1da051784be0155ae579d47890db74f0186f9b9f
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c 4f9db24c4e90585fd046703d4f91c10b453867fa
+F src/func.c f06739ac3266fe237a8079415c75b4fe27f9b604
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
-F src/main.c 0fa2298ab8980cb446dc81086ce36f905f607f70
+F src/main.c 69ba23401427f18f6eb1e9b92a3bd3236e2e39ad
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
@@ -40,7 +41,7 @@ F src/select.c 61d4a739956aaeb124cdf12c34c66e99ae34212c
 F src/shell.c cbf48bf0ca35c4e0d8a7d2a86f7724f52c525cd7
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f1421919a4437a377fb712b98835a224482e776e
-F src/sqliteInt.h b089e9226fbb88b25810d2f52285929dcf6999c6
+F src/sqliteInt.h 55a15c38dbb2cfcf148b56b51945b50d5d41f254
 F src/table.c 203a09d5d0009eeeb1f670370d52b4ce163a3b52
 F src/tclsqlite.c b9cf346e95291cb4c4f1bf5ac1d77db6b8ad023d
 F src/test1.c 33efd350dca27c52c58c553c04fd3a6a51f13c1f
@@ -125,7 +126,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 67a135a051e7c96ddbfe85976539b4b8372c7026
-R fa8d1484ff86c96c0829999f970d3d5e
+P c490a1ff951c5d4a2de8e4f8d349189bfaef7f74
+R 0358ce63954d177a9cd11817b7f3c75f
 U drh
-Z f2c150ed8d00dcdf045fbfc7cf498205
+Z 379bf92a060e853d2b3e64f2e8f8e8ad

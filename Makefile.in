@@ -61,7 +61,7 @@ ENCODING = @ENCODING@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.lo build.lo delete.lo expr.lo hash.lo insert.lo \
+LIBOBJ = btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo os.lo pager.lo parse.lo printf.lo random.lo select.lo \
          table.lo tokenize.lo update.lo util.lo vdbe.lo where.lo
 
@@ -73,6 +73,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
+  $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
@@ -191,6 +192,9 @@ delete.lo:	$(TOP)/src/delete.c $(HDR)
 
 expr.lo:	$(TOP)/src/expr.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/expr.c
+
+func.lo:	$(TOP)/src/func.c $(HDR)
+	$(LIBTOOL) $(TCC) -c $(TOP)/src/func.c
 
 hash.lo:	$(TOP)/src/hash.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/hash.c

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.91 2002/02/23 23:45:45 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.92 2002/02/24 01:55:17 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -646,3 +646,4 @@ void sqliteExprMoveStrings(Expr*, int);
 void sqliteExprListMoveStrings(ExprList*, int);
 void sqliteSelectMoveStrings(Select*, int);
 UserFunc *sqliteFindUserFunction(sqlite*,const char*,int,int,int);
+void sqliteRegisterBuildinFunctions(sqlite*);
