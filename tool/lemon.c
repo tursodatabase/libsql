@@ -3103,13 +3103,16 @@ int mhflag;     /* Output in makeheaders format if true */
     }
 
     /* Print the hash table */
-    fprintf(out,"/* State %d */\n",stp->index); lineno++;
+    if( tablesize>0 ){
+      fprintf(out,"/* State %d */\n",stp->index); lineno++;
+    }
     for(j=0; j<tablesize; j++){
       assert( table[j]!=0 );
-      fprintf(out,"  {%4d,%4d,%4d}, /* ",
+      fprintf(out,"  {%4d,%4d,%4d}, /* %2d: ",
           table[j]->sp->index,
           collide[j]+1,
-          compute_action(lemp,table[j]));
+          compute_action(lemp,table[j]),
+          j+1);
       PrintAction(table[j],out,22);
       fprintf(out," */\n"); 
       lineno++;

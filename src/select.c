@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.71 2002/03/02 17:04:08 drh Exp $
+** $Id: select.c,v 1.72 2002/03/03 02:49:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -760,13 +760,17 @@ static void changeTables(Expr *pExpr, int iFrom, int iTo){
   if( pExpr->op==TK_COLUMN && pExpr->iTable==iFrom ){
     pExpr->iTable = iTo;
   }else{
+    static void changeTablesInList(ExprList*, int, int);
     changeTables(pExpr->pLeft, iFrom, iTo);
     changeTables(pExpr->pRight, iFrom, iTo);
-    if( pExpr->pList ){
-      int i;
-      for(i=0; i<pExpr->pList->nExpr; i++){
-        changeTables(pExpr->pList->a[i].pExpr, iFrom, iTo);
-      }
+    changeTablesInList(pExpr->pList, iFrom, iTo);
+  }
+}
+static void changeTablesInList(ExprList *pList, int iFrom, int iTo){
+  if( pList ){
+    int i;
+    for(i=0; i<pList->nExpr; i++){
+      changeTables(pList->a[i].pExpr, iFrom, iTo);
     }
   }
 }
@@ -799,6 +803,7 @@ static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
     pExpr->iTable = pNew->iTable;
     pExpr->iColumn = pNew->iColumn;
     pExpr->iAgg = pNew->iAgg;
+    pExpr->token = pNew->token;
     if( iSub!=iTable ){
       changeTables(pExpr, iSub, iTable);
     }
@@ -908,8 +913,10 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
       pList->a[i].zName = sqliteStrNDup(pExpr->span.z, pExpr->span.n);
     }
   }
-  substExprList(p->pGroupBy, iParent, pSub->pEList, iSub);
-  substExpr(p->pHaving, iParent, pSub->pEList, iSub);
+  if( isAgg ){
+    substExprList(p->pGroupBy, iParent, pSub->pEList, iSub);
+    substExpr(p->pHaving, iParent, pSub->pEList, iSub);
+  }
   substExprList(p->pOrderBy, iParent, pSub->pEList, iSub);
   if( pSub->pWhere ){
     pWhere = sqliteExprDup(pSub->pWhere);
@@ -921,8 +928,25 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   }
   if( subqueryIsAgg ){
     assert( p->pHaving==0 );
-    p->pHaving = pWhere;
+    p->pHaving = p->pWhere;
+    p->pWhere = pWhere;
     substExpr(p->pHaving, iParent, pSub->pEList, iSub);
+    if( pSub->pHaving ){
+      Expr *pHaving = sqliteExprDup(pSub->pHaving);
+      if( iParent!=iSub ){
+        changeTables(pHaving, iSub, iParent);
+      }
+      if( p->pHaving ){
+        p->pHaving = sqliteExpr(TK_AND, p->pHaving, pHaving, 0);
+      }else{
+        p->pHaving = pHaving;
+      }
+    }
+    assert( p->pGroupBy==0 );
+    p->pGroupBy = sqliteExprListDup(pSub->pGroupBy);
+    if( iParent!=iSub ){
+      changeTablesInList(p->pGroupBy, iSub, iParent);
+    }
   }else if( p->pWhere==0 ){
     p->pWhere = pWhere;
   }else{
@@ -1083,6 +1107,13 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 **
 ** This routine does NOT free the Select structure passed in.  The
 ** calling function needs to do that.
+**
+** The pParent, parentTab, and *pParentAgg fields are filled in if this
+** SELECT is a subquery.  This routine may try to combine this SELECT
+** with its parent to form a single flat query.  In so doing, it might
+** change the parent query from a non-aggregate to an aggregate query.
+** For that reason, the pParentAgg flag is passed as a pointer, so it
+** can be changed.
 */
 int sqliteSelect(
   Parse *pParse,         /* The parser context */
@@ -1091,7 +1122,7 @@ int sqliteSelect(
   int iParm,             /* Save result in this memory location, if >=0 */
   Select *pParent,       /* Another SELECT for which this is a sub-query */
   int parentTab,         /* Index in pParent->pSrc of this query */
-  int parentAgg          /* True if pParent uses aggregate functions */
+  int *pParentAgg        /* True if pParent uses aggregate functions */
 ){
   int i;
   WhereInfo *pWInfo;
@@ -1254,21 +1285,23 @@ int sqliteSelect(
     if( pTabList->a[i].pSelect==0 ) continue;
     sqliteVdbeAddOp(v, OP_OpenTemp, base+i, 0);
     sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_Table, base+i,
-                 p, i, isAgg);
+                 p, i, &isAgg);
+    pTabList = p->pSrc;
+    pWhere = p->pWhere;
+    pOrderBy = p->pOrderBy;
+    pGroupBy = p->pGroupBy;
+    pHaving = p->pHaving;
+    isDistinct = p->isDistinct;
   }
 
   /* Check to see if this is a subquery that can be "flattened" into its parent.
   ** If flattening is a possiblity, do so and return immediately.  
   */
-  if( flattenSubquery(pParent, parentTab, parentAgg, isAgg) ){
+  if( pParent && pParentAgg &&
+      flattenSubquery(pParent, parentTab, *pParentAgg, isAgg) ){
+    if( isAgg ) *pParentAgg = 1;
     return rc;
   }
-  pTabList = p->pSrc;
-  pWhere = p->pWhere;
-  pOrderBy = p->pOrderBy;
-  pGroupBy = p->pGroupBy;
-  pHaving = p->pHaving;
-  isDistinct = p->isDistinct;
 
   /* Do an analysis of aggregate expressions.
   */

@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.7 2002/02/19 13:39:23 drh Exp $
+# $Id: insert2.test,v 1.8 2002/03/03 02:49:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -112,10 +112,75 @@ do_test insert2-2.3 {
   }
 } {hi 2 1}
 
-do_test insert2-4.0 {
+do_test insert2-3.0 {
   set x [execsql {PRAGMA integrity_check}]
   if {$x==""} {set x ok}
   set x
 } {ok}
+
+# File table t4 with lots of data
+#
+do_test insert2-3.1 {
+  execsql {
+    SELECT * from t4;
+  }
+} {1 2}
+do_test insert2-3.2 {
+  execsql {
+    BEGIN;
+    INSERT INTO t4 VALUES(2,4);
+    INSERT INTO t4 VALUES(3,6);
+    INSERT INTO t4 VALUES(4,8);
+    INSERT INTO t4 VALUES(5,10);
+    INSERT INTO t4 VALUES(6,12);
+    INSERT INTO t4 VALUES(7,14);
+    INSERT INTO t4 VALUES(8,16);
+    INSERT INTO t4 VALUES(9,18);
+    INSERT INTO t4 VALUES(10,20);
+    COMMIT;
+    SELECT count(*) FROM t4;
+  }
+} {10}
+do_test insert2-3.3 {
+  execsql {
+    BEGIN;
+    INSERT INTO t4 SELECT x+(SELECT max(x) FROM t4),y FROM t4;
+    INSERT INTO t4 SELECT x+(SELECT max(x) FROM t4),y FROM t4;
+    INSERT INTO t4 SELECT x+(SELECT max(x) FROM t4),y FROM t4;
+    INSERT INTO t4 SELECT x+(SELECT max(x) FROM t4),y FROM t4;
+    COMMIT;
+    SELECT count(*) FROM t4;
+  }
+} {160}
+do_test insert2-3.4 {
+  execsql {
+    BEGIN;
+    UPDATE t4 SET y='lots of data for the row where x=' || x
+                     || ' and y=' || y || ' - even more data to fill space';
+    COMMIT;
+    SELECT count(*) FROM t4;
+  }
+} {160}
+do_test insert2-3.5 {
+  execsql {
+    BEGIN;
+    INSERT INTO t4 SELECT x+(SELECT max(x)+1 FROM t4),y FROM t4;
+    SELECT count(*) from t4;
+    ROLLBACK;
+  }
+} {320}
+do_test insert2-3.6 {
+  execsql {
+    SELECT count(*) FROM t4;
+  }
+} {160}
+do_test insert2-3.7 {
+  execsql {
+    BEGIN;
+    DELETE FROM t4 WHERE x!=123;
+    SELECT count(*) FROM t4;
+    ROLLBACK;
+  }
+} {1}
 
 finish_test
