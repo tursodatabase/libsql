@@ -1,7 +1,7 @@
 #
 # Run this script to generated a datatypes.html output file
 #
-set rcsid {$Id: datatypes.tcl,v 1.5 2002/08/18 19:09:24 drh Exp $}
+set rcsid {$Id: datatypes.tcl,v 1.6 2003/12/18 14:19:41 drh Exp $}
 
 puts {<html>
 <head>
@@ -98,7 +98,7 @@ largest key is 2147483647, then the column will be filled with a
 random integer.  Either way, the INTEGER PRIMARY KEY column will be
 assigned a unique integer.  You can retrieve this integer using
 the <b>sqlite_last_insert_rowid()</b> API function or using the
-<b>last_insert_rowid()</b> SQL function is a subsequent SELECT statement.
+<b>last_insert_rowid()</b> SQL function in a subsequent SELECT statement.
 </p>
 
 <h2>3.0 &nbsp; Comparison and Sort Order</h2>
