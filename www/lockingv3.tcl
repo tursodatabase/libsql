@@ -31,8 +31,10 @@ set pnum(8) 0
 HEADING 1 {File Locking And Concurrency In SQLite Version 3}
 
 puts {
-<p>Version 3 of SQLite introduces a more sophisticated locking mechanism
-design to improve concurrency and reduce the writer starvation problem.
+<p>Version 3 of SQLite introduces a more complex locking and journaling 
+mechanism designed to improve concurrency and reduce the writer starvation 
+problem.  The new mechanism also allows atomic commits of transactions
+involving multiple database files.
 This document describes the new locking mechanism.
 The intended audience is programmers who want to understand and/or modify
 the pager code and reviewers working to verify the design
@@ -47,19 +49,19 @@ puts {
 Locking and concurrency control are handled by the the 
 <a href="http://www.sqlite.org/cvstrac/getfile/sqlite/src/pager.c">
 pager module</a>.
-The pager module is responsible for make SQLite "ACID" (Atomic,
+The pager module is responsible for making SQLite "ACID" (Atomic,
 Consistent, Isolated, and Durable).  The pager module makes sure changes
 happen all at once, that either all changes occur or none of them do,
-that two or more threads or processes do not try to access the database
+that two or more processes do not try to access the database
 in incompatible ways at the same time, and that once changes have been
 written they persist until explicitly deleted.  The pager also provides
 an memory cache of some of the contents of the disk file.</p>
 
 <p>The pager is unconcerned
 with the details of B-Trees, text encodings, indices, and so forth.
-From the point of view of the pager, the database consists of
+From the point of view of the pager the database consists of
 a single file of uniform-sized blocks.  Each block is called a
-"page" is is usually 1024 bytes in size.   The pages are numbered
+"page" and is usually 1024 bytes in size.   The pages are numbered
 beginning with 1.  So the first 1024 bytes of the database are called
 "page 1" and the second 1024 bytes are call "page 2" and so forth. All 
 other encoding details are handled by higher layers of the library.  
@@ -72,13 +74,18 @@ os_unix.c</a>,
 os_win.c</a>)
 that provides a uniform abstraction for operating system services.
 </p>
+
+<p>The pager module effectively controls access for separate threads, or
+separate processes, or both.  Throughout this document whenever the
+word "process" is written you may substitute the word "thread" without
+changing the truth of the statement.</p>
 }
 
 HEADING 1 {Locking}
 
 puts {
 <p>
-From the point of view of a single thread or process, a database file
+From the point of view of a single process, a database file
 can be in one of five locking states:
 </p>
 
@@ -88,14 +95,14 @@ can be in one of five locking states:
 <td valign="top">
 No locks are held on the database.  The database may be neither read nor
 written.  Any internally cached data is considered suspect and subject to
-verification against the database file before being used.  Other threads
-and processes can read or write the database as their own locking states
+verification against the database file before being used.  Other 
+processes can read or write the database as their own locking states
 permit.  This is the default state.
 </td></tr>
 
 <tr><td valign="top">SHARED</td>
 <td valign="top">
-The database may be read but not written.  Any number of threads or
+The database may be read but not written.  Any number of 
 processes can hold SHARED locks at the same time, hence there can be
 many simultaneous readers.  But no other thread or process is allowed
 to write to the database file while one or more SHARED locks are active.
@@ -134,9 +141,9 @@ EXCLUSIVE locks are held.
 
 <p>
 The operating system interface layer understands and tracks all five
-locking states described above.  (It has to, since it is responsible
-for implementing the locks.)  But the pager module only tracks four
-of the five locking states.  A PENDING lock is always just a temporary
+locking states described above.  
+The pager module only tracks four of the five locking states.
+A PENDING lock is always just a temporary
 stepping stone on the path to an EXCLUSIVE lock and so the pager module
 does not track PENDING locks.
 </p>
@@ -158,7 +165,8 @@ the database file with the suffix "<tt>-journal</tt>" added.</p>
 
 <p>If SQLite is working with multiple databases at the same time
 (using the ATTACH command) then each database has its own journal.
-But there is also a separate aggregate journal called the "master journal".
+But there is also a separate aggregate journal
+called the <em>master journal</em>.
 The master journal does not contain page data used for rolling back
 changes.  Instead the master journal contains the names of the
 individual file journals for each of the ATTACHed databases.   Each of
@@ -169,7 +177,8 @@ created and the normal rollback journal contains an empty string
 in the place normally reserved for recording the name of the master
 journal.</p>
 
-<p>A individual file journal is said to be "hot" if it needs to be rolled back
+<p>A individual file journal is said to be <em>hot</em>
+if it needs to be rolled back
 in order to restore the integrity of its database.  
 A hot journal is created when a process is in the middle of a database
 update and a program or operating system crash or power failure prevents 
@@ -188,7 +197,20 @@ does not have a RESERVED lock.
 If a master journal is named in the file journal, then the file journal
 is hot if its master journal exists and there is no RESERVED
 lock on the corresponding database file.
+It is important to understand when a journal is hot so the
+preceding rules will be repeated in bullets:
 </p>
+
+<ul>
+<li>A journal is hot if...
+    <ul>
+    <li>It exists, and</li>
+    <li>It's master journal exists or the master journal name is an
+        empty string, and</li>
+    <li>There is no RESERVED lock on the corresponding database file.</li>
+    </ul>
+</li>
+</ul>
 }
 
 HEADING 2 {Dealing with hot journals}
@@ -196,8 +218,8 @@ HEADING 2 {Dealing with hot journals}
 puts {
 <p>
 Before reading from a a database file, SQLite always checks to see if that
-file has a hot journal.  If the file does have a hot journal, then the
-journal is rolled back before the file is read.  In this way, we ensure
+database file has a hot journal.  If the file does have a hot journal, then
+the journal is rolled back before the file is read.  In this way, we ensure
 that the database file is in a consistent state before it is read.
 </p>
 
@@ -212,10 +234,10 @@ the following sequence of steps:
     does not have a hot journal, we are done.  Return immediately.
     If there is a hot journal, that journal must be rolled back by
     the subsequent steps of this algorithm.</li>
-<li>Acquire a PENDING then an EXCLUSIVE lock on the database file.
-    (Note: do not acquire a RESERVED lock because that would make
+<li>Acquire a PENDING lock then an EXCLUSIVE lock on the database file.
+    (Note: Do not acquire a RESERVED lock because that would make
     other processes think the journal was no longer hot.)  If we
-    fail to acquire this lock it means another process or thread
+    fail to acquire these locks it means another process
     is already trying to do the rollback.  In that case,
     drop all locks, close the database, and return SQLITE_BUSY. </li>
 <li>Read the journal file and roll back the changes.</li>
@@ -252,16 +274,16 @@ or refer to other master journals or no master journal at all, then the
 master journal we are testing is stale and can be safely deleted.</p>
 }
 
-HEADING 2 {Writing to a database file}
+HEADING 1 {Writing to a database file}
 
 puts {
 <p>To write to a database, a process must first acquire a SHARED lock
 as described above (possibly rolling back incomplete changes if there
 is a hot journal). 
 After a SHARED lock is obtained, a RESERVED lock must be acquired.
-The RESERVED lock signals that the process intentions to write to the
+The RESERVED lock signals that the process intends to write to the
 database at some point in the future.  Only one process at a time
-can hold a reserved lock.  But other processes can continue to read
+can hold a RESERVED lock.  But other processes can continue to read
 the database while the RESERVED lock is held.
 </p>
 
@@ -276,7 +298,7 @@ is also reserved for a master journal name, though the master journal
 name is initially empty.</p>
 
 <p>Before making changes to any page of the database, the process writes
-the original value of that page into the rollback journal.  Changes
+the original content of that page into the rollback journal.  Changes
 to pages are held in memory at first and are not written to the disk.
 The original database file remains unaltered, which means that other
 processes can continue to read the database.</p>
@@ -309,9 +331,10 @@ the writer might continue to make changes to other pages.  Before
 subsequent changes are written to the database file, the rollback
 journal must be flushed to disk again.  Note also that the EXCLUSIVE
 lock that the writer obtained in order to write to the database initially
-must be held until all changes are committed.  That means that from the
-time the memory cache first spills to disk up until the transaction
-commits, no other processes are able to access the database.
+must be held until all changes are committed.  That means that no other
+processes are able to access the database from the
+time the memory cache first spills to disk until the transaction
+commits.
 </p>
 
 <p>
@@ -378,11 +401,30 @@ commit sequence is used, as follows:</p>
 </ol>
 }
 
+HEADING 2 {Writer starvation}
+
+puts {
+<p>In SQLite version 2, if many processes are reading from the database,
+it might be the case that there is never a time when there are
+no active readers.  And if there is always at least one read lock on the
+database, no process would ever be able to make changes to the database
+because it would be impossible to acquire a write lock.  This situation
+is called <em>writer starvation</em>.</p>
+
+<p>SQLite version 3 seeks to avoid writer starvation through the use of
+the PENDING lock.  The PENDING lock allows existing readers to continue
+but prevents new readers from connecting to the database.  So when a
+process wants to write a busy database, it can set a PENDING lock which
+will prevent new readers from coming in.  Assuming existing readers do
+eventually complete, all SHARED locks will eventually clear and the
+writer will be given a chance to make its changes.</p>
+}
+
 HEADING 1 {How To Corrupt Your Database Files}
 
 puts {
 <p>The pager module is robust but it is not completely failsafe.
-It can be subverted.  This section attempt to identify and explain
+It can be subverted.  This section attempts to identify and explain
 the risks.</p>
 
 <p>
@@ -391,7 +433,7 @@ into the middle of the database file or journal will cause problems.
 Likewise, 
 if a rogue process opens a database file or journal and writes malformed
 data into the middle of it, then the database will become corrupt.
-There is not much that can be done about these kinds of problems so
+There is not much that can be done about these kinds of problems
 so they are given no further attention.
 </p>
 
@@ -402,7 +444,7 @@ calls.  SQLite assumes that these system calls all work as advertised.  If
 that is not the case, then database corruption can result.  One should
 note that POSIX advisory locking is known to be buggy or even unimplemented
 on many NFS implementations (including recent versions of Mac OS X)
-and that there are persistent reports of locking problems
+and that there are reports of locking problems
 for network filesystems under windows.  Your best defense is to not
 use SQLite for files on a network filesystem.
 </p>
@@ -451,7 +493,7 @@ calls fsync() on the directory, in an effort to push the directory information
 to disk.  But suppose some other process is adding or removing unrelated
 files to the directory that contains the database and journal at the the
 moment of a power failure.  The supposedly unrelated actions of this other
-process might in the journal file being dropped from the directory and
+process might result in the journal file being dropped from the directory and
 moved into "lost+found".  This is an unlikely scenario, but it could happen.
 The best defenses are to use a journaling filesystem or to keep the
 database and journal in a directory by themselves.
@@ -480,7 +522,8 @@ puts {
 The changes to locking and concurrency control in SQLite version 3 also
 introduce some subtle changes in the way transactions work at the SQL
 language level.
-By default, SQLite version 3 operates in "autocommit" mode.  In autocommit mode,
+By default, SQLite version 3 operates in <em>autocommit</em> mode.
+In autocommit mode,
 all changes to the database are committed as soon as all operations associated
 with the current database connection complete.</p>
 
@@ -490,7 +533,7 @@ Note that the BEGIN command does not acquire any locks on the database.
 After a BEGIN command, a SHARED lock will be acquired when the first
 SELECT statement is executed.  A RESERVED lock will be acquired when
 the first INSERT, UPDATE, or DELETE statement is executed.  No EXCLUSIVE
-locks is acquired until either the memory cache fills up and must
+lock is acquired until either the memory cache fills up and must
 be spilled to disk or until the transaction commits.  In this way,
 the system delays blocking read access to the file file until the
 last possible moment.
@@ -509,6 +552,15 @@ then tries to commit change but fails because some other process is holding
 a SHARED lock, then autocommit is turned back off automatically.  This
 allows the user to retry the COMMIT at a later time after the SHARED lock
 has had an opportunity to clear.</p>
+
+<p>If multiple commands are being executed against the same SQLite database
+connection at the same time, the autocommit is deferred until the very
+last command completes.  For example, if a SELECT statement is being
+executed, the execution of the command will pause as each row of the
+result is returned.  During this pause other INSERT, UPDATE, or DELETE
+commands can be executed against other tables in the database.  But none
+of these changes will commit until the original SELECT statement finishes.
+</p>
 }
 
 
