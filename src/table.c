@@ -48,7 +48,6 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   ** we need to remember from this invocation of the callback.
   */
   if( p->nRow==0 && argv!=0 ){
-    p->nColumn = nCol;
     need = nCol*2;
   }else{
     need = nCol;
@@ -66,6 +65,7 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   ** the names of all columns.
   */
   if( p->nRow==0 ){
+    p->nColumn = nCol;
     for(i=0; i<nCol; i++){
       if( colv[i]==0 ){
         z = 0;

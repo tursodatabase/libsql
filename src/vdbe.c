@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.87 2001/10/19 16:44:57 drh Exp $
+** $Id: vdbe.c,v 1.88 2001/10/20 12:30:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1457,7 +1457,7 @@ case OP_Precision: {
   POPSTACK;
   Release(p, nos);
   zStack[nos] = sqliteStrDup(zBuf);
-  aStack[nos].n = strlen(zStack[tos]) + 1;
+  aStack[nos].n = strlen(zStack[nos]) + 1;
   aStack[nos].flags = STK_Str | STK_Dyn;
   break;
 }

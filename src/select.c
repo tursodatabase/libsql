@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.42 2001/10/19 16:44:57 drh Exp $
+** $Id: select.c,v 1.43 2001/10/20 12:30:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -260,7 +260,7 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
         char *zTab;
  
         zTab = pTabList->a[p->iTable - pParse->nTab].zAlias;
-        if( zTab==0 ) zTab = pTab->zName;
+        if( showFullNames || zTab==0 ) zTab = pTab->zName;
         sqliteSetString(&zName, zTab, ".", pTab->aCol[p->iColumn].zName, 0);
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
         sqliteVdbeChangeP3(v, -1, zName, strlen(zName));

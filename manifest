@@ -1,9 +1,9 @@
-C Version\s2.0.6\s(CVS\s464)
-D 2001-10-19T16:45:00
+C 2.0.7\s(CVS\s292)
+D 2001-10-20T12:30:11
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
-F VERSION be4a9c5c382f200a4575c3dc5133f6359a33606a
+F VERSION 46489bc13fe8b494327fecb3c9a05f4db2e284b3
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -36,12 +36,12 @@ F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 148e4cd134d3cbd816dcb0df50e49e498faa6ba4
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c 10957c2fd52ee36fbb40171c36377c9f94dd36ea
+F src/select.c 898b27a324afc067e253a9c04e63701f10b0af1c
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in b95c161abf1d58bceb05290fa3f657d8f388fc11
 F src/sqliteInt.h 52577abf2805ba148972f69788ed49c64064fa31
-F src/table.c 4e8cbabfbc6018fdd0615f7c5d06fb431cd56505
+F src/table.c 7102da21a8e4b2f8a4df79378d6dc0b01aa76a33
 F src/tclsqlite.c 7d205aeda449047f86b39a6c55731a1ded7a7ab5
 F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
@@ -49,7 +49,7 @@ F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 59ddae1501de472e9a6274a1cbf451170c52488c
 F src/update.c c916182c6bfbc8a6f20c24920c4560fece6c9569
 F src/util.c 4da3be37d0fd3c640d2d3033503768afdc8e5387
-F src/vdbe.c e326ff611c9d2c273fdcb86b4661b464f2af128b
+F src/vdbe.c 0aea4e858880867ffd59d9598da9b3f9ab5d97b9
 F src/vdbe.h f8407fd6b644bc001b1e7c65460c9962f6a15f6b
 F src/where.c 22fe910c7c8e2736eb37e9861343e90c0b513c86
 F test/all.test a2320eb40b462f25bd3e33115b1cabf3791450dd
@@ -59,7 +59,7 @@ F test/btree2.test 20ce47ab804f15b6563736528bdd38aabe5193dc
 F test/copy.test 768e6f1701a07d08090e1ca7f7dcce0a7a72b43e
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test b4171c84b767f7b7e94dbce4824ba8e981a1c72f
-F test/func.test fb0f44de6d8487359a4455accbae120bde267772
+F test/func.test 9012f7fc5369422c890e93549aa61d762e0c8bb3
 F test/in.test 9323681388be301dc73f370b4cd62c5a33f79d1e
 F test/index.test 6076f29d09a4f26a2efa38b03b8cc338b8662f0e
 F test/insert.test a5c122aa726f1cef6f07d6767e8fd6f220994c11
@@ -82,7 +82,7 @@ F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/sort.test 462c1161eee1abaa7cc93990e0b34d5fdb70ce19
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
-F test/tableapi.test 162840153191a91a7dce6395f2334f9aef713b37
+F test/tableapi.test 51d0c209aa6b1158cb952ec917c656d4ce66e9e4
 F test/tclsqlite.test a57bb478d7e9f0b2c927f92e161f391e2896631a
 F test/temptable.test 37acd9e39781c2ff7cff2ba741b6b27ce020a44a
 F test/tester.tcl c7ddeebc14cc841abb37134cd5d40c1e3ad367c1
@@ -102,7 +102,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl 6c5989670e014de44dce6580cbde0eea965dadbb
-F www/changes.tcl 7f249321a6ccb4abb79e56b801dede791a44c237
+F www/changes.tcl 72923f6a051a2f6bdad639933e9e8e153b392123
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -114,7 +114,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 8467d84fc6e67bd93051f54338a8f6c9b1711ee1
-R 517debf090e30b01a34d90ad2b9ba498
+P c8535a0de90fb7a22df15018984db590a85decfb
+R 04b0305eff69829eee3382ca64677b9c
 U drh
-Z 903042b458878eb66b0451d8d6ffb242
+Z 0c6d455d9482eaf63fb01fb72aa45066
