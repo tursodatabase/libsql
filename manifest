@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sVACUUM\sthat\scan\slead\sto\sdatabase\scorruption.\s(CVS\s2323)
-D 2005-02-12T00:19:30
+C Fix\sa\sproblem\swith\ssub-queries\sand\sthe\sflattening\soptimization.\sAlso\shandle\san\sextra\scase\sof\sdatabase\scorruption.\s(CVS\s2324)
+D 2005-02-12T08:59:56
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,13 +29,13 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
-F src/btree.c d88766f8eb98241cd7af6aabf302ed322606057b
+F src/btree.c 2432adf957c68e7243b198c174b0f316f9717844
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
 F src/build.c 9783b4bd230a22d0eaf7a3a1b521192d0ce85707
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c 4b94395b52a8f7785acd71135c2ce54f3f5550b3
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
-F src/expr.c b9ffd249cef8cd0f2d3681da8daf9a4292dcd005
+F src/expr.c e160aabb59ff3c02e8e00ca4b30d00b94664c519
 F src/func.c 4538f82c8ae5f753012f15c4f22cffd578280c56
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -57,7 +57,7 @@ F src/parse.y ee046c1ea30425a817285e52fb1993c2f955e766
 F src/pragma.c 7e65c5545d83909238adf231e2a6eee6eb43e0d5
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 37dd84fd228db14e9006e3eafb389f08d823502f
+F src/select.c 69e6093d52e871a243477e9746f820456538dd03
 F src/shell.c 3cb0ef124ed9cd582ce89aec59ff7c659bc6e61b
 F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h 3ebdaeee801f79950c38986639dcfb90782042ed
@@ -95,7 +95,7 @@ F test/autovacuum_ioerr.test 9cf27275ca47b72e188a47c53b61b6d583a01d24
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test a88917a3d2865f31006e2acb2fd7534dcd15140d
+F test/bind.test 04ff6df093ce9b8108f5f450410a60a910f44340
 F test/blob.test fc41fe95bdc10da51f0dee73ce86e75ce1d6eb9d
 F test/btree.test 8aa7424aeec844df990273fe36447e5d7e407261
 F test/btree2.test dbce930b549d5ac883a7d8905c976209ea241db3
@@ -181,13 +181,13 @@ F test/select5.test 2d414f712bff8e590091e08f9b7287600731be00
 F test/select6.test 6e5a1a70a788cdbe515d1252dd0917d7e9d1d71e
 F test/select7.test 8f3362336c10d828ab6fe9c1b8897b484da8b592
 F test/sort.test 312eade533cb3c7667110ccfa6e818db1078fd6c
-F test/subquery.test 3b24c027497191658ef2a97e71e659803b8fbd52
+F test/subquery.test 409078e5fd822647391663694e9af74719923025
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test a2a58cae70ef2511cbf27d40fb8f570106a2677e
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
 F test/tclsqlite.test 4b26cad242ef5c634fd52e0465c723d9e0c00901
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
-F test/tester.tcl 227af8e343b13e2927c9ac9a6b0148fb3c7afac8
+F test/tester.tcl 69c0dc1accaf0ff26bff62b33e13590a4ecba17d
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P c33c02d6069b90f295698a9f35f4aa99dee5f5e9
-R 8e61ab153be1dc618b065882d6b2d1a5
-U drh
-Z ed61c7e978da07a018272bafaa9d7f6b
+P 63894baf1b37156fd0b84eba4c9c5e8f43cee3f3
+R 4ee542c569351f4ff1f82d163be495c2
+U danielk1977
+Z 373c8022bccec8f4ba403b177f7c78fd

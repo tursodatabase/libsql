@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.193 2005/02/08 07:50:41 danielk1977 Exp $
+** $Id: expr.c,v 1.194 2005/02/12 08:59:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -473,7 +473,10 @@ SrcList *sqlite3SrcListDup(SrcList *p){
     pNewItem->zAlias = sqliteStrDup(pOldItem->zAlias);
     pNewItem->jointype = pOldItem->jointype;
     pNewItem->iCursor = pOldItem->iCursor;
-    pNewItem->pTab = 0;
+    pNewItem->pTab = pOldItem->pTab;
+    if( pNewItem->pTab ){
+      pNewItem->pTab->isTransient = 0;
+    }
     pNewItem->pSelect = sqlite3SelectDup(pOldItem->pSelect);
     pNewItem->pOn = sqlite3ExprDup(pOldItem->pOn);
     pNewItem->pUsing = sqlite3IdListDup(pOldItem->pUsing);
@@ -518,8 +521,8 @@ Select *sqlite3SelectDup(Select *p){
   pNew->iOffset = -1;
   pNew->ppOpenTemp = 0;
   pNew->pFetch = 0;
-  pNew->isResolved = 0;
-  pNew->isAgg = 0;
+  pNew->isResolved = p->isResolved;
+  pNew->isAgg = p->isAgg;
   return pNew;
 }
 #else

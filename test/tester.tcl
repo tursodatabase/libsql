@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.47 2005/01/24 10:26:00 danielk1977 Exp $
+# $Id: tester.tcl,v 1.48 2005/02/12 08:59:59 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -303,9 +303,6 @@ proc crashsql {crashdelay crashfile sql} {
 #
 proc do_ioerr_test {testname args} {
 
-  if {$testname=="ioerr-2"} {
-    breakpoint
-  }
   set ::ioerropts(-start) 1
   set ::ioerropts(-cksum) 0
 
