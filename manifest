@@ -1,5 +1,5 @@
-C :-)\s(CVS\s126)
-D 2000-08-04T13:51:11
+C :-)\s(CVS\s127)
+D 2000-08-04T13:52:31
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -59,7 +59,7 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl 4a1aaaaad9a9b4cf3259264955c225b98a9d025d
+F www/changes.tcl a8608ae834d6e6922f386a9341e84e74a521e847
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl 421bcabc6839eb00698b75b169caa8a559454515
@@ -68,7 +68,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 7c2ee68063fa59463f55d5bac1ffe3e50d8a817f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 14785d94fb3775da603001f4a9c2e4ecd732c898
-R a9134ea20219e9a8c4bd56ddbff67290
+P e31be5824813d1690a4ee7bac9e49658a08c52c1
+R a1959e73cecbe5ec9f491607dba0c61e
 U drh
-Z 3fa7aeae6df5c70b05c8e1b0d2427519
+Z a62979c6837973254ca7c80dad5fc80b
