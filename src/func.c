@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.17 2002/05/26 21:34:58 drh Exp $
+** $Id: func.c,v 1.18 2002/05/29 23:22:23 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -254,6 +254,7 @@ static void nullifFunc(sqlite_func *context, int argc, const char **argv){
 typedef struct SumCtx SumCtx;
 struct SumCtx {
   double sum;     /* Sum of terms */
+  int cnt;        /* Number of elements summed */
 };
 
 /*
@@ -261,12 +262,12 @@ struct SumCtx {
 */
 static void sumStep(sqlite_func *context, int argc, const char **argv){
   SumCtx *p;
-  double x;
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p==0 ) return;
-  x = argv[0] ? atof(argv[0]) : 0.0;
-  p->sum += x;
+  if( p && argv[0] ){
+    p->sum += atof(argv[0]);
+    p->cnt++;
+  }
 }
 static void sumFinalize(sqlite_func *context){
   SumCtx *p;
@@ -275,11 +276,9 @@ static void sumFinalize(sqlite_func *context){
 }
 static void avgFinalize(sqlite_func *context){
   SumCtx *p;
-  double rN;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  rN = sqlite_aggregate_count(context);
-  if( p && rN>0.0 ){
-    sqlite_set_result_double(context, p->sum/rN);
+  if( p && p->cnt>0 ){
+    sqlite_set_result_double(context, p->sum/(double)p->cnt);
   }
 }
 
@@ -291,6 +290,7 @@ typedef struct StdDevCtx StdDevCtx;
 struct StdDevCtx {
   double sum;     /* Sum of terms */
   double sum2;    /* Sum of the squares of terms */
+  int cnt;        /* Number of terms counted */
 };
 
 #if 0   /* Omit because math library is required */
@@ -302,17 +302,20 @@ static void stdDevStep(sqlite_func *context, int argc, const char **argv){
   double x;
   if( argc<1 ) return;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p==0 ) return;
-  x = argv[0] ? atof(argv[0]) : 0.0;
-  p->sum += x;
-  p->sum2 += x*x;
+  if( p && argv[0] ){
+    x = atof(argv[0]);
+    p->sum += x;
+    p->sum2 += x*x;
+    p->cnt++;
+  }
 }
 static void stdDevFinalize(sqlite_func *context){
   double rN = sqlite_aggregate_count(context);
   StdDevCtx *p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p && rN>1.0 ){
+  if( p && p->cnt>1 ){
+    double rCnt = cnt;
     sqlite_set_result_double(context, 
-       sqrt((p->sum2 - p->sum*p->sum/rN)/(rN-1.0)));
+       sqrt((p->sum2 - p->sum*p->sum/rCnt)/(rCnt-1.0)));
   }
 }
 #endif
@@ -348,7 +351,6 @@ static void countFinalize(sqlite_func *context){
 */
 typedef struct MinMaxCtx MinMaxCtx;
 struct MinMaxCtx {
-  int isNull;      /* True if the result should be NULL */
   char *z;         /* The best so far */
   char zBuf[28];   /* Space that can be used for storage */
 };
@@ -359,11 +361,7 @@ struct MinMaxCtx {
 static void minStep(sqlite_func *context, int argc, const char **argv){
   MinMaxCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p==0 || argc<1 ) return;
-  if( argv[0]==0 || p->isNull ){
-    p->isNull = 1;
-    return;
-  }
+  if( p==0 || argc<1 || argv[0]==0 ) return;
   if( sqlite_aggregate_count(context)==1 || sqliteCompare(argv[0],p->z)<0 ){
     int len;
     if( p->z && p->z!=p->zBuf ){
@@ -382,11 +380,7 @@ static void minStep(sqlite_func *context, int argc, const char **argv){
 static void maxStep(sqlite_func *context, int argc, const char **argv){
   MinMaxCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p==0 || argc<1 ) return;
-  if( argv[0]==0 || p->isNull ){
-    p->isNull = 1;
-    return;
-  }
+  if( p==0 || argc<1 || argv[0]==0 ) return;
   if( sqlite_aggregate_count(context)==1 || sqliteCompare(argv[0],p->z)>0 ){
     int len;
     if( p->z && p->z!=p->zBuf ){
@@ -405,7 +399,7 @@ static void maxStep(sqlite_func *context, int argc, const char **argv){
 static void minMaxFinalize(sqlite_func *context){
   MinMaxCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p && p->z && !p->isNull ){
+  if( p && p->z ){
     sqlite_set_result_string(context, p->z, strlen(p->z));
   }
   if( p && p->z && p->z!=p->zBuf ){
@@ -438,6 +432,7 @@ void sqliteRegisterBuildinFunctions(sqlite *db){
     { "coalesce",  -1, ifnullFunc },
     { "coalesce",   0, 0          },
     { "coalesce",   1, 0          },
+    { "ifnull",     2, ifnullFunc },
     { "random",    -1, randomFunc },
     { "like",       2, likeFunc   },
     { "glob",       2, globFunc   },
