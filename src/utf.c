@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.13 2004/05/28 16:00:22 drh Exp $
+** $Id: utf.c,v 1.14 2004/05/29 02:44:02 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -376,8 +376,8 @@ int sqlite3utf8CharLen(const char *pZ, int nByte){
 */
 int sqlite3utf16ByteLen(const void *pZ, int nChar){
   if( nChar<0 ){
-    const unsigned char *pC1 = pZ;
-    const unsigned char *pC2 = pZ+1;
+    const unsigned char *pC1 = (unsigned char *)pZ;
+    const unsigned char *pC2 = (unsigned char *)pZ+1;
     while( *pC1 || *pC2 ){
       pC1 += 2;
       pC2 += 2;
