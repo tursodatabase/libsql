@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 July 29} {
+<li>Better labels on column names of the result.</li>
+}
+
 chng {2000 July 28} {
 <li>Added the <b>sqlite_busy_handler()</b> 
     and <b>sqlite_busy_timeout()</b> interface.</li>

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.35 2000/07/28 14:32:50 drh Exp $
+** $Id: vdbe.c,v 1.36 2000/07/29 13:06:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -350,6 +350,32 @@ void sqliteVdbeDequoteP3(Vdbe *p, int addr){
   if( addr<0 || addr>=p->nOp ) return;
   z = p->aOp[addr].p3;
   sqliteDequote(z);
+}
+
+/*
+** On the P3 argument of the given instruction, change all
+** strings of whitespace characters into a single space and
+** delete leading and trailing whitespace.
+*/
+void sqliteVdbeCompressSpace(Vdbe *p, int addr){
+  char *z;
+  int i, j;
+  if( addr<0 || addr>=p->nOp ) return;
+  z = p->aOp[addr].p3;
+  i = j = 0;
+  while( isspace(z[i]) ){ i++; }
+  while( z[i] ){
+    if( isspace(z[i]) ){
+      z[j++] = ' ';
+      while( isspace(z[++i]) ){}
+    }else{
+      z[j++] = z[i++];
+    }
+  }
+  while( i>0 && isspace(z[i-1]) ){
+    z[i-1] = 0;
+    i--;
+  }
 }
 
 /*

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.25 2000/06/21 13:59:12 drh Exp $
+** $Id: select.c,v 1.26 2000/07/29 13:06:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -234,13 +234,18 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
   sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
+    int addr;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
       continue;
     }
     p = pEList->a[i].pExpr;
-    if( p->op!=TK_COLUMN || pTabList==0 ){
+    if( p->span.z && p->span.z[0] ){
+      addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0, 0, 0);
+      sqliteVdbeChangeP3(v, addr, p->span.z, p->span.n);
+      sqliteVdbeCompressSpace(v, addr);
+    }else if( p->op!=TK_COLUMN || pTabList==0 ){
       char zName[30];
       sprintf(zName, "column%d", i+1);
       sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
@@ -327,6 +332,8 @@ static int fillInColumnList(Parse *pParse, Select *p){
         pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
         pExpr->pRight->token.z = pTab->aCol[j].zName;
         pExpr->pRight->token.n = strlen(pTab->aCol[j].zName);
+        pExpr->span.z = "";
+        pExpr->span.n = 0;
         pEList = sqliteExprListAppend(pEList, pExpr, 0);
       }
     }

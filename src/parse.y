@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.23 2000/06/21 13:59:12 drh Exp $
+** @(#) $Id: parse.y,v 1.24 2000/07/29 13:06:59 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -301,17 +301,25 @@ inscollist(A) ::= id(Y).                     {A = sqliteIdListAppend(0,&Y);}
 %type expr {Expr*}
 %destructor expr {sqliteExprDelete($$);}
 
-expr(A) ::= LP expr(X) RP.   {A = X;}
-expr(A) ::= ID(X).           {A = sqliteExpr(TK_ID, 0, 0, &X);}
-expr(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
-expr(A) ::= id(X) DOT id(Y). {Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
-                              Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
-                              A = sqliteExpr(TK_DOT, temp1, temp2, 0);}
+expr(A) ::= LP(B) expr(X) RP(E). {A = X; sqliteExprSpan(A,&B,&E);}
+expr(A) ::= ID(X).               {A = sqliteExpr(TK_ID, 0, 0, &X);}
+expr(A) ::= NULL(X).             {A = sqliteExpr(TK_NULL, 0, 0, &X);}
+expr(A) ::= id(X) DOT id(Y). {
+  Expr *temp1 = sqliteExpr(TK_ID, 0, 0, &X);
+  Expr *temp2 = sqliteExpr(TK_ID, 0, 0, &Y);
+  A = sqliteExpr(TK_DOT, temp1, temp2, 0);
+}
 expr(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 expr(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 expr(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
-expr(A) ::= ID(X) LP exprlist(Y) RP.  {A = sqliteExprFunction(Y, &X);}
-expr(A) ::= ID(X) LP STAR RP.         {A = sqliteExprFunction(0, &X);}
+expr(A) ::= ID(X) LP exprlist(Y) RP(E). {
+  A = sqliteExprFunction(Y, &X);
+  sqliteExprSpan(A,&X,&E);
+}
+expr(A) ::= ID(X) LP STAR RP(E). {
+  A = sqliteExprFunction(0, &X);
+  sqliteExprSpan(A,&X,&E);
+}
 expr(A) ::= expr(X) AND expr(Y).   {A = sqliteExpr(TK_AND, X, Y, 0);}
 expr(A) ::= expr(X) OR expr(Y).    {A = sqliteExpr(TK_OR, X, Y, 0);}
 expr(A) ::= expr(X) LT expr(Y).    {A = sqliteExpr(TK_LT, X, Y, 0);}
@@ -324,31 +332,50 @@ expr(A) ::= expr(X) LIKE expr(Y).  {A = sqliteExpr(TK_LIKE, X, Y, 0);}
 expr(A) ::= expr(X) NOT LIKE expr(Y).  {
   A = sqliteExpr(TK_LIKE, X, Y, 0);
   A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&X->span,&Y->span);
 }
 expr(A) ::= expr(X) GLOB expr(Y).  {A = sqliteExpr(TK_GLOB,X,Y,0);}
 expr(A) ::= expr(X) NOT GLOB expr(Y).  {
   A = sqliteExpr(TK_GLOB, X, Y, 0);
   A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&X->span,&Y->span);
 }
 expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
 expr(A) ::= expr(X) SLASH expr(Y). {A = sqliteExpr(TK_SLASH, X, Y, 0);}
 expr(A) ::= expr(X) CONCAT expr(Y). {A = sqliteExpr(TK_CONCAT, X, Y, 0);}
-expr(A) ::= expr(X) ISNULL.        {A = sqliteExpr(TK_ISNULL, X, 0, 0);}
-expr(A) ::= expr(X) NOTNULL.       {A = sqliteExpr(TK_NOTNULL, X, 0, 0);}
-expr(A) ::= NOT expr(X).           {A = sqliteExpr(TK_NOT, X, 0, 0);}
-expr(A) ::= MINUS expr(X). [UMINUS]   {A = sqliteExpr(TK_UMINUS, X, 0, 0);}
-expr(A) ::= PLUS expr(X). [UMINUS]    {A = X;}
-expr(A) ::= LP select(X) RP. {
+expr(A) ::= expr(X) ISNULL(E). {
+  A = sqliteExpr(TK_ISNULL, X, 0, 0);
+  sqliteExprSpan(A,&X->span,&E);
+}
+expr(A) ::= expr(X) NOTNULL(E). {
+  A = sqliteExpr(TK_NOTNULL, X, 0, 0);
+  sqliteExprSpan(A,&X->span,&E);
+}
+expr(A) ::= NOT(B) expr(X). {
+  A = sqliteExpr(TK_NOT, X, 0, 0);
+  sqliteExprSpan(A,&B,&X->span);
+}
+expr(A) ::= MINUS(B) expr(X). [UMINUS] {
+  A = sqliteExpr(TK_UMINUS, X, 0, 0);
+  sqliteExprSpan(A,&B,&X->span);
+}
+expr(A) ::= PLUS(B) expr(X). [UMINUS] {
+  A = X;
+  sqliteExprSpan(A,&B,&X->span);
+}
+expr(A) ::= LP(B) select(X) RP(E). {
   A = sqliteExpr(TK_SELECT, 0, 0, 0);
   A->pSelect = X;
+  sqliteExprSpan(A,&B,&E);
 }
 expr(A) ::= expr(W) BETWEEN expr(X) AND expr(Y). {
   ExprList *pList = sqliteExprListAppend(0, X, 0);
   pList = sqliteExprListAppend(pList, Y, 0);
   A = sqliteExpr(TK_BETWEEN, W, 0, 0);
   A->pList = pList;
+  sqliteExprSpan(A,&W->span,&Y->span);
 }
 expr(A) ::= expr(W) NOT BETWEEN expr(X) AND expr(Y). {
   ExprList *pList = sqliteExprListAppend(0, X, 0);
@@ -356,24 +383,29 @@ expr(A) ::= expr(W) NOT BETWEEN expr(X) AND expr(Y). {
   A = sqliteExpr(TK_BETWEEN, W, 0, 0);
   A->pList = pList;
   A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&W->span,&Y->span);
 }
-expr(A) ::= expr(X) IN LP exprlist(Y) RP.  {
+expr(A) ::= expr(X) IN LP exprlist(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pList = Y;
+  sqliteExprSpan(A,&X->span,&E);
 }
-expr(A) ::= expr(X) IN LP select(Y) RP.  {
+expr(A) ::= expr(X) IN LP select(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pSelect = Y;
+  sqliteExprSpan(A,&X->span,&E);
 }
-expr(A) ::= expr(X) NOT IN LP exprlist(Y) RP.  {
+expr(A) ::= expr(X) NOT IN LP exprlist(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pList = Y;
   A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&X->span,&E);
 }
-expr(A) ::= expr(X) NOT IN LP select(Y) RP.  {
+expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
   A->pSelect = Y;
   A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&X->span,&E);
 }
 
 

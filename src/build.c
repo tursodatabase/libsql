@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.20 2000/07/28 14:32:49 drh Exp $
+** $Id: build.c,v 1.21 2000/07/29 13:06:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,7 +81,21 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
     pNew->token.z = "";
     pNew->token.n = 0;
   }
+  if( pLeft && pRight ){
+    sqliteExprSpan(pNew, &pLeft->span, &pRight->span);
+  }else{
+    pNew->span = pNew->token;
+  }
   return pNew;
+}
+
+/*
+** Set the Expr.token field of the given expression to span all
+** text between the two given tokens.
+*/
+void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
+  pExpr->span.z = pLeft->z;
+  pExpr->span.n = pRight->n + (int)pRight->z - (int)pLeft->z;
 }
 
 /*

@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.26 2000/07/28 14:32:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.27 2000/07/29 13:06:59 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -204,6 +204,7 @@ struct Expr {
   Expr *pLeft, *pRight;  /* Left and right subnodes */
   ExprList *pList;       /* A list of expressions used as a function argument */
   Token token;           /* An operand token */
+  Token span;            /* Complete text of the expression */
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table.  When
                          ** op==TK_FUNCTION, iColumn holds the function id */
@@ -365,6 +366,7 @@ void sqliteDequote(char*);
 int sqliteRunParser(Parse*, char*, char **);
 void sqliteExec(Parse*);
 Expr *sqliteExpr(int, Expr*, Expr*, Token*);
+void sqliteExprSpan(Expr*,Token*,Token*);
 Expr *sqliteExprFunction(ExprList*, Token*);
 void sqliteExprDelete(Expr*);
 ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);

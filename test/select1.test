@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.6 2000/06/21 13:59:13 drh Exp $
+# $Id: select1.test,v 1.7 2000/07/29 13:07:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -265,17 +265,17 @@ do_test select1-6.4 {
 do_test select1-6.5 {
   set v [catch {execsql2 {SELECT test1.f1+F2 FROM test1 ORDER BY f2}} msg]
   lappend v $msg
-} {0 {column1 33 column1 77}}
+} {0 {test1.f1+F2 33 test1.f1+F2 77}}
 do_test select1-6.6 {
   set v [catch {execsql2 {SELECT test1.f1+F2, t1 FROM test1, test2 
          ORDER BY f2}} msg]
   lappend v $msg
-} {0 {column1 33 test2.t1 abc column1 77 test2.t1 abc}}
+} {0 {test1.f1+F2 33 t1 abc test1.f1+F2 77 t1 abc}}
 do_test select1-6.7 {
   set v [catch {execsql2 {SELECT A.f1, t1 FROM test1 as A, test2 
          ORDER BY f2}} msg]
   lappend v $msg
-} {0 {A.f1 11 test2.t1 abc A.f1 33 test2.t1 abc}}
+} {0 {A.f1 11 t1 abc A.f1 33 t1 abc}}
 do_test select1-6.8 {
   set v [catch {execsql2 {SELECT A.f1, f1 FROM test1 as A, test1 as B 
          ORDER BY f2}} msg]
