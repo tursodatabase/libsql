@@ -1,0 +1,151 @@
+# 2004 Jun 4	
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is btree database backend.
+#
+# $Id: btree8.test,v 1.1 2004/11/13 13:19:56 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Use the SQL interface to create a couple of btree tables, one using
+# the flags for an SQL table, the other an SQL index.
+# 
+do_test btree8-1.0 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE INDEX i1 ON t1(b);
+  }
+} {}
+set tnum [execsql {SELECT rootpage FROM sqlite_master where type = 'table'}]
+set inum [execsql {SELECT rootpage FROM sqlite_master where type = 'index'}]
+db close
+
+# Open the database at the btree level and begin a transaction
+do_test btree8-1.1 {
+  set ::bt [btree_open test.db 100 0]
+  btree_begin_transaction $::bt
+  expr 0
+} {0}
+
+# For each element in the list $keys, insert an entry into the SQL table
+# with the corresponding key value. Check that the cursor used to insert
+# the key is left pointing to it after the insert. Then save this cursor
+# in the list $csr_list.
+#
+set keys [list 3178 4886 719 1690 443 4113 1618 310 1320 2028]
+set csr_list [list]
+set testnum 2
+foreach key $keys {
+  do_test btree-8-1.$testnum {
+    set csr [btree_cursor $::bt $::tnum 1]
+    btree_insert $csr $key [string repeat a 10]
+    lappend csr_list $csr
+    btree_key $csr
+  } $key
+  incr testnum 
+}
+btree_commit $::bt
+
+# set btree_trace 1
+
+# Now write more entries to the table (and overwriting the ones that exist).
+# After each write, check that the cursors created above still point to the
+# same entries.
+btree_begin_transaction $::bt
+set ::write_csr [btree_cursor $::bt $::tnum 1]
+for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
+  set datalen [expr int(rand()*20.0)]
+
+  do_test btree8-1.$i.1 {
+    btree_insert $::write_csr $i [string repeat x $datalen]
+  } {}
+
+  set testnum 1
+  foreach csr $csr_list key $keys {
+    incr testnum
+    do_test btree8-1.$i.$testnum {
+      btree_key $::csr
+    } $key
+  }
+}
+btree_close_cursor $::write_csr
+btree_commit $::bt
+if {$::nErr>0} { puts $::csr_list }
+foreach csr $csr_list {
+  btree_close_cursor $csr
+}
+set csr_list [list]
+
+# Transform the number $num into a string of length $len by repeating the
+# string representation of the number as many times as necessary. Repeats
+# are seperated by a '.' character. Eg:
+#
+# [num_to_string 456 10] -> "456.456.45"
+#
+proc num_to_string {num len} {
+  return [string range [string repeat "$num." $len] 0 [expr $len-1]]
+}
+
+foreach key $keys {
+  lappend skeys [num_to_string $key 20]
+}
+
+# For each element in the list $skeys, insert an entry into the SQL index
+# with the corresponding key value. Check that the cursor used to insert
+# the key is left pointing to it after the insert. Then save this cursor
+# in the list $csr_list.
+#
+btree_begin_transaction $::bt
+set testnum 0
+foreach key $skeys {
+  incr testnum 
+  do_test btree-8-2.$testnum {
+    set csr [btree_cursor $::bt $::inum 1]
+    btree_insert $csr $key ""
+    lappend csr_list $csr
+    btree_key $csr
+  } $key
+}
+btree_commit $::bt
+
+# set btree_trace 1
+
+# Now write more entries to the index (and overwrite the ones that exist).
+# After each write, check that the cursors created above still point to the
+# same entries.
+btree_begin_transaction $::bt
+set ::write_csr [btree_cursor $::bt $::inum 1]
+for {set i $testnum} {$i < 5000 && $nErr==0 } {incr i} {
+  set skey [num_to_string $i 20]
+
+  do_test btree8-2.$i.1 {
+    btree_insert $::write_csr $skey ""
+  } {}
+
+  set testnum 1
+  foreach csr $csr_list key $skeys {
+    incr testnum
+    do_test btree8-2.$i.$testnum {
+      btree_key $::csr
+    } $key
+  }
+}
+btree_close_cursor $::write_csr
+btree_commit $::bt
+if {$::nErr>0} { puts $::csr_list }
+foreach csr $csr_list {
+  btree_close_cursor $csr
+}
+set csr_list [list]
+
+finish_test
+

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.32 2004/11/08 09:26:10 danielk1977 Exp $
+# $Id: quick.test,v 1.33 2004/11/13 13:19:56 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,6 +33,7 @@ set EXCLUDE {
   quick.test
   utf16.test
   autovacuum_crash.test
+  btree8.test
 }
 
 if {[sqlite3 -has-codec]} {

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.216 2004/11/10 11:55:11 danielk1977 Exp $
+** $Id: btree.c,v 1.217 2004/11/13 13:19:56 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3613,6 +3613,7 @@ static int balance_nonroot(MemPage *pPage){
   int *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aCopy[NB];               /* Space for holding data of apCopy[] */
   u8 *aSpace;                  /* Space to hold copies of dividers cells */
+  BtCursor *pCur;
 
   /* 
   ** Find the parent page.
@@ -3861,16 +3862,6 @@ static int balance_nonroot(MemPage *pPage){
     zeroPage(pNew, pageFlags);
   }
 
-  /* Free any old pages that were not reused as new pages.
-  */
-  while( i<nOld ){
-    rc = freePage(apOld[i]);
-    if( rc ) goto balance_cleanup;
-    releasePage(apOld[i]);
-    apOld[i] = 0;
-    i++;
-  }
-
   /*
   ** Put the new pages in accending order.  This helps to
   ** keep entries in the disk file in order so that a scan
@@ -3915,6 +3906,131 @@ static int balance_nonroot(MemPage *pPage){
     nNew>=4 ? pgnoNew[3] : 0, nNew>=4 ? szNew[3] : 0,
     nNew>=5 ? pgnoNew[4] : 0, nNew>=5 ? szNew[4] : 0));
 
+#if 0
+  /* The following block shows how cells migrated during the balance op. */
+  if( sqlite3_btree_trace ){
+    char zBuf[200];
+    char *zCsr = zBuf;
+    int a, b, c=0, d=0;
+    *zCsr = '\0';
+    for(a=0; a<nOld; a++){
+      int nOldCells = apCopy[a]->nCell+apCopy[a]->nOverflow;
+      for(b=0; b<(nOldCells+((a!=nOld-1&&!leafData)?1:0)); b++){
+        int x = 0;
+        Pgno iNewPage;
+        Pgno iOldPage;
+        int iNewIndex;
+        int iOldIndex;
+
+        if( b<nOldCells ){
+          iOldPage = pgnoOld[a];
+          iOldIndex = b;
+        }else{
+          iOldPage = pParent->pgno;
+          iOldIndex = idxDiv[a];
+        }
+
+        while( cntNew[x]<=c ) x++;
+        if( x>0 && c==cntNew[x-1] && !leafData ){
+          iNewPage = pParent->pgno;
+          iNewIndex = nxDiv + a;
+        }else{
+          assert( x<nNew );
+          iNewPage = pgnoNew[x];
+          iNewIndex = c-(x>0?cntNew[x-1]:0)-(leafData?0:1);
+        }
+
+        if( (&zBuf[sizeof(zBuf)])-zCsr > 100 && 
+            (1 || iOldPage!=iNewPage || iOldIndex!=iNewIndex) ){
+          zCsr += sprintf(zCsr, " %d.%d->%d.%d", iOldPage, iOldIndex,
+              iNewPage, iNewIndex);
+        }
+        c++;
+        if( (d==0 && strlen(zBuf)>35) || strlen(zBuf)>60 ){
+          TRACE(("%s%s\n", d==0?"BALANCE: Cell migration:":"", zBuf));
+          zCsr = zBuf;
+          d = 1;
+        }
+      }
+    }
+    assert( c==nCell );
+    if( zCsr!=zBuf ){
+      TRACE(("%s%s\n", d==0?"BALANCE: Cell migration":"", zBuf));
+    }
+  }
+#endif
+
+  /* If there are other cursors that refer to one of the pages involved
+  ** in the balancing, then adjust these cursors so that they still
+  ** point to the same cells.
+  */
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    int nCellCnt = 0;
+    int iCell = -1;
+    Pgno pgno = pCur->pPage->pgno;
+
+    /* If the cursor is not valid, do not do anything with it. */
+    if( !pCur->isValid ) continue;
+
+    for(i=0; iCell<0 && i<nOld; i++){
+      if( pgno==apCopy[i]->pgno ){
+        iCell = nCellCnt + pCur->idx;
+        break;
+      }
+      nCellCnt += (apCopy[i]->nCell + apCopy[i]->nOverflow) + (leafData?0:1);
+    }
+
+    if( pgno==pParent->pgno ){
+      assert( !leafData );
+      assert( iCell==-1 );
+      if( pCur->idx>=nxDiv && pCur->idx<(nxDiv+nOld-1) ){
+        for(i=0; i<=(pCur->idx-nxDiv); i++){
+          iCell += (apCopy[i]->nCell + apCopy[i]->nOverflow + 1);
+        }
+      }
+      if( pCur->idx>=(nxDiv+nOld) ){
+        TRACE(("BALANCE: Cursor %p migrates from %d,%d to %d,%d\n", 
+            pCur, pgno, pCur->idx, pgno, pCur->idx+(nNew-nOld)));
+        pCur->idx += (nNew-nOld);
+        pCur->info.nSize = 0;
+      }
+    }
+
+    if( iCell>=0 ){
+      int idxNew;
+      Pgno pgnoNew;
+      int x = 0;
+
+      while( cntNew[x]<=iCell ) x++;
+      if( x>0 && !leafData && cntNew[x-1]==iCell ){
+        /* The cell that pCur points to is a divider cell in pParent. */
+        pgnoNew = pParent->pgno;
+        idxNew = nxDiv + x-1;
+      }else{
+        /* The cell that pCur points to is on page apNew[x]. */
+        idxNew = iCell-(x>0?cntNew[x-1]:0)-((leafData||x==0)?0:1);
+        pgnoNew = apNew[x]->pgno;
+      }
+
+      TRACE(("BALANCE: Cursor %p migrates from %d,%d to %d,%d\n", 
+          pCur, pgno, pCur->idx, pgnoNew, idxNew));
+
+      pCur->idx = idxNew;
+      releasePage(pCur->pPage);
+      rc = getPage(pBt, pgnoNew, &pCur->pPage);
+      assert( rc==SQLITE_OK );
+      pCur->info.nSize = 0;
+    }
+  }
+
+  /* Free any old pages that were not reused as new pages.
+  */
+  for(i=nNew; i<nOld; i++){
+    rc = freePage(apOld[i]);
+    if( rc ) goto balance_cleanup;
+    releasePage(apOld[i]);
+    apOld[i] = 0;
+  }
 
   /*
   ** Evenly distribute the data in apCell[] across the new pages.
@@ -4111,6 +4227,7 @@ static int balance_deeper(MemPage *pPage){
   u8 *cdata;          /* Content of the child page */
   int hdr;            /* Offset to page header in parent */
   int brk;            /* Offset to content of first cell in parent */
+  BtCursor *pCur;
 
   assert( pPage->pParent==0 );
   assert( pPage->nOverflow>0 );
@@ -4136,6 +4253,21 @@ static int balance_deeper(MemPage *pPage){
   zeroPage(pPage, pChild->aData[0] & ~PTF_LEAF);
   put4byte(&pPage->aData[pPage->hdrOffset+8], pgnoChild);
   TRACE(("BALANCE: copy root %d into %d\n", pPage->pgno, pChild->pgno));
+
+  /* If there were cursors pointing at this page, point them at the new
+  ** page instead. Decrement the reference count for the old page and
+  ** increment it for the new one.
+  */
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    if( pCur->pPage==pPage ){
+      TRACE(("BALANCE: Cursor %p migrates from %d,%d to %d,%d\n", 
+          pCur, pPage->pgno, pCur->idx, pChild->pgno, pCur->idx));
+      releasePage(pCur->pPage);
+      rc = getPage(pBt, pChild->pgno,  &pCur->pPage);
+      assert( rc==SQLITE_OK );
+    }
+  }
+
   rc = balance_nonroot(pChild);
   releasePage(pChild);
   return rc;
@@ -4183,7 +4315,7 @@ static int checkReadLocks(Btree *pBt, Pgno pgnoRoot, BtCursor *pExclude){
     if( p->pgnoRoot!=pgnoRoot || p==pExclude ) continue;
     if( p->wrFlag==0 ) return SQLITE_LOCKED;
     if( p->pPage->pgno!=p->pgnoRoot ){
-      moveToRoot(p);
+/*      moveToRoot(p); */
     }
   }
   return SQLITE_OK;
@@ -4210,6 +4342,7 @@ int sqlite3BtreeInsert(
   Btree *pBt = pCur->pBt;
   unsigned char *oldCell;
   unsigned char *newCell = 0;
+  BtCursor *pCur2;
 
   if( pCur->status ){
     return pCur->status;  /* A rollback destroyed this cursor */
@@ -4261,12 +4394,32 @@ int sqlite3BtreeInsert(
     assert( pPage->leaf );
   }
   rc = insertCell(pPage, pCur->idx, newCell, szNew, 0);
+  pCur->isValid = 1;
+
+  /* If there are other cursors pointing at this page with a BtCursor.idx
+  ** field greater than or equal to 'i', then the cell they refer to
+  ** has been modified or moved within the page. Fix the cursor.
+  */
+  for(pCur2=pPage->pBt->pCursor; pCur2; pCur2 = pCur2->pNext){
+    if( pCur2->pPage==pPage ){
+      if( pCur2->idx>=pCur->idx && pCur!=pCur2 && loc!=0 ){
+	/* The cell pointed to by pCur2 was shifted one to the right on it's
+	** page by this Insert(). 
+        */
+        TRACE(("INSERT: Cursor %p migrates from %d,%d to %d,%d\n", 
+            pCur2, pPage->pgno, pCur2->idx, pPage->pgno, pCur2->idx+1));
+        pCur2->idx++;
+      }
+      pCur2->info.nSize = 0;
+    }
+  }
+
   if( rc!=SQLITE_OK ) goto end_insert;
   rc = balance(pPage);
   /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
   /* fflush(stdout); */
   if( rc==SQLITE_OK ){
-    moveToRoot(pCur);
+  /*  moveToRoot(pCur); */
   }
 end_insert:
   sqliteFree(newCell);
@@ -4350,6 +4503,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     rc = insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell);
     if( rc!=SQLITE_OK ) return rc;
     put4byte(findOverflowCell(pPage, pCur->idx), pgnoChild);
+    pCur->isValid = 0;
     rc = balance(pPage);
     sqliteFree(tempCell);
     if( rc ) return rc;
@@ -4360,6 +4514,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     TRACE(("DELETE: table=%d delete from leaf %d\n",
        pCur->pgnoRoot, pPage->pgno));
     dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
+    pCur->isValid = 0;
     rc = balance(pPage);
   }
   moveToRoot(pCur);
