@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.141 2004/06/25 08:32:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.142 2004/06/25 11:11:54 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -402,17 +402,22 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
   int rc;
   u32 len;
   off_t szJ;
+  int cksum;
+  int i;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
 
   *pzMaster = 0;
 
   rc = sqlite3OsFileSize(pJrnl, &szJ);
-  if( rc!=SQLITE_OK || szJ<12 ) return rc;
+  if( rc!=SQLITE_OK || szJ<16 ) return rc;
 
-  rc = sqlite3OsSeek(pJrnl, szJ-12);
+  rc = sqlite3OsSeek(pJrnl, szJ-16);
   if( rc!=SQLITE_OK ) return rc;
  
   rc = read32bits(pJrnl, &len);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = read32bits(pJrnl, &cksum);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3OsRead(pJrnl, aMagic, 8);
@@ -430,6 +435,15 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
     sqliteFree(*pzMaster);
     *pzMaster = 0;
     return rc;
+  }
+
+  /* See if the checksum matches the master journal name */
+  for(i=0; i<len; i++){
+    cksum -= *pzMaster[i];
+  }
+  if( !cksum ){
+    sqliteFree(*pzMaster);
+    *pzMaster = 0;
   }
    
   return SQLITE_OK;
@@ -591,16 +605,33 @@ static int readJournalHdr(
 
 /*
 ** Write the supplied master journal name into the journal file for pager
-** pPager at the current location.
+** pPager at the current location. The master journal name must be the last
+** thing written to a journal file. If the pager is in full-sync mode, the
+** journal file descriptor is advanced to the next sector boundary before
+** anything is written. The format is:
+**
+** + 4 bytes: PAGER_MJ_PGNO.
+** + N bytes: length of master journal name.
+** + 4 bytes: N
+** + 4 bytes: Master journal name checksum.
+** + 8 bytes: aJournalMagic[].
+**
+** The master journal page checksum is the sum of the bytes in the master
+** journal name.
 */
 static int writeMasterJournal(Pager *pPager, const char *zMaster){
   int rc;
   int len; 
+  int i; 
+  int cksum = 0; 
 
   if( !zMaster || pPager->setMaster) return SQLITE_OK;
   pPager->setMaster = 1;
 
   len = strlen(zMaster);
+  for(i=0; i<len; i++){
+    cksum += zMaster[i];
+  }
 
   /* If in full-sync mode, advance to the next disk sector before writing
   ** the master journal name. This is in case the previous page written to
@@ -610,8 +641,7 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
     rc = seekJournalHdr(pPager);
     if( rc!=SQLITE_OK ) return rc;
   }
-
-  pPager->journalOff += (len+16);
+  pPager->journalOff += (len+20);
 
   rc = write32bits(&pPager->jfd, PAGER_MJ_PGNO(pPager));
   if( rc!=SQLITE_OK ) return rc;
@@ -620,6 +650,9 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   if( rc!=SQLITE_OK ) return rc;
 
   rc = write32bits(&pPager->jfd, len);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = write32bits(&pPager->jfd, cksum);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3OsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
