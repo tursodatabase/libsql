@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.22 2004/05/09 01:35:06 drh Exp $
+# $Id: btree.test,v 1.23 2004/05/09 11:51:40 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -661,7 +661,7 @@ do_test btree-8.8 {
   btree_commit $::b1
   btree_data $::c1
 } $::data
-do_test btree-8.9 {
+do_test btree-8.9.1 {
   btree_close_cursor $::c1
   btree_close $::b1
   set ::b1 [btree_open test1.bt 2000 0]
@@ -669,6 +669,9 @@ do_test btree-8.9 {
   btree_move_to $::c1 2030
   btree_data $::c1
 } $::data
+do_test btree-8.9.2 {
+  btree_integrity_check $::b1 1 2
+} {}
 do_test btree-8.10 {
   btree_begin_transaction $::b1
   btree_delete $::c1
@@ -679,14 +682,17 @@ do_test btree-8.11 {
 
 # Now check out keys on overflow pages.
 #
-do_test btree-8.12 {
+do_test btree-8.12.1 {
   set ::keyprefix "This is a long prefix to a key "
   while {[string length $::keyprefix]<256} {append ::keyprefix $::keyprefix}
   btree_close_cursor $::c1
   btree_clear_table $::b1 2
   lindex [btree_get_meta $::b1] 0
 } {4}
-do_test btree-8.12.1 {
+do_test btree-8.12.2 {
+  btree_integrity_check $::b1 1 2
+} {}
+do_test btree-8.12.3 {
   set ::c1 [btree_cursor $::b1 2 1]
   btree_insert $::c1 ${::keyprefix}1 1
   btree_first $::c1
@@ -818,13 +824,19 @@ do_test btree-9.6 {
   btree_close_cursor $::c1
   lindex [btree_pager_stats $::b1] 1
 } {1}
-puts "222: [btree_integrity_check $::b1 1 2]"
-
 do_test btree-9.7 {
+  btree_integrity_check $::b1 1 2
+} {}
+do_test btree-9.8 {
   btree_rollback $::b1
   lindex [btree_pager_stats $::b1] 1
 } {0}
-do_test btree-9.8 {
+do_test btree-9.9 {
+  btree_integrity_check $::b1 1 2
+} {}
+do_test btree-9.10 {
+  btree_close $::b1
+  set ::b1 [btree_open test1.bt 2000 0]
   btree_integrity_check $::b1 1 2
 } {}
 
@@ -979,8 +991,8 @@ do_test btree-12.12 {
   btree_next $::c1
   btree_key $::c1
 } {402}
-btree_commit $::b1
-btree_tree_dump $::b1 1
+# btree_commit $::b1
+# btree_tree_dump $::b1 1
 do_test btree-13.1 {
   btree_integrity_check $::b1 1 2
 } {}
