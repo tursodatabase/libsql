@@ -1,8 +1,8 @@
-C :-)\s(CVS\s7)
-D 2000-05-29T23:30:51
+C :-)\s(CVS\s8)
+D 2000-05-29T23:48:23
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in f5e807375d080405b757239762db8f3b4124e08a
-F README 0200f7787a68917ac55c07b97e3c3a982bccd0bc
+F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
+F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
 F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -16,13 +16,14 @@ F src/sqlite.h 2397c17a8f4ca90c09acab0100dc7e2f8f441b69
 F src/sqliteInt.h 0365970442441b5e9b74e1e828afdeac7b0662be
 F src/tclsqlite.c 30f4317e1fc9119b130f29ee5dac4ab9121de68b
 F src/tokenize.c ab578d90ec6ab117b7ade6e6cfbcb5b0f9cad500
-F src/util.c 171dc6334fde23ccdf6e058d98c23eaa88445944
+F src/util.c 321c136fc1a4d5821bad0f990c6374ef0785a118
 F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
 F src/where.c 67ffea57920e16b33c580e9a9b9855b3ec9dea7b
+F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
 F test/crtidx.test 56de1628220deafe33037c40369229eb02c1907d
 F test/crttbl.test 45889cb39e3c3de9e10d79057f424a38ecebe93f
-F test/tester.tcl 31a9077926a5eb54dcae11b2c92abc1263dd675c
+F test/tester.tcl 0c260d6e56ba5ba69fbddef130638562e79bb2a3
 F tool/gdbmdump.c 529e67c78d920606ba196326ea55b57b75fcc82b
 F tool/lemon.c cff35578b3c4d1491021b6418016639ebe21b1a5
 F tool/lempar.c a1eec94d6eacc12332368660ec65f3b248853833
@@ -32,7 +33,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 67b2bee04077377eacede2b11e21fe37ef7e10c6
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 1517f85243b63511c2ceb73a10453c5ae56d3428
-R 57cc33953bef9654e813c3a2624d0bb4
+P fdf4b31a18fcbbcd358bf92c91fccbf94a79bc26
+R 8e7ef511fbf73d9fc2da9869644b9298
 U drh
-Z b4846e605fc44b608a9e06c083145b56
+Z 333679d5ad9690cc5b3b61743c281f2f

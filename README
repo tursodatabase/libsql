@@ -28,7 +28,7 @@ primary build products are:
 There are some other make targets of interest:
 
 
-   make regression        This runs a regression test on the library.
+   make test              This runs a regression test on the library.
 
    make gdbmdump          This builds a utility named "gdbmdump" that
                           writes out the contents of a GDBM file in a

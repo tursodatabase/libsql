@@ -117,9 +117,8 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
 		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBGDBM) $(LIBTCL)
 
-regression:	tclsqlite
-	for i in $(TOP)/test/*.test; do ./tclsqlite $$i; done
-
+test:	tclsqlite
+	./tclsqlite $(TOP)/test/all.test
 
 TARBALL = \
   sqlite/COPYRIGHT \
