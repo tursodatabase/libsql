@@ -1,5 +1,5 @@
-C Updates\sto\sthe\spublish.sh\sscript\sand\sthe\sdownload.html\swebpage.\s(CVS\s1858)
-D 2004-07-22T18:53:17
+C Version\s3.0.3\s(CVS\s1860)
+D 2004-07-22T18:54:05
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -239,7 +239,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P cc82288b9fff13ae1dc0ae61dfc6be1ac0e603f7
+P 23c2ec459101d45c17e6e4cc6a20ed1b981cfd35
 R 9f643945fe51e64682dfcc93cccdf0fd
 U drh
-Z 2eafc7507cf66a3e30b01a0e577cb9f1
+Z bd1faa193d134f4b9062c0491fef712a
