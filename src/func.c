@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.85 2004/10/06 15:41:17 drh Exp $
+** $Id: func.c,v 1.86 2004/11/12 13:42:31 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -507,6 +507,49 @@ static void versionFunc(
   sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
 }
 
+#ifndef SQLITE_OMIT_ALTERTABLE
+/*
+** This function is used by SQL generated to implement the 
+** ALTER TABLE command. The first argument is the text of a CREATE TABLE or
+** CREATE INDEX command. The second is a table name. The table name in 
+** the CREATE TABLE or CREATE INDEX statement is replaced with the second
+** argument and the result returned. Examples:
+**
+** sqlite_alter_table('CREATE TABLE abc(a, b, c)', 'def')
+**     -> 'CREATE TABLE def(a, b, c)'
+**
+** sqlite_alter_table('CREATE INDEX i ON abc(a)', 'def')
+**     -> 'CREATE INDEX i ON def(a, b, c)'
+*/
+static void altertableFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  char const *zSql = sqlite3_value_text(argv[0]);
+  char const *zTableName = sqlite3_value_text(argv[1]);
+
+  char const *zCsr = zSql;
+  char const *zPrev;
+  char *zRet = 0;
+  int tokenType = 0;
+  int len;
+
+  assert( argc==2 );
+  if( zSql ){
+    while( tokenType!=TK_LP ){
+      zPrev = zCsr-len;
+      len = sqlite3GetToken(zCsr, &tokenType);
+      zCsr += len;
+    }
+
+    zRet = sqlite3MPrintf("%.*s%Q(%s", zPrev-zSql, zSql, zTableName, zCsr);
+    sqlite3_result_text(context, zRet, -1, SQLITE_TRANSIENT);
+    sqliteFree(zRet);
+  }
+}
+#endif
+
 /*
 ** EXPERIMENTAL - This is not an official function.  The interface may
 ** change.  This function may disappear.  Do not write code that depends
@@ -952,6 +995,9 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "last_insert_rowid",  0, 1, SQLITE_UTF8,    0, last_insert_rowid },
     { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
     { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
+#ifndef SQLITE_OMIT_ALTERTABLE
+    { "sqlite_alter_table", 2, 0, SQLITE_UTF8,    0, altertableFunc},
+#endif
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.276 2004/11/12 03:56:15 drh Exp $
+** $Id: build.c,v 1.277 2004/11/12 13:42:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2359,7 +2359,7 @@ void sqlite3CreateIndex(
     */
     if( pStart && pEnd ){
       /* A named index with an explicit CREATE INDEX statement */
-      zStmt = sqlite3MPrintf("CREATE%s INDEX %.*q",
+      zStmt = sqlite3MPrintf("CREATE%s INDEX %.*s",
         onError==OE_None ? "" : " UNIQUE",
         Addr(pEnd->z) - Addr(pName->z) + 1,
         pName->z);
@@ -2919,3 +2919,79 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
 }
 #endif
+
+#ifndef SQLITE_OMIT_ALTERTABLE
+/*
+** Generate code to implement the "ALTER TABLE xxx RENAME TO yyy" 
+** command. 
+*/
+void sqlite3AlterRenameTable(
+  Parse *pParse,            /* Parser context. */
+  SrcList *pSrc,            /* The table to rename. */
+  Token *pName              /* The new table name. */
+){
+  int iDb;                  /* Database that contains the table */
+  Table *pTab;              /* Table being renamed */
+  sqlite3 *db = pParse->db; /* Database connection */
+  char *zName = 0;          /* NULL-terminated version of pName */ 
+  char *zWhere = 0;         /* Where clause of schema elements to reparse */
+  Vdbe *v;
+  
+  assert( pSrc->nSrc==1 );
+
+  pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
+  if( !pTab ) return;
+  iDb = pTab->iDb;
+
+  /* Get a NULL terminated version of the new table name. */
+  zName = sqlite3NameFromToken(pName);
+  if( !zName ) return;
+
+  /* Check that a table or index named 'zName' does not already exist
+  ** in database iDb. If so, this is an error.
+  */
+  if( sqlite3FindTable(db, zName, db->aDb[iDb].zName) ||
+      sqlite3FindIndex(db, zName, db->aDb[iDb].zName) ){
+    sqlite3ErrorMsg(pParse, 
+        "there is already another table or index with this name: %s", zName);
+    sqliteFree(zName);
+    return;
+  }
+
+  /* Begin a transaction and code the VerifyCookie for database iDb. 
+  ** Then modify the schema cookie (since the ALTER TABLE modifies the
+  ** schema).
+  */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) return;
+  sqlite3BeginWriteOperation(pParse, 0, iDb);
+  sqlite3ChangeCookie(db, v, iDb);
+
+  /* Modify the sqlite_master table to use the new table name. */
+  sqlite3NestedParse(pParse,
+      "UPDATE %Q.%s SET "
+          "sql = sqlite_alter_table(sql, %Q), "
+          "tbl_name = %Q, "
+          "name = CASE "
+            "WHEN type='table' THEN %Q "
+            "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
+              "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
+            "ELSE name END "
+      "WHERE tbl_name=%Q AND type IN ('table', 'index');", 
+      db->aDb[iDb].zName, SCHEMA_TABLE(iDb), zName, zName, zName, 
+      zName, strlen(pTab->zName), pTab->zName
+  );
+
+  /* Drop the elements of the in-memory schema that refered to the table
+  ** renamed and load the new versions from the database.
+  */
+  if( pParse->nErr==0 ){
+    sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
+    zWhere = sqlite3MPrintf("tbl_name=%Q", zName);
+    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
+  }
+
+  sqliteFree(zName);
+}
+#endif
+

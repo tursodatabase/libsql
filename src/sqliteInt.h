@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.338 2004/11/12 03:56:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.339 2004/11/12 13:42:31 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -107,6 +107,7 @@
 /* #define SQLITE_OMIT_DATETIME_FUNCS 1 */
 /* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
 /* #define SQLITE_OMIT_AUTOVACUUM */
+/* #define SQLITE_OMIT_ALTERTABLE */
 
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it
@@ -1457,6 +1458,8 @@ sqlite3_value *sqlite3GetTransientValue(sqlite3*db);
 extern const unsigned char sqlite3UpperToLower[];
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
+void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
+int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 
 #endif
