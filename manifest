@@ -1,5 +1,5 @@
-C comment\stypos\s(CVS\s1191)
-D 2004-01-19T04:55:56
+C comment\stypos\s(CVS\s1192)
+D 2004-01-19T04:57:53
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y e41722d11148f34f034716652c1668ffb0ef2905
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 292a7bfc5a815cb6465e32b2d5c9fe9bd43b27f0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 2712bd4d311ebe7dbf8fd7596a809042657db85f
+F src/select.c 131b1af582c48a72f92eee9f3dfc669687faa1c8
 F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/sqlite.h.in c70d8533cd5a5ae8af580597dbc726693ef82de9
 F src/sqliteInt.h c5b727d5d07b88654c204c0fc1ae79c9f635a008
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 0d2683dc5ecb886ae9625484b51e65df49b3235d
-R 203cc465a47717ce24d2d19ccf38f702
+P de35c36ed7657903ebba0c5acff75baaa0453f87
+R 5016fe6fe6275299a3b767a9f0895d11
 U jplyon
-Z dbd68a45967f0a84beda668c59e1a249
+Z 7f28b1cde29695a0721906aa558a015b

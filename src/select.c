@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.147 2004/01/14 13:38:54 drh Exp $
+** $Id: select.c,v 1.148 2004/01/19 04:57:53 jplyon Exp $
 */
 #include "sqliteInt.h"
 
@@ -1262,7 +1262,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p){
 **      |
 **      `----->  SELECT b FROM t2
 **                |
-**                `------>  SELECT c FROM t1
+**                `------>  SELECT a FROM t1
 **
 ** The arrows in the diagram above represent the Select.pPrior pointer.
 ** So if this routine is called with p equal to the t3 query, then
@@ -1935,7 +1935,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 **
 **     SRT_Union       Store results as a key in a temporary table iParm
 **
-**     SRT_Except      Remove results form the temporary table iParm.
+**     SRT_Except      Remove results from the temporary table iParm.
 **
 **     SRT_Table       Store results in temporary table iParm
 **
