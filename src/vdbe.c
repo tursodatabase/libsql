@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.448 2005/01/27 00:33:21 drh Exp $
+** $Id: vdbe.c,v 1.449 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3957,6 +3957,31 @@ case OP_ListReset: {
   break;
 }
 
+#ifndef SQLITE_OMIT_SUBQUERY
+/* Opcode: AggContextPush * * * 
+**
+** Save the state of the current aggregator. It is restored an 
+** AggContextPop opcode.
+** 
+*/
+case OP_AggContextPush: {
+  p->pAgg++;
+  assert( p->pAgg<&p->apAgg[p->nAgg] );
+  break;
+}
+
+/* Opcode: AggContextPop * * *
+**
+** Restore the aggregator to the state it was in when AggContextPush
+** was last called. Any data in the current aggregator is deleted.
+*/
+case OP_AggContextPop: {
+  p->pAgg--;
+  assert( p->pAgg>=p->apAgg );
+  break;
+}
+#endif
+
 #ifndef SQLITE_OMIT_TRIGGER
 /* Opcode: ContextPush * * * 
 **
@@ -4185,8 +4210,8 @@ case OP_MemIncr: {
 
 /* Opcode: AggReset P1 P2 P3
 **
-** Reset the aggregator so that it no longer contains any data.
-** Future aggregator elements will contain P2 values each and be sorted
+** Reset the current aggregator context so that it no longer contains any 
+** data. Future aggregator elements will contain P2 values each and be sorted
 ** using the KeyInfo structure pointed to by P3.
 **
 ** If P1 is non-zero, then only a single aggregator row is available (i.e.
@@ -4196,18 +4221,18 @@ case OP_MemIncr: {
 case OP_AggReset: {
   assert( !pOp->p3 || pOp->p3type==P3_KEYINFO );
   if( pOp->p1 ){
-    rc = sqlite3VdbeAggReset(0, &p->agg, (KeyInfo *)pOp->p3);
-    p->agg.nMem = pOp->p2;    /* Agg.nMem is used by AggInsert() */
-    rc = AggInsert(&p->agg, 0, 0);
+    rc = sqlite3VdbeAggReset(0, p->pAgg, (KeyInfo *)pOp->p3);
+    p->pAgg->nMem = pOp->p2;    /* Agg.nMem is used by AggInsert() */
+    rc = AggInsert(p->pAgg, 0, 0);
   }else{
-    rc = sqlite3VdbeAggReset(db, &p->agg, (KeyInfo *)pOp->p3);
-    p->agg.nMem = pOp->p2;
+    rc = sqlite3VdbeAggReset(db, p->pAgg, (KeyInfo *)pOp->p3);
+    p->pAgg->nMem = pOp->p2;
   }
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
-  p->agg.apFunc = sqliteMalloc( p->agg.nMem*sizeof(p->agg.apFunc[0]) );
-  if( p->agg.apFunc==0 ) goto no_mem;
+  p->pAgg->apFunc = sqliteMalloc( p->pAgg->nMem*sizeof(p->pAgg->apFunc[0]) );
+  if( p->pAgg->apFunc==0 ) goto no_mem;
   break;
 }
 
@@ -4219,8 +4244,8 @@ case OP_AggReset: {
 */
 case OP_AggInit: {
   int i = pOp->p2;
-  assert( i>=0 && i<p->agg.nMem );
-  p->agg.apFunc[i] = (FuncDef*)pOp->p3;
+  assert( i>=0 && i<p->pAgg->nMem );
+  p->pAgg->apFunc[i] = (FuncDef*)pOp->p3;
   break;
 }
 
@@ -4255,9 +4280,9 @@ case OP_AggFunc: {
     storeTypeInfo(pRec, db->enc);
   }
   i = pTos->i;
-  assert( i>=0 && i<p->agg.nMem );
+  assert( i>=0 && i<p->pAgg->nMem );
   ctx.pFunc = (FuncDef*)pOp->p3;
-  pMem = &p->agg.pCurrent->aMem[i];
+  pMem = &p->pAgg->pCurrent->aMem[i];
   ctx.s.z = pMem->zShort;  /* Space used for small aggregate contexts */
   ctx.pAgg = pMem->z;
   ctx.cnt = ++pMem->i;
@@ -4301,18 +4326,18 @@ case OP_AggFocus: {
   Stringify(pTos, db->enc);
   zKey = pTos->z;
   nKey = pTos->n;
-  assert( p->agg.pBtree );
-  assert( p->agg.pCsr );
-  rc = sqlite3BtreeMoveto(p->agg.pCsr, zKey, nKey, &res);
+  assert( p->pAgg->pBtree );
+  assert( p->pAgg->pCsr );
+  rc = sqlite3BtreeMoveto(p->pAgg->pCsr, zKey, nKey, &res);
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
   if( res==0 ){
-    rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
-        (char *)&p->agg.pCurrent);
+    rc = sqlite3BtreeData(p->pAgg->pCsr, 0, sizeof(AggElem*),
+        (char *)&p->pAgg->pCurrent);
     pc = pOp->p2 - 1;
   }else{
-    rc = AggInsert(&p->agg, zKey, nKey);
+    rc = AggInsert(p->pAgg, zKey, nKey);
   }
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
@@ -4330,10 +4355,10 @@ case OP_AggFocus: {
 case OP_AggSet: {
   AggElem *pFocus;
   int i = pOp->p2;
-  pFocus = p->agg.pCurrent;
+  pFocus = p->pAgg->pCurrent;
   assert( pTos>=p->aStack );
   if( pFocus==0 ) goto no_mem;
-  assert( i>=0 && i<p->agg.nMem );
+  assert( i>=0 && i<p->pAgg->nMem );
   rc = sqlite3VdbeMemMove(&pFocus->aMem[i], pTos);
   pTos--;
   break;
@@ -4348,22 +4373,22 @@ case OP_AggSet: {
 case OP_AggGet: {
   AggElem *pFocus;
   int i = pOp->p2;
-  pFocus = p->agg.pCurrent;
+  pFocus = p->pAgg->pCurrent;
   if( pFocus==0 ){
     int res;
     if( sqlite3_malloc_failed ) goto no_mem;
-    rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
+    rc = sqlite3BtreeFirst(p->pAgg->pCsr, &res);
     if( rc!=SQLITE_OK ){
       return rc;
     }
     if( res!=0 ){
-      rc = AggInsert(&p->agg,"",1);
-      pFocus = p->agg.pCurrent;
+      rc = AggInsert(p->pAgg, "", 1);
+      pFocus = p->pAgg->pCurrent;
     }else{
-      rc = sqlite3BtreeData(p->agg.pCsr, 0, 4, (char *)&pFocus);
+      rc = sqlite3BtreeData(p->pAgg->pCsr, 0, 4, (char *)&pFocus);
     }
   }
-  assert( i>=0 && i<p->agg.nMem );
+  assert( i>=0 && i<p->pAgg->nMem );
   pTos++;
   sqlite3VdbeMemShallowCopy(pTos, &pFocus->aMem[i], MEM_Ephem);
   if( pTos->flags&MEM_Str ){
@@ -4388,16 +4413,16 @@ case OP_AggNext: {
   int res;
   assert( rc==SQLITE_OK );
   CHECK_FOR_INTERRUPT;
-  if( p->agg.searching==0 ){
-    p->agg.searching = 1;
-    if( p->agg.pCsr ){
-      rc = sqlite3BtreeFirst(p->agg.pCsr, &res);
+  if( p->pAgg->searching==0 ){
+    p->pAgg->searching = 1;
+    if( p->pAgg->pCsr ){
+      rc = sqlite3BtreeFirst(p->pAgg->pCsr, &res);
     }else{
       res = 0;
     }
   }else{
-    if( p->agg.pCsr ){
-      rc = sqlite3BtreeNext(p->agg.pCsr, &res);
+    if( p->pAgg->pCsr ){
+      rc = sqlite3BtreeNext(p->pAgg->pCsr, &res);
     }else{
       res = 1;
     }
@@ -4410,14 +4435,14 @@ case OP_AggNext: {
     sqlite3_context ctx;
     Mem *aMem;
 
-    if( p->agg.pCsr ){
-      rc = sqlite3BtreeData(p->agg.pCsr, 0, sizeof(AggElem*),
-          (char *)&p->agg.pCurrent);
+    if( p->pAgg->pCsr ){
+      rc = sqlite3BtreeData(p->pAgg->pCsr, 0, sizeof(AggElem*),
+          (char *)&p->pAgg->pCurrent);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
     }
-    aMem = p->agg.pCurrent->aMem;
-    for(i=0; i<p->agg.nMem; i++){
-      FuncDef *pFunc = p->agg.apFunc[i];
+    aMem = p->pAgg->pCurrent->aMem;
+    for(i=0; i<p->pAgg->nMem; i++){
+      FuncDef *pFunc = p->pAgg->apFunc[i];
       Mem *pMem = &aMem[i];
       if( pFunc==0 || pFunc->xFinalize==0 ) continue;
       ctx.s.flags = MEM_Null;
@@ -4517,7 +4542,6 @@ case OP_Expire: {
   }
   break;
 }
-
 
 
 /* An other opcode is illegal...

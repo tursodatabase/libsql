@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.99 2005/01/20 11:32:24 danielk1977 Exp $
+** $Id: delete.c,v 1.100 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,6 +90,7 @@ void sqlite3DeleteFrom(
   sqlite3 *db;           /* Main database structure */
   AuthContext sContext;  /* Authorization context */
   int oldIdx = -1;       /* Cursor for the OLD table of AFTER triggers */
+  NameContext sNC;       /* Name context to resolve expressions in */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -148,11 +149,14 @@ void sqlite3DeleteFrom(
     oldIdx = pParse->nTab++;
   }
 
-  /* Resolve the column names in all the expressions.
+  /* Resolve the column names in the WHERE clause.
   */
   assert( pTabList->nSrc==1 );
   iCur = pTabList->a[0].iCursor = pParse->nTab++;
-  if( sqlite3ExprResolveNames(pParse, pTabList, 0, 0, pWhere, 0, 1) ){
+  memset(&sNC, 0, sizeof(sNC));
+  sNC.pParse = pParse;
+  sNC.pSrcList = pTabList;
+  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
     goto delete_from_cleanup;
   }
 
@@ -176,7 +180,7 @@ void sqlite3DeleteFrom(
   */
   if( isView ){
     Select *pView = sqlite3SelectDup(pTab->pSelect);
-    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0, 0);
+    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
 

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.300 2005/01/27 00:33:38 danielk1977 Exp $
+** $Id: build.c,v 1.301 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -95,7 +95,7 @@ void sqlite3FinishCoding(Parse *pParse){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem+3,
-                         pParse->nTab+3, pParse->explain);
+                         pParse->nTab+3, pParse->nMaxDepth+1, pParse->explain);
     pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
@@ -104,7 +104,6 @@ void sqlite3FinishCoding(Parse *pParse){
   pParse->nTab = 0;
   pParse->nMem = 0;
   pParse->nSet = 0;
-  pParse->nAgg = 0;
   pParse->nVar = 0;
   pParse->cookieMask = 0;
   pParse->cookieGoto = 0;
@@ -896,7 +895,6 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
   }else{
     sqlite3ExprDelete(pCol->pDflt);
     pCol->pDflt = sqlite3ExprDup(pExpr);
-    sqlite3ExprResolveNames(pParse,0,0,0,pExpr,0,0);
   }
   sqlite3ExprDelete(pExpr);
 }
@@ -1439,7 +1437,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       sqlite3VdbeAddOp(v, OP_Integer, p->iDb, 0);
       sqlite3VdbeAddOp(v, OP_OpenWrite, 1, 0);
       pParse->nTab = 2;
-      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0, 0);
+      sqlite3Select(pParse, pSelect, SRT_Table, 1, 0, 0, 0, 0);
       sqlite3VdbeAddOp(v, OP_Close, 1, 0);
       if( pParse->nErr==0 ){
         pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.103 2005/01/19 23:24:51 drh Exp $
+** $Id: update.c,v 1.104 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,6 +49,7 @@ void sqlite3Update(
   Expr *pRecnoExpr = 0;  /* Expression defining the new record number */
   int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
+  NameContext sNC;       /* The name-context to resolve expressions in */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -113,6 +114,11 @@ void sqlite3Update(
     pParse->nTab++;
   }
 
+  /* Initialize the name-context */
+  memset(&sNC, 0, sizeof(sNC));
+  sNC.pParse = pParse;
+  sNC.pSrcList = pTabList;
+
   /* Resolve the column names in all the expressions of the
   ** of the UPDATE statement.  Also find the column index
   ** for each column to be updated in the pChanges array.  For each
@@ -121,8 +127,7 @@ void sqlite3Update(
   */
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
-    if( sqlite3ExprResolveNames(pParse, pTabList, 0, 0,
-          pChanges->a[i].pExpr, 0, 1) ){
+    if( sqlite3ExprResolveNames(&sNC, pChanges->a[i].pExpr) ){
       goto update_cleanup;
     }
     for(j=0; j<pTab->nCol; j++){
@@ -198,7 +203,7 @@ void sqlite3Update(
   /* Resolve the column names in all the expressions in the
   ** WHERE clause.
   */
-  if( sqlite3ExprResolveNames(pParse, pTabList, 0, 0, pWhere, 0, 1) ){
+  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
     goto update_cleanup;
   }
 
@@ -221,7 +226,7 @@ void sqlite3Update(
   if( isView ){
     Select *pView;
     pView = sqlite3SelectDup(pTab->pSelect);
-    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0, 0);
+    sqlite3Select(pParse, pView, SRT_TempTable, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
 

@@ -640,7 +640,8 @@ static int codeTriggerProgram(
 	Select * ss = sqlite3SelectDup(pTriggerStep->pSelect);		  
 	assert(ss);
 	assert(ss->pSrc);
-	sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0, 0, 0);
+        sqlite3SelectResolve(pParse, ss, 0);
+	sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0, 0);
 	sqlite3SelectDelete(ss);
 	break;
       }
@@ -744,11 +745,12 @@ int sqlite3CodeRowTrigger(
  
     if( fire_this ){
       int endTrigger;
-      SrcList dummyTablist;
       Expr * whenExpr;
       AuthContext sContext;
+      NameContext sNC;
 
-      dummyTablist.nSrc = 0;
+      memset(&sNC, 0, sizeof(sNC));
+      sNC.pParse = pParse;
 
       /* Push an entry on to the trigger stack */
       trigStackEntry.pTrigger = pTrigger;
@@ -763,7 +765,7 @@ int sqlite3CodeRowTrigger(
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqlite3ExprDup(pTrigger->pWhen);
-      if( sqlite3ExprResolveNames(pParse, &dummyTablist, 0, 0, whenExpr, 0,1) ){
+      if( sqlite3ExprResolveNames(&sNC, whenExpr) ){
         pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(whenExpr);
         return 1;

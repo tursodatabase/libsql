@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.131 2005/01/20 22:48:48 drh Exp $
+** $Id: where.c,v 1.132 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -191,6 +191,7 @@ static void createMask(ExprMaskSet *pMaskSet, int iCursor){
 ** sets their opcodes to TK_COLUMN and their Expr.iTable fields to
 ** the VDBE cursor number of the table.
 */
+static Bitmask exprListTableUsage(ExprMaskSet *, ExprList *);
 static Bitmask exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
   Bitmask mask = 0;
   if( p==0 ) return 0;
@@ -198,16 +199,25 @@ static Bitmask exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
     mask = getMask(pMaskSet, p->iTable);
     return mask;
   }
-  if( p->pRight ){
-    mask = exprTableUsage(pMaskSet, p->pRight);
+  mask = exprTableUsage(pMaskSet, p->pRight);
+  mask |= exprTableUsage(pMaskSet, p->pLeft);
+  mask |= exprListTableUsage(pMaskSet, p->pList);
+  if( p->pSelect ){
+    Select *pS = p->pSelect;
+    mask |= exprListTableUsage(pMaskSet, pS->pEList);
+    mask |= exprListTableUsage(pMaskSet, pS->pGroupBy);
+    mask |= exprListTableUsage(pMaskSet, pS->pOrderBy);
+    mask |= exprTableUsage(pMaskSet, pS->pWhere);
+    mask |= exprTableUsage(pMaskSet, pS->pHaving);
   }
-  if( p->pLeft ){
-    mask |= exprTableUsage(pMaskSet, p->pLeft);
-  }
-  if( p->pList ){
-    int i;
-    for(i=0; i<p->pList->nExpr; i++){
-      mask |= exprTableUsage(pMaskSet, p->pList->a[i].pExpr);
+  return mask;
+}
+static Bitmask exprListTableUsage(ExprMaskSet *pMaskSet, ExprList *pList){
+  int i;
+  Bitmask mask = 0;
+  if( pList ){
+    for(i=0; i<pList->nExpr; i++){
+      mask |= exprTableUsage(pMaskSet, pList->a[i].pExpr);
     }
   }
   return mask;
@@ -479,14 +489,20 @@ static void codeEqualityTerm(
   if( pX->op!=TK_IN ){
     assert( pX->op==TK_EQ );
     sqlite3ExprCode(pParse, pX->pRight);
+#ifndef SQLITE_OMIT_SUBQUERY
   }else{
-    int iTab = pX->iTable;
+    int iTab;
     Vdbe *v = pParse->pVdbe;
+
+    sqlite3CodeSubselect(pParse, pX);
+    iTab = pX->iTable;
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, brk);
     sqlite3VdbeAddOp(v, OP_KeyAsData, iTab, 1);
+    VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
     pLevel->inP2 = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
     pLevel->inOp = OP_Next;
     pLevel->inP1 = iTab;
+#endif
   }
   disableTerm(pLevel, &pTerm->p);
 }

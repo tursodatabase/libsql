@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.13 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: misc4.test,v 1.14 2005/01/29 08:32:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,7 +119,20 @@ ifcapable subquery {
         where a.key=x.key;
     }
   } {01 data01 01 3.0 +1 data+1 +1 7.0}
+
+  # This test case tests the same property as misc4-4.1, but it is
+  # a bit smaller which makes it easier to work with while debugging.
+  do_test misc4-4.2 {
+    execsql {
+      CREATE TABLE ab(a TEXT, b TEXT);
+      INSERT INTO ab VALUES('01', '1');
+    }
+    execsql {
+      select * from ab, (select b from ab) as x where x.b = ab.a;
+    }
+  } {}
 }
+
 
 # Ticket #1036.  When creating tables from a SELECT on a view, use the
 # short names of columns.

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.134 2005/01/20 11:32:24 danielk1977 Exp $
+** $Id: insert.c,v 1.135 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -312,8 +312,11 @@ void sqlite3Insert(
     iInitCode = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
-    rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock,0,0,0,0,0);
+
+    /* Resolve the expressions in the SELECT statement and execute it. */
+    rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock,0,0,0,0);
     if( rc || pParse->nErr || sqlite3_malloc_failed ) goto insert_cleanup;
+
     iCleanup = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iCleanup);
     assert( pSelect->pEList );
@@ -372,15 +375,16 @@ void sqlite3Insert(
     /* This is the case if the data for the INSERT is coming from a VALUES
     ** clause
     */
-    SrcList dummy;
+    NameContext sNC;
+    memset(&sNC, 0, sizeof(sNC));
+    sNC.pParse = pParse;
     assert( pList!=0 );
     srcTab = -1;
     useTempTable = 0;
     assert( pList );
     nColumn = pList->nExpr;
-    dummy.nSrc = 0;
     for(i=0; i<nColumn; i++){
-      if( sqlite3ExprResolveNames(pParse,&dummy,0,0,pList->a[i].pExpr,0,1) ){
+      if( sqlite3ExprResolveNames(&sNC, pList->a[i].pExpr) ){
         goto insert_cleanup;
       }
     }

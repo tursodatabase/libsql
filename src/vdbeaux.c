@@ -586,6 +586,7 @@ void sqlite3VdbeMakeReady(
   int nVar,                      /* Number of '?' see in the SQL statement */
   int nMem,                      /* Number of memory cells to allocate */
   int nCursor,                   /* Number of cursors to allocate */
+  int nAgg,                      /* Number of aggregate contexts required */
   int isExplain                  /* True if the EXPLAIN keywords is present */
 ){
   int n;
@@ -615,6 +616,7 @@ void sqlite3VdbeMakeReady(
       + nVar*sizeof(char*)             /* azVar */
       + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*)        /* apCsr */
+      + nAgg*sizeof(Agg)               /* Aggregate contexts */
     );
     if( !sqlite3_malloc_failed ){
       p->aMem = &p->aStack[n];
@@ -625,14 +627,19 @@ void sqlite3VdbeMakeReady(
       p->apArg = (Mem**)&p->aVar[nVar];
       p->azVar = (char**)&p->apArg[n];
       p->apCsr = (Cursor**)&p->azVar[nVar];
+      if( nAgg>0 ){
+        p->nAgg = nAgg;
+        p->apAgg = (Agg*)&p->apCsr[nCursor];
+      }
       p->nCursor = nCursor;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
       }
-      for(n=0; n<nMem; n++){
-        p->aMem[n].flags = MEM_Null;
-      }
     }
+  }
+  p->pAgg = p->apAgg;
+  for(n=0; n<p->nMem; n++){
+    p->aMem[n].flags = MEM_Null;
   }
 
 #ifdef SQLITE_DEBUG
@@ -733,8 +740,10 @@ static void freeAggElem(AggElem *pElem, Agg *pAgg){
 */
 int sqlite3VdbeAggReset(sqlite3 *db, Agg *pAgg, KeyInfo *pKeyInfo){
   int rc = 0;
-  BtCursor *pCsr = pAgg->pCsr;
+  BtCursor *pCsr;
 
+  if( !pAgg ) return SQLITE_OK;
+  pCsr = pAgg->pCsr;
   assert( (pCsr && pAgg->nTab>0) || (!pCsr && pAgg->nTab==0)
          || sqlite3_malloc_failed );
 
@@ -886,7 +895,9 @@ static void Cleanup(Vdbe *p){
     sqliteFree(p->contextStack);
   }
   sqlite3VdbeSorterReset(p);
-  sqlite3VdbeAggReset(0, &p->agg, 0);
+  for(i=0; i<p->nAgg; i++){
+    sqlite3VdbeAggReset(0, &p->apAgg[i], 0);
+  }
   p->contextStack = 0;
   p->contextStackDepth = 0;
   p->contextStackTop = 0;

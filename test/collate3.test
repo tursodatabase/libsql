@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate3.test,v 1.9 2005/01/26 03:58:36 danielk1977 Exp $
+# $Id: collate3.test,v 1.10 2005/01/29 08:32:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -131,51 +131,51 @@ do_test collate3-2.8 {
 } {1 {no such collation sequence: string_compare}} 
 
 ifcapable compound {
-do_test collate3-2.9 {
-  catchsql {
-    SELECT c1 FROM collate3t1 UNION SELECT c1 FROM collate3t1;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.10 {
-  catchsql {
-    SELECT c1 FROM collate3t1 EXCEPT SELECT c1 FROM collate3t1;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.11 {
-  catchsql {
-    SELECT c1 FROM collate3t1 INTERSECT SELECT c1 FROM collate3t1;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.12 {
-  catchsql {
-    SELECT c1 FROM collate3t1 UNION ALL SELECT c1 FROM collate3t1;
-  }
-} {0 {}}
-do_test collate3-2.13 {
-  catchsql {
-    SELECT 10 UNION ALL SELECT 20 ORDER BY 1 COLLATE string_compare;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.14 {
-  catchsql {
-    SELECT 10 INTERSECT SELECT 20 ORDER BY 1 COLLATE string_compare;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.15 {
-  catchsql {
-    SELECT 10 EXCEPT SELECT 20 ORDER BY 1 COLLATE string_compare;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.16 {
-  catchsql {
-    SELECT 10 UNION SELECT 20 ORDER BY 1 COLLATE string_compare;
-  }
-} {1 {no such collation sequence: string_compare}} 
-do_test collate3-2.17 {
-  catchsql {
-    SELECT c1 FROM collate3t1 UNION ALL SELECT c1 FROM collate3t1 ORDER BY 1;
-  }
-} {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.9 {
+    catchsql {
+      SELECT c1 FROM collate3t1 UNION SELECT c1 FROM collate3t1;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.10 {
+    catchsql {
+      SELECT c1 FROM collate3t1 EXCEPT SELECT c1 FROM collate3t1;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.11 {
+    catchsql {
+      SELECT c1 FROM collate3t1 INTERSECT SELECT c1 FROM collate3t1;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.12 {
+    catchsql {
+      SELECT c1 FROM collate3t1 UNION ALL SELECT c1 FROM collate3t1;
+    }
+  } {0 {}}
+  do_test collate3-2.13 {
+    catchsql {
+      SELECT 10 UNION ALL SELECT 20 ORDER BY 1 COLLATE string_compare;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.14 {
+    catchsql {
+      SELECT 10 INTERSECT SELECT 20 ORDER BY 1 COLLATE string_compare;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.15 {
+    catchsql {
+      SELECT 10 EXCEPT SELECT 20 ORDER BY 1 COLLATE string_compare;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.16 {
+    catchsql {
+      SELECT 10 UNION SELECT 20 ORDER BY 1 COLLATE string_compare;
+    }
+  } {1 {no such collation sequence: string_compare}} 
+  do_test collate3-2.17 {
+    catchsql {
+      SELECT c1 FROM collate3t1 UNION ALL SELECT c1 FROM collate3t1 ORDER BY 1;
+    }
+  } {1 {no such collation sequence: string_compare}} 
 } ;# ifcapable compound
 
 #

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.2 2005/01/21 11:55:28 danielk1977 Exp $
+# $Id: subquery.test,v 1.3 2005/01/29 08:32:47 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -59,5 +59,183 @@ do_test subquery-1.4 {
   }
 } {13 31 57}
 
+# Simple tests to make sure correlated subqueries in WHERE clauses
+# are used by the query optimizer correctly.
+do_test subquery-1.5 {
+  execsql {
+    SELECT a, x FROM t1, t2 WHERE t1.a = (SELECT x);
+  }
+} {1 1 3 3 5 5 7 7}
+do_test subquery-1.6 {
+  execsql {
+    CREATE INDEX i1 ON t1(a);
+    SELECT a, x FROM t1, t2 WHERE t1.a = (SELECT x);
+  }
+} {1 1 3 3 5 5 7 7}
+do_test subquery-1.7 {
+  execsql {
+    SELECT a, x FROM t2, t1 WHERE t1.a = (SELECT x);
+  }
+} {1 1 3 3 5 5 7 7}
+
+# Try an aggregate in both the subquery and the parent query.
+do_test subquery-1.6 {
+  execsql {
+    SELECT count(*) FROM t1 WHERE a > (SELECT count(*) FROM t2);
+  }
+} {2}
+
+
+#------------------------------------------------------------------
+# The following test cases - subquery-2.* - are not logically
+# organized. They're here largely because they were failing during
+# one stage of development of sub-queries.
+#
+do_test subquery-2.1 {
+  execsql {
+    SELECT (SELECT 10);
+  }
+} {10}
+do_test subquery-2.2.1 {
+  execsql {
+    CREATE TABLE t3(a PRIMARY KEY, b);
+    INSERT INTO t3 VALUES(1, 2);
+    INSERT INTO t3 VALUES(3, 1);
+  }
+} {}
+do_test subquery-2.2.2 {
+  execsql {
+    SELECT * FROM t3 WHERE a IN (SELECT b FROM t3);
+  }
+} {1 2}
+do_test subquery-2.2.3 {
+  execsql {
+    DROP TABLE t3;
+  }
+} {}
+do_test subquery-2.3.1 {
+  execsql {
+    CREATE TABLE t3(a TEXT);
+    INSERT INTO t3 VALUES('10');
+  }
+} {}
+do_test subquery-2.3.2 {
+  execsql {
+    SELECT a IN (10.0, 20) FROM t3;
+  }
+} {0}
+do_test subquery-2.3.3 {
+  execsql {
+    DROP TABLE t3;
+  }
+} {}
+do_test subquery-2.4.1 {
+  execsql {
+    CREATE TABLE t3(a TEXT);
+    INSERT INTO t3 VALUES('XX');
+  }
+} {}
+do_test subquery-2.4.2 {
+  execsql {
+    SELECT count(*) FROM t3 WHERE a IN (SELECT 'XX')
+  }
+} {1}
+do_test subquery-2.4.3 {
+  execsql {
+    DROP TABLE t3;
+  }
+} {}
+do_test subquery-2.5.1 {
+  execsql {
+    CREATE TABLE t3(a INTEGER);
+    INSERT INTO t3 VALUES(10);
+
+    CREATE TABLE t4(x TEXT);
+    INSERT INTO t4 VALUES('10.0');
+  }
+} {}
+do_test subquery-2.5.2 {
+  execsql {
+    SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
+  }
+} {10.0}
+do_test subquery-2.5.3 {
+  execsql {
+    CREATE INDEX t4i ON t4(x);
+    SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
+  }
+} {10.0}
+do_test subquery-2.5.4 {
+  execsql {
+    DROP TABLE t3;
+    DROP TABLE t4;
+  }
+} {}
+
+#------------------------------------------------------------------
+# The following test cases - subquery-3.* - test tickets that
+# were raised during development of correlated subqueries.
+#
+
+# Ticket 1083
+ifcapable view {
+  do_test subquery-3.1 {
+    catchsql { DROP TABLE t1; }
+    catchsql { DROP TABLE t2; }
+    execsql {
+      CREATE TABLE t1(a,b);
+      INSERT INTO t1 VALUES(1,2);
+      CREATE VIEW v1 AS SELECT b FROM t1 WHERE a>0;
+      CREATE TABLE t2(p,q);
+      INSERT INTO t2 VALUES(2,9);
+      SELECT * FROM v1 WHERE EXISTS(SELECT * FROM t2 WHERE p=v1.b);
+    }
+  } {2}
+}
+
+# Ticket 1084
+do_test subquery-3.2 {
+  catchsql {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+  }
+  execsql {
+    SELECT (SELECT t1.a) FROM t1;
+  }
+} {1}
+
+#------------------------------------------------------------------
+# These tests - subquery-4.* - use the TCL statement cache to try 
+# and expose bugs to do with re-using statements that have been 
+# passed to sqlite3_reset().
+#
+# One problem was that VDBE memory cells were not being initialised
+# to NULL on the second and subsequent executions.
+#
+do_test subquery-4.1.1 {
+  execsql {
+    SELECT (SELECT a FROM t1);
+  }
+} {1}
+do_test subquery-4.2 {
+  execsql {
+    DELETE FROM t1;
+    SELECT (SELECT a FROM t1);
+  }
+} {{}}
+do_test subquery-4.2.1 {
+  execsql {
+    CREATE TABLE t3(a PRIMARY KEY);
+    INSERT INTO t3 VALUES(10);
+  }
+  execsql {INSERT INTO t3 VALUES((SELECT max(a) FROM t3)+1)}
+} {}
+do_test subquery-4.2.2 {
+  execsql {INSERT INTO t3 VALUES((SELECT max(a) FROM t3)+1)}
+} {}
+
+
 
 finish_test
+
+

@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that contain
 # subqueries in their FROM clause.
 #
-# $Id: select6.test,v 1.16 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: select6.test,v 1.17 2005/01/29 08:32:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -157,19 +157,19 @@ do_test select6-2.9 {
   }
 } {1 1 1 2 2 3 3 4 7 4 8 15 5 5 20}
 
-do_test sqlite6-3.1 {
+do_test select6-3.1 {
   execsql2 {
     SELECT * FROM (SELECT * FROM (SELECT * FROM t1 WHERE x=3));
   }
 } {x 3 y 2}
-do_test sqlite6-3.2 {
+do_test select6-3.2 {
   execsql {
     SELECT * FROM
       (SELECT a.q, a.p, b.r
        FROM (SELECT count(*) as p , b as q FROM t2 GROUP BY q) AS a,
             (SELECT max(a) as r, b as s FROM t2 GROUP BY s) as b
        WHERE a.q=b.s ORDER BY a.q)
-    ORDER BY q
+    ORDER BY "a.q"
   }
 } {1 1 1 2 2 3 3 4 7 4 8 15 5 5 20}
 do_test select6-3.3 {

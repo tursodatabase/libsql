@@ -321,7 +321,9 @@ struct Vdbe {
   int magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
-  Agg agg;                /* Aggregate information */
+  int nAgg;               /* Number of elements in apAgg */
+  Agg *apAgg;             /* Array of aggregate contexts */
+  Agg *pAgg;              /* Current aggregate context */
   int nCallback;          /* Number of callbacks invoked so far */
   Keylist *pList;         /* A list of ROWIDs */
   int contextStackTop;    /* Index of top element in the context stack */

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.188 2005/01/23 22:41:37 danielk1977 Exp $
+** $Id: expr.c,v 1.189 2005/01/29 08:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -516,6 +516,8 @@ Select *sqlite3SelectDup(Select *p){
   pNew->iOffset = -1;
   pNew->ppOpenTemp = 0;
   pNew->pFetch = 0;
+  pNew->isResolved = 0;
+  pNew->isAgg = 0;
   return pNew;
 }
 #else
@@ -750,40 +752,42 @@ static int lookupName(
 
     pNC->nRef++;
     /* assert( zTab==0 || pEList==0 ); */
-    for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
-      Table *pTab = pItem->pTab;
-      Column *pCol;
-
-      if( pTab==0 ) continue;
-      assert( pTab->nCol>0 );
-      if( zTab ){
-        if( pItem->zAlias ){
-          char *zTabName = pItem->zAlias;
-          if( sqlite3StrICmp(zTabName, zTab)!=0 ) continue;
-        }else{
-          char *zTabName = pTab->zName;
-          if( zTabName==0 || sqlite3StrICmp(zTabName, zTab)!=0 ) continue;
-          if( zDb!=0 && sqlite3StrICmp(db->aDb[pTab->iDb].zName, zDb)!=0 ){
-            continue;
+    if( pSrcList ){
+      for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
+        Table *pTab = pItem->pTab;
+        Column *pCol;
+  
+        if( pTab==0 ) continue;
+        assert( pTab->nCol>0 );
+        if( zTab ){
+          if( pItem->zAlias ){
+            char *zTabName = pItem->zAlias;
+            if( sqlite3StrICmp(zTabName, zTab)!=0 ) continue;
+          }else{
+            char *zTabName = pTab->zName;
+            if( zTabName==0 || sqlite3StrICmp(zTabName, zTab)!=0 ) continue;
+            if( zDb!=0 && sqlite3StrICmp(db->aDb[pTab->iDb].zName, zDb)!=0 ){
+              continue;
+            }
           }
         }
-      }
-      if( 0==(cntTab++) ){
-        pExpr->iTable = pItem->iCursor;
-        pExpr->iDb = pTab->iDb;
-        pMatch = pItem;
-      }
-      for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
-        if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-          cnt++;
+        if( 0==(cntTab++) ){
           pExpr->iTable = pItem->iCursor;
-          pMatch = pItem;
           pExpr->iDb = pTab->iDb;
-          /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
-          pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-          pExpr->affinity = pTab->aCol[j].affinity;
-          pExpr->pColl = pTab->aCol[j].pColl;
-          break;
+          pMatch = pItem;
+        }
+        for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
+          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            cnt++;
+            pExpr->iTable = pItem->iCursor;
+            pMatch = pItem;
+            pExpr->iDb = pTab->iDb;
+            /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
+            pExpr->iColumn = j==pTab->iPKey ? -1 : j;
+            pExpr->affinity = pTab->aCol[j].affinity;
+            pExpr->pColl = pTab->aCol[j].pColl;
+            break;
+          }
         }
       }
     }
@@ -926,7 +930,7 @@ static int lookupName(
   pExpr->pRight = 0;
   pExpr->op = TK_COLUMN;
   if( cnt==1 ){
-    assert( pNC!=0 && pNC->pSrcList!=0 );
+    assert( pNC!=0 );
     sqlite3AuthRead(pParse, pExpr, pNC->pSrcList);
   }
   return cnt!=1;
@@ -991,10 +995,11 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
   SrcList *pSrcList;
   Parse *pParse;
 
+  if( pExpr==0 ) return 1;
   assert( pNC!=0 );
   pSrcList = pNC->pSrcList;
   pParse = pNC->pParse;
-  if( pExpr==0 ) return 1;
+
   if( ExprHasAnyProperty(pExpr, EP_Resolved) ) return 1;
   ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
@@ -1017,7 +1022,6 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
     /* A lone identifier is the name of a column.
     */
     case TK_ID: {
-      if( pSrcList==0 ) break;
       lookupName(pParse, 0, 0, &pExpr->token, pNC, pExpr);
       return 1;
     }
@@ -1031,7 +1035,7 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       Token *pDb;
       Expr *pRight;
 
-      if( pSrcList==0 ) break;
+      /* if( pSrcList==0 ) break; */
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         pDb = 0;
@@ -1052,7 +1056,6 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
     case TK_CTIME:
     case TK_CTIMESTAMP:
     case TK_CDATE:
-    /* Note: The above three were a seperate case in sqlmoto. Reason? */
     case TK_GLOB:
     case TK_LIKE:
     case TK_FUNCTION: {
@@ -1105,12 +1108,23 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       */
       return is_agg;
     }
+#ifndef SQLITE_OMIT_SUBQUERY
+    case TK_SELECT:
+    case TK_EXISTS:
+#endif
+    case TK_IN: {
+      if( pExpr->pSelect ){
+        int nRef = pNC->nRef;
+        sqlite3SelectResolve(pParse, pExpr->pSelect, pNC);
+        assert( pNC->nRef>=nRef );
+        if( nRef!=pNC->nRef ){
+          ExprSetProperty(pExpr, EP_VarSelect);
+        }
+      }
+    }
   }
   return 0;
 }
-
-/* Forward declaration */
-static int sqlite3ExprCodeSubquery(Parse*, NameContext*, Expr*);
 
 /*
 ** This routine walks an expression tree and resolves references to
@@ -1134,31 +1148,13 @@ static int sqlite3ExprCodeSubquery(Parse*, NameContext*, Expr*);
 ** property on the expression.
 */
 int sqlite3ExprResolveNames(
-  Parse *pParse,          /* The parser context */
-  SrcList *pSrcList,      /* List of tables used to resolve column names */
-  ExprList *pEList,       /* List of expressions used to resolve "AS" */
-  NameContext *pNC,       /* Namespace of enclosing statement */
-  Expr *pExpr,            /* The expression to be analyzed. */
-  int allowAgg,           /* True to allow aggregate expressions */
-  int codeSubquery        /* If true, then generate code for subqueries too */
+  NameContext *pNC,       /* Namespace to resolve expressions in. */
+  Expr *pExpr             /* The expression to be analyzed. */
 ){
-  NameContext sNC;
-
   if( pExpr==0 ) return 0;
-  memset(&sNC, 0, sizeof(sNC));
-  sNC.pSrcList = pSrcList;
-  sNC.pParse = pParse;
-  sNC.pEList = pEList;
-  sNC.allowAgg = allowAgg;
-  sNC.pNext = pNC;
-  walkExprTree(pExpr, nameResolverStep, &sNC);
-  if( sNC.hasAgg ){
-    ExprSetProperty(pExpr, EP_Agg);
-  }
-  if( sNC.nErr>0 ){
+  walkExprTree(pExpr, nameResolverStep, pNC);
+  if( pNC->nErr>0 ){
     ExprSetProperty(pExpr, EP_Error);
-  }else if( codeSubquery  && sqlite3ExprCodeSubquery(pParse, &sNC, pExpr) ){
-    return 1;
   }
   return ExprHasProperty(pExpr, EP_Error);
 }
@@ -1186,28 +1182,36 @@ struct QueryCoder {
 ** The first form is handled by creating a set holding the list
 ** of allowed values.  The second form causes the SELECT to generate 
 ** a temporary table.
-**
-** This routine also looks for scalar SELECTs that are part of an expression.
-** If it finds any, it generates code to write the value of that select
-** into a memory cell.
-**
-** This routine is a callback for wallExprTree() used to implement
-** sqlite3ExprCodeSubquery().  See comments on those routines for
-** additional information.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-static int codeSubqueryStep(void *pArg, Expr *pExpr){
-  QueryCoder *pCoder = (QueryCoder*)pArg;
-  Parse *pParse = pCoder->pParse;
+void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
+  int label = 0;                         /* Address after sub-select code */
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  if( v==0 ) return;
+
+  /* If this is not a variable (correlated) select, then execute
+  ** it only once. Unless this is part of a trigger program. In
+  ** that case re-execute every time (this could be optimized).
+  */
+  if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
+    int mem = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_MemLoad, mem, 0);
+    label = sqlite3VdbeMakeLabel(v);
+    sqlite3VdbeAddOp(v, OP_If, 0, label);
+    sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+    sqlite3VdbeAddOp(v, OP_MemStore, mem, 1);
+  }
+
+  if( pExpr->pSelect ){
+    sqlite3VdbeAddOp(v, OP_AggContextPush, 0, 0);
+  }
 
   switch( pExpr->op ){
     case TK_IN: {
       char affinity;
-      Vdbe *v = sqlite3GetVdbe(pParse);
       KeyInfo keyInfo;
       int addr;        /* Address of OP_OpenTemp instruction */
 
-      if( v==0 ) return 2;
       affinity = sqlite3ExprAffinity(pExpr->pLeft);
 
       /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
@@ -1238,7 +1242,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
         int iParm = pExpr->iTable +  (((int)affinity)<<16);
         ExprList *pEList;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
-        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0, 0, 0);
+        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0, 0);
         pEList = pExpr->pSelect->pEList;
         if( pEList && pEList->nExpr>0 ){ 
           keyInfo.aColl[0] = binaryCompareCollSeq(pParse, pExpr->pLeft,
@@ -1266,10 +1270,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
           if( !sqlite3ExprIsConstant(pE2) ){
             sqlite3ErrorMsg(pParse,
               "right-hand side of IN operator must be constant");
-            return 2;
-          }
-          if( sqlite3ExprResolveNames(pParse, 0, 0, 0, pE2, 0, 0) ){
-            return 2;
+            return;
           }
 
           /* Evaluate the expression and insert it into the temp table */
@@ -1280,7 +1281,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
         }
       }
       sqlite3VdbeChangeP3(v, addr, (void *)&keyInfo, P3_KEYINFO);
-      return 1;
+      break;
     }
 
     case TK_EXISTS:
@@ -1289,18 +1290,9 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.
       */
-      NameContext *pNC;
-      int nRef;
-      Vdbe *v;
-      int addr;
       int sop;
       Select *pSel;
 
-      pNC = pCoder->pNC;
-      if( pNC ) nRef = pNC->nRef;
-      sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
-      v = sqlite3GetVdbe(pParse);
-      addr = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
       pExpr->iColumn = pParse->nMem++;
       pSel = pExpr->pSelect;
       if( pExpr->op==TK_SELECT ){
@@ -1312,41 +1304,20 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
         pSel->pEList = sqlite3ExprListAppend(0, 
                           sqlite3Expr(TK_INTEGER, 0, 0, &one), 0);
       }
-      sqlite3Select(pParse, pSel, sop, pExpr->iColumn, 0, 0, 0, 0, pNC);
-      if( pNC && pNC->nRef>nRef ){
-        /* Subquery value changes.  Evaluate at each use */
-        pExpr->iTable = addr+1;
-        sqlite3VdbeAddOp(v, OP_Return, 0, 0);
-        sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
-      }else{
-        /* Subquery value is constant.  evaluate only once. */
-        pExpr->iTable = -1;
-        sqlite3VdbeChangeP2(v, addr, addr+1);
-      }
-      return 1;
+      sqlite3Select(pParse, pSel, sop, pExpr->iColumn, 0, 0, 0, 0);
+      break;
     }
   }
-  return 0;
+
+  if( pExpr->pSelect ){
+    sqlite3VdbeAddOp(v, OP_AggContextPop, 0, 0);
+  }
+  if( label<0 ){
+    sqlite3VdbeResolveLabel(v, label);
+  }
+  return;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
-
-/*
-** Generate code to evaluate subqueries and IN operators contained
-** in expression pExpr.
-*/
-static int sqlite3ExprCodeSubquery(
-  Parse *pParse,       /* Parser */
-  NameContext *pNC,    /* First enclosing namespace.  Often NULL */
-  Expr *pExpr          /* Subquery to be coded */
-){
-#ifndef SQLITE_OMIT_SUBQUERY
-  QueryCoder sCoder;
-  sCoder.pParse = pParse;
-  sCoder.pNC = pNC;
-  walkExprTree(pExpr, codeSubqueryStep, &sCoder);
-#endif
-  return 0;
-}
 
 /*
 ** Generate an instruction that will put the integer describe by
@@ -1556,10 +1527,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS:
     case TK_SELECT: {
-      if( pExpr->iTable>=0 ){
-        sqlite3VdbeAddOp(v, OP_Gosub, 0, pExpr->iTable);
-        VdbeComment((v, "# run subquery"));
-      }
+      sqlite3CodeSubselect(pParse, pExpr);
       sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
       VdbeComment((v, "# load subquery result"));
       break;
@@ -1567,6 +1535,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_IN: {
       int addr;
       char affinity;
+      sqlite3CodeSubselect(pParse, pExpr);
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for

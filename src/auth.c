@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.20 2005/01/22 03:03:54 drh Exp $
+** $Id: auth.c,v 1.21 2005/01/29 08:32:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -115,10 +115,10 @@ void sqlite3AuthRead(
 
   if( db->xAuth==0 ) return;
   assert( pExpr->op==TK_COLUMN );
-  for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
+  for(iSrc=0; pTabList && iSrc<pTabList->nSrc; iSrc++){
     if( pExpr->iTable==pTabList->a[iSrc].iCursor ) break;
   }
-  if( iSrc>=0 && iSrc<pTabList->nSrc ){
+  if( iSrc>=0 && pTabList && iSrc<pTabList->nSrc ){
     pTab = pTabList->a[iSrc].pTab;
   }else if( (pStack = pParse->trigStack)!=0 ){
     /* This must be an attempt to read the NEW or OLD pseudo-tables
