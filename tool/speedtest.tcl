@@ -37,9 +37,9 @@ proc runtest {title} {
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format PostgreSQL: $t]
   exec sync; after $delay;
-  set t [time "exec mysql drh <$sqlfile" 1]
-  set t [expr {[lindex $t 0]/1000000.0}]
-  puts [format $format MySQL: $t]
+#  set t [time "exec mysql -f drh <$sqlfile" 1]
+#  set t [expr {[lindex $t 0]/1000000.0}]
+#  puts [format $format MySQL: $t]
 #  set t [time "exec ./sqlite232 s232.db <$sqlfile" 1]
 #  set t [expr {[lindex $t 0]/1000000.0}]
 #  puts [format $format {SQLite 2.3.2:} $t]
@@ -157,6 +157,7 @@ runtest {100 SELECTs on a string comparison}
 set fd [open test$cnt.sql w]
 puts $fd {CREATE INDEX i2a ON t2(a);}
 puts $fd {CREATE INDEX i2b ON t2(b);}
+puts $fd {VACUUM;}
 close $fd
 runtest {Creating an index}
 

@@ -1,5 +1,5 @@
-C Change\sthe\spager\slocking\smechanism\sso\sthat\swe\sdon't\shave\sto\swrite\spage\s1\nto\sthe\sjournal\sand\sto\sthe\sdatabase\sunless\sit\sactually\schanges.\s(CVS\s419)
-D 2002-03-05T12:41:20
+C Optimizations\sto\sthe\sprocessing\sof\sinteger\scomparisons.\s(CVS\s420)
+D 2002-03-06T03:08:26
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,7 +23,7 @@ F src/btree.c b7d1b8875113ab4061a6a8cc759f75728ae7daf0
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 0f3c6b6482e0b74284b22661de1b813a0bfb0197
 F src/delete.c 577da499162291c1855f0b304b211bffcf9da945
-F src/expr.c e12ca550536c0bae7a3acef49dfa3068fe5f0900
+F src/expr.c d2adad05dc2fe112aef364bdb9c0eb8877618bbe
 F src/func.c 87516e7dc37190c24af77593931a5d09d797520a
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
@@ -50,8 +50,8 @@ F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
-F src/util.c 00a35b421c92ae0d7cfa51bd87f7d4995f464d19
-F src/vdbe.c 0b634bbe3d1a770136b9f7324804bb55903a9b17
+F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
+F src/vdbe.c fcbe9d3c1b87f18ed3d7f0553f6c4194fb74a85d
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 34d91fd5d822c2663caeb023f72d60df316ebf29
 F test/all.test 7a8a8a7a579ed2bb4d8976d55402f21eacd58049
@@ -108,7 +108,7 @@ F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
-F tool/speedtest.tcl 1c151e27d7ca10c6a2509bf6e816116744c3199e
+F tool/speedtest.tcl 61660a00b9a5ad8566dbc48e9b09071b1ad8a1c3
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
@@ -128,7 +128,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 414da4af1f4aebc3936ca339fbc7932add081912
-R 0b32113f5a809c11a2af16e72cce2c93
+P 480eef1a3a4f049bc0d0cbee32dc8a8d138597c6
+R 293e4b0f9d71b9a7cc31da9375205a15
 U drh
-Z d718da112d32fa4d0c0cf7ece4f5da88
+Z be460c9473f4d69e9aab54c7c0b566d7

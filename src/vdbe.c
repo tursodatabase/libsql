@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.131 2002/03/05 01:11:14 drh Exp $
+** $Id: vdbe.c,v 1.132 2002/03/06 03:08:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1360,15 +1360,21 @@ case OP_Halt: {
   break;
 }
 
-/* Opcode: Integer P1 * *
+/* Opcode: Integer P1 * P3
 **
-** The integer value P1 is pushed onto the stack.
+** The integer value P1 is pushed onto the stack.  If P3 is not zero
+** then it is assumed to be a string representation of the same integer.
 */
 case OP_Integer: {
   int i = ++p->tos;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   aStack[i].i = pOp->p1;
   aStack[i].flags = STK_Int;
+  if( pOp->p3 ){
+    zStack[i] = pOp->p3;
+    aStack[i].flags |= STK_Str | STK_Static;
+    aStack[i].n = strlen(pOp->p3)+1;
+  }
   break;
 }
 
@@ -1428,16 +1434,16 @@ case OP_Dup: {
   if( aStack[j].flags & STK_Str ){
     if( pOp->p2 || (aStack[j].flags & STK_Static)!=0 ){
       zStack[j] = zStack[i];
-      aStack[j].flags = STK_Str | STK_Static;
+      aStack[j].flags &= ~STK_Dyn;
     }else if( aStack[i].n<=NBFS ){
       memcpy(aStack[j].z, zStack[i], aStack[j].n);
       zStack[j] = aStack[j].z;
-      aStack[j].flags = STK_Str;
+      aStack[j].flags &= ~(STK_Static|STK_Dyn);
     }else{
       zStack[j] = sqliteMalloc( aStack[j].n );
       if( zStack[j]==0 ) goto no_mem;
       memcpy(zStack[j], zStack[i], aStack[j].n);
-      aStack[j].flags = STK_Str | STK_Dyn;
+      aStack[j].flags &= ~STK_Static;
     }
   }
   break;
@@ -1971,7 +1977,13 @@ case OP_Ge: {
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   ft = aStack[tos].flags;
   fn = aStack[nos].flags;
-  if( (ft & fn)==STK_Int ){
+  if( (ft & fn & STK_Int)==STK_Int ){
+    c = aStack[nos].i - aStack[tos].i;
+  }else if( (ft & STK_Int)!=0 && (fn & STK_Str)!=0 && isInteger(zStack[nos]) ){
+    Integerify(p, nos);
+    c = aStack[nos].i - aStack[tos].i;
+  }else if( (fn & STK_Int)!=0 && (ft & STK_Str)!=0 && isInteger(zStack[tos]) ){
+    Integerify(p, tos);
     c = aStack[nos].i - aStack[tos].i;
   }else{
     if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
@@ -4620,6 +4632,8 @@ default: {
       for(i=p->tos; i>=0 && i>p->tos-5; i--){
         if( aStack[i].flags & STK_Null ){
           fprintf(p->trace, " NULL");
+        }else if( (aStack[i].flags & (STK_Int|STK_Str))==(STK_Int|STK_Str) ){
+          fprintf(p->trace, " si:%d", aStack[i].i);
         }else if( aStack[i].flags & STK_Int ){
           fprintf(p->trace, " i:%d", aStack[i].i);
         }else if( aStack[i].flags & STK_Real ){

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.40 2002/02/28 04:10:30 drh Exp $
+** $Id: util.c,v 1.41 2002/03/06 03:08:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -629,7 +629,7 @@ static int sortStrCmp(const char *atext, const char *btext, int useCase){
 **
 ** Am empty string is considered numeric.
 */
-static int isNum(const char *z){
+static int sqliteIsNumber(const char *z){
   if( *z=='-' || *z=='+' ) z++;
   if( !isdigit(*z) ){
     return *z==0;
@@ -669,8 +669,8 @@ int sqliteCompare(const char *atext, const char *btext){
   }else if( btext==0 ){
     return 1;
   }
-  isNumA = isNum(atext);
-  isNumB = isNum(btext);
+  isNumA = sqliteIsNumber(atext);
+  isNumB = sqliteIsNumber(btext);
   if( isNumA ){
     if( !isNumB ){
       result = -1;
@@ -728,8 +728,8 @@ int sqliteSortCompare(const char *a, const char *b){
   int isNumA, isNumB;
 
   while( res==0 && *a && *b ){
-    isNumA = isNum(&a[1]);
-    isNumB = isNum(&b[1]);
+    isNumA = sqliteIsNumber(&a[1]);
+    isNumB = sqliteIsNumber(&b[1]);
     if( isNumA ){
       double rA, rB;
       if( !isNumB ){
