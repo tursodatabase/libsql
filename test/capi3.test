@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.14 2004/06/28 13:09:11 danielk1977 Exp $
+# $Id: capi3.test,v 1.15 2004/06/29 08:59:35 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -132,6 +132,9 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
+do_test capi3-3.6 {
+  sqlite3_close $db2
+} {SQLITE_MISUSE}
 
 # rename sqlite3_open ""
 # rename sqlite3_open_old sqlite3_open
@@ -452,5 +455,23 @@ do_test capi3-6.3 {
 do_test capi3-6.4 {
   sqlite3_close $DB
 } {SQLITE_OK}
+
+# Test what happens when the library encounters a newer file format.
+# Do this by updating the file format via the btree layer.
+do_test capi3-7.1 {
+  set ::bt [btree_open test.db 10 0]
+  btree_begin_transaction $::bt
+  set meta [btree_get_meta $::bt]
+  lset meta 5 2
+  eval [concat btree_update_meta $::bt $meta]
+  btree_commit $::bt
+  btree_close $::bt
+} {}
+do_test capi3-7.2 {
+  sqlite3 db test.db
+  catchsql {
+    SELECT * FROM sqlite_master;
+  }
+} {1 {unsupported file format}}
 
 finish_test

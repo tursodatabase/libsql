@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.55 2004/06/29 07:45:34 danielk1977 Exp $
+** $Id: pragma.c,v 1.56 2004/06/29 08:59:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -116,19 +116,6 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 }
 
 /*
-** Check to make sure the schema is loaded.  Return 1 if it is not.
-*/
-static int checkSchema(Parse *pParse){
-  int rc = sqlite3ReadSchema(pParse->db, &pParse->zErrMsg);
-  if( SQLITE_OK!=rc ){
-    pParse->nErr++;
-    pParse->rc = rc;
-    return 1;
-  }
-  return 0;
-}
-
-/*
 ** Process a pragma statement.  
 **
 ** Pragmas are of this form:
@@ -200,7 +187,7 @@ void sqlite3Pragma(
       { OP_Callback,    1, 0,        0},
     };
     int addr;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "cache_size", P3_STATIC);
@@ -241,7 +228,7 @@ void sqlite3Pragma(
     static VdbeOpList getCacheSize[] = {
       { OP_Callback,    1, 0,        0},
     };
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
       int size = db->aDb[iDb].cache_size;
       assert( size>0 );
@@ -270,7 +257,7 @@ void sqlite3Pragma(
     static VdbeOpList getSync[] = {
       { OP_Callback,    1, 0,        0},
     };
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
@@ -315,7 +302,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "table_info")==0 && zRight ){
     Table *pTab;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       int i;
@@ -344,7 +331,7 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "index_info")==0 && zRight ){
     Index *pIdx;
     Table *pTab;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pIdx = sqlite3FindIndex(db, zRight, 0);
     if( pIdx ){
       int i;
@@ -367,7 +354,7 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "index_list")==0 && zRight ){
     Index *pIdx;
     Table *pTab;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -393,7 +380,7 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 && zRight ){
     FKey *pFK;
     Table *pTab;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -426,7 +413,7 @@ void sqlite3Pragma(
 
   if( sqlite3StrICmp(zLeft, "database_list")==0 ){
     int i;
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeSetNumCols(v, 3);
     sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
     sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
@@ -477,7 +464,7 @@ void sqlite3Pragma(
     };
 
     /* Initialize the VDBE program */
-    if( checkSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, "integrity_check", P3_STATIC);
     sqlite3VdbeAddOpList(v, ArraySize(initCode), initCode);
@@ -625,7 +612,7 @@ void sqlite3Pragma(
     struct EncName *pEnc;
     encnames[6].enc = encnames[7].enc = SQLITE_UTF16NATIVE;
     if( !zRight ){    /* "PRAGMA encoding" */
-      if( checkSchema(pParse) ) goto pragma_out;
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "encoding", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);

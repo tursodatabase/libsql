@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.236 2004/06/29 07:45:33 danielk1977 Exp $
+** $Id: build.c,v 1.237 2004/06/29 08:59:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -104,25 +104,23 @@ void sqlite3FinishCoding(Parse *pParse){
 }
 
 /*
-** Locate the in-memory structure that describes 
-** a particular database table given the name
-** of that table and (optionally) the name of the database
-** containing the table.  Return NULL if not found.
+** Locate the in-memory structure that describes a particular database
+** table given the name of that table and (optionally) the name of the
+** database containing the table.  Return NULL if not found.
 **
-** If zDatabase is 0, all databases are searched for the
-** table and the first matching table is returned.  (No checking
-** for duplicate table names is done.)  The search order is
-** TEMP first, then MAIN, then any auxiliary databases added
-** using the ATTACH command.
+** If zDatabase is 0, all databases are searched for the table and the
+** first matching table is returned.  (No checking for duplicate table
+** names is done.)  The search order is TEMP first, then MAIN, then any
+** auxiliary databases added using the ATTACH command.
 **
 ** See also sqlite3LocateTable().
 */
 Table *sqlite3FindTable(sqlite *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
-  int rc = sqlite3ReadSchema(db, 0);
   assert( zName!=0 );
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+  assert( (db->flags & SQLITE_Initialized) || db->init.busy );
+  for(i=0; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].tblHash, zName, strlen(zName)+1);
@@ -132,27 +130,27 @@ Table *sqlite3FindTable(sqlite *db, const char *zName, const char *zDatabase){
 }
 
 /*
-** Locate the in-memory structure that describes 
-** a particular database table given the name
-** of that table and (optionally) the name of the database
-** containing the table.  Return NULL if not found.
-** Also leave an error message in pParse->zErrMsg.
+** Locate the in-memory structure that describes a particular database
+** table given the name of that table and (optionally) the name of the
+** database containing the table.  Return NULL if not found.  Also leave an
+** error message in pParse->zErrMsg.
 **
-** The difference between this routine and sqlite3FindTable()
-** is that this routine leaves an error message in pParse->zErrMsg
-** where sqlite3FindTable() does not.
+** The difference between this routine and sqlite3FindTable() is that this
+** routine leaves an error message in pParse->zErrMsg where
+** sqlite3FindTable() does not.
 */
 Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
   Table *p;
 
+  /* Read the database schema. If an error occurs, leave an error message
+  ** and code in pParse and return NULL. */
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
+    return 0;
+  }
+
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
-    if( !(pParse->db->flags & SQLITE_Initialized) ){
-      /* If the schema is not initialised at this point, it must be because
-      ** the database is locked. */
-      pParse->nErr++;
-      pParse->rc = SQLITE_BUSY;
-    }else if( zDbase ){
+    if( zDbase ){
       sqlite3ErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
     }else if( sqlite3FindTable(pParse->db, zName, 0)!=0 ){
       sqlite3ErrorMsg(pParse, "table \"%s\" is not in database \"%s\"",
@@ -180,8 +178,8 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 Index *sqlite3FindIndex(sqlite *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
-  int rc = sqlite3ReadSchema(db, 0);
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+  assert( (db->flags & SQLITE_Initialized) || db->init.busy );
+  for(i=0; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].idxHash, zName, strlen(zName)+1);
@@ -642,14 +640,15 @@ void sqlite3StartTable(
   ** index or table name in the same database.  Issue an error message if
   ** it does.
   */
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) return;
   pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
   if( pTable ){
     sqlite3ErrorMsg(pParse, "table %T already exists", pName);
     sqliteFree(zName);
     return;
   }
-  if( (pIdx = sqlite3FindIndex(db, zName, 0))!=0 &&
-          (pIdx->iDb==0 || !db->init.busy) ){
+  if( (pIdx = sqlite3FindIndex(db, zName, 0))!=0 && 
+      ( iDb==0 || !db->init.busy) ){
     sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
     sqliteFree(zName);
     return;
@@ -1577,6 +1576,7 @@ static void sqliteViewResetAll(sqlite *db, int idx){
   DbClearProperty(db, idx, DB_UnresetViews);
 }
 
+#if 0
 /*
 ** Given a token, look up a table with that name.  If not found, leave
 ** an error for the parser to find and return NULL.
@@ -1594,6 +1594,7 @@ Table *sqlite3TableFromToken(Parse *pParse, Token *pTok){
   }
   return pTab;
 }
+#endif
 
 /*
 ** This routine is called to do the work of a DROP TABLE statement.
@@ -1958,6 +1959,7 @@ void sqlite3CreateIndex(
   */
   if( pName ){
     zName = sqlite3NameFromToken(pName);
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
     if( zName==0 ) goto exit_create_index;
     if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
@@ -1965,6 +1967,7 @@ void sqlite3CreateIndex(
     if( !db->init.busy ){
       Index *pISameName;    /* Another index with the same name */
       Table *pTSameName;    /* A table with same name as the index */
+      if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
       if( (pISameName = sqlite3FindIndex(db, zName, db->aDb[iDb].zName))!=0 ){
         sqlite3ErrorMsg(pParse, "index %s already exists", zName);
         goto exit_create_index;
@@ -2242,6 +2245,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
 
   if( pParse->nErr || sqlite3_malloc_failed ) return;
   assert( pName->nSrc==1 );
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) return;
   pIndex = sqlite3FindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
     sqlite3ErrorMsg(pParse, "no such index: %S", pName, 0);

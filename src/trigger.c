@@ -404,18 +404,13 @@ void sqlite3DeleteTrigger(Trigger *pTrigger){
 }
 
 /*
- * This function is called to drop a trigger from the database schema. 
- *
- * This may be called directly from the parser and therefore identifies
- * the trigger by name.  The sqlite3DropTriggerPtr() routine does the
- * same job as this routine except it take a spointer to the trigger
- * instead of the trigger name.
- *
- * Note that this function does not delete the trigger entirely. Instead it
- * removes it from the internal schema and places it in the trigDrop hash 
- * table. This is so that the trigger can be restored into the database schema
- * if the transaction is rolled back.
- */
+** This function is called to drop a trigger from the database schema. 
+**
+** This may be called directly from the parser and therefore identifies
+** the trigger by name.  The sqlite3DropTriggerPtr() routine does the
+** same job as this routine except it takes a pointer to the trigger
+** instead of the trigger name.
+**/
 void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   Trigger *pTrigger = 0;
   int i;
@@ -425,8 +420,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   sqlite *db = pParse->db;
 
   if( sqlite3_malloc_failed ) goto drop_trigger_cleanup;
-  if( SQLITE_OK!=sqlite3ReadSchema(db, &pParse->zErrMsg) ){
-    pParse->nErr++;
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto drop_trigger_cleanup;
   }
 
@@ -461,7 +455,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
   sqlite *db = pParse->db;
 
   assert( pTrigger->iDb<db->nDb );
-  pTable = sqlite3FindTable(db, pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
+  pTable = sqlite3FindTable(db,pTrigger->table,db->aDb[pTrigger->iTabDb].zName);
   assert(pTable);
   assert( pTable->iDb==pTrigger->iDb || pTrigger->iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
