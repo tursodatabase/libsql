@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.29 2002/05/15 23:26:23 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.30 2002/06/16 04:57:32 chw Exp $}
 
 puts {<html>
 <head>
@@ -618,14 +618,18 @@ as much memory as is
 necessary to hold the SQL statements generated.</p>
 
 <p>The second advantage the SQLite printf routines have over
-<b>sprintf()</b> is a new formatting option specifically designed
+<b>sprintf()</b> are two new formatting options specifically designed
 to support string literals in SQL.  Within the format string,
 the %q formatting option works very much like %s in that it
 reads a null-terminated string from the argument list and inserts
 it into the result.  But %q translates the inserted string by
 making two copies of every single-quote (') character in the
 substituted string.  This has the effect of escaping the end-of-string
-meaning of single-quote within a string literal.
+meaning of single-quote within a string literal. The %Q formatting
+option works similar; it translates the single-quotes like %q and
+additionally encloses the resulting string in single-quotes.
+If the argument for the %Q formatting options is a NULL pointer,
+the resulting string is NULL without single quotes.
 </p>
 
 <p>Consider an example.  Suppose you are trying to insert a string
@@ -667,6 +671,28 @@ When generating SQL on-the-fly from data that might contain a
 single-quote character ('), it is always a good idea to use the
 SQLite printf routines and the %q formatting option instead of <b>sprintf</b>.
 </p>
+
+<p>If the %Q formatting option is used instead of %q, like this:</p>
+
+<blockquote><pre>
+sqlite_exec_printf(db,
+  "INSERT INTO table1 VALUES(%Q)",
+  0, 0, 0, zString);
+</pre></blockquote>
+
+<p>Then the generated SQL will look like the following:</p>
+
+<blockquote><pre>
+INSERT INTO table1 VALUES('Hi y''all')
+</pre></blockquote>
+
+<p>If the value of the zString variable is NULL, the generated SQL
+will look like the following:</p>
+
+<blockquote><pre>
+INSERT INTO table1 VALUES(NULL)
+</pre></blockquote>
+
 
 <h2>Adding New SQL Functions</h2>
 

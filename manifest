@@ -1,5 +1,5 @@
-C Added\sprintf-4.(2-4)\stest\scases\sto\stest\snew\s%Q\sformat\sspecifier.\s(CVS\s622)
-D 2002-06-16T04:56:37
+C Added\sexplanation\sand\sexamples\sfor\s%Q\sformat\sspecifier.\s(CVS\s623)
+D 2002-06-16T04:57:32
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -121,7 +121,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
-F www/c_interface.tcl badaceafef1cccbdca3bfcb09c1bf2391859e431
+F www/c_interface.tcl 58cf4d128dcae08d91d0011c6d4d11de323f470f
 F www/changes.tcl d1057bb733c574d9dca73578daf78a3128a61426
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b9c7ecc2f9d8d7d57c51dc4ba0aaa520e89eb31f
-R e772258ee0dc04fdc02553a51e656b4b
+P 7d5fc35b5d38230230344b4f70763f75940ab908
+R d122c615a4148cedce3cbd33972d093f
 U chw
-Z 413c80ebe0a7609981d76612786a2b60
+Z 3a86dbdae8ed57285b80b82bbf99d831
