@@ -1,5 +1,5 @@
-C Fix\sfor\stickets\s#912\sand\s#922.\s\sProblem\sintroduced\sby\scheck-in\s(1973).\s(CVS\s1975)
-D 2004-09-24T12:24:07
+C Simplification\sof\sthe\strigger\scode.\s(CVS\s1976)
+D 2004-09-24T12:24:36
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -69,7 +69,7 @@ F src/test3.c 5b5b0f3d11b097399c1054fff73d8f3711092301
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 418ef7ba1149603a30dcf0057e04a3ea0e99edbe
-F src/trigger.c 3591b88baac4253c93733e34e4d1d74c549fe8a8
+F src/trigger.c d1f770ee37a80391dd6d0948ee821b0272f99ae7
 F src/update.c 7157084216c4b02a23cdb23eb6d246aa9034fa4d
 F src/utf.c 328890099db492dda5620ee5f924e244c6e57ff7
 F src/util.c f9b661a3b80a1469777771776a59a5f0e2f193fc
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a35e52276998f8db2407115b07f30bd490982944
-R 5792bfa085a00a00bd1d4a9801cd2ff0
+P 9001e2220d2e35b81a9b7dc70c012f94bb6db679
+R fcc40213cf4f43ad3198270005b0847c
 U drh
-Z d6e2d9c37d8b22b397c88a0920962493
+Z e0420e53be5e67880217af54cf3a9844

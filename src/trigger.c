@@ -650,6 +650,7 @@ static int codeTriggerProgram(
   assert( pTriggerStep!=0 );
   assert( v!=0 );
   sqlite3VdbeAddOp(v, OP_ContextPush, 0, 0);
+  VdbeComment((v, "# begin trigger %s", pStepList->pTrig->name));
   while( pTriggerStep ){
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
@@ -697,6 +698,7 @@ static int codeTriggerProgram(
     pTriggerStep = pTriggerStep->pNext;
   }
   sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
+  VdbeComment((v, "# end trigger %s", pStepList->pTrig->name));
 
   return 0;
 }
@@ -732,8 +734,9 @@ int sqlite3CodeRowTrigger(
   int orconf,          /* ON CONFLICT policy */
   int ignoreJump       /* Instruction to jump to for RAISE(IGNORE) */
 ){
-  Trigger * pTrigger;
-  TriggerStack * pTriggerStack;
+  Trigger *pTrigger;
+  TriggerStack *pStack;
+  TriggerStack trigStackEntry;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
   assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER );
@@ -748,12 +751,10 @@ int sqlite3CodeRowTrigger(
     if( pTrigger->op == op && pTrigger->tr_tm == tr_tm && 
         pTrigger->foreach == TK_ROW ){
       fire_this = 1;
-      pTriggerStack = pParse->trigStack;
-      while( pTriggerStack ){
-        if( pTriggerStack->pTrigger == pTrigger ){
+      for(pStack=pParse->trigStack; pStack; pStack=pStack->pNext){
+        if( pStack->pTrigger==pTrigger ){
 	  fire_this = 0;
 	}
-        pTriggerStack = pTriggerStack->pNext;
       }
       if( op == TK_UPDATE && pTrigger->pColumns &&
           !checkColumnOverLap(pTrigger->pColumns, pChanges) ){
@@ -761,10 +762,7 @@ int sqlite3CodeRowTrigger(
       }
     }
  
-    /* FIX ME:  Can we not omit the sqliteMalloc() and make pTriggerStack
-    ** point to a stack variable?
-    */
-    if( fire_this && (pTriggerStack = sqliteMalloc(sizeof(TriggerStack)))!=0 ){
+    if( fire_this ){
       int endTrigger;
       SrcList dummyTablist;
       Expr * whenExpr;
@@ -773,21 +771,20 @@ int sqlite3CodeRowTrigger(
       dummyTablist.nSrc = 0;
 
       /* Push an entry on to the trigger stack */
-      pTriggerStack->pTrigger = pTrigger;
-      pTriggerStack->newIdx = newIdx;
-      pTriggerStack->oldIdx = oldIdx;
-      pTriggerStack->pTab = pTab;
-      pTriggerStack->pNext = pParse->trigStack;
-      pTriggerStack->ignoreJump = ignoreJump;
-      pParse->trigStack = pTriggerStack;
+      trigStackEntry.pTrigger = pTrigger;
+      trigStackEntry.newIdx = newIdx;
+      trigStackEntry.oldIdx = oldIdx;
+      trigStackEntry.pTab = pTab;
+      trigStackEntry.pNext = pParse->trigStack;
+      trigStackEntry.ignoreJump = ignoreJump;
+      pParse->trigStack = &trigStackEntry;
       sqlite3AuthContextPush(pParse, &sContext, pTrigger->name);
 
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqlite3ExprDup(pTrigger->pWhen);
       if( sqlite3ExprResolveIds(pParse, &dummyTablist, 0, whenExpr) ){
-        pParse->trigStack = pParse->trigStack->pNext;
-        sqliteFree(pTriggerStack);
+        pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(whenExpr);
         return 1;
       }
@@ -797,9 +794,8 @@ int sqlite3CodeRowTrigger(
       codeTriggerProgram(pParse, pTrigger->step_list, orconf); 
 
       /* Pop the entry off the trigger stack */
-      pParse->trigStack = pParse->trigStack->pNext;
+      pParse->trigStack = trigStackEntry.pNext;
       sqlite3AuthContextPop(&sContext);
-      sqliteFree(pTriggerStack);
 
       sqlite3VdbeResolveLabel(pParse->pVdbe, endTrigger);
     }
