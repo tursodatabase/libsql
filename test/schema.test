@@ -1,4 +1,4 @@
-# 2004 Jun 27
+# 2004 Jan 24
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -13,67 +13,126 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.1 2005/01/24 10:26:00 danielk1977 Exp $
+# $Id: schema.test,v 1.2 2005/01/24 13:03:32 danielk1977 Exp $
+
+#---------------------------------------------------------------------
+# When any of the following types of SQL statements or actions are 
+# executed, all pre-compiled statements are invalidated. An attempt
+# to execute an invalidated statement always returns SQLITE_SCHEMA.
+#
+# CREATE/DROP TABLE...................................schema-1.*
+# CREATE/DROP VIEW....................................schema-2.*
+# CREATE/DROP TRIGGER.................................schema-3.*
+# CREATE/DROP INDEX...................................schema-4.*
+# DETACH..............................................schema-5.*
+# Deleting a user-function............................schema-6.*
+# Deleting a collation sequence.......................schema-7.*
+# Setting or changing the authorization function......schema-8.*
+#
+# Note: Test cases schema-6.* are missing right now.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# schema-1.1: Test that if a table is dropped by one database connection, 
-#             other database connections are aware of the schema change.
-# schema-1.2: Test that if a view is dropped by one database connection,
-#             other database connections are aware of the schema change.
-#
 do_test schema-1.1 {
+  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
   execsql {
     CREATE TABLE abc(a, b, c);
   }
-  sqlite3 db2 test.db
-  execsql {
-    DROP TABLE abc;
-  } db2
-  catchsql {
-    SELECT * FROM abc;
-  }
-} {1 {no such table: abc}}
-do_test schema-1.2 {
-  execsql {
-    CREATE TABLE abc(a, b, c);
-    CREATE VIEW abcview AS SELECT * FROM abc;
-  }
-  sqlite3 db2 test.db
-  execsql {
-    DROP VIEW abcview;
-  } db2
-  db2 close
-  catchsql {
-    SELECT * FROM abcview;
-  }
-} {1 {no such table: abcview}}
-
-# Tests 2.1 to 2.4 check that prepared statements are invalidated when
-# a collation sequence is deleted (but not when one is added).
-#
-do_test schema-2.1 {
-  set sql {SELECT * FROM abc;}
-  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
-  add_test_collate $::DB 1 1 1
-  sqlite3_step $::STMT
-} {SQLITE_DONE}
-do_test schema-2.2 {
-  sqlite3_reset $::STMT
-} {SQLITE_OK}
-do_test schema-2.3 {
-  add_test_collate $::DB 0 0 0 
   sqlite3_step $::STMT
 } {SQLITE_ERROR}
-do_test schema-2.4 {
+do_test schema-1.2 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
+do_test schema-1.3 {
+  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+  execsql {
+    DROP TABLE abc;
+  }
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test schema-1.4 {
   sqlite3_finalize $::STMT
 } {SQLITE_SCHEMA}
 
-# Tests 3.1 to 3.4 check that prepared statements are invalidated when
+ifcapable view {
+  do_test schema-2.1 {
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    execsql {
+      CREATE VIEW v1 AS SELECT * FROM sqlite_master;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-2.2 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+  do_test schema-2.3 {
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    execsql {
+      DROP VIEW v1;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-2.4 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+}
+
+ifcapable trigger {
+  do_test schema-3.1 {
+    execsql {
+      CREATE TABLE abc(a, b, c);
+    }
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    execsql {
+      CREATE TRIGGER abc_trig AFTER INSERT ON abc BEGIN
+        SELECT 1, 2, 3;
+      END;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-3.2 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+  do_test schema-3.3 {
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    execsql {
+      DROP TRIGGER abc_trig;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-3.4 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+}
+
+do_test schema-4.1 {
+  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+  execsql {
+    CREATE INDEX abc_index ON abc(a);
+  }
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test schema-4.2 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
+do_test schema-4.3 {
+  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+  execsql {
+    DROP INDEX abc_index;
+  }
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test schema-4.4 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
+
+#---------------------------------------------------------------------
+# Tests 5.1 to 5.4 check that prepared statements are invalidated when
 # a database is DETACHed (but not when one is ATTACHed).
 #
-do_test schema-3.1 {
+do_test schema-5.1 {
   set sql {SELECT * FROM abc;}
   set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
   execsql {
@@ -81,25 +140,96 @@ do_test schema-3.1 {
   }
   sqlite3_step $::STMT
 } {SQLITE_DONE}
-do_test schema-3.2 {
+do_test schema-5.2 {
   sqlite3_reset $::STMT
 } {SQLITE_OK}
-do_test schema-3.3 {
+do_test schema-5.3 {
   execsql {
     DETACH aux;
   }
   sqlite3_step $::STMT
 } {SQLITE_ERROR}
-do_test schema-3.4 {
+do_test schema-5.4 {
   sqlite3_finalize $::STMT
 } {SQLITE_SCHEMA}
 
+#---------------------------------------------------------------------
+# Tests 7.* check that prepared statements are invalidated when
+# a collation sequence is deleted (but not when one is added).
+#
+do_test schema-7.1 {
+  set sql {SELECT * FROM abc;}
+  set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
+  add_test_collate $::DB 1 1 1
+  sqlite3_step $::STMT
+} {SQLITE_DONE}
+do_test schema-7.2 {
+  sqlite3_reset $::STMT
+} {SQLITE_OK}
+do_test schema-7.3 {
+  add_test_collate $::DB 0 0 0 
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test schema-7.4 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
 
+#---------------------------------------------------------------------
+# Tests 8.1 and 8.2 check that prepared statements are invalidated when
+# the authorization function is set.
+#
+ifcapable auth {
+  do_test schema-8.1 {
+    set ::STMT [sqlite3_prepare $::DB {SELECT * FROM sqlite_master} -1 TAIL]
+    db auth {}
+    sqlite3_step $::STMT
+  } {SQLITE_ERROR}
+  do_test schema-8.3 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_SCHEMA}
+}
+
+#---------------------------------------------------------------------
+# schema-9.1: Test that if a table is dropped by one database connection, 
+#             other database connections are aware of the schema change.
+# schema-9.2: Test that if a view is dropped by one database connection,
+#             other database connections are aware of the schema change.
+#
+do_test schema-9.1 {
+  sqlite3 db2 test.db
+  execsql {
+    DROP TABLE abc;
+  } db2
+  db2 close
+  catchsql {
+    SELECT * FROM abc;
+  }
+} {1 {no such table: abc}}
+execsql {
+  CREATE TABLE abc(a, b, c);
+}
+ifcapable view {
+  do_test schema-9.2 {
+    execsql {
+      CREATE VIEW abcview AS SELECT * FROM abc;
+    }
+    sqlite3 db2 test.db
+    execsql {
+      DROP VIEW abcview;
+    } db2
+    db2 close
+    catchsql {
+      SELECT * FROM abcview;
+    }
+  } {1 {no such table: abcview}}
+}
+
+#---------------------------------------------------------------------
 # Test that if a CREATE TABLE statement fails because there are other
 # btree cursors open on the same database file it does not corrupt
 # the sqlite_master table.
 #
-do_test schema-4.1 {
+do_test schema-10.1 {
   execsql {
     INSERT INTO abc VALUES(1, 2, 3);
   }
@@ -107,27 +237,23 @@ do_test schema-4.1 {
   set ::STMT [sqlite3_prepare $::DB $sql -1 TAIL]
   sqlite3_step $::STMT
 } {SQLITE_ROW}
-do_test schema-4.2 {
+do_test schema-10.2 {
   catchsql {
     CREATE TABLE t2(a, b, c);
   }
 } {1 {database table is locked}}
-do_test schema-4.3 {
+do_test schema-10.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
-do_test schema-4.4 {
+do_test schema-10.4 {
   sqlite3 db2 test.db
   execsql {
     SELECT * FROM abc
   } db2
 } {1 2 3}
-do_test schema-4.5 {
+do_test schema-10.5 {
   db2 close
 } {}
 
 finish_test
-
-
-
-
 
