@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.11 2005/02/19 13:05:48 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.12 2005/03/21 01:31:37 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -131,6 +131,14 @@ puts {
     feature that it changes the cache size persistently.  With this pragma,
     you can set the cache size once and that setting is retained and reused
     every time you reopen the database.</p></li>
+
+<a name="pragma_default_synchronous"></a>
+<li><p><b>PRAGMA default_synchronous;</b></p>
+    <p>This pragma was available in version 2.8 but was removed in version
+    3.0.  It is a dangerous pragma whose use is discouraged.  To help
+    dissuide users of version 2.8 from employing this pragma, the documentation
+    will not tell you what it does.</p></li>
+
 
 <a name="pragma_empty_result_callbacks"></a>
 <li><p><b>PRAGMA empty_result_callbacks;

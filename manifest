@@ -1,5 +1,5 @@
-C fix\stypo\sin\sCREATE\sVIEW\sdocumentation.\s\sTicket\s#1135.\s(CVS\s2411)
-D 2005-03-21T01:24:02
+C Update\sdocs\sto\ssay\sthat\sthe\sdefault_synchronous\spragma\shas\sbeen\sremoved.\nTicket\s#1049.\s(CVS\s2412)
+D 2005-03-21T01:31:37
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -268,7 +268,7 @@ F www/oldnews.tcl 61e4b210569e3f45b2df77482ddabb3fa2e8a8a6
 F www/omitted.tcl f1e57977299c3ed54fbae55e4b5ea6a64de39e19
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
-F www/pragma.tcl 3b7d88d6545e9b8ea4a3661e0be5e0f0e9817466
+F www/pragma.tcl 20ea0674d96bfea23a9825fb5a6a2214ee258b17
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 876d09d9145775956913e975c29e81d7553839ac
-R 102adcb61d5e412e042bc001de9a5328
+P 38897a509a98188a06c49c01a71ddf8835c7b607
+R 1b4a441146adb0ecc52175bfdcd6efd5
 U drh
-Z 0f028b267572ce51730f974e5e04b5b2
+Z fc644c5b33bbdb85ae450e1f8b341f3b
