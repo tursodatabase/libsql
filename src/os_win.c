@@ -409,6 +409,7 @@ static int unlockReadLock(OsFile *id){
   return res;
 }
 
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
 ** Check that a given pathname is a directory and is writable 
 **
@@ -419,10 +420,12 @@ int sqlite3OsIsDirWritable(char *zBuf){
   if(! isNT() && strlen(zBuf) > MAX_PATH ) return 0;
   fileAttr = GetFileAttributesA(zBuf);
   if( fileAttr == 0xffffffff ) return 0;
-  if( (fileAttr & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY ) return 0;
+  if( (fileAttr & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY ){
+    return 0;
+  }
   return 1;
 }
-
+#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
 /*
 ** Lock the file with the lock specified by parameter locktype - one

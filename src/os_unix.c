@@ -616,6 +616,7 @@ int sqlite3OsTempFileName(char *zBuf){
   return SQLITE_OK; 
 }
 
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
 ** Check that a given pathname is a directory and is writable 
 **
@@ -623,12 +624,13 @@ int sqlite3OsTempFileName(char *zBuf){
 int sqlite3OsIsDirWritable(char *zBuf){
   struct stat buf;
   if( zBuf==0 ) return 0;
-  if( strlen(zBuf)==0 ) return 0;
+  if( zBuf[0]==0 ) return 0;
   if( stat(zBuf, &buf) ) return 0;
   if( !S_ISDIR(buf.st_mode) ) return 0;
   if( access(zBuf, 07) ) return 0;
   return 1;
 }
+#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
 /*
 ** Read data from a file into a buffer.  Return SQLITE_OK if all

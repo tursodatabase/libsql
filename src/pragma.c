@@ -11,9 +11,10 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.81 2004/12/25 01:03:14 drh Exp $
+** $Id: pragma.c,v 1.82 2005/01/08 15:44:26 drh Exp $
 */
 #include "sqliteInt.h"
+#include "os.h"
 #include <ctype.h>
 
 /* Ignore this whole file if pragmas are disabled
@@ -373,45 +374,22 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
       }
     }else{
-      if( strlen(zRight)==0 ){
-        /* empty path, set to default. allows os_{unix,win}.c to choose directory */
-        if( sqlite3_temp_directory ){
-          /* previous temp_store_directory defined, free and invalidate */
-          sqlite3FreeX(sqlite3_temp_directory);
-          if( db->temp_store==1 ) {
-            /* temp storage is "file", so invalidate temp */
-            invalidateTempStorage( pParse );
-          }
-        }
-        sqlite3_temp_directory = 0;
+      if( zRight[0] && !sqlite3OsIsDirWritable(zRight) ){
+        sqlite3ErrorMsg(pParse, "not a writable directory");
+        goto pragma_out;
+      }
+      if( TEMP_STORE==0
+       || (TEMP_STORE==1 && db->temp_store<=1)
+       || (TEMP_STORE==2 && db->temp_store==1)
+      ){
+        invalidateTempStorage(pParse);
+      }
+      sqliteFree(sqlite3_temp_directory);
+      if( zRight[0] ){
+        sqlite3_temp_directory = zRight;
+        zRight = 0;
       }else{
-        /* check if previous directory defined, free and alloc if needed */
-        if( sqlite3_temp_directory ){
-          if( strlen(sqlite3_temp_directory) < strlen(zRight) + 1){
-            sqlite3FreeX(sqlite3_temp_directory);
-            sqlite3_temp_directory = sqliteMalloc( strlen(zRight) + 1 );
-            if( sqlite3_temp_directory==0 ){
-              goto pragma_out;
-            }
-            sqlite3_temp_directory[0] = '\0';
-          }
-        }else{
-          sqlite3_temp_directory = sqliteMalloc( strlen(zRight) + 1 );
-          if( sqlite3_temp_directory==0 ){
-            goto pragma_out;
-          }
-          sqlite3_temp_directory[0] = '\0';
-        }
-        /* check that directory exists and is writable */
-        if( sqlite3OsIsDirWritable( zRight ) ){
-          strcpy(sqlite3_temp_directory, zRight);
-          if( db->temp_store==1 ) {
-            /* temp storage is "file", so invalidate temp */
-            invalidateTempStorage( pParse );
-          }
-        }else{
-          sqlite3ErrorMsg(pParse, "not a directory, or not writable");
-        }
+        sqlite3_temp_directory = 0;
       }
     }
   }else

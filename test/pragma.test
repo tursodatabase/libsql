@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.29 2005/01/07 10:42:48 danielk1977 Exp $
+# $Id: pragma.test,v 1.30 2005/01/08 15:44:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -586,12 +586,12 @@ do_test pragma-8.2.15 {
     PRAGMA user_version;
   }
 } {-450}
-
 } ; # ifcapable schema_version
 
 
 # Test temp_store and temp_store_directory pragmas
 #
+ifcapable pager_pragmas {
 do_test pragma-9.1 {
   db close
   sqlite3 db test.db
@@ -617,8 +617,9 @@ do_test pragma-9.4 {
   }
 } {}
 do_test pragma-9.5 {
-  execsql " \
-    PRAGMA temp_store_directory='[pwd]'; \
+  set pwd [string map {' ''} [pwd]]
+  execsql "
+    PRAGMA temp_store_directory='$pwd';
   "
 } {}
 do_test pragma-9.6 {
@@ -627,14 +628,10 @@ do_test pragma-9.6 {
   }
 } [pwd]
 do_test pragma-9.7 {
-  set result ""
-  catch {
-    execsql { 
-      PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';
-    }
-  } result
-  set result
-} {not a directory, or not writable}
+  catchsql { 
+    PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';
+  }
+} {1 {not a writable directory}}
 do_test pragma-9.8 {
   execsql { 
     PRAGMA temp_store_directory='';
@@ -650,16 +647,11 @@ do_test pragma-9.9 {
   }
 } {2}
 do_test pragma-9.10 {
-  set result ""
-  catch {
-    execsql " \
-      PRAGMA temp_store_directory='[pwd]'; \
-      SELECT * FROM temp_store_directory_test;
-    "
-  } result
-  set result
-} {no such table: temp_store_directory_test}
-
-
+  catchsql "
+    PRAGMA temp_store_directory='$pwd';
+    SELECT * FROM temp_store_directory_test;
+  "
+} {1 {no such table: temp_store_directory_test}}
+} ;# ifcapable pager_pragmas
 
 finish_test
