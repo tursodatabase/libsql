@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.82 2002/05/24 02:04:33 drh Exp $
+** $Id: select.c,v 1.83 2002/05/24 16:14:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -53,6 +53,70 @@ Select *sqliteSelectNew(
     pNew->nOffset = nOffset;
   }
   return pNew;
+}
+
+/*
+** Given 1 to 3 identifiers preceeding the JOIN keyword, determine the
+** type of join.  Return an integer constant that expresses that type
+** in terms of the following bit values:
+**
+**     JT_INNER
+**     JT_OUTER
+**     JT_NATURAL
+**     JT_LEFT
+**     JT_RIGHT
+**
+** A full outer join is the combination of JT_LEFT and JT_RIGHT.
+**
+** If an illegal or unsupported join type is seen, then still return
+** a join type, but put an error in the pParse structure.
+*/
+int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
+  int jointype = 0;
+  Token *apAll[3];
+  Token *p;
+  static struct {
+    const char *zKeyword;
+    int nChar;
+    int code;
+  } keywords[] = {
+    { "natural", 7, JT_NATURAL },
+    { "left",    4, JT_LEFT },
+    { "right",   5, JT_RIGHT },
+    { "full",    4, JT_FULL },
+    { "outer",   5, JT_OUTER },
+    { "inner",   5, JT_INNER },
+    { "cross",   5, JT_INNER },
+  };
+  int i, j;
+  apAll[0] = pA;
+  apAll[1] = pB;
+  apAll[2] = pC;
+  for(i=0; apAll[i]; i++){
+    p = apAll[i];
+    for(j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++){
+      if( p->n==keywords[j].nChar 
+          && sqliteStrNICmp(p->z, keywords[j].zKeyword, p->n)==0 ){
+        jointype |= keywords[j].code;
+        break;
+      }
+    }
+    if( j>=sizeof(keywords)/sizeof(keywords[0]) ){
+      jointype |= JT_ERROR;
+      break;
+    }
+  }
+  if( (jointype & ~JT_INNER)!=0 ){
+    static Token dummy = { 0, 0 };
+    char *zSp1 = " ", *zSp2 = " ";
+    if( pB==0 ){ pB = &dummy; zSp1 = 0; }
+    if( pC==0 ){ pC = &dummy; zSp2 = 0; }
+    sqliteSetNString(&pParse->zErrMsg, "unknown or unsupported join type: ", 0,
+       pA->z, pA->n, zSp1, 1, pB->z, pB->n, zSp2, 1, pC->z, pC->n, 0);
+    pParse->nErr++;
+    jointype = JT_INNER;
+  }
+  return jointype;
 }
 
 /*

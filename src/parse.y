@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.68 2002/05/24 02:04:33 drh Exp $
+** @(#) $Id: parse.y,v 1.69 2002/05/24 16:14:15 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -128,6 +128,7 @@ id(A) ::= FOR(X).        {A = X;}
 id(A) ::= ID(X).         {A = X;}
 id(A) ::= IGNORE(X).     {A = X;}
 id(A) ::= INSTEAD(X).    {A = X;}
+id(A) ::= JOIN(X).       {A = X;}
 id(A) ::= KEY(X).        {A = X;}
 id(A) ::= OF(X).         {A = X;}
 id(A) ::= OFFSET(X).     {A = X;}
@@ -272,8 +273,9 @@ distinct(A) ::= .           {A = 0;}
 %destructor sclp {sqliteExprListDelete($$);}
 sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
-selcollist(A) ::= sclp(P) expr(X).           {A = sqliteExprListAppend(P,X,0);}
-selcollist(A) ::= sclp(P) expr(X) as ids(Y). {A = sqliteExprListAppend(P,X,&Y);}
+selcollist(A) ::= sclp(P) expr(X) as(Y).     {
+   A = sqliteExprListAppend(P,X,Y.n?&Y:0);
+}
 selcollist(A) ::= sclp(P) STAR. {
   A = sqliteExprListAppend(P, sqliteExpr(TK_ALL, 0, 0, 0), 0);
 }
@@ -282,8 +284,13 @@ selcollist(A) ::= sclp(P) ids(X) DOT STAR. {
   Expr *pLeft = sqliteExpr(TK_ID, 0, 0, &X);
   A = sqliteExprListAppend(P, sqliteExpr(TK_DOT, pLeft, pRight, 0), 0);
 }
-as ::= .
-as ::= AS.
+
+// An option "AS <id>" phrase that can follow one of the expressions that
+// define the result set, or one of the tables in the FROM clause.
+//
+%type as {Token}
+as(X) ::= AS ids(Y).    { X = Y; }
+as(X) ::= .             { X.n = 0; }
 
 
 %type seltablist {SrcList*}
@@ -293,32 +300,67 @@ as ::= AS.
 %type from {SrcList*}
 %destructor from {sqliteSrcListDelete($$);}
 
+// A complete FROM clause.
+//
 from(A) ::= .                                 {A = sqliteMalloc(sizeof(*A));}
 from(A) ::= FROM seltablist(X).               {A = X;}
-stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
+
+// "seltablist" is a "Select Table List" - the content of the FROM clause
+// in a SELECT statement.  "stl_prefix" is a prefix of this list.
+//
+stl_prefix(A) ::= seltablist(X) joinop(Y).    {
+   A = X;
+   if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = Y;
+}
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) ids(Y).       {A = sqliteSrcListAppend(X,&Y);}
-seltablist(A) ::= stl_prefix(X) ids(Y) as ids(Z). {
+seltablist(A) ::= stl_prefix(X) ids(Y) as(Z) on_opt(N) using_opt(U). {
   A = sqliteSrcListAppend(X,&Y);
-  sqliteSrcListAddAlias(A,&Z);
+  if( Z.n ) sqliteSrcListAddAlias(A,&Z);
+  if( N ){
+    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
+    else { sqliteExprDelete(N); }
+  }
+  if( U ){
+    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
+    else { sqliteIdListDelete(U); }
+  }
 }
-seltablist(A) ::= stl_prefix(X) LP select(S) RP. {
+seltablist(A) ::= stl_prefix(X) LP select(S) RP as(Z) on_opt(N) using_opt(U). {
   A = sqliteSrcListAppend(X,0);
   A->a[A->nSrc-1].pSelect = S;
   if( S->pOrderBy ){
     sqliteExprListDelete(S->pOrderBy);
     S->pOrderBy = 0;
   }
-}
-seltablist(A) ::= stl_prefix(X) LP select(S) RP as ids(Z). {
-  A = sqliteSrcListAppend(X,0);
-  A->a[A->nSrc-1].pSelect = S;
-  if( S->pOrderBy ){
-    sqliteExprListDelete(S->pOrderBy);
-    S->pOrderBy = 0;
+  if( Z.n ) sqliteSrcListAddAlias(A,&Z);
+  if( N ){
+    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
+    else { sqliteExprDelete(N); }
   }
-  sqliteSrcListAddAlias(A,&Z);
+  if( U ){
+    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
+    else { sqliteIdListDelete(U); }
+  }
 }
+
+%type joinop {int}
+%type joinop2 {int}
+joinop(X) ::= COMMA.                   { X = JT_INNER; }
+joinop(X) ::= JOIN.                    { X = JT_INNER; }
+joinop(X) ::= ID(A) JOIN.              { X = sqliteJoinType(pParse,&A,0,0); }
+joinop(X) ::= ID(A) ID(B) JOIN.        { X = sqliteJoinType(pParse,&A,&B,0); }
+joinop(X) ::= ID(A) ID(B) ID(C) JOIN.  { X = sqliteJoinType(pParse,&A,&B,&C); }
+
+%type on_opt {Expr*}
+%destructor on_opt {sqliteExprDelete($$);}
+on_opt(N) ::= ON expr(E).   {N = E;}
+on_opt(N) ::= .             {N = 0;}
+
+%type using_opt {IdList*}
+%destructor using_opt {sqliteIdListDelete($$);}
+using_opt(U) ::= USING LP idxlist(L) RP.  {U = L;}
+using_opt(U) ::= .                        {U = 0;}
+
 
 %type orderby_opt {ExprList*}
 %destructor orderby_opt {sqliteExprListDelete($$);}

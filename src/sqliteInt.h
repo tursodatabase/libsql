@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.113 2002/05/24 02:04:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.114 2002/05/24 16:14:15 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -457,6 +457,17 @@ struct SrcList {
 };
 
 /*
+** Permitted values of the SrcList.a.jointype field
+*/
+#define JT_INNER     0x0001    /* Any kind of inner or cross join */
+#define JT_NATURAL   0x0002    /* True for a "natural" join */
+#define JT_LEFT      0x0014    /* Left outer join */
+#define JT_RIGHT     0x0018    /* Right outer join */
+#define JT_FULL      0x001a    /* Combination of left and right outer join */
+#define JT_OUTER     0x0010    /* The "OUTER" keyword is present */
+#define JT_ERROR     0x0020    /* unknown or unsupported join type */
+
+/*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
 ** structure contains a single instance of this structure.  This structure
 ** is intended to be private the the where.c module and should not be
@@ -858,3 +869,4 @@ TriggerStep *sqliteTriggerInsertStep(Token*, IdList*, ExprList*, Select*, int);
 TriggerStep *sqliteTriggerUpdateStep(Token*, ExprList*, Expr*, int);
 TriggerStep *sqliteTriggerDeleteStep(Token*, Expr*);
 void sqliteDeleteTrigger(Trigger*);
+int sqliteJoinType(Parse*, Token*, Token*, Token*);
