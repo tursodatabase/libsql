@@ -1,5 +1,5 @@
-C Improvements\sin\sthreadtest.c\s(for\sUnix)\sand\ssome\sminor\sbug\sfixes\sthat\sresult\nfrom\sthe\sbetter\stesting.\s(CVS\s776)
-D 2002-11-01T01:55:37
+C Add\sthe\ssqlite_version()\sSQL\sfunction\sas\sa\sbuilt-in.\s(CVS\s777)
+D 2002-11-04T19:32:25
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F src/build.c 1559232f6878fd7f2b1c79aede0f7a33ececab07
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
 F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c 9427b4d1d04ede1095994b8e042abe2e6fea7443
-F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
+F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
@@ -43,7 +43,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
 F src/sqliteInt.h a001c52dfb10ec38f18d6b9ed7dd8b3f42ca8c72
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
-F src/tclsqlite.c fa646506f02509455c1e4a878d1303bd2d4c3ead
+F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
 F src/test2.c 5fa694d130b3309e3f9c852f0a437750fcb5a006
 F src/test3.c 540fa7fc3cb3732517b779b5f90ad9cc4303d0ab
@@ -66,7 +66,7 @@ F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
 F test/expr.test dea1cd62684a8bf116426447c948f5e8fb2c84b6
 F test/fkey1.test 33c850201a6ec35f0b370daf4e57f44456f1b35d
 F test/format3.test cbb168d446152fcf1dd85be299ad2d6cd507da4e
-F test/func.test bed7ae7a3482df05db0f5eed2debdf25ac2d07fc
+F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/in.test 15428c85d141edda7543bfc3f9a32ce65193717b
 F test/index.test 2a5a1b654f50ca0768fb10ae44b72e6a776b1f18
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4051dbdb0552620eaff2ccef02f64a2ff97a8dfb
-R c21e2859a962756f67fcca7d8aada8c6
+P 326e0983c34b584a3c4a2300399bff0a8281b9f8
+R 12c8410f7c6ea71ae42e48a4c6d31874
 U drh
-Z fd6af700160d9f9561f1698c6ec1c692
+Z f6c61d47bb938fe73872fd88f36201ed

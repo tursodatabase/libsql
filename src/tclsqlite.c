@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.42 2002/09/14 13:47:32 drh Exp $
+** $Id: tclsqlite.c,v 1.43 2002/11/04 19:32:26 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -623,6 +623,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 **       Return the encoding used by LIKE and GLOB operators.  Choices
 **       are UTF-8 and iso8859.
 **
+**  sqlite -version
+**
+**       Return the version number of the SQLite library.
+**
 **  sqlite -tcl-uses-utf
 **
 **       Return "1" if compiled with a Tcl uses UTF-8.  Return "0" if
@@ -637,6 +641,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int argc, char **argv){
   if( argc==2 ){
     if( strcmp(argv[1],"-encoding")==0 ){
       Tcl_AppendResult(interp,sqlite_encoding,0);
+      return TCL_OK;
+    }
+    if( strcmp(argv[1],"-version")==0 ){
+      Tcl_AppendResult(interp,sqlite_version,0);
       return TCL_OK;
     }
     if( strcmp(argv[1],"-tcl-uses-utf")==0 ){

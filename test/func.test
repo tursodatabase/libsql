@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.15 2002/08/13 23:02:58 drh Exp $
+# $Id: func.test,v 1.16 2002/11/04 19:32:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -328,5 +328,13 @@ do_test func-10.5 {
     );
   }
 } {1.234}
+
+# Test the built-in sqlite_version(*) SQL function.
+#
+do_test func-11.1 {
+  execsql {
+    SELECT sqlite_version(*);
+  }
+} [sqlite -version]
 
 finish_test
