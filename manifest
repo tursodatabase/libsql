@@ -1,5 +1,5 @@
-C Update\sthe\schange\slog\sto\sinclude\sthe\sprevious\scommit.\s(CVS\s508)
-D 2002-03-30T15:27:57
+C Version\s2.4.4\s(CVS\s509)
+D 2002-03-30T15:32:09
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d2bdc0feeb3a3595850f40ab211df7a3963d6c30
+P 81c4b749614cb0ca50bc52a3d4aac189af0222cd
 R 1efdee052cda46c4285c9aa461bc40c7
 U drh
-Z 3701183fe40d012d7dea475d59ae9fae
+Z f55b9c743018f95f2b4a4105752314ab
