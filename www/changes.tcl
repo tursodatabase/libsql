@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 July 31} {
+<li>Finish the <a href="vdbe.html">VDBE tutorial</a>.</li>
+<li>Fix a configuration problem for HPUX.</li>
+}
+
 chng {2000 July 29} {
 <li>Better labels on column names of the result.</li>
 }
