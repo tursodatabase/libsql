@@ -11,10 +11,11 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.6 2004/05/22 09:21:21 danielk1977 Exp $
+** $Id: test4.c,v 1.7 2004/05/26 02:04:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
+#include "os.h"
 #if defined(OS_UNIX) && OS_UNIX==1 && defined(THREADSAFE) && THREADSAFE==1
 #include <stdlib.h>
 #include <string.h>
@@ -40,13 +41,13 @@ struct Thread {
   ** master. */
   int completed;        /* Number of operations completed */
   sqlite *db;           /* Open database */
-  sqlite_vm *vm;        /* Pending operation */
+  sqlite3_stmt *pStmt;     /* Pending operation */
   char *zErr;           /* operation error */
   char *zStaticErr;     /* Static error message */
   int rc;               /* operation return code */
   int argc;             /* number of columns in result */
-  const char **argv;    /* result columns */
-  const char **colv;    /* result column names */
+  const char *argv[100];    /* result columns */
+  const char *colv[100];    /* result column names */
 };
 
 /*
@@ -71,7 +72,7 @@ static void *thread_main(void *pArg){
     sqlite3_close(p->db);
     p->db = 0;
   }
-  p->vm = 0;
+  p->pStmt = 0;
   p->completed = 1;
   while( p->opnum<=p->completed ) sched_yield();
   while( p->xOp ){
@@ -83,9 +84,9 @@ static void *thread_main(void *pArg){
     p->completed++;
     while( p->opnum<=p->completed ) sched_yield();
   }
-  if( p->vm ){
-    sqlite3_finalize(p->vm, 0);
-    p->vm = 0;
+  if( p->pStmt ){
+    sqlite3_finalize(p->pStmt);
+    p->pStmt = 0;
   }
   if( p->db ){
     sqlite3_close(p->db);
@@ -445,11 +446,11 @@ static void do_compile(Thread *p){
     p->rc = SQLITE_ERROR;
     return;
   }
-  if( p->vm ){
-    sqlite3_finalize(p->vm, 0);
-    p->vm = 0;
+  if( p->pStmt ){
+    sqlite3_finalize(p->pStmt);
+    p->pStmt = 0;
   }
-  p->rc = sqlite3_compile(p->db, p->zArg, 0, &p->vm, &p->zErr);
+  p->rc = sqlite3_prepare(p->db, p->zArg, -1, &p->pStmt, 0);
 }
 
 /*
@@ -487,12 +488,22 @@ static int tcl_thread_compile(
 ** This procedure runs in the thread to step the virtual machine.
 */
 static void do_step(Thread *p){
-  if( p->vm==0 ){
+  int i;
+  if( p->pStmt==0 ){
     p->zErr = p->zStaticErr = "no virtual machine available";
     p->rc = SQLITE_ERROR;
     return;
   }
-  p->rc = sqlite3_step(p->vm, &p->argc, &p->argv, &p->colv);
+  p->rc = sqlite3_step(p->pStmt);
+  if( p->rc==SQLITE_ROW ){
+    p->argc = sqlite3_column_count(p->pStmt);
+    for(i=0; i<sqlite3_data_count(p->pStmt); i++){
+      p->argv[i] = sqlite3_column_data(p->pStmt, i);
+    }
+    for(i=0; i<p->argc; i++){
+      p->colv[i] = sqlite3_column_name(p->pStmt, i);
+    }
+  }
 }
 
 /*
@@ -528,13 +539,13 @@ static int tcl_thread_step(
 ** This procedure runs in the thread to finalize a virtual machine.
 */
 static void do_finalize(Thread *p){
-  if( p->vm==0 ){
+  if( p->pStmt==0 ){
     p->zErr = p->zStaticErr = "no virtual machine available";
     p->rc = SQLITE_ERROR;
     return;
   }
-  p->rc = sqlite3_finalize(p->vm, &p->zErr);
-  p->vm = 0;
+  p->rc = sqlite3_finalize(p->pStmt);
+  p->pStmt = 0;
 }
 
 /*

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** This file contains code used for creating, destroying, and populating
-** a VDBE (or an "sqlite_vm" as it is known to the outside world.)  Prior
+** a VDBE (or an "sqlite3_stmt" as it is known to the outside world.)  Prior
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 */
@@ -995,18 +995,6 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
     sqlite3ResetInternalSchema(db, 0);
   }
   return rc;
-}
-
-/*
-** Set the values of all variables.  Variable $1 in the original SQL will
-** be the string azValue[0].  $2 will have the value azValue[1].  And
-** so forth.  If a value is out of range (for example $3 when nValue==2)
-** then its value will be NULL.
-**
-** This routine overrides any prior call.
-*/
-int sqlite3_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
-  return sqlite3_bind_text(pVm, i, zVal, len, copy);
 }
 
 /*

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.189 2004/05/25 23:35:18 danielk1977 Exp $
+** $Id: main.c,v 1.190 2004/05/26 02:04:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -480,135 +480,6 @@ void sqlite3RollbackAll(sqlite *db){
   }
   sqlite3ResetInternalSchema(db, 0);
   /* sqlite3RollbackInternalChanges(db); */
-}
-
-/*
-** Compile a single statement of SQL into a virtual machine.  Return one
-** of the SQLITE_ success/failure codes.  Also write an error message into
-** memory obtained from malloc() and make *pzErrMsg point to that message.
-*/
-int sqlite3_compile(
-  sqlite *db,                 /* The database on which the SQL executes */
-  const char *zSql,           /* The SQL to be executed */
-  const char **pzTail,        /* OUT: Next statement after the first */
-  sqlite_vm **ppVm,           /* OUT: The virtual machine */
-  char **pzErrMsg             /* OUT: Write error messages here */
-){
-  Parse sParse;
-
-  if( pzErrMsg ) *pzErrMsg = 0;
-  if( sqlite3SafetyOn(db) ) goto exec_misuse;
-  if( !db->init.busy ){
-    if( (db->flags & SQLITE_Initialized)==0 ){
-      int rc, cnt = 1;
-      while( (rc = sqlite3Init(db, pzErrMsg))==SQLITE_BUSY
-         && db->xBusyCallback
-         && db->xBusyCallback(db->pBusyArg, "", cnt++)!=0 ){}
-      if( rc!=SQLITE_OK ){
-        sqlite3StrRealloc(pzErrMsg);
-        sqlite3SafetyOff(db);
-        return rc;
-      }
-      if( pzErrMsg ){
-        sqliteFree(*pzErrMsg);
-        *pzErrMsg = 0;
-      }
-    }
-  }
-  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
-  if( db->pVdbe==0 ){ db->nChange = 0; }
-  memset(&sParse, 0, sizeof(sParse));
-  sParse.db = db;
-  sqlite3RunParser(&sParse, zSql, pzErrMsg);
-  if( db->xTrace && !db->init.busy ){
-    /* Trace only the statment that was compiled.
-    ** Make a copy of that part of the SQL string since zSQL is const
-    ** and we must pass a zero terminated string to the trace function
-    ** The copy is unnecessary if the tail pointer is pointing at the
-    ** beginnig or end of the SQL string.
-    */
-    if( sParse.zTail && sParse.zTail!=zSql && *sParse.zTail ){
-      char *tmpSql = sqliteStrNDup(zSql, sParse.zTail - zSql);
-      if( tmpSql ){
-        db->xTrace(db->pTraceArg, tmpSql);
-        free(tmpSql);
-      }else{
-        /* If a memory error occurred during the copy,
-        ** trace entire SQL string and fall through to the
-        ** sqlite3_malloc_failed test to report the error.
-        */
-        db->xTrace(db->pTraceArg, zSql); 
-      }
-    }else{
-      db->xTrace(db->pTraceArg, zSql); 
-    }
-  }
-  if( sqlite3_malloc_failed ){
-    sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
-    sParse.rc = SQLITE_NOMEM;
-    sqlite3RollbackAll(db);
-    sqlite3ResetInternalSchema(db, 0);
-    db->flags &= ~SQLITE_InTrans;
-  }
-  if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
-  if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(sParse.rc), (char*)0);
-  }
-  sqlite3StrRealloc(pzErrMsg);
-  if( sParse.rc==SQLITE_SCHEMA ){
-    sqlite3ResetInternalSchema(db, 0);
-  }
-  assert( ppVm );
-  *ppVm = (sqlite_vm*)sParse.pVdbe;
-  if( pzTail ) *pzTail = sParse.zTail;
-  if( sqlite3SafetyOff(db) ) goto exec_misuse;
-  return sParse.rc;
-
-exec_misuse:
-  if( pzErrMsg ){
-    *pzErrMsg = 0;
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(SQLITE_MISUSE), (char*)0);
-    sqlite3StrRealloc(pzErrMsg);
-  }
-  return SQLITE_MISUSE;
-}
-
-
-/*
-** The following routine destroys a virtual machine that is created by
-** the sqlite3_compile() routine.
-**
-** The integer returned is an SQLITE_ success/failure code that describes
-** the result of executing the virtual machine.  An error message is
-** written into memory obtained from malloc and *pzErrMsg is made to
-** point to that error if pzErrMsg is not NULL.  The calling routine
-** should use sqlite3_freemem() to delete the message when it has finished
-** with it.
-*/
-int sqlite3_finalize(
-  sqlite_vm *pVm,            /* The virtual machine to be destroyed */
-  char **pzErrMsg            /* OUT: Write error messages here */
-){
-  int rc = sqlite3VdbeFinalize((Vdbe*)pVm, pzErrMsg);
-  sqlite3StrRealloc(pzErrMsg);
-  return rc;
-}
-
-/*
-** Terminate the current execution of a virtual machine then
-** reset the virtual machine back to its starting state so that it
-** can be reused.  Any error message resulting from the prior execution
-** is written into *pzErrMsg.  A success code from the prior execution
-** is returned.
-*/
-int sqlite3_reset(
-  sqlite_vm *pVm,            /* The virtual machine to be destroyed */
-  char **pzErrMsg            /* OUT: Write error messages here */
-){
-  int rc = sqlite3VdbeReset((Vdbe*)pVm, pzErrMsg);
-  sqlite3VdbeMakeReady((Vdbe*)pVm, -1, 0);
-  sqlite3StrRealloc(pzErrMsg);
-  return rc;
 }
 
 /*
@@ -1252,7 +1123,7 @@ int sqlite3_open16(
 ** This routine sets the error code and string returned by
 ** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
 */
-int sqlite3_finalize_new(sqlite3_stmt *pStmt){
+int sqlite3_finalize(sqlite3_stmt *pStmt){
   return sqlite3VdbeFinalize((Vdbe*)pStmt, 0);
 }
 
@@ -1264,7 +1135,7 @@ int sqlite3_finalize_new(sqlite3_stmt *pStmt){
 ** This routine sets the error code and string returned by
 ** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
 */
-int sqlite3_reset_new(sqlite3_stmt *pStmt){
+int sqlite3_reset(sqlite3_stmt *pStmt){
   int rc = sqlite3VdbeReset((Vdbe*)pStmt, 0);
   sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0);
   return rc;

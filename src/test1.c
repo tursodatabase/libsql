@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.53 2004/05/26 00:07:26 danielk1977 Exp $
+** $Id: test1.c,v 1.54 2004/05/26 02:04:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -71,17 +71,6 @@ static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite **ppDb){
       (zA[0]!='0' || zA[1]!='x' || sscanf(&zA[2], PTR_FMT, (void**)ppDb)!=1)
   ){
     Tcl_AppendResult(interp, "\"", zA, "\" is not a valid pointer value", 0);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
-}
-
-/*
-** Decode a pointer to an sqlite_vm object.
-*/
-static int getVmPointer(Tcl_Interp *interp, const char *zArg, sqlite_vm **ppVm){
-  if( sscanf(zArg, PTR_FMT, (void**)ppVm)!=1 ){
-    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -780,7 +769,7 @@ static int test_finalize(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
-  rc = sqlite3_finalize_new(pStmt);
+  rc = sqlite3_finalize(pStmt);
   if( rc ){
     return TCL_ERROR;
   }
@@ -809,7 +798,7 @@ static int test_reset(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
 
-  rc = sqlite3_reset_new(pStmt);
+  rc = sqlite3_reset(pStmt);
   if( rc ){
     return TCL_ERROR;
   }
@@ -844,7 +833,7 @@ static int test_bind(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
-  sqlite_vm *vm;
+  sqlite3_stmt *pStmt;
   int rc;
   int idx;
   if( argc!=5 ){
@@ -852,14 +841,14 @@ static int test_bind(
        " VM IDX VALUE (null|static|normal)\"", 0);
     return TCL_ERROR;
   }
-  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
+  if( getStmtPointer(interp, argv[1], &pStmt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &idx) ) return TCL_ERROR;
   if( strcmp(argv[4],"null")==0 ){
-    rc = sqlite3_bind(vm, idx, 0, 0, 0);
+    rc = sqlite3_bind_null(pStmt, idx);
   }else if( strcmp(argv[4],"static")==0 ){
-    rc = sqlite3_bind(vm, idx, sqlite_static_bind_value, -1, 0);
+    rc = sqlite3_bind_text(pStmt, idx, sqlite_static_bind_value, -1, 0);
   }else if( strcmp(argv[4],"normal")==0 ){
-    rc = sqlite3_bind(vm, idx, argv[3], -1, 1);
+    rc = sqlite3_bind_text(pStmt, idx, argv[3], -1, 1);
   }else{
     Tcl_AppendResult(interp, "4th argument should be "
         "\"null\" or \"static\" or \"normal\"", 0);

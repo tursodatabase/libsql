@@ -311,7 +311,7 @@ struct Context {
 ** An instance of the virtual machine.  This structure contains the complete
 ** state of the virtual machine.
 **
-** The "sqlite_vm" structure pointer that is returned by sqlite3_compile()
+** The "sqlite3_stmt" structure pointer that is returned by sqlite3_compile()
 ** is really a pointer to an instance of this structure.
 */
 struct Vdbe {

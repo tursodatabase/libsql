@@ -15,7 +15,7 @@
 ** VDBE instances.  This file is solely interested in executing
 ** the VDBE program.
 **
-** In the external interface, an "sqlite_vm*" is an opaque pointer
+** In the external interface, an "sqlite3_stmt*" is an opaque pointer
 ** to a VDBE.
 **
 ** The SQL parser generates a program which is then executed by
@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.330 2004/05/26 00:07:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.331 2004/05/26 02:04:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"

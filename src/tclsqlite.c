@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.69 2004/05/25 12:05:57 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.70 2004/05/26 02:04:57 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1218,7 +1218,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest1_Init(interp);
     Sqlitetest2_Init(interp);
     Sqlitetest3_Init(interp);
-/*    Sqlitetest4_Init(interp); */
+    Sqlitetest4_Init(interp);
     Sqlitetest5_Init(interp);
     Md5_Init(interp);
   }
