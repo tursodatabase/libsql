@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.14 2004/05/27 17:22:56 drh Exp $
+# $Id: delete.test,v 1.15 2004/06/10 05:59:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -277,11 +277,16 @@ do_test delete-8.3 {
 do_test delete-8.4 {
   execsql {SELECT * FROM t3} 
 } {123}
+
+# Update for v3: In v2 the DELETE statement would succeed because no
+# database writes actually occur. Version 3 refuses to open a transaction
+# on a read-only file, so the statement fails.
 do_test delete-8.5 {
   catchsql {
     DELETE FROM t3 WHERE a<100;
   }
-} {0 {}}
+# v2 result: {0 {}}
+} {1 {attempt to write a readonly database}}
 do_test delete-8.6 {
   execsql {SELECT * FROM t3}
 } {123}

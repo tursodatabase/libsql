@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.26 2004/06/09 09:55:20 danielk1977 Exp $
+# $Id: misc1.test,v 1.27 2004/06/10 05:59:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -323,13 +323,16 @@ do_test misc1-10.10 {
 # Make sure the initialization works even if a database is opened while
 # another process has the database locked.
 #
+# Update for v3: The BEGIN doesn't lock the database so the schema is read
+# and the SELECT returns successfully.
 do_test misc1-11.1 {
   execsql {BEGIN}
   execsql {UPDATE t1 SET a=0 WHERE 0}
   sqlite db2 test.db
   set rc [catch {db2 eval {SELECT count(*) FROM t1}} msg]
   lappend rc $msg
-} {1 {database is locked}}
+# v2 result: {1 {database is locked}}
+} {0 3}
 do_test misc1-11.2 {
   execsql {COMMIT}
   set rc [catch {db2 eval {SELECT count(*) FROM t1}} msg]
