@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.112 2002/09/14 13:47:32 drh Exp $
+** $Id: build.c,v 1.113 2002/09/21 15:57:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1245,14 +1245,15 @@ void sqliteCreateForeignKey(
   if( pFKey==0 ) goto fk_end;
   pFKey->pFrom = p;
   pFKey->pNextFrom = p->pFKey;
-  pFKey->zTo = z = (char*)&pFKey[1];
+  z = (char*)&pFKey[1];
+  pFKey->aCol = (struct sColMap*)z;
+  z += sizeof(struct sColMap)*nCol;
+  pFKey->zTo = z;
   memcpy(z, pTo->z, pTo->n);
   z[pTo->n] = 0;
   z += pTo->n+1;
   pFKey->pNextTo = 0;
   pFKey->nCol = nCol;
-  pFKey->aCol = (struct sColMap*)z;
-  z += sizeof(struct sColMap)*nCol;
   if( pFromCol==0 ){
     pFKey->aCol[0].iFrom = p->nCol-1;
   }else{
