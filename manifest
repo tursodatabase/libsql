@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\spublish.sh\sscript\sthat\swas\scausing\sthe\swindows\sDLL\sto\snot\nbe\sbuilt.\s(CVS\s686)
-D 2002-07-18T11:07:19
+C Version\s2.6.0\sRelease\s2\s(CVS\s687)
+D 2002-07-18T11:10:30
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9761a2a0fbfd3e98f719a813bcc544950968aef2
+P ee8c2758a222251fed0197d2a364346d05728240
 R 76ddeede69cbf2bb4e711ae5b4e30b2a
 U drh
-Z eb3635dc98ef2d9e1e0cf839bc043cc8
+Z 599b54bc5f40ea342f28053ffae009fb
