@@ -1,5 +1,5 @@
-C Get\sthe\sattach.test\sworking\son\swindows.\s(CVS\s1508)
-D 2004-05-31T18:21:55
+C Begin\sadding\sdocumentation\sfor\sversion\s3.0.\s(CVS\s1509)
+D 2004-05-31T18:22:26
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -184,14 +184,16 @@ F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
+F www/capi3.tcl 79fec496d95e87420c40e4058f2685a6df2f93c7
 F www/changes.tcl 9d562205db584d26b358ebe93fb58039feefd1b8
 F www/common.tcl f786e6be86fb2627ceb30e770e9efa83b9c67a3a
 F www/conflict.tcl fb8a2ba83746c7fdfd9e52fa7f6aaf5c422b8246
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
+F www/datatype3.tcl 3dcc0baaccc7d3bc28e12a3acc45f5ab7f723ca2
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
-F www/docs.tcl 60a7ce60d6f04cd5f56ab9329e0ffc22ebd6f021
+F www/docs.tcl 5ea8a84edd33030879725fca85905899c89c7075
 F www/download.tcl 8c84f15695c92cb01486930055fdf5192995f474
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
@@ -210,7 +212,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 460f2361141f14aa709addd41cc011127bac9b6e
-R e79cc292e6bccbc3d8d6727cae1981b6
+P 48226a73801bc478d6fd6de5a554aec5119d2194
+R 6c1a6ec8dae26e3de7139bd0ba98440c
 U drh
-Z 90fe3d5148e97c78c1b08256539f671c
+Z dd522c4899d9ea1abb58bb871bde4c24

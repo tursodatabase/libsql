@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.1 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.2 2004/05/31 18:22:26 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -28,6 +28,10 @@ doc {Version 2 C/C++ API} {c_interface.html} {
   A description of the C/C++ interface bindings for SQLite through version 
   2.8
 }
+doc {Version 3 C/C++ API} {capi3.html} {
+  A description of the C/C++ interface bindings for SQLite version 3.0.0
+  and following.
+}
 
 doc {Tcl API} {tclsqlite.html} {
   A description of the TCL interface bindings for SQLite.
@@ -35,6 +39,12 @@ doc {Tcl API} {tclsqlite.html} {
 
 doc {Version 2 DataTypes } {datatypes.html} {
   A description of how SQLite version 2 handles SQL datatypes.
+}
+doc {Version 3 DataTypes } {datatype3.html} {
+  SQLite version 3 introduces the concept of manifest typing, where the
+  type of a value is associated with the value itself, not the column that
+  it is stored in.
+  This page describes data typing for SQLite version 3 in further detail.
 }
 
 doc {Release History} {changes.html} {
