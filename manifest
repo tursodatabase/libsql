@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\s"return"\sstatement\saccidentaly\sleft\sin\scheck-in\s(1032).\s(CVS\s1033)
-D 2003-06-23T15:15:03
+C In\sa\sSELECT,\sthe\srowid\sof\sa\sview\sor\ssubquery\swhich\sis\sreally\sa\sjoin\sis\nset\sto\sNULL\sif\sthe\sjoin\sis\sflattened.\s\sTicket\s#364.\s(CVS\s1034)
+D 2003-06-24T10:39:46
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,7 +59,7 @@ F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 566c7780170dd11fb1ad5de3ba81f0dfea7cccf0
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
-F src/vdbe.c fba0a1d25b7dac26c3cf3c10f6e8fde352a386ee
+F src/vdbe.c aa35237cd53a941e152bea3b3c28effaa3b46a80
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -96,7 +96,7 @@ F test/memdb.test cd4580f466f34c42354612a375c5adb90447e4c4
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test b54ac3bc45460a4976b08ef363e05c032418726e
 F test/misc1.test c7dc2f2bd702d8283e885a64ec0714be26cfb051
-F test/misc2.test afbb0678792654e7495d580e227f36999f6eb20d
+F test/misc2.test c896dd7c875f11a1de11ddf249ee52edb0da95e1
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -166,7 +166,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P ec31a5292cbc5d2fb68449838b929638f48e31a7
-R 735fa44a8f7121b39944a932c2c63313
+P c697410af4a61d2037e7e319efe8dd78d7b83365
+R fc902483cfd5afb786db4fc888e74b75
 U drh
-Z 198968a4bbf5ffca6cdcfc3ecf44d637
+Z 9dd48a432e60faea0918c9a13abb7b08

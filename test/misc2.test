@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.1 2003/06/22 01:41:50 drh Exp $
+# $Id: misc2.test,v 1.2 2003/06/24 10:39:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,3 +30,21 @@ do_test misc2-1.1 {
     INSERT INTO foo(bar) VALUES (1);
   }
 } {1 aiieee}
+
+# Make sure ROWID works on a view and a subquery.  Ticket #364
+#
+do_test misc2-2.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(1,2,3);
+    CREATE TABLE t2(x,y,z);
+    INSERT INTO t2 VALUES(7,8,9);
+    SELECT rowid, * FROM (SELECT * FROM t1, t2);
+  }
+} {{} 1 2 3 7 8 9}
+do_test misc2-2.2 {
+  execsql {
+    CREATE VIEW v1 AS SELECT * FROM t1, t2;
+    SELECT rowid, * FROM v1;
+  }
+} {{} 1 2 3 7 8 9}
