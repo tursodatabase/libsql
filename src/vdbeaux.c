@@ -100,7 +100,6 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
 #ifndef NDEBUG
-  pOp->zComment = 0;
   if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
@@ -209,7 +208,6 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p3 = pIn->p3;
       pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
 #ifndef NDEBUG
-      pOut->zComment = 0;
       if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -334,56 +332,6 @@ void sqlite3VdbeDequoteP3(Vdbe *p, int addr){
 }
 
 /*
-** On the P3 argument of the given instruction, change all
-** strings of whitespace characters into a single space and
-** delete leading and trailing whitespace.
-*/
-void sqlite3VdbeCompressSpace(Vdbe *p, int addr){
-  unsigned char *z;
-  int i, j;
-  Op *pOp;
-  assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
-  pOp = &p->aOp[addr];
-  if( pOp->p3type==P3_STATIC ){
-    pOp->p3 = sqliteStrDup(pOp->p3);
-    pOp->p3type = P3_DYNAMIC;
-  }
-  assert( pOp->p3type==P3_DYNAMIC );
-  z = (unsigned char*)pOp->p3;
-  if( z==0 ) return;
-  i = j = 0;
-  while( isspace(z[i]) ){ i++; }
-  while( z[i] ){
-    if( isspace(z[i]) ){
-      z[j++] = ' ';
-      while( isspace(z[++i]) ){}
-    }else{
-      z[j++] = z[i++];
-    }
-  }
-  while( j>0 && isspace(z[j-1]) ){ j--; }
-  z[j] = 0;
-}
-
-#ifndef NDEBUG
-/*
-** Add comment text to the most recently inserted opcode
-*/
-void sqlite3VdbeAddComment(Vdbe *p, const char *zFormat, ...){
-  va_list ap;
-  VdbeOp *pOp;
-  char *zText;
-  va_start(ap, zFormat);
-  zText = sqlite3_vmprintf(zFormat, ap);
-  va_end(ap);
-  pOp = &p->aOp[p->nOp-1];
-  sqliteFree(pOp->zComment);
-  pOp->zComment = zText;
-}
-#endif
-
-/*
 ** Search the current program starting at instruction addr for the given
 ** opcode and P2 value.  Return the address plus 1 if found and 0 if not
 ** found.
@@ -488,13 +436,8 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   static const char *zFormat2 = "%4d %-13s %4d %4d %-20s -- %s\n";
   if( pOut==0 ) pOut = stdout;
   zP3 = displayP3(pOp, zPtr, sizeof(zPtr));
-#ifdef NDEBUG
   fprintf(pOut, zFormat1,
       pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3);
-#else
-  fprintf(pOut, pOp->zComment ? zFormat2 : zFormat1,
-      pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3,pOp->zComment);
-#endif
   fflush(pOut);
 }
 #endif
@@ -1377,9 +1320,6 @@ void sqlite3VdbeDelete(Vdbe *p){
       sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
       sqliteFree(pVdbeFunc);
     }
-#ifndef NDEBUG
-    sqliteFree(pOp->zComment);
-#endif
   }
   for(i=0; i<p->nVar; i++){
     sqlite3VdbeMemRelease(&p->apVar[i]);

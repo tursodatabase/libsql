@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.15 2004/06/19 00:16:31 drh Exp $
+# $Id: rowid.test,v 1.16 2004/06/27 21:31:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -631,6 +631,21 @@ do_test rowid-11.4 {
   execsql {SELECT rowid, a FROM t5 WHERE rowid<='abc'}
 } {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
 
-
+# Test the automatic generation of rowids when the table already contains
+# a rowid with the maximum value.
+#
+do_test rowid-12.1 {
+  execsql {
+    CREATE TABLE t7(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t7 VALUES(9223372036854775807,'a');
+    SELECT y FROM t7;
+  }
+} {a}
+do_test rowid-12.2 {
+  execsql {
+    INSERT INTO t7 VALUES(NULL,'b');
+    SELECT y FROM t7;
+  }
+} {b a}
 
 finish_test
