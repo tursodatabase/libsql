@@ -1183,10 +1183,16 @@ int sqlite3OsRandomSeed(char *zBuf){
   memset(zBuf, 0, 256);
 #if !defined(SQLITE_TEST)
   {
-    int pid;
-    time((time_t*)zBuf);
-    pid = getpid();
-    memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
+    int pid, fd;
+    fd = open("/dev/urandom", O_RDONLY);
+    if( fd<0 ){
+      time((time_t*)zBuf);
+      pid = getpid();
+      memcpy(&zBuf[sizeof(time_t)], &pid, sizeof(pid));
+    }else{
+      read(fd, zBuf, 256);
+      close(fd);
+    }
   }
 #endif
   return SQLITE_OK;
