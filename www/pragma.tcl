@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.10 2005/02/19 12:32:57 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.11 2005/02/19 13:05:48 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -250,63 +250,68 @@ puts {
 
 <a name="pragma_temp_store"></a>
 <li><p><b>PRAGMA temp_store;
-       <br>PRAGMA temp_store = DEFAULT; </b>(0)<b>
-       <br>PRAGMA temp_store = MEMORY; </b>(2)<b>
-       <br>PRAGMA temp_store = FILE;</b> (1)</p>
-    <p>Query or change the setting of the "temp_store" flag affecting
-    the database for the duration of the current database connection.
-    The temp_store flag reverts to its default value when the database
-    is closed and reopened.  For additional information on the temp_store
-    flag, see the description of the <a href="#pragma_default_temp_store">
-    <b>default_temp_store</b></a> pragma.  Note that it is possible for 
-    the library compile-time options to override this setting.  
-
-<a name="pragma_temp_store"></a>
-<li><p><b>PRAGMA temp_store;
-       <br>PRAGMA temp_store = DEFAULT; </b>(0)<b>
-       <br>PRAGMA temp_store = MEMORY; </b>(2)<b>
-       <br>PRAGMA temp_store = FILE;</b> (1)</p>
+       <br>PRAGMA temp_store = DEFAULT;</b> (0)<b>
+       <br>PRAGMA temp_store = FILE;</b> (1)<b>
+       <br>PRAGMA temp_store = MEMORY;</b> (2)</p>
     <p>Query or change the setting of the "<b>temp_store</b>" parameter.
-    When temp_store is DEFAULT (0), the compile-time value of the
-    symbol TEMP_STORE is used for the temporary database.  When
-    temp_store is MEMORY (2), an in-memory database is used.  
-    When temp_store is FILE (1), a temporary database file on disk
-    will be used. See PRAGMA <a href="#pragma_temp_store_directory">
-    temp_store_directory</a> for further temporary storage options when 
+    When temp_store is DEFAULT (0), the compile-time C preprocessor macro
+    TEMP_STORE is used to determine where temporary tables and indices
+    are stored.  When
+    temp_store is MEMORY (2) temporary tables and indices are kept in memory.
+    When temp_store is FILE (1) temporary tables and indices are stored
+    in a file.  The <a href="#pragma_temp_store_directory">
+    temp_store_directory</a> pragma can be used to specify the directory
+    containing this file.
     <b>FILE</b> is specified. When the temp_store setting is changed,
-    all existing temporary tables, indices, triggers, and viewers are
+    all existing temporary tables, indices, triggers, and views are
     immediately deleted.</p>
 
-    <p>It is possible for the library compile-time symbol
-    TEMP_STORE to override this setting.  The following table summarizes 
-    this:</p>
+    <p>It is possible for the library compile-time C preprocessor symbol
+    TEMP_STORE to override this pragma setting.  The following table summarizes
+    the interaction of the TEMP_STORE preprocessor macro and the
+    temp_store pragma:</p>
 
-<table cellpadding="2">
-<tr><th>TEMP_STORE</th><th>temp_store</th><th>temp database location</th></tr>
-<tr><td align="center">0</td><td align="center"><em>any</em></td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">0</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">0</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">2</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
-</table>
-</li>
-<br>
+    <blockquote>
+    <table cellpadding="2" border="1">
+    <tr><th valign="bottom">TEMP_STORE</th>
+        <th valign="bottom">PRAGMA<br>temp_store</th>
+        <th>Storage used for<br>TEMP tables and indices</th></tr>
+    <tr><td align="center">0</td>
+        <td align="center"><em>any</em></td>
+        <td align="center">file</td></tr>
+    <tr><td align="center">1</td>
+        <td align="center">0</td>
+        <td align="center">file</td></tr>
+    <tr><td align="center">1</td>
+        <td align="center">1</td>
+        <td align="center">file</td></tr>
+    <tr><td align="center">1</td>
+        <td align="center">2</td>
+        <td align="center">memory</td></tr>
+    <tr><td align="center">2</td>
+        <td align="center">0</td>
+        <td align="center">memory</td></tr>
+    <tr><td align="center">2</td>
+        <td align="center">1</td>
+        <td align="center">file</td></tr>
+    <tr><td align="center">2</td>
+        <td align="center">2</td>
+        <td align="center">memory</td></tr>
+    <tr><td align="center">3</td>
+        <td align="center"><em>any</em></td>
+        <td align="center">memory</td></tr>
+    </table>
+    </blockquote>
+    </li>
+    <br>
 
 <a name="pragma_temp_store_directory"></a>
 <li><p><b>PRAGMA temp_store_directory;
        <br>PRAGMA temp_store_directory = 'directory-name';</b></p>
-    <p>Query or change the setting of the "temp_store_directory" flag affecting
-    the database for the duration of the current database connection.
-    The temp_store_directory flag reverts to its default value when the database
-    is closed and reopened.  Setting temp_store_directory allows control of the
-    placement of temporary files created by SQLite when PRAGMA
-    <a href="#pragma_temp_store">temp_store</a> is <b>FILE</b> (1),
-    or when the compile time default temporary store is FILE.
-    Otherwise, when the temp_store (or default) setting is 
-    <b>MEMORY</b> (2), setting temp_store_directory has no effect.</p>
+    <p>Query or change the setting of the "temp_store_directory" - the
+    directory where files used for storing temporary tables and indices
+    are kept.  This setting lasts for the duration of the current connection
+    only and resets to its default value for each new connection opened.
 
     <p>When the temp_store_directory setting is changed, all existing temporary
     tables, indices, triggers, and viewers are immediately deleted.  In
@@ -315,7 +320,7 @@ puts {
 
     <p>The value <i>directory-name</i> should be enclosed in single quotes.
     To revert the directory to the default, set the <i>directory-name</i> to
-    a null string, e.g., <i>PRAGMA temp_store_directory = ''</i>.  An
+    an empty string, e.g., <i>PRAGMA temp_store_directory = ''</i>.  An
     error is raised if <i>directory-name</i> is not found or is not
     writable. </p>
 
@@ -436,6 +441,18 @@ puts {
     <br>PRAGMA vdbe_trace = OFF;</b> (0)</p>
     <p>Turn tracing of the virtual database engine inside of the
     SQLite library on and off.  This is used for debugging.  See the 
+    <a href="vdbe.html#trace">VDBE documentation</a> for more 
+    information.</p></li>
+
+<a name="pragma_vdbe_listing"></a>
+<li><p><b>PRAGMA vdbe_listing = ON; </b>(1)<b>
+    <br>PRAGMA vdbe_listing = OFF;</b> (0)</p>
+    <p>Turn listings of virtual machine programs on and off.
+    With listing is on, the entire content of a program is printed
+    just prior to beginning execution.  This is like automatically
+    executing an EXPLAIN prior to each statement.  The statement
+    executes normally after the listing is printed.
+    This is used for debugging.  See the 
     <a href="vdbe.html#trace">VDBE documentation</a> for more 
     information.</p></li>
 </ul>
