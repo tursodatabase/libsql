@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or one writer.
 **
-** @(#) $Id: pager.c,v 1.12 2001/06/28 01:54:49 drh Exp $
+** @(#) $Id: pager.c,v 1.13 2001/07/02 17:51:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -122,6 +122,7 @@ struct Pager {
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
   unsigned char state;        /* SQLITE_UNLOCK, _READLOCK or _WRITELOCK */
   unsigned char errMask;      /* One of several kinds of errors */
+  unsigned char *aInJournal;  /* One bit for each page in the database file */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
@@ -210,6 +211,7 @@ static int pager_unlock(fd){
 ** the beginning of the file.
 */
 static int pager_seek(int fd, off_t whereto){
+  /*printf("SEEK to page %d\n", whereto/SQLITE_PAGE_SIZE + 1);*/
   lseek(fd, whereto, SEEK_SET);
   return SQLITE_OK;
 }
@@ -232,6 +234,7 @@ static int pager_truncate(int fd, Pgno mxPg){
 */
 static int pager_read(int fd, void *pBuf, int nByte){
   int rc;
+  /* printf("READ\n");*/
   rc = read(fd, pBuf, nByte);
   if( rc<0 ){
     memset(pBuf, 0, nByte);
@@ -253,6 +256,7 @@ static int pager_read(int fd, void *pBuf, int nByte){
 */
 static int pager_write(int fd, const void *pBuf, int nByte){
   int rc;
+  /*printf("WRITE\n");*/
   rc = write(fd, pBuf, nByte);
   if( rc<nByte ){
     return SQLITE_FULL;
@@ -338,6 +342,8 @@ static int pager_unwritelock(Pager *pPager){
   unlink(pPager->zJournal);
   close(pPager->jfd);
   pPager->jfd = -1;
+  sqliteFree( pPager->aInJournal );
+  pPager->aInJournal = 0;
   for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
     pPg->inJournal = 0;
     pPg->dirty = 0;
@@ -434,6 +440,7 @@ static int pager_playback(Pager *pPager){
     pPg = pager_lookup(pPager, pgRec.pgno);
     if( pPg ){
       memcpy(PGHDR_TO_DATA(pPg), pgRec.aData, SQLITE_PAGE_SIZE);
+      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
     }
     rc = pager_seek(pPager->fd, (pgRec.pgno-1)*SQLITE_PAGE_SIZE);
     if( rc!=SQLITE_OK ) break;
@@ -719,9 +726,9 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       /* Recycle an older page.  First locate the page to be recycled.
       ** Try to find one that is not dirty and is near the head of
       ** of the free list */
-      int cnt = 4;
+      int cnt = pPager->mxPage/2;
       pPg = pPager->pFirst;
-      while( pPg->dirty && 0<cnt-- ){
+      while( pPg->dirty && 0<cnt-- && pPg->pNextFree ){
         pPg = pPg->pNextFree;
       }
       if( pPg==0 || pPg->dirty ) pPg = pPager->pFirst;
@@ -752,12 +759,19 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 
       /* Unlink the old page from the free list and the hash table
       */
-      pPager->pFirst = pPg->pNextFree;
-      if( pPager->pFirst ){
-        pPager->pFirst->pPrevFree = 0;
+      if( pPg->pPrevFree ){
+        pPg->pPrevFree->pNextFree = pPg->pNextFree;
       }else{
-        pPager->pLast = 0;
+        assert( pPager->pFirst==pPg );
+        pPager->pFirst = pPg->pNextFree;
       }
+      if( pPg->pNextFree ){
+        pPg->pNextFree->pPrevFree = pPg->pPrevFree;
+      }else{
+        assert( pPager->pLast==pPg );
+        pPager->pLast = pPg->pPrevFree;
+      }
+      pPg->pNextFree = pPg->pPrevFree = 0;
       if( pPg->pNextHash ){
         pPg->pNextHash->pPrevHash = pPg->pPrevHash;
       }
@@ -768,10 +782,15 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         assert( pPager->aHash[h]==pPg );
         pPager->aHash[h] = pPg->pNextHash;
       }
+      pPg->pNextHash = pPg->pPrevHash = 0;
       pPager->nOvfl++;
     }
     pPg->pgno = pgno;
-    pPg->inJournal = 0;
+    if( pPager->aInJournal && pgno<=pPager->origDbSize ){
+      pPg->inJournal = (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
+    }else{
+      pPg->inJournal = 0;
+    }
     pPg->dirty = 0;
     pPg->nRef = 1;
     REFINFO(pPg);
@@ -910,6 +929,11 @@ int sqlitepager_write(void *pData){
   if( pPg->inJournal ){ return SQLITE_OK; }
   assert( pPager->state!=SQLITE_UNLOCK );
   if( pPager->state==SQLITE_READLOCK ){
+    assert( pPager->aInJournal==0 );
+    pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
+    if( pPager->aInJournal==0 ){
+      return SQLITE_NOMEM;
+    }
     pPager->jfd = open(pPager->zJournal, O_RDWR|O_CREAT, 0644);
     if( pPager->jfd<0 ){
       return SQLITE_CANTOPEN;
@@ -952,12 +976,24 @@ int sqlitepager_write(void *pData){
       pPager->errMask |= PAGER_ERR_FULL;
       return rc;
     }
+    assert( pPager->aInJournal!=0 );
+    pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
   }
   pPg->inJournal = 1;
   if( pPager->dbSize<pPg->pgno ){
     pPager->dbSize = pPg->pgno;
   }
   return rc;
+}
+
+/*
+** Return TRUE if the page given in the argument was previous passed
+** to sqlitepager_write().  In other words, return TRUE if it is ok
+** to change the content of the page.
+*/
+int sqlitepager_iswriteable(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  return pPg->dirty;
 }
 
 /*

@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.6 2001/07/01 22:12:02 drh Exp $
+** $Id: test3.c,v 1.7 2001/07/02 17:51:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -79,7 +79,7 @@ static int btree_open(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  rc = sqliteBtreeOpen(argv[1], 0666, &pBt);
+  rc = sqliteBtreeOpen(argv[1], 0666, 10, &pBt);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -376,7 +376,37 @@ static int btree_page_dump(
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
-  rc = sqliteBtreePageDump(pBt, iPage);
+  rc = sqliteBtreePageDump(pBt, iPage, 0);
+  if( rc!=SQLITE_OK ){
+    Tcl_AppendResult(interp, errorName(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_tree_dump ID PAGENUM
+**
+** Print a disassembly of a page and all its child pages on standard output
+*/
+static int btree_tree_dump(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int iPage;
+  int rc;
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
+  rc = sqliteBtreePageDump(pBt, iPage, 1);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -795,6 +825,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_get_meta", btree_get_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_update_meta", btree_update_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_page_dump", btree_page_dump, 0, 0);
+  Tcl_CreateCommand(interp, "btree_tree_dump", btree_tree_dump, 0, 0);
   Tcl_CreateCommand(interp, "btree_pager_stats", btree_pager_stats, 0, 0);
   Tcl_CreateCommand(interp, "btree_pager_ref_dump", btree_pager_ref_dump, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor", btree_cursor, 0, 0);
