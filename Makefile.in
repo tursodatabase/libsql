@@ -31,6 +31,7 @@ TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
 # Some standard variables and programs
 #
 prefix = @prefix@
+exec_prefix = @exec_prefix@
 INSTALL = @INSTALL@
 LIBTOOL = ./libtool
 
@@ -121,15 +122,15 @@ last_change:	$(SRC)
           | awk '{print $$5,$$6}' >last_change
 
 libsqlite.la:	$(LIBOBJ)
-	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(prefix)/lib
+	$(LIBTOOL) $(TCC) -o libsqlite.la $(LIBOBJ) -rpath $(exec_prefix)/lib
 
 libtclsqlite.la:	tclsqlite.lo libsqlite.la
 	$(LIBTOOL) $(TCC) -o libtclsqlite.la tclsqlite.lo \
-		libsqlite.la $(LIBTCL) -rpath $(prefix)/lib
+		libsqlite.la $(LIBTCL) -rpath $(exec_prefix)/lib
 
 sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
-		libsqlite.la $(LIBREADLINE)
+		libsqlite.la $(LIBREADLINE) -rpath $(exec_prefix)/lib
 
 # Rules to build the LEMON compiler generator
 #
@@ -309,8 +310,11 @@ doc:	$(DOC)
 	mv $(DOC) doc
 
 install:	sqlite libsqlite.la sqlite.h
-	$(LIBTOOL) $(INSTALL) libsqlite.la $(prefix)/lib
-	$(LIBTOOL) $(INSTALL) sqlite $(prefix)/bin
+	$(INSTALL) -d $(exec_prefix)/lib
+	$(LIBTOOL) $(INSTALL) libsqlite.la $(exec_prefix)/lib
+	$(INSTALL) -d $(exec_prefix)/bin
+	$(LIBTOOL) $(INSTALL) sqlite $(exec_prefix)/bin
+	$(INSTALL) -d $(prefix)/include
 	$(INSTALL) -m 0644 sqlite.h $(prefix)/include
 
 clean:	

@@ -1,6 +1,6 @@
-C Fix\sfor\sticket\s#137:\sUse\sgetpwuid()\sinstead\sof\sgetpwent().\s(CVS\s723)
-D 2002-08-21T11:26:41
-F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
+C Fix\sfor\sticket\s#138:\sMakefile\sdoesn't\suse\sexec_prefix,\shas\ssome\sinstall\sproblems\s(CVS\s724)
+D 2002-08-22T18:18:36
+F Makefile.in bcb81f40d9a17bd94f59e67157b1e1c54c046c2b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION a8c86d12b1459b66b47ef640f3f0c87822c25901
@@ -147,7 +147,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 39bd52d33029233d4b22df08975e9ef3c74c260f
-R 6a1abb62e413c693a06001ba7911a178
-U drh
-Z 8c1950b7c3aa43ff65e154fca595ce49
+P ea011990c552a7a6019b63f9b4341ad6c8663479
+R 01c77a2fbc8007617e801a4f6c0c3a87
+U jadams
+Z d542663e519b76f9974c46422a65caa8
