@@ -1,5 +1,5 @@
-C README\sfile\supdated\sto\ssuggest\srunning\s"make\sinstall".\s\sTicket\s#1168.\s(CVS\s2409)
-D 2005-03-21T00:47:18
+C Fix\san\sinfinite\sloop\sin\sthe\scode\sgenerator\sfor\sINSERT.\s\sTicket\s#1140.\s(CVS\s2410)
+D 2005-03-21T01:20:58
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -40,7 +40,7 @@ F src/expr.c 53f854495411eed41e42ec7f174aef64b7918119
 F src/func.c ff0673a25ec6216934e664bf9f480ae8b2c66936
 F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c 7e6b123bdb3fd45a907361b1bcc2e56e66fdd0ed
+F src/insert.c 34c25c33f51a43644a42cc091ac967b070c6b6d5
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c 90cb84bbb85aa89442af41ad4323b136af6527b7
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -135,7 +135,7 @@ F test/in.test ed134f8d477a6280297ced1646de83cccf8f196d
 F test/index.test 51e01a0928b4b61228917ddd8c6c0e2466547f6f
 F test/index2.test 9ad98243fd7fe833795a9cc662f371f0eed4ff4f
 F test/index3.test 72bd07b508022db688ec536c460345d24a3912e3
-F test/insert.test f39cb2306199c6f9d8959b843c9199d799217055
+F test/insert.test 9a9c5774e4cf985d08edfe870d9db20c3849b5d2
 F test/insert2.test 065f179a21b42f9746b97571b8ad10b092e90913
 F test/insert3.test c67f0240b1c17e71fa2ed8bb6de064928f549f95
 F test/interrupt.test 5b4d8389e6cf2d01b94f87cfd02d9df1073bfb2d
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 2bf88daa57b01216c7bbe67972f479ee12be1193
-R a8d688cde6a568c802e729910848975a
+P b48784cf65420da5ccdf779504e3c0b5c0f2471d
+R 672678ded19de8ecd9285bc2b337f447
 U drh
-Z 23a17a120aa0ef56263bab0ba6726a29
+Z cfa0ed114867b2787c7c40a2be3dcf16
