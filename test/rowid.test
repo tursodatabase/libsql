@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.12 2003/07/06 17:22:25 drh Exp $
+# $Id: rowid.test,v 1.13 2004/01/14 21:59:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -470,6 +470,164 @@ do_test rowid-9.10 {
     SELECT * FROM t3 WHERE a>=122.9 AND a<=123.1
   }
 } {123}
+
+# Ticket #567.  Comparisons of ROWID or integery primary key against
+# floating point numbers still do not always work.
+#
+do_test rowid-10.1 {
+  execsql {
+    CREATE TABLE t5(a);
+    INSERT INTO t5 VALUES(1);
+    INSERT INTO t5 VALUES(2);
+    INSERT INTO t5 SELECT a+2 FROM t5;
+    INSERT INTO t5 SELECT a+4 FROM t5;
+    SELECT rowid, * FROM t5;
+  }
+} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
+do_test rowid-10.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>=5.5}
+} {6 6 7 7 8 8}
+do_test rowid-10.3 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>=5.0}
+} {5 5 6 6 7 7 8 8}
+do_test rowid-10.4 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>5.5}
+} {6 6 7 7 8 8}
+do_test rowid-10.3.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>5.0}
+} {6 6 7 7 8 8}
+do_test rowid-10.5 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5<=rowid}
+} {6 6 7 7 8 8}
+do_test rowid-10.6 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5<rowid}
+} {6 6 7 7 8 8}
+do_test rowid-10.7 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<=5.5}
+} {1 1 2 2 3 3 4 4 5 5}
+do_test rowid-10.8 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<5.5}
+} {1 1 2 2 3 3 4 4 5 5}
+do_test rowid-10.9 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5>=rowid}
+} {1 1 2 2 3 3 4 4 5 5}
+do_test rowid-10.10 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5>rowid}
+} {1 1 2 2 3 3 4 4 5 5}
+do_test rowid-10.11 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>=5.5 ORDER BY rowid DESC}
+} {8 8 7 7 6 6}
+do_test rowid-10.11.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>=5.0 ORDER BY rowid DESC}
+} {8 8 7 7 6 6 5 5}
+do_test rowid-10.12 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>5.5 ORDER BY rowid DESC}
+} {8 8 7 7 6 6}
+do_test rowid-10.12.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>5.0 ORDER BY rowid DESC}
+} {8 8 7 7 6 6}
+do_test rowid-10.13 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5<=rowid ORDER BY rowid DESC}
+} {8 8 7 7 6 6}
+do_test rowid-10.14 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5<rowid ORDER BY rowid DESC}
+} {8 8 7 7 6 6}
+do_test rowid-10.15 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<=5.5 ORDER BY rowid DESC}
+} {5 5 4 4 3 3 2 2 1 1}
+do_test rowid-10.16 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<5.5 ORDER BY rowid DESC}
+} {5 5 4 4 3 3 2 2 1 1}
+do_test rowid-10.17 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5>=rowid ORDER BY rowid DESC}
+} {5 5 4 4 3 3 2 2 1 1}
+do_test rowid-10.18 {
+  execsql {SELECT rowid, a FROM t5 WHERE 5.5>rowid ORDER BY rowid DESC}
+} {5 5 4 4 3 3 2 2 1 1}
+
+do_test rowid-10.30 {
+  execsql {
+    CREATE TABLE t6(a);
+    INSERT INTO t6(rowid,a) SELECT -a,a FROM t5;
+    SELECT rowid, * FROM t6;
+  }
+} {-8 8 -7 7 -6 6 -5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.31.1 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>=-5.5}
+} {-5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.31.2 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>=-5.0}
+} {-5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.32.1 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>=-5.5 ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4 -5 5}
+do_test rowid-10.32.1 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>=-5.0 ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4 -5 5}
+do_test rowid-10.33 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5<=rowid}
+} {-5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.34 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5<=rowid ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4 -5 5}
+do_test rowid-10.35.1 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>-5.5}
+} {-5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.35.2 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>-5.0}
+} {-4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.36.1 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>-5.5 ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4 -5 5}
+do_test rowid-10.36.2 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid>-5.0 ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4}
+do_test rowid-10.37 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5<rowid}
+} {-5 5 -4 4 -3 3 -2 2 -1 1}
+do_test rowid-10.38 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5<rowid ORDER BY rowid DESC}
+} {-1 1 -2 2 -3 3 -4 4 -5 5}
+do_test rowid-10.39 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid<=-5.5}
+} {-8 8 -7 7 -6 6}
+do_test rowid-10.40 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid<=-5.5 ORDER BY rowid DESC}
+} {-6 6 -7 7 -8 8}
+do_test rowid-10.41 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5>=rowid}
+} {-8 8 -7 7 -6 6}
+do_test rowid-10.42 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5>=rowid ORDER BY rowid DESC}
+} {-6 6 -7 7 -8 8}
+do_test rowid-10.43 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid<-5.5}
+} {-8 8 -7 7 -6 6}
+do_test rowid-10.44 {
+  execsql {SELECT rowid, a FROM t6 WHERE rowid<-5.5 ORDER BY rowid DESC}
+} {-6 6 -7 7 -8 8}
+do_test rowid-10.44 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5>rowid}
+} {-8 8 -7 7 -6 6}
+do_test rowid-10.46 {
+  execsql {SELECT rowid, a FROM t6 WHERE -5.5>rowid ORDER BY rowid DESC}
+} {-6 6 -7 7 -8 8}
+
+# Comparison of rowid against string values.
+#
+do_test rowid-11.1 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>'abc'}
+} {}
+do_test rowid-11.2 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid>='abc'}
+} {}
+do_test rowid-11.3 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<'abc'}
+} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
+do_test rowid-11.4 {
+  execsql {SELECT rowid, a FROM t5 WHERE rowid<='abc'}
+} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}
+
 
 
 finish_test

@@ -1,5 +1,5 @@
-C Version\s2.8.11\s(CVS\s1177)
-D 2004-01-14T13:50:59
+C Fix\scomparisons\sof\sROWID\sagainst\sfloating\spoint\snumbers\sso\sthat\sthey\swork\ncorrectly.\s\sTicket\s#377\sand\s#567.\s(CVS\s1178)
+D 2004-01-14T21:59:23
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,7 +30,7 @@ F src/build.c a7493c433de5b552f9535d8fa7ed80aaf135491e
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c bb89fdb9c89e367b9a728c58cb96e4823974a2c1
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
-F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
+F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c 866a6d7aacc2825aa13056ccbea1a16f436a1ca5
 F src/func.c 62cf8fae8147c0301d1c6a4a94fe0a78f7aa5b33
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
@@ -61,11 +61,11 @@ F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c 64995b5949a5d377629ffd2598747bc771cade1e
 F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
-F src/vdbe.c ff3551cbe96d31ec50e6a0fef654d69c8cd9ab91
+F src/vdbe.c 763ff006f6e5a7c4dd5ba64d4967df5d49d08064
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h eab39bc209b267271bc4afbcf4991d6c229bae9a
 F src/vdbeaux.c 6f2d43643f83656b2555b7ee320397805db11d4c
-F src/where.c 5b149c9851954156679741ea25b058c09f91bbfa
+F src/where.c 1302d728bd338c237e6a8282e4e3eadbbdf11e45
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
 F test/attach2.test d0105f4e8b1debf0ac25ed7df986b5854620e172
@@ -104,7 +104,7 @@ F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
-F test/misc3.test d16aadeed2b1dfd94fd2c5c73c6f650ca7db389c
+F test/misc3.test 01698429c87174fbad2bf35c6d737b4f83264490
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -114,7 +114,7 @@ F test/printf.test 3ed02f1361402c0767492cd5cef4650e61df8308
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
-F test/rowid.test 1936d0d866a8105ab53cf6cb40a549b6664d06ce
+F test/rowid.test 77f7e8c7ca626a15ff91a536595b695cfce7c845
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 2812dd5fc99c959f41b24b0f6b280b67b06fe9d9
-R 7743767b16f5b5e66e4c5fdeadd3f02e
+P a9f25347de6d2bf843a8aebf7935e9c8a1f2319c
+R 8641e6b22bbcab376fe70750a642a5f8
 U drh
-Z d2ade93349c33e5a70eeb1653f73e3b7
+Z 7e6cc2ec80fafcf5309e5e8766ecebcd

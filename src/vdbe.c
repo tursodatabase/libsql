@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.249 2004/01/07 20:37:52 drh Exp $
+** $Id: vdbe.c,v 1.250 2004/01/14 21:59:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1217,27 +1217,38 @@ case OP_AddImm: {
   break;
 }
 
-/* Opcode: IsNumeric P1 P2 *
+/* Opcode: ForceInt P1 P2 *
 **
-** Check the top of the stack to see if it is a numeric value.  A numeric
-** value is an integer, a real number, or a string that looks like an 
-** integer or a real number.  When P1==0, pop the stack and jump to P2
-** if the value is numeric.  Otherwise fall through and leave the stack
-** unchanged.  The sense of the test is inverted when P1==1.
+** Convert the top of the stack into an integer.  If the current top of
+** the stack is not numeric (meaning that is is a NULL or a string that
+** does not look like an integer or floating point number) then pop the
+** stack and jump to P2.  If the top of the stack is numeric then
+** convert it into the least integer that is greater than or equal to its
+** current value if P1==0, or to the least integer that is strictly
+** greater than its current value if P1==1.
 */
-case OP_IsNumeric: {
+case OP_ForceInt: {
   int tos = p->tos;
-  int r;
+  int v;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  r = (aStack[tos].flags & (STK_Int|STK_Real))!=0 
-           || (zStack[tos] && sqliteIsNumber(zStack[tos]));
-  if( pOp->p1 ){
-    r = !r;
-  }
-  if( r ){
+  if( (aStack[tos].flags & (STK_Int|STK_Real))==0
+         && (zStack[tos]==0 || sqliteIsNumber(zStack[tos])==0) ){
     POPSTACK;
     pc = pOp->p2 - 1;
+    break;
   }
+  if( aStack[tos].flags & STK_Int ){
+    v = aStack[tos].i + (pOp->p1!=0);
+  }else{
+    Realify(p, tos);
+    v = (int)aStack[tos].r;
+    if( aStack[tos].r>(double)v ) v++;
+    if( pOp->p1 && aStack[tos].r==(double)v ) v++;
+  }
+  if( aStack[tos].flags & STK_Dyn ) sqliteFree(zStack[tos]);
+  zStack[tos] = 0;
+  aStack[tos].i = v;
+  aStack[tos].flags = STK_Int;
   break;
 }
 

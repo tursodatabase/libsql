@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.9 2003/06/28 16:25:34 drh Exp $
+** $Id: encode.c,v 1.10 2004/01/14 21:59:23 drh Exp $
 */
 #include <string.h>
 
@@ -190,16 +190,18 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
 }
 
 #ifdef ENCODER_TEST
+#include <stdio.h>
 /*
 ** The subroutines above are not tested by the usual test suite.  To test
 ** these routines, compile just this one file with a -DENCODER_TEST=1 option
 ** and run the result.
 */
 int main(int argc, char **argv){
-  int i, j, n, m, nOut;
+  int i, j, n, m, nOut, nByte;
   unsigned char in[30000];
   unsigned char out[33000];
 
+  nByte = 0;
   for(i=0; i<sizeof(in); i++){
     printf("Test %d: ", i+1);
     n = rand() % (i+1);
@@ -213,6 +215,7 @@ int main(int argc, char **argv){
     }else{
       for(j=0; j<n; j++) in[j] = rand() & 0xff;
     }
+    nByte += n;
     nOut = sqlite_encode_binary(in, n, out);
     if( nOut!=strlen(out) ){
       printf(" ERROR return value is %d instead of %d\n", nOut, strlen(out));
@@ -241,5 +244,6 @@ int main(int argc, char **argv){
     }
     printf(" OK\n");
   }
+  fprintf(stderr, "Finished.  Total encoding: %d bytes\n", nByte);
 }
 #endif /* ENCODER_TEST */
