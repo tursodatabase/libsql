@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.8 2004/02/21 19:41:05 drh Exp $
+# $Id: printf.test,v 1.9 2004/06/14 23:46:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,23 +19,23 @@ source $testdir/tester.tcl
 set n 1
 foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
   do_test printf-1.$n.1 [subst {
-    sqlite_mprintf_int {Three integers: %d %x %o} $v $v $v
-  }] [format {Three integers: %d %x %o} $v $v $v]
+    sqlite3_mprintf_int {Three integers: %d %x %o} $v $v $v
+  }] [format {Three integers: %d %lx %lo} $v $v $v]
   do_test printf-1.$n.2 [subst {
-    sqlite_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
-  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v $v]
+    sqlite3_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
+  }] [format {Three integers: (%6d) (%6lx) (%6lo)} $v $v $v]
   do_test printf-1.$n.3 [subst {
-    sqlite_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
-  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v]
+    sqlite3_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
+  }] [format {Three integers: (%-6d) (%-6lx) (%-6lo)} $v $v $v]
   do_test printf-1.$n.4 [subst {
-    sqlite_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
-  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v]
+    sqlite3_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
+  }] [format {Three integers: (%+6d) (%+6lx) (%+6lo)} $v $v $v]
   do_test printf-1.$n.5 [subst {
-    sqlite_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
-  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v $v]
+    sqlite3_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
+  }] [format {Three integers: (%06d) (%06lx) (%06lo)} $v $v $v]
   do_test printf-1.$n.6 [subst {
-    sqlite_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
-  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v]
+    sqlite3_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
+  }] [format {Three integers: (% 6d) (% 6lx) (% 6lo)} $v $v $v]
   incr n
 }
 
@@ -47,19 +47,19 @@ foreach {a b} {1 1 5 5 10 10 10 5} {
   set n 1
   foreach x {0.001 1.0e-20 1.0 0.0 100.0 9.99999 -0.00543 -1.0 -99.99999} {
     do_test printf-2.$m.$n.1 [subst {
-      sqlite_mprintf_double {A double: %*.*f} $a $b $x
+      sqlite3_mprintf_double {A double: %*.*f} $a $b $x
     }] [format {A double: %*.*f} $a $b $x]
     do_test printf-2.$m.$n.2 [subst {
-      sqlite_mprintf_double {A double: %*.*e} $a $b $x
+      sqlite3_mprintf_double {A double: %*.*e} $a $b $x
     }] [format {A double: %*.*e} $a $b $x]
     do_test printf-2.$m.$n.3 [subst {
-      sqlite_mprintf_double {A double: %*.*g} $a $b $x
+      sqlite3_mprintf_double {A double: %*.*g} $a $b $x
     }] [format {A double: %*.*g} $a $b $x]
     do_test printf-2.$m.$n.4 [subst {
-      sqlite_mprintf_double {A double: %d %d %g} $a $b $x
+      sqlite3_mprintf_double {A double: %d %d %g} $a $b $x
     }] [format {A double: %d %d %g} $a $b $x]
     do_test printf-2.$m.$n.5 [subst {
-      sqlite_mprintf_double {A double: %d %d %#g} $a $b $x
+      sqlite3_mprintf_double {A double: %d %d %#g} $a $b $x
     }] [format {A double: %d %d %#g} $a $b $x]
     incr n
   }
@@ -69,58 +69,58 @@ foreach {a b} {1 1 5 5 10 10 10 5} {
 }
 
 do_test printf-3.1 {
-  sqlite_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
+  sqlite3_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
 } [format {A String: (%*.*s)} 10 10 {This is the string}]
 do_test printf-3.2 {
-  sqlite_mprintf_str {A String: (%*.*s)} 10 5 {This is the string}
+  sqlite3_mprintf_str {A String: (%*.*s)} 10 5 {This is the string}
 } [format {A String: (%*.*s)} 10 5 {This is the string}]
 do_test printf-3.3 {
-  sqlite_mprintf_str {A String: (%*.*s)} -10 5 {This is the string}
+  sqlite3_mprintf_str {A String: (%*.*s)} -10 5 {This is the string}
 } [format {A String: (%*.*s)} -10 5 {This is the string}]
 do_test printf-3.4 {
-  sqlite_mprintf_str {%d %d A String: (%s)} 1 2 {This is the string}
+  sqlite3_mprintf_str {%d %d A String: (%s)} 1 2 {This is the string}
 } [format {%d %d A String: (%s)} 1 2 {This is the string}]
 do_test printf-3.5 {
-  sqlite_mprintf_str {%d %d A String: (%30s)} 1 2 {This is the string}
+  sqlite3_mprintf_str {%d %d A String: (%30s)} 1 2 {This is the string}
 } [format {%d %d A String: (%30s)} 1 2 {This is the string}]
 do_test printf-3.6 {
-  sqlite_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
+  sqlite3_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
 } [format {%d %d A String: (%-30s)} 1 2 {This is the string}]
 
 do_test printf-4.1 {
-  sqlite_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
+  sqlite3_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
 } {1 2 A quoted string: 'Hi Y''all'}
 do_test printf-4.2 {
-  sqlite_mprintf_str {%d %d A NULL pointer in %%q: '%q'} 1 2
+  sqlite3_mprintf_str {%d %d A NULL pointer in %%q: '%q'} 1 2
 } {1 2 A NULL pointer in %q: '(NULL)'}
 do_test printf-4.3 {
-  sqlite_mprintf_str {%d %d A quoted string: %Q} 1 2 {Hi Y'all}
+  sqlite3_mprintf_str {%d %d A quoted string: %Q} 1 2 {Hi Y'all}
 } {1 2 A quoted string: 'Hi Y''all'}
 do_test printf-4.4 {
-  sqlite_mprintf_str {%d %d A NULL pointer in %%Q: %Q} 1 2
+  sqlite3_mprintf_str {%d %d A NULL pointer in %%Q: %Q} 1 2
 } {1 2 A NULL pointer in %Q: NULL}
 
 do_test printf-5.1 {
-  set x [sqlite_mprintf_str {%d %d %100000s} 0 0 {Hello}]
+  set x [sqlite3_mprintf_str {%d %d %100000s} 0 0 {Hello}]
   string length $x
 } {994}
 do_test printf-5.2 {
-  sqlite_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
+  sqlite3_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
 } {-9 -10 (HelloHello) %}
 
 do_test printf-6.1 {
-  sqlite_mprintf_z_test , one two three four five six
+  sqlite3_mprintf_z_test , one two three four five six
 } {,one,two,three,four,five,six}
 
 
 do_test printf-7.1 {
-  sqlite_mprintf_scaled {A double: %g} 1.0e307 1.0
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 1.0
 } {A double: 1e+307}
 do_test printf-7.2 {
-  sqlite_mprintf_scaled {A double: %g} 1.0e307 10.0
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 10.0
 } {A double: 1e+308}
 do_test printf-7.3 {
-  sqlite_mprintf_scaled {A double: %g} 1.0e307 100.0
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 100.0
 } {A double: NaN}
 
 finish_test

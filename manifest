@@ -1,5 +1,5 @@
-C Schema\smodifications\sare\scommitted\sinternally\swhen\sa\sstatement\stransaction\nis\scommitted.\s(CVS\s1592)
-D 2004-06-14T13:14:59
+C Update\ssome\sold\stests\sto\suse\sthe\snew\sAPI.\s(CVS\s1593)
+D 2004-06-14T23:46:48
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -138,9 +138,9 @@ F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test b17ce7d4e89ab3618f6903f0ec318a13f855a849
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 1b6792d4af550ca4973096d77fc278dd6c32c4dd
-F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
+F test/printf.test 31ac25b4f85fbc7fb507be34c6c0731adbefcf80
 F test/progress.test 7542a6ac7894a1b7730c1f9a27f3f8b9388a4d25 x
-F test/quick.test 10c5fdbee91ef440d6adefa8e5844796c5764bfb
+F test/quick.test 2d13fadfeca9b14d92813883b77f26dc9955cf2c
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 863e6e75878cccf03d166fe52023f20e09508683
 F test/select1.test 2f161f9cdf9fb577336bc8c930edade538567123
@@ -152,7 +152,7 @@ F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test dbd94673b05054e44ca3f08a80faa1e890ef06d8
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test bbae9f267e947963f8951e72516667ab16c5810c
-F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
+F test/tableapi.test 8651d6d1b043217aa851632b515ab68f185fb430
 F test/tclsqlite.test 2ff5abfd1e133cddcfc61ad5850e3b93f4a7ff40
 F test/temptable.test 3109726251fb4961010eb4d47e5c4df2af6b958d
 F test/tester.tcl fc10520db0d3ce4ef6a8b5ab91bd102fc3f4280a
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 1fa97dd81d349e448171a78f69e463e7fa364daa
-R e2df8a58e6722e61f1dd53384723fd2e
+P 4cfc5a36e9891a9b69209f94194fc492e203ab75
+R 78a27636c3b0e6afcf78533b6487d039
 U danielk1977
-Z 699e2d26d511fd198a645a9fe1c7342b
+Z 913380e0abc39a0407addfbc437c0f2c
