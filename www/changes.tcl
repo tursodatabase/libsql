@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Nov ?? (2.1.4)} {
+<li>Add the ability to put a single .command in the second argument
+    of the sqlite shell</li>
+}
+
 chng {2001 Nov 23 (2.1.3)} {
 <li>Fix the behavior of comparison operators 
     (ex: "<b>&lt</b>", "<b>==</b>", etc.)

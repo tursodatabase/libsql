@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.39 2001/11/24 00:31:46 drh Exp $
+** $Id: shell.c,v 1.40 2001/11/25 13:18:24 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -907,9 +907,16 @@ int main(int argc, char **argv){
   }
   data.out = stdout;
   if( argc==3 ){
-    if( sqlite_exec(db, argv[2], callback, &data, &zErrMsg)!=0 && zErrMsg!=0 ){
-      fprintf(stderr,"SQL error: %s\n", zErrMsg);
-      exit(1);
+    if( argv[2][0]=='.' ){
+      do_meta_command(argv[2], db, &data);
+      exit(0);
+    }else{
+      int rc;
+      rc = sqlite_exec(db, argv[2], callback, &data, &zErrMsg);
+      if( rc!=0 && zErrMsg!=0 ){
+        fprintf(stderr,"SQL error: %s\n", zErrMsg);
+        exit(1);
+      }
     }
   }else{
     extern int isatty();
