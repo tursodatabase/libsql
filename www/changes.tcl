@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Dec 27 (2.7.5)} {
+<li>Fix an uninitialized variable in pager.c which could (with a probability
+    of about 1 in 4 billion) result in a corrupted database.</li>
+}
+
 chng {2002 Dec 17 (2.7.4)} {
 <li>Database files can now grow to be up to 2^41 bytes.  The old limit
     was 2^31 bytes.</li>
