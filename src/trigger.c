@@ -661,7 +661,7 @@ int sqliteCodeRowTrigger(
       int endTrigger;
       SrcList dummyTablist;
       Expr * whenExpr;
-      const char *zSavedAuthContext;
+      AuthContext sContext;
 
       dummyTablist.nSrc = 0;
 
@@ -673,8 +673,7 @@ int sqliteCodeRowTrigger(
       pTriggerStack->pNext = pParse->trigStack;
       pTriggerStack->ignoreJump = ignoreJump;
       pParse->trigStack = pTriggerStack;
-      zSavedAuthContext = pParse->zAuthContext;
-      pParse->zAuthContext = pTrigger->name;
+      sqliteAuthContextPush(pParse, &sContext, pTrigger->name);
 
       /* code the WHEN clause */
       endTrigger = sqliteVdbeMakeLabel(pParse->pVdbe);
@@ -692,7 +691,7 @@ int sqliteCodeRowTrigger(
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = pParse->trigStack->pNext;
-      pParse->zAuthContext = zSavedAuthContext;
+      sqliteAuthContextPop(&sContext);
       sqliteFree(pTriggerStack);
 
       sqliteVdbeResolveLabel(pParse->pVdbe, endTrigger);

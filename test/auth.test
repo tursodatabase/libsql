@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.8 2003/04/22 20:30:40 drh Exp $
+# $Id: auth.test,v 1.9 2003/04/25 17:52:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1714,5 +1714,74 @@ do_test auth-3.2 {
   }
 } {12 112 2 2 {} {} 8 108 8 8 {} {}}
 
+# Make sure the names of views and triggers are passed on on arg4.
+#
+do_test auth-4.1 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    lappend ::authargs $code $arg1 $arg2 $arg3 $arg4
+    return SQLITE_OK
+  }
+  set authargs {}
+  execsql {
+    UPDATE t2 SET a=a+1;
+  }
+  set authargs
+} [list \
+  SQLITE_READ   t2 a  main {} \
+  SQLITE_UPDATE t2 a  main {} \
+  SQLITE_INSERT tx {} main r1 \
+  SQLITE_READ   t2 a  main r1 \
+  SQLITE_READ   t2 a  main r1 \
+  SQLITE_READ   t2 b  main r1 \
+  SQLITE_READ   t2 b  main r1 \
+  SQLITE_READ   t2 c  main r1 \
+  SQLITE_READ   t2 c  main r1]
+do_test auth-4.2 {
+  execsql {
+    CREATE VIEW v1 AS SELECT a+b AS x FROM t2;
+    CREATE TABLE v1chng(x1,x2);
+    CREATE TRIGGER r2 INSTEAD OF UPDATE ON v1 BEGIN
+      INSERT INTO v1chng VALUES(OLD.x,NEW.x);
+    END;
+    SELECT * FROM v1;
+  }
+} {115 117}
+do_test auth-4.3 {
+  set authargs {}
+  execsql {
+    UPDATE v1 SET x=1 WHERE x=117
+  }
+  set authargs
+} [list \
+  SQLITE_UPDATE v1     x  main {} \
+  SQLITE_READ   v1     x  main {} \
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_READ   t2     a  main v1 \
+  SQLITE_READ   t2     b  main v1 \
+  SQLITE_INSERT v1chng {} main r2 \
+  SQLITE_READ   v1     x  main r2 \
+  SQLITE_READ   v1     x  main r2]
+do_test auth-4.4 {
+  execsql {
+    CREATE TRIGGER r3 INSTEAD OF DELETE ON v1 BEGIN
+      INSERT INTO v1chng VALUES(OLD.x,NULL);
+    END;
+    SELECT * FROM v1;
+  }
+} {115 117}
+do_test auth-4.5 {
+  set authargs {}
+  execsql {
+    DELETE FROM v1 WHERE x=117
+  }
+  set authargs
+} [list \
+  SQLITE_DELETE v1     {} main {} \
+  SQLITE_READ   v1     x  main {} \
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_READ   t2     a  main v1 \
+  SQLITE_READ   t2     b  main v1 \
+  SQLITE_INSERT v1chng {} main r3 \
+  SQLITE_READ   v1     x  main r3]
 
 finish_test

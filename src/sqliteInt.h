@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.180 2003/04/24 01:45:04 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.181 2003/04/25 17:52:11 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -219,6 +219,7 @@ typedef struct TriggerStep TriggerStep;
 typedef struct TriggerStack TriggerStack;
 typedef struct FKey FKey;
 typedef struct Db Db;
+typedef struct AuthContext AuthContext;
 
 /*
 ** Each database file to be accessed by the system is an instance
@@ -835,6 +836,15 @@ struct Parse {
 };
 
 /*
+** An instance of the following structure can be declared on a stack and used
+** to save the Parse.zAuthContext value so that it can be restored later.
+*/
+struct AuthContext {
+  const char *zAuthContext;   /* Put saved Parse.zAuthContext here */
+  Parse *pParse;              /* The Parse structure */
+};
+
+/*
  * Each trigger present in the database schema is stored as an instance of
  * struct Trigger. 
  *
@@ -1111,9 +1121,13 @@ void sqliteDeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   void sqliteAuthRead(Parse*,Expr*,SrcList*,int);
   int sqliteAuthCheck(Parse*,int, const char*, const char*, const char*);
+  void sqliteAuthContextPush(Parse*, AuthContext*, const char*);
+  void sqliteAuthContextPop(AuthContext*);
 #else
 # define sqliteAuthRead(a,b,c,d)
 # define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
+# define sqliteAuthContextPush(a,b,c)
+# define sqliteAuthContextPop(a)
 #endif
 void sqliteAttach(Parse*, Token*, Token*);
 void sqliteDetach(Parse*, Token*);

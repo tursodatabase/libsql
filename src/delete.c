@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.54 2003/04/24 01:45:04 drh Exp $
+** $Id: delete.c,v 1.55 2003/04/25 17:52:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,12 +68,14 @@ void sqliteDeleteFrom(
   int base;              /* Index of the first available table cursor */
   sqlite *db;            /* Main database structure */
   int isView;            /* True if attempting to delete from a view */
+  AuthContext sContext;  /* Authorization context */
 
   int row_triggers_exist = 0;  /* True if any triggers exist */
   int before_triggers;         /* True if there are BEFORE triggers */
   int after_triggers;          /* True if there are AFTER triggers */
   int oldIdx = -1;             /* Cursor for the OLD table of AFTER triggers */
 
+  sContext.pParse = 0;
   if( pParse->nErr || sqlite_malloc_failed ){
     pTabList = 0;
     goto delete_from_cleanup;
@@ -125,6 +127,12 @@ void sqliteDeleteFrom(
     if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
       goto delete_from_cleanup;
     }
+  }
+
+  /* Start the view context
+  */
+  if( isView ){
+    sqliteAuthContextPush(pParse, &sContext, pTab->zName);
   }
 
   /* Begin generating code.
@@ -303,6 +311,7 @@ void sqliteDeleteFrom(
   }
 
 delete_from_cleanup:
+  sqliteAuthContextPop(&sContext);
   sqliteSrcListDelete(pTabList);
   sqliteExprDelete(pWhere);
   return;

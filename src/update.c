@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.63 2003/04/24 01:45:05 drh Exp $
+** $Id: update.c,v 1.64 2003/04/25 17:52:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,6 +49,7 @@ void sqliteUpdate(
   Expr *pRecnoExpr;      /* Expression defining the new record number */
   int openAll;           /* True if all indices need to be opened */
   int isView;            /* Trying to update a view */
+  AuthContext sContext;  /* The authorization context */
 
   int before_triggers;         /* True if there are any BEFORE triggers */
   int after_triggers;          /* True if there are any AFTER triggers */
@@ -57,6 +58,7 @@ void sqliteUpdate(
   int newIdx      = -1;  /* index of trigger "new" temp table       */
   int oldIdx      = -1;  /* index of trigger "old" temp table       */
 
+  sContext.pParse = 0;
   if( pParse->nErr || sqlite_malloc_failed ) goto update_cleanup;
   db = pParse->db;
   assert( pTabList->nSrc==1 );
@@ -74,8 +76,10 @@ void sqliteUpdate(
   if( sqliteIsReadOnly(pParse, pTab, before_triggers) ){
     goto update_cleanup;
   }
-  if( isView && sqliteViewGetColumnNames(pParse, pTab) ){
-    goto update_cleanup;
+  if( isView ){
+    if( sqliteViewGetColumnNames(pParse, pTab) ){
+      goto update_cleanup;
+    }
   }
   aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;
@@ -99,20 +103,12 @@ void sqliteUpdate(
     pParse->nTab++;
   }
 
-  /* Resolve the column names in all the expressions in both the
-  ** WHERE clause and in the new values.  Also find the column index
+  /* Resolve the column names in all the expressions of the
+  ** of the UPDATE statement.  Also find the column index
   ** for each column to be updated in the pChanges array.  For each
   ** column to be updated, make sure we have authorization to change
   ** that column.
   */
-  if( pWhere ){
-    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pWhere) ){
-      goto update_cleanup;
-    }
-    if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
-      goto update_cleanup;
-    }
-  }
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
     if( sqliteExprResolveIds(pParse, base, pTabList, 0, pChanges->a[i].pExpr) ){
@@ -185,6 +181,24 @@ void sqliteUpdate(
     }
   }
 
+  /* Resolve the column names in all the expressions in the
+  ** WHERE clause.
+  */
+  if( pWhere ){
+    if( sqliteExprResolveIds(pParse, base, pTabList, 0, pWhere) ){
+      goto update_cleanup;
+    }
+    if( sqliteExprCheck(pParse, pWhere, 0, 0) ){
+      goto update_cleanup;
+    }
+  }
+
+  /* Start the view context
+  */
+  if( isView ){
+    sqliteAuthContextPush(pParse, &sContext, pTab->zName);
+  }
+
   /* Begin generating code.
   */
   v = sqliteGetVdbe(pParse);
@@ -195,7 +209,8 @@ void sqliteUpdate(
   ** a temporary table.
   */
   if( isView ){
-    Select *pView = sqliteSelectDup(pTab->pSelect);
+    Select *pView;
+    pView = sqliteSelectDup(pTab->pSelect);
     sqliteSelect(pParse, pView, SRT_TempTable, base, 0, 0, 0);
     sqliteSelectDelete(pView);
   }
@@ -422,6 +437,7 @@ void sqliteUpdate(
   }
 
 update_cleanup:
+  sqliteAuthContextPop(&sContext);
   sqliteFree(apIdx);
   sqliteFree(aXRef);
   sqliteSrcListDelete(pTabList);

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.7 2003/04/24 01:45:04 drh Exp $
+** $Id: auth.c,v 1.8 2003/04/25 17:52:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -171,6 +171,34 @@ int sqliteAuthCheck(
     sqliteAuthBadReturnCode(pParse, rc);
   }
   return rc;
+}
+
+/*
+** Push an authorization context.  After this routine is called, the
+** zArg3 argument to authorization callbacks will be zContext until
+** popped.  Or if pParse==0, this routine is a no-op.
+*/
+void sqliteAuthContextPush(
+  Parse *pParse,
+  AuthContext *pContext, 
+  const char *zContext
+){
+  pContext->pParse = pParse;
+  if( pParse ){
+    pContext->zAuthContext = pParse->zAuthContext;
+    pParse->zAuthContext = zContext;
+  }
+}
+
+/*
+** Pop an authorization context that was previously pushed
+** by sqliteAuthContextPush
+*/
+void sqliteAuthContextPop(AuthContext *pContext){
+  if( pContext->pParse ){
+    pContext->pParse->zAuthContext = pContext->zAuthContext;
+    pContext->pParse = 0;
+  }
 }
 
 #endif /* SQLITE_OMIT_AUTHORIZATION */
