@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.19 2002/01/04 03:09:30 drh Exp $
+** @(#) $Id: btree.h,v 1.20 2002/02/02 18:49:20 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -28,6 +28,9 @@ int sqliteBtreeSetCacheSize(Btree*, int);
 int sqliteBtreeBeginTrans(Btree*);
 int sqliteBtreeCommit(Btree*);
 int sqliteBtreeRollback(Btree*);
+int sqliteBtreeBeginCkpt(Btree*);
+int sqliteBtreeCommitCkpt(Btree*);
+int sqliteBtreeRollbackCkpt(Btree*);
 
 int sqliteBtreeCreateTable(Btree*, int*);
 int sqliteBtreeCreateIndex(Btree*, int*);

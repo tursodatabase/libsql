@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.70 2002/01/31 15:54:22 drh Exp $
+** $Id: build.c,v 1.71 2002/02/02 18:49:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1338,7 +1338,7 @@ void sqliteCopy(
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;
-    sqliteBeginWriteOperation(pParse);
+    sqliteBeginMultiWriteOperation(pParse);
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
@@ -1493,20 +1493,40 @@ void sqliteRollbackTransaction(Parse *pParse){
 
 /*
 ** Generate VDBE code that prepares for doing an operation that
-** might change the database.  If we are in the middle of a transaction,
-** then this sets a checkpoint.  If we are not in a transaction, then
-** start a transaction.
+** might change the database.  The operation will be atomic in the
+** sense that it will either do its changes completely or not at
+** all.  So there is not need to set a checkpoint is a transaction
+** is already in effect.
 */
 void sqliteBeginWriteOperation(Parse *pParse){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
-  if( pParse->db->flags & SQLITE_InTrans ){
-    /* sqliteVdbeAddOp(v, OP_CheckPoint, 0, 0); */
-  }else{
+  if( (pParse->db->flags & SQLITE_InTrans)==0  ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
     pParse->schemaVerified = 1;
+  }
+}
+
+/*
+** Generate VDBE code that prepares for doing an operation that
+** might change the database.  The operation might not be atomic in
+** the sense that an error may be discovered and the operation might
+** abort after some changes have been made.  If we are in the middle 
+** of a transaction, then this sets a checkpoint.  If we are not in
+** a transaction, then start a transaction.
+*/
+void sqliteBeginMultiWriteOperation(Parse *pParse){
+  Vdbe *v;
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return;
+  if( (pParse->db->flags & SQLITE_InTrans)==0 ){
+    sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
+    sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
+    pParse->schemaVerified = 1;
+  }else{
+    sqliteVdbeAddOp(v, OP_Checkpoint, 0, 0);
   }
 }
 

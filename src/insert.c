@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.39 2002/01/31 15:54:22 drh Exp $
+** $Id: insert.c,v 1.40 2002/02/02 18:49:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -79,7 +79,11 @@ void sqliteInsert(
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
-  sqliteBeginWriteOperation(pParse);
+  if( pSelect ){
+    sqliteBeginMultiWriteOperation(pParse);
+  }else{
+    sqliteBeginWriteOperation(pParse);
+  }
 
   /* Figure out how many columns of data are supplied.  If the data
   ** is coming from a SELECT statement, then this step has to generate

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.10 2001/09/16 00:13:28 drh Exp $
+# $Id: pager.test,v 1.11 2002/02/02 18:49:21 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -243,6 +243,163 @@ do_test pager-3.99 {
   pager_close $::p1
 } {}
 
+# tests of the checkpoint mechanism and api
+#
+do_test pager-4.0 {
+  set v [catch {
+    file delete -force ptf1.db
+    set ::p1 [pager_open ptf1.db 15]
+  } msg]
+  if {$v} {lappend v $msg}
+  set v
+} {0}
+do_test pager-4.1 {
+  set g1 [page_get $::p1 1]
+  page_write $g1 "Page-1 v0"
+  for {set i 2} {$i<=20} {incr i} {
+    set gx [page_get $::p1 $i]
+    page_write $gx "Page-$i v0"
+    page_unref $gx
+  }
+  pager_commit $::p1
+} {}
+for {set i 1} {$i<=20} {incr i} {
+  do_test pager-4.2.$i {
+    set gx [page_get $p1 $i]
+    set v [page_read $gx]
+    page_unref $gx
+    set v
+  } "Page-$i v0"
+}
+do_test pager-4.3 {
+  lrange [pager_stats $::p1] 0 1
+} {ref 1}
+do_test pager-4.4 {
+  lrange [pager_stats $::p1] 8 9
+} {state 1}
+
+for {set i 1} {$i<20} {incr i} {
+  do_test pager-4.5.$i.0 {
+    set res {}
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      set value [page_read $gx]
+      page_unref $gx
+      set shouldbe "Page-$j v[expr {$i-1}]"
+      if {$value!=$shouldbe} {
+        lappend res $value $shouldbe
+      }
+    }
+    set res
+  } {}
+  do_test pager-4.5.$i.1 {
+    page_write $g1 "Page-1 v$i"
+    lrange [pager_stats $p1] 8 9
+  } {state 2}
+  do_test pager-4.5.$i.2 {
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      page_write $gx "Page-$j v$i"
+      page_unref $gx
+      if {$j==$i} {
+        pager_ckpt_begin $p1
+      }
+    }
+  } {}
+  do_test pager-4.5.$i.3 {
+    set res {}
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      set value [page_read $gx]
+      page_unref $gx
+      set shouldbe "Page-$j v$i"
+      if {$value!=$shouldbe} {
+        lappend res $value $shouldbe
+      }
+    }
+    set res
+  } {}
+  do_test pager-4.5.$i.4 {
+    pager_rollback $p1
+    set res {}
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      set value [page_read $gx]
+      page_unref $gx
+      set shouldbe "Page-$j v[expr {$i-1}]"
+      if {$value!=$shouldbe} {
+        lappend res $value $shouldbe
+      }
+    }
+    set res
+  } {}
+  do_test pager-4.5.$i.5 {
+    page_write $g1 "Page-1 v$i"
+    lrange [pager_stats $p1] 8 9
+  } {state 2}
+  do_test pager-4.5.$i.6 {
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      page_write $gx "Page-$j v$i"
+      page_unref $gx
+      if {$j==$i} {
+        pager_ckpt_begin $p1
+      }
+    }
+  } {}
+  do_test pager-4.5.$i.7 {
+    pager_ckpt_rollback $p1
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      set value [page_read $gx]
+      page_unref $gx
+      if {$j<=$i || $i==1} {
+        set shouldbe "Page-$j v$i"
+      } else {
+        set shouldbe "Page-$j v[expr {$i-1}]"
+      }
+      if {$value!=$shouldbe} {
+        lappend res $value $shouldbe
+      }
+    }
+    set res
+  } {}
+  do_test pager-4.5.$i.8 {
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      page_write $gx "Page-$j v$i"
+      page_unref $gx
+      if {$j==$i} {
+        pager_ckpt_begin $p1
+      }
+    }
+  } {}
+  do_test pager-4.5.$i.9 {
+    pager_ckpt_commit $p1
+    for {set j 2} {$j<=20} {incr j} {
+      set gx [page_get $p1 $j]
+      set value [page_read $gx]
+      page_unref $gx
+      set shouldbe "Page-$j v$i"
+      if {$value!=$shouldbe} {
+        lappend res $value $shouldbe
+      }
+    }
+    set res
+  } {}
+  do_test pager-4.5.$i.10 {
+    pager_commit $p1
+    lrange [pager_stats $p1] 8 9
+  } {state 1}
+}
+
+do_test pager-4.99 {
+  pager_close $::p1
+} {}
+
+
+
+  file delete -force ptf1.db
 
 } ;# end if( not mem: and has pager_open command );
 

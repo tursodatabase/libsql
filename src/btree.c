@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.46 2002/01/04 03:09:29 drh Exp $
+** $Id: btree.c,v 1.47 2002/02/02 18:49:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -302,7 +302,8 @@ struct Btree {
   Pager *pPager;        /* The page cache */
   BtCursor *pCursor;    /* A list of all open cursors */
   PageOne *page1;       /* First page of the database */
-  int inTrans;          /* True if a transaction is in progress */
+  u8 inTrans;           /* True if a transaction is in progress */
+  u8 inCkpt;            /* True if there is a checkpoint on the transaction */
   Hash locks;           /* Key: root page number.  Data: lock count */
 };
 typedef Btree Bt;
@@ -691,6 +692,7 @@ static void unlockBtreeIfUnused(Btree *pBt){
     sqlitepager_unref(pBt->page1);
     pBt->page1 = 0;
     pBt->inTrans = 0;
+    pBt->inCkpt = 0;
   }
 }
 
@@ -753,6 +755,7 @@ int sqliteBtreeBeginTrans(Btree *pBt){
   }
   if( rc==SQLITE_OK ){
     pBt->inTrans = 1;
+    pBt->inCkpt = 0;
   }else{
     unlockBtreeIfUnused(pBt);
   }
@@ -770,6 +773,7 @@ int sqliteBtreeCommit(Btree *pBt){
   if( pBt->inTrans==0 ) return SQLITE_ERROR;
   rc = sqlitepager_commit(pBt->pPager);
   pBt->inTrans = 0;
+  pBt->inCkpt = 0;
   unlockBtreeIfUnused(pBt);
   return rc;
 }
@@ -788,6 +792,7 @@ int sqliteBtreeRollback(Btree *pBt){
   BtCursor *pCur;
   if( pBt->inTrans==0 ) return SQLITE_OK;
   pBt->inTrans = 0;
+  pBt->inCkpt = 0;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     if( pCur->pPage ){
       sqlitepager_unref(pCur->pPage);
@@ -796,6 +801,61 @@ int sqliteBtreeRollback(Btree *pBt){
   }
   rc = sqlitepager_rollback(pBt->pPager);
   unlockBtreeIfUnused(pBt);
+  return rc;
+}
+
+/*
+** Set the checkpoint for the current transaction.  The checkpoint serves
+** as a sub-transaction that can be rolled back independently of the
+** main transaction.  You must start a transaction before starting a
+** checkpoint.  The checkpoint is ended automatically if the transaction
+** commits or rolls back.
+**
+** Only one checkpoint may be active at a time.  It is an error to try
+** to start a new checkpoint if another checkpoint is already active.
+*/
+int sqliteBtreeBeginCkpt(Btree *pBt){
+  int rc;
+  if( !pBt->inTrans || pBt->inCkpt ) return SQLITE_ERROR;
+  rc = sqlitepager_ckpt_begin(pBt->pPager);
+  pBt->inCkpt = 1;
+  return rc;
+}
+
+
+/*
+** Commit a checkpoint to transaction currently in progress.  If no
+** checkpoint is active, this is a no-op.
+*/
+int sqliteBtreeCommitCkpt(Btree *pBt){
+  int rc;
+  if( pBt->inCkpt ){
+    rc = sqlitepager_ckpt_commit(pBt->pPager);
+  }else{
+    rc = SQLITE_OK;
+  }
+  return rc;
+}
+
+/*
+** Rollback the checkpoint to the current transaction.  If there
+** is no active checkpoint or transaction, this routine is a no-op.
+**
+** All cursors will be invalided by this operation.  Any attempt
+** to use a cursor that was open at the beginning of this operation
+** will result in an error.
+*/
+int sqliteBtreeRollbackCkpt(Btree *pBt){
+  int rc;
+  BtCursor *pCur;
+  if( pBt->inCkpt==0 ) return SQLITE_OK;
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    if( pCur->pPage ){
+      sqlitepager_unref(pCur->pPage);
+      pCur->pPage = 0;
+    }
+  }
+  rc = sqlitepager_ckpt_rollback(pBt->pPager);
   return rc;
 }
 

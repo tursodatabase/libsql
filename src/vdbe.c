@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.113 2002/01/31 15:54:22 drh Exp $
+** $Id: vdbe.c,v 1.114 2002/02/02 18:49:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -860,35 +860,35 @@ void sqliteVdbeDelete(Vdbe *p){
 ** this array, then copy and paste it into this file, if you want.
 */
 static char *zOpName[] = { 0,
-  "Transaction",       "Commit",            "Rollback",          "ReadCookie",
-  "SetCookie",         "VerifyCookie",      "Open",              "OpenTemp",
-  "OpenWrite",         "OpenAux",           "OpenWrAux",         "Close",
-  "MoveTo",            "NewRecno",          "PutIntKey",         "PutStrKey",
-  "Distinct",          "Found",             "NotFound",          "IsUnique",
-  "NotExists",         "Delete",            "Column",            "KeyAsData",
-  "Recno",             "FullKey",           "Rewind",            "Next",
-  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
-  "Reorganize",        "IdxPut",            "IdxDelete",         "IdxRecno",
-  "IdxGT",             "IdxGE",             "MemLoad",           "MemStore",
-  "ListWrite",         "ListRewind",        "ListRead",          "ListReset",
-  "SortPut",           "SortMakeRec",       "SortMakeKey",       "Sort",
-  "SortNext",          "SortCallback",      "SortReset",         "FileOpen",
-  "FileRead",          "FileColumn",        "AggReset",          "AggFocus",
-  "AggIncr",           "AggNext",           "AggSet",            "AggGet",
-  "SetInsert",         "SetFound",          "SetNotFound",       "MakeRecord",
-  "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
-  "If",                "Halt",              "ColumnCount",       "ColumnName",
-  "Callback",          "NullCallback",      "Integer",           "String",
-  "Pop",               "Dup",               "Pull",              "Push",
-  "MustBeInt",         "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Precision",         "Min",               "Max",
-  "Like",              "Glob",              "Eq",                "Ne",
-  "Lt",                "Le",                "Gt",                "Ge",
-  "IsNull",            "NotNull",           "Negative",          "And",
-  "Or",                "Not",               "Concat",            "Noop",
-  "Strlen",            "Substr",            "Limit",           
+  "Transaction",       "Checkpoint",        "Commit",            "Rollback",
+  "ReadCookie",        "SetCookie",         "VerifyCookie",      "Open",
+  "OpenTemp",          "OpenWrite",         "OpenAux",           "OpenWrAux",
+  "Close",             "MoveTo",            "NewRecno",          "PutIntKey",
+  "PutStrKey",         "Distinct",          "Found",             "NotFound",
+  "IsUnique",          "NotExists",         "Delete",            "Column",
+  "KeyAsData",         "Recno",             "FullKey",           "Rewind",
+  "Next",              "Destroy",           "Clear",             "CreateIndex",
+  "CreateTable",       "Reorganize",        "IdxPut",            "IdxDelete",
+  "IdxRecno",          "IdxGT",             "IdxGE",             "MemLoad",
+  "MemStore",          "ListWrite",         "ListRewind",        "ListRead",
+  "ListReset",         "SortPut",           "SortMakeRec",       "SortMakeKey",
+  "Sort",              "SortNext",          "SortCallback",      "SortReset",
+  "FileOpen",          "FileRead",          "FileColumn",        "AggReset",
+  "AggFocus",          "AggIncr",           "AggNext",           "AggSet",
+  "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
+  "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
+  "Goto",              "If",                "Halt",              "ColumnCount",
+  "ColumnName",        "Callback",          "NullCallback",      "Integer",
+  "String",            "Pop",               "Dup",               "Pull",
+  "Push",              "MustBeInt",         "Add",               "AddImm",
+  "Subtract",          "Multiply",          "Divide",            "Remainder",
+  "BitAnd",            "BitOr",             "BitNot",            "ShiftLeft",
+  "ShiftRight",        "AbsValue",          "Precision",         "Min",
+  "Max",               "Like",              "Glob",              "Eq",
+  "Ne",                "Lt",                "Le",                "Gt",
+  "Ge",                "IsNull",            "NotNull",           "Negative",
+  "And",               "Or",                "Not",               "Concat",
+  "Noop",              "Strlen",            "Substr",            "Limit",
 };
 
 /*
@@ -1072,8 +1072,9 @@ int sqliteVdbeExec(
   sqlite *db = p->db;        /* The database */
   char **zStack;             /* Text stack */
   Stack *aStack;             /* Additional stack information */
-  int rollbackOnError = 1;   /* Do a ROLLBACK if an error is encountered */
-  char zBuf[100];            /* Space to sprintf() an integer */
+  int errorAction = OE_Abort; /* Recovery action to do in case of an error */
+  int undoTransOnError = 0;   /* If error, either ROLLBACK or COMMIT */
+  char zBuf[100];             /* Space to sprintf() an integer */
 
 
   /* No instruction ever pushes more than a single element onto the
@@ -1172,7 +1173,7 @@ case OP_Goto: {
 case OP_Halt: {
   if( pOp->p1!=SQLITE_OK ){
     rc = pOp->p1;
-    rollbackOnError = pOp->p2!=OE_Fail;
+    errorAction = pOp->p2;
     goto abort_due_to_error;
   }else{
     pc = p->nOp-1;
@@ -2319,18 +2320,32 @@ case OP_IncrKey: {
   break;
 }
 
+/* Opcode: Checkpoint * * *
+**
+** Begin a checkpoint.  A checkpoint is the beginning of a operation that
+** is part of a larger transaction but which might need to be rolled back
+** itself without effecting the containing transaction.  A checkpoint will
+** be automatically committed or rollback when the VDBE halts.
+*/
+case OP_Checkpoint: {
+  rc = sqliteBtreeBeginCkpt(pBt);
+  if( rc==SQLITE_OK && db->pBeTemp ){
+     rc = sqliteBtreeBeginCkpt(pBt);
+  }
+  break;
+}
+
 /* Opcode: Transaction * * *
 **
 ** Begin a transaction.  The transaction ends when a Commit or Rollback
-** opcode is encountered or whenever there is an execution error that causes
-** a script to abort.  A transaction is not ended by a Halt.
+** opcode is encountered.  Depending on the ON CONFLICT setting, the
+** transaction might also be rolled back if an error is encountered.
 **
 ** A write lock is obtained on the database file when a transaction is
 ** started.  No other process can read or write the file while the
 ** transaction is underway.  Starting a transaction also creates a
-** rollback journal.
-** A transaction must be started before any changes can be made to the
-** database.
+** rollback journal.  A transaction must be started before any changes
+** can be made to the database.
 */
 case OP_Transaction: {
   int busy = 0;
@@ -2359,6 +2374,7 @@ case OP_Transaction: {
       }
     }
   }while( busy );
+  undoTransOnError = 1;
   break;
 }
 
@@ -4466,14 +4482,39 @@ default: {
 
 cleanup:
   Cleanup(p);
-  if( rc!=SQLITE_OK && rollbackOnError ){
-    closeAllCursors(p);
-    sqliteBtreeRollback(pBt);
-    if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
-    sqliteRollbackInternalChanges(db);
-    db->flags &= ~SQLITE_InTrans;
-    db->onError = OE_Default;
-  }
+  if( rc!=SQLITE_OK ){
+    switch( errorAction ){
+      case OE_Abort: {
+        if( !undoTransOnError ){
+          sqliteBtreeRollbackCkpt(pBt);
+          if( db->pBeTemp ) sqliteBtreeRollbackCkpt(db->pBeTemp);
+          break;
+        }
+        /* Fall through to ROLLBACK */
+      }
+      case OE_Rollback: {
+        sqliteBtreeRollback(pBt);
+        if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
+        sqliteRollbackInternalChanges(db);
+        db->flags &= ~SQLITE_InTrans;
+        db->onError = OE_Default;
+        break;
+      }
+      default: {
+        if( undoTransOnError ){
+          sqliteBtreeCommit(pBt);
+          if( db->pBeTemp ) sqliteBtreeCommit(db->pBeTemp);
+          sqliteCommitInternalChanges(db);
+          db->flags &= ~SQLITE_InTrans;
+          db->onError = OE_Default;
+        }
+        break;
+      }
+    }
+  }else{
+    sqliteBtreeCommitCkpt(pBt);
+    if( db->pBeTemp ) sqliteBtreeCommitCkpt(db->pBeTemp);
+  }   
   return rc;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
