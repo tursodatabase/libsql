@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.388 2004/06/22 22:54:23 drh Exp $
+** $Id: vdbe.c,v 1.389 2004/06/26 08:38:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2300,10 +2300,7 @@ case OP_Transaction: {
   pBt = db->aDb[i].pBt;
 
   if( pBt ){
-    if( db->nMaster<0 ){
-      db->nMaster = strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt))+20;
-    }
-    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, db->nMaster);
+    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
     if( rc==SQLITE_BUSY ){
       p->pc = pc;
       p->rc = SQLITE_BUSY;
@@ -2535,9 +2532,8 @@ case OP_OpenTemp: {
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, TEMP_PAGES, &pCx->pBt);
-
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1, 0);
+    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling

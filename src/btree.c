@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.172 2004/06/22 14:40:11 drh Exp $
+** $Id: btree.c,v 1.173 2004/06/26 08:38:25 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1231,7 +1231,7 @@ static int newDatabase(Btree *pBt){
 ** This is so that appropriate space can be allocated in the journal file
 ** when it is created..
 */
-int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag, int nMaster){
+int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
   int rc = SQLITE_OK;
 
   /* If the btree is already in a write-transaction, or it
@@ -1251,7 +1251,7 @@ int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag, int nMaster){
   }
 
   if( rc==SQLITE_OK && wrflag ){
-    rc = sqlite3pager_begin(pBt->pPage1->aData, nMaster);
+    rc = sqlite3pager_begin(pBt->pPage1->aData);
     if( rc==SQLITE_OK ){
       rc = newDatabase(pBt);
     }

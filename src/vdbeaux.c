@@ -772,7 +772,7 @@ int sqlite3VdbeAggReset(sqlite *db, Agg *pAgg, KeyInfo *pKeyInfo){
       assert( pAgg->nTab==0 );
       rc = sqlite3BtreeFactory(db, ":memory:", 0, TEMP_PAGES, &pAgg->pBtree);
       if( rc!=SQLITE_OK ) return rc;
-      sqlite3BtreeBeginTrans(pAgg->pBtree, 1, 0);
+      sqlite3BtreeBeginTrans(pAgg->pBtree, 1);
       rc = sqlite3BtreeCreateTable(pAgg->pBtree, &pAgg->nTab, 0);
       if( rc!=SQLITE_OK ) return rc;
     }
@@ -986,15 +986,16 @@ static int vdbeCommit(sqlite *db){
     }
   }
 
-  /* The simple case - no more than one database file (not counting the TEMP
-  ** database) has a transaction active.   There is no need for the
+  /* The simple case - no more than one database file (not counting the
+  ** TEMP database) has a transaction active.   There is no need for the
   ** master-journal.
   **
-  ** if db->nMaster==0, it means the main database is :memory:.  In that case
-  ** we do not support atomic multi-file commits, so use the simple case then
+  ** If the return value of sqlite3BtreeGetFilename() is a zero length
+  ** string, it means the main database is :memory:.  In that case we do
+  ** not support atomic multi-file commits, so use the simple case then
   ** too.
   */
-  if( db->nMaster<=0 || nTrans<=1 ){
+  if( 0==strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt)) || nTrans<=1 ){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
@@ -1034,7 +1035,6 @@ static int vdbeCommit(sqlite *db){
     }while( sqlite3OsFileExists(zMaster) );
 
     /* Open the master journal. */
-    assert( strlen(zMaster)<db->nMaster );
     memset(&master, 0, sizeof(master));
     rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){

@@ -1,5 +1,5 @@
-C Remove\sdefault_synchronous\sand\stemp_store\spragmas.\sAllow\sthe\ssafety-level\nand\scache-size\sto\sbe\sset\sfor\sattached\sdatabases.\s(CVS\s1736)
-D 2004-06-26T06:37:07
+C Remove\sthe\s'nMaster'\sargument\sfrom\svarious\spager\sand\sbtree\sfunctions.\s(CVS\s1737)
+D 2004-06-26T08:38:25
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,9 +26,9 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def 26f4e7b0a3fbaa55701e020fdec429f1594e2866
 F src/attach.c b105aeb8c82fbd097c5067dddde90d5f7fadf8dd
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c 0591368af031a0ecc4620140dfdaa177b82885a1
-F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c fc0b51748da8bc9c8266fdb36e57d49393793947
+F src/btree.c d485d1b2f00d9957a58dae15ad718da0a8596267
+F src/btree.h 934d0ad30b5b419e9291a11da878be349df2277e
+F src/build.c ef9fb5bbc951f879145edb6a2278d32565bc77b8
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c e81545e546f6bc87d7508a93a09ca70695265af3
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
@@ -50,8 +50,8 @@ F src/os_unix.c bd62e20d3abfb96c41fe737715b328d1dbb52bf7
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c e3969171742e7d9681977703feed4853f5ee206a
-F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
+F src/pager.c d9f34d9245d4aa0b2073564e3f1d8a0d89f8fedd
+F src/pager.h fe818866f6d1adcffeed88705e8df7e588cbaf13
 F src/parse.y e19e066e726a31d7b2d3e6475bdf55f7e339f8a3
 F src/pragma.c 16713c1bc440ccd9982a27fb4b38e1a1c95ffd29
 F src/printf.c 3090c8ff397d549bc0de09b16d8ab7fd37a0c3f7
@@ -59,12 +59,12 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
-F src/sqliteInt.h ed55c1f149875b6484798381e6933f5f5ad1a4ce
+F src/sqliteInt.h d1911e120fb20ff9ba4cf0115065ac6569268cec
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
 F src/test1.c e4e0ae8af8040c848ef35f92e6a22b2245b9b873
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
-F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
+F src/test3.c bacc42bf41fa04d6faf7dd104b595b8bafb9aec9
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
@@ -72,12 +72,12 @@ F src/trigger.c 296e888ae931e9774e1761996b2b66db40f7d216
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c a8fb39c94ae4ef6606d5216b6f05d9b86f6901b2
 F src/util.c 43d0289d49f43c66847ebbeddfb85a2a0d1ddd2d
-F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
-F src/vdbe.c 0d8f2fea386c173997fb8eab555ab999497591fe
+F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
+F src/vdbe.c 423b55e65501ef2b60d8dedabe8d76d06ea62d99
 F src/vdbe.h 2d87155e31e84bb00cdc48cc1ce6987a3a484250
 F src/vdbeInt.h 22ab717b69074fe7a28f64e35a39bd436ad9d150
 F src/vdbeapi.c d3659f3f2982e79c06ab8e338604a39e0ea0d2d3
-F src/vdbeaux.c f28f7fbc56c013f99957ed89318e5467ea629748
+F src/vdbeaux.c 51f23399819e4c3bcbddf662a90c34465b24392b
 F src/vdbemem.c d37e4033f7350e542f715c061bffe23feb51bc9e
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 212de3ce66f746036cb2267a9f924fd55fa2f37a
-R 609621fb2d8c2cbffc869dbeea94770a
+P 76da457b8fc8fe838226da14c31c315cf914a505
+R 98f9db5e6f42c5a7abb1dd3e9055572f
 U danielk1977
-Z a1f3d16e3f6a21f6f1c6570aa621e99e
+Z 119b2a1a08cb96489bfef6a509f0c0ea

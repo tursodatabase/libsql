@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.143 2004/06/26 01:48:19 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.144 2004/06/26 08:38:25 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -2361,7 +2361,7 @@ static int pager_open_journal(Pager *pPager){
 **
 ** If the database is already reserved for writing, this routine is a no-op.
 */
-int sqlite3pager_begin(void *pData, int dummy_fixme){
+int sqlite3pager_begin(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
@@ -2445,7 +2445,7 @@ int sqlite3pager_write(void *pData){
   ** create it if it does not.
   */
   assert( pPager->state!=PAGER_UNLOCK );
-  rc = sqlite3pager_begin(pData, 0);
+  rc = sqlite3pager_begin(pData);
   if( rc!=SQLITE_OK ){
     return rc;
   }
