@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.13 2003/06/10 02:46:15 drh Exp $
+** $Id: btree_rb.c,v 1.14 2003/06/29 18:29:48 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -1180,21 +1180,6 @@ static char *memRbtreeIntegrityCheck(Rbtree* tree, int* aRoot, int nRoot)
   return msg;
 }
 
-/*
- * Close the supplied Rbtree. Delete everything associated with it.
- */
-static int memRbtreeClose(Rbtree* tree)
-{
-  HashElem *p;
-  while( (p=sqliteHashFirst(&tree->tblHash))!=0 ){
-    tree->eTransState = TRANS_ROLLBACK;
-    memRbtreeDropTable(tree, sqliteHashKeysize(p));
-  }
-  sqliteHashClear(&tree->tblHash);
-  sqliteFree(tree);
-  return SQLITE_OK;
-}
-
 static int memRbtreeSetCacheSize(Rbtree* tree, int sz)
 {
   return SQLITE_OK;
@@ -1235,6 +1220,22 @@ static int memRbtreeCommit(Rbtree* tree){
   tree->pCheckRollback = 0;
   tree->pCheckRollbackTail = 0;
   tree->eTransState = TRANS_NONE;
+  return SQLITE_OK;
+}
+
+/*
+ * Close the supplied Rbtree. Delete everything associated with it.
+ */
+static int memRbtreeClose(Rbtree* tree)
+{
+  HashElem *p;
+  memRbtreeCommit(tree);
+  while( (p=sqliteHashFirst(&tree->tblHash))!=0 ){
+    tree->eTransState = TRANS_ROLLBACK;
+    memRbtreeDropTable(tree, sqliteHashKeysize(p));
+  }
+  sqliteHashClear(&tree->tblHash);
+  sqliteFree(tree);
   return SQLITE_OK;
 }
 
