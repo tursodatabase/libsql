@@ -1,5 +1,5 @@
-C (1)\sModifications\sto\sthe\suser-function\sinterface\sand\s(2)\sInternal\schanges\nto\sautomatically\screated\sindices.\s(CVS\s1575)
-D 2004-06-12T09:25:12
+C Fix\stypo\sin\sthe\slocking\sdocument.\s(CVS\s1576)
+D 2004-06-12T14:11:38
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -211,7 +211,7 @@ F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl 7ed8a5c871ab105f01e5defe1822ec39f70675bb
 F www/index.tcl 64435502af780d7cd813365d443b9b9344662ce4
 F www/lang.tcl fc528581c4a406cabc138e2f17db5ef6f38615ff
-F www/lockingv3.tcl cd2b83e92fcb89a0737ab21d1f783b8de1a7ac46
+F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P dcad244f58453d23f2bcb749dcea077434bbd08c
-R 5693485a98aab5da11e93316c0299999
-U danielk1977
-Z 4d571fd8206bcad58754dc2ba435cca7
+P 5903f53828b5d282b33e27813417e4317c9ecf0b
+R a46c51da808bad8e24d7946d300b2226
+U drh
+Z e597c81eeb6dd60916f877dd834b0e9c

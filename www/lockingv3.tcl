@@ -466,8 +466,8 @@ system bugs that SQLite is unable to defend against.
 </p>
 
 <p>
-If a crash or power failure occurs and results in a hot journal, but that
-journal is deleted.  The next process to open the database will not
+If a crash or power failure occurs and results in a hot journal but that
+journal is deleted, the next process to open the database will not
 know that it contains changes that need to be rolled back.  The rollback
 will not occur and the database will be left in an inconsistent state.
 Rollback journals might be deleted for any number of reasons:
