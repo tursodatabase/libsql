@@ -1,5 +1,5 @@
-C Add\san\sentry\sto\sfaq.tcl\sregarding\sSQLITE_SCHEMA\serrors.\s(CVS\s2277)
-D 2005-01-26T10:39:58
+C An\soptimization\sto\ssqlite3VdbeSerialType().\s(CVS\s2278)
+D 2005-01-26T17:47:03
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -79,7 +79,7 @@ F src/vdbe.c 4fb54fd01cf00b90dfd02f73785adc3f043e89e3
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 24d411de9efc6919a1e580069a597182be269bcf
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
-F src/vdbeaux.c 30cd8af354e3a067a494196e11f6795fc4bc42f9
+F src/vdbeaux.c 82e2c87e6028ce8b7ee5eb2e1787b941c757be10
 F src/vdbemem.c 62fe89471b656a922e9879be005abf690509ead3
 F src/where.c f4127cc2633ee0f74790ab7f09f5af832489e44e
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
@@ -272,7 +272,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 0642d3e3d6636a5f922f75c05252c9c1372d3936
-R ff98b5bb4857d018624b47a08a862aa2
-U danielk1977
-Z 0d80c050a8433757427c9d87cf25f2e2
+P 12defe8cd6a0d7434c8f74b88169155d47299079
+R 10797ec718abc66577c37fb254251e5c
+U drh
+Z 3208deb2a90b07f23b987f55fb0e2b1e
