@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.193 2005/03/14 02:01:50 drh Exp $
+** @(#) $Id: pager.c,v 1.194 2005/03/15 17:09:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2179,6 +2179,26 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 }
 
 /*
+** Return TRUE if there is a hot journal on the given pager.
+** A hot journal is one that needs to be played back.
+**
+** If the current size of the database file is 0 but a journal file
+** exists, that is probably an old journal left over from a prior
+** database with the same name.  Just delete the journal.
+*/
+static int hasHotJournal(Pager *pPager){
+  if( !pPager->useJournal ) return 0;
+  if( !sqlite3OsFileExists(pPager->zJournal) ) return 0;
+  if( sqlite3OsCheckReservedLock(&pPager->fd) ) return 0;
+  if( sqlite3pager_pagecount(pPager)==0 ){
+    sqlite3OsDelete(pPager->zJournal);
+    return 0;
+  }else{
+    return 1;
+  }
+}
+
+/*
 ** Acquire a page.
 **
 ** A read lock on the disk file is obtained when the first page is acquired. 
@@ -2203,7 +2223,7 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 */
 int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   PgHdr *pPg;
-  int rc, n;
+  int rc;
 
   /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
   ** number greater than this, or zero, is requested.
@@ -2234,10 +2254,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
     */
-    if( pPager->useJournal && 
-        sqlite3OsFileExists(pPager->zJournal) &&
-        !sqlite3OsCheckReservedLock(&pPager->fd) 
-    ){
+    if( hasHotJournal(pPager) ){
        int rc;
 
        /* Get an EXCLUSIVE lock on the database file. At this point it is
@@ -2415,13 +2432,12 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     if( pPager->nExtra>0 ){
       memset(PGHDR_TO_EXTRA(pPg, pPager), 0, pPager->nExtra);
     }
-    n = sqlite3pager_pagecount(pPager);
     if( pPager->errMask!=0 ){
       sqlite3pager_unref(PGHDR_TO_DATA(pPg));
       rc = pager_errcode(pPager);
       return rc;
     }
-    if( n<(int)pgno ){
+    if( sqlite3pager_pagecount(pPager)<(int)pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
       int rc;

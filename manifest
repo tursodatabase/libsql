@@ -1,5 +1,5 @@
-C Allow\sthe\sdatabase\sname\sin\sa\sDETACH\sstatement\sto\sbe\squoted.\nTicket\s#1151.\s(CVS\s2386)
-D 2005-03-15T02:04:12
+C When\screating\sa\snew\sdatabase,\sdelete\sany\spreexisting\sjournal\sthat\smight\sbe\nleft\sover\sfrom\sa\sprior\sdatabase\swith\sthe\ssame\sname.\s\sTicket\s#1152.\s(CVS\s2387)
+D 2005-03-15T17:09:30
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -52,7 +52,7 @@ F src/os_unix.c d4823c6b3dd86e8cbb6a8f9d2fd6c4b3e722f8ee
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 2e795b3d85303b03daa1e18727a6aaa215a50980
+F src/pager.c 26a642c1238615bdea53d458ab6a4df7ca070a08
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 0b6135268a7a29db35335d5b71b5a8791e02f91e
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -144,6 +144,7 @@ F test/join.test e08471279574487cac0d17fa1ea66aca15c4de7f
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test cc6cafe85e11aacacd0abcd247a46bed251308f8
+F test/journal1.test ffc86f485293ece87005d00c6da1640554af7e22
 F test/lastinsert.test b6a1db3e1ce2d3f0d6afe99d445084f543b6feaa
 F test/laststmtchanges.test 07cbdabc52407c29e40abc25050f2434f044a6b1
 F test/limit.test 270b076f31c5c32f7187de5727e74da4de43e477
@@ -274,7 +275,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 644c6398e52481e5dda87671e1c196b26b1e4990
-R c7a0fd10b1d2a373374c7ed8ae164835
+P 24e887735256499e58dabe90463524d9e6eb08ce
+R 76fc7bf07ced1da0a2aa6b133619eb70
 U drh
-Z 2ee8d8f83569ed719ed59eea247ccc2d
+Z 568a4e730d583509fc67f9b125ab2918
