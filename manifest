@@ -1,5 +1,5 @@
-C Back\sout\sthe\schanges\sin\sthe\spager\sthat\ssorted\spages\sprior\sto\swriting\sthem\nto\sthe\sdatabase.\s\sAdditional\smeasurements\sshowed\sno\sperformance\sgains.\s(CVS\s785)
-D 2002-11-11T01:04:48
+C Remove\sextra\s</TD>\sfrom\sHTML\soutput.\s\sTicket\s#189.\s(CVS\s786)
+D 2002-11-11T13:56:47
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c ce82596a2eaaf418edba45b2426f41065e49578b
-F src/shell.c 9e9a6eb6bca07f01e6472a603f908a0127ea50ff
+F src/shell.c 53185af128613a2bac79d50128f4c17794f0f992
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
 F src/sqliteInt.h a001c52dfb10ec38f18d6b9ed7dd8b3f42ca8c72
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 263a8ca40f7ff66fbdcb43bf9032391d5b1e68bd
-R 0010d81229c7872c45b3b325790678da
+P 745d66395daf5cb8463305bbc9e4219534d2b7cf
+R 6688f5aa17a60526344422b5bdab31ec
 U drh
-Z a3b8e3b4a8a73490705deeac8230e339
+Z 78f9e30eef4d1ce00b70a5af738709b8
