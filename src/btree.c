@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.66 2002/07/08 02:16:38 drh Exp $
+** $Id: btree.c,v 1.67 2002/07/08 10:59:51 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1509,8 +1509,13 @@ int sqliteBtreeNext(BtCursor *pCur, int *pRes){
 ** SQLITE_OK is returned on success.  Any other return value indicates
 ** an error.  *ppPage and *pPgno are undefined in the event of an error.
 ** Do not invoke sqlitepager_unref() on *ppPage if an error is returned.
+**
+** If the "near" parameter is not 0, then a (feeble) effort is made to 
+** locate a page close to the page number "near".  This can be used in an
+** attempt to keep related pages close to each other in the database file,
+** which in turn can make database access faster.
 */
-static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
+static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno near){
   PageOne *pPage1 = pBt->page1;
   int rc;
   if( pPage1->freeList ){
@@ -1533,8 +1538,23 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno){
       pPage1->freeList = pOvfl->iNext;
       *ppPage = (MemPage*)pOvfl;
     }else{
+      int closest;
+      if( pInfo->nFree>1 && near>0 ){
+        int i, dist;
+        closest = 0;
+        dist = pInfo->aFree[0] - near;
+        if( dist<0 ) dist = -dist;
+        for(i=1; i<pInfo->nFree; i++){
+          int d2 = pInfo->aFree[i] - near;
+          if( d2<0 ) d2 = -d2;
+          if( d2<dist ) closest = i;
+        }
+      }else{
+        closest = 0;
+      }
       pInfo->nFree--;
-      *pPgno = pInfo->aFree[pInfo->nFree];
+      *pPgno = pInfo->aFree[closest];
+      pInfo->aFree[closest] = pInfo->aFree[pInfo->nFree];
       rc = sqlitepager_get(pBt->pPager, *pPgno, (void**)ppPage);
       sqlitepager_unref(pOvfl);
       if( rc==SQLITE_OK ){
@@ -1660,6 +1680,7 @@ static int fillInCell(
   int nPayload;
   const char *pPayload;
   char *pSpace;
+  Pgno near = 0;
 
   pCell->h.leftChild = 0;
   pCell->h.nKey = nKey & 0xffff;
@@ -1677,9 +1698,11 @@ static int fillInCell(
   pPrior = 0;
   while( nPayload>0 ){
     if( spaceLeft==0 ){
-      rc = allocatePage(pBt, (MemPage**)&pOvfl, pNext);
+      rc = allocatePage(pBt, (MemPage**)&pOvfl, pNext, near);
       if( rc ){
         *pNext = 0;
+      }else{
+        near = *pNext;
       }
       if( pPrior ) sqlitepager_unref(pPrior);
       if( rc ){
@@ -1986,7 +2009,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     */
     rc = sqlitepager_write(pPage);
     if( rc ) return rc;
-    rc = allocatePage(pBt, &pChild, &pgnoChild);
+    rc = allocatePage(pBt, &pChild, &pgnoChild, sqlitepager_pagenumber(pPage));
     if( rc ) return rc;
     assert( sqlitepager_iswriteable(pChild) );
     copyPage(pChild, pPage);
@@ -2171,7 +2194,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
       apOld[i] = 0;
       sqlitepager_write(apNew[i]);
     }else{
-      rc = allocatePage(pBt, &apNew[i], &pgnoNew[i]);
+      rc = allocatePage(pBt, &apNew[i], &pgnoNew[i], pgnoNew[i-1]);
       if( rc ) goto balance_cleanup;
     }
     nNew++;
@@ -2455,7 +2478,7 @@ int sqliteBtreeCreateTable(Btree *pBt, int *piTable){
   if( pBt->readOnly ){
     return SQLITE_READONLY;
   }
-  rc = allocatePage(pBt, &pRoot, &pgnoRoot);
+  rc = allocatePage(pBt, &pRoot, &pgnoRoot, 0);
   if( rc ) return rc;
   assert( sqlitepager_iswriteable(pRoot) );
   zeroPage(pRoot);
