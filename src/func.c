@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.34 2003/12/23 02:17:35 drh Exp $
+** $Id: func.c,v 1.35 2004/01/02 13:17:49 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -122,13 +122,11 @@ static void substrFunc(sqlite_func *context, int argc, const char **argv){
     p2 = len-p1;
   }
 #ifdef SQLITE_UTF8
-  for(i=0; i<p1; i++){
-    assert( z[i] );
+  for(i=0; i<p1 && z[i]; i++){
     if( (z[i]&0xc0)==0x80 ) p1++;
   }
   while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p1++; }
-  for(; i<p1+p2; i++){
-    assert( z[i] );
+  for(; i<p1+p2 && z[i]; i++){
     if( (z[i]&0xc0)==0x80 ) p2++;
   }
   while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
