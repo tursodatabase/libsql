@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.1 2000/05/29 14:26:02 drh Exp $
+** $Id: where.c,v 1.2 2000/05/30 03:28:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -367,12 +367,12 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_SLASH:    op = OP_Divide;   break;
     case TK_AND:      op = OP_And;      break;
     case TK_OR:       op = OP_Or;       break;
-    case TK_LT:       op = OP_Lt;       break;
-    case TK_LE:       op = OP_Le;       break;
-    case TK_GT:       op = OP_Gt;       break;
-    case TK_GE:       op = OP_Ge;       break;
-    case TK_NE:       op = OP_Ne;       break;
-    case TK_EQ:       op = OP_Eq;       break;
+    case TK_LT:       op = OP_Ge;       break;
+    case TK_LE:       op = OP_Gt;       break;
+    case TK_GT:       op = OP_Le;       break;
+    case TK_GE:       op = OP_Lt;       break;
+    case TK_NE:       op = OP_Eq;       break;
+    case TK_EQ:       op = OP_Ne;       break;
     case TK_ISNULL:   op = OP_IsNull;   break;
     case TK_NOTNULL:  op = OP_NotNull;  break;
     case TK_NOT:      op = OP_Not;      break;

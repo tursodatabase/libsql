@@ -1,0 +1,67 @@
+# Copyright (c) 1999, 2000 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing expressions.
+#
+# $Id: expr.test,v 1.1 2000/05/30 03:28:36 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table to work with.
+#
+execsql {CREATE TABLE test1(i1 int, i2 int, r1 real, r2 real, t1 text, t2 text)}
+execsql {INSERT INTO test1 VALUES(1,2,1.1,2.2,'hello','world')}
+proc test_expr {name settings expr result} {
+  do_test $name [format {
+    execsql {UPDATE test1 SET %s}
+    execsql {SELECT %s FROM test1}
+  } $settings $expr] $result
+}
+
+test_expr expr-1.1 {i1=10, i2=20} {i1+i2} 30
+test_expr expr-1.2 {i1=10, i2=20} {i1-i2} -10
+test_expr expr-1.3 {i1=10, i2=20} {i1*i2} 200
+test_expr expr-1.4 {i1=10, i2=20} {i1/i2} 0.5
+test_expr expr-1.5 {i1=10, i2=20} {i2/i1} 2
+test_expr expr-1.6 {i1=10, i2=20} {i2<i1} 0
+test_expr expr-1.7 {i1=10, i2=20} {i2<=i1} 0
+test_expr expr-1.8 {i1=10, i2=20} {i2>i1} 1
+test_expr expr-1.9 {i1=10, i2=20} {i2>=i1} 1
+test_expr expr-1.10 {i1=10, i2=20} {i2!=i1} 1
+test_expr expr-1.11 {i1=10, i2=20} {i2=i1} 0
+test_expr expr-1.12 {i1=10, i2=20} {i2<>i1} 1
+test_expr expr-1.13 {i1=10, i2=20} {i2==i1} 0
+test_expr expr-1.14 {i1=20, i2=20} {i2<i1} 0
+test_expr expr-1.15 {i1=20, i2=20} {i2<=i1} 1
+test_expr expr-1.16 {i1=20, i2=20} {i2>i1} 0
+test_expr expr-1.17 {i1=20, i2=20} {i2>=i1} 1
+test_expr expr-1.18 {i1=20, i2=20} {i2!=i1} 0
+test_expr expr-1.19 {i1=20, i2=20} {i2=i1} 1
+test_expr expr-1.20 {i1=20, i2=20} {i2<>i1} 0
+test_expr expr-1.21 {i1=20, i2=20} {i2==i1} 1
+test_expr expr-1.22 {i1=1, i2=2, r1=3.0} {i1+i2*r1} {7}
+test_expr expr-1.23 {i1=1, i2=2, r1=3.0} {(i1+i2)*r1} {9}
+
+
+finish_test

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s12)
-D 2000-05-30T03:12:21
+C :-)\s(CVS\s13)
+D 2000-05-30T03:28:36
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 89921c1ee4de75275bfadfbac198396da31704d1
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -19,9 +19,10 @@ F src/tokenize.c ab578d90ec6ab117b7ade6e6cfbcb5b0f9cad500
 F src/util.c 321c136fc1a4d5821bad0f990c6374ef0785a118
 F src/vdbe.c 80132b6bb9a744d1990a1c16666d54baaff2dbc3
 F src/vdbe.h e721ad308f2e6ca805cebc4dd0a196ce4419d030
-F src/where.c 67ffea57920e16b33c580e9a9b9855b3ec9dea7b
+F src/where.c be3973952e9bb5d2bb0bc5523b03f5d1f9e9d6f9
 F test/all.test 66a8a5b8291a472157944edcdce51a320ebd1f35
 F test/delete.test 814d53e3b0d2d7069fb17e005d4041454d6585d4
+F test/expr.test 11e00880d2de0f60ff1ba7fdd4e09a0d72a01910
 F test/index.test 8d4f26901a5582daa353fe3c8266cbf4a53af830
 F test/insert.test 161bc67a4189738c559e3569323ceae31f4d49d6
 F test/table.test b1afc2f6d4989f9ce911acbf711ac5d7ae521eb7
@@ -36,7 +37,7 @@ F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/index.tcl 2466d1b2e26c6f354b0acedee12025309a216799
 F www/sqlite.tcl 947e067bcc347dc767af4c1a6e5a8d47d8404aa3
-P 9818723ee127bc535e79f6876546cc027b4999e6
-R 1a430f86cc22b988f5aa7dc8de33740d
+P 20f2811fc19f937ed03bdb0e9d87a40c75452b17
+R a5c212fd65bac2f4b07651714ab486bf
 U drh
-Z 3a408137acde4ba4c4136a81536a81e2
+Z 182f1f474f82d5f20dd5789e51b5d83f
