@@ -1,5 +1,5 @@
-C fix\sa\smemory\sleadk\s(CVS\s1708)
-D 2000-10-19T14:18:34
+C add\sthe\ssqlite_test_prefixes\scontrol\sfile\s(CVS\s159)
+D 2000-10-19T14:21:43
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -31,7 +31,7 @@ F src/util.c 811e0ad47f842c16555aaf361b26dab7221c1a6c
 F src/vdbe.c a876c75429903acb9167b741b0513ef0198f6001
 F src/vdbe.h 140cdec3c56f70483e169f8ae657bd90f9fd6e98
 F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
-F test/all.test 4d7a1652fb65cabc6660fedd0ddb138ea78da624
+F test/all.test 71d439d4d8d5bb68ca73344ce6d2b1ebb35ab7dd
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
 F test/dbbe.test bd2cd9fe84c6d69b6ae42ac5f55b1e940bdca886
 F test/delete.test 402ee3ccb6e544582d24c573ef70b34d09583ae7
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P e9236833d95060509bdcba008d0e15e61fd7b6d7
-R 795207d02db45c216afe2f2c20fb6839
+P 948f5a749fdc7f40f8a8e5a4e5be8139f9e4c66d
+R e79bb9b290cec447f3f3f47b8c2dfcaa
 U drh
-Z efd68c6765770679a998f7c5283947e0
+Z c6b0e812334b90035c7213ccc2b20570

@@ -22,7 +22,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.3 2000/10/19 14:10:09 drh Exp $
+# $Id: all.test,v 1.4 2000/10/19 14:21:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,16 +35,19 @@ if {[file exists ./sqlite_test_count]} {
   set COUNT 1
 }
 
+if {[file exists ./sqlite_test_prefixes]} {
+  set PREFIXES [exec cat ./sqlite_test_prefixes]
+} else {
+  set PREFIXES {memory: gdbm:}
+}
+
 for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
-  set dbprefix memory:
-  foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
-    if {[file tail $testfile]=="all.test"} continue
-    source $testfile
-  }
-  set dbprefix gdbm:
-  foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
-    if {[file tail $testfile]=="all.test"} continue
-    source $testfile
+  foreach p $PREFIXES {
+    set dbprefix $p
+    foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+      if {[file tail $testfile]=="all.test"} continue
+      source $testfile
+    }
   }
 }
 
