@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.5 2003/07/27 17:16:08 drh Exp $
+# $Id: misc2.test,v 1.6 2003/07/30 12:34:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,3 +98,19 @@ do_test misc2-4.6 {
     SELECT a FROM t1 WHERE a<1000000000000 ORDER BY 1;
   }
 } {1 2147483647 2147483648 4000000000}
+
+# There were some issues with expanding a SrcList object using a call
+# to sqliteSrcListAppend() if the SrcList had previously been duplicated
+# using a call to sqliteSrcListDup().  Ticket #416.  The following test
+# makes sure the problem has been fixed.
+#
+do_test misc2-5.1 {
+  execsql {
+    CREATE TABLE x(a,b);
+    CREATE VIEW y AS 
+      SELECT x1.b AS p, x2.b AS q FROM x AS x1, x AS x2 WHERE x1.a=x2.a;
+    CREATE VIEW z AS
+      SELECT y1.p, y2.p FROM y AS y1, y AS y2 WHERE y1.q=y2.q;
+    SELECT * from z;
+  }
+} {}

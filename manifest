@@ -1,5 +1,5 @@
-C When\screating\sa\snew\sjournal\sfile,\sopen\sa\s(read-only)\sfile\sdescriptor\son\sthe\ndirectory\scontaining\sthe\sjournal\sand\ssync\sthat\sdirectory\sonce\sto\smake\ssure\nthat\sthe\sjournal\sfilename\sentry\sgets\sinto\sthe\sdirectory.\s\sTicket\s#410.\s(CVS\s1066)
-D 2003-07-27T18:59:43
+C The\s{quote:\sSrcList}\sobject\swas\snot\sbeing\sexpanded\scorrectly\sby\sa\scall\sto\r\nsqliteSrcListAppend()\sif\sthe\s{quote:\sSrcList}\shad\spreviously\sbeen\sduplicated\sby\r\na\scall\sto\ssqliteSrcListDup().\s\sTicket\s#416.\sThis\scheck-in\sfixes\sthat\sproblem\r\nby\skeeping\sa\sseparate\snAlloc\sfield\son\s{quote:\sSrcList}.\s\sA\ssimilar\schange\sis\smade\r\nto\s{quote:\sIdList}\sand\s{quote:\sExprList}\sto\savoid\sfuture\sproblems.\s(CVS\s1067)
+D 2003-07-30T12:34:12
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,11 +24,11 @@ F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c ba1cc0c71c3d2742b9a9047832335dc7d3656c45
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c f30f5cddc4375c05bf361116da1492d9601760ca
-F src/build.c 13b6ae48ce71a0f59368f548dba2a662375aeaf6
+F src/build.c 335a4db960a3305e16c64d67726dd534386df7c3
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
-F src/expr.c 3c07e7b5374649c4921b4ff1287f57d513876c3f
+F src/expr.c 03c321ac66c1e998c2e0faf22184b5a808b559ca
 F src/func.c 6b23578d48a8be98a664db145a635c2fa9ddb57b
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -47,7 +47,7 @@ F src/select.c 2fa83d6c972d3e3f379faee32e3621411490dedb
 F src/shell.c c2ba26c850874964f5ec1ebf6c43406f28e44c4a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in dafa83571810b6932f089b589c783355ef7a54b5
-F src/sqliteInt.h e3c756e5aa7bcbf7fbcd20e6aef640c9359c23f2
+F src/sqliteInt.h a57cafea9ef34e73e4504ada4bc70417def67f1e
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c d6860dcd56348b9521726280b72c412d2a33ae97
 F src/test1.c b12b585bfb4763df3262975ed8d3f4f274b5eaed
@@ -57,7 +57,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 2ba93fe10d5f57f0cc20b07417c3244a30c324b3
 F src/trigger.c 6ff205aaac4869e402d9902e528e1d22a85de14c
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
-F src/util.c 566c7780170dd11fb1ad5de3ba81f0dfea7cccf0
+F src/util.c 9ab0f573d31ad8c3cf1fcb6bef7a6299e09463fa
 F src/vacuum.c 0820984615786c9ccdaad8032a792309b354a8eb
 F src/vdbe.c 779fa3b15148161282a71241ff9733a54a8b0648
 F src/vdbe.h d853ed6cc4727fa9e8ace6187c55afcf817041dd
@@ -97,7 +97,7 @@ F test/memdb.test cd4580f466f34c42354612a375c5adb90447e4c4
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test c7dc2f2bd702d8283e885a64ec0714be26cfb051
-F test/misc2.test d8a0b59399a53fd27e74a8fac2a22d5271b9bded
+F test/misc2.test 6400032fe041360f717f501930585498853d79ae
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 8c163fc0c7c721b7a5fa6727b0e90bff4484c782
-R 8fa888001788f8c7b2a2f5a0b6144c1c
+P 09c10fe3c99cffc64ed02c2929f206d99c8e3309
+R d2bc63b0694faef8c02f9403066fd889
 U drh
-Z 5beb2c4636d8c2b6025132999d440be1
+Z 6699c88f8cb611bb62eca292eb62c177
