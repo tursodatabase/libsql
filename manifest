@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#134:\sChange\sthe\slemon.c\ssources\sto\swork\saround\sa\sproblem\swith\nthe\sAIX\sC\scompiler.\s(CVS\s715)
-D 2002-08-14T23:18:57
+C Fixes\sand\stest\simprovements\sresulting\sfrom\scode\scoverage\stesting.\s(CVS\s716)
+D 2002-08-15T01:26:09
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,7 +20,7 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/btree.c 16d1712321e91e77562ffc673ed97b0b1a791db4
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
-F src/build.c 0d661e653e02ce8037917c35403d9f0ff4418e6e
+F src/build.c 35d7ec1e3d377b19a9af38617b50600f63ce1015
 F src/delete.c c9f59ee217e062eb9de7b64b76b5cfff42b2f028
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 8a6b669ba5d6cd2810e8671f918ddb0fac3dd1b1
@@ -52,7 +52,7 @@ F src/tokenize.c b5500e193a82b5b9888fbf947efd90d3b4858178
 F src/trigger.c d88ab4d68d68955c217b38fb6717e090fbbf54a4
 F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c bdbf0aedcec21ede2248126bbbe734bcc070b7c8
-F src/vdbe.c aad57e622827dc864529f1609a8e94240d4ed92a
+F src/vdbe.c 5b3bb8ac3bb8dd777abd9fae64a293bfdcc13c54
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
 F src/where.c 68ac5d2066da7a9a1aac98ecaebe6187d85137ed
 F test/all.test 9a6eb262393f74cb7fb09b17156491a34b941fe3
@@ -63,13 +63,13 @@ F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 4518cc3c1c40c4ba74220d9ee814257ae7d09c47
 F test/copy.test 55d60a4d5ed342a0fa08b7cd07d46d43ea0d0d7f
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
-F test/expr.test 565feb81bd39f703d4f9f9fa3534f05fae5094fe
+F test/expr.test dea1cd62684a8bf116426447c948f5e8fb2c84b6
 F test/func.test bed7ae7a3482df05db0f5eed2debdf25ac2d07fc
 F test/in.test e59461f1702b7387880bf08a0ce6bb777925d282
 F test/index.test 2a5a1b654f50ca0768fb10ae44b72e6a776b1f18
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
-F test/intpkey.test 69a6a9b41e541f27a2ffcd20264fb35adc3c2680
+F test/intpkey.test f3620158fd7963af1306b01047277f10ae91a30b
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/join.test 90a620f2a2d015e5139d5a4cde0eeb4cf62523bf
 F test/limit.test dd932f7572fe78e82ef621ef62f0cc480c7e541e
@@ -145,7 +145,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2127de3f03537ef2f18120e773f7603e0984ff81
-R 7b9d14f25b49a3a4845ff8b962285057
+P 07f6020bb56d6d1bffdd936017f61cfae5bd134b
+R 9cedd757d76753c6b434284c8a29f442
 U drh
-Z c3b9f5c917c9c33ab25ee4f00b0cc805
+Z 60f9f150ddc50216dbbd17469130080e

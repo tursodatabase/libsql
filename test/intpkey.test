@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.10 2002/06/19 20:32:45 drh Exp $
+# $Id: intpkey.test,v 1.11 2002/08/15 01:26:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -461,5 +461,19 @@ do_test intpkey-10.3 {
     SELECT * FROM t2;
   }
 } {1 1 2 2 2 3 3 2 1 4 3 2}
+
+# This tests checks to see if a floating point number can be used
+# to reference an integer primary key.
+#
+do_test intpkey-11.1 {
+  execsql {
+    SELECT b FROM t1 WHERE a=2.0+3.0;
+  }
+} {hello}
+do_test intpkey-11.1 {
+  execsql {
+    SELECT b FROM t1 WHERE a=2.0+3.5;
+  }
+} {}
 
 finish_test

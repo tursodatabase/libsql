@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.107 2002/08/02 10:36:09 drh Exp $
+** $Id: build.c,v 1.108 2002/08/15 01:26:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -461,35 +461,37 @@ void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   }
   z[j] = 0;
   pCol->sortOrder = SQLITE_SO_NUM;
-  for(i=0; z[i]; i++){
-    switch( z[i] ){
-      case 'b':
-      case 'B': {
-        if( sqliteStrNICmp(&z[i],"blob",4)==0 ){
-          pCol->sortOrder = SQLITE_SO_TEXT;
-          return;
+  if( pParse->db->file_format>=4 ){
+    for(i=0; z[i]; i++){
+      switch( z[i] ){
+        case 'b':
+        case 'B': {
+          if( sqliteStrNICmp(&z[i],"blob",4)==0 ){
+            pCol->sortOrder = SQLITE_SO_TEXT;
+            return;
+          }
+          break;
         }
-        break;
-      }
-      case 'c':
-      case 'C': {
-        if( sqliteStrNICmp(&z[i],"char",4)==0 ||
-                sqliteStrNICmp(&z[i],"clob",4)==0 ){
-          pCol->sortOrder = SQLITE_SO_TEXT;
-          return;
+        case 'c':
+        case 'C': {
+          if( sqliteStrNICmp(&z[i],"char",4)==0 ||
+                  sqliteStrNICmp(&z[i],"clob",4)==0 ){
+            pCol->sortOrder = SQLITE_SO_TEXT;
+            return;
+          }
+          break;
         }
-        break;
-      }
-      case 'x':
-      case 'X': {
-        if( i>=2 && sqliteStrNICmp(&z[i-2],"text",4)==0 ){
-          pCol->sortOrder = SQLITE_SO_TEXT;
-          return;
+        case 'x':
+        case 'X': {
+          if( i>=2 && sqliteStrNICmp(&z[i-2],"text",4)==0 ){
+            pCol->sortOrder = SQLITE_SO_TEXT;
+            return;
+          }
+          break;
         }
-        break;
-      }
-      default: {
-        break;
+        default: {
+          break;
+        }
       }
     }
   }

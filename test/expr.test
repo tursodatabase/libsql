@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.26 2002/08/13 23:02:58 drh Exp $
+# $Id: expr.test,v 1.27 2002/08/15 01:26:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,7 +122,10 @@ test_expr expr-1.94 {i1=NULL, i2=8} {2 between i1 and i2} {{}}
 test_expr expr-1.95 {i1=NULL, i2=8} {2 not between i1 and i2} {{}}
 test_expr expr-1.94 {i1=NULL, i2=8} {55 between i1 and i2} 0
 test_expr expr-1.95 {i1=NULL, i2=8} {55 not between i1 and i2} 1
-
+test_expr expr-1.96 {i1=NULL, i2=3} {coalesce(i1<<i2,99)} 99
+test_expr expr-1.97 {i1=32, i2=NULL} {coalesce(i1>>i2,99)} 99
+test_expr expr-1.98 {i1=NULL, i2=NULL} {coalesce(i1|i2,99)} 99
+test_expr expr-1.99 {i1=32, i2=NULL} {coalesce(i1&i2,99)} 99
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
@@ -184,6 +187,19 @@ test_expr expr-3.29 {t1='xyz', t2='abc'} {t1||t2} {xyzabc}
 test_expr expr-3.30 {t1=NULL, t2='abc'} {t1||t2} {{}}
 test_expr expr-3.31 {t1='xyz', t2=NULL} {t1||t2} {{}}
 test_expr expr-3.32 {t1='xyz', t2='abc'} {t1||' hi '||t2} {{xyz hi abc}}
+test_expr epxr-3.33 {t1='abc', t2=NULL} {coalesce(t1<t2,99)} 99
+test_expr epxr-3.34 {t1='abc', t2=NULL} {coalesce(t2<t1,99)} 99
+test_expr epxr-3.35 {t1='abc', t2=NULL} {coalesce(t1>t2,99)} 99
+test_expr epxr-3.36 {t1='abc', t2=NULL} {coalesce(t2>t1,99)} 99
+test_expr epxr-3.37 {t1='abc', t2=NULL} {coalesce(t1<=t2,99)} 99
+test_expr epxr-3.38 {t1='abc', t2=NULL} {coalesce(t2<=t1,99)} 99
+test_expr epxr-3.39 {t1='abc', t2=NULL} {coalesce(t1>=t2,99)} 99
+test_expr epxr-3.40 {t1='abc', t2=NULL} {coalesce(t2>=t1,99)} 99
+test_expr epxr-3.41 {t1='abc', t2=NULL} {coalesce(t1==t2,99)} 99
+test_expr epxr-3.42 {t1='abc', t2=NULL} {coalesce(t2==t1,99)} 99
+test_expr epxr-3.43 {t1='abc', t2=NULL} {coalesce(t1!=t2,99)} 99
+test_expr epxr-3.44 {t1='abc', t2=NULL} {coalesce(t2!=t1,99)} 99
+
 
 test_expr expr-4.1 {t1='abc', t2='Abc'} {t1<t2} 0
 test_expr expr-4.2 {t1='abc', t2='Abc'} {t1>t2} 1
@@ -439,6 +455,10 @@ test_expr2 expr-7.39 {a<2 OR (b=0 AND a<0)} {1}
 test_expr2 expr-7.40 {((a<2 OR a IS NULL) AND b<3) OR b>1e10} {{} 1}
 test_expr2 expr-7.41 {a BETWEEN -1 AND 1} {1}
 test_expr2 expr-7.42 {a NOT BETWEEN 2 AND 100} {1}
+test_expr2 expr-7.43 {(b+1234)||'this is a string that is at least 32 characters long' BETWEEN 1 AND 2} {}
+test_expr2 expr-7.44 {123||'xabcdefghijklmnopqrstuvwyxz01234567890'||a BETWEEN '123a' AND '123b'} {}
+test_expr2 expr-7.45 {((123||'xabcdefghijklmnopqrstuvwyxz01234567890'||a) BETWEEN '123a' AND '123b')<0} {}
+test_expr2 expr-7.46 {((123||'xabcdefghijklmnopqrstuvwyxz01234567890'||a) BETWEEN '123a' AND '123z')>0} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
 
 test_expr2 expr-7.50 {((a between 1 and 2 OR 0) AND 1) OR 0} {1 2}
 test_expr2 expr-7.51 {((a not between 3 and 100 OR 0) AND 1) OR 0} {1 2}
@@ -450,6 +470,6 @@ test_expr2 expr-7.56 {((a not in (3,4,5,6,7,8,9,10) IS NULL OR 0) AND 1) OR 0} \
    {{}}
 test_expr2 expr-7.57 {((a>0 IS NULL OR 0) AND 1) OR 0} {{}}
 
-
+test_expr2 expr-7.58  {(a||'')<='1'}                  {1}
 
 finish_test
