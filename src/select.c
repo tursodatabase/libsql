@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.207 2004/09/06 17:24:13 drh Exp $
+** $Id: select.c,v 1.208 2004/09/08 15:09:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -121,7 +121,7 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     if( pB==0 ){ pB = &dummy; zSp1 = 0; }
     if( pC==0 ){ pC = &dummy; zSp2 = 0; }
     sqlite3SetNString(&pParse->zErrMsg, "unknown or unsupported join type: ", 0,
-       pA->z, pA->n, zSp1, 1, pB->z, pB->n, zSp2, 1, pC->z, pC->n, 0);
+       pA->z, pA->n, zSp1, 1, pB->z, pB->n, zSp2, 1, pC->z, pC->n, (char*)0);
     pParse->nErr++;
     jointype = JT_INNER;
   }else if( jointype & JT_RIGHT ){

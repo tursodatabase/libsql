@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.64 2004/09/06 17:24:13 drh Exp $
+** $Id: pragma.c,v 1.65 2004/09/08 15:09:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -208,7 +208,7 @@ void sqlite3Pragma(
   if( !zLeft ) return;
   if( minusFlag ){
     zRight = 0;
-    sqlite3SetNString(&zRight, "-", 1, pValue->z, pValue->n, 0);
+    sqlite3SetNString(&zRight, "-", 1, pValue->z, pValue->n, (char*)0);
   }else{
     zRight = sqlite3NameFromToken(pValue);
   }

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.251 2004/09/06 17:24:12 drh Exp $
+** $Id: build.c,v 1.252 2004/09/08 15:09:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -785,7 +785,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
   pCol = &p->aCol[i];
   pz = &pCol->zType;
   n = pLast->n + Addr(pLast->z) - Addr(pFirst->z);
-  sqlite3SetNString(pz, pFirst->z, n, 0);
+  sqlite3SetNString(pz, pFirst->z, n, (char*)0);
   z = *pz;
   if( z==0 ) return;
   for(i=j=0; z[i]; i++){
@@ -814,9 +814,9 @@ void sqlite3AddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
   if( i<0 ) return;
   pz = &p->aCol[i].zDflt;
   if( minusFlag ){
-    sqlite3SetNString(pz, "-", 1, pVal->z, pVal->n, 0);
+    sqlite3SetNString(pz, "-", 1, pVal->z, pVal->n, (char*)0);
   }else{
-    sqlite3SetNString(pz, pVal->z, pVal->n, 0);
+    sqlite3SetNString(pz, pVal->z, pVal->n, (char*)0);
   }
   sqlite3Dequote(*pz);
 }
@@ -1017,7 +1017,7 @@ static int synthCollSeq(Parse *pParse, CollSeq *pColl){
   }
   if( pParse->nErr==0 ){
     sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", 
-        -1, z, n, 0);
+        -1, z, n, (char*)0);
   }
   pParse->nErr++;
   return SQLITE_ERROR;
@@ -1102,7 +1102,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   if( !initbusy && (!pColl || !pColl->xCmp) ){
     if( pParse->nErr==0 ){
       sqlite3SetNString(&pParse->zErrMsg, "no such collation sequence: ", -1,
-          zName, nName, 0);
+          zName, nName, (char*)0);
     }
     pParse->nErr++;
     pColl = 0;

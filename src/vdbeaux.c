@@ -299,7 +299,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     pOp->p3 = (char*)zP3;
     pOp->p3type = n;
   }else{
-    sqlite3SetNString(&pOp->p3, zP3, n, 0);
+    sqlite3SetNString(&pOp->p3, zP3, n, (char*)0);
     pOp->p3type = P3_DYNAMIC;
   }
 }
