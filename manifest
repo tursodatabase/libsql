@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sman-page\s(sqlite.1)\sand\sremove\stwo\sunused\sfiles.\nPatches\sfrom\sAndreas\sRottmann.\s(CVS\s551)
-D 2002-05-06T11:34:27
+C Added\sdocumentation\sabout\sthe\snew\sCASE\sexpression.\s(CVS\s552)
+D 2002-05-06T11:47:33
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -123,14 +123,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 45bdb18b75ac3aa1befec42985fb892413aac0bb
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
-F www/lang.tcl 2d4654255ad1ec7f58d02dc41b59528c0ee6ea44
+F www/lang.tcl d47800eb1da14a2ea501c6088beccc4001fb0486
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5f3618142f7e4654e85ca08383d6d7c1b3395c66
-R 7d7d850e3031b292a6fad784a9897f60
+P 5772d31934ced7e35842d7c7689ff4878b7e80f5
+R b085b09618ae8814b296116bb7ca3dee
 U drh
-Z 1a769610dfaa62dadca70e2cf713c5c9
+Z cddb6e7b9d73903f2cd270dc5481d839

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.32 2002/04/12 10:09:00 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.33 2002/05/06 11:47:33 drh Exp $}
 
 puts {<html>
 <head>
@@ -362,7 +362,7 @@ of another SELECT in place of a table name.
 Section DELETE delete
 
 Syntax {sql-statement} {
-DELETE FROM <table-name> [WHERE <expression>]
+DELETE FROM <table-name> [WHERE <expr>]
 }
 
 puts {
@@ -435,21 +435,22 @@ on <a href="opcode.html">available opcodes</a> for the virtual machine.</p>
 
 Section expression expr
 
-Syntax {expression} {
-<expression> <binary-op> <expression> |
-<expression> <like-op> <expression> |
-<unary-op> <expression> |
-( <expression> ) |
+Syntax {expr} {
+<expr> <binary-op> <expr> |
+<expr> <like-op> <expr> |
+<unary-op> <expr> |
+( <expr> ) |
 <column-name> |
 <table-name> . <column-name> |
 <literal-value> |
 <function-name> ( <expr-list> | STAR ) |
-<expression> ISNULL |
-<expression> NOTNULL |
-<expression> [NOT] BETWEEN <expression> AND <expression> |
-<expression> [NOT] IN ( <value-list> ) |
-<expression> [NOT] IN ( <select-statement> ) |
-( <select-statement> )
+<expr> ISNULL |
+<expr> NOTNULL |
+<expr> [NOT] BETWEEN <expr> AND <expr> |
+<expr> [NOT] IN ( <value-list> ) |
+<expr> [NOT] IN ( <select-statement> ) |
+( <select-statement> ) |
+CASE [<expr>] ( WHEN <expr> THEN <expr> )+ [ELSE <expr>] END
 } {like-op} {
 LIKE | GLOB | NOT LIKE | NOT GLOB
 }
@@ -965,16 +966,16 @@ Section SELECT select
 
 Syntax {sql-statement} {
 SELECT <result> [FROM <table-list>]
-[WHERE <expression>]
+[WHERE <expr>]
 [GROUP BY <expr-list>]
-[HAVING <expression>]
+[HAVING <expr>]
 [<compound-op> <select>]*
 [ORDER BY <sort-expr-list>]
 [LIMIT <integer> [OFFSET <integer>]]
 } {result} {
 <result-column> [, <result-column>]*
 } {result-column} {
-STAR | <expression> [ [AS] <string> ]
+STAR | <expr> [ [AS] <string> ]
 } {table-list} {
 <table> [, <table>]*
 } {table} {
@@ -1052,9 +1053,9 @@ Section UPDATE update
 Syntax {sql-statement} {
 UPDATE [ OR <conflict-algorithm> ] <table-name>
 SET <assignment> [, <assignment>] 
-[WHERE <expression>]
+[WHERE <expr>]
 } {assignment} {
-<column-name> = <expression>
+<column-name> = <expr>
 }
 
 puts {
