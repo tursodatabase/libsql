@@ -1,5 +1,5 @@
-C Update\sto\sthe\sdate\sfunctions.\s(CVS\s1110)
-D 2003-10-10T02:09:57
+C Add\ssqlite_progress_handler()\sAPI\sfor\sspecifying\san\sprogress\scallback\s(CVS\s1111)
+D 2003-10-18T09:37:26
 F Makefile.in ab585a91e34bc33928a1b6181fa2f6ebd4fb17e1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -35,7 +35,7 @@ F src/func.c fce558b4c1d895e81091d6d5e7d86a192fc8e84c
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c dc200ae04a36bd36e575272a069e20c528b7fbdf
-F src/main.c ae92469674db9987de2848e373cd41a394621e32
+F src/main.c 9422005bb4411cc08c2986fde3278ac5b87068a0
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 97df440bc71f65e22df5d3d920ce39551c0a5f5a
 F src/os.h 729395fefcca4b81ae056aa9ff67b72bb40dd9e0
@@ -48,10 +48,10 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
 F src/shell.c c2ba26c850874964f5ec1ebf6c43406f28e44c4a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in f8ae61546942e5a81df0ce3118048bec8dc87be4
-F src/sqliteInt.h 5f706313beafcc2da8102c807c35e18b2b0a3572
+F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
+F src/sqliteInt.h 74dc7989c9f2b46b50485d0455a8ef8d4f178708
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
-F src/tclsqlite.c ec9e5b796bf9ec1483927e986828a205d4a7422a
+F src/tclsqlite.c 3efac6b5861ac149c41251d4d4c420c94be5ba6a
 F src/test1.c f9d5816610f7ec4168ab7b098d5207a5708712b6
 F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c 30985ebdfaf3ee1462a9b0652d3efbdc8d9798f5
@@ -61,7 +61,7 @@ F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c f16efa2d60bfd4e31ae06b07ed149557e828d294
 F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
-F src/vdbe.c a9923a38a24ee86dd2e237c9f7e9d0116e329394
+F src/vdbe.c 0928a242ced0b5d26292f3949fdab26fa4dc327d
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 2824bf88895b901b3a8c9e44527c67530e1c0dcb
 F src/vdbeaux.c 31abb8e3e57866913360381947e267a51fed92c6
@@ -109,6 +109,7 @@ F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test dd31da9bee94a82e2e87e58cf286cfe809f8fc5f
 F test/pragma.test e7cb7ffd765c9158868b0b7a3771d54a0d5f5072
 F test/printf.test 3ed02f1361402c0767492cd5cef4650e61df8308
+F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
 F test/quick.test c527bdb899b12a8cd8ceecce45f72922099f4095
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 1936d0d866a8105ab53cf6cb40a549b6664d06ce
@@ -153,7 +154,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 44b589fc01d6829d43447ab40588b00aec5b9734
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/c_interface.tcl acacd31d4441de900e09ee48b5ffdef0162d8dc3
+F www/c_interface.tcl 17d8bd9e7b4fbdca47c30c8b9bcb728c351d55c0
 F www/changes.tcl 1188dd0e79f9a8c48996ff44e4d9e81789bf1503
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -173,7 +174,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 54aa0fb236d17b53b194a667d68c71007c8e7687
-R 78b719cb974e90d3bbfc839a1c83b68b
-U drh
-Z 6362f853c8fee8f874044b89744bb342
+P 06d4e88394217fb1390b069bad82d6ac71981f72
+R cde37f606921798e43de3b54f3499f6d
+U danielk1977
+Z a955533f397af1a9a7db7d26a39908ea

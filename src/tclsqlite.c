@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.50 2003/08/19 14:31:02 drh Exp $
+** $Id: tclsqlite.c,v 1.51 2003/10/18 09:37:26 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -52,6 +52,7 @@ struct SqliteDb {
   Tcl_Interp *interp;   /* The interpreter used for this database */
   char *zBusy;          /* The busy callback routine */
   char *zTrace;         /* The trace callback routine */
+  char *zProgress;      /* The progress callback routine */
   char *zAuth;          /* The authorization callback routine */
   SqlFunc *pFunc;       /* List of SQL functions */
   int rc;               /* Return code of most recent sqlite_exec() */
@@ -326,6 +327,21 @@ static int DbBusyHandler(void *cd, const char *zTable, int nTries){
 }
 
 /*
+** This routine is invoked as the 'progress callback' for the database.
+*/
+static int DbProgressHandler(void *cd){
+  SqliteDb *pDb = (SqliteDb*)cd;
+  int rc;
+
+  assert( pDb->zProgress );
+  rc = Tcl_Eval(pDb->interp, pDb->zProgress);
+  if( rc!=TCL_OK || atoi(Tcl_GetStringResult(pDb->interp)) ){
+    return 1;
+  }
+  return 0;
+}
+
+/*
 ** This routine is called by the SQLite trace handler whenever a new
 ** block of SQL is executed.  The TCL script in pDb->zTrace is executed.
 */
@@ -457,13 +473,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "close",              "complete",          "errorcode",
     "eval",               "function",          "last_insert_rowid",
     "onecolumn",          "timeout",            "trace",
-    0
+    "progress",           0
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CHANGES,
     DB_CLOSE,             DB_COMPLETE,         DB_ERRORCODE,
     DB_EVAL,              DB_FUNCTION,         DB_LAST_INSERT_ROWID,
     DB_ONECOLUMN,         DB_TIMEOUT,          DB_TRACE,            
+    DB_PROGRESS,
   };
 
   if( objc<2 ){
@@ -558,6 +575,48 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         sqlite_busy_handler(pDb->db, 0, 0);
       }
+    }
+    break;
+  }
+
+  /*    $db progress ?N CALLBACK?
+  ** 
+  ** Invoke the given callback every N virtual machine opcodes while executing
+  ** queries.
+  */
+  case DB_PROGRESS: {
+    if( objc==2 ){
+      if( pDb->zProgress ){
+        Tcl_AppendResult(interp, pDb->zProgress, 0);
+      }
+    }else if( objc==4 ){
+      char *zProgress;
+      int len;
+      int N;
+      if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
+	return TCL_ERROR;
+      };
+      if( pDb->zProgress ){
+        Tcl_Free(pDb->zProgress);
+      }
+      zProgress = Tcl_GetStringFromObj(objv[3], &len);
+      if( zProgress && len>0 ){
+        pDb->zProgress = Tcl_Alloc( len + 1 );
+        strcpy(pDb->zProgress, zProgress);
+      }else{
+        pDb->zProgress = 0;
+      }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+      if( pDb->zProgress ){
+        pDb->interp = interp;
+        sqlite_progress_handler(pDb->db, N, DbProgressHandler, pDb);
+      }else{
+        sqlite_progress_handler(pDb->db, 0, 0, 0);
+      }
+#endif
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "N CALLBACK");
+      return TCL_ERROR;
     }
     break;
   }

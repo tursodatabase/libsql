@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.199 2003/09/27 13:39:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.200 2003/10/18 09:37:26 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -88,6 +88,7 @@
 /* #define SQLITE_OMIT_INMEMORYDB     1 */
 /* #define SQLITE_OMIT_VACUUM         1 */
 /* #define SQLITE_OMIT_TIMEDATE_FUNCS 1 */
+/* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -325,6 +326,11 @@ struct sqlite {
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
                                 /* Access authorization function */
   void *pAuthArg;               /* 1st argument to the access auth function */
+#endif
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  int (*xProgress)(void *);     /* The progress callback */
+  void *pProgressArg;           /* Argument to the progress callback */
+  int nProgressOps;             /* Number of opcodes for progress callback */
 #endif
 };
 

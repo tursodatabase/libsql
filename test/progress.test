@@ -1,0 +1,118 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the 'progress callback'.
+#
+# $Id: progress.test,v 1.1 2003/10/18 09:37:27 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Build some test data
+#
+execsql {
+  BEGIN;
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(4);
+  INSERT INTO t1 VALUES(5);
+  INSERT INTO t1 VALUES(6);
+  INSERT INTO t1 VALUES(7);
+  INSERT INTO t1 VALUES(8);
+  INSERT INTO t1 VALUES(9);
+  INSERT INTO t1 VALUES(10);
+  COMMIT;
+}
+
+
+# Test that the progress callback is invoked.
+do_test progress-1.0 {
+  set counter 0
+  db progress 1 "[namespace code {incr counter}] ; expr 0"
+  execsql {
+    SELECT * FROM t1
+  }
+  expr $counter > 1
+} 1
+
+# Test that the query is abandoned when the progress callback returns non-zero
+do_test progress1.1 {
+  set counter 0
+  db progress 1 "[namespace code {incr counter}] ; expr 1"
+  execsql {
+    SELECT * FROM t1
+  }
+  set counter 
+} 1
+
+# Test that the query is rolled back when the progress callback returns
+# non-zero.
+do_test progress1.2 {
+
+  # This figures out how many opcodes it takes to copy 5 extra rows into t1.
+  db progress 1 "[namespace code {incr five_rows}] ; expr 0"
+  set five_rows 0
+  execsql {
+    INSERT INTO t1 SELECT a+10 FROM t1 WHERE a < 6
+  }
+  db progress 0 ""
+  execsql {
+    DELETE FROM t1 WHERE a > 10
+  }
+
+  # Now set up the progress callback to abandon the query after the number of
+  # opcodes to copy 5 rows. That way, when we try to copy 6 rows, we know
+  # some data will have been inserted into the table by the time the progress
+  # callback abandons the query.
+  db progress $five_rows "expr 1"
+  execsql {
+    INSERT INTO t1 SELECT a+10 FROM t1 WHERE a < 7
+  }
+  execsql {
+    SELECT count(*) FROM t1
+  }
+} 10
+
+# Test that an active transaction remains active and not rolled back after the
+# progress query abandons a query. 
+do_test progress1.3 {
+
+  db progress 0 ""
+  execsql BEGIN
+  execsql {
+    INSERT INTO t1 VALUES(11)
+  }
+  db progress 1 "expr 1"
+  execsql {
+    INSERT INTO t1 VALUES(12)
+  }
+  db progress 0 ""
+  execsql COMMIT
+  execsql {
+    SELECT count(*) FROM t1
+  }
+} 11
+
+# Check that a value of 0 for N means no progress callback
+do_test progress1.4 {
+  set counter 0
+  db progress 0 "[namespace code {incr counter}] ; expr 0"
+  execsql {
+    SELECT * FROM t1;
+  }
+  set counter
+} 0
+
+db progress 0 ""
+
+finish_test

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.241 2003/09/27 00:56:32 drh Exp $
+** $Id: vdbe.c,v 1.242 2003/10/18 09:37:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -529,6 +529,9 @@ int sqliteVdbeExec(
   unsigned long long start;  /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
 #endif
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  int nProgressOps = 0;      /* Opcodes executed since progress callback. */
+#endif
 
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
@@ -554,6 +557,23 @@ int sqliteVdbeExec(
     if( p->trace ){
       sqliteVdbePrintOp(p->trace, pc, pOp);
     }
+#endif
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+    /* Call the progress callback if it is configured and the required number
+    ** of VDBE ops have been executed (either since this invocation of
+    ** sqliteVdbeExec() or since last time the progress callback was called).
+    ** If the progress callback returns non-zero, exit the virtual machine with
+    ** a return code SQLITE_ABORT.
+    */
+    if( db->xProgress && (db->nProgressOps==nProgressOps) ){
+      if( db->xProgress(db->pProgressArg)!=0 ){
+        rc = SQLITE_ABORT;
+        continue; /* skip to the next iteration of the for loop */
+      }
+      nProgressOps = 0;
+    }
+    nProgressOps++;
 #endif
 
     switch( pOp->opcode ){

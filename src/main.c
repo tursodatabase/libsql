@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.142 2003/09/06 22:18:08 drh Exp $
+** $Id: main.c,v 1.143 2003/10/18 09:37:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -825,6 +825,31 @@ void sqlite_busy_handler(
   db->xBusyCallback = xBusy;
   db->pBusyArg = pArg;
 }
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+/*
+** This routine sets the progress callback for an Sqlite database to the
+** given callback function with the given argument. The progress callback will
+** be invoked every nOps opcodes.
+*/
+void sqlite_progress_handler(
+  sqlite *db, 
+  int nOps,
+  int (*xProgress)(void*), 
+  void *pArg
+){
+  if( nOps>0 ){
+    db->xProgress = xProgress;
+    db->nProgressOps = nOps;
+    db->pProgressArg = pArg;
+  }else{
+    db->xProgress = 0;
+    db->nProgressOps = 0;
+    db->pProgressArg = 0;
+  }
+}
+#endif
+
 
 /*
 ** This routine installs a default busy handler that waits for the

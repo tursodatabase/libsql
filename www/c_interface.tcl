@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.38 2003/07/08 23:42:25 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.39 2003/10/18 09:37:27 danielk1977 Exp $}
 
 puts {<html>
 <head>
@@ -635,6 +635,8 @@ char *sqlite_vmprintf(const char *zFormat, va_list);
 
 void sqlite_freemem(char*);
 
+void sqlite_progress_handler(sqlite*, int, int (*)(void*), void*);
+
 </pre></blockquote>
 
 <p>All of the above definitions are included in the "sqlite.h"
@@ -977,6 +979,30 @@ from malloc() and returns a pointer to the malloced buffer.
 above.  The <b>sqlite_vmprintf()</b> is a varargs version of the same
 routine.  The string pointer that these routines return should be freed
 by passing it to <b>sqlite_freemem()</b>.
+</p>
+
+<h3>3.10 Performing background jobs during large queries </h2>
+
+<p>The <b>sqlite_progress_handler()</b> routine can be used to register a
+callback routine with an SQLite database to be invoked periodically during long
+running calls to <b>sqlite_exec()</b>, <b>sqlite_step()</b> and the various
+wrapper functions.
+</p>
+
+<p>The callback is invoked every N virtual machine operations, where N is
+supplied as the second argument to <b>sqlite_progress_handler()</b>. The third
+and fourth arguments to <b>sqlite_progress_handler()</b> are a pointer to the
+routine to be invoked and a void pointer to be passed as the first argument to
+it.
+</p>
+
+<p>The time taken to execute each virtual machine operation can vary based on
+many factors.  A typical value for a 1 GHz PC is between half and three million
+per second but may be much higher or lower, depending on the query.  As such it
+is difficult to schedule background operations based on virtual machine
+operations. Instead, it is recommended that a callback be scheduled relatively
+frequently (say every 1000 instructions) and external timer routines used to
+determine whether or not background jobs need to be run.  
 </p>
 
 <a name="cfunc">

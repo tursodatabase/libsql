@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.52 2003/09/06 22:18:08 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.53 2003/10/18 09:37:26 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -728,6 +728,33 @@ int sqlite_reset(sqlite_vm*, char **pzErrMsg);
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 int sqlite_bind(sqlite_vm*, int idx, const char *value, int len, int copy);
+
+/*
+** This routine configures a callback function - the progress callback - that
+** is invoked periodically during long running calls to sqlite_exec(),
+** sqlite_step() and sqlite_get_table(). An example use for this API is to keep
+** a GUI updated during a large query.
+**
+** The progress callback is invoked once for every N virtual machine opcodes,
+** where N is the second argument to this function. The progress callback
+** itself is identified by the third argument to this function. The fourth
+** argument to this function is a void pointer passed to the progress callback
+** function each time it is invoked.
+**
+** If a call to sqlite_exec(), sqlite_step() or sqlite_get_table() results 
+** in less than N opcodes being executed, then the progress callback is not
+** invoked.
+** 
+** Calling this routine overwrites any previously installed progress callback.
+** To remove the progress callback altogether, pass NULL as the third
+** argument to this function.
+**
+** If the progress callback returns a result other than 0, then the current 
+** query is immediately terminated and any database changes rolled back. If the
+** query was part of a larger transaction, then the transaction is not rolled
+** back and remains active. The sqlite_exec() call returns SQLITE_ABORT. 
+*/
+void sqlite_progress_handler(sqlite*, int, int(*)(void*), void*);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
