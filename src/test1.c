@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.112 2004/11/13 15:59:15 drh Exp $
+** $Id: test1.c,v 1.113 2004/11/14 04:04:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -490,6 +490,7 @@ static int test_create_function(
   rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
         ifnullFunc, 0, 0);
 
+#ifndef SQLITE_OMIT_UTF16
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
@@ -500,6 +501,8 @@ static int test_create_function(
               1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
     sqlite3ValueFree(pVal);
   }
+#endif
+
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   return TCL_OK;
 }
@@ -1005,7 +1008,7 @@ static int test_bind(
   return TCL_OK;
 }
 
-
+#ifndef SQLITE_OMIT_UTF16
 /*
 ** Usage: add_test_collate <db ptr> <utf8> <utf16le> <utf16be>
 **
@@ -1148,6 +1151,7 @@ bad_args:
   Tcl_WrongNumArgs(interp, 1, objv, "DB");
   return TCL_ERROR;
 }
+#endif /* SQLITE_OMIT_UTF16 */
 
 /*
 ** Usage: add_test_function <db ptr> <utf8> <utf16le> <utf16be>
@@ -1174,6 +1178,7 @@ bad_args:
 ** for a UTF-16LE test_function(), and UTF-16LE for an implementation that
 ** prefers UTF-16BE.
 */
+#ifndef SQLITE_OMIT_UTF16
 static void test_function_utf8(
   sqlite3_context *pCtx, 
   int nArg,
@@ -1243,12 +1248,14 @@ static void test_function_utf16be(
       -1, SQLITE_TRANSIENT);
   sqlite3ValueFree(pVal);
 }
+#endif /* SQLITE_OMIT_UTF16 */
 static int test_function(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   sqlite3 *db;
   int val;
 
@@ -1275,6 +1282,7 @@ static int test_function(
 bad_args:
   Tcl_AppendResult(interp, "wrong # args: should be \"",
       Tcl_GetStringFromObj(objv[0], 0), " <DB> <utf8> <utf16le> <utf16be>", 0);
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_ERROR;
 }
 
@@ -1553,6 +1561,7 @@ static int test_bind_text16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   sqlite3_stmt *pStmt;
   int idx;
   int bytes;
@@ -1576,6 +1585,7 @@ static int test_bind_text16(
     return TCL_ERROR;
   }
 
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -1760,6 +1770,7 @@ static int test_errmsg16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   sqlite3 *db;
   const void *zErr;
   int bytes;
@@ -1774,6 +1785,7 @@ static int test_errmsg16(
   zErr = sqlite3_errmsg16(db);
   bytes = sqlite3utf16ByteLen(zErr, -1);
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zErr, bytes));
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -1844,6 +1856,7 @@ static int test_prepare16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   sqlite3 *db;
   const void *zSql;
   const void *zTail = 0;
@@ -1883,6 +1896,7 @@ static int test_prepare16(
     if( makePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
   }
   Tcl_AppendResult(interp, zBuf, 0);
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -1923,6 +1937,7 @@ static int test_open16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   const void *zFilename;
   sqlite3 *db;
   int rc;
@@ -1939,6 +1954,7 @@ static int test_open16(
   
   if( makePointerStr(interp, zBuf, db) ) return TCL_ERROR;
   Tcl_AppendResult(interp, zBuf, 0);
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -1954,6 +1970,7 @@ static int test_complete16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   char *zBuf;
 
   if( objc!=2 ){
@@ -1963,6 +1980,7 @@ static int test_complete16(
 
   zBuf = Tcl_GetByteArrayFromObj(objv[1], 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_complete16(zBuf)));
+#endif /* SQLITE_OMIT_UTF16 */
   return TCL_OK;
 }
 
@@ -2227,6 +2245,7 @@ static int test_stmt_utf16(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_UTF16
   sqlite3_stmt *pStmt;
   int col;
   Tcl_Obj *pRet;
@@ -2247,6 +2266,7 @@ static int test_stmt_utf16(
     pRet = Tcl_NewByteArrayObj(zName16, sqlite3utf16ByteLen(zName16, -1)+2);
     Tcl_SetObjResult(interp, pRet);
   }
+#endif /* SQLITE_OMIT_UTF16 */
 
   return TCL_OK;
 }
@@ -2721,9 +2741,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
    
      /* Custom test interfaces */
      { "sqlite3OsUnlock",         test_sqlite3OsUnlock, 0    },
+#ifndef SQLITE_OMIT_UTF16
      { "add_test_collate",        test_collate, 0            },
      { "add_test_collate_needed", test_collate_needed, 0     },
      { "add_test_function",       test_function, 0           },
+#endif
      { "sqlite3_crashparams",     sqlite3_crashparams, 0     },
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.41 2004/11/10 15:27:38 danielk1977 Exp $
+# $Id: tester.tcl,v 1.42 2004/11/14 04:04:18 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -241,7 +241,7 @@ proc integrity_check {name} {
 # code.  Omit the code if false.
 #
 proc ifcapable {expr code} {
-  regsub -all {[a-z_]+} $expr {$::sqlite_options(&)} e2
+  regsub -all {[a-z_0-9]+} $expr {$::sqlite_options(&)} e2
   if !($e2) return
   return -code [catch {uplevel 1 $code}]
 }
@@ -249,4 +249,3 @@ proc ifcapable {expr code} {
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)
-

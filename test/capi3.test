@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.21 2004/09/02 14:57:09 drh Exp $
+# $Id: capi3.test,v 1.22 2004/11/14 04:04:18 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -84,6 +84,7 @@ do_test capi3-1.7 {
   sqlite3_errmsg $DB
 } {no such column: namex}
 
+ifcapable {utf16} {
 do_test capi3-2.1 {
   set sql16 [utf16 {SELECT name FROM sqlite_master}]
   set STMT [sqlite3_prepare16 $DB $sql16 -1 ::TAIL]
@@ -108,6 +109,7 @@ do_test capi3-2.4 {
 do_test capi3-2.5 {
   sqlite3_errmsg $DB
 } {no such column: namex}
+} ;# endif utf16
 
 # rename sqlite3_open sqlite3_open_old
 # proc sqlite3_open {fname options} {sqlite3_open_new $fname $options}
@@ -132,19 +134,22 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6 {
+do_test capi3-3.6.1 {
   sqlite3_close $db2
 } {SQLITE_MISUSE}
-do_test capi3-3.6 {
+do_test capi3-3.6.2 {
   sqlite3_errmsg $db2
 } {library routine called out of sequence}
-do_test capi3-3.6 {
-  utf8 [sqlite3_errmsg16 $db2]
-} {library routine called out of sequence}
+ifcapable {utf16} {
+  do_test capi3-3.6.3 {
+    utf8 [sqlite3_errmsg16 $db2]
+  } {library routine called out of sequence}
+}
 
 # rename sqlite3_open ""
 # rename sqlite3_open_old sqlite3_open
 
+ifcapable {utf16} {
 do_test capi3-4.1 {
   set db2 [sqlite3_open16 [utf16 test.db] {}]
   sqlite3_errcode $db2
@@ -165,6 +170,7 @@ do_test capi3-4.4 {
 do_test capi3-4.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
+} ;# utf16
 
 # This proc is used to test the following API calls:
 #
@@ -201,13 +207,15 @@ proc check_header {STMT test names decltypes} {
   } $names
 
   # Column names in UTF-16
-  do_test $test.2 {
-    set cnamelist [list]
-    foreach i $idxlist {
-      lappend cnamelist [utf8 [sqlite3_column_name16 $STMT $i]]
-    }
-    set cnamelist
-  } $names
+  ifcapable {utf16} {
+    do_test $test.2 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_name16 $STMT $i]]
+      }
+      set cnamelist
+    } $names
+  }
 
   # Column names in UTF-8
   do_test $test.3 {
@@ -217,13 +225,15 @@ proc check_header {STMT test names decltypes} {
   } $names
 
   # Column names in UTF-16
-  do_test $test.4 {
-    set cnamelist [list]
-    foreach i $idxlist {
-      lappend cnamelist [utf8 [sqlite3_column_name16 $STMT $i]]
-    }
-    set cnamelist
-  } $names
+  ifcapable {utf16} {
+    do_test $test.4 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_name16 $STMT $i]]
+      }
+      set cnamelist
+    } $names
+  }
 
   # Column names in UTF-8
   do_test $test.5 {
@@ -233,27 +243,31 @@ proc check_header {STMT test names decltypes} {
   } $decltypes
 
   # Column declaration types in UTF-16
-  do_test $test.6 {
-    set cnamelist [list]
-    foreach i $idxlist {
-      lappend cnamelist [utf8 [sqlite3_column_decltype16 $STMT $i]]
-    }
-    set cnamelist
-  } $decltypes
+  ifcapable {utf16} {
+    do_test $test.6 {
+      set cnamelist [list]
+      foreach i $idxlist {
+        lappend cnamelist [utf8 [sqlite3_column_decltype16 $STMT $i]]
+      }
+      set cnamelist
+    } $decltypes
+  }
 
 
   # Test some out of range conditions:
-  do_test $test.7 {
-    list \
-      [sqlite3_column_name $STMT -1] \
-      [sqlite3_column_name16 $STMT -1] \
-      [sqlite3_column_decltype $STMT -1] \
-      [sqlite3_column_decltype16 $STMT -1] \
-      [sqlite3_column_name $STMT $numcols] \
-      [sqlite3_column_name16 $STMT $numcols] \
-      [sqlite3_column_decltype $STMT $numcols] \
-      [sqlite3_column_decltype16 $STMT $numcols]
-  } {{} {} {} {} {} {} {} {}}
+  ifcapable {utf16} {
+    do_test $test.7 {
+      list \
+        [sqlite3_column_name $STMT -1] \
+        [sqlite3_column_name16 $STMT -1] \
+        [sqlite3_column_decltype $STMT -1] \
+        [sqlite3_column_decltype16 $STMT -1] \
+        [sqlite3_column_name $STMT $numcols] \
+        [sqlite3_column_name16 $STMT $numcols] \
+        [sqlite3_column_decltype $STMT $numcols] \
+        [sqlite3_column_decltype16 $STMT $numcols]
+    } {{} {} {} {} {} {} {} {}}
+  }
 
 } 
 
@@ -352,11 +366,13 @@ do_test $test.7 {
 } $doubles
 
 # UTF-16
-do_test $test.8 {
-  set utf8 [list]
-  foreach i $idxlist {lappend utf8 [utf8 [sqlite3_column_text16 $STMT $i]]}
-  set utf8
-} $strings
+ifcapable {utf16} {
+  do_test $test.8 {
+    set utf8 [list]
+    foreach i $idxlist {lappend utf8 [utf8 [sqlite3_column_text16 $STMT $i]]}
+    set utf8
+  } $strings
+}
 
 # Integers
 do_test $test.9 {
@@ -601,9 +617,11 @@ do_test capi3-10-1 {
 do_test capi3-10-2 {
   sqlite3_errmsg $::DB
 } {out of memory}
-do_test capi3-10-3 {
-  utf8 [sqlite3_errmsg16 $::DB]
-} {out of memory}
+ifcapable {utf16} {
+  do_test capi3-10-3 {
+    utf8 [sqlite3_errmsg16 $::DB]
+  } {out of memory}
+}
 db close
 sqlite_malloc_fail 0
 }

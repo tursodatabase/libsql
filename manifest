@@ -1,5 +1,5 @@
-C More\scompile-time\soptions\sfor\sremoving\scomponents.\s(CVS\s2098)
-D 2004-11-13T15:59:15
+C Changes\stoward\sreducing\scode\ssize\swhen\sSQLITE_OMIT_UTF16\sis\senabled.\s(CVS\s2099)
+D 2004-11-14T04:04:17
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -64,7 +64,7 @@ F src/sqlite.h.in a44eac0716bf4751447160d5c8ed049ece66d45a
 F src/sqliteInt.h 8569ce94e891a854de71d7bd628da1d25ee6dfe4
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 7f1a1a678140e6901c8954590ca2aabe50b48f71
-F src/test1.c 4d671e27cc8f27869786110824d23408622b2aa9
+F src/test1.c af2cc6864464b18675c9bdbb02142d765f2f0c6d
 F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c 6f1ec93e13632a004b527049535079eda84c459d
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -89,7 +89,7 @@ F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test 8a0309e284cf9aa1d7d6cc444989031881f7a21c
 F test/auth.test cf13e449cb253f75d6584b376202c94bbdd53ec9
 F test/autoinc.test 11330758197e0301d3600a071230d45b2f6a65b7
-F test/autovacuum.test e52b8fab3b82f6b51b7fde5b7140827ce8e86b1c
+F test/autovacuum.test d0517eb9fa7bb12c9e7f3b5d6fd4275d22e57c15
 F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -103,7 +103,7 @@ F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test eee59cfd3a0151adbc7d85e5373f31ae6d4c3061
 F test/capi2.test 1ec97bf8896185aec2366c7d07b01edef6ae4b7e
-F test/capi3.test 9258ca75fc98d89477015dcd70aa3d2757b142b8
+F test/capi3.test 1e15509a61fa93ef637ec9c2a3fc93bc1d971a3b
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 12fd658d8f5106a8a5c8a77d66919d8c89394036
@@ -120,7 +120,7 @@ F test/delete.test fc29491f6a7ac899ce29f4549a104809e245d9a6
 F test/delete2.test 1d3f99f52f50eb6ed10c803f80540a6857307a7d
 F test/diskfull.test e2f6cfd868713ead06dc82b84a4938e868128fc0
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
-F test/enc2.test ca80d1f07484d66b5e407eb833da1e7fb74e2e8d
+F test/enc2.test 6d1a2650e9da43eab499d18ca694a0cb6ec69dee
 F test/enc3.test a96f4a7c44bac4d63bdc4ff422b8049912083998
 F test/expr.test 20ddaf66c7ab673c1d0c953889e3466139256f9a
 F test/fkey1.test 81bb13caaa78f58d7d191d7f535529f7c91d821a
@@ -130,7 +130,7 @@ F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
 F test/index.test 5776a3ebcbe0bdc69e7eeaeb5e95dfba6b17389e
 F test/insert.test 56f9c20c9adc8d707490c4ffa5d4daa94826ea03
 F test/insert2.test 614a29d3ed7dd0d8644a059c6d8ce742c63a734a
-F test/interrupt.test 3b78c7c1a466fc3989eb376d5ea56099810a835d
+F test/interrupt.test 0aa230f8aedec0ad7caaf5edaced337e4cfb3820
 F test/intpkey.test b57cf5236fde1bd8cbc1388fa0c91908f6fd9194
 F test/ioerr.test 3ce897ee998ee874073f3b23b0396d9ff804759c
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
@@ -180,7 +180,7 @@ F test/table.test 87a6219c784722249a2f604b6495ce171ca2588a
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
 F test/tclsqlite.test 5e262df81a638a058536fb6d6666f316843ac7b2
 F test/temptable.test 63a16e3ad19adf073cfbcdf7624c92ac5236522c
-F test/tester.tcl 9bd005b223871bceb4733d453f90df66ff39be5b
+F test/tester.tcl e7ebedf60c8ebbb0a9af4950981babfbb80cc9a7
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
@@ -258,7 +258,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 5eaa18d43f2996a9d354bb4fb9c81e267e98be29
-R 7bedbeea778ef4d3e2b1635c460d0010
+P dcbc0c22cf269e2f67002aa3f1bc0c66aaeff5f1
+R b20243043da42c552406a47e684bc877
 U drh
-Z cd7be5fd7726d4f38a75365a78354a97
+Z 6d564933ddae0997ba41ac32b88f3e8b
