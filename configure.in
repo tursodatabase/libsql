@@ -146,12 +146,12 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
-AC_INIT(src/sqlite.h)
+AC_INIT(src/sqlite.h.in)
 
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.5 $
+# $Revision: 1.6 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.

@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 18 (Version 1.0.1)} {
+<li>Fix a bug in the configure script.</li>
+}
+
 chng {2000 Aug 17 (Version 1.0)} {
 <li>Change the <b>sqlite</b> program so that it can read
     databases for which it lacks write permission.  (It used to
