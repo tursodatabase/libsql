@@ -1,5 +1,5 @@
-C MinGW/MSYS\sbuild\sfixes;\sticket\s#765\s(CVS\s1623)
-D 2004-06-18T23:19:20
+C MinGW/MSYS\sbuild\sfixes;\sticket\s#765\s(CVS\s1624)
+D 2004-06-18T23:20:53
 F Makefile.in 2659cbce885c1365cb0a5fbeeed5ad69a354fa70
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -204,7 +204,7 @@ F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl dadcd0b09dc6fdf86d0c38499e310ae94cb586d7
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl 095b5718ec044156af477061566ea25632624b56
-F www/download.tcl 3868640b7a898df260ca3bb94c37e956fe0183d4
+F www/download.tcl 3e28632ec437bb78d267743a203647b20d1384c5
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P f312057da4304857d16b344b784c84ce14e2ef69
-R b20ad43ea14e6dc2f45c4b6098329cad
+P 7121cee78c2ed20fd09190fdcca1c8c92ef1e09d
+R 58e1f6e21954d4318ce72d56b439f77e
 U dougcurrie
-Z b47ac03834a134c7ae6483a335c150db
+Z b09565c21375e35ceafe9a40a90515d6
