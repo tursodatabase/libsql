@@ -1,5 +1,5 @@
-C Bug\sfixes\sand\sspeed\simprovements.\sDelete\sis\sstill\sslow.\s(CVS\s244)
-D 2001-09-14T16:42:12
+C Added\sa\sPRAGMA\sstatement.\s\sTook\sout\sthe\sspecial\scomment\sparsing.\s(CVS\s245)
+D 2001-09-14T18:54:08
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ecb2370b5cb34d390af1fcb3118ea6d84a253ca
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -13,9 +13,9 @@ F notes/notes2.txt 7e3fafd5e25906c1fe1e95f13b089aa398ca403e
 F notes/notes2b.txt 1c17a5b7f6b44a75cd3eb98ed2c24db1eefb06c3
 F notes/notes3.txt 71e47be517e3d2578b3b9343a45b772d43b7ba16
 F src/TODO f0ea267ab55c4d15127c1ac1667edbf781147438
-F src/btree.c 04cfedfd8c86401b2a5a61395589bb0c52cbeb15
-F src/btree.h 2427961c702dd0755ec70f529cf3db32707d689b
-F src/build.c d639146a7d88045f1e69d6bb827a51c19c9ec825
+F src/btree.c 3adf545b8e072000923f7e0f7f91d33072a9f869
+F src/btree.h a3d9c20fa876e837680745ac60500be697026b7b
+F src/build.c b5c682960b5889555cd059f3b5157668778b8834
 F src/delete.c 62500a09606c0f714b651756475cd42979ef08e8
 F src/ex/README b745b00acce2d892f60c40111dacdfc48e0c1c7a
 F src/ex/db.c f1419ae6c93e40b5ac6e39fe7efd95d868e6f9d7
@@ -29,22 +29,22 @@ F src/expr.c bcd91d0487c71cfa44413a46efe5e2c2244901b6
 F src/insert.c edf098ecbbe00e3ecde6b5f22404a8230590c9fd
 F src/main.c a2c142626b46e3eb3e01436626df6c2d0a8f3ae6
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/pager.c fc0d51b73e74fe7e8aec98c146fa2e714c7a8d52
-F src/pager.h 238aa88bafe33911bf9b0b365f35afd0a261cd46
-F src/parse.y 8fc096948994a7ffbf61ba13129cc589f794a9cb
+F src/pager.c bb0891d49b9068711e4b8bab14db2959f56f5be9
+F src/pager.h bb9136e833de46bc84aafd8403713d3c46fcbfdf
+F src/parse.y 8b30e072208c3dfabd97c7d06f0924f194919533
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
 F src/random.c b626726c4f0066610739e52e7431adae7ccd9651
 F src/select.c f1673b4d06c24665097faf28d76c4533bce18b84
 F src/shell.c 1fcdf8c4180098bcfdee12501e01b4c8eb21d726
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 8faa2fed0513d188ced16e5f9094e57694594e70
-F src/sqliteInt.h 28d53b3690d730d5470a4a183531c7e4371669f1
+F src/sqliteInt.h 11d74bfd90777afafc529434b86c413fed44f0bf
 F src/table.c adcaf074f6c1075e86359174e68701fa2acfc4d6
 F src/tclsqlite.c d328970848c028e13e61e173bef79adcc379568a
 F src/test1.c abb3cb427e735ae87e6533f5b3b7164b7da91bc4
 F src/test2.c b3177e061fabd20d48e4b1b4bca610a0d2b28670
 F src/test3.c 1fc103f198cbd0447d1a12c3ce48795755ec1a53
-F src/tokenize.c 00c8ab42ee731ff7466b048b449e1e838e9d638c
+F src/tokenize.c 2d4d1534b321422384de0f311d417ffce14fedc6
 F src/update.c ea8f2c0712cd4cd19314a26ef4766866013facda
 F src/util.c c77668fef860cfd2e4e682ef4f3ed8f9e68c551b
 F src/vdbe.c 244c86e406170c76b89ab07de4c7258f716c36ff
@@ -107,7 +107,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P e7b65e37fd88c4d69c89cfe73ab345b8b645ada6
-R ed181b52a40061f0079d6a386222bac2
+P 7da856cd94d2572070e40762e5bc477679e60042
+R 07caee6e3ed361d3efc95a7817451754
 U drh
-Z badce0ce49575ed2f4c401ae6458d977
+Z 4e11150d8699ec673e8745d72c606c4d

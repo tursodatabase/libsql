@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite B-Tree file
 ** subsystem.
 **
-** @(#) $Id: btree.h,v 1.12 2001/09/13 14:46:10 drh Exp $
+** @(#) $Id: btree.h,v 1.13 2001/09/14 18:54:08 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -34,6 +34,7 @@ typedef struct BtCursor BtCursor;
 
 int sqliteBtreeOpen(const char *zFilename, int mode, int nPg, Btree **ppBtree);
 int sqliteBtreeClose(Btree*);
+int sqliteBtreeSetCacheSize(Btree*, int);
 
 int sqliteBtreeBeginTrans(Btree*);
 int sqliteBtreeCommit(Btree*);

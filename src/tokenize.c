@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.20 2001/09/14 03:24:25 drh Exp $
+** $Id: tokenize.c,v 1.21 2001/09/14 18:54:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -57,6 +57,7 @@ static Keyword aKeywordTable[] = {
   { "BETWEEN",           0, TK_BETWEEN,          0 },
   { "BY",                0, TK_BY,               0 },
   { "CHECK",             0, TK_CHECK,            0 },
+  { "CLUSTER",           0, TK_CLUSTER,          0 },
   { "COMMIT",            0, TK_COMMIT,           0 },
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
   { "COPY",              0, TK_COPY,             0 },
@@ -89,6 +90,7 @@ static Keyword aKeywordTable[] = {
   { "ON",                0, TK_ON,               0 },
   { "OR",                0, TK_OR,               0 },
   { "ORDER",             0, TK_ORDER,            0 },
+  { "PRAGMA",            0, TK_PRAGMA,           0 },
   { "PRIMARY",           0, TK_PRIMARY,          0 },
   { "ROLLBACK",          0, TK_ROLLBACK,         0 },
   { "SELECT",            0, TK_SELECT,           0 },
@@ -310,11 +312,9 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
   int i;
   void *pEngine;
   int once = 1;
-  static FILE *trace = 0;
   extern void *sqliteParserAlloc(void*(*)(int));
   extern void sqliteParserFree(void*, void(*)(void*));
   extern int sqliteParser(void*, int, Token, Parse*);
-  extern void sqliteParserTrace(FILE*, char *);
 
   pParse->db->flags &= ~SQLITE_Interrupt;
   pParse->rc = SQLITE_OK;
@@ -325,9 +325,6 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
     sqliteSetString(pzErrMsg, "out of memory", 0);
     return 1;
   }
-#ifndef NDEBUG
-  sqliteParserTrace(trace, "parser: ");
-#endif
   while( sqlite_malloc_failed==0 && nErr==0 && i>=0 && zSql[i]!=0 ){
     int tokenType;
     
@@ -347,24 +344,6 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
       case TK_SPACE:
         break;
       case TK_COMMENT: {
-        /* Various debugging modes can be turned on and off using
-        ** special SQL comments.  Check for the special comments
-        ** here and take approriate action if found.
-        */
-#ifndef NDEBUG
-        char *z = pParse->sLastToken.z;
-        if( sqliteStrNICmp(z,"--parser-trace-on--",19)==0 ){
-          trace = stdout;
-          sqliteParserTrace(trace, "parser: ");
-        }else if( sqliteStrNICmp(z,"--parser-trace-off--", 20)==0 ){
-          trace = 0;
-          sqliteParserTrace(trace, "parser: ");
-        }else if( sqliteStrNICmp(z,"--vdbe-trace-on--",17)==0 ){
-          pParse->db->flags |= SQLITE_VdbeTrace;
-        }else if( sqliteStrNICmp(z,"--vdbe-trace-off--", 18)==0 ){
-          pParse->db->flags &= ~SQLITE_VdbeTrace;
-        }
-#endif
         break;
       }
       case TK_ILLEGAL:

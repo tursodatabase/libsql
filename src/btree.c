@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.26 2001/09/14 16:42:12 drh Exp $
+** $Id: btree.c,v 1.27 2001/09/14 18:54:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -640,6 +640,14 @@ int sqliteBtreeClose(Btree *pBt){
   }
   sqlitepager_close(pBt->pPager);
   sqliteFree(pBt);
+  return SQLITE_OK;
+}
+
+/*
+** Change the number of pages in the cache.
+*/
+int sqliteBtreeSetCacheSize(Btree *pBt, int mxPage){
+  sqlitepager_set_cachesize(pBt->pPager, mxPage);
   return SQLITE_OK;
 }
 

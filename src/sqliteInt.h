@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.46 2001/09/14 16:42:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.47 2001/09/14 18:54:09 drh Exp $
 */
 #include "sqlite.h"
 #include "vdbe.h"
@@ -38,8 +38,8 @@
 ** The maximum number of in-memory pages to use for the main database
 ** table and for temporary tables.
 */
-#define MAX_PAGES   150
-#define TEMP_PAGES   50
+#define MAX_PAGES   100
+#define TEMP_PAGES   25
 
 /*
 ** The paging system deals with 32-bit integers.
@@ -411,6 +411,7 @@ Expr *sqliteExprFunction(ExprList*, Token*);
 void sqliteExprDelete(Expr*);
 ExprList *sqliteExprListAppend(ExprList*,Expr*,Token*);
 void sqliteExprListDelete(ExprList*);
+void sqlitePragma(Parse*,Token*,Token*,int);
 void sqliteCommitInternalChanges(sqlite*);
 void sqliteRollbackInternalChanges(sqlite*);
 void sqliteStartTable(Parse*,Token*,Token*);

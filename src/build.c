@@ -33,9 +33,10 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.33 2001/09/14 03:24:24 drh Exp $
+** $Id: build.c,v 1.34 2001/09/14 18:54:08 drh Exp $
 */
 #include "sqliteInt.h"
+#include <ctype.h>
 
 /*
 ** This routine is called after a single SQL statement has been
@@ -1182,4 +1183,74 @@ void sqliteRollbackTransaction(Parse *pParse){
     sqliteVdbeAddOp(v, OP_Rollback, 0, 0, 0, 0);
   }
   db->flags &= ~SQLITE_InTrans;
+}
+
+/*
+** Interpret the given string as a boolean value.
+*/
+static int getBoolean(char *z){
+  static char *azTrue[] = { "yes", "on", "true" };
+  int i;
+  if( z[0]==0 ) return 0;
+  if( isdigit(z[0]) || (z[0]=='-' && isdigit(z[1])) ){
+    return atoi(z);
+  }
+  for(i=0; i<sizeof(azTrue)/sizeof(azTrue[0]); i++){
+    if( sqliteStrICmp(z,azTrue[i])==0 ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Process a pragma statement.  
+**
+** Pragmas are of this form:
+**
+**      PRAGMA id = value
+**
+** The identifier might also be a string.  The value is a string, and
+** identifier, or a number.  If minusFlag is true, then the value is
+** a number that was preceded by a minus sign.
+*/
+void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
+  char *zLeft = 0;
+  char *zRight = 0;
+  sqlite *db = pParse->db;
+
+  zLeft = sqliteStrNDup(pLeft->z, pLeft->n);
+  sqliteDequote(zLeft);
+  if( minusFlag ){
+    zRight = 0;
+    sqliteSetNString(&zRight, "-", 1, pRight->z, pRight->n, 0);
+  }else{
+    zRight = sqliteStrNDup(pRight->z, pRight->n);
+    sqliteDequote(zRight);
+  }
+ 
+  if( sqliteStrICmp(zLeft,"cache_size")==0 ){
+    int size = atoi(zRight);
+    sqliteBtreeSetCacheSize(db->pBe, size);
+  }else
+
+  if( sqliteStrICmp(zLeft, "vdbe_trace")==0 ){
+    if( getBoolean(zRight) ){
+      db->flags |= SQLITE_VdbeTrace;
+    }else{
+      db->flags &= ~SQLITE_VdbeTrace;
+    }
+  }else
+
+#ifndef NDEBUG
+  if( sqliteStrICmp(zLeft, "parser_trace")==0 ){
+    extern void sqliteParserTrace(FILE*, char *);
+    if( getBoolean(zRight) ){
+      sqliteParserTrace(stdout, "parser: ");
+    }else{
+      sqliteParserTrace(0, 0);
+    }
+  }else
+#endif
+
+  if( zLeft ) sqliteFree(zLeft);
+  if( zRight ) sqliteFree(zRight);
 }
