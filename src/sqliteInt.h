@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.228 2004/05/10 10:34:52 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.229 2004/05/10 23:29:50 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -120,6 +120,7 @@
 #   define INTPTR_TYPE long long
 # endif
 #endif
+typedef INT64_TYPE i64;            /* 8-byte signed integer */
 typedef UINT64_TYPE u64;           /* 8-byte unsigned integer */
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
@@ -367,8 +368,8 @@ struct sqlite {
   void *pCommitArg;             /* Argument to xCommitCallback() */   
   int (*xCommitCallback)(void*);/* Invoked at every commit. */
   Hash aFunc;                   /* All functions that can be in SQL exprs */
-  int lastRowid;                /* ROWID of most recent insert (see above) */
-  int priorNewRowid;            /* Last randomly generated ROWID */
+  i64 lastRowid;                /* ROWID of most recent insert (see above) */
+  i64 priorNewRowid;            /* Last randomly generated ROWID */
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed (see above) */
   int lsChange;                 /* Last statement change count (see above) */
@@ -1287,4 +1288,3 @@ void sqlite3utf16to16be(void *pData, int N);
 int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3VarintLen(u64 v);
-

@@ -17,13 +17,12 @@
 */
 
 /*
-** When converting from the native format to the key format and back
-** again, in addition to changing the byte order we invert the high-order
-** bit of the most significant byte.  This causes negative numbers to
-** sort before positive numbers in the memcmp() function.
+** In the btree layer, a rowid is an unsigned 64-bit integer.  In the
+** schema layer, a rowid is a signed 64-bit integer.  The following macros
+** convert between the two in such a way as to preserve sort order.
 */
-#define keyToInt(X)   (sqlite3VdbeByteSwap(X) ^ 0x80000000)
-#define intToKey(X)   (sqlite3VdbeByteSwap((X) ^ 0x80000000))
+#define keyToInt(X)   (X ^ 0x8000000000000000)
+#define intToKey(X)   (X ^ 0x8000000000000000)
 
 /*
 ** The makefile scans this source file and creates the following
@@ -62,8 +61,8 @@ typedef unsigned char Bool;
 */
 struct Cursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
-  int lastRecno;        /* Last recno from a Next or NextIdx operation */
-  int nextRowid;        /* Next rowid returned by OP_NewRowid */
+  i64 lastRecno;        /* Last recno from a Next or NextIdx operation */
+  i64 nextRowid;        /* Next rowid returned by OP_NewRowid */
   Bool recnoIsValid;    /* True if lastRecno is valid */
   Bool keyAsData;       /* The OP_Column command works on key instead of data */
   Bool atFirst;         /* True if pointing to first entry */
@@ -72,11 +71,13 @@ struct Cursor {
   Bool nextRowidValid;  /* True if the nextRowid field is valid */
   Bool pseudoTable;     /* This is a NEW or OLD pseudo-tables of a trigger */
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
-  int movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
+  Bool intKey;          /* True if the table requires integer keys */
+  Bool zeroData;        /* True if table contains keys only - no data */
+  i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
   int nData;            /* Number of bytes in pData */
   char *pData;          /* Data for a NEW or OLD pseudo-table */
-  int iKey;             /* Key for the NEW or OLD pseudo-table row */
+  i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
 };
 typedef struct Cursor Cursor;
 
@@ -110,7 +111,7 @@ struct Sorter {
 ** is an instance of the following structure. 
 */
 struct Mem {
-  int i;              /* Integer value */
+  i64 i;              /* Integer value */
   int n;              /* Number of characters in string value, including '\0' */
   int flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   double r;           /* Real value */

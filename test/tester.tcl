@@ -11,9 +11,8 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.30 2004/05/07 17:57:50 drh Exp $
+# $Id: tester.tcl,v 1.31 2004/05/10 23:29:51 drh Exp $
 
-if 0 {
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
 #
@@ -63,8 +62,6 @@ sqlite db ./test.db
 if {[info exists ::SETUP_SQL]} {
   db eval $::SETUP_SQL
 }
-}
-proc db {args} {}
 
 # Abort early if this script has been run before.
 #
@@ -111,44 +108,6 @@ proc do_test {name cmd expected} {
     incr nErr
     lappend ::failList $name
     if {$nErr>=1} {puts "*** Giving up..."; finalize_testing}
-  } else {
-    puts " Ok"
-  }
-}
-
-# Invoke this procedure on a test that is probabilistic
-# and might fail sometimes.
-#
-proc do_probtest {name cmd expected} {
-  global argv nProb nTest skip_test
-  if {$skip_test} {
-    set skip_test 0
-    return
-  }
-  if {[llength $argv]==0} { 
-    set go 1
-  } else {
-    set go 0
-    foreach pattern $argv {
-      if {[string match $pattern $name]} {
-        set go 1
-        break
-      }
-    }
-  }
-  if {!$go} return
-  incr nTest
-  puts -nonewline $name...
-  flush stdout
-  if {[catch {uplevel #0 "$cmd;\n"} result]} {
-    puts "\nError: $result"
-    incr nErr
-  } elseif {[string compare $result $expected]} {
-    puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
-    puts "NOTE: The results of the previous test depend on system load"
-    puts "and processor speed.  The test may sometimes fail even if the"
-    puts "library is working correctly."
-    incr nProb	
   } else {
     puts " Ok"
   }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.273 2004/05/10 10:35:00 danielk1977 Exp $
+** $Id: vdbe.c,v 1.274 2004/05/10 23:29:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2528,18 +2528,13 @@ case OP_Rollback: {
 ** executing this instruction.
 */
 case OP_ReadCookie: {
-  int aMeta[SQLITE_N_BTREE_META];
+  int iMeta;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( db->aDb[pOp->p1].pBt!=0 );
-  {
-    int ii;
-    for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-      rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, ii+1, &aMeta[ii]);
-    }
-  }
+  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, pOp->p2+1, &iMeta);
   pTos++;
-  pTos->i = aMeta[1+pOp->p2];
+  pTos->i = iMeta;
   pTos->flags = MEM_Int;
   break;
 }
@@ -2555,27 +2550,12 @@ case OP_ReadCookie: {
 ** A transaction must be started before executing this opcode.
 */
 case OP_SetCookie: {
-  int aMeta[SQLITE_N_BTREE_META];
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( db->aDb[pOp->p1].pBt!=0 );
   assert( pTos>=p->aStack );
-  Integerify(pTos)
-  {
-    int ii;
-    for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-      rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, ii+1, &aMeta[ii]);
-    }
-  }
-  if( rc==SQLITE_OK ){
-    aMeta[1+pOp->p2] = pTos->i;
-    {
-      int ii;
-      for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-        rc = sqlite3BtreeUpdateMeta(db->aDb[pOp->p1].pBt, ii+1, aMeta[ii]);
-      }
-    }
-  }
+  Integerify(pTos);
+  rc = sqlite3BtreeUpdateMeta(db->aDb[pOp->p1].pBt, 1+pOp->p2, (int)pTos->i);
   Release(pTos);
   pTos--;
   break;
@@ -2598,15 +2578,10 @@ case OP_SetCookie: {
 ** invoked.
 */
 case OP_VerifyCookie: {
-  int aMeta[SQLITE_N_BTREE_META];
+  int iMeta;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  {
-    int ii;
-    for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-      rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, ii+1, &aMeta[ii]);
-    }
-  }
-  if( rc==SQLITE_OK && aMeta[1]!=pOp->p2 ){
+  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1, &iMeta);
+  if( rc==SQLITE_OK && iMeta!=pOp->p2 ){
     sqlite3SetString(&p->zErrMsg, "database schema has changed", (char*)0);
     rc = SQLITE_SCHEMA;
   }
@@ -2665,6 +2640,7 @@ case OP_OpenWrite: {
   int wrFlag;
   Btree *pX;
   int iDb;
+  Cursor *pCur;
   
   assert( pTos>=p->aStack );
   Integerify(pTos);
@@ -2687,12 +2663,13 @@ case OP_OpenWrite: {
   }
   assert( i>=0 );
   if( expandCursorArraySize(p, i) ) goto no_mem;
-  sqlite3VdbeCleanupCursor(&p->aCsr[i]);
-  memset(&p->aCsr[i], 0, sizeof(Cursor));
-  p->aCsr[i].nullRow = 1;
+  pCur = &p->aCsr[i];
+  sqlite3VdbeCleanupCursor(pCur);
+  memset(pCur, 0, sizeof(Cursor));
+  pCur->nullRow = 1;
   if( pX==0 ) break;
   do{
-    rc = sqlite3BtreeCursor(pX, p2, wrFlag, 0, 0, &p->aCsr[i].pCursor);
+    rc = sqlite3BtreeCursor(pX, p2, wrFlag, 0, 0, &pCur->pCursor);
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
@@ -2707,6 +2684,9 @@ case OP_OpenWrite: {
         break;
       }
       case SQLITE_OK: {
+        int flags = sqlite3BtreeFlags(pCur->pCursor);
+        pCur->intKey = (flags & BTREE_INTKEY)!=0;
+        pCur->zeroData = (flags & BTREE_ZERODATA)!=0;
         busy = 0;
         break;
       }
@@ -2754,16 +2734,17 @@ case OP_OpenTemp: {
     /* If a transient index is required, create it by calling
     ** sqlite3BtreeCreateTable() with the BTREE_ZERODATA flag before
     ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 2.
+    ** automatically created table with root-page 1.
     */
     if( pOp->p2 ){
       int pgno;
       rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
       if( rc==SQLITE_OK ){
+        assert( pgno==MASTER_ROOT+1 );
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 0, 0, &pCx->pCursor);
       }
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, 2, 1, 0, 0, &pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
     }
   }
   break;
@@ -2837,8 +2818,10 @@ case OP_MoveTo: {
   if( pC->pCursor!=0 ){
     int res, oc;
     pC->nullRow = 0;
-    if( pTos->flags & MEM_Int ){
-      int iKey = intToKey(pTos->i);
+    if( pC->intKey ){
+      i64 iKey;
+      assert( pTos->flags & MEM_Int );
+      iKey = intToKey(pTos->i);
       if( pOp->p2==0 && pOp->opcode==OP_MoveTo ){
         pC->movetoTarget = iKey;
         pC->deferredMoveto = 1;
@@ -2846,7 +2829,7 @@ case OP_MoveTo: {
         pTos--;
         break;
       }
-      sqlite3BtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
+      sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, &res);
       pC->lastRecno = pTos->i;
       pC->recnoIsValid = res==0;
     }else{
@@ -2871,8 +2854,7 @@ case OP_MoveTo: {
         /* res might be negative because the table is empty.  Check to
         ** see if this is the case.
         */
-        int keysize;
-        /* TODO: res = sqlite3BtreeKeySize(pC->pCursor,&keysize)!=0 || * keysize==0; */
+        res = sqlite3BtreeEof(pC->pCursor);
       }
       if( res && pOp->p2>0 ){
         pc = pOp->p2 - 1;
@@ -2927,6 +2909,7 @@ case OP_Found: {
   assert( i>=0 && i<p->nCursor );
   if( (pC = &p->aCsr[i])->pCursor!=0 ){
     int res, rx;
+    assert( pC->intKey==0 );
     Stringify(pTos);
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
@@ -2967,6 +2950,7 @@ case OP_Found: {
 case OP_IsUnique: {
   int i = pOp->p1;
   Mem *pNos = &pTos[-1];
+  Cursor *pCx;
   BtCursor *pCrsr;
   int R;
 
@@ -2977,7 +2961,9 @@ case OP_IsUnique: {
   R = pTos->i;
   pTos--;
   assert( i>=0 && i<=p->nCursor );
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  pCx = &p->aCsr[i];
+  pCrsr = pCx->pCursor;
+  if( pCrsr!=0 ){
     int res, rc;
     int v;         /* The record number on the P1 entry that matches K */
     char *zKey;    /* The value of K */
@@ -3080,11 +3066,11 @@ case OP_NotExists: {
 */
 case OP_NewRecno: {
   int i = pOp->p1;
-  int v = 0;
+  i64 v = 0;
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
   if( (pC = &p->aCsr[i])->pCursor==0 ){
-    v = 0;
+    /* The zero initialization above is all that is needed */
   }else{
     /* The next rowid or record number (different terms for the same
     ** thing) is obtained in a two-step algorithm.
@@ -3117,8 +3103,11 @@ case OP_NewRecno: {
     ** larger than the previous rowid.  This has been shown experimentally
     ** to double the speed of the COPY operation.
     */
-    int res, rx, cnt, x;
+    int res, rx, cnt;
+    i64 x;
     cnt = 0;
+    assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_INTKEY)!=0 );
+    assert( (sqlite3BtreeFlags(pC->pCursor) & BTREE_ZERODATA)==0 );
     if( !pC->useRandomRowid ){
       if( pC->nextRowidValid ){
         v = pC->nextRowid;
@@ -3127,16 +3116,16 @@ case OP_NewRecno: {
         if( res ){
           v = 1;
         }else{
-          sqlite3BtreeKey(pC->pCursor, 0, sizeof(v), (void*)&v);
+          sqlite3BtreeKeySize(pC->pCursor, (u64*)&v);
           v = keyToInt(v);
-          if( v==0x7fffffff ){
+          if( v==0x7fffffffffffffff ){
             pC->useRandomRowid = 1;
           }else{
             v++;
           }
         }
       }
-      if( v<0x7fffffff ){
+      if( v<0x7fffffffffffffff ){
         pC->nextRowidValid = 1;
         pC->nextRowid = v+1;
       }else{
@@ -3157,7 +3146,7 @@ case OP_NewRecno: {
         }
         if( v==0 ) continue;
         x = intToKey(v);
-        rx = sqlite3BtreeMoveto(pC->pCursor, &x, sizeof(int), &res);
+        rx = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)x, &res);
         cnt++;
       }while( cnt<1000 && rx==SQLITE_OK && res==0 );
       db->priorNewRowid = v;
@@ -3517,7 +3506,7 @@ case OP_Column: {
 case OP_Recno: {
   int i = pOp->p1;
   Cursor *pC;
-  int v;
+  i64 v;
 
   assert( i>=0 && i<p->nCursor );
   pC = &p->aCsr[i];
@@ -3532,7 +3521,7 @@ case OP_Recno: {
     break;
   }else{
     assert( pC->pCursor!=0 );
-    sqlite3BtreeKey(pC->pCursor, 0, sizeof(u32), (char*)&v);
+    sqlite3BtreeKeySize(pC->pCursor, (u64*)&v);
     v = keyToInt(v);
   }
   pTos->i = v;
@@ -3965,14 +3954,16 @@ case OP_Clear: {
 case OP_CreateIndex:
 case OP_CreateTable: {
   int pgno;
+  int flags;
   assert( pOp->p3!=0 && pOp->p3type==P3_POINTER );
   assert( pOp->p2>=0 && pOp->p2<db->nDb );
   assert( db->aDb[pOp->p2].pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
-    rc = sqlite3BtreeCreateTable(db->aDb[pOp->p2].pBt, &pgno, BTREE_INTKEY);
+    flags = BTREE_INTKEY;
   }else{
-    rc = sqlite3BtreeCreateTable(db->aDb[pOp->p2].pBt, &pgno, BTREE_ZERODATA);
+    flags = BTREE_ZERODATA;
   }
+  rc = sqlite3BtreeCreateTable(db->aDb[pOp->p2].pBt, &pgno, flags);
   pTos++;
   if( rc==SQLITE_OK ){
     pTos->i = pgno;

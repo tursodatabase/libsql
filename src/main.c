@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.168 2004/05/10 10:34:43 danielk1977 Exp $
+** $Id: main.c,v 1.169 2004/05/10 23:29:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -217,34 +217,11 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   ;
 
   /* The following SQL will read the schema from the master tables.
-  ** The first version works with SQLite file formats 2 or greater.
-  ** The second version is for format 1 files.
-  **
-  ** Beginning with file format 2, the rowid for new table entries
-  ** (including entries in sqlite_master) is an increasing integer.
-  ** So for file format 2 and later, we can play back sqlite_master
-  ** and all the CREATE statements will appear in the right order.
-  ** But with file format 1, table entries were random and so we
-  ** have to make sure the CREATE TABLEs occur before their corresponding
-  ** CREATE INDEXs.  (We don't have to deal with CREATE VIEW or
-  ** CREATE TRIGGER in file format 1 because those constructs did
-  ** not exist then.) 
   */
   static char init_script[] = 
-/****** FIX ME
      "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
      "UNION ALL "
-*/
      "SELECT type, name, rootpage, sql, 0 FROM sqlite_master";
-  static char older_init_script[] = 
-     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
-     "UNION ALL "
-     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master "
-     "WHERE type='table' "
-     "UNION ALL "
-     "SELECT type, name, rootpage, sql, 0 FROM sqlite_master "
-     "WHERE type='index'";
-
 
   assert( iDb>=0 && iDb!=1 && iDb<db->nDb );
 
@@ -281,23 +258,25 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   */
   if( db->aDb[iDb].pBt==0 ) return SQLITE_OK;
   rc = sqlite3BtreeCursor(db->aDb[iDb].pBt, MASTER_ROOT, 0, 0, 0, &curMain);
-  if( rc ){
+  if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
     return rc;
   }
 
   /* Get the database meta information
   */
-  {
-    int ii;
-    for(ii=0; rc==SQLITE_OK && ii<SQLITE_N_BTREE_META; ii++){
-      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, ii+1, &meta[ii]);
+  if( rc==SQLITE_OK ){
+    int i;
+    for(i=0; rc==SQLITE_OK && i<SQLITE_N_BTREE_META; i++){
+      rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, i+1, &meta[i]);
     }
-  }
-  if( rc ){
-    sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
-    sqlite3BtreeCloseCursor(curMain);
-    return rc;
+    if( rc ){
+      sqlite3SetString(pzErrMsg, sqlite3_error_string(rc), (char*)0);
+      sqlite3BtreeCloseCursor(curMain);
+      return rc;
+    }
+  }else{
+    memset(meta, 0, sizeof(meta));
   }
   db->aDb[iDb].schema_cookie = meta[1];
   if( iDb==0 ){
@@ -313,22 +292,17 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     if( db->safety_level==0 ) db->safety_level = 2;
 
     /*
-    **  file_format==1    Version 2.1.0.
-    **  file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
-    **  file_format==3    Version 2.6.0. Fix empty-string index bug.
-    **  file_format==4    Version 2.7.0. Add support for separate numeric and
-    **                    text datatypes.
+    **  file_format==1    Version 3.0.0.
     */
     if( db->file_format==0 ){
       /* This happens if the database was initially empty */
-      db->file_format = 4;
-    }else if( db->file_format>4 ){
+      db->file_format = 1;
+    }else if( db->file_format>1 ){
       sqlite3BtreeCloseCursor(curMain);
       sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
       return SQLITE_ERROR;
     }
-  }else if( db->file_format!=meta[2] || db->file_format<4 ){
-    assert( db->file_format>=4 );
+  }else if( db->file_format!=meta[2] ){
     if( meta[2]==0 ){
       sqlite3SetString(pzErrMsg, "cannot attach empty database: ",
          db->aDb[iDb].zName, (char*)0);
@@ -347,20 +321,23 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
   */
   assert( db->init.busy );
   sqlite3SafetyOff(db);
-  if( iDb==0 ){
-    rc = sqlite3_exec(db, 
-        db->file_format>=2 ? init_script : older_init_script,
-        sqlite3InitCallback, &initData, 0);
+  if( rc==SQLITE_EMPTY ){
+    /* For an empty database, there is nothing to read */
+    rc = SQLITE_OK;
   }else{
-    char *zSql = 0;
-    sqlite3SetString(&zSql, 
-       "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
-       db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
-    rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-    sqliteFree(zSql);
+    if( iDb==0 ){
+      rc = sqlite3_exec(db, init_script, sqlite3InitCallback, &initData, 0);
+    }else{
+      char *zSql = 0;
+      sqlite3SetString(&zSql, 
+         "SELECT type, name, rootpage, sql, ", zDbNum, " FROM \"",
+         db->aDb[iDb].zName, "\".sqlite_master", (char*)0);
+      rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
+      sqliteFree(zSql);
+    }
+    sqlite3SafetyOn(db);
+    sqlite3BtreeCloseCursor(curMain);
   }
-  sqlite3SafetyOn(db);
-  sqlite3BtreeCloseCursor(curMain);
   if( sqlite3_malloc_failed ){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     rc = SQLITE_NOMEM;

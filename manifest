@@ -1,5 +1,5 @@
-C The\sbtree.c\smodule\spasses\sall\stests\sand\sis\sready\sfor\sintegration.\nStill\sneed\sto\sgo\sback\sand\sdo\scoverage\stesting.\s(CVS\s1343)
-D 2004-05-10T18:45:10
+C Work\stoward\sgetting\sthe\snew\sbtree.c\sintegrated\swith\svdbe.c.\s(CVS\s1345)
+D 2004-05-10T23:29:49
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,8 +23,8 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c fa9a58234406d84eeb900517d0c0adc4b2da051a
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 3904c06f69df10a29b49bb3f5c651eb4813980ac
-F src/btree.h 7c3939a2e5f782c1ebac3bf43c02a16febad6df1
+F src/btree.c 38cff183ac4f1d1a2e3079c9eeda7137d103e06e
+F src/btree.h 91343fe6893b8bc35f496bbcecec095a803e5763
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c 8d9965b3ce5dcc1bd4dac60bd0f14524fea269cb
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
@@ -36,7 +36,7 @@ F src/func.c 6cf6501f092b41c8cd9368b09c287016c0576438
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 2d082257784a8613b1b50cd5bbf42b9466646a0e
-F src/main.c 45f0dc84265d18b0e99500dced4975df8a041481
+F src/main.c 5f8fe4e06fbb79571f4d1a8055bcea2067e2243d
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
@@ -49,7 +49,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 9290439282fdc787fdf34d8600dec3a360275c92
 F src/shell.c 255b8b9023cb5274f56d87df437e8ce6ef810b91
 F src/sqlite.h.in 799c5e726296ec7bc20e6407cdf4df0e0bc00c0c
-F src/sqliteInt.h 3151a1c14fc07f96169e904913d28c7ab173d8ca
+F src/sqliteInt.h 16365a1a4cb28a9edcaada45d40d104112b3544c
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c a38bf2263a097fcc9603e818c291151de1782c11
 F src/test1.c 79956f70dddd1a28f8577bbd61c8cf28e5875eb8
@@ -63,13 +63,13 @@ F src/update.c 6ca82fc4a0fb4d7f134e961921c906f6f3c8bc74
 F src/utf.c fc799748d43fe1982d157b871e3e420a19c85d4f
 F src/util.c 74ee316594f68c41aed1884d737ab4085d479455
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
-F src/vdbe.c 5cd18c8a3ab826f02ef1ce88a5798ec744337b30
+F src/vdbe.c 24a2dbe73ad2f283e70fda6f2ce74ac146239005
 F src/vdbe.h 2dc4d1161b64f5684faa6a2d292e318a185ecb2e
-F src/vdbeInt.h 2567223b73d8807d61f8141d9f5e5f7f2975f50a
+F src/vdbeInt.h d5786e1c4f7dadac24e3baeed9847dbfed3016de
 F src/vdbeaux.c 943484a2437b6cf40d1ffd3d62e48b5c9a043c5a
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test ba8261d38da6b6a7d4f78ec543c548c4418582ef
+F test/attach.test 76f096f384221f775cc0a856e51d5a35f9ee1541
 F test/attach2.test ce61e6185b3cd891cc0e9a4c868fcc65eb92fc55
 F test/auth.test 5c4d95cdaf539c0c236e20ce1f71a93e7dde9185
 F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
@@ -133,7 +133,7 @@ F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
 F test/tableapi.test e0c4cce61e58343caa84dab33fa6823cb35fe1e1
 F test/tclsqlite.test a684fc191b81e6cded8a81263663d5a130fbb013
 F test/temptable.test a770ba6308d7f7332fce985086b8e06bed6430c2
-F test/tester.tcl 64babe2528dec64125ddc8c1af763713710b59c3
+F test/tester.tcl 3780967a81e8d3e32caf167c9db3a66210ff69ff
 F test/thread1.test 53f050d5be6932d9430df7756edd379366508ff6
 F test/threadtest1.c f7f896e62ed46feae1dc411114a48c15a0f82ee2
 F test/threadtest2.c d94ca4114fd1504f7e0ae724bcd83d4b40931d86
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 433ae0d327e5d5b0761e88418ed57fc4cbf4966b
-R 2c4d2a423e133f1d66dbfff76eb51821
+P 84506b23365933383397e02a8ec5a980c57c80fc
+R 00b64215240cbce0ff6f014e73120057
 U drh
-Z 4381466dc0ffb9f0d1943a642446ce5b
+Z 014c7bdc3d67480b085cd3793f146069

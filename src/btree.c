@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.123 2004/05/10 18:45:10 drh Exp $
+** $Id: btree.c,v 1.124 2004/05/10 23:29:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1894,6 +1894,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
   assert( pCur->pPage );
   assert( pCur->pPage->isInit );
   if( pCur->isValid==0 ){
+    *pRes = -1;
     assert( pCur->pPage->nCell==0 );
     return SQLITE_OK;
   }
@@ -3160,7 +3161,7 @@ int sqlite3BtreeInsert(
   if( rc ) return rc;
   assert( szNew==cellSize(pPage, newCell) );
   assert( szNew<=sizeof(newCell) );
-  if( loc==0 ){
+  if( loc==0 && pCur->isValid ){
     int szOld;
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
     oldCell = pPage->aCell[pCur->idx];
@@ -3425,6 +3426,15 @@ int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
   return SQLITE_OK;
 }
 
+/*
+** Return the flag byte at the beginning of the page that the cursor
+** is currently pointing to.
+*/
+int sqlite3BtreeFlags(BtCursor *pCur){
+  MemPage *pPage = pCur->pPage;
+  return pPage ? pPage->aData[pPage->hdrOffset] : 0;
+}
+
 /******************************************************************************
 ** The complete implementation of the BTree subsystem is above this line.
 ** All the code the follows is for testing and troubleshooting the BTree
@@ -3527,16 +3537,6 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   sqlite3pager_unref(data);
   fflush(stdout);
   return SQLITE_OK;
-}
-#endif
-
-#ifdef SQLITE_TEST
-/*
-** Return the flag byte at the beginning of the page that the cursor
-** is currently pointing to.
-*/
-int sqlite3BtreeFlags(BtCursor *pCur){
-  return pCur->pPage->aData[pCur->pPage->hdrOffset];
 }
 #endif
 
