@@ -1,0 +1,18 @@
+How to do a B*Tree insert:
+
+add_to_page(cursor, data, ptr){
+  if( data_fits_on_page ){ add data to page; return; }
+  if( page==root ){
+     newpage1 = lowerpart( page+(data+ptr) );
+     newpage2 = upperpart( page+(data+ptr) );
+     page = newpage1 + center + newpage2;
+     return;
+  }
+  if( move_some_data_left || move_some_data_right ){
+    add data to page
+    return
+  }
+  newpage = upperhalf( page+(data+ptr) );
+  pop cursor one level
+  add_to_page(cursor, center, newpage);
+}

@@ -1,5 +1,5 @@
-C Begin\sadding\sBTree\scode\s(CVS\s213)
-D 2001-04-17T20:09:11
+C :-)\s(CVS\s1719)
+D 2001-04-17T20:09:44
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in ac01d6145714b0d1c9e99382caf03cf30d6f4c8d
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -8,6 +8,9 @@ F configure 260d3be664b6d9b4d2d985e66b6dae1ef723c86e x
 F configure.in 6940e3f88bf3d28a10c73b06ab99fd3a7e039a61
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F doc/report1.txt 734cbae63b1310cc643fe5e9e3da1ab55a79b99e
+F notes/notes1.txt b7c0812b704a022e88c621146ae50955c923d464
+F notes/notes2.txt 30b1d05005731ff8b49e430921daf40e5d8c764c
+F notes/notes3.txt cd5e7bd2167d7ef89b1077abdfa68f0af6337744
 F src/TODO 38a68a489e56e9fd4a96263e0ff9404a47368ad4
 F src/btree.c 670b20349bd1d1448cc90f7b9487c2bf7a5c039c
 F src/btree.h f21c240d0c95f93e2a128106d04a6c448ed0eb94
@@ -103,7 +106,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P a7bfcbb4131ab17a58d5e843c418b2e1a3ab2abc
-R a9d053b754fd8fb60eea783a8c6d6da7
+P bdb1c425f577d455155982ee2cd8cb686bcaf0da
+R 71de057d1d30d3f00126006f203367a6
 U drh
-Z b0f122553586c19814acf39c12755271
+Z ab8bc94b1c7db1acb4a5bcaf00ffbb81

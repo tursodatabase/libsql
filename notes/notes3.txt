@@ -1,0 +1,105 @@
+The Proposed New SQLite 2.0 Interface design.  (April 16, 2001)
+
+Primary access routines:
+
+  sqlite *sqlite_open(const char *zFilename, int mode);
+  int sqlite_compile(sqlite*, const char *zSql);
+  int sqlite_row(sqlite*, int *argc, const char ***argv);
+  int sqlite_finish(sqlite*);
+  int sqlite_close(sqlite*);
+
+Secondary access routines:
+
+  const char sqlite_version[];
+  const char sqlite_encoding[];
+  int sqlite_complete(const char *);
+  sqlite *sqlite_dup(sqlite*);
+  int sqlite_abort(sqlite*);
+  void sqlite_interrupt(sqlite*);
+  char *sqlite_errmsg(sqlite*);
+  const char **sqlite_columns(sqlite*);
+  int sqlite_argc(sqlite*);
+  const char **sqlite_argv(sqlite*);
+  char *sqlite_vmprintf(const char *zFormat, va_list);
+  int sqlite_table(sqlite*, int *nrow, int *ncolumn, const char ***argv);
+  void sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+
+Access routines that are implement derived from primary and sec
+  
+  char *sqlite_mprintf(const char *zFormat, ...);
+  int sqlite_compile_vprintf(sqlite*, const char *zFormat, va_list);
+  int sqlite_compile_printf(sqlite*, const char *zFormat, ...);
+  int sqlite_busy_timeout(sqlite*, int ms);
+
+The C++ interface is obvious...
+
+Deprecated legacy interfaces:
+
+  int sqlite_exec(
+    sqlite*,
+    char *sql,
+    int (*)(void*,int,char**,char**),
+    void*,
+    char **errmsg
+  );
+  int sqlite_exec_printf(...);
+  int sqlite_exec_vprintf(...);
+  int sqlite_get_table(
+    sqlite*,
+    char *sql,
+    const char ***result,
+    int *nrow,
+    int *ncolumn,
+    char **errmsg
+  );
+  void sqlite_free_table(char**);
+  int sqlite_get_table_printf(...);
+  int sqlite_get_table_vprintf(...);
+
+TCL Interface
+
+  sqlite DB FILENAME ?MODE?
+  DB compile SQL
+  DB row VAR
+  DB argc
+  DB argv ?N?
+  DB table ?VAR?
+  DB columns ?N?
+  DB finish
+  DB abort
+  DB eval SQL ?VAR SCRIPT?
+  DB close
+  DB complete
+  DB timeout MS
+  DB busy SCRIPT
+  DB dup NEWDB
+
+Primary access pattern:
+
+  sqlite *db = sqlite_open("testdb", 0644);
+  sqlite_compile(db, "SELECT * FROM sqlite_master");
+  while( sqlite_row(db, &argc, &argv)==SQLITE_OK ){
+    /* Do something with the row data in argc, argv */
+  }
+  sqlite_finish(db);
+  sqlite_close(db);
+
+Alternative access pattern 1:
+
+  sqlite *db = sqlite_open("testdb", 0644);
+  sqlite_compile(db, "SELECT * FROM sqlite_master");
+  sqlite_table(db, &nrow, &ncolumn, &argv);
+  /* Do something with the matrix data in argv */
+  sqlite_finish(db);
+  sqlite_close(db);
+
+Issues:
+
+  *  If one query is in progress and we do sqlite_compile(), does
+     that abort the current query or return an error code?
+
+  *  What happens here:
+        sqlite_compile(db, "SELECT a FROM t1; SELECT b,c FROM t2;");
+        sqlite_table(db, &nrow, &ncolumn, &argv);
+     What value is returned for nrow and ncolumn?  Or is this an error?
+     Or maybe only the first table is returned?
