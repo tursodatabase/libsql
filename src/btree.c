@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.127 2004/05/11 09:31:32 drh Exp $
+** $Id: btree.c,v 1.128 2004/05/12 15:15:47 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -336,7 +336,7 @@ static void parseCellHeader(
   MemPage *pPage,         /* Page containing the cell */
   unsigned char *pCell,   /* The cell */
   u64 *pnData,            /* Number of bytes of data in payload */
-  u64 *pnKey,             /* Number of bytes of key, or key value for intKey */
+  i64 *pnKey,             /* Number of bytes of key, or key value for intKey */
   int *pnHeader           /* Size of header in bytes.  Offset to payload */
 ){
   int n;
@@ -350,7 +350,7 @@ static void parseCellHeader(
   }else{
     n += getVarint(&pCell[n], pnData);
   }
-  n += getVarint(&pCell[n], pnKey);
+  n += getVarint(&pCell[n], (u64*)pnKey);
   *pnHeader = n;
 }
 
@@ -363,7 +363,8 @@ static void parseCellHeader(
 */
 static int cellSize(MemPage *pPage, unsigned char *pCell){
   int n;
-  u64 nData, nKey;
+  u64 nData;
+  i64 nKey;
   int nPayload, maxPayload;
 
   parseCellHeader(pPage, pCell, &nData, &nKey, &n);
@@ -867,6 +868,7 @@ int sqlite3BtreeOpen(
   ** the right size.  This is to guard against size changes that result
   ** when compiling on a different architecture.
   */
+  assert( sizeof(i64)==8 );
   assert( sizeof(u64)==8 );
   assert( sizeof(u32)==4 );
   assert( sizeof(u16)==2 );
@@ -1392,7 +1394,7 @@ static void releaseTempCursor(BtCursor *pCur){
 ** For a table with the INTKEY flag set, this routine returns the key
 ** itself, not the number of bytes in the key.
 */
-int sqlite3BtreeKeySize(BtCursor *pCur, u64 *pSize){
+int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
   MemPage *pPage;
   unsigned char *cell;
 
@@ -1471,7 +1473,8 @@ static int getPayload(
   int rc;
   MemPage *pPage;
   Btree *pBt;
-  u64 nData, nKey;
+  u64 nData;
+  i64 nKey;
   int maxLocal, ovflSize;
 
   assert( pCur!=0 && pCur->pPage!=0 );
@@ -1490,7 +1493,7 @@ static int getPayload(
   }else{
     aPayload += getVarint(aPayload, &nData);
   }
-  aPayload += getVarint(aPayload, &nKey);
+  aPayload += getVarint(aPayload, (u64*)&nKey);
   if( pPage->intKey ){
     nKey = 0;
   }
@@ -1617,7 +1620,8 @@ static const unsigned char *fetchPayload(
   unsigned char *aPayload;
   MemPage *pPage;
   Btree *pBt;
-  u64 nData, nKey;
+  u64 nData;
+  i64 nKey;
   int maxLocal;
 
   assert( pCur!=0 && pCur->pPage!=0 );
@@ -1636,7 +1640,7 @@ static const unsigned char *fetchPayload(
   }else{
     aPayload += getVarint(aPayload, &nData);
   }
-  aPayload += getVarint(aPayload, &nKey);
+  aPayload += getVarint(aPayload, (u64*)&nKey);
   if( pPage->intKey ){
     nKey = 0;
   }
@@ -1926,7 +1930,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than pKey.
 */
-int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
+int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
   int rc;
 
   if( pCur->status ){
@@ -1951,7 +1955,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
     pageIntegrity(pPage);
     while( lwr<=upr ){
       const void *pCellKey;
-      u64 nCellKey;
+      i64 nCellKey;
       pCur->idx = (lwr+upr)/2;
       sqlite3BtreeKeySize(pCur, &nCellKey);
       if( pPage->intKey ){
@@ -2269,7 +2273,8 @@ static int freePage(MemPage *pPage){
 static int clearCell(MemPage *pPage, unsigned char *pCell){
   Btree *pBt = pPage->pBt;
   int rc, n, nPayload;
-  u64 nData, nKey;
+  u64 nData;
+  i64 nKey;
   Pgno ovflPgno;
 
   parseCellHeader(pPage, pCell, &nData, &nKey, &n);
@@ -2309,7 +2314,7 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
 static int fillInCell(
   MemPage *pPage,                /* The page that contains the cell */
   unsigned char *pCell,          /* Complete text of the cell */
-  const void *pKey, u64 nKey,    /* The key */
+  const void *pKey, i64 nKey,    /* The key */
   const void *pData,int nData,   /* The data */
   int *pnSize                    /* Write cell size here */
 ){
@@ -2333,7 +2338,7 @@ static int fillInCell(
   if( !pPage->zeroData ){
     nHeader += putVarint(&pCell[nHeader], nData);
   }
-  nHeader += putVarint(&pCell[nHeader], nKey);
+  nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
   
   /* Fill in the payload */
   if( pPage->zeroData ){
@@ -3166,7 +3171,7 @@ static int checkReadLocks(BtCursor *pCur){
 */
 int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
-  const void *pKey, u64 nKey,    /* The key of the new record */
+  const void *pKey, i64 nKey,    /* The key of the new record */
   const void *pData, int nData   /* The data of the new record */
 ){
   int rc;
@@ -3194,6 +3199,7 @@ int sqlite3BtreeInsert(
   rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc);
   if( rc ) return rc;
   pPage = pCur->pPage;
+  assert( pPage->intKey || nKey>=0 );
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
@@ -3522,7 +3528,8 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   assert( hdr == (pgno==1 ? 100 : 0) );
   idx = get2byte(&data[hdr+3]);
   while( idx>0 && idx<=pBt->pageSize ){
-    u64 nData, nKey;
+    u64 nData;
+    i64 nKey;
     int nHeader;
     Pgno child;
     unsigned char *pCell = &data[idx];
@@ -3818,7 +3825,8 @@ static int checkTreePage(
   cur.pPage = pPage;
   for(i=0; i<pPage->nCell; i++){
     u8 *pCell = pPage->aCell[i];
-    u64 nKey, nData;
+    i64 nKey;
+    u64 nData;
     int sz, nHeader;
 
     /* Check payload overflow pages

@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.45 2004/05/11 00:58:56 drh Exp $
+** @(#) $Id: btree.h,v 1.46 2004/05/12 15:15:47 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -73,9 +73,9 @@ int sqlite3BtreeCursor(
 );
 
 int sqlite3BtreeCloseCursor(BtCursor*);
-int sqlite3BtreeMoveto(BtCursor*, const void *pKey, u64 nKey, int *pRes);
+int sqlite3BtreeMoveto(BtCursor*, const void *pKey, i64 nKey, int *pRes);
 int sqlite3BtreeDelete(BtCursor*);
-int sqlite3BtreeInsert(BtCursor*, const void *pKey, u64 nKey,
+int sqlite3BtreeInsert(BtCursor*, const void *pKey, i64 nKey,
                                   const void *pData, int nData);
 int sqlite3BtreeFirst(BtCursor*, int *pRes);
 int sqlite3BtreeLast(BtCursor*, int *pRes);
@@ -83,7 +83,7 @@ int sqlite3BtreeNext(BtCursor*, int *pRes);
 int sqlite3BtreeEof(BtCursor*);
 int sqlite3BtreeFlags(BtCursor*);
 int sqlite3BtreePrevious(BtCursor*, int *pRes);
-int sqlite3BtreeKeySize(BtCursor*, u64 *pSize);
+int sqlite3BtreeKeySize(BtCursor*, i64 *pSize);
 int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
 const void *sqlite3BtreeKeyFetch(BtCursor*, int amt);
 const void *sqlite3BtreeDataFetch(BtCursor*, int amt);

@@ -1,5 +1,5 @@
-C The\spager\snow\shandles\sfile\s":memory:"\scomplete\sin\smemory\swith\sno\sdisk\sI/O.\s(CVS\s1363)
-D 2004-05-12T13:30:08
+C Btree\suses\ssigned\sintegers\sfor\sthe\srowid.\s\sThe\sintToKey()\sand\skeyToInt()\smacros\nare\snow\sno-ops.\s(CVS\s1364)
+D 2004-05-12T15:15:47
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,8 +23,8 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 35df9e6d3a30bbe2d32d6b08f51e2a16b835c6e8
-F src/btree.h 578dc465c801cf4e7666efbb0fa1c46a54758008
+F src/btree.c 62a870f24d3fa067d206596c7a8686192edf8deb
+F src/btree.h 5549569274a78d31c941845e0771b878755b07e5
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
 F src/build.c f25e4ac9f102efd70188bc09a459c2b461fe2135
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
@@ -65,7 +65,7 @@ F src/util.c 778a8cd03ad6e52778602d20a3132c7d2d1b0a0c
 F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
 F src/vdbe.c 9b82d9ed192729e00581ae08d1cd71a27a698fe0
 F src/vdbe.h 71c02a75d506a3ce9f6bdfc78101528d5edf319b
-F src/vdbeInt.h 3610b51a3207f1d4e780748a6d8f13cfe98ce2f7
+F src/vdbeInt.h 608a0b092a2ab3ab7538384e5e3da09ae512d50c
 F src/vdbeaux.c c976c7fe334a1d1c102dda410546e880549a6060
 F src/where.c 487e55b1f64c8fbf0f46a9a90c2247fc45ae6a9a
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -190,7 +190,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2f16c9ef3c101c4280991ce3cb0c3bea7b6ed439
-R 34cbf66e13c9fd717a5c35355887a263
+P 97de9f7ceebab859ef984d155808575ad321afc0
+R 2679bc087b647fe5d90e5a7c20264be0
 U drh
-Z fff149a4adda820449b55f8e9ff0bdd9
+Z bf6ca6f575d739fe1938b329ef825f50

@@ -17,12 +17,11 @@
 */
 
 /*
-** In the btree layer, a rowid is an unsigned 64-bit integer.  In the
-** schema layer, a rowid is a signed 64-bit integer.  The following macros
-** convert between the two in such a way as to preserve sort order.
+** intToKey() and keyToInt() used to transform the rowid.  But with
+** the latest versions of the design they are no-ops.
 */
-#define keyToInt(X)   (X ^ 0x8000000000000000)
-#define intToKey(X)   (X ^ 0x8000000000000000)
+#define keyToInt(X)   (X)
+#define intToKey(X)   (X)
 
 /*
 ** The makefile scans this source file and creates the following
