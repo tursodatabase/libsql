@@ -1,5 +1,5 @@
-C Version\s3.0.8\s(CVS\s2021)
-D 2004-10-12T00:56:09
+C Fix\stypo\son\shomepage.\s\sTicket\s#956.\s(CVS\s2022)
+D 2004-10-12T02:38:10
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -236,7 +236,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl bce6f03a9d00366e7f9eba9174167930b9f1b4ad
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
-F www/index.tcl acf9b0391e0bd8be34b784274d81308efc1f2540
+F www/index.tcl 0c923045904426f5b5313a5563c4759277603567
 F www/lang.tcl ba4fbca6342938f0240efdd84e83d5badcd72667
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P d3d0d7a8bb63842739fb470f7843db1ffbdc7d4f
-R 1b662162253f7c9fb8d0728586103b36
+P 7dd66d7653adf5cdd6b3b0fb9053815ab199d6cc
+R 7c96d6747ffa976caa15def1d0bd0bd7
 U drh
-Z 7c86bb98987a12165e39578f144d9903
+Z c308df2f37087503eed03596397edc59
