@@ -18,7 +18,7 @@
 */
 #include <stdlib.h>
 #include <string.h>
-#include "sqlite.h"
+#include "sqliteInt.h"
 
 /*
 ** This structure is used to pass data from sqlite_get_table() through
@@ -26,6 +26,7 @@
 */
 typedef struct TabResult {
   char **azResult;
+  char *zErrMsg;
   int nResult;
   int nAlloc;
   int nRow;
@@ -82,6 +83,11 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
       }
       p->azResult[p->nData++] = z;
     }
+  }else if( p->nColumn!=nCol ){
+    sqliteSetString(&p->zErrMsg,
+       "sqlite_get_table() called with two or more incompatible queries", 0);
+    p->rc = SQLITE_ERROR;
+    return 1;
   }
 
   /* Copy over the row data
@@ -129,6 +135,7 @@ int sqlite_get_table(
   *pazResult = 0;
   if( pnColumn ) *pnColumn = 0;
   if( pnRow ) *pnRow = 0;
+  res.zErrMsg = 0;
   res.nResult = 0;
   res.nRow = 0;
   res.nColumn = 0;
@@ -146,8 +153,18 @@ int sqlite_get_table(
   }
   if( rc==SQLITE_ABORT ){
     sqlite_free_table(&res.azResult[1]);
+    if( res.zErrMsg ){
+      if( pzErrMsg ){
+        free(*pzErrMsg);
+        *pzErrMsg = res.zErrMsg;
+        sqliteStrRealloc(pzErrMsg);
+      }else{
+        sqliteFree(res.zErrMsg);
+      }
+    }
     return res.rc;
   }
+  sqliteFree(res.zErrMsg);
   if( rc!=SQLITE_OK ){
     sqlite_free_table(&res.azResult[1]);
     return rc;

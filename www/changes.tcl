@@ -20,6 +20,8 @@ proc chng {date desc} {
 chng {2002 Mar 122 (2.4.3)} {
 <li>Fix a bug in SELECT that occurs when a compound SELECT is used as a
     subquery in the FROM of a SELECT.</li>
+<li>The <b>sqlite_get_table()</b> function now returns an error if you
+    give it two or more SELECTs that return different numbers of columns.</li>
 }
 
 chng {2002 Mar 14 (2.4.2)} {

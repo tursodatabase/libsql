@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.4 2001/10/20 12:30:12 drh Exp $
+# $Id: tableapi.test,v 1.5 2002/03/23 00:52:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -143,6 +143,15 @@ do_test tableapi-3.7 {
     SELECT * FROM xyz WHERE a>1000
   } {}
 } {0 0 2 a b}
+
+do_test tableapi-4.1 {
+  set rc [catch {
+    sqlite_get_table_printf $::dbx {
+      SELECT * FROM xyz;  SELECT * FROM sqlite_master
+    } {}
+  } msg]
+  concat $rc $msg
+} {0 1 {sqlite_get_table() called with two or more incompatible queries}}
 
 do_test tableapi-99.0 {
   sqlite_close $::dbx
