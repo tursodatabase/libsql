@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.126 2004/12/20 19:01:33 tpoindex Exp $
+** @(#) $Id: sqlite.h.in,v 1.127 2005/01/20 01:14:23 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -665,6 +665,13 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
 /*
+** Set all the parameters in the compiled SQL statement to NULL.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite3_clear_bindings(sqlite3_stmt*);
+
+/*
 ** Return the number of columns in the result set returned by the compiled
 ** SQL statement. This routine returns 0 if pStmt is an SQL statement
 ** that does not return data (for example an UPDATE).
@@ -1153,6 +1160,19 @@ int sqlite3_rekey(
   sqlite3 *db,                   /* Database to be rekeyed */
   const void *pKey, int nKey     /* The new key */
 );
+
+/*
+** Sleep for a little while. The second parameter is the number of
+** miliseconds to sleep for. 
+**
+** If the operating system does not support sleep requests with 
+** milisecond time resolution, then the time will be rounded up to 
+** the nearest second. The number of miliseconds of sleep actually 
+** requested from the operating system is returned.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+int sqlite3_sleep(int);
 
 /*
 ** If the following global variable is made to point to a

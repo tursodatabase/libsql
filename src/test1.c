@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.123 2005/01/19 23:24:51 drh Exp $
+** $Id: test1.c,v 1.124 2005/01/20 01:14:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1723,6 +1723,29 @@ static int test_bind_parameter_index(
 }
 
 /*
+** Usage:   sqlite3_clear_bindings STMT
+**
+*/
+#if 0
+static int test_clear_bindings(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_clear_bindings(pStmt)));
+  return TCL_OK;
+}
+#endif
+
+/*
 ** Usage: sqlite3_errcode DB
 **
 ** Return the string representation of the most recent sqlite3_* API
@@ -2533,6 +2556,28 @@ static int test_interrupt(
 }
 
 /*
+** Usage:  sqlite3_sleep ms 
+**
+** Sleep for the specified number of ms.
+*/
+#if 0
+static int test_sleep(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  sqlite3 *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " ms", 0);
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_sleep(atoi(argv[1]))));
+  return TCL_OK;
+}
+#endif
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -2764,6 +2809,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
      { "sqlite_set_magic",              (Tcl_CmdProc*)sqlite_set_magic      },
      { "sqlite3_interrupt",             (Tcl_CmdProc*)test_interrupt        },
+#if 0
+     { "sqlite3_sleep",                 (Tcl_CmdProc*)test_sleep            },
+#endif
   };
   static struct {
      char *zName;
@@ -2780,6 +2828,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
      { "sqlite3_bind_parameter_index",  test_bind_parameter_index, 0},
+#if 0
+     { "sqlite3_clear_bindings",        test_clear_bindings, 0},
+#endif
      { "sqlite3_errcode",               test_errcode       ,0 },
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
