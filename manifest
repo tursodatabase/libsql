@@ -1,5 +1,5 @@
-C Add\slarge\sfile\ssupport\sto\sWindows.\s\sChange\slarge\sfile\ssupport\sfor\sUnix\sso\nthat\sit\scompiles\sautomatically\s-\swithout\srequiring\sspecial\soptions\son\sthe\ncompiler\scommand\sline.\s(CVS\s781)
-D 2002-11-06T14:08:11
+C Try\sto\sbetter\sdetect\swhen\sthe\slibrary\sis\scompiled\sfor\slarge\sfile\ssupport\s(LFS)\nbut\sthe\ssupport\sis\snot\savailable\sin\sthe\shost\sOS\skernel.\s(CVS\s782)
+D 2002-11-09T00:33:16
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,11 +28,11 @@ F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
-F src/main.c b95d7eeec90f86d05b6a064d07db34b7279e06d4
+F src/main.c f04f93b8928d6d85976e5137fea146a46de1fd6e
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
-F src/os.c ebe65e9a1c88535e367aaaae25ef087c1486b08d
-F src/os.h deac8efeac7767de931122c536ca253fdb70f2f8
-F src/pager.c 7d581b201d7284fa9dafde92cd5b737e3733c984
+F src/os.c caf5a34b35a2d99a58457517261c879ac29b0a05
+F src/os.h 1caaea972d1c0401cfe6300aba51fb0f6fe435c9
+F src/pager.c 292853d08658df23f1044fba1a793a210475964e
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -40,12 +40,12 @@ F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c ce82596a2eaaf418edba45b2426f41065e49578b
 F src/shell.c 9e9a6eb6bca07f01e6472a603f908a0127ea50ff
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in d3999a9c6374675779058d6cfe5431131618e92b
+F src/sqlite.h.in 98b1574b2362abe02c4a4c73b9dbf99bcd713ab3
 F src/sqliteInt.h a001c52dfb10ec38f18d6b9ed7dd8b3f42ca8c72
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
-F src/test2.c 5fa694d130b3309e3f9c852f0a437750fcb5a006
+F src/test2.c 8f7d88895a49b3eed111469f2ab1071cb780ed12
 F src/test3.c 540fa7fc3cb3732517b779b5f90ad9cc4303d0ab
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 81bb1aed5e9094a9655bd03614bb111d79896928
-R 2170efe21354495bba0abb7d147e0a86
+P 2008b56fe11e49d52e28f47d14ccd70504e6c094
+R 4ac4711a79ff9ee10d8741795898da69
 U drh
-Z 7e2f109564ef517cfa10eb3df7a02ba0
+Z c8abc0129b7b7c57014c7437e465381e

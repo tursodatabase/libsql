@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.55 2002/11/06 14:08:11 drh Exp $
+** @(#) $Id: pager.c,v 1.56 2002/11/09 00:33:16 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -815,6 +815,7 @@ static int syncAllPages(Pager *pPager){
 */
 int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   PgHdr *pPg;
+  int rc;
 
   /* Make sure we have not hit any critical errors.
   */ 
@@ -829,9 +830,10 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   ** on the database file.
   */
   if( pPager->nRef==0 ){
-    if( sqliteOsReadLock(&pPager->fd)!=SQLITE_OK ){
+    rc = sqliteOsReadLock(&pPager->fd);
+    if( rc!=SQLITE_OK ){
       *ppPage = 0;
-      return SQLITE_BUSY;
+      return rc;
     }
     pPager->state = SQLITE_READLOCK;
 
@@ -844,10 +846,12 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        */
        rc = sqliteOsWriteLock(&pPager->fd);
        if( rc!=SQLITE_OK ){
-         rc = sqliteOsUnlock(&pPager->fd);
-         assert( rc==SQLITE_OK );
+         if( sqliteOsUnlock(&pPager->fd)!=SQLITE_OK ){
+           /* This should never happen! */
+           rc = SQLITE_INTERNAL;
+         }
          *ppPage = 0;
-         return SQLITE_BUSY;
+         return rc;
        }
        pPager->state = SQLITE_WRITELOCK;
 

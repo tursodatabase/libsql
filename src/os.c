@@ -19,7 +19,12 @@
 
 #if OS_UNIX
 # include <time.h>
+# include <errno.h>
 # ifndef O_LARGEFILE
+#  define O_LARGEFILE 0
+# endif
+# ifdef SQLITE_DISABLE_LFS
+#  undef O_LARGEFILE
 #  define O_LARGEFILE 0
 # endif
 # ifndef O_NOFOLLOW
@@ -674,7 +679,9 @@ int isNT(void){
 ** If the file was write locked, then this reduces the lock to a read.
 ** If the file was read locked, then this acquires a new read lock.
 **
-** Return SQLITE_OK on success and SQLITE_BUSY on failure.
+** Return SQLITE_OK on success and SQLITE_BUSY on failure.  If this
+** library was compiled with large file support (LFS) but LFS is not
+** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqliteOsReadLock(OsFile *id){
 #if OS_UNIX
@@ -688,11 +695,13 @@ int sqliteOsReadLock(OsFile *id){
     rc = SQLITE_OK;
   }else if( id->locked || id->pLock->cnt==0 ){
     struct flock lock;
+    int s;
     lock.l_type = F_RDLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = lock.l_len = 0L;
-    if( fcntl(id->fd, F_SETLK, &lock)!=0 ){
-      rc = SQLITE_BUSY;
+    s = fcntl(id->fd, F_SETLK, &lock);
+    if( s!=0 ){
+      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = 1;
@@ -734,7 +743,9 @@ int sqliteOsReadLock(OsFile *id){
 
 /*
 ** Change the lock status to be an exclusive or write lock.  Return
-** SQLITE_OK on success and SQLITE_BUSY on a failure.
+** SQLITE_OK on success and SQLITE_BUSY on a failure.  If this
+** library was compiled with large file support (LFS) but LFS is not
+** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqliteOsWriteLock(OsFile *id){
 #if OS_UNIX
@@ -742,11 +753,13 @@ int sqliteOsWriteLock(OsFile *id){
   sqliteOsEnterMutex();
   if( id->pLock->cnt==0 || (id->pLock->cnt==1 && id->locked==1) ){
     struct flock lock;
+    int s;
     lock.l_type = F_WRLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = lock.l_len = 0L;
-    if( fcntl(id->fd, F_SETLK, &lock)!=0 ){
-      rc = SQLITE_BUSY;
+    s = fcntl(id->fd, F_SETLK, &lock);
+    if( s!=0 ){
+      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = -1;
@@ -791,7 +804,9 @@ int sqliteOsWriteLock(OsFile *id){
 
 /*
 ** Unlock the given file descriptor.  If the file descriptor was
-** not previously locked, then this routine is a no-op.
+** not previously locked, then this routine is a no-op.  If this
+** library was compiled with large file support (LFS) but LFS is not
+** available on the host, then an SQLITE_NOLFS is returned.
 */
 int sqliteOsUnlock(OsFile *id){
 #if OS_UNIX
@@ -804,11 +819,13 @@ int sqliteOsUnlock(OsFile *id){
     rc = SQLITE_OK;
   }else{
     struct flock lock;
+    int s;
     lock.l_type = F_UNLCK;
     lock.l_whence = SEEK_SET;
     lock.l_start = lock.l_len = 0L;
-    if( fcntl(id->fd, F_SETLK, &lock)!=0 ){
-      rc = SQLITE_BUSY;
+    s = fcntl(id->fd, F_SETLK, &lock);
+    if( s!=0 ){
+      rc = (s==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
       id->pLock->cnt = 0;
