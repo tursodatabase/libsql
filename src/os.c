@@ -168,14 +168,15 @@ static unsigned int elapse;
 
 /*
 ** An instance of the following structure serves as the key used
-** to locate a particular lockInfo structure given its inode. 
+** to locate a particular lockInfo structure given its inode.  Note
+** that we have to include the process ID as part of the key.  On some
+** threading implementations (ex: linux), each thread has a separate
+** process ID.
 */
-struct inodeKey {
+struct lockKey {
   dev_t dev;   /* Device number */
   ino_t ino;   /* Inode number */
-#ifdef SQLITE_UNIX_THREADS
-  pthread_t thread_id;   /* Which thread are we */
-#endif
+  pid_t pid;   /* Process ID */
 };
 
 /*
@@ -185,13 +186,13 @@ struct inodeKey {
 ** object keeps a count of the number of OsFiles pointing to it.
 */
 struct lockInfo {
-  struct inodeKey key;  /* The lookup key */
+  struct lockKey key;  /* The lookup key */
   int cnt;              /* 0: unlocked.  -1: write lock.  1...: read lock. */
   int nRef;             /* Number of pointers to this structure */
 };
 
 /* 
-** This hash table maps inodes (in the form of inodeKey structures) into
+** This hash table maps inodes (in the form of lockKey structures) into
 ** pointers to lockInfo structures.
 */
 static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
@@ -203,7 +204,7 @@ static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 */
 static struct lockInfo *findLockInfo(int fd){
   int rc;
-  struct inodeKey key;
+  struct lockKey key;
   struct stat statbuf;
   struct lockInfo *pInfo;
   rc = fstat(fd, &statbuf);
@@ -211,9 +212,7 @@ static struct lockInfo *findLockInfo(int fd){
   memset(&key, 0, sizeof(key));
   key.dev = statbuf.st_dev;
   key.ino = statbuf.st_ino;
-#ifdef SQLITE_UNIX_THREADS
-  key.thread_id = pthread_self();
-#endif
+  key.pid = getpid();
   pInfo = (struct lockInfo*)sqliteHashFind(&lockHash, &key, sizeof(key));
   if( pInfo==0 ){
     struct lockInfo *pOld;
