@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.269 2004/11/05 20:58:40 drh Exp $
+** $Id: build.c,v 1.270 2004/11/05 22:18:49 drh Exp $
 =======
-** $Id: build.c,v 1.269 2004/11/05 20:58:40 drh Exp $
+** $Id: build.c,v 1.270 2004/11/05 22:18:49 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -740,6 +740,7 @@ void sqlite3StartTable(
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
     sqlite3BeginWriteOperation(pParse, 0, iDb);
+
     /* Every time a new table is created the file-format
     ** and encoding meta-values are set in the database, in
     ** case this is the first table created.
@@ -752,6 +753,10 @@ void sqlite3StartTable(
     /* This just creates a place-holder record in the sqlite_master table.
     ** The record created does not contain anything yet.  It will be replaced
     ** by the real entry in code generated at sqlite3EndTable().
+    **
+    ** The rowid for the new entry is left on the top of the stack.
+    ** The rowid value is needed by the code that sqlite3EndTable will
+    ** generate.
     */
     sqlite3OpenMasterTable(v, iDb);
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
@@ -2412,28 +2417,15 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   /* Generate code to remove the index and from the master table */
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    static const VdbeOpList dropIndex[] = {
-      { OP_Rewind,     0, ADDR(9), 0}, 
-      { OP_String8,    0, 0,       0}, /* 1 */
-      { OP_MemStore,   1, 1,       0},
-      { OP_MemLoad,    1, 0,       0}, /* 3 */
-      { OP_Column,     0, 1,       0},
-      { OP_Eq,         0, ADDR(8), 0},
-      { OP_Next,       0, ADDR(3), 0},
-      { OP_Goto,       0, ADDR(9), 0},
-      { OP_Delete,     0, 0,       0}, /* 8 */
-    };
-    int base;
-
-    sqlite3BeginWriteOperation(pParse, 0, pIndex->iDb);
-    sqlite3OpenMasterTable(v, pIndex->iDb);
-    base = sqlite3VdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
-    sqlite3VdbeChangeP3(v, base+1, pIndex->zName, 0);
-    sqlite3ChangeCookie(db, v, pIndex->iDb);
-    /* sqlite3VdbeAddOp(v, OP_Destroy, pIndex->tnum, pIndex->iDb); */
-    destroyRootPage(pParse, pIndex->tnum, pIndex->iDb);
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeOp3(v, OP_DropIndex, pIndex->iDb, 0, pIndex->zName, 0);
+    int iDb = pIndex->iDb;
+    sqlite3NestedParse(pParse,
+       "DELETE FROM %Q.%s WHERE name=%Q",
+       db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
+       pIndex->zName
+    );
+    sqlite3ChangeCookie(db, v, iDb);
+    destroyRootPage(pParse, pIndex->tnum, iDb);
+    sqlite3VdbeOp3(v, OP_DropIndex, iDb, 0, pIndex->zName, 0);
   }
 
 exit_drop_index:

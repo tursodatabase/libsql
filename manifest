@@ -1,5 +1,5 @@
-C Use\ssqlite3NestedParse\sto\simplement\sCREATE\sINDEX.\s(CVS\s2070)
-D 2004-11-05T20:58:40
+C Use\ssqlite3NestedParse\sto\simplement\sDROP\sINDEX.\s(CVS\s2071)
+D 2004-11-05T22:18:49
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c bf0d3d59ec076f0a37378f8ac6090d157d925c24
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c d1234774c8eec8f4e0365da14931236ac9ff323b
+F src/build.c e498f958ebb4678e103224edd3a5c2ebcc42d18f
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
 F src/delete.c f0af21a1ede15524a5edd59fe10ef486283a1ee9
 F src/expr.c be18081d2959a2cc53846d0fbedfec40fbfa1d6e
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P b0506bdd701339d63166ada065445776dd499588
-R b008b9e3c2a495feb1a9866c40c60982
+P 47d8ebdaaddcb7a05e1917dd1dee2029c34228a4
+R d45e3580de79d7367f59fbd57af5e6a1
 U drh
-Z 363f59f6d239c3e53daa03d8d94862e0
+Z 4c43f2f11733856473822a7670e21c59
