@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.73 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: update.c,v 1.74 2004/05/16 11:15:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -287,7 +287,10 @@ void sqlite3Update(
       }
     }
     sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqlite3AddRecordType(v, pTab);
+    if( !isView ){
+      sqlite3TableAffinityStr(v, pTab);
+    }
+    if( pParse->nErr ) goto update_cleanup;
     sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
     if( !isView ){
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);

@@ -1317,7 +1317,7 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
 **
 ** Two NULL values are considered equal by this function.
 */
-int compareMemCells(Mem *pMem1, Mem *pMem2){
+int sqlite3MemCompare(Mem *pMem1, Mem *pMem2){
   int rc;
   int combined_flags = pMem1->flags|pMem2->flags; 
  
@@ -1430,7 +1430,7 @@ int sqlite3VdbeKeyCompare(
     offset1 += sqlite3VdbeSerialGet(&aKey1[offset1], serial_type1, &mem1);
     offset2 += sqlite3VdbeSerialGet(&aKey2[offset2], serial_type2, &mem2);
 
-    rc = compareMemCells(&mem1, &mem2);
+    rc = sqlite3MemCompare(&mem1, &mem2);
     if( mem1.flags&MEM_Dyn ){
       sqliteFree(mem1.z);
     }

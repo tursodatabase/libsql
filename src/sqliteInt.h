@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.233 2004/05/14 16:50:06 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.234 2004/05/16 11:15:39 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -457,7 +457,8 @@ struct Column {
   char *zType;     /* Data type for this column */
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
-  u8 sortOrder;    /* Some combination of SQLITE_SO_... values */
+//  u8 sortOrder;    /* Some combination of SQLITE_SO_... values */ 
+  char affinity;   /* One of the SQLITE_AFF_... values */
   u8 dottedName;   /* True if zName contains a "." character */
 };
 
@@ -474,6 +475,15 @@ struct Column {
 #define SQLITE_SO_ASC       0  /* Sort in ascending order */
 #define SQLITE_SO_DESC      1  /* Sort in descending order */
 #define SQLITE_SO_DIRMASK   1  /* Mask to extract the sort direction */
+
+/*
+** Column affinity types.
+*/
+#define SQLITE_AFF_INTEGER  'i'
+#define SQLITE_AFF_NUMERIC  'n'
+#define SQLITE_AFF_TEXT     't'
+#define SQLITE_AFF_NONE     'o'
+
 
 /*
 ** Each SQL table is represented in memory by an instance of the
@@ -638,6 +648,7 @@ struct Index {
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
+  char *zColAff;   /* String defining the affinity of each column */
   Index *pNext;    /* The next index associated with the same table */
 };
 
@@ -707,6 +718,7 @@ struct Expr {
                          ** result from the iAgg-th element of the aggregator */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
+  char affinity;         /* The affinity of the column or 0 if not a column */
 };
 
 /*
@@ -1291,4 +1303,7 @@ int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3GetVarint32(const unsigned char *, u32 *);
 int sqlite3VarintLen(u64 v);
-int sqlite3AddRecordType(Vdbe*, Table*);
+char sqlite3AffinityType(const char *, int);
+void sqlite3IndexAffinityStr(Vdbe *, Index *);
+void sqlite3TableAffinityStr(Vdbe *, Table *);
+

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.47 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: func.c,v 1.48 2004/05/16 11:15:38 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -571,6 +571,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
     { "max",       -1, SQLITE_ARGS,    2, minmaxFunc },
     { "max",        0, 0,              2, 0          },
     { "typeof",     1, SQLITE_TEXT,    0, typeofFunc },
+    { "classof",    1, SQLITE_TEXT,    0, typeofFunc }, /* FIX ME: hack */
     { "length",     1, SQLITE_NUMERIC, 0, lengthFunc },
     { "substr",     3, SQLITE_TEXT,    0, substrFunc },
     { "abs",        1, SQLITE_NUMERIC, 0, absFunc    },

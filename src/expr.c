@@ -12,10 +12,50 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.117 2004/05/11 07:11:53 danielk1977 Exp $
+** $Id: expr.c,v 1.118 2004/05/16 11:15:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
+static char exprAffinity(Expr *pExpr){
+  if( pExpr->op==TK_AS ){
+    return exprAffinity(pExpr->pLeft);
+  }
+  if( pExpr->op==TK_SELECT ){
+    return exprAffinity(pExpr->pSelect->pEList->a[0].pExpr);
+  }
+  return pExpr->affinity;
+}
+
+/*
+** Return the P1 value that should be used for a binary comparison
+** opcode (OP_Eq, OP_Ge etc.) used to compare pExpr1 and pExpr2.
+** If jumpIfNull is true, then set the low byte of the returned
+** P1 value to tell the opcode to jump if either expression
+** evaluates to NULL.
+*/
+int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
+  char aff1 = exprAffinity(pExpr1);
+  char aff2 = exprAffinity(pExpr2);
+
+  if( aff1 && aff2 ){
+    /* Both sides of the comparison are columns. If one has numeric or
+    ** integer affinity, use that. Otherwise use no affinity.
+    */
+    if( aff1==SQLITE_AFF_INTEGER || aff2==SQLITE_AFF_INTEGER ){
+      aff1 = SQLITE_AFF_INTEGER;
+    }else
+    if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
+      aff1 = SQLITE_AFF_NUMERIC;
+    }else{
+      aff1 = SQLITE_AFF_NONE;
+    }
+  }else if( !aff1 ){
+    aff1 = aff2;
+  }
+
+  return (((int)aff1)<<8)+(jumpIfNull?1:0);
+}
 
 /*
 ** Construct a new expression node and return a pointer to it.  Memory
@@ -472,7 +512,11 @@ static int lookupName(
         pExpr->iDb = pTab->iDb;
         /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
         pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-        pExpr->dataType = pCol->sortOrder & SQLITE_SO_TYPEMASK;
+        pExpr->affinity = pTab->aCol[j].affinity;
+
+        /* FIX ME: Expr::dataType will be removed... */
+        pExpr->dataType =
+            (pCol->affinity==SQLITE_AFF_TEXT?SQLITE_SO_TEXT:SQLITE_SO_NUM);
         break;
       }
     }
@@ -504,7 +548,10 @@ static int lookupName(
         if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
           cnt++;
           pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-          pExpr->dataType = pCol->sortOrder & SQLITE_SO_TYPEMASK;
+          pExpr->affinity = pTab->aCol[j].affinity;
+          /* FIX ME: Expr::dataType will be removed... */
+          pExpr->dataType =
+              (pCol->affinity==SQLITE_AFF_TEXT?SQLITE_SO_TEXT:SQLITE_SO_NUM);
           break;
         }
       }
@@ -518,6 +565,7 @@ static int lookupName(
     cnt = 1;
     pExpr->iColumn = -1;
     pExpr->dataType = SQLITE_SO_NUM;
+    pExpr->affinity = SQLITE_AFF_INTEGER;
   }
 
   /*
@@ -1050,6 +1098,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_INTEGER: {
       if( pExpr->op==TK_INTEGER && sqlite3FitsIn32Bits(pExpr->token.z) ){
         sqlite3VdbeAddOp(v, OP_Integer, atoi(pExpr->token.z), 0);
+      }else if( pExpr->op==TK_FLOAT ){
+        sqlite3VdbeAddOp(v, OP_Real, 0, 0);
       }else{
         sqlite3VdbeAddOp(v, OP_String, 0, 0);
       }
@@ -1072,10 +1122,17 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, 0);
+      sqlite3ExprCode(pParse, pExpr->pLeft);
+      sqlite3ExprCode(pParse, pExpr->pRight);
+      sqlite3VdbeAddOp(v, op, p1, 0);
+      break;
+#if 0
       if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
         op += 6;  /* Convert numeric opcodes to text opcodes */
       }
       /* Fall through into the next case */
+#endif
     }
     case TK_AND:
     case TK_OR:
@@ -1135,8 +1192,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       dest = sqlite3VdbeCurrentAddr(v) + 2;
       sqlite3VdbeAddOp(v, op, 1, dest);
       sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);
-      break;
     }
+    break;
     case TK_AGG_FUNCTION: {
       sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       break;
@@ -1153,7 +1210,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList, pDef->includeTypes);
-      sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
+      /* FIX ME: The following is a temporary hack. */
+      if( 0==sqlite3StrNICmp(zId, "classof", nId) ){
+        assert( nExpr==1 );
+        sqlite3VdbeOp3(v, OP_Class, nExpr, 0, 0, 0);
+      }else{
+        sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
+      }
       break;
     }
     case TK_SELECT: {
@@ -1332,12 +1395,10 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, jumpIfNull);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
-        op += 6;  /* Convert numeric opcodes to text opcodes */
-      }
-      sqlite3VdbeAddOp(v, op, jumpIfNull, dest);
+      sqlite3VdbeAddOp(v, op, p1, dest);
       break;
     }
     case TK_ISNULL:
@@ -1427,18 +1488,10 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
-        /* Convert numeric comparison opcodes into text comparison opcodes.
-        ** This step depends on the fact that the text comparision opcodes are
-        ** always 6 greater than their corresponding numeric comparison
-        ** opcodes.
-        */
-        assert( OP_Eq+6 == OP_StrEq );
-        op += 6;
-      }
+      int p1 = binaryCompareP1(pExpr->pLeft, pExpr->pRight, jumpIfNull);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, jumpIfNull, dest);
+      sqlite3VdbeAddOp(v, op, p1, dest);
       break;
     }
     case TK_ISNULL:

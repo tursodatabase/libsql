@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.293 2004/05/14 21:59:40 drh Exp $
+** $Id: vdbe.c,v 1.294 2004/05/16 11:15:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -428,15 +428,16 @@ static int expandCursorArraySize(Vdbe *p, int mxCursor){
 ** Apply any conversion required by the supplied column affinity to
 ** memory cell pRec. affinity may be one of:
 **
-** SQLITE_AFF_NUM
+** SQLITE_AFF_NUMERIC
 ** SQLITE_AFF_TEXT
 ** SQLITE_AFF_NONE
 ** SQLITE_AFF_INTEGER
 **
 */
-static void applyAffinity(Mem *pRec, int affinity){
+static void applyAffinity(Mem *pRec, char affinity){
   switch( affinity ){
-    case SQLITE_SO_NUM:
+    case SQLITE_AFF_INTEGER:
+    case SQLITE_AFF_NUMERIC:
       if( 0==(pRec->flags&(MEM_Real|MEM_Int)) ){
         /* pRec does not have a valid integer or real representation. 
         ** Attempt a conversion if pRec has a string representation and
@@ -451,8 +452,19 @@ static void applyAffinity(Mem *pRec, int affinity){
           }
         }
       }
+
+      if( affinity==SQLITE_AFF_INTEGER ){
+        /* For INTEGER affinity, try to convert a real value to an int */
+        if( pRec->flags&MEM_Real ){
+          pRec->i = pRec->r;
+          if( ((double)pRec->i)==pRec->r ){
+            pRec->flags |= MEM_Int;
+          }
+        }
+      }
       break;
-    case SQLITE_SO_TEXT:
+
+    case SQLITE_AFF_TEXT:
       /* Only attempt the conversion if there is an integer or real
       ** representation (blob and NULL do not get converted) but no string
       ** representation.
@@ -464,25 +476,12 @@ static void applyAffinity(Mem *pRec, int affinity){
 
       break;
 
-/*
-    case SQLITE_AFF_INTEGER:
     case SQLITE_AFF_NONE:
+      /* Affinity NONE. Do nothing. */
       break;
-*/
+
     default:
       assert(0);
-  }
-}
-
-/*
-** This function interprets the character 'affinity' according to the 
-** following table and calls the applyAffinity() function.
-*/
-static void applyAffinityByChar(Mem *pRec, char affinity){
-  switch( affinity ){
-    case 'n': return applyAffinity(pRec, SQLITE_SO_NUM);
-    case 't': return applyAffinity(pRec, SQLITE_SO_TEXT);
-    default: assert(0);
   }
 }
 
@@ -770,6 +769,24 @@ case OP_String: {
     pTos->n = strlen(z) + 1;
     pTos->flags = MEM_Str | MEM_Static;
   }
+  break;
+}
+
+/* Opcode: Real * * P3
+**
+** The string value P3 is converted to a real and pushed on to the stack.
+*/
+case OP_Real: {
+  char *z = pOp->p3;
+
+  assert( z );
+  assert( sqlite3IsNumber(z, 0) );
+
+  pTos++;
+  pTos->r = sqlite3AtoF(z, 0);
+  pTos->z = z;
+  pTos->n = strlen(z)+1;
+  pTos->flags = MEM_Real|MEM_Str|MEM_Static;
   break;
 }
 
@@ -1358,17 +1375,31 @@ mismatch:
 ** Pop the top two elements from the stack.  If they are equal, then
 ** jump to instruction P2.  Otherwise, continue to the next instruction.
 **
-** If either operand is NULL (and thus if the result is unknown) then
-** take the jump if P1 is true.
+** The least significant byte of P1 may be either 0x00 or 0x01. If either
+** operand is NULL (and thus if the result is unknown) then take the jump
+** only if the least significant byte of P1 is 0x01.
 **
-** If both values are numeric, they are converted to doubles using atof()
-** and compared for equality that way.  Otherwise the strcmp() library
-** routine is used for the comparison.  For a pure text comparison
-** use OP_StrEq.
+** The second least significant byte of P1 determines whether any
+** conversions are applied to the two values before the comparison is made.
+** If this byte is 0x00, and one of the values being compared is numeric
+** and the other text, an attempt is made to convert the text value to 
+** a numeric form.
+**
+** If the second least significant byte of P1 is not 0x00, then it must
+** be an affinity character - 'n', 't', 'i' or 'o'. In this case an 
+** attempt is made to coerce both values according to the affinity before
+** the comparison is made.
+**
+** Once any conversions have taken place, and neither value is NULL, 
+** the values are compared. If both values are blobs, or both are text,
+** then memcmp() is used to determine the results of the comparison. If
+** both values are numeric, then a numeric comparison is used. If the
+** two values are of different types, then they are inequal.
 **
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
+**
 */
 /* Opcode: Ne P1 P2 *
 **
@@ -1463,6 +1494,8 @@ mismatch:
 ** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
 ** stack if the jump would have been taken, or a 0 if not.  Push a
 ** NULL if either operand was NULL.
+**
+** FIX ME: The comment for OP_Eq is up to date, but none of the others are.
 */
 case OP_Eq:
 case OP_Ne:
@@ -1470,6 +1503,62 @@ case OP_Lt:
 case OP_Le:
 case OP_Gt:
 case OP_Ge: {
+  Mem *pNos;
+  int flags;
+  int res;
+  char affinity;
+
+  pNos = &pTos[-1];
+  flags = pTos->flags|pNos->flags;
+
+  /* If either value is a NULL P2 is not zero, take the jump if the least
+  ** significant byte of P1 is true. If P2 is zero, then push a NULL onto
+  ** the stack.
+  */
+  if( flags&MEM_Null ){
+    popStack(&pTos, 2);
+    if( pOp->p2 ){
+      if( pOp->p1 ) pc = pOp->p2-1;
+    }else{
+      pTos++;
+      pTos->flags = MEM_Null;
+    }
+    break;
+  }
+
+  affinity = (pOp->p1>>8)&0xFF;
+  if( !affinity && (flags&(MEM_Real|MEM_Int)) ){
+    affinity = SQLITE_AFF_NUMERIC;
+  }
+  if( affinity ){
+    applyAffinity(pNos, affinity);
+    applyAffinity(pTos, affinity);
+  }
+
+  res = sqlite3MemCompare(pNos, pTos);
+  switch( pOp->opcode ){
+    case OP_Eq:    res = res==0;     break;
+    case OP_Ne:    res = res!=0;     break;
+    case OP_Lt:    res = res<0;      break;
+    case OP_Le:    res = res<=0;     break;
+    case OP_Gt:    res = res>0;      break;
+    default:       res = res>=0;     break;
+  }
+
+  popStack(&pTos, 2);
+  if( pOp->p2 ){
+    if( res ){
+      pc = pOp->p2-1;
+    }
+  }else{
+    pTos++;
+    pTos->flags = MEM_Int;
+    pTos->i = res;
+  }
+  break;
+}
+
+#if 0
   Mem *pNos = &pTos[-1];
   i64 c, v;
   int ft, fn;
@@ -1514,6 +1603,7 @@ case OP_Ge: {
   }
   break;
 }
+#endif
 /* INSERT NO CODE HERE!
 **
 ** The opcode numbers are extracted from this source file by doing
@@ -1874,6 +1964,44 @@ case OP_NotNull: {
   break;
 }
 
+/* Opcode: Class * * *
+**
+** Pop a single value from the top of the stack and push on one of the
+** following strings, according to the storage class of the value just
+** popped:
+**
+** "NULL", "INTEGER", "REAL", "TEXT", "BLOB"
+**
+** This opcode is probably temporary.
+*/
+case OP_Class: {
+  int flags = pTos->flags;
+  int i;
+
+  struct {
+    int mask;
+    char * zClass;
+  } classes[] = {
+    {MEM_Null, "NULL"},
+    {MEM_Int, "INTEGER"},
+    {MEM_Real, "REAL"},
+    {MEM_Str, "TEXT"},
+    {MEM_Blob, "BLOB"}
+  };
+
+  Release(pTos);
+  pTos->flags = MEM_Str|MEM_Static;
+
+  for(i=0; i<5; i++){
+    if( classes[i].mask&flags ){
+      pTos->z = classes[i].zClass;
+      break;
+    }
+  }
+  assert( i<5 );
+  break;
+}
+
 /* Opcode: Column P1 P2 *
 **
 ** Interpret the data that cursor P1 points to as a structure built using
@@ -1958,11 +2086,11 @@ case OP_Column: {
     if( zRec ){
       zData = zRec;
     }else{
-      /* We can assume that 9 bytes (maximum length of a varint) fits
+      /* We can assume that 10 bytes (maximum length of a varint) fits
       ** on the main page in all cases.
       */
-      int n = 9;
-      if( payloadSize<9 ) n = payloadSize;
+      int n = 10;
+      if( payloadSize<10 ) n = payloadSize;
       if( pC->keyAsData ){
         zData = (char *)sqlite3BtreeKeyFetch(pCrsr, n);
       }else{
@@ -2152,7 +2280,7 @@ case OP_MakeRecord: {
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
-      applyAffinityByChar(pRec, zAffinity[pRec-pData0]);
+      applyAffinity(pRec, zAffinity[pRec-pData0]);
     }
     serial_type = sqlite3VdbeSerialType(pRec);
     nBytes += sqlite3VdbeSerialTypeLen(serial_type);
@@ -2274,7 +2402,7 @@ case OP_MakeIdxKey: {
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
     if( zAffinity ){
-      applyAffinityByChar(pRec, zAffinity[pRec-pData0]);
+      applyAffinity(pRec, zAffinity[pRec-pData0]);
     }else{
       applyAffinity(pRec, SQLITE_SO_NUM);
     }

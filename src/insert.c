@@ -12,13 +12,13 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.98 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: insert.c,v 1.99 2004/05/16 11:15:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** Set P3 of the most recently inserted opcode to a column affinity
-** string for table pTab. A column affinity string has one character
+** string for index pIdx. A column affinity string has one character
 ** for each column in the table, according to the affinity of the column:
 **
 **  Character      Column affinity
@@ -28,9 +28,45 @@
 **  't'            TEXT
 **  'o'            NONE
 */
-int sqlite3AddRecordType(Vdbe *v, Table *pTab){
-  assert( pTab );
+void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
+  if( !pIdx->zColAff ){
+    /* The first time a column affinity string for a particular table is
+    ** required, it is allocated and populated here. It is then stored as
+    ** a member of the Table structure for subsequent use.
+    **
+    ** The column affinity string will eventually be deleted by
+    ** sqliteDeleteIndex() when the Table structure itself is cleaned
+    ** up.
+    */
+    int n;
+    Table *pTab = pIdx->pTable;
+    pIdx->zColAff = (char *)sqliteMalloc(pIdx->nColumn+1);
+    if( !pIdx->zColAff ){
+      return;
+    }
+    for(n=0; n<pIdx->nColumn; n++){
+      pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
+    }
+    pIdx->zColAff[pIdx->nColumn] = '\0';
+  }
  
+  sqlite3VdbeChangeP3(v, -1, pIdx->zColAff, P3_STATIC);
+}
+
+/*
+** Set P3 of the most recently inserted opcode to a column affinity
+** string for table pTab. A column affinity string has one character
+** for each column indexed by the index, according to the affinity of the
+** column:
+**
+**  Character      Column affinity
+**  ------------------------------
+**  'n'            NUMERIC
+**  'i'            INTEGER
+**  't'            TEXT
+**  'o'            NONE
+*/
+void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
   /* The first time a column affinity string for a particular table
   ** is required, it is allocated and populated here. It is then 
   ** stored as a member of the Table structure for subsequent use.
@@ -42,28 +78,20 @@ int sqlite3AddRecordType(Vdbe *v, Table *pTab){
     char *zColAff;
     int i;
 
-    zColAff = sqliteMalloc(pTab->nCol+1);
+    zColAff = (char *)sqliteMalloc(pTab->nCol+1);
     if( !zColAff ){
-      return SQLITE_NOMEM;
+      return;
     }
 
     for(i=0; i<pTab->nCol; i++){
-      if( pTab->aCol[i].sortOrder&SQLITE_SO_TEXT ){
-        zColAff[i] = 't';
-      }else{
-        zColAff[i] = 'n';
-      }
+      zColAff[i] = pTab->aCol[i].affinity;
     }
     zColAff[pTab->nCol] = '\0';
 
     pTab->zColAff = zColAff;
   }
 
-  /* Set the memory management at the vdbe to P3_STATIC, as the column
-  ** affinity string is managed as part of the Table structure.
-  */
   sqlite3VdbeChangeP3(v, -1, pTab->zColAff, P3_STATIC);
-  return SQLITE_OK;
 }
 
 
@@ -267,7 +295,7 @@ void sqlite3Insert(
       srcTab = pParse->nTab++;
       sqlite3VdbeResolveLabel(v, iInsertBlock);
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
-      sqlite3AddRecordType(v, pTab);
+      sqlite3TableAffinityStr(v, pTab);
       sqlite3VdbeAddOp(v, OP_NewRecno, srcTab, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
       sqlite3VdbeAddOp(v, OP_PutIntKey, srcTab, 0);
@@ -446,7 +474,15 @@ void sqlite3Insert(
       }
     }
     sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqlite3AddRecordType(v, pTab);
+
+    /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
+    ** do not attempt any conversions before assembling the record.
+    ** If this is a real table, attempt conversions as required by the
+    ** table column affinities.
+    */
+    if( !isView ){
+      sqlite3TableAffinityStr(v, pTab);
+    }
     sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
 
     /* Fire BEFORE or INSTEAD OF triggers */
@@ -826,7 +862,7 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     jumpInst1 = sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-    sqlite3AddIdxKeyType(v, pIdx);
+    sqlite3IndexAffinityStr(v, pIdx);
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
@@ -936,7 +972,7 @@ void sqlite3CompleteInsertion(
     sqlite3VdbeAddOp(v, OP_IdxPut, base+i+1, 0);
   }
   sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-  sqlite3AddRecordType(v, pTab);
+  sqlite3TableAffinityStr(v, pTab);
   if( newIdx>=0 ){
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.22 2004/05/11 08:48:11 danielk1977 Exp $
+** $Id: pragma.c,v 1.23 2004/05/16 11:15:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -667,7 +667,7 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
             }
           }
           sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-          sqlite3AddIdxKeyType(v, pIdx);
+          sqlite3IndexAffinityStr(v, pIdx);
           jmp2 = sqlite3VdbeAddOp(v, OP_Found, j+2, 0);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
           sqlite3VdbeChangeP3(v, addr+4, pIdx->zName, P3_STATIC);

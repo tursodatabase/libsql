@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.183 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: build.c,v 1.184 2004/05/16 11:15:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -183,6 +183,9 @@ static void sqliteDeleteIndex(sqlite *db, Index *p){
   if( pOld!=0 && pOld!=p ){
     sqlite3HashInsert(&db->aDb[p->iDb].idxHash, pOld->zName,
                      strlen(pOld->zName)+1, pOld);
+  }
+  if( p->zColAff ){
+    sqliteFree(p->zColAff);
   }
   sqliteFree(p);
 }
@@ -581,7 +584,12 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol = &p->aCol[p->nCol];
   memset(pCol, 0, sizeof(p->aCol[0]));
   pCol->zName = z;
-  pCol->sortOrder = SQLITE_SO_NUM;
+ 
+  /* If there is no type specified, columns have the default affinity
+  ** 'NONE'. If there is a type specified, then sqlite3AddColumnType()
+  ** will be called next to set pCol->affinity correctly.
+  */
+  pCol->affinity = SQLITE_AFF_NONE;
   p->nCol++;
 }
 
@@ -629,7 +637,8 @@ void sqlite3AddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
     z[j++] = c;
   }
   z[j] = 0;
-  pCol->sortOrder = sqlite3CollateType(z, n);
+//  pCol->sortOrder = sqlite3CollateType(z, n);
+  pCol->affinity = sqlite3AffinityType(z, n);
 }
 
 /*
@@ -751,7 +760,42 @@ void sqlite3AddCollateType(Parse *pParse, int collType){
   int i;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
-  if( i>=0 ) p->aCol[i].sortOrder = collType;
+
+  /* FIX ME */
+  /* if( i>=0 ) p->aCol[i].sortOrder = collType; */
+}
+
+/*
+** Parse the column type name zType (length nType) and return the
+** associated affinity type.
+*/
+char sqlite3AffinityType(const char *zType, int nType){
+  /* FIX ME: This could be done more efficiently */
+  int n, i;
+  struct {
+    const char *zSub;
+    int nSub;
+    char affinity;
+  } substrings[] = {
+    {"INT", 3, SQLITE_AFF_INTEGER},
+    {"REAL", 4, SQLITE_AFF_NUMERIC},
+    {"FLOAT", 5, SQLITE_AFF_NUMERIC},
+    {"DOUBLE", 6, SQLITE_AFF_NUMERIC},
+    {"NUM", 3, SQLITE_AFF_NUMERIC},
+    {"CHAR", 4, SQLITE_AFF_TEXT},
+    {"CLOB", 4, SQLITE_AFF_TEXT},
+    {"TEXT", 4, SQLITE_AFF_TEXT}
+  };
+
+  for(n=0; n<(nType-3); n++){
+    for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
+      if( 0==sqlite3StrNICmp(zType, substrings[i].zSub, substrings[i].nSub) ){
+        return substrings[i].affinity;
+      }
+    }
+  }
+
+  return SQLITE_AFF_NONE;
 }
 
 /*
@@ -1296,39 +1340,6 @@ void sqlite3DropTable(Parse *pParse, Token *pName, int isView){
 }
 
 /*
-** This routine constructs a P3 string suitable for an OP_MakeIdxKey
-** opcode and adds that P3 string to the most recently inserted instruction
-** in the virtual machine.  The P3 string consists of a single character
-** for each column in the index pIdx of table pTab.  If the column uses
-** a numeric sort order, then the P3 string character corresponding to
-** that column is 'n'.  If the column uses a text sort order, then the
-** P3 string is 't'.  See the OP_MakeIdxKey opcode documentation for
-** additional information.  See also the sqlite3AddKeyType() routine.
-*/
-void sqlite3AddIdxKeyType(Vdbe *v, Index *pIdx){
-  char *zType;
-  Table *pTab;
-  int i, n;
-  assert( pIdx!=0 && pIdx->pTable!=0 );
-  pTab = pIdx->pTable;
-  n = pIdx->nColumn;
-  zType = sqliteMallocRaw( n+1 );
-  if( zType==0 ) return;
-  for(i=0; i<n; i++){
-    int iCol = pIdx->aiColumn[i];
-    assert( iCol>=0 && iCol<pTab->nCol );
-    if( (pTab->aCol[iCol].sortOrder & SQLITE_SO_TYPEMASK)==SQLITE_SO_TEXT ){
-      zType[i] = 't';
-    }else{
-      zType[i] = 'n';
-    }
-  }
-  zType[n] = 0;
-  sqlite3VdbeChangeP3(v, -1, zType, n);
-  sqliteFree(zType);
-}
-
-/*
 ** This routine is called to create a new foreign key on the table
 ** currently under construction.  pFromCol determines which columns
 ** in the current table point to the foreign key.  If pFromCol==0 then
@@ -1725,7 +1736,7 @@ void sqlite3CreateIndex(
         }
       }
       sqlite3VdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
-      sqlite3AddIdxKeyType(v, pIndex);
+      sqlite3IndexAffinityStr(v, pIndex);
       sqlite3VdbeOp3(v, OP_IdxPut, 1, pIndex->onError!=OE_None,
                       "indexed columns are not unique", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_Next, 2, lbl1);
