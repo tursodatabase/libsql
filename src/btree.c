@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.59 2002/03/05 12:41:20 drh Exp $
+** $Id: btree.c,v 1.60 2002/03/06 22:01:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -650,6 +650,18 @@ int sqliteBtreeClose(Btree *pBt){
 
 /*
 ** Change the limit on the number of pages allowed the cache.
+**
+** The maximum number of cache pages is set to the absolute
+** value of mxPage.  If mxPage is negative, the pager will
+** operate asynchronously - it will not stop to do fsync()s
+** to insure data is written to the disk surface before
+** continuing.  Transactions still work if synchronous is off,
+** and the database cannot be corrupted if this program
+** crashes.  But if the operating system crashes or there is
+** an abrupt power failure when synchronous is off, the database
+** could be left in an inconsistent and unrecoverable state.
+** Synchronous is on by default so database corruption is not
+** normally a worry.
 */
 int sqliteBtreeSetCacheSize(Btree *pBt, int mxPage){
   sqlitepager_set_cachesize(pBt->pPager, mxPage);

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.85 2002/03/05 01:11:13 drh Exp $
+** $Id: build.c,v 1.86 2002/03/06 22:01:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1736,10 +1736,30 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     sqliteDequote(zRight);
   }
  
-  if( sqliteStrICmp(zLeft,"cache_size")==0 ){
+  /*
+  **  PRAGMA default_cache_size
+  **  PRAGMA default_cache_size=N
+  **
+  ** The first form reports the current persistent setting for the
+  ** page cache size.  The value returned is the maximum number of
+  ** pages in the page cache.  The second form sets both the current
+  ** page cache size value and the persistent page cache size value
+  ** stored in the database file.
+  **
+  ** The default cache size is stored in meta-value 2 of page 1 of the
+  ** database file.  The cache size is actually the absolute value of
+  ** this memory location.  The sign of meta-value 2 determines the
+  ** synchronous setting.  A negative value means synchronous is off
+  ** and a positive value means synchronous is on.
+  */
+  if( sqliteStrICmp(zLeft,"default_cache_size")==0 ){
     static VdbeOp getCacheSize[] = {
       { OP_ReadCookie,  0, 2,        0},
       { OP_AbsValue,    0, 0,        0},
+      { OP_Dup,         0, 0,        0},
+      { OP_Integer,     0, 0,        0},
+      { OP_Ne,          0, 6,        0},
+      { OP_Integer,     MAX_PAGES,0, 0},
       { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "cache_size"},
       { OP_Callback,    1, 0,        0},
@@ -1760,10 +1780,71 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_Negative, 0, 0);
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
       sqliteEndWriteOperation(pParse);
+      db->cache_size = db->cache_size<0 ? -size : size;
+      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
     }
   }else
 
-  if( sqliteStrICmp(zLeft,"synchronous")==0 ){
+  /*
+  **  PRAGMA cache_size
+  **  PRAGMA cache_size=N
+  **
+  ** The first form reports the current local setting for the
+  ** page cache size.  The local setting can be different from
+  ** the persistent cache size value that is stored in the database
+  ** file itself.  The value returned is the maximum number of
+  ** pages in the page cache.  The second form sets the local
+  ** page cache size value.  It does not change the persistent
+  ** cache size stored on the disk so the cache size will revert
+  ** to its default value when the database is closed and reopened.
+  ** N should be a positive integer.
+  */
+  if( sqliteStrICmp(zLeft,"cache_size")==0 ){
+    static VdbeOp getCacheSize[] = {
+      { OP_ColumnCount, 1, 0,        0},
+      { OP_ColumnName,  0, 0,        "cache_size"},
+      { OP_Callback,    1, 0,        0},
+    };
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    if( pRight->z==pLeft->z ){
+      int size = db->cache_size;;
+      if( size<0 ) size = -size;
+      sqliteVdbeAddOp(v, OP_Integer, size, 0);
+      sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+    }else{
+      int size = atoi(zRight);
+      if( size<0 ) size = -size;
+      if( db->cache_size<0 ) size = -size;
+      db->cache_size = size;
+      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
+    }
+  }else
+
+  /*
+  **  PRAGMA default_synchronous
+  **  PRAGMA default_synchronous=BOOLEAN
+  **
+  ** The first form returns the persistent value of the "synchronous" setting
+  ** that is stored in the database.  This is the synchronous setting that
+  ** is used whenever the database is opened unless overridden by a separate
+  ** "synchronous" pragma.  The second form changes the persistent and the
+  ** local synchronous setting to the value given.
+  **
+  ** If synchronous is on, SQLite will do an fsync() system call at strategic
+  ** points to insure that all previously written data has actually been
+  ** written onto the disk surface before continuing.  This mode insures that
+  ** the database will always be in a consistent state event if the operating
+  ** system crashes or power to the computer is interrupted unexpectedly.
+  ** When synchronous is off, SQLite will not wait for changes to actually
+  ** be written to the disk before continuing.  As soon as it hands changes
+  ** to the operating system, it assumes that the changes are permanent and
+  ** it continues going.  The database cannot be corrupted by a program crash
+  ** even with synchronous off, but an operating system crash or power loss
+  ** could potentially corrupt data.  On the other hand, synchronous off is
+  ** faster than synchronous on.
+  */
+  if( sqliteStrICmp(zLeft,"default_synchronous")==0 ){
     static VdbeOp getSync[] = {
       { OP_Integer,     0, 0,        0},
       { OP_ReadCookie,  0, 2,        0},
@@ -1780,14 +1861,52 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
     }else{
       int addr;
+      int size = db->cache_size;
+      if( size<0 ) size = -size;
       sqliteBeginWriteOperation(pParse);
       sqliteVdbeAddOp(v, OP_ReadCookie, 0, 2);
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0);
+      addr = sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+      sqliteVdbeAddOp(v, OP_Ne, 0, addr+3);
+      sqliteVdbeAddOp(v, OP_AddImm, MAX_PAGES, 0);
       sqliteVdbeAddOp(v, OP_AbsValue, 0, 0);
       if( !getBoolean(zRight) ){
         sqliteVdbeAddOp(v, OP_Negative, 0, 0);
+        size = -size;
       }
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 2);
       sqliteEndWriteOperation(pParse);
+      db->cache_size = size;
+      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
+    }
+  }else
+
+  /*
+  **   PRAGMA synchronous
+  **   PRAGMA synchronous=BOOLEAN
+  **
+  ** Return or set the local value of the synchronous flag.  Changing
+  ** the local value does not make changes to the disk file and the
+  ** default value will be restored the next time the database is
+  ** opened.
+  */
+  if( sqliteStrICmp(zLeft,"synchronous")==0 ){
+    static VdbeOp getSync[] = {
+      { OP_ColumnCount, 1, 0,        0},
+      { OP_ColumnName,  0, 0,        "synchronous"},
+      { OP_Callback,    1, 0,        0},
+    };
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    if( pRight->z==pLeft->z ){
+      sqliteVdbeAddOp(v, OP_Integer, db->cache_size>=0, 0);
+      sqliteVdbeAddOpList(v, ArraySize(getSync), getSync);
+    }else{
+      int size = db->cache_size;
+      if( size<0 ) size = -size;
+      if( !getBoolean(zRight) ) size = -size;
+      db->cache_size = size;
+      sqliteBtreeSetCacheSize(db->pBe, db->cache_size);
     }
   }else
 

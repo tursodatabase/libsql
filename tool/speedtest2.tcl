@@ -79,6 +79,7 @@ puts $fd {
 }
 close $fd
 exec ./sqlite240 s2k.db <2kinit.sql
+exec ./sqlite-t1 st1.db <2kinit.sql
 set fd [open nosync-init.sql w]
 puts $fd {
   PRAGMA default_cache_size=2000;
@@ -114,152 +115,93 @@ proc number_name {n} {
 }
 
 
-
-set fd [open test$cnt.sql w]
-puts $fd "CREATE TABLE t1(a INTEGER, b INTEGER, c VARCHAR(100));"
-for {set i 1} {$i<=1000} {incr i} {
-  set r [expr {int(rand()*100000)}]
-  puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
-}
-close $fd
-runtest {1000 INSERTs}
-
-
-
 set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
-puts $fd "CREATE TABLE t2(a INTEGER, b INTEGER, c VARCHAR(100));"
+puts $fd "CREATE TABLE t1(a INTEGER, b INTEGER, c VARCHAR(100));"
 for {set i 1} {$i<=25000} {incr i} {
   set r [expr {int(rand()*500000)}]
-  puts $fd "INSERT INTO t2 VALUES($i,$r,'[number_name $r]');"
+  puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
 }
 puts $fd "COMMIT;"
 close $fd
 runtest {25000 INSERTs in a transaction}
 
 
-
 set fd [open test$cnt.sql w]
-for {set i 0} {$i<100} {incr i} {
-  set lwr [expr {$i*100}]
-  set upr [expr {($i+10)*100}]
-  puts $fd "SELECT count(*), avg(b) FROM t2 WHERE b>=$lwr AND b<$upr;"
-}
+puts $fd "DELETE FROM t1;"
 close $fd
-runtest {100 SELECTs without an index}
-
-
-
-set fd [open test$cnt.sql w]
-for {set i 1} {$i<=100} {incr i} {
-  puts $fd "SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%[number_name $i]%';"
-}
-close $fd
-runtest {100 SELECTs on a string comparison}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd {CREATE INDEX i2a ON t2(a);}
-puts $fd {CREATE INDEX i2b ON t2(b);}
-close $fd
-runtest {Creating an index}
-
-
-
-set fd [open test$cnt.sql w]
-for {set i 0} {$i<5000} {incr i} {
-  set lwr [expr {$i*100}]
-  set upr [expr {($i+1)*100}]
-  puts $fd "SELECT count(*), avg(b) FROM t2 WHERE b>=$lwr AND b<$upr;"
-}
-close $fd
-runtest {5000 SELECTs with an index}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd "BEGIN;"
-for {set i 0} {$i<1000} {incr i} {
-  set lwr [expr {$i*10}]
-  set upr [expr {($i+1)*10}]
-  puts $fd "UPDATE t1 SET b=b*2 WHERE a>=$lwr AND a<$upr;"
-}
-puts $fd "COMMIT;"
-close $fd
-runtest {1000 UPDATEs without an index}
-
+runtest {DELETE everything}
 
 
 set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
 for {set i 1} {$i<=25000} {incr i} {
   set r [expr {int(rand()*500000)}]
-  puts $fd "UPDATE t2 SET b=$r WHERE a=$i;"
-}
-puts $fd "COMMIT;"
-close $fd
-runtest {25000 UPDATEs with an index}
-
-
-set fd [open test$cnt.sql w]
-puts $fd "BEGIN;"
-for {set i 1} {$i<=25000} {incr i} {
-  set r [expr {int(rand()*500000)}]
-  puts $fd "UPDATE t2 SET c='[number_name $r]' WHERE a=$i;"
-}
-puts $fd "COMMIT;"
-close $fd
-runtest {25000 text UPDATEs with an index}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd "BEGIN;"
-puts $fd "INSERT INTO t1 SELECT * FROM t2;"
-puts $fd "INSERT INTO t2 SELECT * FROM t1;"
-puts $fd "COMMIT;"
-close $fd
-runtest {INSERTs from a SELECT}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd {DELETE FROM t2 WHERE c LIKE '%fifty%';}
-close $fd
-runtest {DELETE without an index}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd {DELETE FROM t2 WHERE a>10 AND a<20000;}
-close $fd
-runtest {DELETE with an index}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd {INSERT INTO t2 SELECT * FROM t1;}
-close $fd
-runtest {A big INSERT after a big DELETE}
-
-
-
-set fd [open test$cnt.sql w]
-puts $fd {BEGIN;}
-puts $fd {DELETE FROM t1;}
-for {set i 1} {$i<=3000} {incr i} {
-  set r [expr {int(rand()*100000)}]
   puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
 }
-puts $fd {COMMIT;}
+puts $fd "COMMIT;"
 close $fd
-runtest {A big DELETE followed by many small INSERTs}
+runtest {25000 INSERTs in a transaction}
 
+
+set fd [open test$cnt.sql w]
+puts $fd "DELETE FROM t1;"
+close $fd
+runtest {DELETE everything}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "BEGIN;"
+for {set i 1} {$i<=25000} {incr i} {
+  set r [expr {int(rand()*500000)}]
+  puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
+}
+puts $fd "COMMIT;"
+close $fd
+runtest {25000 INSERTs in a transaction}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "DELETE FROM t1;"
+close $fd
+runtest {DELETE everything}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "BEGIN;"
+for {set i 1} {$i<=25000} {incr i} {
+  set r [expr {int(rand()*500000)}]
+  puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
+}
+puts $fd "COMMIT;"
+close $fd
+runtest {25000 INSERTs in a transaction}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "DELETE FROM t1;"
+close $fd
+runtest {DELETE everything}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "BEGIN;"
+for {set i 1} {$i<=25000} {incr i} {
+  set r [expr {int(rand()*500000)}]
+  puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
+}
+puts $fd "COMMIT;"
+close $fd
+runtest {25000 INSERTs in a transaction}
+
+
+set fd [open test$cnt.sql w]
+puts $fd "DELETE FROM t1;"
+close $fd
+runtest {DELETE everything}
 
 
 set fd [open test$cnt.sql w]
 puts $fd {DROP TABLE t1;}
-puts $fd {DROP TABLE t2;}
 close $fd
 runtest {DROP TABLE}

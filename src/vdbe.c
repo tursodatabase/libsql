@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.132 2002/03/06 03:08:26 drh Exp $
+** $Id: vdbe.c,v 1.133 2002/03/06 22:01:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4309,7 +4309,8 @@ case OP_MemLoad: {
   memcpy(&aStack[tos], &p->aMem[i].s, sizeof(aStack[tos])-NBFS);;
   if( aStack[tos].flags & STK_Str ){
     zStack[tos] = p->aMem[i].z;
-    aStack[tos].flags = STK_Str | STK_Static;
+    aStack[tos].flags |= STK_Static;
+    aStack[tos].flags &= ~STK_Dyn;
   }
   break;
 }

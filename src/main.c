@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.67 2002/03/05 01:11:14 drh Exp $
+** $Id: main.c,v 1.68 2002/03/06 22:01:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -44,9 +44,9 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   switch( argv[0][0] ){
     case 'c': {  /* Recommended pager cache size */
       int size = atoi(argv[3]);
-      if( size!=0 ){
-        sqliteBtreeSetCacheSize(db->pBe, size);
-      }
+      if( size==0 ){ size = MAX_PAGES; }
+      db->cache_size = size;
+      sqliteBtreeSetCacheSize(db->pBe, size);
       break;
     }
     case 'f': {  /* File format */
