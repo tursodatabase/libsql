@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.84 2001/10/13 02:59:09 drh Exp $
+** $Id: vdbe.c,v 1.85 2001/10/13 21:56:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2638,6 +2638,8 @@ case OP_Column: {
     (*xSize)(pCrsr, &payloadSize);
     if( payloadSize < sizeof(aHdr[0])*(p2+1) ){
       rc = SQLITE_CORRUPT;
+printf("keyasdata=%d ", p->aCsr[i].keyAsData);
+printf("payloadSize=%d aHdr[0]=%d p2=%d\n", payloadSize, aHdr[0], p2);
       goto abort_due_to_error;
     }
     if( p2+1<mxHdr ){
@@ -2651,7 +2653,7 @@ case OP_Column: {
         amt = aHdr[p2+1] - offset;
       }
     }else{
-      sqliteBtreeData(pCrsr, 0, sizeof(aHdr[0]), (char*)aHdr);
+      (*xRead)(pCrsr, 0, sizeof(aHdr[0]), (char*)aHdr);
       nCol = aHdr[0]/sizeof(aHdr[0]);
       if( p2 == nCol-1 ){
         (*xRead)(pCrsr, sizeof(aHdr[0])*p2, sizeof(aHdr[0]), (char*)aHdr);
@@ -2776,7 +2778,7 @@ case OP_Next: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     if( !p->aCsr[i].atFirst ){
       int res;
-      sqliteBtreeNext(pCrsr, &res);
+      rc = sqliteBtreeNext(pCrsr, &res);
       if( res ){
         pc = pOp->p2 - 1;
       }else{

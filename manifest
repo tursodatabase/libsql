@@ -1,9 +1,9 @@
-C Version\s2.0.3\s(CVS\s467)
-D 2001-10-13T03:00:00
+C Bug\sfix.\s\sRaised\sversion\snumber\sto\s2.0.4.\s(CVS\s288)
+D 2001-10-13T21:56:34
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 582916b263aa40a70521dfb3d99d574028abd47b
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
-F VERSION f993f873300343a57c72ba514c06e41d922e43c1
+F VERSION 930f436b9878b6b1a49f546e86a54c17df3e0ca9
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -49,7 +49,7 @@ F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c c3fcb76a41a22803b6060bddb5fbadc80bbe309c
 F src/update.c 0b287faf0cc1d2bfa437f8a54061dd12ae6df91d
 F src/util.c 4da3be37d0fd3c640d2d3033503768afdc8e5387
-F src/vdbe.c dd65cd51bd5540edd8126723701f6ede6cb5f90c
+F src/vdbe.c 0f8ea6ca59f0899e9e0d71a81c0bf46110447cf6
 F src/vdbe.h 86fc2ef42f48024c9a2e1b7fb01eda22b65a5295
 F src/where.c 22fe910c7c8e2736eb37e9861343e90c0b513c86
 F test/all.test a2320eb40b462f25bd3e33115b1cabf3791450dd
@@ -102,7 +102,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl a59ee0835d1b33fcddab7d4fd65cf9e50f7d2dc7
-F www/changes.tcl 7078c2b8a93c723babef5883e29ae629924d9378
+F www/changes.tcl 5407ebb20a046f1f12dd4b8acd23c135f8e45f91
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -114,7 +114,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 75e90cf09b64ee1fcb39a711fc9ac6d3d2b849a5
-R 8da9c9836a4f886cd81b2c8f2ff58fcd
+P a8fee23f86c268c1bdb3575f3f6069da18de12a8
+R 4a79f4243a1c67e525408e6bb2f97ed5
 U drh
-Z 7cd02275f71fe4a2999287a8252e25e8
+Z ed2168af0cd1e05e4de01b47bbc410da

@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct 13 (2.0.4)} {
+<li>Bug fix: an abscure and relatively harmless bug was causing one of
+    the tests to fail when gcc optimizations are turned on.  This release
+    fixes the problem.</li>
+}
+
 chng {2001 Oct 13 (2.0.3)} {
 <li>Bug fix: the <b>sqlite_busy_timeout()</b> function was delaying 1000
     times too long before failing.</li>
