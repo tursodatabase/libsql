@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.12 2002/02/28 04:00:12 drh Exp $
+** $Id: func.c,v 1.13 2002/03/02 19:00:31 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -187,6 +187,13 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
       break;
     }
   }
+}
+
+/*
+** Implementation of random().  Return a random integer.  
+*/
+static void randomFunc(sqlite_func *context, int argc, const char **argv){
+  sqlite_set_result_int(context, sqliteRandomInteger());
 }
 
 /*
@@ -375,7 +382,7 @@ void sqliteRegisterBuildinFunctions(sqlite *db){
     { "coalesce",  -1, ifnullFunc },
     { "coalesce",   0, 0          },
     { "coalesce",   1, 0          },
-
+    { "random",    -1, randomFunc },
   };
   static struct {
     char *zName;

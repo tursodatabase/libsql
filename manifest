@@ -1,5 +1,5 @@
-C Subquery\sflattening\sis\simplemented\sand\spasses\sall\sregression\stests.\nWe\sstill\sneed\sto\sadd\saddition\stests\sto\sthe\ssuite\sto\sfurther\sexercise\nthe\sflattener,\showever.\s(CVS\s408)
-D 2002-03-02T17:04:08
+C Change\sthe\sbtree\snode\sbalancers\sto\ssort\snodes\sinto\saccending\sorder.\s\sThis\nimproves\sinsert\sand\sdelete\sspeed\sby\s25%.\s(CVS\s409)
+D 2002-03-02T19:00:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,12 +19,12 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 495275fe14f3b718cf2f691dce979d4c0e1f8e5d
+F src/btree.c 360c0aa4db058bd2d33269d7416178bdc7b7fe41
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 2f6d3136e6b824b2b446c54db2d2be5703033203
 F src/delete.c bf569eeb66dc851966b5681e5154d5fe2aee92c2
 F src/expr.c 17e3db6f115d60530a55530e3046312196c5eb36
-F src/func.c 0db438ba17f3394dc5a3ffcd2ee41ca0c8e80b21
+F src/func.c 5b4d9707b0c8f463824c1f04547b524cba24bf7b
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 4fb3428f591afe106f6e60029a61f87fa0e79920
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e14b0c82f3514f41934a7c0d173b6fdb186aafc8
-R f60c0ec90c7ca3b07c137c446692b495
+P d5d3e79cc58da5bd315cc1fea1f7cbf46274da16
+R e2a0844c770bfd758020b0af68cec917
 U drh
-Z 28d7598277d139ff75ed8a6bf05f4a82
+Z fff6edd2a1ed34d852214cfe902efd49

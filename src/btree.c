@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.55 2002/02/19 22:43:59 drh Exp $
+** $Id: btree.c,v 1.56 2002/03/02 19:00:31 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2102,6 +2102,40 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     nNew++;
     zeroPage(apNew[i]);
     apNew[i]->isInit = 1;
+  }
+
+  /*
+  ** Put the new pages in accending order.  This helps to
+  ** keep entries in the disk file in order so that a scan
+  ** of the table is a linear scan through the file.  That
+  ** in turn helps the operating system to deliver pages
+  ** from the disk more rapidly.
+  **
+  ** An O(n^2) insertion sort algorithm is used, but since
+  ** n is never more than 3, that should not be a problem.
+  **
+  ** This one optimization makes the database about 25%
+  ** faster for large insertions and deletions.
+  */
+  for(i=0; i<k-1; i++){
+    int minV = pgnoNew[i];
+    int minI = i;
+    for(j=i+1; j<k; j++){
+      if( pgnoNew[j]<minV ){
+        minI = j;
+        minV = pgnoNew[j];
+      }
+    }
+    if( minI>i ){
+      int t;
+      MemPage *pT;
+      t = pgnoNew[i];
+      pT = apNew[i];
+      pgnoNew[i] = pgnoNew[minI];
+      apNew[i] = apNew[minI];
+      pgnoNew[minI] = t;
+      apNew[minI] = pT;
+    }
   }
 
   /*
