@@ -1,5 +1,5 @@
-C Have\stests\spass\swhen\sSQLITE_OMIT_SCHEMA_PRAGMAS\sis\sdefined.\s(CVS\s2144)
-D 2004-11-23T10:13:03
+C Ensure\sthe\stest\ssuite\sruns\swith\sSQLITE_OMIT_PAGER_PRAGMAS\sdefined.\s(CVS\s2145)
+D 2004-11-23T10:52:51
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -159,8 +159,8 @@ F test/null.test 5a945790ef21b24fd602fe2c7a23847b903f8687
 F test/pager.test 394455707a079804e8a4e431d12edce831a065f0
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 647f696a9cf7409df00a1e0047c2eb55585a1b85
-F test/pagesize.test 6f94b70ed9645dbe6314b627ae765c5dec8036d9
-F test/pragma.test 5b0c3224170832784386e60140d923f099630ee1
+F test/pagesize.test 1b826d1608fd86d2303aa895b5586052ad07eba1
+F test/pragma.test e344e0fdef3683bab053bc6a34b60a4502e80c0b
 F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 91e5b8ae6663dc9e3e754b271f0384f0cae706e6
@@ -261,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 557be3ff5b1c46a3f3836ea3a9d9dede5dc46998
-R 795bf0d67acc367f1399bb179f72bd24
+P 6ccb589bd94fc7d33e07caa39e011c3628563e9b
+R 5a8adf496e1061bb035a6d034efa4c08
 U danielk1977
-Z 6114e34e7feb3954d6ddf0262d880fc7
+Z 568d1ff71d96d7e41d00c01a657aab48

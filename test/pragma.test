@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.25 2004/11/23 10:13:03 danielk1977 Exp $
+# $Id: pragma.test,v 1.26 2004/11/23 10:52:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,7 @@ db close
 file delete test.db
 set DB [sqlite3 db test.db]
 
+ifcapable pager_pragmas {
 do_test pragma-1.1 {
   execsql {
     PRAGMA cache_size;
@@ -149,6 +150,7 @@ do_test pragma-1.14 {
     PRAGMA synchronous;
   }
 } {2}
+} ;# ifcapable pager_pragmas
 
 # Test turning "flag" pragmas on and off.
 #
@@ -184,6 +186,7 @@ do_test pragma-2.1 {
     ATTACH 'test2.db' AS aux;
   } 
 } {}
+ifcapable pager_pragmas {
 do_test pragma-2.2 {
   execsql {
     pragma aux.synchronous;
@@ -203,6 +206,7 @@ do_test pragma-2.4 {
     pragma aux.synchronous;
   } 
 } {2 1}
+} ;# ifcapable pager_pragmas
 
 # Construct a corrupted index and make sure the integrity_check
 # pragma finds it.
@@ -240,6 +244,7 @@ do_test pragma-3.3 {
 } {}
 
 # Test modifying the cache_size of an attached database.
+ifcapable pager_pragmas {
 do_test pragma-4.1 {
   execsql {
     pragma aux.cache_size;
@@ -282,9 +287,11 @@ do_test pragma-4.6 {
     pragma aux.default_cache_size;
   } 
 } {456 456}
+} ;# ifcapable pager_pragmas
 
 # Test that modifying the sync-level in the middle of a transaction is
 # disallowed.
+ifcapable pager_pragmas {
 do_test pragma-5.0 {
   execsql {
     pragma synchronous;
@@ -302,6 +309,7 @@ do_test pragma-5.2 {
   } 
 } {2}
 catchsql {COMMIT;}
+} ;# ifcapable pager_pragmas
 
 # Test schema-query pragmas
 #
