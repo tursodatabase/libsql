@@ -3003,6 +3003,13 @@ struct lemon *lemp;
 ** Append text to a dynamically allocated string.  If zText is 0 then
 ** reset the string to be empty again.  Always return the complete text
 ** of the string (which is overwritten with each call).
+**
+** n bytes of zText are stored.  If n==0 then all of zText up to the first
+** \000 terminator is stored.  zText can contain up to two instances of
+** %d.  The values of p1 and p2 are written into the first and second
+** %d.
+**
+** If n==-1, then the previous character is overwritten.
 */
 PRIVATE char *append_str(char *zText, int n, int p1, int p2){
   static char *z = 0;
@@ -3015,7 +3022,13 @@ PRIVATE char *append_str(char *zText, int n, int p1, int p2){
     used = 0;
     return z;
   }
-  if( n<=0 ) n = strlen(zText);
+  if( n<=0 ){
+    if( n<0 ){
+      used += n;
+      assert( used>=0 );
+    }
+    n = strlen(zText);
+  }
   if( n+sizeof(zInt)*2+used >= alloced ){
     alloced = n + sizeof(zInt)*2 + used + 200;
     z = realloc(z,  alloced);
@@ -3060,14 +3073,20 @@ PRIVATE char *translate_code(struct lemon *lemp, struct rule *rp){
       saved = *xp;
       *xp = 0;
       if( rp->lhsalias && strcmp(cp,rp->lhsalias)==0 ){
-        append_str("yygotominor.yy%d",-1,rp->lhs->dtnum,0);
+        append_str("yygotominor.yy%d",0,rp->lhs->dtnum,0);
         cp = xp;
         lhsused = 1;
       }else{
         for(i=0; i<rp->nrhs; i++){
           if( rp->rhsalias[i] && strcmp(cp,rp->rhsalias[i])==0 ){
-            append_str("yymsp[%d].minor.yy%d",-1,
-                       i-rp->nrhs+1,rp->rhs[i]->dtnum);
+            if( cp!=rp->code && cp[-1]=='@' ){
+              /* If the argument is of the form @X then substituted
+              ** the token number of X, not the value of X */
+              append_str("yymsp[%d].major",-1,i-rp->nrhs+1,0);
+            }else{
+              append_str("yymsp[%d].minor.yy%d",0,
+                         i-rp->nrhs+1,rp->rhs[i]->dtnum);
+            }
             cp = xp;
             used[i] = 1;
             break;
@@ -3097,7 +3116,7 @@ PRIVATE char *translate_code(struct lemon *lemp, struct rule *rp){
       lemp->errorcnt++;
     }else if( rp->rhsalias[i]==0 ){
       if( has_destructor(rp->rhs[i],lemp) ){
-        append_str("  yy_destructor(%d,&yymsp[%d].minor);\n", -1,
+        append_str("  yy_destructor(%d,&yymsp[%d].minor);\n", 0,
            rp->rhs[i]->index,i-rp->nrhs+1);
       }else{
         /* No destructor defined for this term */

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.132 2004/08/01 00:10:45 drh Exp $
+** @(#) $Id: parse.y,v 1.133 2004/08/19 15:12:26 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -538,7 +538,7 @@ inscollist(A) ::= nm(Y).                      {A = sqlite3IdListAppend(0,&Y);}
 %destructor expr {sqlite3ExprDelete($$);}
 
 expr(A) ::= LP(B) expr(X) RP(E). {A = X; sqlite3ExprSpan(A,&B,&E); }
-expr(A) ::= NULL(X).             {A = sqlite3Expr(TK_NULL, 0, 0, &X);}
+expr(A) ::= NULL(X).             {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= ID(X).               {A = sqlite3Expr(TK_ID, 0, 0, &X);}
 expr(A) ::= JOIN_KW(X).          {A = sqlite3Expr(TK_ID, 0, 0, &X);}
 expr(A) ::= nm(X) DOT nm(Y). {
@@ -553,10 +553,10 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp4 = sqlite3Expr(TK_DOT, temp2, temp3, 0);
   A = sqlite3Expr(TK_DOT, temp1, temp4, 0);
 }
-expr(A) ::= INTEGER(X).      {A = sqlite3Expr(TK_INTEGER, 0, 0, &X);}
-expr(A) ::= FLOAT(X).        {A = sqlite3Expr(TK_FLOAT, 0, 0, &X);}
-expr(A) ::= STRING(X).       {A = sqlite3Expr(TK_STRING, 0, 0, &X);}
-expr(A) ::= BLOB(X).         {A = sqlite3Expr(TK_BLOB, 0, 0, &X);}
+expr(A) ::= INTEGER(X).      {A = sqlite3Expr(@X, 0, 0, &X);}
+expr(A) ::= FLOAT(X).        {A = sqlite3Expr(@X, 0, 0, &X);}
+expr(A) ::= STRING(X).       {A = sqlite3Expr(@X, 0, 0, &X);}
+expr(A) ::= BLOB(X).         {A = sqlite3Expr(@X, 0, 0, &X);}
 expr(A) ::= VARIABLE(X).     {
   A = sqlite3Expr(TK_VARIABLE, 0, 0, &X);
   if( A ) A->iTable = ++pParse->nVar;
@@ -569,18 +569,18 @@ expr(A) ::= ID(X) LP STAR RP(E). {
   A = sqlite3ExprFunction(0, &X);
   sqlite3ExprSpan(A,&X,&E);
 }
-expr(A) ::= expr(X) AND expr(Y).   {A = sqlite3Expr(TK_AND, X, Y, 0);}
-expr(A) ::= expr(X) OR expr(Y).    {A = sqlite3Expr(TK_OR, X, Y, 0);}
-expr(A) ::= expr(X) LT expr(Y).    {A = sqlite3Expr(TK_LT, X, Y, 0);}
-expr(A) ::= expr(X) GT expr(Y).    {A = sqlite3Expr(TK_GT, X, Y, 0);}
-expr(A) ::= expr(X) LE expr(Y).    {A = sqlite3Expr(TK_LE, X, Y, 0);}
-expr(A) ::= expr(X) GE expr(Y).    {A = sqlite3Expr(TK_GE, X, Y, 0);}
-expr(A) ::= expr(X) NE expr(Y).    {A = sqlite3Expr(TK_NE, X, Y, 0);}
-expr(A) ::= expr(X) EQ expr(Y).    {A = sqlite3Expr(TK_EQ, X, Y, 0);}
-expr(A) ::= expr(X) BITAND expr(Y). {A = sqlite3Expr(TK_BITAND, X, Y, 0);}
-expr(A) ::= expr(X) BITOR expr(Y).  {A = sqlite3Expr(TK_BITOR, X, Y, 0);}
-expr(A) ::= expr(X) LSHIFT expr(Y). {A = sqlite3Expr(TK_LSHIFT, X, Y, 0);}
-expr(A) ::= expr(X) RSHIFT expr(Y). {A = sqlite3Expr(TK_RSHIFT, X, Y, 0);}
+expr(A) ::= expr(X) AND(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) OR(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) LT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) GT(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) LE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) GE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) NE(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) EQ(OP) expr(Y).     {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) BITAND(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) BITOR(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) LSHIFT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) RSHIFT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE]  {
   ExprList *pList = sqlite3ExprListAppend(0, Y, 0);
   pList = sqlite3ExprListAppend(pList, X, 0);
@@ -599,12 +599,12 @@ expr(A) ::= expr(X) NOT likeop(OP) expr(Y). [LIKE] {
 %type likeop {int}
 likeop(A) ::= LIKE. {A = TK_LIKE;}
 likeop(A) ::= GLOB. {A = TK_GLOB;}
-expr(A) ::= expr(X) PLUS expr(Y).  {A = sqlite3Expr(TK_PLUS, X, Y, 0);}
-expr(A) ::= expr(X) MINUS expr(Y). {A = sqlite3Expr(TK_MINUS, X, Y, 0);}
-expr(A) ::= expr(X) STAR expr(Y).  {A = sqlite3Expr(TK_STAR, X, Y, 0);}
-expr(A) ::= expr(X) SLASH expr(Y). {A = sqlite3Expr(TK_SLASH, X, Y, 0);}
-expr(A) ::= expr(X) REM expr(Y).   {A = sqlite3Expr(TK_REM, X, Y, 0);}
-expr(A) ::= expr(X) CONCAT expr(Y). {A = sqlite3Expr(TK_CONCAT, X, Y, 0);}
+expr(A) ::= expr(X) PLUS(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) MINUS(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) STAR(OP) expr(Y).   {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) SLASH(OP) expr(Y).  {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) REM(OP) expr(Y).    {A = sqlite3Expr(@OP, X, Y, 0);}
+expr(A) ::= expr(X) CONCAT(OP) expr(Y). {A = sqlite3Expr(@OP, X, Y, 0);}
 expr(A) ::= expr(X) ISNULL(E). {
   A = sqlite3Expr(TK_ISNULL, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
@@ -626,11 +626,11 @@ expr(A) ::= expr(X) IS NOT NULL(E). {
   sqlite3ExprSpan(A,&X->span,&E);
 }
 expr(A) ::= NOT(B) expr(X). {
-  A = sqlite3Expr(TK_NOT, X, 0, 0);
+  A = sqlite3Expr(@B, X, 0, 0);
   sqlite3ExprSpan(A,&B,&X->span);
 }
 expr(A) ::= BITNOT(B) expr(X). {
-  A = sqlite3Expr(TK_BITNOT, X, 0, 0);
+  A = sqlite3Expr(@B, X, 0, 0);
   sqlite3ExprSpan(A,&B,&X->span);
 }
 expr(A) ::= MINUS(B) expr(X). [UMINUS] {
