@@ -1,5 +1,5 @@
-C Fix\sa\scomment.\s(CVS\s384)
-D 2002-02-19T22:43:59
+C Do\snot\sallow\sdot-commands\sto\soccur\sin\sthe\smiddle\sof\sa\sreal\sSQL\scommand.\s(CVS\s385)
+D 2002-02-21T02:25:03
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template 3372d45f8853afdb70bd30cc6fb50a3cd9069834
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/parse.y b82278917959eefd05bd08c90e07a4fa5917ea51
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 282f37b2fdb9367f0230811e1cf7bba48665fb72
-F src/shell.c c102dfe388c7618a668c944ff157c49cb48f28e3
+F src/shell.c cbf48bf0ca35c4e0d8a7d2a86f7724f52c525cd7
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f57074c84a2c112a5093ba7a9d9636aa9cacc87c
 F src/sqliteInt.h e19efd5b1c6accfb3418cbb5c0e8c143fc1d18d7
@@ -125,7 +125,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1686196a8aea326f616bc8205df99cd84d955ec4
-R 42c062c2ca75817e3567e6aa37103eaa
+P 953928537c350e6c9df157553114c6d9d44712d5
+R 9ed6435fa0cf461ec879e5b28166d8d6
 U drh
-Z 4a1d19ca8703d5210ddbf3e99038aa5f
+Z a1b5da6dd8cc3bb5ba9dca0ec016a36c
