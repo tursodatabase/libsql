@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.79 2002/07/15 18:55:25 drh Exp $
+** @(#) $Id: parse.y,v 1.80 2002/08/11 20:10:48 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -164,6 +164,7 @@ carg ::= DEFAULT NULL.
 // In addition to the type name, we also care about the primary key and
 // UNIQUE constraints.
 //
+ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
 ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}

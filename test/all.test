@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.15 2002/07/07 16:52:47 drh Exp $
+# $Id: all.test,v 1.16 2002/08/11 20:10:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,7 +20,7 @@ proc finish_test {} {memleak_check}
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
 } else {
-  set COUNT 3
+  set COUNT 4
 }
 
 # LeakList will hold a list of the number of unfreed mallocs after
@@ -38,6 +38,7 @@ set EXCLUDE {
 #  btree2.test
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
+  set btree_native_byte_order [expr {($Counter>>1)&0x1}]
   if {$Counter%2} {
     set ::SETUP_SQL {PRAGMA default_synchronous=off;}
   } else {

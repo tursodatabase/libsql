@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: opcode.tcl,v 1.9 2001/11/24 13:50:53 drh Exp $}
+set rcsid {$Id: opcode.tcl,v 1.10 2002/08/11 20:10:49 drh Exp $}
 
 puts {<html>
 <head>
@@ -91,7 +91,7 @@ When the virtual machine halts, all memory
 that it allocated is released and all database cursors it may
 have had open are closed.  If the execution stopped due to an
 error, any pending transactions are terminated and changes made
-to the database are rollback.</p>
+to the database are rolled back.</p>
 
 <p>The virtual machine also contains an operand stack of unlimited
 depth.  Many of the opcodes use operands from the stack.  See the

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.60 2002/07/18 02:07:08 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.61 2002/08/11 20:10:49 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -49,7 +49,7 @@ puts {<h2>Features</h2>
 <p><ul>
 <li>Implements most of SQL92.</li>
 <li>A complete database (with multiple tables and indices) is
-    stored in a single disk file.</li>
+    stored in a single byte-order independent disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
 <li>Small memory footprint: less than 20K lines of C code.</li>
 <li><a href="speed.html">Four times faster</a> than PostgreSQL.
