@@ -21,6 +21,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 January 21 (3.1.0 ALPHA)} {
+<li>Autovacuum support added</li>
+<li>CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP added</li>
+<li>Support for the EXISTS clause added.</li>
+<li>Support for correlated subqueries added.</li>
+<li>Added the ESCAPE clause on the LIKE operator.</li>
+<li>Support for ALTER TABLE ... RENAME TABLE ... added</li>
+<li>AUTOINCREMENT keyword supported on INTEGER PRIMARY KEY</li>
+<li>Many SQLITE_OMIT_ macros inserts to omit features at compile-time
+    and reduce the library footprint.</li>
+<li>The REINDEX command was added.</li>
+<li>The engine no longer consults the main table if it can get
+    all the information it needs from an index.</li>
+<li>Many nuisance bugs fixed.</li>
+}
+
 chng {2004 October 11 (3.0.8)} {
 <li>Add support for DEFERRED, IMMEDIATE, and EXCLUSIVE transactions.</li>
 <li>Allow new user-defined functions to be created when there are

@@ -1,5 +1,5 @@
-C Final\spreparations\sfor\sthe\s3.1.0\salpha\srelease.\s(CVS\s2255)
-D 2005-01-21T15:52:33
+C Update\schange\slog\sfor\sversion\s3.1.0.\s(CVS\s2256)
+D 2005-01-21T17:03:50
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -237,7 +237,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 9676103393dbf1c313b5618c9da59033f82cd924
 F www/capi3ref.tcl c5a3ae75fc3505c034f3c4bbb62ab94cf359ac39
-F www/changes.tcl f2b34859843d9f06a0611eb6d44af767891b09ef
+F www/changes.tcl c4e713f1a478dba14764119c29cb1b5e66b8242b
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl b4bbd488427dfe88b1a2366cf9f0b4b850e1f271
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 9c4d0e13e8c5f3fc4d7fd8f495898372293f7fad
-R 44bbe83d5fc37b261a84d7182829f5c6
+P 17122c7e8e9cae36f1ffa7b42bd69d702980ac6a
+R 52675c0b34bb0b46d99c674c05fb7484
 U drh
-Z c3d0ff636238b9d4407ee815eacf77a0
+Z f6d2db5d32591dc13c3638acc2048e05
