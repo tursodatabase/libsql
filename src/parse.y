@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.61 2002/04/06 13:57:43 drh Exp $
+** @(#) $Id: parse.y,v 1.62 2002/04/20 14:24:42 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -431,18 +431,21 @@ expr(A) ::= expr(X) BITAND expr(Y). {A = sqliteExpr(TK_BITAND, X, Y, 0);}
 expr(A) ::= expr(X) BITOR expr(Y).  {A = sqliteExpr(TK_BITOR, X, Y, 0);}
 expr(A) ::= expr(X) LSHIFT expr(Y). {A = sqliteExpr(TK_LSHIFT, X, Y, 0);}
 expr(A) ::= expr(X) RSHIFT expr(Y). {A = sqliteExpr(TK_RSHIFT, X, Y, 0);}
-expr(A) ::= expr(X) LIKE expr(Y).   {A = sqliteExpr(TK_LIKE, X, Y, 0);}
-expr(A) ::= expr(X) NOT LIKE expr(Y).  {
-  A = sqliteExpr(TK_LIKE, X, Y, 0);
+expr(A) ::= expr(X) likeop(OP) expr(Y).  [LIKE]  {
+  ExprList *pList = sqliteExprListAppend(0, Y, 0);
+  pList = sqliteExprListAppend(pList, X, 0);
+  A = sqliteExprFunction(pList, &OP);
+  sqliteExprSpan(A, &X->span, &Y->span);
+}
+expr(A) ::= expr(X) NOT likeop(OP) expr(Y). [LIKE] {
+  ExprList *pList = sqliteExprListAppend(0, Y, 0);
+  pList = sqliteExprListAppend(pList, X, 0);
+  A = sqliteExprFunction(pList, &OP);
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&X->span,&Y->span);
 }
-expr(A) ::= expr(X) GLOB expr(Y).  {A = sqliteExpr(TK_GLOB,X,Y,0);}
-expr(A) ::= expr(X) NOT GLOB expr(Y).  {
-  A = sqliteExpr(TK_GLOB, X, Y, 0);
-  A = sqliteExpr(TK_NOT, A, 0, 0);
-  sqliteExprSpan(A,&X->span,&Y->span);
-}
+likeop(A) ::= LIKE(X). {A = X;}
+likeop(A) ::= GLOB(X). {A = X;}
 expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}

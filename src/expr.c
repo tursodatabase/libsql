@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.57 2002/03/24 13:13:29 drh Exp $
+** $Id: expr.c,v 1.58 2002/04/20 14:24:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -705,8 +705,6 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_GE:       op = OP_Ge;       break;
     case TK_NE:       op = OP_Ne;       break;
     case TK_EQ:       op = OP_Eq;       break;
-    case TK_LIKE:     op = OP_Like;     break;
-    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_IsNull;   break;
     case TK_NOTNULL:  op = OP_NotNull;  break;
     case TK_NOT:      op = OP_Not;      break;
@@ -784,9 +782,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_GT:
     case TK_GE:
     case TK_NE:
-    case TK_EQ: 
-    case TK_LIKE: 
-    case TK_GLOB: {
+    case TK_EQ: {
       int dest;
       sqliteVdbeAddOp(v, OP_Integer, 1, 0);
       sqliteExprCode(pParse, pExpr->pLeft);
@@ -938,8 +934,6 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_GE:       op = OP_Ge;       break;
     case TK_NE:       op = OP_Ne;       break;
     case TK_EQ:       op = OP_Eq;       break;
-    case TK_LIKE:     op = OP_Like;     break;
-    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_IsNull;   break;
     case TK_NOTNULL:  op = OP_NotNull;  break;
     default:  break;
@@ -966,9 +960,7 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
     case TK_GT:
     case TK_GE:
     case TK_NE:
-    case TK_EQ:
-    case TK_LIKE:
-    case TK_GLOB: {
+    case TK_EQ: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, dest);
@@ -1026,8 +1018,6 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
     case TK_GE:       op = OP_Lt;       break;
     case TK_NE:       op = OP_Eq;       break;
     case TK_EQ:       op = OP_Ne;       break;
-    case TK_LIKE:     op = OP_Like;     break;
-    case TK_GLOB:     op = OP_Glob;     break;
     case TK_ISNULL:   op = OP_NotNull;  break;
     case TK_NOTNULL:  op = OP_IsNull;   break;
     default:  break;
@@ -1058,13 +1048,6 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
       sqliteVdbeAddOp(v, op, 0, dest);
-      break;
-    }
-    case TK_LIKE:
-    case TK_GLOB: {
-      sqliteExprCode(pParse, pExpr->pLeft);
-      sqliteExprCode(pParse, pExpr->pRight);
-      sqliteVdbeAddOp(v, op, 1, dest);
       break;
     }
     case TK_ISNULL:

@@ -32,10 +32,10 @@ proc runtest {title} {
   puts "</blockquote><table border=0 cellpadding=0 cellspacing=0>"
   set format {<tr><td>%s</td><td align="right">&nbsp;&nbsp;&nbsp;%.3f</td></tr>}
   set delay 1000
-  exec sync; after $delay;
-  set t [time "exec psql drh <$sqlfile" 1]
-  set t [expr {[lindex $t 0]/1000000.0}]
-  puts [format $format PostgreSQL: $t]
+#  exec sync; after $delay;
+#  set t [time "exec psql drh <$sqlfile" 1]
+#  set t [expr {[lindex $t 0]/1000000.0}]
+#  puts [format $format PostgreSQL: $t]
   exec sync; after $delay;
   set t [time "exec mysql -f drh <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
@@ -47,11 +47,11 @@ proc runtest {title} {
 #  set t [expr {[lindex $t 0]/1000000.0}]
 #  puts [format $format {SQLite 2.4 (cache=100):} $t]
   exec sync; after $delay;
-  set t [time "exec ./sqlite240 s2k.db <$sqlfile" 1]
+  set t [time "exec ./sqlite248 s2k.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format {SQLite 2.4:} $t]
   exec sync; after $delay;
-  set t [time "exec ./sqlite240 sns.db <$sqlfile" 1]
+  set t [time "exec ./sqlite248 sns.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format {SQLite 2.4 (nosync):} $t]
 #  set t [time "exec ./sqlite-t1 st1.db <$sqlfile" 1]
@@ -78,14 +78,14 @@ puts $fd {
   PRAGMA default_synchronous=on;
 }
 close $fd
-exec ./sqlite240 s2k.db <2kinit.sql
+exec ./sqlite248 s2k.db <2kinit.sql
 set fd [open nosync-init.sql w]
 puts $fd {
   PRAGMA default_cache_size=2000;
   PRAGMA default_synchronous=off;
 }
 close $fd
-exec ./sqlite240 sns.db <nosync-init.sql
+exec ./sqlite248 sns.db <nosync-init.sql
 set ones {zero one two three four five six seven eight nine
           ten eleven twelve thirteen fourteen fifteen sixteen seventeen
           eighteen nineteen}

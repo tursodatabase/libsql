@@ -1,9 +1,9 @@
-C Add\ssupport\sfor\ssaving\sthe\ssqlite\sshell\scommand-line\shistory\sacross\ssessions.\s(CVS\s536)
-D 2002-04-19T12:34:06
+C Fix\sfor\sticket\s#1:\sImplement\sthe\sGLOB\sand\sLIKE\soperators\sas\sfunctions\sthat\ncan\sbe\soverridden.\s\sThis\sway,\sa\sdeveloper\scan\schange\sthe\sLIKE\soperator\sto\nbe\scase\ssensitive,\sfor\sexample.\s(CVS\s537)
+D 2002-04-20T14:24:42
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION bb2c45e1821c29d3e52ea953e25a4c4a2d2f15e7
+F VERSION 5446cf3087aa40ee419d025faa144cfb7da913b7
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -24,8 +24,8 @@ F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c d01b81f41481e733e27ab2fa8e1bfcc64f24257d
 F src/delete.c 6a6b8192cdff5e4b083da3bc63de099f3790d01f
-F src/expr.c e7a1e22bc2ebcd789f0f8c0db544cf16ad664054
-F src/func.c dca9df811298cd0beb3724d40cee348e884352b2
+F src/expr.c cf8d2ea17e419fc83b23e080195b2952e0be4164
+F src/func.c a31dcba85bc2ecb9b752980289cf7e6cd0cafbce
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 31233f44fc79edbb43523a830e54736a8e222ff4
@@ -35,7 +35,7 @@ F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c ba5740104cc27b342cd43eebfdc44d60f64a3ded
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y 9a8a2311dd95101bb02b3991042e619eea49729a
+F src/parse.y 0ce56f1c751657f01e18a4b4ac1aa4d29525ac20
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 92aef3f69e90dc065d680d88b1f075409e9249bb
@@ -52,8 +52,8 @@ F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 5624d342601f616157ba266abccc1368a5afee70
 F src/update.c 7dd714a6a7fa47f849ebb36b6d915974d6c6accb
 F src/util.c b34cd91387bbfdc79319ea451a7d120cef478120
-F src/vdbe.c 9213ff1ab136eabcf3e8a58157765a01274bf8e9
-F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
+F src/vdbe.c 0ed88fff32273c103a24396d491b71bc69b4b596
+F src/vdbe.h 67840a462e1daedb958cca0ccc97db140d3d9152
 F src/where.c 9d36f6c9fea4af71501770c13089f824cb9b033c
 F test/all.test 6aa106eee4d7127afa5cee97c51a783a79694ead
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -110,7 +110,7 @@ F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
-F tool/speedtest.tcl 6d89431651f2eb800fb0998a8de44b84168e08b9
+F tool/speedtest.tcl 8287851340fd4a9500a69e9b10fb5ed9e6b0d0c3
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6c32c07e8218caffebd4503e7d8a90226ac81cdc
-R fdf61026ce1ec867dd8bbc684e7b26b1
+P ca4abf3fe1f0e66802f9f98a20e0c8b82a6459aa
+R 296e96183752df57d48880aeba4ee595
 U drh
-Z efe3d88b41e036fdbd5e6a43e4d0b877
+Z 1714d41230ea0b8c518108a22a7c1e16

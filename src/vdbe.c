@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.138 2002/04/12 10:09:00 drh Exp $
+** $Id: vdbe.c,v 1.139 2002/04/20 14:24:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1058,11 +1058,11 @@ static char *zOpName[] = { 0,
   "MustBeInt",         "Add",               "AddImm",            "Subtract",
   "Multiply",          "Divide",            "Remainder",         "BitAnd",
   "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Like",              "Glob",              "Eq",
-  "Ne",                "Lt",                "Le",                "Gt",
-  "Ge",                "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Function",          "Limit",           
+  "AbsValue",          "Eq",                "Ne",                "Lt",
+  "Le",                "Gt",                "Ge",                "IsNull",
+  "NotNull",           "Negative",          "And",               "Or",
+  "Not",               "Concat",            "Noop",              "Function",
+  "Limit",           
 };
 
 /*
@@ -2007,69 +2007,6 @@ case OP_Ge: {
   }
   POPSTACK;
   POPSTACK;
-  if( c ) pc = pOp->p2-1;
-  break;
-}
-
-/* Opcode: Like P1 P2 *
-**
-** Pop the top two elements from the stack.  The top-most is a
-** "like" pattern -- the right operand of the SQL "LIKE" operator.
-** The lower element is the string to compare against the like
-** pattern.  Jump to P2 if the two compare, and fall through without
-** jumping if they do not.  The '%' in the top-most element matches
-** any sequence of zero or more characters in the lower element.  The
-** '_' character in the topmost matches any single character of the
-** lower element.  Case is ignored for this comparison.
-**
-** If P1 is not zero, the sense of the test is inverted and we
-** have a "NOT LIKE" operator.  The jump is made if the two values
-** are different.
-*/
-case OP_Like: {
-  int tos = p->tos;
-  int nos = tos - 1;
-  int c;
-  VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-  c = sqliteLikeCompare((unsigned char*)zStack[tos], 
-                        (unsigned char*)zStack[nos]);
-  POPSTACK;
-  POPSTACK;
-  if( pOp->p1 ) c = !c;
-  if( c ) pc = pOp->p2-1;
-  break;
-}
-
-/* Opcode: Glob P1 P2 *
-**
-** Pop the top two elements from the stack.  The top-most is a
-** "glob" pattern.  The lower element is the string to compare 
-** against the glob pattern.
-**
-** Jump to P2 if the two compare, and fall through without
-** jumping if they do not.  The '*' in the top-most element matches
-** any sequence of zero or more characters in the lower element.  The
-** '?' character in the topmost matches any single character of the
-** lower element.  [...] matches a range of characters.  [^...]
-** matches any character not in the range.  Case is significant
-** for globs.
-**
-** If P1 is not zero, the sense of the test is inverted and we
-** have a "NOT GLOB" operator.  The jump is made if the two values
-** are different.
-*/
-case OP_Glob: {
-  int tos = p->tos;
-  int nos = tos - 1;
-  int c;
-  VERIFY( if( nos<0 ) goto not_enough_stack; )
-  if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-  c = sqliteGlobCompare((unsigned char*)zStack[tos],
-                        (unsigned char*)zStack[nos]);
-  POPSTACK;
-  POPSTACK;
-  if( pOp->p1 ) c = !c;
   if( c ) pc = pOp->p2-1;
   break;
 }
