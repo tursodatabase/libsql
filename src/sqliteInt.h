@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.350 2005/01/03 01:27:19 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.351 2005/01/08 18:42:28 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -108,6 +108,14 @@
 /* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
 /* #define SQLITE_OMIT_AUTOVACUUM */
 /* #define SQLITE_OMIT_ALTERTABLE */
+
+/*
+** Provide a default value for TEMP_STORE in case it is not specified
+** on the command-line
+*/
+#ifndef TEMP_STORE
+# define TEMP_STORE 1
+#endif
 
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it

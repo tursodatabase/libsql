@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.268 2004/11/22 19:12:20 drh Exp $
+** $Id: main.c,v 1.269 2005/01/08 18:42:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -843,9 +843,6 @@ int sqlite3BtreeFactory(
     btree_flags |= BTREE_OMIT_JOURNAL;
   }
   if( zFilename==0 ){
-#ifndef TEMP_STORE
-# define TEMP_STORE 1
-#endif
 #if TEMP_STORE==0
     /* Do nothing */
 #endif
