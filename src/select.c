@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.47 2001/11/06 14:10:42 drh Exp $
+** $Id: select.c,v 1.48 2001/11/07 14:22:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -200,7 +200,7 @@ static int selectInnerLoop(
   */
   if( eDest==SRT_Mem ){
     assert( nColumn==1 );
-    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 1);
     sqliteVdbeAddOp(v, OP_Goto, 0, iBreak);
   }else
 
@@ -907,7 +907,7 @@ int sqliteSelect(
   */
   if( eDest==SRT_Mem ){
     sqliteVdbeAddOp(v, OP_String, 0, 0);
-    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 1);
   }
 
   /* Begin the database scan

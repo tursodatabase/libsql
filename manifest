@@ -1,5 +1,5 @@
-C Added\ssupport\sfor\sLIMIT.\s(CVS\s302)
-D 2001-11-06T14:10:42
+C Incremental\supdate.\s\sWe\sare\sin\sthe\smiddle\sof\smodifying\sthe\sindex\ssystem\nto\ssupport\srange\squeries\swithout\sdoing\sa\scomplete\stable\sscan.\s(CVS\s303)
+D 2001-11-07T14:22:00
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,14 +19,14 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 2789f704777d29b1b38e62e4798381ce602dc0fb
-F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
-F src/build.c 65438f92919d92c7974e995f2d654b6cb3280a50
-F src/delete.c a4c13c444544f315703d5fbed6419c8786f66581
+F src/btree.c add522fad1b18c0face24e6f9f7468a6c696c5cc
+F src/btree.h 0250a0a577a98cc64ddf1582d50c08b8d2451650
+F src/build.c b459cbe33ee617f46b1975f96ae605d3519583d9
+F src/delete.c 9cb0b1470e50881d3404f78af353df3ebb6399e5
 F src/expr.c 2dd0252ced345c1e64db015b94dc6b5d7a57eef3
 F src/hash.c d0110e6da70a5962e21575fccf8206f7d9d75e00
 F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
-F src/insert.c b65c1d4b848e45d41e9dcccd2b226ca335de67b6
+F src/insert.c 962f277340adc265fbde4dd952055df7ede4e67b
 F src/main.c e2ae5e14a3f936d5fa7e3d9d9477610b5f16e7eb
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 66b677479eae37e30bdfbe32deb0fe6a2efca983
@@ -36,7 +36,7 @@ F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
 F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
-F src/select.c da60dfdd449ef6a71225878aca130b86f298c76e
+F src/select.c a97d3d27c544dc9a4849bfbad1cfa3e7c673bda9
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
@@ -47,10 +47,10 @@ F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
 F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
 F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
-F src/update.c 4eeb154a2da8a934d180e2d9e4211ac0a7a4ce8b
+F src/update.c b1e315e20b98a013d30fd9ff3b7d9dc4f29b39b3
 F src/util.c ac83973ecc647d3d3c58708f148442365abf9b94
-F src/vdbe.c 9f6ff3444a38d9bba27497be56e4ad386b316cbb
-F src/vdbe.h ea71a2c29d43c03283dee30237a01f4726900b29
+F src/vdbe.c 24306643bed5e19406735152ad68e98d598dcab0
+F src/vdbe.h a1170446638ce5b7f078279e640dcf91ec50de01
 F src/where.c 601f096f2a37ca688a775ca36d33534b13b876cb
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
 F test/bigrow.test 9458134d67f81559845f934fdd6802fe19a68ad1
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P eb07768ae93f14bf6c150c1c4329948857a9d01c
-R 69771165b17aa31e07d926b8467701a7
+P 177012249ae93dbea4a11fb50faaae7912848bd0
+R 28881ea0807c6135a3c8ce43fbf768db
 U drh
-Z 0d18c20a2f39388100a44f2bc527ed6b
+Z bdd4c0f13b513e97b71388c7bea5ec3a
