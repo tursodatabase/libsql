@@ -644,7 +644,7 @@ int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
   TIMER_START;
   got = read(id->h, pBuf, amt);
   TIMER_END;
-  TRACE4("READ    %-3d %7d %d\n", id->h, last_page, TIMER_ELAPSED);
+  TRACE5("READ    %-3d %5d %7d %d\n", id->h, got, last_page, TIMER_ELAPSED);
   SEEK(0);
   /* if( got<0 ) got = 0; */
   if( got==amt ){
@@ -670,7 +670,7 @@ int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
     pBuf = &((char*)pBuf)[wrote];
   }
   TIMER_END;
-  TRACE4("WRITE   %-3d %7d %d\n", id->h, last_page, TIMER_ELAPSED);
+  TRACE5("WRITE   %-3d %5d %7d %d\n", id->h, wrote, last_page, TIMER_ELAPSED);
   SEEK(0);
   if( amt>0 ){
     return SQLITE_FULL;
@@ -941,7 +941,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   int s;
 
   assert( id->isOpen );
-  TRACE7("LOCK %d %s was %s(%s,%d) pid=%d\n", id->h, locktypeName(locktype), 
+  TRACE7("LOCK    %d %s was %s(%s,%d) pid=%d\n", id->h, locktypeName(locktype), 
       locktypeName(id->locktype), locktypeName(pLock->locktype), pLock->cnt
       ,getpid() );
 
@@ -950,7 +950,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   ** sqlite3OsEnterMutex() hasn't been called yet.
   */
   if( id->locktype>=locktype ){
-    TRACE3("LOCK %d %s ok (already held)\n", id->h, locktypeName(locktype));
+    TRACE3("LOCK    %d %s ok (already held)\n", id->h, locktypeName(locktype));
     return SQLITE_OK;
   }
 
@@ -1071,7 +1071,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
 
 end_lock:
   sqlite3OsLeaveMutex();
-  TRACE4("LOCK %d %s %s\n", id->h, locktypeName(locktype), 
+  TRACE4("LOCK    %d %s %s\n", id->h, locktypeName(locktype), 
       rc==SQLITE_OK ? "ok" : "failed");
   return rc;
 }
@@ -1093,7 +1093,7 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
   int rc = SQLITE_OK;
 
   assert( id->isOpen );
-  TRACE7("UNLOCK %d %d was %d(%d,%d) pid=%d\n", id->h, locktype, id->locktype, 
+  TRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d\n", id->h, locktype, id->locktype, 
       id->pLock->locktype, id->pLock->cnt, getpid());
 
   assert( locktype<=SHARED_LOCK );
