@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.406 2004/07/24 17:38:29 drh Exp $
+** $Id: vdbe.c,v 1.407 2004/08/07 23:54:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2079,11 +2079,6 @@ case OP_MakeRecord: {
   /* Add the initial header varint and total the size */
   nHdr += sqlite3VarintLen(nHdr);
   nByte = nHdr+nData;
-
-  if( nByte>MAX_BYTES_PER_ROW ){
-    rc = SQLITE_TOOBIG;
-    goto abort_due_to_error;
-  }
 
   /* Allocate space for the new record. */
   if( nByte>sizeof(zTemp) ){

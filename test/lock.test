@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.26 2004/06/19 00:16:31 drh Exp $
+# $Id: lock.test,v 1.27 2004/08/07 23:54:48 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -170,7 +170,7 @@ do_test lock-2.2 {
 } {0 {9 8}}
 
 # If the other thread (the one that does not hold the transaction with
-# a RESERVED lock) tries to get a RESERVED lock, we get a busy callback.
+# a RESERVED lock) tries to get a RESERVED lock, we do not get a busy callback.
 #
 do_test lock-2.3 {
   proc callback {count} {
@@ -182,7 +182,7 @@ do_test lock-2.3 {
   set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
   lappend r $msg
   lappend r $::callback_value
-} {1 {database is locked} 1}
+} {1 {database is locked} {}}
 do_test lock-2.4 {
   proc callback {count} {
     lappend ::callback_value $count
@@ -193,7 +193,7 @@ do_test lock-2.4 {
   set r [catch {execsql {UPDATE t1 SET a=b, b=a} db2} msg]
   lappend r $msg
   lappend r $::callback_value
-} {1 {database is locked} {1 2 3 4 5}}
+} {1 {database is locked} {}}
 do_test lock-2.5 {
   proc callback {count} {
     lappend ::callback_value $count
@@ -205,39 +205,7 @@ do_test lock-2.5 {
   lappend r $msg
   lappend r $::callback_value
 } {0 {2 1} {}}
-
-# In this test, the 3rd invocation of the busy callback causes
-# the first thread to release its transaction.  That allows the
-# second thread to continue.
-#
-do_test lock-2.6 {
-  proc callback {count} {
-    lappend ::callback_value $count
-    if {$count>2} {
-      execsql {ROLLBACK}
-    }
-  }
-  set ::callback_value {}
-  db2 busy callback
-  set r [catch {execsql {SELECT * FROM t2} db2} msg]
-  lappend r $msg
-  lappend r $::callback_value
-} {0 {9 8} {}}
-do_test lock-2.7 {
-  proc callback {count} {
-    lappend ::callback_value $count
-    if {$count>2} {
-      execsql {ROLLBACK}
-    }
-  }
-  set ::callback_value {}
-  db2 busy callback
-  execsql {BEGIN TRANSACTION} db2
-  set r [catch {execsql {UPDATE t1 SET a = 0 WHERE 0} db2} msg]
-  execsql {ROLLBACK} db2
-  lappend r $msg
-  lappend r $::callback_value
-} {0 {} {1 2 3}}
+execsql {ROLLBACK}
 
 # Test the built-in busy timeout handler
 #
@@ -245,7 +213,7 @@ do_test lock-2.8 {
   db2 timeout 400
   execsql BEGIN
   execsql {UPDATE t1 SET a = 0 WHERE 0}
-  catchsql BEGIN db2
+  # catchsql BEGIN db2
   catchsql {UPDATE t1 SET a = 0 WHERE 0} db2
 } {1 {database is locked}}
 do_test lock-2.9 {
@@ -289,7 +257,7 @@ do_test lock-4.3 {
   db2 busy callback
   set rc [catch {db2 eval {UPDATE t1 SET a=0}} msg]
   lappend rc $msg $::callback_value
-} {1 {database is locked} {1 2 3 4 5}}
+} {1 {database is locked} {}}
 execsql {ROLLBACK}
 
 # When one thread is writing, other threads cannot read.  Except if the

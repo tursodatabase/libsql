@@ -12,7 +12,7 @@
 # focus of this file is stressing the library by putting large amounts
 # of data in a single row of a table.
 #
-# $Id: bigrow.test,v 1.4 2001/11/24 00:31:47 drh Exp $
+# $Id: bigrow.test,v 1.5 2004/08/07 23:54:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -205,10 +205,18 @@ for {set sz 60} {$sz<1048560} {incr sz $sz} {
   incr i
 }
 do_test bigrow-5.3 {
-  set r [catch {execsql {UPDATE t1 SET b=b||b}} msg]
-  lappend r $msg
-} {1 {too much data for one table row}}
+  catchsql {UPDATE t1 SET b=b||b}
+} {0 {}}
 do_test bigrow-5.4 {
+  execsql {SELECT length(b) FROM t1}
+} 1966080
+do_test bigrow-5.5 {
+  catchsql {UPDATE t1 SET b=b||b}
+} {0 {}}
+do_test bigrow-5.6 {
+  execsql {SELECT length(b) FROM t1}
+} 3932160
+do_test bigrow-5.99 {
   execsql {DROP TABLE t1}
 } {}
 

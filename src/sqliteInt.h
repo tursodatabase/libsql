@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.313 2004/08/04 14:29:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.314 2004/08/07 23:54:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -172,18 +172,6 @@ struct BusyHandler {
 ** pointer arithmetic.
 */
 #define Addr(X)  ((uptr)X)
-
-/*
-** The maximum number of bytes of data that can be put into a single
-** row of a single table.  The upper bound on this limit is
-** 9223372036854775808 bytes (or 2**63).  We have arbitrarily set the
-** limit to just 1MB here because the overflow page chain is inefficient
-** for really big records and we want to discourage people from thinking that 
-** multi-megabyte records are OK.  If your needs are different, you can
-** change this define and recompile to increase or decrease the record
-** size.
-*/
-#define MAX_BYTES_PER_ROW  1048576
 
 /*
 ** If memory allocation problems are found, recompile with
