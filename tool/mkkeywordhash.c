@@ -150,7 +150,7 @@ static Keyword aKeywordTable[] = {
   { "FAIL",             "TK_FAIL",         CONFLICT|TRIGGER       },
   { "FETCH",            "TK_FETCH",        CURSOR                 },
   { "FIRST",            "TK_FIRST",        CURSOR                 },
-  { "FOR",              "TK_FOR",          TRIGGER                },
+  { "FOR",              "TK_FOR",          TRIGGER|CURSOR         },
   { "FOREIGN",          "TK_FOREIGN",      FKEY                   },
   { "FROM",             "TK_FROM",         ALWAYS                 },
   { "FULL",             "TK_JOIN_KW",      ALWAYS                 },
