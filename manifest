@@ -1,8 +1,8 @@
-C Disclaimed\scopyright.\s\sPreparing\sfor\srelease\s2.0.\s(CVS\s250)
-D 2001-09-16T00:13:26
+C Version\sto\s2.0.0\s(CVS\s251)
+D 2001-09-16T13:36:41
 F Makefile.in 81e1c96b0d148042d851b40cbd3e26ecc5472aa6
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 5148a9efa1b036cfd2fb64b3d15ff0455211a8e9
+F VERSION 3861a21803fcd9eb92a403027b0da2bb7add4de1
 F configure aad857a97ca28a584228869186eb4cd7dbebbb3a x
 F configure.in 0000c0d62beb47cae1d2d81a197c7fe6efd56a45
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -93,7 +93,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 8e2f3f751ea342372c94977ff27baaff5126009a
-R df9c4668fa3229b042e38f43df406b89
+P 4e926efe2b59adfec4086eb1d2ba830238facb4c
+R b664d11dd53bb094e12afd54030b7627
 U drh
-Z 7f44bdd57bad1d607db8e180754eb53f
+Z ae4e84a6e126186214dee2d7ef388846
