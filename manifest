@@ -1,5 +1,5 @@
-C Version\s2.7.4\s(CVS\s803)
-D 2002-12-17T22:50:45
+C Fix\san\suninitialized\svariable\sin\sthe\spager.\s\sTickets\s#208\sand\s#206.\r\nBug\sintroduced\sby\scheck-in\s(795).\s(CVS\s804)
+D 2002-12-28T01:06:30
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/main.c cee05c2ba23b5e78f9671f319dbd68e2130e0f68
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 740022806209e44cab0abddfb1fee65c77702e21
 F src/os.h 09fd96b4d733aae2f3b98b2ae9ceea40b8fd780d
-F src/pager.c 0cbbde8bc4a16a6fc6b17fb7a08789391baa3d2d
+F src/pager.c ebc73e7c314e7d8ff6c5728bb96831aaa9efb2e4
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f685ae15b1179baeadfadbaef0a73b001c96fac5
-R ab0c750118000ee7f5cb66111e7ee69b
+P 0224db6f8ce5e3cecc4432f3966b8f59f80e9303
+R 0c62da9557063815f4c551cb7e4b7577
 U drh
-Z e3dee75b0c520f2cf7309d962f724be2
+Z 5a6d8c5f4614f1b09023fb1b502e94da

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.61 2002/12/07 21:45:14 drh Exp $
+** @(#) $Id: pager.c,v 1.62 2002/12/28 01:06:30 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -829,7 +829,7 @@ int sqlitepager_ref(void *pData){
 */
 static int syncAllPages(Pager *pPager){
   PgHdr *pPg;
-  Pgno lastPgno;
+  Pgno lastPgno = 0;
   int rc = SQLITE_OK;
 
   /* Sync the journal before modifying the main database
