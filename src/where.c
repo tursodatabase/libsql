@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.80 2003/07/06 17:22:25 drh Exp $
+** $Id: where.c,v 1.81 2003/07/16 00:54:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -358,7 +358,7 @@ WhereInfo *sqliteWhereBegin(
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
-  int brk, cont;             /* Addresses used during code generation */
+  int brk, cont = 0;         /* Addresses used during code generation */
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey;         /* True if KEY is on the stack */
