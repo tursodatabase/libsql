@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.165 2004/06/13 23:07:04 drh Exp $
+** $Id: btree.c,v 1.166 2004/06/14 06:03:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4194,6 +4194,24 @@ char *sqlite3BtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
 const char *sqlite3BtreeGetFilename(Btree *pBt){
   assert( pBt->pPager!=0 );
   return sqlite3pager_filename(pBt->pPager);
+}
+
+/*
+** Return the pathname of the directory that contains the database file.
+*/
+const char *sqlite3BtreeGetDirname(Btree *pBt){
+  assert( pBt->pPager!=0 );
+  return sqlite3pager_dirname(pBt->pPager);
+}
+
+/*
+** Return the pathname of the journal file for this database. The return
+** value of this routine is the same regardless of whether the journal file
+** has been created or not.
+*/
+const char *sqlite3BtreeGetJournalname(Btree *pBt){
+  assert( pBt->pPager!=0 );
+  return sqlite3pager_journalname(pBt->pPager);
 }
 
 /*

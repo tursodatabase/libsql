@@ -1061,7 +1061,7 @@ static int vdbeCommit(sqlite *db){
       Btree *pBt = db->aDb[i].pBt;
       if( i==1 ) continue;   /* Ignore the TEMP database */
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
-        char const *zFile = sqlite3BtreeGetFilename(pBt);
+        char const *zFile = sqlite3BtreeGetJournalname(pBt);
         if( zFile[0]==0 ) continue;  /* Ignore :memory: databases */
         rc = sqlite3OsWrite(&master, zFile, strlen(zFile)+1);
         if( rc!=SQLITE_OK ){
@@ -1073,12 +1073,24 @@ static int vdbeCommit(sqlite *db){
       }
     }
 
-    /* Sync the master journal file */
-    rc = sqlite3OsSync(&master);
-    sqlite3OsClose(&master);
 
-    /* FIXME:  Sync the directory that contains the master journal to
-    ** make sure the i-node is up to date. */
+    /* Sync the master journal file. Before doing this, open the directory
+    ** the master journal file is store in so that it gets synced too.
+    */
+    zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
+    rc = sqlite3OsOpenDirectory(zMainFile, &master);
+    if( rc!=SQLITE_OK ){
+      sqlite3OsClose(&master);
+      sqlite3OsDelete(zMaster);
+      sqliteFree(zMaster);
+      return rc;
+    }
+    rc = sqlite3OsSync(&master);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(zMaster);
+      return rc;
+    }
+    sqlite3OsClose(&master);
 
     /* Sync all the db files involved in the transaction. The same call
     ** sets the master journal pointer in each individual journal. If

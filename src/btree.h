@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.53 2004/06/04 06:22:01 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.54 2004/06/14 06:03:57 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -59,6 +59,8 @@ int sqlite3BtreeIsInStmt(Btree*);
 int sqlite3BtreeSync(Btree*, const char *zMaster);
 
 const char *sqlite3BtreeGetFilename(Btree *);
+const char *sqlite3BtreeGetDirname(Btree *);
+const char *sqlite3BtreeGetJournalname(Btree *);
 int sqlite3BtreeCopyFile(Btree *, Btree *);
 
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR

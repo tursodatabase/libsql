@@ -1,5 +1,5 @@
-C Update\sthe\sfile\schange\scounter\sjust\sbefore\seach\stransaction\sis\scommitted.\s(CVS\s1582)
-D 2004-06-14T05:10:43
+C Ensure\sthe\smaster\sjournal\sdirectory\sis\ssynced.\sAlso,\schange\sthe\smaster\sjournal\nformat\sto\sstore\sjournal\sfile\snames.\s(CVS\s1583)
+D 2004-06-14T06:03:57
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,8 +26,8 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c 5591068c5ed0e5d65938d41ac9e3fe6f461fdb07
-F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
+F src/btree.c 1bed18993e54483de8ff869142e82c48847e1d50
+F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
 F src/delete.c 911221aadb35d610c84fadb32e71c52990827e58
@@ -48,8 +48,8 @@ F src/os_unix.c 7ece785e36c4ecb57c73db8d374b56912d742c4a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c d4009586dfd0543ca8956ff0be30f9d23e2cbbdd
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c feb44bd0279f77319079c1fddf9be927b052d028
-F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
+F src/pager.c d42af374b23b50805b42c08cbba5bd70dd73964f
+F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c e288bd122d3ca41ec2032475abde1ff5fa3095f4
 F src/printf.c 63b15f1ea9fe3daa066bb7430fd20d4a2d717dc8
@@ -75,7 +75,7 @@ F src/vdbe.c e6b6702fb2c2e2702e312f52c2cc08353c580736
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
 F src/vdbeInt.h ffc7b8ed911c5bf804796a768fdb6f0568010fa2
 F src/vdbeapi.c ee350b552fc4c1c695b760f914f69e9c5556e829
-F src/vdbeaux.c 7b45d4934cddcf0fb79feac13c3399165774d35c
+F src/vdbeaux.c d792de3b042ffc49c344e147543af6cf2a3dc5de
 F src/vdbemem.c 34f59988831ea032b7f526c2c73175f9f4c0f3ad
 F src/where.c dda77afaa593cd54e5955ec433076de18faf62f6
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 77c5eaa10a9d2e2bb8f89b7434d6e6efbacf35e9
-R 728fa94fee79e66b965ca32e2cd56d1b
+P 4649abcbfd032836b196b5d690ef66e4aa494c45
+R b61789483f3e3746f567ebdec2a394da
 U danielk1977
-Z 982942d9d284a3b9c20e3e9aaf713011
+Z cb4dbe83de3608a128ac6ced61032939

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.125 2004/06/14 05:10:43 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.126 2004/06/14 06:03:57 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -615,30 +615,33 @@ static int pager_delmaster(const char *zMaster){
   rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   master_open = 1;
-
   rc = sqlite3OsFileSize(&master, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
 
   if( nMasterJournal>0 ){
-    char *zDb;
-    zMasterJournal = (char *)sqliteMalloc(nMasterJournal);
+    char *zJournal;
+    char *zMasterPtr;
+    int nMasterPtr;   /* Number of bytes allocated at zMasterPtr */
+
+    /* Load the entire master journal file into space obtained from
+    ** sqliteMalloc() and pointed to by zMasterJournal. 
+    **
+    ** Also allocate an extra (strlen(zMaster)+1) bytes. This space is used
+    ** to load a master-journal filename from some other journal file to
+    ** check if it points at this master journal file.
+    */
+    nMasterPtr = strlen(zMaster) + 1;
+    zMasterJournal = (char *)sqliteMalloc(nMasterJournal) + nMasterPtr;
     if( !zMasterJournal ){
       rc = SQLITE_NOMEM;
       goto delmaster_out;
     }
+    zMasterPtr = &zMasterJournal[nMasterJournal];
     rc = sqlite3OsRead(&master, zMasterJournal, nMasterJournal);
     if( rc!=SQLITE_OK ) goto delmaster_out;
 
-    zDb = zMasterJournal;
-    while( (zDb-zMasterJournal)<nMasterJournal ){
-      char *zJournal = 0;
-      /*** FIX ME:  Store the full journal name in the master journal,
-      **** not just the base database name. ***/
-      sqlite3SetString(&zJournal, zDb, "-journal", 0);
-      if( !zJournal ){
-        rc = SQLITE_NOMEM;
-        goto delmaster_out;
-      }
+    zJournal = zMasterJournal;
+    while( (zJournal-zMasterJournal)<nMasterJournal ){
       if( sqlite3OsFileExists(zJournal) ){
         /* One of the journals pointed to by the master journal exists.
         ** Open it and check if it points at the master journal. If
@@ -649,7 +652,6 @@ static int pager_delmaster(const char *zMaster){
         off_t jsz;
 
         rc = sqlite3OsOpenReadOnly(zJournal, &journal);
-        sqliteFree(zJournal);
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&journal);
           goto delmaster_out;
@@ -676,26 +678,18 @@ static int pager_delmaster(const char *zMaster){
         if( rc!=SQLITE_OK ) goto delmaster_out;
         rc = read32bits(&journal, (u32*)&nMaster);
         if( rc!=SQLITE_OK ) goto delmaster_out;
-        if( nMaster>0 && nMaster>=strlen(zMaster)+1 ){
-          /*** FIX ME: Consider allocating this space at the same time
-          **** space is allocated for holding the text of the master journal */
-          char *zMasterPtr = (char *)sqliteMalloc(nMaster);
-          if( !zMasterPtr ){
-            rc = SQLITE_NOMEM;
-          }
-          rc = sqlite3OsRead(&journal, zMasterPtr, nMaster);
+        if( nMaster>=nMasterPtr ){
+          rc = sqlite3OsRead(&journal, zMasterPtr, nMasterPtr);
           if( rc!=SQLITE_OK ){
-            sqliteFree(zMasterPtr);
             goto delmaster_out;
           }
-          if( 0==strncmp(zMasterPtr, zMaster, nMaster) ){
+          if( zMasterPtr[nMasterPtr-1]=='\0' && !strcmp(zMasterPtr, zMaster) ){
             /* We have a match. Do not delete the master journal file. */
-            sqliteFree(zMasterPtr);
             goto delmaster_out;
           }
         }
       }
-      zDb += (strlen(zDb)+1);
+      zJournal += (strlen(zJournal)+1);
     }
   }
   
@@ -2632,6 +2626,20 @@ int sqlite3pager_stmt_rollback(Pager *pPager){
 */
 const char *sqlite3pager_filename(Pager *pPager){
   return pPager->zFilename;
+}
+
+/*
+** Return the directory of the database file.
+*/
+const char *sqlite3pager_dirname(Pager *pPager){
+  return pPager->zDirectory;
+}
+
+/*
+** Return the full pathname of the journal file.
+*/
+const char *sqlite3pager_journalname(Pager *pPager){
+  return pPager->zJournal;
 }
 
 /*
