@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.5 2003/04/25 02:43:08 drh Exp $
+** $Id: pragma.c,v 1.6 2003/05/10 03:03:34 jplyon Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -314,14 +314,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       db->flags |= SQLITE_ReportTypes;
     }else{
       db->flags &= ~SQLITE_ReportTypes;
-    }
-  }else
-
-  if( sqliteStrICmp(zLeft, "result_set_details")==0 ){
-    if( getBoolean(zRight) ){
-      db->flags |= SQLITE_ResultDetails;
-    }else{
-      db->flags &= ~SQLITE_ResultDetails;
     }
   }else
 

@@ -1,5 +1,5 @@
-C Documented\sthe\s"GO"\sand\s"\\"\scommand\sterminators.\s(CVS\s963)
-D 2003-05-10T02:54:57
+C Removed\snever-used\spragma\s"result_set_details".\s(CVS\s964)
+D 2003-05-10T03:03:34
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
-F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
+F src/pragma.c c2e932cb8962584d27300bb46723efd465bc8fe3
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 2bbb08049508829419dd9a3729241b97b017cf36
-R 1d25a4fc1144fa38b78eaed73ce64429
+P 6a76bd9590f372411e697f002285fe36ff3787ee
+R 74f788b873e6394b28e13a7884967ff8
 U jplyon
-Z d62bb0c1bbe259e95f45f644528a86de
+Z ce7efc80b41796afb0acc1ade34d51d2
