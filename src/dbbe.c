@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.16 2000/07/28 14:32:49 drh Exp $
+** $Id: dbbe.c,v 1.17 2000/07/31 13:38:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -136,6 +136,13 @@ static int rc4byte(struct rc4 *p){
   t = p->s[p->i] + p->s[p->j];
   return t & 0xff;
 }
+
+/*
+** The "mkdir()" function only takes one argument under Windows.
+*/
+#if OS_WIN
+# define mkdir(A,B) mkdir(A)
+#endif
 
 /*
 ** This routine opens a new database.  For the GDBM driver

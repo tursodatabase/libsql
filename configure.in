@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.4 $
+# $Revision: 1.5 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -285,7 +285,7 @@ else
   TARGET_RANLIB=$RANLIB
 fi
 if test "$config_TARGET_AR" != ""; then
-  TARGET_RANLIB=$config_TARGET_AR
+  TARGET_AR=$config_TARGET_AR
 else
   TARGET_AR='ar cr'
 fi
@@ -502,7 +502,11 @@ if test "$found" = "no"; then
   done
 fi
 if test "$found" = "yes"; then
-  TARGET_HAVE_READLINE=1
+  if test "$TARGET_READLINE_LIBS" = ""; then
+    TARGET_HAVE_READLINE=0
+  else
+    TARGET_HAVE_READLINE=1
+  fi
 else
   TARGET_HAVE_READLINE=0
 fi

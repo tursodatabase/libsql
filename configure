@@ -525,7 +525,7 @@ fi
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.4 $
+# $Revision: 1.5 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -918,7 +918,7 @@ fi
   TARGET_RANLIB=$RANLIB
 fi
 if test "$config_TARGET_AR" != ""; then
-  TARGET_RANLIB=$config_TARGET_AR
+  TARGET_AR=$config_TARGET_AR
 else
   TARGET_AR='ar cr'
 fi
@@ -1720,7 +1720,11 @@ fi
   done
 fi
 if test "$found" = "yes"; then
-  TARGET_HAVE_READLINE=1
+  if test "$TARGET_READLINE_LIBS" = ""; then
+    TARGET_HAVE_READLINE=0
+  else
+    TARGET_HAVE_READLINE=1
+  fi
 else
   TARGET_HAVE_READLINE=0
 fi
@@ -1731,12 +1735,12 @@ fi
 # Figure out whether or not we have a "usleep()" function.
 #
 echo $ac_n "checking for usleep""... $ac_c" 1>&6
-echo "configure:1735: checking for usleep" >&5
+echo "configure:1739: checking for usleep" >&5
 if eval "test \"`echo '$''{'ac_cv_func_usleep'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1740 "configure"
+#line 1744 "configure"
 #include "confdefs.h"
 /* System header to define __stub macros and hopefully few prototypes,
     which can conflict with char usleep(); below.  */
@@ -1759,7 +1763,7 @@ usleep();
 
 ; return 0; }
 EOF
-if { (eval echo configure:1763: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:1767: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_func_usleep=yes"
 else
