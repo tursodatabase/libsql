@@ -30,7 +30,7 @@
 ** Nothing is ever written to disk using this backend.  All information
 ** is forgotten when the program exits.
 **
-** $Id: dbbemem.c,v 1.13 2001/04/04 11:48:58 drh Exp $
+** $Id: dbbemem.c,v 1.14 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -156,6 +156,7 @@ static void ArrayRehash(Array *array, int new_size){
   ArrayElem *x;                   /* Element being copied to new hash table */
 
   new_ht = sqliteMalloc( new_size*sizeof(struct _Array_ht) );
+  if( new_ht==0 ){ ArrayClear(array); return; }
   if( array->ht ) sqliteFree(array->ht);
   array->ht = new_ht;
   array->htsize = new_size;
@@ -305,8 +306,13 @@ static Datum ArrayInsert(Array *array, Datum key, Datum data){
   memcpy(new_elem->key.p, key.p, key.n);
   array->count++;
   if( array->htsize==0 ) ArrayRehash(array,4);
+  if( array->htsize==0 ) return nil;
   if( array->count > array->htsize ){
     ArrayRehash(array,array->htsize*2);
+    if( array->htsize==0 ){
+      sqliteFree(new_elem);
+      return nil;
+    }
   }
   h = hraw & (array->htsize-1);
   elem = array->ht[h].chain;
@@ -468,6 +474,7 @@ static int sqliteMemOpenCursor(
   if( zTable ){
     Datum key;
     zName = sqliteNameOfTable(zTable);
+    if( zName==0 ) return SQLITE_NOMEM;
     key.p = zName;
     key.n = strlen(zName);
     pTble = ArrayFind(&pBe->tables, key).p;
@@ -690,6 +697,7 @@ static int sqliteMemPut(
   Datum data, key;
   data.n = nData;
   data.p = sqliteMalloc( data.n );
+  if( data.p==0 ) return SQLITE_NOMEM;
   memcpy(data.p, pData, data.n);
   key.n = nKey;
   key.p = pKey;

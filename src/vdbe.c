@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.56 2001/04/05 15:57:13 drh Exp $
+** $Id: vdbe.c,v 1.57 2001/04/11 14:28:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -223,8 +223,8 @@ struct Vdbe {
 */
 Vdbe *sqliteVdbeCreate(sqlite *db){
   Vdbe *p;
-
   p = sqliteMalloc( sizeof(Vdbe) );
+  if( p==0 ) return 0;
   p->pBe = db->pBe;
   p->db = db;
   return p;
@@ -368,7 +368,7 @@ void sqliteVdbeDequoteP3(Vdbe *p, int addr){
   char *z;
   if( addr<0 || addr>=p->nOp ) return;
   z = p->aOp[addr].p3;
-  sqliteDequote(z);
+  if( z ) sqliteDequote(z);
 }
 
 /*
@@ -381,6 +381,7 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   int i, j;
   if( addr<0 || addr>=p->nOp ) return;
   z = p->aOp[addr].p3;
+  if( z==0 ) return;
   i = j = 0;
   while( isspace(z[i]) ){ i++; }
   while( z[i] ){
@@ -462,6 +463,10 @@ static void AggRehash(Agg *p, int nHash){
   if( p->nHash==nHash ) return;
   size = nHash * sizeof(AggElem*);
   p->apHash = sqliteRealloc(p->apHash, size );
+  if( p->apHash==0 ){
+    AggReset(p);
+    return;
+  }
   memset(p->apHash, 0, size);
   p->nHash = nHash;
   for(pElem=p->pFirst; pElem; pElem=pElem->pNext){
@@ -534,7 +539,10 @@ static void SetInsert(Set *p, char *zKey){
     if( strcmp(pElem->zKey, zKey)==0 ) return;
   }
   pElem = sqliteMalloc( sizeof(*pElem) + strlen(zKey) );
-  if( pElem==0 ) return;
+  if( pElem==0 ){
+    SetClear(p);
+    return;
+  }
   strcpy(pElem->zKey, zKey);
   pElem->pNext = p->pAll;
   p->pAll = pElem;
@@ -1004,6 +1012,7 @@ int sqliteVdbeExec(
   }
 #endif
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
+  if( sqlite_malloc_failed ) rc = SQLITE_NOMEM;
   for(pc=0; rc==SQLITE_OK && pc<p->nOp VERIFY(&& pc>=0); pc++){
     pOp = &p->aOp[pc];
 
@@ -1364,8 +1373,7 @@ int sqliteVdbeExec(
           Realify(p, nos);
           copy = aStack[tos].r>aStack[nos].r;
         }else{
-          Stringify(p, tos);
-          Stringify(p, nos);
+          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
           copy = sqliteCompare(zStack[tos],zStack[nos])>0;
         }
         if( copy ){
@@ -1405,8 +1413,7 @@ int sqliteVdbeExec(
           Realify(p, nos);
           copy = aStack[tos].r<aStack[nos].r;
         }else{
-          Stringify(p, tos);
-          Stringify(p, nos);
+          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
           copy = sqliteCompare(zStack[tos],zStack[nos])<0;
         }
         if( copy ){
@@ -1485,8 +1492,7 @@ int sqliteVdbeExec(
         if( (ft & fn)==STK_Int ){
           c = aStack[nos].i - aStack[tos].i;
         }else{
-          Stringify(p, tos);
-          Stringify(p, nos);
+          if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
           c = sqliteCompare(zStack[nos], zStack[tos]);
         }
         switch( pOp->opcode ){
@@ -1523,8 +1529,7 @@ int sqliteVdbeExec(
         int nos = tos - 1;
         int c;
         VERIFY( if( nos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
-        Stringify(p, nos);
+        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
         c = sqliteLikeCompare(zStack[tos], zStack[nos]);
         POPSTACK;
         POPSTACK;
@@ -1556,8 +1561,7 @@ int sqliteVdbeExec(
         int nos = tos - 1;
         int c;
         VERIFY( if( nos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
-        Stringify(p, nos);
+        if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
         c = sqliteGlobCompare(zStack[tos], zStack[nos]);
         POPSTACK;
         POPSTACK;
@@ -3070,7 +3074,7 @@ int sqliteVdbeExec(
         int nKey;
 
         VERIFY( if( tos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
+        if( Stringify(p, tos) ) goto no_mem;
         zKey = zStack[tos]; 
         nKey = aStack[tos].n;
         if( p->agg.nHash<=0 ){
@@ -3086,6 +3090,7 @@ int sqliteVdbeExec(
           pc = pOp->p2 - 1;
         }else{
           AggInsert(&p->agg, zKey);
+          if( sqlite_malloc_failed ) goto no_mem;
         }
         POPSTACK;
         break; 
@@ -3241,10 +3246,11 @@ int sqliteVdbeExec(
         }else{
           int tos = p->tos;
           if( tos<0 ) goto not_enough_stack;
-          Stringify(p, tos);
+          if( Stringify(p, tos) ) goto no_mem;
           SetInsert(&p->aSet[i], zStack[tos]);
           POPSTACK;
         }
+        if( sqlite_malloc_failed ) goto no_mem;
         break;
       }
 
@@ -3258,7 +3264,7 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         int tos = p->tos;
         VERIFY( if( tos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
+        if( Stringify(p, tos) ) goto no_mem;
         if( VERIFY( i>=0 && i<p->nSet &&) SetTest(&p->aSet[i], zStack[tos])){
           pc = pOp->p2 - 1;
         }
@@ -3276,7 +3282,7 @@ int sqliteVdbeExec(
         int i = pOp->p1;
         int tos = p->tos;
         VERIFY( if( tos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
+        if( Stringify(p, tos) ) goto no_mem;
         if(VERIFY( i>=0 && i<p->nSet &&) !SetTest(&p->aSet[i], zStack[tos])){
           pc = pOp->p2 - 1;
         }
@@ -3293,7 +3299,7 @@ int sqliteVdbeExec(
         int tos = p->tos;
         int len;
         VERIFY( if( tos<0 ) goto not_enough_stack; )
-        Stringify(p, tos);
+        if( Stringify(p, tos) ) goto no_mem;
 #ifdef SQLITE_UTF8
         {
           char *z = zStack[tos];
@@ -3351,7 +3357,7 @@ int sqliteVdbeExec(
           start = pOp->p1 - 1;
         }
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        Stringify(p, p->tos);
+        if( Stringify(p, p->tos) ) goto no_mem;
 
         /* "n" will be the number of characters in the input string.
         ** For iso8859, the number of characters is the number of bytes.

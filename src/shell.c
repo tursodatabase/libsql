@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.30 2001/04/04 21:22:14 drh Exp $
+** $Id: shell.c,v 1.31 2001/04/11 14:28:42 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -60,7 +60,7 @@ static sqlite *db = 0;
 ** The interface is like "readline" but no command-line editing
 ** is done.
 */
-static char *getline(char *zPrompt){
+static char *getline(char *zPrompt, FILE *in){
   char *zLine;
   int nLine;
   int n;
@@ -81,7 +81,7 @@ static char *getline(char *zPrompt){
       zLine = realloc(zLine, nLine);
       if( zLine==0 ) return 0;
     }
-    if( fgets(&zLine[n], nLine - n, stdin)==0 ){
+    if( fgets(&zLine[n], nLine - n, in)==0 ){
       if( n==0 ){
         free(zLine);
         return 0;
@@ -110,11 +110,11 @@ static char *getline(char *zPrompt){
 ** zPrior is a string of prior text retrieved.  If not the empty
 ** string, then issue a continuation prompt.
 */
-static char *one_input_line(const char *zPrior, int isatty){
+static char *one_input_line(const char *zPrior, FILE *in){
   char *zPrompt;
   char *zResult;
-  if( !isatty ){
-    return getline(0);
+  if( in!=0 ){
+    return getline(0, in);
   }
   if( zPrior && zPrior[0] ){
     zPrompt = "   ...> ";
@@ -133,6 +133,7 @@ static char *one_input_line(const char *zPrior, int isatty){
 */
 struct callback_data {
   sqlite *db;            /* The database */
+  int echoOn;            /* True to echo input commands */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
   int mode;              /* An output mode setting */
@@ -389,23 +390,23 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
 ** This routine should print text sufficient to recreate the table.
 */
 static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
-  struct callback_data *pData = (struct callback_data *)pArg;
+  struct callback_data *p = (struct callback_data *)pArg;
   if( nArg!=3 ) return 1;
-  fprintf(pData->out, "%s;\n", azArg[2]);
+  fprintf(p->out, "%s;\n", azArg[2]);
   if( strcmp(azArg[1],"table")==0 ){
     struct callback_data d2;
-    d2 = *pData;
+    d2 = *p;
     d2.mode = MODE_List;
     d2.escape = '\t';
     strcpy(d2.separator,"\t");
-    fprintf(pData->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
-    sqlite_exec_printf(pData->db, 
+    fprintf(p->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
+    sqlite_exec_printf(p->db, 
        "SELECT * FROM '%q'",
        callback, &d2, 0, azArg[0]
     );
-    fprintf(pData->out, "\\.\n");
+    fprintf(p->out, "\\.\n");
   }
-  fprintf(pData->out, "VACUUM '%s';\n", azArg[0]);
+  fprintf(p->out, "VACUUM '%s';\n", azArg[0]);
   return 0;
 }
 
@@ -414,6 +415,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
 */
 static char zHelp[] = 
   ".dump ?TABLE? ...      Dump the database in an text format\n"
+  ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
   ".explain               Set output mode suitable for EXPLAIN\n"
   ".header ON|OFF         Turn display of headers on or off\n"
@@ -424,12 +426,18 @@ static char zHelp[] =
   ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
+  ".read FILENAME         Execute SQL in FILENAME\n"
+  ".reindex ?TABLE?       Rebuild indices\n"
+/*  ".rename OLD NEW        Change the name of a table or index\n" */
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
   ".tables ?PATTERN?      List names of tables matching a pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
+
+/* Forward reference */
+static void process_input(struct callback_data *p, FILE *in);
 
 /*
 ** If an input line begins with "." then invoke this routine to
@@ -489,6 +497,21 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
     }
+  }else
+
+  if( c=='e' && strncmp(azArg[0], "echo", n)==0 && nArg>1 ){
+    int j;
+    char *z = azArg[1];
+    int val = atoi(azArg[1]);
+    for(j=0; z[j]; j++){
+      if( isupper(z[j]) ) z[j] = tolower(z[j]);
+    }
+    if( strcmp(z,"on")==0 ){
+      val = 1;
+    }else if( strcmp(z,"yes")==0 ){
+      val = 1;
+    } 
+    p->echoOn = val;
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
@@ -559,6 +582,8 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
       }else{
         sprintf(p->zDestTable,"table");
       }
+    }else {
+      fprintf(stderr,"mode should be on of: column html insert line list\n");
     }
   }else
 
@@ -574,6 +599,50 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
         fprintf(stderr,"can't write to \"%s\"\n", azArg[1]);
         p->out = stdout;
       }
+    }
+  }else
+
+  if( c=='r' && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
+    FILE *alt = fopen(azArg[1], "r");
+    if( alt==0 ){
+      fprintf(stderr,"can't open \"%s\"\n", azArg[1]);
+    }else{
+      process_input(p, alt);
+      fclose(alt);
+    }
+  }else
+
+  if( c=='r' && strncmp(azArg[0], "reindex", n)==0 ){
+    char **azResult;
+    int nRow, rc;
+    char *zErrMsg;
+    int i;
+    char *zSql;
+    if( nArg==1 ){
+      rc = sqlite_get_table(db,
+        "SELECT name, sql FROM sqlite_master "
+        "WHERE type='index'",
+        &azResult, &nRow, 0, &zErrMsg
+      );
+    }else{
+      rc = sqlite_get_table_printf(db,
+        "SELECT name, sql FROM sqlite_master "
+        "WHERE type='index' AND tbl_name LIKE '%q'",
+        &azResult, &nRow, 0, &zErrMsg, azArg[1]
+      );
+    }
+    for(i=1; rc==SQLITE_OK && i<=nRow; i++){
+      extern char *sqlite_mprintf(const char *, ...);
+      zSql = sqlite_mprintf(
+         "DROP INDEX '%q';\n%s;\nVACUUM '%q';",
+         azResult[i*2], azResult[i*2+1], azResult[i*2]);
+      if( p->echoOn ) printf("%s\n", zSql);
+      rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
+    }
+    sqlite_free_table(azResult);
+    if( zErrMsg ){
+      fprintf(stderr,"Error: %s\n", zErrMsg);
+      free(zErrMsg);
     }
   }else
 
@@ -685,12 +754,64 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }
 }
 
+static char *Argv0;
+static void process_input(struct callback_data *p, FILE *in){
+  char *zLine;
+  char *zSql = 0;
+  int nSql = 0;
+  char *zErrMsg;
+  while( (zLine = one_input_line(zSql, in))!=0 ){
+    if( p->echoOn ) printf("%s\n", zLine);
+    if( zLine && zLine[0]=='.' ){
+      do_meta_command(zLine, db, p);
+      free(zLine);
+      continue;
+    }
+    if( zSql==0 ){
+      int i;
+      for(i=0; zLine[i] && isspace(zLine[i]); i++){}
+      if( zLine[i]!=0 ){
+        nSql = strlen(zLine);
+        zSql = malloc( nSql+1 );
+        strcpy(zSql, zLine);
+      }
+    }else{
+      int len = strlen(zLine);
+      zSql = realloc( zSql, nSql + len + 2 );
+      if( zSql==0 ){
+        fprintf(stderr,"%s: out of memory!\n", Argv0);
+        exit(1);
+      }
+      strcpy(&zSql[nSql++], "\n");
+      strcpy(&zSql[nSql], zLine);
+      nSql += len;
+    }
+    free(zLine);
+    if( zSql && sqlite_complete(zSql) ){
+      p->cnt = 0;
+      if( sqlite_exec(db, zSql, callback, p, &zErrMsg)!=0 
+           && zErrMsg!=0 ){
+        if( in!=0 && !p->echoOn ) printf("%s\n",zSql);
+        printf("SQL error: %s\n", zErrMsg);
+        free(zErrMsg);
+        zErrMsg = 0;
+      }
+      free(zSql);
+      zSql = 0;
+      nSql = 0;
+    }
+  }
+  if( zSql ){
+    printf("Incomplete SQL: %s\n", zSql);
+    free(zSql);
+  }
+}
+
 int main(int argc, char **argv){
   char *zErrMsg = 0;
-  char *argv0 = argv[0];
   struct callback_data data;
-  int echo = 0;
 
+  Argv0 = argv[0];
   memset(&data, 0, sizeof(data));
   data.mode = MODE_List;
   strcpy(data.separator,"|");
@@ -724,16 +845,16 @@ int main(int argc, char **argv){
       argc--;
       argv++;
     }else if( strcmp(argv[1],"-echo")==0 ){
-      echo = 1;
+      data.echoOn = 1;
       argc--;
       argv++;
     }else{
-      fprintf(stderr,"%s: unknown option: %s\n", argv0, argv[1]);
+      fprintf(stderr,"%s: unknown option: %s\n", Argv0, argv[1]);
       return 1;
     }
   }
   if( argc!=2 && argc!=3 ){
-    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", argv0);
+    fprintf(stderr,"Usage: %s ?OPTIONS? FILENAME ?SQL?\n", Argv0);
     exit(1);
   }
   data.db = db = sqlite_open(argv[1], 0666, &zErrMsg);
@@ -757,57 +878,15 @@ int main(int argc, char **argv){
       exit(1);
     }
   }else{
-    char *zLine;
-    char *zSql = 0;
-    int nSql = 0;
-    int istty = isatty(0);
-    if( istty ){
+    if( isatty(0) ){
       printf(
         "SQLite version %s\n"
         "Enter \".help\" for instructions\n",
         sqlite_version
       );
-    }
-    while( (zLine = one_input_line(zSql, istty))!=0 ){
-      if( echo ) printf("%s\n", zLine);
-      if( zLine && zLine[0]=='.' ){
-        do_meta_command(zLine, db, &data);
-        free(zLine);
-        continue;
-      }
-      if( zSql==0 ){
-        int i;
-        for(i=0; zLine[i] && isspace(zLine[i]); i++){}
-        if( zLine[i]!=0 ){
-          nSql = strlen(zLine);
-          zSql = malloc( nSql+1 );
-          strcpy(zSql, zLine);
-        }
-      }else{
-        int len = strlen(zLine);
-        zSql = realloc( zSql, nSql + len + 2 );
-        if( zSql==0 ){
-          fprintf(stderr,"%s: out of memory!\n", argv0);
-          exit(1);
-        }
-        strcpy(&zSql[nSql++], "\n");
-        strcpy(&zSql[nSql], zLine);
-        nSql += len;
-      }
-      free(zLine);
-      if( zSql && sqlite_complete(zSql) ){
-        data.cnt = 0;
-        if( sqlite_exec(db, zSql, callback, &data, &zErrMsg)!=0 
-             && zErrMsg!=0 ){
-          if( !istty && !echo ) printf("%s\n",zSql);
-          printf("SQL error: %s\n", zErrMsg);
-          free(zErrMsg);
-          zErrMsg = 0;
-        }
-        free(zSql);
-        zSql = 0;
-        nSql = 0;
-      }
+      process_input(&data, 0);
+    }else{
+      process_input(&data, stdin);
     }
   }
   sqlite_close(db);

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.8 2001/03/20 22:05:00 drh Exp $
+** $Id: delete.c,v 1.9 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -45,12 +45,18 @@ void sqliteDeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
 
+  if( pParse->nErr || sqlite_malloc_failed ){
+    pTabList = 0;
+    goto delete_from_cleanup;
+  }
+
   /* Locate the table which we want to delete.  This table has to be
   ** put in an IdList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
   ** an IdList* parameter instead of just a Table* parameger.
   */
   pTabList = sqliteIdListAppend(0, pTableName);
+  if( pTabList==0 ) goto delete_from_cleanup;
   for(i=0; i<pTabList->nId; i++){
     pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){

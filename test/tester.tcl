@@ -23,7 +23,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.14 2001/04/06 16:13:43 drh Exp $
+# $Id: tester.tcl,v 1.15 2001/04/11 14:28:43 drh Exp $
 
 # Make sure tclsqlite was compiled correctly.  Abort now with an
 # error message if not.
@@ -183,7 +183,7 @@ proc testif {args} {
   set ::skip_test 1
 }
 
-# The procedure uses the special "--malloc-stats--" macro of SQLite
+# The procedure uses the special "sqlite_malloc_stat" command
 # (which is only available if SQLite is compiled with -DMEMORY_DEBUG=1)
 # to see how many malloc()s have not been free()ed.  The number
 # of surplus malloc()s is stored in the global variable $::Leak.
@@ -191,10 +191,10 @@ proc testif {args} {
 # in the library.
 #
 proc memleak_check {} {
-  set r [execsql {--malloc-stats--}]
-  if {$r==""} return
-  set ::Leak [expr {[lindex $r 0]-[lindex $r 1]}]
-  # puts "*** $::Leak mallocs have not been freed ***"
+  if {[info command sqlite_malloc_stat]!=""} {
+    set r [sqlite_malloc_stat]
+    set ::Leak [expr {[lindex $r 0]-[lindex $r 1]}]
+  }
 }
 
 # Run this routine last

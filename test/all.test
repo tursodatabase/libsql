@@ -22,7 +22,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.5 2000/12/10 18:23:51 drh Exp $
+# $Id: all.test,v 1.6 2001/04/11 14:28:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,6 +53,7 @@ for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
     set dbprefix $p
     foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
       if {[file tail $testfile]=="all.test"} continue
+      if {[file tail $testfile]=="malloc.test"} continue
       source $testfile
     }
   }
@@ -77,6 +78,15 @@ if {$LeakList!=""} {
     }
   }
   puts " Ok"
+}
+
+if {[file readable $testdir/malloc.test]} {
+  for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
+    foreach p $PREFIXES {
+      set dbprefix $p
+      source $testdir/malloc.test
+    }
+  }
 }
 
 really_finish_test

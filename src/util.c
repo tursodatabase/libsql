@@ -26,11 +26,17 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.20 2001/04/05 15:57:13 drh Exp $
+** $Id: util.c,v 1.21 2001/04/11 14:28:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
+
+/*
+** If malloc() ever fails, this global variable gets set to 1.
+** This causes the library to abort and never again function.
+*/
+int sqlite_malloc_failed = 0;
 
 /*
 ** If MEMORY_DEBUG is defined, then use versions of malloc() and
@@ -58,12 +64,18 @@ void *sqliteMalloc_(int n, char *zFile, int line){
   sqlite_nMalloc++;
   if( sqlite_iMallocFail>=0 ){
     sqlite_iMallocFail--;
-    if( sqlite_iMallocFail==0 ) return 0;
+    if( sqlite_iMallocFail==0 ){
+      sqlite_malloc_failed++;
+      return 0;
+    }
   }
   if( n==0 ) return 0;
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (3+k)*sizeof(int));
-  if( pi==0 ) return 0;
+  if( pi==0 ){
+    sqlite_malloc_failed++;
+    return 0;
+  }
   pi[0] = 0xdead1122;
   pi[1] = n;
   pi[k+2] = 0xdead3344;
@@ -131,6 +143,10 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
   }
   k = (n + sizeof(int) - 1)/sizeof(int);
   pi = malloc( (k+3)*sizeof(int) );
+  if( pi==0 ){
+    sqlite_malloc_failed++;
+    return 0;
+  }
   pi[0] = 0xdead1122;
   pi[1] = n;
   pi[k+2] = 0xdead3344;
@@ -151,12 +167,21 @@ void *sqliteRealloc_(void *oldP, int n, char *zFile, int line){
 /*
 ** Make a duplicate of a string into memory obtained from malloc()
 ** Free the original string using sqliteFree().
+**
+** This routine is called on all strings that are passed outside of
+** the SQLite library.  That way clients can free the string using free()
+** rather than having to call sqliteFree().
 */
 void sqliteStrRealloc(char **pz){
   char *zNew;
   if( pz==0 || *pz==0 ) return;
   zNew = malloc( strlen(*pz) + 1 );
-  if( zNew ) strcpy(zNew, *pz);
+  if( zNew==0 ){
+    sqlite_malloc_failed++;
+    sqliteFree(*pz);
+    *pz = 0;
+  }
+  strcpy(zNew, *pz);
   sqliteFree(*pz);
   *pz = zNew;
 }
@@ -191,7 +216,10 @@ char *sqliteStrNDup_(const char *z, int n, char *zFile, int line){
 */
 void *sqliteMalloc(int n){
   void *p = malloc(n);
-  if( p==0 ) return 0;
+  if( p==0 ){
+    sqlite_malloc_failed++;
+    return 0;
+  }
   memset(p, 0, n);
   return p;
 }
@@ -218,7 +246,11 @@ void *sqliteRealloc(void *p, int n){
     sqliteFree(p);
     return 0;
   }
-  return realloc(p, n);
+  p = realloc(p, n);
+  if( p==0 ){
+    sqlite_malloc_failed++;
+  }
+  return p;
 }
 
 /*
@@ -325,6 +357,7 @@ void sqliteSetNString(char **pz, ...){
 void sqliteDequote(char *z){
   int quote;
   int i, j;
+  if( z==0 ) return;
   quote = z[0];
   if( quote!='\'' && quote!='"' ) return;
   for(i=1, j=0; z[i]; i++){

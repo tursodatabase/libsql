@@ -25,7 +25,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.13 2001/04/04 11:48:58 drh Exp $
+** $Id: where.c,v 1.14 2001/04/11 14:28:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -170,8 +170,9 @@ WhereInfo *sqliteWhereBegin(
   ** return value.
   */
   pWInfo = sqliteMalloc( sizeof(WhereInfo) );
-  if( pWInfo==0 ){
+  if( sqlite_malloc_failed ){
     sqliteFree(aOrder);
+    sqliteFree(pWInfo);
     return 0;
   }
   pWInfo->pParse = pParse;

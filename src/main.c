@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.27 2001/04/06 16:13:43 drh Exp $
+** $Id: main.c,v 1.28 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -157,8 +157,8 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   */
   vdbe = sqliteVdbeCreate(db);
   if( vdbe==0 ){
-    sqliteSetString(pzErrMsg, "out of memory",0); 
-    return 1;
+    sqliteSetString(pzErrMsg, "out of memory");
+    return SQLITE_NOMEM;
   }
   sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
   rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
@@ -179,8 +179,6 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
       pTab->readOnly = 1;
     }
     db->flags |= SQLITE_Initialized;
-  }else{
-    sqliteStrRealloc(pzErrMsg);
   }
   return rc;
 }
@@ -216,17 +214,13 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   /* Allocate the sqlite data structure */
   db = sqliteMalloc( sizeof(sqlite) );
   if( pzErrMsg ) *pzErrMsg = 0;
-  if( db==0 ){
-    sqliteSetString(pzErrMsg, "out of memory", 0);
-    sqliteStrRealloc(pzErrMsg);
-    return 0;
-  }
+  if( db==0 ) goto no_mem_on_open;
   
   /* Open the backend database driver */
   db->pBe = sqliteDbbeOpen(zFilename, (mode&0222)!=0, mode!=0, pzErrMsg);
   if( db->pBe==0 ){
-    sqliteStrRealloc(pzErrMsg);
     sqliteFree(db);
+    sqliteStrRealloc(pzErrMsg);
     return 0;
   }
 
@@ -235,14 +229,21 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
 
   /* Attempt to read the schema */
   rc = sqliteInit(db, pzErrMsg);
-  if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
+  if( sqlite_malloc_failed ){
+    goto no_mem_on_open;
+  }else if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
     sqlite_close(db);
     return 0;
   }else /* if( pzErrMsg ) */{
-    free(*pzErrMsg);
+    sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
   return db;
+
+no_mem_on_open:
+  sqliteSetString(pzErrMsg, "out of memory", 0);
+  sqliteStrRealloc(pzErrMsg);
+  return 0;
 }
 
 /*
@@ -336,13 +337,21 @@ int sqlite_exec(
   if( pzErrMsg ) *pzErrMsg = 0;
   if( (db->flags & SQLITE_Initialized)==0 ){
     int rc = sqliteInit(db, pzErrMsg);
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc!=SQLITE_OK ){
+      sqliteStrRealloc(pzErrMsg);
+      return rc;
+    }
   }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sParse.xCallback = xCallback;
   sParse.pArg = pArg;
   sqliteRunParser(&sParse, zSql, pzErrMsg);
+  if( sqlite_malloc_failed ){
+    sqliteSetString(pzErrMsg, "out of memory", 0);
+    sParse.rc = SQLITE_NOMEM;
+  }
+  sqliteStrRealloc(pzErrMsg);
   return sParse.rc;
 }
 
@@ -352,7 +361,7 @@ int sqlite_exec(
 ** an integer number of milliseconds passed in as the first
 ** argument.
 */
-static int sqlite_default_busy_callback(
+static int sqliteDefaultBusyCallback(
  void *Timeout,           /* Maximum amount of time to wait */
  const char *NotUsed,     /* The name of the table that is busy */
  int count                /* Number of times table has been busy */
@@ -407,7 +416,7 @@ void sqlite_busy_handler(
 */
 void sqlite_busy_timeout(sqlite *db, int ms){
   if( ms>0 ){
-    sqlite_busy_handler(db, sqlite_default_busy_callback, (void*)ms);
+    sqlite_busy_handler(db, sqliteDefaultBusyCallback, (void*)ms);
   }else{
     sqlite_busy_handler(db, 0, 0);
   }

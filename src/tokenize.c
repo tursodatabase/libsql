@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.18 2001/04/04 11:48:58 drh Exp $
+** $Id: tokenize.c,v 1.19 2001/04/11 14:28:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -107,7 +107,7 @@ static Keyword aKeywordTable[] = {
 /*
 ** This is the hash table
 */
-#define KEY_HASH_SIZE 69
+#define KEY_HASH_SIZE 71
 static Keyword *apHashTable[KEY_HASH_SIZE];
 
 
@@ -328,7 +328,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
 #ifndef NDEBUG
   sqliteParserTrace(trace, "parser: ");
 #endif
-  while( nErr==0 && i>=0 && zSql[i]!=0 ){
+  while( sqlite_malloc_failed==0 && nErr==0 && i>=0 && zSql[i]!=0 ){
     int tokenType;
     
     if( (pParse->db->flags & SQLITE_Interrupt)!=0 ){
@@ -363,24 +363,6 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
           pParse->db->flags |= SQLITE_VdbeTrace;
         }else if( sqliteStrNICmp(z,"--vdbe-trace-off--", 18)==0 ){
           pParse->db->flags &= ~SQLITE_VdbeTrace;
-#ifdef MEMORY_DEBUG
-        }else if( sqliteStrNICmp(z,"--malloc-fail=",14)==0 ){
-          sqlite_iMallocFail = atoi(&z[14]);
-        }else if( sqliteStrNICmp(z,"--malloc-stats--", 16)==0 ){
-          if( pParse->xCallback ){
-            static char *azName[4] = {"malloc", "free", "to_fail", 0 };
-            char *azArg[4];
-            char zVal[3][30];
-            sprintf(zVal[0],"%d", sqlite_nMalloc);
-            sprintf(zVal[1],"%d", sqlite_nFree);
-            sprintf(zVal[2],"%d", sqlite_iMallocFail);
-            azArg[0] = zVal[0];
-            azArg[1] = zVal[1];
-            azArg[2] = zVal[2];
-            azArg[3] = 0;
-            pParse->xCallback(pParse->pArg, 3, azArg, azName);
-          }
-#endif
         }
 #endif
         break;
@@ -437,7 +419,6 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
     pParse->pNewTable = 0;
   }
   sqliteParseInfoReset(pParse);
-  sqliteStrRealloc(pzErrMsg);
   if( nErr>0 && pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
   }

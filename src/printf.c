@@ -563,6 +563,7 @@ static int vxprintf(
           n += i + 1;
           if( n>etBUFSIZE ){
             bufpt = zExtra = sqliteMalloc( n );
+            if( bufpt==0 ) return -1;
           }else{
             bufpt = buf;
           }

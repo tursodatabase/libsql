@@ -140,7 +140,7 @@ int sqlite_get_table(
   res.nRow = 0;
   res.nColumn = 0;
   res.nData = 1;
-  res.nAlloc = 200;
+  res.nAlloc = 20;
   res.rc = SQLITE_OK;
   res.azResult = malloc( sizeof(char*)*res.nAlloc );
   if( res.azResult==0 ){

@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.26 2001/04/04 11:48:57 drh Exp $
+** $Id: build.c,v 1.27 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,6 +49,7 @@
 */
 void sqliteExec(Parse *pParse){
   int rc = SQLITE_OK;
+  if( sqlite_malloc_failed ) return;
   if( pParse->pVdbe ){
     if( pParse->explain ){
       rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
@@ -96,8 +97,10 @@ Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
 ** text between the two given tokens.
 */
 void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
-  pExpr->span.z = pLeft->z;
-  pExpr->span.n = pRight->n + (int)pRight->z - (int)pLeft->z;
+  if( pExpr ){
+    pExpr->span.z = pLeft->z;
+    pExpr->span.n = pRight->n + (int)pRight->z - (int)pLeft->z;
+  }
 }
 
 /*
@@ -167,13 +170,13 @@ Index *sqliteFindIndex(sqlite *db, char *zName){
 ** Remove the given index from the index hash table, and free
 ** its memory structures.
 **
-** The index is removed from the database hash table, but it is
-** not unlinked from the Table that is being indexed.  Unlinking
-** from the Table must be done by the calling function.
+** The index is removed from the database hash table if db!=NULL.
+** But it is not unlinked from the Table that is being indexed.  
+** Unlinking from the Table must be done by the calling function.
 */
 static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
   int h;
-  if( pIndex->zName ){
+  if( pIndex->zName && db ){
     h = sqliteHashNoCase(pIndex->zName, 0) % N_HASH;
     if( db->apIdxHash[h]==pIndex ){
       db->apIdxHash[h] = pIndex->pHash;
@@ -195,6 +198,11 @@ static void sqliteDeleteIndex(sqlite *db, Index *pIndex){
 ** This routine just deletes the data structure.  It does not unlink
 ** the table data structure from the hash table.  But does it destroy
 ** memory structures of the indices associated with the table.
+**
+** Indices associated with the table are unlinked from the "db"
+** data structure if db!=NULL.  If db==NULL, indices attached to
+** the table are deleted, but it is assumed they have already been
+** unlinked.
 */
 void sqliteDeleteTable(sqlite *db, Table *pTable){
   int i;
@@ -236,6 +244,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
 
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
+  if( zName==0 ) return;
   pTable = sqliteFindTable(pParse->db, zName);
   if( pTable!=0 ){
     sqliteSetNString(&pParse->zErrMsg, "table ", 0, pName->z, pName->n,
@@ -252,11 +261,7 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName){
     return;
   }
   pTable = sqliteMalloc( sizeof(Table) );
-  if( pTable==0 ){
-    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
-    pParse->nErr++;
-    return;
-  }
+  if( pTable==0 ) return;
   pTable->zName = zName;
   pTable->pHash = 0;
   pTable->nCol = 0;
@@ -275,10 +280,10 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   if( (p = pParse->pNewTable)==0 ) return;
   if( (p->nCol & 0x7)==0 ){
     p->aCol = sqliteRealloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
-  }
-  if( p->aCol==0 ){
-    p->nCol = 0;
-    return;
+    if( p->aCol==0 ){
+      p->nCol = 0;
+      return;
+    }
   }
   memset(&p->aCol[p->nCol], 0, sizeof(p->aCol[0]));
   pz = &p->aCol[p->nCol++].zName;
@@ -323,13 +328,14 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   int h;
   int addMeta;       /* True to insert a meta records into the file */
 
-  if( pParse->nErr ) return;
+  if( pEnd==0 || pParse->nErr || sqlite_malloc_failed ) return;
   p = pParse->pNewTable;
-  addMeta =  p!=0 && pParse->db->nTable==1;
+  if( p==0 ) return;
+  addMeta =  pParse->db->nTable==1;
 
   /* Add the table to the in-memory representation of the database
   */
-  if( p!=0 && pParse->explain==0 ){
+  if( pParse->explain==0 ){
     h = sqliteHashNoCase(p->zName, 0) % N_HASH;
     p->pHash = pParse->db->apTblHash[h];
     pParse->db->apTblHash[h] = p;
@@ -381,8 +387,11 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
 ** an error for the parser to find and return NULL.
 */
 Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
-  char *zName = sqliteTableNameFromToken(pTok);
-  Table *pTab = sqliteFindTable(pParse->db, zName);
+  char *zName;
+  Table *pTab;
+  zName = sqliteTableNameFromToken(pTok);
+  if( zName==0 ) return 0;
+  pTab = sqliteFindTable(pParse->db, zName);
   sqliteFree(zName);
   if( pTab==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such table: ", 0, 
@@ -401,6 +410,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   Vdbe *v;
   int base;
 
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   pTable = sqliteTableFromToken(pParse, pName);
   if( pTable==0 ) return;
   if( pTable->readOnly ){
@@ -486,6 +496,8 @@ void sqliteCreateIndex(
   int i, j, h;
   Token nullId;    /* Fake token for an empty ID list */
 
+  if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
+
   /*
   ** Find the table that is to be indexed.  Return early if not found.
   */
@@ -512,6 +524,7 @@ void sqliteCreateIndex(
     zName = 0;
     sqliteSetString(&zName, pTab->zName, "__primary_key", 0);
   }
+  if( zName==0 ) goto exit_create_index;
   if( sqliteFindIndex(pParse->db, zName) ){
     sqliteSetString(&pParse->zErrMsg, "index ", zName, 
        " already exists", 0);
@@ -541,11 +554,7 @@ void sqliteCreateIndex(
   */
   pIndex = sqliteMalloc( sizeof(Index) + strlen(zName) + 1 +
                         sizeof(int)*pList->nId );
-  if( pIndex==0 ){
-    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
-    pParse->nErr++;
-    goto exit_create_index;
-  }
+  if( pIndex==0 ) goto exit_create_index;
   pIndex->aiColumn = (int*)&pIndex[1];
   pIndex->zName = (char*)&pIndex->aiColumn[pList->nId];
   strcpy(pIndex->zName, zName);
@@ -656,7 +665,9 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   char *zName;
   Vdbe *v;
 
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   zName = sqliteTableNameFromToken(pName);
+  if( zName==0 ) return;
   pIndex = sqliteFindIndex(pParse->db, zName);
   sqliteFree(zName);
   if( pIndex==0 ){
@@ -714,8 +725,8 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
   int i;
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(ExprList) );
+    if( pList==0 ) return 0;
   }
-  if( pList==0 ) return 0;
   if( (pList->nExpr & 7)==0 ){
     int n = pList->nExpr + 8;
     pList->a = sqliteRealloc(pList->a, n*sizeof(pList->a[0]));
@@ -751,6 +762,8 @@ void sqliteExprListDelete(ExprList *pList){
 /*
 ** Append a new element to the given IdList.  Create a new IdList if
 ** need be.
+**
+** A new IdList is returned, or NULL if malloc() fails.
 */
 IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
   if( pList==0 ){
@@ -761,13 +774,20 @@ IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
     pList->a = sqliteRealloc(pList->a, (pList->nId+8)*sizeof(pList->a[0]) );
     if( pList->a==0 ){
       pList->nId = 0;
-      return pList;
+      sqliteIdListDelete(pList);
+      return 0;
     }
   }
   memset(&pList->a[pList->nId], 0, sizeof(pList->a[0]));
   if( pToken ){
-    sqliteSetNString(&pList->a[pList->nId].zName, pToken->z, pToken->n, 0);
-    sqliteDequote(pList->a[pList->nId].zName);
+    char **pz = &pList->a[pList->nId].zName;
+    sqliteSetNString(pz, pToken->z, pToken->n, 0);
+    if( *pz==0 ){
+      sqliteIdListDelete(pList);
+      return 0;
+    }else{
+      sqliteDequote(*pz);
+    }
   }
   pList->nId++;
   return pList;
@@ -793,6 +813,11 @@ void sqliteIdListDelete(IdList *pList){
   for(i=0; i<pList->nId; i++){
     sqliteFree(pList->a[i].zName);
     sqliteFree(pList->a[i].zAlias);
+    if( pList->a[i].pSelect ){
+      sqliteFree(pList->a[i].zName);
+      sqliteSelectDelete(pList->a[i].pSelect);
+      sqliteDeleteTable(0, pList->a[i].pTab);
+    }
   }
   sqliteFree(pList->a);
   sqliteFree(pList);
@@ -824,6 +849,7 @@ void sqliteCopy(
   Index *pIdx;
 
   zTab = sqliteTableNameFromToken(pTableName);
+  if( sqlite_malloc_failed || zTab==0 ) goto copy_cleanup;
   pTab = sqliteFindTable(pParse->db, zTab);
   sqliteFree(zTab);
   if( pTab==0 ){
@@ -891,6 +917,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   char *zName;
   Vdbe *v;
 
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   if( pTableName ){
     zName = sqliteTableNameFromToken(pTableName);
   }else{
@@ -933,6 +960,7 @@ void sqliteBeginTransaction(Parse *pParse){
   DbbeMethods *pM;
   sqlite *db;
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   if( db->flags & SQLITE_InTrans ) return;
   pM = pParse->db->pBe->x;
   if( pM && pM->BeginTransaction ){
@@ -953,6 +981,7 @@ void sqliteCommitTransaction(Parse *pParse){
   DbbeMethods *pM;
   sqlite *db;
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   if( (db->flags & SQLITE_InTrans)==0 ) return;
   pM = pParse->db->pBe->x;
   if( pM && pM->Commit ){
@@ -973,6 +1002,7 @@ void sqliteRollbackTransaction(Parse *pParse){
   DbbeMethods *pM;
   sqlite *db;
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
+  if( pParse->nErr || sqlite_malloc_failed ) return;
   if( (db->flags & SQLITE_InTrans)==0 ) return;
   pM = pParse->db->pBe->x;
   if( pM && pM->Rollback ){

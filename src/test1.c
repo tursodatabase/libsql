@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.1 2001/04/07 15:24:33 drh Exp $
+** $Id: test1.c,v 1.2 2001/04/11 14:28:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -268,6 +268,50 @@ static int sqlite_mprintf_double(
 }
 
 /*
+** Usage: sqlite_malloc_fail N
+**
+** Rig sqliteMalloc() to fail on the N-th call.  Turn of this mechanism
+** and reset the sqlite_malloc_failed variable is N==0.
+*/
+#ifdef MEMORY_DEBUG
+static int sqlite_malloc_fail(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int n;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " N\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+  sqlite_iMallocFail = n;
+  sqlite_malloc_failed = 0;
+  return TCL_OK;
+}
+#endif
+
+/*
+** Usage: sqlite_malloc_stat
+**
+** Return the number of prior calls to sqliteMalloc() and sqliteFree().
+*/
+#ifdef MEMORY_DEBUG
+static int sqlite_malloc_stat(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  char zBuf[200];
+  sprintf(zBuf, "%d %d %d", sqlite_nMalloc, sqlite_nFree, sqlite_iMallocFail);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}
+#endif
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -279,5 +323,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "sqlite_get_table_printf", test_get_table_printf,
       0, 0);
   Tcl_CreateCommand(interp, "sqlite_close", sqlite_test_close, 0, 0);
+#ifdef MEMORY_DEBUG
+  Tcl_CreateCommand(interp, "sqlite_malloc_fail", sqlite_malloc_fail, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite_malloc_stat", sqlite_malloc_stat, 0, 0);
+#endif
   return TCL_OK;
 }

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.30 2001/04/04 11:48:58 drh Exp $
+** $Id: select.c,v 1.31 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -33,25 +33,33 @@
 ** structure.
 */
 Select *sqliteSelectNew(
-  ExprList *pEList,
-  IdList *pSrc,
-  Expr *pWhere,
-  ExprList *pGroupBy,
-  Expr *pHaving,
-  ExprList *pOrderBy,
-  int isDistinct
+  ExprList *pEList,     /* which columns to include in the result */
+  IdList *pSrc,         /* the FROM clause -- which tables to scan */
+  Expr *pWhere,         /* the WHERE clause */
+  ExprList *pGroupBy,   /* the GROUP BY clause */
+  Expr *pHaving,        /* the HAVING clause */
+  ExprList *pOrderBy,   /* the ORDER BY clause */
+  int isDistinct        /* true if the DISTINCT keyword is present */
 ){
   Select *pNew;
   pNew = sqliteMalloc( sizeof(*pNew) );
-  if( pNew==0 ) return 0;
-  pNew->pEList = pEList;
-  pNew->pSrc = pSrc;
-  pNew->pWhere = pWhere;
-  pNew->pGroupBy = pGroupBy;
-  pNew->pHaving = pHaving;
-  pNew->pOrderBy = pOrderBy;
-  pNew->isDistinct = isDistinct;
-  pNew->op = TK_SELECT;
+  if( pNew==0 ){
+    sqliteExprListDelete(pEList);
+    sqliteIdListDelete(pSrc);
+    sqliteExprDelete(pWhere);
+    sqliteExprListDelete(pGroupBy);
+    sqliteExprDelete(pHaving);
+    sqliteExprListDelete(pOrderBy);
+  }else{
+    pNew->pEList = pEList;
+    pNew->pSrc = pSrc;
+    pNew->pWhere = pWhere;
+    pNew->pGroupBy = pGroupBy;
+    pNew->pHaving = pHaving;
+    pNew->pOrderBy = pOrderBy;
+    pNew->isDistinct = isDistinct;
+    pNew->op = TK_SELECT;
+  }
   return pNew;
 }
 
@@ -103,6 +111,7 @@ static int selectInnerLoop(
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
+  if( v==0 ) return 0;
 
   /* Pull the requested columns.
   */
@@ -117,8 +126,9 @@ static int selectInnerLoop(
     }
   }
 
-  /* If the current result is not distinct, skip the rest
-  ** of the processing for the current row.
+  /* If the DISTINCT keyword was present on the SELECT statement
+  ** and this row has been seen before, then do not make this row
+  ** part of the result.
   */
   if( distinct>=0 ){
     int lbl = sqliteVdbeMakeLabel(v);
@@ -229,7 +239,7 @@ static
 void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
   Vdbe *v = pParse->pVdbe;
   int i;
-  if( pParse->colNamesSet ) return;
+  if( pParse->colNamesSet || v==0 || sqlite_malloc_failed ) return;
   pParse->colNamesSet = 1;
   sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
   for(i=0; i<pEList->nExpr; i++){
@@ -241,6 +251,7 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
       continue;
     }
     p = pEList->a[i].pExpr;
+    if( p==0 ) continue;
     if( p->span.z && p->span.z[0] ){
       addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0, 0, 0);
       sqliteVdbeChangeP3(v, addr, p->span.z, p->span.n);
@@ -299,8 +310,12 @@ static const char *selectOpName(int id){
 */
 static int fillInColumnList(Parse *pParse, Select *p){
   int i, j;
-  IdList *pTabList = p->pSrc;
-  ExprList *pEList = p->pEList;
+  IdList *pTabList;
+  ExprList *pEList;
+
+  if( p==0 || p->pSrc==0 ) return 1;
+  pTabList = p->pSrc;
+  pEList = p->pEList;
 
   /* Look up every table in the table list.
   */
@@ -308,6 +323,17 @@ static int fillInColumnList(Parse *pParse, Select *p){
     if( pTabList->a[i].pTab ){
       /* This routine has run before!  No need to continue */
       return 0;
+    }
+    if( pTabList->a[i].zName==0 ){
+      /* No table name is given.  Instead, there is a (SELECT ...) statement
+      ** the results of which should be used in place of the table.  The
+      ** was this is implemented is that the (SELECT ...) writes its results
+      ** into a temporary table which is then scanned like any other table.
+      */
+      sqliteSetString(&pParse->zErrMsg, 
+          "(SELECT...) in a FROM clause is not yet implemented.", 0);
+      pParse->nErr++;
+      return 1;
     }
     pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
     if( pTabList->a[i].pTab==0 ){
@@ -326,10 +352,13 @@ static int fillInColumnList(Parse *pParse, Select *p){
       Table *pTab = pTabList->a[i].pTab;
       for(j=0; j<pTab->nCol; j++){
         Expr *pExpr = sqliteExpr(TK_DOT, 0, 0, 0);
+        if( pExpr==0 ) break;
         pExpr->pLeft = sqliteExpr(TK_ID, 0, 0, 0);
+        if( pExpr->pLeft==0 ) break;
         pExpr->pLeft->token.z = pTab->zName;
         pExpr->pLeft->token.n = strlen(pTab->zName);
         pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
+        if( pExpr->pRight==0 ) break;
         pExpr->pRight->token.z = pTab->aCol[j].zName;
         pExpr->pRight->token.n = strlen(pTab->aCol[j].zName);
         pExpr->span.z = "";
@@ -366,7 +395,7 @@ static int matchOrderbyToColumn(
   int i, j;
   ExprList *pEList;
 
-  assert( pSelect && pOrderBy );
+  if( pSelect==0 || pOrderBy==0 ) return 1;
   if( mustComplete ){
     for(i=0; i<pOrderBy->nExpr; i++){ pOrderBy->a[i].done = 0; }
   }
@@ -426,10 +455,6 @@ Vdbe *sqliteGetVdbe(Parse *pParse){
   if( v==0 ){
     v = pParse->pVdbe = sqliteVdbeCreate(pParse->db);
   }
-  if( v==0 ){
-    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
-    pParse->nErr++;
-  }
   return v;
 }
     
@@ -447,7 +472,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   /* Make sure there is no ORDER BY clause on prior SELECTs.  Only the 
   ** last SELECT in the series may have an ORDER BY.
   */
-  assert( p->pPrior!=0 );
+  if( p==0 || p->pPrior==0 ) return 1;
   pPrior = p->pPrior;
   if( pPrior->pOrderBy ){
     sqliteSetString(&pParse->zErrMsg,"ORDER BY clause should come after ",
@@ -651,6 +676,8 @@ int sqliteSelect(
   int distinct;          /* Table to use for the distinct set */
   int base;              /* First cursor available for use */
 
+  if( sqlite_malloc_failed || pParse->nErr || p==0 ) return 1;
+
   /* If there is are a sequence of queries, do the earlier ones first.
   */
   if( p->pPrior ){
@@ -686,6 +713,7 @@ int sqliteSelect(
     return 1;
   }
   pEList = p->pEList;
+  if( pEList==0 ) return 1;
 
   /* Allocate a temporary table to use for the DISTINCT set, if
   ** necessary.  This must be done early to allocate the cursor before
@@ -820,15 +848,8 @@ int sqliteSelect(
 
   /* Begin generating code.
   */
-  v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db);
-  }
-  if( v==0 ){
-    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
-    pParse->nErr++;
-    return 1;
-  }
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return 1;
   if( pOrderBy ){
     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
   }

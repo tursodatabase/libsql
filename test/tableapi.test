@@ -24,7 +24,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.1 2001/04/07 15:24:34 drh Exp $
+# $Id: tableapi.test,v 1.2 2001/04/11 14:28:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,6 +48,49 @@ do_test tableapi-2.1 {
     SELECT * FROM xyz WHERE b='%q'
   } {Hi Y'all}
 } {0 1 2 a b 1 {Hi Y'all}}
+do_test tableapi-2.2 {
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz
+  } {}
+} {0 1 2 a b 1 {Hi Y'all}}
+do_test tableapi-2.3 {
+  for {set i 2} {$i<=50} {incr i} {
+    sqlite_get_table_printf $::dbx \
+       "INSERT INTO xyz VALUES($i,'(%s)')" $i
+  }
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz ORDER BY a
+  } {}
+} {0 50 2 a b 1 {Hi Y'all} 2 (2) 3 (3) 4 (4) 5 (5) 6 (6) 7 (7) 8 (8) 9 (9) 10 (10) 11 (11) 12 (12) 13 (13) 14 (14) 15 (15) 16 (16) 17 (17) 18 (18) 19 (19) 20 (20) 21 (21) 22 (22) 23 (23) 24 (24) 25 (25) 26 (26) 27 (27) 28 (28) 29 (29) 30 (30) 31 (31) 32 (32) 33 (33) 34 (34) 35 (35) 36 (36) 37 (37) 38 (38) 39 (39) 40 (40) 41 (41) 42 (42) 43 (43) 44 (44) 45 (45) 46 (46) 47 (47) 48 (48) 49 (49) 50 (50)}
+do_test tableapi-2.3.1 {
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz  WHERE a>49 ORDER BY a
+  } {}
+} {0 1 2 a b 50 (50)}
+do_test tableapi-2.3.2 {
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz WHERE a>47 ORDER BY a
+  } {}
+} {0 3 2 a b 48 (48) 49 (49) 50 (50)}
+do_test tableapi-2.4 {
+  set ::big_str [sqlite_mprintf_str {%500'* Hello %500'*} 0 0 {}]
+  sqlite_get_table_printf $::dbx {
+    INSERT INTO xyz VALUES(51,'%q')
+  } $::big_str
+} {0 0 0}
+do_test tableapi-2.5 {
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz WHERE a>49 ORDER BY a;
+  } {}
+} "0 2 2 a b 50 (50) 51 \173$::big_str\175"
+do_test tableapi-2.6 {
+  sqlite_get_table_printf $::dbx {
+    INSERT INTO xyz VALUES(52,NULL)
+  } {}
+  sqlite_get_table_printf $::dbx {
+    SELECT * FROM xyz WHERE a IN (42,50,52) ORDER BY a DESC
+  } {}
+} {0 3 2 a b 52 NULL 50 (50) 42 (42)}
 
 do_test tableapi-99.0 {
   sqlite_close $::dbx

@@ -24,7 +24,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions.
 **
-** $Id: expr.c,v 1.23 2001/04/04 21:22:14 drh Exp $
+** $Id: expr.c,v 1.24 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -123,13 +123,14 @@ static int sqliteIsRowid(const char *z){
 ** the number of errors seen and leaves an error message on pParse->zErrMsg.
 */
 int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
-  if( pExpr==0 ) return 0;
+  if( pExpr==0 || pTabList==0 ) return 0;
   switch( pExpr->op ){
     /* A lone identifier */
     case TK_ID: {
       int cnt = 0;      /* Number of matches */
       int i;            /* Loop counter */
       char *z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
+      if( z==0 ) return 1;
       for(i=0; i<pTabList->nId; i++){
         int j;
         Table *pTab = pTabList->a[i].pTab;
@@ -177,6 +178,11 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       assert( pRight && pRight->op==TK_ID );
       zLeft = sqliteStrNDup(pLeft->token.z, pLeft->token.n);
       zRight = sqliteStrNDup(pRight->token.z, pRight->token.n);
+      if( zLeft==0 || zRight==0 ){
+        sqliteFree(zLeft);
+        sqliteFree(zRight);
+        return 1;
+      }
       pExpr->iTable = -1;
       for(i=0; i<pTabList->nId; i++){
         int j;
@@ -480,6 +486,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
 void sqliteExprCode(Parse *pParse, Expr *pExpr){
   Vdbe *v = pParse->pVdbe;
   int op;
+  if( v==0 || pExpr==0 ) return;
   switch( pExpr->op ){
     case TK_PLUS:     op = OP_Add;      break;
     case TK_MINUS:    op = OP_Subtract; break;
@@ -683,6 +690,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
 void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
+  if( v==0 || pExpr==0 ) return;
   switch( pExpr->op ){
     case TK_LT:       op = OP_Lt;       break;
     case TK_LE:       op = OP_Le;       break;
@@ -769,6 +777,7 @@ void sqliteExprIfTrue(Parse *pParse, Expr *pExpr, int dest){
 void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
   Vdbe *v = pParse->pVdbe;
   int op = 0;
+  if( v==0 || pExpr==0 ) return;
   switch( pExpr->op ){
     case TK_LT:       op = OP_Ge;       break;
     case TK_LE:       op = OP_Gt;       break;
@@ -896,8 +905,7 @@ static int appendAggInfo(Parse *pParse){
     int amt = pParse->nAgg + 8;
     pParse->aAgg = sqliteRealloc(pParse->aAgg, amt*sizeof(pParse->aAgg[0]));
     if( pParse->aAgg==0 ){
-      sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
-      pParse->nErr++;
+      pParse->nAgg = 0;
       return -1;
     }
   }

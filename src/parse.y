@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.27 2001/04/04 11:48:58 drh Exp $
+** @(#) $Id: parse.y,v 1.28 2001/04/11 14:28:42 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -170,9 +170,11 @@ cmd ::= select(X).  {
 
 select(A) ::= oneselect(X).                      {A = X;}
 select(A) ::= select(X) joinop(Y) oneselect(Z).  {
+  if( Z ){
     Z->op = Y;
     Z->pPrior = X;
-    A = Z;
+  }
+  A = Z;
 }
 %type joinop {int}
 joinop(A) ::= UNION.      {A = TK_UNION;}
@@ -236,11 +238,11 @@ orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
 sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
   A = sqliteExprListAppend(X,Y,0);
-  A->a[A->nExpr-1].sortOrder = Z;   /* 0 for ascending order, 1 for decending */
+  if( A ) A->a[A->nExpr-1].sortOrder = Z;  /* 0=ascending, 1=decending */
 }
 sortlist(A) ::= sortitem(Y) sortorder(Z). {
   A = sqliteExprListAppend(0,Y,0);
-  A->a[0].sortOrder = Z;
+  if( A ) A->a[0].sortOrder = Z;
 }
 sortitem(A) ::= expr(X).   {A = X;}
 
@@ -297,13 +299,13 @@ item(A) ::= INTEGER(X).      {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 item(A) ::= PLUS INTEGER(X). {A = sqliteExpr(TK_INTEGER, 0, 0, &X);}
 item(A) ::= MINUS INTEGER(X). {
   A = sqliteExpr(TK_UMINUS, 0, 0, 0);
-  A->pLeft = sqliteExpr(TK_INTEGER, 0, 0, &X);
+  if( A ) A->pLeft = sqliteExpr(TK_INTEGER, 0, 0, &X);
 }
 item(A) ::= FLOAT(X).        {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 item(A) ::= PLUS FLOAT(X).   {A = sqliteExpr(TK_FLOAT, 0, 0, &X);}
 item(A) ::= MINUS FLOAT(X).  {
   A = sqliteExpr(TK_UMINUS, 0, 0, 0);
-  A->pLeft = sqliteExpr(TK_FLOAT, 0, 0, &X);
+  if( A ) A->pLeft = sqliteExpr(TK_FLOAT, 0, 0, &X);
 }
 item(A) ::= STRING(X).       {A = sqliteExpr(TK_STRING, 0, 0, &X);}
 item(A) ::= NULL.            {A = sqliteExpr(TK_NULL, 0, 0, 0);}
@@ -397,43 +399,43 @@ expr(A) ::= PLUS(B) expr(X). [UMINUS] {
 }
 expr(A) ::= LP(B) select(X) RP(E). {
   A = sqliteExpr(TK_SELECT, 0, 0, 0);
-  A->pSelect = X;
+  if( A ) A->pSelect = X;
   sqliteExprSpan(A,&B,&E);
 }
 expr(A) ::= expr(W) BETWEEN expr(X) AND expr(Y). {
   ExprList *pList = sqliteExprListAppend(0, X, 0);
   pList = sqliteExprListAppend(pList, Y, 0);
   A = sqliteExpr(TK_BETWEEN, W, 0, 0);
-  A->pList = pList;
+  if( A ) A->pList = pList;
   sqliteExprSpan(A,&W->span,&Y->span);
 }
 expr(A) ::= expr(W) NOT BETWEEN expr(X) AND expr(Y). {
   ExprList *pList = sqliteExprListAppend(0, X, 0);
   pList = sqliteExprListAppend(pList, Y, 0);
   A = sqliteExpr(TK_BETWEEN, W, 0, 0);
-  A->pList = pList;
+  if( A ) A->pList = pList;
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&W->span,&Y->span);
 }
 expr(A) ::= expr(X) IN LP exprlist(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
-  A->pList = Y;
+  if( A ) A->pList = Y;
   sqliteExprSpan(A,&X->span,&E);
 }
 expr(A) ::= expr(X) IN LP select(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
-  A->pSelect = Y;
+  if( A ) A->pSelect = Y;
   sqliteExprSpan(A,&X->span,&E);
 }
 expr(A) ::= expr(X) NOT IN LP exprlist(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
-  A->pList = Y;
+  if( A ) A->pList = Y;
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&X->span,&E);
 }
 expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
   A = sqliteExpr(TK_IN, X, 0, 0);
-  A->pSelect = Y;
+  if( A ) A->pSelect = Y;
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&X->span,&E);
 }

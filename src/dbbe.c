@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.26 2001/04/04 21:22:14 drh Exp $
+** $Id: dbbe.c,v 1.27 2001/04/11 14:28:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -65,6 +65,7 @@ Dbbe *sqliteDbbeOpen(
   return sqliteGdbmOpen(zName, writeFlag, createFlag, pzErrMsg);
 }
 
+#if 0  /* NOT USED */
 /*
 ** Translate the name of an SQL table (or index) into the name 
 ** of a file that holds the key/data pairs for that table or
@@ -115,3 +116,4 @@ char *sqliteDbbeNameToFile(
   zFile[i] = 0;
   return zFile;
 }
+#endif /* NOT USED */

@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.1 2001/04/07 15:24:33 drh Exp $
+# $Id: printf.test,v 1.2 2001/04/11 14:28:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,6 +39,15 @@ foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
   do_test printf-1.$n.3 [subst {
     sqlite_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
   }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v]
+  do_test printf-1.$n.4 [subst {
+    sqlite_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
+  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v]
+  do_test printf-1.$n.5 [subst {
+    sqlite_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
+  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v $v]
+  do_test printf-1.$n.6 [subst {
+    sqlite_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
+  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v]
   incr n
 }
 
@@ -88,5 +97,16 @@ do_test printf-3.6 {
 do_test printf-4.1 {
   sqlite_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
 } {1 2 A quoted string: 'Hi Y''all'}
+
+do_test printf-5.1 {
+  set x [sqlite_mprintf_str {%d %d %100000s} 0 0 {Hello}]
+  string length $x
+} {994}
+do_test printf-5.2 {
+  sqlite_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
+} {-9 -10 (HelloHello) %}
+do_test printf-5.3 {
+  sqlite_mprintf_str {%% %d %d (%=10s)} 5 6 Hello
+} {% 5 6 (  Hello   )}
 
 finish_test
