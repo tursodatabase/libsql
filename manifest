@@ -1,5 +1,5 @@
-C The\sscript\sthat\scross-compiles\sthe\swindows\sDLLs\snow\sexports\sthe\ssymbols\nTclsqlite_Init\sand\sSqlite_Init\sused\sto\sinitialize\sthe\sTCL\sextension.\nTicket\s#1137.\s(CVS\s2358)
-D 2005-02-23T00:26:12
+C Remove\sstrcasecmp\sfrom\sshell.c.\s\sTickets\s#1108,\s#1122.\s(CVS\s2359)
+D 2005-02-23T12:35:41
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -59,7 +59,7 @@ F src/pragma.c 7e65c5545d83909238adf231e2a6eee6eb43e0d5
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 69e6093d52e871a243477e9746f820456538dd03
-F src/shell.c 3cb0ef124ed9cd582ce89aec59ff7c659bc6e61b
+F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h f95cc4becd7b27293aae8f8c4ed2f6ef44830fbb
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P b323f0f2832ac5d225d880db6f56314d2f766a25
-R f024288b3fe4fd17c52073db0d64ea20
+P f18704777407d84f5ba23333e8d4bcdcb09b4a70
+R dec2cd6da581ce8b13fe5d65e2ffac3f
 U drh
-Z 1ca90fe2c70fc42ca54b30f8507e120e
+Z 922f0610cc55acf37a531e00573720ae
