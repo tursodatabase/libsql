@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.275 2004/06/09 14:01:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.276 2004/06/09 20:03:09 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -422,6 +422,7 @@ struct sqlite {
   void *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
   u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
+  int nMaster;                  /* Length of master journal name. -1=unknown */
 };
 
 /*

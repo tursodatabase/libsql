@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.361 2004/06/09 09:55:19 danielk1977 Exp $
+** $Id: vdbe.c,v 1.362 2004/06/09 20:03:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2319,8 +2319,10 @@ case OP_Transaction: {
   pBt = db->aDb[i].pBt;
 
   if( pBt ){
-    int nMaster = strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt))+11;
-    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, nMaster);
+    if( db->nMaster<0 ){
+      db->nMaster = strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt))+20;
+    }
+    rc = sqlite3BtreeBeginTrans(pBt, pOp->p2, db->nMaster);
     if( rc==SQLITE_BUSY ){
         if( db->busyHandler.xFunc==0 ){
           p->pc = pc;

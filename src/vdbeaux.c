@@ -933,8 +933,12 @@ static int vdbeCommit(sqlite *db){
   /* The simple case - no more than one database file (not counting the TEMP
   ** database) has a transaction active.   There is no need for the
   ** master-journal.
+  **
+  ** if db->nMaster==0, it means the main database is :memory:.  In that case
+  ** we do not support atomic multi-file commits, so use the simple case then
+  ** too.
   */
-  if( nTrans<=100 ){  /**** FIX ME ****/
+  if( db->nMaster<=0 || nTrans<=1 ){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
@@ -974,6 +978,7 @@ static int vdbeCommit(sqlite *db){
     }while( sqlite3OsFileExists(zMaster) );
 
     /* Open the master journal. */
+    assert( strlen(zMaster)<db->nMaster );
     rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){
       sqliteFree(zMaster);
@@ -988,16 +993,11 @@ static int vdbeCommit(sqlite *db){
     */
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
+      if( i==1 ) continue;   /* Ignore the TEMP database */
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
         char const *zFile = sqlite3BtreeGetFilename(pBt);
-        rc = sqlite3OsWrite(&master, zFile, strlen(zFile));
-        if( rc!=SQLITE_OK ){
-          sqlite3OsClose(&master);
-          sqlite3OsDelete(zMaster);
-          sqliteFree(zMaster);
-          return rc;
-        }
-        rc = sqlite3OsWrite(&master, "\0", 1);
+        if( zFile[0]==0 ) continue;  /* Ignore :memory: databases */
+        rc = sqlite3OsWrite(&master, zFile, strlen(zFile)+1);
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&master);
           sqlite3OsDelete(zMaster);
@@ -1010,6 +1010,9 @@ static int vdbeCommit(sqlite *db){
     /* Sync the master journal file */
     rc = sqlite3OsSync(&master);
     sqlite3OsClose(&master);
+
+    /* FIXME:  Sync the directory that contains the master journal to
+    ** make sure the i-node is up to date. */
 
     /* Sync all the db files involved in the transaction. The same call
     ** sets the master journal pointer in each individual journal. If

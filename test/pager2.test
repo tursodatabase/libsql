@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager2.test,v 1.1 2004/05/12 13:30:09 drh Exp $
+# $Id: pager2.test,v 1.2 2004/06/09 20:03:10 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -122,7 +122,7 @@ do_test pager2-2.14 {
 } {0 {}}
 do_test pager2-2.15 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 1 state 2 err 0 hit 1 miss 1 ovfl 0}
+} {ref 1 page 1 max 10 size 1 state 3 err 0 hit 1 miss 1 ovfl 0}
 do_test pager2-2.16 {
   page_read $::g1
 } {Page-One}
@@ -295,7 +295,7 @@ for {set i 1} {$i<20} {incr i} {
   do_test pager2-4.5.$i.1 {
     page_write $g1 "Page-1 v$i"
     lrange [pager_stats $p1] 8 9
-  } {state 2}
+  } {state 3}
   do_test pager2-4.5.$i.2 {
     for {set j 2} {$j<=20} {incr j} {
       set gx [page_get $p1 $j]
@@ -336,7 +336,7 @@ for {set i 1} {$i<20} {incr i} {
   do_test pager2-4.5.$i.5 {
     page_write $g1 "Page-1 v$i"
     lrange [pager_stats $p1] 8 9
-  } {state 2}
+  } {state 3}
   do_test pager2-4.5.$i.6 {
     for {set j 2} {$j<=20} {incr j} {
       set gx [page_get $p1 $j]

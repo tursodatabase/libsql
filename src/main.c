@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.209 2004/06/09 12:30:06 danielk1977 Exp $
+** $Id: main.c,v 1.210 2004/06/09 20:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1033,6 +1033,9 @@ static int openDatabase(
   /* Open the backend database driver */
   if( zFilename[0]==':' && strcmp(zFilename,":memory:")==0 ){
     db->temp_store = 2;
+    db->nMaster = 0;    /* Disable atomic multi-file commit for :memory: */
+  }else{
+    db->nMaster = -1;   /* Size of master journal filename initially unknown */
   }
   rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
@@ -1161,4 +1164,3 @@ int sqlite3_create_collation16(
   sqliteFree(zName8);
   return rc;
 }
-

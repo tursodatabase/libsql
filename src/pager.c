@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.116 2004/06/09 19:03:55 drh Exp $
+** @(#) $Id: pager.c,v 1.117 2004/06/09 20:03:09 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1934,7 +1934,8 @@ static int pager_open_journal(Pager *pPager){
     rc = write32bits(&pPager->jfd, pPager->nMaster);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite3OsSeek(&pPager->jfd, 24 + pPager->nMaster);
+    sqlite3OsSeek(&pPager->jfd, 24 + pPager->nMaster - 1);
+    rc = sqlite3OsWrite(&pPager->jfd, "\000", 1);
   }
   if( pPager->stmtAutoopen && rc==SQLITE_OK ){
     rc = sqlite3pager_stmt_begin(pPager);
