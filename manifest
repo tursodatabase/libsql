@@ -1,19 +1,19 @@
-C Added\spkg-config\ssupport.\s(CVS\s880)
-D 2003-03-24T09:39:32
+C Updated\slibtool.\s(CVS\s881)
+D 2003-03-24T09:40:35
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
-F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
-F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
-F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
+F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
+F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
+F config.sub 975368989965310238930ecf8e7f06a23061dbb1
 F configure 9303d975dbd577fbe61e615045ddc02015b59fb5 x
 F configure.ac 222ba4ebf74c05114a2b4922843ec57e3d41b7c8
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
-F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
-F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
+F libtool bbbea7d79c23323e4100103836028e4fad0d9242
+F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
 F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a5d8fc95ee58dc3205a0bbbcadaa3b9c902a941b
-R a8fe95c2de5f541cf49bf9d25d653c41
+P ec1c5a611307047dd0049353e989e75dcaffaa45
+R 9a78eb1d64158bc22a18891e8460f746
 U a.rottmann
-Z 04b1b20eb280020ef59c5860e69b752c
+Z 8715eabfdcf10b404092b414164f644d
