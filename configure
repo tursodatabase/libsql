@@ -1039,7 +1039,7 @@ Optional Packages:
   --with-tags[=TAGS]
                           include additional configurations [automatic]
   --with-hints=FILE       Read configuration options from FILE
-  --with-tcl              directory containing tcl configuration (tclConfig.sh)
+  --with-tcl=DIR          directory containing tcl configuration (tclConfig.sh)
 
 Some influential environment variables:
   CC          C compiler command
@@ -1495,7 +1495,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.27 $
+# $Revision: 1.28 $
 
 #########
 # Programs needed

@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.13 $
+# $Revision: 1.14 $
 
 #########
 # Programs needed
@@ -399,7 +399,7 @@ AC_SUBST(TARGET_LIBS)
 AC_ARG_ENABLE(tcl, [  --disable-tcl       do not build TCL extension],
       [use_tcl=$enableval],[use_tcl=yes])
 if test "${use_tcl}" = "yes" ; then
-  AC_ARG_WITH(tcl, [  --with-tcl              directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
+  AC_ARG_WITH(tcl, [  --with-tcl=DIR          directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
   AC_MSG_CHECKING([for Tcl configuration])
   AC_CACHE_VAL(ac_cv_c_tclconfig,[
     # First check to see if --with-tcl was specified.

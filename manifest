@@ -1,5 +1,5 @@
-C Add\sa\s-DUSE_TCL_STUBS\sto\sthe\sstandard\sMakefile.\s\sThis\smight\shelp\swith\nticket\s#1034.\s\sOr\smaybe\snot.\s(CVS\s2160)
-D 2004-12-10T02:08:41
+C Improvements\sto\sthe\s--help\soption\sto\sconfigure.\s\sTicket\s#1033.\s(CVS\s2161)
+D 2004-12-10T02:20:28
 F Makefile.in 4bf4cfb523915f40441ae607c7e7cdc4f808e833
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -10,8 +10,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
-F configure 7bddb59f07f10377569c8ad76351ce44d95858f8 x
-F configure.ac 8bb95fd240baf3968eeb12985000b2ac4b8e9306
+F configure 236a39f7fe430e5080ad1fdc9bc683c7fb281360 x
+F configure.ac 5b196e37f2a4458643fa86148f521e022d4cb99d
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P bf81aabff1303b66f12d28b730d19b7cbdb2de6a
-R 3519c47761b952307951e0f6a46860bc
+P 4c30c373ef674505d275e4a1e8868c9f72a3a1ef
+R ed87b44a09e03935c38f1886858c0d7b
 U drh
-Z 7f2a18e37605632c50e72da0eeabcab0
+Z 25c4b054fc5c6acb442c9297e9807af3
