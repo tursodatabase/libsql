@@ -22,7 +22,8 @@ Features include:
 <li>A complete database is stored in a single disk file.</li>
 <li>Database files can be freely shared between machines with
     different byte orders.</li>
-<li>Supports databases up to 2 terabytes (2<sup>41</sup> bytes) in size.</li>
+<li>Supports databases up to 2 terabytes
+    (2<sup><small>41</small></sup> bytes) in size.</li>
 <li>Sizes of strings and BLOBs limited only by available memory.</li>
 <li>Small code footprint: less than 30K lines of C code,
     less than 250KB code space (gcc on i486)</li>
@@ -33,7 +34,7 @@ Features include:
     Bindings for many other languages 
     <a href="http://www.sqlite.org/cvstrac/wiki?p=SqliteWrappers">
     available separately.</a></li>
-<li>Well-commented source code with over 90% test coverage.</li>
+<li>Well-commented source code with over 95% test coverage.</li>
 <li>Self-contained: no external dependencies.</li>
 <li>Sources are in the <a href="copyright.html">public domain</a>.
     Use for any purpose.</li>
@@ -80,4 +81,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.97 2004/09/18 18:51:09 drh Exp $}
+footer {$Id: index.tcl,v 1.98 2004/10/07 19:03:02 drh Exp $}

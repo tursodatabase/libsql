@@ -1,5 +1,5 @@
-C Additional\sparser\soptimizations.\s(CVS\s2010)
-D 2004-10-07T03:06:29
+C Optimizations\sto\sthe\stokenizer.\s(CVS\s2011)
+D 2004-10-07T19:03:01
 F Makefile.in 52c1cc106cad9148d4b7cb387b458e82dc86b339
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -70,7 +70,7 @@ F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c 5b5b0f3d11b097399c1054fff73d8f3711092301
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
-F src/tokenize.c 449843c85c8118b9718f3935f4b5d18586c8cee2
+F src/tokenize.c a235e9a38ccf175f7badccdec68f58d79cb5abe5
 F src/trigger.c b51a120d53e8b85359be11bf5e50854e5725fe3d
 F src/update.c 174c3b593b8f4928e510a51ec309e8ce69d2371c
 F src/utf.c f4f83acd73389090e32d6589d307fc55d794c7ed
@@ -201,6 +201,7 @@ F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 336eb50b0849dbf99b1d5462d9c37291b01b2b43
+F tool/mkkeywordhash.c 0cfab6691def993d5b2124398d25129b12b6b5fd
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -235,7 +236,7 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 8cf9f59fd93868c9954223a99db244c9975fa43b
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
 F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
-F www/index.tcl 3bf50fdac2f5df49cf4f6f76a7f312b5fd4725b8
+F www/index.tcl ae29ea8a5bdde5a8031a9ac0935ac16dd921b4ef
 F www/lang.tcl dde78c1415ee2d19fc30360808ca6f0e2ea71c30
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -251,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 1376a0bb8d864de755c614b2ecce4342155fd09b
-R 7c281d56a2bfc9c05afabc9a79a1f3b5
+P 618dee121e41d8e5c9b4d5c167475b11ddcda2d7
+R c6f2c8afd2a59eadba90462f2b06f8bc
 U drh
-Z fe725e970bb1b0deb3b69c8bf4e69648
+Z bc3b2c6d615a585d4fad51811788aa10
