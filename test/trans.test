@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.1 2001/04/04 11:48:58 drh Exp $
+# $Id: trans.test,v 1.2 2001/04/12 23:21:59 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -178,6 +178,76 @@ do_test trans-3.14 {
   lappend v $msg
 } {0 {1 2 3 4}}
 
+do_test trans-4.1 {
+  set v [catch {execsql {
+    COMMIT;
+  } db} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-4.2 {
+  set v [catch {execsql {
+    ROLLBACK;
+  } db} msg]
+  lappend v $msg
+} {0 {}}
+do_test trans-4.3 {
+  set v [catch {execsql {
+    BEGIN TRANSACTION;
+    SELECT a FROM two ORDER BY a;
+  } db} msg]
+  lappend v $msg
+} {0 {1 4 5 10}}
+do_test trans-4.4 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table two is locked}}
+do_test trans-4.5 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 2 3 4}}
+do_test trans-4.6 {
+  set v [catch {execsql {
+    BEGIN TRANSACTION;
+    SELECT a FROM one ORDER BY a;
+  } db} msg]
+  lappend v $msg
+} {0 {1 2 3 4}}
+do_test trans-4.7 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table two is locked}}
+do_test trans-4.8 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {1 {table one is locked}}
+do_test trans-4.9 {
+  set v [catch {execsql {
+    END TRANSACTION;
+    SELECT a FROM two ORDER BY a;
+  } db} msg]
+  lappend v $msg
+} {0 {1 4 5 10}}
+do_test trans-4.10 {
+  set v [catch {execsql {
+    SELECT a FROM two ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 4 5 10}}
+do_test trans-4.11 {
+  set v [catch {execsql {
+    SELECT a FROM one ORDER BY a;
+  } altdb} msg]
+  lappend v $msg
+} {0 {1 2 3 4}}
+
 do_test trans-99.1 {
   altdb close
   execsql {
@@ -185,6 +255,7 @@ do_test trans-99.1 {
     DROP TABLE two;
   }
 } {}
+
 
 finish_test
 

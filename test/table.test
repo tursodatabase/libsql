@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.8 2001/04/04 11:48:58 drh Exp $
+# $Id: table.test,v 1.9 2001/04/12 23:21:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -313,21 +313,23 @@ do_test table-7.1 {
       asc text,
       explain int,
       vacuum boolean,
-      delimiters varchar(10)
+      delimiters varchar(10),
+      begin blob,
+      end clob
     )
   }} msg]
   lappend v $msg
 } {0 {}}
 do_test table-7.2 {
   execsql {
-    INSERT INTO weird VALUES('a','b',9,0,'xyz');
+    INSERT INTO weird VALUES('a','b',9,0,'xyz','hi','y''all');
     SELECT * FROM weird;
   }
-} {a b 9 0 xyz}
+} {a b 9 0 xyz hi y'all}
 do_test table-7.3 {
   execsql2 {
     SELECT * FROM weird;
   }
-} {desc a asc b explain 9 vacuum 0 delimiters xyz}
+} {desc a asc b explain 9 vacuum 0 delimiters xyz begin hi end y'all}
 
 finish_test

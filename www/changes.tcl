@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Apr 11 (1.0.31)} {
+chng {2001 Apr 12 (1.0.31)} {
 <li>More robust handling of out-of-memory errors.</li>
 <li>New tests added to the test suite.</li>
 }

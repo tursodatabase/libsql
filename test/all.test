@@ -22,7 +22,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.6 2001/04/11 14:28:43 drh Exp $
+# $Id: all.test,v 1.7 2001/04/12 23:21:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,7 +32,7 @@ proc finish_test {} {memleak_check}
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
 } else {
-  set COUNT 4
+  set COUNT 3
 }
 
 if {[file exists ./sqlite_test_prefixes]} {
@@ -81,11 +81,9 @@ if {$LeakList!=""} {
 }
 
 if {[file readable $testdir/malloc.test]} {
-  for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
-    foreach p $PREFIXES {
-      set dbprefix $p
-      source $testdir/malloc.test
-    }
+  foreach p $PREFIXES {
+    set dbprefix $p
+    source $testdir/malloc.test
   }
 }
 

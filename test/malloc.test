@@ -26,7 +26,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.1 2001/04/11 14:29:22 drh Exp $
+# $Id: malloc.test,v 1.2 2001/04/12 23:21:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,9 +53,38 @@ for {set go 1; set i 1} {$go} {incr i} {
         INSERT INTO t1 VALUES(1,2.3,4.5,'hi','there');
         INSERT INTO t1 VALUES(6,7.0,0.8,'hello','out yonder');
         SELECT * FROM t1;
-        SELECT avg(b) FROM t1 GROUP BY a;
+        SELECT avg(b) FROM t1 GROUP BY a HAVING b>20.0;
         DELETE FROM t1 WHERE a==6;
         SELECT count(*) FROM t1;
+     }} msg]
+     if {[lindex [sqlite_malloc_stat] 2]>0} {
+       set ::go 0
+       set v {1 1}
+     } else {
+       lappend v [expr {$msg=="" || $msg=="out of memory"}]
+     }
+  } {1 1}
+}
+
+set fd [open ./data.tmp w]
+for {set i 1} {$i<=40} {incr i} {
+  puts $fd "$i\t[expr {$i*$i}]\t[expr {100-$i}]"
+}
+close $fd
+
+for {set go 1; set i 1} {$go} {incr i} {
+  do_test malloc-2.$i {
+     sqlite_malloc_fail 0
+     catch {execsql {DROP TABLE t1}}
+     sqlite_malloc_fail $i
+     set v [catch {execsql {
+        CREATE TABLE t1(a int, b int, c int);
+        CREATE INDEX i1 ON t1(a,b);
+        COPY t1 FROM 'data.tmp';
+        SELECT 'stuff', count(*) as 'other stuff' FROM t1;
+        UPDATE t1 SET b=a WHERE a in (10,12,22);
+        DROP INDEX i1;
+        VACUUM t1;
      }} msg]
      if {[lindex [sqlite_malloc_stat] 2]>0} {
        set ::go 0
