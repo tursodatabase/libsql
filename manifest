@@ -1,5 +1,5 @@
-C Minor\sfollow-on\schanges\sto\sthe\srecent\sATTACH\spatch.\s(CVS\s893)
-D 2003-03-31T13:36:09
+C Add\sinfrastructure\sto\ssuport\smultiple\sbtree\simplementations\s(CVS\s894)
+D 2003-04-01T21:16:42
 F Makefile.in 3c4ba24253e61c954d67adbbb4245e7117c5357e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -20,8 +20,8 @@ F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
-F src/btree.c dba4d12945228dd7e94de7da0e1d8638b70d99f2
-F src/btree.h 8209bfadf5845d4fdaa60f471bb360f894cd4095
+F src/btree.c 7eae5413a7f957bb0733bcab6fab31c6943c51d2
+F src/btree.h 024d2dd21310c202d648c6244dec885e48efa9ad
 F src/build.c 81d31f2e63d51683ee653df6399acc3c3a2e3672
 F src/delete.c 58d698779a6b7f819718ecd45b310a9de8537088
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
@@ -155,7 +155,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e80afe75b33d4eacb40ef6128cf688f7c3253984
-R 8452f551322a2a47e2174b852766e085
-U drh
-Z 7162b736d28f6cc7cea678e58590971b
+P 11378c5bf988412f8564cdc0314fc241793b292e
+R cc8e4c3807eb9ac6929fb512790ca871
+U paul
+Z 048b3196e99f227ca8551c2b49ca1411
