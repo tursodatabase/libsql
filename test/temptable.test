@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.8 2002/09/02 12:14:51 drh Exp $
+# $Id: temptable.test,v 1.9 2003/03/30 00:19:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -166,17 +166,28 @@ do_test temptable-4.3 {
     SELECT * FROM t2;
   } db2
 } {1 {database schema has changed}}
-do_test temptable-4.4 {
+do_test temptable-4.4.1 {
+  catchsql {
+    SELECT * FROM temp.t2;
+  } db2
+} {0 {10 20}}
+do_test temptable-4.4.2 {
+  catchsql {
+    SELECT * FROM main.t2;
+  } db2
+} {0 {9 8 7}}
+do_test temptable-4.4.3 {
+  # TEMP takes precedence over MAIN
   catchsql {
     SELECT * FROM t2;
   } db2
 } {0 {10 20}}
 do_test temptable-4.5 {
   catchsql {
-    DROP TABLE t2;
-    SELECT * FROM t2;
+    DROP TABLE t2;     -- should drop TEMP
+    SELECT * FROM t2;  -- data should be from MAIN
   } db2
-} {1 {no such table: t2}}
+} {0 {9 8 7}}
 do_test temptable-4.6 {
   db2 close
   sqlite db2 ./test.db
@@ -223,10 +234,10 @@ do_test temptable-4.12 {
 } {3 4}
 do_test temptable-4.13 {
   catchsql {
-    DROP TABLE t2;
-    SELECT * FROM t2;
+    DROP TABLE t2;     -- drops TEMP.T2
+    SELECT * FROM t2;  -- uses MAIN.T2
   } db2
-} {1 {no such table: t2}}
+} {0 {3 4}}
 do_test temptable-4.14 {
   execsql {
     SELECT * FROM t2;

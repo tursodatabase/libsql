@@ -171,6 +171,7 @@ void sqliteCreateTrigger(
     /* Attach it to the table object */
     nt->pNext = tab->pTrigger;
     tab->pTrigger = nt;
+    sqliteSrcListDelete(pTableName);
     return;
   }else{
     sqliteFree(nt->name);
@@ -380,7 +381,7 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     if( pTable->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
     if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName) ||
       sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->iDb),0) ){
-      return;
+      goto drop_trigger_cleanup;
     }
   }
 #endif

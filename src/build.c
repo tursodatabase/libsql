@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.135 2003/03/27 13:50:00 drh Exp $
+** $Id: build.c,v 1.136 2003/03/30 00:19:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1452,7 +1452,13 @@ void sqliteCreateIndex(
     pTab =  pParse->pNewTable;
   }
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
-  if( !isTemp && (pTab->readOnly || pTab->iDb>=2) ){
+  if( pTab->readOnly ){
+    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
+      " may not be indexed", 0);
+    pParse->nErr++;
+    goto exit_create_index;
+  }
+  if( !isTemp && pTab->iDb>=2 ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
       " may not have non-temporary indices added", 0);
     pParse->nErr++;

@@ -114,7 +114,7 @@ do_test trigger1-1.9 {
        SELECT * FROM sqlite_master;
     END;
   }
-} {1 {cannot create trigger on system table: sqlite_master}}
+} {1 {cannot create trigger on system table}}
 
 # Check to make sure that a DELETE statement within the body of
 # a trigger does not mess up the DELETE that caused the trigger to
