@@ -1,5 +1,5 @@
-C Add\shooks\son\seach\sattached\sdatabase\sconnection\sfor\sstoring\sauxiliary\ninformation.\s\sAdd\sthe\sUSING\sclause\sto\sATTACH.\s(CVS\s1232)
-D 2004-02-12T18:46:39
+C Add\sthe\sSQLITE_NOTADB\sreturn\scode\sfor\scases\swhen\syou\stry\sto\sopen\sa\sfile\nthat\sdoes\snot\seven\sremotely\sresemble\san\sSQLite\sdatabase\sfile.\s(CVS\s1233)
+D 2004-02-12T19:01:05
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c b01db0d3211f673d8e670abf7eaad04591d40d14
 F src/auth.c c59ad0dab501888f8b1fccc25e2f5965d2265116
-F src/btree.c c325d46f0aa815d73358bf2e044dab23f645c214
+F src/btree.c 9aefacf529226b5875b487d59e9be0224961ef3d
 F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 32b2cb4285c0fbd53b89de021637b63d52257e54
 F src/build.c 2a02df7931cb0ea153c1e29324292cd943d4f73c
@@ -36,7 +36,7 @@ F src/func.c cbc5edd10c82a5193b9ca0726873328be445e6c1
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
-F src/main.c b5d68e856c1575a15284adb394889e6e6fc43362
+F src/main.c 3230d9e31e7dd0800d5bd5c9bd59e58a73fdb776
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c f5fc4954725b2fcd852979f2746085fe8ca27710
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
@@ -48,7 +48,7 @@ F src/printf.c 84e4ea4ba49cbbf930e95e82295127ad5843ae1f
 F src/random.c 775913e0b7fbd6295d21f12a7bd35b46387c44b2
 F src/select.c a3a203f9b68c899ac69dbc5fa11cd649fd8acd06
 F src/shell.c c1c7242ede2af46044378d36d2c533e98fd59fb8
-F src/sqlite.h.in 1798588cab21ebf9fac3aad7fc1539b396c1f91d
+F src/sqlite.h.in 77b0c68726b7d3bb6335e301debb2de148dc1169
 F src/sqliteInt.h c45fbae6278407111d7a00aa9280ddc0f51344ad
 F src/table.c d845cb101b5afc1f7fea083c99e3d2fa7998d895
 F src/tclsqlite.c c4174ecb406810435b6670f6e470e39424c52804
@@ -143,7 +143,7 @@ F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/vacuum.test 9447f1d7633b083c9b97f807fa05f9b27ada7503
-F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
+F test/version.test 92adee5d98cf6e3eb0d1cf5186952e8114931bf6
 F test/view.test 1ee12c6f8f4791a2c0655120d5562a49400cfe53
 F test/where.test cb3a2ed062ce4b5f08aff2d08027c6a46d68c47b
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -184,7 +184,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a6b862a9db6d409a53cc13e7008b27d4848b5509
-R 4700f1562b7f9bc806f5774fe67321dc
+P 800c11f4bce014a07110eb539992a609e6418406
+R e34b1ca8621284ba0ec92cd624f757fa
 U drh
-Z 2597b11ff4d9a3579abdb5d4741c34dc
+Z be3fd85f44027e94830f95d929d96578

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.149 2004/02/12 18:46:39 drh Exp $
+** $Id: main.c,v 1.150 2004/02/12 19:01:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -770,6 +770,7 @@ const char *sqlite_error_string(int rc){
     case SQLITE_AUTH:       z = "authorization denied";                  break;
     case SQLITE_FORMAT:     z = "auxiliary database format error";       break;
     case SQLITE_RANGE:      z = "bind index out of range";               break;
+    case SQLITE_NOTADB:     z = "file is encrypted or is not a database";break;
     default:                z = "unknown error";                         break;
   }
   return z;

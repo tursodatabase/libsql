@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.100 2004/02/10 02:57:59 drh Exp $
+** $Id: btree.c,v 1.101 2004/02/12 19:01:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -793,7 +793,7 @@ static int lockBtree(Btree *pBt){
     PageOne *pP1 = pBt->page1;
     if( strcmp(pP1->zMagic,zMagicHeader)!=0 ||
           (pP1->iMagic!=MAGIC && swab32(pP1->iMagic)!=MAGIC) ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_NOTADB;
       goto page1_init_failed;
     }
     pBt->needSwab = pP1->iMagic!=MAGIC;

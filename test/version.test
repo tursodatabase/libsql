@@ -12,7 +12,7 @@
 # focus of this file is testing the ability of the library to detect
 # past or future file format version numbers and respond appropriately.
 #
-# $Id: version.test,v 1.8 2002/09/02 12:14:51 drh Exp $
+# $Id: version.test,v 1.9 2004/02/12 19:01:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -192,7 +192,7 @@ do_test version-2.2 {
   close $fd
   set rc [catch {sqlite db test.db} msg]
   lappend rc $msg
-} {1 {database disk image is malformed}}
+} {1 {file is encrypted or is not a database}}
 
 
 finish_test
