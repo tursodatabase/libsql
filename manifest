@@ -1,5 +1,5 @@
-C Version\s2.1.7\s(CVS\s454)
-D 2001-12-15T03:05:00
+C Comment\sand\sdocumentation\schanges.\s(CVS\s331)
+D 2001-12-15T14:22:19
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,8 +19,8 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh cb0f8f7bcb65b8360d0f6668a216a9ac9d5da892
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c c27474fdafb7036eef17673c7291e54c2116d6ff
-F src/btree.h 0250a0a577a98cc64ddf1582d50c08b8d2451650
+F src/btree.c c3c36b3b5f07c3efdabf76df9ea423086b1ce142
+F src/btree.h 8767bd4ecf841c4999b7aee6876906bd607546e7
 F src/build.c 5127f737837a9d2a8cb4b998dbab505c08b8f06a
 F src/delete.c 5d93a21c1388cfb1359bda01c072f25583a2f4f2
 F src/expr.c 6b25c5bb1e750af2e2217c0134a7aa1fc0b11444
@@ -31,8 +31,8 @@ F src/main.c e5fa4773e6684b81fc0bcd9d9ae4578d56660c0c
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c 07882cde5c61f26751b8ee76fd84726c1f7e453c
 F src/os.h 00a18e0ae1139a64f1d3ead465ae2b9ff43f3db2
-F src/pager.c f39d99e9339e5fff3fd9852f48d2fc8308933d3b
-F src/pager.h df1fb8a759ab69112ea88b9f14601a7633d0ccc0
+F src/pager.c dde0eb5bf9af0ac0ff8a4429b2bee2aec2194ec9
+F src/pager.h f78d064c780855ff70beacbeba0e2324471b26fe
 F src/parse.y 5295f393f41ea89958287e5738e6c12c7cd67482
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 2a9cc2c9716d14815fd4c2accf89d87a1143e46b
@@ -108,7 +108,7 @@ F www/changes.tcl 0b921ad20b5dd262e5a9594691b9708a311e5912
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 1ea61f9d89a2a5a9b2cee36b0d5cf97321bdefe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 3c26fb2f2acfc9254f2685e23a34acae2490b44f
+F www/faq.tcl 5c6fba68e238a52b4d9d86b0a63ed2d706fc7f1f
 F www/index.tcl 6d6d847dd3e39e9aa7b0c9b8f3144819ff3f9f51
 F www/lang.tcl 6482d90e40fb5ee004a86cf98f3007312a75444e
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3a31daf6465b989a2b0790a2d1ba22ff955486a0
-R fe372d30b06d43519de0595e4ea6a38e
+P 0d44465347125c8e7e962ffb67213f9953a9b7ab
+R f9524b24c72db56ae24d23e4dfe8d2a7
 U drh
-Z 1ebde59941b4e5e9dcfe12e6c3caef81
+Z c454c32fd5ff2d794a364b8c8ca2dfec

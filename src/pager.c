@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.33 2001/12/14 15:09:57 drh Exp $
+** @(#) $Id: pager.c,v 1.34 2001/12/15 14:22:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -230,17 +230,6 @@ static void pager_reset(Pager *pPager){
 ** a write lock on the database.  This routine releases the database
 ** write lock and acquires a read lock in its place.  The journal file
 ** is deleted and closed.
-**
-** We have to release the write lock before acquiring the read lock,
-** so there is a race condition where another process can get the lock
-** while we are not holding it.  But, no other process should do this
-** because we are also holding a lock on the journal, and no process
-** should get a write lock on the database without first getting a lock
-** on the journal.  So this routine should never fail.  But it can fail
-** if another process is not playing by the rules.  If it does fail,
-** all in-memory cache pages are invalidated, the PAGER_ERR_LOCK bit
-** is set in pPager->errMask, and this routine returns SQLITE_PROTOCOL.
-** SQLITE_OK is returned on success.
 */
 static int pager_unwritelock(Pager *pPager){
   int rc;
@@ -273,8 +262,15 @@ static int pager_unwritelock(Pager *pPager){
 ** consists of a Pgno and SQLITE_PAGE_SIZE bytes of data.  See
 ** the PageRecord structure for details.
 **
-** For playback, the pages have to be read from the journal in
+** For playback, the pages are read from the journal in
 ** reverse order and put back into the original database file.
+** It used to be required to replay pages in reverse order because
+** there was a possibility of a page appearing in the journal more
+** than once.  In that case, the original value of the page was
+** the first entry so it should be reset last.  But now, a bitmap
+** is used to record every page that is in the journal.  No pages
+** are ever repeated. So we could, in theory, playback the journal
+** in the forward direction and it would still work.
 **
 ** If the file opened as the journal file is not a well-formed
 ** journal file (as determined by looking at the magic number
@@ -383,9 +379,9 @@ void sqlitepager_set_cachesize(Pager *pPager, int mxPage){
 ** the first call to sqlitepager_get() and is only held open until the
 ** last page is released using sqlitepager_unref().
 **
-** If zFilename is NULL then a random temporary file is created and used
-** as the file to be cached.  The file will be deleted automatically when
-** it is closed.
+** If zFilename is NULL then a randomly-named temporary file is created
+** and used as the file to be cached.  The file will be deleted
+** automatically when it is closed.
 */
 int sqlitepager_open(
   Pager **ppPager,         /* Return the Pager structure here */
@@ -573,11 +569,12 @@ int sqlitepager_ref(void *pData){
 **
 ** Writing all free dirty pages to the database after the sync is a
 ** non-obvious optimization.  fsync() is an expensive operation so we
-** want to minimize the number that occur.  So after an fsync() is forced
-** and we are free to write dirty pages back to the database, it is best
-** to go ahead and do as much of that as possible to minimize the chance
-** of having to do another fsync() later on.  Writing dirty free pages
-** in this way make database operations go up to 10 times faster.
+** want to minimize the number it is called.  After an fsync() call,
+** we are free to write dirty pages back to the database.  It is best
+** to go ahead and write as many dirty pages as possible to minimize 
+** the risk of having to do another fsync() later on.  Writing dirty
+** free pages in this way was observed to make database operations go
+** up to 10 times faster.
 */
 static int syncAllPages(Pager *pPager){
   PgHdr *pPg;
@@ -652,7 +649,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        */
        rc = sqliteOsWriteLock(&pPager->fd);
        if( rc!=SQLITE_OK ){
-         rc = sqliteOsReadLock(&pPager->fd);
+         rc = sqliteOsUnlock(&pPager->fd);
          assert( rc==SQLITE_OK );
          *ppPage = 0;
          return SQLITE_BUSY;
@@ -912,14 +909,25 @@ int sqlitepager_write(void *pData){
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
 
+  /* Check for errors
+  */
   if( pPager->errMask ){ 
     return pager_errcode(pPager);
   }
   if( pPager->readOnly ){
     return SQLITE_PERM;
   }
+
+  /* Mark the page as dirty.  If the page has already been written
+  ** to the journal then we can return right away.
+  */
   pPg->dirty = 1;
   if( pPg->inJournal ){ return SQLITE_OK; }
+
+  /* If we get this far, it means that the page needs to be
+  ** written to the journal file. First check to see if the
+  ** journal exists and create it if it does not.
+  */
   assert( pPager->state!=SQLITE_UNLOCK );
   if( pPager->state==SQLITE_READLOCK ){
     assert( pPager->aInJournal==0 );
@@ -956,6 +964,10 @@ int sqlitepager_write(void *pData){
   }
   assert( pPager->state==SQLITE_WRITELOCK );
   assert( pPager->journalOpen );
+
+  /* The journal now exists and we have a write lock on the
+  ** main database file.  Write the current page to the journal.
+  */
   if( pPg->pgno <= pPager->origDbSize ){
     rc = sqliteOsWrite(&pPager->jfd, &pPg->pgno, sizeof(Pgno));
     if( rc==SQLITE_OK ){
@@ -970,6 +982,9 @@ int sqlitepager_write(void *pData){
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
     pPager->needSync = 1;
   }
+
+  /* Mark the current page as being in the journal and return.
+  */
   pPg->inJournal = 1;
   if( pPager->dbSize<pPg->pgno ){
     pPager->dbSize = pPg->pgno;

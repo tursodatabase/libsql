@@ -10,9 +10,10 @@
 **
 *************************************************************************
 ** This header file defines the interface that the sqlite B-Tree file
-** subsystem.
+** subsystem.  See comments in the source code for a detailed description
+** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.17 2001/11/07 14:22:00 drh Exp $
+** @(#) $Id: btree.h,v 1.18 2001/12/15 14:22:19 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_

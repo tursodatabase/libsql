@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.44 2001/12/15 02:47:28 drh Exp $
+** $Id: btree.c,v 1.45 2001/12/15 14:22:19 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -251,7 +251,7 @@ struct OverflowPage {
 /*
 ** For every page in the database file, an instance of the following structure
 ** is stored in memory.  The u.aDisk[] array contains the raw bits read from
-** the disk.  The rest is auxiliary information that held in memory only. The
+** the disk.  The rest is auxiliary information held in memory only. The
 ** auxiliary info is only valid for regular database pages - it is not
 ** used for overflow pages and pages on the freelist.
 **
@@ -635,7 +635,7 @@ int sqliteBtreeClose(Btree *pBt){
 }
 
 /*
-** Change the number of pages in the cache.
+** Change the limit on the number of pages allowed the cache.
 */
 int sqliteBtreeSetCacheSize(Btree *pBt, int mxPage){
   sqlitepager_set_cachesize(pBt->pPager, mxPage);
@@ -806,9 +806,13 @@ int sqliteBtreeRollback(Btree *pBt){
 ** If wrFlag==0, then the cursor can only be used for reading.
 ** If wrFlag==1, then the cursor can be used for reading or writing.
 ** A read/write cursor requires exclusive access to its table.  There
-** cannot be two or more cursors open on the same table is any one of
+** cannot be two or more cursors open on the same table if any one of
 ** cursors is a read/write cursor.  But there can be two or more
 ** read-only cursors open on the same table.
+**
+** No checking is done to make sure that page iTable really is the
+** root page of a b-tree.  If it is not, then the cursor acquired
+** will not work correctly.
 */
 int sqliteBtreeCursor(Btree *pBt, int iTable, int wrFlag, BtCursor **ppCur){
   int rc;

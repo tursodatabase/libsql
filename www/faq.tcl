@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.3 2001/12/05 00:21:21 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.4 2001/12/15 14:22:19 drh Exp $}
 
 puts {<html>
 <head>
@@ -93,29 +93,21 @@ faq {
 }
 
 faq {
-  Why does the second INSERT in the following sequence of commands throw
-  a constraint exception?
-  <blockquote>
-     CREATE TABLE t(s varchar(10) primary key);<br>
-     INSERT INTO t VALUES('0');<br>
-     INSERT INTO t VALUES('0.0');<br>
-  </blockquote>
+  Why doesn't SQLite allow me to use '0' and '0.0' as the primary
+  key on two different rows of the same table?
 } {
-  <p>Because column <b>s</b> is a primary key, all values of <b>s</b> must
-  be unique.  But SQLite thinks that <b>'0'</b> and <b>'0.0'</b> are the
+  <p>Every row much have a unique primary key.
+  But SQLite thinks that <b>'0'</b> and <b>'0.0'</b> are the
   same value because they compare equal to one another numerically.
-  (See the previous question.)  Hence the values are not unique and the
-  constraint fails.</p>
+  (See the previous question.)  Hence the values are not unique.</p>
 
-  <p>You can work around this issue in several ways:</p>
+  <p>You can work around this issue in two ways:</p>
   <ol>
-  <li><p>Remove the <b>primary key</b> clause from the CREATE TABLE so that
-         <b>s</b> can contain more than one entry with the same value. 
-         If you need an index on the <b>s</b> column then create it separately.
-         </p></li>
-  <li><p>Prepend a space to the beginning of every <b>s</b> value.  The initial
-         space will mean that the entries are not pure numerics and hence
-         will be compared as strings using <b>strcmp()</b>.</p></li>
+  <li><p>Remove the <b>primary key</b> clause from the CREATE TABLE.</p></li>
+  <li><p>Prepend a space to the beginning of every value you use for
+      the primary key.  The initial
+     space will mean that the entries are not pure numerics and hence
+     will be compared as strings using <b>strcmp()</b>.</p></li>
   </ol>
 }
         
@@ -234,7 +226,7 @@ ORDER BY name;
 }
 
 faq {
-  Is there any known size limits to SQLite databases.
+  Are there any known size limits to SQLite databases.
 } {
   <p>Internally, SQLite can handle databases up to 2^40 bytes (1 terabyte)
   in size.  But the backend interface to POSIX and Win32 limits files to
@@ -255,6 +247,32 @@ faq {
   within a 1-megabyte row of the SQLITE_MASTER table.  Other than this,
   there are no constraints on the length of the name of a table, or on the
   number of columns, etc.  Indices are similarly unconstrained.</p>
+}
+
+faq {
+  How do I add or delete columns from an existing table in SQLite.
+} {
+  <p>SQLite does not support the "ALTER TABLE" SQL command.  If you
+  what to change the structure of a table, you have to recreate the
+  table.  You can save existing data to a temporary table, drop the
+  old table, create the new table, then copy the data back in from
+  the temporary table.</p>
+
+  <p>For example, suppose you have a table named "t1" with columns
+  names "a", "b", and "c" and that you want to delete column "c" from
+  this table.  The following steps illustrate how this could be done:
+  </p>
+
+  <blockquote><pre>
+BEGIN TRANSACTION;
+CREATE TEMPORARY TABLE t1_backup(a,b);
+INSERT INTO t1_backup SELECT a,b FROM t1;
+DROP TABLE t1;
+CREATE TABLE t1(a,b);
+INSERT INTO t1 SELECT a,b FROM t1_backup;
+DROP TABLE t1_backup;
+COMMIT;
+</pre></blockquote>
 }
 
 # End of questions and answers.
