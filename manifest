@@ -1,5 +1,5 @@
-C Pthread\sis\snow\sconditionally\sincluded\sin\smakefile,\ssee\sticket\s#910\s(CVS\s1974)
-D 2004-09-20T14:57:23
+C Fix\sfor\stickets\s#912\sand\s#922.\s\sProblem\sintroduced\sby\scheck-in\s(1973).\s(CVS\s1975)
+D 2004-09-24T12:24:07
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c c5ecf114af4ebc2963a03142b6bd6f2284ee35fc
 F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
 F src/delete.c d862b383a9abc0b79f4588783c2619fe52d74ea7
-F src/expr.c 4a674ed1c91967096aa73af2d0b6f3b93313fc98
+F src/expr.c 16ccea21ffb60f32ce2a9dd56d6d2c2cfdb0f1c6
 F src/func.c 1fbc5256639586573fd0e70814d6dcd8bc10afc1
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4871c77f8fce36ff230e1f026f4e4e49492515e9
-R bede9b44ed7ebb616aa1848cfc38c778
-U dougcurrie
-Z fde2d4fad7076c6aba6215b69248b2e7
+P a35e52276998f8db2407115b07f30bd490982944
+R 5792bfa085a00a00bd1d4a9801cd2ff0
+U drh
+Z d6e2d9c37d8b22b397c88a0920962493

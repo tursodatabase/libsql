@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.163 2004/09/19 02:15:25 drh Exp $
+** $Id: expr.c,v 1.164 2004/09/24 12:24:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -204,17 +204,9 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
   pNew->pRight = pRight;
   if( pToken ){
     assert( pToken->dyn==0 );
-    pNew->token = *pToken;
-    pNew->span = *pToken;
-  }else{
-    assert( pNew->token.dyn==0 );
-    assert( pNew->token.z==0 );
-    assert( pNew->token.n==0 );
-    if( pLeft && pRight ){
-      sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
-    }else{
-      pNew->span = pNew->token;
-    }
+    pNew->span = pNew->token = *pToken;
+  }else if( pLeft && pRight ){
+    sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
   }
   return pNew;
 }
@@ -242,7 +234,7 @@ void sqlite3ExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   assert( pLeft!=0 );
   if( !sqlite3_malloc_failed && pRight->z && pLeft->z ){
     assert( pLeft->dyn==0 || pLeft->z[pLeft->n]==0 );
-    if( pLeft->z[pLeft->n]!=0 && pRight->dyn==0 ){
+    if( pLeft->dyn==0 && pRight->dyn==0 ){
       pExpr->span.z = pLeft->z;
       pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
     }else{
@@ -401,7 +393,7 @@ void sqlite3TokenCopy(Token *pTo, Token *pFrom){
 }
 ExprList *sqlite3ExprListDup(ExprList *p){
   ExprList *pNew;
-  struct ExprList_item *pItem;
+  struct ExprList_item *pItem, *pOldItem;
   int i;
   if( p==0 ) return 0;
   pNew = sqliteMalloc( sizeof(*pNew) );
@@ -412,9 +404,10 @@ ExprList *sqlite3ExprListDup(ExprList *p){
     sqliteFree(pNew);
     return 0;
   } 
-  for(i=0; i<p->nExpr; i++, pItem++){
+  pOldItem = p->a;
+  for(i=0; i<p->nExpr; i++, pItem++, pOldItem++){
     Expr *pNewExpr, *pOldExpr;
-    pItem->pExpr = pNewExpr = sqlite3ExprDup(pOldExpr = p->a[i].pExpr);
+    pItem->pExpr = pNewExpr = sqlite3ExprDup(pOldExpr = pOldItem->pExpr);
     if( pOldExpr->span.z!=0 && pNewExpr ){
       /* Always make a copy of the span for top-level expressions in the
       ** expression list.  The logic in SELECT processing that determines
@@ -423,9 +416,9 @@ ExprList *sqlite3ExprListDup(ExprList *p){
     }
     assert( pNewExpr==0 || pNewExpr->span.z!=0 
             || pOldExpr->span.z==0 || sqlite3_malloc_failed );
-    pItem->zName = sqliteStrDup(p->a[i].zName);
-    pItem->sortOrder = p->a[i].sortOrder;
-    pItem->isAgg = p->a[i].isAgg;
+    pItem->zName = sqliteStrDup(pOldItem->zName);
+    pItem->sortOrder = pOldItem->sortOrder;
+    pItem->isAgg = pOldItem->isAgg;
     pItem->done = 0;
   }
   return pNew;
@@ -1242,7 +1235,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3VdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg);
       }else if( pExpr->iColumn>=0 ){
         sqlite3VdbeAddOp(v, OP_Column, pExpr->iTable, pExpr->iColumn);
-        VdbeComment((v, "# %T", &pExpr->span));
+#ifndef NDEBUG
+        if( pExpr->span.z && pExpr->span.n>0 && pExpr->span.n<100 ){
+          VdbeComment((v, "# %T", &pExpr->span));
+        }
+#endif
       }else{
         sqlite3VdbeAddOp(v, OP_Recno, pExpr->iTable, 0);
       }
