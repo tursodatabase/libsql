@@ -1,5 +1,5 @@
-C Fix\sfor\sbug\s#11:\sOutput\sthe\scorrect\srow\scount\swhen\sand\sINSERT\sdoes\san\nIGNORE\saction.\s(CVS\s524)
-D 2002-04-09T03:28:01
+C Fix\sfor\sbug\s#16:\sCheck\sfor\sinvalid\sfunctions\sin\sthe\sVALUES\sclause\sof\san\nINSERT\sstatement.\s(CVS\s525)
+D 2002-04-12T03:55:16
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/expr.c e7a1e22bc2ebcd789f0f8c0db544cf16ad664054
 F src/func.c dca9df811298cd0beb3724d40cee348e884352b2
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
-F src/insert.c 9ddb3b05a77644cd0e325a97a4d896c328c13601
+F src/insert.c 80105ff6a8bdabe8122948b0066fb1914f9b86c7
 F src/main.c b21019084b93fe685a8a25217d01f6958584ae9b
 F src/md5.c b2b1a34fce66ceca97f4e0dabc20be8be7933c92
 F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f46acfc3b828620e4e97b09f9aff119b9313e5d7
-R 692fc2d1862a53490444758eb16748ac
+P bb83642e9a6c1c9ade861618496933c9f922a8f8
+R f474a54633adfc730f9670e6001e85d7
 U drh
-Z 6902a29913af9f8655adc77cc99b4640
+Z ee5b859e30a1d5d36bceb3c81154e192
