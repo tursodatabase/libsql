@@ -1,5 +1,5 @@
-C Added\stests\sfor\ssqlite3_changes\safter\sa\sDELETE.\s(CVS\s1798)
-D 2004-07-15T20:08:39
+C Use\sthe\sF_FULLFSYNC\sfctrl\sif\sit\sis\savailable.\s\sRecord\sthe\sname\sof\sfiles\nthat\sare\sopened\sin\sthe\sOsFile\sstructure.\s(CVS\s1799)
+D 2004-07-17T21:44:57
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,8 +46,8 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c 6bf10100de2ca199a91fe7ac6474561c8a7166ae
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 7df6ae05faa5b84164193d3694cb71b66661bbf3
-F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
+F src/os_unix.c 7dca8d07ac1d6e2b589eda6d536a4d143160a0f3
+F src/os_unix.h c3ee271744327d156a9e016dff965adebadffdfb
 F src/os_win.c 54181eb73cb4783c4241feca9eaa490768b39008
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c 5f8cdc92ee9efb5a7849dc8b561b53122b700c78
@@ -233,7 +233,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c44943e6fe0c88830102253591a501dc7d724d2f
-R 6372bb8eea811521fd1d8c72d50b1f51
+P c01f13267f592dc2678e78ea45dadddcdc154f82
+R a9f4dab888d922312d00d87de0e5cb2e
 U drh
-Z 3cb2ad30190c7832bdc46e58738a9e26
+Z d985f788c605dfd4069fa22794ea5ba6

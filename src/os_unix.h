@@ -65,6 +65,7 @@ struct OsFile {
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
   int h;                    /* The file descriptor */
+  const char *zFilename;    /* Name passed to open() */
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
   int dirfd;                /* File descriptor for the directory */

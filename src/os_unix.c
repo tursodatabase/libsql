@@ -655,6 +655,22 @@ int sqlite3OsSeek(OsFile *id, off_t offset){
 }
 
 /*
+** The fsync() system call does not work as advertised on many
+** unix systems.  The following procedure is an attempt to make
+** it work better.
+*/
+static int full_fsync(int fd){
+  int rc;
+#ifdef F_FULLFSYNC
+  rc = fcntl(fd, F_FULLFSYNC, 0);
+  if( rc ) rc = fsync(fd);
+#else
+  rc = fsync(fd);
+#endif
+  return rc;
+}
+
+/*
 ** Make sure all writes to a particular file are committed to disk.
 **
 ** Under Unix, also make sure that the directory entry for the file
@@ -669,12 +685,12 @@ int sqlite3OsSync(OsFile *id){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
-  if( fsync(id->h) ){
+  if( full_fsync(id->h) ){
     return SQLITE_IOERR;
   }
   if( id->dirfd>=0 ){
     TRACE2("DIRSYNC %-3d\n", id->dirfd);
-    fsync(id->dirfd);
+    full_fsync(id->dirfd);
     close(id->dirfd);  /* Only need to sync once, so close the directory */
     id->dirfd = -1;    /* when we are done. */
   }
@@ -1057,6 +1073,7 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
 */
 int sqlite3OsClose(OsFile *id){
   if( !id->isOpen ) return SQLITE_OK;
+  id->zFilename = 0;
   sqlite3OsUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
