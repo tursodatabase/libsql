@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.104 2002/01/04 03:09:30 drh Exp $
+** $Id: vdbe.c,v 1.105 2002/01/06 17:07:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -456,11 +456,12 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   Op *pOp;
   if( p->aOp==0 || addr<0 || addr>=p->nOp ) return;
   pOp = &p->aOp[addr];
+  if( pOp->p3type==P3_POINTER ){
+    return;
+  }
   if( pOp->p3type!=P3_DYNAMIC ){
     pOp->p3 = sqliteStrDup(pOp->p3);
     pOp->p3type = P3_DYNAMIC;
-  }else if( pOp->p3type!=P3_STATIC ){
-    return;
   }
   z = pOp->p3;
   if( z==0 ) return;
@@ -474,10 +475,8 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
       z[j++] = z[i++];
     }
   }
-  while( i>0 && isspace(z[i-1]) ){
-    z[i-1] = 0;
-    i--;
-  }
+  while( j>0 && isspace(z[j-1]) ){ j--; }
+  z[j] = 0;
 }
 
 /*
@@ -922,7 +921,6 @@ int sqliteVdbeList(
   azValue[3] = zP2;
   azValue[5] = 0;
   rc = SQLITE_OK;
-  /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
     if( p->db->flags & SQLITE_Interrupt ){
       p->db->flags &= ~SQLITE_Interrupt;
@@ -1028,8 +1026,9 @@ static int byteSwap(int x){
 ** from sqliteMalloc() and *pzErrMsg is made to point to that memory.
 ** The return parameter is the number of errors.
 **
-** If the callback every returns non-zero, then the program exits
-** immediately.  No error message but the function does return SQLITE_ABORT.
+** If the callback ever returns non-zero, then the program exits
+** immediately.  There will be no error message but the function
+** does return SQLITE_ABORT.
 **
 ** A memory allocation error causes this routine to return SQLITE_NOMEM
 ** and abandon furture processing.
@@ -1089,7 +1088,6 @@ int sqliteVdbeExec(
     p->trace = stdout;
   }
 #endif
-  /* if( pzErrMsg ){ *pzErrMsg = 0; } */
   if( sqlite_malloc_failed ) goto no_mem;
   for(pc=0; !sqlite_malloc_failed && rc==SQLITE_OK && pc<p->nOp
              VERIFY(&& pc>=0); pc++){

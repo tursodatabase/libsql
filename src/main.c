@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.52 2001/12/21 14:30:43 drh Exp $
+** $Id: main.c,v 1.53 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -67,9 +67,9 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
       }else{
         /* If the SQL column is blank it means this is an index that
         ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
-        ** constraint or a CREATE TABLE.  The index should have already
+        ** constraint for a CREATE TABLE.  The index should have already
         ** been created when we processed the CREATE TABLE.  All we have
-        ** to do here is record the root page.
+        ** to do here is record the root page number for that index.
         */
         Index *pIndex = sqliteFindIndex(db, argv[1]);
         if( pIndex==0 || pIndex->tnum!=0 ){
@@ -118,7 +118,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
      ")"
   ;
 
-  /* The following program is used to initialize the internal
+  /* The following VDBE program is used to initialize the internal
   ** structure holding the tables and indexes of the database.
   ** The database contains a special table named "sqlite_master"
   ** defined as follows:
@@ -210,6 +210,11 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
     rc = SQLITE_ERROR;
   }
+
+  /* The schema for the SQLITE_MASTER table is not stored in the
+  ** database itself.  We have to invoke the callback one extra
+  ** time to get it to process the SQLITE_MASTER table defintion.
+  */
   if( rc==SQLITE_OK ){
     Table *pTab;
     char *azArg[6];
@@ -270,9 +275,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   if( rc!=SQLITE_OK ){
     switch( rc ){
       default: {
-        if( pzErrMsg ){
-          sqliteSetString(pzErrMsg, "unable to open database: ", zFilename, 0);
-        }
+        sqliteSetString(pzErrMsg, "unable to open database: ", zFilename, 0);
       }
     }
     sqliteFree(db);
@@ -289,7 +292,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqlite_close(db);
     sqliteStrRealloc(pzErrMsg);
     return 0;
-  }else /* if( pzErrMsg ) */{
+  }else if( pzErrMsg ){
     sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
@@ -304,7 +307,7 @@ no_mem_on_open:
 /*
 ** Erase all schema information from the schema hash table.  Except
 ** tables that are created using CREATE TEMPORARY TABLE are preserved
-** if the preserverTemps flag is true.
+** if the preserveTemps flag is true.
 **
 ** The database schema is normally read in once when the database
 ** is first opened and stored in a hash table in the sqlite structure.

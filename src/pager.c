@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.34 2001/12/15 14:22:19 drh Exp $
+** @(#) $Id: pager.c,v 1.35 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -993,7 +993,7 @@ int sqlitepager_write(void *pData){
 }
 
 /*
-** Return TRUE if the page given in the argument was previous passed
+** Return TRUE if the page given in the argument was previously passed
 ** to sqlitepager_write().  In other words, return TRUE if it is ok
 ** to change the content of the page.
 */

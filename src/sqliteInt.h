@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.74 2001/12/31 02:48:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.75 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -118,13 +118,6 @@ extern int sqlite_nMalloc;       /* Number of sqliteMalloc() calls */
 extern int sqlite_nFree;         /* Number of sqliteFree() calls */
 extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 #endif
-
-/*
-** The number of entries in the in-memory hash array holding the
-** database schema.  (Collision resolution is by chaining, so the
-** table will hold more than this many entries.)
-*/
-#define N_HASH        51
 
 /*
 ** Name of the master database table.  The master database table

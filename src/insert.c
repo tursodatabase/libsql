@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.31 2002/01/04 03:09:30 drh Exp $
+** $Id: insert.c,v 1.32 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -163,7 +163,7 @@ void sqliteInsert(
     }
   }
 
-  /* If there is not IDLIST term but the table has an integer primary
+  /* If there is no IDLIST term but the table has an integer primary
   ** key, the set the keyColumn variable to the primary key column index
   ** in the original table definition.
   */
@@ -220,15 +220,15 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_Dup, 0, 0);
   }
 
-  /* Push onto the stack data for all columns of the new entry, beginning
+  /* Push onto the stack, data for all columns of the new entry, beginning
   ** with the first column.
   */
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
       /* The value of the INTEGER PRIMARY KEY column is always a NULL.
-      ** Whenever this column is used, the record number will be substituted
-      ** in its place, so there is no point in it taking up space in
-      ** the data record. */
+      ** Whenever this column is read, the record number will be substituted
+      ** in its place.  So will fill this column with a NULL to avoid
+      ** taking up data space with information that will never be used. */
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       continue;
     }

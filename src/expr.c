@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.36 2002/01/04 03:09:30 drh Exp $
+** $Id: expr.c,v 1.37 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -49,7 +49,9 @@ static int isConstant(Expr *p){
 ** These operators have to be processed before column names are
 ** resolved because each such operator increments pParse->nTab
 ** to reserve cursor numbers for its own use.  But pParse->nTab
-** needs to be constant once we begin resolving column names.
+** needs to be constant once we begin resolving column names.  For
+** that reason, this procedure needs to be called on every expression
+** before sqliteExprResolveIds() is called on any expression.
 **
 ** Actually, the processing of IN-SELECT is only started by this
 ** routine.  This routine allocates a cursor number to the IN-SELECT
@@ -86,11 +88,15 @@ static int sqliteIsRowid(const char *z){
 /*
 ** This routine walks an expression tree and resolves references to
 ** table columns.  Nodes of the form ID.ID or ID resolve into an
-** index to the table in the table list and a column offset.  The opcode
-** for such nodes is changed to TK_COLUMN.  The iTable value is changed
-** to the index of the referenced table in pTabList plus the pParse->nTab
-** value.  The iColumn value is changed to the index of the column of the 
-** referenced table.
+** index to the table in the table list and a column offset.  The 
+** Expr.opcode for such nodes is changed to TK_COLUMN.  The Expr.iTable
+** value is changed to the index of the referenced table in pTabList
+** plus the pParse->nTab value.  This value will ultimately become the
+** VDBE cursor number for a cursor that is pointing into the referenced
+** table.  The Expr.iColumn value is changed to the index of the column 
+** of the referenced table.  The Expr.iColumn value for the special
+** ROWID column is -1.  Any INTEGER PRIMARY KEY column is tried as an
+** alias for ROWID.
 **
 ** We also check for instances of the IN operator.  IN comes in two
 ** forms:

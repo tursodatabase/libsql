@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.41 2001/12/22 14:49:25 drh Exp $
+** @(#) $Id: parse.y,v 1.42 2002/01/06 17:07:40 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -102,6 +102,7 @@ id(A) ::= CLUSTER(X).    {A = X;}
 id(A) ::= ID(X).         {A = X;}
 id(A) ::= TEMP(X).       {A = X;}
 id(A) ::= OFFSET(X).     {A = X;}
+id(A) ::= KEY(X).        {A = X;}
 
 // And "ids" is an identifer-or-string.
 //

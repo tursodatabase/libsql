@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.40 2001/11/25 13:18:24 drh Exp $
+** $Id: shell.c,v 1.41 2002/01/06 17:07:40 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -92,7 +92,7 @@ static char *getline(char *zPrompt, FILE *in){
 ** Retrieve a single line of input text.  "isatty" is true if text
 ** is coming from a terminal.  In that case, we issue a prompt and
 ** attempt to use "readline" for command-line editing.  If "isatty"
-** is false, use "getline" instead of "readline" and issue to prompt.
+** is false, use "getline" instead of "readline" and issue no prompt.
 **
 ** zPrior is a string of prior text retrieved.  If not the empty
 ** string, then issue a continuation prompt.

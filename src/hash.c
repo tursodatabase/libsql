@@ -12,13 +12,22 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.4 2001/11/21 02:21:12 drh Exp $
+** $Id: hash.c,v 1.5 2002/01/06 17:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
 
 /* Turn bulk memory into a hash table object by initializing the
 ** fields of the Hash structure.
+**
+** "new" is a pointer to the hash table that is to be initialized.
+** keyClass is one of the constants SQLITE_HASH_INT, SQLITE_HASH_POINTER,
+** SQLITE_HASH_BINARY, or SQLITE_HASH_STRING.  The value of keyClass 
+** determines what kind of key the hash table will use.  "copyKey" is
+** true if the hash table should make its own private copy of keys and
+** false if it should just use the supplied pointer.  CopyKey only makes
+** sense for SQLITE_HASH_STRING and SQLITE_HASH_BINARY and is ignored
+** for other key classes.
 */
 void sqliteHashInit(Hash *new, int keyClass, int copyKey){
   assert( new!=0 );
@@ -33,6 +42,8 @@ void sqliteHashInit(Hash *new, int keyClass, int copyKey){
 }
 
 /* Remove all entries from a hash table.  Reclaim all memory.
+** Call this routine to delete a hash table or to reset a hash table
+** to the empty state.
 */
 void sqliteHashClear(Hash *pH){
   HashElem *elem;         /* For looping over all elements of the table */
@@ -107,6 +118,15 @@ static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 
 /*
 ** Return a pointer to the appropriate hash function given the key class.
+**
+** The C syntax in this function definition may be unfamilar to some 
+** programmers, so we provide the following additional explanation:
+**
+** The name of the function is "hashFunction".  The function takes a
+** single parameter "keyClass".  The return value of hashFunction()
+** is a pointer to another function.  Specifically, the return value
+** of hashFunction() is a pointer to a function that takes two parameters
+** with types "const void*" and "int" and returns an "int".
 */
 static int (*hashFunction(int keyClass))(const void*,int){
   switch( keyClass ){
@@ -121,6 +141,9 @@ static int (*hashFunction(int keyClass))(const void*,int){
 
 /*
 ** Return a pointer to the appropriate hash function given the key class.
+**
+** For help in interpreted the obscure C code in the function definition,
+** see the header comment on the previous function.
 */
 static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
   switch( keyClass ){
@@ -134,8 +157,9 @@ static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
 }
 
 
-/* Resize the hash table. new_size must be a power of 2.
-** The hash table might fail to resize if sqliteMalloc() fails.
+/* Resize the hash table so that it cantains "new_size" buckets.
+** "new_size" must be a power of 2.  The hash table might fail 
+** to resize if sqliteMalloc() fails.
 */
 static void rehash(Hash *pH, int new_size){
   struct _ht *new_ht;            /* The new hash table */
@@ -172,8 +196,8 @@ static void rehash(Hash *pH, int new_size){
 }
 
 /* This function (for internal use only) locates an element in an
-** pH that matches the given key.  The hash for this key has
-** already been computed and is passed as the 3rd parameter.
+** hash table that matches the given key.  The hash for this key has
+** already been computed and is passed as the 4th parameter.
 */
 static HashElem *findElementGivenHash(
   const Hash *pH,     /* The pH to be searched */
@@ -205,7 +229,7 @@ static HashElem *findElementGivenHash(
 static void removeElementGivenHash(
   Hash *pH,         /* The pH containing "elem" */
   HashElem* elem,   /* The element to be removed from the pH */
-  int h              /* Hash value for the element */
+  int h             /* Hash value for the element */
 ){
   if( elem->prev ){
     elem->prev->next = elem->next; 
@@ -229,9 +253,9 @@ static void removeElementGivenHash(
   pH->count--;
 }
 
-/* Attempt to locate an element of the associative pH with a key
+/* Attempt to locate an element of the hash table pH with a key
 ** that matches pKey,nKey.  Return the data for this element if it is
-** found, or NULL if no match is found.
+** found, or NULL if there is no match.
 */
 void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
   int h;             /* A hash on key */
@@ -257,7 +281,7 @@ void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
 ** If another element already exists with the same key, then the
 ** new data replaces the old data and the old data is returned.
 ** The key is not copied in this instance.  If a malloc fails, then
-** new data is returned.
+** the new data is returned and the hash table is unchanged.
 **
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.

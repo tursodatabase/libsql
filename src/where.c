@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.30 2002/01/04 03:09:30 drh Exp $
+** $Id: where.c,v 1.31 2002/01/06 17:07:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -572,8 +572,8 @@ WhereInfo *sqliteWhereBegin(
       pLevel->p2 = start;
       haveKey = 0;
     }else{
-      /* Case 5: The contraints on the right-most index field are
-      **         inequalities.
+      /* Case 5: The contraint on the right-most index field is
+      **         an inequality.
       */
       int score = pLevel->score;
       int nEqColumn = score/4;
