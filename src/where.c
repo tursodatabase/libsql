@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.62 2002/08/14 03:03:57 drh Exp $
+** $Id: where.c,v 1.63 2002/08/15 13:50:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -304,7 +304,6 @@ WhereInfo *sqliteWhereBegin(
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey;         /* True if KEY is on the stack */
-  int aDirect[32];     /* If TRUE, then index this table using ROWID */
   int iDirectEq[32];   /* Term of the form ROWID==X for the N-th table */
   int iDirectLt[32];   /* Term of the form ROWID<X or ROWID<=X */
   int iDirectGt[32];   /* Term of the form ROWID>X or ROWID>=X */
@@ -412,7 +411,7 @@ WhereInfo *sqliteWhereBegin(
   ** to the limit of 32 bits in an integer bitmask.
   */
   loopMask = 0;
-  for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(aDirect); i++){
+  for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(iDirectEq); i++){
     int j;
     int idx = aOrder[i];
     Table *pTab = pTabList->a[idx].pTab;

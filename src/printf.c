@@ -206,7 +206,6 @@ static int vxprintf(
   char prefix;              /* Prefix character.  "+" or "-" or " " or '\0'. */
   int  errorflag = 0;       /* True if an error is encountered */
   enum et_type xtype;       /* Conversion paradigm */
-  char *zMem;               /* String to be freed */
   char *zExtra;             /* Extra memory used for etTCLESCAPE conversions */
   static char spaces[] = "                                                  "
      "                                                                      ";
@@ -550,7 +549,7 @@ static int vxprintf(
         bufpt = buf;
         break;
       case etSTRING:
-        zMem = bufpt = va_arg(ap,char*);
+        bufpt = va_arg(ap,char*);
         if( bufpt==0 ) bufpt = "(null)";
         length = strlen(bufpt);
         if( precision>=0 && precision<length ) length = precision;

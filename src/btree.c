@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.70 2002/08/13 00:01:17 drh Exp $
+** $Id: btree.c,v 1.71 2002/08/15 13:50:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2002,7 +2002,6 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   int rc;                      /* The return code */
   int iCur;                    /* apCell[iCur] is the cell of the cursor */
   MemPage *pOldCurPage;        /* The cursor originally points to this page */
-  int totalSize;               /* Total bytes for all cells */
   int subtotal;                /* Subtotal of bytes in cells on one page */
   int cntNew[4];               /* Index in apCell[] of cell after i-th page */
   int szNew[4];                /* Combined size of cells place on i-th page */
@@ -2227,10 +2226,6 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   ** This little patch of code is critical for keeping the tree
   ** balanced. 
   */
-  totalSize = 0;
-  for(i=0; i<nCell; i++){
-    totalSize += szCell[i];
-  }
   for(subtotal=k=i=0; i<nCell; i++){
     subtotal += szCell[i];
     if( subtotal > USABLE_SPACE ){

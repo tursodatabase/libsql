@@ -1,5 +1,5 @@
-C More\sdocumentation\supdates.\s(CVS\s718)
-D 2002-08-15T13:45:17
+C Fix\sfor\sticket\s#135:\sRemove\sunused\svariables\sfrom\sthree\sfiles.\s(CVS\s719)
+D 2002-08-15T13:50:49
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,7 +18,7 @@ F main.mk 8a44951de2a6791646fe65a11d47f43223d23e86
 F publish.sh a7a8d23e6525bd25d4f5ba9b0fc6edc107d94050
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 16d1712321e91e77562ffc673ed97b0b1a791db4
+F src/btree.c 9e21606581a5a4a5b18ad304d7a4f433101f1538
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
 F src/build.c 35d7ec1e3d377b19a9af38617b50600f63ce1015
 F src/delete.c c9f59ee217e062eb9de7b64b76b5cfff42b2f028
@@ -35,7 +35,7 @@ F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
 F src/pager.c 4b0169e91b34f6ff91e8feb57545c43e4d6eb370
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 66e7da55b34b57f81ca07e50d1dcc430b1c1bf74
-F src/printf.c 06f4c8725063e0faf0e34824ab70feace7146bf7
+F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c f504cc542229f472b3f15cefe5d6782494ee8d92
 F src/shell.c 37a8405aec5740726c4ee18826c1ff5fd2c29b96
@@ -54,7 +54,7 @@ F src/update.c f07e6ed2c517c92871e54d3f5886d1cf56121b11
 F src/util.c bdbf0aedcec21ede2248126bbbe734bcc070b7c8
 F src/vdbe.c 5b3bb8ac3bb8dd777abd9fae64a293bfdcc13c54
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
-F src/where.c 68ac5d2066da7a9a1aac98ecaebe6187d85137ed
+F src/where.c ce42cce65d7bf42341627f3fb0a17f69fea6a4f4
 F test/all.test 9a6eb262393f74cb7fb09b17156491a34b941fe3
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -146,7 +146,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 048b16c111693727482642e2a19a74a91458fc80
-R 6efb031218c7f978d135ae50d0d8e6c1
+P 9c0400aa7a0244605828fa6450ea1cc723240b16
+R ddf988ebfceb731da194e672ddbf06c6
 U drh
-Z 1e0a5248b18dfae467225acd1f95aa8e
+Z 29d5419af0f9c5edc39a8a40ac6613e3
