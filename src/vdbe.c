@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.4 2000/05/31 15:34:53 drh Exp $
+** $Id: vdbe.c,v 1.5 2000/05/31 20:00:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -392,23 +392,23 @@ void sqliteVdbeDelete(Vdbe *p){
 */
 static char *zOpName[] = { 0,
   "Open",           "Close",          "Fetch",          "New",
-  "Put",            "Delete",         "Field",          "Key",
-  "Rewind",         "Next",           "Destroy",        "Reorganize",
-  "ResetIdx",       "NextIdx",        "PutIdx",         "DeleteIdx",
-  "ListOpen",       "ListWrite",      "ListRewind",     "ListRead",
-  "ListClose",      "SortOpen",       "SortPut",        "SortMakeRec",
-  "SortMakeKey",    "Sort",           "SortNext",       "SortKey",
-  "SortCallback",   "SortClose",      "FileOpen",       "FileRead",
-  "FileField",      "FileClose",      "MakeRecord",     "MakeKey",
-  "Goto",           "If",             "Halt",           "ColumnCount",
-  "ColumnName",     "Callback",       "Integer",        "String",
-  "Pop",            "Dup",            "Pull",           "Add",
-  "AddImm",         "Subtract",       "Multiply",       "Divide",
-  "Min",            "Max",            "Like",           "Glob",
-  "Eq",             "Ne",             "Lt",             "Le",
-  "Gt",             "Ge",             "IsNull",         "NotNull",
-  "Negative",       "And",            "Or",             "Not",
-  "Concat",         "Noop",         
+  "Put",            "Distinct",       "Delete",         "Field",
+  "Key",            "Rewind",         "Next",           "Destroy",
+  "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
+  "DeleteIdx",      "ListOpen",       "ListWrite",      "ListRewind",
+  "ListRead",       "ListClose",      "SortOpen",       "SortPut",
+  "SortMakeRec",    "SortMakeKey",    "Sort",           "SortNext",
+  "SortKey",        "SortCallback",   "SortClose",      "FileOpen",
+  "FileRead",       "FileField",      "FileClose",      "MakeRecord",
+  "MakeKey",        "Goto",           "If",             "Halt",
+  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
+  "String",         "Pop",            "Dup",            "Pull",
+  "Add",            "AddImm",         "Subtract",       "Multiply",
+  "Divide",         "Min",            "Max",            "Like",
+  "Glob",           "Eq",             "Ne",             "Lt",
+  "Le",             "Gt",             "Ge",             "IsNull",
+  "NotNull",        "Negative",       "And",            "Or",
+  "Not",            "Concat",         "Noop",         
 };
 
 /*
@@ -1247,7 +1247,7 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: MakeKey P1 * *
+      /* Opcode: MakeKey P1 P2 *
       **
       ** Convert the top P1 entries of the stack into a single entry suitable
       ** for use as the key in an index or a sort.  The top P1 records are
@@ -1255,6 +1255,11 @@ int sqliteVdbeExec(
       ** separator.  The entire concatenation is null-terminated.  The
       ** lowest entry in the stack is the first field and the top of the
       ** stack becomes the last.
+      **
+      ** If P2 is not zero, then the original entries remain on the stack
+      ** and the new key is pushed on top.  If P2 is zero, the original
+      ** data is popped off the stack first then the new key is pushed
+      ** back in its place.
       **
       ** See also the SortMakeKey opcode.
       */
@@ -1280,7 +1285,7 @@ int sqliteVdbeExec(
           if( i<p->tos ) zNewKey[j++] = '\t';
         }
         zNewKey[j] = 0;
-        PopStack(p, nField);
+        if( pOp->p2==0 ) PopStack(p, nField);
         NeedStack(p, p->tos+1);
         p->tos++;
         p->iStack[p->tos] = nByte;
@@ -1350,6 +1355,38 @@ int sqliteVdbeExec(
           }
         }
         PopStack(p, 1);
+        break;
+      }
+
+      /* Opcode: Distinct P1 P2 *
+      **
+      ** Use the top of the stack as a key.  If a record with that key
+      ** does not exist in table P1, then jump to P2.  If the record
+      ** does already exist, then fall thru.  The record is not retrieved.
+      ** The key is not popped from the stack.
+      */
+      case OP_Distinct: {
+        int i = pOp->p1;
+        int tos = p->tos;
+        int alreadyExists = 0;
+        if( tos<0 ) goto not_enough_stack;
+        if( i>=0 && i<p->nTable && p->aTab[i].pTable ){
+          if( p->zStack[tos]==0 ){
+            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, sizeof(int), 
+                                          (char*)&p->iStack[tos]);
+          }else{
+            alreadyExists = sqliteDbbeTest(p->aTab[i].pTable, p->iStack[tos], 
+                                           p->zStack[tos]);
+          }
+        }
+        if( !alreadyExists ){
+          pc = pOp->p2;
+          if( pc<0 || pc>p->nOp ){
+            sqliteSetString(pzErrMsg, "jump destination out of range", 0);
+            rc = 1;
+          }
+          pc--;
+        }
         break;
       }
 

@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.2 2000/05/31 02:27:49 drh Exp $
+** $Id: dbbe.h,v 1.3 2000/05/31 20:00:52 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -59,6 +59,9 @@ void sqliteDbbeClose(Dbbe*);
 
 /* Open a particular table of a previously opened database.
 ** Create the table if it doesn't already exist and writeable!=0.
+**
+** If zTableName is 0 or "", then a temporary table is created that
+** will be deleted when closed.
 */
 DbbeTable *sqliteDbbeOpenTable(Dbbe*, const char *zTableName, int writeable);
 
@@ -75,6 +78,11 @@ void sqliteDbbeCloseTable(DbbeTable*);
 ** successful and 0 if no such entry exists.
 */
 int sqliteDbbeFetch(DbbeTable*, int nKey, char *pKey);
+
+/* Return 1 if the given key is already in the table.  Return 0
+** if it is not.
+*/
+int sqliteDbbeTest(DbbeTable*, int nKey, char *pKey);
 
 /* Retrieve the key or data used for the last fetch.  Only size
 ** bytes are read beginning with the offset-th byte.  The return

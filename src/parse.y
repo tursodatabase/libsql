@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.5 2000/05/31 18:20:14 drh Exp $
+** @(#) $Id: parse.y,v 1.6 2000/05/31 20:00:52 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -125,10 +125,15 @@ cmd ::= DROP TABLE id(X).          {sqliteDropTable(pParse,&X);}
 // The select statement
 //
 cmd ::= select.
-select ::= SELECT selcollist(W) from(X) where_opt(Y) orderby_opt(Z).
-     {sqliteSelect(pParse, W, X, Y, Z);}
-select ::= SELECT STAR from(X) where_opt(Y) orderby_opt(Z).
-     {sqliteSelect(pParse, 0, X, Y, Z);}
+select ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y) orderby_opt(Z).
+     {sqliteSelect(pParse, W, X, Y, Z, D);}
+select ::= SELECT distinct(D) STAR from(X) where_opt(Y) orderby_opt(Z).
+     {sqliteSelect(pParse, 0, X, Y, Z, D);}
+
+%type distinct {int}
+
+distinct(A) ::= DISTINCT.   {A = 1;}
+distinct(A) ::= .           {A = 0;}
 
 %type selcollist {ExprList*}
 %destructor selcollist {sqliteExprListDelete($$);}

@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.3 2000/05/31 02:27:49 drh Exp $
+** $Id: dbbe.c,v 1.4 2000/05/31 20:00:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -47,7 +47,18 @@ struct BeFile {
   char *zName;            /* Name of the file */
   GDBM_FILE dbf;          /* The file itself */
   int nRef;               /* Number of references */
+  int delOnClose;         /* Delete when closing */
   BeFile *pNext, *pPrev;  /* Next and previous on list of open files */
+};
+
+/*
+** The following are state variables for the RC4 algorithm.  We
+** use RC4 as a random number generator.  Each call to RC4 gives
+** a random 8-bit number.
+*/
+struct rc4 {
+  int i, j;
+  int s[256];
 };
 
 /*
@@ -59,6 +70,7 @@ struct Dbbe {
   BeFile *pOpen;     /* List of open files */
   int nTemp;         /* Number of temporary files created */
   FILE **apTemp;     /* Space to hold temporary file pointers */
+  struct rc4 rc4;    /* The random number generator */
 };
 
 /*
@@ -73,6 +85,41 @@ struct DbbeTable {
   int needRewind;    /* Next key should be the first */
   int readPending;   /* The fetch hasn't actually been done yet */
 };
+
+/*
+** Initialize the RC4 algorithm.
+*/
+static void rc4init(struct rc4 *p, char *key, int keylen){
+  int i;
+  char k[256];
+  p->j = 0;
+  p->i = 0;
+  for(i=0; i<256; i++){
+    p->s[i] = i;
+    k[i] = key[i%keylen];
+  }
+  for(i=0; i<256; i++){
+    int t;
+    p->j = (p->j + p->s[i] + k[i]) & 0xff;
+    t = p->s[p->j];
+    p->s[p->j] = p->s[i];
+    p->s[i] = t;
+  }
+}
+
+/*
+** Get a single 8-bit random value from the RC4 algorithm.
+*/
+static int rc4byte(struct rc4 *p){
+  int t;
+  p->i = (p->i + 1) & 0xff;
+  p->j = (p->j + p->s[p->i]) & 0xff;
+  t = p->s[p->i];
+  p->s[p->i] = p->s[p->j];
+  p->s[p->j] = t;
+  t = p->s[p->i] + p->s[p->j];
+  return t & 0xff;
+}
 
 /*
 ** This routine opens a new database.  For the current driver scheme,
@@ -105,6 +152,8 @@ Dbbe *sqliteDbbeOpen(
   strcpy(pNew->zDir, zName);
   pNew->write = write;
   pNew->pOpen = 0;
+  time(&statbuf.st_ctime);
+  rc4init(&pNew->rc4, (char*)&statbuf, sizeof(statbuf));
   return pNew;
 }
 
@@ -145,6 +194,22 @@ static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable){
 }
 
 /*
+** Generate a random filename with the given prefix.
+*/
+static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
+  int i, j;
+  static const char zRandomChars[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+  strcpy(zBuf, zPrefix);
+  j = strlen(zBuf);
+  for(i=0; i<15; i++){
+    int c = (rc4byte(pRc4) & 0x7f) % (sizeof(zRandomChars) - 1);
+    zBuf[j++] = zRandomChars[c];
+  }
+  zBuf[j] = 0;
+}
+
+
+/*
 ** Open a new table cursor
 */
 DbbeTable *sqliteDbbeOpenTable(
@@ -158,9 +223,14 @@ DbbeTable *sqliteDbbeOpenTable(
 
   pTable = sqliteMalloc( sizeof(*pTable) );
   if( pTable==0 ) return 0;
-  zFile = sqliteFileOfTable(pBe, zTable);
-  for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
-    if( strcmp(pFile->zName,zFile)==0 ) break;
+  if( zTable ){
+    zFile = sqliteFileOfTable(pBe, zTable);
+    for(pFile=pBe->pOpen; pFile; pFile=pFile->pNext){
+      if( strcmp(pFile->zName,zFile)==0 ) break;
+    }
+  }else{
+    pFile = 0;
+    zFile = 0;
   }
   if( pFile==0 ){
     pFile = sqliteMalloc( sizeof(*pFile) );
@@ -176,7 +246,24 @@ DbbeTable *sqliteDbbeOpenTable(
     }
     pFile->pNext = pBe->pOpen;
     pBe->pOpen = pFile;
-    pFile->dbf = gdbm_open(pFile->zName, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
+    if( pFile->zName ){
+      pFile->dbf = gdbm_open(pFile->zName, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
+    }else{
+      int i, j, limit;
+      struct rc4 *pRc4;
+      char zRandom[50];
+      pRc4 = &pBe->rc4;
+      zFile = 0;
+      limit = 5;
+      do {
+        randomName(&pBe->rc4, zRandom, "_temp_table_");
+        sqliteFree(zFile);
+        zFile = sqliteFileOfTable(pBe, zRandom);
+        pFile->dbf = gdbm_open(zFile, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
+      }while( pFile->dbf==0 && limit-- >= 0);
+      pFile->zName = zFile;
+      pFile->delOnClose = 1;
+    }
   }else{
     sqliteFree(zFile);
     pFile->nRef++;
@@ -240,6 +327,9 @@ void sqliteDbbeCloseTable(DbbeTable *pTable){
     if( pFile->pNext ){
       pFile->pNext->pPrev = pFile->pPrev;
     }
+    if( pFile->delOnClose ){
+      unlink(pFile->zName);
+    }
     sqliteFree(pFile->zName);
     memset(pFile, 0, sizeof(*pFile));
     sqliteFree(pFile);
@@ -273,6 +363,21 @@ int sqliteDbbeFetch(DbbeTable *pTable, int nKey, char *pKey){
     pTable->data = gdbm_fetch(pTable->pFile->dbf, key);
   }
   return pTable->data.dptr!=0;
+}
+
+/*
+** Return 1 if the given key is already in the table.  Return 0
+** if it is not.
+*/
+int sqliteDbbeTest(DbbeTable *pTable, int nKey, char *pKey){
+  datum key;
+  int result = 0;
+  key.dsize = nKey;
+  key.dptr = pKey;
+  if( pTable->pFile && pTable->pFile->dbf ){
+    result = gdbm_exists(pTable->pFile->dbf, key);
+  }
+  return result;
 }
 
 /*
@@ -378,72 +483,21 @@ int sqliteDbbeNextKey(DbbeTable *pTable){
 }
 
 /*
-** The following are state variables for the RC4 algorithm.  We
-** use RC4 as a random number generator.  Each call to RC4 gives
-** a random 8-bit number.
-*/
-static struct {
-  int i, j;
-  int s[256];
-} rc4;
-
-/*
-** Initialize the RC4 algorithm.
-*/
-static void rc4init(char *key, int keylen){
-  int i;
-  char k[256];
-  rc4.j = 0;
-  rc4.i = 0;
-  for(i=0; i<256; i++){
-    rc4.s[i] = i;
-    k[i] = key[i%keylen];
-  }
-  for(i=0; i<256; i++){
-    int t;
-    rc4.j = (rc4.j + rc4.s[i] + k[i]) & 0xff;
-    t = rc4.s[rc4.j];
-    rc4.s[rc4.j] = rc4.s[i];
-    rc4.s[i] = t;
-  }
-}
-
-/*
-** Get a single 8-bit random value from the RC4 algorithm.
-*/
-static int rc4byte(void){
-  int t;
-  rc4.i = (rc4.i + 1) & 0xff;
-  rc4.j = (rc4.j + rc4.s[rc4.i]) & 0xff;
-  t = rc4.s[rc4.i];
-  rc4.s[rc4.i] = rc4.s[rc4.j];
-  rc4.s[rc4.j] = t;
-  t = rc4.s[rc4.i] + rc4.s[rc4.j];
-  return t & 0xff;
-}
-
-/*
 ** Get a new integer key.
 */
 int sqliteDbbeNew(DbbeTable *pTable){
-  static int isInit = 0;
   int iKey;
   datum key;
   int go = 1;
   int i;
+  struct rc4 *pRc4;
 
-  if( !isInit ){
-    struct stat statbuf;
-    stat(pTable->pFile->zName, &statbuf);
-    time(&statbuf.st_ctime);
-    rc4init((char*)&statbuf, sizeof(statbuf));
-    isInit = 1;
-  }
   if( pTable->pFile==0 || pTable->pFile->dbf==0 ) return 1;
+  pRc4 = &pTable->pBe->rc4;
   while( go ){
     iKey = 0;
     for(i=0; i<4; i++){
-      iKey = (iKey<<8) + rc4byte();
+      iKey = (iKey<<8) + rc4byte(pRc4);
     }
     key.dptr = (char*)&iKey;
     key.dsize = 4;
@@ -488,8 +542,9 @@ int sqliteDbbeDelete(DbbeTable *pTable, int nKey, char *pKey){
 */
 FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
   char *zFile;
-  char zBuf[30];
-  int i;
+  char zBuf[50];
+  int i, j;
+  int limit;
 
   for(i=0; i<pBe->nTemp; i++){
     if( pBe->apTemp[i]==0 ) break;
@@ -499,9 +554,13 @@ FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
     pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
   }
   if( pBe->apTemp==0 ) return 0;
-  sprintf(zBuf, "/_temp_%d~", i);
+  limit = 4;
   zFile = 0;
-  sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
+  do{
+    randomName(&pBe->rc4, zBuf, "/_temp_file_");
+    sqliteFree(zFile);
+    sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
+  }while( access(zFile,0) && limit-- >= 0 );
   pBe->apTemp[i] = fopen(zFile, "w+");
   sqliteFree(zFile);
   return pBe->apTemp[i];

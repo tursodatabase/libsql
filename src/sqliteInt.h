@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.5 2000/05/31 15:34:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.6 2000/05/31 20:00:52 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -249,7 +249,7 @@ void sqliteIdListAddAlias(IdList*, Token*);
 void sqliteIdListDelete(IdList*);
 void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
-void sqliteSelect(Parse*, ExprList*, IdList*, Expr*, ExprList*);
+void sqliteSelect(Parse*, ExprList*, IdList*, Expr*, ExprList*, int);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);
 void sqliteUpdate(Parse*, Token*, ExprList*, Expr*);
 WhereInfo *sqliteWhereBegin(Parse*, IdList*, Expr*, int);

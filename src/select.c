@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.2 2000/05/31 18:20:14 drh Exp $
+** $Id: select.c,v 1.3 2000/05/31 20:00:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -37,7 +37,8 @@ void sqliteSelect(
   ExprList *pEList,      /* List of fields to extract.  NULL means "*" */
   IdList *pTabList,      /* List of tables to select from */
   Expr *pWhere,          /* The WHERE clause.  May be NULL */
-  ExprList *pOrderBy     /* The ORDER BY clause.  May be NULL */
+  ExprList *pOrderBy,    /* The ORDER BY clause.  May be NULL */
+  int distinct           /* If true, only output distinct results */
 ){
   int i, j;
   WhereInfo *pWInfo;
@@ -121,6 +122,12 @@ void sqliteSelect(
     pOrderBy = 0;
   }
 
+  /* Turn off distinct if this is an aggregate
+  */
+  if( isAgg ){
+    distinct = 0;
+  }
+
   /* Begin generating code.
   */
   v = pParse->pVdbe;
@@ -188,7 +195,11 @@ void sqliteSelect(
   }
 
   /* Begin the database scan
-  */  
+  */
+  if( distinct ){
+    distinct = pTabList->nId*2+1;
+    sqliteVdbeAddOp(v, OP_Open, distinct, 0, 0, 0);
+  }
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) goto select_cleanup;
 
@@ -198,6 +209,19 @@ void sqliteSelect(
     for(i=0; i<pEList->nExpr; i++){
       sqliteExprCode(pParse, pEList->a[i].pExpr);
     }
+  }
+
+  /* If the current result is not distinct, script the remainder
+  ** of this processing.
+  */
+  if( distinct ){
+    int isDistinct = sqliteVdbeMakeLabel(v);
+    sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1, 0, 0);
+    sqliteVdbeAddOp(v, OP_Distinct, distinct, isDistinct, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", isDistinct);
+    sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
   }
   
   /* If there is no ORDER BY clause, then we can invoke the callback
