@@ -1,5 +1,5 @@
-C Bug\sin\sWHERE\sclause\sprocessing\sfixed.\s\sTicket\s#298.\s(CVS\s919)
-D 2003-04-19T16:34:05
+C Modify\sthe\soptimizer\sso\sthat\sit\sdoes\snot\sassume\sthat\sfunctions\sare\nconstant.\s(CVS\s920)
+D 2003-04-19T17:27:25
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/build.c 6694013c86c4c480754f515ddab561302c6e732a
 F src/copy.c 8699e571994934c78f70761a1458d7b9e9e75073
 F src/delete.c af65b26d9d13abbf63fdc4e97b88d26c700b04bb
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
-F src/expr.c 942f535c8906ef81df00bac62223868feb78424b
+F src/expr.c 3c0ff6b7b34d483ea03fb86c66f28b929542c782
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
@@ -80,7 +80,7 @@ F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
 F test/hook.test 7a4c97b886801d265c981dc4ec123c77af642a9d
-F test/in.test 3171a2b3170a8223665c1a4f26be5f3eda36cc4b
+F test/in.test 22de8a3eb27265aab723adc513bea0e76bef70c6
 F test/index.test 90ef4c426865f15937858bd433cc82b9c11af913
 F test/insert.test 5697ba098e4d8a6f0151f281b7e39dec9c439e05
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
@@ -126,7 +126,7 @@ F test/update.test 198360dfa14e65354dbcc66d5b98d8070780e42b
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test c64fa39ea57f3c2066c854290f032ad13b23b83d
-F test/where.test 94adbfe53e5c9660b9756f23b29e3b2c3d2792a9
+F test/where.test d719129a052280fe245a2ddcbd09bcc0b8c17ce4
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 14fedcde9cf70aa6040b89de164cf8f56f92a4b9
 F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1e3d0d094776c2a429fa2a3eebc036a0b6374862
-R 869f63511d353e87dc2dd3a60513ae60
+P 9b619c98b586a207a87942640d3a94220ff8ab02
+R 7412289c17f86b36c7e9e5ef2d7e5a25
 U drh
-Z 804a9e6e52c395fdc713233765cd05d5
+Z f9b7a3e33fd7e690b2414333a1a1aca5
