@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.62 2003/09/06 22:18:08 drh Exp $
+** $Id: tokenize.c,v 1.63 2003/09/12 02:08:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -214,9 +214,8 @@ static const char isIdChar[] = {
 
 
 /*
-** Return the length of the token that begins at z[0].  Return
-** -1 if the token is (or might be) incomplete.  Store the token
-** type in *tokenType before returning.
+** Return the length of the token that begins at z[0]. 
+** Store the token type in *tokenType before returning.
 */
 static int sqliteGetToken(const unsigned char *z, int *tokenType){
   int i;
@@ -227,7 +226,6 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       return i;
     }
     case '-': {
-      if( z[1]==0 ) return -1;
       if( z[1]=='-' ){
         for(i=2; z[i] && z[i]!='\n'; i++){}
         *tokenType = TK_COMMENT;
@@ -426,7 +424,6 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->sLastToken.dyn = 0;
   pParse->zTail = zSql;
   while( sqlite_malloc_failed==0 && zSql[i]!=0 ){
-    
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
     assert( pParse->sLastToken.dyn==0 );

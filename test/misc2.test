@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc2.test,v 1.8 2003/08/27 22:54:32 drh Exp $
+# $Id: misc2.test,v 1.9 2003/09/12 02:08:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,3 +179,11 @@ do_test misc2-7.4 {
   } msg]
   lappend rc $msg
 } {1 {database table is locked}}
+
+# Ticket #453.  If the SQL ended with "-", the tokenizer was calling that
+# an incomplete token, which caused problem.  The solution was to just call
+# it a minus sign.
+#
+do_test misc2-8.1 {
+  catchsql {-}
+} {1 {near "-": syntax error}}
