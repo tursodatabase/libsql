@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sturn\sof\scalls\sto\sfsync()\susing\sthe\s"synchronous"\spragma.\nIncreased\sthe\sdefault\scache\ssize\sfrom\s100\sto\s2000\sand\smade\sthe\s"cache_size"\npragma\spersistent.\s(CVS\s418)
-D 2002-03-05T01:11:13
+C Change\sthe\spager\slocking\smechanism\sso\sthat\swe\sdon't\shave\sto\swrite\spage\s1\nto\sthe\sjournal\sand\sto\sthe\sdatabase\sunless\sit\sactually\schanges.\s(CVS\s419)
+D 2002-03-05T12:41:20
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,7 +19,7 @@ F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 5b59f4aff037aafa0e4a3b6fa599495dbd73f360
 F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c d25ea795a0f7017bc2099c437e6cc01d4c31b22d
+F src/btree.c b7d1b8875113ab4061a6a8cc759f75728ae7daf0
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 0f3c6b6482e0b74284b22661de1b813a0bfb0197
 F src/delete.c 577da499162291c1855f0b304b211bffcf9da945
@@ -32,8 +32,8 @@ F src/main.c 3015c23faeff1709b1528f07c0bfe839284090a8
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c db969ecd1bcb4fef01b0b541b8b17401b0eb7ed2
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
-F src/pager.c 41af87908cd76a50d7e22cf3c7a4d479e3c9a512
-F src/pager.h feb18aab2f6dea439393f23a382699b9b1053c32
+F src/pager.c e1419353e68c45aaae2555d2000f72de6525faac
+F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y f7483ccff7b8f16d3655df59775d85b62b06897e
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -108,7 +108,7 @@ F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
-F tool/speedtest.tcl 31a2f06e3d2153f4311b13cd6fd5e19b7adc8373
+F tool/speedtest.tcl 1c151e27d7ca10c6a2509bf6e816116744c3199e
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
@@ -128,7 +128,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 36a8fe0ad0ee2a67afafc04125dcc085ec1b5a13
-R e93330a0aa7a7fa6a56e7a5c31b63757
+P 414da4af1f4aebc3936ca339fbc7932add081912
+R 0b32113f5a809c11a2af16e72cce2c93
 U drh
-Z b84940384f009522e2520b7d71139ff4
+Z d718da112d32fa4d0c0cf7ece4f5da88

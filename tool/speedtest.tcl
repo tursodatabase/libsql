@@ -6,11 +6,12 @@
 
 # Run a test
 #
-set cnt 0
-proc runtest {title sqlfile} {
+set cnt 1
+proc runtest {title} {
   global cnt
-  incr cnt
+  set sqlfile test$cnt.sql
   puts "<h2>Test $cnt: $title</h2>"
+  incr cnt
   set fd [open $sqlfile r]
   set sql [string trim [read $fd [file size $sqlfile]]]
   close $fd
@@ -28,11 +29,14 @@ proc runtest {title sqlfile} {
   }
   puts "<blockquote>"
   puts "$sql"
-  puts "</blockquote><table border=0 cellpadding=0 cellspacing=5>"
-  set format {<tr><td>%s</td><td align="right">%.3f</td></tr>}
+  puts "</blockquote><table border=0 cellpadding=0 cellspacing=0>"
+  set format {<tr><td>%s</td><td align="right">&nbsp;&nbsp;&nbsp;%.3f</td></tr>}
+  set delay 1000
+  exec sync; after $delay;
   set t [time "exec psql drh <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format PostgreSQL: $t]
+  exec sync; after $delay;
   set t [time "exec mysql drh <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format MySQL: $t]
@@ -42,12 +46,17 @@ proc runtest {title sqlfile} {
 #  set t [time "exec ./sqlite-100 s100.db <$sqlfile" 1]
 #  set t [expr {[lindex $t 0]/1000000.0}]
 #  puts [format $format {SQLite 2.4 (cache=100):} $t]
+  exec sync; after $delay;
   set t [time "exec ./sqlite240 s2k.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
-  puts [format $format {SQLite 2.4 (cache=2000):} $t]
+  puts [format $format {SQLite 2.4:} $t]
+  exec sync; after $delay;
   set t [time "exec ./sqlite240 sns.db <$sqlfile" 1]
   set t [expr {[lindex $t 0]/1000000.0}]
   puts [format $format {SQLite 2.4 (nosync):} $t]
+#  set t [time "exec ./sqlite-t1 st1.db <$sqlfile" 1]
+#  set t [expr {[lindex $t 0]/1000000.0}]
+#  puts [format $format {SQLite 2.4 (test):} $t]
   puts "</table>"
 }
 
@@ -67,6 +76,7 @@ set fd [open 2kinit.sql w]
 puts $fd {PRAGMA cache_size=2000; PRAGMA synchronous=on;}
 close $fd
 exec ./sqlite240 s2k.db <2kinit.sql
+exec ./sqlite-t1 st1.db <2kinit.sql
 set fd [open nosync-init.sql w]
 puts $fd {PRAGMA cache_size=2000; PRAGMA synchronous=off;}
 close $fd
@@ -82,11 +92,11 @@ proc number_name {n} {
   } else {
     set txt {}
   }
-  if {$n>100} {
+  if {$n>=100} {
     append txt " [lindex $::ones [expr {$n/100}]] hundred"
     set n [expr {$n%100}]
   }
-  if {$n>19} {
+  if {$n>=20} {
     append txt " [lindex $::tens [expr {$n/10}]]"
     set n [expr {$n%10}]
   }
@@ -98,20 +108,20 @@ proc number_name {n} {
   return $txt
 }
 
-# TEST 1
-#
-set fd [open test1.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd "CREATE TABLE t1(a INTEGER, b INTEGER, c VARCHAR(100));"
 for {set i 1} {$i<=1000} {incr i} {
   set r [expr {int(rand()*100000)}]
   puts $fd "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');"
 }
 close $fd
-runtest {1000 INSERTs} test1.sql
+runtest {1000 INSERTs}
 
-# TEST 2
-#
-set fd [open test2.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
 puts $fd "CREATE TABLE t2(a INTEGER, b INTEGER, c VARCHAR(100));"
 for {set i 1} {$i<=25000} {incr i} {
@@ -120,41 +130,50 @@ for {set i 1} {$i<=25000} {incr i} {
 }
 puts $fd "COMMIT;"
 close $fd
-runtest {25000 INSERTs in a transaction} test2.sql
+runtest {25000 INSERTs in a transaction}
 
-# TEST 3
-#
-set fd [open test3.sql w]
+
+
+set fd [open test$cnt.sql w]
 for {set i 0} {$i<100} {incr i} {
   set lwr [expr {$i*100}]
   set upr [expr {($i+10)*100}]
   puts $fd "SELECT count(*), avg(b) FROM t2 WHERE b>=$lwr AND b<$upr;"
 }
 close $fd
-runtest {100 SELECTs without an index} test3.sql
+runtest {100 SELECTs without an index}
 
-# TEST 4
-#
-set fd [open test4.sql w]
+
+
+set fd [open test$cnt.sql w]
+for {set i 1} {$i<=100} {incr i} {
+  puts $fd "SELECT count(*), avg(b) FROM t2 WHERE c LIKE '%[number_name $i]%';"
+}
+close $fd
+runtest {100 SELECTs on a string comparison}
+
+
+
+set fd [open test$cnt.sql w]
 puts $fd {CREATE INDEX i2a ON t2(a);}
 puts $fd {CREATE INDEX i2b ON t2(b);}
 close $fd
-runtest {Creating an index} test4.sql
+runtest {Creating an index}
 
-# TEST 5
-#
-set fd [open test5.sql w]
+
+
+set fd [open test$cnt.sql w]
 for {set i 0} {$i<5000} {incr i} {
   set lwr [expr {$i*100}]
   set upr [expr {($i+1)*100}]
   puts $fd "SELECT count(*), avg(b) FROM t2 WHERE b>=$lwr AND b<$upr;"
 }
 close $fd
-runtest {5000 SELECTs with an index} test5.sql
+runtest {5000 SELECTs with an index}
 
-# TEST 6
-#
-set fd [open test6.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
 for {set i 0} {$i<100} {incr i} {
   set lwr [expr {$i*10}]
@@ -163,52 +182,53 @@ for {set i 0} {$i<100} {incr i} {
 }
 puts $fd "COMMIT;"
 close $fd
-runtest {100 UPDATEs without an index} test6.sql
+runtest {100 UPDATEs without an index}
 
 
-# TEST 7
-set fd [open test7.sql w]
+
+set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
 for {set i 1} {$i<=25000} {incr i} {
   puts $fd "UPDATE t2 SET b=b+a WHERE a=$i;"
 }
 puts $fd "COMMIT;"
 close $fd
-runtest {25000 UPDATEs with an index} test7.sql
+runtest {25000 UPDATEs with an index}
 
-# TEST 8
-set fd [open test8.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd "BEGIN;"
 puts $fd "INSERT INTO t1 SELECT * FROM t2;"
 puts $fd "INSERT INTO t2 SELECT * FROM t1;"
 puts $fd "COMMIT;"
 close $fd
-runtest {INSERTs from a SELECT} test8.sql
+runtest {INSERTs from a SELECT}
 
-# TEST 9
-#
-set fd [open test9.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd {DELETE FROM t2 WHERE c LIKE '%fifty%';}
 close $fd
-runtest {DELETE without an index} test9.sql
+runtest {DELETE without an index}
 
-# TEST 10
-#
-set fd [open test10.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd {DELETE FROM t2 WHERE a>10 AND a<20000;}
 close $fd
-runtest {DELETE with an index} test10.sql
+runtest {DELETE with an index}
 
-# TEST 11
-#
-set fd [open test11.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd {INSERT INTO t2 SELECT * FROM t1;}
 close $fd
-runtest {A big INSERT after a big DELETE} test11.sql
+runtest {A big INSERT after a big DELETE}
 
-# TEST 12
-#
-set fd [open test12.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd {BEGIN;}
 puts $fd {DELETE FROM t1;}
 for {set i 1} {$i<=1000} {incr i} {
@@ -217,12 +237,12 @@ for {set i 1} {$i<=1000} {incr i} {
 }
 puts $fd {COMMIT;}
 close $fd
-runtest {A big DELETE followed by many small INSERTs} test12.sql
+runtest {A big DELETE followed by many small INSERTs}
 
-# TEST 13
-#
-set fd [open test13.sql w]
+
+
+set fd [open test$cnt.sql w]
 puts $fd {DROP TABLE t1;}
 puts $fd {DROP TABLE t2;}
 close $fd
-runtest {DROP TABLE} test13.sql
+runtest {DROP TABLE}

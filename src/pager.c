@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.42 2002/03/05 01:11:14 drh Exp $
+** @(#) $Id: pager.c,v 1.43 2002/03/05 12:41:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -989,6 +989,63 @@ int sqlitepager_unref(void *pData){
 }
 
 /*
+** Acquire a write-lock on the database.  The lock is removed when
+** the any of the following happen:
+**
+**   *  sqlitepager_commit() is called.
+**   *  sqlitepager_rollback() is called.
+**   *  sqlitepager_close() is called.
+**   *  sqlitepager_unref() is called to on every outstanding page.
+**
+** The parameter to this routine is a pointer to any open page of the
+** database file.  Nothing changes about the page - it is used merely
+** to acquire a pointer to the Pager structure and as proof that there
+** is already a read-lock on the database.
+**
+** If the database is already write-locked, this routine is a no-op.
+*/
+int sqlitepager_begin(void *pData){
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  Pager *pPager = pPg->pPager;
+  int rc = SQLITE_OK;
+  assert( pPg->nRef>0 );
+  assert( pPager->state!=SQLITE_UNLOCK );
+  if( pPager->state==SQLITE_READLOCK ){
+    assert( pPager->aInJournal==0 );
+    rc = sqliteOsWriteLock(&pPager->fd);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
+    if( pPager->aInJournal==0 ){
+      sqliteOsReadLock(&pPager->fd);
+      return SQLITE_NOMEM;
+    }
+    rc = sqliteOsOpenExclusive(pPager->zJournal, &pPager->jfd, 0);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(pPager->aInJournal);
+      pPager->aInJournal = 0;
+      sqliteOsReadLock(&pPager->fd);
+      return SQLITE_CANTOPEN;
+    }
+    pPager->journalOpen = 1;
+    pPager->needSync = !pPager->noSync;
+    pPager->state = SQLITE_WRITELOCK;
+    sqlitepager_pagecount(pPager);
+    pPager->origDbSize = pPager->dbSize;
+    rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
+    if( rc==SQLITE_OK ){
+      rc = sqliteOsWrite(&pPager->jfd, &pPager->dbSize, sizeof(Pgno));
+    }
+    if( rc!=SQLITE_OK ){
+      rc = pager_unwritelock(pPager);
+      if( rc==SQLITE_OK ) rc = SQLITE_FULL;
+    }
+  }
+  return rc;
+}
+
+/*
 ** Mark a data page as writeable.  The page is written into the journal 
 ** if it is not there already.  This routine must be called before making
 ** changes to a page.
@@ -1035,39 +1092,8 @@ int sqlitepager_write(void *pData){
   ** create it if it does not.
   */
   assert( pPager->state!=SQLITE_UNLOCK );
-  if( pPager->state==SQLITE_READLOCK ){
-    assert( pPager->aInJournal==0 );
-    rc = sqliteOsWriteLock(&pPager->fd);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
-    if( pPager->aInJournal==0 ){
-      sqliteOsReadLock(&pPager->fd);
-      return SQLITE_NOMEM;
-    }
-    rc = sqliteOsOpenExclusive(pPager->zJournal, &pPager->jfd, 0);
-    if( rc!=SQLITE_OK ){
-      sqliteFree(pPager->aInJournal);
-      pPager->aInJournal = 0;
-      sqliteOsReadLock(&pPager->fd);
-      return SQLITE_CANTOPEN;
-    }
-    pPager->journalOpen = 1;
-    pPager->needSync = 0;
-    pPager->state = SQLITE_WRITELOCK;
-    sqlitepager_pagecount(pPager);
-    pPager->origDbSize = pPager->dbSize;
-    rc = sqliteOsWrite(&pPager->jfd, aJournalMagic, sizeof(aJournalMagic));
-    if( rc==SQLITE_OK ){
-      rc = sqliteOsWrite(&pPager->jfd, &pPager->dbSize, sizeof(Pgno));
-    }
-    if( rc!=SQLITE_OK ){
-      rc = pager_unwritelock(pPager);
-      if( rc==SQLITE_OK ) rc = SQLITE_FULL;
-      return rc;
-    }
-  }
+  rc = sqlitepager_begin(pData);
+  if( rc!=SQLITE_OK ) return rc;
   assert( pPager->state==SQLITE_WRITELOCK );
   assert( pPager->journalOpen );
 
@@ -1247,6 +1273,9 @@ commit_abort:
 int sqlitepager_rollback(Pager *pPager){
   int rc;
   if( pPager->errMask!=0 && pPager->errMask!=PAGER_ERR_FULL ){
+    if( pPager->state>=SQLITE_WRITELOCK ){
+      pager_playback(pPager);
+    }
     return pager_errcode(pPager);
   }
   if( pPager->state!=SQLITE_WRITELOCK ){
