@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.246 2003/12/23 02:17:35 drh Exp $
+** $Id: vdbe.c,v 1.247 2004/01/07 18:52:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -361,42 +361,6 @@ static Sorter *Merge(Sorter *pLeft, Sorter *pRight){
   }
   return sHead.pNext;
 }
-
-/*
-** Convert an integer in between the native integer format and
-** the bigEndian format used as the record number for tables.
-**
-** The bigEndian format (most significant byte first) is used for
-** record numbers so that records will sort into the correct order
-** even though memcmp() is used to compare the keys.  On machines
-** whose native integer format is little endian (ex: i486) the
-** order of bytes is reversed.  On native big-endian machines
-** (ex: Alpha, Sparc, Motorola) the byte order is the same.
-**
-** This function is its own inverse.  In other words
-**
-**         X == byteSwap(byteSwap(X))
-*/
-static int byteSwap(int x){
-  union {
-     char zBuf[sizeof(int)];
-     int i;
-  } ux;
-  ux.zBuf[3] = x&0xff;
-  ux.zBuf[2] = (x>>8)&0xff;
-  ux.zBuf[1] = (x>>16)&0xff;
-  ux.zBuf[0] = (x>>24)&0xff;
-  return ux.i;
-}
-
-/*
-** When converting from the native format to the key format and back
-** again, in addition to changing the byte order we invert the high-order
-** bit of the most significant byte.  This causes negative numbers to
-** sort before positive numbers in the memcmp() function.
-*/
-#define keyToInt(X)   (byteSwap(X) ^ 0x80000000)
-#define intToKey(X)   (byteSwap((X) ^ 0x80000000))
 
 /*
 ** Code contained within the VERIFY() macro is not needed for correct
@@ -2597,8 +2561,15 @@ case OP_MoveTo: {
   pC = &p->aCsr[i];
   if( pC->pCursor!=0 ){
     int res, oc;
+    pC->nullRow = 0;
     if( aStack[tos].flags & STK_Int ){
       int iKey = intToKey(aStack[tos].i);
+      if( pOp->p2==0 && pOp->opcode==OP_MoveTo ){
+        pC->movetoTarget = iKey;
+        pC->deferredMoveto = 1;
+        POPSTACK;
+        break;
+      }
       sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
       pC->lastRecno = aStack[tos].i;
       pC->recnoIsValid = res==0;
@@ -2607,7 +2578,7 @@ case OP_MoveTo: {
       sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
       pC->recnoIsValid = 0;
     }
-    pC->nullRow = 0;
+    pC->deferredMoveto = 0;
     sqlite_search_count++;
     oc = pOp->opcode;
     if( oc==OP_MoveTo && res<0 ){
@@ -2682,6 +2653,7 @@ case OP_Found: {
     Stringify(p, tos);
     rx = sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
+    pC->deferredMoveto = 0;
   }
   if( pOp->opcode==OP_Found ){
     if( alreadyExists ) pc = pOp->p2 - 1;
@@ -2743,6 +2715,7 @@ case OP_IsUnique: {
     /* Search for an entry in P1 where all but the last four bytes match K.
     ** If there is no such entry, jump immediately to P2.
     */
+    assert( p->aCsr[i].deferredMoveto==0 );
     rc = sqliteBtreeMoveto(pCrsr, zKey, nKey-4, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
@@ -2911,6 +2884,7 @@ case OP_NewRecno: {
       }
     }
     pC->recnoIsValid = 0;
+    pC->deferredMoveto = 0;
   }
   p->tos++;
   aStack[p->tos].i = v;
@@ -2993,6 +2967,7 @@ case OP_PutStrKey: {
                           zStack[tos], aStack[tos].n);
     }
     pC->recnoIsValid = 0;
+    pC->deferredMoveto = 0;
   }
   POPSTACK;
   POPSTACK;
@@ -3019,6 +2994,7 @@ case OP_Delete: {
   assert( i>=0 && i<p->nCursor );
   pC = &p->aCsr[i];
   if( pC->pCursor!=0 ){
+    sqliteVdbeCursorMoveto(pC);
     rc = sqliteBtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
   }
@@ -3061,6 +3037,7 @@ case OP_RowData: {
     aStack[tos].flags = STK_Null;
   }else if( pC->pCursor!=0 ){
     BtCursor *pCrsr = pC->pCursor;
+    sqliteVdbeCursorMoveto(pC);
     if( pC->nullRow ){
       aStack[tos].flags = STK_Null;
       break;
@@ -3131,6 +3108,7 @@ case OP_Column: {
     zRec = zStack[tos+i];
     payloadSize = aStack[tos+i].n;
   }else if( (pC = &p->aCsr[i])->pCursor!=0 ){
+    sqliteVdbeCursorMoveto(pC);
     zRec = 0;
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
@@ -3237,7 +3215,9 @@ case OP_Recno: {
   int v;
 
   assert( i>=0 && i<p->nCursor );
-  if( (pC = &p->aCsr[i])->recnoIsValid ){
+  pC = &p->aCsr[i];
+  sqliteVdbeCursorMoveto(pC);
+  if( pC->recnoIsValid ){
     v = pC->lastRecno;
   }else if( pC->pseudoTable ){
     v = keyToInt(pC->iKey);
@@ -3276,6 +3256,7 @@ case OP_FullKey: {
     int amt;
     char *z;
 
+    sqliteVdbeCursorMoveto(&p->aCsr[i]);
     sqliteBtreeKeySize(pCrsr, &amt);
     if( amt<=0 ){
       rc = SQLITE_CORRUPT;
@@ -3329,7 +3310,8 @@ case OP_Last: {
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     rc = sqliteBtreeLast(pCrsr, &res);
-    p->aCsr[i].nullRow = res;
+    pC->nullRow = res;
+    pC->deferredMoveto = 0;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3359,6 +3341,7 @@ case OP_Rewind: {
     rc = sqliteBtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
     pC->nullRow = res;
+    pC->deferredMoveto = 0;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3397,6 +3380,7 @@ case OP_Next: {
     if( pC->nullRow ){
       res = 1;
     }else{
+      assert( pC->deferredMoveto==0 );
       rc = pOp->opcode==OP_Next ? sqliteBtreeNext(pCrsr, &res) :
                                   sqliteBtreePrevious(pCrsr, &res);
       pC->nullRow = res;
@@ -3458,6 +3442,7 @@ case OP_IdxPut: {
       }
     }
     rc = sqliteBtreeInsert(pCrsr, zKey, nKey, "", 0);
+    assert( p->aCsr[i].deferredMoveto==0 );
   }
   POPSTACK;
   break;
@@ -3479,6 +3464,7 @@ case OP_IdxDelete: {
     if( rx==SQLITE_OK && res==0 ){
       rc = sqliteBtreeDelete(pCrsr);
     }
+    assert( p->aCsr[i].deferredMoveto==0 );
   }
   POPSTACK;
   break;
@@ -3501,6 +3487,7 @@ case OP_IdxRecno: {
   if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
     int v;
     int sz;
+    assert( p->aCsr[i].deferredMoveto==0 );
     sqliteBtreeKeySize(pCrsr, &sz);
     if( sz<sizeof(u32) ){
       aStack[tos].flags = STK_Null;
@@ -3550,6 +3537,7 @@ case OP_IdxGE: {
     int res, rc;
  
     Stringify(p, tos);
+    assert( p->aCsr[i].deferredMoveto==0 );
     rc = sqliteBtreeKeyCompare(pCrsr, zStack[tos], aStack[tos].n, 4, &res);
     if( rc!=SQLITE_OK ){
       break;
