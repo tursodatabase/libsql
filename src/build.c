@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.271 2004/11/05 23:46:15 drh Exp $
+** $Id: build.c,v 1.272 2004/11/06 00:02:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1688,6 +1688,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
 */
 static void destroyTable(Parse *pParse, Table *pTab){
 #ifdef SQLITE_OMIT_AUTOVACUUM
+  Index *pIdx;
   destroyRootPage(pParse, pTab->tnum, pTab->iDb);
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     destroyRootPage(pParse, pIdx->tnum, pIdx->iDb);
@@ -2817,10 +2818,17 @@ void reindexDatabases(Parse *pParse, CollSeq *pColl){
 #endif
 
 /*
-** Generate code for a REINDEX command.  If the argument is present it
-** is the name of a collating sequence and all indices that use that
-** collating sequence should be reindexed.  If no argument is present,
-** then rebuild all indices
+** Generate code for the REINDEX command.
+**
+**        REINDEX                            -- 1
+**        REINDEX  <collation>               -- 2
+**        REINDEX  ?<database>.?<tablename>  -- 3
+**        REINDEX  ?<database>.?<indexname>  -- 4
+**
+** Form 1 causes all indices in all attached databases to be rebuilt.
+** Form 2 rebuilds all indices in all databases that use the named
+** collating function.  Forms 3 and 4 rebuild the named index or all
+** indices associated with the named table.
 */
 #ifndef SQLITE_OMIT_REINDEX
 void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){

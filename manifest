@@ -1,5 +1,5 @@
-C First\scut\sat\sa\sREINDEX\scommand.\s\sBasic\stesting\sonly.\s\sNo\sdocumentation.\s(CVS\s2072)
-D 2004-11-05T23:46:15
+C Compile\sand\spass\sthe\squick\sregression\stests\swith\sautovacuum\sdisabled.\s(CVS\s2073)
+D 2004-11-06T00:02:48
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,9 +29,9 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c bf0d3d59ec076f0a37378f8ac6090d157d925c24
+F src/btree.c 32b5c8d45744d8710475ae99744a0ca9a402d2a0
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c 154e7a666a7b36da04c739a6af87d5e9bdcd0cda
+F src/build.c fba59507d36d27effbeba59bdd2a720071b7673a
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
 F src/delete.c f0af21a1ede15524a5edd59fe10ef486283a1ee9
 F src/expr.c be18081d2959a2cc53846d0fbedfec40fbfa1d6e
@@ -253,7 +253,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 0f81aa5b057eab908b46b70ea9e9a42bc2ee8c21
-R 877c89049e39a4d803a0375d417e1d42
+P 11dba47e61279bdf3be6f64a6259b877f3bf6155
+R 8f5f401812cf89b0176d6494be1ddd1b
 U drh
-Z 82c5d66bdd823220be3997a2e30a2b5d
+Z 7c63afdfe773d316c41b855a4f0f6dac

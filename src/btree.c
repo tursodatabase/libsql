@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.211 2004/11/05 16:37:03 danielk1977 Exp $
+** $Id: btree.c,v 1.212 2004/11/06 00:02:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1192,9 +1192,11 @@ int sqlite3BtreeOpen(
     pBt->maxEmbedFrac = 64;   /* 25% */
     pBt->minEmbedFrac = 32;   /* 12.5% */
     pBt->minLeafFrac = 32;    /* 12.5% */
+#ifndef SQLITE_OMIT_AUTOVACUUM
     if( zFilename && strcmp(zFilename,":memory:") ){
       pBt->autoVacuum = SQLITE_DEFAULT_AUTOVACUUM;
     }
+#endif
     nReserve = 0;
   }else{
     nReserve = zDbHeader[20];
@@ -1313,7 +1315,7 @@ int sqlite3BtreeGetReserve(Btree *pBt){
 */
 int sqlite3BtreeSetAutoVacuum(Btree *pBt, int autoVacuum){
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  return SQLITE_READONLY
+  return SQLITE_READONLY;
 #else
   if( pBt->pageSizeFixed ){
     return SQLITE_READONLY;
