@@ -1,5 +1,5 @@
-C Omit\sthe\ssqlite3VdbeCode()\sroutine.\s\sUse\ssqlite3NameFromToken()\smore\sto\nreduce\sthe\samount\sof\scode.\s(CVS\s1639)
-D 2004-06-19T14:49:12
+C Fix\sproblems\swith\sthe\sWatCom\sC\scompiler:\s\sArrays\smust\scontain\sat\sleast\sone\nelement.\s\ssqlite3FreeX\sdeclared\sproperly.\s\sDon't\sallow\srun-time\sexpression\n(the\sSQLITE_UTF16NATIVE\smacro)\sin\san\sarray\sinitializer.\s(CVS\s1640)
+D 2004-06-19T15:22:56
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 0a9048137bc0783acde5a9a032a44ec2510da576
+F main.mk bede7ee0070ad5b3519d084c1c678b4be145b0c1
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -51,13 +51,13 @@ F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
 F src/pager.c d627c5e46084b0c757a16cec2c17adcc8046f8ee
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
-F src/pragma.c 424d812d7411a83816f0d7c41170a5d6e13b3824
+F src/pragma.c 318a60581e8420f16e877e62b1dfabbb23c96177
 F src/printf.c 823b6a5cbedb6971a9e62f5d83204fe9b0be7c1b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 9aa82bbc63983a304bc51d4a7c259e759f92c8dc
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in c34414b9f5330f875e26a69fe685e38ca45f11b9
-F src/sqliteInt.h 6a34196b2fc203b738ed3596c5ffef1d0748cc95
+F src/sqliteInt.h b776ee9d096bcd90c0ebdca7ae827e7c89747120
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c ddef9b18271fb46344d3d35446bd7c001465a69a
 F src/test1.c ee426e026ad9223483e7a84bb68849fc6e9f542e
@@ -73,8 +73,8 @@ F src/util.c 1b3743413e11cae51a899dc03fa9b829a3a1f160
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
 F src/vdbe.c 324ad6157f9bd0a770be70a4e7dca2cb0d27bd82
 F src/vdbe.h 9ad64674c4c7acd6744174cab5d34013413ef0d3
-F src/vdbeInt.h 54af2e00301cde7573b86ea8a9b29a2152e762f7
-F src/vdbeapi.c 1601fb2d015fc88ce3dd6a6a50cf44b6419fdbbf
+F src/vdbeInt.h e472de98c61e9e183402bfa00542e0abd26e825c
+F src/vdbeapi.c 2163463b13468b2b8651fbf71a2b8548ea071e37
 F src/vdbeaux.c cf9caac1163ea384e49b11cb0d405082eef8741d
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 936e60d7b122079de23db301a55c6e8510c82e18
-R ed730593128daa92468fa18fd3a57762
+P 99d0436e0ee1c917b2b7bbf005f05288b535648a
+R db0065ad2b92a7ca2b665309ece9eeec
 U drh
-Z f5520e1d232faa01844b8961883e0286
+Z 991debb39d796778891cff3d4f612b44

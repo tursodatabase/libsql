@@ -119,6 +119,7 @@ TESTSRC = \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
+  $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
