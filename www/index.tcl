@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.21 2000/07/31 19:16:32 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.22 2000/08/01 09:56:27 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -59,8 +59,7 @@ the <a href="http://www.google.com/search?q=gnu+readline+library">GNU
 Readline library</a></li>
 <li>A Tcl-based test suite provides near 100% code coverage</li>
 <li>7500+ lines of C code.  No external dependencies other than GDBM.</li>
-<li>Built and tested under Linux, HPUX, and WinNT.
-Should work under any Unix or Win95/98/2000.</li>
+<li>Built and tested under Linux, HPUX, and WinNT.</li>
 </ul>
 </p>
 

@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.24 2000/07/29 13:06:59 drh Exp $
+** @(#) $Id: parse.y,v 1.25 2000/08/01 09:56:27 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -246,7 +246,7 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 cmd ::= UPDATE id(X) SET setlist(Y) where_opt(Z).
     {sqliteUpdate(pParse,&X,Y,Z);}
 
-setlist(A) ::= id(X) EQ expr(Y) COMMA setlist(Z).
+setlist(A) ::= setlist(Z) COMMA id(X) EQ expr(Y).
     {A = sqliteExprListAppend(Z,Y,&X);}
 setlist(A) ::= id(X) EQ expr(Y).   {A = sqliteExprListAppend(0,Y,&X);}
 

@@ -1,5 +1,5 @@
-C :-)\s(CVS\s118)
-D 2000-07-31T19:16:32
+C fix\sparser\sstack\soverflow\s(CVS\s119)
+D 2000-08-01T09:56:27
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 670aa9413cb2cdcded23b328a9e255c845c41a1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -13,7 +13,7 @@ F src/delete.c 4d491eaf61b515516749c7ed68fa3b2ee8a09065
 F src/expr.c 2fa63f086707176d09092e71832f9bbdc6a8ac85
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c c4b6678af8326cc602f61de51d451697451fd177
-F src/parse.y 754653f073ee03749471f86ef1bca641b35887c7
+F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
 F src/shell.c a5eb8ee9d5f90e735900a92e7fc364a54deb2cfb
 F src/sqlite.h 82ae53028e27919250f886ff9d7c4927de81978a
@@ -59,16 +59,16 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl 874d7b801a9370326e74cc34f119c62f361cb697
+F www/changes.tcl bfd60af0af1cd81030a14dd072fb0214f44b1470
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl f3a70650e942262f8285d53097d48f0b3aa59862
-F www/index.tcl 9d89a0441491460b35b2e467e49bf65154bcd485
+F www/index.tcl 8043911df3baacc5be42c40c9bd0883602e8a63a
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 8fc48dd4831dbd58a0c10b043686ea52ca1db6dd
-R 34b08c8ea4884986bf1ceed39f1cdde6
+P 4132d4760f6a2cbcf853f82546987d932e76e3c1
+R 463a993a466cf480cd166cfd852b8351
 U drh
-Z 13a69076e075a1729ee9466c15878585
+Z 9d9beee969b260700b91790c5774a3ef

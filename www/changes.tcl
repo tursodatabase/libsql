@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 1} {
+<li>The parser's stack was overflowing on a very long UPDATE statement.
+    This is now fixed.</li>
+}
+
 chng {2000 July 31} {
 <li>Finish the <a href="vdbe.html">VDBE tutorial</a>.</li>
 <li>Added documentation on compiling to WindowsNT.</li>
