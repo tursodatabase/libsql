@@ -1,5 +1,5 @@
-C Corrections\sto\stransient\stable\shandling\sin\scompound\sselect\sstatments.\nTickets\s#826\sand\s#875.\s(CVS\s1912)
-D 2004-08-29T16:25:04
+C Back\sout\san\soptimization\sthat\swas\scausing\sproblems\sin\sUTF-16\sdatabases.\s(CVS\s1913)
+D 2004-08-29T17:30:50
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -75,7 +75,7 @@ F src/update.c 151f1869ce532ed883f1ce26306f0b0fa7b2589a
 F src/utf.c 3d8f7bffcbefcced69a436c9e0a1c7eb9e0bb4fa
 F src/util.c e2c631849cc9e035f6fd387f507ad8886f77cedd
 F src/vacuum.c 9978a5760c2c430bc5b5e66505a02dad76f25813
-F src/vdbe.c 28a48fcee38d2601cb00adc02bdac475bd43e176
+F src/vdbe.c bc7717be599d23c463c029d13eb2eb46c94a5e6e
 F src/vdbe.h e081c72cd0f7c19d49b1927460aeefcf0fbc85ac
 F src/vdbeInt.h aadadddc8cfad6aa5a5445c849f70d881276fe34
 F src/vdbeapi.c 854732720c2cfc6ff76b28eef6253ac84a5408bc
@@ -245,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 307478593d5d96b79386da222c7742ea2eaa5467
-R dce15d87c754e08c36b4d1c93058acb6
+P 9cc765be4611a248cfcce1243fd1bbeaf5202968
+R 322c89c271bde81b5c0a447dc345bf24
 U drh
-Z c4c7da99c7cb81b57cec03f3f74114d2
+Z 2caad5bafbe8a50a1fee4bcc7275c430
