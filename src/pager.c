@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.122 2004/06/10 05:59:25 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.123 2004/06/10 23:35:50 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -59,9 +59,11 @@ static Pager *mainPager = 0;
 **                       multiple readers accessing the same database
 **                       file at the same time.
 **
-**   PAGER_RESERVED      Writing is permitted to the page cache only.
-**                       The original database file has not been modified.
-**                       Other processes may still be reading the on-disk
+**   PAGER_RESERVED      This process has reserved the database for writing
+**                       but has not yet made any changes.  Only one process
+**                       at a time can reserve the database.  The original
+**                       database file has not been modified so other
+**                       processes may still be reading the on-disk
 **                       database file.
 **
 **   PAGER_EXCLUSIVE     The page cache is writing the database.
@@ -70,16 +72,16 @@ static Pager *mainPager = 0;
 **                       process is writing.
 **
 ** The page cache comes up in PAGER_UNLOCK.  The first time a
-** sqlite_page_get() occurs, the state transitions to PAGER_SHARED.
+** sqlite3pager_get() occurs, the state transitions to PAGER_SHARED.
 ** After all pages have been released using sqlite_page_unref(),
 ** the state transitions back to PAGER_UNLOCK.  The first time
-** that sqlite_page_write() is called, the state transitions to
+** that sqlite3pager_write() is called, the state transitions to
 ** PAGER_RESERVED.  (Note that sqlite_page_write() can only be
 ** called on an outstanding page which means that the pager must
 ** be in PAGER_SHARED before it transitions to PAGER_RESERVED.)
-** The sqlite_page_rollback() and sqlite_page_commit() functions 
-** transition the state from PAGER_RESERVED to PAGER_EXCLUSIVE to
-** PAGER_SHARED.
+** The transition to PAGER_EXCLUSIVE occurs when before any changes
+** are made to the database file.  After an sqlite3pager_rollback()
+** or sqlite_pager_commit(), the state goes back to PAGER_SHARED.
 */
 #define PAGER_UNLOCK      0
 #define PAGER_SHARED      1
@@ -215,13 +217,13 @@ struct Pager {
   u8 memDb;                   /* True to inhibit all file I/O */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInStmt;                /* One bit for each page in the database */
+  int nMaster;                /* Number of bytes to reserve for master j.p */
+  BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
   PgHdr *pFirst, *pLast;      /* List of free pages */
   PgHdr *pFirstSynced;        /* First free page with PgHdr.needSync==0 */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *pStmt;               /* List of pages in the statement subjournal */
-  PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number of PgHdr */
-  int nMaster;                /* Number of bytes to reserve for master j.p */
-  BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
+  PgHdr *aHash[N_PG_HASH];    /* Hash table to map page number to PgHdr */
 };
 
 /*
@@ -261,16 +263,15 @@ static const unsigned char aJournalMagic[] = {
 };
 
 /*
-** The size of the header and of each page in the journal varies according
-** to which journal format is being used.  The following macros figure out
-** the sizes based on format numbers.
+** The size of the header and of each page in the journal is determined
+** by the following macros.
 */
 #define JOURNAL_HDR_SZ(pPager) (24 + (pPager)->nMaster)
 #define JOURNAL_PG_SZ(pPager)  ((pPager->pageSize) + 8)
 
 
 /*
-** Enable reference count tracking here:
+** Enable reference count tracking (for debugging) here:
 */
 #ifdef SQLITE_TEST
   int pager3_refinfo_enable = 0;
@@ -292,6 +293,8 @@ static const unsigned char aJournalMagic[] = {
 ** Read a 32-bit integer from the given file descriptor.  Store the integer
 ** that is read in *pRes.  Return SQLITE_OK if everything worked, or an
 ** error code is something goes wrong.
+**
+** All values are stored on disk as big-endian.
 */
 static int read32bits(OsFile *fd, u32 *pRes){
   u32 res;
@@ -469,8 +472,21 @@ static int pager_unwritelock(Pager *pPager){
 ** Compute and return a checksum for the page of data.
 **
 ** This is not a real checksum.  It is really just the sum of the 
-** random initial value and the page number.  We considered do a checksum
-** of the database, but that was found to be too slow.
+** random initial value and the page number.  We experimented with
+** a checksum of the entire data, but that was found to be too slow.
+**
+** Note that the page number is stored at the beginning of data and
+** the checksum is stored at the end.  This is important.  If journal
+** corruption occurs due to a power failure, the most likely scenario
+** is that one end or the other of the record will be changed.  It is
+** much less likely that the two ends of the journal record will be
+** correct and the middle be corrupt.  Thus, this "checksum" scheme,
+** though fast and simple, catches the mostly likely kind of corruption.
+**
+** FIX ME:  Consider adding every 200th (or so) byte of the data to the
+** checksum.  That way if a single page spans 3 or more disk sectors and
+** only the middle sector is corrupt, we will still have a reasonable
+** chance of failing the checksum and thus detecting the problem.
 */
 static u32 pager_cksum(Pager *pPager, Pgno pgno, const char *aData){
   u32 cksum = pPager->cksumInit + pgno;
@@ -481,10 +497,9 @@ static u32 pager_cksum(Pager *pPager, Pgno pgno, const char *aData){
 ** Read a single page from the journal file opened on file descriptor
 ** jfd.  Playback this one page.
 **
-** 
-** 
-** There are three different journal formats.  The format parameter determines
-** which format is used by the journal that is played back.
+** If useCksum==0 it means this journal does not use checksums.  Checksums
+** are not used in statement journals because statement journals do not
+** need to survive power failures.
 */
 static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   int rc;
@@ -546,14 +561,13 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     assert( pPg->nRef==0 || pPg->pgno==1 );
     pData = PGHDR_TO_DATA(pPg);
     memcpy(pData, aData, pPager->pageSize);
-    if( pPager->xDestructor ){
+    if( pPager->xDestructor ){  /*** FIX ME:  Should this be xReinit? ***/
       pPager->xDestructor(pData, pPager->pageSize);
     }
     if( pPager->state==PAGER_EXCLUSIVE ){
       pPg->dirty = 0;
       pPg->needSync = 0;
     }
-
     CODEC(pPager, pData, pPg->pgno, 3);
   }
   return rc;
@@ -564,6 +578,11 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
 ** file that referred to the master journal file has just been rolled back.
 ** This routine checks if it is possible to delete the master journal file,
 ** and does so if it is.
+**
+** The master journal file contains the names of all child journals.
+** To tell if a master journal can be deleted, check to each of the
+** children.  If all children are either missing or do not refer to
+** a different master journal, then this master journal can be deleted.
 */
 static int pager_delmaster(const char *zMaster){
   int rc;
@@ -595,6 +614,8 @@ static int pager_delmaster(const char *zMaster){
     zDb = zMasterJournal;
     while( (zDb-zMasterJournal)<nMasterJournal ){
       char *zJournal = 0;
+      /*** FIX ME:  Store the full journal name in the master journal,
+      **** not just the base database name. ***/
       sqlite3SetString(&zJournal, zDb, "-journal", 0);
       if( !zJournal ){
         rc = SQLITE_NOMEM;
@@ -638,6 +659,8 @@ static int pager_delmaster(const char *zMaster){
         rc = read32bits(&journal, (u32*)&nMaster);
         if( rc!=SQLITE_OK ) goto delmaster_out;
         if( nMaster>0 && nMaster>=strlen(zMaster)+1 ){
+          /*** FIX ME: Consider allocating this space at the same time
+          **** space is allocated for holding the text of the master journal */
           char *zMasterPtr = (char *)sqliteMalloc(nMaster);
           if( !zMasterPtr ){
             rc = SQLITE_NOMEM;

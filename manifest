@@ -1,5 +1,5 @@
-C Add\snew\scontributed\slogo\sTIFF.\s(CVS\s1566)
-D 2004-06-10T22:51:42
+C Comment\schanges\sin\spager.c.\s(CVS\s1567)
+D 2004-06-10T23:35:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -48,7 +48,7 @@ F src/os_unix.c 1d6f3d1a87d4aa0e4490bcc47b3f0ff9b2e37e7a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 6b8f9fcc683bb888e07fc485372803baa68faadb
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c d852730901441babf6cd16fc528dd6eecc2b2eab
+F src/pager.c 94ecf938607847e21fb794d2841c9a7f05e2ddb7
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0bc3adea28df802074996bec067d506d55d28f84
@@ -220,7 +220,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 49ab4794e1b5be5cbb3b87a65477659762487cf8
-R 248d68f3e0451ccee26e84d45e60226c
+P 86744c9aca8f27c994a2bf37c4f9fd3c90b1266f
+R 65f18105c3c7cd6b45070d399a5db0dc
 U drh
-Z 5e2791e245ed383e2c61d4a359e961de
+Z 8a5b524afd149095f5eb569662ebddff
