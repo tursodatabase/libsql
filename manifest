@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sbtree.c\sin\scases\swhere\susableSize!=pageSize.\s\sTicket\s#925.\s(CVS\s1987)
-D 2004-09-27T12:20:52
+C Comment\schanges\sin\sbtree.c.\s\sNo\schanges\sto\scode.\s(CVS\s1988)
+D 2004-09-27T13:19:52
 F Makefile.in abdeb5bd9d017822691884935c320037c33f6ee6
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 65408baa7e6621520882478dfa1e6b8c1d6c1850
-F src/btree.c 839aa4dbb742b518dff6c833b5edf259649f2c5f
+F src/btree.c 014d3c9d31136050f3b3294c0c5dc0c7615557bf
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c 86318bdcd291919d4f87700385fdb73146436531
 F src/date.c eb8d5fa1a6d5cfc09031c8852d10ff742a94b15b
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 54ee1664aaaa1a3380009b5206a0fa79cd286fc5
-R 4007cebb122e47fc348aee0870d3a991
+P cb3e12372d96f5a24f5a5d79645c705775bc63ff
+R 94470b4120ee288eca8b9b72b996ebdd
 U drh
-Z eff0734cd4f698ab257de3d7b60fd084
+Z b8354c1b1ec396f3dd5711b713f744d9

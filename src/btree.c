@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.190 2004/09/27 12:20:52 drh Exp $
+** $Id: btree.c,v 1.191 2004/09/27 13:19:52 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -127,15 +127,16 @@
 **
 ** The flags define the format of this btree page.  The leaf flag means that
 ** this page has no children.  The zerodata flag means that this page carries
-** only keys and no data.  The intkey flag means that the key is a single
-** variable length integer at the beginning of the payload.
+** only keys and no data.  The intkey flag means that the key is a integer
+** which is stored in the key size entry of the cell header rather than in
+** the payload area.
 **
 ** The cell pointer array begins on the first byte after the page header.
 ** The cell pointer array contains zero or more 2-byte numbers which are
 ** offsets from the beginning of the page to the cell content in the cell
 ** content area.  The cell pointers occur in sorted order.  The system strives
 ** to keep free space after the last cell pointer so that new cells can
-** be easily added without have to defragment the page.
+** be easily added without having to defragment the page.
 **
 ** Cell content is stored at the very end of the page and grows toward the
 ** beginning of the page.
