@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Oct 30 (2.7.3)} {
+<li>Various compiler compatibility fixes.</li>
+<li>Fix a bug in the "expr IN ()" operator.</li>
+<li>Accept column names in parentheses.</li>
+<li>Fix a problem with string memory management in the VDBE</li>
+<li>Fix a bug in the "table_info" pragma"</li>
+<li>Export the sqlite_function_type() API function in the Windows DLL</li>
+<li>Fix locking behavior under windows</li>
+<li>Fix a bug in LEFT OUTER JOIN</li>
+}
+
 chng {2002 Sep 25 (2.7.2)} {
 <li>Prevent journal file overflows on huge transactions.</li>
 <li>Fix a memory leak that occurred when sqlite_open() failed.</li>

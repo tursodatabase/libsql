@@ -1,9 +1,9 @@
-C In\sthe\sVDBE,\scheck\sto\smake\ssure\sa\sset\shas\sbeen\sinitialized\sbefore\susing\sit.\nTicket\s#185.\s(CVS\s772)
-D 2002-10-30T22:42:59
+C Bump\sthe\sversion\snumber\sprior\sto\sthe\srelease\sof\sversion\s2.7.3.\s(CVS\s773)
+D 2002-10-30T23:04:27
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 7cc70240794db6c8f3c6ef8867090c25d8b442bd
+F VERSION 3cd17ced6590df1bb65cb7e075ab529b481517f0
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -129,7 +129,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl e76c9fd609326c34cd45cd040b508b0e21908800
-F www/changes.tcl 5074fcf9ad6186f1ca48cda96081a465e8d41f52
+F www/changes.tcl 9c47ef405cf8605b5ba3de4476b78d3f2420853c
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 31df3690d0fe4bd4a293cbe8ca9a26c98c3ed3ce
-R eb80ca88edb7341c8e42b523ac2c342a
+P 8c4cbdd05517e91879a0f2c4559d0f0518d2385b
+R e45fb39d2412ba050ad0f809e542a329
 U drh
-Z 8e88b9a64c45827fb45a696ea6365971
+Z 81b9d246d2219c6cfbb498689da38259
