@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.15 2004/05/31 18:51:58 drh Exp $
+** $Id: utf.c,v 1.16 2004/06/02 00:29:24 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -59,19 +59,6 @@ struct UtfString {
   int c;                /* Number of pZ bytes already read or written */
 };
 
-/* TODO: Implement this macro in os.h. It should be 1 on big-endian
-** machines, and 0 on little-endian.
-*/
-#define SQLITE_NATIVE_BIGENDIAN 0
-
-#if SQLITE_NATIVE_BIGENDIAN == 1
-#define BOM_BIGENDIAN 0x0000FFFE
-#define BOM_LITTLEENDIAN 0x0000FEFF
-#else
-#define BOM_BIGENDIAN 0x0000FEFF
-#define BOM_LITTLEENDIAN 0x0000FFFE
-#endif
-
 /*
 ** These two macros are used to interpret the first two bytes of the 
 ** unsigned char array pZ as a 16-bit unsigned int. BE16() for a big-endian
@@ -108,14 +95,10 @@ static int readUtf16Bom(UtfString *pStr, int big_endian){
   ** present.
   */
   if( pStr->n>1 ){
-    u32 bom = BE16(pStr->pZ);
-    if( bom==BOM_BIGENDIAN ){
-      pStr->c = 2;
-      return 1;
-    }
-    if( bom==BOM_LITTLEENDIAN ){
-      pStr->c = 2;
-      return 0;
+    u8 bom = sqlite3UtfReadBom(pStr->pZ, 2);
+    if( bom ){
+      pStr->c += 2;
+      return (bom==TEXT_Utf16le)?0:1;
     }
   }
 

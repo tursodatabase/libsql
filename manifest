@@ -1,5 +1,5 @@
-C Fix\sanother\swebsite\stypo.\s(CVS\s1521)
-D 2004-06-02T00:08:56
+C Fix\sa\sbug\swith\sUTF-16\sbyte-order-marks\son\sbig-endian\shosts.\s(CVS\s1522)
+D 2004-06-02T00:29:24
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -67,7 +67,7 @@ F src/test5.c a894fbfa8a7dcdc2cbc0c38c11149cc5c8252cea
 F src/tokenize.c 183c5d7da11affab5d70d903d33409c8c0ce6c5b
 F src/trigger.c 04b2c310d0d056b213609cab6df5fff03d5eaf88
 F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
-F src/utf.c c18b4e66bd13872b7199444addaa04785ff1b80a
+F src/utf.c c8be20ecdcb10659e23c43e35d835460e964d248
 F src/util.c 3b647719c0bece41491300b605cff96a7a26f03a
 F src/vacuum.c c91acc316127411980982938d050b299d42b81ef
 F src/vdbe.c cc754eddc0d2e741e57c4557c77754d8bbd93eeb
@@ -214,7 +214,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 023d1760c1a720632b25c98d14bf521ab91861e2
-R 5a6a7e0dc4da60097c6d0b9613de9a3a
-U drh
-Z 18ef1953bc240ed2b92d7ff4b96c3997
+P 24e2bbd0f233eaec1789e866e9abb88db66e2278
+R 770b5bbc0f504b74630be07ad566c456
+U danielk1977
+Z d278c6c962aa9ab7dcd916a21504bfc5
