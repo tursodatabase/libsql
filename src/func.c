@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.27 2003/08/09 21:32:28 drh Exp $
+** $Id: func.c,v 1.28 2003/08/10 01:50:55 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -503,14 +503,16 @@ static void minMaxFinalize(sqlite_func *context){
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
-** in Greenwich on January 01, 4713 B.C.  (a.k.a -4713-01-01 12:00:00)
+** in Greenwich on November 24, 4714 B.C. according to the Gregorian
+** calendar system.
+**
 ** This implement requires years to be expressed as a 4-digit number
 ** which means that only dates between 0000-01-01 and 9999-12-31 can
 ** be represented, even though julian day numbers allow a much wider
 ** range of dates.
 **
 ** The Gregorian calendar system is used for all dates and times,
-** even those that predate the Gregorian calendar.  Historians often
+** even those that predate the Gregorian calendar.  Historians usually
 ** use the Julian calendar for dates prior to 1582-10-15 and for some
 ** dates afterwards, depending on locale.  Beware of this difference.
 **
@@ -540,7 +542,7 @@ static int getDigits(const char *zDate, int N){
 }
 
 /*
-** Parse dates of the form HH:MM:SS or HH:MM.  Store the
+** Parse times of the form HH:MM:SS or HH:MM.  Store the
 ** result (in days) in *prJD.
 **
 ** Return 1 if there is a parsing error and 0 on success.
@@ -645,160 +647,152 @@ static int parseDateOrTime(const char *zDate, double *prJD){
 }
 
 /*
-** Break up a julian day number into year, month, day, and seconds.
+** A structure for holding date and time.
+*/
+typedef struct DateTime DateTime;
+struct DateTime {
+  double rJD;    /* The julian day number */
+  int Y, M, D;   /* Year, month, and day */
+  int h, m, s;   /* Hour minute and second */
+};
+
+/*
+** Break up a julian day number into year, month, day, hour, minute, second.
 ** This function assume the Gregorian calendar - even for dates prior
 ** to the invention of the Gregorian calendar in 1582.
 **
 ** See Meeus page 63.
+**
+** If mode==1 only the year, month, and day are computed.  If mode==2
+** then only the hour, minute, and second are computed.  If mode==3 then
+** everything is computed.  If mode==0, this routine is a no-op.
 */
-static void decomposeDate(double JD, int *pY, int *pM, int *pD, int *pS){
-  int Z, A, B, C, D, E, X1;
-  Z = JD + 0.5;
-  A = (Z - 1867216.25)/36524.25;
-  A = Z + 1 + A - (A/4);
-  B = A + 1524;
-  C = (B - 122.1)/365.25;
-  D = 365.25*C;
-  E = (B-D)/30.6001;
-  X1 = 30.6001*E;
-  *pD = B - D - X1;
-  *pM = E<14 ? E-1 : E-13;
-  *pY = *pD>2 ? C - 4716 : C - 4715;
-  *pS = (JD + 0.5 - Z)*86400.0;
+static void decomposeDate(DateTime *p, int mode){
+  int Z;
+  Z = p->rJD + 0.5;
+  if( mode & 1 ){
+    int A, B, C, D, E, X1;
+    A = (Z - 1867216.25)/36524.25;
+    A = Z + 1 + A - (A/4);
+    B = A + 1524;
+    C = (B - 122.1)/365.25;
+    D = 365.25*C;
+    E = (B-D)/30.6001;
+    X1 = 30.6001*E;
+    p->D = B - D - X1;
+    p->M = E<14 ? E-1 : E-13;
+    p->Y = p->M>2 ? C - 4716 : C - 4715;
+  }
+  if( mode & 2 ){
+    p->s = (p->rJD + 0.5 - Z)*86400.0;
+    p->h = p->s/3600;
+    p->s -= p->h*3600;
+    p->m = p->s/60;
+    p->s -= p->m*60;
+  }
 }
 
 /*
-** Check to see that all arguments are valid date strings.  If any is
-** not a valid date string, return 0.  If all are valid, return 1.
-** Write into *prJD the sum of the julian day numbers for all date
-** strings.
+** Check to see that all arguments are valid date strings.  If any 
+** argument is not a valid date string, return 0.  If all arguments
+** are valid, return 1 and write into *p->rJD the sum of the julian day
+** numbers for all date strings.
+**
+** A "valid" date string is one that is accepted by parseDateOrTime().
+**
+** The mode argument is passed through to decomposeDate() in order to
+** fill in the year, month, day, hour, minute, and second of the *p
+** structure, if desired.
 */
-static int isDate(
-  sqlite_func *context,
-  int argc,
-  const char **argv,
-  double *prJD
-){
+static int isDate(int argc, const char **argv, DateTime *p, int mode){
   double r;
   int i;
-  *prJD = 0.0;
+  p->rJD = 0.0;
   for(i=0; i<argc; i++){
     if( argv[i]==0 ) return 0;
     if( parseDateOrTime(argv[i], &r) ) return 0;
-    *prJD += r;
+    p->rJD += r;
   }
+  decomposeDate(p, mode);
   return 1;
 }
+
 
 /*
 ** The following routines implement the various date and time functions
 ** of SQLite.
 */
 static void juliandayFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    sqlite_set_result_double(context, JD);
+  DateTime x;
+  if( isDate(argc, argv, &x, 0) ){
+    sqlite_set_result_double(context, x.rJD);
   }
 }
 static void timestampFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, h, m, s;
+  DateTime x;
+  if( isDate(argc, argv, &x, 3) ){
     char zBuf[100];
-    decomposeDate(JD, &Y, &M, &D, &s);
-    h = s/3600;
-    s -= h*3600;
-    m = s/60;
-    s -= m*60;
-    sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d", Y, M, D, h, m, s);
+    sprintf(zBuf, "%04d-%02d-%02d %02d:%02d:%02d",x.Y, x.M, x.D, x.h, x.m, x.s);
     sqlite_set_result_string(context, zBuf, -1);
   }
 }
 static void timeFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, h, m, s;
+  DateTime x;
+  if( isDate(argc, argv, &x, 2) ){
     char zBuf[100];
-    decomposeDate(JD, &Y, &M, &D, &s);
-    h = s/3600;
-    s -= h*3600;
-    m = s/60;
-    s -= m*60;
-    sprintf(zBuf, "%02d:%02d:%02d", h, m, s);
+    sprintf(zBuf, "%02d:%02d:%02d", x.h, x.m, x.s);
     sqlite_set_result_string(context, zBuf, -1);
   }
 }
 static void dateFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, s;
+  DateTime x;
+  if( isDate(argc, argv, &x, 1) ){
     char zBuf[100];
-    decomposeDate(JD, &Y, &M, &D, &s);
-    sprintf(zBuf, "%04d-%02d-%02d", Y, M, D);
+    sprintf(zBuf, "%04d-%02d-%02d", x.Y, x.M, x.D);
     sqlite_set_result_string(context, zBuf, -1);
   }
 }
 static void yearFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    sqlite_set_result_int(context, Y);
+  DateTime x;
+  if( isDate(argc, argv, &x, 1) ){
+    sqlite_set_result_int(context, x.Y);
   }
 }
 static void monthFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    sqlite_set_result_int(context, M);
+  DateTime x;
+  if( isDate(argc, argv, &x, 1) ){
+    sqlite_set_result_int(context, x.M);
   }
 }
 static void dayofweekFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Z = JD + 1.5;
+  DateTime x;
+  if( isDate(argc, argv, &x, 0) ){
+    int Z = x.rJD + 1.5;
     sqlite_set_result_int(context, Z % 7);
   }
 }
 static void dayofmonthFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    sqlite_set_result_int(context, D);
+  DateTime x;
+  if( isDate(argc, argv, &x, 1) ){
+    sqlite_set_result_int(context, x.D);
   }
 }
 static void secondFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, h, m, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    h = s/3600;
-    s -= h*3600;
-    m = s/60;
-    s -= m*60;
-    sqlite_set_result_int(context, s);
+  DateTime x;
+  if( isDate(argc, argv, &x, 2) ){
+    sqlite_set_result_int(context, x.s);
   }
 }
 static void minuteFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, h, m, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    h = s/3600;
-    s -= h*3600;
-    m = s/60;
-    sqlite_set_result_int(context, m);
+  DateTime x;
+  if( isDate(argc, argv, &x, 2) ){
+    sqlite_set_result_int(context, x.m);
   }
 }
 static void hourFunc(sqlite_func *context, int argc, const char **argv){
-  double JD;
-  if( isDate(context, argc, argv, &JD) ){
-    int Y, M, D, h, s;
-    decomposeDate(JD, &Y, &M, &D, &s);
-    h = s/3600;
-    sqlite_set_result_int(context, h);
+  DateTime x;
+  if( isDate(argc, argv, &x, 2) ){
+    sqlite_set_result_int(context, x.h);
   }
 }
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
