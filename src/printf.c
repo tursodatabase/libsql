@@ -90,8 +90,8 @@ typedef struct et_info {   /* Information about each format field */
   etByte base;             /* The base for radix conversion */
   etByte flags;            /* One or more of FLAG_ constants below */
   etByte type;             /* Conversion paradigm */
-  char *charset;           /* The character set for conversion */
-  char *prefix;            /* Prefix on non-zero values in alt format */
+  etByte charset;          /* Offset into aDigits[] of the digits string */
+  etByte prefix;           /* Offset into aPrefix[] of the prefix string */
 } et_info;
 
 /*
@@ -105,28 +105,30 @@ typedef struct et_info {   /* Information about each format field */
 ** The following table is searched linearly, so it is good to put the
 ** most frequently used conversion types first.
 */
+static const char aDigits[] = "0123456789ABCDEF0123456789abcdef";
+static const char aPrefix[] = "-x0\000X0";
 static et_info fmtinfo[] = {
-  {  'd', 10, 1, etRADIX,      "0123456789",       0    },
-  {  's',  0, 0, etSTRING,     0,                  0    },
-  {  'z',  0, 2, etDYNSTRING,  0,                  0    },
-  {  'q',  0, 0, etSQLESCAPE,  0,                  0    },
-  {  'Q',  0, 0, etSQLESCAPE2, 0,                  0    },
-  {  'c',  0, 0, etCHARX,      0,                  0    },
-  {  'o',  8, 0, etRADIX,      "01234567",         "0"  },
-  {  'u', 10, 0, etRADIX,      "0123456789",       0    },
-  {  'x', 16, 0, etRADIX,      "0123456789abcdef", "x0" },
-  {  'X', 16, 0, etRADIX,      "0123456789ABCDEF", "X0" },
-  {  'f',  0, 1, etFLOAT,      0,                  0    },
-  {  'e',  0, 1, etEXP,        "e",                0    },
-  {  'E',  0, 1, etEXP,        "E",                0    },
-  {  'g',  0, 1, etGENERIC,    "e",                0    },
-  {  'G',  0, 1, etGENERIC,    "E",                0    },
-  {  'i', 10, 1, etRADIX,      "0123456789",       0    },
-  {  'n',  0, 0, etSIZE,       0,                  0    },
-  {  '%',  0, 0, etPERCENT,    0,                  0    },
-  {  'p', 16, 0, etPOINTER,    "0123456789abcdef", "x0" },
-  {  'T',  0, 2, etTOKEN,      0,                  0    },
-  {  'S',  0, 2, etSRCLIST,    0,                  0    },
+  {  'd', 10, 1, etRADIX,      0,  0 },
+  {  's',  0, 0, etSTRING,     0,  0 },
+  {  'z',  0, 2, etDYNSTRING,  0,  0 },
+  {  'q',  0, 0, etSQLESCAPE,  0,  0 },
+  {  'Q',  0, 0, etSQLESCAPE2, 0,  0 },
+  {  'c',  0, 0, etCHARX,      0,  0 },
+  {  'o',  8, 0, etRADIX,      0,  2 },
+  {  'u', 10, 0, etRADIX,      0,  0 },
+  {  'x', 16, 0, etRADIX,      16, 1 },
+  {  'X', 16, 0, etRADIX,      0,  4 },
+  {  'f',  0, 1, etFLOAT,      0,  0 },
+  {  'e',  0, 1, etEXP,        30, 0 },
+  {  'E',  0, 1, etEXP,        14, 0 },
+  {  'g',  0, 1, etGENERIC,    30, 0 },
+  {  'G',  0, 1, etGENERIC,    14, 0 },
+  {  'i', 10, 1, etRADIX,      0,  0 },
+  {  'n',  0, 0, etSIZE,       0,  0 },
+  {  '%',  0, 0, etPERCENT,    0,  0 },
+  {  'p', 16, 0, etPOINTER,    0,  1 },
+  {  'T',  0, 2, etTOKEN,      0,  0 },
+  {  'S',  0, 2, etSRCLIST,    0,  0 },
 };
 #define etNINFO  (sizeof(fmtinfo)/sizeof(fmtinfo[0]))
 
@@ -377,9 +379,9 @@ static int vxprintf(
         }
         bufpt = &buf[etBUFSIZE-1];
         {
-          register char *cset;      /* Use registers for speed */
+          register const char *cset;      /* Use registers for speed */
           register int base;
-          cset = infop->charset;
+          cset = &aDigits[infop->charset];
           base = infop->base;
           do{                                           /* Convert to ascii */
             *(--bufpt) = cset[longvalue%base];
@@ -392,10 +394,11 @@ static int vxprintf(
         }
         if( prefix ) *(--bufpt) = prefix;               /* Add sign */
         if( flag_alternateform && infop->prefix ){      /* Add "0" or "0x" */
-          char *pre, x;
-          pre = infop->prefix;
+          const char *pre;
+          char x;
+          pre = &aPrefix[infop->prefix];
           if( *bufpt!=pre[0] ){
-            for(pre=infop->prefix; (x=(*pre))!=0; pre++) *(--bufpt) = x;
+            for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
           }
         }
         length = &buf[etBUFSIZE-1]-bufpt;
@@ -493,7 +496,7 @@ static int vxprintf(
           }
           bufpt++;                            /* point to next free slot */
           if( exp || flag_exp ){
-            *(bufpt++) = infop->charset[0];
+            *(bufpt++) = aDigits[infop->charset];
             if( exp<0 ){ *(bufpt++) = '-'; exp = -exp; } /* sign of exp */
             else       { *(bufpt++) = '+'; }
             if( exp>=100 ){
@@ -809,6 +812,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 ** and segfaults if you give it a long long int.
 */
 void sqlite3DebugPrintf(const char *zFormat, ...){
+  extern int getpid(void);
   va_list ap;
   char zBuf[500];
   va_start(ap, zFormat);

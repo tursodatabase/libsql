@@ -56,6 +56,21 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 }
 
 /*
+** Resize the Vdbe.aOp array so that it contains at least N
+** elements.
+*/
+static void resizeOpArray(Vdbe *p, int N){
+  if( p->nOpAlloc<N ){
+    int oldSize = p->nOpAlloc;
+    p->nOpAlloc = N+100;
+    p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
+    if( p->aOp ){
+      memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
+    }
+  }
+}
+
+/*
 ** Add a new instruction to the list of instructions current in the
 ** VDBE.  Return the address of the new instruction.
 **
@@ -78,24 +93,13 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   i = p->nOp;
   p->nOp++;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( i>=p->nOpAlloc ){
-    int oldSize = p->nOpAlloc;
-    Op *aNew;
-    p->nOpAlloc = p->nOpAlloc*2 + 100;
-    aNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-    if( aNew==0 ){
-      p->nOpAlloc = oldSize;
-      return 0;
-    }
-    p->aOp = aNew;
-    memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
+  resizeOpArray(p, i+1);
+  if( p->aOp==0 ){
+    return 0;
   }
   pOp = &p->aOp[i];
   pOp->opcode = op;
   pOp->p1 = p1;
-  if( p2<0 && (-1-p2)<p->nLabel && p->aLabel[-1-p2]>=0 ){
-    p2 = p->aLabel[-1-p2];
-  }
   pOp->p2 = p2;
   pOp->p3 = 0;
   pOp->p3type = P3_NOTUSED;
@@ -133,20 +137,12 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   i = p->nLabel++;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
-    int *aNew;
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    aNew = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
-    if( aNew==0 ){
-      sqliteFree(p->aLabel);
-    }
-    p->aLabel = aNew;
+    p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
-  if( p->aLabel==0 ){
-    p->nLabel = 0;
-    p->nLabelAlloc = 0;
-    return 0;
+  if( p->aLabel ){
+    p->aLabel[i] = -1;
   }
-  p->aLabel[i] = -1;
   return -1-i;
 }
 
@@ -156,16 +152,33 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
 ** a prior call to sqlite3VdbeMakeLabel().
 */
 void sqlite3VdbeResolveLabel(Vdbe *p, int x){
-  int j;
+  int j = -1-x;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( x<0 && (-x)<=p->nLabel && p->aOp ){
-    if( p->aLabel[-1-x]==p->nOp ) return;
-    assert( p->aLabel[-1-x]<0 );
-    p->aLabel[-1-x] = p->nOp;
-    for(j=0; j<p->nOp; j++){
-      if( p->aOp[j].p2==x ) p->aOp[j].p2 = p->nOp;
-    }
+  assert( j>=0 && j<p->nLabel );
+  if( p->aLabel ){
+    p->aLabel[j] = p->nOp;
   }
+}
+
+/*
+** Loop through the program looking for P2 values that are negative.
+** Each such value is a label.  Resolve the label by setting the P2
+** value to its correct non-zero value.
+**
+** This routine is called once after all opcodes have been inserted.
+*/
+static void resolveP2Values(Vdbe *p){
+  int i;
+  Op *pOp;
+  int *aLabel = p->aLabel;
+  if( aLabel==0 ) return;
+  for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
+    if( pOp->p2>=0 ) continue;
+    assert( -1-pOp->p2<p->nLabel );
+    pOp->p2 = aLabel[-1-pOp->p2];
+  }
+  sqliteFree(p->aLabel);
+  p->aLabel = 0;
 }
 
 /*
@@ -183,17 +196,9 @@ int sqlite3VdbeCurrentAddr(Vdbe *p){
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->nOp + nOp >= p->nOpAlloc ){
-    int oldSize = p->nOpAlloc;
-    Op *aNew;
-    p->nOpAlloc = p->nOpAlloc*2 + nOp + 10;
-    aNew = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-    if( aNew==0 ){
-      p->nOpAlloc = oldSize;
-      return 0;
-    }
-    p->aOp = aNew;
-    memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
+  resizeOpArray(p, p->nOp + nOp);
+  if( p->aOp==0 ){
+    return 0;
   }
   addr = p->nOp;
   if( nOp>0 ){
@@ -312,7 +317,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
   assert( p->nOp>0 );
-  assert( p->aOp[p->nOp-1].p3==0 );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 );
   va_start(ap, zFormat);
   sqlite3VdbeChangeP3(p, -1, sqlite3VMPrintf(zFormat, ap), P3_DYNAMIC);
   va_end(ap);
@@ -457,6 +462,17 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 #endif
 
 /*
+** Release an array of N Mem elements
+*/
+static void releaseMemArray(Mem *p, int N){
+  if( p ){
+    while( N-->0 ){
+      sqlite3VdbeMemRelease(p++);
+    }
+  }
+}
+
+/*
 ** Give a listing of the program in the virtual machine.
 **
 ** The interface is the same as sqlite3VdbeExec().  But instead of
@@ -477,10 +493,7 @@ int sqlite3VdbeList(
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
   if( p->pTos==&p->aStack[4] ){
-    for(i=0; i<5; i++){
-      sqlite3VdbeMemRelease(&p->aStack[i]);
-      p->aStack[i].flags = 0;
-    }
+    releaseMemArray(p->aStack, 5);
   }
   p->resOnStack = 0;
 
@@ -586,6 +599,7 @@ void sqlite3VdbeMakeReady(
   ** Allocation all the stack space we will ever need.
   */
   if( p->aStack==0 ){
+    resolveP2Values(p);
     assert( nVar>=0 );
     n = isExplain ? 10 : p->nOp;
     p->aStack = sqliteMalloc(
@@ -846,27 +860,23 @@ static void closeAllCursors(Vdbe *p){
 static void Cleanup(Vdbe *p){
   int i;
   if( p->aStack ){
-    Mem *pTos = p->pTos;
-    while( pTos>=p->aStack ){
-      sqlite3VdbeMemRelease(pTos);
-      pTos--;
-    }
-    p->pTos = pTos;
+    releaseMemArray(p->aStack, 1 + (p->pTos - p->aStack));
+    p->pTos = &p->aStack[-1];
   }
   closeAllCursors(p);
-  for(i=0; i<p->nMem; i++){
-    sqlite3VdbeMemRelease(&p->aMem[i]);
-  }
+  releaseMemArray(p->aMem, p->nMem);
   if( p->pList ){
     sqlite3VdbeKeylistFree(p->pList);
     p->pList = 0;
   }
-  for(i=0; i<p->contextStackTop; i++){
-    sqlite3VdbeKeylistFree(p->contextStack[i].pList);
+  if( p->contextStack ){
+    for(i=0; i<p->contextStackTop; i++){
+      sqlite3VdbeKeylistFree(p->contextStack[i].pList);
+    }
+    sqliteFree(p->contextStack);
   }
   sqlite3VdbeSorterReset(p);
   sqlite3VdbeAggReset(0, &p->agg, 0);
-  sqliteFree(p->contextStack);
   p->contextStack = 0;
   p->contextStackDepth = 0;
   p->contextStackTop = 0;
@@ -881,8 +891,16 @@ static void Cleanup(Vdbe *p){
 ** be called on an SQL statement before sqlite3_step().
 */
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
+  Mem *pColName;
+  int n;
   assert( 0==p->nResColumn );
   p->nResColumn = nResColumn;
+  n = nResColumn*2;
+  p->aColName = pColName = (Mem*)sqliteMalloc( sizeof(Mem)*n );
+  if( p->aColName==0 ) return;
+  while( n-- > 0 ){
+    (pColName++)->flags = MEM_Null;
+  }
 }
 
 /*
@@ -900,21 +918,8 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, const char *zName, int N){
   int rc;
   Mem *pColName;
   assert( idx<(2*p->nResColumn) );
-
-  /* If the Vdbe.aColName array has not yet been allocated, allocate
-  ** it now.
-  */
-  if( !p->aColName ){
-    int i;
-    p->aColName = (Mem *)sqliteMalloc(sizeof(Mem)*p->nResColumn*2);
-    if( !p->aColName ){
-      return SQLITE_NOMEM;
-    }
-    for(i=0; i<(2*p->nResColumn); i++){
-      p->aColName[i].flags = MEM_Null;
-    }
-  }
-
+  if( sqlite3_malloc_failed ) return SQLITE_NOMEM;
+  assert( p->aColName!=0 );
   pColName = &(p->aColName[idx]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
     rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
@@ -1381,34 +1386,25 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( p->pNext ){
     p->pNext->pPrev = p->pPrev;
   }
-  p->pPrev = p->pNext = 0;
-  if( p->nOpAlloc==0 ){
-    p->aOp = 0;
-    p->nOp = 0;
-  }
-  for(i=0; i<p->nOp; i++){
-    Op *pOp = &p->aOp[i];
-    if( pOp->p3type==P3_DYNAMIC || pOp->p3type==P3_KEYINFO ){
-      sqliteFree(pOp->p3);
+  if( p->aOp ){
+    for(i=0; i<p->nOp; i++){
+      Op *pOp = &p->aOp[i];
+      if( pOp->p3type==P3_DYNAMIC || pOp->p3type==P3_KEYINFO ){
+        sqliteFree(pOp->p3);
+      }
+      if( pOp->p3type==P3_VDBEFUNC ){
+        VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
+        sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
+        sqliteFree(pVdbeFunc);
+      }
     }
-    if( pOp->p3type==P3_VDBEFUNC ){
-      VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
-      sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
-      sqliteFree(pVdbeFunc);
-    }
+    sqliteFree(p->aOp);
   }
-  for(i=0; i<p->nVar; i++){
-    sqlite3VdbeMemRelease(&p->aVar[i]);
-  }
-  sqliteFree(p->aOp);
+  releaseMemArray(p->aVar, p->nVar);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);
-  if( p->aColName ){
-    for(i=0; i<(p->nResColumn)*2; i++){
-      sqlite3VdbeMemRelease(&(p->aColName[i]));
-    }
-    sqliteFree(p->aColName);
-  }
+  releaseMemArray(p->aColName, p->nResColumn*2);
+  sqliteFree(p->aColName);
   p->magic = VDBE_MAGIC_DEAD;
   sqliteFree(p);
 }
