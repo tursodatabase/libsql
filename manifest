@@ -1,5 +1,5 @@
-C Version\s2.1.0\s(CVS\s461)
-D 2001-11-12T14:00:00
+C Bug\sfix:\sSometimes\sNULL\sresults\swere\snot\sbeing\spassed\sas\snulls\sto\sthe\ncallback\sfunction.\s(CVS\s312)
+D 2001-11-13T19:35:15
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -49,7 +49,7 @@ F src/test3.c d6775f95fd91f5b3cf0e2382a28e5aaeb68f745b
 F src/tokenize.c 830e9ef684334070a26583d94770bb869e2727bf
 F src/update.c b1e315e20b98a013d30fd9ff3b7d9dc4f29b39b3
 F src/util.c ac83973ecc647d3d3c58708f148442365abf9b94
-F src/vdbe.c 1942750d2406527213382a1dac740a90d0797012
+F src/vdbe.c f1afb7a82016be2cb4cea24cf98dbb5af0ea7214
 F src/vdbe.h cd4c8647051a0c22c0e133c375f1cd17bb8b1e06
 F src/where.c 05d27a01e53c20b8cd10589b7e789b2a64367988
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 6b3ccb37bf4c10b2d8f96ef8efc22ed8253f1886
-R 256cf76dc431744295dc1e0eacb978d2
+P 56d8390e47bbf8f97fa602863af4c65ac755964e
+R 1fa6790d1eea5ec12130e8c4925105cd
 U drh
-Z 4e0cab8010e7cd6d2f48861b8fd4b471
+Z 8299d71f99165e45e838cc9c083f27eb
