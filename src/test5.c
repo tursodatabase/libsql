@@ -52,7 +52,7 @@ static int sqlite_utf8to16le(
 
   in = Tcl_GetByteArrayFromObj(objv[1], 0);
   out = (unsigned char *)sqlite3utf8to16le(in, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(ret));
+  res = Tcl_NewByteArrayObj(out, utf16_length(out));
   sqliteFree(out);
 
   Tcl_SetObjResult(interp, res);
@@ -78,7 +78,7 @@ static int sqlite_utf8to16be(
 
   in = Tcl_GetByteArrayFromObj(objv[1], 0);
   out = (unsigned char *)sqlite3utf8to16be(in, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(ret));
+  res = Tcl_NewByteArrayObj(out, utf16_length(out));
   sqliteFree(out);
 
   Tcl_SetObjResult(interp, res);
@@ -108,7 +108,7 @@ static int sqlite_utf16to16le(
   memcpy(out, in, in_len);
   
   sqlite3utf16to16le(out, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(ret));
+  res = Tcl_NewByteArrayObj(out, utf16_length(out));
   sqliteFree(out);
 
   Tcl_SetObjResult(interp, res);
@@ -138,7 +138,7 @@ static int sqlite_utf16to16be(
   memcpy(out, in, in_len);
   
   sqlite3utf16to16be(out, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(ret));
+  res = Tcl_NewByteArrayObj(out, utf16_length(out));
   sqliteFree(out);
 
   Tcl_SetObjResult(interp, res);
@@ -164,7 +164,7 @@ static int sqlite_utf16to8(
 
   in = Tcl_GetByteArrayFromObj(objv[1], 0);
   out = sqlite3utf16to8(in, -1);
-  res = Tcl_NewByteArrayObj(out, strlen(ret));
+  res = Tcl_NewByteArrayObj(out, strlen(out));
   sqliteFree(out);
 
   Tcl_SetObjResult(interp, res);
