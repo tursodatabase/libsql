@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.58 2001/12/05 00:21:20 drh Exp $
+** $Id: build.c,v 1.59 2001/12/15 02:35:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -628,7 +628,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
     }
-    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, 0);
+    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
     sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, P3_POINTER);
     p->tnum = 0;
     if( !p->isTemp ){
