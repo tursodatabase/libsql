@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.8 2003/06/28 16:20:24 drh Exp $
+# $Id: capi2.test,v 1.9 2003/07/09 00:28:15 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -461,6 +461,14 @@ do_test capi2-8.1 {
   sqlite_finalize $VM1
 } {}
   
+# Tickets #384 and #385 - make sure the TAIL argument to sqlite_compile
+# and all of the return pointers in sqlite_step can be null.
+#
+do_test capi2-9.1 {
+  set VM1 [sqlite_compile $DB {SELECT * FROM t2}]
+  sqlite_step $VM1
+  sqlite_finalize $VM1
+} {}
 
 db2 close
 

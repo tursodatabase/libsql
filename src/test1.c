@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.25 2003/06/16 03:08:19 drh Exp $
+** $Id: test1.c,v 1.26 2003/07/09 00:28:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -643,7 +643,7 @@ static int sqlite_datatypes(
 }
 
 /*
-** Usage:  sqlite_compile  DB  SQL  TAILVAR
+** Usage:  sqlite_compile  DB  SQL  ?TAILVAR?
 **
 ** Attempt to compile an SQL statement.  Return a pointer to the virtual
 ** machine used to execute that statement.  Unprocessed SQL is written
@@ -661,14 +661,14 @@ static int test_compile(
   char *zErr = 0;
   const char *zTail;
   char zBuf[50];
-  if( argc!=4 ){
+  if( argc!=3 && argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
        " DB SQL TAILVAR", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite_compile(db, argv[2], &zTail, &vm, &zErr);
-  Tcl_SetVar(interp, argv[3], zTail, 0);
+  rc = sqlite_compile(db, argv[2], argc==4 ? &zTail : 0, &vm, &zErr);
+  if( argc==4 ) Tcl_SetVar(interp, argv[3], zTail, 0);
   if( rc ){
     assert( vm==0 );
     sprintf(zBuf, "(%d) ", rc);
@@ -684,7 +684,7 @@ static int test_compile(
 }
 
 /*
-** Usage:  sqlite_step  VM  NVAR  VALUEVAR  COLNAMEVAR
+** Usage:  sqlite_step  VM  ?NVAR?  ?VALUEVAR?  ?COLNAMEVAR?
 **
 ** Step a virtual machine.  Return a the result code as a string.
 ** Column results are written into three variables.
@@ -702,27 +702,33 @@ static int test_step(
   int N = 0;
   char *zRc;
   char zBuf[50];
-  if( argc!=5 ){
+  if( argc<2 || argc>5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
        " VM NVAR VALUEVAR COLNAMEVAR", 0);
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite_step(vm, &N, &azValue, &azColName);
-  sprintf(zBuf, "%d", N);
-  Tcl_SetVar(interp, argv[2], zBuf, 0);
-  Tcl_SetVar(interp, argv[3], "", 0);
-  if( azValue ){
-    for(i=0; i<N; i++){
-      Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
-          TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+  rc = sqlite_step(vm, argc>=3?&N:0, argc>=4?&azValue:0, argc==5?&azColName:0);
+  if( argc>=3 ){
+    sprintf(zBuf, "%d", N);
+    Tcl_SetVar(interp, argv[2], zBuf, 0);
+  }
+  if( argc>=4 ){
+    Tcl_SetVar(interp, argv[3], "", 0);
+    if( azValue ){
+      for(i=0; i<N; i++){
+        Tcl_SetVar(interp, argv[3], azValue[i] ? azValue[i] : "",
+            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+      }
     }
   }
-  Tcl_SetVar(interp, argv[4], "", 0);
-  if( azColName ){
-    for(i=0; i<N*2; i++){
-      Tcl_SetVar(interp, argv[4], azColName[i] ? azColName[i] : "",
-          TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+  if( argc==5 ){
+    Tcl_SetVar(interp, argv[4], "", 0);
+    if( azColName ){
+      for(i=0; i<N*2; i++){
+        Tcl_SetVar(interp, argv[4], azColName[i] ? azColName[i] : "",
+            TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+      }
     }
   }
   switch( rc ){

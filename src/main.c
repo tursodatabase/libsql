@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.137 2003/06/23 15:15:03 drh Exp $
+** $Id: main.c,v 1.138 2003/07/09 00:28:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -645,7 +645,7 @@ static int sqliteMain(
   if( sParse.useCallback==0 ){
     assert( ppVm );
     *ppVm = (sqlite_vm*)sParse.pVdbe;
-    *pzTail = sParse.zTail;
+    if( pzTail ) *pzTail = sParse.zTail;
   }
   if( sqliteSafetyOff(db) ) goto exec_misuse;
   return sParse.rc;
