@@ -2954,6 +2954,10 @@ int *lineno;
     putc(*str,out);
     str++;
   }
+  if( str[-1]!='\n' ){
+    putc('\n',out);
+    (*lineno)++;
+  }
   tplt_linedir(out,*lineno+2,lemp->outname); 
   (*lineno)+=2;
   return;
