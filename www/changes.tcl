@@ -25,6 +25,21 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2003 December 4 (2.8.7)} {
+<li>Added experimental sqlite_bind() and sqlite_reset() APIs.</li>
+<li>If the name of the database is an empty string, open a new database
+    in a temporary file that is automatically deleted when the database
+    is closed.</li>
+<li>Performance enhancements in the lemon-generated parser</li>
+<li>Experimental date/time functions revised.</li>
+<li>Disallow temporary indices on permanent tables.</li>
+<li>Documentation updates and typo fixes</li>
+<li>Added experimental sqlite_progress_handler() callback API</li>
+<li>Removed support for the Oracle8 outer join syntax.</li>
+<li>Allow GLOB and LIKE operators to work as functions.</li>
+<li>Other minor documentation and makefile changes and bug fixes.</li>
+}
+
 chng {2003 August 21 (2.8.6)} {
 <li>Moved the CVS repository to www.sqlite.org</li>
 <li>Update the NULL-handling documentation.</li>
