@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.53 2003/05/04 07:02:55 jplyon Exp $}
+set rcsid {$Id: lang.tcl,v 1.54 2003/05/07 03:59:10 jplyon Exp $}
 
 puts {<html>
 <head>
@@ -1522,24 +1522,61 @@ puts {
 <p>The following keywords are used by SQLite. Most are either reserved 
 words in SQL-92 or were listed as potential reserved words.  Those which 
 aren't are shown in italics.  Not all of these words are actually used
-by SQLite.  SQLite doesn't currently enforce reserved words, so most of
-these can actually be used for the names of SQLite objects such as 
-tables, columns, and views, but they must be generally be enclosed by 
-brackes or quotes to avoid confusing the parser.</p>
+by SQLite.  Keywords are not reserved in SQLite.  Any Keyword can be used 
+as an identifier for SQLite objects (columns, databases, indexes, tables, 
+triggers, views, ...) but must generally be enclosed by brackets or 
+quotes to avoid confusing the parser.  Keyword matching in SQLite is 
+case-insensitive.</p>
 
-<p><i>_ROWID_</i> <i>ABORT</i> AFTER ALL AND AS ASC <i>ATTACH</i> 
-BEFORE BEGIN BETWEEN BY CASCADE CASE CHECK <i>CLUSTER</i> COLLATE 
-COMMIT <i>CONFLICT</i> CONSTRAINT <i>COPY</i> CREATE CROSS 
-<i>DATABASE</i> DEFAULT DEFERRED DEFERRABLE DELETE <i>DELIMITERS</i> 
-DESC <i>DETACH</i> DISTINCT DROP EACH ELSE END EXCEPT <i>EXPLAIN</i> 
-<i>FAIL</i> FOR FOREIGN FROM FULL <i>GLOB</i> GROUP HAVING IGNORE 
-IMMEDIATE IN <i>INDEX</i> INITIALLY INNER INSERT <i>INSTEAD</i> 
-INTERSECT INTO IS <i>ISNULL</i> JOIN KEY LEFT LIKE LIMIT MATCH NATURAL 
-NOT <i>NOTNULL</i> NULL OF <i>OFFSET</i> ON OR ORDER OUTER <i>PRAGMA</i> 
-PRIMARY <i>RAISE</i> REFERENCES <i>REPLACE</i> RESTRICT RIGHT ROLLBACK 
-<i>ROW</i> <i>ROWID</i> SELECT SET <i>STATEMENT</i> TABLE <i>TEMP</i> 
-TEMPORARY THEN TRANSACTION TRIGGER UNION UNIQUE UPDATE USING <i>VACUUM</i> 
-VALUES VIEW WHEN WHERE</p>
+<p>Keywords can be used as identifiers in three ways:</p>
+
+<table>
+<tr>	<td width=12%> 'keyword'
+	<td>Interpreted as a literal string if it occurs in a legal string 
+	context, otherwise as an identifier.
+<tr>	<td> "keyword"
+	<td>Interpreted as an identifier if it matches a known identifier 
+	and occurs in a legal identifier context, otherwise as a string. 
+<tr>	<td> [keyword]
+	<td> Always interpreted as an identifer. (This notation is used 
+	by MS Access and SQL Server.)
+</table>
+
+<h2>Fallback Keywords</h2>
+
+<p>These keywords can be used as identifiers for SQLite objects without 
+delimiters.</p>
+
+<p> <i>ABORT</i> AFTER ASC <i>ATTACH</i> BEFORE BEGIN DEFERRED CASCADE 
+<i>CLUSTER</i> <i>CONFLICT</i> <i>COPY</i> CROSS <i>DATABASE</i> 
+<i>DELIMITERS</i> DESC <i>DETACH</i> EACH END <i>EXPLAIN</i> <i>FAIL</i> 
+FOR FULL IGNORE IMMEDIATE INITIALLY INNER <i>INSTEAD</i> KEY LEFT MATCH 
+NATURAL OF <i>OFFSET</i> OUTER <i>PRAGMA</i> <i>RAISE</i> <i>REPLACE</i> 
+RESTRICT RIGHT <i>ROW</i> <i>STATEMENT</i> <i>TEMP</i> TEMPORARY TRIGGER 
+<i>VACUUM</i> VIEW </p>
+
+<h2>Normal keywords</h2>
+
+<p>These keywords can be used as identifiers for SQLite objects, but 
+must be enclosed in brackets or quotes for SQLite to recognize them as 
+an identifier.</p>
+
+<p> ALL AND AS BETWEEN BY CASE CHECK COLLATE COMMIT CONSTRAINT CREATE 
+DEFAULT DEFERRABLE DELETE DISTINCT DROP ELSE EXCEPT FOREIGN FROM 
+<i>GLOB</i> GROUP HAVING IN <i>INDEX</i> INSERT INTERSECT INTO IS 
+<i>ISNULL</i> JOIN LIKE LIMIT NOT <i>NOTNULL</i> NULL ON OR ORDER 
+PRIMARY REFERENCES ROLLBACK SELECT SET TABLE THEN TRANSACTION UNION 
+UNIQUE UPDATE USING VALUES WHEN WHERE </p>
+
+<h2>Special words</h2>
+
+<p>The following are not keywords in SQLite, but are used as names of 
+system objects.  They can be used as an identifier for a different 
+type of object.</p>
+
+<p> <i>_ROWID_</i> <i>MAIN</i> OID <i>ROWID</i> <i>SQLITE_MASTER</i> 
+<i>SQLITE_TEMP_MASTER</i>
+</p>
 }
 
 
