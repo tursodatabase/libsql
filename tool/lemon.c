@@ -1311,6 +1311,31 @@ void memory_error(){
   exit(1);
 }
 
+static int nDefine = 0;      /* Number of -D options on the command line */
+static char **azDefine = 0;  /* Name of the -D macros */
+
+/* This routine is called with the argument to each -D command-line option.
+** Add the macro defined to the azDefine array.
+*/
+static void handle_D_option(char *z){
+  char **paz;
+  nDefine++;
+  azDefine = realloc(azDefine, sizeof(azDefine[0])*nDefine);
+  if( azDefine==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  paz = &azDefine[nDefine-1];
+  *paz = malloc( strlen(z)+1 );
+  if( *paz==0 ){
+    fprintf(stderr,"out of memory\n");
+    exit(1);
+  }
+  strcpy(*paz, z);
+  for(z=*paz; *z && *z!='='; z++){}
+  *z = 0;
+}
+
 
 /* The main program.  Parse the command line and do it... */
 int main(argc,argv)
@@ -1327,10 +1352,12 @@ char **argv;
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
+    {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
     {OPT_FLAG, "m", (char*)&mhflag, "Output a makeheaders compatible file"},
     {OPT_FLAG, "q", (char*)&quiet, "(Quiet) Don't print the report file."},
-    {OPT_FLAG, "s", (char*)&statistics, "Print parser stats to standard output."},
+    {OPT_FLAG, "s", (char*)&statistics,
+                                   "Print parser stats to standard output."},
     {OPT_FLAG, "x", (char*)&version, "Print the version number."},
     {OPT_FLAG,0,0,0}
   };
@@ -1629,7 +1656,7 @@ FILE *err;
   int errcnt = 0;
   int j;
   for(j=0; op[j].label; j++){
-    if( strcmp(&argv[i][1],op[j].label)==0 ) break;
+    if( strncmp(&argv[i][1],op[j].label,strlen(op[j].label))==0 ) break;
   }
   v = argv[i][0]=='-' ? 1 : 0;
   if( op[j].label==0 ){
@@ -1642,6 +1669,8 @@ FILE *err;
     *((int*)op[j].arg) = v;
   }else if( op[j].type==OPT_FFLAG ){
     (*(void(*)())(op[j].arg))(v);
+  }else if( op[j].type==OPT_FSTR ){
+    (*(void(*)())(op[j].arg))(&argv[i][2]);
   }else{
     if( err ){
       fprintf(err,"%smissing argument on switch.\n",emsg);
@@ -2271,6 +2300,57 @@ to follow the previous rule.");
   }
 }
 
+/* Run the proprocessor over the input file text.  The global variables
+** azDefine[0] through azDefine[nDefine-1] contains the names of all defined
+** macros.  This routine looks for "%ifdef" and "%ifndef" and "%endif" and
+** comments them out.  Text in between is also commented out as appropriate.
+*/
+static preprocess_input(char *z){
+  int i, j, k, n;
+  int exclude = 0;
+  int start;
+  int lineno = 1;
+  int start_lineno;
+  for(i=0; z[i]; i++){
+    if( z[i]=='\n' ) lineno++;
+    if( z[i]!='%' || (i>0 && z[i-1]!='\n') ) continue;
+    if( strncmp(&z[i],"%endif",6)==0 && isspace(z[i+6]) ){
+      if( exclude ){
+        exclude--;
+        if( exclude==0 ){
+          for(j=start; j<i; j++) if( z[j]!='\n' ) z[j] = ' ';
+        }
+      }
+      for(j=i; z[j] && z[j]!='\n'; j++) z[j] = ' ';
+    }else if( (strncmp(&z[i],"%ifdef",6)==0 && isspace(z[i+6]))
+          || (strncmp(&z[i],"%ifndef",7)==0 && isspace(z[i+7])) ){
+      if( exclude ){
+        exclude++;
+      }else{
+        for(j=i+7; isspace(z[j]); j++){}
+        for(n=0; z[j+n] && !isspace(z[j+n]); n++){}
+        exclude = 1;
+        for(k=0; k<nDefine; k++){
+          if( strncmp(azDefine[k],&z[j],n)==0 && strlen(azDefine[k])==n ){
+            exclude = 0;
+            break;
+          }
+        }
+        if( z[i+3]=='n' ) exclude = !exclude;
+        if( exclude ){
+          start = i;
+          start_lineno = lineno;
+        }
+      }
+      for(j=i; z[j] && z[j]!='\n'; j++) z[j] = ' ';
+    }
+  }
+  if( exclude ){
+    fprintf(stderr,"unterminated %%ifdef starting on line %d\n", start_lineno);
+    exit(1);
+  }
+}
+
 /* In spite of its name, this function is really a scanner.  It read
 ** in the entire input file (all at once) then tokenizes it.  Each
 ** token is passed to the function "parseonetoken" which builds all
@@ -2319,6 +2399,9 @@ struct lemon *gp;
   }
   fclose(fp);
   filebuf[filesize] = 0;
+
+  /* Make an initial pass through the file to handle %ifdef and %ifndef */
+  preprocess_input(filebuf);
 
   /* Now scan the text of the input file */
   lineno = 1;

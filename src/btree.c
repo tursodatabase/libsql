@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.176 2004/06/30 08:20:16 danielk1977 Exp $
+** $Id: btree.c,v 1.177 2004/07/20 12:45:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -410,9 +410,13 @@ static u8 *findCell(MemPage *pPage, int iCell){
 static u8 *findOverflowCell(MemPage *pPage, int iCell){
   int i;
   for(i=pPage->nOverflow-1; i>=0; i--){
-    if( pPage->aOvfl[i].idx<=iCell ){
-      if( pPage->aOvfl[i].idx==iCell ){
-        return pPage->aOvfl[i].pCell;
+    int k;
+    struct _OvflCell *pOvfl;
+    pOvfl = &pPage->aOvfl[i];
+    k = pOvfl->idx;
+    if( k<=iCell ){
+      if( k==iCell ){
+        return pOvfl->pCell;
       }
       iCell--;
     }

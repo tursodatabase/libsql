@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.305 2004/07/15 13:37:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.306 2004/07/20 12:45:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -464,7 +464,6 @@ struct Column {
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
   char affinity;   /* One of the SQLITE_AFF_... values */
-  u8 dottedName;   /* True if zName contains a "." character */
 };
 
 /*

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.150 2004/07/19 22:08:10 drh Exp $
+** @(#) $Id: pager.c,v 1.151 2004/07/20 12:45:22 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1468,7 +1468,9 @@ int sqlite3pager_open(
   sqliteFree(zFullPathname);
   strcpy(&pPager->zJournal[nameLen], "-journal");
   pPager->fd = fd;
+#if OS_UNIX
   pPager->fd.pPager = pPager;
+#endif
   pPager->journalOpen = 0;
   pPager->useJournal = useJournal && !memDb;
   pPager->stmtOpen = 0;
