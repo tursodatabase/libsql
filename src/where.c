@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.53 2002/06/19 14:27:06 drh Exp $
+** $Id: where.c,v 1.54 2002/06/24 12:20:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1057,7 +1057,7 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqliteVdbeAddOp(v, OP_MemLoad, pLevel->iLeftJoin, 0);
-      sqliteVdbeAddOp(v, OP_NotNull, 0, addr+4);
+      sqliteVdbeAddOp(v, OP_NotNull, 1, addr+4);
       sqliteVdbeAddOp(v, OP_NullRow, base+i, 0);
       sqliteVdbeAddOp(v, OP_Goto, 0, pLevel->top);
     }

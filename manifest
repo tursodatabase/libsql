@@ -1,5 +1,5 @@
-C An\soptimization:\savoid\sthe\suse\sof\san\sintermediate\stable\son\sUNION\sALL\sif\sthere\nis\sno\sORDER\sBY\sclause.\s(CVS\s637)
-D 2002-06-22T02:33:38
+C Fix\sa\sVDBE\sstack\sleak\sin\sLEFT\sOUTER\sJOIN.\s\sFix\sa\sbug\sin\sthe\scode\sgenerator\nfor\sJOIN\s...\sUSING(...).\s(CVS\s638)
+D 2002-06-24T12:20:23
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 2285d8967d7334d52a2188089e5a881d73ba56f6
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c d71b59805fe8dd8eb9dd87b50860c07820ec7918
+F src/select.c 3e83a18baeeb5c89936ca84bde0bb0d18709b6b5
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 7c8882e352cb70818cfaf9bdb5b1b3bee81ef144
@@ -54,7 +54,7 @@ F src/update.c 6f6a4dcd71cd9ff730b7f12c83de5498cde4924f
 F src/util.c 876b259f9186e84b944b72e793dd3dad50e63e95
 F src/vdbe.c 774f79483ce809b27c3bdb02afd7295cc3c7acd4
 F src/vdbe.h a9292f2b5fcecef924fa255fb74609e9cbc776c2
-F src/where.c 1fdb7aca26c1963eb42615a95e0fc2978eec566a
+F src/where.c 5ff862869a8ab704070df2ef75a3424c782422cf
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9d5523107937e3700c76666fb058694babdd672c
-R 8009c7f3df0b06e96c68ea3fa98dc912
+P 8aa73ce61268a50d353d9a5c878461290195525f
+R 2b416ef8a3e6fcbc67f7c234a7a7ee0f
 U drh
-Z 29b6ba248298ad91adb3978ba4b0728d
+Z f4ef2a81bcc41a1ff76332fb25825e47
