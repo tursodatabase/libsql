@@ -1,5 +1,5 @@
-C Version\s2.4.11\s(CVS\s555)
-D 2002-05-08T12:03:51
+C Fix\sfor\sticket\s#34:\sVIEWs\signore\stheir\sORDER\sBY\sclause.\s(CVS\s556)
+D 2002-05-08T21:30:15
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -20,7 +20,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c 7dd7ddc66459982dd0cb9800958c1f8d65a32d9f
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
-F src/build.c d01b81f41481e733e27ab2fa8e1bfcc64f24257d
+F src/build.c 6a5064503250e7b8cdd9285970d01522df8468f7
 F src/delete.c 6a6b8192cdff5e4b083da3bc63de099f3790d01f
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c cf8d2ea17e419fc83b23e080195b2952e0be4164
@@ -100,7 +100,7 @@ F test/trans.test ae0b9a82d5d34122c3a3108781eb8d078091ccee
 F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/view.test 1536b58161e9cef544085d3928b53f17c9ed8424
+F test/view.test b9851e9142de5e5831fdf18f125cbe1256cb550a
 F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
 F tool/lemon.c 77d026f58d7715543786d457cf9432f9103e3f62
 F tool/lempar.c ee508b94607f74d591d60eda5c8014db4e144de5
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f6e406aa0422d9b5a3cfe89b0d38def535f8fe9b
-R 17202f5bc5a2297c04fce252ad531823
+P b13151794b42109a59ed34e6b9bce6ce90de537b
+R b50c1ac078edfd5aced2d105f10a7073
 U drh
-Z a3dfa73be4e80fdb0160fb03e523733c
+Z 97bfd3bfbda4f4c22d4d187d6a98c52c

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.86 2002/03/06 22:01:36 drh Exp $
+** $Id: build.c,v 1.87 2002/05/08 21:30:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -828,6 +828,11 @@ void sqliteCreateView(
   if( p==0 ){
     sqliteSelectDelete(pSelect);
     return;
+  }
+  /* Ignore ORDER BY clauses on a SELECT */
+  if( pSelect->pOrderBy ){
+    sqliteExprListDelete(pSelect->pOrderBy);
+    pSelect->pOrderBy = 0;
   }
   p->pSelect = pSelect;
   if( !pParse->initFlag ){
