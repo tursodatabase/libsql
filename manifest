@@ -1,5 +1,5 @@
-C Begin\swriting\sthe\sVDBE\stutorial\s(CVS\s107)
-D 2000-06-23T19:16:23
+C :-)\s(CVS\s108)
+D 2000-06-26T12:02:51
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 02ecb0cd0de7ddf7b4623d480061870798787556
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -64,8 +64,8 @@ F www/index.tcl 4116afce6a8c63d68882d2b00aa10b079e0129cd
 F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 401bdc639509c2f17d3bb97cbbdfdc22a61faa07
 F www/sqlite.tcl b685dc3ce345a6db0441e6d5716ed29abb96dd29
-F www/vdbe.tcl e70765d1670b7f215661087c0f3a06370cbf526c
-P e970079cc1fc5f8df8d892a3c3b2240e88f7fa8d
-R 6c043c564329906a84eab3ed26257e45
+F www/vdbe.tcl 3ea62769f7a09ee0ee803c8de000182909a31e4e
+P 79ce59cf79df3da2c9dcb944dba15c64c99fbad1
+R 7f9d7add7ab2d3c72acbddbd24bcb674
 U drh
-Z 954439354aec5c9289da18a7b795994a
+Z 7a87be763e4ccb46d3ff76e2d3d669ce

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.2 2000/06/23 19:16:23 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.3 2000/06/26 12:02:51 drh Exp $}
 
 puts {<html>
 <head>
@@ -25,18 +25,18 @@ puts {
 you need to begin with a solid understanding of the Virtual Database
 Engine or VDBE.  The VDBE occurs right in the middle of the
 processing stream (see the <a href="arch.html">architecture diagram</a>)
-and so it seems to touch most as parts of the library.  Even
+and so it seems to touch most parts of the library.  Even
 parts of the code that do not directly interact with the VDBE
 are usually in a supporting role.  The VDBE really is the heart of
 SQLite.</p>
 
-<p>This article is a brief tutorial introduction to how the VDBE
+<p>This article is a brief introduction to how the VDBE
 works and in particular how the various VDBE instructions
 (documented <a href="opcode.html">here</a>) work together
 to do useful things with the database.  The style is tutorial,
 beginning with simple tasks and working toward solving more
-complex problems.  Along the way we will touch briefly on most
-aspects of the SQLite library.  After completeing this tutorial,
+complex problems.  Along the way we will visit most
+submodules in the SQLite library.  After completeing this tutorial,
 you should have a pretty good understanding of how SQLite works
 and will be ready to begin studying the actual source code.</p>
 
@@ -44,9 +44,9 @@ and will be ready to begin studying the actual source code.</p>
 
 <p>The VDBE implements a virtual computer that runs a program in
 its virtual machine language.  The goal of each program is to 
-interagate or change the database.  Toward this end, the machine
+interrogate or change the database.  Toward this end, the machine
 language that the VDBE implements is specifically designed to
-work with databases.</p>
+search, read, and modify databases.</p>
 
 <p>Each instruction of the VDBE language contains an opcode and
 three operands labeled P1, P2, and P3.  Operand P1 is an arbitrary
@@ -54,7 +54,7 @@ integer.   P2 is a non-negative integer.  P3 is a null-terminated
 string, or possibly just a null pointer.  Only a few VDBE
 instructions use all three operands.  Many instructions use only
 one or two operands.  A significant number of instructions use
-no operands at all, taking there data and storing their results
+no operands at all but instead take their data and storing their results
 on the execution stack.  The details of what each instruction
 does and which operands it uses are described in the separate
 <a href="opcode.html">opcode description</a> document.</p>
@@ -82,15 +82,15 @@ that is only a few instructions long.  Suppose we have an SQL
 table that was created like this:</p>
 
 <blockquote><pre>
-CREATE TABLE ex(one text, two int);
+CREATE TABLE examp(one text, two int);
 </pre></blockquote>
 
-<p>In words, we have a database table named "ex" that has two
+<p>In words, we have a database table named "examp" that has two
 columns of data named "one" and "two".  Now suppose we want to insert a single
 record into this table.  Like this:</p>
 
 <blockquote><pre>
-INSERT INTO ex VALUES('Hello, World!',99);
+INSERT INTO examp VALUES('Hello, World!',99);
 </pre></blockquote>
 
 <p>We can see the VDBE program that SQLite uses to implement this
@@ -196,7 +196,7 @@ the stack looks like this:</p>
 stack {A data record holding "Hello, World!" and 99} \
   {A random integer key}
 
-puts {<p>The last instruction pops top elements from the stack
+puts {<p>The last instruction pops the top two elements from the stack
 and uses them as data and key to make a new entry in database
 database file pointed to by cursor P1.  This instruction is where
 the insert actually occurs.</p>
@@ -207,13 +207,13 @@ VDBE to halt.  When the VDBE halts, it automatically closes
 all open cursors, frees any elements left on the stack,
 and releases any other resources we may have allocated.
 In this case, the only cleanup necessary is to close the
-open cursor to the "examp" file.</p>
+cursor to the "examp" file.</p>
 
 <a name="trace">
 <h2>Tracing VDBE Program Execution</h2>
 
 <p>If the SQLite library is compiled without the NDEBUG 
-preprocessor macro being defined, then
+preprocessor macro, then
 there is a special SQL comment that will cause the 
 the VDBE to traces the execution of programs.
 Though this features was originally intended for testing
@@ -245,7 +245,7 @@ to executing it.  After the instruction is executed, the top few
 entries in the stack are displayed.  The stack display is omitted
 if the stack is empty.</p>
 
-<p>On the stack display, most entries are show with a prefix
+<p>On the stack display, most entries are shown with a prefix
 that tells the datatype of that stack entry.  Integers begin
 with "<tt>i:</tt>".  Floating point values begin with "<tt>r:</tt>".
 (The "r" stands for "real-number".)  Strings begin with either
@@ -526,18 +526,18 @@ puts {
 the records in the "examp" database that are to be deleted.  This is
 done using a loop very much like the loop used in the SELECT examples
 above.  Once all records have been located, then we can go back through
-an delete them one by one.  Note that we cannot delete each record
+and delete them one by one.  Note that we cannot delete each record
 as soon as we find it.  We have to locate all records first, then
 go back and delete them.  This is because the GDBM database
 backend might change the scan order after a delete operation.
 And if the scan
 order changes in the middle of the scan, some records might be
-tested more than once, and some records might not be tested at all.</p>
+visited more than once and other records might not be visited at all.</p>
 
 <p>So the implemention of DELETE is really in two loops.  The
 first loop (instructions 2 through 8 in the example) locates the records that
 are to be deleted and the second loop (instructions 12 through 14)
-do the actual deleting.</p>
+does the actual deleting.</p>
 
 <p>The very first instruction in the program, the ListOpen instruction,
 creates a new List object in which we can store the keys of the records
@@ -581,7 +581,7 @@ The Open instruction at 11 reopens the same database file, but for
 writing this time.  The loop that does the actual deleting of records
 is on instructions 12, 13, and 14.</p>
 
-<p>The ListRead instruction as 12 reads a single integer key from
+<p>The ListRead instruction at 12 reads a single integer key from
 the list and pushes that key onto the stack.  If there are no
 more keys, nothing gets pushed onto the stack but instead a jump
 is made to instruction 15.  Notice the similarity 
@@ -598,7 +598,7 @@ of a "thing". The "things" for the Next instruction are records
 in a database file.  "Things" for ListRead are integer keys in a list.
 Later on,
 we will see other looping instructions (NextIdx and SortNext) that
-operating using the same principle.</p>
+operate using the same principle.</p>
 
 <p>The Delete instruction at address 13 pops an integer key from
 the stack (the key was put there by the preceding ListRead
@@ -624,7 +624,7 @@ UPDATE examp SET one= '(' || one || ')' WHERE two < 50;
 </pre></blockquote>
 
 <p>Instead of deleting records where the "two" column is less than
-50, this statement just puts the "one" column in paraentheses
+50, this statement just puts the "one" column in parentheses
 The VDBE program to implement this statement follows:</p>
 }
 
