@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.291 2004/05/14 15:27:29 drh Exp $
+** $Id: vdbe.c,v 1.292 2004/05/14 21:12:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1875,10 +1875,7 @@ case OP_NotNull: {
   break;
 }
 
-/* Opcode: Column3 P1 P2 *
-**
-** This opcode (not yet in use) is a replacement for the current OP_Column3
-** that supports the SQLite3 manifest typing feature.
+/* Opcode: Column P1 P2 *
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -1905,8 +1902,7 @@ case OP_Column: {
   char *zData;       
   int freeZdata = 0; /* zData requires sqliteFree() */
 
-  u64 nFields;       /* number of fields in the record */
-  u64 *aTypes;       /* An array of serial types (size nFields) */
+  u64 nField;        /* number of fields in the record */
 
   int len;           /* The length of the serialized data for the column */
   int offset;
@@ -1924,12 +1920,15 @@ case OP_Column: {
     assert( pTos[i].flags & MEM_Str );
     zRec = pTos[i].z;
     payloadSize = pTos[i].n;
+    pC->cacheValid = 0;
   }else if( (pC = &p->aCsr[i])->pCursor!=0 ){
     sqlite3VdbeCursorMoveto(pC);
     zRec = 0;
     pCrsr = pC->pCursor;
     if( pC->nullRow ){
       payloadSize = 0;
+    }else if( pC->cacheValid ){
+      payloadSize = pC->payloadSize;
     }else if( pC->keyAsData ){
       i64 payloadSize64;
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
@@ -1940,6 +1939,7 @@ case OP_Column: {
   }else if( pC->pseudoTable ){
     payloadSize = pC->nData;
     zRec = pC->pData;
+    pC->cacheValid = 0;
     assert( payloadSize==0 || zRec!=0 );
   }else{
     payloadSize = 0;
@@ -1951,100 +1951,106 @@ case OP_Column: {
     break;
   }
 
-  /* Read the number of fields for the record.
-  ** FIX ME: The Cursor object should cache this data and the array of
-  ** field types for subsequent OP_Column instructions.
+  /* Read and parse the table header.  Store the results of the parse
+  ** into the record header cache fields of the cursor.
   */
-  if( zRec ){
-    zData = zRec;
-  }else{
-    /* We can assume that 9 bytes (maximum length of a varint) fits
-    ** on the main page in all cases.
-    */
-    if( pC->keyAsData ){
-      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, 9>payloadSize?payloadSize:9);
+  if( !pC->cacheValid ){
+    pC->payloadSize = payloadSize;
+    if( zRec ){
+      zData = zRec;
     }else{
-      zData = (char *)sqlite3BtreeDataFetch(pCrsr, 9>payloadSize?payloadSize:9);
-    }
-    assert( zData );
-  }
-  offset = sqlite3GetVarint(zData, &nFields);
-
-  if( !zRec ){
-    /* If the record is stored in a table, see if enough of it is on
-    ** the main page to use sqlite3BtreeDataFetch() to get the data
-    ** containing the nFields serial types (varints). This will almost
-    ** always work, but if it doesn't sqliteMalloc() space and use
-    ** sqlite3BtreeData().
-    **
-    ** Estimate the maximum space required by the nFields varints by
-    ** assuming the maximum space for each is the length required to store:
-    **
-    **     (<record length> * 2) + 13
-    **
-    ** This is the serial-type for a text object as long as the record
-    ** itself. In all cases the length required to store this is three
-    ** bytes or less. 
-    */
-    int max_space = sqlite3VarintLen((((u64)payloadSize)<<1)+13)*nFields;
-    max_space += offset;
-    if( max_space>payloadSize ){
-      max_space = payloadSize;
-    }
-
-    if( pC->keyAsData ){
-      zData = (char *)sqlite3BtreeKeyFetch(pCrsr, max_space);
-    }else{
-      zData = (char *)sqlite3BtreeDataFetch(pCrsr, max_space);
-    }
-    if( !zData ){
-      /* This code will run very infrequently (e.g. tables with several
-      ** hundred columns).
+      /* We can assume that 9 bytes (maximum length of a varint) fits
+      ** on the main page in all cases.
       */
-      zData = (char *)sqliteMallocRaw(offset+max_space);
-      if( !zData ){
-        rc = SQLITE_NOMEM;
-        goto abort_due_to_error;
-      }
+      int n = 9;
+      if( payloadSize<9 ) n = payloadSize;
       if( pC->keyAsData ){
-        rc = sqlite3BtreeKey(pCrsr, 0, max_space, zData);
+        zData = (char *)sqlite3BtreeKeyFetch(pCrsr, n);
       }else{
-        rc = sqlite3BtreeData(pCrsr, 0, max_space, zData);
+        zData = (char *)sqlite3BtreeDataFetch(pCrsr, n);
       }
-      if( rc!=SQLITE_OK ){
-        sqliteFree(zData);
-        goto abort_due_to_error;
-      }
-      freeZdata = 1;
+      assert( zData );
     }
-  }
+    offset = sqlite3GetVarint(zData, &nField);
+    if( nField>pC->nField ){
+      sqliteFree(pC->aType);
+      pC->aType = sqliteMallocRaw( nField*sizeof(pC->aType[0]) );
+      if( pC->aType==0 ){
+        goto no_mem;
+      }
+    }
+    pC->nField = nField;
 
-  /* Dynamically allocate space for the aTypes array. and read all
-  ** the serial types for the record. At the end of this block variable
-  ** offset is set to the offset to the start of Data0 in the record.
-  */
-  aTypes = (u64 *)sqliteMallocRaw(sizeof(u64)*nFields);
-  if( !aTypes ){
+    if( !zRec ){
+      /* If the record is stored in a table, see if enough of it is on
+      ** the main page to use sqlite3BtreeDataFetch() to get the data
+      ** containing the nField serial types (varints). This will almost
+      ** always work, but if it doesn't sqliteMalloc() space and use
+      ** sqlite3BtreeData().
+      **
+      ** Estimate the maximum space required by the nField varints by
+      ** assuming the maximum space for each is the length required to store:
+      **
+      **     (<record length> * 2) + 13
+      **
+      ** This is the serial-type for a text object as long as the record
+      ** itself. In all cases the length required to store this is three
+      ** bytes or less. 
+      */
+      int max_space = sqlite3VarintLen((((u64)payloadSize)<<1)+13)*nField;
+      max_space += offset;
+      if( max_space>payloadSize ){
+        max_space = payloadSize;
+      }
+
+      if( pC->keyAsData ){
+        zData = (char *)sqlite3BtreeKeyFetch(pCrsr, max_space);
+      }else{
+        zData = (char *)sqlite3BtreeDataFetch(pCrsr, max_space);
+      }
+      if( !zData ){
+        /* This code will run very infrequently (e.g. tables with several
+        ** hundred columns).
+        */
+        zData = (char *)sqliteMallocRaw(max_space);
+        if( !zData ){
+          goto no_mem;
+        }
+        if( pC->keyAsData ){
+          rc = sqlite3BtreeKey(pCrsr, 0, max_space, zData);
+        }else{
+          rc = sqlite3BtreeData(pCrsr, 0, max_space, zData);
+        }
+        if( rc!=SQLITE_OK ){
+          sqliteFree(zData);
+          goto abort_due_to_error;
+        }
+        freeZdata = 1;
+      }
+    }
+
+    /* Read all the serial types for the record.  At the end of this block
+    ** variable offset is set to the offset to the start of Data0 in the record.
+    */
+    for(nn=0; nn<nField; nn++){
+      offset += sqlite3GetVarint(&zData[offset], &pC->aType[nn]);
+    }
     if( freeZdata ){
-      sqliteFree(zData);
       freeZdata = 0;
+      sqliteFree(zData);
     }
-    rc = SQLITE_NOMEM;
-    goto abort_due_to_error;
-  }
-  for(nn=0; nn<nFields; nn++){
-    offset += sqlite3GetVarint(&zData[offset], &aTypes[nn]);
-  }
- 
-  if( freeZdata ){
-    freeZdata = 0;
-    sqliteFree(zData);
+    pC->nHeader = offset;
+    pC->cacheValid = 1;
   }
 
+  /* Compute the offset from the beginning of the record to the beginning
+  ** of the data.  And get the length of the data.
+  */
+  offset = pC->nHeader;
   for(nn=0; nn<p2; nn++){
-    offset += sqlite3VdbeSerialTypeLen(aTypes[nn]);
+    offset += sqlite3VdbeSerialTypeLen(pC->aType[nn]);
   }
-  len = sqlite3VdbeSerialTypeLen(aTypes[p2]);
+  len = sqlite3VdbeSerialTypeLen(pC->aType[p2]);
 
   if( !zRec ){
     /* If the record is stored in a table, see if enough of it
@@ -2057,12 +2063,10 @@ case OP_Column: {
     }else{
       zData = (char *)sqlite3BtreeDataFetch(pCrsr, offset+len);
     }
-    if( !zData && len>0 ){
+    if( !zData ){
       zData = (char *)sqliteMallocRaw(len);
       if( !zData ){
-        sqliteFree(aTypes);
-        rc = SQLITE_NOMEM;
-        goto abort_due_to_error;
+        goto no_mem;
       }
       if( pC->keyAsData ){
         rc = sqlite3BtreeKey(pCrsr, offset, len, zData);
@@ -2070,7 +2074,6 @@ case OP_Column: {
         rc = sqlite3BtreeData(pCrsr, offset, len, zData);
       }
       if( rc!=SQLITE_OK ){
-        sqliteFree( aTypes );
         sqliteFree( zData );
         goto abort_due_to_error;
       }
@@ -2080,9 +2083,8 @@ case OP_Column: {
   }
 
   /* Deserialize the value directly into the top of the stack */
-  sqlite3VdbeSerialGet(&zData[offset], aTypes[p2], pTos);
+  sqlite3VdbeSerialGet(&zData[offset], pC->aType[p2], pTos);
 
-  sqliteFree(aTypes);
   if( freeZdata ){
     sqliteFree(zData);
   }
@@ -2822,6 +2824,7 @@ case OP_MoveTo: {
       pC->recnoIsValid = 0;
     }
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
     pC->incrKey = 0;
     sqlite3_search_count++;
     oc = pOp->opcode;
@@ -2899,6 +2902,7 @@ case OP_Found: {
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
   }
   if( pOp->opcode==OP_Found ){
     if( alreadyExists ) pc = pOp->p2 - 1;
@@ -2968,7 +2972,8 @@ case OP_IsUnique: {
     /* Search for an entry in P1 where all but the last four bytes match K.
     ** If there is no such entry, jump immediately to P2.
     */
-    assert( p->aCsr[i].deferredMoveto==0 );
+    assert( pCx->deferredMoveto==0 );
+    pCx->cacheValid = 0;
     rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res<0 ){
@@ -3025,22 +3030,24 @@ case OP_IsUnique: {
 */
 case OP_NotExists: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
     int res, rx;
     u64 iKey;
     assert( pTos->flags & MEM_Int );
     assert( p->aCsr[i].intKey );
     iKey = intToKey(pTos->i);
     rx = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
-    p->aCsr[i].lastRecno = pTos->i;
-    p->aCsr[i].recnoIsValid = res==0;
-    p->aCsr[i].nullRow = 0;
+    pC->lastRecno = pTos->i;
+    pC->recnoIsValid = res==0;
+    pC->nullRow = 0;
+    pC->cacheValid = 0;
     if( rx!=SQLITE_OK || res!=0 ){
       pc = pOp->p2 - 1;
-      p->aCsr[i].recnoIsValid = 0;
+      pC->recnoIsValid = 0;
     }
   }
   Release(pTos);
@@ -3148,6 +3155,7 @@ case OP_NewRecno: {
     }
     pC->recnoIsValid = 0;
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
   }
   pTos++;
   pTos->i = v;
@@ -3249,6 +3257,7 @@ case OP_PutStrKey: {
     }
     pC->recnoIsValid = 0;
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
   }
   popStack(&pTos, 2);
   break;
@@ -3278,6 +3287,7 @@ case OP_Delete: {
     sqlite3VdbeCursorMoveto(pC);
     rc = sqlite3BtreeDelete(pC->pCursor);
     pC->nextRowidValid = 0;
+    pC->cacheValid = 0;
   }
   if( pOp->p2 & OPFLAG_NCHANGE ) db->nChange++;
   if( pOp->p2 & OPFLAG_CSCHANGE ) db->csChange++;
@@ -3490,6 +3500,7 @@ case OP_Last: {
     rc = sqlite3BtreeLast(pCrsr, &res);
     pC->nullRow = res;
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
     if( res && pOp->p2>0 ){
       pc = pOp->p2 - 1;
     }
@@ -3519,6 +3530,7 @@ case OP_Rewind: {
     rc = sqlite3BtreeFirst(pCrsr, &res);
     pC->atFirst = res==0;
     pC->deferredMoveto = 0;
+    pC->cacheValid = 0;
   }else{
     res = 1;
   }
@@ -3562,6 +3574,7 @@ case OP_Next: {
       rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
                                   sqlite3BtreePrevious(pCrsr, &res);
       pC->nullRow = res;
+      pC->cacheValid = 0;
     }
     if( res==0 ){
       pc = pOp->p2 - 1;
@@ -3587,11 +3600,12 @@ case OP_Next: {
 */
 case OP_IdxPut: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   assert( pTos->flags & MEM_Str );
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
     const char *zKey = pTos->z;
     if( pOp->p2 ){
@@ -3609,7 +3623,7 @@ case OP_IdxPut: {
         int c;
         sqlite3BtreeKeySize(pCrsr, &n);
         if( n==nKey && 
-            sqlite3VdbeIdxKeyCompare(&p->aCsr[i], len, zKey, 0, &c)==SQLITE_OK
+            sqlite3VdbeIdxKeyCompare(pC, len, zKey, 0, &c)==SQLITE_OK
             && c==0
         ){
           rc = SQLITE_CONSTRAINT;
@@ -3626,9 +3640,10 @@ case OP_IdxPut: {
         }
       }
     }
-    assert( p->aCsr[i].intKey==0 );
+    assert( pC->intKey==0 );
     rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
-    assert( p->aCsr[i].deferredMoveto==0 );
+    assert( pC->deferredMoveto==0 );
+    pC->cacheValid = 0;
   }
   Release(pTos);
   pTos--;
@@ -3642,17 +3657,19 @@ case OP_IdxPut: {
 */
 case OP_IdxDelete: {
   int i = pOp->p1;
+  Cursor *pC;
   BtCursor *pCrsr;
   assert( pTos>=p->aStack );
   assert( pTos->flags & MEM_Str );
   assert( i>=0 && i<p->nCursor );
-  if( (pCrsr = p->aCsr[i].pCursor)!=0 ){
+  if( (pCrsr = (pC = &p->aCsr[i])->pCursor)!=0 ){
     int rx, res;
     rx = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, &res);
     if( rx==SQLITE_OK && res==0 ){
       rc = sqlite3BtreeDelete(pCrsr);
     }
-    assert( p->aCsr[i].deferredMoveto==0 );
+    assert( pC->deferredMoveto==0 );
+    pC->cacheValid = 0;
   }
   Release(pTos);
   pTos--;

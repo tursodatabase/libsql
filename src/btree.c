@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.138 2004/05/14 19:08:18 drh Exp $
+** $Id: btree.c,v 1.139 2004/05/14 21:12:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1460,6 +1460,23 @@ static void releaseTempCursor(BtCursor *pCur){
 }
 
 /*
+** Make sure the BtCursor.info field of the given cursor is valid.
+*/
+static void getCellInfo(BtCursor *pCur){
+  MemPage *pPage = pCur->pPage;
+  if( !pCur->infoValid ){
+    parseCell(pPage, pPage->aCell[pCur->idx], &pCur->info);
+    pCur->infoValid = 1;
+  }else{
+#ifndef NDEBUG
+    CellInfo info;
+    parseCell(pPage, pPage->aCell[pCur->idx], &info);
+    assert( memcmp(&info, &pCur->info, sizeof(info))==0 );
+#endif
+  }
+}
+
+/*
 ** Set *pSize to the size of the buffer needed to hold the value of
 ** the key for the current entry.  If the cursor is not pointing
 ** to a valid entry, *pSize is set to 0. 
@@ -1468,25 +1485,11 @@ static void releaseTempCursor(BtCursor *pCur){
 ** itself, not the number of bytes in the key.
 */
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
-  MemPage *pPage;
-  unsigned char *cell;
-
   if( !pCur->isValid ){
     *pSize = 0;
   }else{
-    pPage = pCur->pPage;
-    pageIntegrity(pPage);
-    assert( pPage!=0 );
-    assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-    cell = pPage->aCell[pCur->idx];
-    cell += 2;   /* Skip the offset to the next cell */
-    if( !pPage->leaf ){
-      cell += 4;  /* Skip the child pointer */
-    }
-    if( pPage->hasData ){
-      while( (0x80&*(cell++))!=0 ){}  /* Skip the data size number */
-    }
-    getVarint(cell, pSize);
+    getCellInfo(pCur);
+    *pSize = pCur->info.nKey;
   }
   return SQLITE_OK;
 }
@@ -1499,28 +1502,12 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 ** the database is empty) then *pSize is set to 0.
 */
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  MemPage *pPage;
-  unsigned char *cell;
-
   if( !pCur->isValid ){
     /* Not pointing at a valid entry - set *pSize to 0. */
     *pSize = 0;
   }else{
-    pPage = pCur->pPage;
-    assert( pPage!=0 );
-    assert( pPage->isInit );
-    pageIntegrity(pPage);
-    if( !pPage->hasData ){
-      *pSize = 0;
-    }else{
-      assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-      cell = pPage->aCell[pCur->idx];
-      cell += 2;   /* Skip the offset to the next cell */
-      if( !pPage->leaf ){
-        cell += 4;  /* Skip the child pointer */
-      }
-      getVarint32(cell, pSize);
-    }
+    getCellInfo(pCur);
+    *pSize = pCur->info.nData;
   }
   return SQLITE_OK;
 }
@@ -1555,16 +1542,7 @@ static int getPayload(
   pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
-  if( !pCur->infoValid ){
-    parseCell(pPage, aPayload, &pCur->info);
-    pCur->infoValid = 1;
-  }else{
-#ifndef NDEBUG
-    CellInfo info;
-    parseCell(pPage, aPayload, &info);
-    assert( memcmp(&info, &pCur->info, sizeof(info))==0 );
-#endif
-  }
+  getCellInfo(pCur);
   aPayload += pCur->info.nHeader;
   if( pPage->intKey ){
     nKey = 0;
@@ -1703,16 +1681,7 @@ static const unsigned char *fetchPayload(
   pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
-  if( !pCur->infoValid ){
-    parseCell(pPage, aPayload, &pCur->info);
-    pCur->infoValid = 1;
-  }else{
-#ifndef NDEBUG
-    CellInfo info;
-    parseCell(pPage, aPayload, &info);
-    assert( memcmp(&info, &pCur->info, sizeof(info))==0 );
-#endif
-  }
+  getCellInfo(pCur);
   aPayload += pCur->info.nHeader;
   if( pPage->intKey ){
     nKey = 0;

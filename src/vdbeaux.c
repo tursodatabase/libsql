@@ -735,6 +735,7 @@ void sqlite3VdbeCleanupCursor(Cursor *pCx){
     sqlite3BtreeClose(pCx->pBt);
   }
   sqliteFree(pCx->pData);
+  sqliteFree(pCx->aType);
   memset(pCx, 0, sizeof(Cursor));
 }
 
@@ -1062,6 +1063,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     }
     sqlite3_search_count++;
     p->deferredMoveto = 0;
+    p->cacheValid = 0;
   }
   return SQLITE_OK;
 }

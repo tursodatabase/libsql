@@ -78,6 +78,14 @@ struct Cursor {
   int nData;            /* Number of bytes in pData */
   char *pData;          /* Data for a NEW or OLD pseudo-table */
   i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
+
+  /* Cached information about the header for the data record that the
+  ** cursor is currently pointing to */
+  Bool cacheValid;      /* True if the cache is valid */
+  int nField;           /* Number of fields in the header */
+  int nHeader;          /* Number of bytes in the entire header */
+  int payloadSize;      /* Total number of bytes in the record */
+  u64 *aType;           /* Type values for all entries in the record */
 };
 typedef struct Cursor Cursor;
 
