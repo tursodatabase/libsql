@@ -1,5 +1,5 @@
-C Modify\sthe\ssqlite\sshell\sprogram\sso\sthat\sthe\s".dump"\scommand\sdoes\snot\sgive\sup\nif\sit\sencounters\san\sSQLITE_CORRUPT\serror.\s\sIt\stries\sto\skeep\sgoing\sin\sorder\nto\sextract\sas\smuch\sinformation\sas\sit\scan\sfrom\sthe\scorrupt\sdatabase.\s(CVS\s1919)
-D 2004-08-30T01:54:05
+C Remove\sthe\s\\001\scharacter\sthat\slemon\sinserts\sautomatically\sin\sits\r\noutput\sfile.\s\sThe\sneed\sfor\sthis\scharacter\shas\sexpired\sand\sit\screates\r\nconfusion\sfor\susers.\s\sTicket\s#877\s(CVS\s1920)
+D 2004-08-30T14:22:31
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -190,7 +190,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test ca5c296989d3045f121be9a67588ff88c64874a8
 F test/where.test 40dcffcb77ad0a00960cef2b5b1212c77fd02199
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/lemon.c 0bae9c6743cfe6597e8f35f50900949d6c0f056d
+F tool/lemon.c ece41a3cd100e68fef5f136267cf02c44366c263
 F tool/lempar.c 0b5e7a58634e0d448929b8e85f7981c2aa708d57
 F tool/memleak.awk b744b6109566206c746d826f6ecdba34662216bc
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -245,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 431f7436a680b7c520aa559b0bf8619d7faba8c1
-R c2bf0d7faa9695ce4fed9fa1b1ba2f22
+P d3f3acb77f4e9f597af5afac565916b9c5e1c5d6
+R f3cc352b4b8b201ee44a2f9128511428
 U drh
-Z d01d7107b6d7cfa828846c09e3df38dc
+Z 84e5ab499ab655e1a55718824c3e9d7d

@@ -3361,7 +3361,6 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate the defines */
-  fprintf(out,"/* \001 */\n");
   fprintf(out,"#define YYCODETYPE %s\n",
     minimum_size_type(0, lemp->nsymbol+5)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
