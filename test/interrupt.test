@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.3 2004/02/18 01:31:54 drh Exp $
+# $Id: interrupt.test,v 1.4 2004/02/18 16:57:23 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -146,13 +146,11 @@ for {set i 1} {$i<50} {incr i 5} {
 # will try to reproduce it here:
 #
 execsql {
-  UPDATE t1 SET b=round((100-rowid)/10);
+  CREATE TABLE t2(a,b,c);
+  INSERT INTO t2 SELECT round(a/10), randstr(50,80), randstr(50,60) FROM t1;
 }
 set sql {
-  SELECT sum(a.a), max(a.a), min(b.a), a.b 
-  FROM t1 AS a, t1 AS b
-  WHERE b.rowid=a.b
-  GROUP BY 4 ORDER BY 1;
+  SELECT max(min(b,c)), min(max(b,c)), a FROM t2 GROUP BY a ORDER BY a;
 }
 set sqlite_interrupt_count 1000000
 execsql $sql
@@ -160,12 +158,7 @@ set max_count [expr {1000000-$sqlite_interrupt_count}]
 for {set i 1} {$i<$max_count-5} {incr i 1} {
   do_test interrupt-4.$i.1 {
     set ::sqlite_interrupt_count $::i
-    catchsql {
-      SELECT sum(a.a), max(a.a), min(b.a), a.b 
-      FROM t1 AS a, t1 AS b
-      WHERE b.rowid=a.b
-      GROUP BY 4 ORDER BY 1;
-    }
+    catchsql $sql
   } {1 interrupted}
 }
 

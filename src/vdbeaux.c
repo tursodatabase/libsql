@@ -660,6 +660,9 @@ void sqliteVdbeAggReset(Agg *pAgg){
         if( pMem->z!=0 && pMem->z!=pMem->zShort ){
           sqliteFree(pMem->z);
         }
+        if( ctx.s.flags & MEM_Dyn ){
+          sqliteFree(ctx.s.z);
+        }
       }else if( pMem->flags & MEM_Dyn ){
         sqliteFree(pMem->z);
       }
