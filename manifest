@@ -1,5 +1,5 @@
-C The\ssqlite_busy_timeout()\sfunction\swas\sinterpreting\sits\ssecond\sargument\nas\sseconds,\snot\smilliseconds\sas\sadvertised.\s\sThis\spatch\sfixes\sthe\sproblem.\s(CVS\s284)
-D 2001-10-09T13:46:01
+C Version\s2.0.2\s(CVS\s468)
+D 2001-10-09T14:00:00
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 1e54087c0390c4ce0bb5be43e14ba028283751e6
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -113,7 +113,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 6307641d463eefd5ec346d299830e822acbc0938
+P abe5a25b9dcf1e47f3cb37fd419f620db03bd4da
 R 811a44282886ed3bd9485148120cee71
 U drh
-Z d80a90e04324de94315b0535882a46bf
+Z bb72d0236472bbdc7b77722d8537d4bf
