@@ -61,6 +61,10 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2005-Mar-19} {Version 3.2.0} {
+  Version 3.2.0 adds support for ALTER TABLE ADD COLUMN.  
+}
+
 newsitem {2005-Mar-16} {Version 3.1.6} {
   Version 3.1.6 fixes a critical bug that can cause database corruption
   when inserting rows into tables with around 125 columns. This bug was
@@ -91,4 +95,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.111 2005/03/17 03:33:17 drh Exp $}
+footer {$Id: index.tcl,v 1.112 2005/03/19 14:45:50 drh Exp $}

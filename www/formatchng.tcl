@@ -1,16 +1,18 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.12 2004/10/10 17:24:55 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.13 2005/03/19 14:45:50 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
 <h2>File Format Changes in SQLite</h2>
 
 <p>
-From time to time, enhancements or bug fixes require a change to
-the underlying file format for SQLite.  When this happens and you
-want to upgrade your library, you must convert the contents of your
+Every effort is made to keep SQLite fully backwards compatible from
+one release to the next.  Rarely, however, some
+enhancements or bug fixes may require a change to
+the underlying file format.  When this happens and you
+must convert the contents of your
 databases into a portable ASCII representation using the old version
 of the library then reload the data using the new version of the
 library.
@@ -18,11 +20,16 @@ library.
 
 <p>
 You can tell if you should reload your databases by comparing the
-version numbers of the old and new libraries.  If either of the
-first two digits in the version number change, then a reload is
-either required or recommended.  For example, upgrading from
-version 1.0.32 to 2.0.0 requires a reload.  So does going from
-version 2.0.8 to 2.1.0.
+version numbers of the old and new libraries.  If the first digit
+of the version number is different, then a reload of the database will
+be required.  If the second digit changes, newer versions of SQLite
+will be able to read and write older database files, but older versions
+of the library may have difficulty reading or writing newer database
+files.
+For example, upgrading from
+version 2.8.14 to 3.0.0 requires a reload.  Going from
+version 3.0.8 to 3.1.0 is backwards compatible but not necessarily
+forwards compatible.
 </p>
 
 <p>
@@ -54,7 +61,11 @@ occurred since version 1.0.0:
   <td>The same basic B-Tree format is used but the details of the 
   index keys were changed in order to provide better query 
   optimization opportunities.  Some of the headers were also changed in order
-  to increase the maximum size of a row from 64KB to 24MB.</td>
+  to increase the maximum size of a row from 64KB to 24MB.<p>
+
+  This change is an exception to the version number rule described above
+  in that it is neither forwards or backwards compatible.  A complete
+  reload of the database is required.  This is the only exception.</td>
 </tr>
 <tr>
   <td valign="top">2.1.7 to 2.2.0</td>
@@ -168,12 +179,36 @@ occurred since version 1.0.0:
 </tr>
 <tr>
   <td valign="top">2.8.14 to 3.0.0</td>
-  <td valign="top">(pending)</td>
+  <td valign="top">2004-Jun-18</td>
   <td><p>Version 3.0.0 is a major upgrade for SQLite that incorporates
   support for UTF-16, BLOBs, and a more compact encoding that results
-  in database files that are typically 25% to 35% smaller.  The new file
-  format is radically different and completely incompatible with the
+  in database files that are typically 25% to 50% smaller.  The new file
+  format is very different and is completely incompatible with the
   version 2 file format.</p>
+  </td>
+</tr>
+<tr>
+  <td valign="top">3.0.8 to 3.1.0</td>
+  <td valign="top">2004-Jan-21</td>
+  <td><p>Version 3.1.0 adds support for
+  <a href="pragma.html#pragma_auto_vacuum">autovacuum mode</a>.
+  Prior versions of SQLite will be able to read and autovacuumed
+  database but will not be able to write it.  If autovaccum is disabled
+  (which is the default condition)
+  then databases are fully forwards and backwards compatible.</p>
+  </td>
+</tr>
+<tr>
+  <td valign="top">3.1.6 to 3.2.0</td>
+  <td valign="top">2004-Mar-19</td>
+  <td><p>Version 3.2.0 adds support for the 
+  <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
+  command.  A database that has been modified by this command can
+  not be read by a version of SQLite prior to 3.1.4.  Running 
+  <a href="lang_vacuum.html">VACUUM</a>
+  after the ALTER TABLE
+  restores the database to a format such that it can be read by earlier
+  SQLite versions.</p>
   </td>
 </tr>
 </table>
@@ -190,7 +225,7 @@ this is as follows:
 </p>
 
 <blockquote>
-  echo .dump | sqlite-old old.db | sqlite-new new.db
+  sqlite-old old.db .dump | sqlite-new new.db
 </blockquote>
 }
 footer $rcsid

@@ -21,6 +21,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2005 March 19 (3.2.0)} {
+<li>Added support for ALTER TABLE ADD COLUMN.</li>
+}
+
 chng {2005 March 16 (3.1.6)} {
 <li>Fix a bug that could cause database corruption when inserting
     record into tables with around 125 columns.</li>

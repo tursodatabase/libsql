@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.10 2005/03/12 15:55:11 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.11 2005/03/19 14:45:50 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -126,6 +126,11 @@ doc {Compilation Options} {compile.html} {
   This document describes the compile time options that may be set to 
   modify the default behaviour of the library or omit optional features
   in order to reduce binary size.
+}
+
+doc {Backwards Compatibility} {formatchng.html} {
+  This document details all of the incompatible changes to the SQLite
+  file format that have occurred since version 1.0.0.
 }
 
 puts {</table>}

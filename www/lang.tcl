@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.86 2005/03/19 01:41:22 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.87 2005/03/19 14:45:50 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -181,6 +181,10 @@ statement, with the following restrictions:
 the amount of data in the table.  The ALTER TABLE command runs as quickly
 on a table with 10 million rows as it does on a table with 1 row.
 </p>
+
+<p>After ADD COLUMN has been run on a database, that database will not
+be readable by SQLite version 3.1.3 and earlier until the database
+is <a href="lang_vacuum.html">VACUUM</a>ed.</p>
 }
 
 Section {ATTACH DATABASE} attach
