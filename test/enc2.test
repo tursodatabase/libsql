@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.8 2004/06/10 14:01:08 danielk1977 Exp $
+# $Id: enc2.test,v 1.9 2004/06/13 23:07:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -111,6 +111,7 @@ do_test $t.10 {
 # The three unicode encodings understood by SQLite.
 set encodings [list UTF-8 UTF-16le UTF-16be]
 
+set sqlite_os_trace 0
 set i 1
 foreach enc $encodings {
   file delete -force test.db
@@ -119,6 +120,7 @@ foreach enc $encodings {
   execsql $dbcontents
   db close
   run_test_script enc2-$i $enc
+  db close
   incr i
 }
 
@@ -188,6 +190,7 @@ do_test enc2-5.3 {
   lappend res $::test_collate_enc
 } {one two three four five UTF-16BE}
 
+db close
 file delete -force test.db
 set DB [sqlite db test.db]
 execsql {pragma encoding = 'UTF-16LE'}
@@ -218,6 +221,7 @@ do_test enc2-5.7 {
   lappend res $::test_collate_enc
 } {one two three four five UTF-8}
 
+db close
 file delete -force test.db
 set DB [sqlite db test.db]
 execsql {pragma encoding = 'UTF-16BE'}
@@ -249,6 +253,3 @@ do_test enc2-5.11 {
 } {one two three four five UTF-8}
 
 finish_test
-
-
-

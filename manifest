@@ -1,5 +1,5 @@
-C More\sspeed\simprovements.\s(CVS\s1580)
-D 2004-06-13T00:54:02
+C os_win.c\sis\snow\sworking\swith\sthe\snew\slocking\sprotocol.\s(CVS\s1581)
+D 2004-06-13T23:07:04
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
-F src/btree.c fed8a295ebb11c2ebadb473c04cd3ba55c17e934
+F src/btree.c 5591068c5ed0e5d65938d41ac9e3fe6f461fdb07
 F src/btree.h 589427ac13bb544d298cd99726e2572a6fe4bdaa
 F src/build.c 916a84fa5f8bfd44dbe14c3d7c923dd07ee7373f
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 68c7f3ddd6a7f1e5596d6996da1a2861b3789a3a
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c 9061fff2b04759d849155a334bf2a9f158d325d7
+F src/main.c c68c873165e0ee0bdf4f6c2bc79b95c1d6c010c6
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 23c69c5084e71b5fe199ff1c4e35a4aded0f1380
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -83,7 +83,7 @@ F test/attach.test aed659e52635662bcd5069599aaca823533edf5a
 F test/attach2.test e6b5f0d735cf8f6c14acfa2ce69b925dbe316b3e
 F test/attach3.test 8259ab833b5dcdf4acd75d9653f42f703ce2e013
 F test/auth.test 95809b8f6a9bec18b94d28cafd03fe27d2f8a9e9
-F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
+F test/bigfile.test 5b079dfe7354a6c43b92a3ea5e49e4e5d88c789e
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 4f5a19e84077b61ea797644b4942bb98b17bdd42
 F test/blob.test b6474275536614352d6e1c729f23a18ba1082ae9
@@ -106,7 +106,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test ac14bd6df5f1581d646eebc013d6b844a885dcf6
 F test/enc.test a55481d45ff493804e8d88357feb4642fc50a6b2
-F test/enc2.test 1d469f58ee7f187bf06e11bd72a12bdea6362b2f
+F test/enc2.test b689600df49149d992381b8a02e826a92ab72cc8
 F test/expr.test 521588701dae8cf5aa2b8a18c5c897711f754332
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test a63cf7a16bbd9dd1430214f6a0625099faa530f3
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8029f1e465b900215acdff48c8eefb53c71341a8
-R 138e81a320888ca19cc24892b2fcae4f
+P c5ebc1c05eccc2c0697b6047a504954e11960f73
+R 4b53e920198647f93177549edf4e8baf
 U drh
-Z cc9b57c631b9118103ce79035012013e
+Z 362250ddf90f1c6b39b6cc80b805170c

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.218 2004/06/12 09:25:15 danielk1977 Exp $
+** $Id: main.c,v 1.219 2004/06/13 23:07:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1287,4 +1287,3 @@ int sqlite3_collation_needed16(
   db->pCollNeededArg = pCollNeededArg;
   return SQLITE_OK;
 }
-
