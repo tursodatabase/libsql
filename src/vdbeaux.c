@@ -1117,14 +1117,15 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 **
 **   serial type        bytes of data      type
 **   --------------     ---------------    ---------------
-**      0                     -            Not a type.
+**      0                     0            NULL
 **      1                     1            signed integer
 **      2                     2            signed integer
-**      3                     4            signed integer
-**      4                     8            signed integer
-**      5                     8            IEEE float
-**      6                     0            NULL
-**     7..11                               reserved for expansion
+**      3                     3            signed integer
+**      4                     4            signed integer
+**      5                     6            signed integer
+**      6                     8            signed integer
+**      7                     8            IEEE float
+**     8-11                                reserved for expansion
 **    N>=12 and even       (N-12)/2        BLOB
 **    N>=13 and odd        (N-13)/2        text
 **
@@ -1137,18 +1138,20 @@ u32 sqlite3VdbeSerialType(Mem *pMem){
   int flags = pMem->flags;
 
   if( flags&MEM_Null ){
-    return 6;
+    return 0;
   }
   if( flags&MEM_Int ){
     /* Figure out whether to use 1, 2, 4 or 8 bytes. */
     i64 i = pMem->i;
     if( i>=-127 && i<=127 ) return 1;
     if( i>=-32767 && i<=32767 ) return 2;
-    if( i>=-2147483647 && i<=2147483647 ) return 3;
-    return 4;
+    if( i>=-8388607 && i<=8388607 ) return 3;
+    if( i>=-2147483647 && i<=2147483647 ) return 4;
+    if( i>=-140737488355328L && i<=140737488355328L ) return 5;
+    return 6;
   }
   if( flags&MEM_Real ){
-    return 5;
+    return 7;
   }
   if( flags&MEM_Str ){
     int n = pMem->n;
@@ -1165,11 +1168,10 @@ u32 sqlite3VdbeSerialType(Mem *pMem){
 ** Return the length of the data corresponding to the supplied serial-type.
 */
 int sqlite3VdbeSerialTypeLen(u32 serial_type){
-  assert( serial_type!=0 );
-  if( serial_type>6 ){
+  if( serial_type>=12 ){
     return (serial_type-12)/2;
   }else{
-    static u8 aSize[] = { 0, 1, 2, 4, 8, 8, 0, };
+    static u8 aSize[] = { 0, 1, 2, 3, 4, 6, 8, 8, 0, 0, 0, 0 };
     return aSize[serial_type];
   }
 }
@@ -1183,18 +1185,16 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem){
   u32 serial_type = sqlite3VdbeSerialType(pMem);
   int len;
 
-  assert( serial_type!=0 );
- 
   /* NULL */
-  if( serial_type==6 ){
+  if( serial_type==0 ){
     return 0;
   }
  
   /* Integer and Real */
-  if( serial_type<=5 ){
+  if( serial_type<=7 ){
     u64 v;
     int i;
-    if( serial_type==5 ){
+    if( serial_type==7 ){
       v = *(u64*)&pMem->r;
     }else{
       v = *(u64*)&pMem->i;
@@ -1225,11 +1225,15 @@ int sqlite3VdbeSerialGet(
 ){
   int len;
 
+  if( serial_type==0 ){
+    /* NULL */
+    pMem->flags = MEM_Null;
+    return 0;
+  }
   len = sqlite3VdbeSerialTypeLen(serial_type);
-  assert( serial_type!=0 );
-  if( serial_type<=5 ){
+  if( serial_type<=7 ){
     /* Integer and Real */
-    if( serial_type<=3 ){
+    if( serial_type<=4 ){
       /* 32-bit integer type.  This is handled by a special case for
       ** performance reasons. */
       int v = buf[0];
@@ -1253,7 +1257,7 @@ int sqlite3VdbeSerialGet(
       for(n=0; n<len; n++){
         v = (v<<8) | buf[n];
       }
-      if( serial_type==5 ){
+      if( serial_type==7 ){
         pMem->flags = MEM_Real;
         pMem->r = *(double*)&v;
       }else{
@@ -1261,8 +1265,9 @@ int sqlite3VdbeSerialGet(
         pMem->i = *(i64*)&v;
       }
     }
-  }else if( serial_type>=12 ){
+  }else{
     /* String or blob */
+    assert( serial_type>=12 );
     pMem->z = (char *)buf;
     pMem->n = len;
     if( serial_type&0x01 ){
@@ -1270,11 +1275,6 @@ int sqlite3VdbeSerialGet(
     }else{
       pMem->flags = MEM_Blob | MEM_Ephem;
     }
-  }else{
-    /* NULL */
-    assert( serial_type==6 );
-    assert( len==0 );
-    pMem->flags = MEM_Null;
   }
   return len;
 }

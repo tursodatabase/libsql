@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.349 2004/05/30 20:46:09 drh Exp $
+** $Id: vdbe.c,v 1.350 2004/05/30 21:14:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3714,7 +3714,7 @@ case OP_IdxIsNull: {
   k = sqlite3GetVarint32(z, &serial_type);
   for(; k<n && i>0; i--){
     k += sqlite3GetVarint32(&z[k], &serial_type);
-    if( serial_type==6 ){   /* Serial type 6 is a NULL */
+    if( serial_type==0 ){   /* Serial type 0 is a NULL */
       pc = pOp->p2-1;
       break;
     }

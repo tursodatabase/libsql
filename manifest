@@ -1,5 +1,5 @@
-C Various\sspeed\senhancements.\s(CVS\s1498)
-D 2004-05-30T20:46:09
+C Add\s3-byte\sand\s6-byte\sinteger\sserial\stypes.\s\sThis\smakes\sdatabases\ssmaller\nand\sfaster.\s\sShould\swe\sgo\sahead\sand\sadd\s5-\sand\s7-byte\sinteger\stypes\stoo?\s(CVS\s1499)
+D 2004-05-30T21:14:59
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -69,11 +69,11 @@ F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c f8604999a54483533ac20a63879074f01b0df384
 F src/util.c 3b647719c0bece41491300b605cff96a7a26f03a
 F src/vacuum.c 82ce1fc8ecc2e1aa284c13fe38446709f9936c63
-F src/vdbe.c a2131f7846fd2dbe1573bb37fc6d683c455c0ea4
+F src/vdbe.c 8c99c3c1e4b29b62a3e19e84b207b0fe84c45c46
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h c2bcd6e5a6e6a3753e4c5a368629c3a625719bfc
 F src/vdbeapi.c 0c5d64c81871cb4fe5407e639604ee95738b6942
-F src/vdbeaux.c ec0cccd9611fa6146a7b70ec23112959e63510ec
+F src/vdbeaux.c c7e66db2b52b3c816adbdec81581b5e7ad257639
 F src/vdbemem.c 627d714c347f6af8092cc48ae1c06fd774a1ad9c
 F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -85,7 +85,7 @@ F test/bigfile.test ea904b853ce2d703b16c5ce90e2b54951bc1ae81
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 4f5a19e84077b61ea797644b4942bb98b17bdd42
 F test/blob.test b6474275536614352d6e1c729f23a18ba1082ae9
-F test/btree.test 08e4093c78d2bc1d54e27266f8d17fed14751125
+F test/btree.test 018909b1c7ffe1fdcbd07774250a52ea58de3a11
 F test/btree2.test aa4a6d05b1ea90b1acaf83ba89039dd302a88635
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c86b7c065a798cd108189b96e87d100115862ff2
-R d1973e68e90aa9267e1c93eed75b57c5
+P a0db15bba64af0c529d5be366659bca1165ff21b
+R 915a168eb388cda740e119c94b1b9b85
 U drh
-Z 7599afd42e52bbb72c5888c64d1ac6d1
+Z 7fdd86c94ca6358f07f558cb154c7ae7
