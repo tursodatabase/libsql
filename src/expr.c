@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.106 2004/01/16 16:42:54 drh Exp $
+** $Id: expr.c,v 1.107 2004/01/25 22:44:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -375,6 +375,221 @@ int sqliteIsRowid(const char *z){
 }
 
 /*
+** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
+** that name in the set of source tables in pSrcList and make the pExpr 
+** expression node refer back to that source column.  The following changes
+** are made to pExpr:
+**
+**    pExpr->iDb           Set the index in db->aDb[] of the database holding
+**                         the table.
+**    pExpr->iTable        Set to the cursor number for the table obtained
+**                         from pSrcList.
+**    pExpr->iColumn       Set to the column number within the table.
+**    pExpr->dataType      Set to the appropriate data type for the column.
+**    pExpr->op            Set to TK_COLUMN.
+**    pExpr->pLeft         Any expression this points to is deleted
+**    pExpr->pRight        Any expression this points to is deleted.
+**
+** The pDbToken is the name of the database (the "X").  This value may be
+** NULL meaning that name is of the form Y.Z or Z.  Any available database
+** can be used.  The pTableToken is the name of the table (the "Y").  This
+** value can be NULL if pDbToken is also NULL.  If pTableToken is NULL it
+** means that the form of the name is Z and that columns from any table
+** can be used.
+**
+** If the name cannot be resolved unambiguously, leave an error message
+** in pParse and return non-zero.  Return zero on success.
+*/
+static int lookupName(
+  Parse *pParse,      /* The parsing context */
+  Token *pDbToken,     /* Name of the database containing table, or NULL */
+  Token *pTableToken,  /* Name of table containing column, or NULL */
+  Token *pColumnToken, /* Name of the column. */
+  SrcList *pSrcList,   /* List of tables used to resolve column names */
+  ExprList *pEList,    /* List of expressions used to resolve "AS" */
+  Expr *pExpr          /* Make this EXPR node point to the selected column */
+){
+  char *zDb = 0;       /* Name of the database.  The "X" in X.Y.Z */
+  char *zTab = 0;      /* Name of the table.  The "Y" in X.Y.Z or Y.Z */
+  char *zCol = 0;      /* Name of the column.  The "Z" */
+  int i, j;            /* Loop counters */
+  int cnt = 0;         /* Number of matching column names */
+  int cntTab = 0;      /* Number of matching table names */
+  sqlite *db;          /* The database */
+
+  assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
+  if( pDbToken && pDbToken->z ){
+    zDb = sqliteStrNDup(pDbToken->z, pDbToken->n);
+    sqliteDequote(zDb);
+  }else{
+    zDb = 0;
+  }
+  if( pTableToken && pTableToken->z ){
+    zTab = sqliteStrNDup(pTableToken->z, pTableToken->n);
+    sqliteDequote(zTab);
+  }else{
+    assert( zDb==0 );
+    zTab = 0;
+  }
+  zCol = sqliteStrNDup(pColumnToken->z, pColumnToken->n);
+  sqliteDequote(zCol);
+  if( sqlite_malloc_failed ){
+    return 1;  /* Leak memory (zDb and zTab) if malloc fails */
+  }
+  assert( zTab==0 || pEList==0 );
+
+  pExpr->iTable = -1;
+  for(i=0; i<pSrcList->nSrc; i++){
+    struct SrcList_item *pItem = &pSrcList->a[i];
+    Table *pTab = pItem->pTab;
+    Column *pCol;
+
+    if( pTab==0 ) continue;
+    assert( pTab->nCol>0 );
+    if( zTab ){
+      if( pItem->zAlias ){
+        char *zTabName = pItem->zAlias;
+        if( sqliteStrICmp(zTabName, zTab)!=0 ) continue;
+      }else{
+        char *zTabName = pTab->zName;
+        if( zTabName==0 || sqliteStrICmp(zTabName, zTab)!=0 ) continue;
+        if( zDb!=0 && sqliteStrICmp(db->aDb[pTab->iDb].zName, zDb)!=0 ){
+          continue;
+        }
+      }
+    }
+    if( 0==(cntTab++) ){
+      pExpr->iTable = pItem->iCursor;
+      pExpr->iDb = pTab->iDb;
+    }
+    for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
+      if( sqliteStrICmp(pCol->zName, zCol)==0 ){
+        cnt++;
+        pExpr->iTable = pItem->iCursor;
+        pExpr->iDb = pTab->iDb;
+        /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
+        pExpr->iColumn = j==pTab->iPKey ? -1 : j;
+        pExpr->dataType = pCol->sortOrder & SQLITE_SO_TYPEMASK;
+        break;
+      }
+    }
+  }
+
+  /* If we have not already resolved the name, then maybe 
+  ** it is a new.* or old.* trigger argument reference
+  */
+  if( zDb==0 && zTab!=0 && cnt==0 && pParse->trigStack!=0 ){
+    TriggerStack *pTriggerStack = pParse->trigStack;
+    Table *pTab = 0;
+    if( pTriggerStack->newIdx != -1 && sqliteStrICmp("new", zTab) == 0 ){
+      pExpr->iTable = pTriggerStack->newIdx;
+      assert( pTriggerStack->pTab );
+      pTab = pTriggerStack->pTab;
+    }else if( pTriggerStack->oldIdx != -1 && sqliteStrICmp("old", zTab) == 0 ){
+      pExpr->iTable = pTriggerStack->oldIdx;
+      assert( pTriggerStack->pTab );
+      pTab = pTriggerStack->pTab;
+    }
+
+    if( pTab ){ 
+      int j;
+      Column *pCol = pTab->aCol;
+      
+      pExpr->iDb = pTab->iDb;
+      cntTab++;
+      for(j=0; j < pTab->nCol; j++, pCol++) {
+        if( sqliteStrICmp(pCol->zName, zCol)==0 ){
+          cnt++;
+          pExpr->iColumn = j==pTab->iPKey ? -1 : j;
+          pExpr->dataType = pCol->sortOrder & SQLITE_SO_TYPEMASK;
+          break;
+        }
+      }
+    }
+  }
+
+  /*
+  ** Perhaps the name is a reference to the ROWID
+  */
+  if( cnt==0 && cntTab==1 && sqliteIsRowid(zCol) ){
+    cnt = 1;
+    pExpr->iColumn = -1;
+    pExpr->dataType = SQLITE_SO_NUM;
+  }
+
+  /*
+  ** If the input is of the form Z (not Y.Z or X.Y.Z) then the name Z
+  ** might refer to an result-set alias.  This happens, for example, when
+  ** we are resolving names in the WHERE clause of the following command:
+  **
+  **     SELECT a+b AS x FROM table WHERE x<10;
+  **
+  ** In cases like this, replace pExpr with a copy of the expression that
+  ** forms the result set entry ("a+b" in the example) and return immediately.
+  ** Note that the expression in the result set should have already been
+  ** resolved by the time the WHERE clause is resolved.
+  */
+  if( cnt==0 && pEList!=0 ){
+    for(j=0; j<pEList->nExpr; j++){
+      char *zAs = pEList->a[j].zName;
+      if( zAs!=0 && sqliteStrICmp(zAs, zCol)==0 ){
+        assert( pExpr->pLeft==0 && pExpr->pRight==0 );
+        pExpr->op = TK_AS;
+        pExpr->iColumn = j;
+        pExpr->pLeft = sqliteExprDup(pEList->a[j].pExpr);
+        sqliteFree(zCol);
+        assert( zTab==0 && zDb==0 );
+        return 0;
+      }
+    } 
+  }
+
+  /*
+  ** If X and Y are NULL (in other words if only the column name Z is
+  ** supplied) and the value of Z is enclosed in double-quotes, then
+  ** Z is a string literal if it doesn't match any column names.  In that
+  ** case, we need to return right away and not make any changes to
+  ** pExpr.
+  */
+  if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
+    sqliteFree(zCol);
+    return 0;
+  }
+
+  /*
+  ** cnt==0 means there was not match.  cnt>1 means there were two or
+  ** more matches.  Either way, we have an error.
+  */
+  if( cnt!=1 ){
+    char *z = 0;
+    char *zErr;
+    zErr = cnt==0 ? "no such column: %s" : "ambiguous column name: %s";
+    if( zDb ){
+      sqliteSetString(&z, zDb, ".", zTab, ".", zCol, 0);
+    }else if( zTab ){
+      sqliteSetString(&z, zTab, ".", zCol, 0);
+    }else{
+      z = sqliteStrDup(zCol);
+    }
+    sqliteErrorMsg(pParse, zErr, z);
+    sqliteFree(z);
+  }
+
+  /* Clean up and return
+  */
+  sqliteFree(zDb);
+  sqliteFree(zTab);
+  sqliteFree(zCol);
+  sqliteExprDelete(pExpr->pLeft);
+  pExpr->pLeft = 0;
+  sqliteExprDelete(pExpr->pRight);
+  pExpr->pRight = 0;
+  pExpr->op = TK_COLUMN;
+  sqliteAuthRead(pParse, pExpr, pSrcList);
+  return cnt!=1;
+}
+
+/*
 ** This routine walks an expression tree and resolves references to
 ** table columns.  Nodes of the form ID.ID or ID resolve into an
 ** index to the table in the table list and a column offset.  The 
@@ -407,15 +622,15 @@ int sqliteIsRowid(const char *z){
 */
 int sqliteExprResolveIds(
   Parse *pParse,     /* The parser context */
-  SrcList *pTabList, /* List of tables used to resolve column names */
+  SrcList *pSrcList, /* List of tables used to resolve column names */
   ExprList *pEList,  /* List of expressions used to resolve "AS" */
   Expr *pExpr        /* The expression to be analyzed. */
 ){
   int i;
 
-  if( pExpr==0 || pTabList==0 ) return 0;
-  for(i=0; i<pTabList->nSrc; i++){
-    assert( pTabList->a[i].iCursor>=0 && pTabList->a[i].iCursor<pParse->nTab );
+  if( pExpr==0 || pSrcList==0 ) return 0;
+  for(i=0; i<pSrcList->nSrc; i++){
+    assert( pSrcList->a[i].iCursor>=0 && pSrcList->a[i].iCursor<pParse->nTab );
   }
   switch( pExpr->op ){
     /* Double-quoted strings (ex: "abc") are used as identifiers if
@@ -426,79 +641,11 @@ int sqliteExprResolveIds(
       if( pExpr->token.z[0]=='\'' ) break;
       /* Fall thru into the TK_ID case if this is a double-quoted string */
     }
-    /* A lone identifier.  Try and match it as follows:
-    **
-    **     1.  To the name of a column of one of the tables in pTabList
-    **
-    **     2.  To the right side of an AS keyword in the column list of
-    **         a SELECT statement.  (For example, match against 'x' in
-    **         "SELECT a+b AS 'x' FROM t1".)
-    **
-    **     3.  One of the special names "ROWID", "OID", or "_ROWID_".
+    /* A lone identifier is the name of a columnd.
     */
     case TK_ID: {
-      int cnt = 0;      /* Number of matches */
-      char *z;
-      int iDb = -1;
-
-      assert( pExpr->token.z );
-      z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
-      sqliteDequote(z);
-      if( z==0 ) return 1;
-      for(i=0; i<pTabList->nSrc; i++){
-        int j;
-        Table *pTab = pTabList->a[i].pTab;
-        if( pTab==0 ) continue;
-        iDb = pTab->iDb;
-        assert( pTab->nCol>0 );
-        for(j=0; j<pTab->nCol; j++){
-          if( sqliteStrICmp(pTab->aCol[j].zName, z)==0 ){
-            cnt++;
-            pExpr->iTable = pTabList->a[i].iCursor;
-            pExpr->iDb = pTab->iDb;
-            if( j==pTab->iPKey ){
-              /* Substitute the record number for the INTEGER PRIMARY KEY */
-              pExpr->iColumn = -1;
-              pExpr->dataType = SQLITE_SO_NUM;
-            }else{
-              pExpr->iColumn = j;
-              pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
-            }
-            pExpr->op = TK_COLUMN;
-          }
-        }
-      }
-      if( cnt==0 && pEList!=0 ){
-        int j;
-        for(j=0; j<pEList->nExpr; j++){
-          char *zAs = pEList->a[j].zName;
-          if( zAs!=0 && sqliteStrICmp(zAs, z)==0 ){
-            cnt++;
-            assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-            pExpr->op = TK_AS;
-            pExpr->iColumn = j;
-            pExpr->pLeft = sqliteExprDup(pEList->a[j].pExpr);
-          }
-        } 
-      }
-      if( cnt==0 && iDb>=0 && sqliteIsRowid(z) ){
-        pExpr->iColumn = -1;
-        pExpr->iTable = pTabList->a[0].iCursor;
-        pExpr->iDb = iDb;
-        cnt = 1 + (pTabList->nSrc>1);
-        pExpr->op = TK_COLUMN;
-        pExpr->dataType = SQLITE_SO_NUM;
-      }
-      sqliteFree(z);
-      if( cnt==0 && pExpr->token.z[0]!='"' ){
-        sqliteErrorMsg(pParse, "no such column: %T", &pExpr->token);
+      if( lookupName(pParse, 0, 0, &pExpr->token, pSrcList, pEList, pExpr) ){
         return 1;
-      }else if( cnt>1 ){
-        sqliteErrorMsg(pParse, "ambiguous column name: %T", &pExpr->token);
-        return 1;
-      }
-      if( pExpr->op==TK_COLUMN ){
-        sqliteAuthRead(pParse, pExpr, pTabList);
       }
       break; 
     }
@@ -507,134 +654,32 @@ int sqliteExprResolveIds(
     ** Or a database, table and column:  ID.ID.ID
     */
     case TK_DOT: {
-      int cnt = 0;             /* Number of matches */
-      int cntTab = 0;          /* Number of matching tables */
-      int i;                   /* Loop counter */
-      Expr *pLeft, *pRight;    /* Left and right subbranches of the expr */
-      char *zLeft, *zRight;    /* Text of an identifier */
-      char *zDb;               /* Name of database holding table */
-      sqlite *db = pParse->db;
+      Token *pColumn;
+      Token *pTable;
+      Token *pDb;
+      Expr *pRight;
 
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
-        pLeft = pExpr->pLeft;
-        zDb = 0;
+        pDb = 0;
+        pTable = &pExpr->pLeft->token;
+        pColumn = &pRight->token;
       }else{
-        Expr *pDb = pExpr->pLeft;
-        assert( pDb && pDb->op==TK_ID && pDb->token.z );
-        zDb = sqliteStrNDup(pDb->token.z, pDb->token.n);
-        pLeft = pRight->pLeft;
-        pRight = pRight->pRight;
+        assert( pRight->op==TK_DOT );
+        pDb = &pExpr->pLeft->token;
+        pTable = &pRight->pLeft->token;
+        pColumn = &pRight->pRight->token;
       }
-      assert( pLeft && pLeft->op==TK_ID && pLeft->token.z );
-      assert( pRight && pRight->op==TK_ID && pRight->token.z );
-      zLeft = sqliteStrNDup(pLeft->token.z, pLeft->token.n);
-      zRight = sqliteStrNDup(pRight->token.z, pRight->token.n);
-      if( zLeft==0 || zRight==0 ){
-        sqliteFree(zLeft);
-        sqliteFree(zRight);
-        sqliteFree(zDb);
+      if( lookupName(pParse, pDb, pTable, pColumn, pSrcList, 0, pExpr) ){
         return 1;
       }
-      sqliteDequote(zDb);
-      sqliteDequote(zLeft);
-      sqliteDequote(zRight);
-      pExpr->iTable = -1;
-      for(i=0; i<pTabList->nSrc; i++){
-        int j;
-        char *zTab;
-        Table *pTab = pTabList->a[i].pTab;
-        if( pTab==0 ) continue;
-        assert( pTab->nCol>0 );
-        if( pTabList->a[i].zAlias ){
-          zTab = pTabList->a[i].zAlias;
-          if( sqliteStrICmp(zTab, zLeft)!=0 ) continue;
-        }else{
-          zTab = pTab->zName;
-          if( zTab==0 || sqliteStrICmp(zTab, zLeft)!=0 ) continue;
-          if( zDb!=0 && sqliteStrICmp(db->aDb[pTab->iDb].zName, zDb)!=0 ){
-            continue;
-          }
-        }
-        if( 0==(cntTab++) ){
-          pExpr->iTable = pTabList->a[i].iCursor;
-          pExpr->iDb = pTab->iDb;
-        }
-        for(j=0; j<pTab->nCol; j++){
-          if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
-            cnt++;
-            pExpr->iTable = pTabList->a[i].iCursor;
-            pExpr->iDb = pTab->iDb;
-            /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
-            pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-            pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
-          }
-        }
-      }
-
-      /* If we have not already resolved this *.* expression, then maybe 
-       * it is a new.* or old.* trigger argument reference */
-      if( cnt == 0 && pParse->trigStack != 0 ){
-        TriggerStack *pTriggerStack = pParse->trigStack;
-        int t = 0;
-        if( pTriggerStack->newIdx != -1 && sqliteStrICmp("new", zLeft) == 0 ){
-          pExpr->iTable = pTriggerStack->newIdx;
-          assert( pTriggerStack->pTab );
-          pExpr->iDb = pTriggerStack->pTab->iDb;
-          cntTab++;
-          t = 1;
-        }
-        if( pTriggerStack->oldIdx != -1 && sqliteStrICmp("old", zLeft) == 0 ){
-          pExpr->iTable = pTriggerStack->oldIdx;
-          assert( pTriggerStack->pTab );
-          pExpr->iDb = pTriggerStack->pTab->iDb;
-          cntTab++;
-          t = 1;
-        }
-
-        if( t ){ 
-	  int j;
-          Table *pTab = pTriggerStack->pTab;
-          for(j=0; j < pTab->nCol; j++) {
-            if( sqliteStrICmp(pTab->aCol[j].zName, zRight)==0 ){
-              cnt++;
-              pExpr->iColumn = j==pTab->iPKey ? -1 : j;
-              pExpr->dataType = pTab->aCol[j].sortOrder & SQLITE_SO_TYPEMASK;
-            }
-          }
-	}
-      }
-
-      if( cnt==0 && cntTab==1 && sqliteIsRowid(zRight) ){
-        cnt = 1;
-        pExpr->iColumn = -1;
-        pExpr->dataType = SQLITE_SO_NUM;
-      }
-      sqliteFree(zDb);
-      sqliteFree(zLeft);
-      sqliteFree(zRight);
-      if( cnt==0 ){
-        sqliteErrorMsg(pParse, "no such column: %T.%T",
-               &pLeft->token, &pRight->token);
-        return 1;
-      }else if( cnt>1 ){
-        sqliteErrorMsg(pParse, "ambiguous column name: %T.%T",
-          &pLeft->token, &pRight->token);
-        return 1;
-      }
-      sqliteExprDelete(pExpr->pLeft);
-      pExpr->pLeft = 0;
-      sqliteExprDelete(pExpr->pRight);
-      pExpr->pRight = 0;
-      pExpr->op = TK_COLUMN;
-      sqliteAuthRead(pParse, pExpr, pTabList);
       break;
     }
 
     case TK_IN: {
       Vdbe *v = sqliteGetVdbe(pParse);
       if( v==0 ) return 1;
-      if( sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
+      if( sqliteExprResolveIds(pParse, pSrcList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pSelect ){
@@ -704,11 +749,11 @@ int sqliteExprResolveIds(
     /* For all else, just recursively walk the tree */
     default: {
       if( pExpr->pLeft
-      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pLeft) ){
+      && sqliteExprResolveIds(pParse, pSrcList, pEList, pExpr->pLeft) ){
         return 1;
       }
       if( pExpr->pRight 
-      && sqliteExprResolveIds(pParse, pTabList, pEList, pExpr->pRight) ){
+      && sqliteExprResolveIds(pParse, pSrcList, pEList, pExpr->pRight) ){
         return 1;
       }
       if( pExpr->pList ){
@@ -716,7 +761,7 @@ int sqliteExprResolveIds(
         ExprList *pList = pExpr->pList;
         for(i=0; i<pList->nExpr; i++){
           Expr *pArg = pList->a[i].pExpr;
-          if( sqliteExprResolveIds(pParse, pTabList, pEList, pArg) ){
+          if( sqliteExprResolveIds(pParse, pSrcList, pEList, pArg) ){
             return 1;
           }
         }

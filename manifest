@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sgroup\sFROM\sterms\susing\sparentheses.\s\sNames\sof\scolumns\sin\na\sjoin\sno\slonger\sinclude\sthe\stable\sname.\s(CVS\s1197)
-D 2004-01-24T20:18:13
+C Modularize\sthe\scolumn\sname\sresolution\scode\sso\sthat\sit\sis\ssmaller,\sfaster,\nand\sready\sfor\ssome\senhancements\sthat\swill\sfix\slong-standing\sname\nresolutions\sproblems.\s(CVS\s1198)
+D 2004-01-25T22:44:59
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -31,7 +31,7 @@ F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c c6b7e3fa5364d50fe19641882194f3c75364a5af
 F src/delete.c 0778fe05df0a1d62ac27fd1a3dba237c186ff4d1
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
-F src/expr.c e6a05bec1ca8d80d0901e5ff59c4ce3d9553f6cc
+F src/expr.c 3928893e8a7576484cd2ed5548468ba978d8005a
 F src/func.c fd710743e4026dfebfd48c12d20b1a5c27318fa5
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
@@ -181,7 +181,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 3dc951951947a9188ecba1b84e48c65e34c4df16
-R c11f9dd26aca5e351dec881862f5d549
+P 3626f6d4a1adb4209d5bd9e6477343b52bddbdf2
+R dd7edf82e94deb20012095d659a5fe16
 U drh
-Z 2a2e36c650f4fa8bf25792ffa5a54e26
+Z cf295a8614ac26ab40dca8b761e6d91c
