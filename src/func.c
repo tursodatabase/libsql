@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.56 2004/05/26 06:18:37 danielk1977 Exp $
+** $Id: func.c,v 1.57 2004/05/26 16:54:43 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -29,45 +29,41 @@
 /*
 ** Implementation of the non-aggregate min() and max() functions
 */
-static void minmaxFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const char *zBest; 
+static void minmaxFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   int i;
-  int (*xCompare)(const char*, const char*);
   int mask;    /* 0 for min() or 0xffffffff for max() */
-  const char *zArg;
+  int iBest;
 
   if( argc==0 ) return;
   mask = (int)sqlite3_user_data(context);
-  zBest = sqlite3_value_data(argv[0]);
-  if( zBest==0 ) return;
-  zArg = sqlite3_value_data(argv[1]);
-  if( zArg[0]=='n' ){
-    xCompare = sqlite3Compare;
-  }else{
-    xCompare = strcmp;
-  }
-  for(i=2; i<argc; i+=2){
-    zArg = sqlite3_value_data(argv[i]);
-    if( zArg==0 ) return;
-    if( (xCompare(zArg, zBest)^mask)<0 ){
-      zBest = zArg;
+  iBest = 0;
+  for(i=1; i<argc; i++){
+    if( (sqlite3MemCompare(argv[iBest], argv[i], 0)^mask)<0 ){
+      iBest = i;
     }
   }
-  sqlite3_result_text(context, zBest, -1, 1);
+  sqlite3_result(context, argv[iBest]);
 }
 
 /*
 ** Return the type of the argument.
 */
-static void typeofFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void typeofFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   const char *z = 0;
-  assert( argc==2 );
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE3_NULL: z = "null" ; break;
-    case SQLITE3_INTEGER: z = "integer" ; break;
-    case SQLITE3_TEXT: z = "text" ; break;
-    case SQLITE3_FLOAT: z = "real" ; break;
-    case SQLITE3_BLOB: z = "blob" ; break;
+    case SQLITE3_NULL:    z = "null";    break;
+    case SQLITE3_INTEGER: z = "integer"; break;
+    case SQLITE3_TEXT:    z = "text";    break;
+    case SQLITE3_FLOAT:   z = "real";    break;
+    case SQLITE3_BLOB:    z = "blob";    break;
   }
   sqlite3_result_text(context, z, -1, 0);
 }
@@ -75,19 +71,33 @@ static void typeofFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 /*
 ** Implementation of the length() function
 */
-static void lengthFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void lengthFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   const char *z;
   int len;
 
   assert( argc==1 );
-  z = sqlite3_value_data(argv[0]);
-  if( z==0 ) return;
-#ifdef SQLITE_UTF8
-  for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
-#else
-  len = strlen(z);
-#endif
-  sqlite3_result_int32(context, len);
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE3_BLOB:
+    case SQLITE3_INTEGER:
+    case SQLITE3_FLOAT: {
+      sqlite3_result_int32(context, sqlite3_value_bytes(argv[0]));
+      break;
+    }
+    case SQLITE3_TEXT: {
+      const char *z = sqlite3_value_data(argv[0]);
+      for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
+      sqlite3_result_int32(context, len);
+      break;
+    }
+    default: {
+      sqlite3_result_null(context);
+      break;
+    }
+  }
 }
 
 /*
@@ -96,32 +106,41 @@ static void lengthFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *z;
   assert( argc==1 );
-  z = sqlite3_value_data(argv[0]);
-  if( z==0 ) return;
-  if( z[0]=='-' && isdigit(z[1]) ) z++;
-  sqlite3_result_text(context, z, -1, 1);
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE3_INTEGER: {
+      sqlite3_result_int64(context, -sqlite3_value_int(argv[0]));
+      break;
+    }
+    case SQLITE3_NULL: {
+      sqlite3_result_null(context);
+      break;
+    }
+    default: {
+      sqlite3_result_double(context, -sqlite3_value_float(argv[0]));
+      break;
+    }
+  }
 }
 
 /*
 ** Implementation of the substr() function
 */
-static void substrFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void substrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   const char *z;
-#ifdef SQLITE_UTF8
   const char *z2;
   int i;
-#endif
   int p1, p2, len;
+
   assert( argc==3 );
   z = sqlite3_value_data(argv[0]);
   if( z==0 ) return;
   p1 = sqlite3_value_int(argv[1]);
   p2 = sqlite3_value_int(argv[2]);
-#ifdef SQLITE_UTF8
   for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z2)!=0x80 ) len++; }
-#else
-  len = strlen(z);
-#endif
   if( p1<0 ){
     p1 += len;
     if( p1<0 ){
@@ -134,7 +153,6 @@ static void substrFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
   if( p1+p2>len ){
     p2 = len-p1;
   }
-#ifdef SQLITE_UTF8
   for(i=0; i<p1 && z[i]; i++){
     if( (z[i]&0xc0)==0x80 ) p1++;
   }
@@ -143,7 +161,6 @@ static void substrFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
     if( (z[i]&0xc0)==0x80 ) p2++;
   }
   while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
-#endif
   if( p2<0 ) p2 = 0;
   sqlite3_result_text(context, &z[p1], p2, 1);
 }
@@ -203,11 +220,15 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** All three do the same thing.  They return the first non-NULL
 ** argument.
 */
-static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void ifnullFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE3_NULL!=sqlite3_value_type(argv[i]) ){
-      sqlite3_result_text(context, sqlite3_value_data(argv[i]), -1, 1);
+      sqlite3_result(context, argv[i]);
       break;
     }
   }
@@ -216,7 +237,11 @@ static void ifnullFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 /*
 ** Implementation of random().  Return a random integer.  
 */
-static void randomFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void randomFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   int r;
   sqlite3Randomness(sizeof(r), &r);
   sqlite3_result_int32(context, r);
@@ -232,14 +257,18 @@ static void last_insert_rowid(
   sqlite3_value **argv
 ){
   sqlite *db = sqlite3_user_data(context);
-  sqlite3_result_int32(context, sqlite3_last_insert_rowid(db));
+  sqlite3_result_int64(context, sqlite3_last_insert_rowid(db));
 }
 
 /*
 ** Implementation of the change_count() SQL function.  The return
 ** value is the same as the sqlite3_changes() API function.
 */
-static void change_count(sqlite3_context *context, int arg, sqlite3_value **argv){
+static void change_count(
+  sqlite3_context *context,
+  int arg,
+  sqlite3_value **argv
+){
   sqlite *db = sqlite3_user_data(context);
   sqlite3_result_int32(context, sqlite3_changes(db));
 }
@@ -301,11 +330,13 @@ static void globFunc(sqlite3_context *context, int arg, sqlite3_value **argv){
 ** argument if the arguments are different.  The result is NULL if the
 ** arguments are equal to each other.
 */
-static void nullifFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  const unsigned char *zX = sqlite3_value_data(argv[0]);
-  const unsigned char *zY = sqlite3_value_data(argv[1]);
-  if( zX!=0 && sqlite3Compare(zX, zY)!=0 ){
-    sqlite3_result_text(context, zX, -1, 1);
+static void nullifFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  if( sqlite3MemCompare(argv[0], argv[1], 0)!=0 ){
+    sqlite3_result(context, argv[0]);
   }
 }
 
@@ -313,7 +344,11 @@ static void nullifFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
 ** Implementation of the VERSION(*) function.  The result is the version
 ** of the SQLite library that is running.
 */
-static void versionFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void versionFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
   sqlite3_result_text(context, sqlite3_version, -1, 0);
 }
 
@@ -331,27 +366,37 @@ static void versionFunc(sqlite3_context *context, int argc, sqlite3_value **argv
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *zArg = sqlite3_value_data(argv[0]);
   if( argc<1 ) return;
-  if( zArg==0 ){
-    sqlite3_result_text(context, "NULL", 4, 0);
-  }else if( sqlite3IsNumber(zArg, 0, TEXT_Utf8) ){
-    sqlite3_result_text(context, zArg, -1, 1);
-  }else{
-    int i,j,n;
-    char *z;
-    for(i=n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
-    z = sqliteMalloc( i+n+3 );
-    if( z==0 ) return;
-    z[0] = '\'';
-    for(i=0, j=1; zArg[i]; i++){
-      z[j++] = zArg[i];
-      if( zArg[i]=='\'' ){
-        z[j++] = '\'';
-      }
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE3_NULL: {
+      sqlite3_result_text(context, "NULL", 4, 0);
+      break;
     }
-    z[j++] = '\'';
-    z[j] = 0;
-    sqlite3_result_text(context, z, j, 1);
-    sqliteFree(z);
+    case SQLITE3_INTEGER:
+    case SQLITE3_FLOAT: {
+      sqlite3_result(context, argv[0]);
+      break;
+    }
+    case SQLITE3_BLOB:  /*** FIX ME.  Use a BLOB encoding ***/
+    case SQLITE3_TEXT: {
+      int i,j,n;
+      const char *zArg = sqlite3_value_data(argv[0]);
+      char *z;
+
+      for(i=n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
+      z = sqliteMalloc( i+n+3 );
+      if( z==0 ) return;
+      z[0] = '\'';
+      for(i=0, j=1; zArg[i]; i++){
+        z[j++] = zArg[i];
+        if( zArg[i]=='\'' ){
+          z[j++] = '\'';
+        }
+      }
+      z[j++] = '\'';
+      z[j] = 0;
+      sqlite3_result_text(context, z, j, 1);
+      sqliteFree(z);
+    }
   }
 }
 
@@ -409,14 +454,14 @@ static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
   int iMin, iMax, n, r, i;
   unsigned char zBuf[1000];
   if( argc>=1 ){
-    iMin = atoi(sqlite3_value_data(argv[0]));
+    iMin = sqlite3_value_int(argv[0]);
     if( iMin<0 ) iMin = 0;
     if( iMin>=sizeof(zBuf) ) iMin = sizeof(zBuf)-1;
   }else{
     iMin = 1;
   }
   if( argc>=2 ){
-    iMax = atoi(sqlite3_value_data(argv[1]));
+    iMax = sqlite3_value_int(argv[1]);
     if( iMax<iMin ) iMax = iMin;
     if( iMax>=sizeof(zBuf) ) iMax = sizeof(zBuf)-1;
   }else{
@@ -578,23 +623,8 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
 static void minMaxFinalize(sqlite3_context *context){
   sqlite3_value *pRes;
   pRes = (sqlite3_value *)sqlite3_get_context(context, sizeof(Mem));
-  
   if( pRes->flags ){
-    switch( sqlite3_value_type(pRes) ){
-      case SQLITE3_INTEGER: 
-        sqlite3_result_int32(context, sqlite3_value_int(pRes));
-        break;
-      case SQLITE3_FLOAT: 
-        sqlite3_result_double(context, sqlite3_value_float(pRes));
-      case SQLITE3_TEXT: 
-      case SQLITE3_BLOB: 
-        sqlite3_result_text(context,
-            sqlite3_value_data(pRes), sqlite3_value_bytes(pRes), 1);
-        break;
-      case SQLITE3_NULL: 
-      default:
-        assert(0);
-    }
+    sqlite3_result(context, pRes);
   }
 }
 
@@ -607,90 +637,70 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
   static struct {
      char *zName;
      signed char nArg;
-     signed char dataType;
      u8 argType;               /* 0: none.  1: db  2: (-1) */
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
-    { "min",       -1, SQLITE_ARGS,    0, minmaxFunc },
-    { "min",        0, 0,              0, 0          },
-    { "max",       -1, SQLITE_ARGS,    2, minmaxFunc },
-    { "max",        0, 0,              2, 0          },
-    { "typeof",     1, SQLITE_TEXT,    0, typeofFunc },
-    { "classof",    1, SQLITE_TEXT,    0, typeofFunc }, /* FIX ME: hack */
-    { "length",     1, SQLITE_NUMERIC, 0, lengthFunc },
-    { "substr",     3, SQLITE_TEXT,    0, substrFunc },
-    { "abs",        1, SQLITE_NUMERIC, 0, absFunc    },
-    { "round",      1, SQLITE_NUMERIC, 0, roundFunc  },
-    { "round",      2, SQLITE_NUMERIC, 0, roundFunc  },
-    { "upper",      1, SQLITE_TEXT,    0, upperFunc  },
-    { "lower",      1, SQLITE_TEXT,    0, lowerFunc  },
-    { "coalesce",  -1, SQLITE_ARGS,    0, ifnullFunc },
-    { "coalesce",   0, 0,              0, 0          },
-    { "coalesce",   1, 0,              0, 0          },
-    { "ifnull",     2, SQLITE_ARGS,    0, ifnullFunc },
-    { "random",    -1, SQLITE_NUMERIC, 0, randomFunc },
-    { "like",       2, SQLITE_NUMERIC, 0, likeFunc   },
-    { "glob",       2, SQLITE_NUMERIC, 0, globFunc   },
-    { "nullif",     2, SQLITE_ARGS,    0, nullifFunc },
-    { "sqlite_version",0,SQLITE_TEXT,  0, versionFunc},
-    { "quote",      1, SQLITE_ARGS,    0, quoteFunc  },
-    { "last_insert_rowid", 0, SQLITE_NUMERIC, 1, last_insert_rowid },
-    { "change_count",      0, SQLITE_NUMERIC, 1, change_count      },
-    { "last_statement_change_count",
-                           0, SQLITE_NUMERIC, 1, last_statement_change_count },
+    { "min",                        -1, 0, minmaxFunc },
+    { "min",                         0, 0, 0          },
+    { "max",                        -1, 2, minmaxFunc },
+    { "max",                         0, 2, 0          },
+    { "typeof",                      1, 0, typeofFunc },
+    { "classof",                     1, 0, typeofFunc }, /* FIX ME: hack */
+    { "length",                      1, 0, lengthFunc },
+    { "substr",                      3, 0, substrFunc },
+    { "abs",                         1, 0, absFunc    },
+    { "round",                       1, 0, roundFunc  },
+    { "round",                       2, 0, roundFunc  },
+    { "upper",                       1, 0, upperFunc  },
+    { "lower",                       1, 0, lowerFunc  },
+    { "coalesce",                   -1, 0, ifnullFunc },
+    { "coalesce",                    0, 0, 0          },
+    { "coalesce",                    1, 0, 0          },
+    { "ifnull",                      2, 0, ifnullFunc },
+    { "random",                     -1, 0, randomFunc },
+    { "like",                        2, 0, likeFunc   },
+    { "glob",                        2, 0, globFunc   },
+    { "nullif",                      2, 0, nullifFunc },
+    { "sqlite_version",              0, 0, versionFunc},
+    { "quote",                       1, 0, quoteFunc  },
+    { "last_insert_rowid",           0, 1, last_insert_rowid },
+    { "change_count",                0, 1, change_count      },
+    { "last_statement_change_count", 0, 1, last_statement_change_count },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",    1, SQLITE_TEXT,    0, soundexFunc},
+    { "soundex",                     1, 0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",    2, SQLITE_TEXT,    0, randStr    },
+    { "randstr",                     2, 0, randStr    },
 #endif
   };
   static struct {
     char *zName;
     signed char nArg;
-    signed char dataType;
     u8 argType;
     void (*xStep)(sqlite3_context*,int,sqlite3_value**);
     void (*xFinalize)(sqlite3_context*);
   } aAggs[] = {
-    { "min",    1, 0,              0, minmaxStep,   minMaxFinalize },
-    { "max",    1, 0,              2, minmaxStep,   minMaxFinalize },
-    { "sum",    1, SQLITE_NUMERIC, 0, sumStep,      sumFinalize    },
-    { "avg",    1, SQLITE_NUMERIC, 0, sumStep,      avgFinalize    },
-    { "count",  0, SQLITE_NUMERIC, 0, countStep,    countFinalize  },
-    { "count",  1, SQLITE_NUMERIC, 0, countStep,    countFinalize  },
+    { "min",    1, 0, minmaxStep,   minMaxFinalize },
+    { "max",    1, 2, minmaxStep,   minMaxFinalize },
+    { "sum",    1, 0, sumStep,      sumFinalize    },
+    { "avg",    1, 0, sumStep,      avgFinalize    },
+    { "count",  0, 0, countStep,    countFinalize  },
+    { "count",  1, 0, countStep,    countFinalize  },
 #if 0
-    { "stddev", 1, SQLITE_NUMERIC, 0, stdDevStep,   stdDevFinalize },
+    { "stddev", 1, 0, stdDevStep,   stdDevFinalize },
 #endif
   };
-  static const char *azTypeFuncs[] = { "min", "max", "typeof" };
   int i;
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     void *pArg = aFuncs[i].argType==2 ? (void*)(-1) : db;
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg, 0, 0,
         pArg, aFuncs[i].xFunc, 0, 0);
-    if( aFuncs[i].xFunc ){
-      sqlite3_function_type(db, aFuncs[i].zName, aFuncs[i].dataType);
-    }
   }
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
     void *pArg = aAggs[i].argType==2 ? (void*)(-1) : db;
     sqlite3_create_function(db, aAggs[i].zName, aAggs[i].nArg, 0, 0, pArg,
         0, aAggs[i].xStep, aAggs[i].xFinalize);
-    sqlite3_function_type(db, aAggs[i].zName, aAggs[i].dataType);
-  }
-
-  for(i=0; i<sizeof(azTypeFuncs)/sizeof(azTypeFuncs[0]); i++){
-    int n = strlen(azTypeFuncs[i]);
-    FuncDef *p = sqlite3HashFind(&db->aFunc, azTypeFuncs[i], n);
-    while( p ){
-      p->includeTypes = 1;
-      p = p->pNext;
-    }
   }
   sqlite3RegisterDateTimeFunctions(db);
 }
-
-
-

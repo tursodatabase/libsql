@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.127 2004/05/21 13:39:51 drh Exp $
+** $Id: expr.c,v 1.128 2004/05/26 16:54:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -503,7 +503,6 @@ int sqlite3IsRowid(const char *z){
 **    pExpr->iTable        Set to the cursor number for the table obtained
 **                         from pSrcList.
 **    pExpr->iColumn       Set to the column number within the table.
-**    pExpr->dataType      Set to the appropriate data type for the column.
 **    pExpr->op            Set to TK_COLUMN.
 **    pExpr->pLeft         Any expression this points to is deleted
 **    pExpr->pRight        Any expression this points to is deleted.
@@ -1224,13 +1223,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, 0);
       assert( pDef!=0 );
-      nExpr = sqlite3ExprCodeExprList(pParse, pList, pDef->includeTypes);
+      nExpr = sqlite3ExprCodeExprList(pParse, pList);
       /* FIX ME: The following is a temporary hack. */
       if( 0==sqlite3StrNICmp(zId, "classof", nId) ){
         assert( nExpr==1 );
         sqlite3VdbeAddOp(v, OP_Class, nExpr, 0);
       }else{
-        sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
+        sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_FUNCDEF);
       }
       break;
     }
@@ -1346,16 +1345,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 
 /*
 ** Generate code that pushes the value of every element of the given
-** expression list onto the stack.  If the includeTypes flag is true,
-** then also push a string that is the datatype of each element onto
-** the stack after the value.
+** expression list onto the stack.
 **
 ** Return the number of elements pushed onto the stack.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
-  ExprList *pList,   /* The expression list to be coded */
-  int includeTypes   /* TRUE to put datatypes on the stack too */
+  ExprList *pList    /* The expression list to be coded */
 ){
   struct ExprList_item *pItem;
   int i, n;
@@ -1365,12 +1361,8 @@ int sqlite3ExprCodeExprList(
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     sqlite3ExprCode(pParse, pItem->pExpr);
-    if( includeTypes ){
-      /** DEPRECATED.  This will go away with the new function interface **/
-      sqlite3VdbeOp3(v, OP_String, 0, 0, "numeric", P3_STATIC);
-    }
   }
-  return includeTypes ? n*2 : n;
+  return n;
 }
 
 /*
@@ -1714,11 +1706,13 @@ FuncDef *sqlite3FindFunction(
     assert( createFlag==0 );
     return pMaybe;
   }
-  if( p==0 && createFlag && (p = sqliteMalloc(sizeof(*p)))!=0 ){
+  if( p==0 && createFlag && (p = sqliteMalloc(sizeof(*p)+nName+1))!=0 ){
     p->nArg = nArg;
     p->pNext = pFirst;
-    p->dataType = pFirst ? pFirst->dataType : SQLITE_NUMERIC;
-    sqlite3HashInsert(&db->aFunc, zName, nName, (void*)p);
+    p->zName = (char*)&p[1];
+    memcpy(p->zName, zName, nName);
+    p->zName[nName] = 0;
+    sqlite3HashInsert(&db->aFunc, p->zName, nName, (void*)p);
   }
   return p;
 }

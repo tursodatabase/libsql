@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.252 2004/05/26 06:58:44 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.253 2004/05/26 16:54:45 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -160,20 +160,15 @@ extern const int sqlite3one;
 
 /*
 ** The maximum number of bytes of data that can be put into a single
-** row of a single table.  The upper bound on this limit is 16777215
-** bytes (or 16MB-1).  We have arbitrarily set the limit to just 1MB
-** here because the overflow page chain is inefficient for really big
-** records and we want to discourage people from thinking that 
+** row of a single table.  The upper bound on this limit is
+** 9223372036854775808 bytes (or 2**63).  We have arbitrarily set the
+** limit to just 1MB here because the overflow page chain is inefficient
+** for really big records and we want to discourage people from thinking that 
 ** multi-megabyte records are OK.  If your needs are different, you can
 ** change this define and recompile to increase or decrease the record
 ** size.
-**
-** The 16777198 is computed as follows:  238 bytes of payload on the
-** original pages plus 16448 overflow pages each holding 1020 bytes of
-** data.
 */
 #define MAX_BYTES_PER_ROW  1048576
-/* #define MAX_BYTES_PER_ROW 16777198 */
 
 /*
 ** If memory allocation problems are found, recompile with
@@ -334,18 +329,6 @@ struct Db {
 /*
 ** Each database is an instance of the following structure.
 **
-** The sqlite.file_format is initialized by the database file
-** and helps determines how the data in the database file is
-** represented.  This field allows newer versions of the library
-** to read and write older databases.  The various file formats
-** are as follows:
-**
-**     file_format==1    Version 2.1.0.
-**     file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
-**     file_format==3    Version 2.6.0. Fix empty-string index bug.
-**     file_format==4    Version 2.7.0. Add support for separate numeric and
-**                       text datatypes.
-**
 ** The sqlite.temp_store determines where temporary database files
 ** are stored.  If 1, then a file is created to hold those tables.  If
 ** 2, then they are held in memory.  0 means use the default value in
@@ -462,15 +445,13 @@ struct sqlite {
 ** points to a linked list of these structures.
 */
 struct FuncDef {
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**);  /* Regular function */
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**);  /* Aggregate function step */
-  void (*xFinalize)(sqlite3_context*);           /* Aggregate function finializer */
-  signed char nArg;         /* Number of arguments.  -1 means unlimited */
-  signed char dataType;     /* Arg that determines datatype.  -1=NUMERIC, */
-                            /* -2=TEXT. -3=SQLITE_ARGS */
-  u8 includeTypes;          /* Add datatypes to args of xFunc and xStep */
-  void *pUserData;          /* User data parameter */
-  FuncDef *pNext;           /* Next function with same name */
+  char *zName;         /* SQL name of the function */
+  int nArg;            /* Number of arguments.  -1 means unlimited */
+  void *pUserData;     /* User data parameter */
+  FuncDef *pNext;      /* Next function with same name */
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
+  void (*xFinalize)(sqlite3_context*);                /* Aggregate finializer */
 };
 
 /*
@@ -1256,7 +1237,7 @@ void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, int, ExprList**);
 void sqlite3WhereEnd(WhereInfo*);
 void sqlite3ExprCode(Parse*, Expr*);
-int sqlite3ExprCodeExprList(Parse*, ExprList*, int);
+int sqlite3ExprCodeExprList(Parse*, ExprList*);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 Table *sqlite3FindTable(sqlite*,const char*, const char*);

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.193 2004/05/26 10:11:06 danielk1977 Exp $
+** $Id: main.c,v 1.194 2004/05/26 16:54:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -412,7 +412,7 @@ static int binaryCollatingFunc(
 /*
 ** Return the ROWID of the most recent insert
 */
-int sqlite3_last_insert_rowid(sqlite *db){
+long long int sqlite3_last_insert_rowid(sqlite *db){
   return db->lastRowid;
 }
 
@@ -693,20 +693,6 @@ int sqlite3_create_function16(
       iCollateArg, pUserData, xFunc, xStep, xFinal);
   sqliteFree(zFunctionName8);
   return rc;
-}
-
-/*
-** Change the datatype for all functions with a given name.  See the
-** header comment for the prototype of this function in sqlite.h for
-** additional information.
-*/
-int sqlite3_function_type(sqlite *db, const char *zName, int dataType){
-  FuncDef *p = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, strlen(zName));
-  while( p ){
-    p->dataType = dataType; 
-    p = p->pNext;
-  }
-  return SQLITE_OK;
 }
 
 /*
@@ -1028,7 +1014,7 @@ static int openDatabase(
   db->aDb = db->aDbStatic;
   db->enc = def_enc;
   /* db->flags |= SQLITE_ShortColNames; */
-  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 1);
+  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
   for(i=0; i<db->nDb; i++){
     sqlite3HashInit(&db->aDb[i].tblHash, SQLITE_HASH_STRING, 0);

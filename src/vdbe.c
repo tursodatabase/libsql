@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.334 2004/05/26 13:27:00 danielk1977 Exp $
+** $Id: vdbe.c,v 1.335 2004/05/26 16:54:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -5864,7 +5864,8 @@ default: {
         assert( (pTos->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
       }
       /* MEM_Null excludes all other types */
-      assert( pTos->flags==MEM_Null || (pTos->flags&MEM_Null)==0 );
+      assert( (pTos->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
+              || (pTos->flags&MEM_Null)==0 );
     }
     if( pc<-1 || pc>=p->nOp ){
       sqlite3SetString(&p->zErrMsg, "jump destination out of range", (char*)0);

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.83 2004/05/26 10:11:07 danielk1977 Exp $
+** $Id: vdbe.h,v 1.84 2004/05/26 16:54:48 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -69,7 +69,8 @@ typedef struct VdbeOpList VdbeOpList;
 #define P3_STATIC   (-2)  /* Pointer to a static string */
 #define P3_POINTER  (-3)  /* P3 is a pointer to some structure or object */
 #define P3_COLLSEQ  (-4)  /* P3 is a pointer to a CollSeq structure */
-#define P3_KEYINFO  (-5)  /* P3 is a pointer to a KeyInfo structure */
+#define P3_FUNCDEF  (-5)  /* P3 is a pointer to a FuncDef structure */
+#define P3_KEYINFO  (-6)  /* P3 is a pointer to a KeyInfo structure */
 
 /* When adding a P3 argument using P3_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the
@@ -78,7 +79,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** from a single sqliteMalloc().  But no copy is made and the calling
 ** function should *not* try to free the KeyInfo.
 */
-#define P3_KEYINFO_HANDOFF (-6)
+#define P3_KEYINFO_HANDOFF (-7)
 
 /*
 ** The following macro converts a relative address in the p2 field

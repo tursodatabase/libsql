@@ -517,6 +517,17 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
       zP3 = zTemp;
       break;
     }
+    case P3_FUNCDEF: {
+      FuncDef *pDef = (FuncDef*)pOp->p3;
+      char zNum[30];
+      sprintf(zTemp, "%.*s", nTemp, pDef->zName);
+      sprintf(zNum,"(%d)", pDef->nArg);
+      if( strlen(zTemp)+strlen(zNum)+1<=nTemp ){
+        strcat(zTemp, zNum);
+      }
+      zP3 = zTemp;
+      break;
+    }
     default: {
       zP3 = pOp->p3;
       if( zP3==0 ){
@@ -1869,10 +1880,13 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 }
 
 /*
-** The following nine routines, named sqlite3_result_*(), are used to
+** The following ten routines, named sqlite3_result_*(), are used to
 ** return values or errors from user-defined functions and aggregate
 ** operations. They are commented in the header file sqlite.h (sqlite.h.in)
 */
+void sqlite3_result(sqlite3_context *pCtx, sqlite3_value *pValue){
+  sqlite3VdbeMemCopy(&pCtx->s, pValue);
+}
 void sqlite3_result_int32(sqlite3_context *pCtx, int iVal){
   MemSetInt(&pCtx->s, iVal);
 }
@@ -1918,4 +1932,3 @@ void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
   MemSetStr(&pCtx->s, z, n, TEXT_Utf16, 1);
 }
-

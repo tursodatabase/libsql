@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.71 2004/05/26 06:18:38 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.72 2004/05/26 16:54:46 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -864,7 +864,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pFunc->zScript = (char*)&pFunc[1];
     strcpy(pFunc->zScript, zScript);
     sqlite3_create_function(pDb->db, zName, -1, 0, 0, pFunc, tclSqlFunc, 0, 0);
-    sqlite3_function_type(pDb->db, zName, SQLITE_NUMERIC);
     break;
   }
 
@@ -1245,6 +1244,3 @@ int TCLSH_MAIN(int argc, char **argv){
 #endif /* TCLSH */
 
 #endif /* !defined(NO_TCL) */
-
-
-
