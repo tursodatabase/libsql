@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.64 2004/06/06 12:41:50 danielk1977 Exp $
+** $Id: func.c,v 1.65 2004/06/08 00:39:01 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -604,7 +604,33 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_value(context, argv[0]);
       break;
     }
-    case SQLITE_BLOB:  /*** FIX ME.  Use a BLOB encoding ***/
+    case SQLITE_BLOB: {
+      static const char hexdigits[] = { 
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' 
+      };
+      char *zText = 0;
+      int nBlob = sqlite3_value_bytes(argv[0]);
+      char const *zBlob = sqlite3_value_blob(argv[0]);
+
+      zText = (char *)sqliteMalloc((2*nBlob)+4); 
+      if( !zText ){
+        sqlite3_result_error(context, "out of memory", -1);
+      }else{
+        int i;
+        for(i=0; i<nBlob; i++){
+          zText[(i*2)+2] = hexdigits[(zBlob[i]>>4)&0x0F];
+          zText[(i*2)+3] = hexdigits[(zBlob[i])&0x0F];
+        }
+        zText[(nBlob*2)+2] = '\'';
+        zText[(nBlob*2)+3] = '\0';
+        zText[0] = 'X';
+        zText[1] = '\'';
+        sqlite3_result_text(context, zText, -1, 1);
+        sqliteFree(zText);
+      }
+      break;
+    }
     case SQLITE_TEXT: {
       int i,j,n;
       const char *zArg = sqlite3_value_text(argv[0]);

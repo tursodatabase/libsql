@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.103 2004/06/08 00:02:34 danielk1977 Exp $
+** $Id: shell.c,v 1.104 2004/06/08 00:39:01 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -490,80 +490,6 @@ static char * appendText(char *zIn, char const *zAppend, char quote){
   return zIn;
 }
 
-/* This function implements the SQL scalar function dump_literal()used by
- * the '.dump' built-in. It takes one argument and returns the fully quoted
-** literal version of the argument depending on the type.
-**
-** Type          Example
-** -----------------------
-** NULL          "NULL"
-** INTEGER       "0"
-** REAL          "0.0"
-** TEXT          "'abc'"
-** BLOB          "X'89AB'"
-**
-*/
-static void dump_literalFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  static const char hexdigits[] = { 
-      '0', '1', '2', '3', '4', '5', '6', '7',
-      '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' 
-  };
-  assert( argc==1 );
-
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL:
-      sqlite3_result_text(context, "NULL", -1, 0);
-      break;
-    case SQLITE_INTEGER:
-      sqlite3_result_text(context, sqlite3_value_text(argv[0]), -1, 1);
-      break;
-    case SQLITE_FLOAT: {
-      char zBuf[40];
-      sprintf(zBuf, "%.15g", sqlite3_value_double(argv[0]));
-      sqlite3_result_text(context, zBuf, -1, 1);
-      break;
-    }
-    case SQLITE_TEXT: {
-      char *zText;
-      zText = appendText(0, sqlite3_value_text(argv[0]), '\'');
-      if( !zText ){
-        sqlite3_result_error(context, "out of memory", -1);
-      }else{
-        sqlite3_result_text(context, zText, -1, 1);
-        free(zText);
-      }
-      break;
-    }
-    case SQLITE_BLOB: {
-      char *zText = 0;
-      int nBlob = sqlite3_value_bytes(argv[0]);
-      char const *zBlob = sqlite3_value_blob(argv[0]);
-
-      zText = (char *)malloc((2*nBlob)+4); 
-      if( !zText ){
-        sqlite3_result_error(context, "out of memory", -1);
-      }else{
-        int i;
-        for(i=0; i<nBlob; i++){
-          zText[(i*2)+2] = hexdigits[(zBlob[i]>>4)&0x0F];
-          zText[(i*2)+3] = hexdigits[(zBlob[i])&0x0F];
-        }
-        zText[(nBlob*2)+2] = '\'';
-        zText[(nBlob*2)+3] = '\0';
-        zText[0] = 'X';
-        zText[1] = '\'';
-        sqlite3_result_text(context, zText, -1, 1);
-        free(zText);
-      }
-      break;
-    }
-  }
-}
-
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -609,7 +535,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zSelect = appendText(zSelect, " || ' VALUES(' || ", 0);
     rc = sqlite3_step(pTableInfo);
     while( rc==SQLITE_ROW ){
-      zSelect = appendText(zSelect, "dump_literal(", 0);
+      zSelect = appendText(zSelect, "quote(", 0);
       zSelect = appendText(zSelect, sqlite3_column_text(pTableInfo, 1), '"');
       rc = sqlite3_step(pTableInfo);
       if( rc==SQLITE_ROW ){
@@ -700,9 +626,6 @@ static void open_db(struct callback_data *p){
           p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
     }
-
-    /* Add the 'dump_literal' SQL function used by .dump */
-    sqlite3_create_function(db,"dump_literal",1,0,0,0,dump_literalFunc,0,0);
   }
 }
 

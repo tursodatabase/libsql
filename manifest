@@ -1,5 +1,5 @@
-C Remove\sthe\sthird\sargument\sfrom\sthe\ssqlite3_open()\sAPI.\s(CVS\s1540)
-D 2004-06-08T00:02:33
+C Enhance\sthe\sbuilt-in\sfunction\squote()\sto\ssupport\sblob\svalues.\s(CVS\s1541)
+D 2004-06-08T00:39:01
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/date.c 8e6fa3173386fb29fdef012ee08a853c1e9908b2
 F src/delete.c b30f08250c9ed53a25a13c7c04599c1e8753992d
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
 F src/expr.c 2b18dd4ed178e39989f22d75bf0e68ba6ed3923c
-F src/func.c 730741443e8de788de370e2b0d641df69d174697
+F src/func.c ffbdfa4cad2a16a41390c2ce923ef8b0f173d777
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
@@ -54,7 +54,7 @@ F src/pragma.c 54b4d67fa81fd38b911aa3325348dcae9ceac5a4
 F src/printf.c 63b15f1ea9fe3daa066bb7430fd20d4a2d717dc8
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0ac0adeb2ae15255ac4399d9ee1b0d25a266a676
-F src/shell.c a70b41be0377ef74e85841025330ebbd34e0dd8b
+F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
 F src/sqlite.h.in 577974e9a1b85815ccddfb5b858695b62000f595
 F src/sqliteInt.h 845d2a3ffdb9a9050a1b55044d4856227b649b84
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
@@ -215,7 +215,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0c2d169cf3c0f36972015c952a2b46cb9a333881
-R ae36aa59d9c9bbd9dcea25dbefbbc5f3
+P 62e31f396cb6b49f542977e2fade78e11e371132
+R 87169ec73e15b83e9be0f5b8ac7aaebe
 U danielk1977
-Z 9bd0ddefb661cdb7cba70d74baa55d54
+Z e31a621434c9bec95d63eda46f31cc00
