@@ -90,14 +90,14 @@ static int last_page = 0;
 ** cnt>0 means there are cnt shared locks on the file.
 **
 ** Any attempt to lock or unlock a file first checks the locking
-** structure.  The fcntl() system call is only invoked to set a 
+** structure.  The fcntl() system call is only invoked to set a
 ** POSIX lock if the internal lock structure transitions between
 ** a locked and an unlocked state.
 */
 
 /*
 ** An instance of the following structure serves as the key used
-** to locate a particular lockInfo structure given its inode. 
+** to locate a particular lockInfo structure given its inode.
 */
 struct inodeKey {
   dev_t dev;   /* Device number */
@@ -116,7 +116,7 @@ struct lockInfo {
   int nRef;             /* Number of pointers to this structure */
 };
 
-/* 
+/*
 ** This hash table maps inodes (in the form of inodeKey structures) into
 ** pointers to lockInfo structures.
 */
@@ -236,7 +236,7 @@ int sqliteOsOpenReadWrite(
   if( id->fd<0 ){
     id->fd = open(zFilename, O_RDONLY);
     if( id->fd<0 ){
-      return SQLITE_CANTOPEN; 
+      return SQLITE_CANTOPEN;
     }
     *pReadonly = 1;
   }else{
@@ -328,7 +328,7 @@ int sqliteOsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
   HANDLE h;
   int fileflags;
   if( delFlag ){
-    fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS 
+    fileflags = FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_RANDOM_ACCESS
                      | FILE_FLAG_DELETE_ON_CLOSE;
   }else{
     fileflags = FILE_FLAG_RANDOM_ACCESS;
@@ -448,7 +448,7 @@ int sqliteOsTempFileName(char *zBuf){
     if( !sqliteOsFileExists(zBuf) ) break;
   }
 #endif
-  return SQLITE_OK; 
+  return SQLITE_OK;
 }
 
 /*
@@ -642,19 +642,24 @@ int sqliteOsFileSize(OsFile *id, int *pSize){
 // get the platform id to decide how to calculate the lock offset
 
 int mkPlatformId(void){
- 
+
  static long init=0;
+ static long lock=0;
+
  static int pid=VER_PLATFORM_WIN32_WINDOWS;
- OSVERSIONINFOA info;	
- 
- if (!init) {
-  if (InterlockedIncrement(&init)==1)
+ OSVERSIONINFOA info;
+
+ while (!init) {
+  if (InterlockedIncrement(&lock)==1)
    {
     info.dwOSVersionInfoSize=sizeof(info);
-   if (GetVersionEx(&info)) pid=info.dwPlatformId;
+    if (GetVersionEx(&info)) pid=info.dwPlatformId;
+    init=1;
    }
-  } 
- return pid;  
+  else
+   Sleep(1);
+  }
+ return pid;
 }
 
 // locks and unlocks beyond eof. uses platformid to move the lock as far as possible.
@@ -676,11 +681,11 @@ int mkunlock(HANDLE h, WORD base, WORD size)
 
 //obtain the sync lock on a handle
 
-void synclock(HANDLE h){ 
+void synclock(HANDLE h){
  while (!mklock(h,0,1)) Sleep(1);
 }
 
-void syncunlock(HANDLE h){ 
+void syncunlock(HANDLE h){
  mkunlock(h,0,1);
 }
 
@@ -729,12 +734,12 @@ int sqliteOsReadLock(OsFile *id){
   }else{
     int lk = (sqliteRandomInteger() & 0x7ffffff)%MX_LOCKBYTE + 1;
     int res;
-    
+
     synclock(id->h);
     if (id->locked<0) mkunlock(id->h,1,MX_LOCKBYTE); // release write lock if we have it
     res=mklock(id->h,lk,1);
     syncunlock(id->h);
-    
+
     if( res ){
       id->locked = lk;
       rc = SQLITE_OK;
@@ -778,12 +783,12 @@ int sqliteOsWriteLock(OsFile *id){
     rc = SQLITE_OK;
   }else{
     int res;
-    
+
     synclock(id->h);
     if (id->locked>0) mkunlock(id->h,id->locked,1); // release read lock
     res=mklock(id->h,1,MX_LOCKBYTE);
     syncunlock(id->h);
-   
+
     if(res){
       id->locked = -1;
       rc = SQLITE_OK;
