@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.36 2004/01/16 13:58:18 drh Exp $
+** $Id: func.c,v 1.37 2004/01/19 04:53:25 jplyon Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -178,8 +178,8 @@ static void lowerFunc(sqlite_func *context, int argc, const char **argv){
 
 /*
 ** Implementation of the IFNULL(), NVL(), and COALESCE() functions.  
-** All three do the same thing.  They return the first argument
-** non-NULL argument.
+** All three do the same thing.  They return the first non-NULL
+** argument.
 */
 static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
   int i;
