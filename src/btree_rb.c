@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.23 2004/02/12 15:31:21 drh Exp $
+** $Id: btree_rb.c,v 1.24 2004/02/29 00:11:31 drh Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -259,17 +259,16 @@ static void rightRotate(BtRbTree *pTree, BtRbNode *pX)
  * concatenation of orig and val is returned. The original orig is deleted
  * (using sqliteFree()).
  */
-static char *append_val(char * orig, char const * val)
-{
+static char *append_val(char * orig, char const * val){
+  char *z;
   if( !orig ){
-    return sqliteStrDup( val );
+    z = sqliteStrDup( val );
   } else{
-    char * ret = 0;
-    sqliteSetString(&ret, orig, val, (char*)0);
+    z = 0;
+    sqliteSetString(&z, orig, val, (char*)0);
     sqliteFree( orig );
-    return ret;
   }
-  assert(0);
+  return z;
 }
 
 /*
@@ -1178,12 +1177,11 @@ static int memRbtreeKey(RbtCursor* pCur, int offset, int amt, char *zBuf)
   if( !pCur->pNode ) return 0;
   if( !pCur->pNode->pKey || ((amt + offset) <= pCur->pNode->nKey) ){
     memcpy(zBuf, ((char*)pCur->pNode->pKey)+offset, amt);
-    return amt;
   }else{
     memcpy(zBuf, ((char*)pCur->pNode->pKey)+offset, pCur->pNode->nKey-offset);
-    return pCur->pNode->nKey-offset;
+    amt = pCur->pNode->nKey-offset;
   }
-  assert(0);
+  return amt;
 }
 
 static int memRbtreeDataSize(RbtCursor* pCur, int *pSize)
@@ -1201,12 +1199,11 @@ static int memRbtreeData(RbtCursor *pCur, int offset, int amt, char *zBuf)
   if( !pCur->pNode ) return 0;
   if( (amt + offset) <= pCur->pNode->nData ){
     memcpy(zBuf, ((char*)pCur->pNode->pData)+offset, amt);
-    return amt;
   }else{
     memcpy(zBuf, ((char*)pCur->pNode->pData)+offset ,pCur->pNode->nData-offset);
-    return pCur->pNode->nData-offset;
+    amt = pCur->pNode->nData-offset;
   }
-  assert(0);
+  return amt;
 }
 
 static int memRbtreeCloseCursor(RbtCursor* pCur)

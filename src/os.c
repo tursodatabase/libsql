@@ -1214,7 +1214,7 @@ int sqliteOsFileSize(OsFile *id, off_t *pSize){
 ** the LockFileEx() API.
 */
 int isNT(void){
-  static osType = 0;   /* 0=unknown 1=win95 2=winNT */
+  static int osType = 0;   /* 0=unknown 1=win95 2=winNT */
   if( osType==0 ){
     OSVERSIONINFO sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);

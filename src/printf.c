@@ -358,7 +358,7 @@ static int vxprintf(
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
         }
-        bufpt = &buf[etBUFSIZE];
+        bufpt = &buf[etBUFSIZE-1];
         {
           register char *cset;      /* Use registers for speed */
           register int base;
@@ -369,7 +369,7 @@ static int vxprintf(
             longvalue = longvalue/base;
           }while( longvalue>0 );
         }
-        length = &buf[etBUFSIZE]-bufpt;
+        length = &buf[etBUFSIZE-1]-bufpt;
         for(idx=precision-length; idx>0; idx--){
           *(--bufpt) = '0';                             /* Zero pad */
         }
@@ -381,7 +381,7 @@ static int vxprintf(
             for(pre=infop->prefix; (x=(*pre))!=0; pre++) *(--bufpt) = x;
           }
         }
-        length = &buf[etBUFSIZE]-bufpt;
+        length = &buf[etBUFSIZE-1]-bufpt;
         break;
       case etFLOAT:
       case etEXP:
