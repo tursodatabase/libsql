@@ -1,5 +1,5 @@
-C Fix\san\sassert\sthat\smight\sfail\sif\smalloc()\sfails.\s(CVS\s774)
-D 2002-10-31T00:09:40
+C Version\s2.7.3\s(CVS\s775)
+D 2002-10-31T00:15:10
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P bc7c7d87e550c786d5bdb4169a0ad75db3fb066a
+P 8ad018944c3aa8f58e1c68b1fa634ef922d6476f
 R f8477ebc66610cd7938692d7ec68ce06
 U drh
-Z 4d95d48fbae005ad580c41cc0f9f6e52
+Z e70ab099db1c57aeafd8f952a2b6f584
