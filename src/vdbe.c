@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.464 2005/03/31 18:40:05 drh Exp $
+** $Id: vdbe.c,v 1.465 2005/04/01 10:47:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4117,8 +4117,13 @@ case OP_SortPut: {        /* no-push */
   if( Dynamicify(pTos, db->enc) ) goto no_mem;
   pSorter = sqliteMallocRaw( sizeof(Sorter) );
   if( pSorter==0 ) goto no_mem;
-  pSorter->pNext = p->pSort;
-  p->pSort = pSorter;
+  pSorter->pNext = 0;
+  if( p->pSortTail ){
+    p->pSortTail->pNext = pSorter;
+  }else{
+    p->pSort = pSorter;
+  }
+  p->pSortTail = pSorter;
   assert( pTos->flags & MEM_Dyn );
   pSorter->nKey = pTos->n;
   pSorter->zKey = pTos->z;

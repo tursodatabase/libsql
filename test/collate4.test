@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate4.test,v 1.7 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: collate4.test,v 1.8 2005/04/01 10:47:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -95,7 +95,7 @@ do_test collate4-1.1.5 {
 } {{} A B a b nosort}
 do_test collate4-1.1.6 {
   cksort {SELECT b FROM collate4t1 ORDER BY b COLLATE NOCASE}
-} {{} A a B b sort}
+} {{} a A b B sort}
 
 do_test collate4-1.1.7 {
   execsql {
@@ -172,10 +172,10 @@ do_test collate4-1.1.21 {
 } {}
 do_test collate4-1.1.22 {
   cksort {SELECT a FROM collate4t4 ORDER BY a}
-} {{} A a B b sort}
+} {{} a A b B sort}
 do_test collate4-1.1.23 {
   cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE NOCASE}
-} {{} A a B b sort}
+} {{} a A b B sort}
 do_test collate4-1.1.24 {
   cksort {SELECT a FROM collate4t4 ORDER BY a COLLATE TEXT}
 } {{} A B a b nosort}
@@ -223,7 +223,7 @@ do_test collate4-1.2.4 {
 } {{} A a B b nosort}
 do_test collate4-1.2.5 {
   cksort {SELECT a FROM collate4t1 ORDER BY a, b COLLATE nocase}
-} {{} A a B b sort}
+} {{} a A b B sort}
 do_test collate4-1.2.6 {
   cksort {SELECT a FROM collate4t1 ORDER BY a, b COLLATE text}
 } {{} A a B b nosort}
@@ -272,10 +272,10 @@ do_test collate4-1.2.14 {
 } {}
 do_test collate4-1.2.15 {
   cksort {SELECT a FROM collate4t3 ORDER BY a}
-} {{} A a B b sort}
+} {{} a A b B sort}
 do_test collate4-1.2.16 {
   cksort {SELECT a FROM collate4t3 ORDER BY a COLLATE nocase}
-} {{} A a B b sort}
+} {{} a A b B sort}
 do_test collate4-1.2.17 {
   cksort {SELECT a FROM collate4t3 ORDER BY a COLLATE text}
 } {{} A B a b nosort}
