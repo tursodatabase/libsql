@@ -85,7 +85,7 @@ endif
 # Object files for the SQLite library.
 #
 LIBOBJ = attach.lo auth.lo btree.lo build.lo copy.lo date.lo \
-         delete.lo expr.lo func.lo hash.lo insert.lo \
+         delete.lo encode.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os.lo pager.lo parse.lo pragma.lo \
          printf.lo random.lo select.lo table.lo tokenize.lo \
          update.lo util.lo vacuum.lo vdbe.lo vdbeaux.lo \
@@ -108,6 +108,7 @@ SRC = \
   $(TOP)/src/copy.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
+  $(TOP)/src/encode.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
@@ -175,7 +176,7 @@ VDBEHDR = \
 #
 all:	sqlite.h libsqlite.la sqlite@TARGET_EXEEXT@
 
-Makefile: Makefile.in
+Makefile: $(TOP)/Makefile.in
 	./config.status
 
 # Generate the file "last_change" which contains the date of change
@@ -304,6 +305,9 @@ date.lo:	$(TOP)/src/date.c $(HDR)
 
 delete.lo:	$(TOP)/src/delete.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/delete.c
+
+encode.lo:	$(TOP)/src/encode.c
+	$(LTCOMPILE) -c $(TOP)/src/encode.c
 
 expr.lo:	$(TOP)/src/expr.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/expr.c
@@ -487,8 +491,8 @@ dll: sqlite.dll
 
 REAL_LIBOBJ = $(LIBOBJ:%.lo=.libs/%.o)
 
-sqlite.dll: $(LIBOBJ) sqlite.def
-	dllwrap --dllname sqlite.dll --def sqlite.def $(REAL_LIBOBJ)
+sqlite.dll: $(LIBOBJ) $(TOP)/sqlite.def
+	dllwrap --dllname sqlite.dll --def $(TOP)/sqlite.def $(REAL_LIBOBJ)
 	strip sqlite.dll
 
 #target for dll import libraries
@@ -496,7 +500,7 @@ implib: sqlite.lib
 
 #make Borland C++ import library for the dll
 sqlite.lib: sqlite.dll
-	-implib -a sqlite.lib sqlite.dll sqlite.def
+	-implib -a sqlite.lib sqlite.dll $(TOP)/sqlite.def
 	-lib /machine:i386 /def:sqlite.def 
 
 distclean:	clean
