@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.26 2004/06/30 09:49:24 danielk1977 Exp $
+** $Id: vacuum.c,v 1.27 2004/07/24 14:35:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -247,6 +247,7 @@ end_of_vacuum:
     sqliteFree(zTemp);
   }
   if( zSql ) sqliteFree( zSql );
+  sqlite3ResetInternalSchema(db, 0);
 #endif
   return rc;
-} 
+}

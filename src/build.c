@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.241 2004/07/24 03:30:48 drh Exp $
+** $Id: build.c,v 1.242 2004/07/24 14:35:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -81,6 +81,10 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto);
     }
   }
+
+#ifndef NDEBUG
+  sqlite3VdbeOp3(v, OP_Noop, 0, 0, pParse->zSql, pParse->zTail - pParse->zSql);
+#endif
 
   /* Get the VDBE program ready for execution
   */
@@ -1138,8 +1142,7 @@ char sqlite3AffinityType(const char *zType, int nType){
 }
 
 /*
-** Come up with a new random value for the schema cookie.  Make sure
-** the new value is different from the old.
+** Generate code that will increment the schema cookie.
 **
 ** The schema cookie is used to determine when the schema for the
 ** database changes.  After each schema change, the cookie value
@@ -1155,13 +1158,7 @@ char sqlite3AffinityType(const char *zType, int nType){
 ** 1 chance in 2^32.  So we're safe enough.
 */
 void sqlite3ChangeCookie(sqlite *db, Vdbe *v, int iDb){
-  unsigned char r;
-  int *pSchemaCookie = &(db->aDb[iDb].schema_cookie);
-
-  sqlite3Randomness(1, &r);
-  *pSchemaCookie = *pSchemaCookie + r + 1;
-  db->flags |= SQLITE_InternChanges;
-  sqlite3VdbeAddOp(v, OP_Integer, *pSchemaCookie, 0);
+  sqlite3VdbeAddOp(v, OP_Integer, db->aDb[iDb].schema_cookie+1, 0);
   sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 0);
 }
 

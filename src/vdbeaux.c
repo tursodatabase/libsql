@@ -416,7 +416,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     }
     default: {
       zP3 = pOp->p3;
-      if( zP3==0 ){
+      if( zP3==0 || pOp->opcode==OP_Noop ){
         zP3 = "";
       }
     }
@@ -522,6 +522,23 @@ int sqlite3VdbeList(
 }
 
 /*
+** Print the SQL that was used to generate a VDBE program.
+*/
+void sqlite3VdbePrintSql(Vdbe *p){
+#ifdef SQLITE_DEBUG
+  int nOp = p->nOp;
+  VdbeOp *pOp;
+  if( nOp<2 ) return;
+  pOp = &p->aOp[nOp-2];
+  if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
+    const char *z = pOp->p3;
+    while( isspace(*z) ) z++;
+    printf("SQL: [%s]\n", z);
+  }
+#endif
+}
+
+/*
 ** Prepare a virtual machine for execution.  This involves things such
 ** as allocating stack space and initializing the program counter.
 ** After the VDBE has be prepped, it can be executed by one or more
@@ -571,12 +588,12 @@ void sqlite3VdbeMakeReady(
   ){
     int i;
     printf("VDBE Program Listing:\n");
+    sqlite3VdbePrintSql(p);
     for(i=0; i<p->nOp; i++){
       sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
     }
   }
   if( sqlite3OsFileExists("vdbe_trace") ){
-    printf("VDBE Execution Trace:\n");
     p->trace = stdout;
   }
 #endif

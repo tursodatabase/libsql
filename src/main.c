@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.247 2004/07/24 03:30:48 drh Exp $
+** $Id: main.c,v 1.248 2004/07/24 14:35:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1025,7 +1025,7 @@ int sqlite3_prepare(
     goto prepare_out;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
-  if( sParse.checkSchema && !schemaIsValid(db) ){
+  if( sParse.rc!=SQLITE_OK && sParse.checkSchema && !schemaIsValid(db) ){
     sParse.rc = SQLITE_SCHEMA;
   }
   if( sParse.rc==SQLITE_SCHEMA ){

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.79 2004/07/24 03:30:48 drh Exp $
+** $Id: tokenize.c,v 1.80 2004/07/24 14:35:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -431,13 +431,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     sqlite3SetString(pzErrMsg, "out of memory", (char*)0);
     return 1;
   }
-#ifndef NDEBUG
-  if( sqlite3OsFileExists("vdbe_sqltrace") ){
-    printf("SQL To Compiler: [%s]\n", zSql);
-  }
-#endif
   pParse->sLastToken.dyn = 0;
-  pParse->zTail = zSql;
+  pParse->zTail = pParse->zSql = zSql;
   while( sqlite3_malloc_failed==0 && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];

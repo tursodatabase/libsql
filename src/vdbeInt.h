@@ -367,6 +367,7 @@ int sqlite3VdbeCursorMoveto(Cursor*);
 #if !defined(NDEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
+void sqlite3VdbePrintSql(Vdbe*);
 int sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*);
 int sqlite3VdbeSerialPut(unsigned char*, Mem*);
