@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.134 2003/06/04 15:48:33 drh Exp $
+** $Id: main.c,v 1.135 2003/06/12 08:59:01 jplyon Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -745,6 +745,7 @@ const char *sqlite_error_string(int rc){
     case SQLITE_MISUSE:     z = "library routine called out of sequence";break;
     case SQLITE_NOLFS:      z = "kernel lacks large file support";       break;
     case SQLITE_AUTH:       z = "authorization denied";                  break;
+    case SQLITE_FORMAT:     z = "auxiliary database format error";       break;
     default:                z = "unknown error";                         break;
   }
   return z;

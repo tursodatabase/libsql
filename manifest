@@ -1,5 +1,5 @@
-C Suppress\sthe\swarning\smessage\sabout\sprint_node()\sbeing\sunused\sin\sbtree_rb.c.\nTicket\s#347.\s(CVS\s1017)
-D 2003-06-10T02:46:15
+C Added\smissing\serror\sstring\sto\ssqlite_error_string().\s(CVS\s1018)
+D 2003-06-12T08:59:01
 F Makefile.in 98a14dc13a78ca0e12007e974c93aeb098db7f68
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -33,7 +33,7 @@ F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c fc4c26a0bb505fb802babfb9a7b7a1d4be2e3061
-F src/main.c c785a3d4675b26cde2d69015aa1090d69ff0da43
+F src/main.c e818e84e9eb11a0d4b594752a9a659cdf97a6b9b
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 4f540b4e5208c8b59e81cdbb8267c8705288b56e
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P 373d077173f1b31896dc0e0d724371dd506d52f3
-R efcbe00be33c897746f862783b6620fa
-U drh
-Z 3f14deec3abc2935a3d62723193da70a
+P b52f07e1c894a52bb12459d03fd0efcee05dd08c
+R 375f5c988936e58c05b781805fc9b599
+U jplyon
+Z e300729656da799f5c12bc51a4173669
