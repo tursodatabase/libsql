@@ -1,5 +1,5 @@
-C Fix\stypo\son\sthe\shomepage.\s(CVS\s1054)
-D 2003-07-16T17:10:45
+C In\sthe\stest\sscripts,\sdo\snot\stry\sto\sdelete\sfiles\sthat\sare\sstill\sopen.\nWindows\sdoes\snot\slike\sit\swhen\syou\sdo.\s\sTicket\s#397.\s(CVS\s1055)
+D 2003-07-18T01:25:35
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,8 +63,8 @@ F src/vdbe.c 7bef599539f72d5b5ae62723a7d52aefe9bfb2f0
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 83b2a2d26d5c3bea33457a83e541bb1dcf7b1248
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test eccea2937923ac0be8ad1072585fd3b4f0b85598
-F test/attach2.test d69003d59f5b1260dfcf3fcc5f60f164680aa7ee
+F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
+F test/attach2.test 6f98cc2b929d88dc5f82d95d04e9b89b3b5dead3
 F test/auth.test a618f0e96bb5baa7a5623eb939388e9ac5f5d9a2
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -168,7 +168,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P a31d0bd90af7cc95f8e36ca8ece21515f872235e
-R 90546d9894c57df9894be2667370a98b
+P c74107d63ace3d0e51da3b7bd7ee250c2a39205b
+R 661fe384de2ed85ee5763e7e68dc886d
 U drh
-Z 20a8f1c0a2ef53d73b389e547d2f2a6c
+Z c8d38f0133bcc4acbc1424cba79baf46
