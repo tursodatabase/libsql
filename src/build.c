@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.170 2004/02/14 23:59:57 drh Exp $
+** $Id: build.c,v 1.171 2004/02/21 13:31:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1274,7 +1274,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   */
   v = sqliteGetVdbe(pParse);
   if( v ){
-    static VdbeOp dropTable[] = {
+    static VdbeOpList dropTable[] = {
       { OP_Rewind,     0, ADDR(8),  0},
       { OP_String,     0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
@@ -1853,7 +1853,7 @@ void sqliteDropIndex(Parse *pParse, SrcList *pName){
   /* Generate code to remove the index and from the master table */
   v = sqliteGetVdbe(pParse);
   if( v ){
-    static VdbeOp dropIndex[] = {
+    static VdbeOpList dropIndex[] = {
       { OP_Rewind,     0, ADDR(9), 0}, 
       { OP_String,     0, 0,       0}, /* 1 */
       { OP_MemStore,   1, 1,       0},

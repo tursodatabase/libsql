@@ -11,12 +11,11 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.215 2004/02/20 22:53:39 rdc Exp $
+** @(#) $Id: sqliteInt.h,v 1.216 2004/02/21 13:31:10 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
 #include "hash.h"
-#include "vdbe.h"
 #include "parse.h"
 #include "btree.h"
 #include <stdio.h>
@@ -106,6 +105,9 @@
 #ifndef UINT8_TYPE
 # define UINT8_TYPE unsigned char
 #endif
+#ifndef INT8_TYPE
+# define INT8_TYPE signed char
+#endif
 #ifndef INTPTR_TYPE
 # if SQLITE_PTR_SZ==4
 #   define INTPTR_TYPE int
@@ -116,8 +118,14 @@
 typedef UINT32_TYPE u32;           /* 4-byte unsigned integer */
 typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
+typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 typedef INTPTR_TYPE ptr;           /* Big enough to hold a pointer */
 typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
+
+/*
+** Defer sourcing vdbe.h until after the "u8" typedef is defined.
+*/
+#include "vdbe.h"
 
 /*
 ** Most C compilers these days recognize "long double", don't they?

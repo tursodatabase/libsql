@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.15 2004/02/20 14:50:58 drh Exp $
+** $Id: pragma.c,v 1.16 2004/02/21 13:31:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -133,20 +133,21 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** and a positive value means synchronous is on.
   */
   if( sqliteStrICmp(zLeft,"default_cache_size")==0 ){
-    static VdbeOp getCacheSize[] = {
+    static VdbeOpList getCacheSize[] = {
       { OP_ReadCookie,  0, 2,        0},
       { OP_AbsValue,    0, 0,        0},
       { OP_Dup,         0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 6,        0},
-      { OP_Integer,     MAX_PAGES,0, 0},
+      { OP_Integer,     0, 0,        0},  /* 5 */
       { OP_ColumnName,  0, 1,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
+    int addr;
     if( pRight->z==pLeft->z ){
-      sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      addr = sqliteVdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      sqliteVdbeChangeP1(v, addr+5, MAX_PAGES);
     }else{
-      int addr;
       int size = atoi(zRight);
       if( size<0 ) size = -size;
       sqliteBeginWriteOperation(pParse, 0, 0);
@@ -177,7 +178,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** N should be a positive integer.
   */
   if( sqliteStrICmp(zLeft,"cache_size")==0 ){
-    static VdbeOp getCacheSize[] = {
+    static VdbeOpList getCacheSize[] = {
       { OP_ColumnName,  0, 1,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
@@ -215,7 +216,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** zero, but with a write performance penalty.  The default mode is NORMAL.
   */
   if( sqliteStrICmp(zLeft,"default_synchronous")==0 ){
-    static VdbeOp getSync[] = {
+    static VdbeOpList getSync[] = {
       { OP_ColumnName,  0, 1,        "synchronous"},
       { OP_ReadCookie,  0, 3,        0},
       { OP_Dup,         0, 0,        0},
@@ -268,7 +269,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** opened.
   */
   if( sqliteStrICmp(zLeft,"synchronous")==0 ){
-    static VdbeOp getSync[] = {
+    static VdbeOpList getSync[] = {
       { OP_ColumnName,  0, 1,        "synchronous"},
       { OP_Callback,    1, 0,        0},
     };
@@ -346,7 +347,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     Table *pTab;
     pTab = sqliteFindTable(db, zRight, 0);
     if( pTab ){
-      static VdbeOp tableInfoPreface[] = {
+      static VdbeOpList tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "cid"},
         { OP_ColumnName,  1, 0,       "name"},
         { OP_ColumnName,  2, 0,       "type"},
@@ -378,7 +379,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     Table *pTab;
     pIdx = sqliteFindIndex(db, zRight, 0);
     if( pIdx ){
-      static VdbeOp tableInfoPreface[] = {
+      static VdbeOpList tableInfoPreface[] = {
         { OP_ColumnName,  0, 0,       "seqno"},
         { OP_ColumnName,  1, 0,       "cid"},
         { OP_ColumnName,  2, 1,       "name"},
@@ -408,7 +409,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
     if( pTab && pIdx ){
       int i = 0; 
-      static VdbeOp indexListPreface[] = {
+      static VdbeOpList indexListPreface[] = {
         { OP_ColumnName,  0, 0,       "seq"},
         { OP_ColumnName,  1, 0,       "name"},
         { OP_ColumnName,  2, 1,       "unique"},
@@ -437,7 +438,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
     if( pTab && pFK ){
       int i = 0; 
-      static VdbeOp indexListPreface[] = {
+      static VdbeOpList indexListPreface[] = {
         { OP_ColumnName,  0, 0,       "id"},
         { OP_ColumnName,  1, 0,       "seq"},
         { OP_ColumnName,  2, 0,       "table"},
@@ -468,7 +469,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqliteStrICmp(zLeft, "database_list")==0 ){
     int i;
-    static VdbeOp indexListPreface[] = {
+    static VdbeOpList indexListPreface[] = {
       { OP_ColumnName,  0, 0,       "seq"},
       { OP_ColumnName,  1, 0,       "name"},
       { OP_ColumnName,  2, 1,       "file"},
@@ -501,7 +502,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** override this setting
   */
   if( sqliteStrICmp(zLeft, "temp_store")==0 ){
-    static VdbeOp getTmpDbLoc[] = {
+    static VdbeOpList getTmpDbLoc[] = {
       { OP_ColumnName,  0, 1,        "temp_store"},
       { OP_Callback,    1, 0,        0},
     };
@@ -529,7 +530,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   ** override this setting
   */
   if( sqliteStrICmp(zLeft, "default_temp_store")==0 ){
-    static VdbeOp getTmpDbLoc[] = {
+    static VdbeOpList getTmpDbLoc[] = {
       { OP_ColumnName,  0, 1,        "temp_store"},
       { OP_ReadCookie,  0, 5,        0},
       { OP_Callback,    1, 0,        0}};
@@ -566,7 +567,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     /* Code that initializes the integrity check program.  Set the
     ** error count 0
     */
-    static VdbeOp initCode[] = {
+    static VdbeOpList initCode[] = {
       { OP_Integer,     0, 0,        0},
       { OP_MemStore,    0, 1,        0},
       { OP_ColumnName,  0, 1,        "integrity_check"},
@@ -574,7 +575,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
     /* Code to do an BTree integrity check on a single database file.
     */
-    static VdbeOp checkDb[] = {
+    static VdbeOpList checkDb[] = {
       { OP_SetInsert,   0, 0,        "2"},
       { OP_Integer,     0, 0,        0},    /* 1 */
       { OP_OpenRead,    0, 2,        0},
@@ -599,7 +600,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
     */
-    static VdbeOp endCode[] = {
+    static VdbeOpList endCode[] = {
       { OP_MemLoad,     0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 0,        0},    /* 2 */
@@ -648,7 +649,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_MemIncr, 1, 0);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int k, jmp2;
-          static VdbeOp idxErr[] = {
+          static VdbeOpList idxErr[] = {
             { OP_MemIncr,     0,  0,  0},
             { OP_String,      0,  0,  "rowid "},
             { OP_Recno,       1,  0,  0},
@@ -676,7 +677,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_Next, 1, loopTop+1);
         sqliteVdbeChangeP2(v, loopTop, sqliteVdbeCurrentAddr(v));
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          static VdbeOp cntIdx[] = {
+          static VdbeOpList cntIdx[] = {
              { OP_Integer,      0,  0,  0},
              { OP_MemStore,     2,  1,  0},
              { OP_Rewind,       0,  0,  0},  /* 2 */

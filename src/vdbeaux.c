@@ -167,7 +167,7 @@ int sqliteVdbeCurrentAddr(Vdbe *p){
 ** Add a whole list of operations to the operation stack.  Return the
 ** address of the first operation added.
 */
-int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
+int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp >= p->nOpAlloc ){
@@ -185,11 +185,15 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
   addr = p->nOp;
   if( nOp>0 ){
     int i;
-    for(i=0; i<nOp; i++){
-      int p2 = aOp[i].p2;
-      p->aOp[i+addr] = aOp[i];
-      if( p2<0 ) p->aOp[i+addr].p2 = addr + ADDR(p2);
-      p->aOp[i+addr].p3type = aOp[i].p3 ? P3_STATIC : P3_NOTUSED;
+    VdbeOpList const *pIn = aOp;
+    for(i=0; i<nOp; i++, pIn++){
+      int p2 = pIn->p2;
+      VdbeOp *pOut = &p->aOp[i+addr];
+      pOut->opcode = pIn->opcode;
+      pOut->p1 = pIn->p1;
+      pOut->p2 = p2<0 ? addr + ADDR(p2) : p2;
+      pOut->p3 = pIn->p3;
+      pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
 #ifndef NDEBUG
       if( sqlite_vdbe_addop_trace ){
         sqliteVdbePrintOp(0, i+addr, &p->aOp[i+addr]);

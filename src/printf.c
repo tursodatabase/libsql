@@ -218,8 +218,7 @@ static int vxprintf(
   etByte errorflag = 0;      /* True if an error is encountered */
   etByte xtype;              /* Conversion paradigm */
   char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
-  static char spaces[] = "                                                  "
-     "                                                                      ";
+  static char spaces[] = "                                                  ";
 #define etSPACESIZE (sizeof(spaces)-1)
 #ifndef etNOFLOATINGPOINT
   int  exp;                  /* exponent of real numbers */

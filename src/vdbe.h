@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.69 2004/02/14 23:59:58 drh Exp $
+** $Id: vdbe.h,v 1.70 2004/02/21 13:31:11 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -34,7 +34,7 @@ typedef struct Vdbe Vdbe;
 ** as an instance of the following structure:
 */
 struct VdbeOp {
-  int opcode;         /* What operation to perform */
+  u8 opcode;          /* What operation to perform */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   char *p3;           /* Third parameter */
@@ -45,6 +45,18 @@ struct VdbeOp {
 #endif
 };
 typedef struct VdbeOp VdbeOp;
+
+/*
+** A smaller version of VdbeOp used for the VdbeAddOpList() function because
+** it takes up less space.
+*/
+struct VdbeOpList {
+  u8 opcode;          /* What operation to perform */
+  signed char p1;     /* First operand */
+  short int p2;       /* Second parameter (often the jump destination) */
+  char *p3;           /* Third parameter */
+};
+typedef struct VdbeOpList VdbeOpList;
 
 /*
 ** Allowed values of VdbeOp.p3type
@@ -75,7 +87,7 @@ typedef struct VdbeOp VdbeOp;
 Vdbe *sqliteVdbeCreate(sqlite*);
 void sqliteVdbeCreateCallback(Vdbe*, int*);
 int sqliteVdbeAddOp(Vdbe*,int,int,int);
-int sqliteVdbeAddOpList(Vdbe*, int nOp, VdbeOp const *aOp);
+int sqliteVdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
 void sqliteVdbeChangeP1(Vdbe*, int addr, int P1);
 void sqliteVdbeChangeP2(Vdbe*, int addr, int P2);
 void sqliteVdbeChangeP3(Vdbe*, int addr, const char *zP1, int N);
