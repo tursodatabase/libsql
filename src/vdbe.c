@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.395 2004/06/30 02:35:51 danielk1977 Exp $
+** $Id: vdbe.c,v 1.396 2004/06/30 02:43:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1416,7 +1416,7 @@ case OP_MustBeInt: {
     }
     if( !sqlite3atoi64(pTos->z, &v) ){
       double r;
-      if( !sqlite3IsNumber(pTos->z, 0, db->enc) ){
+      if( !sqlite3IsNumber(pTos->z, 0, SQLITE_UTF8) ){
         goto mismatch;
       }
       Realify(pTos);
