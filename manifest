@@ -1,5 +1,5 @@
-C Insert\s#ifdefs\sthat\scan\soptionally\sremove\sfeatures\sat\scompiletime\sresulting\nin\sa\sdatabase\sengine\swith\sa\ssmaller\sfootprint.\s(CVS\s2034)
-D 2004-10-31T02:22:48
+C Add\scode\sto\screate/update\sthe\sbtree\s'pointer-map'\sfor\sauto-vacuum\smode.\s(CVS\s2035)
+D 2004-10-31T16:25:43
 F Makefile.in 9e90c685d69f09039015a6b1f3b0a48e9738c9e5
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 3764bdd9839075eb6dcc2369caca659b9b89d3f5
+F src/btree.c 231a0e7a00b96bafd4a7a0c774eece1510aec2fd
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c bb896c5f85ab749d17ae5d730235134c12c08033
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -251,7 +251,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 2aa506ccb003a25555b414772002d0130db93052
-R a7fa315527f5cd6a01abf8ab34756c15
-U drh
-Z ec22b5e4f08c77bf263552544e24fca1
+P be661acfa849bb0d5692797dd221f5a8a457f8ad
+R fb770ca0c24b8afc49e326691465632b
+U danielk1977
+Z 7f9d79ada055e2ae1b10f7384fac7801
