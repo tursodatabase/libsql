@@ -1,5 +1,5 @@
-C The\spage_size\spragma\spreserves\sthe\sreserved\sarea\sat\sthe\send\sof\seach\spage.\s(CVS\s1964)
-D 2004-09-17T20:25:25
+C Close\sstray\sstatements\sprior\sto\sfinishing\strace.test,\sto\savoid\sa\sfile\ndescriptor\sleak.\s(CVS\s1965)
+D 2004-09-17T20:46:55
 F Makefile.in 9cdfc3af2647055085969968ca2394f24c3c6166
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -175,7 +175,7 @@ F test/tester.tcl 1ff1170dd4203d87f572871080cdb64330dade99
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
-F test/trace.test b6fb0931e4ac802414977a09109c0b02ee446202
+F test/trace.test a54fa8df0d01cf827289a7659d78959e8fd2f955
 F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
 F test/trigger1.test dc015c410161f1a6109fd52638dfac852e2a34de
 F test/trigger2.test a5d06e6e8e1e773cfcb5aaa75ab381b2ff35de63
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 90bb3af6cd827fcf731ba3d641a00ae426d6baca
-R aa6eeefbd20fa345d3aa2d6e6649e024
+P c34f3209e5028e008ea9e2c43f1e0d97d6db01d3
+R 9bf1357a0f59d6cb60105f9baaa7a8a0
 U drh
-Z f6a708092cd33df029263c6839c6eb54
+Z 65c375355addb95c8f1eba5741c8237a
