@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.57 2002/11/10 23:32:57 drh Exp $
+** @(#) $Id: pager.c,v 1.58 2002/11/11 01:04:48 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -75,7 +75,6 @@ struct PgHdr {
   PgHdr *pNextFree, *pPrevFree;  /* Freelist of pages where nRef==0 */
   PgHdr *pNextAll, *pPrevAll;    /* A list of all pages */
   PgHdr *pNextCkpt, *pPrevCkpt;  /* List of pages in the checkpoint journal */
-  PgHdr *pSort;                  /* Next in list of pages to be written */
   u8 inJournal;                  /* TRUE if has been written to journal */
   u8 inCkpt;                     /* TRUE if written to the checkpoint journal */
   u8 dirty;                      /* TRUE if we need to write back changes */
@@ -795,41 +794,6 @@ int sqlitepager_ref(void *pData){
 }
 
 /*
-** The parameters are pointers to the head of two sorted lists
-** of page headers.  Merge these two lists together and return
-** a single sorted list.  This routine forms the core of the 
-** merge-sort algorithm that sorts dirty pages into accending
-** order prior to writing them back to the disk.
-**
-** In the case of a tie, left sorts in front of right.
-**
-** Headers are sorted in order of ascending page number.
-*/
-static PgHdr *page_merge(PgHdr *pLeft, PgHdr *pRight){
-  PgHdr sHead;
-  PgHdr *pTail;
-  pTail = &sHead;
-  pTail->pSort = 0;
-  while( pLeft && pRight ){
-    if( pLeft->pgno<=pRight->pgno ){
-      pTail->pSort = pLeft;
-      pLeft = pLeft->pSort;
-    }else{
-      pTail->pSort = pRight;
-      pRight = pRight->pSort;
-    }
-    pTail = pTail->pSort;
-  }
-  if( pLeft ){
-    pTail->pSort = pLeft;
-  }else if( pRight ){
-    pTail->pSort = pRight;
-  }
-  return sHead.pSort;
-}
-
-
-/*
 ** Sync the journal and then write all free dirty pages to the database
 ** file.
 **
@@ -845,19 +809,10 @@ static PgHdr *page_merge(PgHdr *pLeft, PgHdr *pRight){
 ** If we are writing to temporary database, there is no need to preserve
 ** the integrity of the journal file, so we can save time and skip the
 ** fsync().
-**
-** This routine goes to the extra trouble of sorting all the dirty
-** pages by their page number prior to writing them.  Tests show that
-** writing pages in order by page number gives a modest speed improvement
-** under Linux.  
 */
 static int syncAllPages(Pager *pPager){
   PgHdr *pPg;
-  PgHdr *pToWrite;
-# define NSORT 28
   Pgno lastPgno;
-  int i;
-  PgHdr *apSorter[NSORT];
   int rc = SQLITE_OK;
 
   /* Sync the journal before modifying the main database
@@ -871,56 +826,21 @@ static int syncAllPages(Pager *pPager){
     pPager->needSync = 0;
   }
 
-  /* Create a list of all dirty pages
+  /* Write all dirty free pages to the disk in the order that they
+  ** appear on the disk.  We have experimented with sorting the pages
+  ** by page numbers so that they are written in order, but that does
+  ** not appear to improve performance.
   */
-  pToWrite = 0;
   for(pPg=pPager->pFirst; pPg; pPg=pPg->pNextFree){
     if( pPg->dirty ){
-      pPg->pSort = pToWrite;
-      pToWrite = pPg;
-    }
-  }
-
-  /* Sort the list of dirty pages into accending order by
-  ** page number
-  */
-  for(i=0; i<NSORT; i++){
-    apSorter[i] = 0;
-  }
-  while( pToWrite ){
-    pPg = pToWrite;
-    pToWrite = pPg->pSort;
-    pPg->pSort = 0;
-    for(i=0; i<NSORT-1; i++){
-      if( apSorter[i]==0 ){
-        apSorter[i] = pPg;
-        break;
-      }else{
-        pPg = page_merge(apSorter[i], pPg);
-        apSorter[i] = 0;
+      if( lastPgno==0 || pPg->pgno!=lastPgno+1 ){
+        sqliteOsSeek(&pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
       }
+      rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+      if( rc!=SQLITE_OK ) break;
+      pPg->dirty = 0;
+      lastPgno = pPg->pgno;
     }
-    if( i>=NSORT-1 ){
-      apSorter[NSORT-1] = page_merge(apSorter[NSORT-1],pPg);
-    }
-  }
-  pToWrite = 0;
-  for(i=0; i<NSORT; i++){
-    pToWrite = page_merge(apSorter[i], pToWrite);
-  }
-
-  /* Write all dirty pages back to the database and mark
-  ** them all clean.
-  */
-  lastPgno = 0;
-  for(pPg=pToWrite; pPg; pPg=pPg->pSort){
-    if( lastPgno==0 || pPg->pgno!=lastPgno-1 ){
-      sqliteOsSeek(&pPager->fd, (pPg->pgno-1)*SQLITE_PAGE_SIZE);
-    }
-    rc = sqliteOsWrite(&pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
-    if( rc!=SQLITE_OK ) break;
-    pPg->dirty = 0;
-    lastPgno = pPg->pgno;
   }
   return rc;
 }

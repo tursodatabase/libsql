@@ -1,5 +1,5 @@
-C Replace\sthe\satoi()\slibrary\sroutine\swith\sa\sfaster\shome-grown\sversion\sin\sthe\nVDBE.\s\sThis\sgives\sa\sdramatic\sspeed\simprovement\sfor\ssome\skinds\sof\squeries.\s(CVS\s784)
-D 2002-11-11T00:05:43
+C Back\sout\sthe\schanges\sin\sthe\spager\sthat\ssorted\spages\sprior\sto\swriting\sthem\nto\sthe\sdatabase.\s\sAdditional\smeasurements\sshowed\sno\sperformance\sgains.\s(CVS\s785)
+D 2002-11-11T01:04:48
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -32,7 +32,7 @@ F src/main.c f04f93b8928d6d85976e5137fea146a46de1fd6e
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c caf5a34b35a2d99a58457517261c879ac29b0a05
 F src/os.h 1caaea972d1c0401cfe6300aba51fb0f6fe435c9
-F src/pager.c 27d9b94641e968bafabfd2119d9ba4304ccb69a4
+F src/pager.c 691571c468e36212677ed0b1db475dba4dba46bf
 F src/pager.h 6991c9c2dc5e4c7f2df4d4ba47d1c6458f763a32
 F src/parse.y 469c9636ff713e63c00234662209f11668671ae9
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a6ef6657a4377684dc2fce7be2bbf009fd2d2f37
-R 185b0bc33f10b4a768e6cfb7280605c4
+P 263a8ca40f7ff66fbdcb43bf9032391d5b1e68bd
+R 0010d81229c7872c45b3b325790678da
 U drh
-Z f3f9009eb197efb6353cb5684648e29d
+Z a3b8e3b4a8a73490705deeac8230e339
