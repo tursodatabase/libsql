@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.70 2003/01/11 14:25:40 drh Exp $
+** $Id: where.c,v 1.71 2003/01/11 15:02:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -325,7 +325,6 @@ WhereInfo *sqliteWhereBegin(
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   int brk, cont;             /* Addresses used during code generation */
-  int *aOrder;         /* Order in which pTabList entries are searched */
   int nExpr;           /* Number of subexpressions in the WHERE clause */
   int loopMask;        /* One bit set for each outer loop */
   int haveKey;         /* True if KEY is on the stack */
@@ -355,15 +354,11 @@ WhereInfo *sqliteWhereBegin(
     return 0;
   }
   
-  /* Allocate space for aOrder[] */
-  aOrder = sqliteMalloc( sizeof(int) * pTabList->nSrc );
-
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
   */
   pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( sqlite_malloc_failed ){
-    sqliteFree(aOrder);
     sqliteFree(pWInfo);
     return 0;
   }
@@ -406,19 +401,6 @@ WhereInfo *sqliteWhereBegin(
     }
   }
 
-  /* Figure out a good nesting order for the tables.  aOrder[0] will
-  ** be the index in pTabList of the outermost table.  aOrder[1] will
-  ** be the first nested loop and so on.  aOrder[pTabList->nSrc-1] will
-  ** be the innermost loop.
-  **
-  ** Someday we will put in a good algorithm here to reorder the loops
-  ** for an effiecient query.  But for now, just use whatever order the
-  ** tables appear in in the pTabList.
-  */
-  for(i=0; i<pTabList->nSrc; i++){
-    aOrder[i] = i;
-  }
-
   /* Figure out what index to use (if any) for each nested loop.
   ** Make pWInfo->a[i].pIdx point to the index to use for the i-th nested
   ** loop where i==0 is the outer loop and i==pTabList->nSrc-1 is the inner
@@ -438,7 +420,7 @@ WhereInfo *sqliteWhereBegin(
   loopMask = 0;
   for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(iDirectEq); i++){
     int j;
-    int idx = aOrder[i];
+    int idx = i;
     Table *pTab = pTabList->a[idx].pTab;
     Index *pIdx;
     Index *pBestIdx = 0;
@@ -678,7 +660,7 @@ WhereInfo *sqliteWhereBegin(
   loopMask = 0;
   for(i=0; i<pTabList->nSrc; i++){
     int j, k;
-    int idx = aOrder[i];
+    int idx = i;
     Index *pIdx;
     WhereLevel *pLevel = &pWInfo->a[i];
 
@@ -1126,7 +1108,6 @@ WhereInfo *sqliteWhereBegin(
   if( pushKey && !haveKey ){
     sqliteVdbeAddOp(v, OP_Recno, base, 0);
   }
-  sqliteFree(aOrder);
   return pWInfo;
 }
 
