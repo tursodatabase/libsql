@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.62 2002/01/09 03:20:00 drh Exp $
+** $Id: build.c,v 1.63 2002/01/09 13:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -163,17 +163,18 @@ Index *sqliteFindIndex(sqlite *db, char *zName){
 ** Remove the given index from the index hash table, and free
 ** its memory structures.
 **
-** The index is removed from the database hash tables if db!=NULL.
-** But the index is not unlinked from the Table that it indexes.
+** The index is removed from the database hash tables but
+** it is not unlinked from the Table that it indexes.
 ** Unlinking from the Table must be done by the calling function.
 */
 static void sqliteDeleteIndex(sqlite *db, Index *p){
-  if( p->zName && db ){
-    Index *pOld;
-    pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
-    assert( pOld==0 || pOld==p );
-    sqliteHashInsert(&db->idxDrop, p, 0, 0);
+  Index *pOld;
+  assert( db!=0 && p->zName!=0 );
+  pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
+  if( pOld!=0 && pOld!=p ){
+    sqliteHashInsert(&db->idxHash, pOld->zName, strlen(pOld->zName)+1, pOld);
   }
+  sqliteHashInsert(&db->idxDrop, p, 0, 0);
   sqliteFree(p);
 }
 
@@ -210,7 +211,9 @@ void sqlitePendingDropIndex(sqlite *db, Index *p){
   }else{
     Index *pOld;
     pOld = sqliteHashInsert(&db->idxHash, p->zName, strlen(p->zName)+1, 0);
-    assert( pOld==p );
+    if( pOld!=0 && pOld!=p ){
+      sqliteHashInsert(&db->idxHash, pOld->zName, strlen(pOld->zName)+1, pOld);
+    }
     sqliteHashInsert(&db->idxDrop, p, 0, p);
     p->isDropped = 1;
   }
@@ -252,12 +255,11 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
 ** table structure with all its indices.
 */
 static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
-  if( p->zName && db ){
-    Table *pOld;
-    pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
-    assert( pOld==0 || pOld==p );
-    sqliteHashInsert(&db->tblDrop, p, 0, 0);
-  }
+  Table *pOld;
+  assert( db!=0 );
+  pOld = sqliteHashInsert(&db->tblHash, p->zName, strlen(p->zName)+1, 0);
+  assert( pOld==0 || pOld==p );
+  sqliteHashInsert(&db->tblDrop, p, 0, 0);
   sqliteDeleteTable(db, p);
 }
 

@@ -1,5 +1,5 @@
-C Working\son\sa\sbug:\sDropping\sand\srecreating\sa\stable\swithin\sa\stransaction\ncauses\san\sassertion\sfailure.\s(CVS\s342)
-D 2002-01-09T03:19:59
+C Continued\swork\son\sthe\sDROP/CREATE\sproblem.\s(CVS\s343)
+D 2002-01-09T13:30:41
 F Makefile.in 9fa4277413bf1d9cf91365f07d4108d7d87ed2af
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -21,7 +21,7 @@ F sqlite.1 2e2bb0529ef468ade9e4322bd609d0695fb9ded9
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c c796e387da340cb628dc1e41f684fc20253f561e
 F src/btree.h 9ead7f54c270d8a554e59352ca7318fdaf411390
-F src/build.c 66195e45353b1c56ee12ba74a5743cb7a487f65e
+F src/build.c 1acab23d8d5ef447e16c2b270262fcb18d6c0d90
 F src/delete.c f7690efc09ad6a2f1f3f0490e1b0cbb676bb95cf
 F src/expr.c 8169261ac56e96c860407a8773ca10b779e32328
 F src/hash.c 838a6f2af547dfdc5ff2b438e8f981ea4b74f224
@@ -89,7 +89,7 @@ F test/tableapi.test 51d0c209aa6b1158cb952ec917c656d4ce66e9e4
 F test/tclsqlite.test feca0f2b23ba51d202d67d71e10ba7a8a1621f82
 F test/temptable.test 37acd9e39781c2ff7cff2ba741b6b27ce020a44a
 F test/tester.tcl 96db1b49157388edb57e11bf33285e3811a897e4
-F test/trans.test 5f8543d3df10600b36732ebed5b46030073913a1
+F test/trans.test 9306ee5e47e36d0c99185ab33326f988567a868d
 F test/unique.test 07776624b82221a80c8b4138ce0dd8b0853bb3ea
 F test/update.test 3cf1ca0565f678063c2dfa9a7948d2d66ae1a778
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7deb62241300ff23af5a78dd855f0f69e5f16ffd
-R 4f050fe6f09f01448c2bd7cd3c521994
+P b3656a5cfef91c89de2cbb9790087d0d53c03e6f
+R 03b35c15e5406e6d492b56b49630910a
 U drh
-Z 333823479478d2952c0013142638bffb
+Z b941f9b4d1245f388980c0232066edd8
