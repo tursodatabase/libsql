@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** when syntax rules are reduced.
 **
-** $Id: build.c,v 1.8 2000/05/30 17:30:36 drh Exp $
+** $Id: build.c,v 1.9 2000/05/30 19:22:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -883,20 +883,21 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
     case TK_ID: {
       int cnt = 0;   /* Number of matches */
       int i;         /* Loop counter */
-      char *z = pExpr->token.z;
-      int n = pExpr->token.n;
+      char *z = 0;
+      sqliteSetNString(&z, pExpr->token.z, pExpr->token.n, 0);
       for(i=0; i<pTabList->nId; i++){
         int j;
         Table *pTab = pTabList->a[i].pTab;
         if( pTab==0 ) continue;
         for(j=0; j<pTab->nCol; j++){
-          if( sqliteStrNICmp(pTab->azCol[j], z, n)==0 ){
+          if( sqliteStrICmp(pTab->azCol[j], z)==0 ){
             cnt++;
             pExpr->iTable = i;
             pExpr->iField = j;
           }
         }
       }
+      sqliteFree(z);
       if( cnt==0 ){
         sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
           pExpr->token.z, pExpr->token.n, 0);
@@ -918,14 +919,16 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
       int i;         /* Loop counter */
       Expr *pLeft, *pRight;    /* Left and right subbranches of the expr */
       int n;                   /* Length of an identifier */
-      char *z;                 /* Text of an identifier */
+      char *zLeft, *zRight;    /* Text of an identifier */
 
       pLeft = pExpr->pLeft;
       pRight = pExpr->pRight;
       assert( pLeft && pLeft->op==TK_ID );
       assert( pRight && pRight->op==TK_ID );
-      n = pRight->token.n;
-      z = pRight->token.z;      
+      zLeft = 0;
+      sqliteSetNString(&zLeft, pLeft->token.z, pLeft->token.n, 0);
+      zRight = 0;
+      sqliteSetNString(&zRight, pRight->token.z, pRight->token.n, 0);
       for(i=0; i<pTabList->nId; i++){
         int j;
         char *zTab;
@@ -936,23 +939,27 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
         }else{
           zTab = pTab->zName;
         }
-        if( sqliteStrNICmp(zTab, pLeft->token.z, pLeft->token.n)!=0 ) continue;
+        if( sqliteStrICmp(zTab, zLeft)!=0 ) continue;
         for(j=0; j<pTab->nCol; j++){
-          if( sqliteStrNICmp(pTab->azCol[j], z, n)==0 ){
+          if( sqliteStrICmp(pTab->azCol[j], zRight)==0 ){
             cnt++;
             pExpr->iTable = i;
             pExpr->iField = j;
           }
         }
       }
+      sqliteFree(zLeft);
+      sqliteFree(zRight);
       if( cnt==0 ){
         sqliteSetNString(&pParse->zErrMsg, "no such field: ", -1,  
-          pLeft->token.z, pLeft->token.n, ".", 1, z, n, 0);
+          pLeft->token.z, pLeft->token.n, ".", 1, 
+          pRight->token.z, pRight->token.n, 0);
         pParse->nErr++;
         return 1;
       }else if( cnt>1 ){
         sqliteSetNString(&pParse->zErrMsg, "ambiguous field name: ", -1,  
-          pExpr->token.z, pExpr->token.n, ".", 1, z, n, 0);
+          pLeft->token.z, pLeft->token.n, ".", 1,
+          pRight->token.z, pRight->token.n, 0);
         pParse->nErr++;
         return 1;
       }
