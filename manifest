@@ -1,5 +1,5 @@
-C Version\s2.0.2\s(CVS\s281)
-D 2001-10-09T04:21:51
+C More\schanges\sprior\sto\srelease\s2.0.2.\s\sMostly\scomment\schanges.\s\sBut\sthere\nwas\salso\sa\sminor\schange\sto\stemptable.test\sso\sthat\sit\swould\swork\sunder\nWindows.\s(CVS\s282)
+D 2001-10-09T12:39:24
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 1e54087c0390c4ce0bb5be43e14ba028283751e6
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -29,7 +29,7 @@ F src/hash.h a5f5b3ce2d086a172c5879b0b06a27a82eac9fac
 F src/insert.c a48ba850461b203fb8dbc7add83fc6b6a9cf47f3
 F src/main.c 87b2fca50cbe8b400e1443b2c73693e18d9911cb
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
-F src/os.c 64d0015bfc9edcb6380ce6fc75b31c73490f4c7b
+F src/os.c a83f4cb85e4d3b98c1659a799f9e318fcaf1c76c
 F src/os.h bed702c9e3b768bc3cb1b12c90b83d099c1546be
 F src/pager.c 3445bd7c18cbfdffd8d6d1077f0b2bdf788da4fe
 F src/pager.h a0d4c5ae271914aa07b62aee0707997d6932b6ca
@@ -83,7 +83,7 @@ F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 3ef4254d62ece31a3872ab11cdaec846f6fa8fd1
 F test/tableapi.test 162840153191a91a7dce6395f2334f9aef713b37
 F test/tclsqlite.test a57bb478d7e9f0b2c927f92e161f391e2896631a
-F test/temptable.test 9576d30a6809a3233310163fee9ae8d4b9d27f54
+F test/temptable.test 37acd9e39781c2ff7cff2ba741b6b27ce020a44a
 F test/tester.tcl c7ddeebc14cc841abb37134cd5d40c1e3ad367c1
 F test/trans.test 855337b8a178c73c433fcf8ee88e4b2f5efff0d9
 F test/unique.test ef1f67607a7109e9c0842cd8557550fb121d7ec6
@@ -101,7 +101,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl 8e8d9e66e8467c5751116c3427296bde77f474a6
-F www/changes.tcl 6c25c0098cddde028e04d8ce7b59f58359a0fa1f
+F www/changes.tcl 2b416b49a136312678317f509821cf9359e421b5
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -113,7 +113,7 @@ F www/speed.tcl ab7d6d3bc898472bd94320a5d3c63de928d4804b
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 484b82d8a1c84f3d9725a509de93276b9fa9b294
-R e0211f7ef81f1015b59b3a33ae8ec9df
+P 765359c77ebae22e42b78636e70a57b010aaa18e
+R 00a3f33de80cb8fb5006abe2246012c5
 U drh
-Z 085c67f80b7bd57b2ee9d6e92b91d085
+Z 8201536b58eae125c25ac9ac5ab95d7d

@@ -40,6 +40,58 @@
 
 #if OS_UNIX
 /*
+** Here is the dirt on POSIX advisory locks:  ANSI STD 1003.1 (1996)
+** section 6.5.2.2 lines 483 through 490 specify that when a process
+** sets or clears a lock, that operation overrides any prior locks set
+** by the same process.  It does not explicitly say so, but this implies
+** that it overrides locks set by the same process using a different
+** file descriptor.  Consider this test case:
+**
+**       int fd1 = open("./file1", O_RDWR|O_CREAT, 0644);
+**       int fd2 = open("./file2", O_RDWR|O_CREAT, 0644);
+**
+** Suppose ./file1 and ./file2 are really be the same file (because
+** one is a hard or symbolic link to the other) then if you set
+** an exclusive lock on fd1, then try to get an exclusive lock
+** on fd2, it works.  I would have expected the second lock to
+** fail since there was already a lock on the file due to fd1.
+** But not so.  Since both locks came from the same process, the
+** second overrides the first, even though they were on different
+** file descriptors opened on different file names.
+**
+** Bummer.  If you ask me, this is broken.  Badly broken.  It means
+** that we cannot use POSIX locks to synchronize file access among
+** competing threads of the same process.  POSIX locks will work fine
+** to synchronize access for threads in separate processes, but not
+** threads within the same process.
+**
+** To work around the problem, SQLite has to manage file locks internally
+** on its own.  Whenever a new database is opened, we have to find the
+** specific inode of the database file (the inode is determined by the
+** st_dev and st_ino fields of the stat structure the stat() fills in)
+** and check for locks already existing on that inode.  When locks are
+** created or removed, we have to look at our own internal record of the
+** locks to see if another thread has previously set a lock on that same
+** inode.
+**
+** The OsFile structure for POSIX is no longer just an integer file
+** descriptor.  It is now a structure that holds the integer file
+** descriptor and a pointer to a structure that describes the internal
+** locks on the corresponding inode.  There is one locking structure
+** per inode, so if the same inode is opened twice, both OsFile structures
+** point to the same locking structure.  The locking structure keeps
+** a reference count (so we will know when to delete it) and a "cnt"
+** field that tells us its internal lock status.  cnt==0 means the
+** file is unlocked.  cnt==-1 means the file has an exclusive lock.
+** cnt>0 means there are cnt shared locks on the file.
+**
+** Any attempt to lock or unlock a file first checks the locking
+** structure.  The fcntl() system call is only invoked to set a 
+** POSIX lock if the internal lock structure transitions between
+** a locked and an unlocked state.
+*/
+
+/*
 ** An instance of the following structure serves as the key used
 ** to locate a particular lockInfo structure given its inode. 
 */
@@ -50,8 +102,9 @@ struct inodeKey {
 
 /*
 ** An instance of the following structure is allocated for each inode.
-** A single inode can have multiple file descriptors, so each OsFile structure
-** contains a pointer to an instance of this object.
+** A single inode can have multiple file descriptors, so each OsFile
+** structure contains a pointer to an instance of this object and this
+** object keeps a count of the number of OsFiles pointing to it.
 */
 struct lockInfo {
   struct inodeKey key;  /* The lookup key */
@@ -67,7 +120,8 @@ static Hash lockHash = { SQLITE_HASH_BINARY, 0, 0, 0, 0, 0 };
 
 /*
 ** Given a file descriptor, locate a lockInfo structure that describes
-** that file descriptor.  Create a new one if necessary.
+** that file descriptor.  Create a new one if necessary.  NULL might
+** be returned if malloc() fails.
 */
 static struct lockInfo *findLockInfo(int fd){
   int rc;
@@ -81,6 +135,7 @@ static struct lockInfo *findLockInfo(int fd){
   pInfo = (struct lockInfo*)sqliteHashFind(&lockHash, &key, sizeof(key));
   if( pInfo==0 ){
     pInfo = sqliteMalloc( sizeof(*pInfo) );
+    if( pInfo==0 ) return 0;
     pInfo->key = key;
     pInfo->nRef = 1;
     pInfo->cnt = 0;
@@ -101,7 +156,7 @@ static void releaseLockInfo(struct lockInfo *pInfo){
     sqliteFree(pInfo);
   }
 }
-#endif
+#endif  /** POSIX advisory lock work-around **/
 
 
 /*

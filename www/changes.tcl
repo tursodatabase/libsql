@@ -18,7 +18,7 @@ proc chng {date desc} {
 }
 
 chng {2001 Oct 9 (2.0.2)} {
-<li>Fix a bugs in the locking protocol.</li>
+<li>Fix two bugs in the locking protocol.  (One was masking the other.)</li>
 <li>Removed some unused "#include <unistd.h>" that were causing problems
     for VC++.</li>
 <li>Fixed <b>sqlite.h</b> so that it is usable from C++</li>
