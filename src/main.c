@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.239 2004/06/29 08:59:35 danielk1977 Exp $
+** $Id: main.c,v 1.240 2004/06/29 10:53:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -40,8 +40,10 @@ const int sqlite3one = 1;
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  sqlite3SetString(pData->pzErrMsg, "malformed database schema",
-     zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
+  if( !sqlite3_malloc_failed ){
+    sqlite3SetString(pData->pzErrMsg, "malformed database schema",
+       zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
+  }
 }
 
 /*

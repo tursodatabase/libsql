@@ -1,5 +1,5 @@
-C Fix\serror\sreporting\spath\sfor\serrors\sthat\soccur\swhile\sreading\sthe\sdatabase\nschema.\s(CVS\s1757)
-D 2004-06-29T08:59:35
+C Do\snot\sset\snew\serror\smessages\safter\sa\smalloc\sfailure.\s(CVS\s1758)
+D 2004-06-29T10:53:55
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -38,7 +38,7 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c d99ffe87e1e1397f4233afcd06841d52d6b17b18
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c c5cd98481abe99fe3061df2fc419427b18b998c4
+F src/main.c b6b9e0b4ac6b2f22bb61fe093eabc78de62e8a7a
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h 1e745e582138c01d995f190d7544da3e826f6b2f
@@ -231,7 +231,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ffd3312b66e2657c3431eab814aadec254af2403
-R 63c7d18bf59f5e6712d62a6fd6e5946d
-U danielk1977
-Z f7e74128acc3daa4896fa3764474c95e
+P 157db33e09399f31bcdaf58ea90fe618fefcd9bd
+R efbd6afb1b44337868e9f35c6c978aeb
+U drh
+Z 9bb08bb81ba05e89f979e5bf3a48c272
