@@ -114,22 +114,37 @@ struct Mem {
   int n;              /* Number of characters in string value, including '\0' */
   int flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   double r;           /* Real value */
-  char *z;            /* String value */
+  char *z;            /* String or BLOB value */
   char zShort[NBFS];  /* Space for short strings */
 };
 typedef struct Mem Mem;
 
 /*
-** Allowed values for Mem.flags
+** Allowed values for Mem.flags.
+**
+** The first 5 values determine the data type(s).  Null and Blob must
+** occur alone.  But Str, Int, and Real can occur together.
+**
+** The next 3 utf entries determine the text representation for strings.
+** These values are only meaningful if the type is Str.
+**
+** The last 4 values specify what kind of memory Mem.z points to.
+** These valus are only meaningful if the Str or Blob types are used.
 */
 #define MEM_Null      0x0001   /* Value is NULL */
 #define MEM_Str       0x0002   /* Value is a string */
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
-#define MEM_Dyn       0x0010   /* Need to call sqliteFree() on Mem.z */
-#define MEM_Static    0x0020   /* Mem.z points to a static string */
-#define MEM_Ephem     0x0040   /* Mem.z points to an ephemeral string */
-#define MEM_Short     0x0080   /* Mem.z points to Mem.zShort */
+#define MEM_Blob      0x0010   /* Value is a BLOB */
+
+#define MEM_Utf8      0x0020   /* String uses UTF-8 encoding */
+#define MEM_Utf16be   0x0040   /* String uses UTF-16 big-endian */
+#define MEM_Utf16le   0x0080   /* String uses UTF-16 little-endian */
+
+#define MEM_Dyn       0x0100   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Static    0x0200   /* Mem.z points to a static string */
+#define MEM_Ephem     0x0400   /* Mem.z points to an ephemeral string */
+#define MEM_Short     0x0800   /* Mem.z points to Mem.zShort */
 
 /* The following MEM_ value appears only in AggElem.aMem.s.flag fields.
 ** It indicates that the corresponding AggElem.aMem.z points to a
@@ -306,6 +321,3 @@ int sqlite3VdbeSerialLen(const Mem *);
 int sqlite3VdbeDeserialize(Mem *, const unsigned char *);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-
-
-
