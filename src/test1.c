@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.40 2004/05/13 11:34:16 danielk1977 Exp $
+** $Id: test1.c,v 1.41 2004/05/20 01:12:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -45,6 +45,21 @@ static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite **ppDb){
 */
 static int getVmPointer(Tcl_Interp *interp, const char *zArg, sqlite_vm **ppVm){
   if( sscanf(zArg, PTR_FMT, (void**)ppVm)!=1 ){
+    Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Decode a pointer to an sqlite3_stmt object.
+*/
+static int getStmtPointer(
+  Tcl_Interp *interp, 
+  const char *zArg,  
+  sqlite3_stmt **ppStmt
+){
+  if( sscanf(zArg, PTR_FMT, (void**)ppStmt)!=1 ){
     Tcl_AppendResult(interp, "\"", zArg, "\" is not a valid pointer value", 0);
     return TCL_ERROR;
   }
@@ -967,6 +982,216 @@ static int test_breakpoint(
   return TCL_OK;         /* Do nothing */
 }
 
+static int test_bind_int32(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int value;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &value) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_int32(pStmt, idx, value);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_int64(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  i64 value;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetWideIntFromObj(interp, objv[3], &value) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_int64(pStmt, idx, value);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_double(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  double value;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetDoubleFromObj(interp, objv[3], &value) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_double(pStmt, idx, value);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_null(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_null(pStmt, idx);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_text(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int bytes;
+  char *value;
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
+        " <bytes>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  value = Tcl_GetString(objv[3]);
+  if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_text(pStmt, idx, value, bytes, 1);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_text16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int bytes;
+  char *value;
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
+        " <bytes>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  value = Tcl_GetByteArrayFromObj(objv[3], 0);
+  if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_text16(pStmt, idx, (void *)value, bytes, 1);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+static int test_bind_blob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int bytes;
+  char *value;
+  int rc;
+
+  if( objc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT> <param no.> <value>"
+        " <bytes>", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  value = Tcl_GetString(objv[3]);
+  if( Tcl_GetIntFromObj(interp, objv[2], &bytes) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_blob(pStmt, idx, value, bytes, 1);
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -1005,10 +1230,25 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
+  static struct {
+     char *zName;
+     Tcl_ObjCmdProc *xProc;
+  } aObjCmd[] = {
+     { "sqlite3_bind_int32",            (Tcl_ObjCmdProc*)test_bind_int32    },
+     { "sqlite3_bind_int64",            (Tcl_ObjCmdProc*)test_bind_int64    },
+     { "sqlite3_bind_double",           (Tcl_ObjCmdProc*)test_bind_double   },
+     { "sqlite3_bind_null",             (Tcl_ObjCmdProc*)test_bind_null     },
+     { "sqlite3_bind_text",             (Tcl_ObjCmdProc*)test_bind_text     },
+     { "sqlite3_bind_text16",           (Tcl_ObjCmdProc*)test_bind_text16   },
+     { "sqlite3_bind_blob",             (Tcl_ObjCmdProc*)test_bind_blob     },
+  };
   int i;
 
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
+  }
+  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
+    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite3_search_count, TCL_LINK_INT);

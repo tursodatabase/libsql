@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.1 2003/09/06 22:45:21 drh Exp $
+# $Id: bind.test,v 1.2 2004/05/20 01:12:35 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -63,10 +63,137 @@ do_test bind-1.9 {
   execsql {SELECT rowid, * FROM t1}
 } {1 123 abcdefg {} 2 456 abcdefg {}}
 
-
 do_test bind-1.99 {
   sqlite_finalize $VM
 } {}
+
+do_test bind-2.1 {
+  execsql {
+    DELETE FROM t1;
+  }
+  set VM [sqlite_compile $DB {INSERT INTO t1 VALUES(?,?,?)} TAIL]
+  set TAIL
+} {}
+
+# 32 bit Integers
+do_test bind-2.2 {
+  sqlite3_bind_int32 $VM 1 123
+  sqlite3_bind_int32 $VM 2 456
+  sqlite3_bind_int32 $VM 3 789
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 123 456 789}
+do_test bind-2.3 {
+  sqlite3_bind_int32 $VM 2 -2000000000
+  sqlite3_bind_int32 $VM 3 2000000000
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 123 456 789 2 123 -2000000000 2000000000}
+do_test bind-2.4 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {INTEGER INTEGER INTEGER INTEGER INTEGER INTEGER}
+do_test bind-2.5 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# 64 bit Integers
+do_test bind-3.1 {
+  sqlite3_bind_int64 $VM 1 32
+  sqlite3_bind_int64 $VM 2 -2000000000000
+  sqlite3_bind_int64 $VM 3 2000000000000
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 32 -2000000000000 2000000000000}
+do_test bind-3.2 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {INTEGER INTEGER INTEGER}
+do_test bind-3.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# Doubles
+do_test bind-4.1 {
+  sqlite3_bind_double $VM 1 1234.1234
+  sqlite3_bind_double $VM 2 0.00001
+  sqlite3_bind_double $VM 3 123456789
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 1234.1234 1e-05 123456789}
+do_test bind-4.2 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {REAL REAL REAL}
+do_test bind-4.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# NULL
+do_test bind-5.1 {
+  sqlite3_bind_null $VM 1
+  sqlite3_bind_null $VM 2
+  sqlite3_bind_null $VM 3 
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 {} {} {}}
+do_test bind-5.2 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {NULL NULL NULL}
+do_test bind-5.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# UTF-8 text
+do_test bind-6.1 {
+  sqlite3_bind_text $VM 1 hellothere 5
+  sqlite3_bind_text $VM 2 "." 2
+  sqlite3_bind_text $VM 3 world -1
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 hello . world}
+do_test bind-6.2 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {TEXT TEXT TEXT}
+do_test bind-6.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# UTF-16 text
+do_test bind-7.1 {
+  sqlite3_bind_text16 $VM 1 [encoding convertto unicode hellothere] 10
+  sqlite3_bind_text16 $VM 2 [encoding convertto unicode ""] 0
+  sqlite3_bind_text16 $VM 3 [encoding convertto unicode world] 10
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite_reset $VM
+  execsql {SELECT rowid, * FROM t1}
+} {1 hello {} world}
+do_test bind-7.2 {
+  execsql {SELECT classof(a), classof(b), classof(c) FROM t1}
+} {TEXT TEXT TEXT}
+do_test bind-7.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+do_test bind-8.99 {
+  sqlite_finalize $VM
+} {}
+
 
 
 finish_test

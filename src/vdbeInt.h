@@ -146,6 +146,8 @@ typedef struct Mem Mem;
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 
+#define MEM_Term      0x1000   /* String has a nul terminator character */
+
 #define MEM_Utf8      0x0020   /* String uses UTF-8 encoding */
 #define MEM_Utf16be   0x0040   /* String uses UTF-16 big-endian */
 #define MEM_Utf16le   0x0080   /* String uses UTF-16 little-endian */

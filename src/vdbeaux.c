@@ -1043,10 +1043,16 @@ int sqlite3_bind_text(
   int nData, 
   int eCopy
 ){
-  if( zData && nData<0 ){
-    nData = strlen(zData)+1;
+  int flags = MEM_Str|MEM_Utf8;
+  if( zData ){
+    if( nData<0 ){
+      nData = strlen(zData)+1;
+      flags |= MEM_Term;
+    }else if( !zData[nData-1] ){
+      flags |= MEM_Term;
+    }
   }
-  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Str|MEM_Utf8);
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, flags);
 }
 
 int sqlite3_bind_text16(
@@ -1056,14 +1062,26 @@ int sqlite3_bind_text16(
   int nData, 
   int eCopy
 ){
-  if( zData && nData<0 ){
-    char *z = (char *)zData;
-    while( (*z)!=0 && (*(z+1))!=0 ) z+=2;
-    nData = (z - (char *)zData) + 2;
-  }
+  int flags = MEM_Str|MEM_Utf16le|MEM_Utf16be;
+
+  if( zData ){
+    /* If nData is less than zero, measure the length of the string. 
+    ** manually. In this case the variable will always be null terminated.
+    */
+    if( nData<0 ){
+      nData = sqlite3utf16ByteLen(zData) + 2;
+      flags |= MEM_Term;
+    }else{
+      /* If nData is greater than zero, check if the final character appears
+      ** to be a terminator.
+      */
+      if( !(((u8 *)zData)[nData-1]) && !(((u8 *)zData)[nData-2]) ){
+        flags |= MEM_Term;
+      }
+    }
+  }  
  
-  /* FIX ME - MEM_Utf16le? */
-  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, MEM_Str|MEM_Utf16le);
+  return vdbeBindBlob((Vdbe *)p, i, zData, nData, eCopy, flags);
 }
 
 int sqlite3_bind_blob(

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.4 2004/05/19 10:34:57 danielk1977 Exp $
+** $Id: utf.c,v 1.5 2004/05/20 01:12:35 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -327,14 +327,14 @@ static int writeUtf16(UtfString *pStr, int code, int big_endian){
 ** Return the number of bytes up to (but not including) the first \u0000
 ** character in *pStr.
 */
-static int utf16Bytelen(const unsigned char *pZ){
+int sqlite3utf16ByteLen(const void *pZ){
   const unsigned char *pC1 = pZ;
   const unsigned char *pC2 = pZ+1;
   while( *pC1 || *pC2 ){
     pC1 += 2;
     pC2 += 2;
   }
-  return pC1-pZ;
+  return pC1-(unsigned char *)pZ;
 }
 
 /*
@@ -359,7 +359,7 @@ unsigned char *sqlite3utf16to8(const void *pData, int N){
   in.c = 0;
 
   if( in.n<0 ){
-    in.n = utf16Bytelen(in.pZ);
+    in.n = sqlite3utf16ByteLen(in.pZ);
   }
 
   /* A UTF-8 encoding of a unicode string can require at most 1.5 times as
@@ -447,7 +447,7 @@ static void utf16to16(void *pData, int N, int big_endian){
   inout.n = N;
 
   if( inout.n<0 ){
-    inout.n = utf16Bytelen(inout.pZ);
+    inout.n = sqlite3utf16ByteLen(inout.pZ);
   }
 
   if( readUtf16Bom(&inout)!=big_endian ){

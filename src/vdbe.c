@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.305 2004/05/19 20:41:03 drh Exp $
+** $Id: vdbe.c,v 1.306 2004/05/20 01:12:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -189,6 +189,51 @@ static AggElem *_AggInFocus(Agg *p){
   return pElem ? sqliteHashData(pElem) : 0;
 }
 
+#define NulTermify(P) if(((P)->flags & MEM_Str)==0){hardStringify(P);} \
+                      else if(((P)->flags & MEM_Term)==0){hardNulTermify(P);}
+static int hardNulTermify(Mem *pStack){
+  int flags = pStack->flags;
+
+  assert( !(flags&MEM_Term) && (flags&MEM_Str) );
+  assert( flags&(MEM_Utf8|MEM_Utf16le|MEM_Utf16be) );
+
+  if( flags&MEM_Utf8 ){
+    /* If the string is already dynamically allocated, use sqliteRealloc()
+    ** to allocate extra space for the terminator.
+    */
+    if( flags&MEM_Dyn ){
+      pStack->z = sqliteRealloc(pStack->z, pStack->n+1);
+      if( !pStack->z ){
+        return 1;
+      }
+    }
+
+    if( flags&(MEM_Static|MEM_Ephem|MEM_Short) ){
+      if( pStack->n+1<NBFS ){
+        if( flags&MEM_Short ){
+          memcpy(pStack->zShort, pStack->z, pStack->n);
+          pStack->flags = MEM_Short|MEM_Str|MEM_Utf8|MEM_Term;
+        }
+      }else{
+        char *z = sqliteMalloc(pStack->n+1);
+        if( !z ){
+          return 1;
+        }
+        memcpy(z, pStack->z, pStack->n);
+        pStack->z = z;
+        pStack->flags = MEM_Dyn|MEM_Str|MEM_Utf8|MEM_Term;
+      }
+    }
+
+    pStack->z[pStack->n] = '\0';
+    pStack->n++;
+  }else{
+    assert(0);
+  }
+
+  return 0;
+}
+
 /*
 ** Convert the given stack entity into a string if it isn't one
 ** already.
@@ -205,7 +250,7 @@ static int hardStringify(Mem *pStack){
   }
   pStack->z = pStack->zShort;
   pStack->n = strlen(pStack->zShort)+1;
-  pStack->flags = MEM_Str | MEM_Short;
+  pStack->flags = MEM_Str | MEM_Short | MEM_Term;
   return 0;
 }
 
@@ -834,7 +879,7 @@ case OP_Variable: {
   ** variable is used again, even after the virtual machine is reset, the
   ** conversion won't have to be done again.
   **
-  ** TODO: This is where we need to support databases that use other than
+  ** FIX ME: This is where we need to support databases that use other than
   ** UTF-8 on disk.
   */
   pVar = &p->apVar[j];
@@ -848,7 +893,17 @@ case OP_Variable: {
     Release(pVar);
     pVar->z = zUtf8;
     pVar->n = strlen(zUtf8)+1;
-    pVar->flags = MEM_Str|MEM_Dyn;
+    pVar->flags = MEM_Str|MEM_Dyn|MEM_Utf8|MEM_Term;
+  }
+
+  /* Ensure that the variable value is nul terminated. Again, do this in
+  ** place.
+  **
+  ** FIX ME: The rest of the vdbe will soon understand MEM_Term, making
+  ** this step unnecessary.
+  */
+  if( pVar->flags&MEM_Str ){
+    NulTermify(pVar);
   }
 
   /* Copy the value in pVar to the top of the stack. If pVar is a string or

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.238 2004/05/19 20:41:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.239 2004/05/20 01:12:34 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1321,6 +1321,7 @@ void *sqlite3utf8to16be(const unsigned char *pIn, int N);
 void *sqlite3utf8to16le(const unsigned char *pIn, int N);
 void sqlite3utf16to16le(void *pData, int N);
 void sqlite3utf16to16be(void *pData, int N);
+int sqlite3utf16ByteLen(const void *pData);
 int sqlite3PutVarint(unsigned char *, u64);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3GetVarint32(const unsigned char *, u32 *);
