@@ -1,5 +1,5 @@
-C added\saggregate\sfunctions\slike\scount(*)\s(CVS\s21)
-D 2000-05-31T15:34:52
+C :-)\s(CVS\s22)
+D 2000-05-31T15:35:42
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ac2fef265940d93a544cb454efa836451559a71
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -41,10 +41,10 @@ F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
-F www/changes.tcl f6d75118ac266313ebcdafa79b779b82dde44cc0
+F www/changes.tcl 0736b26575548e07e5c4ed80f70450756fe5481c
 F www/index.tcl 600e85c207929bedb9c6fd221aa7875fd8f43edf
 F www/sqlite.tcl 7deb564df188ad4523adecfe2365de6d09f6dfd9
-P 01d85b35e9c4ca5619ad21a4232a8f8bf9ec3538
-R 05da1ee70a5c666d9e2d499f8f42ff62
+P dee7a8be88a95014534b90b96716d9e2e6b16579
+R 78e6202c5ce39b1cef62befff7b288e8
 U drh
-Z d21127e72e51c417dbc3dc88c1114902
+Z 979ad639546cee8bf477f0ca70897f6e

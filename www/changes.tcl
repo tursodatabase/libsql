@@ -17,7 +17,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chan {2000 May 31} {
+chng {2000 May 31} {
 <li>Added support for aggregate functions (Ex: <b>COUNT(*)<b>, <b>MIN(...)</b>)
 to the SELECT statement.</li>
 }
