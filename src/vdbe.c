@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.250 2004/01/14 21:59:23 drh Exp $
+** $Id: vdbe.c,v 1.251 2004/01/15 02:44:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2245,6 +2245,13 @@ case OP_Transaction: {
 */
 case OP_Commit: {
   int i;
+  if( db->xCommitCallback!=0 ){
+    if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
+    if( db->xCommitCallback(db->pCommitArg)!=0 ){
+      rc = SQLITE_CONSTRAINT;
+    }
+    if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
+  }
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     if( db->aDb[i].inTrans ){
       rc = sqliteBtreeCommit(db->aDb[i].pBt);

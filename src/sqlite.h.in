@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.53 2003/10/18 09:37:26 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.54 2004/01/15 02:44:03 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -753,8 +753,25 @@ int sqlite_bind(sqlite_vm*, int idx, const char *value, int len, int copy);
 ** query is immediately terminated and any database changes rolled back. If the
 ** query was part of a larger transaction, then the transaction is not rolled
 ** back and remains active. The sqlite_exec() call returns SQLITE_ABORT. 
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 void sqlite_progress_handler(sqlite*, int, int(*)(void*), void*);
+
+/*
+** Register a callback function to be invoked whenever a new transaction
+** is committed.  The pArg argument is passed through to the callback.
+** callback.  If the callback function returns non-zero, then the commit
+** is converted into a rollback.
+**
+** If another function was previously registered, its pArg value is returned.
+** Otherwise NULL is returned.
+**
+** Registering a NULL function disables the callback.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+void *sqlite_commit_hook(sqlite*, int(*)(void*), void*);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

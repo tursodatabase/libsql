@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.144 2003/12/06 21:43:56 drh Exp $
+** $Id: main.c,v 1.145 2004/01/15 02:44:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -975,6 +975,24 @@ void *sqlite_trace(sqlite *db, void (*xTrace)(void*,const char*), void *pArg){
   db->pTraceArg = pArg;
   return pOld;
 }
+
+/*** EXPERIMENTAL ***
+**
+** Register a function to be invoked when a transaction comments.
+** If either function returns non-zero, then the commit becomes a
+** rollback.
+*/
+void *sqlite_commit_hook(
+  sqlite *db,               /* Attach the hook to this database */
+  int (*xCallback)(void*),  /* Function to invoke on each commit */
+  void *pArg                /* Argument to the function */
+){
+  void *pOld = db->pCommitArg;
+  db->xCommitCallback = xCallback;
+  db->pCommitArg = pArg;
+  return pOld;
+}
+
 
 /*
 ** This routine is called to create a connection to a database BTree
