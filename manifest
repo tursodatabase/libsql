@@ -1,5 +1,5 @@
-C Refinements\sto\sNULL\sprocessing:\sNULLs\sare\sindistinct\sfor\sDISTINCT\sand\sUNION.\nMultiplying\sa\sNULL\sby\szero\syields\szero.\sIn\sa\sCASE\sexpression,\sa\sNULL\scomparison\nis\sconsidered\sfalse,\snot\sNULL.\s\sWith\sthese\schanges,\sNULLs\sin\sSQLite\snow\swork\nthe\ssame\sas\sin\sPostgreSQL\sand\sin\sOracle.\s(CVS\s600)
-D 2002-05-31T15:51:25
+C Multiplying\sNULL\sby\szero\sgives\sNULL,\snot\szero.\s\sI\smisread\sthe\stest\sdata\nand\scoded\sit\swrong.\s\sThis\scheck-in\sfixes\sthe\sproblem.\s(CVS\s601)
+D 2002-06-01T21:41:10
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -52,7 +52,7 @@ F src/tokenize.c facec7dc0b4a13e17ad67702f548dac2f7c6a732
 F src/trigger.c d02f8e3510c7c2ad948a0e8c3bb0cca8adaf80c5
 F src/update.c f68375173bf5338cae3e97012708e10f206aedd9
 F src/util.c 7cf46b5612f5d12601c697374b9c6b38b2332ce8
-F src/vdbe.c 81ae0a1ce59d56fd4180cb8b20018c67b43d0423
+F src/vdbe.c ee08fbae7f7bfc150b5840ce69967c469c440752
 F src/vdbe.h b8706429131c14b307a07aab7e47f95a9da53610
 F src/where.c b054f2f23127bd57eb5f973bcd38764b875d73fe
 F test/all.test e4d3821eeba751829b419cd47814bd20af4286d1
@@ -80,7 +80,7 @@ F test/minmax.test 29bc5727c3e4c792d5c4745833dd4b505905819e
 F test/misc1.test df281e9b26cd1db5808939c7cf2703072d555be0
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
-F test/null.test 732b4ec96e1c1a10b2bc3e1008c8f1da1cc0fb30
+F test/null.test 5c2b57307e4b6178aae825eb65ddbee01e76b0fd
 F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
 F test/pragma.test 0b9675ef1f5ba5b43abfa337744445fc5b01a34a
 F test/printf.test 3cb415073754cb8ff076f26173143c3cd293a9da
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7a24336d50e72006b2cc0e4feb292b946e79d5f3
-R fa5694968411297d416326c538e47fd0
+P da61aa1d238539dff9c43fd9f464d311e28d669f
+R f5c3f541431552f938b5386e692916f8
 U drh
-Z 4ea8ccf14bc3e954bee7c679e23f1161
+Z 64d47e65013a776dcf32882cb49edbc6

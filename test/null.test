@@ -46,12 +46,7 @@ do_test null-1.2 {
   execsql {
     select ifnull(b*c,99) from t1;
   }
-} {0 0 0 1 0 99 99}
-do_test null-1.2.1 {
-  execsql {
-    select ifnull(c*b,99) from t1;
-  }
-} {0 0 0 1 0 99 99}
+} {0 0 0 1 99 99 99}
 
 # Check to see how the CASE expression handles NULL values.  The
 # first WHEN for which the test expression is TRUE is selected.

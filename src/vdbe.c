@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.151 2002/05/31 15:51:26 drh Exp $
+** $Id: vdbe.c,v 1.152 2002/06/01 21:41:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1769,28 +1769,9 @@ case OP_Remainder: {
   int nos = tos - 1;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   if( ((aStack[tos].flags | aStack[nos].flags) & STK_Null)!=0 ){
-    int resultType = STK_Null;
-    if( pOp->opcode==OP_Multiply ){
-      /* Special case: multiplying NULL by zero gives a zero result, not a
-      ** NULL result as it would normally. */
-      if( (aStack[tos].flags & (STK_Int|STK_Real))!=0
-              || ((aStack[tos].flags & STK_Str)!=0 && isNumber(zStack[tos])) ){
-        Integerify(p,tos);
-        if( aStack[tos].i==0 ){
-          resultType = STK_Int;
-          aStack[nos].i = 0;
-        }
-      }else if( (aStack[nos].flags & (STK_Int|STK_Real))!=0
-              || ((aStack[nos].flags & STK_Str)!=0 && isNumber(zStack[nos])) ){
-        Integerify(p,nos);
-        if( aStack[nos].i==0 ){
-          resultType = STK_Int;
-        }
-      }
-    }
     POPSTACK;
     Release(p, nos);
-    aStack[nos].flags = resultType;
+    aStack[nos].flags = STK_Null;
   }else if( (aStack[tos].flags & aStack[nos].flags & STK_Int)==STK_Int ){
     int a, b;
     a = aStack[tos].i;
