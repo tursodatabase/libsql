@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.14 2004/06/09 17:37:29 drh Exp $
+# $Id: attach2.test,v 1.15 2004/06/09 21:01:12 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -263,27 +263,41 @@ do_test attach2-4.9 {
 lock_status 4.9.1 db {main shared temp reserved file2 shared}
 lock_status 4.9.2 db2 {main reserved temp reserved file2 reserved}
 
+set sqlite_os_trace 0
+btree_breakpoint
 do_test attach2-4.10 {
-  # Release the locks held by handle 'db2'
-  execsql {COMMIT} db2
-} {}
+  # We cannot commit db2 while db is holding a read-lock
+  catchsql {COMMIT} db2
+} {1 {database is locked}}
 
 lock_status 4.10.1 db {main shared temp reserved file2 shared}
-lock_status 4.10.2 db2 {main unlocked temp unlocked file2 unlocked}
+lock_status 4.10.2 db2 {main reserved temp reserved file2 reserved}
 
 do_test attach2-4.11 {
+  # db is able to commit.
+  catchsql {COMMIT}
+} {0 {}}
+
+lock_status 4.11.1 db {main unlocked temp unlocked file2 unlocked}
+lock_status 4.11.2 db2 {main reserved temp reserved file2 reserved}
+
+do_test attach2-4.12 {
+  # Now we can commit db2
+  catchsql {COMMIT} db2
+} {0 {}}
+
+lock_status 4.12.1 db {main unlocked temp unlocked file2 unlocked}
+lock_status 4.12.2 db2 {main unlocked temp unlocked file2 unlocked}
+
+do_test attach2-4.13 {
   execsql {SELECT * FROM file2.t1}
 } {1 2}
-do_test attach2-4.12 {
+do_test attach2-4.14 {
   execsql {INSERT INTO t1 VALUES(1, 2)}
 } {}
-do_test attach2-4.13 {
-  # Release the locks held by handle 'db'
-  execsql {ROLLBACK}
-} {}
-do_test attach2-4.14 {
+do_test attach2-4.15 {
   execsql {SELECT * FROM t1} db2
-} {}
+} {1 2 1 2}
 
 db close
 db2 close

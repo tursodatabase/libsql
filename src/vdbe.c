@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.362 2004/06/09 20:03:10 drh Exp $
+** $Id: vdbe.c,v 1.363 2004/06/09 21:01:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2278,6 +2278,7 @@ case OP_AutoCommit: {
 
   if( i!=db->autoCommit ){
     db->autoCommit = i;
+    p->autoCommitOn |= i;
     if( pOp->p2 ){
       sqlite3RollbackAll(db);
     }

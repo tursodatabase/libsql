@@ -971,7 +971,7 @@ static int vdbeCommit(sqlite *db){
       u32 random;
       sqliteFree(zMaster);
       sqlite3Randomness(sizeof(random), &random);
-      zMaster = sqlite3MPrintf("%s-mj%08X", zMainFile, random);
+      zMaster = sqlite3MPrintf("%s-mj%08X", zMainFile, random&0x7fffffff);
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
@@ -1134,7 +1134,18 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
       p->rc = vdbeCommit(db);
       if( p->rc!=SQLITE_OK ){
         sqlite3Error(p->db, p->rc, 0);
-        xFunc = sqlite3BtreeRollback;
+        if( p->rc==SQLITE_BUSY && p->autoCommitOn ){
+          /* If we just now have turned autocommit on (meaning we just have
+          ** finished executing a COMMIT command) but the commit fails due
+          ** to lock contention, autocommit back off.  This gives the user
+          ** the opportunity to try again after the lock that was preventing
+          ** the commit has cleared. */
+          db->autoCommit = 0;
+        }else{
+          /* If the command just executed was not a COMMIT command, then
+          ** rollback whatever the results of that command were */
+          xFunc = sqlite3BtreeRollback;
+        }
       }
     }else{
       xFunc = sqlite3BtreeRollback;

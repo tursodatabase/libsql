@@ -323,10 +323,11 @@ struct Vdbe {
   int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
   char **azResColumn;     /* Values for one row of result */ 
-  u8 resOnStack;          /* True if there are result values on the stack */
   int popStack;           /* Pop the stack this much on entry to VdbeExec() */
   char *zErrMsg;          /* Error message written here */
+  u8 resOnStack;          /* True if there are result values on the stack */
   u8 explain;             /* True if EXPLAIN present on SQL command */
+  u8 autoCommitOn;        /* True if autocommit got turned on by this program */
 };
 
 /*
