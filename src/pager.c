@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.52 2002/09/05 16:08:27 drh Exp $
+** @(#) $Id: pager.c,v 1.53 2002/09/05 19:10:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1517,6 +1517,7 @@ ckpt_begin_failed:
 int sqlitepager_ckpt_commit(Pager *pPager){
   if( pPager->ckptInUse ){
     PgHdr *pPg;
+    sqliteOsSeek(&pPager->cpfd, 0);
     sqliteOsTruncate(&pPager->cpfd, 0);
     pPager->ckptInUse = 0;
     sqliteFree( pPager->aInCkpt );
