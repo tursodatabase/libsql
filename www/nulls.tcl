@@ -1,7 +1,7 @@
 #
 # Run this script to generated a nulls.html output file
 #
-set rcsid {$Id: nulls.tcl,v 1.2 2003/07/01 01:16:30 drh Exp $}
+set rcsid {$Id: nulls.tcl,v 1.3 2003/07/07 00:10:40 drh Exp $}
 
 puts {<html>
 <head>
@@ -44,7 +44,7 @@ worked this way.  So SQLite was modified to work the same as
 Oracle, PostgreSQL, and DB2.  This involved making NULLs
 indistinct for the purposes of the SELECT DISTINCT statement and
 for the UNION operator in a SELECT.  NULLs are still distinct
-in a UNIQUE index.  This seems somewhat arbitrary, but the desire
+in a UNIQUE column.  This seems somewhat arbitrary, but the desire
 to be compatible with other engines outweighted that objection.
 </p>
 
@@ -59,7 +59,7 @@ change the value of the NULL_ALWAYS_DISTINCT #define in the
 The following table shows the results of the NULL handling experiments.
 </p>
 
-<table border=1 cellpadding=5 width="100%">
+<table border=1 cellpadding=3 width="100%">
 <tr><th>&nbsp&nbsp;</th>
 <th>SQLite</th>
 <th>PostgreSQL</th>
@@ -67,9 +67,11 @@ The following table shows the results of the NULL handling experiments.
 <th>Informix</th>
 <th>DB2</th>
 <th>MS-SQL</th>
+<th>OCELOT</th>
 </tr>
 
 <tr><td>Adding anything to null gives null</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -84,16 +86,19 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
-<tr><td>nulls are distinct in a UNIQUE index</td>
+<tr><td>nulls are distinct in a UNIQUE column</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>nulls are distinct in SELECT DISTINCT</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
@@ -108,8 +113,10 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
+<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>"CASE WHEN null THEN 1 ELSE 0 END" is 0?</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -124,8 +131,10 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>"not (null AND false)" is true</td>
+<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -135,10 +144,9 @@ The following table shows the results of the NULL handling experiments.
 </tr>
 </table>
 
-<table border=1 cellpadding=5 width="100%">
+<table border=1 cellpadding=3 width="100%">
 <tr><th>&nbsp&nbsp;</th>
 <th>MySQL</th>
-<th>OCELOT</th>
 <th>Firebird</th>
 <th>SQL Anywhere</th>
 <th>Borland Interbase</th>
@@ -149,17 +157,14 @@ The following table shows the results of the NULL handling experiments.
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>Multiplying null by zero gives null</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
-<tr><td>nulls are distinct in a UNIQUE index</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
+<tr><td>nulls are distinct in a UNIQUE column</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 4)</td>
@@ -167,20 +172,17 @@ The following table shows the results of the NULL handling experiments.
 </tr>
 <tr><td>nulls are distinct in SELECT DISTINCT</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>nulls are distinct in a UNION</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 3)</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 1)</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 </tr>
 <tr><td>"CASE WHEN null THEN 1 ELSE 0 END" is 0?</td>
-<td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#aaaad2">(Note 2)</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
@@ -188,13 +190,11 @@ The following table shows the results of the NULL handling experiments.
 </tr>
 <tr><td>"null OR true" is true</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
-<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 </tr>
 <tr><td>"not (null AND false)" is true</td>
-<td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#c7a9a9">No</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
 <td valign="center" align="center" bgcolor="#a9c7a9">Yes</td>
