@@ -1,4 +1,4 @@
-C Test\scases\sto\simprove\scoverage\sof\sbtree.c\s(and\sminor\sbugfixes).\s(CVS\s2190)
+C Test\scases\sto\simprove\scoverage\sof\sbtree.c\s(and\sminor\sbugfixes).\s(CVS\s2191)
 D 2005-01-11T10:25:07
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
@@ -266,7 +266,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P a461988661368bce799ef3d498a18e88559e14c7
+P 8ced491588764b1e1066787d0abf3cde8b60970b
 R 9631300063f5d334400b6e5706977e76
 U danielk1977
-Z 6f3669f1f4cea6222a3e8648182fde70
+Z cacca1885cea08f3a5097f0fca56ed7a
