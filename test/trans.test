@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.16 2002/08/18 20:28:07 drh Exp $
+# $Id: trans.test,v 1.17 2003/02/11 14:55:42 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -857,7 +857,7 @@ if {[info exists ISQUICK]} {
 for {set i 2} {$i<=$limit} {incr i} {
   set ::sig [signature]
   set cnt [lindex $::sig 0]
-  set ::pager_old_format [expr {($i%4)==0}]
+  set ::journal_format [expr {($i%3)+1}]
   do_test trans-9.$i.1-$cnt {
      execsql {
        BEGIN;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.159 2003/01/29 18:46:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.160 2003/02/11 14:55:41 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -417,7 +417,7 @@ struct FKey {
 ** referenced table row is propagated into the row that holds the
 ** foreign key.
 ** 
-** The following there symbolic values are used to record which type
+** The following symbolic values are used to record which type
 ** of action to take.
 */
 #define OE_None     0   /* There is no constraint to check */
