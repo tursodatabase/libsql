@@ -1235,9 +1235,10 @@ void sqlite3VdbeDelete(Vdbe *p){
       sqliteFree(pOp->p3);
     }
     if( pOp->p3type==P3_VDBEFUNC ){
+      int j;
       VdbeFunc *pVdbeFunc = (VdbeFunc *)pOp->p3;
-      for(i=0; i<pVdbeFunc->nAux; i++){
-        struct AuxData *pAuxData = &pVdbeFunc->apAux[i].pAux;
+      for(j=0; j<pVdbeFunc->nAux; j++){
+        struct AuxData *pAuxData = &pVdbeFunc->apAux[j].pAux;
         if( pAuxData->pAux && pAuxData->xDelete ){
           pAuxData->xDelete(pAuxData->pAux);
         }

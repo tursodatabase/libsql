@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.62 2004/05/31 18:51:58 drh Exp $
+** $Id: func.c,v 1.63 2004/06/06 09:44:04 danielk1977 Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -293,23 +293,236 @@ static void last_statement_change_count(
 }
 
 /*
+** A LIKE pattern compiles to an instance of the following structure. Refer
+** to the comment for compileLike() function for details.
+*/
+struct LikePattern {
+  int nState;
+  struct LikeState {
+    int val;           /* Unicode codepoint or -1 for any char i.e. '_' */
+    int failstate;     /* State to jump to if next char is not val */
+  } aState[0];
+};
+typedef struct LikePattern LikePattern;
+
+void deleteLike(void *pLike){
+  sqliteFree(pLike);
+}
+
+
+/* #define TRACE_LIKE */
+
+#if defined(TRACE_LIKE) && !defined(NDEBUG)
+char *dumpLike(LikePattern *pLike){
+  int i;
+  int k = 0;
+  char *zBuf = (char *)sqliteMalloc(pLike->nState*40);
+  
+  k += sprintf(&zBuf[k], "%d states - ", pLike->nState);
+  for(i=0; i<pLike->nState; i++){
+    k += sprintf(&zBuf[k], " %d:(%d, %d)", i, pLike->aState[i].val,
+        pLike->aState[i].failstate);
+  }
+  return zBuf;
+}
+#endif
+
+/*
+** This function compiles an SQL 'LIKE' pattern into a state machine, 
+** represented by a LikePattern structure.
+**
+** Each state of the state-machine has two attributes, 'val' and
+** 'failstate'. The val attribute is either the value of a unicode 
+** codepoint, or -1, indicating a '_' wildcard (match any single
+** character). The failstate is either the number of another state
+** or -1, indicating jump to 'no match'.
+**
+** To see if a string matches a pattern the pattern is
+** compiled to a state machine that is executed according to the algorithm
+** below. The string is assumed to be terminated by a 'NUL' character
+** (unicode codepoint 0).
+**
+** 1   S = 0
+** 2   DO 
+** 3       C = <Next character from input string>
+** 4       IF( C matches <State S val> )
+** 5           S = S+1
+** 6       ELSE IF( S != <State S failstate> )
+** 7           S = <State S failstate>
+** 8           <Rewind Input string 1 character>
+** 9   WHILE( (C != NUL) AND (S != FAILED) )
+** 10
+** 11  IF( S == <number of states> )
+** 12      RETURN MATCH
+** 13  ELSE
+** 14      RETURN NO-MATCH
+**       
+** In practice there is a small optimization to avoid the <Rewind>
+** operation in line 8 of the description above.
+**
+** For example, the following pattern, 'X%ABabc%_Y' is compiled to
+** the state machine below.
+**
+** State    Val          FailState
+** -------------------------------
+** 0        120 (x)      -1 (NO MATCH)
+** 1        97  (a)      1
+** 2        98  (b)      1
+** 3        97  (a)      1
+** 4        98  (b)      2
+** 5        99  (c)      3
+** 6        -1  (_)      6
+** 7        121 (y)      7
+** 8        0   (NUL)    7
+**
+** The algorithms implemented to compile and execute the state machine were
+** first presented in "Fast pattern matching in strings", Knuth, Morris and
+** Pratt, 1977.
+**       
+*/
+LikePattern *compileLike(sqlite3_value *pPattern, u8 enc){
+  LikePattern *pLike;
+  struct LikeState *aState;
+  int pc_state = -1;    /* State number of previous '%' wild card */
+  int n = 0;
+  int c;
+
+  int offset = 0;
+  const char *zLike;
+ 
+  if( enc==TEXT_Utf8 ){
+    zLike = sqlite3_value_text(pPattern);
+    n = sqlite3_value_bytes(pPattern) + 1;
+  }else{
+    zLike = sqlite3_value_text16(pPattern);
+    n = sqlite3_value_bytes16(pPattern)/2 + 1;
+  }
+
+  pLike = (LikePattern *)
+      sqliteMalloc(sizeof(LikePattern)+n*sizeof(struct LikeState));
+  aState = pLike->aState;
+
+  n = 0;
+  do {
+    c = sqlite3ReadUniChar(zLike, &offset, &enc, 1);
+    if( c==95 ){        /* A '_' wildcard */
+      aState[n].val = -1;
+      n++;
+    }else if( c==37 ){  /* A '%' wildcard */
+      aState[n].failstate = n;
+      pc_state = n;
+    }else{              /* A regular character */
+      aState[n].val = c;
+
+      assert( pc_state<=n );
+      if( pc_state<0 ){
+        aState[n].failstate = -1;
+      }else if( pc_state==n ){
+        aState[n].failstate = pc_state;
+      }else{
+        int k = pLike->aState[n-1].failstate;
+        while( k>pc_state && aState[k+1].val!=-1 && aState[k+1].val!=c ){
+          k = aState[k].failstate;
+        }
+        if( k!=pc_state && aState[k+1].val==c ){
+          assert( k==pc_state );
+          k++;
+        }
+        aState[n].failstate = k;
+      }
+      n++;
+    }
+  }while( c );
+  pLike->nState = n;
+#if defined(TRACE_LIKE) && !defined(NDEBUG)
+  {
+    char *zCompiled = dumpLike(pLike);
+    printf("Pattern=\"%s\" Compiled=\"%s\"\n", zPattern, zCompiled);
+    sqliteFree(zCompiled);
+  }
+#endif
+  return pLike;
+}
+
+/*
 ** Implementation of the like() SQL function.  This function implements
 ** the build-in LIKE operator.  The first argument to the function is the
-** string and the second argument is the pattern.  So, the SQL statements:
+** pattern and the second argument is the string.  So, the SQL statements:
 **
 **       A LIKE B
 **
-** is implemented as like(A,B).
+** is implemented as like(B,A).
+**
+** If the pointer retrieved by via a call to sqlite3_user_data() is
+** not NULL, then this function uses UTF-16. Otherwise UTF-8.
 */
 static void likeFunc(
   sqlite3_context *context, 
   int argc, 
   sqlite3_value **argv
 ){
-  const unsigned char *zA = sqlite3_value_text(argv[0]);
-  const unsigned char *zB = sqlite3_value_text(argv[1]);
-  if( zA && zB ){
-    sqlite3_result_int(context, sqlite3LikeCompare(zA, zB));
+  int s;
+  int c;
+  int nc;
+  u8 enc;
+  int offset = 0;
+  const unsigned char *zString;
+  LikePattern *pLike = sqlite3_get_auxdata(context, 0); 
+
+  /* If either argument is NULL, the result is NULL */
+  if( sqlite3_value_type(argv[1])==SQLITE_NULL || 
+      sqlite3_value_type(argv[0])==SQLITE_NULL ){
+    return;
+  }
+
+  /* If the user-data pointer is NULL, use UTF-8. Otherwise UTF-16. */
+  if( sqlite3_user_data(context) ){
+    enc = TEXT_Utf16;
+    zString = (const unsigned char *)sqlite3_value_text16(argv[1]);
+  }else{
+    enc = TEXT_Utf8;
+    zString = sqlite3_value_text(argv[1]);
+  }
+
+  /* If the LIKE pattern has not been compiled, compile it now. */
+  if( !pLike ){
+    pLike = compileLike(argv[0], enc);
+    if( !pLike ){
+      sqlite3_result_error(context, "out of memory", -1);
+      return;
+    }
+    sqlite3_set_auxdata(context, 0, pLike, deleteLike);
+  }
+
+  s = 0;
+  nc = 1;
+  do {
+    int val = pLike->aState[s].val;
+    if( nc ) c = sqlite3ReadUniChar(zString, &offset, &enc, 1);
+
+#if defined(TRACE_LIKE) && !defined(NDEBUG)
+    printf("State=%d:(%d, %d) Input=%d\n", 
+        s, pLike->aState[s].val, 
+        pLike->aState[s].failstate, c);
+#endif
+
+    if( val==-1 || val==c ){
+      s++;
+      nc = 1;
+    }else{
+      if( pLike->aState[s].failstate==s ){
+        nc = 1;
+      }else{
+        nc = 0;
+        s = pLike->aState[s].failstate;
+      }
+    }
+  }while( c && s>=0 );
+
+  if( s==pLike->nState ){
+    sqlite3_result_int(context, 1);
+  }else{
+    sqlite3_result_int(context, 0);
   }
 }
 
@@ -642,39 +855,40 @@ void sqlite3RegisterBuiltinFunctions(sqlite *db){
      char *zName;
      signed char nArg;
      u8 argType;               /* 0: none.  1: db  2: (-1) */
+     u8 eTextRep;              /* 1: UTF-16.  0: UTF-8 */
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
   } aFuncs[] = {
-    { "min",                        -1, 0, minmaxFunc },
-    { "min",                         0, 0, 0          },
-    { "max",                        -1, 2, minmaxFunc },
-    { "max",                         0, 2, 0          },
-    { "typeof",                      1, 0, typeofFunc },
-    { "classof",                     1, 0, typeofFunc }, /* FIX ME: hack */
-    { "length",                      1, 0, lengthFunc },
-    { "substr",                      3, 0, substrFunc },
-    { "abs",                         1, 0, absFunc    },
-    { "round",                       1, 0, roundFunc  },
-    { "round",                       2, 0, roundFunc  },
-    { "upper",                       1, 0, upperFunc  },
-    { "lower",                       1, 0, lowerFunc  },
-    { "coalesce",                   -1, 0, ifnullFunc },
-    { "coalesce",                    0, 0, 0          },
-    { "coalesce",                    1, 0, 0          },
-    { "ifnull",                      2, 0, ifnullFunc },
-    { "random",                     -1, 0, randomFunc },
-    { "like",                        2, 0, likeFunc   },
-    { "glob",                        2, 0, globFunc   },
-    { "nullif",                      2, 0, nullifFunc },
-    { "sqlite_version",              0, 0, versionFunc},
-    { "quote",                       1, 0, quoteFunc  },
-    { "last_insert_rowid",           0, 1, last_insert_rowid },
-    { "change_count",                0, 1, change_count      },
-    { "last_statement_change_count", 0, 1, last_statement_change_count },
+    { "min",                        -1, 0, 0, minmaxFunc },
+    { "min",                         0, 0, 0, 0          },
+    { "max",                        -1, 2, 0, minmaxFunc },
+    { "max",                         0, 2, 0, 0          },
+    { "typeof",                      1, 0, 0, typeofFunc },
+    { "length",                      1, 0, 0, lengthFunc },
+    { "substr",                      3, 0, 0, substrFunc },
+    { "abs",                         1, 0, 0, absFunc    },
+    { "round",                       1, 0, 0, roundFunc  },
+    { "round",                       2, 0, 0, roundFunc  },
+    { "upper",                       1, 0, 0, upperFunc  },
+    { "lower",                       1, 0, 0, lowerFunc  },
+    { "coalesce",                   -1, 0, 0, ifnullFunc },
+    { "coalesce",                    0, 0, 0, 0          },
+    { "coalesce",                    1, 0, 0, 0          },
+    { "ifnull",                      2, 0, 0, ifnullFunc },
+    { "random",                     -1, 0, 0, randomFunc },
+    { "like",                        2, 0, 0, likeFunc   }, /* UTF-8 */
+    { "like",                        2, 2, 1, likeFunc   }, /* UTF-16 */
+    { "glob",                        2, 0, 0, globFunc   },
+    { "nullif",                      2, 0, 0, nullifFunc },
+    { "sqlite_version",              0, 0, 0, versionFunc},
+    { "quote",                       1, 0, 0, quoteFunc  },
+    { "last_insert_rowid",           0, 1, 0, last_insert_rowid },
+    { "change_count",                0, 1, 0, change_count      },
+    { "last_statement_change_count", 0, 1, 0, last_statement_change_count },
 #ifdef SQLITE_SOUNDEX
-    { "soundex",                     1, 0, soundexFunc},
+    { "soundex",                     1, 0, 0, soundexFunc},
 #endif
 #ifdef SQLITE_TEST
-    { "randstr",                     2, 0, randStr    },
+    { "randstr",                     2, 0, 0, randStr    },
 #endif
   };
   static struct {

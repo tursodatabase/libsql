@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.96 2004/06/02 00:41:10 drh Exp $
+** $Id: util.c,v 1.97 2004/06/06 09:44:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1046,57 +1046,6 @@ sqlite3GlobCompare(const unsigned char *zPattern, const unsigned char *zString){
       }
       default: {
         if( c != *zString ) return 0;
-        zPattern++;
-        zString++;
-        break;
-      }
-    }
-  }
-  return *zString==0;
-}
-
-/*
-** Compare two UTF-8 strings for equality using the "LIKE" operator of
-** SQL.  The '%' character matches any sequence of 0 or more
-** characters and '_' matches any single character.  Case is
-** not significant.
-**
-** This routine is just an adaptation of the sqlite3GlobCompare()
-** routine above.
-*/
-int 
-sqlite3LikeCompare(const unsigned char *zPattern, const unsigned char *zString){
-  register int c;
-  int c2;
-
-  while( (c = UpperToLower[*zPattern])!=0 ){
-    switch( c ){
-      case '%': {
-        while( (c=zPattern[1]) == '%' || c == '_' ){
-          if( c=='_' ){
-            if( *zString==0 ) return 0;
-            sqliteNextChar(zString);
-          }
-          zPattern++;
-        }
-        if( c==0 ) return 1;
-        c = UpperToLower[c];
-        while( (c2=UpperToLower[*zString])!=0 ){
-          while( c2 != 0 && c2 != c ){ c2 = UpperToLower[*++zString]; }
-          if( c2==0 ) return 0;
-          if( sqlite3LikeCompare(&zPattern[1],zString) ) return 1;
-          sqliteNextChar(zString);
-        }
-        return 0;
-      }
-      case '_': {
-        if( *zString==0 ) return 0;
-        sqliteNextChar(zString);
-        zPattern++;
-        break;
-      }
-      default: {
-        if( c != UpperToLower[*zString] ) return 0;
         zPattern++;
         zString++;
         break;

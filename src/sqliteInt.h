@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.268 2004/06/04 06:22:02 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.269 2004/06/06 09:44:05 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -1265,7 +1265,6 @@ void sqlite3UnlinkAndDeleteIndex(sqlite*,Index*);
 void sqlite3Vacuum(Parse*, Token*);
 int sqlite3RunVacuum(char**, sqlite*);
 int sqlite3GlobCompare(const unsigned char*,const unsigned char*);
-int sqlite3LikeCompare(const unsigned char*,const unsigned char*);
 char *sqlite3TableNameFromToken(Token*);
 int sqlite3ExprCheck(Parse*, Expr*, int, int*);
 int sqlite3ExprType(Expr*);
@@ -1297,7 +1296,7 @@ ExprList *sqlite3ExprListDup(ExprList*);
 SrcList *sqlite3SrcListDup(SrcList*);
 IdList *sqlite3IdListDup(IdList*);
 Select *sqlite3SelectDup(Select*);
-FuncDef *sqlite3FindFunction(sqlite*,const char*,int,int,int);
+FuncDef *sqlite3FindFunction(sqlite*,const char*,int,int,int,int);
 void sqlite3RegisterBuiltinFunctions(sqlite*);
 void sqlite3RegisterDateTimeFunctions(sqlite*);
 int sqlite3SafetyOn(sqlite*);
@@ -1373,3 +1372,4 @@ u8 sqlite3UtfReadBom(const void *zData, int nData);
 void *sqlite3HexToBlob(const char *z);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
+int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold);

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.16 2004/06/02 00:29:24 danielk1977 Exp $
+** $Id: utf.c,v 1.17 2004/06/06 09:44:05 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -75,6 +75,138 @@ struct UtfString {
 #define READ_16(pZ,big_endian) (big_endian?BE16(pZ):LE16(pZ))
 
 /*
+** The following macro, LOWERCASE(x), takes an integer representing a
+** unicode code point. The value returned is the same code point folded to
+** lower case, if applicable. SQLite currently understands the upper/lower
+** case relationship between the 26 characters used in the English
+** language only.
+**
+** This means that characters with umlauts etc. will not be folded
+** correctly (unless they are encoded as composite characters, which would
+** doubtless cause much trouble).
+*/
+#define LOWERCASE(x) (x<91?(int)(UpperToLower[x]):x);
+static unsigned char UpperToLower[91] = {
+      0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17,
+     18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
+     36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+     54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99,100,101,102,103,
+    104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,
+    122,
+};
+
+/*
+** The first parameter, zStr, points at a unicode string. This routine
+** reads a single character from the string and returns the codepoint value
+** of the character read.
+**
+** The value of *pEnc is the string encoding. If *pEnc is TEXT_Utf16le or
+** TEXT_Utf16be, and the first character read is a byte-order-mark, then
+** the value of *pEnc is modified if necessary. In this case the next
+** character is read and it's code-point value returned.
+**
+** The value of *pOffset is the byte-offset in zStr from which to begin
+** reading. It is incremented by the number of bytes read by this function.
+**
+** If the fourth parameter, fold, is non-zero, then codepoint values are
+** folded to lower-case before being returned. See comments for macro
+** LOWERCASE(x) for details.
+*/
+int sqlite3ReadUniChar(const char *zStr, int *pOffset, u8 *pEnc, int fold){
+  int ret = 0;
+
+  switch( *pEnc ){
+    case TEXT_Utf8: {
+      struct Utf8TblRow {
+        u8 b1_mask;
+        u8 b1_masked_val;
+        u8 b1_value_mask;
+        int trailing_bytes;
+      };
+      static const struct Utf8TblRow utf8tbl[] = {
+        { 0x80, 0x00, 0x7F, 0 },
+        { 0xE0, 0xC0, 0x1F, 1 },
+        { 0xF0, 0xE0, 0x0F, 2 },
+        { 0xF8, 0xF0, 0x0E, 3 },
+        { 0, 0, 0, 0}
+      };
+    
+      u8 b1;   /* First byte of the potentially multi-byte utf-8 character */
+      int ii;
+      struct Utf8TblRow const *pRow;
+    
+      pRow = &(utf8tbl[0]);
+    
+      b1 = zStr[(*pOffset)++];
+      while( pRow->b1_mask && (b1&pRow->b1_mask)!=pRow->b1_masked_val ){
+        pRow++;
+      }
+      if( !pRow->b1_mask ){
+        return (int)0xFFFD;
+      }
+      
+      ret = (u32)(b1&pRow->b1_value_mask);
+      for( ii=0; ii<pRow->trailing_bytes; ii++ ){
+        u8 b = zStr[(*pOffset)++];
+        if( (b&0xC0)!=0x80 ){
+          return (int)0xFFFD;
+        }
+        ret = (ret<<6) + (u32)(b&0x3F);
+      }
+      
+      break;
+    }
+
+    case TEXT_Utf16le:
+    case TEXT_Utf16be: {
+      u32 code_point;   /* the first code-point in the character */
+      u32 code_point2;  /* the second code-point in the character, if any */
+    
+      code_point = READ_16(&zStr[*pOffset], (*pEnc==TEXT_Utf16be));
+      *pOffset += 2;
+    
+      /* If this is a non-surrogate code-point, just cast it to an int and
+      ** this is the code-point value.
+      */
+      if( code_point<0xD800 || code_point>0xE000 ){
+        ret = code_point;
+        break;
+      }
+
+      /* If this is a trailing surrogate code-point, then the string is
+      ** malformed; return the replacement character.
+      */
+      if( code_point>0xDBFF ){
+        return (int)0xFFFD;
+      }
+    
+      /* The code-point just read is a leading surrogate code-point. If their
+      ** is not enough data left or the next code-point is not a trailing
+      ** surrogate, return the replacement character.
+      */
+      code_point2 = READ_16(&zStr[*pOffset], (*pEnc==TEXT_Utf16be));
+      *pOffset += 2;
+      if( code_point2<0xDC00 || code_point>0xDFFF ){
+        return (int)0xFFFD;
+      }
+   
+      ret = ( 
+          (((code_point&0x03C0)+0x0040)<<16) +   /* uuuuu */
+          ((code_point&0x003F)<<10) +            /* xxxxxx */
+          (code_point2&0x03FF)                   /* yy yyyyyyyy */
+      );
+    }
+    default:
+      assert(0);
+  }
+
+  if( fold ){
+    return LOWERCASE(ret);
+  }
+  return ret;
+}
+
+/*
 ** Read the BOM from the start of *pStr, if one is present. Return zero
 ** for little-endian, non-zero for big-endian. If no BOM is present, return
 ** the value of the parameter "big_endian".
@@ -133,47 +265,8 @@ u8 sqlite3UtfReadBom(const void *zData, int nData){
 ** strings, the unicode replacement character U+FFFD may be returned.
 */
 static u32 readUtf8(UtfString *pStr){
-  struct Utf8TblRow {
-    u8 b1_mask;
-    u8 b1_masked_val;
-    u8 b1_value_mask;
-    int trailing_bytes;
-  };
-  static const struct Utf8TblRow utf8tbl[] = {
-    { 0x80, 0x00, 0x7F, 0 },
-    { 0xE0, 0xC0, 0x1F, 1 },
-    { 0xF0, 0xE0, 0x0F, 2 },
-    { 0xF8, 0xF0, 0x0E, 3 },
-    { 0, 0, 0, 0}
-  };
-
-  u8 b1;       /* First byte of the potentially multi-byte utf-8 character */
-  u32 ret = 0; /* Return value */
-  int ii;
-  struct Utf8TblRow const *pRow;
-
-  pRow = &(utf8tbl[0]);
-
-  b1 = pStr->pZ[pStr->c];
-  pStr->c++;
-  while( pRow->b1_mask && (b1&pRow->b1_mask)!=pRow->b1_masked_val ){
-    pRow++;
-  }
-  if( !pRow->b1_mask ){
-    return 0xFFFD;
-  }
-  
-  ret = (u32)(b1&pRow->b1_value_mask);
-  for( ii=0; ii<pRow->trailing_bytes; ii++ ){
-    u8 b = pStr->pZ[pStr->c+ii];
-    if( (b&0xC0)!=0x80 ){
-      return 0xFFFD;
-    }
-    ret = (ret<<6) + (u32)(b&0x3F);
-  }
-  
-  pStr->c += pRow->trailing_bytes;
-  return ret;
+  u8 enc = TEXT_Utf8;
+  return sqlite3ReadUniChar(pStr->pZ, &pStr->c, &enc, 0);
 }
 
 /*

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.92 2004/06/05 10:22:18 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.93 2004/06/06 09:44:04 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -834,6 +834,13 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** The third parameter is the number of arguments that the function or
 ** aggregate takes. If this parameter is negative, then the function or
 ** aggregate may take any number of arguments.
+**
+** If the fourth parameter is non-zero, this indicates that the function is
+** more likely to handle text in UTF-16 encoding than UTF-8. This does not
+** change the behaviour of the programming interface. However, if two
+** versions of the same function are registered, one with eTextRep non-zero
+** and the other zero, SQLite invokes the version likely to minimize
+** conversions between unicode encodings.
 **
 ** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
 ** pointers to user implemented C functions that implement the user

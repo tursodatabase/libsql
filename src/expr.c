@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.134 2004/06/05 10:22:17 danielk1977 Exp $
+** $Id: expr.c,v 1.135 2004/06/06 09:44:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -968,11 +968,12 @@ int sqlite3ExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;
+      int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
 
       getFunctionName(pExpr, &zId, &nId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, 0);
+      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, iPrefEnc, 0);
       if( pDef==0 ){
-        pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, 0);
+        pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, iPrefEnc, 0);
         if( pDef==0 ){
           no_such_func = 1;
         }else{
@@ -1233,12 +1234,15 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       const char *zId;
       int p2 = 0;
       int i;
+      int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
       getFunctionName(pExpr, &zId, &nId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, 0);
+      pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, iPrefEnc, 0);
       assert( pDef!=0 );
       nExpr = sqlite3ExprCodeExprList(pParse, pList);
       for(i=0; i<nExpr && i<32; i++){
-        p2 &= (1<<i);
+        if( sqlite3ExprIsConstant(pList->a[i].pExpr) ){
+          p2 |= (1<<i);
+        }
       }
       sqlite3VdbeOp3(v, OP_Function, nExpr, p2, (char*)pDef, P3_FUNCDEF);
       break;
@@ -1645,13 +1649,14 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
         }
       }
       if( i>=pParse->nAgg ){
+        int iPrefEnc = (pParse->db->enc==TEXT_Utf8)?0:1;
         i = appendAggInfo(pParse);
         if( i<0 ) return 1;
         pParse->aAgg[i].isAgg = 1;
         pParse->aAgg[i].pExpr = pExpr;
         pParse->aAgg[i].pFunc = sqlite3FindFunction(pParse->db,
              pExpr->token.z, pExpr->token.n,
-             pExpr->pList ? pExpr->pList->nExpr : 0, 0);
+             pExpr->pList ? pExpr->pList->nExpr : 0, iPrefEnc, 0);
       }
       pExpr->iAgg = i;
       break;
@@ -1677,9 +1682,10 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 }
 
 /*
-** Locate a user function given a name and a number of arguments.
-** Return a pointer to the FuncDef structure that defines that
-** function, or return NULL if the function does not exist.
+** Locate a user function given a name, a number of arguments and a flag
+** indicating whether the function prefers UTF-16 over UTF-8.  Return a
+** pointer to the FuncDef structure that defines that function, or return
+** NULL if the function does not exist.
 **
 ** If the createFlag argument is true, then a new (blank) FuncDef
 ** structure is created and liked into the "db" structure if a
@@ -1690,39 +1696,70 @@ int sqlite3ExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
 ** If createFlag is false and nArg is -1, then the first valid
 ** function found is returned.  A function is valid if either xFunc
 ** or xStep is non-zero.
+**
+** If createFlag is false, then a function with the required name and
+** number of arguments may be returned even if the eTextRep flag does not
+** match that requested.
 */
 FuncDef *sqlite3FindFunction(
   sqlite *db,        /* An open database */
   const char *zName, /* Name of the function.  Not null-terminated */
   int nName,         /* Number of characters in the name */
   int nArg,          /* Number of arguments.  -1 means any number */
+  int eTextRep,      /* True to retrieve UTF-16 versions. */
   int createFlag     /* Create new entry if true and does not otherwise exist */
 ){
-  FuncDef *pFirst, *p, *pMaybe;
-  pFirst = p = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, nName);
-  if( p && !createFlag && nArg<0 ){
-    while( p && p->xFunc==0 && p->xStep==0 ){ p = p->pNext; }
-    return p;
+  FuncDef *p;         /* Iterator variable */
+  FuncDef *pFirst;    /* First function with this name */
+  FuncDef *pBest = 0; /* Best match found so far */
+  int matchqual = 0;  
+
+  /* Normalize argument values to simplify comparisons below. */
+  if( eTextRep ) eTextRep = 1;
+  if( nArg<-1 ) nArg = -1;
+
+  pFirst = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, nName);
+  for(p=pFirst; p; p=p->pNext){
+    if( 1 || p->xFunc || p->xStep ){
+      if( p->nArg==nArg && p->iPrefEnc==eTextRep ){
+        /* A perfect match. */
+        pBest = p;
+        matchqual = 4;
+        break;
+      }
+      if( p->nArg==nArg ){
+        /* Number of arguments matches, but not the text encoding */
+        pBest = p;
+        matchqual = 3;
+      }
+      else if( (p->nArg<0) || (nArg<0) ){
+        if( matchqual<2 && p->iPrefEnc==eTextRep ){
+          /* Matched a varargs function with correct text encoding */
+          pBest = p;
+          matchqual = 2;
+        }
+        if( matchqual<1 ){
+          /* Matched a varargs function with incorrect text encoding */
+          pBest = p;
+          matchqual = 1;
+        }
+      }
+    }
   }
-  pMaybe = 0;
-  while( p && p->nArg!=nArg ){
-    if( p->nArg<0 && !createFlag && (p->xFunc || p->xStep) ) pMaybe = p;
-    p = p->pNext;
+
+  if( createFlag && matchqual<4 && 
+      (pBest = sqliteMalloc(sizeof(*pBest)+nName+1)) ){
+    pBest->nArg = nArg;
+    pBest->pNext = pFirst;
+    pBest->zName = (char*)&pBest[1];
+    memcpy(pBest->zName, zName, nName);
+    pBest->zName[nName] = 0;
+    sqlite3HashInsert(&db->aFunc, pBest->zName, nName, (void*)pBest);
   }
-  if( p && !createFlag && p->xFunc==0 && p->xStep==0 ){
-    return 0;
+
+  if( pBest && (pBest->xStep || pBest->xFunc || createFlag) ){
+    return pBest;
   }
-  if( p==0 && pMaybe ){
-    assert( createFlag==0 );
-    return pMaybe;
-  }
-  if( p==0 && createFlag && (p = sqliteMalloc(sizeof(*p)+nName+1))!=0 ){
-    p->nArg = nArg;
-    p->pNext = pFirst;
-    p->zName = (char*)&p[1];
-    memcpy(p->zName, zName, nName);
-    p->zName[nName] = 0;
-    sqlite3HashInsert(&db->aFunc, p->zName, nName, (void*)p);
-  }
-  return p;
+  return 0;
 }
+

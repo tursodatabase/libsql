@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.358 2004/06/05 10:22:18 danielk1977 Exp $
+** $Id: vdbe.c,v 1.359 2004/06/06 09:44:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1273,7 +1273,7 @@ case OP_Function: {
   */
   if( ctx.pVdbeFunc ){
     int mask = pOp->p2;
-    for(i=0; i<n; i++){
+    for(i=0; i<ctx.pVdbeFunc->nAux; i++){
       struct AuxData *pAux = &ctx.pVdbeFunc->apAux[i];
       if( (i>31 || !(mask&(1<<i))) && pAux->pAux ){
         pAux->xDelete(pAux->pAux);

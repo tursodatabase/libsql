@@ -248,6 +248,7 @@ void sqlite3_set_auxdata(
     pCtx->pVdbeFunc = sqliteRealloc(pCtx->pVdbeFunc, nMalloc);
     if( !pCtx->pVdbeFunc ) return;
     pCtx->pVdbeFunc->nAux = iArg+1;
+    pCtx->pVdbeFunc->pFunc = pCtx->pFunc;
   }
 
   pAuxData = &pCtx->pVdbeFunc->apAux[iArg];
