@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.328 2004/10/22 20:29:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.329 2004/10/31 02:22:49 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1259,8 +1259,14 @@ void sqlite3AddColumnType(Parse*,Token*,Token*);
 void sqlite3AddDefaultValue(Parse*,Token*,int);
 void sqlite3AddCollateType(Parse*, const char*, int);
 void sqlite3EndTable(Parse*,Token*,Select*);
-void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int);
-int sqlite3ViewGetColumnNames(Parse*,Table*);
+
+#ifndef SQLITE_OMIT_VIEW
+  void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int);
+  int sqlite3ViewGetColumnNames(Parse*,Table*);
+#else
+# define sqlite3ViewGetColumnNames(A,B) 0
+#endif
+
 void sqlite3DropTable(Parse*, SrcList*, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
@@ -1297,7 +1303,6 @@ Table *sqlite3LocateTable(Parse*,const char*, const char*);
 Index *sqlite3FindIndex(sqlite3*,const char*, const char*);
 void sqlite3UnlinkAndDeleteTable(sqlite3*,int,const char*);
 void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
-void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
 void sqlite3Vacuum(Parse*, Token*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(Token*);
@@ -1337,21 +1342,32 @@ int sqlite3SafetyOn(sqlite3*);
 int sqlite3SafetyOff(sqlite3*);
 int sqlite3SafetyCheck(sqlite3*);
 void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
-void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,
-                         int,Expr*,int);
-void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
-void sqlite3DropTrigger(Parse*, SrcList*);
-void sqlite3DropTriggerPtr(Parse*, Trigger*, int);
-int sqlite3TriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
-int sqlite3CodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
-                         int, int);
-void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
-void sqlite3DeleteTriggerStep(TriggerStep*);
-TriggerStep *sqlite3TriggerSelectStep(Select*);
-TriggerStep *sqlite3TriggerInsertStep(Token*, IdList*, ExprList*, Select*, int);
-TriggerStep *sqlite3TriggerUpdateStep(Token*, ExprList*, Expr*, int);
-TriggerStep *sqlite3TriggerDeleteStep(Token*, Expr*);
-void sqlite3DeleteTrigger(Trigger*);
+
+#ifndef SQLITE_OMIT_TRIGGER
+  void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,
+                           int,Expr*,int);
+  void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
+  void sqlite3DropTrigger(Parse*, SrcList*);
+  void sqlite3DropTriggerPtr(Parse*, Trigger*, int);
+  int sqlite3TriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
+  int sqlite3CodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
+                           int, int);
+  void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
+  void sqlite3DeleteTriggerStep(TriggerStep*);
+  TriggerStep *sqlite3TriggerSelectStep(Select*);
+  TriggerStep *sqlite3TriggerInsertStep(Token*, IdList*, ExprList*,Select*,int);
+  TriggerStep *sqlite3TriggerUpdateStep(Token*, ExprList*, Expr*, int);
+  TriggerStep *sqlite3TriggerDeleteStep(Token*, Expr*);
+  void sqlite3DeleteTrigger(Trigger*);
+  void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
+#else
+# define sqlite3TriggersExist(A,B,C,D,E,F) 0
+# define sqlite3DeleteTrigger(A)
+# define sqlite3DropTriggerPtr(A,B,C)
+# define sqlite3UnlinkAndDeleteTrigger(A,B,C)
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I) 0
+#endif
+
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
 void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);

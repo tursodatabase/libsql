@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.144 2004/10/07 03:06:29 drh Exp $
+** @(#) $Id: parse.y,v 1.145 2004/10/31 02:22:49 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -81,11 +81,13 @@ struct AttachKey { int type;  Token key; };
 input ::= cmdlist.
 cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
-ecmd ::= explain cmdx SEMI.
-ecmd ::= SEMI.
 cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
-explain ::= EXPLAIN.    { sqlite3BeginParse(pParse, 1); }
+ecmd ::= SEMI.
+ecmd ::= explain cmdx SEMI.
 explain ::= .           { sqlite3BeginParse(pParse, 0); }
+%ifndef SQLITE_OMIT_EXPLAIN
+explain ::= EXPLAIN.    { sqlite3BeginParse(pParse, 1); }
+%endif
 
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
@@ -144,7 +146,11 @@ id(A) ::= ID(X).         {A = X;}
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   GLOB IGNORE IMMEDIATE INITIALLY INSTEAD LIKE MATCH KEY
   OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW STATEMENT
-  TEMP TRIGGER VACUUM VIEW.
+  TEMP TRIGGER VACUUM VIEW
+%ifdef SQLITE_OMIT_COMPOUND_SELECT
+  EXCEPT INTERSECT UNION
+%endif
+  .
 
 // Define operator precedence early so that this is the first occurance
 // of the operator tokens in the grammer.  Keeping the operators together
@@ -285,12 +291,14 @@ cmd ::= DROP TABLE fullname(X). {
 
 ///////////////////// The CREATE VIEW statement /////////////////////////////
 //
+%ifndef SQLITE_OMIT_VIEW
 cmd ::= CREATE(X) temp(T) VIEW nm(Y) dbnm(Z) AS select(S). {
   sqlite3CreateView(pParse, &X, &Y, &Z, S, T);
 }
 cmd ::= DROP VIEW fullname(X). {
   sqlite3DropTable(pParse, X, 1);
 }
+%endif // SQLITE_OMIT_VIEW
 
 //////////////////////// The SELECT statement /////////////////////////////////
 //
@@ -305,6 +313,7 @@ cmd ::= select(X).  {
 %destructor oneselect {sqlite3SelectDelete($$);}
 
 select(A) ::= oneselect(X).                      {A = X;}
+%ifndef SQLITE_OMIT_COMPOUND_SELECT
 select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
   if( Z ){
     Z->op = Y;
@@ -317,6 +326,7 @@ multiselect_op(A) ::= UNION(OP).      {A = @OP;}
 multiselect_op(A) ::= UNION ALL.      {A = TK_ALL;}
 multiselect_op(A) ::= INTERSECT(OP).  {A = @OP;}
 multiselect_op(A) ::= EXCEPT(OP).     {A = @OP;}
+%endif // SQLITE_OMIT_COMPOUND_SELECT
 oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
   A = sqlite3SelectNew(W,X,Y,P,Q,Z,D,L.limit,L.offset);
@@ -793,6 +803,8 @@ plus_opt ::= .
 
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
+%ifndef SQLITE_OMIT_TRIGGER
+
 cmd ::= CREATE trigger_decl(A) BEGIN trigger_cmd_list(S) END(Z). {
   Token all;
   all.z = A.z;
@@ -869,6 +881,8 @@ expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
   A->iColumn = T;
   sqlite3ExprSpan(A, &X, &Y);
 }
+%endif // !SQLITE_OMIT_TRIGGER
+
 %type raisetype {int}
 raisetype(A) ::= ROLLBACK.  {A = OE_Rollback;}
 raisetype(A) ::= ABORT.     {A = OE_Abort;}
@@ -876,9 +890,11 @@ raisetype(A) ::= FAIL.      {A = OE_Fail;}
 
 
 ////////////////////////  DROP TRIGGER statement //////////////////////////////
+%ifndef SQLITE_OMIT_TRIGGER
 cmd ::= DROP TRIGGER fullname(X). {
   sqlite3DropTrigger(pParse,X);
 }
+%endif // !SQLITE_OMIT_TRIGGER
 
 //////////////////////// ATTACH DATABASE file AS name /////////////////////////
 cmd ::= ATTACH database_kw_opt ids(F) AS nm(D) key_opt(K). {

@@ -11,6 +11,10 @@
 BEGIN {
   print "/* Automatically generated.  Do not edit */"
   print "/* See the mkopcodec.h script for details. */"
+  printf "#if !defined(SQLITE_OMIT_EXPLAIN)"
+  printf    " || !defined(NDEBUG)"
+  printf    " || defined(VDBE_PROFILE)"
+  print     " || defined(SQLITE_DEBUG)"
   print "const char *const sqlite3OpcodeNames[] = { \"?\","
 }
 /^#define OP_/ {
@@ -19,4 +23,5 @@ BEGIN {
 }
 END {
   print "};"
+  print "#endif"
 }

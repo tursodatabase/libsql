@@ -177,9 +177,12 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     db->activeVdbeCnt++;
     p->pc = 0;
   }
+#ifndef SQLITE_OMIT_EXPLAIN
   if( p->explain ){
     rc = sqlite3VdbeList(p);
-  }else{
+  }else
+#endif /* SQLITE_OMIT_EXPLAIN */
+  {
     rc = sqlite3VdbeExec(p);
   }
 

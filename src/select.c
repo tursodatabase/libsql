@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.212 2004/10/06 15:41:17 drh Exp $
+** $Id: select.c,v 1.213 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1282,6 +1282,7 @@ static int openTempIndex(Parse *pParse, Select *p, int iTab, int keyAsData){
   return addr;
 }
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** Add the address "addr" to the set of all OpenTemp opcode addresses
 ** that are being accumulated in p->ppOpenTemp.
@@ -1294,7 +1295,9 @@ static int multiSelectOpenTempAddr(Select *p, int addr){
   pList->a[pList->nId-1].idx = addr;
   return SQLITE_OK;
 }
+#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** Return the appropriate collating sequence for the iCol-th column of
 ** the result set for the compound-select statement "p".  Return NULL if
@@ -1315,7 +1318,9 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
   }
   return pRet;
 }
+#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** This routine is called to process a query that is really the union
 ** or intersection of two or more separate queries.
@@ -1704,7 +1709,9 @@ multi_select_end:
   p->ppOpenTemp = 0;
   return rc;
 }
+#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
+#ifndef SQLITE_OMIT_VIEW
 /*
 ** Scan through the expression pExpr.  Replace every reference to
 ** a column in table number iTable with a copy of the iColumn-th
@@ -1757,7 +1764,9 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList){
     substExpr(pList->a[i].pExpr, iTable, pEList);
   }
 }
+#endif /* !defined(SQLITE_OMIT_VIEW) */
 
+#ifndef SQLITE_OMIT_VIEW
 /*
 ** This routine attempts to flatten subqueries in order to speed
 ** execution.  It returns 1 if it makes changes and 0 if no flattening
@@ -2009,6 +2018,7 @@ static int flattenSubquery(
   sqlite3SelectDelete(pSub);
   return 1;
 }
+#endif /* SQLITE_OMIT_VIEW */
 
 /*
 ** Analyze the SELECT statement passed in as an argument to see if it
@@ -2262,11 +2272,13 @@ int sqlite3Select(
   if( sqlite3_malloc_failed || pParse->nErr || p==0 ) return 1;
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* If there is are a sequence of queries, do the earlier ones first.
   */
   if( p->pPrior ){
     return multiSelect(pParse, p, eDest, iParm, aff);
   }
+#endif
 
   /* Make local copies of the parameters for this query.
   */
@@ -2400,11 +2412,13 @@ int sqlite3Select(
   /* Check to see if this is a subquery that can be "flattened" into its parent.
   ** If flattening is a possiblity, do so and return immediately.  
   */
+#ifndef SQLITE_OMIT_VIEW
   if( pParent && pParentAgg &&
       flattenSubquery(pParse, pParent, parentTab, *pParentAgg, isAgg) ){
     if( isAgg ) *pParentAgg = 1;
     return rc;
   }
+#endif
 
   /* If there is an ORDER BY clause, resolve any collation sequences
   ** names that have been explicitly specified.

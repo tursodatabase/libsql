@@ -12,6 +12,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 # Ticket #844
 #

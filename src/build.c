@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.257 2004/10/06 15:41:16 drh Exp $
+** $Id: build.c,v 1.258 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1400,6 +1400,7 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   }
 }
 
+#ifndef SQLITE_OMIT_VIEW
 /*
 ** The parser calls this routine in order to create a new VIEW
 */
@@ -1461,7 +1462,9 @@ void sqlite3CreateView(
   sqlite3EndTable(pParse, &sEnd, 0);
   return;
 }
+#endif /* SQLITE_OMIT_VIEW */
 
+#ifndef SQLITE_OMIT_VIEW
 /*
 ** The Table structure pTable is really a VIEW.  Fill in the names of
 ** the columns of the view in the pTable structure.  Return the number
@@ -1530,7 +1533,9 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   pSel->pEList = pEList;
   return nErr;  
 }
+#endif /* SQLITE_OMIT_VIEW */
 
+#ifndef SQLITE_OMIT_VIEW
 /*
 ** Clear the column names from every VIEW in database idx.
 */
@@ -1545,6 +1550,9 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
   }
   DbClearProperty(db, idx, DB_UnresetViews);
 }
+#else
+# define sqliteViewResetAll(A,B)
+#endif /* SQLITE_OMIT_VIEW */
 
 /*
 ** This routine is called to do the work of a DROP TABLE statement.
@@ -1693,12 +1701,13 @@ void sqlite3CreateForeignKey(
   ExprList *pToCol,    /* Columns in the other table */
   int flags            /* Conflict resolution algorithms. */
 ){
+  FKey *pFKey = 0;
+#ifndef SQLITE_OMIT_FOREIGN_KEY
   Table *p = pParse->pNewTable;
   int nByte;
   int i;
   int nCol;
   char *z;
-  FKey *pFKey = 0;
 
   assert( pTo!=0 );
   if( p==0 || pParse->nErr ) goto fk_end;
@@ -1779,6 +1788,7 @@ void sqlite3CreateForeignKey(
 
 fk_end:
   sqliteFree(pFKey);
+#endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
   sqlite3ExprListDelete(pFromCol);
   sqlite3ExprListDelete(pToCol);
 }
@@ -1791,10 +1801,12 @@ fk_end:
 ** accordingly.
 */
 void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
+#ifndef SQLITE_OMIT_FOREIGN_KEY
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 || (pFKey = pTab->pFKey)==0 ) return;
   pFKey->isDeferred = isDeferred;
+#endif
 }
 
 /*

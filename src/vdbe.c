@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.419 2004/10/19 16:40:59 drh Exp $
+** $Id: vdbe.c,v 1.420 2004/10/31 02:22:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3735,6 +3735,7 @@ case OP_DropTrigger: {
 }
 
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /* Opcode: IntegrityCk * P2 *
 **
 ** Do an analysis of the currently open database.  Push onto the
@@ -3786,6 +3787,7 @@ case OP_IntegrityCk: {
   sqliteFree(aRoot);
   break;
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /* Opcode: ListWrite * * *
 **

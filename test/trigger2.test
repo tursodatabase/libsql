@@ -49,6 +49,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 # 1.
 set ii 0

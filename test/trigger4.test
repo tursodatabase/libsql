@@ -12,6 +12,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 do_test trigger4-1.1 {
   execsql {

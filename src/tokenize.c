@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.92 2004/10/23 05:10:18 drh Exp $
+** $Id: tokenize.c,v 1.93 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -287,6 +287,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     case '5': case '6': case '7': case '8': case '9': {
       *tokenType = TK_INTEGER;
       for(i=1; isdigit(z[i]); i++){}
+#ifndef SQLITE_OMIT_FLOATING_POINT
       if( z[i]=='.' && isdigit(z[i+1]) ){
         i += 2;
         while( isdigit(z[i]) ){ i++; }
@@ -301,6 +302,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
         while( isdigit(z[i]) ){ i++; }
         *tokenType = TK_FLOAT;
       }
+#endif
       return i;
     }
     case '[': {
@@ -318,6 +320,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       *tokenType = i>1 ? TK_VARIABLE : TK_ILLEGAL;
       return i;
     }
+#ifndef SQLITE_OMIT_TCL_VARIABLE
     case '$': {
       *tokenType = TK_VARIABLE;
       if( z[1]=='{' ){
@@ -354,7 +357,9 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
         if( n==0 ) *tokenType = TK_ILLEGAL;
       }
       return i;
-    } 
+    }
+#endif
+#ifndef SQLITE_OMIT_BLOB_LITERAL
     case 'x': case 'X': {
       if( (c=z[1])=='\'' || c=='"' ){
         int delim = c;
@@ -374,6 +379,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       }
       /* Otherwise fall through to the next case */
     }
+#endif
     default: {
       if( !IdChar(*z) ){
         break;
@@ -502,14 +508,14 @@ abort_parse:
 ** Token types used by the sqlite3_complete() routine.  See the header
 ** comments on that procedure for additional information.
 */
-#define tkEXPLAIN 0
-#define tkCREATE  1
-#define tkTEMP    2
-#define tkTRIGGER 3
-#define tkEND     4
-#define tkSEMI    5
-#define tkWS      6
-#define tkOTHER   7
+#define tkSEMI    0
+#define tkWS      1
+#define tkOTHER   2
+#define tkEXPLAIN 3
+#define tkCREATE  4
+#define tkTEMP    5
+#define tkTRIGGER 6
+#define tkEND     7
 
 /*
 ** Return TRUE if the given SQL string ends in a semicolon.
@@ -524,15 +530,15 @@ abort_parse:
 **                 returns 1 if it ends in the START state and 0 if it ends
 **                 in any other state.
 **
-**   (1) EXPLAIN   The keyword EXPLAIN has been seen at the beginning of 
+**   (1) NORMAL    We are in the middle of statement which ends with a single
+**                 semicolon.
+**
+**   (2) EXPLAIN   The keyword EXPLAIN has been seen at the beginning of 
 **                 a statement.
 **
-**   (2) CREATE    The keyword CREATE has been seen at the beginning of a
+**   (3) CREATE    The keyword CREATE has been seen at the beginning of a
 **                 statement, possibly preceeded by EXPLAIN and/or followed by
 **                 TEMP or TEMPORARY
-**
-**   (3) NORMAL    We are in the middle of statement which ends with a single
-**                 semicolon.
 **
 **   (4) TRIGGER   We are in the middle of a trigger definition that must be
 **                 ended by a semicolon, the keyword END, and another semicolon.
@@ -546,36 +552,51 @@ abort_parse:
 ** Transitions between states above are determined by tokens extracted
 ** from the input.  The following tokens are significant:
 **
-**   (0) tkEXPLAIN   The "explain" keyword.
-**   (1) tkCREATE    The "create" keyword.
-**   (2) tkTEMP      The "temp" or "temporary" keyword.
-**   (3) tkTRIGGER   The "trigger" keyword.
-**   (4) tkEND       The "end" keyword.
-**   (5) tkSEMI      A semicolon.
-**   (6) tkWS        Whitespace
-**   (7) tkOTHER     Any other SQL token.
+**   (0) tkSEMI      A semicolon.
+**   (1) tkWS        Whitespace
+**   (2) tkOTHER     Any other SQL token.
+**   (3) tkEXPLAIN   The "explain" keyword.
+**   (4) tkCREATE    The "create" keyword.
+**   (5) tkTEMP      The "temp" or "temporary" keyword.
+**   (6) tkTRIGGER   The "trigger" keyword.
+**   (7) tkEND       The "end" keyword.
 **
 ** Whitespace never causes a state transition and is always ignored.
+**
+** If we compile with SQLITE_OMIT_TRIGGER, all of the computation needed
+** to recognize the end of a trigger can be omitted.  All we have to do
+** is look for a semicolon that is not part of an string or comment.
 */
 int sqlite3_complete(const char *zSql){
   u8 state = 0;   /* Current state, using numbers defined in header comment */
   u8 token;       /* Value of the next token */
 
-  /* The following matrix defines the transition from one state to another
-  ** according to what token is seen.  trans[state][token] returns the
-  ** next state.
+#ifndef SQLITE_OMIT_TRIGGER
+  /* A complex statement machine used to detect the end of a CREATE TRIGGER
+  ** statement.  This is the normal case.
   */
   static const u8 trans[7][8] = {
                      /* Token:                                                */
-     /* State:       **  EXPLAIN  CREATE  TEMP  TRIGGER  END  SEMI  WS  OTHER */
-     /* 0   START: */ {       1,      2,    3,       3,   3,    0,  0,     3, },
-     /* 1 EXPLAIN: */ {       3,      2,    3,       3,   3,    0,  1,     3, },
-     /* 2  CREATE: */ {       3,      3,    2,       4,   3,    0,  2,     3, },
-     /* 3  NORMAL: */ {       3,      3,    3,       3,   3,    0,  3,     3, },
-     /* 4 TRIGGER: */ {       4,      4,    4,       4,   4,    5,  4,     4, },
-     /* 5    SEMI: */ {       4,      4,    4,       4,   6,    5,  5,     4, },
-     /* 6     END: */ {       4,      4,    4,       4,   4,    0,  6,     4, },
+     /* State:       **  SEMI  WS  OTHER EXPLAIN  CREATE  TEMP  TRIGGER  END  */
+     /* 0   START: */ {    0,  0,     1,      2,      3,    1,       1,   1,  },
+     /* 1  NORMAL: */ {    0,  1,     1,      1,      1,    1,       1,   1,  },
+     /* 2 EXPLAIN: */ {    0,  2,     1,      1,      3,    1,       1,   1,  },
+     /* 3  CREATE: */ {    0,  3,     1,      1,      1,    3,       4,   1,  },
+     /* 4 TRIGGER: */ {    5,  4,     4,      4,      4,    4,       4,   4,  },
+     /* 5    SEMI: */ {    5,  5,     4,      4,      4,    4,       4,   6,  },
+     /* 6     END: */ {    0,  6,     4,      4,      4,    4,       4,   4,  },
   };
+#else
+  /* If triggers are not suppored by this compile then the statement machine
+  ** used to detect the end of a statement is much simplier
+  */
+  static const u8 trans[2][3] = {
+                     /* Token:           */
+     /* State:       **  SEMI  WS  OTHER */
+     /* 0   START: */ {    0,  0,     1, },
+     /* 1  NORMAL: */ {    0,  1,     1, },
+  };
+#endif /* SQLITE_OMIT_TRIGGER */
 
   while( *zSql ){
     switch( *zSql ){
@@ -635,6 +656,9 @@ int sqlite3_complete(const char *zSql){
           /* Keywords and unquoted identifiers */
           int nId;
           for(nId=1; IdChar(zSql[nId]); nId++){}
+#ifdef SQLITE_OMIT_TRIGGER
+          token = tkOTHER;
+#else
           switch( *zSql ){
             case 'c': case 'C': {
               if( nId==6 && sqlite3StrNICmp(zSql, "create", 6)==0 ){
@@ -659,9 +683,13 @@ int sqlite3_complete(const char *zSql){
             case 'e':  case 'E': {
               if( nId==3 && sqlite3StrNICmp(zSql, "end", 3)==0 ){
                 token = tkEND;
-              }else if( nId==7 && sqlite3StrNICmp(zSql, "explain", 7)==0 ){
+              }else
+#ifndef SQLITE_OMIT_EXPLAIN
+              if( nId==7 && sqlite3StrNICmp(zSql, "explain", 7)==0 ){
                 token = tkEXPLAIN;
-              }else{
+              }else
+#endif
+              {
                 token = tkOTHER;
               }
               break;
@@ -671,6 +699,7 @@ int sqlite3_complete(const char *zSql){
               break;
             }
           }
+#endif /* SQLITE_OMIT_TRIGGER */
           zSql += nId-1;
         }else{
           /* Operators and special symbols */
@@ -685,6 +714,7 @@ int sqlite3_complete(const char *zSql){
   return state==0;
 }
 
+#ifndef SQLITE_OMIT_UTF16
 /*
 ** This routine is the same as the sqlite3_complete() routine described
 ** above, except that the parameter is required to be UTF-16 encoded, not
@@ -704,3 +734,4 @@ int sqlite3_complete16(const void *zSql){
   sqlite3ValueFree(pVal);
   return rc;
 }
+#endif /* SQLITE_OMIT_UTF16 */

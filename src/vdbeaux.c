@@ -375,6 +375,8 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   return &p->aOp[addr];
 }
 
+#if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
+     || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
 ** Compute a string that describes the P3 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
@@ -444,6 +446,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
   }
   return zP3;
 }
+#endif
 
 
 #if !defined(NDEBUG) || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
@@ -473,6 +476,7 @@ static void releaseMemArray(Mem *p, int N){
   }
 }
 
+#ifndef SQLITE_OMIT_EXPLAIN
 /*
 ** Give a listing of the program in the virtual machine.
 **
@@ -549,6 +553,7 @@ int sqlite3VdbeList(
   }
   return rc;
 }
+#endif /* SQLITE_OMIT_EXPLAIN */
 
 /*
 ** Print the SQL that was used to generate a VDBE program.

@@ -12,6 +12,7 @@
 */
 #include "sqliteInt.h"
 
+#ifndef SQLITE_OMIT_TRIGGER
 /*
 ** Delete a linked list of TriggerStep structures.
 */
@@ -802,3 +803,4 @@ int sqlite3CodeRowTrigger(
   }
   return 0;
 }
+#endif /* !defined(SQLITE_OMIT_TRIGGER) */

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.26 2004/08/18 15:58:24 drh Exp $
+# $Id: attach.test,v 1.27 2004/10/31 02:22:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -205,6 +205,7 @@ do_test attach-1.29 {
   db_list db
 } {0 main 1 temp}
 
+ifcapable {trigger} {  # Only do the following tests if triggers are enabled
 do_test attach-2.1 {
   execsql {
     CREATE TABLE tx(x1,x2,y1,y2);
@@ -292,6 +293,7 @@ do_test attach-2.16 {
     SELECT type, name, tbl_name FROM db2.sqlite_master;
   }
 } {table t2 t2 table tx tx trigger r1 t2 index i2 t2}
+} ;# End of ifcapable {trigger}
 
 do_test attach-3.1 {
   db close
@@ -302,6 +304,24 @@ do_test attach-3.1 {
     SELECT * FROM t1
   }
 } {1 2 3 4}
+
+# If we are testing a version of the code that lacks trigger support,
+# adjust the database contents so that they are the same if triggers
+# had been enabled.
+ifcapable {!trigger} {
+  db2 eval {
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(21, 'x');
+    INSERT INTO t2 VALUES(22, 'y');
+    CREATE TABLE tx(x1,x2,y1,y2);
+    INSERT INTO tx VALUES(1, 11, 'x', 'x');
+    INSERT INTO tx VALUES(2, 12, 'y', 'y');
+    INSERT INTO tx VALUES(11, 21, 'x', 'x');
+    INSERT INTO tx VALUES(12, 22, 'y', 'y');
+    CREATE INDEX i2 ON t2(x);
+  }
+}
+
 do_test attach-3.2 {
   catchsql {
     SELECT * FROM t2
@@ -434,29 +454,31 @@ do_test attach-4.5 {
     SELECT * FROM db2.t3;
   }
 } {1 2 9 10}
-do_test attach-4.6 {
-  execsql {
-    DETACH db2;
-  }
-  execsql {
-    CREATE TABLE t4(x);
-    CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
-      INSERT INTO t4 VALUES('db2.' || NEW.x);
-    END;
-    INSERT INTO t3 VALUES(6,7);
-    SELECT * FROM t4;
-  } db2
-} {db2.6}
-do_test attach-4.7 {
-  execsql {
-    CREATE TABLE t4(y);
-    CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
-      INSERT INTO t4 VALUES('main.' || NEW.a);
-    END;
-    INSERT INTO main.t3 VALUES(11,12);
-    SELECT * FROM main.t4;
-  }
-} {main.11}
+ifcapable {trigger} {
+  do_test attach-4.6 {
+    execsql {
+      DETACH db2;
+    }
+    execsql {
+      CREATE TABLE t4(x);
+      CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
+        INSERT INTO t4 VALUES('db2.' || NEW.x);
+      END;
+      INSERT INTO t3 VALUES(6,7);
+      SELECT * FROM t4;
+    } db2
+  } {db2.6}
+  do_test attach-4.7 {
+    execsql {
+      CREATE TABLE t4(y);
+      CREATE TRIGGER t3r3 AFTER INSERT ON t3 BEGIN
+        INSERT INTO t4 VALUES('main.' || NEW.a);
+      END;
+      INSERT INTO main.t3 VALUES(11,12);
+      SELECT * FROM main.t4;
+    }
+  } {main.11}
+}
 
 # This one is tricky.  On the UNION ALL select, we have to make sure
 # the schema for both main and db2 is valid before starting to execute

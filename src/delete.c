@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.83 2004/10/22 20:29:22 drh Exp $
+** $Id: delete.c,v 1.84 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -104,12 +104,28 @@ void sqlite3DeleteFrom(
   */
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 )  goto delete_from_cleanup;
+
+  /* Figure out if we have any triggers and if the table being
+  ** deleted from is a view
+  */
+#ifndef SQLITE_OMIT_TRIGGER
   before_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
                          TK_DELETE, TK_BEFORE, TK_ROW, 0);
   after_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
                          TK_DELETE, TK_AFTER, TK_ROW, 0);
   row_triggers_exist = before_triggers || after_triggers;
   isView = pTab->pSelect!=0;
+#else
+# define before_triggers 0
+# define after_triggers 0
+# define row_triggers_exist 0
+# define isView 0
+#endif
+#ifdef SQLITE_OMIT_VIEW
+# undef isView
+# define isView 0
+#endif
+
   if( sqlite3IsReadOnly(pParse, pTab, before_triggers) ){
     goto delete_from_cleanup;
   }

@@ -29,8 +29,12 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
-do_test trigger1-1.1.2 {
+do_test trigger1-1.1.1 {
    catchsql {
      CREATE TRIGGER trig UPDATE ON no_such_table BEGIN
        SELECT * from sqlite_master;

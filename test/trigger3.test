@@ -13,6 +13,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 # Test that we can cause ROLLBACK, FAIL and ABORT correctly
 # catchsql { DROP TABLE tbl; }

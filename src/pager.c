@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.168 2004/10/22 16:22:59 drh Exp $
+** @(#) $Id: pager.c,v 1.169 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -308,6 +308,21 @@ static const unsigned char aJournalMagic[] = {
 */
 #define JOURNAL_HDR_SZ(pPager) (pPager->sectorSize)
 
+/*
+** The macro MEMDB is true if we are dealing with an in-memory database.
+** We do this as a macro so that if the SQLITE_OMIT_MEMORYDB macro is set,
+** the value of MEMDB will be a constant and the compiler will optimize
+** out code that would never execute.
+*/
+#ifdef SQLITE_OMIT_MEMORYDB
+# define MEMDB 0
+#else
+# define MEMDB pPager->memDb
+#endif
+
+/*
+** The default size of a disk sector
+*/
 #define PAGER_SECTOR_SIZE 512
 
 /*
@@ -779,7 +794,7 @@ static void pager_reset(Pager *pPager){
 static int pager_unwritelock(Pager *pPager){
   PgHdr *pPg;
   int rc;
-  assert( !pPager->memDb );
+  assert( !MEMDB );
   if( pPager->state<PAGER_RESERVED ){
     return SQLITE_OK;
   }
@@ -1454,11 +1469,14 @@ int sqlite3pager_open(
     return SQLITE_NOMEM;
   }
   if( zFilename && zFilename[0] ){
+#ifndef SQLITE_OMIT_MEMORYDB
     if( strcmp(zFilename,":memory:")==0 ){
       memDb = 1;
       zFullPathname = sqliteStrDup("");
       rc = SQLITE_OK;
-    }else{
+    }else
+#endif
+    {
       zFullPathname = sqlite3OsFullPathname(zFilename);
       if( zFullPathname ){
         rc = sqlite3OsOpenReadWrite(zFullPathname, &fd, &readOnly);
@@ -1581,7 +1599,7 @@ void sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
 */
 void sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
   memset(pDest, 0, N);
-  if( pPager->memDb==0 ){
+  if( MEMDB==0 ){
     sqlite3OsSeek(&pPager->fd, 0);
     sqlite3OsRead(&pPager->fd, pDest, N);
   }
@@ -1602,7 +1620,7 @@ int sqlite3pager_pagecount(Pager *pPager){
     return 0;
   }
   n /= pPager->pageSize;
-  if( !pPager->memDb && n==PENDING_BYTE/pPager->pageSize ){
+  if( !MEMDB && n==PENDING_BYTE/pPager->pageSize ){
     n++;
   }
   if( pPager->state!=PAGER_UNLOCK ){
@@ -1699,7 +1717,7 @@ int sqlite3pager_truncate(Pager *pPager, Pgno nPage){
   if( nPage>=(unsigned)pPager->dbSize ){
     return SQLITE_OK;
   }
-  if( pPager->memDb ){
+  if( MEMDB ){
     pPager->dbSize = nPage;
     memoryTruncate(pPager);
     return SQLITE_OK;
@@ -1731,14 +1749,14 @@ int sqlite3pager_close(Pager *pPager){
     case PAGER_SYNCED: 
     case PAGER_EXCLUSIVE: {
       sqlite3pager_rollback(pPager);
-      if( !pPager->memDb ){
+      if( !MEMDB ){
         sqlite3OsUnlock(&pPager->fd, NO_LOCK);
       }
       assert( pPager->journalOpen==0 );
       break;
     }
     case PAGER_SHARED: {
-      if( !pPager->memDb ){
+      if( !MEMDB ){
         sqlite3OsUnlock(&pPager->fd, NO_LOCK);
       }
       break;
@@ -1750,7 +1768,7 @@ int sqlite3pager_close(Pager *pPager){
   }
   for(pPg=pPager->pAll; pPg; pPg=pNext){
 #ifndef NDEBUG
-    if( pPager->memDb ){
+    if( MEMDB ){
       PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
       assert( !pPg->alwaysRollback );
       assert( !pHist->pOrig );
@@ -2066,7 +2084,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   /* If this is the first page accessed, then get a SHARED lock
   ** on the database file.
   */
-  if( pPager->nRef==0 && !pPager->memDb ){
+  if( pPager->nRef==0 && !MEMDB ){
     rc = pager_wait_on_lock(pPager, SHARED_LOCK);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -2132,7 +2150,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
   }else{
     /* Search for page in cache */
     pPg = pager_lookup(pPager, pgno);
-    if( pPager->memDb && pPager->state==PAGER_UNLOCK ){
+    if( MEMDB && pPager->state==PAGER_UNLOCK ){
       pPager->state = PAGER_SHARED;
     }
   }
@@ -2140,20 +2158,20 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* The requested page is not in the page cache. */
     int h;
     pPager->nMiss++;
-    if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || pPager->memDb ){
+    if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ){
       /* Create a new page */
       pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->psAligned
                               + sizeof(u32) + pPager->nExtra
-                              + pPager->memDb*sizeof(PgHistory) );
+                              + MEMDB*sizeof(PgHistory) );
       if( pPg==0 ){
-        if( !pPager->memDb ){
+        if( !MEMDB ){
           pager_unwritelock(pPager);
         }
         pPager->errMask |= PAGER_ERR_MEM;
         return SQLITE_NOMEM;
       }
       memset(pPg, 0, sizeof(*pPg));
-      if( pPager->memDb ){
+      if( MEMDB ){
         memset(PGHDR_TO_HIST(pPg, pPager), 0, sizeof(PgHistory));
       }
       pPg->pPager = pPager;
@@ -2266,7 +2284,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
       int rc;
-      assert( pPager->memDb==0 );
+      assert( MEMDB==0 );
       sqlite3OsSeek(&pPager->fd, (pgno-1)*(i64)pPager->pageSize);
       rc = sqlite3OsRead(&pPager->fd, PGHDR_TO_DATA(pPg), pPager->pageSize);
       TRACE3("FETCH %d page %d\n", pPager->fd.h, pPg->pgno);
@@ -2360,7 +2378,7 @@ int sqlite3pager_unref(void *pData){
     */
     pPager->nRef--;
     assert( pPager->nRef>=0 );
-    if( pPager->nRef==0 && !pPager->memDb ){
+    if( pPager->nRef==0 && !MEMDB ){
       pager_reset(pPager);
     }
   }
@@ -2376,7 +2394,7 @@ int sqlite3pager_unref(void *pData){
 */
 static int pager_open_journal(Pager *pPager){
   int rc;
-  assert( !pPager->memDb );
+  assert( !MEMDB );
   assert( pPager->state>=PAGER_RESERVED );
   assert( pPager->journalOpen==0 );
   assert( pPager->useJournal );
@@ -2461,7 +2479,7 @@ int sqlite3pager_begin(void *pData, int exFlag){
   assert( pPager->state!=PAGER_UNLOCK );
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->aInJournal==0 );
-    if( pPager->memDb ){
+    if( MEMDB ){
       pPager->state = PAGER_EXCLUSIVE;
       pPager->origDbSize = pPager->dbSize;
     }else{
@@ -2555,11 +2573,11 @@ int sqlite3pager_write(void *pData){
   ** EXCLUSIVE lock on the main database file.  Write the current page to
   ** the transaction journal if it is not there already.
   */
-  if( !pPg->inJournal && (pPager->useJournal || pPager->memDb) ){
+  if( !pPg->inJournal && (pPager->useJournal || MEMDB) ){
     if( (int)pPg->pgno <= pPager->origDbSize ){
       int szPg;
       u32 saved;
-      if( pPager->memDb ){
+      if( MEMDB ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
         TRACE3("JOURNAL %d page %d\n", pPager->fd.h, pPg->pgno);
         assert( pHist->pOrig==0 );
@@ -2613,7 +2631,7 @@ int sqlite3pager_write(void *pData){
   */
   if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
-    if( pPager->memDb ){
+    if( MEMDB ){
       PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
       assert( pHist->pStmt==0 );
       pHist->pStmt = sqliteMallocRaw( pPager->pageSize );
@@ -2643,7 +2661,7 @@ int sqlite3pager_write(void *pData){
   */
   if( pPager->dbSize<(int)pPg->pgno ){
     pPager->dbSize = pPg->pgno;
-    if( !pPager->memDb && pPager->dbSize==PENDING_BYTE/pPager->pageSize ){
+    if( !MEMDB && pPager->dbSize==PENDING_BYTE/pPager->pageSize ){
       pPager->dbSize++;
     }
   }
@@ -2706,7 +2724,7 @@ int sqlite3pager_overwrite(Pager *pPager, Pgno pgno, void *pData){
 void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
 
-  if( pPager->memDb ) return;
+  if( MEMDB ) return;
 
   pPg = pager_lookup(pPager, pgno);
   pPg->alwaysRollback = 1;
@@ -2738,7 +2756,7 @@ void sqlite3pager_dont_rollback(void *pData){
   Pager *pPager = pPg->pPager;
 
   if( pPager->state!=PAGER_EXCLUSIVE || pPager->journalOpen==0 ) return;
-  if( pPg->alwaysRollback || pPager->alwaysRollback || pPager->memDb ) return;
+  if( pPg->alwaysRollback || pPager->alwaysRollback || MEMDB ) return;
   if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
     assert( pPager->aInJournal!=0 );
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
@@ -2794,7 +2812,7 @@ int sqlite3pager_commit(Pager *pPager){
     return SQLITE_ERROR;
   }
   TRACE2("COMMIT %d\n", pPager->fd.h);
-  if( pPager->memDb ){
+  if( MEMDB ){
     pPg = pager_get_all_dirty_pages(pPager);
     while( pPg ){
       clearHistory(PGHDR_TO_HIST(pPg, pPager));
@@ -2855,7 +2873,7 @@ commit_abort:
 int sqlite3pager_rollback(Pager *pPager){
   int rc;
   TRACE2("ROLLBACK %d\n", pPager->fd.h);
-  if( pPager->memDb ){
+  if( MEMDB ){
     PgHdr *p;
     for(p=pPager->pAll; p; p=p->pNextAll){
       PgHistory *pHist;
@@ -2962,7 +2980,7 @@ int sqlite3pager_stmt_begin(Pager *pPager){
   assert( !pPager->stmtInUse );
   assert( pPager->dbSize>=0 );
   TRACE2("STMT-BEGIN %d\n", pPager->fd.h);
-  if( pPager->memDb ){
+  if( MEMDB ){
     pPager->stmtInUse = 1;
     pPager->stmtSize = pPager->dbSize;
     return SQLITE_OK;
@@ -3010,7 +3028,7 @@ int sqlite3pager_stmt_commit(Pager *pPager){
   if( pPager->stmtInUse ){
     PgHdr *pPg, *pNext;
     TRACE2("STMT-COMMIT %d\n", pPager->fd.h);
-    if( !pPager->memDb ){
+    if( !MEMDB ){
       sqlite3OsSeek(&pPager->stfd, 0);
       /* sqlite3OsTruncate(&pPager->stfd, 0); */
       sqliteFree( pPager->aInStmt );
@@ -3021,7 +3039,7 @@ int sqlite3pager_stmt_commit(Pager *pPager){
       assert( pPg->inStmt );
       pPg->inStmt = 0;
       pPg->pPrevStmt = pPg->pNextStmt = 0;
-      if( pPager->memDb ){
+      if( MEMDB ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
         sqliteFree(pHist->pStmt);
         pHist->pStmt = 0;
@@ -3042,7 +3060,7 @@ int sqlite3pager_stmt_rollback(Pager *pPager){
   int rc;
   if( pPager->stmtInUse ){
     TRACE2("STMT-ROLLBACK %d\n", pPager->fd.h);
-    if( pPager->memDb ){
+    if( MEMDB ){
       PgHdr *pPg;
       for(pPg=pPager->pStmt; pPg; pPg=pPg->pNextStmt){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
@@ -3148,7 +3166,7 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster){
   /* If this is an in-memory db, or no pages have been written to, or this
   ** function has already been called, it is a no-op.
   */
-  if( pPager->state!=PAGER_SYNCED && !pPager->memDb && pPager->dirtyCache ){
+  if( pPager->state!=PAGER_SYNCED && !MEMDB && pPager->dirtyCache ){
     PgHdr *pPg;
     assert( pPager->journalOpen );
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.119 2004/10/05 02:41:42 drh Exp $
+** $Id: insert.c,v 1.120 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -213,16 +213,31 @@ void sqlite3Insert(
     goto insert_cleanup;
   }
 
+  /* Figure out if we have any triggers and if the table being
+  ** inserted into is a view
+  */
+#ifndef SQLITE_OMIT_TRIGGER
+  before_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
+                         TK_INSERT, TK_BEFORE, TK_ROW, 0);
+  after_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
+                         TK_INSERT, TK_AFTER, TK_ROW, 0);
+  row_triggers_exist = before_triggers || after_triggers;
+  isView = pTab->pSelect!=0;
+#else
+# define before_triggers 0
+# define after_triggers 0
+# define row_triggers_exist 0
+# define isView 0
+#endif
+#ifdef SQLITE_OMIT_VIEW
+# undef isView
+# define isView 0
+#endif
+
   /* Ensure that:
   *  (a) the table is not read-only, 
   *  (b) that if it is a view then ON INSERT triggers exist
   */
-  before_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, TK_INSERT, 
-                                       TK_BEFORE, TK_ROW, 0);
-  after_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, TK_INSERT,
-                                       TK_AFTER, TK_ROW, 0);
-  row_triggers_exist = before_triggers || after_triggers;
-  isView = pTab->pSelect!=0;
   if( sqlite3IsReadOnly(pParse, pTab, before_triggers) ){
     goto insert_cleanup;
   }

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.166 2004/10/04 13:19:24 drh Exp $
+** $Id: expr.c,v 1.167 2004/10/31 02:22:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -700,6 +700,7 @@ static int lookupName(
     }
   }
 
+#ifndef SQLITE_OMIT_TRIGGER
   /* If we have not already resolved the name, then maybe 
   ** it is a new.* or old.* trigger argument reference
   */
@@ -733,6 +734,7 @@ static int lookupName(
       }
     }
   }
+#endif /* !defined(SQLITE_OMIT_TRIGGER) */
 
   /*
   ** Perhaps the name is a reference to the ROWID

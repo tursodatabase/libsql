@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.193 2004/10/22 16:22:58 drh Exp $
+** $Id: btree.c,v 1.194 2004/10/31 02:22:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4067,6 +4067,7 @@ struct IntegrityCk {
   char *zErrMsg; /* An error message.  NULL of no errors seen. */
 };
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** Append a message to the error message string.
 */
@@ -4092,7 +4093,9 @@ static void checkAppendMsg(
   }
   sqliteFree(zMsg2);
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** Add 1 to the reference count for page iPage.  If this is the second
 ** reference to the page, add an error message to pCheck->zErrMsg.
@@ -4113,7 +4116,9 @@ static int checkRef(IntegrityCk *pCheck, int iPage, char *zContext){
   }
   return  (pCheck->anRef[iPage]++)>1;
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** Check the integrity of the freelist or of an overflow page list.
 ** Verify that the number of pages on the list is N.
@@ -4158,7 +4163,9 @@ static void checkList(
     sqlite3pager_unref(pOvfl);
   }
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** Do various sanity checks on a single page of a tree.  Return
 ** the tree depth.  Root pages return 0.  Parents of root pages
@@ -4296,7 +4303,9 @@ static int checkTreePage(
   releasePage(pPage);
   return depth+1;
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
+#ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
 ** This routine does a complete check of the given BTree file.  aRoot[] is
 ** an array of pages numbers were each page number is the root page of
@@ -4366,6 +4375,7 @@ char *sqlite3BtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   sqliteFree(sCheck.anRef);
   return sCheck.zErrMsg;
 }
+#endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /*
 ** Return the full pathname of the underlying database file.
@@ -4393,6 +4403,7 @@ const char *sqlite3BtreeGetJournalname(Btree *pBt){
   return sqlite3pager_journalname(pBt->pPager);
 }
 
+#ifndef SQLITE_OMIT_VACUUM
 /*
 ** Copy the complete content of pBtFrom into pBtTo.  A transaction
 ** must be active for both files.
@@ -4434,6 +4445,7 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   }
   return rc;  
 }
+#endif /* SQLITE_OMIT_VACUUM */
 
 /*
 ** Return non-zero if a transaction is active.
