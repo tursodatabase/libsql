@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.11 2003/12/06 21:43:56 drh Exp $
+** $Id: auth.c,v 1.12 2004/02/22 18:40:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,12 +85,9 @@ int sqlite_set_authorizer(
 ** user-supplied authorization function returned an illegal value.
 */
 static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
-  char zBuf[20];
-  sprintf(zBuf, "(%d)", rc);
-  sqliteSetString(&pParse->zErrMsg, "illegal return value ", zBuf,
-    " from the authorization function - should be SQLITE_OK, "
-    "SQLITE_IGNORE, or SQLITE_DENY", (char*)0);
-  pParse->nErr++;
+  sqliteErrorMsg(pParse, "illegal return value (%d) from the "
+    "authorization function - should be SQLITE_OK, SQLITE_IGNORE, "
+    "or SQLITE_DENY", rc);
   pParse->rc = SQLITE_MISUSE;
 }
 
@@ -150,13 +147,11 @@ void sqliteAuthRead(
     pExpr->op = TK_NULL;
   }else if( rc==SQLITE_DENY ){
     if( db->nDb>2 || pExpr->iDb!=0 ){
-      sqliteSetString(&pParse->zErrMsg,"access to ", zDBase, ".",
-          pTab->zName, ".", zCol, " is prohibited", (char*)0);
+      sqliteErrorMsg(pParse, "access to %s.%s.%s is prohibited", 
+         zDBase, pTab->zName, zCol);
     }else{
-      sqliteSetString(&pParse->zErrMsg,"access to ", pTab->zName, ".",
-                      zCol, " is prohibited", (char*)0);
+      sqliteErrorMsg(pParse, "access to %s.%s is prohibited", pTab->zName,zCol);
     }
-    pParse->nErr++;
     pParse->rc = SQLITE_AUTH;
   }else if( rc!=SQLITE_OK ){
     sqliteAuthBadReturnCode(pParse, rc);
@@ -184,9 +179,8 @@ int sqliteAuthCheck(
   }
   rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext);
   if( rc==SQLITE_DENY ){
-    sqliteSetString(&pParse->zErrMsg, "not authorized", (char*)0);
+    sqliteErrorMsg(pParse, "not authorized");
     pParse->rc = SQLITE_AUTH;
-    pParse->nErr++;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
     rc = SQLITE_DENY;
     sqliteAuthBadReturnCode(pParse, rc);
