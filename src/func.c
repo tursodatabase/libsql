@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.25 2003/05/13 01:52:32 drh Exp $
+** $Id: func.c,v 1.26 2003/06/28 16:20:23 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -290,7 +290,7 @@ static void soundexFunc(sqlite_func *context, int argc, const char **argv){
     zResult[j] = 0;
     sqlite_set_result_string(context, zResult, 4);
   }else{
-    sqlite_set_result_string(context, zResult, "?000", 4);
+    sqlite_set_result_string(context, "?000", 4);
   }
 }
 #endif

@@ -107,7 +107,7 @@ static unsigned int elapse;
 **       int fd1 = open("./file1", O_RDWR|O_CREAT, 0644);
 **       int fd2 = open("./file2", O_RDWR|O_CREAT, 0644);
 **
-** Suppose ./file1 and ./file2 are really be the same file (because
+** Suppose ./file1 and ./file2 are really the same file (because
 ** one is a hard or symbolic link to the other) then if you set
 ** an exclusive lock on fd1, then try to get an exclusive lock
 ** on fd2, it works.  I would have expected the second lock to
