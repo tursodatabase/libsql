@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 8} {
+<li>Added lots of new test cases</li>
+<li>Fix a few bugs discovered while adding test cases</li>
+<li>Begin adding lots of new documentation</li>
+}
+
 chng {2000 June 6} {
 <li>Added outer join operators: <B>UNION</b>, <b>UNION ALL</B>,
 <b>INTERSECT</b>, and <b>EXCEPT</b></li>
