@@ -1,5 +1,5 @@
-C Use\sthe\sdatabase\sname\ssupplied\sto\stable_info()\sand\srelated\spragmas.\s(CVS\s2001)
-D 2004-10-05T15:42:53
+C Rearrange\smemory\sallocation\sin\ssqlite3VdbeMakeReady\sto\stry\sto\swork\saround\nsome\sbyte-alignment\sproblems\son\sSparc.\s(CVS\s2002)
+D 2004-10-05T17:37:36
 F Makefile.in 78ddc9fca09ab6e3b75a79ecf8d490e34cd0519c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -79,7 +79,7 @@ F src/vdbe.c f7ebf1a20a5fdca27e80cb96e06e988da2426379
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 6017100adff362b8dfa37a69e3f1431f084bfa5b
 F src/vdbeapi.c 81ab9e84c55f5762f552904e6e5d309269b02017
-F src/vdbeaux.c a43a2989eeb3a478b31dba2fc28578bbb2d6366e
+F src/vdbeaux.c edf87d360ed8af02a4d197d1c3f0d7a1d8d4d6ea
 F src/vdbemem.c ef9ac7d32acfe4bce5c5b408b1294c8d9e0cdb56
 F src/where.c 6e637a6b3e61fe3104adc4e5caa4738bf6570daa
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
@@ -250,7 +250,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 81ff8107ad63113782cf5a9ba7a512496114ba08
-R ff0efd5a5f898106b48c51aa9ee32ff8
+P 0415af325739fd4e0bd4761c889719355a1ec4ff
+R e89157b4e00ba8f0209c420ebd34655f
 U drh
-Z 077e72fc4e15bfcfe383832545b7afca
+Z 2e9077980f61e3df7d6059849a32a371
