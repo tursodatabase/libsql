@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\sout-of-order\sINSERT.\s(CVS\s336)
-D 2001-12-22T21:48:30
+C Version\s2.2.0\s(CVS\s453)
+D 2001-12-22T22:00:00
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template c88ffcb9c339e718f434d0c7f045bcd7eea125af
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -119,7 +119,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 14392258c5b6385091be8d684e3ea6841941b483
+P a26d0880b20ca5534400a3689d1da31fe6aaa934
 R ca7de0eadaa033a7f4b8aa20c781d7ab
 U drh
-Z 78bd90f0486367269572eb4d5eb1619b
+Z c050baa80c96802f9a0e4328455fadff
