@@ -1,7 +1,7 @@
 #
-# Run this Tcl script to generate the sqlite.html file.
+# Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.79 2004/11/20 08:17:18 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.80 2004/11/21 01:02:01 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -12,15 +12,15 @@ if {[llength $argv]>0} {
 
 header {Query Language Understood by SQLite}
 puts {
-<h2>SQL As Understood By SQLite</h2>
+<h1>SQL As Understood By SQLite</h1>
 
 <p>The SQLite library understands most of the standard SQL
 language.  But it does <a href="omitted.html">omit some features</a>
 while at the same time
 adding a few features of its own.  This document attempts to
 describe precisely what parts of the SQL language SQLite does
-and does not support.  A list of <a href="#keywords">keywords</a> is 
-given at the end.</p>
+and does not support.  A list of <a href="lang_keywords.html">keywords</a> is 
+also provided.</p>
 
 <p>In all of the syntax diagrams that follow, literal text is shown in
 bold blue.  Non-terminal symbols are shown in italic red.  Operators
@@ -122,7 +122,9 @@ proc Section {name label} {
         rename footer_standard footer
       } 
       set ::section_file [open [file join $outputdir lang_$label.html] w]
-      header "SQL command \"$name\""
+      header "Query Language Understood by SQLite: $name"
+      puts "<h1>SQL As Understood By SQLite</h1>"
+      puts "<a href=\"lang.html\">\[Contents\]</a>"
       puts "<h2>$name</h2>"
       return 
     }
@@ -448,7 +450,7 @@ CREATE [TEMP | TEMPORARY] TABLE [<database-name>.] <table-name> AS <select-state
 <typename> ( <number> , <number> )
 } {column-constraint} {
 NOT NULL [ <conflict-clause> ] |
-PRIMARY KEY [<sort-order>] [ <conflict-clause> ] |
+PRIMARY KEY [<sort-order>] [ <conflict-clause> ] [AUTOINCREMENT] |
 UNIQUE [ <conflict-clause> ] |
 CHECK ( <expr> ) [ <conflict-clause> ] |
 DEFAULT <value> |
@@ -492,7 +494,7 @@ YYYY-MM-DD. The format for CURRENT_TIMESTAMP is "YYYY-MM-DD HH:MM:SS".
 </p>
 
 <p>Specifying a PRIMARY KEY normally just creates a UNIQUE index
-on the primary key.  However, if primary key is on a single column
+on the corresponding columns.  However, if primary key is on a single column
 that has datatype INTEGER, then that column is used internally
 as the actual key of the B-Tree for the table.  This means that the column
 may only hold unique integer values.  (Except for this one case,
@@ -503,7 +505,11 @@ then the B-Tree key will be a automatically generated integer.  The
 B-Tree key for a row can always be accessed using one of the
 special names "<b>ROWID</b>", "<b>OID</b>", or "<b>_ROWID_</b>".
 This is true regardless of whether or not there is an INTEGER
-PRIMARY KEY.</p>
+PRIMARY KEY.  An INTEGER PRIMARY KEY column man also include the
+keyword AUTOINCREMENT.  The AUTOINCREMENT keyword modified the way
+that B-Tree keys are automatically generated.  Additional detail
+on automatic B-Tree key generation is available
+<a href="autoinc.html">separately</a>.</p>
 
 <p>If the "TEMP" or "TEMPORARY" keyword occurs in between "CREATE"
 and "TABLE" then the table that is created is only visible to the
@@ -798,8 +804,7 @@ puts {
 with the <a href="#createindex">
 CREATE INDEX</a> statement.  The index named is completely removed from
 the disk.  The only way to recover the index is to reenter the
-appropriate CREATE INDEX command.  Non-temporary indexes on tables in 
-an attached database cannot be dropped.</p>
+appropriate CREATE INDEX command.</p>
 
 <p>The DROP INDEX statement does not reduce the size of the database 
 file.  Empty space in the database is retained for later INSERTs.  To 
@@ -1543,192 +1548,219 @@ is auto-vacuum mode, enabled using the
 <a href="pragma.html#pragma_auto_vacuum">auto_vacuum pragma</a>.</p>
 }
 
+# A list of keywords.  A asterisk occurs after the keyword if it is on
+# the fallback list.
+#
+set keyword_list [lsort {
+   ABORT*
+   AFTER*
+   ALL
+   ALTER
+   AND
+   AS
+   ASC*
+   ATTACH*
+   AUTOINCREMENT
+   BEFORE*
+   BEGIN*
+   BETWEEN
+   BY
+   CASCADE*
+   CASE
+   CHECK
+   COLLATE
+   COMMIT
+   CONFLICT*
+   CONSTRAINT
+   CREATE
+   CROSS
+   CURRENT_DATE*
+   CURRENT_TIME*
+   CURRENT_TIMESTAMP*
+   DATABASE*
+   DEFAULT
+   DEFERRED*
+   DEFERRABLE
+   DELETE
+   DESC*
+   DETACH*
+   DISTINCT
+   DROP
+   END*
+   EACH*
+   ELSE
+   ESCAPE
+   EXCEPT
+   EXCLUSIVE*
+   EXPLAIN*
+   FAIL*
+   FOR*
+   FOREIGN
+   FROM
+   FULL
+   GLOB*
+   GROUP
+   HAVING
+   IGNORE*
+   IMMEDIATE*
+   IN
+   INDEX
+   INITIALLY*
+   INNER
+   INSERT
+   INSTEAD*
+   INTERSECT
+   INTO
+   IS
+   ISNULL
+   JOIN
+   KEY*
+   LEFT
+   LIKE*
+   LIMIT
+   MATCH*
+   NATURAL
+   NOT
+   NOTNULL
+   NULL
+   OF*
+   OFFSET*
+   ON
+   OR
+   ORDER
+   OUTER
+   PRAGMA*
+   PRIMARY
+   RAISE*
+   REFERENCES
+   REINDEX*
+   RENAME*
+   REPLACE*
+   RESTRICT*
+   RIGHT
+   ROLLBACK
+   ROW*
+   SELECT
+   SET
+   STATEMENT*
+   TABLE
+   TEMP*
+   TEMPORARY*
+   THEN
+   TO
+   TRANSACTION
+   TRIGGER*
+   UNION
+   UNIQUE
+   UPDATE
+   USING
+   VACUUM*
+   VALUES
+   VIEW*
+   WHEN
+   WHERE
+}]
+
+
 
 Section {SQLite keywords} keywords
 
 puts {
-<p>The following keywords are used by SQLite.  Most are either reserved 
-words in SQL-92 or were listed as potential reserved words.  Those which 
-aren't are shown in italics.  Not all of these words are actually used
-by SQLite.  Keywords are not reserved in SQLite.  Any keyword can be used 
-as an identifier for SQLite objects (columns, databases, indexes, tables, 
-triggers, views, ...) but must generally be enclosed by brackets or 
-quotes to avoid confusing the parser.  Keyword matching in SQLite is 
-case-insensitive.</p>
+<p>The SQL standard specifies a huge number of keywords which may not
+be used as the names of tables, indices, columns, or databases.  The
+list is so long that few people can remember them all.  For most SQL
+code, your safest bet is to never use any English language word as the
+name of a user-defined object.</p>
 
-<p>Keywords can be used as identifiers in three ways:</p>
+<p>If you want to use a keyword as a name, you need to quote it.  There
+are three ways of quoting keywords in SQLite:</p>
 
+<p>
+<blockquote>
 <table>
-<tr>	<td width=12%> 'keyword'
-	<td>Interpreted as a literal string if it occurs in a legal string 
-	context, otherwise as an identifier.
-<tr>	<td> "keyword"
-	<td>Interpreted as an identifier if it matches a known identifier 
-	and occurs in a legal identifier context, otherwise as a string. 
-<tr>	<td> [keyword]
-	<td> Always interpreted as an identifier. (This notation is used 
-	by MS Access and SQL Server.)
+<tr>	<td valign="top"><b>'keyword'</b></td><td width="20"></td>
+	<td>A keyword in single quotes is interpreted as a literal string
+        if it occurs in a context where a string literal is allowed, otherwise
+	it is understood as an identifier.</td></tr>
+<tr>	<td valign="top"><b>"keyword"</b></td><td></td>
+	<td>A keyword in double-quotes is interpreted as an identifier if
+        it matches a known identifier.  Otherwise it is interpreted as a
+        string literal.</td></tr>
+<tr>	<td valign="top"><b>[keyword]</b></td><td></td>
+	<td>A keyword enclosed in square brackets is always understood as
+        an identifier.  This is not standard SQL.  This quoting mechanism
+        is used by MS Access and SQL Server and is included in SQLite for
+        compatibility.</td></tr>
 </table>
+</blockquote>
+</p>
 
-<h2>Fallback Keywords</h2>
+<p>Quoted keywords are unaesthetic.
+To help you avoid them, SQLite allows many keywords to be used unquoted
+as the names of databases, tables, indices, triggers, views, and/or columns.
+In the list of keywords that follows, those that can be used as identifiers
+are shown in an italic font.  Keywords that must be quoted in order to be
+used as identifiers are shown in bold.</p>
 
-<p>These keywords can be used as identifiers for SQLite objects without 
-delimiters.</p>
+<p>
+SQLite adds new keywords from time to time when it take on new features.
+So to prevent you code from being broken by future enhancements, you should
+normally quote any indentifier that is an English language word, even if
+you do not have to.
+</p>
+
+<p>
+The following are the keywords currently recognized by SQLite:
+</p>
+
+<blockquote>
+<table width="100%">
+<tr>
+<td align="left" valign="top" width="20%">
 }
 
-proc keyword_list {x} {
-  puts "<p>"
-  foreach k $x {
-    if {[string index $k 0]=="*"} {
-      set nonstandard 1
-      set k [string range $k 1 end]
-    } else {
-      set nonstandard 0
-    }
-    if {$nonstandard} {
-      puts "<i>$k</i> &nbsp;&nbsp;"
-    } else {
-      puts "$k &nbsp;&nbsp;"
-    }
+set n [llength $keyword_list]
+set nCol 5
+set nRow [expr {($n+$nCol-1)/$nCol}]
+set i 0
+foreach word $keyword_list {
+  if {[string index $word end]=="*"} {
+    set word [string range $word 0 end-1]
+    set font i
+  } else {
+    set font b
   }
-  puts "</p>\n"
-}
-
-keyword_list {
-  *ABORT
-  AFTER
-  ASC
-  *ATTACH
-  BEFORE
-  BEGIN
-  DEFERRED
-  CASCADE 
-  *CLUSTER 
-  *CONFLICT
-  *COPY
-  CROSS
-  *DATABASE
-  *DELIMITERS
-  DESC
-  *DETACH
-  EACH
-  END
-  EXPLAIN
-  *EXPLAIN
-  *FAIL
-  FOR
-  FULL
-  IGNORE
-  IMMEDIATE
-  INITIALLY
-  INNER
-  *INSTEAD
-  KEY
-  LEFT
-  MATCH 
-  NATURAL
-  OF
-  *OFFSET
-  OUTER
-  *PRAGMA
-  *RAISE
-  *REPLACE
-  RESTRICT
-  RIGHT
-  *ROW
-  *STATEMENT
-  *TEMP
-  TEMPORARY
-  TRIGGER 
-  *VACUUM
-  VIEW
-}
-puts {
-
-<h2>Normal keywords</h2>
-
-<p>These keywords can be used as identifiers for SQLite objects, but 
-must be enclosed in brackets or quotes for SQLite to recognize them as 
-an identifier.</p>
-}
-
-keyword_list {
-  ALL
-  AND
-  AS
-  BETWEEN
-  BY
-  CASE
-  CHECK
-  COLLATE
-  COMMIT
-  CONSTRAINT
-  CREATE 
-  DEFAULT
-  DEFERRABLE
-  DELETE
-  DISTINCT
-  DROP
-  ELSE
-  EXCEPT
-  ESCAPE
-  FOREIGN
-  FROM 
-  *GLOB
-  GROUP
-  HAVING
-  IN
-  *INDEX
-  INSERT
-  INTERSECT
-  INTO
-  IS 
-  *ISNULL
-  JOIN
-  LIKE
-  LIMIT
-  NOT
-  *NOTNULL
-  NULL
-  ON
-  OR
-  ORDER 
-  PRIMARY
-  REFERENCES
-  ROLLBACK
-  SELECT
-  SET
-  TABLE
-  THEN
-  TRANSACTION
-  UNION 
-  UNIQUE
-  UPDATE
-  USING
-  VALUES
-  WHEN
-  WHERE
+  if {$i==$nRow} {
+    puts "</td><td valign=\"top\" align=\"left\" width=\"20%\">"
+    set i 1
+  } else {
+    incr i
+  }
+  puts "<$font>$word</$font><br>"
 }
 
 puts {
-<h2>Special words</h2>
+</td></tr></table></blockquote>
+
+<h2>Special names</h2>
 
 <p>The following are not keywords in SQLite, but are used as names of 
 system objects.  They can be used as an identifier for a different 
 type of object.</p>
-}
 
-keyword_list {
-  *_ROWID_
-  *MAIN
-  OID
-  *ROWID
-  *SQLITE_MASTER
-  *SQLITE_TEMP_MASTER
+<blockquote><b>
+  _ROWID_<br>
+  MAIN<br>
+  OID<br>
+  ROWID<br>
+  SQLITE_MASTER<br>
+  SQLITE_SEQUENCE<br>
+  SQLITE_TEMP_MASTER<br>
+  TEMP<br>
+</b></blockquote>
 }
 
 footer $rcsid
 if {[string length $outputdir]} {
   footer $rcsid
 }
-

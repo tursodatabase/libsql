@@ -1,6 +1,6 @@
-C Fix\sto\sthe\sdocumentation\son\ssqlite3_create_function.\s\sTicket\s#899.\s(CVS\s2128)
-D 2004-11-20T21:02:14
-F Makefile.in e747bb5ba34ccbdd81f79dcf1b2b33c02817c21d
+C AUTOINCREMENT\sdocumentation\sadded.\s\sImprovements\sto\slang.html.\s(CVS\s2129)
+D 2004-11-21T01:02:00
+F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 088758a26c59b5bb60c1d8d3185b219fe7944796
+F main.mk 31af0ba9d4d0f03a5db4051a6f2ca527dfae3daf
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 14a794f7b206976afc416b30fe8e0fc97f3434e9
 F mkopcodeh.awk 4090944e4de0a2ccb99aa0083290f73bce4db406
@@ -225,6 +225,7 @@ F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 6f2d47c4e0c5842c0d6b5513fd8249393d7c7003
 F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
+F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
 F www/capi3ref.tcl 682ed717d564a1234badb8a563837547e140a382
@@ -244,7 +245,7 @@ F www/faq.tcl abe360e630d8134bc6242c5e3664969c397eac6e
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl bb67c0d13020641d1fb4c043afa1f40fcc144d88
-F www/lang.tcl b2d8272bc89d94db373b4f1d071b1faa1153109a
+F www/lang.tcl 9670e34e0a4a518b7de27a68055f49a790b6a840
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -260,7 +261,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P d10560c75244daebe55da5630ef7e7b84ba7f77a
-R 30545a0753dd70ce9583a0fefab75a16
+P 4ab1d012f0f365c46bcabe67eace891eeaa78d70
+R 36dcf878f43a703fc736b88e118828a1
 U drh
-Z 9264d8e15e126e08fc159b47651406eb
+Z ef040ca6aab550074695604039d8de29

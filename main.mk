@@ -384,6 +384,9 @@ arch.html:	$(TOP)/www/arch.tcl
 arch.png:	$(TOP)/www/arch.png
 	cp $(TOP)/www/arch.png .
 
+autoinc.html:	$(TOP)/www/autoinc.tcl
+	tclsh $(TOP)/www/autoinc.tcl >autoinc.html
+
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
 
@@ -395,6 +398,9 @@ capi3ref.html:	$(TOP)/www/capi3ref.tcl
 
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
+
+compile.html:	$(TOP)/www/compile.tcl
+	tclsh $(TOP)/www/compile.tcl >compile.html
 
 copyright.html:	$(TOP)/www/copyright.tcl
 	tclsh $(TOP)/www/copyright.tcl >copyright.html
@@ -484,19 +490,18 @@ vdbe.html:	$(TOP)/www/vdbe.tcl
 version3.html:	$(TOP)/www/version3.tcl
 	tclsh $(TOP)/www/version3.tcl >version3.html
 
-compile.html:	$(TOP)/www/compile.tcl
-	tclsh $(TOP)/www/compile.tcl >compile.html
-
 
 # Files to be published on the website.
 #
 DOC = \
   arch.html \
   arch.png \
+  autoinc.html \
   c_interface.html \
   capi3.html \
   capi3ref.html \
   changes.html \
+  compile.html \
   copyright.html \
   copyright-release.html \
   copyright-release.pdf \
@@ -524,8 +529,7 @@ DOC = \
   support.html \
   tclsqlite.html \
   vdbe.html \
-  version3.html \
-  compile.html
+  version3.html 
 
 doc:	common.tcl $(DOC)
 	mkdir -p doc

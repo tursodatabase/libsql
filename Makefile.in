@@ -408,6 +408,9 @@ arch.html:	$(TOP)/www/arch.tcl
 arch2.gif:	$(TOP)/www/arch2.gif
 	cp $(TOP)/www/arch2.gif .
 
+autoinc.html:	$(TOP)/www/autoinc.tcl
+	tclsh $(TOP)/www/autoinc.tcl >autoinc.html
+
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
 
@@ -419,6 +422,9 @@ capi3ref.html:	$(TOP)/www/capi3ref.tcl
 
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
+
+compile.html:	$(TOP)/www/compile.tcl
+	tclsh $(TOP)/www/compile.tcl >compile.html
 
 copyright.html:	$(TOP)/www/copyright.tcl
 	tclsh $(TOP)/www/copyright.tcl >copyright.html
@@ -510,11 +516,13 @@ version3.html:	$(TOP)/www/version3.tcl
 #
 DOC = \
   arch.html \
-  arch2.gif \
+  arch.png \
+  autoinc.html \
   c_interface.html \
   capi3.html \
   capi3ref.html \
   changes.html \
+  compile.html \
   copyright.html \
   copyright-release.html \
   copyright-release.pdf \
@@ -534,6 +542,7 @@ DOC = \
   oldnews.html \
   omitted.html \
   opcode.html \
+  pragma.html \
   quickstart.html \
   speed.html \
   sqlite.gif \
@@ -541,7 +550,7 @@ DOC = \
   support.html \
   tclsqlite.html \
   vdbe.html \
-  version3.html
+  version3.html 
 
 doc:	common.tcl $(DOC)
 	mkdir -p doc
