@@ -28,7 +28,6 @@
 #define sqlite3OsSync              sqlite3RealSync
 #define sqlite3OsTruncate          sqlite3RealTruncate
 #define sqlite3OsFileSize          sqlite3RealFileSize
-#define sqlite3OsFileModTime       sqlite3RealFileModTime
 #define sqlite3OsLock              sqlite3RealLock
 #define sqlite3OsUnlock            sqlite3RealUnlock
 #define sqlite3OsCheckReservedLock sqlite3RealCheckReservedLock
@@ -50,7 +49,6 @@
 #undef sqlite3OsSync              
 #undef sqlite3OsTruncate          
 #undef sqlite3OsFileSize          
-#undef sqlite3OsFileModTime       
 #undef sqlite3OsLock              
 #undef sqlite3OsUnlock            
 #undef sqlite3OsCheckReservedLock 
@@ -448,9 +446,6 @@ int sqlite3OsLock(OsFile *id, int locktype){
 }
 int sqlite3OsUnlock(OsFile *id, int locktype){
   return sqlite3RealUnlock(&(*id)->fd, locktype);
-}
-int sqlite3OsFileModTime(OsFile *id, double *prNow){
-  return sqlite3RealFileModTime(&(*id)->fd, prNow);
 }
 int sqlite3OsOpenDirectory(const char *zDirname, OsFile *id){
   return sqlite3RealOpenDirectory(zDirname, &(*id)->fd);

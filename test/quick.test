@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.25 2004/06/22 13:12:52 danielk1977 Exp $
+# $Id: quick.test,v 1.26 2004/06/29 13:41:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,7 +49,7 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     lappend ::failList $tail
   }
 }
-# source $testdir/misuse.test
+source $testdir/misuse.test
 
 set sqlite_open_file_count 0
 really_finish_test
