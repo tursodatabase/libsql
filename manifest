@@ -1,5 +1,5 @@
-C better\shandling\sof\sout-of-memory\serrors\s(CVS\s207)
-D 2001-04-11T14:28:42
+C :-)\s(CVS\s208)
+D 2001-04-11T14:29:22
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 4775f7fd1ed543606bb24fa3fada1bc90a23a6b9
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -26,6 +26,7 @@ F src/ex/sizes.tcl f54bad4a2ac567624be59131a6ee42d71b41a3d7
 F src/expr.c c4c24c3af1eba094a816522eb0e085bed518ee16
 F src/insert.c aa528e20a787af85432a61daaea6df394bd251d7
 F src/main.c 92ce30a89f622ba36cc8b7d912829e14a480722c
+F src/pager.c 0aa36ee4038369fb7537871950d192e5e93d5530
 F src/pager.h 889c5cf517ad30704e295540793c893ac843fd5f
 F src/parse.y 8fc096948994a7ffbf61ba13129cc589f794a9cb
 F src/printf.c b1e22a47be8cdf707815647239991e08e8cb69f9
@@ -56,6 +57,7 @@ F test/insert.test dbd3bd189edb61fddbe66c236694ef23352429f1
 F test/insert2.test 732405e30331635af8d159fccabe835eea5cd0c6
 F test/lock.test bca7d53de73138b1f670a2fbdb1f481ff7eaa45a
 F test/main.test da635f9e078cd21ddf074e727381a715064489ff
+F test/malloc.test 47777dd5697c43f575d6a898b6b3f332f10a71d3
 F test/printf.test 4c71871e1a75a2dacb673945fc13ddb30168798f
 F test/rowid.test 128453599def7435e988216f7fe89c7450b8a9a3
 F test/select1.test 824d9d5007dffd6a45edde79e89c0a04c36e3ebe
@@ -97,7 +99,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 2507ec40610d8034ccf9dcb58a16934065e6f120
-R 0329ee9c40e806471f7c325d51a23bb6
+P 86b30cd0975dfea9424b9f9f0d4194aa71ce508b
+R 446c442a007e555210ed8cb182f64479
 U drh
-Z 598daf9af8c7873df8fb5f69d495d703
+Z 9bc3b137c004e3bfdf49c47f3fac4875

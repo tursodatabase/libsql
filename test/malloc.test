@@ -1,0 +1,69 @@
+# Copyright (c) 2001 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file attempts to check the library in an out-of-memory situation.
+# When compiled with -DMEMORY_DEBUG=1, the SQLite library accepts a special
+# command (--malloc-fail=N) which causes the N-th malloc to fail.  This
+# special feature is used to see what happens in the library if a malloc
+# were to really fail due to an out-of-memory situation.
+#
+# $Id: malloc.test,v 1.1 2001/04/11 14:29:22 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Only run these tests if memory debugging is turned on.
+#
+if {[info command sqlite_malloc_fail]==""} {
+   puts "Skipping malloc tests: not compiled with -DMEMORY_DEBUG..."
+   finish_test
+   return
+}
+
+for {set go 1; set i 1} {$go} {incr i} {
+  do_test malloc-1.$i {
+     sqlite_malloc_fail 0
+     catch {execsql {DROP TABLE t1}}
+     sqlite_malloc_fail $i
+     set v [catch {execsql {
+        CREATE TABLE t1(
+           a int, b float, c double, d text, e varchar(20),
+           primary key(a,b,c)
+        );
+        CREATE INDEX i1 ON t1(a,b);
+        INSERT INTO t1 VALUES(1,2.3,4.5,'hi','there');
+        INSERT INTO t1 VALUES(6,7.0,0.8,'hello','out yonder');
+        SELECT * FROM t1;
+        SELECT avg(b) FROM t1 GROUP BY a;
+        DELETE FROM t1 WHERE a==6;
+        SELECT count(*) FROM t1;
+     }} msg]
+     if {[lindex [sqlite_malloc_stat] 2]>0} {
+       set ::go 0
+       set v {1 1}
+     } else {
+       lappend v [expr {$msg=="" || $msg=="out of memory"}]
+     }
+  } {1 1}
+}
+sqlite_malloc_fail 0
+finish_test
