@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\smulti-file\stransaction\srollback.\s(CVS\s1751)
-D 2004-06-28T04:52:30
+C Add\sa\ssimple\stest\scase\sfor\sinter-process\slocking.\s(CVS\s1752)
+D 2004-06-28T08:25:48
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
 F src/os_test.c ef353f73a2ad85a239d7a77c4a5df2e1377f3848
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c bd62e20d3abfb96c41fe737715b328d1dbb52bf7
+F src/os_unix.c 295d0d4fe8a3f531ae39623e2c8766b1823c0acd
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
@@ -128,6 +128,7 @@ F test/lastinsert.test 31382f88b9b0270333ac9e4a17f2c2f4732da718
 F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
 F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
 F test/lock.test 1dbf1d06b0a7eb36237b4f107cfb3da9726b449e
+F test/lock2.test 321066db9e0dfa22968ece2ea9b03e7ffbdd4d94
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
 F test/malloc.test a78617ce8258388e4835f4834a3a2c0d4282a7ec
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
@@ -229,7 +230,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 81e4994045697470bcfd692a794731c8291a8a30
-R 720c8ecc08d420175dd5d527a0298db7
+P 06e8e30b249c10512a225d6c7a5fcb5c666595e6
+R d120c4842e7f311a12d71241eb9f9f18
 U danielk1977
-Z 4b192e4a8c202247fb9d2a51a2cec3ca
+Z a2a960a2ceb55201658e7b059b0a9a2b

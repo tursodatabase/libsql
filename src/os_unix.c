@@ -796,7 +796,7 @@ int sqlite3OsLock(OsFile *id, int locktype){
   if( locktype==SHARED_LOCK 
       || (locktype==EXCLUSIVE_LOCK && id->locktype<PENDING_LOCK)
   ){
-    lock.l_type = F_RDLCK;
+    lock.l_type = (locktype==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
     s = fcntl(id->h, F_SETLK, &lock);
     if( s ){
