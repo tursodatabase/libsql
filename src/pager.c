@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.142 2004/06/25 11:11:54 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.143 2004/06/26 01:48:19 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -234,6 +234,7 @@ struct Pager {
   off_t journalOff;           /* Current byte offset in the journal file */
   off_t journalHdr;           /* Byte offset to previous journal header */
   off_t stmtHdrOff;           /* First journal header written this statement */
+  off_t stmtCksum;            /* cksumInit when statement was started */
   int sectorSize;             /* Assumed sector size during rollback */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
 };
@@ -838,7 +839,7 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** it could cause invalid data to be written into the journal.  We need to
   ** detect this invalid data (with high probability) and ignore it.
   */
-  if( pgno==0 ){
+  if( pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){
     return SQLITE_DONE;
   }
   if( pgno>(unsigned)pPager->dbSize ){
@@ -1264,7 +1265,9 @@ static int pager_stmt_playback(Pager *pPager){
     goto end_stmt_playback;
   }
   pPager->journalOff = pPager->stmtJSize;
-  while( pPager->journalOff < hdrOff ){
+  pPager->cksumInit = pPager->stmtCksum;
+  assert( JOURNAL_HDR_SZ(pPager)<(pPager->pageSize+8) );
+  while( pPager->journalOff <= (hdrOff-(pPager->pageSize+8)) ){
     rc = pager_playback_one_page(pPager, &pPager->jfd, 1);
     assert( rc!=SQLITE_DONE );
     if( rc!=SQLITE_OK ) goto end_stmt_playback;
@@ -1277,6 +1280,9 @@ static int pager_stmt_playback(Pager *pPager){
     if( rc!=SQLITE_OK ){
       assert( rc!=SQLITE_DONE );
       goto end_stmt_playback;
+    }
+    if( nRec==0 ){
+      nRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
     }
     for(i=nRec-1; i>=0 && pPager->journalOff < szJ; i--){
       rc = pager_playback_one_page(pPager, &pPager->jfd, 1);
@@ -1291,6 +1297,9 @@ end_stmt_playback:
   if( rc!=SQLITE_OK ){
     pPager->errMask |= PAGER_ERR_CORRUPT;
     rc = SQLITE_CORRUPT;
+  }else{
+    pPager->journalOff = szJ;
+    /* pager_reload_cache(pPager); */
   }
   return rc;
 }
@@ -1470,6 +1479,7 @@ int sqlite3pager_open(
   pPager->readOnly = readOnly;
   pPager->needSync = 0;
   pPager->noSync = pPager->tempFile || !useJournal;
+  pPager->fullSync = (pPager->noSync?0:1);
   pPager->pFirst = 0;
   pPager->pFirstSynced = 0;
   pPager->pLast = 0;
@@ -2879,6 +2889,7 @@ int sqlite3pager_stmt_begin(Pager *pPager){
   pPager->stmtJSize = pPager->journalOff;
   pPager->stmtSize = pPager->dbSize;
   pPager->stmtHdrOff = 0;
+  pPager->stmtCksum = pPager->cksumInit;
   if( !pPager->stmtOpen ){
     rc = sqlite3pager_opentemp(zTemp, &pPager->stfd);
     if( rc ) goto stmt_begin_failed;

@@ -1,5 +1,5 @@
-C Fix\sCVS\smerge\sproblem.\s(CVS\s1693)
-D 2004-06-25T12:08:47
+C Fix\sa\sbug\sin\sthe\snew\sfull-sync\sjournal\sformat.\s(CVS\s1733)
+D 2004-06-26T01:48:19
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -50,7 +50,7 @@ F src/os_unix.c bd62e20d3abfb96c41fe737715b328d1dbb52bf7
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
 F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
-F src/pager.c e4c7e844d8ce52bf23d53d25bd5fc506abdcf441
+F src/pager.c e3969171742e7d9681977703feed4853f5ee206a
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 0750e1c360647dbe0a991f16133b0fe5e42e5039
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4905e74925a4e9d467c51dc174f265b9395ae9fa
-R 98cae54b77ddaa39769902b12d5a271c
+P dfab1e9ac0fbe57fe4a1cbe6c363ef43b3b075ef
+R e246eb7b8fa1d2e1a6e20fbeb7cc5c16
 U danielk1977
-Z 7a7f720eca297a401dca9b9f9bbfe29b
+Z ead895d5ca480d6e5d884e35379e8164
