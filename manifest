@@ -1,5 +1,5 @@
-C Disable\sthe\suse\sof\s./crashtest\sin\sbuilds\sthat\sinclude\sa\scodec.\s(CVS\s2371)
-D 2005-03-10T12:58:22
+C Disable\sF_FULLSYNC\sif\sthe\ssychronous\spragma\sis\snot\sset\sto\sFULL.\s(CVS\s2372)
+D 2005-03-10T14:11:13
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -44,15 +44,15 @@ F src/insert.c 0456649d4d48396f918e7ea1fecbf3d66ed90816
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c 90cb84bbb85aa89442af41ad4323b136af6527b7
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
-F src/os.h ae44064dc118b20d39450cb331409a775e8bb1c6
+F src/os.h 0c805df3df02b98eb78a7a86756c3cbd4e190939
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
 F src/os_test.c 91e5f22dd89491e5e1554820e715805f43fa4ece
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 68d3d32937eee90fe1f50d500d1a4ee826cbe790
-F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
+F src/os_unix.c 4fe368b6213f6734f767ca9aef65e873c810bf4e
+F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c b728c90bfa33994006a067a32971cabd0a852916
+F src/pager.c a789b0ffe7a42fd99f54f8c938fd9a866669e79d
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 0b6135268a7a29db35335d5b71b5a8791e02f91e
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -64,7 +64,7 @@ F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h b59243adc43f0326ca7d8ce0b7ebd3cc70bd670d
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 29e56ecdb94c4066dbe6b088d12cc2404bc9597e
-F src/test1.c 7b11aafae2d2b5850799200f4b9f8465a69a0c9d
+F src/test1.c 3ef73fd9221086cf2990c23070767fae46e6d47d
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -195,7 +195,7 @@ F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c 97a830d53c24c42290501fdfba4a6e5bdd34748b
 F test/trace.test a54fa8df0d01cf827289a7659d78959e8fd2f955
-F test/trans.test 29645b344d2b9b6792793562b12340177ddd8f96
+F test/trans.test f32e3966f2d0045fb60866b569a788e703495f0b
 F test/trigger1.test 9db1a7c91930baa2dc60ce72c7e969900bf2ae8a
 F test/trigger2.test cbc8fe3775904d5b49ff26888aa39df7341fae7c
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 06a48da67b142e92624cdfd46947bd4ccc6842b7
-R 8d17b42d8bdc15b1a43c1cdc2214004d
+P 7e4af62238bf8fa3d3cbc79e2c8951e621a0c0b4
+R 365c81273dfabb7e12708718466b11d2
 U drh
-Z fef84291e48ee74066a31f01ad017fa8
+Z 180431ad527de9a764ef13a7e79aee4d

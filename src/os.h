@@ -54,6 +54,13 @@
 # include "os_win.h"
 #endif
 
+/* If the SET_FULLSYNC macro is not defined above, then make it
+** a no-op
+*/
+#ifndef SET_FULLSYNC
+# define SET_FULLSYNC(x,y)
+#endif
+
 /*
 ** Temporary files are named starting with this prefix followed by 16 random
 ** alphanumeric characters, and no file extension. They are stored in the

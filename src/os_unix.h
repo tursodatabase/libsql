@@ -68,8 +68,14 @@ struct OsFile {
   int h;                    /* The file descriptor */
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
+  unsigned char fullSync;   /* Use F_FULLSYNC if available */
   int dirfd;                /* File descriptor for the directory */
 };
+
+/*
+** A macro to set the OsFile.fullSync flag, if it exists.
+*/
+#define SET_FULLSYNC(x,y)  ((x).fullSync = (y))
 
 /*
 ** Maximum number of characters in a temporary file name

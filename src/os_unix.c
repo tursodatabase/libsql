@@ -688,6 +688,16 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_TEST
+/*
+** Count the number of fullsyncs and normal syncs.  This is used to test
+** that syncs and fullsyncs are occuring at the right times.
+*/
+int sqlite3_sync_count = 0;
+int sqlite3_fullsync_count = 0;
+#endif
+
+
 /*
 ** The fsync() system call does not work as advertised on many
 ** unix systems.  The following procedure is an attempt to make
@@ -699,19 +709,40 @@ int sqlite3OsSeek(OsFile *id, i64 offset){
 ** enabled, however, since with SQLITE_NO_SYNC enabled, an OS crash
 ** or power failure will likely corrupt the database file.
 */
-static int full_fsync(int fd){
-#ifdef SQLITE_NO_SYNC
-  return SQLITE_OK;
-#else
+static int full_fsync(int fd, int fullSync){
   int rc;
+
+  /* Record the number of times that we do a normal fsync() and 
+  ** FULLSYNC.  This is used during testing to verify that this procedure
+  ** gets called with the correct arguments.
+  */
+#ifdef SQLITE_TEST
+  if( fullSync ) sqlite3_fullsync_count++;
+  sqlite3_sync_count++;
+#endif
+
+  /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
+  ** no-op
+  */
+#ifdef SQLITE_NO_SYNC
+  rc = SQLITE_OK;
+#else
+
 #ifdef F_FULLFSYNC
-  rc = fcntl(fd, F_FULLFSYNC, 0);
+  if( fullSync ){
+    rc = fcntl(fd, F_FULLSYNC, 0);
+  }else{
+    rc = 1;
+  }
+  /* If the FULLSYNC failed, try to do a normal fsync() */
   if( rc ) rc = fsync(fd);
+
 #else
   rc = fsync(fd);
-#endif
+#endif /* defined(F_FULLSYNC) */
+#endif /* defined(SQLITE_NO_SYNC) */
+
   return rc;
-#endif
 }
 
 /*
@@ -729,12 +760,12 @@ int sqlite3OsSync(OsFile *id){
   assert( id->isOpen );
   SimulateIOError(SQLITE_IOERR);
   TRACE2("SYNC    %-3d\n", id->h);
-  if( full_fsync(id->h) ){
+  if( full_fsync(id->h, id->fullSync) ){
     return SQLITE_IOERR;
   }
   if( id->dirfd>=0 ){
     TRACE2("DIRSYNC %-3d\n", id->dirfd);
-    full_fsync(id->dirfd);
+    full_fsync(id->dirfd, id->fullSync);
     close(id->dirfd);  /* Only need to sync once, so close the directory */
     id->dirfd = -1;    /* when we are done. */
   }
@@ -744,6 +775,10 @@ int sqlite3OsSync(OsFile *id){
 /*
 ** Sync the directory zDirname. This is a no-op on operating systems other
 ** than UNIX.
+**
+** This is used to make sure the master journal file has truely been deleted
+** before making changes to individual journals on a multi-database commit.
+** The F_FULLSYNC option is not needed here.
 */
 int sqlite3OsSyncDirectory(const char *zDirname){
   int fd;
