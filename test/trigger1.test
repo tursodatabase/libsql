@@ -418,6 +418,14 @@ execsql {
   DROP TABLE t4;
 }
 
+# Skip the remaining tests if we have a codec.  The ATTACH command
+# will not work right on these tests when there is a codec.
+#
+if {[sqlite -has-codec]} {
+  finish_test
+  return
+}
+
 # Ticket #764. At one stage TEMP triggers would fail to re-install when the
 # schema was reloaded. The following tests ensure that TEMP triggers are
 # correctly re-installed.
