@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.82 2004/08/20 16:02:39 drh Exp $
+** $Id: tokenize.c,v 1.83 2004/08/24 15:23:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -385,6 +385,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
     }
     case '$': {
       int c;
+      *tokenType = TK_VARIABLE;
       if( z[1]=='{' ){
         int nBrace = 1;
         for(i=2; (c=z[i])!=0 && nBrace; i++){
@@ -394,7 +395,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
             nBrace--;
           }
         }
-        *tokenType = c!=0 ? TK_VARIABLE : TK_ILLEGAL;
+        if( c==0 ) *tokenType = TK_ILLEGAL;
       }else{
         int n = 0;
         for(i=1; (c=z[i])!=0; i++){
@@ -406,7 +407,6 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
             }while( (c=z[i])!=0 && !isspace(c) && c!=')' );
             if( c==')' ){
               i++;
-              *tokenType = TK_VARIABLE;
             }else{
               *tokenType = TK_ILLEGAL;
             }
@@ -414,10 +414,10 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
           }else if( c==':' && z[i+1]==':' ){
             i++;
           }else{
-            *tokenType = n==0 ? TK_ILLEGAL : TK_VARIABLE;
             break;
           }
         }
+        if( n==0 ) *tokenType = TK_ILLEGAL;
       }
       return i;
     } 

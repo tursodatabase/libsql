@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.100 2004/08/20 18:34:20 drh Exp $
+** $Id: tclsqlite.c,v 1.101 2004/08/24 15:23:34 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -693,9 +693,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** that have the same name as the fields extracted by the query.
   */
   case DB_EVAL: {
-    char const *zSql;
-    char const *zLeft;
-    sqlite3_stmt *pStmt;
+    char const *zSql;      /* Next SQL statement to execute */
+    char const *zLeft;     /* What is left after first stmt in zSql */
+    sqlite3_stmt *pStmt;   /* Compiled SQL statment */
     Tcl_Obj *pArray;       /* Name of array into which results are written */
     Tcl_Obj *pScript;      /* Script to run for each result set */
 
