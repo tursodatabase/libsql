@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.201 2003/11/01 01:53:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.202 2003/11/11 23:30:36 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -87,7 +87,7 @@
 /* #define SQLITE_OMIT_AUTHORIZATION  1 */
 /* #define SQLITE_OMIT_INMEMORYDB     1 */
 /* #define SQLITE_OMIT_VACUUM         1 */
-/* #define SQLITE_OMIT_TIMEDATE_FUNCS 1 */
+/* #define SQLITE_OMIT_DATETIME_FUNCS 1 */
 /* #define SQLITE_OMIT_PROGRESS_CALLBACK 1 */
 
 /*
