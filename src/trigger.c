@@ -102,7 +102,7 @@ void sqliteCreateTrigger(
     sqliteVdbeAddOp(pParse->pVdbe,        OP_PutIntKey, 0, 1);
 
     /* Change the cookie, since the schema is changed */
-    changeCookie(pParse->db);
+    sqliteChangeCookie(pParse->db);
     sqliteVdbeAddOp(pParse->pVdbe, OP_Integer, pParse->db->next_cookie, 0);
     sqliteVdbeAddOp(pParse->pVdbe, OP_SetCookie, 0, 0);
 
@@ -300,20 +300,19 @@ void sqliteDropTrigger(Parse *pParse, Token * trigname, int nested)
       { OP_Close,      0, 0,        0},
     };
 
-    if (!nested) 
+    if( !nested ){
       sqliteBeginWriteOperation(pParse);
-
+    }
     base = sqliteVdbeAddOpList(pParse->pVdbe, 
         ArraySize(dropTrigger), dropTrigger);
     sqliteVdbeChangeP3(pParse->pVdbe, base+2, tmp_name, 0);
-
-    if (!nested)
-      changeCookie(pParse->db);
-
+    if( !nested ){
+      sqliteChangeCookie(pParse->db);
+    }
     sqliteVdbeChangeP1(pParse->pVdbe, base+9, pParse->db->next_cookie);
-
-    if (!nested)
+    if( !nested ){
       sqliteEndWriteOperation(pParse);
+    }
   }
 
   sqliteFree(tmp_name);

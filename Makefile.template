@@ -118,7 +118,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 #
 LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o \
          main.o os.o pager.o parse.o printf.o random.o select.o table.o \
-         tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
+         tokenize.o trigger.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
 #
@@ -146,6 +146,7 @@ SRC = \
   $(TOP)/src/table.c \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/trigger.c \
   $(TOP)/src/update.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
@@ -244,6 +245,9 @@ sqlite.h:	$(TOP)/src/sqlite.h.in
 
 tokenize.o:	$(TOP)/src/tokenize.c $(HDR)
 	$(TCCX) -c $(TOP)/src/tokenize.c
+
+trigger.o:	$(TOP)/src/trigger.c $(HDR)
+	$(TCCX) -c $(TOP)/src/trigger.c
 
 util.o:	$(TOP)/src/util.c $(HDR)
 	$(TCCX) -c $(TOP)/src/util.c

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.89 2002/05/15 11:44:14 drh Exp $
+** $Id: build.c,v 1.90 2002/05/15 12:45:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -356,7 +356,6 @@ void sqliteRollbackInternalChanges(sqlite *db){
     Table * tab = sqliteFindTable(db, pTrigger->table);
     sqliteHashInsert(&db->trigHash, pTrigger->name, 
         strlen(pTrigger->name) + 1, pTrigger);
-
     pTrigger->pNext = tab->pTrigger;
     tab->pTrigger = pTrigger;
   }
@@ -653,7 +652,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
 */
-void changeCookie(sqlite *db){
+void sqliteChangeCookie(sqlite *db){
   if( db->next_cookie==db->schema_cookie ){
     db->next_cookie = db->schema_cookie + sqliteRandomByte() + 1;
     db->flags |= SQLITE_InternChanges;
@@ -852,7 +851,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       }
       sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, 0, 0);
-      changeCookie(db);
+      sqliteChangeCookie(db);
       sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
       sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
       sqliteVdbeAddOp(v, OP_Close, 0, 0);
@@ -1095,7 +1094,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     Index *pIdx;
     sqliteBeginWriteOperation(pParse);
     /* Drop all triggers associated with the table being dropped */
-    while (pTable->pTrigger) {
+    while( pTable->pTrigger ){
       Token tt;
       tt.z = pTable->pTrigger->name;
       tt.n = strlen(pTable->pTrigger->name);
@@ -1104,7 +1103,7 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     if( !pTable->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropTable), dropTable);
       sqliteVdbeChangeP3(v, base+2, pTable->zName, 0);
-      changeCookie(db);
+      sqliteChangeCookie(db);
       sqliteVdbeChangeP1(v, base+9, db->next_cookie);
     }
     if( !isView ){
@@ -1409,7 +1408,7 @@ void sqliteCreateIndex(
     }
     if( pTable!=0 ){
       if( !isTemp ){
-        changeCookie(db);
+        sqliteChangeCookie(db);
         sqliteVdbeAddOp(v, OP_Integer, db->next_cookie, 0);
         sqliteVdbeAddOp(v, OP_SetCookie, 0, 0);
         sqliteVdbeAddOp(v, OP_Close, 0, 0);
@@ -1472,7 +1471,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     if( !pTab->isTemp ){
       base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
       sqliteVdbeChangeP3(v, base+2, pIndex->zName, P3_STATIC);
-      changeCookie(db);
+      sqliteChangeCookie(db);
       sqliteVdbeChangeP1(v, base+10, db->next_cookie);
     }
     sqliteVdbeAddOp(v, OP_Destroy, pIndex->tnum, pTab->isTemp);
@@ -1711,14 +1710,14 @@ void sqliteRollbackTransaction(Parse *pParse){
 ** Generate VDBE code that prepares for doing an operation that
 ** might change the database.  The operation will be atomic in the
 ** sense that it will either do its changes completely or not at
-** all.  So there is not need to set a checkpoint is a transaction
+** all.  So there is no need to set a checkpoint is a transaction
 ** is already in effect.
 */
 void sqliteBeginWriteOperation(Parse *pParse){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
-  if (pParse->trigStack) return; /* if this is in a trigger */
+  if( pParse->trigStack ) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0  ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);
@@ -1738,7 +1737,7 @@ void sqliteBeginMultiWriteOperation(Parse *pParse){
   Vdbe *v;
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return;
-  if (pParse->trigStack) return; /* if this is in a trigger */
+  if( pParse->trigStack ) return; /* if this is in a trigger */
   if( (pParse->db->flags & SQLITE_InTrans)==0 ){
     sqliteVdbeAddOp(v, OP_Transaction, 0, 0);
     sqliteVdbeAddOp(v, OP_VerifyCookie, pParse->db->schema_cookie, 0);

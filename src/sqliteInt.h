@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.108 2002/05/15 08:30:14 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.109 2002/05/15 12:45:43 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -558,63 +558,49 @@ struct Parse {
                        ** while generating expressions.  Normally false */
   int schemaVerified;  /* True if an OP_VerifySchema has been coded someplace
                        ** other than after an OP_Transaction */
-
-  TriggerStack * trigStack;
+  TriggerStack *trigStack;
 };
 
 struct TriggerStack {
-  Trigger * pTrigger;
-  Table *   pTab;         /* Table that triggers are currently being coded as */
-  int       newIdx;       /* Index of "new" temp table */
-  int       oldIdx;       /* Index of "old" temp table */
-  int       orconf;       /* Current orconf policy */
-  struct TriggerStack * pNext;
+  Trigger *pTrigger;
+  Table *pTab;         /* Table that triggers are currently being coded as */
+  int newIdx;          /* Index of "new" temp table */
+  int oldIdx;          /* Index of "old" temp table */
+  int orconf;          /* Current orconf policy */
+  TriggerStack *pNext;
 };
 struct TriggerStep {
   int op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
   int orconf;
 
-  Select * pSelect;     /* Valid for SELECT and sometimes 
+  Select *pSelect;     /* Valid for SELECT and sometimes 
 			   INSERT steps (when pExprList == 0) */
   Token target;         /* Valid for DELETE, UPDATE, INSERT steps */
-  Expr * pWhere;        /* Valid for DELETE, UPDATE steps */
-  ExprList * pExprList; /* Valid for UPDATE statements and sometimes 
+  Expr *pWhere;        /* Valid for DELETE, UPDATE steps */
+  ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
 			   INSERT steps (when pSelect == 0)         */
   IdList *pIdList;      /* Valid for INSERT statements only */
 
   TriggerStep * pNext;  /* Next in the link-list */
 };
 struct Trigger {
-  char * name;             /* The name of the trigger                        */
-  char * table;            /* The table or view to which the trigger applies */
-  int    op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
-  int    tr_tm;            /* One of TK_BEFORE, TK_AFTER, TK_INSTEAD         */
-  Expr * pWhen;            /* The WHEN clause of the expresion (may be NULL) */
-  IdList * pColumns;       /* If this is an UPDATE OF <column-list> trigger,
-			      the column names are stored in this list       */
-  int foreach;             /* One of TK_ROW or TK_STATEMENT */
+  char *name;             /* The name of the trigger                        */
+  char *table;            /* The table or view to which the trigger applies */
+  int op;                 /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
+  int tr_tm;              /* One of TK_BEFORE, TK_AFTER, TK_INSTEAD         */
+  Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
+  IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
+                             the column names are stored in this list       */
+  int foreach;            /* One of TK_ROW or TK_STATEMENT */
 
-  TriggerStep * step_list; /* Link list of trigger program steps             */
-
-  char * strings;  /* pointer to the allocation of Token strings */
-  Trigger * pNext; /* Next trigger associated with the table */
+  TriggerStep *step_list; /* Link list of trigger program steps             */
+  char *strings;          /* pointer to allocation of Token strings */
+  Trigger *pNext;         /* Next trigger associated with the table */
   int isCommit;
 };
 
-TriggerStep * sqliteTriggerSelectStep(Select *);
-TriggerStep * sqliteTriggerInsertStep(Token *, IdList *, ExprList *, 
-    Select *, int);
-TriggerStep * sqliteTriggerUpdateStep(Token *, ExprList *, Expr *, int);
-TriggerStep * sqliteTriggerDeleteStep(Token *, Expr *);
-
 extern int always_code_trigger_setup;
 
-void sqliteCreateTrigger(Parse * ,Token *, int, int, IdList *, Token *, int, Expr *, TriggerStep *, char const *,int);
-void sqliteDropTrigger(Parse *, Token *, int);
-int sqliteTriggersExist( Parse * , Trigger * , int , int , int, ExprList * );
-int sqliteCodeRowTrigger( Parse * pParse, int op, ExprList *, int tr_tm,   Table * tbl, int newTable, int oldTable, int onError);
-
-void sqliteViewTriggers(Parse *, Table *, Expr *, int, ExprList *);
 
 /*
 ** Internal function prototypes
@@ -726,5 +712,14 @@ void sqliteRegisterBuildinFunctions(sqlite*);
 int sqliteSafetyOn(sqlite*);
 int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);
-
-void changeCookie(sqlite *);
+void sqliteChangeCookie(sqlite *);
+void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, Token*, 
+                         int, Expr*, TriggerStep*, char const*,int);
+void sqliteDropTrigger(Parse*, Token*, int);
+int sqliteTriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
+int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, int);
+void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
+TriggerStep *sqliteTriggerSelectStep(Select*);
+TriggerStep *sqliteTriggerInsertStep(Token*, IdList*, ExprList*, Select*, int);
+TriggerStep *sqliteTriggerUpdateStep(Token*, ExprList*, Expr*, int);
+TriggerStep *sqliteTriggerDeleteStep(Token*, Expr*);
