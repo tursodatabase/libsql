@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.289 2004/05/14 11:16:56 danielk1977 Exp $
+** $Id: vdbe.c,v 1.290 2004/05/14 12:16:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3881,7 +3881,8 @@ case OP_CreateTable: {
   assert( pOp->p2>=0 && pOp->p2<db->nDb );
   assert( db->aDb[pOp->p2].pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
-    flags = BTREE_INTKEY;
+    /* flags = BTREE_INTKEY; */
+    flags = BTREE_LEAFDATA|BTREE_INTKEY;
   }else{
     flags = BTREE_ZERODATA;
   }
