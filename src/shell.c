@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.59 2002/06/25 19:31:18 drh Exp $
+** $Id: shell.c,v 1.60 2002/07/10 21:26:01 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -492,8 +492,6 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
-  ".reindex ?TABLE?       Rebuild indices\n"
-/*  ".rename OLD NEW        Change the name of a table or index\n" */
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator string for \"list\" mode\n"
   ".show                  Show the current values for various settings\n"
@@ -751,40 +749,6 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     }else{
       process_input(p, alt);
       fclose(alt);
-    }
-  }else
-
-  if( c=='r' && strncmp(azArg[0], "reindex", n)==0 ){
-    char **azResult;
-    int nRow, rc;
-    char *zErrMsg;
-    int i;
-    char *zSql;
-    if( nArg==1 ){
-      rc = sqlite_get_table(db,
-        "SELECT name, sql FROM sqlite_master "
-        "WHERE type='index'",
-        &azResult, &nRow, 0, &zErrMsg
-      );
-    }else{
-      rc = sqlite_get_table_printf(db,
-        "SELECT name, sql FROM sqlite_master "
-        "WHERE type='index' AND tbl_name LIKE '%q'",
-        &azResult, &nRow, 0, &zErrMsg, azArg[1]
-      );
-    }
-    for(i=1; rc==SQLITE_OK && i<=nRow; i++){
-      extern char *sqlite_mprintf(const char *, ...);
-      zSql = sqlite_mprintf(
-         "DROP INDEX '%q';\n%s;\nVACUUM '%q';",
-         azResult[i*2], azResult[i*2+1], azResult[i*2]);
-      if( p->echoOn ) printf("%s\n", zSql);
-      rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
-    }
-    sqlite_free_table(azResult);
-    if( zErrMsg ){
-      fprintf(stderr,"Error: %s\n", zErrMsg);
-      free(zErrMsg);
     }
   }else
 

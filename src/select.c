@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.103 2002/07/05 21:42:37 drh Exp $
+** $Id: select.c,v 1.104 2002/07/10 21:26:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -626,11 +626,7 @@ static void generateColumnNames(
     p = pEList->a[i].pExpr;
     if( p==0 ) continue;
     showFullNames = (pParse->db->flags & SQLITE_FullColNames)!=0;
-    if( p->span.z && p->span.z[0] && !showFullNames ){
-      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
-      sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
-      sqliteVdbeCompressSpace(v, addr);
-    }else if( p->op==TK_COLUMN && pTabList ){
+    if( p->op==TK_COLUMN && pTabList ){
       Table *pTab = pTabList->a[p->iTable - base].pTab;
       char *zCol;
       int iCol = p->iColumn;
@@ -643,7 +639,11 @@ static void generateColumnNames(
         zCol = pTab->aCol[iCol].zName;
         zType = pTab->aCol[iCol].zType;
       }
-      if( pTabList->nSrc>1 || showFullNames ){
+      if( p->span.z && p->span.z[0] && !showFullNames ){
+        int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
+        sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
+        sqliteVdbeCompressSpace(v, addr);
+      }else if( pTabList->nSrc>1 || showFullNames ){
         char *zName = 0;
         char *zTab;
  
@@ -657,6 +657,10 @@ static void generateColumnNames(
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
         sqliteVdbeChangeP3(v, -1, zCol, 0);
       }
+    }else if( p->span.z && p->span.z[0] && !showFullNames ){
+      int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
+      sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);
+      sqliteVdbeCompressSpace(v, addr);
     }else if( p->span.z && p->span.z[0] ){
       int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);
       sqliteVdbeChangeP3(v, -1, p->span.z, p->span.n);

@@ -699,14 +699,10 @@ char *sqlite_mprintf(const char *zFormat, ...){
   vxprintf(mout,&sMprintf,zFormat,ap);
   va_end(ap);
   sMprintf.zText[sMprintf.nChar] = 0;
-  if( sMprintf.zText==sMprintf.zBase ){
-    zNew = sqliteMalloc( sMprintf.nChar+1 );
-    if( zNew ) strcpy(zNew,zBuf);
-  }else{
-    zNew = sqliteRealloc(sMprintf.zText,sMprintf.nChar+1);
-    if( zNew==0 ){
-      sqliteFree(sMprintf.zText);
-    }
+  zNew = malloc( sMprintf.nChar+1 );
+  if( zNew ) strcpy(zNew,sMprintf.zText);
+  if( sMprintf.zText!=sMprintf.zBase ){
+    sqliteFree(sMprintf.zText);
   }
   return zNew;
 }
@@ -715,6 +711,7 @@ char *sqlite_mprintf(const char *zFormat, ...){
 */
 char *sqlite_vmprintf(const char *zFormat, va_list ap){
   struct sgMprintf sMprintf;
+  char *zNew;
   char zBuf[200];
   sMprintf.nChar = 0;
   sMprintf.zText = zBuf;
@@ -722,17 +719,12 @@ char *sqlite_vmprintf(const char *zFormat, va_list ap){
   sMprintf.zBase = zBuf;
   vxprintf(mout,&sMprintf,zFormat,ap);
   sMprintf.zText[sMprintf.nChar] = 0;
-  if( sMprintf.zText==sMprintf.zBase ){
-    sMprintf.zText = sqliteMalloc( strlen(zBuf)+1 );
-    if( sMprintf.zText ) strcpy(sMprintf.zText,zBuf);
-  }else{
-    char *z = sqliteRealloc(sMprintf.zText,sMprintf.nChar+1);
-    if( z==0 ){
-      sqliteFree(sMprintf.zText);
-    }
-    sMprintf.zText = z;
+  zNew = malloc( sMprintf.nChar+1 );
+  if( zNew ) strcpy(zNew,sMprintf.zText);
+  if( sMprintf.zText!=sMprintf.zBase ){
+    sqliteFree(sMprintf.zText);
   }
-  return sMprintf.zText;
+  return zNew;
 }
 
 /*
@@ -772,7 +764,7 @@ int sqlite_exec_vprintf(
 
   zSql = sqlite_vmprintf(sqlFormat, ap);
   rc = sqlite_exec(db, zSql, xCallback, pArg, errmsg);
-  sqliteFree(zSql);
+  free(zSql);
   return rc;
 }
 int sqlite_get_table_printf(
@@ -806,6 +798,6 @@ int sqlite_get_table_vprintf(
 
   zSql = sqlite_vmprintf(sqlFormat, ap);
   rc = sqlite_get_table(db, zSql, resultp, nrow, ncolumn, errmsg);
-  sqliteFree(zSql);
+  free(zSql);
   return rc;
 }

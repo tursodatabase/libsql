@@ -25,8 +25,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define sqliteFree(X)  sqliteFree_(X,__FILE__,__LINE__)
-
 /*
 ** Come here to die.
 */
@@ -100,7 +98,7 @@ char **db_query(sqlite *db, const char *zFile, const char *zFormat, ...){
     free(zSql);
     Exit(1);
   }
-  sqliteFree(zSql);
+  sqlite_freemem(zSql);
   if( sResult.azElem==0 ){
     db_query_callback(&sResult, 0, 0, 0);
   }
@@ -123,10 +121,10 @@ void db_execute(sqlite *db, const char *zFile, const char *zFormat, ...){
   if( zErrMsg ){
     fprintf(stderr,"%s: command failed: %s - %s\n", zFile, zSql, zErrMsg);
     free(zErrMsg);
-    sqliteFree(zSql);
+    sqlite_freemem(zSql);
     Exit(1);
   }
-  sqliteFree(zSql);
+  sqlite_freemem(zSql);
 }
 
 /*
@@ -135,7 +133,7 @@ void db_execute(sqlite *db, const char *zFile, const char *zFormat, ...){
 void db_query_free(char **az){
   int i;
   for(i=0; az[i]; i++){
-    sqliteFree(az[i]);
+    sqlite_freemem(az[i]);
   }
   free(az);
 }
