@@ -1,9 +1,9 @@
-C Bug\sfix:\sWhen\smultiple\sSQL\sstatements\swere\spassed\sinto\sa\ssingle\ssqlite_exec()\scall,\sexecution\sspeed\swould\sdecrease\sfor\seach\sstatement\sexecuted\sbecause\sVDBE\scursors\swere\snot\sbeing\sreused.\s\sNow\sthe\scursors\sare\sreused\sand\sexecution\stime\sis\slinear.\s(CVS\s754)
-D 2002-09-25T19:04:07
+C Bump\sthe\sversion\snumber\sto\s2.7.2.\s(CVS\s755)
+D 2002-09-25T19:26:59
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
-F VERSION 32d9c5fea1bc2db8fb2e5e460a166301d0c1a901
+F VERSION 7cc70240794db6c8f3c6ef8867090c25d8b442bd
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -129,7 +129,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 679a0c48817f71bc91d5911ef386e5ef35d4f178
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl e76c9fd609326c34cd45cd040b508b0e21908800
-F www/changes.tcl 8c14e76e382baae613314bd24821ea986fce3abe
+F www/changes.tcl 5074fcf9ad6186f1ca48cda96081a465e8d41f52
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 14ebe30bf5937effdc388e23e998ba1a34fb0a29
-R 177fd2a86ea7e1243cec22f56d3bf48e
+P b0d27a377a9f6134f81108fe45c8c868ab4d4411
+R 6b3b49333db1fe81ae49602c8806a88b
 U drh
-Z f9ea9206896cc0d3e37a6baef7c96e75
+Z c182cb4ceec14be26b636f8139424645

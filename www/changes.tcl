@@ -25,6 +25,17 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Sep 25 (2.7.2)} {
+<li>Prevent journal file overflows on huge transactions.</li>
+<li>Fix a memory leak that occurred when sqlite_open() failed.</li>
+<li>Honor the ORDER BY and LIMIT clause of a SELECT even if the
+    result set is used for an INSERT.</li>
+<li>Do not put write locks on the file used to hold TEMP tables.</li>
+<li>Added documention on SELECT DISTINCT and on how SQLite handles NULLs.</li>
+<li>Fix a problem that was causing poor performance when many thousands
+    of SQL statements were executed by a single sqlite_exec() call.</li>
+}
+
 chng {2002 Aug 31 (2.7.1)} {
 <li>Fix a bug in the ORDER BY logic that was introduced in version 2.7.0</li>
 <li>C-style comments are now accepted by the tokenizer.</li>
