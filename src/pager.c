@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.139 2004/06/25 06:23:23 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.140 2004/06/25 07:21:28 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -475,7 +475,7 @@ static int seekJournalHdr(Pager *pPager){
 ** - 4 bytes: Initial database page count.
 ** - 4 bytes: Sector size used by the process that wrote this journal.
 ** 
-** Followed by (JOURNAL_HDR_SZ - 20) bytes of unused space.
+** Followed by (JOURNAL_HDR_SZ - 24) bytes of unused space.
 */
 static int writeJournalHdr(Pager *pPager){
 

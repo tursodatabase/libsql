@@ -696,6 +696,44 @@ int sqlite3OsCheckReservedLock(OsFile *id){
 ** routine to lower a locking level.
 */
 int sqlite3OsLock(OsFile *id, int locktype){
+  /* The following describes the implementation of the various locks and
+  ** lock transitions in terms of the POSIX advisory shared and exclusive
+  ** lock primitives (called read-locks and write-locks below, to avoid
+  ** confusion with SQLite lock names). The algorithms are complicated
+  ** slightly in order to be compatible with windows systems simultaneously
+  ** accessing the same database file, in case that is ever required.
+  **
+  ** Symbols defined in os.h indentify the 'pending byte' and the 'reserved
+  ** byte', each single bytes at well known offsets, and the 'shared byte
+  ** range', a range of 510 bytes at a well known offset.
+  **
+  ** To obtain a SHARED lock, a read-lock is obtained on the 'pending
+  ** byte'.  If this is successful, a random byte from the 'shared byte
+  ** range' is read-locked and the lock on the 'pending byte' released.
+  **
+  ** A process may only obtain a RESERVED lock after it has a SHARED lock
+  ** (the sqlite3OsLock() routine will try to obtain this lock
+  ** automatically if it is not already held). A RESERVED lock is
+  ** implemented by grabbing a write-lock on the 'reserved byte'. 
+  **
+  ** A process may only obtain a PENDING lock after it has obtained a
+  ** SHARED lock (done automatically by sqlite3OsLock()). A PENDING lock is
+  ** implemented by obtaining a write-lock on the 'pending byte'. This
+  ** ensures that no new SHARED locks can be obtained, but existing SHARED
+  ** locks are allowed to persist. A process does not have to obtain a
+  ** RESERVED lock on the way to a PENDING lock. This property is used by
+  ** the algorithm for rolling back a journal file after a crash.
+  **
+  ** An EXCLUSIVE lock is implemented by obtaining a write-lock on the
+  ** entire 'shared byte range'. Since all other locks require a read-lock
+  ** on one of the bytes within this range, this ensures that no other
+  ** locks are held on the database. 
+  **
+  ** The reason a single byte cannot be used instead of the 'shared byte
+  ** range' is that some versions of windows do not support read-locks. By
+  ** locking a random byte from a range, concurrent SHARED locks may exist
+  ** even if the locking primitive used is always a write-lock.
+  */
   int rc = SQLITE_OK;
   struct lockInfo *pLock = id->pLock;
   struct flock lock;
