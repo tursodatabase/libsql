@@ -1290,7 +1290,7 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
   len = sqlite3VdbeSerialTypeLen(serial_type);
   pMem->n = len;
   if( len>NBFS ){
-    pMem->z = sqliteMalloc( len );
+    pMem->z = sqliteMallocRaw( len );
     if( !pMem->z ){
       return -1;
     }
