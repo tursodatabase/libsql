@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.15 2003/01/12 18:02:19 drh Exp $
+** $Id: test1.c,v 1.16 2003/01/13 23:27:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -595,17 +595,36 @@ static int auth_callback(
   int rc;
   const char *zReply;
   switch( code ){
-    case SQLITE_READ_COLUMN:   zCode="SQLITE_READ_COLUMN";  break;
-    case SQLITE_WRITE_COLUMN:  zCode="SQLITE_WRITE_COLUMN"; break;
-    case SQLITE_INSERT_ROW:    zCode="SQLITE_INSERT_ROW";   break;
-    case SQLITE_DELETE_ROW:    zCode="SQLITE_DELETE_ROW";   break;
-    case SQLITE_COMMAND:       zCode="SQLITE_COMMAND";      break;
-    default:                   zCode="unknown code";        break;
+    case SQLITE_COPY              : zCode="SQLITE_COPY"; break;
+    case SQLITE_CREATE_INDEX      : zCode="SQLITE_CREATE_INDEX"; break;
+    case SQLITE_CREATE_TABLE      : zCode="SQLITE_CREATE_TABLE"; break;
+    case SQLITE_CREATE_TEMP_INDEX : zCode="SQLITE_CREATE_TEMP_INDEX"; break;
+    case SQLITE_CREATE_TEMP_TABLE : zCode="SQLITE_CREATE_TEMP_TABLE"; break;
+    case SQLITE_CREATE_TEMP_TRIGGER: zCode="SQLITE_CREATE_TEMP_TRIGGER"; break;
+    case SQLITE_CREATE_TEMP_VIEW  : zCode="SQLITE_CREATE_TEMP_VIEW"; break;
+    case SQLITE_CREATE_TRIGGER    : zCode="SQLITE_CREATE_TRIGGER"; break;
+    case SQLITE_CREATE_VIEW       : zCode="SQLITE_CREATE_VIEW"; break;
+    case SQLITE_DELETE            : zCode="SQLITE_DELETE"; break;
+    case SQLITE_DROP_INDEX        : zCode="SQLITE_DROP_INDEX"; break;
+    case SQLITE_DROP_TABLE        : zCode="SQLITE_DROP_TABLE"; break;
+    case SQLITE_DROP_TEMP_INDEX   : zCode="SQLITE_DROP_TEMP_INDEX"; break;
+    case SQLITE_DROP_TEMP_TABLE   : zCode="SQLITE_DROP_TEMP_TABLE"; break;
+    case SQLITE_DROP_TEMP_TRIGGER : zCode="SQLITE_DROP_TEMP_TRIGGER"; break;
+    case SQLITE_DROP_TEMP_VIEW    : zCode="SQLITE_DROP_TEMP_VIEW"; break;
+    case SQLITE_DROP_TRIGGER      : zCode="SQLITE_DROP_TRIGGER"; break;
+    case SQLITE_DROP_VIEW         : zCode="SQLITE_DROP_VIEW"; break;
+    case SQLITE_INSERT            : zCode="SQLITE_INSERT"; break;
+    case SQLITE_PRAGMA            : zCode="SQLITE_PRAGMA"; break;
+    case SQLITE_READ              : zCode="SQLITE_READ"; break;
+    case SQLITE_SELECT            : zCode="SQLITE_SELECT"; break;
+    case SQLITE_TRANSACTION       : zCode="SQLITE_TRANSACTION"; break;
+    case SQLITE_UPDATE            : zCode="SQLITE_UPDATE"; break;
+    default                       : zCode="????"; break;
   }
   Tcl_DStringInit(&str);
   Tcl_DStringAppend(&str, authInfo.zCmd, -1);
   Tcl_DStringAppendElement(&str, zCode);
-  Tcl_DStringAppendElement(&str, zArg1);
+  Tcl_DStringAppendElement(&str, zArg1 ? zArg1 : "");
   Tcl_DStringAppendElement(&str, zArg2 ? zArg2 : "");
   rc = Tcl_GlobalEval(authInfo.interp, Tcl_DStringValue(&str));
   Tcl_DStringFree(&str);

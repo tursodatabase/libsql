@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.36 2003/01/12 18:02:18 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.37 2003/01/13 23:27:33 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -509,18 +509,42 @@ int sqlite_aggregate_count(sqlite_func*);
 int sqlite_set_authorizer(
   sqlite*,
   int (*xAuth)(void*,int,const char*,const char*),
-  void*
+  void *pUserData
 );
 
 /*
 ** The second parameter to the access authorization function above will
-** be one of these values:
+** be one of the values below.  These values signify what kind of operation
+** is to be authorized.  The 3rd and 4th parameters to the authorization
+** function will be parameters or NULL depending on which of the following
+** codes is used as the second parameter.
+**
+**                                          Arg-3           Arg-4
 */
-#define SQLITE_READ_COLUMN   1  /* Is it OK to read the specified column?     */
-#define SQLITE_WRITE_COLUMN  2  /* Is it OK to update the specified column?   */
-#define SQLITE_DELETE_ROW    3  /* Is it OK to delete a row from the table?   */
-#define SQLITE_INSERT_ROW    4  /* Is it OK to insert a new row in the table? */
-#define SQLITE_COMMAND       5  /* Is it OK to execute a particular command?  */
+#define SQLITE_COPY                  0   /* Table Name      NULL            */
+#define SQLITE_CREATE_INDEX          1   /* Index Name      Table Name      */
+#define SQLITE_CREATE_TABLE          2   /* Table Name      NULL            */
+#define SQLITE_CREATE_TEMP_INDEX     3   /* Index Name      Table Name      */
+#define SQLITE_CREATE_TEMP_TABLE     4   /* Table Name      NULL            */
+#define SQLITE_CREATE_TEMP_TRIGGER   5   /* Trigger Name    NULL            */
+#define SQLITE_CREATE_TEMP_VIEW      6   /* View Name       NULL            */
+#define SQLITE_CREATE_TRIGGER        7   /* Trigger Name    NULL            */
+#define SQLITE_CREATE_VIEW           8   /* View Name       NULL            */
+#define SQLITE_DELETE                9   /* Table Name      NULL            */
+#define SQLITE_DROP_INDEX           10   /* Index Name      NULL            */
+#define SQLITE_DROP_TABLE           11   /* Table Name      NULL            */
+#define SQLITE_DROP_TEMP_INDEX      12   /* Index Name      NULL            */
+#define SQLITE_DROP_TEMP_TABLE      13   /* Table Name      NULL            */
+#define SQLITE_DROP_TEMP_TRIGGER    14   /* Trigger Name    NULL            */
+#define SQLITE_DROP_TEMP_VIEW       15   /* View Name       NULL            */
+#define SQLITE_DROP_TRIGGER         16   /* Trigger Name    NULL            */
+#define SQLITE_DROP_VIEW            17   /* View Name       NULL            */
+#define SQLITE_INSERT               18   /* Table Name      NULL            */
+#define SQLITE_PRAGMA               19   /* Pragma Name     1st arg or NULL */
+#define SQLITE_READ                 20   /* Table Name      Column Name     */
+#define SQLITE_SELECT               21   /* NULL            NULL            */
+#define SQLITE_TRANSACTION          22   /* NULL            NULL            */
+#define SQLITE_UPDATE               23   /* Table Name      Column Name     */
 
 /*
 ** The return value of the authorization function should be one of the

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.153 2003/01/12 18:02:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.154 2003/01/13 23:27:33 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -938,7 +938,7 @@ void sqliteRollbackInternalChanges(sqlite*);
 void sqliteCommitInternalChanges(sqlite*);
 Table *sqliteResultSetOfSelect(Parse*,char*,Select*);
 void sqliteOpenMasterTable(Vdbe *v, int);
-void sqliteStartTable(Parse*,Token*,Token*,int);
+void sqliteStartTable(Parse*,Token*,Token*,int,int);
 void sqliteAddColumn(Parse*,Token*);
 void sqliteAddNotNull(Parse*, int);
 void sqliteAddPrimaryKey(Parse*, IdList*, int);
@@ -1035,13 +1035,8 @@ void sqliteCreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
 void sqliteDeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
   void sqliteAuthRead(Parse*,Expr*,SrcList*,int);
-  int sqliteAuthDelete(Parse*,const char*, int);
-  int sqliteAuthInsert(Parse*,const char*, int);
-  int sqliteAuthCommand(Parse*,const char*,const char*);
+  int sqliteAuthCheck(Parse*,int, const char*, const char*);
 #else
 # define sqliteAuthRead(a,b,c,d)
-# define sqliteAuthDelete(a,b,c)     SQLITE_OK
-# define sqliteAuthInsert(a,b,c)     SQLITE_OK
-# define sqliteAuthWrite(a,b,c)      SQLITE_OK
-# define sqliteAuthCommand(a,b,c)    SQLITE_OK
+# define sqliteAuthCheck(a,b,c,d)    SQLITE_OK
 #endif

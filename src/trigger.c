@@ -49,8 +49,7 @@ void sqliteCreateTrigger(
 ){
   Trigger *nt;
   Table   *tab;
-
-  if( sqliteAuthCommand(pParse, "CREATE", "TRIGGER") ) goto trigger_cleanup;
+  char *zName = 0;    /* Name of the trigger */
 
   /* Check that: 
   ** 1. the trigger name does not already exist.
@@ -59,16 +58,12 @@ void sqliteCreateTrigger(
   ** 4. That we are not trying to create an INSTEAD OF trigger on a table.
   ** 5. That we are not trying to create a BEFORE or AFTER trigger on a view.
   */
-  {
-    char *tmp_str = sqliteStrNDup(pName->z, pName->n);
-    if( sqliteHashFind(&(pParse->db->trigHash), tmp_str, pName->n + 1) ){
-      sqliteSetNString(&pParse->zErrMsg, "trigger ", -1,
-          pName->z, pName->n, " already exists", -1, 0);
-      sqliteFree(tmp_str);
-      pParse->nErr++;
-      goto trigger_cleanup;
-    }
-    sqliteFree(tmp_str);
+  zName = sqliteStrNDup(pName->z, pName->n);
+  if( sqliteHashFind(&(pParse->db->trigHash), zName, pName->n + 1) ){
+    sqliteSetNString(&pParse->zErrMsg, "trigger ", -1,
+        pName->z, pName->n, " already exists", -1, 0);
+    pParse->nErr++;
+    goto trigger_cleanup;
   }
   {
     char *tmp_str = sqliteStrNDup(pTableName->z, pTableName->n);
@@ -104,9 +99,15 @@ void sqliteCreateTrigger(
 	  " trigger on table: ", -1, pTableName->z, pTableName->n, 0);
       goto trigger_cleanup;
     }
-    if( sqliteAuthInsert(pParse, SCHEMA_TABLE(tab->isTemp), 1) ){
-      goto trigger_cleanup;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+    {
+      int code = SQLITE_CREATE_TRIGGER;
+      if( tab->isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
+      if( sqliteAuthCheck(pParse, code, zName, tab->zName) ){
+        goto trigger_cleanup;
+      }
     }
+#endif
   }
 
   if (tr_tm == TK_INSTEAD){
@@ -116,7 +117,8 @@ void sqliteCreateTrigger(
   /* Build the Trigger object */
   nt = (Trigger*)sqliteMalloc(sizeof(Trigger));
   if( nt==0 ) goto trigger_cleanup;
-  nt->name = sqliteStrNDup(pName->z, pName->n);
+  nt->name = zName;
+  zName = 0;
   nt->table = sqliteStrNDup(pTableName->z, pTableName->n);
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   nt->op = op;
@@ -179,6 +181,7 @@ void sqliteCreateTrigger(
 
 trigger_cleanup:
 
+  sqliteFree(zName);
   sqliteIdListDelete(pColumns);
   sqliteExprDelete(pWhen);
   sqliteDeleteTriggerStep(pStepList);
@@ -342,7 +345,6 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
   Table   *pTable;
   Vdbe *v;
 
-  if( sqliteAuthCommand(pParse, "DROP", "TRIGGER") ) return;
   zName = sqliteStrNDup(pName->z, pName->n);
 
   /* ensure that the trigger being dropped exists */
@@ -355,11 +357,17 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
   }
   pTable = sqliteFindTable(pParse->db, pTrigger->table);
   assert(pTable);
-  if( sqliteAuthDelete(pParse, SCHEMA_TABLE(pTable->isTemp), 1) ){
-    sqliteFree(zName);
-    return;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  {
+    int code = SQLITE_DROP_TRIGGER;
+    if( pTable->isTemp ) code = SQLITE_DROP_TEMP_TRIGGER;
+    if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName) ||
+      sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->isTemp),0) ){
+      sqliteFree(zName);
+      return;
+    }
   }
-
+#endif
 
   /*
    * If this is not an "explain", then delete the trigger structure.

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.2 2003/01/12 19:33:53 drh Exp $
+** $Id: auth.c,v 1.3 2003/01/13 23:27:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -106,7 +106,7 @@ void sqliteAuthRead(
   }else{
     zCol = "ROWID";
   }
-  rc = db->xAuth(db->pAuthArg, SQLITE_READ_COLUMN, pTab->zName, zCol);
+  rc = db->xAuth(db->pAuthArg, SQLITE_READ, pTab->zName, zCol);
   if( rc==SQLITE_IGNORE ){
     pExpr->op = TK_NULL;
   }else if( rc==SQLITE_DENY ){
@@ -119,94 +119,28 @@ void sqliteAuthRead(
 }
 
 /*
-** Check the user-supplied authorization function to see if it is ok to
-** delete rows from the table pTab.  Return SQLITE_OK if it is.  Return
-** SQLITE_IGNORE if deletions should be silently omitted.  Return SQLITE_DENY
-** if an error is to be reported.  In the last case, write the text of
-** the error into pParse->zErrMsg.
+** Do an authorization check using the code and arguments given.  Return
+** either SQLITE_OK (zero) or SQLITE_IGNORE or SQLITE_DENY.  If SQLITE_DENY
+** is returned, then the error count and error message in pParse are
+** modified appropriately.
 */
-int sqliteAuthDelete(Parse *pParse, const char *zName, int forceError){
+int sqliteAuthCheck(
+  Parse *pParse,
+  int code,
+  const char *zArg1,
+  const char *zArg2
+){
   sqlite *db = pParse->db;
   int rc;
   if( db->xAuth==0 ){
     return SQLITE_OK;
   }
-  rc = db->xAuth(db->pAuthArg, SQLITE_DELETE_ROW, zName, "");
-  if( rc==SQLITE_DENY  || (rc==SQLITE_IGNORE && forceError) ){
-    sqliteSetString(&pParse->zErrMsg,"deletion from table ",
-        zName, " is prohibited", 0);
+  rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2);
+  if( rc==SQLITE_DENY ){
+    sqliteSetString(&pParse->zErrMsg, "not authorized", 0);
     pParse->nErr++;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
     rc = SQLITE_DENY;
-    sqliteAuthBadReturnCode(pParse, rc);
-  }
-  return rc;
-}
-
-/*
-** Check the user-supplied authorization function to see if it is ok to
-** insert rows from the table pTab.  Return SQLITE_OK if it is.  Return
-** SQLITE_IGNORE if deletions should be silently omitted.  Return SQLITE_DENY
-** if an error is to be reported.  In the last case, write the text of
-** the error into pParse->zErrMsg.
-*/
-int sqliteAuthInsert(Parse *pParse, const char *zName, int forceError){
-  sqlite *db = pParse->db;
-  int rc;
-  if( db->xAuth==0 ){
-    return SQLITE_OK;
-  }
-  rc = db->xAuth(db->pAuthArg, SQLITE_INSERT_ROW, zName, "");
-  if( rc==SQLITE_DENY || (rc==SQLITE_IGNORE && forceError) ){
-    sqliteSetString(&pParse->zErrMsg,"insertion into table ",
-        zName, " is prohibited", 0);
-    pParse->nErr++;
-  }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
-    rc = SQLITE_DENY;
-    sqliteAuthBadReturnCode(pParse, rc);
-  }
-  return rc;
-}
-
-/*
-** Check to see if it is ok to modify column "j" of table pTab.
-** Return SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY.
-*/
-int sqliteAuthWrite(Parse *pParse, Table *pTab, int j){
-  sqlite *db = pParse->db;
-  int rc;
-  if( db->xAuth==0 ) return SQLITE_OK;
-  rc = db->xAuth(db->pAuthArg, SQLITE_WRITE_COLUMN,
-                    pTab->zName, pTab->aCol[j].zName);
-  if( rc==SQLITE_DENY ){
-      sqliteSetString(&pParse->zErrMsg, "changes to ", pTab->zName,
-          ".", pTab->aCol[j].zName, " are prohibited", 0);
-      pParse->nErr++;
-  }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
-    sqliteAuthBadReturnCode(pParse, rc);
-  }
-  return rc;
-}
-
-/*
-** Check to see if it is ok to execute a special command such as
-** COPY or VACUUM or ROLLBACK.
-*/
-int sqliteAuthCommand(Parse *pParse, const char *zCmd, const char *zArg1){
-  sqlite *db = pParse->db;
-  int rc;
-  if( db->xAuth==0 ) return SQLITE_OK;
-  rc = db->xAuth(db->pAuthArg, SQLITE_COMMAND, zCmd, zArg1);
-  if( rc==SQLITE_DENY ){
-    if( zArg1 && zArg1[0] ){
-      sqliteSetString(&pParse->zErrMsg, "execution of the ", zCmd, " ", zArg1,
-          " command is prohibited", 0);
-    }else{
-      sqliteSetString(&pParse->zErrMsg, "execution of the ", zCmd,
-          " command is prohibited", 0);
-    }
-    pParse->nErr++;
-  }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
     sqliteAuthBadReturnCode(pParse, rc);
   }
   return rc;

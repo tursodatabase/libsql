@@ -1,5 +1,5 @@
-C The\sinitial\sround\sof\stests\sfor\sthe\ssqlite_set_authorizer()\sAPI.\s\sMore\sare\nneeded\sbefore\srelease.\s\sTicket\s#215.\s(CVS\s829)
-D 2003-01-12T19:33:53
+C Revise\sthe\ssqlite_set_authorizer\sAPI\sto\sprovide\smore\sdetailed\sinformation\nabout\sthe\sSQL\sstatement\sbeing\sauthorized.\s\sOnly\spartially\stested\sso\sfar.\s(CVS\s830)
+D 2003-01-13T23:27:32
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,46 +18,46 @@ F main.mk 8b10c5df8a21cdd343986a90c75247bafaebb3aa
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/auth.c de3c70e5eab92ef5c1af87dae626022b8f46a6fd
+F src/auth.c 9c2db0bc7707f2d2e227f47e3d557b41d44ade75
 F src/btree.c 131b5903f66e148f0f9af0cedd1c6654932c4e04
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
-F src/build.c 3136d7fc765cc2feee2ad987bac1c1696fdc0f0e
-F src/delete.c bc807a756dde6aa16db38f6e05a90408053d2f2c
+F src/build.c 94cd4ed1724b3e7304387b2caece75aff39d7f6e
+F src/delete.c cbd499f3f9297504c42e328af89bef1a2113d04c
 F src/encode.c 09d1fe8a2e97ff94cce496e2909e2ebc8947960b
 F src/expr.c d8b319f25335443a415a639aec8e0edc64e3ab6c
 F src/func.c 90c583f0b91220f7cd411a2407deaf9327245d63
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c d19a73907ade1f2801bf8c3cb68538e8b1a05b5f
+F src/insert.c db954e955970795819145a3649fd2ad116a58890
 F src/main.c c8f8fdfe4548a8404fab90ff6ad374b217e6b7fa
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 28447687e7914306650f72058f62f7162faeef1f
 F src/os.h afa3e096213bad86845f8bdca81a9e917505e401
 F src/pager.c 5b81639b38eb4250810ed2b31aada9fb040ed86b
 F src/pager.h 540833e8cb826b80ce2e39aa917deee5e12db626
-F src/parse.y 427a17888c117cc9cc35311eda0603d55437f02b
+F src/parse.y 58655a50817f93ddd0bc3d8949e267729396949c
 F src/printf.c 5c50fc1da75c8f5bf432b1ad17d91d6653acd167
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 1b7d20b659621bf8621dec710e9680b4c380563c
+F src/select.c 5ce75c1381d8ec3b89ea4d7eb5171bc57785e610
 F src/shell.c c9946847b81b8b7f32ad195498dafbc623c6874f
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
-F src/sqlite.h.in 7b35872afdba0d46890773470a12aa71d78f6d21
-F src/sqliteInt.h 01b59d2ecbd36b7ec750339bbd9401c012b463c2
+F src/sqlite.h.in 9974a66d4caa4880fe44ebdc306f5f94c6a4d9c0
+F src/sqliteInt.h bc986d4fc3d8285cec370eb5e305d5499f422a31
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9f2c00a92338c51171ded8943bd42d77f7e69e64
-F src/test1.c 2a0e5cf7e66cbbb46d9f0c97ea8f406141e8b263
+F src/test1.c 921e5dda494f836d2ebea703bd5b239a7cc963d0
 F src/test2.c 03f05e984c8e2f2badc44644d42baf72b249096b
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
-F src/trigger.c dd3fb6595643e29b71d6f3ecb22afb930224633c
-F src/update.c 9f2e9105c697b11b06b381910d0e429718f01cc3
+F src/trigger.c cb72a3374b21ed00a6dbd3c2c5aa27a7fa72625f
+F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
 F src/util.c 354336da4a6f1c98f687a13db0c45ed9314a892b
 F src/vdbe.c e103bd5a154b1790dd344662dceb14566a51a879
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
-F test/auth.test 1e8e443bc8d5c4ea44176ce6d9de4157582475aa
+F test/auth.test c0b3210b109f9cdde2a19c7af603a3f6c763dcf8
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7601916419489879fe963c83010b452c49ef063f
-R bf3593b345d77cb3f65a7094575c0db9
+P 5707b3d56efb6e988f816abefb1836f2f3254117
+R 185c96485c9e323ed508e05878c2e1fd
 U drh
-Z 10949dc2e6e230f66d8a085db700df05
+Z ce7138319a0232b300fa79474bc44207
