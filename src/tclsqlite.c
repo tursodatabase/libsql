@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.120 2005/03/31 18:26:21 drh Exp $
+** $Id: tclsqlite.c,v 1.121 2005/04/03 23:54:44 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -83,6 +83,7 @@ struct SqliteDb {
   char *zTrace;         /* The trace callback routine */
   char *zProgress;      /* The progress callback routine */
   char *zAuth;          /* The authorization callback routine */
+  char *zNull;          /* Text to substitute for an SQL NULL value */
   SqlFunc *pFunc;       /* List of SQL functions */
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
@@ -135,6 +136,9 @@ static void DbDeleteCmd(void *db){
   }
   if( pDb->zAuth ){
     Tcl_Free(pDb->zAuth);
+  }
+  if( pDb->zNull ){
+    Tcl_Free(pDb->zNull);
   }
   Tcl_Free((char*)pDb);
 }
@@ -441,9 +445,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "changes",            "close",             "collate",
     "collation_needed",   "commit_hook",       "complete",
     "copy",               "errorcode",         "eval",
-    "function",           "last_insert_rowid", "onecolumn",
-    "progress",           "rekey",             "timeout",
-    "total_changes",      "trace",             "version",
+    "function",           "last_insert_rowid", "nullvalue",
+    "onecolumn",          "progress",          "rekey",
+    "timeout",            "total_changes",     "trace",
+    "version",
     0                    
   };
   enum DB_enum {
@@ -451,9 +456,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_CHANGES,           DB_CLOSE,            DB_COLLATE,
     DB_COLLATION_NEEDED,  DB_COMMIT_HOOK,      DB_COMPLETE,
     DB_COPY,              DB_ERRORCODE,        DB_EVAL,
-    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_ONECOLUMN,
-    DB_PROGRESS,          DB_REKEY,            DB_TIMEOUT,
-    DB_TOTAL_CHANGES,     DB_TRACE,            DB_VERSION
+    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_NULLVALUE,
+    DB_ONECOLUMN,         DB_PROGRESS,         DB_REKEY,
+    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
+    DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -975,6 +981,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
               pVal = Tcl_NewDoubleObj(r);
               break;
             }
+            case SQLITE_NULL: {
+              pVal = dbTextToObj(pDb->zNull);
+              break;
+            }
             default: {
               pVal = dbTextToObj(sqlite3_column_text(pStmt, i));
               break;
@@ -1246,6 +1256,37 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
+  /*
+  **     $db nullvalue ?STRING?
+  **
+  ** Change text used when a NULL comes back from the database. If ?STRING?
+  ** is not present, then the current string used for NULL is returned.
+  ** If STRING is present, then STRING is returned.
+  **
+  */
+  case DB_NULLVALUE: {
+    if( objc!=2 && objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "NULLVALUE");
+      return TCL_ERROR;
+    }
+    if( objc==3 ){
+      int len;
+      char *zNull = Tcl_GetStringFromObj(objv[2], &len);
+      if( pDb->zNull ){
+        Tcl_Free(pDb->zNull);
+      }
+      if( zNull && len>0 ){
+        pDb->zNull = Tcl_Alloc( len + 1 );
+        strncpy(pDb->zNull, zNull, len);
+        pDb->zNull[len] = '\0';
+      }else{
+        pDb->zNull = 0;
+      }
+    }
+    Tcl_SetObjResult(interp, dbTextToObj(pDb->zNull));
+    break;
+  }
+  
   /*
   **     $db total_changes
   **

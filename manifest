@@ -1,5 +1,5 @@
-C Documentation\supdates.\s(CVS\s2440)
-D 2005-04-01T16:29:12
+C Apply\sTcl\s'nullvalue'\spatch\sfrom\sStefan\sFinzel.\s(CVS\s2441)
+D 2005-04-03T23:54:44
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/shell.c 25b3217d7c64e6497225439d261a253a23efff26
 F src/sqlite.h.in 1ece9aafba94b8515b276b3de73cbabe0912d42a
 F src/sqliteInt.h 474c20597ee66bb3a666bed0abd76e7be579184a
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
-F src/tclsqlite.c 650b9ae64d7d9b40b3c8cd8bf27224139a10028e
+F src/tclsqlite.c 245b242edfb587e305954698ed93c1bc3daed678
 F src/test1.c 32a158ca4aca2e9b43d911eda4552253df9a207d
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
@@ -192,7 +192,7 @@ F test/subquery.test 6274cce7617bc7f625490759cbe4f0c0eef24895
 F test/subselect.test 3f3f7a940dc3195c3139f4d530385cb54665d614
 F test/table.test e87fb2211b97c6a3a367fbc116e8572091b53160
 F test/tableapi.test 6a66d58b37d46dc0f2b3c7d4bd2617d209399bd1
-F test/tclsqlite.test 4ac312b47632596516353948b59089b02312aed7
+F test/tclsqlite.test 7112be2a9d0d70c8767b9b2c748bf39d407a6aba
 F test/temptable.test c71eeffe8af807f76eafdc5a39824639a1e301df
 F test/tester.tcl 69c0dc1accaf0ff26bff62b33e13590a4ecba17d
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -274,11 +274,11 @@ F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
-F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
+F www/tclsqlite.tcl 425be741b8ae664f55cb1ef2371aab0a75109cf9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl a99cf5f6d8bd4d5537584a2b342f0fb9fa601d8b
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P e8391491a68018406e30c2a699a4cab9e0de092c
-R 0099f7c3586b4b93ff511d85ac21c75e
-U drh
-Z da8ce3a3ad37d1a0e8ba4a6a000261c8
+P 7e6f688d468099a6e62e405086c9172459d43e3f
+R a8cca6db5487eb412a323e0b22bfb314
+U danielk1977
+Z ee96ebc082df4a64e80f84ebea2df6dc

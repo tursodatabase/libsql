@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.38 2005/02/26 17:31:28 drh Exp $
+# $Id: tclsqlite.test,v 1.39 2005/04/03 23:54:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,7 @@ do_test tcl-1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, errorcode, eval, function, last_insert_rowid, onecolumn, progress, rekey, timeout, total_changes, trace, or version}}
+} {1 {bad option "bogus": must be authorizer, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, errorcode, eval, function, last_insert_rowid, nullvalue, onecolumn, progress, rekey, timeout, total_changes, trace, or version}}
 do_test tcl-1.3 {
   execsql {CREATE TABLE t1(a int, b int)}
   execsql {INSERT INTO t1 VALUES(10,20)}
@@ -301,5 +301,21 @@ do_test tcl-7.1 {
   db version
   expr 0
 } {0}
+
+# modify and reset the NULL representation
+#
+do_test tcl-8.1 {
+  db nullvalue NaN
+  execsql {INSERT INTO t1 VALUES(30,NULL)}
+  db eval {SELECT * FROM t1 WHERE b IS NULL}
+} {30 NaN}
+do_test tcl-8.2 {
+  db nullvalue NULL
+  db nullvalue
+} {NULL}
+do_test tcl-8.3 {
+  db nullvalue {}
+  db eval {SELECT * FROM t1 WHERE b IS NULL}
+} {30 {}}
 
 finish_test
