@@ -1,5 +1,5 @@
-C Version\s2.5.6\s(CVS\s664)
-D 2002-07-07T17:13:00
+C Make\sthe\sBTree\sbalance()\sroutine\sa\slittle\sfaster\sby\sreusing\sdatabase\r\npages\slocally\srather\sthan\sfreeing\sand\sreallocating\sthem.\s(CVS\s666)
+D 2002-07-08T02:16:38
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -18,7 +18,7 @@ F publish.sh 1a04b9aa0d9c9661e338268343476ed0851c5778
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c 73212bda34c491ce9165464c3e1ada737acf5e06
+F src/btree.c ce999ee3f5c6130aa12529ba4f510679d0a07faa
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c ea4a3bc15d6338294e68100f642edf48e4082403
 F src/delete.c 215492ffcea4262a993e55f3c4a67dc9fea4da9c
@@ -140,7 +140,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ee86704daf184307fe98b5631f22ceb3d701afce
-R 40fe3b9213d364dad4e1cb9b6ce3c5e4
+P 111c78e6835306fcd8b6d22b9ae68dfb9ab4febe
+R 66eadf0358149489c17da262453c92f0
 U drh
-Z 0f5647bf09d0573645455993f27ff345
+Z 70877f6880980e12b35ccd8168df5635

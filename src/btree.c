@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.65 2002/07/07 16:52:47 drh Exp $
+** $Id: btree.c,v 1.66 2002/07/08 02:16:38 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2099,10 +2099,6 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   */
   for(i=0; i<nOld; i++){
     copyPage(&aOld[i], apOld[i]);
-    rc = freePage(pBt, apOld[i], pgnoOld[i]);
-    if( rc ) goto balance_cleanup;
-    sqlitepager_unref(apOld[i]);
-    apOld[i] = &aOld[i];
   }
 
   /*
@@ -2112,7 +2108,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   */
   nCell = 0;
   for(i=0; i<nOld; i++){
-    MemPage *pOld = apOld[i];
+    MemPage *pOld = &aOld[i];
     for(j=0; j<pOld->nCell; j++){
       apCell[nCell] = pOld->apCell[j];
       szCell[nCell] = cellSize(apCell[nCell]);
@@ -2166,14 +2162,31 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   assert( cntNew[0]>0 );
 
   /*
-  ** Allocate k new pages
+  ** Allocate k new pages.  Reuse old pages where possible.
   */
   for(i=0; i<k; i++){
-    rc = allocatePage(pBt, &apNew[i], &pgnoNew[i]);
-    if( rc ) goto balance_cleanup;
+    if( i<nOld ){
+      apNew[i] = apOld[i];
+      pgnoNew[i] = pgnoOld[i];
+      apOld[i] = 0;
+      sqlitepager_write(apNew[i]);
+    }else{
+      rc = allocatePage(pBt, &apNew[i], &pgnoNew[i]);
+      if( rc ) goto balance_cleanup;
+    }
     nNew++;
     zeroPage(apNew[i]);
     apNew[i]->isInit = 1;
+  }
+
+  /* Free any old pages that were not reused as new pages.
+  */
+  while( i<nOld ){
+    rc = freePage(pBt, apOld[i], pgnoOld[i]);
+    if( rc ) goto balance_cleanup;
+    sqlitepager_unref(apOld[i]);
+    apOld[i] = 0;
+    i++;
   }
 
   /*
@@ -2236,7 +2249,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     }
   }
   assert( j==nCell );
-  apNew[nNew-1]->u.hdr.rightChild = apOld[nOld-1]->u.hdr.rightChild;
+  apNew[nNew-1]->u.hdr.rightChild = aOld[nOld-1].u.hdr.rightChild;
   if( nxDiv==pParent->nCell ){
     pParent->u.hdr.rightChild = pgnoNew[nNew-1];
   }else{
@@ -2274,7 +2287,7 @@ balance_cleanup:
     sqlitepager_unref(extraUnref);
   }
   for(i=0; i<nOld; i++){
-    if( apOld[i]!=&aOld[i] ) sqlitepager_unref(apOld[i]);
+    if( apOld[i]!=0 && apOld[i]!=&aOld[i] ) sqlitepager_unref(apOld[i]);
   }
   for(i=0; i<nNew; i++){
     sqlitepager_unref(apNew[i]);
