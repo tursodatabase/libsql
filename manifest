@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#42:\sAdded\scomments\sto\sstructs\sTrigger,\sTriggerStep\sand\sTriggerStack.\s(CVS\s569)
-D 2002-05-16T00:13:12
+C Stylistic\schanges\sto\ssrc/trigger.c\s(partial\sfix\sto\sticket\s#39).\sAlso\smore\scomments.\s(CVS\s570)
+D 2002-05-17T00:05:59
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -49,7 +49,7 @@ F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c f12f78c58b2a79ea4eee880efad63a328e103c62
-F src/trigger.c 491d5d3b40d737365a1ade7d4039277991208dc3
+F src/trigger.c e61b4a9ecdfdef8e5d7d074e720dacf7abe5f361
 F src/update.c f9b53d46cc651b9630fc53342b9e792031f6fc5c
 F src/util.c 707c30f8c13cddace7c08556ac450c0b786660b3
 F src/vdbe.c 42281b4e0e0c4a089018a14d6840ada5a1896e51
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 454879fa400f8c67456a483e69342bf48e3a02a4
-R 4ce29c61e08ffa335fbe57344d2ed013
+P 9ec8a2b139ce38312284d7b4eb61221b1e1e3052
+R 6c59ff9d8d542bc14ae8632c3c69e144
 U danielk1977
-Z 4467b41aebb8cfe3136a58c0b40fd68b
+Z d967dbf67c63f0da8b2c7467d5b0888a
