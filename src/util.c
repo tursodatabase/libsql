@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.108 2004/06/30 02:35:51 danielk1977 Exp $
+** $Id: util.c,v 1.109 2004/06/30 04:02:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -762,18 +762,6 @@ int sqlite3FitsIn64Bits(const char *zNum){
   return i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0);
 }
 
-/*
-** If zNum represents an integer that will fit in 64-bits, then set
-** *pValue to that integer and return true.  Otherwise return false.
-*/
-int sqlite3GetInt64(const char *zNum, i64 *pValue){
-  if( sqlite3FitsIn64Bits(zNum) ){
-    sqlite3atoi64(zNum, pValue);
-    return 1;
-  }
-  return 0;
-}
-
 #if 1  /* We are now always UTF-8 */
 /*
 ** X is a pointer to the first byte of a UTF-8 character.  Increment
@@ -1112,17 +1100,8 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
     *v = (x<<7) | c;
     return 2;
   }
-  x = (x<<7) | (c&0x7f);
-  if( ((c = p[2]) & 0x80)==0 ){
-    *v = (x<<7) | c;
-    return 3;
-  }
-  x = (x<<7) | (c&0x7f);
-  if( ((c = p[3]) & 0x80)==0 ){
-    *v = (x<<7) | c;
-    return 4;
-  }
-  n = 4;
+  x = (x<<7) | (c & 0x7f);
+  n = 2;
   do{
     x = (x<<7) | ((c = p[n++])&0x7f);
   }while( (c & 0x80)!=0 && n<9 );
@@ -1143,6 +1122,27 @@ int sqlite3VarintLen(u64 v){
   return i;
 }
 
+/*
+** Translate a single byte of Hex into an integer.
+*/
+static int hexToInt(int h){
+  if( h>='0' && h<='9' ){
+    return h - '0';
+  }else if( h>='a' && h<='f' ){
+    return h - 'a' + 10;
+  }else if( h>='A' && h<='F' ){
+    return h - 'A' + 10;
+  }else{
+    return 0;
+  }
+}
+
+/*
+** Convert a BLOB literal of the form "x'hhhhhh'" into its binary
+** value.  Return a pointer to its binary value.  Space to hold the
+** binary value has been obtained from malloc and must be freed by
+** the calling routine.
+*/
 void *sqlite3HexToBlob(const char *z){
   char *zBlob;
   int i;
@@ -1150,27 +1150,8 @@ void *sqlite3HexToBlob(const char *z){
   if( n%2 ) return 0;
 
   zBlob = (char *)sqliteMalloc(n/2);
-
-  for(i=0; i<n; i++){
-    u8 c;
-
-    if     ( z[i]>47 && z[i]<58 ) c = (z[i]-48)<<4;
-    else if( z[i]>64 && z[i]<71 ) c = (z[i]-55)<<4;
-    else if( z[i]>96 && z[i]<103 ) c = (z[i]-87)<<4;
-    else {
-      sqliteFree(zBlob);
-      return 0;
-    }
-    i++;
-    if     ( z[i]>47 && z[i]<58 ) c += (z[i]-48);
-    else if( z[i]>64 && z[i]<71 ) c += (z[i]-55);
-    else if( z[i]>96 && z[i]<103 ) c += (z[i]-87);
-    else {
-      sqliteFree(zBlob);
-      return 0;
-    }
-
-    zBlob[i/2] = c;
+  for(i=0; i<n; i+=2){
+    zBlob[i/2] = (hexToInt(z[i])<<4) | hexToInt(z[i+1]);
   }
   return zBlob;
 }

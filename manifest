@@ -1,5 +1,5 @@
-C Improved\stest\scoverage\sof\sfunc.c\sand\shash.c.\s(CVS\s1772)
-D 2004-06-30T03:08:25
+C Improve\stest\scoverage\sof\sutil.c\s(CVS\s1773)
+D 2004-06-30T04:02:12
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -59,19 +59,19 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
-F src/sqliteInt.h 4f8d44f04cc51cb421bf3c195247353a5be2e98f
+F src/sqliteInt.h 9dcfcc67fc995b9079074d6b9619a1d4335583d0
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c f72288553ca3cdaf686baab4b1797dd98140c501
-F src/test1.c 151df224f7202c2a0d907638f22ed4b0e2378ba9
+F src/test1.c ad2ae36959d6ac480f54b7e07d4baad8ee3b2e88
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
-F src/test3.c 7163c577f1dd73ad4a1d3730ea6541af3274c964
+F src/test3.c d0c56667e89f79ad0f060fdf010d1c34a4bc2988
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c b001fa7f1b9e2dc5c2331de62fc641b5ab2bd7a1
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
 F src/trigger.c 6aaf6d79cc2157c70a06031dd1531707d644cfb4
 F src/update.c b66b1896c9da54678ba3eff2bf0b4d291a95986a
 F src/utf.c f03535db72bfa09e24202ccdd245f21d2fc65f0a
-F src/util.c 94796d2b31600beee7de426c3946022ef3508d46
+F src/util.c b267d0fe10cffa3301fe9fab6592a6808a38bce6
 F src/vacuum.c 353c7f69dbeb6738434d81798465cc0698844640
 F src/vdbe.c 32039b08701f1c19fcd9b684366cefaa8fabaa72
 F src/vdbe.h 75b241c02431b9c0f16eaa9cdbb34146c6287f52
@@ -120,7 +120,7 @@ F test/index.test b6941dd532815f278042b85f79b1a6dc16c4d729
 F test/insert.test ebbab63db4ad69395a058514bccb3cdb0a029d48
 F test/insert2.test ea5d4f8dcbc68d8ad85eaa5f03d9812757610f90
 F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
-F test/intpkey.test 8b9590b2db07696e73381da4df6c40ef10436d73
+F test/intpkey.test c8efd06db62b8b27216558ef439cc867d113cfec
 F test/ioerr.test 7d087bfd1a1a53442940e000df936e0df0c5b886
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
 F test/join2.test c97e4c5aa65dea462145529e58212a709b4722b8
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P e5e39764038311cbb3555b5bd41de2563a89113e
-R 6128bf7e6957bc36be00e553f4313e2a
+P 0c999f28137bd82ba24dd263bab30d22329eed73
+R aac9bef2959b49a3b21126dff36eb51a
 U drh
-Z 6dcdf7a54d5c2b70e5fcf38318bf29ad
+Z d9d34e7eed57c4c6a384e0a609787172

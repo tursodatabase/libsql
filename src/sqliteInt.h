@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.303 2004/06/29 08:59:35 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.304 2004/06/30 04:02:12 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1338,7 +1338,6 @@ int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 double sqlite3AtoF(const char *z, const char **);
 char *sqlite3_snprintf(int,char*,const char*,...);
 int sqlite3GetInt32(const char *, int*);
-int sqlite3GetInt64(const char *, i64*);
 int sqlite3FitsIn64Bits(const char *);
 int sqlite3utf16ByteLen(const void *pData, int nChar);
 int sqlite3utf8CharLen(const char *pData, int nByte);

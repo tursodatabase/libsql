@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.90 2004/06/29 13:18:24 danielk1977 Exp $
+** $Id: test1.c,v 1.91 2004/06/30 04:02:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -538,6 +538,18 @@ static int sqlite3_mprintf_int(
   Tcl_AppendResult(interp, z, 0);
   sqlite3_free(z);
   return TCL_OK;
+}
+
+/*
+** If zNum represents an integer that will fit in 64-bits, then set
+** *pValue to that integer and return true.  Otherwise return false.
+*/
+static int sqlite3GetInt64(const char *zNum, i64 *pValue){
+  if( sqlite3FitsIn64Bits(zNum) ){
+    sqlite3atoi64(zNum, pValue);
+    return 1;
+  }
+  return 0;
 }
 
 /*
