@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.223 2004/11/22 10:02:10 danielk1977 Exp $
+** $Id: btree.c,v 1.224 2004/11/22 19:07:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2854,7 +2854,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     }
     pCur->idx--;
     pCur->info.nSize = 0;
-    if( pPage->leafData ){
+    if( pPage->leafData && !pPage->leaf ){
       rc = sqlite3BtreePrevious(pCur, pRes);
     }else{
       rc = SQLITE_OK;
