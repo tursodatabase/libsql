@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.180 2004/07/23 00:01:39 drh Exp $
+** $Id: btree.c,v 1.181 2004/08/08 19:43:30 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -338,7 +338,6 @@ struct CellInfo {
 struct BtCursor {
   Btree *pBt;               /* The Btree to which this cursor belongs */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
-  BtCursor *pShared;        /* Loop of cursors with the same root page */
   int (*xCompare)(void*,int,const void*,int,const void*); /* Key comp func */
   void *pArg;               /* First arg to xCompare() */
   Pgno pgnoRoot;            /* The root page of this tree */
@@ -1532,16 +1531,21 @@ int sqlite3BtreeCursor(
   BtCursor **ppCur                            /* Write new cursor here */
 ){
   int rc;
-  BtCursor *pCur, *pRing;
+  BtCursor *pCur;
 
-  if( pBt->readOnly && wrFlag ){
-    *ppCur = 0;
-    return SQLITE_READONLY;
+  *ppCur = 0;
+  if( wrFlag ){
+    static int checkReadLocks(Btree*,Pgno,BtCursor*);
+    if( pBt->readOnly ){
+      return SQLITE_READONLY;
+    }
+    if( checkReadLocks(pBt, iTable, 0) ){
+      return SQLITE_LOCKED;
+    }
   }
   if( pBt->pPage1==0 ){
     rc = lockBtree(pBt);
     if( rc!=SQLITE_OK ){
-      *ppCur = 0;
       return rc;
     }
   }
@@ -1572,14 +1576,6 @@ int sqlite3BtreeCursor(
     pCur->pNext->pPrev = pCur;
   }
   pCur->pPrev = 0;
-  pRing = pBt->pCursor;
-  while( pRing && pRing->pgnoRoot!=pCur->pgnoRoot ){ pRing = pRing->pNext; }
-  if( pRing ){
-    pCur->pShared = pRing->pShared;
-    pRing->pShared = pCur;
-  }else{
-    pCur->pShared = pCur;
-  }
   pBt->pCursor = pCur;
   pCur->isValid = 0;
   pCur->status = SQLITE_OK;
@@ -1587,7 +1583,6 @@ int sqlite3BtreeCursor(
   return SQLITE_OK;
 
 create_cursor_exception:
-  *ppCur = 0;
   if( pCur ){
     releasePage(pCur->pPage);
     sqliteFree(pCur);
@@ -1625,11 +1620,6 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     pCur->pNext->pPrev = pCur->pPrev;
   }
   releasePage(pCur->pPage);
-  if( pCur->pShared!=pCur ){
-    BtCursor *pRing = pCur->pShared;
-    while( pRing->pShared!=pCur ){ pRing = pRing->pShared; }
-    pRing->pShared = pCur->pShared;
-  }
   unlockBtreeIfUnused(pBt);
   sqliteFree(pCur);
   return SQLITE_OK;
@@ -3419,27 +3409,24 @@ static int balance(MemPage *pPage){
 }
 
 /*
-** This routine checks all cursors that point to the same table
-** as pCur points to.  If any of those cursors were opened with
+** This routine checks all cursors that point to table pgnoRoot.
+** If any of those cursors other than pExclude were opened with 
 ** wrFlag==0 then this routine returns SQLITE_LOCKED.  If all
-** cursors point to the same table were opened with wrFlag==1
+** cursors that point to pgnoRoot were opened with wrFlag==1
 ** then this routine returns SQLITE_OK.
 **
 ** In addition to checking for read-locks (where a read-lock 
 ** means a cursor opened with wrFlag==0) this routine also moves
-** all cursors other than pCur so that they are pointing to the 
+** all cursors other than pExclude so that they are pointing to the 
 ** first Cell on root page.  This is necessary because an insert 
 ** or delete might change the number of cells on a page or delete
 ** a page entirely and we do not want to leave any cursors 
 ** pointing to non-existant pages or cells.
 */
-static int checkReadLocks(BtCursor *pCur){
+static int checkReadLocks(Btree *pBt, Pgno pgnoRoot, BtCursor *pExclude){
   BtCursor *p;
-  assert( pCur->wrFlag );
-  for(p=pCur->pShared; p!=pCur; p=p->pShared){
-    assert( p );
-    assert( p->pgnoRoot==pCur->pgnoRoot );
-    assert( p->pPage->pgno==sqlite3pager_pagenumber(p->pPage->aData) );
+  for(p=pBt->pCursor; p; p=p->pNext){
+    if( p->pgnoRoot!=pgnoRoot || p==pExclude ) continue;
     if( p->wrFlag==0 ) return SQLITE_LOCKED;
     if( p->pPage->pgno!=p->pgnoRoot ){
       moveToRoot(p);
@@ -3481,7 +3468,7 @@ int sqlite3BtreeInsert(
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Cursor not open for writing */
   }
-  if( checkReadLocks(pCur) ){
+  if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
   rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc);
@@ -3551,7 +3538,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Did not open this cursor for writing */
   }
-  if( checkReadLocks(pCur) ){
+  if( checkReadLocks(pBt, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
   rc = sqlite3pager_write(pPage->aData);

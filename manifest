@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\sthe\sbusy\scallback\swhen\strying\sto\spromote\sa\slock\sfrom\sSHARED\nto\sRESERVED.\s\sThis\savoids\sa\sdeadlock.\s(CVS\s1879)
-D 2004-08-07T23:54:48
+C Attempting\sto\sopen\sa\slocked\stable\sfor\swriting\sshould\sfail\simmediately.\r\nTicket\s#842.\s(CVS\s1880)
+D 2004-08-08T19:43:30
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F sqlite3.def c139a6b17293d71759a7c301ad76707243ce5d54
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
-F src/btree.c edf4ece708350dec7f28ebd4620c6d33afe6993a
+F src/btree.c cfa5ed01838247be40c113cac528286675940801
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
 F src/build.c d1a2d7a99bb07a1ea4a019fcef6786546cb09f73
 F src/date.c e1bb384a7856c18dce9cadb0afbe6934ba5ddb00
@@ -109,6 +109,7 @@ F test/crash.test 3ea432ce624369c04ba1a23a5288115e40f5daa2
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test a5cdaed88fe575f2d6f63ff605abb5abc1b7319c
 F test/delete.test ec0b455f2dcc0e189d96ee438438ba026c4e51d8
+F test/delete2.test 050a3a6e8ea0f83aed817d164b16af2a499fb452
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
 F test/enc2.test 7a60971a62748be6b607b4b4380eb4c5e151a6ec
 F test/enc3.test 2ae80b11adf5b2c171d2e17214dabd356b9672c1
@@ -241,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 863540be248d3079e1a997349be6c74199149511
-R 537860faa651d2512143eecc05e62317
+P d33771a303d9c20dd477b1a973024ff763203211
+R d49220a972e86ed5f2222c14670b9ccc
 U drh
-Z a6e6f8dc54fe5cdf4e420d0a0243394b
+Z 6bdb053e7f2204021eb022af1f2d8d7a
