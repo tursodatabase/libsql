@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.19 2004/09/30 13:43:14 drh Exp $
+# $Id: auth.test,v 1.20 2004/11/12 15:53:37 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1665,6 +1665,123 @@ do_test auth-1.262 {
 } {test1}
 db authorizer {}
 execsql {DETACH DATABASE test1}
+db authorizer ::auth
+
+# Authorization for ALTER TABLE
+#
+do_test auth-1.263 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t1 RENAME TO t1x
+  }
+} {0 {}}
+do_test auth-1.264 {
+  execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+} {t1x}
+do_test auth-1.265 {
+  set authargs
+} {temp t1 {} {}}
+do_test auth-1.266 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t1x RENAME TO t1
+  }
+} {0 {}}
+do_test auth-1.267 {
+  execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+} {t1x}
+do_test auth-1.268 {
+  set authargs
+} {temp t1x {} {}}
+do_test auth-1.269 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t1x RENAME TO t1
+  }
+} {1 {not authorized}}
+do_test auth-1.270 {
+  execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+} {t1x}
+do_test auth-1.271 {
+  set authargs
+} {temp t1x {} {}}
+db authorizer {}
+catchsql {ALTER TABLE t1x RENAME TO t1}
+db authorizer ::auth
+do_test auth-1.272 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t2 RENAME TO t2x
+  }
+} {0 {}}
+do_test auth-1.273 {
+  execsql {SELECT name FROM sqlite_master WHERE type='table'}
+} {t2x}
+do_test auth-1.274 {
+  set authargs
+} {main t2 {} {}}
+do_test auth-1.275 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t2x RENAME TO t2
+  }
+} {0 {}}
+do_test auth-1.276 {
+  execsql {SELECT name FROM sqlite_master WHERE type='table'}
+} {t2x}
+do_test auth-1.277 {
+  set authargs
+} {main t2x {} {}}
+do_test auth-1.278 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ALTER_TABLE"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ALTER TABLE t2x RENAME TO t2
+  }
+} {1 {not authorized}}
+do_test auth-1.279 {
+  execsql {SELECT name FROM sqlite_master WHERE type='table'}
+} {t2x}
+do_test auth-1.280 {
+  set authargs
+} {main t2x {} {}}
+db authorizer {}
+catchsql {ALTER TABLE t2x RENAME TO t2}
 
 
 do_test auth-2.1 {

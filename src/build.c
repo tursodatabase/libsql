@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.277 2004/11/12 13:42:31 danielk1977 Exp $
+** $Id: build.c,v 1.278 2004/11/12 15:53:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2931,10 +2931,11 @@ void sqlite3AlterRenameTable(
   Token *pName              /* The new table name. */
 ){
   int iDb;                  /* Database that contains the table */
+  char *zDb;                /* Name of database iDb */
   Table *pTab;              /* Table being renamed */
-  sqlite3 *db = pParse->db; /* Database connection */
   char *zName = 0;          /* NULL-terminated version of pName */ 
   char *zWhere = 0;         /* Where clause of schema elements to reparse */
+  sqlite3 *db = pParse->db; /* Database connection */
   Vdbe *v;
   
   assert( pSrc->nSrc==1 );
@@ -2942,6 +2943,7 @@ void sqlite3AlterRenameTable(
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) return;
   iDb = pTab->iDb;
+  zDb = db->aDb[iDb].zName;
 
   /* Get a NULL terminated version of the new table name. */
   zName = sqlite3NameFromToken(pName);
@@ -2950,20 +2952,30 @@ void sqlite3AlterRenameTable(
   /* Check that a table or index named 'zName' does not already exist
   ** in database iDb. If so, this is an error.
   */
-  if( sqlite3FindTable(db, zName, db->aDb[iDb].zName) ||
-      sqlite3FindIndex(db, zName, db->aDb[iDb].zName) ){
+  if( sqlite3FindTable(db, zName, zDb) || sqlite3FindIndex(db, zName, zDb) ){
     sqlite3ErrorMsg(pParse, 
         "there is already another table or index with this name: %s", zName);
     sqliteFree(zName);
     return;
   }
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  /* Invoke the authorization callback. */
+  if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
+    sqliteFree(zName);
+    return;
+  }
+#endif
+
   /* Begin a transaction and code the VerifyCookie for database iDb. 
   ** Then modify the schema cookie (since the ALTER TABLE modifies the
   ** schema).
   */
   v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return;
+  if( v==0 ){
+    sqliteFree(zName);
+    return;
+  }
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   sqlite3ChangeCookie(db, v, iDb);
 

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.121 2004/10/06 15:52:01 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.122 2004/11/12 15:53:37 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -428,6 +428,7 @@ int sqlite3_set_authorizer(
 #define SQLITE_UPDATE               23   /* Table Name      Column Name     */
 #define SQLITE_ATTACH               24   /* Filename        NULL            */
 #define SQLITE_DETACH               25   /* Database Name   NULL            */
+#define SQLITE_ALTER_TABLE          26   /* Database Name   Table Name      */
 
 
 /*

@@ -8,12 +8,17 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.1 2004/11/12 13:42:32 danielk1977 Exp $
+# $Id: alter.test,v 1.2 2004/11/12 15:53:37 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
 
 # Create some tables to rename.  Be sure to include some TEMP tables
 # and some tables with odd names.
@@ -144,6 +149,52 @@ do_test alter-1.7 {
      index {sqlite_autoindex_<t2>_2}    <t2>          \
   ]
 
+# Check that ALTER TABLE works on attached databases.
+#
+do_test alter-1.8.1 {
+  file delete -force test2.db
+  file delete -force test2.db-journal
+  execsql {
+    ATTACH 'test2.db' AS aux;
+  }
+} {}
+do_test alter-1.8.2 {
+  execsql {
+    CREATE TABLE t4(a PRIMARY KEY, b, c);
+    CREATE TABLE aux.t4(a PRIMARY KEY, b, c);
+    CREATE INDEX i4 ON t4(b);
+    CREATE INDEX aux.i4 ON aux.t4(b);
+  }
+} {}
+do_test alter-1.8.3 {
+  execsql {
+    INSERT INTO t4 VALUES('main', 'main', 'main');
+    INSERT INTO aux.t4 VALUES('aux', 'aux', 'aux');
+    SELECT * FROM t4 WHERE a = 'main';
+  }
+} {main main main}
+do_test alter-1.8.4 {
+  execsql {
+    ALTER TABLE t4 RENAME TO t5;
+    SELECT * FROM t4 WHERE a = 'aux';
+  }
+} {aux aux aux}
+do_test alter-1.8.5 {
+  execsql {
+    SELECT * FROM t5;
+  }
+} {main main main}
+do_test alter-1.8.6 {
+  execsql {
+    SELECT * FROM t5 WHERE b = 'main';
+  }
+} {main main main}
+do_test alter-1.8.7 {
+  execsql {
+    ALTER TABLE aux.t4 RENAME TO t5;
+    SELECT * FROM aux.t5 WHERE b = 'aux';
+  }
+} {aux aux aux}
 
 # Test error messages
 #
@@ -166,6 +217,5 @@ do_test alter-2.3 {
   }
 } {1 {there is already another table or index with this name: i3}}
 
-    
 
 finish_test

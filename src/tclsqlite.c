@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.106 2004/09/13 13:16:32 drh Exp $
+** $Id: tclsqlite.c,v 1.107 2004/11/12 15:53:37 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -287,6 +287,7 @@ static int auth_callback(
     case SQLITE_UPDATE            : zCode="SQLITE_UPDATE"; break;
     case SQLITE_ATTACH            : zCode="SQLITE_ATTACH"; break;
     case SQLITE_DETACH            : zCode="SQLITE_DETACH"; break;
+    case SQLITE_ALTER_TABLE       : zCode="SQLITE_ALTER_TABLE"; break;
     default                       : zCode="????"; break;
   }
   Tcl_DStringInit(&str);
