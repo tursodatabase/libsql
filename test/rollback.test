@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.1 2004/06/30 11:14:19 drh Exp $
+# $Id: rollback.test,v 1.2 2005/01/12 13:04:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -64,7 +64,7 @@ do_test rollback-1.5 {
 #
 do_test rollback-1.6 {
   sqlite3_reset $STMT
-} {}
+} {SQLITE_OK}
 do_test rollback-1.7 {
   sqlite3_step $STMT
 } {SQLITE_ROW}

@@ -1,5 +1,5 @@
-C Tests\sto\simprove\scoverage\sof\smain.c.\s(CVS\s2202)
-D 2005-01-12T12:44:04
+C Fix\sa\stest\sbug\sintroduce\swith\sthe\sprevious\scommit.\s(CVS\s2203)
+D 2005-01-12T13:04:55
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -150,7 +150,7 @@ F test/lock.test a19aab9a963273fe61c1058e3d1b648d6a0a2425
 F test/lock2.test 59c3dd7d9b24d1bf7ec91b2d1541c37e97939d5f
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test a60a1d234b5f5784097973bd395514ca56003ef1
-F test/malloc.test 5a18f953212cc14ec999b5abf9d2a781a18d7a1e
+F test/malloc.test ad87a748a74026817ba09698b1fc9106fcab23c1
 F test/memdb.test 532aac7128a3da494cddc4461d76c6e3988f771b
 F test/memleak.test f1fa233f8295dd1d955a00d5e5ee857850f27f29
 F test/minmax.test e7048476940df0af11d0f2cf687572f557cd0b29
@@ -171,7 +171,7 @@ F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 91e5b8ae6663dc9e3e754b271f0384f0cae706e6
 F test/quote.test 6d75cf635d93ba2484dc9cb378d88cbae9dc2c62
 F test/reindex.test 3552c6b944a3fab28cfd3049c04c65cb79419757
-F test/rollback.test 4097328d44510277244ef4fa51b22b2f11d7ef4c
+F test/rollback.test 94cd981ee3a627d9f6466f69dcf1f7dbfe695d7a
 F test/rowid.test 1ce3f1520d2082b0363e7d9bdef904cb72b9efe8
 F test/safety.test 907b64fee719554a3622853812af3886fddbbb4f
 F test/select1.test 524d4323f3921db16138f8b1765f1cc44e030bf4
@@ -268,7 +268,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 2b3e21ce2e8126ec2851751546094c3a2c831942
-R 5afae1e8307f40841f1da323337aa8a5
+P 4e28c82adabb58ad9f79ed829734a2ff569a7c05
+R 91e64343b817051315eaf949a67a369a
 U danielk1977
-Z 16673a65fc0ffd926dfd73f55b52e6d7
+Z 4c9e1226b7273b770b05a62249dc1ec1

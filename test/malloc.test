@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.16 2005/01/12 12:44:04 danielk1977 Exp $
+# $Id: malloc.test,v 1.17 2005/01/12 13:04:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,8 +34,21 @@ if {[info command sqlite_malloc_stat]==""} {
 #
 #     -tclprep          TCL script to run to prepare test.
 #     -sqlprep          SQL script to run to prepare test.
-#     -tclbody          TCL script to run with IO error simulation.
-#     -sqlbody          TCL script to run with IO error simulation.
+#     -tclbody          TCL script to run with malloc failure simulation.
+#     -sqlbody          TCL script to run with malloc failure simulation.
+#
+# This command runs a series of tests to verify SQLite's ability
+# to handle an out-of-memory condition gracefully. It is assumed
+# that if this condition occurs a malloc() call will return a
+# NULL pointer. Linux, for example, doesn't do that by default. See
+# the "BUGS" section of malloc(3).
+#
+# Each iteration of a loop, the TCL commands in any argument passed
+# to the -tclbody switch, followed by the SQL commands in any argument
+# passed to the -sqlbody switch are executed. Each iteration the
+# Nth call to sqliteMalloc() is made to fail, where N is increased
+# each time the loop runs starting from 1. When all commands execute
+# successfully, the loop ends.
 #
 proc do_malloc_test {tn args} {
   array set ::mallocopts $args
@@ -84,8 +97,6 @@ proc do_malloc_test {tn args} {
     } {1 1}
   }
 }
-
-if 0 {
 
 for {set go 1; set i 1} {$go} {incr i} {
   do_test malloc-1.$i {
@@ -459,8 +470,6 @@ do_malloc_test 9 -sqlprep {
   INSERT INTO abc1 VALUES(1, 2, 3);
   INSERT INTO abc2 VALUES(1, 2, 3);
   COMMIT;
-}
-
 }
 
 # This block tests malloc() failures that occur while opening a 
