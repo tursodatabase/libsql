@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Mar 122 (2.4.3)} {
+<li>Fix a bug in SELECT that occurs when a compound SELECT is used as a
+    subquery in the FROM of a SELECT.</li>
+}
+
 chng {2002 Mar 14 (2.4.2)} {
 <li>Bug fix: Fix an assertion failure that occurred when ROWID was a column
     in a SELECT statement on a view.</li>

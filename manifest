@@ -1,9 +1,9 @@
-C Version\s2.4.2\s(CVS\s441)
-D 2002-03-20T01:05:00
+C Fix\sa\sbug\sin\ssubquery\sgeneration\swhen\sthe\ssubquery\sis\sa\scompound\sselect.\nAlso\sadded\snew\stests\sto\scover\sthis\scase.\s(CVS\s435)
+D 2002-03-23T00:31:29
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION 0ca6986d9c1379523ecd35eec51f54857a8afd48
+F VERSION 50919ab26b7c119efb3f2fa5000696e75a9fb378
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.log 6a73d03433669b10a3f0c221198c3f26b9413914
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 9a8be2eebad16f636292967d328882c2d07e30a9
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 08b9d8acf75ad985dabde1b3c53025f59d5b09c6
+F src/select.c 9323800e2937e84b52c198fffc51995d822b1779
 F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
@@ -88,7 +88,7 @@ F test/select2.test ed2c1882857106b85478f54f67000e14966be4c4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
 F test/select4.test 29a2ffb187f3d8b6ca42a0a6b619e9cabe12e228
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test cc9e2efeefe73399b757d952800df2032560be87
+F test/select6.test 5b9b52e84c1f44fd3a4eeb75e78deceb085b78b0
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
 F test/subselect.test 335d3dad8d585726c447dfee8d9c4f7383c76b78
 F test/table.test 17b0b6eafa3faaee5545b7a94e6c1ff73f0880f3
@@ -115,12 +115,12 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl d2530398b3f7d12de2dc1083fe6d082309184389
+F www/changes.tcl 65c1e63566ddbe09ef016c4c78ed21b6537af512
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl c6d1d6d69a9083734ee73d1b5ee4253ae8f10074
+F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl eacd99bcc3132d6e6b74a51422d415cc0bf7bfdf
 F www/lang.tcl d589f9a39c925d81fa9198b9215b4fd56da4192b
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c2e0b79057c9c643e7432e62c90399c8f34339f9
-R febee3eb313aa60c56ad4221de74bd94
+P 49d032325553fa1dd7f31b852753cc6c9226d8f7
+R afbadc87908df7153445a9059806e384
 U drh
-Z 108938d1bedd485ef53334a9e6726bd8
+Z 20aa27678bc9a0889ed47e36fd4764d7

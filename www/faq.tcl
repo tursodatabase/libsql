@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.8 2002/02/19 22:42:06 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.9 2002/03/23 00:31:29 drh Exp $}
 
 puts {<html>
 <head>
@@ -194,12 +194,11 @@ faq {
 faq {
   Is SQLite threadsafe?
 } {
-  <p>Almost.  In the source file named "<b>os.c</b>" there are two functions
-  named <b>sqliteOsEnterMutex()</b> and <b>sqliteOsLeaveMutex()</b>.  In
-  the default distribution these functions are stubs.  They do not do anything.
-  If you change them so that they actually implement a mutex, then SQLite
-  will be threadsafe.  But because these routines are stubs, the default
-  SQLite distribution is not threadsafe.</p>
+  <p>Yes.  Sometimes.  In order to be thread-safe, SQLite must be compiled
+  with the THREADSAFE preprocessor macro set to 1.  In the default
+  distribution, the windows binaries are compiled to be threadsafe but
+  the linux binaries are not.  If you want to change this, you'll have to
+  recompile.</p>
 
   <p>"Threadsafe" in the previous paragraph means that two or more threads
   can run SQLite at the same time on different "<b>sqlite</b>" structures
