@@ -208,7 +208,8 @@ static int vxprintf(
   etByte flag_alternateform; /* True if "#" flag is present */
   etByte flag_zeropad;       /* True if field width constant starts with zero */
   etByte flag_long;          /* True if "l" flag is present */
-  unsigned long longvalue;   /* Value for integer types */
+  etByte flag_longlong;      /* True if the "ll" flag is present */
+  UINT64_TYPE longvalue;     /* Value for integer types */
   LONGDOUBLE_TYPE realvalue; /* Value for real types */
   et_info *infop;            /* Pointer to the appropriate info structure */
   char buf[etBUFSIZE];       /* Conversion buffer */
@@ -299,8 +300,14 @@ static int vxprintf(
     if( c=='l' ){
       flag_long = 1;
       c = *++fmt;
+      if( c=='l' ){
+        flag_longlong = 1;
+        c = *++fmt;
+      }else{
+        flag_longlong = 0;
+      }
     }else{
-      flag_long = 0;
+      flag_long = flag_longlong = 0;
     }
     /* Fetch the info entry for the field */
     infop = 0;
@@ -326,6 +333,8 @@ static int vxprintf(
     **   flag_zeropad                TRUE if the width began with 0.
     **   flag_long                   TRUE if the letter 'l' (ell) prefixed
     **                               the conversion character.
+    **   flag_longlong               TRUE if the letter 'll' (ell ell) prefixed
+    **                               the conversion character.
     **   flag_blanksign              TRUE if a ' ' is present.
     **   width                       The specified field width.  This is
     **                               always non-negative.  Zero is the default.
@@ -336,8 +345,9 @@ static int vxprintf(
     */
     switch( xtype ){
       case etRADIX:
-        if( flag_long )  longvalue = va_arg(ap,long);
-        else             longvalue = va_arg(ap,int);
+        if( flag_longlong )   longvalue = va_arg(ap,INT64_TYPE);
+        else if( flag_long )  longvalue = va_arg(ap,long ing);
+        else                  longvalue = va_arg(ap,int);
 #if 1
         /* For the format %#x, the value zero is printed "0" not "0x0".
         ** I think this is stupid. */

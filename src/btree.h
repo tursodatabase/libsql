@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.37 2004/04/26 14:10:21 drh Exp $
+** @(#) $Id: btree.h,v 1.38 2004/05/07 13:30:42 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -64,7 +64,7 @@ int sqlite3BtreeCursor(
   BtCursor **ppCursor                  /* Returned cursor */
 );
 
-int sqlite3BtreeCursorClose(BtCursor*);
+int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMoveto(BtCursor*, const void *pKey, u64 nKey, int *pRes);
 int sqlite3BtreeDelete(BtCursor*);
 int sqlite3BtreeInsert(BtCursor*, const void *pKey, u64 nKey,
@@ -78,6 +78,15 @@ int sqlite3BtreeKey(BtCursor*, u32 offset, u32 amt, void*);
 void *sqlite3BtreeKeyFetch(BtCursor*);
 int sqlite3BtreeDataSize(BtCursor*, u32 *pSize);
 int sqlite3BtreeData(BtCursor*, u32 offset, u32 amt, void*);
+
+char *sqlite3BtreeIntegrityCheck(Btree*, int *aRoot, int nRoot);
+struct Pager *sqlite3BtreePager(Btree*);
+
+#ifdef SQLITE_TEST
+int sqlite3BtreeCursorDump(BtCursor*, int*);
+int sqlite3BtreeFlags(BtCursor*);
+int sqlite3BtreePageDump(Btree*, int, int recursive);
+#endif
 
 
 #endif /* _BTREE_H_ */

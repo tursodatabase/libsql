@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.222 2004/05/06 23:37:53 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.223 2004/05/07 13:30:42 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -95,6 +95,9 @@
 **
 **         cc '-DUINTPTR_TYPE=long long int' ...
 */
+#ifndef INT64_TYPE
+# define INT64_TYPE long long int
+#endif
 #ifndef UINT64_TYPE
 # define UINT64_TYPE unsigned long long int
 #endif
@@ -1274,4 +1277,3 @@ void *sqlite3utf8to16be(const unsigned char *pIn, int N);
 void *sqlite3utf8to16le(const unsigned char *pIn, int N);
 void sqlite3utf16to16le(void *pData, int N);
 void sqlite3utf16to16be(void *pData, int N);
-

@@ -54,7 +54,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = hash.o os.o pager.o random.o \
+LIBOBJ = btree.o hash.o os.o pager.o random.o \
          util.o tclsqlite.o utf.o
 
 LIBOBJ_ORIG = attach.o auth.o btree.o btree_rb.o build.o copy.o date.o delete.o \
@@ -66,6 +66,8 @@ LIBOBJ_ORIG = attach.o auth.o btree.o btree_rb.o build.o copy.o date.o delete.o 
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/btree.c \
+  $(TOP)/src/btree.h \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
   $(TOP)/src/os.c \
@@ -121,6 +123,7 @@ TESTSRC = \
   $(TOP)/src/os.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/test2.c \
+  $(TOP)/src/test3.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/md5.c
 
