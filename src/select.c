@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.64 2002/02/21 12:01:27 drh Exp $
+** $Id: select.c,v 1.65 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -67,6 +67,7 @@ void sqliteSelectDelete(Select *p){
   sqliteExprDelete(p->pHaving);
   sqliteExprListDelete(p->pOrderBy);
   sqliteSelectDelete(p->pPrior);
+  sqliteFree(p->zSelect);
   sqliteFree(p);
 }
 
@@ -362,6 +363,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
   int i, j, k;
   IdList *pTabList;
   ExprList *pEList;
+  Table *pTab;
 
   if( p==0 || p->pSrc==0 ) return 1;
   pTabList = p->pSrc;
@@ -376,7 +378,6 @@ static int fillInColumnList(Parse *pParse, Select *p){
     }
     if( pTabList->a[i].zName==0 ){
       /* A sub-query in the FROM clause of a SELECT */
-      Table *pTab;
       assert( pTabList->a[i].pSelect!=0 );
       pTabList->a[i].pTab = pTab = 
         sqliteResultSetOfSelect(pParse, pTabList->a[i].zAlias,
@@ -386,13 +387,17 @@ static int fillInColumnList(Parse *pParse, Select *p){
       }
       pTab->isTransient = 1;
     }else{
-      /* An ordinary table name in the FROM clause */
-      pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
-      if( pTabList->a[i].pTab==0 ){
+      /* An ordinary table or view name in the FROM clause */
+      pTabList->a[i].pTab = pTab = 
+        sqliteFindTable(pParse->db, pTabList->a[i].zName);
+      if( pTab==0 ){
         sqliteSetString(&pParse->zErrMsg, "no such table: ", 
            pTabList->a[i].zName, 0);
         pParse->nErr++;
         return 1;
+      }
+      if( pTab->pSelect ){
+        pTabList->a[i].pSelect = pTab->pSelect;
       }
     }
   }
@@ -494,8 +499,10 @@ static int matchOrderbyToColumn(
     if( pOrderBy->a[i].done ) continue;
     for(j=0; j<pEList->nExpr; j++){
       if( pEList->a[j].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
-        char *zName = pEList->a[j].zName;
-        char *zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
+        char *zName, *zLabel;
+        zName = pEList->a[j].zName;
+        assert( pE->token.z );
+        zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
         sqliteDequote(zLabel);
         if( sqliteStrICmp(zName, zLabel)==0 ){ 
           match = 1; 
@@ -1036,9 +1043,7 @@ int sqliteSelect(
   */
   for(i=0; i<pTabList->nId; i++){
     int oldNTab;
-    Table *pTab = pTabList->a[i].pTab;
-    if( !pTab->isTransient ) continue;
-    assert( pTabList->a[i].pSelect!=0 );
+    if( pTabList->a[i].pSelect==0 ) continue;
     oldNTab = pParse->nTab;
     pParse->nTab += i+1;
     sqliteVdbeAddOp(v, OP_OpenTemp, oldNTab+i, 0);

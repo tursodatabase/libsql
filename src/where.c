@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.36 2002/02/18 22:49:59 drh Exp $
+** $Id: where.c,v 1.37 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -399,7 +399,7 @@ WhereInfo *sqliteWhereBegin(
     Table *pTab;
 
     pTab = pTabList->a[i].pTab;
-    if( pTab->isTransient ) continue;
+    if( pTab->isTransient || pTab->pSelect ) continue;
     openOp = pTab->isTemp ? OP_OpenAux : OP_Open;
     sqliteVdbeAddOp(v, openOp, base+i, pTab->tnum);
     sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);

@@ -12,10 +12,73 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.41 2002/02/14 21:42:51 drh Exp $
+** $Id: expr.c,v 1.42 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 
+
+/*
+** Construct a new expression node and return a pointer to it.  Memory
+** for this node is obtained from sqliteMalloc().  The calling function
+** is responsible for making sure the node eventually gets freed.
+*/
+Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
+  Expr *pNew;
+  pNew = sqliteMalloc( sizeof(Expr) );
+  if( pNew==0 ){
+    sqliteExprDelete(pLeft);
+    sqliteExprDelete(pRight);
+    return 0;
+  }
+  pNew->op = op;
+  pNew->pLeft = pLeft;
+  pNew->pRight = pRight;
+  if( pToken ){
+    pNew->token = *pToken;
+  }else{
+    pNew->token.z = 0;
+    pNew->token.n = 0;
+  }
+  if( pLeft && pRight ){
+    sqliteExprSpan(pNew, &pLeft->span, &pRight->span);
+  }else{
+    pNew->span = pNew->token;
+  }
+  return pNew;
+}
+
+/*
+** Set the Expr.token field of the given expression to span all
+** text between the two given tokens.
+*/
+void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
+  if( pExpr ){
+    pExpr->span.z = pLeft->z;
+    pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
+  }
+}
+
+/*
+** Construct a new expression node for a function with multiple
+** arguments.
+*/
+Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
+  Expr *pNew;
+  pNew = sqliteMalloc( sizeof(Expr) );
+  if( pNew==0 ){
+    sqliteExprListDelete(pList);
+    return 0;
+  }
+  pNew->op = TK_FUNCTION;
+  pNew->pList = pList;
+  if( pToken ){
+    pNew->token = *pToken;
+  }else{
+    pNew->token.z = 0;
+    pNew->token.n = 0;
+  }
+  return pNew;
+}
 
 /*
 ** Recursively delete an expression tree.
@@ -29,6 +92,108 @@ void sqliteExprDelete(Expr *p){
   if( p->pList ) sqliteExprListDelete(p->pList);
   if( p->pSelect ) sqliteSelectDelete(p->pSelect);
   sqliteFree(p);
+}
+
+/*
+** The following group of functions are used to translate the string
+** pointers of tokens in expression from one buffer to another.
+**
+** Normally, the Expr.token.z and Expr.span.z fields point into the
+** original input buffer of an SQL statement.  This is usually OK
+** since the SQL statement is executed and the expression is deleted
+** before the input buffer is freed.  Making the tokens point to the
+** original input buffer saves many calls to malloc() and thus helps
+** the library to run faster. 
+**
+** But sometimes we need an expression to persist past the time when
+** the input buffer is freed.  (Example: The SELECT clause of a
+** CREATE VIEW statement contains expressions that must persist for
+** the life of the view.)  When that happens we have to make a
+** persistent copy of the input buffer and translate the Expr.token.z
+** and Expr.span.z fields to point to the copy rather than the 
+** original input buffer.  The following group of routines to that
+** translation.
+**
+** The "offset" parameter is the distance from the original input buffer
+** to the persistent copy.  These routines recursively walk the entire
+** expression tree and shift all tokens by "offset" amount.
+**
+** The work of figuring out the appropriate "offset" and making the
+** presistent copy of the input buffer is done by the calling routine.
+*/
+void sqliteExprMoveStrings(Expr *p, int offset){
+  if( p==0 ) return;
+  if( p->token.z ) p->token.z += offset;
+  if( p->span.z ) p->span.z += offset;
+  if( p->pLeft ) sqliteExprMoveStrings(p->pLeft, offset);
+  if( p->pRight ) sqliteExprMoveStrings(p->pRight, offset);
+  if( p->pList ) sqliteExprListMoveStrings(p->pList, offset);
+  if( p->pSelect ) sqliteSelectMoveStrings(p->pSelect, offset);
+}
+void sqliteExprListMoveStrings(ExprList *pList, int offset){
+  int i;
+  if( pList==0 ) return;
+  for(i=0; i<pList->nExpr; i++){
+    sqliteExprMoveStrings(pList->a[i].pExpr, offset);
+  }
+}
+void sqliteSelectMoveStrings(Select *pSelect, int offset){
+  if( pSelect==0 ) return;
+  sqliteExprListMoveStrings(pSelect->pEList, offset);
+  sqliteExprMoveStrings(pSelect->pWhere, offset);
+  sqliteExprListMoveStrings(pSelect->pGroupBy, offset);
+  sqliteExprMoveStrings(pSelect->pHaving, offset);
+  sqliteExprListMoveStrings(pSelect->pOrderBy, offset);
+  sqliteSelectMoveStrings(pSelect->pPrior, offset);
+}
+
+/*
+** Add a new element to the end of an expression list.  If pList is
+** initially NULL, then create a new expression list.
+*/
+ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
+  int i;
+  if( pList==0 ){
+    pList = sqliteMalloc( sizeof(ExprList) );
+    if( pList==0 ){
+      sqliteExprDelete(pExpr);
+      return 0;
+    }
+  }
+  if( (pList->nExpr & 7)==0 ){
+    int n = pList->nExpr + 8;
+    struct ExprList_item *a;
+    a = sqliteRealloc(pList->a, n*sizeof(pList->a[0]));
+    if( a==0 ){
+      sqliteExprDelete(pExpr);
+      return pList;
+    }
+    pList->a = a;
+  }
+  if( pExpr || pName ){
+    i = pList->nExpr++;
+    pList->a[i].pExpr = pExpr;
+    pList->a[i].zName = 0;
+    if( pName ){
+      sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
+      sqliteDequote(pList->a[i].zName);
+    }
+  }
+  return pList;
+}
+
+/*
+** Delete an entire expression list.
+*/
+void sqliteExprListDelete(ExprList *pList){
+  int i;
+  if( pList==0 ) return;
+  for(i=0; i<pList->nExpr; i++){
+    sqliteExprDelete(pList->a[i].pExpr);
+    sqliteFree(pList->a[i].zName);
+  }
+  sqliteFree(pList->a);
+  sqliteFree(pList);
 }
 
 /*
@@ -156,7 +321,9 @@ int sqliteExprResolveIds(
     case TK_ID: {
       int cnt = 0;      /* Number of matches */
       int i;            /* Loop counter */
-      char *z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
+      char *z;
+      assert( pExpr->token.z );
+      z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
       sqliteDequote(z);
       if( z==0 ) return 1;
       for(i=0; i<pTabList->nId; i++){
@@ -221,8 +388,8 @@ int sqliteExprResolveIds(
 
       pLeft = pExpr->pLeft;
       pRight = pExpr->pRight;
-      assert( pLeft && pLeft->op==TK_ID );
-      assert( pRight && pRight->op==TK_ID );
+      assert( pLeft && pLeft->op==TK_ID && pLeft->token.z );
+      assert( pRight && pRight->op==TK_ID && pRight->token.z );
       zLeft = sqliteStrNDup(pLeft->token.z, pLeft->token.n);
       zRight = sqliteStrNDup(pRight->token.z, pRight->token.n);
       if( zLeft==0 || zRight==0 ){
@@ -327,6 +494,7 @@ int sqliteExprResolveIds(
             case TK_INTEGER:
             case TK_STRING: {
               int addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0);
+              assert( pE2->token.z );
               sqliteVdbeChangeP3(v, addr, pE2->token.z, pE2->token.n);
               sqliteVdbeDequoteP3(v, addr);
               break;
@@ -577,11 +745,13 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_FLOAT:
     case TK_INTEGER: {
       sqliteVdbeAddOp(v, OP_String, 0, 0);
+      assert( pExpr->token.z );
       sqliteVdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_STRING: {
       int addr = sqliteVdbeAddOp(v, OP_String, 0, 0);
+      assert( pExpr->token.z );
       sqliteVdbeChangeP3(v, addr, pExpr->token.z, pExpr->token.n);
       sqliteVdbeDequoteP3(v, addr);
       break;

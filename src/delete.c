@@ -12,9 +12,58 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.26 2002/01/31 15:54:22 drh Exp $
+** $Id: delete.c,v 1.27 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
+
+
+/*
+** Given a table name, find the corresponding table and make sure the
+** table is writeable.  Generate an error and return NULL if not.  If
+** everything checks out, return a pointer to the Table structure.
+*/
+Table *sqliteTableNameToTable(Parse *pParse, const char *zTab){
+  Table *pTab;
+  pTab = sqliteFindTable(pParse->db, zTab);
+  if( pTab==0 ){
+    sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
+    pParse->nErr++;
+    return 0;
+  }
+  if( pTab->readOnly || pTab->pSelect ){
+    sqliteSetString(&pParse->zErrMsg, 
+      pTab->pSelect ? "view " : "table ",
+      zTab,
+      " may not be modified", 0);
+    pParse->nErr++;
+    return 0;      
+  }
+  return pTab;
+}
+
+/*
+** Given a table name, check to make sure the table exists, is writable
+** and is not a view.  If everything is OK, construct an IdList holding
+** the table and return a pointer to the IdList.  The calling function
+** is responsible for freeing the IdList when it has finished with it.
+** If there is an error, leave a message on pParse->zErrMsg and return
+** NULL.
+*/
+IdList *sqliteTableTokenToIdList(Parse *pParse, Token *pTableName){
+  Table *pTab;
+  IdList *pTabList;
+
+  pTabList = sqliteIdListAppend(0, pTableName);
+  if( pTabList==0 ) return 0;
+  assert( pTabList->nId==1 );
+  pTab = sqliteTableNameToTable(pParse, pTabList->a[0].zName);
+  if( pTab==0 ){
+    sqliteIdListDelete(pTabList);
+    return 0;
+  }
+  pTabList->a[0].pTab = pTab;
+  return pTabList;
+}
 
 /*
 ** Process a DELETE FROM statement.
@@ -47,23 +96,8 @@ void sqliteDeleteFrom(
   ** will be calling are designed to work with multiple tables and expect
   ** an IdList* parameter instead of just a Table* parameger.
   */
-  pTabList = sqliteIdListAppend(0, pTableName);
+  pTabList = sqliteTableTokenToIdList(pParse, pTableName);
   if( pTabList==0 ) goto delete_from_cleanup;
-  for(i=0; i<pTabList->nId; i++){
-    pTabList->a[i].pTab = sqliteFindTable(db, pTabList->a[i].zName);
-    if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
-         pTabList->a[i].zName, 0);
-      pParse->nErr++;
-      goto delete_from_cleanup;
-    }
-    if( pTabList->a[i].pTab->readOnly ){
-      sqliteSetString(&pParse->zErrMsg, "table ", pTabList->a[i].zName,
-        " may not be modified", 0);
-      pParse->nErr++;
-      goto delete_from_cleanup;
-    }
-  }
   pTab = pTabList->a[0].pTab;
 
   /* Resolve the column names in all the expressions.

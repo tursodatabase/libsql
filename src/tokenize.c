@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.37 2002/02/21 12:01:27 drh Exp $
+** $Id: tokenize.c,v 1.38 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -101,6 +101,7 @@ static Keyword aKeywordTable[] = {
   { "USING",             0, TK_USING,            0 },
   { "VACUUM",            0, TK_VACUUM,           0 },
   { "VALUES",            0, TK_VALUES,           0 },
+  { "VIEW",              0, TK_VIEW,             0 },
   { "WHERE",             0, TK_WHERE,            0 },
 };
 
@@ -419,7 +420,7 @@ int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
     }
   }
-  if( nErr==0 && (db->flags & SQLITE_Interrupt)==0 ){
+  if( zSql[i]==0 ){
     sqliteParser(pEngine, 0, pParse->sLastToken, pParse);
     if( pParse->zErrMsg && pParse->sErrToken.z ){
        sqliteSetNString(pzErrMsg, "near \"", -1, 

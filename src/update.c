@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.33 2002/02/02 18:49:21 drh Exp $
+** $Id: update.c,v 1.34 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -55,23 +55,8 @@ void sqliteUpdate(
   ** will be calling are designed to work with multiple tables and expect
   ** an IdList* parameter instead of just a Table* parameter.
   */
-  pTabList = sqliteIdListAppend(0, pTableName);
+  pTabList = sqliteTableTokenToIdList(pParse, pTableName);
   if( pTabList==0 ) goto update_cleanup;
-  for(i=0; i<pTabList->nId; i++){
-    pTabList->a[i].pTab = sqliteFindTable(db, pTabList->a[i].zName);
-    if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
-         pTabList->a[i].zName, 0);
-      pParse->nErr++;
-      goto update_cleanup;
-    }
-    if( pTabList->a[i].pTab->readOnly ){
-      sqliteSetString(&pParse->zErrMsg, "table ", pTabList->a[i].zName,
-        " may not be modified", 0);
-      pParse->nErr++;
-      goto update_cleanup;
-    }
-  }
   pTab = pTabList->a[0].pTab;
   aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;

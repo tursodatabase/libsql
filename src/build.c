@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.78 2002/02/21 12:01:27 drh Exp $
+** $Id: build.c,v 1.79 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -65,74 +65,11 @@ void sqliteExec(Parse *pParse){
 }
 
 /*
-** Construct a new expression node and return a pointer to it.  Memory
-** for this node is obtained from sqliteMalloc().  The calling function
-** is responsible for making sure the node eventually gets freed.
-*/
-Expr *sqliteExpr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
-  Expr *pNew;
-  pNew = sqliteMalloc( sizeof(Expr) );
-  if( pNew==0 ){
-    sqliteExprDelete(pLeft);
-    sqliteExprDelete(pRight);
-    return 0;
-  }
-  pNew->op = op;
-  pNew->pLeft = pLeft;
-  pNew->pRight = pRight;
-  if( pToken ){
-    pNew->token = *pToken;
-  }else{
-    pNew->token.z = "";
-    pNew->token.n = 0;
-  }
-  if( pLeft && pRight ){
-    sqliteExprSpan(pNew, &pLeft->span, &pRight->span);
-  }else{
-    pNew->span = pNew->token;
-  }
-  return pNew;
-}
-
-/*
-** Set the Expr.token field of the given expression to span all
-** text between the two given tokens.
-*/
-void sqliteExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
-  if( pExpr ){
-    pExpr->span.z = pLeft->z;
-    pExpr->span.n = pRight->n + Addr(pRight->z) - Addr(pLeft->z);
-  }
-}
-
-/*
-** Construct a new expression node for a function with multiple
-** arguments.
-*/
-Expr *sqliteExprFunction(ExprList *pList, Token *pToken){
-  Expr *pNew;
-  pNew = sqliteMalloc( sizeof(Expr) );
-  if( pNew==0 ){
-    sqliteExprListDelete(pList);
-    return 0;
-  }
-  pNew->op = TK_FUNCTION;
-  pNew->pList = pList;
-  if( pToken ){
-    pNew->token = *pToken;
-  }else{
-    pNew->token.z = "";
-    pNew->token.n = 0;
-  }
-  return pNew;
-}
-
-/*
 ** Locate the in-memory structure that describes 
 ** a particular database table given the name
 ** of that table.  Return NULL if not found.
 */
-Table *sqliteFindTable(sqlite *db, char *zName){
+Table *sqliteFindTable(sqlite *db, const char *zName){
   Table *p = sqliteHashFind(&db->tblHash, zName, strlen(zName)+1);
   return p;
 }
@@ -142,7 +79,7 @@ Table *sqliteFindTable(sqlite *db, char *zName){
 ** a particular index given the name of that index.
 ** Return NULL if not found.
 */
-Index *sqliteFindIndex(sqlite *db, char *zName){
+Index *sqliteFindIndex(sqlite *db, const char *zName){
   Index *p = sqliteHashFind(&db->idxHash, zName, strlen(zName)+1);
   return p;
 }
@@ -235,6 +172,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   }
   sqliteFree(pTable->zName);
   sqliteFree(pTable->aCol);
+  sqliteSelectDelete(pTable->pSelect);
   sqliteFree(pTable);
 }
 
@@ -860,6 +798,51 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
 }
 
 /*
+** The parser calls this routine in order to create a new VIEW
+*/
+void sqliteCreateView(
+  Parse *pParse,     /* The parsing context */
+  Token *pBegin,     /* The CREATE token that begins the statement */
+  Token *pName,      /* The token that holds the name of the view */
+  Select *pSelect    /* A SELECT statement that will become the new view */
+){
+  Token sEnd;
+  Table *pSelTab;
+  Table *p;
+  char *z;
+  int n, offset;
+
+  sqliteStartTable(pParse, pBegin, pName, 0);
+  p = pParse->pNewTable;
+  if( p==0 ) goto create_view_failed;
+  p->pSelect = pSelect;
+  pSelTab = sqliteResultSetOfSelect(pParse, 0, pSelect);
+  if( pSelTab==0 ) goto create_view_failed;
+  assert( p->aCol==0 );
+  p->nCol = pSelTab->nCol;
+  p->aCol = pSelTab->aCol;
+  pSelTab->nCol = 0;
+  pSelTab->aCol = 0;
+  sqliteDeleteTable(0, pSelTab);
+  sEnd = pParse->sLastToken;
+  if( sEnd.z[0]!=0 && sEnd.z[0]!=';' ){
+    sEnd.z += sEnd.n;
+  }
+  sEnd.n = 0;
+  n = ((int)sEnd.z) - (int)pBegin->z;
+  z = p->pSelect->zSelect = sqliteStrNDup(pBegin->z, n+1);
+  if( z==0 ) goto create_view_failed;
+  offset = ((int)z) - (int)pBegin->z;
+  sqliteSelectMoveStrings(p->pSelect, offset);
+  sqliteEndTable(pParse, &sEnd, 0);
+  return;
+
+create_view_failed:
+  sqliteSelectDelete(pSelect);
+  return;
+}
+
+/*
 ** Given a token, look up a table with that name.  If not found, leave
 ** an error for the parser to find and return NULL.
 */
@@ -990,6 +973,11 @@ void sqliteCreateIndex(
   if( pTab->readOnly ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
       " may not have new indices added", 0);
+    pParse->nErr++;
+    goto exit_create_index;
+  }
+  if( pTab->pSelect ){
+    sqliteSetString(&pParse->zErrMsg, "views may not be indexed", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -1299,55 +1287,6 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
 }
 
 /*
-** Add a new element to the end of an expression list.  If pList is
-** initially NULL, then create a new expression list.
-*/
-ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
-  int i;
-  if( pList==0 ){
-    pList = sqliteMalloc( sizeof(ExprList) );
-    if( pList==0 ){
-      sqliteExprDelete(pExpr);
-      return 0;
-    }
-  }
-  if( (pList->nExpr & 7)==0 ){
-    int n = pList->nExpr + 8;
-    struct ExprList_item *a;
-    a = sqliteRealloc(pList->a, n*sizeof(pList->a[0]));
-    if( a==0 ){
-      sqliteExprDelete(pExpr);
-      return pList;
-    }
-    pList->a = a;
-  }
-  if( pExpr || pName ){
-    i = pList->nExpr++;
-    pList->a[i].pExpr = pExpr;
-    pList->a[i].zName = 0;
-    if( pName ){
-      sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
-      sqliteDequote(pList->a[i].zName);
-    }
-  }
-  return pList;
-}
-
-/*
-** Delete an entire expression list.
-*/
-void sqliteExprListDelete(ExprList *pList){
-  int i;
-  if( pList==0 ) return;
-  for(i=0; i<pList->nExpr; i++){
-    sqliteExprDelete(pList->a[i].pExpr);
-    sqliteFree(pList->a[i].zName);
-  }
-  sqliteFree(pList->a);
-  sqliteFree(pList);
-}
-
-/*
 ** Append a new element to the given IdList.  Create a new IdList if
 ** need be.
 **
@@ -1394,7 +1333,7 @@ void sqliteIdListAddAlias(IdList *pList, Token *pToken){
 }
 
 /*
-** Delete an entire IdList
+** Delete an entire IdList.
 */
 void sqliteIdListDelete(IdList *pList){
   int i;
@@ -1402,8 +1341,13 @@ void sqliteIdListDelete(IdList *pList){
   for(i=0; i<pList->nId; i++){
     sqliteFree(pList->a[i].zName);
     sqliteFree(pList->a[i].zAlias);
-    if( pList->a[i].pSelect ){
-      sqliteFree(pList->a[i].zName);
+
+    /* If the pSelect field is set and is not pointing to the Select
+    ** structure that defines a VIEW, then the Select is for a subquery
+    ** and should be deleted.  Do not delete VIEWs, however.
+    */
+    if( pList->a[i].pSelect && 
+         (pList->a[i].pTab==0 || pList->a[i].pTab->pSelect==0) ){
       sqliteSelectDelete(pList->a[i].pSelect);
       sqliteDeleteTable(0, pList->a[i].pTab);
     }

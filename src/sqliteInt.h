@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.89 2002/02/21 12:01:27 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.90 2002/02/23 02:32:10 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -250,6 +250,7 @@ struct Table {
   int iPKey;       /* If not less then 0, use aCol[iPKey] as the primary key */
   Index *pIndex;   /* List of SQL indexes on this table. */
   int tnum;        /* Root BTree node for this table (see note above) */
+  Select *pSelect; /* NULL for tables.  Points to definition if a view. */
   u8 readOnly;     /* True if this table should not be written by the user */
   u8 isCommit;     /* True if creation of this table has been committed */
   u8 isTemp;       /* True if stored in db->pBeTemp instead of db->pBe */
@@ -442,6 +443,14 @@ struct WhereInfo {
 /*
 ** An instance of the following structure contains all information
 ** needed to generate code for a single SELECT statement.
+**
+** The zSelect field is used when the Select structure must be persistent.
+** Normally, the expression tree points to tokens in the original input
+** string that encodes the select.  But if the Select structure must live
+** longer than its input string (for example when it is used to describe
+** a VIEW) we have to make a copy of the input string so that the nodes
+** of the expression tree will have something to point to.  zSelect is used
+** to hold that copy.
 */
 struct Select {
   int isDistinct;        /* True if the DISTINCT keyword is present */
@@ -454,6 +463,7 @@ struct Select {
   int op;                /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   Select *pPrior;        /* Prior select in a compound select statement */
   int nLimit, nOffset;   /* LIMIT and OFFSET values.  -1 means not used */
+  char *zSelect;         /* Complete text of the SELECT command */
 };
 
 /*
@@ -570,6 +580,7 @@ void sqliteAddPrimaryKey(Parse*, IdList*, int);
 void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
 void sqliteEndTable(Parse*,Token*,Select*);
+void sqliteCreateView(Parse*,Token*,Token*,Select*);
 void sqliteDropTable(Parse*, Token*);
 void sqliteDeleteTable(sqlite*, Table*);
 void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);
@@ -582,6 +593,8 @@ int sqliteSelect(Parse*, Select*, int, int);
 Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqliteSelectDelete(Select*);
+Table *sqliteTableNameToTable(Parse*, const char*);
+IdList *sqliteTableTokenToIdList(Parse*, Token*);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);
 void sqliteUpdate(Parse*, Token*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, IdList*, Expr*, int);
@@ -589,8 +602,8 @@ void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int);
 void sqliteExprIfFalse(Parse*, Expr*, int);
-Table *sqliteFindTable(sqlite*,char*);
-Index *sqliteFindIndex(sqlite*,char*);
+Table *sqliteFindTable(sqlite*,const char*);
+Index *sqliteFindIndex(sqlite*,const char*);
 void sqliteUnlinkAndDeleteIndex(sqlite*,Index*);
 void sqliteCopy(Parse*, Token*, Token*, Token*, int);
 void sqliteVacuum(Parse*, Token*);
@@ -618,3 +631,6 @@ void sqliteCompleteInsertion(Parse*, Table*, int, char*, int, int);
 void sqliteBeginWriteOperation(Parse*);
 void sqliteBeginMultiWriteOperation(Parse*);
 void sqliteEndWriteOperation(Parse*);
+void sqliteExprMoveStrings(Expr*, int);
+void sqliteExprListMoveStrings(ExprList*, int);
+void sqliteSelectMoveStrings(Select*, int);
