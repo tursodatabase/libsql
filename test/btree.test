@@ -11,13 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.14 2003/02/12 14:09:45 drh Exp $
+# $Id: btree.test,v 1.15 2004/02/10 01:54:28 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-if {[info commands btree_open]!=""} {
+if {[info commands btree_open]!="" && $SQLITE_PAGE_SIZE==1024 
+     && $SQLITE_USABLE_SIZE==1024} {
 
 # Basic functionality.  Open and close a database.
 #
