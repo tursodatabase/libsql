@@ -41,16 +41,16 @@ THREADSAFE = -DTHREADSAFE=0
 #THREADLIB = -lpthread
 THREADLIB = 
 
-#### Leave MEMORY_DEBUG undefined for maximum speed.  Use MEMORY_DEBUG=1
-#    to check for memory leaks.  Use MEMORY_DEBUG=2 to print a log of all
+#### Leave SQLITE_DEBUG undefined for maximum speed.  Use SQLITE_DEBUG=1
+#    to check for memory leaks.  Use SQLITE_DEBUG=2 to print a log of all
 #    malloc()s and free()s in order to track down memory leaks.
 #    
 #    SQLite uses some expensive assert() statements in the inner loop.
 #    You can make the library go almost twice as fast if you compile
 #    with -DNDEBUG=1
 #
-#OPTS = -DMEMORY_DEBUG=2
-#OPTS = -DMEMORY_DEBUG=1
+#OPTS = -DSQLITE_DEBUG=2
+#OPTS = -DSQLITE_DEBUG=1
 #OPTS = 
 OPTS = -DNDEBUG=1
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.274 2004/06/09 12:30:06 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.275 2004/06/09 14:01:51 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -174,18 +174,18 @@ extern const int sqlite3one;
 /*
 ** If memory allocation problems are found, recompile with
 **
-**      -DMEMORY_DEBUG=1
+**      -DSQLITE_DEBUG=1
 **
 ** to enable some sanity checking on malloc() and free().  To
 ** check for memory leaks, recompile with
 **
-**      -DMEMORY_DEBUG=2
+**      -DSQLITE_DEBUG=2
 **
 ** and a line of text will be written to standard error for
 ** each malloc() and free().  This output can be analyzed
 ** by an AWK script to determine if there are any leaks.
 */
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
 # define sqliteMalloc(X)    sqlite3Malloc_(X,1,__FILE__,__LINE__)
 # define sqliteMallocRaw(X) sqlite3Malloc_(X,0,__FILE__,__LINE__)
 # define sqliteFree(X)      sqlite3Free_(X,__FILE__,__LINE__)
@@ -206,9 +206,9 @@ extern int sqlite3_malloc_failed;
 
 /*
 ** The following global variables are used for testing and debugging
-** only.  They only work if MEMORY_DEBUG is defined.
+** only.  They only work if SQLITE_DEBUG is defined.
 */
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
 extern int sqlite3_nMalloc;       /* Number of sqliteMalloc() calls */
 extern int sqlite3_nFree;         /* Number of sqliteFree() calls */
 extern int sqlite3_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
@@ -1194,7 +1194,7 @@ int sqlite3IsNumber(const char*, int*, u8);
 int sqlite3Compare(const char *, const char *);
 int sqlite3SortCompare(const char *, const char *);
 void sqlite3RealToSortable(double r, char *);
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
   void *sqlite3Malloc_(int,int,char*,int);
   void sqlite3Free_(void*,char*,int);
   void *sqlite3Realloc_(void*,int,char*,int);

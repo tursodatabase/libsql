@@ -653,7 +653,7 @@ void sqlite3VdbeMakeReady(
 
   sqlite3HashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
   p->agg.pSearch = 0;
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
   if( sqlite3OsFileExists("vdbe_explain") ){
     int i;
     printf("VDBE Program Listing:\n");

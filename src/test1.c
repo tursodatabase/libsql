@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.72 2004/06/09 09:55:19 danielk1977 Exp $
+** $Id: test1.c,v 1.73 2004/06/09 14:01:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -625,7 +625,7 @@ static int sqlite3_mprintf_scaled(
 ** Rig sqliteMalloc() to fail on the N-th call.  Turn off this mechanism
 ** and reset the sqlite3_malloc_failed variable is N==0.
 */
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
 static int sqlite_malloc_fail(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -649,7 +649,7 @@ static int sqlite_malloc_fail(
 **
 ** Return the number of prior calls to sqliteMalloc() and sqliteFree().
 */
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
 static int sqlite_malloc_stat(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
@@ -1815,7 +1815,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
      { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                  (Tcl_CmdProc*)sqlite_abort          },
-#ifdef MEMORY_DEBUG
+#ifdef SQLITE_DEBUG
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
