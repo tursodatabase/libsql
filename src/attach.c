@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.14 2004/06/09 12:30:05 danielk1977 Exp $
+** $Id: attach.c,v 1.15 2004/06/19 09:08:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -37,6 +37,12 @@ void sqlite3Attach(Parse *pParse, Token *pFilename, Token *pDbname, Token *pKey)
   if( db->nDb>=MAX_ATTACHED+2 ){
     sqlite3ErrorMsg(pParse, "too many attached databases - max %d", 
        MAX_ATTACHED);
+    pParse->rc = SQLITE_ERROR;
+    return;
+  }
+
+  if( !db->autoCommit ){
+    sqlite3ErrorMsg(pParse, "cannot ATTACH database within transaction");
     pParse->rc = SQLITE_ERROR;
     return;
   }
@@ -147,6 +153,11 @@ void sqlite3Detach(Parse *pParse, Token *pDbname){
   }
   if( i<2 ){
     sqlite3ErrorMsg(pParse, "cannot detach database %T", pDbname);
+    return;
+  }
+  if( !db->autoCommit ){
+    sqlite3ErrorMsg(pParse, "cannot DETACH database within transaction");
+    pParse->rc = SQLITE_ERROR;
     return;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION

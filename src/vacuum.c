@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.22 2004/06/15 11:40:09 danielk1977 Exp $
+** $Id: vacuum.c,v 1.23 2004/06/19 09:08:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -217,8 +217,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   }
 
 end_of_vacuum:
-  execSql(db, "DETACH vacuum_db;");
   execSql(db, "ROLLBACK;");
+  execSql(db, "DETACH vacuum_db;");
   if( zTemp ){
     sqlite3OsDelete(zTemp);
     sqliteFree(zTemp);

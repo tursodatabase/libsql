@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.19 2004/06/19 00:16:31 drh Exp $
+# $Id: attach2.test,v 1.20 2004/06/19 09:08:16 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -338,6 +338,30 @@ do_test attach2-5.4 {
 do_test attach2-5.5 {
   glob test.db*
 } {test.db test.db2}
+
+# Check that a database cannot be ATTACHed or DETACHed during a transaction.
+do_test attach2-6.1 {
+  execsql {
+    BEGIN;
+  }
+} {}
+do_test attach2-6.2 {
+  catchsql {
+    ATTACH 'test3.db' as aux2;
+  }
+} {1 {cannot ATTACH database within transaction}}
+
+do_test attach2-6.3 {
+  catchsql {
+    DETACH aux;
+  }
+} {1 {cannot DETACH database within transaction}}
+do_test attach2-6.4 {
+  execsql {
+    COMMIT;
+    DETACH aux;
+  }
+} {}
 
 db close
 
