@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\sflattener\sto\shandle\ssubqueries\sthat\sare\sjoins.\nAll\sregressions\spass\sbut\snew\stests\sneed\sto\sbe\sadded\sbefore\srelease.\nTicket\s#272.\s(CVS\s948)
-D 2003-05-02T16:04:17
+C Additional\stests\sof\sthe\snew\sflattener\sadded.\s\sTicket\s#272.\s(CVS\s949)
+D 2003-05-02T16:44:25
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -110,7 +110,7 @@ F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 445a1a3dde4e2fd32541b311f55da5e2f8079d76
 F test/select4.test e7e9a32fa745246cb99fadbeb63af4843a17925b
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
-F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
+F test/select6.test 670026a06c358cc867ace7b1de6020e43adc7245
 F test/sort.test ba07b107c16070208e6aab3cadea66ba079d85ba
 F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 371a1fc1c470982b2f68f9732f903a5d96f949c4
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P be7aed2011b4af868b6a0c370c3d41354ae0cdf4
-R ed36fbd16d08ea65dbe969ae9a7bbf4c
+P ad57693e9f1b83a8cc4d028264b35018a9a4a701
+R 0c892dfdfe33ba9930d105338a5e3731
 U drh
-Z 80e0fdd6a1502d3a16e3bb09c6a28adb
+Z ba7386fd2621411a19fd3dce98cc1a19
