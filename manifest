@@ -1,5 +1,5 @@
-C Update\sthe\shomepage\sprior\sto\sreleases\s2.8.16\sand\s3.1.2.\s(CVS\s2333)
-D 2005-02-15T12:51:16
+C Update\sthe\schange\slog.\s(CVS\s2334)
+D 2005-02-15T12:56:23
 F Makefile.in d928187101fa3d78426cf48ca30e39d0fb714e57
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -237,7 +237,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 9676103393dbf1c313b5618c9da59033f82cd924
 F www/capi3ref.tcl c5a3ae75fc3505c034f3c4bbb62ab94cf359ac39
-F www/changes.tcl 33b6d72be3d38765151450c09ce8b0328ce2bf8e
+F www/changes.tcl 34c1ddc0920970e2d8f50dbfe7685bdcda66eece
 F www/common.tcl de758130d54d95d151ea0d17a2ae5b92e1bb01de
 F www/compile.tcl 65b26bdfc964b66c5f0af841718a52f9795ceb05
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -271,7 +271,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P dcbc983355d3207615b52b0724405a024a1a5955
-R 172c191a1ce473af2b8dc5daebe6e1c8
+P 603bbe47ddb14105da6a3435ff8f7c6c6f1929a1
+R fc5fb67821511f39ad807bd445fba3ac
 U drh
-Z 7beb827665e6158964bed98a27aa81d2
+Z 1f704501a3d3bc8df860f96a858ec188
