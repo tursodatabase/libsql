@@ -1,5 +1,5 @@
-C Relax\sthe\slocking\srequirements\son\sBTree\scursors.\s\sAny\snumber\sof\sread\sand\nwrite\scursors\scan\sbe\sopen\sat\sthe\ssame\stime\snow,\sbut\sa\swrite\scannot\soccur\nas\slong\sas\sone\sor\smore\sread\scursors\sare\sopen.\n\nBefore\sthis\schange,\sone\sor\smore\sread\scursors\scould\sbe\sopen\son\sa\stable,\nor\sa\ssingle\swrite\scursor,\sbut\snot\sboth.\s\sBoth\spolicies\shave\sthe\ssame\ndesirable\seffect:\sthey\sprevent\swrites\sto\sa\stable\swhile\sa\ssequential\sscan\nof\sthat\stable\sis\sunderway.\s\sBut\sthe\snew\spolicy\sis\sa\slittle\sless\srestrictive.\nBoth\spolicies\sprevent\san\sUPDATE\sfrom\soccurring\sinside\sa\sSELECT\s(which\sis\nwhat\swe\swant)\sbut\sthe\snew\spolicy\sallows\sa\sSELECT\sto\soccur\sinside\san\nUPDATE.\s(CVS\s739)
-D 2002-09-01T23:20:45
+C Detect\swhen\sthe\stest\sscripts\sare\sbeing\srun\sas\sroot\sand\sissue\san\sappropriate\nerror\smessage.\s(CVS\s740)
+D 2002-09-02T12:14:51
 F Makefile.in 420fada882179cb72ffd07313f3fd693f9f06640
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/vdbe.h 7cfeb3aab6a901336532d93494cdedbddf30b7ec
 F src/where.c 53959c9d94adaf93b409271815e26eafa6ddd515
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
-F test/btree.test bf326f546a666617367a7033fa2c07451bd4f8e1
+F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 0173a12a257f73bac2c9d53ad44cac9b15ea517e
@@ -101,7 +101,7 @@ F test/subselect.test f0fea8cf9f386d416d64d152e3c65f9116d0f50f
 F test/table.test 10508e5e53fb7971b9fa6acb29d85748e545745c
 F test/tableapi.test 3c80421a889e1d106df16e5800fa787f0d2914a6
 F test/tclsqlite.test 6f4b9760681c7dbca52a18d0ab46a1679cdc79b9
-F test/temptable.test 9ed7ec0288f887e132de66d90c428ad109105f67
+F test/temptable.test 03b7bdb7d6ce2c658ad20c94b037652c6cad34e0
 F test/tester.tcl 6f603d90881bd835ea27c568a7fecaa57dce91cc
 F test/trans.test 10b53c77e2cc4ad9529c15fdcb390b8d5722ea65
 F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
@@ -111,7 +111,7 @@ F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/version.test b4284c60109c514f1dc5b6525a7da9793c7bab0d
+F test/version.test 605fd0d7e7d571370c32b12dbf395b58953de246
 F test/view.test 76d3fe155f1215f9dde1ccad1d1bce5c803132d0
 F test/where.test c7aba40ad9178acf9c898e53aac9e447e2d2f2f7
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -150,7 +150,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 170711ca65dc894d0486b9d575edb8f1708250fb
-R 665b6d3bd425ef91563749e2f71e8997
+P 8c2a0836980341faa479cfe6c716409e6057367d
+R d69d74396bd3d8fa6110e1bb4d145b9c
 U drh
-Z c368bcd74fab4b1fea02ec6dd259bce0
+Z 5b7e102d83ef9c4dd3f46fe8bd1002c5
