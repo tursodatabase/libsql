@@ -17,9 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jan 10 (2.2.2)} {
+chng {2002 Jan 13 (2.2.2)} {
 <li>Bug fix: An assertion was failing when a temporary table with an index
     had the same name as a permanent table created by a separate process.</li>
+<li>Bug fix: Updates to tables containing an INTEGER PRIMARY KEY and an
+    index could fail.</li>
 }
 
 chng {2002 Jan 9 (2.2.1)} {

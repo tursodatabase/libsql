@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.4 2001/12/22 21:48:30 drh Exp $
+# $Id: intpkey.test,v 1.5 2002/01/14 02:56:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -410,5 +410,27 @@ do_test intpkey-7.2 {
     SELECT * FROM t1 WHERE rowid>20;
   }
 } {22 b-22 c-22 30 new row}
+
+# Do an insert from a select statement.
+#
+do_test intpkey-8.1 {
+  execsql {
+    CREATE TABLE t2(x INTEGER PRIMARY KEY, y, z);
+    INSERT INTO t2 SELECT * FROM t1;
+    SELECT rowid FROM t2;
+  }
+} {-4 0 5 6 11 20 22 30}
+do_test intpkey-8.2 {
+  execsql {
+    SELECT x FROM t2;
+  }
+} {-4 0 5 6 11 20 22 30}
+
+do_test intpkey-9.1 {
+  execsql {
+    UPDATE t1 SET c='www' WHERE c='world';
+    SELECT rowid, a, c FROM t1 WHERE c=='www';
+  }
+} {5 5 www 11 11 www}
 
 finish_test
