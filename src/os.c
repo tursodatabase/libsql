@@ -11,7 +11,7 @@
 ******************************************************************************
 **
 ** This file contains code that is specific to particular operating
-** systems.  The purpose of this file is to provide a uniform abstract
+** systems.  The purpose of this file is to provide a uniform abstraction
 ** on which the rest of SQLite can operate.
 */
 #include "sqliteInt.h"
@@ -158,6 +158,23 @@ static void releaseLockInfo(struct lockInfo *pInfo){
 }
 #endif  /** POSIX advisory lock work-around **/
 
+/*
+** If we compile with the SQLITE_TEST macro set, then the following block
+** of code will give us the ability to simulate a disk I/O error.  This
+** is used for testing the I/O recovery logic.
+*/
+#ifdef SQLITE_TEST
+int sqlite_io_error_pending = 0;
+#define SimulateIOError(A)  \
+   if( sqlite_io_error_pending ) \
+     if( sqlite_io_error_pending-- == 1 ){ local_ioerr(); return A; }
+static void local_ioerr(){
+  sqlite_io_error_pending = 0;  /* Really just a place to set a breakpoint */
+}
+#else
+#define SimulateIOError(A)
+#endif
+
 
 /*
 ** Delete the named file
@@ -248,7 +265,7 @@ int sqliteOsOpenReadWrite(
      NULL
   );
   if( h==INVALID_HANDLE_VALUE ){
-    HANDLE h = CreateFile(zFilename,
+    h = CreateFile(zFilename,
        GENERIC_READ,
        FILE_SHARE_READ,
        NULL,
@@ -443,12 +460,14 @@ int sqliteOsClose(OsFile id){
 int sqliteOsRead(OsFile id, void *pBuf, int amt){
 #if OS_UNIX
   int got;
+  SimulateIOError(SQLITE_IOERR);
   got = read(id.fd, pBuf, amt);
   if( got<0 ) got = 0;
   return got==amt ? SQLITE_OK : SQLITE_IOERR;
 #endif
 #if OS_WIN
   DWORD got;
+  SimulateIOError(SQLITE_IOERR);
   if( !ReadFile(id, pBuf, amt, &got, 0) ){
     got = 0;
   }
@@ -463,12 +482,14 @@ int sqliteOsRead(OsFile id, void *pBuf, int amt){
 int sqliteOsWrite(OsFile id, const void *pBuf, int amt){
 #if OS_UNIX
   int wrote;
+  SimulateIOError(SQLITE_IOERR);
   wrote = write(id.fd, pBuf, amt);
   if( wrote<amt ) return SQLITE_FULL;
   return SQLITE_OK;
 #endif
 #if OS_WIN
   DWORD wrote;
+  SimulateIOError(SQLITE_IOERR);
   if( !WriteFile(id, pBuf, amt, &wrote, 0) || wrote<amt ){
     return SQLITE_FULL;
   }
@@ -494,6 +515,7 @@ int sqliteOsSeek(OsFile id, int offset){
 ** Make sure all writes to a particular file are committed to disk.
 */
 int sqliteOsSync(OsFile id){
+  SimulateIOError(SQLITE_IOERR);
 #if OS_UNIX
   return fsync(id.fd)==0 ? SQLITE_OK : SQLITE_IOERR;
 #endif
@@ -506,6 +528,7 @@ int sqliteOsSync(OsFile id){
 ** Truncate an open file to a specified size
 */
 int sqliteOsTruncate(OsFile id, int nByte){
+  SimulateIOError(SQLITE_IOERR);
 #if OS_UNIX
   return ftruncate(id.fd, nByte)==0 ? SQLITE_OK : SQLITE_IOERR;
 #endif
@@ -522,6 +545,7 @@ int sqliteOsTruncate(OsFile id, int nByte){
 int sqliteOsFileSize(OsFile id, int *pSize){
 #if OS_UNIX
   struct stat buf;
+  SimulateIOError(SQLITE_IOERR);
   if( fstat(id.fd, &buf)!=0 ){
     return SQLITE_IOERR;
   }
@@ -529,6 +553,7 @@ int sqliteOsFileSize(OsFile id, int *pSize){
   return SQLITE_OK;
 #endif
 #if OS_WIN
+  SimulateIOError(SQLITE_IOERR);
   *pSize = GetFileSize(id, 0);
   return SQLITE_OK;
 #endif

@@ -146,6 +146,7 @@ SRC = \
 #
 TESTSRC = \
   $(TOP)/src/btree.c \
+  $(TOP)/src/os.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \

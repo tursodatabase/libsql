@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.16 2001/09/28 23:11:24 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.17 2001/10/12 17:30:05 drh Exp $}
 
 puts {<html>
 <head>
@@ -292,7 +292,10 @@ that there is no more space left on the disk.
 <dd><p>This value is returned if SQLite detects that the database it is
 working on has become corrupted.  Corruption might occur due to a rogue
 process writing to the database file or it might happen due to an 
-perviously undetected logic error in of SQLite. 
+perviously undetected logic error in of SQLite. This value is also
+returned if a disk I/O error occurs in such a way that SQLite is forced
+to leave the database file in a corrupted state.  The latter should only
+happen due to a hardware or operating system malfunction.
 </p></dd>
 <dt>SQLITE_FULL</dt>
 <dd><p>This value is returned if an insertion failed because there is

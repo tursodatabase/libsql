@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.1 2001/09/22 18:12:10 drh Exp $
+** $Id: hash.c,v 1.2 2001/10/12 17:30:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -197,7 +197,7 @@ static HashElem *findElementGivenHash(
   return 0;
 }
 
-/* Remove a single entry from the pH given a pointer to that
+/* Remove a single entry from the hash table given a pointer to that
 ** element and a hash on the element's key.
 */
 static void removeElementGivenHash(
@@ -228,7 +228,7 @@ static void removeElementGivenHash(
 }
 
 /* Attempt to locate an element of the associative pH with a key
-** that matches "key".  Return the data for this element if it is
+** that matches pKey,nKey.  Return the data for this element if it is
 ** found, or NULL if no match is found.
 */
 void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
@@ -245,19 +245,19 @@ void *sqliteHashFind(const Hash *pH, const void *pKey, int nKey){
   return elem ? elem->data : 0;
 }
 
-/* Insert an element into the pH.  The key will be "key" and
-** the data will be "data".
+/* Insert an element into the hash table pH.  The key is pKey,nKey
+** and the data is "data".
 **
-** If no pH element exists with a matching key, then a new
-** pH element is created.  The key is copied (using the copy
-** function of the key class) into the new element.  NULL is returned.
+** If no element exists with a matching key, then a new
+** element is created.  A copy of the key is made if the copyKey
+** flag is set.  NULL is returned.
 **
 ** If another element already exists with the same key, then the
 ** new data replaces the old data and the old data is returned.
 ** The key is not copied in this instance.
 **
 ** If the "data" parameter to this function is NULL, then the
-** element corresponding to "key" is removed from the pH.
+** element corresponding to "key" is removed from the hash table.
 */
 void *sqliteHashInsert(Hash *pH, void *pKey, int nKey, void *data){
   int hraw;             /* Raw hash value of the key */

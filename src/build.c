@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.46 2001/10/09 04:19:47 drh Exp $
+** $Id: build.c,v 1.47 2001/10/12 17:30:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1473,6 +1473,36 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_String, 0, 0,
             pTab->aCol[pIdx->aiColumn[i]].zName, 0);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0, 0, 0);
+      }
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "index_list")==0 ){
+    Index *pIdx;
+    Table *pTab;
+    Vdbe *v;
+    pTab = sqliteFindTable(db, zRight);
+    if( pTab ){
+      v = sqliteGetVdbe(pParse);
+      pIdx = pTab->pIndex;
+    }
+    if( pTab && pIdx && v ){
+      int i = 0; 
+      static VdbeOp indexListPreface[] = {
+        { OP_ColumnCount, 3, 0,       0},
+        { OP_ColumnName,  0, 0,       "seq"},
+        { OP_ColumnName,  1, 0,       "name"},
+        { OP_ColumnName,  2, 0,       "unique"},
+      };
+
+      sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+      while(pIdx){
+        sqliteVdbeAddOp(v, OP_Integer, i, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0, pIdx->zName, 0);
+        sqliteVdbeAddOp(v, OP_Integer, pIdx->isUnique, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Callback, 3, 0, 0, 0);
+	++i;
+	pIdx = pIdx->pNext;
       }
     }
   }else

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.35 2001/10/08 13:22:33 drh Exp $
+** @(#) $Id: parse.y,v 1.36 2001/10/12 17:30:05 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -329,10 +329,11 @@ inscollist(A) ::= ids(Y).                     {A = sqliteIdListAppend(0,&Y);}
 %right NOT.
 %left EQ NE ISNULL NOTNULL IS LIKE GLOB BETWEEN IN.
 %left GT GE LT LE.
+%left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
-%left STAR SLASH.
+%left STAR SLASH MOD.
 %left CONCAT.
-%right UMINUS.
+%right UMINUS BITNOT.
 
 %type expr {Expr*}
 %destructor expr {sqliteExprDelete($$);}
@@ -364,7 +365,11 @@ expr(A) ::= expr(X) LE expr(Y).    {A = sqliteExpr(TK_LE, X, Y, 0);}
 expr(A) ::= expr(X) GE expr(Y).    {A = sqliteExpr(TK_GE, X, Y, 0);}
 expr(A) ::= expr(X) NE expr(Y).    {A = sqliteExpr(TK_NE, X, Y, 0);}
 expr(A) ::= expr(X) EQ expr(Y).    {A = sqliteExpr(TK_EQ, X, Y, 0);}
-expr(A) ::= expr(X) LIKE expr(Y).  {A = sqliteExpr(TK_LIKE, X, Y, 0);}
+expr(A) ::= expr(X) BITAND expr(Y). {A = sqliteExpr(TK_BITAND, X, Y, 0);}
+expr(A) ::= expr(X) BITOR expr(Y).  {A = sqliteExpr(TK_BITOR, X, Y, 0);}
+expr(A) ::= expr(X) LSHIFT expr(Y). {A = sqliteExpr(TK_LSHIFT, X, Y, 0);}
+expr(A) ::= expr(X) RSHIFT expr(Y). {A = sqliteExpr(TK_RSHIFT, X, Y, 0);}
+expr(A) ::= expr(X) LIKE expr(Y).   {A = sqliteExpr(TK_LIKE, X, Y, 0);}
 expr(A) ::= expr(X) NOT LIKE expr(Y).  {
   A = sqliteExpr(TK_LIKE, X, Y, 0);
   A = sqliteExpr(TK_NOT, A, 0, 0);
@@ -380,6 +385,7 @@ expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
 expr(A) ::= expr(X) SLASH expr(Y). {A = sqliteExpr(TK_SLASH, X, Y, 0);}
+expr(A) ::= expr(X) MOD expr(Y).   {A = sqliteExpr(TK_MOD, X, Y, 0);}
 expr(A) ::= expr(X) CONCAT expr(Y). {A = sqliteExpr(TK_CONCAT, X, Y, 0);}
 expr(A) ::= expr(X) ISNULL(E). {
   A = sqliteExpr(TK_ISNULL, X, 0, 0);
@@ -397,8 +403,16 @@ expr(A) ::= expr(X) NOT NULL(E). {
   A = sqliteExpr(TK_NOTNULL, X, 0, 0);
   sqliteExprSpan(A,&X->span,&E);
 }
+expr(A) ::= expr(X) IS NOT NULL(E). {
+  A = sqliteExpr(TK_NOTNULL, X, 0, 0);
+  sqliteExprSpan(A,&X->span,&E);
+}
 expr(A) ::= NOT(B) expr(X). {
   A = sqliteExpr(TK_NOT, X, 0, 0);
+  sqliteExprSpan(A,&B,&X->span);
+}
+expr(A) ::= BITNOT(B) expr(X). {
+  A = sqliteExpr(TK_BITNOT, X, 0, 0);
   sqliteExprSpan(A,&B,&X->span);
 }
 expr(A) ::= MINUS(B) expr(X). [UMINUS] {

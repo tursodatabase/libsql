@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct ? (2.0.3)} {
+<li>Bug fix: the <b>sqlite_busy_timeout()</b> function was delaying 1000
+    times too long before failing.</li>
+<li>Bug fix: an assertion was failing if the disk holding the database
+    file became full or stopped accepting writes for some other reason.
+    New tests were added to detect similar problems in the future.</li>
+}
+
 chng {2001 Oct 9 (2.0.2)} {
 <li>Fix two bugs in the locking protocol.  (One was masking the other.)</li>
 <li>Removed some unused "#include <unistd.h>" that were causing problems

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.5 2001/09/16 00:13:27 drh Exp $
+** $Id: test2.c,v 1.6 2001/10/12 17:30:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -388,6 +388,7 @@ static int page_write(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest2_Init(Tcl_Interp *interp){
+  extern int sqlite_io_error_pending;
   Tcl_CreateCommand(interp, "pager_open", pager_open, 0, 0);
   Tcl_CreateCommand(interp, "pager_close", pager_close, 0, 0);
   Tcl_CreateCommand(interp, "pager_commit", pager_commit, 0, 0);
@@ -400,5 +401,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "page_read", page_read, 0, 0);
   Tcl_CreateCommand(interp, "page_write", page_write, 0, 0);
   Tcl_CreateCommand(interp, "page_number", page_number, 0, 0);
+  Tcl_LinkVar(interp, "sqlite_io_error_pending",
+     (char*)&sqlite_io_error_pending, TCL_LINK_INT);
   return TCL_OK;
 }

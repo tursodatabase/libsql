@@ -1,0 +1,59 @@
+# 2001 October 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing for correct handling of I/O errors
+# such as writes failing because the disk is full.
+# 
+# The tests in this file use special facilities that are only
+# available in the SQLite test fixture.
+#
+# $Id: ioerr.test,v 1.1 2001/10/12 17:30:05 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set ::go 1
+for {set n 1} {$go} {incr n} {
+  do_test ioerr-1.$n.1 {
+    set ::sqlite_io_error_pending 0
+    db close
+    catch {file delete -force test.db}
+    sqlite db test.db
+    execsql {SELECT * FROM sqlite_master}
+  } {}
+  do_test ioerr-1.$n.2 [subst {
+    set ::sqlite_io_error_pending $n
+  }] $n
+  do_test ioerr-1.$n.3 {
+    set r [catch {db eval {
+      CREATE TABLE t1(a,b,c);
+      SELECT * FROM sqlite_master;
+      BEGIN TRANSACTION;
+      INSERT INTO t1 VALUES(1,2,3);
+      INSERT INTO t1 VALUES(4,5,6);
+      ROLLBACK;
+      SELECT * FROM t1;
+      BEGIN TRANSACTION;
+      INSERT INTO t1 VALUES(1,2,3);
+      INSERT INTO t1 VALUES(4,5,6);
+      COMMIT;
+      SELECT * FROM t1;
+      DELETE FROM t1 WHERE a<100;
+    }} msg]
+    # if {$r} {puts $msg}
+    set ::go [expr {$::sqlite_io_error_pending<=0}]
+    expr {$::sqlite_io_error_pending>0 || $r!=0}
+  } {1}
+}
+set ::sqlite_io_error_pending 0
+
+
+finish_test

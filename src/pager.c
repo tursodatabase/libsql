@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.26 2001/10/08 13:22:33 drh Exp $
+** @(#) $Id: pager.c,v 1.27 2001/10/12 17:30:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -128,6 +128,7 @@ struct Pager {
 #define PAGER_ERR_MEM      0x02  /* malloc() failed */
 #define PAGER_ERR_LOCK     0x04  /* error in the locking protocol */
 #define PAGER_ERR_CORRUPT  0x08  /* database or journal corruption */
+#define PAGER_ERR_DISK     0x10  /* general disk I/O error - bad hard drive? */
 
 /*
 ** The journal file contains page records in the following
@@ -178,6 +179,7 @@ static const unsigned char aJournalMagic[] = {
 static int pager_errcode(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->errMask & PAGER_ERR_LOCK )    rc = SQLITE_PROTOCOL;
+  if( pPager->errMask & PAGER_ERR_DISK )    rc = SQLITE_IOERR;
   if( pPager->errMask & PAGER_ERR_FULL )    rc = SQLITE_FULL;
   if( pPager->errMask & PAGER_ERR_MEM )     rc = SQLITE_NOMEM;
   if( pPager->errMask & PAGER_ERR_CORRUPT ) rc = SQLITE_CORRUPT;
@@ -305,20 +307,25 @@ static int pager_playback(Pager *pPager){
   sqliteOsSeek(pPager->jfd, 0);
   rc = sqliteOsRead(pPager->jfd, aMagic, sizeof(aMagic));
   if( rc!=SQLITE_OK || memcmp(aMagic,aJournalMagic,sizeof(aMagic))!=0 ){
-    return SQLITE_PROTOCOL;
+    rc = SQLITE_PROTOCOL;
+    goto end_playback;
   }
   rc = sqliteOsRead(pPager->jfd, &mxPg, sizeof(mxPg));
   if( rc!=SQLITE_OK ){
-    return SQLITE_PROTOCOL;
+    goto end_playback;
   }
-  sqliteOsTruncate(pPager->fd, mxPg*SQLITE_PAGE_SIZE);
+  rc = sqliteOsTruncate(pPager->fd, mxPg*SQLITE_PAGE_SIZE);
+  if( rc!=SQLITE_OK ){
+    goto end_playback;
+  }
   pPager->dbSize = mxPg;
   
   /* Begin reading the journal beginning at the end and moving
   ** toward the beginning.
   */
-  if( sqliteOsFileSize(pPager->jfd, &nRec)!=SQLITE_OK ){
-    return SQLITE_OK;
+  rc = sqliteOsFileSize(pPager->jfd, &nRec);
+  if( rc!=SQLITE_OK ){
+    goto end_playback;
   }
   nRec = (nRec - (sizeof(aMagic)+sizeof(Pgno))) / sizeof(PageRecord);
 
@@ -353,6 +360,8 @@ static int pager_playback(Pager *pPager){
     rc = sqliteOsWrite(pPager->fd, pgRec.aData, SQLITE_PAGE_SIZE);
     if( rc!=SQLITE_OK ) break;
   }
+
+end_playback:
   if( rc!=SQLITE_OK ){
     pager_unwritelock(pPager);
     pPager->errMask |= PAGER_ERR_CORRUPT;
@@ -470,6 +479,7 @@ int sqlitepager_pagecount(Pager *pPager){
     return pPager->dbSize;
   }
   if( sqliteOsFileSize(pPager->fd, &n)!=SQLITE_OK ){
+    pPager->errMask |= PAGER_ERR_DISK;
     return 0;
   }
   n /= SQLITE_PAGE_SIZE;
@@ -589,7 +599,7 @@ static int syncAllPages(Pager *pPager){
       pPg->dirty = 0;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -790,8 +800,12 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     if( pPager->dbSize<pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
     }else{
+      int rc;
       sqliteOsSeek(pPager->fd, (pgno-1)*SQLITE_PAGE_SIZE);
-      sqliteOsRead(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+      rc = sqliteOsRead(pPager->fd, PGHDR_TO_DATA(pPg), SQLITE_PAGE_SIZE);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
     }
     if( pPager->nExtra>0 ){
       memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
