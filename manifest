@@ -1,10 +1,12 @@
-C CVS\smissed\sa\scommit\s(because\sI\spressed\sCtrl-C\sin\sthe\smiddle).\s\sThis\nextra\scommit\swill\shopefully\shelp\sclear\sthings\sup.\s(CVS\s1091)
-D 2003-08-27T22:57:08
+C Add\sa\slogo\sfrom\sRasmus\sSchultz.\s(CVS\s1092)
+D 2003-09-02T15:26:33
 F Makefile.in f7e916ae863393827fa6a4cb292e3398096edcf1
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION 97d209249f825001288ff942df07b48e1083af5c
 F aclocal.m4 ff32919e75f42b2d4213fe3c6f79dd0fe47f7769
+F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
+F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F config.guess 831db445a8ae31d1f773fce85e14c16c8677417d
 F config.sub 975368989965310238930ecf8e7f06a23061dbb1
 F configure 8c9c261da9037dba368e5454de877a22255661ad x
@@ -168,7 +170,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 3403d28a49b27d3059d3d399ca057e8d33eb857a
-R 83559274e1a48bc890542f4f8da2c822
+P 522c2efeb5bdccadf3306234d458425b94cdbbe3
+R 5b61a815079f1971babe212bb4f8b793
 U drh
-Z 383ad70dc8f9b6b7c243c6e9a9d93d60
+Z f92c2044c3f4c2f842d2611b3febcf40
