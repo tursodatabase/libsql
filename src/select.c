@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.77 2002/03/23 00:31:29 drh Exp $
+** $Id: select.c,v 1.78 2002/04/04 02:10:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -355,16 +355,16 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 **    (1)  Fill in the pTabList->a[].pTab fields in the IdList that 
 **         defines the set of tables that should be scanned. 
 **
-**    (2)  If the columns to be extracted variable (pEList) is NULL
-**         (meaning that a "*" was used in the SQL statement) then
-**         create a fake pEList containing the names of all columns
-**         of all tables.
+**    (2)  Scan the list of columns in the result set (pEList) looking
+**         for instances of the "*" operator or the TABLE.* operator.
+**         If found, expand each "*" to be every column in every table
+**         and TABLE.* to be every column in TABLE.
 **
 ** Return 0 on success.  If there are problems, leave an error message
 ** in pParse and return non-zero.
 */
 static int fillInColumnList(Parse *pParse, Select *p){
-  int i, j, k;
+  int i, j, k, rc;
   IdList *pTabList;
   ExprList *pEList;
   Table *pTab;
@@ -410,42 +410,72 @@ static int fillInColumnList(Parse *pParse, Select *p){
   }
 
   /* For every "*" that occurs in the column list, insert the names of
-  ** all columns in all tables.  The parser inserted a special expression
+  ** all columns in all tables.  And for every TABLE.* insert the names
+  ** of all columns in TABLE.  The parser inserted a special expression
   ** with the TK_ALL operator for each "*" that it found in the column list.
   ** The following code just has to locate the TK_ALL expressions and expand
   ** each one to the list of all columns in all tables.
+  **
+  ** The first loop just checks to see if there are any "*" operators
+  ** that need expanding.
   */
   for(k=0; k<pEList->nExpr; k++){
-    if( pEList->a[k].pExpr->op==TK_ALL ) break;
+    Expr *pE = pEList->a[k].pExpr;
+    if( pE->op==TK_ALL ) break;
+    if( pE->op==TK_DOT && pE->pRight && pE->pRight->op==TK_ALL
+         && pE->pLeft && pE->pLeft->op==TK_ID ) break;
   }
+  rc = 0;
   if( k<pEList->nExpr ){
+    /*
+    ** If we get here it means the result set contains one or more "*"
+    ** operators that need to be expanded.  Loop through each expression
+    ** in the result set and expand them one by one.
+    */
     struct ExprList_item *a = pEList->a;
     ExprList *pNew = 0;
     for(k=0; k<pEList->nExpr; k++){
-      if( a[k].pExpr->op!=TK_ALL ){
+      Expr *pE = a[k].pExpr;
+      if( pE->op!=TK_ALL &&
+           (pE->op!=TK_DOT || pE->pRight==0 || pE->pRight->op!=TK_ALL) ){
+        /* This particular expression does not need to be expanded.
+        */
         pNew = sqliteExprListAppend(pNew, a[k].pExpr, 0);
         pNew->a[pNew->nExpr-1].zName = a[k].zName;
         a[k].pExpr = 0;
         a[k].zName = 0;
       }else{
+        /* This expression is a "*" or a "TABLE.*" and needs to be
+        ** expanded. */
+        int tableSeen = 0;      /* Set to 1 when TABLE matches */
+        Token *pName;           /* text of name of TABLE */
+        if( pE->op==TK_DOT && pE->pLeft ){
+          pName = &pE->pLeft->token;
+        }else{
+          pName = 0;
+        }
         for(i=0; i<pTabList->nId; i++){
           Table *pTab = pTabList->a[i].pTab;
+          char *zTabName = pTabList->a[i].zAlias;
+          if( zTabName==0 || zTabName[0]==0 ){ 
+            zTabName = pTab->zName;
+          }
+          if( pName && (zTabName==0 || zTabName[0]==0 ||
+                sqliteStrNICmp(pName->z, zTabName, pName->n)!=0) ){
+            continue;
+          }
+          tableSeen = 1;
           for(j=0; j<pTab->nCol; j++){
             Expr *pExpr, *pLeft, *pRight;
             pRight = sqliteExpr(TK_ID, 0, 0, 0);
             if( pRight==0 ) break;
             pRight->token.z = pTab->aCol[j].zName;
             pRight->token.n = strlen(pTab->aCol[j].zName);
-            if( pTab->zName ){
+            if( zTabName ){
               pLeft = sqliteExpr(TK_ID, 0, 0, 0);
               if( pLeft==0 ) break;
-              if( pTabList->a[i].zAlias && pTabList->a[i].zAlias[0] ){
-                pLeft->token.z = pTabList->a[i].zAlias;
-                pLeft->token.n = strlen(pTabList->a[i].zAlias);
-              }else{
-                pLeft->token.z = pTab->zName;
-                pLeft->token.n = strlen(pTab->zName);
-              }
+              pLeft->token.z = zTabName;
+              pLeft->token.n = strlen(zTabName);
               pExpr = sqliteExpr(TK_DOT, pLeft, pRight, 0);
               if( pExpr==0 ) break;
             }else{
@@ -455,12 +485,18 @@ static int fillInColumnList(Parse *pParse, Select *p){
             pNew = sqliteExprListAppend(pNew, pExpr, 0);
           }
         }
+        if( !tableSeen ){
+          assert( pName!=0 );
+          sqliteSetNString(&pParse->zErrMsg, "no such table: ", -1, 
+            pName->z, pName->n, 0);
+          rc = 1;
+        }
       }
     }
     sqliteExprListDelete(pEList);
     p->pEList = pNew;
   }
-  return 0;
+  return rc;
 }
 
 /*

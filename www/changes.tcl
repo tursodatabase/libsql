@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Apr 03 (2.4.7)} {
+<li>Add the ability to put TABLE.* in the column list of a
+    SELECT statement.</li>
+}
+
 chng {2002 Apr 02 (2.4.6)} {
 <li>Bug fix: Correctly handle terms in the WHERE clause of a join that
     do not contain a comparison operator.</li>
