@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.152 2004/07/22 01:19:35 drh Exp $
+** @(#) $Id: pager.c,v 1.153 2004/07/22 15:02:25 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1001,8 +1001,8 @@ static int pager_reload_cache(Pager *pPager){
       sqlite3OsSeek(&pPager->fd, pPager->pageSize*(off_t)(pPg->pgno-1));
       rc = sqlite3OsRead(&pPager->fd, zBuf, pPager->pageSize);
       TRACE2("REFETCH page %d\n", pPg->pgno);
-      CODEC(pPager, zBuf, pPg->pgno, 2);
       if( rc ) break;
+      CODEC(pPager, zBuf, pPg->pgno, 2);
     }else{
       memset(zBuf, 0, pPager->pageSize);
     }
@@ -2516,12 +2516,13 @@ int sqlite3pager_write(void *pData){
         }
         pPg->inJournal = 1;
       }else{
-        u32 cksum = pager_cksum(pPager, pPg->pgno, pData);
+        u32 cksum;
+        CODEC(pPager, pData, pPg->pgno, 7);
+        cksum = pager_cksum(pPager, pPg->pgno, pData);
         saved = *(u32*)PGHDR_TO_EXTRA(pPg, pPager);
         store32bits(cksum, pPg, pPager->pageSize);
         szPg = pPager->pageSize+8;
         store32bits(pPg->pgno, pPg, -4);
-        CODEC(pPager, pData, pPg->pgno, 7);
         rc = sqlite3OsWrite(&pPager->jfd, &((char*)pData)[-4], szPg);
         pPager->journalOff += szPg;
         TRACE3("JOURNAL page %d needSync=%d\n", pPg->pgno, pPg->needSync);

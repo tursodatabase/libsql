@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.307 2004/07/22 01:19:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.308 2004/07/22 15:02:25 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1330,7 +1330,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 # define sqlite3AuthContextPush(a,b,c)
 # define sqlite3AuthContextPop(a)  ((void)(a))
 #endif
-void sqlite3Attach(Parse*, Token*, Token*, Token*);
+void sqlite3Attach(Parse*, Token*, Token*, int, Token*);
 void sqlite3Detach(Parse*, Token*);
 int sqlite3BtreeFactory(const sqlite *db, const char *zFilename,
                        int omitJournal, int nCache, Btree **ppBtree);

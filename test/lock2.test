@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks between competing processes.
 #
-# $Id: lock2.test,v 1.2 2004/06/28 11:52:46 drh Exp $
+# $Id: lock2.test,v 1.3 2004/07/22 15:02:26 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -89,7 +89,7 @@ close $f
 do_test lock2-1.1 {
   set ::tf1 [launch_testfixture]
   testfixture $::tf1 {
-    sqlite3 db test.db
+    sqlite3 db test.db -key xyzzy
     db eval {select * from sqlite_master}
   }
 } {}

@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.9 2004/06/30 03:08:25 drh Exp $
+# $Id: types.test,v 1.10 2004/07/22 15:02:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,6 +37,10 @@ source $testdir/tester.tcl
 # types-3.*: Test that the '=' operator respects manifest types.
 #
 
+# Disable encryption on the database for this test.
+db close
+set DB [sqlite3 db test.db]
+sqlite3_rekey $DB {}
 
 # Create a table with one column for each type of affinity
 do_test types-1.1.0 {

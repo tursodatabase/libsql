@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.94 2004/07/17 21:56:10 drh Exp $
+** $Id: test1.c,v 1.95 2004/07/22 15:02:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -302,6 +302,62 @@ static int test_last_rowid(
   sprintf(zBuf, "%lld", sqlite3_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
+}
+
+/*
+** Usage:  sqlite3_key DB KEY
+**
+** Set the codec key.
+*/
+static int test_key(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  const char *zKey;
+  int nKey;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FILENAME\"", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  zKey = argv[2];
+  nKey = strlen(zKey);
+#ifdef SQLITE_HAS_CODEC
+  sqlite3_key(db, zKey, nKey);
+#endif
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_rekey DB KEY
+**
+** Change the codec key.
+*/
+static int test_rekey(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  const char *zKey;
+  int nKey;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FILENAME\"", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  zKey = argv[2];
+  nKey = strlen(zKey);
+#ifdef SQLITE_HAS_CODEC
+  sqlite3_rekey(db, zKey, nKey);
+#endif
+  return TCL_OK;
 }
 
 /*
@@ -2328,8 +2384,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",            (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",            (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-     { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
-     { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
+     { "sqlite_bind",                   (Tcl_CmdProc*)test_bind             },
+     { "breakpoint",                    (Tcl_CmdProc*)test_breakpoint       },
+     { "sqlite3_key",                   (Tcl_CmdProc*)test_key              },
+     { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
   };
   static struct {
      char *zName;

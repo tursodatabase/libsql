@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.15 2004/06/26 19:35:30 drh Exp $
+# $Id: pragma.test,v 1.16 2004/07/22 15:02:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -207,7 +207,8 @@ do_test pragma-2.4 {
 # Construct a corrupted index and make sure the integrity_check
 # pragma finds it.
 #
-if {![sqlite3 -has-codec]} {
+# These tests won't work if the database is encrypted
+#
 do_test pragma-3.1 {
   execsql {
     BEGIN;
@@ -219,19 +220,19 @@ do_test pragma-3.1 {
     SELECT rowid, * from t2;
   }
 } {1 11 2 3 2 22 3 4}
-do_test pragma-3.2 {
-  set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
-  set db [btree_open test.db 100 0]
-  btree_begin_transaction $db
-  set c [btree_cursor $db $rootpage 1]
-  btree_first $c
-  btree_delete $c
-  btree_commit $db
-  btree_close $db
-  execsql {PRAGMA integrity_check}
-} {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
-}; # endif has-codec
-
+if {![sqlite3 -has-codec]} {
+  do_test pragma-3.2 {
+    set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
+    set db [btree_open test.db 100 0]
+    btree_begin_transaction $db
+    set c [btree_cursor $db $rootpage 1]
+    btree_first $c
+    btree_delete $c
+    btree_commit $db
+    btree_close $db
+    execsql {PRAGMA integrity_check}
+  } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
+}
 do_test pragma-3.3 {
   execsql {
     DROP INDEX i2;
