@@ -1426,23 +1426,21 @@ int sqlite3VdbeSerialPut(unsigned char *buf, const Mem *pMem){
     return 0;
   }
  
-  /* Integer */
-  if( serial_type<5 ){
-    i64 i = pMem->i;
-    len = sqlite3VdbeSerialTypeLen(serial_type);
-    while( len-- ){
-      buf[len] = (i&0xFF);
-      i = i >> 8;
+  /* Integer and Real */
+  if( serial_type<=5 ){
+    u64 v;
+    int i;
+    if( serial_type==5 ){
+      v = *(u64*)&pMem->r;
+    }else{
+      v = *(u64*)&pMem->i;
     }
-    return sqlite3VdbeSerialTypeLen(serial_type);
-  }
-
-  /* Float */
-  if( serial_type==5 ){
-    /* TODO: byte ordering? */
-    assert( sizeof(double)==8 );
-    memcpy(buf, &pMem->r, 8);
-    return 8;
+    len = i = sqlite3VdbeSerialTypeLen(serial_type);
+    while( i-- ){
+      buf[i] = (v&0xFF);
+      v >>= 8;
+    }
+    return len;
   }
   
   /* String or blob */
@@ -1471,35 +1469,28 @@ int sqlite3VdbeSerialGet(const unsigned char *buf, u64 serial_type, Mem *pMem){
     return 0;
   }
  
-  /* Integer */
-  if( serial_type<5 ){
-    i64 i = 0;
+  /* Integer and Real */
+  if( serial_type<=5 ){
+    u64 v = 0;
     int n;
     len = sqlite3VdbeSerialTypeLen(serial_type);
 
     if( buf[0]&0x80 ){
-      for(n=0; n<(8-len); n++){
-        i = (i<<8)+0xFF;
-      }
+      v = -1;
     }
     for(n=0; n<len; n++){
-      i = i << 8;
-      i = i + buf[n];
+      v = (v<<8) | buf[n];
     }
-    pMem->flags = MEM_Int;
-    pMem->i = i;
-    return sqlite3VdbeSerialTypeLen(serial_type);
+    if( serial_type==5 ){
+      pMem->flags = MEM_Real;
+      pMem->r = *(double*)&v;
+    }else{
+      pMem->flags = MEM_Int;
+      pMem->i = *(int*)&v;
+    }
+    return len;
   }
 
-  /* Float */
-  if( serial_type==5 ){
-    /* TODO: byte ordering? */
-    assert( sizeof(double)==8 );
-    memcpy(&pMem->r, buf, 8);
-    pMem->flags = MEM_Real;
-    return 8;
-  }
-  
   /* String or blob */
   assert( serial_type>=12 );
   len = sqlite3VdbeSerialTypeLen(serial_type);
@@ -1883,6 +1874,3 @@ int sqlite3VdbeIdxKeyCompare(
   }
   return SQLITE_OK;
 }
-
-
-

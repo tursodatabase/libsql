@@ -1,5 +1,5 @@
-C Remove\sthe\sOP_SetFound\sopcode\sand\sits\scousins.\s(CVS\s1430)
-D 2004-05-21T13:39:50
+C Floating\spoint\svalues\sare\sserialized\sin\sbig-endian\sbyte\sorder.\s(CVS\s1431)
+D 2004-05-21T21:12:42
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -67,7 +67,7 @@ F src/vacuum.c c134702e023db8778e6be59ac0ea7b02315b5476
 F src/vdbe.c 2944326a99869c71698f634d6ace9e9be56d9180
 F src/vdbe.h 391d5642a83af686f35c228fcd36cb4456d68f44
 F src/vdbeInt.h 8ed2272e97bef20c5302c3b2cb4f900e8b5e2642
-F src/vdbeaux.c 0a0de6f6097125960b02a3c8625fa896cbc61271
+F src/vdbeaux.c 2dd437063e9a0769ce453f7ce94407934f56e2f8
 F src/where.c efe5d25fe18cd7381722457898cd863e84097a0c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test cb9b884344e6cfa5e165965d5b1adea679a24c83
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 550a53b3f28ddb288bcb6c21849ca83b0a20bde4
-R a27328b840ad5ac31f67deb6b635b74b
+P 5524075ec02102446f8d153e068546f763d4bf7a
+R 3fab4945c0e9af6644985641add2812d
 U drh
-Z 678137ddf4cdf9bac7e4b018c69ba9fb
+Z 8a832721c126d5ef16d065c0fc0b260b
