@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 16} {
+<li>Added the concatenate string operator (||)</li>
+}
+
 chng {2000 June 12} {
 <li>Added the fcnt() function to the SQL interpreter.  The fcnt() function
     returns the number of database "Fetch" operations that have occurred.

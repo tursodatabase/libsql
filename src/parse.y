@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.20 2000/06/09 14:14:33 drh Exp $
+** @(#) $Id: parse.y,v 1.21 2000/06/16 20:51:26 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -297,6 +297,7 @@ fieldlist(A) ::= id(Y).                    {A = sqliteIdListAppend(0,&Y);}
 %left GT GE LT LE.
 %left PLUS MINUS.
 %left STAR SLASH.
+%left CONCAT.
 %right UMINUS.
 
 %type expr {Expr*}
@@ -335,6 +336,7 @@ expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
 expr(A) ::= expr(X) SLASH expr(Y). {A = sqliteExpr(TK_SLASH, X, Y, 0);}
+expr(A) ::= expr(X) CONCAT expr(Y). {A = sqliteExpr(TK_CONCAT, X, Y, 0);}
 expr(A) ::= expr(X) ISNULL.        {A = sqliteExpr(TK_ISNULL, X, 0, 0);}
 expr(A) ::= expr(X) NOTNULL.       {A = sqliteExpr(TK_NOTNULL, X, 0, 0);}
 expr(A) ::= NOT expr(X).           {A = sqliteExpr(TK_NOT, X, 0, 0);}
