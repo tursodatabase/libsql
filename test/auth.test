@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_set_authorizer() API.
 #
-# $Id: auth.test,v 1.3 2003/01/14 02:49:28 drh Exp $
+# $Id: auth.test,v 1.4 2003/01/14 13:48:21 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1509,6 +1509,145 @@ do_test auth-1.239 {
   execsql2 {SELECT a FROM t2}
 } {a 11 a 7}
 
+do_test auth-1.240 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_TRANSACTION"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {BEGIN}
+} {1 {not authorized}}
+do_test auth-1.241 {
+  set ::authargs
+} {BEGIN {}}
+do_test auth-1.242 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_TRANSACTION" && $arg1!="BEGIN"} {
+      set ::authargs [list $arg1 $arg2]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {BEGIN; INSERT INTO t2 VALUES(44,55,66); COMMIT}
+} {1 {not authorized}}
+do_test auth-1.243 {
+  set ::authargs
+} {COMMIT {}}
+do_test auth-1.244 {
+  execsql {SELECT * FROM t2}
+} {11 2 33 7 8 9 44 55 66}
+do_test auth-1.245 {
+  catchsql {ROLLBACK}
+} {1 {not authorized}}
+do_test auth-1.246 {
+  set ::authargs
+} {ROLLBACK {}}
+do_test auth-1.247 {
+  catchsql {END TRANSACTION}
+} {1 {not authorized}}
+do_test auth-1.248 {
+  set ::authargs
+} {COMMIT {}}
+do_test auth-1.249 {
+  sqlite_set_authorizer $::DB {}
+  catchsql {ROLLBACK}
+} {0 {}}
+do_test auth-1.250 {
+  execsql {SELECT * FROM t2}
+} {11 2 33 7 8 9}
+
+do_test auth-2.1 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  sqlite_set_authorizer $::DB ::auth
+  execsql {CREATE TABLE t3(x INTEGER PRIMARY KEY, y, z)}
+  catchsql {SELECT * FROM t3}
+} {1 {access to t3.x is prohibited}}
+do_test auth-2.1 {
+  catchsql {SELECT y,z FROM t3}
+} {0 {}}
+do_test auth-2.2 {
+  catchsql {SELECT ROWID,y,z FROM t3}
+} {1 {access to t3.x is prohibited}}
+do_test auth-2.3 {
+  catchsql {SELECT OID,y,z FROM t3}
+} {1 {access to t3.x is prohibited}}
+do_test auth-2.4 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  execsql {INSERT INTO t3 VALUES(44,55,66)}
+  catchsql {SELECT * FROM t3}
+} {0 {{} 55 66}}
+do_test auth-2.5 {
+  catchsql {SELECT rowid,y,z FROM t3}
+} {0 {{} 55 66}}
+do_test auth-2.6 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="ROWID"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t3}
+} {0 {44 55 66}}
+do_test auth-2.7 {
+  catchsql {SELECT ROWID,y,z FROM t3}
+} {0 {44 55 66}}
+do_test auth-2.8 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT ROWID,b,c FROM t2}
+} {0 {{} 2 33 {} 8 9}}
+do_test auth-2.9 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
+      return bogus
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT ROWID,b,c FROM t2}
+} {1 {illegal return value (999) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+do_test auth-2.10 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_SELECT"} {
+      return bogus
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT ROWID,b,c FROM t2}
+} {1 {illegal return value (1) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+do_test auth-2.11 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg2=="a"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2, t3}
+} {0 {{} 2 33 44 55 66 {} 8 9 44 55 66}}
+do_test auth-2.11 {
+  proc auth {code arg1 arg2} {
+    if {$code=="SQLITE_READ" && $arg2=="x"} {
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {SELECT * FROM t2, t3}
+} {0 {11 2 33 {} 55 66 7 8 9 {} 55 66}}
 
 } ;# End of the "if( db command exists )"
 

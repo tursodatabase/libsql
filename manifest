@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sPRAGMA\sauthorization\scode.\s(CVS\s833)
-D 2003-01-14T02:54:08
+C Finish\sout\sthe\stest\ssuite\sfor\sthe\snew\ssqlite_set_authorizer\sAPI.\s(CVS\s834)
+D 2003-01-14T13:48:21
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/vdbe.c e103bd5a154b1790dd344662dceb14566a51a879
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
-F test/auth.test 30149de6b78099ba06429fb7d6cc4dfcc1f4985c
+F test/auth.test 95aeda24f76b6fd028bdb3d6ae1e30b153d942fe
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/btree.test 10e75aec120ecefc0edc4c912a0980a43db1b6c2
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P cc2ae781ac186f9ee1afacdc9117087421955369
-R db8bf1340de486936570528587d9e25c
+P ba58979f2ff3ec878a21e7c171fbcd8fa79ace6f
+R d196fd62af24b9896e18def719841a67
 U drh
-Z 5c7f484e4619e69cb548da93eb06003c
+Z 0dca7f72990a1e352389dd411ae1fee0
