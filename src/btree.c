@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.91 2003/04/25 13:22:52 drh Exp $
+** $Id: btree.c,v 1.92 2003/04/25 15:37:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3498,22 +3498,34 @@ static const char *fileBtreeGetFilename(Btree *pBt){
 */
 static int fileBtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   int rc = SQLITE_OK;
-  Pgno i, nPage;
+  Pgno i, nPage, nToPage;
 
   if( !pBtTo->inTrans || !pBtFrom->inTrans ) return SQLITE_ERROR;
   if( pBtTo->needSwab!=pBtFrom->needSwab ) return SQLITE_ERROR;
   if( pBtTo->pCursor ) return SQLITE_BUSY;
   memcpy(pBtTo->page1, pBtFrom->page1, SQLITE_PAGE_SIZE);
-  sqlitepager_overwrite(pBtTo->pPager, 1, pBtFrom->page1);
+  rc = sqlitepager_overwrite(pBtTo->pPager, 1, pBtFrom->page1);
+  nToPage = sqlitepager_pagecount(pBtTo->pPager);
   nPage = sqlitepager_pagecount(pBtFrom->pPager);
-  for(i=2; i<=nPage; i++){
+  for(i=2; rc==SQLITE_OK && i<=nPage; i++){
     void *pPage;
     rc = sqlitepager_get(pBtFrom->pPager, i, &pPage);
     if( rc ) break;
-    sqlitepager_overwrite(pBtTo->pPager, i, pPage);
+    rc = sqlitepager_overwrite(pBtTo->pPager, i, pPage);
+    if( rc ) break;
     sqlitepager_unref(pPage);
   }
-  if( !rc ) rc = sqlitepager_truncate(pBtTo->pPager, nPage);
+  for(i=nPage+1; rc==SQLITE_OK && i<=nToPage; i++){
+    void *pPage;
+    rc = sqlitepager_get(pBtTo->pPager, i, &pPage);
+    if( rc ) break;
+    rc = sqlitepager_write(pPage);
+    sqlitepager_unref(pPage);
+    sqlitepager_dont_write(pBtTo->pPager, i);
+  }
+  if( !rc && nPage<nToPage ){
+    rc = sqlitepager_truncate(pBtTo->pPager, nPage);
+  }
   if( rc ){
     fileBtreeRollback(pBtTo);
   }

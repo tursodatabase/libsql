@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.82 2003/04/25 13:22:53 drh Exp $
+** @(#) $Id: pager.c,v 1.83 2003/04/25 15:37:58 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -937,7 +937,13 @@ static int syncAllPages(Pager*);
 */
 int sqlitepager_truncate(Pager *pPager, Pgno nPage){
   int rc;
-  if( pPager->dbSize<0 ) sqlitepager_pagecount(pPager);
+  if( pPager->dbSize<0 ){
+    sqlitepager_pagecount(pPager);
+  }
+  if( pPager->errMask!=0 ){
+    rc = pager_errcode(pPager);
+    return rc;
+  }
   if( nPage>=pPager->dbSize ){
     return SQLITE_OK;
   }
@@ -1197,6 +1203,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   */ 
   assert( pPager!=0 );
   assert( pgno!=0 );
+  *ppPage = 0;
   if( pPager->errMask & ~(PAGER_ERR_FULL) ){
     return pager_errcode(pPager);
   }
@@ -1207,7 +1214,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
   if( pPager->nRef==0 ){
     rc = sqliteOsReadLock(&pPager->fd);
     if( rc!=SQLITE_OK ){
-      *ppPage = 0;
       return rc;
     }
     pPager->state = SQLITE_READLOCK;
@@ -1225,7 +1231,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
            /* This should never happen! */
            rc = SQLITE_INTERNAL;
          }
-         *ppPage = 0;
          return rc;
        }
        pPager->state = SQLITE_WRITELOCK;
@@ -1241,7 +1246,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
        if( rc!=SQLITE_OK ){
          rc = sqliteOsUnlock(&pPager->fd);
          assert( rc==SQLITE_OK );
-         *ppPage = 0;
          return SQLITE_BUSY;
        }
        pPager->journalOpen = 1;
@@ -1269,7 +1273,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       pPg = sqliteMallocRaw( sizeof(*pPg) + SQLITE_PAGE_SIZE 
                               + sizeof(u32) + pPager->nExtra );
       if( pPg==0 ){
-        *ppPage = 0;
         pager_unwritelock(pPager);
         pPager->errMask |= PAGER_ERR_MEM;
         return SQLITE_NOMEM;
@@ -1298,7 +1301,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         int rc = syncAllPages(pPager);
         if( rc!=0 ){
           sqlitepager_rollback(pPager);
-          *ppPage = 0;
           return SQLITE_IOERR;
         }
         pPg = pPager->pFirst;
@@ -1313,7 +1315,6 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         rc = pager_write_pagelist( pPg );
         if( rc!=SQLITE_OK ){
           sqlitepager_rollback(pPager);
-          *ppPage = 0;
           return SQLITE_IOERR;
         }
       }
@@ -1391,7 +1392,15 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       assert( pPg->pNextHash->pPrevHash==0 );
       pPg->pNextHash->pPrevHash = pPg;
     }
+    if( pPager->nExtra>0 ){
+      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
+    }
     if( pPager->dbSize<0 ) sqlitepager_pagecount(pPager);
+    if( pPager->errMask!=0 ){
+      sqlitepager_unref(PGHDR_TO_DATA(pPg));
+      rc = pager_errcode(pPager);
+      return rc;
+    }
     if( pPager->dbSize<(int)pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
     }else{
@@ -1402,14 +1411,12 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
         off_t fileSize;
         if( sqliteOsFileSize(&pPager->fd,&fileSize)!=SQLITE_OK
                || fileSize>=pgno*SQLITE_PAGE_SIZE ){
+          sqlitepager_unref(PGHDR_TO_DATA(pPg));
           return rc;
         }else{
           memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
         }
       }
-    }
-    if( pPager->nExtra>0 ){
-      memset(PGHDR_TO_EXTRA(pPg), 0, pPager->nExtra);
     }
   }else{
     /* The requested page is in the page cache. */
@@ -1532,6 +1539,10 @@ static int pager_open_journal(Pager *pPager){
   pPager->alwaysRollback = 0;
   pPager->nRec = 0;
   sqlitepager_pagecount(pPager);
+  if( pPager->errMask!=0 ){
+    rc = pager_errcode(pPager);
+    return rc;
+  }
   pPager->origDbSize = pPager->dbSize;
   if( journal_format==JOURNAL_FORMAT_3 ){
     rc = sqliteOsWrite(&pPager->jfd, aJournalMagic3, sizeof(aJournalMagic3));

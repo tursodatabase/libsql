@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.5 2003/04/25 13:22:53 drh Exp $
+** $Id: vacuum.c,v 1.6 2003/04/25 15:37:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -280,31 +280,31 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
   sVac.dbOld = db;
   sVac.dbNew = dbNew;
   sVac.pParse = pParse;
-  for(i=0; i<sizeof(zPragma)/sizeof(zPragma[0]); i++){
+  for(i=0; rc==SQLITE_OK && i<sizeof(zPragma)/sizeof(zPragma[0]); i++){
     char zBuf[200];
     assert( strlen(zPragma[i])<100 );
     sprintf(zBuf, "PRAGMA %s;", zPragma[i]);
     sVac.zPragma = zPragma[i];
     rc = sqlite_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
-    if( rc ) goto vacuum_error;
   }
-  if( rc==SQLITE_OK ){
+  if( !rc ){
     rc = sqlite_exec(db, "SELECT type, name, sql FROM sqlite_master "
              "WHERE sql NOT NULL", vacuumCallback1, &sVac, &zErrMsg);
   }
-  if( rc ){
-    if( pParse->zErrMsg==0 ){
-      sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
-    }
-    goto end_of_vacuum;
+  if( !rc ){
+    rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
+    sqlite_exec(db, "COMMIT", 0, 0, 0);
+    sqlite_exec(db, "ROLLBACK", 0, 0, 0);  /* In case the COMMIT failed */
+    sqliteResetInternalSchema(db, 0);
   }
-  rc = sqliteBtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
-  sqlite_exec(db, "COMMIT", 0, 0, 0);
-  sqliteResetInternalSchema(db, 0);
 
 end_of_vacuum:
-  sqlite_exec(db, "COMMIT", 0, 0, 0);
+  if( rc && pParse->zErrMsg==0 && zErrMsg!=0 ){
+    sqliteErrorMsg(pParse, "unable to vacuum database - %s", zErrMsg);
+  }
   if( safety ) {
+    sqlite_exec(db, "COMMIT", 0, 0, 0);
+    sqlite_exec(db, "ROLLBACK", 0, 0, 0);  /* In case the COMMIT failed */
     sqliteSafetyOn(db);
   }
   if( dbNew ) sqlite_close(dbNew);
@@ -314,7 +314,5 @@ end_of_vacuum:
   sqliteFree(sVac.s2.z);
   if( zErrMsg ) sqlite_freemem(zErrMsg);
   return;
-
-vacuum_error:
 #endif
 }

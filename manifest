@@ -1,5 +1,5 @@
-C Work\saround\sa\sname\scollision\sproblem\son\swindows.\s(CVS\s934)
-D 2003-04-25T13:28:03
+C Add\stests\sto\sinsure\sVACUUM\sworks\sin\sthe\spresence\sof\sI/O\serrors.\s\sFix\ssome\nproblems\sthat\scame\sto\slight\sby\sthese\stests.\s(CVS\s935)
+D 2003-04-25T15:37:58
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -21,7 +21,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
 F src/auth.c a4afd27964fb9f661147115790c8ae2ee230ebcc
-F src/btree.c a9e8aa96c2af6a81e442719d0cbc1a71bb9b3e08
+F src/btree.c 077d75aee4ed63f3628698611ba43c87097d458d
 F src/btree.h 23c50e00709de16a5dce1fcea9c0429cc955ff0e
 F src/btree_rb.c 8e00e40be264716e1929987878672e55d9e0e76d
 F src/build.c d5a26baeffa5bc49b4b7009a7723c6ab7e1b02d9
@@ -37,7 +37,7 @@ F src/main.c 5e4d4d081d82840a743c57269ca3c32640cefc06
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c e56853eaea5dab258ab1ccb77b4743b453516e3a
 F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
-F src/pager.c 18066f5057500dccc2948c258ea5ffd4139bbf7d
+F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 15ae47e7dd84304c1c6ae9205558405127977541
 F src/pragma.c 118fe400d71b7fdcc03580d5eab6bb5aa00772a5
@@ -58,8 +58,8 @@ F src/tokenize.c 067d1a477a94af7712ca74e09aaa6bd0f7299527
 F src/trigger.c e763f4015c96e06b694184ead5754985c1dfdae0
 F src/update.c b7fa7c427b74aee6db56ecfa09e5e151e6f9fa6a
 F src/util.c 87635cfdfffa056a8d3147719357aa442374f78c
-F src/vacuum.c 44420de0f02cc66a673469fee1f33b6d08bb717e
-F src/vdbe.c f0868ac926d98395d28c2a29119364ff11b77852
+F src/vacuum.c 14ac3073203fa021e01ffe33db56968ad79a8344
+F src/vdbe.c 48098080d2b5d35d4cc28ac2a4855c7730f6ee7b
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c f632cd30f013163484a4d60c249d36fe31f5be12
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -86,7 +86,7 @@ F test/index.test 90ef4c426865f15937858bd433cc82b9c11af913
 F test/insert.test 5697ba098e4d8a6f0151f281b7e39dec9c439e05
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 39f49fd993350f7f3ab255e5cfbf9a09d8f8800e
-F test/ioerr.test 45c8feebe608d7f456fea27ff27a0aaaf0b9c636
+F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test c97267c19294bf1fa4e81087edad179828bced88
 F test/limit.test 9ffb965a0f5bf7152187ef3d8d1249b96e5620bf
 F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P caa960289f3d1f5e8f35a94e9e4321996c211ed2
-R 6965193ade608332ec748a76df98b36c
+P c3b1f84dfce13b2523c9923e4270577862ca0595
+R 40330553c4eb619fb11602a7f62ead1c
 U drh
-Z d6cf94162cb85ee388573561bf7c7da3
+Z 09a1f9c6aa9e8c12d787618e6052f340
