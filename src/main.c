@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.90 2002/07/19 18:13:36 drh Exp $
+** $Id: main.c,v 1.91 2002/07/19 18:52:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -115,7 +115,7 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   int rc;
   Table *pTab;
   Trigger *pTrig;
-  char *zErr;
+  char *zErr = 0;
 
   pTab = sqliteFindTable(pData->db, argv[0]);
   if( pTab ){
@@ -302,7 +302,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
 /*
 ** The version of the library
 */
-static const char rcsid[] = "@(#) $Id: main.c,v 1.90 2002/07/19 18:13:36 drh Exp $";
+static const char rcsid[] = "@(#) $Id: main.c,v 1.91 2002/07/19 18:52:41 drh Exp $";
 const char sqlite_version[] = SQLITE_VERSION;
 
 /*

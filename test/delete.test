@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.10 2001/10/15 00:44:36 drh Exp $
+# $Id: delete.test,v 1.11 2002/07/19 18:52:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -193,6 +193,53 @@ do_test delete-6.10 {
   execsql {SELECT f1 FROM table2}
 } {2}
 
+do_test delete-7.1 {
+  execsql {
+    CREATE TABLE t3(a);
+    INSERT INTO t3 VALUES(1);
+    INSERT INTO t3 SELECT a+1 FROM t3;
+    INSERT INTO t3 SELECT a+2 FROM t3;
+    SELECT * FROM t3;
+  }
+} {1 2 3 4}
+do_test delete-7.2 {
+  execsql {
+    CREATE TABLE cnt(del);
+    INSERT INTO cnt VALUES(0);
+    CREATE TRIGGER r1 AFTER DELETE ON t3 FOR EACH ROW BEGIN
+      UPDATE cnt SET del=del+1;
+    END;
+    DELETE FROM t3 WHERE a<2;
+    SELECT * FROM t3;
+  }
+} {2 3 4}
+do_test delete-7.3 {
+  execsql {
+    SELECT * FROM cnt;
+  }
+} {1}
+do_test delete-7.4 {
+  execsql {
+    DELETE FROM t3;
+    SELECT * FROM t3;
+  }
+} {}
+do_test delete-7.5 {
+  execsql {
+    SELECT * FROM cnt;
+  }
+} {4}
+do_test delete-7.6 {
+  execsql {
+    INSERT INTO t3 VALUES(1);
+    INSERT INTO t3 SELECT a+1 FROM t3;
+    INSERT INTO t3 SELECT a+2 FROM t3;
+    CREATE TABLE t4 AS SELECT * FROM t3;
+    PRAGMA count_changes=ON;
+    DELETE FROM t3;
+    DELETE FROM t4;
+  }
+} {4 4}
 
 
 finish_test

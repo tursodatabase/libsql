@@ -25,7 +25,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2002 Jly 7 (2.6.0)} {
+chng {2002 Jly 19 (2.6.1)} {
+<li>Include a static string in the library that responds to the RCS
+    "ident" command and which contains the library version number.</li>
+<li>Fix an assertion failure that occurred when deleting all rows of
+    a table with the "count_changes" pragma turned on.</li>
+<li>Better error reporting when problems occur during the automatic
+    2.5.6 to 2.6.0 database format upgrade.</li>
+}
+
+chng {2002 Jly 17 (2.6.0)} {
 <li>Change the format of indices to correct a design flaw the originated
     with version 2.1.0.  <font color="red">*** This is an incompatible
     file format change ***</font>  When version 2.6.0 or later of the

@@ -1,9 +1,9 @@
-C Add\sstatic\sident\sstrings\s(such\sas\spicked\sup\sby\sthe\sRCS\s"ident"\scommand)\ncontaining\sthe\slibrary\sversion\snumber.\s(CVS\s689)
-D 2002-07-19T18:13:36
+C Fix\san\sassertion\sfailure\sthat\soccurs\swhen\sattempting\sto\sdelete\sall\srows\sof\na\stable\swhile\sthe\s"count_changes"\spragma\sis\sturned\son.\s\sUp\sthe\sversion\snumber\nto\s2.6.1.\s(CVS\s690)
+D 2002-07-19T18:52:41
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
-F VERSION b36b90fdfe67f5f38d70b444e4430701df184330
+F VERSION 162ea0af81011c17ff003197a34f3b1d5318a7f2
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
 F config.sub f14b07d544ca26b5d698259045136b783e18fc7f
@@ -21,14 +21,14 @@ F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c f014b682e184876aba5df14a68f96594e0b7ae00
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 2f81c837284840448f21c90ef7c9c6c6c0d4d8a0
-F src/delete.c bc35d6aa7e7b2a4f88510a17e060abb355a53bd6
+F src/delete.c c9f59ee217e062eb9de7b64b76b5cfff42b2f028
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 8a6b669ba5d6cd2810e8671f918ddb0fac3dd1b1
 F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 9bc794863ea2988a7b8667ef010b3c46b26dba38
-F src/main.c 553efc8e20cab91c9968db55370b9a53a87a52e7
+F src/main.c bbf5b5536c90b6e4e9202dd1b942ae236365784e
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c edb22daad525f49681f41c76683a16c1d39755c7
 F src/os.h 5b9a69875c880d1665ae040cbca1f7b9c82198ab
@@ -62,7 +62,7 @@ F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test 9caa9e22491dd8cd8aa36d7ac3b48b089817c895
 F test/conflict.test 4518cc3c1c40c4ba74220d9ee814257ae7d09c47
 F test/copy.test 92e21ebea11319c3f70448d3763fdaa0e2f1c21f
-F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
+F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
 F test/expr.test 5fadd0bc87c223b424ce6752b576c1df346abf1f
 F test/func.test cae5f27e09736cfdcc978c3719ac1345405b848c
 F test/in.test e59461f1702b7387880bf08a0ce6bb777925d282
@@ -107,7 +107,7 @@ F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
-F test/version.test 3a4d507ad9a7d4f7e2ce829b7896e399c8372ef1
+F test/version.test 946589ce15d214443b8377b69d176551e6b32b34
 F test/view.test 3afca084dab44c7a5772d3c6a326adf93ad52050
 F test/where.test 1f87bec674bf85d74ac1cc5b2cd3d89be1e87b1d
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -127,7 +127,7 @@ F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 580c03f096a16c0cf7ce18e0483daace4a602b46
-F www/changes.tcl 899174e0f3b0c32be054b9d09d9a3bddba82752b
+F www/changes.tcl c920fe01975e4eac1333e075134aa857b6ebee32
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
@@ -142,7 +142,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c8a7b725b7cec792d2148455a4cecbce9dfebe80
-R 4b70b10f72657c3aef30cab2e450b1e2
+P 712ee3914e988f0077e9a3d6170ff8db496a9600
+R e18ddbb4d34c611c8ea2fbb6bf8125f5
 U drh
-Z e6d57a6a86a2d8ecbb750e666c311e5b
+Z ac4011cc1c3100f3850516aaff92f5b7
