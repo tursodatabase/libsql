@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.11 2002/04/12 10:09:00 drh Exp $
+# $Id: conflict.test,v 1.12 2002/06/25 13:16:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -491,10 +491,6 @@ do_test conflict-8.6.1 {
   db changes
 } {3}
 
-do_test insert-99.1 {
-  set x [execsql {PRAGMA integrity_check}]
-  if {$x==""} {set x ok}
-  set x
-} {ok}
+integrity_check conflict-99.1
 
 finish_test

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.11 2002/03/11 02:06:14 drh Exp $
+# $Id: trans.test,v 1.12 2002/06/25 13:16:04 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -45,6 +45,7 @@ do_test trans-1.9 {
 do_test trans-1.10 {
   execsql {SELECT b FROM two ORDER BY a} altdb
 } {I V X}
+integrity_check trans-1.11
 
 # Basic transactions
 #
@@ -80,6 +81,7 @@ do_test trans-2.10 {
     END;
   }
 } {1 2 3 1 5 10}
+integrity_check trans-2.11
 
 # Check the locking behavior
 #
@@ -164,6 +166,7 @@ do_test trans-3.14 {
   } db} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
+integrity_check trans-3.15
 
 do_test trans-4.1 {
   set v [catch {execsql {
@@ -234,13 +237,15 @@ do_test trans-4.11 {
   } altdb} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
-do_test trans-4.99 {
+integrity_check trans-4.12
+do_test trans-4.98 {
   altdb close
   execsql {
     DROP TABLE one;
     DROP TABLE two;
   }
 } {}
+integrity_check trans-4.99
 
 # Check out the commit/rollback behavior of the database
 #
@@ -405,6 +410,8 @@ do_test trans-5.23 {
     SELECT * FROM t2;
   }
 } {1 2 3}
+integrity_check trans-5.23
+
 
 # Try to DROP and CREATE tables and indices with the same name
 # within a transaction.  Make sure ROLLBACK works.
@@ -663,6 +670,7 @@ do_test trans-6.39 {
     SELECT * FROM t1 WHERE c<1;
   }
 } {1 -2 -3 4 -5 -6}
+integrity_check trans-6.40
 
 # Test to make sure rollback restores the database back to its original
 # state.
@@ -770,6 +778,7 @@ do_test trans-7.13 {
 do_test trans-7.14 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
+integrity_check trans-7.15
 
 # Arrange for another process to begin modifying the database but abort
 # and die in the middle of the modification.  Then have this process read
@@ -794,6 +803,7 @@ do_test trans-8.1 {
 do_test trans-8.2 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
+integrity_check trans-8.3
 
    
 finish_test

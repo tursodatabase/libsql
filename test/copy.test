@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.10 2002/02/19 13:39:23 drh Exp $
+# $Id: copy.test,v 1.11 2002/06/25 13:16:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -226,12 +226,7 @@ do_test copy-5.7 {
   }
 } {0}
 
-do_test copy-6.0 {
-  set x [execsql {PRAGMA integrity_check}]
-  if {$x==""} {set x ok}
-  set x
-} {ok}
- 
+integrity_check copy-6.0
 
 # Cleanup 
 #

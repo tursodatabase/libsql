@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.98 2002/06/25 01:09:11 drh Exp $
+** $Id: build.c,v 1.99 2002/06/25 13:16:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2129,12 +2129,20 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_SetInsert,   0, 0,        "2"},
       { OP_Open,        0, 2,        0},
       { OP_Rewind,      0, 6,        0},
-      { OP_Column,      0, 3,        0},
+      { OP_Column,      0, 3,        0},    /* 3 */
       { OP_SetInsert,   0, 0,        0},
       { OP_Next,        0, 3,        0},
-      { OP_IntegrityCk, 0, 0,        0},
+      { OP_IntegrityCk, 0, 0,        0},    /* 6 */
       { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "integrity_check"},
+      { OP_Callback,    1, 0,        0},
+      { OP_SetInsert,   1, 0,        "2"},
+      { OP_OpenAux,     1, 2,        0},
+      { OP_Rewind,      1, 16,       0},
+      { OP_Column,      1, 3,        0},    /* 13 */
+      { OP_SetInsert,   1, 0,        0},
+      { OP_Next,        1, 13,       0},
+      { OP_IntegrityCk, 1, 1,        0},    /* 16 */
       { OP_Callback,    1, 0,        0},
     };
     Vdbe *v = sqliteGetVdbe(pParse);

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.159 2002/06/25 01:09:12 drh Exp $
+** $Id: vdbe.c,v 1.160 2002/06/25 13:16:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4019,14 +4019,17 @@ case OP_CreateTable: {
   break;
 }
 
-/* Opcode: IntegrityCk P1 * *
+/* Opcode: IntegrityCk P1 P2 *
 **
 ** Do an analysis of the currently open database.  Push onto the
 ** stack the text of an error message describing any problems.
 ** If there are no errors, push a "ok" onto the stack.
 **
 ** P1 is the index of a set that contains the root page numbers
-** for all tables and indices in this database.
+** for all tables and indices in the main database file.
+**
+** If P2 is not zero, the check is done on the auxiliary database
+** file, not the main database file.
 **
 ** This opcode is used for testing purposes only.
 */
@@ -4049,12 +4052,12 @@ case OP_IntegrityCk: {
     aRoot[j] = atoi((char*)sqliteHashKey(i));
   }
   aRoot[j] = 0;
-  z = sqliteBtreeIntegrityCheck(pBt, aRoot, nRoot);
+  z = sqliteBtreeIntegrityCheck(pOp->p2 ? db->pBeTemp : pBt, aRoot, nRoot);
   if( z==0 || z[0]==0 ){
+    if( z ) sqliteFree(z);
     zStack[tos] = "ok";
     aStack[tos].n = 3;
     aStack[tos].flags = STK_Str | STK_Static;
-    if( z ) sqliteFree(z);
   }else{
     zStack[tos] = z;
     aStack[tos].n = strlen(z) + 1;

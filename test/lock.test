@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.14 2002/05/10 13:14:08 drh Exp $
+# $Id: lock.test,v 1.15 2002/06/25 13:16:04 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -145,6 +145,7 @@ if {$::tcl_platform(platform)=="unix"} {
     set r
   } {0 2}
 }
+integrity_check lock-1.23
 
 # If one thread has a transaction another thread cannot start
 # a transaction.
@@ -231,6 +232,7 @@ do_test lock-2.7 {
   lappend r $msg
   lappend r $::callback_value
 } {0 {} {1 2 3}}
+integrity_check lock-2.8
 
 # Try to start two transactions in a row
 #
@@ -240,7 +242,7 @@ do_test lock-3.1 {
   execsql {ROLLBACK}
   lappend r $msg
 } {0 {}}
-
+integrity_check lock-3.2
 
 do_test lock-999.1 {
   rename db2 {}
