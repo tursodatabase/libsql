@@ -30,8 +30,9 @@ make target_source
 cd tsrc
 rm shell.c
 TCLDIR=/home/drh/tcltk/8.2linux
+TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a
 OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1 -DOS_UNIX=1 -DOS_WIN=0'
-gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c -o tclsqlite.so
+gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
 mv tclsqlite.so ..
 cd ..
@@ -42,6 +43,7 @@ gzip tclsqlite.so
 #
 make target_source
 cd tsrc
+rm shell.c
 TCLDIR=/home/drh/tcltk/8.2win
 TCLSTUBLIB=$TCLDIR/tclstub82.a
 PATH=$PATH:/opt/mingw/bin

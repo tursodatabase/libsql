@@ -1,5 +1,5 @@
-C Version\s2.0.0\s(CVS\s272)
-D 2001-09-28T17:47:14
+C Line\stclsqlite.so\sagainst\sthe\sstub\slibrary.\s(CVS\s273)
+D 2001-09-28T18:10:56
 F Makefile.in 98d4627cb364537e4c3a29ee806171f3abf5211a
 F Makefile.template 7179523fdf3d6e7933ec843e2352dcfc9785c700
 F README 93d2977cc5c6595c448de16bdefc312b9d401533
@@ -17,7 +17,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 88bc1f96946582eb0323c4d31a89767ba6ae46ce
+F publish.sh 502b907fa9e0214309406fa5f520b3d3c14f9c1d
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c a4a88dfef2072cedfdac09f3a51b7d70b017b9b4
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
@@ -111,7 +111,7 @@ F www/speed.tcl 91b53f9403a62bb322dc1f85a81531309bcfb41c
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 00575d167aea567bc38f8a329aeff7b814eb91c8
-R 81c8ca6ec47dd72d51e7ef41271549d2
+P 1df5386a5557c1fc6a5433e9dbd23009026be369
+R 6225ec3f6335ee7954c1d6de6918fbe0
 U drh
-Z 04def0ebf7eae2e65632e77981c5002a
+Z 8263c2f5969f26088267e7e476fc0b16
