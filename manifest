@@ -1,5 +1,5 @@
-C Makefile.in\sand\ssqlite.def\schanges\sfor\sencode\sand\snon-toplevel\sbuild;\sticket\s#667\s(CVS\s1297)
-D 2004-03-16T21:49:50
+C The\ssqlite_trace()\sAPI\sonly\sworks\sfor\scommands\sstarted\sby\sthe\suser,\snot\sfor\nSQL\scommands\srun\sduring\sinitialization.\s(CVS\s1298)
+D 2004-03-17T18:44:46
 F Makefile.in 5d50a7d2a6a641e90a0312fc30d4e9c96b3903da
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -30,13 +30,13 @@ F src/build.c c8ab8b467d9a64254b0d4d42083f6313b3a980d1
 F src/copy.c 750e13828c3e4a293123e36aaa7cf0f22466248a
 F src/date.c f055419d602bde622c70f831350b6b52f2235de0
 F src/delete.c 82001c74882319f94dab5f6b92a27311b31092ae
-F src/encode.c e6518a1e3326a07539a88d2082cbaa3389cdf6e0
+F src/encode.c fc8c51f0b61bc803ccdec092e130bebe762b0a2f
 F src/expr.c 95ea5d47d11b5085aaeeb77d60b17c2cba13383a
 F src/func.c 34fead7a33e82095f6412d3fafd379d47864b3be
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c c0485ee2d1b99322894e2d1e0b576fd05ed75616
-F src/main.c 8e1b406d661c6475cc27d4b2b9422d1d2ab94cf7
+F src/main.c 89a18cfb2a6a832a03fff10b2515da4bbe8f83ef
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 5f11382733805d4529ec2a30800e117f30995ea8
 F src/os.h 250a3789be609adfee5c5aa20137ce8683276f24
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 359f0e787ff2d4d10fd23059e2ce99670e93f66a
-R 844f798d0d4db4bb8c51bd95cdec6c47
-U dougcurrie
-Z e289d5957606d6a682af1d12195f27e6
+P 72205a371ce5be4eac0a77d5d2fa8ccb23bb988f
+R 99d9abce4fbd17d2074c2e743660ebc3
+U drh
+Z 0b52db8f82add9da6aef2ec7c65ba20e

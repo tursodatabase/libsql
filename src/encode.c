@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.11 2004/03/14 22:12:00 drh Exp $
+** $Id: encode.c,v 1.12 2004/03/17 18:44:46 drh Exp $
 */
 #include <string.h>
 #include <assert.h>
@@ -27,7 +27,7 @@
 ** 0x00.  This is accomplished by using an escape character to encode
 ** 0x27 and 0x00 as a two-byte sequence.  The escape character is always
 ** 0x01.  An 0x00 is encoded as the two byte sequence 0x01 0x01.  The
-** 0x27 character is encoded as the two byte sequence 0x01 0x03.  Finally,
+** 0x27 character is encoded as the two byte sequence 0x01 0x28.  Finally,
 ** the escape character itself is encoded as the two-character sequence
 ** 0x01 0x02.
 **
@@ -35,7 +35,7 @@
 **
 **       0x00  ->  0x01 0x01
 **       0x01  ->  0x01 0x02
-**       0x27  ->  0x01 0x03
+**       0x27  ->  0x01 0x28
 **
 ** If that were all the encoder did, it would work, but in certain cases
 ** it could double the size of the encoded string.  For example, to
@@ -81,7 +81,7 @@
 **           the offset in step 7 below.
 **
 **     (6)   Convert each 0x01 0x01 sequence into a single character 0x00.
-**           Convert 0x01 0x02 into 0x01.  Convert 0x01 0x03 into 0x27.
+**           Convert 0x01 0x02 into 0x01.  Convert 0x01 0x28 into 0x27.
 **
 **     (7)   Subtract the offset value that was the first character of
 **           the encoded buffer from all characters in the output buffer.
@@ -122,6 +122,7 @@
 */
 int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
   int i, j, e, m;
+  unsigned char x;
   int cnt[256];
   if( n<=0 ){
     if( out ){
@@ -149,16 +150,12 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
   out[0] = e;
   j = 1;
   for(i=0; i<n; i++){
-    int c = (in[i] - e)&0xff;
-    if( c==0 || c==1 ){
+    x = in[i] - e;
+    if( x==0 || x==1 || x=='\''){
       out[j++] = 1;
-      out[j++] = c+1;
-    }else if( c=='\'' ){
-      out[j++] = 1;
-      out[j++] = 3;
-    }else{
-      out[j++] = c;
+      x++;
     }
+    out[j++] = x;
   }
   out[j] = 0;
   assert( j==n+m+1 );
@@ -176,21 +173,15 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
 ** to decode a string in place.
 */
 int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
-  int i, c, e;
+  int i, e;
+  unsigned char c;
   e = *(in++);
   i = 0;
   while( (c = *(in++))!=0 ){
     if( c==1 ){
-      c = *(in++);
-      if( c==1 || c==2 ){
-        c--;
-      }else if( c==3 ){
-        c = '\'';
-      }else{
-        return -1;
-      }
+      c = *(in++) - 1;
     }
-    out[i++] = (c + e)&0xff;
+    out[i++] = c + e;
   }
   return i;
 }

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.162 2004/03/04 19:09:20 rdc Exp $
+** $Id: main.c,v 1.163 2004/03/17 18:44:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -719,7 +719,7 @@ int sqlite_compile(
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sqliteRunParser(&sParse, zSql, pzErrMsg);
-  if( db->xTrace ){
+  if( db->xTrace && !db->init.busy ){
     /* Trace only the statment that was compiled.
     ** Make a copy of that part of the SQL string since zSQL is const
     ** and we must pass a zero terminated string to the trace function
