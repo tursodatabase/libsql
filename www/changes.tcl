@@ -21,6 +21,22 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 June 9 (2.8.14)} {
+<li>Fix the min() and max() optimizer so that it works when the FROM
+    clause consists of a subquery.</li>
+<li>Ignore extra whitespace at the end of of "." commands in the shell.</li>
+<li>Bundle sqlite_encode_binary() and sqlite_decode_binary() with the 
+    library.</li>
+<li>The TEMP_STORE and DEFAULT_TEMP_STORE pragmas now work.</li>
+<li>Code changes to compile cleanly using OpenWatcom.</li>
+<li>Fix VDBE stack overflow problems with INSTEAD OF triggers and
+    NULLs in IN operators.</li>
+<li>Add the global variable sqlite_temp_directory which if set defines the
+    directory in which temporary files are stored.</li>
+<li>sqlite_interrupt() plays well with VACUUM.</li>
+<li>Other minor bug fixes.</li>
+}
+
 chng {2004 March 8 (2.8.13)} {
 <li>Refactor parts of the code in order to make the code footprint
     smaller.  The code is now also a little bit faster.</li>
