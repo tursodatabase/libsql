@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.100 2002/08/31 18:53:06 drh Exp $
+** $Id: main.c,v 1.101 2002/09/03 19:43:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -634,6 +634,9 @@ int sqlite_exec(
     if( db->pBeTemp ) sqliteBtreeRollback(db->pBeTemp);
     db->flags &= ~SQLITE_InTrans;
     sqliteResetInternalSchema(db);
+  }
+  if( sParse.rc!=SQLITE_OK && pzErrMsg && *pzErrMsg==0 ){
+    sqliteSetString(pzErrMsg, sqlite_error_string(sParse.rc), 0);
   }
   sqliteStrRealloc(pzErrMsg);
   if( sParse.rc==SQLITE_SCHEMA ){

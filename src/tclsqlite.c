@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.40 2002/08/31 18:53:08 drh Exp $
+** $Id: tclsqlite.c,v 1.41 2002/09/03 19:43:24 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -442,15 +442,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       rc = sqlite_exec(pDb->db, zSql, DbEvalCallback2, pList, &zErrMsg);
       Tcl_SetObjResult(interp, pList);
     }
-    if( zErrMsg ){
+    if( rc==SQLITE_ABORT ){
+      if( zErrMsg ) free(zErrMsg);
+      rc = cbData.tcl_rc;
+    }else if( zErrMsg ){
       Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
       free(zErrMsg);
       rc = TCL_ERROR;
-    }else if( rc!=SQLITE_OK && rc!=SQLITE_ABORT ){
+    }else if( rc!=SQLITE_OK ){
       Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
       rc = TCL_ERROR;
     }else{
-      rc = cbData.tcl_rc;
     }
     Tcl_DecrRefCount(objv[2]);
 #ifdef UTF_TRANSLATION_NEEDED

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.174 2002/09/01 23:20:46 drh Exp $
+** $Id: vdbe.c,v 1.175 2002/09/03 19:43:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1505,9 +1505,7 @@ case OP_Return: {
 ** rollback the current transaction.  Do not rollback if P2==OE_Fail.
 ** Do the rollback if P2==OE_Rollback.  If P2==OE_Abort, then back
 ** out all changes that have occurred during this execution of the
-** VDBE, but do not rollback the transaction.  (This last case has
-** not yet been implemented.  OE_Abort works like OE_Rollback for
-** now.  In the future that may change.)
+** VDBE, but do not rollback the transaction. 
 **
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
