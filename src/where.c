@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.79 2003/05/17 17:35:13 drh Exp $
+** $Id: where.c,v 1.80 2003/07/06 17:22:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -853,7 +853,7 @@ WhereInfo *sqliteWhereBegin(
         }else{
           sqliteExprCode(pParse, aExpr[k].p->pLeft);
         }
-        sqliteVdbeAddOp(v, OP_MustBeInt, 1, brk);
+        sqliteVdbeAddOp(v, OP_IsNumeric, 1, brk);
         if( aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT ){
           sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
         }
@@ -872,7 +872,7 @@ WhereInfo *sqliteWhereBegin(
         }else{
           sqliteExprCode(pParse, aExpr[k].p->pLeft);
         }
-        sqliteVdbeAddOp(v, OP_MustBeInt, 1, sqliteVdbeCurrentAddr(v)+1);
+        /* sqliteVdbeAddOp(v, OP_MustBeInt, 0, sqliteVdbeCurrentAddr(v)+1); */
         pLevel->iMem = pParse->nMem++;
         sqliteVdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
         if( aExpr[k].p->op==TK_LT || aExpr[k].p->op==TK_GT ){
