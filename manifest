@@ -1,5 +1,5 @@
-C Add\scomments\sto\stest1.c.\s(CVS\s1659)
-D 2004-06-22T12:46:54
+C Add\scrash.test\sscript.\s(CVS\s1660)
+D 2004-06-22T13:12:52
 F Makefile.in 0a3d7aaefa50717bd550b0cf568a51072c4c103c
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 8f87a6089d3ae33be43ecc71d0bfd2d14892e91f
+F main.mk ed07aaa719ccc4fdb2d86b2d8079bbd4faba7ce5
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -44,8 +44,8 @@ F src/os.h 2f5ea879b784bc82aac8022a3e8fe00b73c83d67
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_test.c 0c6490723681649c11852adf701f00e09a981d1e
-F src/os_test.h c47bad966c6f6f9bb4448abfc03c18884bc0ca9f
+F src/os_test.c db4df491bad874c095b1a9d4db346990cfd56ae0
+F src/os_test.h acacfe7e7bb78dd99865f16cfa822426b177d2ab
 F src/os_unix.c 39e73ed02fc992a6bfc52200ea26704633412cc0
 F src/os_unix.h 00c1f82b526ab2fb7ee5ddd555ea4ed68363c93a
 F src/os_win.c 84549f6cc815237533c5d0eb3697352b03478d96
@@ -62,7 +62,7 @@ F src/sqlite.h.in 1f400a561fca3b1df73677d2d97046425d47cae4
 F src/sqliteInt.h dd796b6abc6d50505fe33c54f0143d7000681a41
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
-F src/test1.c cd1284a7e62b2523cfee146a758a3c2416d25657
+F src/test1.c 7ecde02fdecff651250f11d96da73d484a4ff764
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -104,6 +104,7 @@ F test/collate4.test 0e9fc08ffcf6eddf72e354a15de06688fa86db31
 F test/collate5.test 1dd5f0f508c46667f9d4606c7950c414b0bdc0d5
 F test/collate6.test 2a45768914f04c1447a69d1358bbede376552675
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
+F test/crash.test b6ff4701ca4c30553dc819eab9d8b1226ca39af2
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
@@ -142,7 +143,7 @@ F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test e09ac12edbdac81d21ca88084fef376c7667f5b0
 F test/printf.test 31ac25b4f85fbc7fb507be34c6c0731adbefcf80
 F test/progress.test 7542a6ac7894a1b7730c1f9a27f3f8b9388a4d25 x
-F test/quick.test 0c191839eaceca22814982ae0f585cfad1f06154
+F test/quick.test 4c0b3eabe2e0e606622d63d7d61ef6efb3ce156b
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
 F test/rowid.test 8845b4861341ef23f94e51f27702335d9c5dcd31
 F test/select1.test 2f161f9cdf9fb577336bc8c930edade538567123
@@ -227,7 +228,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d0def160e5cf37cde771c2d9b18904a2a1f8c358
-R 8248cc6658aa6d7649f6f797445f6e81
-U drh
-Z e125e35ec1374207bd595447efc0138e
+P be6bd6c99dde902aafd02d8a72f3d42826caabe8
+R e0f8cd78ed0c1d3c7e04b2acf0370248
+U danielk1977
+Z c3503634057680b2d410b0fe073781d0

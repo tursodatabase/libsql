@@ -29,6 +29,7 @@ struct OsTestFile {
   u8 **apBlk;       /* Array of blocks that have been written to. */
   int nBlk;         /* Size of apBlock. */
   int nMaxWrite;    /* Largest offset written to. */
+  char *zName;      /* File name */
   OsRealFile fd;
   OsTestFile *pNext;
 };

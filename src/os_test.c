@@ -100,11 +100,14 @@ static OsTestFile *pAllFiles = 0;
 /*
 ** Initialise the os_test.c specific fields of pFile.
 */
-static void initFile(OsFile *id){
-  OsTestFile *pFile = (OsTestFile *)sqliteMalloc(sizeof(OsTestFile));
+static void initFile(OsFile *id, char const *zName){
+  OsTestFile *pFile = (OsTestFile *)
+      sqliteMalloc(sizeof(OsTestFile) + strlen(zName)+1);
   pFile->nMaxWrite = 0; 
   pFile->nBlk = 0; 
   pFile->apBlk = 0; 
+  pFile->zName = (char *)(&pFile[1]);
+  strcpy(pFile->zName, zName);
   *id = pFile;
   pFile->pNext = pAllFiles;
   pAllFiles = pFile;
@@ -192,7 +195,16 @@ static int writeCache2(OsTestFile *pFile, int crash){
       if( crash ){
         char random;
         sqlite3Randomness(1, &random);
-        if( random & 0x01 ) skip = 1;
+        if( random & 0x01 ){
+          skip = 1;
+/*
+          printf("Not writing block %d of %s\n", i, pFile->zName);
+*/
+        }else{
+/*
+          printf("Writing block %d of %s\n", i, pFile->zName);
+*/
+        }
       }
 
       if( rc==SQLITE_OK ){
@@ -380,15 +392,15 @@ int sqlite3OsFileSize(OsFile *id, off_t *pSize){
 ** os_unix.c function to really open the file.
 */
 int sqlite3OsOpenReadWrite(const char *zFilename, OsFile *id, int *pReadonly){
-  initFile(id);
+  initFile(id, zFilename);
   return sqlite3RealOpenReadWrite(zFilename, &(*id)->fd, pReadonly);
 }
 int sqlite3OsOpenExclusive(const char *zFilename, OsFile *id, int delFlag){
-  initFile(id);
+  initFile(id, zFilename);
   return sqlite3RealOpenExclusive(zFilename, &(*id)->fd, delFlag);
 }
 int sqlite3OsOpenReadOnly(const char *zFilename, OsFile *id){
-  initFile(id);
+  initFile(id, zFilename);
   return sqlite3RealOpenReadOnly(zFilename, &(*id)->fd);
 }
 

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.24 2004/06/19 00:16:31 drh Exp $
+# $Id: quick.test,v 1.25 2004/06/22 13:12:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,7 @@ set EXCLUDE {
   memleak.test
   misuse.test
   format3.test
+  crash.test
 }
 
 if {[sqlite3 -has-codec]} {
