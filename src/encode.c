@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.6 2003/05/10 03:36:54 drh Exp $
+** $Id: encode.c,v 1.7 2003/06/15 10:35:05 jplyon Exp $
 */
 #include <string.h>
 
@@ -44,7 +44,7 @@
 ** this.
 **
 ** To minimize the encoding size, we first add a fixed offset value to each 
-** byte in the sequence.  The addition is module 256.  (That is to say, if
+** byte in the sequence.  The addition is modulo 256.  (That is to say, if
 ** the sum of the original character value and the offset exceeds 256, then
 ** the higher order bits are truncated.)  The offset is chosen to minimize
 ** the number of characters in the string that need to be escaped.  For
@@ -86,7 +86,7 @@
 **           the encoded buffer from all characters in the output buffer.
 **
 ** The only tricky part is step (1) - how to compute an offset value to
-** minimize the size of the output buffer.  This is accomplished to testing
+** minimize the size of the output buffer.  This is accomplished by testing
 ** all offset values and picking the one that results in the fewest number
 ** of escapes.  To do that, we first scan the entire input and count the
 ** number of occurances of each character value in the input.  Suppose
@@ -107,10 +107,10 @@
 ** string back into its original binary.
 **
 ** The result is written into a preallocated output buffer "out".
-** "out" must be able to hold at least (256*n + 1262)/253 bytes.
+** "out" must be able to hold at least 2 +(257*n)/254 bytes.
 ** In other words, the output will be expanded by as much as 3
-** bytes for every 253 bytes of input plus 2 bytes of fixed overhead.
-** (This is approximately 2 + 1.019*n or about a 2% size increase.)
+** bytes for every 254 bytes of input plus 2 bytes of fixed overhead.
+** (This is approximately 2 + 1.0118*n or about a 1.2% size increase.)
 **
 ** The return value is the number of characters in the encoded
 ** string, excluding the "\000" terminator.
@@ -159,7 +159,7 @@ int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
 
 /*
 ** Decode the string "in" into binary data and write it into "out".
-** This routine reverses the encoded created by sqlite_encode_binary().
+** This routine reverses the encoding created by sqlite_encode_binary().
 ** The output will always be a few bytes less than the input.  The number
 ** of bytes of output is returned.  If the input is not a well-formed
 ** encoding, -1 is returned.

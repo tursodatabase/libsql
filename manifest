@@ -1,5 +1,5 @@
-C Documented\sinteger\svalues\sused\sby\sPRAGMAs.\nFixed\smissing\send\stags\sin\sgenerated\sanchors.\s(CVS\s1022)
-D 2003-06-15T10:29:25
+C Updated\ssqlite_encode_binary()\scomments\swith\stighter\sbounds\son\soutput\slength.\s(CVS\s1023)
+D 2003-06-15T10:35:05
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/btree_rb.c a0dd64f840417b13637160599bd2740c8a340366
 F src/build.c 936d10b33b326546280690bee7f20efaf19a6fe8
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
-F src/encode.c ed720e54ec4ef4d4de651592f1dd1c74d422bbd2
+F src/encode.c a5fc03201e34b0015817202e9286bacf89e72048
 F src/expr.c ebdb0f3ee039c8030de25935ce2df030966540a6
 F src/func.c 33bbce6acaf9578ac99aa1f689968ccaf2ce43a2
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
@@ -165,7 +165,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P e13e8b05b4d146aa4ca9ed06e414e0c6a4fba4e4
-R 025a97aa1a8710d9abd04f450fb59b7a
+P 6c24dfbae56a16dd736de5297c1796818773df80
+R 58e24d713b97f4ba7b875ae8dce7497f
 U jplyon
-Z f0f06ece626e6fed7f80c90c5644e695
+Z fb46334e21926a895547abc49f262bff
