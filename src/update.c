@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.50 2002/09/14 13:47:32 drh Exp $
+** $Id: update.c,v 1.51 2003/01/11 13:30:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -386,7 +386,6 @@ void sqliteUpdate(
   ** Return the number of rows that were changed.
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
-    sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
     sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
     sqliteVdbeChangeP3(v, -1, "rows updated", P3_STATIC);
     sqliteVdbeAddOp(v, OP_Callback, 1, 0);

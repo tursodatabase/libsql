@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.65 2003/01/07 14:46:08 drh Exp $
+** @(#) $Id: pager.c,v 1.66 2003/01/11 13:30:58 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -93,9 +93,14 @@ struct PgHdr {
 
 /*
 ** How big to make the hash table used for locating in-memory pages
-** by page number.  Knuth says this should be a prime number.
+** by page number.
 */
-#define N_PG_HASH 2003
+#define N_PG_HASH 2048
+
+/*
+** Hash a page number
+*/
+#define pager_hash(PN)  ((PN)&(N_PG_HASH-1))
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -186,11 +191,6 @@ int pager_old_format = 0;
 #else
 # define pager_old_format 0
 #endif
-
-/*
-** Hash a page number
-*/
-#define pager_hash(PN)  ((PN)%N_PG_HASH)
 
 /*
 ** Enable reference count tracking here:
@@ -302,7 +302,7 @@ static void page_remove_from_ckpt_list(PgHdr *pPg){
 ** a pointer to the page or NULL if not found.
 */
 static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
-  PgHdr *p = pPager->aHash[pgno % N_PG_HASH];
+  PgHdr *p = pPager->aHash[pager_hash(pgno)];
   while( p && p->pgno!=pgno ){
     p = p->pNextHash;
   }
@@ -778,7 +778,8 @@ Pgno sqlitepager_pagenumber(void *pData){
 ** currently on the freelist (the reference count is zero) then
 ** remove it from the freelist.
 */
-static void page_ref(PgHdr *pPg){
+#define page_ref(P)   ((P)->nRef==0?_page_ref(P):(void)(P)->nRef++)
+static void _page_ref(PgHdr *pPg){
   if( pPg->nRef==0 ){
     /* The page is currently on the freelist.  Remove it. */
     if( pPg->pPrevFree ){
@@ -888,9 +889,8 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 
   /* Make sure we have not hit any critical errors.
   */ 
-  if( pPager==0 || pgno==0 ){
-    return SQLITE_ERROR;
-  }
+  assert( pPager!=0 );
+  assert( pgno!=0 );
   if( pPager->errMask & ~(PAGER_ERR_FULL) ){
     return pager_errcode(pPager);
   }
@@ -1114,17 +1114,15 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
 void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
   PgHdr *pPg;
 
-  /* Make sure we have not hit any critical errors.
-  */ 
-  if( pPager==0 || pgno==0 ){
-    return 0;
-  }
+  assert( pPager!=0 );
+  assert( pgno!=0 );
   if( pPager->errMask & ~(PAGER_ERR_FULL) ){
     return 0;
   }
-  if( pPager->nRef==0 ){
-    return 0;
-  }
+  /* if( pPager->nRef==0 ){
+  **  return 0;
+  ** }
+  */
   pPg = pager_lookup(pPager, pgno);
   if( pPg==0 ) return 0;
   page_ref(pPg);

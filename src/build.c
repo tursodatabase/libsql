@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.118 2003/01/02 14:43:56 drh Exp $
+** $Id: build.c,v 1.119 2003/01/11 13:30:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1872,7 +1872,6 @@ void sqliteCopy(
     sqliteVdbeAddOp(v, OP_Noop, 0, 0);
     sqliteEndWriteOperation(pParse);
     if( db->flags & SQLITE_CountRows ){
-      sqliteVdbeAddOp(v, OP_ColumnCount, 1, 0);
       sqliteVdbeAddOp(v, OP_ColumnName, 0, 0);
       sqliteVdbeChangeP3(v, -1, "rows inserted", P3_STATIC);
       sqliteVdbeAddOp(v, OP_Callback, 1, 0);
@@ -2077,7 +2076,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 6,        0},
       { OP_Integer,     MAX_PAGES,0, 0},
-      { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
@@ -2118,7 +2116,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   */
   if( sqliteStrICmp(zLeft,"cache_size")==0 ){
     static VdbeOp getCacheSize[] = {
-      { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "cache_size"},
       { OP_Callback,    1, 0,        0},
     };
@@ -2168,7 +2165,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Integer,     0, 0,        0},
       { OP_Lt,          0, 5,        0},
       { OP_AddImm,      1, 0,        0},
-      { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "synchronous"},
       { OP_Callback,    1, 0,        0},
     };
@@ -2209,7 +2205,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   */
   if( sqliteStrICmp(zLeft,"synchronous")==0 ){
     static VdbeOp getSync[] = {
-      { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "synchronous"},
       { OP_Callback,    1, 0,        0},
     };
@@ -2290,7 +2285,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pTab ) v = sqliteGetVdbe(pParse);
     if( pTab && v ){
       static VdbeOp tableInfoPreface[] = {
-        { OP_ColumnCount, 5, 0,       0},
         { OP_ColumnName,  0, 0,       "cid"},
         { OP_ColumnName,  1, 0,       "name"},
         { OP_ColumnName,  2, 0,       "type"},
@@ -2323,7 +2317,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pIdx ) v = sqliteGetVdbe(pParse);
     if( pIdx && v ){
       static VdbeOp tableInfoPreface[] = {
-        { OP_ColumnCount, 3, 0,       0},
         { OP_ColumnName,  0, 0,       "seqno"},
         { OP_ColumnName,  1, 0,       "cid"},
         { OP_ColumnName,  2, 0,       "name"},
@@ -2355,7 +2348,6 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pTab && pIdx && v ){
       int i = 0; 
       static VdbeOp indexListPreface[] = {
-        { OP_ColumnCount, 3, 0,       0},
         { OP_ColumnName,  0, 0,       "seq"},
         { OP_ColumnName,  1, 0,       "name"},
         { OP_ColumnName,  2, 0,       "unique"},
@@ -2394,16 +2386,15 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_SetInsert,   0, 0,        0},
       { OP_Next,        0, 3,        0},
       { OP_IntegrityCk, 0, 0,        0},    /* 6 */
-      { OP_ColumnCount, 1, 0,        0},
       { OP_ColumnName,  0, 0,        "integrity_check"},
       { OP_Callback,    1, 0,        0},
       { OP_SetInsert,   1, 0,        "2"},
       { OP_OpenAux,     1, 2,        0},
-      { OP_Rewind,      1, 16,       0},
-      { OP_Column,      1, 3,        0},    /* 13 */
+      { OP_Rewind,      1, 15,       0},
+      { OP_Column,      1, 3,        0},    /* 12 */
       { OP_SetInsert,   1, 0,        0},
-      { OP_Next,        1, 13,       0},
-      { OP_IntegrityCk, 1, 1,        0},    /* 16 */
+      { OP_Next,        1, 12,       0},
+      { OP_IntegrityCk, 1, 1,        0},    /* 15 */
       { OP_Callback,    1, 0,        0},
     };
     Vdbe *v = sqliteGetVdbe(pParse);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.151 2003/01/02 14:43:57 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.152 2003/01/11 13:30:58 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -726,7 +726,7 @@ struct Parse {
   Token sLastToken;    /* The last token parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Vdbe *pVdbe;         /* An engine for executing database bytecode */
-  u8 colNamesSet;      /* TRUE after OP_ColumnCount has been issued to pVdbe */
+  u8 colNamesSet;      /* TRUE after OP_ColumnName has been issued to pVdbe */
   u8 explain;          /* True if the EXPLAIN flag is found on the query */
   u8 initFlag;         /* True if reparsing CREATE TABLEs */
   u8 nameClash;        /* A permanent table name clashes with temp table name */

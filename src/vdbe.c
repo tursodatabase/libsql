@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.194 2003/01/07 13:55:23 drh Exp $
+** $Id: vdbe.c,v 1.195 2003/01/11 13:30:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1713,17 +1713,6 @@ case OP_Push: {
   }
   aStack[from].flags = 0;
   p->tos--;
-  break;
-}
-
-/* Opcode: ColumnCount P1 * *
-**
-** Specify the number of column values that will appear in the
-** array passed as the 4th parameter to the callback. 
-*/
-case OP_ColumnCount: {
-  p->azColName[pOp->p1] = 0;
-  p->nCallback = 0;
   break;
 }
 
