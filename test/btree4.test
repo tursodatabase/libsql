@@ -15,7 +15,7 @@
 # sqliteBtreePrevious() procedures and making sure they are able
 # to step through an entire table from either direction.
 #
-# $Id: btree4.test,v 1.1 2002/12/04 13:40:27 drh Exp $
+# $Id: btree4.test,v 1.2 2004/05/09 20:40:12 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -27,8 +27,11 @@ if {[info commands btree_open]!=""} {
 #
 file delete -force test1.bt
 file delete -force test1.bt-journal
-set b1 [btree_open test1.bt]
-btree_begin_transaction $::b1
+set b1 [btree_open test1.bt 2000 0]
+btree_begin_transaction $b1
+do_test btree4-0.1 {
+  btree_create_table $b1 0
+} 2
 
 set data {abcdefghijklmnopqrstuvwxyz0123456789}
 append data $data

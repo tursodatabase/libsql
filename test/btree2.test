@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree2.test,v 1.11 2004/05/09 00:40:52 drh Exp $
+# $Id: btree2.test,v 1.12 2004/05/09 20:40:11 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -34,26 +34,30 @@ do_test btree2-1.1 {
   expr srand(1)
   file delete -force test2.bt
   file delete -force test2.bt-journal
-  set ::b [btree_open test2.bt]
+  set ::b [btree_open test2.bt 2000 0]
   btree_begin_transaction $::b
-  btree_create_table $::b
-} {3}
+  btree_create_table $::b 0
+} {2}
 do_test btree2-1.2 {
-  btree_create_table $::b
-} {4}
+  btree_create_table $::b 0
+} {3}
 do_test btree2-1.3 {
-  btree_create_table $::b
-} {5}
+  btree_create_table $::b 0
+} {4}
 do_test btree2-1.4 {
-  btree_create_table $::b
-} {6}
+  btree_create_table $::b 0
+} {5}
 do_test btree2-1.5 {
+  btree_create_table $::b 0
+} {6}
+do_test btree2-1.6 {
   set ::c2 [btree_cursor $::b 2 1]
   btree_insert $::c2 {one} {1}
+  btree_move_to $::c2 {one}
   btree_delete $::c2
   btree_close_cursor $::c2
   btree_commit $::b
-  btree_integrity_check $::b 2 3 4 5 6
+  btree_integrity_check $::b 1 2 3 4 5 6
 } {}
 
 # This test module works by making lots of pseudo-random changes to a
@@ -125,7 +129,7 @@ proc make_payload {keynum L len} {
 # success or an error message if something is amiss.
 #
 proc check_invariants {} {
-  set ck [btree_integrity_check $::b 2 3 4 5 6]
+  set ck [btree_integrity_check $::b 1 2 3 4 5 6]
   if {$ck!=""} {
     puts "\n*** SANITY:\n$ck"
     exit
@@ -194,6 +198,7 @@ proc check_invariants {} {
 # 
 set chngcnt 0
 proc random_changes {n I K D} {
+  global chngcnt
   btree_move_to $::c2 N
   set N [btree_data $::c2]
   btree_move_to $::c2 L
@@ -206,9 +211,6 @@ proc random_changes {n I K D} {
     set insert [expr {rand()<=$I}]
     set longkey [expr {rand()<=$K}]
     set longdata [expr {rand()<=$D}]
-    # incr ::chngcnt
-    # if {$::chngcnt==251} {btree_tree_dump $::b 3} 
-    # puts "CHANGE $::chngcnt: $k $insert $longkey $longdata"
     if {$longkey} {
       set x [expr {rand()}]
       set keylen [expr {int($x*$x*$x*$x*3000)+10}]
@@ -244,6 +246,17 @@ proc random_changes {n I K D} {
     if {$kx==$k} {
       btree_delete $::c4
     }
+    # For debugging - change the "0" to "1" to integrity check after
+    # every change.
+    if 0 {
+      incr chngcnt
+      puts check----$chngcnt
+      set ck [btree_integrity_check $::b 1 2 3 4 5 6]
+      if {$ck!=""} {
+         puts "\nSANITY CHECK FAILED!\n$ck"
+         exit
+       }
+    }
     if {$insert} {
       btree_insert $::c3 $key $data
     } else {
@@ -259,13 +272,17 @@ proc random_changes {n I K D} {
     } elseif {[btree_move_to $::c6 $basekey]==0} {
       btree_delete $::c6
     }
-    # set ck [btree_integrity_check $::b 2 3 4 5 6]
-    # if {$ck!=""} {
-    #   puts "\nSANITY CHECK FAILED!\n$ck"
-    #   exit
-    # }
-    # puts "PAGE 3:"; btree_page_dump $::b 3
-    # puts "PAGE 4:"; btree_page_dump $::b 4
+    # For debugging - change the "0" to "1" to integrity check after
+    # every change.
+    if 0 {
+      incr chngcnt
+      puts check----$chngcnt
+      set ck [btree_integrity_check $::b 1 2 3 4 5 6]
+      if {$ck!=""} {
+         puts "\nSANITY CHECK FAILED!\n$ck"
+         exit
+       }
+    }
   }
 }
 
@@ -327,7 +344,7 @@ foreach {N L} {
   do_test btree2-$testno.7 {
     btree_close $::b
   } {}
-after 100
+
   # For each database size, run various changes tests.
   #
   set num2 1
@@ -343,7 +360,7 @@ after 100
     set testid btree2-$testno.8.$num2
     set hash [md5file test2.bt]
     do_test $testid.0 {
-      set ::b [btree_open test2.bt]
+      set ::b [btree_open test2.bt 2000 0]
       set ::c2 [btree_cursor $::b 2 1]
       set ::c3 [btree_cursor $::b 3 1]
       set ::c4 [btree_cursor $::b 4 1]
@@ -359,7 +376,6 @@ after 100
       btree_begin_transaction $::b
       lindex [btree_pager_stats $::b] 1
     } $cnt
-    # exec cp test2.bt test2.bt.bu1
     do_test $testid.2 [subst {
       random_changes $n $I $K $D
     }] {}
@@ -375,13 +391,13 @@ after 100
       btree_rollback $::b
       md5file test2.bt
     } $hash
-    # exec cp test2.bt test2.bt.bu2
     btree_begin_transaction $::b
     set ::c2 [btree_cursor $::b 2 1]
     set ::c3 [btree_cursor $::b 3 1]
     set ::c4 [btree_cursor $::b 4 1]
     set ::c5 [btree_cursor $::b 5 1]
     set ::c6 [btree_cursor $::b 6 1]
+#if {$testid=="btree2-3.8.4"} {set btree_trace 1}
     do_test $testid.5 [subst {
       random_changes $n $I $K $D
     }] {}
@@ -403,7 +419,7 @@ after 100
     } {0}
     do_test $testid.9 {
       btree_close $::b
-      set ::b [btree_open test2.bt]
+      set ::b [btree_open test2.bt 2000 0]
       set ::c2 [btree_cursor $::b 2 1]
       set ::c3 [btree_cursor $::b 3 1]
       set ::c4 [btree_cursor $::b 4 1]
@@ -425,7 +441,7 @@ after 100
     incr num2
   }
   incr testno
-  set ::b [btree_open test2.bt]
+  set ::b [btree_open test2.bt 2000 0]
 }  
 
 # Testing is complete.  Shut everything down.
