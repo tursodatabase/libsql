@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\stest3.c\smodule\sthat\swas\scausing\sfailures\sin\sbtree5.test.\s(CVS\s1962)
-D 2004-09-17T19:39:24
+C Get\sVACUUM\sworking\son\sdatabases\sthat\shave\sreserved\sbytes\sat\sthe\send\nof\seach\spage.\s(CVS\s1963)
+D 2004-09-17T20:02:42
 F Makefile.in 9cdfc3af2647055085969968ca2394f24c3c6166
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -73,7 +73,7 @@ F src/trigger.c 98dd620bebd9f3dadaacf0db3958b916cf1e7b7f
 F src/update.c 0e00300763d2ce0dbd6a0598882a5039580b225e
 F src/utf.c 328890099db492dda5620ee5f924e244c6e57ff7
 F src/util.c f9b661a3b80a1469777771776a59a5f0e2f193fc
-F src/vacuum.c 819a3f411cb8d2d714e55f0805e8c23a642dd7ba
+F src/vacuum.c 257de36230cb988842f66eb08dc6c0250b8e05f3
 F src/vdbe.c b19de04c57b4136a8e0203d5e3b76dd82bded1b5
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h e09362d6323a725de3c30b0cc381a691e86ed697
@@ -247,7 +247,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 709bb22d6ddbd713029059180aaf77ac483b5bb8
-R dc044bae1d961706b839b683870afbd2
+P cd200cf8332be2c99a0a312b5f7dcd582a93fd18
+R 260ff196fe720e304616748ce8e1318c
 U drh
-Z d2ace6ff4a13f602608f2ad24423bdd0
+Z ffe5185b7796c26b209ae9a7dd162ea9
