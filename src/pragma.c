@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.10 2003/06/15 23:42:24 drh Exp $
+** $Id: pragma.c,v 1.11 2003/08/23 22:40:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -343,6 +343,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         { OP_ColumnName,  2, 0,       "type"},
         { OP_ColumnName,  3, 0,       "notnull"},
         { OP_ColumnName,  4, 0,       "dflt_value"},
+        { OP_ColumnName,  5, 0,       "pk"},
       };
       int i;
       sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
@@ -357,7 +358,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
         sqliteVdbeChangeP3(v, -1, pTab->aCol[i].zDflt, P3_STATIC);
-        sqliteVdbeAddOp(v, OP_Callback, 5, 0);
+        sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].isPrimKey, 0);
+        sqliteVdbeAddOp(v, OP_Callback, 6, 0);
       }
     }
   }else
@@ -416,6 +418,45 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     }
   }else
 
+  if( sqliteStrICmp(zLeft, "foreign_key_list")==0 ){
+    FKey *pFK;
+    Table *pTab;
+    pTab = sqliteFindTable(db, zRight, 0);
+    if( pTab ){
+      v = sqliteGetVdbe(pParse);
+      pFK = pTab->pFKey;
+    }
+    if( pTab && pFK ){
+      int i = 0; 
+      static VdbeOp indexListPreface[] = {
+        { OP_ColumnName,  0, 0,       "id"},
+        { OP_ColumnName,  1, 0,       "seq"},
+        { OP_ColumnName,  2, 0,       "table"},
+        { OP_ColumnName,  3, 0,       "from"},
+        { OP_ColumnName,  4, 0,       "to"},
+      };
+
+      sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
+      while(pFK){
+        int j;
+        for(j=0; j<pFK->nCol; j++){
+          sqliteVdbeAddOp(v, OP_Integer, i, 0);
+          sqliteVdbeAddOp(v, OP_Integer, j, 0);
+          sqliteVdbeAddOp(v, OP_String, 0, 0);
+          sqliteVdbeChangeP3(v, -1, pFK->zTo, P3_STATIC);
+          sqliteVdbeAddOp(v, OP_String, 0, 0);
+          sqliteVdbeChangeP3(v, -1, pTab->aCol[pFK->aCol[j].iFrom].zName,
+                             P3_STATIC);
+          sqliteVdbeAddOp(v, OP_String, 0, 0);
+          sqliteVdbeChangeP3(v, -1, pFK->aCol[j].zCol, P3_STATIC);
+          sqliteVdbeAddOp(v, OP_Callback, 5, 0);
+        }
+        ++i;
+        pFK = pFK->pNextFrom;
+      }
+    }
+  }else
+
   if( sqliteStrICmp(zLeft, "database_list")==0 ){
     int i;
     static VdbeOp indexListPreface[] = {
@@ -437,6 +478,8 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_Callback, 3, 0);
     }
   }else
+
+
   /*
   **   PRAGMA temp_store
   **   PRAGMA temp_store = "default"|"memory"|"file"

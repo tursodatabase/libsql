@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.157 2003/07/30 12:34:12 drh Exp $
+** $Id: build.c,v 1.158 2003/08/23 22:40:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -702,7 +702,7 @@ void sqliteAddDefaultValue(Parse *pParse, Token *pVal, int minusFlag){
 void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
-  int iCol = -1;
+  int iCol = -1, i;
   if( pTab==0 ) goto primary_key_exit;
   if( pTab->hasPrimKey ){
     sqliteSetString(&pParse->zErrMsg, "table \"", pTab->zName, 
@@ -713,10 +713,15 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
   pTab->hasPrimKey = 1;
   if( pList==0 ){
     iCol = pTab->nCol - 1;
-  }else if( pList->nId==1 ){
-    for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( sqliteStrICmp(pList->a[0].zName, pTab->aCol[iCol].zName)==0 ) break;
+    pTab->aCol[iCol].isPrimKey = 1;
+  }else{
+    for(i=0; i<pList->nId; i++){
+      for(iCol=0; iCol<pTab->nCol; iCol++){
+        if( sqliteStrICmp(pList->a[0].zName, pTab->aCol[iCol].zName)==0 ) break;
+      }
+      if( iCol<pTab->nCol ) pTab->aCol[iCol].isPrimKey = 1;
     }
+    if( pList->nId>1 ) iCol = -1;
   }
   if( iCol>=0 && iCol<pTab->nCol ){
     zType = pTab->aCol[iCol].zType;

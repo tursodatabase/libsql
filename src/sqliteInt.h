@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.196 2003/08/09 21:32:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.197 2003/08/23 22:40:54 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -384,7 +384,7 @@ struct Column {
   char *zDflt;     /* Default value of this column */
   char *zType;     /* Data type for this column */
   u8 notNull;      /* True if there is a NOT NULL constraint */
-  u8 isPrimKey;    /* True if this column is an INTEGER PRIMARY KEY */
+  u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
   u8 sortOrder;    /* Some combination of SQLITE_SO_... values */
 };
 
