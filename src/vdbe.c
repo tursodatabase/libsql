@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.85 2001/10/13 21:56:34 drh Exp $
+** $Id: vdbe.c,v 1.86 2001/10/18 12:34:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1661,7 +1661,8 @@ case OP_Like: {
   int c;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-  c = sqliteLikeCompare(zStack[tos], zStack[nos]);
+  c = sqliteLikeCompare((unsigned char*)zStack[tos], 
+                        (unsigned char*)zStack[nos]);
   POPSTACK;
   POPSTACK;
   if( pOp->p1 ) c = !c;
@@ -1693,7 +1694,8 @@ case OP_Glob: {
   int c;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
-  c = sqliteGlobCompare(zStack[tos], zStack[nos]);
+  c = sqliteGlobCompare((unsigned char*)zStack[tos],
+                        (unsigned char*)zStack[nos]);
   POPSTACK;
   POPSTACK;
   if( pOp->p1 ) c = !c;
@@ -3263,6 +3265,7 @@ case OP_SortMakeKey: {
     zNewKey[j++] = 0;
   }
   zNewKey[j] = 0;
+  VERIFY( j<nByte );
   PopStack(p, nField);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;

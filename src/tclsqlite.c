@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.24 2001/09/28 17:47:14 drh Exp $
+** $Id: tclsqlite.c,v 1.25 2001/10/18 12:34:47 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -19,6 +19,16 @@
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
+
+/*
+** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
+** have to do a translation when going between the two.  Set the 
+** UTF_TRANSLATION_NEEDED macro to indicate that we need to do
+** this translation.  
+*/
+#if defined(TCL_UTF_MAX) && !defined(SQLITE_UTF8)
+# define UTF_TRANSLATION_NEEDED 1
+#endif
 
 /*
 ** There is one instance of this structure for each SQLite database
@@ -42,17 +52,11 @@ struct CallbackData {
   Tcl_Obj *pCode;           /* The code to execute for each row */
   int once;                 /* Set only for the first invocation of callback */
   int tcl_rc;               /* Return code from TCL script */
-};
-
-/*
-** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
-** have to do a translation when going between the two.  Set the 
-** UTF_TRANSLATION_NEEDED macro to indicate that we need to do
-** this translation.  
-*/
-#if defined(TCL_UTF_MAX) && !defined(SQLITE_UTF8)
-# define UTF_TRANSLATION_NEEDED 1
+#ifdef UTF_TRANSLATION_NEEDED
+  int nColName;             /* Number of entries in the azColName[] array */
+  char **azColName;         /* Column names translated to UTF-8 */
 #endif
+};
 
 /*
 ** Called for each row of the result.

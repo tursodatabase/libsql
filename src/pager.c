@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.27 2001/10/12 17:30:05 drh Exp $
+** @(#) $Id: pager.c,v 1.28 2001/10/18 12:34:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1076,7 +1076,7 @@ int sqlitepager_rollback(Pager *pPager){
   }
   pPager->dbSize = -1;
   return rc;
-};
+}
 
 /*
 ** Return TRUE if the database file is opened read-only.  Return FALSE

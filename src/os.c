@@ -577,7 +577,7 @@ int sqliteOsLock(OsFile id, int wrlock){
       needSysLock = 1;
     }
   }else{
-    if( id.pLock<0 ){
+    if( id.pLock->cnt<0 ){
       rc = SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;

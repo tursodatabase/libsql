@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.27 2001/10/13 02:59:09 drh Exp $
+** $Id: tokenize.c,v 1.28 2001/10/18 12:34:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -138,12 +138,44 @@ static int sqliteKeywordCode(const char *z, int n){
   return TK_ID;
 }
 
+
+/*
+** If X is a character that can be used in an identifier then
+** isIdChar[X] will be 1.  Otherwise isIdChar[X] will be 0.
+**
+** In this implementation, an identifier can be a string of
+** alphabetic characters, digits, and "_" plus any character
+** with the high-order bit set.  The latter rule means that
+** any sequence of UTF-8 characters or characters taken from
+** an extended ISO8859 character set can form an identifier.
+*/
+static const char isIdChar[] = {
+/* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 0x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 1x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 2x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  /* 5x */
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 6x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 8x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 9x */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Ax */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Bx */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Cx */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Dx */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Ex */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* Fx */
+};
+
+
 /*
 ** Return the length of the token that begins at z[0].  Return
 ** -1 if the token is (or might be) incomplete.  Store the token
 ** type in *tokenType before returning.
 */
-int sqliteGetToken(const char *z, int *tokenType){
+static int sqliteGetToken(const unsigned char *z, int *tokenType){
   int i;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
@@ -294,22 +326,13 @@ int sqliteGetToken(const char *z, int *tokenType){
       }
       return i;
     }
-    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-    case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
-    case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-    case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-    case 'y': case 'z': case '_':
-    case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-    case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
-    case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
-    case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
-    case 'Y': case 'Z': {
-      for(i=1; z[i] && (isalnum(z[i]) || z[i]=='_'); i++){}
+    default: {
+      if( !isIdChar[*z] ){
+        break;
+      }
+      for(i=1; isIdChar[z[i]]; i++){}
       *tokenType = sqliteKeywordCode(z, i);
       return i;
-    }
-    default: {
-      break;
     }
   }
   *tokenType = TK_ILLEGAL;
@@ -350,7 +373,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
       break;
     }
     pParse->sLastToken.z = &zSql[i];
-    pParse->sLastToken.n = sqliteGetToken(&zSql[i], &tokenType);
+    pParse->sLastToken.n = sqliteGetToken((unsigned char*)&zSql[i], &tokenType);
     i += pParse->sLastToken.n;
     if( once ){
       pParse->sFirstToken = pParse->sLastToken;
