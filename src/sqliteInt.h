@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.105 2002/04/12 10:08:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.106 2002/05/10 05:44:56 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -167,6 +167,7 @@ struct sqlite {
   int lastRowid;                /* ROWID of most recent insert */
   int priorNewRowid;            /* Last randomly generated ROWID */
   int onError;                  /* Default conflict algorithm */
+  int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
   int recursionDepth;           /* Number of nested calls to sqlite_exec() */
 };
@@ -188,6 +189,16 @@ struct sqlite {
 #define SQLITE_ResultDetails  0x00000100  /* Details added to result set */
 #define SQLITE_UnresetViews   0x00000200  /* True if one or more views have */
                                           /*   defined column names */
+
+/*
+** Possible values for the sqlite.magic field.
+** The numbers are obtained at random and have no special meaning, other
+** than being distinct from one another.
+*/
+#define SQLITE_MAGIC_OPEN     0xa029a697  /* Database is open */
+#define SQLITE_MAGIC_CLOSED   0x9f3c2d33  /* Database is closed */
+#define SQLITE_MAGIC_BUSY     0xf03b7906  /* Database currently in use */
+#define SQLITE_MAGIC_ERROR    0xb5357930  /* An SQLITE_MISUSE error occurred */
 
 /*
 ** Each SQL function is defined by an instance of the following
@@ -648,3 +659,5 @@ IdList *sqliteIdListDup(IdList*);
 Select *sqliteSelectDup(Select*);
 FuncDef *sqliteFindFunction(sqlite*,const char*,int,int,int);
 void sqliteRegisterBuildinFunctions(sqlite*);
+int sqliteSafetyOn(sqlite*);
+int sqliteSafetyOff(sqlite*);

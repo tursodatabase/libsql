@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.26 2002/04/12 10:09:00 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.27 2002/05/10 05:44:57 drh Exp $}
 
 puts {<html>
 <head>
@@ -186,6 +186,7 @@ the type of error.  Here is a complete list of the return codes:
 #define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
 #define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
 #define SQLITE_MISMATCH    20   /* Data type mismatch */
+#define SQLITE_MISUSE      21   /* Library used incorrectly */
 </pre></blockquote>
 
 <p>
@@ -293,6 +294,15 @@ a database constraint.
 data into a column labeled INTEGER PRIMARY KEY.  For most columns, SQLite
 ignores the data type and allows any kind of data to be stored.  But
 an INTEGER PRIMARY KEY column is only allowed to store integer data.
+</p></dd>
+<dt>SQLITE_MISUSE</dt>
+<dd><p>This error might occur if one or more of the SQLite API routines
+is used incorrectly.  Examples of incorrect usage include calling
+<b>sqlite_exec()</b> after the database has been closed using
+<b>sqlite_close()</b> or calling <b>sqlite_exec()</b> with the same
+database pointer simultaneously from two separate threads.  The
+library makes an effort to detect these sorts of problems, but it
+cannot detect them with 100% accuracy.
 </p></dd>
 </dl>
 </blockquote>

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.69 2002/04/12 10:08:59 drh Exp $
+** $Id: main.c,v 1.70 2002/05/10 05:44:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -332,6 +332,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
   sqliteRegisterBuildinFunctions(db);
   db->onError = OE_Default;
   db->priorNewRowid = 0;
+  db->magic = SQLITE_MAGIC_BUSY;
   
   /* Open the backend database driver */
   rc = sqliteBtreeOpen(zFilename, mode, MAX_PAGES, &db->pBe);
@@ -359,6 +360,7 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
+  db->magic = SQLITE_MAGIC_OPEN;
   return db;
 
 no_mem_on_open:
@@ -433,6 +435,8 @@ int sqlite_changes(sqlite *db){
 */
 void sqlite_close(sqlite *db){
   HashElem *i;
+  if( sqliteSafetyOn(db) ){ return; }
+  db->magic = SQLITE_MAGIC_CLOSED;
   sqliteBtreeClose(db->pBe);
   clearHashTable(db, 0);
   if( db->pBeTemp ){
@@ -526,10 +530,12 @@ int sqlite_exec(
   Parse sParse;
 
   if( pzErrMsg ) *pzErrMsg = 0;
+  if( sqliteSafetyOn(db) ){ return SQLITE_MISUSE; }
   if( (db->flags & SQLITE_Initialized)==0 ){
     int rc = sqliteInit(db, pzErrMsg);
     if( rc!=SQLITE_OK ){
       sqliteStrRealloc(pzErrMsg);
+      sqliteSafetyOff(db);
       return rc;
     }
   }
@@ -554,7 +560,47 @@ int sqlite_exec(
     clearHashTable(db, 1);
   }
   db->recursionDepth--;
+  if( sqliteSafetyOff(db) ){ sParse.rc = SQLITE_MISUSE; }
   return sParse.rc;
+}
+
+/*
+** Change the magic from SQLITE_MAGIC_OPEN to SQLITE_MAGIC_BUSY.
+** Return an error (non-zero) if the magic was not SQLITE_MAGIC_OPEN
+** when this routine is called.
+**
+** This routine is a attempt to detect if two threads attempt
+** to use the same sqlite* pointer at the same time.  There is a
+** race condition so it is possible that the error is not detected.
+** But usually the problem will be seen.  The result will be an
+** error which can be used to debugging the application that is
+** using SQLite incorrectly.
+*/
+int sqliteSafetyOn(sqlite *db){
+  if( db->magic==SQLITE_MAGIC_OPEN ){
+    db->magic = SQLITE_MAGIC_BUSY;
+    return 0;
+  }else{
+    db->magic = SQLITE_MAGIC_ERROR;
+    db->flags |= SQLITE_Interrupt;
+    return 1;
+  }
+}
+
+/*
+** Change the magic from SQLITE_MAGIC_BUSY to SQLITE_MAGIC_OPEN.
+** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
+** when this routine is called.
+*/
+int sqliteSafetyOff(sqlite *db){
+  if( db->magic==SQLITE_MAGIC_BUSY ){
+    db->magic = SQLITE_MAGIC_OPEN;
+    return 0;
+  }else{
+    db->magic = SQLITE_MAGIC_ERROR;
+    db->flags |= SQLITE_Interrupt;
+    return 1;
+  }
 }
 
 /*

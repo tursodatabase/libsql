@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.139 2002/04/20 14:24:42 drh Exp $
+** $Id: vdbe.c,v 1.140 2002/05/10 05:44:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1092,6 +1092,7 @@ int sqliteVdbeList(
   void *pArg,                /* 1st argument to callback */
   char **pzErrMsg            /* Error msg written here */
 ){
+  sqlite *db = p->db;
   int i, rc;
   char *azValue[6];
   char zAddr[20];
@@ -1109,8 +1110,8 @@ int sqliteVdbeList(
   azValue[5] = 0;
   rc = SQLITE_OK;
   for(i=0; rc==SQLITE_OK && i<p->nOp; i++){
-    if( p->db->flags & SQLITE_Interrupt ){
-      p->db->flags &= ~SQLITE_Interrupt;
+    if( db->flags & SQLITE_Interrupt ){
+      db->flags &= ~SQLITE_Interrupt;
       sqliteSetString(pzErrMsg, "interrupted", 0);
       rc = SQLITE_INTERRUPT;
       break;
@@ -1125,8 +1126,15 @@ int sqliteVdbeList(
       azValue[4] = p->aOp[i].p3;
     }
     azValue[1] = zOpName[p->aOp[i].opcode];
+    if( sqliteSafetyOff(db) ){
+      rc = SQLITE_MISUSE;
+      break;
+    }
     if( xCallback(pArg, 5, azValue, azColumnNames) ){
       rc = SQLITE_ABORT;
+    }
+    if( sqliteSafetyOn(db) ){
+      rc = SQLITE_MISUSE;
     }
   }
   return rc;
@@ -1577,9 +1585,11 @@ case OP_Callback: {
     if( p->iOffset>0 ){
       p->iOffset--;
     }else{
+      if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
       if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
         rc = SQLITE_ABORT;
       }
+      if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
       p->nCallback++;
       if( p->iLimit>0 ){
         p->iLimit--;
@@ -1612,9 +1622,11 @@ case OP_Callback: {
 */
 case OP_NullCallback: {
   if( xCallback!=0 && p->nCallback==0 ){
+    if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
     if( xCallback(pArg, pOp->p1, 0, p->azColName)!=0 ){
       rc = SQLITE_ABORT;
     }
+    if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
     p->nCallback++;
   }
   if( sqlite_malloc_failed ) goto no_mem;
@@ -3988,9 +4000,11 @@ case OP_SortCallback: {
     if( p->iOffset>0 ){
       p->iOffset--;
     }else{
+      if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
       if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName)!=0 ){
         rc = SQLITE_ABORT;
       }
+      if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
       p->nCallback++;
       if( p->iLimit>0 ){
         p->iLimit--;
@@ -4654,6 +4668,12 @@ no_mem:
   sqliteSetString(pzErrMsg, "out of memory", 0);
   rc = SQLITE_NOMEM;
   goto cleanup;
+
+  /* Jump to here for an SQLITE_MISUSE error.
+  */
+abort_due_to_misuse:
+  rc = SQLITE_MISUSE;
+  /* Fall thru into abort_due_to_error */
 
   /* Jump to here for any other kind of fatal error.  The "rc" variable
   ** should hold the error number.
