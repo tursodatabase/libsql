@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.91 2001/11/01 14:41:34 drh Exp $
+** $Id: vdbe.c,v 1.92 2001/11/04 18:32:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -348,7 +348,7 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
 **
 ** If addr<0 then change P3 on the most recently inserted instruction.
 */
-void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
+void sqliteVdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   if( p==0 || p->aOp==0 ) return;
   if( addr<0 || addr>=p->nOp ){
@@ -364,7 +364,7 @@ void sqliteVdbeChangeP3(Vdbe *p, int addr, char *zP3, int n){
     pOp->p3 = 0;
     pOp->p3type = P3_NOTUSED;
   }else if( n<0 ){
-    pOp->p3 = zP3;
+    pOp->p3 = (char*)zP3;
     pOp->p3type = n;
   }else{
     sqliteSetNString(&pOp->p3, zP3, n, 0);
@@ -1910,27 +1910,37 @@ case OP_NotNull: {
 /* Opcode: MakeRecord P1 * *
 **
 ** Convert the top P1 entries of the stack into a single entry
-** suitable for use as a data record in a database table.  To do this
-** all entries (except NULLs) are converted to strings and 
-** concatenated.  The null-terminators are included on all string
-** except for NULL columns which are represented by zero bytes.
-** The lowest entry
-** on the stack is the first in the concatenation and the top of
-** the stack is the last.  After all columns are concatenated, an
-** index header is added.  The index header consists of P1 16-bit integers
-** which hold the offset of the beginning of each column data from the
-** beginning of the completed record including the header.
-**
-** The Column opcode is used to unpack a record manufactured with
-** the opcode.
+** suitable for use as a data record in a database table.  The
+** details of the format are irrelavant as long as the OP_Column
+** opcode can decode the record later.  Refer to source code
+** comments for the details of the record format.
 */
 case OP_MakeRecord: {
   char *zNewRecord;
   int nByte;
   int nField;
   int i, j;
-  u16 addr;
+  int idxWidth;
+  u32 addr;
 
+  /* Assuming the record contains N fields, the record format looks
+  ** like this:
+  **
+  **   -------------------------------------------------------------------
+  **   | idx0 | idx1 | ... | idx(N-1) | idx(N) | data0 | ... | data(N-1) |
+  **   -------------------------------------------------------------------
+  **
+  ** All data fields are converted to strings before being stored and
+  ** are stored with their null terminators.  NULL entries omit the
+  ** null terminator.  Thus an empty string uses 1 byte and a NULL uses
+  ** zero bytes.  Data(0) is taken from the lowest element of the stack
+  ** and data(N-1) is the top of the stack.
+  **
+  ** Each of the idx() entries is either 1, 2, or 3 bytes depending on
+  ** how big the total record is.  Idx(0) contains the offset to the start
+  ** of data(0).  Idx(k) contains the offset to the start of data(k).
+  ** Idx(N) contains the total number of bytes in the record.
+  */
   nField = pOp->p1;
   VERIFY( if( p->tos+1<nField ) goto not_enough_stack; )
   nByte = 0;
@@ -1940,7 +1950,14 @@ case OP_MakeRecord: {
       nByte += aStack[i].n;
     }
   }
-  nByte += sizeof(addr)*nField;
+  if( nByte + nField + 1 < 256 ){
+    idxWidth = 1;
+  }else if( nByte + 2*nField + 2 < 65536 ){
+    idxWidth = 2;
+  }else{
+    idxWidth = 3;
+  }
+  nByte += idxWidth*(nField + 1);
   if( nByte>MAX_BYTES_PER_ROW ){
     rc = SQLITE_TOOBIG;
     goto abort_due_to_error;
@@ -1948,12 +1965,24 @@ case OP_MakeRecord: {
   zNewRecord = sqliteMalloc( nByte );
   if( zNewRecord==0 ) goto no_mem;
   j = 0;
-  addr = sizeof(addr)*nField;
+  addr = idxWidth*(nField+1);
   for(i=p->tos-nField+1; i<=p->tos; i++){
-    memcpy(&zNewRecord[j], (char*)&addr, sizeof(addr));
-    j += sizeof(addr);
+    zNewRecord[j++] = addr & 0xff;
+    if( idxWidth>1 ){
+      zNewRecord[j++] = (addr>>8)&0xff;
+      if( idxWidth>2 ){
+        zNewRecord[j++] = (addr>>16)&0xff;
+      }
+    }
     if( (aStack[i].flags & STK_Null)==0 ){
       addr += aStack[i].n;
+    }
+  }
+  zNewRecord[j++] = addr & 0xff;
+  if( idxWidth>1 ){
+    zNewRecord[j++] = (addr>>8)&0xff;
+    if( idxWidth>2 ){
+      zNewRecord[j++] = (addr>>16)&0xff;
     }
   }
   for(i=p->tos-nField+1; i<=p->tos; i++){
@@ -2420,19 +2449,20 @@ case OP_Close: {
 case OP_MoveTo: {
   int i = pOp->p1;
   int tos = p->tos;
+  Cursor *pC;
+
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( i>=0 && i<p->nCursor && p->aCsr[i].pCursor ){
+  if( i>=0 && i<p->nCursor && (pC = &p->aCsr[i])->pCursor!=0 ){
     int res;
     if( aStack[tos].flags & STK_Int ){
       int iKey = bigEndian(aStack[tos].i);
-      sqliteBtreeMoveto(p->aCsr[i].pCursor, 
-          (char*)&iKey, sizeof(int), &res);
-      p->aCsr[i].lastRecno = aStack[tos].i;
-      p->aCsr[i].recnoIsValid = 1;
+      sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
+      pC->lastRecno = aStack[tos].i;
+      pC->recnoIsValid = 1;
     }else{
       if( Stringify(p, tos) ) goto no_mem;
-      sqliteBtreeMoveto(p->aCsr[i].pCursor, zStack[tos], aStack[tos].n, &res);
-      p->aCsr[i].recnoIsValid = 0;
+      sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
+      pC->recnoIsValid = 0;
     }
     p->nFetch++;
   }
@@ -2496,17 +2526,16 @@ case OP_Found: {
   int i = pOp->p1;
   int tos = p->tos;
   int alreadyExists = 0;
+  Cursor *pC;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) p->aCsr[i].pCursor ){
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
     int res, rx;
     if( aStack[tos].flags & STK_Int ){
       int iKey = bigEndian(aStack[tos].i);
-      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, 
-           (char*)&iKey, sizeof(int), &res);
+      rx = sqliteBtreeMoveto(pC->pCursor, (char*)&iKey, sizeof(int), &res);
     }else{
       if( Stringify(p, tos) ) goto no_mem;
-      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor,
-         zStack[tos], aStack[tos].n, &res);
+      rx = sqliteBtreeMoveto(pC->pCursor, zStack[tos], aStack[tos].n, &res);
     }
     alreadyExists = rx==SQLITE_OK && res==0;
   }
@@ -2531,7 +2560,8 @@ case OP_Found: {
 case OP_NewRecno: {
   int i = pOp->p1;
   int v = 0;
-  if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
+  Cursor *pC;
+  if( VERIFY( i<0 || i>=p->nCursor || ) (pC = &p->aCsr[i])->pCursor==0 ){
     v = 0;
   }else{
     /* A probablistic algorithm is used to locate an unused rowid.
@@ -2561,7 +2591,7 @@ case OP_NewRecno: {
       }
       if( v==0 ) continue;
       x = bigEndian(v);
-      rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &x, sizeof(int), &res);
+      rx = sqliteBtreeMoveto(pC->pCursor, &x, sizeof(int), &res);
       cnt++;
     }while( cnt<1000 && rx==SQLITE_OK && res==0 );
     db->nextRowid = v;
@@ -2656,67 +2686,61 @@ case OP_KeyAsData: {
 ** data.
 */
 case OP_Column: {
-  int amt, offset, nCol, payloadSize;
-  u16 aHdr[10];
-  static const int mxHdr = sizeof(aHdr)/sizeof(aHdr[0]);
+  int amt, offset, end, nCol, payloadSize;
   int i = pOp->p1;
   int p2 = pOp->p2;
   int tos = p->tos+1;
+  Cursor *pC;
   BtCursor *pCrsr;
-  char *z;
+  int idxWidth;
+  unsigned char aHdr[10];
+  int (*xRead)(BtCursor*, int, int, char*);
 
   VERIFY( if( NeedStack(p, tos+1) ) goto no_mem; )
-  if( VERIFY( i>=0 && i<p->nCursor && ) (pCrsr = p->aCsr[i].pCursor)!=0 ){
-    int (*xSize)(BtCursor*, int*);
-    int (*xRead)(BtCursor*, int, int, char*);
+  if( VERIFY( i>=0 && i<p->nCursor && ) (pC = &p->aCsr[i])->pCursor!=0 ){
 
     /* Use different access functions depending on whether the information
     ** is coming from the key or the data of the record.
     */
-    if( p->aCsr[i].keyAsData ){
-      xSize = sqliteBtreeKeySize;
+    pCrsr = pC->pCursor;
+    if( pC->keyAsData ){
+      sqliteBtreeKeySize(pCrsr, &payloadSize);
       xRead = sqliteBtreeKey;
     }else{
-      xSize = sqliteBtreeDataSize;
+      sqliteBtreeDataSize(pCrsr, &payloadSize);
       xRead = sqliteBtreeData;
     }
 
-    /* 
-    ** The code is complicated by efforts to minimize the number
-    ** of invocations of xRead() since that call can be expensive.
-    ** For the common case where P2 is small, xRead() is invoked
-    ** twice.  For larger values of P2, it has to be called
-    ** three times.
+    /* Figure out how many bytes in the column data and where the column
+    ** data begins.
     */
-    (*xSize)(pCrsr, &payloadSize);
-    if( payloadSize < sizeof(aHdr[0])*(p2+1) ){
+    if( payloadSize<256 ){
+      idxWidth = 1;
+    }else if( payloadSize<65536 ){
+      idxWidth = 2;
+    }else{
+      idxWidth = 3;
+    }
+
+    /* Figure out where the requested column is stored and how big it is.
+    */
+    if( payloadSize < idxWidth*(p2+1) ){
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
     }
-    if( p2+1<mxHdr ){
-      (*xRead)(pCrsr, 0, sizeof(aHdr[0])*(p2+2), (char*)aHdr);
-      nCol = aHdr[0];
-      nCol /= sizeof(aHdr[0]);
-      offset = aHdr[p2];
-      if( p2 == nCol-1 ){
-        amt = payloadSize - offset;
-      }else{
-        amt = aHdr[p2+1] - offset;
-      }
-    }else{
-      (*xRead)(pCrsr, 0, sizeof(aHdr[0]), (char*)aHdr);
-      nCol = aHdr[0]/sizeof(aHdr[0]);
-      if( p2 == nCol-1 ){
-        (*xRead)(pCrsr, sizeof(aHdr[0])*p2, sizeof(aHdr[0]), (char*)aHdr);
-        offset = aHdr[0];
-        amt = payloadSize - offset;
-      }else{
-        (*xRead)(pCrsr, sizeof(aHdr[0])*p2, sizeof(aHdr[0])*2, (char*)aHdr);
-        offset = aHdr[0];
-        amt = aHdr[1] - offset;
+    (*xRead)(pCrsr, idxWidth*p2, idxWidth*2, (char*)aHdr);
+    offset = aHdr[0];
+    end = aHdr[idxWidth];
+    if( idxWidth>1 ){
+      offset |= aHdr[1]<<8;
+      end |= aHdr[idxWidth+1]<<8;
+      if( idxWidth>2 ){
+        offset |= aHdr[2]<<16;
+        end |= aHdr[idxWidth+2]<<16;
       }
     }
-    if( payloadSize < nCol || amt<0 || offset<0 ){
+    amt = end - offset;
+    if( amt<0 || offset<0 || end>payloadSize ){
       rc = SQLITE_CORRUPT;
       goto abort_due_to_error;
     }
@@ -2727,7 +2751,7 @@ case OP_Column: {
     if( amt==0 ){
       aStack[tos].flags = STK_Null;
     }else{
-      z = sqliteMalloc( amt );
+      char *z = sqliteMalloc( amt );
       if( z==0 ) goto no_mem;
       (*xRead)(pCrsr, offset, amt, z);
       aStack[tos].flags = STK_Str | STK_Dyn;

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.36 2001/11/01 13:52:53 drh Exp $
+** $Id: btree.c,v 1.37 2001/11/04 18:32:47 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -99,7 +99,7 @@ typedef struct OverflowPage OverflowPage;
 ** SQLite database in order to identify the file as a real database.
 */
 static const char zMagicHeader[] = 
-   "** This file contains an SQLite 2.0 database **";
+   "** This file contains an SQLite 2.1 database **";
 #define MAGIC_SIZE (sizeof(zMagicHeader))
 
 /*
@@ -175,8 +175,12 @@ struct CellHdr {
   Pgno leftChild; /* Child page that comes before this cell */
   u16 nKey;       /* Number of bytes in the key */
   u16 iNext;      /* Index in MemPage.u.aDisk[] of next cell in sorted order */
-  u32 nData;      /* Number of bytes of data */
+  u8 nKeyHi;
+  u8 nDataHi;
+  u16 nData;      /* Number of bytes of data */
 };
+#define NKEY(h)  (h.nKey + h.nKeyHi*65536)
+#define NDATA(h) (h.nData + h.nDataHi*65536)
 
 /*
 ** The minimum size of a complete Cell.  The Cell must contain a header
@@ -340,7 +344,7 @@ struct BtCursor {
 ** is NOT included in the value returned from this routine.
 */
 static int cellSize(Cell *pCell){
-  int n = pCell->h.nKey + pCell->h.nData;
+  int n = NKEY(pCell->h) + NDATA(pCell->h);
   if( n>MX_LOCAL_PAYLOAD ){
     n = MX_LOCAL_PAYLOAD + sizeof(Pgno);
   }else{
@@ -936,7 +940,7 @@ int sqliteBtreeKeySize(BtCursor *pCur, int *pSize){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
-    *pSize = pCell->h.nKey;
+    *pSize = NKEY(pCell->h);
   }
   return SQLITE_OK;
 }
@@ -1019,8 +1023,8 @@ int sqliteBtreeKey(BtCursor *pCur, int offset, int amt, char *zBuf){
     return 0;
   }
   pCell = pPage->apCell[pCur->idx];
-  if( amt+offset > pCell->h.nKey ){
-    amt = pCell->h.nKey - offset;
+  if( amt+offset > NKEY(pCell->h) ){
+    amt = NKEY(pCell->h) - offset;
     if( amt<=0 ){
       return 0;
     }
@@ -1045,7 +1049,7 @@ int sqliteBtreeDataSize(BtCursor *pCur, int *pSize){
     *pSize = 0;
   }else{
     pCell = pPage->apCell[pCur->idx];
-    *pSize = pCell->h.nData;
+    *pSize = NDATA(pCell->h);
   }
   return SQLITE_OK;
 }
@@ -1070,13 +1074,13 @@ int sqliteBtreeData(BtCursor *pCur, int offset, int amt, char *zBuf){
     return 0;
   }
   pCell = pPage->apCell[pCur->idx];
-  if( amt+offset > pCell->h.nData ){
-    amt = pCell->h.nData - offset;
+  if( amt+offset > NDATA(pCell->h) ){
+    amt = NDATA(pCell->h) - offset;
     if( amt<=0 ){
       return 0;
     }
   }
-  getPayload(pCur, offset + pCell->h.nKey, amt, zBuf);
+  getPayload(pCur, offset + NKEY(pCell->h), amt, zBuf);
   return amt;
 }
 
@@ -1114,8 +1118,8 @@ int sqliteBtreeKeyCompare(
   assert( pCur->pPage );
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
   pCell = pCur->pPage->apCell[pCur->idx];
-  if( nKey > pCell->h.nKey ){
-    nKey = pCell->h.nKey;
+  if( nKey > NKEY(pCell->h) ){
+    nKey = NKEY(pCell->h);
   }
   n = nKey;
   if( n>MX_LOCAL_PAYLOAD ){
@@ -1187,7 +1191,7 @@ static int compareKey(
     assert( pCur->pPage );
     assert( pCur->pPage->nCell>pCur->idx && pCur->idx>=0 );
     pCell = pCur->pPage->apCell[pCur->idx];
-    c = pCell->h.nKey - nKeyOrig;
+    c = NKEY(pCell->h) - nKeyOrig;
   }
   *pResult = c;
   return SQLITE_OK;
@@ -1495,7 +1499,7 @@ static int clearCell(Btree *pBt, Cell *pCell){
   Pgno ovfl, nextOvfl;
   int rc;
 
-  if( pCell->h.nKey + pCell->h.nData <= MX_LOCAL_PAYLOAD ){
+  if( NKEY(pCell->h) + NDATA(pCell->h) <= MX_LOCAL_PAYLOAD ){
     return SQLITE_OK;
   }
   ovfl = pCell->ovfl;
@@ -1531,8 +1535,10 @@ static int fillInCell(
   char *pSpace;
 
   pCell->h.leftChild = 0;
-  pCell->h.nKey = nKey;
-  pCell->h.nData = nData;
+  pCell->h.nKey = nKey & 0xffff;
+  pCell->h.nKeyHi = nKey >> 16;
+  pCell->h.nData = nData & 0xffff;
+  pCell->h.nDataHi = nData >> 16;
   pCell->h.iNext = 0;
 
   pNext = &pCell->ovfl;
@@ -2413,7 +2419,7 @@ int sqliteBtreePageDump(Btree *pBt, int pgno, int recursive){
     Cell *pCell = (Cell*)&pPage->u.aDisk[idx];
     int sz = cellSize(pCell);
     sprintf(range,"%d..%d", idx, idx+sz-1);
-    sz = pCell->h.nKey + pCell->h.nData;
+    sz = NKEY(pCell->h) + NDATA(pCell->h);
     if( sz>sizeof(payload)-1 ) sz = sizeof(payload)-1;
     memcpy(payload, pCell->aPayload, sz);
     for(j=0; j<sz; j++){
@@ -2422,7 +2428,7 @@ int sqliteBtreePageDump(Btree *pBt, int pgno, int recursive){
     payload[sz] = 0;
     printf(
       "cell %2d: i=%-10s chld=%-4d nk=%-4d nd=%-4d payload=%s\n",
-      i, range, (int)pCell->h.leftChild, pCell->h.nKey, pCell->h.nData,
+      i, range, (int)pCell->h.leftChild, NKEY(pCell->h), NDATA(pCell->h),
       payload
     );
     if( pPage->isInit && pPage->apCell[i]!=pCell ){
@@ -2652,7 +2658,7 @@ static int checkTreePage(
 
     /* Check payload overflow pages
     */
-    sz = pCell->h.nKey + pCell->h.nData;
+    sz = NKEY(pCell->h) + NDATA(pCell->h);
     sprintf(zContext, "On page %d cell %d: ", iPage, i);
     if( sz>MX_LOCAL_PAYLOAD ){
       int nPage = (sz - MX_LOCAL_PAYLOAD + OVERFLOW_SIZE - 1)/OVERFLOW_SIZE;
@@ -2662,8 +2668,8 @@ static int checkTreePage(
     /* Check that keys are in the right order
     */
     cur.idx = i;
-    zKey2 = sqliteMalloc( pCell->h.nKey+1 );
-    getPayload(&cur, 0, pCell->h.nKey, zKey2);
+    zKey2 = sqliteMalloc( NKEY(pCell->h)+1 );
+    getPayload(&cur, 0, NKEY(pCell->h), zKey2);
     if( zKey1 && strcmp(zKey1,zKey2)>=0 ){
       checkAppendMsg(pCheck, zContext, "Key is out of order");
     }

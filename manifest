@@ -1,5 +1,5 @@
-C Version\s2.0.8\s(CVS\s462)
-D 2001-11-04T00:00:00
+C Increase\smaximum\srow\ssize\sto\s1MB.\s(CVS\s300)
+D 2001-11-04T18:32:47
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,7 +19,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c f5b3bf49c98a90754097e8f0a946931d9cc857ef
+F src/btree.c 2789f704777d29b1b38e62e4798381ce602dc0fb
 F src/btree.h 57d653ef5137b91f2a068aaf71a2905468dd2cb7
 F src/build.c 8857c16751a5e9c5ee845e1b3cf2da78935c8cb3
 F src/delete.c a4c13c444544f315703d5fbed6419c8786f66581
@@ -40,20 +40,20 @@ F src/select.c c34b02eafaa69fde6b4428df7861c3417b3079f9
 F src/shell.c 71597951753b56a97fea1c7a30908f31e635c00c
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 934de9112747ad8d8e7d5fec44876246b24ca5a3
-F src/sqliteInt.h 9a18aebf42a805ba02f55eba2239beabe35f02b3
+F src/sqliteInt.h fa9f56b77e0790f0ec329195c2255e2d8e440b0a
 F src/table.c c89698bd5bb4b8d14722d6ee7e9be014c383d24a
 F src/tclsqlite.c 4896e078495bf868742f5394dcf01c5efe5bea02
 F src/test1.c e4b31f62ea71963cbae44338acf477a04fc8fc49
 F src/test2.c e9f99aa5ee73872819259d6612c11e55e1644321
 F src/test3.c 4a0d7b882fdae731dbb759f512ad867122452f96
-F src/tokenize.c 8f4c2b5e7fb471ba194979fb4dd5f947402fd792
+F src/tokenize.c 9ede24b17630351d70258bf8fa4f70f5990d45ae
 F src/update.c 4eeb154a2da8a934d180e2d9e4211ac0a7a4ce8b
 F src/util.c aa4d2de60cb2445239b71c79c3a8c0b7c0d3336a
-F src/vdbe.c 9e4fd512dd3e66d37f5b53ae88138fda4f9aa227
-F src/vdbe.h 4a587ec56943d34698edf507ad5a746e87cb8cf4
-F src/where.c 22fe910c7c8e2736eb37e9861343e90c0b513c86
+F src/vdbe.c a71e73e9a4a63fe2f63546a1a43fce4de5136476
+F src/vdbe.h c29e6fdfa157b3cce18258c05d9d533eb9cd1377
+F src/where.c 601f096f2a37ca688a775ca36d33534b13b876cb
 F test/all.test 2a51e5395ac7c2c539689b123b9782a05e3837fe
-F test/bigrow.test a35f2de9948b24e427fb292c35947795efe182d0
+F test/bigrow.test 9458134d67f81559845f934fdd6802fe19a68ad1
 F test/btree.test 47952c7a0c22660566264c68c0664592b7da85ce
 F test/btree2.test 08e9485619265cbaf5d11bd71f357cdc26bb87e0
 F test/copy.test 768e6f1701a07d08090e1ca7f7dcce0a7a72b43e
@@ -102,7 +102,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 03b521d252575f93b9c52f7c8b0007011512fcfb
 F www/c_interface.tcl d446234c1d3ed747fcefd30e972a19f2b2fc0e05
-F www/changes.tcl 13c447ca789c2ee8994ad827296c71b1dce628ba
+F www/changes.tcl 797653d0d9988c716beb8a33e54b682fe53a4b93
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
@@ -114,7 +114,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 0a8c2f4f9812ffa7d43be0e3b59648dca40fa83c
-R 20a1ec902a198db024868b1e2643b8b3
+P 0fd2874205f1a4b89fc069cb429c1b0c7a0b99c1
+R 810197be2f3f50401607f0c17a5fe11e
 U drh
-Z cdd8ae8efa6d763d99acb5bacc9c14f3
+Z 863cf3e2c644c7eb0aa13f1cb68860b5

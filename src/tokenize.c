@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.30 2001/10/22 02:58:10 drh Exp $
+** $Id: tokenize.c,v 1.31 2001/11/04 18:32:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -346,7 +346,7 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
 ** memory obtained from malloc() and *pzErrMsg made to point to that
 ** error message.  Or maybe not.
 */
-int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
+int sqliteRunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;
   int i;
   void *pEngine;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.65 2001/10/22 02:58:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.66 2001/11/04 18:32:47 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -40,9 +40,15 @@ typedef unsigned char u8;             /* 1-byte unsigned integer */
 
 /*
 ** The maximum number of bytes of data that can be put into a single
-** row of a single table.
+** row of a single table.  The upper bound on this limit is 16777215
+** bytes (or 16MB-1).  We have arbitrarily set the limit to just 1MB
+** here because the overflow page chain is inefficient for really big
+** records and we want to discourage people from thinking that 
+** multi-megabyte records are OK.  If your needs are different, you can
+** change this define and recompile to increase or decrease the record
+** size.
 */
-#define MAX_BYTES_PER_ROW  65535
+#define MAX_BYTES_PER_ROW  1048576
 
 /*
 ** If memory allocation problems are found, recompile with
@@ -237,8 +243,8 @@ struct Index {
 ** this structure.
 */
 struct Token {
-  char *z;      /* Text of the token.  Not NULL-terminated! */
-  int n;        /* Number of characters in this token */
+  const char *z;      /* Text of the token.  Not NULL-terminated! */
+  int n;              /* Number of characters in this token */
 };
 
 /*
@@ -417,7 +423,7 @@ int sqliteSortCompare(const char *, const char *);
 void sqliteSetString(char **, const char *, ...);
 void sqliteSetNString(char **, ...);
 void sqliteDequote(char*);
-int sqliteRunParser(Parse*, char*, char **);
+int sqliteRunParser(Parse*, const char*, char **);
 void sqliteExec(Parse*);
 Expr *sqliteExpr(int, Expr*, Expr*, Token*);
 void sqliteExprSpan(Expr*,Token*,Token*);
