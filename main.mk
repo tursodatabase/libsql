@@ -128,7 +128,7 @@ TESTSRC = \
 # Header files used by all library source files.
 #
 HDR = \
-   sqlite.h  \
+   sqlite3.h  \
    $(TOP)/src/btree.h \
    config.h \
    $(TOP)/src/hash.h \
@@ -150,7 +150,7 @@ VDBEHDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite.h config.h libsqlite.a sqlite$(EXE)
+all:	sqlite3.h config.h libsqlite3.a sqlite3$(EXE)
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -159,13 +159,13 @@ last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort +4 | tail -1 \
           | awk '{print $$5,$$6}' >last_change
 
-libsqlite.a:	$(LIBOBJ)
-	$(AR) libsqlite.a $(LIBOBJ)
-	$(RANLIB) libsqlite.a
+libsqlite3.a:	$(LIBOBJ)
+	$(AR) libsqlite3.a $(LIBOBJ)
+	$(RANLIB) libsqlite3.a
 
-sqlite$(EXE):	$(TOP)/src/shell.c libsqlite.a sqlite.h
-	$(TCCX) $(READLINE_FLAGS) -o sqlite$(EXE) $(TOP)/src/shell.c \
-		libsqlite.a $(LIBREADLINE) $(THREADLIB)
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(TOP)/src/shell.c \
+		libsqlite3.a $(LIBREADLINE) $(THREADLIB)
 
 objects: $(LIBOBJ_ORIG)
 
@@ -294,10 +294,10 @@ random.o:	$(TOP)/src/random.c $(HDR)
 select.o:	$(TOP)/src/select.c $(HDR)
 	$(TCCX) -c $(TOP)/src/select.c
 
-sqlite.h:	$(TOP)/src/sqlite.h.in 
+sqlite3.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
             -e s/--ENCODING--/$(ENCODING)/ \
-                 $(TOP)/src/sqlite.h.in >sqlite.h
+                 $(TOP)/src/sqlite.h.in >sqlite3.h
 
 table.o:	$(TOP)/src/table.c $(HDR)
 	$(TCCX) -c $(TOP)/src/table.c
@@ -340,19 +340,19 @@ where.o:	$(TOP)/src/where.c $(HDR)
 
 # Rules for building test programs and for running tests
 #
-tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
-		$(TOP)/src/tclsqlite.c libsqlite.a $(LIBTCL)
+tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
+		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL)
 
-testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
+testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture$(EXE) \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libsqlite.a $(LIBTCL) $(THREADLIB)
+		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-fulltest:	testfixture$(EXE) sqlite$(EXE)
+fulltest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test
 
-test:	testfixture$(EXE) sqlite$(EXE)
+test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/quick.test
 
 # Rules used to build documentation
@@ -365,6 +365,9 @@ arch.png:	$(TOP)/www/arch.png
 
 c_interface.html:	$(TOP)/www/c_interface.tcl
 	tclsh $(TOP)/www/c_interface.tcl >c_interface.html
+
+capi3.html:	$(TOP)/www/capi3.tcl
+	tclsh $(TOP)/www/capi3.tcl >capi3.html
 
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html
@@ -386,6 +389,9 @@ conflict.html:	$(TOP)/www/conflict.tcl
 
 datatypes.html:	$(TOP)/www/datatypes.tcl
 	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+
+datatype3.html:	$(TOP)/www/datatype3.tcl
+	tclsh $(TOP)/www/datatype3.tcl >datatype3.html
 
 docs.html:	$(TOP)/www/docs.tcl
 	tclsh $(TOP)/www/docs.tcl >docs.html
@@ -447,13 +453,15 @@ vdbe.html:	$(TOP)/www/vdbe.tcl
 DOC = \
   arch.html \
   arch.png \
-  changes.html \
   c_interface.html \
+  capi3.html \
+  changes.html \
   copyright.html \
   copyright-release.html \
   copyright-release.pdf \
   conflict.html \
   datatypes.html \
+  datatype3.html \
   docs.html \
   download.html \
   faq.html \
@@ -479,13 +487,13 @@ doc:	common.tcl $(DOC)
 
 # Standard install and cleanup targets
 #
-install:	sqlite libsqlite.a sqlite.h
-	mv sqlite /usr/bin
-	mv libsqlite.a /usr/lib
-	mv sqlite.h /usr/include
+install:	sqlite3 libsqlite3.a sqlite3.h
+	mv sqlite3 /usr/bin
+	mv libsqlite3.a /usr/lib
+	mv sqlite3.h /usr/include
 
 clean:	
-	rm -f *.o sqlite libsqlite.a sqlite.h opcodes.*
+	rm -f *.o sqlite3 libsqlite3.a sqlite3.h opcodes.*
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out

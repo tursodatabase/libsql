@@ -30,7 +30,7 @@
  */
 #include <tcl.h>
 #include <string.h>
-#include "sqlite.h"
+#include "sqlite3.h"
 
 /*
  * If compiled on a machine that doesn't have a 32-bit integer,

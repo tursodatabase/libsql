@@ -11,10 +11,10 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.263 2004/05/31 08:55:34 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.264 2004/05/31 18:23:09 drh Exp $
 */
 #include "config.h"
-#include "sqlite.h"
+#include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
 #include <stdio.h>

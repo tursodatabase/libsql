@@ -1,5 +1,5 @@
-C Begin\sadding\sdocumentation\sfor\sversion\s3.0.\s(CVS\s1509)
-D 2004-05-31T18:22:26
+C Change\sthe\sname\sof\sthe\sinclude\sfile\sto\s"sqlite3.h".\s\sThe\snames\sof\sthe\sshell\ncommand\sand\sstatic\slibrary\sbecome\s"sqlite3"\sand\s"libsqlite3.a".\s(CVS\s1510)
+D 2004-05-31T18:23:08
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 37fbea48aaddd86249e10bc9f20e2151695e2037
+F main.mk 63b5680a8103b46481898d71c1c259b9f34e144a
 F publish.sh 1cd5c982388560fa91eedf6a338e210f713b35c8
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -37,7 +37,7 @@ F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 4268d9e3959cc845ea243fb4ec7507269404dad9
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 9bb9578c15db0205616fcf474885b83aba53d910
-F src/md5.c d2c738fedfb27f73cefcf2b0ac1f9f21894b073e
+F src/md5.c 4302e84ae516c616bb079c4e6d038c0addb33481
 F src/os.h ab42f4a7c4c716f26b988e759b6e12085a3bfc67
 F src/os_common.h 744286a27de55c52f1b18921e8d17abbf7fafc0f
 F src/os_mac.c b823874690615ace0dd520d3ad1fe8bfd864b7e0
@@ -53,9 +53,9 @@ F src/pragma.c 7f432dee3c94460638df1e5fffeb59a560943d13
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
-F src/shell.c ed4d237b3e52a0a42512bfcc53530e46de20c28f
+F src/shell.c b71bdc3586c1c254941a236f3461615fd032eab1
 F src/sqlite.h.in edc6408c7f53c2104f781a76b926036e17018ec9
-F src/sqliteInt.h 4a153e6c57eda3dfbfe190ac66986bc765a2c351
+F src/sqliteInt.h de20432992233b394a7fc80458f03d7cb7138bc5
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c b314f12760547e4ef090e055f1298f70627450d3
 F src/test1.c 32934478366531503d634968db414df17cb38238
@@ -212,7 +212,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 48226a73801bc478d6fd6de5a554aec5119d2194
-R 6c1a6ec8dae26e3de7139bd0ba98440c
+P 2005bfdad03ac2aa70a82ba7ff9b2f469d129367
+R 783e591d80614a85072d6745be4be04f
 U drh
-Z dd522c4899d9ea1abb58bb871bde4c24
+Z bb28014f004f9d7fe5e7794b01035f95
