@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.11 2001/10/08 13:22:33 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.12 2001/10/13 02:59:10 drh Exp $}
 
 puts {<html>
 <head>
@@ -357,12 +357,19 @@ subcomponent of most other commands.</p>
 highest to lowest precedence:</p>
 
 <blockquote><pre>
-<font color="#2c2cf0"><big>*    /
+<font color="#2c2cf0"><big>*    /    %
 +    -
+&lt;&lt;   &gt;&gt;   &amp;    |
 &lt;    &lt;=   &gt;    &gt;=
 =    ==   !=   &lt;&gt;   </big>IN
 AND
 OR</font>
+</pre></blockquote>
+
+<p>Supported unary operaters are these:</p>
+
+<blockquote><pre>
+<font color="#2c2cf0"><big>-    +    !    ~</big></font>
 </pre></blockquote>
 
 <p>Any SQLite value can be used as part of an expression.  
@@ -437,7 +444,7 @@ functions:</p>
 
 <blockquote><pre>
 <font color="#2c2cf0"><big>count    min       max       sum
-avg      length    substr</big></font>
+avg      length    substr    abs       round</big></font>
 </pre></blockquote>
 
 <p>
@@ -445,10 +452,18 @@ The functions <b>count</b>, <b>sum</b>, and <b>avg</b> and the functions
 <b>min</b> and <b>max</b> used with only one argument are all aggregate
 functions.  This means that they are computed across all rows of the result.
 The functions <b>min</b> and <b>max</b>
-with two or more arguments and the 
-functions <b>length</b> and <b>substr</b>
+with two or more arguments and all other functions
 are non-aggregates.  Non-aggregate functions
 are computed separately for each row of the result.
+</p>
+
+<p>
+The <b>round</b> function can take either 1 or 2 arguments.  The
+first argument is the floating point value that is rounded.  The
+second argument is the number of digits to the right of the
+decimal point to preserve.  If the second argument is omitted,
+zero is assumed.  So round(1.23456,2) is 1.23 and
+round(12.34,0) and round(12.34) both evaluate to 12.
 </p>
 
 <p>

@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.83 2001/10/13 01:06:48 drh Exp $
+** $Id: vdbe.c,v 1.84 2001/10/13 02:59:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -814,7 +814,9 @@ static char *zOpName[] = { 0,
   "ColumnName",        "Callback",          "Integer",           "String",
   "Null",              "Pop",               "Dup",               "Pull",
   "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Min",               "Max",               "Like",
+  "Divide",            "Remainder",         "BitAnd",            "BitOr",
+  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
+  "Precision",         "Min",               "Max",               "Like",
   "Glob",              "Eq",                "Ne",                "Lt",
   "Le",                "Gt",                "Ge",                "IsNull",
   "NotNull",           "Negative",          "And",               "Or",
@@ -1322,10 +1324,20 @@ case OP_Concat: {
 ** is a string then it is converted to a double using the atof()
 ** function before the division.  Division by zero returns NULL.
 */
+/* Opcode: Remainder * * *
+**
+** Pop the top two elements from the stack, divide the
+** first (what was on top of the stack) from the second (the
+** next on stack)
+** and push the remainder after division onto the stack.  If either element
+** is a string then it is converted to a double using the atof()
+** function before the division.  Division by zero returns NULL.
+*/
 case OP_Add:
 case OP_Subtract:
 case OP_Multiply:
-case OP_Divide: {
+case OP_Divide:
+case OP_Remainder: {
   int tos = p->tos;
   int nos = tos - 1;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
@@ -1337,9 +1349,14 @@ case OP_Divide: {
       case OP_Add:         b += a;       break;
       case OP_Subtract:    b -= a;       break;
       case OP_Multiply:    b *= a;       break;
-      default: {
+      case OP_Divide: {
         if( a==0 ) goto divide_by_zero;
         b /= a;
+        break;
+      }
+      default: {
+        if( a==0 ) goto divide_by_zero;
+        b %= a;
         break;
       }
     }
@@ -1357,9 +1374,16 @@ case OP_Divide: {
       case OP_Add:         b += a;       break;
       case OP_Subtract:    b -= a;       break;
       case OP_Multiply:    b *= a;       break;
-      default: {
+      case OP_Divide: {
         if( a==0.0 ) goto divide_by_zero;
         b /= a;
+        break;
+      }
+      default: {
+        int ia = a;
+        int ib = b;
+        if( ia==0.0 ) goto divide_by_zero;
+        b = ib % ia;
         break;
       }
     }
@@ -1374,6 +1398,37 @@ divide_by_zero:
   PopStack(p, 2);
   p->tos = nos;
   aStack[nos].flags = STK_Null;
+  break;
+}
+
+/*
+** Opcode: Precision * * *
+**
+** The top of stack is a floating-point number and the next on stack is
+** an integer.  Truncate the floating-point number to a number of digits
+** specified by the integer and push the floating-point number back onto
+** the stack. 
+*/
+case OP_Precision: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int nDigit;
+  double v;
+  char zBuf[100];
+
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  Realify(p, tos);
+  Integerify(p, nos);
+  nDigit = aStack[nos].i;
+  if( nDigit<0 ) nDigit = 0;
+  if( nDigit>30 ) nDigit = 30;
+  v = aStack[tos].r;
+  sprintf(zBuf, "%.*f", nDigit, v);
+  POPSTACK;
+  Release(p, nos);
+  zStack[nos] = sqliteStrDup(zBuf);
+  aStack[nos].n = strlen(zStack[tos]) + 1;
+  aStack[nos].flags = STK_Str | STK_Dyn;
   break;
 }
 
@@ -1452,6 +1507,56 @@ case OP_Min: {
     Release(p, tos);
   }
   p->tos = nos;
+  break;
+}
+
+/* Opcode: BitAnd * * *
+**
+** Pop the top two elements from the stack.  Convert both elements
+** to integers.  Push back onto the stack the bit-wise AND of the
+** two elements.
+*/
+/* Opcode: BitOr * * *
+**
+** Pop the top two elements from the stack.  Convert both elements
+** to integers.  Push back onto the stack the bit-wise OR of the
+** two elements.
+*/
+/* Opcode: ShiftLeft * * *
+**
+** Pop the top two elements from the stack.  Convert both elements
+** to integers.  Push back onto the stack the top element shifted
+** left by N bits where N is the second element on the stack.
+*/
+/* Opcode: ShiftRight * * *
+**
+** Pop the top two elements from the stack.  Convert both elements
+** to integers.  Push back onto the stack the top element shifted
+** right by N bits where N is the second element on the stack.
+*/
+case OP_BitAnd:
+case OP_BitOr:
+case OP_ShiftLeft:
+case OP_ShiftRight: {
+  int tos = p->tos;
+  int nos = tos - 1;
+  int a, b;
+  VERIFY( if( nos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  Integerify(p, nos);
+  a = aStack[tos].i;
+  b = aStack[nos].i;
+  switch( pOp->opcode ){
+    case OP_BitAnd:      a &= b;     break;
+    case OP_BitOr:       a |= b;     break;
+    case OP_ShiftLeft:   a <<= b;    break;
+    case OP_ShiftRight:  a >>= b;    break;
+    default:   /* CANT HAPPEN */     break;
+  }
+  POPSTACK;
+  Release(p, nos);
+  aStack[nos].i = a;
+  aStack[nos].flags = STK_Int;
   break;
 }
 
@@ -1633,21 +1738,33 @@ case OP_Or: {
 ** Treat the top of the stack as a numeric quantity.  Replace it
 ** with its additive inverse.
 */
-case OP_Negative: {
+/* Opcode: AbsValue * * *
+**
+** Treat the top of the stack as a numeric quantity.  Replace it
+** with its absolute value.
+*/
+case OP_Negative:
+case OP_AbsValue: {
   int tos = p->tos;
   VERIFY( if( tos<0 ) goto not_enough_stack; )
   if( aStack[tos].flags & STK_Real ){
     Release(p, tos);
-    aStack[tos].r = -aStack[tos].r;
+    if( pOp->opcode==OP_Negative || aStack[tos].r<0.0 ){
+      aStack[tos].r = -aStack[tos].r;
+    }
     aStack[tos].flags = STK_Real;
   }else if( aStack[tos].flags & STK_Int ){
     Release(p, tos);
-    aStack[tos].i = -aStack[tos].i;
+    if( pOp->opcode==OP_Negative ||  aStack[tos].i<0 ){
+      aStack[tos].i = -aStack[tos].i;
+    }
     aStack[tos].flags = STK_Int;
   }else{
     Realify(p, tos);
     Release(p, tos);
-    aStack[tos].r = -aStack[tos].r;
+    if( pOp->opcode==OP_Negative ||  aStack[tos].r<0.0 ){
+      aStack[tos].r = -aStack[tos].r;
+    }
     aStack[tos].flags = STK_Real;
   }
   break;
@@ -1664,6 +1781,21 @@ case OP_Not: {
   Integerify(p, tos);
   Release(p, tos);
   aStack[tos].i = !aStack[tos].i;
+  aStack[tos].flags = STK_Int;
+  break;
+}
+
+/* Opcode:  * * *
+**
+** Interpret the top of the stack as an value.  Replace it
+** with its ones-complement.
+*/
+case OP_BitNot: {
+  int tos = p->tos;
+  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
+  Integerify(p, tos);
+  Release(p, tos);
+  aStack[tos].i = ~aStack[tos].i;
   aStack[tos].flags = STK_Int;
   break;
 }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.15 2001/09/16 00:13:28 drh Exp $
+# $Id: expr.test,v 1.16 2001/10/13 02:59:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -68,6 +68,11 @@ test_expr expr-1.38 {i1=1} {-i1} {-1}
 test_expr expr-1.39 {i1=1} {+i1} {1}
 test_expr expr-1.40 {i1=1, i2=2} {+(i2+i1)} {3}
 test_expr expr-1.41 {i1=1, i2=2} {-(i2+i1)} {-3}
+test_expr expr-1.42 {i1=1, i2=2} {i1|i2} {3}
+test_expr expr-1.43 {i1=1, i2=2} {i1&i2} {0}
+test_expr expr-1.44 {i1=1} {~i1} {-2}
+test_expr expr-1.45 {i1=1, i2=3} {i1<<i2} {8}
+test_expr expr-1.46 {i1=32, i2=3} {i1>>i2} {4}
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.36 2001/10/12 17:30:05 drh Exp $
+** @(#) $Id: parse.y,v 1.37 2001/10/13 02:59:09 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -331,7 +331,7 @@ inscollist(A) ::= ids(Y).                     {A = sqliteIdListAppend(0,&Y);}
 %left GT GE LT LE.
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
-%left STAR SLASH MOD.
+%left STAR SLASH REM.
 %left CONCAT.
 %right UMINUS BITNOT.
 
@@ -385,7 +385,7 @@ expr(A) ::= expr(X) PLUS expr(Y).  {A = sqliteExpr(TK_PLUS, X, Y, 0);}
 expr(A) ::= expr(X) MINUS expr(Y). {A = sqliteExpr(TK_MINUS, X, Y, 0);}
 expr(A) ::= expr(X) STAR expr(Y).  {A = sqliteExpr(TK_STAR, X, Y, 0);}
 expr(A) ::= expr(X) SLASH expr(Y). {A = sqliteExpr(TK_SLASH, X, Y, 0);}
-expr(A) ::= expr(X) MOD expr(Y).   {A = sqliteExpr(TK_MOD, X, Y, 0);}
+expr(A) ::= expr(X) REM expr(Y).   {A = sqliteExpr(TK_REM, X, Y, 0);}
 expr(A) ::= expr(X) CONCAT expr(Y). {A = sqliteExpr(TK_CONCAT, X, Y, 0);}
 expr(A) ::= expr(X) ISNULL(E). {
   A = sqliteExpr(TK_ISNULL, X, 0, 0);

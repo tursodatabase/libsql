@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.8 2001/09/16 00:13:28 drh Exp $
+# $Id: main.test,v 1.9 2001/10/13 02:59:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,17 +98,9 @@ do_test main-3.2 {
   foreach f [glob -nocomplain testdb/*] {file delete -force $f}
   file delete -force testdb
   sqlite db testdb
-  set v [catch {execsql {SELECT * from T1 where ~x}} msg]
+  set v [catch {execsql {SELECT * from T1 where @x}} msg]
   lappend v $msg
-} {1 {unrecognized token: "~"}}
-do_test main-3.3 {
-  catch {db close}
-  foreach f [glob -nocomplain testdb/*] {file delete -force $f}
-  file delete -force testdb
-  sqlite db testdb
-  set v [catch {execsql {SELECT a|b from T1 where x}} msg]
-  lappend v $msg
-} {1 {unrecognized token: "|"}}
+} {1 {unrecognized token: "@"}}
 
 do_test main-3.3 {
   catch {db close}

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.26 2001/10/09 04:19:47 drh Exp $
+** $Id: tokenize.c,v 1.27 2001/10/13 02:59:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -185,6 +185,10 @@ int sqliteGetToken(const char *z, int *tokenType){
       *tokenType = TK_SLASH;
       return 1;
     }
+    case '%': {
+      *tokenType = TK_REM;
+      return 1;
+    }
     case '=': {
       *tokenType = TK_EQ;
       return 1 + (z[1]=='=');
@@ -196,6 +200,9 @@ int sqliteGetToken(const char *z, int *tokenType){
       }else if( z[1]=='>' ){
         *tokenType = TK_NE;
         return 2;
+      }else if( z[1]=='<' ){
+        *tokenType = TK_LSHIFT;
+        return 2;
       }else{
         *tokenType = TK_LT;
         return 1;
@@ -204,6 +211,9 @@ int sqliteGetToken(const char *z, int *tokenType){
     case '>': {
       if( z[1]=='=' ){
         *tokenType = TK_GE;
+        return 2;
+      }else if( z[1]=='>' ){
+        *tokenType = TK_RSHIFT;
         return 2;
       }else{
         *tokenType = TK_GT;
@@ -221,7 +231,7 @@ int sqliteGetToken(const char *z, int *tokenType){
     }
     case '|': {
       if( z[1]!='|' ){
-        *tokenType = TK_ILLEGAL;
+        *tokenType = TK_BITOR;
         return 1;
       }else{
         *tokenType = TK_CONCAT;
@@ -230,6 +240,14 @@ int sqliteGetToken(const char *z, int *tokenType){
     }
     case ',': {
       *tokenType = TK_COMMA;
+      return 1;
+    }
+    case '&': {
+      *tokenType = TK_BITAND;
+      return 1;
+    }
+    case '~': {
+      *tokenType = TK_BITNOT;
       return 1;
     }
     case '\'': case '"': {

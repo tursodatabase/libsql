@@ -17,12 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct ? (2.0.3)} {
+chng {2001 Oct 13 (2.0.3)} {
 <li>Bug fix: the <b>sqlite_busy_timeout()</b> function was delaying 1000
     times too long before failing.</li>
 <li>Bug fix: an assertion was failing if the disk holding the database
     file became full or stopped accepting writes for some other reason.
     New tests were added to detect similar problems in the future.</li>
+<li>Added new operators: <b>&amp;</b> (bitwise-and)
+    <b>|</b> (bitwise-or), <b>~</b> (ones-complement),
+    <b>&lt;&lt;</b> (shift left), <b>&gt;&gt;</b> (shift right).</li>
+<li>Added new functions: <b>round()</b> and <b>abs()</b>.</li>
 }
 
 chng {2001 Oct 9 (2.0.2)} {

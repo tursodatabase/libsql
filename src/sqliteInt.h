@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.60 2001/10/12 17:30:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.61 2001/10/13 02:59:09 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -117,21 +117,8 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 #define FN_Fcnt       6
 #define FN_Length     7
 #define FN_Substr     8
-#if 0
 #define FN_Abs        9
-#define FN_Ceil       10
-#define FN_Floor      11
-#define FN_Frac       12
-#define FN_Sin        13
-#define FN_Cos        14
-#define FN_Tan        15
-#define FN_Asin       16
-#define FN_Acos       17
-#define FN_Atan       18
-#define FN_Exp        19
-#define FN_Ln         20
-#define FN_Pow        21
-#endif
+#define FN_Round      10
 
 /*
 ** Forward references to structures

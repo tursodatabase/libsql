@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.48 2001/10/13 01:06:48 drh Exp $
+** $Id: build.c,v 1.49 2001/10/13 02:59:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1081,12 +1081,14 @@ ExprList *sqliteExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
       return pList;
     }
   }
-  i = pList->nExpr++;
-  pList->a[i].pExpr = pExpr;
-  pList->a[i].zName = 0;
-  if( pName ){
-    sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
-    sqliteDequote(pList->a[i].zName);
+  if( pExpr ){
+    i = pList->nExpr++;
+    pList->a[i].pExpr = pExpr;
+    pList->a[i].zName = 0;
+    if( pName ){
+      sqliteSetNString(&pList->a[i].zName, pName->z, pName->n, 0);
+      sqliteDequote(pList->a[i].zName);
+    }
   }
   return pList;
 }

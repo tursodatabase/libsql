@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.4 2001/09/16 00:13:28 drh Exp $
+# $Id: func.test,v 1.5 2001/10/13 02:59:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -120,5 +120,45 @@ do_test func-3.10 {
 } "ter ain i\u1234h TF-"
 
 } ;# End [sqlite -encoding]==UTF-8 and \u1234!=u1234
+
+# Test the abs() and round() functions.
+#
+do_test func-4.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(1,2,3);
+    INSERT INTO t1 VALUES(2,1.2345678901234,-12345.67890);
+    INSERT INTO t1 VALUES(3,-2,-5);
+  }
+  catchsql {SELECT abs(a,b) FROM t1}
+} {1 {too many arguments to function abs()}}
+do_test func-4.2 {
+  catchsql {SELECT abs() FROM t1}
+} {1 {too few arguments to function abs()}}
+do_test func-4.3 {
+  catchsql {SELECT abs(b) FROM t1 ORDER BY a}
+} {0 {2 1.2345678901234 2}}
+do_test func-4.4 {
+  catchsql {SELECT abs(c) FROM t1 ORDER BY a}
+} {0 {3 12345.6789 5}}
+
+do_test func-4.5 {
+  catchsql {SELECT round(a,b,c) FROM t1}
+} {1 {too many arguments to function round()}}
+do_test func-4.6 {
+  catchsql {SELECT round(b,2) FROM t1}
+} {0 {2.00 1.23 -2.00}}
+do_test func-4.7 {
+  catchsql {SELECT round(b,0) FROM t1 ORDER BY a}
+} {0 {2 1 -2}}
+do_test func-4.8 {
+  catchsql {SELECT round(c) FROM t1 ORDER BY a}
+} {0 {3 -12346 -5}}
+do_test func-4.9 {
+  catchsql {SELECT round(c,a) FROM t1 ORDER BY a}
+} {0 {3.0 -12345.68 -5.000}}
+do_test func-4.10 {
+  catchsql {SELECT round() FROM t1 ORDER BY a}
+} {1 {too few arguments to function round()}}
 
 finish_test

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.30 2001/10/13 01:06:48 drh Exp $
+** $Id: expr.c,v 1.31 2001/10/13 02:59:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -335,14 +335,16 @@ int sqliteFuncId(Token *pToken){
      int len;
      int id;
   } aFunc[] = {
-     { "count",  5, FN_Count },
-     { "min",    3, FN_Min   },
-     { "max",    3, FN_Max   },
-     { "sum",    3, FN_Sum   },
-     { "avg",    3, FN_Avg   },
-     { "fcnt",   4, FN_Fcnt  },  /* Used for testing only */
-     { "length", 6, FN_Length},
-     { "substr", 6, FN_Substr},
+     { "count",  5, FN_Count  },
+     { "min",    3, FN_Min    },
+     { "max",    3, FN_Max    },
+     { "sum",    3, FN_Sum    },
+     { "avg",    3, FN_Avg    },
+     { "fcnt",   4, FN_Fcnt   },  /* Used for testing only */
+     { "length", 6, FN_Length },
+     { "substr", 6, FN_Substr },
+     { "abs",    3, FN_Abs    },
+     { "round",  5, FN_Round  },
   };
   int i;
   for(i=0; i<ArraySize(aFunc); i++){
@@ -401,9 +403,15 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           is_agg = 1;
           break;
         }
+        case FN_Abs:
         case FN_Length: {
           too_few_args = n<1;
           too_many_args = n>1;
+          break;
+        }
+        case FN_Round: {
+          too_few_args = n<1;
+          too_many_args = n>2;
           break;
         }
         case FN_Substr: {
@@ -411,7 +419,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           too_many_args = n>3;
           break;
         }
-        /* The "fcnt(*)" function always returns the number of fetch
+        /* The "fcnt(*)" function always returns the number of OP_MoveTo
         ** operations that have occurred so far while processing the
         ** SQL statement.  This information can be used by test procedures
         ** to verify that indices are being used properly to minimize
@@ -496,6 +504,12 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_NOTNULL:  op = OP_NotNull;  break;
     case TK_NOT:      op = OP_Not;      break;
     case TK_UMINUS:   op = OP_Negative; break;
+    case TK_BITAND:   op = OP_BitAnd;   break;
+    case TK_BITOR:    op = OP_BitOr;    break;
+    case TK_BITNOT:   op = OP_BitNot;   break;
+    case TK_LSHIFT:   op = OP_ShiftLeft;  break;
+    case TK_RSHIFT:   op = OP_ShiftRight; break;
+    case TK_REM:      op = OP_Remainder;  break;
     default: break;
   }
   switch( pExpr->op ){
@@ -534,9 +548,19 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_PLUS:
     case TK_STAR:
     case TK_MINUS:
+    case TK_REM:
+    case TK_BITAND:
+    case TK_BITOR:
     case TK_SLASH: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
+      sqliteVdbeAddOp(v, op, 0, 0);
+      break;
+    }
+    case TK_LSHIFT:
+    case TK_RSHIFT: {
+      sqliteExprCode(pParse, pExpr->pRight);
+      sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, op, 0, 0);
       break;
     }
@@ -580,6 +604,7 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       }
       /* Fall through into TK_NOT */
     }
+    case TK_BITNOT:
     case TK_NOT: {
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteVdbeAddOp(v, op, 0, 0);
@@ -623,6 +648,21 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
               sqliteVdbeAddOp(v, op, 0, 0);
             }
           }
+          break;
+        }
+        case FN_Abs: {
+          sqliteExprCode(pParse, pList->a[0].pExpr);
+          sqliteVdbeAddOp(v, OP_AbsValue, 0, 0);
+          break;
+        }
+        case FN_Round: {
+          if( pList->nExpr==2 ){
+            sqliteExprCode(pParse, pList->a[1].pExpr);
+          }else{
+            sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+          }
+          sqliteExprCode(pParse, pList->a[0].pExpr);
+          sqliteVdbeAddOp(v, OP_Precision, 0, 0);
           break;
         }
         case FN_Length: {
