@@ -1,9 +1,9 @@
-C :-)\s(CVS\s141)
-D 2000-08-22T13:47:57
+C bug\sfix\s(CVS\s142)
+D 2000-08-22T18:29:34
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 880d9396e60cb9e65a3af230f9467412553b6d50
+F VERSION 8fbc549835992841cbef4232a1d5b86780d3ad5b
 F configure 078a370347baf9375baa8053857ca1e6bc84afa7 x
 F configure.in 381aeb4564f1562b7b2a115f5e99035c561a7fea
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -26,7 +26,7 @@ F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c b75b33e6bd5d47898bb7ed9fdd0dea4fe7c19b00
 F src/vdbe.c bdedf21230581f0cf73a2dcd8fe23f30cf30ebe6
 F src/vdbe.h 6c5653241633c583549c2d8097394ab52550eb63
-F src/where.c 420f666a38b405cd58bd7af832ed99f1dbc7d336
+F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
 F test/dbbe.test c6079572516aeb2739a35fd272b105c45c30cc76
@@ -61,7 +61,7 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 1b79e404a0dd46f44cd453a44b01df568c9586d1
-F www/changes.tcl 12d390033b0f65841396f9c0e74b27ad415b1b61
+F www/changes.tcl a457553fce8400977cc484ae47a0a2011491bb7f
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl 2f5cc070b8fa8c3fc2f71bba4e6b7877d528fbde
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 9d72ceb44d325963ffdf5d247961519dc2cb72ad
-R 603335734419a5d34b7543742d689dcb
+P 7ecc9c447bd9259c52e82c8a75830c7fc3381af7
+R d941b15d38d95642a66b6ff4bba2c454
 U drh
-Z 711ba37325e02d401d1540181826ed38
+Z 20279627a80a674fdd5f37866394e8e6
