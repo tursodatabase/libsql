@@ -55,6 +55,11 @@ set tabledef\
 );}
 mem eval $tabledef
 
+proc integerify {real} {
+  return [expr int($real)]
+}
+mem function int integerify
+
 # Quote a string for use in an SQL query. Examples:
 #
 # [quote {hello world}]   == {'hello world'}
@@ -379,6 +384,11 @@ proc percent {num denom {of {}}} {
   }
 }
 
+proc divide {num denom} {
+  if {$denom==0} {return 0.0}
+  return [format %.2f [expr double($num)/double($denom)]]
+}
+
 # Generate a subreport that covers some subset of the database.
 # the $where clause determines which subset to analyze.
 #
@@ -395,18 +405,18 @@ proc subreport {title where} {
   #
   mem eval "
     SELECT
-      sum(nentry) AS nentry,
-      sum(leaf_entries) AS nleaf,
-      sum(payload) AS payload,
-      sum(ovfl_payload) AS ovfl_payload,
+      int(sum(nentry)) AS nentry,
+      int(sum(leaf_entries)) AS nleaf,
+      int(sum(payload)) AS payload,
+      int(sum(ovfl_payload)) AS ovfl_payload,
       max(mx_payload) AS mx_payload,
-      sum(ovfl_cnt) as ovfl_cnt,
-      sum(leaf_pages) AS leaf_pages,
-      sum(int_pages) AS int_pages,
-      sum(ovfl_pages) AS ovfl_pages,
-      sum(leaf_unused) AS leaf_unused,
-      sum(int_unused) AS int_unused,
-      sum(ovfl_unused) AS ovfl_unused
+      int(sum(ovfl_cnt)) as ovfl_cnt,
+      int(sum(leaf_pages)) AS leaf_pages,
+      int(sum(int_pages)) AS int_pages,
+      int(sum(ovfl_pages)) AS ovfl_pages,
+      int(sum(leaf_unused)) AS leaf_unused,
+      int(sum(int_unused)) AS int_unused,
+      int(sum(ovfl_unused)) AS ovfl_unused
     FROM space_used WHERE $where" {} {}
 
   # Output the sub-report title, nicely decorated with * characters.
@@ -434,11 +444,20 @@ proc subreport {title where} {
   set storage [expr {$total_pages*$pageSize}]
   set payload_percent [percent $payload $storage {of storage consumed}]
   set total_unused [expr {$ovfl_unused+$int_unused+$leaf_unused}]
-  set avg_payload [expr {$nleaf>0?$payload/$nleaf:0}]
-  set avg_unused [expr {$nleaf>0?$total_unused/$nleaf:0}]
+  set avg_payload [divide $payload $nleaf]
+  set avg_unused [divide $total_unused $nleaf]
   if {$int_pages>0} {
     # TODO: Is this formula correct?
-    set avg_fanout [format %.2f [expr double($nentry-$nleaf)/$int_pages]]
+    set nTab [mem eval "
+      SELECT count(*) FROM (
+          SELECT DISTINCT tblname FROM space_used WHERE $where AND is_index=0
+      )
+    "]
+    set avg_fanout [mem eval "
+      SELECT (sum(leaf_pages+int_pages)-$nTab)/sum(int_pages) FROM space_used
+          WHERE $where AND is_index = 0
+    "]
+    set avg_fanout [format %.2f $avg_fanout]
   }
   set ovfl_cnt_percent [percent $ovfl_cnt $nleaf {of all entries}]
 
@@ -536,7 +555,7 @@ set av_pgcnt    [autovacuum_overhead $file_pgcnt $pageSize]
 set av_percent  [percent $av_pgcnt $file_pgcnt]
 
 set sql {SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM space_used}
-set inuse_pgcnt   [expr [mem eval $sql]]
+set inuse_pgcnt   [expr int([mem eval $sql])]
 set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
 
 set free_pgcnt    [expr $file_pgcnt-$inuse_pgcnt-$av_pgcnt]
@@ -553,7 +572,7 @@ set nautoindex [db eval $sql]
 set nmanindex [expr {$nindex-$nautoindex}]
 
 # set total_payload [mem eval "SELECT sum(payload) FROM space_used"]
-set user_payload [mem one {SELECT sum(payload) FROM space_used
+set user_payload [mem one {SELECT int(sum(payload)) FROM space_used
      WHERE NOT is_index AND name NOT LIKE 'sqlite_master'}]
 set user_percent [percent $user_payload $file_bytes]
 
@@ -582,7 +601,7 @@ puts ""
 puts "*** Page counts for all tables with their indices ********************"
 puts ""
 mem eval {SELECT tblname, count(*) AS cnt, 
-              sum(int_pages+leaf_pages+ovfl_pages) AS size
+              int(sum(int_pages+leaf_pages+ovfl_pages)) AS size
           FROM space_used GROUP BY tblname ORDER BY size DESC, tblname} {} {
   statline [string toupper $tblname] $size [percent $size $file_pgcnt]
 }
