@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.114 2004/08/20 16:02:39 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.115 2004/08/28 18:21:21 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -33,9 +33,12 @@ extern "C" {
 /*
 ** The version string is also compiled into the library so that a program
 ** can check to make sure that the lib*.a file and the *.h file are from
-** the same version.
+** the same version.  The sqlite3_libversion() function returns a pointer
+** to the sqlite3_version variable - useful in DLLs which cannot access
+** global variables.
 */
 extern const char sqlite3_version[];
+const char *sqlite3_libversion();
 
 /*
 ** Each open sqlite database is represented by an instance of the

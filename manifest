@@ -1,5 +1,5 @@
-C Memory\shandling\sfixes\sand\soptimizations\sin\sthe\sVDBE.\s\sTicket\s#862.\s(CVS\s1909)
-D 2004-08-28T18:17:48
+C Add\sprototype\sin\ssqlite3.h\sfor\sthe\ssqlite3_libversion()\sfunction.\s(CVS\s1910)
+D 2004-08-28T18:21:21
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -60,7 +60,7 @@ F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 24b9ab865e34c0d5e7f2447558f93d1fe6f9d588
 F src/shell.c 42f65424a948f197f389e13bc7aaa3cf24dafd0c
-F src/sqlite.h.in de2be4043f0bfa16958d33392a3e7a5e7d4bd50b
+F src/sqlite.h.in d619f3dd276845c2ff3fbeaed1d037563fc419f0
 F src/sqliteInt.h c7ed161ecc40f9fd0f080fbcc00e34bd7d6735ee
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c b7dd8b3531b70188d03354db530de0f2ffcac697
@@ -244,7 +244,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6db26a19ea7ac77be41a7416dedaef1b9dfd9e16
-R 99e5b852a5fab1a5e5963194c447eb34
+P 5f8d246852c7cefd5941b8c7bb22177dfc7157c5
+R 3f41463f2cecec8d057e1745a2da11b9
 U drh
-Z b40cbed2b276adf8c405b360bef48d5f
+Z 4e0fa276b810f33b48f974651190c49f
