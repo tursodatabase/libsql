@@ -28,7 +28,7 @@
 **
 ** This file uses an in-memory hash table as the database backend. 
 **
-** $Id: dbbemem.c,v 1.9 2001/03/20 12:55:14 drh Exp $
+** $Id: dbbemem.c,v 1.10 2001/03/20 12:57:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <sys/stat.h>
@@ -725,7 +725,7 @@ static int sqliteMemOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
   const char *zTemps[] = { "/usr/tmp", "/var/tmp", "/tmp", "/temp", 0};
 #endif
 #if OS_WIN
-  const char *zTemps[] = { "c:/temp", "c:", 0};
+  const char *zTemps[] = { "/temp", "c:/temp", "c:", "d:", "e:", 0};
 #endif
   const char *zDir;
   int i;

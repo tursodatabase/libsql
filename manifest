@@ -1,5 +1,5 @@
-C Open\swindows\sfiles\sin\sbinary\smode.\s(CVS\s1717)
-D 2001-03-20T12:55:14
+C Better\stemp\sfile\snaming\sunder\swindows\s(CVS\s1718)
+D 2001-03-20T12:57:57
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7efa81e2985b45ba73db27d55b70cc927f5abfd7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -13,7 +13,7 @@ F src/build.c 7aa5879bf58ea6bbff22c26c59d1130021fa6ca4
 F src/dbbe.c 1b3b8b5ded9e58d10d94d268cd12343b6212dbd1
 F src/dbbe.h 0435a36906a839cce062608f51bd9d3e79878fec
 F src/dbbegdbm.c 5bfcb1b4ee47a98c5eae83041e9716cd3233fd0e
-F src/dbbemem.c af740e5b4f2da3cb010b10592034f0627cdb0543
+F src/dbbemem.c e0ffaae47c22dd8d73362a4fae2f2b4f074fd079
 F src/delete.c b83dc815f83220a82df13f1f1f479187d305fe6a
 F src/ex/README b745b00acce2d892f60c40111dacdfc48e0c1c7a
 F src/ex/db.c f1419ae6c93e40b5ac6e39fe7efd95d868e6f9d7
@@ -91,7 +91,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P e48b9f24faeee606aa2bda1666016d8a00b430a7
-R c64bf80b88e496913947dd674ee75d13
+P 3adf884bcf4ff8c28083d9ed63edea5e91fea1fc
+R daa25a3d54c3808b11e465e636487674
 U drh
-Z b307f2964bdccaa0756d296787c02441
+Z a9039f3b5c36549f6fa2c8707e4b6c39
