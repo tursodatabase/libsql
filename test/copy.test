@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the COPY statement.
 #
-# $Id: copy.test,v 1.15 2003/08/05 13:13:39 drh Exp $
+# $Id: copy.test,v 1.16 2003/09/27 00:56:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -158,6 +158,17 @@ do_test copy-3.2 {
   }
 } {1 {hello
 world} 2 {hello world}}
+do_test copy-3.3 {
+  set fd [open data6.txt w]
+  puts $fd "1:hello\\b\\f\\n\\r\\t\\vworld"
+  puts $fd "2:hello world"
+  close $fd
+  execsql {
+    DELETE FROM t1;
+    COPY t1 FROM 'data6.txt' USING DELIMITERS ':';
+    SELECT * FROM t1 ORDER BY a;
+  }
+} [list 1 "hello\b\f\n\r\t\vworld" 2 "hello world"]
 
 # Test the embedded NULL logic.
 #

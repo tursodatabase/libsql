@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.240 2003/09/06 22:18:08 drh Exp $
+** $Id: vdbe.c,v 1.241 2003/09/27 00:56:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4125,7 +4125,17 @@ case OP_FileRead: {
     }
     while( z[from] ){
       if( z[from]=='\\' && z[from+1]!=0 ){
-        z[to++] = z[from+1];
+        int tx = z[from+1];
+        switch( tx ){
+          case 'b':  tx = '\b'; break;
+          case 'f':  tx = '\f'; break;
+          case 'n':  tx = '\n'; break;
+          case 'r':  tx = '\r'; break;
+          case 't':  tx = '\t'; break;
+          case 'v':  tx = '\v'; break;
+          default:   break;
+        }
+        z[to++] = tx;
         from += 2;
         continue;
       }
