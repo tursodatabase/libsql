@@ -587,6 +587,7 @@ do_test trigger2-7.1 {
   }
 } {}
 
+#explain {delete from abcd where a=1;}
 do_test trigger2-7.2 {
   execsql {
     UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
@@ -600,5 +601,93 @@ do_test trigger2-7.2 {
 	 4 1 2 3 4 0 0 0 0 \
 	 5 0 0 0 0 10 20 30 40 \
 	 6 0 0 0 0 10 20 30 40 ]
+
+do_test trigger2-7.3 {
+  execsql {
+    DELETE FROM tlog;
+    INSERT INTO abcd VALUES(10, 20, 30, 40);
+    UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
+    DELETE FROM abcd WHERE a = 1;
+    SELECT * FROM tlog;
+  }
+} [ list \
+   1 0 0 0 0 10 20 30 40 \
+   2 0 0 0 0 10 20 30 40 \
+   3 1 2 3 4 100 25 3 4 \
+   4 1 2 3 4 100 25 3 4 \
+   5 1 2 3 4 0 0 0 0 \
+   6 1 2 3 4 0 0 0 0 \
+]
+do_test trigger2-7.4 {
+  execsql {
+    DELETE FROM tlog;
+    DELETE FROM abcd WHERE a = 1;
+    INSERT INTO abcd VALUES(10, 20, 30, 40);
+    UPDATE abcd SET a = 100, b = 5*5 WHERE a = 1;
+    SELECT * FROM tlog;
+  }
+} [ list \
+   1 1 2 3 4 0 0 0 0 \
+   2 1 2 3 4 0 0 0 0 \
+   3 0 0 0 0 10 20 30 40 \
+   4 0 0 0 0 10 20 30 40 \
+   5 1 2 3 4 100 25 3 4 \
+   6 1 2 3 4 100 25 3 4 \
+]
+
+do_test trigger2-8.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c);
+    INSERT INTO t1 VALUES(1,2,3);
+    CREATE VIEW v1 AS
+      SELECT a+b AS x, b+c AS y, a+c AS z FROM t1;
+    SELECT * FROM v1;
+  }
+} {3 5 4}
+do_test trigger2-8.2 {
+  execsql {
+    CREATE TABLE v1log(a,b,c,d,e,f);
+    CREATE TRIGGER r1 INSTEAD OF DELETE ON v1 BEGIN
+      INSERT INTO v1log VALUES(OLD.x,NULL,OLD.y,NULL,OLD.z,NULL);
+    END;
+    DELETE FROM v1 WHERE x=1;
+    SELECT * FROM v1log;
+  }
+} {}
+do_test trigger2-8.3 {
+  execsql {
+    DELETE FROM v1 WHERE x=3;
+    SELECT * FROM v1log;
+  }
+} {3 {} 5 {} 4 {}}
+do_test trigger2-8.4 {
+  execsql {
+    INSERT INTO t1 VALUES(4,5,6);
+    DELETE FROM v1log;
+    DELETE FROM v1 WHERE y=11;
+    SELECT * FROM v1log;
+  }
+} {9 {} 11 {} 10 {}}
+do_test trigger2-8.5 {
+  execsql {
+    CREATE TRIGGER r2 INSTEAD OF INSERT ON v1 BEGIN
+      INSERT INTO v1log VALUES(NULL,NEW.x,NULL,NEW.y,NULL,NEW.z);
+    END;
+    DELETE FROM v1log;
+    INSERT INTO v1 VALUES(1,2,3);
+    SELECT * FROM v1log;
+  }
+} {{} 1 {} 2 {} 3}
+do_test trigger2-8.6 {
+  execsql {
+    CREATE TRIGGER r3 INSTEAD OF UPDATE ON v1 BEGIN
+      INSERT INTO v1log VALUES(OLD.x,NEW.x,OLD.y,NEW.y,OLD.z,NEW.z);
+    END;
+    DELETE FROM v1log;
+    UPDATE v1 SET x=x+100, y=y+200, z=z+300;
+    SELECT * FROM v1log;
+  }
+} {3 103 5 205 4 304 9 109 11 211 10 310}
+
 
 finish_test

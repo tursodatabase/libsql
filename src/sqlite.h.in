@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.46 2003/04/23 12:25:24 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.47 2003/04/24 01:45:04 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -524,8 +524,9 @@ int sqlite_set_authorizer(
 ** function will be parameters or NULL depending on which of the following
 ** codes is used as the second parameter.  The 5th parameter is the name
 ** of the database ("main", "temp", etc.) if applicable.  The 6th parameter
-** is the name of the trigger that is responsible for the access attempt,
-** or NULL if this access attempt is directly from input SQL code.
+** is the name of the inner-most trigger or view that is responsible for
+** the access attempt or NULL if this access attempt is directly from 
+** input SQL code.
 **
 **                                          Arg-3           Arg-4
 */

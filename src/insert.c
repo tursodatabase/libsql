@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.81 2003/04/22 20:30:39 drh Exp $
+** $Id: insert.c,v 1.82 2003/04/24 01:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -109,6 +109,7 @@ void sqliteInsert(
   int iCleanup;         /* Address of the cleanup code */
   int iInsertBlock;     /* Address of the subroutine used to insert data */
   int iCntMem;          /* Memory cell used for the row counter */
+  int isView;           /* True if attempting to insert into a view */
 
   int row_triggers_exist = 0; /* True if there are FOR EACH ROW triggers */
   int before_triggers;        /* True if there are BEFORE triggers */
@@ -142,21 +143,16 @@ void sqliteInsert(
   after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT,
                                        TK_AFTER, TK_ROW, 0);
   row_triggers_exist = before_triggers || after_triggers;
-  if( pTab->readOnly || (pTab->pSelect && !row_triggers_exist) ){
-    sqliteErrorMsg(pParse, "%s %s may not be modified",
-      pTab->pSelect ? "view" : "table",
-      zTab);
+  isView = pTab->pSelect!=0;
+  if( sqliteIsReadOnly(pParse, pTab, before_triggers) ){
     goto insert_cleanup;
   }
-
   if( pTab==0 ) goto insert_cleanup;
 
   /* If pTab is really a view, make sure it has been initialized.
   */
-  if( pTab->pSelect ){
-    if( sqliteViewGetColumnNames(pParse, pTab) ){
-      goto insert_cleanup;
-    }
+  if( isView && sqliteViewGetColumnNames(pParse, pTab) ){
+    goto insert_cleanup;
   }
 
   /* Allocate a VDBE
@@ -356,7 +352,7 @@ void sqliteInsert(
     sqliteVdbeResolveLabel(v, iInsertBlock);
   }
 
-  /* Run the BEFORE triggers, if there are any
+  /* Run the BEFORE and INSTEAD OF triggers, if there are any
   */
   endOfLoop = sqliteVdbeMakeLabel(v);
   if( before_triggers ){
@@ -405,7 +401,7 @@ void sqliteInsert(
     sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
     sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
 
-    /* Fire BEFORE triggers */
+    /* Fire BEFORE or INSTEAD OF triggers */
     if( sqliteCodeRowTrigger(pParse, TK_INSERT, 0, TK_BEFORE, pTab, 
         newIdx, -1, onError, endOfLoop) ){
       goto insert_cleanup;
@@ -415,19 +411,17 @@ void sqliteInsert(
   /* If any triggers exists, the opening of tables and indices is deferred
   ** until now.
   */
-  if( row_triggers_exist ){
-    if( !pTab->pSelect ){
-      base = pParse->nTab;
-      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
-      sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
-      for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-        sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-        sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
-        sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
-      }
-      pParse->nTab += idx;
+  if( row_triggers_exist && !isView ){
+    base = pParse->nTab;
+    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
+    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+    for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
+      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, idx+base, pIdx->tnum);
+      sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
     }
+    pParse->nTab += idx;
   }
 
   /* Push the record number for the new entry onto the stack.  The
@@ -435,7 +429,7 @@ void sqliteInsert(
   ** except when the table has an INTEGER PRIMARY KEY column, in which
   ** case the record number is the same as that column. 
   */
-  if( !pTab->pSelect ){
+  if( !isView ){
     if( keyColumn>=0 ){
       if( useTempTable ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, keyColumn);
@@ -492,17 +486,17 @@ void sqliteInsert(
     sqliteGenerateConstraintChecks(pParse, pTab, base, 0,0,0,onError,endOfLoop);
     sqliteCompleteInsertion(pParse, pTab, base, 0,0,0,
                             after_triggers ? newIdx : -1);
+  }
 
-    /* Update the count of rows that are inserted
-    */
-    if( (db->flags & SQLITE_CountRows)!=0 ){
-      sqliteVdbeAddOp(v, OP_MemIncr, iCntMem, 0);
-    }
+  /* Update the count of rows that are inserted
+  */
+  if( (db->flags & SQLITE_CountRows)!=0 ){
+    sqliteVdbeAddOp(v, OP_MemIncr, iCntMem, 0);
   }
 
   if( row_triggers_exist ){
     /* Close all tables opened */
-    if( !pTab->pSelect ){
+    if( !isView ){
       sqliteVdbeAddOp(v, OP_Close, base, 0);
       for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
         sqliteVdbeAddOp(v, OP_Close, idx+base, 0);

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.6 2003/04/22 20:30:38 drh Exp $
+** $Id: auth.c,v 1.7 2003/04/24 01:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -95,11 +95,7 @@ void sqliteAuthRead(
   const char *zCol;     /* Name of the column of the table */
   int iSrc;             /* Index in pTabList->a[] of table being read */
   const char *zDBase;   /* Name of database being accessed */
-  const char *zTrig;    /* Name of the trigger doing the accessing */
-  TriggerStack *pStack; /* The stack of current triggers */
 
-  pStack = pParse->trigStack;
-  zTrig = pStack ? pStack->pTrigger->name : 0;
   if( db->xAuth==0 ) return;
   assert( pExpr->op==TK_COLUMN );
   iSrc = pExpr->iTable - base;
@@ -109,6 +105,8 @@ void sqliteAuthRead(
     /* This must be an attempt to read the NEW or OLD pseudo-tables
     ** of a trigger.
     */
+    TriggerStack *pStack; /* The stack of current triggers */
+    pStack = pParse->trigStack;
     assert( pStack!=0 );
     assert( pExpr->iTable==pStack->newIdx || pExpr->iTable==pStack->oldIdx );
     pTab = pStack->pTab;
@@ -123,9 +121,10 @@ void sqliteAuthRead(
   }else{
     zCol = "ROWID";
   }
-  assert( pExpr->iDb>=0 && pExpr->iDb<db->nDb );
+  assert( pExpr->iDb<db->nDb );
   zDBase = db->aDb[pExpr->iDb].zName;
-  rc = db->xAuth(db->pAuthArg, SQLITE_READ, pTab->zName, zCol, zDBase, zTrig);
+  rc = db->xAuth(db->pAuthArg, SQLITE_READ, pTab->zName, zCol, zDBase, 
+                 pParse->zAuthContext);
   if( rc==SQLITE_IGNORE ){
     pExpr->op = TK_NULL;
   }else if( rc==SQLITE_DENY ){
@@ -158,13 +157,11 @@ int sqliteAuthCheck(
 ){
   sqlite *db = pParse->db;
   int rc;
-  const char *zTrigName;
 
   if( db->xAuth==0 ){
     return SQLITE_OK;
   }
-  zTrigName = pParse->trigStack ? pParse->trigStack->pTrigger->name : 0;
-  rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, zTrigName);
+  rc = db->xAuth(db->pAuthArg, code, zArg1, zArg2, zArg3, pParse->zAuthContext);
   if( rc==SQLITE_DENY ){
     sqliteSetString(&pParse->zErrMsg, "not authorized", 0);
     pParse->rc = SQLITE_AUTH;

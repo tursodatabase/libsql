@@ -41,7 +41,7 @@ void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
 void sqliteBeginTrigger(
   Parse *pParse,      /* The parse context of the CREATE TRIGGER statement */
   Token *pName,       /* The name of the trigger */
-  int tr_tm,          /* One of TK_BEFORE, TK_AFTER , TK_INSTEAD */
+  int tr_tm,          /* One of TK_BEFORE, TK_AFTER, TK_INSTEAD */
   int op,             /* One of TK_INSERT, TK_UPDATE, TK_DELETE */
   IdList *pColumns,   /* column list if this is an UPDATE OF trigger */
   SrcList *pTableName,/* The name of the table/view the trigger applies to */
@@ -110,6 +110,11 @@ void sqliteBeginTrigger(
   }
 #endif
 
+  /* INSTEAD OF triggers can only appear on views and BEGIN triggers
+  ** cannot appear on views.  So we might as well translate every
+  ** INSTEAD OF trigger into a BEFORE trigger.  It simplifies code
+  ** elsewhere.
+  */
   if (tr_tm == TK_INSTEAD){
     tr_tm = TK_BEFORE;
   }
@@ -627,7 +632,7 @@ int sqliteCodeRowTrigger(
   TriggerStack * pTriggerStack;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
-  assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER);
+  assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER );
 
   assert(newIdx != -1 || oldIdx != -1);
 
@@ -656,6 +661,7 @@ int sqliteCodeRowTrigger(
       int endTrigger;
       SrcList dummyTablist;
       Expr * whenExpr;
+      const char *zSavedAuthContext;
 
       dummyTablist.nSrc = 0;
 
@@ -667,6 +673,8 @@ int sqliteCodeRowTrigger(
       pTriggerStack->pNext = pParse->trigStack;
       pTriggerStack->ignoreJump = ignoreJump;
       pParse->trigStack = pTriggerStack;
+      zSavedAuthContext = pParse->zAuthContext;
+      pParse->zAuthContext = pTrigger->name;
 
       /* code the WHEN clause */
       endTrigger = sqliteVdbeMakeLabel(pParse->pVdbe);
@@ -684,6 +692,7 @@ int sqliteCodeRowTrigger(
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = pParse->trigStack->pNext;
+      pParse->zAuthContext = zSavedAuthContext;
       sqliteFree(pTriggerStack);
 
       sqliteVdbeResolveLabel(pParse->pVdbe, endTrigger);
@@ -692,146 +701,4 @@ int sqliteCodeRowTrigger(
   }
 
   return 0;
-}
-
-/*
- * This function is called to code ON UPDATE and ON DELETE triggers on 
- * views. 
- *
- * This function deletes the data pointed at by the pWhere and pChanges
- * arguments before it completes.
- */
-void sqliteViewTriggers(
-  Parse *pParse, 
-  Table *pTab,         /* The view to code triggers on */
-  Expr *pWhere,        /* The WHERE clause of the statement causing triggers*/
-  int orconf,          /* The ON CONFLICT policy specified as part of the
-			  statement causing these triggers */
-  ExprList *pChanges   /* If this is an statement causing triggers to fire
-			  is an UPDATE, then this list holds the columns
-			  to update and the expressions to update them to.
-			  See comments for sqliteUpdate(). */
-){
-  int oldIdx = -1;
-  int newIdx = -1;
-  int *aXRef = 0;   
-  Vdbe *v;
-  int endOfLoop;
-  int startOfLoop;
-  Select theSelect;
-  Token tblNameToken;
-
-  assert(pTab->pSelect);
-
-  tblNameToken.z = pTab->zName;
-  tblNameToken.n = strlen(pTab->zName);
-
-  theSelect.isDistinct = 0;
-  theSelect.pEList = sqliteExprListAppend(0, sqliteExpr(TK_ALL, 0, 0, 0), 0);
-  theSelect.pSrc   = sqliteSrcListAppend(0, &tblNameToken, 0);
-  theSelect.pWhere = pWhere;    pWhere = 0;
-  theSelect.pGroupBy = 0;
-  theSelect.pHaving = 0;
-  theSelect.pOrderBy = 0;
-  theSelect.op = TK_SELECT; /* ?? */
-  theSelect.pPrior = 0;
-  theSelect.nLimit = -1;
-  theSelect.nOffset = -1;
-  theSelect.zSelect = 0;
-  theSelect.base = 0;
-
-  v = sqliteGetVdbe(pParse);
-  assert(v);
-  sqliteBeginWriteOperation(pParse, 1, 0);
-
-  /* Allocate temp tables */
-  oldIdx = pParse->nTab++;
-  sqliteVdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
-  if( pChanges ){
-    newIdx = pParse->nTab++;
-    sqliteVdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
-  }
-
-  /* Snapshot the view */
-  if( sqliteSelect(pParse, &theSelect, SRT_Table, oldIdx, 0, 0, 0) ){
-    goto trigger_cleanup;
-  }
-
-  /* loop thru the view snapshot, executing triggers for each row */
-  endOfLoop = sqliteVdbeMakeLabel(v);
-  sqliteVdbeAddOp(v, OP_Rewind, oldIdx, endOfLoop);
-
-  /* Loop thru the view snapshot, executing triggers for each row */
-  startOfLoop = sqliteVdbeCurrentAddr(v);
-
-  /* Build the updated row if required */
-  if( pChanges ){
-    int ii;
-
-    aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
-    if( aXRef==0 ) goto trigger_cleanup;
-    for(ii = 0; ii < pTab->nCol; ii++){
-      aXRef[ii] = -1;
-    }
-
-    for(ii=0; ii<pChanges->nExpr; ii++){
-      int jj;
-      if( sqliteExprResolveIds(pParse, oldIdx, theSelect.pSrc , 0, 
-            pChanges->a[ii].pExpr) ){
-        goto trigger_cleanup;
-      }
-
-      if( sqliteExprCheck(pParse, pChanges->a[ii].pExpr, 0, 0) )
-        goto trigger_cleanup;
-
-      for(jj=0; jj<pTab->nCol; jj++){
-        if( sqliteStrICmp(pTab->aCol[jj].zName, pChanges->a[ii].zName)==0 ){
-          aXRef[jj] = ii;
-          break;
-        }
-      }
-      if( jj>=pTab->nCol ){
-        sqliteErrorMsg(pParse, "no such column: %s", pChanges->a[ii].zName);
-        goto trigger_cleanup;
-      }
-    }
-
-    sqliteVdbeAddOp(v, OP_Integer, 13, 0);
-
-    for(ii = 0; ii<pTab->nCol; ii++){
-      if( aXRef[ii] < 0 ){ 
-        sqliteVdbeAddOp(v, OP_Column, oldIdx, ii);
-      }else{
-        sqliteExprCode(pParse, pChanges->a[aXRef[ii]].pExpr);
-      }
-    }
-
-    sqliteVdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
-    sqliteVdbeAddOp(v, OP_PutIntKey, newIdx, 0);
-    sqliteVdbeAddOp(v, OP_Rewind, newIdx, 0);
-
-    sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_BEFORE, 
-        pTab, newIdx, oldIdx, orconf, endOfLoop);
-    sqliteCodeRowTrigger(pParse, TK_UPDATE, pChanges, TK_AFTER, 
-        pTab, newIdx, oldIdx, orconf, endOfLoop);
-  }else{
-    sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, oldIdx, 
-        orconf, endOfLoop);
-    sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, oldIdx, 
-        orconf, endOfLoop);
-  }
-
-  sqliteVdbeAddOp(v, OP_Next, oldIdx, startOfLoop);
-
-  sqliteVdbeResolveLabel(v, endOfLoop);
-  sqliteEndWriteOperation(pParse);
-
-trigger_cleanup:
-  sqliteFree(aXRef);
-  sqliteExprListDelete(pChanges);
-  sqliteExprDelete(pWhere);
-  sqliteExprListDelete(theSelect.pEList);
-  sqliteSrcListDelete(theSelect.pSrc);
-  sqliteExprDelete(theSelect.pWhere);
-  return;
 }

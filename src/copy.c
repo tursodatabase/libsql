@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.3 2003/04/22 20:30:39 drh Exp $
+** $Id: copy.c,v 1.4 2003/04/24 01:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -46,10 +46,10 @@ void sqliteCopy(
   if( sqlite_malloc_failed  ) goto copy_cleanup;
   assert( pTableName->nSrc==1 );
   pTab = sqliteSrcListLookup(pParse, pTableName);
-  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ) goto copy_cleanup;
+  if( pTab==0 || sqliteIsReadOnly(pParse, pTab, 0) ) goto copy_cleanup;
   zFile = sqliteStrNDup(pFilename->z, pFilename->n);
   sqliteDequote(zFile);
-  assert( pTab->iDb>=0 && pTab->iDb<db->nDb );
+  assert( pTab->iDb<db->nDb );
   zDb = db->aDb[pTab->iDb].zName;
   if( sqliteAuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0, zDb)
       || sqliteAuthCheck(pParse, SQLITE_COPY, pTab->zName, zFile, zDb) ){

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.133 2003/04/22 20:30:39 drh Exp $
+** $Id: select.c,v 1.134 2003/04/24 01:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -904,6 +904,10 @@ static int fillInColumnList(Parse *pParse, Select *p){
       if( pTab==0 ){
         return 1;
       }
+      /* The isTransient flag indicates that the Table structure has been
+      ** dynamically allocated and may be freed at any time.  In other words,
+      ** pTab is not pointing to a persistent table structure that defines
+      ** part of the schema. */
       pTab->isTransient = 1;
     }else{
       /* An ordinary table or view name in the FROM clause */
@@ -1048,6 +1052,9 @@ static int fillInColumnList(Parse *pParse, Select *p){
 ** This routine is called on the Select structure that defines a
 ** VIEW in order to undo any bindings to tables.  This is necessary
 ** because those tables might be DROPed by a subsequent SQL command.
+** If the bindings are not removed, then the Select.pSrc->a[].pTab field
+** will be left pointing to a deallocated Table structure after the
+** DROP and a coredump will occur the next time the VIEW is used.
 */
 void sqliteSelectUnbind(Select *p){
   int i;
@@ -1058,10 +1065,6 @@ void sqliteSelectUnbind(Select *p){
     if( (pTab = pSrc->a[i].pTab)!=0 ){
       if( pTab->isTransient ){
         sqliteDeleteTable(0, pTab);
-#if 0
-        sqliteSelectDelete(pSrc->a[i].pSelect);
-        pSrc->a[i].pSelect = 0;
-#endif
       }
       pSrc->a[i].pTab = 0;
       if( pSrc->a[i].pSelect ){
@@ -2113,9 +2116,17 @@ int sqliteSelect(
   /* Generate code for all sub-queries in the FROM clause
   */
   for(i=0; i<pTabList->nSrc; i++){
+    const char *zSavedAuthContext;
     if( pTabList->a[i].pSelect==0 ) continue;
+    if( pTabList->a[i].zName!=0 ){
+      zSavedAuthContext = pParse->zAuthContext;
+      pParse->zAuthContext = pTabList->a[i].zName;
+    }
     sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_TempTable, base+i,
                  p, i, &isAgg);
+    if( pTabList->a[i].zName!=0 ){
+      pParse->zAuthContext = zSavedAuthContext;
+    }
     pTabList = p->pSrc;
     pWhere = p->pWhere;
     if( eDest==SRT_Callback ){

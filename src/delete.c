@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.53 2003/04/22 20:30:39 drh Exp $
+** $Id: delete.c,v 1.54 2003/04/24 01:45:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,11 +38,13 @@ Table *sqliteSrcListLookup(Parse *pParse, SrcList *pSrc){
 ** writable, generate an error message and return 1.  If it is
 ** writable return 0;
 */
-int sqliteIsReadOnly(Parse *pParse, Table *pTab){
-  if( pTab->readOnly || pTab->pSelect ){
-    sqliteErrorMsg(pParse, "%s %s may not be modified",
-      pTab->pSelect ? "view" : "table",
-      pTab->zName);
+int sqliteIsReadOnly(Parse *pParse, Table *pTab, int viewOk){
+  if( pTab->readOnly ){
+    sqliteErrorMsg(pParse, "table %s may not be modified", pTab->zName);
+    return 1;
+  }
+  if( !viewOk && pTab->pSelect ){
+    sqliteErrorMsg(pParse, "cannot modify %s because it is a view",pTab->zName);
     return 1;
   }
   return 0;
@@ -65,6 +67,7 @@ void sqliteDeleteFrom(
   Index *pIdx;           /* For looping over indices of the table */
   int base;              /* Index of the first available table cursor */
   sqlite *db;            /* Main database structure */
+  int isView;            /* True if attempting to delete from a view */
 
   int row_triggers_exist = 0;  /* True if any triggers exist */
   int before_triggers;         /* True if there are BEFORE triggers */
@@ -90,17 +93,19 @@ void sqliteDeleteFrom(
   after_triggers = sqliteTriggersExist(pParse, pTab->pTrigger, 
                          TK_DELETE, TK_AFTER, TK_ROW, 0);
   row_triggers_exist = before_triggers || after_triggers;
-  if( row_triggers_exist &&  pTab->pSelect ){
-    /* Just fire VIEW triggers */
-    sqliteSrcListDelete(pTabList);
-    sqliteViewTriggers(pParse, pTab, pWhere, OE_Replace, 0);
-    return;
+  isView = pTab->pSelect!=0;
+  if( sqliteIsReadOnly(pParse, pTab, before_triggers) ){
+    goto delete_from_cleanup;
   }
-  if( sqliteIsReadOnly(pParse, pTab) ) goto delete_from_cleanup;
-  assert( pTab->pSelect==0 );  /* This table is not a view */
   assert( pTab->iDb<db->nDb );
   zDb = db->aDb[pTab->iDb].zName;
   if( sqliteAuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
+    goto delete_from_cleanup;
+  }
+
+  /* If pTab is really a view, make sure it has been initialized.
+  */
+  if( isView && sqliteViewGetColumnNames(pParse, pTab) ){
     goto delete_from_cleanup;
   }
 
@@ -131,6 +136,15 @@ void sqliteDeleteFrom(
   sqliteBeginWriteOperation(pParse, row_triggers_exist,
        !row_triggers_exist && pTab->iDb==1);
 
+  /* If we are trying to delete from a view, construct that view into
+  ** a temporary table.
+  */
+  if( isView ){
+    Select *pView = sqliteSelectDup(pTab->pSelect);
+    sqliteSelect(pParse, pView, SRT_TempTable, base, 0, 0, 0);
+    sqliteSelectDelete(pView);
+  }
+
   /* Initialize the counter of the number of rows deleted, if
   ** we are counting rows.
   */
@@ -148,17 +162,21 @@ void sqliteDeleteFrom(
       ** entries in the table. */
       int endOfLoop = sqliteVdbeMakeLabel(v);
       int addr;
-      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
+      if( !isView ){
+        sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+        sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
+      }
       sqliteVdbeAddOp(v, OP_Rewind, base, sqliteVdbeCurrentAddr(v)+2);
       addr = sqliteVdbeAddOp(v, OP_AddImm, 1, 0);
       sqliteVdbeAddOp(v, OP_Next, base, addr);
       sqliteVdbeResolveLabel(v, endOfLoop);
       sqliteVdbeAddOp(v, OP_Close, base, 0);
     }
-    sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->iDb);
-    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pIdx->iDb);
+    if( !isView ){
+      sqliteVdbeAddOp(v, OP_Clear, pTab->tnum, pTab->iDb);
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        sqliteVdbeAddOp(v, OP_Clear, pIdx->tnum, pIdx->iDb);
+      }
     }
   }
 
@@ -201,51 +219,59 @@ void sqliteDeleteFrom(
     if( row_triggers_exist ){
       addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
       sqliteVdbeAddOp(v, OP_Dup, 0, 0);
-      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
+      if( !isView ){
+        sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+        sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
+      }
       sqliteVdbeAddOp(v, OP_MoveTo, base, 0);
 
       sqliteVdbeAddOp(v, OP_Recno, base, 0);
       sqliteVdbeAddOp(v, OP_RowData, base, 0);
       sqliteVdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
-      sqliteVdbeAddOp(v, OP_Close, base, 0);
+      if( !isView ){
+        sqliteVdbeAddOp(v, OP_Close, base, 0);
+      }
 
       sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
 
-    /* Open cursors for the table we are deleting from and all its
-    ** indices.  If there are row triggers, this happens inside the
-    ** OP_ListRead loop because the cursor have to all be closed
-    ** before the trigger fires.  If there are no row triggers, the
-    ** cursors are opened only once on the outside the loop.
-    */
-    pParse->nTab = base + 1;
-    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
-    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, pParse->nTab++, pIdx->tnum);
-    }
+    if( !isView ){
+      /* Open cursors for the table we are deleting from and all its
+      ** indices.  If there are row triggers, this happens inside the
+      ** OP_ListRead loop because the cursor have to all be closed
+      ** before the trigger fires.  If there are no row triggers, the
+      ** cursors are opened only once on the outside the loop.
+      */
+      pParse->nTab = base + 1;
+      sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+      sqliteVdbeAddOp(v, OP_OpenWrite, base, pTab->tnum);
+      for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+        sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+        sqliteVdbeAddOp(v, OP_OpenWrite, pParse->nTab++, pIdx->tnum);
+      }
 
-    /* This is the beginning of the delete loop when there are no
-    ** row triggers */
-    if( !row_triggers_exist ){ 
-      addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
-    }
+      /* This is the beginning of the delete loop when there are no
+      ** row triggers */
+      if( !row_triggers_exist ){ 
+        addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end);
+      }
 
-    /* Delete the row */
-    sqliteGenerateRowDelete(db, v, pTab, base, pParse->trigStack==0);
+      /* Delete the row */
+      sqliteGenerateRowDelete(db, v, pTab, base, pParse->trigStack==0);
+    }
 
     /* If there are row triggers, close all cursors then invoke
     ** the AFTER triggers
     */
     if( row_triggers_exist ){
-      for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-        sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
+      if( !isView ){
+        for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+          sqliteVdbeAddOp(v, OP_Close, base + i, pIdx->tnum);
+        }
+        sqliteVdbeAddOp(v, OP_Close, base, 0);
       }
-      sqliteVdbeAddOp(v, OP_Close, base, 0);
       sqliteCodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);

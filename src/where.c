@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.76 2003/04/20 17:29:24 drh Exp $
+** $Id: where.c,v 1.77 2003/04/24 01:45:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1144,7 +1144,9 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
   }
   sqliteVdbeResolveLabel(v, pWInfo->iBreak);
   for(i=0; i<pTabList->nSrc; i++){
-    if( pTabList->a[i].pTab->isTransient ) continue;
+    Table *pTab = pTabList->a[i].pTab;
+    assert( pTab!=0 );
+    if( pTab->isTransient || pTab->pSelect ) continue;
     pLevel = &pWInfo->a[i];
     sqliteVdbeAddOp(v, OP_Close, base+i, 0);
     if( pLevel->pIdx!=0 ){
