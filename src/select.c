@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.23 2000/06/08 15:10:48 drh Exp $
+** $Id: select.c,v 1.24 2000/06/19 19:09:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -534,7 +534,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       int iCont, iBreak;
 
       /* INTERSECT is different from the others since it requires
-      ** two temporary tables.  Hence it has its own case.  Begine
+      ** two temporary tables.  Hence it has its own case.  Begin
       ** by allocating the tables we will need.
       */
       tab1 = pParse->nTab++;

@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 June 19} {
+<li>Bug fix: Column names in UPDATE statements used to be case sensitive.
+    Now they are not.</li>
+}
+
 chng {2000 June 16} {
 <li>Added the concatenate string operator (||)</li>
 }

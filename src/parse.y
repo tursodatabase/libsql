@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.21 2000/06/16 20:51:26 drh Exp $
+** @(#) $Id: parse.y,v 1.22 2000/06/19 19:09:09 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -47,7 +47,7 @@ input ::= cmdlist.
 
 // These are extra tokens used by the lexer but never seen by the
 // parser.  We put them in a rule so that the parser generator will
-// add them to the sqliteTokens.h output file.
+// add them to the parse.h output file.
 //
 input ::= END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
           UMINUS FIELD AGG_FUNCTION.
@@ -104,8 +104,7 @@ carg ::= DEFAULT NULL.
 // In addition to the type name, we also care about the primary key.
 //
 ccons ::= NOT NULL.
-ccons ::= PRIMARY KEY sortorder.  
-   {sqliteCreateIndex(pParse,0,0,0,0,0);}
+ccons ::= PRIMARY KEY sortorder.     {sqliteCreateIndex(pParse,0,0,0,0,0);}
 ccons ::= UNIQUE.
 ccons ::= CHECK LP expr RP.
 
@@ -118,8 +117,7 @@ conslist ::= conslist COMMA tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT id tcons2.
 tcons ::= tcons2.
-tcons2 ::= PRIMARY KEY LP idxlist(X) RP.  
-      {sqliteCreateIndex(pParse,0,0,X,0,0);}
+tcons2 ::= PRIMARY KEY LP idxlist(X) RP. {sqliteCreateIndex(pParse,0,0,X,0,0);}
 tcons2 ::= UNIQUE LP idlist RP.
 tcons2 ::= CHECK expr.
 idlist ::= idlist COMMA id.
@@ -193,7 +191,7 @@ from(A) ::= FROM seltablist(X).               {A = X;}
 stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) id(Y).        {A = sqliteIdListAppend(X,&Y);}
-seltablist(A) ::= stl_prefix(X) id(Y) AS id(Z).
+seltablist(A) ::= stl_prefix(X) id(Y) as id(Z).
    {A = sqliteIdListAppend(X,&Y);
     sqliteIdListAddAlias(A,&Z);}
 
@@ -224,12 +222,12 @@ sortorder(A) ::= .         {A = 0;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqliteExprListDelete($$);}
-groupby_opt(A) ::= .     {A = 0;}
+groupby_opt(A) ::= .                      {A = 0;}
 groupby_opt(A) ::= GROUP BY exprlist(X).  {A = X;}
 
 %type having_opt {Expr*}
 %destructor having_opt {sqliteExprDelete($$);}
-having_opt(A) ::= .      {A = 0;}
+having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
 
