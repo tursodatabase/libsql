@@ -1,5 +1,5 @@
-C Check\sfor\smiscompiled\sTcl\s(CVS\s204)
-D 2001-04-06T16:13:43
+C Check\sfor\smiscompiled\sTcl\s(CVS\s205)
+D 2001-04-06T16:15:28
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 25791375ce9f4f5b57d4cab67f0d58d772c96451
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -83,7 +83,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl ddca19005c47dd5a15882addc02fff5de83d8ed9
-F www/changes.tcl e9379e995e19486b352c82d54e87041153739fca
+F www/changes.tcl a522ee29c7e66205e76a2c34f3dc1363e251bfda
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
@@ -94,7 +94,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 4b3ffa161a09653919a689336784a85b9548c249
-R 712a3306e2a2c79bccc911915e955880
+P 735d8b5c13b5e2602b37940377fced098be210c1
+R f07b6ba51358f496162e586514c5cd88
 U drh
-Z bfdec300c92af1e06bfec59389035a75
+Z b32a92625a91eb078feff33335193f47

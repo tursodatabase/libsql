@@ -17,6 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Apr 6 (1.0.30)} {
+<li>Remove the <b>sqlite_encoding</b> TCL variable that was introduced
+    in the previous version.</li>
+<li>Add options <b>-encoding</b> and <b>-tcl-uses-utf</b> to the
+    <b>sqlite</b> TCL command.</li>
+<li>Add tests to make sure that tclsqlite was compiled using Tcl header
+    files and libraries that match.</li>
+}
+
 chng {2001 Apr 5 (1.0.29)} {
 <li>The library now assumes data is stored as UTF-8 if the --enable-utf8
     option is given to configure.  The default behavior is to assume
