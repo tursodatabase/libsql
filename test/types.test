@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.4 2004/05/18 10:06:26 danielk1977 Exp $
+# $Id: types.test,v 1.5 2004/05/20 12:41:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,7 +41,7 @@ source $testdir/tester.tcl
 # Create a table with one column for each type of affinity
 do_test types-1.1.0 {
   execsql {
-    CREATE TABLE t1(i integer, n numeric, t text, o);
+    CREATE TABLE t1(i integer, n numeric, t text, o blob);
   }
 } {}
 
@@ -51,16 +51,16 @@ do_test types-1.1.0 {
 # four value are the storage classes that would be used if the
 # literal were inserted into a column with affinity INTEGER, NUMERIC, TEXT
 # or NONE, respectively.
-set values [list \
-  [list 5.0   INTEGER REAL    TEXT REAL] \
-  [list 5     INTEGER INTEGER TEXT INTEGER] \
-  [list '5.0' INTEGER REAL    TEXT TEXT] \
-  [list '-5.0' INTEGER REAL    TEXT TEXT] \
-  [list '-5.0' INTEGER REAL    TEXT TEXT] \
-  [list '5'   INTEGER INTEGER TEXT TEXT] \
-  [list 'abc' TEXT    TEXT    TEXT TEXT] \
-  [list NULL  NULL    NULL    NULL NULL] \
-]
+set values {
+  { 5.0    INTEGER REAL    TEXT REAL    }
+  { 5      INTEGER INTEGER TEXT INTEGER }
+  { '5.0'  INTEGER REAL    TEXT TEXT    }
+  { '-5.0' INTEGER REAL    TEXT TEXT    }
+  { '-5.0' INTEGER REAL    TEXT TEXT    }
+  { '5'    INTEGER INTEGER TEXT TEXT    }
+  { 'abc'  TEXT    TEXT    TEXT TEXT    }
+  { NULL   NULL    NULL    NULL NULL    }
+}
 
 # This code tests that the storage classes specified above (in the $values
 # table) are correctly assigned when values are inserted using a statement
@@ -291,4 +291,3 @@ do_test types-2.5.3 {
 } [list {} $string10 4000 $string500 4000 {} 4000 {} $string500000]
 
 finish_test
-

@@ -1,5 +1,5 @@
-C Default\stype\saffinity\sis\snow\sNUMERIC.\s\sThe\saffinity.html\sfile\schecked\sinto\nthe\sdoc\sdirectory.\s(CVS\s1417)
-D 2004-05-20T12:10:20
+C Fix\sproblems\swith\stypes\sand\sthe\srecognition\sof\sBLOB\sas\shaving\sno\saffinity.\s(CVS\s1418)
+D 2004-05-20T12:41:20
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 7abf1261c204e23aeeef12ec1bf75f5eca57d469
 F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
 F src/btree_rb.c 9d7973e266ee6f9c61ce592f68742ce9cd5b10e5
-F src/build.c c3e7b98a5b4de896fdb6cfe749518902baed66fe
+F src/build.c 7310eb68de59281c6dbfe49b728200e3d89b91dd
 F src/copy.c 4d2038602fd0549d80c59bda27d96f13ea9b5e29
 F src/date.c 0eb0a89960bb45c7f7e768748605a7a97b0c8064
 F src/delete.c 2e1dda38345416a1ea1c0a6468589a7472334dac
@@ -43,7 +43,7 @@ F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h 6e446a17cbeb6c2ce470683a0bb8d9c63abe8607
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
-F src/parse.y d2e226650738931c047c2562326ed05882af2330
+F src/parse.y 4ed66f12583796dd4d5fff6860dc7e16f1d15cae
 F src/pragma.c 2332e7fa9d7cd4b21f30583a696bee36628404ca
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -146,8 +146,8 @@ F test/trigger1.test 4538c1c7d6bbca5dfe619ea6e1682b07ece95b21
 F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
-F test/types.test a16dad25e2a7591ddbca206b465a963953f5e10f
-F test/types2.test b9b528e5ec6c5d8ee149ff27d48a23ce3f6075d9
+F test/types.test e1e0d71c8e65f8aa5d9a36751f4c8cbce6f01f7a
+F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/vacuum.test a2a44544df719666efb51afbfeb6062fd59a672a
@@ -195,7 +195,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2821767b947ae1a70e98dd7f47d69e424c37947f
-R 47e063b297603452597f44008f0d5f06
+P 948307f07d6f8cc1cc186167ff7aaa5dfd5d8a2e
+R 59f05a5952887901890856f7cd04108e
 U drh
-Z f81faf25453e97891fc89436b647ef37
+Z 90bb81f98be65daf25dbb23b209b7296

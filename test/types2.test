@@ -12,7 +12,7 @@
 # of this file is testing the interaction of manifest types, type affinity
 # and comparison expressions.
 #
-# $Id: types2.test,v 1.2 2004/05/17 10:48:58 danielk1977 Exp $
+# $Id: types2.test,v 1.3 2004/05/20 12:41:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,8 +40,8 @@ execsql {
     n2 NUMERIC,
     t1 TEXT,
     t2 TEXT,
-    o1,
-    o2
+    o1 BLOB,
+    o2 BLOB
   );
   INSERT INTO t1 VALUES(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 }
@@ -99,7 +99,7 @@ set vals [list 10 10.0 '10' '10.0' 20 20.0 '20' '20.0' 30 30.0 '30' '30.0']
 #              1  2    3    4      5  6    7    8      9  10   11   12
 
 execsql {
-  CREATE TABLE t2(i INTEGER, n NUMERIC, t TEXT, o);
+  CREATE TABLE t2(i INTEGER, n NUMERIC, t TEXT, o XBLOBY);
   CREATE INDEX t2i1 ON t2(i);
   CREATE INDEX t2i2 ON t2(n);
   CREATE INDEX t2i3 ON t2(t);
@@ -247,7 +247,7 @@ test_boolset types2-6.9 {rowid IN (1, 6, 10)} {1 6 10}
 # Tests types2-7.* concentrate on expressions of the form 
 # "x IN (SELECT...)" with no index.
 execsql {
-  CREATE TABLE t3(i INTEGER, n NUMERIC, t TEXT, o);
+  CREATE TABLE t3(i INTEGER, n NUMERIC, t TEXT, o BLOB);
   INSERT INTO t3 VALUES(1, 1, 1, 1);
   INSERT INTO t3 VALUES(2, 2, 2, 2);
   INSERT INTO t3 VALUES(3, 3, 3, 3);
@@ -282,7 +282,7 @@ test_bool types2-7.15 {o1='2'} {o1 IN (SELECT o||'' FROM t3)} 1
 # set vals [list 10 10.0 '10' '10.0' 20 20.0 '20' '20.0' 30 30.0 '30' '30.0']
 #                1  2    3    4      5  6    7    8      9  10   11   12
 execsql {
-  CREATE TABLE t4(i INTEGER, n NUMERIC, t TEXT, o);
+  CREATE TABLE t4(i INTEGER, n NUMERIC, t VARCHAR(20), o LARGE BLOB);
   INSERT INTO t4 VALUES(10, 20, 20, 30);
 }
 test_boolset types2-8.1 {i IN (SELECT i FROM t4)} {1 2 3 4}
@@ -299,10 +299,3 @@ test_boolset types2-8.7 {t IN (SELECT o FROM t4)} {9 11}
 test_boolset types2-8.8 {o IN (SELECT o FROM t4)} {9 10}
 
 finish_test
-
-
-
-
-
-
-
