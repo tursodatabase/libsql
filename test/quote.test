@@ -1,0 +1,84 @@
+# Copyright (c) 2001 D. Richard Hipp
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA  02111-1307, USA.
+#
+# Author contact information:
+#   drh@hwaci.com
+#   http://www.hwaci.com/drh/
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is the ability to specify table and column names
+# as quoted strings.
+#
+# $Id: quote.test,v 1.1 2001/07/23 14:33:04 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a table with a strange name and with strange column names.
+#
+do_test quote-1.0 {
+  set r [catch {
+    execsql {CREATE TABLE '@abc' ( '#xyz' int, '!pqr' text );}
+  } msg]
+  lappend r $msg
+} {0 {}}
+
+# Insert, update and query the table.
+#
+do_test quote-1.1 {
+  set r [catch {
+    execsql {INSERT INTO '@abc' VALUES(5,'hello')}
+  } msg]
+  lappend r $msg
+} {0 {}}
+do_test quote-1.2 {
+  set r [catch {
+    execsql {SELECT * FROM '@abc'}
+  } msg ]
+  lappend r $msg
+} {0 {5 hello}}
+do_test quote-1.3 {
+  set r [catch {
+    execsql {SELECT '@abc'.'!pqr', '@abc'.'#xyz'+5 FROM '@abc'}
+  } msg ]
+  lappend r $msg
+} {0 {hello 10}}
+do_test quote-1.4 {
+  set r [catch {
+    execsql {UPDATE '@abc' SET '#xyz'=11}
+  } msg ]
+  lappend r $msg
+} {0 {}}
+do_test quote-1.5 {
+  set r [catch {
+    execsql {SELECT '@abc'.'!pqr', '@abc'.'#xyz'+5 FROM '@abc'}
+  } msg ]
+  lappend r $msg
+} {0 {hello 16}}
+
+# Drop the table with the strange name.
+#
+do_test quote-1.6 {
+  set r [catch {
+    execsql {DROP TABLE '@abc'}
+  } msg ]
+  lappend r $msg
+} {0 {}}
+ 
+
+finish_test

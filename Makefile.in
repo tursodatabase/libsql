@@ -47,8 +47,8 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
-         main.o pager.o parse.o printf.o random.o select.o table.o \
+LIBOBJ = build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
+         main.o parse.o printf.o random.o select.o table.o \
          tokenize.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
@@ -83,8 +83,6 @@ SRC = \
 #
 TESTSRC = \
   $(TOP)/src/test1.c \
-  $(TOP)/src/test2.c \
-  $(TOP)/src/test3.c \
   $(TOP)/src/md5.c
 
 # This is the default Makefile target.  The objects listed here
@@ -118,14 +116,9 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 HDR = \
    sqlite.h  \
    $(TOP)/src/sqliteInt.h  \
-   $(TOP)/src/btree.h \
    $(TOP)/src/dbbe.h  \
-   $(TOP)/src/pager.h \
    $(TOP)/src/vdbe.h  \
    parse.h
-
-btree.o:	$(TOP)/src/btree.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/btree.c
 
 build.o:	$(TOP)/src/build.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) -c $(TOP)/src/build.c
@@ -195,9 +188,6 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/printf.c
 
-pager.o:	$(TOP)/src/pager.c $(HDR)
-	$(TCC) $(GDBM_FLAGS) $(TCL_FLAGS) -c $(TOP)/src/pager.c
-
 gdbmdump:	$(TOP)/tool/gdbmdump.c
 	$(TCC) $(GDBM_FLAGS) -o gdbmdump $(TOP)/tool/gdbmdump.c $(LIBGDBM)
 
@@ -207,8 +197,8 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 
 testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c $(TOP)/src/btree.c \
-		$(TOP)/src/pager.c libsqlite.a $(LIBGDBM) $(LIBTCL)
+		$(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libsqlite.a $(LIBGDBM) $(LIBTCL)
 
 test:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test

@@ -1,0 +1,26 @@
+
+
+add_to_page(cursor, payload, child){
+  if( fits-on-current-page ){
+    insert (child,payload) into cursor
+    return
+  }
+  if( cursor is root page ){
+    split cursor+(child,payload) into page1, center, page2
+    set cursor page to page1,center,page2
+    return
+  }
+  if( move_some_data_left || move_some_data_right ){
+    add (child,payload) to cursor
+    return
+  }
+  split cursor+(child,payload) into self, center, page2
+  move_up(cursor)
+  add_to_page(cursor, center, page2)
+}
+
+
+split(in_page, payload, child_pgno, out_page1, center_payload, out_page2){
+  // It might be that in_page==out_page1
+
+}

@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Jul 23 (1.0.32)} {
+<li>Pager and btree subsystems removed.  These will be used in a follow-on
+    SQL server library named "SQLus".</li>
+<li>Add the ability to use quoted strings as table and column names in
+    expressions.</li>
+}
+
 chng {2001 Apr 14 (1.0.31)} {
 <li>Pager subsystem added but not yet used.</li>
 <li>More robust handling of out-of-memory errors.</li>

@@ -1,65 +1,125 @@
 The Proposed New SQLite 2.0 Interface design.  (April 16, 2001)
 
 Primary access routines:
-
-  sqlite *sqlite_open(const char *zFilename, int mode);
-  int sqlite_compile(sqlite*, const char *zSql);
-  int sqlite_row(sqlite*, int *argc, const char ***argv);
-  int sqlite_finish(sqlite*);
-  int sqlite_close(sqlite*);
+  Control functions:
+      sqlite *sqlite_open(const char *zFilename);
+      int sqlite_compile(sqlite*, const char *zSql);
+      int sqlite_next(sqlite*);
+      int sqlite_abort(sqlite*);
+      int sqlite_finish(sqlite*);
+      sqlite *sqlite_dup(sqlite*);
+      int sqlite_close(sqlite*);
+  Access functions:
+      int sqlite_status(sqlite*);
+      char *sqlite_error_text(sqlite*);
+      int sqlite_column_count(sqlite*);
+      char **sqlite_column_names(sqlite*);
+      char **sqlite_values(sqlite*);
+      const char sqlite_version[];
+      const char sqlite_encoding[];
 
 Secondary access routines:
+  Control functions:
+      int sqlite_complete(const char *);
+      char *sqlite_mprintf(const char *zFormat, ...)
+      char *sqlite_vmprintf(const char *zFormat, va_list ap);
+      int sqlite_compile_printf(sqlite*, const char *zFormat, ...);
+      int sqlite_compile_vprintf(sqlite*, const char *zFormat, va_list ap);
+      int sqlite_eval(sqlite*, const char *zSql);
+      int sqlite_retry(sqlite*);
+      int sqlite_eval_printf(sqlite*, const char *zFormat, ...);
+      int sqlite_eval_vprintf(sqlite*, const char *zFormat, va_list ap);
+      int sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+      int sqlite_busy_timeout(sqlite*, int ms);
+  Access functions:
+      int sqlite_row_count(sqlite*);
+      char ***sqlite_rows(sqlite*, int iRow);
 
-  const char sqlite_version[];
-  const char sqlite_encoding[];
-  int sqlite_complete(const char *);
-  sqlite *sqlite_dup(sqlite*);
-  int sqlite_abort(sqlite*);
-  void sqlite_interrupt(sqlite*);
-  char *sqlite_errmsg(sqlite*);
-  const char **sqlite_columns(sqlite*);
-  int sqlite_argc(sqlite*);
-  const char **sqlite_argv(sqlite*);
-  char *sqlite_vmprintf(const char *zFormat, va_list);
-  int sqlite_table(sqlite*, int *nrow, int *ncolumn, const char ***argv);
-  void sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
+Usage examples:
+  Getting an entire result table in one go:
+      sqlite *p = sqlite_open("ex.db");
+      sqlite_eval(p, "SELECT * FROM table_one");
+      for(i=0; i<sqlite_row_count(p); i++){
+        if( i>0 ) printf("\n");
+        for(j=0; j<sqlite_column_count(p); j++){
+          printf("%s = %s\n", sqlite_column_names(p)[j], sqlite_row(p,i)[j]);
+        }
+      }
+      sqlite_close(p);
+      
+  Getting one row at a time:
+      sqlite *p = sqlite_open("ex.db");
+      sqlite_compile(p, "SELECT * FROM table_one");
+      for(i=0; sqlite_next(p)==SQLITE_OK; i++ ){ 
+        if( i>0 ) printf("\n");
+        for(j=0; j<sqlite_column_count(p); j++){
+          printf("%s = %s\n", sqlite_column_names(p)[j], sqlite_values(p)[j];
+        }
+      }
+      sqlite_close(p);
 
-Access routines that are derived from primary and secondary:
-  
-  char *sqlite_mprintf(const char *zFormat, ...);
-  int sqlite_compile_vprintf(sqlite*, const char *zFormat, va_list);
-  int sqlite_compile_printf(sqlite*, const char *zFormat, ...);
-  int sqlite_busy_timeout(sqlite*, int ms);
-
-The C++ interface is obvious...
-
-Deprecated legacy interfaces:
-
-  int sqlite_exec(
-    sqlite*,
-    char *sql,
-    int (*)(void*,int,char**,char**),
-    void*,
-    char **errmsg
-  );
-  int sqlite_exec_printf(...);
-  int sqlite_exec_vprintf(...);
-  int sqlite_get_table(
-    sqlite*,
-    char *sql,
-    const char ***result,
-    int *nrow,
-    int *ncolumn,
-    char **errmsg
-  );
-  void sqlite_free_table(char**);
-  int sqlite_get_table_printf(...);
-  int sqlite_get_table_vprintf(...);
+  Getting an entire result table with error and lock detection:
+      sqlite *p = sqlite_open("ex.db");
+      if( p==0 ){
+        fprintf(stderr,"out of memory");
+        return;
+      }
+      if( sqlite_status(p)!=SQLITE_OK ){
+        fprintf(stderr,"Error opening database: %s", sqlite_error_text(p));
+        sqlite_close(p);
+        return;
+      }
+      sqlite_busy_timeout(p, 5000);
+      sqlite_eval(p, "SELECT * FROM table_one");
+      if( sqlite_status(p)!=SQLITE_OK ){
+        fprintf(stderr,"Query error: %s\n", sqlite_error_text(p));
+        sqlite_close(p);
+        return;
+      }
+      for(i=0; i<sqlite_row_count(p); i++){
+        if( i>0 ) printf("\n");
+        for(j=0; j<sqlite_column_count(p); j++){
+          printf("%s = %s\n", sqlite_column_names(p)[j], sqlite_row(p,i)[j]);
+        }
+      }
+      sqlite_close(p);
+      
+  Getting one row at a time with manual control of lock conflicts:
+      sqlite *p = sqlite_open("ex.db");
+      if( p==0 ){
+        fprintf(stderr,"out of memory");
+        return;
+      }
+      if( sqlite_status(p)!=SQLITE_OK ){
+        fprintf(stderr,"Error opening database: %s", sqlite_error_text(p));
+        sqlite_close(p);
+        return;
+      }
+      sqlite_compile(p, "SELECT * FROM table_one");
+      if( sqlite_status(p)!=SQLITE_OK ){
+        fprintf(stderr,"Query error: %s\n", sqlite_error_text(p));
+        sqlite_close(p);
+        return;
+      }
+      for(i=0; sqlite_status(p)==SQLITE_OK; i++ ){ 
+        for(j=0; j<50 && sqlite_next(p)==SQLITE_BUSY; j++){
+          usleep(100000);
+        }
+        if( sqlite_status(p)!=SQLITE_OK ) break;
+        if( i>0 ) printf("\n");
+        for(j=0; j<sqlite_column_count(p); j++){
+          printf("%s = %s\n", sqlite_column_names(p)[j], sqlite_values(p)[j];
+        }
+      }
+      sqlite_close(p);
 
 TCL Interface
 
   sqlite DB FILENAME ?MODE?
   DB compile SQL
+  DB next
+  DB status
+  DB errortext
   DB row VAR
   DB argc
   DB argv ?N?
