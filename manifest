@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#22:\sIn\sthe\scode\sgenerator\sfor\scompound\sSELECT\sstatements,\stake\ncare\snot\sto\sgenerate\scolumn\sname\sheaders\sif\sthe\soutput\sis\san\sintermediate\stable.\nOtherwise\sthe\scolumn\sheaders\sare\snot\sgenerated\scorrectly\sif\sa\scompound\sSELECT\nstatement\sappears\sas\san\sexpression\sin\spart\sof\sthe\sWHERE\sclause.\s(CVS\s543)
-D 2002-04-23T17:10:18
+C Fix\sfor\sticket\s#26:\sDocument\sthe\sfact\sthat\sCREATE\sTABLE\smight\snot\sbe\nimmediately\svisible\sto\sother\sprocesses\sthat\sare\sholding\sthe\sdatabase\sopen.\s(CVS\s544)
+D 2002-04-25T00:21:50
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -121,7 +121,7 @@ F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
+F www/faq.tcl 45bdb18b75ac3aa1befec42985fb892413aac0bb
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl d0c52fbf031d0a3ee6d9d77aa669d5a4b24b6130
 F www/lang.tcl 2d4654255ad1ec7f58d02dc41b59528c0ee6ea44
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0691720a4b94141635734ab0a8c4072cab189a33
-R 5e23c695d2d82aae9921a85b5156d273
+P a06d9acdd5af0dc69b3a4d024de082631254aead
+R cfeb54c57cf6f9ec54bd35534c55c306
 U drh
-Z 57e5aab64c05733c095af92c508e335d
+Z d14450a4a0ba6fe1648be69426d0ab18

@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.9 2002/03/23 00:31:29 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.10 2002/04/25 00:21:50 drh Exp $}
 
 puts {<html>
 <head>
@@ -65,6 +65,20 @@ INSERT INTO t1 VALUES((SELECT max(a) FROM t1)+1,123);
   <b>sqlite_last_insert_rowid()</b> which will return the integer key
   for the most recent insert operation.  See the API documentation for
   details.</p>
+}
+
+faq {
+  What datatypes does SQLite support?
+} {
+  <p>SQLite is typeless. All data is stored as null-terminated strings.
+  The datatype information that follows the column name in CREATE TABLE
+  statements is ignored (mostly).  You can put any type of data you want
+  into any column, without regard to the declared datatype of that column.
+  </p>
+
+  <p>An exception to this rule is a column of type INTEGER PRIMARY KEY.
+  Such columns must hold an integer.  An attempt to put a non-integer
+  value into an INTEGER PRIMARY KEY column will generate an error.</p>
 }
 
 faq {
@@ -189,6 +203,12 @@ faq {
   adjust this behavior from C code using the <b>sqlite_busy_handler()</b> or
   <b>sqlite_busy_timeout()</b> API functions.  See the API documentation
   for details.</p>
+
+  <p>If two or more processes have the same database open and one
+  process creates a new table or index, the other processes might
+  not be able to see the new table right away.  You might have to
+  get the other processes to close and reopen their connection to
+  the database before they will be able to see the new table.</p>
 }
 
 faq {
@@ -205,6 +225,12 @@ faq {
   returned from separate calls to <b>sqlite_open()</b>.  It is never safe
   to use the same <b>sqlite</b> structure pointer simultaneously in two
   or more threads.</p>
+
+  <p>Note that if two or more threads have the same database open and one
+  thread creates a new table or index, the other threads might
+  not be able to see the new table right away.  You might have to
+  get the other threads to close and reopen their connection to
+  the database before they will be able to see the new table.</p>
 }
 
 faq {
@@ -255,7 +281,7 @@ ORDER BY name;
 }
 
 faq {
-  Are there any known size limits to SQLite databases.
+  Are there any known size limits to SQLite databases?
 } {
   <p>Internally, SQLite can handle databases up to 2^40 bytes (1 terabyte)
   in size.  But the backend interface to POSIX and Win32 limits files to
@@ -276,6 +302,36 @@ faq {
   within a 1-megabyte row of the SQLITE_MASTER table.  Other than this,
   there are no constraints on the length of the name of a table, or on the
   number of columns, etc.  Indices are similarly unconstrained.</p>
+}
+
+faq {
+  What is the maximum size of a VARCHAR in SQLite?
+} {
+  <p>Remember, SQLite is typeless.  A VARCHAR column can hold as much
+  data as any other column.  The total amount of data in a single row
+  of the database is limited to 1 megabyte.  You can increase this limit
+  to 16 megabytes, if you need to, by adjusting a single #define in the
+  source tree and recompiling.</p>
+
+  <p>For maximum speed and space efficiency, you should try to keep the
+  amount of data in a single row below about 230 bytes.</p>
+}
+
+faq {
+  Does SQLite support a BLOB type?
+} {
+  <p>You can declare a table column to be of type "BLOB" but it will still
+  only store null-terminated strings.  This is because the only way to 
+  insert information into an SQLite database is using an INSERT SQL statement,
+  and you can not include binary data in the middle of the ASCII text string
+  of an INSERT statement.</p>
+
+  <p>SQLite is 8-bit clean with regard to the data is stores as long as
+  the data does not contain any NUL characters.  If you want to store binary
+  data, consider encoding your data in such a way that it contains no NUL
+  characters and inserting it that way.  You might use URL-style encoding:
+  encode NUL as "%00" and "%" as "%25".  Or you might consider encoding your
+  binary data using base-64.</p>
 }
 
 faq {
