@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.42 2004/11/10 05:48:57 danielk1977 Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.43 2004/11/19 11:59:24 danielk1977 Exp $}
 source common.tcl
 header {The C language interface to the SQLite library}
 puts {
@@ -446,7 +446,7 @@ same information as the 2nd through 4th parameters of the
 the <b>sqlite_exec</b> interface.  Except, with <b>sqlite_step</b>
 the column datatype information is always included in the in the
 4th parameter regardless of whether or not the
-<a href="lang.html#pragma_show_datatypes">SHOW_DATATYPES</a> pragma
+<a href="pragma.html#pragma_show_datatypes">SHOW_DATATYPES</a> pragma
 is on or off.
 </p>
 

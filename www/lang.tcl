@@ -1,8 +1,15 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.77 2004/11/16 23:21:57 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.78 2004/11/19 11:59:24 danielk1977 Exp $}
 source common.tcl
+
+if {[llength $argv]>0} {
+  set outputdir [lindex $argv 0]
+} else {
+  set outputdir ""
+}
+
 header {Query Language Understood by SQLite}
 puts {
 <h2>SQL As Understood By SQLite</h2>
@@ -29,36 +36,47 @@ the grammar file "parse.y".</p>
 <p><ul>
 }
 
+proc slink {label} {
+  if {[string match *.html $label]} {
+    return $label
+  }
+  if {[string length $::outputdir]==0} {
+    return #$label
+  } else { 
+    return lang_$label.html
+  }
+}
+
 foreach {section} [lsort -index 0 -dictionary {
-  {{CREATE TABLE} #createtable}
-  {{CREATE INDEX} #createindex}
-  {VACUUM #vacuum}
-  {{DROP TABLE} #droptable}
-  {{DROP INDEX} #dropindex}
-  {INSERT #insert}
-  {REPLACE #replace}
-  {DELETE #delete}
-  {UPDATE #update}
-  {SELECT #select}
-  {comment #comment}
-  {COPY #copy}
-  {EXPLAIN #explain}
-  {expression #expr}
-  {{BEGIN TRANSACTION} #transaction}
-  {{COMMIT TRANSACTION} #transaction}
-  {{END TRANSACTION} #transaction}
-  {{ROLLBACK TRANSACTION} #transaction}
+  {{CREATE TABLE} createtable}
+  {{CREATE INDEX} createindex}
+  {VACUUM vacuum}
+  {{DROP TABLE} droptable}
+  {{DROP INDEX} dropindex}
+  {INSERT insert}
+  {REPLACE replace}
+  {DELETE delete}
+  {UPDATE update}
+  {SELECT select}
+  {comment comment}
+  {COPY copy}
+  {EXPLAIN explain}
+  {expression expr}
+  {{BEGIN TRANSACTION} transaction}
+  {{COMMIT TRANSACTION} transaction}
+  {{END TRANSACTION} transaction}
+  {{ROLLBACK TRANSACTION} transaction}
   {PRAGMA pragma.html}
-  {{ON CONFLICT clause} #conflict}
-  {{CREATE VIEW} #createview}
-  {{DROP VIEW} #dropview}
-  {{CREATE TRIGGER} #createtrigger}
-  {{DROP TRIGGER} #droptrigger}
-  {{ATTACH DATABASE} #attach}
-  {{DETACH DATABASE} #detach}
+  {{ON CONFLICT clause} conflict}
+  {{CREATE VIEW} createview}
+  {{DROP VIEW} dropview}
+  {{CREATE TRIGGER} createtrigger}
+  {{DROP TRIGGER} droptrigger}
+  {{ATTACH DATABASE} attach}
+  {{DETACH DATABASE} detach}
 }] {
   foreach {s_title s_tag} $section {}
-  puts "<li><a href=\"$s_tag\">$s_title</a></li>"
+  puts "<li><a href=\"[slink $s_tag]\">$s_title</a></li>"
 }
 puts {</ul></p>
 
@@ -77,6 +95,41 @@ proc Keyword {name} {
 }
 proc Example {text} {
   puts "<blockquote><pre>$text</pre></blockquote>"
+}
+
+proc Section {name label} {
+  global outputdir
+
+  if {[string length $outputdir]!=0} {
+    if {[llength [info commands puts_standard]]>0} {
+      footer $::rcsid
+    }
+
+    if {[string length $label]>0} {
+      rename puts puts_standard
+      proc puts {str} {
+        regsub -all {href="#([a-z]+)"} $str {href="lang_\1.html"} str
+        puts_standard $::section_file $str
+      }
+      rename footer footer_standard
+      proc footer {id} {
+        footer_standard $id
+        rename footer ""
+        rename puts ""
+        rename puts_standard puts
+        rename footer_standard footer
+      } 
+      set ::section_file [open [file join $outputdir lang_$label.html] w]
+      header "SQL command \"$name\""
+      puts "<h2>$name</h2>"
+      return 
+    }
+  }
+  puts "\n<hr />"
+  if {$label!=""} {
+    puts "<a name=\"$label\"></a>"
+  }
+  puts "<h1>$name</h1>\n"
 }
 
 
@@ -667,7 +720,7 @@ database name is specified, and the TEMP keyword is not present,
 the table is created in the main database.</p>
 
 <p>You cannot COPY, DELETE, INSERT or UPDATE a view.  Views are read-only 
-in SQLite.  However, in many cases you can use a <a href="#trigger">
+in SQLite.  However, in many cases you can use a <a href="#createtrigger">
 TRIGGER</a> on the view to accomplish the same thing.  Views are removed 
 with the <a href="#dropview">DROP VIEW</a> 
 command.  Non-temporary views cannot be created on tables in an attached 
@@ -1620,3 +1673,7 @@ keyword_list {
 }
 
 footer $rcsid
+if {[string length $outputdir]} {
+  footer $rcsid
+}
+

@@ -437,7 +437,7 @@ index.html:	$(TOP)/www/index.tcl last_change
 	tclsh $(TOP)/www/index.tcl >index.html
 
 lang.html:	$(TOP)/www/lang.tcl
-	tclsh $(TOP)/www/lang.tcl >lang.html
+	tclsh $(TOP)/www/lang.tcl doc >lang.html
 
 pragma.html:	$(TOP)/www/pragma.tcl
 	tclsh $(TOP)/www/pragma.tcl >pragma.html

@@ -1,9 +1,17 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.3 2004/11/12 16:12:00 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.4 2004/11/19 11:59:24 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
+
+proc Section {name {label {}}} {
+  puts "\n<hr />"
+  if {$label!=""} {
+    puts "<a name=\"$label\"></a>"
+  }
+  puts "<h1>$name</h1>\n"
+}
 
 puts {
 <p>The <a href="#syntax">PRAGMA command</a> is a special command used to 
@@ -70,7 +78,7 @@ puts {
     <p>Normally, when a transaction that deletes data from a database is
     committed, the database file remains the same size. Unused database file 
     pages are marked as such and reused later on, when data is inserted into 
-    the database. In this mode the <a href="lang.html#vacuum">VACUUM</a>
+    the database. In this mode the <a href="lang_vacuum.html">VACUUM</a>
     command is used to reclaim unused space.</p>
 
     <p>When the auto-vacuum flag is set, the database file shrinks when a

@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.9 2004/11/11 01:50:30 danielk1977 Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.10 2004/11/19 11:59:24 danielk1977 Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -329,7 +329,7 @@ intended for testing purposes, NOCASE and REVERSE:
 <p>
 Each column of each table has a default collation type. If a collation type
 other than BINARY is required, a COLLATE clause is specified as part of the
-<a href="lang.html#createtable">column definition</a> to define it. 
+<a href="lang_createtable.html">column definition</a> to define it. 
 </p>  
 
 <p>
@@ -358,7 +358,7 @@ otherwise.
 </p>  
 
 <p>
-An <a href="lang.html#select">ORDER BY</a> clause that is part of a SELECT
+An <a href="lang_select.html">ORDER BY</a> clause that is part of a SELECT
 statement may be assigned a collation sequence to be used for the sort
 operation explicitly. In this case the explicit collation sequence is
 always used.  Otherwise, if the expression sorted by an ORDER BY clause is
