@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.105 2002/01/06 17:07:41 drh Exp $
+** $Id: vdbe.c,v 1.106 2002/01/14 09:28:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -586,7 +586,7 @@ static void hardRelease(Vdbe *p, int i){
     if(((P)->aStack[(I)].flags&STK_Int)==0){ hardIntegerify(P,I); }
 static void hardIntegerify(Vdbe *p, int i){
   if( p->aStack[i].flags & STK_Real ){
-    p->aStack[i].i = p->aStack[i].r;
+    p->aStack[i].i = (int)p->aStack[i].r;
     Release(p, i);
   }else if( p->aStack[i].flags & STK_Str ){
     p->aStack[i].i = atoi(p->zStack[i]);
@@ -1511,8 +1511,8 @@ case OP_Remainder: {
         break;
       }
       default: {
-        int ia = a;
-        int ib = b;
+        int ia = (int)a;
+        int ib = (int)b;
         if( ia==0.0 ) goto divide_by_zero;
         b = ib % ia;
         break;
@@ -3880,7 +3880,7 @@ case OP_AggIncr: {
       if( pMem->s.flags & STK_Int ){
         /* Do nothing */
       }else if( pMem->s.flags & STK_Real ){
-        pMem->s.i = pMem->s.r;
+        pMem->s.i = (int)pMem->s.r;
       }else if( pMem->s.flags & STK_Str ){
         pMem->s.i = atoi(pMem->z);
       }else{
@@ -4282,9 +4282,11 @@ not_enough_stack:
 
   /* Jump here if an illegal or illformed instruction is executed.
   */
+VERIFY(
 bad_instruction:
   sprintf(zBuf,"%d",pc);
   sqliteSetString(pzErrMsg, "illegal operation at ", zBuf, 0);
   rc = SQLITE_INTERNAL;
   goto cleanup;
+)
 }

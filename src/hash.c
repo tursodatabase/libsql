@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.5 2002/01/06 17:07:40 drh Exp $
+** $Id: hash.c,v 1.6 2002/01/14 09:28:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -130,10 +130,10 @@ static int binCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 */
 static int (*hashFunction(int keyClass))(const void*,int){
   switch( keyClass ){
-    case SQLITE_HASH_INT:     return intHash;
-    case SQLITE_HASH_POINTER: return ptrHash;
-    case SQLITE_HASH_STRING:  return strHash;
-    case SQLITE_HASH_BINARY:  return binHash;;
+    case SQLITE_HASH_INT:     return &intHash;
+    case SQLITE_HASH_POINTER: return &ptrHash;
+    case SQLITE_HASH_STRING:  return &strHash;
+    case SQLITE_HASH_BINARY:  return &binHash;;
     default: break;
   }
   return 0;
@@ -147,10 +147,10 @@ static int (*hashFunction(int keyClass))(const void*,int){
 */
 static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
   switch( keyClass ){
-    case SQLITE_HASH_INT:     return intCompare;
-    case SQLITE_HASH_POINTER: return ptrCompare;
-    case SQLITE_HASH_STRING:  return strCompare;
-    case SQLITE_HASH_BINARY:  return binCompare;
+    case SQLITE_HASH_INT:     return &intCompare;
+    case SQLITE_HASH_POINTER: return &ptrCompare;
+    case SQLITE_HASH_STRING:  return &strCompare;
+    case SQLITE_HASH_BINARY:  return &binCompare;
     default: break;
   }
   return 0;

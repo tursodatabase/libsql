@@ -17,6 +17,14 @@
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
 
+#ifdef WIN32
+#  define OS_WIN 1
+#  undef  OS_UNIX
+#else
+#  define OS_UNIX 1
+#  undef  OS_WIN
+#endif
+
 /*
 ** A handle for an open file is stored in an OsFile object.
 */

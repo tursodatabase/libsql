@@ -499,7 +499,7 @@ int sqliteOsWrite(OsFile *id, const void *pBuf, int amt){
 #if OS_WIN
   DWORD wrote;
   SimulateIOError(SQLITE_IOERR);
-  if( !WriteFile(id->h, pBuf, amt, &wrote, 0) || wrote<amt ){
+  if( !WriteFile(id->h, pBuf, amt, &wrote, 0) || (int)wrote<amt ){
     return SQLITE_FULL;
   }
   return SQLITE_OK;

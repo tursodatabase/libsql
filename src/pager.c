@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.35 2002/01/06 17:07:40 drh Exp $
+** @(#) $Id: pager.c,v 1.36 2002/01/14 09:28:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -769,7 +769,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       pPager->nOvfl++;
     }
     pPg->pgno = pgno;
-    if( pPager->aInJournal && pgno<=pPager->origDbSize ){
+    if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
       pPg->inJournal = (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
     }else{
       pPg->inJournal = 0;
@@ -786,7 +786,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
       pPg->pNextHash->pPrevHash = pPg;
     }
     if( pPager->dbSize<0 ) sqlitepager_pagecount(pPager);
-    if( pPager->dbSize<pgno ){
+    if( pPager->dbSize<(int)pgno ){
       memset(PGHDR_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
     }else{
       int rc;
@@ -968,7 +968,7 @@ int sqlitepager_write(void *pData){
   /* The journal now exists and we have a write lock on the
   ** main database file.  Write the current page to the journal.
   */
-  if( pPg->pgno <= pPager->origDbSize ){
+  if( (int)pPg->pgno <= pPager->origDbSize ){
     rc = sqliteOsWrite(&pPager->jfd, &pPg->pgno, sizeof(Pgno));
     if( rc==SQLITE_OK ){
       rc = sqliteOsWrite(&pPager->jfd, pData, SQLITE_PAGE_SIZE);
@@ -986,7 +986,7 @@ int sqlitepager_write(void *pData){
   /* Mark the current page as being in the journal and return.
   */
   pPg->inJournal = 1;
-  if( pPager->dbSize<pPg->pgno ){
+  if( pPager->dbSize<(int)pPg->pgno ){
     pPager->dbSize = pPg->pgno;
   }
   return rc;

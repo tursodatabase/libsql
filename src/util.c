@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.34 2001/12/22 14:49:25 drh Exp $
+** $Id: util.c,v 1.35 2002/01/14 09:28:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -819,7 +819,7 @@ void sqliteRealToSortable(double r, char *z){
   while( r>0.0 && cnt<10 ){
     int digit;
     r *= 64.0;
-    digit = r;
+    digit = (int)r;
     assert( digit>=0 && digit<64 );
     *z++ = zDigit[digit & 0x3f];
     r -= digit;
