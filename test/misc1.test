@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.5 2002/03/30 15:26:52 drh Exp $
+# $Id: misc1.test,v 1.6 2002/05/24 02:14:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -185,6 +185,47 @@ do_test misc1-6.4 {
     SELECT abort+asc,max(key,pragma,temp) FROM t4
   }
 } {3 17}
-     
+
+# Test for multi-column primary keys, and for multiple primary keys.
+#
+do_test misc1-7.1 {
+  catchsql {
+    CREATE TABLE error1(
+      a TYPE PRIMARY KEY,
+      b TYPE PRIMARY KEY
+    );
+  }
+} {1 {table "error1" has more than one primary key}}
+do_test misc1-7.2 {
+  catchsql {
+    CREATE TABLE error1(
+      a INTEGER PRIMARY KEY,
+      b TYPE PRIMARY KEY
+    );
+  }
+} {1 {table "error1" has more than one primary key}}
+do_test misc1-7.3 {
+  execsql {
+    CREATE TABLE t5(a,b,c,PRIMARY KEY(a,b));
+    INSERT INTO t5 VALUES(1,2,3);
+    SELECT * FROM t5 ORDER BY a;
+  }
+} {1 2 3}
+do_test misc1-7.4 {
+  catchsql {
+    INSERT INTO t5 VALUES(1,2,4);
+  }
+} {1 {constraint failed}}
+do_test misc1-7.5 {
+  catchsql {
+    INSERT INTO t5 VALUES(0,2,4);
+  }
+} {0 {}}
+do_test misc1-7.6 {
+  execsql {
+    SELECT * FROM t5 ORDER BY a;
+  }
+} {0 2 4 1 2 3}
+
 
 finish_test

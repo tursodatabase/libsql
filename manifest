@@ -1,5 +1,5 @@
-C Split\sthe\sIdList\sstructure\sinto\sIdList\sand\sSrcList.\s\sSrcList\sis\sused\sto\nrepresent\sa\sFROM\sclause\sand\sIdList\sis\sused\sfor\severything\selse.\s\sThis\schange\nallows\sSrcList\sto\sgrow\sto\ssupport\souter\sjoins\swithout\sburdening\sthe\sother\nuses\sof\sIdList.\s(CVS\s584)
-D 2002-05-24T02:04:33
+C Added\stests\sfor\smulti-column\sprimary\skeys.\s(CVS\s585)
+D 2002-05-24T02:14:50
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -76,7 +76,7 @@ F test/lock.test 3fcfd46a73119f6a18094673328a32c7b3047a8f
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/minmax.test fb6ab400271ae1f5bc88617c2882f2f081ea8e6d
-F test/misc1.test a03214118429b40ca5548bc1fae0ebd5c34dabe6
+F test/misc1.test df281e9b26cd1db5808939c7cf2703072d555be0
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test b1f3e42fc475b0b5827b27b2e9b562081995ff30
 F test/pager.test b0c0d00cd5dce0ce21f16926956b195c0ab5044c
@@ -134,7 +134,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c53b0b9283c5c34def87d58b03fd979d03dc0890
-R 95dc28a2322a37ee9ed8c63d2402b526
+P a167b71d8c27e870bc3079c6132e483bffc83298
+R bc68016f19e54f17abf3f7534099036e
 U drh
-Z 694384ea6b2e1a364fadbb314a03dd97
+Z 0889a09c44f0ca7641771392f552bb9a
