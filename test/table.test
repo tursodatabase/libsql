@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.10 2001/09/13 21:53:10 drh Exp $
+# $Id: table.test,v 1.11 2001/09/14 03:24:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,7 +57,7 @@ do_test table-1.3 {
 #
 do_test table-1.4 {
   db close
-  sqlite db testdb
+  sqlite db test.db
   execsql {SELECT name, tbl_name, type from sqlite_master WHERE type!='meta'}
 } {test1 test1 table}
 
@@ -68,18 +68,12 @@ do_test table-1.5 {
   execsql {SELECT * FROM sqlite_master WHERE type!='meta'}
 } {}
 
-# Verify that the file associated with the database is gone.
-#
-do_test table-1.5 {
-  lsort [glob -nocomplain testdb/*.tbl]
-} {testdb/sqlite_master.tbl}
-
 # Close and reopen the database.  Verify that the table is
 # still gone.
 #
 do_test table-1.6 {
   db close
-  sqlite db testdb
+  sqlite db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
@@ -117,7 +111,7 @@ do_test table-2.1b {
 } {1 {table sqlite_master already exists}}
 do_test table-2.1c {
   db close
-  sqlite db testdb
+  sqlite db test.db
   set v [catch {execsql {CREATE TABLE sqlite_master(two text)}} msg]
   lappend v $msg
 } {1 {table sqlite_master already exists}}
@@ -134,19 +128,22 @@ do_test table-2.2a {
 } {1 {there is already an index named test3}}
 do_test table-2.2b {
   db close
-  sqlite db testdb
+  sqlite db test.db
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
   lappend v $msg
 } {1 {there is already an index named test3}}
 do_test table-2.2c {
+  execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
+} {test2 test3}
+do_test table-2.2d {
   execsql {DROP INDEX test3}
   set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
   lappend v $msg
 } {0 {}}
-do_test table-2.2d {
+do_test table-2.2e {
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {test2 test3}
-do_test table-2.2e {
+do_test table-2.2f {
   execsql {DROP TABLE test2; DROP TABLE test3}
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } {}
@@ -194,7 +191,7 @@ do_test table-3.4 {
 } {1 {table bIg already exists}}
 do_test table-3.5 {
   db close
-  sqlite db testdb
+  sqlite db test.db
   set v [catch {execsql {CREATE TABLE Big(xyz foo)}} msg]
   lappend v $msg
 } {1 {table Big already exists}}
@@ -222,7 +219,7 @@ do_test table-4.1 {
 } $r
 do_test table-4.1b {
   db close
-  sqlite db testdb
+  sqlite db test.db
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
 
@@ -232,6 +229,7 @@ set r {}
 for {set i 1} {$i<=100} {incr i 2} {
   lappend r test$i
 }
+#execsql {--vdbe-trace-on--}
 do_test table-4.2 {
   for {set i 2} {$i<=100} {incr i 2} {
     set sql "DROP TABLE TEST$i"
@@ -239,6 +237,7 @@ do_test table-4.2 {
   }
   execsql {SELECT name FROM sqlite_master WHERE type!='meta' ORDER BY name}
 } $r
+#exit
 
 # Drop the odd number tables
 #
@@ -281,11 +280,11 @@ do_test table-5.4 {
 
 # Create a table with a goofy name
 #
-do_test table-6.1 {
-  execsql {CREATE TABLE 'Spaces In This Name!'(x int)}
-  execsql {INSERT INTO 'spaces in this name!' VALUES(1)}
-  set list [glob -nocomplain testdb/spaces*.tbl]
-} {testdb/spaces+in+this+name+.tbl}
+#do_test table-6.1 {
+#  execsql {CREATE TABLE 'Spaces In This Name!'(x int)}
+#  execsql {INSERT INTO 'spaces in this name!' VALUES(1)}
+#  set list [glob -nocomplain testdb/spaces*.tbl]
+#} {testdb/spaces+in+this+name+.tbl}
 
 # Try using keywords as table names or column names.
 # 

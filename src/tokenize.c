@@ -27,7 +27,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.19 2001/04/11 14:28:43 drh Exp $
+** $Id: tokenize.c,v 1.20 2001/09/14 03:24:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -354,7 +354,7 @@ int sqliteRunParser(Parse *pParse, char *zSql, char **pzErrMsg){
 #ifndef NDEBUG
         char *z = pParse->sLastToken.z;
         if( sqliteStrNICmp(z,"--parser-trace-on--",19)==0 ){
-          trace = stderr;
+          trace = stdout;
           sqliteParserTrace(trace, "parser: ");
         }else if( sqliteStrNICmp(z,"--parser-trace-off--", 20)==0 ){
           trace = 0;

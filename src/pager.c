@@ -27,7 +27,7 @@
 ** all writes in order to support rollback.  Locking is used to limit
 ** access to one or more reader or to one writer.
 **
-** @(#) $Id: pager.c,v 1.15 2001/09/13 14:46:10 drh Exp $
+** @(#) $Id: pager.c,v 1.16 2001/09/14 03:24:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -475,10 +475,10 @@ static const char *findTempDir(void){
   int i;
   struct stat buf;
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
-    if( stat(azDirs[i], &buf)==0 && S_ISDIR(buf.st_mode)
-         && access(azDirs[i], W_OK) ){
-       return azDirs[i];
-    }
+    if( stat(azDirs[i], &buf) ) continue;
+    if( !S_ISDIR(buf.st_mode) ) continue;
+    if( access(azDirs[i], 07) ) continue;
+    return azDirs[i];
   }
   return 0;
 }

@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.64 2001/09/13 21:53:10 drh Exp $
+** $Id: vdbe.c,v 1.65 2001/09/14 03:24:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1061,7 +1061,7 @@ int sqliteVdbeExec(
   rc = SQLITE_OK;
 #ifdef MEMORY_DEBUG
   if( access("vdbe_trace",0)==0 ){
-    p->trace = stderr;
+    p->trace = stdout;
   }
 #endif
   /* if( pzErrMsg ){ *pzErrMsg = 0; } */
@@ -1085,6 +1085,7 @@ int sqliteVdbeExec(
       fprintf(p->trace,"%4d %-12s %4d %4d %s\n",
         pc, zOpName[pOp->opcode], pOp->p1, pOp->p2,
            pOp->p3 ? pOp->p3 : "");
+      fflush(p->trace);
     }
 #endif
 
@@ -2141,8 +2142,8 @@ case OP_Fcnt: {
 **
 ** Use the top of the stack as a key.  If a record with that key
 ** does not exist in file P1, then jump to P2.  If the record
-** does already exist, then fall thru.  The record is not retrieved.
-** The key is not popped from the stack.
+** does already exist, then fall thru.  The cursor is left pointing
+** at the record if it exists. The key is not popped from the stack.
 **
 ** This operation is similar to NotFound except that this operation
 ** does not pop the key from the stack.
@@ -2151,15 +2152,15 @@ case OP_Fcnt: {
 **
 ** Use the top of the stack as a key.  If a record with that key
 ** does exist in file P1, then jump to P2.  If the record
-** does not exist, then fall thru.  The record is not retrieved.
-** The key is popped from the stack.
+** does not exist, then fall thru.  The cursor is left pointing
+** to the record if it exists.  The key is popped from the stack.
 */
 /* Opcode: NotFound P1 P2 *
 **
 ** Use the top of the stack as a key.  If a record with that key
 ** does not exist in file P1, then jump to P2.  If the record
-** does exist, then fall thru.  The record is not retrieved.
-** The key is popped from the stack.
+** does exist, then fall thru.  The cursor is left pointing to the
+** record if it exists.  The key is popped from the stack.
 **
 ** The difference between this operation and Distinct is that
 ** Distinct does not pop the key from the stack.
@@ -2203,14 +2204,18 @@ case OP_Found: {
 */
 case OP_NewRecno: {
   int i = pOp->p1;
-  int v;
+  static int v = 0;
   if( VERIFY( i<0 || i>=p->nCursor || ) p->aCsr[i].pCursor==0 ){
     v = 0;
   }else{
     int res, rx, cnt;
     cnt = 0;
     do{
-      v = sqliteRandomInteger();
+      if( v==0 || cnt>5 ){
+        v = sqliteRandomInteger();
+      }else{
+        v += sqliteRandomByte() + 1;
+      }
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
     }while( cnt<10 && rx==SQLITE_OK && res==0 );

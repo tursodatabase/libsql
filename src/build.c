@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.32 2001/09/13 21:53:10 drh Exp $
+** $Id: build.c,v 1.33 2001/09/14 03:24:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -51,12 +51,12 @@ void sqliteExec(Parse *pParse){
   int rc = SQLITE_OK;
   sqlite *db = pParse->db;
   if( sqlite_malloc_failed ) return;
-  if( pParse->pVdbe ){
+  if( pParse->pVdbe && pParse->nErr==0 ){
     if( pParse->explain ){
       rc = sqliteVdbeList(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
                           &pParse->zErrMsg);
     }else{
-      FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stderr : 0;
+      FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
       sqliteVdbeTrace(pParse->pVdbe, trace);
       rc = sqliteVdbeExec(pParse->pVdbe, pParse->xCallback, pParse->pArg, 
                           &pParse->zErrMsg, db->pBusyArg,
@@ -868,6 +868,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
       sqliteVdbeAddOp(v, OP_Transaction, 0, 0, 0, 0);
     }
     base = sqliteVdbeAddOpList(v, ArraySize(dropIndex), dropIndex);
+    sqliteVdbeChangeP3(v, base+2, pIndex->zName, 0);
     sqliteVdbeChangeP1(v, base+8, pIndex->tnum);
     if( (db->flags & SQLITE_InTrans)==0 ){
       sqliteVdbeAddOp(v, OP_Commit, 0, 0, 0, 0);
