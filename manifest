@@ -1,5 +1,5 @@
-C One\smore\schange\sbefore\s2.4.2:\sMake\sthe\sos.h\sheader\sfile\smore\srobust\sin\ndetecting\swhether\sto\suse\sunix\sor\swindows.\s(CVS\s434)
-D 2002-03-20T00:00:29
+C Version\s2.4.2\s(CVS\s441)
+D 2002-03-20T01:05:00
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b0805b606904e18800c9850b5aa33724c4619de8
+P c2e0b79057c9c643e7432e62c90399c8f34339f9
 R febee3eb313aa60c56ad4221de74bd94
 U drh
-Z 80111d962fe0e2fa1d833166a8ebeebe
+Z 108938d1bedd485ef53334a9e6726bd8
