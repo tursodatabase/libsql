@@ -1,4 +1,4 @@
-C file\sjoin3_28.test\swas\sinitially\sadded\son\sbranch\sversion_2.\s(CVS\s1851)
+C file\sjoin4_28.test\swas\sinitially\sadded\son\sbranch\sversion_2.\s(CVS\s1852)
 D 2004-07-22T16:08:39
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 428f80239e68671a258ed3d1a00f42b32e4ea0c9
+P ee5c2cff810511b8f457c5c5af0791fc7f05d6c4
 R f558b644dbbbefc6121213a8be1b65fb
 U drh
-Z c8a1428a5bf901b1a61374e6e579b135
+Z 4ff0299324a49d118e37f6ade0bcef03
