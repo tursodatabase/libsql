@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.67 2002/02/27 01:47:12 drh Exp $
+** $Id: select.c,v 1.68 2002/02/27 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -748,6 +748,64 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 }
 
 /*
+** This routine attempts to flatten subqueries in order to speed
+** execution.  It returns 1 if it makes changes and 0 if no flattening
+** occurs.
+**
+** To understand the concept of flattening, consider the following
+** query:
+**
+**     SELECT a FROM (SELECT x+y AS a FROM t1 WHERE z<100) WHERE a>5
+**
+** The default way of implementing this query is to execute the
+** subquery first and store the results in a temporary table, then
+** run the outer query on that temporary table.  This requires two
+** passes over the data.  Furthermore, because the temporary table
+** has no indices, the WHERE clause on the outer query cannot be
+** optimized using indices.
+**
+** This routine attempts to write queries such as the above into
+** a single flat select, like this:
+**
+**     SELECT x+y AS a FROM t1 WHERE z<100 AND a>5
+**
+** The code generated for this simpification gives the same result
+** but only has to scan the data once.
+**
+** Generally speaking, flattening is only possible if the subquery
+** query is a simple query without a GROUP BY clause or the DISTINCT
+** keyword and the outer query is not a join. 
+**
+** If flattening is not possible, this routine is a no-op and return 0.
+** If flattening is possible, this routine  rewrites the query into
+** the simplified form and return 1.
+**
+** All of the expression analysis must occur before this routine runs.
+** This routine depends on the results of the expression analysis.
+*/
+int flattenSubqueries(Select *p){
+  Select *pSub;
+  if( p->pSrc->nId>1 ){
+    return 0;   /* Cannot optimize: The outer query is a join. */
+  }
+  pSub = p->pSrc->a[0].pSelect;
+  if( pSub==0 ){
+    return 0;   /* Nothing to optimize: There is no subquery. */
+  }
+  if( pSub->isDistinct ){
+    return 0;   /* Subquery contains DISTINCT keyword */
+  }
+  if( pSub->pGroupBy ){
+    return 0;   /* Subquery contains a GROUP BY clause */
+  }
+  if( pSub->pPrior ){
+    return 0;   /* Subquery is the union of two or more queries */
+  } 
+
+  return 0;
+}	
+
+/*
 ** Analyze the SELECT statement passed in as an argument to see if it
 ** is a simple min() or max() query.  If it is and this query can be
 ** satisfied using a single seek to the beginning or end of an index,
@@ -1056,6 +1114,14 @@ int sqliteSelect(
     }
   }
 
+  /* Try to merge subqueries in the FROM clause into the main
+  ** query.
+  */
+  if( flattenSubqueries(p) ){
+    pEList = p->pEList;
+    pWhere = p->pWhere;
+  }
+
   /* Check for the special case of a min() or max() function by itself
   ** in the result set.
   */
@@ -1134,8 +1200,8 @@ int sqliteSelect(
     for(i=0; i<pParse->nAgg; i++){
       UserFunc *pUser;
       if( (pUser = pParse->aAgg[i].pUser)!=0 && pUser->xFinalize!=0 ){
-        sqliteVdbeAddOp(v, OP_AggFinalizer, 0, i);
-        sqliteVdbeChangeP3(v, -1, (char*)pUser->xFinalize, P3_POINTER);
+        sqliteVdbeAddOp(v, OP_AggInit, 0, i);
+        sqliteVdbeChangeP3(v, -1, (char*)pUser, P3_POINTER);
       }
     }
     if( pGroupBy==0 ){
@@ -1214,7 +1280,6 @@ int sqliteSelect(
       for(j=0; j<pE->pList->nExpr; j++){
         sqliteExprCode(pParse, pE->pList->a[j].pExpr);
       }
-      sqliteVdbeAddOp(v, OP_AggGet, 0, i);
       switch( pE->iColumn ){
         case FN_Min:      op = OP_Min;     break;
         case FN_Max:      op = OP_Max;     break;
@@ -1223,14 +1288,16 @@ int sqliteSelect(
         case FN_Unknown:  op = OP_AggFunc; break;
       }
       if( op!=OP_AggFunc ){
+        sqliteVdbeAddOp(v, OP_AggGet, 0, i);
         sqliteVdbeAddOp(v, op, 0, 0);
+        sqliteVdbeAddOp(v, OP_AggSet, 0, i);
       }else{
+        sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_AggFunc, 0, pE->pList->nExpr);
         assert( pParse->aAgg[i].pUser!=0 );
         assert( pParse->aAgg[i].pUser->xStep!=0 );
-        sqliteVdbeChangeP3(v,-1,(char*)pParse->aAgg[i].pUser->xStep,P3_POINTER);
+        sqliteVdbeChangeP3(v, -1, (char*)pParse->aAgg[i].pUser, P3_POINTER);
       }
-      sqliteVdbeAddOp(v, OP_AggSet, 0, i);
     }
   }
 

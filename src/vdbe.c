@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.123 2002/02/24 03:25:16 drh Exp $
+** $Id: vdbe.c,v 1.124 2002/02/27 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -142,17 +142,30 @@ typedef struct Mem Mem;
 ** It indicates that the corresponding AggElem.aMem.z points to a
 ** user-defined aggregate context that needs to be finalized.
 */
-#define STK_AggCtx    0x0040   /* zStack[] points to an user function context */
+#define STK_AggCtx    0x0040   /* zStack[] points to an agg function context */
 
 /*
-** The "context" argument for a user-defined function.
+** The "context" argument for a user-defined function.  A pointer to an
+** instance of this structure is the first argument to the routines used
+** implement user-defined SQL functions.
+**
+** There is a typedef for this structure in sqlite.h.  So all routines,
+** even the public interface to SQLite, can use a pointer to this structure.
+** But this file is the only place where the internal details of this
+** structure are known.
+**
+** This structure is defined inside of vdbe.c because it uses substructures
+** (Stack) which are only defined there.
 */
-struct UserFuncContext {
-  Stack s;       /* Small string, integer, and floating point values go here */
-  char *z;       /* Space for holding dynamic string results */
-  int isError;   /* Set to true for an error */
+struct sqlite_func {
+  UserFunc *pFunc;  /* Pointer to function information.  MUST BE FIRST */
+  Stack s;          /* Small strings, ints, and double values go here */
+  char *z;          /* Space for holding dynamic string results */
+  void *pAgg;       /* Aggregate context */
+  u8 isError;       /* Set to true for an error */
+  u8 isStep;        /* Current in the step function */
+  int cnt;          /* Number of times that the step function has been called */
 };
-typedef struct UserFuncContext UserFuncContext;
 
 /*
 ** An Agg structure describes an Aggregator.  Each Agg consists of
@@ -168,7 +181,7 @@ struct Agg {
   AggElem *pCurrent;   /* The AggElem currently in focus */
   HashElem *pSearch;   /* The hash element for pCurrent */
   Hash hash;           /* Hash table of all aggregate elements */
-  void (**axFinalize)(void*,void*);  /* Array of nMem finalizers */
+  UserFunc **apFunc;   /* Information about user-defined aggregate functions */
 };
 struct AggElem {
   char *zKey;          /* The key to this AggElem */
@@ -525,9 +538,13 @@ void sqliteVdbeCompressSpace(Vdbe *p, int addr){
 **
 ** The sqlite_set_result_int() and sqlite_set_result_double() set the return
 ** value of the user function to an integer or a double.
+**
+** These routines are defined here in vdbe.c because they depend on knowing
+** the internals of the sqlite_func structure which is only defined in that
+** one source file.
 */
-char *sqlite_set_result_string(void *context, const char *zResult, int n){
-  UserFuncContext *p = (UserFuncContext*)context;
+char *sqlite_set_result_string(sqlite_func *p, const char *zResult, int n){
+  assert( !p->isStep );
   if( p->s.flags & STK_Dyn ){
     sqliteFree(p->z);
   }
@@ -554,49 +571,106 @@ char *sqlite_set_result_string(void *context, const char *zResult, int n){
   p->s.n = n;
   return p->z;
 }
-void sqlite_set_result_int(void *context, int iResult){
-  UserFuncContext *p = (UserFuncContext*)context;
+void sqlite_set_result_int(sqlite_func *p, int iResult){
+  assert( !p->isStep );
   if( p->s.flags & STK_Dyn ){
     sqliteFree(p->z);
   }
   p->s.i = iResult;
   p->s.flags = STK_Int;
 }
-void sqlite_set_result_double(void *context, double rResult){
-  UserFuncContext *p = (UserFuncContext*)context;
+void sqlite_set_result_double(sqlite_func *p, double rResult){
+  assert( !p->isStep );
   if( p->s.flags & STK_Dyn ){
     sqliteFree(p->z);
   }
   p->s.r = rResult;
   p->s.flags = STK_Real;
 }
-void sqlite_set_result_error(void *context, const char *zMsg, int n){
-  UserFuncContext *p = (UserFuncContext*)context;
-  sqlite_set_result_string(context, zMsg, n);
+void sqlite_set_result_error(sqlite_func *p, const char *zMsg, int n){
+  assert( !p->isStep );
+  sqlite_set_result_string(p, zMsg, n);
   p->isError = 1;
 }
 
 /*
-** Reset an Agg structure.  Delete all its contents.
+** Extract the user data from a sqlite_func structure and return a
+** pointer to it.
+**
+** This routine is defined here in vdbe.c because it depends on knowing
+** the internals of the sqlite_func structure which is only defined in that
+** one source file.
+*/
+void *sqlite_user_data(sqlite_func *p){
+  assert( p && p->pFunc );
+  return p->pFunc->pUserData;
+}
+
+/*
+** Allocate or return the aggregate context for a user function.  A new
+** context is allocated on the first call.  Subsequent calls return the
+** same context that was returned on prior calls.
+**
+** This routine is defined here in vdbe.c because it depends on knowing
+** the internals of the sqlite_func structure which is only defined in that
+** one source file.
+*/
+void *sqlite_aggregate_context(sqlite_func *p, int nByte){
+  assert( p && p->pFunc && p->pFunc->xStep );
+  if( p->pAgg==0 ){
+    p->pAgg = sqliteMalloc( nByte );
+  }
+  return p->pAgg;
+}
+
+/*
+** Return the number of times the Step function of a user-defined 
+** aggregate has been called.
+**
+** This routine is defined here in vdbe.c because it depends on knowing
+** the internals of the sqlite_func structure which is only defined in that
+** one source file.
+*/
+int sqlite_aggregate_count(sqlite_func *p){
+  assert( p && p->pFunc && p->pFunc->xStep );
+  return p->cnt;
+}
+
+/*
+** Reset an Agg structure.  Delete all its contents. 
+**
+** For user-defined aggregate functions, if the step function has been
+** called, make sure the finalizer function has also been called.  The
+** finalizer might need to free memory that was allocated as part of its
+** private context.  If the finalizer has not been called yet, call it
+** now.
 */
 static void AggReset(Agg *pAgg){
   int i;
   HashElem *p;
   for(p = sqliteHashFirst(&pAgg->hash); p; p = sqliteHashNext(p)){
     AggElem *pElem = sqliteHashData(p);
-    assert( pAgg->axFinalize!=0 );
+    assert( pAgg->apFunc!=0 );
     for(i=0; i<pAgg->nMem; i++){
-      if( pElem->aMem[i].s.flags & STK_Dyn ){
+      if( pAgg->apFunc[i] && (pElem->aMem[i].s.flags & STK_AggCtx)!=0 ){
+        sqlite_func ctx;
+        ctx.s.flags = STK_Null;
+        ctx.z = 0;
+        ctx.pAgg = pElem->aMem[i].z;
+        ctx.cnt = pElem->aMem[i].s.i;
+        ctx.isStep = 0;
+        ctx.isError = 0;
+        (*pAgg->apFunc[i]->xFinalize)(&ctx);
+      }
+      if( pElem->aMem[i].s.flags & (STK_Dyn | STK_AggCtx) ){
         sqliteFree(pElem->aMem[i].z);
-      }else if( pAgg->axFinalize[i] && (pElem->aMem[i].s.flags & STK_AggCtx) ){
-        (pAgg->axFinalize[i])((void*)pElem->aMem[i].z, 0);
       }
     }
     sqliteFree(pElem);
   }
   sqliteHashClear(&pAgg->hash);
-  sqliteFree(pAgg->axFinalize);
-  pAgg->axFinalize = 0;
+  sqliteFree(pAgg->apFunc);
+  pAgg->apFunc = 0;
   pAgg->pCurrent = 0;
   pAgg->pSearch = 0;
   pAgg->nMem = 0;
@@ -966,8 +1040,8 @@ static char *zOpName[] = { 0,
   "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
   "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
   "FileColumn",        "AggReset",          "AggFocus",          "AggIncr",
-  "AggNext",           "AggSet",            "AggGet",            "AggFinalizer",
-  "AggFunc",           "SetInsert",         "SetFound",          "SetNotFound",
+  "AggNext",           "AggSet",            "AggGet",            "AggFunc",
+  "AggInit",           "SetInsert",         "SetFound",          "SetNotFound",
   "MakeRecord",        "MakeKey",           "MakeIdxKey",        "IncrKey",
   "Goto",              "If",                "Halt",              "ColumnCount",
   "ColumnName",        "Callback",          "NullCallback",      "Integer",
@@ -1786,14 +1860,16 @@ case OP_Max: {
 
 /* Opcode: UserFunc P1 * P3
 **
-** Invoke a user function (P3 is a pointer to the function) with
-** P1 string arguments taken from the stack.  Pop all arguments from
-** the stack and push back the result.
+** Invoke a user function (P3 is a pointer to a UserFunc structure that
+** defines the function) with P1 string arguments taken from the stack.
+** Pop all arguments from the stack and push back the result.
+**
+** See also: AggFunc
 */
 case OP_UserFunc: {
   int n, i;
-  UserFuncContext ctx;
-  void (*xFunc)(void*,int,const char**);
+  sqlite_func ctx;
+
   n = pOp->p1;
   VERIFY( if( n<=0 ) goto bad_instruction; )
   VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
@@ -1802,10 +1878,12 @@ case OP_UserFunc: {
       if( Stringify(p, i) ) goto no_mem;
     }
   }
-  xFunc = (void(*)(void*,int,const char**))pOp->p3;
+  ctx.pFunc = (UserFunc*)pOp->p3;
   ctx.s.flags = STK_Null;
+  ctx.z = 0;
   ctx.isError = 0;
-  xFunc((void*)&ctx, n, (const char**)&zStack[p->tos-n+1]);
+  ctx.isStep = 0;
+  (*ctx.pFunc->xFunc)(&ctx, n, (const char**)&zStack[p->tos-n+1]);
   PopStack(p, n);
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;
@@ -4313,63 +4391,63 @@ case OP_MemLoad: {
 case OP_AggReset: {
   AggReset(&p->agg);
   p->agg.nMem = pOp->p2;
-  p->agg.axFinalize = sqliteMalloc( p->agg.nMem*sizeof(p->agg.axFinalize[0]) );
+  p->agg.apFunc = sqliteMalloc( p->agg.nMem*sizeof(p->agg.apFunc[0]) );
   break;
 }
 
-/* Opcode: AggFinalizer * P2 P3
+/* Opcode: AggInit * P2 P3
 **
-** Register a finializer function for the P2-th column of the aggregate.
-** The P3 parameter is a pointer to the finalizer.
-** There should be one instance of this opcode immediately following
-** each AggReset for each user defined aggregate function that is used
-** in a SELECT.
-**
-** All finalizers must be registered so that user-defined aggregate
-** function contexts can be deallocated if the VDBE aborts.
+** Initialize the function parameters for a user-defined aggregate function.
+** The user-defined aggregate will operate out of aggregate column P2.
+** P3 is a pointer to the UserFunc structure for the function.
 */
-case OP_AggFinalizer: {
+case OP_AggInit: {
   int i = pOp->p2;
-  VERIFY( if( p->agg.nMem<=i ) goto bad_instruction; );
-  p->agg.axFinalize[i] = (void(*)(void*,void*))pOp->p3;
+  VERIFY( if( i<0 || i>=p->agg.nMem ) goto bad_instruction; )
+  p->agg.apFunc[i] = (UserFunc*)pOp->p3;
   break;
 }
 
 /* Opcode: AggFunc * P2 P3
 **
 ** Execute the step function for a user-defined aggregate.  The
-** function has P2 arguments.  P3 is a pointer to the step function.
+** function has P2 arguments.  P3 is a pointer to the UserFunc
+** structure that specifies the user-defined function.
 **
-** The top of the stack should be the function context.  The P2
-** parameters occur below the function context on the stack.  The
-** revised function context remains on the stack after this op-code
-** finishes.
+** The top of the stack must be an integer which is the index of
+** the aggregate column that corresponds to this aggregate function.
+** Ideally, this index would be another parameter, but there are
+** no free parameters left.  The integer is popped from the stack.
 */
 case OP_AggFunc: {
   int n = pOp->p2;
   int i;
-  void *pCtx;
-  void *(*xStep)(void*,int,const char**);
+  Mem *pMem;
+  sqlite_func ctx;
 
-  if( aStack[p->tos].flags & STK_AggCtx ){
-    pCtx = zStack[p->tos];
-  }else{
-    pCtx = 0;
-  }
   VERIFY( if( n<=0 ) goto bad_instruction; )
   VERIFY( if( p->tos+1<n ) goto not_enough_stack; )
+  VERIFY( if( aStack[p->tos].flags!=STK_Int ) goto bad_instruction; )
   for(i=p->tos-n; i<p->tos; i++){
     if( (aStack[i].flags & STK_Null)==0 ){
       if( Stringify(p, i) ) goto no_mem;
     }
   }
-  xStep = (void*(*)(void*,int,const char**))pOp->p3;
-  pCtx = xStep(pCtx, n, (const char**)&zStack[p->tos-n]);
+  i = aStack[p->tos].i;
+  VERIFY( if( i<0 || i>=p->agg.nMem ) goto bad_instruction; )
+  ctx.pFunc = (UserFunc*)pOp->p3;
+  pMem = &p->agg.pCurrent->aMem[i];
+  ctx.pAgg = pMem->z;
+  ctx.cnt = ++pMem->s.i;
+  ctx.isError = 0;
+  ctx.isStep = 1;
+  (ctx.pFunc->xStep)(&ctx, n, (const char**)&zStack[p->tos-n]);
+  pMem->z = ctx.pAgg;
+  pMem->s.flags = STK_AggCtx;
   PopStack(p, n+1);
-  VERIFY( NeedStack(p, p->tos+1); )
-  p->tos++;
-  aStack[p->tos].flags = STK_AggCtx;
-  zStack[p->tos] = (char*)pCtx;
+  if( ctx.isError ){
+    rc = SQLITE_ERROR;
+  }
   break;
 }
 
@@ -4517,19 +4595,23 @@ case OP_AggNext: {
     pc = pOp->p2 - 1;
   } else {
     int i;
-    UserFuncContext ctx;
-    void *pCtx;
+    sqlite_func ctx;
     Mem *aMem;
     int nErr = 0;
     p->agg.pCurrent = sqliteHashData(p->agg.pSearch);
     aMem = p->agg.pCurrent->aMem;
     for(i=0; i<p->agg.nMem; i++){
-      if( p->agg.axFinalize[i]==0 ) continue;
+      if( p->agg.apFunc[i]==0 ) continue;
+      if( p->agg.apFunc[i]->xFinalize==0 ) continue;
       if( (aMem[i].s.flags & STK_AggCtx)==0 ) continue;
       ctx.s.flags = STK_Null;
       ctx.z = 0;
-      pCtx = (void*)aMem[i].z;
-      (*p->agg.axFinalize[i])(pCtx, &ctx);
+      ctx.pAgg = (void*)aMem[i].z;
+      ctx.cnt = aMem[i].s.i;
+      ctx.isStep = 0;
+      ctx.pFunc = p->agg.apFunc[i];
+      (*p->agg.apFunc[i]->xFinalize)(&ctx);
+      sqliteFree( aMem[i].z );
       aMem[i].s = ctx.s;
       aMem[i].z = ctx.z;
       if( (aMem[i].s.flags & STK_Str) &&

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.94 2002/02/27 01:47:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.95 2002/02/27 19:00:22 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -206,11 +206,12 @@ struct sqlite {
 ** points to a linked list of these structures.
 */
 struct UserFunc {
-  void (*xFunc)(void*,int,const char**);   /* Regular function */
-  void *(*xStep)(void*,int,const char**);  /* Aggregate function step */
-  void (*xFinalize)(void*,void*);          /* Aggregate function finializer */
-  int nArg;                                /* Number of arguments */
-  UserFunc *pNext;                         /* Next function with same name */
+  void (*xFunc)(sqlite_func*,int,const char**);   /* Regular function */
+  void *(*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
+  void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
+  int nArg;                                  /* Number of arguments */
+  void *pUserData;                           /* User data parameter */
+  UserFunc *pNext;                           /* Next function with same name */
 };
 
 /*

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.3 2002/02/26 23:55:31 drh Exp $
+** $Id: func.c,v 1.4 2002/02/27 19:00:22 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -26,7 +26,7 @@
 /*
 ** Implementation of the upper() and lower() SQL functions.
 */
-static void upperFunc(void *context, int argc, const char **argv){
+static void upperFunc(sqlite_func *context, int argc, const char **argv){
   char *z;
   int i;
   if( argc<1 || argv[0]==0 ) return;
@@ -36,7 +36,7 @@ static void upperFunc(void *context, int argc, const char **argv){
     if( islower(z[i]) ) z[i] = toupper(z[i]);
   }
 }
-static void lowerFunc(void *context, int argc, const char **argv){
+static void lowerFunc(sqlite_func *context, int argc, const char **argv){
   char *z;
   int i;
   if( argc<1 || argv[0]==0 ) return;
@@ -61,32 +61,24 @@ struct StdDevCtx {
 /*
 ** Routines used to compute the standard deviation as an aggregate.
 */
-static void *stdDevStep(void *stddev, int argc, char **argv){
+static void stdDevStep(sqlite_func *context, int argc, const char **argv){
   StdDevCtx *p;
   double x;
-  if( argc<1 ) return 0;
-  if( stddev==0 ){
-    p = malloc( sizeof(*p) );
-    p->n = 0;
-    p->sum = 0.0;
-    p->sum2 = 0.0;
-  }else{
-    p = (StdDevCtx*)stddev;
-  }
+  if( argc<1 ) return;
+  p = sqlite_aggregate_context(context, sizeof(*p));
+  if( p==0 ) return;
   x = atof(argv[0]);
   p->sum += x;
   p->sum2 += x*x;
   p->n++;
-  return p;
 }
-static void stdDevFinalize(void *stddev, void *context){
-  StdDevCtx *p = (StdDevCtx*)stddev;
-  if( context && p && p->n>1 ){
+static void stdDevFinalize(sqlite_func *context){
+  StdDevCtx *p = sqlite_aggregate_context(context, sizeof(*p));
+  if( p && p->n>1 ){
     double rN = p->n;
     sqlite_set_result_double(context, 
        sqrt((p->sum2 - p->sum*p->sum/rN)/(rN-1.0)));
   }
-  if( stddev ) free(stddev);
 }
 
 /*
@@ -95,7 +87,7 @@ static void stdDevFinalize(void *stddev, void *context){
 ** external linkage.
 */
 void sqliteRegisterBuildinFunctions(sqlite *db){
-  sqlite_create_function(db, "upper", 1, upperFunc);
-  sqlite_create_function(db, "lower", 1, lowerFunc);
-  sqlite_create_aggregate(db, "stddev", 1, stdDevStep, stdDevFinalize);
+  sqlite_create_function(db, "upper", 1, upperFunc, 0);
+  sqlite_create_function(db, "lower", 1, lowerFunc, 0);
+  sqlite_create_aggregate(db, "stddev", 1, stdDevStep, stdDevFinalize, 0);
 }

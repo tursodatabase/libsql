@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.64 2002/02/27 01:53:13 drh Exp $
+** $Id: main.c,v 1.65 2002/02/27 19:00:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -643,7 +643,8 @@ int sqlite_create_function(
   sqlite *db,          /* Add the function to this database connection */
   const char *zName,   /* Name of the function to add */
   int nArg,            /* Number of arguments */
-  void (*xFunc)(void*,int,const char**)  /* Implementation of the function */
+  void (*xFunc)(sqlite_func*,int,const char**),  /* The implementation */
+  void *pUserData      /* User data */
 ){
   UserFunc *p;
   if( db==0 || zName==0 ) return 1;
@@ -652,14 +653,16 @@ int sqlite_create_function(
   p->xFunc = xFunc;
   p->xStep = 0;
   p->xFinalize = 0;
+  p->pUserData = pUserData;
   return 0;
 }
 int sqlite_create_aggregate(
   sqlite *db,          /* Add the function to this database connection */
   const char *zName,   /* Name of the function to add */
   int nArg,            /* Number of arguments */
-  void *(*xStep)(void*,int,const char**), /* The step function */
-  void (*xFinalize)(void*,void*)          /* The finalizer */
+  void (*xStep)(sqlite_func*,int,const char**), /* The step function */
+  void (*xFinalize)(sqlite_func*),              /* The finalizer */
+  void *pUserData      /* User data */
 ){
   UserFunc *p;
   if( db==0 || zName==0 ) return 1;
@@ -668,5 +671,6 @@ int sqlite_create_aggregate(
   p->xFunc = 0;
   p->xStep = xStep;
   p->xFinalize = xFinalize;
+  p->pUserData = pUserData;
   return 0;
 }
