@@ -1,5 +1,5 @@
-C Pager\stests\sworking.\s(CVS\s1308)
-D 2004-04-26T14:10:21
+C Sync\sall\sversion\s3\schanges.\s(CVS\s1309)
+D 2004-04-29T14:42:46
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c b01db0d3211f673d8e670abf7eaad04591d40d14
 F src/auth.c 4fa3b05bd19445d1c474d6751c4a508d6ea0abe1
-F src/btree.c 4e2b50ae03bd4d9e678bda14b08307d80dd4471c
+F src/btree.c 09272a46501fb5e60474c0b5c1e32c825086067f
 F src/btree.h 858659c6605ae07a2a0fb3d176b25573d30f27c5
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
 F src/build.c 76fbca30081decd6615dee34b48c927ed5063752
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P ce0bbd3a7159e12c86c5cde6571d6668b234827b
-R e6250126bdd2ced9348d9f2d5069495a
+P 910067a200c4b25b5d813a84146673d3d1c80952
+R 9774fd5f44f9196be5f8b828df0f1a01
 U drh
-Z 07ad078caa4fedefbf47bb778c51fa1e
+Z 1f01b8b1967a026f92cc6d5ed5f03774

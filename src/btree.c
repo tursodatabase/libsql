@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.105 2004/04/26 14:10:21 drh Exp $
+** $Id: btree.c,v 1.106 2004/04/29 14:42:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1520,6 +1520,22 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
 }
 
 /*
+** Return true if the page is the virtual root of its table.
+**
+** The virtual root page is the root page for most tables.  But
+** for the table rooted on page 1, sometime the real root page
+** is empty except for the right-pointer.  In such cases the
+** virtual root page is the page that the right-pointer of page
+** 1 is pointing to.
+*/
+static int isRootPage(MemPage *pPage){
+  MemPage *pParent = pPage->pParent;
+  assert( pParent==0 || pParent->isInit );
+  if( pParent || (pParent->pgno==1 && pParent->nCell==0) ) return 1;
+  return 0;
+}
+
+/*
 ** Move the cursor up to the parent page.
 **
 ** pCur->idx is set to the cell index that contains the pointer
@@ -1535,6 +1551,7 @@ static void moveToParent(BtCursor *pCur){
 
   pPage = pCur->pPage;
   assert( pPage!=0 );
+  assert( !isRootPage(pPage) );
   pParent = pPage->pParent;
   assert( pParent!=0 );
   idxParent = pPage->idxParent;
@@ -1580,14 +1597,21 @@ static int moveToRoot(BtCursor *pCur){
   int rc;
   Btree *pBt = pCur->pBt;
 
-  rc = sqlitepager_get(pBt->pPager, pCur->pgnoRoot, &pRoot);
+  rc = getPage(pBt, pCur->pgnoRoot, &pRoot);
   if( rc ) return rc;
   rc = initPage(pRoot, 0);
   if( rc ) return rc;
   releasePage(pCur->pPage);
   pCur->pPage = pRoot;
   pCur->idx = 0;
-  return SQLITE_OK;
+  if( pRoot->nCell==0 && !pRoot->leaf ){
+    Pgno subpage;
+    assert( pRoot->pgno==1 );
+    subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+6]);
+    assert( subpage>0 );
+    rc = movetoChild(pCur, subpage);
+  }
+  return rc;
 }
 
 /*
@@ -1802,7 +1826,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
       return rc;
     }
     do{
-      if( pPage->pParent==0 ){
+      if( isRootPage(pPage) ){
         *pRes = 1;
         return SQLITE_OK;
       }
@@ -1855,7 +1879,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     rc = moveToRightmost(pCur);
   }else{
     while( pCur->idx==0 ){
-      if( pPage->pParent==0 ){
+      if( isRootPage(pPage) ){
         if( pRes ) *pRes = 1;
         return SQLITE_OK;
       }
@@ -2374,20 +2398,35 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     MemPage *pChild;
     assert( pPage->isInit );
     if( pPage->nCell==0 ){
-      if( pPage->u.hdr.rightChild ){
-        /*
-        ** The root page is empty.  Copy the one child page
-        ** into the root page and return.  This reduces the depth
-        ** of the BTree by one.
+      if( pPage->leaf ){
+        /* The table is completely empty */
+        relinkCellList(pPage);
+      }else{
+        /* The root page is empty but has one child.  Transfer the
+        ** information from that one child into the root page if it 
+        ** will fit.  This reduces the depth of the BTree by one.
+        **
+        ** If the root page is page 1, it has less space available than
+        ** the child, so it might not be able to hold all of the information
+        ** in the child.  If this is the case, then do not do the transfer.
+        ** Leave page 1 empty except for the right-pointer to the child page.
+        ** The child page becomes the virtual root of the tree.
         */
-        pgnoChild = SWAB32(pBt, pPage->u.hdr.rightChild);
-        rc = sqlitepager_get(pBt->pPager, pgnoChild, (void**)&pChild);
+        pgnoChild = get4byte(pPage->aData[pPage->hdrOffset+6]);
+        assert( pgnoChild>0 && pgnoChild<=sqlit3pager_pagecount(pBt->pPager) );
+        rc = getPage(pBt, pgnoChild, &pChild);
         if( rc ) return rc;
-        memcpy(pPage, pChild, SQLITE_USABLE_SIZE);
-        pPage->isInit = 0;
-        rc = initPage(pBt, pPage, sqlitepager_pagenumber(pPage), 0);
-        assert( rc==SQLITE_OK );
-        reparentChildPages(pBt, pPage);
+        if( pPage->pgno==1 ){
+          rc = initPage(pChild);
+          if( rc ) return rc;
+          if( pChild->nFree>=100 ){
+          }
+        }else{
+          memcpy(pPage, pChild, SQLITE_USABLE_SIZE);
+          pPage->isInit = 0;
+          rc = initPage(pBt, pPage, sqlitepager_pagenumber(pPage), 0);
+          assert( rc==SQLITE_OK );
+          reparentChildPages(pBt, pPage);
         if( pCur && pCur->pPage==pChild ){
           sqlitepager_unref(pChild);
           pCur->pPage = pPage;
