@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.227 2004/06/19 02:22:11 danielk1977 Exp $
+** $Id: main.c,v 1.228 2004/06/19 03:33:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -462,27 +462,32 @@ int sqlite3_last_statement_changes(sqlite *db){
 /*
 ** Close an existing SQLite database
 */
-void sqlite3_close(sqlite *db){
+int sqlite3_close(sqlite *db){
   HashElem *i;
   int j;
 
   if( !db ){
-    return;
+    return SQLITE_OK;
   }
-  db->want_to_close = 1;
+
+  /* If there are any outstanding VMs, return SQLITE_BUSY. */
+  if( db->pVdbe ){
+    sqlite3Error(db, SQLITE_BUSY, 
+        "Unable to close due to unfinalised statements");
+    return SQLITE_BUSY;
+  }
+  assert( !sqlite3SafetyCheck(db) );
 
   /* FIX ME: db->magic may be set to SQLITE_MAGIC_CLOSED if the database
   ** cannot be opened for some reason. So this routine needs to run in
   ** that case. But maybe there should be an extra magic value for the
   ** "failed to open" state.
   */
-  if( db->magic!=SQLITE_MAGIC_CLOSED && 
-      (sqlite3SafetyCheck(db) || sqlite3SafetyOn(db)) ){
+  if( db->magic!=SQLITE_MAGIC_CLOSED && sqlite3SafetyOn(db) ){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
-    return;
+    return SQLITE_ERROR;
   }
 
-  db->magic = SQLITE_MAGIC_CLOSED;
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
     if( pDb->pBt ){
@@ -515,7 +520,10 @@ void sqlite3_close(sqlite *db){
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
   }
+
+  db->magic = SQLITE_MAGIC_ERROR;
   sqliteFree(db);
+  return SQLITE_OK;
 }
 
 /*

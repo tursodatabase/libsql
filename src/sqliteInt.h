@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.289 2004/06/18 17:45:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.290 2004/06/19 03:33:57 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -390,7 +390,6 @@ struct sqlite {
   int flags;                    /* Miscellanous flags. See below */
   u8 file_format;               /* What file format version is this database? */
   u8 safety_level;              /* How aggressive at synching data to disk */
-  u8 want_to_close;             /* Close after all VDBEs are deallocated */
   u8 temp_store;                /* 1=file, 2=memory, 0=compile-time default */
   int next_cookie;              /* Next value of aDb[0].schema_cookie */
   int cache_size;               /* Number of pages to use in the cache */

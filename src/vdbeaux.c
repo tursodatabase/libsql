@@ -1323,9 +1323,6 @@ int sqlite3VdbeFinalize(Vdbe *p, char **pzErrMsg){
   db = p->db;
   rc = sqlite3VdbeReset(p, pzErrMsg);
   sqlite3VdbeDelete(p);
-  if( db->want_to_close && db->pVdbe==0 ){
-    sqlite3_close(db);
-  }
   if( rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
   }
