@@ -1,4 +1,4 @@
-C More\schanges\sdirected\sat\sgetting\sthings\sto\swork\son\s64-bit\splatforms.\s(CVS\s1949)
+C More\schanges\sdirected\sat\sgetting\sthings\sto\swork\son\s64-bit\splatforms.\s(CVS\s1950)
 D 2004-09-08T20:13:05
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a1f532520c16a1f4b4285cd522774669292fb234
+P 39755d216608e9d12e1055433549f820f63608a7
 R 6047026f7d4b4901b427c44c73fb5a78
 U drh
-Z 1ab41b9e5e58dc7d541f086c557c8e24
+Z 166d384819d94bfe62b3a98a4987d656
