@@ -61,8 +61,7 @@ void sqliteCreateTrigger(
   */
   if( sqlite_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
-  tab = sqliteTableNameToTable(pParse, pTableName->a[0].zName,
-                                pTableName->a[0].zDatabase);
+  tab = sqliteSrcListLookup(pParse, pTableName);
   if( !tab ){
     goto trigger_cleanup;
   }
@@ -356,8 +355,9 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
   zName = pName->a[0].zName;
   nName = strlen(zName);
   for(i=0; i<db->nDb; i++){
-    if( zDb && sqliteStrICmp(db->aDb[i].zName, zDb) ) continue;
-    pTrigger = sqliteHashFind(&(db->aDb[i].trigHash), zName, nName+1);
+    int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
+    if( zDb && sqliteStrICmp(db->aDb[j].zName, zDb) ) continue;
+    pTrigger = sqliteHashFind(&(db->aDb[j].trigHash), zName, nName+1);
     if( pTrigger ) break;
   }
   if( !pTrigger ){

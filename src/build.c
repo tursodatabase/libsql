@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.134 2003/03/27 12:51:24 drh Exp $
+** $Id: build.c,v 1.135 2003/03/27 13:50:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -117,8 +117,9 @@ Table *sqliteFindTable(sqlite *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
   for(i=0; i<db->nDb; i++){
-    if( zDatabase!=0 && sqliteStrICmp(zDatabase, db->aDb[i].zName) ) continue;
-    p = sqliteHashFind(&db->aDb[i].tblHash, zName, strlen(zName)+1);
+    int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
+    if( zDatabase!=0 && sqliteStrICmp(zDatabase, db->aDb[j].zName) ) continue;
+    p = sqliteHashFind(&db->aDb[j].tblHash, zName, strlen(zName)+1);
     if( p ) break;
   }
   return p;
@@ -133,8 +134,9 @@ Index *sqliteFindIndex(sqlite *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
   for(i=0; i<db->nDb; i++){
-    if( zDb && sqliteStrICmp(zDb, db->aDb[i].zName) ) continue;
-    p = sqliteHashFind(&db->aDb[i].idxHash, zName, strlen(zName)+1);
+    int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
+    if( zDb && sqliteStrICmp(zDb, db->aDb[j].zName) ) continue;
+    p = sqliteHashFind(&db->aDb[j].idxHash, zName, strlen(zName)+1);
     if( p ) break;
   }
   return p;
@@ -1444,8 +1446,7 @@ void sqliteCreateIndex(
   if( pTable!=0 ){
     assert( pName!=0 );
     assert( pTable->nSrc==1 );
-    pTab =  sqliteTableNameToTable(pParse, 
-                 pTable->a[0].zName, pTable->a[0].zDatabase);
+    pTab =  sqliteSrcListLookup(pParse, pTable);
   }else{
     assert( pName==0 );
     pTab =  pParse->pNewTable;
@@ -1985,9 +1986,8 @@ void sqliteCopy(
 
   if( sqlite_malloc_failed  ) goto copy_cleanup;
   assert( pTableName->nSrc==1 );
-  pTab = sqliteTableNameToTable(pParse, pTableName->a[0].zName,
-                                pTableName->a[0].zDatabase);
-  if( pTab==0 ) goto copy_cleanup;
+  pTab = sqliteSrcListLookup(pParse, pTableName);
+  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ) goto copy_cleanup;
   zFile = sqliteStrNDup(pFilename->z, pFilename->n);
   sqliteDequote(zFile);
   if( sqliteAuthCheck(pParse, SQLITE_INSERT, pTab->zName, zFile)

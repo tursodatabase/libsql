@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.75 2003/03/27 12:51:25 drh Exp $
+** $Id: insert.c,v 1.76 2003/03/27 13:50:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -93,7 +93,6 @@ void sqliteInsert(
 ){
   Table *pTab;          /* The table to insert into */
   char *zTab;           /* Name of the table into which we are inserting */
-  char *zDb;            /* Name of the database holding zTab */
   int i, j, idx;        /* Loop counters */
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
@@ -121,8 +120,7 @@ void sqliteInsert(
   assert( pTabList->nSrc==1 );
   zTab = pTabList->a[0].zName;
   if( zTab==0 ) goto insert_cleanup;
-  zDb = pTabList->a[0].zDatabase;
-  pTab = sqliteTableNameToTable(pParse, zTab, zDb);
+  pTab = sqliteSrcListLookup(pParse, pTabList);
   if( pTab==0 ){
     goto insert_cleanup;
   }

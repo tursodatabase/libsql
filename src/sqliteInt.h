@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.165 2003/03/27 12:51:25 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.166 2003/03/27 13:50:00 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -252,6 +252,13 @@ struct sqlite {
   void *pAuthArg;               /* 1st argument to the access auth function */
 #endif
 };
+
+/*
+** The following are the indices of in sqlite.aDb[] of the main database
+** file and the file used to store TEMP tables.
+*/
+#define DB_TMP     0
+#define DB_MAIN    1
 
 /*
 ** Possible values for the sqlite.flags.
@@ -1001,7 +1008,8 @@ Select *sqliteSelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqliteSelectDelete(Select*);
 void sqliteSelectUnbind(Select*);
-Table *sqliteTableNameToTable(Parse*, const char*, const char*);
+Table *sqliteSrcListLookup(Parse*, SrcList*);
+int sqliteIsReadOnly(Parse*, Table*);
 void sqliteDeleteFrom(Parse*, SrcList*, Expr*);
 void sqliteUpdate(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqliteWhereBegin(Parse*, int, SrcList*, Expr*, int, ExprList**);

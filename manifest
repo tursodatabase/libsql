@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sin\sthe\strigger\scode.\s(CVS\s884)
-D 2003-03-27T13:01:29
+C Regression\stests\snow\swork\s-\sexcept\sfor\ssome\schanges\sin\serror\smessage\ntext.\s\sThe\slibrary\sis\snow\ssafe\sto\suse\sfor\sexperimental\swork.\s(CVS\s885)
+D 2003-03-27T13:50:00
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,14 +22,14 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/auth.c f37bfc9451b8c1fa52f34adff474560018892729
 F src/btree.c 327819bb858d534072f5004973f8bcdd50f133d6
 F src/btree.h 8209bfadf5845d4fdaa60f471bb360f894cd4095
-F src/build.c abd5da38923bba6c5dc14d0e24b8e05f68ff459b
-F src/delete.c e1552bd5a26418c32b8516cb5602bf5473651c68
+F src/build.c 0c14b18192a825a18c5c03df5c2db0e6f85ed44b
+F src/delete.c 923497248e0ff9097a595c6333ec6d67fe6650b5
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
 F src/expr.c eae205a27ec45232f234f281f8827c3be58b303d
 F src/func.c 882c3ed5a02be18cd904715c7ec62947a34a3605
 F src/hash.c 4fc39feb7b7711f6495ee9f2159559bedb043e1f
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 8d23a2d9995d5bee5b7eb44cb9dc354e0874e70a
+F src/insert.c 95e7ab3fb51909351273a6c6f8aa831201130ce7
 F src/main.c e0d9a86541f0644be5c875c6d8f5062c325c653d
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c dfed46091f69cd2d1e601f8a214d41344f2b00b6
@@ -43,7 +43,7 @@ F src/select.c afdc06d4606d14ab5793ef480206def6b02a2f19
 F src/shell.c 0d260a007e0668fc7dda2b0c89bd597ef2966ec6
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
-F src/sqliteInt.h c4338bc3c75784840d51fd8a744a63e444ec496d
+F src/sqliteInt.h 5335f694cba9f07538cf8207aab11d48e0b9a2f8
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 8167d40fd34036701e07492d07a6f9e5c4015241
 F src/test1.c 7ad4e6308dde0bf5a0f0775ce20cb2ec37a328f8
@@ -51,8 +51,8 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 675b4718d17c69fe7609dc8e85e426ef002be811
-F src/trigger.c 5e2b4cd05dc1ece62911bae2c6d0c1da486910b8
-F src/update.c 785e0e1c8df2043dc96ad7c298fb11aaa3ebc8af
+F src/trigger.c 64ad4be538e524b0dff0c377debf62fe54cc8c17
+F src/update.c ab8c48ce00747ccf8f449f7f51ae56e08b5428ba
 F src/util.c 73b668d1ed468df650dc00685a5e4ffa6887feb4
 F src/vdbe.c 7171dbe873760f403b2501e96fd3d1bd852b3ce8
 F src/vdbe.h ed43771f1dc2b994d5c484fdf2eab357c6ef0ee3
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9ac71c329e17a0934d2a824eacc33e9a2ebce7c3
-R 73acb81d40c3749321870765682932e8
+P 7672914b196cd55744edda8e5d8f1b7b86f898f9
+R ef1de606572d96575e808b13bdc2a270
 U drh
-Z a17b58550476cb426e51600a2c69c02b
+Z 5cf2b764f7e1375be431b06267e44f31

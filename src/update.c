@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.56 2003/03/27 12:51:25 drh Exp $
+** $Id: update.c,v 1.57 2003/03/27 13:50:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -84,8 +84,8 @@ void sqliteUpdate(
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab, zDb);
-  if( pTab==0 ) goto update_cleanup;
+  pTab = sqliteSrcListLookup(pParse, pTabList);
+  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ) goto update_cleanup;
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   aXRef = sqliteMalloc( sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;

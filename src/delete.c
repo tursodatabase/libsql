@@ -12,37 +12,50 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.48 2003/03/27 12:51:24 drh Exp $
+** $Id: delete.c,v 1.49 2003/03/27 13:50:00 drh Exp $
 */
 #include "sqliteInt.h"
 
-
 /*
-** Given a table name, find the corresponding table and make sure the
-** table is writeable.  Generate an error and return NULL if not.  If
-** everything checks out, return a pointer to the Table structure.
+** Look up every table that is named in pSrc.  If any table is not found,
+** add an error message to pParse->zErrMsg and return NULL.  If all tables
+** are found, return a pointer to the last table.
 */
-Table *sqliteTableNameToTable(Parse *pParse, const char *zTab, const char *zDb){
-  Table *pTab;
-  pTab = sqliteFindTable(pParse->db, zTab, zDb);
-  if( pTab==0 ){
-    if( zDb==0 || zDb[0]==0 ){
-      sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
-    }else{
-      sqliteSetString(&pParse->zErrMsg, "no such table: ", zDb, ".", zTab, 0);
+Table *sqliteSrcListLookup(Parse *pParse, SrcList *pSrc){
+  Table *pTab = 0;
+  int i;
+  for(i=0; i<pSrc->nSrc; i++){
+    const char *zTab = pSrc->a[i].zName;
+    const char *zDb = pSrc->a[i].zDatabase;
+    pTab = sqliteFindTable(pParse->db, zTab, zDb);
+    if( pTab==0 ){
+      if( zDb==0 || zDb[0]==0 ){
+        sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
+      }else{
+        sqliteSetString(&pParse->zErrMsg, "no such table: ", zDb, ".", zTab, 0);
+      }
+      pParse->nErr++;
+      break;
     }
-    pParse->nErr++;
-    return 0;
-  }
-  if( pTab->readOnly || pTab->pSelect ){
-    sqliteSetString(&pParse->zErrMsg, 
-      pTab->pSelect ? "view " : "table ",
-      zTab,
-      " may not be modified", 0);
-    pParse->nErr++;
-    return 0;      
+    pSrc->a[i].pTab = pTab;
   }
   return pTab;
+}
+
+/*
+** Check to make sure the given table is writable.  If it is not
+** writable, generate an error message and return 1.  If it is
+** writable return 0;
+*/
+int sqliteIsReadOnly(Parse *pParse, Table *pTab){
+  if( pTab->readOnly || pTab->pSelect ){
+    sqliteSetString(&pParse->zErrMsg, 
+      pTab->pSelect ? "view " : "table ", pTab->zName,
+      " may not be modified", 0);
+    pParse->nErr++;
+    return 1;
+  }
+  return 0;
 }
 
 /*
@@ -101,8 +114,8 @@ void sqliteDeleteFrom(
   ** will be calling are designed to work with multiple tables and expect
   ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTab = pTabList->a[0].pTab = sqliteTableNameToTable(pParse, zTab, zDb);
-  if( pTab==0 ){
+  pTab = sqliteSrcListLookup(pParse, pTabList);
+  if( pTab==0 || sqliteIsReadOnly(pParse, pTab) ){
     goto delete_from_cleanup;
   }
   assert( pTab->pSelect==0 );  /* This table is not a view */
