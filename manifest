@@ -1,5 +1,5 @@
-C Break\sout\sDBBE\sdrivers\sinto\sseparate\sfiles.\s(CVS\s157)
-D 2000-10-19T01:49:02
+C Version\s1.0.13\s(CVS\s490)
+D 2000-10-19T02:00:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in e52c865acc544f539820b2c3efad5af6e6a0c533
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 7330218a912ea788b0c83fa7c7350fd6df88b18a
+P 979ef5d5d64b8e38cc15fef0d2d507ca2fe6842c
 R f2349cd3f015fde9fcbd6e3d9e05118d
 U drh
-Z f79070030a7939f47c5a891f83eee50c
+Z 01572c0f8e01066746bb3a9054777b1b
