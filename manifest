@@ -1,5 +1,5 @@
-C Factor\sthe\stest\sfor\szName==NULL\sout\sof\sthe\sloop.\s\sTicket\s#1032.\s(CVS\s2164)
-D 2004-12-10T18:00:04
+C Minor\scode\sand\scomment\scleanup.\s(CVS\s2165)
+D 2004-12-14T03:34:34
 F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,10 +31,10 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c fa113d624d38bcb36700a0244b47f39d57d34efb
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c 306e49e1f6f19741a40c1bbc23140027aa4f8cc9
+F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
-F src/delete.c 4a70ac0bd0159fe38efdaf2cb44723256b0f7b37
+F src/delete.c 6debe7893fa09bb5b386df0f26165f13132423e6
 F src/expr.c d61efc526449a7a4c725325a3001a614cbcc3bed
 F src/func.c b668e5ad043176049454c95a6a780367a0e8f6bb
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
@@ -82,7 +82,7 @@ F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
 F src/vdbeaux.c a7c4c90786e2633b38f2d89f3dc49aed747454e4
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
-F src/where.c f9d3b6f2243a0eb9065fa4c465fe0831a64b7db7
+F src/where.c 35ea898e6414864afb819d3fde30f11179dbede0
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 9eefabc92d3924bcaa2ae0f425fe5635824c64ec
-R d06a575b50fd36d04bb524dfbec46ef9
+P 7f38f67c7b427ea46db2e95fdfadc1aae064c704
+R 0372084bee24d5ee507746e9b7def4a4
 U drh
-Z 2c0e72f9278bb2cb505aa806dd33e721
+Z 08a84bfe20c08dc8299c4719dba55eae

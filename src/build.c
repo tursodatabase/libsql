@@ -22,16 +22,14 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.289 2004/12/07 12:29:18 drh Exp $
+** $Id: build.c,v 1.290 2004/12/14 03:34:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
 
 /*
 ** This routine is called when a new SQL statement is beginning to
-** be parsed.  Check to see if the schema for the database needs
-** to be read from the SQLITE_MASTER and SQLITE_TEMP_MASTER tables.
-** If it does, then read it.
+** be parsed.  Initialize the pParse structure as needed.
 */
 void sqlite3BeginParse(Parse *pParse, int explainFlag){
   pParse->explain = explainFlag;
@@ -85,7 +83,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** statement as its P3 argument.  This does not change the functionality
     ** of the program. 
     **
-    ** This is used to implement sqlite3_trace() functionality.
+    ** This is used to implement sqlite3_trace().
     */
     sqlite3VdbeOp3(v, OP_Noop, 0, 0, pParse->zSql, pParse->zTail-pParse->zSql);
   }
@@ -518,7 +516,7 @@ void sqlite3OpenMasterTable(Vdbe *v, int iDb){
 ** index of the named database in db->aDb[], or -1 if the named db 
 ** does not exist.
 */
-int findDb(sqlite3 *db, Token *pName){
+static int findDb(sqlite3 *db, Token *pName){
   int i;         /* Database number */
   int n;         /* Number of characters in the name */
   Db *pDb;       /* A database whose name space is being searched */
@@ -623,7 +621,7 @@ void sqlite3StartTable(
 ){
   Table *pTable;
   Index *pIdx;
-  char *zName;
+  char *zName = 0; /* The name of the new table */
   sqlite3 *db = pParse->db;
   Vdbe *v;
   int iDb;         /* Database number to create the table in */
@@ -651,7 +649,6 @@ void sqlite3StartTable(
   if( isTemp && iDb>1 ){
     /* If creating a temp table, the name may not be qualified */
     sqlite3ErrorMsg(pParse, "temporary table name must be unqualified");
-    pParse->nErr++;
     return;
   }
   if( isTemp ) iDb = 1;
@@ -660,8 +657,7 @@ void sqlite3StartTable(
   zName = sqlite3NameFromToken(pName);
   if( zName==0 ) return;
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
-    sqliteFree(zName);
-    return;
+    goto begin_table_error;
   }
   if( db->init.iDb==1 ) isTemp = 1;
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -670,8 +666,7 @@ void sqlite3StartTable(
     int code;
     char *zDb = db->aDb[iDb].zName;
     if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
-      sqliteFree(zName);
-      return;
+      goto begin_table_error;
     }
     if( isView ){
       if( isTemp ){
@@ -687,8 +682,7 @@ void sqlite3StartTable(
       }
     }
     if( sqlite3AuthCheck(pParse, code, zName, 0, zDb) ){
-      sqliteFree(zName);
-      return;
+      goto begin_table_error;
     }
   }
 #endif
@@ -701,21 +695,18 @@ void sqlite3StartTable(
   pTable = sqlite3FindTable(db, zName, db->aDb[iDb].zName);
   if( pTable ){
     sqlite3ErrorMsg(pParse, "table %T already exists", pName);
-    sqliteFree(zName);
-    return;
+    goto begin_table_error;
   }
   if( (pIdx = sqlite3FindIndex(db, zName, 0))!=0 && 
       ( iDb==0 || !db->init.busy) ){
     sqlite3ErrorMsg(pParse, "there is already an index named %s", zName);
-    sqliteFree(zName);
-    return;
+    goto begin_table_error;
   }
   pTable = sqliteMalloc( sizeof(Table) );
   if( pTable==0 ){
     pParse->rc = SQLITE_NOMEM;
     pParse->nErr++;
-    sqliteFree(zName);
-    return;
+    goto begin_table_error;
   }
   pTable->zName = zName;
   pTable->nCol = 0;
@@ -771,6 +762,14 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
   }
+
+  /* Normal (non-error) return. */
+  return;
+
+  /* If an error occurs, we jump here */
+begin_table_error:
+  sqliteFree(zName);
+  return;
 }
 
 /*
@@ -898,9 +897,7 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
 ** error.
 **
 ** If the PRIMARY KEY is on a single column whose datatype is INTEGER,
-** then we will try to use that column as the row id.  (Exception:
-** For backwards compatibility with older databases, do not do this
-** if the file format version number is less than 1.)  Set the Table.iPKey
+** then we will try to use that column as the rowid.  Set the Table.iPKey
 ** field of the table under construction to be the index of the
 ** INTEGER PRIMARY KEY column.  Table.iPKey is set to -1 if there is
 ** no INTEGER PRIMARY KEY.
@@ -2075,8 +2072,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 }
 
 /*
-** Create a new index for an SQL table.  pIndex is the name of the index 
-** and pTable is the name of the table that is to be indexed.  Both will 
+** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
+** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
 ** UNIQUE constraint.  If pTable and pIndex are NULL, use pParse->pNewTable
 ** as the table to be indexed.  pParse->pNewTable is a table that is
@@ -2087,16 +2084,16 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 ** to the table currently under construction.  
 */
 void sqlite3CreateIndex(
-  Parse *pParse,   /* All information about this parse */
-  Token *pName1,   /* First part of index name. May be NULL */
-  Token *pName2,   /* Second part of index name. May be NULL */
-  SrcList *pTblName,  /* Table to index. Use pParse->pNewTable if 0 */
+  Parse *pParse,     /* All information about this parse */
+  Token *pName1,     /* First part of index name. May be NULL */
+  Token *pName2,     /* Second part of index name. May be NULL */
+  SrcList *pTblName, /* Table to index. Use pParse->pNewTable if 0 */
   ExprList *pList,   /* A list of columns to be indexed */
-  int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
-  Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
+  int onError,       /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  Token *pStart,     /* The CREATE token that begins a CREATE TABLE statement */
+  Token *pEnd        /* The ")" that closes the CREATE INDEX statement */
 ){
-  Table *pTab = 0; /* Table to be indexed */
+  Table *pTab = 0;   /* Table to be indexed */
   Index *pIndex = 0; /* The index to be created */
   char *zName = 0;
   int i, j;

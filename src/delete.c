@@ -10,9 +10,9 @@
 **
 *************************************************************************
 ** This file contains C code routines that are called by the parser
-** to handle DELETE FROM statements.
+** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.92 2004/12/07 14:06:13 drh Exp $
+** $Id: delete.c,v 1.93 2004/12/14 03:34:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -66,7 +66,11 @@ void sqlite3OpenTableForReading(
 
 
 /*
-** Process a DELETE FROM statement.
+** Generate code for a DELETE FROM statement.
+**
+**     DELETE FROM table_wxyz WHERE a<5 AND b NOT NULL;
+**                 \________/       \________________/
+**                  pTabList              pWhere
 */
 void sqlite3DeleteFrom(
   Parse *pParse,         /* The parser context */

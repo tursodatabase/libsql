@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.120 2004/11/23 01:47:31 drh Exp $
+** $Id: where.c,v 1.121 2004/12/14 03:34:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -358,7 +358,7 @@ static int sortableByRowid(
 **   (2)  SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.x AND t2.z='ok'
 **   (3)  SELECT * FROM t1, t2 WHERE t1.a=t2.x AND t2.z='ok'
 **
-** The t2.z='ok' is disabled in the in (2) because it did not originate
+** The t2.z='ok' is disabled in the in (2) because it originates
 ** in the ON clause.  The term is disabled in (3) because it is not part
 ** of a LEFT OUTER JOIN.  In (1), the term is not disabled.
 **
