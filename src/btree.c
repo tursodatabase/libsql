@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.77 2003/01/04 16:48:09 drh Exp $
+** $Id: btree.c,v 1.78 2003/01/04 18:53:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2123,7 +2123,6 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   int cntNew[4];               /* Index in apCell[] of cell after i-th page */
   int szNew[4];                /* Combined size of cells place on i-th page */
   MemPage *extraUnref = 0;     /* A page that needs to be unref-ed */
-  Pgno pgno, swabPgno;         /* Page number */
   Cell *apCell[MX_CELL*3+5];   /* All cells from pages being balanceed */
   int szCell[MX_CELL*3+5];     /* Local size of all cells */
   Cell aTemp[2];               /* Temporary holding area for apDiv[] */
@@ -2198,7 +2197,7 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
     assert( sqlitepager_iswriteable(pChild) );
     copyPage(pChild, pPage);
     pChild->pParent = pPage;
-    pChild->idxParent = pChild->nCell;
+    pChild->idxParent = 0;
     sqlitepager_ref(pPage);
     pChild->isOverfull = 1;
     if( pCur && pCur->pPage==pPage ){
@@ -2221,20 +2220,19 @@ static int balance(Btree *pBt, MemPage *pPage, BtCursor *pCur){
   ** to pPage.  The "idx" variable is the index of that cell.  If pPage
   ** is the rightmost child of pParent then set idx to pParent->nCell 
   */
-  idx = -1;
-  pgno = sqlitepager_pagenumber(pPage);
-  swabPgno = SWAB32(pBt, pgno);
-  for(i=0; i<pParent->nCell; i++){
-    if( pParent->apCell[i]->h.leftChild==swabPgno ){
-      idx = i;
-      break;
+  if( pParent->idxShift ){
+    Pgno pgno, swabPgno;
+    pgno = sqlitepager_pagenumber(pPage);
+    swabPgno = SWAB32(pBt, pgno);
+    for(idx=0; idx<pParent->nCell; idx++){
+      if( pParent->apCell[idx]->h.leftChild==swabPgno ){
+        break;
+      }
     }
+    assert( idx<pParent->nCell || pParent->u.hdr.rightChild==swabPgno );
+  }else{
+    idx = pPage->idxParent;
   }
-  if( idx<0 && pParent->u.hdr.rightChild==swabPgno ){
-    idx = pParent->nCell;
-  }
-  assert( idx>=0 );
-  /* assert( pParent->idxShift || idx==pPage->idxParent ); */
 
   /*
   ** Initialize variables so that it will be safe to jump

@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\sBTree\smodule\sfor\sa\smodest\sspeed\simprovement.\s(CVS\s810)
-D 2003-01-04T16:48:09
+C Another\soptimization\sto\sthe\sbtree\slogic.\s(CVS\s811)
+D 2003-01-04T18:53:28
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -18,7 +18,7 @@ F main.mk 9d13839b9697af332d788fe6e801e68da027cc5c
 F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F src/btree.c 4ed13ad0c695e4fb803d106926c6fdd08a0b4d0f
+F src/btree.c 9ae3232125d54e0f4c73ae88af1f4556e15440e9
 F src/btree.h 17710339f7a8f46e3c7d6d0d4648ef19c584ffda
 F src/build.c 8569ac014609add4b796260d3567a5090b90056d
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 1ba41bc2afab18cc295d9a45845296b46bfa57e5
-R a4125fbf39c245763f99492b33c9c8e8
+P 39902a70417475225956704a037493515e9b08b9
+R 5307d3e389db7bcbbe208e92a667a5a5
 U drh
-Z df8ce8a4e13ca11e4b128387a80bf533
+Z 5237255ce20b25abc6c29c72daee1d77
