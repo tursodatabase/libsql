@@ -13,7 +13,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: experimental.c,v 1.1 2005/01/20 01:14:23 danielk1977 Exp $
+** $Id: experimental.c,v 1.2 2005/01/20 01:17:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,7 +23,7 @@
 int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int i;
   int rc = SQLITE_OK;
-  for(i=1; i<=sqlite3_bind_parameter_count(pStmt); i++){
+  for(i=1; rc==SQLITE_OK && i<=sqlite3_bind_parameter_count(pStmt); i++){
     rc = sqlite3_bind_null(pStmt, i);
   }
   return rc;
