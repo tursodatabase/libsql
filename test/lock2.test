@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks between competing processes.
 #
-# $Id: lock2.test,v 1.1 2004/06/28 08:25:48 danielk1977 Exp $
+# $Id: lock2.test,v 1.2 2004/06/28 11:52:46 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -153,5 +153,7 @@ do_test lock2-1.10 {
   }
 } {table abc abc 2 {CREATE TABLE abc(a, b, c)}}
 
-finish_test
+catch {testfixture $::tf1 {db close}}
+catch {close $::tf1}
 
+finish_test

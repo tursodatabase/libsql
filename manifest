@@ -1,5 +1,5 @@
-C Add\sa\ssimple\stest\scase\sfor\sinter-process\slocking.\s(CVS\s1752)
-D 2004-06-28T08:25:48
+C Get\sall\stests\sworking\sunder\swin2k.\s(CVS\s1753)
+D 2004-06-28T11:52:46
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -109,7 +109,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 4f0c86e2bebdc822d179c80697b1ceabe6bbcd07
 F test/enc.test 2f5463af488d50aef60c6110bec6b21b5efba961
-F test/enc2.test 8a3b62254292c8ed6bb0671fcecb032b6fcbc356
+F test/enc2.test d4427cf5d866addb3ecb46412ad45b7e04bbdfd4
 F test/enc3.test 315f302ed9a6042be76710eb6aa70e4551e9aa73
 F test/expr.test b4e945265c4c697bf5213b72558914ba10a989cc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
@@ -128,7 +128,7 @@ F test/lastinsert.test 31382f88b9b0270333ac9e4a17f2c2f4732da718
 F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
 F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
 F test/lock.test 1dbf1d06b0a7eb36237b4f107cfb3da9726b449e
-F test/lock2.test 321066db9e0dfa22968ece2ea9b03e7ffbdd4d94
+F test/lock2.test 4108cabaa108a142e5eed83de3b13b6e579c12cf
 F test/main.test e8c4d9ca6d1e5f5e55e6550d31aec488883b2ed9
 F test/malloc.test a78617ce8258388e4835f4834a3a2c0d4282a7ec
 F test/memdb.test b8a13fa79f006bd087bbcf135ce8eb62056a6027
@@ -230,7 +230,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 06e8e30b249c10512a225d6c7a5fcb5c666595e6
-R d120c4842e7f311a12d71241eb9f9f18
-U danielk1977
-Z a2a960a2ceb55201658e7b059b0a9a2b
+P b0fcc99d227c061203fb1e0f4583b66723033159
+R ef365fb61dcd45108ed65368cfbc0124
+U drh
+Z 91da1422b7cc4d27c359e506557fc669

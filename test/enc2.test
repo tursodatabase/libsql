@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.14 2004/06/23 12:35:16 danielk1977 Exp $
+# $Id: enc2.test,v 1.15 2004/06/28 11:52:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -302,6 +302,7 @@ do_test enc2-6.3 {
   }
 } {{UTF-16BE sqlite}}
 
+db close
 file delete -force test.db
 set DB [sqlite3 db test.db]
 execsql {pragma encoding = 'UTF-16LE'}
@@ -334,6 +335,7 @@ do_test enc2-6.6 {
   }
 } {{UTF-16BE sqlite}}
 
+db close
 file delete -force test.db
 set DB [sqlite3 db test.db]
 execsql {pragma encoding = 'UTF-16BE'}
@@ -413,8 +415,3 @@ db2 close
 
 
 finish_test
-
-
-
-
-
