@@ -1,5 +1,5 @@
-C When\sconstructing\srecords\sand\sindex\skeys,\suse\sstatic\sstring\sspace\srather\sthan\nmallocing\s(when\spossible)\sfor\sa\ssmall\sspeed\simprovement.\s(CVS\s817)
-D 2003-01-07T13:43:46
+C In\sthe\sVDBE,\sallocate\sspace\sto\shold\scolumn\snames\swhen\sthe\sVDBE\sfirst\sstarts.\nThe\sColumnCount\sopcode\snow\sjust\swrites\sthe\snull\sterminator\sinto\sthis\sspace.\s(CVS\s818)
+D 2003-01-07T13:55:23
 F Makefile.in 868c17a1ae1c07603d491274cc8f86c04acf2a1e
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c e2d108842e02810d3d3242cac0e024b09cdb3c4a
-F src/vdbe.c 07570003d3378b668408d8e54f4b137a12ca4df6
+F src/vdbe.c 42577c260b0bba8ff8dce60a0ffd8c71f413ef35
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c af235636b7bc7f7f42ee1c7162d1958ad0102cab
 F test/all.test 873d30e25a41b3aa48fec5633a7ec1816e107029
@@ -152,7 +152,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a362981b20fd33254ad498619eedf75b576682e3
-R 167f2117e4d0226460f1cb7008234b4d
+P 657c9fb5133aef93e4edd433912e6942ad9674ec
+R 30af34abe888623d0ad22c90d02b73df
 U drh
-Z 09ee972659cfc232fea37abfb187e33e
+Z 10b12f5b3cbab70eee4329daa1b839b8

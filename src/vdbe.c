@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.193 2003/01/07 13:43:46 drh Exp $
+** $Id: vdbe.c,v 1.194 2003/01/07 13:55:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -247,7 +247,6 @@ struct Vdbe {
   int nLabelAlloc;    /* Number of slots allocated in aLabel[] */
   int *aLabel;        /* Space to hold the labels */
   int tos;            /* Index of top of stack */
-  int nStackAlloc;    /* Size of the stack */
   Stack *aStack;      /* The operand stack, except string values */
   char **zStack;      /* Text or binary values of the stack */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
@@ -1034,8 +1033,6 @@ static void SorterReset(Vdbe *p){
 static void Cleanup(Vdbe *p){
   int i;
   PopStack(p, p->tos+1);
-  sqliteFree(p->azColName);
-  p->azColName = 0;
   closeAllCursors(p);
   if( p->aMem ){
     for(i=0; i<p->nMem; i++){
@@ -1105,7 +1102,6 @@ void sqliteVdbeDelete(Vdbe *p){
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);
-  sqliteFree(p->zStack);
   sqliteFree(p);
 }
 
@@ -1410,8 +1406,10 @@ int sqliteVdbeExec(
   ** Allocation all the stack space we will ever need.
   */
   sqliteVdbeAddOp(p, OP_Halt, 0, 0);
-  zStack = p->zStack = sqliteMalloc( p->nOp*sizeof(zStack[0]) );
-  aStack = p->aStack = sqliteMalloc( p->nOp*sizeof(aStack[0]) );
+  aStack = sqliteMalloc( p->nOp*(sizeof(aStack[0]) + 2*sizeof(char*)) );
+  p->aStack = aStack;
+  zStack = p->zStack = (char**)&aStack[p->nOp];
+  p->azColName = (char**)&zStack[p->nOp];
   p->tos = -1;
 #ifdef VDBE_PROFILE
   {
@@ -1721,13 +1719,9 @@ case OP_Push: {
 /* Opcode: ColumnCount P1 * *
 **
 ** Specify the number of column values that will appear in the
-** array passed as the 4th parameter to the callback.  No checking
-** is done.  If this value is wrong, a coredump can result.
+** array passed as the 4th parameter to the callback. 
 */
 case OP_ColumnCount: {
-  char **az = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
-  if( az==0 ){ goto no_mem; }
-  p->azColName = az;
   p->azColName[pOp->p1] = 0;
   p->nCallback = 0;
   break;
@@ -1737,9 +1731,6 @@ case OP_ColumnCount: {
 **
 ** P3 becomes the P1-th column name (first is 0).  An array of pointers
 ** to all column names is passed as the 4th parameter to the callback.
-** The ColumnCount opcode must be executed first to allocate space to
-** hold the column names.  Failure to do this will likely result in
-** a coredump.
 */
 case OP_ColumnName: {
   p->azColName[pOp->p1] = pOp->p3;
