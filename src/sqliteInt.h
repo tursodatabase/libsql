@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.56 2001/09/27 15:11:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.57 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -164,6 +164,7 @@ struct sqlite {
 #define SQLITE_Interrupt      0x00000004  /* Cancel current operation */
 #define SQLITE_InTrans        0x00000008  /* True if in a transaction */
 #define SQLITE_InternChanges  0x00000010  /* Uncommitted Hash table changes */
+#define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
 
 /*
 ** Current file format version
@@ -177,6 +178,7 @@ struct sqlite {
 struct Column {
   char *zName;     /* Name of this column */
   char *zDflt;     /* Default value of this column */
+  char *zType;     /* Data type for this column */
   int notNull;     /* True if there is a NOT NULL constraint */
 };
 
@@ -423,6 +425,8 @@ void sqliteCommitInternalChanges(sqlite*);
 void sqliteRollbackInternalChanges(sqlite*);
 void sqliteStartTable(Parse*,Token*,Token*);
 void sqliteAddColumn(Parse*,Token*);
+void sqliteAddNotNull(Parse*);
+void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
 void sqliteEndTable(Parse*,Token*);
 void sqliteDropTable(Parse*, Token*);

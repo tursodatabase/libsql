@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.32 2001/10/02 13:01:49 drh Exp $
+** $Id: btree.c,v 1.33 2001/10/06 16:33:02 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -595,6 +595,10 @@ static void pageDestructor(void *pData){
 ** Actually, this routine just sets up the internal data structures
 ** for accessing the database.  We do not open the database file 
 ** until the first page is loaded.
+**
+** zFilename is the name of the database file.  If zFilename is NULL
+** a new database with a random name is created.  The database will be
+** destroyed when sqliteBtreeClose() is called.
 */
 int sqliteBtreeOpen(
   const char *zFilename,    /* Name of the file containing the BTree database */

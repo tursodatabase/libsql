@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.20 2001/09/27 03:22:33 drh Exp $
+** $Id: insert.c,v 1.21 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -186,12 +186,7 @@ void sqliteInsert(
       }
     }
     if( pColumn && j>=pColumn->nId ){
-      char *zDflt = pTab->aCol[i].zDflt;
-      if( zDflt==0 ){
-        sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
-      }else{
-        sqliteVdbeAddOp(v, OP_String, 0, 0, zDflt, 0);
-      }
+      sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[i].zDflt, 0);
     }else if( srcTab>=0 ){
       sqliteVdbeAddOp(v, OP_Column, srcTab, i, 0, 0); 
     }else{
@@ -218,12 +213,7 @@ void sqliteInsert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        char *zDflt = pTab->aCol[idx].zDflt;
-        if( zDflt==0 ){
-          sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
-        }else{
-          sqliteVdbeAddOp(v, OP_String, 0, 0, zDflt, 0);
-        }
+        sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[idx].zDflt, 0);
       }else if( srcTab>=0 ){
         sqliteVdbeAddOp(v, OP_Column, srcTab, idx, 0, 0); 
       }else{

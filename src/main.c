@@ -14,14 +14,16 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.42 2001/09/27 15:11:54 drh Exp $
+** $Id: main.c,v 1.43 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
 
 /*
 ** This is the callback routine for the code that initializes the
-** database.  Each callback contains the following information:
+** database.  See sqliteInit() below for additional information.
+**
+** Each callback contains the following information:
 **
 **     argv[0] = "meta" or "table" or "index"
 **     argv[1] = table or index name or meta statement type.
@@ -34,8 +36,9 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
   Parse sParse;
   int nErr = 0;
 
-/* TODO: Do some validity checks on all fields.  In particular,
-** make sure fields do not contain NULLs. */
+  /* TODO: Do some validity checks on all fields.  In particular,
+  ** make sure fields do not contain NULLs. Otherwise we might core
+  ** when attempting to initialize from a corrupt database file. */
 
   assert( argc==4 );
   switch( argv[0][0] ){
@@ -51,12 +54,23 @@ static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
     case 'i':
     case 't': {  /* CREATE TABLE  and CREATE INDEX statements */
       if( argv[3] && argv[3][0] ){
+        /* Call the parser to process a CREATE TABLE or CREATE INDEX statement.
+        ** But because sParse.initFlag is set to 1, no VDBE code is generated
+        ** or executed.  All the parser does is build the internal data
+        ** structures that describe the table or index.
+        */
         memset(&sParse, 0, sizeof(sParse));
         sParse.db = db;
         sParse.initFlag = 1;
         sParse.newTnum = atoi(argv[2]);
         nErr = sqliteRunParser(&sParse, argv[3], 0);
       }else{
+        /* If the SQL column is blank it means this is an index that
+        ** was created to be the PRIMARY KEY or to fulfill a UNIQUE
+        ** constraint or a CREATE TABLE.  The index should have already
+        ** been created when we processed the CREATE TABLE.  All we have
+        ** to do here is record the root page.
+        */
         Index *pIndex = sqliteFindIndex(db, argv[1]);
         if( pIndex==0 || pIndex->tnum!=0 ){
           nErr++;
@@ -123,9 +137,12 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** The "tbl_name" is the name of the associated table.  For tables,
   ** the tbl_name column is always the same as name.  For indices, the
   ** tbl_name column contains the name of the table that the index
-  ** indexes.  Finally, the "sql" column contains the complete text of
-  ** the CREATE TABLE or CREATE INDEX statement that originally created
-  ** the table or index.
+  ** indexes.  The "rootpage" column holds the number of the root page
+  ** for the b-tree for the table or index.  Finally, the "sql" column
+  ** contains the complete text of the CREATE TABLE or CREATE INDEX
+  ** statement that originally created the table or index.  If an index
+  ** was created to fulfill a PRIMARY KEY or UNIQUE constraint on a table,
+  ** then the "sql" column is NULL.
   **
   ** If the "type" column has the value "meta", then the "sql" column
   ** contains extra information about the database, such as the
@@ -175,7 +192,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     { OP_Goto,     0, 24, 0},
     { OP_String,   0, 0,  "meta"},      /* 34 */
     { OP_String,   0, 0,  "schema-cookie"},
-    { OP_Null,     0, 0,  0},
+    { OP_String,   0, 0,  0},
     { OP_ReadCookie,0,0,  0},
     { OP_Callback, 4, 0,  0},
     { OP_Close,    0, 0,  0},
@@ -183,7 +200,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   };
 
   /* Create a virtual machine to run the initialization program.  Run
-  ** the program.  The delete the virtual machine.
+  ** the program.  Then delete the virtual machine.
   */
   vdbe = sqliteVdbeCreate(db);
   if( vdbe==0 ){

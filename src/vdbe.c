@@ -30,11 +30,10 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.79 2001/09/27 15:11:54 drh Exp $
+** $Id: vdbe.c,v 1.80 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
-#include <unistd.h>
 
 /*
 ** SQL is translated into a sequence of instructions to be
@@ -1084,20 +1083,26 @@ case OP_Integer: {
 
 /* Opcode: String * * P3
 **
-** The string value P3 is pushed onto the stack.
+** The string value P3 is pushed onto the stack.  If P3==0 then a
+** NULL is pushed onto the stack.
 */
 case OP_String: {
   int i = ++p->tos;
   char *z;
   VERIFY( if( NeedStack(p, p->tos) ) goto no_mem; )
   z = pOp->p3;
-  if( z==0 ) z = "";
-  zStack[i] = z;
-  aStack[i].n = strlen(z) + 1;
-  aStack[i].flags = STK_Str;
+  if( z==0 ){
+    zStack[i] = 0;
+    aStack[i].flags = STK_Null;
+  }else{
+    zStack[i] = z;
+    aStack[i].n = strlen(z) + 1;
+    aStack[i].flags = STK_Str;
+  }
   break;
 }
 
+#if 0 /* NOT USED */
 /* Opcode: Null * * *
 **
 ** Push a NULL value onto the stack.
@@ -1109,6 +1114,7 @@ case OP_Null: {
   aStack[i].flags = STK_Null;
   break;
 }
+#endif
 
 /* Opcode: Pop P1 * *
 **

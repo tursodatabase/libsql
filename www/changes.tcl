@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Oct ? (2.0.2)} {
+<li>Removed some unused "#include <unistd.h>" that were causing problems
+    for VC++.</li>
+<li>Added the FULL_COLUMN_NAMES pragma.  When set to "ON", the names of
+    columns are reported back as TABLE.COLUMN instead of just COLUMN.</li>
+}
+
 chng {2001 Oct 2 (2.0.1)} {
 <li>Remove some C++ style comments from btree.c so that it will compile
     using compilers other than gcc.</li>

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.43 2001/09/28 23:11:24 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.44 2001/10/06 16:33:04 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -169,6 +169,10 @@ base$
 puts {<h2>Related Sites</h2>
 
 <ul>
+
+<li><p>An ODBC driver for SQLite can be found at
+       <a href="http://www.ch-werner.de/sqliteodbc/">
+       http://www.ch-werner.de/sqliteodbc/</a>.</p></li>
 
 <li><p>Here is a good <a href="http://w3.one.net/~jhoffman/sqltut.htm">
        tutorial on SQL</a>.</p></li>

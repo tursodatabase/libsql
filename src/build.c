@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.43 2001/09/27 15:11:54 drh Exp $
+** $Id: build.c,v 1.44 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -203,6 +203,7 @@ void sqliteDeleteTable(sqlite *db, Table *pTable){
   for(i=0; i<pTable->nCol; i++){
     sqliteFree(pTable->aCol[i].zName);
     sqliteFree(pTable->aCol[i].zDflt);
+    sqliteFree(pTable->aCol[i].zType);
   }
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
@@ -335,7 +336,7 @@ char *sqliteTableNameFromToken(Token *pName){
 ** after seeing tokens "CREATE" and "TABLE" and the table name.  The
 ** pStart token is the CREATE and pName is the table name.
 **
-** The new table is constructed in files of the pParse structure.  As
+** The new table is constructed in fields of the pParse structure.  As
 ** more of the CREATE TABLE statement is parsed, additional action
 ** routines are called to build up more of the table.
 */
@@ -404,6 +405,48 @@ void sqliteAddColumn(Parse *pParse, Token *pName){
   pz = &p->aCol[p->nCol++].zName;
   sqliteSetNString(pz, pName->z, pName->n, 0);
   sqliteDequote(*pz);
+}
+
+/*
+** This routine is called by the parser while in the middle of
+** parsing a CREATE TABLE statement.  A "NOT NULL" constraint has
+** been seen on a column.  This routine sets the notNull flag on
+** the column currently under construction.
+*/
+void sqliteAddNotNull(Parse *pParse){
+  Table *p;
+  int i;
+  if( (p = pParse->pNewTable)==0 ) return;
+  i = p->nCol-1;
+  p->aCol[i].notNull = 1;
+}
+
+/*
+** This routine is called by the parser while in the middle of
+** parsing a CREATE TABLE statement.  The pFirst token is the first
+** token in the sequence of tokens that describe the type of the
+** column currently under construction.   pLast is the last token
+** in the sequence.  Use this information to construct a string
+** that contains the typename of the column and store that string
+** in zType.
+*/ 
+void sqliteAddColumnType(Parse *pParse, Token *pFirst, Token *pLast){
+  Table *p;
+  int i, j;
+  int n;
+  char *z, **pz;
+  if( (p = pParse->pNewTable)==0 ) return;
+  i = p->nCol-1;
+  pz = &p->aCol[i].zType;
+  n = pLast->n + ((int)pLast->z) - (int)pFirst->z;
+  sqliteSetNString(pz, pFirst->z, n, 0);
+  z = *pz;
+  for(i=j=0; z[i]; i++){
+    int c = z[i];
+    if( isspace(c) ) continue;
+    z[j++] = c;
+  }
+  z[j] = 0;
 }
 
 /*
@@ -486,9 +529,7 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
   ** "sqlite_master" table on the disk.  So do not write to the disk
   ** again.  Extract the root page number for the table from the 
   ** pParse->newTnum field.  (The page number should have been put
-  ** there by the sqliteOpenCb routine.)  If the table has a primary
-  ** key, the root page of the index associated with the primary key
-  ** should be in pParse->newKnum.
+  ** there by the sqliteOpenCb routine.)
   */
   if( pParse->initFlag ){
     p->tnum = pParse->newTnum;
@@ -618,11 +659,12 @@ void sqliteDropTable(Parse *pParse, Token *pName){
 ** and pTable is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
 ** UNIQUE constraint.  If pTable and pIndex are NULL, use pParse->pNewTable
-** as the table to be indexed.
+** as the table to be indexed.  pParse->pNewTable is a table that is
+** currently being constructed by a CREATE TABLE statement.
 **
-** pList is a list of columns to be indexed.  pList will be NULL if the
-** most recently added column of the table is the primary key or has
-** the UNIQUE constraint.
+** pList is a list of columns to be indexed.  pList will be NULL if this
+** is a primary key or unique-constraint on the most recent column added
+** to the table currently under construction.  
 */
 void sqliteCreateIndex(
   Parse *pParse,   /* All information about this parse */
@@ -763,10 +805,9 @@ void sqliteCreateIndex(
   ** we don't want to recreate it.
   **
   ** If pTable==0 it means this index is generated as a primary key
-  ** or UNIQUE constraint of a CREATE TABLE statement.  The code generator
-  ** for CREATE TABLE will have already opened cursor 0 for writing to
-  ** the sqlite_master table and will take care of closing that cursor
-  ** for us in the end.  So those steps are skipped when pTable==0
+  ** or UNIQUE constraint of a CREATE TABLE statement.  Since the table
+  ** has just been created, it contains no data and the index initialization
+  ** step can be skipped.
   */
   else if( pParse->initFlag==0 ){
     int n;
@@ -796,12 +837,10 @@ void sqliteCreateIndex(
       sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_OpenWrite, 1, 0, 0, 0);
     }
+    addr = sqliteVdbeAddOp(v, OP_String, 0, 0, 0, 0);
     if( pStart && pEnd ){
       n = (int)pEnd->z - (int)pStart->z + 1;
-      addr = sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
       sqliteVdbeChangeP3(v, addr, pStart->z, n);
-    }else{
-      sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
     }
     sqliteVdbeAddOp(v, OP_MakeRecord, 5, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Put, 0, 0, 0, 0);
@@ -1259,6 +1298,68 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       db->flags |= SQLITE_VdbeTrace;
     }else{
       db->flags &= ~SQLITE_VdbeTrace;
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "full_column_names")==0 ){
+    if( getBoolean(zRight) ){
+      db->flags |= SQLITE_FullColNames;
+    }else{
+      db->flags &= ~SQLITE_FullColNames;
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "table_info")==0 ){
+    Table *pTab;
+    Vdbe *v;
+    pTab = sqliteFindTable(db, zRight);
+    if( pTab ) v = sqliteGetVdbe(pParse);
+    if( pTab && v ){
+      static VdbeOp tableInfoPreface[] = {
+        { OP_ColumnCount, 5, 0,       0},
+        { OP_ColumnName,  0, 0,       "cid"},
+        { OP_ColumnName,  1, 0,       "name"},
+        { OP_ColumnName,  2, 0,       "type"},
+        { OP_ColumnName,  3, 0,       "notnull"},
+        { OP_ColumnName,  4, 0,       "dflt_value"},
+      };
+      int i;
+      sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
+      for(i=0; i<pTab->nCol; i++){
+        sqliteVdbeAddOp(v, OP_Integer, i, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[i].zName, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0, 
+           pTab->aCol[i].zType ? pTab->aCol[i].zType : "text", 0);
+        sqliteVdbeAddOp(v, OP_Integer, pTab->aCol[i].notNull, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0, pTab->aCol[i].zDflt, 0);
+        sqliteVdbeAddOp(v, OP_Callback, 5, 0, 0, 0);
+      }
+    }
+  }else
+
+  if( sqliteStrICmp(zLeft, "index_info")==0 ){
+    Index *pIdx;
+    Table *pTab;
+    Vdbe *v;
+    pIdx = sqliteFindIndex(db, zRight);
+    if( pIdx ) v = sqliteGetVdbe(pParse);
+    if( pIdx && v ){
+      static VdbeOp tableInfoPreface[] = {
+        { OP_ColumnCount, 3, 0,       0},
+        { OP_ColumnName,  0, 0,       "seqno"},
+        { OP_ColumnName,  1, 0,       "cid"},
+        { OP_ColumnName,  2, 0,       "name"},
+      };
+      int i;
+      pTab = pIdx->pTable;
+      sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
+      for(i=0; i<pIdx->nColumn; i++){
+        sqliteVdbeAddOp(v, OP_Integer, i, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_Integer, pIdx->aiColumn[i], 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_String, 0, 0,
+            pTab->aCol[pIdx->aiColumn[i]].zName, 0);
+        sqliteVdbeAddOp(v, OP_Callback, 3, 0, 0, 0);
+      }
     }
   }else
 

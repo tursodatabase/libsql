@@ -20,6 +20,7 @@ TOP = ../sqlite
 #    will run on the platform that is doing the build.
 #
 BCC = gcc -g -O2
+#BCC = /opt/ancic/bin/c89 -0
 
 #### If the target operating system supports the "usleep()" system
 #    call, then define the HAVE_USLEEP macro for all C modules.
@@ -58,6 +59,7 @@ EXE =
 TCC = gcc -O6
 #TCC = gcc -g -O0 -Wall
 #TCC = /opt/mingw/bin/i386-mingw32-gcc -O6
+#TCC = /opt/ansic/bin/c89 -O +z -Wl,-a,archive
 
 #### Tools used to build a static library.
 #
@@ -72,12 +74,14 @@ RANLIB = ranlib
 #TCL_FLAGS = -DSTATIC_BUILD=1
 TCL_FLAGS = -I/home/drh/tcltk/8.4linux
 #TCL_FLAGS = -I/home/drh/tcltk/8.4win -DSTATIC_BUILD=1
+#TCL_FLAGS = -I/home/drh/tcltk/8.3hpux
 
 #### Linker options needed to link against the TCL library.
 #
 #LIBTCL = -ltcl -lm -ldl
 LIBTCL = /home/drh/tcltk/8.4linux/libtcl8.4g.a -lm -ldl
 #LIBTCL = /home/drh/tcltk/8.4win/libtcl84s.a -lmsvcrt
+#LIBTCL = /home/drh/tcltk/8.3hpux/libtcl8.3.a -ldld -lm -lc
 
 #### Compiler options needed for programs that use the readline() library.
 #

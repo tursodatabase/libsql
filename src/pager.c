@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.24 2001/09/20 01:44:43 drh Exp $
+** @(#) $Id: pager.c,v 1.25 2001/10/06 16:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -377,6 +377,10 @@ void sqlitepager_set_cachesize(Pager *pPager, int mxPage){
 ** The file to be cached need not exist.  The file is not locked until
 ** the first call to sqlitepager_get() and is only held open until the
 ** last page is released using sqlitepager_unref().
+**
+** If zFilename is NULL then a random temporary file is created and used
+** as the file to be cached.  The file will be deleted automatically when
+** it is closed.
 */
 int sqlitepager_open(
   Pager **ppPager,         /* Return the Pager structure here */

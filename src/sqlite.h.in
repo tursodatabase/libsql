@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.20 2001/09/27 03:22:33 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.21 2001/10/06 16:33:03 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -22,6 +22,13 @@
 ** The version of the SQLite library.
 */
 #define SQLITE_VERSION         "--VERS--"
+
+/*
+** Make sure we can call this stuff from C++.
+*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 ** The version string is also compiled into the library so that a program
@@ -341,5 +348,9 @@ int sqlite_get_table_vprintf(
   char **errmsg,         /* Error msg written here */
   va_list ap             /* Arguments to the format string */
 );
+
+#ifdef __cplusplus
+}  /* End of the 'extern "C"' block */
+#endif
 
 #endif /* _SQLITE_H_ */
