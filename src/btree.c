@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.43 2001/12/14 15:09:57 drh Exp $
+** $Id: btree.c,v 1.44 2001/12/15 02:47:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1252,6 +1252,7 @@ int sqliteBtreeFirst(BtCursor *pCur, int *pRes){
   }
   *pRes = 0;
   rc = moveToLeftmost(pCur);
+  pCur->bSkipNext = 0;
   return rc;
 }
 

@@ -1,5 +1,5 @@
-C Fix\sa\scritical\sbug\sin\sthe\screation\sof\stemporary\stables.\s(CVS\s327)
-D 2001-12-15T02:35:59
+C Fix\sa\sbug\sin\sthe\ssqliteBtreeFirst()\sfunction\swhich\swas\scausing\sthe\sfirst\nrow\sof\sa\stable\sto\sbe\srepeated\sduring\sa\sscan.\s(CVS\s328)
+D 2001-12-15T02:47:28
 F Makefile.in 352fed589f09dd94347e0bb391d047118ebd6105
 F Makefile.template 0fbf0ee1fe38183d760170a13e91fffec64e73f5
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -19,7 +19,7 @@ F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F publish.sh 33cbe6798969f637698044023c139080e5d772a6
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
-F src/btree.c e4ea48618c136694de21e96fea0ed9a3d79c7996
+F src/btree.c c27474fdafb7036eef17673c7291e54c2116d6ff
 F src/btree.h 0250a0a577a98cc64ddf1582d50c08b8d2451650
 F src/build.c 5127f737837a9d2a8cb4b998dbab505c08b8f06a
 F src/delete.c 5d93a21c1388cfb1359bda01c072f25583a2f4f2
@@ -117,7 +117,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 880ef67cb4f2797b95bf1368fc4e0d8ca0fda956
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6ecd90b6c3f3616af78b5ac6323e0f2e883a61c9
-R 1d0e9014f96c82eaa3df3b50b1b20792
+P 96f707413699eec16053a0323affbe8bf3760c14
+R c16b7f44f1165aa12d6687c129be8884
 U drh
-Z 6148f6846e9207bc7fc3dbd73e756dbd
+Z 199292d6d0682db07ec614d09be7bc7b
