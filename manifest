@@ -1,5 +1,5 @@
-C Fix\sfor\s#764.\sWhen\sreloading\sthe\sschema,\sload\sthe\stemp\sschema\slast.\s(CVS\s1628)
-D 2004-06-19T02:22:10
+C Update\ssqlite.def\sfor\sversion\s3.0.\s(CVS\s1629)
+D 2004-06-19T03:26:12
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
-F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
+F sqlite.def ae35f40943ddf25ca7de2439d2beeb06c924ca9c
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 26676538ee63311393b52c8479c324469bf71f65
-R 00e7c262ba02f91646c321e006cada67
-U danielk1977
-Z 9439357e77e5edc00904308c8fb4c430
+P 1f43219a7402af7255743466731dba2afb31d12b
+R 04cb6cb57e48220a19336f286fc84528
+U drh
+Z 91bdc31755ee1b84ef2ddbce38c07d07
