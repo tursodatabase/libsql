@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.38 2004/06/09 00:48:13 drh Exp $
+** $Id: pragma.c,v 1.39 2004/06/09 12:30:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -203,7 +203,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0},
     };
     int addr;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "cache_size", P3_STATIC);
@@ -243,7 +246,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getCacheSize[] = {
       { OP_Callback,    1, 0,        0},
     };
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       int size = db->cache_size;;
       if( size<0 ) size = -size;
@@ -294,7 +300,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Callback,    1, 0,        0}
     };
     int addr;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
@@ -338,7 +347,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getSync[] = {
       { OP_Callback,    1, 0,        0},
     };
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "synchronous", P3_STATIC);
@@ -371,7 +383,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqlite3StrICmp(zLeft, "table_info")==0 ){
     Table *pTab;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       int i;
@@ -400,7 +415,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "index_info")==0 ){
     Index *pIdx;
     Table *pTab;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     pIdx = sqlite3FindIndex(db, zRight, 0);
     if( pIdx ){
       int i;
@@ -423,7 +441,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "index_list")==0 ){
     Index *pIdx;
     Table *pTab;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -449,7 +470,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 ){
     FKey *pFK;
     Table *pTab;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     pTab = sqlite3FindTable(db, zRight, 0);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -482,7 +506,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 
   if( sqlite3StrICmp(zLeft, "database_list")==0 ){
     int i;
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     sqlite3VdbeSetNumCols(v, 3);
     sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
     sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
@@ -514,7 +541,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_Callback,    1, 0,        0},
     };
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       sqlite3VdbeAddOp(v, OP_Integer, db->temp_store, 0);
       sqlite3VdbeSetNumCols(v, 1);
@@ -540,7 +570,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOpList getTmpDbLoc[] = {
       { OP_ReadCookie,  0, 5,        0},
       { OP_Callback,    1, 0,        0}};
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( pRight->z==pLeft->z ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "temp_store", P3_STATIC);
@@ -556,7 +589,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     extern void sqlite3ParserTrace(FILE*, char *);
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     if( getBoolean(zRight) ){
       sqlite3ParserTrace(stdout, "parser: ");
     }else{
@@ -589,7 +625,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
 
     /* Initialize the VDBE program */
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+    if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+      pParse->nErr++;
+      return;
+    }
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, "integrity_check", P3_STATIC);
     sqlite3VdbeAddOpList(v, ArraySize(initCode), initCode);
@@ -734,7 +773,10 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     };
     struct EncName *pEnc;
     if( pRight->z==pLeft->z ){    /* "PRAGMA encoding" */
-      if( SQLITE_OK!=sqlite3ReadSchema(pParse->db) ) return;
+      if( SQLITE_OK!=sqlite3ReadSchema(pParse->db, &pParse->zErrMsg) ){
+        pParse->nErr++;
+        return;
+      }
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, "encoding", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String8, 0, 0);

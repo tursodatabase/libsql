@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.5 2004/06/07 07:52:19 danielk1977 Exp $
+# $Id: enc2.test,v 1.6 2004/06/09 12:30:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,12 +114,32 @@ set encodings [list UTF-8 UTF-16le UTF-16be]
 set i 1
 foreach enc $encodings {
   file delete -force test.db
-  sqlite db test.db $enc
+  sqlite db test.db
   db eval "PRAGMA encoding = \"$enc\""
   execsql $dbcontents
   db close
   run_test_script enc2-$i $enc
   incr i
 }
+
+# Test that it is an error to try to attach a database with a different
+# encoding to the main database.
+do_test enc2-4.1 {
+  file delete -force test.db
+  sqlite db test.db
+  db eval "PRAGMA encoding = 'UTF-8'"
+  db eval "CREATE TABLE abc(a, b, c);"
+} {}
+do_test enc2-4.2 {
+  file delete -force test2.db
+  sqlite db2 test2.db
+  db2 eval "PRAGMA encoding = 'UTF-16'"
+  db2 eval "CREATE TABLE abc(a, b, c);"
+} {}
+do_test enc2-4.3 {
+  catchsql {
+    ATTACH 'test2.db' as aux;
+  }
+} {1 {attached databases must use the same text encoding as main database}}
 
 finish_test

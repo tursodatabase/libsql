@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.208 2004/06/09 09:55:18 danielk1977 Exp $
+** $Id: main.c,v 1.209 2004/06/09 12:30:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -382,21 +382,15 @@ int sqlite3Init(sqlite *db, char **pzErrMsg){
 ** This routine is a no-op if the database schema is already initialised.
 ** Otherwise, the schema is loaded. An error code is returned.
 */
-int sqlite3ReadSchema(sqlite *db){
+int sqlite3ReadSchema(sqlite *db, char **pzErrMsg){
   int rc = SQLITE_OK;
-  char *zErrMsg = 0;
 
   if( !db->init.busy ){
     if( (db->flags & SQLITE_Initialized)==0 ){
-      rc = sqlite3Init(db, &zErrMsg);
+      rc = sqlite3Init(db, pzErrMsg);
     }
   }
-  assert( (db->flags & SQLITE_Initialized)!=0 || db->init.busy );
-
-  sqlite3Error(db, rc, zErrMsg);
-  if( zErrMsg ){
-    sqliteFree(zErrMsg);
-  }
+  assert( rc!=SQLITE_OK || (db->flags & SQLITE_Initialized)||db->init.busy );
   return rc;
 }
 

@@ -421,7 +421,10 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   sqlite *db = pParse->db;
 
   if( sqlite3_malloc_failed ) goto drop_trigger_cleanup;
-  if( SQLITE_OK!=sqlite3ReadSchema(db) ) goto drop_trigger_cleanup;
+  if( SQLITE_OK!=sqlite3ReadSchema(db, &pParse->zErrMsg) ){
+    pParse->nErr++;
+    goto drop_trigger_cleanup;
+  }
 
   assert( pName->nSrc==1 );
   zDb = pName->a[0].zDatabase;

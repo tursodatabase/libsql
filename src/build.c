@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.211 2004/06/09 09:55:17 danielk1977 Exp $
+** $Id: build.c,v 1.212 2004/06/09 12:30:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -130,7 +130,7 @@ void sqlite3FinishCoding(Parse *pParse){
 Table *sqlite3FindTable(sqlite *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
-  int rc = sqlite3ReadSchema(db);
+  int rc = sqlite3ReadSchema(db, 0);
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
@@ -183,7 +183,7 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 Index *sqlite3FindIndex(sqlite *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
-  int rc = sqlite3ReadSchema(db);
+  int rc = sqlite3ReadSchema(db, 0);
   for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
