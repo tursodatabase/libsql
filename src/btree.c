@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.224 2004/11/22 19:07:10 drh Exp $
+** $Id: btree.c,v 1.225 2004/11/23 09:06:56 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4076,6 +4076,9 @@ static int balance_shallower(MemPage *pPage){
           szCell[i] = cellSizePtr(pChild, apCell[i]);
         }
         assemblePage(pPage, pChild->nCell, apCell, szCell);
+        /* Copy the right-pointer of the child to the parent. */
+        put4byte(&pPage->aData[pPage->hdrOffset+8], 
+            get4byte(&pChild->aData[pChild->hdrOffset+8]));
         freePage(pChild);
         TRACE(("BALANCE: child %d transfer to page 1\n", pChild->pgno));
       }else{

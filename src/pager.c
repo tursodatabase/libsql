@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.177 2004/11/10 15:27:38 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.178 2004/11/23 09:06:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3315,6 +3315,7 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
     needSyncPgno = pPg->pgno;
     assert( pPg->inJournal );
     assert( pPg->dirty );
+    assert( pPager->needSync );
   }
 
   /* Unlink pPg from it's hash-chain */
@@ -3334,6 +3335,7 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
       assert( pPgOld->inJournal );
       pPg->inJournal = 1;
       pPg->needSync = 1;
+      assert( pPager->needSync );
     }
   }
 
@@ -3357,11 +3359,16 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
     ** Currently, no such page exists in the page-cache and the 
     ** Pager.aInJournal bit has been set. This needs to be remedied by loading
     ** the page into the pager-cache and setting the PgHdr.needSync flag.
+    **
+    ** The sqlite3pager_get() call may cause the journal to sync. So make
+    ** sure the Pager.needSync flag is set too.
     */
     int rc;
     void *pNeedSync;
+    assert( pPager->needSync );
     rc = sqlite3pager_get(pPager, needSyncPgno, &pNeedSync);
     if( rc!=SQLITE_OK ) return rc;
+    pPager->needSync = 1;
     DATA_TO_PGHDR(pNeedSync)->needSync = 1;
     DATA_TO_PGHDR(pNeedSync)->inJournal = 1;
     DATA_TO_PGHDR(pNeedSync)->dirty = 1;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.33 2004/11/10 11:55:15 danielk1977 Exp $
+# $Id: table.test,v 1.34 2004/11/23 09:06:56 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -626,6 +626,26 @@ do_test table-14.4 {
   ] 
   set result [list $rc $msg]
 } {1 {database table is locked}}
+
+# Create and drop 2000 tables. This is to check that the balance_shallow()
+# routine works correctly on the sqlite_master table. At one point it
+# contained a bug that would prevent the right-child pointer of the
+# child page from being copied to the root page.
+#
+do_test table-15.1 {
+  execsql {BEGIN}
+  for {set i 0} {$i<2000} {incr i} {
+    execsql "CREATE TABLE tbl$i (a, b, c)"
+  }
+  execsql {COMMIT}
+} {}
+do_test table-15.2 {
+  execsql {BEGIN}
+  for {set i 0} {$i<2000} {incr i} {
+    execsql "DROP TABLE tbl$i"
+  }
+  execsql {COMMIT}
+} {}
 
 finish_test
 
