@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sand\schanges\slog\sfor\s2.4.9\s(CVS\s541)
-D 2002-04-22T00:33:24
+C Version\s2.4.9\s(CVS\s542)
+D 2002-04-22T00:35:06
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8a50c57cc3342de9c6eca6c2567d3aa42b407f10
+P a91da82f8ae2b375bf9f5e064f16d6a5770e20b6
 R 472bee23aa57568ebf6afa84b40ded15
 U drh
-Z 9dffa65382299cf857a0cc2534644441
+Z 4019f966a724267cde26980ddbf6ddea
