@@ -510,7 +510,7 @@ int sqlite3_bind_text16(
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;
-  int rc, txt_enc;
+  int rc;
 
   rc = vdbeUnbind(p, i);
   if( rc ){

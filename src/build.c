@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.221 2004/06/18 04:24:54 danielk1977 Exp $
+** $Id: build.c,v 1.222 2004/06/18 06:02:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -950,7 +950,7 @@ static void callCollNeeded(sqlite *db, const char *zName, int nName){
   /* No collation sequence of this type for this encoding is registered.
   ** Call the collation factory to see if it can supply us with one.
   */
-  char *zExternal = 0;
+  char const *zExternal = 0;
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( nName<0 ) nName = strlen(zName);
   if( db->xCollNeeded ){

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.77 2004/06/18 04:24:55 danielk1977 Exp $
+** $Id: tokenize.c,v 1.78 2004/06/18 06:02:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -702,7 +702,7 @@ int sqlite3_complete(const char *zSql){
 */
 int sqlite3_complete16(const void *zSql){
   sqlite3_value *pVal;
-  char *zSql8;
+  char const *zSql8;
   int rc = 0;
 
   pVal = sqlite3ValueNew();
@@ -710,7 +710,6 @@ int sqlite3_complete16(const void *zSql){
   zSql8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zSql8 ){
     rc = sqlite3_complete(zSql8);
-    sqliteFree(zSql8);
   }
   sqlite3ValueFree(pVal);
   return rc;
