@@ -46,6 +46,7 @@
 # Assign numbers to all opcodes and output the result.
 END {
   cnt = 0
+  max = 0
   print "/* Automatically generated.  Do not edit */"
   print "/* See the mkopcodeh.awk script for details */"
   for(name in op){
@@ -54,6 +55,18 @@ END {
       while( used[cnt] ) cnt++
       op[name] = cnt
     }
+    used[op[name]] = 1;
+    if( op[name]>max ) max = op[name]
     printf "#define %-30s %d\n", name, op[name]
+  }
+  seenUnused = 0;
+  for(i=1; i<max; i++){
+    if( !used[i] ){
+      if( !seenUnused ){
+        printf "\n/* The following opcode values are never used */\n"
+        seenUnused = 1
+      }
+      printf "/*#define OP_?          %d  -- Not Used */\n", i
+    }
   }
 }

@@ -17,9 +17,10 @@ BEGIN {
   print     " || defined(SQLITE_DEBUG)"
   print "const char *const sqlite3OpcodeNames[] = { \"?\","
 }
-/^#define OP_/ {
+/define OP_/ {
   sub("OP_","",$2)
-  print "  \"" $2 "\","
+  i++
+  printf " /* %3d */ \"%s\",\n", $3, $2
 }
 END {
   print "};"

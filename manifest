@@ -1,5 +1,5 @@
-C Back\sout\sthe\sUSE_TCL_STUBS\schanges\sbecause\sit\sbreaks\sthe\sbuild.\s\sI\sthink\nthe\sstrategy\sneeds\sto\sbe\sto\sabandon\slibtool\sand\suse\stcl.m4\sto\sfigure\sout\show\nto\sbuild\sour\sown\sshared\slibraries.\s\sTicket\s#1034.\s(CVS\s2162)
-D 2004-12-10T03:08:13
+C Fix\sa\sproblem\swith\sthe\sautomatic\sgeneration\sof\sthe\sopcode\sname\stable.\s(CVS\s2163)
+D 2004-12-10T17:17:18
 F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -18,8 +18,8 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
 F main.mk 41626e77ccf8ece8a3afa98e41c2fe584160e7a1
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
-F mkopcodec.awk 14a794f7b206976afc416b30fe8e0fc97f3434e9
-F mkopcodeh.awk 4090944e4de0a2ccb99aa0083290f73bce4db406
+F mkopcodec.awk 141aede6e58634f9cf9e96205a5316680e649987
+F mkopcodeh.awk ee454cdee1da38b485c5e8cca84e5727c07158ba
 F mkso.sh 7b67da1d63070875ba948e749aee9ef50ce36e3d
 F publish.sh 72bde067dda3fc2d33e92f20253b924e3b97da30
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 3032cc2b88800e7226e6fab8f5ca7a7e8dbac36e
-R c8abceba0d2236f8d89fe82f64595ad4
+P 7f4679b92ec764bf5c11a0f19876073a94742092
+R 36a3ee9aa86cf8f9d9120d6180f8bb9a
 U drh
-Z 4da33d0d73d20d83bdec266239288aee
+Z 1f22ea61df5694df34bb633032f0b38a
