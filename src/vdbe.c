@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.70 2001/09/16 00:13:27 drh Exp $
+** $Id: vdbe.c,v 1.71 2001/09/18 02:02:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2332,7 +2332,11 @@ case OP_NewRecno: {
       v = ux.i;
       rx = sqliteBtreeMoveto(p->aCsr[i].pCursor, &v, sizeof(v), &res);
       cnt++;
-    }while( cnt<10 && rx==SQLITE_OK && res==0 );
+    }while( cnt<200 && rx==SQLITE_OK && res==0 );
+    if( rx==SQLITE_OK && res==0 ){
+      rc = SQLITE_FULL;
+      goto abort_due_to_error;
+    }
   }
   VERIFY( NeedStack(p, p->tos+1); )
   p->tos++;

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.20 2001/09/16 00:13:27 drh Exp $
+** @(#) $Id: pager.c,v 1.21 2001/09/18 02:02:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -947,14 +947,12 @@ void *sqlitepager_lookup(Pager *pPager, Pgno pgno){
 ** removed.
 */
 int sqlitepager_unref(void *pData){
-  Pager *pPager;
   PgHdr *pPg;
 
   /* Decrement the reference count for this page
   */
   pPg = DATA_TO_PGHDR(pData);
   assert( pPg->nRef>0 );
-  pPager = pPg->pPager;
   pPg->nRef--;
   REFINFO(pPg);
 
@@ -962,6 +960,8 @@ int sqlitepager_unref(void *pData){
   ** destructor and add the page to the freelist.
   */
   if( pPg->nRef==0 ){
+    Pager *pPager;
+    pPager = pPg->pPager;
     pPg->pNextFree = 0;
     pPg->pPrevFree = pPager->pLast;
     pPager->pLast = pPg;

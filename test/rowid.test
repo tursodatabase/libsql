@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.4 2001/09/16 00:13:28 drh Exp $
+# $Id: rowid.test,v 1.5 2001/09/18 02:02:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,6 +61,13 @@ do_test rowid-1.7 {
   set sql "SELECT x FROM t1 WHERE _rowid_==$x2rowid(1)"
   execsql $sql
 } {1}
+do_test rowid-1.7.1 {
+  while 1 {
+    set norow [expr {int(rand()*1000000)}]
+    if {$norow!=$x2rowid(1) && $norow!=$x2rowid(3)} break
+  }
+  execsql "SELECT x FROM t1 WHERE rowid=$norow"
+} {}
 do_test rowid-1.8 {
   global x2rowid
   set v [execsql {SELECT x, oid FROM t1 order by x}]
@@ -235,13 +242,13 @@ do_test rowid-4.5 {
     SELECT t1.x, fcnt() FROM t2, t1 
     WHERE t2.y==256 AND t1.rowid==t2.rowid
   }
-} {4 2}
+} {4 1}
 do_test rowid-4.5.1 {
   execsql {
     SELECT t1.x, fcnt() FROM t2, t1 
     WHERE t1.OID==t2.rowid AND t2.y==81
   }
-} {3 2}
+} {3 1}
 do_test rowid-4.6 {
   execsql {
     SELECT t1.x FROM t1, t2
