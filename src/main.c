@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.86 2002/07/13 17:23:21 drh Exp $
+** $Id: main.c,v 1.87 2002/07/18 00:34:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -88,6 +88,31 @@ int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
   }
   return nErr;
 }
+
+/*
+** This is a callback procedure used to reconstruct a table.  The
+** name of the table to be reconstructed is passed in as argv[0].
+**
+** This routine is used to automatically upgrade a database from
+** format version 1 or 2 to version 3.  The correct operation of
+** this routine relys on the fact that no indices are used when
+** copying a table out to a temporary file.
+*/
+static int 
+upgrade_3_callback(void *pDb, int argc, char **argv, char **NotUsed){
+  sqlite *db = (sqlite*)pDb;
+  int rc;
+
+  rc = sqlite_exec_printf(db,
+    "CREATE TEMP TABLE sqlite_x AS SELECT * FROM '%q'; "
+    "DELETE FROM '%q'; "
+    "INSERT INTO '%q' SELECT * FROM sqlite_x; "
+    "DROP TABLE sqlite_x;",
+    0, 0, 0, argv[0], argv[0], argv[0]);
+  return rc!=SQLITE_OK;
+}
+
+
 
 /*
 ** Attempt to read the database schema and initialize internal
@@ -206,12 +231,14 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   /*
   **     file_format==1    Version 2.1.0.
   **     file_format==2    Version 2.2.0. Add support for INTEGER PRIMARY KEY.
-  **     file_format==3    Version 2.6.0. Add support for separate numeric and
+  **     file_format==3    Version 2.6.0. Fix empty-string index bug.
+  **     file_format==4    Version 2.7.0. Add support for separate numeric and
   **                       text datatypes.
   */
   if( db->file_format==0 ){
-    db->file_format = 2;
-  }else if( db->file_format>2 ){
+    /* This happens if the database was initially empty */
+    db->file_format = 3;
+  }else if( db->file_format>3 ){
     sqliteBtreeCloseCursor(curMain);
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
     rc = SQLITE_ERROR;
@@ -313,6 +340,40 @@ sqlite *sqlite_open(const char *zFilename, int mode, char **pzErrMsg){
     sqliteFree(*pzErrMsg);
     *pzErrMsg = 0;
   }
+
+  /* If the database is in formats 1 or 2, then upgrade it to
+  ** version 3.  This will reconstruct all indices.  If the
+  ** upgrade fails for any reason (ex: out of disk space, database
+  ** is read only, interrupt receive, etc.) then refuse to open.
+  */
+  if( db->file_format<3 ){
+    char *zErr;
+    int meta[SQLITE_N_BTREE_META];
+
+    db->file_format = 3;
+    rc = sqlite_exec(db,
+      "BEGIN; SELECT name FROM sqlite_master WHERE type='table';",
+      upgrade_3_callback,
+      db,
+      &zErr);
+    if( rc==SQLITE_OK ){
+      sqliteBtreeGetMeta(db->pBe, meta);
+      meta[2] = 3;
+      sqliteBtreeUpdateMeta(db->pBe, meta);
+      sqlite_exec(db, "COMMIT", 0, 0, 0);
+    }
+    if( rc!=SQLITE_OK ){
+      sqliteSetString(pzErrMsg, 
+        "unable to upgrade database to the version 2.6 format",
+        zErr ? ": " : 0, zErr, 0);
+      sqliteFree(zErr);
+      sqliteStrRealloc(pzErrMsg);
+      sqlite_close(db);
+      return 0;
+    }
+  }
+
+  /* Return a pointer to the newly opened database structure */
   return db;
 
 no_mem_on_open:
@@ -501,6 +562,11 @@ int sqlite_exec(
       sqliteSafetyOff(db);
       return rc;
     }
+  }
+  if( db->file_format<3 ){
+    sqliteSafetyOff(db);
+    sqliteSetString(pzErrMsg, "obsolete database file format", 0);
+    return SQLITE_ERROR;
   }
   if( db->recursionDepth==0 ){ db->nChange = 0; }
   db->recursionDepth++;

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.105 2002/07/11 12:18:17 drh Exp $
+** $Id: select.c,v 1.106 2002/07/18 00:34:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -322,7 +322,7 @@ static void pushOntoSorter(Parse *pParse, Vdbe *v, ExprList *pOrderBy){
       type = SQLITE_SO_TEXT;
     }else if( (order & SQLITE_SO_TYPEMASK)==SQLITE_SO_NUM ){
       type = SQLITE_SO_NUM;
-    }else if( pParse->db->file_format>=3 ){
+    }else if( pParse->db->file_format>=4 ){
       type = sqliteExprType(pOrderBy->a[i].pExpr);
     }else{
       type = SQLITE_SO_NUM;
@@ -429,7 +429,7 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqliteVdbeCurrentAddr(v)+7);
 #endif
     sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
-    if( pParse->db->file_format>=3 ) sqliteAddKeyType(v, pEList);
+    if( pParse->db->file_format>=4 ) sqliteAddKeyType(v, pEList);
     sqliteVdbeAddOp(v, OP_Distinct, distinct, sqliteVdbeCurrentAddr(v)+3);
     sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
@@ -1968,7 +1968,7 @@ int sqliteSelect(
         sqliteExprCode(pParse, pGroupBy->a[i].pExpr);
       }
       sqliteVdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0);
-      if( pParse->db->file_format>=3 ) sqliteAddKeyType(v, pGroupBy);
+      if( pParse->db->file_format>=4 ) sqliteAddKeyType(v, pGroupBy);
       lbl1 = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1);
       for(i=0; i<pParse->nAgg; i++){

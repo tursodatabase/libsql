@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.39 2002/07/05 21:42:37 drh Exp $
+** $Id: delete.c,v 1.40 2002/07/18 00:34:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -381,7 +381,7 @@ void sqliteGenerateRowIndexDelete(
       }
     }
     sqliteVdbeAddOp(v, OP_MakeIdxKey, pIdx->nColumn, 0);
-    if( db->file_format>=3 ) sqliteAddIdxKeyType(v, pIdx);
+    if( db->file_format>=4 ) sqliteAddIdxKeyType(v, pIdx);
     sqliteVdbeAddOp(v, OP_IdxDelete, base+i, 0);
   }
 }

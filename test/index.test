@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.18 2002/07/13 03:11:54 drh Exp $
+# $Id: index.test,v 1.19 2002/07/18 00:34:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -414,5 +414,71 @@ do_test index-13.4 {
     SELECT * FROM t5;
   }
 } {1 2 3 a b c}
+
+# Check the sort order of data in an index.
+#
+do_test index-14.1 {
+  execsql {
+    CREATE TABLE t6(a,b,c);
+    CREATE INDEX t6i1 ON t6(a,b);
+    INSERT INTO t6 VALUES('','',1);
+    INSERT INTO t6 VALUES('',NULL,2);
+    INSERT INTO t6 VALUES(NULL,'',3);
+    INSERT INTO t6 VALUES('abc',123,4);
+    INSERT INTO t6 VALUES(123,'abc',5);
+    SELECT c FROM t6 ORDER BY a,b;
+  }
+} {3 5 2 1 4}
+do_test index-14.2 {
+  execsql {
+    SELECT c FROM t6 WHERE a='';
+  }
+} {2 1}
+do_test index-14.3 {
+  execsql {
+    SELECT c FROM t6 WHERE b='';
+  }
+} {1 3}
+do_test index-14.4 {
+  execsql {
+    SELECT c FROM t6 WHERE a>'';
+  }
+} {4}
+do_test index-14.5 {
+  execsql {
+    SELECT c FROM t6 WHERE a>='';
+  }
+} {2 1 4}
+do_test index-14.6 {
+  execsql {
+    SELECT c FROM t6 WHERE a>123;
+  }
+} {2 1 4}
+do_test index-14.7 {
+  execsql {
+    SELECT c FROM t6 WHERE a>=123;
+  }
+} {5 2 1 4}
+do_test index-14.8 {
+  execsql {
+    SELECT c FROM t6 WHERE a<'abc';
+  }
+} {3 5 2 1}
+do_test index-14.9 {
+  execsql {
+    SELECT c FROM t6 WHERE a<='abc';
+  }
+} {3 5 2 1 4}
+do_test index-14.10 {
+  execsql {
+    SELECT c FROM t6 WHERE a<='';
+  }
+} {3 5 2 1}
+do_test index-14.11 {
+  execsql {
+    SELECT c FROM t6 WHERE a<'';
+  }
+} {3 5}
+
 
 finish_test
