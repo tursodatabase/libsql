@@ -21,6 +21,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2004 September 02 (3.0.6 beta)} {
+<li>Better detection and handling of corrupt database files.</li>
+<li>The sqlite3_step() interface returns SQLITE_BUSY if it is unable
+    to commit a change because of a lock</li>
+<li>Combine the implementations of LIKE and GLOB into a single
+    pattern-matching subroutine.</li>
+<li>Miscellaneous code size optimizations and bug fixes</li>
+}
+
 chng {2004 August 29 (3.0.5 beta)} {
 <li>Support for ":AAA" style bind parameter names.</li>
 <li>Added the new sqlite3_bind_parameter_name() interface.</li>

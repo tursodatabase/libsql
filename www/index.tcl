@@ -58,6 +58,15 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2004-Sep-02} {Version 3.0.6 (beta)} {
+  Because of some important changes to way sqlite3_step() responds
+  to locked databases when trying to do a COMMIT, we decided to
+  do an additional beta release prior to the first "stable" release.
+  If no serious problems are discovered in this version, we will
+  release version 3.0 "stable" in about a week.
+}
+
+
 newsitem {2004-Aug-29} {Version 3.0.5 (beta)} {
   The fourth beta release of SQLite version 3.0 is now available.
   The next release is expected to be called "stable".
@@ -85,4 +94,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.93 2004/08/29 17:52:40 drh Exp $}
+footer {$Id: index.tcl,v 1.94 2004/09/02 16:36:03 drh Exp $}
