@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.173 2004/05/11 09:31:32 drh Exp $
+** $Id: main.c,v 1.174 2004/05/11 09:50:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -165,9 +165,9 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
 
   /* The following SQL will read the schema from the master tables.
   */
-  static char init_script[] = 
-     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master "
-     "UNION ALL "
+  static char init_script1[] = 
+     "SELECT type, name, rootpage, sql, 1 FROM sqlite_temp_master";
+  static char init_script2[] = 
      "SELECT type, name, rootpage, sql, 0 FROM sqlite_master";
 
   assert( iDb>=0 && iDb!=1 && iDb<db->nDb );
@@ -285,7 +285,19 @@ static int sqlite3InitOne(sqlite *db, int iDb, char **pzErrMsg){
     rc = SQLITE_OK;
   }else{
     if( iDb==0 ){
-      rc = sqlite3_exec(db, init_script, sqlite3InitCallback, &initData, 0);
+      /* This SQL statement tries to read the temp.* schema from the
+      ** sqlite_temp_master table. It might return SQLITE_EMPTY. We
+      ** unset the SQLITE_InternChanges flag temporarily to ensure
+      ** that the sqlite_master entry is not removed from the internal
+      ** schema if this does return SQLITE_EMPTY.
+      */
+      assert( db->flags&SQLITE_InternChanges );
+      db->flags &= ~SQLITE_InternChanges;
+      rc = sqlite3_exec(db, init_script1, sqlite3InitCallback, &initData, 0);
+      db->flags |= SQLITE_InternChanges;
+      if( rc==SQLITE_OK || rc==SQLITE_EMPTY ){
+        rc = sqlite3_exec(db, init_script2, sqlite3InitCallback, &initData, 0);
+      }
     }else{
       char *zSql = 0;
       sqlite3SetString(&zSql, 
