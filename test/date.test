@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.11 2004/10/31 02:22:50 drh Exp $
+# $Id: date.test,v 1.12 2005/01/15 01:52:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,6 +55,8 @@ datetest 1.22 {julianday('2000-01-01 12:00:00.')} NULL
 datetest 1.23 julianday(12345.6) 12345.6
 datetest 1.24 {julianday('2001-01-01 12:00:00 bogus')} NULL
 datetest 1.25 {julianday('2001-01-01 bogus')} NULL
+datetest 1.26 {julianday('2001-01-01 12:60:00')} NULL
+datetest 1.27 {julianday('2001-01-01 12:59:60')} NULL
 
 datetest 2.1 datetime(0,'unixepoch') {1970-01-01 00:00:00}
 datetest 2.2 datetime(946684800,'unixepoch') {2000-01-01 00:00:00}
@@ -140,6 +142,7 @@ datetest 5.1 {datetime('1994-04-16 14:00:00 -05:00')} {1994-04-16 09:00:00}
 datetest 5.2 {datetime('1994-04-16 14:00:00 +05:15')} {1994-04-16 19:15:00}
 datetest 5.3 {datetime('1994-04-16 05:00:00 -08:30')} {1994-04-15 20:30:00}
 datetest 5.4 {datetime('1994-04-16 14:00:00 +11:55')} {1994-04-17 01:55:00}
+datetest 5.5 {datetime('1994-04-16 14:00:00 +11:60')} NULL
 
 # localtime->utc and utc->localtime conversions.  These tests only work
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC
@@ -258,6 +261,7 @@ datetest 11.8 {datetime('2004-02-28 20:00:00', '11:59')} \
    {2004-02-29 07:59:00}
 datetest 11.9 {datetime('2004-02-28 20:00:00', '12:01')} \
    {2004-02-29 08:01:00}
+datetest 11.10 {datetime('2004-02-28 20:00:00', '12:60')} NULL
 
 
 

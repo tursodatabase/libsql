@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.220 2005/01/03 02:26:55 drh Exp $
+** $Id: select.c,v 1.221 2005/01/15 01:52:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -670,14 +670,18 @@ static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
       }
       break;
     }
-    case TK_AS:
-      zType = columnType(pParse, pTabList, pExpr->pLeft); 
-      break;
     case TK_SELECT: {
       Select *pS = pExpr->pSelect;
       zType = columnType(pParse, pS->pSrc, pS->pEList->a[0].pExpr); 
       break;
     }
+    case TK_AS:
+      /* The TK_AS operator can only occur in ORDER BY, GROUP BY, HAVING,
+      ** and LIMIT clauses.  But pExpr originates in the result set of a
+      ** SELECT.  So pExpr can never contain an AS operator.
+      */
+      assert( 0 );
+      /* Fall thru */
     default:
       zType = 0;
   }

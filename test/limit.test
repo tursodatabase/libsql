@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.19 2004/12/16 21:09:18 drh Exp $
+# $Id: limit.test,v 1.20 2005/01/15 01:52:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -348,5 +348,12 @@ do_test limit-9.4 {
     LIMIT 2
   }
 } {1 2}
+do_test limit-9.5 {
+  catchsql {
+    SELECT * FROM t6 LIMIT 3
+    UNION
+    SELECT * FROM t7 LIMIT 3
+  }
+} {1 {LIMIT clause should come after UNION not before}}
 
 finish_test
