@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.1 2000/05/30 03:28:36 drh Exp $
+# $Id: expr.test,v 1.2 2000/05/31 17:59:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,6 +62,32 @@ test_expr expr-1.20 {i1=20, i2=20} {i2<>i1} 0
 test_expr expr-1.21 {i1=20, i2=20} {i2==i1} 1
 test_expr expr-1.22 {i1=1, i2=2, r1=3.0} {i1+i2*r1} {7}
 test_expr expr-1.23 {i1=1, i2=2, r1=3.0} {(i1+i2)*r1} {9}
+test_expr expr-1.24 {i1=1, i2=2} {min(i1,i2,i1+i2,i1-i2)} {-1}
+test_expr expr-1.25 {i1=1, i2=2} {max(i1,i2,i1+i2,i1-i2)} {3}
 
+
+test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
+test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
+test_expr expr-2.3 {r1=1.23, r2=2.34} {r1*r2} 2.8782
+test_expr expr-2.4 {r1=1.23, r2=2.34} {r1/r2} 0.525641
+test_expr expr-2.5 {r1=1.23, r2=2.34} {r2/r1} 1.90244
+test_expr expr-2.6 {r1=1.23, r2=2.34} {r2<r1} 0
+test_expr expr-2.7 {r1=1.23, r2=2.34} {r2<=r1} 0
+test_expr expr-2.8 {r1=1.23, r2=2.34} {r2>r1} 1
+test_expr expr-2.9 {r1=1.23, r2=2.34} {r2>=r1} 1
+test_expr expr-2.10 {r1=1.23, r2=2.34} {r2!=r1} 1
+test_expr expr-2.11 {r1=1.23, r2=2.34} {r2=r1} 0
+test_expr expr-2.12 {r1=1.23, r2=2.34} {r2<>r1} 1
+test_expr expr-2.13 {r1=1.23, r2=2.34} {r2==r1} 0
+test_expr expr-2.14 {r1=2.34, r2=2.34} {r2<r1} 0
+test_expr expr-2.15 {r1=2.34, r2=2.34} {r2<=r1} 1
+test_expr expr-2.16 {r1=2.34, r2=2.34} {r2>r1} 0
+test_expr expr-2.17 {r1=2.34, r2=2.34} {r2>=r1} 1
+test_expr expr-2.18 {r1=2.34, r2=2.34} {r2!=r1} 0
+test_expr expr-2.19 {r1=2.34, r2=2.34} {r2=r1} 1
+test_expr expr-2.20 {r1=2.34, r2=2.34} {r2<>r1} 0
+test_expr expr-2.21 {r1=2.34, r2=2.34} {r2==r1} 1
+test_expr expr-2.22 {r1=1.23, r2=2.34} {min(r1,r2,r1+r2,r1-r2)} {-1.11}
+test_expr expr-2.23 {r1=1.23, r2=2.34} {max(r1,r2,r1+r2,r1-r2)} {3.57}
 
 finish_test
