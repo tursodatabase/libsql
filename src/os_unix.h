@@ -62,10 +62,10 @@
 */
 typedef struct OsFile OsFile;
 struct OsFile {
+  struct Pager *pPager;     /* The pager that owns this OsFile.  Might be 0 */
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
   int h;                    /* The file descriptor */
-  const char *zFilename;    /* Name passed to open() */
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
   int dirfd;                /* File descriptor for the directory */

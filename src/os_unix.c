@@ -1073,7 +1073,6 @@ int sqlite3OsUnlock(OsFile *id, int locktype){
 */
 int sqlite3OsClose(OsFile *id){
   if( !id->isOpen ) return SQLITE_OK;
-  id->zFilename = 0;
   sqlite3OsUnlock(id, NO_LOCK);
   if( id->dirfd>=0 ) close(id->dirfd);
   id->dirfd = -1;
