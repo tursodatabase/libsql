@@ -213,6 +213,9 @@ crosscompile.html:	$(TOP)/www/crosscompile.tcl
 mingw.html:	$(TOP)/www/mingw.tcl
 	tclsh $(TOP)/www/mingw.tcl >mingw.html
 
+tclsqlite.html:	$(TOP)/www/tclsqlite.tcl
+	tclsh $(TOP)/www/tclsqlite.tcl >tclsqlite.html
+
 
 # Files to be published on the website.
 #
@@ -229,7 +232,8 @@ PUBLISH = \
   vdbe.html \
   c_interface.html \
   crosscompile.html \
-  mingw.html
+  mingw.html \
+  tclsqlite.html
 
 website:	$(PUBLISH)
 

@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.28 2000/08/18 09:58:52 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.29 2000/09/30 22:46:07 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Library Built Atop GDBM</title></head>
@@ -40,7 +40,7 @@ an example of how to use the SQLite library.</p>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
-<li>A <a href="http://dev.scriptics.com/">Tcl</a> interface is
+<li>A <a href="tclsqlite.html">Tcl</a> interface is
 included.</li>
 <li>Command-line access program <a href="sqlite.html">sqlite</a> uses
 the <a href="http://www.google.com/search?q=gnu+readline+library">GNU
@@ -100,6 +100,7 @@ on tables where many entries in the table have the same index key.</p>
     command-line utility.</li>
 <li>The <a href="lang.html">SQL Language</a> subset understood by SQLite.</li>
 <li>The <a href="c_interface.html">C/C++ Interface</a>.</li>
+<li>The <a href="tclsqlite.html">Tcl Interface</a>.</li>
 <li>The <a href="fileformat.html">file format</a> used by SQLite databases.</li>
 <li>The <a href="arch.html">Architecture of the SQLite Library</a> describes
     how the library is put together.</li>

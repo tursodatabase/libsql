@@ -17,6 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Sep 30 (1.0.8)} {
+<li>Begin writing documentation on the TCL interface.</li>
+}
+
 chng {2000 Sep 29 (Not Released)} {
 <li>Added the <b>sqlite_get_table()</b> API</li>
 <li>Updated the documtation for due to the above change.</li>

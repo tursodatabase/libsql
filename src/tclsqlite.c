@@ -23,7 +23,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.9 2000/09/21 13:01:37 drh Exp $
+** $Id: tclsqlite.c,v 1.10 2000/09/30 22:46:07 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -68,6 +68,7 @@ static int DbEvalCallback(
   int i, rc;
   if( cbData->zArray[0] ){
     if( cbData->once ){
+      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
       for(i=0; i<nCol; i++){
         Tcl_SetVar2(cbData->interp, cbData->zArray, "*", azN[i],
            TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
@@ -87,7 +88,7 @@ static int DbEvalCallback(
   }
   cbData->once = 0;
   rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
-  return rc;
+  return rc!=TCL_OK && rc!=TCL_CONTINUE;
 }
 
 /*

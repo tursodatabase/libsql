@@ -1,9 +1,9 @@
-C Fix\sa\sproblem\swith\sthe\sconfigure\sscript\s(CVS\s1703)
-D 2000-09-29T15:15:53
+C Documenting\sthe\sTCL\sinterface\s(CVS\s149)
+D 2000-09-30T22:46:06
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
-F Makefile.in 39f684ee06a661157793f01cce98d43026fc2c06
+F Makefile.in 2fe404a488607712e569d69974d7929bae06ad1e
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION c4ef5804e5824ee814fdd368026a5d21314bdbed
+F VERSION c2e64b60cb74d152b5b5a0822f0e8cb673c928da
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -21,7 +21,7 @@ F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1e0e4495172f752935ad534871ff726ae509d2f0
 F src/sqliteInt.h b65fdecac7281aafb4c9ff3e79ea1b5546478385
 F src/table.c 12f0165b47178b54a675d25ed373ee7e798d6ff0
-F src/tclsqlite.c a08428125ba2429b71764d5365653771ded4a2b8
+F src/tclsqlite.c 7ccccae67fb36ed60ec98282953bf5dad0f9c16f
 F src/tokenize.c 097bec5843d4a0fb4509e036fee93bac080c5e73
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
 F src/util.c 782f87af3c48c898631a2d5b7074437c899f6f13
@@ -63,16 +63,17 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 73b5c1354e250a12ceaaccc376611351c867146a
-F www/changes.tcl e4fb0a308d62309dba40527ad3fddba825745e4c
+F www/changes.tcl d62039b5387cc0871ec1bd3b15065a7c7d421cb1
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
-F www/index.tcl 2f5cc070b8fa8c3fc2f71bba4e6b7877d528fbde
+F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
 F www/lang.tcl 9192e114b19987e630a41e879585b87006eb84a1
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
+F www/tclsqlite.tcl 21ecd82eaea3ce3d08593a9a2d2bfdb3c1f7b547
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P 2aeb82db3ef6fc13eafa4fcf614e8f1dfd247abf
-R 374764ea3793b387c2fde1f92050f82f
+P ed5f5404ad804aec21ad971d59af834929381b5b
+R 3e751dc5aea8f130e00211562c95fd7d
 U drh
-Z 42aab9ea0ff2eec024d3c6a658fe82fd
+Z 7e17d7124dec057be794cd1546e45e70
