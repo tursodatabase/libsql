@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.46 2002/06/17 17:07:20 drh Exp $
+** $Id: tokenize.c,v 1.47 2002/07/01 12:27:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -58,6 +58,7 @@ static Keyword aKeywordTable[] = {
   { "CONSTRAINT",        0, TK_CONSTRAINT,       0 },
   { "COPY",              0, TK_COPY,             0 },
   { "CREATE",            0, TK_CREATE,           0 },
+  { "CROSS",             0, TK_JOIN_KW,          0 },
   { "DEFAULT",           0, TK_DEFAULT,          0 },
   { "DEFERRED",          0, TK_DEFERRED,         0 },
   { "DEFERRABLE",        0, TK_DEFERRABLE,       0 },
@@ -75,7 +76,7 @@ static Keyword aKeywordTable[] = {
   { "FOR",               0, TK_FOR,              0 },
   { "FOREIGN",           0, TK_FOREIGN,          0 },
   { "FROM",              0, TK_FROM,             0 },
-  { "FULL",              0, TK_FULL,             0 },
+  { "FULL",              0, TK_JOIN_KW,          0 },
   { "GLOB",              0, TK_GLOB,             0 },
   { "GROUP",             0, TK_GROUP,            0 },
   { "HAVING",            0, TK_HAVING,           0 },
@@ -84,6 +85,7 @@ static Keyword aKeywordTable[] = {
   { "IN",                0, TK_IN,               0 },
   { "INDEX",             0, TK_INDEX,            0 },
   { "INITIALLY",         0, TK_INITIALLY,        0 },
+  { "INNER",             0, TK_JOIN_KW,          0 },
   { "INSERT",            0, TK_INSERT,           0 },
   { "INSTEAD",           0, TK_INSTEAD,          0 },
   { "INTERSECT",         0, TK_INTERSECT,        0 },
@@ -92,9 +94,11 @@ static Keyword aKeywordTable[] = {
   { "ISNULL",            0, TK_ISNULL,           0 },
   { "JOIN",              0, TK_JOIN,             0 },
   { "KEY",               0, TK_KEY,              0 },
+  { "LEFT",              0, TK_JOIN_KW,          0 },
   { "LIKE",              0, TK_LIKE,             0 },
   { "LIMIT",             0, TK_LIMIT,            0 },
   { "MATCH",             0, TK_MATCH,            0 },
+  { "NATURAL",           0, TK_JOIN_KW,          0 },
   { "NOT",               0, TK_NOT,              0 },
   { "NOTNULL",           0, TK_NOTNULL,          0 },
   { "NULL",              0, TK_NULL,             0 },
@@ -103,13 +107,14 @@ static Keyword aKeywordTable[] = {
   { "ON",                0, TK_ON,               0 },
   { "OR",                0, TK_OR,               0 },
   { "ORDER",             0, TK_ORDER,            0 },
-  { "PARTIAL",           0, TK_PARTIAL,          0 },
+  { "OUTER",             0, TK_JOIN_KW,          0 },
   { "PRAGMA",            0, TK_PRAGMA,           0 },
   { "PRIMARY",           0, TK_PRIMARY,          0 },
   { "RAISE",             0, TK_RAISE,            0 },
   { "REFERENCES",        0, TK_REFERENCES,       0 },
   { "REPLACE",           0, TK_REPLACE,          0 },
   { "RESTRICT",          0, TK_RESTRICT,         0 },
+  { "RIGHT",             0, TK_JOIN_KW,          0 },
   { "ROLLBACK",          0, TK_ROLLBACK,         0 },
   { "ROW",               0, TK_ROW,              0 },
   { "SELECT",            0, TK_SELECT,           0 },

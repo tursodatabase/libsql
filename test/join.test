@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.3 2002/06/28 12:18:48 drh Exp $
+# $Id: join.test,v 1.4 2002/07/01 12:27:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -217,9 +217,9 @@ do_test join-3.7 {
 } {1 {unknown or unsupported join type: INNER OUTER}}
 do_test join-3.7 {
   catchsql {
-    SELECT * FROM t1 BOGUS JOIN t2;
+    SELECT * FROM t1 LEFT BOGUS JOIN t2;
   }
-} {1 {unknown or unsupported join type: BOGUS}}
+} {1 {unknown or unsupported join type: LEFT BOGUS}}
 
 
 finish_test

@@ -1,5 +1,5 @@
-C Added\sadditional\stests.\s\sNo\snew\serrors\sfound.\s(CVS\s653)
-D 2002-07-01T00:31:36
+C Fix\sfor\stickets\s#90\sand\s#89:\sMake\sthe\sAS\skeyword\soptional\sagain.\s(CVS\s654)
+D 2002-07-01T12:27:09
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -34,7 +34,7 @@ F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 58ae9f569b3c664ea9205c6f6da432e3ae180f56
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y c75ea2580de675bcb80ff8b7c10c0a15e02a21ab
+F src/parse.y dcaf21965b6cba956d1ad014b87d849cee52af13
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 63a10ea636c8ac8cdf2fbb804fbfcfd372150717
@@ -48,7 +48,7 @@ F src/test1.c a2f2b6b1df07d4e8b380323896c3ed34442cea91
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 72ac6a9017a70e542954907a1dfd87ab6f7824e3
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
-F src/tokenize.c ac4c46f190346b87da54ec3e2605d160af80c619
+F src/tokenize.c b5500e193a82b5b9888fbf947efd90d3b4858178
 F src/trigger.c d88ab4d68d68955c217b38fb6717e090fbbf54a4
 F src/update.c 06303bf3895032c7eccb748927f650ed02b9f0cf
 F src/util.c 876b259f9186e84b944b72e793dd3dad50e63e95
@@ -71,7 +71,7 @@ F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 69a6a9b41e541f27a2ffcd20264fb35adc3c2680
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
-F test/join.test 89bd99545094c51a04c2582b014c4527c4d90119
+F test/join.test 75561ec0e5fdde381a3e31317ebe4d6d9474bb71
 F test/limit.test 49b44e027a002c0ba336d723b448f07e05b04466
 F test/lock.test f1b55dc61632e99d241643cc8e7c03774f09f623
 F test/main.test c66b564554b770ee7fdbf6a66c0cd90329bc2c85
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 91c0db66c86facb21b5b522afadd83d91a488256
-R 7d04cf3eef7b325f91f0693158023bcb
+P 8924a7f5bab790ab552332d6359028d0d1825e4a
+R ad6a9eb588fa8773b80d0e8d3383a433
 U drh
-Z e9235d5a107811a531de8a11c88a7168
+Z b747e9af845dbd1dc48cbbd19d5e8f64
