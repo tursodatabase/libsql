@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.117 2004/11/16 15:50:20 danielk1977 Exp $
+** $Id: where.c,v 1.118 2004/11/22 10:02:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -481,8 +481,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   int pushKey,          /* If TRUE, leave the table key on the stack */
-  ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
-  int iTabCur           /* Cursor for pTabList->aSrc[0] */
+  ExprList **ppOrderBy  /* An ORDER BY clause, or NULL */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -778,9 +777,7 @@ WhereInfo *sqlite3WhereBegin(
 
     pTab = pTabList->a[i].pTab;
     if( pTab->isTransient || pTab->pSelect ) continue;
-    if( i>0 || iTabCur<0 ){
-      sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
-    }
+    sqlite3OpenTableForReading(v, pTabList->a[i].iCursor, pTab);
     sqlite3CodeVerifySchema(pParse, pTab->iDb);
     if( (pIx = pWInfo->a[i].pIdx)!=0 ){
       sqlite3VdbeAddOp(v, OP_Integer, pIx->iDb, 0);

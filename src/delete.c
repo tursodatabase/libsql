@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.89 2004/11/16 15:50:20 danielk1977 Exp $
+** $Id: delete.c,v 1.90 2004/11/22 10:02:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -64,6 +64,7 @@ void sqlite3OpenTableForReading(
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
 
+
 /*
 ** Process a DELETE FROM statement.
 */
@@ -75,7 +76,7 @@ void sqlite3DeleteFrom(
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   const char *zDb;       /* Name of database holding pTab */
-  int addr = 0;          /* A couple addresses of generated code */
+  int end, addr = 0;     /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Index *pIdx;           /* For looping over indices of the table */
@@ -149,15 +150,10 @@ void sqlite3DeleteFrom(
     oldIdx = pParse->nTab++;
   }
 
-  /* Resolve the column names in all the expressions. Allocate cursors
-  ** for the table and indices first, in case an expression needs to use
-  ** a cursor (e.g. an IN() expression).
+  /* Resolve the column names in all the expressions.
   */
   assert( pTabList->nSrc==1 );
   iCur = pTabList->a[0].iCursor = pParse->nTab++;
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-    pParse->nTab++;
-  }
   if( sqlite3ExprResolveAndCheck(pParse, pTabList, 0, pWhere, 0, 0) ){
     goto delete_from_cleanup;
   }
@@ -231,6 +227,22 @@ void sqlite3DeleteFrom(
       }
     }
 
+    /* Begin the database scan
+    */
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 1, 0);
+    if( pWInfo==0 ) goto delete_from_cleanup;
+
+    /* Remember the key of every item to be deleted.
+    */
+    sqlite3VdbeAddOp(v, OP_ListWrite, 0, 0);
+    if( db->flags & SQLITE_CountRows ){
+      sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
+    }
+
+    /* End the database scan loop.
+    */
+    sqlite3WhereEnd(pWInfo);
+
     /* Open the pseudo-table used to store OLD if there are triggers.
     */
     if( row_triggers_exist ){
@@ -238,49 +250,80 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp(v, OP_SetNumColumns, oldIdx, pTab->nCol);
     }
 
-    /* Open cursors for the table and indices we are deleting from. */
-    if( !isView ){
-      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
-    }
-
-    /* Begin the database scan
+    /* Delete every item whose key was written to the list during the
+    ** database scan.  We have to delete items after the scan is complete
+    ** because deleting an item can change the scan order.
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, isView?0:iCur);
-    if( pWInfo==0 ) goto delete_from_cleanup;
-    addr = pWInfo->iContinue;
+    sqlite3VdbeAddOp(v, OP_ListRewind, 0, 0);
+    end = sqlite3VdbeMakeLabel(v);
 
-    /* If row-triggers exist, copy the record being deleted into the
-    ** oldIdx psuedo-table. Then invoke the BEFORE triggers.
+    /* This is the beginning of the delete loop when there are
+    ** row triggers.
     */
     if( row_triggers_exist ){
+      addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, end);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      if( !isView ){
+        sqlite3OpenTableForReading(v, iCur, pTab);
+      }
+      sqlite3VdbeAddOp(v, OP_MoveGe, iCur, 0);
       sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
       sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
       sqlite3VdbeAddOp(v, OP_PutIntKey, oldIdx, 0);
+      if( !isView ){
+        sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
+      }
+
       (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
 
-    /* Delete the row. Increment the callback value if the count-rows flag 
-    ** is set. 
-    */
-    if( db->flags & SQLITE_CountRows ){
-      sqlite3VdbeAddOp(v, OP_AddImm, 1, 0);
-    }
-    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
-    sqlite3GenerateRowDelete(db, v, pTab, iCur, pParse->nested==0);
+    if( !isView ){
+      /* Open cursors for the table we are deleting from and all its
+      ** indices.  If there are row triggers, this happens inside the
+      ** OP_ListRead loop because the cursor have to all be closed
+      ** before the trigger fires.  If there are no row triggers, the
+      ** cursors are opened only once on the outside the loop.
+      */
+      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
 
-    /* Code the AFTER triggers.  */
+      /* This is the beginning of the delete loop when there are no
+      ** row triggers */
+      if( !row_triggers_exist ){ 
+        addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, end);
+      }
+
+      /* Delete the row */
+      sqlite3GenerateRowDelete(db, v, pTab, iCur, pParse->nested==0);
+    }
+
+    /* If there are row triggers, close all cursors then invoke
+    ** the AFTER triggers
+    */
     if( row_triggers_exist ){
+      if( !isView ){
+        for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+          sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
+        }
+        sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
+      }
       (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
 
-    /* End the database scan loop and close indices. */
-    sqlite3WhereEnd(pWInfo);
-    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
+    /* End of the delete loop */
+    sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
+    sqlite3VdbeResolveLabel(v, end);
+    sqlite3VdbeAddOp(v, OP_ListReset, 0, 0);
+
+    /* Close the cursors after the loop if there are no row triggers */
+    if( !row_triggers_exist ){
+      for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+        sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
+      }
+      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
   }
 
