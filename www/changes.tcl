@@ -17,7 +17,10 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2000 Oct 16 (1.0.11)} {
+chng {2000 Oct 16 (1.0.12)} {
+<li>Fixed an off-by-one error that was causing a coredump in 
+    the '%q' format directive of the new
+    <b>sqlite_..._printf()</b> routines.</li>
 <li>Added the <b>sqlite_interrupt()</b> interface.</li>
 <li>In the shell, <b>sqlite_interrupt()</b> is invoked when the
     user presses Control-C</li>

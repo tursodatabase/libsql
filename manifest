@@ -1,9 +1,9 @@
-C :-)\s(CVS\s155)
-D 2000-10-16T22:11:57
+C Fix\san\soff-by-one\serror\sin\sprintf.c\s(CVS\s156)
+D 2000-10-17T01:31:23
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in faecea9b6419cec25030b4818c9b3f7f4163b3c1
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION 680e898474f571402b75096f1fb5d186126c3296
+F VERSION 0a8a772d5d713cb4d3d7b6ddedf1335436f90263
 F configure 3dc1edb9dcf60215e31ff72b447935ab62211442 x
 F configure.in d892ca33db7e88a055519ce2f36dcb11020e8fff
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -16,7 +16,7 @@ F src/expr.c e8e350d7baa33bd9ed8701c159eaba5e912e0adb
 F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c 4774731549159ba33c031cfaf6e4c78630c80d96
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
-F src/printf.c 6fc343f0c3537e2530a11ac164ce64ba171aebf8
+F src/printf.c 1efb6b3e7f28a93be57132de3f8f400d2ac1460e
 F src/select.c c1de8ac34131324fa05664b06b0ae1ee9c02905d
 F src/shell.c 146149928c7dca23ceebd6aa53026e9b02d3b4e4
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
@@ -65,7 +65,7 @@ F www/arch.fig 4f246003b7da23bd63b8b0af0618afb4ee3055c8
 F www/arch.png 8dae0766d42ed3de9ed013c1341a5792bcf633e6
 F www/arch.tcl a40380c1fe0080c43e6cc5c20ed70731511b06be
 F www/c_interface.tcl 1a0b13d056625e4acb59b67edc360cfd9c92ba90
-F www/changes.tcl a1ffebea11ce4731dd42a0b6d272ef0facf9c335
+F www/changes.tcl 4f3d27bdd02f253e38907c55768871dba3677ddf
 F www/crosscompile.tcl bee79c34f6c3f162ec1c6f5294e79f73651d27ee
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl b19418d506f90968deef972bf1b427d98bdf13e0
@@ -75,7 +75,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P bae2050f3f63ff0b56ac38fabe220f150cc2d35a
-R 7f85e4dad89691d5b827acd3c44f4b5d
+P 3dc7913dfc4751a00cc5d14f3aa4a3a25d7531bf
+R 9d72075e97e2decee6bef55f36d23c73
 U drh
-Z e35b342beab27371801a76664ec098e9
+Z 58d12f3a83058e026ee280f0b8e80813

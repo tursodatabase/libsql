@@ -561,7 +561,7 @@ static int vxprintf(
           for(i=n=0; (c=arg[i])!=0; i++){
             if( c=='\'' )  n++;
           }
-          n += i;
+          n += i + 1;
           if( n>etBUFSIZE ){
             bufpt = zExtra = sqliteMalloc( n );
           }else{
