@@ -1,5 +1,5 @@
-C Fix\sbugs\sin\ssubstr()\sfor\sUTF-8.\s(CVS\s406)
-D 2002-02-28T04:00:12
+C Bug\sfix\swhen\s-DMEMORY_DEBUG\sis\soff.\s(CVS\s407)
+D 2002-02-28T04:10:30
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -50,7 +50,7 @@ F src/test3.c 4e52fff8b01f08bd202f7633feda5639b7ba2b5e
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
 F src/tokenize.c 4b5d30590a744b9bb5605a92d1f620ab2e7e75af
 F src/update.c 18971d265b0341574b7e3f73116e7947ddab0997
-F src/util.c 1c01f0a54a77ae9fb638d026d18093ee1b61e3b3
+F src/util.c 00a35b421c92ae0d7cfa51bd87f7d4995f464d19
 F src/vdbe.c 91311e99efe980459a78e8f5b9e5456d772c9e23
 F src/vdbe.h f9be1f6e9a336c3ff4d14ea7489ee976e07460cc
 F src/where.c 664be01b0ce9ffaecbde609afbd4d8d3e5ed1585
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P e8611e0c052ddac477f83df485fa5dc882593de0
-R 04ad4c27603a68f224cf2e37abda2702
+P e9fd9e7b0fed445b48e7024ecde0354fff1478a6
+R 963d95bca45cb4c9e29d8cc361ba95c2
 U drh
-Z c02824de6ff4d82a6f9d0a682a20821a
+Z bd4f48a03082cea631000ad6c4df51a3
