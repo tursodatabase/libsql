@@ -492,7 +492,7 @@ int sqliteOsRead(OsFile *id, void *pBuf, int amt){
   if( !ReadFile(id->h, pBuf, amt, &got, 0) ){
     got = 0;
   }
-  if( got==amt ){
+  if( (int)got==amt ){
     return SQLITE_OK;
   }else{
     return SQLITE_IOERR;
@@ -627,10 +627,64 @@ int sqliteOsFileSize(OsFile *id, int *pSize){
 ** lock and get the read lock without another process jumping into the
 ** middle and messing us up.  The same argument applies to sqliteOsWriteLock().
 **
+** Locks must be obtained in an area that does not overlap the "real data area"
+** otherwise read/write operations will conflict with lock operations. Locking beyond EOF
+** is allowed in windows.
+**
 ** There are a finite number of read locks under windows.  That number
 ** is determined by the following variable:
 */
-#define MX_LOCKBYTE 10240
+
+#define MX_LOCKBYTE 0xFFF0
+
+#if OS_WIN
+
+// get the platform id to decide how to calculate the lock offset
+
+int mkPlatformId(void){
+ 
+ static long init=0;
+ static int pid=VER_PLATFORM_WIN32_WINDOWS;
+ OSVERSIONINFOA info;	
+ 
+ if (!init) {
+  if (InterlockedIncrement(&init)==1)
+   {
+    info.dwOSVersionInfoSize=sizeof(info);
+   if (GetVersionEx(&info)) pid=info.dwPlatformId;
+   }
+  } 
+ return pid;  
+}
+
+// locks and unlocks beyond eof. uses platformid to move the lock as far as possible.
+int mklock(HANDLE h, WORD base, WORD size)
+{
+ if (mkPlatformId()==VER_PLATFORM_WIN32_WINDOWS)
+  return LockFile(h,0xFFFF0000+base,0,size,0);
+ else
+  return LockFile(h,base,0xFFFFFFFF,size,0);
+}
+
+int mkunlock(HANDLE h, WORD base, WORD size)
+{
+ if (mkPlatformId()==VER_PLATFORM_WIN32_WINDOWS)
+  return UnlockFile(h,0xFFFF0000+base,0,size,0);
+ else
+  return UnlockFile(h,base,0xFFFFFFFF,size,0);
+}
+
+//obtain the sync lock on a handle
+
+void synclock(HANDLE h){ 
+ while (!mklock(h,0,1)) Sleep(1);
+}
+
+void syncunlock(HANDLE h){ 
+ mkunlock(h,0,1);
+}
+
+#endif
 
 /*
 ** Change the status of the lock on the file "id" to be a readlock.
@@ -639,6 +693,7 @@ int sqliteOsFileSize(OsFile *id, int *pSize){
 **
 ** Return SQLITE_OK on success and SQLITE_BUSY on failure.
 */
+
 int sqliteOsReadLock(OsFile *id){
 #if OS_UNIX
   int rc;
@@ -674,11 +729,12 @@ int sqliteOsReadLock(OsFile *id){
   }else{
     int lk = (sqliteRandomInteger() & 0x7ffffff)%MX_LOCKBYTE + 1;
     int res;
-    if( (res = LockFile(id->h, 0, 0, 1, 0))!=0 ){
-      UnlockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
-      res = LockFile(id->h, lk, 0, 1, 0);
-      UnlockFile(id->h, 0, 0, 1, 0);
-    }
+    
+    synclock(id->h);
+    if (id->locked<0) mkunlock(id->h,1,MX_LOCKBYTE); // release write lock if we have it
+    res=mklock(id->h,lk,1);
+    syncunlock(id->h);
+    
     if( res ){
       id->locked = lk;
       rc = SQLITE_OK;
@@ -722,15 +778,13 @@ int sqliteOsWriteLock(OsFile *id){
     rc = SQLITE_OK;
   }else{
     int res;
-    if( (res = LockFile(id->h, 0, 0, 1, 0))!=0 ){
-      if( id->locked==0 || UnlockFile(id->h, id->locked, 0, 1, 0) ){
-        res = LockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
-      }else{
-        res = 0;
-      }
-      UnlockFile(id->h, 0, 0, 1, 0);
-    }
-    if( res ){
+    
+    synclock(id->h);
+    if (id->locked>0) mkunlock(id->h,id->locked,1); // release read lock
+    res=mklock(id->h,1,MX_LOCKBYTE);
+    syncunlock(id->h);
+   
+    if(res){
       id->locked = -1;
       rc = SQLITE_OK;
     }else{
@@ -772,18 +826,13 @@ int sqliteOsUnlock(OsFile *id){
 #endif
 #if OS_WIN
   int rc;
-  if( id->locked==0 ){
-    rc = SQLITE_OK;
-  }else if( id->locked<0 ){
-    UnlockFile(id->h, 1, 0, MX_LOCKBYTE, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
-  }else{
-    UnlockFile(id->h, id->locked, 0, 1, 0);
-    rc = SQLITE_OK;
-    id->locked = 0;
+  if(id->locked<0 ) {
+    mkunlock(id->h,1,MX_LOCKBYTE);
+  }else if (id->locked>0) {
+    mkunlock(id->h,id->locked,1);
   }
-  return rc;
+  id->locked = 0;
+  return SQLITE_OK;
 #endif
 }
 
