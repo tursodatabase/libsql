@@ -1,9 +1,9 @@
-C bug\sfix\sin\slemon\s(CVS\s136)
-D 2000-08-20T11:42:46
+C :-)\s(CVS\s137)
+D 2000-08-22T13:27:22
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 8a4cc1bdcbb870f76d0c769136cf973af07586a4
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION cfc5fe3a1d6f7e773eb019d04681697648d23e76
+F VERSION 880d9396e60cb9e65a3af230f9467412553b6d50
 F configure 078a370347baf9375baa8053857ca1e6bc84afa7 x
 F configure.in 381aeb4564f1562b7b2a115f5e99035c561a7fea
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -16,7 +16,7 @@ F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c ba16b81890d962821bb90f0a4de9a29b0e495eb2
 F src/parse.y 5d199034de5d29ebedb42c1c51f34db4df40cbe5
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
-F src/shell.c 0aabf9e5e89fc8ac7a56de7f05255ed6864170f2
+F src/shell.c 9bbb37f344c9be466bb30b931f81e51c22c5f8a3
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in fe04454ae51f9f3717179ffe5a10a25874643ced
 F src/sqliteInt.h f6d1e139b3bfa4ceff2136684e19d76b53178ec0
@@ -61,7 +61,7 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 29593cf77025bab137b7ba64b9459eb5eb6b4873
-F www/changes.tcl e9598af4e350e20e8dffa56e4b6d43f916daf3ef
+F www/changes.tcl 197d2e5988a3cc77c313cfe000ba0c067bd3a37d
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl 2f5cc070b8fa8c3fc2f71bba4e6b7877d528fbde
@@ -70,7 +70,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P e8521fc10dcfa02fc4ae35fa83f5bae4864a3d28
-R 2bfd5297c4192f367ec3bc3ac09f66cd
+P 6f4c080739333dbbc3556b5cf96f341f62167646
+R b5d26585ea2e71d67d64e7c3e6937e75
 U drh
-Z 11385936acc435dde4a9410bb5644970
+Z 4f5a35213265d7d63373a8859f6cfa0e

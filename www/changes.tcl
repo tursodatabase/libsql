@@ -17,6 +17,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Aug 22 (Version 1.0.2)} {
+<li>In the sqlite shell, print the "Database opened READ ONLY" message
+    to stderr instead of stdout.</li>
+}
+
 chng {2000 Aug 18 (Version 1.0.1)} {
 <li>Fix a bug in the configure script.</li>
 <li>Minor revisions to the website.</li>

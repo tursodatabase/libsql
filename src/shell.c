@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.21 2000/08/17 09:50:00 drh Exp $
+** $Id: shell.c,v 1.22 2000/08/22 13:27:22 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -668,7 +668,7 @@ int main(int argc, char **argv){
       }
       exit(1);
     }else{
-      printf("Database \"%s\" opened READ ONLY!\n", argv[1]);
+      fprintf(stderr,"Database \"%s\" opened READ ONLY!\n", argv[1]);
     }
   }
   data.out = stdout;
