@@ -20,7 +20,7 @@ static void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
     TriggerStep * pTmp = pTriggerStep;
     pTriggerStep = pTriggerStep->pNext;
 
-    if( pTmp->target.dyn ) sqliteFree(pTmp->target.z);
+    if( pTmp->target.dyn ) sqliteFree((char*)pTmp->target.z);
     sqliteExprDelete(pTmp->pWhere);
     sqliteExprListDelete(pTmp->pExprList);
     sqliteSelectDelete(pTmp->pSelect);
@@ -312,8 +312,6 @@ TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
 ** Recursively delete a Trigger structure
 */
 void sqliteDeleteTrigger(Trigger *pTrigger){
-  TriggerStep *pTriggerStep;
-
   sqliteDeleteTriggerStep(pTrigger->step_list);
   sqliteFree(pTrigger->name);
   sqliteFree(pTrigger->table);

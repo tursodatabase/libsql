@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.170 2002/08/25 18:29:13 drh Exp $
+** $Id: vdbe.c,v 1.171 2002/08/25 19:20:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1067,35 +1067,36 @@ static char *zOpName[] = { 0,
   "Transaction",       "Checkpoint",        "Commit",            "Rollback",
   "ReadCookie",        "SetCookie",         "VerifyCookie",      "Open",
   "OpenTemp",          "OpenWrite",         "OpenAux",           "OpenWrAux",
-  "Close",             "MoveTo",            "NewRecno",          "PutIntKey",
-  "PutStrKey",         "Distinct",          "Found",             "NotFound",
-  "IsUnique",          "NotExists",         "Delete",            "Column",
-  "KeyAsData",         "Recno",             "FullKey",           "NullRow",
-  "Last",              "Rewind",            "Next",              "Destroy",
-  "Clear",             "CreateIndex",       "CreateTable",       "IntegrityCk",
-  "IdxPut",            "IdxDelete",         "IdxRecno",          "IdxGT",
-  "IdxGE",             "MemLoad",           "MemStore",          "MemIncr",
-  "ListWrite",         "ListRewind",        "ListRead",          "ListReset",
-  "ListPush",          "ListPop",           "SortPut",           "SortMakeRec",
-  "SortMakeKey",       "Sort",              "SortNext",          "SortCallback",
-  "SortReset",         "FileOpen",          "FileRead",          "FileColumn",
-  "AggReset",          "AggFocus",          "AggNext",           "AggSet",
-  "AggGet",            "AggFunc",           "AggInit",           "AggPush",
-  "AggPop",            "SetInsert",         "SetFound",          "SetNotFound",
-  "SetFirst",          "SetNext",           "MakeRecord",        "MakeKey",
-  "MakeIdxKey",        "IncrKey",           "Goto",              "If",
-  "IfNot",             "Halt",              "ColumnCount",       "ColumnName",
-  "Callback",          "NullCallback",      "Integer",           "String",
-  "Pop",               "Dup",               "Pull",              "Push",
-  "MustBeInt",         "Add",               "AddImm",            "Subtract",
-  "Multiply",          "Divide",            "Remainder",         "BitAnd",
-  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
-  "AbsValue",          "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "StrEq",
-  "StrNe",             "StrLt",             "StrLe",             "StrGt",
-  "StrGe",             "IsNull",            "NotNull",           "Negative",
-  "And",               "Or",                "Not",               "Concat",
-  "Noop",              "Function",        
+  "RenameCursor",      "Close",             "MoveTo",            "NewRecno",
+  "PutIntKey",         "PutStrKey",         "Distinct",          "Found",
+  "NotFound",          "IsUnique",          "NotExists",         "Delete",
+  "Column",            "KeyAsData",         "Recno",             "FullKey",
+  "NullRow",           "Last",              "Rewind",            "Next",
+  "Destroy",           "Clear",             "CreateIndex",       "CreateTable",
+  "IntegrityCk",       "IdxPut",            "IdxDelete",         "IdxRecno",
+  "IdxGT",             "IdxGE",             "MemLoad",           "MemStore",
+  "MemIncr",           "ListWrite",         "ListRewind",        "ListRead",
+  "ListReset",         "ListPush",          "ListPop",           "SortPut",
+  "SortMakeRec",       "SortMakeKey",       "Sort",              "SortNext",
+  "SortCallback",      "SortReset",         "FileOpen",          "FileRead",
+  "FileColumn",        "AggReset",          "AggFocus",          "AggNext",
+  "AggSet",            "AggGet",            "AggFunc",           "AggInit",
+  "AggPush",           "AggPop",            "SetInsert",         "SetFound",
+  "SetNotFound",       "SetFirst",          "SetNext",           "MakeRecord",
+  "MakeKey",           "MakeIdxKey",        "IncrKey",           "Goto",
+  "If",                "IfNot",             "Halt",              "Gosub",
+  "Return",            "ColumnCount",       "ColumnName",        "Callback",
+  "NullCallback",      "Integer",           "String",            "Pop",
+  "Dup",               "Pull",              "Push",              "MustBeInt",
+  "Add",               "AddImm",            "Subtract",          "Multiply",
+  "Divide",            "Remainder",         "BitAnd",            "BitOr",
+  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
+  "Eq",                "Ne",                "Lt",                "Le",
+  "Gt",                "Ge",                "StrEq",             "StrNe",
+  "StrLt",             "StrLe",             "StrGt",             "StrGe",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Function",        
 };
 
 /*
@@ -1303,6 +1304,25 @@ static void vdbePrintOp(FILE *pOut, int pc, Op *pOp){
 #endif
 
 /*
+** Make sure there is space in the Vdbe structure to hold at least
+** mxCursor cursors.  If there is not currently enough space, then
+** allocate more.
+**
+** If a memory allocation error occurs, return 1.  Return 0 if
+** everything works.
+*/
+static int expandCursorArraySize(Vdbe *p, int mxCursor){
+  if( mxCursor>=p->nCursor ){
+    Cursor *aCsr = sqliteRealloc( p->aCsr, (mxCursor+1)*sizeof(Cursor) );
+    if( aCsr==0 ) return 1;
+    p->aCsr = aCsr;
+    memset(&p->aCsr[p->nCursor], 0, sizeof(Cursor)*(mxCursor+1-p->nCursor));
+    p->nCursor = mxCursor+1;
+  }
+  return 0;
+}
+
+/*
 ** Execute the program in the VDBE.
 **
 ** If an error occurs, an error message is written to memory obtained
@@ -1347,6 +1367,8 @@ int sqliteVdbeExec(
   int errorAction = OE_Abort; /* Recovery action to do in case of an error */
   int undoTransOnError = 0;   /* If error, either ROLLBACK or COMMIT */
   char zBuf[100];             /* Space to sprintf() an integer */
+  int returnStack[100];     /* Return address stack for OP_Gosub & OP_Return */
+  int returnDepth = 0;      /* Next unused element in returnStack[] */
 
 
   /* No instruction ever pushes more than a single element onto the
@@ -1419,6 +1441,44 @@ int sqliteVdbeExec(
 */
 case OP_Goto: {
   pc = pOp->p2 - 1;
+  break;
+}
+
+/* Opcode:  Gosub * P2 *
+**
+** Push the current address plus 1 onto the return address stack
+** and then jump to address P2.
+**
+** The return address stack is of limited depth.  If too many
+** OP_Gosub operations occur without intervening OP_Returns, then
+** the return address stack will fill up and processing will abort
+** with a fatal error.
+*/
+case OP_Gosub: {
+  if( returnDepth>=sizeof(returnStack)/sizeof(returnStack[0]) ){
+    sqliteSetString(pzErrMsg, "return address stack overflow", 0);
+    rc = SQLITE_INTERNAL;
+    goto cleanup;
+  }
+  returnStack[returnDepth++] = pc+1;
+  pc = pOp->p2 - 1;
+  break;
+}
+
+/* Opcode:  Return * * *
+**
+** Jump immediately to the next instruction after the last unreturned
+** OP_Gosub.  If an OP_Return has occurred for all OP_Gosubs, then
+** processing aborts with a fatal error.
+*/
+case OP_Return: {
+  if( returnDepth<=0 ){
+    sqliteSetString(pzErrMsg, "return address stack underflow", 0);
+    rc = SQLITE_INTERNAL;
+    goto cleanup;
+  }
+  returnDepth--;
+  pc = returnStack[returnDepth] - 1;
   break;
 }
 
@@ -3105,16 +3165,7 @@ case OP_Open: {
     }
   }
   VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i>=p->nCursor ){
-    int j;
-    Cursor *aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
-    if( aCsr==0 ) goto no_mem;
-    p->aCsr = aCsr;
-    for(j=p->nCursor; j<=i; j++){
-      memset(&p->aCsr[j], 0, sizeof(Cursor));
-    }
-    p->nCursor = i+1;
-  }
+  if( expandCursorArraySize(p, i) ) goto no_mem;
   cleanupCursor(&p->aCsr[i]);
   memset(&p->aCsr[i], 0, sizeof(Cursor));
   p->aCsr[i].nullRow = 1;
@@ -3163,16 +3214,7 @@ case OP_OpenTemp: {
   int i = pOp->p1;
   Cursor *pCx;
   VERIFY( if( i<0 ) goto bad_instruction; )
-  if( i>=p->nCursor ){
-    int j;
-    Cursor *aCsr = sqliteRealloc( p->aCsr, (i+1)*sizeof(Cursor) );
-    if( aCsr==0 ){ goto no_mem; }
-    p->aCsr = aCsr;
-    for(j=p->nCursor; j<=i; j++){
-      memset(&p->aCsr[j], 0, sizeof(Cursor));
-    }
-    p->nCursor = i+1;
-  }
+  if( expandCursorArraySize(p, i) ) goto no_mem;
   pCx = &p->aCsr[i];
   cleanupCursor(pCx);
   memset(pCx, 0, sizeof(*pCx));
@@ -3191,6 +3233,27 @@ case OP_OpenTemp: {
     }else{
       rc = sqliteBtreeCursor(pCx->pBt, 2, 1, &pCx->pCursor);
     }
+  }
+  break;
+}
+
+/*
+** Opcode: RenameCursor P1 P2 *
+**
+** Rename cursor number P1 as cursor number P2.  If P2 was previously
+** opened is is closed before the renaming occurs.
+*/
+case OP_RenameCursor: {
+  int from = pOp->p1;
+  int to = pOp->p2;
+  VERIFY( if( from<0 || to<0 ) goto bad_instruction; )
+  if( to<p->nCursor && p->aCsr[to].pCursor ){
+    cleanupCursor(&p->aCsr[to]);
+  }
+  expandCursorArraySize(p, to);
+  if( from<p->nCursor ){
+    memcpy(&p->aCsr[to], &p->aCsr[from], sizeof(p->aCsr[0]));
+    memset(&p->aCsr[from], 0, sizeof(p->aCsr[0]));
   }
   break;
 }

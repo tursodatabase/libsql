@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.109 2002/08/25 18:29:12 drh Exp $
+** $Id: select.c,v 1.110 2002/08/25 19:20:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1403,7 +1403,13 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 ** All of the expression analysis must occur on both the outer query and
 ** the subquery before this routine runs.
 */
-int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
+static int flattenSubquery(
+  Parse *pParse,       /* The parsing context */
+  Select *p,           /* The parent or outer SELECT statement */
+  int iFrom,           /* Index in p->pSrc->a[] of the inner subquery */
+  int isAgg,           /* True if outer SELECT uses aggregate functions */
+  int subqueryIsAgg    /* True if the subquery uses aggregate functions */
+){
   Select *pSub;       /* The inner query or "subquery" */
   SrcList *pSrc;      /* The FROM clause of the outer query */
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
@@ -1486,6 +1492,7 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
     }
   }
   p->isDistinct = p->isDistinct || pSub->isDistinct;
+
   if( pSub->nLimit>=0 ){
     if( p->nLimit<0 ){
       p->nLimit = pSub->nLimit;
@@ -1494,6 +1501,20 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
     }
   }
   p->nOffset += pSub->nOffset;
+
+  /* If the subquery contains subqueries of its own, that were not
+  ** flattened, then code will have already been generated to put
+  ** the results of those sub-subqueries into VDBE cursors relative
+  ** to the subquery.  We must translate the cursor number into values
+  ** suitable for use by the outer query.
+  */
+  for(i=0; i<pSubSrc->nSrc; i++){
+    Vdbe *v;
+    if( pSubSrc->a[i].pSelect==0 ) continue;
+    v = sqliteGetVdbe(pParse);
+    sqliteVdbeAddOp(v, OP_RenameCursor, pSub->base+i, p->base+i);
+  }
+
   if( pSrc->a[iFrom].pTab && pSrc->a[iFrom].pTab->isTransient ){
     sqliteDeleteTable(0, pSrc->a[iFrom].pTab);
   }
@@ -1883,7 +1904,7 @@ int sqliteSelect(
   ** If flattening is a possiblity, do so and return immediately.  
   */
   if( pParent && pParentAgg &&
-      flattenSubquery(pParent, parentTab, *pParentAgg, isAgg) ){
+      flattenSubquery(pParse, pParent, parentTab, *pParentAgg, isAgg) ){
     if( isAgg ) *pParentAgg = 1;
     return rc;
   }
