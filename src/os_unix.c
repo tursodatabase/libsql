@@ -433,6 +433,11 @@ int sqlite3OsOpenReadWrite(
   id->dirfd = -1;
   id->h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY, 0644);
   if( id->h<0 ){
+#ifdef EISDIR
+    if( errno==EISDIR ){
+      return SQLITE_CANTOPEN;
+    }
+#endif
     id->h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
     if( id->h<0 ){
       return SQLITE_CANTOPEN; 
