@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.208 2004/06/07 10:00:31 danielk1977 Exp $
+** $Id: build.c,v 1.209 2004/06/08 00:02:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -662,10 +662,10 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   pCol->zName = z;
  
   /* If there is no type specified, columns have the default affinity
-  ** 'NUMERIC'. If there is a type specified, then sqlite3AddColumnType()
-  ** will be called next to set pCol->affinity correctly.
+  ** 'NONE'. If there is a type specified, then sqlite3AddColumnType() will
+  ** be called next to set pCol->affinity correctly.
   */
-  pCol->affinity = SQLITE_AFF_NUMERIC;
+  pCol->affinity = SQLITE_AFF_NONE;
   pCol->pColl = pParse->db->pDfltColl;
   p->nCol++;
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.79 2004/06/02 00:41:09 drh Exp $
+** $Id: tclsqlite.c,v 1.80 2004/06/08 00:02:35 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -896,7 +896,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   const char *zArg;
   char *zErrMsg;
   const char *zFile;
-  const char *zOpts[2] = {0, 0};
   char zBuf[80];
   if( objc==2 ){
     zArg = Tcl_GetStringFromObj(objv[1], 0);
@@ -949,10 +948,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #ifdef SQLITE_HAS_CODEC
   p->db = sqlite3_open_encrypted(zFile, pKey, nKey, 0, &zErrMsg);
 #else
-  if( objc>3 ){
-    zOpts[0] = Tcl_GetString(objv[3]);
-  }
-  sqlite3_open(zFile, &p->db, zOpts);
+  sqlite3_open(zFile, &p->db);
   if( SQLITE_OK!=sqlite3_errcode(p->db) ){
     zErrMsg = strdup(sqlite3_errmsg(p->db));
     sqlite3_close(p->db);

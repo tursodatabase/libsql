@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.9 2004/05/31 19:34:33 drh Exp $
+** $Id: test4.c,v 1.10 2004/06/08 00:02:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -66,7 +66,7 @@ static void *thread_main(void *pArg){
   if( p->db ){
     sqlite3_close(p->db);
   }
-  sqlite3_open(p->zFilename, &p->db, 0);
+  sqlite3_open(p->zFilename, &p->db);
   if( SQLITE_OK!=sqlite3_errcode(p->db) ){
     p->zErr = strdup(sqlite3_errmsg(p->db));
     sqlite3_close(p->db);

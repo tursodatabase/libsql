@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.102 2004/06/05 08:04:44 danielk1977 Exp $
+** $Id: shell.c,v 1.103 2004/06/08 00:02:34 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -692,7 +692,7 @@ static void open_db(struct callback_data *p){
     db = p->db = sqlite3_open_encrypted(p->zDbFilename, p->zKey, n, 0, &zErrMsg);
     assert(0); /* Encrypted databases are broken in SQLite 3 */
 #else
-    sqlite3_open(p->zDbFilename, &p->db, 0);
+    sqlite3_open(p->zDbFilename, &p->db);
     db = p->db;
 #endif
     if( SQLITE_OK!=sqlite3_errcode(db) ){

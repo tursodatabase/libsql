@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.93 2004/06/06 09:44:04 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.94 2004/06/08 00:02:35 danielk1977 Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -487,13 +487,11 @@ void *sqlite3_commit_hook(sqlite*, int(*)(void*), void*);
 */
 int sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
 int sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
-  sqlite3 **ppDb,         /* OUT: SQLite db handle */
-  const char **args       /* Null terminated array of option strings */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
 
 /*

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.206 2004/06/07 07:52:18 danielk1977 Exp $
+** $Id: main.c,v 1.207 2004/06/08 00:02:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1041,8 +1041,7 @@ opendb_out:
 */
 int sqlite3_open(
   const char *zFilename, 
-  sqlite3 **ppDb, 
-  const char **options
+  sqlite3 **ppDb 
 ){
   return openDatabase(zFilename, ppDb);
 }
@@ -1052,8 +1051,7 @@ int sqlite3_open(
 */
 int sqlite3_open16(
   const void *zFilename, 
-  sqlite3 **ppDb, 
-  const char **options
+  sqlite3 **ppDb
 ){
   char *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
   int rc;
