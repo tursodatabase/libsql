@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.3 2003/12/23 16:34:13 drh Exp $
+# $Id: date.test,v 1.4 2004/01/02 15:08:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -124,7 +124,7 @@ datetest 5.4 {datetime('1994-04-16 14:00:00 +11:55')} {1994-04-17 01:55:00}
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC
 # and in New York.)
 #
-if {[clock format 0 -format %Z]=="EST"} {
+if {[clock scan [clock format 0 -format {%b %d, %Y %H:%M:%S}] -gmt 1]==-18000} {
   datetest 6.1 {datetime('2000-10-29 05:59:00','localtime')}\
       {2000-10-29 01:59:00}
   datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
