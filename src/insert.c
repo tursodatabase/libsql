@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.107 2004/05/26 10:11:06 danielk1977 Exp $
+** $Id: insert.c,v 1.108 2004/05/29 11:24:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -466,7 +466,7 @@ void sqlite3Insert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( useTempTable ){
         sqlite3VdbeAddOp(v, OP_Column, srcTab, j); 
       }else if( pSelect ){
@@ -537,7 +537,7 @@ void sqlite3Insert(
         ** Whenever this column is read, the record number will be substituted
         ** in its place.  So will fill this column with a NULL to avoid
         ** taking up data space with information that will never be used. */
-        sqlite3VdbeAddOp(v, OP_String, 0, 0);
+        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
         continue;
       }
       if( pColumn==0 ){
@@ -548,7 +548,7 @@ void sqlite3Insert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
       }else if( useTempTable ){
         sqlite3VdbeAddOp(v, OP_Column, srcTab, j); 
       }else if( pSelect ){
@@ -774,7 +774,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->aCol[i].zDflt, P3_STATIC);
         sqlite3VdbeAddOp(v, OP_Push, nCol-i, 0);
         break;
       }

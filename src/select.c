@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.181 2004/05/28 13:13:02 danielk1977 Exp $
+** $Id: select.c,v 1.182 2004/05/29 11:24:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -395,7 +395,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp(v, OP_Distinct, distinct, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
-    sqlite3VdbeAddOp(v, OP_String, 0, 0);
+    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutStrKey, distinct, 0);
   }
 
@@ -406,7 +406,7 @@ static int selectInnerLoop(
     case SRT_Union: {
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
       break;
     }
@@ -459,7 +459,7 @@ static int selectInnerLoop(
         aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
         affStr = sqlite3AffinityString(aff);
         sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
-        sqlite3VdbeAddOp(v, OP_String, 0, 0);
+        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
         sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeChangeP2(v, addr2, sqlite3VdbeCurrentAddr(v));
@@ -579,7 +579,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, "n", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       break;
     }
@@ -2343,7 +2343,7 @@ int sqlite3Select(
       }
     }
     if( pGroupBy==0 ){
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_AggFocus, 0, 0);
     }
   }
@@ -2351,7 +2351,7 @@ int sqlite3Select(
   /* Initialize the memory cell to NULL
   */
   if( eDest==SRT_Mem ){
-    sqlite3VdbeAddOp(v, OP_String, 0, 0);
+    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iParm, 1);
   }
 

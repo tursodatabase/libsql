@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.131 2004/05/28 08:21:06 drh Exp $
+** $Id: expr.c,v 1.132 2004/05/29 11:24:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -867,7 +867,7 @@ int sqlite3ExprResolveIds(
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2);
           sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
-          sqlite3VdbeAddOp(v, OP_String, 0, 0);
+          sqlite3VdbeAddOp(v, OP_String8, 0, 0);
           sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
         }
       }
@@ -1107,7 +1107,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_RSHIFT:   op = OP_ShiftRight; break;
     case TK_REM:      op = OP_Remainder;  break;
     case TK_FLOAT:    op = OP_Real;       break;
-    case TK_STRING:   op = OP_String;     break;
+    case TK_STRING:   op = OP_String8;     break;
     case TK_BLOB:     op = OP_HexBlob;    break;
     default: break;
   }
@@ -1138,7 +1138,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_NULL: {
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       break;
     }
     case TK_VARIABLE: {
@@ -1259,7 +1259,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       addr = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
       sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC); /* addr + 4 */
       sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
@@ -1318,7 +1318,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->pRight ){
         sqlite3ExprCode(pParse, pExpr->pRight);
       }else{
-        sqlite3VdbeAddOp(v, OP_String, 0, 0);
+        sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       }
       sqlite3VdbeResolveLabel(v, expr_end_label);
       break;

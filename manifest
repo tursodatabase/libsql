@@ -1,5 +1,5 @@
-C Ensure\svacuum\shandles\stable\snames\swith\sspaces\sin\sthem.\s(CVS\s1491)
-D 2004-05-29T10:43:07
+C Transform\sOP_HexBlob\sand\sOP_String8\sto\sOP_Blob\sand\sOP_String\sthe\sfirst\stime\sthey\sare\sexecuted.\s(CVS\s1492)
+D 2004-05-29T11:24:50
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,15 +26,15 @@ F src/attach.c c315c58cb16fd6e913b3bfa6412aedecb4567fa5
 F src/auth.c 5c2f0bea4729c98c2be3b69d6b466fc51448fe79
 F src/btree.c 7832e4247f0d14dfe25dcf85647ddde71b614170
 F src/btree.h b65140b5ae891f30d2a39e64b9f0343225553545
-F src/build.c f97826762d40dbde5f25ebaa009976078ba8b7ff
+F src/build.c fd36c4a603e23df35aa7f57772d965e1865e39e0
 F src/date.c 0eb922af5c5f5e2455f8dc2f98023ed3e04a857e
 F src/delete.c 72f8febf6170cda830f509c8f9dffbed3df3596c
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 1f7b853b097806ff6b0a3edd884c9b6675698745
+F src/expr.c 416e8970fd0f0b66ac8b4d9f58f6f73239e47568
 F src/func.c 1fe0763675eb38b6e3992d3edfbec2271798b658
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
-F src/insert.c dd117e8b3f50e943e6cf5fbcf4bbdc0b907b0b4c
+F src/insert.c 0c7966dba4cd5698e393e824f162d520e96b1978
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
 F src/main.c 79f8142ee2dbf0e3b1f60251515fcf4a1339e784
 F src/md5.c d2c738fedfb27f73cefcf2b0ac1f9f21894b073e
@@ -49,10 +49,10 @@ F src/os_win.h 5d41af24caaef6c13a2d8e2399caa1c57d45c84d
 F src/pager.c 6ff6b906427d4824099140776cb8768f922f3dc5
 F src/pager.h 78a00ac280899bcba1a89dc51585dcae6b7b3253
 F src/parse.y facaa7d07885fb9d53ec8fd676705715d3942b0f
-F src/pragma.c 0c17b613d719c62a0dbad659b7d8a6e7ce7e9733
+F src/pragma.c 84e778a73eb6a14c1a328d75f70355cb51c22803
 F src/printf.c ef750e8e2398ca7e8b58be991075f08c6a7f0e53
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c ee54bf2faa76f5e30832fd589a1f10c485047469
+F src/select.c 0297717eb7331604687c2e29c147d3a311359df1
 F src/shell.c ed4d237b3e52a0a42512bfcc53530e46de20c28f
 F src/sqlite.h.in edc6408c7f53c2104f781a76b926036e17018ec9
 F src/sqliteInt.h 01f9250ee3a1ab681b7ed91ad2b3748c2f230521
@@ -64,18 +64,18 @@ F src/test3.c 5e4a6d596f982f6f47a5f9f75ede9b4a3b739968
 F src/test4.c 34848a9fd31aa65857b20a8bfc03aff77d8c3426
 F src/test5.c 9a1f15133f6955f067c5246e564723b5f23ff221
 F src/tokenize.c 50a87c7414de54a008427c9fed22e4e86efb6844
-F src/trigger.c 6a0751fd7d3d723f414ac1f877f16b1c0ba4722b
-F src/update.c 96461bcf4e946697e83c09c77c7e61b545a2f66e
+F src/trigger.c 258ed8f9583c6b80e5af401cb9cce345c0c689c3
+F src/update.c 259f06e7b22c684b2d3dda54a18185892d6e9573
 F src/utf.c f8604999a54483533ac20a63879074f01b0df384
 F src/util.c 4df9d9b0d930d81ec581bcb68748e7c48bdc8c7d
 F src/vacuum.c 82ce1fc8ecc2e1aa284c13fe38446709f9936c63
-F src/vdbe.c ea010d63dfdf84b7d23781144fe2cd11add2c1bd
+F src/vdbe.c c9658279c8d46760afab9714fd988ef052d02b88
 F src/vdbe.h e73f890e0f2a6c42b183d7d6937947930fe4fdeb
 F src/vdbeInt.h c2bcd6e5a6e6a3753e4c5a368629c3a625719bfc
 F src/vdbeapi.c 0c5d64c81871cb4fe5407e639604ee95738b6942
-F src/vdbeaux.c bbcf1bb953526130495b01b23751cf756cfed2fb
+F src/vdbeaux.c 79dbad52ba653c0f26adcab1a054432669775b0d
 F src/vdbemem.c c97c145ff6d9fc5b4236704c04a65849117e6214
-F src/where.c efe5d25fe18cd7381722457898cd863e84097a0c
+F src/where.c 444a7c3a8b1eb7bba072e489af628555d21d92a4
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 0dd7cf9bf9bc915bce2da4fb616c4ea9c3da64af
 F test/attach2.test 5472d442bb2ef1ee587e0ae7472bb68b52509a38
@@ -204,7 +204,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4feb4b9a71ce7a92924d2358a7ccecb4cca19223
-R 1c8a97ac5a9accf91dcf49ffc08fac99
+P 0a6689be843e695902fbfef863f128915545499e
+R 1d952e495024dd4407d89b7b9acbc34c
 U danielk1977
-Z a1f2191b7711706a5263dea1c2c73086
+Z 654311e7b543692762f3cae151122ce2

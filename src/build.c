@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.199 2004/05/29 10:23:19 danielk1977 Exp $
+** $Id: build.c,v 1.200 2004/05/29 11:24:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -618,7 +618,7 @@ void sqlite3StartTable(
     sqlite3OpenMasterTable(v, iDb);
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-    sqlite3VdbeAddOp(v, OP_String, 0, 0);
+    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
   }
 }
@@ -1080,25 +1080,25 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     }
     p->tnum = 0;
     sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, p->pSelect==0?"table":"view", P3_STATIC);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, p->zName, 0);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, p->zName, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->pSelect==0?"table":"view", P3_STATIC);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, p->zName, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 4, 0);
     if( pSelect ){
       char *z = createTableStmt(p);
       n = z ? strlen(z) : 0;
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeChangeP3(v, -1, z, n);
       sqliteFree(z);
     }else{
       if( p->pSelect ){
-        sqlite3VdbeOp3(v, OP_String, 0, 0, "CREATE VIEW ", P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, "CREATE VIEW ", P3_STATIC);
       }else{
-        sqlite3VdbeOp3(v, OP_String, 0, 0, "CREATE TABLE ", P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, "CREATE TABLE ", P3_STATIC);
       }
       assert( pEnd!=0 );
       n = Addr(pEnd->z) - Addr(pParse->sNameToken.z) + 1;
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       sqlite3VdbeChangeP3(v, -1, pParse->sNameToken.z, n);
       sqlite3VdbeAddOp(v, OP_Concat, 2, 0);
     }
@@ -1392,7 +1392,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
   if( v ){
     static VdbeOpList dropTable[] = {
       { OP_Rewind,     0, ADDR(10), 0},
-      { OP_String,     0, 0,        0}, /* 1 */
+      { OP_String8,     0, 0,        0}, /* 1 */
       { OP_MemStore,   1, 1,        0},
       { OP_MemLoad,    1, 0,        0}, /* 3 */
       { OP_Column,     0, 2,        0},
@@ -1839,9 +1839,9 @@ void sqlite3CreateIndex(
       sqlite3OpenMasterTable(v, iDb);
     }
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, "index", P3_STATIC);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, pIndex->zName, 0);
-    sqlite3VdbeOp3(v, OP_String, 0, 0, pTab->zName, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, "index", P3_STATIC);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, pIndex->zName, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
     sqlite3VdbeOp3(v, OP_CreateIndex, 0, iDb,(char*)&pIndex->tnum,P3_POINTER);
     pIndex->tnum = 0;
     if( pTblName ){
@@ -1852,10 +1852,10 @@ void sqlite3CreateIndex(
       sqlite3VdbeOp3(v, OP_OpenWrite, 1, 0,
                      (char*)&pIndex->keyInfo, P3_KEYINFO);
     }
-    sqlite3VdbeAddOp(v, OP_String, 0, 0);
+    sqlite3VdbeAddOp(v, OP_String8, 0, 0);
     if( pStart && pEnd ){
       sqlite3VdbeChangeP3(v, -1, "CREATE INDEX ", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_String, 0, 0);
+      sqlite3VdbeAddOp(v, OP_String8, 0, 0);
       n = Addr(pEnd->z) - Addr(pName->z) + 1;
       sqlite3VdbeChangeP3(v, -1, pName->z, n);
       sqlite3VdbeAddOp(v, OP_Concat, 2, 0);
@@ -1944,7 +1944,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
   if( v ){
     static VdbeOpList dropIndex[] = {
       { OP_Rewind,     0, ADDR(9), 0}, 
-      { OP_String,     0, 0,       0}, /* 1 */
+      { OP_String8,     0, 0,       0}, /* 1 */
       { OP_MemStore,   1, 1,       0},
       { OP_MemLoad,    1, 0,       0}, /* 3 */
       { OP_Column,     0, 1,       0},

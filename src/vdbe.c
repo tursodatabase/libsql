@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.346 2004/05/29 02:37:19 danielk1977 Exp $
+** $Id: vdbe.c,v 1.347 2004/05/29 11:24:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -694,15 +694,25 @@ case OP_Real: {
   break;
 }
 
-#if 0
 /* Opcode: String8 * * P3
 **
-** This opcode does not exist at vdbe execution time.
+** P3 points to a nul terminated UTF-8 string. This opcode is transformed
+** into an OP_String before it is executed for the first time.
 */
 case OP_String8: {
-  break;
+  pOp->opcode = OP_String;
+
+  if( db->enc!=TEXT_Utf8 && pOp->p3 ){
+    if( db->enc==TEXT_Utf16le ){
+      pOp->p3 = sqlite3utf8to16le(pOp->p3, -1);
+    }else{
+      pOp->p3 = sqlite3utf8to16be(pOp->p3, -1);
+    }
+    if( !pOp->p3 ) goto no_mem;
+  }
+
+  /* Fall through to the next case, OP_String */
 }
-#endif
   
 /* Opcode: String * * P3
 **
@@ -715,32 +725,44 @@ case OP_String: {
   if( pOp->p3 ){
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
     pTos->z = pOp->p3;
-    pTos->n = strlen(pTos->z);
-    pTos->enc = TEXT_Utf8;
-    sqlite3VdbeChangeEncoding(pTos, db->enc);
-/*
     if( db->enc==TEXT_Utf8 ){
       pTos->n = strlen(pTos->z);
     }else{
       pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
     }
     pTos->enc = db->enc;
-*/
   }else{
     pTos->flags = MEM_Null;
   }
   break;
 }
 
-#if 0
 /* Opcode: HexBlob * * P3
 **
-** This opcode does not exist at vdbe execution time.
+** P3 is an SQL hex encoding of a blob. The blob is pushed
+** onto the vdbe stack.
+**
+** The first time this instruction executes, in transforms
+** itself into a 'Blob' opcode with a binary blob as P3.
 */
 case OP_HexBlob: {
-  break;
+  pOp->opcode = OP_Blob;
+  pOp->p1 = strlen(pOp->p3)/2;
+  if( pOp->p1 ){
+    char *zBlob = sqlite3HexToBlob(pOp->p3);
+    if( !zBlob ) goto no_mem;
+    if( pOp->p3type==P3_DYNAMIC ){
+      sqliteFree(pOp->p3);
+    }
+    pOp->p3 = zBlob;
+    pOp->p3type = P3_DYNAMIC;
+  }else{
+    pOp->p3type = P3_STATIC;
+    pOp->p3 = "";
+  }
+
+  /* Fall through to the next case, OP_Blob. */
 }
-#endif
 
 /* Opcode: Blob P1 * P3
 **

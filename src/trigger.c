@@ -209,12 +209,12 @@ void sqlite3FinishTrigger(
   if( !db->init.busy ){
     static VdbeOpList insertTrig[] = {
       { OP_NewRecno,   0, 0,  0          },
-      { OP_String,     0, 0,  "trigger"  },
-      { OP_String,     0, 0,  0          },  /* 2: trigger name */
-      { OP_String,     0, 0,  0          },  /* 3: table name */
+      { OP_String8,     0, 0,  "trigger"  },
+      { OP_String8,     0, 0,  0          },  /* 2: trigger name */
+      { OP_String8,     0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
-      { OP_String,     0, 0,  "CREATE TRIGGER "},
-      { OP_String,     0, 0,  0          },  /* 6: SQL */
+      { OP_String8,     0, 0,  "CREATE TRIGGER "},
+      { OP_String8,     0, 0,  0          },  /* 6: SQL */
       { OP_Concat,     2, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  "tttit"    },
       { OP_PutIntKey,  0, 0,  0          },
@@ -474,10 +474,10 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger, int nested){
     int base;
     static VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String,     0, 0,        0}, /* 1 */
+      { OP_String8,     0, 0,        0}, /* 1 */
       { OP_Column,     0, 1,        0},
       { OP_Ne,         0, ADDR(8),  0},
-      { OP_String,     0, 0,        "trigger"},
+      { OP_String8,     0, 0,        "trigger"},
       { OP_Column,     0, 0,        0},
       { OP_Ne,         0, ADDR(8),  0},
       { OP_Delete,     0, 0,        0},
