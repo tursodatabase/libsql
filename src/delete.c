@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.82 2004/10/05 02:41:42 drh Exp $
+** $Id: delete.c,v 1.83 2004/10/22 20:29:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -38,7 +38,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 ** writable return 0;
 */
 int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
-  if( pTab->readOnly ){
+  if( pTab->readOnly && (pParse->db->flags & SQLITE_WriteSchema)==0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;
   }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.70 2004/10/06 15:41:17 drh Exp $
+** $Id: pragma.c,v 1.71 2004/10/22 20:29:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -137,12 +137,12 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "vdbe_trace",               SQLITE_VdbeTrace     },
     { "sql_trace",                SQLITE_SqlTrace      },
     { "vdbe_listing",             SQLITE_VdbeListing   },
-#if 1  /* FIX ME:  Remove the following pragmas */
     { "full_column_names",        SQLITE_FullColNames  },
     { "short_column_names",       SQLITE_ShortColNames },
     { "count_changes",            SQLITE_CountRows     },
     { "empty_result_callbacks",   SQLITE_NullCallback  },
-#endif
+/* The following is VERY experimental */
+    { "writable_schema",          SQLITE_WriteSchema   },
   };
   int i;
   for(i=0; i<sizeof(aPragma)/sizeof(aPragma[0]); i++){

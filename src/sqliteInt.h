@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.327 2004/10/05 02:41:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.328 2004/10/22 20:29:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -443,6 +443,7 @@ struct sqlite3 {
                                           /*   result set is empty */
 #define SQLITE_SqlTrace       0x00000200  /* Debug print SQL as it executes */
 #define SQLITE_VdbeListing    0x00000400  /* Debug listings of VDBE programs */
+#define SQLITE_WriteSchema    0x00000800  /* OK to update SQLITE_MASTER */
 
 /*
 ** Possible values for the sqlite.magic field.
