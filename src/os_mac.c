@@ -273,6 +273,22 @@ int sqlite3OsTempFileName(char *zBuf){
 }
 
 /*
+** If the following global variable points to a string which is the
+** name of a directory, then that directory will be used to store
+** temporary files.
+*/
+char *sqlite3_temp_directory = 0;
+
+/*
+** Check that a given pathname is a directory and is writable 
+** Just return false, as module is deprecated.
+*/
+int sqlite3OsIsDirWritable(char *zBuf){
+  return 0;
+}
+
+
+/*
 ** Close a file.
 */
 int sqlite3OsClose(OsFile *id){

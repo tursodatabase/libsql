@@ -513,6 +513,9 @@ index.html:	$(TOP)/www/index.tcl last_change
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
 
+pragma.html:	$(TOP)/www/pragma.tcl
+	tclsh $(TOP)/www/pragma.tcl >pragma.html
+
 lockingv3.html:	$(TOP)/www/lockingv3.tcl
 	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
 

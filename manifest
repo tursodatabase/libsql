@@ -1,6 +1,6 @@
-C The\soptimizer\snow\suses\sonly\sthe\sindex\sand\signores\sthe\stable\sif\sit\scan\sget\naway\swith\sdoing\sso,\sthus\ssaving\sa\ssingle\sBTree\ssearch\sper\srow\sof\sresult.\nThis\scould\spotentially\sdouble\sthe\sspeed\sof\scertain\squeries.\s\sThe\ncode\spasses\sall\sregression\stests\sbut\snew\stests\sto\sexercise\sthe\snew\nfunctionality\sare\syet\sto\sbe\sadded.\s(CVS\s2170)
-D 2004-12-19T00:11:35
-F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
+C Add\sPRAGMA\s'temp_store_directory'.\s\sAdded\sos_*.c\sfunction\nsqlite3OsIsDirWritable(),\ssplit\spragma.c\schangeTempStorage()\sfunction\sinto\ninvalidateTempStorage().\s(CVS\s2171)
+D 2004-12-20T19:01:32
+F Makefile.in 02a184d734a2b4bbbc1ecc2e3ef504fcb13de069
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -43,25 +43,25 @@ F src/insert.c 0b9077c6752530e9919a8c84375cfa2c4652260a
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c fc383dc9cf03847b96e5ed9942696467725cfdfd
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
-F src/os.h 38258df2db895499b6e2957dbf17f25e0df71667
+F src/os.h c92a675533c75fea0f53559f34c7b91c5afe1a9d
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
-F src/os_mac.c 7367dab0c44ab0b2c4337e73ac6f6f97f171c2cb
+F src/os_mac.c e2a35e96bdf57a113ae1c446532e3c0924d3d046
 F src/os_mac.h 608fdf39eafa1ce25fc8cb223b8b0a073341d4da
 F src/os_test.c 91e5f22dd89491e5e1554820e715805f43fa4ece
 F src/os_test.h 6a26a4978492e4bbdbf385554958418ff02db162
-F src/os_unix.c 5824b22ba41fe9d514ef9169aac1b5fde73af229
+F src/os_unix.c f3835451ffa69072ea88f30cfd6f3ed12b728cfa
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
-F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
+F src/os_win.c 39525c414e57ca3f18d860d40d6d38df85689522
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 7b4dc9a94228efde924f1d9f4b7751f332da4587
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
 F src/parse.y ceba179b9703657180963568f54b0e75f33e36e1
-F src/pragma.c d6406e12c9eac353b3a026b50d41e4fd561afcc2
+F src/pragma.c 639a7e7ef0999211aafa1f3d474ecc7241033cb9
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c ac6610b4b2c5bd5ffc46536b760dacc420119dac
 F src/shell.c e8f4f486cbf6e60d81173146ac8a6522c930fa51
-F src/sqlite.h.in fa75850f412808afd38fddc1fd6456f4efc6fb97
+F src/sqlite.h.in 0d5e48e506845b74a845c9470e01d3f472b59611
 F src/sqliteInt.h a922cfd13711c68538684619fb15a4d262b12b9d
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 3a4044ef609565c8cc51e887d8b96933ba9f3b5c
@@ -161,7 +161,7 @@ F test/pager.test 394455707a079804e8a4e431d12edce831a065f0
 F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
 F test/pager3.test 647f696a9cf7409df00a1e0047c2eb55585a1b85
 F test/pagesize.test 1b826d1608fd86d2303aa895b5586052ad07eba1
-F test/pragma.test 726167cc97de01445f645c6d7e52e427db9ce46f
+F test/pragma.test 18b3f99853ff694211c2c69567b0a9426e2a5e7a
 F test/printf.test 92ba4c510b4fc61120ffa4a01820446ed917ae57
 F test/progress.test 5ddba78cb6011fba36093973cfb3ac473b8fb96a x
 F test/quick.test 91e5b8ae6663dc9e3e754b271f0384f0cae706e6
@@ -254,7 +254,7 @@ F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 7aa4478e64631859770a5fe4b413919ba6ee8a08
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
-F www/pragma.tcl 39c4a2be847538360c5d3e234f40a11f2eb08916
+F www/pragma.tcl 8c6b5662875bccde826324fe0e37edda39b870f4
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl de99c82c4729a10b6733463636f15473c4ec95bc
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 9b86993ff721b577b920c7c67fb41d3d4355fe88
-R 2476c11934030eade9ca4e863deb7247
-U drh
-Z 352407e4634c619fec9ef3761d4b80dd
+P e5aa489453bf31126da6473ef93c89ec27935cde
+R 80852dba2ab3f55be612ddeeffa02604
+U tpoindex
+Z 5d44d728827caef4bb2a5da252002b6d

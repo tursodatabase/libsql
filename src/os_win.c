@@ -202,7 +202,7 @@ int sqlite3OsOpenDirectory(
 ** name of a directory, then that directory will be used to store
 ** temporary files.
 */
-const char *sqlite3_temp_directory = 0;
+char *sqlite3_temp_directory = 0;
 
 /*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
@@ -408,6 +408,21 @@ static int unlockReadLock(OsFile *id){
   }
   return res;
 }
+
+/*
+** Check that a given pathname is a directory and is writable 
+**
+*/
+int sqlite3OsIsDirWritable(char *zBuf){
+  int fileAttr;
+  if(! zBuf ) return 0;
+  if(! isNT() && strlen(zBuf) > MAX_PATH ) return 0;
+  fileAttr = GetFileAttributesA(zBuf);
+  if( fileAttr == 0xffffffff ) return 0;
+  if( (fileAttr & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY ) return 0;
+  return 1;
+}
+
 
 /*
 ** Lock the file with the lock specified by parameter locktype - one

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.6 2004/11/20 08:17:18 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.7 2004/12/20 19:01:34 tpoindex Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -211,11 +211,50 @@ puts {
     is closed and reopened.  For additional information on the temp_store
     flag, see the description of the <a href="#pragma_default_temp_store">
     <b>default_temp_store</b></a> pragma.  Note that it is possible for 
-    the library compile-time options to override this setting. </p>
+    the library compile-time options to override this setting.  See
+    PRAGMA <a href="#pragma_temp_store_directory">temp_store_directory</a>
+    for further temporary storage options when <b>FILE</b> is specified.</p>
 
     <p>When the temp_store setting is changed, all existing temporary
     tables, indices, triggers, and viewers are immediately deleted.
     </p>
+    </li>
+
+<a name="pragma_temp_store_directory"></a>
+<li><p><b>PRAGMA temp_store_directory;
+       <br>PRAGMA temp_store_directory = 'directory-name';</b></p>
+    <p>Query or change the setting of the "temp_store_directory" flag affecting
+    the database for the duration of the current database connection.
+    The temp_store_directory flag reverts to its default value when the database
+    is closed and reopened.  Setting temp_store_directory allows control of the
+    placement of temporary files created by SQLite when PRAGMA
+    <a href="#pragma_temp_store">temp_store</a> is <b>FILE</b> (1),
+    or when the compile time default temporary store is FILE.
+    Otherwise, when the temp_store (or default) setting is 
+    <b>MEMORY</b> (2), setting temp_store_directory has no effect.</p>
+
+    <p>When the temp_store_directory setting is changed, all existing temporary
+    tables, indices, triggers, and viewers are immediately deleted.  In
+    practice, temp_store_directory should be set immediately after the 
+    database is opened.  </p>
+
+    <p>The value <i>directory-name</i> should be enclosed in single quotes.
+    To revert the directory to the default, set the <i>directory-name</i> to
+    a null string, e.g., <i>PRAGMA temp_store_directory = ''</i>.  An
+    error is raised if <i>directory-name</i> is not found or is not
+    writable. </p>
+
+    <p>The default directory for temporary files depends on the OS.  For
+    Unix/Linux/OSX, the default is the is the first writable directory found
+    in the list of: <b>/var/tmp, /usr/tmp, /tmp,</b> and <b>
+    <i>current-directory</i></b>.  For Windows NT, the default 
+    directory is determined by Windows, generally
+    <b>C:\Documents and Settings\<i>user-name</i>\Local Settings\Temp\</b>. 
+    Temporary files created by SQLite are unlinked immediately after
+    opening, so that the operating system can automatically delete the
+    files when the SQLite process exits.  Thus, temporary files are not
+    normally visible through <i>ls</i> or <i>dir</i> commands.</p>
+ 
     </li>
 </ul>
 }

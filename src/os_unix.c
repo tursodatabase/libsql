@@ -574,7 +574,7 @@ int sqlite3OsOpenDirectory(
 ** name of a directory, then that directory will be used to store
 ** temporary files.
 */
-const char *sqlite3_temp_directory = 0;
+char *sqlite3_temp_directory = 0;
 
 /*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
@@ -614,6 +614,20 @@ int sqlite3OsTempFileName(char *zBuf){
     zBuf[j] = 0;
   }while( access(zBuf,0)==0 );
   return SQLITE_OK; 
+}
+
+/*
+** Check that a given pathname is a directory and is writable 
+**
+*/
+int sqlite3OsIsDirWritable(char *zBuf){
+  struct stat buf;
+  if( zBuf==0 ) return 0;
+  if( strlen(zBuf)==0 ) return 0;
+  if( stat(zBuf, &buf) ) return 0;
+  if( !S_ISDIR(buf.st_mode) ) return 0;
+  if( access(zBuf, 07) ) return 0;
+  return 1;
 }
 
 /*

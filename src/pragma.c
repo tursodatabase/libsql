@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.79 2004/11/22 19:12:21 drh Exp $
+** $Id: pragma.c,v 1.80 2004/12/20 19:01:33 tpoindex Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -79,14 +79,11 @@ static int getTempStore(const char *z){
 }
 
 /*
-** If the TEMP database is open, close it and mark the database schema
-** as needing reloading.  This must be done when using the TEMP_STORE
-** or DEFAULT_TEMP_STORE pragmas.
+** Invalidate temp storage, either when the temp storage is changed
+** from default, or when 'file' and the temp_store_directory has changed
 */
-static int changeTempStorage(Parse *pParse, const char *zStorageType){
-  int ts = getTempStore(zStorageType);
+static int invalidateTempStorage(Parse *pParse){
   sqlite3 *db = pParse->db;
-  if( db->temp_store==ts ) return SQLITE_OK;
   if( db->aDb[1].pBt!=0 ){
     if( db->flags & SQLITE_InTrans ){
       sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
@@ -96,6 +93,21 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
     sqlite3BtreeClose(db->aDb[1].pBt);
     db->aDb[1].pBt = 0;
     sqlite3ResetInternalSchema(db, 0);
+  }
+  return SQLITE_OK;
+}
+
+/*
+** If the TEMP database is open, close it and mark the database schema
+** as needing reloading.  This must be done when using the TEMP_STORE
+** or DEFAULT_TEMP_STORE pragmas.
+*/
+static int changeTempStorage(Parse *pParse, const char *zStorageType){
+  int ts = getTempStore(zStorageType);
+  sqlite3 *db = pParse->db;
+  if( db->temp_store==ts ) return SQLITE_OK;
+  if( invalidateTempStorage( pParse ) != SQLITE_OK ){
+    return SQLITE_ERROR;
   }
   db->temp_store = ts;
   return SQLITE_OK;
@@ -339,6 +351,68 @@ void sqlite3Pragma(
       returnSingleInt(pParse, "temp_store", db->temp_store);
     }else{
       changeTempStorage(pParse, zRight);
+    }
+  }else
+
+  /*
+  **   PRAGMA temp_store_directory
+  **   PRAGMA temp_store_directory = ""|"directory_name"
+  **
+  ** Return or set the local value of the temp_store_directory flag.  Changing
+  ** the value sets a specific directory to be used for temporary files.
+  ** Setting to a null string reverts to the default temporary directory search.
+  ** If temporary directory is changed, then invalidateTempStorage.
+  **
+  */
+  if( sqlite3StrICmp(zLeft, "temp_store_directory")==0 ){
+    if( !zRight ){
+      if( sqlite3_temp_directory ){
+        sqlite3VdbeSetNumCols(v, 1);
+        sqlite3VdbeSetColName(v, 0, "temp_store_directory", P3_STATIC);
+        sqlite3VdbeOp3(v, OP_String8, 0, 0, sqlite3_temp_directory, 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
+      }
+    }else{
+      if( strlen(zRight)==0 ){
+        /* empty path, set to default. allows os_{unix,win}.c to choose directory */
+        if( sqlite3_temp_directory ){
+          /* previous temp_store_directory defined, free and invalidate */
+          sqlite3FreeX(sqlite3_temp_directory);
+          if( db->temp_store==1 ) {
+            /* temp storage is "file", so invalidate temp */
+            invalidateTempStorage( pParse );
+          }
+        }
+        sqlite3_temp_directory = 0;
+      }else{
+        /* check if previous directory defined, free and alloc if needed */
+        if( sqlite3_temp_directory ){
+          if( strlen(sqlite3_temp_directory) < strlen(zRight) + 1){
+            sqlite3FreeX(sqlite3_temp_directory);
+            sqlite3_temp_directory = sqlite3Malloc( strlen(zRight) + 1 );
+            if( sqlite3_temp_directory==0 ){
+              goto pragma_out;
+            }
+            sqlite3_temp_directory[0] = '\0';
+          }
+        }else{
+          sqlite3_temp_directory = sqlite3Malloc( strlen(zRight) + 1 );
+          if( sqlite3_temp_directory==0 ){
+            goto pragma_out;
+          }
+          sqlite3_temp_directory[0] = '\0';
+        }
+        /* check that directory exists and is writable */
+        if( sqlite3OsIsDirWritable( zRight ) ){
+          strcpy(sqlite3_temp_directory, zRight);
+          if( db->temp_store==1 ) {
+            /* temp storage is "file", so invalidate temp */
+            invalidateTempStorage( pParse );
+          }
+        }else{
+          sqlite3ErrorMsg(pParse, "not a directory, or not writable");
+        }
+      }
     }
   }else
 

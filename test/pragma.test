@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.27 2004/11/23 11:16:42 danielk1977 Exp $
+# $Id: pragma.test,v 1.28 2004/12/20 19:01:33 tpoindex Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,6 +25,7 @@ source $testdir/tester.tcl
 # pragma-4.*: Test cache_size and default_cache_size on attached db.
 # pragma-5.*: Test that pragma synchronous may not be used inside of a
 #             transaction.
+# pragma-9.*: Test temp_store and temp_store_directory.
 #
 
 # Delete the preexisting database to avoid the special setup
@@ -585,6 +586,80 @@ do_test pragma-8.2.15 {
     PRAGMA user_version;
   }
 } {-450}
+
+
+# Test temp_store and temp_store_directory pragmas
+#
+
+do_test pragma-9.1 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA temp_store;
+  }
+} {0}
+do_test pragma-9.2 {
+  execsql {
+    PRAGMA temp_store=file;
+    PRAGMA temp_store;
+  }
+} {1}
+do_test pragma-9.3 {
+  execsql {
+    PRAGMA temp_store=memory;
+    PRAGMA temp_store;
+  }
+} {2}
+do_test pragma-9.4 {
+  execsql {
+    PRAGMA temp_store_directory;
+  }
+} {}
+do_test pragma-9.5 {
+  execsql " \
+    PRAGMA temp_store_directory='[pwd]'; \
+  "
+} {}
+do_test pragma-9.6 {
+  execsql { 
+    PRAGMA temp_store_directory;
+  }
+} [pwd]
+do_test pragma-9.7 {
+  set result ""
+  catch {
+    execsql { 
+      PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';
+    }
+  } result
+  set result
+} {not a directory, or not writable}
+do_test pragma-9.8 {
+  execsql { 
+    PRAGMA temp_store_directory='';
+  }
+} {}
+do_test pragma-9.9 {
+  execsql { 
+    PRAGMA temp_store_directory;
+    PRAGMA temp_store=FILE;
+    CREATE TEMP TABLE temp_store_directory_test(a integer);
+    INSERT INTO temp_store_directory_test values (2);
+    SELECT * FROM temp_store_directory_test;
+  }
+} {2}
+do_test pragma-9.10 {
+  set result ""
+  catch {
+    execsql " \
+      PRAGMA temp_store_directory='[pwd]'; \
+      SELECT * FROM temp_store_directory_test;
+    "
+  } result
+  set result
+} {no such table: temp_store_directory_test}
+
+
 
 } ; # ifcapable schema_version
 
