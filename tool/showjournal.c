@@ -43,7 +43,8 @@ int main(int argc, char **argv){
   struct stat sbuf;
   unsigned int u;
   int rc;
-  char zBuf[100];
+  unsigned char zBuf[10];
+  unsigned char zBuf2[sizeof(u)];
   if( argc!=2 ){
     fprintf(stderr,"Usage: %s FILENAME\n", argv[0]);
     exit(1);
@@ -54,10 +55,22 @@ int main(int argc, char **argv){
     exit(1);
   }
   read(db, zBuf, 8);
-  read(db, &u, sizeof(u));
+  if( zBuf[7]==0xd6 ){
+    read(db, &u, sizeof(u));
+    printf("Records in Journal: %u\n", u);
+    read(db, &u, sizeof(u));
+    printf("Magic Number: 0x%08x\n", u);
+  }
+  read(db, zBuf2, sizeof(zBuf2));
+  u = zBuf2[0]<<24 | zBuf2[1]<<16 | zBuf2[2]<<8 | zBuf2[3];
   printf("Database Size: %u\n", u);
-  while( read(db, &u, sizeof(u))==sizeof(u) ){
+  while( read(db, zBuf2, sizeof(zBuf2))==sizeof(zBuf2) ){
+    u = zBuf2[0]<<24 | zBuf2[1]<<16 | zBuf2[2]<<8 | zBuf2[3];
     print_page(u);
+    if( zBuf[7]==0xd6 ){
+      read(db, &u, sizeof(u));
+      printf("Checksum: 0x%08x\n", u);
+    }
   }
   close(db);
 }

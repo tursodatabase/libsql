@@ -1,5 +1,5 @@
-C Remove\sundocumented\sextensions\sfrom\ssqlite_mprintf()\sand\sfriends\sin\sorder\sto\nmake\sit\sabout\s10%\ssmaller.\s(CVS\s1207)
-D 2004-02-02T12:29:25
+C Preliminary\sfix\sfor\sticket\s#599.\s\sMore\stesting\sand\sanalysis\sneeded.\s(CVS\s1208)
+D 2004-02-08T00:40:52
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/main.c 808ea1bda0798f4a714479aee8289d65f04cf29b
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
 F src/os.h 8d02b622153d2df442da1ec37cdd6b1bd9804a25
-F src/pager.c 289328d8efba620eae99f6c2f6062710838a3eb4
+F src/pager.c 7872537f9f47339b2a1098a54101d7f4e4c25364
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
@@ -153,7 +153,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c 3559eac5a3b46e9b558d50856946b25e77633236
-F tool/showjournal.c 9a37d7b05de0591e3102aaf774d01fbc0d053a8b
+F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -182,7 +182,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 3c796de8d1af55944f396f08feaa9e69c1652896
-R eeb1a65670905e806f11ab1b63f5e8e7
+P 0b3f552b986fd89c48c350b0746be93b9d276ecc
+R 753fd39b58050d194e71064713a576ce
 U drh
-Z f7f5c0bf32582b04f90ec08e5433a558
+Z 12eaf8d85a0609bf96a6d19c712cf69b
