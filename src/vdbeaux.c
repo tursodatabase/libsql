@@ -528,8 +528,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
 #ifdef SQLITE_DEBUG
   int nOp = p->nOp;
   VdbeOp *pOp;
-  if( nOp<2 ) return;
-  pOp = &p->aOp[nOp-2];
+  if( nOp<1 ) return;
+  pOp = &p->aOp[nOp-1];
   if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
     const char *z = pOp->p3;
     while( isspace(*(u8*)z) ) z++;
@@ -559,11 +559,9 @@ void sqlite3VdbeMakeReady(
   assert( p!=0 );
   assert( p->magic==VDBE_MAGIC_INIT );
 
-  /* Add a HALT instruction to the very end of the program.
+  /* There should be at least one opcode.
   */
-  if( p->nOp==0 || (p->aOp && p->aOp[p->nOp-1].opcode!=OP_Halt) ){
-    sqlite3VdbeAddOp(p, OP_Halt, 0, 0);
-  }
+  assert( p->nOp>0 );
 
   /* No instruction ever pushes more than a single element onto the
   ** stack.  And the stack never grows on successive executions of the

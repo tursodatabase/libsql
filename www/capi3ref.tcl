@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.11 2004/09/07 16:19:54 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.12 2004/09/15 13:38:11 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1006,9 +1006,11 @@ int sqlite3_step(sqlite3_stmt*);
 api {} {
 void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 } {
- Register a function that is called at every invocation of sqlite3_exec()
- or sqlite3_prepare().  This function can be used (for example) to generate
- a log file of all SQL executed against a database.  This is frequently
+ Register a function that is called each time an SQL statement is evaluated.
+ The callback function is invoked on the first call to sqlite3_step() after
+ calls to sqlite3_prepare() or sqlite3_reset().
+ This function can be used (for example) to generate
+ a log file of all SQL executed against a database.  This can be
  useful when debugging an application that uses SQLite.
 }
 

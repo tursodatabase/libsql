@@ -150,6 +150,30 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     return SQLITE_MISUSE;
   }
   if( p->pc<0 ){
+    /* Invoke the trace callback if there is one
+    */
+    if( (db = p->db)->xTrace && !db->init.busy ){
+      assert( p->nOp>0 );
+      assert( p->aOp[p->nOp-1].opcode==OP_Noop );
+      assert( p->aOp[p->nOp-1].p3!=0 );
+      assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
+      sqlite3SafetyOff(db);
+      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p3);
+      if( sqlite3SafetyOn(db) ){
+        p->rc = SQLITE_MISUSE;
+        return SQLITE_MISUSE;
+      }
+    }
+
+    /* Print a copy of SQL as it is executed if the SQL_TRACE pragma is turned
+    ** on in debugging mode.
+    */
+#ifdef SQLITE_DEBUG
+    if( (db->flags & SQLITE_SqlTrace)!=0 ){
+      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p3);
+    }
+#endif /* SQLITE_DEBUG */
+
     db->activeVdbeCnt++;
     p->pc = 0;
   }

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.252 2004/09/08 15:09:41 drh Exp $
+** $Id: build.c,v 1.253 2004/09/15 13:38:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -81,13 +81,13 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->cookieGoto);
     }
 
-#ifndef NDEBUG
     /* Add a No-op that contains the complete text of the compiled SQL
     ** statement as its P3 argument.  This does not change the functionality
-    ** of the program.  But it does make it easier to debug.
+    ** of the program. 
+    **
+    ** This is used to implement sqlite3_trace() functionality.
     */
     sqlite3VdbeOp3(v, OP_Noop, 0, 0, pParse->zSql, pParse->zTail-pParse->zSql);
-#endif
   }
 
 

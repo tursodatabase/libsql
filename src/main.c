@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.259 2004/09/06 17:24:13 drh Exp $
+** $Id: main.c,v 1.260 2004/09/15 13:38:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -980,40 +980,6 @@ int sqlite3_prepare(
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   sqlite3RunParser(&sParse, zSql, &zErrMsg);
-
-  if( db->xTrace && !db->init.busy ){
-    /* Trace only the statment that was compiled.
-    ** Make a copy of that part of the SQL string since zSQL is const
-    ** and we must pass a zero terminated string to the trace function
-    ** The copy is unnecessary if the tail pointer is pointing at the
-    ** beginning or end of the SQL string.
-    */
-    if( sParse.zTail && sParse.zTail!=zSql && *sParse.zTail ){
-      char *tmpSql = sqliteStrNDup(zSql, sParse.zTail - zSql);
-      if( tmpSql ){
-        db->xTrace(db->pTraceArg, tmpSql);
-        sqliteFree(tmpSql);
-      }else{
-        /* If a memory error occurred during the copy,
-        ** trace entire SQL string and fall through to the
-        ** sqlite3_malloc_failed test to report the error.
-        */
-        db->xTrace(db->pTraceArg, zSql); 
-      }
-    }else{
-      db->xTrace(db->pTraceArg, zSql); 
-    }
-  }
-
-  /* Print a copy of SQL as it is executed if the SQL_TRACE pragma is turned
-  ** on in debugging mode.
-  */
-#ifdef SQLITE_DEBUG
-  if( (db->flags & SQLITE_SqlTrace)!=0 && sParse.zTail && sParse.zTail!=zSql ){
-    sqlite3DebugPrintf("SQL-trace: %.*s\n", sParse.zTail - zSql, zSql);
-  }
-#endif /* SQLITE_DEBUG */
-
 
   if( sqlite3_malloc_failed ){
     rc = SQLITE_NOMEM;
