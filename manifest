@@ -1,5 +1,5 @@
-C Completely\sremove\sthe\sold\sSQL\sfunction\ssystem\sand\sreplace\sit\swith\sthe\nnew\suser\sfunctions.\s\sThe\scode\scurrently\scompiles\sbut\sit\scoredumps\son\sthe\ntest\ssuite.\s\sDo\snot\suse\sin\sits\spresent\sstate.\s(CVS\s400)
-D 2002-02-28T00:41:10
+C Added\sIFNULL\sand\sNVL\sfunctions.\s(CVS\s401)
+D 2002-02-28T00:46:26
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c 32a2b5826b892a61e153df0ff5778e01d1ba9ad9
-F src/func.c 709784ce09c6156c52cbf860f6bcc7c2349d0b65
+F src/func.c 7bfb8a2068cc5e8bed64a3eaf8521448e05371cc
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P c4f9e017b449d4036fa8d2bf77b931d4c31d74f7
-R 8c438145064b7ce85d82d8ac4ca5e8e8
+P 50797fee5066ec9ea23b720e5ab7e8fc8ccc1988
+R ce3267187f04fb6cf19d5ce1ab432374
 U drh
-Z 324db426e1592b4f7c305e457c298b2e
+Z b311912d740a382c290a6410e1cb599f
