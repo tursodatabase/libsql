@@ -1,5 +1,5 @@
-C Modify\sthe\soptimizer\sso\sthat\sit\sdoes\snot\sassume\sthat\sfunctions\sare\nconstant.\s(CVS\s920)
-D 2003-04-19T17:27:25
+C Update\scomments.\s\sRemove\sunused\sfield\sfrom\sthe\sIndex\sstructure.\s(CVS\s921)
+D 2003-04-20T00:00:24
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,7 +24,7 @@ F src/auth.c 2dd558dba4d8ffbed25fe1644e9af242f389f3e9
 F src/btree.c b9487cceb9ea78af9cbae9def34114902f511736
 F src/btree.h 529c98cb0715c62214544fbbe50b946f99a85540
 F src/btree_rb.c b14803c84dc1c8fb51f5db1542237b7b7d411957
-F src/build.c 6694013c86c4c480754f515ddab561302c6e732a
+F src/build.c 66f8ca2457dfdcc6c45e1606696f337418a8c556
 F src/copy.c 8699e571994934c78f70761a1458d7b9e9e75073
 F src/delete.c af65b26d9d13abbf63fdc4e97b88d26c700b04bb
 F src/encode.c faf03741efe921755ec371cf4a6984536de00042
@@ -47,7 +47,7 @@ F src/select.c 07140aaf5f2e209dd7bf8a681401a412ce16dc04
 F src/shell.c a0b7043713713ff45f666ce6b3c03a64109a8bb5
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in f49c2cdec7d24cb03e496a1ca519e16306495ee1
-F src/sqliteInt.h 757c82342dbcf90867471e59a1f4e34ed4d34290
+F src/sqliteInt.h c4f4866cce8f069574268969167b5f8041802edd
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 7a072c3c8ba9796edc25e5ffa62b68558134e192
 F src/test1.c 7ad4e6308dde0bf5a0f0775ce20cb2ec37a328f8
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9b619c98b586a207a87942640d3a94220ff8ab02
-R 7412289c17f86b36c7e9e5ef2d7e5a25
+P 767f1af236d115e8388e1dcc28a4df1be48d6c85
+R 36dfa6d5306b8b01a3a590f7c2277b76
 U drh
-Z f9b7a3e33fd7e690b2414333a1a1aca5
+Z 7a756c9352dc04a8dce7c22eae170166

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.146 2003/04/17 22:57:53 drh Exp $
+** $Id: build.c,v 1.147 2003/04/20 00:00:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1630,7 +1630,7 @@ void sqliteCreateIndex(
   strcpy(pIndex->zName, zName);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nId;
-  pIndex->onError = pIndex->isUnique = onError;
+  pIndex->onError = onError;
   pIndex->autoIndex = pName==0;
   pIndex->iDb = isTemp ? 1 : pParse->iDb;
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.175 2003/04/17 22:57:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.176 2003/04/20 00:00:24 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -296,13 +296,6 @@ struct sqlite {
 };
 
 /*
-** The following are the indices of in sqlite.aDb[] of the main database
-** file and the file used to store TEMP tables.
-*/
-#define DB_TMP     0
-#define DB_MAIN    1
-
-/*
 ** Possible values for the sqlite.flags.
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
@@ -442,7 +435,7 @@ struct Table {
 ** the from-table is created.  The existance of the to-table is not checked
 ** until an attempt is made to insert data into the from-table.
 **
-** The sqlite.aFKey hash table stores pointers to to this structure
+** The sqlite.aFKey hash table stores pointers to this structure
 ** given the name of a to-table.  For each to-table, all foreign keys
 ** associated with that table are on a linked list using the FKey.pNextTo
 ** field.
@@ -520,6 +513,13 @@ struct FKey {
 ** first column to be indexed (c3) has an index of 2 in Ex1.aCol[].
 ** The second column to be indexed (c1) has an index of 0 in
 ** Ex1.aCol[], hence Ex2.aiColumn[1]==0.
+**
+** The Index.onError field determines whether or not the indexed columns
+** must be unique and what to do if they are not.  When Index.onError=OE_None,
+** it means this is not a unique index.  Otherwise it is a unique index
+** and the value of Index.onError indicate the which conflict resolution 
+** algorithm to employ whenever an attempt is made to insert a non-unique
+** element.
 */
 struct Index {
   char *zName;     /* Name of this index */
@@ -527,7 +527,6 @@ struct Index {
   int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
   Table *pTable;   /* The SQL table being indexed */
   int tnum;        /* Page containing root of this index in database file */
-  u8 isUnique;     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   u8 iDb;          /* Index in sqlite.aDb[] of where this index is stored */
@@ -850,18 +849,6 @@ struct Parse {
  *
  * The "step_list" member points to the first element of a linked list
  * containing the SQL statements specified as the trigger program.
- *
- * When a trigger is initially created, the "isCommit" member is set to FALSE.
- * When a transaction is rolled back, any Trigger structures with "isCommit" set
- * to FALSE are deleted by the logic in sqliteRollbackInternalChanges(). When
- * a transaction is commited, the "isCommit" member is set to TRUE for any
- * Trigger structures for which it is FALSE.
- *
- * When a trigger is dropped, using the sqliteDropTrigger() interfaced, it is 
- * removed from the trigHash hash table and added to the trigDrop hash table.
- * If the transaction is rolled back, the trigger is re-added into the trigHash
- * hash table (and hence the database schema). If the transaction is commited,
- * then the Trigger structure is deleted permanently.
  */
 struct Trigger {
   char *name;             /* The name of the trigger                        */
