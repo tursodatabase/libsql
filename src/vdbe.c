@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.20 2000/06/06 13:54:16 drh Exp $
+** $Id: vdbe.c,v 1.21 2000/06/06 17:27:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -423,7 +423,8 @@ static void AggRehash(Agg *p, int nHash){
 */
 static int AggInsert(Agg *p, char *zKey){
   AggElem *pElem;
-  if( p->nHash < p->nElem*2 ){
+  int i;
+  if( p->nHash <= p->nElem*2 ){
     AggRehash(p, p->nElem*2 + 103);
   }
   if( p->nHash==0 ) return 1;
@@ -437,6 +438,9 @@ static int AggInsert(Agg *p, char *zKey){
   p->pFirst = pElem;
   p->nElem++;
   p->pCurrent = pElem;
+  for(i=0; i<p->nMem; i++){
+    pElem->aMem[i].s.flags = STK_Null;
+  }
   return 0;
 }
 
@@ -450,7 +454,7 @@ static AggElem *_AggInFocus(Agg *p){
     p->pCurrent = pFocus;
   }else{
     AggInsert(p,"");
-    pFocus = p->pCurrent;
+    pFocus = p->pCurrent = p->pFirst;
   }
   return pFocus;
 }
@@ -1145,8 +1149,7 @@ int sqliteVdbeExec(
       ** next on stack)
       ** and push the result back onto the stack.  If either element
       ** is a string then it is converted to a double using the atof()
-      ** function before the division.  Division by zero causes the
-      ** program to abort with an error.
+      ** function before the division.  Division by zero returns NULL.
       */
       case OP_Add:
       case OP_Subtract:
@@ -1164,11 +1167,7 @@ int sqliteVdbeExec(
             case OP_Subtract:    b -= a;       break;
             case OP_Multiply:    b *= a;       break;
             default: {
-              if( a==0 ){ 
-                sqliteSetString(pzErrMsg, "division by zero", 0);
-                rc = SQLITE_ERROR;
-                goto cleanup;
-              }
+              if( a==0 ) goto divide_by_zero;
               b /= a;
               break;
             }
@@ -1188,11 +1187,7 @@ int sqliteVdbeExec(
             case OP_Subtract:    b -= a;       break;
             case OP_Multiply:    b *= a;       break;
             default: {
-              if( a==0.0 ){ 
-                sqliteSetString(pzErrMsg, "division by zero", 0);
-                rc = SQLITE_ERROR;
-                goto cleanup;
-              }
+              if( a==0.0 ) goto divide_by_zero;
               b /= a;
               break;
             }
@@ -1202,6 +1197,12 @@ int sqliteVdbeExec(
           p->aStack[nos].r = b;
           p->aStack[nos].flags = STK_Real;
         }
+        break;
+
+      divide_by_zero:
+        PopStack(p, 2);
+        p->tos = nos;
+        p->aStack[nos].flags = STK_Null;
         break;
       }
 
@@ -1248,9 +1249,6 @@ int sqliteVdbeExec(
       **
       ** Pop the top two elements from the stack then push back the
       ** smaller of the two. 
-      **
-      ** If P1==1, always choose TOS for the min and decrement P1.
-      ** This is self-altering code...
       */
       case OP_Min: {
         int tos = p->tos;
@@ -1260,11 +1258,10 @@ int sqliteVdbeExec(
         if( nos<0 ) goto not_enough_stack;
         ft = p->aStack[tos].flags;
         fn = p->aStack[nos].flags;
-        if( pOp->p1 ){
+        if( fn & STK_Null ){
           copy = 1;
-          pOp->p1 = 0;
-        }else if( fn & STK_Null ){
-          copy = 1;
+        }else if( ft & STK_Null ){
+          copy = 0;
         }else if( (ft & fn & STK_Int)==STK_Int ){
           copy = p->aStack[nos].i>p->aStack[tos].i;
         }else if( ( (ft|fn) & (STK_Int|STK_Real) ) !=0 ){
@@ -2728,6 +2725,7 @@ int sqliteVdbeExec(
         }else{
           AggInsert(&p->agg, zKey);
         }
+        PopStack(p, 1);
         break; 
       }
 

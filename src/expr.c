@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.9 2000/06/06 13:54:15 drh Exp $
+** $Id: expr.c,v 1.10 2000/06/06 17:27:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -326,6 +326,7 @@ int sqliteFuncId(Token *pToken){
      { "min",    3, FN_Min   },
      { "max",    3, FN_Max   },
      { "sum",    3, FN_Sum   },
+     { "avg",    3, FN_Avg   },
   };
   int i;
   for(i=0; i<ArraySize(aFunc); i++){
@@ -349,7 +350,6 @@ int sqliteFuncId(Token *pToken){
 int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
   int nErr = 0;
   if( pExpr==0 ) return 0;
-  if( pIsAgg ) *pIsAgg = 0;
   switch( pExpr->op ){
     case TK_FUNCTION: {
       int id = sqliteFuncId(&pExpr->token);
@@ -359,6 +359,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int too_few_args = 0;
       int is_agg = 0;
       int i;
+      pExpr->iField = id;
       switch( id ){
         case FN_Unknown: { 
           no_such_func = 1;
@@ -376,6 +377,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
           is_agg = n==1;
           break;
         }
+        case FN_Avg:
         case FN_Sum: {
           no_such_func = !allowAgg;
           too_many_args = n>1;
@@ -401,6 +403,7 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
         pParse->nErr++;
         nErr++;
       }
+      if( is_agg ) pExpr->op = TK_AGG_FUNCTION;
       if( is_agg && pIsAgg ) *pIsAgg = 1;
       for(i=0; nErr==0 && i<n; i++){
         nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr, 0, 0);
@@ -408,16 +411,17 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
     }
     default: {
       if( pExpr->pLeft ){
-        nErr = sqliteExprCheck(pParse, pExpr->pLeft, 0, 0);
+        nErr = sqliteExprCheck(pParse, pExpr->pLeft, allowAgg, pIsAgg);
       }
       if( nErr==0 && pExpr->pRight ){
-        nErr = sqliteExprCheck(pParse, pExpr->pRight, 0, 0);
+        nErr = sqliteExprCheck(pParse, pExpr->pRight, allowAgg, pIsAgg);
       }
       if( nErr==0 && pExpr->pList ){
         int n = pExpr->pList->nExpr;
         int i;
         for(i=0; nErr==0 && i<n; i++){
-          nErr = sqliteExprCheck(pParse, pExpr->pList->a[i].pExpr, 0, 0);
+          Expr *pE2 = pExpr->pList->a[i].pExpr;
+          nErr = sqliteExprCheck(pParse, pE2, allowAgg, pIsAgg);
         }
       }
       break;
@@ -456,7 +460,11 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
   }
   switch( pExpr->op ){
     case TK_FIELD: {
-      sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iField, 0, 0);
+      if( pParse->useAgg ){
+        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
+      }else{
+        sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iField, 0, 0);
+      }
       break;
     }
     case TK_INTEGER: {
@@ -523,8 +531,17 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteVdbeAddOp(v, OP_AddImm, -1, 0, 0, 0);
       break;
     }
+    case TK_AGG_FUNCTION: {
+      sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0);
+      if( pExpr->iField==FN_Avg ){
+        assert( pParse->iAggCount>=0 && pParse->iAggCount<pParse->nAgg );
+        sqliteVdbeAddOp(v, OP_AggGet, 0, pParse->iAggCount, 0, 0);
+        sqliteVdbeAddOp(v, OP_Divide, 0, 0, 0, 0);
+      }
+      break;
+    }
     case TK_FUNCTION: {
-      int id = sqliteFuncId(&pExpr->token);
+      int id = pExpr->iField;
       int op;
       int i;
       ExprList *pList = pExpr->pList;
@@ -743,4 +760,143 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
       break;
     }
   }
+}
+
+/*
+** Do a deep comparison of two expression trees.  Return TRUE (non-zero)
+** if they are identical and return FALSE if they differ in any way.
+*/
+static int exprDeepCompare(Expr *pA, Expr *pB){
+  int i;
+  if( pA==0 ){
+    return pB==0;
+  }else if( pB==0 ){
+    return 0;
+  }
+  if( pA->op!=pB->op ) return 0;
+  if( !exprDeepCompare(pA->pLeft, pB->pLeft) ) return 0;
+  if( !exprDeepCompare(pA->pRight, pB->pRight) ) return 0;
+  if( pA->pList ){
+    if( pB->pList==0 ) return 0;
+    if( pA->pList->nExpr!=pB->pList->nExpr ) return 0;
+    for(i=0; i<pA->pList->nExpr; i++){
+      if( !exprDeepCompare(pA->pList->a[i].pExpr, pB->pList->a[i].pExpr) ){
+        return 0;
+      }
+    }
+  }else if( pB->pList ){
+    return 0;
+  }
+  if( pA->pSelect || pB->pSelect ) return 0;
+  if( pA->token.z ){
+    if( pB->token.z==0 ) return 0;
+    if( pB->token.n!=pA->token.n ) return 0;
+    if( sqliteStrNICmp(pA->token.z, pB->token.z, pA->token.n)!=0 ) return 0;
+  }
+  return 1;
+}
+
+/*
+** Add a new element to the pParse->aAgg[] array and return its index.
+*/
+static int appendAggInfo(Parse *pParse){
+  if( (pParse->nAgg & 0x7)==0 ){
+    int amt = pParse->nAgg + 8;
+    pParse->aAgg = sqliteRealloc(pParse->aAgg, amt*sizeof(pParse->aAgg[0]));
+    if( pParse->aAgg==0 ){
+      sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
+      pParse->nErr++;
+      return -1;
+    }
+  }
+  memset(&pParse->aAgg[pParse->nAgg], 0, sizeof(pParse->aAgg[0]));
+  return pParse->nAgg++;
+}
+
+/*
+** Analyze the given expression looking for aggregate functions and
+** for variables that need to be added to the pParse->aAgg[] array.
+** Make additional entries to the pParse->aAgg[] array as necessary.
+**
+** This routine should only be called after the expression has been
+** analyzed by sqliteExprResolveIds() and sqliteExprCheck().
+**
+** If errors are seen, leave an error message in zErrMsg and return
+** the number of errors.
+*/
+int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
+  int i;
+  AggExpr *aAgg;
+  int nErr = 0;
+
+  if( pExpr==0 ) return 0;
+  switch( pExpr->op ){
+    case TK_FIELD: {
+      aAgg = pParse->aAgg;
+      for(i=0; i<pParse->nAgg; i++){
+        if( aAgg[i].isAgg ) continue;
+        if( aAgg[i].pExpr->iTable==pExpr->iTable
+         && aAgg[i].pExpr->iField==pExpr->iField ){
+          pExpr->iAgg = i;
+          break;
+        }
+      }
+      if( i>=pParse->nAgg ){
+        i = appendAggInfo(pParse);
+        if( i<0 ) return 1;
+        pParse->aAgg[i].isAgg = 0;
+        pParse->aAgg[i].pExpr = pExpr;
+      }
+      break;
+    }
+    case TK_AGG_FUNCTION: {
+      if( pExpr->iField==FN_Count || pExpr->iField==FN_Avg ){
+        if( pParse->iAggCount>=0 ){
+          i = pParse->iAggCount;
+        }else{
+          i = appendAggInfo(pParse);
+          if( i<0 ) return 1;
+          pParse->aAgg[i].isAgg = 1;
+          pParse->aAgg[i].pExpr = 0;
+          pParse->iAggCount = i;
+        }
+        if( pExpr->iField==FN_Count ){
+          pExpr->iAgg = i;
+          break;
+        }
+      }
+      aAgg = pParse->aAgg;
+      for(i=0; i<pParse->nAgg; i++){
+        if( !aAgg[i].isAgg ) continue;
+        if( exprDeepCompare(aAgg[i].pExpr, pExpr) ){
+          break;
+        }
+      }
+      if( i>=pParse->nAgg ){
+        i = appendAggInfo(pParse);
+        if( i<0 ) return 1;
+        pParse->aAgg[i].isAgg = 1;
+        pParse->aAgg[i].pExpr = pExpr;
+      }
+      pExpr->iAgg = i;
+      break;
+    }
+    default: {
+      if( pExpr->pLeft ){
+        nErr = sqliteExprAnalyzeAggregates(pParse, pExpr->pLeft);
+      }
+      if( nErr==0 && pExpr->pRight ){
+        nErr = sqliteExprAnalyzeAggregates(pParse, pExpr->pRight);
+      }
+      if( nErr==0 && pExpr->pList ){
+        int n = pExpr->pList->nExpr;
+        int i;
+        for(i=0; nErr==0 && i<n; i++){
+          nErr = sqliteExprAnalyzeAggregates(pParse, pExpr->pList->a[i].pExpr);
+        }
+      }
+      break;
+    }
+  }
+  return nErr;
 }

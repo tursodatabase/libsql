@@ -1,5 +1,5 @@
-C added\sIN\sand\sBETWEEN\soperators\s(CVS\s57)
-D 2000-06-06T13:54:15
+C GROUP\sBY\sand\sHAVING\sinstalled\s(CVS\s58)
+D 2000-06-06T17:27:05
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 17ba1ccf8d2d40c627796bba8f72952365d6d644
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -10,19 +10,19 @@ F src/build.c 6c9454b2e2b866979527fb41b19ad8bc49c27a20
 F src/dbbe.c ae8b5d2cdb4fa7dd11313059984be9457fa77f63
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c 8c733bb82a1b84126116d03dcdccf433c0856f5d
-F src/expr.c 1bedf5f426ee1e1609ef1758985b7ce0581987b8
+F src/expr.c d350fe393e1753aaa733a5d21f0830a23e547400
 F src/insert.c 5e69dd70c3f91cf5ec5090f39fd6cd8e135af9bf
 F src/main.c 93a7ad14bb5a82ad13ad59da23ef674a94b0c3d6
-F src/parse.y 51ef63a49e73ced4ef3e81d7b1f9fd825d776837
-F src/select.c a1891cfce003a98a57374c01fa5875366c8d9be2
+F src/parse.y 210c888c052f3fde3def6ff1f402e4b4e8ba270d
+F src/select.c 77906ffaae962e49acc9a0c0c39cb710f06e56d8
 F src/shell.c 5fa24c0bb678782ffe9070128e3e160674f297eb
 F src/sqlite.h 58da0a8590133777b741f9836beaef3d58f40268
-F src/sqliteInt.h 821b435a18e1c9d0fddcd7bfeefcf5f3fe925c6e
+F src/sqliteInt.h 267f66d4a851e19adb0f9a3050a3acb62fc70cae
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
-F src/tokenize.c f190e16ebb82dd60497796022f1e56e2e0527975
+F src/tokenize.c 32f0579d4a7276b8e3bfd353cac034f67976aa82
 F src/update.c 18746f920f989b3d19d96c08263c92584823cd35
 F src/util.c 33f9baa01e45394ef0cf85361a0e872987884315
-F src/vdbe.c 1ab61ada503b99d6b3224c9d40ed9bac855fe317
+F src/vdbe.c 7a4909b44a58a81e03dfc9376b926d5e8f773fcc
 F src/vdbe.h 49e0f9c6742860e224cd81d1278059f5d029dfb6
 F src/where.c c9b90e7672f4662a83ef9a27a193020d69fe034c
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
@@ -32,7 +32,7 @@ F test/expr.test 52be5592143a88479e0006dfd7e2023e43294636
 F test/in.test 17cd46a9ca0e5d4a804483e6fb496458494858e6
 F test/index.test 9f99dca2d904b8de330863a978587f136e2df65a
 F test/insert.test b4c186ffa4b97a231643726f3bcee29815b24eaf
-F test/select1.test a0b00df77e85adff75c338e487718c5d31f69e3a
+F test/select1.test 2311bddd40bca257c27a7d141ed2a359bbdbc906
 F test/select2.test 3cd3c0f9d67e98b1b54af5853679b4a111224410
 F test/subselect.test bf8b251a92fb091973c1c469ce499dc9648a41d5
 F test/table.test 85d6f410d127ec508c6640f02d7c40d218414e81
@@ -49,7 +49,7 @@ F www/c_interface.tcl 8867d76ddd416d2fbd41e4cb3de8efa9cef105a5
 F www/changes.tcl 567cc6066d87460bdedff8e5bbc20f41ddaadf77
 F www/index.tcl f8189a7898f6d06307c34047b9d7e00860026e44
 F www/sqlite.tcl 2f933ce18cffd34a0a020a82435ab937137970fd
-P b52dd82fe32c38c999aef4f07d046d0428336965
-R d1b48bd641877701893f6074a4e397f8
+P 54d198189b58366e4e40139102bc6de94ac55e18
+R dcd329d5daa579a072c3c6f09022ae9f
 U drh
-Z 3b39b6691fb1f454562ec994b26db409
+Z 6732a1b7035c88b38d7888f45d2d7142

@@ -24,10 +24,9 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.10 2000/06/06 13:54:15 drh Exp $
+** $Id: select.c,v 1.11 2000/06/06 17:27:05 drh Exp $
 */
 #include "sqliteInt.h"
-
 
 /*
 ** Allocate a new Select structure and return a pointer to that
@@ -69,6 +68,105 @@ void sqliteSelectDelete(Select *p){
 }
 
 /*
+** Delete the aggregate information from the parse structure.
+*/
+void sqliteParseInfoReset(Parse *pParse){
+  sqliteFree(pParse->aAgg);
+  pParse->aAgg = 0;
+  pParse->nAgg = 0;
+  pParse->iAggCount = -1;
+  pParse->useAgg = 0;
+}
+
+/*
+** This routine generates the code for the inside of the inner loop
+** of a SELECT.
+*/
+static int selectInnerLoop(
+  Parse *pParse,          /* The parser context */
+  ExprList *pEList,       /* List of values being extracted */
+  ExprList *pOrderBy,     /* If not NULL, sort results using this key */
+  int distinct,           /* If >=0, make sure results are distinct */
+  int eDest,              /* How to dispose of the results */
+  int iParm,              /* An argument to the disposal method */
+  int iContinue,          /* Jump here to continue with next row */
+  int iBreak              /* Jump here to break out of the inner loop */
+){
+  Vdbe *v = pParse->pVdbe;
+  int i;
+
+  /* Pull the requested fields.
+  */
+  for(i=0; i<pEList->nExpr; i++){
+    sqliteExprCode(pParse, pEList->a[i].pExpr);
+  }
+
+  /* If the current result is not distinct, skip the rest
+  ** of the processing for the current row.
+  */
+  if( distinct>=0 ){
+    int lbl = sqliteVdbeMakeLabel(v);
+    sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1, 0, 0);
+    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iContinue, 0, 0);
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", lbl);
+    sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
+  }
+  /* If there is an ORDER BY clause, then store the results
+  ** in a sorter.
+  */
+  if( pOrderBy ){
+    char *zSortOrder;
+    sqliteVdbeAddOp(v, OP_SortMakeRec, pEList->nExpr, 0, 0, 0);
+    zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
+    if( zSortOrder==0 ) return 1;
+    for(i=0; i<pOrderBy->nExpr; i++){
+      zSortOrder[i] = pOrderBy->a[i].idx ? '-' : '+';
+      sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
+    }
+    zSortOrder[pOrderBy->nExpr] = 0;
+    sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, 0);
+    sqliteVdbeAddOp(v, OP_SortPut, 0, 0, 0, 0);
+  }else 
+
+  /* If we are writing to a table, then write the results to the table.
+  */
+  if( eDest==SRT_Table ){
+    sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else 
+
+  /* If we are creating a set for an "expr IN (SELECT ...)" construct,
+  ** then there should be a single item on the stack.  Write this
+  ** item into the set table with bogus data.
+  */
+  if( eDest==SRT_Set ){
+    assert( pEList->nExpr==1 );
+    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
+  }else 
+
+  /* If this is a scalar select that is part of an expression, then
+  ** store the results in the appropriate memory cell and break out
+  ** of the scan loop.
+  */
+  if( eDest==SRT_Mem ){
+    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, iBreak, 0, 0);
+  }else
+
+  /* If none of the above, send the data to the callback function.
+  */
+  {
+    sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
+  }
+  return 0;
+}
+
+/*
 ** Generate code for the given SELECT statement.
 **
 ** The results are distributed in various ways depending on the
@@ -105,6 +203,8 @@ int sqliteSelect(
   IdList *pTabList;      /* List of tables to select from */
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
+  ExprList *pGroupBy;    /* The GROUP BY clause.  May be NULL */
+  Expr *pHaving;         /* The HAVING clause.  May be NULL */
   int isDistinct;        /* True if the DISTINCT keyword is present */
   int distinct;          /* Table to use for the distinct set */
 
@@ -112,6 +212,8 @@ int sqliteSelect(
   pTabList = p->pSrc;
   pWhere = p->pWhere;
   pOrderBy = p->pOrderBy;
+  pGroupBy = p->pGroupBy;
+  pHaving = p->pHaving;
   isDistinct = p->isDistinct;
 
   /* 
@@ -119,6 +221,7 @@ int sqliteSelect(
   ** errors before this routine starts.
   */
   if( pParse->nErr>0 ) return 0;
+  sqliteParseInfoReset(pParse);
 
   /* Look up every table in the table list.
   */
@@ -133,10 +236,13 @@ int sqliteSelect(
   }
 
   /* Allocate a temporary table to use for the DISTINCT set, if
-  ** necessary.
+  ** necessary.  This must be done early to allocate the cursor before
+  ** any calls to sqliteExprResolveIds().
   */
   if( isDistinct ){
     distinct = pParse->nTab++;
+  }else{
+    distinct = -1;
   }
 
   /* If the list of fields to retrieve is "*" then replace it with
@@ -154,7 +260,8 @@ int sqliteSelect(
     }
   }
 
-  /* If writing to memory, only a single column may be output.
+  /* If writing to memory or generating a set
+  ** only a single column may be output.
   */
   if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
     sqliteSetString(&pParse->zErrMsg, "only a single result allowed for "
@@ -163,7 +270,13 @@ int sqliteSelect(
     return 1;
   }
 
-  /* Resolve the field names and do a semantics check on all the expressions.
+  /* ORDER BY is ignored if we are not sending the result to a callback.
+  */
+  if( eDest!=SRT_Callback ){
+    pOrderBy = 0;
+  }
+
+  /* Allocate cursors for "expr IN (SELECT ...)" constructs.
   */
   for(i=0; i<pEList->nExpr; i++){
     sqliteExprResolveInSelect(pParse, pEList->a[i].pExpr);
@@ -174,23 +287,21 @@ int sqliteSelect(
       sqliteExprResolveInSelect(pParse, pOrderBy->a[i].pExpr);
     }
   }
+  if( pGroupBy ){
+    for(i=0; i<pGroupBy->nExpr; i++){
+      sqliteExprResolveInSelect(pParse, pGroupBy->a[i].pExpr);
+    }
+  }
+  if( pHaving ) sqliteExprResolveInSelect(pParse, pHaving);
+
+  /* Resolve the field names and do a semantics check on all the expressions.
+  */
   for(i=0; i<pEList->nExpr; i++){
     if( sqliteExprResolveIds(pParse, pTabList, pEList->a[i].pExpr) ){
       return 1;
     }
-    if( sqliteExprCheck(pParse, pEList->a[i].pExpr, 1, &pEList->a[i].isAgg) ){
+    if( sqliteExprCheck(pParse, pEList->a[i].pExpr, 1, &isAgg) ){
       return 1;
-    }
-  }
-  if( pEList->nExpr>0 ){
-    isAgg = pEList->a[0].isAgg;
-    for(i=1; i<pEList->nExpr; i++){
-      if( pEList->a[i].isAgg!=isAgg ){
-        sqliteSetString(&pParse->zErrMsg, "some selected items are aggregates "
-          "and others are not", 0);
-        pParse->nErr++;
-        return 1;
-      }
     }
   }
   if( pWhere ){
@@ -203,25 +314,59 @@ int sqliteSelect(
   }
   if( pOrderBy ){
     for(i=0; i<pOrderBy->nExpr; i++){
-      if( sqliteExprResolveIds(pParse, pTabList, pOrderBy->a[i].pExpr) ){
+      Expr *pE = pOrderBy->a[i].pExpr;
+      if( sqliteExprResolveIds(pParse, pTabList, pE) ){
         return 1;
       }
-      if( sqliteExprCheck(pParse, pOrderBy->a[i].pExpr, 0, 0) ){
+      if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
         return 1;
       }
     }
   }
-
-  /* ORDER BY is ignored if we are not invoking callbacks.
-  */
-  if( isAgg || eDest!=SRT_Callback ){
-    pOrderBy = 0;
+  if( pGroupBy ){
+    for(i=0; i<pGroupBy->nExpr; i++){
+      Expr *pE = pGroupBy->a[i].pExpr;
+      if( sqliteExprResolveIds(pParse, pTabList, pE) ){
+        return 1;
+      }
+      if( sqliteExprCheck(pParse, pE, isAgg, 0) ){
+        return 1;
+      }
+    }
+  }
+  if( pHaving ){
+    if( pGroupBy==0 ){
+      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required to "
+         "use HAVING", 0);
+      pParse->nErr++;
+      return 1;
+    }
+    if( sqliteExprResolveIds(pParse, pTabList, pHaving) ){
+      return 1;
+    }
+    if( sqliteExprCheck(pParse, pHaving, 0, 0) ){
+      return 1;
+    }
   }
 
-  /* Turn off distinct if this is an aggregate or writing to memory.
+  /* Do an analysis of aggregate expressions.
   */
-  if( isAgg || eDest==SRT_Mem ){
-    isDistinct = 0;
+  if( isAgg ){
+    for(i=0; i<pEList->nExpr; i++){
+      if( sqliteExprAnalyzeAggregates(pParse, pEList->a[i].pExpr) ){
+        return 1;
+      }
+    }
+    if( pGroupBy ){
+      for(i=0; i<pGroupBy->nExpr; i++){
+        if( sqliteExprAnalyzeAggregates(pParse, pGroupBy->a[i].pExpr) ){
+          return 1;
+        }
+      }
+    }
+    if( pHaving && sqliteExprAnalyzeAggregates(pParse, pHaving) ){
+      return 1;
+    }
   }
 
   /* Begin generating code.
@@ -239,7 +384,7 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, 0, 0);
   }
 
-  /* Identify column names if we will be using a callback.  This
+  /* Identify column names if we will be using in the callback.  This
   ** step is skipped if the output is going to a table or a memory cell.
   */
   if( eDest==SRT_Callback ){
@@ -279,23 +424,10 @@ int sqliteSelect(
     }
   }
 
-  /* Initialize the stack to contain aggregate seed values
+  /* Reset the aggregator
   */
   if( isAgg ){
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *p = pEList->a[i].pExpr;
-      switch( sqliteFuncId(&p->token) ){
-        case FN_Min:
-        case FN_Max: {
-          sqliteVdbeAddOp(v, OP_Null, 0, 0, 0, 0);
-          break;
-        }
-        default: {
-          sqliteVdbeAddOp(v, OP_Integer, 0, 0, 0, 0);
-          break;
-        }
-      }
-    }
+    sqliteVdbeAddOp(v, OP_AggReset, 0, pParse->nAgg, 0, 0);
   }
 
   /* Initialize the memory cell to NULL
@@ -313,82 +445,97 @@ int sqliteSelect(
   pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0);
   if( pWInfo==0 ) return 1;
 
-  /* Pull the requested fields.
+  /* Use the standard inner loop if we are not dealing with
+  ** aggregates
   */
   if( !isAgg ){
-    for(i=0; i<pEList->nExpr; i++){
-      sqliteExprCode(pParse, pEList->a[i].pExpr);
+    if( selectInnerLoop(pParse, pEList, pOrderBy, distinct, eDest, iParm,
+                    pWInfo->iContinue, pWInfo->iBreak) ){
+       return 1;
     }
   }
 
-  /* If the current result is not distinct, script the remainder
-  ** of this processing.
+  /* If we are dealing with aggregates, then to the special aggregate
+  ** processing.  
   */
-  if( isDistinct ){
-    int lbl = sqliteVdbeMakeLabel(v);
-    sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1, 0, 0);
-    sqliteVdbeAddOp(v, OP_Distinct, distinct, lbl, 0, 0);
-    sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iContinue, 0, 0);
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", lbl);
-    sqliteVdbeAddOp(v, OP_Put, distinct, 0, 0, 0);
-  }
-  
-  /* If there is no ORDER BY clause, then we can invoke the callback
-  ** right away.  If there is an ORDER BY, then we need to put the
-  ** data into an appropriate sorter record.
-  */
-  if( pOrderBy ){
-    char *zSortOrder;
-    sqliteVdbeAddOp(v, OP_SortMakeRec, pEList->nExpr, 0, 0, 0);
-    zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
-    if( zSortOrder==0 ) return 1;
-    for(i=0; i<pOrderBy->nExpr; i++){
-      zSortOrder[i] = pOrderBy->a[i].idx ? '-' : '+';
-      sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
+  else{
+    int doFocus;
+    if( pGroupBy ){
+      for(i=0; i<pGroupBy->nExpr; i++){
+        sqliteExprCode(pParse, pGroupBy->a[i].pExpr);
+      }
+      sqliteVdbeAddOp(v, OP_MakeKey, pGroupBy->nExpr, 0, 0, 0);
+      doFocus = 1;
+    }else{
+      doFocus = 0;
+      for(i=0; i<pParse->nAgg; i++){
+        if( !pParse->aAgg[i].isAgg ){
+          doFocus = 1;
+          break;
+        }
+      }
+      if( doFocus ){
+        sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
+      }
     }
-    zSortOrder[pOrderBy->nExpr] = 0;
-    sqliteVdbeAddOp(v, OP_SortMakeKey, pOrderBy->nExpr, 0, zSortOrder, 0);
-    sqliteVdbeAddOp(v, OP_SortPut, 0, 0, 0, 0);
-  }else if( isAgg ){
-    int n = pEList->nExpr;
-    for(i=0; i<n; i++){
-      Expr *p = pEList->a[i].pExpr;
-      int id = sqliteFuncId(&p->token);
-      int op, p1;
-      if( n>1 ){
-        sqliteVdbeAddOp(v, OP_Pull, n-1, 0, 0, 0);
+    if( doFocus ){
+      int lbl1 = sqliteVdbeMakeLabel(v);
+      sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1, 0, 0);
+      for(i=0; i<pParse->nAgg; i++){
+        if( pParse->aAgg[i].isAgg ) continue;
+        sqliteExprCode(pParse, pParse->aAgg[i].pExpr);
+        sqliteVdbeAddOp(v, OP_AggSet, 0, i, 0, 0);
       }
-      if( id!=FN_Count && p->pList && p->pList->nExpr>=1 ){
-        sqliteExprCode(pParse, p->pList->a[0].pExpr);
-        sqliteVdbeAddOp(v, OP_Concat, 1, 0, 0, 0);
-      }
-      switch( sqliteFuncId(&p->token) ){
-        case FN_Count: op = OP_AddImm; p1 = 1; break;
-        case FN_Sum:   op = OP_Add;    p1 = 0; break;
-        case FN_Min:   op = OP_Min;    p1 = 1; break;
-        case FN_Max:   op = OP_Max;    p1 = 0; break;
-      }
-      sqliteVdbeAddOp(v, op, p1, 0, 0, 0);
+      sqliteVdbeResolveLabel(v, lbl1);
     }
-  }else if( eDest==SRT_Table ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
-  }else if( eDest==SRT_Set ){
-    sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
-    sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
-  }else if( eDest==SRT_Mem ){
-    sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo->iBreak, 0, 0);
-  }else{
-    sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
+    for(i=0; i<pParse->nAgg; i++){
+      Expr *pE;
+      int op;
+      if( !pParse->aAgg[i].isAgg ) continue;
+      pE = pParse->aAgg[i].pExpr;
+      if( pE==0 ){
+        sqliteVdbeAddOp(v, OP_AggIncr, 1, i, 0, 0);
+        continue;
+      }
+      assert( pE->op==TK_AGG_FUNCTION );
+      assert( pE->pList!=0 && pE->pList->nExpr==1 );
+      sqliteExprCode(pParse, pE->pList->a[0].pExpr);
+      sqliteVdbeAddOp(v, OP_AggGet, 0, i, 0, 0);
+      switch( pE->iField ){
+        case FN_Min:  op = OP_Min;   break;
+        case FN_Max:  op = OP_Max;   break;
+        case FN_Avg:  op = OP_Add;   break;
+        case FN_Sum:  op = OP_Add;   break;
+      }
+      sqliteVdbeAddOp(v, op, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_AggSet, 0, i, 0, 0);
+    }
   }
+
 
   /* End the database scan loop.
   */
   sqliteWhereEnd(pWInfo);
+
+  /* If we are processing aggregates, we need to set up a second loop
+  ** over all of the aggregate values and process them.
+  */
+  if( isAgg ){
+    int endagg = sqliteVdbeMakeLabel(v);
+    int startagg;
+    startagg = sqliteVdbeAddOp(v, OP_AggNext, 0, endagg, 0, 0);
+    pParse->useAgg = 1;
+    if( pHaving ){
+      sqliteExprIfFalse(pParse, pHaving, startagg);
+    }
+    if( selectInnerLoop(pParse, pEList, pOrderBy, distinct, eDest, iParm,
+                    startagg, endagg) ){
+      return 1;
+    }
+    sqliteVdbeAddOp(v, OP_Goto, 0, startagg, 0, 0);
+    sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, endagg);
+    pParse->useAgg = 0;
+  }
 
   /* If there is an ORDER BY clause, then we need to sort the results
   ** and send them to the callback one by one.
@@ -401,25 +548,6 @@ int sqliteSelect(
     sqliteVdbeAddOp(v, OP_SortCallback, pEList->nExpr, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
     sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
-  }
-
-  /* If this is an aggregate, then we need to invoke the callback
-  ** exactly once.
-  */
-  if( isAgg ){
-    if( eDest==SRT_Table ){
-      sqliteVdbeAddOp(v, OP_MakeRecord, pEList->nExpr, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_New, iParm, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Pull, 1, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
-    }else if( eDest==SRT_Set ){
-      sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
-      sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
-    }else if( eDest==SRT_Mem ){
-      sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
-    }else{
-      sqliteVdbeAddOp(v, OP_Callback, pEList->nExpr, 0, 0, 0);
-    }
   }
   return 0;
 }

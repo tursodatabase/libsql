@@ -23,7 +23,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.17 2000/06/06 13:54:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.18 2000/06/06 17:27:05 drh Exp $
 */
 #include "sqlite.h"
 #include "dbbe.h"
@@ -88,6 +88,7 @@ typedef struct Token Token;
 typedef struct IdList IdList;
 typedef struct WhereInfo WhereInfo;
 typedef struct Select Select;
+typedef struct AggExpr AggExpr;
 
 /*
 ** Each database is an instance of the following structure
@@ -161,7 +162,10 @@ struct Expr {
   ExprList *pList;       /* A list of expressions used as a function argument */
   Token token;           /* An operand token */
   int iTable, iField;    /* When op==TK_FIELD, then this node means the
-                         ** iField-th field of the iTable-th table */
+                         ** iField-th field of the iTable-th table.  When
+                         ** op==TK_FUNCTION, iField holds the function id */
+  int iAgg;              /* When op==TK_FIELD and pParse->useAgg==TRUE, pull
+                         ** value from these element of the aggregator */
   Select *pSelect;       /* When the expression is a sub-select */
 };
 
@@ -235,6 +239,30 @@ struct Select {
 #define SRT_Table        4  /* Store result in a regular table */
 
 /*
+** When a SELECT uses aggregate functions (like "count(*)" or "avg(f1)")
+** we have to do some additional analysis of expressions.  An instance
+** of the following structure holds information about a single subexpression
+** somewhere in the SELECT statement.  An array of these structures holds
+** all the information we need to generate code for aggregate
+** expressions.
+**
+** Note that when analyzing a SELECT containing aggregates, both
+** non-aggregate field variables and aggregate functions are stored
+** in the AggExpr array of the Parser structure.
+**
+** The pExpr field points to an expression that is part of either the
+** field list, the GROUP BY clause, the HAVING clause or the ORDER BY
+** clause.  The expression will be freed when those clauses are cleaned
+** up.  Do not try to delete the expression attached to AggExpr.pExpr.
+**
+** If AggExpr.pExpr==0, that means the expression is "count(*)".
+*/
+struct AggExpr {
+  int isAgg;        /* if TRUE contains an aggregate function */
+  Expr *pExpr;      /* The expression */
+};
+
+/*
 ** An SQL parser context
 */
 struct Parse {
@@ -253,6 +281,11 @@ struct Parse {
   int nTab;            /* Number of previously allocated cursors */
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
+  int nAgg;            /* Number of aggregate expressions */
+  AggExpr *aAgg;       /* An array of aggregate expressions */
+  int iAggCount;       /* Index of the count(*) aggregate in aAgg[] */
+  int useAgg;          /* If true, extract field values from the aggregator
+                       ** while generating expressions.  Normally false */
 };
 
 /*
@@ -315,3 +348,5 @@ int sqliteExprCheck(Parse*, Expr*, int, int*);
 int sqliteFuncId(Token*);
 int sqliteExprResolveIds(Parse*, IdList*, Expr*);
 void sqliteExprResolveInSelect(Parse*, Expr*);
+int sqliteExprAnalyzeAggregates(Parse*, Expr*);
+void sqlitePArseInfoReset(Parse*);
