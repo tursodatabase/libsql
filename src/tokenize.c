@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.97 2004/11/12 13:42:31 danielk1977 Exp $
+** $Id: tokenize.c,v 1.98 2005/01/11 17:59:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -49,9 +49,15 @@
 ** with the high-order bit set.  The latter rule means that
 ** any sequence of UTF-8 characters or characters taken from
 ** an extended ISO8859 character set can form an identifier.
+**
+** Ticket #1066.  the SQL standard does not allow '$' in the
+** middle of identfiers.  But many SQL implementations do. 
+** SQLite will allow '$' in identifiers for compatibility.
+** But the feature is undocumented.
 */
 static const char isIdChar[] = {
 /* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 2x */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  /* 5x */
@@ -59,7 +65,7 @@ static const char isIdChar[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
 };
 
-#define IdChar(C)  (((c=C)&0x80)!=0 || (c>0x2f && isIdChar[c-0x30]))
+#define IdChar(C)  (((c=C)&0x80)!=0 || (c>0x1f && isIdChar[c-0x20]))
 
 /*
 ** Return the length of the token that begins at z[0]. 

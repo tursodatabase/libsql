@@ -1,5 +1,5 @@
-C Test\scoverage\simprovements\son\stokenize.c.\s(CVS\s2196)
-D 2005-01-11T17:46:42
+C Allow\s'$'\sin\sthe\smiddle\sof\sidentifiers.\s\sTicket\s#1066.\s\sThis\sis\san\nexperimental\schange.\s\sIt\smight\sbe\sbacked\sout\sat\sa\slater\sdate.\s(CVS\s2197)
+D 2005-01-11T17:59:48
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -70,7 +70,7 @@ F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c a72f20066cccd5a7b9f20b7b78fa9b05b47b3020
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c 2ad3d1ae1a0a70746db0b31a0a74f58050a3c39a
+F src/tokenize.c c1d124ec41422c9ec14360ea3a1f98ca4acf7cf1
 F src/trigger.c 98f3b07c08ba01b34cff139ef9687883d325ae8e
 F src/update.c 0979397c41ac29c54fe0cc687a356d8629a633af
 F src/utf.c e45ce11be6922408cd381561721f6cca7d3b992a
@@ -268,7 +268,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 3f46cd7767cf7c48dd1de7ae1c4104d6d1a609be
-R 20f2a0dab63537f5c3dee30143439d82
+P 5767850ccadb3b53d14bca547e50f65de1d3092e
+R 71bb19c51dd02cdb496badd87eed0c55
 U drh
-Z 389596d56c67cb78fa06091fbcccd7d8
+Z bf2e03dddc8198df2fe40e1f78888259
