@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.18 2002/01/15 18:39:45 drh Exp $
+# $Id: expr.test,v 1.19 2002/03/24 13:13:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -232,6 +232,22 @@ test_expr expr-6.22 {t1='abcdefg', t2='a*[^de]g'} {t1 GLOB t2} 1
 test_expr expr-6.23 {t1='abcdefg', t2='a*?g'} {t1 GLOB t2} 1
 test_expr expr-6.24 {t1='ac', t2='a*c'} {t1 GLOB t2} 1
 test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
+
+test_expr expr-case.1 {i1=1, i2=2} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} ne
+test_expr expr-case.2 {i1=2, i2=2} \
+	{CASE WHEN i1 = i2 THEN 'eq' ELSE 'ne' END} eq
+test_expr expr-case.3 {i1=2} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} two
+test_expr expr-case.4 {i1=3} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'error' END} error
+test_expr expr-case.5 {i1=3} \
+	{CASE i1 WHEN 1 THEN 'one' WHEN 2 THEN 'two' END} {{}}
+test_expr expr-case.6 {i1=7} \
+	{ CASE WHEN i1 < 5 THEN 'low' 
+	       WHEN i1 < 10 THEN 'medium' 
+               WHEN i1 < 15 THEN 'high' ELSE 'error' END} medium
+
 
 # These tests only work on versions of TCL that support Unicode
 #

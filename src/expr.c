@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.56 2002/03/13 18:54:07 drh Exp $
+** $Id: expr.c,v 1.57 2002/03/24 13:13:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -877,8 +877,49 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
       sqliteExprCode(pParse, pExpr->pLeft);
       break;
     }
+    case TK_CASE: {
+      int expr_end_label;
+      int next_when_label;
+      int i;
+
+      assert(pExpr->pList);
+      assert((pExpr->pList->nExpr % 2) == 0);
+      assert(pExpr->pList->nExpr > 0);
+      expr_end_label = sqliteVdbeMakeLabel(pParse->pVdbe);
+      if( pExpr->pLeft ){
+        sqliteExprCode(pParse, pExpr->pLeft);
+      }
+      for(i=0; i<pExpr->pList->nExpr; i=i+2){
+        if( i!=0 ){
+          sqliteVdbeResolveLabel(pParse->pVdbe, next_when_label);
+        }
+        next_when_label = sqliteVdbeMakeLabel(pParse->pVdbe);
+        if( pExpr->pLeft ){
+          sqliteVdbeAddOp(pParse->pVdbe, OP_Dup, 0, 1);
+          sqliteExprCode(pParse, pExpr->pList->a[i].pExpr);
+          sqliteVdbeAddOp(pParse->pVdbe, OP_Ne, 0, next_when_label);
+        }else{
+          sqliteExprIfFalse(pParse, pExpr->pList->a[i].pExpr, next_when_label);
+        }
+        if( pExpr->pLeft ){
+          sqliteVdbeAddOp(pParse->pVdbe, OP_Pop, 1, 0);
+        }
+        sqliteExprCode(pParse, pExpr->pList->a[i+1].pExpr);
+        sqliteVdbeAddOp(pParse->pVdbe, OP_Goto, 0, expr_end_label);
+      }
+      sqliteVdbeResolveLabel(pParse->pVdbe, next_when_label);
+      if( pExpr->pLeft ){
+        sqliteVdbeAddOp(pParse->pVdbe, OP_Pop, 1, 0);
+      }
+      if( pExpr->pRight ){
+        sqliteExprCode(pParse, pExpr->pRight);
+      }else{
+        sqliteVdbeAddOp(pParse->pVdbe, OP_String, 0, 0);
+      }
+      sqliteVdbeResolveLabel(pParse->pVdbe, expr_end_label);
+    }
+    break;
   }
-  return;
 }
 
 /*

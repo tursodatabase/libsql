@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.57 2002/03/13 18:54:08 drh Exp $
+** @(#) $Id: parse.y,v 1.58 2002/03/24 13:13:29 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -520,7 +520,28 @@ expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
   sqliteExprSpan(A,&X->span,&E);
 }
 
-
+/* CASE expressions */
+expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
+  A = sqliteExpr(TK_CASE, X, Z, 0);
+  if( A ) A->pList = Y;
+  sqliteExprSpan(A, &C, &E);
+}
+%type case_exprlist {ExprList*}
+%destructor case_exprlist {sqliteExprListDelete($$);}
+case_exprlist(A) ::= case_exprlist(X) WHEN expr(Y) THEN expr(Z). {
+  A = sqliteExprListAppend(X, Y, 0);
+  A = sqliteExprListAppend(A, Z, 0);
+}
+case_exprlist(A) ::= WHEN expr(Y) THEN expr(Z). {
+  A = sqliteExprListAppend(0, Y, 0);
+  A = sqliteExprListAppend(A, Z, 0);
+}
+%type case_else {Expr*}
+case_else(A) ::=  ELSE expr(X).         {A = X;}
+case_else(A) ::=  .                     {A = 0;} 
+%type case_operand {Expr*}
+case_operand(A) ::= expr(X).            {A = X;} 
+case_operand(A) ::= .                   {A = 0;} 
 
 %type exprlist {ExprList*}
 %destructor exprlist {sqliteExprListDelete($$);}
