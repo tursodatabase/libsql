@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.9 2000/06/02 01:51:20 drh Exp $
+** $Id: dbbe.c,v 1.10 2000/06/02 02:09:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -71,6 +71,7 @@ struct Dbbe {
   BeFile *pOpen;     /* List of open files */
   int nTemp;         /* Number of temporary files created */
   FILE **apTemp;     /* Space to hold temporary file pointers */
+  char **azTemp;     /* Names of the temporary files */
   struct rc4 rc4;    /* The random number generator */
 };
 
@@ -182,12 +183,25 @@ Dbbe *sqliteDbbeOpen(
 */
 void sqliteDbbeClose(Dbbe *pBe){
   BeFile *pFile, *pNext;
+  int i;
   for(pFile=pBe->pOpen; pFile; pFile=pNext){
     pNext = pFile->pNext;
     gdbm_close(pFile->dbf);
     memset(pFile, 0, sizeof(*pFile));   
     sqliteFree(pFile);
   }
+  for(i=0; i<pBe->nTemp; i++){
+    if( pBe->apTemp[i]!=0 ){
+      unlink(pBe->azTemp[i]);
+      fclose(pBe->apTemp[i]);
+      sqliteFree(pBe->azTemp[i]);
+      pBe->apTemp[i] = 0;
+      pBe->azTemp[i] = 0;
+      break;
+    }
+  }
+  sqliteFree(pBe->azTemp);
+  sqliteFree(pBe->apTemp);
   memset(pBe, 0, sizeof(*pBe));
   sqliteFree(pBe);
 }
@@ -604,6 +618,7 @@ int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
   if( i>=pBe->nTemp ){
     pBe->nTemp++;
     pBe->apTemp = sqliteRealloc(pBe->apTemp, pBe->nTemp*sizeof(FILE*) );
+    pBe->azTemp = sqliteRealloc(pBe->azTemp, pBe->nTemp*sizeof(char*) );
   }
   if( pBe->apTemp==0 ){
     *ppFile = 0;
@@ -620,8 +635,11 @@ int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile){
   *ppFile = pBe->apTemp[i] = fopen(zFile, "w+");
   if( pBe->apTemp[i]==0 ){
     rc = SQLITE_ERROR;
+    sqliteFree(zFile);
+    pBe->azTemp[i] = 0;
+  }else{
+    pBe->azTemp[i] = zFile;
   }
-  sqliteFree(zFile);
   return rc;
 }
 
@@ -632,14 +650,10 @@ void sqliteDbbeCloseTempFile(Dbbe *pBe, FILE *f){
   int i;
   for(i=0; i<pBe->nTemp; i++){
     if( pBe->apTemp[i]==f ){
-      char *zFile;
-      char zBuf[30];
-      sprintf(zBuf, "/_temp_%d~", i);
-      zFile = 0;
-      sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
-      unlink(zFile);
-      sqliteFree(zFile);
+      unlink(pBe->azTemp[i]);
+      sqliteFree(pBe->azTemp[i]);
       pBe->apTemp[i] = 0;
+      pBe->azTemp[i] = 0;
       break;
     }
   }

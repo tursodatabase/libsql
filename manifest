@@ -1,5 +1,5 @@
-C :-)\s(CVS\s36)
-D 2000-06-02T01:51:20
+C :-)\s(CVS\s1696)
+D 2000-06-02T02:09:23
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ac2fef265940d93a544cb454efa836451559a71
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -7,7 +7,7 @@ F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F src/build.c f56c47f08c2f01fd640abb920c5da6b6614fbf3f
-F src/dbbe.c a217499fb539c5b5db99f1d37c20276b6f0d60a8
+F src/dbbe.c ce2d78a92a14c874443fda3069fde06d330807df
 F src/dbbe.h a8a46f71238e0f09f3ec08fd9d1c8c7f4cdc49bf
 F src/delete.c e11433c14ed5cc8553cba14296b3baa3c23054bc
 F src/expr.c 91970700e3e39b2b725b028c166f588a5bb0c038
@@ -45,7 +45,7 @@ F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
 F www/changes.tcl 37f4906f0b03f2160d2b2e4ed3cedb0b91d253cb
 F www/index.tcl 001f8c8c4edbe20e25c508005a12f2f265f84c9c
 F www/sqlite.tcl 2a0056dd6d78839636176b770d9f37d12e66660e
-P a57ecd606c8caa67db240d1a4bc46c0a590fde0c
-R 565c3c2b5d29c5df35ef5486eca899a0
+P d3c31defbaf25f470d0977c39325890ab8bad054
+R 1972cc5d0dec5079acb55afe886914ee
 U drh
-Z e4f014f9c30a1cd8b033307faacb4b20
+Z b89a6085ec647850e84316905c71acda
