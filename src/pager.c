@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.196 2005/03/20 22:47:57 drh Exp $
+** @(#) $Id: pager.c,v 1.197 2005/03/21 03:53:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -244,6 +244,7 @@ struct Pager {
   int pageSize;               /* Number of bytes in a page */
   int psAligned;              /* pageSize rounded up to a multiple of 8 */
   int nPage;                  /* Total number of in-memory pages */
+  int nMaxPage;               /* High water mark of nPage */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
   int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
@@ -822,6 +823,7 @@ static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
 */
 static void pager_reset(Pager *pPager){
   PgHdr *pPg, *pNext;
+  if( pPager->errMask ) return;
   for(pPg=pPager->pAll; pPg; pPg=pNext){
     pNext = pPg->pNextAll;
     sqliteFree(pPg);
@@ -841,6 +843,7 @@ static void pager_reset(Pager *pPager){
   pPager->nRef = 0;
   assert( pPager->journalOpen==0 );
 }
+
 
 /*
 ** When this routine is called, the pager has the journal file open and
@@ -1630,6 +1633,7 @@ int sqlite3pager_open(
   pPager->stmtSize = 0;
   pPager->stmtJSize = 0;
   pPager->nPage = 0;
+  pPager->nMaxPage = 0;
   pPager->mxPage = 100;
   pPager->state = PAGER_UNLOCK;
   pPager->errMask = 0;
@@ -1921,7 +1925,7 @@ int sqlite3pager_close(Pager *pPager){
       if( !MEMDB ){
         sqlite3OsUnlock(&pPager->fd, NO_LOCK);
       }
-      assert( pPager->journalOpen==0 );
+      assert( pPager->errMask || pPager->journalOpen==0 );
       break;
     }
     case PAGER_SHARED: {
@@ -1948,8 +1952,14 @@ int sqlite3pager_close(Pager *pPager){
     sqliteFree(pPg);
   }
   TRACE2("CLOSE %d\n", PAGERID(pPager));
+  assert( pPager->errMask || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
+  if( pPager->journalOpen ){
+    sqlite3OsClose(&pPager->jfd);
+  }
+  if( pPager->stmtOpen ){
+    sqlite3OsClose(&pPager->stfd);
+  }
   sqlite3OsClose(&pPager->fd);
-  assert( pPager->journalOpen==0 );
   /* Temp files are automatically deleted by the OS
   ** if( pPager->tempFile ){
   **   sqlite3OsDelete(pPager->zFilename);
@@ -2338,9 +2348,6 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
                               + sizeof(u32) + pPager->nExtra
                               + MEMDB*sizeof(PgHistory) );
       if( pPg==0 ){
-        if( !MEMDB ){
-          pager_unwritelock(pPager);
-        }
         pPager->errMask |= PAGER_ERR_MEM;
         return SQLITE_NOMEM;
       }
@@ -2352,6 +2359,10 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
       pPg->pNextAll = pPager->pAll;
       pPager->pAll = pPg;
       pPager->nPage++;
+      if( pPager->nPage>pPager->nMaxPage ){
+        assert( pPager->nMaxPage==(pPager->nPage-1) );
+        pPager->nMaxPage++;
+      }
     }else{
       /* Find a page to recycle.  Try to locate a page that does not
       ** require us to do an fsync() on the journal.
