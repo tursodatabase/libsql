@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.255 2004/08/28 16:19:01 drh Exp $
+** $Id: main.c,v 1.256 2004/08/29 20:08:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -407,7 +407,7 @@ static int nocaseCollatingFunc(
   int nKey2, const void *pKey2
 ){
   int r = sqlite3StrNICmp(
-      (const char *)pKey1, (const char *)pKey2, (nKey1>nKey2)?nKey1:nKey2);
+      (const char *)pKey1, (const char *)pKey2, (nKey1<nKey2)?nKey1:nKey2);
   if( 0==r ){
     r = nKey1-nKey2;
   }

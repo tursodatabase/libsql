@@ -1,5 +1,5 @@
-C Version\s3.0.5\s(beta)\s(CVS\s1916)
-D 2004-08-29T18:14:39
+C Fix\sa\sbug\sin\sthe\sNOCASE\scollating\sfunction.\s(CVS\s1917)
+D 2004-08-29T20:08:59
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c fc1ce65a0fe68f226143de9b43c3582164a92aff
 F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
-F src/main.c 63f77b83a518fda4d8405204b45ae016c5f35a2d
+F src/main.c b92d44c72298d31e08700b1483ef8827468dac9f
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h cd7eb025fdab7dc91e0e97bf6310f1648205857f
@@ -245,7 +245,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a6dc1331396569a3d7c3fad27b98577918d7219d
-R 6b8f0aa31937dc2db0b4b0012911c18f
+P f3fe8c9fa63ed50e033f6caf7927cc3a998bcaa1
+R 2781578b96dab50d1d99ff3260018e0b
 U drh
-Z 533ee417aaf2962ce5848c7f829e3cb7
+Z c3f90e7e5e5793e44cb6a402086f8315
