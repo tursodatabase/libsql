@@ -1,5 +1,5 @@
-C Fix\sanother\stwos-complement\snegation\serror.\s\sTicket\s#313.\s(CVS\s973)
-D 2003-05-13T01:52:32
+C Removed\s3rd\s(file)\scolumn\sfrom\sPRAGMA\sdatabase_list\suntil\stests\sare\sfixed.\s(CVS\s974)
+D 2003-05-13T08:01:34
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
-F src/pragma.c 8928b747a48d2c84de79814a71792ea13367644b
+F src/pragma.c ec64704e61286948f39157617f1ce2f506dd1b74
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P b59d9033d5556015543ac5ca23110ccbeb4391f0
-R 60377002c634c844f060bed55b91931b
-U drh
-Z 23f7cdbac7922b0f8c36b68abd2c81c6
+P f267a8a4ff52eb7ee3ac20a8e3a8ab5fe19e445d
+R 4c116ad646a5d45f20337623549b2e99
+U jplyon
+Z d2079033f7e558e2136afb4a88150abf
