@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sfile\sformat\sdocumentation.\s\sTicket\s#505.\s(CVS\s1121)
-D 2003-11-25T23:48:57
+C Disallow\stemporary\sindices\son\spersistent\stables.\s(CVS\s1122)
+D 2003-11-27T00:48:58
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F src/auth.c c8f50d4507e37779d96ff3c55417bc2b612dfed6
 F src/btree.c ba1cc0c71c3d2742b9a9047832335dc7d3656c45
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c 67d154ffb0fac27a4a7eab9118ece6eaafeb49c9
-F src/build.c 9def3a3b8fba59325ed686049b88c2e7aff9af12
+F src/build.c fede6bfb79d50483747fa55ae18c35d95db35fe3
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/date.c acb75ff7849ca923837a9d3ef6b2d3e111a32fb0
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
@@ -42,7 +42,7 @@ F src/os.c 97df440bc71f65e22df5d3d920ce39551c0a5f5a
 F src/os.h 729395fefcca4b81ae056aa9ff67b72bb40dd9e0
 F src/pager.c 62702dff51d50694d039bc210f31990d1fbba2dd
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
-F src/parse.y ec5d0d0a59b4ce508ab6b980cc4a19a47dd363ef
+F src/parse.y 1c72ca2a1f57df2c6263ea6164ef4cae9dd4f7e7
 F src/pragma.c cee60f17679210e8acd30d5bdee855716d0c898c
 F src/printf.c 12e45d482ac8abcc6f786fc99e5bed7dd9a51af0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
@@ -50,7 +50,7 @@ F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
 F src/shell.c c2ba26c850874964f5ec1ebf6c43406f28e44c4a
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
-F src/sqliteInt.h d950a8e1e6e37497ca681d8288d925e58251ca7c
+F src/sqliteInt.h 882aa33ee2aed7685449b899d917a316b9cc2c44
 F src/table.c 4301926464d88d2c2c7cd21c3360aa75bf068b95
 F src/tclsqlite.c 3efac6b5861ac149c41251d4d4c420c94be5ba6a
 F src/test1.c f9d5816610f7ec4168ab7b098d5207a5708712b6
@@ -70,7 +70,7 @@ F src/where.c 6bd1d2a9c70af63a6e47b0ab0c181d501b12514f
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
 F test/attach2.test 6f98cc2b929d88dc5f82d95d04e9b89b3b5dead3
-F test/auth.test a618f0e96bb5baa7a5623eb939388e9ac5f5d9a2
+F test/auth.test b7d6bdeffa804b96b7bcac2712e5f71ce014a1b8
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
 F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
@@ -130,7 +130,7 @@ F test/temptable.test c82bd6f800f10e8cf96921af6315e5f1c21e2692
 F test/tester.tcl 2671536d3650c29e7c105219f277568b0884cb58
 F test/trans.test 75e7a171b5d2d94ee56766459113e2ad0e5f809d
 F test/trigger1.test 3fe06daecf8334df840025e154e95fd4727600d7
-F test/trigger2.test 22aa0519ae18cf83568c7fba7b8cee893dd6b824
+F test/trigger2.test 0767ab30cb5a2c8402c8524f3d566b410b6f5263
 F test/trigger3.test a95ccace88291449f5eae7139ec438a42f90654d
 F test/trigger4.test 542afce45774e8f8e1130b96b8675f414d6e4bd8
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 72f3e7c2b0258271956ed7a43b3388bb74bf62ec
-R 103afab43c37ed15e55850e7a995daa7
+P 4eef93814f4a26de4a088c464545443547281abd
+R acf9a8364da7d689576d07cca2b5d727
 U drh
-Z c6bb7ee0d77a522e874c5e7fd245f13d
+Z 88c9056f3dd0956270b94117514b4485

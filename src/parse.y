@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.103 2003/09/30 01:54:14 drh Exp $
+** @(#) $Id: parse.y,v 1.104 2003/11/27 00:48:58 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -177,7 +177,7 @@ carg ::= DEFAULT NULL.
 ccons ::= NULL onconf.
 ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
-ccons ::= UNIQUE onconf(R).           {sqliteCreateIndex(pParse,0,0,0,R,0,0,0);}
+ccons ::= UNIQUE onconf(R).           {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqliteCreateForeignKey(pParse,0,&T,TA,R);}
@@ -224,7 +224,7 @@ tcons ::= CONSTRAINT nm.
 tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
                                              {sqliteAddPrimaryKey(pParse,X,R);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
-                                     {sqliteCreateIndex(pParse,0,0,X,R,0,0,0);}
+                                       {sqliteCreateIndex(pParse,0,0,X,R,0,0);}
 tcons ::= CHECK expr onconf.
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
@@ -701,12 +701,12 @@ expritem(A) ::= .                       {A = 0;}
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) temp(T) uniqueflag(U) INDEX nm(X)
+cmd ::= CREATE(S) uniqueflag(U) INDEX nm(X)
         ON nm(Y) dbnm(D) LP idxlist(Z) RP(E) onconf(R). {
   SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
   if( U!=OE_None ) U = R;
   if( U==OE_Default) U = OE_Abort;
-  sqliteCreateIndex(pParse, &X, pSrc, Z, U, T, &S, &E);
+  sqliteCreateIndex(pParse, &X, pSrc, Z, U, &S, &E);
 }
 
 %type uniqueflag {int}

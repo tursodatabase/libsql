@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.160 2003/09/06 22:18:08 drh Exp $
+** $Id: build.c,v 1.161 2003/11/27 00:48:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -734,7 +734,7 @@ void sqliteAddPrimaryKey(Parse *pParse, IdList *pList, int onError){
     pTab->iPKey = iCol;
     pTab->keyConf = onError;
   }else{
-    sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0, 0);
+    sqliteCreateIndex(pParse, 0, 0, pList, onError, 0, 0);
     pList = 0;
   }
 
@@ -1537,7 +1537,6 @@ void sqliteCreateIndex(
   SrcList *pTable, /* Name of the table to index.  Use pParse->pNewTable if 0 */
   IdList *pList,   /* A list of columns to be indexed */
   int onError,     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  int isTemp,      /* True if this is a temporary index */
   Token *pStart,   /* The CREATE token that begins a CREATE TABLE statement */
   Token *pEnd      /* The ")" that closes the CREATE INDEX statement */
 ){
@@ -1547,10 +1546,11 @@ void sqliteCreateIndex(
   int i, j;
   Token nullId;    /* Fake token for an empty ID list */
   DbFixer sFix;    /* For assigning database names to pTable */
+  int isTemp;      /* True for a temporary index */
   sqlite *db = pParse->db;
 
   if( pParse->nErr || sqlite_malloc_failed ) goto exit_create_index;
-  if( !isTemp && pParse->initFlag 
+  if( pParse->initFlag 
      && sqliteFixInit(&sFix, pParse, pParse->iDb, "index", pName)
      && sqliteFixSrcList(&sFix, pTable)
   ){
@@ -1575,9 +1575,9 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
-  if( !isTemp && pTab->iDb>=2 && pParse->initFlag==0 ){
+  if( pTab->iDb>=2 && pParse->initFlag==0 ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName, 
-      " may not have non-temporary indices added", 0);
+      " may not have indices added", 0);
     pParse->nErr++;
     goto exit_create_index;
   }
@@ -1586,9 +1586,7 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
-  if( pTab->iDb==1 ){
-    isTemp = 1;
-  }
+  isTemp = pTab->iDb==1;
 
   /*
   ** Find the name of the index.  Make sure there is not already another
@@ -1639,8 +1637,7 @@ void sqliteCreateIndex(
   {
     const char *zDb = db->aDb[pTab->iDb].zName;
 
-    assert( isTemp==0 || isTemp==1 );
-    assert( pTab->iDb==pParse->iDb || isTemp==1 );
+    assert( pTab->iDb==pParse->iDb || isTemp );
     if( sqliteAuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
       goto exit_create_index;
     }

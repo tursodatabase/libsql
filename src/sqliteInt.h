@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.202 2003/11/11 23:30:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.203 2003/11/27 00:48:58 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1101,7 +1101,7 @@ void sqliteSrcListAddAlias(SrcList*, Token*);
 void sqliteSrcListAssignCursors(Parse*, SrcList*);
 void sqliteIdListDelete(IdList*);
 void sqliteSrcListDelete(SrcList*);
-void sqliteCreateIndex(Parse*,Token*,SrcList*,IdList*,int,int,Token*,Token*);
+void sqliteCreateIndex(Parse*,Token*,SrcList*,IdList*,int,Token*,Token*);
 void sqliteDropIndex(Parse*, SrcList*);
 void sqliteAddKeyType(Vdbe*, ExprList*);
 void sqliteAddIdxKeyType(Vdbe*, Index*);

@@ -60,7 +60,6 @@ foreach tbl_defn {
         {CREATE TABLE tbl (a, b PRIMARY KEY);} 
 	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
 	{CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
-	{CREATE TABLE tbl (a, b); CREATE TEMP INDEX tbl_idx ON tbl(b);} 
 } {
   incr ii
   catchsql { DROP INDEX tbl_idx; }
