@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.29 2002/03/28 14:20:08 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.30 2002/04/06 13:57:44 drh Exp $}
 
 puts {<html>
 <head>
@@ -955,7 +955,7 @@ information.</p>
 Section SELECT select
 
 Syntax {sql-statement} {
-SELECT <result> FROM <table-list>
+SELECT <result> [FROM <table-list>]
 [WHERE <expression>]
 [GROUP BY <expr-list>]
 [HAVING <expression>]
@@ -993,6 +993,8 @@ puts {for that one expression.</p>
 the FROM keyword.  If more than one table is specified, then the
 query is against the (inner) join of the various tables.  A sub-query
 in parentheses may be substituted for any table name in the FROM clause.
+The entire FROM clause may be omitted, in which case the result is a
+single row consisting of the values of the expression list.
 </p>
 
 <p>The WHERE clause can be used to limit the number of rows over

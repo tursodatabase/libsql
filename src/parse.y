@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.60 2002/04/04 02:10:57 drh Exp $
+** @(#) $Id: parse.y,v 1.61 2002/04/06 13:57:43 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -271,6 +271,7 @@ as ::= AS.
 %type from {IdList*}
 %destructor from {sqliteIdListDelete($$);}
 
+from(A) ::= .                                 {A = sqliteMalloc(sizeof(*A));}
 from(A) ::= FROM seltablist(X).               {A = X;}
 stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
 stl_prefix(A) ::= .                           {A = 0;}

@@ -28,6 +28,7 @@ proc chng {date desc} {
 chng {2002 Apr 03 (2.4.7)} {
 <li>Add the ability to put TABLE.* in the column list of a
     SELECT statement.</li>
+<li>Permit SELECT statements without a FROM clause.</li>
 }
 
 chng {2002 Apr 02 (2.4.6)} {
