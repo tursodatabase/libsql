@@ -1,6 +1,6 @@
-C Infrastructure\schanges\sto\shandle\sname\sresolution\sdifferently.\s\sThis\sis\sneeded\nto\sfix\svarious\slong-standing\sproblems\swith\scolumn\snames\sin\sjoins.\s\sIt\swill\nalso\smake\sthe\simplementation\sof\scorrelated\ssubqueries\seasier.\s(CVS\s2228)
-D 2005-01-17T22:08:19
-F Makefile.in 78d6d0af3725aef32468ac9923444d7645d21a28
+C Refinements\sto\sthe\sname\sresolution\slogic.\s\sChange\sthe\sname\sof\sthe\nkeywordhash.c\sfile\sto\skeywordhash.h.\s(CVS\s2229)
+D 2005-01-18T04:00:43
+F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
 F VERSION 342b6d5fde93b6d45023e2fee0163dda6464b9d6
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 839f7bc12221a02bcee10aa0fc72841d893e9b16
+F main.mk 612a0bdbc23797754186ea366ff54512081d17fb
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 141aede6e58634f9cf9e96205a5316680e649987
 F mkopcodeh.awk ee454cdee1da38b485c5e8cca84e5727c07158ba
@@ -31,15 +31,15 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 97101cce85304edbaedafc5f39ab12e2dc78b076
 F src/btree.h 74d19cf40ab49fd69abe9e4e12a6c321ad86c497
-F src/build.c 4638b87f5e797e364ff995f8338b281b61dd8be1
+F src/build.c 4b7a2c308973df3ec26ceda6e3dadc07eecf031b
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
-F src/delete.c 5872f452031f31c6941ef70e9f4e1823e9fecefc
-F src/expr.c 2a9485be4ec44eea0f3eada89f415f2172fc5c2e
+F src/delete.c 728a02e5b5c62d294f8cdbdb21dbaa3e188983ab
+F src/expr.c fa983460a064ee9ba55a0b3be1bd7db6b0545622
 F src/func.c dc188d862d7276ea897655b248e2cb17022686e3
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c 0acf8a8cd21d60c60432c0004586d2aee0ad8d8e
+F src/insert.c 18d506e14d200378902747d13d7fb2a43fb3d31d
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c cbe5a05baabad9fabb733065d0fb00c0b36f6ef1
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -57,10 +57,10 @@ F src/parse.y ceba179b9703657180963568f54b0e75f33e36e1
 F src/pragma.c ac594f74c90ffec043c43e49358719ffeb491eec
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c cfd5f30611967ebd7c39d4bd448a1b1e263e9fb8
+F src/select.c 37b9ddb9688a98c521d092dc38c811ec72191b14
 F src/shell.c 591364a0e9ca4ce53873e21e0294476c0c2b4770
 F src/sqlite.h.in 0d5e48e506845b74a845c9470e01d3f472b59611
-F src/sqliteInt.h f7ed4e6e112df9af7c85600bfb3b0af02e7b7577
+F src/sqliteInt.h a208bf0f51e6d7616c083313fa7cf5313efd346a
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c fd27457b228118be96524dae285146c76efe032b
 F src/test1.c 2e27b110ba5aa16977bad1cc2388553479d73793
@@ -68,9 +68,9 @@ F src/test2.c bbc2ecc58ceeab12d1e40970f831b1017524e40d
 F src/test3.c a72f20066cccd5a7b9f20b7b78fa9b05b47b3020
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
-F src/tokenize.c c1d124ec41422c9ec14360ea3a1f98ca4acf7cf1
-F src/trigger.c 210fe50d4b3c01d3e5f8ef8a7a820117416a992b
-F src/update.c 79a1511104963df3368d9235f9393cfe7f38c027
+F src/tokenize.c 88bef43fe3e3c8865a7447f934296ac13238c4f6
+F src/trigger.c 7b5da6613419da37e5b3e1c6151c7dff95fd4ee0
+F src/update.c 48da25249d33c32fa1e55c66c5a01ec0d182b203
 F src/utf.c 9bece2c7b94d9002ab1bb900a7658c6f826b0f74
 F src/util.c 63e8d77659df88b292ac2a9dbd4766419b0ea158
 F src/vacuum.c 1a9db113a027461daaf44724c71dd1ebbd064203
@@ -269,7 +269,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 5a9da62ae303800ded99942aed30eadeb3863da3
-R 27952fc035e1cac4b0d3a414cfc9fe27
+P 4a7534396a72ccb300303df28798bb2c50293782
+R f8f7d8c77656eb3939f3657d425a82a6
 U drh
-Z 916e3799f439fba92eda7a2a24dc2de5
+Z 295a57dfb9d4d3f564ec7f21c6307f77

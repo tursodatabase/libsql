@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.101 2005/01/17 22:08:19 drh Exp $
+** $Id: update.c,v 1.102 2005/01/18 04:00:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -122,7 +122,7 @@ void sqlite3Update(
   chngRecno = 0;
   for(i=0; i<pChanges->nExpr; i++){
     if( sqlite3ExprResolveNames(pParse, pTabList, 0,
-          pChanges->a[i].pExpr, 0, 0, 1) ){
+          pChanges->a[i].pExpr, 0, 1) ){
       goto update_cleanup;
     }
     for(j=0; j<pTab->nCol; j++){
@@ -198,7 +198,7 @@ void sqlite3Update(
   /* Resolve the column names in all the expressions in the
   ** WHERE clause.
   */
-  if( sqlite3ExprResolveNames(pParse, pTabList, 0, pWhere, 0, 0, 1) ){
+  if( sqlite3ExprResolveNames(pParse, pTabList, 0, pWhere, 0, 1) ){
     goto update_cleanup;
   }
 

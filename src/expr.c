@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.179 2005/01/17 22:08:19 drh Exp $
+** $Id: expr.c,v 1.180 2005/01/18 04:00:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -562,6 +562,7 @@ void sqlite3ExprListDelete(ExprList *pList){
 
 /*
 ** Walk an expression tree.  Call xFunc for each node visited.
+**
 ** The return value from xFunc determines whether the tree walk continues.
 ** 0 means continue walking the tree.  1 means do not walk children
 ** of the current node but continue with siblings.  2 means abandon
@@ -594,10 +595,14 @@ static int walkExprTree(Expr *pExpr, int (*xFunc)(void*,Expr*), void *pArg){
 ** This routine is designed as an xFunc for walkExprTree().
 **
 ** pArg is really a pointer to an integer.  If we can tell by looking
-** at just pExpr and none of its children that the expression is a 
-** constant, then set *pArg to 1 and return 0.  If we can tell that
-** the expression is not a constant, then set *pArg to 0 and return 0.
-** If we need to look at child nodes, return 1.
+** at pExpr that the expression that contains pExpr is not a constant
+** expression, then set *pArg to 0 and return 2 to abandon the tree walk.
+** If pExpr does does not disqualify the expression from being a constant
+** then do nothing.
+**
+** After walking the whole tree, if no nodes are found that disqualify
+** the expression as constant, then we assume the whole expression
+** is constant.  See sqlite3ExprIsConstant() for additional information.
 */
 static int exprNodeIsConstant(void *pArg, Expr *pExpr){
   switch( pExpr->op ){
@@ -628,7 +633,7 @@ int sqlite3ExprIsConstant(Expr *p){
 }
 
 /*
-** If the given expression codes a constant integer that is small enough
+** If the expression p codes a constant integer that is small enough
 ** to fit in a 32-bit integer, return 1 and put the value of the integer
 ** in *pValue.  If the expression is not an integer or if it is too big
 ** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
@@ -709,6 +714,7 @@ static int lookupName(
   sqlite3 *db = pParse->db;  /* The database */
   struct SrcList_item *pItem;       /* Use for looping over pSrcList items */
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
+  NameContext *pTopNC = pNC;        /* First namecontext in the list */
 
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
   zDb = sqlite3NameFromToken(pDbToken);
@@ -872,6 +878,7 @@ static int lookupName(
     }
     sqlite3ErrorMsg(pParse, zErr, z);
     sqliteFree(z);
+    pTopNC->nErr++;
   }
 
   /* If a column from a table in pSrcList is referenced, then record
@@ -957,9 +964,13 @@ static void getFunctionName(Expr *pExpr, const char **pzName, int *pnName){
 /*
 ** This routine is designed as an xFunc for walkExprTree().
 **
-** Resolve symbolic names into TK_COLUMN operands for the current
+** Resolve symbolic names into TK_COLUMN operators for the current
 ** node in the expression tree.  Return 0 to continue the search down
-** the tree or 1 to abort the tree walk.
+** the tree or 2 to abort the tree walk.
+**
+** This routine also does error checking and name resolution for
+** function names.  The operator for aggregate functions is changed
+** to TK_AGG_FUNCTION.
 */
 static int nameResolverStep(void *pArg, Expr *pExpr){
   NameContext *pNC = (NameContext*)pArg;
@@ -1039,9 +1050,8 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
       int i;
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
-      FuncDef *pDef;
-      int enc = pParse->db->enc;
-      NameContext ncParam;        /* Name context for parameters */
+      FuncDef *pDef;              /* Information about the function */
+      int enc = pParse->db->enc;  /* The database encoding */
 
       getFunctionName(pExpr, &zId, &nId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -1071,14 +1081,11 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
         pExpr->op = TK_AGG_FUNCTION;
         pNC->hasAgg = 1;
       }
-      ncParam = *pNC;
-      if( is_agg ) ncParam.allowAgg = 0;
+      if( is_agg ) pNC->allowAgg = 0;
       for(i=0; pNC->nErr==0 && i<n; i++){
-        walkExprTree(pList->a[i].pExpr, nameResolverStep, &ncParam);
-        pNC->nErr += ncParam.nErr;
-        if( ncParam.hasAgg ) pNC->hasAgg = 1;
+        walkExprTree(pList->a[i].pExpr, nameResolverStep, pNC);
       }
-      if( pNC->nErr ) return 2;
+      if( is_agg ) pNC->allowAgg = 1;
       /* FIX ME:  Compute pExpr->affinity based on the expected return
       ** type of the function 
       */
@@ -1106,8 +1113,8 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
 ** have the correct number of arguments.  Leave an error message
 ** in pParse->zErrMsg if anything is amiss.  Return the number of errors.
 **
-** if pIsAgg is not null and this expression is an aggregate function
-** (like count(*) or max(value)) then write a 1 into *pIsAgg.
+** If the expression contains aggregate functions then set the EP_Agg
+** property on the expression.
 */
 int sqlite3ExprResolveNames(
   Parse *pParse,     /* The parser context */
@@ -1115,29 +1122,33 @@ int sqlite3ExprResolveNames(
   ExprList *pEList,  /* List of expressions used to resolve "AS" */
   Expr *pExpr,       /* The expression to be analyzed. */
   int allowAgg,      /* True to allow aggregate expressions */
-  int *pIsAgg,       /* Set to TRUE if aggregates are found */
   int codeSubquery   /* If true, then generate code for subqueries too */
 ){
   NameContext sNC;
 
+  if( pExpr==0 ) return 0;
   memset(&sNC, 0, sizeof(sNC));
   sNC.pSrcList = pSrcList;
   sNC.pParse = pParse;
   sNC.pEList = pEList;
   sNC.allowAgg = allowAgg;
   walkExprTree(pExpr, nameResolverStep, &sNC);
-  if( pIsAgg && sNC.hasAgg ) *pIsAgg = 1;
-  if( sNC.nErr==0 && codeSubquery ){
-    sNC.nErr += sqlite3ExprCodeSubquery(pParse, pExpr);
+  if( sNC.hasAgg ){
+    ExprSetProperty(pExpr, EP_Agg);
   }
-  return sNC.nErr + pParse->nErr;
+  if( sNC.nErr>0 ){
+    ExprSetProperty(pExpr, EP_Error);
+  }else if( codeSubquery  && sqlite3ExprCodeSubquery(pParse, pExpr) ){
+    return 1;
+  }
+  return ExprHasProperty(pExpr, EP_Error);
 }
 
 
 /*
 ** Generate code for subqueries and IN operators.
 **
-** IN comes in two forms:
+** IN operators comes in two forms:
 **
 **           expr IN (exprlist)
 ** and
@@ -1150,6 +1161,10 @@ int sqlite3ExprResolveNames(
 ** This routine also looks for scalar SELECTs that are part of an expression.
 ** If it finds any, it generates code to write the value of that select
 ** into a memory cell.
+**
+** This routine is a callback for wallExprTree() used to implement
+** sqlite3ExprCodeSubquery().  See comments on those routines for
+** additional information.
 */
 static int codeSubqueryStep(void *pArg, Expr *pExpr){
   Parse *pParse = (Parse*)pArg;
@@ -1222,7 +1237,7 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
               "right-hand side of IN operator must be constant");
             return 2;
           }
-          if( sqlite3ExprResolveNames(pParse, 0, 0, pE2, 0, 0, 0) ){
+          if( sqlite3ExprResolveNames(pParse, 0, 0, pE2, 0, 0) ){
             return 2;
           }
 
@@ -1251,7 +1266,8 @@ static int codeSubqueryStep(void *pArg, Expr *pExpr){
 }
 
 /*
-** Generate code to evaluate subqueries and IN operators.
+** Generate code to evaluate subqueries and IN operators contained
+** in expression pExpr.
 */
 int sqlite3ExprCodeSubquery(Parse *pParse, Expr *pExpr){
   walkExprTree(pExpr, codeSubqueryStep, pParse);
@@ -1869,6 +1885,8 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
 
 /*
 ** Add a new element to the pParse->aAgg[] array and return its index.
+** The new element is initialized to zero.  The calling function is
+** expected to fill it in.
 */
 static int appendAggInfo(Parse *pParse){
   if( (pParse->nAgg & 0x7)==0 ){

@@ -243,12 +243,12 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) parse.c opcodes.c keywordhash.c $(VDBEHDR) 
+target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR) 
 	rm -rf tsrc
 	mkdir -p tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c opcodes.c keywordhash.c tsrc
+	cp parse.c opcodes.c keywordhash.h tsrc
 	cp $(TOP)/sqlite3.def tsrc
 
 # Rules to build the LEMON compiler generator
@@ -363,12 +363,12 @@ table.lo:	$(TOP)/src/table.c $(HDR)
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tclsqlite.c
 
-tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.c $(HDR)
+tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tokenize.c
 
-keywordhash.c:	$(TOP)/tool/mkkeywordhash.c
+keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPTS) $(TOP)/tool/mkkeywordhash.c
-	./mkkeywordhash$(BEXE) >keywordhash.c
+	./mkkeywordhash$(BEXE) >keywordhash.h
 
 trigger.lo:	$(TOP)/src/trigger.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/trigger.c
@@ -621,7 +621,7 @@ clean:
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps 
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
-	rm -f mkkeywordhash$(BEXE) keywordhash.c
+	rm -f mkkeywordhash$(BEXE) keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -f testfixture$(TEXE) test.db
