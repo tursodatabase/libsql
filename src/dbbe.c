@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbe.c,v 1.4 2000/05/31 20:00:52 drh Exp $
+** $Id: dbbe.c,v 1.5 2000/05/31 21:06:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -202,7 +202,7 @@ static void randomName(struct rc4 *pRc4, char *zBuf, char *zPrefix){
   strcpy(zBuf, zPrefix);
   j = strlen(zBuf);
   for(i=0; i<15; i++){
-    int c = (rc4byte(pRc4) & 0x7f) % (sizeof(zRandomChars) - 1);
+    int c = rc4byte(pRc4) % (sizeof(zRandomChars) - 1);
     zBuf[j++] = zRandomChars[c];
   }
   zBuf[j] = 0;
@@ -249,7 +249,7 @@ DbbeTable *sqliteDbbeOpenTable(
     if( pFile->zName ){
       pFile->dbf = gdbm_open(pFile->zName, 0, GDBM_WRCREAT|GDBM_FAST, 0640, 0);
     }else{
-      int i, j, limit;
+      int limit;
       struct rc4 *pRc4;
       char zRandom[50];
       pRc4 = &pBe->rc4;
@@ -560,7 +560,7 @@ FILE *sqliteDbbeOpenTempFile(Dbbe *pBe){
     randomName(&pBe->rc4, zBuf, "/_temp_file_");
     sqliteFree(zFile);
     sqliteSetString(&zFile, pBe->zDir, zBuf, 0);
-  }while( access(zFile,0) && limit-- >= 0 );
+  }while( access(zFile,0)==0 && limit-- >= 0 );
   pBe->apTemp[i] = fopen(zFile, "w+");
   sqliteFree(zFile);
   return pBe->apTemp[i];

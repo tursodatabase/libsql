@@ -20,6 +20,7 @@ proc chng {date desc} {
 chng {2000 May 31} {
 <li>Added support for aggregate functions (Ex: <b>COUNT(*)</b>, <b>MIN(...)</b>)
 to the SELECT statement.</li>
+<li>Added support for <B>SELECT DISTINCT ...</B></li>
 }
 
 chng {2000 May 30} {

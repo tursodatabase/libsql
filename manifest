@@ -1,5 +1,5 @@
-C added\sDISTINCT\son\sselect\s(CVS\s27)
-D 2000-05-31T20:00:52
+C :-)\s(CVS\s28)
+D 2000-05-31T21:06:30
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 7ac2fef265940d93a544cb454efa836451559a71
 F README 6b5960603c7f8bf42fc022b4b6436f242f238dbb
@@ -7,7 +7,7 @@ F configure 00a5b5c82147a576fa6e82d7c1b0d55c321d6d2c x
 F configure.in 6ccfd5fc80517f7cfe605a7fc7e0f62d962a233c
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
 F src/build.c 03f83e95d46e328a2ac08aace102b142ea38e6d7
-F src/dbbe.c 80080f5ef2297e54797ee24f5951dab1c39af5d5
+F src/dbbe.c 3635022e50ab1632825be6a14f74eb29014e895f
 F src/dbbe.h 0147c9f8539d421d6c5558d3e854b78387372fae
 F src/delete.c 16ef3418b19be9ab39db836c693970ca7bbff605
 F src/expr.c 91970700e3e39b2b725b028c166f588a5bb0c038
@@ -42,10 +42,10 @@ F tool/opNames.awk 2bd9071a138e4e2be13dc98fe066398a61219e1e
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/renumberOps.awk 6d067177ad5f8d711b79577b462da9b3634bd0a9
 F www/c_interface.tcl f875864edf7974157d1c257ca08de854660882a5
-F www/changes.tcl 995d64c96978a996f0e9e46f2ce896355a7c87a7
+F www/changes.tcl 37f4906f0b03f2160d2b2e4ed3cedb0b91d253cb
 F www/index.tcl a94e31dc690f07b0dfdb82c5ab6315e4840a336d
 F www/sqlite.tcl 7deb564df188ad4523adecfe2365de6d09f6dfd9
-P 0b7d9eb8ad771917c53587ea4d674f7e8d76121f
-R 73a74ce4d5a10f11090cf328a18ab074
+P 1f0c4ffd98591e506201b6b0e6e60b9216ceb596
+R 0f2e2968ed9c0d0c28efc76f372593a3
 U drh
-Z ef837be79fdfd30ace7832037467a189
+Z 0827c57252d4cd13107c7c9e774afaee
