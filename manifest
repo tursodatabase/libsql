@@ -1,5 +1,5 @@
-C Remove\sunused\sopcodes\sfrom\sthe\sVDBE\sand\sfix\sa\sbug\sin\sthe\ssubstr()\sfunction.\s(CVS\s405)
-D 2002-02-28T03:31:11
+C Fix\sbugs\sin\ssubstr()\sfor\sUTF-8.\s(CVS\s406)
+D 2002-02-28T04:00:12
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -24,7 +24,7 @@ F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
 F src/expr.c b70bedaffd27ea24c5c2a197a88b07e82dfa4967
-F src/func.c 089b68c021b82d8f3d0f489143d200ddf1eced39
+F src/func.c 0db438ba17f3394dc5a3ffcd2ee41ca0c8e80b21
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7d86749d4a78d05930bae2b6491d9428f06fe836
-R f548275963c89789d73119d8b7f277e5
+P e8611e0c052ddac477f83df485fa5dc882593de0
+R 04ad4c27603a68f224cf2e37abda2702
 U drh
-Z 85324ea3b3c81399d9a571ab6786b2dc
+Z c02824de6ff4d82a6f9d0a682a20821a

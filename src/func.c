@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.11 2002/02/28 03:31:11 drh Exp $
+** $Id: func.c,v 1.12 2002/02/28 04:00:12 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -102,7 +102,7 @@ static void substrFunc(sqlite_func *context, int argc, const char **argv){
   p1 = atoi(argv[1]?argv[1]:0);
   p2 = atoi(argv[2]?argv[2]:0);
 #ifdef SQLITE_UTF8
-  for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z)!=0x80 ) len++; }
+  for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z2)!=0x80 ) len++; }
 #else
   len = strlen(z);
 #endif
@@ -121,12 +121,14 @@ static void substrFunc(sqlite_func *context, int argc, const char **argv){
 #ifdef SQLITE_UTF8
   for(i=0; i<p1; i++){
     assert( z[i] );
-    if( (z[i]&0xc0)!=0x80 ) p1++;
+    if( (z[i]&0xc0)==0x80 ) p1++;
   }
+  while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p1++; }
   for(; i<p1+p2; i++){
     assert( z[i] );
-    if( (z[i]&0xc0)!=0x80 ) p2++;
+    if( (z[i]&0xc0)==0x80 ) p2++;
   }
+  while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
 #endif
   if( p2<0 ) p2 = 0;
   sqlite_set_result_string(context, &z[p1], p2);
