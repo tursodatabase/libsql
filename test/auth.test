@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.9 2003/04/25 17:52:11 drh Exp $
+# $Id: auth.test,v 1.10 2003/06/06 19:00:42 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1590,6 +1590,106 @@ do_test auth-1.249 {
 do_test auth-1.250 {
   execsql {SELECT * FROM t2}
 } {11 2 33 7 8 9}
+
+# ticket #340 - authorization for ATTACH and DETACH.
+#
+do_test auth-1.251 {
+  db authorizer ::auth
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ATTACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ATTACH DATABASE ':memory:' AS test1
+  }
+} {0 {}}
+do_test auth-1.252 {
+  set ::authargs
+} {:memory: {} {} {}}
+do_test auth-1.253 {
+  catchsql {DETACH DATABASE test1}
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ATTACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ATTACH DATABASE ':memory:' AS test1;
+  }
+} {1 {not authorized}}
+do_test auth-1.254 {
+  lindex [execsql {PRAGMA database_list}] 7
+} {}
+do_test auth-1.255 {
+  catchsql {DETACH DATABASE test1}
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_ATTACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    ATTACH DATABASE ':memory:' AS test1;
+  }
+} {0 {}}
+do_test auth-1.256 {
+  lindex [execsql {PRAGMA database_list}] 7
+} {}
+do_test auth-1.257 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_DETACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_OK
+    }
+    return SQLITE_OK
+  }
+  execsql {ATTACH DATABASE ':memory:' AS test1}
+  catchsql {
+    DETACH DATABASE test1;
+  }
+} {0 {}}
+do_test auth-1.258 {
+  lindex [execsql {PRAGMA database_list}] 7
+} {}
+do_test auth-1.259 {
+  execsql {ATTACH DATABASE ':memory:' AS test1}
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_DETACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_IGNORE
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    DETACH DATABASE test1;
+  }
+} {0 {}}
+do_test auth-1.260 {
+  lindex [execsql {PRAGMA database_list}] 7
+} {test1}
+do_test auth-1.261 {
+  proc auth {code arg1 arg2 arg3 arg4} {
+    if {$code=="SQLITE_DETACH"} {
+      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      return SQLITE_DENY
+    }
+    return SQLITE_OK
+  }
+  catchsql {
+    DETACH DATABASE test1;
+  }
+} {1 {not authorized}}
+do_test auth-1.262 {
+  lindex [execsql {PRAGMA database_list}] 7
+} {test1}
+db authorizer {}
+execsql {DETACH DATABASE test1}
+
 
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4} {

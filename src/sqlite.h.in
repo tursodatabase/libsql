@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.48 2003/06/06 15:44:01 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.49 2003/06/06 19:00:42 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -555,6 +555,9 @@ int sqlite_set_authorizer(
 #define SQLITE_SELECT               21   /* NULL            NULL            */
 #define SQLITE_TRANSACTION          22   /* NULL            NULL            */
 #define SQLITE_UPDATE               23   /* Table Name      Column Name     */
+#define SQLITE_ATTACH               24   /* Filename        NULL            */
+#define SQLITE_DETACH               25   /* Database Name   NULL            */
+
 
 /*
 ** The return value of the authorization function should be one of the
