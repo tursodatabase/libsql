@@ -1428,19 +1428,22 @@ void sqlite3VdbeDelete(Vdbe *p){
 */
 int sqlite3VdbeCursorMoveto(Cursor *p){
   if( p->deferredMoveto ){
-    int res;
+    int res, rc;
     extern int sqlite3_search_count;
     assert( p->intKey );
     if( p->intKey ){
-      sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
+      rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
     }else{
-      sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,sizeof(i64),&res);
+      rc = sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,
+                              sizeof(i64),&res);
     }
+    if( rc ) return rc;
     *p->pIncrKey = 0;
     p->lastRecno = keyToInt(p->movetoTarget);
     p->recnoIsValid = res==0;
     if( res<0 ){
-      sqlite3BtreeNext(p->pCursor, &res);
+      rc = sqlite3BtreeNext(p->pCursor, &res);
+      if( rc ) return rc;
     }
     sqlite3_search_count++;
     p->deferredMoveto = 0;
