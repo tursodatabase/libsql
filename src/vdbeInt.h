@@ -390,3 +390,5 @@ void sqlite3VdbeMemRelease(Mem *p);
 #ifndef NDEBUG
 void sqlite3VdbeMemSanity(Mem*, u8);
 #endif
+int sqlite3VdbeMemTranslate(Mem*, u8);
+void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf, int nBuf);

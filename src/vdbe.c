@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.378 2004/06/17 07:53:03 danielk1977 Exp $
+** $Id: vdbe.c,v 1.379 2004/06/18 04:24:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -361,9 +361,11 @@ static void applyAffinity(Mem *pRec, char affinity, u8 enc){
 ** Write a nice string representation of the contents of cell pMem
 ** into buffer zBuf, length nBuf.
 */
-void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
+void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf, int nBuf){
   char *zCsr = zBuf;
   int f = pMem->flags;
+
+  static const char *encnames[] = {"(X)", "(8)", "(16LE)", "(16BE)"};
 
   if( f&MEM_Blob ){
     int i;
@@ -414,11 +416,6 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
     zBuf[k++] = '[';
     for(j=0; j<15 && j<pMem->n; j++){
       u8 c = pMem->z[j];
-/*
-      if( c==0 && j==pMem->n-1 ) break;
-            zBuf[k++] = "0123456789ABCDEF"[c>>4];
-            zBuf[k++] = "0123456789ABCDEF"[c&0xf];
-*/
       if( c>=0x20 && c<0x7f ){
         zBuf[k++] = c;
       }else{
@@ -426,14 +423,10 @@ void prettyPrintMem(Mem *pMem, char *zBuf, int nBuf){
       }
     }
     zBuf[k++] = ']';
+    k += sprintf(&zBuf[k], encnames[pMem->enc]);
     zBuf[k++] = 0;
   }
 }
-
-/* Temporary - this is useful in conjunction with prettyPrintMem whilst
-** debugging. 
-*/
-char zGdbBuf[100];
 #endif
 
 
@@ -734,20 +727,20 @@ case OP_String8: {
   pOp->opcode = OP_String;
 
   if( db->enc!=SQLITE_UTF8 && pOp->p3 ){
-    char *z = pOp->p3;
-    if( db->enc==SQLITE_UTF16LE ){
-      pOp->p3 = sqlite3utf8to16le(z, -1);
-    }else{
-      pOp->p3 = sqlite3utf8to16be(z, -1);
-    }
+    pTos++;
+    sqlite3VdbeMemSetStr(pTos, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
+    if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pTos, db->enc) ) goto no_mem;
+    if( SQLITE_OK!=sqlite3VdbeMemDynamicify(pTos) ) goto no_mem;
+    pTos->flags &= ~(MEM_Dyn);
+    pTos->flags |= MEM_Static;
     if( pOp->p3type==P3_DYNAMIC ){
-      sqliteFree(z);
+      sqliteFree(pOp->p3);
     }
     pOp->p3type = P3_DYNAMIC;
-    if( !pOp->p3 ) goto no_mem;
+    pOp->p3 = pTos->z;
+    break;
   }
-
-  /* Fall through to the next case, OP_String */
+  /* Otherwise fall through to the next case, OP_String */
 }
   
 /* Opcode: String * * P3
@@ -4590,7 +4583,7 @@ default: {
           fprintf(p->trace, " r:%g", pTos[i].r);
         }else{
           char zBuf[100];
-          prettyPrintMem(&pTos[i], zBuf, 100);
+          sqlite3VdbeMemPrettyPrint(&pTos[i], zBuf, 100);
           fprintf(p->trace, " ");
           fprintf(p->trace, zBuf);
         }

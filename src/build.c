@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.220 2004/06/17 06:13:34 danielk1977 Exp $
+** $Id: build.c,v 1.221 2004/06/18 04:24:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -959,15 +959,12 @@ static void callCollNeeded(sqlite *db, const char *zName, int nName){
       db->xCollNeeded(db->pCollNeededArg, db, (int)db->enc, zExternal);
   }
   if( db->xCollNeeded16 ){
-    if( SQLITE_BIGENDIAN ){
-      zExternal = sqlite3utf8to16be(zName, nName);
-    }else{
-      zExternal = sqlite3utf8to16le(zName, nName);
-    }
+    sqlite3_value *pTmp = sqlite3GetTransientValue(db);
+    sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF8, SQLITE_STATIC);
+    zExternal = sqlite3ValueText(pTmp, SQLITE_UTF16NATIVE);
     if( !zExternal ) return;
     db->xCollNeeded16(db->pCollNeededArg, db, (int)db->enc, zExternal);
   }
-  if( zExternal ) sqliteFree(zExternal);
 }
 
 static int synthCollSeq(Parse *pParse, CollSeq *pColl){
@@ -2627,3 +2624,15 @@ void sqlite3EndWriteOperation(Parse *pParse){
   /* Delete me! */
   return;
 }
+
+/* 
+** Return the transient sqlite3_value object used for encoding conversions
+** during SQL compilation.
+*/
+sqlite3_value *sqlite3GetTransientValue(sqlite *db){
+  if( !db->pValue ){
+    db->pValue = sqlite3ValueNew();
+  }
+  return db->pValue;
+}
+

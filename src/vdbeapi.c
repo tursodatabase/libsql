@@ -518,20 +518,7 @@ int sqlite3_bind_text16(
   }
   pVar = &p->apVar[i-1];
 
-  /* There may or may not be a byte order mark at the start of the UTF-16.
-  ** Either way set 'txt_enc' to the SQLITE_UTF16* value indicating the 
-  ** actual byte order used by this string. If the string does happen
-  ** to contain a BOM, then move zData so that it points to the first
-  ** byte after the BOM.
-  */
-  txt_enc = sqlite3UtfReadBom(zData, nData);
-  if( txt_enc ){
-    zData = (void *)(((u8 *)zData) + 2);
-    nData -= 2;
-  }else{
-    txt_enc = SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE;
-  }
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, txt_enc, xDel);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, SQLITE_UTF16NATIVE, xDel);
   if( rc ){
     return rc;
   }

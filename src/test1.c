@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.77 2004/06/15 02:44:19 danielk1977 Exp $
+** $Id: test1.c,v 1.78 2004/06/18 04:24:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -940,9 +940,9 @@ static int test_collate_func(
   }
 
   pVal = sqlite3ValueNew();
-  sqlite3ValueSetStr(pVal, nA, zA, encin);
+  sqlite3ValueSetStr(pVal, nA, zA, encin, SQLITE_STATIC);
   Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),-1));
-  sqlite3ValueSetStr(pVal, nB, zB, encin);
+  sqlite3ValueSetStr(pVal, nB, zB, encin, SQLITE_STATIC);
   Tcl_ListObjAppendElement(i,pX,Tcl_NewStringObj(sqlite3_value_text(pVal),-1));
   sqlite3ValueFree(pVal);
 

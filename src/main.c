@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.224 2004/06/16 12:00:56 danielk1977 Exp $
+** $Id: main.c,v 1.225 2004/06/18 04:24:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -515,6 +515,12 @@ void sqlite3_close(sqlite *db){
 
   sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
+  if( db->pValue ){
+    sqlite3ValueFree(db->pValue);
+  }
+  if( db->pErr ){
+    sqlite3ValueFree(db->pErr);
+  }
   sqliteFree(db);
 }
 
@@ -749,14 +755,17 @@ int sqlite3_create_function16(
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
-  char *zFunctionName8;
-  zFunctionName8 = sqlite3utf16to8(zFunctionName, -1, SQLITE_BIGENDIAN);
-  if( !zFunctionName8 ){
+  char const *zFunc8;
+
+  sqlite3_value *pTmp = sqlite3GetTransientValue(db);
+  sqlite3ValueSetStr(pTmp, -1, zFunctionName, SQLITE_UTF16NATIVE,SQLITE_STATIC);
+  zFunc8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
+
+  if( !zFunc8 ){
     return SQLITE_NOMEM;
   }
-  rc = sqlite3_create_function(db, zFunctionName8, nArg, eTextRep, 
+  rc = sqlite3_create_function(db, zFunc8, nArg, eTextRep, 
       iCollateArg, pUserData, xFunc, xStep, xFinal);
-  sqliteFree(zFunctionName8);
   return rc;
 }
 
@@ -844,16 +853,16 @@ int sqlite3BtreeFactory(
 ** error.
 */
 const char *sqlite3_errmsg(sqlite3 *db){
-  if( !db ){
+  if( !db || !db->pErr ){
     /* If db is NULL, then assume that a malloc() failed during an
     ** sqlite3_open() call.
     */
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
-  if( db->zErrMsg ){
-    return db->zErrMsg;
+  if( !sqlite3_value_text(db->pErr) ){
+    return sqlite3ErrStr(db->errCode);
   }
-  return sqlite3ErrStr(db->errCode);
+  return sqlite3_value_text(db->pErr);
 }
 
 /*
@@ -861,38 +870,32 @@ const char *sqlite3_errmsg(sqlite3 *db){
 ** error.
 */
 const void *sqlite3_errmsg16(sqlite3 *db){
-  if( !db ){
-    /* If db is NULL, then assume that a malloc() failed during an
-    ** sqlite3_open() call. We have a static version of the string 
-    ** "out of memory" encoded using UTF-16 just for this purpose.
-    **
-    ** Because all the characters in the string are in the unicode
-    ** range 0x00-0xFF, if we pad the big-endian string with a 
-    ** zero byte, we can obtain the little-endian string with
-    ** &big_endian[1].
-    */
-    static char outOfMemBe[] = {
-      0, 'o', 0, 'u', 0, 't', 0, ' ', 
-      0, 'o', 0, 'f', 0, ' ', 
-      0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
-    };
-    static char *outOfMemLe = &outOfMemBe[1];
+  /* Because all the characters in the string are in the unicode
+  ** range 0x00-0xFF, if we pad the big-endian string with a 
+  ** zero byte, we can obtain the little-endian string with
+  ** &big_endian[1].
+  */
+  static char outOfMemBe[] = {
+    0, 'o', 0, 'u', 0, 't', 0, ' ', 
+    0, 'o', 0, 'f', 0, ' ', 
+    0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
+  };
 
-    if( SQLITE_BIGENDIAN ){
-      return (void *)outOfMemBe;
-    }else{
-      return (void *)outOfMemLe;
+  if( db && db->pErr ){
+    if( !sqlite3_value_text16(db->pErr) ){
+      sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
+          SQLITE_UTF8, SQLITE_STATIC);
     }
-  }
-  if( !db->zErrMsg16 ){
-    char const *zErr8 = sqlite3_errmsg(db);
-    if( SQLITE_BIGENDIAN ){
-      db->zErrMsg16 = sqlite3utf8to16be(zErr8, -1);
-    }else{
-      db->zErrMsg16 = sqlite3utf8to16le(zErr8, -1);
+    if( sqlite3_value_text16(db->pErr) ){
+      return sqlite3_value_text16(db->pErr);
     }
-  }
-  return db->zErrMsg16;
+  }  
+
+  /* If db is NULL, then assume that a malloc() failed during an
+  ** sqlite3_open() call. We have a static version of the string 
+  ** "out of memory" encoded using UTF-16 just for this purpose.
+  */
+  return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
 }
 
 int sqlite3_errcode(sqlite3 *db){
@@ -1047,11 +1050,14 @@ int sqlite3_prepare16(
   ** encoded string to UTF-8, then invoking sqlite3_prepare(). The
   ** tricky bit is figuring out the pointer to return in *pzTail.
   */
-  char *zSql8 = 0;
+  char const *zSql8 = 0;
   char const *zTail8 = 0;
   int rc;
+  sqlite3_value *pTmp;
 
-  zSql8 = sqlite3utf16to8(zSql, nBytes, SQLITE_BIGENDIAN);
+  pTmp = sqlite3GetTransientValue(db);
+  sqlite3ValueSetStr(pTmp, -1, zSql, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zSql8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
   if( !zSql8 ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     return SQLITE_NOMEM;
@@ -1067,7 +1073,6 @@ int sqlite3_prepare16(
     int chars_parsed = sqlite3utf8CharLen(zSql8, zTail8-zSql8);
     *pzTail = (u8 *)zSql + sqlite3utf16ByteLen(zSql, chars_parsed);
   }
-  sqliteFree(zSql8);
  
   return rc;
 }
@@ -1134,7 +1139,6 @@ static int openDatabase(
   }
   rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
-    /* FIX ME: sqlite3BtreeFactory() should call sqlite3Error(). */
     sqlite3Error(db, rc, 0);
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
@@ -1148,6 +1152,7 @@ static int openDatabase(
   */
   sqlite3RegisterBuiltinFunctions(db);
   if( rc==SQLITE_OK ){
+    sqlite3Error(db, SQLITE_OK, 0);
     db->magic = SQLITE_MAGIC_OPEN;
   }else{
     sqlite3Error(db, rc, "%s", zErrMsg, 0);
@@ -1177,21 +1182,24 @@ int sqlite3_open16(
   const void *zFilename, 
   sqlite3 **ppDb
 ){
-  char *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
-  int rc;
+  char const *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
+  int rc = SQLITE_NOMEM;
+  sqlite3_value *pVal;
 
   assert( ppDb );
-
-  zFilename8 = sqlite3utf16to8(zFilename, -1, SQLITE_BIGENDIAN);
-  if( !zFilename8 ){
-    *ppDb = 0;
-    return SQLITE_NOMEM;
+  *ppDb = 0;
+  pVal = sqlite3ValueNew();
+  sqlite3ValueSetStr(pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
+  if( zFilename8 ){
+    rc = openDatabase(zFilename8, ppDb);
+    if( rc==SQLITE_OK && *ppDb ){
+      sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
+    }
   }
-  rc = openDatabase(zFilename8, ppDb);
-  if( rc==SQLITE_OK && *ppDb ){
-    sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
+  if( pVal ){
+    sqlite3ValueFree(pVal);
   }
-  sqliteFree(zFilename8);
 
   return rc;
 }
@@ -1273,10 +1281,11 @@ int sqlite3_create_collation16(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc;
-  char *zName8 = sqlite3utf16to8(zName, -1, SQLITE_BIGENDIAN);
-  rc = sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
-  sqliteFree(zName8);
-  return rc;
+  char const *zName8;
+  sqlite3_value *pTmp = sqlite3GetTransientValue(db);
+  sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zName8 = sqlite3ValueText(pTmp, SQLITE_UTF8);
+  return sqlite3_create_collation(db, zName8, enc, pCtx, xCompare);
 }
 
 /*

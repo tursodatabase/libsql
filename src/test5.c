@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.10 2004/06/12 00:42:35 danielk1977 Exp $
+** $Id: test5.c,v 1.11 2004/06/18 04:24:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -23,195 +23,6 @@
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
-
-/*
-** Return the number of bytes up to and including the first pair of
-** 0x00 bytes in *pStr.
-*/
-static int utf16_length(const unsigned char *pZ){
-  const unsigned char *pC1 = pZ;
-  const unsigned char *pC2 = pZ+1;
-  while( *pC1 || *pC2 ){
-    pC1 += 2;
-    pC2 += 2;
-  }
-  return (pC1-pZ)+2;
-}
-
-/*
-** tclcmd:   sqlite_utf8to16le  STRING
-** title:    Convert STRING from utf-8 to utf-16le
-**
-** Return the utf-16le encoded string
-*/
-static int sqlite_utf8to16le(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  unsigned char *out;
-  unsigned char *in;
-  Tcl_Obj *res;
-
-  if( objc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), "<utf-8 encoded-string>", 0);
-    return TCL_ERROR;
-  }
-
-  in = Tcl_GetString(objv[1]);
-  out = (unsigned char *)sqlite3utf8to16le(in, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(out));
-  sqliteFree(out); 
-
-  Tcl_SetObjResult(interp, res);
-
-  return TCL_OK;
-}
-
-/*
-** tclcmd:   sqlite_utf8to16be  STRING
-** title:    Convert STRING from utf-8 to utf-16be
-**
-** Return the utf-16be encoded string
-*/
-static int sqlite_utf8to16be(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  unsigned char *out;
-  unsigned char *in;
-  Tcl_Obj *res;
-
-  if( objc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), "<utf-8 encoded-string>", 0);
-    return TCL_ERROR;
-  }
-
-  in = Tcl_GetByteArrayFromObj(objv[1], 0);
-  in = Tcl_GetString(objv[1]);
-  out = (unsigned char *)sqlite3utf8to16be(in, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(out));
-  sqliteFree(out);
-
-  Tcl_SetObjResult(interp, res);
-
-  return TCL_OK;
-}
-
-/*
-** tclcmd:   sqlite_utf16to16le  STRING
-** title:    Convert STRING from utf-16 in native byte order to utf-16le
-**
-** Return the utf-16le encoded string.  If the input string contains
-** a byte-order mark, then the byte order mark should override the
-** native byte order.
-*/
-static int sqlite_utf16to16le(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  unsigned char *out;
-  unsigned char *in;
-  int in_len;
-  Tcl_Obj *res;
-
-  if( objc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), "<utf-16 encoded-string>", 0);
-    return TCL_ERROR;
-  }
-
-  in = Tcl_GetByteArrayFromObj(objv[1], &in_len);
-  out = (unsigned char *)sqliteMalloc(in_len);
-  memcpy(out, in, in_len);
-  
-  sqlite3utf16to16le(out, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(out));
-  sqliteFree(out);
-
-  Tcl_SetObjResult(interp, res);
-
-  return TCL_OK;
-}
-
-/*
-** tclcmd:   sqlite_utf16to16be  STRING
-** title:    Convert STRING from utf-16 in native byte order to utf-16be
-**
-** Return the utf-16be encoded string.  If the input string contains
-** a byte-order mark, then the byte order mark should override the
-** native byte order.
-*/
-static int sqlite_utf16to16be(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  unsigned char *out;
-  unsigned char *in;
-  int in_len;
-  Tcl_Obj *res;
-
-  if( objc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), "<utf-16 encoded-string>", 0);
-    return TCL_ERROR;
-  }
-
-  in = Tcl_GetByteArrayFromObj(objv[1], &in_len);
-  out = (unsigned char *)sqliteMalloc(in_len);
-  memcpy(out, in, in_len);
-  
-  sqlite3utf16to16be(out, -1);
-  res = Tcl_NewByteArrayObj(out, utf16_length(out));
-  sqliteFree(out);
-
-  Tcl_SetObjResult(interp, res);
-
-  return TCL_OK;
-}
-
-/*
-** tclcmd:   sqlite_utf16to8  STRING
-** title:    Convert STRING from utf-16 in native byte order to utf-8
-**
-** Return the utf-8 encoded string.  If the input string contains
-** a byte-order mark, then the byte order mark should override the
-** native byte order.
-*/
-static int sqlite_utf16to8(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  unsigned char *out;
-  unsigned char *in;
-  Tcl_Obj *res;
-
-  if( objc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <utf-16 encoded-string>", 0);
-    return TCL_ERROR;
-  }
-
-  in = Tcl_GetByteArrayFromObj(objv[1], 0);
-  out = sqlite3utf16to8(in, -1, SQLITE_BIGENDIAN);
-  res = Tcl_NewByteArrayObj(out, strlen(out)+1);
-  sqliteFree(out);
-
-  Tcl_SetObjResult(interp, res);
-
-  return TCL_OK;
-}
 
 /*
 ** The first argument is a TCL UTF-8 string. Return the byte array
@@ -281,6 +92,92 @@ static int test_value_overhead(
   return TCL_OK;
 }
 
+static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
+  struct EncName {
+    char *zName;
+    u8 enc;
+  } encnames[] = {
+    { "UTF8", SQLITE_UTF8 },
+    { "UTF16LE", SQLITE_UTF16LE },
+    { "UTF16BE", SQLITE_UTF16BE },
+    { "UTF16", SQLITE_UTF16NATIVE },
+    { 0, 0 }
+  };
+  struct EncName *pEnc;
+  char *z = Tcl_GetString(pObj);
+  for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
+    if( 0==sqlite3StrICmp(z, pEnc->zName) ){
+      break;
+    }
+  }
+  if( !pEnc->enc ){
+    Tcl_AppendResult(interp, "No such encoding: ", z, 0);
+  }
+  return pEnc->enc;
+}
+
+static int test_translate(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  u8 enc_from;
+  u8 enc_to;
+  sqlite3_value *pVal;
+
+  const char *z;
+  int len;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), 
+        " <string/blob> <from enc> <to enc>", 0
+    );
+    return TCL_ERROR;
+  }
+
+  enc_from = name_to_enc(interp, objv[2]);
+  if( !enc_from ) return TCL_ERROR;
+  enc_to = name_to_enc(interp, objv[3]);
+  if( !enc_to ) return TCL_ERROR;
+
+  pVal = sqlite3ValueNew();
+
+  if( enc_from==SQLITE_UTF8 ){
+    z = Tcl_GetString(objv[1]);
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, SQLITE_STATIC);
+  }else{
+    z = Tcl_GetByteArrayFromObj(objv[1], &len);
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, SQLITE_STATIC);
+  }
+
+  z = sqlite3ValueText(pVal, enc_to);
+  len = sqlite3ValueBytes(pVal, enc_to) + (enc_to==SQLITE_UTF8?1:2);
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(z, len));
+
+  sqlite3ValueFree(pVal);
+
+  return TCL_OK;
+}
+
+/*
+** Usage: translate_selftest
+**
+** Call sqlite3utfSelfTest() to run the internal tests for unicode
+** translation. If there is a problem an assert() will fail.
+**/
+void sqlite3utfSelfTest();
+static int test_translate_selftest(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3utfSelfTest();
+  return SQLITE_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -290,13 +187,10 @@ int Sqlitetest5_Init(Tcl_Interp *interp){
     char *zName;
     Tcl_ObjCmdProc *xProc;
   } aCmd[] = {
-    { "sqlite_utf16to8",         (Tcl_ObjCmdProc*)sqlite_utf16to8    },
-    { "sqlite_utf8to16le",       (Tcl_ObjCmdProc*)sqlite_utf8to16le  },
-    { "sqlite_utf8to16be",       (Tcl_ObjCmdProc*)sqlite_utf8to16be  },
-    { "sqlite_utf16to16le",      (Tcl_ObjCmdProc*)sqlite_utf16to16le },
-    { "sqlite_utf16to16be",      (Tcl_ObjCmdProc*)sqlite_utf16to16be },
     { "binarize",                (Tcl_ObjCmdProc*)binarize },
     { "test_value_overhead",     (Tcl_ObjCmdProc*)test_value_overhead },
+    { "test_translate",          (Tcl_ObjCmdProc*)test_translate     },
+    { "translate_selftest",      (Tcl_ObjCmdProc*)test_translate_selftest},
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

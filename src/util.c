@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.102 2004/06/16 07:45:29 danielk1977 Exp $
+** $Id: util.c,v 1.103 2004/06/18 04:24:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -256,6 +256,13 @@ char *sqlite3StrNDup_(const char *z, int n, char *zFile, int line){
   }
   return zNew;
 }
+
+/*
+** A version of sqliteFree that is always a function, not a macro.
+*/
+void sqlite3FreeX(void *p){
+  sqliteFree(p);
+}
 #endif /* SQLITE_DEBUG */
 
 /*
@@ -446,23 +453,18 @@ void sqlite3SetNString(char **pz, ...){
 ** to NULL.
 */
 void sqlite3Error(sqlite *db, int err_code, const char *zFormat, ...){
-  /* Free any existing error message. */
-  if( db->zErrMsg ){
-    sqliteFree(db->zErrMsg);
-    db->zErrMsg = 0;
-  }
-  if( db->zErrMsg16 ){
-    sqliteFree(db->zErrMsg16);
-    db->zErrMsg16 = 0;
-  }
-
-  /* Set the new error code and error message. */
-  db->errCode = err_code;
-  if( zFormat ){
-    va_list ap;
-    va_start(ap, zFormat);
-    db->zErrMsg = sqlite3VMPrintf(zFormat, ap);
-    va_end(ap);
+  if( db && (db->pErr || (db->pErr = sqlite3ValueNew())) ){
+    db->errCode = err_code;
+    if( zFormat ){
+      char *z;
+      va_list ap;
+      va_start(ap, zFormat);
+      z = sqlite3VMPrintf(zFormat, ap);
+      va_end(ap);
+      sqlite3ValueSetStr(db->pErr, -1, z, SQLITE_UTF8, sqlite3FreeX);
+    }else{
+      sqlite3ValueSetStr(db->pErr, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
+    }
   }
 }
 

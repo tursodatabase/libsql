@@ -21,63 +21,23 @@
 #include "vdbeInt.h"
 
 /*
-** If pMem is a string object, this routine sets the encoding of the string
-** (to one of UTF-8 or UTF16) and whether or not the string is
-** nul-terminated. If pMem is not a string object, then this routine is
-** a no-op.
+** If pMem is an object with a valid string representation, this routine
+** ensures the internal encoding for the string representation is
+** 'desiredEnc', one of SQLITE_UTF8, SQLITE_UTF16LE or SQLITE_UTF16BE.
 **
-** The second argument, "desiredEnc" is one of TEXT_Utf8, TEXT_Utf16le
-** or TEXT_Utf16be.  This routine changes the encoding of pMem to match
-** desiredEnc.
+** If pMem is not a string object, or the encoding of the string
+** representation is already stored using the requested encoding, then this
+** routine is a no-op.
 **
 ** SQLITE_OK is returned if the conversion is successful (or not required).
 ** SQLITE_NOMEM may be returned if a malloc() fails during conversion
 ** between formats.
 */
 int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
-  /* If this is not a string, or if it is a string but the encoding is
-  ** already correct, do nothing. */
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
-
-  if( pMem->enc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF8 ){
-    /* If the current encoding does not match the desired encoding, then
-    ** we will need to do some translation between encodings.
-    */
-    char *z;
-    int n;
-    int rc;
-
-    rc = sqlite3utfTranslate(pMem->z, pMem->n, pMem->enc, (void **)&z, 
-        &n, desiredEnc);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    sqlite3VdbeMemRelease(pMem);
-
-    /* Result of sqlite3utfTranslate is currently always dynamically
-    ** allocated and nul terminated. This might be altered as a performance
-    ** enhancement later.
-    */
-    pMem->z = z;
-    pMem->n = n;
-    pMem->flags &= ~(MEM_Ephem | MEM_Short | MEM_Static);
-    pMem->flags |= MEM_Str | MEM_Dyn | MEM_Term;
-    pMem->xDel = 0;
-  }else{
-    /* Must be translating between UTF-16le and UTF-16be. */
-    int i;
-    u8 *pFrom, *pTo;
-    sqlite3VdbeMemMakeWriteable(pMem);
-    for(i=0, pFrom=pMem->z, pTo=&pMem->z[1]; i<pMem->n; i+=2, pFrom+=2,pTo+=2){
-      u8 temp = *pFrom;
-      *pFrom = *pTo;
-      *pTo = temp;
-    }
-  }
-  pMem->enc = desiredEnc;
-  return SQLITE_OK;
+  return sqlite3VdbeMemTranslate(pMem, desiredEnc);
 }
 
 /*
@@ -405,16 +365,19 @@ int sqlite3VdbeMemSetStr(
     case SQLITE_UTF16LE:
     case SQLITE_UTF16BE:
       pMem->flags |= MEM_Str;
-      if( n<0 ){
-        pMem->n = sqlite3utf16ByteLen(z,-1);
+      if( pMem->n<0 ){
+        pMem->n = sqlite3utf16ByteLen(pMem->z,-1);
         pMem->flags |= MEM_Term;
+      }
+      if( sqlite3VdbeMemHandleBom(pMem) ){
+        return SQLITE_NOMEM;
       }
       break;
 
     default:
       assert(0);
   }
-  if( xDel==SQLITE_TRANSIENT ){
+  if( pMem->flags&MEM_Ephem ){
     return sqlite3VdbeMemMakeWriteable(pMem);
   }
   return SQLITE_OK;
@@ -498,11 +461,9 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     assert( pMem1->enc==SQLITE_UTF8 || 
             pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
 
-    /* FIX ME: This may fail if the collation sequence is deleted after
-    ** this vdbe program is compiled. We cannot just use BINARY in this
-    ** case as this may lead to a segfault caused by traversing an index
-    ** table incorrectly.  We need to return an error to the user in this
-    ** case.
+    /* This assert may fail if the collation sequence is deleted after this
+    ** vdbe program is compiled. The documentation defines this as an
+    ** undefined condition. A crash is usual result.
     */
     assert( !pColl || pColl->xCmp );
 
@@ -645,22 +606,17 @@ void sqlite3VdbeMemSanity(Mem *pMem, u8 db_enc){
 ** SQLITE_UTF8.
 */
 const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
+  if( !pVal ) return 0;
   assert( enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE || enc==SQLITE_UTF8);
+
   if( pVal->flags&MEM_Null ){
-    /* For a NULL return a NULL Pointer */
     return 0;
   }
-
   if( pVal->flags&MEM_Str ){
-    /* If there is already a string representation, make sure it is in
-    ** encoded in the required UTF-16 byte order.
-    */
     sqlite3VdbeChangeEncoding(pVal, enc);
   }else if( !(pVal->flags&MEM_Blob) ){
-    /* Otherwise, unless this is a blob, convert it to a UTF-16 string */
     sqlite3VdbeMemStringify(pVal, enc);
   }
-
   return (const void *)(pVal->z);
 }
 
@@ -673,12 +629,19 @@ sqlite3_value* sqlite3ValueNew(){
   return p;
 }
 
-void sqlite3ValueSetStr(sqlite3_value *v, int n, const void *z, u8 enc){
-  sqlite3VdbeMemSetStr((Mem *)v, z, n, enc, SQLITE_STATIC);
+void sqlite3ValueSetStr(
+  sqlite3_value *v, 
+  int n, 
+  const void *z, 
+  u8 enc,
+  void (*xDel)(void*)
+){
+  if( v ) sqlite3VdbeMemSetStr((Mem *)v, z, n, enc, xDel);
 }
 
 void sqlite3ValueFree(sqlite3_value *v){
-  sqlite3ValueSetStr(v, 0, 0, SQLITE_UTF8);
+  if( !v ) return;
+  sqlite3ValueSetStr(v, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
   sqliteFree(v);
 }
 

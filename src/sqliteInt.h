@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.286 2004/06/17 05:36:44 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.287 2004/06/18 04:24:54 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -194,6 +194,7 @@ extern const int sqlite3one;
 # define sqliteStrNDup(X,Y) sqlite3StrNDup_(X,Y,__FILE__,__LINE__)
   void sqlite3StrRealloc(char**);
 #else
+# define sqlite3FreeX sqliteFree
 # define sqlite3Realloc_(X,Y) sqliteRealloc(X,Y)
 # define sqlite3StrRealloc(X)
 #endif
@@ -422,14 +423,17 @@ struct sqlite {
 #endif
 
   int errCode;                  /* Most recent error code (SQLITE_*) */
-  char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
-  void *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
   u8 enc;                       /* Text encoding for this database. */
   u8 autoCommit;                /* The auto-commit flag. */
   int nMaster;                  /* Length of master journal name. -1=unknown */
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*);
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
   void *pCollNeededArg;
+  sqlite3_value *pValue;        /* Value used for transient conversions */
+  sqlite3_value *pErr;          /* Most recent error message */
+
+  char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
+  char *zErrMsg16;              /* Most recent error message (UTF-8 encoded) */
 };
 
 /*
@@ -1213,6 +1217,7 @@ void sqlite3RealToSortable(double r, char *);
   char *sqlite3StrDup_(const char*,char*,int);
   char *sqlite3StrNDup_(const char*, int,char*,int);
   void sqlite3CheckMemory(void*,int);
+  void sqlite3FreeX(void *p);
 #else
   void *sqliteMalloc(int);
   void *sqliteMallocRaw(int);
@@ -1375,11 +1380,6 @@ char *sqlite3_snprintf(int,char*,const char*,...);
 int sqlite3GetInt32(const char *, int*);
 int sqlite3GetInt64(const char *, i64*);
 int sqlite3FitsIn64Bits(const char *);
-unsigned char *sqlite3utf16to8(const void *pData, int N, int big_endian);
-void *sqlite3utf8to16be(const unsigned char *pIn, int N);
-void *sqlite3utf8to16le(const unsigned char *pIn, int N);
-void sqlite3utf16to16le(void *pData, int N);
-void sqlite3utf16to16be(void *pData, int N);
 int sqlite3utf16ByteLen(const void *pData, int nChar);
 int sqlite3utf8CharLen(const char *pData, int nByte);
 int sqlite3utf8LikeCompare(const unsigned char*, const unsigned char*);
@@ -1396,8 +1396,6 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3atoi64(const char*, i64*);
 void sqlite3Error(sqlite *, int, const char*,...);
-int sqlite3utfTranslate(const void *, int , u8 , void **, int *, u8);
-u8 sqlite3UtfReadBom(const void *zData, int nData);
 void *sqlite3HexToBlob(const char *z);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
@@ -1412,6 +1410,7 @@ int sqlite3CheckObjectName(Parse *, const char *);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
 int sqlite3ValueBytes(sqlite3_value*, u8);
-void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8);
+void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew();
+sqlite3_value *sqlite3GetTransientValue(sqlite *db);
