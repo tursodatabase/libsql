@@ -22,6 +22,8 @@ chng {2002 Mar 14 (2.4.2)} {
     in a SELECT statement on a view.</li>
 <li>Bug fix: Fix an uninitialized variable in the VDBE that would could an
     assert failure.</li>
+<li>Make the os.h header file more robust in detecting when the compile is
+    for windows and when it is for unix.</li>
 }
 
 chng {2002 Mar 13 (2.4.1)} {

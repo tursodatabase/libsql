@@ -1,5 +1,5 @@
-C Version\s2.4.2\s(CVS\s433)
-D 2002-03-19T23:51:12
+C One\smore\schange\sbefore\s2.4.2:\sMake\sthe\sos.h\sheader\sfile\smore\srobust\sin\ndetecting\swhether\sto\suse\sunix\sor\swindows.\s(CVS\s434)
+D 2002-03-20T00:00:29
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -30,8 +30,8 @@ F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 42bfd145efd428d7e5f200dd49ea0b816fc30d79
 F src/main.c b21019084b93fe685a8a25217d01f6958584ae9b
 F src/md5.c b2b1a34fce66ceca97f4e0dabc20be8be7933c92
-F src/os.c db969ecd1bcb4fef01b0b541b8b17401b0eb7ed2
-F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
+F src/os.c 5ab8b6b4590d0c1ab8e96c67996c170e4462e0fc
+F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c f136f5ba82c896d500a10b6a2e5caea62abf716b
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 9a8be2eebad16f636292967d328882c2d07e30a9
@@ -115,7 +115,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 77af8c44eda2e227d055d76129d67824eafbc86a
+F www/changes.tcl d2530398b3f7d12de2dc1083fe6d082309184389
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3dcdeae7f620736c1eae52ad78db1efb886ea9c3
-R ea516b678d070786f67b5a99c5da81af
+P b0805b606904e18800c9850b5aa33724c4619de8
+R febee3eb313aa60c56ad4221de74bd94
 U drh
-Z b33dff180258a45dc7cd626b1810f101
+Z 80111d962fe0e2fa1d833166a8ebeebe

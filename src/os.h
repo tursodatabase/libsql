@@ -17,12 +17,21 @@
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
 
-#ifdef WIN32
-#  define OS_WIN 1
-#  undef  OS_UNIX
-#else
-#  define OS_UNIX 1
-#  undef  OS_WIN
+#ifndef OS_UNIX
+# ifndef OS_WIN
+#  if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#    define OS_WIN 1
+#    define OS_UNIX 0
+#  else
+#    define OS_WIN 0
+#    define OS_UNIX 1
+#  endif
+# else
+#  define OS_UNIX 0
+# endif
+#endif
+#ifndef OS_WIN
+# define OS_WIN 0
 #endif
 
 /*
