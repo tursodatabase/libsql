@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.95 2002/08/02 10:36:10 drh Exp $
+** $Id: main.c,v 1.96 2002/08/13 20:45:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -844,7 +844,7 @@ int sqlite_function_type(sqlite *db, const char *zName, int dataType){
 ** separate databases and acting on them as if they were one.
 **
 ** This routine closes the existing auxiliary database file, which will
-** cause any previously created TEMP tables to be created.
+** cause any previously created TEMP tables to be dropped.
 **
 ** The zName parameter can be a NULL pointer or an empty string to cause
 ** a temporary file to be opened and automatically deleted when closed.

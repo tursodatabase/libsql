@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.63 2002/08/13 00:01:18 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.64 2002/08/13 20:45:41 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -47,7 +47,8 @@ Quick Links:
 puts {<h2>Features</h2>
 
 <p><ul>
-<li>Implements most of SQL92.</li>
+<li>Implements most of SQL92.
+    (<a href="omitted.html">Features not supported</a>)</li>
 <li>A complete database (with multiple tables and indices) is
     stored in a single disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
@@ -59,12 +60,13 @@ puts {<h2>Features</h2>
 <li>Very simple 
 <a href="c_interface.html">C/C++ interface</a> requires the use of only
 three functions and one opaque structure.</li>
-<li><a href="tclsqlite.html">TCL bindings</a> included.</li>
+<li><a href="tclsqlite.html">TCL bindings</a> included.
+    Bindings for many other languages available separately.</li>
 <li>Simple, well-commented source code.</li>
-<li>A TCL-based test suite provides near 100% code coverage.</li>
+<li>Automated test suite provides near 100% code coverage.</li>
 <li>Self-contained: no external dependencies.</li>
-<li>Built and tested under Linux and Win2K.</li>
-<li>Sources are uncopyrighted.  Use for any purpose.</li>
+<li>Built and tested under Linux and Windows.</li>
+<li>Sources are in the public domain.  Use for any purpose.</li>
 </ul>
 </p>
 }

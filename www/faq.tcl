@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.14 2002/08/11 20:10:49 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.15 2002/08/13 20:45:41 drh Exp $}
 
 puts {<html>
 <head>
@@ -275,7 +275,7 @@ ORDER BY name;
   except that it is only visible to the application that created the 
   temporary tables.  To get a list of all tables, both permanent and
   temporary, one can use a command similar to the following:
-</blockquote><pre>
+<blockquote><pre>
 SELECT name FROM 
    (SELECT * FROM sqlite_master UNION ALL
     SELECT * FROM sqlite_temp_master)
@@ -334,8 +334,14 @@ faq {
   the data does not contain any NUL characters.  If you want to store binary
   data, consider encoding your data in such a way that it contains no NUL
   characters and inserting it that way.  You might use URL-style encoding:
-  encode NUL as "%00" and "%" as "%25".  Or you might consider encoding your
-  binary data using base-64.</p>
+  encode NUL as "%00" and "%" as "%25".  Or, you might consider encoding your
+  binary data using base-64.  There is a source file named 
+  "<b>src/encode.c</b>" in the SQLite distribution that contains
+  implementations of functions named "<b>sqlite_encode_binary()</b>
+  and <b>sqlite_decode_binary()</b> that can be used for converting
+  binary data to ASCII and back again, if you like.</p>
+
+ 
 }
 
 faq {

@@ -1,8 +1,8 @@
-C Bug\sfix\sto\sthe\sleft\souter\sjoin\slogic.\s(CVS\s708)
-D 2002-08-13T13:15:51
+C Documentation\sand\smakefile\supdates.\s(CVS\s709)
+D 2002-08-13T20:45:40
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
-F Makefile.template 0f288908fb6b1186b1594d753f79dc06c32b1dd7
-F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
+F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
+F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION f860323f95b110e5af69b3754d006f39304390a0
 F aclocal.m4 11faa843caa38fd451bc6aeb43e248d1723a269d
 F config.guess f38b1e93d1e0fa6f5a6913e9e7b12774b9232588
@@ -14,7 +14,8 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
-F publish.sh 29f86624db9253353ae159a9e015f81e16f9dd5b
+F main.mk 34e976d914ac76ba90a93d2b7c41c1a7498e8c59
+F publish.sh a7a8d23e6525bd25d4f5ba9b0fc6edc107d94050
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/btree.c 16d1712321e91e77562ffc673ed97b0b1a791db4
@@ -27,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 8aefc998c86a3bd53082e2f8fdd049345fcf3463
-F src/main.c 0f5d0f6f27333a851d848bfdd7bfa67a37cea12b
+F src/main.c 69f85a56200df5f5ce24ba38b6590d2a9c9f542b
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9665974085ebe1d40d56d1145045b3d64f12cbce
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
@@ -132,9 +133,9 @@ F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 5e3f71ced26a6dc863bd8d7afd711bf16c99acf6
+F www/faq.tcl e5a752ff431a8408ae24a91ab88ded2dfe699e16
 F www/formatchng.tcl 502847353450adaf76d187d87374bce20dd07e0e
-F www/index.tcl 4ee3750153a5eaaabc3e5d9b1e96cfbe78c62086
+F www/index.tcl 47945cc79706e9f2caf797330412c112d54ad72b
 F www/lang.tcl 8c3d0bda030f110c754b5edbad75eddf5dbe2ed1
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl 33c5f2061a05c5d227c72b84c080b3bf74c74f8b
@@ -142,7 +143,7 @@ F www/speed.tcl 7fc83f1b018e1ecc451838449542c3079ed12425
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 957d908e6b84cd599b5cfd82af80c8fac79c1dbd
-R 3e7291c79a919fa2cefc3efc93c90571
+P f9d3d4c1230a7f1176b2002d72e94857e251c04e
+R d02766c7d8bb513006dc1e531944f320
 U drh
-Z de838e68957e6e35c849e80fb3e5a484
+Z ee2dcaa9cadd52a5fbd5a9424f9bf06e

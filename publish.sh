@@ -13,7 +13,7 @@ srcdir=`echo "$0" | sed 's%\(^.*\)/[^/][^/]*$%\1%'`
 
 # Get the makefile.
 #
-cp $srcdir/Makefile.template ./Makefile
+cp $srcdir/Makefile.linux-gcc ./Makefile
 
 # Start building stuff.
 #
