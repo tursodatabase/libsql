@@ -1,5 +1,5 @@
-C Do\snot\suse\sstrcpy()\son\soverlapping\sbuffers.\s(CVS\s1187)
-D 2004-01-17T01:16:21
+C comment\s(CVS\s1188)
+D 2004-01-19T04:52:29
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -43,7 +43,7 @@ F src/os.h 8d02b622153d2df442da1ec37cdd6b1bd9804a25
 F src/pager.c 289328d8efba620eae99f6c2f6062710838a3eb4
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y e41722d11148f34f034716652c1668ffb0ef2905
-F src/pragma.c deec7342741e371f3042adaee53fcc324c5dd1d4
+F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 292a7bfc5a815cb6465e32b2d5c9fe9bd43b27f0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 2712bd4d311ebe7dbf8fd7596a809042657db85f
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 6604e5f7d332b484e84d177f93c9d9f2ab54a32b
-R 56122f9d9725d849b260b2f540e95202
-U drh
-Z 081176abfab2dbf18cbd619ec8f258ba
+P ed6bd2eb39a0940c4f41d365ddc81ecc7066cf4e
+R 3b426c0df8317cb3753abc7127ea7bb7
+U jplyon
+Z ab7d91050c50abcd2dcadcf846105c68
