@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.183 2002/11/01 01:55:38 drh Exp $
+** $Id: vdbe.c,v 1.184 2002/11/11 00:05:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -835,6 +835,33 @@ static void hardRelease(Vdbe *p, int i){
 }
 
 /*
+** Return TRUE if zNum is an integer and write
+** the value of the integer into *pNum.
+**
+** Under Linux (RedHat 7.2) this routine is much faster than atoi()
+** for converting strings into integers.
+*/
+static int toInt(const char *zNum, int *pNum){
+  int v = 0;
+  int neg;
+  if( *zNum=='-' ){
+    neg = 1;
+    zNum++;
+  }else if( *zNum=='+' ){
+    neg = 0;
+    zNum++;
+  }else{
+    neg = 0;
+  }
+  while( isdigit(*zNum) ){
+    v = v*10 + *zNum - '0';
+    zNum++;
+  }
+  *pNum = neg ? -v : v;
+  return *zNum==0;
+}
+
+/*
 ** Convert the given stack entity into a integer if it isn't one
 ** already.
 **
@@ -848,7 +875,7 @@ static void hardIntegerify(Vdbe *p, int i){
     p->aStack[i].i = (int)p->aStack[i].r;
     Release(p, i);
   }else if( p->aStack[i].flags & STK_Str ){
-    p->aStack[i].i = atoi(p->zStack[i]);
+    toInt(p->zStack[i], &p->aStack[i].i);
     Release(p, i);
   }else{
     p->aStack[i].i = 0;
@@ -963,15 +990,6 @@ static int isNumber(const char *zNum){
   zNum++;
   if( *zNum=='-' || *zNum=='+' ) zNum++;
   if( !isdigit(*zNum) ) return 0;
-  while( isdigit(*zNum) ) zNum++;
-  return *zNum==0;
-}
-
-/*
-** Return TRUE if zNum is an integer.
-*/
-static int isInteger(const char *zNum){
-  if( *zNum=='-' || *zNum=='+' ) zNum++;
   while( isdigit(*zNum) ) zNum++;
   return *zNum==0;
 }
@@ -2109,10 +2127,11 @@ case OP_MustBeInt: {
     }
     aStack[tos].i = i;
   }else if( aStack[tos].flags & STK_Str ){
-    if( !isInteger(zStack[tos]) ){
+    int v;
+    if( !toInt(zStack[tos], &v) ){
       goto mismatch;
     }
-    p->aStack[tos].i = atoi(p->zStack[tos]);
+    p->aStack[tos].i = v;
   }else{
     goto mismatch;
   }
@@ -2250,7 +2269,7 @@ case OP_Gt:
 case OP_Ge: {
   int tos = p->tos;
   int nos = tos - 1;
-  int c;
+  int c, v;
   int ft, fn;
   VERIFY( if( nos<0 ) goto not_enough_stack; )
   ft = aStack[tos].flags;
@@ -2267,11 +2286,15 @@ case OP_Ge: {
     break;
   }else if( (ft & fn & STK_Int)==STK_Int ){
     c = aStack[nos].i - aStack[tos].i;
-  }else if( (ft & STK_Int)!=0 && (fn & STK_Str)!=0 && isInteger(zStack[nos]) ){
-    Integerify(p, nos);
+  }else if( (ft & STK_Int)!=0 && (fn & STK_Str)!=0 && toInt(zStack[nos],&v) ){
+    Release(p, nos);
+    aStack[nos].i = v;
+    aStack[nos].flags = STK_Int;
     c = aStack[nos].i - aStack[tos].i;
-  }else if( (fn & STK_Int)!=0 && (ft & STK_Str)!=0 && isInteger(zStack[tos]) ){
-    Integerify(p, tos);
+  }else if( (fn & STK_Int)!=0 && (ft & STK_Str)!=0 && toInt(zStack[tos],&v) ){
+    Release(p, tos);
+    aStack[tos].i = v;
+    aStack[tos].flags = STK_Int;
     c = aStack[nos].i - aStack[tos].i;
   }else{
     if( Stringify(p, tos) || Stringify(p, nos) ) goto no_mem;
@@ -4274,7 +4297,7 @@ case OP_IntegrityCk: {
   nRoot = sqliteHashCount(&pSet->hash);
   aRoot = sqliteMalloc( sizeof(int)*(nRoot+1) );
   for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
-    aRoot[j] = atoi((char*)sqliteHashKey(i));
+    toInt((char*)sqliteHashKey(i), &aRoot[j]);
   }
   aRoot[j] = 0;
   z = sqliteBtreeIntegrityCheck(pOp->p2 ? db->pBeTemp : pBt, aRoot, nRoot);

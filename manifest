@@ -1,5 +1,5 @@
-C Two\soptimizations\sto\sthe\spager:\s(1)\sWrite\sdirty\spages\sback\sto\sthe\sdatabase\nfile\sin\sorder\sand\s(2)\sKeep\sa\sseparate\slist\sof\sin-memory\spages\sthat\sare\sin\nthe\scheckpoint\sjournal\sin\sorder\sto\sspeed\sa\scheckpoint\scommit.\s(CVS\s783)
-D 2002-11-10T23:32:57
+C Replace\sthe\satoi()\slibrary\sroutine\swith\sa\sfaster\shome-grown\sversion\sin\sthe\nVDBE.\s\sThis\sgives\sa\sdramatic\sspeed\simprovement\sfor\ssome\skinds\sof\squeries.\s(CVS\s784)
+D 2002-11-11T00:05:43
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c a187467bc4e9ef7793969b5010d7297341b19394
+F src/vdbe.c 7d46f087c1da55ba9be38f70d92a03c52c8a2ccb
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P a29d60ecc5ee3f535142a81f56eecbef7875ef22
-R 52d1e18697b72d70d44fdac37bed7445
+P a6ef6657a4377684dc2fce7be2bbf009fd2d2f37
+R 185b0bc33f10b4a768e6cfb7280605c4
 U drh
-Z 7623b80b72f443af5ce24d861a13e847
+Z f3f9009eb197efb6353cb5684648e29d
