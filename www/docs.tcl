@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.7 2004/11/10 05:48:57 danielk1977 Exp $}
+set rcsid {$Id: docs.tcl,v 1.8 2004/11/20 06:05:56 danielk1977 Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -108,6 +108,12 @@ doc {VDBE Opcodes} {opcode.html} {
   opcodes that the VDBE understands.  Programmers can use this document as
   a reference to better understand the output of EXPLAIN listings from
   SQLite.
+}
+
+doc {Compilation Options} {compile.html} {
+  This document describes the compile time options that may be set to 
+  modify the default behaviour of the library or omit optional features
+  in order to reduce binary size.
 }
 
 puts {</table>}

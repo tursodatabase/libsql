@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.122 2004/11/12 15:53:37 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.123 2004/11/20 06:05:56 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -449,8 +449,8 @@ void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 /*
 ** This routine configures a callback function - the progress callback - that
 ** is invoked periodically during long running calls to sqlite3_exec(),
-** sqlite3_step() and sqlite3_get_table(). An example use for this API is to keep
-** a GUI updated during a large query.
+** sqlite3_step() and sqlite3_get_table(). An example use for this API is to 
+** keep a GUI updated during a large query.
 **
 ** The progress callback is invoked once for every N virtual machine opcodes,
 ** where N is the second argument to this function. The progress callback
