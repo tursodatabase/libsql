@@ -1,5 +1,5 @@
-C Added\san\sinterrupt\scapability\s(CVS\s153)
-D 2000-10-16T22:06:41
+C Added\san\sinterrupt\scapability\s(CVS\s1706)
+D 2000-10-16T22:06:43
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in faecea9b6419cec25030b4818c9b3f7f4163b3c1
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -75,7 +75,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl ae101d5f7c07dcc59770e2a84aae09025fab2dad
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P d67884f6278a130c81bc75f472170eb6c799ddfa
+P f7ea08b931b9b40831bfe73cd7afea17f92112cf
 R 2f7e4e8c1990ac2e5aa0bbfe9f423798
 U drh
-Z 12eb66ddad145a24d9572d4df23b3c52
+Z 09ef158beb4f39d63ed5d18c384ecacc
