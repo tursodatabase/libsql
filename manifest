@@ -1,5 +1,5 @@
-C Make\sthe\sVACUUM\scommand\srun\sout\sof\sthe\sVDBE\slike\sall\sother\scommands.\n(Ticket\s#464).\s\sMake\sthe\sVACUUM\scommand\swork\seven\sif\sthere\sare\sVIEWs\nin\sthe\sSQLITE_MASTER\stable\sthat\scome\sbefore\stables\sthey\sreference.\n(Ticket\s#515)\s(CVS\s1128)
-D 2003-12-07T00:24:35
+C Fix\sthe\scode\sgenerator\sto\sa\svoid\sa\sVDBE\sstack\soverflow\son\s3-way\sjoins.\nTicket\s#519.\s(CVS\s1129)
+D 2003-12-10T01:31:21
 F Makefile.in 5cb273b7d0e945d47ee8b9ad1c2a04ce79927d2d
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -62,11 +62,11 @@ F src/trigger.c ce83e017b407d046e909d05373d7f8ee70f9f7f9
 F src/update.c 24260b4fda00c9726d27699a0561d53c0dccc397
 F src/util.c cc95dd360fac09a059b2ab98e4c333d1a2308db5
 F src/vacuum.c 77485a64a6e4e358170f150fff681c1624a092b0
-F src/vdbe.c b40c2a7002c0c8e5a226666622f487e241dadf36
+F src/vdbe.c 46068de5569a9ddb7d97f396f7acec1b02281f29
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 2824bf88895b901b3a8c9e44527c67530e1c0dcb
 F src/vdbeaux.c 877ae44ab42f43d38e8cd989087627508a4c98dd
-F src/where.c d01a3506f3c1e3a205028068c8a14d713872c633
+F src/where.c 724c7b82938b2b52602e583c1c3a719eec17003c
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
 F test/attach2.test d0105f4e8b1debf0ac25ed7df986b5854620e172
@@ -104,7 +104,7 @@ F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
-F test/misc2.test 5818bfafd07535b0437f15c32bed983f3bd363b2
+F test/misc2.test b5813a4add0c4ee6575dc0066ea7b37f033499c0
 F test/misuse.test a3aa2b18a97e4c409a1fcaff5151a4dd804a0162
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -176,7 +176,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P ac428c8d4a731678cc26cf198689814a8a56d141
-R de0e25f496472fda102deb07f0a3f4c2
+P 614cbbafa180469744421f8fbe56cb392f48d05f
+R bbe1d83090ef4c5c0c7c0fb5cceefdc4
 U drh
-Z da3da18ef1bdac6a224ddd572daad46d
+Z 54bb7506abb69e543e32a232bf0d99d4
