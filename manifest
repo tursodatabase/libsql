@@ -1,5 +1,5 @@
-C Comment\schanges\sonly\s(CVS\s166)
-D 2000-11-28T20:47:18
+C Version\s1.0.16\s(CVS\s487)
+D 2000-11-28T21:00:00
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 0b1fdafa55e1bf4d3a4f5213544130e66ef32052
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -76,7 +76,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P 97339efdf3f3b02a6a4fe57d2cb01d19cec3c749
+P 5518e012bf35821f65fe2ca7cbafca6a97e7a4ac
 R 1c6acddf7130094f372af0f6ab539a9f
 U drh
-Z 0dae5798cf7348c71ddbbe7fba631943
+Z 150fc454dfaa87f8bdafb86307caf84b
