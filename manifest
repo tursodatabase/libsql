@@ -1,5 +1,5 @@
-C file\sspaceanal.tcl\swas\sinitially\sadded\son\sbranch\sversion_2.\s(CVS\s1638)
-D 2004-06-19T11:57:40
+C Omit\sthe\ssqlite3VdbeCode()\sroutine.\s\sUse\ssqlite3NameFromToken()\smore\sto\nreduce\sthe\samount\sof\scode.\s(CVS\s1639)
+D 2004-06-19T14:49:12
 F Makefile.in d69d53c543518c1572ee0a8e8723d7e00bdb2266
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -24,15 +24,15 @@ F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def c4bc3f10bccded91d06328c4b2b742ace4d3ed9f
-F src/attach.c 293da1e8e3ea6e9244bb3d744da930606fbb4ab0
+F src/attach.c 78ca379f2db3701cca20055cdd802c6bd3b49870
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
 F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
-F src/build.c d7827169529c76cb86760bc1bc06a931c4ff6c8c
+F src/build.c c843ef3d4440b591e154d0e78c664e213236db68
 F src/date.c b3e8b2bef1e3f2ce24e5b057203036defb18c3f1
 F src/delete.c a5191011b7429dff939df631b8bdcc1714b8d7aa
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 01cdf6a632ff66acfff667932c41bb79d18d5077
+F src/expr.c 9ae0e55a230802da35a55fd6e87533cca0301af9
 F src/func.c b7a8b55200d34bf01fe2a52462db27399f291777
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
@@ -51,13 +51,13 @@ F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
 F src/pager.c d627c5e46084b0c757a16cec2c17adcc8046f8ee
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
-F src/pragma.c 42de2b327d17af5167de66744a731f8dae8bbe96
+F src/pragma.c 424d812d7411a83816f0d7c41170a5d6e13b3824
 F src/printf.c 823b6a5cbedb6971a9e62f5d83204fe9b0be7c1b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c 91570af7f13d1c5584f3b711676e1226ee12194e
+F src/select.c 9aa82bbc63983a304bc51d4a7c259e759f92c8dc
 F src/shell.c 24b641700c9d90f361fcfa4f432c5b4aff704e6d
 F src/sqlite.h.in c34414b9f5330f875e26a69fe685e38ca45f11b9
-F src/sqliteInt.h 6c141ab926097c9671e22641fbb70e24c58b883c
+F src/sqliteInt.h 6a34196b2fc203b738ed3596c5ffef1d0748cc95
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c ddef9b18271fb46344d3d35446bd7c001465a69a
 F src/test1.c ee426e026ad9223483e7a84bb68849fc6e9f542e
@@ -66,16 +66,16 @@ F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
-F src/trigger.c b05699cf40e99a330649eabfb1cece05ff73e469
+F src/trigger.c fb38c34d933f32dbb6c31b48935f33d868cc7658
 F src/update.c f9a03233577e0c3d57234d1957963875fc941da2
 F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
 F src/util.c 1b3743413e11cae51a899dc03fa9b829a3a1f160
 F src/vacuum.c fcb930215a3f6c50087300782555f61ad11dd80c
 F src/vdbe.c 324ad6157f9bd0a770be70a4e7dca2cb0d27bd82
-F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
+F src/vdbe.h 9ad64674c4c7acd6744174cab5d34013413ef0d3
 F src/vdbeInt.h 54af2e00301cde7573b86ea8a9b29a2152e762f7
 F src/vdbeapi.c 1601fb2d015fc88ce3dd6a6a50cf44b6419fdbbf
-F src/vdbeaux.c 82074da25adb94aabd80a407b32f91fa9389baca
+F src/vdbeaux.c cf9caac1163ea384e49b11cb0d405082eef8741d
 F src/vdbemem.c 9359c53386e070fea9f5403cab0c6f0cfe36496b
 F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P a5c98a272ec30971a9aa9ba2a6e2dec1a4dd8c18
-R 5f8f7f04d9aeffdc923f82538c2bcc15
+P 936e60d7b122079de23db301a55c6e8510c82e18
+R ed730593128daa92468fa18fd3a57762
 U drh
-Z 27045e58200021e41670a7eb9cdb0650
+Z f5520e1d232faa01844b8961883e0286

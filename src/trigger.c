@@ -100,7 +100,7 @@ void sqlite3BeginTrigger(
 
   /* Check that the trigger name is not reserved and that no trigger of the
   ** specified name exists */
-  zName = sqlite3TableNameFromToken(pName);
+  zName = sqlite3NameFromToken(pName);
   if( !zName || SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto trigger_cleanup;
   }

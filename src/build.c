@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.224 2004/06/19 09:35:36 danielk1977 Exp $
+** $Id: build.c,v 1.225 2004/06/19 14:49:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -414,14 +414,23 @@ static void sqliteUnlinkAndDeleteTable(sqlite *db, Table *p){
 }
 
 /*
-** Construct the name of a user table or index from a token.
+** Given a token, return a string that consists of the text of that
+** token with any quotations removed.  Space to hold the returned string
+** is obtained from sqliteMalloc() and must be freed by the calling
+** function.
 **
-** Space to hold the name is obtained from sqliteMalloc() and must
-** be freed by the calling function.
+** Tokens are really just pointers into the original SQL text and so
+** are not \000 terminated and are not persistent.  The returned string
+** is \000 terminated and is persistent.
 */
-char *sqlite3TableNameFromToken(Token *pName){
-  char *zName = sqliteStrNDup(pName->z, pName->n);
-  sqlite3Dequote(zName);
+char *sqlite3NameFromToken(Token *pName){
+  char *zName;
+  if( pName ){
+    zName = sqliteStrNDup(pName->z, pName->n);
+    sqlite3Dequote(zName);
+  }else{
+    zName = 0;
+  }
   return zName;
 }
 
@@ -554,7 +563,7 @@ void sqlite3StartTable(
   if( isTemp ) iDb = 1;
 
   pParse->sNameToken = *pName;
-  zName = sqlite3TableNameFromToken(pName);
+  zName = sqlite3NameFromToken(pName);
   if( zName==0 ) return;
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     sqliteFree(zName);
@@ -683,12 +692,11 @@ void sqlite3StartTable(
 void sqlite3AddColumn(Parse *pParse, Token *pName){
   Table *p;
   int i;
-  char *z = 0;
+  char *z;
   Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
-  sqlite3SetNString(&z, pName->z, pName->n, 0);
+  z = sqlite3NameFromToken(pName);
   if( z==0 ) return;
-  sqlite3Dequote(z);
   for(i=0; i<p->nCol; i++){
     if( sqlite3StrICmp(z, p->aCol[i].zName)==0 ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
@@ -1573,7 +1581,7 @@ static void sqliteViewResetAll(sqlite *db, int idx){
 Table *sqlite3TableFromToken(Parse *pParse, Token *pTok){
   char *zName;
   Table *pTab;
-  zName = sqlite3TableNameFromToken(pTok);
+  zName = sqlite3NameFromToken(pTok);
   if( zName==0 ) return 0;
   pTab = sqlite3FindTable(pParse->db, zName, 0);
   sqliteFree(zName);
@@ -1946,7 +1954,7 @@ void sqlite3CreateIndex(
   ** own name.
   */
   if( pName ){
-    zName = sqlite3TableNameFromToken(pName);
+    zName = sqlite3NameFromToken(pName);
     if( zName==0 ) goto exit_create_index;
     if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
@@ -2148,10 +2156,8 @@ void sqlite3CreateIndex(
     sqlite3VdbeOp3(v, OP_CreateIndex, 0, iDb,(char*)&pIndex->tnum,P3_POINTER);
     pIndex->tnum = 0;
     if( pTblName ){
-      sqlite3VdbeCode(v,
-          OP_Dup,       0,      0,
-          OP_Integer,   iDb,    0,
-      0);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
       sqlite3VdbeOp3(v, OP_OpenWrite, 1, 0,
                      (char*)&pIndex->keyInfo, P3_KEYINFO);
     }
@@ -2329,16 +2335,7 @@ IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
     pList->a = a;
   }
   memset(&pList->a[pList->nId], 0, sizeof(pList->a[0]));
-  if( pToken ){
-    char **pz = &pList->a[pList->nId].zName;
-    sqlite3SetNString(pz, pToken->z, pToken->n, 0);
-    if( *pz==0 ){
-      sqlite3IdListDelete(pList);
-      return 0;
-    }else{
-      sqlite3Dequote(*pz);
-    }
-  }
+  pList->a[pList->nId].zName = sqlite3NameFromToken(pToken);
   pList->nId++;
   return pList;
 }
@@ -2369,6 +2366,7 @@ IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
 ** Then C is the table name and B is the database name.
 */
 SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
+  struct SrcList_item *pItem;
   if( pList==0 ){
     pList = sqliteMalloc( sizeof(SrcList) );
     if( pList==0 ) return 0;
@@ -2385,7 +2383,8 @@ SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
     }
     pList = pNew;
   }
-  memset(&pList->a[pList->nSrc], 0, sizeof(pList->a[0]));
+  pItem = &pList->a[pList->nSrc];
+  memset(pItem, 0, sizeof(pList->a[0]));
   if( pDatabase && pDatabase->z==0 ){
     pDatabase = 0;
   }
@@ -2394,27 +2393,9 @@ SrcList *sqlite3SrcListAppend(SrcList *pList, Token *pTable, Token *pDatabase){
     pDatabase = pTable;
     pTable = pTemp;
   }
-  if( pTable ){
-    char **pz = &pList->a[pList->nSrc].zName;
-    sqlite3SetNString(pz, pTable->z, pTable->n, 0);
-    if( *pz==0 ){
-      sqlite3SrcListDelete(pList);
-      return 0;
-    }else{
-      sqlite3Dequote(*pz);
-    }
-  }
-  if( pDatabase ){
-    char **pz = &pList->a[pList->nSrc].zDatabase;
-    sqlite3SetNString(pz, pDatabase->z, pDatabase->n, 0);
-    if( *pz==0 ){
-      sqlite3SrcListDelete(pList);
-      return 0;
-    }else{
-      sqlite3Dequote(*pz);
-    }
-  }
-  pList->a[pList->nSrc].iCursor = -1;
+  pItem->zName = sqlite3NameFromToken(pTable);
+  pItem->zDatabase = sqlite3NameFromToken(pDatabase);
+  pItem->iCursor = -1;
   pList->nSrc++;
   return pList;
 }
@@ -2436,9 +2417,7 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
 */
 void sqlite3SrcListAddAlias(SrcList *pList, Token *pToken){
   if( pList && pList->nSrc>0 ){
-    int i = pList->nSrc - 1;
-    sqlite3SetNString(&pList->a[i].zAlias, pToken->z, pToken->n, 0);
-    sqlite3Dequote(pList->a[i].zAlias);
+    pList->a[pList->nSrc-1].zAlias = sqlite3NameFromToken(pToken);
   }
 }
 
@@ -2633,4 +2612,3 @@ sqlite3_value *sqlite3GetTransientValue(sqlite *db){
   }
   return db->pValue;
 }
-

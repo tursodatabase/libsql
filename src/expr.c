@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.144 2004/06/17 07:53:03 danielk1977 Exp $
+** $Id: expr.c,v 1.145 2004/06/19 14:49:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -421,10 +421,7 @@ ExprList *sqlite3ExprListAppend(ExprList *pList, Expr *pExpr, Token *pName){
     struct ExprList_item *pItem = &pList->a[pList->nExpr++];
     memset(pItem, 0, sizeof(*pItem));
     pItem->pExpr = pExpr;
-    if( pName ){
-      sqlite3SetNString(&pItem->zName, pName->z, pName->n, 0);
-      sqlite3Dequote(pItem->zName);
-    }
+    pItem->zName = sqlite3NameFromToken(pName);
   }
   return pList;
 }
@@ -575,21 +572,9 @@ static int lookupName(
   sqlite *db = pParse->db;  /* The database */
 
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
-  if( pDbToken && pDbToken->z ){
-    zDb = sqliteStrNDup(pDbToken->z, pDbToken->n);
-    sqlite3Dequote(zDb);
-  }else{
-    zDb = 0;
-  }
-  if( pTableToken && pTableToken->z ){
-    zTab = sqliteStrNDup(pTableToken->z, pTableToken->n);
-    sqlite3Dequote(zTab);
-  }else{
-    assert( zDb==0 );
-    zTab = 0;
-  }
-  zCol = sqliteStrNDup(pColumnToken->z, pColumnToken->n);
-  sqlite3Dequote(zCol);
+  zDb = sqlite3NameFromToken(pDbToken);
+  zTab = sqlite3NameFromToken(pTableToken);
+  zCol = sqlite3NameFromToken(pColumnToken);
   if( sqlite3_malloc_failed ){
     return 1;  /* Leak memory (zDb and zTab) if malloc fails */
   }
@@ -1856,4 +1841,3 @@ FuncDef *sqlite3FindFunction(
   }
   return 0;
 }
-

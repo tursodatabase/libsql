@@ -116,26 +116,6 @@ int sqlite3VdbeOp3(Vdbe *p, int op, int p1, int p2, const char *zP3,int p3type){
 }
 
 /*
-** Add multiple opcodes.  The list is terminated by an opcode of 0.
-*/
-int sqlite3VdbeCode(Vdbe *p, ...){
-  int addr;
-  va_list ap;
-  int opcode, p1, p2;
-  va_start(ap, p);
-  addr = p->nOp;
-  while( (opcode = va_arg(ap,int))!=0 ){
-    p1 = va_arg(ap,int);
-    p2 = va_arg(ap,int);
-    sqlite3VdbeAddOp(p, opcode, p1, p2);
-  }
-  va_end(ap);
-  return addr;
-}
-
-
-
-/*
 ** Create a new symbolic label for an instruction that has yet to be
 ** coded.  The symbolic label is really just a negative number.  The
 ** label can be used as the P2 value of an operation.  Later, when

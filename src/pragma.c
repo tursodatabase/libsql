@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.48 2004/06/18 23:21:47 dougcurrie Exp $
+** $Id: pragma.c,v 1.49 2004/06/19 14:49:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -139,8 +139,8 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
       if( strcmp(zLeft,zRight)==0 && (v = sqlite3GetVdbe(pParse))!=0 ){
         sqlite3VdbeSetNumCols(v, 1);
         sqlite3VdbeSetColName(v, 0, aPragma[i].zName, P3_STATIC);
-        sqlite3VdbeCode(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0,
-                          OP_Callback, 1, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Integer, (db->flags & aPragma[i].mask)!=0, 0);
+        sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
       }else if( getBoolean(zRight) ){
         db->flags |= aPragma[i].mask;
       }else{
@@ -170,14 +170,12 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
 
-  zLeft = sqliteStrNDup(pLeft->z, pLeft->n);
-  sqlite3Dequote(zLeft);
+  zLeft = sqlite3NameFromToken(pLeft);
   if( minusFlag ){
     zRight = 0;
     sqlite3SetNString(&zRight, "-", 1, pRight->z, pRight->n, 0);
   }else{
-    zRight = sqliteStrNDup(pRight->z, pRight->n);
-    sqlite3Dequote(zRight);
+    zRight = sqlite3NameFromToken(pRight);
   }
   if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, 0) ){
     goto pragma_out;

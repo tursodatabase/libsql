@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.192 2004/06/17 07:53:03 danielk1977 Exp $
+** $Id: select.c,v 1.193 2004/06/19 14:49:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1125,9 +1125,8 @@ static int matchOrderbyToColumn(
       if( pEList->a[j].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
         char *zName, *zLabel;
         zName = pEList->a[j].zName;
-        assert( pE->token.z );
-        zLabel = sqliteStrNDup(pE->token.z, pE->token.n);
-        sqlite3Dequote(zLabel);
+        zLabel = sqlite3NameFromToken(&pE->token);
+        assert( zLabel!=0 );
         if( sqlite3StrICmp(zName, zLabel)==0 ){ 
           iCol = j;
         }
