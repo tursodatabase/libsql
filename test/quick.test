@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.33 2004/11/13 13:19:56 danielk1977 Exp $
+# $Id: quick.test,v 1.34 2005/03/21 04:04:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,6 +28,7 @@ set EXCLUDE {
   corrupt.test
   crash.test
   malloc.test
+  malloc2.test
   memleak.test
   misuse.test
   quick.test

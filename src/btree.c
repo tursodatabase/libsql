@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.252 2005/03/14 02:01:50 drh Exp $
+** $Id: btree.c,v 1.253 2005/03/21 04:04:02 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2160,12 +2160,11 @@ int sqlite3BtreeCursor(
     goto create_cursor_exception;
   }
   pCur->pgnoRoot = (Pgno)iTable;
+  pCur->pPage = 0;  /* For exit-handler, in case getAndInitPage() fails. */
   if( iTable==1 && sqlite3pager_pagecount(pBt->pPager)==0 ){
     rc = SQLITE_EMPTY;
-    pCur->pPage = 0;
     goto create_cursor_exception;
   }
-  pCur->pPage = 0;  /* For exit-handler, in case getAndInitPage() fails. */
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->pPage, 0);
   if( rc!=SQLITE_OK ){
     goto create_cursor_exception;
@@ -3252,8 +3251,8 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
     if( rc ) return rc;
     ovflPgno = get4byte(pOvfl->aData);
     rc = freePage(pOvfl);
-    if( rc ) return rc;
     sqlite3pager_unref(pOvfl->aData);
+    if( rc ) return rc;
   }
   return SQLITE_OK;
 }
@@ -3525,7 +3524,8 @@ static int insertCell(
     end = cellOffset + 2*pPage->nCell + 2;
     ins = cellOffset + 2*i;
     if( end > top - sz ){
-      defragmentPage(pPage);
+      int rc = defragmentPage(pPage);
+      if( rc!=SQLITE_OK ) return rc;
       top = get2byte(&data[hdr+5]);
       assert( end + sz <= top );
     }
@@ -4406,7 +4406,7 @@ static int balance_deeper(MemPage *pPage){
   memcpy(&cdata[brk], &data[brk], usableSize-brk);
   assert( pChild->isInit==0 );
   rc = initPage(pChild, pPage);
-  if( rc ) return rc;
+  if( rc ) goto balancedeeper_out;
   memcpy(pChild->aOvfl, pPage->aOvfl, pPage->nOverflow*sizeof(pPage->aOvfl[0]));
   pChild->nOverflow = pPage->nOverflow;
   if( pChild->nOverflow ){
@@ -4420,7 +4420,7 @@ static int balance_deeper(MemPage *pPage){
   if( pBt->autoVacuum ){
     int i;
     rc = ptrmapPut(pBt, pChild->pgno, PTRMAP_BTREE, pPage->pgno);
-    if( rc ) return rc;
+    if( rc ) goto balancedeeper_out;
     for(i=0; i<pChild->nCell; i++){
       rc = ptrmapPutOvfl(pChild, i);
       if( rc!=SQLITE_OK ){
@@ -4430,6 +4430,8 @@ static int balance_deeper(MemPage *pPage){
   }
 #endif
   rc = balance_nonroot(pChild);
+
+balancedeeper_out:
   releasePage(pChild);
   return rc;
 }
@@ -4616,7 +4618,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     unsigned char *pNext;
     int szNext;
     int notUsed;
-    unsigned char *tempCell;
+    unsigned char *tempCell = 0;
     assert( !pPage->leafData );
     getTempCursor(pCur, &leafCur);
     rc = sqlite3BtreeNext(&leafCur, &notUsed);
@@ -4624,26 +4626,34 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       if( rc!=SQLITE_NOMEM ){
         rc = SQLITE_CORRUPT;  /* bkpt-CORRUPT */
       }
-      return rc;
     }
-    rc = sqlite3pager_write(leafCur.pPage->aData);
-    if( rc ) return rc;
-    TRACE(("DELETE: table=%d delete internal from %d replace from leaf %d\n",
-       pCur->pgnoRoot, pPage->pgno, leafCur.pPage->pgno));
-    dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
-    pNext = findCell(leafCur.pPage, leafCur.idx);
-    szNext = cellSizePtr(leafCur.pPage, pNext);
-    assert( MX_CELL_SIZE(pBt)>=szNext+4 );
-    tempCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
-    if( tempCell==0 ) return SQLITE_NOMEM;
-    rc = insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell, 0);
-    if( rc!=SQLITE_OK ) return rc;
-    put4byte(findOverflowCell(pPage, pCur->idx), pgnoChild);
-    rc = balance(pPage, 0);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3pager_write(leafCur.pPage->aData);
+    }
+    if( rc==SQLITE_OK ){
+      TRACE(("DELETE: table=%d delete internal from %d replace from leaf %d\n",
+         pCur->pgnoRoot, pPage->pgno, leafCur.pPage->pgno));
+      dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
+      pNext = findCell(leafCur.pPage, leafCur.idx);
+      szNext = cellSizePtr(leafCur.pPage, pNext);
+      assert( MX_CELL_SIZE(pBt)>=szNext+4 );
+      tempCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
+      if( tempCell==0 ){
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( rc==SQLITE_OK ){
+      rc = insertCell(pPage, pCur->idx, pNext-4, szNext+4, tempCell, 0);
+    }
+    if( rc==SQLITE_OK ){
+      put4byte(findOverflowCell(pPage, pCur->idx), pgnoChild);
+      rc = balance(pPage, 0);
+    }
+    if( rc==SQLITE_OK ){
+      dropCell(leafCur.pPage, leafCur.idx, szNext);
+      rc = balance(leafCur.pPage, 0);
+    }
     sqliteFree(tempCell);
-    if( rc ) return rc;
-    dropCell(leafCur.pPage, leafCur.idx, szNext);
-    rc = balance(leafCur.pPage, 0);
     releaseTempCursor(&leafCur);
   }else{
     TRACE(("DELETE: table=%d delete from leaf %d\n",
@@ -4651,7 +4661,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
     rc = balance(pPage, 0);
   }
-  moveToRoot(pCur);
+  if( rc==SQLITE_OK ){
+    moveToRoot(pCur);
+  }
   return rc;
 }
 
@@ -4792,7 +4804,7 @@ static int clearDatabasePage(
   MemPage *pParent,     /* Parent page.  NULL for the root */
   int freePageFlag      /* Deallocate page if true */
 ){
-  MemPage *pPage;
+  MemPage *pPage = 0;
   int rc;
   unsigned char *pCell;
   int i;
@@ -4802,27 +4814,29 @@ static int clearDatabasePage(
   }
 
   rc = getAndInitPage(pBt, pgno, &pPage, pParent);
-  if( rc ) return rc;
+  if( rc ) goto cleardatabasepage_out;
   rc = sqlite3pager_write(pPage->aData);
-  if( rc ) return rc;
+  if( rc ) goto cleardatabasepage_out;
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
       rc = clearDatabasePage(pBt, get4byte(pCell), pPage->pParent, 1);
-      if( rc ) return rc;
+      if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell);
-    if( rc ) return rc;
+    if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
     rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage->pParent, 1);
-    if( rc ) return rc;
+    if( rc ) goto cleardatabasepage_out;
   }
   if( freePageFlag ){
     rc = freePage(pPage);
   }else{
     zeroPage(pPage, pPage->aData[0] | PTF_LEAF);
   }
+
+cleardatabasepage_out:
   releasePage(pPage);
   return rc;
 }
@@ -4896,7 +4910,10 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable, int *piMoved){
   rc = getPage(pBt, (Pgno)iTable, &pPage);
   if( rc ) return rc;
   rc = sqlite3BtreeClearTable(pBt, iTable);
-  if( rc ) return rc;
+  if( rc ){
+    releasePage(pPage);
+    return rc;
+  }
 
   *piMoved = 0;
 
@@ -5755,3 +5772,16 @@ int sqlite3BtreeSync(Btree *pBt, const char *zMaster){
   }
   return SQLITE_OK;
 }
+
+#ifndef SQLITE_OMIT_GLOBALRECOVER
+/*
+** Reset the btree and underlying pager after a malloc() failure. Any
+** transaction that was active when malloc() failed is rolled back.
+*/
+int sqlite3BtreeReset(Btree *pBt){
+  if( pBt->pCursor ) return SQLITE_BUSY;
+  pBt->inTrans = TRANS_NONE;
+  unlockBtreeIfUnused(pBt);
+  return sqlite3pager_reset(pBt->pPager);
+}
+#endif

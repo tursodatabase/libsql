@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.134 2005/03/11 04:41:40 drh Exp $
+** $Id: test1.c,v 1.135 2005/03/21 04:04:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2294,6 +2294,24 @@ static int test_stmt_utf8(
   return TCL_OK;
 }
 
+static int test_global_recover(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifndef SQLITE_OMIT_GLOBALRECOVER
+  int rc;
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  rc = sqlite3_global_recover();
+  Tcl_SetResult(interp, (char *)errorName(rc), TCL_STATIC);
+#endif
+  return TCL_OK;
+}
+
 /*
 ** Usage: sqlite3_column_text STMT column
 **
@@ -2765,6 +2783,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "foreignkey", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_OMIT_GLOBALRECOVER
+  Tcl_SetVar2(interp, "sqlite_options", "globalrecover", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "globalrecover", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_INTEGRITY_CHECK
   Tcl_SetVar2(interp, "sqlite_options", "integrityck", "0", TCL_GLOBAL_ONLY);
 #else
@@ -2952,6 +2976,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
      { "sqlite3_column_name16",     test_stmt_utf16, sqlite3_column_name16    },
 #endif
+     { "sqlite3_global_recover",    test_global_recover, 0   },
 
      /* Functions from os.h */
      { "sqlite3OsOpenReadWrite",test_sqlite3OsOpenReadWrite, 0 },

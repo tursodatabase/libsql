@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.197 2005/03/21 03:53:38 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.198 2005/03/21 04:04:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -843,6 +843,28 @@ static void pager_reset(Pager *pPager){
   pPager->nRef = 0;
   assert( pPager->journalOpen==0 );
 }
+
+/*
+** This function is used to reset the pager after a malloc() failure. This
+** doesn't work with in-memory databases. If a malloc() fails when an 
+** in-memory database is in use it is not possible to recover.
+**
+** If a transaction or statement transaction is active, it is rolled back.
+**
+** It is an error to call this function if any pages are in use.
+*/
+#ifndef SQLITE_OMIT_GLOBALRECOVER
+int sqlite3pager_reset(Pager *pPager){
+  if( pPager ){
+    if( pPager->nRef || MEMDB ){
+      return SQLITE_ERROR;
+    }
+    pPager->errMask &= ~(PAGER_ERR_MEM);
+    pager_reset(pPager);
+  }
+  return SQLITE_OK;
+}
+#endif
 
 
 /*

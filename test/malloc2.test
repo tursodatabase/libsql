@@ -1,0 +1,335 @@
+# 2005 March 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file attempts to check that the library can recover from a malloc()
+# failure when sqlite3_global_recover() is invoked.
+#
+# $Id: malloc2.test,v 1.1 2005/03/21 04:04:03 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Only run these tests if memory debugging is turned on.
+#
+if {[info command sqlite_malloc_stat]==""} {
+  puts "Skipping malloc tests: not compiled with -DSQLITE_DEBUG..."
+  finish_test
+  return
+}
+
+ifcapable !globalrecover {
+  finish_test
+  return
+}
+
+# Generate a checksum based on the contents of the database. If the
+# checksum of two databases is the same, and the integrity-check passes
+# for both, the two databases are identical.
+#
+proc cksum {db} {
+  set ret [list]
+  set sql {
+    SELECT name FROM sqlite_master WHERE type = 'table' UNION
+    SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
+    SELECT 'sqlite_master' UNION
+    SELECT 'sqlite_temp_master'
+  }
+  foreach tbl [$db eval $sql] {
+    set cols [list]
+    $db eval "PRAGMA table_info($tbl)" {
+      lappend cols $name
+    }
+    set sql "SELECT md5sum([join $cols ,]) FROM $tbl"
+    lappend ret [db onecolumn $sql]
+  }
+  return $ret
+}
+
+proc do_malloc2_test {tn args} {
+  array set ::mallocopts $args
+  set sum [cksum db]
+
+  for {set ::n 1} {true} {incr ::n} {
+
+    # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
+    # may or may not be reported.
+    sqlite_malloc_fail $::n
+    do_test malloc2-$tn.$::n.2 {
+      set res [catchsql $::mallocopts(-sql)]
+      set rc [expr { 
+        0==[string compare $res {1 {out of memory}}] ||
+        0==[lindex $res 0]
+      }]
+      if {$rc!=1} {
+        puts "Error: $res"
+      }
+      set rc
+    } {1}
+
+    # If $::n is greater than the number of malloc() calls required to
+    # execute the SQL, then this test is finished. Break out of the loop.
+    if {[lindex [sqlite_malloc_stat] 2]>0} {
+      sqlite_malloc_fail -1
+      break
+    }
+
+    # Nothing should work now, because the allocator should refuse to
+    # allocate any memory.
+    do_test malloc2-$tn.$::n.3 {
+      catchsql {SELECT 'nothing should work'}
+    } {1 {out of memory}}
+
+    # Recover from the malloc failure.
+    do_test malloc2-$tn.$::n.4 {
+      if 0 {
+        db close
+        sqlite_malloc_fail -1
+        set ::DB [sqlite3 db test.db]
+        set dummy SQLITE_OK
+      } else {
+        sqlite3_global_recover
+      }
+    } {SQLITE_OK}
+
+    # Checksum the database.
+    do_test malloc2-$tn.$::n.5 {
+      cksum db
+    } $sum
+
+    integrity_check malloc2-$tn.$::n.6
+  if {$::nErr>1} return
+  }
+  unset ::mallocopts
+}
+
+do_test malloc2.1.setup {
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(10, 20, 30);
+    INSERT INTO abc VALUES(40, 50, 60);
+    CREATE INDEX abc_i ON abc(a, b, c);
+  }
+} {}
+do_malloc2_test 1.1 -sql {
+  SELECT * FROM abc;
+}
+do_malloc2_test 1.2 -sql {
+  UPDATE abc SET c = c+10;
+}
+do_malloc2_test 1.3 -sql {
+  INSERT INTO abc VALUES(70, 80, 90);
+}
+do_malloc2_test 1.4 -sql {
+  DELETE FROM abc;
+}
+do_test malloc2.1.5 {
+  execsql {
+    SELECT * FROM abc;
+  }
+} {}
+
+do_test malloc2.2.setup {
+  execsql {
+    CREATE TABLE def(a, b, c);
+    CREATE INDEX def_i1 ON def(a);
+    CREATE INDEX def_i2 ON def(c);
+    BEGIN;
+  }
+  for {set i 0} {$i<20} {incr i} {
+    execsql {
+    INSERT INTO def VALUES(randstr(300,300),randstr(300,300),randstr(300,300));
+    }
+  }
+  execsql {
+    COMMIT;
+  }
+} {}
+do_malloc2_test 2 -sql {
+  BEGIN;
+  UPDATE def SET a = randstr(100,100) WHERE (oid%9)==0;
+  INSERT INTO def SELECT * FROM def WHERE (oid%13)==0;
+
+  CREATE INDEX def_i3 ON def(b);
+
+  UPDATE def SET a = randstr(100,100) WHERE (oid%9)==1;
+  INSERT INTO def SELECT * FROM def WHERE (oid%13)==1;
+
+  CREATE TABLE def2 AS SELECT * FROM def;
+  DROP TABLE def;
+  CREATE TABLE def AS SELECT * FROM def2;
+  DROP TABLE def2;
+
+  DELETE FROM def WHERE (oid%9)==2;
+  INSERT INTO def SELECT * FROM def WHERE (oid%13)==2;
+  COMMIT;
+}
+
+do_test malloc2.3.setup {
+  execsql {
+    CREATE TEMP TABLE ghi(a, b, c);
+    BEGIN;
+  }
+  for {set i 0} {$i<20} {incr i} {
+    execsql {
+    INSERT INTO ghi VALUES(randstr(300,300),randstr(300,300),randstr(300,300));
+    }
+  }
+  execsql {
+    COMMIT;
+  }
+} {}
+do_malloc2_test 3 -sql {
+  BEGIN;
+  CREATE INDEX ghi_i1 ON ghi(a);
+  UPDATE def SET a = randstr(100,100) WHERE (oid%2)==0;
+  UPDATE ghi SET a = randstr(100,100) WHERE (oid%2)==0;
+  COMMIT;
+}
+
+############################################################################
+# The test cases below are to increase the code coverage in btree.c and 
+# pager.c of this test file. The idea is that each malloc() that occurs in
+# these two source files should be made to fail at least once.
+#
+catchsql {
+  DROP TABLE ghi;
+}
+do_malloc2_test 4.1 -sql {
+  SELECT * FROM def ORDER BY oid ASC;
+  SELECT * FROM def ORDER BY oid DESC;
+}
+do_malloc2_test 4.2 -sql {
+  PRAGMA cache_size = 10;
+  BEGIN;
+
+  -- This will put about 25 pages on the free list.
+  DELETE FROM def WHERE 1;
+
+  -- Allocate 32 new root pages. This will exercise the 'extract specific 
+  -- page from the freelist' code when in auto-vacuum mode (see the
+  -- allocatePage() routine in btree.c).
+  CREATE TABLE t1(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t2(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t3(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t4(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t5(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t6(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t7(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t8(a UNIQUE, b UNIQUE, c UNIQUE);
+
+  ROLLBACK;
+}
+
+########################################################################
+# Test that the global linked list of database handles works. An assert()
+# will fail if there is some problem.
+do_test malloc2-5 {
+  sqlite3 db1 test.db
+  sqlite3 db2 test.db
+  sqlite3 db3 test.db
+  sqlite3 db4 test.db
+  sqlite3 db5 test.db
+
+  # Close the head of the list:
+  db5 close
+  
+  # Close the end of the list:
+  db1 close
+
+  # Close a handle from the middle of the list:
+  db3 close
+
+  # Close the other two. Then open and close one more database, to make
+  # sure the head of the list was set back to NULL.
+  db2 close
+  db4 close
+  sqlite db1 test.db
+  db1 close
+} {}
+
+########################################################################
+# Check that if a statement is active sqlite3_global_recover doesn't reset
+# the sqlite3_malloc_failed variable.
+do_test malloc2-6.1 {
+  set ::STMT [sqlite3_prepare $::DB {SELECT * FROM def} -1 DUMMY]
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+do_test malloc2-6.2 {
+  sqlite3 db1 test.db
+  sqlite_malloc_fail 100
+  catchsql {
+    SELECT * FROM def;
+  } db1
+} {1 {out of memory}}
+do_test malloc2-6.3 {
+  sqlite3_global_recover
+} {SQLITE_BUSY}
+do_test malloc2-6.4 {
+  catchsql {
+    SELECT 'hello';
+  }
+} {1 {out of memory}}
+do_test malloc2-6.5 {
+  sqlite3_reset $::STMT
+} {SQLITE_OK}
+do_test malloc2-6.6 {
+  sqlite3_global_recover
+} {SQLITE_OK}
+do_test malloc2-6.7 {
+  catchsql {
+    SELECT 'hello';
+  }
+} {0 hello}
+do_test malloc2-6.8 {
+  sqlite3_step $::STMT
+} {SQLITE_ERROR}
+do_test malloc2-6.9 {
+  sqlite3_finalize $::STMT
+} {SQLITE_SCHEMA}
+do_test malloc2-6.10 {
+  db1 close
+} {}
+
+########################################################################
+# Check that if an in-memory database is being used it is not possible
+# to recover from a malloc() failure.
+ifcapable memorydb {
+  do_test malloc2-7.1 {
+    sqlite3 db1 :memory:
+    list
+  } {}
+  do_test malloc2-7.2 {
+    sqlite_malloc_fail 100
+    catchsql {
+      SELECT * FROM def;
+    } 
+  } {1 {out of memory}}
+  do_test malloc2-7.3 {
+    sqlite3_global_recover
+  } {SQLITE_ERROR}
+  do_test malloc2-7.4 {
+    catchsql {
+      SELECT 'hello';
+    }
+  } {1 {out of memory}}
+  do_test malloc2-7.5 {
+    db1 close
+  } {}
+  do_test malloc2-7.6 {
+    sqlite3_global_recover
+  } {SQLITE_OK}
+  do_test malloc2-7.7 {
+    catchsql {
+      SELECT 'hello';
+    }
+  } {0 hello}
+}
+
+finish_test
