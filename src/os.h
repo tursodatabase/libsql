@@ -118,9 +118,6 @@
 #endif
 
 #if OS_WIN
-# if defined(__CYGWIN__)
-#  define __CYGWIN_USE_BIG_TYPES__
-# endif
 #include <windows.h>
 #include <winbase.h>
   typedef struct OsFile OsFile;
