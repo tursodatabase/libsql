@@ -1,6 +1,6 @@
-C Fix\smemory\sallocation\sproblem\sin\sthe\ssqlite_get_table()\sAPI.\s\sTicket\s#315.\s(CVS\s976)
-D 2003-05-17T00:05:50
-F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
+C Escape\sbackslashes\sin\secho\scommands\sin\sthe\smakefiles.\s\sTickets\s#311,\s#282,\s#256.\s(CVS\s977)
+D 2003-05-17T00:24:21
+F Makefile.in 14d22c39109f6212b1fcc15aee6d05b20ac68476
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
 F VERSION e5b03976c56deafa24511d6ef17d64a28679e9bd
@@ -14,7 +14,7 @@ F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool bbbea7d79c23323e4100103836028e4fad0d9242
 F ltmain.sh abfb9387049fff6996afc6e325736597795baf11
-F main.mk 65302cd32c459607872cae81481ccadd6a998968
+F main.mk a22911e6793b9eae920afcffd5b7dd9ba5cdecf2
 F publish.sh 86b5e8535830a2588f62ce1d5d1ef00e1dede23a
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0f92736d1fbe3b587592fe1f26dfb3558cc49727
-R ead816a07db427380be0139245529b1b
+P f1d955efd91093994db43a1540080d32442d5ac0
+R 03992ccc785874fa02ae390fd264aa6c
 U drh
-Z 9c4183fd3600141a5186400d5209fe8f
+Z 260c30646225745d6845b061a282070d
