@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.145 2004/05/20 22:16:29 drh Exp $
+** $Id: btree.c,v 1.146 2004/05/22 02:55:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -73,7 +73,7 @@
 **
 ** All of the integer values are big-endian (most significant byte first).
 **
-** The file change counter is incremented every time the database is more
+** The file change counter is incremented when the database is changed more
 ** than once within the same second.  This counter, together with the
 ** modification time of the file, allows other processes to know
 ** when the file has changed and thus when they need to flush their
@@ -83,7 +83,7 @@
 ** space in a page that can be consumed by a single cell for standard
 ** B-tree (non-LEAFDATA) tables.  A value of 255 means 100%.  The default
 ** is to limit the maximum cell size so that at least 4 cells will fit
-** on one pages.  Thus the default max embedded payload fraction is 64.
+** on one page.  Thus the default max embedded payload fraction is 64.
 **
 ** If the payload for a cell is larger than the max payload, then extra
 ** payload is spilled to overflow pages.  Once an overflow page is allocated,
@@ -114,7 +114,9 @@
 ** A variable-length integer is 1 to 9 bytes where the lower 7 bits of each 
 ** byte are used.  The integer consists of all bytes that have bit 8 set and
 ** the first byte with bit 8 clear.  The most significant byte of the integer
-** appears first.
+** appears first.  A variable-length integer may not be more than 9 bytes long.
+** As a special case, all 8 bytes of the 9th byte are used as data.  This
+** allows a 64-bit integer to be encoded in 9 bytes.
 **
 **    0x00                      becomes  0x00000000
 **    0x7f                      becomes  0x0000007f
@@ -133,8 +135,9 @@
 ** increasing order.  Because a freeblock is 4 bytes in size, the minimum
 ** size allocation on a btree page is 4 bytes.  Because a freeblock must be
 ** at least 4 bytes in size, any group of 3 or fewer unused bytes cannot
-** exist on the freeblock chain.  The total number of such fragmented bytes
-** is recorded in the page header at offset 5.
+** exist on the freeblock chain.  A group of 3 or fewer free bytes is called
+** a fragment.  The total number of bytes in all fragments is recorded.
+** in the page header at offset 5.
 **
 **    SIZE    DESCRIPTION
 **      2     Byte offset of the next freeblock
@@ -190,13 +193,13 @@
 /* The following value is the maximum cell size assuming a maximum page
 ** size give above.
 */
-#define MX_CELL_SIZE  (MX_PAGE_SIZE-10)
+#define MX_CELL_SIZE  (MX_PAGE_SIZE-6)
 
 /* The maximum number of cells on a single page of the database.  This
 ** assumes a minimum cell size of 3 bytes.  Such small cells will be
 ** exceedingly rare, but they are possible.
 */
-#define MX_CELL ((MX_PAGE_SIZE-10)/3)
+#define MX_CELL ((MX_PAGE_SIZE-6)/3)
 
 /* Forward declarations */
 typedef struct MemPage MemPage;
@@ -227,7 +230,6 @@ static const char zMagicHeader[] = "SQLite format 3";
 ** The pageDestructor() routine handles that chore.
 */
 struct MemPage {
-  u32 notUsed;
   u8 isInit;                     /* True if previously initialized */
   u8 idxShift;                   /* True if Cell indices have changed */
   u8 isOverfull;                 /* Some aCell[] do not fit on page */
@@ -237,7 +239,7 @@ struct MemPage {
   u8 leafData;                   /* True if tables stores data on leaves only */
   u8 hasData;                    /* True if this page stores data */
   u8 hdrOffset;                  /* 100 for page 1.  0 otherwise */
-  u8 needRelink;                 /* True if need to run relinkCellList() */
+  u8 needRelink;                 /* True if cell not linked properly in aData */
   int idxParent;                 /* Index in pParent->aCell[] of this node */
   int nFree;                     /* Number of free bytes on the page */
   int nCell;                     /* Number of entries on this page */
@@ -245,6 +247,9 @@ struct MemPage {
   unsigned char **aCell;         /* Pointer to start of each cell */
   struct Btree *pBt;             /* Pointer back to BTree structure */
 
+  /* When page content is move from one page to the other (by the movePage()
+  ** subroutine) only the information about is moved.  The information below
+  ** is fixed. */
   unsigned char *aData;          /* Pointer back to the start of the page */
   Pgno pgno;                     /* Page number for this page */
   MemPage *pParent;              /* The parent of this page.  NULL for root */
@@ -265,32 +270,33 @@ struct Btree {
   BtCursor *pCursor;    /* A list of all open cursors */
   MemPage *pPage1;      /* First page of the database */
   u8 inTrans;           /* True if a transaction is in progress */
-  u8 inStmt;            /* True if there is a checkpoint on the transaction */
+  u8 inStmt;            /* True if we are in a statement subtransaction */
   u8 readOnly;          /* True if the underlying file is readonly */
+  u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
+  u8 minEmbedFrac;      /* Minimum payload as % of total page size */
+  u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
   int pageSize;         /* Total number of bytes on a page */
   int usableSize;       /* Number of usable bytes on each page */
   int maxLocal;         /* Maximum local payload in non-LEAFDATA tables */
   int minLocal;         /* Minimum local payload in non-LEAFDATA tables */
   int maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
-  u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
-  u8 minEmbedFrac;      /* Minimum payload as % of total page size */
-  u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
 };
 typedef Btree Bt;
 
 /*
 ** An instance of the following structure is used to hold information
-** about a cell.  The parseCell() function fills the structure in.
+** about a cell.  The parseCell() function fills in this structure
+** based on information extract from the raw disk page.
 */
 typedef struct CellInfo CellInfo;
 struct CellInfo {
   i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
   u32 nData;     /* Number of bytes of data */
-  u16 nHeader;   /* Size of the header in bytes */
+  u16 nHeader;   /* Size of the cell header in bytes */
   u16 nLocal;    /* Amount of payload held locally */
-  u16 iOverflow; /* Offset to overflow page number.  Zero if none */
-  u16 nSize;     /* Size of the cell */
+  u16 iOverflow; /* Offset to overflow page number.  Zero if no overflow */
+  u16 nSize;     /* Total size of the cell (on the main b-tree page) */
 };
 
 /*
@@ -310,13 +316,12 @@ struct BtCursor {
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 infoValid;             /* True if information in BtCursor.info is valid */
   u8 wrFlag;                /* True if writable */
-  u8 iMatch;                /* compare result from last sqlite3BtreeMoveto() */
   u8 isValid;               /* TRUE if points to a valid entry */
   u8 status;                /* Set to SQLITE_ABORT if cursors is invalidated */
 };
 
 /*
-** Read or write a two-, four-, and eight-byte big-endian integer values.
+** Read or write a two- and four-byte big-endian integer values.
 */
 static u32 get2byte(unsigned char *p){
   return (p[0]<<8) | p[1];
@@ -336,7 +341,9 @@ static void put4byte(unsigned char *p, u32 v){
 }
 
 /*
-** Routines to read and write variable-length integers.
+** Routines to read and write variable-length integers.  These used to
+** be defined locally, but now we use the varint routines in the util.c
+** file.
 */
 #define getVarint    sqlite3GetVarint
 #define getVarint32  sqlite3GetVarint32
@@ -347,18 +354,15 @@ static void put4byte(unsigned char *p, u32 v){
 */
 static void parseCell(
   MemPage *pPage,         /* Page containing the cell */
-  unsigned char *pCell,   /* The cell */
+  unsigned char *pCell,   /* Pointer to the first byte of the cell */
   CellInfo *pInfo         /* Fill in this structure */
 ){
   int n;
   int nPayload;
   Btree *pBt;
   int minLocal, maxLocal;
-  if( pPage->leaf ){
-    n = 2;
-  }else{
-    n = 6;
-  }
+  assert( pPage->leaf==0 || pPage->leaf==1 );
+  n = 6 - 4*pPage->leaf;
   if( pPage->hasData ){
     n += getVarint32(&pCell[n], &pInfo->nData);
   }else{
@@ -373,7 +377,7 @@ static void parseCell(
   pBt = pPage->pBt;
   if( pPage->leafData ){
     minLocal = pBt->minLeaf;
-    maxLocal = pBt->usableSize - 23;
+    maxLocal = pBt->maxLeaf;
   }else{
     minLocal = pBt->minLocal;
     maxLocal = pBt->maxLocal;
@@ -557,7 +561,7 @@ static void defragmentPage(MemPage *pPage){
 ** allocating the new chunk.
 **
 ** Algorithm:  Carve a piece off of the first freeblock that is
-** nByte in size or that larger.
+** nByte in size or larger.
 */
 static int allocateSpace(MemPage *pPage, int nByte){
   int addr, pc, hdr;
@@ -1224,14 +1228,19 @@ int sqlite3BtreeRollback(Btree *pBt){
 }
 
 /*
-** Set the checkpoint for the current transaction.  The checkpoint serves
-** as a sub-transaction that can be rolled back independently of the
-** main transaction.  You must start a transaction before starting a
-** checkpoint.  The checkpoint is ended automatically if the transaction
+** Start a statement subtransaction.  The subtransaction can
+** can be rolled back independently of the main transaction.
+** You must start a transaction before starting a subtransaction.
+** The subtransaction is ended automatically if the main transaction
 ** commits or rolls back.
 **
-** Only one checkpoint may be active at a time.  It is an error to try
-** to start a new checkpoint if another checkpoint is already active.
+** Only one subtransaction may be active at a time.  It is an error to try
+** to start a new subtransaction if another subtransaction is already active.
+**
+** Statement subtransactions are used around individual SQL statements
+** that are contained within a BEGIN...COMMIT block.  If a constraint
+** error occurs within the statement, the effect of that one statement
+** can be rolled back without having to rollback the entire transaction.
 */
 int sqlite3BtreeBeginStmt(Btree *pBt){
   int rc;
@@ -1245,8 +1254,8 @@ int sqlite3BtreeBeginStmt(Btree *pBt){
 
 
 /*
-** Commit a checkpoint to transaction currently in progress.  If no
-** checkpoint is active, this is a no-op.
+** Commit the statment subtransaction currently in progress.  If no
+** subtransaction is active, this is a no-op.
 */
 int sqlite3BtreeCommitStmt(Btree *pBt){
   int rc;
@@ -1260,10 +1269,10 @@ int sqlite3BtreeCommitStmt(Btree *pBt){
 }
 
 /*
-** Rollback the checkpoint to the current transaction.  If there
-** is no active checkpoint or transaction, this routine is a no-op.
+** Rollback the active statement subtransaction.  If no subtransaction
+** is active this routine is a no-op.
 **
-** All cursors will be invalided by this operation.  Any attempt
+** All cursors will be invalidated by this operation.  Any attempt
 ** to use a cursor that was open at the beginning of this operation
 ** will result in an error.
 */
@@ -1468,6 +1477,10 @@ static void releaseTempCursor(BtCursor *pCur){
 
 /*
 ** Make sure the BtCursor.info field of the given cursor is valid.
+** If it is not already valid, call parseCell() to fill it in.
+**
+** BtCursor.info is a cache of the information in the current cell.
+** Using this cache reduces the number of calls to parseCell().
 */
 static void getCellInfo(BtCursor *pCur){
   MemPage *pPage = pCur->pPage;
@@ -1525,7 +1538,8 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
 ** a total of "amt" bytes.  Put the result in zBuf.
 **
 ** This routine does not make a distinction between key and data.
-** It just reads bytes from the payload area.
+** It just reads bytes from the payload area.  Data might appear
+** on the main page or be scattered out on multiple overflow pages.
 */
 static int getPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
@@ -1740,7 +1754,7 @@ const void *sqlite3BtreeDataFetch(BtCursor *pCur, int amt){
 
 /*
 ** Move the cursor down to a new child page.  The newPgno argument is the
-** page number of the child page in the byte order of the disk image.
+** page number of the child page to move to.
 */
 static int moveToChild(BtCursor *pCur, u32 newPgno){
   int rc;
@@ -1971,8 +1985,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 ** before or after the key.
 **
 ** The result of comparing the key with the entry to which the
-** cursor is left pointing is stored in pCur->iMatch.  The same
-** value is also written to *pRes if pRes!=NULL.  The meaning of
+** cursor is written to *pRes if pRes!=NULL.  The meaning of
 ** this value is as follows:
 **
 **     *pRes<0      The cursor is left pointing at an entry that
@@ -2038,7 +2051,6 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
           upr = lwr - 1;
           break;
         }else{
-          pCur->iMatch = c;
           if( pRes ) *pRes = 0;
           return SQLITE_OK;
         }
@@ -2059,7 +2071,6 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
       chldPg = get4byte(&pPage->aCell[lwr][2]);
     }
     if( chldPg==0 ){
-      pCur->iMatch = c;
       assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
       if( pRes ) *pRes = c;
       return SQLITE_OK;
@@ -2670,6 +2681,7 @@ static void assemblePage(
   put2byte(data+prevpc, 0);
 }
 
+#if 0  /* Never Used */
 /*
 ** Rebuild the linked list of cells on a page so that the cells
 ** occur in the order specified by the pPage->aCell[] array.  
@@ -2690,6 +2702,7 @@ static void relinkCellList(MemPage *pPage){
   put2byte(&pPage->aData[idxFrom], 0);
   pPage->needRelink = 0;
 }
+#endif
 
 /*
 ** GCC does not define the offsetof() macro so we'll have to do it
@@ -2751,26 +2764,20 @@ static void movePage(MemPage *pTo, MemPage *pFrom){
 #define NB (NN*2+1)      /* Total pages involved in the balance */
 
 /*
-** This routine redistributes Cells on pPage and up to two siblings
+** This routine redistributes Cells on pPage and up to NN*2 siblings
 ** of pPage so that all pages have about the same amount of free space.
 ** Usually one sibling on either side of pPage is used in the balancing,
 ** though both siblings might come from one side if pPage is the first
-** or last child of its parent.  If pPage has fewer than two siblings
+** or last child of its parent.  If pPage has fewer than 2*NN siblings
 ** (something which can only happen if pPage is the root page or a 
 ** child of root) then all available siblings participate in the balancing.
 **
 ** The number of siblings of pPage might be increased or decreased by
-** one in an effort to keep pages between 66% and 100% full. The root page
-** is special and is allowed to be less than 66% full. If pPage is 
+** one in an effort to keep pages nearly full but not over full. The root page
+** is special and is allowed to be nearly empty. If pPage is 
 ** the root page, then the depth of the tree might be increased
 ** or decreased by one, as necessary, to keep the root page from being
-** overfull or empty.
-**
-** This routine alwyas calls relinkCellList() on its input page regardless of
-** whether or not it does any real balancing.  Client routines will typically
-** invoke insertCell() or dropCell() before calling this routine, so we
-** need to call relinkCellList() to clean up the mess that those other
-** routines left behind.
+** overfull or completely empty.
 **
 ** Note that when this routine is called, some of the Cells on pPage
 ** might not actually be stored in pPage->aData[].  This can happen
@@ -2826,7 +2833,7 @@ static int balance(MemPage *pPage){
   pBt = pPage->pBt;
   if( !pPage->isOverfull && pPage->nFree<pBt->usableSize*2/3
         && pPage->nCell>=2){
-    relinkCellList(pPage);
+    assert( pPage->needRelink==0 );
     return SQLITE_OK;
   }
 
@@ -2842,7 +2849,7 @@ static int balance(MemPage *pPage){
     if( pPage->nCell==0 ){
       if( pPage->leaf ){
         /* The table is completely empty */
-        relinkCellList(pPage);
+        assert( pPage->needRelink==0 );
         TRACE(("BALANCE: empty table %d\n", pPage->pgno));
       }else{
         /* The root page is empty but has one child.  Transfer the
@@ -2897,7 +2904,7 @@ static int balance(MemPage *pPage){
     if( !pPage->isOverfull ){
       /* It is OK for the root page to be less than half full.
       */
-      relinkCellList(pPage);
+      assert( pPage->needRelink==0 );
       TRACE(("BALANCE: root page %d is low - no changes\n", pPage->pgno));
       return SQLITE_OK;
     }
@@ -3217,7 +3224,7 @@ static int balance(MemPage *pPage){
     j = cntNew[i];
     assert( pNew->nCell>0 );
     assert( !pNew->isOverfull );
-    relinkCellList(pNew);
+    assert( pNew->needRelink==0 );
     if( i<nNew-1 && j<nCell ){
       u8 *pCell;
       u8 *pTemp;
@@ -3491,11 +3498,12 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 ** Create a new BTree table.  Write into *piTable the page
 ** number for the root page of the new table.
 **
-** In the current implementation, BTree tables and BTree indices are the 
-** the same.  In the future, we may change this so that BTree tables
-** are restricted to having a 4-byte integer key and arbitrary data and
-** BTree indices are restricted to having an arbitrary key and no data.
-** But for now, this routine also serves to create indices.
+** The type of type is determined by the flags parameter.  Only the
+** following values of flags are currently in use.  Other values for
+** flags might not work:
+**
+**     BTREE_INTKEY|BTREE_LEAFDATA     Used for SQL tables with rowid keys
+**     BTREE_ZERODATA                  Used for SQL indices
 */
 int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   MemPage *pRoot;
@@ -3559,7 +3567,13 @@ static int clearDatabasePage(
 }
 
 /*
-** Delete all information from a single table in the database.
+** Delete all information from a single table in the database.  iTable is
+** the page number of the root of the table.  After this routine returns,
+** the root page is empty, but still exists.
+**
+** This routine will fail with SQLITE_LOCKED if there are any open
+** read cursors on the table.  Open write cursors are moved to the
+** root of the table.
 */
 int sqlite3BtreeClearTable(Btree *pBt, int iTable){
   int rc;
@@ -3583,7 +3597,10 @@ int sqlite3BtreeClearTable(Btree *pBt, int iTable){
 /*
 ** Erase all information in a table and add the root of the table to
 ** the freelist.  Except, the root of the principle table (the one on
-** page 2) is never added to the freelist.
+** page 1) is never added to the freelist.
+**
+** This routine will fail with SQLITE_LOCKED if there are any open
+** cursors on the table.
 */
 int sqlite3BtreeDropTable(Btree *pBt, int iTable){
   int rc;
