@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.146 2002/05/23 22:07:03 drh Exp $
+** $Id: vdbe.c,v 1.147 2002/05/24 02:04:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -233,7 +233,7 @@ struct Vdbe {
   char **zStack;      /* Text or binary values of the stack */
   char **azColName;   /* Becomes the 4th parameter to callbacks */
   int nCursor;        /* Number of slots in aCsr[] */
-  Cursor *aCsr;       /* On element of this array for each open cursor */
+  Cursor *aCsr;       /* One element of this array for each open cursor */
   Keylist *pList;     /* A list of ROWIDs */
   Sorter *pSort;      /* A linked list of objects to be sorted */
   FILE *pFile;        /* At most one open file handler */
@@ -3823,7 +3823,7 @@ case OP_ListReset: {
 
 /* Opcode: ListPush * * * 
 **
-** Save the current Vdbe list such that it can be restored by a PopList 
+** Save the current Vdbe list such that it can be restored by a ListPop
 ** opcode. The list is empty after this is executed.
 */
 case OP_ListPush: {
@@ -3838,7 +3838,7 @@ case OP_ListPush: {
 
 /* Opcode: ListPop * * * 
 **
-** Restore the Vdbe list to the state it was in when PushList was last
+** Restore the Vdbe list to the state it was in when ListPush was last
 ** executed.
 */
 case OP_ListPop: {

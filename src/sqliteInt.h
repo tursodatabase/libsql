@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.112 2002/05/21 13:18:26 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.113 2002/05/24 02:04:33 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -139,6 +139,7 @@ typedef struct ExprList ExprList;
 typedef struct Parse Parse;
 typedef struct Token Token;
 typedef struct IdList IdList;
+typedef struct SrcList SrcList;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 typedef struct Select Select;
@@ -400,7 +401,7 @@ struct Expr {
 ** name.  An expr/name combination can be used in several ways, such
 ** as the list of "expr AS ID" fields following a "SELECT" or in the
 ** list of "ID = expr" items in an UPDATE.  A list of expressions can
-** also be used as the argument to a function, in which case the azName
+** also be used as the argument to a function, in which case the a.zName
 ** field is not used.
 */
 struct ExprList {
@@ -415,16 +416,43 @@ struct ExprList {
 };
 
 /*
-** A list of identifiers.
+** An instance of this structure can hold a simple list of identifiers,
+** such as the list "a,b,c" in the following statements:
+**
+**      INSERT INTO t(a,b,c) VALUES ...;
+**      CREATE INDEX idx ON t(a,b,c);
+**      CREATE TRIGGER trig BEFORE UPDATE ON t(a,b,c) ...;
+**
+** The IdList.a.idx field is used when the IdList represents the list of
+** column names after a table name in an INSERT statement.  In the statement
+**
+**     INSERT INTO t(a,b,c) ...
+**
+** If "a" is the k-th column of table "t", then IdList.a[0].idx==k.
 */
 struct IdList {
   int nId;         /* Number of identifiers on the list */
   struct IdList_item {
-    char *zName;      /* Text of the identifier. */
-    char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
+    char *zName;      /* Name of the identifier */
     int idx;          /* Index in some Table.aCol[] of a column named zName */
+  } *a;
+};
+
+/*
+** The following structure describes the FROM clause of a SELECT statement.
+** Each table or subquery in the FROM clause is a separate element of
+** the SrcList.a[] array.
+*/
+struct SrcList {
+  int nSrc;        /* Number of tables or subqueries in the FROM clause */
+  struct SrcList_item {
+    char *zName;      /* Name of the table */
+    char *zAlias;     /* The "B" part of a "A AS B" phrase.  zName is the "A" */
     Table *pTab;      /* An SQL table corresponding to zName */
     Select *pSelect;  /* A SELECT statement used in place of a table name */
+    int jointype;     /* Type of join between this table and the next */
+    Expr *pOn;        /* The ON clause of a join */
+    IdList *pUsing;   /* The USING clause of a join */
   } *a;            /* One entry for each identifier on the list */
 };
 
@@ -453,7 +481,7 @@ struct WhereLevel {
 */
 struct WhereInfo {
   Parse *pParse;
-  IdList *pTabList;    /* List of tables in the join */
+  SrcList *pTabList;   /* List of tables in the join */
   int iContinue;       /* Jump here to continue with next record */
   int iBreak;          /* Jump here to break out of the loop */
   int base;            /* Index of first Open opcode */
@@ -478,7 +506,7 @@ struct WhereInfo {
 struct Select {
   int isDistinct;        /* True if the DISTINCT keyword is present */
   ExprList *pEList;      /* The fields of the result */
-  IdList *pSrc;          /* The FROM clause */
+  SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
   Expr *pHaving;         /* The HAVING clause */
@@ -569,16 +597,17 @@ struct Parse {
  * 1. In the "trigHash" hash table (part of the sqlite* that represents the 
  *    database). This allows Trigger structures to be retrieved by name.
  * 2. All triggers associated with a single table form a linked list, using the
- *    pNext member of struct Trigger. A pointer to the first element of the linked
- *    list is stored as the "pTrigger" member of the associated struct Table.
+ *    pNext member of struct Trigger. A pointer to the first element of the
+ *    linked list is stored as the "pTrigger" member of the associated
+ *    struct Table.
  *
  * The "strings" member of struct Trigger contains a pointer to the memory 
  * referenced by the various Token structures referenced indirectly by the
  * "pWhen", "pColumns" and "step_list" members. (ie. the memory allocated for
  * use in conjunction with the sqliteExprMoveStrings() etc. interface).
  *
- * The "step_list" member points to the first element of a linked list containing
- * the SQL statements specified as the trigger program.
+ * The "step_list" member points to the first element of a linked list
+ * containing the SQL statements specified as the trigger program.
  *
  * When a trigger is initially created, the "isCommit" member is set to FALSE.
  * When a transaction is rolled back, any Trigger structures with "isCommit" set
@@ -587,8 +616,8 @@ struct Parse {
  * Trigger structures for which it is FALSE.
  *
  * When a trigger is dropped, using the sqliteDropTrigger() interfaced, it is 
- * removed from the trigHash hash table and added to the trigDrop hash table. If 
- * the transaction is rolled back, the trigger is re-added into the trigHash
+ * removed from the trigHash hash table and added to the trigDrop hash table.
+ * If the transaction is rolled back, the trigger is re-added into the trigHash
  * hash table (and hence the database schema). If the transaction is commited,
  * then the Trigger structure is deleted permanently.
  */
@@ -629,7 +658,8 @@ struct Trigger {
  * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
  *              this stores values to be inserted. Otherwise NULL.
  * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ... 
- *              statement, then this stores the column-names to be inserted into.
+ *              statement, then this stores the column-names to be
+ *              inserted into.
  *
  * (op == TK_DELETE)
  * target    -> A token holding the name of the table to delete from.
@@ -641,7 +671,8 @@ struct Trigger {
  * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
  *              Otherwise NULL.
  * pExprList -> A list of the columns to update and the expressions to update
- *              them to. See sqliteUpdate() documentation of "pChanges" argument.
+ *              them to. See sqliteUpdate() documentation of "pChanges"
+ *              argument.
  * 
  */
 struct TriggerStep {
@@ -755,20 +786,22 @@ void sqliteDropTable(Parse*, Token*, int);
 void sqliteDeleteTable(sqlite*, Table*);
 void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);
 IdList *sqliteIdListAppend(IdList*, Token*);
-void sqliteIdListAddAlias(IdList*, Token*);
+SrcList *sqliteSrcListAppend(SrcList*, Token*);
+void sqliteSrcListAddAlias(SrcList*, Token*);
 void sqliteIdListDelete(IdList*);
+void sqliteSrcListDelete(SrcList*);
 void sqliteCreateIndex(Parse*, Token*, Token*, IdList*, int, Token*, Token*);
 void sqliteDropIndex(Parse*, Token*);
 int sqliteSelect(Parse*, Select*, int, int, Select*, int, int*);
-Select *sqliteSelectNew(ExprList*,IdList*,Expr*,ExprList*,Expr*,ExprList*,
+Select *sqliteSelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
                         int,int,int);
 void sqliteSelectDelete(Select*);
 void sqliteSelectUnbind(Select*);
 Table *sqliteTableNameToTable(Parse*, const char*);
-IdList *sqliteTableTokenToIdList(Parse*, Token*);
+SrcList *sqliteTableTokenToSrcList(Parse*, Token*);
 void sqliteDeleteFrom(Parse*, Token*, Expr*);
 void sqliteUpdate(Parse*, Token*, ExprList*, Expr*, int);
-WhereInfo *sqliteWhereBegin(Parse*, int, IdList*, Expr*, int);
+WhereInfo *sqliteWhereBegin(Parse*, int, SrcList*, Expr*, int);
 void sqliteWhereEnd(WhereInfo*);
 void sqliteExprCode(Parse*, Expr*);
 void sqliteExprIfTrue(Parse*, Expr*, int);
@@ -784,7 +817,7 @@ char *sqliteTableNameFromToken(Token*);
 int sqliteExprCheck(Parse*, Expr*, int, int*);
 int sqliteExprCompare(Expr*, Expr*);
 int sqliteFuncId(Token*);
-int sqliteExprResolveIds(Parse*, int, IdList*, ExprList*, Expr*);
+int sqliteExprResolveIds(Parse*, int, SrcList*, ExprList*, Expr*);
 int sqliteExprAnalyzeAggregates(Parse*, Expr*);
 Vdbe *sqliteGetVdbe(Parse*);
 int sqliteRandomByte(void);
@@ -805,6 +838,7 @@ void sqliteExprListMoveStrings(ExprList*, int);
 void sqliteSelectMoveStrings(Select*, int);
 Expr *sqliteExprDup(Expr*);
 ExprList *sqliteExprListDup(ExprList*);
+SrcList *sqliteSrcListDup(SrcList*);
 IdList *sqliteIdListDup(IdList*);
 Select *sqliteSelectDup(Select*);
 FuncDef *sqliteFindFunction(sqlite*,const char*,int,int,int);

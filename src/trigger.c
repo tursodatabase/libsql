@@ -571,10 +571,10 @@ int sqliteCodeRowTrigger(
 
     if( fire_this && (pTriggerStack = sqliteMalloc(sizeof(TriggerStack)))!=0 ){
       int endTrigger;
-      IdList dummyTablist;
+      SrcList dummyTablist;
       Expr * whenExpr;
 
-      dummyTablist.nId = 0;
+      dummyTablist.nSrc = 0;
       dummyTablist.a = 0;
 
       /* Push an entry on to the trigger stack */
@@ -645,7 +645,7 @@ void sqliteViewTriggers(
 
   theSelect.isDistinct = 0;
   theSelect.pEList = sqliteExprListAppend(0, sqliteExpr(TK_ALL, 0, 0, 0), 0);
-  theSelect.pSrc   = sqliteIdListAppend(0, &tblNameToken);
+  theSelect.pSrc   = sqliteSrcListAppend(0, &tblNameToken);
   theSelect.pWhere = pWhere;    pWhere = 0;
   theSelect.pGroupBy = 0;
   theSelect.pHaving = 0;
@@ -750,7 +750,7 @@ trigger_cleanup:
   sqliteExprListDelete(pChanges);
   sqliteExprDelete(pWhere);
   sqliteExprListDelete(theSelect.pEList);
-  sqliteIdListDelete(theSelect.pSrc);
+  sqliteSrcListDelete(theSelect.pSrc);
   sqliteExprDelete(theSelect.pWhere);
   return;
 }

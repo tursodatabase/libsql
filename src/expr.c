@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.62 2002/05/23 02:09:04 drh Exp $
+** $Id: expr.c,v 1.63 2002/05/24 02:04:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -155,11 +155,11 @@ void sqliteSelectMoveStrings(Select *pSelect, int offset){
 ** string space that is allocated separately from the expression tree
 ** itself.  These routines do NOT duplicate that string space.
 **
-** The expression list and ID list return by sqliteExprListDup() and 
-** sqliteIdListDup() can not be further expanded by subsequent calls
-** to sqliteExprListAppend() or sqliteIdListAppend().
+** The expression list, ID, and source lists return by sqliteExprListDup(),
+** sqliteIdListDup(), and sqliteSrcListDup() can not be further expanded 
+** by subsequent calls to sqlite*ListAppend() routines.
 **
-** Any tables that the ID list might point to are not duplicated.
+** Any tables that the SrcList might point to are not duplicated.
 */
 Expr *sqliteExprDup(Expr *p){
   Expr *pNew;
@@ -196,6 +196,26 @@ ExprList *sqliteExprListDup(ExprList *p){
   }
   return pNew;
 }
+SrcList *sqliteSrcListDup(SrcList *p){
+  SrcList *pNew;
+  int i;
+  if( p==0 ) return 0;
+  pNew = sqliteMalloc( sizeof(*pNew) );
+  if( pNew==0 ) return 0;
+  pNew->nSrc = p->nSrc;
+  pNew->a = sqliteMalloc( p->nSrc*sizeof(p->a[0]) );
+  if( pNew->a==0 ) return 0;
+  for(i=0; i<p->nSrc; i++){
+    pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
+    pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
+    pNew->a[i].jointype = p->a[i].jointype;
+    pNew->a[i].pTab = 0;
+    pNew->a[i].pSelect = sqliteSelectDup(p->a[i].pSelect);
+    pNew->a[i].pOn = sqliteExprDup(p->a[i].pOn);
+    pNew->a[i].pUsing = sqliteIdListDup(p->a[i].pUsing);
+  }
+  return pNew;
+}
 IdList *sqliteIdListDup(IdList *p){
   IdList *pNew;
   int i;
@@ -207,10 +227,7 @@ IdList *sqliteIdListDup(IdList *p){
   if( pNew->a==0 ) return 0;
   for(i=0; i<p->nId; i++){
     pNew->a[i].zName = sqliteStrDup(p->a[i].zName);
-    pNew->a[i].zAlias = sqliteStrDup(p->a[i].zAlias);
     pNew->a[i].idx = p->a[i].idx;
-    pNew->a[i].pTab = 0;
-    pNew->a[i].pSelect = sqliteSelectDup(p->a[i].pSelect);
   }
   return pNew;
 }
@@ -221,7 +238,7 @@ Select *sqliteSelectDup(Select *p){
   if( pNew==0 ) return 0;
   pNew->isDistinct = p->isDistinct;
   pNew->pEList = sqliteExprListDup(p->pEList);
-  pNew->pSrc = sqliteIdListDup(p->pSrc);
+  pNew->pSrc = sqliteSrcListDup(p->pSrc);
   pNew->pWhere = sqliteExprDup(p->pWhere);
   pNew->pGroupBy = sqliteExprListDup(p->pGroupBy);
   pNew->pHaving = sqliteExprDup(p->pHaving);
@@ -362,12 +379,12 @@ static int sqliteIsRowid(const char *z){
 int sqliteExprResolveIds(
   Parse *pParse,     /* The parser context */
   int base,          /* VDBE cursor number for first entry in pTabList */
-  IdList *pTabList,  /* List of tables used to resolve column names */
+  SrcList *pTabList, /* List of tables used to resolve column names */
   ExprList *pEList,  /* List of expressions used to resolve "AS" */
   Expr *pExpr        /* The expression to be analyzed. */
 ){
   if( pExpr==0 || pTabList==0 ) return 0;
-  assert( base+pTabList->nId<=pParse->nTab );
+  assert( base+pTabList->nSrc<=pParse->nTab );
   switch( pExpr->op ){
     /* Double-quoted strings (ex: "abc") are used as identifiers if
     ** possible.  Otherwise they remain as strings.  Single-quoted
@@ -395,7 +412,7 @@ int sqliteExprResolveIds(
       z = sqliteStrNDup(pExpr->token.z, pExpr->token.n);
       sqliteDequote(z);
       if( z==0 ) return 1;
-      for(i=0; i<pTabList->nId; i++){
+      for(i=0; i<pTabList->nSrc; i++){
         int j;
         Table *pTab = pTabList->a[i].pTab;
         if( pTab==0 ) continue;
@@ -430,7 +447,7 @@ int sqliteExprResolveIds(
       if( cnt==0 && sqliteIsRowid(z) ){
         pExpr->iColumn = -1;
         pExpr->iTable = base;
-        cnt = 1 + (pTabList->nId>1);
+        cnt = 1 + (pTabList->nSrc>1);
         pExpr->op = TK_COLUMN;
       }
       sqliteFree(z);
@@ -470,7 +487,7 @@ int sqliteExprResolveIds(
       sqliteDequote(zLeft);
       sqliteDequote(zRight);
       pExpr->iTable = -1;
-      for(i=0; i<pTabList->nId; i++){
+      for(i=0; i<pTabList->nSrc; i++){
         int j;
         char *zTab;
         Table *pTab = pTabList->a[i].pTab;

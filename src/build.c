@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.93 2002/05/22 21:27:03 drh Exp $
+** $Id: build.c,v 1.94 2002/05/24 02:04:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1536,29 +1536,79 @@ IdList *sqliteIdListAppend(IdList *pList, Token *pToken){
 }
 
 /*
+** Append a new table name to the given SrcList.  Create a new SrcList if
+** need be.  A new entry is created in the SrcList even if pToken is NULL.
+**
+** A new SrcList is returned, or NULL if malloc() fails.
+*/
+SrcList *sqliteSrcListAppend(SrcList *pList, Token *pToken){
+  if( pList==0 ){
+    pList = sqliteMalloc( sizeof(IdList) );
+    if( pList==0 ) return 0;
+  }
+  if( (pList->nSrc & 7)==0 ){
+    struct SrcList_item *a;
+    a = sqliteRealloc(pList->a, (pList->nSrc+8)*sizeof(pList->a[0]) );
+    if( a==0 ){
+      sqliteSrcListDelete(pList);
+      return 0;
+    }
+    pList->a = a;
+  }
+  memset(&pList->a[pList->nSrc], 0, sizeof(pList->a[0]));
+  if( pToken ){
+    char **pz = &pList->a[pList->nSrc].zName;
+    sqliteSetNString(pz, pToken->z, pToken->n, 0);
+    if( *pz==0 ){
+      sqliteSrcListDelete(pList);
+      return 0;
+    }else{
+      sqliteDequote(*pz);
+    }
+  }
+  pList->nSrc++;
+  return pList;
+}
+
+/*
 ** Add an alias to the last identifier on the given identifier list.
 */
-void sqliteIdListAddAlias(IdList *pList, Token *pToken){
-  if( pList && pList->nId>0 ){
-    int i = pList->nId - 1;
+void sqliteSrcListAddAlias(SrcList *pList, Token *pToken){
+  if( pList && pList->nSrc>0 ){
+    int i = pList->nSrc - 1;
     sqliteSetNString(&pList->a[i].zAlias, pToken->z, pToken->n, 0);
     sqliteDequote(pList->a[i].zAlias);
   }
 }
 
 /*
-** Delete an entire IdList.
+** Delete an IdList.
 */
 void sqliteIdListDelete(IdList *pList){
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nId; i++){
     sqliteFree(pList->a[i].zName);
+  }
+  sqliteFree(pList->a);
+  sqliteFree(pList);
+}
+
+/*
+** Delete an entire SrcList including all its substructure.
+*/
+void sqliteSrcListDelete(SrcList *pList){
+  int i;
+  if( pList==0 ) return;
+  for(i=0; i<pList->nSrc; i++){
+    sqliteFree(pList->a[i].zName);
     sqliteFree(pList->a[i].zAlias);
     if( pList->a[i].pTab && pList->a[i].pTab->isTransient ){
       sqliteDeleteTable(0, pList->a[i].pTab);
     }
     sqliteSelectDelete(pList->a[i].pSelect);
+    sqliteExprDelete(pList->a[i].pOn);
+    sqliteIdListDelete(pList->a[i].pUsing);
   }
   sqliteFree(pList->a);
   sqliteFree(pList);

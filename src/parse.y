@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.67 2002/05/23 00:30:31 drh Exp $
+** @(#) $Id: parse.y,v 1.68 2002/05/24 02:04:33 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -30,14 +30,24 @@
 #include "parse.h"
 
 /*
-** A structure for holding two integers
+** An instance of this structure holds information about the
+** LIMIT clause of a SELECT statement.
 */
-struct twoint { int a,b; };
+struct LimitVal {
+  int limit;    /* The LIMIT value.  -1 if there is no limit */
+  int offset;   /* The OFFSET.  0 if there is none */
+};
 
 /*
-** A structure for holding an integer and an IdList
+** An instance of the following structure describes the event of a
+** TRIGGER.  "a" is the event type, one of TK_UPDATE, TK_INSERT,
+** TK_DELETE, or TK_INSTEAD.  If the event is of the form
+**
+**      UPDATE ON (a,b,c)
+**
+** Then the "b" IdList records the list "a,b,c".
 */
-struct int_idlist { int a; IdList * b; };
+struct TrigEvent { int a; IdList * b; };
 }
 
 // These are extra tokens used by the lexer but never seen by the
@@ -240,7 +250,7 @@ multiselect_op(A) ::= INTERSECT.  {A = TK_INTERSECT;}
 multiselect_op(A) ::= EXCEPT.     {A = TK_EXCEPT;}
 oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
-  A = sqliteSelectNew(W,X,Y,P,Q,Z,D,L.a,L.b);
+  A = sqliteSelectNew(W,X,Y,P,Q,Z,D,L.limit,L.offset);
 }
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
@@ -276,38 +286,38 @@ as ::= .
 as ::= AS.
 
 
-%type seltablist {IdList*}
-%destructor seltablist {sqliteIdListDelete($$);}
-%type stl_prefix {IdList*}
-%destructor stl_prefix {sqliteIdListDelete($$);}
-%type from {IdList*}
-%destructor from {sqliteIdListDelete($$);}
+%type seltablist {SrcList*}
+%destructor seltablist {sqliteSrcListDelete($$);}
+%type stl_prefix {SrcList*}
+%destructor stl_prefix {sqliteSrcListDelete($$);}
+%type from {SrcList*}
+%destructor from {sqliteSrcListDelete($$);}
 
 from(A) ::= .                                 {A = sqliteMalloc(sizeof(*A));}
 from(A) ::= FROM seltablist(X).               {A = X;}
 stl_prefix(A) ::= seltablist(X) COMMA.        {A = X;}
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) ids(Y).       {A = sqliteIdListAppend(X,&Y);}
+seltablist(A) ::= stl_prefix(X) ids(Y).       {A = sqliteSrcListAppend(X,&Y);}
 seltablist(A) ::= stl_prefix(X) ids(Y) as ids(Z). {
-  A = sqliteIdListAppend(X,&Y);
-  sqliteIdListAddAlias(A,&Z);
+  A = sqliteSrcListAppend(X,&Y);
+  sqliteSrcListAddAlias(A,&Z);
 }
 seltablist(A) ::= stl_prefix(X) LP select(S) RP. {
-  A = sqliteIdListAppend(X,0);
-  A->a[A->nId-1].pSelect = S;
+  A = sqliteSrcListAppend(X,0);
+  A->a[A->nSrc-1].pSelect = S;
   if( S->pOrderBy ){
     sqliteExprListDelete(S->pOrderBy);
     S->pOrderBy = 0;
   }
 }
 seltablist(A) ::= stl_prefix(X) LP select(S) RP as ids(Z). {
-  A = sqliteIdListAppend(X,0);
-  A->a[A->nId-1].pSelect = S;
+  A = sqliteSrcListAppend(X,0);
+  A->a[A->nSrc-1].pSelect = S;
   if( S->pOrderBy ){
     sqliteExprListDelete(S->pOrderBy);
     S->pOrderBy = 0;
   }
-  sqliteIdListAddAlias(A,&Z);
+  sqliteSrcListAddAlias(A,&Z);
 }
 
 %type orderby_opt {ExprList*}
@@ -345,11 +355,11 @@ groupby_opt(A) ::= GROUP BY exprlist(X).  {A = X;}
 having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
-%type limit_opt {struct twoint}
-limit_opt(A) ::= .                  {A.a = -1; A.b = 0;}
-limit_opt(A) ::= LIMIT INTEGER(X).  {A.a = atoi(X.z); A.b = 0;}
+%type limit_opt {struct LimitVal}
+limit_opt(A) ::= .                  {A.limit = -1; A.offset = 0;}
+limit_opt(A) ::= LIMIT INTEGER(X).  {A.limit = atoi(X.z); A.offset = 0;}
 limit_opt(A) ::= LIMIT INTEGER(X) limit_sep INTEGER(Y). 
-                                    {A.a = atoi(X.z); A.b = atoi(Y.z);}
+                                    {A.limit = atoi(X.z); A.offset = atoi(Y.z);}
 limit_sep ::= OFFSET.
 limit_sep ::= COMMA.
 
@@ -655,7 +665,8 @@ trigger_time(A) ::= AFTER.       { A = TK_AFTER;  }
 trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
 trigger_time(A) ::= .            { A = TK_BEFORE; }
 
-%type trigger_event {struct int_idlist}
+%type trigger_event {struct TrigEvent}
+%destructor trigger_event {sqliteIdListDelete($$.b);}
 trigger_event(A) ::= DELETE. { A.a = TK_DELETE; A.b = 0; }
 trigger_event(A) ::= INSERT. { A.a = TK_INSERT; A.b = 0; }
 trigger_event(A) ::= UPDATE. { A.a = TK_UPDATE; A.b = 0;}

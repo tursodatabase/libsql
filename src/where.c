@@ -13,7 +13,7 @@
 ** the WHERE clause of SQL statements.  Also found here are subroutines
 ** to generate VDBE code to evaluate expressions.
 **
-** $Id: where.c,v 1.45 2002/05/21 13:18:26 drh Exp $
+** $Id: where.c,v 1.46 2002/05/24 02:04:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -159,7 +159,7 @@ static void exprAnalyze(int base, ExprInfo *pInfo){
 WhereInfo *sqliteWhereBegin(
   Parse *pParse,       /* The parser context */
   int base,            /* VDBE cursor index for left-most table in pTabList */
-  IdList *pTabList,    /* A list of all tables */
+  SrcList *pTabList,   /* A list of all tables to be scanned */
   Expr *pWhere,        /* The WHERE clause */
   int pushKey          /* If TRUE, leave the table key on the stack */
 ){
@@ -178,12 +178,12 @@ WhereInfo *sqliteWhereBegin(
   ExprInfo aExpr[50];  /* The WHERE clause is divided into these expressions */
 
   /* Allocate space for aOrder[] and aiMem[]. */
-  aOrder = sqliteMalloc( sizeof(int) * pTabList->nId );
+  aOrder = sqliteMalloc( sizeof(int) * pTabList->nSrc );
 
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
   */
-  pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nId*sizeof(WhereLevel) );
+  pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( sqlite_malloc_failed ){
     sqliteFree(aOrder);
     sqliteFree(pWInfo);
@@ -239,20 +239,20 @@ WhereInfo *sqliteWhereBegin(
 
   /* Figure out a good nesting order for the tables.  aOrder[0] will
   ** be the index in pTabList of the outermost table.  aOrder[1] will
-  ** be the first nested loop and so on.  aOrder[pTabList->nId-1] will
+  ** be the first nested loop and so on.  aOrder[pTabList->nSrc-1] will
   ** be the innermost loop.
   **
   ** Someday we will put in a good algorithm here to reorder the loops
   ** for an effiecient query.  But for now, just use whatever order the
   ** tables appear in in the pTabList.
   */
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     aOrder[i] = i;
   }
 
   /* Figure out what index to use (if any) for each nested loop.
   ** Make pWInfo->a[i].pIdx point to the index to use for the i-th nested
-  ** loop where i==0 is the outer loop and i==pTabList->nId-1 is the inner
+  ** loop where i==0 is the outer loop and i==pTabList->nSrc-1 is the inner
   ** loop. 
   **
   ** If terms exist that use the ROWID of any table, then set the
@@ -267,7 +267,7 @@ WhereInfo *sqliteWhereBegin(
   ** to the limit of 32 bits in an integer bitmask.
   */
   loopMask = 0;
-  for(i=0; i<pTabList->nId && i<ARRAYSIZE(aDirect); i++){
+  for(i=0; i<pTabList->nSrc && i<ARRAYSIZE(aDirect); i++){
     int j;
     int idx = aOrder[i];
     Table *pTab = pTabList->a[idx].pTab;
@@ -426,7 +426,7 @@ WhereInfo *sqliteWhereBegin(
 
   /* Open all tables in the pTabList and all indices used by those tables.
   */
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     int openOp;
     Table *pTab;
 
@@ -449,7 +449,7 @@ WhereInfo *sqliteWhereBegin(
   /* Generate the code to do the search
   */
   loopMask = 0;
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     int j, k;
     int idx = aOrder[i];
     Index *pIdx;
@@ -473,7 +473,7 @@ WhereInfo *sqliteWhereBegin(
       brk = pLevel->brk = sqliteVdbeMakeLabel(v);
       cont = pLevel->cont = brk;
       sqliteVdbeAddOp(v, OP_MustBeInt, 0, brk);
-      if( i==pTabList->nId-1 && pushKey ){
+      if( i==pTabList->nSrc-1 && pushKey ){
         /* Note: The OP_Dup below will cause the recno to be left on the
         ** stack if the record does not exists and the OP_NotExists jump is
         ** taken.  This violates a general rule of the VDBE that you should
@@ -536,7 +536,7 @@ WhereInfo *sqliteWhereBegin(
       start = sqliteVdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
       sqliteVdbeAddOp(v, testOp, pLevel->iCur, brk);
       sqliteVdbeAddOp(v, OP_IdxRecno, pLevel->iCur, 0);
-      if( i==pTabList->nId-1 && pushKey ){
+      if( i==pTabList->nSrc-1 && pushKey ){
         haveKey = 1;
       }else{
         sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
@@ -759,7 +759,7 @@ WhereInfo *sqliteWhereBegin(
         sqliteVdbeAddOp(v, testOp, pLevel->iCur, brk);
       }
       sqliteVdbeAddOp(v, OP_IdxRecno, pLevel->iCur, 0);
-      if( i==pTabList->nId-1 && pushKey ){
+      if( i==pTabList->nSrc-1 && pushKey ){
         haveKey = 1;
       }else{
         sqliteVdbeAddOp(v, OP_MoveTo, base+idx, 0);
@@ -805,9 +805,9 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
   int i;
   int base = pWInfo->base;
   WhereLevel *pLevel;
-  IdList *pTabList = pWInfo->pTabList;
+  SrcList *pTabList = pWInfo->pTabList;
 
-  for(i=pTabList->nId-1; i>=0; i--){
+  for(i=pTabList->nSrc-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqliteVdbeResolveLabel(v, pLevel->cont);
     if( pLevel->op!=OP_Noop ){
@@ -816,7 +816,7 @@ void sqliteWhereEnd(WhereInfo *pWInfo){
     sqliteVdbeResolveLabel(v, pLevel->brk);
   }
   sqliteVdbeResolveLabel(v, pWInfo->iBreak);
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     if( pTabList->a[i].pTab->isTransient ) continue;
     pLevel = &pWInfo->a[i];
     sqliteVdbeAddOp(v, OP_Close, base+i, 0);

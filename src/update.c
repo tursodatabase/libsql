@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.42 2002/05/23 22:07:03 drh Exp $
+** $Id: update.c,v 1.43 2002/05/24 02:04:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,7 +28,7 @@ void sqliteUpdate(
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
-  IdList *pTabList = 0;  /* List containing only pTab */
+  SrcList *pTabList = 0; /* Fake FROM clause containing only pTab */
   int addr;              /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Vdbe *v;               /* The virtual database engine */
@@ -80,11 +80,11 @@ void sqliteUpdate(
   }
 
   /* Locate the table which we want to update.  This table has to be
-  ** put in an IdList structure because some of the subroutines we
+  ** put in an SrcList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
-  ** an IdList* parameter instead of just a Table* parameter.
+  ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTabList = sqliteTableTokenToIdList(pParse, pTableName);
+  pTabList = sqliteTableTokenToSrcList(pParse, pTableName);
   if( pTabList==0 ) goto update_cleanup;
   pTab = pTabList->a[0].pTab;
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
@@ -391,7 +391,7 @@ void sqliteUpdate(
 update_cleanup:
   sqliteFree(apIdx);
   sqliteFree(aXRef);
-  sqliteIdListDelete(pTabList);
+  sqliteSrcListDelete(pTabList);
   sqliteExprListDelete(pChanges);
   sqliteExprDelete(pWhere);
   return;

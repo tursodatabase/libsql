@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.81 2002/05/08 11:54:15 drh Exp $
+** $Id: select.c,v 1.82 2002/05/24 02:04:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -22,7 +22,7 @@
 */
 Select *sqliteSelectNew(
   ExprList *pEList,     /* which columns to include in the result */
-  IdList *pSrc,         /* the FROM clause -- which tables to scan */
+  SrcList *pSrc,        /* the FROM clause -- which tables to scan */
   Expr *pWhere,         /* the WHERE clause */
   ExprList *pGroupBy,   /* the GROUP BY clause */
   Expr *pHaving,        /* the HAVING clause */
@@ -35,7 +35,7 @@ Select *sqliteSelectNew(
   pNew = sqliteMalloc( sizeof(*pNew) );
   if( pNew==0 ){
     sqliteExprListDelete(pEList);
-    sqliteIdListDelete(pSrc);
+    sqliteSrcListDelete(pSrc);
     sqliteExprDelete(pWhere);
     sqliteExprListDelete(pGroupBy);
     sqliteExprDelete(pHaving);
@@ -61,7 +61,7 @@ Select *sqliteSelectNew(
 void sqliteSelectDelete(Select *p){
   if( p==0 ) return;
   sqliteExprListDelete(p->pEList);
-  sqliteIdListDelete(p->pSrc);
+  sqliteSrcListDelete(p->pSrc);
   sqliteExprDelete(p->pWhere);
   sqliteExprListDelete(p->pGroupBy);
   sqliteExprDelete(p->pHaving);
@@ -234,7 +234,7 @@ static void generateSortTail(Vdbe *v, int nColumn){
 static void generateColumnNames(
   Parse *pParse,      /* Parser context */
   int base,           /* VDBE cursor corresponding to first entry in pTabList */
-  IdList *pTabList,   /* List of tables */
+  SrcList *pTabList,  /* List of tables */
   ExprList *pEList    /* Expressions defining the result set */
 ){
   Vdbe *v = pParse->pVdbe;
@@ -265,7 +265,7 @@ static void generateColumnNames(
       if( iCol<0 ) iCol = pTab->iPKey;
       assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
       zCol = iCol<0 ? "_ROWID_" : pTab->aCol[iCol].zName;
-      if( pTabList->nId>1 || showFullNames ){
+      if( pTabList->nSrc>1 || showFullNames ){
         char *zName = 0;
         char *zTab;
  
@@ -352,7 +352,7 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 /*
 ** For the given SELECT statement, do two things.
 **
-**    (1)  Fill in the pTabList->a[].pTab fields in the IdList that 
+**    (1)  Fill in the pTabList->a[].pTab fields in the SrcList that 
 **         defines the set of tables that should be scanned. 
 **
 **    (2)  Scan the list of columns in the result set (pEList) looking
@@ -365,7 +365,7 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
 */
 static int fillInColumnList(Parse *pParse, Select *p){
   int i, j, k, rc;
-  IdList *pTabList;
+  SrcList *pTabList;
   ExprList *pEList;
   Table *pTab;
 
@@ -375,7 +375,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
 
   /* Look up every table in the table list.
   */
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     if( pTabList->a[i].pTab ){
       /* This routine has run before!  No need to continue */
       return 0;
@@ -454,7 +454,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
         }else{
           pName = 0;
         }
-        for(i=0; i<pTabList->nId; i++){
+        for(i=0; i<pTabList->nSrc; i++){
           Table *pTab = pTabList->a[i].pTab;
           char *zTabName = pTabList->a[i].zAlias;
           if( zTabName==0 || zTabName[0]==0 ){ 
@@ -511,10 +511,10 @@ static int fillInColumnList(Parse *pParse, Select *p){
 */
 void sqliteSelectUnbind(Select *p){
   int i;
-  IdList *pSrc = p->pSrc;
+  SrcList *pSrc = p->pSrc;
   Table *pTab;
   if( p==0 ) return;
-  for(i=0; i<pSrc->nId; i++){
+  for(i=0; i<pSrc->nSrc; i++){
     if( (pTab = pSrc->a[i].pTab)!=0 ){
       if( pTab->isTransient ){
         sqliteDeleteTable(0, pTab);
@@ -932,8 +932,8 @@ substExprList(ExprList *pList, int iTable, ExprList *pEList, int iSub){
 */
 int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   Select *pSub;       /* The inner query or "subquery" */
-  IdList *pSrc;       /* The FROM clause of the outer query */
-  IdList *pSubSrc;    /* The FROM clause of the subquery */
+  SrcList *pSrc;      /* The FROM clause of the outer query */
+  SrcList *pSubSrc;   /* The FROM clause of the subquery */
   ExprList *pList;    /* The result set of the outer query */
   int i;
   int iParent, iSub;
@@ -943,15 +943,15 @@ int flattenSubquery(Select *p, int iFrom, int isAgg, int subqueryIsAgg){
   */
   if( p==0 ) return 0;
   pSrc = p->pSrc;
-  assert( pSrc && iFrom>=0 && iFrom<pSrc->nId );
+  assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
   pSub = pSrc->a[iFrom].pSelect;
   assert( pSub!=0 );
   if( isAgg && subqueryIsAgg ) return 0;
-  if( subqueryIsAgg && pSrc->nId>1 ) return 0;
+  if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
-  if( pSubSrc->nId!=1 ) return 0;
-  if( pSub->isDistinct && pSrc->nId>1 ) return 0;
+  if( pSubSrc->nSrc!=1 ) return 0;
+  if( pSub->isDistinct && pSrc->nSrc>1 ) return 0;
   if( pSub->isDistinct && isAgg ) return 0;
   if( p->isDistinct && subqueryIsAgg ) return 0;
 
@@ -1059,7 +1059,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   ** zero if it is  not.
   */
   if( p->pGroupBy || p->pHaving || p->pWhere ) return 0;
-  if( p->pSrc->nId!=1 ) return 0;
+  if( p->pSrc->nSrc!=1 ) return 0;
   if( p->pEList->nExpr!=1 ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
@@ -1184,7 +1184,7 @@ int sqliteSelect(
   Vdbe *v;
   int isAgg = 0;         /* True for select lists like "count(*)" */
   ExprList *pEList;      /* List of columns to extract. */
-  IdList *pTabList;      /* List of tables to select from */
+  SrcList *pTabList;     /* List of tables to select from */
   Expr *pWhere;          /* The WHERE clause.  May be NULL */
   ExprList *pOrderBy;    /* The ORDER BY clause.  May be NULL */
   ExprList *pGroupBy;    /* The GROUP BY clause.  May be NULL */
@@ -1216,7 +1216,7 @@ int sqliteSelect(
   ** FROM clause be consecutive.
   */
   base = p->base = pParse->nTab;
-  pParse->nTab += pTabList->nId;
+  pParse->nTab += pTabList->nSrc;
 
   /* 
   ** Do not even attempt to generate any code if we have already seen
@@ -1351,7 +1351,7 @@ int sqliteSelect(
 
   /* Generate code for all sub-queries in the FROM clause
   */
-  for(i=0; i<pTabList->nId; i++){
+  for(i=0; i<pTabList->nSrc; i++){
     if( pTabList->a[i].pSelect==0 ) continue;
     sqliteSelect(pParse, pTabList->a[i].pSelect, SRT_TempTable, base+i,
                  p, i, &isAgg);

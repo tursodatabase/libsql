@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.35 2002/05/23 12:50:18 drh Exp $
+** $Id: delete.c,v 1.36 2002/05/24 02:04:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,22 +43,22 @@ Table *sqliteTableNameToTable(Parse *pParse, const char *zTab){
 
 /*
 ** Given a table name, check to make sure the table exists, is writable
-** and is not a view.  If everything is OK, construct an IdList holding
-** the table and return a pointer to the IdList.  The calling function
-** is responsible for freeing the IdList when it has finished with it.
+** and is not a view.  If everything is OK, construct an SrcList holding
+** the table and return a pointer to the SrcList.  The calling function
+** is responsible for freeing the SrcList when it has finished with it.
 ** If there is an error, leave a message on pParse->zErrMsg and return
 ** NULL.
 */
-IdList *sqliteTableTokenToIdList(Parse *pParse, Token *pTableName){
+SrcList *sqliteTableTokenToSrcList(Parse *pParse, Token *pTableName){
   Table *pTab;
-  IdList *pTabList;
+  SrcList *pTabList;
 
-  pTabList = sqliteIdListAppend(0, pTableName);
+  pTabList = sqliteSrcListAppend(0, pTableName);
   if( pTabList==0 ) return 0;
-  assert( pTabList->nId==1 );
+  assert( pTabList->nSrc==1 );
   pTab = sqliteTableNameToTable(pParse, pTabList->a[0].zName);
   if( pTab==0 ){
-    sqliteIdListDelete(pTabList);
+    sqliteSrcListDelete(pTabList);
     return 0;
   }
   pTabList->a[0].pTab = pTab;
@@ -76,7 +76,7 @@ void sqliteDeleteFrom(
   Vdbe *v;               /* The virtual database engine */
   Table *pTab;           /* The table from which records will be deleted */
   char *zTab;            /* Name of the table from which we are deleting */
-  IdList *pTabList;      /* An ID list holding pTab and nothing else */
+  SrcList *pTabList;     /* A fake FROM clause holding just pTab */
   int end, addr;         /* A couple addresses of generated code */
   int i;                 /* Loop counter */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
@@ -116,13 +116,13 @@ void sqliteDeleteFrom(
   }
 
   /* Locate the table which we want to delete.  This table has to be
-  ** put in an IdList structure because some of the subroutines we
+  ** put in an SrcList structure because some of the subroutines we
   ** will be calling are designed to work with multiple tables and expect
-  ** an IdList* parameter instead of just a Table* parameter.
+  ** an SrcList* parameter instead of just a Table* parameter.
   */
-  pTabList = sqliteTableTokenToIdList(pParse, pTableName);
+  pTabList = sqliteTableTokenToSrcList(pParse, pTableName);
   if( pTabList==0 ) goto delete_from_cleanup;
-  assert( pTabList->nId==1 );
+  assert( pTabList->nSrc==1 );
   pTab = pTabList->a[0].pTab;
   assert( pTab->pSelect==0 );  /* This table is not a view */
 
@@ -301,7 +301,7 @@ void sqliteDeleteFrom(
   }
 
 delete_from_cleanup:
-  sqliteIdListDelete(pTabList);
+  sqliteSrcListDelete(pTabList);
   sqliteExprDelete(pWhere);
   return;
 }
