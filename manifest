@@ -1,5 +1,5 @@
-C Try\sagain\sto\sget\sthe\sHH:MM:SS\smodifier\schange\sright...\s(CVS\s1279)
-D 2004-02-29T00:50:33
+C One\smore\sfix\sto\sthe\snew\sHH:MM:SS\smodifier.\s\sThis\stime\sadd\ssome\stest\nprocedures\stoo.\s(CVS\s1280)
+D 2004-02-29T01:08:18
 F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/btree.h 41cb3ff6ebc3f6da2d0a074e39ff8c7a2287469f
 F src/btree_rb.c 99feb3ff835106d018a483a1ce403e5cf9c718bc
 F src/build.c c8ab8b467d9a64254b0d4d42083f6313b3a980d1
 F src/copy.c 750e13828c3e4a293123e36aaa7cf0f22466248a
-F src/date.c 33a5267827347e106cef2fe001770b6911fcfa3d
+F src/date.c f055419d602bde622c70f831350b6b52f2235de0
 F src/delete.c 82001c74882319f94dab5f6b92a27311b31092ae
 F src/encode.c 9e70ea1e4e746f23f18180949e94f1bb1c2220d3
 F src/expr.c 95ea5d47d11b5085aaeeb77d60b17c2cba13383a
@@ -83,7 +83,7 @@ F test/capi2.test ec96e0e235d87b53cbaef3d8e3e0f8ccf32c71ca
 F test/conflict.test 0911bb2f079046914a6e9c3341b36658c4e2103e
 F test/copy.test f07ea8d60878da7a67416ab62f78e9706b9d3c45
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test 80cc84210b59af26e03ffa3f323bdeb5190a48dd
+F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 92256384f1801760180ded129f7427884cf28886
 F test/expr.test c4cc292d601019c2f2ce95093caaa5d10284b105
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 248b5500900bc8f401006aaa9b7dac090ae419fa
-R 9e6e50874a22e82686efa948b5530e0e
+P e20d51f94ed67b8864a435e5735f61f396662c21
+R f6cfaacb2696207417d341bc6d9eaa35
 U drh
-Z 6aabfeb88e3f40a15732ea64d28d35d1
+Z 78e3b4d83ccc7f48feaa7210a8b39c81
