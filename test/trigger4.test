@@ -122,4 +122,6 @@ do_test trigger4-3.7 {
   }
 } {7 99}
 
+integrity_check trigger4-4.1
+
 finish_test

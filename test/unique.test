@@ -12,7 +12,7 @@
 # focus of this file is testing the CREATE UNIQUE INDEX statement,
 # and primary keys, and the UNIQUE constraint on table columns
 #
-# $Id: unique.test,v 1.5 2003/01/29 18:46:54 drh Exp $
+# $Id: unique.test,v 1.6 2003/06/15 23:42:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -73,6 +73,7 @@ do_test unique-1.8 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 2 3 3 4 5}
+integrity_check unique-1.9
 
 do_test unique-2.0 {
   execsql {
@@ -129,6 +130,7 @@ do_test unique-2.9 {
     CREATE INDEX i2 ON t2(a);
   }
 } {0 {}}
+integrity_check unique-2.10
 
 # Test the UNIQUE keyword as used on two or more fields.
 #
@@ -161,6 +163,7 @@ do_test unique-3.4 {
     SELECT * FROM t3 ORDER BY a,b,c,d;
   }
 } {1 {uniqueness constraint failed}}
+integrity_check unique-3.5
 
 # Make sure NULLs are distinct as far as the UNIQUE tests are
 # concerned.
@@ -193,6 +196,6 @@ do_test unique-4.5 {
     SELECT * FROM t4
   }
 } {1 2 3 {} 2 {} {} 3 4 2 2 {}}
-
+integrity_check unique-4.6
 
 finish_test

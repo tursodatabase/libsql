@@ -186,7 +186,7 @@ foreach tbl_defn {
     execsql {
       PRAGMA integrity_check;
     }
-  } {ok ok}
+  } {ok}
 }
 catchsql {
   DROP TABLE rlog;
@@ -308,7 +308,7 @@ foreach tr_program {
       execsql {
         PRAGMA integrity_check;
       }
-    } {ok ok}
+    } {ok}
 
   }
 }
@@ -384,7 +384,7 @@ do_test trigger2-3.3 {
   execsql {
     PRAGMA integrity_check;
   }
-} {ok ok}
+} {ok}
 
 # Simple cascaded trigger
 execsql {
@@ -714,6 +714,6 @@ do_test trigger2-8.6 {
 
 do_test trigger2-9.9 {
   execsql {PRAGMA integrity_check}
-} {ok ok}
+} {ok}
 
 finish_test

@@ -157,6 +157,8 @@ do_test trigger3-7.3 {
     }
 } {1 {View abort}}
 
+integrity_check trigger3-8.1
+
 catchsql { DROP TABLE tbl; } 
 catchsql { DROP TABLE tbl2; } 
 catchsql { DROP VIEW tbl_view; }

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.4 2003/02/15 23:09:17 drh Exp $
+# $Id: pragma.test,v 1.5 2003/06/15 23:42:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -227,7 +227,33 @@ do_test pragma-2.10 {
     SELECT d,e FROM t1 INTERSECT SELECT c,e FROM v1
   }
 } {WHATEVER BLOB}
-    
 
+# Construct a corrupted index and make sure the integrity_check
+# pragma finds it.
+#
+do_test pragma-3.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t2(a,b,c);
+    CREATE INDEX i2 ON t2(a);
+    INSERT INTO t2 VALUES(11,2,3);
+    INSERT INTO t2 VALUES(22,3,4);
+    COMMIT;
+    SELECT rowid, * from t2;
+  }
+} {1 11 2 3 2 22 3 4}
+do_test pragma-3.2 {
+  set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
+  set db [btree_open test.db]
+  btree_begin_transaction $db
+  set c [btree_cursor $db $rootpage 1]
+  btree_first $c
+  btree_delete $c
+  btree_commit $db
+  btree_close $db
+  execsql {PRAGMA integrity_check}
+} {{rowid 1 missing from index i2
+wrong # of entries in index i2
+}}
 
 finish_test

@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is not used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.7 2003/06/15 10:35:05 jplyon Exp $
+** $Id: encode.c,v 1.8 2003/06/15 23:42:24 drh Exp $
 */
 #include <string.h>
 
@@ -38,7 +38,7 @@
 **
 ** If that were all the encoder did, it would work, but in certain cases
 ** it could double the size of the encoded string.  For example, to
-** encode a string of 100 0x27 character would require 100 instances of
+** encode a string of 100 0x27 characters would require 100 instances of
 ** the 0x01 0x03 escape sequence resulting in a 200-character output.
 ** We would prefer to keep the size of the encoded string smaller than
 ** this.

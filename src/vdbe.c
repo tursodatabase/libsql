@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.227 2003/06/07 11:33:45 drh Exp $
+** $Id: vdbe.c,v 1.228 2003/06/15 23:42:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -486,7 +486,6 @@ int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
   return addr;
 }
 
-#if 0 /* NOT USED */
 /*
 ** Change the value of the P1 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -499,7 +498,6 @@ void sqliteVdbeChangeP1(Vdbe *p, int addr, int val){
     p->aOp[addr].p1 = val;
   }
 }
-#endif /* NOT USED */
 
 /*
 ** Change the value of the P2 operand for a specific instruction.
@@ -4627,7 +4625,9 @@ case OP_CreateTable: {
 ** If there are no errors, push a "ok" onto the stack.
 **
 ** P1 is the index of a set that contains the root page numbers
-** for all tables and indices in the main database file.
+** for all tables and indices in the main database file.  The set
+** is cleared by this opcode.  In other words, after this opcode
+** has executed, the set will be empty.
 **
 ** If P2 is not zero, the check is done on the auxiliary database
 ** file, not the main database file.
@@ -4653,6 +4653,8 @@ case OP_IntegrityCk: {
     toInt((char*)sqliteHashKey(i), &aRoot[j]);
   }
   aRoot[j] = 0;
+  sqliteHashClear(&pSet->hash);
+  pSet->prev = 0;
   z = sqliteBtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot);
   if( z==0 || z[0]==0 ){
     if( z ) sqliteFree(z);

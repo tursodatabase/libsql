@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.12 2003/05/04 20:42:56 drh Exp $
+# $Id: delete.test,v 1.13 2003/06/15 23:42:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,6 +60,8 @@ do_test delete-3.1.6 {
 do_test delete-3.1.7 {
   execsql {SELECT * FROM table1 ORDER BY f1}
 } {1 2 4 16}
+integrity_check delete-3.2
+
 
 # Semantic errors in the WHERE clause
 #
@@ -73,6 +75,7 @@ do_test delete-4.2 {
   set v [catch {execsql {DELETE FROM table2 WHERE xyzzy(f1+4)}} msg]
   lappend v $msg
 } {1 {no such function: xyzzy}}
+integrity_check delete-4.3
 
 # Lots of deletes
 #
@@ -142,6 +145,8 @@ do_test delete-5.7 {
   execsql "DELETE FROM table1 WHERE f1!=48"
   execsql {SELECT f1 FROM table1 ORDER BY f1}
 } {48}
+integrity_check delete-5.8
+
 
 # Delete large quantities of data.  We want to test the List overflow
 # mechanism in the vdbe.
@@ -192,6 +197,7 @@ do_test delete-6.10 {
   execsql {INSERT INTO table2 VALUES(2,3)}
   execsql {SELECT f1 FROM table2}
 } {2}
+integrity_check delete-6.11
 
 do_test delete-7.1 {
   execsql {
@@ -240,6 +246,7 @@ do_test delete-7.6 {
     DELETE FROM t4;
   }
 } {4 4}
+integrity_check delete-7.7
 
 # Make sure error messages are consistent when attempting to delete
 # from a read-only database.  Ticket #304.
@@ -279,6 +286,6 @@ do_test delete-8.5 {
 do_test delete-8.6 {
   execsql {SELECT * FROM t3}
 } {123}
-
+integrity_check delete-8.7
 
 finish_test

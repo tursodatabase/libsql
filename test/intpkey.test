@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.13 2003/03/07 19:50:08 drh Exp $
+# $Id: intpkey.test,v 1.14 2003/06/15 23:42:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -481,5 +481,7 @@ do_test intpkey-11.1 {
     SELECT b FROM t1 WHERE a=2.0+3.5;
   }
 } {}
+
+integrity_check intpkey-12.1
 
 finish_test

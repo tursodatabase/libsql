@@ -307,5 +307,6 @@ do_test trigger-4.4 {
   };
 } {3 4 7 8}
 
+integrity_check trigger-5.1
 
 finish_test
