@@ -1,5 +1,5 @@
-C Update\sthe\schange\slog\sfor\sthe\s2.4.8\srelease.\s(CVS\s539)
-D 2002-04-20T14:44:01
+C Version\s2.4.8\s(CVS\s538)
+D 2002-04-20T14:45:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 51572bf71774d7631c7083be90b806e621bc9bee
+P c01bc2d19e8592fe3b1a5202926be649af96c783
 R c985aee663734079903708a52d4ca252
 U drh
-Z e77b13e719a643f47f4dab2d0080ff50
+Z aec1c09c119aa7c61e11883fb01fa5f4
