@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.173 2002/08/28 03:01:00 drh Exp $
+** $Id: vdbe.c,v 1.174 2002/09/01 23:20:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2958,6 +2958,10 @@ case OP_Transaction: {
           busy = 0;
         }
         break;
+      }
+      case SQLITE_READONLY: {
+        rc = SQLITE_OK;
+        /* Fall thru into the next case */
       }
       case SQLITE_OK: {
         busy = 0;
