@@ -825,7 +825,7 @@ int sqliteOsTempFileName(char *zBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   int i, j;
-  char *zDir;
+  const char *zDir;
   char zTempPath[SQLITE_TEMPNAME_SIZE];
   if( sqlite_temp_directory==0 ){
     GetTempPath(SQLITE_TEMPNAME_SIZE-30, zTempPath);
