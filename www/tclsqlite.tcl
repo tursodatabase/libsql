@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.10 2004/07/21 14:54:50 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.11 2004/08/26 01:12:14 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -20,7 +20,7 @@ programming interface.</p>
 <p>The interface to the SQLite library consists of single
 tcl command named <b>sqlite</b> (version 2.8) or <b>sqlite3</b>
 (version 3.0).  Because there is only this
-one interface command, the interface is not placed in a separate
+one command, the interface is not placed in a separate
 namespace.</p>
 
 <p>The <b>sqlite3</b> command is used as follows:</p>
@@ -117,7 +117,7 @@ like this:</p>
 
 <blockquote>
 <i>dbcmd</i>&nbsp;&nbsp;<b>eval</b>&nbsp;&nbsp;<i>sql</i>
-&nbsp;&nbsp;&nbsp;&nbsp;?<i>array-name&nbsp;&nbsp;script</i>?
+&nbsp;&nbsp;&nbsp;&nbsp;?<i>array-name&nbsp;</i>?&nbsp;?<i>script</i>?
 </blockquote>
 
 <p>
@@ -187,13 +187,13 @@ used to store a list of column names in the order that they appear.
 </p>
 
 <p>
-If the array variable name is the empty string, then the value of
+If the array variable name is omitted or is the empty string, then the value of
 each column is stored in a variable with the same name as the column
 itself.  For example:
 </p>
 
 <blockquote>
-<b>db1 eval {SELECT * FROM t1 ORDER BY a} {} {<br>
+<b>db1 eval {SELECT * FROM t1 ORDER BY a} {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;puts "a=$a b=$b"<br>
 }</b>
 </blockquote>
@@ -207,6 +207,25 @@ a=1 b=hello<br>
 a=2 b=goodbye<br>
 a=3 b=howdy!</b>
 </blockquote>
+
+<p>
+Tcl variable names can appear in the SQL statement of the second argument
+in any position where it is legal to put a string or number literal.  The
+value of the variable is substituted for the variable name.  If the
+variable does not exist a NULL values is used.  For example:
+</p>
+
+<blockquote><b>
+db1 eval {INSERT INTO t1 VALUES(5,$bigblob)}
+</b></blockquote>
+
+<p>
+Note that it is not necessary to quote the $bigblob value.  That happens
+automatically.  If $bigblob is a large string or binary object, this
+technique is not only easier to write, it is also much more efficient
+since it avoids making a copy of the content of $bigblob.
+</p>
+
 }
 
 ##############################################################################

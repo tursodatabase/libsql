@@ -1,5 +1,5 @@
-C Protect\sTcl_Obj\spointers\sfrom\schange\susing\sTcl_IncrRefCount()\swhile\nexecuting\sSQL\sstatements\sin\sthe\sTCL\sbindings.\s(CVS\s1903)
-D 2004-08-26T00:56:05
+C Update\sthe\sTCL\sbinding\sdocumentation\sto\sdescribe\sthe\snewly\sadded\sability\nto\sspecify\sTCL\svariable\snames\sin\sthe\sbody\sof\san\sSQL\sstatement.\s(CVS\s1904)
+D 2004-08-26T01:12:14
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -239,11 +239,11 @@ F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 19cf0c1bf73c4b534dfafc95b3eacff4825740b4
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 96c8324cea27b5ded53ff5c60c127ba2053f688e
-F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
+F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fd584d1ccf6643b723c2ff0a7a16c2aea3f1142c
-R c2945f067807301ea9f9b82dd56f837f
+P 6199f2f243514bbd4befbf768a7e03aec775bed2
+R f973acd39b99533a4d32c0284d2f7a6d
 U drh
-Z 3e4b219d5ef080e3900472694ea85d39
+Z e1a14528ab39e612df9c5d5bff54ca90
