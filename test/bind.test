@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.23 2004/11/20 20:18:55 drh Exp $
+# $Id: bind.test,v 1.24 2005/01/11 16:54:15 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -419,12 +419,28 @@ do_test bind-10.6 {
 do_test bind-10.7 {
   sqlite3_bind_parameter_name $VM 3
 } $v2
+do_test bind-10.7.1 {
+  sqlite3_bind_parameter_name 0 1   ;# Ignore if VM is NULL
+} {}
+do_test bind-10.7.2 {
+  sqlite3_bind_parameter_name $VM 0 ;# Ignore if index too small
+} {}
+do_test bind-10.7.3 {
+  sqlite3_bind_parameter_name $VM 4 ;# Ignore if index is too big
+} {}
 do_test bind-10.8 {
   sqlite3_bind_int $VM 1 1
   sqlite3_bind_int $VM 2 2
   sqlite3_bind_int $VM 3 3
   sqlite3_step $VM
 } SQLITE_DONE
+do_test bind-10.8.1 {
+  # Binding attempts after program start should fail
+  set rc [catch {
+    sqlite3_bind_int $VM 1 1
+  } msg]
+  lappend rc $msg
+} {1 {}}
 do_test bind-10.9 {
   sqlite3_finalize $VM
 } SQLITE_OK
@@ -443,6 +459,9 @@ do_test bind-10.11 {
   ]
   sqlite3_bind_parameter_count $VM
 } 5
+do_test bind-10.11.1 {
+  sqlite3_bind_parameter_index 0 :xyz  ;# ignore NULL VM arguments
+} 0
 do_test bind-10.12 {
   sqlite3_bind_parameter_index $VM :xyz
 } 0

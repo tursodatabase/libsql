@@ -492,6 +492,9 @@ int sqlite3VdbeList(
   int rc = SQLITE_OK;
 
   assert( p->explain );
+  if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
+  assert( db->magic==SQLITE_MAGIC_BUSY );
+  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
 
   /* Even though this opcode does not put dynamic strings onto the
   ** the stack, they may become dynamic if the user calls
@@ -502,17 +505,14 @@ int sqlite3VdbeList(
   }
   p->resOnStack = 0;
 
+
   i = p->pc++;
   if( i>=p->nOp ){
     p->rc = SQLITE_OK;
     rc = SQLITE_DONE;
   }else if( db->flags & SQLITE_Interrupt ){
     db->flags &= ~SQLITE_Interrupt;
-    if( db->magic!=SQLITE_MAGIC_BUSY ){
-      p->rc = SQLITE_MISUSE;
-    }else{
-      p->rc = SQLITE_INTERRUPT;
-    }
+    p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);
   }else{

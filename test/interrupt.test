@@ -11,11 +11,13 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.8 2004/11/14 04:04:18 drh Exp $
+# $Id: interrupt.test,v 1.9 2005/01/11 16:54:15 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+db close
+set DB [sqlite3 db test.db]
 
 # Compute a checksum on the entire database.
 #
@@ -107,7 +109,15 @@ ifcapable {vacuum && !default_autovacuum} {
     expr {$::origsize>[file size test.db]}
   } 1
 }
-integrity_check interrupt-2.5
+ifcapable {explain} {
+  do_test interrupt-2.5 {
+    set sql {EXPLAIN SELECT max(a,b), a, b FROM t1}
+    execsql $sql
+    set rc [catch {db eval $sql {sqlite3_interrupt $DB}} msg]
+    lappend rc $msg
+  } {1 interrupted}
+}
+integrity_check interrupt-2.6
 
 # Ticket #594.  If an interrupt occurs in the middle of a transaction
 # and that transaction is later rolled back, the internal schema tables do

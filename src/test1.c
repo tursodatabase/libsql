@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.118 2005/01/11 15:28:33 drh Exp $
+** $Id: test1.c,v 1.119 2005/01/11 16:54:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2507,6 +2507,27 @@ static int sqlite_set_magic(
 }
 
 /*
+** Usage:  sqlite3_interrupt  DB 
+**
+** Trigger an interrupt on DB
+*/
+static int test_interrupt(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  sqlite3 *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  sqlite3_interrupt(db);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  tcl_variable_type VARIABLENAME
 **
 ** Return the name of the internal representation for the
@@ -2737,6 +2758,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_key",                   (Tcl_CmdProc*)test_key              },
      { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
      { "sqlite_set_magic",              (Tcl_CmdProc*)sqlite_set_magic      },
+     { "sqlite3_interrupt",             (Tcl_CmdProc*)test_interrupt        },
   };
   static struct {
      char *zName;

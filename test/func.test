@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.30 2005/01/11 13:02:34 danielk1977 Exp $
+# $Id: func.test,v 1.31 2005/01/11 16:54:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -248,6 +248,7 @@ do_test func-7.1 {
 # Tests for aggregate functions and how they handle NULLs.
 #
 do_test func-8.1 {
+  execsql {EXPLAIN SELECT sum(a) FROM t2;}
   execsql {
     SELECT sum(a), count(a), round(avg(a),2), min(a), max(a), count(*) FROM t2;
   }
