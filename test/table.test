@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.16 2002/05/22 21:27:04 drh Exp $
+# $Id: table.test,v 1.17 2002/06/02 18:19:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -377,6 +377,63 @@ do_test table-9.1 {
     CREATE TABLE t6(a,b,a);
   }
 } {1 {duplicate column name: a}}
+
+# Check the foreign key syntax.
+#
+do_test table-10.1 {
+  catchsql {
+    CREATE TABLE t6(a REFERENCES t4(a) NOT NULL);
+    INSERT INTO t6 VALUES(NULL);
+  }
+} {1 {constraint failed}}
+do_test table-10.2 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a REFERENCES t4(a) MATCH PARTIAL);
+  }
+} {0 {}}
+do_test table-10.3 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a REFERENCES t4 MATCH FULL ON DELETE SET NULL NOT NULL);
+  }
+} {0 {}}
+do_test table-10.4 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a REFERENCES t4 MATCH FULL ON UPDATE SET DEFAULT DEFAULT 1);
+  }
+} {0 {}}
+do_test table-10.5 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a NOT NULL NOT DEFERRABLE INITIALLY IMMEDIATE);
+  }
+} {0 {}}
+do_test table-10.6 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a NOT NULL DEFERRABLE INITIALLY DEFERRED);
+  }
+} {0 {}}
+do_test table-10.7 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a,
+      FOREIGN KEY (a) REFERENCES t4(b) DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+} {0 {}}
+do_test table-10.8 {
+  catchsql {
+    DROP TABLE t6;
+    CREATE TABLE t6(a,b,c,
+      FOREIGN KEY (b,c) REFERENCES t4(x,y) MATCH PARTIAL
+        ON UPDATE SET NULL ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+} {0 {}}
+
 
 
 finish_test

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.69 2002/05/24 16:14:15 drh Exp $
+** @(#) $Id: parse.y,v 1.70 2002/06/02 18:19:00 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -115,9 +115,11 @@ id(A) ::= AFTER(X).      {A = X;}
 id(A) ::= ASC(X).        {A = X;}
 id(A) ::= BEFORE(X).     {A = X;}
 id(A) ::= BEGIN(X).      {A = X;}
+id(A) ::= CASCADE(X).    {A = X;}
 id(A) ::= CLUSTER(X).    {A = X;}
 id(A) ::= CONFLICT(X).   {A = X;}
 id(A) ::= COPY(X).       {A = X;}
+id(A) ::= DEFERRED(X).   {A = X;}
 id(A) ::= DELIMITERS(X). {A = X;}
 id(A) ::= DESC(X).       {A = X;}
 id(A) ::= EACH(X).       {A = X;}
@@ -125,15 +127,21 @@ id(A) ::= END(X).        {A = X;}
 id(A) ::= EXPLAIN(X).    {A = X;}
 id(A) ::= FAIL(X).       {A = X;}
 id(A) ::= FOR(X).        {A = X;}
+id(A) ::= FULL(X).       {A = X;}
 id(A) ::= ID(X).         {A = X;}
 id(A) ::= IGNORE(X).     {A = X;}
+id(A) ::= IMMEDATE(X).   {A = X;}
+id(A) ::= INITIALLY(X).  {A = X;}
 id(A) ::= INSTEAD(X).    {A = X;}
+id(A) ::= MATCH(X).      {A = X;}
 id(A) ::= JOIN(X).       {A = X;}
 id(A) ::= KEY(X).        {A = X;}
 id(A) ::= OF(X).         {A = X;}
 id(A) ::= OFFSET(X).     {A = X;}
+id(A) ::= PARTIAL(X).    {A = X;}
 id(A) ::= PRAGMA(X).     {A = X;}
 id(A) ::= REPLACE(X).    {A = X;}
+id(A) ::= RESTRICT(X).   {A = X;}
 id(A) ::= ROW(X).        {A = X;}
 id(A) ::= STATEMENT(X).  {A = X;}
 id(A) ::= TEMP(X).       {A = X;}
@@ -179,6 +187,29 @@ ccons ::= NOT NULL onconf(R).               {sqliteAddNotNull(pParse, R);}
 ccons ::= PRIMARY KEY sortorder onconf(R).  {sqliteAddPrimaryKey(pParse,0,R);}
 ccons ::= UNIQUE onconf(R).            {sqliteCreateIndex(pParse,0,0,0,R,0,0);}
 ccons ::= CHECK LP expr RP onconf.
+ccons ::= references.
+ccons ::= defer_subclause.
+
+// A REFERENCES clause is parsed but the current implementation does not
+// do anything with it.
+//
+references ::= REFERENCES ids LP idxlist RP refargs.
+references ::= REFERENCES ids refargs.
+refargs ::= .
+refargs ::= refargs refarg.
+refarg ::= MATCH FULL.
+refarg ::= MATCH PARTIAL.
+refarg ::= ON DELETE refact.
+refarg ::= ON UPDATE refact.
+refact ::= SET NULL.
+refact ::= SET DEFAULT.
+refact ::= CASCADE.
+refact ::= RESTRICT.
+defer_subclause ::= NOT DEFERRABLE init_deferred_pred_opt.
+defer_subclause ::= DEFERRABLE init_deferred_pred_opt.
+init_deferred_pred_opt ::= .
+init_deferred_pred_opt ::= INITIALLY DEFERRED.
+init_deferred_pred_opt ::= INITIALLY IMMEDIATE.
 
 // For the time being, the only constraint we care about is the primary
 // key and UNIQUE.  Both create indices.
@@ -194,6 +225,9 @@ tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R).
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                        {sqliteCreateIndex(pParse,0,0,X,R,0,0);}
 tcons ::= CHECK expr onconf.
+tcons ::= FOREIGN KEY LP idxlist RP references defer_subclause_opt.
+defer_subclause_opt ::= .
+defer_subclause_opt ::= defer_subclause.
 
 // The following is a non-standard extension that allows us to declare the
 // default behavior when there is a constraint conflict.
