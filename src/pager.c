@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.172 2004/11/04 14:30:05 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.173 2004/11/05 16:37:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2885,7 +2885,7 @@ int sqlite3pager_commit(Pager *pPager){
     return rc;
   }
   assert( pPager->journalOpen );
-  rc = sqlite3pager_sync(pPager, 0);
+  rc = sqlite3pager_sync(pPager, 0, 0);
   if( rc!=SQLITE_OK ){
     goto commit_abort;
   }
@@ -3201,8 +3201,11 @@ static int pager_incr_changecounter(Pager *pPager){
 **
 ** Note that if zMaster==NULL, this does not overwrite a previous value
 ** passed to an sqlite3pager_sync() call.
+**
+** If parameter nTrunc is non-zero, then the pager file is truncated to
+** nTrunc pages (this is used by auto-vacuum databases).
 */
-int sqlite3pager_sync(Pager *pPager, const char *zMaster){
+int sqlite3pager_sync(Pager *pPager, const char *zMaster, Pgno nTrunc){
   int rc = SQLITE_OK;
 
   /* If this is an in-memory db, or no pages have been written to, or this
@@ -3226,6 +3229,13 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster){
       rc = syncJournal(pPager);
       if( rc!=SQLITE_OK ) goto sync_exit;
     }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( nTrunc!=0 ){
+      rc = sqlite3pager_truncate(pPager, nTrunc);
+      if( rc!=SQLITE_OK ) goto sync_exit;
+    }
+#endif
 
     /* Write all dirty pages to the database file */
     pPg = pager_get_all_dirty_pages(pPager);

@@ -1,5 +1,5 @@
-C Make\sauto-vacuum\sa\srun-time\soption\s(default\sdetermined\sby\sSQLITE_DEFAULT_AUTOVACUUM\smacro).\s(CVS\s2067)
-D 2004-11-05T15:45:10
+C Do\snot\struncate\sa\sdatabase\sfile\suntil\safter\sfsync()\shas\sbeen\scalled\son\sthe\sjournal.\s(CVS\s2068)
+D 2004-11-05T16:37:03
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 9ca965e9fbb28fb567cd76fe2a3cec1a161ad5ba
+F src/btree.c bf0d3d59ec076f0a37378f8ac6090d157d925c24
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c dc8b9ab836f2323d9b313c2d703b00b2e9441382
 F src/date.c 34bdb0082db7ec2a83ef00063f7b44e61ee19dad
@@ -52,8 +52,8 @@ F src/os_unix.c 5824b22ba41fe9d514ef9169aac1b5fde73af229
 F src/os_unix.h f3097815e041e82e24d92505e1ff61ba24172d13
 F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c a43e2a392be51966129e9afb18b81551c9f222b8
-F src/pager.h cbe4ba356d9dd3f30260f322b3dc77408164df14
+F src/pager.c 868c67e4ff8a1785c06caaf483fddb5a95013af0
+F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
 F src/parse.y 97247c0a89ca1667729db5035f1ee60140960984
 F src/pragma.c 6a0ae7721e614c5a921e918ab5206d5e654f1a6f
 F src/printf.c 7a92adc00b758cd5ce087dae80181a8bbdb70ed2
@@ -252,7 +252,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 44a015b3a3bbecc4ec1e02bb371d3274e2b6edf3
-R fba5273e743f06f619fdf4a2b5c9b7df
+P b9d5f007fc32d4f471e0e11cc4baadb100612878
+R 18a567bb56395dc74db3aa4daaced6ab
 U danielk1977
-Z 243e31232ec02903a39e127ae0fea404
+Z 17328cbcaecb7be2165f3f20c069642c
