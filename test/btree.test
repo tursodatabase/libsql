@@ -11,11 +11,26 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.23 2004/05/09 11:51:40 drh Exp $
+# $Id: btree.test,v 1.24 2004/05/14 16:50:07 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Testing of varint reading writing.
+#
+do_test btree-0.1 {
+  btree_varint_test 0 0 500 1
+} {}
+do_test btree-0.2 {
+  btree_varint_test 1024 1 500 1
+} {}
+do_test btree-0.3 {
+  btree_varint_test -1 1 500 1
+} {}
+do_test btree-0.4 {
+  btree_varint_test -1 100000 500 1
+} {}
 
 # Basic functionality.  Open and close a database.
 #

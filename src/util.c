@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.81 2004/05/14 11:00:53 danielk1977 Exp $
+** $Id: util.c,v 1.82 2004/05/14 16:50:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -1139,26 +1139,92 @@ int sqlite3SafetyCheck(sqlite *db){
   return 0;
 }
 
+/*
+** Write a 64-bit variable-length integer to memory starting at p[0].
+** The length of data write will be between 1 and 9 bytes.  The number
+** of bytes written is returned.
+**
+** A variable-length integer consists of the lower 7 bits of each byte
+** for all bytes that have the 8th bit set and one byte with the 8th
+** bit clear.
+*/
 int sqlite3PutVarint(unsigned char *p, u64 v){
-  int i = 0;
+  int i, j, n;
+  u8 buf[10];
+  n = 0;
   do{
-    p[i++] = (v & 0x7f) | 0x80;
+    buf[n++] = (v & 0x7f) | 0x80;
     v >>= 7;
   }while( v!=0 );
-  p[i-1] &= 0x7f;
-  return i;
+  buf[0] &= 0x7f;
+  for(i=0, j=n-1; j>=0; j--, i++){
+    p[i] = buf[j];
+  }
+  return n;
 }
 
+/*
+** Read a 64-bit variable-length integer from memory starting at p[0].
+** Return the number of bytes read.  The value is stored in *v.
+*/
 int sqlite3GetVarint(const unsigned char *p, u64 *v){
-  u64 x = p[0] & 0x7f;
-  int n = 0;
-  while( (p[n++]&0x80)!=0 ){
-    x |= ((u64)(p[n]&0x7f))<<(n*7);
+  u32 x;
+  u64 x64;
+  int n;
+  unsigned char c;
+  c = p[0];
+  if( (c & 0x80)==0 ){
+    *v = c;
+    return 1;
+  }
+  x = c & 0x7f;
+  c = p[1];
+  if( (c & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 2;
+  }
+  x = (x<<7) | (c&0x7f);
+  c = p[2];
+  if( (c & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 3;
+  }
+  x = (x<<7) | (c&0x7f);
+  c = p[3];
+  if( (c & 0x80)==0 ){
+    *v = (x<<7) | c;
+    return 4;
+  }
+  x64 = (x<<7) | (c&0x7f);
+  n = 4;
+  do{
+    c = p[n++];
+    x64 = (x64<<7) | (c&0x7f);
+  }while( (c & 0x80)!=0 );
+  *v = x64;
+  return n;
+}
+
+/*
+** Read a 32-bit variable-length integer from memory starting at p[0].
+** Return the number of bytes read.  The value is stored in *v.
+*/
+int sqlite3GetVarint32(const unsigned char *p, u32 *v){
+  int n = 1;
+  unsigned char c = p[0];
+  u32 x = c & 0x7f;
+  while( (c & 0x80)!=0 ){
+    c = p[n++];
+    x = (x<<7) | (c & 0x7f);
   }
   *v = x;
   return n;
 }
 
+/*
+** Return the number of bytes that will be needed to store the given
+** 64-bit integer.
+*/
 int sqlite3VarintLen(u64 v){
   int i = 0;
   do{
@@ -1167,4 +1233,3 @@ int sqlite3VarintLen(u64 v){
   }while( v!=0 );
   return i;
 }
-

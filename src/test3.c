@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.36 2004/05/11 02:10:07 danielk1977 Exp $
+** $Id: test3.c,v 1.37 2004/05/14 16:50:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1029,7 +1029,8 @@ static int btree_fetch_data(
 
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID AMT\"", 0);
+       " ID AMT
+\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
@@ -1144,6 +1145,62 @@ static int btree_breakpoint(
   return TCL_OK;
 }
 
+/*
+** usage:   varint_test  START  MULTIPLIER  COUNT  INCREMENT
+**
+** This command tests the sqlite3PutVarint() and sqlite3GetVarint()
+** routines, both for accuracy and for speed.
+**
+** An integer is written using PutVarint() and read back with
+** GetVarint() and varified to be unchanged.  This repeats COUNT
+** times.  The first integer is START*MULTIPLIER.  Each iteration
+** increases the integer by INCREMENT.
+**
+** This command returns nothing if it works.  It returns an error message
+** if something goes wrong.
+*/
+static int btree_varint_test(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  u32 start, mult, count, incr;
+  u64 in, out;
+  int n1, n2, i;
+  unsigned char zBuf[100];
+  if( argc!=5 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " START MULTIPLIER COUNT INCREMENT\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&start) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[2], (int*)&mult) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[3], (int*)&count) ) return TCL_ERROR;
+  if( Tcl_GetInt(interp, argv[4], (int*)&incr) ) return TCL_ERROR;
+  in = start;
+  in *= mult;
+  for(i=0; i<count; i++){
+    n1 = sqlite3PutVarint(zBuf, in);
+    if( n1>9 || n1<1 ){
+      Tcl_AppendResult(interp, "PutVarint returned value out of range", 0);
+      return TCL_ERROR;
+    }
+    n2 = sqlite3GetVarint(zBuf, &out);
+    if( n1!=n2 ){
+      Tcl_AppendResult(interp, \
+         "GetVarint returned value different from PutVarint", 0);
+      return TCL_ERROR;
+    }
+    if( in!=out ){
+      Tcl_AppendResult(interp, \
+         "Value read is different from value written", 0);
+      return TCL_ERROR;
+    }
+    in += incr;
+  }
+  return TCL_OK;
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -1188,6 +1245,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_cursor_list",        (Tcl_CmdProc*)btree_cursor_list        },
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
      { "btree_breakpoint",         (Tcl_CmdProc*)btree_breakpoint         },
+     { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
   };
   int i;
 
