@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.175 2004/12/07 15:41:49 drh Exp $
+** $Id: expr.c,v 1.176 2004/12/18 18:40:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -690,7 +690,9 @@ static int lookupName(
   int i, j;            /* Loop counters */
   int cnt = 0;         /* Number of matching column names */
   int cntTab = 0;      /* Number of matching table names */
-  sqlite3 *db = pParse->db;  /* The database */
+  sqlite3 *db = pParse->db;         /* The database */
+  struct SrcList_item *pItem;       /* Use for looping over pSrcList items */
+  struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
 
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
   zDb = sqlite3NameFromToken(pDbToken);
@@ -702,8 +704,7 @@ static int lookupName(
   assert( zTab==0 || pEList==0 );
 
   pExpr->iTable = -1;
-  for(i=0; i<pSrcList->nSrc; i++){
-    struct SrcList_item *pItem = &pSrcList->a[i];
+  for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
     Table *pTab = pItem->pTab;
     Column *pCol;
 
@@ -724,11 +725,13 @@ static int lookupName(
     if( 0==(cntTab++) ){
       pExpr->iTable = pItem->iCursor;
       pExpr->iDb = pTab->iDb;
+      pMatch = pItem;
     }
     for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
       if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
         cnt++;
         pExpr->iTable = pItem->iCursor;
+        pMatch = pItem;
         pExpr->iDb = pTab->iDb;
         /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
         pExpr->iColumn = j==pTab->iPKey ? -1 : j;
@@ -840,6 +843,21 @@ static int lookupName(
     }
     sqlite3ErrorMsg(pParse, zErr, z);
     sqliteFree(z);
+  }
+
+  /* If a column from a table in pSrcList is referenced, then record
+  ** this fact in the pSrcList.a[].colUsed bitmask.  Column 0 causes
+  ** bit 0 to be set.  Column 1 sets bit 1.  And so forth.  If the
+  ** column number is greater than the number of bits in the bitmask
+  ** then set the high-order bit of the bitmask.
+  */
+  if( pExpr->iColumn>=0 && pMatch!=0 ){
+    int n = pExpr->iColumn;
+    if( n>=sizeof(Bitmask)*8 ){
+      n = sizeof(Bitmask)*8-1;
+    }
+    assert( pMatch->iCursor==pExpr->iTable );
+    pMatch->colUsed |= 1<<n;
   }
 
   /* Clean up and return

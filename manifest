@@ -1,5 +1,5 @@
-C Fix\sa\sC++-ism\sin\sthe\sprevious\schange\sto\stclsqlite.c.\s(CVS\s2168)
-D 2004-12-17T20:48:06
+C Improvements\sto\sthe\squery\soptimizer.\s\sThis\sis\sa\swork\sin\sprogress.\s(CVS\s2169)
+D 2004-12-18T18:40:27
 F Makefile.in da09f379b80c8cd78d78abaa0f32ca90a124e884
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -35,7 +35,7 @@ F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
 F src/delete.c 6debe7893fa09bb5b386df0f26165f13132423e6
-F src/expr.c d61efc526449a7a4c725325a3001a614cbcc3bed
+F src/expr.c d718509e56f58b06bc5f9b46afb295675334d544
 F src/func.c b668e5ad043176049454c95a6a780367a0e8f6bb
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -62,7 +62,7 @@ F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c ac6610b4b2c5bd5ffc46536b760dacc420119dac
 F src/shell.c e8f4f486cbf6e60d81173146ac8a6522c930fa51
 F src/sqlite.h.in fa75850f412808afd38fddc1fd6456f4efc6fb97
-F src/sqliteInt.h e0c5c1af95e975645c7a09b151af258d6fca1c53
+F src/sqliteInt.h 9f95e46c03ba8466e7bc4528ffe39e3ae0c955ab
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 3a4044ef609565c8cc51e887d8b96933ba9f3b5c
 F src/test1.c b7d94c54e58f95452387a5cabdf98b2be8059f29
@@ -82,7 +82,7 @@ F src/vdbeInt.h 0f74561e629af86172de7cdf0ecaea014c51696c
 F src/vdbeapi.c 0cf3bdc1072616bedc8eec7fc22e3f5a169d33fd
 F src/vdbeaux.c a7c4c90786e2633b38f2d89f3dc49aed747454e4
 F src/vdbemem.c 5876c8abf4374fef671f4fd8dc333ef3fc95a2f0
-F src/where.c 35ea898e6414864afb819d3fde30f11179dbede0
+F src/where.c 94b784521e40f1b181ac151f89150a243c88feee
 F tclinstaller.tcl 36478c3bbfc5b93ceac42d94e3c736937b808432
 F test/all.test 929bfa932b55e75c96fe2203f7650ba451c1862c
 F test/alter.test 95c57a4f461fa81293e0dccef7f83889aadb169a
@@ -202,7 +202,7 @@ F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
 F test/vacuum.test f18eccdee5b538d46298c64d6a060cfbf97bbc23
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 3f96df86f1c61ee850b945204683773bbbb8643e
-F test/where.test 6914a44678693e78d379eab389140a33334633a2
+F test/where.test e092b5c206a58d61282090acce63a9d5fbe401f3
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/lemon.c 250b30bcf3f1f422a2cad24b1597314777058a4b
 F tool/lempar.c 1e61d2b6cb9d8affa264a13336bc0c088498caa4
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P a9311d9df054a91e231d4e4332df0d661675744d
-R 82afa2ad55f8fa2d63a8a18ec3035e8e
+P b49b8fdd11a5a4aac15ceda58a28bbc852f6f239
+R 98ad9cc1dc8e1742c8a95031c2f5cb13
 U drh
-Z 1ee374478d3894044f0834b2bb0bd546
+Z e1e7b9285b9bdd508bb0434689171c56
