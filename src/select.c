@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.161.2.1 2004/07/18 21:14:05 drh Exp $
+** $Id: select.c,v 1.161.2.2 2004/07/19 23:33:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -365,6 +365,30 @@ void sqliteAddKeyType(Vdbe *v, ExprList *pEList){
 }
 
 /*
+** Add code to implement the OFFSET and LIMIT
+*/
+static void codeLimiter(
+  Vdbe *v,          /* Generate code into this VM */
+  Select *p,        /* The SELECT statement being coded */
+  int iContinue,    /* Jump here to skip the current record */
+  int iBreak,       /* Jump here to end the loop */
+  int nPop          /* Number of times to pop stack when jumping */
+){
+  if( p->iOffset>=0 ){
+    int addr = sqliteVdbeCurrentAddr(v) + 2;
+    if( nPop>0 ) addr++;
+    sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr);
+    if( nPop>0 ){
+      sqliteVdbeAddOp(v, OP_Pop, nPop, 0);
+    }
+    sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
+  }
+  if( p->iLimit>=0 ){
+    sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, iBreak);
+  }
+}
+
+/*
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
 **
@@ -388,6 +412,7 @@ static int selectInnerLoop(
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
+  int hasDistinct;        /* True if the DISTINCT keyword is present */
 
   if( v==0 ) return 0;
   assert( pEList!=0 );
@@ -395,15 +420,9 @@ static int selectInnerLoop(
   /* If there was a LIMIT clause on the SELECT statement, then do the check
   ** to see if this row should be output.
   */
-  if( pOrderBy==0 ){
-    if( p->iOffset>=0 ){
-      int addr = sqliteVdbeCurrentAddr(v);
-      sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr+2);
-      sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
-    }
-    if( p->iLimit>=0 ){
-      sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, iBreak);
-    }
+  hasDistinct = distinct>=0 && pEList && pEList->nExpr>0;
+  if( pOrderBy==0 && !hasDistinct ){
+    codeLimiter(v, p, iContinue, iBreak, 0);
   }
 
   /* Pull the requested columns.
@@ -423,7 +442,7 @@ static int selectInnerLoop(
   ** and this row has been seen before, then do not make this row
   ** part of the result.
   */
-  if( distinct>=0 && pEList && pEList->nExpr>0 ){
+  if( hasDistinct ){
 #if NULL_ALWAYS_DISTINCT
     sqliteVdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqliteVdbeCurrentAddr(v)+7);
 #endif
@@ -434,6 +453,9 @@ static int selectInnerLoop(
     sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeAddOp(v, OP_PutStrKey, distinct, 0);
+    if( pOrderBy==0 ){
+      codeLimiter(v, p, iContinue, iBreak, nColumn);
+    }
   }
 
   switch( eDest ){
@@ -570,14 +592,7 @@ static void generateSortTail(
   if( eDest==SRT_Sorter ) return;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end1);
-  if( p->iOffset>=0 ){
-    sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr+4);
-    sqliteVdbeAddOp(v, OP_Pop, 1, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, addr);
-  }
-  if( p->iLimit>=0 ){
-    sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, end2);
-  }
+  codeLimiter(v, p, addr, end2, 1);
   switch( eDest ){
     case SRT_Callback: {
       sqliteVdbeAddOp(v, OP_SortCallback, nColumn, 0);
