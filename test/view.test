@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.23 2005/01/29 08:32:47 danielk1977 Exp $
+# $Id: view.test,v 1.24 2005/01/30 11:11:44 danielk1977 Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -418,5 +418,26 @@ do_test view-10.2 {
     SELECT * FROM v_t3_b;
   }
 } {2}
+
+do_test view-11.1 {
+  execsql {
+    CREATE TABLE t4(a COLLATE NOCASE);
+    INSERT INTO t4 VALUES('This');
+    INSERT INTO t4 VALUES('this');
+    INSERT INTO t4 VALUES('THIS');
+    SELECT * FROM t4 WHERE a = 'THIS';
+  }
+} {This this THIS}
+do_test view-11.2 {
+  execsql {
+    SELECT * FROM (SELECT * FROM t4) WHERE a = 'THIS';
+  }
+} {This this THIS}
+do_test view-11.3 {
+  execsql {
+    CREATE VIEW v11 AS SELECT * FROM t4;
+    SELECT * FROM v11 WHERE a = 'THIS';
+  }
+} {This this THIS}
 
 finish_test
