@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: btree.c,v 1.3 2001/04/29 23:32:56 drh Exp $
+** $Id: btree.c,v 1.4 2001/05/11 11:02:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -29,6 +29,15 @@
 #include <assert.h>
 
 typedef unsigned int u32;
+typedef unsigned short int u16;
+
+/*
+** Forward declarations of structures used only in this file.
+*/
+typedef struct Page1Header Page1Header;
+typedef struct PageHdr PageHdr;
+typedef struct Cell Cell;
+typedef struct FreeBlk FreeBlk;
 
 
 /*
@@ -41,6 +50,12 @@ typedef unsigned int u32;
 #define EXTRA_PAGE_1_CELLS  3
 #define MAGIC_1  0x7264dc61
 #define MAGIC_2  0x54e55d9e
+
+struct Page1Header {
+  u32 magic1;
+  u32 magic2;
+  Pgno firstList;
+};
 
 /*
 ** Each database page has a header as follows:
@@ -57,6 +72,22 @@ typedef unsigned int u32;
 **      nByte                 Number of free bytes in this block
 **      next_free             Next free block or 0 if this is the end
 */
+struct PageHdr {
+  Pgno pgno;      /* Child page that comes after all cells on this page */
+  u16 firstCell;  /* Index in MemPage.aPage[] of the first cell */
+  u16 firstFree;  /* Index in MemPage.aPage[] of the first free block */
+};
+struct Cell {
+  Pgno pgno;      /* Child page that comes before this cell */
+  u16 nKey;       /* Number of bytes in the key */
+  u16 iNext;      /* Index in MemPage.aPage[] of next cell in sorted order */
+  u32 nData;      /* Number of bytes of data */
+  char aData[4];  /* Key and data */
+};
+struct FreeBlk {
+  u16 iSize;      /* Number of u32-sized slots in the block of free space */
+  u16 iNext;      /* Index in MemPage.aPage[] of the next free block */
+};
 
 /*
 ** The maximum number of database entries that can be held in a single
@@ -73,7 +104,7 @@ typedef unsigned int u32;
 ** be at least 4 bytes in the key/data packet, so each entry consumes at
 ** least 20 bytes of space on the page.
 */
-#define MX_CELL ((SQLITE_PAGE_SIZE-12)/20)
+#define MX_CELL ((SQLITE_PAGE_SIZE-sizeof(PageHdr))/sizeof(Cell))
 
 /*
 ** The maximum amount of data (in bytes) that can be stored locally for a
@@ -109,7 +140,7 @@ struct MemPage {
   Pgno left;                   /* Left sibling page.  0==none */
   Pgno right;                  /* Right sibling page.  0==none */
   int idxStart;                /* Index in aPage[] of real data */
-  int nFree;                   /* Number of free elements of aPage[] */
+  int nFree;                   /* Number of free slots of aPage[] */
   int nCell;                   /* Number of entries on this page */
   u32 *aCell[MX_CELL];         /* All entires in sorted order */
 }
@@ -133,6 +164,17 @@ struct Btree {
 };
 typedef Btree Bt;
 
+/*
+** A cursor is a pointer to a particular entry in the BTree.
+** The entry is identified by its MemPage and the index in
+** MemPage.aCell[] of the entry.
+*/
+struct Cursor {
+  Btree *pBt;           /* The pointer back to the BTree */
+  MemPage *pPage;       /* Page that contains the entry */
+  int idx;              /* Index of the entry in pPage->aCell[] */
+  int skip_incr;        /* */
+};
 
 /*
 ** The maximum depth of a cursor
@@ -163,83 +205,25 @@ struct BtCursor {
   BtIdxpt aLevel[MX_LEVEL];     /* The index levels */
 };
 
+
+/*
+** Defragment the page given.  All of the free space
+** is collected into one big block at the end of the
+** page.
+*/
+static void defragmentPage(MemPage *pPage){
+}
+
 /*
 ** Mark a section of the memory block as in-use.
 */
 static void useSpace(MemPage *pPage, int start, int size){
-  int i;
-  FreeBlk *p;
-
-  /* Some basic sanity checking */
-  assert( pPage && pPage->isInit );
-  assert( pPage->nFree>0 && pPage->nFree<=MX_FREE );
-  assert( pPage->nFreeSlot >= size );
-  assert( start > pPage->idxStart );
-  assert( size>0 );
-  assert( start + size < SQLITE_PAGE_SIZE/sizeof(pPage->aPage[0]) );
-
-  /* Search for the freeblock that describes the space to be used */
-  for(i=0; i<pPage->nFree; i++){
-    p = &pPage->aFree[i]
-    if( p->idx<=start && p->idx+p->size>start ) break;
-  }
-
-  /* The freeblock must contain all the space that is to be used */
-  assert( i<pPage->nFree );
-  assert( p->idx+p->size >= start+size );
-
-  /* Remove the used space from the freeblock */
-  if( p->idx==start ){
-    /* The space is at the beginning of the block
-    p->size -= size;
-    if( p->size==0 ){
-      *p = pPage->aFree[pPage->nFree-1];
-      pPage->nFree--;
-    }
-  }else if( p->idx+p->size==start+size ){
-    /* Space at the end of the block */
-    p->size -= size;
-  }else{
-    /* Space in the middle of the freeblock. */
-    FreeBlk *pNew;
-    assert( p->nFreeSlot < MX_FREE );
-    pNew->idx = start+size;
-    pNew->size = p->idx+p->size - pNew->idx;
-    p->size = start - p->idx;
-  }
-  pPage->nFreeSlot -= size;
 }
 
 /*
 ** Return a section of the MemPage.aPage[] to the freelist.
 */
 static void freeSpace(MemPage *pPage, int start, int size){
-  int end = start+size;
-  int i;
-  FreeBlk *pMatch = 0;
-  FreeBlk *
-  for(i=0; i<pPage->nFreeSlot; i++){
-    FreeBlk *p = &pPage->aFree[i];
-    if( p->idx==end+1 ){
-      if( pMatch ){
-        
-      }else{
-        p->idx = start;
-        p->size += size;
-        pMatch = p;
-      }
-    }
-    if( p->idx+p->size+1==start ){
-      p->size += size;
-      break;
-    }
-  }
-}
-
-/*
-** Defragment the freespace
-*/
-static void defragmentSpace(MemPage *pPage){
 }
 
 /*

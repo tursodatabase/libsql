@@ -1,48 +1,111 @@
 How to do a B*Tree insert:
 
-add_to_page(cursor, data, ptr){
-  if( data_fits_on_page ){ add data to page; return; }
-  if( page==root ){
-     split currentpage+(data+ptr) into lowerpart, center, upperpart
-     newpage1 = lowerpart;
-     newpage2 = upperpart;
-     page = ptr(newpage1) + center + ptr(newpage2);
-     return;
+add_to_page(pageptr, data, pgno){
+  pgno.parent = pageptr
+  if( data+pgno fits on pageptr ){
+    add data+pgno to pageptr
+    return
+  }
+  if( pageptr==root ){
+    split pageptr+(data+pgno) into newpage1, center, newpage2
+    pageptr = ptr(newpage1) + center + ptr(newpage2);
+    return
   }
   if( move_some_data_left || move_some_data_right ){
-    add data to page
+    add data+pgno to pageptr
     return
   }
-  split currentpage+(data+ptr) into lowerpart, center, upperpart
-  newpage = upperpart
-  currentpage = lowerpart
-  pop cursor one level
-  add_to_page(cursor, center, ptr(newpage));
+  split pageptr+(data+pgno) into pageptr, center, newpage
+  add_to_page(parent(pageptr), center, ptr(newpage));
+  newpage.parent = parent(pageptr)
 }
 
+Cursor: pageptr, idx
+
 unlink_entry(cursor, olddata){
-  if( !is_a_leaf ){
-    n = next_entry()
-    if( n fits pageof(cursor) ){
-      if( olddata!=nil ) copy dataof(cursor) into olddata
-      copy dataof(n) into dataof(cursor)
+  if( cursor.pageptr is not a leaf page ){
+    if( olddata!=nil) copy payload(cursor) into olddata
+    n = next_entry(cursor)
+    if( payloadsize(n) <= freesize(cursor) + payloadsize(cursor) ){
+      copy payload(n) into payload(cursor)
       unlink_entry(n, nil)
       return
     }
-    n = prev_entry()
-    if( n fits pageof(cursor) ){
-      if( olddata!=nil ) copy dataof(cursor) into olddata
-      copy dataof(n) into dataof(cursor)
-      unlink_entry(n, nil)
+    p = prev_entry(cursor)
+    if( payloadsize(p) <= freesize(cursor) + payloadsize(cursor) ){
+      copy payload(p) into payload(cursor)
+      unlink_entry(p, nil)
       return
     }
-    unlink_entry(n, leafdata)
-    move cursor data and ptr into olddata, oldptr
-    add_to_page(cursor, leafdata, oldptr)
+    unlink(n, leafdata)
+    pageptr = cursor.pageptr
+    nextpgno = pageptr.aCell[cursor.idx].pgno;
+    convert_cursor_to_free_block(cursor)
+    add_to_page(pageptr, leafdata, nextpgno)
     return
   }
-  move cursor data into olddata
-  if( !underfull(pageof(cursor)) ) return
+  pageptr = cursor.pageptr;
+  convert_cursor_to_free_block(cursor)
+  if( usage(pageptr)<0.65 ){
+    consolidate(pageptr)
+  }
+}
 
+consolidate(pageptr){
+  parentpage = parentof(pageptr)
+  idx = index_of_page(parentpage, pageptr);
+  leftsibling = parentpage.cell[idx].pgno;
+  rightsibling = parentpage.cell[idx+1].pgno;
+  if( idx>0 ){
+    cursor = makecursor(pageptr,idx-1)
+    if( try_to_move_down(cursor) ) return
+  }
+  if( idx<max ){
+    cursor = makecursor(pageptr,idx)
+    try_to_move_down(cursor)
+  }
+  return
+}
 
+try_to_move_down(cursor){
+  pageptr = cursor.pageptr
+  if( payload(cursor)+sizeof(left)+sizeof(right)<=pagesize ){
+    put cursor and content of left into right
+    remove cursor from pageptr
+    if( pageptr is root ){
+      if( cellcount(pageptr)==0 ){
+        copy child into pageptr
+        update parent field of child
+      }
+    }else if( usage(pageptr)<0.65 ){
+      try_to_move_down(cursor)
+    }
+  }
+}
+
+cursor_move_next(cursor){
+  if( cursor.incr_noop ){
+    cursor.incr_noop = FALSE;
+    return;
+  }
+  if( is_leaf(cursor.pageptr) ){
+    if( cursor.idx==cursor.pageptr.ncell ){
+      if( cursor.pageptr==root ){
+        nil cursor
+        return
+      }
+      cursor_move_up(cursor)
+      cursor_move_next(cursor)
+    }else{
+      cursor.idx++;
+    }
+    return
+  }
+  pgno = next_pgno(cursor)
+  loop {
+    cursor.pageptr = get(pgno);
+    if( is_leaf(cursor.pageptr) ) break;
+    pgno = first_pgno(pageptr);
+  }
+  cursor.idx = 0;
 }
