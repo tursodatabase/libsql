@@ -1,5 +1,5 @@
-C Version\s2.4.6\s(CVS\s516)
-D 2002-04-02T13:27:43
+C Added\sa\shyperlink\sto\sthe\sSQLite-PHP\sproject.\s(CVS\s517)
+D 2002-04-03T20:50:21
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -123,7 +123,7 @@ F www/download.tcl 29aa6679ca29621d10613f60ebbbda18f4b91c49
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
-F www/index.tcl e6d59816ad6f90b03b0a92eccd45d6a4a928438a
+F www/index.tcl 2a9653ebeeaba3aca3401f476ba0e0e4acb40929
 F www/lang.tcl e6c277480c4e31877c08509af7a16f6c69bb1046
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
@@ -131,7 +131,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P abb12259a09418eb6e3cf573ea718ac58c91ac7b
-R 1e8462f1dea7fa55f9cf92098e6e2f92
+P 5ae7efd87f1a8e2f3e927bf373fbcb5c692d1a02
+R 97c982959534a76dbc674ad8494cc78c
 U drh
-Z c767d9da34c060a9378c5b233c151832
+Z c9be79df63e845bc5fc84485638451ca
