@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.9 2004/08/21 19:20:42 drh Exp $
+# $Id: crash.test,v 1.10 2004/11/08 09:26:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,6 +67,11 @@ proc signature {} {
 proc signature2 {} {
   return [db eval {SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abc2}]
 }
+
+# This variable is set to 1 if the databases being used support auto-vacuum.
+# This is because some of the tests in this file verify file-size, which is
+# slightly larger for auto-vacuum databases.
+set AUTOVACUUM [db eval {pragma auto_vacuum}]
 
 #--------------------------------------------------------------------------
 # Simple crash test:
@@ -170,7 +175,7 @@ do_test crash-2.1 {
 } {499500.0 999000.0 1498500.0}
 do_test crash-2.2 {
   expr [file size test.db] / 1024
-} {19}
+} [expr $AUTOVACUUM ? 20 : 19]
 do_test crash-2.3 {
   crashsql 2 test.db-journal {
     DELETE FROM abc WHERE a < 800;
@@ -210,7 +215,7 @@ do_test crash-3.0 {
     INSERT INTO abc SELECT * FROM abc;
   }
   expr [file size test.db] / 1024
-} {554}
+} [expr $AUTOVACUUM ? 557 : 554]
 for {set i 1} {$i < $repeats} {incr i} {
   set sig [signature]
   do_test crash-3.$i.1 {
@@ -324,3 +329,64 @@ for {set i 1} {$i < 5} {incr i} {
     signature2
   } $sig2
 }
+
+#--------------------------------------------------------------------------
+# The following test cases - crash-5.* - exposes a bug that existed in the
+# sqlite3pager_movepage() API used by auto-vacuum databases.
+# database when a crash occurs during a multi-file transaction. See comments
+# in test crash-5.3 for details.
+#
+db close
+file delete -force test.db
+sqlite3 db test.db
+do_test crash-5.1 {
+  execsql {
+    CREATE TABLE abc(a, b, c);                          -- Root page 3
+    INSERT INTO abc VALUES(randstr(1500,1500), 0, 0);   -- Overflow page 4
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+  }
+} {}
+do_test crash-5.2 {
+  expr [file size test.db] / 1024
+} [expr $AUTOVACUUM ? 11 : 10]
+set sig [signature]
+do_test crash-5.3 {
+# The SQL below is used to expose a bug that existed in
+# sqlite3pager_movepage() during development of the auto-vacuum feature. It
+# functions as follows:
+# 
+# 1: Begin a transaction.
+# 2: Put page 4 on the free-list (was the overflow page for the row deleted).
+# 3: Write data to page 4 (it becomes the overflow page for the row inserted).
+#    The old page 4 data has been written to the journal file, but the
+#    journal file has not been sync()hronized.
+# 4: Create a table, which calls sqlite3pager_movepage() to move page 4
+#    to the end of the database (page 12) to make room for the new root-page.
+# 5: Put pressure on the pager-cache. This results in page 4 being written
+#    to the database file to make space in the cache to load a new page. The
+#    bug was that page 4 was written to the database file before the journal
+#    is sync()hronized.
+# 6: Commit. A crash occurs during the sync of the journal file.
+#
+# End result: Before the bug was fixed, data has been written to page 4 of the
+# database file and the journal file does not contain trustworthy rollback
+# data for this page.
+#
+  crashsql 1 test.db-journal {
+    BEGIN;                                             -- 1
+    DELETE FROM abc WHERE oid = 1;                     -- 2
+    INSERT INTO abc VALUES(randstr(1500,1500), 0, 0);  -- 3
+    CREATE TABLE abc2(a, b, c);                        -- 4
+    SELECT * FROM abc;                                 -- 5
+    COMMIT;                                            -- 6
+  }
+} {1 {child process exited abnormally}}
+integrity_check crash-5.4
+do_test crash-5.5 {
+  signature
+} $sig
+
+
+

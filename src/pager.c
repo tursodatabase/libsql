@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.175 2004/11/08 07:13:14 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.176 2004/11/08 09:26:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -34,7 +34,7 @@
 #define TRACE2(X,Y)     sqlite3DebugPrintf(X,Y)
 #define TRACE3(X,Y,Z)   sqlite3DebugPrintf(X,Y,Z)
 #define TRACE4(X,Y,Z,W) sqlite3DebugPrintf(X,Y,Z,W)
-#define TRACE5(X,Y,Z,W,V) sqlite3DebugPrintf(X,Y,Z,W, V)
+#define TRACE5(X,Y,Z,W,V) sqlite3DebugPrintf(X,Y,Z,W,V)
 #else
 #define TRACE1(X)
 #define TRACE2(X,Y)
@@ -3303,12 +3303,19 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   PgHdr *pPgOld; 
   int h;
+  Pgno needSyncPgno = 0;
 
   assert( !pPager->stmtInUse );
   assert( pPg->nRef>0 );
 
   TRACE5("MOVE %d page %d (needSync=%d) moves to %d\n", 
       PAGERID(pPager), pPg->pgno, pPg->needSync, pgno);
+
+  if( pPg->needSync ){
+    needSyncPgno = pPg->pgno;
+    assert( pPg->inJournal );
+    assert( pPg->dirty );
+  }
 
   /* Unlink pPg from it's hash-chain */
   unlinkHashChain(pPager, pPg);
@@ -3341,6 +3348,23 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
 
   pPg->dirty = 1;
   pPager->dirtyCache = 1;
+
+  if( needSyncPgno ){
+    /* If needSyncPgno is non-zero, then the journal file needs to be 
+    ** sync()ed before any data is written to database file page needSyncPgno.
+    ** Currently, no such page exists in the page-cache and the 
+    ** Pager.aInJournal bit has been set. This needs to be remedied by loading
+    ** the page into the pager-cache and setting the PgHdr.needSync flag.
+    */
+    int rc;
+    void *pNeedSync;
+    rc = sqlite3pager_get(pPager, needSyncPgno, &pNeedSync);
+    if( rc!=SQLITE_OK ) return rc;
+    DATA_TO_PGHDR(pNeedSync)->needSync = 1;
+    DATA_TO_PGHDR(pNeedSync)->inJournal = 1;
+    DATA_TO_PGHDR(pNeedSync)->dirty = 1;
+    sqlite3pager_unref(pNeedSync);
+  }
 
   return SQLITE_OK;
 }
