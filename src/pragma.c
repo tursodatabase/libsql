@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.89 2005/02/09 03:20:37 danielk1977 Exp $
+** $Id: pragma.c,v 1.90 2005/02/26 18:10:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -79,7 +79,9 @@ static int getTempStore(const char *z){
     return 0;
   }
 }
+#endif /* SQLITE_PAGER_PRAGMAS */
 
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
 ** Invalidate temp storage, either when the temp storage is changed
 ** from default, or when 'file' and the temp_store_directory has changed
@@ -98,7 +100,9 @@ static int invalidateTempStorage(Parse *pParse){
   }
   return SQLITE_OK;
 }
+#endif /* SQLITE_PAGER_PRAGMAS */
 
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
 ** If the TEMP database is open, close it and mark the database schema
 ** as needing reloading.  This must be done when using the TEMP_STORE
@@ -114,7 +118,7 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
   db->temp_store = ts;
   return SQLITE_OK;
 }
-#endif
+#endif /* SQLITE_PAGER_PRAGMAS */
 
 /*
 ** Generate code to return a single integer value.
@@ -129,6 +133,7 @@ static void returnSingleInt(Parse *pParse, const char *zLabel, int value){
   sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
 }
 
+#ifndef SQLITE_OMIT_FLAG_PRAGMAS
 /*
 ** Check to see if zRight and zLeft refer to a pragma that queries
 ** or changes one of the flags in db->flags.  Return 1 if so and 0 if not.
@@ -177,6 +182,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
   }
   return 0;
 }
+#endif /* SQLITE_OMIT_FLAG_PRAGMAS */
 
 /*
 ** Process a pragma statement.  
@@ -428,10 +434,12 @@ void sqlite3Pragma(
   }else
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
+#ifndef SQLITE_OMIT_FLAG_PRAGMAS
   if( flagPragma(pParse, zLeft, zRight) ){
     /* The flagPragma() subroutine also generates any necessary code
     ** there is nothing more to do here */
   }else
+#endif /* SQLITE_OMIT_FLAG_PRAGMAS */
 
 #ifndef SQLITE_OMIT_SCHEMA_PRAGMAS
   /*

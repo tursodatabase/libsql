@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfault\sthat\scan\soccur\swhile\sautovacuuming\sa\scorrupt\sdatabase\nfile.\s\sAdd\sthe\sSQLITE_OMIT_COMPLETE\scompile-time\sparameter.\s(CVS\s2361)
-D 2005-02-26T17:31:27
+C Add\sthe\sSQLITE_OMIT_FLAG_PRAGMAS\scompile-time\soption.\s(CVS\s2362)
+D 2005-02-26T18:10:44
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -55,7 +55,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 835028769569971c7dbd63d11d3517392f1cdae0
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 450fc9c4d5a737be6fdba6e4b2e3de5800d4d750
-F src/pragma.c 7e65c5545d83909238adf231e2a6eee6eb43e0d5
+F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 69e6093d52e871a243477e9746f820456538dd03
@@ -64,7 +64,7 @@ F src/sqlite.h.in c85f6bad9ca7de29f505fe886646cfff7df4c55e
 F src/sqliteInt.h f95cc4becd7b27293aae8f8c4ed2f6ef44830fbb
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 29e56ecdb94c4066dbe6b088d12cc2404bc9597e
-F src/test1.c 99bfdba919ae278933178a52769115feb20557d9
+F src/test1.c 7b11aafae2d2b5850799200f4b9f8465a69a0c9d
 F src/test2.c 7f0ef466706ac01414e1136b96e5d8a65cb97545
 F src/test3.c 683e1e3819152ffd35da2f201e507228921148d0
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -85,7 +85,7 @@ F src/where.c 80a2a9d24f868fc5744ba2838701c46934c7e09f
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
-F test/alter2.test cd4204a4f5e11c5abfe8abbdf880538c994f3b47
+F test/alter2.test 8536631ea9cd97480dd548894b361795bf33e9cf
 F test/attach.test 5147d531ca5fc5c2539fd20ce3b07a00420e1fbb
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 5c99bea5a480edc7b15ae80be952b212e730d452
-R 9aed6907317152f4462ba568d557eca0
+P bb0e7e3857a06347b08d93553ac603e737322262
+R 2d91afc85eae20ff08e2b428c6ff7700
 U drh
-Z c94cdcca709d3e72a871ddb7b503aa8a
+Z 328cf6bc7d1c3ac80091be36b2dd1a8b

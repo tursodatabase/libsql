@@ -13,11 +13,14 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.1 2005/02/19 08:18:06 danielk1977 Exp $
+# $Id: alter2.test,v 1.2 2005/02/26 18:10:45 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# We have to have pragmas in order to do this test
+ifcapable {!pragma} return
 
 # The file format change affects the way row-records stored in tables (but 
 # not indices) are interpreted. Before version 3.1.3, a row-record for a 
@@ -289,4 +292,3 @@ do_test alter2-6.3 {
 } {2}
 
 finish_test
-
