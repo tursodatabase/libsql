@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.18 2004/11/22 13:35:42 danielk1977 Exp $
+# $Id: limit.test,v 1.19 2004/12/16 21:09:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -316,5 +316,37 @@ do_test limit-8.3 {
     SELECT DISTINCT round(x/100) FROM t3 LIMIT 5 OFFSET 25;
   }
 } {25 26 27 28 29}
+
+# Make sure limits on multiple subqueries work correctly.
+# Ticket #1035
+#
+do_test limit-9.1 {
+  execsql {
+    SELECT * FROM (SELECT * FROM t6 LIMIT 3);
+  }
+} {1 2 3}
+do_test limit-9.2 {
+  execsql {
+    CREATE TABLE t7 AS SELECT * FROM t6;
+    SELECT * FROM (SELECT * FROM t7 LIMIT 3);
+  }
+} {1 2 3}
+do_test limit-9.3 {
+  execsql {
+    SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+    UNION
+    SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+    ORDER BY 1
+  }
+} {1 2 3}
+do_test limit-9.4 {
+  execsql {
+    SELECT * FROM (SELECT * FROM t6 LIMIT 3)
+    UNION
+    SELECT * FROM (SELECT * FROM t7 LIMIT 3)
+    ORDER BY 1
+    LIMIT 2
+  }
+} {1 2}
 
 finish_test

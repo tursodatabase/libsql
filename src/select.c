@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.217 2004/11/23 01:47:30 drh Exp $
+** $Id: select.c,v 1.218 2004/12/16 21:09:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1504,6 +1504,8 @@ static int multiSelect(
       p->pOrderBy = pOrderBy;
       p->nLimit = nLimit;
       p->nOffset = nOffset;
+      p->iLimit = -1;
+      p->iOffset = -1;
       if( rc ){
         goto multi_select_end;
       }
