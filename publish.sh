@@ -16,14 +16,19 @@ srcdir=`echo "$0" | sed 's%\(^.*\)/[^/][^/]*$%\1%'`
 cp $srcdir/Makefile.linux-gcc ./Makefile
 chmod +x $srcdir/install-sh
 
-# Start building stuff.
+# Get the current version number - needed to help build filenames
+#
+VERS=`cat $srcdir/VERSION`
+VERSW=`sed 's/\./_/g' $srcdir/VERSION`
+
+# Start by building an sqlite shell for linux.
 #
 make clean
-make sqlite
-strip sqlite
-mv sqlite sqlite.bin
-rm -f sqlite.bin.gz
-gzip sqlite.bin
+make sqlite3
+strip sqlite3
+mv sqlite3 sqlite3-$VERS.bin
+gzip sqlite3-$VERS.bin
+mv sqlite3-$VERS.bin.gz doc
 
 # Build the tclsqlite.so shared library for import into tclsh or wish
 # under Linux
@@ -38,15 +43,16 @@ TCLSTUBLIB=$TCLDIR/libtclstub8.2g.a
 OPTS='-DUSE_TCL_STUBS=1 -DNDEBUG=1'
 gcc -fPIC $OPTS -O2 -I. -I$TCLDIR -shared *.c $TCLSTUBLIB -o tclsqlite.so
 strip tclsqlite.so
-mv tclsqlite.so ..
+mv tclsqlite.so tclsqlite-$VERS.so
+gzip tclsqlite-$VERS.so
+mv tclsqlite-$VERS.so.gz ../doc
 rm tclsqlite.c
 gcc -fPIC -DNDEBUG=1 -O2 -I. -shared *.c -o sqlite.so
 strip sqlite.so
-mv sqlite.so ..
+mv sqlite.so sqlite-$VERS.so
+gzip sqlite-$VERS.so
+mv sqlite-$VERS.so.gz ../doc
 cd ..
-rm -f tclsqlite.so.gz sqlite.so.gz
-gzip tclsqlite.so
-gzip sqlite.so
 
 # Build the tclsqlite.dll shared library that can be imported into tclsh
 # or wish on windows.
@@ -155,11 +161,9 @@ i386-mingw32msvc-dllwrap \
      --target i386-mingw32 \
      -dllname sqlite.dll -lmsvcrt *.o
 i386-mingw32msvc-strip sqlite.dll
-mv sqlite.dll sqlite.def ..
+zip ../doc/tclsqlite-$VERSW.zip tclsqlite.dll
+zip ../doc/sqlitedll-$VERSW.zip sqlite.dll sqlite.def
 cd ..
-rm -f tclsqlite.zip sqlitedll.zip
-zip tclsqlite.zip tclsqlite.dll
-zip sqlitedll.zip sqlite.dll sqlite.def
 
 # Build the sqlite.exe executable for windows.
 #
@@ -168,10 +172,8 @@ cd tsrc
 rm tclsqlite.c
 OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
 i386-mingw32msvc-gcc -O2 $OPTS -I. -I$TCLDIR *.c -o sqlite.exe
-mv sqlite.exe ..
+zip ../doc/sqlite-$VERSW.zip sqlite.exe
 cd ..
-rm -f sqlite.zip
-zip sqlite.zip sqlite.exe
 
 # Construct a tarball of the source tree
 #
@@ -179,11 +181,8 @@ ORIGIN=`pwd`
 cd $srcdir
 cd ..
 EXCLUDE=`find sqlite -print | grep CVS | sed 's,sqlite/, --exclude sqlite/,'`
-tar czf $ORIGIN/sqlite.tar.gz $EXCLUDE sqlite
+tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite
 cd $ORIGIN
-vers=`cat $srcdir/VERSION`
-rm -f sqlite-$vers.tar.gz
-ln sqlite.tar.gz sqlite-$vers.tar.gz
 
 #
 # Build RPMS (binary) and Source RPM
@@ -201,24 +200,19 @@ mkdir $HOME/rpm/SRPMS
 mkdir $HOME/rpm/SPECS
 
 # create the spec file from the template
-sed s/SQLITE_VERSION/$vers/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
+sed s/SQLITE_VERSION/$VERS/g $srcdir/spec.template > $HOME/rpm/SPECS/sqlite.spec
 
 # copy the source tarball to the rpm directory
-cp sqlite-$vers.tar.gz $HOME/rpm/SOURCES/.
+cp doc/sqlite-$VERS.tar.gz $HOME/rpm/SOURCES/.
 
 # build all the rpms
 rpm -ba $HOME/rpm/SPECS/sqlite.spec >& rpm-$vers.log
 
 # copy the RPMs into the build directory.
-ln $HOME/rpm/RPMS/i386/sqlite*-$vers*.rpm .
-ln $HOME/rpm/SRPMS/sqlite-$vers*.rpm .
-
+mv $HOME/rpm/RPMS/i386/sqlite*-$vers*.rpm doc
+mv $HOME/rpm/SRPMS/sqlite-$vers*.rpm doc
 
 # Build the website
 #
-cp $srcdir/../historical/* .
-rm -rf doc
+cp $srcdir/../historical/* doc
 make doc
-ln sqlite.bin.gz sqlite.zip sqlite*.tar.gz tclsqlite.so.gz tclsqlite.zip doc
-ln sqlitedll.zip sqlite.so.gz sqlite_source.zip doc
-ln *.rpm doc

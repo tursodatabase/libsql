@@ -1,5 +1,5 @@
-C Assorted\smemory\sleak\sfixes.\s(CVS\s1600)
-D 2004-06-15T16:51:01
+C Documentation\supdates\sand\schanges\sthe\spublish.sh\sscript.\s(CVS\s1602)
+D 2004-06-16T03:02:01
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,9 +17,9 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk e02f35c8354fe9a0ab48fc87b0bcb3fb7a86d713
+F main.mk 26a2e950660b952a98fd2772d4375636a5c9651b
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
-F publish.sh 2e579b7474d57b6debcead93c73a49eb8cb81718
+F publish.sh e772c09c4fb72f2323a1fb522259640e52040b15
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
@@ -187,7 +187,7 @@ F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl a40f956733cbd99e4aace05c9fb9d7a999c9477e
+F www/arch.tcl 3f4f9173a3b7dc05b0ea67ae0c942866558ad35d
 F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
@@ -203,16 +203,17 @@ F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl f48b05cafd5e54ae5c05e643169d5217ee51a244
 F www/datatypes.tcl 566004b81c36877397ddbe6e1907aae6065f6b41
 F www/docs.tcl a924a5043973a70c58b65abf1051ed8b1238864d
-F www/download.tcl 8c84f15695c92cb01486930055fdf5192995f474
+F www/download.tcl 075e21eb50ec6a3f29cdf2a011770a02187592eb
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 3a1776818d9bd973ab0c3048ec7ad6b1ad091ae5
 F www/fileformat.tcl f71a06a0d533c7df408539c64113b4adeaf29764
-F www/formatchng.tcl 7ed8a5c871ab105f01e5defe1822ec39f70675bb
-F www/index.tcl 64435502af780d7cd813365d443b9b9344662ce4
+F www/formatchng.tcl d1dfecedfb25e122ab513a1e0948b15cb4f0be46
+F www/index.tcl a3d658c44b27ca28b0b660e2a3903ee39f052dea
 F www/lang.tcl fc528581c4a406cabc138e2f17db5ef6f38615ff
 F www/lockingv3.tcl afcd22f0f063989cff2f4d57bbc38d719b4c6e75
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl f31330db8c978e675f5cd263067b32b822effa6f
+F www/oldnews.tcl 3cfc9685d9d25eb26a69c2ce979432b26d5ae75e
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
@@ -222,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 59db58ebd30cd7c79c32f5a725620e740eff661d
-R 8e2d649247d3314adc65f3fdcaa9f1fe
-U danielk1977
-Z 80be8fa32cc9e1b101e22c8e2ab0aff3
+P 07b90f3690768e852384fbbde0ba59e69e24d1da
+R 3acf8389b7928b0e6bed5f904140c093
+U drh
+Z d8b4e54d3b0adc4de12efd128b05998c

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.10 2004/05/31 15:06:30 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.11 2004/06/16 03:02:04 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -167,7 +167,7 @@ occurred since version 1.0.0:
   </td>
 </tr>
 <tr>
-  <td valign="top">2.8.13 to 3.0.0</td>
+  <td valign="top">2.8.14 to 3.0.0</td>
   <td valign="top">(pending)</td>
   <td><p>Version 3.0.0 is a major upgrade for SQLite that incorporates
   support for UTF-16, BLOBs, and a more compact encoding that results

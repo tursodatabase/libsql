@@ -422,6 +422,9 @@ lang.html:	$(TOP)/www/lang.tcl
 lockingv3.html:	$(TOP)/www/lockingv3.tcl
 	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
 
+oldnews.html:	$(TOP)/www/oldnews.tcl
+	tclsh $(TOP)/www/oldnews.tcl >oldnews.html
+
 omitted.html:	$(TOP)/www/omitted.tcl
 	tclsh $(TOP)/www/omitted.tcl >omitted.html
 
@@ -481,6 +484,7 @@ DOC = \
   lockingv3.html \
   mingw.html \
   nulls.html \
+  oldnews.html \
   omitted.html \
   opcode.html \
   quickstart.html \

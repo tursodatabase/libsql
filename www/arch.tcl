@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.12 2004/05/31 15:06:29 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.13 2004/06/16 03:02:04 drh Exp $}
 source common.tcl
 header {Architecture of SQLite}
 puts {
@@ -39,6 +39,17 @@ the plumbing is very different.  The diagram at the right shows
 the structure of SQLite for version 2.8.13 and following.
 </p>
 
+<p>
+This document describes the structure for SQLite version 2.X.
+SQLite version 3.0.0 introduces many new features and capabilities.
+The basic architecture of the library remains the same.  However,
+some of the details described here are different.  For example,
+the code was in the file <b>os.c</b> has now been split out into
+several file, on for each operating system.  And
+the prefix on the names of API routines changed from <b>sqlite_</b>
+to <b>sqlite3_</b>. 
+</p>
+
 <h3>Interface</h3>
 
 <p>Much of the public interface to the SQLite library is implemented by
@@ -58,7 +69,7 @@ Those symbols that are intended for external use (in other words,
 those symbols which form the API for SQLite) begin
 with <b>sqlite_</b>.</p>
 
-<h3>SQL Command Process</h3>
+<h3>SQL Command Processor</h3>
 
 <p>
 
@@ -146,8 +157,12 @@ The <b>btree.h</b> source file contains the details.</p>
 
 <h3>Red/Black Tree</h3>
 
-<p>In-memory databases are stored in a red/black tree implementation
-contain in the <b>btree_rb.c</b> source file.
+<p>In SQLite version 2.X, in-memory databases are stored in a red/black
+tree implementation contain in the <b>btree_rb.c</b> source file.  In
+version 3.0, the red/black tree implementation is omitted.  In-memory
+databases use the same B-Tree and pager code with a special flag that
+tells the pager to maintain all data in cache and never write to the
+disk.
 </p>
 
 <h3>B-Tree</h3>
@@ -155,10 +170,7 @@ contain in the <b>btree_rb.c</b> source file.
 <p>An SQLite database is maintained on disk using a B-tree implementation
 found in the <b>btree.c</b> source file.  A separate B-tree is used for
 each table and index in the database.  All B-trees are stored in the
-same disk file.  Each page of a B-tree is 1024 bytes in size.  The key
-and data for an entry are stored together in an area called "payload".
-Up to 236 bytes of payload can be stored on the same page as the B-tree
-entry.  Any additional payload is stored in a chain of overflow pages.</p>
+same disk file.</p>
 
 <p>The interface to the B-tree subsystem is defined by the header file
 <b>btree.h</b>.
