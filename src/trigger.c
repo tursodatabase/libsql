@@ -15,7 +15,7 @@
 /*
 ** Delete a linked list of TriggerStep structures.
 */
-static void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
+void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
   while( pTriggerStep ){
     TriggerStep * pTmp = pTriggerStep;
     pTriggerStep = pTriggerStep->pNext;
@@ -31,11 +31,14 @@ static void sqliteDeleteTriggerStep(TriggerStep *pTriggerStep){
 }
 
 /*
-** This is called by the parser when it sees a CREATE TRIGGER statement. See
-** comments surrounding struct Trigger in sqliteInt.h for a description of 
-** how triggers are stored.
+** This is called by the parser when it sees a CREATE TRIGGER statement
+** up to the point of the BEGIN before the trigger actions.  A Trigger
+** structure is generated based on the information available and stored
+** in pParse->pNewTrigger.  After the trigger actions have been parsed, the
+** sqliteFinishTrigger() function is called to complete the trigger
+** construction process.
 */
-void sqliteCreateTrigger(
+void sqliteBeginTrigger(
   Parse *pParse,      /* The parse context of the CREATE TRIGGER statement */
   Token *pName,       /* The name of the trigger */
   int tr_tm,          /* One of TK_BEFORE, TK_AFTER , TK_INSTEAD */
@@ -44,17 +47,17 @@ void sqliteCreateTrigger(
   SrcList *pTableName,/* The name of the table/view the trigger applies to */
   int foreach,        /* One of TK_ROW or TK_STATEMENT */
   Expr *pWhen,        /* WHEN clause */
-  TriggerStep *pStepList, /* The triggered program */
-  Token *pAll             /* Token that describes the complete CREATE TRIGGER */
+  int isTemp          /* True if the TEMPORARY keyword is present */
 ){
   Trigger *nt;
   Table   *tab;
-  char *zName = 0;    /* Name of the trigger */
+  char *zName = 0;        /* Name of the trigger */
   sqlite *db = pParse->db;
+  int iDb;                /* When database to store the trigger in */
 
   /* Check that: 
   ** 1. the trigger name does not already exist.
-  ** 2. the table (or view) does exist.
+  ** 2. the table (or view) does exist in the same database as the trigger.
   ** 3. that we are not trying to create a trigger on the sqlite_master table
   ** 4. That we are not trying to create an INSTEAD OF trigger on a table.
   ** 5. That we are not trying to create a BEFORE or AFTER trigger on a view.
@@ -65,14 +68,15 @@ void sqliteCreateTrigger(
   if( !tab ){
     goto trigger_cleanup;
   }
-  if( tab->iDb>=2 && !pParse->initFlag ){
+  iDb = isTemp ? 1 : tab->iDb;
+  if( iDb>=2 && !pParse->initFlag ){
     sqliteErrorMsg(pParse, "triggers may not be added to auxiliary "
        "database %s", db->aDb[tab->iDb].zName);
     goto trigger_cleanup;
   }
 
   zName = sqliteStrNDup(pName->z, pName->n);
-  if( sqliteHashFind(&(db->aDb[tab->iDb].trigHash), zName,pName->n+1) ){
+  if( sqliteHashFind(&(db->aDb[iDb].trigHash), zName,pName->n+1) ){
     sqliteErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;
   }
@@ -94,7 +98,7 @@ void sqliteCreateTrigger(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_CREATE_TRIGGER;
-    if( tab->iDb==1 ) code = SQLITE_CREATE_TEMP_TRIGGER;
+    if( tab->iDb==1 || isTemp ) code = SQLITE_CREATE_TEMP_TRIGGER;
     if( sqliteAuthCheck(pParse, code, zName, tab->zName) ){
       goto trigger_cleanup;
     }
@@ -115,20 +119,42 @@ void sqliteCreateTrigger(
   zName = 0;
   nt->table = sqliteStrDup(pTableName->a[0].zName);
   if( sqlite_malloc_failed ) goto trigger_cleanup;
-  nt->iDb = tab->iDb;
+  nt->iDb = iDb;
   nt->op = op;
   nt->tr_tm = tr_tm;
   nt->pWhen = sqliteExprDup(pWhen);
-  sqliteExprDelete(pWhen);
   nt->pColumns = sqliteIdListDup(pColumns);
-  sqliteIdListDelete(pColumns);
   nt->foreach = foreach;
+  assert( pParse->pNewTrigger==0 );
+  pParse->pNewTrigger = nt;
+
+trigger_cleanup:
+  sqliteFree(zName);
+  sqliteSrcListDelete(pTableName);
+  sqliteIdListDelete(pColumns);
+  sqliteExprDelete(pWhen);
+}
+
+/*
+** This routine is called after all of the trigger actions have been parsed
+** in order to complete the process of building the trigger.
+*/
+void sqliteFinishTrigger(
+  Parse *pParse,          /* Parser context */
+  TriggerStep *pStepList, /* The triggered program */
+  Token *pAll             /* Token that describes the complete CREATE TRIGGER */
+){
+  Trigger *nt;              /* The trigger whose construction is finishing up */
+  sqlite *db = pParse->db;  /* The database */
+
+  if( pParse->nErr || pParse->pNewTrigger==0 ) goto triggerfinish_cleanup;
+  nt = pParse->pNewTrigger;
+  pParse->pNewTrigger = 0;
   nt->step_list = pStepList;
   while( pStepList ){
     pStepList->pTrig = nt;
     pStepList = pStepList->pNext;
   }
-  pStepList = nt->step_list;
 
   /* if we are not initializing, and this trigger is not on a TEMP table, 
   ** build the sqlite_master entry
@@ -149,16 +175,14 @@ void sqliteCreateTrigger(
 
     /* Make an entry in the sqlite_master table */
     v = sqliteGetVdbe(pParse);
-    if( v==0 ) goto trigger_cleanup;
+    if( v==0 ) goto triggerfinish_cleanup;
     sqliteBeginWriteOperation(pParse, 0, 0);
-    sqliteOpenMasterTable(v, tab->iDb);
+    sqliteOpenMasterTable(v, nt->iDb==1);
     addr = sqliteVdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
-    sqliteVdbeChangeP3(v, addr, tab->iDb ? TEMP_MASTER_NAME : MASTER_NAME,
-                       P3_STATIC);
     sqliteVdbeChangeP3(v, addr+2, nt->name, 0); 
     sqliteVdbeChangeP3(v, addr+3, nt->table, 0); 
     sqliteVdbeChangeP3(v, addr+5, pAll->z, pAll->n);
-    if( tab->iDb==0 ){
+    if( nt->iDb==0 ){
       sqliteChangeCookie(db, v);
     }
     sqliteVdbeAddOp(v, OP_Close, 0, 0);
@@ -166,26 +190,20 @@ void sqliteCreateTrigger(
   }
 
   if( !pParse->explain ){
-    /* Stick it in the hash-table */
-    sqliteHashInsert(&(db->aDb[nt->iDb].trigHash), nt->name, pName->n + 1, nt);
-
-    /* Attach it to the table object */
-    nt->pNext = tab->pTrigger;
-    tab->pTrigger = nt;
-    sqliteSrcListDelete(pTableName);
-    return;
+    Table *pTab;
+    sqliteHashInsert(&db->aDb[nt->iDb].trigHash, 
+                     nt->name, strlen(nt->name)+1, nt);
+    pTab = sqliteLocateTable(pParse, nt->table, 0);
+    assert( pTab!=0 );
+    nt->pNext = pTab->pTrigger;
+    pTab->pTrigger = nt;
   }else{
-    sqliteFree(nt->name);
-    sqliteFree(nt->table);
-    sqliteFree(nt);
+    sqliteDeleteTrigger(nt);
   }
 
-trigger_cleanup:
-
-  sqliteFree(zName);
-  sqliteSrcListDelete(pTableName);
-  sqliteIdListDelete(pColumns);
-  sqliteExprDelete(pWhen);
+triggerfinish_cleanup:
+  sqliteDeleteTrigger(pParse->pNewTrigger);
+  pParse->pNewTrigger = 0;
   sqliteDeleteTriggerStep(pStepList);
 }
 
@@ -322,6 +340,7 @@ TriggerStep *sqliteTriggerDeleteStep(Token *pTableName, Expr *pWhere){
 ** Recursively delete a Trigger structure
 */
 void sqliteDeleteTrigger(Trigger *pTrigger){
+  if( pTrigger==0 ) return;
   sqliteDeleteTriggerStep(pTrigger->step_list);
   sqliteFree(pTrigger->name);
   sqliteFree(pTrigger->table);
@@ -366,7 +385,7 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     sqliteErrorMsg(pParse, "no such trigger: %S", pName, 0);
     goto drop_trigger_cleanup;
   }
-  assert( pTrigger->iDb>=0 && pTrigger->iDb<db->nDb );
+  assert( pTrigger->iDb<db->nDb );
   if( pTrigger->iDb>=2 ){
     sqliteErrorMsg(pParse, "triggers may not be removed from "
        "auxiliary database %s", db->aDb[pTrigger->iDb].zName);
@@ -374,17 +393,43 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
   }
   pTable = sqliteFindTable(db, pTrigger->table, db->aDb[pTrigger->iDb].zName);
   assert(pTable);
-  assert( pTable->iDb==pTrigger->iDb );
+  assert( pTable->iDb==pTrigger->iDb || pTrigger->iDb==1 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code = SQLITE_DROP_TRIGGER;
-    if( pTable->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
+    if( pTrigger->iDb ) code = SQLITE_DROP_TEMP_TRIGGER;
     if( sqliteAuthCheck(pParse, code, pTrigger->name, pTable->zName) ||
-      sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTable->iDb),0) ){
+      sqliteAuthCheck(pParse, SQLITE_DELETE, SCHEMA_TABLE(pTrigger->iDb),0) ){
       goto drop_trigger_cleanup;
     }
   }
 #endif
+
+  /* Generate code to destroy the database record of the trigger.
+  */
+  if( pTable!=0 && !nested && (v = sqliteGetVdbe(pParse))!=0 ){
+    int base;
+    static VdbeOp dropTrigger[] = {
+      { OP_Rewind,     0, ADDR(8),  0},
+      { OP_String,     0, 0,        0}, /* 1 */
+      { OP_MemStore,   1, 1,        0},
+      { OP_MemLoad,    1, 0,        0}, /* 3 */
+      { OP_Column,     0, 1,        0},
+      { OP_Ne,         0, ADDR(7),  0},
+      { OP_Delete,     0, 0,        0},
+      { OP_Next,       0, ADDR(3),  0}, /* 7 */
+    };
+
+    sqliteBeginWriteOperation(pParse, 0, 0);
+    sqliteOpenMasterTable(v, pTrigger->iDb);
+    base = sqliteVdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
+    sqliteVdbeChangeP3(v, base+1, zName, 0);
+    if( pTrigger->iDb==0 ){
+      sqliteChangeCookie(db, v);
+    }
+    sqliteVdbeAddOp(v, OP_Close, 0, 0);
+    sqliteEndWriteOperation(pParse);
+  }
 
   /*
    * If this is not an "explain", then delete the trigger structure.
@@ -405,32 +450,6 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     }
     sqliteHashInsert(&(db->aDb[pTrigger->iDb].trigHash), zName, nName+1, 0);
     sqliteDeleteTrigger(pTrigger);
-  }
-
-  /* Generate code to destroy the database record of the trigger.
-  */
-  if( pTable!=0 && !nested && (v = sqliteGetVdbe(pParse))!=0 ){
-    int base;
-    static VdbeOp dropTrigger[] = {
-      { OP_Rewind,     0, ADDR(8),  0},
-      { OP_String,     0, 0,        0}, /* 1 */
-      { OP_MemStore,   1, 1,        0},
-      { OP_MemLoad,    1, 0,        0}, /* 3 */
-      { OP_Column,     0, 1,        0},
-      { OP_Ne,         0, ADDR(7),  0},
-      { OP_Delete,     0, 0,        0},
-      { OP_Next,       0, ADDR(3),  0}, /* 7 */
-    };
-
-    sqliteBeginWriteOperation(pParse, 0, 0);
-    sqliteOpenMasterTable(v, pTable->iDb);
-    base = sqliteVdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
-    sqliteVdbeChangeP3(v, base+1, zName, 0);
-    if( pTable->iDb==0 ){
-      sqliteChangeCookie(db, v);
-    }
-    sqliteVdbeAddOp(v, OP_Close, 0, 0);
-    sqliteEndWriteOperation(pParse);
   }
 
 drop_trigger_cleanup:
@@ -521,6 +540,7 @@ static int codeTriggerProgram(
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
     pParse->useDb = pTriggerStep->pTrig->iDb;
+    if( pParse->useDb==1 ) pParse->useDb = -1;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
 	Select * ss = sqliteSelectDup(pTriggerStep->pSelect);		  

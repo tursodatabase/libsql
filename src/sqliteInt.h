@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.176 2003/04/20 00:00:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.177 2003/04/21 18:48:47 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -832,7 +832,8 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nAgg;            /* Number of aggregate expressions */
   AggExpr *aAgg;       /* An array of aggregate expressions */
-  TriggerStack *trigStack;
+  Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
+  TriggerStack *trigStack;  /* Trigger actions being coded */
 };
 
 /*
@@ -853,9 +854,9 @@ struct Parse {
 struct Trigger {
   char *name;             /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
-  int iDb;                /* Database containing this trigger               */
-  int op;                 /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
-  int tr_tm;              /* One of TK_BEFORE, TK_AFTER */
+  u8 iDb;                 /* Database containing this trigger               */
+  u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
+  u8 tr_tm;               /* One of TK_BEFORE, TK_AFTER */
   Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
@@ -1094,13 +1095,14 @@ int sqliteSafetyOn(sqlite*);
 int sqliteSafetyOff(sqlite*);
 int sqliteSafetyCheck(sqlite*);
 void sqliteChangeCookie(sqlite*, Vdbe*);
-void sqliteCreateTrigger(Parse*, Token*, int, int, IdList*, SrcList*, 
-                         int, Expr*, TriggerStep*, Token*);
+void sqliteBeginTrigger(Parse*, Token*,int,int,IdList*,SrcList*,int,Expr*,int);
+void sqliteFinishTrigger(Parse*, TriggerStep*, Token*);
 void sqliteDropTrigger(Parse*, SrcList*, int);
 int sqliteTriggersExist(Parse* , Trigger* , int , int , int, ExprList*);
 int sqliteCodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
                          int, int);
 void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
+void sqliteDeleteTriggerStep(TriggerStep*);
 TriggerStep *sqliteTriggerSelectStep(Select*);
 TriggerStep *sqliteTriggerInsertStep(Token*, IdList*, ExprList*, Select*, int);
 TriggerStep *sqliteTriggerUpdateStep(Token*, ExprList*, Expr*, int);

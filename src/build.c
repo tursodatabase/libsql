@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.147 2003/04/20 00:00:24 drh Exp $
+** $Id: build.c,v 1.148 2003/04/21 18:48:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -159,6 +159,10 @@ Table *sqliteLocateTable(Parse *pParse, const char *zName, const char *zDbase){
   if( p==0 ){
     if( zDbase ){
       sqliteErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
+    }else if( (pParse->useDb==0 || pParse->useDb>=2) 
+               && sqliteFindTable(db, zName, 0)!=0 ){
+      sqliteErrorMsg(pParse, "table \"%s\" is not in database \"%s\"",
+         zName, zUse);
     }else{
       sqliteErrorMsg(pParse, "no such table: %s", zName);
     }

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.95 2003/04/17 22:57:54 drh Exp $
+** @(#) $Id: parse.y,v 1.96 2003/04/21 18:48:46 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -759,15 +759,18 @@ plus_opt ::= PLUS.
 plus_opt ::= .
 
 //////////////////////////// The CREATE TRIGGER command /////////////////////
-cmd ::= CREATE(A) TRIGGER nm(B) trigger_time(C) trigger_event(D) 
-                  ON nm(E) dbnm(DB)
-                  foreach_clause(F) when_clause(G)
-                  BEGIN trigger_cmd_list(S) END(Z). {
-  SrcList *pTab = sqliteSrcListAppend(0, &E, &DB);
+
+cmd ::= CREATE(A) trigger_decl BEGIN trigger_cmd_list(S) END(Z). {
   Token all;
   all.z = A.z;
   all.n = (Z.z - A.z) + Z.n;
-  sqliteCreateTrigger(pParse, &B, C, D.a, D.b, pTab, F, G, S, &all);
+  sqliteFinishTrigger(pParse, S, &all);
+}
+
+trigger_decl ::= temp(T) TRIGGER nm(B) trigger_time(C) trigger_event(D)
+                 ON nm(E) dbnm(DB) foreach_clause(F) when_clause(G). {
+  SrcList *pTab = sqliteSrcListAppend(0, &E, &DB);
+  sqliteBeginTrigger(pParse, &B, C, D.a, D.b, pTab, F, G, T);
 }
 
 %type trigger_time  {int}
@@ -793,6 +796,7 @@ when_clause(A) ::= .             { A = 0; }
 when_clause(A) ::= WHEN expr(X). { A = X; }
 
 %type trigger_cmd_list {TriggerStep *}
+%destructor trigger_cmd_list {sqliteDeleteTriggerStep($$);}
 trigger_cmd_list(A) ::= trigger_cmd(X) SEMI trigger_cmd_list(Y). {
   X->pNext = Y;
   A = X;
@@ -800,6 +804,7 @@ trigger_cmd_list(A) ::= trigger_cmd(X) SEMI trigger_cmd_list(Y). {
 trigger_cmd_list(A) ::= . { A = 0; }
 
 %type trigger_cmd {TriggerStep *}
+%destructor trigger_cmd {sqliteDeleteTriggerStep($$);}
 // UPDATE 
 trigger_cmd(A) ::= UPDATE orconf(R) nm(X) SET setlist(Y) where_opt(Z).  
                { A = sqliteTriggerUpdateStep(&X, Y, Z, R); }

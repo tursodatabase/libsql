@@ -180,4 +180,91 @@ do_test trigger1-1.14 {
   }
 } {1 {cannot create AFTER trigger on view: v1}}
 
+# Check for memory leaks in the trigger parser
+#
+do_test trigger1-2.1 {
+  catchsql {
+    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+      SELECT * FROM;  -- Syntax error
+    END;
+  }
+} {1 {near ";": syntax error}}
+do_test trigger1-2.2 {
+  catchsql {
+    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+      SELECT * FROM t1;
+      SELECT * FROM;  -- Syntax error
+    END;
+  }
+} {1 {near ";": syntax error}}
+
+# Create a trigger that refers to a table that might not exist.
+#
+do_test trigger1-3.1 {
+  execsql {
+    CREATE TEMP TABLE t2(x,y);
+  }
+  catchsql {
+    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t2 VALUES(NEW.a,NEW.b);
+    END;
+  }
+} {0 {}}
+do_test trigger-3.2 {
+  catchsql {
+    INSERT INTO t1 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {1 {table "t2" is not in database "main"}}
+do_test trigger-3.3 {
+  db close
+  set rc [catch {sqlite db test.db} err]
+  if {$rc} {lappend rc $err}
+  set rc
+} {0}
+do_test trigger-3.4 {
+  catchsql {
+    INSERT INTO t1 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {1 {no such table: t2}}
+do_test trigger-3.5 {
+  catchsql {
+    CREATE TEMP TABLE t2(x,y);
+    INSERT INTO t1 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {1 {table "t2" is not in database "main"}}
+do_test trigger-3.6 {
+  catchsql {
+    DROP TRIGGER r1;
+    CREATE TEMP TRIGGER r1 AFTER INSERT ON t1 BEGIN
+      INSERT INTO t2 VALUES(NEW.a,NEW.b);
+    END;
+    INSERT INTO t1 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {0 {1 2}}
+do_test trigger-3.7 {
+  execsql {
+    DROP TABLE t2;
+    CREATE TABLE t2(x,y);
+    SELECT * FROM t2;
+  }
+} {}
+do_test trigger-3.8 {
+  execsql {
+    INSERT INTO t1 VALUES(3,4);
+    SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+  }
+} {1 2 3 4 3 4}
+do_test trigger-3.9 {
+  db close
+  sqlite db test.db
+  execsql {
+    INSERT INTO t1 VALUES(5,6);
+    SELECT * FROM t1 UNION ALL SELECT * FROM t2;
+  }
+} {1 2 3 4 5 6 3 4}
+
 finish_test
