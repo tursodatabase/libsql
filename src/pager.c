@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.194 2005/03/15 17:09:30 drh Exp $
+** @(#) $Id: pager.c,v 1.195 2005/03/20 19:10:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -973,7 +973,8 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   pPg = pager_lookup(pPager, pgno);
   assert( pPager->state>=PAGER_EXCLUSIVE || pPg );
   TRACE3("PLAYBACK %d page %d\n", PAGERID(pPager), pgno);
-  if( pPager->state>=PAGER_EXCLUSIVE ){
+  assert( jfd == (useCksum ? &pPager->jfd : &pPager->stfd) );
+  if( pPager->state>=PAGER_EXCLUSIVE && (useCksum || !pPg || !pPg->needSync) ){
     sqlite3OsSeek(&pPager->fd, (pgno-1)*(i64)pPager->pageSize);
     rc = sqlite3OsWrite(&pPager->fd, aData, pPager->pageSize);
   }

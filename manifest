@@ -1,5 +1,5 @@
-C More\sdocumentation\supdates.\s(CVS\s2401)
-D 2005-03-19T15:10:45
+C Tentative\sfix\sfor\sticket\s#1171.\s\sMore\sresearch\sand\stesting\sneeded.\s(CVS\s2402)
+D 2005-03-20T19:10:12
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -52,7 +52,7 @@ F src/os_unix.c fba0167576f09e242afd4c4978e1d2944b1da8b5
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 26a642c1238615bdea53d458ab6a4df7ca070a08
+F src/pager.c bac21a13353a91cf8342e3c5ee7bd89a50e46917
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -115,7 +115,7 @@ F test/collate3.test 51362bdfb43a72bd2b087d90b2623b0695538e7a
 F test/collate4.test b8668612691c4dcf90f67a8df1eeb1544e7fdaf8
 F test/collate5.test 581775b94604b7435dc6a5c6e72fbbf7d69e3830
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
-F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
+F test/conflict.test 3c4ef047070ce495e15d7d267a7d791d6f4ffef5
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test f38b980a0508655d08c957a6dd27d66bca776504
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P 90a00e90663749e5d1f8e28709dfbe981f8afc8b
-R b87c30888e4a9264bec8715ac90b8e35
+P f065b6102db838d48f1a1a9ed68b2a09cd440cf8
+R 2d3ac9a5328361b0e3fa76626887a5ca
 U drh
-Z b19b05f5c3b18978c53300f98dffca49
+Z 040f462f187d8ccdb87f470324a49732
