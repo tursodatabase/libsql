@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.429 2004/11/15 23:42:28 drh Exp $
+** $Id: vdbe.c,v 1.430 2004/11/18 02:10:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3983,7 +3983,7 @@ case OP_ContextPop: {
 **
 ** The TOS is the key and the NOS is the data.  Pop both from the stack
 ** and put them on the sorter.  The key and data should have been
-** made using SortMakeKey and SortMakeRec, respectively.
+** made using the MakeRecord opcode.
 */
 case OP_SortPut: {
   Mem *pNos = &pTos[-1];
