@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\ssoundex()\scode.\s\sTicket\s#367.\s\sAdd\stests\sfor\sticket\s#261\neven\sthought\sthe\sproblem\scould\snot\sbe\sreproduced.\s(CVS\s1035)
-D 2003-06-28T16:20:23
+C Minor\schange\sto\sa\scomment\sin\sencode.c.\s(CVS\s1036)
+D 2003-06-28T16:25:34
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -27,7 +27,7 @@ F src/btree_rb.c a0dd64f840417b13637160599bd2740c8a340366
 F src/build.c 936d10b33b326546280690bee7f20efaf19a6fe8
 F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
-F src/encode.c d37cb398b4ada55dbecc35b32ca3927621f3c3c3
+F src/encode.c 25ea901a9cefb3d93774afa4a06b57cb58acf544
 F src/expr.c ebdb0f3ee039c8030de25935ce2df030966540a6
 F src/func.c 6b23578d48a8be98a664db145a635c2fa9ddb57b
 F src/hash.c 058f077c1f36f266581aa16f907a3903abf64aa3
@@ -166,7 +166,7 @@ F www/speed.tcl 296cc5632d069b56d3ef5409ca0df90f486c10fb
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 14fdcc7fe8a60a6ba8584903636db8dc37eef26a
-P bad8b55833f5120003a19883154dac5146cc36a3
-R baee906944b38490e9ba70fa19d1c285
+P e2ca936feee35b3fce99c95c2cf8c0ad05cd9c3b
+R cfb713a77db3ee45d8bfec587408e8ac
 U drh
-Z 9de5b744ee07e6aac7053a7b2a067fd3
+Z 158078b48c563543782d1f7f2db6bee1
