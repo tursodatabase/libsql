@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.21 2003/01/04 16:48:10 drh Exp $
+# $Id: table.test,v 1.22 2003/01/29 18:46:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -385,7 +385,7 @@ do_test table-10.1 {
     CREATE TABLE t6(a REFERENCES t4(a) NOT NULL);
     INSERT INTO t6 VALUES(NULL);
   }
-} {1 {constraint failed}}
+} {1 {t6.a may not be NULL}}
 do_test table-10.2 {
   catchsql {
     DROP TABLE t6;

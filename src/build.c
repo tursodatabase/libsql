@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.126 2003/01/28 23:13:11 drh Exp $
+** $Id: build.c,v 1.127 2003/01/29 18:46:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -91,7 +91,6 @@ void sqliteExec(Parse *pParse){
       }
       rc = sqliteVdbeFinalize(v, &pParse->zErrMsg);
       if( rc ) pParse->nErr++;
-      sqliteVdbeDelete(v);
       pParse->pVdbe = 0;
       pParse->rc = rc;
       if( rc ) pParse->nErr++;
@@ -100,6 +99,8 @@ void sqliteExec(Parse *pParse){
     }
     pParse->colNamesSet = 0;
     pParse->schemaVerified = 0;
+  }else if( pParse->useCallback==0 ){
+    pParse->rc = SQLITE_ERROR;
   }
   pParse->nTab = 0;
   pParse->nMem = 0;
@@ -1666,6 +1667,7 @@ void sqliteCreateIndex(
       sqliteVdbeAddOp(v, OP_MakeIdxKey, pIndex->nColumn, 0);
       if( db->file_format>=4 ) sqliteAddIdxKeyType(v, pIndex);
       sqliteVdbeAddOp(v, OP_IdxPut, 1, pIndex->onError!=OE_None);
+      sqliteVdbeChangeP3(v, -1, "indexed columns are not unique", P3_STATIC);
       sqliteVdbeAddOp(v, OP_Next, 2, lbl1);
       sqliteVdbeResolveLabel(v, lbl2);
       sqliteVdbeAddOp(v, OP_Close, 2, 0);

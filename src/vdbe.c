@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.201 2003/01/29 14:06:09 drh Exp $
+** $Id: vdbe.c,v 1.202 2003/01/29 18:46:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1710,17 +1710,18 @@ case OP_Return: {
 ** is the same as executing Halt.
 */
 case OP_Halt: {
+  p->magic = VDBE_MAGIC_HALT;
   if( pOp->p1!=SQLITE_OK ){
     p->rc = pOp->p1;
     p->errorAction = pOp->p2;
     if( pOp->p3 ){
       sqliteSetString(&p->zErrMsg, pOp->p3, 0);
     }
+    return SQLITE_ERROR;
   }else{
     p->rc = SQLITE_OK;
+    return SQLITE_DONE;
   }
-  p->magic = VDBE_MAGIC_HALT;
-  return SQLITE_DONE;
 }
 
 /* Opcode: Integer P1 * P3
@@ -4307,7 +4308,7 @@ case OP_IdxPut: {
         ){
           rc = SQLITE_CONSTRAINT;
           if( pOp->p3 && pOp->p3[0] ){
-            sqliteSetString(&p->zErrMsg, "duplicate index entry: ", pOp->p3,0);
+            sqliteSetString(&p->zErrMsg, pOp->p3, 0);
           }
           goto abort_due_to_error;
         }
@@ -5614,7 +5615,9 @@ abort_due_to_misuse:
   ** should hold the error number.
   */
 abort_due_to_error:
-  sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+  if( p->zErrMsg==0 ){
+    sqliteSetString(&p->zErrMsg, sqlite_error_string(rc), 0);
+  }
   goto vdbe_halt;
 
   /* Jump to here if the sqlite_interrupt() API sets the interrupt
@@ -5659,6 +5662,7 @@ bad_instruction:
 int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
   sqlite *db = p->db;
   Btree *pBt = p->pBt;
+  int rc;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
@@ -5727,5 +5731,7 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
     }
   }
 #endif
-  return p->rc;
+  rc = p->rc;
+  sqliteVdbeDelete(p);
+  return rc;
 }

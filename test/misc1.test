@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.18 2003/01/18 20:11:07 drh Exp $
+# $Id: misc1.test,v 1.19 2003/01/29 18:46:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -222,7 +222,7 @@ do_test misc1-7.4 {
   catchsql {
     INSERT INTO t5 VALUES(1,2,4);
   }
-} {1 {constraint failed}}
+} {1 {uniqueness constraint failed}}
 do_test misc1-7.5 {
   catchsql {
     INSERT INTO t5 VALUES(0,2,4);

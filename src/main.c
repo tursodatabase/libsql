@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.111 2003/01/29 14:06:08 drh Exp $
+** $Id: main.c,v 1.112 2003/01/29 18:46:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -716,7 +716,9 @@ int sqlite_finalize(
   sqlite_vm *pVm,            /* The virtual machine to be destroyed */
   char **pzErrMsg            /* OUT: Write error messages here */
 ){
-  return sqliteVdbeFinalize((Vdbe*)pVm, pzErrMsg);
+  int rc = sqliteVdbeFinalize((Vdbe*)pVm, pzErrMsg);
+  sqliteStrRealloc(pzErrMsg);
+  return rc;
 }
 
 /*

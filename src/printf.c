@@ -684,6 +684,28 @@ static void mout(void *arg, char *zNewText, int nNewChar){
 ** resulting string and returns a pointer to the allocated memory.  Use
 ** sqliteFree() to release the memory allocated.
 */
+char *sqliteMPrintf(const char *zFormat, ...){
+  va_list ap;
+  struct sgMprintf sMprintf;
+  char *zNew;
+  char zBuf[200];
+
+  sMprintf.nChar = 0;
+  sMprintf.nAlloc = sizeof(zBuf);
+  sMprintf.zText = zBuf;
+  sMprintf.zBase = zBuf;
+  va_start(ap,zFormat);
+  vxprintf(mout,&sMprintf,zFormat,ap);
+  va_end(ap);
+  sMprintf.zText[sMprintf.nChar] = 0;
+  return sqliteRealloc(sMprintf.zText, sMprintf.nChar+1);
+}
+
+/*
+** sqlite_mprintf() works like printf(), but allocations memory to hold the
+** resulting string and returns a pointer to the allocated memory.  Use
+** sqliteFree() to release the memory allocated.
+*/
 char *sqlite_mprintf(const char *zFormat, ...){
   va_list ap;
   struct sgMprintf sMprintf;
