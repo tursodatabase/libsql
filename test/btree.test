@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.20 2004/05/08 20:07:40 drh Exp $
+# $Id: btree.test,v 1.21 2004/05/09 00:40:52 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -534,7 +534,7 @@ do_test btree-7.2 {
     set data [format %5d $i]
     btree_insert $::c1 $key $data
   }
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {8 1}
 do_test btree-7.3 {
   for {set i 1001} {$i<1091} {incr i 2} {
@@ -543,9 +543,9 @@ do_test btree-7.3 {
   }
   # Freed 45 blocks.  Total freespace is 458
   # Keys remaining are even numbers between 1000 and 1090, inclusive
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {458 46}
-#btree_page_dump $::b1 2
+#btree_tree_dump $::b1 1
 do_test btree-7.4 {
   # The largest free block is 10 bytes long.  So if we insert
   # a record bigger than 10 bytes it should force a defrag
@@ -555,9 +555,9 @@ do_test btree-7.4 {
   btree_key $::c1
 } {2000}
 do_test btree-7.5 {
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {438 1}
-#btree_page_dump $::b1 2
+#btree_tree_dump $::b1 1
 
 # Delete an entry to make a hole of a known size, then immediately recreate
 # that entry.  This tests the path into allocateSpace where the hole exactly
@@ -573,12 +573,12 @@ do_test btree-7.6 {
   btree_delete $::c1
 } {}
 do_test btree-7.7 {
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {458 3}   ;# Create two new holes of 10 bytes each
 #btree_page_dump $::b1 2
 do_test btree-7.8 {
   btree_insert $::c1 1006 { 1006}
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {448 2}   ;# Filled in the first hole
 #btree_page_dump $::b1 2
 
@@ -587,27 +587,27 @@ do_test btree-7.8 {
 do_test btree-7.9 {
   btree_move_to $::c1 1012
   btree_delete $::c1
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {458 2}  ;# Coalesce with the whole before
 do_test btree-7.10 {
   btree_move_to $::c1 1008
   btree_delete $::c1
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {468 2}  ;# Coalesce with whole after
 do_test btree-7.11 {
   btree_move_to $::c1 1030
   btree_delete $::c1
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {478 3}   ;# Make a new hole
 do_test btree-7.13 {
   btree_move_to $::c1 1034
   btree_delete $::c1
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {488 4}   ;# Make another hole
 do_test btree-7.14 {
   btree_move_to $::c1 1032
   btree_delete $::c1
-  lrange [btree_cursor_dump $::c1] 4 5
+  lrange [btree_cursor_info $::c1] 4 5
 } {498 3}   ;# The freed space should coalesce on both ends
 #btree_page_dump $::b1 2
 do_test btree-7.15 {
@@ -616,13 +616,14 @@ do_test btree-7.15 {
 
 # Check to see that data on overflow pages work correctly.
 #
+#btree_page_dump $::b1 1
 do_test btree-8.1 {
   set data "*** This is a very long key "
   while {[string length $data]<1234} {append data $data}
   set ::data $data
   btree_insert $::c1 2020 $data
 } {}
-#btree_page_dump $::b1 2
+#btree_page_dump $::b1 1
 do_test btree-8.1.1 {
   lindex [btree_pager_stats $::b1] 1
 } {1}
@@ -757,9 +758,7 @@ do_test btree-9.2 {
   btree_insert $::c1 020 {*** 020 *** 020 *** 020 *** 020 ***}
   select_keys $::c1
 } {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
-#btree_page_dump $::b1 5
 #btree_page_dump $::b1 2
-#btree_page_dump $::b1 7
 #btree_pager_ref_dump $::b1
 #set pager_refinfo_enable 0
 
@@ -860,13 +859,7 @@ for {set i 1} {$i<=30} {incr i} {
 #
 catch {unset ::data}
 catch {unset ::key}
-for {set i 31} {$i<=1000} {incr i} {
-if {$i==88} {
-set pager_refinfo_enable 1
-btree_tree_dump $b1 2
-btree_pager_ref_dump $b1
-btree_cursor_list $b1
-}
+for {set i 31} {$i<=999} {incr i} {
   do_test btree-11.1.$i.1 {
     set key [format %03d $i]
     set ::data "*** $key *** $key *** $key *** $key ***"
@@ -874,12 +867,6 @@ btree_cursor_list $b1
     btree_move_to $::c1 $key
     btree_key $::c1
   } [format %03d $i]
-if {$i==88} {
-btree_pager_ref_dump $b1
-btree_cursor_list $b1
-btree_tree_dump $b1 2
-exit
-}
   do_test btree-11.1.$i.2 {
     btree_data $::c1
   } $::data
@@ -908,76 +895,15 @@ do_test btree-11.3 {
 # Delete the dividers on the root page
 #
 do_test btree-11.4 {
-  btree_move_to $::c1 257
+  btree_move_to $::c1 551
   btree_delete $::c1
-  btree_next $::c1
+  btree_move_to $::c1 551
+  set k [btree_key $::c1]
+  if {$k==550} {
+    set k [btree_next $::c1]
+  }
   btree_key $::c1
-} {258}
-do_test btree-11.4.1 {
-  btree_move_to $::c1 256
-  btree_key $::c1
-} {256}
-do_test btree-11.4.2 {
-  btree_move_to $::c1 258
-  btree_key $::c1
-} {258}
-do_test btree-11.4.3 {
-  btree_move_to $::c1 259
-  btree_key $::c1
-} {259}
-do_test btree-11.4.4 {
-  btree_move_to $::c1 257
-  set n [btree_key $::c1]
-  expr {$n==256||$n==258}
-} {1}
-do_test btree-11.5 {
-  btree_move_to $::c1 513
-  btree_delete $::c1
-  btree_next $::c1
-  btree_key $::c1
-} {514}
-do_test btree-11.5.1 {
-  btree_move_to $::c1 512
-  btree_key $::c1
-} {512}
-do_test btree-11.5.2 {
-  btree_move_to $::c1 514
-  btree_key $::c1
-} {514}
-do_test btree-11.5.3 {
-  btree_move_to $::c1 515
-  btree_key $::c1
-} {515}
-do_test btree-11.5.4 {
-  btree_move_to $::c1 513
-  set n [btree_key $::c1]
-  expr {$n==512||$n==514}
-} {1}
-do_test btree-11.6 {
-  btree_move_to $::c1 769
-  btree_delete $::c1
-  btree_next $::c1
-  btree_key $::c1
-} {770}
-do_test btree-11.6.1 {
-  btree_move_to $::c1 768
-  btree_key $::c1
-} {768}
-do_test btree-11.6.2 {
-  btree_move_to $::c1 771
-  btree_key $::c1
-} {771}
-do_test btree-11.6.3 {
-  btree_move_to $::c1 770
-  btree_key $::c1
-} {770}
-do_test btree-11.6.4 {
-  btree_move_to $::c1 769
-  set n [btree_key $::c1]
-  expr {$n==768||$n==770}
-} {1}
-#btree_page_dump $::b1 2
-#btree_page_dump $::b1 25
+} {552}
 
 # Change the data on an intermediate node such that the node becomes overfull
 # and has to split.  We happen to know that intermediate nodes exist on
@@ -989,14 +915,17 @@ append ::data $::data
 append ::data $::data
 do_test btree-12.1 {
   btree_insert $::c1 337 $::data
+  btree_move_to $::c1 337
   btree_data $::c1
 } $::data
 do_test btree-12.2 {
   btree_insert $::c1 401 $::data
+  btree_move_to $::c1 401
   btree_data $::c1
 } $::data
 do_test btree-12.3 {
   btree_insert $::c1 465 $::data
+  btree_move_to $::c1 465
   btree_data $::c1
 } $::data
 do_test btree-12.4 {
@@ -1034,9 +963,9 @@ do_test btree-12.12 {
   btree_next $::c1
   btree_key $::c1
 } {402}
-do_test btree-13.1 {
-  btree_integrity_check $::b1 2 3
-} {}
+#do_test btree-13.1 {
+#  btree_integrity_check $::b1 1 2
+#} {}
 
 # To Do:
 #

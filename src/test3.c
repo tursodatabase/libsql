@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.31 2004/05/08 20:07:40 drh Exp $
+** $Id: test3.c,v 1.32 2004/05/09 00:40:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -996,7 +996,7 @@ static int btree_payload_size(
 }
 
 /*
-** Usage:   btree_cursor_dump ID
+** Usage:   btree_cursor_info ID
 **
 ** Return eight integers containing information about the entry the
 ** cursor is pointing to:
@@ -1010,7 +1010,7 @@ static int btree_payload_size(
 **   aResult[6] =  Page number of the left child of this entry
 **   aResult[7] =  Page number of the right child for the whole page
 */
-static int btree_cursor_dump(
+static int btree_cursor_info(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -1028,7 +1028,7 @@ static int btree_cursor_dump(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqlite3BtreeCursorDump(pCur, aResult);
+  rc = sqlite3BtreeCursorInfo(pCur, aResult);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -1097,7 +1097,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_payload_size",       (Tcl_CmdProc*)btree_payload_size       },
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
      { "btree_last",               (Tcl_CmdProc*)btree_last               },
-     { "btree_cursor_dump",        (Tcl_CmdProc*)btree_cursor_dump        },
+     { "btree_cursor_info",        (Tcl_CmdProc*)btree_cursor_info        },
      { "btree_cursor_list",        (Tcl_CmdProc*)btree_cursor_list        },
      { "btree_integrity_check",    (Tcl_CmdProc*)btree_integrity_check    },
      { "btree_breakpoint",         (Tcl_CmdProc*)btree_breakpoint         },

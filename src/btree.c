@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.116 2004/05/08 20:07:40 drh Exp $
+** $Id: btree.c,v 1.117 2004/05/09 00:40:52 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -218,6 +218,7 @@ struct MemPage {
   u8 leaf;                       /* True if leaf flag is set */
   u8 zeroData;                   /* True if zero data flag is set */
   u8 hdrOffset;                  /* 100 for page 1.  0 otherwise */
+  u8 needRelink;                 /* True if need to run relinkCellList() */
   int idxParent;                 /* Index in pParent->aCell[] of this node */
   int nFree;                     /* Number of free bytes on the page */
   int nCell;                     /* Number of entries on this page */
@@ -378,6 +379,78 @@ static int cellSize(MemPage *pPage, unsigned char *pCell){
 }
 
 /*
+** Do sanity checking on a page.  Throw an exception if anything is
+** not right.
+**
+** This routine is used for internal error checking only.  It is omitted
+** from most builds.
+*/
+#if defined(BTREE_DEBUG) && !defined(NDEBUG) && 0
+static void _pageIntegrity(MemPage *pPage){
+  int pageSize;
+  u8 *data;
+  int i, idx, c, pc, hdr, nFree;
+  u8 used[MX_PAGE_SIZE];
+
+  pageSize = pPage->pBt->pageSize;
+  assert( pPage->aData==&((unsigned char*)pPage)[-pageSize] );
+  hdr = pPage->hdrOffset;
+  assert( hdr==(pPage->pgno==1 ? 100 : 0) );
+  assert( pPage->pgno==sqlite3pager_pagenumber(pPage->aData) );
+  c = pPage->aData[hdr];
+  if( pPage->isInit ){
+    assert( pPage->leaf == ((c & PTF_LEAF)!=0) );
+    assert( pPage->zeroData == ((c & PTF_ZERODATA)!=0) );
+    assert( pPage->intKey == ((c & PTF_INTKEY)!=0) );
+  }
+  data = pPage->aData;
+  memset(used, 0, pageSize);
+  for(i=0; i<hdr+10-pPage->leaf*4; i++) used[i] = 1;
+  nFree = 0;
+  pc = get2byte(&data[hdr+1]);
+  while( pc ){
+    int size;
+    assert( pc>0 && pc<pageSize-4 );
+    size = get2byte(&data[pc+2]);
+    assert( pc+size<=pageSize );
+    nFree += size;
+    for(i=pc; i<pc+size; i++){
+      assert( used[i]==0 );
+      used[i] = 1;
+    }
+    pc = get2byte(&data[pc]);
+  }
+  assert( pPage->isInit==0 || pPage->nFree==nFree+data[hdr+5] );
+  idx = 0;
+  pc = get2byte(&data[hdr+3]);
+  while( pc ){
+    int size;
+    assert( pPage->isInit==0 || idx<pPage->nCell );
+    assert( pc>0 && pc<pageSize-4 );
+    assert( pPage->isInit==0 || pPage->aCell[idx]==&data[pc] );
+    size = cellSize(pPage, &data[pc]);
+    assert( pc+size<=pageSize );
+    for(i=pc; i<pc+size; i++){
+      assert( used[i]==0 );
+      used[i] = 1;
+    }
+    pc = get2byte(&data[pc]);
+    idx++;
+  }
+  assert( idx==pPage->nCell );
+  nFree = 0;
+  for(i=0; i<pageSize; i++){
+    assert( used[i]<=1 );
+    if( used[i]==0 ) nFree++;
+  }
+  assert( nFree==data[hdr+5] );
+}
+#define pageIntegrity(X) _pageIntegrity(X)
+#else
+# define pageIntegrity(X)
+#endif
+
+/*
 ** Defragment the page given.  All Cells are moved to the
 ** beginning of the page and all free space is collected 
 ** into one big FreeBlk at the end of the page.
@@ -392,6 +465,8 @@ static void defragmentPage(MemPage *pPage){
   assert( sqlite3pager_iswriteable(pPage->aData) );
   assert( pPage->pBt!=0 );
   assert( pPage->pBt->pageSize <= MX_PAGE_SIZE );
+  assert( !pPage->needRelink );
+  assert( !pPage->isOverfull );
   oldPage = pPage->aData;
   hdr = pPage->hdrOffset;
   addr = 3+hdr;
@@ -408,9 +483,10 @@ static void defragmentPage(MemPage *pPage){
     size = cellSize(pPage, &oldPage[pc]);
     memcpy(&newPage[n], &oldPage[pc], size);
     put2byte(&newPage[addr],n);
+    assert( pPage->aCell[i]==&oldPage[pc] );
     pPage->aCell[i++] = &oldPage[n];
+    addr = n;
     n += size;
-    addr = pc;
     pc = get2byte(&oldPage[pc]);
   }
   assert( i==pPage->nCell );
@@ -614,6 +690,7 @@ static int initPage(
   pPage->zeroData = (c & PTF_ZERODATA)!=0;
   pPage->leaf = (c & PTF_LEAF)!=0;
   pPage->isOverfull = 0;
+  pPage->needRelink = 0;
   pPage->idxShift = 0;
   pageSize = pPage->pBt->pageSize;
 
@@ -656,6 +733,7 @@ static int initPage(
   }
 
   pPage->isInit = 1;
+  pageIntegrity(pPage);
   return SQLITE_OK;
 }
 
@@ -687,8 +765,10 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->zeroData = (flags & PTF_ZERODATA)!=0;
   pPage->hdrOffset = hdr;
   pPage->isOverfull = 0;
+  pPage->needRelink = 0;
   pPage->idxShift = 0;
   pPage->isInit = 1;
+  pageIntegrity(pPage);
 }
 
 /*
@@ -749,6 +829,7 @@ static void releasePage(MemPage *pPage){
 */
 static void pageDestructor(void *pData){
   MemPage *pPage = (MemPage*)&((char*)pData)[SQLITE_PAGE_SIZE];
+  assert( pPage->isInit==0 || pPage->needRelink==0 );
   if( pPage->pParent ){
     MemPage *pParent = pPage->pParent;
     pPage->pParent = 0;
@@ -1000,7 +1081,8 @@ static void invalidateCursors(Btree *pBt){
   BtCursor *pCur;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
     MemPage *pPage = pCur->pPage;
-    if( pPage && !pPage->isInit ){
+    if( pPage /* && !pPage->isInit */ ){
+      pageIntegrity(pPage);
       releasePage(pPage);
       pCur->pPage = 0;
       pCur->isValid = 0;
@@ -1289,6 +1371,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, u64 *pSize){
     *pSize = 0;
   }else{
     pPage = pCur->pPage;
+    pageIntegrity(pPage);
     assert( pPage!=0 );
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
     cell = pPage->aCell[pCur->idx];
@@ -1331,6 +1414,7 @@ static int getPayload(
   assert( pCur->isValid );
   pBt = pCur->pBt;
   pPage = pCur->pPage;
+  pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   aPayload = pPage->aCell[pCur->idx];
   aPayload += 2;  /* Skip the next cell index */
@@ -1453,6 +1537,7 @@ void *sqlite3BtreeKeyFetch(BtCursor *pCur){
   assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
   pBt = pCur->pBt;
   pPage = pCur->pPage;
+  pageIntegrity(pPage);
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   assert( pPage->intKey==0 );
   aPayload = pPage->aCell[pCur->idx];
@@ -1489,6 +1574,7 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   pPage = pCur->pPage;
   assert( pPage!=0 );
   assert( pPage->isInit );
+  pageIntegrity(pPage);
   if( pPage->zeroData ){
     *pSize = 0;
   }else{
@@ -1538,6 +1624,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   assert( pCur->isValid );
   rc = getAndInitPage(pBt, newPgno, &pNewPage, pCur->pPage);
   if( rc ) return rc;
+  pageIntegrity(pNewPage);
   pNewPage->idxParent = pCur->idx;
   pOldPage = pCur->pPage;
   pOldPage->idxShift = 0;
@@ -1585,8 +1672,10 @@ static void moveToParent(BtCursor *pCur){
   pPage = pCur->pPage;
   assert( pPage!=0 );
   assert( !isRootPage(pPage) );
+  pageIntegrity(pPage);
   pParent = pPage->pParent;
   assert( pParent!=0 );
+  pageIntegrity(pParent);
   idxParent = pPage->idxParent;
   sqlite3pager_ref(pParent->aData);
   oldPgno = pPage->pgno;
@@ -1636,6 +1725,7 @@ static int moveToRoot(BtCursor *pCur){
     return rc;
   }
   releasePage(pCur->pPage);
+  pageIntegrity(pRoot);
   pCur->pPage = pRoot;
   pCur->idx = 0;
   if( pRoot->nCell==0 && !pRoot->leaf ){
@@ -1784,6 +1874,7 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, u64 nKey, int *pRes){
     int c = -1;  /* pRes return if table is empty must be -1 */
     lwr = 0;
     upr = pPage->nCell-1;
+    pageIntegrity(pPage);
     while( lwr<=upr ){
       void *pCellKey;
       u64 nCellKey;
@@ -2218,14 +2309,16 @@ static void reparentPage(Btree *pBt, Pgno pgno, MemPage *pNewParent, int idx){
   if( pgno==0 ) return;
   assert( pBt->pPager!=0 );
   aData = sqlite3pager_lookup(pBt->pPager, pgno);
-  pThis = (MemPage*)&aData[pBt->pageSize];
-  if( pThis && pThis->isInit ){
-    if( pThis->pParent!=pNewParent ){
-      if( pThis->pParent ) sqlite3pager_unref(pThis->pParent->aData);
-      pThis->pParent = pNewParent;
-      if( pNewParent ) sqlite3pager_ref(pNewParent->aData);
+  if( aData ){
+    pThis = (MemPage*)&aData[pBt->pageSize];
+    if( pThis->isInit ){
+      if( pThis->pParent!=pNewParent ){
+        if( pThis->pParent ) sqlite3pager_unref(pThis->pParent->aData);
+        pThis->pParent = pNewParent;
+        if( pNewParent ) sqlite3pager_ref(pNewParent->aData);
+      }
+      pThis->idxParent = idx;
     }
-    pThis->idxParent = idx;
     sqlite3pager_unref(aData);
   }
 }
@@ -2261,25 +2354,45 @@ static void reparentChildPages(MemPage *pPage){
 **
 ** "sz" must be the number of bytes in the cell.
 **
-** Do not bother maintaining the integrity of the linked list of Cells.
-** Only the pPage->aCell[] array is important.  The relinkCellList() 
-** routine will be called soon after this routine in order to rebuild 
-** the linked list.
+** Try to maintain the integrity of the linked list of cells.  But if
+** the cell being inserted does not fit on the page, this will not be
+** possible.  If the linked list is not maintained, then just update
+** pPage->aCell[] and set the pPage->needRelink flag so that we will
+** know to rebuild the linked list later.
 */
 static void dropCell(MemPage *pPage, int idx, int sz){
   int j, pc;
+  u8 *data;
   assert( idx>=0 && idx<pPage->nCell );
   assert( sz==cellSize(pPage, pPage->aCell[idx]) );
   assert( sqlite3pager_iswriteable(pPage->aData) );
   assert( pPage->aCell[idx]>=pPage->aData );
   assert( pPage->aCell[idx]<&pPage->aData[pPage->pBt->pageSize-sz] );
-  pc = Addr(pPage->aCell[idx]) - Addr(pPage->aData);
+  data = pPage->aData;
+  pc = Addr(pPage->aCell[idx]) - Addr(data);
   assert( pc>pPage->hdrOffset && pc+sz<=pPage->pBt->pageSize );
   freeSpace(pPage, pc, sz);
   for(j=idx; j<pPage->nCell-1; j++){
     pPage->aCell[j] = pPage->aCell[j+1];
   }
   pPage->nCell--;
+  if( !pPage->isOverfull && !pPage->needRelink ){
+    u8 *pPrev;
+    if( idx==0 ){
+      pPrev = &data[pPage->hdrOffset+3];
+    }else{
+      pPrev = pPage->aCell[idx-1];
+    }
+    if( idx<pPage->nCell ){
+      pc = Addr(pPage->aCell[idx]) - Addr(data);
+    }else{
+      pc = 0;
+    }
+    put2byte(pPrev, pc);
+    pageIntegrity(pPage);
+  }else{
+    pPage->needRelink = 1;
+  }
   pPage->idxShift = 1;
 }
 
@@ -2291,17 +2404,18 @@ static void dropCell(MemPage *pPage, int idx, int sz){
 ** will not fit, then just make pPage->aCell[i] point to the content
 ** and set pPage->isOverfull.  
 **
-** Do not bother maintaining the integrity of the linked list of Cells.
-** Only the pPage->aCell[] array is important.  The relinkCellList() 
-** routine will be called soon after this routine in order to rebuild 
-** the linked list.
+** Try to maintain the integrity of the linked list of cells.  But if
+** the cell being inserted does not fit on the page, this will not be
+** possible.  If the linked list is not maintained, then just update
+** pPage->aCell[] and set the pPage->needRelink flag so that we will
+** know to rebuild the linked list later.
 */
 static void insertCell(MemPage *pPage, int i, unsigned char *pCell, int sz){
   int idx, j;
   assert( i>=0 && i<=pPage->nCell );
   assert( sz==cellSize(pPage, pCell) );
   assert( sqlite3pager_iswriteable(pPage->aData) );
-  idx = allocateSpace(pPage, sz);
+  idx = pPage->needRelink ? 0 : allocateSpace(pPage, sz);
   resizeCellArray(pPage, pPage->nCell+1);
   for(j=pPage->nCell; j>i; j--){
     pPage->aCell[j] = pPage->aCell[j-1];
@@ -2311,8 +2425,24 @@ static void insertCell(MemPage *pPage, int i, unsigned char *pCell, int sz){
     pPage->isOverfull = 1;
     pPage->aCell[i] = pCell;
   }else{
-    memcpy(&pPage->aData[idx], pCell, sz);
-    pPage->aCell[i] = &pPage->aData[idx];
+    u8 *data = pPage->aData;
+    memcpy(&data[idx], pCell, sz);
+    pPage->aCell[i] = &data[idx];
+  }
+  if( !pPage->isOverfull && !pPage->needRelink ){
+    u8 *pPrev;
+    int pc;
+    if( i==0 ){
+      pPrev = &pPage->aData[pPage->hdrOffset+3];
+    }else{
+      pPrev = pPage->aCell[i-1];
+    }
+    pc = get2byte(pPrev);
+    put2byte(pPrev, idx);
+    put2byte(pPage->aCell[i], pc);
+    pageIntegrity(pPage);
+  }else{
+    pPage->needRelink = 1;
   }
   pPage->idxShift = 1;
 }
@@ -2326,6 +2456,7 @@ static void insertCell(MemPage *pPage, int i, unsigned char *pCell, int sz){
 static void relinkCellList(MemPage *pPage){
   int i, idxFrom;
   assert( sqlite3pager_iswriteable(pPage->aData) );
+  if( !pPage->needRelink ) return;
   idxFrom = pPage->hdrOffset+3;
   for(i=0; i<pPage->nCell; i++){
     int idx = Addr(pPage->aCell[i]) - Addr(pPage->aData);
@@ -2334,6 +2465,7 @@ static void relinkCellList(MemPage *pPage){
     idxFrom = idx;
   }
   put2byte(&pPage->aData[idxFrom], 0);
+  pPage->needRelink = 0;
 }
 
 /*
@@ -2378,6 +2510,15 @@ static void movePage(MemPage *pTo, MemPage *pFrom){
     }
   }
 }
+
+/*
+** For debugging...
+*/
+#if 1
+# define TRACE(X)   if( pager3_refinfo_enable ) printf X
+#else
+# define TRACE(X)
+#endif
 
 /*
 ** The following parameters determine how many adjacent pages get involved
@@ -2475,6 +2616,7 @@ static int balance(MemPage *pPage){
   ** it means this page is the root page and special rules apply.
   */
   pParent = pPage->pParent;
+  TRACE(("BALANCE: begin page %d\n", pPage->pgno));
   if( pParent==0 ){
     Pgno pgnoChild;
     MemPage *pChild;
@@ -2483,6 +2625,7 @@ static int balance(MemPage *pPage){
       if( pPage->leaf ){
         /* The table is completely empty */
         relinkCellList(pPage);
+        TRACE(("BALANCE: empty table\n"));
       }else{
         /* The root page is empty but has one child.  Transfer the
         ** information from that one child into the root page if it 
@@ -2513,9 +2656,11 @@ static int balance(MemPage *pPage){
                         cellSize(pChild, pChild->aCell[i]));
             }
             freePage(pChild);
+            TRACE(("BALANCE: child %d transfer to page 1\n", pChild->pgno));
           }else{
             /* The child has more information that will fit on the root.
             ** The tree is already balanced.  Do nothing. */
+            TRACE(("BALANCE: child %d will not fit on page 1\n", pChild->pgno));
           }
         }else{
           memcpy(pPage, pChild, pBt->pageSize);
@@ -2524,6 +2669,7 @@ static int balance(MemPage *pPage){
           rc = initPage(pPage, 0);
           assert( rc==SQLITE_OK );
           freePage(pChild);
+          TRACE(("BALANCE: transfer child %d into root\n", pChild->pgno));
         }
         reparentChildPages(pPage);
         releasePage(pChild);
@@ -2534,6 +2680,7 @@ static int balance(MemPage *pPage){
       /* It is OK for the root page to be less than half full.
       */
       relinkCellList(pPage);
+      TRACE(("BALANCE:  Root page is underfull but that is ok\n"));
       return SQLITE_OK;
     }
     /*
@@ -2558,6 +2705,7 @@ static int balance(MemPage *pPage){
     pParent = pPage;
     pPage = pChild;
     extraUnref = pChild;
+    TRACE(("BALANCE: Copy root into %d and blance\n", pPage->pgno));
   }
   rc = sqlite3pager_write(pParent->aData);
   if( rc ) return rc;
@@ -2834,6 +2982,7 @@ static int balance(MemPage *pPage){
   */
   assert( pPage->isInit );
   assert( pParent->isInit );
+  pageIntegrity(pPage);
   rc = balance(pParent);
   
 
@@ -2852,6 +3001,7 @@ balance_cleanup:
   }
   releasePage(pParent);
   releasePage(extraUnref);
+  TRACE(("BALANCE: Finished with %d\n", pPage->pgno));
   return rc;
 }
 
@@ -3224,8 +3374,9 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   pPage->intKey = (c & PTF_INTKEY)!=0;
   pPage->zeroData = (c & PTF_ZERODATA)!=0;
   pPage->leaf = (c & PTF_LEAF)!=0;
-  printf("PAGE %d:  flags=0x%02x  frag=%d\n", pgno,
-    data[hdr], data[hdr+5]);
+  printf("PAGE %d:  flags=0x%02x  frag=%d   parent=%d\n", pgno,
+    data[hdr], data[hdr+5], 
+    (pPage->isInit && pPage->pParent) ? pPage->pParent->pgno : 0);
   i = 0;
   assert( hdr == (pgno==1 ? 100 : 0) );
   idx = get2byte(&data[hdr+3]);
@@ -3321,9 +3472,11 @@ int sqlite3BtreeFlags(BtCursor *pCur){
 **
 ** This routine is used for testing and debugging only.
 */
-int sqlite3BtreeCursorDump(BtCursor *pCur, int *aResult){
+int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult){
   int cnt, idx;
   MemPage *pPage = pCur->pPage;
+
+  pageIntegrity(pPage);
   assert( pPage->isInit );
   aResult[0] = sqlite3pager_pagenumber(pPage->aData);
   assert( aResult[0]==pPage->pgno );
