@@ -74,7 +74,7 @@ newsitem {2005-Feb-15} {Versions 2.8.16 and 3.1.2 Released} {
   series.  SQLite 3.1 features added support for correlated
   subqueries, autovacuum, autoincrement, ALTER TABLE, and
   other enhancements.  See the 
-  <a href="www.sqlite.org/releasenotes310.html">release notes
+  <a href="http://www.sqlite.org/releasenotes310.html">release notes
   for version 3.1.0</a> for a detailed description of the
   changes available in the 3.1 series.
 }
@@ -103,4 +103,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.106 2005/02/15 12:51:16 drh Exp $}
+footer {$Id: index.tcl,v 1.107 2005/02/15 13:38:46 drh Exp $}
