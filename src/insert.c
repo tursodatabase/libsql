@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.125 2004/11/12 03:56:15 drh Exp $
+** $Id: insert.c,v 1.126 2004/11/13 03:48:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -199,6 +199,10 @@ void sqlite3Insert(
   int after_triggers;         /* True if there are AFTER triggers */
 #endif
 
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  int counterRowid;     /* Memory cell holding rowid of autoinc counter */
+#endif
+
   if( pParse->nErr || sqlite3_malloc_failed ) goto insert_cleanup;
   db = pParse->db;
 
@@ -275,16 +279,29 @@ void sqlite3Insert(
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
   /* If this is an AUTOINCREMENT table, look up the sequence number in the
-  ** sqlite_sequence table and store it in a memory cell.  Create a new
-  ** sqlite_sequence table entry if one does not already exist.
+  ** sqlite_sequence table and store it in memory cell counterMem.  Also
+  ** remember the rowid of the sqlite_sequence table entry in memory cell
+  ** counterRowid.
   */
   if( pTab->autoInc ){
-    counterMem = ++pParse->nMem;
-    assert( counterMem>0 );  /* Must be so for OP_NewRecno to work right */
-    sqlite3NestedParse(pParse, 
-       "SELECT seq FROM %Q.sqlite_sequence WHERE name=%Q INTO %d",
-       pDb->zName, pTab->zName, counterMem
-    );
+    int iCur = pParse->nTab;
+    int base = sqlite3VdbeCurrentAddr(v);
+    counterRowid = pParse->nMem++;
+    counterMem = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqlite3VdbeAddOp(v, OP_OpenRead, iCur, pDb->pSeqTab->tnum);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, 2);
+    sqlite3VdbeAddOp(v, OP_Rewind, iCur, base+13);
+    sqlite3VdbeAddOp(v, OP_Column, iCur, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
+    sqlite3VdbeAddOp(v, OP_Ne, 28417, base+12);
+    sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_MemStore, counterRowid, 1);
+    sqlite3VdbeAddOp(v, OP_Column, iCur, 1);
+    sqlite3VdbeAddOp(v, OP_MemStore, counterMem, 1);
+    sqlite3VdbeAddOp(v, OP_Goto, 0, base+13);
+    sqlite3VdbeAddOp(v, OP_Next, iCur, base+4);
+    sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
   }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
@@ -566,7 +583,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp(v, OP_NewRecno, base, counterMem);
       sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     }else{
-      sqlite3VdbeAddOp(v, OP_NewRecno, base, 0);
+      sqlite3VdbeAddOp(v, OP_NewRecno, base, counterMem);
     }
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     if( pTab->autoInc ){
@@ -657,13 +674,25 @@ void sqlite3Insert(
   }
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-  /* Update the sqlite_sequence table 
+  /* Update the sqlite_sequence table by storing the content of the
+  ** counter value in memory counterMem back into the sqlite_sequence
+  ** table.
   */
   if( pTab->autoInc ){
-    sqlite3NestedParse(pParse,
-      "UPDATE %Q.sqlite_sequence SET seq=#-%d WHERE name=%Q",
-      pDb->zName, counterMem+1, pTab->zName
-    );
+    int iCur = pParse->nTab;
+    int base = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+    sqlite3VdbeAddOp(v, OP_OpenWrite, iCur, pDb->pSeqTab->tnum);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, 2);
+    sqlite3VdbeAddOp(v, OP_MemLoad, counterRowid, 0);
+    sqlite3VdbeAddOp(v, OP_NotNull, -1, base+7);
+    sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+    sqlite3VdbeAddOp(v, OP_NewRecno, iCur, 0);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
+    sqlite3VdbeAddOp(v, OP_MemLoad, counterMem, 0);
+    sqlite3VdbeAddOp(v, OP_MakeRecord, 2, 0);
+    sqlite3VdbeAddOp(v, OP_PutIntKey, iCur, 0);
+    sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
   }
 #endif
 

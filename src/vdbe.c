@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.426 2004/11/12 03:56:15 drh Exp $
+** $Id: vdbe.c,v 1.427 2004/11/13 03:48:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2895,6 +2895,7 @@ case OP_NewRecno: {
         Mem *pMem;
         assert( pOp->p2>0 && pOp->p2<p->nMem );  /* P2 is a valid memory cell */
         pMem = &p->aMem[pOp->p2];
+        Integerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P2) holds an integer */
         if( pMem->i==0x7fffffffffffffff || pC->useRandomRowid ){
           rc = SQLITE_FULL;
@@ -4126,7 +4127,7 @@ case OP_MemMax: {
   assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nMem );
   pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
+  Integerify(pMem);
   Integerify(pTos);
   if( pMem->i<pTos->i){
     pMem->i = pTos->i;

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.278 2004/11/12 15:53:37 danielk1977 Exp $
+** $Id: build.c,v 1.279 2004/11/13 03:48:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1465,13 +1465,8 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
       Db *pDb = &db->aDb[p->iDb];
       if( pDb->pSeqTab==0 ){
         sqlite3NestedParse(pParse,
-          "CREATE TABLE %Q.sqlite_sequence AS SELECT %Q AS name, 0 AS seq;",
-          pDb->zName, p->zName
-        );
-      }else{
-        sqlite3NestedParse(pParse,
-          "INSERT INTO %Q.sqlite_sequence VALUES(%Q,0)",
-          pDb->zName, p->zName
+          "CREATE TABLE %Q.sqlite_sequence(name,seq)",
+          pDb->zName
         );
       }
     }
@@ -1811,9 +1806,8 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     }
   }
 #endif
-  if( pTab->readOnly ){
+  if( pTab->readOnly || pTab==db->aDb[iDb].pSeqTab ){
     sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
-    pParse->nErr++;
     goto exit_drop_table;
   }
   if( isView && pTab->pSelect==0 ){
@@ -3006,4 +3000,3 @@ void sqlite3AlterRenameTable(
   sqliteFree(zName);
 }
 #endif
-

@@ -1,5 +1,5 @@
-C Change\spragmas\sschema_cookie\sand\suser_cookie\sto\sschema_version\sand\suser_version.\s(CVS\s2094)
-D 2004-11-12T16:12:00
+C Autoincrement\sis\snow\sworking\sand\shas\sregression\stests.\s(CVS\s2095)
+D 2004-11-13T03:48:07
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,14 +31,14 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c 9fd74df65bad768a441afefc3b73174d45b85d5b
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c 45ba40523aa4f9130c5a5af8b7db5d0d878443a3
+F src/build.c a95eb1181247368b0ffe2eed121a43735976a964
 F src/date.c 4fd4e90b3880dacd67305e96330940dc243ffc10
 F src/delete.c f0af21a1ede15524a5edd59fe10ef486283a1ee9
 F src/expr.c 4ee3e47358c92a919062255b14057a7a8f641e01
 F src/func.c b68572e79ada56dd038b7e71755212215092b717
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
-F src/insert.c e80b009f9ef2864bbaaaae836286f56125a180f6
+F src/insert.c 9524a6c3e86cbdbae3313f6a083bb9a3e7a2462b
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
 F src/main.c c7dc54c62c86cab8b2e2883aef607c179eefa611
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
@@ -54,7 +54,7 @@ F src/os_win.c 9482dfc92f289b68205bb2c9315757c7e3946bfb
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ee88fcecb081e3635c281bc09d604e934429e2f5
 F src/pager.h 9eba8c53dd91eae7f3f90743b2ee242da02a9862
-F src/parse.y b64ebeb91d9fc1c813f4517b80e3a3659e94b032
+F src/parse.y 7978be173379fc72abf8004301577b90408d50e5
 F src/pragma.c 32ce8fad1a1e05eff97a3dfe02acc61b6936eeee
 F src/printf.c 3d20b21cfecadacecac3fb7274e746cb81d3d357
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
@@ -64,7 +64,7 @@ F src/sqlite.h.in a44eac0716bf4751447160d5c8ed049ece66d45a
 F src/sqliteInt.h 8569ce94e891a854de71d7bd628da1d25ee6dfe4
 F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c 7f1a1a678140e6901c8954590ca2aabe50b48f71
-F src/test1.c f4dca9e072971dd0207a2d09913da48dac7f7871
+F src/test1.c bbd404d6ee6bfe326ebf04699a0fabcc28e50a91
 F src/test2.c b11fa244fff02190707dd0879987c37c75e61fc8
 F src/test3.c 6f1ec93e13632a004b527049535079eda84c459d
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
@@ -75,7 +75,7 @@ F src/update.c 3cc67f6053495152e82a6a48c93ed331218e936e
 F src/utf.c f4f83acd73389090e32d6589d307fc55d794c7ed
 F src/util.c 005fdf2d008f3429d081766ad6098fdd86d8d8e6
 F src/vacuum.c ecb4a2c6f1ac5cc9b394dc64d3bb14ca650c4f60
-F src/vdbe.c 0fd9437a288b19681856ef3f803bfde6858567f1
+F src/vdbe.c 312df85707ed3d2a90ac2ccec4e614b6996842d9
 F src/vdbe.h 067ca8d6750ba4f69a50284765e5883dee860181
 F src/vdbeInt.h 6017100adff362b8dfa37a69e3f1431f084bfa5b
 F src/vdbeapi.c 3965bf4678ae32c05f73550c1b5be3268f9f3006
@@ -88,6 +88,7 @@ F test/attach.test e305dd59a375e37c658c6d401f19f8a95880bf9a
 F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test 8a0309e284cf9aa1d7d6cc444989031881f7a21c
 F test/auth.test cf13e449cb253f75d6584b376202c94bbdd53ec9
+F test/autoinc.test 11330758197e0301d3600a071230d45b2f6a65b7
 F test/autovacuum.test e52b8fab3b82f6b51b7fde5b7140827ce8e86b1c
 F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
 F test/bigfile.test d3744a8821ce9abb8697f2826a3e3d22b719e89f
@@ -256,7 +257,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P c4115aa3a1b010704af76c5ae9f6dcbfa4038df8
-R aad8608531c726385c6e9788af9bc8b9
-U danielk1977
-Z 1177c79f2e60c6c7d6713520bedefc82
+P 5e058318441bb5043c609cc8fba1653995e90efb
+R c2b0cdd20fba53e39338d096ea4e7b99
+U drh
+Z af7f52e053f24291ed6aecd06da0eb9b

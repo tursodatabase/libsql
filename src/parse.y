@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.154 2004/11/12 13:42:31 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.155 2004/11/13 03:48:07 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -268,7 +268,7 @@ conslist ::= conslist COMMA tcons.
 conslist ::= conslist tcons.
 conslist ::= tcons.
 tcons ::= CONSTRAINT nm.
-tcons ::= PRIMARY KEY LP idxlist(X) RP onconf(R) autoinc(I).
+tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                          {sqlite3AddPrimaryKey(pParse,X,R,I);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                        {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0);}
@@ -319,21 +319,6 @@ cmd ::= select(X).  {
   sqlite3Select(pParse, X, SRT_Callback, 0, 0, 0, 0, 0);
   sqlite3SelectDelete(X);
 }
-
-%ifndef SQLITE_OMIT_AUTOINCREMENT
-// The INTO clause after a select only works in nested mode.  It causes
-// the result of the SELECT to be stored in a memory register of the
-// virtual machine.
-//
-cmd ::= select(X) INTO INTEGER(M).  {
-  if( pParse->nested ){
-    sqlite3Select(pParse, X, SRT_Mem, atoi(M.z), 0, 0, 0, 0);
-  }else{
-    sqlite3ErrorMsg(pParse, "near \"INTO\": syntax error");
-  }
-  sqlite3SelectDelete(X);
-}
-%endif // SQLITE_OMIT_AUTOINCREMENT
 
 %type select {Select*}
 %destructor select {sqlite3SelectDelete($$);}
