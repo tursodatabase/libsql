@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.201 2004/07/20 01:45:20 drh Exp $
+** $Id: select.c,v 1.202 2004/07/26 23:32:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2242,7 +2242,6 @@ int sqlite3Select(
     case SRT_Union:
     case SRT_Except:
     case SRT_Discard:
-    case SRT_Set:
       pOrderBy = 0;
       break;
     default:

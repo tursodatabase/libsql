@@ -1,5 +1,5 @@
-C Get\sVACUUM\sworking\swith\sUNIQUE\sindices.\s\sTicket\s#829.\s(CVS\s1870)
-D 2004-07-26T23:07:52
+C Honor\sthe\sORDER\sBY\sclause\sin\sa\ssubquery\sthat\sis\sthe\sright-hand\sside\sof\san\sIN\noperator.\s\sTicket\s#827.\s(CVS\s1871)
+D 2004-07-26T23:32:27
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -57,7 +57,7 @@ F src/parse.y 0bcc53bba498081a544e50c8845bf4857ebfccb9
 F src/pragma.c c8be18093f0492f9983406647808781ca0073d8b
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
-F src/select.c aefda626660086addca4ce85c34aeef5d0f44c25
+F src/select.c cbed45f4af76ad7fdfc0a0df6878b2b3827ae1d4
 F src/shell.c 93c96c847228c02fb84bb381875d87ee71fbbeb4
 F src/sqlite.h.in d5d542e3cfd25c79f46239d1722d8333f1b16796
 F src/sqliteInt.h 691d584330cadab3801280caa49eb479fe2446a3
@@ -160,7 +160,7 @@ F test/select4.test 86e72fc3b07de4fe11439aa419e37db3c49467e2
 F test/select5.test 3f3f0f31e674fa61f8a3bdb6af1517dfae674081
 F test/select6.test a9e31906e700e7c7592c4d0acfc022808f718baf
 F test/sort.test 30fb9ea782a78da849a562d53233ec62d421bf61
-F test/subselect.test cca16490d78613174bf90a8416fc21a383ec7c71
+F test/subselect.test 8e889521c4234d8ebbe3945d91b147ed051fb9da
 F test/table.test fd9a0f4992230e4ca89cd37ae3191a12750df1d0
 F test/tableapi.test b21ab097e87a5484bb61029e69e1a4e5c5e65ede
 F test/tclsqlite.test 9bb1ee91e4ab661b3240423daaf4efff76874565
@@ -240,7 +240,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 15bfb2d153b9ffbb6b59146e1288d0e2e4cdf66f
-R ee707c764e2bb8451fb37013b45cc605
+P 88a19a4386708c3c10448740d2bbe149055bcc6e
+R 72ccf7f1497b53b19dd26358d8d9f694
 U drh
-Z ba6b19d006dc27280511a74c7f232d33
+Z f33c6b0a28f21ae8f46c0aa75565ac7e
