@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.16 2005/01/16 09:06:34 danielk1977 Exp $
+# $Id: crash.test,v 1.17 2005/01/20 05:24:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,8 +46,15 @@ proc crashsql {crashdelay crashfile sql} {
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crashparams $crashdelay $cfile"
-  puts $f "sqlite3 db test.db"
-  puts $f "db eval {pragma cache_size = 10}"
+  puts $f {sqlite3 db test.db}
+
+  # This block sets the cache size of the main database to 10
+  # pages. This is done in case the build is configured to omit
+  # "PRAGMA cache_size".
+  puts $f {db eval {SELECT * FROM sqlite_master;}}
+  puts $f {set bt [btree_from_db db]}
+  puts $f {btree_set_cache_size $bt 10}
+
   puts $f "db eval {"
   puts $f   "$sql"
   puts $f "}"

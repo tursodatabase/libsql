@@ -1,5 +1,5 @@
-C Fix\ssome\stest\sscripts\sso\sthat\sthey\swork\swith\sa\sminimal\sbuild\sconfiguration.\s(CVS\s2241)
-D 2005-01-20T02:17:02
+C Changes\sso\sthat\scrash.test\sworks\swhen\sSQLITE_OMIT_PAGER_PRAGMAS\sis\sdefined.\s(CVS\s2242)
+D 2005-01-20T05:24:33
 F Makefile.in ffd81f5e926d40b457071b4de8d7c1fa18f39b5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -66,7 +66,7 @@ F src/table.c 25b3ff2b39b7d87e8d4a5da0713d68dfc06cbee9
 F src/tclsqlite.c fd27457b228118be96524dae285146c76efe032b
 F src/test1.c 59fc0f0c35cb3bccdf166f36a1a5f9ffb0b951e7
 F src/test2.c bbc2ecc58ceeab12d1e40970f831b1017524e40d
-F src/test3.c a72f20066cccd5a7b9f20b7b78fa9b05b47b3020
+F src/test3.c 5c2ec5c8eb689ac93fb0546f84b310659ad287c6
 F src/test4.c 7c6b9fc33dd1f3f93c7f1ee6e5e6d016afa6c1df
 F src/test5.c 64f08b2a50ef371a1bd68ff206829e7b1b9997f5
 F src/tokenize.c 88bef43fe3e3c8865a7447f934296ac13238c4f6
@@ -116,7 +116,7 @@ F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
 F test/corrupt.test 916977f0255c81217a44abe0ac01b8508f65dcbf
 F test/corrupt2.test cb1f813df7559de3021e01170af0bba31507a9a5
-F test/crash.test fa5d79ece85e8f6677bd81703db5f869a15963aa
+F test/crash.test f38b980a0508655d08c957a6dd27d66bca776504
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/cursor.test d7c65ea0fc4e321e12fbcf5c7f3e2211ef45379b
 F test/date.test ef6c679d0b59502457dbd78ee1c3c085c949c4c4
@@ -270,7 +270,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 2d3ab1ab5ae08fe21f4662b171f04362c1326eb0
-R 5ba3e96793e1fa69b896ac82bdf9868f
+P d267fb3ca3f31ee138c9613cb84e873ede7f141a
+R 55044367795c6eaf0d2957842ac9aaf4
 U danielk1977
-Z ec1fffb60f32816ed9904cccfc34fd61
+Z 27da8f82b49b57c87cafc749a59dab56

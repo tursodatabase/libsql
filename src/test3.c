@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.59 2005/01/10 12:59:53 danielk1977 Exp $
+** $Id: test3.c,v 1.60 2005/01/20 05:24:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1363,6 +1363,33 @@ static int btree_from_db(
   return TCL_OK;
 }
 
+
+/*
+** usage:   btree_set_cache_size ID NCACHE
+**
+** Set the size of the cache used by btree $ID.
+*/
+static int btree_set_cache_size(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int nCache;
+  Btree *pBt;
+
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " BT NCACHE\"", 0);
+    return TCL_ERROR;
+  }
+  pBt = sqlite3TextToPtr(argv[1]);
+  if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
+  sqlite3BtreeSetCacheSize(pBt, nCache);
+  return TCL_OK;
+}
+
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -1410,6 +1437,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_commit_statement",   (Tcl_CmdProc*)btree_commit_statement   },
      { "btree_rollback_statement", (Tcl_CmdProc*)btree_rollback_statement },
      { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
+     { "btree_set_cache_size",     (Tcl_CmdProc*)btree_set_cache_size     },
   };
   int i;
 
