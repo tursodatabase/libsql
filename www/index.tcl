@@ -61,7 +61,7 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2005-Mar-27} {Version 3.2.1} {
+newsitem {2005-Mar-29} {Version 3.2.1} {
   This release fixes a memory allocation problem in the new
   <a href="lang_altertable.html">ALTER TABLE ADD COLUMN</a>
   command.
@@ -113,4 +113,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.114 2005/03/28 16:56:09 drh Exp $}
+footer {$Id: index.tcl,v 1.115 2005/03/29 13:19:02 drh Exp $}

@@ -21,7 +21,7 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2005 March 27 (3.2.1)} {
+chng {2005 March 29 (3.2.1)} {
 <li>Fix a memory allocation error in the new ADD COLUMN comment.</li>
 <li>Documentation updates</li>
 }
