@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.90 2002/06/02 16:09:02 drh Exp $
+** $Id: select.c,v 1.91 2002/06/06 18:54:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -326,12 +326,9 @@ static int selectInnerLoop(
   ** part of the result.
   */
   if( distinct>=0 && pEList && pEList->nExpr>0 ){
-    /* For the purposes of the DISTINCT keyword to a SELECT, NULLs
-    ** are indistinct.  This was confirmed by experiment in Oracle
-    ** and PostgreSQL.  It seems contradictory, but it appears to be
-    ** true.
-    ** sqliteVdbeAddOp(v, OP_IsNull, -pEList->nExpr,sqliteVdbeCurrentAddr(v)+7);
-    */
+#if NULL_ALWAYS_DISTINCT
+    sqliteVdbeAddOp(v, OP_IsNull, -pEList->nExpr, sqliteVdbeCurrentAddr(v)+7);
+#endif
     sqliteVdbeAddOp(v, OP_MakeKey, pEList->nExpr, 1);
     sqliteVdbeAddOp(v, OP_Distinct, distinct, sqliteVdbeCurrentAddr(v)+3);
     sqliteVdbeAddOp(v, OP_Pop, pEList->nExpr+1, 0);
@@ -363,7 +360,7 @@ static int selectInnerLoop(
   ** table iParm.
   */
   if( eDest==SRT_Union ){
-    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
     sqliteVdbeAddOp(v, OP_String, 0, 0);
     sqliteVdbeAddOp(v, OP_PutStrKey, iParm, 0);
   }else 
@@ -382,7 +379,8 @@ static int selectInnerLoop(
   ** the temporary table iParm.
   */
   if( eDest==SRT_Except ){
-    int addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+    int addr;
+    addr = sqliteVdbeAddOp(v, OP_MakeRecord, nColumn, NULL_ALWAYS_DISTINCT);
     sqliteVdbeAddOp(v, OP_NotFound, iParm, addr+3);
     sqliteVdbeAddOp(v, OP_Delete, iParm, 0);
   }else 

@@ -31,6 +31,9 @@
 **                       to no legal terminal or nonterminal number.  This
 **                       number is used to fill in empty slots of the hash 
 **                       table.
+**    YYFALLBACK         If defined, this indicates that one or more tokens
+**                       have fall-back values which should be used if the
+**                       original value of the token will not parse.
 **    YYACTIONTYPE       is the data type used for storing terminal
 **                       and nonterminal numbers.  "unsigned char" is
 **                       used if there are fewer than 250 rules and
@@ -105,6 +108,22 @@ static const yyStateEntry yyStateTable[] = {
 %%
 };
 
+/* The next table maps tokens into fallback tokens.  If a construct
+** like the following:
+** 
+**      %fallback ID X Y Z.
+**
+** appears in the grammer, then ID becomes a fallback token for X, Y,
+** and Z.  Whenever one of the tokens X, Y, or Z is input to the parser
+** but it does not parse, the type of the token is changed to ID and
+** the parse is retried before an error is thrown.
+*/
+#ifdef YYFALLBACK
+static const YYCODETYPE yyFallback[] = {
+%%
+};
+#endif /* YYFALLBACK */
+
 /* The following structure represents a single element of the
 ** parser's stack.  Information stored includes:
 **
@@ -141,7 +160,9 @@ typedef struct yyParser yyParser;
 #include <stdio.h>
 static FILE *yyTraceFILE = 0;
 static char *yyTracePrompt = 0;
+#endif /* NDEBUG */
 
+#ifndef NDEBUG
 /* 
 ** Turn parser tracing on by giving a stream to which to write the trace
 ** and a prompt to preface each trace message.  Tracing is turned off
@@ -165,17 +186,23 @@ void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
   if( yyTraceFILE==0 ) yyTracePrompt = 0;
   else if( yyTracePrompt==0 ) yyTraceFILE = 0;
 }
+#endif /* NDEBUG */
 
+#ifndef NDEBUG
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *yyTokenName[] = { 
 %%
 };
-#define YYTRACE(X) if( yyTraceFILE ) fprintf(yyTraceFILE,"%sReduce [%s].\n",yyTracePrompt,X);
-#else
-#define YYTRACE(X)
-#endif
+#endif /* NDEBUG */
 
+#ifndef NDEBUG
+/* For tracing reduce actions, the names of all rules are required.
+*/
+static const char *yyRuleName[] = {
+%%
+};
+#endif /* NDEBUG */
 
 /*
 ** This function returns the symbolic name associated with a token
@@ -297,6 +324,7 @@ static int yy_find_parser_action(
 ){
   const yyStateEntry *pState;   /* Appropriate entry in the state table */
   const yyActionEntry *pAction; /* Action appropriate for the look-ahead */
+  int iFallback;                /* Fallback token */
  
   /* if( pParser->yyidx<0 ) return YY_NO_ACTION;  */
   pState = &yyStateTable[pParser->yytop->stateno];
@@ -306,9 +334,21 @@ static int yy_find_parser_action(
     pAction = &pState->hashtbl[iLookAhead % pState->nEntry];
     while( 1 ){
       if( pAction->lookahead==iLookAhead ) return pAction->action;
-      if( pAction->next==0 ) return pState->actionDefault;
+      if( pAction->next==0 ) break;
       pAction = &pState->hashtbl[pAction->next-1];
     }
+#ifdef YYFALLBACK
+    if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
+           && (iFallback = yyFallback[iLookAhead])!=0 ){
+#ifndef NDEBUG
+      if( yyTraceFILE ){
+        fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
+           yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
+      }
+#endif
+      return yy_find_parser_action(pParser, iFallback);
+    }
+#endif
   }else if( pState->hashtbl->lookahead!=YYNOCODE ){
     return YY_NO_ACTION;
   }
@@ -384,11 +424,18 @@ static void yy_reduce(
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH;
   yymsp = yypParser->yytop;
+#ifndef NDEBUG
+  if( yyTraceFILE && yyruleno>=0 
+        && yyruleno<sizeof(yyRuleName)/sizeof(yyRuleName[0]) ){
+    fprintf(yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
+      yyRuleName[yyruleno]);
+  }
+#endif /* NDEBUG */
+
   switch( yyruleno ){
   /* Beginning here are the reduction cases.  A typical example
   ** follows:
   **   case 0:
-  **     YYTRACE("<text of the rule>");
   **  #line <lineno> <grammarfile>
   **     { ... }           // User supplied code
   **  #line <lineno> <thisfile>

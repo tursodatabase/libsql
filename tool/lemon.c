@@ -129,6 +129,7 @@ struct symbol {
     NONTERMINAL
   } type;                  /* Symbols are all either TERMINALS or NTs */
   struct rule *rule;       /* Linked list of rules of this (if an NT) */
+  struct symbol *fallback; /* fallback token in case this token doesn't parse */
   int prec;                /* Precedence if defined (-1 otherwise) */
   enum e_assoc {
     LEFT,
@@ -269,6 +270,7 @@ struct lemon {
   int nconflict;           /* Number of parsing conflicts */
   int tablesize;           /* Size of the parse tables */
   int basisflag;           /* Print only basis configurations */
+  int has_fallback;        /* True if any %fallback is seen in the grammer */
   char *argv0;             /* Name of the program */
 };
 
@@ -1203,6 +1205,7 @@ char **argv;
   lem.argv0 = argv[0];
   lem.filename = OptArg(0);
   lem.basisflag = basisflag;
+  lem.has_fallback = 0;
   lem.nconflict = 0;
   lem.name = lem.include = lem.arg = lem.tokentype = lem.start = 0;
   lem.vartype = 0;
@@ -1722,8 +1725,10 @@ struct pstate {
     RESYNC_AFTER_RULE_ERROR,
     RESYNC_AFTER_DECL_ERROR,
     WAITING_FOR_DESTRUCTOR_SYMBOL,
-    WAITING_FOR_DATATYPE_SYMBOL
+    WAITING_FOR_DATATYPE_SYMBOL,
+    WAITING_FOR_FALLBACK_ID
   } state;                   /* The state of the parser */
+  struct symbol *fallback;   /* The fallback token */
   struct symbol *lhs;        /* Left-hand side of current rule */
   char *lhsalias;            /* Alias for the LHS */
   int nrhs;                  /* Number of right-hand side symbols seen */
@@ -2001,6 +2006,9 @@ to follow the previous rule.");
           psp->state = WAITING_FOR_DESTRUCTOR_SYMBOL;
 	}else if( strcmp(x,"type")==0 ){
           psp->state = WAITING_FOR_DATATYPE_SYMBOL;
+        }else if( strcmp(x,"fallback")==0 ){
+          psp->fallback = 0;
+          psp->state = WAITING_FOR_FALLBACK_ID;
         }else{
           ErrorMsg(psp->filename,psp->tokenlineno,
             "Unknown declaration keyword: \"%%%s\".",x);
@@ -2078,6 +2086,27 @@ to follow the previous rule.");
           "Illegal argument to %%%s: %s",psp->declkeyword,x);
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
+      }
+      break;
+    case WAITING_FOR_FALLBACK_ID:
+      if( x[0]=='.' ){
+        psp->state = WAITING_FOR_DECL_OR_RULE;
+      }else if( !isupper(x[0]) ){
+        ErrorMsg(psp->filename, psp->tokenlineno,
+          "%%fallback argument \"%s\" should be a token", x);
+        psp->errorcnt++;
+      }else{
+        struct symbol *sp = Symbol_new(x);
+        if( psp->fallback==0 ){
+          psp->fallback = sp;
+        }else if( sp->fallback ){
+          ErrorMsg(psp->filename, psp->tokenlineno,
+            "More than one fallback assigned to token %s", x);
+          psp->errorcnt++;
+        }else{
+          sp->fallback = psp->fallback;
+          psp->gp->has_fallback = 1;
+        }
       }
       break;
     case RESYNC_AFTER_RULE_ERROR:
@@ -2952,7 +2981,7 @@ int mhflag;     /* Output in makeheaders format if true */
   struct state *stp;
   struct action *ap;
   struct rule *rp;
-  int i;
+  int i, j;
   int tablecnt;
   char *name;
 
@@ -3037,6 +3066,9 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out,"#define YYNRULE %d\n",lemp->nrule);  lineno++;
   fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index);  lineno++;
   fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum);  lineno++;
+  if( lemp->has_fallback ){
+    fprintf(out,"#define YYFALLBACK 1\n");  lineno++;
+  }
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate the action table.
@@ -3146,7 +3178,24 @@ int mhflag;     /* Output in makeheaders format if true */
   }
   tplt_xfer(lemp->name,in,out,&lineno);
 
-  /* Generate a table containing the symbolic name of every symbol */
+  /* Generate the table of fallback tokens.
+  */
+  if( lemp->has_fallback ){
+    for(i=0; i<lemp->nterminal; i++){
+      struct symbol *p = lemp->symbols[i];
+      if( p->fallback==0 ){
+        fprintf(out, "    0,  /* %10s => nothing */\n", p->name);
+      }else{
+        fprintf(out, "  %3d,  /* %10s => %s */\n", p->fallback->index,
+          p->name, p->fallback->name);
+      }
+      lineno++;
+    }
+  }
+  tplt_xfer(lemp->name, in, out, &lineno);
+
+  /* Generate a table containing the symbolic name of every symbol
+  */
   for(i=0; i<lemp->nsymbol; i++){
     sprintf(line,"\"%s\",",lemp->symbols[i]->name);
     fprintf(out,"  %-15s",line);
@@ -3155,9 +3204,22 @@ int mhflag;     /* Output in makeheaders format if true */
   if( (i&3)!=0 ){ fprintf(out,"\n"); lineno++; }
   tplt_xfer(lemp->name,in,out,&lineno);
 
+  /* Generate a table containing a text string that describes every
+  ** rule in the rule set of the grammer.  This information is used
+  ** when tracing REDUCE actions.
+  */
+  for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
+    assert( rp->index==i );
+    fprintf(out," /* %3d */ \"%s ::=", i, rp->lhs->name);
+    for(j=0; j<rp->nrhs; j++) fprintf(out," %s",rp->rhs[j]->name);
+    fprintf(out,"\",\n"); lineno++;
+  }
+  tplt_xfer(lemp->name,in,out,&lineno);
+
   /* Generate code which executes every time a symbol is popped from
   ** the stack while processing errors or while destroying the parser. 
-  ** (In other words, generate the %destructor actions) */
+  ** (In other words, generate the %destructor actions)
+  */
   if( lemp->tokendest ){
     for(i=0; i<lemp->nsymbol; i++){
       struct symbol *sp = lemp->symbols[i];
@@ -3210,9 +3272,6 @@ int mhflag;     /* Output in makeheaders format if true */
   /* Generate code which execution during each REDUCE action */
   for(rp=lemp->rule; rp; rp=rp->next){
     fprintf(out,"      case %d:\n",rp->index); lineno++;
-    fprintf(out,"        YYTRACE(\"%s ::=",rp->lhs->name);
-    for(i=0; i<rp->nrhs; i++) fprintf(out," %s",rp->rhs[i]->name);
-    fprintf(out,"\")\n"); lineno++;
     emit_code(out,rp,lemp,&lineno);
     fprintf(out,"        break;\n"); lineno++;
   }
@@ -3562,6 +3621,7 @@ char *x;
     sp->name = Strsafe(x);
     sp->type = isupper(*x) ? TERMINAL : NONTERMINAL;
     sp->rule = 0;
+    sp->fallback = 0;
     sp->prec = -1;
     sp->assoc = UNK;
     sp->firstset = 0;

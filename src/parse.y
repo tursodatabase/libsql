@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.70 2002/06/02 18:19:00 drh Exp $
+** @(#) $Id: parse.y,v 1.71 2002/06/06 18:54:40 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -110,44 +110,51 @@ columnid ::= ids(X).                {sqliteAddColumn(pParse,&X);}
 // keywords.  Any non-standard keyword can also be an identifier.
 //
 %type id {Token}
-id(A) ::= ABORT(X).      {A = X;}
-id(A) ::= AFTER(X).      {A = X;}
-id(A) ::= ASC(X).        {A = X;}
-id(A) ::= BEFORE(X).     {A = X;}
-id(A) ::= BEGIN(X).      {A = X;}
-id(A) ::= CASCADE(X).    {A = X;}
-id(A) ::= CLUSTER(X).    {A = X;}
-id(A) ::= CONFLICT(X).   {A = X;}
-id(A) ::= COPY(X).       {A = X;}
-id(A) ::= DEFERRED(X).   {A = X;}
-id(A) ::= DELIMITERS(X). {A = X;}
-id(A) ::= DESC(X).       {A = X;}
-id(A) ::= EACH(X).       {A = X;}
-id(A) ::= END(X).        {A = X;}
-id(A) ::= EXPLAIN(X).    {A = X;}
-id(A) ::= FAIL(X).       {A = X;}
-id(A) ::= FOR(X).        {A = X;}
-id(A) ::= FULL(X).       {A = X;}
+//id(A) ::= ABORT(X).      {A = X;}
+//id(A) ::= AFTER(X).      {A = X;}
+//id(A) ::= ASC(X).        {A = X;}
+//id(A) ::= BEFORE(X).     {A = X;}
+//id(A) ::= BEGIN(X).      {A = X;}
+//id(A) ::= CASCADE(X).    {A = X;}
+//id(A) ::= CLUSTER(X).    {A = X;}
+//id(A) ::= CONFLICT(X).   {A = X;}
+//id(A) ::= COPY(X).       {A = X;}
+//id(A) ::= DEFERRED(X).   {A = X;}
+//id(A) ::= DELIMITERS(X). {A = X;}
+//id(A) ::= DESC(X).       {A = X;}
+//id(A) ::= EACH(X).       {A = X;}
+//id(A) ::= END(X).        {A = X;}
+//id(A) ::= EXPLAIN(X).    {A = X;}
+//id(A) ::= FAIL(X).       {A = X;}
+//id(A) ::= FOR(X).        {A = X;}
+//id(A) ::= FULL(X).       {A = X;}
 id(A) ::= ID(X).         {A = X;}
-id(A) ::= IGNORE(X).     {A = X;}
-id(A) ::= IMMEDATE(X).   {A = X;}
-id(A) ::= INITIALLY(X).  {A = X;}
-id(A) ::= INSTEAD(X).    {A = X;}
-id(A) ::= MATCH(X).      {A = X;}
-id(A) ::= JOIN(X).       {A = X;}
-id(A) ::= KEY(X).        {A = X;}
-id(A) ::= OF(X).         {A = X;}
-id(A) ::= OFFSET(X).     {A = X;}
-id(A) ::= PARTIAL(X).    {A = X;}
-id(A) ::= PRAGMA(X).     {A = X;}
-id(A) ::= REPLACE(X).    {A = X;}
-id(A) ::= RESTRICT(X).   {A = X;}
-id(A) ::= ROW(X).        {A = X;}
-id(A) ::= STATEMENT(X).  {A = X;}
-id(A) ::= TEMP(X).       {A = X;}
-id(A) ::= TRIGGER(X).    {A = X;}
-id(A) ::= VACUUM(X).     {A = X;}
-id(A) ::= VIEW(X).       {A = X;}
+//id(A) ::= IGNORE(X).     {A = X;}
+//id(A) ::= IMMEDATE(X).   {A = X;}
+//id(A) ::= INITIALLY(X).  {A = X;}
+//id(A) ::= INSTEAD(X).    {A = X;}
+//id(A) ::= MATCH(X).      {A = X;}
+//id(A) ::= JOIN(X).       {A = X;}
+//id(A) ::= KEY(X).        {A = X;}
+//id(A) ::= OF(X).         {A = X;}
+//id(A) ::= OFFSET(X).     {A = X;}
+//id(A) ::= PARTIAL(X).    {A = X;}
+//id(A) ::= PRAGMA(X).     {A = X;}
+//id(A) ::= REPLACE(X).    {A = X;}
+//id(A) ::= RESTRICT(X).   {A = X;}
+//id(A) ::= ROW(X).        {A = X;}
+//id(A) ::= STATEMENT(X).  {A = X;}
+//id(A) ::= TEMP(X).       {A = X;}
+//id(A) ::= TRIGGER(X).    {A = X;}
+//id(A) ::= VACUUM(X).     {A = X;}
+//id(A) ::= VIEW(X).       {A = X;}
+
+%fallback ID 
+  ABORT AFTER ASC BEFORE BEGIN CASCADE CLUSTER CONFLICT
+  COPY DEFERRED DELIMITERS DESC EACH END EXPLAIN FAIL FOR
+  FULL IGNORE IMMEDIATE INITIALLY INSTEAD MATCH JOIN KEY
+  OF OFFSET PARTIAL PRAGMA REPLACE RESTRICT ROW STATEMENT
+  TEMP TRIGGER VACUUM VIEW.
 
 // And "ids" is an identifer-or-string.
 //

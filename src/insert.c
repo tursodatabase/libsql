@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.59 2002/05/26 20:54:33 drh Exp $
+** $Id: insert.c,v 1.60 2002/06/06 18:54:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -551,8 +551,13 @@ void sqliteGenerateConstraintChecks(
 
   /* Test all CHECK constraints
   */
+  /**** TBD ****/
 
-  /* Test all UNIQUE constraints.  Add index records as we go.
+  /* If we have an INTEGER PRIMARY KEY, make sure the primary key
+  ** of the new record does not previously exist.  Except, if this
+  ** is an UPDATE and the primary key is not changing, that is OK.
+  ** Also, if the conflict resolution policy is REPLACE, then we
+  ** can skip this test.
   */
   if( (recnoChng || !isUpdate) && pTab->iPKey>=0 ){
     onError = pTab->keyConf;
@@ -593,6 +598,11 @@ void sqliteGenerateConstraintChecks(
       }
     }
   }
+
+  /* Test all UNIQUE constraints by creating entries for each UNIQUE
+  ** index and making sure that duplicate entries do not already exist.
+  ** Add the new records to the indices as we go.
+  */
   extra = 0;
   for(extra=(-1), iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
     if( aIdxUsed && aIdxUsed[iCur]==0 ) continue;
@@ -642,7 +652,9 @@ void sqliteGenerateConstraintChecks(
       default: assert(0);
     }
     contAddr = sqliteVdbeCurrentAddr(v);
+#if NULL_DISTINCT_FOR_UNIQUE
     sqliteVdbeChangeP2(v, jumpInst1, contAddr);
+#endif
     sqliteVdbeChangeP2(v, jumpInst2, contAddr);
   }
 }

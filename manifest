@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning.\s(CVS\s604)
-D 2002-06-02T18:22:06
+C Added\sthe\s%fallback\sdirective\sto\sthe\slemon\sparser\sgenerator\sand\sused\sthis\nin\sthe\sparser\sto\smake\sthe\sparse\stables\smuch\ssmaller.\s\sThis\sreduced\sthe\ssize\nof\sthe\slibrary\sby\s15K.\s(CVS\s605)
+D 2002-06-06T18:54:40
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -27,21 +27,21 @@ F src/expr.c 8ce9c22655735ff62b1e33ab11ad9d44c4ab99c6
 F src/func.c 061a520a122da7e4f9dcac15697bb996aac7d5df
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
-F src/insert.c 24b4e146319bada6f82a1d5eae6b38b3065d132f
+F src/insert.c 4b0bd94296fea46ef1b2ed8bfd05e12a38ce2c90
 F src/main.c 6e53c49a390fabd5fecce9e3b128c61c85208000
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y 68c0ab3d6bc938d1edcd087a18f28246c763076a
+F src/parse.y e8c65150e8f581da6cc0bc5a87063ed7a2b28564
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c ad9061b4735ccd79fc073415979882cd5c424c71
+F src/select.c 0293ec0190d9a991725579a5e9c3af2fb6c1b592
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 8ec47ae045cf8525c2bcc1a650853d814ca7675c
+F src/sqliteInt.h 3fd61a32c101b10aea610de8e7d931744657712f
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 09d95048b66ce6dcd2bae90f443589043d7d631e
@@ -108,8 +108,8 @@ F test/update.test a0aa0bf83e6fad8407d0e4ad25ebb09b513f5bf4
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
 F test/view.test b9851e9142de5e5831fdf18f125cbe1256cb550a
 F test/where.test 1d85a7eba93e7acc0a971c6d9daead0e49cb023a
-F tool/lemon.c 77d026f58d7715543786d457cf9432f9103e3f62
-F tool/lempar.c ee508b94607f74d591d60eda5c8014db4e144de5
+F tool/lemon.c 459cb2bb3738a1ad5cb0ad8b805587a88a885d95
+F tool/lempar.c 73a991cc3017fb34804250fa901488b5147b3717
 F tool/memleak.awk 296dfbce7a9ca499b95ce04e30334e64a50052e0
 F tool/opNames.awk 5ba1f48aa854ee3b7c3d2b54233665bc3e649ea2
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6fdcee3c99e994ef3ab83a0cc57344cdb16210df
-R 84cb93cd645bc6a21c3f645c617f9a5e
+P 637ee587b5438c54ba2d8bd8fc15e584abb70946
+R d5040ca10de549792ac65f5e92bf037a
 U drh
-Z 6dc156e6736d2538f2d30b5501e72ea4
+Z 67f180b15375cb80ef3d22765a7c3016

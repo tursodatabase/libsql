@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.119 2002/06/02 16:09:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.120 2002/06/06 18:54:41 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -29,6 +29,32 @@
 */
 #define MAX_PAGES   2000
 #define TEMP_PAGES   500
+
+/*
+** If the following macro is set to 1, then NULL values are considered
+** distinct for the SELECT DISTINCT statement and for UNION or EXCEPT
+** compound queries.  No other SQL database engine (among those tested) 
+** works this way except for OCELOT.  But the SQL92 spec implies that
+** this is how things should work.
+**
+** If the following macro is set to 0, then NULLs are indistinct for
+** SELECT DISTINCT and for UNION.
+*/
+#define NULL_ALWAYS_DISTINCT 0
+
+/*
+** If the following macro is set to 1, then NULL values are considered
+** distinct when determining whether or not two entries are the same
+** in a UNIQUE index.  This is the way PostgreSQL, Oracle, DB2, MySQL,
+** OCELOT, and Firebird all work.  The SQL92 spec explicitly says this
+** is the way things are suppose to work.
+**
+** If the following macro is set to 0, the NULLs are indistinct for
+** a UNIQUE index.  In this mode, you can only have a single NULL entry
+** for a column declared UNIQUE.  This is the way Informix and SQL Server
+** work.
+*/
+#define NULL_DISTINCT_FOR_UNIQUE 1
 
 /*
 ** Integers of known sizes.  These typedefs might change for architectures
@@ -214,7 +240,7 @@ struct sqlite {
 ** points to a linked list of these structures.
 */
 struct FuncDef {
-  void (*xFunc)(sqlite_func*,int,const char**);   /* Regular function */
+  void (*xFunc)(sqlite_func*,int,const char**);  /* Regular function */
   void (*xStep)(sqlite_func*,int,const char**);  /* Aggregate function step */
   void (*xFinalize)(sqlite_func*);           /* Aggregate function finializer */
   int nArg;                                  /* Number of arguments */
@@ -284,7 +310,7 @@ struct Table {
 /*
 ** SQLite supports 5 different ways to resolve a contraint
 ** error.  ROLLBACK processing means that a constraint violation
-** causes the operation in proces to fail and for the current transaction
+** causes the operation in process to fail and for the current transaction
 ** to be rolled back.  ABORT processing means the operation in process
 ** fails and any prior changes from that one operation are backed out,
 ** but the transaction is not rolled back.  FAIL processing means that
