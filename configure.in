@@ -151,7 +151,7 @@ AC_INIT(src/sqlite.h)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.2 $
+# $Revision: 1.3 $
 
 #########
 # Make sure we are not building in a subdirectory of the source tree.
@@ -442,7 +442,7 @@ if test "$config_TARGET_GDBM_INC" != ""; then
   found=yes
 fi
 if test "$found" = "yes"; then
-  AC_MSG_RESULT($TARGET_TCL_INC)
+  AC_MSG_RESULT($TARGET_GDBM_INC)
 else
   AC_MSG_RESULT(not specified: still searching...)
   AC_CHECK_HEADER(gdbm.h, [found=yes])
