@@ -102,6 +102,7 @@ struct Keyword {
 */
 static Keyword aKeywordTable[] = {
   { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
+  { "ADD",              "TK_ADD",          ALTER                  },
   { "AFTER",            "TK_AFTER",        TRIGGER                },
   { "ALL",              "TK_ALL",          ALWAYS                 },
   { "ALTER",            "TK_ALTER",        ALTER                  },
@@ -118,6 +119,7 @@ static Keyword aKeywordTable[] = {
   { "CASE",             "TK_CASE",         ALWAYS                 },
   { "CHECK",            "TK_CHECK",        ALWAYS                 },
   { "COLLATE",          "TK_COLLATE",      ALWAYS                 },
+  { "COLUMN",           "TK_COLUMNKW",     ALTER                  },
   { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
   { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
   { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
