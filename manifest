@@ -1,5 +1,5 @@
-C Work\saround\sa\sbug\sin\sthe\sBorland\sC\scompiler.\s\sTicket\s#172.\s(CVS\s765)
-D 2002-10-20T15:53:04
+C Export\sthe\ssqlite_function_type\sfunction\sfrom\swindows\sDLLs.\s\sTicket\s#173.\s(CVS\s766)
+D 2002-10-20T15:55:02
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -15,7 +15,7 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F libtool c56e618713c9510a103bda6b95f3ea3900dcacd6
 F ltmain.sh e9ed72eb1d690f447c13945eaf69e28af531eda1
 F main.mk d7a9dfc003ab1eeb4fdb46dfcee8af0ab0e38a99
-F publish.sh a7a8d23e6525bd25d4f5ba9b0fc6edc107d94050
+F publish.sh e5b83867d14708ed58cec8cba0a4f201e969474d
 F spec.template 238f7db425a78dc1bb7682e56e3834c7270a3f5e
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/btree.c 8024b87635c2adf133f153f1bb595125ec1c7d7b
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 4622b7ce8f4727a6405ddf4f0af701db86da86bf
-R be2bc0a24e02b5cac45ad5a3ae26a77c
+P 3ef2925650bfbeb4ee5dbd0aaf8e606fc4cd2be1
+R 6b6ab36ea62bd949a1c2d58f016b6b09
 U drh
-Z 65dec2fc5948c9e002373b1beb73bd0e
+Z 186adb525ff47dfccbb825db0d9dd635

@@ -102,6 +102,7 @@ sqlite_libencoding
 sqlite_changes
 sqlite_create_function
 sqlite_create_aggregate
+sqlite_function_type
 sqlite_user_data
 sqlite_aggregate_context
 sqlite_aggregate_count
