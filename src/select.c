@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.128 2003/03/27 12:51:25 drh Exp $
+** $Id: select.c,v 1.129 2003/03/31 02:12:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -120,9 +120,8 @@ int sqliteJoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     pParse->nErr++;
     jointype = JT_INNER;
   }else if( jointype & JT_RIGHT ){
-    sqliteSetString(&pParse->zErrMsg, 
-      "RIGHT and FULL OUTER JOINs are not currently supported", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, 
+      "RIGHT and FULL OUTER JOINs are not currently supported");
     jointype = JT_INNER;
   }
   return jointype;
@@ -218,9 +217,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     if( pTerm->jointype & JT_NATURAL ){
       Table *pTab;
       if( pTerm->pOn || pTerm->pUsing ){
-        sqliteSetString(&pParse->zErrMsg, "a NATURAL join may not have "
+        sqliteErrorMsg(pParse, "a NATURAL join may not have "
            "an ON or USING clause", 0);
-        pParse->nErr++;
         return 1;
       }
       pTab = pTerm->pTab;
@@ -234,9 +232,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     /* Disallow both ON and USING clauses in the same join
     */
     if( pTerm->pOn && pTerm->pUsing ){
-      sqliteSetString(&pParse->zErrMsg, "cannot have both ON and USING "
-        "clauses in the same join", 0);
-      pParse->nErr++;
+      sqliteErrorMsg(pParse, "cannot have both ON and USING "
+        "clauses in the same join");
       return 1;
     }
 
@@ -268,9 +265,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
       for(j=0; j<pList->nId; j++){
         if( columnIndex(pTerm->pTab, pList->a[j].zName)<0 ||
             columnIndex(pOther->pTab, pList->a[j].zName)<0 ){
-          sqliteSetString(&pParse->zErrMsg, "cannot join using column ",
-            pList->a[j].zName, " - column not present in both tables", 0);
-          pParse->nErr++;
+          sqliteErrorMsg(pParse, "cannot join using column %s - column "
+            "not present in both tables", pList->a[j].zName);
           return 1;
         }
         addWhereTerm(pList->a[j].zName, pTerm->pTab, pOther->pTab, &p->pWhere);
@@ -915,9 +911,7 @@ static int fillInColumnList(Parse *pParse, Select *p){
         sqliteFindTable(pParse->db, pTabList->a[i].zName,
                                     pTabList->a[i].zDatabase);
       if( pTab==0 ){
-        sqliteSetString(&pParse->zErrMsg, "no such table: ", 
-           pTabList->a[i].zName, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "no such table: %S", pTabList, i);
         return 1;
       }
       if( pTab->pSelect ){
@@ -1033,10 +1027,9 @@ static int fillInColumnList(Parse *pParse, Select *p){
         }
         if( !tableSeen ){
           if( pName ){
-            sqliteSetNString(&pParse->zErrMsg, "no such table: ", -1, 
-              pName->z, pName->n, 0);
+            sqliteErrorMsg(pParse, "no such table: %T", pName);
           }else{
-            sqliteSetString(&pParse->zErrMsg, "no tables specified", 0);
+            sqliteErrorMsg(pParse, "no tables specified");
           }
           rc = 1;
         }
@@ -1130,11 +1123,9 @@ static int matchOrderbyToColumn(
     if( pOrderBy->a[i].done ) continue;
     if( sqliteExprIsInteger(pE, &iCol) ){
       if( iCol<=0 || iCol>pEList->nExpr ){
-        char zBuf[200];
-        sprintf(zBuf,"ORDER BY position %d should be between 1 and %d",
-           iCol, pEList->nExpr);
-        sqliteSetString(&pParse->zErrMsg, zBuf, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse,
+          "ORDER BY position %d should be between 1 and %d",
+          iCol, pEList->nExpr);
         nErr++;
         break;
       }
@@ -1164,11 +1155,8 @@ static int matchOrderbyToColumn(
       pOrderBy->a[i].done = 1;
     }
     if( iCol<0 && mustComplete ){
-      char zBuf[30];
-      sprintf(zBuf,"%d",i+1);
-      sqliteSetString(&pParse->zErrMsg, "ORDER BY term number ", zBuf, 
-        " does not match any result column", 0);
-      pParse->nErr++;
+      sqliteErrorMsg(pParse,
+        "ORDER BY term number %d does not match any result column", i+1);
       nErr++;
       break;
     }
@@ -1278,9 +1266,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   if( p==0 || p->pPrior==0 ) return 1;
   pPrior = p->pPrior;
   if( pPrior->pOrderBy ){
-    sqliteSetString(&pParse->zErrMsg,"ORDER BY clause should come after ",
-      selectOpName(p->op), " not before", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse,"ORDER BY clause should come after %s not before",
+      selectOpName(p->op));
     return 1;
   }
 
@@ -1451,9 +1438,8 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   }
   assert( p->pEList && pPrior->pEList );
   if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
-    sqliteSetString(&pParse->zErrMsg, "SELECTs to the left and right of ",
-      selectOpName(p->op), " do not have the same number of result columns", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "SELECTs to the left and right of %s"
+      " do not have the same number of result columns", selectOpName(p->op));
     return 1;
   }
 
@@ -1978,9 +1964,8 @@ int sqliteSelect(
   ** only a single column may be output.
   */
   if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
-    sqliteSetString(&pParse->zErrMsg, "only a single result allowed for "
-       "a SELECT that is part of an expression", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "only a single result allowed for "
+       "a SELECT that is part of an expression");
     goto select_end;
   }
 
@@ -2020,9 +2005,7 @@ int sqliteSelect(
   }
   if( pHaving ){
     if( pGroupBy==0 ){
-      sqliteSetString(&pParse->zErrMsg, "a GROUP BY clause is required "
-         "before HAVING", 0);
-      pParse->nErr++;
+      sqliteErrorMsg(pParse, "a GROUP BY clause is required before HAVING");
       goto select_end;
     }
     if( sqliteExprResolveIds(pParse, base, pTabList, pEList, pHaving) ){
@@ -2048,16 +2031,13 @@ int sqliteSelect(
       }
       if( sqliteExprIsConstant(pE) ){
         if( sqliteExprIsInteger(pE, &iCol)==0 ){
-          sqliteSetString(&pParse->zErrMsg, 
-               "ORDER BY terms must not be non-integer constants", 0);
-          pParse->nErr++;
+          sqliteErrorMsg(pParse,
+             "ORDER BY terms must not be non-integer constants");
           goto select_end;
         }else if( iCol<=0 || iCol>pEList->nExpr ){
-          char zBuf[2000];
-          sprintf(zBuf,"ORDER BY column number %d out of range - should be "
+          sqliteErrorMsg(pParse, 
+             "ORDER BY column number %d out of range - should be "
              "between 1 and %d", iCol, pEList->nExpr);
-          sqliteSetString(&pParse->zErrMsg, zBuf, 0);
-          pParse->nErr++;
           goto select_end;
         }
       }
@@ -2079,16 +2059,13 @@ int sqliteSelect(
       }
       if( sqliteExprIsConstant(pE) ){
         if( sqliteExprIsInteger(pE, &iCol)==0 ){
-          sqliteSetString(&pParse->zErrMsg, 
-               "GROUP BY terms must not be non-integer constants", 0);
-          pParse->nErr++;
+          sqliteErrorMsg(pParse,
+            "GROUP BY terms must not be non-integer constants");
           goto select_end;
         }else if( iCol<=0 || iCol>pEList->nExpr ){
-          char zBuf[2000];
-          sprintf(zBuf,"GROUP BY column number %d out of range - should be "
+          sqliteErrorMsg(pParse,
+             "GROUP BY column number %d out of range - should be "
              "between 1 and %d", iCol, pEList->nExpr);
-          sqliteSetString(&pParse->zErrMsg, zBuf, 0);
-          pParse->nErr++;
           goto select_end;
         }
       }

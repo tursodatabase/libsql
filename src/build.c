@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.137 2003/03/31 00:30:48 drh Exp $
+** $Id: build.c,v 1.138 2003/03/31 02:12:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1750,20 +1750,17 @@ void sqliteDropIndex(Parse *pParse, SrcList *pName){
   assert( pName->nSrc==1 );
   pIndex = sqliteFindIndex(db, pName->a[0].zName, pName->a[0].zDatabase);
   if( pIndex==0 ){
-    sqliteSetString(&pParse->zErrMsg, "no such index: ", pName->a[0].zName, 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "no such index: %S", pName, 0);
     goto exit_drop_index;
   }
   if( pIndex->autoIndex ){
-    sqliteSetString(&pParse->zErrMsg, "index associated with UNIQUE "
+    sqliteErrorMsg(pParse, "index associated with UNIQUE "
       "or PRIMARY KEY constraint cannot be dropped", 0);
-    pParse->nErr++;
     goto exit_drop_index;
   }
   if( pIndex->iDb>1 ){
-    sqliteSetString(&pParse->zErrMsg, "cannot alter schema of attached "
+    sqliteErrorMsg(pParse, "cannot alter schema of attached "
        "databases", 0);
-    pParse->nErr++;
     goto exit_drop_index;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -2108,9 +2105,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0) ) return;
   if( db->flags & SQLITE_InTrans ){
-    pParse->nErr++;
-    sqliteSetString(&pParse->zErrMsg, "cannot start a transaction "
-       "within a transaction", 0);
+    sqliteErrorMsg(pParse, "cannot start a transaction within a transaction");
     return;
   }
   sqliteBeginWriteOperation(pParse, 0, 0);
@@ -2128,9 +2123,7 @@ void sqliteCommitTransaction(Parse *pParse){
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
-    pParse->nErr++;
-    sqliteSetString(&pParse->zErrMsg, 
-       "cannot commit - no transaction is active", 0);
+    sqliteErrorMsg(pParse, "cannot commit - no transaction is active");
     return;
   }
   db->flags &= ~SQLITE_InTrans;
@@ -2149,9 +2142,7 @@ void sqliteRollbackTransaction(Parse *pParse){
   if( pParse->nErr || sqlite_malloc_failed ) return;
   if( sqliteAuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0) ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
-    pParse->nErr++;
-    sqliteSetString(&pParse->zErrMsg,
-       "cannot rollback - no transaction is active", 0);
+    sqliteErrorMsg(pParse, "cannot rollback - no transaction is active");
     return; 
   }
   v = sqliteGetVdbe(pParse);
@@ -2701,10 +2692,7 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   sqliteDequote(zName);
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].zName && sqliteStrICmp(db->aDb[i].zName, zName)==0 ){
-      sqliteSetString(&pParse->zErrMsg, "database \"", zName, 
-         "\" already in use", 0);
-      sqliteFree(zName);
-      pParse->nErr++;
+      sqliteErrorMsg(pParse, "database %z is already in use", zName);
       return;
     }
   }
@@ -2715,8 +2703,7 @@ void sqliteAttach(Parse *pParse, Token *pFilename, Token *pDbname){
   sqliteDequote(zFile);
   rc = sqliteBtreeOpen(zFile, 0, MAX_PAGES, &aNew->pBt);
   if( rc ){
-    sqliteSetString(&pParse->zErrMsg, "unable to open database: ", zFile, 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "unable to open database: %s", zFile);
   }
   sqliteFree(zFile);
   db->flags &= ~SQLITE_Initialized;
@@ -2746,14 +2733,11 @@ void sqliteDetach(Parse *pParse, Token *pDbname){
     if( sqliteStrNICmp(db->aDb[i].zName, pDbname->z, pDbname->n)==0 ) break;
   }
   if( i>=db->nDb ){
-    sqliteSetNString(&pParse->zErrMsg, "no such database: ", -1,
-        pDbname->z, pDbname->n, 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "no such database: %T", pDbname);
     return;
   }
   if( i<2 ){
-    sqliteSetString(&pParse->zErrMsg, "cannot detached \"main\" or \"temp\"",0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "cannot detached database %T", pDbname);
     return;
   }
   sqliteBtreeClose(db->aDb[i].pBt);

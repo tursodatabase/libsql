@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.58 2003/02/16 22:21:32 drh Exp $
+** $Id: util.c,v 1.59 2003/03/31 02:12:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -390,6 +390,134 @@ void sqliteSetNString(char **pz, ...){
 #endif
 #endif
   va_end(ap);
+}
+
+/*
+** Add an error message to pParse->zErrMsg and increment pParse->nErr.
+** The following formatting characters are allowed:
+**
+**      %s      Insert a string
+**      %z      A string that should be freed after use
+**      %d      Insert an integer
+**      %T      Insert a token
+**      %S      Insert the first element of a SrcList
+*/
+void sqliteErrorMsg(Parse *pParse, const char *zFormat, ...){
+  va_list ap;
+  int nByte;
+  int i, j;
+  char *z;
+  static char zNull[] = "NULL";
+
+  pParse->nErr++;
+  nByte = 1 + strlen(zFormat);
+  va_start(ap, zFormat);
+  for(i=0; zFormat[i]; i++){
+    if( zFormat[i]!='%' && zFormat[i+1] ) continue;
+    i++;
+    switch( zFormat[i] ){
+      case 'd': {
+        (void)va_arg(ap, int);
+        nByte += 20;
+        break;
+      }
+      case 'z':
+      case 's': {
+        char *z2 = va_arg(ap, char*);
+        if( z2==0 ) z2 = zNull;
+        nByte += strlen(z2);
+        break;
+      }
+      case 'T': {
+        Token *p = va_arg(ap, Token*);
+        nByte += p->n;
+        break;
+      }
+      case 'S': {
+        SrcList *p = va_arg(ap, SrcList*);
+        int k = va_arg(ap, int);
+        assert( p->nSrc>k && k>=0 );
+        nByte += strlen(p->a[k].zName);
+        if( p->a[k].zDatabase && p->a[k].zDatabase[0] ){
+          nByte += strlen(p->a[k].zDatabase)+1;
+        }
+        break;
+      }
+      default: {
+        nByte++;
+        break;
+      }
+    }
+  }
+  va_end(ap);
+  z = sqliteMalloc( nByte );
+  if( z==0 ) return;
+  sqliteFree(pParse->zErrMsg);
+  pParse->zErrMsg = z;
+  va_start(ap, zFormat);
+  for(i=j=0; zFormat[i]; i++){
+    if( zFormat[i]!='%' ) continue;
+    if( i>j ){
+      memcpy(z, &zFormat[j], i-j);
+      z += i-j;
+    }
+    j = i+2;
+    i++;
+    switch( zFormat[i] ){
+      case 'd': {
+        int x = va_arg(ap, int);
+        sprintf(z, "%d", x);
+        z += strlen(z);
+        break;
+      }
+      case 'z':
+      case 's': {
+        int len;
+        char *z2 = va_arg(ap, char*);
+        if( z2==0 ) z2 = zNull;
+        len = strlen(z2);
+        memcpy(z, z2, len);
+        z += len;
+        if( zFormat[i]=='z' && z2!=zNull ){
+          sqliteFree(z2);
+        }
+        break;
+      }
+      case 'T': {
+        Token *p = va_arg(ap, Token*);
+        memcpy(z, p->z, p->n);
+        z += p->n;
+        break;
+      }
+      case 'S': {
+        int len;
+        SrcList *p = va_arg(ap, SrcList*);
+        int k = va_arg(ap, int);
+        assert( p->nSrc>k && k>=0 );
+        if( p->a[k].zDatabase && p->a[k].zDatabase[0] ){
+          len = strlen(p->a[k].zDatabase);
+          memcpy(z, p->a[k].zDatabase, len);
+          z += len;
+          *(z++) = '.';
+        }
+        len = strlen(p->a[k].zName);
+        memcpy(z, p->a[k].zName, len);
+        z += len;
+        break;
+      }
+      default: {
+        *(z++) = zFormat[i];
+        break;
+      }
+    }
+  }
+  va_end(ap);
+  if( i>j ){
+    memcpy(z, &zFormat[j], i-j);
+    z += i-j;
+  }
+  assert( (z - pParse->zErrMsg) < nByte );
+  *z = 0;
 }
 
 /*

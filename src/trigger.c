@@ -66,33 +66,29 @@ void sqliteCreateTrigger(
     goto trigger_cleanup;
   }
   if( tab->iDb>=2 ){
-    sqliteSetString(&pParse->zErrMsg, "triggers may not be added to "
-       "auxiliary database \"", db->aDb[tab->iDb].zName, "\"", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "triggers may not be added to auxiliary "
+       "database %s", db->aDb[tab->iDb].zName);
     goto trigger_cleanup;
   }
 
   zName = sqliteStrNDup(pName->z, pName->n);
   if( sqliteHashFind(&(db->aDb[tab->iDb].trigHash), zName,pName->n+1) ){
-    sqliteSetNString(&pParse->zErrMsg, "trigger ", -1,
-        pName->z, pName->n, " already exists", -1, 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "trigger %T already exists", pName);
     goto trigger_cleanup;
   }
   if( sqliteStrNICmp(tab->zName, "sqlite_", 7)==0 ){
-    sqliteSetString(&pParse->zErrMsg,"cannot create trigger on system table",0);
+    sqliteErrorMsg(pParse, "cannot create trigger on system table");
     pParse->nErr++;
     goto trigger_cleanup;
   }
   if( tab->pSelect && tr_tm != TK_INSTEAD ){
-    sqliteSetString(&pParse->zErrMsg, "cannot create ", 
-        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", " trigger on view: ",
-        pTableName->a[0].zName, 0);
+    sqliteErrorMsg(pParse, "cannot create %s trigger on view: %S", 
+        (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", pTableName, 0);
     goto trigger_cleanup;
   }
   if( !tab->pSelect && tr_tm == TK_INSTEAD ){
-    sqliteSetString(&pParse->zErrMsg, "cannot create INSTEAD OF", 
-        " trigger on table: ", pTableName->a[0].zName, 0);
+    sqliteErrorMsg(pParse, "cannot create INSTEAD OF"
+        " trigger on table: %S", pTableName, 0);
     goto trigger_cleanup;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -362,14 +358,13 @@ void sqliteDropTrigger(Parse *pParse, SrcList *pName, int nested){
     if( pTrigger ) break;
   }
   if( !pTrigger ){
-    sqliteSetString(&pParse->zErrMsg, "no such trigger: ", zName, 0);
+    sqliteErrorMsg(pParse, "no such trigger: %S", pName, 0);
     goto drop_trigger_cleanup;
   }
   assert( pTrigger->iDb>=0 && pTrigger->iDb<db->nDb );
   if( pTrigger->iDb>=2 ){
-    sqliteSetString(&pParse->zErrMsg, "triggers may not be removed from "
-       "auxiliary database \"", db->aDb[pTrigger->iDb].zName, "\"", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "triggers may not be removed from "
+       "auxiliary database %s", db->aDb[pTrigger->iDb].zName);
     goto drop_trigger_cleanup;
   }
   pTable = sqliteFindTable(db, pTrigger->table, db->aDb[pTrigger->iDb].zName);
@@ -764,9 +759,7 @@ void sqliteViewTriggers(
         }
       }
       if( jj>=pTab->nCol ){
-        sqliteSetString(&pParse->zErrMsg, "no such column: ", 
-            pChanges->a[ii].zName, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "no such column: %s", pChanges->a[ii].zName);
         goto trigger_cleanup;
       }
     }

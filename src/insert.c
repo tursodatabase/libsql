@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.76 2003/03/27 13:50:00 drh Exp $
+** $Id: insert.c,v 1.77 2003/03/31 02:12:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -137,11 +137,9 @@ void sqliteInsert(
         TK_BEFORE, TK_ROW, 0) ||
     sqliteTriggersExist(pParse, pTab->pTrigger, TK_INSERT, TK_AFTER, TK_ROW, 0);
   if( pTab->readOnly || (pTab->pSelect && !row_triggers_exist) ){
-    sqliteSetString(&pParse->zErrMsg, 
-      pTab->pSelect ? "view " : "table ",
-      zTab,
-      " may not be modified", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "%s %s may not be modified",
+      pTab->pSelect ? "view" : "table",
+      zTab);
     goto insert_cleanup;
   }
 
@@ -245,24 +243,13 @@ void sqliteInsert(
   ** of columns to be inserted into the table.
   */
   if( pColumn==0 && nColumn!=pTab->nCol ){
-    char zNum1[30];
-    char zNum2[30];
-    sprintf(zNum1,"%d", nColumn);
-    sprintf(zNum2,"%d", pTab->nCol);
-    sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-       " has ", zNum2, " columns but ",
-       zNum1, " values were supplied", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, 
+       "table %S has %d columns but %d values were supplied",
+       pTabList, 0, pTab->nCol, nColumn);
     goto insert_cleanup;
   }
   if( pColumn!=0 && nColumn!=pColumn->nId ){
-    char zNum1[30];
-    char zNum2[30];
-    sprintf(zNum1,"%d", nColumn);
-    sprintf(zNum2,"%d", pColumn->nId);
-    sqliteSetString(&pParse->zErrMsg, zNum1, " values for ",
-       zNum2, " columns", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "%d values for %d columns", nColumn, pColumn->nId);
     goto insert_cleanup;
   }
 
@@ -292,8 +279,8 @@ void sqliteInsert(
         }
       }
       if( j>=pTab->nCol ){
-        sqliteSetString(&pParse->zErrMsg, "table ", pTab->zName,
-           " has no column named ", pColumn->a[i].zName, 0);
+        sqliteErrorMsg(pParse, "table %S has no column named %s",
+            pTabList, 0, pColumn->a[i].zName);
         pParse->nErr++;
         goto insert_cleanup;
       }

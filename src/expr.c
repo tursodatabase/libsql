@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.90 2003/03/27 12:51:25 drh Exp $
+** $Id: expr.c,v 1.91 2003/03/31 02:12:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -477,14 +477,10 @@ int sqliteExprResolveIds(
       }
       sqliteFree(z);
       if( cnt==0 && pExpr->token.z[0]!='"' ){
-        sqliteSetNString(&pParse->zErrMsg, "no such column: ", -1,  
-          pExpr->token.z, pExpr->token.n, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "no such column: %T", &pExpr->token);
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous column name: ", -1,  
-          pExpr->token.z, pExpr->token.n, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "ambiguous column name: %T", &pExpr->token);
         return 1;
       }
       if( pExpr->op==TK_COLUMN ){
@@ -600,16 +596,12 @@ int sqliteExprResolveIds(
       sqliteFree(zLeft);
       sqliteFree(zRight);
       if( cnt==0 ){
-        sqliteSetNString(&pParse->zErrMsg, "no such column: ", -1,  
-          pLeft->token.z, pLeft->token.n, ".", 1, 
-          pRight->token.z, pRight->token.n, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "no such column: %T.%T",
+               &pLeft->token, &pRight->token);
         return 1;
       }else if( cnt>1 ){
-        sqliteSetNString(&pParse->zErrMsg, "ambiguous column name: ", -1,  
-          pLeft->token.z, pLeft->token.n, ".", 1,
-          pRight->token.z, pRight->token.n, 0);
-        pParse->nErr++;
+        sqliteErrorMsg(pParse, "ambiguous column name: %T.%T",
+          &pLeft->token, &pRight->token);
         return 1;
       }
       sqliteExprDelete(pExpr->pLeft);
@@ -647,9 +639,8 @@ int sqliteExprResolveIds(
         for(i=0; i<pExpr->pList->nExpr; i++){
           Expr *pE2 = pExpr->pList->a[i].pExpr;
           if( !sqliteExprIsConstant(pE2) ){
-            sqliteSetString(&pParse->zErrMsg,
-              "right-hand side of IN operator must be constant", 0);
-            pParse->nErr++;
+            sqliteErrorMsg(pParse,
+              "right-hand side of IN operator must be constant");
             return 1;
           }
           if( sqliteExprCheck(pParse, pE2, 0, 0) ){
@@ -1219,8 +1210,8 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_RAISE: {
       if( !pParse->trigStack ){
-        sqliteSetNString(&pParse->zErrMsg, 
-		"RAISE() may only be used within a trigger-program", -1, 0);
+        sqliteErrorMsg(pParse,
+                       "RAISE() may only be used within a trigger-program");
         pParse->nErr++;
 	return;
       }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.49 2003/03/27 13:50:00 drh Exp $
+** $Id: delete.c,v 1.50 2003/03/31 02:12:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -29,12 +29,7 @@ Table *sqliteSrcListLookup(Parse *pParse, SrcList *pSrc){
     const char *zDb = pSrc->a[i].zDatabase;
     pTab = sqliteFindTable(pParse->db, zTab, zDb);
     if( pTab==0 ){
-      if( zDb==0 || zDb[0]==0 ){
-        sqliteSetString(&pParse->zErrMsg, "no such table: ", zTab, 0);
-      }else{
-        sqliteSetString(&pParse->zErrMsg, "no such table: ", zDb, ".", zTab, 0);
-      }
-      pParse->nErr++;
+      sqliteErrorMsg(pParse, "no such table: %S", pSrc, 0);
       break;
     }
     pSrc->a[i].pTab = pTab;
@@ -49,10 +44,9 @@ Table *sqliteSrcListLookup(Parse *pParse, SrcList *pSrc){
 */
 int sqliteIsReadOnly(Parse *pParse, Table *pTab){
   if( pTab->readOnly || pTab->pSelect ){
-    sqliteSetString(&pParse->zErrMsg, 
-      pTab->pSelect ? "view " : "table ", pTab->zName,
-      " may not be modified", 0);
-    pParse->nErr++;
+    sqliteErrorMsg(pParse, "%s %s may not be modified",
+      pTab->pSelect ? "view" : "table",
+      pTab->zName);
     return 1;
   }
   return 0;
