@@ -86,14 +86,14 @@ void sqliteCreateTrigger(
     goto trigger_cleanup;
   }
   if( tab->pSelect && tr_tm != TK_INSTEAD ){
-    sqliteSetNString(&pParse->zErrMsg, "cannot create ", 
+    sqliteSetString(&pParse->zErrMsg, "cannot create ", 
         (tr_tm == TK_BEFORE)?"BEFORE":"AFTER", " trigger on view: ",
         pTableName->a[0].zName, 0);
     goto trigger_cleanup;
   }
   if( !tab->pSelect && tr_tm == TK_INSTEAD ){
-    sqliteSetNString(&pParse->zErrMsg, "cannot create INSTEAD OF", 
-        " trigger on table: ", pTableName->a[0].zName);
+    sqliteSetString(&pParse->zErrMsg, "cannot create INSTEAD OF", 
+        " trigger on table: ", pTableName->a[0].zName, 0);
     goto trigger_cleanup;
   }
 #ifndef SQLITE_OMIT_AUTHORIZATION

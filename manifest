@@ -1,5 +1,5 @@
-C Changes\sto\sthe\s"sqlite"\sstructure\sthat\sallow\ssimultaneous\soperations\son\nmultiple\sdatabase\sfiles.\s\sMany\sregession\stests\spass\s-\sbut\snot\sall\sof\sthem.\nDo\snot\suse\sthis\sversion\sexcept\sfor\sdebugging\sSQLite\sitself.\s(CVS\s1731)
-D 2003-03-27T12:51:25
+C Fix\sa\ssegfault\sin\sthe\strigger\scode.\s(CVS\s884)
+D 2003-03-27T13:01:29
 F Makefile.in 6917c2149a586f11b47c428f2ba748eb1da04f69
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -51,7 +51,7 @@ F src/test2.c 5014337d8576b731cce5b5a14bec4f0daf432700
 F src/test3.c c12ea7f1c3fbbd58904e81e6cb10ad424e6fc728
 F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 675b4718d17c69fe7609dc8e85e426ef002be811
-F src/trigger.c 578e9d07c5b0d07374f85d7f311126cf9c9d6bcf
+F src/trigger.c 5e2b4cd05dc1ece62911bae2c6d0c1da486910b8
 F src/update.c 785e0e1c8df2043dc96ad7c298fb11aaa3ebc8af
 F src/util.c 73b668d1ed468df650dc00685a5e4ffa6887feb4
 F src/vdbe.c 7171dbe873760f403b2501e96fd3d1bd852b3ce8
@@ -156,7 +156,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P d2fb2bb50cf1e13feb90995079f291384abd6ba9
-R 6683142d762d7951c57ba32402494ae2
+P 9ac71c329e17a0934d2a824eacc33e9a2ebce7c3
+R 73acb81d40c3749321870765682932e8
 U drh
-Z 12d4ac3ac6d1943a9fe5bf03ce5b85bc
+Z a17b58550476cb426e51600a2c69c02b
