@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.16 2000/07/28 14:32:49 drh Exp $
+** $Id: shell.c,v 1.17 2000/07/29 13:20:21 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -130,7 +130,8 @@ struct callback_data {
   int escape;            /* Escape this character when in MODE_List */
   char zDestTable[250];  /* Name of destination table when MODE_Insert */
   char separator[20];    /* Separator character for MODE_List */
-  int colWidth[30];      /* Width of each column when in column mode */
+  int colWidth[100];     /* Requested width of each column when in column mode*/
+  int actualWidth[100];  /* Actual width of each column */
 };
 
 /*
@@ -243,32 +244,45 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       break;
     }
     case MODE_Column: {
-      if( p->cnt++==0 && p->showHeader ){
+      if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
-          int w;
-          if( i<ArraySize(p->colWidth) && p->colWidth[i]>0 ){
-             w = p->colWidth[i]; 
-          }else{
-             w = 10;
-          }
-          fprintf(p->out,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
-        }
-        for(i=0; i<nArg; i++){
-          int w;
-          if( i<ArraySize(p->colWidth) && p->colWidth[i]>0 ){
+          int w, n;
+          if( i<ArraySize(p->colWidth) ){
              w = p->colWidth[i];
           }else{
-             w = 10;
+             w = 0;
           }
-          fprintf(p->out,"%-*.*s%s",w,w,"-------------------------------------"
-                 "------------------------------------------------------------",
-                  i==nArg-1 ? "\n": "  ");
+          if( w<=0 ){
+            w = strlen(azCol[i]);
+            if( w<10 ) w = 10;
+            n = strlen(azArg[i]);
+            if( w<n ) w = n;
+          }
+          if( i<ArraySize(p->actualWidth) ){
+            p->actualWidth[i] = w; 
+          }
+          if( p->showHeader ){
+            fprintf(p->out,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
+          }
+        }
+        if( p->showHeader ){
+          for(i=0; i<nArg; i++){
+            int w;
+            if( i<ArraySize(p->actualWidth) ){
+               w = p->actualWidth[i];
+            }else{
+               w = 10;
+            }
+            fprintf(p->out,"%-*.*s%s",w,w,"-----------------------------------"
+                   "----------------------------------------------------------",
+                    i==nArg-1 ? "\n": "  ");
+          }
         }
       }
       for(i=0; i<nArg; i++){
         int w;
-        if( i<ArraySize(p->colWidth) && p->colWidth[i]>0 ){
-           w = p->colWidth[i];
+        if( i<ArraySize(p->actualWidth) ){
+           w = p->actualWidth[i];
         }else{
            w = 10;
         }

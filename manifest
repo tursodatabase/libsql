@@ -1,5 +1,5 @@
-C better\scolumn\slabels\sin\sselect\sresults\s(CVS\s110)
-D 2000-07-29T13:06:59
+C better\scolumn\snames\sin\sthe\sshell\s(CVS\s111)
+D 2000-07-29T13:20:21
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 9e6dcd232e594fb599a5e9ba8bcf45e6c6e2fe72
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -15,7 +15,7 @@ F src/insert.c f146f149ad2422a1dc3bfa7a1651a25940f98958
 F src/main.c 82dba47063cb9837910c3bcefacb47de7486fb47
 F src/parse.y 754653f073ee03749471f86ef1bca641b35887c7
 F src/select.c d382e96c2221d08367cc87976f2b574537c9de97
-F src/shell.c ffcb11569f6f1756148b389ac0f1fc480859698e
+F src/shell.c 3fd7424c80654b0de8ca08165bd3c3ffe49930fe
 F src/sqlite.h 82ae53028e27919250f886ff9d7c4927de81978a
 F src/sqliteInt.h 74eb0e266e05d10278e2c20a2cd8fe9fd9fa0d1a
 F src/tclsqlite.c 9f358618ae803bedf4fb96da5154fd45023bc1f7
@@ -66,7 +66,7 @@ F www/lang.tcl 1645e9107d75709be4c6099b643db235bbe0a151
 F www/opcode.tcl 401bdc639509c2f17d3bb97cbbdfdc22a61faa07
 F www/sqlite.tcl 69781eaffb02e17aa4af28b76a2bedb19baa8e9f
 F www/vdbe.tcl 3330c700ef9c212a169f568a595361e4cce749ed
-P 2d57b02fec35fa922aab3f707e3b7dfa1ef561a0
-R 87f4dde86778218c5426917d42801d46
+P 3bf434d93a54a24f4882d0d9375f82ceee0b7602
+R 62d5ed1a73773f8306d7f2d4bcc6586d
 U drh
-Z 40af36ae39a880c6a582ccc2005dae71
+Z 12cb62dbb78ef20fcb0d4c8ab57670db
