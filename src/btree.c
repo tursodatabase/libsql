@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.170 2004/06/15 11:40:04 danielk1977 Exp $
+** $Id: btree.c,v 1.171 2004/06/16 12:00:29 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1346,7 +1346,7 @@ void sqlite3BtreeCursorList(Btree *pBt){
 ** are no active cursors, it also releases the read lock.
 */
 int sqlite3BtreeRollback(Btree *pBt){
-  int rc;
+  int rc = SQLITE_OK;
   MemPage *pPage1;
   if( pBt->inTrans==TRANS_WRITE ){
     rc = sqlite3pager_rollback(pBt->pPager);
@@ -1732,30 +1732,31 @@ static int getPayload(
   }else{
     offset -= pCur->info.nLocal;
   }
+  ovflSize = pBt->usableSize - 4;
   if( amt>0 ){
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
-  }
-  ovflSize = pBt->usableSize - 4;
-  while( amt>0 && nextPage ){
-    rc = sqlite3pager_get(pBt->pPager, nextPage, (void**)&aPayload);
-    if( rc!=0 ){
-      return rc;
-    }
-    nextPage = get4byte(aPayload);
-    if( offset<ovflSize ){
-      int a = amt;
-      if( a + offset > ovflSize ){
-        a = ovflSize - offset;
+    while( amt>0 && nextPage ){
+      rc = sqlite3pager_get(pBt->pPager, nextPage, (void**)&aPayload);
+      if( rc!=0 ){
+        return rc;
       }
-      memcpy(pBuf, &aPayload[offset+4], a);
-      offset = 0;
-      amt -= a;
-      pBuf += a;
-    }else{
-      offset -= ovflSize;
+      nextPage = get4byte(aPayload);
+      if( offset<ovflSize ){
+        int a = amt;
+        if( a + offset > ovflSize ){
+          a = ovflSize - offset;
+        }
+        memcpy(pBuf, &aPayload[offset+4], a);
+        offset = 0;
+        amt -= a;
+        pBuf += a;
+      }else{
+        offset -= ovflSize;
+      }
+      sqlite3pager_unref(aPayload);
     }
-    sqlite3pager_unref(aPayload);
   }
+
   if( amt>0 ){
     return SQLITE_CORRUPT;
   }
@@ -2836,7 +2837,7 @@ static int balance(MemPage*);
 static int balance_nonroot(MemPage *pPage){
   MemPage *pParent;            /* The parent of pPage */
   Btree *pBt;                  /* The whole database */
-  int nCell;                   /* Number of cells in aCell[] */
+  int nCell = 0;               /* Number of cells in aCell[] */
   int nOld;                    /* Number of pages in apOld[] */
   int nNew;                    /* Number of pages in apNew[] */
   int nDiv;                    /* Number of cells in apDiv[] */
@@ -3494,7 +3495,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   MemPage *pPage = pCur->pPage;
   unsigned char *pCell;
   int rc;
-  Pgno pgnoChild;
+  Pgno pgnoChild = 0;
   Btree *pBt = pCur->pBt;
 
   assert( pPage->isInit );

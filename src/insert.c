@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.110 2004/06/10 10:50:21 danielk1977 Exp $
+** $Id: insert.c,v 1.111 2004/06/16 12:00:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -177,17 +177,17 @@ void sqlite3Insert(
   Vdbe *v;              /* Generate code into this virtual machine */
   Index *pIdx;          /* For looping over indices of the table */
   int nColumn;          /* Number of columns in the data */
-  int base;             /* VDBE Cursor number for pTab */
-  int iCont, iBreak;    /* Beginning and end of the loop over srcTab */
+  int base = 0;         /* VDBE Cursor number for pTab */
+  int iCont=0,iBreak=0; /* Beginning and end of the loop over srcTab */
   sqlite *db;           /* The main database structure */
   int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
   int useTempTable;     /* Store SELECT results in intermediate table */
-  int srcTab;           /* Data comes from this temporary cursor if >=0 */
-  int iSelectLoop;      /* Address of code that implements the SELECT */
-  int iCleanup;         /* Address of the cleanup code */
-  int iInsertBlock;     /* Address of the subroutine used to insert data */
-  int iCntMem;          /* Memory cell used for the row counter */
+  int srcTab = 0;       /* Data comes from this temporary cursor if >=0 */
+  int iSelectLoop = 0;  /* Address of code that implements the SELECT */
+  int iCleanup = 0;     /* Address of the cleanup code */
+  int iInsertBlock = 0; /* Address of the subroutine used to insert data */
+  int iCntMem = 0;      /* Memory cell used for the row counter */
   int isView;           /* True if attempting to insert into a view */
 
   int row_triggers_exist = 0; /* True if there are FOR EACH ROW triggers */
@@ -735,7 +735,7 @@ void sqlite3GenerateConstraintChecks(
   int iCur;
   Index *pIdx;
   int seenReplace = 0;
-  int jumpInst1, jumpInst2;
+  int jumpInst1=0, jumpInst2;
   int contAddr;
   int hasTwoRecnos = (isUpdate && recnoChng);
 

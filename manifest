@@ -1,5 +1,5 @@
-C Fix\shandling\sof\sa\sfailed\smalloc()\sin\svarious\splaces\s(CVS\s1605)
-D 2004-06-16T10:39:52
+C Trivial\smodifications\sto\sprevent\scompiler\swarnings.\s(CVS\s1606)
+D 2004-06-16T12:00:29
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,19 +26,19 @@ F sqlite.def fc4f5734786fe4743cfe2aa98eb2da4b089edb5f
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F src/attach.c 93b8ecec4a8d7b4e9f2479e2327d90c9d01765e8
 F src/auth.c 204e1e9c45e64315589bc8b62cba5d9de29b6a3c
-F src/btree.c 2852932e900b1b82e105fd651807f199a1d86f12
+F src/btree.c 0cf8a52a57a7eb13d50719114ee1fa353e89d7d3
 F src/btree.h 32f96abef464cf8765b23ca669acfe90d191fcc5
 F src/build.c 19fc5d0336a3fef973d62b3a1728078a319e4045
 F src/date.c 65b483caeb0e4dd663667d2f927caa058168ebff
-F src/delete.c 911221aadb35d610c84fadb32e71c52990827e58
+F src/delete.c 1e94ef693e45b441f5c828ea0a064ac339008f8e
 F src/encode.c a876af473d1d636faa3dca51c7571f2e007eea37
-F src/expr.c 7c19fbc4495f8978439c20528cf3e070df068427
+F src/expr.c 657ca11f63a06aefd78014e6bc51dab6c735cc63
 F src/func.c be055fc63f1ae59c6a5dc4901240669f2a21f40c
 F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
-F src/insert.c 68c7f3ddd6a7f1e5596d6996da1a2861b3789a3a
+F src/insert.c 15575e57917ea2e5702a2b5935583c84139699c3
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c adac42394fb42aa47e3fdc5d9354d21f4bdaf29a
+F src/main.c 63c30e17cae13cbe9ccc037507cd03a27fc3d67b
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
@@ -48,7 +48,7 @@ F src/os_unix.c 8832c78dd95c115b1690054354d90321a791950d
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 337e973ee77797aaab4787e3477a5945fcd97266
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c 72b5ab4fcc60d07d4a078434247bba1e3617d90d
+F src/pager.c 453099416c10669365ca70f12f13e67e6ef11000
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c be8ed53611971f8c93f66cd31129af89e6d58997
@@ -224,7 +224,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 7d8edce4c12d075acbc6bac6758aabb2769f983a
-R be28934235640c9ed3003a5c5e30f6a4
+P b739ef2a1b8f7cfee4ab3f4c1319c159bd1e2e40
+R 34de51c2b09ded7c20407703316e67d9
 U danielk1977
-Z 36276b8c3fee19808c53a65120310e72
+Z 65f56c8d01087ad1b77a565b9ecae0bf

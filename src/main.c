@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.223 2004/06/16 10:39:32 danielk1977 Exp $
+** $Id: main.c,v 1.224 2004/06/16 12:00:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1021,7 +1021,7 @@ prepare_out:
   if( rc==SQLITE_OK ){
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
   }else if( sParse.pVdbe ){
-    sqlite3_finalize(sParse.pVdbe);
+    sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
   }
 
   if( zErrMsg ){
