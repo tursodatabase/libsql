@@ -574,9 +574,12 @@ void sqlite3VdbeMakeReady(
     p->aStack = sqliteMalloc(
       n*(sizeof(p->aStack[0])+sizeof(Mem*))          /* aStack, apArg */
       + p->nVar*sizeof(Mem)                          /* apVar */
+      + p->nVar*sizeof(char*)                        /* apVarName */
     );
     p->apArg = (Mem **)&p->aStack[n];
     p->apVar = (Mem *)&p->apArg[n];
+    p->azVar = (char**)&p->apVar[p->nVar];
+    p->okVar = 0;
     for(n=0; n<p->nVar; n++){
       p->apVar[n].flags = MEM_Null;
     }

@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.28 2004/07/26 12:24:24 drh Exp $
+# $Id: tclsqlite.test,v 1.29 2004/08/20 16:02:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -103,7 +103,7 @@ do_test tcl-1.13 {
 do_test tcl-1.14 {
   set v [catch {db eval} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db eval SQL ?ARRAY-NAME CODE?"}}
+} {1 {wrong # args: should be "db eval SQL ?ARRAY-NAME? ?SCRIPT?"}}
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg

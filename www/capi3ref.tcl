@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.7 2004/07/22 15:45:16 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.8 2004/08/20 16:02:40 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -101,6 +101,25 @@ api {} {
  sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
  Bindings are not reset by the sqlite3_reset() routine.
  Unbound wildcards are interpreted as NULL.
+}
+
+api {} {
+  int sqlite3_bind_parameter_count(sqlite3_stmt*);
+} {
+  Return the number of wildcards in the precompiled statement given as
+  the argument.
+}
+
+api {} {
+  const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int n);
+} {
+  Return the name of the n-th wildcard in the precompiled statement.
+  Wildcards of the form ":N:" have a name which is the string ":N:".
+  Wildcards of the form "?" have no name.
+
+  If the value n is out of range or if the n-th wildcard is nameless,
+  then NULL is returned.  The returned string is always in the
+  UTF-8 encoding.
 }
 
 api {} {

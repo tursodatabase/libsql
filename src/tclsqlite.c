@@ -11,11 +11,12 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.98 2004/07/26 12:24:23 drh Exp $
+** $Id: tclsqlite.c,v 1.99 2004/08/20 16:02:39 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
 #include "sqliteInt.h"
+#include "hash.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
@@ -58,8 +59,9 @@ struct SqlCollate {
 ** that has been opened by the SQLite TCL interface.
 */
 typedef struct SqliteDb SqliteDb;
+typedef struct SqlStmt SqlStmt;
 struct SqliteDb {
-  sqlite *db;           /* The "real" database structure */
+  sqlite3 *db;          /* The "real" database structure */
   Tcl_Interp *interp;   /* The interpreter used for this database */
   char *zBusy;          /* The busy callback routine */
   char *zCommit;        /* The commit hook callback routine */
@@ -70,21 +72,19 @@ struct SqliteDb {
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;  /* Collation needed script */
+  SqlStmt *pStmtList;   /* List of all prepared statements */
 };
 
 /*
-** An instance of this structure passes information thru the sqlite
-** logic from the original TCL command into the callback routine.
+** Each prepared statement is an instance of the following structure.
 */
-typedef struct CallbackData CallbackData;
-struct CallbackData {
-  Tcl_Interp *interp;       /* The TCL interpreter */
-  char *zArray;             /* The array into which data is written */
-  Tcl_Obj *pCode;           /* The code to execute for each row */
-  int once;                 /* Set for first callback only */
-  int tcl_rc;               /* Return code from TCL script */
-  int nColName;             /* Number of entries in the azColName[] array */
-  char **azColName;         /* Column names translated to UTF-8 */
+struct SqlStmt {
+  SqliteDb *pDb;        /* The database that this statement is part of */
+  SqlStmt *pAll;        /* Next statement in list of all for pDb */
+  SqlStmt **ppPrev;     /* Previous pAll pointer */
+  sqlite3_stmt *pVm;    /* Compiled statement. */
+  int nBind;            /* Number of bindings in this statement */
+  char *azBindVar[1];   /* Name of variables for each binding */
 };
 
 /*
@@ -117,10 +117,17 @@ static int DbEvalCallback3(
 }
 
 /*
-** Called when the command is deleted.
+** TCL calls this procedure when an sqlite3 database command is
+** deleted.
 */
 static void DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
+  SqlStmt *pStmt, *pNextStmt;
+  for(pStmt=pDb->pStmtList; pStmt; pStmt=pNextStmt){
+    pNextStmt = pStmt->pAll;
+    sqlite3_finalize(pStmt->pVm);
+    Tcl_Free(pStmt);
+  }
   sqlite3_close(pDb->db);
   while( pDb->pFunc ){
     SqlFunc *pFunc = pDb->pFunc;
@@ -280,6 +287,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value **argv)
         SQLITE_TRANSIENT);
   }
 }
+
 #ifndef SQLITE_OMIT_AUTHORIZATION
 /*
 ** This is the authentication function.  It appends the authentication
@@ -696,7 +704,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
    
   /*
-  **    $db eval $sql ?array {  ...code... }?
+  **    $db eval $sql ?array? ?{  ...code... }?
   **
   ** The SQL statement in $sql is evaluated.  For each row, the values are
   ** placed in elements of the array named "array" and ...code... is executed.
@@ -712,8 +720,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_Obj *pRet = Tcl_NewObj();
     Tcl_IncrRefCount(pRet);
 
-    if( objc!=5 && objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME CODE?");
+    if( objc<3 || objc>5 || objc==4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SQL ?ARRAY-NAME? ?SCRIPT?");
       return TCL_ERROR;
     }
 

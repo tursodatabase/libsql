@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.15 2004/07/15 14:15:02 drh Exp $
+# $Id: bind.test,v 1.16 2004/08/20 16:02:39 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -38,12 +38,21 @@ do_test bind-1.1 {
   db close
   set DB [sqlite3 db test.db]
   execsql {CREATE TABLE t1(a,b,c)}
-  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(?,?,?)} -1 TAIL]
+  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(:1:,?,:3:)} -1 TAIL]
   set TAIL
 } {}
 do_test bind-1.1.1 {
   sqlite3_bind_parameter_count $VM
 } 3
+do_test bind-1.1.2 {
+  sqlite3_bind_parameter_name $VM 1
+} {:1:}
+do_test bind-1.1.3 {
+  sqlite3_bind_parameter_name $VM 2
+} {}
+do_test bind-1.1.4 {
+  sqlite3_bind_parameter_name $VM 3
+} {:3:}
 do_test bind-1.2 {
   sqlite_step $VM N VALUES COLNAMES
 } {SQLITE_DONE}
@@ -91,9 +100,21 @@ do_test bind-2.1 {
   execsql {
     DELETE FROM t1;
   }
-  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES(?,?,?)} -1 TAIL]
+  set VM [sqlite3_prepare $DB {INSERT INTO t1 VALUES($one,$::two,${x})} -1 TAIL]
   set TAIL
 } {}
+do_test bind-2.1.1 {
+  sqlite3_bind_parameter_count $VM
+} 3
+do_test bind-2.1.2 {
+  sqlite3_bind_parameter_name $VM 1
+} {$one}
+do_test bind-2.1.3 {
+  sqlite3_bind_parameter_name $VM 2
+} {$::two}
+do_test bind-2.1.4 {
+  sqlite3_bind_parameter_name $VM 3
+} {${x}}
 
 # 32 bit Integers
 do_test bind-2.2 {

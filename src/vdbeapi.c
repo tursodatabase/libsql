@@ -518,9 +518,32 @@ int sqlite3_bind_text16(
 /*
 ** Return the number of wildcards that can be potentially bound to.
 ** This routine is added to support DBD::SQLite.  
-**
-******** EXPERIMENTAL *******
 */
 int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
   return ((Vdbe*)pStmt)->nVar;
+}
+
+/*
+** Return the name of a wildcard parameter.  Return NULL if the index
+** is out of range or if the wildcard is unnamed.
+**
+** The result is always UTF-8.
+*/
+const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
+  Vdbe *p = (Vdbe*)pStmt;
+  if( i<1 || i>p->nVar ){
+    return 0;
+  }
+  if( !p->okVar ){
+    int j;
+    Op *pOp;
+    for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
+      if( pOp->opcode==OP_Variable ){
+        assert( pOp->p1>0 && pOp->p1<=p->nVar );
+        p->azVar[pOp->p1-1] = pOp->p3;
+      }
+    }
+    p->okVar = 1;
+  }
+  return p->azVar[i-1];
 }

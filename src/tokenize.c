@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.81 2004/08/08 23:39:19 drh Exp $
+** $Id: tokenize.c,v 1.82 2004/08/20 16:02:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -373,6 +373,54 @@ static int sqliteGetToken(const unsigned char *z, int *tokenType){
       *tokenType = TK_VARIABLE;
       return 1;
     }
+    case ':': {
+      for(i=1; isdigit(z[i]); i++){}
+      if( i>1 && z[i]==':' ){
+        *tokenType = TK_VARIABLE;
+        return i+1;
+      }else{
+        *tokenType = TK_ILLEGAL;
+        return i;
+      }
+    }
+    case '$': {
+      int c;
+      if( z[1]=='{' ){
+        int nBrace = 1;
+        for(i=2; (c=z[i])!=0 && nBrace; i++){
+          if( c=='{' ){
+            nBrace++;
+          }else if( c=='}' ){
+            nBrace--;
+          }
+        }
+        *tokenType = c!=0 ? TK_VARIABLE : TK_ILLEGAL;
+      }else{
+        int n = 0;
+        for(i=1; (c=z[i])!=0; i++){
+          if( isalnum(c) || c=='_' ){
+            n++;
+          }else if( c=='(' && n>0 ){
+            do{
+              i++;
+            }while( (c=z[i])!=0 && !isspace(c) && c!=')' );
+            if( c==')' ){
+              i++;
+              *tokenType = TK_VARIABLE;
+            }else{
+              *tokenType = TK_ILLEGAL;
+            }
+            break;
+          }else if( c==':' && z[i+1]==':' ){
+            i++;
+          }else{
+            *tokenType = n==0 ? TK_ILLEGAL : TK_VARIABLE;
+            break;
+          }
+        }
+      }
+      return i;
+    } 
     case 'x': case 'X': {
       if( z[1]=='\'' || z[1]=='"' ){
         int delim = z[1];
