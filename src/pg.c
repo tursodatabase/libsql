@@ -21,7 +21,7 @@
 **   http://www.hwaci.com/drh/
 **
 *************************************************************************
-** $Id: pg.c,v 1.3 2001/01/21 00:58:08 drh Exp $
+** $Id: pg.c,v 1.4 2001/01/25 01:45:41 drh Exp $
 */
 #include <assert.h>
 #include <sys/types.h>
@@ -256,7 +256,7 @@ static Pghdr *sqlitePgFindJidx(Pgr *p, u32 pgno){
 static u32 sqlitePgJournalPageNumber(Pgr *p, u32 dbpgno){
   u32 jpgno;
   
-  assert( dbpgno>0 );
+  if( dbpgno==0 ) return 0;
   jpgno = p->aJHash[dbpgno % J_HASH_SIZE];
   while( jpgno!=0 ){
     int idx_num;     /* Which journal index describes page jpgno */
@@ -638,9 +638,12 @@ int sqlitePgGet(Pgr *p, u32 pgno, void **ppData){
   if( pPg->jpgno!=0 ){
     TRACE(("PG: reading d-page %u content from j-page %u\n", pgno, pPg->jpgno));
     sqlitePgRead(p->fdJournal, PG_TO_DATA(pPg), pPg->jpgno);
-  }else{
+  }else if( pPg->dbpgno!=0 ){
     TRACE(("PG: reading d-page %u from database\n", pgno));
     sqlitePgRead(p->fdMain, PG_TO_DATA(pPg), pPg->dbpgno);
+  }else{
+    TRACE(("PG: reading zero page\n");
+    memset(PG_TO_DATA(pPg), 0, SQLITE_PAGE_SIZE);
   }
   pPg->isDirty = 0;
   pPg->nRef = 1;
@@ -691,7 +694,7 @@ int sqlitePgTouch(void *pD){
 ** Return the number of the first unused page at the end of the
 ** database file.
 */
-int sqlitePgAlloc(Pgr *p, u32 *pPgno){
+int sqlitePgCount(Pgr *p, u32 *pPgno){
   *pPgno = p->nDbPg;
   return SQLITE_OK;
 }
