@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.158 2004/08/31 13:45:12 drh Exp $
+** $Id: expr.c,v 1.159 2004/09/01 03:06:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -217,6 +217,20 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, Token *pToken){
     }
   }
   return pNew;
+}
+
+/*
+** Join two expressions using an AND operator.  If either expression is
+** NULL, then just return the other expression.
+*/
+Expr *sqlite3ExprAnd(Expr *pLeft, Expr *pRight){
+  if( pLeft==0 ){
+    return pRight;
+  }else if( pRight==0 ){
+    return pLeft;
+  }else{
+    return sqlite3Expr(TK_AND, pLeft, pRight, 0);
+  }
 }
 
 /*
