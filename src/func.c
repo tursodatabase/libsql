@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.30 2003/08/26 11:41:27 drh Exp $
+** $Id: func.c,v 1.31 2003/09/06 01:10:47 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -541,6 +541,9 @@ static void minMaxFinalize(sqlite_func *context){
 
 /****************************************************************************
 ** Time and date functions.
+**
+** 1970-01-01 00:00:00 is JD 2440587.5.
+** 2000-01-01 00:00:00 is JD 2451544.5
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon

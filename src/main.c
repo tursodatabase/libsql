@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.140 2003/07/27 17:26:23 drh Exp $
+** $Id: main.c,v 1.141 2003/09/06 01:10:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -696,6 +696,32 @@ int sqlite_compile(
 }
 
 /*
+** If the SQL that was handed to sqlite_compile contains variables of
+** the form $1, $2, $3, etc. then this routine assigns values to those
+** variables.  azValue[0] is assigned to $1.  azValue[1] is assigned
+** to $2.  And so forth.  The value of variable $0 will always be NULL.
+** The values of any variable $N where N>nValue will be NULL.  If any
+** azValue[] is a NULL pointer, then the corresponding variable will be
+** NULL.
+**
+** This routine can only be called immediately after sqlite_compile()
+** or sqlite_reset() and before any calls to sqlite_step().
+**
+** This routine makes copies of all strings in azValue[] so the values
+** passed in can be changed or deleted immediately after this call.  The
+** copies are deallocated when sqlite_finalize() or sqlite_reset() is
+** invoked.
+*/
+int sqlite_instantiate(
+  sqlite_vm *pVm,
+  int nValue,
+  const char **azValue
+){
+  return sqliteVdbeSetVariables((Vdbe*)pVm, nValue, azValue);
+}
+
+
+/*
 ** The following routine destroys a virtual machine that is created by
 ** the sqlite_compile() routine.
 **
@@ -716,16 +742,18 @@ int sqlite_finalize(
 }
 
 /*
-** Destroy a virtual machine in the same manner as sqlite_finalize(). If 
-** possible, leave *ppVm pointing at a new virtual machine which may be
-** used to re-execute the query.
+** Terminate the current execution of a virtual machine then
+** reset the virtual machine back to its starting state so that it
+** can be reused.  Any error message resulting from the prior execution
+** is written into *pzErrMsg.  A success code from the prior execution
+** is returned.
 */
 int sqlite_reset(
   sqlite_vm *pVm,            /* The virtual machine to be destroyed */
-  char **pzErrMsg,           /* OUT: Write error messages here */
-  sqlite_vm **ppVm           /* OUT: The new virtual machine */
+  char **pzErrMsg            /* OUT: Write error messages here */
 ){
-  int rc = sqliteVdbeReset((Vdbe*)pVm, pzErrMsg, (Vdbe **)ppVm);
+  int rc = sqliteVdbeReset((Vdbe*)pVm, pzErrMsg);
+  sqliteVdbeMakeReady((Vdbe*)pVm, 0, 0, 0);
   sqliteStrRealloc(pzErrMsg);
   return rc;
 }

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.89 2003/08/26 11:41:27 drh Exp $
+** @(#) $Id: pager.c,v 1.90 2003/09/06 01:10:47 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -426,6 +426,10 @@ static void pager_reset(Pager *pPager){
 ** a write lock on the database.  This routine releases the database
 ** write lock and acquires a read lock in its place.  The journal file
 ** is deleted and closed.
+**
+** TODO: Consider keeping the journal file open for temporary databases.
+** This might give a performance improvement on windows where opening
+** a file is an expensive operation.
 */
 static int pager_unwritelock(Pager *pPager){
   int rc;

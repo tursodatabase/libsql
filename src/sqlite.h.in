@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.50 2003/07/22 09:24:44 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.51 2003/09/06 01:10:48 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -695,9 +695,31 @@ int sqlite_finalize(sqlite_vm*, char **pzErrMsg);
 **
 ** If sqlite_reset() returns SQLITE_SCHEMA, then *ppVm is set to NULL.
 **
+*/
+int sqlite_reset(sqlite_vm *, char **pzErrMsg);
+
+/*
+** If the SQL that was handed to sqlite_compile contains variables of
+** the form $1, $2, $3, etc. then this routine assigns values to those
+** variables.  azValue[0] is assigned to $1.  azValue[1] is assigned
+** to $2.  And so forth.  The value of variable $0 will always be NULL.
+** The values of any variable $N where N>nValue will be NULL.  If any
+** azValue[] is a NULL pointer, then the corresponding variable will be
+** NULL.
+**
+** This routine can only be called immediately after sqlite_compile()
+** or sqlite_reset() and before any calls to sqlite_step().
+**
+** This routine makes copies of all strings in azValue[] so the values
+** passed in can be changed or deleted immediately after this call.  The
+** copies are deallocated when sqlite_finalize() or sqlite_reset() is
+** invoked.
+**
 ******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
-int sqlite_reset(sqlite_vm *, char **pzErrMsg, sqlite_vm **ppVm);
+int sqlite_instantiate(sqlite_vm*, int, const char**);
+
+
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */

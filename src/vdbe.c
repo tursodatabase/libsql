@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.237 2003/08/26 11:35:00 drh Exp $
+** $Id: vdbe.c,v 1.238 2003/09/06 01:10:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -270,9 +270,11 @@ struct Vdbe {
   FILE *pFile;        /* At most one open file handler */
   int nField;         /* Number of file fields */
   char **azField;     /* Data for each file field */
+  int nVariable;          /* Number of entries in azVariable[] */
+  char **azVariable;      /* Values for the OP_Variable opcode */
   char *zLine;            /* A single line from the input file */
-  int magic;              /* Magic number for sanity checking */
   int nLineAlloc;         /* Number of spaces allocated for zLine */
+  int magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   Agg agg;                /* Aggregate information */
@@ -1148,10 +1150,20 @@ static void SorterReset(Vdbe *p){
 }
 
 /*
+** Delete the variables in p->azVariable[]
+*/
+static void ClearVariableArray(Vdbe *p){
+  sqliteFree(p->azVariable);
+  p->nVariable = 0;
+  p->azVariable = 0;
+}
+
+/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, lists, and/or
-** sorters that were left open.
+** sorters that were left open.  It also deletes the values of
+** variables in the azVariable[] array.
 */
 static void Cleanup(Vdbe *p){
   int i;
@@ -1206,7 +1218,7 @@ static void Cleanup(Vdbe *p){
   }
   sqliteFree(p->zErrMsg);
   p->zErrMsg = 0;
-  p->magic = VDBE_MAGIC_DEAD;
+  ClearVariableArray(p);
 }
 
 /*
@@ -1238,6 +1250,7 @@ void sqliteVdbeDelete(Vdbe *p){
   sqliteFree(p->aOp);
   sqliteFree(p->aLabel);
   sqliteFree(p->aStack);
+  p->magic = VDBE_MAGIC_DEAD;
   sqliteFree(p);
 }
 
@@ -1508,7 +1521,9 @@ void sqliteVdbeMakeReady(
 
   /* Add a HALT instruction to the very end of the program.
   */
-  sqliteVdbeAddOp(p, OP_Halt, 0, 0);
+  if( p->nOp==0 || (p->aOp && p->aOp[p->nOp-1].opcode!=OP_Halt) ){
+    sqliteVdbeAddOp(p, OP_Halt, 0, 0);
+  }
 
   /* No instruction ever pushes more than a single element onto the
   ** stack.  And the stack never grows on successive executions of the
@@ -1539,7 +1554,7 @@ void sqliteVdbeMakeReady(
   p->xCallback = xCallback;
   p->pCbArg = pCallbackArg;
   p->popStack =  0;
-  p->explain = isExplain;
+  p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
 #ifdef VDBE_PROFILE
   for(i=0; i<p->nOp; i++){
@@ -1768,6 +1783,27 @@ case OP_String: {
     zStack[i] = z;
     aStack[i].n = strlen(z) + 1;
     aStack[i].flags = STK_Str | STK_Static;
+  }
+  break;
+}
+
+/* Opcode: Variable P1 * *
+**
+** Push the value of variable P1 onto the stack.  A variable is
+** an unknown in the original SQL string as handed to sqlite_compile().
+** The first variable is $1, the second is $2, and so forth.  The
+** value of the variables is determined by sqlite_instantiate().
+*/
+case OP_Variable: {
+  int i = ++p->tos;
+  if( pOp->p1>0 && pOp->p1<=p->nVariable && p->azVariable[pOp->p1-1]!=0 ){
+    zStack[i] = p->azVariable[pOp->p1-1];
+    aStack[i].n = strlen(zStack[i]) + 1;
+    aStack[i].flags = STK_Str | STK_Static;
+  }else{
+    zStack[i] = 0;
+    aStack[i].n = 0;
+    aStack[i].flags = STK_Null;
   }
   break;
 }
@@ -3025,9 +3061,17 @@ case OP_MakeRecord: {
 ** back in its place.
 **
 ** P3 is a string that is P1 characters long.  Each character is either
-** an 'n' or a 't' to indicates if the argument should be numeric or
-** text.  The first character corresponds to the lowest element on the
-** stack.  If P3 is NULL then all arguments are assumed to be numeric.
+** an 'n' or a 't' to indicates if the argument should be intepreted as
+** numeric or text type.  The first character of P3 corresponds to the
+** lowest element on the stack.  If P3 is NULL then all arguments are
+** assumed to be of the numeric type.
+**
+** The type makes a difference in that text-type fields may not be 
+** introduced by 'b' (as described in the next paragraph).  The
+** first character of a text-type field must be either 'a' (if it is NULL)
+** or 'c'.  Numeric fields will be introduced by 'b' if their content
+** looks like a well-formed number.  Otherwise the 'a' or 'c' will be
+** used.
 **
 ** The key is a concatenation of fields.  Each field is terminated by
 ** a single 0x00 character.  A NULL field is introduced by an 'a' and
@@ -3039,7 +3083,7 @@ case OP_MakeRecord: {
 ** sqliteRealToSortable() function.  A text field is introduced by a
 ** 'c' character and is followed by the exact text of the field.  The
 ** use of an 'a', 'b', or 'c' character at the beginning of each field
-** guarantees that NULL sort before numbers and that numbers sort
+** guarantees that NULLs sort before numbers and that numbers sort
 ** before text.  0x00 characters do not occur except as separators
 ** between fields.
 **
@@ -5816,12 +5860,15 @@ bad_instruction:
 
 
 /*
-** Clean up the VDBE after execution.  Return an integer which is the
-** result code.
+** Clean up a VDBE after execution but do not delete the VDBE just yet.
+** Write any error messages into *pzErrMsg.  Return the result code.
+**
+** After this routine is run, the VDBE should be ready to be executed
+** again.
 */
-int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
+int sqliteVdbeReset(Vdbe *p, char **pzErrMsg){
   sqlite *db = p->db;
-  int i, rc;
+  int i;
 
   if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
     sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
@@ -5895,7 +5942,24 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
     }
   }
 #endif
-  rc = p->rc;
+  p->magic = VDBE_MAGIC_INIT;
+  return p->rc;
+}
+
+/*
+** Clean up and delete a VDBE after execution.  Return an integer which is
+** the result code.  Write any error message text into *pzErrMsg.
+*/
+int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
+  int rc;
+  sqlite *db;
+
+  if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
+    sqliteSetString(pzErrMsg, sqlite_error_string(SQLITE_MISUSE), 0);
+    return SQLITE_MISUSE;
+  }
+  db = p->db;
+  rc = sqliteVdbeReset(p, pzErrMsg);
   sqliteVdbeDelete(p);
   if( db->want_to_close && db->pVdbe==0 ){
     sqlite_close(db);
@@ -5904,11 +5968,54 @@ int sqliteVdbeFinalize(Vdbe *p, char **pzErrMsg){
 }
 
 /*
+** Set the values of all variables.  Variable $1 in the original SQL will
+** be the string azValue[0].  $2 will have the value azValue[1].  And
+** so forth.  If a value is out of range (for example $3 when nValue==2)
+** then its value will be NULL.
+**
+** This routine overrides any prior call.
+*/
+int sqliteVdbeSetVariables(Vdbe *p, int nValue, const char **azValue){
+  int i, n;
+  char *z;
+  if( p->magic!=VDBE_MAGIC_RUN || p->pc!=0 || p->nVariable!=0 ){
+    return SQLITE_MISUSE;
+  }
+  ClearVariableArray(p);
+  if( nValue==0 ){
+    p->nVariable = 0;
+    p->azVariable = 0;
+  }
+  for(i=n=0; i<nValue; i++){
+    if( azValue[i] ) n += strlen(azValue[i]) + 1;
+  }
+  p->azVariable = sqliteMalloc( sizeof(p->azVariable[0])*nValue + n );
+  if( p->azVariable==0 ){
+    p->nVariable = 0;
+    return SQLITE_NOMEM;
+  }
+  z = (char*)&p->azVariable[nValue];
+  for(i=0; i<nValue; i++){
+    if( azValue[i]==0 ){
+      p->azVariable[i] = 0;
+    }else{
+      p->azVariable[i] = z;
+      n = strlen(azValue[i]);
+      memcpy(z, azValue[i], n+1);
+      z += n+1;
+    }
+  }
+  p->nVariable = nValue;
+  return SQLITE_OK;
+}
+
+
+#if 0
+/*
 ** Create a new Vdbe in *pOut and populate it with the program from p. Then
 ** pass p to sqliteVdbeFinalize().
 */
-int sqliteVdbeReset(Vdbe *p, char ** pErrMsg, Vdbe** pOut)
-{
+int sqliteVdbeReset(Vdbe *p, char ** pErrMsg, Vdbe** pOut){
   if( pOut && p->rc != SQLITE_SCHEMA ){
 
     /* Create a new VDBE and populate it with the program used by the old
@@ -5928,3 +6035,4 @@ int sqliteVdbeReset(Vdbe *p, char ** pErrMsg, Vdbe** pOut)
   }
   return sqliteVdbeFinalize(p, pErrMsg);
 }
+#endif

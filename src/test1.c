@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.26 2003/07/09 00:28:15 drh Exp $
+** $Id: test1.c,v 1.27 2003/09/06 01:10:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -775,6 +775,66 @@ static int test_finalize(
 }
 
 /*
+** Usage:  sqlite_reset   VM 
+**
+** Reset a virtual machine and prepare it to be run again.
+*/
+static int test_reset(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite_vm *vm;
+  int rc;
+  char *zErrMsg = 0;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " VM\"", 0);
+    return TCL_ERROR;
+  }
+  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
+  rc = sqlite_reset(vm, &zErrMsg);
+  if( rc ){
+    char zBuf[50];
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
+    sqlite_freemem(zErrMsg);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite_instantiate  VM  ARGS...
+**
+** Set the values of variables (ex: $1, $2, etc) in the original SQL string.
+*/
+static int test_instantiate(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite_vm *vm;
+  int rc;
+  if( argc<2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " VM ARGS...\"", 0);
+    return TCL_ERROR;
+  }
+  if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
+  rc = sqlite_instantiate(vm, argc-2, &argv[2]);
+  if( rc ){
+    char zBuf[50];
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, sqlite_error_string(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:    breakpoint
 **
 ** This routine exists for one purpose - to provide a place to put a
@@ -827,6 +887,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
      { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
      { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
+     { "sqlite_instantiate",             (Tcl_CmdProc*)test_instantiate      },
+     { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   int i;
