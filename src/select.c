@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements.
 **
-** $Id: select.c,v 1.15 2000/06/07 14:42:27 drh Exp $
+** $Id: select.c,v 1.16 2000/06/07 23:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -135,11 +135,11 @@ static int selectInnerLoop(
   */
   if( pOrderBy ){
     char *zSortOrder;
-    sqliteVdbeAddOp(v, OP_SortMakeRec, pEList->nExpr, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_SortMakeRec, nField, 0, 0, 0);
     zSortOrder = sqliteMalloc( pOrderBy->nExpr + 1 );
     if( zSortOrder==0 ) return 1;
     for(i=0; i<pOrderBy->nExpr; i++){
-      zSortOrder[i] = pOrderBy->a[i].idx ? '-' : '+';
+      zSortOrder[i] = pOrderBy->a[i].sortOrder ? '-' : '+';
       sqliteExprCode(pParse, pOrderBy->a[i].pExpr);
     }
     zSortOrder[pOrderBy->nExpr] = 0;
@@ -179,7 +179,7 @@ static int selectInnerLoop(
   ** item into the set table with bogus data.
   */
   if( eDest==SRT_Set ){
-    assert( pEList->nExpr==1 );
+    assert( nField==1 );
     sqliteVdbeAddOp(v, OP_String, 0, 0, "", 0);
     sqliteVdbeAddOp(v, OP_Put, iParm, 0, 0, 0);
   }else 
@@ -190,7 +190,7 @@ static int selectInnerLoop(
   ** of the scan loop.
   */
   if( eDest==SRT_Mem ){
-    assert( pEList->nExpr==1 );
+    assert( nField==1 );
     sqliteVdbeAddOp(v, OP_MemStore, iParm, 0, 0, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, iBreak, 0, 0);
   }else
@@ -204,21 +204,38 @@ static int selectInnerLoop(
 }
 
 /*
+** If the inner loop was generated using a non-null pOrderBy argument,
+** then the results were placed in a sorter.  After the loop is terminated
+** we need to run the sorter and output the results.  The following
+** routine generates the code needed to do that.
+*/
+static void generateSortTail(Vdbe *v, int nField){
+  int end = sqliteVdbeMakeLabel(v);
+  int addr;
+  sqliteVdbeAddOp(v, OP_Sort, 0, 0, 0, 0);
+  addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end, 0, 0);
+  sqliteVdbeAddOp(v, OP_SortCallback, nField, 0, 0, 0);
+  sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
+  sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
+}
+
+/*
 ** Generate code that will tell the VDBE how many columns there
 ** are in the result and the name for each column.  This information
 ** is used to provide "argc" and "azCol[]" values in the callback.
 */
-static void generateColumnNames(Vdbe *v, IdList *pTabList, ExprList *pEList){
+static 
+void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
+  Vdbe *v = pParse->pVdbe;
   int i;
+  if( pParse->colNamesSet ) return;
+  pParse->colNamesSet = 1;
   sqliteVdbeAddOp(v, OP_ColumnCount, pEList->nExpr, 0, 0, 0);
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
-      int addr = sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
-      if( zName[0]=='\'' || zName[0]=='"' ){
-        sqliteVdbeDequoteP3(v, addr);
-      }
+      sqliteVdbeAddOp(v, OP_ColumnName, i, 0, zName, 0);
       continue;
     }
     p = pEList->a[i].pExpr;
@@ -247,6 +264,167 @@ static void generateColumnNames(Vdbe *v, IdList *pTabList, ExprList *pEList){
 }
 
 /*
+** Name of the connection operator, used for error messages.
+*/
+static const char *selectOpName(int id){
+  char *z;
+  switch( id ){
+    case TK_ALL:       z = "UNION ALL";   break;
+    case TK_INTERSECT: z = "INTERSECT";   break;
+    case TK_EXCEPT:    z = "EXCEPT";      break;
+    default:           z = "UNION";       break;
+  }
+  return z;
+}
+
+/*
+** For the given SELECT statement, do two things.
+**
+**    (1)  Fill in the pTab fields of the IdList that defines the set
+**         of tables we are scanning.
+**
+**    (2)  If the columns to be extracted variable (pEList) is NULL
+**         (meaning that a "*" was used in the SQL statement) then
+**         create a fake pEList containing the names of all columns
+**         of all tables.
+**
+** Return 0 on success.  If there are problems, leave an error message
+** in pParse and return non-zero.
+*/
+static int fillInColumnList(Parse *pParse, Select *p){
+  int i, j;
+  IdList *pTabList = p->pSrc;
+  ExprList *pEList = p->pEList;
+
+  /* Look up every table in the table list.
+  */
+  for(i=0; i<pTabList->nId; i++){
+    if( pTabList->a[i].pTab ){
+      /* This routine has run before!  No need to continue */
+      return 0;
+    }
+    pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
+    if( pTabList->a[i].pTab==0 ){
+      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
+         pTabList->a[i].zName, 0);
+      pParse->nErr++;
+      return 1;
+    }
+  }
+
+  /* If the list of columns to retrieve is "*" then replace it with
+  ** a list of all columns from all tables.
+  */
+  if( pEList==0 ){
+    for(i=0; i<pTabList->nId; i++){
+      Table *pTab = pTabList->a[i].pTab;
+      for(j=0; j<pTab->nCol; j++){
+        Expr *pExpr = sqliteExpr(TK_DOT, 0, 0, 0);
+        pExpr->pLeft = sqliteExpr(TK_ID, 0, 0, 0);
+        pExpr->pLeft->token.z = pTab->zName;
+        pExpr->pLeft->token.n = strlen(pTab->zName);
+        pExpr->pRight = sqliteExpr(TK_ID, 0, 0, 0);
+        pExpr->pRight->token.z = pTab->aCol[j].zName;
+        pExpr->pRight->token.n = strlen(pTab->aCol[j].zName);
+        pEList = sqliteExprListAppend(pEList, pExpr, 0);
+      }
+    }
+    p->pEList = pEList;
+  }
+  return 0;
+}
+
+/*
+** This routine associates entries in an ORDER BY expression list with
+** columns in a result.  For each ORDER BY expression, the opcode of
+** the top-level node is changed to TK_FIELD and the iField value of
+** the top-level node is filled in with column number and the iTable
+** value of the top-level node is filled with iTable parameter.
+**
+** If there are prior SELECT clauses, they are processed first.  A match
+** in an earlier SELECT takes precedence over a later SELECT.
+**
+** Any entry that does not match is flagged as an error.  The number
+** of errors is returned.
+*/
+static int matchOrderbyToColumn(
+  Parse *pParse,          /* A place to leave error messages */
+  Select *pSelect,        /* Match to result columns of this SELECT */
+  ExprList *pOrderBy,     /* The ORDER BY values to match against columns */
+  int iTable,             /* Insert this this value in iTable */
+  int mustComplete        /* If TRUE all ORDER BYs must match */
+){
+  int nErr = 0;
+  int i, j;
+  ExprList *pEList;
+
+  assert( pSelect && pOrderBy );
+  if( mustComplete ){
+    for(i=0; i<pOrderBy->nExpr; i++){ pOrderBy->a[i].done = 0; }
+  }
+  if( fillInColumnList(pParse, pSelect) ){
+    return 1;
+  }
+  if( pSelect->pPrior ){
+    matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0);
+  }
+  pEList = pSelect->pEList;
+  for(i=0; i<pOrderBy->nExpr; i++){
+    Expr *pE = pOrderBy->a[i].pExpr;
+    if( pOrderBy->a[i].done ) continue;
+    for(j=0; j<pEList->nExpr; j++){
+      int match = 0;
+      if( pEList->a[i].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
+        char *zName = pEList->a[i].zName;
+        char *zLabel = 0;
+        sqliteSetString(&zLabel, pE->token.z, pE->token.n, 0);
+        sqliteDequote(zLabel);
+        if( sqliteStrICmp(zName, zLabel)==0 ){ 
+          match = 1; 
+        }
+      }
+      if( match==0 && sqliteExprCompare(pE, pEList->a[i].pExpr) ){
+        match = 1;
+      }
+      if( match ){
+        pE->op = TK_FIELD;
+        pE->iField = j;
+        pE->iTable = iTable;
+        pOrderBy->a[i].done = 1;
+        break;
+      }
+    }
+    if( mustComplete ){
+      char zBuf[30];
+      sprintf(zBuf,"%d",i+1);
+      sqliteSetString(&pParse->zErrMsg, "ORDER BY term number ", zBuf, 
+        " does not match any result column", 0);
+      pParse->nErr++;
+      nErr++;
+      break;
+    }
+  }
+  return nErr;  
+}
+
+/*
+** Get a VDBE for the given parser context.  Create a new one if necessary.
+** If an error occurs, return NULL and leave a message in pParse.
+*/
+Vdbe *sqliteGetVdbe(Parse *pParse){
+  Vdbe *v = pParse->pVdbe;
+  if( v==0 ){
+    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  }
+  if( v==0 ){
+    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
+    pParse->nErr++;
+  }
+  return v;
+}
+    
+
+/*
 ** This routine is called to process a query that is really the union
 ** or intersection of two or more separate queries.
 */
@@ -254,62 +432,92 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   int rc;
   Select *pPrior;
   Vdbe *v;
-  int i;
 
-  /* Make sure we have a valid query engine.  If not, create a new one.
+  /* Make sure there is no ORDER BY clause on prior SELECTs.  Only the 
+  ** last SELECT in the series may have an ORDER BY.
   */
-  v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-  }
-  if( v==0 ){
-    sqliteSetString(&pParse->zErrMsg, "out of memory", 0);
+  assert( p->pPrior!=0 );
+  pPrior = p->pPrior;
+  if( pPrior->pOrderBy ){
+    sqliteSetString(&pParse->zErrMsg,"ORDER BY clause should come after ",
+      selectOpName(p->op), " not before", 0);
     pParse->nErr++;
     return 1;
   }
 
-  assert( p->pPrior!=0 );
-  pPrior = p->pPrior;
+  /* Make sure we have a valid query engine.  If not, create a new one.
+  */
+  v = sqliteGetVdbe(pParse);
+  if( v==0 ) return 1;
+
+  /* Process the UNION or INTERSECTION
+  */
   switch( p->op ){
-    case TK_ALL: {
-      rc = sqliteSelect(pParse, pPrior, eDest, iParm);
-      if( rc ) return rc;
-      p->pPrior = 0;
-      rc = sqliteSelect(pParse, p, eDest, iParm);
-      p->pPrior = pPrior;
-      break;
-    }
+    case TK_ALL:
     case TK_EXCEPT:
     case TK_UNION: {
-      int unionTab;
-      int op;
+      int unionTab;    /* Cursor number of the temporary table holding result */
+      int op;          /* One of the SRT_ operations to apply to self */
+      int priorOp;     /* The SRT_ operation to apply to prior selects */
 
-      if( eDest==SRT_Union ){
+      priorOp = p->op==TK_ALL ? SRT_Table : SRT_Union;
+      if( eDest==priorOp ){
+        /* We can reuse a temporary table generated by a SELECT to our
+        ** right.  This also means we are not the right-most select and so
+        ** we cannot have an ORDER BY clause
+        */
         unionTab = iParm;
+        assert( p->pOrderBy==0 );
       }else{
-        unionTab = pParse->nTab++;          
+        /* We will need to create our own temporary table to hold the
+        ** intermediate results.
+        */
+        unionTab = pParse->nTab++;
+        if( p->pOrderBy 
+        && matchOrderbyToColumn(pParse, p, p->pOrderBy, unionTab, 1) ){
+          return 1;
+        }
         sqliteVdbeAddOp(v, OP_Open, unionTab, 1, 0, 0);
-        sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1, 0, 0);
+        if( p->op!=TK_ALL ){
+          sqliteVdbeAddOp(v, OP_KeyAsData, unionTab, 1, 0, 0);
+        }
       }
-      rc = sqliteSelect(pParse, pPrior, SRT_Union, unionTab);
+
+      /* Code the SELECT statements to our left
+      */
+      rc = sqliteSelect(pParse, pPrior, priorOp, unionTab);
       if( rc ) return rc;
-      op = p->op==TK_EXCEPT ? SRT_Except : SRT_Union;
+
+      /* Code the current SELECT statement
+      */
+      switch( p->op ){
+         case TK_EXCEPT:  op = SRT_Except;   break;
+         case TK_UNION:   op = SRT_Union;    break;
+         case TK_ALL:     op = SRT_Table;    break;
+      }
       p->pPrior = 0;
       rc = sqliteSelect(pParse, p, op, unionTab);
       p->pPrior = pPrior;
       if( rc ) return rc;
-      if( eDest!=SRT_Union ){
+
+      /* Convert the data in the temporary table into whatever form
+      ** it is that we currently need.
+      */      
+      if( eDest!=priorOp ){
         int iCont, iBreak;
         assert( p->pEList );
-        generateColumnNames(v, 0, p->pEList);
+        generateColumnNames(pParse, 0, p->pEList);
         iBreak = sqliteVdbeMakeLabel(v);
         iCont = sqliteVdbeAddOp(v, OP_Next, unionTab, iBreak, 0, 0);
         rc = selectInnerLoop(pParse, 0, unionTab, p->pEList->nExpr,
-                             0, -1, eDest, iParm, 
+                             p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
         if( rc ) return 1;
         sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
         sqliteVdbeAddOp(v, OP_Close, unionTab, 0, 0, iBreak);
+        if( p->pOrderBy ){
+          generateSortTail(v, p->pEList->nExpr);
+        }
       }
       break;
     }
@@ -317,38 +525,58 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       int tab1, tab2;
       int iCont, iBreak;
 
+      /* INTERSECT is different from the others since it requires
+      ** two temporary tables.  Hence it has its own case.  Begine
+      ** by allocating the tables we will need.
+      */
       tab1 = pParse->nTab++;
       tab2 = pParse->nTab++;
+      if( p->pOrderBy && matchOrderbyToColumn(pParse,p,p->pOrderBy,tab1,1) ){
+        return 1;
+      }
       sqliteVdbeAddOp(v, OP_Open, tab1, 1, 0, 0);
       sqliteVdbeAddOp(v, OP_KeyAsData, tab1, 1, 0, 0);
+
+      /* Code the SELECTs to our left into temporary table "tab1".
+      */
       rc = sqliteSelect(pParse, pPrior, SRT_Union, tab1);
       if( rc ) return rc;
+
+      /* Code the current SELECT into temporary table "tab2"
+      */
       sqliteVdbeAddOp(v, OP_Open, tab2, 1, 0, 0);
       sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1, 0, 0);
       p->pPrior = 0;
       rc = sqliteSelect(pParse, p, SRT_Union, tab2);
       p->pPrior = pPrior;
       if( rc ) return rc;
+
+      /* Generate code to take the intersection of the two temporary
+      ** tables.
+      */
       assert( p->pEList );
-      generateColumnNames(v, 0, p->pEList);
+      generateColumnNames(pParse, 0, p->pEList);
       iBreak = sqliteVdbeMakeLabel(v);
       iCont = sqliteVdbeAddOp(v, OP_Next, tab1, iBreak, 0, 0);
       sqliteVdbeAddOp(v, OP_Key, tab1, 0, 0, 0);
       sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont, 0, 0);
       rc = selectInnerLoop(pParse, 0, tab1, p->pEList->nExpr,
-                             0, -1, eDest, iParm, 
+                             p->pOrderBy, -1, eDest, iParm, 
                              iCont, iBreak);
       if( rc ) return 1;
       sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
       sqliteVdbeAddOp(v, OP_Close, tab2, 0, 0, iBreak);
       sqliteVdbeAddOp(v, OP_Close, tab1, 0, 0, 0);
+      if( p->pOrderBy ){
+        generateSortTail(v, p->pEList->nExpr);
+      }
       break;
     }
   }
   assert( p->pEList && pPrior->pEList );
   if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
-    sqliteSetString(&pParse->zErrMsg, "SELECTs have different numbers "
-       "of columns and therefore cannot be joined", 0);
+    sqliteSetString(&pParse->zErrMsg, "SELECTs to the left and right of ",
+      selectOpName(p->op), " do not have the same number of result columns", 0);
     pParse->nErr++;
     return 1;
   }
@@ -386,7 +614,7 @@ int sqliteSelect(
   int eDest,             /* One of: SRT_Callback Mem Set Union Except */
   int iParm              /* Save result in this memory location, if >=0 */
 ){
-  int i, j;
+  int i;
   WhereInfo *pWInfo;
   Vdbe *v;
   int isAgg = 0;         /* True for select lists like "count(*)" */
@@ -407,7 +635,6 @@ int sqliteSelect(
 
   /* Make local copies of the parameters for this query.
   */
-  pEList = p->pEList;
   pTabList = p->pSrc;
   pWhere = p->pWhere;
   pOrderBy = p->pOrderBy;
@@ -422,17 +649,14 @@ int sqliteSelect(
   if( pParse->nErr>0 ) return 0;
   sqliteParseInfoReset(pParse);
 
-  /* Look up every table in the table list.
+  /* Look up every table in the table list and create an appropriate
+  ** columnlist in pEList if there isn't one already.  (The parser leaves
+  ** a NULL in the pEList field if the SQL said "SELECT * FROM ...")
   */
-  for(i=0; i<pTabList->nId; i++){
-    pTabList->a[i].pTab = sqliteFindTable(pParse->db, pTabList->a[i].zName);
-    if( pTabList->a[i].pTab==0 ){
-      sqliteSetString(&pParse->zErrMsg, "no such table: ", 
-         pTabList->a[i].zName, 0);
-      pParse->nErr++;
-      return 1;
-    }
+  if( fillInColumnList(pParse, p) ){
+    return 1;
   }
+  pEList = p->pEList;
 
   /* Allocate a temporary table to use for the DISTINCT set, if
   ** necessary.  This must be done early to allocate the cursor before
@@ -442,21 +666,6 @@ int sqliteSelect(
     distinct = pParse->nTab++;
   }else{
     distinct = -1;
-  }
-
-  /* If the list of fields to retrieve is "*" then replace it with
-  ** a list of all fields from all tables.
-  */
-  if( pEList==0 ){
-    for(i=0; i<pTabList->nId; i++){
-      Table *pTab = pTabList->a[i].pTab;
-      for(j=0; j<pTab->nCol; j++){
-        Expr *pExpr = sqliteExpr(TK_FIELD, 0, 0, 0);
-        pExpr->iTable = i + pParse->nTab;
-        pExpr->iField = j;
-        p->pEList = pEList = sqliteExprListAppend(pEList, pExpr, 0);
-      }
-    }
   }
 
   /* If writing to memory or generating a set
@@ -587,7 +796,7 @@ int sqliteSelect(
   ** step is skipped if the output is going to a table or a memory cell.
   */
   if( eDest==SRT_Callback ){
-    generateColumnNames(v, pTabList, pEList);
+    generateColumnNames(pParse, pTabList, pEList);
   }
 
   /* Reset the aggregator
@@ -707,13 +916,7 @@ int sqliteSelect(
   ** and send them to the callback one by one.
   */
   if( pOrderBy ){
-    int end = sqliteVdbeMakeLabel(v);
-    int addr;
-    sqliteVdbeAddOp(v, OP_Sort, 0, 0, 0, 0);
-    addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end, 0, 0);
-    sqliteVdbeAddOp(v, OP_SortCallback, pEList->nExpr, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
-    sqliteVdbeAddOp(v, OP_SortClose, 0, 0, 0, end);
+    generateSortTail(v, pEList->nExpr);
   }
   return 0;
 }

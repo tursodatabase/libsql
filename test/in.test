@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.1 2000/06/06 13:54:16 drh Exp $
+# $Id: in.test,v 1.2 2000/06/07 23:51:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -146,5 +146,20 @@ do_test in-4.2 {
   execsql {SELECT a FROM t1 ORDER BY a}
 } {1 2 3 4 5 6 7 8}
 
+# Do an IN with a constant RHS but where the RHS has many, many
+# elements.  We need to test that collisions in the hash table
+# are resolved properly.
+#
+do_test in-5.1 {
+  execsql {
+    INSERT INTO t1 VALUES('hello', 'world');
+    SELECT * FROM t1
+    WHERE a IN (
+       'Do','an','IN','with','a','constant','RHS','but','where','the',
+       'has','many','elements','We','need','to','test','that',
+       'collisions','hash','table','are','resolved','properly',
+       'This','in-set','contains','thirty','one','entries','hello');
+  }
+} {hello world}
 
 finish_test

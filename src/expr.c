@@ -23,7 +23,7 @@
 *************************************************************************
 ** This file contains C code routines used for processing expressions
 **
-** $Id: expr.c,v 1.10 2000/06/06 17:27:05 drh Exp $
+** $Id: expr.c,v 1.11 2000/06/07 23:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -206,10 +206,7 @@ int sqliteExprResolveIds(Parse *pParse, IdList *pTabList, Expr *pExpr){
     }
 
     case TK_IN: {
-      Vdbe *v = pParse->pVdbe;
-      if( v==0 ){
-        v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-      }
+      Vdbe *v = sqliteGetVdbe(pParse);
       if( v==0 ) return 1;
       if( sqliteExprResolveIds(pParse, pTabList, pExpr->pLeft) ){
         return 1;
@@ -766,7 +763,7 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest){
 ** Do a deep comparison of two expression trees.  Return TRUE (non-zero)
 ** if they are identical and return FALSE if they differ in any way.
 */
-static int exprDeepCompare(Expr *pA, Expr *pB){
+int sqliteExprCompare(Expr *pA, Expr *pB){
   int i;
   if( pA==0 ){
     return pB==0;
@@ -774,13 +771,13 @@ static int exprDeepCompare(Expr *pA, Expr *pB){
     return 0;
   }
   if( pA->op!=pB->op ) return 0;
-  if( !exprDeepCompare(pA->pLeft, pB->pLeft) ) return 0;
-  if( !exprDeepCompare(pA->pRight, pB->pRight) ) return 0;
+  if( !sqliteExprCompare(pA->pLeft, pB->pLeft) ) return 0;
+  if( !sqliteExprCompare(pA->pRight, pB->pRight) ) return 0;
   if( pA->pList ){
     if( pB->pList==0 ) return 0;
     if( pA->pList->nExpr!=pB->pList->nExpr ) return 0;
     for(i=0; i<pA->pList->nExpr; i++){
-      if( !exprDeepCompare(pA->pList->a[i].pExpr, pB->pList->a[i].pExpr) ){
+      if( !sqliteExprCompare(pA->pList->a[i].pExpr, pB->pList->a[i].pExpr) ){
         return 0;
       }
     }
@@ -868,7 +865,7 @@ int sqliteExprAnalyzeAggregates(Parse *pParse, Expr *pExpr){
       aAgg = pParse->aAgg;
       for(i=0; i<pParse->nAgg; i++){
         if( !aAgg[i].isAgg ) continue;
-        if( exprDeepCompare(aAgg[i].pExpr, pExpr) ){
+        if( sqliteExprCompare(aAgg[i].pExpr, pExpr) ){
           break;
         }
       }

@@ -26,7 +26,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.15 2000/06/07 14:42:27 drh Exp $
+** @(#) $Id: parse.y,v 1.16 2000/06/07 23:51:50 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -211,11 +211,11 @@ orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
 sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
   A = sqliteExprListAppend(X,Y,0);
-  A->a[A->nExpr-1].idx = Z;       /* 0 for ascending order, 1 for decending */
+  A->a[A->nExpr-1].sortOrder = Z;   /* 0 for ascending order, 1 for decending */
 }
 sortlist(A) ::= sortitem(Y) sortorder(Z). {
   A = sqliteExprListAppend(0,Y,0);
-  A->a[0].idx = Z;
+  A->a[0].sortOrder = Z;
 }
 sortitem(A) ::= expr(X).   {A = X;}
 

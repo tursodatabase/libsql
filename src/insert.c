@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements.
 **
-** $Id: insert.c,v 1.8 2000/06/07 15:11:27 drh Exp $
+** $Id: insert.c,v 1.9 2000/06/07 23:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -67,10 +67,7 @@ void sqliteInsert(
     pParse->nErr++;
     goto insert_cleanup;
   }
-  v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-  }
+  v = sqliteGetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
   if( pSelect ){
     int rc;

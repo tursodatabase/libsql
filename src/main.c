@@ -26,7 +26,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.11 2000/06/07 15:11:27 drh Exp $
+** $Id: main.c,v 1.12 2000/06/07 23:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -129,6 +129,10 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
   ** the program.  The delete the virtual machine.
   */
   vdbe = sqliteVdbeCreate(db->pBe);
+  if( vdbe==0 ){
+    sqliteSetString(pzErrMsg, "out of memory",0); 
+    return 1;
+  }
   sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
   rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg);
   sqliteVdbeDelete(vdbe);

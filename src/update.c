@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.4 2000/06/06 13:54:16 drh Exp $
+** $Id: update.c,v 1.5 2000/06/07 23:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -104,7 +104,7 @@ void sqliteUpdate(
     }
     for(j=0; j<pTab->nCol; j++){
       if( strcmp(pTab->aCol[j].zName, pChanges->a[i].zName)==0 ){
-        pChanges->a[i].idx = j;
+        /* pChanges->a[i].idx = j; */
         aXRef[j] = i;
         break;
       }
@@ -138,10 +138,7 @@ void sqliteUpdate(
 
   /* Begin generating code.
   */
-  v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-  }
+  v = sqliteGetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
 
   /* Begin the database scan

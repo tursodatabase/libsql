@@ -33,7 +33,7 @@
 **     COPY
 **     VACUUM
 **
-** $Id: build.c,v 1.15 2000/06/05 18:54:46 drh Exp $
+** $Id: build.c,v 1.16 2000/06/07 23:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -60,6 +60,7 @@ void sqliteExec(Parse *pParse){
     }
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
+    pParse->colNamesSet = 0;
   }
 }
 
@@ -330,11 +331,9 @@ void sqliteEndTable(Parse *pParse, Token *pEnd){
       { OP_Close,       0, 0, 0},
     };
     int n, base;
-    Vdbe *v = pParse->pVdbe;
+    Vdbe *v;
 
-    if( v==0 ){
-      v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-    }
+    v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
     n = (int)pEnd->z - (int)pParse->sFirstToken.z + 1;
     base = sqliteVdbeAddOpList(v, ArraySize(addTable), addTable);
@@ -379,10 +378,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   }
 
   /* Generate code to remove the table and its reference in sys_master */
-  v = pParse->pVdbe;
-  if( v==0 ){
-    v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-  }
+  v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropTable[] = {
       { OP_Open,       0, 1,        MASTER_NAME },
@@ -576,9 +572,7 @@ void sqliteCreateIndex(
     int lbl1, lbl2;
     int i;
 
-    if( v==0 ){
-      v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
-    }
+    v = sqliteGetVdbe(pParse);
     if( v==0 ) goto exit_create_index;
     sqliteVdbeAddOp(v, OP_Open, 0, 0, pTab->zName, 0);
     sqliteVdbeAddOp(v, OP_Open, 1, 1, pIndex->zName, 0);
@@ -637,7 +631,7 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   }
 
   /* Generate code to remove the index and from the master table */
-  v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  v = sqliteGetVdbe(pParse);
   if( v ){
     static VdbeOp dropIndex[] = {
       { OP_Open,       0, 1,       MASTER_NAME},
@@ -808,7 +802,7 @@ void sqliteCopy(
     pParse->nErr++;
     goto copy_cleanup;
   }
-  v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  v = sqliteGetVdbe(pParse);
   if( v ){
     addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0, 0, 0);
     sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
@@ -872,7 +866,7 @@ void sqliteVacuum(Parse *pParse, Token *pTableName){
     pParse->nErr++;
     goto vacuum_cleanup;
   }
-  v = pParse->pVdbe = sqliteVdbeCreate(pParse->db->pBe);
+  v = sqliteGetVdbe(pParse);
   if( v==0 ) goto vacuum_cleanup;
   if( zName ){
     sqliteVdbeAddOp(v, OP_Reorganize, 0, 0, zName, 0);
