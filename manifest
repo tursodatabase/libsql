@@ -1,5 +1,5 @@
-C Check\sfor\sschema\supdates\sif\sthe\sparser\sfails\sto\sfind\sa\stable.\s\sMore\slocking\ntest\supdates.\s(CVS\s1555)
-D 2004-06-10T00:29:09
+C Fix\sa\sbuffer\soverrun\sin\sthe\satomic\smultifile\scommit\slogic\sof\sthe\spager.\s(CVS\s1556)
+D 2004-06-10T00:51:44
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -47,7 +47,7 @@ F src/os_unix.c 1d6f3d1a87d4aa0e4490bcc47b3f0ff9b2e37e7a
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 6b8f9fcc683bb888e07fc485372803baa68faadb
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
-F src/pager.c f93d104b61278246fb06859227ac5fd87e6a67f0
+F src/pager.c d1202ce02f7033e08e84c270106fbe688dcf42cd
 F src/pager.h ca8f293e1d623a7c628a1c5e0c6cf43d5bbb80bf
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
 F src/pragma.c 3251628662963f30a95133b19d59e4bc08226c76
@@ -218,7 +218,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 73afa14a04e8aa22de71aac7d08abc0ec68dc327
-R 4a457b2bb951374d999015f4602a5043
+P a22283512afe2df09d5783d189fbd7389ed313ad
+R 44c0fe57aaff3fee6a9e59ee85ca7073
 U drh
-Z 0642bdc31cc4198c64ee7082ebf04a73
+Z e14cb70585259da837e18dc09e5b8e61
