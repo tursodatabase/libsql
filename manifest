@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sto\srefer\sthe\sreader\sto\sthe\sCVS\sserver\sfor\sthe\schange\nlog,\sbug\slists,\sor\sthe\slatest\ssources.\s(CVS\s500)
-D 2002-03-27T12:52:48
+C Two\stypos\sfixed\sin\sthe\sdocumentation\s(lang.html).\s(CVS\s502)
+D 2002-03-28T14:20:08
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -123,14 +123,14 @@ F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl fb1e92e2f604546694f83a36d969492f52fb685d
 F www/formatchng.tcl 2ce21ff30663fad6618198fe747ce675df577590
 F www/index.tcl 64d32b1952138a007c1db5753c5b046d4b83dda1
-F www/lang.tcl d589f9a39c925d81fa9198b9215b4fd56da4192b
+F www/lang.tcl e6c277480c4e31877c08509af7a16f6c69bb1046
 F www/mingw.tcl f1c7c0a7f53387dd9bb4f8c7e8571b7561510ebc
 F www/opcode.tcl bdec8ef9f100dbd87bbef8976c54b88e43fd8ccc
 F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9637b9aa5d405427ead52438eed8c626feac8658
-R 25a47165cf81cde2d1e8d11b6a1ee5f9
+P 2478ba866646d6d445b370554af9cd3d362b0e10
+R 5c3e675adc2271b5ac7cfe741aef903e
 U drh
-Z d2404a9e9da29d8df5fa9904a22bc472
+Z 15765735138d1aadde01b440f7a931b7
