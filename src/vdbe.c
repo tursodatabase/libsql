@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.455 2005/02/17 00:03:07 drh Exp $
+** $Id: vdbe.c,v 1.456 2005/02/19 08:18:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1682,7 +1682,8 @@ case OP_SetNumColumns: {
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
 ** information about the format of the data.) Push onto the stack the value
-** of the P2-th column contained in the data.
+** of the P2-th column contained in the data. If there are less that (P2+1) 
+** values in the record, push a NULL onto the stack.
 **
 ** If the KeyAsData opcode has previously executed on this cursor, then the
 ** field might be extracted from the key rather than the data.
@@ -1850,6 +1851,7 @@ case OP_Column: {
     ** of the record to the start of the data for the i-th column
     */
     offset = szHdr;
+    assert( offset>0 );
     i = 0;
     while( idx<szHdr && i<nField && offset<=payloadSize ){
       aOffset[i] = offset;
@@ -1859,6 +1861,16 @@ case OP_Column: {
     }
     Release(&sMem);
     sMem.flags = MEM_Null;
+
+    /* If i is less that nField, then there are less fields in this
+    ** record than SetNumColumns indicated there are columns in the
+    ** table. Set the offset for any extra columns not present in
+    ** the record to 0. This tells code below to push a NULL onto the
+    ** stack instead of deserializing a value from the record.
+    */
+    while( i<nField ){
+      aOffset[i++] = 0;
+    }
 
     /* The header should end at the start of data and the data should
     ** end at last byte of the record. If this is not the case then
@@ -1879,21 +1891,28 @@ case OP_Column: {
     }
   }
 
-  /* Get the column information.
+  /* Get the column information. If aOffset[p2] is non-zero, then 
+  ** deserialize the value from the record. If aOffset[p2] is zero,
+  ** then there are not enough fields in the record to satisfy the
+  ** request. The value is NULL in this case.
   */
-  assert( rc==SQLITE_OK );
-  if( zRec ){
-    zData = &zRec[aOffset[p2]];
-  }else{
-    len = sqlite3VdbeSerialTypeLen(aType[p2]);
-    rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, pC->keyAsData, &sMem);
-    if( rc!=SQLITE_OK ){
-      goto op_column_out;
+  if( aOffset[p2] ){
+    assert( rc==SQLITE_OK );
+    if( zRec ){
+      zData = &zRec[aOffset[p2]];
+    }else{
+      len = sqlite3VdbeSerialTypeLen(aType[p2]);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,pC->keyAsData,&sMem);
+      if( rc!=SQLITE_OK ){
+        goto op_column_out;
+      }
+      zData = sMem.z;
     }
-    zData = sMem.z;
+    sqlite3VdbeSerialGet(zData, aType[p2], pTos);
+    pTos->enc = db->enc;
+  }else{
+    pTos->flags = MEM_Null;
   }
-  sqlite3VdbeSerialGet(zData, aType[p2], pTos);
-  pTos->enc = db->enc;
 
   /* If we dynamically allocated space to hold the data (in the
   ** sqlite3VdbeMemFromBtree() call above) then transfer control of that

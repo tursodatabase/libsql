@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.7 2005/02/05 12:48:49 danielk1977 Exp $
+# $Id: corrupt.test,v 1.8 2005/02/19 08:18:06 danielk1977 Exp $
 
 catch {file delete -force test.db}
 catch {file delete -force test.db-journal}
@@ -27,18 +27,18 @@ do_test corrupt-1.1 {
   execsql {
     BEGIN;
     CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(randstr(10,100));
-    INSERT INTO t1 VALUES(randstr(10,100));
-    INSERT INTO t1 VALUES(randstr(10,100));
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 VALUES(randstr(2100,3000));
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
-    INSERT INTO t1 SELECT x || randstr(5,10) FROM t1;
+    INSERT INTO t1 VALUES(randstr(100,100));
+    INSERT INTO t1 VALUES(randstr(90,90));
+    INSERT INTO t1 VALUES(randstr(80,80));
+    INSERT INTO t1 SELECT x || randstr(5,5) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(6,6) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(7,7) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(8,8) FROM t1;
+    INSERT INTO t1 VALUES(randstr(3000,3000));
+    INSERT INTO t1 SELECT x || randstr(9,9) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(10,10) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(11,11) FROM t1;
+    INSERT INTO t1 SELECT x || randstr(12,12) FROM t1;
     CREATE INDEX t1i1 ON t1(x);
     CREATE TABLE t2 AS SELECT * FROM t1;
     DELETE FROM t2 WHERE rowid%5!=0;

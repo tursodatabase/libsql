@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.311 2005/02/15 20:47:57 drh Exp $
+** $Id: build.c,v 1.312 2005/02/19 08:18:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -746,16 +746,20 @@ void sqlite3StartTable(
   ** now.
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
+    int lbl;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
 
-    /* Every time a new table is created the file-format
-    ** and encoding meta-values are set in the database, in
-    ** case this is the first table created.
+    /* If the file format and encoding in the database have not been set, 
+    ** set them now.
     */
+    sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);   /* file_format */
+    lbl = sqlite3VdbeMakeLabel(v);
+    sqlite3VdbeAddOp(v, OP_If, 0, lbl);
     sqlite3VdbeAddOp(v, OP_Integer, db->file_format, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 1);
     sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
+    sqlite3VdbeResolveLabel(v, lbl);
 
     /* This just creates a place-holder record in the sqlite_master table.
     ** The record created does not contain anything yet.  It will be replaced

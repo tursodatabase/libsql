@@ -1,0 +1,292 @@
+# 2005 February 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing that SQLite can handle a subtle 
+# file format change that may be used in the future to implement
+# "ALTER TABLE ... ADD COLUMN".
+#
+# $Id: alter2.test,v 1.1 2005/02/19 08:18:06 danielk1977 Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# The file format change affects the way row-records stored in tables (but 
+# not indices) are interpreted. Before version 3.1.3, a row-record for a 
+# table with N columns was guaranteed to contain exactly N fields. As
+# of version 3.1.3, the record may contain up to N fields. In this case
+# the M fields that are present are the values for the left-most M 
+# columns. The (N-M) rightmost columns contain NULL.
+#
+# If any records in the database contain less fields than their table
+# has columns, then the file-format meta value should be set to (at least) 2. 
+#
+
+# This procedure sets the value of the file-format in file 'test.db'
+# to $newval. Also, the schema cookie is incremented.
+# 
+proc set_file_format {newval} {
+  set bt [btree_open test.db 10 0]
+  btree_begin_transaction $bt
+  set meta [btree_get_meta $bt]
+  lset meta 2 $newval                    ;# File format
+  lset meta 1 [expr [lindex $meta 1]+1]  ;# Schema cookie
+  eval "btree_update_meta $bt $meta"
+  btree_commit $bt
+  btree_close $bt
+}
+
+# This procedure returns the value of the file-format in file 'test.db'.
+# 
+proc get_file_format {{fname test.db}} {
+  set bt [btree_open $fname 10 0]
+  set meta [btree_get_meta $bt]
+  btree_close $bt
+  lindex $meta 2
+}
+
+# This procedure sets the SQL statement stored for table $tbl in the
+# sqlite_master table of file 'test.db' to $sql.
+#
+proc alter_table {tbl sql} {
+  sqlite3 dbat test.db
+  dbat eval {
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_master SET sql = $sql WHERE name = $tbl AND type = 'table';
+    PRAGMA writable_schema = 0;
+  }
+  dbat close
+  set_file_format 2
+}
+
+#-----------------------------------------------------------------------
+# Some basic tests to make sure short rows are handled.
+#
+do_test alter2-1.1 {
+  execsql {
+    CREATE TABLE abc(a, b);
+    INSERT INTO abc VALUES(1, 2);
+    INSERT INTO abc VALUES(3, 4);
+    INSERT INTO abc VALUES(5, 6);
+  }
+} {}
+do_test alter2-1.2 {
+  # ALTER TABLE abc ADD COLUMN c;
+  alter_table abc {CREATE TABLE abc(a, b, c);}
+} {}
+do_test alter2-1.3 {
+  execsql {
+    SELECT * FROM abc;
+  }
+} {1 2 {} 3 4 {} 5 6 {}}
+do_test alter2-1.4 {
+  execsql {
+    UPDATE abc SET c = 10 WHERE a = 1;
+    SELECT * FROM abc;
+  }
+} {1 2 10 3 4 {} 5 6 {}}
+do_test alter2-1.5 {
+  execsql {
+    CREATE INDEX abc_i ON abc(c);
+  }
+} {}
+do_test alter2-1.6 {
+  execsql {
+    SELECT c FROM abc ORDER BY c;
+  }
+} {{} {} 10}
+do_test alter2-1.7 {
+  execsql {
+    SELECT * FROM abc WHERE c = 10;
+  }
+} {1 2 10}
+do_test alter2-1.8 {
+  execsql {
+    SELECT sum(a), c FROM abc GROUP BY c;
+  }
+} {8.0 {} 1.0 10}
+do_test alter2-1.9 {
+  # ALTER TABLE abc ADD COLUMN d;
+  alter_table abc {CREATE TABLE abc(a, b, c, d);}
+  execsql { SELECT * FROM abc; }
+  execsql {
+    UPDATE abc SET d = 11 WHERE c IS NULL AND a<4;
+    SELECT * FROM abc;
+  }
+} {1 2 10 {} 3 4 {} 11 5 6 {} {}}
+do_test alter2-1.10 {
+  execsql {
+    SELECT typeof(d) FROM abc;
+  }
+} {null integer null}
+do_test alter2-1.99 {
+  execsql {
+    DROP TABLE abc;
+  }
+} {}
+
+#-----------------------------------------------------------------------
+# Test that views work when the underlying table structure is changed.
+#
+ifcapable view {
+  do_test alter2-2.1 {
+    execsql {
+      CREATE TABLE abc2(a, b, c);
+      INSERT INTO abc2 VALUES(1, 2, 10);
+      INSERT INTO abc2 VALUES(3, 4, NULL);
+      INSERT INTO abc2 VALUES(5, 6, NULL);
+      CREATE VIEW abc2_v AS SELECT * FROM abc2;
+      SELECT * FROM abc2_v;
+    }
+  } {1 2 10 3 4 {} 5 6 {}}
+  do_test alter2-2.2 {
+    # ALTER TABLE abc ADD COLUMN d;
+    alter_table abc2 {CREATE TABLE abc2(a, b, c, d);}
+    execsql {
+      SELECT * FROM abc2_v;
+    }
+  } {1 2 10 {} 3 4 {} {} 5 6 {} {}}
+  do_test alter2-2.3 {
+    execsql {
+      DROP TABLE abc2;
+      DROP VIEW abc2_v;
+    }
+  } {}
+}
+
+#-----------------------------------------------------------------------
+# Test that triggers work when a short row is copied to the old.*
+# trigger pseudo-table.
+#
+ifcapable trigger {
+  do_test alter2-3.1 {
+    execsql {
+      CREATE TABLE abc3(a, b);
+      CREATE TABLE blog(o, n);
+      CREATE TRIGGER abc3_t AFTER UPDATE OF b ON abc3 BEGIN
+        INSERT INTO blog VALUES(old.b, new.b);
+      END;
+    }
+  } {}
+  do_test alter2-3.2 {
+    execsql {
+      INSERT INTO abc3 VALUES(1, 4);
+      UPDATE abc3 SET b = 2 WHERE b = 4;
+      SELECT * FROM blog;
+    }
+  } {4 2}
+  do_test alter2-3.3 {
+    execsql {
+      INSERT INTO abc3 VALUES(3, 4);
+      INSERT INTO abc3 VALUES(5, 6);
+    }
+    alter_table abc3 {CREATE TABLE abc3(a, b, c);}
+    execsql {
+      SELECT * FROM abc3;
+    }
+  } {1 2 {} 3 4 {} 5 6 {}}
+  do_test alter2-3.4 {
+    execsql {
+      UPDATE abc3 SET b = b*2 WHERE a<4;
+      SELECT * FROM abc3;
+    }
+  } {1 4 {} 3 8 {} 5 6 {}}
+  do_test alter2-3.5 {
+    execsql {
+      SELECT * FROM blog;
+    }
+  } {4 2 2 4 4 8}
+
+  do_test alter2-3.6 {
+    execsql {
+      CREATE TABLE clog(o, n);
+      CREATE TRIGGER abc3_t2 AFTER UPDATE OF c ON abc3 BEGIN
+        INSERT INTO clog VALUES(old.c, new.c);
+      END;
+      UPDATE abc3 SET c = a*2;
+      SELECT * FROM clog;
+    }
+  } {{} 2 {} 6 {} 10}
+}
+
+#---------------------------------------------------------------------
+# Check that an error occurs if the database is upgraded to a file
+# format that SQLite does not support (in this case 3). Note: The 
+# file format is checked each time the schema is read, so changing the
+# file format requires incrementing the schema cookie.
+#
+do_test alter2-4.1 {
+  set_file_format 3
+} {}
+do_test alter2-4.2 {
+  catchsql {
+    SELECT * FROM sqlite_master;
+  }
+} {1 {unsupported file format}}
+do_test alter2-4.3 {
+  sqlite3_errcode $::DB
+} {SQLITE_ERROR}
+do_test alter2-4.4 {
+  db close
+  set ::DB [sqlite3 db test.db]
+  catchsql {
+    SELECT * FROM sqlite_master;
+  }
+} {1 {unsupported file format}}
+do_test alter2-4.5 {
+  sqlite3_errcode $::DB
+} {SQLITE_ERROR}
+
+#---------------------------------------------------------------------
+# Check that executing VACUUM on a file with file-format version 2
+# resets the file format to 1.
+#
+do_test alter2-5.1 {
+  set_file_format 2
+  get_file_format
+} {2}
+do_test alter2-5.2 {
+  execsql {
+    VACUUM;
+  }
+} {}
+do_test alter2-5.3 {
+  get_file_format
+} {1}
+ 
+#---------------------------------------------------------------------
+# Test that when a database with file-format 2 is opened, new 
+# databases are still created with file-format 1.
+#
+do_test alter2-6.1 {
+  db close
+  set_file_format 2
+  set ::DB [sqlite3 db test.db]
+  get_file_format
+} {2}
+do_test alter2-6.2 {
+  file delete -force test2.db-journal
+  file delete -force test2.db
+  execsql {
+    ATTACH 'test2.db' AS aux;
+    CREATE TABLE aux.t1(a, b);
+  }
+  get_file_format test2.db
+} {1}
+do_test alter2-6.3 {
+  execsql {
+    CREATE TABLE t1(a, b);
+  }
+  get_file_format 
+} {2}
+
+finish_test
+

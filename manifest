@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sdocumentation\sfor\spragma\sshort_column_names.\sTicket\s#1130.\s(CVS\s2350)
-D 2005-02-18T01:15:23
+C Support\sfor\sa\sfuture\sfile\sformat\sthat\sincludes\s'short'\srecords.\s(CVS\s2351)
+D 2005-02-19T08:18:06
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -32,7 +32,7 @@ F src/attach.c f78f76bc6a8e5e487ca53636e21ccba2484a9a61
 F src/auth.c 18c5a0befe20f3a58a41e3ddd78f372faeeefe1f
 F src/btree.c 5c6e81855deec3d1eac5ae03e4c8db6c2595421f
 F src/btree.h 2e2cc923224649337d7217df0dd32b06673ca180
-F src/build.c 7db7f593093caeb223c849a0fd7ca428dcda631e
+F src/build.c a8792b2f866c1ccc32f4977f4ff61d787d60ddfb
 F src/date.c f3d1f5cd1503dabf426a198f3ebef5afbc122a7f
 F src/delete.c 4b94395b52a8f7785acd71135c2ce54f3f5550b3
 F src/experimental.c 8cc66b2be6a011055d75ef19ed2584bcfbb585ad
@@ -42,7 +42,7 @@ F src/hash.c 2b1b13f7400e179631c83a1be0c664608c8f021f
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
 F src/insert.c 0456649d4d48396f918e7ea1fecbf3d66ed90816
 F src/legacy.c d58ea507bce885298a2c8c3cbb0f4bff5d47830b
-F src/main.c 981099f5f73a71e54b0858b01e03d29b83168f7b
+F src/main.c 9f0716fcee245c275a04b42c778c921483dcf868
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h ae44064dc118b20d39450cb331409a775e8bb1c6
 F src/os_common.h 0e7f428ba0a6c40a61bc56c4e96f493231301b73
@@ -75,7 +75,7 @@ F src/update.c b6f4668c11059f86b71581187d09197fa28ec4be
 F src/utf.c bda5eb85039ef16f2d17004c1e18c96e1ab0a80c
 F src/util.c 1b7b9a127b66743ab6cba8d44597aeb570723c99
 F src/vacuum.c 5cf598003191bd91c17a64742bad8e46241698a8
-F src/vdbe.c 40de3ba927a8a99b582d9cd554a2f9eca1c7a025
+F src/vdbe.c 26b085c3a64a8d7a50f9a4ef116481b6afce80b9
 F src/vdbe.h bb9186484f749a839c6c43953e79a6530253f7cd
 F src/vdbeInt.h e80721cd8ff611789e20743eec43363a9fb5a48e
 F src/vdbeapi.c 467caa6e6fb9247528b1c7ab9132ae1b4748e8ac
@@ -85,6 +85,7 @@ F src/where.c c4b6a799ed9cc99c63d298c8741956156eeb05eb
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
+F test/alter2.test cd4204a4f5e11c5abfe8abbdf880538c994f3b47
 F test/attach.test 5147d531ca5fc5c2539fd20ce3b07a00420e1fbb
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -105,7 +106,7 @@ F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
 F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/capi2.test 2bd71f573b32e3ac5b97441a55873eae14eeab0d
-F test/capi3.test f50dd4666deba96275f9927fe8ec089a3d8c0efa
+F test/capi3.test 39143488ac6aeddb35fa76557d0a25f54081cebc
 F test/capi3b.test 5b6a66f9f295f79f443b5d3f33187fa5ef6cf336
 F test/collate1.test f79736d2ebf5492167ee4d1f4ab4c09dda776b03
 F test/collate2.test 224a632ba04907c049804b08162efd234aa7871f
@@ -114,7 +115,7 @@ F test/collate4.test b8668612691c4dcf90f67a8df1eeb1544e7fdaf8
 F test/collate5.test 581775b94604b7435dc6a5c6e72fbbf7d69e3830
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/conflict.test c5b849b01cfbe0a4f63a90cba6f68e2fe3a75f87
-F test/corrupt.test c34304baf2f027e05942af2efeb26844adca9a53
+F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
 F test/crash.test f38b980a0508655d08c957a6dd27d66bca776504
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
@@ -273,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P c5366deaf5beca9c99558c0f375ba73f817acd92
-R b75a67c7136a5c5600c1249b41513257
+P fac56fa1e06e15ffd738cb9b780d422a73a743ae
+R 9d7f7d2d11da73519486c2d9ff0d66a6
 U danielk1977
-Z 6cb6073f29d2f0c0fa8b11d17ae22e19
+Z 26acc87d20c627eefd55cc96ad30a1f6
