@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.11 2000/10/16 22:06:43 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.12 2000/10/23 13:16:33 drh Exp $}
 
 puts {<html>
 <head>
@@ -29,7 +29,7 @@ The core interface is as follows:</p>
 <blockquote><pre>
 typedef struct sqlite sqlite;
 
-sqlite *sqlite_open(const char *filename, int mode, char **errmsg);
+sqlite *sqlite_open(const char *dbname, int mode, char **errmsg);
 
 void sqlite_close(sqlite*);
 
@@ -134,8 +134,9 @@ written to memory obtained from malloc() and *errmsg will be made
 to point to this error message.  The calling function is responsible
 for freeing the memory when it has finished with it.</p>
 
-<p>An SQLite database is just a directory containing a collection of
-GDBM files.  There is one GDBM file for each table and index in the
+<p>The name of an SQLite database is normally the name of a directory
+that contains a collection of GDBM files that comprise the database.
+There is one GDBM file for each table and index in the
 database.  All GDBM files end with the ".tbl" suffix.  Every SQLite
 database also contains a special database table named <b>sqlite_master</b>
 stored in its own GDBM file.  This special table records the database
@@ -143,7 +144,20 @@ schema.</p>
 
 <p>To create a new SQLite database, all you have to do is call
 <b>sqlite_open()</b> with the first parameter set to the name of
-an empty directory and the second parameter set to 0666.</p>
+an empty directory and the second parameter set to 0666.  The
+directory is created automatically if it does not already exist.</p>
+
+<p>Beginning with SQLite version 1.0.14, SQLite supports database
+backends other than GDBM.  The only backends currently supported 
+are the default GDBM driver and an in-memory hash table database.
+You may anticipate additional backends in future versions of SQLite.</p>
+
+<p>An alternative database backend is specified by prepending the
+backend name and a colon to the database name argument of the
+<b>sqlite_open()</b> function.  For the GDBM backend, you can
+prepend "<b>gdbm:</b>" to the directory name.  To select the in-memory
+hash table backend, prepend "<b>memory:</b>" to the database name.
+Future database drivers will be selected by a similar mechanism.</p>
 
 <p>The return value of the <b>sqlite_open()</b> function is a
 pointer to an opaque <b>sqlite</b> structure.  This pointer will

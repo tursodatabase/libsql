@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.2 2000/10/08 22:20:58 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.3 2000/10/23 13:16:33 drh Exp $}
 
 puts {<html>
 <head>
@@ -30,17 +30,41 @@ namespace.</p>
 <p>The <b>sqlite</b> command is used as follows:</p>
 
 <blockquote>
-<b>sqlite</b>&nbsp;&nbsp;<i>dbcmd&nbsp;&nbsp;database-directory-name</i>
+<b>sqlite</b>&nbsp;&nbsp;<i>dbcmd&nbsp;&nbsp;database-name</i>
 </blockquote>
 
 <p>
-The <b>sqlite</b> command opens the SQLite database located in the
-directory named by the second argument.  If the database or directory
-does not exist, it is created.  The <b>sqlite</b> command 
-also creates a new Tcl
+The <b>sqlite</b> command opens the database named in the second
+argument.  If the database does not already exist, it is
+automatically created.
+The <b>sqlite</b> command also creates a new Tcl
 command to control the database.  The name of the new Tcl command
 is given by the first argument.  This approach is similar to the
 way widgets are created in Tk.
+</p>
+
+<p>
+The name of the database is usually either the name of a directory
+that will contain the GDBM files that comprise the database, or it is the
+name of the directory prefaced by "<b>gdbm:</b>".  The second form
+of the name is a new feature beginning in SQLite version 1.0.14 that
+allows you to select alternative database backends.  The default
+backend is GDBM.  But you can also select to store the database in
+a hash table in memory by using the prefix "<b>memory:</b>". 
+Other backends may be added in the future.
+</p>
+
+<p>
+Every time you open an SQLite database with the <b>memory:</b> prefix
+on the database name, you get a new in-memory database.  This is true
+even if you open two databases with the same name.  Furthermore,
+an in-memory database is automatically deleted when the database is
+closed and so is not useful for persistant storage like a normal
+database.  But the use of an in-memory SQL database does give Tcl/Tk
+a powerful new data storage mechanism that can do things that are
+difficult to do with only Tcl array variables.  In fact, the
+hash-table backend for SQLite was created for the sole purpose of
+providing better data structure support to the Tcl language.
 </p>
 
 <p>
@@ -205,7 +229,7 @@ will wait for locks to clear before giving up on a database transaction.
 The default timeout is 0 millisecond.  (In other words, the default behavior
 is not to wait at all.)</p>
 
-<p>The GDBM library the underlies SQLite allows multiple simultaneous
+<p>The GDBM backend allows multiple simultaneous
 readers or a single writer but not both.  If any process is writing to
 the database no other process is allows to read or write.  If any process
 is reading the database other processes are allowed to read but not write.

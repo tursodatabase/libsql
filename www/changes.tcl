@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Oct 23 (1.0.15)} {
+<li>Documentation updates</li>
+<li>Some sanity checking code was removed from the inner loop of vdbe.c
+    to help the library to run a little faster.  The code is only
+    removed if you compile with -DNDEBUG.</li>
+}
+
 chng {2000 Oct 19 (1.0.14)} {
 <li>Added a "memory:" backend driver that stores its database in an
     in-memory hash table.</li>
