@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.115 2004/09/25 13:12:16 drh Exp $
+** $Id: where.c,v 1.116 2004/10/04 13:38:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -148,17 +148,8 @@ static int exprTableUsage(ExprMaskSet *pMaskSet, Expr *p){
 ** "=", "<", ">", "<=", ">=", and "IN".
 */
 static int allowedOp(int op){
-  switch( op ){
-    case TK_LT:
-    case TK_LE:
-    case TK_GT:
-    case TK_GE:
-    case TK_EQ:
-    case TK_IN:
-      return 1;
-    default:
-      return 0;
-  }
+  assert( TK_GT==TK_LE-1 && TK_LE==TK_LT-1 && TK_LT==TK_GE-1 && TK_EQ==TK_GT-1);
+  return op==TK_IN || (op>=TK_EQ && op<=TK_GE);
 }
 
 /*
@@ -221,12 +212,13 @@ static void exprAnalyze(SrcList *pSrc, ExprMaskSet *pMaskSet, ExprInfo *pInfo){
       assert( pExpr->op!=TK_IN );
       SWAP(CollSeq*,pExpr->pRight->pColl,pExpr->pLeft->pColl);
       SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
-      switch( pExpr->op ){
-        case TK_LT:   pExpr->op = TK_GT;  break;
-        case TK_LE:   pExpr->op = TK_GE;  break;
-        case TK_GT:   pExpr->op = TK_LT;  break;
-        case TK_GE:   pExpr->op = TK_LE;  break;
-        default:      break;
+      if( pExpr->op>=TK_GT ){
+        assert( TK_LT==TK_GT+2 );
+        assert( TK_GE==TK_LE+2 );
+        assert( TK_GT>TK_EQ );
+        assert( TK_GT<TK_LE );
+        assert( pExpr->op>=TK_GT && pExpr->op<=TK_GE );
+        pExpr->op = ((pExpr->op-TK_GT)^2)+TK_GT;
       }
       SWAP(unsigned, pInfo->prereqLeft, pInfo->prereqRight);
       SWAP(short int, pInfo->idxLeft, pInfo->idxRight);

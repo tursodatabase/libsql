@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.140 2004/10/04 13:19:24 drh Exp $
+** @(#) $Id: parse.y,v 1.141 2004/10/04 13:38:09 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -147,7 +147,7 @@ id(A) ::= ID(X).         {A = X;}
 %left AND.
 %right NOT.
 %left IS LIKE GLOB BETWEEN IN ISNULL NOTNULL NE EQ.
-%left GT LE GE LT.
+%left GT LE LT GE.
 %left BITAND BITOR LSHIFT RSHIFT.
 %left PLUS MINUS.
 %left STAR SLASH REM.
