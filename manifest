@@ -1,5 +1,5 @@
-C Fix\sa\stest-suite\serror\smade\sin\scheck-in\s(2132)\s(CVS\s2136)
-D 2004-11-22T10:20:13
+C Ensure\stests\spass\swhen\sSQLITE_OMIT_TRIGGER\sis\sdefined.\s(CVS\s2137)
+D 2004-11-22T11:51:13
 F Makefile.in 8291610f5839939a5fbff4dbbf85adb0fe1ac37f
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -31,7 +31,7 @@ F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
 F src/btree.c edcd4abafe0db11081e4e2db854b17649bec27d9
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
-F src/build.c c7dd57fdbb330d65df241277291cad8e58687a46
+F src/build.c b62389de594d0b413068d6e067794249a1f1d209
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
 F src/delete.c cf185995e20a61c0fecc2a9a9a3b19bd18bd05b3
 F src/expr.c 511c27a8858ca12614f495c9c90f5d12db11e6c2
@@ -87,7 +87,7 @@ F test/alter.test 2b4478c4906e4d1504b1a121b4ffbc8d11043b53
 F test/attach.test bb0ff048b0a65ca2bd5f186eee05d2ec084f3972
 F test/attach2.test 399128a7b3b209a339a8dbf53ca2ed42eb982d1a
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
-F test/auth.test 38a0546692931383a5ef4f762c4202a48160df0a
+F test/auth.test 050fe904ab1b2654b0dbb776035833d64bcde3da
 F test/autoinc.test 11330758197e0301d3600a071230d45b2f6a65b7
 F test/autovacuum.test a4e8da39a6268378c4f9fc17fe2df1d5be16d631
 F test/autovacuum_crash.test 2dca85cbcc497098e45e8847c86407eb3554f3d4
@@ -195,7 +195,7 @@ F test/types2.test f23c147a2ab3e51d5dbcfa9987200db5acba7aa7
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
 F test/utf16.test 459c2f5ab80c60092c603630a348c32d6e59c558
-F test/vacuum.test 7d9eb0d4398cd326d14ee8673509a8565030467c
+F test/vacuum.test f18eccdee5b538d46298c64d6a060cfbf97bbc23
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test a68bee7f5b4e33656667cbf4748dcfc5ebe1828b
 F test/where.test 8a016d444252553a0c7c3a4c806d3f782f7337eb
@@ -259,7 +259,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P ec6b48f4b2abea231b050a8a9d18c2ab12579c8e
-R 0b138ab4e569bea68e7531555ba597f5
+P 48c7eb7fb9fbc2166aaa7dbdb7c7e92c68f8eff3
+R 6dd508c54c10bef1b7e595fe1d4a4547
 U danielk1977
-Z 79e8cbc70189cea680ff0b42cb1f7509
+Z 55588ca2d1f74953c8ec1f40672d9644

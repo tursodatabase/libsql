@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.285 2004/11/20 18:13:10 drh Exp $
+** $Id: build.c,v 1.286 2004/11/22 11:51:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3017,7 +3017,10 @@ void sqlite3AlterRenameTable(
               "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
             "ELSE name END "
       "WHERE tbl_name=%Q AND type IN ('table', 'index', 'trigger');", 
-      zDb, SCHEMA_TABLE(iDb), zName, zName, zName, zName, 
+      zDb, SCHEMA_TABLE(iDb), zName, zName, zName, 
+#ifndef SQLITE_OMIT_TRIGGER
+zName,
+#endif
       zName, strlen(pTab->zName), pTab->zName
   );
 

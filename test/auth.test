@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: auth.test,v 1.22 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: auth.test,v 1.23 2004/11/22 11:51:14 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -538,7 +538,7 @@ do_test auth-1.78 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
 
-# Test cases auth-1.79 to auth-1.123 test creating and dropping views.
+# Test cases auth-1.79 to auth-1.124 test creating and dropping views.
 # Omit these if the library was compiled with views omitted.
 ifcapable view {
 do_test auth-1.79 {
@@ -811,6 +811,10 @@ do_test auth-1.124 {
 } {t1}
 } ;# ifcapable view
 
+# Test cases auth-1.125 to auth-1.176 test creating and dropping triggers.
+# Omit these if the library was compiled with triggers omitted.
+#
+ifcapable trigger {
 do_test auth-1.125 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_CREATE_TRIGGER"} {
@@ -1167,6 +1171,7 @@ do_test auth-1.175 {
 do_test auth-1.176 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
+} ;# ifcapable trigger
 
 do_test auth-1.177 {
   proc auth {code arg1 arg2 arg3 arg4} {
@@ -1888,6 +1893,7 @@ do_test auth-2.11.2 {
 
 # Make sure the OLD and NEW pseudo-tables of a trigger get authorized.
 #
+ifcapable trigger {
 do_test auth-3.1 {
   proc auth {code arg1 arg2 arg3 arg4} {
     return SQLITE_OK
@@ -1914,9 +1920,11 @@ do_test auth-3.2 {
     SELECT * FROM tx;
   }
 } {12 112 2 2 {} {} 8 108 8 8 {} {}}
+} ;# ifcapable trigger
 
 # Make sure the names of views and triggers are passed on on arg4.
 #
+ifcapable trigger {
 do_test auth-4.1 {
   proc auth {code arg1 arg2 arg3 arg4} {
     lappend ::authargs $code $arg1 $arg2 $arg3 $arg4
@@ -1937,8 +1945,9 @@ do_test auth-4.1 {
   SQLITE_READ   t2 b  main r1 \
   SQLITE_READ   t2 c  main r1 \
   SQLITE_READ   t2 c  main r1]
+}
 
-ifcapable view {
+ifcapable {view && trigger} {
 do_test auth-4.2 {
   execsql {
     CREATE VIEW v1 AS SELECT a+b AS x FROM t2;
@@ -1987,6 +1996,6 @@ do_test auth-4.5 {
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3]
 
-} ;# ifcapable view
+} ;# ifcapable view && trigger
 
 finish_test

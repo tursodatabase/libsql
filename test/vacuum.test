@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.31 2004/11/22 08:43:32 danielk1977 Exp $
+# $Id: vacuum.test,v 1.32 2004/11/22 11:51:14 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -90,16 +90,18 @@ do_test vacuum-1.4 {
     CREATE TABLE t2 AS SELECT * FROM t1;
     CREATE TABLE t3 AS SELECT * FROM t1;
     CREATE VIEW v1 AS SELECT b, c FROM t3;
-    CREATE TRIGGER r1 AFTER DELETE ON t2 BEGIN
-      SELECT 1;
-    END;
+    CREATE TRIGGER r1 AFTER DELETE ON t2 BEGIN SELECT 1; END;
     COMMIT;
     DROP TABLE t2;
   }
   # If the library was compiled to omit view support, comment out the
-  # create view in the script $sql_script before executing it.
+  # create view in the script $sql_script before executing it. Similarly,
+  # if triggers are not supported, comment out the trigger definition.
   ifcapable !view {
     regsub {CREATE VIEW} $sql_script {-- CREATE VIEW} sql_script
+  }
+  ifcapable !trigger {
+    regsub {CREATE TRIGGER} $sql_script {-- CREATE TRIGGER} sql_script
   }
   execsql $sql_script
   set ::size1 [file size test.db]
