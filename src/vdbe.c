@@ -36,7 +36,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.182 2002/10/30 22:42:59 drh Exp $
+** $Id: vdbe.c,v 1.183 2002/11/01 01:55:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4874,7 +4874,7 @@ case OP_MemLoad: {
   if( aStack[tos].flags & STK_Str ){
     zStack[tos] = p->aMem[i].z;
     aStack[tos].flags |= STK_Ephem;
-    aStack[tos].flags &= ~STK_Dyn;
+    aStack[tos].flags &= ~(STK_Dyn|STK_Static);
   }
   break;
 }
@@ -5306,6 +5306,7 @@ default: {
           fprintf(p->trace, " ???");
         }
       }
+      if( rc!=0 ) fprintf(p->trace," rc=%d",rc);
       fprintf(p->trace,"\n");
     }
 #endif

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.102 2002/09/05 23:21:37 drh Exp $
+** $Id: main.c,v 1.103 2002/11/01 01:55:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -612,6 +612,10 @@ int sqlite_exec(
       sqliteStrRealloc(pzErrMsg);
       sqliteSafetyOff(db);
       return rc;
+    }
+    if( pzErrMsg ){
+      sqliteFree(*pzErrMsg);
+      *pzErrMsg = 0;
     }
   }
   if( db->file_format<3 ){

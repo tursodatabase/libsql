@@ -1,5 +1,5 @@
-C Version\s2.7.3\s(CVS\s775)
-D 2002-10-31T00:15:10
+C Improvements\sin\sthreadtest.c\s(for\sUnix)\sand\ssome\sminor\sbug\sfixes\sthat\sresult\nfrom\sthe\sbetter\stesting.\s(CVS\s776)
+D 2002-11-01T01:55:37
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -28,7 +28,7 @@ F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 764300a0bd8074a2174946c0bf8a550bd833397a
-F src/main.c ff7c05ef88fa1374e5540ce20173ae8e1836f8a4
+F src/main.c b95d7eeec90f86d05b6a064d07db34b7279e06d4
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c ede7346dffdbab40c6de20d2f325981f3f1168fd
 F src/os.h 3009379b06941e7796a9812d1b6cbc59b26248c8
@@ -47,12 +47,12 @@ F src/tclsqlite.c fa646506f02509455c1e4a878d1303bd2d4c3ead
 F src/test1.c a46e9f61915b32787c5d5a05a4b92e4dacc437d9
 F src/test2.c 5fa694d130b3309e3f9c852f0a437750fcb5a006
 F src/test3.c 540fa7fc3cb3732517b779b5f90ad9cc4303d0ab
-F src/threadtest.c 72bce0a284647314847bbea44616ceb056bfb77f
+F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 75e3bb37305b64e118e709752066f494c4f93c30
 F src/trigger.c 5ba917fc226b96065108da28186c2efaec53e481
 F src/update.c 881e4c8e7c786545da4fd2d95da19252b2e31137
 F src/util.c ca7650ef2cc2d50241e48029fca109a3016144ee
-F src/vdbe.c 921f75ea3fbf2df4480c1ec9f8522843d5839997
+F src/vdbe.c a187467bc4e9ef7793969b5010d7297341b19394
 F src/vdbe.h b7584044223104ba7896a7f87b66daebdd6022ba
 F src/where.c 615a0f0bed305bcb27073c69347ea75018e8b58d
 F test/all.test efd958d048c70a3247997c482f0b33561f7759f0
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8ad018944c3aa8f58e1c68b1fa634ef922d6476f
-R f8477ebc66610cd7938692d7ec68ce06
+P 4051dbdb0552620eaff2ccef02f64a2ff97a8dfb
+R c21e2859a962756f67fcca7d8aada8c6
 U drh
-Z e70ab099db1c57aeafd8f952a2b6f584
+Z fd6af700160d9f9561f1698c6ec1c692
