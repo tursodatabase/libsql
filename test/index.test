@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.30 2004/06/19 00:16:31 drh Exp $
+# $Id: index.test,v 1.31 2004/07/20 00:52:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -650,5 +650,19 @@ do_test index-19.6 {
   }
 } {1 {conflicting ON CONFLICT clauses specified}}
 
-finish_test
+# Drop index with a quoted name.  Ticket #695.
+#
+do_test index-20.1 {
+  execsql {
+    CREATE INDEX "t6i2" ON t6(c);
+    DROP INDEX "t6i2";
+  }
+} {}
+do_test index-20.2 {
+  execsql {
+    DROP INDEX "t6i1";
+  }
+} {}
+   
 
+finish_test

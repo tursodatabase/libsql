@@ -1,5 +1,5 @@
-C Comment\sout\sall\sof\sdate/time\sfunctions\swith\sSQLITE_OMIT_DATETIME_FUNCS.\nTicket\s#784.\s(CVS\s1828)
-D 2004-07-20T00:39:15
+C Add\stest\sfor\screating\sindices\swith\squoted\snames.\s\sTicket\s#695.\s(CVS\s1831)
+D 2004-07-20T00:52:44
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -117,7 +117,7 @@ F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/func.test d47ff9da6cdc2c7c5e56733678c17e98a4630ee3
 F test/hook.test f8605cde4c77b2c6a4a73723bf6c507796a64dda
 F test/in.test b92a2df9162e1cbd33c6449a29a05e6955b1741a
-F test/index.test b6941dd532815f278042b85f79b1a6dc16c4d729
+F test/index.test 6db94446dab9cf66bbafb6d4de71ea22fe29e33d
 F test/insert.test ebbab63db4ad69395a058514bccb3cdb0a029d48
 F test/insert2.test ea5d4f8dcbc68d8ad85eaa5f03d9812757610f90
 F test/interrupt.test 9142ce4448605127640eda5e283952f75f67ed91
@@ -237,7 +237,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8ac5a8ad5eec381585adb6812fc39a1a30aee4c1
-R ca1ba790d83996de01224b6c0c889627
+P 4e2ad572ea1800a2da1ea18548415c6fbf396259
+R 461b986bdadaf39c7881762f49ecc5d6
 U drh
-Z e789d78b4778cb531997ebf32d25e28c
+Z 3a35dbd9e170bbf3665b9b1133e1f2cc
