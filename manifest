@@ -1,5 +1,5 @@
-C Fix\san\sinitialized\svariable\sin\ssqliteInitOne.\s(CVS\s995)
-D 2003-06-02T18:17:33
+C Fix\sa\sbug\sin\sthe\sCOPY\scommand\sintroduced\sby\scheck-in\s(991).\s(CVS\s996)
+D 2003-06-02T22:50:26
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -25,7 +25,7 @@ F src/btree.c 8092dca45dcdb69c61273db0213cbb85760673c7
 F src/btree.h 9b7c09f1e64274d7bb74a57bbfc63778f67b1048
 F src/btree_rb.c 7fc5930cdd0df739b5ad7f4d63fd913758caae8a
 F src/build.c 936d10b33b326546280690bee7f20efaf19a6fe8
-F src/copy.c 5e5d558d283536592cd67b5dc1519c3152bd7e20
+F src/copy.c 9e47975ea96751c658bcf1a0c4f0bb7c6ee61e73
 F src/delete.c 0f81e6799c089487615d38e042a2de4d2d6192bc
 F src/encode.c ed720e54ec4ef4d4de651592f1dd1c74d422bbd2
 F src/expr.c ebdb0f3ee039c8030de25935ce2df030966540a6
@@ -75,7 +75,7 @@ F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
 F test/btree4rb.test ae6f0438512edcb45cf483471cd6070a765963a9
 F test/capi2.test dddfe84d41c876e5339efae41f8e688760454fba
 F test/conflict.test 70d38ff29b532813320c17740738a556ee0ec95d
-F test/copy.test 73df5ed3112e858e006a8b7ddb4c9bab6a25d0fb
+F test/copy.test c860847f1bd66175ef7cb724326a1700e0295820
 F test/delete.test 1586a00574e699a9913bc3403261813e8a93e6b9
 F test/expr.test 48bc6400627532ec97e233809e33d336468bc84c
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 3ae36cf158e1878a66ce9302eae4e62f8a88333f
-R cf11d034c1386f71de59882a8268677b
+P 89957b09ce746cf98d5d75cab2a23994e27c4937
+R 19e4f618ecebcc891f9a6f0384dad1dd
 U drh
-Z 9f04934f87aae134eca4128706bf5285
+Z 2724cf1f234f4f3e53681523549e7156
