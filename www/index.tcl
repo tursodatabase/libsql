@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.46 2001/11/01 14:41:34 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.47 2001/11/12 12:43:22 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -44,7 +44,7 @@ puts {<h2>Features</h2>
 <li>A complete database (with multiple tables and indices) is
     stored in a single disk file.</li>
 <li>Atomic commit and rollback protect data integrity.</li>
-<li>Small memory footprint: about 12000 lines of C code.</li>
+<li>Small memory footprint: about 14000 lines of C code.</li>
 <li><a href="speed.html">Four times faster</a> than PostgreSQL.
     Twice as fast as SQLite 1.0.</li>
 <li>Very simple 
@@ -66,28 +66,38 @@ The latest source code is
 <a href="download.html">available for download</a>.
 There are currently no known memory leaks or bugs
 in the library.
-SQLite is currently being used in several mission-critical
+SQLite 2.1.0 is currently being used in several mission-critical
 applications.
 </p>
 
 <p>
-The file format used changed beginning with version 2.0.0.  Version 1.0.X
-of SQLite used GDBM as its database backend.  Version 2.0.0 and later
-use a built-in implementation of B-trees.  If you have older 1.0 databases
-you will need to convert them before they can be read using a 2.0
-release of SQLite.  The following command will convert a legacy
-database into the new 2.0 format:
+The SQLite file format changed beginning with version 2.1.0.  The
+same basic B-Tree structure from version 2.0.0 is used but the
+details of indices where altered to permit better query optimization
+and the B-Tree table entry headers where changed slightly to expand the
+maximum amount of data on a row from 64KB to 16MB.  
+The file format changes
+between 2.0.8 and 2.1.0 are small but they still require that you
+dump and restore your old databases.  The following command should
+suffice:
 </p>
 
 <blockquote><pre>
-echo .dump | sqlite1.0 old.db | sqlite2.0 new.db
+echo .dump | sqlite2.0 old.db | sqlite2.1 new.db
 </pre></blockquote>
 
 <p>
-The above command assumes that <b>sqlite1.0</b> is sqlite version 1.0
-and <b>sqlite2.0</b> is sqlite version 2.0.  The old database is stored
-in a directory named <b>old.db</b> and the new database is created in
-the file <b>new.db</b>.
+The above command assumes that <b>sqlite2.0</b> is any of the
+2.0 series of sqlite command-line tools and <b>sqlite2.1</b> is the
+new version 2.1 sqlite command-line tool.
+</p>
+
+<p>
+Version 1.0.X of SQLite used GDBM as its backend and so its
+file format is complete incompatable with all version 2.0 and
+version 2.1 SQLite releases.  Legacy databases must be dumped to
+ASCII and reloaded, as shown above, before they can be used with
+newer versions of SQLite.
 </p>
 
 <h2>Documentation</h2>

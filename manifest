@@ -1,5 +1,5 @@
-C Comment\schanges\s(CVS\s308)
-D 2001-11-10T13:51:08
+C Version\s2.1.0\sprerelease\s(CVS\s309)
+D 2001-11-12T12:43:22
 F Makefile.in 6801df952cb1df64aa32e4de85fed24511d28efd
 F Makefile.template 1fdb891f14083ee0b63cf7282f91529634438e7a
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -107,7 +107,7 @@ F www/changes.tcl 983aecfb6bdfdd2b44c32de59414029da80ca164
 F www/crosscompile.tcl c99efacb3aefaa550c6e80d91b240f55eb9fd33e
 F www/download.tcl 3e51c9ff1326b0a182846134987301310dff7d60
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/index.tcl b9d166d09fa4237d31d78be49f2b8b205e6e7678
+F www/index.tcl fa0ee4b5343fd216ee5db0285501e45484189484
 F www/lang.tcl f0e953bfeaaba4c33117ec4bca639dd71ba0e13e
 F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl 7989ed328316454c7030dcdb60f09ae1e017286d
@@ -115,7 +115,7 @@ F www/speed.tcl 212a91d555384e01873160d6a189f1490c791bc2
 F www/sqlite.tcl 6a21242a272e9c0939a04419a51c3d50cae33e3e
 F www/tclsqlite.tcl 13d50723f583888fc80ae1a38247c0ab415066fa
 F www/vdbe.tcl bb7d620995f0a987293e9d4fb6185a3b077e9b44
-P 6e7e7dbf8e93d00eced88404aed792fcf9e75b7d
-R 18e925419ed8c85ff1b4931f4627f2c0
+P 2d2ad264aad6fbdcef586e73d750e3fde842252f
+R 16c00ab1c6dd8026c015350394df2b49
 U drh
-Z a3df24ec6e762840d7c455a8f753602e
+Z a0e64c7188bd5b5811337fabdc6b35c2
