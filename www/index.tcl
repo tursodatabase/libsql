@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.23 2000/08/02 12:26:30 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.24 2000/08/02 12:37:18 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine Built Atop GDBM</title></head>
@@ -41,7 +41,7 @@ echo .dump | old-sqlite old-db | sqlite db
 
 <p>This file format change was made to work around a potential 
 inefficiency in GDBM that comes up when large indices are created 
-on tables where many entries in the table have the same key.</p>
+on tables where many entries in the table have the same index key.</p>
 
 <h2>Features</h2>
 
