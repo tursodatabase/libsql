@@ -1,5 +1,5 @@
-C Revise\sthe\ssqlite_set_authorizer\sAPI\sto\sprovide\smore\sdetailed\sinformation\nabout\sthe\sSQL\sstatement\sbeing\sauthorized.\s\sOnly\spartially\stested\sso\sfar.\s(CVS\s830)
-D 2003-01-13T23:27:32
+C Make\sthe\sGLOB\swork\swrite\swith\supper-case\scharacters.\s\sTicket\s#226.\s(CVS\s831)
+D 2003-01-14T00:44:09
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -52,7 +52,7 @@ F src/threadtest.c d641a5219e718e18a1a80a50eb9bb549f451f42e
 F src/tokenize.c 7ac1c33e0149647c9eb5959c48992df6906d4809
 F src/trigger.c cb72a3374b21ed00a6dbd3c2c5aa27a7fa72625f
 F src/update.c f06afa9bf1f777d17702e0f6e33cf44c44bc4f75
-F src/util.c 354336da4a6f1c98f687a13db0c45ed9314a892b
+F src/util.c e23f8ffc654923e18f8db2d8e0de97c166fca20f
 F src/vdbe.c e103bd5a154b1790dd344662dceb14566a51a879
 F src/vdbe.h 754eba497cfe0c3e352b9c101ab2f811f10d0a55
 F src/where.c 5bf7f1e1d756ab3d25a18b24bb42106cb8e14d18
@@ -67,7 +67,7 @@ F test/btree4.test fa955a3d7a8bc91d6084b7f494f9e5d1bdfb15b6
 F test/conflict.test 0173a12a257f73bac2c9d53ad44cac9b15ea517e
 F test/copy.test 55d60a4d5ed342a0fa08b7cd07d46d43ea0d0d7f
 F test/delete.test 5821a95a66061ae09723a88938f23d10d8a881ad
-F test/expr.test dea1cd62684a8bf116426447c948f5e8fb2c84b6
+F test/expr.test 290e2617b89b5c5e3bf71f19367d285102128be4
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/format3.test 64ab6c4db132b28a645996d413530f7b2a462cc2
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
@@ -154,7 +154,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5707b3d56efb6e988f816abefb1836f2f3254117
-R 185c96485c9e323ed508e05878c2e1fd
+P 45de93f913a18026a45de6254963dbcd1b0f1a19
+R 654c653343e049aa49525a5a6b2d7926
 U drh
-Z ce7138319a0232b300fa79474bc44207
+Z 1fd43382d8c6399496ef6b31baa93763

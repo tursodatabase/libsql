@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.27 2002/08/15 01:26:11 drh Exp $
+# $Id: expr.test,v 1.28 2003/01/14 00:44:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -299,8 +299,12 @@ test_expr expr-6.17 {t1='abc', t2='a[A-Dc]c'} {t1 GLOB t2} 0
 test_expr expr-6.18 {t1='abc', t2='a[^A-Dc]c'} {t1 GLOB t2} 1
 test_expr expr-6.19 {t1='abc', t2='a[]b]c'} {t1 GLOB t2} 1
 test_expr expr-6.20 {t1='abc', t2='a[^]b]c'} {t1 GLOB t2} 0
-test_expr expr-6.21 {t1='abcdefg', t2='a*[de]g'} {t1 GLOB t2} 0
-test_expr expr-6.22 {t1='abcdefg', t2='a*[^de]g'} {t1 GLOB t2} 1
+test_expr expr-6.21a {t1='abcdefg', t2='a*[de]g'} {t1 GLOB t2} 0
+test_expr expr-6.21b {t1='abcdefg', t2='a*[df]g'} {t1 GLOB t2} 1
+test_expr expr-6.21c {t1='abcdefg', t2='a*[d-h]g'} {t1 GLOB t2} 1
+test_expr expr-6.21d {t1='abcdefg', t2='a*[b-e]g'} {t1 GLOB t2} 0
+test_expr expr-6.22a {t1='abcdefg', t2='a*[^de]g'} {t1 GLOB t2} 1
+test_expr expr-6.22b {t1='abcdefg', t2='a*[^def]g'} {t1 GLOB t2} 0
 test_expr expr-6.23 {t1='abcdefg', t2='a*?g'} {t1 GLOB t2} 1
 test_expr expr-6.24 {t1='ac', t2='a*c'} {t1 GLOB t2} 1
 test_expr expr-6.25 {t1='ac', t2='a*?c'} {t1 GLOB t2} 0
@@ -326,6 +330,35 @@ if {"\u1234"!="u1234" && [sqlite -encoding]=="UTF-8"} {
   test_expr expr-6.40 "t1='a\u1234b', t2='a\[a-\u1234\]b'" {t1 GLOB t2} 1
   test_expr expr-6.41 "t1='a\u1234b', t2='a\[a-\u1233\]b'" {t1 GLOB t2} 0
 }
+
+test_expr expr-6.51 {t1='ABC', t2='xyz'} {t1 GLOB t2} 0
+test_expr expr-6.52 {t1='ABC', t2='abc'} {t1 GLOB t2} 0
+test_expr expr-6.53 {t1='ABC', t2='a?c'} {t1 GLOB t2} 0
+test_expr expr-6.54 {t1='ABC', t2='A?C'} {t1 GLOB t2} 1
+test_expr expr-6.55 {t1='ABC', t2='abc?'} {t1 GLOB t2} 0
+test_expr expr-6.56 {t1='ABC', t2='a*c'} {t1 GLOB t2} 0
+test_expr expr-6.57 {t1='ABC', t2='A*C'} {t1 GLOB t2} 1
+test_expr expr-6.58 {t1='ABxyzzyC', t2='A*C'} {t1 GLOB t2} 1
+test_expr expr-6.59 {t1='ABxyzzy', t2='A*C'} {t1 GLOB t2} 0
+test_expr expr-6.60 {t1='ABxyzzyCx', t2='A*C'} {t1 GLOB t2} 0
+test_expr expr-6.61 {t1='ABC', t2='xyz'} {t1 NOT GLOB t2} 1
+test_expr expr-6.62 {t1='ABC', t2='ABC'} {t1 NOT GLOB t2} 0
+test_expr expr-6.63 {t1='ABC', t2='A[Bx]C'} {t1 GLOB t2} 1
+test_expr expr-6.64 {t1='ABC', t2='A[Cx]C'} {t1 GLOB t2} 0
+test_expr expr-6.65 {t1='ABC', t2='A[A-D]C'} {t1 GLOB t2} 1
+test_expr expr-6.66 {t1='ABC', t2='A[^A-D]C'} {t1 GLOB t2} 0
+test_expr expr-6.67 {t1='ABC', t2='A[a-dC]C'} {t1 GLOB t2} 0
+test_expr expr-6.68 {t1='ABC', t2='A[^a-dC]C'} {t1 GLOB t2} 1
+test_expr expr-6.69a {t1='ABC', t2='A[]B]C'} {t1 GLOB t2} 1
+test_expr expr-6.69b {t1='A]C', t2='A[]B]C'} {t1 GLOB t2} 1
+test_expr expr-6.70a {t1='ABC', t2='A[^]B]C'} {t1 GLOB t2} 0
+test_expr expr-6.70b {t1='AxC', t2='A[^]B]C'} {t1 GLOB t2} 1
+test_expr expr-6.70c {t1='A]C', t2='A[^]B]C'} {t1 GLOB t2} 0
+test_expr expr-6.71 {t1='ABCDEFG', t2='A*[DE]G'} {t1 GLOB t2} 0
+test_expr expr-6.72 {t1='ABCDEFG', t2='A*[^DE]G'} {t1 GLOB t2} 1
+test_expr expr-6.73 {t1='ABCDEFG', t2='A*?G'} {t1 GLOB t2} 1
+test_expr expr-6.74 {t1='AC', t2='A*C'} {t1 GLOB t2} 1
+test_expr expr-6.75 {t1='AC', t2='A*?C'} {t1 GLOB t2} 0
 
 # Theses tests are for when SQLite assumes iso8859 characters.
 #
