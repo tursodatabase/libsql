@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.183 2005/01/17 01:33:14 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.184 2005/01/20 11:32:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1727,6 +1727,7 @@ static void unlinkPage(PgHdr *pPg){
   unlinkHashChain(pPager, pPg);
 }
 
+#ifndef SQLITE_OMIT_MEMORYDB
 /*
 ** This routine is used to truncate an in-memory database.  Delete
 ** all pages whose pgno is larger than pPager->dbSize and is unreferenced.
@@ -1752,6 +1753,9 @@ static void memoryTruncate(Pager *pPager){
     }
   }
 }
+#else
+#define memoryTruncate(p)
+#endif
 
 /*
 ** Truncate the file to the number of pages specified.
@@ -2743,6 +2747,7 @@ int sqlite3pager_iswriteable(void *pData){
   return pPg->dirty;
 }
 
+#ifndef SQLITE_OMIT_VACUUM
 /*
 ** Replace the content of a single page with the information in the third
 ** argument.
@@ -2761,6 +2766,7 @@ int sqlite3pager_overwrite(Pager *pPager, Pgno pgno, void *pData){
   }
   return rc;
 }
+#endif
 
 /*
 ** A call to this routine tells the pager that it is not necessary to

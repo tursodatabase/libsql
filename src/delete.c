@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.98 2005/01/19 23:24:50 drh Exp $
+** $Id: delete.c,v 1.99 2005/01/20 11:32:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,10 +43,12 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;
   }
+#ifndef SQLITE_OMIT_VIEW
   if( !viewOk && pTab->pSelect ){
     sqlite3ErrorMsg(pParse,"cannot modify %s because it is a view",pTab->zName);
     return 1;
   }
+#endif
   return 0;
 }
 

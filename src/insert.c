@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.133 2005/01/19 23:24:50 drh Exp $
+** $Id: insert.c,v 1.134 2005/01/20 11:32:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -830,6 +830,8 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeAddOp(v, OP_Dup, nCol-1-i, 1);
     addr = sqlite3VdbeAddOp(v, OP_NotNull, 1, 0);
+    assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
+        || onError==OE_Ignore || onError==OE_Replace );
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
@@ -851,7 +853,6 @@ void sqlite3GenerateConstraintChecks(
         sqlite3VdbeAddOp(v, OP_Push, nCol-i, 0);
         break;
       }
-      default: assert(0);
     }
     sqlite3VdbeChangeP2(v, addr, sqlite3VdbeCurrentAddr(v));
   }
@@ -957,6 +958,8 @@ void sqlite3GenerateConstraintChecks(
     jumpInst2 = sqlite3VdbeAddOp(v, OP_IsUnique, base+iCur+1, 0);
 
     /* Generate code that executes if the new index entry is not unique */
+    assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
+        || onError==OE_Ignore || onError==OE_Replace );
     switch( onError ){
       case OE_Rollback:
       case OE_Abort:
@@ -1001,7 +1004,6 @@ void sqlite3GenerateConstraintChecks(
         seenReplace = 1;
         break;
       }
-      default: assert(0);
     }
     contAddr = sqlite3VdbeCurrentAddr(v);
     assert( contAddr<(1<<24) );
@@ -1047,11 +1049,13 @@ void sqlite3CompleteInsertion(
   }
   sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
   sqlite3TableAffinityStr(v, pTab);
+#ifndef SQLITE_OMIT_TRIGGER
   if( newIdx>=0 ){
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
     sqlite3VdbeAddOp(v, OP_PutIntKey, newIdx, 0);
   }
+#endif
   if( pParse->nested ){
     pik_flags = 0;
   }else{
