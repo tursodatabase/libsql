@@ -14,7 +14,7 @@ Features include:
 </p>
 
 <p><ul>
-<li>Transaction are atomic, consistent, isolated, and durable (ACID)
+<li>Transactions are atomic, consistent, isolated, and durable (ACID)
     even after system crashes and power failures.
 <li>Zero-configuration - no setup or administration needed.</li>
 <li>Implements most of SQL92.
@@ -80,4 +80,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.96 2004/09/18 18:00:24 drh Exp $}
+footer {$Id: index.tcl,v 1.97 2004/09/18 18:51:09 drh Exp $}
