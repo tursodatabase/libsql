@@ -17,6 +17,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Feb 13 (2.3.1)} {
+<li>Bug fix: An assertion was failing if "PRAGMA full_column_names=ON;" was
+    set and you did a query that used a rowid, like this:  
+    "SELECT rowid, * FROM ...".</li>
+}
+
 chng {2002 Jan 30 (2.3.0)} {
 <li>Fix a serious bug in the INSERT command which was causing data to go
     into the wrong columns if the data source was a SELECT and the INSERT

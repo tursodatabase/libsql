@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.57 2002/02/03 19:06:03 drh Exp $
+** $Id: select.c,v 1.58 2002/02/13 23:22:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -256,23 +256,24 @@ void generateColumnNames(Parse *pParse, IdList *pTabList, ExprList *pEList){
       sqliteVdbeCompressSpace(v, addr);
     }else if( p->op==TK_COLUMN && pTabList ){
       Table *pTab = pTabList->a[p->iTable - pParse->nTab].pTab;
+      char *zCol;
       int iCol = p->iColumn;
       if( iCol<0 ) iCol = pTab->iPKey;
-      assert( iCol>=0 && iCol<pTab->nCol );
+      assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
+      zCol = iCol<0 ? "_ROWID_" : pTab->aCol[iCol].zName;
       if( pTabList->nId>1 || showFullNames ){
         char *zName = 0;
         char *zTab;
  
         zTab = pTabList->a[p->iTable - pParse->nTab].zAlias;
         if( showFullNames || zTab==0 ) zTab = pTab->zName;
-        sqliteSetString(&zName, zTab, ".", pTab->aCol[iCol].zName, 0);
+        sqliteSetString(&zName, zTab, ".", zCol, 0);
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
         sqliteVdbeChangeP3(v, -1, zName, strlen(zName));
         sqliteFree(zName);
       }else{
-        char *zName = pTab->aCol[iCol].zName;
         sqliteVdbeAddOp(v, OP_ColumnName, i, 0);
-        sqliteVdbeChangeP3(v, -1, zName, P3_STATIC);
+        sqliteVdbeChangeP3(v, -1, zCol, P3_STATIC);
       }
     }else if( p->span.z && p->span.z[0] ){
       int addr = sqliteVdbeAddOp(v,OP_ColumnName, i, 0);

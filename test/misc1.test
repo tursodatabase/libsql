@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.1 2001/09/18 22:17:45 drh Exp $
+# $Id: misc1.test,v 1.2 2002/02/13 23:22:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -100,5 +100,18 @@ do_test misc1-2.2 {
   execsql {SELECT sum(one), two, four FROM agger
            GROUP BY two, four ORDER BY sum(one) desc}
 } {8 two no 6 one yes 4 two yes 3 thr yes}
+
+# Here's a test for a bug found by Joel Lucsy.  The code below
+# was causing an assertion failure.
+#
+do_test misc1-3.1 {
+  set r [execsql {
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES('hi');
+    PRAGMA full_column_names=on;
+    SELECT rowid, * FROM t1;
+  }]
+  lindex $r 1
+} {hi}
 
 finish_test
