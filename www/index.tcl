@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the index.html file.
 #
-set rcsid {$Id: index.tcl,v 1.56 2002/03/29 18:16:04 drh Exp $}
+set rcsid {$Id: index.tcl,v 1.57 2002/04/01 12:15:02 drh Exp $}
 
 puts {<html>
 <head><title>SQLite: An SQL Database Engine In A C Library</title></head>
@@ -174,16 +174,6 @@ puts {<h2>Related Sites</h2>
 <li><p>An ODBC driver for SQLite can be found at
        <a href="http://www.ch-werner.de/sqliteodbc/">
        http://www.ch-werner.de/sqliteodbc/</a>.</p></li>
-
-<li><p>Here is a good <a href="http://w3.one.net/~jhoffman/sqltut.htm">
-       tutorial on SQL</a>.</p></li>
-
-<li><p><a href="http://www.postgresql.org/">PostgreSQL</a> is a
-       full-blown SQL RDBMS that is also open source.</p></li>
-
-<li><p><a href="http://www.chordate.com/gadfly.html">Gadfly</a> is another
-       SQL library, similar to SQLite, except that Gadfly is written
-       in Python.</p></li>
 </ul>}
 
 puts {
