@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.46 2002/02/26 23:24:27 drh Exp $
+** $Id: shell.c,v 1.47 2002/03/03 23:06:01 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -721,14 +721,14 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     if( nArg==1 ){
       rc = sqlite_get_table(db,
         "SELECT name FROM sqlite_master "
-        "WHERE type='table' "
+        "WHERE type IN ('table','view') "
         "ORDER BY name",
         &azResult, &nRow, 0, &zErrMsg
       );
     }else{
       rc = sqlite_get_table_printf(db,
         "SELECT name FROM sqlite_master "
-        "WHERE type='table' AND name LIKE '%%%q%%' "
+        "WHERE type IN ('table','view') AND name LIKE '%%%q%%' "
         "ORDER BY name",
         &azResult, &nRow, 0, &zErrMsg, azArg[1]
       );

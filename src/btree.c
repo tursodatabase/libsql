@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.57 2002/03/02 20:41:58 drh Exp $
+** $Id: btree.c,v 1.58 2002/03/03 23:06:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2988,6 +2988,7 @@ char *sqliteBtreeIntegrityCheck(Btree *pBt, int *aRoot, int nRoot){
   /* Check all the tables.
   */
   for(i=0; i<nRoot; i++){
+    if( aRoot[i]==0 ) continue;
     checkTreePage(&sCheck, aRoot[i], 0, "List of tree roots: ", 0,0,0,0);
   }
 

@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.82 2002/03/03 18:59:40 drh Exp $
+** $Id: build.c,v 1.83 2002/03/03 23:06:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -753,18 +753,28 @@ void sqliteEndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   ** make an entry in SQLITE_MASTER.
   */
   if( !pParse->initFlag ){
-    int n, addr;
+    int n;
     Vdbe *v;
 
     v = sqliteGetVdbe(pParse);
     if( v==0 ) return;
-    addr = sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
-    sqliteVdbeChangeP3(v, addr, (char *)&p->tnum, P3_POINTER);
+    if( p->pSelect==0 ){
+      /* A regular table */
+      sqliteVdbeAddOp(v, OP_CreateTable, 0, p->isTemp);
+      sqliteVdbeChangeP3(v, -1, (char *)&p->tnum, P3_POINTER);
+    }else{
+      /* A view */
+      sqliteVdbeAddOp(v, OP_Integer, 0, 0);
+    }
     p->tnum = 0;
     if( !p->isTemp ){
       sqliteVdbeAddOp(v, OP_Pull, 1, 0);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
-      sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
+      if( p->pSelect==0 ){
+        sqliteVdbeChangeP3(v, -1, "table", P3_STATIC);
+      }else{
+        sqliteVdbeChangeP3(v, -1, "view", P3_STATIC);
+      }
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, p->zName, P3_STATIC);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
@@ -808,7 +818,7 @@ void sqliteCreateView(
 ){
   Token sEnd;
   Table *p;
-  char *z;
+  const char *z;
   int n, offset;
 
   sqliteStartTable(pParse, pBegin, pName, 0);
@@ -829,7 +839,11 @@ void sqliteCreateView(
   }
   sEnd.n = 0;
   n = ((int)sEnd.z) - (int)pBegin->z;
-  z = p->pSelect->zSelect = sqliteStrNDup(pBegin->z, n+1);
+  z = pBegin->z;
+  while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
+  sEnd.z = &z[n-1];
+  sEnd.n = 1;
+  z = p->pSelect->zSelect = sqliteStrNDup(z, n);
   if( z ){
     offset = ((int)z) - (int)pBegin->z;
     sqliteSelectMoveStrings(p->pSelect, offset);
@@ -966,7 +980,7 @@ Table *sqliteTableFromToken(Parse *pParse, Token *pTok){
 ** This routine is called to do the work of a DROP TABLE statement.
 ** pName is the name of the table to be dropped.
 */
-void sqliteDropTable(Parse *pParse, Token *pName){
+void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   Table *pTable;
   Vdbe *v;
   int base;
@@ -978,6 +992,18 @@ void sqliteDropTable(Parse *pParse, Token *pName){
   if( pTable->readOnly ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTable->zName, 
        " may not be dropped", 0);
+    pParse->nErr++;
+    return;
+  }
+  if( isView && pTable->pSelect==0 ){
+    sqliteSetString(&pParse->zErrMsg, "use DROP TABLE to delete table ",
+      pTable->zName, 0);
+    pParse->nErr++;
+    return;
+  }
+  if( !isView && pTable->pSelect ){
+    sqliteSetString(&pParse->zErrMsg, "use DROP VIEW to delete view ",
+      pTable->zName, 0);
     pParse->nErr++;
     return;
   }
@@ -1008,9 +1034,11 @@ void sqliteDropTable(Parse *pParse, Token *pName){
       changeCookie(db);
       sqliteVdbeChangeP1(v, base+9, db->next_cookie);
     }
-    sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->isTemp);
-    for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
-      sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->isTemp);
+    if( !isView ){
+      sqliteVdbeAddOp(v, OP_Destroy, pTable->tnum, pTable->isTemp);
+      for(pIdx=pTable->pIndex; pIdx; pIdx=pIdx->pNext){
+        sqliteVdbeAddOp(v, OP_Destroy, pIdx->tnum, pTable->isTemp);
+      }
     }
     sqliteEndWriteOperation(pParse);
   }
@@ -1871,7 +1899,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       { OP_Next,        0, 3,        0},
       { OP_IntegrityCk, 0, 0,        0},
       { OP_ColumnCount, 1, 0,        0},
-      { OP_ColumnName,  0, 0,        "sanity_check"},
+      { OP_ColumnName,  0, 0,        "integrity_check"},
       { OP_Callback,    1, 0,        0},
     };
     Vdbe *v = sqliteGetVdbe(pParse);
