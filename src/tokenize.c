@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.91 2004/10/07 19:03:01 drh Exp $
+** $Id: tokenize.c,v 1.92 2004/10/23 05:10:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -35,81 +35,79 @@
 ** the data tables) then rerun that program to regenerate this function.
 */
 int sqlite3KeywordCode(const char *z, int n){
-  static const char zText[519] =
-    "ABORTAFTERALLANDASCATTACHBEFOREBEGINBETWEENBYCASCADECASECHECK"
-    "COLLATECOMMITCONFLICTCONSTRAINTCREATECROSSDATABASEDEFAULTDEFERRABLE"
-    "DEFERREDDELETEDESCDETACHDISTINCTDROPEACHELSEENDEXCEPTEXCLUSIVE"
-    "EXPLAINFAILFOREIGNFROMFULLGLOBGROUPHAVINGIGNOREIMMEDIATEINDEX"
-    "INITIALLYINNERINSERTINSTEADINTERSECTINTOISNULLJOINKEYLEFTLIKE"
-    "LIMITMATCHNATURALNOTNULLNULLOFFSETONORDEROUTERPRAGMAPRIMARYRAISE"
-    "REFERENCESREPLACERESTRICTRIGHTROLLBACKROWSELECTSETSTATEMENTTABLE"
-    "TEMPORARYTHENTRANSACTIONTRIGGERUNIONUNIQUEUPDATEUSINGVACUUMVALUES"
-    "VIEWWHENWHERE";
+  static const char zText[443] =
+    "ABORTABLEFTEMPORARYAFTERAISELECTHENDATABASEACHECKEYANDEFAULTRANSACTION"
+    "ATURALIKELSEXCEPTRIGGEREFERENCESTATEMENTATTACHAVINGLOBEFOREIGN"
+    "OREPLACEXCLUSIVEXPLAINDEXBEGINITIALLYBETWEENOTNULLIMITBYCASCADE"
+    "FERRABLECASECOLLATECOMMITCONFLICTCONSTRAINTERSECTCREATECROSSDEFERRED"
+    "ELETEDESCDETACHDISTINCTDROPRAGMATCHFAILFROMFULLGROUPDATEIMMEDIATE"
+    "INNERESTRICTINSERTINSTEADINTOFFSETISNULLJOINORDERIGHTOUTEROLLBACK"
+    "PRIMARYROWHENUNIONUNIQUEUSINGVACUUMVALUESVIEWHERE";
   static const unsigned char aHash[154] = {
-       0,  75,  82,   0,   0,  97,  80,   0,  83,   0,   0,   0,   0,
-       0,   0,   6,   0,  95,   4,   0,   0,   0,   0,   0,   0,   0,
-       0,  96,  86,   8,   0,  26,  13,   7,  19,  15,   0,   0,  32,
-      25,   0,  21,  31,  41,   0,   0,   0,  34,  27,   0,   0,  30,
-       0,   0,   0,   9,   0,  10,   0,   0,   0,   0,  51,   0,  44,
-      43,   0,  45,  40,   0,  29,  39,  35,   0,   0,  20,   0,  59,
-       0,  16,   0,  17,   0,  18,   0,  55,  42,  72,   0,  33,   0,
-       0,  61,  66,  56,   0,   0,   0,   0,   0,   0,   0,  54,   0,
-       0,   0,   0,   0,  74,  50,  76,  64,  52,   0,   0,   0,   0,
-      68,  84,   0,  47,   0,  58,  60,  92,   0,   0,  48,   0,  93,
-       0,  63,  71,  98,   0,   0,   0,   0,   0,  67,   0,   0,   0,
-       0,  87,   0,   0,   0,   0,   0,  90,  88,   0,  94,
+       0,  26,  82,   0,   0,  91,  90,   0,  27,   0,   0,   0,   0,
+       0,   0,  49,   0,  96,  17,   0,   0,   0,   0,   0,   0,   0,
+       0,  97,   5,  31,   0,  62,  51,  28,  58,  52,   0,   0,  60,
+      61,   0,  12,  41,  50,   0,   0,   0,  36,  63,   0,   0,  15,
+       0,   0,   0,  39,   0,  42,   0,   0,   0,   0,  78,   0,  34,
+      29,   0,  74,  71,   0,  66,  70,  37,   0,   0,  59,   0,  33,
+       0,  53,   0,  54,   0,  55,   0,  83,  72,  67,   0,  24,   0,
+       0,  79,  80,  84,   0,   0,   0,   0,   0,   0,   0,  75,   0,
+       0,   0,   0,   0,  45,  77,  35,  44,  57,   0,   0,   0,   0,
+      20,   2,   0,  38,   0,   3,  46,  93,   0,   0,  40,   0,  94,
+       0,  43,  87,  98,   0,   0,   0,   0,   0,  81,   0,   0,   0,
+       0,  10,   0,   0,   0,   0,   0,  92,  19,   0,  95,
   };
   static const unsigned char aNext[98] = {
-       0,   0,   0,   0,   2,   0,   0,   0,   0,   0,   0,   0,   0,
-       0,  12,   0,   0,   0,   0,   0,   0,  11,   0,   0,   0,   0,
-       0,   0,   0,  14,   3,  24,   0,   0,   0,   1,  22,   0,   0,
-      36,  23,  28,   0,   0,   0,   0,   0,   0,   0,   0,   5,   0,
-       0,  49,  37,   0,   0,   0,  38,   0,  53,   0,  57,  62,   0,
-       0,   0,   0,   0,   0,  70,  46,   0,  65,   0,   0,   0,   0,
-      69,  73,   0,  77,   0,   0,   0,   0,   0,   0,  81,  85,   0,
-      91,  79,  78,   0,   0,  89,   0,
+       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   7,
+       0,  14,   0,   0,   0,   0,   0,   0,   0,   0,   0,   9,   0,
+       0,   0,   0,   0,   0,  18,  22,   0,   0,   0,   0,   0,   0,
+       0,  23,   0,  16,  21,   8,   0,  32,   0,   0,  30,   0,  48,
+       0,   0,   0,   0,   0,   0,   0,  11,   0,   0,   0,   0,   0,
+       0,  56,   0,   1,   0,  69,  64,   0,   0,  65,   0,   0,  13,
+      68,   0,   0,  76,  47,   0,   0,   0,  85,   6,   0,  89,  25,
+       4,  73,  88,  86,   0,   0,   0,
   };
   static const unsigned char aLen[98] = {
-       5,   5,   3,   3,   2,   3,   6,   6,   5,   7,   2,   7,   4,
-       5,   7,   6,   8,  10,   6,   5,   8,   7,  10,   8,   6,   4,
-       6,   8,   4,   4,   4,   3,   6,   9,   7,   4,   3,   7,   4,
-       4,   4,   5,   6,   6,   9,   2,   5,   9,   5,   6,   7,   9,
-       4,   2,   6,   4,   3,   4,   4,   5,   5,   7,   3,   7,   4,
-       2,   6,   2,   2,   5,   5,   6,   7,   5,  10,   7,   8,   5,
-       8,   3,   6,   3,   9,   5,   4,   9,   4,  11,   7,   5,   6,
-       6,   5,   6,   6,   4,   4,   5,
+       5,   5,   4,   4,   9,   2,   5,   5,   6,   4,   3,   8,   2,
+       4,   5,   3,   3,   7,  11,   2,   7,   4,   4,   6,   7,  10,
+       9,   6,   6,   4,   6,   3,   7,   6,   7,   9,   7,   5,   5,
+       9,   3,   7,   3,   7,   4,   5,   2,   7,   3,  10,   4,   7,
+       6,   8,  10,   2,   9,   6,   5,   8,   6,   4,   6,   8,   2,
+       4,   6,   5,   4,   4,   4,   5,   6,   9,   5,   8,   6,   7,
+       4,   2,   6,   3,   6,   4,   5,   5,   5,   8,   7,   3,   4,
+       5,   6,   5,   6,   6,   4,   5,
   };
   static const unsigned short int aOffset[98] = {
-       0,   5,  10,  13,  16,  16,  19,  25,  31,  36,  43,  45,  52,
-      56,  61,  68,  74,  82,  92,  98, 103, 111, 118, 128, 136, 142,
-     146, 152, 160, 164, 168, 172, 175, 181, 190, 197, 201, 201, 208,
-     212, 216, 220, 225, 231, 237, 246, 246, 251, 260, 265, 271, 278,
-     287, 291, 291, 297, 301, 304, 308, 312, 317, 322, 329, 329, 336,
-     340, 340, 346, 348, 348, 353, 358, 364, 371, 376, 386, 393, 401,
-     406, 414, 417, 423, 426, 435, 440, 440, 449, 453, 464, 471, 476,
-     482, 488, 493, 499, 505, 509, 513,
+       0,   4,   7,  10,  10,  14,  19,  23,  26,  31,  33,  35,  40,
+      42,  44,  48,  51,  53,  59,  68,  69,  75,  78,  81,  86,  92,
+     101, 110, 115, 120, 123, 125, 125, 129, 133, 139, 147, 152, 157,
+     160, 165, 169, 175, 175, 178, 181, 186, 188, 189, 193, 203, 207,
+     214, 220, 228, 235, 235, 244, 250, 255, 262, 268, 272, 278, 279,
+     286, 289, 293, 298, 302, 306, 310, 313, 319, 328, 332, 340, 346,
+     353, 356, 356, 359, 362, 368, 372, 376, 381, 385, 393, 400, 402,
+     406, 411, 417, 422, 428, 434, 437,
   };
   static const unsigned char aCode[98] = {
-    TK_ABORT,      TK_AFTER,      TK_ALL,        TK_AND,        TK_AS,         
-    TK_ASC,        TK_ATTACH,     TK_BEFORE,     TK_BEGIN,      TK_BETWEEN,    
-    TK_BY,         TK_CASCADE,    TK_CASE,       TK_CHECK,      TK_COLLATE,    
-    TK_COMMIT,     TK_CONFLICT,   TK_CONSTRAINT, TK_CREATE,     TK_JOIN_KW,    
-    TK_DATABASE,   TK_DEFAULT,    TK_DEFERRABLE, TK_DEFERRED,   TK_DELETE,     
-    TK_DESC,       TK_DETACH,     TK_DISTINCT,   TK_DROP,       TK_EACH,       
-    TK_ELSE,       TK_END,        TK_EXCEPT,     TK_EXCLUSIVE,  TK_EXPLAIN,    
-    TK_FAIL,       TK_FOR,        TK_FOREIGN,    TK_FROM,       TK_JOIN_KW,    
-    TK_GLOB,       TK_GROUP,      TK_HAVING,     TK_IGNORE,     TK_IMMEDIATE,  
-    TK_IN,         TK_INDEX,      TK_INITIALLY,  TK_JOIN_KW,    TK_INSERT,     
-    TK_INSTEAD,    TK_INTERSECT,  TK_INTO,       TK_IS,         TK_ISNULL,     
-    TK_JOIN,       TK_KEY,        TK_JOIN_KW,    TK_LIKE,       TK_LIMIT,      
-    TK_MATCH,      TK_JOIN_KW,    TK_NOT,        TK_NOTNULL,    TK_NULL,       
-    TK_OF,         TK_OFFSET,     TK_ON,         TK_OR,         TK_ORDER,      
-    TK_JOIN_KW,    TK_PRAGMA,     TK_PRIMARY,    TK_RAISE,      TK_REFERENCES, 
-    TK_REPLACE,    TK_RESTRICT,   TK_JOIN_KW,    TK_ROLLBACK,   TK_ROW,        
-    TK_SELECT,     TK_SET,        TK_STATEMENT,  TK_TABLE,      TK_TEMP,       
-    TK_TEMP,       TK_THEN,       TK_TRANSACTION,TK_TRIGGER,    TK_UNION,      
-    TK_UNIQUE,     TK_UPDATE,     TK_USING,      TK_VACUUM,     TK_VALUES,     
-    TK_VIEW,       TK_WHEN,       TK_WHERE,      
+    TK_ABORT,      TK_TABLE,      TK_JOIN_KW,    TK_TEMP,       TK_TEMP,       
+    TK_OR,         TK_AFTER,      TK_RAISE,      TK_SELECT,     TK_THEN,       
+    TK_END,        TK_DATABASE,   TK_AS,         TK_EACH,       TK_CHECK,      
+    TK_KEY,        TK_AND,        TK_DEFAULT,    TK_TRANSACTION,TK_ON,         
+    TK_JOIN_KW,    TK_LIKE,       TK_ELSE,       TK_EXCEPT,     TK_TRIGGER,    
+    TK_REFERENCES, TK_STATEMENT,  TK_ATTACH,     TK_HAVING,     TK_GLOB,       
+    TK_BEFORE,     TK_FOR,        TK_FOREIGN,    TK_IGNORE,     TK_REPLACE,    
+    TK_EXCLUSIVE,  TK_EXPLAIN,    TK_INDEX,      TK_BEGIN,      TK_INITIALLY,  
+    TK_ALL,        TK_BETWEEN,    TK_NOT,        TK_NOTNULL,    TK_NULL,       
+    TK_LIMIT,      TK_BY,         TK_CASCADE,    TK_ASC,        TK_DEFERRABLE, 
+    TK_CASE,       TK_COLLATE,    TK_COMMIT,     TK_CONFLICT,   TK_CONSTRAINT, 
+    TK_IN,         TK_INTERSECT,  TK_CREATE,     TK_JOIN_KW,    TK_DEFERRED,   
+    TK_DELETE,     TK_DESC,       TK_DETACH,     TK_DISTINCT,   TK_IS,         
+    TK_DROP,       TK_PRAGMA,     TK_MATCH,      TK_FAIL,       TK_FROM,       
+    TK_JOIN_KW,    TK_GROUP,      TK_UPDATE,     TK_IMMEDIATE,  TK_JOIN_KW,    
+    TK_RESTRICT,   TK_INSERT,     TK_INSTEAD,    TK_INTO,       TK_OF,         
+    TK_OFFSET,     TK_SET,        TK_ISNULL,     TK_JOIN,       TK_ORDER,      
+    TK_JOIN_KW,    TK_JOIN_KW,    TK_ROLLBACK,   TK_PRIMARY,    TK_ROW,        
+    TK_WHEN,       TK_UNION,      TK_UNIQUE,     TK_USING,      TK_VACUUM,     
+    TK_VALUES,     TK_VIEW,       TK_WHERE,      
   };
   int h, i;
   if( n<2 ) return TK_ID;
@@ -123,6 +121,7 @@ int sqlite3KeywordCode(const char *z, int n){
   }
   return TK_ID;
 }
+
 
 /*
 ** If X is a character that can be used in an identifier and

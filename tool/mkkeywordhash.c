@@ -15,10 +15,14 @@ typedef struct Keyword Keyword;
 struct Keyword {
   char *zName;         /* The keyword name */
   char *zTokenType;    /* Token value for this keyword */
+  int id;              /* Unique ID for this record */
   int hash;            /* Hash on the keyword */
   int offset;          /* Offset to start of name string */
   int len;             /* Length of this keyword, not counting final \000 */
+  int prefix;          /* Number of characters in prefix */
   int iNext;           /* Index in aKeywordTable[] of next with same hash */
+  int substrId;        /* Id to another keyword this keyword is embedded in */
+  int substrOffset;    /* Offset into substrId for start of this keyword */
 };
 
 /*
@@ -153,10 +157,37 @@ const unsigned char sqlite3UpperToLower[] = {
 /*
 ** Comparision function for two Keyword records
 */
-static int keywordCompare(const void *a, const void *b){
+static int keywordCompare1(const void *a, const void *b){
   const Keyword *pA = (Keyword*)a;
   const Keyword *pB = (Keyword*)b;
-  return strcmp(pA->zName, pB->zName);
+  int n = pA->len - pB->len;
+  if( n==0 ){
+    n = strcmp(pA->zName, pB->zName);
+  }
+  return n;
+}
+static int keywordCompare2(const void *a, const void *b){
+  const Keyword *pA = (Keyword*)a;
+  const Keyword *pB = (Keyword*)b;
+  int n = strcmp(pA->zName, pB->zName);
+  return n;
+}
+static int keywordCompare3(const void *a, const void *b){
+  const Keyword *pA = (Keyword*)a;
+  const Keyword *pB = (Keyword*)b;
+  int n = pA->offset - pB->offset;
+  return n;
+}
+
+/*
+** Return a KeywordTable entry with the given id
+*/
+static Keyword *findById(int id){
+  int i;
+  for(i=0; i<NKEYWORD; i++){
+    if( aKeywordTable[i].id==id ) break;
+  }
+  return &aKeywordTable[i];
 }
 
 /*
@@ -164,31 +195,78 @@ static int keywordCompare(const void *a, const void *b){
 ** output.
 */
 int main(int argc, char **argv){
-  int i, j, h;
+  int i, j, k, h;
   int bestSize, bestCount;
   int count;
   int nChar;
   int aHash[1000];  /* 1000 is much bigger than NKEYWORD */
 
-  /* Make sure the table is sorted */
-  qsort(aKeywordTable, NKEYWORD, sizeof(aKeywordTable[0]), keywordCompare);
-
-  /* Fill in the hash value, length, and offset for all entries */
-  nChar = 0;
+  /* Fill in the lengths of strings and hashes for all entries. */
   for(i=0; i<NKEYWORD; i++){
     Keyword *p = &aKeywordTable[i];
     p->len = strlen(p->zName);
-    /* p->hash = sqlite3HashNoCase(p->zName, p->len); */
     p->hash = UpperToLower[p->zName[0]]*5 +
               UpperToLower[p->zName[p->len-1]]*3 + p->len;
-    p->offset = nChar;
-    if( i<NKEYWORD-1 && strncmp(p->zName, aKeywordTable[i+1].zName,p->len)==0 ){
-      /* This entry is a prefix of the one that follows.  Do not advance
-      ** the offset */
-    }else{
-      nChar += p->len;
+    p->id = i+1;
+  }
+
+  /* Sort the table from shortest to longest keyword */
+  qsort(aKeywordTable, NKEYWORD, sizeof(aKeywordTable[0]), keywordCompare1);
+
+  /* Look for short keywords embedded in longer keywords */
+  for(i=NKEYWORD-2; i>=0; i--){
+    Keyword *p = &aKeywordTable[i];
+    for(j=NKEYWORD-1; j>i && p->substrId==0; j--){
+      Keyword *pOther = &aKeywordTable[j];
+      if( pOther->substrId ) continue;
+      if( pOther->len<=p->len ) continue;
+      for(k=0; k<=pOther->len-p->len; k++){
+        if( memcmp(p->zName, &pOther->zName[k], p->len)==0 ){
+          p->substrId = pOther->id;
+          p->substrOffset = k;
+          break;
+        }
+      }
     }
   }
+
+  /* Sort the table into alphabetical order */
+  qsort(aKeywordTable, NKEYWORD, sizeof(aKeywordTable[0]), keywordCompare2);
+
+  /* Fill in the offset for all entries */
+  nChar = 0;
+  for(i=0; i<NKEYWORD; i++){
+    Keyword *p = &aKeywordTable[i];
+    if( p->offset>0 || p->substrId ) continue;
+    p->offset = nChar;
+    nChar += p->len;
+    for(k=p->len-1; k>=1; k--){
+      for(j=i+1; j<NKEYWORD; j++){
+        Keyword *pOther = &aKeywordTable[j];
+        if( pOther->offset>0 || pOther->substrId ) continue;
+        if( pOther->len<=k ) continue;
+        if( memcmp(&p->zName[p->len-k], pOther->zName, k)==0 ){
+          p = pOther;
+          p->offset = nChar - k;
+          nChar = p->offset + p->len;
+          p->zName += k;
+          p->len -= k;
+          p->prefix = k;
+          j = i;
+          k = p->len;
+        }
+      }
+    }
+  }
+  for(i=0; i<NKEYWORD; i++){
+    Keyword *p = &aKeywordTable[i];
+    if( p->substrId ){
+      p->offset = findById(p->substrId)->offset + p->substrOffset;
+    }
+  }
+
+  /* Sort the table by offset */
+  qsort(aKeywordTable, NKEYWORD, sizeof(aKeywordTable[0]), keywordCompare3);
 
   /* Figure out how big to make the hash table in order to minimize the
   ** number of collisions */
@@ -222,7 +300,7 @@ int main(int argc, char **argv){
   printf("  static const char zText[%d] =\n", nChar+1);
   for(i=j=0; i<NKEYWORD; i++){
     Keyword *p = &aKeywordTable[i];
-    if( i<NKEYWORD-1 && p->offset==aKeywordTable[i+1].offset ) continue;
+    if( p->substrId ) continue;
     if( j==0 ) printf("    \"");
     printf("%s", p->zName);
     j += p->len;
@@ -260,7 +338,7 @@ int main(int argc, char **argv){
   printf("  static const unsigned char aLen[%d] = {\n", NKEYWORD);
   for(i=j=0; i<NKEYWORD; i++){
     if( j==0 ) printf("    ");
-    printf(" %3d,", aKeywordTable[i].len);
+    printf(" %3d,", aKeywordTable[i].len+aKeywordTable[i].prefix);
     j++;
     if( j>12 ){
       printf("\n");
