@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.21 2004/06/18 04:24:55 danielk1977 Exp $
+** $Id: utf.c,v 1.22 2004/06/18 17:10:17 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -498,7 +498,7 @@ int sqlite3utf8LikeCompare(
   return *zString==0;
 }
 
-#ifndef NDEBUG
+#if defined(SQLITE_TEST)
 /*
 ** This routine is called from the TCL test function "translate_selftest".
 ** It checks that the primitives for serializing and deserializing
@@ -542,5 +542,3 @@ void sqlite3utfSelfTest(){
   }
 }
 #endif
-
-

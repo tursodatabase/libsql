@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.103 2004/06/18 04:24:55 danielk1977 Exp $
+** $Id: util.c,v 1.104 2004/06/18 17:10:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -275,7 +275,7 @@ void sqlite3FreeX(void *p){
 ** Allocate new memory and set it to zero.  Return NULL if
 ** no memory is available.  See also sqliteMallocRaw().
 */
-void *sqliteMalloc(int n){
+void *sqlite3Malloc(int n){
   void *p;
   if( (p = malloc(n))==0 ){
     if( n>0 ) sqlite3_malloc_failed++;
@@ -289,7 +289,7 @@ void *sqliteMalloc(int n){
 ** Allocate new memory but do not set it to zero.  Return NULL if
 ** no memory is available.  See also sqliteMalloc().
 */
-void *sqliteMallocRaw(int n){
+void *sqlite3MallocRaw(int n){
   void *p;
   if( (p = malloc(n))==0 ){
     if( n>0 ) sqlite3_malloc_failed++;
@@ -300,7 +300,7 @@ void *sqliteMallocRaw(int n){
 /*
 ** Free memory previously obtained from sqliteMalloc()
 */
-void sqliteFree(void *p){
+void sqlite3FreeX(void *p){
   if( p ){
     free(p);
   }
@@ -311,7 +311,7 @@ void sqliteFree(void *p){
 ** works just like sqliteMalloc().  If n==0, then this routine
 ** works just like sqliteFree().
 */
-void *sqliteRealloc(void *p, int n){
+void *sqlite3Realloc(void *p, int n){
   void *p2;
   if( p==0 ){
     return sqliteMalloc(n);
@@ -330,14 +330,14 @@ void *sqliteRealloc(void *p, int n){
 /*
 ** Make a copy of a string in memory obtained from sqliteMalloc()
 */
-char *sqliteStrDup(const char *z){
+char *sqlite3StrDup(const char *z){
   char *zNew;
   if( z==0 ) return 0;
   zNew = sqliteMallocRaw(strlen(z)+1);
   if( zNew ) strcpy(zNew, z);
   return zNew;
 }
-char *sqliteStrNDup(const char *z, int n){
+char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
   zNew = sqliteMallocRaw(n+1);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.287 2004/06/18 04:24:54 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.288 2004/06/18 17:10:17 drh Exp $
 */
 #include "config.h"
 #include "sqlite3.h"
@@ -194,10 +194,15 @@ extern const int sqlite3one;
 # define sqliteStrNDup(X,Y) sqlite3StrNDup_(X,Y,__FILE__,__LINE__)
   void sqlite3StrRealloc(char**);
 #else
-# define sqlite3FreeX sqliteFree
-# define sqlite3Realloc_(X,Y) sqliteRealloc(X,Y)
+# define sqliteFree          sqlite3FreeX
+# define sqliteMalloc        sqlite3Malloc
+# define sqliteMallocRaw     sqlite3MallocRaw
+# define sqliteRealloc       sqlite3Realloc
+/* # define sqliteRealloc_(X,Y) sqlite3Realloc(X,Y) */
 # define sqlite3StrRealloc(X)
 #endif
+#define sqliteStrDup         sqlite3StrDup
+#define sqliteStrNDup        sqlite3StrNDup
 
 /*
 ** This variable gets set if malloc() ever fails.  After it gets set,
@@ -1198,7 +1203,7 @@ struct DbFixer {
  * SQLite will perform the overhead of building new and old trigger references 
  * even when no triggers exist
  */
-extern int always_code_trigger_setup;
+extern int sqlite3_always_code_trigger_setup;
 
 /*
 ** Internal function prototypes

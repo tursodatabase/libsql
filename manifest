@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sdocumentation.\s\sFix\spublish.sh\sso\sthat\sit\scorrectly\sbuilds\sthe\nZIP\sarchive\sof\spreprocesses\ssource\scode.\s(CVS\s1620)
-D 2004-06-18T15:13:48
+C Changes\sto\sallow\slibsqlite3.a\sand\slibsqlite.a\sto\sbe\sboth\slinked\sinto\sthe\nsame\sprogram\sat\sthe\ssame\stime.\s(CVS\s1621)
+D 2004-06-18T17:10:16
 F Makefile.in 5125bd6b92fca76275a6fc6c6ff425484b8cec0a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -17,7 +17,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 6004a81e05581a6b51e4f37a62ed45db089c47cf
+F main.mk 0a9048137bc0783acde5a9a032a44ec2510da576
 F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 5bc5e493fa1773a3c0d9712182de0f5abd494903
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
@@ -38,38 +38,38 @@ F src/hash.c 440c2f8cb373ee1b4e13a0988489c7cd95d55b6f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c 1428887f4a7515a7d34e82aaeb76297c79ba378b
 F src/legacy.c ad23746f15f67e34577621b1875f639c94839e1f
-F src/main.c a7cee3b75b74aec795e26175cd3070fe0909b297
+F src/main.c bbb19c7ad47bbb433a5467a39347ddd49eb5eefe
 F src/md5.c d77a389955759c8329bb357e3d71bac3d6eb710b
 F src/os.h 1cb5f0293a30288451fe3c0c73815cf208212ed1
 F src/os_common.h ba1b7306e16e2091718f2c48db0fe6c1d7a31bb8
 F src/os_mac.c 3d31e26be1411acfb7961033098631b4f3486fdf
 F src/os_mac.h 51d2445f47e182ed32d3bd6937f81070c6fd9bd4
-F src/os_unix.c add5af1cc4ff726297338e4e96ac36d1a5658d2c
+F src/os_unix.c 47176c8e9b90ba751b2c110b6384936572ff3abc
 F src/os_unix.h 1cd6133cf66dea704b8646b70b2dfdcbdd9b3738
 F src/os_win.c 337e973ee77797aaab4787e3477a5945fcd97266
 F src/os_win.h 004eec47b1780fcaf07420ddc2072294b698d48c
 F src/pager.c 453099416c10669365ca70f12f13e67e6ef11000
 F src/pager.h bc58d32a9dee464f7268fb68652c130a4216e438
 F src/parse.y 097438674976355a10cf177bd97326c548820b86
-F src/pragma.c 83b86b2942d7f1b202644ac4e2559965e23a8a7b
-F src/printf.c 7e7f83a747bbd0601dcb4ee2885fb3ce3e994a9f
+F src/pragma.c c11121c2c0659c37deebae3668db6db5e2be43b1
+F src/printf.c 823b6a5cbedb6971a9e62f5d83204fe9b0be7c1b
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 91570af7f13d1c5584f3b711676e1226ee12194e
 F src/shell.c ca519519dcbbc582f6d88f7d0e7583b857fd3469
 F src/sqlite.h.in eacd23af3280603cd8b48979c6f9297b3ac2935c
-F src/sqliteInt.h 7d8145b6828826683f44b8c40930c34c8ec1f3c3
+F src/sqliteInt.h e1f3a90e9efced7a5f610a390b2cae6150fc025e
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
-F src/tclsqlite.c 6f88be282a3617c6739c043fd13571b5f2fe9922
+F src/tclsqlite.c e1e9d89ce93e0372c519cc88d4a3f4df9ce5ff03
 F src/test1.c 963f4417d1770f5238672ff5b817a9103842eeb7
 F src/test2.c db0a0c30b59f1639cb8c2572be06439402833cc8
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
 F src/test5.c 1b7c275b2929dbd034a567255d2aca339410d1d6
 F src/tokenize.c 900374b6b37f04748bcd48c2d29a41c251542935
-F src/trigger.c 3325207ea41d2d429e70370ce2ff987fd49b7ada
+F src/trigger.c b05699cf40e99a330649eabfb1cece05ff73e469
 F src/update.c f9a03233577e0c3d57234d1957963875fc941da2
-F src/utf.c 7464315fd4b627b96801444f3671f3e9930879c6
-F src/util.c 9d9ef854e9a8744a7ebaee02ee26eb0aaa8a9987
+F src/utf.c 3a2596013e4b9582d075ca742de7f067ff7dee95
+F src/util.c e59ee2afc6650bd62466b8d26560794c844ff66d
 F src/vacuum.c f9561c8095407a970af4e6a304b77c4083433d3e
 F src/vdbe.c 2a0e908e46ea6822f215cb0f35ec31f5c2832629
 F src/vdbe.h 46f74444a213129bc4b5ce40124dd8ed613b0cde
@@ -225,7 +225,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl af528563442e3039928f9018327a18157e53a44f
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 8b409aaae42cc36d96536531da41f05bd0cdd29c
-R 06705682ecc02465bea573b58c16c9a3
+P fee0c5e308c3de1937185e2060c8757e605ab3a2
+R 1639c59e9612ce2bf73d0c536753921b
 U drh
-Z 797649997def2a974837df56baf38e92
+Z e30013f7bf26f9cf3901cd1c03fa41f3

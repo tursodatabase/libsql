@@ -241,7 +241,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
 **
 ** Return the number of errors.
 */
-int findLockInfo(
+static int findLockInfo(
   int fd,                      /* The file descriptor used in the key */
   struct lockInfo **ppLock,    /* Return the lockInfo structure here */
   struct openCnt **ppOpen   /* Return the openCnt structure here */

@@ -551,7 +551,7 @@ static int checkColumnOverLap(IdList *pIdList, ExprList *pEList){
  * The pragma is not documented since it is not really part of the interface
  * to SQLite, just the test procedure.
 */
-int always_code_trigger_setup = 0;
+int sqlite3_always_code_trigger_setup = 0;
 
 /*
  * Returns true if a trigger matching op, tr_tm and foreach that is NOT already
@@ -568,7 +568,7 @@ int sqlite3TriggersExist(
 ){
   Trigger * pTriggerCursor;
 
-  if( always_code_trigger_setup ){
+  if( sqlite3_always_code_trigger_setup ){
     return 1;
   }
 
