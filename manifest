@@ -1,5 +1,5 @@
-C Added\sa\sdocument\sdescribing\show\sto\sdo\sa\ssecurity\saudit.\s(CVS\s673)
-D 2002-07-13T16:52:35
+C Fix\sfor\sticket\s#99:\s\sAdded\sdocumentation\son\sthe\ssqlite_mprintf()\sAPI.\s(CVS\s674)
+D 2002-07-13T17:18:37
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -125,7 +125,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/c_interface.tcl 58cf4d128dcae08d91d0011c6d4d11de323f470f
+F www/c_interface.tcl 580c03f096a16c0cf7ce18e0483daace4a602b46
 F www/changes.tcl a6d732a78b451eab29a66a068dc07b359f32c5a8
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
@@ -141,7 +141,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 072fd2ad588332b1f1f725515bedfbc0cf035315
-R 0c58a47e130f778dc9990a3b129c0313
+P cff271837796d84471b09147c59cb7601d16b358
+R 63bf2a6bac15f02f44e75d7ed5641521
 U drh
-Z 87e130d886df3a6228f2f58c5ec9b87e
+Z a0fd29b0bbea80b4f97bf6c9c9b3443e

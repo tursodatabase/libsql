@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.30 2002/06/16 04:57:32 chw Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.31 2002/07/13 17:18:37 drh Exp $}
 
 puts {<html>
 <head>
@@ -378,6 +378,12 @@ int sqlite_get_table_vprintf(
   va_list
 );
 
+char *sqlite_mprintf(const char *zFormat, ...);
+
+char *sqlite_vmprintf(const char *zFormat, va_list);
+
+void sqlite_freemem(char*);
+
 </pre></blockquote>
 
 <p>All of the above definitions are included in the "sqlite.h"
@@ -693,6 +699,22 @@ will look like the following:</p>
 INSERT INTO table1 VALUES(NULL)
 </pre></blockquote>
 
+<p>All of the _printf() routines above are built around the following
+two functions:</p>
+
+<blockquote><pre>
+char *sqlite_mprintf(const char *zFormat, ...);
+char *sqlite_vmprintf(const char *zFormat, va_list);
+</pre></blockquote>
+
+<p>The <b>sqlite_mprintf()</b> routine works like the the standard library
+<b>sprintf()</b> except that it writes its results into memory obtained
+from malloc() and returns a pointer to the malloced buffer.  
+<b>sqlite_mprintf()</b> also understands the %q and %Q extensions described
+above.  The <b>sqlite_vmprintf()</b> is a varargs version of the same
+routine.  The string pointer that these routines return should be freed
+by passing it to <b>sqlite_freemem()</b>.
+</p>
 
 <h2>Adding New SQL Functions</h2>
 
