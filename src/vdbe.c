@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.267 2004/02/22 17:49:34 drh Exp $
+** $Id: vdbe.c,v 1.268 2004/03/03 01:51:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1179,8 +1179,9 @@ case OP_ShiftRight: {
   assert( (pTos->flags & MEM_Dyn)==0 );
   assert( (pNos->flags & MEM_Dyn)==0 );
   pTos--;
+  Release(pTos);
   pTos->i = a;
-  assert( pTos->flags==MEM_Int );
+  pTos->flags = MEM_Int;
   break;
 }
 
@@ -1700,8 +1701,9 @@ case OP_Not: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
   Integerify(pTos);
-  assert( pTos->flags==MEM_Int );
+  Release(pTos);
   pTos->i = !pTos->i;
+  pTos->flags = MEM_Int;
   break;
 }
 
@@ -1715,8 +1717,9 @@ case OP_BitNot: {
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
   Integerify(pTos);
-  assert( pTos->flags==MEM_Int );
+  Release(pTos);
   pTos->i = ~pTos->i;
+  pTos->flags = MEM_Int;
   break;
 }
 
@@ -2299,7 +2302,7 @@ case OP_SetCookie: {
     aMeta[1+pOp->p2] = pTos->i;
     rc = sqliteBtreeUpdateMeta(db->aDb[pOp->p1].pBt, aMeta);
   }
-  assert( pTos->flags==MEM_Int );
+  Release(pTos);
   pTos--;
   break;
 }
@@ -3767,7 +3770,7 @@ case OP_ListWrite: {
   }
   Integerify(pTos);
   pKeylist->aKey[pKeylist->nUsed++] = pTos->i;
-  assert( pTos->flags==MEM_Int );
+  Release(pTos);
   pTos--;
   break;
 }

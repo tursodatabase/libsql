@@ -1,5 +1,5 @@
-C Make\ssure\sa\sLIMIT\sclause\son\sa\sSELECT\scleans\sup\sthe\svdbe\sstack\sso\sthat\sif\sit\noccurs\sinside\sa\strigger,\sit\swon't\scause\sa\sstack\soverflow.\s\sTicket\s#640.\s(CVS\s1282)
-D 2004-03-02T18:37:41
+C A\svdbe\sstack\selement\smight\shave\sa\sstring\svalue\seven\safter\sa\scall\sto\nIntegerify().\s\sTicket\s#641.\s(CVS\s1283)
+D 2004-03-03T01:51:25
 F Makefile.in afc6c0377773421633e592347097ad036eef6aeb
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -61,7 +61,7 @@ F src/trigger.c a9927b57c865b6f3df3fb5e40c9824d722660ded
 F src/update.c 4c50328ebc127852bde8e2950eb8933234802c21
 F src/util.c 122bc174f6c8c2eb6a9127d9f13c4c74f83b85e4
 F src/vacuum.c db5f58cb53c8c79169d74bc0413e6d7e185ac532
-F src/vdbe.c af187d86cb1bcc1ead227245350d1693c28c77a2
+F src/vdbe.c 7c33f761fdc799633468766fb53eda4301daa6b3
 F src/vdbe.h ac987945e4dd6f987bca534c6005899f089fc270
 F src/vdbeInt.h b40ff02ce39fd076e6ff3369e19c1bbfe1986682
 F src/vdbeaux.c e2cdd1ab63604a390612c73e26bdd2ef910e9438
@@ -85,7 +85,7 @@ F test/copy.test f07ea8d60878da7a67416ab62f78e9706b9d3c45
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test aed5030482ebc02bd8d386c6c86a29f694ab068d
 F test/delete.test 92256384f1801760180ded129f7427884cf28886
-F test/expr.test c4cc292d601019c2f2ce95093caaa5d10284b105
+F test/expr.test ad985242e140f87eeef329d98257b8369a2066dc
 F test/fkey1.test d65c824459916249bee501532d6154ddab0b5db7
 F test/format3.test 149cc166c97923fa60def047e90dd3fb32bba916
 F test/func.test 000515779001ac6899eec4b54e65c6e2501279d4
@@ -188,7 +188,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 76d42921a475c531a77677c3fe73b6da265a878d
-R dd8609f48345c006180d07e7ef0d5734
+P 5aaa2939baa972231def086ed5f9d9ba63302532
+R d722781e30098df56cdb3e08d2d9a7bf
 U drh
-Z d1aff38fcd9f7647a8267e5f4641096b
+Z b4ad96d33af4159614ecafeca0eb02b2
