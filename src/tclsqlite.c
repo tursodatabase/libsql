@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.110 2004/12/17 15:41:12 tpoindex Exp $
+** $Id: tclsqlite.c,v 1.111 2004/12/17 20:48:06 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1111,22 +1111,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   **   $db copy $conflit_algo $table_name $filename \t \\N
   */
   case DB_COPY: {
-    char *zSep;
-    char *zNull;
-    if( objc<5 || objc>7 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
-      return TCL_ERROR;
-    }
-    if( objc>=6 ){
-      zSep = Tcl_GetStringFromObj(objv[5], 0);
-    }else{
-      zSep = "\t";
-    }
-    if( objc>=7 ){
-      zNull = Tcl_GetStringFromObj(objv[6], 0);
-    }else{
-      zNull = "";
-    }
     char *zTable;               /* Insert data into this table */
     char *zFile;                /* The file from which to extract data */
     char *zConflict;            /* The conflict algorithm to use */
@@ -1146,6 +1130,23 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     char zLineNum[80];          /* Line number print buffer */
     Tcl_Obj *pResult;           /* interp result */
 
+    char *zSep;
+    char *zNull;
+    if( objc<5 || objc>7 ){
+      Tcl_WrongNumArgs(interp, 2, objv, 
+         "CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?");
+      return TCL_ERROR;
+    }
+    if( objc>=6 ){
+      zSep = Tcl_GetStringFromObj(objv[5], 0);
+    }else{
+      zSep = "\t";
+    }
+    if( objc>=7 ){
+      zNull = Tcl_GetStringFromObj(objv[6], 0);
+    }else{
+      zNull = "";
+    }
     zConflict = Tcl_GetStringFromObj(objv[2], 0);
     zTable = Tcl_GetStringFromObj(objv[3], 0);
     zFile = Tcl_GetStringFromObj(objv[4], 0);
@@ -1160,7 +1161,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
        sqlite3StrICmp(zConflict, "fail"    ) != 0 &&
        sqlite3StrICmp(zConflict, "ignore"  ) != 0 &&
        sqlite3StrICmp(zConflict, "replace" ) != 0 ) {
-      Tcl_AppendResult(interp, "Error: \"", zConflict, "\", conflict-algorithm must be one of: rollback, abort, fail, ignore, or replace", 0);
+      Tcl_AppendResult(interp, "Error: \"", zConflict, 
+            "\", conflict-algorithm must be one of: rollback, "
+            "abort, fail, ignore, or replace", 0);
       return TCL_ERROR;
     }
     zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
@@ -1186,7 +1189,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp, "Error: can't malloc()", 0);
       return TCL_ERROR;
     }
-    sqlite3_snprintf(nByte+50, zSql, "INSERT OR %q INTO '%q' VALUES(?", zConflict, zTable);
+    sqlite3_snprintf(nByte+50, zSql, "INSERT OR %q INTO '%q' VALUES(?",
+         zConflict, zTable);
     j = strlen(zSql);
     for(i=1; i<nCol; i++){
       zSql[j++] = ',';
