@@ -1,5 +1,5 @@
-C Patch\sthe\scommand-line\serror\smessage\sprinting\sfor\slemon.\s\sTicket\s#1120.\s(CVS\s2345)
-D 2005-02-16T03:35:16
+C Change\sto\sconfigure.ac\scontributed\sby\sa\sreader.\s(CVS\s2346)
+D 2005-02-16T03:45:51
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -11,7 +11,7 @@ F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
 F configure ae39c037bbd1fad89d87a89c505d012b975e9f97 x
-F configure.ac a3e521f42b4352215c2499bc2a7138b076d30c59
+F configure.ac 7c6fef390205396e6b1883fa1b8bee8d6e769516
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -273,7 +273,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 8f7c639da0f862fa2dd2f55eb7e4d453cd321540
-R 61bdc6a34c127141b24a0efa6620c3ab
+P 97c7aaf1870a86955f0f3a0cbe06187e3c3ccc90
+R 020fee1418d831a2996b63e2363938a6
 U drh
-Z 89a02ac9cc492af6103ac23f25fbf293
+Z 459e497f379a6c7fdbda3608d27ffb12
