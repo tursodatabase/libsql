@@ -1,5 +1,5 @@
-C Update\scomments.\s\sRemove\sunused\sfield\sfrom\sthe\sIndex\sstructure.\s(CVS\s921)
-D 2003-04-20T00:00:24
+C Reset\spCur->eSkip\son\sa\sMoveTo\s(CVS\s922)
+D 2003-04-20T11:41:04
 F Makefile.in df3a4db41a7450468b5fe934d9dd8f723b631249
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -23,7 +23,7 @@ F src/attach.c 7ebc7487de43e357a64226f8abef81f2669f2183
 F src/auth.c 2dd558dba4d8ffbed25fe1644e9af242f389f3e9
 F src/btree.c b9487cceb9ea78af9cbae9def34114902f511736
 F src/btree.h 529c98cb0715c62214544fbbe50b946f99a85540
-F src/btree_rb.c b14803c84dc1c8fb51f5db1542237b7b7d411957
+F src/btree_rb.c 0c4a10b52ae565071635863cc28c5b69fa5517fc
 F src/build.c 66f8ca2457dfdcc6c45e1606696f337418a8c556
 F src/copy.c 8699e571994934c78f70761a1458d7b9e9e75073
 F src/delete.c af65b26d9d13abbf63fdc4e97b88d26c700b04bb
@@ -162,7 +162,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 767f1af236d115e8388e1dcc28a4df1be48d6c85
-R 36dfa6d5306b8b01a3a590f7c2277b76
-U drh
-Z 7a756c9352dc04a8dce7c22eae170166
+P 7084e05093e72f6e5b65ff0b574336898396826f
+R c8c3aa1616b589f8a100a47f5c0c5e8a
+U paul
+Z cdfdd9c553e34df80f45529e35a33325

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree_rb.c,v 1.4 2003/04/18 22:52:39 drh Exp $
+** $Id: btree_rb.c,v 1.5 2003/04/20 11:41:04 paul Exp $
 **
 ** This file implements an in-core database using Red-Black balanced
 ** binary trees.
@@ -811,6 +811,7 @@ static int memBtreeMoveto(BtCursor* pCur, const void *pKey, int nKey, int *pRes)
    * between pTmp and the searched for key is already stored in *pRes. pTmp is
    * either the successor or predecessor of the key we tried to move to. */
   if( !pCur->pNode ) pCur->pNode = pTmp;
+  pCur->eSkip = SKIP_NONE;
 
   return SQLITE_OK;
 }
@@ -1007,6 +1008,12 @@ static int memBtreeLast(BtCursor* pCur, int *pRes)
   return SQLITE_OK;
 }
 
+/*
+** Advance the cursor to the next entry in the database.  If
+** successful then set *pRes=0.  If the cursor
+** was already pointing to the last entry in the database before
+** this routine was called, then set *pRes=1.
+*/
 static int memBtreeNext(BtCursor* pCur, int *pRes)
 {
   if( pCur->pNode && pCur->eSkip != SKIP_NEXT ){
