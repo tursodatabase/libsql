@@ -576,7 +576,6 @@ void sqliteVdbeMakeReady(
   int n;
 
   assert( p!=0 );
-  assert( p->aStack==0 );
   assert( p->magic==VDBE_MAGIC_INIT );
 
   /* Add a HALT instruction to the very end of the program.
@@ -592,17 +591,20 @@ void sqliteVdbeMakeReady(
   **
   ** Allocation all the stack space we will ever need.
   */
-  p->nVar = nVar>=0 ? nVar : p->nVar;
-  n = isExplain ? 10 : p->nOp;
-  p->aStack = sqliteMalloc(
+  if( p->aStack==0 ){
+    p->nVar = nVar;
+    assert( nVar>=0 );
+    n = isExplain ? 10 : p->nOp;
+    p->aStack = sqliteMalloc(
     n*(sizeof(p->aStack[0]) + 2*sizeof(char*))   /* aStack and zStack */
-    + p->nVar*(sizeof(char*)+sizeof(int)+1)      /* azVar, anVar, abVar */
-  );
-  p->zStack = (char**)&p->aStack[n];
-  p->azColName = (char**)&p->zStack[n];
-  p->azVar = (char**)&p->azColName[n];
-  p->anVar = (int*)&p->azVar[p->nVar];
-  p->abVar = (u8*)&p->anVar[p->nVar];
+      + p->nVar*(sizeof(char*)+sizeof(int)+1)      /* azVar, anVar, abVar */
+    );
+    p->zStack = (char**)&p->aStack[n];
+    p->azColName = (char**)&p->zStack[n];
+    p->azVar = (char**)&p->azColName[n];
+    p->anVar = (int*)&p->azVar[p->nVar];
+    p->abVar = (u8*)&p->anVar[p->nVar];
+  }
 
   sqliteHashInit(&p->agg.hash, SQLITE_HASH_BINARY, 0);
   p->agg.pSearch = 0;
@@ -948,7 +950,7 @@ int sqlite_bind(sqlite_vm *pVm, int i, const char *zVal, int len, int copy){
     p->azVar[i] = sqliteMalloc( len );
     if( p->azVar[i] ) memcpy(p->azVar[i], zVal, len);
   }else{
-    p->azVar[i] = zVal;
+    p->azVar[i] = (char*)zVal;
   }
   p->abVar[i] = copy;
   p->anVar[i] = len;

@@ -1,0 +1,72 @@
+# 2003 September 6
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script testing the sqlite_bind API.
+#
+# $Id: bind.test,v 1.1 2003/09/06 22:45:21 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test bind-1.1 {
+  db close
+  set DB [sqlite db test.db]
+  execsql {CREATE TABLE t1(a,b,c)}
+  set VM [sqlite_compile $DB {INSERT INTO t1 VALUES(?,?,?)} TAIL]
+  set TAIL
+} {}
+do_test bind-1.2 {
+  sqlite_step $VM N VALUES COLNAMES
+} {SQLITE_DONE}
+do_test bind-1.3 {
+  execsql {SELECT rowid, * FROM t1}
+} {1 {} {} {}}
+do_test bind-1.4 {
+  sqlite_reset $VM
+  sqlite_bind $VM 1 {test value 1} normal
+  sqlite_step $VM N VALUES COLNAMES
+} SQLITE_DONE
+do_test bind-1.5 {
+  execsql {SELECT rowid, * FROM t1}
+} {1 {} {} {} 2 {test value 1} {} {}}
+do_test bind-1.6 {
+  sqlite_reset $VM
+  sqlite_bind $VM 3 {'test value 2'} normal
+  sqlite_step $VM N VALUES COLNAMES
+} SQLITE_DONE
+do_test bind-1.7 {
+  execsql {SELECT rowid, * FROM t1}
+} {1 {} {} {} 2 {test value 1} {} {} 3 {test value 1} {} {'test value 2'}}
+do_test bind-1.8 {
+  sqlite_reset $VM
+  set sqlite_static_bind_value 123
+  sqlite_bind $VM 1 {} static
+  sqlite_bind $VM 2 {abcdefg} normal
+  sqlite_bind $VM 3 {} null
+  execsql {DELETE FROM t1}
+  sqlite_step $VM N VALUES COLNAMES
+  execsql {SELECT rowid, * FROM t1}
+} {1 123 abcdefg {}}
+do_test bind-1.9 {
+  sqlite_reset $VM
+  sqlite_bind $VM 1 {456} normal
+  sqlite_step $VM N VALUES COLNAMES
+  execsql {SELECT rowid, * FROM t1}
+} {1 123 abcdefg {} 2 456 abcdefg {}}
+
+
+do_test bind-1.99 {
+  sqlite_finalize $VM
+} {}
+
+
+finish_test

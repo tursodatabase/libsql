@@ -1,5 +1,5 @@
-C Update\sMakefile.in\sfor\sthe\snew\svdbeaux.c\sfile.\s\sRemove\sthe\sexperimental\n"sqlite_instantiate()"\sroutine\sand\sreplace\sit\swith\s"sqlite_bind()"\swhich\nis\smore\slike\sODBC\sand\sJDBC.\s(CVS\s1095)
-D 2003-09-06T22:18:08
+C Add\sinitial\stest\scases\sfor\sthe\snew\ssqlite_bind()\sAPI.\s\sFix\sbugs\sthat\sthe\snew\ntest\scases\sfound.\s(CVS\s1096)
+D 2003-09-06T22:45:21
 F Makefile.in 0cf2ffb6dc35694895e0dac488bc1259b6a4eb90
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,7 +64,7 @@ F src/vacuum.c e4724eade07e4cf8897060a8cf632dbd92408eeb
 F src/vdbe.c 4570d4361838327f45aa3788034e108c048b4d3f
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 2824bf88895b901b3a8c9e44527c67530e1c0dcb
-F src/vdbeaux.c 402daaa4f9c861a5182c47456d372715d2cd571f
+F src/vdbeaux.c 1145fa169021d7fb3962fab6e99f5f8fc2608f8a
 F src/where.c 83b2a2d26d5c3bea33457a83e541bb1dcf7b1248
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test c26848402e7ac829e043e1fa5e0eb87032e5d81d
@@ -72,6 +72,7 @@ F test/attach2.test 6f98cc2b929d88dc5f82d95d04e9b89b3b5dead3
 F test/auth.test a618f0e96bb5baa7a5623eb939388e9ac5f5d9a2
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
+F test/bind.test 56a57043b42c4664ca705f6050e56717a8a6699a
 F test/btree.test 1e3463c7838e7e71bbf37c9c6e45beee9c8975ba
 F test/btree2.test e3b81ec33dc2f89b3e6087436dfe605b870c9080
 F test/btree3.test e597fb59be2ac0ea69c62aaa2064e998e528b665
@@ -172,7 +173,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P bfd69391d3d63675f206ffd8ff0401ea1cbcc073
-R dac64908088b314675a59ad2bf8654f6
+P 990bb11898a539bb0795a4a216fcd989943a0fb2
+R 6da2f2a85b603ea97d6c239837738421
 U drh
-Z 438620e1ac865f39fe826e6f5d8d262a
+Z c1f9b620226847ab0edd9da7114bd24b
