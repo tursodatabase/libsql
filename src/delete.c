@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.28 2002/03/02 17:04:08 drh Exp $
+** $Id: delete.c,v 1.29 2002/03/03 18:59:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -98,7 +98,9 @@ void sqliteDeleteFrom(
   */
   pTabList = sqliteTableTokenToIdList(pParse, pTableName);
   if( pTabList==0 ) goto delete_from_cleanup;
+  assert( pTabList->nId==1 );
   pTab = pTabList->a[0].pTab;
+  assert( pTab->pSelect==0 );  /* This table is not a view */
 
   /* Resolve the column names in all the expressions.
   */

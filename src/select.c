@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.73 2002/03/03 03:03:53 drh Exp $
+** $Id: select.c,v 1.74 2002/03/03 18:59:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -327,6 +327,7 @@ Table *sqliteResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   pTab->zName = zTabName ? sqliteStrDup(zTabName) : 0;
   pEList = pSelect->pEList;
   pTab->nCol = pEList->nExpr;
+  assert( pTab->nCol>0 );
   pTab->aCol = sqliteMalloc( sizeof(pTab->aCol[0])*pTab->nCol );
   for(i=0; i<pTab->nCol; i++){
     Expr *p;
@@ -400,6 +401,9 @@ static int fillInColumnList(Parse *pParse, Select *p){
         return 1;
       }
       if( pTab->pSelect ){
+        if( sqliteViewGetColumnNames(pParse, pTab) ){
+          return 1;
+        }
         pTabList->a[i].pSelect = sqliteSelectDup(pTab->pSelect);
       }
     }

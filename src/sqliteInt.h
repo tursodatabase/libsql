@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.99 2002/03/03 03:03:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.100 2002/03/03 18:59:41 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -183,6 +183,8 @@ struct sqlite {
 #define SQLITE_NullCallback   0x00000080  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_ResultDetails  0x00000100  /* Details added to result set */
+#define SQLITE_UnresetViews   0x00000200  /* True if one or more views have */
+                                          /*   defined column names */
 
 /*
 ** Each SQL function is defined by an instance of the following
@@ -582,6 +584,8 @@ void sqliteAddColumnType(Parse*,Token*,Token*);
 void sqliteAddDefaultValue(Parse*,Token*,int);
 void sqliteEndTable(Parse*,Token*,Select*);
 void sqliteCreateView(Parse*,Token*,Token*,Select*);
+int sqliteViewGetColumnNames(Parse*,Table*);
+void sqliteViewResetAll(sqlite*);
 void sqliteDropTable(Parse*, Token*);
 void sqliteDeleteTable(sqlite*, Table*);
 void sqliteInsert(Parse*, Token*, ExprList*, Select*, IdList*, int);

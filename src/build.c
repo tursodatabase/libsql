@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.81 2002/03/02 17:04:08 drh Exp $
+** $Id: build.c,v 1.82 2002/03/03 18:59:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -807,24 +807,22 @@ void sqliteCreateView(
   Select *pSelect    /* A SELECT statement that will become the new view */
 ){
   Token sEnd;
-  Table *pSelTab;
   Table *p;
   char *z;
   int n, offset;
 
   sqliteStartTable(pParse, pBegin, pName, 0);
   p = pParse->pNewTable;
-  if( p==0 ) goto create_view_failed;
+  if( p==0 ){
+    sqliteSelectDelete(pSelect);
+    return;
+  }
   p->pSelect = pSelect;
-  pSelTab = sqliteResultSetOfSelect(pParse, 0, pSelect);
-  if( pSelTab==0 ) goto create_view_failed;
-  assert( p->aCol==0 );
-  p->nCol = pSelTab->nCol;
-  p->aCol = pSelTab->aCol;
-  pSelTab->nCol = 0;
-  pSelTab->aCol = 0;
-  sqliteDeleteTable(0, pSelTab);
-  sqliteSelectUnbind(pSelect);
+  if( !pParse->initFlag ){
+    if( sqliteViewGetColumnNames(pParse, p) ){
+      return;
+    }
+  }
   sEnd = pParse->sLastToken;
   if( sEnd.z[0]!=0 && sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
@@ -832,15 +830,117 @@ void sqliteCreateView(
   sEnd.n = 0;
   n = ((int)sEnd.z) - (int)pBegin->z;
   z = p->pSelect->zSelect = sqliteStrNDup(pBegin->z, n+1);
-  if( z==0 ) goto create_view_failed;
-  offset = ((int)z) - (int)pBegin->z;
-  sqliteSelectMoveStrings(p->pSelect, offset);
-  sqliteEndTable(pParse, &sEnd, 0);
+  if( z ){
+    offset = ((int)z) - (int)pBegin->z;
+    sqliteSelectMoveStrings(p->pSelect, offset);
+    sqliteEndTable(pParse, &sEnd, 0);
+  }
   return;
+}
 
-create_view_failed:
-  sqliteSelectDelete(pSelect);
-  return;
+/*
+** The Table structure pTable is really a VIEW.  Fill in the names of
+** the columns of the view in the pTable structure.  Return the number
+** of errors.  If an error is seen leave an error message in pPare->zErrMsg.
+*/
+int sqliteViewGetColumnNames(Parse *pParse, Table *pTable){
+  ExprList *pEList;
+  Select *pSel;
+  Table *pSelTab;
+  int nErr = 0;
+
+  assert( pTable );
+
+  /* A positive nCol means the columns names for this view are
+  ** already known.
+  */
+  if( pTable->nCol>0 ) return 0;
+
+  /* A negative nCol is a special marker meaning that we are currently
+  ** trying to compute the column names.  If we enter this routine with
+  ** a negative nCol, it means two or more views form a loop, like this:
+  **
+  **     CREATE VIEW one AS SELECT * FROM two;
+  **     CREATE VIEW two AS SELECT * FROM one;
+  */
+  if( pTable->nCol<0 ){
+    sqliteSetString(&pParse->zErrMsg, "view ", pTable->zName,
+         " is circularly defined", 0);
+    pParse->nErr++;
+    return 1;
+  }
+
+  /* If we get this far, it means we need to compute the table names.
+  */
+  assert( pTable->pSelect ); /* If nCol==0, then pTable must be a VIEW */
+  pSel = pTable->pSelect;
+
+  /* Note that the call to sqliteResultSetOfSelect() will expand any
+  ** "*" elements in this list.  But we will need to restore the list
+  ** back to its original configuration afterwards, so we save a copy of
+  ** the original in pEList.
+  */
+  pEList = pSel->pEList;
+  pSel->pEList = sqliteExprListDup(pEList);
+  if( pSel->pEList==0 ){
+    pSel->pEList = pEList;
+    return 1;  /* Malloc failed */
+  }
+  pTable->nCol = -1;
+  pSelTab = sqliteResultSetOfSelect(pParse, 0, pSel);
+  if( pSelTab ){
+    assert( pTable->aCol==0 );
+    pTable->nCol = pSelTab->nCol;
+    pTable->aCol = pSelTab->aCol;
+    pSelTab->nCol = 0;
+    pSelTab->aCol = 0;
+    sqliteDeleteTable(0, pSelTab);
+    pParse->db->flags |= SQLITE_UnresetViews;
+  }else{
+    pTable->nCol = 0;
+    nErr++;
+  }
+  sqliteSelectUnbind(pSel);
+  sqliteExprListDelete(pSel->pEList);
+  pSel->pEList = pEList;
+  return nErr;  
+}
+
+/*
+** Clear the column names from the VIEW pTable.
+**
+** This routine is called whenever any other table or view is modified.
+** The view passed into this routine might depend directly or indirectly
+** on the modified or deleted table so we need to clear the old column
+** names so that they will be recomputed.
+*/
+static void sqliteViewResetColumnNames(Table *pTable){
+  int i;
+  if( pTable==0 || pTable->pSelect==0 ) return;
+  if( pTable->nCol==0 ) return;
+  for(i=0; i<pTable->nCol; i++){
+    sqliteFree(pTable->aCol[i].zName);
+    sqliteFree(pTable->aCol[i].zDflt);
+    sqliteFree(pTable->aCol[i].zType);
+  }
+  sqliteFree(pTable->aCol);
+  pTable->aCol = 0;
+  pTable->nCol = 0;
+}
+
+/*
+** Clear the column names from every VIEW.
+*/
+void sqliteViewResetAll(sqlite *db){
+  HashElem *i;
+  if( (db->flags & SQLITE_UnresetViews)==0 ) return;
+  for(i=sqliteHashFirst(&db->tblHash); i; i=sqliteHashNext(i)){
+    Table *pTab = sqliteHashData(i);
+    if( pTab->pSelect ){
+      sqliteViewResetColumnNames(pTab);
+    }
+  }
+  db->flags &= ~SQLITE_UnresetViews;
 }
 
 /*
@@ -927,6 +1027,7 @@ void sqliteDropTable(Parse *pParse, Token *pName){
     sqlitePendingDropTable(db, pTable);
     db->flags |= SQLITE_InternChanges;
   }
+  sqliteViewResetAll(db);
 }
 
 /*
@@ -1674,6 +1775,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       };
       int i;
       sqliteVdbeAddOpList(v, ArraySize(tableInfoPreface), tableInfoPreface);
+      sqliteViewGetColumnNames(pParse, pTab);
       for(i=0; i<pTab->nCol; i++){
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
@@ -1710,6 +1812,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
         sqliteVdbeAddOp(v, OP_Integer, i, 0);
         sqliteVdbeAddOp(v, OP_Integer, cnum, 0);
         sqliteVdbeAddOp(v, OP_String, 0, 0);
+        assert( pTab->nCol>cnum );
         sqliteVdbeChangeP3(v, -1, pTab->aCol[cnum].zName, P3_STATIC);
         sqliteVdbeAddOp(v, OP_Callback, 3, 0);
       }

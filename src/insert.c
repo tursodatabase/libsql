@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.46 2002/03/02 17:04:08 drh Exp $
+** $Id: insert.c,v 1.47 2002/03/03 18:59:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -63,6 +63,7 @@ void sqliteInsert(
   pTab = sqliteTableNameToTable(pParse, zTab);
   sqliteFree(zTab);
   if( pTab==0 ) goto insert_cleanup;
+  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
 
   /* Allocate a VDBE
   */
@@ -392,6 +393,7 @@ void sqliteGenerateConstraintChecks(
 
   v = sqliteGetVdbe(pParse);
   assert( v!=0 );
+  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
 
   /* Test all NOT NULL constraints.
@@ -553,6 +555,7 @@ void sqliteCompleteInsertion(
 
   v = sqliteGetVdbe(pParse);
   assert( v!=0 );
+  assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){}
   for(i=nIdx-1; i>=0; i--){
     if( aIdxUsed && aIdxUsed[i]==0 ) continue;
