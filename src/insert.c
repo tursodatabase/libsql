@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.93 2004/02/22 20:05:01 drh Exp $
+** $Id: insert.c,v 1.94 2004/02/24 01:05:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -330,13 +330,7 @@ void sqliteInsert(
   /* Open tables and indices if there are no row triggers */
   if( !row_triggers_exist ){
     base = pParse->nTab;
-    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeOp3(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, P3_STATIC);
-    for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeOp3(v, OP_OpenWrite, idx+base, pIdx->tnum,
-                       pIdx->zName, P3_STATIC);
-    }
+    idx = sqliteOpenTableAndIndices(pParse, pTab, base);
     pParse->nTab += idx;
   }
 
@@ -414,13 +408,7 @@ void sqliteInsert(
   */
   if( row_triggers_exist && !isView ){
     base = pParse->nTab;
-    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeOp3(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, P3_STATIC);
-    for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeOp3(v, OP_OpenWrite, idx+base, pIdx->tnum,
-                       pIdx->zName, P3_STATIC);
-    }
+    idx = sqliteOpenTableAndIndices(pParse, pTab, base);
     pParse->nTab += idx;
   }
 
@@ -906,4 +894,26 @@ void sqliteCompleteInsertion(
   if( isUpdate && recnoChng ){
     sqliteVdbeAddOp(v, OP_Pop, 1, 0);
   }
+}
+
+/*
+** Generate code that will open write cursors for a table and for all
+** indices of that table.  The "base" parameter is the cursor number used
+** for the table.  Indices are opened on subsequent cursors.
+**
+** Return the total number of cursors opened.  This is always at least
+** 1 (for the main table) plus more for each cursor.
+*/
+int sqliteOpenTableAndIndices(Parse *pParse, Table *pTab, int base){
+  int i;
+  Index *pIdx;
+  Vdbe *v = sqliteGetVdbe(pParse);
+  assert( v!=0 );
+  sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
+  sqliteVdbeOp3(v, OP_OpenWrite, base, pTab->tnum, pTab->zName, P3_STATIC);
+  for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+    sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
+    sqliteVdbeOp3(v, OP_OpenWrite, i+base, pIdx->tnum, pIdx->zName, P3_STATIC);
+  }
+  return i;
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the COPY command.
 **
-** $Id: copy.c,v 1.7 2004/02/16 03:44:02 drh Exp $
+** $Id: copy.c,v 1.8 2004/02/24 01:05:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -58,18 +58,9 @@ void sqliteCopy(
   v = sqliteGetVdbe(pParse);
   if( v ){
     sqliteBeginWriteOperation(pParse, 1, pTab->iDb);
-    addr = sqliteVdbeAddOp(v, OP_FileOpen, 0, 0);
-    sqliteVdbeChangeP3(v, addr, pFilename->z, pFilename->n);
+    addr = sqliteVdbeOp3(v, OP_FileOpen, 0, 0, pFilename->z, pFilename->n);
     sqliteVdbeDequoteP3(v, addr);
-    sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
-    sqliteVdbeAddOp(v, OP_OpenWrite, 0, pTab->tnum);
-    sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
-    for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      assert( pIdx->iDb==1 || pIdx->iDb==pTab->iDb );
-      sqliteVdbeAddOp(v, OP_Integer, pIdx->iDb, 0);
-      sqliteVdbeAddOp(v, OP_OpenWrite, i, pIdx->tnum);
-      sqliteVdbeChangeP3(v, -1, pIdx->zName, P3_STATIC);
-    }
+    sqliteOpenTableAndIndices(pParse, pTab, 0);
     if( db->flags & SQLITE_CountRows ){
       sqliteVdbeAddOp(v, OP_Integer, 0, 0);  /* Initialize the row count */
     }
