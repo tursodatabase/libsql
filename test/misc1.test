@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.13 2002/08/15 11:48:13 drh Exp $
+# $Id: misc1.test,v 1.14 2002/08/18 22:41:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -362,5 +362,42 @@ do_test misc1-12.7 {
     SELECT DISTINCT x, y FROM t7 ORDER BY z;
   }
 } {0 0 0 0.0}
+do_test misc1-12.8 {
+  execsql {
+    SELECT min(z), max(z), count(z) FROM t7 GROUP BY x ORDER BY 1;
+  }
+} {1 4 4}
+do_test misc1-12.9 {
+  execsql {
+    SELECT min(z), max(z), count(z) FROM t7 GROUP BY y ORDER BY 1;
+  }
+} {1 2 2 3 4 2}
+do_test misc1-12.10 {
+  catchsql {
+    SELECT * FROM t6 ORDER BY a COLLATE unknown;
+  }
+} {1 {unknown collating type: unknown}}
+do_test misc1-12.11 {
+  execsql {
+    CREATE TABLE t8(x TEXT COLLATE numeric, y INTEGER COLLATE text, z);
+    INSERT INTO t8 VALUES(0,0,1);
+    INSERT INTO t8 VALUES(0.0,0,2);
+    INSERT INTO t8 VALUES(0,0.0,3);
+    INSERT INTO t8 VALUES(0.0,0.0,4);
+    SELECT DISTINCT x, y FROM t8 ORDER BY z;
+  }
+} {0 0 0 0.0}
+do_test misc1-12.12 {
+  execsql {
+    SELECT min(z), max(z), count(z) FROM t8 GROUP BY x ORDER BY 1;
+  }
+} {1 4 4}
+do_test misc1-12.13 {
+  execsql {
+    SELECT min(z), max(z), count(z) FROM t8 GROUP BY y ORDER BY 1;
+  }
+} {1 2 2 3 4 2}
+
+
 
 finish_test
