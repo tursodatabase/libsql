@@ -1,5 +1,5 @@
-C Added\sthe\s%fallback\sdirective\sto\sthe\slemon\sparser\sgenerator\sand\sused\sthis\nin\sthe\sparser\sto\smake\sthe\sparse\stables\smuch\ssmaller.\s\sThis\sreduced\sthe\ssize\nof\sthe\slibrary\sby\s15K.\s(CVS\s605)
-D 2002-06-06T18:54:40
+C Additional\sgrammar\scleanup\sresulting\sfrom\sthe\s%fallback\sdirective.\s(CVS\s606)
+D 2002-06-06T19:04:16
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -34,7 +34,7 @@ F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
 F src/pager.c 1e41053c949cea1f09d8dafada5fe8f90785e650
 F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
-F src/parse.y e8c65150e8f581da6cc0bc5a87063ed7a2b28564
+F src/parse.y 3b4989cb81ab2f441ef6c7cbb203829838eb299e
 F src/printf.c d8032ee18b860c812eeff596c9bebfdacb7930fd
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c 0293ec0190d9a991725579a5e9c3af2fb6c1b592
@@ -136,7 +136,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 637ee587b5438c54ba2d8bd8fc15e584abb70946
-R d5040ca10de549792ac65f5e92bf037a
+P 7ac5bd293cbb2bf252f31f1571f7efac7e77280a
+R d4345db261ae090ac6a58373d7650fb9
 U drh
-Z 67f180b15375cb80ef3d22765a7c3016
+Z a44424a54b4cc26f96d80deba8206afd
