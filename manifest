@@ -1,5 +1,5 @@
-C Ensure\sthe\smaster\sjournal\sdirectory\sis\ssynced.\sAlso,\schange\sthe\smaster\sjournal\nformat\sto\sstore\sjournal\sfile\snames.\s(CVS\s1583)
-D 2004-06-14T06:03:57
+C Change\stests\sin\spager.test\sto\saccount\sfor\sthe\sextra\scache\shit\sin\sthe\scode\nthat\supdates\sfile\schange\scounter.\s(CVS\s1584)
+D 2004-06-14T06:13:06
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -135,7 +135,7 @@ F test/misc3.test eb488314990bfc0959221a1acc465013238bf168
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
-F test/pager.test 548968643d91c1c43a3a3eb1a232e9ca87b4069e
+F test/pager.test b17ce7d4e89ab3618f6903f0ec318a13f855a849
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 1b6792d4af550ca4973096d77fc278dd6c32c4dd
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
@@ -223,7 +223,7 @@ F www/support.tcl 1801397edd271cc39a2aadd54e701184b5181248
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 4649abcbfd032836b196b5d690ef66e4aa494c45
-R b61789483f3e3746f567ebdec2a394da
+P 73cd0aabb24f7b663c8b55cf5e8fcb34fd48c032
+R 6071ea97f079a9886a124df6bbeb5f96
 U danielk1977
-Z cb4dbe83de3608a128ac6ced61032939
+Z a077310bb2345bbd7f3e6966a1de5cc1
