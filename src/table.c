@@ -47,7 +47,7 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   /* Make sure there is enough space in p->azResult to hold everything
   ** we need to remember from this invocation of the callback.
   */
-  if( p->nRow==0 ){
+  if( p->nRow==0 && argv!=0 ){
     p->nColumn = nCol;
     need = nCol*2;
   }else{
@@ -83,20 +83,22 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
 
   /* Copy over the row data
   */
-  for(i=0; i<nCol; i++){
-    if( argv[i]==0 ){
-      z = 0;
-    }else{
-      z = malloc( strlen(argv[i])+1 );
-      if( z==0 ){
-        p->rc = SQLITE_NOMEM;
-        return 1;
+  if( argv!=0 ){
+    for(i=0; i<nCol; i++){
+      if( argv[i]==0 ){
+        z = 0;
+      }else{
+        z = malloc( strlen(argv[i])+1 );
+        if( z==0 ){
+          p->rc = SQLITE_NOMEM;
+          return 1;
+        }
+        strcpy(z, argv[i]);
       }
-      strcpy(z, argv[i]);
+      p->azResult[p->nData++] = z;
     }
-    p->azResult[p->nData++] = z;
+    p->nRow++;
   }
-  p->nRow++;
   return 0;
 }
 

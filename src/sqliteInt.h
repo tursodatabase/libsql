@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.63 2001/10/18 12:34:47 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.64 2001/10/19 16:44:57 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -166,6 +166,8 @@ struct sqlite {
 #define SQLITE_CountRows      0x00000040  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
+#define SQLITE_NullCallback   0x00000080  /* Invoke the callback once if the */
+                                          /*   result set is empty */
 
 /*
 ** Current file format version

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.17 2001/10/12 17:30:05 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.18 2001/10/19 16:44:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -20,7 +20,7 @@ puts {
 a C or C++ program.  This document gives an overview of the C/C++
 programming interface.</p>
 
-<h2>The API</h2>
+<h2>The Core API</h2>
 
 <p>The interface to the SQLite library consists of three core functions,
 one opaque data structure, and some constants used as return values.
@@ -28,6 +28,7 @@ The core interface is as follows:</p>
 
 <blockquote><pre>
 typedef struct sqlite sqlite;
+#define SQLITE_OK           0   /* Successful result */
 
 sqlite *sqlite_open(const char *dbname, int mode, char **errmsg);
 
@@ -40,101 +41,14 @@ int sqlite_exec(
   void*,
   char **errmsg
 );
-
-#define SQLITE_OK           0   /* Successful result */
-#define SQLITE_ERROR        1   /* SQL error or missing database */
-#define SQLITE_INTERNAL     2   /* An internal logic error in SQLite */
-#define SQLITE_PERM         3   /* Access permission denied */
-#define SQLITE_ABORT        4   /* Callback routine requested an abort */
-#define SQLITE_BUSY         5   /* The database file is locked */
-#define SQLITE_LOCKED       6   /* A table in the database is locked */
-#define SQLITE_NOMEM        7   /* A malloc() failed */
-#define SQLITE_READONLY     8   /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite_interrupt() */
-#define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
-#define SQLITE_CORRUPT     11   /* The database disk image is malformed */
-#define SQLITE_NOTFOUND    12   /* (Internal Only) Table or record not found */
-#define SQLITE_FULL        13   /* Insertion failed because database is full */
-#define SQLITE_CANTOPEN    14   /* Unable to open the database file */
-#define SQLITE_PROTOCOL    15   /* Database lock protocol error */
-#define SQLITE_EMPTY       16   /* (Internal Only) Database table is empty */
-#define SQLITE_SCHEMA      17   /* The database schema changed */
-#define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
-#define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
 </pre></blockquote>
 
-<p>Only the three core routines shown above are required to use
-SQLite.  But there are many other functions that provide 
-useful interfaces.  These extended routines are as follows:
+<p>
+The above is all you really need to know in order to use SQLite
+in your C or C++ programs.  There are other convenience functions
+available (and described below) but we will begin by describing
+the core functions shown above.
 </p>
-
-<blockquote><pre>
-int sqlite_get_table(
-  sqlite*,
-  char *sql,
-  char ***result,
-  int *nrow,
-  int *ncolumn,
-  char **errmsg
-);
-
-void sqlite_free_table(char**);
-
-void sqlite_interrupt(sqlite*);
-
-int sqlite_complete(const char *sql);
-
-void sqlite_busy_handler(sqlite*, int (*)(void*,const char*,int), void*);
-
-void sqlite_busy_timeout(sqlite*, int ms);
-
-const char sqlite_version[];
-
-const char sqlite_encoding[];
-
-int sqlite_exec_printf(
-  sqlite*,
-  char *sql,
-  int (*)(void*,int,char**,char**),
-  void*,
-  char **errmsg,
-  ...
-);
-
-int sqlite_exec_vprintf(
-  sqlite*,
-  char *sql,
-  int (*)(void*,int,char**,char**),
-  void*,
-  char **errmsg,
-  va_list
-);
-
-int sqlite_get_table_printf(
-  sqlite*,
-  char *sql,
-  char ***result,
-  int *nrow,
-  int *ncolumn,
-  char **errmsg,
-  ...
-);
-
-int sqlite_get_table_vprintf(
-  sqlite*,
-  char *sql,
-  char ***result,
-  int *nrow,
-  int *ncolumn,
-  char **errmsg,
-  va_list
-);
-
-</pre></blockquote>
-
-<p>All of the above definitions are included in the "sqlite.h"
-header file that comes in the source tree.</p>
-
 <h2>Opening a database</h2>
 
 <p>Use the <b>sqlite_open()</b> function to open an existing SQLite
@@ -225,13 +139,57 @@ argv[i] == 0
 </pre></blockquote>
 <p>The names of the columns are contained in the fourth argument.</p>
 
+<p>If the EMPTY_RESULT_CALLBACKS pragma is set to ON and the result of
+a query is an empty set, then the callback is invoked once with the
+third parameter (argv) set to 0.  In other words
+<blockquote><pre>
+argv == 0
+</pre></blockquote>
+The second parameter (argc)
+and the fourth parameter (columnNames) are still valid
+and can be used to determine the number and names of the result
+columns if there had been a result.
+The default behavior is not to invoke the callback at all if the
+result set is empty.</p>
+
 <p>The callback function should normally return 0.  If the callback
 function returns non-zero, the query is immediately aborted and 
 <b>sqlite_exec()</b> will return SQLITE_ABORT.</p>
 
-<p>The <b>sqlite_exec()</b> function returns an integer to indicate
-success or failure of the operation.  The following are possible
-return values:</p>
+<h2>Error Codes</h2>
+
+<p>
+The <b>sqlite_exec()</b> function normally returns SQLITE_OK.  But
+if something goes wrong it can return a different value to indicate
+the type of error.  Here is a complete list of the return codes:
+</p>
+
+<blockquote><pre>
+#define SQLITE_OK           0   /* Successful result */
+#define SQLITE_ERROR        1   /* SQL error or missing database */
+#define SQLITE_INTERNAL     2   /* An internal logic error in SQLite */
+#define SQLITE_PERM         3   /* Access permission denied */
+#define SQLITE_ABORT        4   /* Callback routine requested an abort */
+#define SQLITE_BUSY         5   /* The database file is locked */
+#define SQLITE_LOCKED       6   /* A table in the database is locked */
+#define SQLITE_NOMEM        7   /* A malloc() failed */
+#define SQLITE_READONLY     8   /* Attempt to write a readonly database */
+#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite_interrupt() */
+#define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
+#define SQLITE_CORRUPT     11   /* The database disk image is malformed */
+#define SQLITE_NOTFOUND    12   /* (Internal Only) Table or record not found */
+#define SQLITE_FULL        13   /* Insertion failed because database is full */
+#define SQLITE_CANTOPEN    14   /* Unable to open the database file */
+#define SQLITE_PROTOCOL    15   /* Database lock protocol error */
+#define SQLITE_EMPTY       16   /* (Internal Only) Database table is empty */
+#define SQLITE_SCHEMA      17   /* The database schema changed */
+#define SQLITE_TOOBIG      18   /* Too much data for one row of a table */
+#define SQLITE_CONSTRAINT  19   /* Abort due to contraint violation */
+</pre></blockquote>
+
+<p>
+The meanings of these various return values are as follows:
+</p>
 
 <blockquote>
 <dl>
@@ -332,6 +290,80 @@ a database constraint.
 </dl>
 </blockquote>
 
+<h2>The Extended API</h2>
+
+<p>Only the three core routines shown above are required to use
+SQLite.  But there are many other functions that provide 
+useful interfaces.  These extended routines are as follows:
+</p>
+
+<blockquote><pre>
+int sqlite_get_table(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg
+);
+
+void sqlite_free_table(char**);
+
+void sqlite_interrupt(sqlite*);
+
+int sqlite_complete(const char *sql);
+
+void sqlite_busy_handler(sqlite*, int (*)(void*,const char*,int), void*);
+
+void sqlite_busy_timeout(sqlite*, int ms);
+
+const char sqlite_version[];
+
+const char sqlite_encoding[];
+
+int sqlite_exec_printf(
+  sqlite*,
+  char *sql,
+  int (*)(void*,int,char**,char**),
+  void*,
+  char **errmsg,
+  ...
+);
+
+int sqlite_exec_vprintf(
+  sqlite*,
+  char *sql,
+  int (*)(void*,int,char**,char**),
+  void*,
+  char **errmsg,
+  va_list
+);
+
+int sqlite_get_table_printf(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg,
+  ...
+);
+
+int sqlite_get_table_vprintf(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg,
+  va_list
+);
+
+</pre></blockquote>
+
+<p>All of the above definitions are included in the "sqlite.h"
+header file that comes in the source tree.</p>
+
 <h2>Querying without using a callback function</h2>
 
 <p>The <b>sqlite_get_table()</b> function is a wrapper around
@@ -375,10 +407,46 @@ result[8] = "zadok"
 <p>Notice that the "host" value for the "dummy" record is NULL so
 the result[] array contains a NULL pointer at that slot.</p>
 
+<p>If the result set of a query is empty, then by default
+<b>sqlite_get_table()</b> will set nrow to 0 and leave its
+result parameter is set to NULL.  But if the EMPTY_RESULT_CALLBACKS
+pragma is ON then the result parameter is initialized to the names
+of the columns only.  For example, consider this query which has
+an empty result set:</p>
+
+<blockquote>
+SELECT employee_name, login, host FROM users WHERE employee_name IS NULL;
+</blockquote>
+
+<p>
+The default behavior gives this results:
+</p>
+
+<blockquote>
+nrow = 0<br>
+ncolumn = 0<br>
+result = 0<br>
+</blockquote>
+
+<p>
+But if the EMPTY_RESULT_CALLBACKS pragma is ON, then the following
+is returned:
+</p>
+
+<blockquote>
+nrow = 0<br>
+ncolumn = 3<br>
+result[0] = "employee_name"<br>
+result[1] = "login"<br>
+result[2] = "host"<br>
+</blockquote>
+
 <p>Memory to hold the information returned by <b>sqlite_get_table()</b>
 is obtained from malloc().  But the calling function should not try
 to free this information directly.  Instead, pass the complete table
-to <b>sqlite_free_table()</b> when the table is no longer needed.</p>
+to <b>sqlite_free_table()</b> when the table is no longer needed.
+It is safe to call <b>sqlite_free_table()</b> will a NULL pointer such
+as would be returned if the result set is empty.</p>
 
 <p>The <b>sqlite_get_table()</b> routine returns the same integer
 result code as <b>sqlite_exec()</b>.</p>

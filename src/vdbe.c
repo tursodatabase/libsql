@@ -30,7 +30,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.86 2001/10/18 12:34:48 drh Exp $
+** $Id: vdbe.c,v 1.87 2001/10/19 16:44:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -202,6 +202,7 @@ struct Vdbe {
   int nSet;           /* Number of sets allocated */
   Set *aSet;          /* An array of sets */
   int nFetch;         /* Number of OP_Fetch instructions executed */
+  int nCallback;      /* Number of callbacks invoked so far */
 };
 
 /*
@@ -811,17 +812,17 @@ static char *zOpName[] = { 0,
   "AggGet",            "SetInsert",         "SetFound",          "SetNotFound",
   "SetClear",          "MakeRecord",        "MakeKey",           "MakeIdxKey",
   "Goto",              "If",                "Halt",              "ColumnCount",
-  "ColumnName",        "Callback",          "Integer",           "String",
-  "Null",              "Pop",               "Dup",               "Pull",
-  "Add",               "AddImm",            "Subtract",          "Multiply",
-  "Divide",            "Remainder",         "BitAnd",            "BitOr",
-  "BitNot",            "ShiftLeft",         "ShiftRight",        "AbsValue",
-  "Precision",         "Min",               "Max",               "Like",
-  "Glob",              "Eq",                "Ne",                "Lt",
-  "Le",                "Gt",                "Ge",                "IsNull",
-  "NotNull",           "Negative",          "And",               "Or",
-  "Not",               "Concat",            "Noop",              "Strlen",
-  "Substr",          
+  "ColumnName",        "Callback",          "NullCallback",      "Integer",
+  "String",            "Null",              "Pop",               "Dup",
+  "Pull",              "Add",               "AddImm",            "Subtract",
+  "Multiply",          "Divide",            "Remainder",         "BitAnd",
+  "BitOr",             "BitNot",            "ShiftLeft",         "ShiftRight",
+  "AbsValue",          "Precision",         "Min",               "Max",
+  "Like",              "Glob",              "Eq",                "Ne",
+  "Lt",                "Le",                "Gt",                "Ge",
+  "IsNull",            "NotNull",           "Negative",          "And",
+  "Or",                "Not",               "Concat",            "Noop",
+  "Strlen",            "Substr",          
 };
 
 /*
@@ -1194,6 +1195,7 @@ case OP_ColumnCount: {
   p->azColName = sqliteRealloc(p->azColName, (pOp->p1+1)*sizeof(char*));
   if( p->azColName==0 ) goto no_mem;
   p->azColName[pOp->p1] = 0;
+  p->nCallback = 0;
   break;
 }
 
@@ -1207,6 +1209,7 @@ case OP_ColumnCount: {
 */
 case OP_ColumnName: {
   p->azColName[pOp->p1] = pOp->p3 ? pOp->p3 : "";
+  p->nCallback = 0;
   break;
 }
 
@@ -1231,8 +1234,35 @@ case OP_Callback: {
     if( xCallback(pArg, pOp->p1, &zStack[i], p->azColName)!=0 ){
       rc = SQLITE_ABORT;
     }
+    p->nCallback++;
   }
   PopStack(p, pOp->p1);
+  break;
+}
+
+/* Opcode: NullCallback P1 * *
+**
+** Invoke the callback function once with the 2nd argument (the
+** number of columns) equal to P1 and with the 4th argument (the
+** names of the columns) set according to prior OP_ColumnName and
+** OP_ColumnCount instructions.  This is all like the regular
+** OP_Callback or OP_SortCallback opcodes.  But the 3rd argument
+** which normally contains a pointer to an array of pointers to
+** data is NULL.
+**
+** The callback is only invoked if there have been no prior calls
+** to OP_Callback or OP_SortCallback.
+**
+** This opcode is used to report the number and names of columns
+** in cases where the result set is empty.
+*/
+case OP_NullCallback: {
+  if( xCallback!=0 && p->nCallback==0 ){
+    if( xCallback(pArg, pOp->p1, 0, p->azColName)!=0 ){
+      rc = SQLITE_ABORT;
+    }
+    p->nCallback++;
+  }
   break;
 }
 
@@ -3376,6 +3406,7 @@ case OP_SortCallback: {
     if( xCallback(pArg, pOp->p1, (char**)zStack[i], p->azColName) ){
       rc = SQLITE_ABORT;
     }
+    p->nCallback++;
   }
   POPSTACK;
   break;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.13 2001/10/18 12:34:48 drh Exp $
+# $Id: select1.test,v 1.14 2001/10/19 16:44:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -413,5 +413,37 @@ do_test select1-8.5 {
     FROM test1 ORDER BY f1
   }
 } {1 -3 1 -3}
+
+
+# Check the behavior when the result set is empty
+#
+do_test select1-9.1 {
+  catch {unset r}
+  set r(*) {}
+  db eval {SELECT * FROM test1 WHERE f1<0} r {}
+  set r(*)
+} {}
+do_test select1-9.2 {
+  execsql {PRAGMA empty_result_callbacks=on}
+  set r(*) {}
+  db eval {SELECT * FROM test1 WHERE f1<0} r {}
+  set r(*)
+} {f1 f2}
+do_test select1-9.3 {
+  set r(*) {}
+  db eval {SELECT * FROM test1 WHERE f1<(select count(*) from test2)} r {}
+  set r(*)
+} {f1 f2}
+do_test select1-9.4 {
+  set r(*) {}
+  db eval {SELECT * FROM test1 ORDER BY f1} r {}
+  set r(*)
+} {f1 f2}
+do_test select1-9.5 {
+  set r(*) {}
+  db eval {SELECT * FROM test1 WHERE f1<0 ORDER BY f1} r {}
+  set r(*)
+} {f1 f2}
+unset r
 
 finish_test

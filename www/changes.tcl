@@ -17,7 +17,8 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2001 Oct ?? (2.0.6)} {
+chng {2001 Oct 19 (2.0.6)} {
+<li>Added the EMPTY_RESULT_CALLBACKS pragma</li>
 <li>Support for UTF-8 and ISO8859 characters in column and table names.</li>
 <li>Bug fix: Compute correct table names with the FULL_COLUMN_NAMES pragma
     is turned on.</li>

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.41 2001/10/18 12:34:47 drh Exp $
+** $Id: select.c,v 1.42 2001/10/19 16:44:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -994,5 +994,13 @@ int sqliteSelect(
     generateSortTail(v, pEList->nExpr);
   }
   pParse->nTab = base;
+
+
+  /* Issue a null callback if that is what the user wants.
+  */
+  if( (pParse->db->flags & SQLITE_NullCallback)!=0 && eDest==SRT_Callback ){
+    sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
+  }
+
   return 0;
 }

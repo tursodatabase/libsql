@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.36 2001/10/06 16:33:03 drh Exp $
+** $Id: shell.c,v 1.37 2001/10/19 16:44:57 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -244,6 +244,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
   switch( p->mode ){
     case MODE_Line: {
       int w = 5;
+      if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         int len = strlen(azCol[i]);
         if( len>w ) w = len;
@@ -266,7 +267,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           if( w<=0 ){
             w = strlen(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = strlen(azArg[i] ? azArg[i] : "");
+            n = strlen(azArg && azArg[i] ? azArg[i] : "");
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -290,6 +291,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           }
         }
       }
+      if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         int w;
         if( i<ArraySize(p->actualWidth) ){
@@ -309,6 +311,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           fprintf(p->out,"%s%s",azCol[i], i==nArg-1 ? "\n" : p->separator);
         }
       }
+      if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         char *z = azArg[i];
         if( z==0 ) z = "";
@@ -342,6 +345,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }
         fprintf(p->out,"</TR>\n");
       }
+      if( azArg==0 ) break;
       fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
         fprintf(p->out,"<TD>");
@@ -352,6 +356,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       break;
     }
     case MODE_Insert: {
+      if( azArg==0 ) break;
       fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
@@ -365,6 +370,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }
       }
       fprintf(p->out,");\n");
+      break;
     }
   }      
   return 0;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.25 2001/10/18 12:34:47 drh Exp $
+** $Id: tclsqlite.c,v 1.26 2001/10/19 16:44:57 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -72,42 +72,44 @@ static int DbEvalCallback(
 #ifdef UTF_TRANSLATION_NEEDED
   Tcl_DString dCol;
 #endif
-  if( cbData->zArray[0] ){
-    if( cbData->once ){
-      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
+  if( azCol==0 || (cbData->once && cbData->zArray[0]) ){
+    Tcl_SetVar2(cbData->interp, cbData->zArray, "*", "", 0);
+    for(i=0; i<nCol; i++){
+      Tcl_SetVar2(cbData->interp, cbData->zArray, "*", azN[i],
+         TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+    }
+    cbData->once = 0;
+  }
+  if( azCol!=0 ){
+    if( cbData->zArray[0] ){
       for(i=0; i<nCol; i++){
-        Tcl_SetVar2(cbData->interp, cbData->zArray, "*", azN[i],
-           TCL_LIST_ELEMENT|TCL_APPEND_VALUE);
+        char *z = azCol[i];
+        if( z==0 ) z = "";
+#ifdef UTF_TRANSLATION_NEEDED
+        Tcl_DStringInit(&dCol);
+        Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
+        Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], 
+              Tcl_DStringValue(&dCol), 0);
+        Tcl_DStringFree(&dCol);
+#else
+        Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], z, 0);
+#endif
+      }
+    }else{
+      for(i=0; i<nCol; i++){
+        char *z = azCol[i];
+        if( z==0 ) z = "";
+#ifdef UTF_TRANSLATION_NEEDED
+        Tcl_DStringInit(&dCol);
+        Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
+        Tcl_SetVar(cbData->interp, azN[i], Tcl_DStringValue(&dCol), 0);
+        Tcl_DStringFree(&dCol);
+#else
+        Tcl_SetVar(cbData->interp, azN[i], z, 0);
+#endif
       }
     }
-    for(i=0; i<nCol; i++){
-      char *z = azCol[i];
-      if( z==0 ) z = "";
-#ifdef UTF_TRANSLATION_NEEDED
-      Tcl_DStringInit(&dCol);
-      Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
-      Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], 
-            Tcl_DStringValue(&dCol), 0);
-      Tcl_DStringFree(&dCol);
-#else
-      Tcl_SetVar2(cbData->interp, cbData->zArray, azN[i], z, 0);
-#endif
-    }
-  }else{
-    for(i=0; i<nCol; i++){
-      char *z = azCol[i];
-      if( z==0 ) z = "";
-#ifdef UTF_TRANSLATION_NEEDED
-      Tcl_DStringInit(&dCol);
-      Tcl_ExternalToUtfDString(NULL, z, -1, &dCol);
-      Tcl_SetVar(cbData->interp, azN[i], Tcl_DStringValue(&dCol), 0);
-      Tcl_DStringFree(&dCol);
-#else
-      Tcl_SetVar(cbData->interp, azN[i], z, 0);
-#endif
-    }
   }
-  cbData->once = 0;
   rc = Tcl_EvalObj(cbData->interp, cbData->pCode);
   if( rc==TCL_CONTINUE ) rc = TCL_OK;
   cbData->tcl_rc = rc;
@@ -128,6 +130,7 @@ static int DbEvalCallback2(
 ){
   Tcl_Obj *pList = (Tcl_Obj*)clientData;
   int i;
+  if( azCol==0 ) return 0;
   for(i=0; i<nCol; i++){
     Tcl_Obj *pElem;
     if( azCol[i] && *azCol[i] ){
