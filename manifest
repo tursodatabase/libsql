@@ -1,5 +1,5 @@
-C Always\sreload\sthe\sschema\safter\sa\srollback.\s\sTicket\s#594.\s(CVS\s1229)
-D 2004-02-12T15:31:21
+C Remove\sunused\svariable.\s(CVS\s1230)
+D 2004-02-12T15:32:53
 F Makefile.in cfd75c46b335881999333a9e4b982fa8491f200b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -64,7 +64,7 @@ F src/vacuum.c d9e80c2b36ee1f623dbf1bdf3cedad24a23f87ac
 F src/vdbe.c f665f4c1dcee0665f26b88b9e7ede74c4ab9edd5
 F src/vdbe.h 3957844e46fea71fd030e78f6a3bd2f7e320fb43
 F src/vdbeInt.h 8a3baf749115cba81a810b7a52208aef055eda7b
-F src/vdbeaux.c 7c83db889c336596f48defebdec4270ce3990847
+F src/vdbeaux.c c55d87d6658487e87ef09ca80c1aa2f314024fed
 F src/where.c 1302d728bd338c237e6a8282e4e3eadbbdf11e45
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
 F test/attach.test 09ff5eec8e7103909beae14dbb1d97c01d64bfa4
@@ -184,7 +184,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2fe9f5101cb0f743532912ece3d37f6c873e7025
-R 6c2fc2ff1652d69a19fddf002bab9e52
+P 12c7a83f8e4055c4590983ef212648c781ebd963
+R 169c4550cb0c181c91ddd06ec37d21a9
 U drh
-Z cb56b1ce256967725fed5e041788204c
+Z 6f67ba3f9d362fc59a57f90014d40746
