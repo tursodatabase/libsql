@@ -1,5 +1,5 @@
-C Correct\suse\sof\susableSize\sversus\spageSize\sin\sbtree.c.\s\sTicket\s#1010.\s(CVS\s2125)
-D 2004-11-20T20:31:12
+C Avoid\sexcess\sheap\susage\swhen\scopying\sexpressions.\s\sTicket\s#979.\s(CVS\s2127)
+D 2004-11-20T20:44:14
 F Makefile.in e747bb5ba34ccbdd81f79dcf1b2b33c02817c21d
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -34,7 +34,7 @@ F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c c7dd57fdbb330d65df241277291cad8e58687a46
 F src/date.c 65536e7ea04fdde6e0551264fca15966966e171f
 F src/delete.c be9d039b819f4a5d0fdfaeceace139ba189ef819
-F src/expr.c 90f440e1fe065717bbe391cc4de455997794399d
+F src/expr.c 511c27a8858ca12614f495c9c90f5d12db11e6c2
 F src/func.c b668e5ad043176049454c95a6a780367a0e8f6bb
 F src/hash.c a97721a55440b7bea31ffe471bb2f6b4123cddd5
 F src/hash.h 1b0c445e1c89ff2aaad9b4605ba61375af001e84
@@ -260,7 +260,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P accd432e4d9626353e555e63298fb7a56a41e53d
-R 1ccf4dda121470590ad512e7b345f98d
+P 5a4013ec9cabb2c933cbf45495f5d1e8b3b20da5
+R 1ccc0c1cee174b34e5863b11269541a0
 U drh
-Z c6333e370a3a5a96836061f6165224d0
+Z 03c0bec5c7cb94aa1b76ae09f66e42f9
