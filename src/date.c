@@ -16,7 +16,7 @@
 ** sqliteRegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.4 2003/12/23 16:34:13 drh Exp $
+** $Id: date.c,v 1.5 2003/12/24 01:41:19 dougcurrie Exp $
 **
 ** NOTES:
 **
@@ -48,12 +48,12 @@
 **      Richmond, Virginia (USA)
 */
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
+#include "os.h"
+#include "sqliteInt.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
-#include "sqliteInt.h"
-#include "os.h"
 
 /*
 ** A structure for holding a single date and time.

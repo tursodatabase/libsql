@@ -132,6 +132,9 @@
 # else
 #  if !defined(_CYGWIN_TYPES_H)
      typedef long long off_t;
+#    if defined(__MINGW32__)
+#      define	_OFF_T_
+#    endif
 #  endif
 # endif
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
