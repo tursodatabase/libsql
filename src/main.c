@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.93 2002/07/30 18:43:41 drh Exp $
+** $Id: main.c,v 1.94 2002/07/31 00:32:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -118,6 +118,8 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
   char *zErr = 0;
 
   pTab = sqliteFindTable(pData->db, argv[0]);
+  assert( pTab!=0 );
+  assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
   if( pTab ){
     pTrig = pTab->pTrigger;
     pTab->pTrigger = 0;  /* Disable all triggers before rebuilding the table */
@@ -132,7 +134,17 @@ int upgrade_3_callback(void *pInit, int argc, char **argv, char **NotUsed){
     sqliteSetString(pData->pzErrMsg, zErr, 0);
     sqlite_freemem(zErr);
   }
-  if( pTab ) pTab->pTrigger = pTrig;  /* Re-enable triggers */
+
+  /* If an error occurred in the SQL above, then the transaction will
+  ** rollback which will delete the internal symbol tables.  This will
+  ** cause the structure that pTab points to be deleted.  In case that
+  ** happened, we need to refetch pTab.
+  */
+  pTab = sqliteFindTable(pData->db, argv[0]);
+  if( pTab ){
+    assert( sqliteStrICmp(pTab->zName, argv[0])==0 );
+    pTab->pTrigger = pTrig;  /* Re-enable triggers */
+  }
   return rc!=SQLITE_OK;
 }
 

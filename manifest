@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#114:\sCorrectly\shandle\sSQLITE_BUSY\sif\sit\soccurs\sduring\ndatabase\sinitialization.\s(CVS\s696)
-D 2002-07-30T18:43:41
+C Fix\sfor\sticket\s#104:\sMake\striggers\son\sviews\swork\sproperly\seven\safter\sclosing\nand\sreopening\sthe\sdatabase.\s\sAlso\sfixed\san\sunrelated\sbug\sin\sthe\sversion\n2.6.0\sdatabase\sformat\supgrade\slogic.\s\sThe\supgrade\slogic\sbug\swas\sfound\swhile\ntesting\sthe\strigger\sfixes.\s(CVS\s697)
+D 2002-07-31T00:32:50
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -27,8 +27,8 @@ F src/expr.c 8a6b669ba5d6cd2810e8671f918ddb0fac3dd1b1
 F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 9bc794863ea2988a7b8667ef010b3c46b26dba38
-F src/main.c 4a9b0bae947bc276093f3eb4202ad2f3904da422
+F src/insert.c 8aefc998c86a3bd53082e2f8fdd049345fcf3463
+F src/main.c 6ae1d21113b4dd4cf036f75e3c954fa43422d6df
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c edb22daad525f49681f41c76683a16c1d39755c7
 F src/os.h 5b9a69875c880d1665ae040cbca1f7b9c82198ab
@@ -104,6 +104,7 @@ F test/trans.test 1fd1ecdece1eca22abe631674c3bd24046df4150
 F test/trigger1.test bb63749fa8a395a60541100607d86381604b7194
 F test/trigger2.test f739876942a26c63d42387321a89b75ec93af48a
 F test/trigger3.test 7dfe798d7e72c13720394685fe353112e3f31adf
+F test/trigger4.test 9a5c1406344d743020c2753ae8d6dfe6eb75f818
 F test/unique.test 572aa791327c1e8d797932263e9d67f176cfdb44
 F test/update.test 7ffb062d580a972e7870d0f51d5af3ab9bfeae08
 F test/vacuum.test 059871b312eb910bbe49dafde1d01490cc2c6bbe
@@ -142,7 +143,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 0b0c0492cc1e55c1c4feba6e92765ea09896096c
-R a473164afc293bc42dd2cac7939e21de
+P 5b814b5df667ccc91d85fbb7f96e523483e9219b
+R e7cab85ea2c9f7138b4a7428603a00f1
 U drh
-Z 4386be0810f97b9bb5d92a2b7f47c244
+Z 973c17ae849347942e20c1058f1b7159
