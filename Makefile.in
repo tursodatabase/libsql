@@ -565,7 +565,6 @@ version3.html:	$(TOP)/www/version3.tcl
 #
 DOC = \
   arch.html \
-  arch.png \
   autoinc.html \
   c_interface.html \
   capi3.html \

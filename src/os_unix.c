@@ -730,7 +730,7 @@ static int full_fsync(int fd, int fullSync){
 
 #ifdef F_FULLFSYNC
   if( fullSync ){
-    rc = fcntl(fd, F_FULLSYNC, 0);
+    rc = fcntl(fd, F_FULLFSYNC, 0);
   }else{
     rc = 1;
   }
@@ -739,7 +739,7 @@ static int full_fsync(int fd, int fullSync){
 
 #else
   rc = fsync(fd);
-#endif /* defined(F_FULLSYNC) */
+#endif /* defined(F_FULLFSYNC) */
 #endif /* defined(SQLITE_NO_SYNC) */
 
   return rc;
@@ -778,7 +778,7 @@ int sqlite3OsSync(OsFile *id){
 **
 ** This is used to make sure the master journal file has truely been deleted
 ** before making changes to individual journals on a multi-database commit.
-** The F_FULLSYNC option is not needed here.
+** The F_FULLFSYNC option is not needed here.
 */
 int sqlite3OsSyncDirectory(const char *zDirname){
   int fd;

@@ -21,7 +21,12 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
-chng {2005 February 19 (3.1.4)} {
+chng {2005 March 11 (3.1.5)} {
+<li>The ioctl on OS-X to control syncing to disk is F_FULLFSYNC,
+    not F_FULLSYNC.  The previous release had it wrong.</li>
+}
+
+chng {2005 March 10 (3.1.4)} {
 <li>Fix a bug in autovacuum that could cause database corruption if
 a CREATE UNIQUE INDEX fails because of a constraint violation.
 This problem only occurs if the new autovacuum feature introduced in
