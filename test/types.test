@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.13 2004/11/03 16:27:02 drh Exp $
+# $Id: types.test,v 1.14 2004/11/14 21:56:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -269,7 +269,7 @@ do_test types-2.4.2 {
 
 # Check that all the record sizes are as we expected. This is dependant on
 # the database encoding.
-if { [execsql {pragma encoding}] == "UTF-8" } {
+if { $sqlite_options(utf16)==0 || [execsql {pragma encoding}] == "UTF-8" } {
   do_test types-2.4.3 {
     set root [db eval {select rootpage from sqlite_master where name = 't4'}]
     record_sizes $root

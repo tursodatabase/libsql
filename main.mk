@@ -113,6 +113,7 @@ SRC = \
 #
 TESTSRC = \
   $(TOP)/src/btree.c \
+  $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \

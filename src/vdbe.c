@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.427 2004/11/13 03:48:07 drh Exp $
+** $Id: vdbe.c,v 1.428 2004/11/14 21:56:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -710,11 +710,16 @@ case OP_String: {
   if( pOp->p3 ){
     pTos->flags = MEM_Str|MEM_Static|MEM_Term;
     pTos->z = pOp->p3;
+#ifndef SQLITE_OMIT_UTF16
     if( db->enc==SQLITE_UTF8 ){
       pTos->n = strlen(pTos->z);
     }else{
       pTos->n  = sqlite3utf16ByteLen(pTos->z, -1);
     }
+#else
+    assert( db->enc==SQLITE_UTF8 );
+    pTos->n = strlen(pTos->z);
+#endif
     pTos->enc = db->enc;
   }else{
     pTos->flags = MEM_Null;

@@ -13,10 +13,17 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc.test,v 1.4 2004/06/23 13:46:33 danielk1977 Exp $
+# $Id: enc.test,v 1.5 2004/11/14 21:56:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Skip this test if the build does not support multiple encodings.
+#
+ifcapable {!utf16} {
+  finish_test
+  return
+}
 
 proc do_bincmp_test {testname got expect} {
   binary scan $expect \c* expectvals
@@ -143,6 +150,3 @@ test_conversion enc-8 [string repeat "\u007E\u007F\u0080\u0081" 100]
 test_conversion enc-9 [string repeat "\u07FE\u07FF\u0800\u0801\uFFF0" 100]
 
 finish_test
-
-
-

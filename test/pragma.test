@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.23 2004/11/12 16:12:00 danielk1977 Exp $
+# $Id: pragma.test,v 1.24 2004/11/14 21:56:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -351,13 +351,15 @@ do_test pragma-7.1 {
     pragma index_list(t3);
   }
 } {0 t3i1 0 1 sqlite_autoindex_t3_1 1}
-do_test pragma-7.2 {
-  db close
-  sqlite3 db test.db
-  catchsql {
-    pragma encoding=bogus;
-  }
-} {1 {unsupported encoding: bogus}}
+ifcapable {utf16} {
+  do_test pragma-7.2 {
+    db close
+    sqlite3 db test.db
+    catchsql {
+      pragma encoding=bogus;
+    }
+  } {1 {unsupported encoding: bogus}}
+}
 do_test pragma-7.3 {
   db close
   sqlite3 db test.db
@@ -572,5 +574,3 @@ do_test pragma-8.2.15 {
 } {-450}
 
 finish_test
-
-

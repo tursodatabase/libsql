@@ -37,7 +37,11 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
+#ifdef SQLITE_OMIT_UTF16
+  return SQLITE_ERROR;
+#else
   return sqlite3VdbeMemTranslate(pMem, desiredEnc);
+#endif
 }
 
 /*
@@ -403,6 +407,7 @@ int sqlite3VdbeMemSetStr(
       }
       break;
 
+#ifndef SQLITE_OMIT_UTF16
     case SQLITE_UTF16LE:
     case SQLITE_UTF16BE:
       pMem->flags |= MEM_Str;
@@ -414,6 +419,7 @@ int sqlite3VdbeMemSetStr(
         return SQLITE_NOMEM;
       }
       break;
+#endif /* SQLITE_OMIT_UTF16 */
 
     default:
       assert(0);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.22 2004/11/14 04:04:18 drh Exp $
+# $Id: capi3.test,v 1.23 2004/11/14 21:56:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -331,18 +331,20 @@ do_test $test.3 {
 } $lens
 
 # bytes16
-set lens [list]
-foreach i $::idxlist {
-  lappend lens [expr 2 * [string length [lindex $strings $i]]]
-}
-do_test $test.4 {
-  set bytes [list]
+ifcapable {utf16} {
   set lens [list]
-  foreach i $idxlist {
-    lappend bytes [sqlite3_column_bytes16 $STMT $i]
+  foreach i $::idxlist {
+    lappend lens [expr 2 * [string length [lindex $strings $i]]]
   }
-  set bytes
-} $lens
+  do_test $test.4 {
+    set bytes [list]
+    set lens [list]
+    foreach i $idxlist {
+      lappend bytes [sqlite3_column_bytes16 $STMT $i]
+    }
+    set bytes
+  } $lens
+}
 
 # Blob
 do_test $test.5 {

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.21 2004/11/03 16:27:02 drh Exp $
+# $Id: bind.test,v 1.22 2004/11/14 21:56:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -247,17 +247,19 @@ do_test bind-6.3 {
 } {}
 
 # UTF-16 text
-do_test bind-7.1 {
-  sqlite3_bind_text16 $VM 1 [encoding convertto unicode hellothere] 10
-  sqlite3_bind_text16 $VM 2 [encoding convertto unicode ""] 0
-  sqlite3_bind_text16 $VM 3 [encoding convertto unicode world] 10
-  sqlite_step $VM N VALUES COLNAMES
-  sqlite3_reset $VM
-  execsql {SELECT rowid, * FROM t1}
-} {1 hello {} world}
-do_test bind-7.2 {
-  execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
-} {text text text}
+ifcapable {utf16} {
+  do_test bind-7.1 {
+    sqlite3_bind_text16 $VM 1 [encoding convertto unicode hellothere] 10
+    sqlite3_bind_text16 $VM 2 [encoding convertto unicode ""] 0
+    sqlite3_bind_text16 $VM 3 [encoding convertto unicode world] 10
+    sqlite_step $VM N VALUES COLNAMES
+    sqlite3_reset $VM
+    execsql {SELECT rowid, * FROM t1}
+  } {1 hello {} world}
+  do_test bind-7.2 {
+    execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
+  } {text text text}
+}
 do_test bind-7.3 {
   execsql {
     DELETE FROM t1;
@@ -271,9 +273,11 @@ do_test bind-8.1 {
 do_test bind-8.2 {
   sqlite3_errmsg $DB
 } {bind index out of range}
-do_test bind-8.3 {
-  encoding convertfrom unicode [sqlite3_errmsg16 $DB]
-} {bind index out of range}
+ifcapable {utf16} {
+  do_test bind-8.3 {
+    encoding convertfrom unicode [sqlite3_errmsg16 $DB]
+  } {bind index out of range}
+}
 do_test bind-8.4 {
   sqlite3_bind_null $VM 1 
   sqlite3_errmsg $DB
@@ -284,9 +288,11 @@ do_test bind-8.5 {
 do_test bind-8.6 {
   sqlite3_errmsg $DB
 } {bind index out of range}
-do_test bind-8.7 {
-  encoding convertfrom unicode [sqlite3_errmsg16 $DB]
-} {bind index out of range}
+ifcapable {utf16} {
+  do_test bind-8.7 {
+    encoding convertfrom unicode [sqlite3_errmsg16 $DB]
+  } {bind index out of range}
+}
 
 do_test bind-8.8 {
   catch { sqlite3_bind_blob $VM 0 "abc" 3 }
@@ -297,9 +303,11 @@ do_test bind-8.9 {
 do_test bind-8.10 {
   catch { sqlite3_bind_text $VM 0 "abc" 3 }
 } {1}
-do_test bind-8.11 {
-  catch { sqlite3_bind_text16 $VM 4 "abc" 2 }
-} {1}
+ifcapable {utf16} {
+  do_test bind-8.11 {
+    catch { sqlite3_bind_text16 $VM 4 "abc" 2 }
+  } {1}
+}
 do_test bind-8.12 {
   catch { sqlite3_bind_int $VM 0 5 }
 } {1}
