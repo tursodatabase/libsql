@@ -54,7 +54,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o \
+LIBOBJ = auth.o btree.o build.o delete.o expr.o func.o hash.o insert.o \
          main.o opcodes.o os.o pager.o parse.o printf.o random.o \
          select.o table.o tokenize.o trigger.o update.o util.o \
          vdbe.o where.o tclsqlite.o
@@ -62,6 +62,7 @@ LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o \
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
@@ -263,6 +264,9 @@ tclsqlite.o:	$(TOP)/src/tclsqlite.c $(HDR)
 
 printf.o:	$(TOP)/src/printf.c $(HDR)
 	$(TCCX) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+
+auth.o:	$(TOP)/src/auth.c $(HDR)
+	$(TCCX) -c $(TOP)/src/auth.c
 
 tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \

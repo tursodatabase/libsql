@@ -50,6 +50,8 @@ void sqliteCreateTrigger(
   Trigger *nt;
   Table   *tab;
 
+  if( sqliteAuthCommand(pParse, "CREATE", "TRIGGER") ) goto trigger_cleanup;
+
   /* Check that: 
   ** 1. the trigger name does not already exist.
   ** 2. the table (or view) does exist.
@@ -100,6 +102,9 @@ void sqliteCreateTrigger(
     if( !tab->pSelect && tr_tm == TK_INSTEAD ){
       sqliteSetNString(&pParse->zErrMsg, "cannot create INSTEAD OF", -1, 
 	  " trigger on table: ", -1, pTableName->z, pTableName->n, 0);
+      goto trigger_cleanup;
+    }
+    if( sqliteAuthInsert(pParse, SCHEMA_TABLE(tab->isTemp), 1) ){
       goto trigger_cleanup;
     }
   }
@@ -337,6 +342,7 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
   Table   *pTable;
   Vdbe *v;
 
+  if( sqliteAuthCommand(pParse, "DROP", "TRIGGER") ) return;
   zName = sqliteStrNDup(pName->z, pName->n);
 
   /* ensure that the trigger being dropped exists */
@@ -347,13 +353,18 @@ void sqliteDropTrigger(Parse *pParse, Token *pName, int nested){
     sqliteFree(zName);
     return;
   }
+  pTable = sqliteFindTable(pParse->db, pTrigger->table);
+  assert(pTable);
+  if( sqliteAuthDelete(pParse, SCHEMA_TABLE(pTable->isTemp), 1) ){
+    sqliteFree(zName);
+    return;
+  }
+
 
   /*
    * If this is not an "explain", then delete the trigger structure.
    */
   if( !pParse->explain ){
-    pTable = sqliteFindTable(pParse->db, pTrigger->table);
-    assert(pTable);
     if( pTable->pTrigger == pTrigger ){
       pTable->pTrigger = pTrigger->pNext;
     }else{

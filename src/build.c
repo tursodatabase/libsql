@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.119 2003/01/11 13:30:57 drh Exp $
+** $Id: build.c,v 1.120 2003/01/12 18:02:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -325,6 +325,9 @@ void sqliteStartTable(Parse *pParse, Token *pStart, Token *pName, int isTemp){
   pParse->sFirstToken = *pStart;
   zName = sqliteTableNameFromToken(pName);
   if( zName==0 ) return;
+  if( sqliteAuthInsert(pParse, SCHEMA_TABLE(isTemp), 1) ){
+    return;
+  }
 
   /* Before trying to create a temporary table, make sure the Btree for
   ** holding temporary tables is open.
@@ -894,7 +897,7 @@ void sqliteCreateView(
 
   sqliteStartTable(pParse, pBegin, pName, isTemp);
   p = pParse->pNewTable;
-  if( p==0 ){
+  if( p==0 || pParse->nErr ){
     sqliteSelectDelete(pSelect);
     return;
   }
@@ -1069,6 +1072,9 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
   if( pParse->nErr || sqlite_malloc_failed ) return;
   pTable = sqliteTableFromToken(pParse, pName);
   if( pTable==0 ) return;
+  if( sqliteAuthDelete(pParse, SCHEMA_TABLE(pTable->isTemp), 1) ){
+    return;
+  }
   if( pTable->readOnly ){
     sqliteSetString(&pParse->zErrMsg, "table ", pTable->zName, 
        " may not be dropped", 0);
@@ -1085,6 +1091,9 @@ void sqliteDropTable(Parse *pParse, Token *pName, int isView){
     sqliteSetString(&pParse->zErrMsg, "use DROP VIEW to delete view ",
       pTable->zName, 0);
     pParse->nErr++;
+    return;
+  }
+  if( sqliteAuthDelete(pParse, pTable->zName, 1) ){
     return;
   }
 
@@ -1365,6 +1374,9 @@ void sqliteCreateIndex(
     pParse->nErr++;
     goto exit_create_index;
   }
+  if( sqliteAuthInsert(pParse, SCHEMA_TABLE(pTab->isTemp), 1) ){
+    goto exit_create_index;
+  }
 
   /* If this index is created while re-reading the schema from sqlite_master
   ** but the table associated with this index is a temporary table, it can
@@ -1626,6 +1638,9 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
     pParse->nErr++;
     return;
   }
+  if( sqliteAuthDelete(pParse, SCHEMA_TABLE(pIndex->pTable->isTemp), 1) ){
+    return;
+  }
 
   /* Generate code to remove the index and from the master table */
   v = sqliteGetVdbe(pParse);
@@ -1822,6 +1837,12 @@ void sqliteCopy(
   pTab = sqliteTableNameToTable(pParse, zTab);
   sqliteFree(zTab);
   if( pTab==0 ) goto copy_cleanup;
+  if( sqliteAuthInsert(pParse, zTab, 0) ){
+    goto copy_cleanup;
+  }
+  if( sqliteAuthCommand(pParse, "COPY", zTab) ){
+    goto copy_cleanup;
+  }
   v = sqliteGetVdbe(pParse);
   if( v ){
     int openOp;
@@ -1904,6 +1925,7 @@ void sqliteBeginTransaction(Parse *pParse, int onError){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( sqliteAuthCommand(pParse, "BEGIN", "") ) return;
   if( db->flags & SQLITE_InTrans ){
     pParse->nErr++;
     sqliteSetString(&pParse->zErrMsg, "cannot start a transaction "
@@ -1923,6 +1945,7 @@ void sqliteCommitTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( sqliteAuthCommand(pParse, "COMMIT", "") ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     pParse->nErr++;
     sqliteSetString(&pParse->zErrMsg, 
@@ -1943,6 +1966,7 @@ void sqliteRollbackTransaction(Parse *pParse){
 
   if( pParse==0 || (db=pParse->db)==0 || db->pBe==0 ) return;
   if( pParse->nErr || sqlite_malloc_failed ) return;
+  if( sqliteAuthCommand(pParse, "ROLLBACK", "") ) return;
   if( (db->flags & SQLITE_InTrans)==0 ){
     pParse->nErr++;
     sqliteSetString(&pParse->zErrMsg,
@@ -2051,6 +2075,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     zRight = sqliteStrNDup(pRight->z, pRight->n);
     sqliteDequote(zRight);
   }
+  if( sqliteAuthCommand(pParse, "PRAGMA", zLeft) ) return;
  
   /*
   **  PRAGMA default_cache_size

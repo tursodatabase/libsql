@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.152 2003/01/11 13:30:58 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.153 2003/01/12 18:02:18 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -155,6 +155,11 @@ extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 #define TEMP_MASTER_NAME  "sqlite_temp_master"
 
 /*
+** The name of the schema table.
+*/
+#define SCHEMA_TABLE(x)  (x?TEMP_MASTER_NAME:MASTER_NAME)
+
+/*
 ** A convenience macro that returns the number of elements in
 ** an array.
 */
@@ -220,6 +225,10 @@ struct sqlite {
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Number of rows changed */
   int recursionDepth;           /* Number of nested calls to sqlite_exec() */
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  int (*xAuth)(void*,int,const char*,const char*); /* Access Auth function */
+  void *pAuthArg;               /* 1st argument to the access auth function */
+#endif
 };
 
 /*
@@ -899,6 +908,7 @@ void sqliteRealToSortable(double r, char *);
   void *sqliteRealloc_(void*,int,char*,int);
   char *sqliteStrDup_(const char*,char*,int);
   char *sqliteStrNDup_(const char*, int,char*,int);
+  void sqliteCheckMemory(void*,int);
 #else
   void *sqliteMalloc(int);
   void *sqliteMallocRaw(int);
@@ -906,6 +916,7 @@ void sqliteRealToSortable(double r, char *);
   void *sqliteRealloc(void*,int);
   char *sqliteStrDup(const char*);
   char *sqliteStrNDup(const char*, int);
+# define sqliteCheckMemory(a,b)
 #endif
 void sqliteSetString(char **, const char *, ...);
 void sqliteSetNString(char **, ...);
@@ -1022,3 +1033,15 @@ void sqliteDeleteTrigger(Trigger*);
 int sqliteJoinType(Parse*, Token*, Token*, Token*);
 void sqliteCreateForeignKey(Parse*, IdList*, Token*, IdList*, int);
 void sqliteDeferForeignKey(Parse*, int);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  void sqliteAuthRead(Parse*,Expr*,SrcList*,int);
+  int sqliteAuthDelete(Parse*,const char*, int);
+  int sqliteAuthInsert(Parse*,const char*, int);
+  int sqliteAuthCommand(Parse*,const char*,const char*);
+#else
+# define sqliteAuthRead(a,b,c,d)
+# define sqliteAuthDelete(a,b,c)     SQLITE_OK
+# define sqliteAuthInsert(a,b,c)     SQLITE_OK
+# define sqliteAuthWrite(a,b,c)      SQLITE_OK
+# define sqliteAuthCommand(a,b,c)    SQLITE_OK
+#endif

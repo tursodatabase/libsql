@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.66 2003/01/11 13:30:58 drh Exp $
+** @(#) $Id: pager.c,v 1.67 2003/01/12 18:02:18 drh Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -1050,6 +1050,7 @@ int sqlitepager_get(Pager *pPager, Pgno pgno, void **ppPage){
     }
     pPg->pgno = pgno;
     if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
+      sqliteCheckMemory(pPager->aInJournal, pgno/8);
       pPg->inJournal = (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
     }else{
       pPg->inJournal = 0;

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.35 2002/11/09 00:33:17 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.36 2003/01/12 18:02:18 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -163,6 +163,7 @@ int sqlite_exec(
 #define SQLITE_MISMATCH    20   /* Data type mismatch */
 #define SQLITE_MISUSE      21   /* Library used incorrectly */
 #define SQLITE_NOLFS       22   /* Uses OS features not supported on host */
+#define SQLITE_AUTH        23   /* Authorization denied */
 
 /*
 ** Each entry in an SQLite table has a unique integer key.  (The key is
@@ -497,6 +498,37 @@ void *sqlite_aggregate_context(sqlite_func*, int nBytes);
 ** routine always returns at least 1.
 */
 int sqlite_aggregate_count(sqlite_func*);
+
+/*
+** This routine registers a callback with the SQLite library.  The
+** callback is invoked for every attempt to access a column of a table
+** in the database.  The callback returns SQLITE_OK if access is allowed,
+** SQLITE_DENY if the entire SQL statement should be aborted with an error
+** and SQLITE_IGNORE if the column should be treated as a NULL value.
+*/
+int sqlite_set_authorizer(
+  sqlite*,
+  int (*xAuth)(void*,int,const char*,const char*),
+  void*
+);
+
+/*
+** The second parameter to the access authorization function above will
+** be one of these values:
+*/
+#define SQLITE_READ_COLUMN   1  /* Is it OK to read the specified column?     */
+#define SQLITE_WRITE_COLUMN  2  /* Is it OK to update the specified column?   */
+#define SQLITE_DELETE_ROW    3  /* Is it OK to delete a row from the table?   */
+#define SQLITE_INSERT_ROW    4  /* Is it OK to insert a new row in the table? */
+#define SQLITE_COMMAND       5  /* Is it OK to execute a particular command?  */
+
+/*
+** The return value of the authorization function should be one of the
+** following constants:
+*/
+/* #define SQLITE_OK  0   // Allow access (This is actually defined above) */
+#define SQLITE_DENY   1   /* Abort the SQL statement with an error */
+#define SQLITE_IGNORE 2   /* Don't allow access, but don't generate an error */
 
 /*
 ** Attempt to open the file named in the argument as the auxiliary database

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.54 2003/01/02 14:43:57 drh Exp $
+** $Id: util.c,v 1.55 2003/01/12 18:02:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -82,6 +82,24 @@ void *sqliteMalloc_(int n, int bZero, char *zFile, int line){
       ++memcnt, n, (int)p, zFile,line);
 #endif
   return p;
+}
+
+/*
+** Check to see if the given pointer was obtained from sqliteMalloc()
+** and is able to hold at least N bytes.  Raise an exception if this
+** is not the case.
+**
+** This routine is used for testing purposes only.
+*/
+void sqliteCheckMemory(void *p, int N){
+  int *pi = p;
+  int n, k;
+  pi -= 2;
+  assert( pi[0]==0xdead1122 );
+  n = pi[1];
+  assert( N>=0 && N<n );
+  k = (n+sizeof(int)-1)/sizeof(int);
+  assert( pi[k+2]==0xdead3344 );
 }
 
 /*

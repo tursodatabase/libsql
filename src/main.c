@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.105 2002/12/02 04:25:21 drh Exp $
+** $Id: main.c,v 1.106 2003/01/12 18:02:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -689,6 +689,7 @@ const char *sqlite_error_string(int rc){
     case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
     case SQLITE_MISUSE:     z = "library routine called out of sequence";break;
     case SQLITE_NOLFS:      z = "kernel lacks large file support";       break;
+    case SQLITE_AUTH:       z = "authorization denied";                  break;
     default:                z = "unknown error";                         break;
   }
   return z;

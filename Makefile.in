@@ -62,7 +62,7 @@ ENCODING = @ENCODING@
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
+LIBOBJ = auth.lo btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
          main.lo opcodes.lo os.lo pager.lo parse.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo update.lo util.lo vdbe.lo \
          where.lo trigger.lo
@@ -70,6 +70,7 @@ LIBOBJ = btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
 # All of the source code files.
 #
 SRC = \
+  $(TOP)/src/auth.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
@@ -274,6 +275,9 @@ tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 
 printf.lo:	$(TOP)/src/printf.c $(HDR)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/printf.c
+
+auth.lo:	$(TOP)/src/auth.c $(HDR)
+	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -c $(TOP)/src/auth.c
 
 tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.la
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
