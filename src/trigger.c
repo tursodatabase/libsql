@@ -417,7 +417,7 @@ void sqlite3DeleteTrigger(Trigger *pTrigger){
  * if the transaction is rolled back.
  */
 void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
-  Trigger *pTrigger;
+  Trigger *pTrigger = 0;
   int i;
   const char *zDb;
   const char *zName;

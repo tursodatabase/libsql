@@ -825,22 +825,6 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
 **
 ** These routines are all just simple wrappers.
 */
-int sqlite3_exec_printf(
-  sqlite *db,                   /* An open database */
-  const char *sqlFormat,        /* printf-style format string for the SQL */
-  sqlite_callback xCallback,    /* Callback function */
-  void *pArg,                   /* 1st argument to callback function */
-  char **errmsg,                /* Error msg written here */
-  ...                           /* Arguments to the format string. */
-){
-  va_list ap;
-  int rc;
-
-  va_start(ap, errmsg);
-  rc = sqlite3_exec_vprintf(db, sqlFormat, xCallback, pArg, errmsg, ap);
-  va_end(ap);
-  return rc;
-}
 int sqlite3_exec_vprintf(
   sqlite *db,                   /* An open database */
   const char *sqlFormat,        /* printf-style format string for the SQL */
@@ -857,20 +841,19 @@ int sqlite3_exec_vprintf(
   free(zSql);
   return rc;
 }
-int sqlite3_get_table_printf(
-  sqlite *db,            /* An open database */
-  const char *sqlFormat, /* printf-style format string for the SQL */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncol,             /* Number of result columns written here */
-  char **errmsg,         /* Error msg written here */
-  ...                    /* Arguments to the format string */
+int sqlite3_exec_printf(
+  sqlite *db,                   /* An open database */
+  const char *sqlFormat,        /* printf-style format string for the SQL */
+  sqlite_callback xCallback,    /* Callback function */
+  void *pArg,                   /* 1st argument to callback function */
+  char **errmsg,                /* Error msg written here */
+  ...                           /* Arguments to the format string. */
 ){
   va_list ap;
   int rc;
 
   va_start(ap, errmsg);
-  rc = sqlite3_get_table_vprintf(db, sqlFormat, resultp, nrow, ncol, errmsg, ap);
+  rc = sqlite3_exec_vprintf(db, sqlFormat, xCallback, pArg, errmsg, ap);
   va_end(ap);
   return rc;
 }
@@ -889,5 +872,22 @@ int sqlite3_get_table_vprintf(
   zSql = sqlite3_vmprintf(sqlFormat, ap);
   rc = sqlite3_get_table(db, zSql, resultp, nrow, ncolumn, errmsg);
   free(zSql);
+  return rc;
+}
+int sqlite3_get_table_printf(
+  sqlite *db,            /* An open database */
+  const char *sqlFormat, /* printf-style format string for the SQL */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncol,             /* Number of result columns written here */
+  char **errmsg,         /* Error msg written here */
+  ...                    /* Arguments to the format string */
+){
+  va_list ap;
+  int rc;
+
+  va_start(ap, errmsg);
+  rc = sqlite3_get_table_vprintf(db, sqlFormat, resultp, nrow, ncol, errmsg, ap);
+  va_end(ap);
   return rc;
 }

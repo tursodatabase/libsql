@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.44 2004/06/15 16:51:01 danielk1977 Exp $
+** $Id: pragma.c,v 1.45 2004/06/16 12:02:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -454,20 +454,20 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
       pIdx = pTab->pIndex;
-    }
-    if( pTab && pIdx ){
-      int i = 0; 
-      sqlite3VdbeSetNumCols(v, 3);
-      sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
-      sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
-      sqlite3VdbeSetColName(v, 2, "unique", P3_STATIC);
-      while(pIdx){
-        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, pIdx->zName, 0);
-        sqlite3VdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
-        sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
-        ++i;
-        pIdx = pIdx->pNext;
+      if( pIdx ){
+        int i = 0; 
+        sqlite3VdbeSetNumCols(v, 3);
+        sqlite3VdbeSetColName(v, 0, "seq", P3_STATIC);
+        sqlite3VdbeSetColName(v, 1, "name", P3_STATIC);
+        sqlite3VdbeSetColName(v, 2, "unique", P3_STATIC);
+        while(pIdx){
+          sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+          sqlite3VdbeOp3(v, OP_String8, 0, 0, pIdx->zName, 0);
+          sqlite3VdbeAddOp(v, OP_Integer, pIdx->onError!=OE_None, 0);
+          sqlite3VdbeAddOp(v, OP_Callback, 3, 0);
+          ++i;
+          pIdx = pIdx->pNext;
+        }
       }
     }
   }else
@@ -483,28 +483,28 @@ void sqlite3Pragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
       pFK = pTab->pFKey;
-    }
-    if( pTab && pFK ){
-      int i = 0; 
-      sqlite3VdbeSetNumCols(v, 5);
-      sqlite3VdbeSetColName(v, 0, "id", P3_STATIC);
-      sqlite3VdbeSetColName(v, 1, "seq", P3_STATIC);
-      sqlite3VdbeSetColName(v, 2, "table", P3_STATIC);
-      sqlite3VdbeSetColName(v, 3, "from", P3_STATIC);
-      sqlite3VdbeSetColName(v, 4, "to", P3_STATIC);
-      while(pFK){
-        int j;
-        for(j=0; j<pFK->nCol; j++){
-          sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-          sqlite3VdbeAddOp(v, OP_Integer, j, 0);
-          sqlite3VdbeOp3(v, OP_String8, 0, 0, pFK->zTo, 0);
-          sqlite3VdbeOp3(v, OP_String8, 0, 0,
-                           pTab->aCol[pFK->aCol[j].iFrom].zName, 0);
-          sqlite3VdbeOp3(v, OP_String8, 0, 0, pFK->aCol[j].zCol, 0);
-          sqlite3VdbeAddOp(v, OP_Callback, 5, 0);
+      if( pFK ){
+        int i = 0; 
+        sqlite3VdbeSetNumCols(v, 5);
+        sqlite3VdbeSetColName(v, 0, "id", P3_STATIC);
+        sqlite3VdbeSetColName(v, 1, "seq", P3_STATIC);
+        sqlite3VdbeSetColName(v, 2, "table", P3_STATIC);
+        sqlite3VdbeSetColName(v, 3, "from", P3_STATIC);
+        sqlite3VdbeSetColName(v, 4, "to", P3_STATIC);
+        while(pFK){
+          int j;
+          for(j=0; j<pFK->nCol; j++){
+            sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+            sqlite3VdbeAddOp(v, OP_Integer, j, 0);
+            sqlite3VdbeOp3(v, OP_String8, 0, 0, pFK->zTo, 0);
+            sqlite3VdbeOp3(v, OP_String8, 0, 0,
+                             pTab->aCol[pFK->aCol[j].iFrom].zName, 0);
+            sqlite3VdbeOp3(v, OP_String8, 0, 0, pFK->aCol[j].zCol, 0);
+            sqlite3VdbeAddOp(v, OP_Callback, 5, 0);
+          }
+          ++i;
+          pFK = pFK->pNextFrom;
         }
-        ++i;
-        pFK = pFK->pNextFrom;
       }
     }
   }else
