@@ -1,5 +1,5 @@
-C Add\sability\sto\squote\stable\sand\scolumn\snames\sin\sexpression.\s(CVS\s235)
-D 2001-07-23T14:33:03
+C Add\sability\sto\squote\stable\sand\scolumn\snames\sin\sexpression.\s(CVS\s1721)
+D 2001-07-23T14:33:04
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in a4595a83d56549b527dace5415729d20995f717b
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
@@ -107,7 +107,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P a84fb078baf96dbfb5983981127dfc905074b7f9
+P 029e3a3a5dd8d4923af50bb2c9f31b1b7cd9439e
 R eec7e6db07d9a5655c1c80f7d8ed8318
 U drh
-Z 7c7623637c745880923fb1ff59c11d78
+Z f926307f22f0af02761ce6abf8ebe8c3
