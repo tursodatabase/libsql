@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.52 2001/02/19 23:23:39 drh Exp $
+** $Id: vdbe.c,v 1.53 2001/03/20 22:05:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -168,6 +168,20 @@ struct SetElem {
 };
 
 /*
+** A Keylist is a bunch of keys into a table.  The keylist can
+** grow without bound.  The keylist stores the keys of database
+** records that need to be deleted.
+*/
+typedef struct Keylist Keylist;
+struct Keylist {
+  int nKey;         /* Number of slots in aKey[] */
+  int nUsed;        /* Next unwritten slot in aKey[] */
+  int nRead;        /* Next unread slot in aKey[] */
+  Keylist *pNext;   /* Next block of keys */
+  int aKey[1];      /* One or more keys.  Extra space allocated as needed */
+};
+
+/*
 ** An instance of the virtual machine
 */
 struct Vdbe {
@@ -188,7 +202,7 @@ struct Vdbe {
   int nCursor;        /* Number of slots in aCsr[] */
   Cursor *aCsr;       /* On element of this array for each open cursor */
   int nList;          /* Number of slots in apList[] */
-  FILE **apList;      /* An open file for each list */
+  Keylist **apList;   /* For each Keylist */
   int nSort;          /* Number of slots in apSort[] */
   Sorter **apSort;    /* An open sorter list */
   FILE *pFile;        /* At most one open file handler */
@@ -686,6 +700,17 @@ static int hardNeedStack(Vdbe *p, int N){
 }
 
 /*
+** Delete a keylist
+*/
+static void KeylistFree(Keylist *p){
+  while( p ){
+    Keylist *pNext = p->pNext;
+    sqliteFree(p);
+    p = pNext;
+  }
+}
+
+/*
 ** Clean up the VM after execution.
 **
 ** This routine will automatically close any cursors, list, and/or
@@ -714,10 +739,8 @@ static void Cleanup(Vdbe *p){
   p->aMem = 0;
   p->nMem = 0;
   for(i=0; i<p->nList; i++){
-    if( p->apList[i] ){
-      p->pBe->x->CloseTempFile(p->pBe, p->apList[i]);
-      p->apList[i] = 0;
-    }
+    KeylistFree(p->apList[i]);
+    p->apList[i] = 0;
   }
   sqliteFree(p->apList);
   p->apList = 0;
@@ -2431,10 +2454,11 @@ int sqliteVdbeExec(
 
       /* Opcode: ListOpen P1 * *
       **
-      ** Open a file used for temporary storage of integer table keys.  P1
-      ** will server as a handle to this temporary file for future
-      ** interactions.  If another temporary file with the P1 handle is
-      ** already opened, the prior file is closed and a new one opened
+      ** Open a "List" structure used for temporary storage of integer 
+      ** table keys.  P1
+      ** will server as a handle to this list for future
+      ** interactions.  If another list with the P1 handle is
+      ** already opened, the prior list is closed and a new one opened
       ** in its place.
       */
       case OP_ListOpen: {
@@ -2442,16 +2466,13 @@ int sqliteVdbeExec(
         VERIFY( if( i<0 ) goto bad_instruction; )
         if( i>=p->nList ){
           int j;
-          p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(FILE*) );
+          p->apList = sqliteRealloc( p->apList, (i+1)*sizeof(Keylist*) );
           if( p->apList==0 ){ p->nList = 0; goto no_mem; }
           for(j=p->nList; j<=i; j++) p->apList[j] = 0;
           p->nList = i+1;
         }else if( p->apList[i] ){
-          pBex->CloseTempFile(pBe, p->apList[i]);
-        }
-        rc = pBex->OpenTempFile(pBe, &p->apList[i]);
-        if( rc!=SQLITE_OK ){
-          sqliteSetString(pzErrMsg, "unable to open a temporary file", 0);
+          KeylistFree(p->apList[i]);
+          p->apList[i] = 0;
         }
         break;
       }
@@ -2459,19 +2480,26 @@ int sqliteVdbeExec(
       /* Opcode: ListWrite P1 * *
       **
       ** Write the integer on the top of the stack
-      ** into the temporary storage file P1.
+      ** into the temporary storage list P1.
       */
       case OP_ListWrite: {
         int i = pOp->p1;
-        VERIFY( if( i<0 ) goto bad_instruction; )
+        Keylist *pKeylist;
+        VERIFY( if( i<0 || i>=p->nList ) goto bad_instruction; )
         VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
-          int val;
-          Integerify(p, p->tos);
-          val = aStack[p->tos].i;
-          POPSTACK;
-          fwrite(&val, sizeof(int), 1, p->apList[i]);
+        pKeylist = p->apList[i];
+        if( pKeylist==0 || pKeylist->nUsed>=pKeylist->nKey ){
+          pKeylist = sqliteMalloc( sizeof(Keylist)+999*sizeof(int) );
+          if( pKeylist==0 ) goto no_mem;
+          pKeylist->nKey = 1000;
+          pKeylist->nRead = 0;
+          pKeylist->nUsed = 0;
+          pKeylist->pNext = p->apList[i];
+          p->apList[i] = pKeylist;
         }
+        Integerify(p, p->tos);
+        pKeylist->aKey[pKeylist->nUsed++] = aStack[p->tos].i;
+        POPSTACK;
         break;
       }
 
@@ -2482,9 +2510,7 @@ int sqliteVdbeExec(
       case OP_ListRewind: {
         int i = pOp->p1;
         VERIFY( if( i<0 ) goto bad_instruction; )
-        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
-          rewind(p->apList[i]);
-        }
+        /* This is now a no-op */
         break;
       }
 
@@ -2497,14 +2523,24 @@ int sqliteVdbeExec(
       case OP_ListRead: {
         int i = pOp->p1;
         int val, amt;
-        VERIFY(if( i<0 || i>=p->nList || p->apList[i]==0 )goto bad_instruction;)
-        amt = fread(&val, sizeof(int), 1, p->apList[i]);
-        if( amt==1 ){
+        Keylist *pKeylist;
+        VERIFY(if( i<0 || i>=p->nList ) goto bad_instruction;)
+        pKeylist = p->apList[i];
+        if( pKeylist!=0 ){
+          VERIFY(
+            if( pKeylist->nRead<0 
+              || pKeylist->nRead>=pKeylist->nUsed
+              || pKeylist->nRead>=pKeylist->nKey ) goto bad_instruction;
+          )
           p->tos++;
           if( NeedStack(p, p->tos) ) goto no_mem;
-          aStack[p->tos].i = val;
+          aStack[p->tos].i = pKeylist->aKey[pKeylist->nRead++];
           aStack[p->tos].flags = STK_Int;
           zStack[p->tos] = 0;
+          if( pKeylist->nRead>=pKeylist->nUsed ){
+            p->apList[i] = pKeylist->pNext;
+            sqliteFree(pKeylist);
+          }
         }else{
           pc = pOp->p2 - 1;
         }
@@ -2518,10 +2554,9 @@ int sqliteVdbeExec(
       case OP_ListClose: {
         int i = pOp->p1;
         VERIFY( if( i<0 ) goto bad_instruction; )
-        if( VERIFY( i<p->nList && ) p->apList[i]!=0 ){
-          pBex->CloseTempFile(pBe, p->apList[i]);
-          p->apList[i] = 0;
-        }
+        VERIFY( if( i>=p->nList ) goto bad_instruction; )
+        KeylistFree(p->apList[i]);
+        p->apList[i] = 0;
         break;
       }
 

@@ -24,7 +24,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.7 2001/01/15 22:51:10 drh Exp $
+** $Id: delete.c,v 1.8 2001/03/20 22:05:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -85,48 +85,63 @@ void sqliteDeleteFrom(
   v = sqliteGetVdbe(pParse);
   if( v==0 ) goto delete_from_cleanup;
 
-  /* Begin the database scan
+  /* Special case: A DELETE without a WHERE clause deletes everything.
+  ** It is easier just to deleted the database files directly.
   */
-  sqliteVdbeAddOp(v, OP_ListOpen, 0, 0, 0, 0);
-  pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1);
-  if( pWInfo==0 ) goto delete_from_cleanup;
-
-  /* Remember the key of every item to be deleted.
-  */
-  sqliteVdbeAddOp(v, OP_ListWrite, 0, 0, 0, 0);
-
-  /* End the database scan loop.
-  */
-  sqliteWhereEnd(pWInfo);
-
-  /* Delete every item whose key was written to the list during the
-  ** database scan.  We have to delete items after the scan is complete
-  ** because deleting an item can change the scan order.
-  */
-  base = pParse->nTab;
-  sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
-  for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-    sqliteVdbeAddOp(v, OP_OpenIdx, base+i, 1, pIdx->zName, 0);
-  }
-  end = sqliteVdbeMakeLabel(v);
-  addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
-  if( pTab->pIndex ){
-    sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-    sqliteVdbeAddOp(v, OP_Fetch, base, 0, 0, 0);
-    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-      int j;
-      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
-      for(j=0; j<pIdx->nColumn; j++){
-        sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiColumn[j], 0, 0);
-      }
-      sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
-      sqliteVdbeAddOp(v, OP_DeleteIdx, base+i, 0, 0, 0);
+  if( pWhere==0 ){
+    sqliteVdbeAddOp(v, OP_Destroy, 0, 0, pTab->zName, 0);
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      sqliteVdbeAddOp(v, OP_Destroy, 0, 0, pIdx->zName, 0);
     }
   }
-  sqliteVdbeAddOp(v, OP_Delete, base, 0, 0, 0);
-  sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
-  sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
+
+  /* The usual case: There is a WHERE clause so we have to scan through
+  ** the table an pick which records to delete.
+  */
+  else{
+    /* Begin the database scan
+    */
+    sqliteVdbeAddOp(v, OP_ListOpen, 0, 0, 0, 0);
+    pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 1);
+    if( pWInfo==0 ) goto delete_from_cleanup;
+
+    /* Remember the key of every item to be deleted.
+    */
+    sqliteVdbeAddOp(v, OP_ListWrite, 0, 0, 0, 0);
+
+    /* End the database scan loop.
+    */
+    sqliteWhereEnd(pWInfo);
+
+    /* Delete every item whose key was written to the list during the
+    ** database scan.  We have to delete items after the scan is complete
+    ** because deleting an item can change the scan order.
+    */
+    base = pParse->nTab;
+    sqliteVdbeAddOp(v, OP_ListRewind, 0, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_OpenTbl, base, 1, pTab->zName, 0);
+    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+      sqliteVdbeAddOp(v, OP_OpenIdx, base+i, 1, pIdx->zName, 0);
+    }
+    end = sqliteVdbeMakeLabel(v);
+    addr = sqliteVdbeAddOp(v, OP_ListRead, 0, end, 0, 0);
+    if( pTab->pIndex ){
+      sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+      sqliteVdbeAddOp(v, OP_Fetch, base, 0, 0, 0);
+      for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+        int j;
+        sqliteVdbeAddOp(v, OP_Dup, 0, 0, 0, 0);
+        for(j=0; j<pIdx->nColumn; j++){
+          sqliteVdbeAddOp(v, OP_Field, base, pIdx->aiColumn[j], 0, 0);
+        }
+        sqliteVdbeAddOp(v, OP_MakeKey, pIdx->nColumn, 0, 0, 0);
+        sqliteVdbeAddOp(v, OP_DeleteIdx, base+i, 0, 0, 0);
+      }
+    }
+    sqliteVdbeAddOp(v, OP_Delete, base, 0, 0, 0);
+    sqliteVdbeAddOp(v, OP_Goto, 0, addr, 0, 0);
+    sqliteVdbeAddOp(v, OP_ListClose, 0, 0, 0, end);
+  }
 
 delete_from_cleanup:
   sqliteIdListDelete(pTabList);

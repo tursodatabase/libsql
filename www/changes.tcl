@@ -17,6 +17,15 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2001 Mar 20 (1.0.27)} {
+<li>When doing DELETE and UPDATE, the library used to write the record
+    numbers of records to be deleted or updated into a temporary file.
+    This is changed so that the record numbers are held in memory.</li>
+<li>The DELETE command without a WHILE clause just removes the database
+    files from the disk, rather than going through and deleting record
+    by record.</li>
+}
+
 chng {2001 Mar 20 (1.0.26)} {
 <li>A serious bug fixed on Windows.  Windows users should upgrade.
     No impact to Unix.</li>

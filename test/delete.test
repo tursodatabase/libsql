@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.7 2001/03/20 12:55:14 drh Exp $
+# $Id: delete.test,v 1.8 2001/03/20 22:05:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -117,5 +117,57 @@ do_test delete-5.7 {
   execsql "DELETE FROM table1 WHERE f1!=48"
   execsql {SELECT f1 FROM table1 ORDER BY f1}
 } {48}
+
+# Delete large quantities of data.  We want to test the List overflow
+# mechanism in the vdbe.
+#
+do_test delete-6.1 {
+  set fd [open data1.txt w]
+  for {set i 1} {$i<=3000} {incr i} {
+    puts $fd "[expr {$i}]\t[expr {$i*$i}]"
+  }
+  close $fd
+  execsql {DELETE FROM table1}
+  execsql {COPY table1 FROM 'data1.txt'}
+  execsql {DELETE FROM table2}
+  execsql {COPY table2 FROM 'data1.txt'}
+  file delete data1.txt
+  execsql {SELECT count(*) FROM table1}
+} {3000}
+do_test delete-6.2 {
+  execsql {SELECT count(*) FROM table2}
+} {3000}
+do_test delete-6.3 {
+  execsql {SELECT f1 FROM table1 WHERE f1<10 ORDER BY f1}
+} {1 2 3 4 5 6 7 8 9}
+do_test delete-6.4 {
+  execsql {SELECT f1 FROM table2 WHERE f1<10 ORDER BY f1}
+} {1 2 3 4 5 6 7 8 9}
+do_test delete-6.5 {
+  execsql {DELETE FROM table1 WHERE f1>7}
+  execsql {SELECT f1 FROM table1 ORDER BY f1}
+} {1 2 3 4 5 6 7}
+do_test delete-6.6 {
+  execsql {DELETE FROM table2 WHERE f1>7}
+  execsql {SELECT f1 FROM table2 ORDER BY f1}
+} {1 2 3 4 5 6 7}
+do_test delete-6.7 {
+  execsql {DELETE FROM table1}
+  execsql {SELECT f1 FROM table1}
+} {}
+do_test delete-6.8 {
+  execsql {INSERT INTO table1 VALUES(2,3)}
+  execsql {SELECT f1 FROM table1}
+} {2}
+do_test delete-6.9 {
+  execsql {DELETE FROM table2}
+  execsql {SELECT f1 FROM table2}
+} {}
+do_test delete-6.10 {
+  execsql {INSERT INTO table2 VALUES(2,3)}
+  execsql {SELECT f1 FROM table2}
+} {2}
+
+
 
 finish_test

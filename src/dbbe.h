@@ -28,7 +28,7 @@
 ** This library was originally designed to support the following
 ** backends: GDBM, NDBM, SDBM, Berkeley DB.
 **
-** $Id: dbbe.h,v 1.10 2001/01/15 22:51:10 drh Exp $
+** $Id: dbbe.h,v 1.11 2001/03/20 22:05:00 drh Exp $
 */
 #ifndef _SQLITE_DBBE_H_
 #define _SQLITE_DBBE_H_
@@ -150,12 +150,6 @@ struct DbbeMethods {
 
   /* Remove an entry from the table */
   int (*Delete)(DbbeCursor*, int nKey, char *pKey);
-
-  /* Open a file suitable for temporary storage */
-  int (*OpenTempFile)(Dbbe*, FILE**);
-
-  /* Close a temporary file */
-  void (*CloseTempFile)(Dbbe *, FILE *);
 };
 
 /*
@@ -170,9 +164,8 @@ struct DbbeMethods {
 */
 struct Dbbe {
   struct DbbeMethods *x; /* Backend-specific methods for database access */
-  int nTemp;             /* Number of temporary files created */
-  FILE **apTemp;         /* Space to hold temporary file pointers */
-  char **azTemp;         /* Names of the temporary files */
+  /* There used to be other information here, but it has since
+  ** been removed.  */
 };
 
 #endif /* defined(_SQLITE_DBBE_H_) */

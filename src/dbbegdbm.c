@@ -30,7 +30,7 @@
 ** relatively simple to convert to a different database such
 ** as NDBM, SDBM, or BerkeleyDB.
 **
-** $Id: dbbegdbm.c,v 1.3 2001/01/15 22:51:10 drh Exp $
+** $Id: dbbegdbm.c,v 1.4 2001/03/20 22:05:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <gdbm.h>
@@ -110,7 +110,6 @@ static void sqliteGdbmClose(Dbbe *pDbbe){
     memset(pFile, 0, sizeof(*pFile));   
     sqliteFree(pFile);
   }
-  sqliteDbbeCloseAllTempFiles(pDbbe);
   memset(pBe, 0, sizeof(*pBe));
   sqliteFree(pBe);
 }
@@ -542,15 +541,6 @@ static int sqliteGdbmDelete(DbbeCursor *pCursr, int nKey, char *pKey){
 }
 
 /*
-** Open a temporary file.  The file is located in the same directory
-** as the rest of the database.
-*/
-static int sqliteGdbmOpenTempFile(Dbbe *pDbbe, FILE **ppFile){
-  Dbbex *pBe = (Dbbex*)pDbbe;
-  return sqliteDbbeOpenTempFile(pBe->zDir, pDbbe, ppFile);
-}
-
-/*
 ** This variable contains pointers to all of the access methods
 ** used to implement the GDBM backend.
 */
@@ -573,8 +563,6 @@ static struct DbbeMethods gdbmMethods = {
   /*             New */   sqliteGdbmNew,
   /*             Put */   sqliteGdbmPut,
   /*          Delete */   sqliteGdbmDelete,
-  /*    OpenTempFile */   sqliteGdbmOpenTempFile,
-  /*   CloseTempFile */   sqliteDbbeCloseTempFile
 };
 
 
