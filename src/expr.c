@@ -12,11 +12,39 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.120 2004/05/16 22:55:28 danielk1977 Exp $
+** $Id: expr.c,v 1.121 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
 
+char const *sqlite3AffinityString(char affinity){
+  switch( affinity ){
+    case SQLITE_AFF_INTEGER: return "i";
+    case SQLITE_AFF_NUMERIC: return "n";
+    case SQLITE_AFF_TEXT:    return "t";
+    case SQLITE_AFF_NONE:    return "o";
+    default:
+      assert(0);
+  }
+}
+
+
+/*
+** Return the 'affinity' of the expression pExpr if any.
+**
+** If pExpr is a column, a reference to a column via an 'AS' alias,
+** or a sub-select with a column as the return value, then the 
+** affinity of that column is returned. Otherwise, 0x00 is returned,
+** indicating no affinity for the expression.
+**
+** i.e. the WHERE clause expresssions in the following statements all
+** have an affinity:
+**
+** CREATE TABLE t1(a);
+** SELECT * FROM t1 WHERE a;
+** SELECT a AS b FROM t1 WHERE b;
+** SELECT * FROM t1 WHERE (select a from t1);
+*/
 static char exprAffinity(Expr *pExpr){
   if( pExpr->op==TK_AS ){
     return exprAffinity(pExpr->pLeft);
@@ -27,6 +55,64 @@ static char exprAffinity(Expr *pExpr){
   return pExpr->affinity;
 }
 
+char sqlite3CompareAffinity(Expr *pExpr, char aff2){
+  char aff1 = exprAffinity(pExpr);
+  if( aff1 && aff2 ){
+    /* Both sides of the comparison are columns. If one has numeric or
+    ** integer affinity, use that. Otherwise use no affinity.
+    */
+    if( aff1==SQLITE_AFF_INTEGER || aff2==SQLITE_AFF_INTEGER ){
+      return SQLITE_AFF_INTEGER;
+    }else if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
+      return SQLITE_AFF_NUMERIC;
+    }else{
+      return SQLITE_AFF_NONE;
+    }
+  }else if( !aff1 && !aff2 ){
+    /* Neither side of the comparison is a column. Use numeric affinity
+    ** for the comparison.
+    */
+    return SQLITE_AFF_NUMERIC;
+  }else{
+    /* One side is a column, the other is not. Use the columns affinity. */
+    return (aff1 + aff2);
+  }
+}
+
+static char comparisonAffinity(Expr *pExpr){
+  char aff;
+  assert( pExpr->op==TK_EQ || pExpr->op==TK_IN || pExpr->op==TK_LT ||
+          pExpr->op==TK_GT || pExpr->op==TK_GE || pExpr->op==TK_LE ||
+          pExpr->op==TK_NE );
+  assert( pExpr->pLeft );
+  aff = exprAffinity(pExpr->pLeft);
+  if( pExpr->pRight ){
+    aff = sqlite3CompareAffinity(pExpr->pRight, aff);
+  }
+  else if( pExpr->pSelect ){
+    aff = sqlite3CompareAffinity(pExpr->pSelect->pEList->a[0].pExpr, aff);
+  }
+  else if( !aff ){
+    aff = SQLITE_AFF_NUMERIC;
+  }
+  return aff;
+}
+
+/*
+** pExpr is a comparison expression, eg. '=', '<', IN(...) etc.
+** idx_affinity is the affinity of an indexed column. Return true
+** if the index with affinity idx_affinity may be used to implement
+** the comparison in pExpr.
+*/
+int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
+  char aff = comparisonAffinity(pExpr);
+  return 
+    (aff==SQLITE_AFF_NONE) ||
+    (aff==SQLITE_AFF_NUMERIC && idx_affinity==SQLITE_AFF_INTEGER) ||
+    (aff==SQLITE_AFF_INTEGER && idx_affinity==SQLITE_AFF_NUMERIC) ||
+    (aff==idx_affinity);
+}
+
 /*
 ** Return the P1 value that should be used for a binary comparison
 ** opcode (OP_Eq, OP_Ge etc.) used to compare pExpr1 and pExpr2.
@@ -34,27 +120,9 @@ static char exprAffinity(Expr *pExpr){
 ** P1 value to tell the opcode to jump if either expression
 ** evaluates to NULL.
 */
-int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
-  char aff1 = exprAffinity(pExpr1);
-  char aff2 = exprAffinity(pExpr2);
-
-  if( aff1 && aff2 ){
-    /* Both sides of the comparison are columns. If one has numeric or
-    ** integer affinity, use that. Otherwise use no affinity.
-    */
-    if( aff1==SQLITE_AFF_INTEGER || aff2==SQLITE_AFF_INTEGER ){
-      aff1 = SQLITE_AFF_INTEGER;
-    }else
-    if( aff1==SQLITE_AFF_NUMERIC || aff2==SQLITE_AFF_NUMERIC ){
-      aff1 = SQLITE_AFF_NUMERIC;
-    }else{
-      aff1 = SQLITE_AFF_NONE;
-    }
-  }else if( !aff1 ){
-    aff1 = aff2;
-  }
-
-  return (((int)aff1)<<8)+(jumpIfNull?1:0);
+static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
+  char aff = exprAffinity(pExpr2);
+  return (((int)sqlite3CompareAffinity(pExpr1, aff))<<8)+(jumpIfNull?1:0);
 }
 
 /*
@@ -728,30 +796,59 @@ int sqlite3ExprResolveIds(
     }
 
     case TK_IN: {
+      char affinity;
       Vdbe *v = sqlite3GetVdbe(pParse);
       if( v==0 ) return 1;
       if( sqlite3ExprResolveIds(pParse, pSrcList, pEList, pExpr->pLeft) ){
         return 1;
       }
+      affinity = exprAffinity(pExpr->pLeft);
+
+      /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
+      ** expression it is handled the same way. A temporary table is 
+      ** filled with single-field index keys representing the results
+      ** from the SELECT or the <exprlist>.
+      **
+      ** If the 'x' expression is a column value, or the SELECT...
+      ** statement returns a column value, then the affinity of that
+      ** column is used to build the index keys. If both 'x' and the
+      ** SELECT... statement are columns, then numeric affinity is used
+      ** if either column has NUMERIC or INTEGER affinity. If neither
+      ** 'x' nor the SELECT... statement are columns, then numeric affinity
+      ** is used.
+      */
+      pExpr->iTable = pParse->nTab++;
+      sqlite3VdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 1);
+
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)
         **
-        ** Generate code to write the results of the select into a temporary
-        ** table.  The cursor number of the temporary table has already
-        ** been put in iTable by sqlite3ExprResolveInSelect().
+        ** Generate code to write the results of the select into the temporary
+        ** table allocated and opened above.
         */
-        pExpr->iTable = pParse->nTab++;
-        sqlite3VdbeAddOp(v, OP_OpenTemp, pExpr->iTable, 1);
-        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, pExpr->iTable, 0,0,0);
+        int iParm = pExpr->iTable +  (((int)affinity)<<16);
+        assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
+        sqlite3Select(pParse, pExpr->pSelect, SRT_Set, iParm, 0, 0, 0);
       }else if( pExpr->pList ){
         /* Case 2:     expr IN (exprlist)
         **
-        ** Create a set to put the exprlist values in.  The Set id is stored
-        ** in iTable.
+	** For each expression, build an index key from the evaluation and
+        ** store it in the temporary table. If <expr> is a column, then use
+        ** that columns affinity when building index keys. If <expr> is not
+        ** a column, use numeric affinity.
         */
-        int i, iSet;
+        int i;
+        char const *affStr;
+        if( !affinity ){
+          affinity = SQLITE_AFF_NUMERIC;
+        }
+        affStr = sqlite3AffinityString(affinity);
+
+        /* Loop through each expression in <exprlist>. */
         for(i=0; i<pExpr->pList->nExpr; i++){
           Expr *pE2 = pExpr->pList->a[i].pExpr;
+
+          /* Check that the expression is constant and valid. */
           if( !sqlite3ExprIsConstant(pE2) ){
             sqlite3ErrorMsg(pParse,
               "right-hand side of IN operator must be constant");
@@ -760,27 +857,12 @@ int sqlite3ExprResolveIds(
           if( sqlite3ExprCheck(pParse, pE2, 0, 0) ){
             return 1;
           }
-        }
-        iSet = pExpr->iTable = pParse->nSet++;
-        for(i=0; i<pExpr->pList->nExpr; i++){
-          Expr *pE2 = pExpr->pList->a[i].pExpr;
-          switch( pE2->op ){
-            case TK_FLOAT:
-            case TK_INTEGER:
-            case TK_STRING: {
-              int addr;
-              assert( pE2->token.z );
-              addr = sqlite3VdbeOp3(v, OP_SetInsert, iSet, 0,
-                                  pE2->token.z, pE2->token.n);
-              sqlite3VdbeDequoteP3(v, addr);
-              break;
-            }
-            default: {
-              sqlite3ExprCode(pParse, pE2);
-              sqlite3VdbeAddOp(v, OP_SetInsert, iSet, 0);
-              break;
-            }
-          }
+
+          /* Evaluate the expression and insert it into the temp table */
+          sqlite3ExprCode(pParse, pE2);
+          sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC);
+          sqlite3VdbeAddOp(v, OP_String, 0, 0);
+          sqlite3VdbeAddOp(v, OP_PutStrKey, pExpr->iTable, 0);
         }
       }
       break;
@@ -1127,12 +1209,6 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3ExprCode(pParse, pExpr->pRight);
       sqlite3VdbeAddOp(v, op, p1, 0);
       break;
-#if 0
-      if( sqlite3ExprType(pExpr)==SQLITE_SO_TEXT ){
-        op += 6;  /* Convert numeric opcodes to text opcodes */
-      }
-      /* Fall through into the next case */
-#endif
     }
     case TK_AND:
     case TK_OR:
@@ -1225,19 +1301,29 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_IN: {
       int addr;
+      char const *affStr;
+
+      /* Figure out the affinity to use to create a key from the results
+      ** of the expression. affinityStr stores a static string suitable for
+      ** P3 of OP_MakeKey.
+      */
+      affStr = sqlite3AffinityString(comparisonAffinity(pExpr));
+
       sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+
+      /* Code the <expr> from "<expr> IN (...)". The temporary table
+      ** pExpr->iTable contains the values that make up the (...) set.
+      */
       sqlite3ExprCode(pParse, pExpr->pLeft);
       addr = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);
+      sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       sqlite3VdbeAddOp(v, OP_String, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, addr+6);
-      if( pExpr->pSelect ){
-        sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+6);
-      }else{
-        sqlite3VdbeAddOp(v, OP_SetFound, pExpr->iTable, addr+6);
-      }
-      sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);
+      sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
+      sqlite3VdbeOp3(v, OP_MakeKey, 1, 0, affStr, P3_STATIC); /* addr + 4 */
+      sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
+      sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);                  /* addr + 6 */
+
       break;
     }
     case TK_BETWEEN: {
@@ -1407,6 +1493,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3VdbeAddOp(v, op, 1, dest);
       break;
     }
+#if 0
     case TK_IN: {
       int addr;
       sqlite3ExprCode(pParse, pExpr->pLeft);
@@ -1421,6 +1508,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }
       break;
     }
+#endif
     case TK_BETWEEN: {
       int addr;
       sqlite3ExprCode(pParse, pExpr->pLeft);
@@ -1500,6 +1588,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3VdbeAddOp(v, op, 1, dest);
       break;
     }
+#if 0
     case TK_IN: {
       int addr;
       sqlite3ExprCode(pParse, pExpr->pLeft);
@@ -1514,6 +1603,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }
       break;
     }
+#endif
     case TK_BETWEEN: {
       int addr;
       sqlite3ExprCode(pParse, pExpr->pLeft);

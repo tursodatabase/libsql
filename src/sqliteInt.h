@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.234 2004/05/16 11:15:39 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.235 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -1306,4 +1306,6 @@ int sqlite3VarintLen(u64 v);
 char sqlite3AffinityType(const char *, int);
 void sqlite3IndexAffinityStr(Vdbe *, Index *);
 void sqlite3TableAffinityStr(Vdbe *, Table *);
-
+char sqlite3CompareAffinity(Expr *pExpr, char aff2);
+char const *sqlite3AffinityString(char affinity);
+int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);

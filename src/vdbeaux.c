@@ -1458,8 +1458,6 @@ int sqlite3VdbeKeyCompare(
     return -1;
   }
 
-return_result:
-
   return 0;
 }
 

@@ -12,7 +12,7 @@
 ** This module contains C code that generates VDBE code used to process
 ** the WHERE clause of SQL statements.
 **
-** $Id: where.c,v 1.94 2004/05/16 11:15:41 danielk1977 Exp $
+** $Id: where.c,v 1.95 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -536,8 +536,10 @@ WhereInfo *sqlite3WhereBegin(
              && (aExpr[j].prereqRight & loopMask)==aExpr[j].prereqRight ){
           int iColumn = aExpr[j].p->pLeft->iColumn;
           int k;
+          char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
           for(k=0; k<pIdx->nColumn; k++){
-            if( pIdx->aiColumn[k]==iColumn ){
+            if( pIdx->aiColumn[k]==iColumn 
+                && sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ){
               switch( aExpr[j].p->op ){
                 case TK_IN: {
                   if( k==0 ) inMask |= 1;
@@ -571,8 +573,10 @@ WhereInfo *sqlite3WhereBegin(
              && (aExpr[j].prereqLeft & loopMask)==aExpr[j].prereqLeft ){
           int iColumn = aExpr[j].p->pRight->iColumn;
           int k;
+          char idxaff = pIdx->pTable->aCol[iColumn].affinity; 
           for(k=0; k<pIdx->nColumn; k++){
-            if( pIdx->aiColumn[k]==iColumn ){
+            if( pIdx->aiColumn[k]==iColumn 
+                && sqlite3IndexAffinityOk(aExpr[j].p, idxaff) ){
               switch( aExpr[j].p->op ){
                 case TK_EQ: {
                   eqMask |= 1<<k;
@@ -720,16 +724,10 @@ WhereInfo *sqlite3WhereBegin(
         Expr *pX = aExpr[k].p;
         if( pX->op!=TK_IN ){
           sqlite3ExprCode(pParse, aExpr[k].p->pRight);
-        }else if( pX->pList ){
-          sqlite3VdbeAddOp(v, OP_SetFirst, pX->iTable, brk);
-          pLevel->inOp = OP_SetNext;
-          pLevel->inP1 = pX->iTable;
-          pLevel->inP2 = sqlite3VdbeCurrentAddr(v);
         }else{
-          assert( pX->pSelect );
           sqlite3VdbeAddOp(v, OP_Rewind, pX->iTable, brk);
           sqlite3VdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
-          pLevel->inP2 = sqlite3VdbeAddOp(v, OP_FullKey, pX->iTable, 0);
+          pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, pX->iTable, 0);
           pLevel->inOp = OP_Next;
           pLevel->inP1 = pX->iTable;
         }
@@ -758,27 +756,22 @@ WhereInfo *sqlite3WhereBegin(
              && (aExpr[k].prereqRight & loopMask)==aExpr[k].prereqRight 
              && pX->pLeft->iColumn==pIdx->aiColumn[j]
           ){
-            if( pX->op==TK_EQ ){
-              sqlite3ExprCode(pParse, pX->pRight);
-              aExpr[k].p = 0;
-              break;
-            }
-            if( pX->op==TK_IN && nColumn==1 ){
-              if( pX->pList ){
-                sqlite3VdbeAddOp(v, OP_SetFirst, pX->iTable, brk);
-                pLevel->inOp = OP_SetNext;
-                pLevel->inP1 = pX->iTable;
-                pLevel->inP2 = sqlite3VdbeCurrentAddr(v);
-              }else{
-                assert( pX->pSelect );
+            char idxaff = pIdx->pTable->aCol[pX->pLeft->iColumn].affinity;
+            if( sqlite3IndexAffinityOk(aExpr[k].p, idxaff) ){
+              if( pX->op==TK_EQ ){
+                sqlite3ExprCode(pParse, pX->pRight);
+                aExpr[k].p = 0;
+                break;
+              }
+              if( pX->op==TK_IN && nColumn==1 ){
                 sqlite3VdbeAddOp(v, OP_Rewind, pX->iTable, brk);
                 sqlite3VdbeAddOp(v, OP_KeyAsData, pX->iTable, 1);
-                pLevel->inP2 = sqlite3VdbeAddOp(v, OP_FullKey, pX->iTable, 0);
+                pLevel->inP2 = sqlite3VdbeAddOp(v, OP_IdxColumn, pX->iTable, 0);
                 pLevel->inOp = OP_Next;
                 pLevel->inP1 = pX->iTable;
+                aExpr[k].p = 0;
+                break;
               }
-              aExpr[k].p = 0;
-              break;
             }
           }
           if( aExpr[k].idxRight==iCur
@@ -786,9 +779,12 @@ WhereInfo *sqlite3WhereBegin(
              && (aExpr[k].prereqLeft & loopMask)==aExpr[k].prereqLeft
              && aExpr[k].p->pRight->iColumn==pIdx->aiColumn[j]
           ){
-            sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
-            aExpr[k].p = 0;
-            break;
+            char idxaff = pIdx->pTable->aCol[pX->pRight->iColumn].affinity;
+            if( sqlite3IndexAffinityOk(aExpr[k].p, idxaff) ){
+              sqlite3ExprCode(pParse, aExpr[k].p->pLeft);
+              aExpr[k].p = 0;
+              break;
+            }
           }
         }
       }

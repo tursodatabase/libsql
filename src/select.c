@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.164 2004/05/11 06:55:14 danielk1977 Exp $
+** $Id: select.c,v 1.165 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -479,6 +479,7 @@ static int selectInnerLoop(
     case SRT_Set: {
       int addr1 = sqlite3VdbeCurrentAddr(v);
       int addr2;
+
       assert( nColumn==1 );
       sqlite3VdbeAddOp(v, OP_NotNull, -1, addr1+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
@@ -486,8 +487,13 @@ static int selectInnerLoop(
       if( pOrderBy ){
         pushOntoSorter(pParse, v, pOrderBy);
       }else{
+        char const *affStr;
+        char aff = (iParm>>16)&0xFF;
+        aff = sqlite3CompareAffinity(pEList->a[0].pExpr, aff);
+        affStr = sqlite3AffinityString(aff);
+        sqlite3VdbeOp3(v, OP_MakeKey, 1, 1, affStr, P3_STATIC);
         sqlite3VdbeAddOp(v, OP_String, 0, 0);
-        sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
+        sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeChangeP2(v, addr2, sqlite3VdbeCurrentAddr(v));
       break;
@@ -593,8 +599,9 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
+      sqlite3VdbeOp3(v, OP_MakeKey, 1, 1, "n", P3_STATIC);
       sqlite3VdbeAddOp(v, OP_String, 0, 0);
-      sqlite3VdbeAddOp(v, OP_PutStrKey, iParm, 0);
+      sqlite3VdbeAddOp(v, OP_PutStrKey, (iParm&0x0000FFFF), 0);
       break;
     }
     case SRT_Mem: {
@@ -799,7 +806,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
           char zBuf[30];
           sprintf(zBuf,"_%d",++cnt);
           n = strlen(zBuf);
-          sqlite3SetNString(&aCol[i].zName, pR->token.z, pR->token.n, zBuf, n,0);
+          sqlite3SetNString(&aCol[i].zName, pR->token.z, pR->token.n, zBuf,n,0);
           j = -1;
         }
       }
@@ -810,6 +817,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
       sprintf(zBuf, "column%d", i+1);
       pTab->aCol[i].zName = sqliteStrDup(zBuf);
     }
+    
+    /* Affinity is always NONE, as there is no type name. */
+    pTab->aCol[i].affinity = SQLITE_AFF_NONE;
   }
   pTab->iPKey = -1;
   return pTab;
@@ -1942,7 +1952,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 **
 **     SRT_Mem         Store first result in memory cell iParm
 **
-**     SRT_Set         Store results as keys of a table with cursor iParm
+**     SRT_Set         Store results as keys of table iParm.
 **
 **     SRT_Union       Store results as a key in a temporary table iParm
 **

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.99 2004/05/16 11:15:38 danielk1977 Exp $
+** $Id: insert.c,v 1.100 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,12 +30,12 @@
 */
 void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
   if( !pIdx->zColAff ){
-    /* The first time a column affinity string for a particular table is
+    /* The first time a column affinity string for a particular index is
     ** required, it is allocated and populated here. It is then stored as
-    ** a member of the Table structure for subsequent use.
+    ** a member of the Index structure for subsequent use.
     **
     ** The column affinity string will eventually be deleted by
-    ** sqliteDeleteIndex() when the Table structure itself is cleaned
+    ** sqliteDeleteIndex() when the Index structure itself is cleaned
     ** up.
     */
     int n;

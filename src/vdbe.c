@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.295 2004/05/16 11:57:28 danielk1977 Exp $
+** $Id: vdbe.c,v 1.296 2004/05/17 10:48:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1379,16 +1379,10 @@ mismatch:
 ** operand is NULL (and thus if the result is unknown) then take the jump
 ** only if the least significant byte of P1 is 0x01.
 **
-** The second least significant byte of P1 determines whether any
-** conversions are applied to the two values before the comparison is made.
-** If this byte is 0x00, and one of the values being compared is numeric
-** and the other text, an attempt is made to convert the text value to 
-** a numeric form.
-**
-** If the second least significant byte of P1 is not 0x00, then it must
-** be an affinity character - 'n', 't', 'i' or 'o'. In this case an 
-** attempt is made to coerce both values according to the affinity before
-** the comparison is made.
+** The second least significant byte of P1 must be an affinity character -
+** 'n', 't', 'i' or 'o' - or 0x00. An attempt is made to coerce both values
+** according to the affinity before the comparison is made. If the byte is
+** 0x00, then numeric affinity is used.
 **
 ** Once any conversions have taken place, and neither value is NULL, 
 ** the values are compared. If both values are blobs, or both are text,
@@ -1527,13 +1521,9 @@ case OP_Ge: {
   }
 
   affinity = (pOp->p1>>8)&0xFF;
-  if( !affinity && (flags&(MEM_Real|MEM_Int)) ){
-    affinity = SQLITE_AFF_NUMERIC;
-  }
-  if( affinity ){
-    applyAffinity(pNos, affinity);
-    applyAffinity(pTos, affinity);
-  }
+  if( affinity=='\0' ) affinity = 'n';
+  applyAffinity(pNos, affinity);
+  applyAffinity(pTos, affinity);
 
   res = sqlite3MemCompare(pNos, pTos);
   switch( pOp->opcode ){
@@ -2401,11 +2391,7 @@ case OP_MakeIdxKey: {
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
     u64 serial_type;
-    if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0]);
-    }else{
-      applyAffinity(pRec, SQLITE_SO_NUM);
-    }
+    applyAffinity(pRec, zAffinity[pRec-pData0]);
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
@@ -2837,7 +2823,8 @@ case OP_OpenTemp: {
       rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 0, 0, &pCx->pCursor);
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeKeyCompare,
+            pCx, &pCx->pCursor);
       }
     }else{
       rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
@@ -3543,6 +3530,57 @@ case OP_Recno: {
   }
   pTos->i = v;
   pTos->flags = MEM_Int;
+  break;
+}
+
+/* Opcode: IdxColumn P1 * *
+**
+** P1 is a cursor opened on an index. Push the first field from the
+** current index key onto the stack.
+*/
+case OP_IdxColumn: {
+  char *zData;
+  i64 n;
+  u64 serial_type;
+  int len;
+  int freeZData = 0;
+  BtCursor *pCsr;
+
+  assert( 0==p->apCsr[pOp->p1]->intKey );
+  pCsr = p->apCsr[pOp->p1]->pCursor;
+  rc = sqlite3BtreeKeySize(pCsr, &n);
+  if( rc!=SQLITE_OK ){
+    goto abort_due_to_error;
+  }
+  if( n>10 ) n = 10;
+
+  zData = (char *)sqlite3BtreeKeyFetch(pCsr, n);
+  assert( zData );
+
+  len = sqlite3GetVarint(zData, &serial_type);
+  n = sqlite3VdbeSerialTypeLen(serial_type);
+
+  zData = (char *)sqlite3BtreeKeyFetch(pCsr, len+n);
+  if( !zData ){
+    zData = (char *)sqliteMalloc(n);
+    if( !zData ){
+      rc = SQLITE_NOMEM;
+      goto abort_due_to_error;
+    }
+    rc = sqlite3BtreeKey(pCsr, len, n, zData);
+    if( rc!=SQLITE_OK ){
+      sqliteFree(zData);
+      goto abort_due_to_error;
+    }
+    freeZData = 1;
+    len = 0;
+  }
+
+  pTos++;
+  sqlite3VdbeSerialGet(&zData[len], serial_type, pTos);
+  if( freeZData ){
+    sqliteFree(zData);
+  }
   break;
 }
 
