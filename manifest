@@ -1,5 +1,5 @@
-C The\scommand-line\sshell\sshould\savoid\swriting\schanges\sinto\sstring\sconstants.\s(CVS\s1886)
-D 2004-08-14T18:18:44
+C Fix\sa\sbug\sthat\swas\spreventing\s"PRAGMA\stemp_store=MEMORY"\sfrom\sworking.\s(CVS\s1887)
+D 2004-08-14T18:34:55
 F Makefile.in 4a5e570a9e2d35b09c31b3cf01b78cea764ade4b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,7 +39,7 @@ F src/hash.c f0a2f22c2a7052d67053b5f4690ea3010bb3fb9f
 F src/hash.h 762d95f1e567664d1eafc1687de755626be962fb
 F src/insert.c bedcba371401395033a1a1c578d8fdc3fec87bec
 F src/legacy.c 2f3617c61bcdcd1d776154a9cfebf99facda8ad8
-F src/main.c 41da595846e299b757cc413d18de804f97f68748
+F src/main.c 32b91a5799d53586af068b5f95cd851242d681ca
 F src/md5.c 7ae1c39044b95de2f62e066f47bb1deb880a1070
 F src/os.h d1780e0db95cad01f213d48da22ab490eb4fd345
 F src/os_common.h cd7eb025fdab7dc91e0e97bf6310f1648205857f
@@ -242,7 +242,7 @@ F www/tclsqlite.tcl 06a86cba4d7fc88e2bcd633b57702d3d16abebb5
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P fce56ba6a3c53843fabdfad4f545e35a83a01aa9
-R b1881f94fad0c59172cf45c286e4715e
+P 6b8178de9936e48ed69d1546218b5def6665b459
+R dd5d27280c9e7d8e0c9807625c7d9299
 U drh
-Z bc92f5f0cf522e7edc05817456da33d7
+Z 1990a2927b4118ca945a16b473a82826

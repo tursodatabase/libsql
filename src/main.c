@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.249 2004/08/01 00:10:45 drh Exp $
+** $Id: main.c,v 1.250 2004/08/14 18:34:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -817,7 +817,6 @@ int sqlite3BtreeFactory(
 ){
   int btree_flags = 0;
   int rc;
-  int useMem = 0;
   
   assert( ppBtree != 0);
   if( omitJournal ){
@@ -825,24 +824,20 @@ int sqlite3BtreeFactory(
   }
   if( zFilename==0 ){
 #ifndef TEMP_STORE
-# define TEMP_STORE 2
+# define TEMP_STORE 1
 #endif
 #if TEMP_STORE==0
-    useMem = 0;
+    /* Do nothing */
 #endif
 #if TEMP_STORE==1
-    useMem = db->temp_store==2;
+    if( db->temp_store==2 ) zFilename = ":memory:";
 #endif
 #if TEMP_STORE==2
-    useMem = db->temp_store!=1;
+    if( db->temp_store!=1 ) zFilename = ":memory:";
 #endif
 #if TEMP_STORE==3
-    useMem = 1;
+    zFilename = ":memory:";
 #endif
-  }
-  if( (zFilename && strcmp(zFilename, ":memory:")==0)
-         || (zFilename==0 && useMem) ){
-    btree_flags |= BTREE_MEMORY;
   }
 
   rc = sqlite3BtreeOpen(zFilename, ppBtree, btree_flags);
