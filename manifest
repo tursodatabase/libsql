@@ -1,5 +1,5 @@
-C Version\s2.5.1\s(CVS\s629)
-D 2002-06-19T14:27:23
+C Fix\sfor\sticket\s#75:\sAutoincrement\sINTEGER\sPRIMARY\sKEY\sfields\son\san\sINSERT\neven\sif\sthe\sdata\sis\scoming\sfrom\sa\sSELECT\sstatement.\s(CVS\s630)
+D 2002-06-19T20:32:44
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -27,7 +27,7 @@ F src/expr.c ec0689af4e355356df47dc1514ff17523d2f9c71
 F src/func.c b8d0fd3011f53ea0e46b6bab857612eb36b5d1ea
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
-F src/insert.c 3a90bb98cd246f88cc26c44f24d5b47760bc5cba
+F src/insert.c 4bb40ed9dbaba4516fc2abbcff3f08d5687b073c
 F src/main.c 07f56387147f00e69eea7cea369071452bc4706f
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
@@ -69,7 +69,7 @@ F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test 58d44c19b3557f67f4aeb5110ed9ef02038c3684
 F test/insert2.test eb8481878a7f52ccb4e3346f87550f5afdd77f76
-F test/intpkey.test 31b5f28b2c44273e6695cf36ab2e4133aee7753c
+F test/intpkey.test 69a6a9b41e541f27a2ffcd20264fb35adc3c2680
 F test/ioerr.test 57d9bffaca18b34f9e976f786eadc2591d6efc6a
 F test/join.test ea6a4097e4fcebbb16eac7ec819569e759336a74
 F test/limit.test 96b33e108e134b5cc674a660064229d15fa278b9
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f09e19b43ef61073713cf32282c90ea666229eba
-R e3b8c707333c1ebbf7616bf0a643f3ed
+P 5e8a3131aba25e22f3e25b9b1c051019381f11d1
+R 524db4044083fd865802aa3a7659d610
 U drh
-Z 8383f6bd0a1652a6736946631d343146
+Z 7f1cd27c410e1c7fc4e1a09a08e84965
