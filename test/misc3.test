@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.4 2004/01/06 01:52:34 drh Exp $
+# $Id: misc3.test,v 1.5 2004/01/14 13:38:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -178,5 +178,33 @@ do_test misc3-3.14 {
   }
 } {2147483646}
 
+# Ticket #565.  A stack overflow is occurring when the subquery to the
+# right of an IN operator contains many NULLs
+#
+do_test misc3-4.1 {
+  execsql {
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t3(b) VALUES('abc');
+    INSERT INTO t3(b) VALUES('xyz');
+    INSERT INTO t3(b) VALUES(NULL);
+    INSERT INTO t3(b) VALUES(NULL);
+    INSERT INTO t3(b) SELECT b||'d' FROM t3;
+    INSERT INTO t3(b) SELECT b||'e' FROM t3;
+    INSERT INTO t3(b) SELECT b||'f' FROM t3;
+    INSERT INTO t3(b) SELECT b||'g' FROM t3;
+    INSERT INTO t3(b) SELECT b||'h' FROM t3;
+    SELECT count(a), count(b) FROM t3;
+  }
+} {128 64}
+do_test misc3-4.2 {
+  execsql {
+    SELECT count(a) FROM t3 WHERE b IN (SELECT b FROM t3);
+  }
+} {64}
+do_test misc3-4.3 {
+  execsql {
+    SELECT count(a) FROM t3 WHERE b IN (SELECT b FROM t3 ORDER BY a+1);
+  }
+} {64}
 
 finish_test

@@ -1,5 +1,5 @@
-C Version\s2.8.10\s(CVS\s1174)
-D 2004-01-14T03:49:44
+C Ignore\sNULLs\sin\sa\ssubquery\sas\sthe\sright\soperand\sof\sIN.\s\sTicket\s#565.\s(CVS\s1175)
+D 2004-01-14T13:38:54
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y c65aa6c5508763806ac9734b0589b93480ec7e7a
 F src/pragma.c deec7342741e371f3042adaee53fcc324c5dd1d4
 F src/printf.c 292a7bfc5a815cb6465e32b2d5c9fe9bd43b27f0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c d79ac60ba1595ff3c94b12892e87098329776482
+F src/select.c 2712bd4d311ebe7dbf8fd7596a809042657db85f
 F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/sqlite.h.in e6cfff01fafc8a82ce82cd8c932af421dc9adb54
 F src/sqliteInt.h d9f2391451ae9636eb447dfa4dc35b70bfa3759d
@@ -104,7 +104,7 @@ F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
 F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
-F test/misc3.test 73bdce2b7f82699fb4771e7acfbd37461263f59e
+F test/misc3.test d16aadeed2b1dfd94fd2c5c73c6f650ca7db389c
 F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
@@ -179,7 +179,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 74c661850e1899c457d4e822d8284bb66e1dc651
-R 645658339c33d79eab34ac1193ea03db
+P 8bef75ab85197d926d924ae689769207df9a12f8
+R e82ff4a32b69424b4777ea2b0ae9dce2
 U drh
-Z 72f77dbb820822dcc7b734e920703a0c
+Z d5289e7823f77fbba88fcb8d1e6b3c9f
