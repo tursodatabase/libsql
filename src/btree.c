@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.201 2004/11/03 03:52:37 danielk1977 Exp $
+** $Id: btree.c,v 1.202 2004/11/03 11:37:08 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -412,6 +412,8 @@ static void put4byte(unsigned char *p, u32 v){
 */
 #define PTRMAP_PAGENO(pgsz, pgno) (((pgno-2)/(pgsz/5+1))*(pgsz/5+1)+2)
 #define PTRMAP_PTROFFSET(pgsz, pgno) (((pgno-2)%(pgsz/5+1)-1)*5)
+
+#define PTRMAP_ISPAGE(pgsz, pgno) (PTRMAP_PAGENO(pgsz,pgno)==pgno)
 
 /*
 ** The pointer map is a lookup table that contains an entry for each database
@@ -1614,12 +1616,13 @@ static int allocatePage(Btree *, MemPage **, Pgno *, Pgno);
 static int autoVacuumCommit(Btree *pBt){
   Pager *pPager = pBt->pPager;
   Pgno nFreeList;   /* Number of pages remaining on the free-list. */
-  Pgno origDbSize;  /* Pages in the database file */
-  Pgno finDbSize;   /* Pages in the database file after truncation */
+  int nPtrMap;      /* Number of pointer-map pages deallocated */
+  Pgno origSize;  /* Pages in the database file */
+  Pgno finSize;   /* Pages in the database file after truncation */
   int i;            /* Counter variable */
   int rc;           /* Return code */
   u8 eType;
-
+  int pgsz = pBt->pageSize;  /* Page size for this database */
   Pgno iDbPage;              /* The database page to move */
   u8 *pDbPage = 0;           /* "" */
   MemPage *pDbMemPage = 0;   /* "" */
@@ -1633,28 +1636,30 @@ static int autoVacuumCommit(Btree *pBt){
 #endif
 
   assert( pBt->autoVacuum );
+  assert( 0==PTRMAP_ISPAGE(pgsz, sqlite3pager_pagecount(pPager)) );
 
   /* Figure out how many free-pages are in the database. If there are no
   ** free pages, then auto-vacuum is a no-op.
   */
   nFreeList = get4byte(&pBt->pPage1->aData[36]);
-  if( nFreeList==0 ) return SQLITE_OK;
+  if( nFreeList==0 ){
+    return SQLITE_OK;
+  }
 
-  /* TODO: This does not calculate finDbSize correctly for the case where
-  ** pointer-map pages must be deallocated.
-  */
-  origDbSize = sqlite3pager_pagecount(pPager);
-  finDbSize = origDbSize - nFreeList;
-  TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origDbSize, finDbSize));
+  origSize = sqlite3pager_pagecount(pPager);
+  nPtrMap = (nFreeList-origSize+PTRMAP_PAGENO(pgsz, origSize)+pgsz/5)/(pgsz/5);
+  finSize = origSize - nFreeList - nPtrMap;
+
+  TRACE(("AUTOVACUUM: Begin (db size %d->%d)\n", origSize, finSize));
 
   /* Note: This is temporary code for use during development of auto-vacuum. 
   **
   ** Inspect the pointer map to make sure there are no root pages with a
-  ** page number greater than finDbSize. If so, the auto-vacuum cannot
+  ** page number greater than finSize. If so, the auto-vacuum cannot
   ** proceed. This limitation will be fixed when root pages are automatically
   ** allocated at the start of the database file.
   */
-  for( i=finDbSize+1; i<=origDbSize; i++ ){
+  for( i=finSize+1; i<=origSize; i++ ){
     rc = ptrmapGet(pBt, i, &eType, 0);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
     if( eType==PTRMAP_ROOTPAGE ){
@@ -1663,20 +1668,19 @@ static int autoVacuumCommit(Btree *pBt){
     }
   }
 
-  /* Variable 'finDbSize' will be the size of the file in pages after
+  /* Variable 'finSize' will be the size of the file in pages after
   ** the auto-vacuum has completed (the current file size minus the number
   ** of pages on the free list). Loop through the pages that lie beyond
   ** this mark, and if they are not already on the free list, move them
-  ** to a free page earlier in the file (somewhere before finDbSize).
+  ** to a free page earlier in the file (somewhere before finSize).
   */
-  for( iDbPage=finDbSize+1; iDbPage<=origDbSize; iDbPage++ ){
+  for( iDbPage=finSize+1; iDbPage<=origSize; iDbPage++ ){
     rc = ptrmapGet(pBt, iDbPage, &eType, &iPtrPage);
     if( rc!=SQLITE_OK ) goto autovacuum_out;
     assert( eType!=PTRMAP_ROOTPAGE );
 
     /* If iDbPage is a free or pointer map page, do not swap it. */
-    if( eType==PTRMAP_FREEPAGE ||
-        iDbPage==PTRMAP_PAGENO(pBt->pageSize, iDbPage) ){
+    if( eType==PTRMAP_FREEPAGE || PTRMAP_ISPAGE(pgsz, iDbPage) ){
       continue;
     }
     rc = getPage(pBt, iDbPage, &pDbMemPage);
@@ -1694,8 +1698,8 @@ static int autoVacuumCommit(Btree *pBt){
       }
       rc = allocatePage(pBt, &pFreeMemPage, &iFreePage, 0);
       if( rc!=SQLITE_OK ) goto autovacuum_out;
-      assert( iFreePage<=origDbSize );
-    }while( iFreePage>finDbSize );
+      assert( iFreePage<=origSize );
+    }while( iFreePage>finSize );
 
     /* Move page iDbPage from it's current location to page number iFreePage */
     TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
@@ -1720,7 +1724,7 @@ static int autoVacuumCommit(Btree *pBt){
     }else{
       Pgno nextOvfl = get4byte(pDbPage);
       if( nextOvfl!=0 ){
-        assert( nextOvfl<=origDbSize );
+        assert( nextOvfl<=origSize );
         rc = ptrmapPut(pBt, nextOvfl, PTRMAP_OVERFLOW2, iFreePage);
         if( rc!=SQLITE_OK ) goto autovacuum_out;
       }
@@ -1743,14 +1747,14 @@ static int autoVacuumCommit(Btree *pBt){
   }
 
   /* The entire free-list has been swapped to the end of the file. So
-  ** truncate the database file to finDbSize pages and consider the
+  ** truncate the database file to finSize pages and consider the
   ** free-list empty.
   */
   rc = sqlite3pager_write(pBt->pPage1->aData);
   if( rc!=SQLITE_OK ) goto autovacuum_out;
   put4byte(&pBt->pPage1->aData[32], 0);
   put4byte(&pBt->pPage1->aData[36], 0);
-  rc = sqlite3pager_truncate(pBt->pPager, finDbSize);
+  rc = sqlite3pager_truncate(pBt->pPager, finSize);
   if( rc!=SQLITE_OK ) goto autovacuum_out;
 
 autovacuum_out:
@@ -2874,7 +2878,7 @@ static int allocatePage(Btree *pBt, MemPage **ppPage, Pgno *pPgno, Pgno nearby){
     *pPgno = sqlite3pager_pagecount(pBt->pPager) + 1;
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->autoVacuum && *pPgno==PTRMAP_PAGENO(pBt->pageSize, *pPgno) ){
+    if( pBt->autoVacuum && PTRMAP_ISPAGE(pBt->pageSize, *pPgno) ){
       /* If *pPgno refers to a pointer-map page, allocate two new pages
       ** at the end of the file instead of one. The first allocated page
       ** becomes a new pointer-map page, the second is used by the caller.
@@ -3058,17 +3062,13 @@ static int fillInCell(
 #endif
       rc = allocatePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl);
 #ifndef SQLITE_OMIT_AUTOVACUUM
-      /* If the database supports auto-vacuum, add an entry to the 
-      ** pointer-map for the overflow page just allocated. If the page just 
-      ** allocated was the first in the overflow list, then the balance() 
-      ** routine may adjust the pointer-map entry later.
+      /* If the database supports auto-vacuum, and the second or subsequent
+      ** overflow page is being allocated, add an entry to the pointer-map
+      ** for that page now. The entry for the first overflow page will be
+      ** added later, by the insertCell() routine.
       */
-      if( pBt->autoVacuum && rc==0 ){
-        if( pgnoPtrmap!=0 ){
-          rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW2, pgnoPtrmap);
-        }else{
-          rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
-        }
+      if( pBt->autoVacuum && pgnoPtrmap!=0 && rc==SQLITE_OK ){
+        rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW2, pgnoPtrmap);
       }
 #endif
       if( rc ){
@@ -3289,22 +3289,22 @@ static int insertCell(
     put2byte(&data[hdr+3], pPage->nCell);
     pPage->idxShift = 1;
     pageIntegrity(pPage);
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( pPage->pBt->autoVacuum ){
+      /* The cell may contain a pointer to an overflow page. If so, write
+      ** the entry for the overflow page into the pointer map.
+      */
+      CellInfo info;
+      parseCellPtr(pPage, pCell, &info);
+      if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
+        Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
+        int rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
+        if( rc!=SQLITE_OK ) return rc;
+      }
+    }
+#endif
   }
 
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  if( pPage->pBt->autoVacuum ){
-    /* The cell may contain a pointer to an overflow page. If so, write
-    ** the entry for the overflow page into the pointer map.
-    */
-    CellInfo info;
-    parseCellPtr(pPage, pCell, &info);
-    if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
-      Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
-      int rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
-      if( rc!=SQLITE_OK ) return rc;
-    }
-  }
-#endif
   return SQLITE_OK;
 }
 
