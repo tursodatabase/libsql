@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.40 2000/08/28 16:22:00 drh Exp $
+** $Id: vdbe.c,v 1.41 2000/09/14 01:21:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -547,7 +547,7 @@ static int hardStringify(Vdbe *p, int i){
   char zBuf[30];
   int fg = p->aStack[i].flags;
   if( fg & STK_Real ){
-    sprintf(zBuf,"%g",p->aStack[i].r);
+    sprintf(zBuf,"%.15g",p->aStack[i].r);
   }else if( fg & STK_Int ){
     sprintf(zBuf,"%d",p->aStack[i].i);
   }else{

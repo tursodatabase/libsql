@@ -1,9 +1,9 @@
-C Version\s1.0.4\s(CVS\s496)
-D 2000-08-28T16:25:00
+C better\shandling\sof\sexponential\snotation\s(CVS\s145)
+D 2000-09-14T01:21:10
 F COPYRIGHT 74a8a6531a42e124df07ab5599aad63870fa0bd4
 F Makefile.in 036bce328b963f48dbaadbec8cc4144a1fd9e50a
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
-F VERSION a13d4e1d1641b231b44592642d25363ccc2cbb05
+F VERSION 4edef6ec60a55c61b01fc0abebbf5a2f67c4f0e7
 F configure 078a370347baf9375baa8053857ca1e6bc84afa7 x
 F configure.in 381aeb4564f1562b7b2a115f5e99035c561a7fea
 F doc/lemon.html e233a3e97a779c7a87e1bc4528c664a58e49dd47
@@ -23,15 +23,15 @@ F src/sqliteInt.h b65fdecac7281aafb4c9ff3e79ea1b5546478385
 F src/tclsqlite.c 89dc4ba2b521f3e919d6d7aaa4cc1c2aba8e16f3
 F src/tokenize.c 097bec5843d4a0fb4509e036fee93bac080c5e73
 F src/update.c 51b9ef7434b15e31096155da920302e9db0d27fc
-F src/util.c b75b33e6bd5d47898bb7ed9fdd0dea4fe7c19b00
-F src/vdbe.c 4dd50dbbfb753bae763f0e4eb21b1d17f5cc1423
+F src/util.c 782f87af3c48c898631a2d5b7074437c899f6f13
+F src/vdbe.c c0e3d29d2e13997d5664ade19ff2c8e2212945e3
 F src/vdbe.h 6413cd0165ac62b0839fe3e077cb7c9f0b736295
 F src/where.c 3dfad2ffd0aa994d5eceac88852f7189c8d1d3c8
 F test/all.test 0950c135cab7e60c07bd745ccfad1476211e5bd7
 F test/copy.test b77a1214bd7756f2849d5c4fa6e715c0ff0c34eb
 F test/dbbe.test c6079572516aeb2739a35fd272b105c45c30cc76
 F test/delete.test 402ee3ccb6e544582d24c573ef70b34d09583ae7
-F test/expr.test 09b55ccf81cb8cc2f9cd83d592a2ba187ee48ba8
+F test/expr.test 48273bf48a15d226c35829f702af4254c0ff6795
 F test/func.test 02aed8845b98bde1043dda97455de1d37238ebb3
 F test/in.test 2c560c0f55fb777029fd9bb5378f2997582aa603
 F test/index.test 950be6116122c6e2db7c2c345eabcdb854ced1d0
@@ -62,7 +62,7 @@ F www/arch.fig 4e26e9dca3c49724fc8f554c695ddea9f2413156
 F www/arch.png c4d908b79065a72e7dcf19317f36d1324c550e87
 F www/arch.tcl 4f6a9afecc099a27bba17b4f8cc9561abc15dc40
 F www/c_interface.tcl 1b79e404a0dd46f44cd453a44b01df568c9586d1
-F www/changes.tcl 3f58bd3095d46f73f5b04f4584aa9a628586cdaf
+F www/changes.tcl 8ac23210e8cef43b77041f01b439a6ff3d1554fc
 F www/crosscompile.tcl 19734ce7f18b16ff2ed8479412abf8aca56e1dcc
 F www/fileformat.tcl cfb7fba80b7275555281ba2f256c00734bcdd1c9
 F www/index.tcl 2f5cc070b8fa8c3fc2f71bba4e6b7877d528fbde
@@ -71,7 +71,7 @@ F www/mingw.tcl fc5f4ba9d336b6e8c97347cc6496d6162461ef60
 F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/vdbe.tcl bcbfc33bcdd0ebad95eab31286adb9e1bc289520
-P b8cec9b938b4be1ccf230588d8e1564fb3ac4316
-R b19d9376e2ed736a8c71d021909787e7
+P 92346e003eba759251d23c296f97a7ad6299f5de
+R d838e77add09f4d92cf328c578007f7b
 U drh
-Z 240a9899293f42faa04a2a025b9382ba
+Z 003a64f816759573cb4ebb770e70d29a

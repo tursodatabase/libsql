@@ -26,7 +26,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.14 2000/07/31 11:57:37 drh Exp $
+** $Id: util.c,v 1.15 2000/09/14 01:21:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -550,6 +550,41 @@ static int privateStrCmp(const char *atext, const char *btext, int useCase){
   return result;
 }
 
+/*
+** Do a comparison of pure numerics.  If either string is not a pure
+** numeric, then return 0.  Otherwise return 1 and set *pResult to be
+** negative, zero or positive if the first string are numerially less than
+** equal to, or greater than the second.
+*/
+static int privateCompareNum(const char *a, const char *b, int *pResult){
+  char *endPtr;
+  double rA, rB;
+  int isNumA, isNumB;
+  if( isdigit(*a) || ((*a=='-' || *a=='+') && isdigit(a[1])) ){
+    rA = strtod(a, &endPtr);
+    isNumA = *endPtr==0;
+  }else{
+    isNumA = 0;
+  }
+  if( isdigit(*b) || ((*b=='-' || *b=='+') && isdigit(b[1])) ){
+    rB = strtod(b, &endPtr);
+    isNumB = *endPtr==0;
+  }else{
+    isNumB = 0;
+  }
+  if( isNumB==0 && isNumA==0 ) return 0;
+  if( isNumA!=isNumB ){
+    *pResult =  isNumA - isNumB;
+  }else if( rA<rB ){
+    *pResult = -1;
+  }else if( rA>rB ){
+    *pResult = 1;
+  }else{
+    *pResult = 0;
+  }
+  return 1;
+}
+
 /* This comparison routine is what we use for comparison operations
 ** in an SQL expression.  (Ex:  name<'Hello' or value<5).  Compare two
 ** strings.  Use case only as a tie-breaker.  Numbers compare in
@@ -557,8 +592,10 @@ static int privateStrCmp(const char *atext, const char *btext, int useCase){
 */
 int sqliteCompare(const char *atext, const char *btext){
   int result;
-  result = privateStrCmp(atext, btext, 0);
-  if( result==0 ) result = privateStrCmp(atext, btext, 1);
+  if( !privateCompareNum(atext, btext, &result) || result==0 ){
+    result = privateStrCmp(atext, btext, 0);
+    if( result==0 ) result = privateStrCmp(atext, btext, 1);
+  }
   return result;
 }
 
@@ -573,12 +610,13 @@ int sortCmp(const char **a, const char **b){
   return sqliteCompare(*a, *b);
 }
 int main(int argc, char **argv){
-  int i, j, k, n;
+  int i, j, k, n, cnt;
   static char *azStr[] = {
      "abc", "aBc", "abcd", "aBcd", 
-     "123", "124", "1234", "-123", "-124", "-1234", 
+     "123", "124", "1234", "-123", "-124", "-1234", "+124",
      "123.45", "123.456", "123.46", "-123.45", "-123.46", "-123.456", 
      "x9", "x10", "x-9", "x-10", "X9", "X10",
+     "1.234e+02", "+123", "1.23E2", "1.2345e+2", "-1.2345e2", "+w"
   };
   n = sizeof(azStr)/sizeof(azStr[0]);
   qsort(azStr, n, sizeof(azStr[0]), sortCmp);
@@ -587,6 +625,7 @@ int main(int argc, char **argv){
   }
   printf("Sanity1...");
   fflush(stdout);
+  cnt = 0;
   for(i=0; i<n-1; i++){
     char *a = azStr[i];
     for(j=i+1; j<n; j++){
@@ -595,10 +634,42 @@ int main(int argc, char **argv){
         printf("Failed!  \"%s\" vs \"%s\"\n", a, b);
         i = j = n;
       }
+      cnt++;
     }
   }
   if( i<n ){
-    printf(" OK\n");
+    printf(" OK (%d)\n", cnt);
+  }
+  printf("Sanity2...");
+  fflush(stdout);
+  cnt = 0;
+  for(i=0; i<n; i++){
+    char *a = azStr[i];
+    for(j=0; j<n; j++){
+      char *b = azStr[j];
+      for(k=0; k<n; k++){
+        char *c = azStr[k];
+        int x1, x2, x3, success;
+        x1 = sqliteCompare(a,b);
+        x2 = sqliteCompare(b,c);
+        x3 = sqliteCompare(a,c);
+        if( x1==0 ){
+          success = x2==x3;
+        }else if( x1<0 ){
+          success = (x2<=0 && x3<=0) || x2>0;
+        }else{
+          success = (x2>=0 && x3>=0) || x2<0;
+        }
+        if( !success ){
+          printf("Failed!  \"%s\" vs \"%s\" vs \"%s\"\n", a, b, c);
+          i = j = k = n+1;
+        }
+        cnt++;
+      }
+    }
+  }
+  if( i<n+1 ){
+    printf(" OK (%d)\n", cnt);
   }
   return 0;
 }

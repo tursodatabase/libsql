@@ -17,6 +17,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Sep 13 (Version 1.0.5)} {
+<li>Changed the print format for floating point values from "%g" to "%.15g".
+    </li>
+<li>Changed the comparison function so that numbers in exponential notation
+    (ex: 1.234e+05) sort in numerical order.</li>
+}
+
 chng {2000 Aug 28 (Version 1.0.4)} {
 <li>Added functions <b>length()</b> and <b>substr()</b>.</li>
 <li>Fix a bug in the <b>sqlite</b> shell program that was causing
