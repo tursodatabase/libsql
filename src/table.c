@@ -9,9 +9,9 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the sqlite_get_table() and sqlite_free_table()
+** This file contains the sqlite3_get_table() and sqlite3_free_table()
 ** interface routines.  These are just wrappers around the main
-** interface routine of sqlite_exec().
+** interface routine of sqlite3_exec().
 **
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
@@ -21,7 +21,7 @@
 #include "sqliteInt.h"
 
 /*
-** This structure is used to pass data from sqlite_get_table() through
+** This structure is used to pass data from sqlite3_get_table() through
 ** to the callback function is uses to build the result.
 */
 typedef struct TabResult {
@@ -40,7 +40,7 @@ typedef struct TabResult {
 ** is to fill in the TabResult structure appropriately, allocating new
 ** memory as necessary.
 */
-static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
+static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   TabResult *p = (TabResult*)pArg;
   int need;
   int i;
@@ -85,7 +85,7 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
     }
   }else if( p->nColumn!=nCol ){
     sqlite3SetString(&p->zErrMsg,
-       "sqlite_get_table() called with two or more incompatible queries",
+       "sqlite3_get_table() called with two or more incompatible queries",
        (char*)0);
     p->rc = SQLITE_ERROR;
     return 1;
@@ -119,10 +119,10 @@ static int sqlite_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
 **
 ** The result that is written to ***pazResult is held in memory obtained
 ** from malloc().  But the caller cannot free this memory directly.  
-** Instead, the entire table should be passed to sqlite_free_table() when
+** Instead, the entire table should be passed to sqlite3_free_table() when
 ** the calling procedure is finished using it.
 */
-int sqlite_get_table(
+int sqlite3_get_table(
   sqlite *db,                 /* The database on which the SQL executes */
   const char *zSql,           /* The SQL to be executed */
   char ***pazResult,          /* Write the result table here */
@@ -148,12 +148,12 @@ int sqlite_get_table(
     return SQLITE_NOMEM;
   }
   res.azResult[0] = 0;
-  rc = sqlite_exec(db, zSql, sqlite_get_table_cb, &res, pzErrMsg);
+  rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
   if( res.azResult ){
     res.azResult[0] = (char*)res.nData;
   }
   if( rc==SQLITE_ABORT ){
-    sqlite_free_table(&res.azResult[1]);
+    sqlite3_free_table(&res.azResult[1]);
     if( res.zErrMsg ){
       if( pzErrMsg ){
         free(*pzErrMsg);
@@ -167,14 +167,14 @@ int sqlite_get_table(
   }
   sqliteFree(res.zErrMsg);
   if( rc!=SQLITE_OK ){
-    sqlite_free_table(&res.azResult[1]);
+    sqlite3_free_table(&res.azResult[1]);
     return rc;
   }
   if( res.nAlloc>res.nData ){
     char **azNew;
     azNew = realloc( res.azResult, sizeof(char*)*(res.nData+1) );
     if( azNew==0 ){
-      sqlite_free_table(&res.azResult[1]);
+      sqlite3_free_table(&res.azResult[1]);
       return SQLITE_NOMEM;
     }
     res.nAlloc = res.nData+1;
@@ -187,10 +187,10 @@ int sqlite_get_table(
 }
 
 /*
-** This routine frees the space the sqlite_get_table() malloced.
+** This routine frees the space the sqlite3_get_table() malloced.
 */
-void sqlite_free_table(
-  char **azResult             /* Result returned from from sqlite_get_table() */
+void sqlite3_free_table(
+  char **azResult             /* Result returned from from sqlite3_get_table() */
 ){
   if( azResult ){
     int i, n;

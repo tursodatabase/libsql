@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.4 2004/05/08 08:23:39 danielk1977 Exp $
+** $Id: test4.c,v 1.5 2004/05/10 10:34:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -63,15 +63,15 @@ static Thread threadset[N_THREAD];
 static void *thread_main(void *pArg){
   Thread *p = (Thread*)pArg;
   if( p->db ){
-    sqlite_close(p->db);
+    sqlite3_close(p->db);
   }
-  p->db = sqlite_open(p->zFilename, 0, &p->zErr);
+  p->db = sqlite3_open(p->zFilename, 0, &p->zErr);
   p->vm = 0;
   p->completed = 1;
   while( p->opnum<=p->completed ) sched_yield();
   while( p->xOp ){
     if( p->zErr && p->zErr!=p->zStaticErr ){
-      sqlite_freemem(p->zErr);
+      sqlite3_freemem(p->zErr);
       p->zErr = 0;
     }
     (*p->xOp)(p);
@@ -79,15 +79,15 @@ static void *thread_main(void *pArg){
     while( p->opnum<=p->completed ) sched_yield();
   }
   if( p->vm ){
-    sqlite_finalize(p->vm, 0);
+    sqlite3_finalize(p->vm, 0);
     p->vm = 0;
   }
   if( p->db ){
-    sqlite_close(p->db);
+    sqlite3_close(p->db);
     p->db = 0;
   }
   if( p->zErr && p->zErr!=p->zStaticErr ){
-    sqlite_freemem(p->zErr);
+    sqlite3_freemem(p->zErr);
     p->zErr = 0;
   }
   p->completed++;
@@ -441,10 +441,10 @@ static void do_compile(Thread *p){
     return;
   }
   if( p->vm ){
-    sqlite_finalize(p->vm, 0);
+    sqlite3_finalize(p->vm, 0);
     p->vm = 0;
   }
-  p->rc = sqlite_compile(p->db, p->zArg, 0, &p->vm, &p->zErr);
+  p->rc = sqlite3_compile(p->db, p->zArg, 0, &p->vm, &p->zErr);
 }
 
 /*
@@ -487,7 +487,7 @@ static void do_step(Thread *p){
     p->rc = SQLITE_ERROR;
     return;
   }
-  p->rc = sqlite_step(p->vm, &p->argc, &p->argv, &p->colv);
+  p->rc = sqlite3_step(p->vm, &p->argc, &p->argv, &p->colv);
 }
 
 /*
@@ -528,7 +528,7 @@ static void do_finalize(Thread *p){
     p->rc = SQLITE_ERROR;
     return;
   }
-  p->rc = sqlite_finalize(p->vm, &p->zErr);
+  p->rc = sqlite3_finalize(p->vm, &p->zErr);
   p->vm = 0;
 }
 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.37 2004/05/08 08:23:39 danielk1977 Exp $
+** $Id: test1.c,v 1.38 2004/05/10 10:34:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -82,7 +82,7 @@ static int makePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
 }
 
 /*
-** Usage:   sqlite_open filename
+** Usage:   sqlite3_open filename
 **
 ** Returns:  The name of an open database.
 */
@@ -100,7 +100,7 @@ static int sqlite_test_open(
        " FILENAME\"", 0);
     return TCL_ERROR;
   }
-  db = sqlite_open(argv[1], 0666, &zErr);
+  db = sqlite3_open(argv[1], 0666, &zErr);
   if( db==0 ){
     Tcl_AppendResult(interp, zErr, 0);
     free(zErr);
@@ -112,7 +112,7 @@ static int sqlite_test_open(
 }
 
 /*
-** The callback routine for sqlite_exec_printf().
+** The callback routine for sqlite3_exec_printf().
 */
 static int exec_printf_cb(void *pArg, int argc, char **argv, char **name){
   Tcl_DString *str = (Tcl_DString*)pArg;
@@ -130,9 +130,9 @@ static int exec_printf_cb(void *pArg, int argc, char **argv, char **name){
 }
 
 /*
-** Usage:  sqlite_exec_printf  DB  FORMAT  STRING
+** Usage:  sqlite3_exec_printf  DB  FORMAT  STRING
 **
-** Invoke the sqlite_exec_printf() interface using the open database
+** Invoke the sqlite3_exec_printf() interface using the open database
 ** DB.  The SQL is the string FORMAT.  The format string should contain
 ** one %s or %q.  STRING is the value inserted into %s or %q.
 */
@@ -154,7 +154,7 @@ static int test_exec_printf(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
-  rc = sqlite_exec_printf(db, argv[2], exec_printf_cb, &str, &zErr, argv[3]);
+  rc = sqlite3_exec_printf(db, argv[2], exec_printf_cb, &str, &zErr, argv[3]);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
@@ -164,7 +164,7 @@ static int test_exec_printf(
 }
 
 /*
-** Usage:  sqlite_mprintf_z_test  SEPARATOR  ARG0  ARG1 ...
+** Usage:  sqlite3_mprintf_z_test  SEPARATOR  ARG0  ARG1 ...
 **
 ** Test the %z format of mprintf().  Use multiple mprintf() calls to 
 ** concatenate arg0 through argn using separator as the separator.
@@ -188,9 +188,9 @@ static int test_mprintf_z(
 }
 
 /*
-** Usage:  sqlite_get_table_printf  DB  FORMAT  STRING
+** Usage:  sqlite3_get_table_printf  DB  FORMAT  STRING
 **
-** Invoke the sqlite_get_table_printf() interface using the open database
+** Invoke the sqlite3_get_table_printf() interface using the open database
 ** DB.  The SQL is the string FORMAT.  The format string should contain
 ** one %s or %q.  STRING is the value inserted into %s or %q.
 */
@@ -215,7 +215,7 @@ static int test_get_table_printf(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
-  rc = sqlite_get_table_printf(db, argv[2], &aResult, &nRow, &nCol, 
+  rc = sqlite3_get_table_printf(db, argv[2], &aResult, &nRow, &nCol, 
                &zErr, argv[3]);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
@@ -230,14 +230,14 @@ static int test_get_table_printf(
   }else{
     Tcl_AppendElement(interp, zErr);
   }
-  sqlite_free_table(aResult);
+  sqlite3_free_table(aResult);
   if( zErr ) free(zErr);
   return TCL_OK;
 }
 
 
 /*
-** Usage:  sqlite_last_insert_rowid DB
+** Usage:  sqlite3_last_insert_rowid DB
 **
 ** Returns the integer ROWID of the most recent insert.
 */
@@ -255,15 +255,15 @@ static int test_last_rowid(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sprintf(zBuf, "%d", sqlite_last_insert_rowid(db));
+  sprintf(zBuf, "%d", sqlite3_last_insert_rowid(db));
   Tcl_AppendResult(interp, zBuf, 0);
   return SQLITE_OK;
 }
 
 /*
-** Usage:  sqlite_close DB
+** Usage:  sqlite3_close DB
 **
-** Closes the database opened by sqlite_open.
+** Closes the database opened by sqlite3_open.
 */
 static int sqlite_test_close(
   void *NotUsed,
@@ -278,7 +278,7 @@ static int sqlite_test_close(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite_close(db);
+  sqlite3_close(db);
   return TCL_OK;
 }
 
@@ -290,7 +290,7 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
   int i;
   for(i=0; i<argc; i++){
     if( argv[i] ){
-      sqlite_set_result_string(context, argv[i], -1);
+      sqlite3_set_result_string(context, argv[i], -1);
       break;
     }
   }
@@ -345,11 +345,11 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 }
 
 /*
-** Implementation of the x_sqlite_exec() function.  This function takes
+** Implementation of the x_sqlite3_exec() function.  This function takes
 ** a single argument and attempts to execute that argument as SQL code.
 ** This is illegal and should set the SQLITE_MISUSE flag on the database.
 **
-** 2004-Jan-07:  We have changed this to make it legal to call sqlite_exec()
+** 2004-Jan-07:  We have changed this to make it legal to call sqlite3_exec()
 ** from within a function call.  
 ** 
 ** This routine simulates the effect of having two threads attempt to
@@ -358,25 +358,25 @@ static int execFuncCallback(void *pData, int argc, char **argv, char **NotUsed){
 static void sqlite3ExecFunc(sqlite_func *context, int argc, const char **argv){
   struct dstr x;
   memset(&x, 0, sizeof(x));
-  sqlite_exec((sqlite*)sqlite_user_data(context), argv[0], 
+  sqlite3_exec((sqlite*)sqlite3_user_data(context), argv[0], 
       execFuncCallback, &x, 0);
-  sqlite_set_result_string(context, x.z, x.nUsed);
+  sqlite3_set_result_string(context, x.z, x.nUsed);
   sqliteFree(x.z);
 }
 
 /*
 ** Usage:  sqlite_test_create_function DB
 **
-** Call the sqlite_create_function API on the given database in order
+** Call the sqlite3_create_function API on the given database in order
 ** to create a function named "x_coalesce".  This function does the same thing
 ** as the "coalesce" function.  This function also registers an SQL function
-** named "x_sqlite_exec" that invokes sqlite_exec().  Invoking sqlite_exec()
+** named "x_sqlite3_exec" that invokes sqlite3_exec().  Invoking sqlite3_exec()
 ** in this way is illegal recursion and should raise an SQLITE_MISUSE error.
 ** The effect is similar to trying to use the same database connection from
 ** two threads at the same time.
 **
 ** The original motivation for this routine was to be able to call the
-** sqlite_create_function function while a query is in progress in order
+** sqlite3_create_function function while a query is in progress in order
 ** to test the SQLITE_MISUSE detection logic.
 */
 static int test_create_function(
@@ -393,8 +393,8 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
-  sqlite_create_function(db, "x_sqlite_exec", 1, sqlite3ExecFunc, db);
+  sqlite3_create_function(db, "x_coalesce", -1, ifnullFunc, 0);
+  sqlite3_create_function(db, "x_sqlite3_exec", 1, sqlite3ExecFunc, db);
   return TCL_OK;
 }
 
@@ -407,26 +407,26 @@ struct CountCtx {
 };
 static void countStep(sqlite_func *context, int argc, const char **argv){
   CountCtx *p;
-  p = sqlite_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, sizeof(*p));
   if( (argc==0 || argv[0]) && p ){
     p->n++;
   }
 }   
 static void countFinalize(sqlite_func *context){
   CountCtx *p;
-  p = sqlite_aggregate_context(context, sizeof(*p));
-  sqlite_set_result_int(context, p ? p->n : 0);
+  p = sqlite3_aggregate_context(context, sizeof(*p));
+  sqlite3_set_result_int(context, p ? p->n : 0);
 }
 
 /*
 ** Usage:  sqlite_test_create_aggregate DB
 **
-** Call the sqlite_create_function API on the given database in order
+** Call the sqlite3_create_function API on the given database in order
 ** to create a function named "x_count".  This function does the same thing
 ** as the "md5sum" function.
 **
 ** The original motivation for this routine was to be able to call the
-** sqlite_create_aggregate function while a query is in progress in order
+** sqlite3_create_aggregate function while a query is in progress in order
 ** to test the SQLITE_MISUSE detection logic.
 */
 static int test_create_aggregate(
@@ -442,19 +442,19 @@ static int test_create_aggregate(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  sqlite_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
-  sqlite_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
+  sqlite3_create_aggregate(db, "x_count", 0, countStep, countFinalize, 0);
+  sqlite3_create_aggregate(db, "x_count", 1, countStep, countFinalize, 0);
   return TCL_OK;
 }
 
 
 
 /*
-** Usage:  sqlite_mprintf_int FORMAT INTEGER INTEGER INTEGER
+** Usage:  sqlite3_mprintf_int FORMAT INTEGER INTEGER INTEGER
 **
 ** Call mprintf with three integer arguments
 */
-static int sqlite_mprintf_int(
+static int sqlite3_mprintf_int(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -470,18 +470,18 @@ static int sqlite_mprintf_int(
   for(i=2; i<5; i++){
     if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
   }
-  z = sqlite_mprintf(argv[1], a[0], a[1], a[2]);
+  z = sqlite3_mprintf(argv[1], a[0], a[1], a[2]);
   Tcl_AppendResult(interp, z, 0);
-  sqlite_freemem(z);
+  sqlite3_freemem(z);
   return TCL_OK;
 }
 
 /*
-** Usage:  sqlite_mprintf_str FORMAT INTEGER INTEGER STRING
+** Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER STRING
 **
 ** Call mprintf with two integer arguments and one string argument
 */
-static int sqlite_mprintf_str(
+static int sqlite3_mprintf_str(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -497,18 +497,18 @@ static int sqlite_mprintf_str(
   for(i=2; i<4; i++){
     if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
   }
-  z = sqlite_mprintf(argv[1], a[0], a[1], argc>4 ? argv[4] : NULL);
+  z = sqlite3_mprintf(argv[1], a[0], a[1], argc>4 ? argv[4] : NULL);
   Tcl_AppendResult(interp, z, 0);
-  sqlite_freemem(z);
+  sqlite3_freemem(z);
   return TCL_OK;
 }
 
 /*
-** Usage:  sqlite_mprintf_str FORMAT INTEGER INTEGER DOUBLE
+** Usage:  sqlite3_mprintf_str FORMAT INTEGER INTEGER DOUBLE
 **
 ** Call mprintf with two integer arguments and one double argument
 */
-static int sqlite_mprintf_double(
+static int sqlite3_mprintf_double(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -526,20 +526,20 @@ static int sqlite_mprintf_double(
     if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
   }
   if( Tcl_GetDouble(interp, argv[4], &r) ) return TCL_ERROR;
-  z = sqlite_mprintf(argv[1], a[0], a[1], r);
+  z = sqlite3_mprintf(argv[1], a[0], a[1], r);
   Tcl_AppendResult(interp, z, 0);
-  sqlite_freemem(z);
+  sqlite3_freemem(z);
   return TCL_OK;
 }
 
 /*
-** Usage:  sqlite_mprintf_str FORMAT DOUBLE DOUBLE
+** Usage:  sqlite3_mprintf_str FORMAT DOUBLE DOUBLE
 **
 ** Call mprintf with a single double argument which is the product of the
 ** two arguments given above.  This is used to generate overflow and underflow
 ** doubles to test that they are converted properly.
 */
-static int sqlite_mprintf_scaled(
+static int sqlite3_mprintf_scaled(
   void *NotUsed,
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int argc,              /* Number of arguments */
@@ -556,9 +556,9 @@ static int sqlite_mprintf_scaled(
   for(i=2; i<4; i++){
     if( Tcl_GetDouble(interp, argv[i], &r[i-2]) ) return TCL_ERROR;
   }
-  z = sqlite_mprintf(argv[1], r[0]*r[1]);
+  z = sqlite3_mprintf(argv[1], r[0]*r[1]);
   Tcl_AppendResult(interp, z, 0);
-  sqlite_freemem(z);
+  sqlite3_freemem(z);
   return TCL_OK;
 }
 
@@ -566,7 +566,7 @@ static int sqlite_mprintf_scaled(
 ** Usage: sqlite_malloc_fail N
 **
 ** Rig sqliteMalloc() to fail on the N-th call.  Turn off this mechanism
-** and reset the sqlite_malloc_failed variable is N==0.
+** and reset the sqlite3_malloc_failed variable is N==0.
 */
 #ifdef MEMORY_DEBUG
 static int sqlite_malloc_fail(
@@ -581,8 +581,8 @@ static int sqlite_malloc_fail(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
-  sqlite_iMallocFail = n;
-  sqlite_malloc_failed = 0;
+  sqlite3_iMallocFail = n;
+  sqlite3_malloc_failed = 0;
   return TCL_OK;
 }
 #endif
@@ -600,7 +600,7 @@ static int sqlite_malloc_stat(
   char **argv            /* Text of each argument */
 ){
   char zBuf[200];
-  sprintf(zBuf, "%d %d %d", sqlite_nMalloc, sqlite_nFree, sqlite_iMallocFail);
+  sprintf(zBuf, "%d %d %d", sqlite3_nMalloc, sqlite3_nFree, sqlite3_iMallocFail);
   Tcl_AppendResult(interp, zBuf, 0);
   return TCL_OK;
 }
@@ -630,19 +630,19 @@ static int sqlite_abort(
 static void testFunc(sqlite_func *context, int argc, const char **argv){
   while( argc>=2 ){
     if( argv[0]==0 ){
-      sqlite_set_result_error(context, "first argument to test function "
+      sqlite3_set_result_error(context, "first argument to test function "
          "may not be NULL", -1);
     }else if( sqlite3StrICmp(argv[0],"string")==0 ){
-      sqlite_set_result_string(context, argv[1], -1);
+      sqlite3_set_result_string(context, argv[1], -1);
     }else if( argv[1]==0 ){
-      sqlite_set_result_error(context, "2nd argument may not be NULL if the "
+      sqlite3_set_result_error(context, "2nd argument may not be NULL if the "
          "first argument is not \"string\"", -1);
     }else if( sqlite3StrICmp(argv[0],"int")==0 ){
-      sqlite_set_result_int(context, atoi(argv[1]));
+      sqlite3_set_result_int(context, atoi(argv[1]));
     }else if( sqlite3StrICmp(argv[0],"double")==0 ){
-      sqlite_set_result_double(context, sqlite3AtoF(argv[1], 0));
+      sqlite3_set_result_double(context, sqlite3AtoF(argv[1], 0));
     }else{
-      sqlite_set_result_error(context,"first argument should be one of: "
+      sqlite3_set_result_error(context,"first argument should be one of: "
           "string int double", -1);
     }
     argc -= 2;
@@ -669,9 +669,9 @@ static int test_register_func(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite_create_function(db, argv[2], -1, testFunc, 0);
+  rc = sqlite3_create_function(db, argv[2], -1, testFunc, 0);
   if( rc!=0 ){
-    Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+    Tcl_AppendResult(interp, sqlite3_error_string(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -722,16 +722,16 @@ static int sqlite_datatypes(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite_exec(db, argv[2], rememberDataTypes, interp, 0);
+  rc = sqlite3_exec(db, argv[2], rememberDataTypes, interp, 0);
   if( rc!=0 && rc!=SQLITE_ABORT ){
-    Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+    Tcl_AppendResult(interp, sqlite3_error_string(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
 }
 
 /*
-** Usage:  sqlite_compile  DB  SQL  ?TAILVAR?
+** Usage:  sqlite3_compile  DB  SQL  ?TAILVAR?
 **
 ** Attempt to compile an SQL statement.  Return a pointer to the virtual
 ** machine used to execute that statement.  Unprocessed SQL is written
@@ -755,13 +755,13 @@ static int test_compile(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite_compile(db, argv[2], argc==4 ? &zTail : 0, &vm, &zErr);
+  rc = sqlite3_compile(db, argv[2], argc==4 ? &zTail : 0, &vm, &zErr);
   if( argc==4 ) Tcl_SetVar(interp, argv[3], zTail, 0);
   if( rc ){
     assert( vm==0 );
     sprintf(zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, zErr, 0);
-    sqlite_freemem(zErr);
+    sqlite3_freemem(zErr);
     return TCL_ERROR;
   }
   if( vm ){
@@ -772,7 +772,7 @@ static int test_compile(
 }
 
 /*
-** Usage:  sqlite_step  VM  ?NVAR?  ?VALUEVAR?  ?COLNAMEVAR?
+** Usage:  sqlite3_step  VM  ?NVAR?  ?VALUEVAR?  ?COLNAMEVAR?
 **
 ** Step a virtual machine.  Return a the result code as a string.
 ** Column results are written into three variables.
@@ -796,7 +796,7 @@ static int test_step(
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite_step(vm, argc>=3?&N:0, argc>=4?&azValue:0, argc==5?&azColName:0);
+  rc = sqlite3_step(vm, argc>=3?&N:0, argc>=4?&azValue:0, argc==5?&azColName:0);
   if( argc>=3 ){
     sprintf(zBuf, "%d", N);
     Tcl_SetVar(interp, argv[2], zBuf, 0);
@@ -832,7 +832,7 @@ static int test_step(
 }
 
 /*
-** Usage:  sqlite_finalize  VM 
+** Usage:  sqlite3_finalize  VM 
 **
 ** Shutdown a virtual machine.
 */
@@ -851,19 +851,19 @@ static int test_finalize(
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite_finalize(vm, &zErrMsg);
+  rc = sqlite3_finalize(vm, &zErrMsg);
   if( rc ){
     char zBuf[50];
     sprintf(zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
-    sqlite_freemem(zErrMsg);
+    sqlite3_freemem(zErrMsg);
     return TCL_ERROR;
   }
   return TCL_OK;
 }
 
 /*
-** Usage:  sqlite_reset   VM 
+** Usage:  sqlite3_reset   VM 
 **
 ** Reset a virtual machine and prepare it to be run again.
 */
@@ -882,12 +882,12 @@ static int test_reset(
     return TCL_ERROR;
   }
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
-  rc = sqlite_reset(vm, &zErrMsg);
+  rc = sqlite3_reset(vm, &zErrMsg);
   if( rc ){
     char zBuf[50];
     sprintf(zBuf, "(%d) ", rc);
     Tcl_AppendResult(interp, zBuf, zErrMsg, 0);
-    sqlite_freemem(zErrMsg);
+    sqlite3_freemem(zErrMsg);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -895,12 +895,12 @@ static int test_reset(
 
 /*
 ** This is the "static_bind_value" that variables are bound to when
-** the FLAG option of sqlite_bind is "static"
+** the FLAG option of sqlite3_bind is "static"
 */
 static char *sqlite_static_bind_value = 0;
 
 /*
-** Usage:  sqlite_bind  VM  IDX  VALUE  FLAGS
+** Usage:  sqlite3_bind  VM  IDX  VALUE  FLAGS
 **
 ** Sets the value of the IDX-th occurance of "?" in the original SQL
 ** string.  VALUE is the new value.  If FLAGS=="null" then VALUE is
@@ -926,11 +926,11 @@ static int test_bind(
   if( getVmPointer(interp, argv[1], &vm) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[2], &idx) ) return TCL_ERROR;
   if( strcmp(argv[4],"null")==0 ){
-    rc = sqlite_bind(vm, idx, 0, 0, 0);
+    rc = sqlite3_bind(vm, idx, 0, 0, 0);
   }else if( strcmp(argv[4],"static")==0 ){
-    rc = sqlite_bind(vm, idx, sqlite_static_bind_value, -1, 0);
+    rc = sqlite3_bind(vm, idx, sqlite_static_bind_value, -1, 0);
   }else if( strcmp(argv[4],"normal")==0 ){
-    rc = sqlite_bind(vm, idx, argv[3], -1, 1);
+    rc = sqlite3_bind(vm, idx, argv[3], -1, 1);
   }else{
     Tcl_AppendResult(interp, "4th argument should be "
         "\"null\" or \"static\" or \"normal\"", 0);
@@ -939,7 +939,7 @@ static int test_bind(
   if( rc ){
     char zBuf[50];
     sprintf(zBuf, "(%d) ", rc);
-    Tcl_AppendResult(interp, zBuf, sqlite_error_string(rc), 0);
+    Tcl_AppendResult(interp, zBuf, sqlite3_error_string(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -971,26 +971,26 @@ static int test_breakpoint(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
-  extern int sqlite_search_count;
-  extern int sqlite_interrupt_count;
-  extern int sqlite_open_file_count;
-  extern int sqlite_current_time;
+  extern int sqlite3_search_count;
+  extern int sqlite3_interrupt_count;
+  extern int sqlite3_open_file_count;
+  extern int sqlite3_current_time;
   static struct {
      char *zName;
      Tcl_CmdProc *xProc;
   } aCmd[] = {
-     { "sqlite_mprintf_int",             (Tcl_CmdProc*)sqlite_mprintf_int    },
-     { "sqlite_mprintf_str",             (Tcl_CmdProc*)sqlite_mprintf_str    },
-     { "sqlite_mprintf_double",          (Tcl_CmdProc*)sqlite_mprintf_double },
-     { "sqlite_mprintf_scaled",          (Tcl_CmdProc*)sqlite_mprintf_scaled },
-     { "sqlite_mprintf_z_test",          (Tcl_CmdProc*)test_mprintf_z        },
-     { "sqlite_open",                    (Tcl_CmdProc*)sqlite_test_open      },
-     { "sqlite_last_insert_rowid",       (Tcl_CmdProc*)test_last_rowid       },
-     { "sqlite_exec_printf",             (Tcl_CmdProc*)test_exec_printf      },
-     { "sqlite_get_table_printf",        (Tcl_CmdProc*)test_get_table_printf },
-     { "sqlite_close",                   (Tcl_CmdProc*)sqlite_test_close     },
-     { "sqlite_create_function",         (Tcl_CmdProc*)test_create_function  },
-     { "sqlite_create_aggregate",        (Tcl_CmdProc*)test_create_aggregate },
+     { "sqlite3_mprintf_int",             (Tcl_CmdProc*)sqlite3_mprintf_int    },
+     { "sqlite3_mprintf_str",             (Tcl_CmdProc*)sqlite3_mprintf_str    },
+     { "sqlite3_mprintf_double",          (Tcl_CmdProc*)sqlite3_mprintf_double },
+     { "sqlite3_mprintf_scaled",          (Tcl_CmdProc*)sqlite3_mprintf_scaled },
+     { "sqlite3_mprintf_z_test",          (Tcl_CmdProc*)test_mprintf_z        },
+     { "sqlite3_open",                    (Tcl_CmdProc*)sqlite_test_open      },
+     { "sqlite3_last_insert_rowid",       (Tcl_CmdProc*)test_last_rowid       },
+     { "sqlite3_exec_printf",             (Tcl_CmdProc*)test_exec_printf      },
+     { "sqlite3_get_table_printf",        (Tcl_CmdProc*)test_get_table_printf },
+     { "sqlite3_close",                   (Tcl_CmdProc*)sqlite_test_close     },
+     { "sqlite3_create_function",         (Tcl_CmdProc*)test_create_function  },
+     { "sqlite3_create_aggregate",        (Tcl_CmdProc*)test_create_aggregate },
      { "sqlite_register_test_function",  (Tcl_CmdProc*)test_register_func    },
      { "sqlite_abort",                   (Tcl_CmdProc*)sqlite_abort          },
      { "sqlite_datatypes",               (Tcl_CmdProc*)sqlite_datatypes      },
@@ -998,11 +998,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite_malloc_fail",             (Tcl_CmdProc*)sqlite_malloc_fail    },
      { "sqlite_malloc_stat",             (Tcl_CmdProc*)sqlite_malloc_stat    },
 #endif
-     { "sqlite_compile",                 (Tcl_CmdProc*)test_compile          },
-     { "sqlite_step",                    (Tcl_CmdProc*)test_step             },
-     { "sqlite_finalize",                (Tcl_CmdProc*)test_finalize         },
-     { "sqlite_bind",                    (Tcl_CmdProc*)test_bind             },
-     { "sqlite_reset",                   (Tcl_CmdProc*)test_reset            },
+     { "sqlite3_compile",                 (Tcl_CmdProc*)test_compile          },
+     { "sqlite3_step",                    (Tcl_CmdProc*)test_step             },
+     { "sqlite3_finalize",                (Tcl_CmdProc*)test_finalize         },
+     { "sqlite3_bind",                    (Tcl_CmdProc*)test_bind             },
+     { "sqlite3_reset",                   (Tcl_CmdProc*)test_reset            },
      { "breakpoint",                     (Tcl_CmdProc*)test_breakpoint       },
   };
   int i;
@@ -1010,14 +1010,14 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
-  Tcl_LinkVar(interp, "sqlite_search_count", 
-      (char*)&sqlite_search_count, TCL_LINK_INT);
-  Tcl_LinkVar(interp, "sqlite_interrupt_count", 
-      (char*)&sqlite_interrupt_count, TCL_LINK_INT);
-  Tcl_LinkVar(interp, "sqlite_open_file_count", 
-      (char*)&sqlite_open_file_count, TCL_LINK_INT);
-  Tcl_LinkVar(interp, "sqlite_current_time", 
-      (char*)&sqlite_current_time, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite3_search_count", 
+      (char*)&sqlite3_search_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite3_interrupt_count", 
+      (char*)&sqlite3_interrupt_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite3_open_file_count", 
+      (char*)&sqlite3_open_file_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite3_current_time", 
+      (char*)&sqlite3_current_time, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_static_bind_value",
       (char*)&sqlite_static_bind_value, TCL_LINK_STRING);
   return TCL_OK;

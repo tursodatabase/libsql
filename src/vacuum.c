@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.14 2004/05/08 08:23:40 danielk1977 Exp $
+** $Id: vacuum.c,v 1.15 2004/05/10 10:35:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -93,10 +93,10 @@ static int execsql(char **pzErrMsg, sqlite *db, const char *zSql){
   int rc;
 
   /* printf("***** executing *****\n%s\n", zSql); */
-  rc = sqlite_exec(db, zSql, 0, 0, &zErrMsg);
+  rc = sqlite3_exec(db, zSql, 0, 0, &zErrMsg);
   if( zErrMsg ){
     sqlite3SetString(pzErrMsg, zErrMsg, (char*)0);
-    sqlite_freemem(zErrMsg);
+    sqlite3_freemem(zErrMsg);
   }
   return rc;
 }
@@ -153,10 +153,10 @@ static int vacuumCallback1(void *pArg, int argc, char **argv, char **NotUsed){
     appendText(&p->s1, "SELECT * FROM ", -1);
     appendQuoted(&p->s1, argv[1]);
     p->zTable = argv[1];
-    rc = sqlite_exec(p->dbOld, p->s1.z, vacuumCallback2, p, &zErrMsg);
+    rc = sqlite3_exec(p->dbOld, p->s1.z, vacuumCallback2, p, &zErrMsg);
     if( zErrMsg ){
       sqlite3SetString(p->pzErrMsg, zErrMsg, (char*)0);
-      sqlite_freemem(zErrMsg);
+      sqlite3_freemem(zErrMsg);
     }
   }
   if( rc!=SQLITE_ABORT ) p->rc = rc;
@@ -266,7 +266,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   }
 
   
-  dbNew = sqlite_open(zTemp, 0, &zErrMsg);
+  dbNew = sqlite3_open(zTemp, 0, &zErrMsg);
   if( dbNew==0 ){
     sqlite3SetString(pzErrMsg, "unable to open a temporary database at ",
        zTemp, " - ", zErrMsg, (char*)0);
@@ -285,10 +285,10 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
     assert( strlen(zPragma[i])<100 );
     sprintf(zBuf, "PRAGMA %s;", zPragma[i]);
     sVac.zPragma = zPragma[i];
-    rc = sqlite_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
+    rc = sqlite3_exec(db, zBuf, vacuumCallback3, &sVac, &zErrMsg);
   }
   if( rc==SQLITE_OK ){
-    rc = sqlite_exec(db, 
+    rc = sqlite3_exec(db, 
       "SELECT type, name, sql FROM sqlite_master "
       "WHERE sql NOT NULL AND type!='view' "
       "UNION ALL "
@@ -298,7 +298,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite *db){
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeCopyFile(db->aDb[0].pBt, dbNew->aDb[0].pBt);
-    sqlite_exec(db, "COMMIT", 0, 0, 0);
+    sqlite3_exec(db, "COMMIT", 0, 0, 0);
     sqlite3ResetInternalSchema(db, 0);
   }
 
@@ -307,13 +307,13 @@ end_of_vacuum:
     sqlite3SetString(pzErrMsg, "unable to vacuum database - ", 
        zErrMsg, (char*)0);
   }
-  sqlite_exec(db, "ROLLBACK", 0, 0, 0);
-  if( dbNew ) sqlite_close(dbNew);
+  sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
+  if( dbNew ) sqlite3_close(dbNew);
   sqlite3OsDelete(zTemp);
   sqliteFree(zTemp);
   sqliteFree(sVac.s1.z);
   sqliteFree(sVac.s2.z);
-  if( zErrMsg ) sqlite_freemem(zErrMsg);
+  if( zErrMsg ) sqlite3_freemem(zErrMsg);
   if( rc==SQLITE_ABORT ) sVac.rc = SQLITE_ERROR;
   return sVac.rc;
 #endif

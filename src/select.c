@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.162 2004/05/08 08:23:32 danielk1977 Exp $
+** $Id: select.c,v 1.163 2004/05/10 10:34:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -692,7 +692,7 @@ static void generateColumnNames(
   int fullNames, shortNames;
 
   assert( v!=0 );
-  if( pParse->colNamesSet || v==0 || sqlite_malloc_failed ) return;
+  if( pParse->colNamesSet || v==0 || sqlite3_malloc_failed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
   shortNames = (db->flags & SQLITE_ShortColNames)!=0;
@@ -2007,7 +2007,7 @@ int sqlite3Select(
   int distinct;          /* Table to use for the distinct set */
   int rc = 1;            /* Value to return from this function */
 
-  if( sqlite_malloc_failed || pParse->nErr || p==0 ) return 1;
+  if( sqlite3_malloc_failed || pParse->nErr || p==0 ) return 1;
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
 
   /* If there is are a sequence of queries, do the earlier ones first.

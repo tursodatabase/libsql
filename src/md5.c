@@ -360,9 +360,9 @@ static void md5step(sqlite_func *context, int argc, const char **argv){
   MD5Context *p;
   int i;
   if( argc<1 ) return;
-  p = sqlite_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
-  if( sqlite_aggregate_count(context)==1 ){
+  if( sqlite3_aggregate_count(context)==1 ){
     MD5Init(p);
   }
   for(i=0; i<argc; i++){
@@ -375,13 +375,13 @@ static void md5finalize(sqlite_func *context){
   MD5Context *p;
   unsigned char digest[16];
   char zBuf[33];
-  p = sqlite_aggregate_context(context, sizeof(*p));
+  p = sqlite3_aggregate_context(context, sizeof(*p));
   MD5Final(digest,p);
   DigestToBase16(digest, zBuf);
-  sqlite_set_result_string(context, zBuf, strlen(zBuf));
+  sqlite3_set_result_string(context, zBuf, strlen(zBuf));
 }
 void Md5_Register(sqlite *db){
-  sqlite_create_aggregate(db, "md5sum", -1, md5step, md5finalize, 0);
+  sqlite3_create_aggregate(db, "md5sum", -1, md5step, md5finalize, 0);
 }
 
 

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.105 2004/05/08 20:07:40 drh Exp $
+** @(#) $Id: pager.c,v 1.106 2004/05/10 10:34:49 danielk1977 Exp $
 */
 #include "os.h"         /* Must be first to enable large file support */
 #include "sqliteInt.h"
@@ -932,7 +932,7 @@ int sqlite3pager_open(
   char zTemp[SQLITE_TEMPNAME_SIZE];
 
   *ppPager = 0;
-  if( sqlite_malloc_failed ){
+  if( sqlite3_malloc_failed ){
     return SQLITE_NOMEM;
   }
   if( zFilename && zFilename[0] ){
@@ -945,7 +945,7 @@ int sqlite3pager_open(
     zFullPathname = sqlite3OsFullPathname(zFilename);
     tempFile = 1;
   }
-  if( sqlite_malloc_failed ){
+  if( sqlite3_malloc_failed ){
     return SQLITE_NOMEM;
   }
   if( rc!=SQLITE_OK ){

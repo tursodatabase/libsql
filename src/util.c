@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.78 2004/05/10 10:05:54 danielk1977 Exp $
+** $Id: util.c,v 1.79 2004/05/10 10:35:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -24,7 +24,7 @@
 ** If malloc() ever fails, this global variable gets set to 1.
 ** This causes the library to abort and never again function.
 */
-int sqlite_malloc_failed = 0;
+int sqlite3_malloc_failed = 0;
 
 /*
 ** If MEMORY_DEBUG is defined, then use versions of malloc() and
@@ -36,9 +36,9 @@ int sqlite_malloc_failed = 0;
 ** For keeping track of the number of mallocs and frees.   This
 ** is used to check for memory leaks.
 */
-int sqlite_nMalloc;         /* Number of sqliteMalloc() calls */
-int sqlite_nFree;           /* Number of sqliteFree() calls */
-int sqlite_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
+int sqlite3_nMalloc;         /* Number of sqliteMalloc() calls */
+int sqlite3_nFree;           /* Number of sqliteFree() calls */
+int sqlite3_iMallocFail;     /* Fail sqliteMalloc() after this many calls */
 #if MEMORY_DEBUG>1
 static int memcnt = 0;
 #endif
@@ -56,15 +56,15 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   void *p;
   int *pi;
   int i, k;
-  if( sqlite_iMallocFail>=0 ){
-    sqlite_iMallocFail--;
-    if( sqlite_iMallocFail==0 ){
-      sqlite_malloc_failed++;
+  if( sqlite3_iMallocFail>=0 ){
+    sqlite3_iMallocFail--;
+    if( sqlite3_iMallocFail==0 ){
+      sqlite3_malloc_failed++;
 #if MEMORY_DEBUG>1
       fprintf(stderr,"**** failed to allocate %d bytes at %s:%d\n",
               n, zFile,line);
 #endif
-      sqlite_iMallocFail--;
+      sqlite3_iMallocFail--;
       return 0;
     }
   }
@@ -72,10 +72,10 @@ void *sqlite3Malloc_(int n, int bZero, char *zFile, int line){
   k = (n+sizeof(int)-1)/sizeof(int);
   pi = malloc( (N_GUARD*2+1+k)*sizeof(int));
   if( pi==0 ){
-    sqlite_malloc_failed++;
+    sqlite3_malloc_failed++;
     return 0;
   }
-  sqlite_nMalloc++;
+  sqlite3_nMalloc++;
   for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
   pi[N_GUARD] = n;
   for(i=0; i<N_GUARD; i++) pi[k+1+N_GUARD+i] = 0xdead3344;
@@ -118,7 +118,7 @@ void sqlite3Free_(void *p, char *zFile, int line){
     int *pi, i, k, n;
     pi = p;
     pi -= N_GUARD+1;
-    sqlite_nFree++;
+    sqlite3_nFree++;
     for(i=0; i<N_GUARD; i++){
       if( pi[i]!=0xdead1122 ){
         fprintf(stderr,"Low-end memory corruption at 0x%x\n", (int)p);
@@ -175,7 +175,7 @@ void *sqlite3Realloc_(void *oldP, int n, char *zFile, int line){
   k = (n + sizeof(int) - 1)/sizeof(int);
   pi = malloc( (k+N_GUARD*2+1)*sizeof(int) );
   if( pi==0 ){
-    sqlite_malloc_failed++;
+    sqlite3_malloc_failed++;
     return 0;
   }
   for(i=0; i<N_GUARD; i++) pi[i] = 0xdead1122;
@@ -208,7 +208,7 @@ void sqlite3StrRealloc(char **pz){
   if( pz==0 || *pz==0 ) return;
   zNew = malloc( strlen(*pz) + 1 );
   if( zNew==0 ){
-    sqlite_malloc_failed++;
+    sqlite3_malloc_failed++;
     sqliteFree(*pz);
     *pz = 0;
   }
@@ -252,7 +252,7 @@ char *sqlite3StrNDup_(const char *z, int n, char *zFile, int line){
 void *sqliteMalloc(int n){
   void *p;
   if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite_malloc_failed++;
+    if( n>0 ) sqlite3_malloc_failed++;
   }else{
     memset(p, 0, n);
   }
@@ -266,7 +266,7 @@ void *sqliteMalloc(int n){
 void *sqliteMallocRaw(int n){
   void *p;
   if( (p = malloc(n))==0 ){
-    if( n>0 ) sqlite_malloc_failed++;
+    if( n>0 ) sqlite3_malloc_failed++;
   }
   return p;
 }
@@ -296,7 +296,7 @@ void *sqliteRealloc(void *p, int n){
   }
   p2 = realloc(p, n);
   if( p2==0 ){
-    sqlite_malloc_failed++;
+    sqlite3_malloc_failed++;
   }
   return p2;
 }
@@ -1085,7 +1085,7 @@ sqlite3LikeCompare(const unsigned char *zPattern, const unsigned char *zString){
 ** Ticket #202:  If db->magic is not a valid open value, take care not
 ** to modify the db structure at all.  It could be that db is a stale
 ** pointer.  In other words, it could be that there has been a prior
-** call to sqlite_close(db) and db has been deallocated.  And we do
+** call to sqlite3_close(db) and db has been deallocated.  And we do
 ** not want to write into deallocated memory.
 */
 int sqlite3SafetyOn(sqlite *db){
@@ -1118,8 +1118,8 @@ int sqlite3SafetyOff(sqlite *db){
 }
 
 /*
-** Check to make sure we are not currently executing an sqlite_exec().
-** If we are currently in an sqlite_exec(), return true and set
+** Check to make sure we are not currently executing an sqlite3_exec().
+** If we are currently in an sqlite3_exec(), return true and set
 ** sqlite.magic to SQLITE_MAGIC_ERROR.  This will cause a complete
 ** shutdown of the database.
 **

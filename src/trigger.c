@@ -63,7 +63,7 @@ void sqlite3BeginTrigger(
   ** 4. That we are not trying to create an INSTEAD OF trigger on a table.
   ** 5. That we are not trying to create a BEFORE or AFTER trigger on a view.
   */
-  if( sqlite_malloc_failed ) goto trigger_cleanup;
+  if( sqlite3_malloc_failed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
   if( db->init.busy
    && sqlite3FixInit(&sFix, pParse, db->init.iDb, "trigger", pName)
@@ -133,7 +133,7 @@ void sqlite3BeginTrigger(
   nt->name = zName;
   zName = 0;
   nt->table = sqliteStrDup(pTableName->a[0].zName);
-  if( sqlite_malloc_failed ) goto trigger_cleanup;
+  if( sqlite3_malloc_failed ) goto trigger_cleanup;
   nt->iDb = iDb;
   nt->iTabDb = tab->iDb;
   nt->op = op;
@@ -234,10 +234,10 @@ triggerfinish_cleanup:
 ** the effect of copying all Expr.token.z values into memory obtained
 ** from sqliteMalloc().  As initially created, the Expr.token.z values
 ** all point to the input string that was fed to the parser.  But that
-** string is ephemeral - it will go away as soon as the sqlite_exec()
+** string is ephemeral - it will go away as soon as the sqlite3_exec()
 ** call that started the parser exits.  This routine makes a persistent
 ** copy of all the Expr.token.z strings so that the TriggerStep structure
-** will be valid even after the sqlite_exec() call returns.
+** will be valid even after the sqlite3_exec() call returns.
 */
 static void sqlitePersistTriggerStep(TriggerStep *p){
   if( p->target.z ){
@@ -393,7 +393,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName){
   int nName;
   sqlite *db = pParse->db;
 
-  if( sqlite_malloc_failed ) goto drop_trigger_cleanup;
+  if( sqlite3_malloc_failed ) goto drop_trigger_cleanup;
   assert( pName->nSrc==1 );
   zDb = pName->a[0].zDatabase;
   zName = pName->a[0].zName;

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.69 2004/05/08 08:23:39 danielk1977 Exp $
+** $Id: tokenize.c,v 1.70 2004/05/10 10:34:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -416,7 +416,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   pParse->sLastToken.dyn = 0;
   pParse->zTail = zSql;
-  while( sqlite_malloc_failed==0 && zSql[i]!=0 ){
+  while( sqlite3_malloc_failed==0 && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = &zSql[i];
     assert( pParse->sLastToken.dyn==0 );
@@ -462,7 +462,7 @@ abort_parse:
   }
   sqlite3ParserFree(pEngine, free);
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
-    sqlite3SetString(&pParse->zErrMsg, sqlite_error_string(pParse->rc),
+    sqlite3SetString(&pParse->zErrMsg, sqlite3_error_string(pParse->rc),
                     (char*)0);
   }
   if( pParse->zErrMsg ){
@@ -493,7 +493,7 @@ abort_parse:
 }
 
 /*
-** Token types used by the sqlite_complete() routine.  See the header
+** Token types used by the sqlite3_complete() routine.  See the header
 ** comments on that procedure for additional information.
 */
 #define tkEXPLAIN 0
@@ -551,7 +551,7 @@ abort_parse:
 **
 ** Whitespace never causes a state transition and is always ignored.
 */
-int sqlite_complete(const char *zSql){
+int sqlite3_complete(const char *zSql){
   u8 state = 0;   /* Current state, using numbers defined in header comment */
   u8 token;       /* Value of the next token */
 

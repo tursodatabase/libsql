@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.227 2004/05/10 10:05:54 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.228 2004/05/10 10:34:52 danielk1977 Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -197,16 +197,16 @@ typedef unsigned INTPTR_TYPE uptr; /* Big enough to hold a pointer */
 ** This variable gets set if malloc() ever fails.  After it gets set,
 ** the SQLite library shuts down permanently.
 */
-extern int sqlite_malloc_failed;
+extern int sqlite3_malloc_failed;
 
 /*
 ** The following global variables are used for testing and debugging
 ** only.  They only work if MEMORY_DEBUG is defined.
 */
 #ifdef MEMORY_DEBUG
-extern int sqlite_nMalloc;       /* Number of sqliteMalloc() calls */
-extern int sqlite_nFree;         /* Number of sqliteFree() calls */
-extern int sqlite_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
+extern int sqlite3_nMalloc;       /* Number of sqliteMalloc() calls */
+extern int sqlite3_nFree;         /* Number of sqliteFree() calls */
+extern int sqlite3_iMallocFail;   /* Fail sqliteMalloc() after this many calls */
 #endif
 
 /*
@@ -339,7 +339,7 @@ struct Db {
 ** longer (since after version 2.8.12) reset to -1.
 **
 ** The sqlite.nChange does not count changes within triggers and keeps no
-** context.  It is reset at start of sqlite_exec.
+** context.  It is reset at start of sqlite3_exec.
 ** The sqlite.lsChange represents the number of changes made by the last
 ** insert, update, or delete statement.  It remains constant throughout the
 ** length of a statement and is then updated by OP_SetCounts.  It keeps a
@@ -1276,7 +1276,7 @@ int sqlite3FixExpr(DbFixer*, Expr*);
 int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 double sqlite3AtoF(const char *z, const char **);
-char *sqlite_snprintf(int,char*,const char*,...);
+char *sqlite3_snprintf(int,char*,const char*,...);
 int sqlite3FitsIn32Bits(const char *);
 
 unsigned char *sqlite3utf16to8(const void *pData, int N);

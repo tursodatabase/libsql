@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.272 2004/05/10 07:17:32 danielk1977 Exp $
+** $Id: vdbe.c,v 1.273 2004/05/10 10:35:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -57,7 +57,7 @@
 ** working correctly.  This variable has no function other than to
 ** help verify the correct operation of the library.
 */
-int sqlite_search_count = 0;
+int sqlite3_search_count = 0;
 
 /*
 ** When this global variable is positive, it gets decremented once before
@@ -67,7 +67,7 @@ int sqlite_search_count = 0;
 ** This facility is used for testing purposes only.  It does not function
 ** in an ordinary build.
 */
-int sqlite_interrupt_count = 0;
+int sqlite3_interrupt_count = 0;
 
 /*
 ** Advance the virtual machine to the next output row.
@@ -77,11 +77,11 @@ int sqlite_interrupt_count = 0;
 **
 ** SQLITE_BUSY means that the virtual machine attempted to open
 ** a locked database and there is no busy callback registered.
-** Call sqlite_step() again to retry the open.  *pN is set to 0
+** Call sqlite3_step() again to retry the open.  *pN is set to 0
 ** and *pazColName and *pazValue are both set to NULL.
 **
 ** SQLITE_DONE means that the virtual machine has finished
-** executing.  sqlite_step() should not be called again on this
+** executing.  sqlite3_step() should not be called again on this
 ** virtual machine.  *pN and *pazColName are set appropriately
 ** but *pazValue is set to NULL.
 **
@@ -95,7 +95,7 @@ int sqlite_interrupt_count = 0;
 **
 ** SQLITE_ERROR means that a run-time error (such as a constraint
 ** violation) has occurred.  The details of the error will be returned
-** by the next call to sqlite_finalize().  sqlite_step() should not
+** by the next call to sqlite3_finalize().  sqlite3_step() should not
 ** be called again on the VM.
 **
 ** SQLITE_MISUSE means that the this routine was called inappropriately.
@@ -104,7 +104,7 @@ int sqlite_interrupt_count = 0;
 ** SQLITE_DONE.  Or it could be the case the the same database connection
 ** is being used simulataneously by two or more threads.
 */
-int sqlite_step(
+int sqlite3_step(
   sqlite_vm *pVm,              /* The virtual machine to execute */
   int *pN,                     /* OUT: Number of columns in result */
   const char ***pazValue,      /* OUT: Column data */
@@ -197,9 +197,9 @@ static AggElem *_AggInFocus(Agg *p){
 static int hardStringify(Mem *pStack){
   int fg = pStack->flags;
   if( fg & MEM_Real ){
-    sqlite_snprintf(sizeof(pStack->zShort),pStack->zShort,"%.15g",pStack->r);
+    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%.15g",pStack->r);
   }else if( fg & MEM_Int ){
-    sqlite_snprintf(sizeof(pStack->zShort),pStack->zShort,"%d",pStack->i);
+    sqlite3_snprintf(sizeof(pStack->zShort),pStack->zShort,"%d",pStack->i);
   }else{
     pStack->zShort[0] = 0;
   }
@@ -439,7 +439,7 @@ __inline__ unsigned long long int hwtime(void){
 
 /*
 ** The CHECK_FOR_INTERRUPT macro defined here looks to see if the
-** sqlite_interrupt() routine has been called.  If it has been, then
+** sqlite3_interrupt() routine has been called.  If it has been, then
 ** processing of the VDBE program is interrupted.
 **
 ** This macro added to every instruction that does a jump in order to
@@ -504,7 +504,7 @@ int sqlite3VdbeExec(
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
-  if( sqlite_malloc_failed ) goto no_mem;
+  if( sqlite3_malloc_failed ) goto no_mem;
   pTos = p->pTos;
   if( p->popStack ){
     popStack(&pTos, p->popStack);
@@ -532,10 +532,10 @@ int sqlite3VdbeExec(
     ** if we have a special test build.
     */
 #ifdef SQLITE_TEST
-    if( sqlite_interrupt_count>0 ){
-      sqlite_interrupt_count--;
-      if( sqlite_interrupt_count==0 ){
-        sqlite_interrupt(db);
+    if( sqlite3_interrupt_count>0 ){
+      sqlite3_interrupt_count--;
+      if( sqlite3_interrupt_count==0 ){
+        sqlite3_interrupt(db);
       }
     }
 #endif
@@ -645,7 +645,7 @@ case OP_Return: {
 ** Exit immediately.  All open cursors, Lists, Sorts, etc are closed
 ** automatically.
 **
-** P1 is the result code returned by sqlite_exec().  For a normal
+** P1 is the result code returned by sqlite3_exec().  For a normal
 ** halt, this should be SQLITE_OK (0).  For errors, it can be some
 ** other value.  If P1!=0 then P2 will determine whether or not to
 ** rollback the current transaction.  Do not rollback if P2==OE_Fail.
@@ -711,11 +711,11 @@ case OP_String: {
 /* Opcode: Variable P1 * *
 **
 ** Push the value of variable P1 onto the stack.  A variable is
-** an unknown in the original SQL string as handed to sqlite_compile().
+** an unknown in the original SQL string as handed to sqlite3_compile().
 ** Any occurance of the '?' character in the original SQL is considered
 ** a variable.  Variables in the SQL string are number from left to
 ** right beginning with 1.  The values of variables are set using the
-** sqlite_bind() API.
+** sqlite3_bind() API.
 */
 case OP_Variable: {
   int j = pOp->p1 - 1;
@@ -770,7 +770,7 @@ case OP_Dup: {
       pTos->z = pTos->zShort;
     }else if( (pTos->flags & MEM_Static)==0 ){
       pTos->z = sqliteMallocRaw(pFrom->n);
-      if( sqlite_malloc_failed ) goto no_mem;
+      if( sqlite3_malloc_failed ) goto no_mem;
       memcpy(pTos->z, pFrom->z, pFrom->n);
       pTos->flags &= ~(MEM_Static|MEM_Ephem|MEM_Short);
       pTos->flags |= MEM_Dyn;
@@ -2441,7 +2441,7 @@ case OP_Transaction: {
           p->pTos = pTos;
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, "", busy++)==0 ){
-          sqlite3SetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
+          sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -2701,7 +2701,7 @@ case OP_OpenWrite: {
           p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
           return SQLITE_BUSY;
         }else if( (*db->xBusyCallback)(db->pBusyArg, pOp->p3, ++busy)==0 ){
-          sqlite3SetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
+          sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
           busy = 0;
         }
         break;
@@ -2855,7 +2855,7 @@ case OP_MoveTo: {
       pC->recnoIsValid = 0;
     }
     pC->deferredMoveto = 0;
-    sqlite_search_count++;
+    sqlite3_search_count++;
     oc = pOp->opcode;
     if( oc==OP_MoveTo && res<0 ){
       sqlite3BtreeNext(pC->pCursor, &res);
@@ -3187,7 +3187,7 @@ case OP_NewRecno: {
 ** incremented (otherwise not).  If the OPFLAG_CSCHANGE flag is set,
 ** then the current statement change count is incremented (otherwise not).
 ** If the OPFLAG_LASTROWID flag of P2 is set, then rowid is
-** stored for subsequent return by the sqlite_last_insert_rowid() function
+** stored for subsequent return by the sqlite3_last_insert_rowid() function
 ** (otherwise it's unmodified).
 */
 /* Opcode: PutStrKey P1 * *
@@ -3694,7 +3694,7 @@ case OP_Next: {
     }
     if( res==0 ){
       pc = pOp->p2 - 1;
-      sqlite_search_count++;
+      sqlite3_search_count++;
     }
   }else{
     pC->nullRow = 1;
@@ -4780,7 +4780,7 @@ case OP_AggFocus: {
     pc = pOp->p2 - 1;
   }else{
     AggInsert(&p->agg, zKey, nKey);
-    if( sqlite_malloc_failed ) goto no_mem;
+    if( sqlite3_malloc_failed ) goto no_mem;
   }
   Release(pTos);
   pTos--;
@@ -4913,7 +4913,7 @@ case OP_SetInsert: {
     Release(pTos);
     pTos--;
   }
-  if( sqlite_malloc_failed ) goto no_mem;
+  if( sqlite3_malloc_failed ) goto no_mem;
   break;
 }
 
@@ -5013,7 +5013,7 @@ case OP_Vacuum: {
 /* An other opcode is illegal...
 */
 default: {
-  sqlite_snprintf(sizeof(zBuf),zBuf,"%d",pOp->opcode);
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",pOp->opcode);
   sqlite3SetString(&p->zErrMsg, "unknown opcode ", zBuf, (char*)0);
   rc = SQLITE_INTERNAL;
   break;
@@ -5151,12 +5151,12 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    if( sqlite_malloc_failed ) rc = SQLITE_NOMEM;
-    sqlite3SetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
+    if( sqlite3_malloc_failed ) rc = SQLITE_NOMEM;
+    sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
   }
   goto vdbe_halt;
 
-  /* Jump to here if the sqlite_interrupt() API sets the interrupt
+  /* Jump to here if the sqlite3_interrupt() API sets the interrupt
   ** flag.
   */
 abort_due_to_interrupt:
@@ -5167,6 +5167,6 @@ abort_due_to_interrupt:
   }else{
     rc = SQLITE_INTERRUPT;
   }
-  sqlite3SetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
+  sqlite3SetString(&p->zErrMsg, sqlite3_error_string(rc), (char*)0);
   goto vdbe_halt;
 }

@@ -362,12 +362,12 @@ int findLockInfo(
 ** is used for testing the I/O recovery logic.
 */
 #ifdef SQLITE_TEST
-int sqlite_io_error_pending = 0;
+int sqlite3_io_error_pending = 0;
 #define SimulateIOError(A)  \
-   if( sqlite_io_error_pending ) \
-     if( sqlite_io_error_pending-- == 1 ){ local_ioerr(); return A; }
+   if( sqlite3_io_error_pending ) \
+     if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); return A; }
 static void local_ioerr(){
-  sqlite_io_error_pending = 0;  /* Really just a place to set a breakpoint */
+  sqlite3_io_error_pending = 0;  /* Really just a place to set a breakpoint */
 }
 #else
 #define SimulateIOError(A)
@@ -377,8 +377,8 @@ static void local_ioerr(){
 ** When testing, keep a count of the number of open files.
 */
 #ifdef SQLITE_TEST
-int sqlite_open_file_count = 0;
-#define OpenCounter(X)  sqlite_open_file_count+=(X)
+int sqlite3_open_file_count = 0;
+#define OpenCounter(X)  sqlite3_open_file_count+=(X)
 #else
 #define OpenCounter(X)
 #endif
@@ -1785,7 +1785,7 @@ char *sqlite3OsFullPathname(const char *zRelative){
 ** returned from sqlite3OsCurrentTime().  This is used for testing.
 */
 #ifdef SQLITE_TEST
-int sqlite_current_time = 0;
+int sqlite3_current_time = 0;
 #endif
 
 /*
@@ -1810,8 +1810,8 @@ int sqlite3OsCurrentTime(double *prNow){
   *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
 #endif
 #ifdef SQLITE_TEST
-  if( sqlite_current_time ){
-    *prNow = sqlite_current_time/86400.0 + 2440587.5;
+  if( sqlite3_current_time ){
+    *prNow = sqlite3_current_time/86400.0 + 2440587.5;
   }
 #endif
   return 0;

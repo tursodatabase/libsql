@@ -753,7 +753,7 @@ char *sqlite3MPrintf(const char *zFormat, ...){
 ** Print into memory obtained from malloc().  Do not use the internal
 ** %-conversion extensions.  This routine is for use by external users.
 */
-char *sqlite_mprintf(const char *zFormat, ...){
+char *sqlite3_mprintf(const char *zFormat, ...){
   va_list ap;
   char *z;
   char zBuf[200];
@@ -765,21 +765,21 @@ char *sqlite_mprintf(const char *zFormat, ...){
   return z;
 }
 
-/* This is the varargs version of sqlite_mprintf.  
+/* This is the varargs version of sqlite3_mprintf.  
 */
-char *sqlite_vmprintf(const char *zFormat, va_list ap){
+char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   char zBuf[200];
   return base_vprintf((void*(*)(void*,int))realloc, 0,
                       zBuf, sizeof(zBuf), zFormat, ap);
 }
 
 /*
-** sqlite_snprintf() works like snprintf() except that it ignores the
+** sqlite3_snprintf() works like snprintf() except that it ignores the
 ** current locale settings.  This is important for SQLite because we
 ** are not able to use a "," as the decimal point in place of "." as
 ** specified by some locales.
 */
-char *sqlite_snprintf(int n, char *zBuf, const char *zFormat, ...){
+char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   char *z;
   va_list ap;
 
@@ -791,13 +791,13 @@ char *sqlite_snprintf(int n, char *zBuf, const char *zFormat, ...){
 
 /*
 ** The following four routines implement the varargs versions of the
-** sqlite_exec() and sqlite_get_table() interfaces.  See the sqlite.h
+** sqlite3_exec() and sqlite3_get_table() interfaces.  See the sqlite.h
 ** header files for a more detailed description of how these interfaces
 ** work.
 **
 ** These routines are all just simple wrappers.
 */
-int sqlite_exec_printf(
+int sqlite3_exec_printf(
   sqlite *db,                   /* An open database */
   const char *sqlFormat,        /* printf-style format string for the SQL */
   sqlite_callback xCallback,    /* Callback function */
@@ -809,11 +809,11 @@ int sqlite_exec_printf(
   int rc;
 
   va_start(ap, errmsg);
-  rc = sqlite_exec_vprintf(db, sqlFormat, xCallback, pArg, errmsg, ap);
+  rc = sqlite3_exec_vprintf(db, sqlFormat, xCallback, pArg, errmsg, ap);
   va_end(ap);
   return rc;
 }
-int sqlite_exec_vprintf(
+int sqlite3_exec_vprintf(
   sqlite *db,                   /* An open database */
   const char *sqlFormat,        /* printf-style format string for the SQL */
   sqlite_callback xCallback,    /* Callback function */
@@ -824,12 +824,12 @@ int sqlite_exec_vprintf(
   char *zSql;
   int rc;
 
-  zSql = sqlite_vmprintf(sqlFormat, ap);
-  rc = sqlite_exec(db, zSql, xCallback, pArg, errmsg);
+  zSql = sqlite3_vmprintf(sqlFormat, ap);
+  rc = sqlite3_exec(db, zSql, xCallback, pArg, errmsg);
   free(zSql);
   return rc;
 }
-int sqlite_get_table_printf(
+int sqlite3_get_table_printf(
   sqlite *db,            /* An open database */
   const char *sqlFormat, /* printf-style format string for the SQL */
   char ***resultp,       /* Result written to a char *[]  that this points to */
@@ -842,11 +842,11 @@ int sqlite_get_table_printf(
   int rc;
 
   va_start(ap, errmsg);
-  rc = sqlite_get_table_vprintf(db, sqlFormat, resultp, nrow, ncol, errmsg, ap);
+  rc = sqlite3_get_table_vprintf(db, sqlFormat, resultp, nrow, ncol, errmsg, ap);
   va_end(ap);
   return rc;
 }
-int sqlite_get_table_vprintf(
+int sqlite3_get_table_vprintf(
   sqlite *db,            /* An open database */
   const char *sqlFormat, /* printf-style format string for the SQL */
   char ***resultp,       /* Result written to a char *[]  that this points to */
@@ -858,8 +858,8 @@ int sqlite_get_table_vprintf(
   char *zSql;
   int rc;
 
-  zSql = sqlite_vmprintf(sqlFormat, ap);
-  rc = sqlite_get_table(db, zSql, resultp, nrow, ncolumn, errmsg);
+  zSql = sqlite3_vmprintf(sqlFormat, ap);
+  rc = sqlite3_get_table(db, zSql, resultp, nrow, ncolumn, errmsg);
   free(zSql);
   return rc;
 }
