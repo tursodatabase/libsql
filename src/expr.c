@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.174 2004/11/23 01:47:30 drh Exp $
+** $Id: expr.c,v 1.175 2004/12/07 15:41:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1544,6 +1544,31 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       }
     }
     break;
+  }
+}
+
+/*
+** Generate code that evalutes the given expression and leaves the result
+** on the stack.  See also sqlite3ExprCode().
+**
+** This routine might also cache the result and modify the pExpr tree
+** so that it will make use of the cached result on subsequent evaluations
+** rather than evaluate the whole expression again.  Trivial expressions are
+** not cached.  If the expression is cached, its result is stored in a 
+** memory location.
+*/
+void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
+  Vdbe *v = pParse->pVdbe;
+  int iMem;
+  int addr1, addr2;
+  if( v==0 ) return;
+  addr1 = sqlite3VdbeCurrentAddr(v);
+  sqlite3ExprCode(pParse, pExpr);
+  addr2 = sqlite3VdbeCurrentAddr(v);
+  if( addr2>addr1+1 || sqlite3VdbeGetOp(v, addr1)->opcode==OP_Function ){
+    iMem = pExpr->iTable = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
+    pExpr->op = TK_REGISTER;
   }
 }
 

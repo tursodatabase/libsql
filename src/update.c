@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.98 2004/12/07 14:06:13 drh Exp $
+** $Id: update.c,v 1.99 2004/12/07 15:41:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -276,11 +276,11 @@ void sqlite3Update(
     /* Generate the NEW table
     */
     if( chngRecno ){
-      sqlite3ExprCode(pParse, pRecnoExpr);
+      sqlite3ExprCodeAndCache(pParse, pRecnoExpr);
     }else{
       sqlite3VdbeAddOp(v, OP_Recno, iCur, 0);
     }
-    for(i=0; i<pTab->nCol; i++){ /* TODO: Factor out this loop as common code */
+    for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
         sqlite3VdbeAddOp(v, OP_String8, 0, 0);
         continue;
@@ -289,7 +289,7 @@ void sqlite3Update(
       if( j<0 ){
         sqlite3VdbeAddOp(v, OP_Column, iCur, i);
       }else{
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr);
+        sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr);
       }
     }
     sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
