@@ -18,8 +18,8 @@ proc chng {date desc} {
 }
 
 chng {2002 Mar 13 (2.4.1)} {
-<li>Using an unnamed subquery in a FROM clause would cause a segfault.</p>
-<li>The parser insist on seeing a semicolon or the end of input before
+<li>Using an unnamed subquery in a FROM clause would cause a segfault.</li>
+<li>The parser now insists on seeing a semicolon or the end of input before
     executing a statement.  This avoids an accidental disaster if the
     WHERE keyword is misspelled in an UPDATE or DELETE statement.</li>
 }

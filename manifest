@@ -1,5 +1,5 @@
-C Version\s2.4.1\s(CVS\s442)
-D 2002-03-13T19:00:00
+C Bug\sfix:\sallow\sROWID\sas\sa\scolumn\sin\sSELECT\sstatements\swhere\sthe\sFROM\sclause\nincludes\sviews\swhich\sare\sflattened.\s(CVS\s431)
+D 2002-03-14T14:33:31
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 9a8be2eebad16f636292967d328882c2d07e30a9
 F src/printf.c 300a90554345751f26e1fc0c0333b90a66110a1d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 1288243cacdee338ee49e3e30fcda1a701a0c8c8
+F src/select.c 08b9d8acf75ad985dabde1b3c53025f59d5b09c6
 F src/shell.c b3454229599246b944cdb5b95753af3fca5d8bb0
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 1dae50411aee9439860d7fbe315183c582d27197
@@ -115,7 +115,7 @@ F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
 F www/arch.tcl 72a0c80e9054cc7025a50928d28d9c75c02c2b8b
 F www/c_interface.tcl 567cda531aac9d68a61ef02e26c6b202bd856db2
-F www/changes.tcl 9e6601167fbbd8e759d25304809fb1f0963a4e84
+F www/changes.tcl 945dc1f1517eb8391e5304ad87c287241662e1cf
 F www/conflict.tcl 81dd21f9a679e60aae049e9dd8ab53d59570cda2
 F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/download.tcl a6d75b8b117cd33dcb090bef7e80d7556d28ebe0
@@ -130,7 +130,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 9333ecca1e48bfca613d6909498f91ca3a53d53d
-R d90902b89773a261703f56e28ea984b4
+P 9f12b8805fd2f9a3422ed2a46190cfc881c87b36
+R eba21a9b7664327f427824ecda232c88
 U drh
-Z 8a89e3ea63e50dc00e0396c038e7ee97
+Z cfacda59addc5682014e59b30781ddb3

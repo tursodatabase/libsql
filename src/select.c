@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.75 2002/03/07 02:02:51 drh Exp $
+** $Id: select.c,v 1.76 2002/03/14 14:33:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -782,8 +782,9 @@ static void changeTablesInList(ExprList *pList, int iFrom, int iTo){
 /*
 ** Scan through the expression pExpr.  Replace every reference to
 ** a column in table number iTable with a copy of the corresponding
-** entry in pEList.  When make a copy of pEList, change references
-** to columns in table iSub into references to table iTable.
+** entry in pEList.  (But leave references to the ROWID column 
+** unchanged.)  When making a copy of an expression in pEList, change
+** references to columns in table iSub into references to table iTable.
 **
 ** This routine is part of the flattening procedure.  A subquery
 ** whose result set is defined by pEList appears as entry in the
@@ -794,9 +795,9 @@ static void changeTablesInList(ExprList *pList, int iFrom, int iTo){
 */
 static void substExpr(Expr *pExpr, int iTable, ExprList *pEList, int iSub){
   if( pExpr==0 ) return;
-  if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable ){
+  if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable && pExpr->iColumn>=0 ){
     Expr *pNew;
-    assert( pEList!=0 && pExpr->iColumn>=0 && pExpr->iColumn<pEList->nExpr );
+    assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
     assert( pExpr->pLeft==0 && pExpr->pRight==0 && pExpr->pList==0 );
     pNew = pEList->a[pExpr->iColumn].pExpr;
     assert( pNew!=0 );
