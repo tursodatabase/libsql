@@ -54,7 +54,6 @@ LIBOBJ = btree.o build.o dbbe.o dbbegdbm.o dbbemem.o delete.o expr.o insert.o \
 # All of the source code files.
 #
 SRC = \
-  $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/dbbe.c \
   $(TOP)/src/dbbe.h \
@@ -64,7 +63,6 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
-  $(TOP)/src/pager.c \
   $(TOP)/src/parse.y \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
@@ -209,7 +207,7 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.a
 testfixture:	$(TOP)/src/tclsqlite.c libsqlite.a $(TESTSRC)
 	$(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -o testfixture \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c $(TOP)/src/btree.c \
-		libsqlite.a $(LIBGDBM) $(LIBTCL)
+		$(TOP)/src/pager.c libsqlite.a $(LIBGDBM) $(LIBTCL)
 
 test:	testfixture sqlite
 	./testfixture $(TOP)/test/all.test

@@ -25,7 +25,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.3 2001/06/25 02:11:07 drh Exp $
+** $Id: test3.c,v 1.4 2001/06/28 01:54:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -356,6 +356,64 @@ static int btree_page_dump(
 }
 
 /*
+** Usage:   btree_pager_stats ID
+**
+** Returns pager statistics
+*/
+static int btree_pager_stats(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+  int i;
+  int *a;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  a = sqlitepager_stats(sqliteBtreePager(pBt));
+  for(i=0; i<9; i++){
+    static char *zName[] = {
+      "ref", "page", "max", "size", "state", "err",
+      "hit", "miss", "ovfl",
+    };
+    char zBuf[100];
+    Tcl_AppendElement(interp, zName[i]);
+    sprintf(zBuf,"%d",a[i]);
+    Tcl_AppendElement(interp, zBuf);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:   btree_pager_ref_dump ID
+**
+** Print out all outstanding pages.
+*/
+static int btree_pager_ref_dump(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  Btree *pBt;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], (int*)&pBt) ) return TCL_ERROR;
+  sqlitepager_refdump(sqliteBtreePager(pBt));
+  return TCL_OK;
+}
+
+/*
 ** Usage:   btree_cursor ID TABLENUM
 **
 ** Create a new cursor.  Return the ID for the cursor.
@@ -669,6 +727,8 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_get_meta", btree_get_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_update_meta", btree_update_meta, 0, 0);
   Tcl_CreateCommand(interp, "btree_page_dump", btree_page_dump, 0, 0);
+  Tcl_CreateCommand(interp, "btree_pager_stats", btree_pager_stats, 0, 0);
+  Tcl_CreateCommand(interp, "btree_pager_ref_dump", btree_pager_ref_dump, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor", btree_cursor, 0, 0);
   Tcl_CreateCommand(interp, "btree_close_cursor", btree_close_cursor, 0, 0);
   Tcl_CreateCommand(interp, "btree_move_to", btree_move_to, 0, 0);
@@ -678,5 +738,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   Tcl_CreateCommand(interp, "btree_key", btree_key, 0, 0);
   Tcl_CreateCommand(interp, "btree_data", btree_data, 0, 0);
   Tcl_CreateCommand(interp, "btree_cursor_dump", btree_cursor_dump, 0, 0);
+  Tcl_LinkVar(interp, "pager_refinfo_enable", (char*)&pager_refinfo_enable,
+     TCL_LINK_INT);
   return TCL_OK;
 }

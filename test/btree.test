@@ -23,7 +23,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.2 2001/06/25 02:11:07 drh Exp $
+# $Id: btree.test,v 1.3 2001/06/28 01:54:50 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -37,6 +37,16 @@ do_test btree-1.1 {
   file delete -force test1.bt
   file delete -force test1.bt-journal
   set rc [catch {btree_open test1.bt} ::b1]
+} {0}
+
+# The second element of the list returned by btree_pager_stats is the
+# number of pages currently checked out.  We'll be checking this value
+# frequently during this test script, to make sure the btree library
+# is properly releasing the pages it checks out, and thus avoiding
+# page leaks.
+#
+do_test btree-1.1.1 {
+  lindex [btree_pager_stats $::b1] 1
 } {0}
 do_test btree-1.2 {
   set rc [catch {btree_open test1.bt} ::b2]
@@ -52,6 +62,9 @@ do_test btree-1.4 {
   set rc [catch {btree_begin_transaction $::b1} msg]
   lappend rc $msg
 } {0 {}}
+do_test btree-1.4.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {1}
 do_test btree-1.5 {
   set rc [catch {btree_cursor $::b1 2} ::c1]
   if {$rc} {lappend rc $::c1}
@@ -78,6 +91,9 @@ do_test btree-1.10 {
 do_test btree-1.11 {
   file size test1.bt
 } {2048}
+do_test btree-1.12 {
+  lindex [btree_pager_stats $::b1] 1
+} {0}
 
 # Reopen the database and attempt to read the record that we wrote.
 #
@@ -101,6 +117,9 @@ do_test btree-2.5 {
 do_test btree-2.6 {
   btree_data $::c1
 } {1.00}
+do_test btree-2.7 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 
 # Do some additional inserts
 #
@@ -109,6 +128,9 @@ do_test btree-3.1 {
   btree_insert $::c1 two 2.00
   btree_key $::c1
 } {two}
+do_test btree-3.1.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 do_test btree-3.2 {
   btree_insert $::c1 three 3.00
   btree_key $::c1
@@ -185,10 +207,16 @@ do_test btree-3.22 {
   set rc [catch {btree_close_cursor $::c1} msg]
   lappend rc $msg
 } {0 {}}
+do_test btree-3.22.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {1}
 do_test btree-3.23 {
   set rc [catch {btree_commit $::b1} msg]
   lappend rc $msg
 } {0 {}}
+do_test btree-3.23.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {0}
 do_test btree-3.24 {
   file size test1.bt
 } {2048}
@@ -197,6 +225,9 @@ do_test btree-3.25 {
   if {$rc} {lappend rc $::c1}
   set rc
 } {0}
+do_test btree-3.25.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 do_test btree-3.26 {
   set rc [btree_move_to $::c1 {}]
   expr {$rc>0}
@@ -249,6 +280,10 @@ do_test btree-3.39 {
 do_test btree-3.40 {
   btree_data $::c1
 } {}
+do_test btree-3.41 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+
 
 # Now try a delete
 #
@@ -257,6 +292,9 @@ do_test btree-4.1 {
   btree_move_to $::c1 one
   btree_key $::c1
 } {one}
+do_test btree-4.1.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 do_test btree-4.2 {
   btree_delete $::c1
 } {}
@@ -304,10 +342,19 @@ do_test btree-4.5 {
 # the data again.
 #
 do_test btree-4.6 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+do_test btree-4.7 {
   btree_close_cursor $::c1
+  lindex [btree_pager_stats $::b1] 1
+} {0}
+do_test btree-4.8 {
   btree_close $::b1
   set ::b1 [btree_open test1.bt]
   set ::c1 [btree_cursor $::b1 2]
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+do_test btree-4.9 {
   set r {}
   while 1 {
     set key [btree_key $::c1]
@@ -360,6 +407,17 @@ proc select_all {cursor} {
   }
   return $r
 }
+proc select_keys {cursor} {
+  set r {}
+  btree_move_to $cursor {}
+  while 1 {
+    set key [btree_key $cursor]
+    if {$key==""} break
+    lappend r $key
+    btree_next $cursor
+  }
+  return $r
+}
 
 # Try to create a new table in the database file
 #
@@ -372,13 +430,22 @@ do_test btree-6.2 {
   set ::t2 [btree_create_table $::b1]
 } {3}
 do_test btree-6.2.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {1}
+do_test btree-6.2.2 {
   set ::c2 [btree_cursor $::b1 $::t2]
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+do_test btree-6.2.3 {
   btree_insert $::c2 ten 10
   btree_key $::c2
 } {ten}
 do_test btree-6.3 {
   btree_commit $::b1
   set ::c1 [btree_cursor $::b1 2]
+  lindex [btree_pager_stats $::b1] 1
+} {3}
+do_test btree-6.3.1 {
   select_all $::c1
 } {five 5.00 four 4.00 six 6.00 three 3.00 two 2.00}
 #btree_page_dump $::b1 3
@@ -394,6 +461,9 @@ do_test btree-6.5 {
 do_test btree-6.6 {
   btree_close_cursor $::c2
 } {}
+do_test btree-6.6.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 do_test btree-6.7 {
   btree_drop_table $::b1 $::t2
 } {}
@@ -408,6 +478,10 @@ do_test btree-6.8.1 {
 } {0}
 do_test btree-6.9 {
   set ::c2 [btree_cursor $::b1 $::t2]
+  lindex [btree_pager_stats $::b1] 1
+} {3}
+
+do_test btree-6.9.1 {
   btree_move_to $::c2 {}
   btree_key $::c2
 } {}
@@ -428,6 +502,10 @@ do_test btree-6.11 {
 do_test btree-6.12 {
   select_all $::c2
 } {}
+do_test btree-6.13 {
+  btree_close_cursor $::c2
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 
 # Check to see that pages defragment properly.  To do this test we will
 # 
@@ -439,6 +517,8 @@ do_test btree-6.12 {
 do_test btree-7.1 {
   btree_begin_transaction $::b1
 } {}
+catch {unset key}
+catch {unset data}
 do_test btree-7.2 {
   for {set i 0} {$i<36} {incr i} {
     set key [format %03d $i]
@@ -514,8 +594,11 @@ do_test btree-7.14 {
   lrange [btree_cursor_dump $::c1] 4 5
 } {652 2}
 #btree_page_dump $::b1 2
+do_test btree-7.15 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
 
-# Check to see that both key and data on overflow pages work correctly.
+# Check to see that data on overflow pages work correctly.
 #
 do_test btree-8.1 {
   set data "*** This is a very long key "
@@ -524,6 +607,10 @@ do_test btree-8.1 {
   btree_insert $::c1 020 $data
 } {}
 #btree_page_dump $::b1 2
+do_test btree-8.1.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+#btree_pager_ref_dump $::b1
 do_test btree-8.2 {
   string length [btree_data $::c1]
 } [string length $::data]
@@ -567,11 +654,148 @@ do_test btree-8.10 {
 do_test btree-8.11 {
   lindex [btree_get_meta $::b1] 0
 } [expr {int(([string length $::data]-238+1019)/1020)}]
-puts [btree_get_meta $::b1]
+
+# Now check out keys on overflow pages.
+#
+do_test btree-8.12 {
+  set ::keyprefix "This is a long prefix to a key "
+  while {[string length $::keyprefix]<256} {append ::keyprefix $::keyprefix}
+  btree_close_cursor $::c1
+  btree_drop_table $::b1 2
+  lindex [btree_get_meta $::b1] 0
+} {4}
+do_test btree-8.12.1 {
+  set ::c1 [btree_cursor $::b1 2]
+  btree_insert $::c1 ${::keyprefix}1 1
+  btree_data $::c1
+} {1}
+do_test btree-8.13 {
+  btree_key $::c1
+} ${keyprefix}1
+do_test btree-8.14 {
+  btree_insert $::c1 ${::keyprefix}2 2
+  btree_insert $::c1 ${::keyprefix}3 3
+  btree_key $::c1
+} ${keyprefix}3
+do_test btree-8.15 {
+  btree_move_to $::c1 ${::keyprefix}2
+  btree_data $::c1
+} {2}
+do_test btree-8.16 {
+  btree_move_to $::c1 ${::keyprefix}1
+  btree_data $::c1
+} {1}
+do_test btree-8.17 {
+  btree_move_to $::c1 ${::keyprefix}3
+  btree_data $::c1
+} {3}
+do_test btree-8.18 {
+  lindex [btree_get_meta $::b1] 0
+} {1}
+do_test btree-8.19 {
+  btree_move_to $::c1 ${::keyprefix}2
+  btree_key $::c1
+} ${::keyprefix}2
+#btree_page_dump $::b1 2
+do_test btree-8.20 {
+  btree_delete $::c1
+  btree_next $::c1
+  btree_key $::c1
+} ${::keyprefix}3
+#btree_page_dump $::b1 2
+do_test btree-8.21 {
+  lindex [btree_get_meta $::b1] 0
+} {2}
+do_test btree-8.22 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+do_test btree-8.23 {
+  btree_close_cursor $::c1
+  btree_drop_table $::b1 2
+  set ::c1 [btree_cursor $::b1 2]
+  lindex [btree_get_meta $::b1] 0
+} {4}
+do_test btree-8.24 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+
+# Check page splitting logic
+#
+do_test btree-9.1 {
+  for {set i 1} {$i<=19} {incr i} {
+    set key [format %03d $i]
+    set data "*** $key *** $key *** $key *** $key ***"
+    btree_insert $::c1 $key $data
+  }
+} {}
+#btree_page_dump $::b1 2
+#btree_pager_ref_dump $::b1
+#set pager_refinfo_enable 1
+do_test btree-9.2 {
+  btree_insert $::c1 020 {*** 020 *** 020 *** 020 *** 020 ***}
+  select_keys $::c1
+} {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
+#btree_page_dump $::b1 5
+#btree_page_dump $::b1 2
+#btree_page_dump $::b1 7
+#btree_pager_ref_dump $::b1
+#set pager_refinfo_enable 0
+
+# The previous "select_keys" command left the cursor pointing at the root
+# page.  So there should only be two pages checked out.  2 (the root) and
+# page 1.
+do_test btree-9.2.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {2}
+for {set i 1} {$i<=20} {incr i} {
+  do_test btree-9.3.$i.1 [subst {
+    btree_move_to $::c1 [format %03d $i]
+    btree_key $::c1
+  }] [format %03d $i]
+  do_test btree-9.3.$i.2 [subst {
+    btree_move_to $::c1 [format %03d $i]
+    string range \[btree_data $::c1\] 0 10
+  }] "*** [format %03d $i] ***"
+}
+do_test btree-9.4.1 {
+  lindex [btree_pager_stats $::b1] 1
+} {3}
+
+# Check the page joining logic.
+#
+#btree_page_dump $::b1 2
+#btree_pager_ref_dump $::b1
+do_test btree-9.4.2 {
+  btree_move_to $::c1 005
+  btree_delete $::c1
+} {}
+#btree_page_dump $::b1 2
+for {set i 1} {$i<=19} {incr i} {
+  if {$i==5} continue
+  do_test btree-9.5.$i.1 [subst {
+    btree_move_to $::c1 [format %03d $i]
+    btree_key $::c1
+  }] [format %03d $i]
+  do_test btree-9.5.$i.2 [subst {
+    btree_move_to $::c1 [format %03d $i]
+    string range \[btree_data $::c1\] 0 10
+  }] "*** [format %03d $i] ***"
+}
+#btree_pager_ref_dump $::b1
+do_test btree-9.6 {
+  btree_close_cursor $::c1
+  lindex [btree_pager_stats $::b1] 1
+} {1}
+do_test btree-9.7 {
+  btree_rollback $::b1
+  lindex [btree_pager_stats $::b1] 1
+} {0}
 
 do_test btree-99.1 {
   btree_close $::b1
 } {}
+catch {unset data}
+catch {unset key}
 
 } ;# end if( not mem: and has pager_open command );
 
