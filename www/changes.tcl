@@ -17,6 +17,14 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Oct 8 (1.0.9)} {
+<li>Added the <b>sqlite_..._printf()</b> interface routines.</li>
+<li>Modified the <b>sqlite</b> shell program to use the new interface 
+    routines.</li>
+<li>Modified the <b>sqlite</b> shell program to print the schema for
+    the built-in SQLITE_MASTER table, if explicitly requested.</li>
+}
+
 chng {2000 Sep 30 (1.0.8)} {
 <li>Begin writing documentation on the TCL interface.</li>
 }

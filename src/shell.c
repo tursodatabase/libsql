@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.25 2000/09/29 13:30:55 drh Exp $
+** $Id: shell.c,v 1.26 2000/10/08 22:20:58 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -377,14 +377,15 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   fprintf(pData->out, "%s;\n", azArg[2]);
   if( strcmp(azArg[1],"table")==0 ){
     struct callback_data d2;
-    char zSql[1000];
     d2 = *pData;
     d2.mode = MODE_List;
     d2.escape = '\t';
     strcpy(d2.separator,"\t");
     fprintf(pData->out, "COPY '%s' FROM STDIN;\n", azArg[0]);
-    sprintf(zSql, "SELECT * FROM '%s'", azArg[0]);
-    sqlite_exec(pData->db, zSql, callback, &d2, 0);
+    sqlite_exec_printf(pData->db, 
+       "SELECT * FROM '%q'",
+       callback, &d2, 0, azArg[0]
+    );
     fprintf(pData->out, "\\.\n");
   }
   fprintf(pData->out, "VACUUM '%s';\n", azArg[0]);
@@ -449,19 +450,22 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
  
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
-    char zSql[1000];
     if( nArg==1 ){
-      sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
-                    "WHERE type!='meta' "
-                    "ORDER BY tbl_name, type DESC, name");
-      sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
+      sqlite_exec(db,
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE type!='meta' "
+        "ORDER BY tbl_name, type DESC, name",
+        dump_callback, p, &zErrMsg
+      );
     }else{
       int i;
       for(i=1; i<nArg && zErrMsg==0; i++){
-        sprintf(zSql, "SELECT name, type, sql FROM sqlite_master "
-                      "WHERE tbl_name LIKE '%.800s' AND type!='meta' "
-                      "ORDER BY type DESC, name", azArg[i]);
-        sqlite_exec(db, zSql, dump_callback, p, &zErrMsg);
+        sqlite_exec_printf(db, 
+          "SELECT name, type, sql FROM sqlite_master "
+          "WHERE tbl_name LIKE '%q' AND type!='meta' "
+          "ORDER BY type DESC, name",
+          dump_callback, p, &zErrMsg, azArg[i]
+        );
         
       }
     }
@@ -507,14 +511,15 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg>1 ){
     struct callback_data data;
     char *zErrMsg = 0;
-    char zSql[1000];
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
-    sprintf(zSql, "SELECT name FROM sqlite_master "
-                  "WHERE type='index' AND tbl_name LIKE '%.800s' "
-                  "ORDER BY name", azArg[1]);
-    sqlite_exec(db, zSql, callback, &data, &zErrMsg);
+    sqlite_exec_printf(db, 
+      "SELECT name FROM sqlite_master "
+      "WHERE type='index' AND tbl_name LIKE '%q' "
+      "ORDER BY name",
+      callback, &data, &zErrMsg, azArg[1]
+    );
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
@@ -559,21 +564,37 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
-    char zSql[1000];
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_Semi;
     if( nArg>1 ){
-      sprintf(zSql, "SELECT sql FROM sqlite_master "
-                    "WHERE tbl_name LIKE '%.800s' AND type!='meta'"
-                    "ORDER BY type DESC, name",
-         azArg[1]);
+      if( sqliteStrICmp(azArg[1],"sqlite_master")==0 ){
+        char *new_argv[2], *new_colv[2];
+        new_argv[0] = "CREATE TABLE sqlite_master (\n"
+                      "  type text,\n"
+                      "  name text,\n"
+                      "  tbl_name text,\n"
+                      "  sql text\n"
+                      ")";
+        new_argv[1] = 0;
+        new_colv[0] = "sql";
+        new_colv[1] = 0;
+        callback(&data, 1, new_argv, new_colv);
+      }else{
+        sqlite_exec_printf(db,
+          "SELECT sql FROM sqlite_master "
+          "WHERE tbl_name LIKE '%q' AND type!='meta'"
+          "ORDER BY type DESC, name",
+          callback, &data, &zErrMsg, azArg[1]);
+      }
     }else{
-      sprintf(zSql, "SELECT sql FROM sqlite_master "
+      sqlite_exec(db,
+         "SELECT sql FROM sqlite_master "
          "WHERE type!='meta' "
-         "ORDER BY tbl_name, type DESC, name");
+         "ORDER BY tbl_name, type DESC, name",
+         callback, &data, &zErrMsg
+      );
     }
-    sqlite_exec(db, zSql, callback, &data, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
@@ -588,19 +609,21 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     char **azResult;
     int nRow, rc;
     char *zErrMsg;
-    char zSql[1000];
     if( nArg==1 ){
-      sprintf(zSql,
+      rc = sqlite_get_table(db,
         "SELECT name FROM sqlite_master "
         "WHERE type='table' "
-        "ORDER BY name");
+        "ORDER BY name",
+        &azResult, &nRow, 0, &zErrMsg
+      );
     }else{
-      sprintf(zSql,
+      rc = sqlite_get_table_printf(db,
         "SELECT name FROM sqlite_master "
-        "WHERE type='table' AND name LIKE '%%%.100s%%' "
-        "ORDER BY name", azArg[1]);
+        "WHERE type='table' AND name LIKE '%%%q%%' "
+        "ORDER BY name",
+        &azResult, &nRow, 0, &zErrMsg, azArg[1]
+      );
     }
-    rc = sqlite_get_table(db, zSql, &azResult, &nRow, 0, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);

@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.8 2000/09/29 13:30:55 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.9 2000/10/08 22:20:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -22,10 +22,9 @@ programming interface.</p>
 
 <h2>The API</h2>
 
-<p>The interface to the SQLite library consists of eight functions
-(only the first three of which are required),
-one opaque data structure, and some constants used as return
-values from sqlite_exec():</p>
+<p>The interface to the SQLite library consists of three core functions,
+one opaque data structure, and some constants used as return values.
+The core interface is as follows:</p>
 
 <blockquote><pre>
 typedef struct sqlite sqlite;
@@ -42,6 +41,22 @@ int sqlite_exec(
   char **errmsg
 );
 
+#define SQLITE_OK        0    /* Successful result */
+#define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
+#define SQLITE_ERROR     2    /* SQL error or missing database */
+#define SQLITE_PERM      3    /* Access permission denied */
+#define SQLITE_ABORT     4    /* Callback routine requested an abort */
+#define SQLITE_BUSY      5    /* One or more database files are locked */
+#define SQLITE_NOMEM     6    /* A malloc() failed */
+#define SQLITE_READONLY  7    /* Attempt to write a readonly database */
+</pre></blockquote>
+
+<p>Only the three core routines shown above are required to use
+SQLite.  But there are many other functions that provide 
+useful interfaces.  These extended routines are as follows:
+</p>
+
+<blockquote><pre>
 int sqlite_get_table(
   sqlite*,
   char *sql,
@@ -61,14 +76,44 @@ void sqlite_busy_timeout(sqlite*, int ms);
 
 const char sqlite_version[];
 
-#define SQLITE_OK        0    /* Successful result */
-#define SQLITE_INTERNAL  1    /* An internal logic error in SQLite */
-#define SQLITE_ERROR     2    /* SQL error or missing database */
-#define SQLITE_PERM      3    /* Access permission denied */
-#define SQLITE_ABORT     4    /* Callback routine requested an abort */
-#define SQLITE_BUSY      5    /* One or more database files are locked */
-#define SQLITE_NOMEM     6    /* A malloc() failed */
-#define SQLITE_READONLY  7    /* Attempt to write a readonly database */
+int sqlite_exec_printf(
+  sqlite*,
+  char *sql,
+  int (*)(void*,int,char**,char**),
+  void*,
+  char **errmsg,
+  ...
+);
+
+int sqlite_exec_vprintf(
+  sqlite*,
+  char *sql,
+  int (*)(void*,int,char**,char**),
+  void*,
+  char **errmsg,
+  va_list
+);
+
+int sqlite_get_table_printf(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg,
+  ...
+);
+
+int sqlite_get_table_vprintf(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg,
+  va_list
+);
+
 </pre></blockquote>
 
 <p>All of the above definitions are included in the "sqlite.h"
@@ -304,7 +349,7 @@ the SQLITE_VERSION macro against the <b>sqlite_version</b>
 string constant to verify that the version number of the
 header file and the library match.</p> 
 
-<h2>Changing the libraries reponse to locked files</h2>
+<h2>Changing the libraries response to locked files</h2>
 
 <p>The GDBM library supports database locks at the file level.
 If a GDBM database file is opened for reading, then that same
@@ -344,6 +389,85 @@ After <b>sqlite_busy_timeout()</b> has been executed, the SQLite library
 will wait for the lock to clear for at least the number of milliseconds 
 specified before it returns SQLITE_BUSY.  Specifying zero milliseconds for
 the timeout restores the default behavior.</p>
+
+<h2>Using the <tt>_printf()</tt> wrapper functions</h2>
+
+<p>The four utility functions</p>
+
+<p>
+<ul>
+<li><b>sqlite_exec_printf()</b></li>
+<li><b>sqlite_exec_vprintf()</b></li>
+<li><b>sqlite_get_table_printf()</b></li>
+<li><b>sqlite_get_table_vprintf()</b></li>
+</ul>
+</p>
+
+<p>implement the same query functionality as <b>sqlite_exec()</b>
+and <b>sqlite_get_table()</b>.  But instead of taking a complete
+SQL statement as their second argument, the four <b>_printf</b>
+routines take a printf-style format string.  The SQL statement to
+be executed is generated from this format string and from whatever
+additional arguments are attached to the end of the function call.</p>
+
+<p>There are two advantages to using the SQLite printf
+functions instead of <b>sprintf()</b>.  First of all, with the
+SQLite printf routines, there is never a danger of overflowing a
+static buffer as there is with <b>sprintf()</b>.  The SQLite
+printf routines automatically allocate (and later free)
+as much memory as is 
+necessary to hold the SQL statements generated.</p>
+
+<p>The second advantage the SQLite printf routines have over
+<b>sprintf()</b> is a new formatting option specifically designed
+to support string literals in SQL.  Within the format string,
+the %q formatting option works very much like %s in that it
+reads a null-terminated string from the argument list and inserts
+it into the result.  But %q translates the inserted string by
+making two copies of every single-quote (') character in the
+substituted string.  This has the effect of escaping the end-of-string
+meaning of single-quote within a string literal.
+</p>
+
+<p>Consider an example.  Suppose you are trying to insert a string
+values into a database table where the string value was obtained from
+user input.  Suppose the string to be inserted is stored in a variable
+named zString.  The code to insert this string might look like this:</p>
+
+<blockquote><pre>
+sqlite_exec_printf(db,
+  "INSERT INTO table1 VALUES('%s')",
+  0, 0, 0, zString);
+</pre></blockquote>
+
+<p>If the zString variable holds text like "Hello", then this statement
+will work just fine.  But suppose the user enters a string like 
+"Hi y'all!".  The SQL statement generated reads as follows:
+
+<blockquote><pre>
+INSERT INTO table1 VALUES('Hi y'all')
+</pre></blockquote>
+
+<p>This is not valid SQL because of the apostrophy in the word "y'all".
+But if the %q formatting option is used instead of %s, like this:</p>
+
+<blockquote><pre>
+sqlite_exec_printf(db,
+  "INSERT INTO table1 VALUES('%q')",
+  0, 0, 0, zString);
+</pre></blockquote>
+
+<p>Then the generated SQL will look like the following:</p>
+
+<blockquote><pre>
+INSERT INTO table1 VALUES('Hi y''all')
+</pre></blockquote>
+
+<p>Here the apostrophy has been escaped and the SQL statement is well-formed.
+When generating SQL on-the-fly from data that might contain a
+single-quote character ('), it is always a good idea to use the
+SQLite printf routines and the %q formatting option instead of <b>sprintf</b>.
+</p>
 
 <h2>Usage Examples</h2>
 

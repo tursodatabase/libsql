@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.1 2000/09/30 22:46:07 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.2 2000/10/08 22:20:58 drh Exp $}
 
 puts {<html>
 <head>
@@ -108,7 +108,7 @@ db1 eval {CREATE TABLE t1(a int, b text)}</b>
 </blockquote>
 
 <p>The above code creates a new table named <b>t1</b> with columns
-<b>a</b> and <b>b</b>.  What could be simplier?</p>
+<b>a</b> and <b>b</b>.  What could be simpler?</p>
 
 <p>Query results are returned as a list of column values.  If a
 query requests 2 columns and there are 3 rows matching the query,
@@ -186,14 +186,58 @@ a=3 b=howdy!</b>
 </blockquote>
 
 <h2>The "complete" method</h2>
-<i>TBD</i>
+
+<p>
+The "complete" method takes a string of supposed SQL as its only argument.
+It returns TRUE if the string is a complete statement of SQL and FALSE if
+there is more to be entered.</p>
+
+<p>The "complete" method is useful when building interactive applications
+in order to know when the user has finished entering a line of SQL code.
+This is really just an interface to the <b>sqlite_complete()</b> C
+function.  Refer to the <a href="c_interface.html">C/C++ interface</a>
+specification for additional information.</p>
 
 <h2>The "timeout" method</h2>
-<i>TBD</i>
+
+<p>The "timeout" method is used to control how long the SQLite library
+will wait for locks to clear before giving up on a database transaction.
+The default timeout is 0 millisecond.  (In other words, the default behavior
+is not to wait at all.)</p>
+
+<p>The GDBM library the underlies SQLite allows multiple simultaneous
+readers or a single writer but not both.  If any process is writing to
+the database no other process is allows to read or write.  If any process
+is reading the database other processes are allowed to read but not write.
+Each GDBM file is locked separately.  Because each SQL table is stored as
+a separate file, it is possible for different processes to write to different
+database tables at the same time, just not the same table.</p>
+
+<p>When SQLite tries to open a GDBM file and finds that it is locked, it
+can optionally delay for a short while and try to open the file again.
+This process repeats until the query times out and SQLite returns a
+failure.  The timeout is adjustable.  It is set to 0 by default so that
+if a GDBM file is locked, the SQL statement fails immediately.  But you
+can use the "timeout" method to change the timeout value to a positive
+number.  For example:</p>
+
+<blockquote><b>db1 timeout 2000</b></blockquote>
+
+<p>The argument to the timeout method is the maximum number of milliseconds
+to wait for the lock to clear.  So in the example above, the maximum delay
+would be 2 seconds.</p>
 
 <h2>The "busy" method</h2>
-<i>TBD</i>
 
+<p>The "busy" method, like "timeout", only comes into play when a GDBM
+file is locked.  But the "busy" method gives the programmer much more
+control over what action to take.  The "busy" method specifies a callback
+Tcl procedure that is invoked whenever SQLite tries to open a locked
+GDBM file.  This callback can do whatever is desired.  Presumably, the
+callback will do some other useful work for a short while then return
+so that the lock can be tried again.  The callback procedure should
+return "0" if it wants SQLite to try again to open the GDBM file and
+should return "1" if it wants SQLite to abandon the current operation.
 
 }
 

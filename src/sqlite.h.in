@@ -24,10 +24,11 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.3 2000/09/29 13:30:55 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.4 2000/10/08 22:20:58 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
+#include <stdarg.h>     /* Needed for the definition of va_list */
 
 /*
 ** The version of the SQLite library.
@@ -187,12 +188,39 @@ void sqlite_busy_timeout(sqlite*, int ms);
 ** Instead of invoking a user-supplied callback for each row of the
 ** result, this routine remembers each row of the result in memory
 ** obtained from malloc(), then returns all of the result after the
-** query has finished.  After the calling function has finished using
-** the result, it should pass the result data pointer to 
-** sqlite_free_table() in order to release the memory that was malloc-ed.
-** Because of the way the malloc() happens, the calling function must
-** not try to call malloc() directly.  Only sqlite_free_table() is able
-** to release the memory properly and safely.
+** query has finished. 
+**
+** As an example, suppose the query result where this table:
+**
+**        Name        | Age
+**        -----------------------
+**        Alice       | 43
+**        Bob         | 28
+**        Cindy       | 21
+**
+** If the 3rd argument were &azResult then after the function returns
+** azResult would contain the following data:
+**
+**        azResult[0] = "Name";
+**        azResult[1] = "Age";
+**        azResult[2] = "Alice";
+**        azResult[3] = "43";
+**        azResult[4] = "Bob";
+**        azResult[5] = "28";
+**        azResult[6] = "Cindy";
+**        azResult[7] = "21";
+**
+** Notice that there is an extra row of data containing the column
+** headers.  But the *nrow return value is still 3.  *ncolumn is
+** set to 2.  In general, the number of values inserted into azResult
+** will be ((*nrow) + 1)*(*ncolumn).
+**
+** After the calling function has finished using the result, it should 
+** pass the result data pointer to sqlite_free_table() in order to 
+** release the memory that was malloc-ed.  Because of the way the 
+** malloc() happens, the calling function must not try to call 
+** malloc() directly.  Only sqlite_free_table() is able to release 
+** the memory properly and safely.
 **
 ** The return value of this routine is the same as from sqlite_exec().
 */
@@ -209,6 +237,79 @@ int sqlite_get_table(
 ** Call this routine to free the memory that sqlite_get_table() allocated.
 */
 void sqlite_free_table(char **result);
+
+/*
+** The following routines are wrappers around sqlite_exec() and
+** sqlite_get_table().  The only difference between the routine that
+** follow and the originals is that the second argument to the 
+** routines that follow is really a printf()-style format
+** string describing the SQL to be executed.  Arguments to the format
+** string appear at the end of the argument list.
+**
+** All of the usual printf formatting options apply.  In addition, there
+** is a "%q" option.  %q works like %s in that it substitutes a null-terminated
+** string from the argument list.  But %q also double every '\'' character.
+** %q is designed for use inside a string literal.  By doubling each '\''
+** character is escapes that character and allows it to be inserted into
+** the string.
+**
+** For example, so some string variable contains text as follows:
+**
+**      char *zText = "It's a happy day!";
+**
+** We can use this text in an SQL statement as follows:
+**
+**      sqlite_exec_printf(db, "INSERT INTO table VALUES('%q')",
+**          callback1, 0, 0, zText);
+**
+** Because the %q format string is used, the '\'' character in zText
+** is escaped and the SQL generated is as follows:
+**
+**      INSERT INTO table1 VALUES('It''s a happy day!')
+**
+** This is correct.  Had we used %s instead of %q, the generated SQL
+** would have looked like this:
+**
+**      INSERT INTO table1 VALUES('It's a happy day!');
+**
+** This second example is an SQL syntax error.  As a general rule you
+** should always use %q instead of %s when inserting text into a string 
+** literal.
+*/
+int sqlite_exec_printf(
+  sqlite*,                      /* An open database */
+  char *sqlFormat,              /* printf-style format string for the SQL */
+  sqlite_callback,              /* Callback function */
+  void *,                       /* 1st argument to callback function */
+  char **errmsg,                /* Error msg written here */
+  ...                           /* Arguments to the format string. */
+);
+int sqlite_exec_vprintf(
+  sqlite*,                      /* An open database */
+  char *sqlFormat,              /* printf-style format string for the SQL */
+  sqlite_callback,              /* Callback function */
+  void *,                       /* 1st argument to callback function */
+  char **errmsg,                /* Error msg written here */
+  va_list ap                    /* Arguments to the format string. */
+);
+int sqlite_get_table_printf(
+  sqlite*,               /* An open database */
+  char *sqlFormat,       /* printf-style format string for the SQL */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncolumn,          /* Number of result columns written here */
+  char **errmsg,         /* Error msg written here */
+  ...                    /* Arguments to the format string */
+);
+int sqlite_get_table_vprintf(
+  sqlite*,               /* An open database */
+  char *sqlFormat,       /* printf-style format string for the SQL */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncolumn,          /* Number of result columns written here */
+  char **errmsg,         /* Error msg written here */
+  va_list ap             /* Arguments to the format string */
+);
 
 
 #endif /* _SQLITE_H_ */
