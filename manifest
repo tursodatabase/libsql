@@ -1,5 +1,5 @@
-C A\sfailed\sATTACH\sleaves\sthe\sdatabase\sin\sa\sconsistent\sstate.\s\sTicket\s#811.\s(CVS\s1811)
-D 2004-07-19T00:56:24
+C Correctly\shandle\sjoins\sof\smore\sthan\s32\stables.\s\sTicket\s#806.\s(CVS\s1812)
+D 2004-07-19T02:12:14
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -79,7 +79,7 @@ F src/vdbeInt.h 7160653a006b6d2c4a00d204112a095bdf842ab6
 F src/vdbeapi.c c5c6d8f162a9581dde497b1a4034f9a0bf54c355
 F src/vdbeaux.c 4de85e30ca4a83ea0a45eceb7e88ac7a48f4c237
 F src/vdbemem.c bbf621377343bee046547712a144a94f387bb1eb
-F src/where.c 6507074d8ce3f78e7a4cd33f667f11e62020553e
+F src/where.c 2d346d4aaeae7b63545b85982c6c97d24b9898b5
 F test/all.test 3b692eb43583b52c99c344b2fa8934512d179016
 F test/attach.test 3acdffccbf5f78b07746771b9490758718e28856
 F test/attach2.test 3cd1d4a69e0ec307d0b68a44a96c9c8e1e253d65
@@ -124,6 +124,7 @@ F test/intpkey.test c8efd06db62b8b27216558ef439cc867d113cfec
 F test/ioerr.test 7d087bfd1a1a53442940e000df936e0df0c5b886
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
 F test/join2.test c97e4c5aa65dea462145529e58212a709b4722b8
+F test/join3.test 920ba2d6dad3fe24593036e83db8bdfc9c44a798
 F test/lastinsert.test 31382f88b9b0270333ac9e4a17f2c2f4732da718
 F test/laststmtchanges.test 417aa27eb2b5cdfafb46e390e2c9ddd0a20eba43
 F test/limit.test 60d7f856ee7846f7130dee67f10f0e726cd70b5d
@@ -234,7 +235,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 88a4e400f916d7af088b39a9653d6452b3666577
-R cdef2dd9c388fa0028ff26d9fe9c7297
+P c22f9feb1bb00d1d54a8a87b557195573463fda9
+R 1646b9502928ce02dfdd04c6f59d8761
 U drh
-Z 8c1cc1ba67e40d5ecd6969fb8fd7151c
+Z df39cc0ffd3a848ee5498bfd77294794
