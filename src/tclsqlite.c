@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.115 2005/01/13 23:54:32 drh Exp $
+** $Id: tclsqlite.c,v 1.116 2005/01/24 00:28:43 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#define NUM_PREPARED_STMTS 0
+#define MAX_PREPARED_STMTS 100
 
 /*
 ** If TCL uses UTF-8 and SQLite is configured to use iso8859, then we
@@ -55,6 +58,19 @@ struct SqlCollate {
 };
 
 /*
+** Prepared statements are cached for faster execution.  Each prepared
+** statement is described by an instance of the following structure.
+*/
+typedef struct SqlPreparedStmt SqlPreparedStmt;
+struct SqlPreparedStmt {
+  SqlPreparedStmt *pNext;  /* Next in linked list */
+  SqlPreparedStmt *pPrev;  /* Previous on the list */
+  sqlite3_stmt *pStmt;     /* The prepared statement */
+  int nSql;                /* chars in zSql[] */
+  char zSql[1];            /* Text of the SQL statement */
+};
+
+/*
 ** There is one instance of this structure for each SQLite database
 ** that has been opened by the SQLite TCL interface.
 */
@@ -71,7 +87,27 @@ struct SqliteDb {
   SqlCollate *pCollate; /* List of SQL collation functions */
   int rc;               /* Return code of most recent sqlite3_exec() */
   Tcl_Obj *pCollateNeeded;  /* Collation needed script */
+  SqlPreparedStmt *stmtList; /* List of prepared statements*/
+  SqlPreparedStmt *stmtLast; /* Last statement in the list */
+  int maxStmt;               /* The next maximum number of stmtList */
+  int nStmt;                 /* Number of statements in stmtList */
 };
+
+/*
+** Finalize and free a list of prepared statements
+*/
+static void flushStmtCache( SqliteDb *pDb ){
+  SqlPreparedStmt *pPreStmt;
+
+  while(  pDb->stmtList ){
+    sqlite3_finalize( pDb->stmtList->pStmt );
+    pPreStmt = pDb->stmtList;
+    pDb->stmtList = pDb->stmtList->pNext;
+    Tcl_Free( (char*)pPreStmt );
+  }
+  pDb->nStmt = 0;
+  pDb->stmtLast = 0;
+}
 
 /*
 ** TCL calls this procedure when an sqlite3 database command is
@@ -79,6 +115,7 @@ struct SqliteDb {
 */
 static void DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
+  flushStmtCache(pDb);
   sqlite3_close(pDb->db);
   while( pDb->pFunc ){
     SqlFunc *pFunc = pDb->pFunc;
@@ -215,7 +252,7 @@ static int tclSqlCollate(
 ** This routine is called to evaluate an SQL function implemented
 ** using TCL script.
 */
-static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
   SqlFunc *p = sqlite3_user_data(context);
   Tcl_DString cmd;
   int i;
@@ -400,23 +437,23 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "busy",              "changes",
-    "close",              "collate",           "collation_needed",
-    "commit_hook",        "complete",          "copy",
-    "errorcode",          "eval",              "function",
-    "last_insert_rowid",  "onecolumn",         "progress",
-    "rekey",              "timeout",           "total_changes",
-    "trace",              "version",
+    "authorizer",         "busy",              "cache",
+    "changes",            "close",             "collate",
+    "collation_needed",   "commit_hook",       "complete",
+    "copy",               "errorcode",         "eval",
+    "function",           "last_insert_rowid", "onecolumn",
+    "progress",           "rekey",             "timeout",
+    "total_changes",      "trace",             "version",
     0                    
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BUSY,             DB_CHANGES,
-    DB_CLOSE,             DB_COLLATE,          DB_COLLATION_NEEDED,
-    DB_COMMIT_HOOK,       DB_COMPLETE,         DB_COPY,
-    DB_ERRORCODE,         DB_EVAL,             DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_ONECOLUMN,        DB_PROGRESS,
-    DB_REKEY,             DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_VERSION
+    DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
+    DB_CHANGES,           DB_CLOSE,            DB_COLLATE,
+    DB_COLLATION_NEEDED,  DB_COMMIT_HOOK,      DB_COMPLETE,
+    DB_COPY,              DB_ERRORCODE,        DB_EVAL,
+    DB_FUNCTION,          DB_LAST_INSERT_ROWID,DB_ONECOLUMN,
+    DB_PROGRESS,          DB_REKEY,            DB_TIMEOUT,
+    DB_TOTAL_CHANGES,     DB_TRACE,            DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -516,6 +553,55 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         sqlite3_busy_handler(pDb->db, 0, 0);
       }
+    }
+    break;
+  }
+
+  /*     $db cache flush
+  **     $db cache size n
+  **
+  ** Flush the prepared statement cache, or set the maximum number of
+  ** cached statements.
+  */
+  case DB_CACHE: {
+    char *subCmd;
+    int n;
+
+    if( objc<=2 ){
+      Tcl_WrongNumArgs(interp, 1, objv, "cache option ?arg?");
+      return TCL_ERROR;
+    }
+    subCmd = Tcl_GetStringFromObj( objv[2], 0 );
+    if( *subCmd=='f' && strcmp(subCmd,"flush")==0 ){
+      if( objc!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "flush");
+        return TCL_ERROR;
+      }else{
+        flushStmtCache( pDb );
+      }
+    }else if( *subCmd=='s' && strcmp(subCmd,"size")==0 ){
+      if( objc!=4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "size n");
+        return TCL_ERROR;
+      }else{
+        if( TCL_ERROR==Tcl_GetIntFromObj(interp, objv[3], &n) ){
+          Tcl_AppendResult( interp, "cannot convert \"", 
+               Tcl_GetStringFromObj(objv[3],0), "\" to integer", 0);
+          return TCL_ERROR;
+        }else{
+          if( n<0 ){
+            flushStmtCache( pDb );
+            n = 0;
+          }else if( n>MAX_PREPARED_STMTS ){
+            n = MAX_PREPARED_STMTS;
+          }
+          pDb->maxStmt = n;
+        }
+      }
+    }else{
+      Tcl_AppendResult( interp, "bad option \"", 
+          Tcl_GetStringFromObj(objv[0],0), "\": must be flush or size", 0);
+      return TCL_ERROR;
     }
     break;
   }
@@ -689,6 +775,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     int nParm;             /* Number of entries used in apParm[] */
     Tcl_Obj *aParm[10];    /* Static space for apParm[] in the common case */
     Tcl_Obj *pRet;         /* Value to be returned */
+    SqlPreparedStmt *pPreStmt;  /* Pointer to a prepared statement */
+    int rc2;
 
     if( choice==DB_ONECOLUMN ){
       if( objc!=3 ){
@@ -718,29 +806,78 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     Tcl_IncrRefCount(objv[2]);
     zSql = Tcl_GetStringFromObj(objv[2], 0);
     while( rc==TCL_OK && zSql[0] ){
-      int i;      /* Loop counter */
-      int nVar;   /* Number of wildcards in the SQL */
-      int nCol;   /* Number of columns in the result set */
+      int i;                     /* Loop counter */
+      int nVar;                  /* Number of bind parameters in the pStmt */
+      int nCol;                  /* Number of columns in the result set */
       Tcl_Obj **apColName = 0;   /* Array of column names */
+      int len;                   /* String length of zSql */
   
-      /* Compile a single SQL statement */
-      if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
-        Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
-        rc = TCL_ERROR;
-        break;
+      /* Try to find a SQL statement that has already been compiled and
+      ** which matches the next sequence of SQL.
+      */
+      pStmt = 0;
+      pPreStmt = pDb->stmtList;
+      len = strlen(zSql);
+      if( pPreStmt && sqlite3_expired(pPreStmt->pStmt) ){
+        flushStmtCache(pDb);
+        pPreStmt = 0;
       }
+      for(; pPreStmt; pPreStmt=pPreStmt->pNext){
+        int n = pPreStmt->nSql;
+        if( len>=n 
+            && memcmp(pPreStmt->zSql, zSql, n)==0
+            && (zSql[n]==0 || zSql[n-1]==';')
+        ){
+          pStmt = pPreStmt->pStmt;
+          zLeft = &zSql[pPreStmt->nSql];
+
+          /* When a prepared statement is found, unlink it from the
+          ** cache list.  It will later be added back to the beginning
+          ** of the cache list in order to implement LRU replacement.
+          */
+          if( pPreStmt->pPrev ){
+            pPreStmt->pPrev->pNext = pPreStmt->pNext;
+          }else{
+            pDb->stmtList = pPreStmt->pNext;
+          }
+          if( pPreStmt->pNext ){
+            pPreStmt->pNext->pPrev = pPreStmt->pPrev;
+          }else{
+            pDb->stmtLast = pPreStmt->pPrev;
+          }
+          pDb->nStmt--;
+          break;
+        }
+      }
+  
+      /* If no prepared statement was found.  Compile the SQL text
+      */
       if( pStmt==0 ){
-        if( SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+        if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
           Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
           rc = TCL_ERROR;
           break;
-        }else{
-          zSql = zLeft;
-          continue;
         }
+        if( pStmt==0 ){
+          if( SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+            /* A compile-time error in the statement
+            */
+            Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
+            rc = TCL_ERROR;
+            break;
+          }else{
+            /* The statement was a no-op.  Continue to the next statement
+            ** in the SQL string.
+            */
+            zSql = zLeft;
+            continue;
+          }
+        }
+        assert( pPreStmt==0 );
       }
 
-      /* Bind values to wildcards that begin with $ or : */  
+      /* Bind values to parameters that begin with $ or :
+      */  
       nVar = sqlite3_bind_parameter_count(pStmt);
       nParm = 0;
       if( nVar>sizeof(aParm)/sizeof(aParm[0]) ){
@@ -776,6 +913,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
               Tcl_IncrRefCount(pVar);
               apParm[nParm++] = pVar;
             }
+          }else{
+            sqlite3_bind_null( pStmt, i );
           }
         }
       }
@@ -880,19 +1019,75 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         Tcl_Free((char*)apParm);
       }
 
-      /* Finalize the statement.  If the result code is SQLITE_SCHEMA, then
-      ** try again to execute the same statement
+      /* Reset the statement.  If the result code is SQLITE_SCHEMA, then
+      ** flush the statement cache and try the statement again.
       */
-      if( SQLITE_SCHEMA==sqlite3_finalize(pStmt) ){
+      rc2 = sqlite3_reset(pStmt);
+      if( SQLITE_SCHEMA==rc2 ){
+        /* After a schema change, flush the cache and try to run the
+        ** statement again
+        */
+        flushStmtCache( pDb );
+        sqlite3_finalize(pStmt);
+        if( pPreStmt ) Tcl_Free((char*)pPreStmt);
         continue;
-      }
-  
-      if( SQLITE_OK!=sqlite3_errcode(pDb->db) ){
+      }else if( SQLITE_OK!=rc2 ){
+        /* If a run-time error occurs, report the error and stop reading
+        ** the SQL
+        */
         Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
+        sqlite3_finalize(pStmt);
         rc = TCL_ERROR;
+        if( pPreStmt ) Tcl_Free((char*)pPreStmt);
         break;
+      }else if( pDb->maxStmt<=0 ){
+        /* If the cache is turned off, deallocated the statement */
+        if( pPreStmt ) Tcl_Free((char*)pPreStmt);
+        sqlite3_finalize(pStmt);
+      }else{
+        /* Everything worked and the cache is operational.
+        ** Create a new SqlPreparedStmt structure if we need one.
+        ** (If we already have one we can just reuse it.)
+        */
+        if( pPreStmt==0 ){
+          len = zLeft - zSql;
+          pPreStmt = (SqlPreparedStmt*)Tcl_Alloc( sizeof(*pPreStmt) + len );
+          if( pPreStmt==0 ) return TCL_ERROR;
+          pPreStmt->pStmt = pStmt;
+          pPreStmt->nSql = len;
+          memcpy(pPreStmt->zSql, zSql, len);
+          pPreStmt->zSql[len] = 0;
+        }
+
+        /* Add the prepared statement to the beginning of the cache list
+        */
+        pPreStmt->pNext = pDb->stmtList;
+        pPreStmt->pPrev = 0;
+        if( pDb->stmtList ){
+         pDb->stmtList->pPrev = pPreStmt;
+        }
+        pDb->stmtList = pPreStmt;
+        if( pDb->stmtLast==0 ){
+          assert( pDb->nStmt==0 );
+          pDb->stmtLast = pPreStmt;
+        }else{
+          assert( pDb->nStmt>0 );
+        }
+        pDb->nStmt++;
+   
+        /* If we have too many statement in cache, remove the surplus from the
+        ** end of the cache list.
+        */
+        while( pDb->nStmt>pDb->maxStmt ){
+          sqlite3_finalize(pDb->stmtLast->pStmt);
+          pDb->stmtLast = pDb->stmtLast->pPrev;
+          Tcl_Free((char*)pDb->stmtLast->pNext);
+          pDb->stmtLast->pNext = 0;
+          pDb->nStmt--;
+        }
       }
 
+      /* Proceed to the next statement */
       zSql = zLeft;
     }
     Tcl_DecrRefCount(objv[2]);
@@ -932,7 +1127,12 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     strcpy(pFunc->zScript, zScript);
     rc = sqlite3_create_function(pDb->db, zName, -1, SQLITE_UTF8,
         pFunc, tclSqlFunc, 0, 0);
-    if( rc!=SQLITE_OK ) rc = TCL_ERROR;
+    if( rc!=SQLITE_OK ){
+       rc = TCL_ERROR;
+    }else{
+      /* Must flush any cached statements */
+      flushStmtCache( pDb );
+    }
     break;
   }
 
@@ -1395,6 +1595,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     free(zErrMsg);
     return TCL_ERROR;
   }
+  p->maxStmt = NUM_PREPARED_STMTS;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
 

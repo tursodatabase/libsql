@@ -1287,17 +1287,21 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   sqlite3VdbeHalt(p);
 
-  /* Transfer the error code and error message from the VDBE into the
-  ** main database structure.
+  /* If the VDBE has be run even partially, then transfer the error code
+  ** and error message from the VDBE into the main database structure.  But
+  ** if the VDBE has just been set to run but has not actually executed any
+  ** instructions yet, leave the main database error information unchanged.
   */
-  if( p->zErrMsg ){
-    sqlite3Error(p->db, p->rc, "%s", p->zErrMsg);
-    sqliteFree(p->zErrMsg);
-    p->zErrMsg = 0;
-  }else if( p->rc ){
-    sqlite3Error(p->db, p->rc, 0);
-  }else{
-    sqlite3Error(p->db, SQLITE_OK, 0);
+  if( p->pc>=0 ){
+    if( p->zErrMsg ){
+      sqlite3Error(p->db, p->rc, "%s", p->zErrMsg);
+      sqliteFree(p->zErrMsg);
+      p->zErrMsg = 0;
+    }else if( p->rc ){
+      sqlite3Error(p->db, p->rc, 0);
+    }else{
+      sqlite3Error(p->db, SQLITE_OK, 0);
+    }
   }
 
   /* Reclaim all memory used by the VDBE
