@@ -595,7 +595,8 @@ int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
   }
   createVarMap(p); 
   for(i=0; i<p->nVar; i++){
-    if( strcmp(p->azVar[i],zName)==0 ){
+    const char *z = p->azVar[i];
+    if( z && strcmp(z,zName)==0 ){
       return i+1;
     }
   }

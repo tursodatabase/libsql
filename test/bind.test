@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.19 2004/09/07 16:19:54 drh Exp $
+# $Id: bind.test,v 1.20 2004/09/24 12:48:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -385,5 +385,45 @@ do_test bind-10.9 {
 do_test bind-10.10 {
   execsql {SELECT * FROM t2}
 } {1 999 1000 1001 {} {} 1 2 1 3 2 1}
+
+# Ticket #918
+#
+do_test bind-10.11 {
+  catch {sqlite3_finalize $VM}
+  set VM [
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a,b,c,d,e,f) VALUES(:abc,?,?4,:pqr,:abc,?4)
+    } -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $VM
+} 5
+do_test bind-10.12 {
+  sqlite3_bind_parameter_index $VM :xyz
+} 0
+do_test bind-10.13 {
+  sqlite3_bind_parameter_index $VM {}
+} 0
+do_test bind-10.14 {
+  sqlite3_bind_parameter_index $VM :pqr
+} 5
+do_test bind-10.15 {
+  sqlite3_bind_parameter_index $VM ?4
+} 4
+do_test bind-10.16 {
+  sqlite3_bind_parameter_name $VM 1
+} :abc
+do_test bind-10.16 {
+  sqlite3_bind_parameter_name $VM 2
+} {}
+do_test bind-10.16 {
+  sqlite3_bind_parameter_name $VM 3
+} {}
+do_test bind-10.16 {
+  sqlite3_bind_parameter_name $VM 4
+} {?4}
+do_test bind-10.16 {
+  sqlite3_bind_parameter_name $VM 5
+} :pqr
+catch {sqlite3_finalize $VM}
 
 finish_test
