@@ -15,7 +15,7 @@
 #
 #      sqlite_commit_hook
 #
-# $Id: hook.test,v 1.4 2004/05/31 08:26:49 danielk1977 Exp $
+# $Id: hook.test,v 1.5 2004/06/29 12:39:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -79,5 +79,15 @@ do_test hook-3.8 {
   execsql {SELECT * FROM t2}
 } {1 2 2 3 3 4 4 5 5 6}
 
+# Test turnning off the commit hook
+#
+do_test hook-3.9 {
+  db commit_hook {}
+  set ::commit_cnt {}
+  execsql {
+    INSERT INTO t2 VALUES(7,8);
+  }
+  set ::commit_cnt
+} {}
 
 finish_test

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the 'progress callback'.
 #
-# $Id: progress.test,v 1.2 2004/05/31 08:26:50 danielk1977 Exp $
+# $Id: progress.test,v 1.3 2004/06/29 12:39:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,6 +44,13 @@ do_test progress-1.0 {
   }
   expr $counter > 1
 } 1
+do_test progress-1.0.1 {
+  db progress
+} {::namespace inscope :: {incr counter} ; expr 0}
+do_test progress-1.0.2 {
+  set v [catch {db progress xyz bogus} msg]
+  lappend v $msg
+} {1 {expected integer but got "xyz"}}
 
 # Test that the query is abandoned when the progress callback returns non-zero
 do_test progress1.1 {

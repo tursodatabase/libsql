@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.25 2004/06/21 06:50:29 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.26 2004/06/29 12:39:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,7 @@ do_test tcl-1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, busy, changes, close, commit_hook, complete, errorcode, eval, function, last_insert_rowid, onecolumn, progress, rekey, timeout, trace, collate, collation_needed, or total_changes}}
+} {1 {bad option "bogus": must be authorizer, busy, changes, close, collate, collation_needed, commit_hook, complete, errorcode, eval, function, last_insert_rowid, onecolumn, progress, rekey, timeout, total_changes, or trace}}
 do_test tcl-1.3 {
   execsql {CREATE TABLE t1(a int, b int)}
   execsql {INSERT INTO t1 VALUES(10,20)}
@@ -70,6 +70,67 @@ do_test tcl-1.6 {
   regsub {:.*$} $msg {} msg
   lappend v $msg
 } {1 {syntax error in expression "x*"}}
+do_test tcl-1.7 {
+  set v [catch {db} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db SUBCOMMAND ..."}}
+do_test tcl-1.8 {
+  set v [catch {db authorizer 1 2 3} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db authorizer ?CALLBACK?"}}
+do_test tcl-1.9 {
+  set v [catch {db busy 1 2 3} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db busy CALLBACK"}}
+do_test tcl-1.10 {
+  set v [catch {db progress 1} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db progress N CALLBACK"}}
+do_test tcl-1.11 {
+  set v [catch {db changes xyz} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db changes "}}
+do_test tcl-1.12 {
+  set v [catch {db commit_hook a b c} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db commit_hook ?CALLBACK?"}}
+do_test tcl-1.13 {
+  set v [catch {db complete} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db complete SQL"}}
+do_test tcl-1.14 {
+  set v [catch {db eval} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db eval SQL ?ARRAY-NAME CODE?"}}
+do_test tcl-1.15 {
+  set v [catch {db function} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db function NAME SCRIPT"}}
+do_test tcl-1.14 {
+  set v [catch {db last_insert_rowid xyz} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db last_insert_rowid "}}
+do_test tcl-1.15 {
+  set v [catch {db rekey} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db rekey KEY"}}
+do_test tcl-1.16 {
+  set v [catch {db timeout} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db timeout MILLISECONDS"}}
+do_test tcl-1.17 {
+  set v [catch {db collate} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db collate NAME SCRIPT"}}
+do_test tcl-1.18 {
+  set v [catch {db collation_needed} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db collation_needed SCRIPT"}}
+do_test tcl-1.19 {
+  set v [catch {db total_changes xyz} msg]
+  lappend v $msg
+} {1 {wrong # args: should be "db total_changes "}}
+
 
 if {[sqlite3 -tcl-uses-utf]} {
   do_test tcl-2.1 {
@@ -102,6 +163,23 @@ do_test tcl-3.3 {
   set rc [catch {db onecolumn} errmsg]
   lappend rc $errmsg
 } {1 {wrong # args: should be "db onecolumn SQL"}}
+do_test tcl-3.4 {
+  set rc [catch {db onecolumn {SELECT bogus}} errmsg]
+  lappend rc $errmsg
+} {1 {no such column: bogus}}
 
+# Turn the busy handler on and off
+#
+do_test tcl-4.1 {
+  proc busy_callback {cnt} {
+    break
+  }
+  db busy busy_callback
+  db busy
+} {busy_callback}
+do_test tcl-4.2 {
+  db busy {}
+  db busy
+} {}
 
 finish_test

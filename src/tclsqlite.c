@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.91 2004/06/29 11:26:59 drh Exp $
+** $Id: tclsqlite.c,v 1.92 2004/06/29 12:39:08 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -391,22 +391,21 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "busy",                   "changes",
-    "close",              "commit_hook",            "complete",
-    "errorcode",          "eval",                   "function",
-    "last_insert_rowid",  "onecolumn",
-    "progress",           "rekey",                  "timeout",
-    "trace",              "collate",                "collation_needed",
-    "total_changes",      0                    
+    "authorizer",         "busy",              "changes",
+    "close",              "collate",           "collation_needed",
+    "commit_hook",        "complete",          "errorcode",
+    "eval",               "function",          "last_insert_rowid",
+    "onecolumn",          "progress",          "rekey",
+    "timeout",            "total_changes",     "trace",
+    0                    
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BUSY,                   DB_CHANGES,
-    DB_CLOSE,             DB_COMMIT_HOOK,            DB_COMPLETE,
-    DB_ERRORCODE,         DB_EVAL,                   DB_FUNCTION,
-    DB_LAST_INSERT_ROWID, DB_ONECOLUMN,        
-    DB_PROGRESS,          DB_REKEY,                  DB_TIMEOUT,
-    DB_TRACE,             DB_COLLATE,                DB_COLLATION_NEEDED,
-    DB_TOTAL_CHANGES
+    DB_AUTHORIZER,        DB_BUSY,             DB_CHANGES,
+    DB_CLOSE,             DB_COLLATE,          DB_COLLATION_NEEDED,
+    DB_COMMIT_HOOK,       DB_COMPLETE,         DB_ERRORCODE,
+    DB_EVAL,              DB_FUNCTION,         DB_LAST_INSERT_ROWID,
+    DB_ONECOLUMN,         DB_PROGRESS,         DB_REKEY,
+    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
   };
 
   if( objc<2 ){
@@ -440,6 +439,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   case DB_AUTHORIZER: {
     if( objc>3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+      return TCL_ERROR;
     }else if( objc==2 ){
       if( pDb->zAuth ){
         Tcl_AppendResult(interp, pDb->zAuth, 0);
@@ -583,6 +583,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   case DB_COMMIT_HOOK: {
     if( objc>3 ){
       Tcl_WrongNumArgs(interp, 2, objv, "?CALLBACK?");
+      return TCL_ERROR;
     }else if( objc==2 ){
       if( pDb->zCommit ){
         Tcl_AppendResult(interp, pDb->zCommit, 0);
@@ -607,6 +608,57 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         sqlite3_commit_hook(pDb->db, 0, 0);
       }
     }
+    break;
+  }
+
+  /*
+  **     $db collate NAME SCRIPT
+  **
+  ** Create a new SQL collation function called NAME.  Whenever
+  ** that function is called, invoke SCRIPT to evaluate the function.
+  */
+  case DB_COLLATE: {
+    SqlCollate *pCollate;
+    char *zName;
+    char *zScript;
+    int nScript;
+    if( objc!=4 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "NAME SCRIPT");
+      return TCL_ERROR;
+    }
+    zName = Tcl_GetStringFromObj(objv[2], 0);
+    zScript = Tcl_GetStringFromObj(objv[3], &nScript);
+    pCollate = (SqlCollate*)Tcl_Alloc( sizeof(*pCollate) + nScript + 1 );
+    if( pCollate==0 ) return TCL_ERROR;
+    pCollate->interp = interp;
+    pCollate->pNext = pDb->pCollate;
+    pCollate->zScript = (char*)&pCollate[1];
+    pDb->pCollate = pCollate;
+    strcpy(pCollate->zScript, zScript);
+    if( sqlite3_create_collation(pDb->db, zName, SQLITE_UTF8, 
+        pCollate, tclSqlCollate) ){
+      return TCL_ERROR;
+    }
+    break;
+  }
+
+  /*
+  **     $db collation_needed SCRIPT
+  **
+  ** Create a new SQL collation function called NAME.  Whenever
+  ** that function is called, invoke SCRIPT to evaluate the function.
+  */
+  case DB_COLLATION_NEEDED: {
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "SCRIPT");
+      return TCL_ERROR;
+    }
+    if( pDb->pCollateNeeded ){
+      Tcl_DecrRefCount(pDb->pCollateNeeded);
+    }
+    pDb->pCollateNeeded = Tcl_DuplicateObj(objv[2]);
+    Tcl_IncrRefCount(pDb->pCollateNeeded);
+    sqlite3_collation_needed(pDb->db, pDb, tclCollateNeeded);
     break;
   }
 
@@ -759,6 +811,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pFunc->interp = interp;
     pFunc->pNext = pDb->pFunc;
     pFunc->zScript = (char*)&pFunc[1];
+    pDb->pFunc = pFunc;
     strcpy(pFunc->zScript, zScript);
     sqlite3_create_function(pDb->db, zName, -1, SQLITE_UTF8,
         pFunc, tclSqlFunc, 0, 0);
@@ -849,6 +902,23 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
+  /*
+  **     $db total_changes
+  **
+  ** Return the number of rows that were modified, inserted, or deleted 
+  ** since the database handle was created.
+  */
+  case DB_TOTAL_CHANGES: {
+    Tcl_Obj *pResult;
+    if( objc!=2 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "");
+      return TCL_ERROR;
+    }
+    pResult = Tcl_GetObjResult(interp);
+    Tcl_SetIntObj(pResult, sqlite3_total_changes(pDb->db));
+    break;
+  }
+
   /*    $db trace ?CALLBACK?
   **
   ** Make arrangements to invoke the CALLBACK routine for each SQL statement
@@ -883,73 +953,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         sqlite3_trace(pDb->db, 0, 0);
       }
     }
-    break;
-  }
-
-  /*
-  **     $db collate NAME SCRIPT
-  **
-  ** Create a new SQL collation function called NAME.  Whenever
-  ** that function is called, invoke SCRIPT to evaluate the function.
-  */
-  case DB_COLLATE: {
-    SqlCollate *pCollate;
-    char *zName;
-    char *zScript;
-    int nScript;
-    if( objc!=4 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "NAME SCRIPT");
-      return TCL_ERROR;
-    }
-    zName = Tcl_GetStringFromObj(objv[2], 0);
-    zScript = Tcl_GetStringFromObj(objv[3], &nScript);
-    pCollate = (SqlCollate*)Tcl_Alloc( sizeof(*pCollate) + nScript + 1 );
-    if( pCollate==0 ) return TCL_ERROR;
-    pCollate->interp = interp;
-    pCollate->pNext = pDb->pCollate;
-    pCollate->zScript = (char*)&pCollate[1];
-    strcpy(pCollate->zScript, zScript);
-    if( sqlite3_create_collation(pDb->db, zName, SQLITE_UTF8, 
-        pCollate, tclSqlCollate) ){
-      return TCL_ERROR;
-    }
-    break;
-  }
-
-  /*
-  **     $db collate_needed SCRIPT
-  **
-  ** Create a new SQL collation function called NAME.  Whenever
-  ** that function is called, invoke SCRIPT to evaluate the function.
-  */
-  case DB_COLLATION_NEEDED: {
-    if( objc!=3 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "SCRIPT");
-      return TCL_ERROR;
-    }
-    if( pDb->pCollateNeeded ){
-      Tcl_DecrRefCount(pDb->pCollateNeeded);
-    }
-    pDb->pCollateNeeded = Tcl_DuplicateObj(objv[2]);
-    Tcl_IncrRefCount(pDb->pCollateNeeded);
-    sqlite3_collation_needed(pDb->db, pDb, tclCollateNeeded);
-    break;
-  }
-
-  /*
-  **     $db total_changes
-  **
-  ** Return the number of rows that were modified, inserted, or deleted 
-  ** since the database handle was created.
-  */
-  case DB_TOTAL_CHANGES: {
-    Tcl_Obj *pResult;
-    if( objc!=2 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "");
-      return TCL_ERROR;
-    }
-    pResult = Tcl_GetObjResult(interp);
-    Tcl_SetIntObj(pResult, sqlite3_total_changes(pDb->db));
     break;
   }
 
