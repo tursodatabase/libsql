@@ -979,9 +979,9 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
   }
 
   for(i=0; xFunc && i<db->nDb; i++){
+    int rc;
     Btree *pBt = db->aDb[i].pBt;
     if( sqlite3BtreeIsInTrans(pBt) ){
-      int rc;
       if( db->xCommitCallback && needXcommit ){
         if( db->xCommitCallback(db->pCommitArg)!=0 ){
           p->rc = SQLITE_CONSTRAINT;
@@ -990,9 +990,9 @@ int sqlite3VdbeReset(Vdbe *p, char **pzErrMsg){
         }
         needXcommit = 0;
       }
-      rc = xFunc(pBt);
-      if( p->rc==SQLITE_OK ) p->rc = rc;
     }
+    rc = xFunc(pBt);
+    if( p->rc==SQLITE_OK ) p->rc = rc;
   }
 
 

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.351 2004/05/31 08:26:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.352 2004/05/31 10:01:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2234,7 +2234,7 @@ case OP_AutoCommit: {
   break;
 }
 
-/* Opcode: Transaction P1 * *
+/* Opcode: Transaction P1 P2 *
 **
 ** Begin a transaction.  The transaction ends when a Commit or Rollback
 ** opcode is encountered.  Depending on the ON CONFLICT setting, the
@@ -2244,11 +2244,14 @@ case OP_AutoCommit: {
 ** started.  Index 0 is the main database file and index 1 is the
 ** file used for temporary tables.
 **
-** A write lock is obtained on the database file when a transaction is
-** started.  No other process can read or write the file while the
-** transaction is underway.  Starting a transaction also creates a
-** rollback journal.  A transaction must be started before any changes
-** can be made to the database.
+** If P2 is non-zero, then a write-transaction is started.  A write lock is
+** obtained on the database file when a write-transaction is started.  No
+** other process can read or write the file while the transaction is
+** underway.  Starting a transaction also creates a rollback journal.  A
+** transaction must be started before any changes can be made to the
+** database.
+**
+** If P2 is zero, then a read-lock is obtained on the database file.
 */
 case OP_Transaction: {
   int busy = 1;
@@ -2258,9 +2261,8 @@ case OP_Transaction: {
   assert( i>=0 && i<db->nDb );
   pBt = db->aDb[i].pBt;
 
-  if( sqlite3BtreeIsInTrans(pBt) ) break;
-  while( pBt && busy /* && !sqlite3BtreeIsInTrans(pBt) */ ){
-    rc = sqlite3BtreeBeginTrans(db->aDb[i].pBt);
+  while( pBt && busy ){
+    rc = sqlite3BtreeBeginTrans(db->aDb[i].pBt, pOp->p2);
     switch( rc ){
       case SQLITE_BUSY: {
         if( db->xBusyCallback==0 ){
@@ -2526,7 +2528,7 @@ case OP_OpenTemp: {
   rc = sqlite3BtreeFactory(db, 0, 1, TEMP_PAGES, &pCx->pBt);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeBeginTrans(pCx->pBt);
+    rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
   if( rc==SQLITE_OK ){
     /* If a transient index is required, create it by calling

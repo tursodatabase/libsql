@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.153 2004/05/31 08:26:49 danielk1977 Exp $
+** $Id: btree.c,v 1.154 2004/05/31 10:01:35 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -315,6 +315,13 @@ struct Btree {
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
 };
 typedef Btree Bt;
+
+/*
+** Btree.inTrans may take one of the following values.
+*/
+#define TRANS_NONE  0
+#define TRANS_READ  1
+#define TRANS_WRITE 2
 
 /*
 ** An instance of the following structure is used to hold information
@@ -1142,10 +1149,9 @@ page1_init_failed:
 ** If there is a transaction in progress, this routine is a no-op.
 */
 static void unlockBtreeIfUnused(Btree *pBt){
-  if( pBt->inTrans==0 && pBt->pCursor==0 && pBt->pPage1!=0 ){
+  if( pBt->inTrans==TRANS_NONE && pBt->pCursor==0 && pBt->pPage1!=0 ){
     releasePage(pBt->pPage1);
     pBt->pPage1 = 0;
-    pBt->inTrans = 0;
     pBt->inStmt = 0;
   }
 }
@@ -1179,11 +1185,13 @@ static int newDatabase(Btree *pBt){
 }
 
 /*
-** Attempt to start a new transaction.
+** Attempt to start a new transaction. A write-transaction
+** is started if the second argument is true, otherwise a read-
+** transaction.
 **
-** A transaction must be started before attempting any changes
-** to the database.  None of the following routines will work
-** unless a transaction is started first:
+** A write-transaction must be started before attempting any 
+** changes to the database.  None of the following routines 
+** will work unless a transaction is started first:
 **
 **      sqlite3BtreeCreateTable()
 **      sqlite3BtreeCreateIndex()
@@ -1193,23 +1201,35 @@ static int newDatabase(Btree *pBt){
 **      sqlite3BtreeDelete()
 **      sqlite3BtreeUpdateMeta()
 */
-int sqlite3BtreeBeginTrans(Btree *pBt){
-  int rc;
-  if( pBt->inTrans ) return SQLITE_ERROR;
-  if( pBt->readOnly ) return SQLITE_READONLY;
+int sqlite3BtreeBeginTrans(Btree *pBt, int wrflag){
+  int rc = SQLITE_OK;
+
+  /* If the btree is already in a write-transaction, or it
+  ** is already in a read-transaction and a read-transaction
+  ** is requested, this is a no-op.
+  */
+  if( pBt->inTrans==TRANS_WRITE || 
+      (pBt->inTrans==TRANS_READ && !wrflag) ){
+    return SQLITE_OK;
+  }
+  if( pBt->readOnly && wrflag ){
+    return SQLITE_READONLY;
+  }
+
   if( pBt->pPage1==0 ){
     rc = lockBtree(pBt);
-    if( rc!=SQLITE_OK ){
-      return rc;
+  }
+
+  if( rc==SQLITE_OK && wrflag ){
+    rc = sqlite3pager_begin(pBt->pPage1->aData);
+    if( rc==SQLITE_OK ){
+      rc = newDatabase(pBt);
     }
   }
-  rc = sqlite3pager_begin(pBt->pPage1->aData);
+
   if( rc==SQLITE_OK ){
-    rc = newDatabase(pBt);
-  }
-  if( rc==SQLITE_OK ){
-    pBt->inTrans = 1;
-    pBt->inStmt = 0;
+    pBt->inTrans = (wrflag?TRANS_WRITE:TRANS_READ);
+    if( wrflag ) pBt->inStmt = 0;
   }else{
     unlockBtreeIfUnused(pBt);
   }
@@ -1223,9 +1243,11 @@ int sqlite3BtreeBeginTrans(Btree *pBt){
 ** are no active cursors, it also releases the read lock.
 */
 int sqlite3BtreeCommit(Btree *pBt){
-  int rc;
-  rc = pBt->readOnly ? SQLITE_OK : sqlite3pager_commit(pBt->pPager);
-  pBt->inTrans = 0;
+  int rc = SQLITE_OK;
+  if( pBt->inTrans==TRANS_WRITE ){
+    rc = sqlite3pager_commit(pBt->pPager);
+  }
+  pBt->inTrans = TRANS_NONE;
   pBt->inStmt = 0;
   unlockBtreeIfUnused(pBt);
   return rc;
@@ -1278,12 +1300,7 @@ void sqlite3BtreeCursorList(Btree *pBt){
 int sqlite3BtreeRollback(Btree *pBt){
   int rc;
   MemPage *pPage1;
-  if( pBt->inTrans==0 ) return SQLITE_OK;
-  pBt->inTrans = 0;
-  pBt->inStmt = 0;
-  if( pBt->readOnly ){
-    rc = SQLITE_OK;
-  }else{
+  if( pBt->inTrans==TRANS_WRITE ){
     rc = sqlite3pager_rollback(pBt->pPager);
     /* The rollback may have destroyed the pPage1->aData value.  So
     ** call getPage() on page 1 again to make sure pPage1->aData is
@@ -1291,8 +1308,10 @@ int sqlite3BtreeRollback(Btree *pBt){
     if( getPage(pBt, 1, &pPage1)==SQLITE_OK ){
       releasePage(pPage1);
     }
+    invalidateCursors(pBt);
   }
-  invalidateCursors(pBt);
+  pBt->inTrans = TRANS_NONE;
+  pBt->inStmt = 0;
   unlockBtreeIfUnused(pBt);
   return rc;
 }
@@ -1314,7 +1333,7 @@ int sqlite3BtreeRollback(Btree *pBt){
 */
 int sqlite3BtreeBeginStmt(Btree *pBt){
   int rc;
-  if( !pBt->inTrans || pBt->inStmt ){
+  if( (pBt->inTrans!=TRANS_WRITE) || pBt->inStmt ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   rc = pBt->readOnly ? SQLITE_OK : sqlite3pager_stmt_begin(pBt->pPager);
@@ -3360,7 +3379,7 @@ int sqlite3BtreeInsert(
   if( pCur->status ){
     return pCur->status;  /* A rollback destroyed this cursor */
   }
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction before doing an insert */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
@@ -3427,7 +3446,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( pCur->status ){
     return pCur->status;  /* A rollback destroyed this cursor */
   }
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction before doing a delete */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
@@ -3508,7 +3527,7 @@ int sqlite3BtreeCreateTable(Btree *pBt, int *piTable, int flags){
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     /* Must start a transaction first */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
@@ -3577,7 +3596,7 @@ static int clearDatabasePage(
 int sqlite3BtreeClearTable(Btree *pBt, int iTable){
   int rc;
   BtCursor *pCur;
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
@@ -3605,7 +3624,7 @@ int sqlite3BtreeDropTable(Btree *pBt, int iTable){
   int rc;
   MemPage *pPage;
   BtCursor *pCur;
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
@@ -3657,7 +3676,7 @@ int sqlite3BtreeUpdateMeta(Btree *pBt, int idx, u32 iMeta){
   unsigned char *pP1;
   int rc;
   assert( idx>=1 && idx<=15 );
-  if( !pBt->inTrans ){
+  if( pBt->inTrans!=TRANS_WRITE ){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   assert( pBt->pPage1!=0 );
@@ -4153,7 +4172,9 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   int rc = SQLITE_OK;
   Pgno i, nPage, nToPage;
 
-  if( !pBtTo->inTrans || !pBtFrom->inTrans ) return SQLITE_ERROR;
+  if( pBtTo->inTrans!=TRANS_WRITE || pBtFrom->inTrans!=TRANS_WRITE ){
+    return SQLITE_ERROR;
+  }
   if( pBtTo->pCursor ) return SQLITE_BUSY;
   memcpy(pBtTo->pPage1->aData, pBtFrom->pPage1->aData, pBtFrom->usableSize);
   rc = sqlite3pager_overwrite(pBtTo->pPager, 1, pBtFrom->pPage1->aData);
@@ -4188,7 +4209,7 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
 ** Return non-zero if a transaction is active.
 */
 int sqlite3BtreeIsInTrans(Btree *pBt){
-  return (pBt && pBt->inTrans);
+  return (pBt && (pBt->inTrans==TRANS_WRITE));
 }
 
 /*
