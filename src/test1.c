@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.93 2004/07/15 14:15:02 drh Exp $
+** $Id: test1.c,v 1.94 2004/07/17 21:56:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -664,6 +664,31 @@ static int sqlite3_mprintf_scaled(
     if( Tcl_GetDouble(interp, argv[i], &r[i-2]) ) return TCL_ERROR;
   }
   z = sqlite3_mprintf(argv[1], r[0]*r[1]);
+  Tcl_AppendResult(interp, z, 0);
+  sqlite3_free(z);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_mprintf_stronly FORMAT STRING
+**
+** Call mprintf with a single double argument which is the product of the
+** two arguments given above.  This is used to generate overflow and underflow
+** doubles to test that they are converted properly.
+*/
+static int sqlite3_mprintf_stronly(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  char *z;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FORMAT STRING\"", 0);
+    return TCL_ERROR;
+  }
+  z = sqlite3_mprintf(argv[1], argv[2]);
   Tcl_AppendResult(interp, z, 0);
   sqlite3_free(z);
   return TCL_OK;
@@ -2287,6 +2312,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_int",           (Tcl_CmdProc*)sqlite3_mprintf_int    },
      { "sqlite3_mprintf_int64",         (Tcl_CmdProc*)sqlite3_mprintf_int64  },
      { "sqlite3_mprintf_str",           (Tcl_CmdProc*)sqlite3_mprintf_str    },
+     { "sqlite3_mprintf_stronly",       (Tcl_CmdProc*)sqlite3_mprintf_stronly},
      { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },
      { "sqlite3_mprintf_z_test",        (Tcl_CmdProc*)test_mprintf_z        },

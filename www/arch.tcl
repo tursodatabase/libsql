@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: arch.tcl,v 1.13 2004/06/16 03:02:04 drh Exp $}
+set rcsid {$Id: arch.tcl,v 1.14 2004/07/17 21:56:10 drh Exp $}
 source common.tcl
 header {Architecture of SQLite}
 puts {
@@ -147,23 +147,6 @@ between the virtual machine and the rest of the SQLite library and
 The <b>vdbeaux.c</b> file contains utilities used by the virtual
 machine and interface modules used by the rest of the library to
 construct VM programs.</p>
-
-<h3>Backend</h3>
-
-<p>The backend is an abstraction layer that presents a uniform interface
-to the virtual machine for either the B-Tree drivers for disk-based
-databases or the Red/Black Tree driver for in-memory databases.
-The <b>btree.h</b> source file contains the details.</p>
-
-<h3>Red/Black Tree</h3>
-
-<p>In SQLite version 2.X, in-memory databases are stored in a red/black
-tree implementation contain in the <b>btree_rb.c</b> source file.  In
-version 3.0, the red/black tree implementation is omitted.  In-memory
-databases use the same B-Tree and pager code with a special flag that
-tells the pager to maintain all data in cache and never write to the
-disk.
-</p>
 
 <h3>B-Tree</h3>
 

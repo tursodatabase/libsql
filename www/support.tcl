@@ -1,4 +1,4 @@
-set rcsid {$Id: support.tcl,v 1.3 2004/07/15 14:15:02 drh Exp $}
+set rcsid {$Id: support.tcl,v 1.4 2004/07/17 21:56:10 drh Exp $}
 source common.tcl
 header {SQLite Support Options}
 puts {
@@ -25,11 +25,18 @@ sent by to you by return email.
 </p>
 
 <p>
-An archive of the mailing list can be found at
+There are multiple archives of the mailing list:
+</p>
+
+<blockquote>
 <a href="http://www.mail-archive.com/sqlite-users%40sqlite.org/">
-http://www.mail-archive.com/sqlite-users%40sqlite.org</a> and at
+http://www.mail-archive.com/sqlite-users%40sqlite.org</a><br>
 <a href="http://www.theaimsgroup.com/">
-http://www.theaimsgroup.com/</a>.
+http://www.theaimsgroup.com/</a><br>
+<a href="http://news.gmane.org/gmane.comp.db.sqlite.general">
+http://news.gmane.org/gmane.comp.db.sqlite.general</a>
+</blockquote>
+
 </p>
 
 <h3>Professional Support</h3>

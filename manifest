@@ -1,5 +1,5 @@
-C Use\sthe\sF_FULLFSYNC\sfctrl\sif\sit\sis\savailable.\s\sRecord\sthe\sname\sof\sfiles\nthat\sare\sopened\sin\sthe\sOsFile\sstructure.\s(CVS\s1799)
-D 2004-07-17T21:44:57
+C mprintf()\scorrectly\shandles\s"%s","".\s\sFix\sfor\sticket\s#812.\s(CVS\s1800)
+D 2004-07-17T21:56:10
 F Makefile.in 77d1219b6563476711a7a962e865979a6f314eb0
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -54,7 +54,7 @@ F src/pager.c 5f8cdc92ee9efb5a7849dc8b561b53122b700c78
 F src/pager.h 269b6cfc114dba0148203446e41dd19f9647dd53
 F src/parse.y 51c8e696276c409618e66a4ccf316fcff245506e
 F src/pragma.c 8326df8c400f573eb43004dfb8e53e5102acb3e4
-F src/printf.c 3090c8ff397d549bc0de09b16d8ab7fd37a0c3f7
+F src/printf.c 36090f6d7b4946539de97c1850675ce55ef66c16
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c f02a65af34231031896e8442161cb5251e191e75
 F src/shell.c ebec5da57ea401f4886eefc790917b939d94d595
@@ -62,7 +62,7 @@ F src/sqlite.h.in aaf46c8d458efd8aca694ec4f18c6ecf616ee55e
 F src/sqliteInt.h aeae6793d1db335ec1179ad9f26b0affc0ec658a
 F src/table.c 4521c278892f60e4d630788c0ea5cf4db1e75c49
 F src/tclsqlite.c 62848128011e59291902c6e5c6f910c05956fcbb
-F src/test1.c d491aea9d451d2b6a24cf028cd7e3a9d875bb0f3
+F src/test1.c 004885b49a7b5a594192f137c671135920f64c94
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c d0c56667e89f79ad0f060fdf010d1c34a4bc2988
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -143,7 +143,7 @@ F test/null.test 64730a1c32955e5cc510b7632fed6b9929a4029a
 F test/pager.test 059cc5c58d3b5a851343dff8c56cf7286425d03a
 F test/pager2.test 55469c7c1c1a54d6b32d7b3cc99001e90101a1ce
 F test/pragma.test 212d810e02a51c0ff9784a19d55e35d23382005d
-F test/printf.test 5ed2e033a0b47f901764096bf1907915d6e39406
+F test/printf.test 428ad9be92963b68ba222dac4c19724cc4e304ea
 F test/progress.test 76c722f090b1ccb575e7e4e203a71608c5763beb x
 F test/quick.test bbe4abf7f434d71c0de26626c8cbb4858e1bcb18
 F test/quote.test 08f23385c685d3dc7914ec760d492cacea7f6e3d
@@ -196,8 +196,8 @@ F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 3f4f9173a3b7dc05b0ea67ae0c942866558ad35d
-F www/arch2.fig 613b5ac63511109064c2f93c5754ee662219937d
+F www/arch.tcl b833057e89aeb43335c0bf84a3d5b7f9d11df6fa
+F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 49c6bb36160f03ca2b89eaa5bfb1f560c7d68ee7
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/c_interface.tcl 2176519fc2bd2d2cf6fe74fd806fc2d8362de2c8
@@ -228,12 +228,12 @@ F www/opcode.tcl e8c421fd2c70c503b25cedb3f9617a1f387ac7ea
 F www/quickstart.tcl 4e97bef825e6a4153c43afb9f97235fc4da278ab
 F www/speed.tcl 19cf0c1bf73c4b534dfafc95b3eacff4825740b4
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
-F www/support.tcl 836a8d63f9a4feb72b7004c8dbc7a7e4142d9e10
+F www/support.tcl 96c8324cea27b5ded53ff5c60c127ba2053f688e
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P c01f13267f592dc2678e78ea45dadddcdc154f82
-R a9f4dab888d922312d00d87de0e5cb2e
+P 1d30d0dd46c2bd12ce3f7dc06492f3e27ab6bcee
+R a883873c22c5f6280ed24904f9fd2d42
 U drh
-Z d985f788c605dfd4069fa22794ea5ba6
+Z 687b24d8f66905314c3d6818e3ab8a29
