@@ -172,6 +172,7 @@ TARBALL = \
   sqlite/doc/*.html \
   sqlite/src/*.h \
   sqlite/src/*.c \
+  sqlite/src/*.y \
   sqlite/tool/*.c \
   sqlite/tool/*.awk \
   sqlite/configure \
