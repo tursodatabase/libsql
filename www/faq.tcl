@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.19 2002/08/24 18:24:57 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.20 2002/11/05 23:24:38 drh Exp $}
 
 puts {<html>
 <head>
@@ -311,9 +311,10 @@ ORDER BY name
 faq {
   Are there any known size limits to SQLite databases?
 } {
-  <p>Internally, SQLite can handle databases up to 2^40 bytes (1 terabyte)
+  <p>Internally, SQLite can handle databases up to 2^41 bytes (2 terabytes)
   in size.  But the backend interface to POSIX and Win32 limits files to
-  2^31 (2 gigabytes).</p>
+  2^31 (2 gigabytes).  (See the next question for instructions on how
+  to relax this limit under POSIX.)</p>
 
   <p>SQLite arbitrarily limits the amount of data in one row to 1 megabyte.
   There is a single #define in the source code that can be changed to raise
@@ -335,6 +336,21 @@ faq {
   as long as desired.  However, the names of SQL functions (as created
   by the <a href="c_interface.html#cfunc">sqlite_create_function()</a> API)
   may not exceed 255 characters in length.</p>
+}
+
+faq {
+  Are there any ways to increase the maximum database size limit above 2GB?
+} {
+  <p>For POSIX systems that support large files, you can increase the maximum
+  database size of SQLite by adding the following two options to your
+  compiler command line:</p>
+
+  <blockquote><pre>
+  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
+  </pre></blockquote>
+
+  <p>The resulting library and "sqlite" executable should be able to work
+  with databases as large as 2^41 bytes (2 terabytes).</p>
 }
 
 faq {

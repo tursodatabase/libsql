@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sdatabases\slarger\sthan\s2GB\sunder\sUnix.\s\sMust\sbe\scompiled\nwith\s-D_FILE_OFFSET_BITS=64\sand\s-D_LARGEFILE_SOURCE\sin\sorder\sto\swork\swith\nlarger\sdatabases.\s(CVS\s778)
-D 2002-11-05T23:03:03
+C Update\sthe\sFAQ\sto\sexplain\show\sto\senable\slarge\sfile\ssupport.\s(CVS\s779)
+D 2002-11-05T23:24:38
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -135,7 +135,7 @@ F www/crosscompile.tcl 3622ebbe518927a3854a12de51344673eb2dd060
 F www/datatypes.tcl 0cb28565580554fa7e03e8fcb303e87ce57757ae
 F www/download.tcl 0932d7f4f0e8b2adbbd22fac73132f86e43ab4a9
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 207d3e31597c63ed3bbecd58aaeaa38c53d39dd4
+F www/faq.tcl 7692f91e0b3f7ee9bb4387bc5028cb389dcc6546
 F www/fileformat.tcl a4b5c2c6e89b7d42d09f97fd4d7bbd39cbf24936
 F www/formatchng.tcl b4449e065d2da38b6563bdf12cf46cfe1d4d765e
 F www/index.tcl c93b864e3c7313bbe5f86eec571479d438307173
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7c8c0e7633dca00bde7bc7c22075f688c034c200
-R bb6cf2c43588a20871dc03d12670be4d
+P a3f67fe9121ca4655510094fe775b8603a87800e
+R cf4f7decc291dfde5a877f00e8e00b89
 U drh
-Z 1af0198577d28fb69a5246d24434f76c
+Z d6bb8956fe38e60e0b9132cb2cfe2434
