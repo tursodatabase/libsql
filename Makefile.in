@@ -63,8 +63,9 @@ ENCODING = @ENCODING@
 # Object files for the SQLite library.
 #
 LIBOBJ = btree.lo build.lo delete.lo expr.lo func.lo hash.lo insert.lo \
-         main.lo os.lo pager.lo parse.lo printf.lo random.lo select.lo \
-         table.lo tokenize.lo update.lo util.lo vdbe.lo where.lo trigger.lo
+         main.lo opcodes.lo os.lo pager.lo parse.lo printf.lo random.lo \
+         select.lo table.lo tokenize.lo update.lo util.lo vdbe.lo \
+         where.lo trigger.lo
 
 # All of the source code files.
 #
@@ -76,6 +77,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
+  $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
@@ -91,12 +93,12 @@ SRC = \
   $(TOP)/src/table.c \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
+  $(TOP)/src/trigger.c \
   $(TOP)/src/update.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbe.h \
-  $(TOP)/src/where.c \
-  $(TOP)/src/trigger.c
+  $(TOP)/src/where.c
 
 # Source code to the test files.
 #
@@ -109,6 +111,18 @@ TESTSRC = \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
   $(TOP)/src/md5.c
+
+# Header files used by all library source files.
+#
+HDR = \
+   sqlite.h  \
+   $(TOP)/src/btree.h \
+   $(TOP)/src/hash.h \
+   opcodes.h \
+   $(TOP)/src/os.h \
+   $(TOP)/src/sqliteInt.h  \
+   $(TOP)/src/vdbe.h  \
+   parse.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -133,21 +147,24 @@ sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
 		libsqlite.la $(LIBREADLINE) -rpath $(exec_prefix)/lib
 
+# This target creates a directory named "tsrc" and fills it with
+# copies of all of the C source code and header files needed to
+# build on the target system.  Some of the C source code and header
+# files are automatically generated.  This target takes care of
+# all that automatic generation.
+#
+target_source:	$(SRC) $(HDR) 
+	rm -rf tsrc
+	mkdir tsrc
+	cp $(SRC) $(HDR) tsrc
+	rm tsrc/sqlite.h.in tsrc/parse.y
+	cp parse.c tsrc
+
 # Rules to build the LEMON compiler generator
 #
 lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
-
-# Header files used by all library source files.
-#
-HDR = \
-   sqlite.h  \
-   $(TOP)/src/btree.h \
-   $(TOP)/src/os.h \
-   $(TOP)/src/sqliteInt.h  \
-   $(TOP)/src/vdbe.h  \
-   parse.h
 
 btree.lo:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/btree.c
@@ -160,6 +177,22 @@ main.lo:	$(TOP)/src/main.c $(HDR)
 
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/pager.c
+
+opcodes.lo:	opcodes.c
+	$(LIBTOOL) $(TCC) -c opcodes.c
+
+opcodes.c:	$(TOP)/src/vdbe.c
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
+	echo 'char *sqliteOpcodeNames[] = { "???", ' >>opcodes.c
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
+	echo '};' >>opcodes.c
+
+opcodes.h:	$(TOP)/src/vdbe.h
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/://' | \
+	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
 
 os.lo:	$(TOP)/src/os.c $(HDR)
 	$(LIBTOOL) $(TCC) -c $(TOP)/src/os.c
@@ -283,8 +316,29 @@ speed.html:	$(TOP)/www/speed.tcl
 faq.html:	$(TOP)/www/faq.tcl
 	tclsh $(TOP)/www/faq.tcl >faq.html
 
+formatchng.html:	$(TOP)/www/formatchng.tcl
+	tclsh $(TOP)/www/formatchng.tcl >formatchng.html
+
+conflict.html:	$(TOP)/www/conflict.tcl
+	tclsh $(TOP)/www/conflict.tcl >conflict.html
+
 download.html:	$(TOP)/www/download.tcl
 	tclsh $(TOP)/www/download.tcl >download.html
+
+omitted.html:	$(TOP)/www/omitted.tcl
+	tclsh $(TOP)/www/omitted.tcl >omitted.html
+
+datatypes.html:	$(TOP)/www/datatypes.tcl
+	tclsh $(TOP)/www/datatypes.tcl >datatypes.html
+
+quickstart.html:	$(TOP)/www/quickstart.tcl
+	tclsh $(TOP)/www/quickstart.tcl >quickstart.html
+
+fileformat.html:	$(TOP)/www/fileformat.tcl
+	tclsh $(TOP)/www/fileformat.tcl >fileformat.html
+
+nulls.html:	$(TOP)/www/nulls.tcl
+	tclsh $(TOP)/www/nulls.tcl >nulls.html
 
 
 # Files to be published on the website.
@@ -304,7 +358,14 @@ DOC = \
   tclsqlite.html \
   download.html \
   speed.html \
-  faq.html
+  faq.html \
+  formatchng.html \
+  conflict.html \
+  omitted.html \
+  datatypes.html \
+  quickstart.html \
+  fileformat.html \
+  nulls.html
 
 doc:	$(DOC)
 	mkdir -p doc
@@ -319,7 +380,7 @@ install:	sqlite libsqlite.la sqlite.h
 	$(INSTALL) -m 0644 sqlite.h $(prefix)/include
 
 clean:	
-	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h
+	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h opcodes.*
 	rm -rf .libs .deps 
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)

@@ -54,8 +54,8 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o \
-         main.o os.o pager.o parse.o printf.o random.o select.o table.o \
+LIBOBJ = btree.o build.o delete.o expr.o func.o hash.o insert.o main.o \
+         opcodes.o os.o pager.o parse.o printf.o random.o select.o table.o \
          tokenize.o trigger.o update.o util.o vdbe.o where.o tclsqlite.o
 
 # All of the source code files.
@@ -109,6 +109,7 @@ HDR = \
    sqlite.h  \
    $(TOP)/src/btree.h \
    $(TOP)/src/hash.h \
+   opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h  \
@@ -164,6 +165,22 @@ main.o:	$(TOP)/src/main.c $(HDR)
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(TCCX) -c $(TOP)/src/pager.c
+
+opcodes.o:	opcodes.c
+	$(TCCX) -c opcodes.c
+
+opcodes.c:	$(TOP)/src/vdbe.c
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.c
+	echo 'char *sqliteOpcodeNames[] = { "???", ' >>opcodes.c
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/^.*OP_/  "/' -e 's/:.*$$/", /' >>opcodes.c
+	echo '};' >>opcodes.c
+
+opcodes.h:	$(TOP)/src/vdbe.h
+	echo '/* Automatically generated file.  Do not edit */' >opcodes.h
+	grep '^case OP_' $(TOP)/src/vdbe.c | \
+	  sed -e 's/://' | \
+	  awk '{printf "#define %-30s %3d\n", $$2, ++cnt}' >>opcodes.h
 
 os.o:	$(TOP)/src/os.c $(HDR)
 	$(TCCX) -c $(TOP)/src/os.c
@@ -348,7 +365,7 @@ install:	sqlite libsqlite.a sqlite.h
 	mv sqlite.h /usr/include
 
 clean:	
-	rm -f *.o sqlite libsqlite.a sqlite.h
+	rm -f *.o sqlite libsqlite.a sqlite.h opcodes.*
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out

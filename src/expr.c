@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.80 2002/08/24 18:24:54 drh Exp $
+** $Id: expr.c,v 1.81 2002/09/08 00:04:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1369,7 +1369,13 @@ void sqliteExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_NE:
     case TK_EQ: {
       if( pParse->db->file_format>=4 && sqliteExprType(pExpr)==SQLITE_SO_TEXT ){
-        op += 6;  /* Convert numeric opcodes to text opcodes */
+        /* Convert numeric comparison opcodes into text comparison opcodes.
+        ** This step depends on the fact that the text comparision opcodes are
+        ** always 6 greater than their corresponding numeric comparison
+        ** opcodes.
+        */
+        assert( OP_Eq+6 == OP_StrEq );
+        op += 6;
       }
       sqliteExprCode(pParse, pExpr->pLeft);
       sqliteExprCode(pParse, pExpr->pRight);
