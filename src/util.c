@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.85 2004/05/19 10:34:57 danielk1977 Exp $
+** $Id: util.c,v 1.86 2004/05/19 20:41:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -611,6 +611,38 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
 }
 
 /*
+** Return TRUE if zNum is a 64-bit signed integer and write
+** the value of the integer into *pNum.  If zNum is not an integer
+** or is an integer that is too large to be expressed with 64 bits,
+** then return false.  If n>0 and the integer is string is not
+** exactly n bytes long, return false.
+**
+** When this routine was originally written it dealt with only
+** 32-bit numbers.  At that time, it was much faster than the
+** atoi() library routine in RedHat 7.2.
+*/
+int sqlite3atoi64(const char *zNum, i64 *pNum){
+  i64 v = 0;
+  int neg;
+  int i, c;
+  if( *zNum=='-' ){
+    neg = 1;
+    zNum++;
+  }else if( *zNum=='+' ){
+    neg = 0;
+    zNum++;
+  }else{
+    neg = 0;
+  }
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
+    v = v*10 + c - '0';
+  }
+  *pNum = neg ? -v : v;
+  return c==0 && i>0 && 
+      (i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0));
+}
+
+/*
 ** The string zNum represents an integer.  There might be some other
 ** information following the integer too, but that part is ignored.
 ** If the integer that the prefix of zNum represents will fit in a
@@ -621,11 +653,53 @@ double sqlite3AtoF(const char *z, const char **pzEnd){
 ** 2147483648 will not fit in 32 bits.  So it seems safer to return
 ** false.
 */
-int sqlite3FitsIn32Bits(const char *zNum){
+static int sqlite3FitsIn32Bits(const char *zNum){
   int i, c;
   if( *zNum=='-' || *zNum=='+' ) zNum++;
   for(i=0; (c=zNum[i])>='0' && c<='9'; i++){}
   return i<10 || (i==10 && memcmp(zNum,"2147483647",10)<=0);
+}
+
+/*
+** If zNum represents an integer that will fit in 32-bits, then set
+** *pValue to that integer and return true.  Otherwise return false.
+*/
+int sqlite3GetInt32(const char *zNum, int *pValue){
+  if( sqlite3FitsIn32Bits(zNum) ){
+    *pValue = atoi(zNum);
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** The string zNum represents an integer.  There might be some other
+** information following the integer too, but that part is ignored.
+** If the integer that the prefix of zNum represents will fit in a
+** 64-bit signed integer, return TRUE.  Otherwise return FALSE.
+**
+** This routine returns FALSE for the string -9223372036854775808 even that
+** that number will, in theory fit in a 64-bit integer.  Positive
+** 9223373036854775808 will not fit in 64 bits.  So it seems safer to return
+** false.
+*/
+int sqlite3FitsIn64Bits(const char *zNum){
+  int i, c;
+  if( *zNum=='-' || *zNum=='+' ) zNum++;
+  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){}
+  return i<19 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0);
+}
+
+/*
+** If zNum represents an integer that will fit in 64-bits, then set
+** *pValue to that integer and return true.  Otherwise return false.
+*/
+int sqlite3GetInt64(const char *zNum, i64 *pValue){
+  if( sqlite3FitsIn64Bits(zNum) ){
+    sqlite3atoi64(zNum, pValue);
+    return 1;
+  }
+  return 0;
 }
 
 /* This comparison routine is what we use for comparison operations
@@ -1180,4 +1254,3 @@ int sqlite3VarintLen(u64 v){
   }while( v!=0 && i<9 );
   return i;
 }
-

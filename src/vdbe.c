@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.304 2004/05/19 14:56:57 drh Exp $
+** $Id: vdbe.c,v 1.305 2004/05/19 20:41:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -277,36 +277,6 @@ static void popStack(Mem **ppTos, int N){
 }
 
 /*
-** Return TRUE if zNum is a 32-bit signed integer and write
-** the value of the integer into *pNum.  If zNum is not an integer
-** or is an integer that is too large to be expressed with just 32
-** bits, then return false.
-**
-** Under Linux (RedHat 7.2) this routine is much faster than atoi()
-** for converting strings into integers.
-*/
-static int toInt(const char *zNum, i64 *pNum){
-  i64 v = 0;
-  int neg;
-  int i, c;
-  if( *zNum=='-' ){
-    neg = 1;
-    zNum++;
-  }else if( *zNum=='+' ){
-    neg = 0;
-    zNum++;
-  }else{
-    neg = 0;
-  }
-  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
-    v = v*10 + c - '0';
-  }
-  *pNum = neg ? -v : v;
-  return c==0 && i>0 && 
-      (i<10 || (i==19 && memcmp(zNum,"9223372036854775807",19)<=0));
-}
-
-/*
 ** Convert the given stack entity into a integer if it isn't one
 ** already.
 **
@@ -319,7 +289,7 @@ static void hardIntegerify(Mem *pStack){
     pStack->i = (int)pStack->r;
     Release(pStack);
   }else if( pStack->flags & MEM_Str ){
-    toInt(pStack->z, &pStack->i);
+    sqlite3atoi64(pStack->z, &pStack->i);
     Release(pStack);
   }else{
     pStack->i = 0;
@@ -792,6 +762,7 @@ case OP_Halt: {
 **
 ** The integer value P1 is pushed onto the stack.  If P3 is not zero
 ** then it is assumed to be a string representation of the same integer.
+** If P1 is zero and P3 is not zero, then the value is derived from P3.
 */
 case OP_Integer: {
   pTos++;
@@ -801,6 +772,9 @@ case OP_Integer: {
     pTos->z = pOp->p3;
     pTos->flags |= MEM_Str | MEM_Static;
     pTos->n = strlen(pOp->p3)+1;
+    if( pTos->i==0 ){
+      sqlite3GetInt64(pTos->z, &pTos->i);
+    }
   }
   break;
 }
@@ -1417,7 +1391,7 @@ case OP_MustBeInt: {
     pTos->i = i;
   }else if( pTos->flags & MEM_Str ){
     i64 v;
-    if( !toInt(pTos->z, &v) ){
+    if( !sqlite3atoi64(pTos->z, &v) ){
       double r;
       if( !sqlite3IsNumber(pTos->z, 0) ){
         goto mismatch;
@@ -3334,9 +3308,11 @@ case OP_SetCounts: {
 */
 case OP_KeyAsData: {
   int i = pOp->p1;
+  Cursor *pC;
   assert( i>=0 && i<p->nCursor );
-  p->apCsr[i]->keyAsData = pOp->p2;
-  sqlite3BtreeSetCompare(p->apCsr[i]->pCursor, sqlite3VdbeRowCompare, p->apCsr[i]);
+  pC = p->apCsr[i];
+  pC->keyAsData = pOp->p2;
+  sqlite3BtreeSetCompare(pC->pCursor, sqlite3VdbeRowCompare, pC);
   break;
 }
 
@@ -4035,7 +4011,7 @@ case OP_IntegrityCk: {
   if( aRoot==0 ) goto no_mem;
   for(j=0, i=sqliteHashFirst(&pSet->hash); i; i=sqliteHashNext(i), j++){
     i64 root64;
-    toInt((char*)sqliteHashKey(i), &root64);
+    sqlite3atoi64((char*)sqliteHashKey(i), &root64);
     aRoot[j] = root64;
   }
   aRoot[j] = 0;

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.13 2004/05/19 13:13:08 drh Exp $
+# $Id: quick.test,v 1.14 2004/05/19 20:41:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,7 +43,6 @@ lappend EXCLUDE version.test      ;# uses the btree_meta API (not updated)
 
 # Some tests fail in these file as a result of the partial manifest types
 # implementation.
-lappend EXCLUDE misc1.test 
 lappend EXCLUDE capi2.test 
 
 

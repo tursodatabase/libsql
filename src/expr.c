@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.122 2004/05/18 10:06:25 danielk1977 Exp $
+** $Id: expr.c,v 1.123 2004/05/19 20:41:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -442,8 +442,7 @@ int sqlite3ExprIsConstant(Expr *p){
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
   switch( p->op ){
     case TK_INTEGER: {
-      if( sqlite3FitsIn32Bits(p->token.z) ){
-        *pValue = atoi(p->token.z);
+      if( sqlite3GetInt32(p->token.z, pValue) ){
         return 1;
       }
       break;
@@ -453,8 +452,7 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
       int n = p->token.n;
       if( n>0 && z[0]=='-' ){ z++; n--; }
       while( n>0 && *z && isdigit(*z) ){ z++; n--; }
-      if( n==0 && sqlite3FitsIn32Bits(p->token.z) ){
-        *pValue = atoi(p->token.z);
+      if( n==0 && sqlite3GetInt32(p->token.z, pValue) ){
         return 1;
       }
       break;
@@ -1132,6 +1130,19 @@ int sqlite3ExprType(Expr *p){
 }
 
 /*
+** Generate an instruction that will put the integer describe by
+** text z[0..n-1] on the stack.
+*/
+static void codeInteger(Vdbe *v, const char *z, int n){
+  int i;
+  if( sqlite3GetInt32(z, &i) || (i=0, sqlite3FitsIn64Bits(z))!=0 ){
+    sqlite3VdbeOp3(v, OP_Integer, i, 0, z, n);
+  }else{
+    sqlite3VdbeOp3(v, OP_Real, 0, 0, z, n);
+  }
+}
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression and leave the result on the top of stack.
 */
@@ -1162,6 +1173,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_LSHIFT:   op = OP_ShiftLeft;  break;
     case TK_RSHIFT:   op = OP_ShiftRight; break;
     case TK_REM:      op = OP_Remainder;  break;
+    case TK_FLOAT:    op = OP_Real;       break;
+    case TK_STRING:   op = OP_String;     break;
     default: break;
   }
   switch( pExpr->op ){
@@ -1175,18 +1188,13 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       }
       break;
     }
-    case TK_STRING:
-    case TK_FLOAT:
     case TK_INTEGER: {
-      if( pExpr->op==TK_INTEGER && sqlite3FitsIn32Bits(pExpr->token.z) ){
-        sqlite3VdbeAddOp(v, OP_Integer, atoi(pExpr->token.z), 0);
-      }else if( pExpr->op==TK_FLOAT || pExpr->op==TK_INTEGER ){
-        sqlite3VdbeAddOp(v, OP_Real, 0, 0);
-      }else{
-        sqlite3VdbeAddOp(v, OP_String, 0, 0);
-      }
-      assert( pExpr->token.z );
-      sqlite3VdbeChangeP3(v, -1, pExpr->token.z, pExpr->token.n);
+      codeInteger(v, pExpr->token.z, pExpr->token.n);
+      break;
+    }
+    case TK_FLOAT:
+    case TK_STRING: {
+      sqlite3VdbeOp3(v, op, 0, 0, pExpr->token.z, pExpr->token.n);
       sqlite3VdbeDequoteP3(v, -1);
       break;
     }
@@ -1238,17 +1246,17 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_UMINUS: {
-      assert( pExpr->pLeft );
-      if( pExpr->pLeft->op==TK_FLOAT || pExpr->pLeft->op==TK_INTEGER ){
-        Token *p = &pExpr->pLeft->token;
+      Expr *pLeft = pExpr->pLeft;
+      assert( pLeft );
+      if( pLeft->op==TK_FLOAT || pLeft->op==TK_INTEGER ){
+        Token *p = &pLeft->token;
         char *z = sqliteMalloc( p->n + 2 );
         sprintf(z, "-%.*s", p->n, p->z);
-        if( pExpr->pLeft->op==TK_INTEGER && sqlite3FitsIn32Bits(z) ){
-          sqlite3VdbeAddOp(v, OP_Integer, atoi(z), 0);
+        if( pLeft->op==TK_FLOAT ){
+          sqlite3VdbeOp3(v, OP_Real, 0, 0, z, p->n+1);
         }else{
-          sqlite3VdbeAddOp(v, OP_Real, 0, 0);
+          codeInteger(v, z, p->n+1);
         }
-        sqlite3VdbeChangeP3(v, -1, z, p->n+1);
         sqliteFree(z);
         break;
       }
@@ -1289,7 +1297,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       /* FIX ME: The following is a temporary hack. */
       if( 0==sqlite3StrNICmp(zId, "classof", nId) ){
         assert( nExpr==1 );
-        sqlite3VdbeOp3(v, OP_Class, nExpr, 0, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Class, nExpr, 0);
       }else{
         sqlite3VdbeOp3(v, OP_Function, nExpr, 0, (char*)pDef, P3_POINTER);
       }
@@ -1800,6 +1808,3 @@ FuncDef *sqlite3FindFunction(
   }
   return p;
 }
-
-
-

@@ -1387,13 +1387,13 @@ int sqlite3MemCompare(Mem *pMem1, Mem *pMem2){
   ** if both values are integers.
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
+    i64 diff;
     if( !(pMem1->flags&(MEM_Int|MEM_Real)) ){
       return 1;
     }
     if( !(pMem2->flags&(MEM_Int|MEM_Real)) ){
       return -1;
     }
-
     if( combined_flags&MEM_Real ){
       if( pMem1->flags&MEM_Int ){
         pMem1->r = pMem1->i;
@@ -1405,8 +1405,8 @@ int sqlite3MemCompare(Mem *pMem1, Mem *pMem2){
       if( pMem1->r > pMem2->r ) return 1;
       return 0;
     }
-
-    return (pMem1->i - pMem2->i);
+    diff = pMem1->i - pMem2->i;
+    return diff<0 ? -1 : diff==0 ? 0 : +1;
   }
 
   rc = (pMem2->flags&MEM_Null) - (pMem1->flags&MEM_Null);
@@ -1667,12 +1667,6 @@ int sqlite3VdbeIdxKeyCompare(
   len = nCellKey-2;
   while( pCellKey[len] && --len );
 
-#if 0
-  if( ignorerowid ){
-    nKey--;
-    while( pKey[nKey] && --nKey );
-  }
-#endif
   *res = sqlite3VdbeKeyCompare(pC, len, pCellKey, nKey, pKey);
   
   if( freeCellKey ){

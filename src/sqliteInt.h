@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.237 2004/05/18 23:21:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.238 2004/05/19 20:41:03 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -478,6 +478,7 @@ struct Column {
 */
 struct CollSeq {
   char *zName;         /* Name of the collating sequence */
+  u8 reverseOrder;     /* Compare in reverse order.  Used by OP_Sort only */
   void *pUser;         /* First argument to xCmp() */
   int (*xCmp)(void*,int,const void*,int,const void*); /* Comparison function */
 };
@@ -1312,8 +1313,9 @@ int sqlite3FixExprList(DbFixer*, ExprList*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 double sqlite3AtoF(const char *z, const char **);
 char *sqlite3_snprintf(int,char*,const char*,...);
-int sqlite3FitsIn32Bits(const char *);
-
+int sqlite3GetInt32(const char *, int*);
+int sqlite3GetInt64(const char *, i64*);
+int sqlite3FitsIn64Bits(const char *);
 unsigned char *sqlite3utf16to8(const void *pData, int N);
 void *sqlite3utf8to16be(const unsigned char *pIn, int N);
 void *sqlite3utf8to16le(const unsigned char *pIn, int N);
@@ -1330,3 +1332,4 @@ char sqlite3CompareAffinity(Expr *pExpr, char aff2);
 char const *sqlite3AffinityString(char affinity);
 int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
+int sqlite3atoi64(const char*, i64*);
