@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.248 2004/01/07 19:24:48 drh Exp $
+** $Id: vdbe.c,v 1.249 2004/01/07 20:37:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1797,8 +1797,8 @@ case OP_IfNot: {
 /* Opcode: IsNull P1 P2 *
 **
 ** If any of the top abs(P1) values on the stack are NULL, then jump
-** to P2.  The stack is popped P1 times if P1>0.  If P1<0 then all values
-** are left unchanged on the stack.
+** to P2.  Pop the stack P1 times if P1>0.   If P1<0 leave the stack
+** unchanged.
 */
 case OP_IsNull: {
   int i, cnt;
@@ -1817,14 +1817,18 @@ case OP_IsNull: {
 
 /* Opcode: NotNull P1 P2 *
 **
-** Jump to P2 if the top value on the stack is not NULL.  Pop the
-** stack if P1 is greater than zero.  If P1 is less than or equal to
-** zero then leave the value on the stack.
+** Jump to P2 if the top P1 values on the stack are all not NULL.  Pop the
+** stack if P1 times if P1 is greater than zero.  If P1 is less than
+** zero then leave the stack unchanged.
 */
 case OP_NotNull: {
-  VERIFY( if( p->tos<0 ) goto not_enough_stack; )
-  if( (aStack[p->tos].flags & STK_Null)==0 ) pc = pOp->p2-1;
-  if( pOp->p1>0 ){ POPSTACK; }
+  int i, cnt;
+  cnt = pOp->p1;
+  if( cnt<0 ) cnt = -cnt;
+  VERIFY( if( p->tos+1-cnt<0 ) goto not_enough_stack; )
+  for(i=0; i<cnt && (aStack[p->tos-i].flags & STK_Null)==0; i++){}
+  if( i>=cnt ) pc = pOp->p2-1;
+  if( pOp->p1>0 ) sqliteVdbePopStack(p, cnt);
   break;
 }
 
@@ -3027,6 +3031,16 @@ case OP_KeyAsData: {
 ** If the cursor is not pointing to a valid row, a NULL is pushed
 ** onto the stack.
 */
+/* Opcode: RowKey P1 * *
+**
+** Push onto the stack the complete row key for cursor P1.
+** There is no interpretation of the key.  It is just copied
+** onto the stack exactly as it is found in the database file.
+**
+** If the cursor is not pointing to a valid row, a NULL is pushed
+** onto the stack.
+*/
+case OP_RowKey:
 case OP_RowData: {
   int i = pOp->p1;
   int tos = ++p->tos;
@@ -3043,7 +3057,7 @@ case OP_RowData: {
     if( pC->nullRow ){
       aStack[tos].flags = STK_Null;
       break;
-    }else if( pC->keyAsData ){
+    }else if( pC->keyAsData || pOp->opcode==OP_RowKey ){
       sqliteBtreeKeySize(pCrsr, &n);
     }else{
       sqliteBtreeDataSize(pCrsr, &n);
@@ -3058,7 +3072,7 @@ case OP_RowData: {
       aStack[tos].flags = STK_Str | STK_Dyn;
       zStack[tos] = z;
     }
-    if( pC->keyAsData ){
+    if( pC->keyAsData || pOp->opcode==OP_RowKey ){
       sqliteBtreeKey(pCrsr, 0, n, zStack[tos]);
     }else{
       sqliteBtreeData(pCrsr, 0, n, zStack[tos]);
@@ -3552,6 +3566,37 @@ case OP_IdxGE: {
     if( res>0 ){
       pc = pOp->p2 - 1 ;
     }
+  }
+  POPSTACK;
+  break;
+}
+
+/* Opcode: IdxIsNull P1 P2 *
+**
+** The top of the stack contains an index entry such as might be generated
+** by the MakeIdxKey opcode.  This routine looks at the first P1 fields of
+** that key.  If any of the first P1 fields are NULL, then a jump is made
+** to address P2.  Otherwise we fall straight through.
+**
+** The index entry is always popped from the stack.
+*/
+case OP_IdxIsNull: {
+  int i = pOp->p1;
+  int tos = p->tos;
+  int k, n;
+  const char *z;
+
+  assert( tos>=0 );
+  assert( aStack[tos].flags & STK_Str );
+  z = zStack[tos];
+  n = aStack[tos].n;
+  for(k=0; k<n && i>0; i--){
+    if( z[k]=='a' ){
+      pc = pOp->p2-1;
+      break;
+    }
+    while( k<n && z[k] ){ k++; }
+    k++;
   }
   POPSTACK;
   break;
