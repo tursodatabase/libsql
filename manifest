@@ -1,5 +1,5 @@
-C Prevent\san\sinfinite\sloop\swhen\sdeleting\sa\stable\sthat\shas\sa\sTEMP\strigger.\s(CVS\s984)
-D 2003-05-17T19:04:04
+C Additional\sattach\stesting.\s\sI\snow\sbelieve\sthat\sticket\s#317\swas\sfixed\nby\scheck-in\s(981).\s(CVS\s985)
+D 2003-05-17T19:23:52
 F Makefile.in 1ff85c27d4350c74118341024e8a4fb2a04a3a43
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -63,7 +63,7 @@ F src/vdbe.c 81b9868acd7e7d54ddd26af4ffe8442c312ad374
 F src/vdbe.h 985c24f312d10f9ef8f9a8b8ea62fcdf68e82f21
 F src/where.c 1e645d430cb4b347159c28c6085e9801160f2099
 F test/all.test 569a92a8ee88f5300c057cc4a8f50fbbc69a3242
-F test/attach.test ca8304e0f2236d1bf68e53ccc17cf3e8d76de0f1
+F test/attach.test 20b35533a5460e1a1ed518948233f870c31ba824
 F test/auth.test dee78be1f4f920bd6b15c4c947ce4d01bfe2826d
 F test/bigfile.test 1cd8256d4619c39bea48147d344f348823e78678
 F test/bigrow.test 8ab252dba108f12ad64e337b0f2ff31a807ac578
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P f542e5fc8896111e5165cc625607f95e4993bb16
-R fa932d99cd2f240b0dbcaa691638c769
+P c8c823b068916711857fa67db10fb479999b55c2
+R bc3167929b77207fc599db40b8510a4e
 U drh
-Z c96cb30883171b8cc67337276b3d728f
+Z 07eb60187b21aabbdcf71968529d48bd

@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.4 2003/05/17 17:35:13 drh Exp $
+# $Id: attach.test,v 1.5 2003/05/17 19:23:52 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -259,7 +259,7 @@ do_test attach-2.10 {
   } db2
 } {table t2 t2 table tx tx trigger r1 t2 index i2 t2}
 do_test attach-2.11 {
-  catchsql { pragma vdbe_trace=on;
+  catchsql { 
     SELECT * FROM t2 WHERE x>5;
   }
 } {1 {database schema has changed}}
@@ -291,6 +291,83 @@ do_test attach-2.16 {
     SELECT type, name, tbl_name FROM db2.sqlite_master;
   }
 } {table t2 t2 table tx tx trigger r1 t2 index i2 t2}
+
+do_test attach-3.1 {
+  db close
+  db2 close
+  sqlite db test.db
+  sqlite db2 test2.db
+  execsql {
+    SELECT * FROM t1
+  }
+} {1 2 3 4}
+do_test attach-3.2 {
+  catchsql {
+    SELECT * FROM t2
+  }
+} {1 {no such table: t2}}
+do_test attach-3.3 {
+  catchsql {
+    ATTACH DATABASE 'test2.db' AS db2;
+    SELECT * FROM t2
+  }
+} {0 {21 x 22 y}}
+
+# Even though main has a transaction, test2.db should not be locked.
+do_test attach-3.4 {
+  execsql BEGIN
+  catchsql {
+    SELECT * FROM t2;
+  } db2;
+} {0 {21 x 22 y}}
+
+# Reading from db2 should not lock test2.db
+do_test attach-3.5 {
+  execsql {SELECT * FROM t2}
+  catchsql {
+    SELECT * FROM t2;
+  } db2;
+} {0 {21 x 22 y}}
+
+# Making a change to db2 causes test2.ddb to become locked.
+do_test attach-3.6 {
+  execsql {
+    UPDATE t2 SET x=x+1 WHERE x=50;
+  }
+  catchsql {
+    SELECT * FROM t2;
+  } db2;
+} {1 {database is locked}}
+
+do_test attach-3.7 {
+  execsql ROLLBACK
+  execsql {SELECT * FROM t2} db2
+} {21 x 22 y}
+do_test attach-3.8 {
+  execsql BEGIN
+  execsql BEGIN db2
+  catchsql {SELECT * FROM t2}
+} {1 {database is locked}}
+do_test attach-3.9 {
+  catchsql {SELECT * FROM t2} db2
+} {0 {21 x 22 y}}
+do_test attach-3.10 {
+  execsql {SELECT * FROM t1}
+} {1 2 3 4}
+do_test attach-3.11 {
+  catchsql {UPDATE t1 SET a=a+1}
+} {0 {}}
+do_test attach-3.12 {
+  execsql {SELECT * FROM t1}
+} {2 2 4 4}
+do_test attach-3.13 {
+  catchsql {UPDATE t2 SET x=x+1 WHERE x=50}
+} {1 {database is locked}}
+do_test attach-3.14 {
+  # the "database is locked" error on the previous test should have
+  # caused a rollback.
+  execsql {SELECT * FROM t1}
+} {1 2 3 4}
 
 for {set i 2} {$i<=15} {incr i} {
   catch {db$i close}
