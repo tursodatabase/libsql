@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.366 2005/02/04 04:07:17 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.367 2005/02/05 12:48:48 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1013,7 +1013,8 @@ struct Select {
   Expr *pHaving;         /* The HAVING clause */
   ExprList *pOrderBy;    /* The ORDER BY clause */
   Select *pPrior;        /* Prior select in a compound select statement */
-  int nLimit, nOffset;   /* LIMIT and OFFSET values.  -1 means not used */
+  Expr *pLimit;          /* LIMIT expression. NULL means not used. */
+  Expr *pOffset;         /* OFFSET expression. NULL means not used. */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   IdList **ppOpenTemp;   /* OP_OpenTemp addresses used by multi-selects */
   Fetch *pFetch;         /* If this stmt is part of a FETCH command */
@@ -1378,7 +1379,7 @@ void sqlite3AddKeyType(Vdbe*, ExprList*);
 void sqlite3AddIdxKeyType(Vdbe*, Index*);
 int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*, char *aff);
 Select *sqlite3SelectNew(ExprList*,SrcList*,Expr*,ExprList*,Expr*,ExprList*,
-                        int,int,int);
+                        int,Expr*,Expr*);
 void sqlite3SelectDelete(Select*);
 void sqlite3SelectUnbind(Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);

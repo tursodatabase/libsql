@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.238 2005/02/04 04:07:17 danielk1977 Exp $
+** $Id: select.c,v 1.239 2005/02/05 12:48:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -29,11 +29,12 @@ Select *sqlite3SelectNew(
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
   int isDistinct,       /* true if the DISTINCT keyword is present */
-  int nLimit,           /* LIMIT value.  -1 means not used */
-  int nOffset           /* OFFSET value.  0 means no offset */
+  Expr *pLimit,         /* LIMIT value.  NULL means not used */
+  Expr *pOffset         /* OFFSET value.  NULL means no offset */
 ){
   Select *pNew;
   pNew = sqliteMalloc( sizeof(*pNew) );
+  assert( !pOffset || pLimit );   /* Can't have OFFSET without LIMIT. */
   if( pNew==0 ){
     sqlite3ExprListDelete(pEList);
     sqlite3SrcListDelete(pSrc);
@@ -41,6 +42,8 @@ Select *sqlite3SelectNew(
     sqlite3ExprListDelete(pGroupBy);
     sqlite3ExprDelete(pHaving);
     sqlite3ExprListDelete(pOrderBy);
+    sqlite3ExprDelete(pLimit);
+    sqlite3ExprDelete(pOffset);
   }else{
     if( pEList==0 ){
       pEList = sqlite3ExprListAppend(0, sqlite3Expr(TK_ALL,0,0,0), 0);
@@ -53,8 +56,8 @@ Select *sqlite3SelectNew(
     pNew->pOrderBy = pOrderBy;
     pNew->isDistinct = isDistinct;
     pNew->op = TK_SELECT;
-    pNew->nLimit = nLimit;
-    pNew->nOffset = nOffset;
+    pNew->pLimit = pLimit;
+    pNew->pOffset = pOffset;
     pNew->iLimit = -1;
     pNew->iOffset = -1;
   }
@@ -308,20 +311,10 @@ void sqlite3SelectDelete(Select *p){
   sqlite3ExprDelete(p->pHaving);
   sqlite3ExprListDelete(p->pOrderBy);
   sqlite3SelectDelete(p->pPrior);
+  sqlite3ExprDelete(p->pLimit);
+  sqlite3ExprDelete(p->pOffset);
   sqliteFree(p);
 }
-
-/*
-** Delete the aggregate information from the parse structure.
-*/
-#if 0
-static void sqliteAggregateInfoReset(Parse *pParse){
-  sqliteFree(pParse->aAgg);
-  pParse->aAgg = 0;
-  pParse->nAgg = 0;
-  pParse->useAgg = 0;
-}
-#endif
 
 /*
 ** Insert code into "v" that will push the record on the top of the
@@ -347,9 +340,10 @@ static void codeLimiter(
   int nPop          /* Number of times to pop stack when jumping */
 ){
   if( p->iOffset>=0 ){
-    int addr = sqlite3VdbeCurrentAddr(v) + 2;
+    int addr = sqlite3VdbeCurrentAddr(v) + 3;
     if( nPop>0 ) addr++;
-    sqlite3VdbeAddOp(v, OP_MemIncr, p->iOffset, addr);
+    sqlite3VdbeAddOp(v, OP_MemIncr, p->iOffset, 0);
+    sqlite3VdbeAddOp(v, OP_IfMemPos, p->iOffset, addr);
     if( nPop>0 ){
       sqlite3VdbeAddOp(v, OP_Pop, nPop, 0);
     }
@@ -1274,12 +1268,12 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 
 /*
 ** Compute the iLimit and iOffset fields of the SELECT based on the
-** nLimit and nOffset fields.  nLimit and nOffset hold the integers
+** pLimit and pOffset expressions.  nLimit and nOffset hold the expressions
 ** that appear in the original SQL statement after the LIMIT and OFFSET
-** keywords.  Or that hold -1 and 0 if those keywords are omitted.
-** iLimit and iOffset are the integer memory register numbers for
-** counters used to compute the limit and offset.  If there is no
-** limit and/or offset, then iLimit and iOffset are negative.
+** keywords.  Or NULL if those keywords are omitted. iLimit and iOffset 
+** are the integer memory register numbers for counters used to compute 
+** the limit and offset.  If there is no limit and/or offset, then 
+** iLimit and iOffset are negative.
 **
 ** This routine changes the values if iLimit and iOffset only if
 ** a limit or offset is defined by nLimit and nOffset.  iLimit and
@@ -1292,28 +1286,29 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 */
 static void computeLimitRegisters(Parse *pParse, Select *p){
   /* 
-  ** If the comparison is p->nLimit>0 then "LIMIT 0" shows
-  ** all rows.  It is the same as no limit. If the comparision is
-  ** p->nLimit>=0 then "LIMIT 0" show no rows at all.
   ** "LIMIT -1" always shows all rows.  There is some
   ** contraversy about what the correct behavior should be.
   ** The current implementation interprets "LIMIT 0" to mean
   ** no rows.
   */
-  if( p->nLimit>=0 ){
+  if( p->pLimit ){
     int iMem = pParse->nMem++;
     Vdbe *v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3VdbeAddOp(v, OP_Integer, -p->nLimit, 0);
+    sqlite3ExprCode(pParse, p->pLimit);
+    sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
     VdbeComment((v, "# LIMIT counter"));
     p->iLimit = iMem;
   }
-  if( p->nOffset>0 ){
+  if( p->pOffset ){
     int iMem = pParse->nMem++;
     Vdbe *v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3VdbeAddOp(v, OP_Integer, -p->nOffset, 0);
+    sqlite3ExprCode(pParse, p->pOffset);
+    sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Negative, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iMem, 1);
     VdbeComment((v, "# OFFSET counter"));
     p->iOffset = iMem;
@@ -1463,7 +1458,7 @@ static int multiSelect(
     rc = 1;
     goto multi_select_end;
   }
-  if( pPrior->nLimit>=0 || pPrior->nOffset>0 ){
+  if( pPrior->pLimit ){
     sqlite3ErrorMsg(pParse,"LIMIT clause should come after %s not before",
       selectOpName(p->op));
     rc = 1;
@@ -1504,8 +1499,9 @@ static int multiSelect(
   switch( p->op ){
     case TK_ALL: {
       if( p->pOrderBy==0 ){
-        pPrior->nLimit = p->nLimit;
-        pPrior->nOffset = p->nOffset;
+        assert( !pPrior->pLimit );
+        pPrior->pLimit = p->pLimit;
+        pPrior->pOffset = p->pOffset;
         rc = sqlite3Select(pParse, pPrior, eDest, iParm, 0, 0, 0, aff);
         if( rc ){
           goto multi_select_end;
@@ -1513,8 +1509,8 @@ static int multiSelect(
         p->pPrior = 0;
         p->iLimit = pPrior->iLimit;
         p->iOffset = pPrior->iOffset;
-        p->nLimit = -1;
-        p->nOffset = 0;
+        p->pLimit = 0;
+        p->pOffset = 0;
         rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff);
         p->pPrior = pPrior;
         if( rc ){
@@ -1529,12 +1525,12 @@ static int multiSelect(
       int unionTab;    /* Cursor number of the temporary table holding result */
       int op = 0;      /* One of the SRT_ operations to apply to self */
       int priorOp;     /* The SRT_ operation to apply to prior selects */
-      int nLimit, nOffset; /* Saved values of p->nLimit and p->nOffset */
-      ExprList *pOrderBy;  /* The ORDER BY clause for the right SELECT */
+      Expr *pLimit, *pOffset; /* Saved values of p->nLimit and p->nOffset */
+      ExprList *pOrderBy;     /* The ORDER BY clause for the right SELECT */
       int addr;
 
       priorOp = p->op==TK_ALL ? SRT_Table : SRT_Union;
-      if( eDest==priorOp && p->pOrderBy==0 && p->nLimit<0 && p->nOffset==0 ){
+      if( eDest==priorOp && p->pOrderBy==0 && !p->pLimit && !p->pOffset ){
         /* We can reuse a temporary table generated by a SELECT to our
         ** right.
         */
@@ -1580,15 +1576,16 @@ static int multiSelect(
       p->pPrior = 0;
       pOrderBy = p->pOrderBy;
       p->pOrderBy = 0;
-      nLimit = p->nLimit;
-      p->nLimit = -1;
-      nOffset = p->nOffset;
-      p->nOffset = 0;
+      pLimit = p->pLimit;
+      p->pLimit = 0;
+      pOffset = p->pOffset;
+      p->pOffset = 0;
       rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0, aff);
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
-      p->nLimit = nLimit;
-      p->nOffset = nOffset;
+      sqlite3ExprDelete(p->pLimit);
+      p->pLimit = pLimit;
+      p->pOffset = pOffset;
       p->iLimit = -1;
       p->iOffset = -1;
       if( rc ){
@@ -1627,7 +1624,7 @@ static int multiSelect(
     case TK_INTERSECT: {
       int tab1, tab2;
       int iCont, iBreak, iStart;
-      int nLimit, nOffset;
+      Expr *pLimit, *pOffset;
       int addr;
 
       /* INTERSECT is different from the others since it requires
@@ -1669,14 +1666,15 @@ static int multiSelect(
       assert( nAddr<sizeof(aAddr)/sizeof(aAddr[0]) );
       aAddr[nAddr++] = sqlite3VdbeAddOp(v, OP_SetNumColumns, tab2, 0);
       p->pPrior = 0;
-      nLimit = p->nLimit;
-      p->nLimit = -1;
-      nOffset = p->nOffset;
-      p->nOffset = 0;
+      pLimit = p->pLimit;
+      p->pLimit = 0;
+      pOffset = p->pOffset;
+      p->pOffset = 0;
       rc = sqlite3Select(pParse, p, SRT_Union, tab2, 0, 0, 0, aff);
       p->pPrior = pPrior;
-      p->nLimit = nLimit;
-      p->nOffset = nOffset;
+      sqlite3ExprDelete(p->pLimit);
+      p->pLimit = pLimit;
+      p->pOffset = pOffset;
       if( rc ){
         goto multi_select_end;
       }
@@ -1959,11 +1957,13 @@ static int flattenSubquery(
   if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
+  if( (pSub->pLimit && p->pLimit) || pSub->pOffset || 
+      (pSub->pLimit && isAgg) ) return 0;
   if( pSubSrc->nSrc==0 ) return 0;
-  if( (pSub->isDistinct || pSub->nLimit>=0) &&  (pSrc->nSrc>1 || isAgg) ){
+  if( pSub->isDistinct && (pSrc->nSrc>1 || isAgg) ){
      return 0;
   }
-  if( (p->isDistinct || p->nLimit>=0) && subqueryIsAgg ) return 0;
+  if( p->isDistinct && subqueryIsAgg ) return 0;
   if( p->pOrderBy && pSub->pOrderBy ) return 0;
 
   /* Restriction 3:  If the subquery is a join, make sure the subquery is 
@@ -2095,17 +2095,10 @@ static int flattenSubquery(
   */
   p->isDistinct = p->isDistinct || pSub->isDistinct;
 
-  /* Transfer the limit expression from the subquery to the outer
-  ** query.
-  */
-  if( pSub->nLimit>=0 ){
-    if( p->nLimit<0 ){
-      p->nLimit = pSub->nLimit;
-    }else if( p->nLimit+p->nOffset > pSub->nLimit+pSub->nOffset ){
-      p->nLimit = pSub->nLimit + pSub->nOffset - p->nOffset;
-    }
+  if( pSub->pLimit ){
+    p->pLimit = pSub->pLimit;
+    pSub->pLimit = 0;
   }
-  p->nOffset += pSub->nOffset;
 
   /* Finially, delete what is left of the subquery and return
   ** success.
@@ -2330,15 +2323,28 @@ int sqlite3SelectResolve(
     return SQLITE_ERROR;
   }
 
-  /* Set up the local name-context to pass to ExprResolveNames().  */
-  sNC.pNext = pOuterNC;
+  /* Resolve the expressions in the LIMIT and OFFSET clauses. These
+  ** are not allowed to refer to any names, so pass an empty NameContext.
+  */
   sNC.pParse = pParse;
-  sNC.pSrcList = p->pSrc;
-  sNC.allowAgg = 1;
   sNC.hasAgg = 0;
   sNC.nErr = 0;
   sNC.nRef = 0;
   sNC.pEList = 0;
+  sNC.allowAgg = 0;
+  sNC.pSrcList = 0;
+  sNC.pNext = 0;
+  if( sqlite3ExprResolveNames(&sNC, p->pLimit) ||
+      sqlite3ExprResolveNames(&sNC, p->pOffset) ){
+    return SQLITE_ERROR;
+  }
+
+  /* Set up the local name-context to pass to ExprResolveNames() to
+  ** resolve the expression-list.
+  */
+  sNC.allowAgg = 1;
+  sNC.pSrcList = p->pSrc;
+  sNC.pNext = pOuterNC;
 
   /* NameContext.nDepth stores the depth of recursion for this query. For
   ** an outer query (e.g. SELECT * FROM sqlite_master) this is 1. For

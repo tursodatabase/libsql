@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.452 2005/02/05 06:49:54 danielk1977 Exp $
+** $Id: vdbe.c,v 1.453 2005/02/05 12:48:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4203,7 +4203,7 @@ case OP_MemMax: {
 /* Opcode: MemIncr P1 P2 *
 **
 ** Increment the integer valued memory cell P1 by 1.  If P2 is not zero
-** and the result after the increment is greater than zero, then jump
+** and the result after the increment is exactly 1, then jump
 ** to P2.
 **
 ** This instruction throws an error if the memory cell is not initially
@@ -4216,7 +4216,24 @@ case OP_MemIncr: {
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   pMem->i++;
-  if( pOp->p2>0 && pMem->i>0 ){
+  if( pOp->p2>0 && pMem->i==1 ){
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: IfMemPos P1 P2 *
+**
+** If the value of memory cell P1 is 1 or greater, jump to P2. This
+** opcode assumes that memory cell P1 holds an integer value.
+*/
+case OP_IfMemPos: {
+  int i = pOp->p1;
+  Mem *pMem;
+  assert( i>=0 && i<p->nMem );
+  pMem = &p->aMem[i];
+  assert( pMem->flags==MEM_Int );
+  if( pMem->i>0 ){
      pc = pOp->p2 - 1;
   }
   break;

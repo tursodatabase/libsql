@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.6 2005/02/05 06:49:55 danielk1977 Exp $
+# $Id: corrupt.test,v 1.7 2005/02/05 12:48:49 danielk1977 Exp $
 
 catch {file delete -force test.db}
 catch {file delete -force test.db-journal}
@@ -121,10 +121,8 @@ do_test corrupt-3.1 {
   db close
   copy_file test.bu test.db
   sqlite3 db test.db
-  execsql {
-    SELECT name, rootpage FROM sqlite_master
-  }
-} {t1 2 t1i1 85 t2 177}
+  list
+} {}
 do_test corrupt-3.2 {
   set t1_r [execsql {SELECT rootpage FROM sqlite_master WHERE name = 't1i1'}]
   set t1i1_r [execsql {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
@@ -135,9 +133,8 @@ do_test corrupt-3.2 {
     UPDATE sqlite_master SET rootpage = $t1i1_r WHERE name = 't1i1';
     PRAGMA writable_schema = 0;
     PRAGMA schema_version = $cookie;
-    SELECT name, rootpage FROM sqlite_master;
   "
-} {t1 85 t1i1 2 t2 177}
+} {}
 
 # This one tests the case caught by code in checkin [2313].
 do_test corrupt-3.3 {
