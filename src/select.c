@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.193 2004/06/19 14:49:12 drh Exp $
+** $Id: select.c,v 1.194 2004/06/21 07:36:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -630,30 +630,38 @@ static void generateSortTail(
 ** The declaration type for a ROWID field is INTEGER.
 */
 static const char *columnType(Parse *pParse, SrcList *pTabList, Expr *pExpr){
-  char const *zType = 0;
+  char const *zType;
   int j;
-  if( pExpr==0 ) return 0;
-  if( pExpr->op==TK_COLUMN && pTabList ){
-    Table *pTab;
-    int iCol = pExpr->iColumn;
-    for(j=0; j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable; j++){}
-    assert( j<pTabList->nSrc );
-    pTab = pTabList->a[j].pTab;
-    if( iCol<0 ) iCol = pTab->iPKey;
-    assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
-    if( iCol<0 ){
-      zType = "INTEGER";
-    }else{
-      zType = pTab->aCol[iCol].zType;
-      if( !zType ) zType = "";
+  if( pExpr==0 || pTabList==0 ) return 0;
+
+  switch( pExpr->op ){
+    case TK_COLUMN: {
+      Table *pTab;
+      int iCol = pExpr->iColumn;
+      for(j=0; j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable; j++){}
+      assert( j<pTabList->nSrc );
+      pTab = pTabList->a[j].pTab;
+      if( iCol<0 ) iCol = pTab->iPKey;
+      assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
+      if( iCol<0 ){
+        zType = "INTEGER";
+      }else{
+        zType = pTab->aCol[iCol].zType;
+      }
+      break;
     }
-  }else{
-    switch( sqlite3ExprType(pExpr) ){
-      case SQLITE_AFF_TEXT:     zType = "TEXT";    break;
-      case SQLITE_AFF_NUMERIC:  zType = "NUMERIC"; break;
-      default:                  zType = "ANY";     break;
+    case TK_AS:
+      zType = columnType(pParse, pTabList, pExpr->pLeft); 
+      break;
+    case TK_SELECT: {
+      Select *pS = pExpr->pSelect;
+      zType = columnType(pParse, pS->pSrc, pS->pEList->a[0].pExpr); 
+      break;
     }
+    default:
+      zType = 0;
   }
+  
   return zType;
 }
 
@@ -671,7 +679,7 @@ static void generateColumnTypes(
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
     const char *zType = columnType(pParse, pTabList, p);
-    if( p==0 ) continue;
+    if( zType==0 ) continue;
     /* The vdbe must make it's own copy of the column-type, in case the 
     ** schema is reset before this virtual machine is deleted.
     */

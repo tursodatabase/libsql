@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.27 2004/06/19 00:16:31 drh Exp $
+# $Id: table.test,v 1.28 2004/06/21 07:36:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,11 +337,15 @@ do_test table-8.3 {
     SELECT * FROM [t4'abc];
   }
 } {cnt 1 max(b+c) 5}
+
+# Update for v3: The declaration type of anything except a column is now a
+# NULL pointer, so the created table has no column types. (Changed result
+# from {{CREATE TABLE 't4''abc'(cnt NUMERIC,'max(b+c)' NUMERIC)}}).
 do_test table-8.3.1 {
   execsql {
     SELECT sql FROM sqlite_master WHERE name='t4''abc'
   }
-} {{CREATE TABLE 't4''abc'(cnt NUMERIC,'max(b+c)' NUMERIC)}}
+} {{CREATE TABLE 't4''abc'(cnt,'max(b+c)')}}
 do_test table-8.4 {
   execsql2 {
     CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3'xyz];
@@ -502,4 +506,19 @@ do_test table-11.2 {
   }
 } {null null null null}
 
+# Test that when creating a table using CREATE TABLE AS, column types are
+# assigned correctly for (SELECT ...) and 'x AS y' expressions.
+do_test table-12.1 {
+  execsql {
+    CREATE TABLE t8 AS SELECT b, h, a as i, (SELECT f FROM t7) as j FROM t7;
+  }
+} {}
+do_test table-12.2 {
+  execsql {
+    SELECT sql FROM sqlite_master WHERE tbl_name = 't8'
+  }
+} {{CREATE TABLE t8(b number(5,10),h,i integer,j BLOB)}}
+
 finish_test
+
+
