@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.50 2002/02/28 01:46:12 drh Exp $
+** $Id: expr.c,v 1.51 2002/02/28 03:04:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -652,7 +652,8 @@ int sqliteExprCheck(Parse *pParse, Expr *pExpr, int allowAgg, int *pIsAgg){
       int i;
       FuncDef *pDef;
 
-      pDef = sqliteFindFunction(pParse->db, pExpr->token.z, pExpr->token.n,n,0);
+      pDef = sqliteFindFunction(pParse->db,
+         pExpr->token.z, pExpr->token.n, n, 0);
       if( pDef==0 ){
         pDef = sqliteFindFunction(pParse->db,
            pExpr->token.z, pExpr->token.n, -1, 0);
@@ -854,14 +855,15 @@ void sqliteExprCode(Parse *pParse, Expr *pExpr){
     case TK_FUNCTION: {
       int i;
       ExprList *pList = pExpr->pList;
+      int nExpr = pList ? pList->nExpr : 0;
       FuncDef *pDef;
       pDef = sqliteFindFunction(pParse->db,
-                      pExpr->token.z, pExpr->token.n, pList->nExpr, 0);
+                      pExpr->token.z, pExpr->token.n, nExpr, 0);
       assert( pDef!=0 );
-      for(i=0; i<pList->nExpr; i++){
+      for(i=0; i<nExpr; i++){
         sqliteExprCode(pParse, pList->a[i].pExpr);
       }
-      sqliteVdbeAddOp(v, OP_Function, pList->nExpr, 0);
+      sqliteVdbeAddOp(v, OP_Function, nExpr, 0);
       sqliteVdbeChangeP3(v, -1, (char*)pDef, P3_POINTER);
       break;
     }
@@ -1246,8 +1248,7 @@ FuncDef *sqliteFindFunction(
     assert( createFlag==0 );
     return pMaybe;
   }
-  if( p==0 && createFlag ){
-    p = sqliteMalloc( sizeof(*p) );
+  if( p==0 && createFlag && (p = sqliteMalloc(sizeof(*p)))!=0 ){
     p->nArg = nArg;
     p->pNext = pFirst;
     sqliteHashInsert(&db->aFunc, zName, nName, (void*)p);

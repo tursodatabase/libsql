@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.8 2002/02/28 01:46:13 drh Exp $
+** $Id: func.c,v 1.9 2002/02/28 03:04:48 drh Exp $
 */
 #include <ctype.h>
 #include <math.h>
@@ -31,6 +31,7 @@ static void minFunc(sqlite_func *context, int argc, const char **argv){
   const char *zBest; 
   int i;
 
+  if( argc==0 ) return;
   zBest = argv[0];
   for(i=1; i<argc; i++){
     if( sqliteCompare(argv[i], zBest)<0 ){
@@ -43,6 +44,7 @@ static void maxFunc(sqlite_func *context, int argc, const char **argv){
   const char *zBest; 
   int i;
 
+  if( argc==0 ) return;
   zBest = argv[0];
   for(i=1; i<argc; i++){
     if( sqliteCompare(argv[i], zBest)>0 ){
@@ -105,7 +107,7 @@ static void substrFunc(sqlite_func *context, int argc, const char **argv){
   len = strlen(z);
 #endif
   if( p1<0 ){
-    p1 = len-p1;
+    p1 += len;
   }else if( p1>0 ){
     p1--;
   }
@@ -201,9 +203,7 @@ static void sumStep(sqlite_func *context, int argc, const char **argv){
 static void sumFinalize(sqlite_func *context){
   SumCtx *p;
   p = sqlite_aggregate_context(context, sizeof(*p));
-  if( p ){
-    sqlite_set_result_double(context, p->sum);
-  }
+  sqlite_set_result_double(context, p ? p->sum : 0.0);
 }
 static void avgFinalize(sqlite_func *context){
   SumCtx *p;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.7 2001/12/22 14:49:26 drh Exp $
+# $Id: func.test,v 1.8 2002/02/28 03:04:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,11 +34,11 @@ do_test func-1.0 {
 do_test func-1.1 {
   set r [catch {execsql {SELECT length(*) FROM tbl1 ORDER BY t1}} msg]
   lappend r $msg
-} {1 {too few arguments to function length()}}
+} {1 {wrong number of arguments to function length()}}
 do_test func-1.2 {
   set r [catch {execsql {SELECT length(t1,5) FROM tbl1 ORDER BY t1}} msg]
   lappend r $msg
-} {1 {too many arguments to function length()}}
+} {1 {wrong number of arguments to function length()}}
 do_test func-1.3 {
   execsql {SELECT length(t1), count(*) FROM tbl1 GROUP BY length(t1)
            ORDER BY length(t1)}
@@ -131,20 +131,20 @@ do_test func-4.1 {
     INSERT INTO t1 VALUES(3,-2,-5);
   }
   catchsql {SELECT abs(a,b) FROM t1}
-} {1 {too many arguments to function abs()}}
+} {1 {wrong number of arguments to function abs()}}
 do_test func-4.2 {
   catchsql {SELECT abs() FROM t1}
-} {1 {too few arguments to function abs()}}
+} {1 {wrong number of arguments to function abs()}}
 do_test func-4.3 {
   catchsql {SELECT abs(b) FROM t1 ORDER BY a}
 } {0 {2 1.2345678901234 2}}
 do_test func-4.4 {
   catchsql {SELECT abs(c) FROM t1 ORDER BY a}
-} {0 {3 12345.6789 5}}
+} {0 {3 12345.67890 5}}
 
 do_test func-4.5 {
   catchsql {SELECT round(a,b,c) FROM t1}
-} {1 {too many arguments to function round()}}
+} {1 {wrong number of arguments to function round()}}
 do_test func-4.6 {
   catchsql {SELECT round(b,2) FROM t1 ORDER BY b}
 } {0 {-2.00 1.23 2.00}}
@@ -162,6 +162,6 @@ do_test func-4.10 {
 } {0 {x3.0y x-12345.68y x-5.000y}}
 do_test func-4.11 {
   catchsql {SELECT round() FROM t1 ORDER BY a}
-} {1 {too few arguments to function round()}}
+} {1 {wrong number of arguments to function round()}}
 
 finish_test
