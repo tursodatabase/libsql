@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.87 2002/07/18 00:34:12 drh Exp $
+** $Id: main.c,v 1.88 2002/07/18 01:27:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -102,13 +102,21 @@ static int
 upgrade_3_callback(void *pDb, int argc, char **argv, char **NotUsed){
   sqlite *db = (sqlite*)pDb;
   int rc;
+  Table *pTab;
+  Trigger *pTrig;
 
+  pTab = sqliteFindTable(db, argv[0]);
+  if( pTab ){
+    pTrig = pTab->pTrigger;
+    pTab->pTrigger = 0;  /* Disable all triggers before rebuilding the table */
+  }
   rc = sqlite_exec_printf(db,
     "CREATE TEMP TABLE sqlite_x AS SELECT * FROM '%q'; "
     "DELETE FROM '%q'; "
     "INSERT INTO '%q' SELECT * FROM sqlite_x; "
     "DROP TABLE sqlite_x;",
     0, 0, 0, argv[0], argv[0], argv[0]);
+  if( pTab ) pTab->pTrigger = pTrig;  /* Re-enable triggers */
   return rc!=SQLITE_OK;
 }
 
@@ -241,7 +249,7 @@ int sqliteInit(sqlite *db, char **pzErrMsg){
   }else if( db->file_format>3 ){
     sqliteBtreeCloseCursor(curMain);
     sqliteSetString(pzErrMsg, "unsupported file format", 0);
-    rc = SQLITE_ERROR;
+    return SQLITE_ERROR;
   }
 
   /* Read the schema information out of the schema tables
