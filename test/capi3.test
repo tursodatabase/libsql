@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.5 2004/05/26 13:27:00 danielk1977 Exp $
+# $Id: capi3.test,v 1.6 2004/05/27 01:04:07 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -162,16 +162,21 @@ do_test capi3-4.4 {
 #            columns (before the statement is executed).
 # capi3-5.1: Check we can retrieve column names (before statement execution)
 # capi3-5.2: Check we can retrieve column names in UTF-16
-# capi3-5.3: Step the statement.
-# capi3-5.4: Check the types of the values.
-# capi3-5.5: Check the values can be retrieved as integers.
-# capi3-5.6: Check the values can be retrieved as UTF-8 text.
-# capi3-5.7: Check the values can be retrieved as UTF-16 text.
-# capi3-5.8: Check that the types of the values have not been altered by
-#            retrieving the values as text.
 #
-# Test cases capi3-5.9 - capi3-5.14 are a repeat of 3-8, with a different
-# row of data.
+# capi3-5.1.3: Step the statement.
+# capi3-5.1.4: Check the types of the values.
+# capi3-5.1.5: Check the values can be retrieved as integers.
+# capi3-5.1.6: Check the values can be retrieved as UTF-8 text.
+# capi3-5.1.7: Check the values can be retrieved as floats.
+# capi3-5.1.8: Check the values can be retrieved as UTF-16 text.
+# capi3-5.1.9: Check the values can be retrieved as integers.
+# capi3-5.1.10: Check the values can be retrieved as floats.
+# capi3-5.1.11: Check the values can still be retrieved as UTF-8 text.
+# capi3-5.1.12: Check that the types of the values have not been altered by
+#               retrieving the values as text.
+#
+# Test cases capi3-5.2.3 - capi3-5.2.12 are a repeat of 1.3-1.12, with a
+# different row of data.
 #
 
 do_test capi3-5.0 {
@@ -198,37 +203,68 @@ do_test capi3-5.2 {
   set cnamelist
 } {a b c}
 
-do_test capi3-5.3 {
+do_test capi3-5.1.3 {
   sqlite3_step $STMT
 } SQLITE_ROW
 
-do_test capi3-5.4 {
+# types
+do_test capi3-5.1.4 {
   set types [list]
   foreach i {0 1 2} {lappend types [sqlite3_column_type $STMT $i]}
   set types
 } {INTEGER INTEGER TEXT}
 
-if 0 {
-do_test capi3-5.5 {
+# Integers
+do_test capi3-5.1.5 {
   set ints [list]
   foreach i {0 1 2} {lappend ints [sqlite3_column_int $STMT $i]}
   set ints
 } {1 2 3}
 
-do_test capi3-5.6 {
+# UTF-8
+do_test capi3-5.1.6 {
   set utf8 [list]
   foreach i {0 1 2} {lappend utf8 [sqlite3_column_data $STMT $i]}
   set utf8
 } {1 2 3}
-}
 
-do_test capi3-5.7 {
+# Floats
+do_test capi3-5.1.7 {
+  set utf8 [list]
+  foreach i {0 1 2} {lappend utf8 [sqlite3_column_double $STMT $i]}
+  set utf8
+} {1 2 3}
+
+# UTF-16
+do_test capi3-5.1.8 {
   set utf8 [list]
   foreach i {0 1 2} {lappend utf8 [utf8 [sqlite3_column_data16 $STMT $i]]}
   set utf8
 } {1 2 3}
 
-do_test capi3-5.8 {
+# Integers
+do_test capi3-5.1.9 {
+  set ints [list]
+  foreach i {0 1 2} {lappend ints [sqlite3_column_int $STMT $i]}
+  set ints
+} {1 2 3}
+
+# Floats
+do_test capi3-5.1.10 {
+  set utf8 [list]
+  foreach i {0 1 2} {lappend utf8 [sqlite3_column_double $STMT $i]}
+  set utf8
+} {1 2 3}
+
+# UTF-8
+do_test capi3-5.1.11 {
+  set utf8 [list]
+  foreach i {0 1 2} {lappend utf8 [sqlite3_column_data $STMT $i]}
+  set utf8
+} {1 2 3}
+
+# Types
+do_test capi3-5.1.12 {
   set types [list]
   foreach i {0 1 2} {lappend types [sqlite3_column_type $STMT $i]}
   set types

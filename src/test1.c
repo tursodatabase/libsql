@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.59 2004/05/26 23:25:31 drh Exp $
+** $Id: test1.c,v 1.60 2004/05/27 01:04:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1316,133 +1316,6 @@ static int test_step(
 }
 
 /*
-** Usage: sqlite3_column_text STMT column
-**
-** Advance the statement to the next row.
-*/
-static int test_column_text(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3_stmt *pStmt;
-  int col;
-  Tcl_Obj *pRet;
-
-  if( objc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
-    return TCL_ERROR;
-  }
-
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-
-  if( SQLITE3_BLOB==sqlite3_column_type(pStmt, col) ){
-    int len = sqlite3_column_bytes(pStmt, col);
-    pRet = Tcl_NewByteArrayObj(sqlite3_column_text(pStmt, col), len);
-  }else{
-    pRet = Tcl_NewStringObj(sqlite3_column_text(pStmt, col), -1);
-  }
-  Tcl_SetObjResult(interp, pRet);
-
-  return TCL_OK;
-}
-
-/*
-** Usage: sqlite3_column_text16 STMT column
-**
-** Advance the statement to the next row.
-*/
-static int test_column_text16(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3_stmt *pStmt;
-  int col;
-  Tcl_Obj *pRet;
-  int len;
-
-  if( objc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
-    return TCL_ERROR;
-  }
-
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-
-  len = sqlite3_column_bytes16(pStmt, col);
-  pRet = Tcl_NewByteArrayObj(sqlite3_column_text16(pStmt, col), len);
-  Tcl_SetObjResult(interp, pRet);
-
-  return TCL_OK;
-}
-
-/*
-** Usage: sqlite3_column_name STMT column
-**
-** Advance the statement to the next row.
-*/
-static int test_column_name(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3_stmt *pStmt;
-  int col;
-
-  if( objc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
-    return TCL_ERROR;
-  }
-
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-
-  Tcl_SetResult(interp, (char *)sqlite3_column_name(pStmt, col), 0);
-
-  return TCL_OK;
-}
-
-/*
-** Usage: sqlite3_column_name16 STMT column
-**
-** Advance the statement to the next row.
-*/
-static int test_column_name16(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3_stmt *pStmt;
-  int col;
-  Tcl_Obj *pRet;
-  const void *zName16;
-
-  if( objc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " STMT column", 0);
-    return TCL_ERROR;
-  }
-
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-
-  zName16 = sqlite3_column_name16(pStmt, col);
-  pRet = Tcl_NewByteArrayObj(zName16, sqlite3utf16ByteLen(zName16, -1)+2);
-  Tcl_SetObjResult(interp, pRet);
-
-  return TCL_OK;
-}
-
-/*
 ** Usage: sqlite3_column_count STMT 
 **
 ** Return the number of columns returned by the sql statement STMT.
@@ -1516,12 +1389,12 @@ static int test_column_type(
 }
 
 /*
-** Usage: sqlite3_column_int STMT column
+** Usage: sqlite3_column_int64 STMT column
 **
 ** Return the data in column 'column' of the current row cast as an
-** integer.
+** wide (64-bit) integer.
 */
-static int test_column_int(
+static int test_column_int64(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -1529,6 +1402,7 @@ static int test_column_int(
 ){
   sqlite3_stmt *pStmt;
   int col;
+  i64 iVal;
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -1539,7 +1413,37 @@ static int test_column_int(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_column_int(pStmt, col)));
+  iVal = sqlite3_column_int64(pStmt, col);
+  Tcl_SetObjResult(interp, Tcl_NewWideIntObj(iVal));
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_double STMT column
+**
+** Return the data in column 'column' of the current row cast as a double.
+*/
+static int test_column_double(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  double rVal;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  rVal = sqlite3_column_double(pStmt, col);
+  Tcl_SetObjResult(interp, Tcl_NewDoubleObj(iVal));
   return TCL_OK;
 }
 
@@ -1609,6 +1513,102 @@ static int reverse_collfunc(
   return TCL_OK;
 }
 
+/*
+** Usage: sqlite3_column_text STMT column
+**
+** Usage: sqlite3_column_decltype STMT column
+**
+** Usage: sqlite3_column_name STMT column
+*/
+static int test_stmt_utf8(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  const char *(xFunc *)(sqlite3_stmt*, int) = clientData;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)xFunc(pStmt, col), 0);
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_text STMT column
+**
+** Usage: sqlite3_column_decltype STMT column
+**
+** Usage: sqlite3_column_name STMT column
+*/
+static int test_stmt_utf16(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  Tcl_Obj *pRet;
+  const void *zName16;
+  const void *(xFunc *)(sqlite3_stmt*, int) = clientData;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  zName16 = xFunc(pStmt, col);
+  pRet = Tcl_NewByteArrayObj(zName16, sqlite3utf16ByteLen(zName16, -1)+2);
+  Tcl_SetObjResult(interp, pRet);
+
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_int STMT column
+**
+** Usage: sqlite3_column_bytes STMT column
+**
+** Usage: sqlite3_column_bytes16 STMT column
+**
+*/
+static int test_stmt_int(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  int (xFunc *)(sqlite3_stmt*, int) = clientData;
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT column", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(xFunc(pStmt, col)));
+  return TCL_OK;
+}
+
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -1645,33 +1645,45 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   static struct {
      char *zName;
      Tcl_ObjCmdProc *xProc;
+     void *clientData;
   } aObjCmd[] = {
-     { "sqlite3_bind_int32",            (Tcl_ObjCmdProc*)test_bind_int32    },
-     { "sqlite3_bind_int64",            (Tcl_ObjCmdProc*)test_bind_int64    },
-     { "sqlite3_bind_double",           (Tcl_ObjCmdProc*)test_bind_double   },
-     { "sqlite3_bind_null",             (Tcl_ObjCmdProc*)test_bind_null     },
-     { "sqlite3_bind_text",             (Tcl_ObjCmdProc*)test_bind_text     },
-     { "sqlite3_bind_text16",           (Tcl_ObjCmdProc*)test_bind_text16   },
-     { "sqlite3_bind_blob",             (Tcl_ObjCmdProc*)test_bind_blob     },
-     { "sqlite3_errcode",               (Tcl_ObjCmdProc*)test_errcode       },
-     { "sqlite3_errmsg",                (Tcl_ObjCmdProc*)test_errmsg        },
-     { "sqlite3_errmsg16",              (Tcl_ObjCmdProc*)test_errmsg16      },
-     { "sqlite3_prepare",               (Tcl_ObjCmdProc*)test_prepare       },
-     { "sqlite3_prepare16",             (Tcl_ObjCmdProc*)test_prepare16     },
-     { "sqlite3_open",                  (Tcl_ObjCmdProc*)test_open          },
-     { "sqlite3_open16",                (Tcl_ObjCmdProc*)test_open16        },
-     { "sqlite3_finalize",              (Tcl_ObjCmdProc*)test_finalize      },
-     { "sqlite3_reset",                 (Tcl_ObjCmdProc*)test_reset         },
-     { "sqlite3_step",                  (Tcl_ObjCmdProc*)test_step},
-     { "sqlite3_column_text",           (Tcl_ObjCmdProc*)test_column_text   },
-     { "sqlite3_column_text16",         (Tcl_ObjCmdProc*)test_column_text16 },
-     { "sqlite3_column_count",          (Tcl_ObjCmdProc*)test_column_count  },
-     { "sqlite3_column_name",           (Tcl_ObjCmdProc*)test_column_name   },
-     { "sqlite3_column_name16",         (Tcl_ObjCmdProc*)test_column_name16 },
-     { "sqlite3_column_type",           (Tcl_ObjCmdProc*)test_column_type   },
-     { "sqlite3_column_int",            (Tcl_ObjCmdProc*)test_column_int   },
-     { "sqlite3_data_count",            (Tcl_ObjCmdProc*)test_data_count   },
-     { "add_reverse_collating_func",    (Tcl_ObjCmdProc*)reverse_collfunc   },
+     { "sqlite3_bind_int32",            test_bind_int32, 0    },
+     { "sqlite3_bind_int64",            test_bind_int64 , 0   },
+     { "sqlite3_bind_double",           test_bind_double, 0   },
+     { "sqlite3_bind_null",             test_bind_null     ,0 },
+     { "sqlite3_bind_text",             test_bind_text     ,0 },
+     { "sqlite3_bind_text16",           test_bind_text16   ,0 },
+     { "sqlite3_bind_blob",             test_bind_blob     ,0 },
+     { "sqlite3_errcode",               test_errcode       ,0 },
+     { "sqlite3_errmsg",                test_errmsg        ,0 },
+     { "sqlite3_errmsg16",              test_errmsg16      ,0 },
+     { "sqlite3_open",                  test_open          ,0 },
+     { "sqlite3_open16",                test_open16        ,0 },
+     { "add_reverse_collating_func",    reverse_collfunc   ,0 },
+
+     { "sqlite3_prepare",               test_prepare       ,0 },
+     { "sqlite3_prepare16",             test_prepare16     ,0 },
+     { "sqlite3_finalize",              test_finalize      ,0 },
+     { "sqlite3_reset",                 test_reset         ,0 },
+     { "sqlite3_step",                  test_step,0 },
+
+     /* sqlite3_column_*() API */
+     { "sqlite3_column_count",          test_column_count  ,0 },
+     { "sqlite3_data_count",            test_data_count    ,0 },
+     { "sqlite3_column_type",           test_column_type   ,0 },
+     { "sqlite3_column_blob",           test_column_name   ,0 },
+     { "sqlite3_column_double",         test_column_double ,0 },
+     { "sqlite3_column_int64",          test_column_int64  ,0 },
+     { "sqlite3_column_int", test_stmt_int ,sqlite3_column_int },
+     { "sqlite3_column_bytes", test_stmt_int ,sqlite3_column_bytes },
+     { "sqlite3_column_bytes16", test_stmt_int ,sqlite3_column_bytes16 },
+     { "sqlite3_column_text", test_stmt_utf8,       sqlite3_column_text},
+     { "sqlite3_column_decltype", test_stmt_utf8,   sqlite3_column_decltype},
+     { "sqlite3_column_name", test_stmt_utf8,       sqlite3_column_name},
+     { "sqlite3_column_text16", test_stmt_utf16,    sqlite3_column_text16},
+     { "sqlite3_column_decltype16", test_stmt_utf16,sqlite3_column_decltype16},
+     { "sqlite3_column_name16", test_stmt_utf16,    sqlite3_column_name16},
+
   };
   int i;
 
