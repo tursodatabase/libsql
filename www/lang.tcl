@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.1 2000/06/08 21:53:06 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.2 2000/06/09 01:58:37 drh Exp $}
 
 puts {<html>
 <head>
@@ -30,9 +30,29 @@ that are part of the syntactic markup itself are shown in black roman.</p>
 by SQLite.  Many low-level productions are omitted.  For detailed information
 on the language that SQLite understands, refer to the source code.</p>
 
-<h2>CREATE TABLE</h2>
 
-<p>The basic structure of a CREATE TABLE statement is as follows:</p>
+<p>SQLite implements the follow SQL commands:</p>
+<p><ul>
+}
+
+foreach {section} [lsort -index 0 -dictionary {
+  {{CREATE TABLE} createtable}
+  {{CREATE INDEX} createindex}
+  {VACUUM vacuum}
+  {{DROP TABLE} droptable}
+  {{DROP INDEX} dropindex}
+  {INSERT insert}
+  {DELETE delete}
+  {UPDATE update}
+  {SELECT select}
+  {COPY copy}
+}] {
+  puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
+}
+puts {</ul></p>
+
+<p>Details on the implementation of each command are provided in
+the sequel.</p>
 }
 
 proc Syntax {args} {
@@ -53,6 +73,20 @@ proc Syntax {args} {
   puts {</table>}
 }
 
+proc Section {name {label {}}} {
+  puts "\n<hr />"
+  if {$label!=""} {
+    puts "<a name=\"$label\">"
+  }
+  puts "<h1>$name</h1>\n"
+}
+
+proc Example {text} {
+  puts "<blockquote><pre>$text</pre></blockquote>"
+}
+
+Section {CREATE TABLE} {createtable}
+
 Syntax {sql-command} {
 CREATE TABLE <table-name> (
   <column-def> [, <column-def>]*
@@ -68,7 +102,8 @@ CREATE TABLE <table-name> (
 NOT NULL |
 PRIMARY KEY [<sort-order>] |
 UNIQUE |
-CHECK ( <expr> )
+CHECK ( <expr> ) |
+DEFAULT <value>
 } {constraint} {
 PRIMARY KEY ( <name> [, <name>]* ) |
 UNIQUE ( <name> [, <name>]* ) |
@@ -87,7 +122,9 @@ datatype for that column, then one or more optional column constraints.
 The datatype for the column is ignored.  All information
 is stored as null-terminated strings.  The constraints are also ignored,
 except that the PRIMARY KEY constraint will cause an index to be automatically
-created that implements the primary key.  The name of the primary
+created that implements the primary key and the DEFAULT constraint
+which specifies a default value to use when doing an INSERT.
+The name of the primary
 key index will be the table name
 with "<b>__primary_key</b>" appended.  The index used for a primary key
 does not show up in the <b>sqlite_master</b> table, but a GDBM file is
@@ -103,8 +140,7 @@ are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the table layout.</p>
 }
 
-puts {<h2>CREATE INDEX</h2>
-}
+Section {CREATE INDEX} createindex
 
 Syntax {sql-statement} {
 CREATE INDEX <index-name> 
@@ -130,9 +166,10 @@ of each CREATE INDEX statement is stored in the <b>sqlite_master</b>
 table.  Everytime the database is opened, all CREATE INDEX statements
 are read from the <b>sqlite_master</b> table and used to regenerate
 SQLite's internal representation of the index layout.</p>
-
-<h2>DROP TABLE</h2>
 }
+
+
+Section {DROP TABLE} droptable
 
 Syntax {sql-command} {
 DROP TABLE <table-name>
@@ -142,10 +179,9 @@ puts {
 <p>The DROP TABLE statement consists of the keywords "DROP TABLE" followed
 by the name of the table.  The table named is completely removed from
 the disk.  The table can not be recovered.  All indices associated with
-the table are also reversibly deleted.</p>
+the table are also reversibly deleted.</p>}
 
-<h2>DROP INDEX</h2>
-}
+Section {DROP INDEX} dropindex
 
 Syntax {sql-command} {
 DROP INDEX <index-name>
@@ -156,9 +192,9 @@ puts {
 by the name of the index.  The index named is completely removed from
 the disk.  The only way to recover the index is to reenter the
 appropriate CREATE INDEX command.</p>
-
-<h2>VACUUM</h2>
 }
+
+Section VACUUM vacuum
 
 Syntax {sql-statement} {
 VACUUM [<index-or-table-name>]
@@ -176,7 +212,23 @@ especially indices where a single index value refers to many
 entries in the data table.  Reorganizing these indices will make
 the underlying GDBM file much smaller and will help queries to
 run much faster.</p>
+}
 
+Section INSERT insert
+
+Syntax {sql-statement} {
+INSERT INTO <table-name> [( <column-list> )] VALUES ( <value-list> ) |
+INSERT INTO <table-name> [( <column-list> )] <select-statement>
+}
+
+puts {
+<p>The INSERT statement comes in two basic forms.  The first form
+(with the "VALUES" keyword) creates a single new row in an existing table.
+If no column-list is specified then the number of values must
+be the same as the number of columns in the table.  If a column-list
+is specified, then the number of values must match the number of
+specified columns
+</p>
 }
 
 puts {

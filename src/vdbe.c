@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.30 2000/06/08 16:26:25 drh Exp $
+** $Id: vdbe.c,v 1.31 2000/06/09 01:58:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -946,7 +946,7 @@ int sqliteVdbeExec(
         break;
       }
 
-      /* Opcode: NULL * * *
+      /* Opcode: Null * * *
       **
       ** Push a NULL value onto the stack.
       */
@@ -1893,7 +1893,7 @@ int sqliteVdbeExec(
       ** Turn the key-as-data mode for cursor P1 either on (if P2==1) or
       ** off (if P2==0).  In key-as-data mode, the OP_Fetch opcode pulls
       ** data off of the key rather than the data.  This is useful for
-      ** outer joins and stuff...
+      ** processing compound selects.
       */
       case OP_KeyAsData: {
         int i = pOp->p1;
@@ -1910,8 +1910,12 @@ int sqliteVdbeExec(
       ** 
       ** The value pushed is just a pointer to the data in the cursor.
       ** The value will go away the next time a record is fetched from P1,
-      ** or when P1 is closed.  Make a copy of the string if it needs
-      ** to persist longer than that.
+      ** or when P1 is closed.  Make a copy of the string (using
+      ** "Concat 1 0 0" if it needs to persist longer than that.
+      **
+      ** If the KeyAsData opcode has previously executed on this cursor,
+      ** then the field might be extracted from the key rather than the
+      ** data.
       */
       case OP_Field: {
         int *pAddr;
@@ -2756,8 +2760,11 @@ int sqliteVdbeExec(
       ** with the given key exists, create one and make it current but
       ** do not jump.
       **
-      ** This opcode should not be executed after an AggNext but before
-      ** the next AggReset.
+      ** The order of aggregator opcodes is important.  The order is:
+      ** AggReset AggFocus AggNext.  In other words, you must execute
+      ** AggReset first, then zero or more AggFocus operations, then
+      ** zero or more AggNext operations.  You must not execute an AggFocus
+      ** in between an AggNext and an AggReset.
       */
       case OP_AggFocus: {
         int tos = p->tos;
@@ -2852,8 +2859,8 @@ int sqliteVdbeExec(
       /* Opcode: AggGet * P2 *
       **
       ** Push a new entry onto the stack which is a copy of the P2-th field
-      ** of the current aggregate.  String are not duplicated so
-      ** string values will be ephemeral.  
+      ** of the current aggregate.  Strings are not duplicated so
+      ** string values will be ephemeral.
       */
       case OP_AggGet: {
         AggElem *pFocus = AggInFocus(p->agg);
@@ -2876,8 +2883,11 @@ int sqliteVdbeExec(
       ** aggregate is deleted.  If all aggregate values have been consumed,
       ** jump to P2.
       **
-      ** Do not execute an AggFocus after this opcode until after the
-      ** next AggReset.
+      ** The order of aggregator opcodes is important.  The order is:
+      ** AggReset AggFocus AggNext.  In other words, you must execute
+      ** AggReset first, then zero or more AggFocus operations, then
+      ** zero or more AggNext operations.  You must not execute an AggFocus
+      ** in between an AggNext and an AggReset.
       */
       case OP_AggNext: {
         if( p->agg.nHash ){
@@ -2905,7 +2915,7 @@ int sqliteVdbeExec(
 
       /* Opcode: SetClear P1 * *
       **
-      ** Remove all elements from the given Set.
+      ** Remove all elements from the P1-th Set.
       */
       case OP_SetClear: {
         int i = pOp->p1;
@@ -2917,7 +2927,7 @@ int sqliteVdbeExec(
 
       /* Opcode: SetInsert P1 * P3
       **
-      ** If Set p1 does not exist then create it.  Then insert value
+      ** If Set P1 does not exist then create it.  Then insert value
       ** P3 into that set.  If P3 is NULL, then insert the top of the
       ** stack into the set.
       */
