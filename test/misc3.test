@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.10 2004/03/17 23:32:08 drh Exp $
+# $Id: misc3.test,v 1.11 2004/05/20 03:30:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -222,7 +222,7 @@ do_test misc3-5.1 {
     INSERT INTO x2 VALUES(3,'three');
     INSERT INTO x2 VALUES(4,'four');
     SELECT x2.c AS c, e, b FROM x2 LEFT JOIN
-       (SELECT b, max(c) AS c FROM x1 GROUP BY b)
+       (SELECT b, max(c)+0 AS c FROM x1 GROUP BY b)
        USING(c);
   }
 } {1 one cat 2 two {} 3 three {} 4 four dog}
@@ -230,7 +230,7 @@ do_test misc4-5.2 {
   execsql {
     SELECT * FROM (
       SELECT x2.c AS c, e, b FROM x2 LEFT JOIN
-         (SELECT b, max(c) AS c FROM x1 GROUP BY b)
+         (SELECT b, max(c)+0 AS c FROM x1 GROUP BY b)
          USING(c)
     );
   }
