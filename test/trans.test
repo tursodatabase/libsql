@@ -11,13 +11,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.4 2001/09/16 00:13:28 drh Exp $
+# $Id: trans.test,v 1.5 2001/09/17 20:48:30 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-if {0} {
 
 # Create several tables to work with.
 #
@@ -40,7 +39,7 @@ do_test trans-1.1 {
   }
 } {I V X}
 do_test trans-1.9 {
-  sqlite altdb ${dbprefix}testdb
+  sqlite altdb test.db
   execsql {SELECT b FROM one ORDER BY a} altdb
 } {one two three}
 do_test trans-1.10 {
@@ -95,49 +94,49 @@ do_test trans-3.2 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {0 {1 5 10}}
+} {1 {database in use by another process}}
 do_test trans-3.3 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table one is locked}}
+} {1 {database in use by another process}}
 do_test trans-3.4 {
   set v [catch {execsql {
     INSERT INTO one VALUES(4,'four');
   }} msg]
   lappend v $msg
 } {0 {}}
-do_test trans-3.2 {
+do_test trans-3.5 {
   set v [catch {execsql {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {0 {1 5 10}}
-do_test trans-3.3 {
+} {1 {database in use by another process}}
+do_test trans-3.6 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table one is locked}}
-do_test trans-3.5 {
+} {1 {database in use by another process}}
+do_test trans-3.7 {
   set v [catch {execsql {
     INSERT INTO two VALUES(4,'IV');
   }} msg]
   lappend v $msg
 } {0 {}}
-do_test trans-3.6 {
+do_test trans-3.8 {
   set v [catch {execsql {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table two is locked}}
-do_test trans-3.7 {
+} {1 {database in use by another process}}
+do_test trans-3.9 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table one is locked}}
+} {1 {database in use by another process}}
 do_test trans-3.10 {
   execsql {END TRANSACTION}
 } {}
@@ -190,13 +189,13 @@ do_test trans-4.4 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table two is locked}}
+} {1 {database in use by another process}}
 do_test trans-4.5 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {0 {1 2 3 4}}
+} {1 {database in use by another process}}
 do_test trans-4.6 {
   set v [catch {execsql {
     BEGIN TRANSACTION;
@@ -209,13 +208,13 @@ do_test trans-4.7 {
     SELECT a FROM two ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table two is locked}}
+} {1 {database in use by another process}}
 do_test trans-4.8 {
   set v [catch {execsql {
     SELECT a FROM one ORDER BY a;
   } altdb} msg]
   lappend v $msg
-} {1 {table one is locked}}
+} {1 {database in use by another process}}
 do_test trans-4.9 {
   set v [catch {execsql {
     END TRANSACTION;
@@ -235,8 +234,7 @@ do_test trans-4.11 {
   } altdb} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
-
-do_test trans-99.1 {
+do_test trans-4.99 {
   altdb close
   execsql {
     DROP TABLE one;
@@ -244,7 +242,35 @@ do_test trans-99.1 {
   }
 } {}
 
+# Check out the commit/rollback behavior of the database
+#
+do_test trans-5.1 {
+  execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
+} {}
+do_test trans-5.2 {
+  execsql {BEGIN TRANSACTION}
+  execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
+} {}
+do_test trans-5.3 {
+  execsql {CREATE TABLE one(a text, b int)}
+  execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
+} {one}
+do_test trans-5.4 {
+  execsql {SELECT a,b FROM one ORDER BY b}
+} {}
+do_test trans-5.5 {
+  execsql {INSERT INTO one(a,b) VALUES('hello', 1)}
+  execsql {SELECT a,b FROM one ORDER BY b}
+} {hello 1}
+do_test trans-5.6 {
+  execsql {ROLLBACK}
+  execsql {SELECT name FROM sqlite_master WHERE type='table' ORDER BY name}
+} {}
+do_test trans-5.7 {
+  set v [catch {
+    execsql {SELECT a,b FROM one ORDER BY b}
+  } msg]
+  lappend v $msg
+} {1 {no such table: one}}
 
 finish_test
-
-} ;# end if(gdbm and not windows)

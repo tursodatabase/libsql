@@ -1,5 +1,5 @@
-C Add\sa\snew\scolumn\sin\sthe\sSQLITE_MASTER\stable\sto\srecord\sthe\sroot\spage\nnumber\sof\sprimary\skey\sindices.\s(CVS\s252)
-D 2001-09-17T20:25:58
+C Enchanced\stransaction\stests\s(CVS\s253)
+D 2001-09-17T20:48:30
 F Makefile.in a7053596881af6f2590a816ad4eb8fbbf20724a7
 F README 51f6a4e7408b34afa5bc1c0485f61b6a4efb6958
 F VERSION 3861a21803fcd9eb92a403027b0da2bb7add4de1
@@ -69,7 +69,7 @@ F test/table.test 52fdca1632580fb638c7b7dd14f4d37ecc09f994
 F test/tableapi.test 162840153191a91a7dce6395f2334f9aef713b37
 F test/tclsqlite.test a57bb478d7e9f0b2c927f92e161f391e2896631a
 F test/tester.tcl 4d93d04bb43c5936f33d30df82d2801b519df74e
-F test/trans.test 097ef854f8060bba2d53d7c4ac31eadf75342485
+F test/trans.test 997c8dcc15c479bc2cedc42220cf2d265e63d2a8
 F test/update.test b320ea22899e80b32b4d21c54591eb7a6ba4d6bd
 F test/vacuum.test 8acf8669f3b627e54149b25165b034aa06c2432e
 F test/where.test 43d5ac94da3f3722375307f948884dc79b326a91
@@ -95,7 +95,7 @@ F www/opcode.tcl cb3a1abf8b7b9be9f3a228d097d6bf8b742c2b6f
 F www/sqlite.tcl cb0d23d8f061a80543928755ec7775da6e4f362f
 F www/tclsqlite.tcl 06f81c401f79a04f2c5ebfb97e7c176225c0aef2
 F www/vdbe.tcl 0c8aaa529dd216ccbf7daaabd80985e413d5f9ad
-P c67f6db681784f8511ccf208cde1c29d9ee73742
-R ec078dd1e4ad61f2004b7bba1a6425b5
+P 602ea4f9f641070592c788ce22859b849739b42e
+R 9d47f76cff786cc38ee15dd98f00be51
 U drh
-Z 211dfb1506c70a3bba4b90be9db7543f
+Z 49979fa205c7e6b07a58fef67abee514
