@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.12 2004/06/22 14:52:26 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.13 2004/07/22 18:53:17 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -35,6 +35,12 @@ proc Heading {title} {
 Heading {Precompiled Binaries for Linux}
 
 Product sqlite-VERSION.bin.gz {
+  A statically linked command-line program for accessing and modifing
+  SQLite databases.
+  See <a href="sqlite.html">the documentation</a> for additional information.
+}
+
+Product sqlite3-VERSION.bin.gz {
   A statically linked command-line program for accessing and modifing
   SQLite databases.
   See <a href="sqlite.html">the documentation</a> for additional information.
@@ -134,6 +140,17 @@ cvs -d :pserver:anonymous@www.sqlite.org:/sqlite checkout sqlite
 <p>
 When the first command prompts you for a password, enter "anonymous".
 </p>
+
+<p>
+To access the SQLite version 2.8 sources, begin by getting the 3.0
+tree as described above.  Then update to the "version_2" branch
+as follows:
+</p>
+
+<blockquote><pre>
+cvs update -r version_2
+</pre></blockquote>
+
 }
 
 footer $rcsid

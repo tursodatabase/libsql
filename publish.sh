@@ -147,5 +147,5 @@ mv $HOME/rpm/SRPMS/sqlite-$vers*.rpm doc
 
 # Build the website
 #
-cp $srcdir/../historical/* doc
+#cp $srcdir/../historical/* doc
 make doc
