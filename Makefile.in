@@ -230,6 +230,11 @@ publish:	$(PUBLISH)
 	chmod 0644 $(PUBLISH)
 	scp $(PUBLISH) hwaci@oak.he.net:public_html/sw/sqlite
 
+install:	sqlite libsqlite.a sqlite.h
+	mv sqlite /usr/bin
+	mv libsqlite.a /usr/lib
+	mv sqlite.h /usr/include
+
 clean:	
 	rm -f *.o sqlite libsqlite.a sqlite.h
 	rm -f lemon lempar.c parse.* sqlite.tar.gz
