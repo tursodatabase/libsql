@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.144 2003/07/19 00:44:14 drh Exp $
+** $Id: select.c,v 1.145 2003/07/20 01:16:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -52,6 +52,8 @@ Select *sqliteSelectNew(
     pNew->op = TK_SELECT;
     pNew->nLimit = nLimit;
     pNew->nOffset = nOffset;
+    pNew->iLimit = -1;
+    pNew->iOffset = -1;
   }
   return pNew;
 }
@@ -450,13 +452,13 @@ static int selectInnerLoop(
   ** to see if this row should be output.
   */
   if( pOrderBy==0 ){
-    if( p->nOffset>0 ){
+    if( p->iOffset>=0 ){
       int addr = sqliteVdbeCurrentAddr(v);
-      sqliteVdbeAddOp(v, OP_MemIncr, p->nOffset, addr+2);
+      sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr+2);
       sqliteVdbeAddOp(v, OP_Goto, 0, iContinue);
     }
-    if( p->nLimit>=0 ){
-      sqliteVdbeAddOp(v, OP_MemIncr, p->nLimit, iBreak);
+    if( p->iLimit>=0 ){
+      sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, iBreak);
     }
   }
 
@@ -620,13 +622,13 @@ static void generateSortTail(
   if( eDest==SRT_Sorter ) return;
   sqliteVdbeAddOp(v, OP_Sort, 0, 0);
   addr = sqliteVdbeAddOp(v, OP_SortNext, 0, end);
-  if( p->nOffset>0 ){
-    sqliteVdbeAddOp(v, OP_MemIncr, p->nOffset, addr+4);
+  if( p->iOffset>=0 ){
+    sqliteVdbeAddOp(v, OP_MemIncr, p->iOffset, addr+4);
     sqliteVdbeAddOp(v, OP_Pop, 1, 0);
     sqliteVdbeAddOp(v, OP_Goto, 0, addr);
   }
-  if( p->nLimit>=0 ){
-    sqliteVdbeAddOp(v, OP_MemIncr, p->nLimit, end);
+  if( p->iLimit>=0 ){
+    sqliteVdbeAddOp(v, OP_MemIncr, p->iLimit, end);
   }
   switch( eDest ){
     case SRT_Callback: {
@@ -1245,6 +1247,52 @@ static void multiSelectSortOrder(Select *p, ExprList *pOrderBy){
 }
 
 /*
+** Compute the iLimit and iOffset fields of the SELECT based on the
+** nLimit and nOffset fields.  nLimit and nOffset hold the integers
+** that appear in the original SQL statement after the LIMIT and OFFSET
+** keywords.  Or that hold -1 and 0 if those keywords are omitted.
+** iLimit and iOffset are the integer memory register numbers for
+** counters used to compute the limit and offset.  If there is no
+** limit and/or offset, then iLimit and iOffset are negative.
+**
+** This routine changes the values if iLimit and iOffset only if
+** a limit or offset is defined by nLimit and nOffset.  iLimit and
+** iOffset should have been preset to appropriate default values
+** (usually but not always -1) prior to calling this routine.
+** Only if nLimit>=0 or nOffset>0 do the limit registers get
+** redefined.  The UNION ALL operator uses this property to force
+** the reuse of the same limit and offset registers across multiple
+** SELECT statements.
+*/
+static void computeLimitRegisters(Parse *pParse, Select *p){
+  /* 
+  ** If the comparison is p->nLimit>0 then "LIMIT 0" shows
+  ** all rows.  It is the same as no limit. If the comparision is
+  ** p->nLimit>=0 then "LIMIT 0" show no rows at all.
+  ** "LIMIT -1" always shows all rows.  There is some
+  ** contraversy about what the correct behavior should be.
+  ** The current implementation interprets "LIMIT 0" to mean
+  ** no rows.
+  */
+  if( p->nLimit>=0 ){
+    int iMem = pParse->nMem++;
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    sqliteVdbeAddOp(v, OP_Integer, -p->nLimit, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
+    p->iLimit = iMem;
+  }
+  if( p->nOffset>0 ){
+    int iMem = pParse->nMem++;
+    Vdbe *v = sqliteGetVdbe(pParse);
+    if( v==0 ) return;
+    sqliteVdbeAddOp(v, OP_Integer, -p->nOffset, 0);
+    sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
+    p->iOffset = iMem;
+  }
+}
+
+/*
 ** This routine is called to process a query that is really the union
 ** or intersection of two or more separate queries.
 **
@@ -1279,13 +1327,18 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   Select *pPrior;     /* Another SELECT immediately to our left */
   Vdbe *v;            /* Generate code to this VDBE */
 
-  /* Make sure there is no ORDER BY clause on prior SELECTs.  Only the 
-  ** last SELECT in the series may have an ORDER BY.
+  /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
+  ** the last SELECT in the series may have an ORDER BY or LIMIT.
   */
   if( p==0 || p->pPrior==0 ) return 1;
   pPrior = p->pPrior;
   if( pPrior->pOrderBy ){
     sqliteErrorMsg(pParse,"ORDER BY clause should come after %s not before",
+      selectOpName(p->op));
+    return 1;
+  }
+  if( pPrior->nLimit>=0 || pPrior->nOffset>0 ){
+    sqliteErrorMsg(pParse,"LIMIT clause should come after %s not before",
       selectOpName(p->op));
     return 1;
   }
@@ -1307,9 +1360,15 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
   switch( p->op ){
     case TK_ALL: {
       if( p->pOrderBy==0 ){
+        pPrior->nLimit = p->nLimit;
+        pPrior->nOffset = p->nOffset;
         rc = sqliteSelect(pParse, pPrior, eDest, iParm, 0, 0, 0);
         if( rc ) return rc;
         p->pPrior = 0;
+        p->iLimit = pPrior->iLimit;
+        p->iOffset = pPrior->iOffset;
+        p->nLimit = -1;
+        p->nOffset = 0;
         rc = sqliteSelect(pParse, p, eDest, iParm, 0, 0, 0);
         p->pPrior = pPrior;
         if( rc ) return rc;
@@ -1322,10 +1381,11 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       int unionTab;    /* Cursor number of the temporary table holding result */
       int op;          /* One of the SRT_ operations to apply to self */
       int priorOp;     /* The SRT_ operation to apply to prior selects */
+      int nLimit, nOffset; /* Saved values of p->nLimit and p->nOffset */
       ExprList *pOrderBy;  /* The ORDER BY clause for the right SELECT */
 
       priorOp = p->op==TK_ALL ? SRT_Table : SRT_Union;
-      if( eDest==priorOp && p->pOrderBy==0 ){
+      if( eDest==priorOp && p->pOrderBy==0 && p->nLimit<0 && p->nOffset==0 ){
         /* We can reuse a temporary table generated by a SELECT to our
         ** right.
         */
@@ -1362,9 +1422,15 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       p->pPrior = 0;
       pOrderBy = p->pOrderBy;
       p->pOrderBy = 0;
+      nLimit = p->nLimit;
+      p->nLimit = -1;
+      nOffset = p->nOffset;
+      p->nOffset = 0;
       rc = sqliteSelect(pParse, p, op, unionTab, 0, 0, 0);
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
+      p->nLimit = nLimit;
+      p->nOffset = nOffset;
       if( rc ) return rc;
 
       /* Convert the data in the temporary table into whatever form
@@ -1380,6 +1446,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
         iBreak = sqliteVdbeMakeLabel(v);
         iCont = sqliteVdbeMakeLabel(v);
         sqliteVdbeAddOp(v, OP_Rewind, unionTab, iBreak);
+        computeLimitRegisters(pParse, p);
         iStart = sqliteVdbeCurrentAddr(v);
         multiSelectSortOrder(p, p->pOrderBy);
         rc = selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
@@ -1399,6 +1466,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
     case TK_INTERSECT: {
       int tab1, tab2;
       int iCont, iBreak, iStart;
+      int nLimit, nOffset;
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
@@ -1422,8 +1490,14 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       sqliteVdbeAddOp(v, OP_OpenTemp, tab2, 1);
       sqliteVdbeAddOp(v, OP_KeyAsData, tab2, 1);
       p->pPrior = 0;
+      nLimit = p->nLimit;
+      p->nLimit = -1;
+      nOffset = p->nOffset;
+      p->nOffset = 0;
       rc = sqliteSelect(pParse, p, SRT_Union, tab2, 0, 0, 0);
       p->pPrior = pPrior;
+      p->nLimit = nLimit;
+      p->nOffset = nOffset;
       if( rc ) return rc;
 
       /* Generate code to take the intersection of the two temporary
@@ -1437,6 +1511,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
       iBreak = sqliteVdbeMakeLabel(v);
       iCont = sqliteVdbeMakeLabel(v);
       sqliteVdbeAddOp(v, OP_Rewind, tab1, iBreak);
+      computeLimitRegisters(pParse, p);
       iStart = sqliteVdbeAddOp(v, OP_FullKey, tab1, 0);
       sqliteVdbeAddOp(v, OP_NotFound, tab2, iCont);
       multiSelectSortOrder(p, p->pOrderBy);
@@ -1869,6 +1944,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   */
   sqliteCodeVerifySchema(pParse, pTab->iDb);
   base = p->pSrc->a[0].iCursor;
+  computeLimitRegisters(pParse, p);
   sqliteVdbeAddOp(v, OP_Integer, pTab->iDb, 0);
   sqliteVdbeAddOp(v, OP_OpenRead, base, pTab->tnum);
   sqliteVdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
@@ -2132,39 +2208,6 @@ int sqliteSelect(
     generateColumnNames(pParse, pTabList, pEList);
   }
 
-  /* Set the limiter.
-  **
-  ** The phrase "LIMIT 0" means all rows are shown, not zero rows.
-  ** If the comparison is p->nLimit<=0 then "LIMIT 0" shows
-  ** all rows.  It is the same as no limit. If the comparision is
-  ** p->nLimit<0 then "LIMIT 0" show no rows at all.
-  ** "LIMIT -1" always shows all rows.  There is some
-  ** contraversy about what the correct behavior should be.
-  **
-  ** Note that up until this point, the nLimit and nOffset hold
-  ** the numeric values of the limit and offset that appeared in
-  ** the original SQL.  After this code, the nLimit and nOffset hold
-  ** the register number of counters used to track the limit and
-  ** offset.
-  */
-  if( p->nLimit<0 ){
-    p->nLimit = -1;
-  }else{
-    int iMem = pParse->nMem++;
-    sqliteVdbeAddOp(v, OP_Integer, -p->nLimit, 0);
-    sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
-    p->nLimit = iMem;
-  }
-  if( p->nOffset<=0 ){
-    p->nOffset = 0;
-  }else{
-    int iMem = pParse->nMem++;
-    if( iMem==0 ) iMem = pParse->nMem++;
-    sqliteVdbeAddOp(v, OP_Integer, -p->nOffset, 0);
-    sqliteVdbeAddOp(v, OP_MemStore, iMem, 1);
-    p->nOffset = iMem;
-  }
-
   /* Check for the special case of a min() or max() function by itself
   ** in the result set.
   */
@@ -2210,6 +2253,10 @@ int sqliteSelect(
     if( isAgg ) *pParentAgg = 1;
     return rc;
   }
+
+  /* Set the limiter.
+  */
+  computeLimitRegisters(pParse, p);
 
   /* Identify column types if we will be using a callback.  This
   ** step is skipped if the output is going to a destination other
