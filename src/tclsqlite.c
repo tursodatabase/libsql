@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.74 2004/05/27 12:11:32 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.75 2004/05/27 13:35:20 danielk1977 Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -815,10 +815,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           if( SQLITE3_BLOB!=sqlite3_column_type(pStmt, i) ){
             pVal = Tcl_NewStringObj(sqlite3_column_text(pStmt, i), -1);
           }else{
-            pVal = Tcl_NewByteArrayObj(
-              sqlite3_column_blob(pStmt, i),
-              sqlite3_column_bytes(pStmt, i)
-            );
+            int bytes = sqlite3_column_bytes(pStmt, i);
+            pVal = Tcl_NewByteArrayObj(sqlite3_column_blob(pStmt, i), bytes);
           }
   
           if( objc==5 ){

@@ -315,9 +315,9 @@ int sqlite3VdbeMemSetStr(
 
   pMem->z = (char *)z;
   if( eCopy ){
-    pMem->flags = MEM_Ephem|MEM_Str;
+    pMem->flags = MEM_Ephem;
   }else{
-    pMem->flags = MEM_Static|MEM_Str;
+    pMem->flags = MEM_Static;
   }
   pMem->enc = enc;
   pMem->type = enc==0 ? SQLITE3_BLOB : SQLITE3_TEXT;
@@ -328,6 +328,7 @@ int sqlite3VdbeMemSetStr(
       break;
 
     case TEXT_Utf8:
+      pMem->flags |= MEM_Str;
       if( n<0 ){
         pMem->n = strlen(z);
         pMem->flags |= MEM_Term;
@@ -336,6 +337,7 @@ int sqlite3VdbeMemSetStr(
 
     case TEXT_Utf16le:
     case TEXT_Utf16be:
+      pMem->flags |= MEM_Str;
       if( n<0 ){
         pMem->n = sqlite3utf16ByteLen(z,-1);
         pMem->flags |= MEM_Term;

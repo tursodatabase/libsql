@@ -612,20 +612,22 @@ int sqlite3VdbeList(
 */
 static int translateOp(Op *pOp){
   if( pOp->opcode==OP_HexBlob ){
-    char *zBlob = sqlite3HexToBlob(pOp->p3);
-    if( !zBlob ){
-      if( sqlite3_malloc_failed ){
-        return SQLITE_NOMEM;
-      }
-      return SQLITE_ERROR;
-    }
     pOp->p1 = strlen(pOp->p3)/2;
-    if( pOp->p3type==P3_DYNAMIC ){
-      sqliteFree(pOp->p3);
+    if( pOp->p1 ){
+      char *zBlob = sqlite3HexToBlob(pOp->p3);
+      if( !zBlob ) return SQLITE_NOMEM;
+      if( pOp->p3type==P3_DYNAMIC ){
+        sqliteFree(pOp->p3);
+      }
+      pOp->p3 = zBlob;
+      pOp->p3type = P3_DYNAMIC;
+    }else{
+      pOp->p3type = P3_STATIC;
+      pOp->p3 = "";
     }
-    pOp->p3 = zBlob;
-    pOp->p3type = P3_DYNAMIC;
+    pOp->opcode = OP_Blob;
   }
+  return SQLITE_OK;
 }
 
 /*
@@ -699,7 +701,7 @@ void sqlite3VdbeMakeReady(
     }
   }
 #endif
-  {
+  if( !isExplain ){
     int i;
     for(i=0; i<p->nOp; i++){
       translateOp(&p->aOp[i]);
