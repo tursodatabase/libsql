@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the vdbe.html file.
 #
-set rcsid {$Id: vdbe.tcl,v 1.12 2004/05/31 15:06:30 drh Exp $}
+set rcsid {$Id: vdbe.tcl,v 1.13 2004/11/10 05:48:57 danielk1977 Exp $}
 source common.tcl
 header {The Virtual Database Engine of SQLite}
 puts {
@@ -303,7 +303,7 @@ program, which the VDBE appends when it prepares a program to run.</p>
 <h2>Tracing VDBE Program Execution</h2>
 
 <p>If the SQLite library is compiled without the NDEBUG preprocessor 
-macro, then the PRAGMA <a href="lang.html#pragma_vdbe_trace">vdbe_trace
+macro, then the PRAGMA <a href="pragma.html#pragma_vdbe_trace">vdbe_trace
 </a> causes the VDBE to trace the execution of programs.  Though this 
 feature was originally intended for testing and debugging, it can also 
 be useful in learning about how the VDBE operates.  

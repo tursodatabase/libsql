@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.6 2004/09/18 18:00:24 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.7 2004/11/10 05:48:57 danielk1977 Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -26,6 +26,11 @@ doc {SQLite In 5 Minutes Or Less} {quickstart.html} {
 doc {SQL Syntax} {lang.html} {
   This document describes the SQL language that is understood by
   SQLite.  
+}
+
+doc {Pragma commands} {pragma.html} {
+  This document describes SQLite performance tuning options and other 
+  special purpose database commands.
 }
 
 doc {Version 2 C/C++ API} {c_interface.html} {

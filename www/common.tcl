@@ -55,3 +55,41 @@ proc footer {{rcsid {}}} {
   }
   puts {</body></html>}
 }
+
+
+# The following two procs, Syntax and Section, are used to ensure
+# consistent formatting in the "lang.html" and "pragma.html" pages.
+#
+proc Syntax {args} {
+  puts {<table cellpadding="10">}
+  foreach {rule body} $args {
+    puts "<tr><td align=\"right\" valign=\"top\">"
+    puts "<i><font color=\"#ff3434\">$rule</font></i>&nbsp;::=</td>"
+    regsub -all < $body {%LT} body
+    regsub -all > $body {%GT} body
+    regsub -all %LT $body {</font></b><i><font color="#ff3434">} body
+    regsub -all %GT $body {</font></i><b><font color="#2c2cf0">} body
+    regsub -all {[]|[*?]} $body {</font></b>&<b><font color="#2c2cf0">} body
+    regsub -all "\n" [string trim $body] "<br>\n" body
+    regsub -all "\n  *" $body "\n\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;" body
+    regsub -all {[|,.*()]} $body {<big>&</big>} body
+    regsub -all { = } $body { <big>=</big> } body
+    regsub -all {STAR} $body {<big>*</big>} body
+    ## These metacharacters must be handled to undo being
+    ## treated as SQL punctuation characters above.
+    regsub -all {RPPLUS} $body {</font></b>)+<b><font color="#2c2cf0">} body
+    regsub -all {LP} $body {</font></b>(<b><font color="#2c2cf0">} body
+    regsub -all {RP} $body {</font></b>)<b><font color="#2c2cf0">} body
+    ## Place the left-hand side of the rule in the 2nd table column.
+    puts "<td><b><font color=\"#2c2cf0\">$body</font></b></td></tr>"
+  }
+  puts {</table>}
+}
+proc Section {name {label {}}} {
+  puts "\n<hr />"
+  if {$label!=""} {
+    puts "<a name=\"$label\"></a>"
+  }
+  puts "<h1>$name</h1>\n"
+}
+

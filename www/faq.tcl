@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.26 2004/10/10 17:24:55 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.27 2004/11/10 05:48:57 danielk1977 Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -399,6 +399,10 @@ faq {
   on the Linux box where SQLite is developed) and it can use up to twice
   as much temporary disk space as the original file while it is running.
   </p>
+
+  <p>As of SQLite version 3.1, an alternative to using the VACUUM command
+  is auto-vacuum mode, enabled using the 
+  <a href="pragma.html#pragma_auto_vacuum">auto_vacuum pragma</a>.</p>
 }
 
 faq {

@@ -371,7 +371,7 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -static -o \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -o \
  		sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
@@ -437,6 +437,9 @@ index.html:	$(TOP)/www/index.tcl last_change
 
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
+
+pragma.html:	$(TOP)/www/pragma.tcl
+	tclsh $(TOP)/www/pragma.tcl >pragma.html
 
 lockingv3.html:	$(TOP)/www/lockingv3.tcl
 	tclsh $(TOP)/www/lockingv3.tcl >lockingv3.html
@@ -509,6 +512,7 @@ DOC = \
   oldnews.html \
   omitted.html \
   opcode.html \
+  pragma.html \
   quickstart.html \
   speed.html \
   sqlite.gif \

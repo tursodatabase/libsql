@@ -1,5 +1,5 @@
-C Have\s"DEFAULT\sCURRENT_TIME"\s&\sco.\swork\seven\sif\sSQLITE_OMIT_DATETIME_FUNCS\sis\sdefined.\s(CVS\s2083)
-D 2004-11-09T16:13:33
+C Add\suser\sdocumentation\sfor\sthe\s"pragma\sauto_vacuum"\scommand.\s(CVS\s2084)
+D 2004-11-10T05:48:57
 F Makefile.in c4d2416860f472a1e3393714d0372074197565df
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -16,7 +16,7 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 594a756a761111da9415ca4b1ca7cbf3d269a3a3
+F main.mk 32367381f4e75d7c13f24a739495e60a7b622256
 F mkdll.sh 468d4f41d3ea98221371df4825cfbffbaac4d7e4
 F mkopcodec.awk 14a794f7b206976afc416b30fe8e0fc97f3434e9
 F mkopcodeh.awk 4090944e4de0a2ccb99aa0083290f73bce4db406
@@ -221,40 +221,41 @@ F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
 F www/arch2.gif 6f2d47c4e0c5842c0d6b5513fd8249393d7c7003
 F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/c_interface.tcl 83b39203e1ded4c2dab97f42edf31279a308efcb
+F www/c_interface.tcl ea5a73b330a7006df87d0a4029569301bbd72029
 F www/capi3.tcl 5c1cb163f4d2a54e2d0e22dcc399dd71245c8b89
 F www/capi3ref.tcl aa8b12a1c633c5aaca03657e8ed04c963cb698c6
 F www/changes.tcl f2b34859843d9f06a0611eb6d44af767891b09ef
-F www/common.tcl 2ea19d725e67bac2cd0fb67c375ae9ce1d4b3e5b
+F www/common.tcl 690d0f159cc5b83590707797acbcd031af8079a6
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 82c9670c7ddb0311912ab7fe24703f33c531066c
 F www/datatype3.tcl dea659d2dcc1f3d6eefdb8a2f52c04de3cdb6476
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/docs.tcl 4b5f7fca464e66ed7f929063a8b2b9e101ba902d
+F www/docs.tcl 90de269f52212eb15534553faf6f1588ad77cd45
 F www/download.tcl e9cebc67ac35c9c026b94ec01383ab8a7cf367f0
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl bce6f03a9d00366e7f9eba9174167930b9f1b4ad
+F www/faq.tcl abe360e630d8134bc6242c5e3664969c397eac6e
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bfbf14dbf5181e771d06da7797767b0200b36d8a
 F www/index.tcl 0c923045904426f5b5313a5563c4759277603567
-F www/lang.tcl ba4fbca6342938f0240efdd84e83d5badcd72667
+F www/lang.tcl 7904dbc26918e44c34b522bfc03d7b4671adabaf
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 7aa4478e64631859770a5fe4b413919ba6ee8a08
 F www/omitted.tcl 7bd62b6f0f53b60c5360895b16b3af8407bbca03
 F www/opcode.tcl dafa030a5a3cc24a2f9fd4cfbfb7d7323d2151b0
+F www/pragma.tcl f954f5c5eb98b4ba33c09d4fd866600e78b0aacb
 F www/quickstart.tcl 6f6f694b6139be2d967b1492eb9a6bdf7058aa60
 F www/speed.tcl de99c82c4729a10b6733463636f15473c4ec95bc
 F www/sqlite.tcl b51fd15f0531a54874de785a9efba323eecd5975
 F www/support.tcl 3955da0fd82be68cc5c83d347c05095e80967051
 F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
-F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
+F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl fdacb0ba2d39831e8a6240d05a490026ad4c4e4c
-P 0d27c8ff48f327ad82dd5b5b3b47b8d221f119b7
-R 50983ef3488aaf796e19a0b73688d49a
+P f81b9c1c022772378aad32ec45d0027beeb36574
+R bfd59cfe949547755a65241f31d7d209
 U danielk1977
-Z a02b42aae687ca01ff2682d8d73ff8dd
+Z e40615b74d37b060e4ae6d8ae3079d56

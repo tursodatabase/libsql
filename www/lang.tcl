@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: lang.tcl,v 1.74 2004/10/10 17:24:55 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.75 2004/11/10 05:48:57 danielk1977 Exp $}
 source common.tcl
 header {Query Language Understood by SQLite}
 puts {
@@ -30,34 +30,35 @@ the grammar file "parse.y".</p>
 }
 
 foreach {section} [lsort -index 0 -dictionary {
-  {{CREATE TABLE} createtable}
-  {{CREATE INDEX} createindex}
-  {VACUUM vacuum}
-  {{DROP TABLE} droptable}
-  {{DROP INDEX} dropindex}
-  {INSERT insert}
-  {REPLACE replace}
-  {DELETE delete}
-  {UPDATE update}
-  {SELECT select}
-  {comment comment}
-  {COPY copy}
-  {EXPLAIN explain}
-  {expression expr}
-  {{BEGIN TRANSACTION} transaction}
-  {{COMMIT TRANSACTION} transaction}
-  {{END TRANSACTION} transaction}
-  {{ROLLBACK TRANSACTION} transaction}
-  {PRAGMA pragma}
-  {{ON CONFLICT clause} conflict}
-  {{CREATE VIEW} createview}
-  {{DROP VIEW} dropview}
-  {{CREATE TRIGGER} createtrigger}
-  {{DROP TRIGGER} droptrigger}
-  {{ATTACH DATABASE} attach}
-  {{DETACH DATABASE} detach}
+  {{CREATE TABLE} #createtable}
+  {{CREATE INDEX} #createindex}
+  {VACUUM #vacuum}
+  {{DROP TABLE} #droptable}
+  {{DROP INDEX} #dropindex}
+  {INSERT #insert}
+  {REPLACE #replace}
+  {DELETE #delete}
+  {UPDATE #update}
+  {SELECT #select}
+  {comment #comment}
+  {COPY #copy}
+  {EXPLAIN #explain}
+  {expression #expr}
+  {{BEGIN TRANSACTION} #transaction}
+  {{COMMIT TRANSACTION} #transaction}
+  {{END TRANSACTION} #transaction}
+  {{ROLLBACK TRANSACTION} #transaction}
+  {PRAGMA pragma.html}
+  {{ON CONFLICT clause} #conflict}
+  {{CREATE VIEW} #createview}
+  {{DROP VIEW} #dropview}
+  {{CREATE TRIGGER} #createtrigger}
+  {{DROP TRIGGER} #droptrigger}
+  {{ATTACH DATABASE} #attach}
+  {{DETACH DATABASE} #detach}
 }] {
-  puts "<li><a href=\"#[lindex $section 1]\">[lindex $section 0]</a></li>"
+  foreach {s_title s_tag} $section {}
+  puts "<li><a href=\"$s_tag\">$s_title</a></li>"
 }
 puts {</ul></p>
 
@@ -65,31 +66,6 @@ puts {</ul></p>
 the sequel.</p>
 }
 
-proc Syntax {args} {
-  puts {<table cellpadding="10">}
-  foreach {rule body} $args {
-    puts "<tr><td align=\"right\" valign=\"top\">"
-    puts "<i><font color=\"#ff3434\">$rule</font></i>&nbsp;::=</td>"
-    regsub -all < $body {%LT} body
-    regsub -all > $body {%GT} body
-    regsub -all %LT $body {</font></b><i><font color="#ff3434">} body
-    regsub -all %GT $body {</font></i><b><font color="#2c2cf0">} body
-    regsub -all {[]|[*?]} $body {</font></b>&<b><font color="#2c2cf0">} body
-    regsub -all "\n" [string trim $body] "<br>\n" body
-    regsub -all "\n  *" $body "\n\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;" body
-    regsub -all {[|,.*()]} $body {<big>&</big>} body
-    regsub -all { = } $body { <big>=</big> } body
-    regsub -all {STAR} $body {<big>*</big>} body
-    ## These metacharacters must be handled to undo being
-    ## treated as SQL punctuation characters above.
-    regsub -all {RPPLUS} $body {</font></b>)+<b><font color="#2c2cf0">} body
-    regsub -all {LP} $body {</font></b>(<b><font color="#2c2cf0">} body
-    regsub -all {RP} $body {</font></b>)<b><font color="#2c2cf0">} body
-    ## Place the left-hand side of the rule in the 2nd table column.
-    puts "<td><b><font color=\"#2c2cf0\">$body</font></b></td></tr>"
-  }
-  puts {</table>}
-}
 proc Operator {name} {
   return "<font color=\"#2c2cf0\"><big>$name</big></font>"
 }
@@ -99,16 +75,6 @@ proc Nonterminal {name} {
 proc Keyword {name} {
   return "<font color=\"#2c2cf0\">$name</font>"
 }
- 
-
-proc Section {name {label {}}} {
-  puts "\n<hr />"
-  if {$label!=""} {
-    puts "<a name=\"$label\"></a>"
-  }
-  puts "<h1>$name</h1>\n"
-}
-
 proc Example {text} {
   puts "<blockquote><pre>$text</pre></blockquote>"
 }
@@ -1272,216 +1238,6 @@ If no algorithm is specified anywhere, the ABORT algorithm is used.</p>
 # <p>For additional information, see 
 # <a href="conflict.html">conflict.html</a>.</p>
 
-
-Section PRAGMA pragma
-
-Syntax {sql-statement} {
-PRAGMA <name> [= <value>] |
-PRAGMA <function>(<arg>)
-}
-
-puts {
-<p>The PRAGMA command is used to modify the operation of the SQLite library.
-The pragma command is experimental and specific pragma statements may be
-removed or added in future releases of SQLite.  Use this command
-with caution.</p>
-
-<p>The pragmas that take an integer <b><i>value</i></b> also accept 
-symbolic names.  The strings "<b>on</b>", "<b>true</b>", and "<b>yes</b>" 
-are equivalent to <b>1</b>.  The strings "<b>off</b>", "<b>false</b>", 
-and "<b>no</b>" are equivalent to <b>0</b>.  These strings are case-
-insensitive, and do not require quotes.  An unrecognized string will be 
-treated as <b>1</b>, and will not generate an error.  When the <i>value</i> 
-is returned it is as an integer.</p>
-
-<p>The current implementation supports the following pragmas:</p>
-
-<ul>
-<a name="pragma_cache_size"></a>
-<li><p><b>PRAGMA cache_size;
-       <br>PRAGMA cache_size = </b><i>Number-of-pages</i><b>;</b></p>
-    <p>Query or change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses about 1.5K of memory.
-    The default cache size is 2000.  If you are doing UPDATEs or DELETEs
-    that change many rows of a database and you do not mind if SQLite
-    uses more memory, you can increase the cache size for a possible speed
-    improvement.</p>
-    <p>When you change the cache size using the cache_size pragma, the
-    change only endures for the current session.  The cache size reverts
-    to the default value when the database is closed and reopened.  Use
-    the <a href="#pragma_default_cache_size"><b>default_cache_size</b></a> 
-    pragma to check the cache size permanently.</p></li>
-
-<li><p><b>PRAGMA database_list;</b></p>
-    <p>For each open database, invoke the callback function once with
-    information about that database.  Arguments include the index and 
-    the name the database was attached with.  The first row will be for 
-    the main database.  The second row will be for the database used to 
-    store temporary tables.</p></li>
-
-<a name="pragma_default_cache_size"></a>
-<li><p><b>PRAGMA default_cache_size;
-       <br>PRAGMA default_cache_size = </b><i>Number-of-pages</i><b>;</b></p>
-    <p>Query or change the maximum number of database disk pages that SQLite
-    will hold in memory at once.  Each page uses 1K on disk and about
-    1.5K in memory.
-    This pragma works like the
-    <a href="#pragma_cache_size"><b>cache_size</b></a> 
-    pragma with the additional
-    feature that it changes the cache size persistently.  With this pragma,
-    you can set the cache size once and that setting is retained and reused
-    every time you reopen the database.</p></li>
-
-<a name="pragma_default_synchronous"></a>
-<li><p><b>PRAGMA default_synchronous;
-       <br>PRAGMA default_synchronous = FULL; </b>(2)<b>
-       <br>PRAGMA default_synchronous = NORMAL; </b>(1)<b>
-       <br>PRAGMA default_synchronous = OFF; </b>(0)</p>
-    <p>Query or change the setting of the "synchronous" flag in
-    the database.  The first (query) form will return the setting as an 
-    integer.  When synchronous is FULL (2), the SQLite database engine will
-    pause at critical moments to make sure that data has actually been 
-    written to the disk surface before continuing.  This ensures that if
-    the operating system crashes or if there is a power failure, the database
-    will be uncorrupted after rebooting.  FULL synchronous is very 
-    safe, but it is also slow.  
-    When synchronous is NORMAL (1, the default), the SQLite database
-    engine will still pause at the most critical moments, but less often
-    than in FULL mode.  There is a very small (though non-zero) chance that
-    a power failure at just the wrong time could corrupt the database in
-    NORMAL mode.  But in practice, you are more likely to suffer
-    a catastrophic disk failure or some other unrecoverable hardware
-    fault.  So NORMAL is the default mode.
-    With synchronous OFF (0), SQLite continues without pausing
-    as soon as it has handed data off to the operating system.
-    If the application running SQLite crashes, the data will be safe, but
-    the database might become corrupted if the operating system
-    crashes or the computer loses power before that data has been written
-    to the disk surface.  On the other hand, some
-    operations are as much as 50 or more times faster with synchronous OFF.
-    </p>
-    <p>This pragma changes the synchronous mode persistently.  Once changed,
-    the mode stays as set even if the database is closed and reopened.  The
-    <a href="#pragma_synchronous"><b>synchronous</b></a> pragma does the same 
-    thing but only applies the setting to the current session.
-    
-    </p></li>
-
-<a name="pragma_default_temp_store"></a>
-<li><p><b>PRAGMA default_temp_store;
-       <br>PRAGMA default_temp_store = DEFAULT; </b>(0)<b>
-       <br>PRAGMA default_temp_store = MEMORY; </b>(2)<b>
-       <br>PRAGMA default_temp_store = FILE;</b> (1)</p>
-    <p>Query or change the setting of the "<b>temp_store</b>" flag stored in
-    the database.  When temp_store is DEFAULT (0), the compile-time value
-    of the symbol TEMP_STORE is used for the temporary database.  
-    When temp_store is MEMORY (2), an in-memory database is used.  
-    When temp_store is FILE (1), a temporary database file on disk will be used.
-    It is possible for the library compile-time symbol TEMP_STORE to override 
-    this setting.  The following table summarizes this:</p>
-
-<table cellpadding="2">
-<tr><th>TEMP_STORE</th><th>temp_store</th><th>temp database location</th></tr>
-<tr><td align="center">0</td><td align="center"><em>any</em></td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">0</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">1</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">0</td><td align="center">memory</td></tr>
-<tr><td align="center">2</td><td align="center">1</td><td align="center">file</td></tr>
-<tr><td align="center">2</td><td align="center">2</td><td align="center">memory</td></tr>
-<tr><td align="center">3</td><td align="center"><em>any</em></td><td align="center">memory</td></tr>
-</table>
-
-    <p>This pragma changes the temp_store mode for whenever the database
-    is opened in the future.  The temp_store mode for the current session
-    is unchanged.  Use the 
-    <a href="#pragma_temp_store"><b>temp_store</b></a> pragma to change the
-    temp_store mode for the current session.</p></li>
-
-<li><p><b>PRAGMA foreign_key_list(</b><i>table-name</i><b>);</b></p>
-    <p>For each foreign key that references a column in the argument
-    table, invoke the callback function with information about that
-    foreign key. The callback function will be invoked once for each
-    column in each foreign key.</p></li>
-
-<li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>
-    <p>For each column that the named index references, invoke the 
-    callback function
-    once with information about that column, including the column name,
-    and the column number.</p></li>
-
-<li><p><b>PRAGMA index_list(</b><i>table-name</i><b>);</b></p>
-    <p>For each index on the named table, invoke the callback function
-    once with information about that index.  Arguments include the
-    index name and a flag to indicate whether or not the index must be
-    unique.</p></li>
-
-<li><p><b>PRAGMA integrity_check;</b></p>
-    <p>The command does an integrity check of the entire database.  It
-    looks for out-of-order records, missing pages, malformed records, and
-    corrupt indices.
-    If any problems are found, then a single string is returned which is
-    a description of all problems.  If everything is in order, "ok" is
-    returned.</p></li>
-
-<li><p><b>PRAGMA parser_trace = ON; </b>(1)<b>
-    <br>PRAGMA parser_trace = OFF;</b> (0)</p>
-    <p>Turn tracing of the SQL parser inside of the
-    SQLite library on and off.  This is used for debugging.
-    This only works if the library is compiled without the NDEBUG macro.
-    </p></li>
-
-<a name="pragma_synchronous"></a>
-<li><p><b>PRAGMA synchronous;
-       <br>PRAGMA synchronous = FULL; </b>(2)<b>
-       <br>PRAGMA synchronous = NORMAL; </b>(1)<b>
-       <br>PRAGMA synchronous = OFF;</b> (0)</p>
-    <p>Query or change the setting of the "synchronous" flag affecting
-    the database for the duration of the current database connection.
-    The synchronous flag reverts to its default value when the database
-    is closed and reopened.  For additional information on the synchronous
-    flag, see the description of the <a href="#pragma_default_synchronous">
-    <b>default_synchronous</b></a> pragma.</p>
-    </li>
-
-<li><p><b>PRAGMA table_info(</b><i>table-name</i><b>);</b></p>
-    <p>For each column in the named table, invoke the callback function
-    once with information about that column, including the column name,
-    data type, whether or not the column can be NULL, and the default
-    value for the column.</p></li>
-
-<a name="pragma_temp_store"></a>
-<li><p><b>PRAGMA temp_store;
-       <br>PRAGMA temp_store = DEFAULT; </b>(0)<b>
-       <br>PRAGMA temp_store = MEMORY; </b>(2)<b>
-       <br>PRAGMA temp_store = FILE;</b> (1)</p>
-    <p>Query or change the setting of the "temp_store" flag affecting
-    the database for the duration of the current database connection.
-    The temp_store flag reverts to its default value when the database
-    is closed and reopened.  For additional information on the temp_store
-    flag, see the description of the <a href="#pragma_default_temp_store">
-    <b>default_temp_store</b></a> pragma.  Note that it is possible for 
-    the library compile-time options to override this setting. </p>
-
-    <p>When the temp_store setting is changed, all existing temporary
-    tables, indices, triggers, and viewers are immediately deleted.
-    </p>
-    </li>
-
-<a name="pragma_vdbe_trace"></a>
-<li><p><b>PRAGMA vdbe_trace = ON; </b>(1)<b>
-    <br>PRAGMA vdbe_trace = OFF;</b> (0)</p>
-    <p>Turn tracing of the virtual database engine inside of the
-    SQLite library on and off.  This is used for debugging.  See the 
-    <a href="vdbe.html#trace">VDBE documentation</a> for more 
-    information.</p></li>
-</ul>
-
-<p>No error message is generated if an unknown pragma is issued.
-Unknown pragmas are ignored.</p>
-}
-
-
 Section REPLACE replace
 
 Syntax {sql-statement} {
@@ -1661,6 +1417,10 @@ process on an attached database file.</p>
 
 <p>This command will fail if there is an active transaction.  This 
 command has no effect on an in-memory database.</p>
+
+<p>As of SQLite version 3.1, an alternative to using the VACUUM command
+is auto-vacuum mode, enabled using the 
+<a href="pragma.html#pragma_auto_vacuum">auto_vacuum pragma</a>.</p>
 }
 
 
