@@ -25,6 +25,11 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2002 Apr 21 (2.4.9)} {
+<li>Fix a bug that was causing the precompiled binary of SQLITE.EXE to
+    report "out of memory" under Windows 98.</li>
+}
+
 chng {2002 Apr 20 (2.4.8)} {
 <li>Make sure VIEWs are created after their corresponding TABLEs in the
     output of the <b>.dump</b> command in the shell.</li>
