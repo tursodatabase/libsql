@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.90 2005/02/26 18:10:44 drh Exp $
+** $Id: pragma.c,v 1.91 2005/03/29 03:10:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -644,6 +644,8 @@ void sqlite3Pragma(
     for(i=0; i<db->nDb; i++){
       HashElem *x;
       int cnt = 0;
+
+      if( OMIT_TEMPDB && i==1 ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
 

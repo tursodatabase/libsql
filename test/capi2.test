@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.25 2005/02/04 04:07:18 danielk1977 Exp $
+# $Id: capi2.test,v 1.26 2005/03/29 03:11:00 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -97,13 +97,13 @@ do_test capi2-1.11 {
 do_test capi2-2.1 {
   set SQL {
     SELECT name, rowid FROM sqlite_master;
-    SELECT name, rowid FROM sqlite_temp_master;
+    SELECT name, rowid FROM sqlite_master WHERE 0;
     -- A comment at the end
   }
   set VM [sqlite3_prepare $DB $SQL -1 SQL]
   set SQL
 } {
-    SELECT name, rowid FROM sqlite_temp_master;
+    SELECT name, rowid FROM sqlite_master WHERE 0;
     -- A comment at the end
   }
 do_test capi2-2.2 {

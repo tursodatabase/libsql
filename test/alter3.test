@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.5 2005/03/28 16:50:22 drh Exp $
+# $Id: alter3.test,v 1.6 2005/03/29 03:11:00 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -291,7 +291,7 @@ do_test alter3-5.99 {
 # Test that the table schema is correctly reloaded when a column
 # is added to a table.
 #
-ifcapable trigger {
+ifcapable trigger&&tempdb {
   do_test alter3-6.1 {
     execsql {
       CREATE TABLE t1(a, b);

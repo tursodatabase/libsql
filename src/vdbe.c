@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.460 2005/03/21 03:53:38 danielk1977 Exp $
+** $Id: vdbe.c,v 1.461 2005/03/29 03:11:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3819,7 +3819,7 @@ case OP_ParseSchema: {
 
   assert( iDb>=0 && iDb<db->nDb );
   if( !DbHasProperty(db, iDb, DB_SchemaLoaded) ) break;
-  zMaster = iDb==1 ? TEMP_MASTER_NAME : MASTER_NAME;
+  zMaster = SCHEMA_TABLE(iDb);
   initData.db = db;
   initData.pzErrMsg = &p->zErrMsg;
   zSql = sqlite3MPrintf(

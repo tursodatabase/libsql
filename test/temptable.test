@@ -12,10 +12,15 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.14 2004/06/19 00:16:31 drh Exp $
+# $Id: temptable.test,v 1.15 2005/03/29 03:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !tempdb {
+  finish_test
+  return
+}
 
 # Create an alternative connection to the database
 #

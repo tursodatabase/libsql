@@ -57,15 +57,20 @@ ifcapable {!trigger} {
 # 1.
 ifcapable subquery {
   set ii 0
-  foreach tbl_defn {
-  	{CREATE TEMP TABLE tbl (a, b);} 
-  	{CREATE TABLE tbl (a, b);} 
-  	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);} 
-  	{CREATE TEMPORARY TABLE tbl (a INTEGER PRIMARY KEY, b);} 
-          {CREATE TABLE tbl (a, b PRIMARY KEY);} 
-  	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
-  	{CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
-  } {
+  set tbl_definitions [list \
+  	{CREATE TABLE tbl (a, b);}                                      \
+  	{CREATE TABLE tbl (a INTEGER PRIMARY KEY, b);}                  \
+        {CREATE TABLE tbl (a, b PRIMARY KEY);}                          \
+  	{CREATE TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);}      \
+  ]
+  ifcapable tempdb {
+    lappend tbl_definitions \
+        {CREATE TEMP TABLE tbl (a, b); CREATE INDEX tbl_idx ON tbl(b);} 
+    lappend tbl_definitions {CREATE TEMP TABLE tbl (a, b);}
+    lappend tbl_definitions \
+        {CREATE TEMPORARY TABLE tbl (a INTEGER PRIMARY KEY, b);}
+  }
+  foreach tbl_defn $tbl_definitions {
     incr ii
     catchsql { DROP INDEX tbl_idx; }
     catchsql {

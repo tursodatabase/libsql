@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.34 2005/02/12 00:19:30 drh Exp $
+# $Id: vacuum.test,v 1.35 2005/03/29 03:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -239,11 +239,12 @@ do_test vacuum-5.1 {
     CREATE VIEW viewTest AS SELECT * FROM Test;
 
     BEGIN;
-    CREATE TEMP TABLE tempTest (TestID int primary key, Test2 int NULL);
+    CREATE TABLE tempTest (TestID int primary key, Test2 int NULL);
     INSERT INTO tempTest SELECT TestID, 1 FROM Test;
     DROP TABLE Test;
     CREATE TABLE Test(TestID int primary key, Test2 int NULL);
     INSERT INTO Test SELECT * FROM tempTest;
+    DROP TABLE tempTest;
     COMMIT;
     VACUUM;
   }

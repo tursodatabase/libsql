@@ -283,7 +283,7 @@ do_test lastinsert-6.4 {
 # 7.x - complex tests with temporary tables and nested instead of triggers
 # These do not run if views or triggers are disabled.
 
-ifcapable {trigger && view} {
+ifcapable {trigger && view && tempdb} {
 do_test lastinsert-7.1 {
     catchsql {
         drop table t1; drop table t2; drop trigger r1;

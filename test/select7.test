@@ -10,7 +10,7 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.6 2005/01/26 03:58:37 danielk1977 Exp $
+# $Id: select7.test,v 1.7 2005/03/29 03:11:00 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -19,18 +19,20 @@ source $testdir/tester.tcl
 ifcapable compound {
 
 # A 3-way INTERSECT.  Ticket #875
-do_test select7-1.1 {
-  execsql {
-    create temp table t1(x);
-    insert into t1 values('amx');
-    insert into t1 values('anx');
-    insert into t1 values('amy');
-    insert into t1 values('bmy');
-    select * from t1 where x like 'a__'
-      intersect select * from t1 where x like '_m_'
-      intersect select * from t1 where x like '__x';
-  }
-} {amx}
+ifcapable tempdb {
+  do_test select7-1.1 {
+    execsql {
+      create temp table t1(x);
+      insert into t1 values('amx');
+      insert into t1 values('anx');
+      insert into t1 values('amy');
+      insert into t1 values('bmy');
+      select * from t1 where x like 'a__'
+        intersect select * from t1 where x like '_m_'
+        intersect select * from t1 where x like '__x';
+    }
+  } {amx}
+}
 
 
 # Nested views do not handle * properly.  Ticket #826.

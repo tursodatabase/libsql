@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.31 2005/01/24 01:38:33 drh Exp $
+# $Id: attach2.test,v 1.32 2005/03/29 03:11:00 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -152,6 +152,16 @@ for {set i 2} {$i<=15} {incr i} {
 # A procedure to verify the status of locks on a database.
 #
 proc lock_status {testnum db expected_result} {
+  # If the database was compiled with OMIT_TEMPDB set, then 
+  # the lock_status list will not contain an entry for the temp
+  # db. But the test code doesn't know this, so it's easiest 
+  # to filter it out here.
+  ifcapable !tempdb {
+    set expected_result [concat \
+        [lrange $expected_result 0 1] \
+        [lrange $expected_result 4 end] \
+    ]
+  }
   do_test attach2-$testnum [subst {
     $db cache flush  ;# The lock_status pragma should not be cached
     execsql {PRAGMA lock_status} $db

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.33 2005/01/21 11:55:28 danielk1977 Exp $
+# $Id: func.test,v 1.34 2005/03/29 03:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -260,12 +260,22 @@ do_test func-8.2 {
     SELECT max('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t2;
   }
 } {z+67890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
-do_test func-8.3 {
-  execsql {
-    CREATE TEMP TABLE t3 AS SELECT a FROM t2 ORDER BY a DESC;
-    SELECT min('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t3;
-  }
-} {z+1abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
+
+ifcapable tempdb {
+  do_test func-8.3 {
+    execsql {
+      CREATE TEMP TABLE t3 AS SELECT a FROM t2 ORDER BY a DESC;
+      SELECT min('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t3;
+    }
+  } {z+1abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
+} else {
+  do_test func-8.3 {
+    execsql {
+      CREATE TABLE t3 AS SELECT a FROM t2 ORDER BY a DESC;
+      SELECT min('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t3;
+    }
+  } {z+1abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP}
+}
 do_test func-8.4 {
   execsql {
     SELECT max('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t3;

@@ -11,7 +11,7 @@
 # This file attempts to check that the library can recover from a malloc()
 # failure when sqlite3_global_recover() is invoked.
 #
-# $Id: malloc2.test,v 1.1 2005/03/21 04:04:03 danielk1977 Exp $
+# $Id: malloc2.test,v 1.2 2005/03/29 03:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,11 +35,18 @@ ifcapable !globalrecover {
 #
 proc cksum {db} {
   set ret [list]
-  set sql {
-    SELECT name FROM sqlite_master WHERE type = 'table' UNION
-    SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
-    SELECT 'sqlite_master' UNION
-    SELECT 'sqlite_temp_master'
+  ifcapable tempdb {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master' UNION
+      SELECT 'sqlite_temp_master'
+    }
+  } else {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master'
+    }
   }
   foreach tbl [$db eval $sql] {
     set cols [list]
@@ -171,26 +178,28 @@ do_malloc2_test 2 -sql {
   COMMIT;
 }
 
-do_test malloc2.3.setup {
-  execsql {
-    CREATE TEMP TABLE ghi(a, b, c);
-    BEGIN;
-  }
-  for {set i 0} {$i<20} {incr i} {
+ifcapable tempdb {
+  do_test malloc2.3.setup {
     execsql {
-    INSERT INTO ghi VALUES(randstr(300,300),randstr(300,300),randstr(300,300));
+      CREATE TEMP TABLE ghi(a, b, c);
+      BEGIN;
     }
-  }
-  execsql {
+    for {set i 0} {$i<20} {incr i} {
+      execsql {
+      INSERT INTO ghi VALUES(randstr(300,300),randstr(300,300),randstr(300,300));
+      }
+    }
+    execsql {
+      COMMIT;
+    }
+  } {}
+  do_malloc2_test 3 -sql {
+    BEGIN;
+    CREATE INDEX ghi_i1 ON ghi(a);
+    UPDATE def SET a = randstr(100,100) WHERE (oid%2)==0;
+    UPDATE ghi SET a = randstr(100,100) WHERE (oid%2)==0;
     COMMIT;
   }
-} {}
-do_malloc2_test 3 -sql {
-  BEGIN;
-  CREATE INDEX ghi_i1 ON ghi(a);
-  UPDATE def SET a = randstr(100,100) WHERE (oid%2)==0;
-  UPDATE ghi SET a = randstr(100,100) WHERE (oid%2)==0;
-  COMMIT;
 }
 
 ############################################################################

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.31 2005/03/14 02:01:50 drh Exp $
+# $Id: lock.test,v 1.32 2005/03/29 03:11:00 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -303,42 +303,45 @@ do_test lock-5.2 {
     INSERT INTO t1(a,b) SELECT 3, tx_exec('SELECT y FROM t2 LIMIT 1');
   }
 } {0 {}}
-do_test lock-5.3 {
-  execsql {
-    CREATE TEMP TABLE t3(x);
-    SELECT * FROM t3;
-  }
-} {}
-do_test lock-5.4 {
-  catchsql {
-    INSERT INTO t3 SELECT tx_exec('SELECT y FROM t2 LIMIT 1');
-  }
-} {0 {}}
-do_test lock-5.5 {
-  execsql {
-    SELECT * FROM t3;
-  }
-} {8}
-do_test lock-5.6 {
-  catchsql {
-    UPDATE t1 SET a=tx_exec('SELECT x FROM t2');
-  }
-} {0 {}}
-do_test lock-5.7 {
-  execsql {
-    SELECT * FROM t1;
-  }
-} {9 1 9 8}
-do_test lock-5.8 {
-  catchsql {
-    UPDATE t3 SET x=tx_exec('SELECT x FROM t2');
-  }
-} {0 {}}
-do_test lock-5.9 {
-  execsql {
-    SELECT * FROM t3;
-  }
-} {9}
+
+ifcapable tempdb {
+  do_test lock-5.3 {
+    execsql {
+      CREATE TEMP TABLE t3(x);
+      SELECT * FROM t3;
+    }
+  } {}
+  do_test lock-5.4 {
+    catchsql {
+      INSERT INTO t3 SELECT tx_exec('SELECT y FROM t2 LIMIT 1');
+    }
+  } {0 {}}
+  do_test lock-5.5 {
+    execsql {
+      SELECT * FROM t3;
+    }
+  } {8}
+  do_test lock-5.6 {
+    catchsql {
+      UPDATE t1 SET a=tx_exec('SELECT x FROM t2');
+    }
+  } {0 {}}
+  do_test lock-5.7 {
+    execsql {
+      SELECT * FROM t1;
+    }
+  } {9 1 9 8}
+  do_test lock-5.8 {
+    catchsql {
+      UPDATE t3 SET x=tx_exec('SELECT x FROM t2');
+    }
+  } {0 {}}
+  do_test lock-5.9 {
+    execsql {
+      SELECT * FROM t3;
+    }
+  } {9}
+}
 
 do_test lock-999.1 {
   rename db2 {}

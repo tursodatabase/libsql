@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.10 2005/02/14 06:38:40 danielk1977 Exp $
+# $Id: alter.test,v 1.11 2005/03/29 03:11:00 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -43,7 +43,12 @@ ifcapable !altertable {
 # and some tables with odd names.
 #
 do_test alter-1.1 {
-  execsql {
+  ifcapable tempdb {
+    set ::temp TEMP
+  } else {
+    set ::temp {}
+  }
+  execsql [subst -nocommands {
     CREATE TABLE t1(a,b);
     INSERT INTO t1 VALUES(1,2);
     CREATE TABLE [t1'x1](c UNIQUE, b PRIMARY KEY);
@@ -51,10 +56,10 @@ do_test alter-1.1 {
     CREATE INDEX t1i1 ON T1(B);
     CREATE INDEX t1i2 ON t1(a,b);
     CREATE INDEX i3 ON [t1'x1](b,c);
-    CREATE TEMP TABLE "temp table"(e,f,g UNIQUE);
+    CREATE $::temp TABLE "temp table"(e,f,g UNIQUE);
     CREATE INDEX i2 ON [temp table](f);
     INSERT INTO [temp table] VALUES(5,6,7);
-  }
+  }]
   execsql {
     SELECT 't1', * FROM t1;
     SELECT 't1''x1', * FROM "t1'x1";
@@ -62,11 +67,19 @@ do_test alter-1.1 {
   }
 } {t1 1 2 t1'x1 3 4 5 6 7}
 do_test alter-1.2 {
+  execsql [subst {
+    CREATE $::temp TABLE objlist(type, name, tbl_name);
+    INSERT INTO objlist SELECT type, name, tbl_name 
+        FROM sqlite_master WHERE NAME!='objlist';
+  }]
+  ifcapable tempdb {
+    execsql {
+      INSERT INTO objlist SELECT type, name, tbl_name 
+          FROM sqlite_temp_master WHERE NAME!='objlist';
+    }
+  }
+
   execsql {
-    CREATE TEMP TABLE objlist(type, name, tbl_name);
-    INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
-    INSERT INTO objlist 
-      SELECT type, name, tbl_name FROM sqlite_temp_master WHERE NAME!='objlist';
     SELECT type, name, tbl_name FROM objlist ORDER BY tbl_name, type desc, name;
   }
 } [list \
@@ -102,9 +115,14 @@ do_test alter-1.4 {
 do_test alter-1.5 {
   execsql {
     DELETE FROM objlist;
-    INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
-    INSERT INTO objlist 
-      SELECT type, name, tbl_name FROM sqlite_temp_master WHERE NAME!='objlist';
+    INSERT INTO objlist SELECT type, name, tbl_name
+        FROM sqlite_master WHERE NAME!='objlist';
+  }
+  catchsql {
+    INSERT INTO objlist SELECT type, name, tbl_name 
+        FROM sqlite_temp_master WHERE NAME!='objlist';
+  }
+  execsql {
     SELECT type, name, tbl_name FROM objlist ORDER BY tbl_name, type desc, name;
   }
 } [list \
@@ -123,27 +141,33 @@ do_test alter-1.5 {
 # Make sure the changes persist after restarting the database.
 # (The TEMP table will not persist, of course.)
 #
-do_test alter-1.6 {
-  db close
-  set DB [sqlite3 db test.db]
+ifcapable tempdb {
+  do_test alter-1.6 {
+    db close
+    set DB [sqlite3 db test.db]
+    execsql {
+      CREATE TEMP TABLE objlist(type, name, tbl_name);
+      INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
+      INSERT INTO objlist 
+          SELECT type, name, tbl_name FROM sqlite_temp_master 
+          WHERE NAME!='objlist';
+      SELECT type, name, tbl_name FROM objlist 
+          ORDER BY tbl_name, type desc, name;
+    }
+  } [list \
+       table -t1-                         -t1-           \
+       index t1i1                         -t1-           \
+       index t1i2                         -t1-           \
+       table T2                           T2          \
+       index i3                           T2          \
+       index {sqlite_autoindex_T2_1}      T2          \
+       index {sqlite_autoindex_T2_2}      T2          \
+    ]
+} else {
   execsql {
-    CREATE TEMP TABLE objlist(type, name, tbl_name);
-    INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
-    INSERT INTO objlist 
-        SELECT type, name, tbl_name FROM sqlite_temp_master 
-        WHERE NAME!='objlist';
-    SELECT type, name, tbl_name FROM objlist 
-        ORDER BY tbl_name, type desc, name;
+    DROP TABLE TempTab;
   }
-} [list \
-     table -t1-                         -t1-           \
-     index t1i1                         -t1-           \
-     index t1i2                         -t1-           \
-     table T2                           T2          \
-     index i3                           T2          \
-     index {sqlite_autoindex_T2_1}      T2          \
-     index {sqlite_autoindex_T2_2}      T2          \
-  ]
+}
 
 # Make sure the ALTER TABLE statements work with the
 # non-callback API
@@ -155,12 +179,15 @@ do_test alter-1.7 {
   }
   execsql {
     DELETE FROM objlist;
-    INSERT INTO objlist SELECT type, name, tbl_name FROM sqlite_master;
-    INSERT INTO objlist 
-        SELECT type, name, tbl_name FROM sqlite_temp_master 
-        WHERE NAME!='objlist';
-    SELECT type, name, tbl_name FROM objlist 
-        ORDER BY tbl_name, type desc, name;
+    INSERT INTO objlist SELECT type, name, tbl_name
+        FROM sqlite_master WHERE NAME!='objlist';
+  }
+  catchsql {
+    INSERT INTO objlist SELECT type, name, tbl_name 
+        FROM sqlite_temp_master WHERE NAME!='objlist';
+  }
+  execsql {
+    SELECT type, name, tbl_name FROM objlist ORDER BY tbl_name, type desc, name;
   }
 } [list \
      table *t1*                         *t1*           \
@@ -419,12 +446,12 @@ do_test alter-3.2.10 {
 } {}
 
 do_test alter-3.3.1 {
-  execsql {
+  execsql [subst {
     CREATE TABLE tbl1(a, b, c);
-    CREATE TEMP TRIGGER trig1 AFTER INSERT ON tbl1 BEGIN
+    CREATE $::temp TRIGGER trig1 AFTER INSERT ON tbl1 BEGIN
       SELECT trigfunc('trig1', new.a, new.b, new.c);
     END;
-  }
+  }]
 } {}
 do_test alter-3.3.2 {
   execsql {
@@ -440,11 +467,11 @@ do_test alter-3.3.3 {
   set ::TRIGGER
 } {trig1 d e f}
 do_test alter-3.3.4 {
-  execsql {
-    CREATE TEMP TRIGGER trig2 AFTER UPDATE ON tbl2 BEGIN
+  execsql [subst {
+    CREATE $::temp TRIGGER trig2 AFTER UPDATE ON tbl2 BEGIN
       SELECT trigfunc('trig2', new.a, new.b, new.c);
     END;
-  } 
+  }] 
 } {}
 do_test alter-3.3.5 {
   execsql {
@@ -462,9 +489,15 @@ do_test alter-3.3.6 {
 do_test alter-3.3.7 {
   execsql {
     DROP TABLE tbl3;
-    SELECT * FROM sqlite_temp_master WHERE type = 'trigger';
   }
 } {}
+ifcapable tempdb {
+  do_test alter-3.3.8 {
+    execsql {
+      SELECT * FROM sqlite_temp_master WHERE type = 'trigger';
+    }
+  } {}
+}
 
 } ;# ifcapable trigger
 

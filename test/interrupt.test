@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.10 2005/01/11 17:46:42 drh Exp $
+# $Id: interrupt.test,v 1.11 2005/03/29 03:11:00 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -123,36 +123,38 @@ integrity_check interrupt-2.6
 # and that transaction is later rolled back, the internal schema tables do
 # not reset.
 #
-for {set i 1} {$i<50} {incr i 5} {
-  do_test interrupt-3.$i.1 {
-    execsql {
-      BEGIN;
-      CREATE TEMP TABLE t2(x,y);
-      SELECT name FROM sqlite_temp_master;
-    }
-  } {t2}
-  do_test interrupt-3.$i.2 {
-    set ::sqlite_interrupt_count $::i
-    catchsql {
-      INSERT INTO t2 SELECT * FROM t1;
-    }
-  } {1 interrupted}
-  do_test interrupt-3.$i.3 {
-    execsql {
-      SELECT name FROM sqlite_temp_master;
-    }
-  } {t2}
-  do_test interrupt-3.$i.4 {
-    catchsql {
-      ROLLBACK
-    }
-  } {0 {}}
-  do_test interrupt-3.$i.5 {
-    catchsql {SELECT name FROM sqlite_temp_master};
-    execsql {
-      SELECT name FROM sqlite_temp_master;
-    }
-  } {}
+ifcapable tempdb {
+  for {set i 1} {$i<50} {incr i 5} {
+    do_test interrupt-3.$i.1 {
+      execsql {
+        BEGIN;
+        CREATE TEMP TABLE t2(x,y);
+        SELECT name FROM sqlite_temp_master;
+      }
+    } {t2}
+    do_test interrupt-3.$i.2 {
+      set ::sqlite_interrupt_count $::i
+      catchsql {
+        INSERT INTO t2 SELECT * FROM t1;
+      }
+    } {1 interrupted}
+    do_test interrupt-3.$i.3 {
+      execsql {
+        SELECT name FROM sqlite_temp_master;
+      }
+    } {t2}
+    do_test interrupt-3.$i.4 {
+      catchsql {
+        ROLLBACK
+      }
+    } {0 {}}
+    do_test interrupt-3.$i.5 {
+      catchsql {SELECT name FROM sqlite_temp_master};
+      execsql {
+        SELECT name FROM sqlite_temp_master;
+      }
+    } {}
+  }
 }
 
 # There are reports of a memory leak if an interrupt occurs during

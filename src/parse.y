@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.169 2005/03/17 05:03:40 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.170 2005/03/29 03:10:59 danielk1977 Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -112,7 +112,9 @@ create_table ::= CREATE(X) temp(T) TABLE nm(Y) dbnm(Z). {
    sqlite3StartTable(pParse,&X,&Y,&Z,T,0);
 }
 %type temp {int}
+%ifndef SQLITE_OMIT_TEMPDB
 temp(A) ::= TEMP.  {A = 1;}
+%endif
 temp(A) ::= .      {A = 0;}
 create_table_args ::= LP columnlist conslist_opt(X) RP(Y). {
   sqlite3EndTable(pParse,&X,&Y,0);

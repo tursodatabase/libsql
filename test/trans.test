@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.25 2005/03/11 04:41:40 drh Exp $
+# $Id: trans.test,v 1.26 2005/03/29 03:11:00 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -728,41 +728,47 @@ do_test trans-7.7 {
 do_test trans-7.8 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
-do_test trans-7.9 {
-  execsql {
-    BEGIN;
-    CREATE TEMP TABLE t3 AS SELECT * FROM t2;
-    INSERT INTO t2 SELECT * FROM t3;
-    ROLLBACK;
-    SELECT md5sum(x,y,z) FROM t2;
-  }
-} $checksum
+ifcapable tempdb {
+  do_test trans-7.9 {
+    execsql {
+      BEGIN;
+      CREATE TEMP TABLE t3 AS SELECT * FROM t2;
+      INSERT INTO t2 SELECT * FROM t3;
+      ROLLBACK;
+      SELECT md5sum(x,y,z) FROM t2;
+    }
+  } $checksum
+}
 do_test trans-7.10 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
-do_test trans-7.11 {
-  execsql {
-    BEGIN;
-    CREATE TEMP TABLE t3 AS SELECT * FROM t2;
-    INSERT INTO t2 SELECT * FROM t3;
-    DROP INDEX i2x;
-    DROP INDEX i2y;
-    CREATE INDEX i3a ON t3(x);
-    ROLLBACK;
-    SELECT md5sum(x,y,z) FROM t2;
-  }
-} $checksum
+ifcapable tempdb {
+  do_test trans-7.11 {
+    execsql {
+      BEGIN;
+      CREATE TEMP TABLE t3 AS SELECT * FROM t2;
+      INSERT INTO t2 SELECT * FROM t3;
+      DROP INDEX i2x;
+      DROP INDEX i2y;
+      CREATE INDEX i3a ON t3(x);
+      ROLLBACK;
+      SELECT md5sum(x,y,z) FROM t2;
+    }
+  } $checksum
+}
 do_test trans-7.12 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
-do_test trans-7.13 {
-  execsql {
-    BEGIN;
-    DROP TABLE t2;
-    ROLLBACK;
-    SELECT md5sum(x,y,z) FROM t2;
-  }
-} $checksum
+ifcapable tempdb {
+  do_test trans-7.13 {
+    execsql {
+      BEGIN;
+      DROP TABLE t2;
+      ROLLBACK;
+      SELECT md5sum(x,y,z) FROM t2;
+    }
+  } $checksum
+}
 do_test trans-7.14 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2

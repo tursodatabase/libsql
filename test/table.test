@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.38 2005/01/24 10:26:00 danielk1977 Exp $
+# $Id: table.test,v 1.39 2005/03/29 03:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -349,12 +349,16 @@ do_test table-8.3.1 {
     SELECT sql FROM sqlite_master WHERE name='t4"abc'
   }
 } {{CREATE TABLE "t4""abc"(cnt,"max(b+c)")}}
-do_test table-8.4 {
-  execsql2 {
-    CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3"xyz];
-    SELECT * FROM t5;
-  }
-} {y'all 1}
+
+ifcapable tempdb {
+  do_test table-8.4 {
+    execsql2 {
+      CREATE TEMPORARY TABLE t5 AS SELECT count(*) AS [y'all] FROM [t3"xyz];
+      SELECT * FROM t5;
+    }
+  } {y'all 1}
+}
+
 do_test table-8.5 {
   db close
   sqlite3 db test.db

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.317 2005/03/28 03:39:56 drh Exp $
+** $Id: build.c,v 1.318 2005/03/29 03:10:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -168,7 +168,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   int i;
   assert( zName!=0 );
   assert( (db->flags & SQLITE_Initialized) || db->init.busy );
-  for(i=0; i<db->nDb; i++){
+  for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].tblHash, zName, strlen(zName)+1);
@@ -227,7 +227,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
   assert( (db->flags & SQLITE_Initialized) || db->init.busy );
-  for(i=0; i<db->nDb; i++){
+  for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
     p = sqlite3HashFind(&db->aDb[j].idxHash, zName, strlen(zName)+1);
@@ -537,7 +537,8 @@ static int findDb(sqlite3 *db, Token *pName){
   if( zName ){
     n = strlen(zName);
     for(i=(db->nDb-1), pDb=&db->aDb[i]; i>=0; i--, pDb--){
-      if( n==strlen(pDb->zName) && 0==sqlite3StrICmp(pDb->zName, zName) ){
+      if( (!OMIT_TEMPDB || i!=1 ) && n==strlen(pDb->zName) && 
+          0==sqlite3StrICmp(pDb->zName, zName) ){
         break;
       }
     }
@@ -656,12 +657,12 @@ void sqlite3StartTable(
   */
   iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   if( iDb<0 ) return;
-  if( isTemp && iDb>1 ){
+  if( !OMIT_TEMPDB && isTemp && iDb>1 ){
     /* If creating a temp table, the name may not be qualified */
     sqlite3ErrorMsg(pParse, "temporary table name must be unqualified");
     return;
   }
-  if( isTemp ) iDb = 1;
+  if( !OMIT_TEMPDB && isTemp ) iDb = 1;
 
   pParse->sNameToken = *pName;
   zName = sqlite3NameFromToken(pName);
@@ -679,13 +680,13 @@ void sqlite3StartTable(
       goto begin_table_error;
     }
     if( isView ){
-      if( isTemp ){
+      if( !OMIT_TEMPDB && isTemp ){
         code = SQLITE_CREATE_TEMP_VIEW;
       }else{
         code = SQLITE_CREATE_VIEW;
       }
     }else{
-      if( isTemp ){
+      if( !OMIT_TEMPDB && isTemp ){
         code = SQLITE_CREATE_TEMP_TABLE;
       }else{
         code = SQLITE_CREATE_TABLE;
@@ -1376,7 +1377,7 @@ static char *createTableStmt(Table *p){
   n += 35 + 6*p->nCol;
   zStmt = sqliteMallocRaw( n );
   if( zStmt==0 ) return 0;
-  strcpy(zStmt, p->iDb==1 ? "CREATE TEMP TABLE " : "CREATE TABLE ");
+  strcpy(zStmt, !OMIT_TEMPDB&&p->iDb==1 ? "CREATE TEMP TABLE ":"CREATE TABLE ");
   k = strlen(zStmt);
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
@@ -1865,13 +1866,13 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
       goto exit_drop_table;
     }
     if( isView ){
-      if( iDb==1 ){
+      if( !OMIT_TEMPDB && iDb==1 ){
         code = SQLITE_DROP_TEMP_VIEW;
       }else{
         code = SQLITE_DROP_VIEW;
       }
     }else{
-      if( iDb==1 ){
+      if( !OMIT_TEMPDB && iDb==1 ){
         code = SQLITE_DROP_TEMP_TABLE;
       }else{
         code = SQLITE_DROP_TABLE;
@@ -2189,7 +2190,6 @@ void sqlite3CreateIndex(
   int i, j;
   Token nullId;    /* Fake token for an empty ID list */
   DbFixer sFix;    /* For assigning database names to pTable */
-  int isTemp;      /* True for a temporary index */
   sqlite3 *db = pParse->db;
 
   int iDb;          /* Index of the database that is being written */
@@ -2210,6 +2210,7 @@ void sqlite3CreateIndex(
     iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pName);
     if( iDb<0 ) goto exit_create_index;
 
+#ifndef SQLITE_OMIT_TEMPDB
     /* If the index name was unqualified, check if the the table
     ** is a temp table. If so, set the database to 1.
     */
@@ -2217,6 +2218,7 @@ void sqlite3CreateIndex(
     if( pName2 && pName2->n==0 && pTab && pTab->iDb==1 ){
       iDb = 1;
     }
+#endif
 
     if( sqlite3FixInit(&sFix, pParse, iDb, "index", pName) &&
         sqlite3FixSrcList(&sFix, pTblName)
@@ -2244,7 +2246,6 @@ void sqlite3CreateIndex(
     goto exit_create_index;
   }
 #endif
-  isTemp = pTab->iDb==1;
 
   /*
   ** Find the name of the index.  Make sure there is not already another
@@ -2294,12 +2295,12 @@ void sqlite3CreateIndex(
   */
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
-    const char *zDb = db->aDb[pTab->iDb].zName;
-    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(isTemp), 0, zDb) ){
+    const char *zDb = db->aDb[iDb].zName;
+    if( sqlite3AuthCheck(pParse, SQLITE_INSERT, SCHEMA_TABLE(iDb), 0, zDb) ){
       goto exit_create_index;
     }
     i = SQLITE_CREATE_INDEX;
-    if( isTemp ) i = SQLITE_CREATE_TEMP_INDEX;
+    if( !OMIT_TEMPDB && iDb==1 ) i = SQLITE_CREATE_TEMP_INDEX;
     if( sqlite3AuthCheck(pParse, i, zName, pTab->zName, zDb) ){
       goto exit_create_index;
     }
@@ -2562,7 +2563,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName){
     if( sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       goto exit_drop_index;
     }
-    if( pIndex->iDb ) code = SQLITE_DROP_TEMP_INDEX;
+    if( !OMIT_TEMPDB && pIndex->iDb ) code = SQLITE_DROP_TEMP_INDEX;
     if( sqlite3AuthCheck(pParse, code, pIndex->zName, pTab->zName, zDb) ){
       goto exit_drop_index;
     }
@@ -2870,7 +2871,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
     if( (pParse->cookieMask & mask)==0 ){
       pParse->cookieMask |= mask;
       pParse->cookieValue[iDb] = db->aDb[iDb].schema_cookie;
-      if( iDb==1 ){
+      if( !OMIT_TEMPDB && iDb==1 ){
         sqlite3OpenTempDatabase(pParse);
       }
     }
@@ -2903,7 +2904,7 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   if( setStatement && pParse->nested==0 ){
     sqlite3VdbeAddOp(v, OP_Statement, iDb, 0);
   }
-  if( iDb!=1 && pParse->db->aDb[1].pBt!=0 ){
+  if( (OMIT_TEMPDB || iDb!=1) && pParse->db->aDb[1].pBt!=0 ){
     sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
 }

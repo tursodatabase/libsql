@@ -195,7 +195,7 @@ do_test laststmtchanges-4.3 {
 # 5.x - complex tests with temporary tables and nested instead of triggers
 # These tests cannot run if the library does not have view support enabled.
 
-ifcapable view {
+ifcapable view&&tempdb {
 
 do_test laststmtchanges-5.1 {
     catchsql {
