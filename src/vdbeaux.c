@@ -1061,4 +1061,94 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 }
 
 
+/*
+** The following is the comparison function for (non-integer)
+** keys in the btrees.  This function returns negative, zero, or
+** positive if the first key is less than, equal to, or greater than
+** the second.
+**
+** The key consists of multiple fields.  Each field begins with a variable
+** length integer which determines the field type and the number of bytes
+** of key data to follow for that field.
+**
+**   initial varint     bytes to follow    type
+**   --------------     ---------------    ---------------
+**      0                     0            NULL
+**      1                     1            signed integer
+**      2                     2            signed integer
+**      3                     4            signed integer
+**      4                     8            signed integer
+**      5                     8            IEEE float
+**     6..12                               reserved for expansion
+**    N>=12 and even       (N-12)/2        BLOB
+**    N>=13 and odd        (N-13)/2        text
+**
+** For a particular database, text is always either UTF-8, UTF-16BE, or
+** UTF-16LE.  Which of these three formats to use is determined by one
+** of the meta values in the file header.
+**
+*/
+#if 0
+int sqlite3VdbeKeyCompare(
+  void *userData,
+  int nKey1, const unsigned char *aKey1, 
+  int nKey2, const unsigned char *aKey2,
+){
+  KeyClass *pKeyClass = (KeyClass*)userData;
+  i1 = i2 = 0;
+  for(i1=i2=0; pKeyClass!=0; pKeyClass=pKeyClass->pNext){
+    if( varint32(aKey1, &i1, nKey1, &n1) ) goto bad_key;
+    if( varint32(aKey2, &i2, nKey2, &n2) ) goto bad_key;
+    if( n1==0 ){
+      if( n2>0 ) return -1;
+      /* both values are NULL.  consider them equal for sorting purposes. */
+    }else if( n2==0 ){
+      /* right value is NULL but the left value is not.  right comes first */
+      return +1;
+    }else if( n1<=5 ){
+      if( n2>5 ) return -1;
+      /* both values are numbers.  sort them numerically */
+      /******* Finish this ********/
+    }else if( n2<=5 ){
+      /* right value is numeric and left is TEXT or BLOB.  right comes first */
+      return +1;
+    }else if( n1<12 || n2<12 ){
+      /* bad coding for either the left or the right value */
+      goto bad_key;
+    }else if( (n1&0x01)==0 ){
+      if( n2&0x01)!=0 ) return -1;
+      /* both values are BLOB.  use memcmp() */
+      n1 = (n1-12)/2;
+      n2 = (n2-12)/2;
+      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
+      c = memcmp(&aKey1[i1], &aKey2[i2], n1<n2 ? n1 : n2);
+      if( c!=0 ){
+        return c | 1;
+      }
+      if( n1!=n2 ){
+        return (n1-n2) | 1;
+      }
+      i1 += n1;
+      i2 += n2;
+    }else if( n2&0x01)!=0 ){
+      /* right value if BLOB and left is TEXT.  BLOB comes first */
+      return +1;
+    }else{
+      /* both values are TEXT.  use the supplied comparison function */
+      n1 = (n1-13)/2;
+      n2 = (n2-13)/2;
+      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
+      c = pKeyClass->xCompare(pKeyClass->pUser, n1, &aKey1[i1], n2, &aKey2[i2]);
+      if( c!=0 ){
+        return c | 1;
+      }
+      i1 += n1;
+      i2 += n2;
+    } 
+  }
+  return 0;
 
+bad_key:
+  return 1;
+}
+#endif

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.114 2004/05/08 08:23:21 danielk1977 Exp $
+** $Id: btree.c,v 1.115 2004/05/08 10:56:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -556,98 +556,6 @@ static void freeSpace(MemPage *pPage, int start, int size){
   }
   assert( tsize+data[pPage->hdrOffset+5]==pPage->nFree );
 }
-
-#if 0
-/*
-** The following is the default comparison function for (non-integer)
-** keys in the btrees.  This function returns negative, zero, or
-** positive if the first key is less than, equal to, or greater than
-** the second.
-**
-** The key consists of multiple fields.  Each field begins with a variable
-** length integer which determines the field type and the number of bytes
-** of key data to follow for that field.
-**
-**   initial varint     bytes to follow    type
-**   --------------     ---------------    ---------------
-**      0                     0            NULL
-**      1                     1            signed integer
-**      2                     2            signed integer
-**      3                     4            signed integer
-**      4                     8            signed integer
-**      5                     8            IEEE float
-**     6..12                               reserved for expansion
-**    N>=12 and even       (N-12)/2        BLOB
-**    N>=13 and odd        (N-13)/2        text
-**
-** For a particular database, text is always either UTF-8, UTF-16BE, or
-** UTF-16LE.  Which of these three formats to use is determined by one
-** of the meta values in the file header.
-**
-*/
-static int keyComp(
-  void *userData,
-  int nKey1, const unsigned char *aKey1, 
-  int nKey2, const unsigned char *aKey2,
-){
-  KeyClass *pKeyClass = (KeyClass*)userData;
-  i1 = i2 = 0;
-  for(i1=i2=0; pKeyClass!=0; pKeyClass=pKeyClass->pNext){
-    if( varint32(aKey1, &i1, nKey1, &n1) ) goto bad_key;
-    if( varint32(aKey2, &i2, nKey2, &n2) ) goto bad_key;
-    if( n1==0 ){
-      if( n2>0 ) return -1;
-      /* both values are NULL.  consider them equal for sorting purposes. */
-    }else if( n2==0 ){
-      /* right value is NULL but the left value is not.  right comes first */
-      return +1;
-    }else if( n1<=5 ){
-      if( n2>5 ) return -1;
-      /* both values are numbers.  sort them numerically */
-      ...
-    }else if( n2<=5 ){
-      /* right value is numeric and left is TEXT or BLOB.  right comes first */
-      return +1;
-    }else if( n1<12 || n2<12 ){
-      /* bad coding for either the left or the right value */
-      goto bad_key;
-    }else if( (n1&0x01)==0 ){
-      if( n2&0x01)!=0 ) return -1;
-      /* both values are BLOB.  use memcmp() */
-      n1 = (n1-12)/2;
-      n2 = (n2-12)/2;
-      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
-      c = memcmp(&aKey1[i1], &aKey2[i2], n1<n2 ? n1 : n2);
-      if( c!=0 ){
-        return c | 1;
-      }
-      if( n1!=n2 ){
-        return (n1-n2) | 1;
-      }
-      i1 += n1;
-      i2 += n2;
-    }else if( n2&0x01)!=0 ){
-      /* right value if BLOB and left is TEXT.  BLOB comes first */
-      return +1;
-    }else{
-      /* both values are TEXT.  use the supplied comparison function */
-      n1 = (n1-13)/2;
-      n2 = (n2-13)/2;
-      if( i1+n1>nKey1 || i2+n2>nKey2 ) goto bad_key;
-      c = pKeyClass->xCompare(pKeyClass->pUser, n1, &aKey1[i1], n2, &aKey2[i2]);
-      if( c!=0 ){
-        return c | 1;
-      }
-      i1 += n1;
-      i2 += n2;
-    } 
-  }
-  return 0;
-
-bad_key:
-  return 1;
-}
-#endif
 
 /*
 ** Resize the aCell[] array of the given page so that it is able to
@@ -3253,23 +3161,27 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
   int i, j;
   int nFree;
   u16 idx;
-  int hdrOffset;
+  int hdr;
+  unsigned char *data;
   char range[20];
   unsigned char payload[20];
+
   rc = getPage(pBt, (Pgno)pgno, &pPage);
   if( rc ){
     return rc;
   }
+  hdr = pPage->hdrOffset;
+  data = pPage->aData;
   printf("PAGE %d:  flags=0x%02x  frag=%d\n", pgno,
-    pPage->aData[pPage->hdrOffset], pPage->aData[pPage->hdrOffset+5]);
+    data[hdr], data[hdr+5]);
   i = 0;
-  assert( pPage->hdrOffset == (pgno==1 ? 100 : 0) );
-  idx = get2byte(&pPage->aData[hdrOffset+3]);
+  assert( hdr == (pgno==1 ? 100 : 0) );
+  idx = get2byte(&data[hdr+3]);
   while( idx>0 && idx<=pBt->pageSize ){
     u64 nData, nKey;
     int nHeader;
     Pgno child;
-    unsigned char *pCell = &pPage->aData[idx];
+    unsigned char *pCell = &data[idx];
     int sz = cellSize(pPage, pCell);
     sprintf(range,"%d..%d", idx, idx+sz-1);
     parseCellHeader(pPage, pCell, &nData, &nKey, &nHeader);
@@ -3300,33 +3212,33 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
     printf("ERROR: next cell index out of range: %d\n", idx);
   }
   if( !pPage->leaf ){
-    printf("right_child: %d\n", get4byte(&pPage->aData[6]));
+    printf("right_child: %d\n", get4byte(&data[6]));
   }
   nFree = 0;
   i = 0;
-  idx = get2byte(&pPage->aData[hdrOffset+1]);
+  idx = get2byte(&data[hdr+1]);
   while( idx>0 && idx<pPage->pBt->pageSize ){
-    int sz = get2byte(&pPage->aData[idx+2]);
+    int sz = get2byte(&data[idx+2]);
     sprintf(range,"%d..%d", idx, idx+sz-1);
     nFree += sz;
     printf("freeblock %2d: i=%-10s size=%-4d total=%d\n",
        i, range, sz, nFree);
-    idx = get2byte(&pPage->aData[idx]);
+    idx = get2byte(&data[idx]);
     i++;
   }
   if( idx!=0 ){
     printf("ERROR: next freeblock index out of range: %d\n", idx);
   }
   if( recursive && !pPage->leaf ){
-    idx = get2byte(&pPage->aData[hdrOffset+3]);
+    idx = get2byte(&data[hdr+3]);
     while( idx>0 && idx<pBt->pageSize ){
-      unsigned char *pCell = &pPage->aData[idx];
+      unsigned char *pCell = &data[idx];
       sqlite3BtreePageDump(pBt, get4byte(&pCell[2]), 1);
       idx = get2byte(pCell);
     }
-    sqlite3BtreePageDump(pBt, get4byte(&pPage->aData[hdrOffset+6]), 1);
+    sqlite3BtreePageDump(pBt, get4byte(&data[hdr+6]), 1);
   }
-  sqlite3pager_unref(pPage->aData);
+  sqlite3pager_unref(data);
   return SQLITE_OK;
 }
 #endif
@@ -3764,40 +3676,3 @@ int sqlite3BtreeCopyFile(Btree *pBtTo, Btree *pBtFrom){
   }
   return rc;  
 }
-
-int sqlite3BtreeKeyCompare(
-  BtCursor *pCur,       /* Pointer to entry to compare against */
-  const void *pKey,     /* Key to compare against entry that pCur points to */
-  int nKey,             /* Number of bytes in pKey */
-  int nIgnore,          /* Ignore this many bytes at the end of pCur */
-  int *pResult          /* Write the result here */
-){
-  void *pCellKey;
-  u64 nCellKey;
-  int rc;
-
-  sqlite3BtreeKeySize(pCur, &nCellKey);
-  nCellKey = nCellKey - nIgnore;
-  if( nCellKey<=0 ){
-    *pResult = 0;
-    return SQLITE_OK;
-  }
-
-  pCellKey = sqlite3BtreeKeyFetch(pCur);
-  if( pCellKey ){
-    *pResult = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
-    return SQLITE_OK;
-  }
-
-  pCellKey = sqliteMalloc( nCellKey );
-  if( pCellKey==0 ) return SQLITE_NOMEM;
-
-  rc = sqlite3BtreeKey(pCur, 0, nCellKey, pCellKey);
-  *pResult = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
-  sqliteFree(pCellKey);
-
-  return rc;
-}
-
-
-

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.269 2004/05/08 08:23:40 danielk1977 Exp $
+** $Id: vdbe.c,v 1.270 2004/05/08 10:56:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2744,7 +2744,9 @@ case OP_IsUnique: {
         break;
       }
     }
+/******** FIX ME
     rc = sqlite3BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &res); 
+*/rc=SQLITE_INTERNAL;
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3472,7 +3474,9 @@ case OP_IdxPut: {
         int c;
         /* TODO: sqlite3BtreeKeySize(pCrsr, &n); */
         if( n==nKey
+/***** FIX ME
             && sqlite3BtreeKeyCompare(pCrsr, zKey, nKey-4, 4, &c)==SQLITE_OK
+*/
            && c==0
         ){
           rc = SQLITE_CONSTRAINT;
@@ -3593,7 +3597,9 @@ case OP_IdxGE: {
  
     Stringify(pTos);
     assert( p->aCsr[i].deferredMoveto==0 );
+/****** FIX ME
     rc = sqlite3BtreeKeyCompare(pCrsr, pTos->z, pTos->n, 4, &res);
+*/rc=SQLITE_INTERNAL;
     if( rc!=SQLITE_OK ){
       break;
     }
@@ -4908,6 +4914,3 @@ abort_due_to_interrupt:
   sqlite3SetString(&p->zErrMsg, sqlite_error_string(rc), (char*)0);
   goto vdbe_halt;
 }
-
-
-

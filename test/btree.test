@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.18 2004/05/08 02:03:23 drh Exp $
+# $Id: btree.test,v 1.19 2004/05/08 10:56:20 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -835,7 +835,7 @@ do_test btree-10.3 {
   select_keys $::c1
 } {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
 #btree_page_dump $::b1 7
-#btree_page_dump $::b1 2
+btree_page_dump $::b1 1
 #btree_page_dump $::b1 6
 do_test btree-10.4 {
   btree_move_to $::c1 011
