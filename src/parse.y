@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.105 2003/12/06 21:43:56 drh Exp $
+** @(#) $Id: parse.y,v 1.106 2004/01/15 03:30:25 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -664,6 +664,22 @@ expr(A) ::= expr(X) NOT IN LP select(Y) RP(E).  {
   A = sqliteExpr(TK_NOT, A, 0, 0);
   sqliteExprSpan(A,&X->span,&E);
 }
+expr(A) ::= expr(X) IN nm(Y) dbnm(D). {
+  SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
+  ExprList *pList = sqliteExprListAppend(0, sqliteExpr(TK_ALL,0,0,0), 0);
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  if( A ) A->pSelect = sqliteSelectNew(pList,pSrc,0,0,0,0,0,-1,0);
+  sqliteExprSpan(A,&X->span,D.z?&D:&Y);
+}
+expr(A) ::= expr(X) NOT IN nm(Y) dbnm(D). {
+  SrcList *pSrc = sqliteSrcListAppend(0, &Y, &D);
+  ExprList *pList = sqliteExprListAppend(0, sqliteExpr(TK_ALL,0,0,0), 0);
+  A = sqliteExpr(TK_IN, X, 0, 0);
+  if( A ) A->pSelect = sqliteSelectNew(pList,pSrc,0,0,0,0,0,-1,0);
+  A = sqliteExpr(TK_NOT, A, 0, 0);
+  sqliteExprSpan(A,&X->span,D.z?&D:&Y);
+}
+
 
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
