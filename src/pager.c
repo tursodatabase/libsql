@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.195 2005/03/20 19:10:12 drh Exp $
+** @(#) $Id: pager.c,v 1.196 2005/03/20 22:47:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -935,6 +935,12 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   u32 cksum;                    /* Checksum used for sanity checking */
   u8 aData[SQLITE_MAX_PAGE_SIZE];  /* Temp storage for a page */
 
+  /* useCksum should be true for the main journal and false for
+  ** statement journals.  Verify that this is always the case
+  */
+  assert( jfd == (useCksum ? &pPager->jfd : &pPager->stfd) );
+
+
   rc = read32bits(jfd, &pgno);
   if( rc!=SQLITE_OK ) return rc;
   rc = sqlite3OsRead(jfd, &aData, pPager->pageSize);
@@ -969,14 +975,27 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   **
   ** If in EXCLUSIVE state, then we update the pager cache if it exists
   ** and the main file. The page is then marked not dirty.
+  **
+  ** Ticket #1171:  The statement journal might contain page content that is
+  ** different from the page content at the start of the transaction.
+  ** This occurs when a page is changed prior to the start of a statement
+  ** then changed again within the statement.  When rolling back such a
+  ** statement we must not write to the original database unless we know
+  ** for certain that original page contents are in the main rollback
+  ** journal.  Otherwise, if a full ROLLBACK occurs after the statement
+  ** rollback the full ROLLBACK will not restore the page to its original
+  ** content.  Two conditions must be met before writing to the database
+  ** files. (1) the database must be locked.  (2) we know that the original
+  ** page content is in the main journal either because the page is not in
+  ** cache or else it is marked as needSync==0.
   */
   pPg = pager_lookup(pPager, pgno);
-  assert( pPager->state>=PAGER_EXCLUSIVE || pPg );
+  assert( pPager->state>=PAGER_EXCLUSIVE || pPg!=0 );
   TRACE3("PLAYBACK %d page %d\n", PAGERID(pPager), pgno);
-  assert( jfd == (useCksum ? &pPager->jfd : &pPager->stfd) );
-  if( pPager->state>=PAGER_EXCLUSIVE && (useCksum || !pPg || !pPg->needSync) ){
+  if( pPager->state>=PAGER_EXCLUSIVE && (pPg==0 || pPg->needSync==0) ){
     sqlite3OsSeek(&pPager->fd, (pgno-1)*(i64)pPager->pageSize);
     rc = sqlite3OsWrite(&pPager->fd, aData, pPager->pageSize);
+    if( pPg ) pPg->dirty = 0;
   }
   if( pPg ){
     /* No page should ever be explicitly rolled back that is in use, except
@@ -992,13 +1011,9 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     if( pPager->xDestructor ){  /*** FIX ME:  Should this be xReinit? ***/
       pPager->xDestructor(pData, pPager->pageSize);
     }
-    if( pPager->state>=PAGER_EXCLUSIVE ){
-      pPg->dirty = 0;
-      pPg->needSync = 0;
 #ifdef SQLITE_CHECK_PAGES
-      pPg->pageHash = pager_pagehash(pPg);
+    pPg->pageHash = pager_pagehash(pPg);
 #endif
-    }
     CODEC(pPager, pData, pPg->pgno, 3);
   }
   return rc;

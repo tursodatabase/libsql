@@ -1,5 +1,5 @@
-C Tentative\sfix\sfor\sticket\s#1171.\s\sMore\sresearch\sand\stesting\sneeded.\s(CVS\s2402)
-D 2005-03-20T19:10:12
+C More\schanges\sfor\sticket\s#1171\safter\sadditional\sanalysis.\s(CVS\s2403)
+D 2005-03-20T22:47:57
 F Makefile.in 5c00d0037104de2a50ac7647a5f12769795957a3
 F Makefile.linux-gcc 06be33b2a9ad4f005a5f42b22c4a19dab3cbb5c7
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -52,7 +52,7 @@ F src/os_unix.c fba0167576f09e242afd4c4978e1d2944b1da8b5
 F src/os_unix.h 40b2fd1d02cfa45d6c3dea25316fd019cf9fcb0c
 F src/os_win.c bddeae1c3299be0fbe47077dd4e98b786a067f71
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c bac21a13353a91cf8342e3c5ee7bd89a50e46917
+F src/pager.c e5000ca94ba2894d249213675318bbc918f97e9c
 F src/pager.h 70d496f372163abb6340f474288c4bb9ea962cf7
 F src/parse.y 10c0ace9efce31d5a06e03488a4284b9d97abc56
 F src/pragma.c 4b20dbc0f4b97f412dc511853d3d0c2e0d4adedc
@@ -277,7 +277,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 528299b8316726dbcc5548e9aa0648c8b1bd055b
-P f065b6102db838d48f1a1a9ed68b2a09cd440cf8
-R 2d3ac9a5328361b0e3fa76626887a5ca
+P f0a39cee78472b93cce5304fc255285ddea7d2bf
+R 43f1db9a2e69b0f7f7b43aff2c1a6b5f
 U drh
-Z 040f462f187d8ccdb87f470324a49732
+Z d771bce0fb6baa30068489aaa968f24c
