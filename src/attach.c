@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.26 2004/08/01 03:52:18 drh Exp $
+** $Id: attach.c,v 1.27 2004/09/05 23:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,7 +28,7 @@ void sqlite3Attach(
   Token *pFilename,    /* Name of database file */
   Token *pDbname,      /* Name of the database to use internally */
   int keyType,         /* 0: no key.  1: TEXT,  2: BLOB */
-  Token *pKey          /* Text of the key for keytype 2 and 3 */
+  Token *pKey          /* Text of the key for keytype 1 and 2 */
 ){
   Db *aNew;
   int rc, i;
@@ -202,7 +202,7 @@ void sqlite3Detach(Parse *pParse, Token *pDbname){
 int sqlite3FixInit(
   DbFixer *pFix,      /* The fixer to be initialized */
   Parse *pParse,      /* Error messages will be written here */
-  int iDb,            /* This is the database that must must be used */
+  int iDb,            /* This is the database that must be used */
   const char *zType,  /* "view", "trigger", or "index" */
   const Token *pName  /* Name of the view, trigger, or index */
 ){
@@ -238,21 +238,21 @@ int sqlite3FixSrcList(
 ){
   int i;
   const char *zDb;
+  struct SrcList_item *pItem;
 
   if( pList==0 ) return 0;
   zDb = pFix->zDb;
-  for(i=0; i<pList->nSrc; i++){
-    if( pList->a[i].zDatabase==0 ){
-      pList->a[i].zDatabase = sqliteStrDup(zDb);
-    }else if( sqlite3StrICmp(pList->a[i].zDatabase,zDb)!=0 ){
+  for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
+    if( pItem->zDatabase==0 ){
+      pItem->zDatabase = sqliteStrDup(zDb);
+    }else if( sqlite3StrICmp(pItem->zDatabase,zDb)!=0 ){
       sqlite3ErrorMsg(pFix->pParse,
-         "%s %z cannot reference objects in database %s",
-         pFix->zType, sqliteStrNDup(pFix->pName->z, pFix->pName->n),
-         pList->a[i].zDatabase);
+         "%s %T cannot reference objects in database %s",
+         pFix->zType, pFix->pName, pItem->zDatabase);
       return 1;
     }
-    if( sqlite3FixSelect(pFix, pList->a[i].pSelect) ) return 1;
-    if( sqlite3FixExpr(pFix, pList->a[i].pOn) ) return 1;
+    if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
+    if( sqlite3FixExpr(pFix, pItem->pOn) ) return 1;
   }
   return 0;
 }
@@ -300,9 +300,10 @@ int sqlite3FixExprList(
   ExprList *pList    /* The expression to be fixed to one database */
 ){
   int i;
+  struct ExprList_item *pItem;
   if( pList==0 ) return 0;
-  for(i=0; i<pList->nExpr; i++){
-    if( sqlite3FixExpr(pFix, pList->a[i].pExpr) ){
+  for(i=0, pItem=pList->a; i<pList->nExpr; i++, pItem++){
+    if( sqlite3FixExpr(pFix, pItem->pExpr) ){
       return 1;
     }
   }

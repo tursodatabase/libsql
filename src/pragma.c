@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.62 2004/09/02 15:14:01 drh Exp $
+** $Id: pragma.c,v 1.63 2004/09/05 23:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -28,7 +28,7 @@ static int getBoolean(const u8 *z){
   static const u8 *azTrue[] = { "yes", "on", "true" };
   int i;
   if( z[0]==0 ) return 0;
-  if( isdigit(z[0]) || (z[0]=='-' && isdigit(z[1])) ){
+  if( sqlite3IsNumber(z, 0, SQLITE_UTF8) ){
     return atoi(z);
   }
   for(i=0; i<sizeof(azTrue)/sizeof(azTrue[0]); i++){
@@ -62,7 +62,7 @@ static int getSafetyLevel(u8 *z){
   };
   int i;
   if( z[0]==0 ) return 1;
-  if( isdigit(z[0]) || (z[0]=='-' && isdigit(z[1])) ){
+  if( sqlite3IsNumber(z, 0, SQLITE_UTF8) ){
     return atoi(z);
   }
   for(i=0; i<sizeof(aKey)/sizeof(aKey[0]); i++){

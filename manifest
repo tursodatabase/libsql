@@ -1,5 +1,5 @@
-C Make\sVACUUM\swork\swhen\sthe\spage\ssize\sis\sdifferent\sthan\sthe\sdefault\s1024.\nTicket\s#890.\s(CVS\s1939)
-D 2004-09-05T00:33:43
+C Comment\schanges\sand\sminor\scode\scleanup.\s(CVS\s1940)
+D 2004-09-05T23:23:42
 F Makefile.in 65a7c43fcaf9a710d62f120b11b6e435eeb4a450
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -26,7 +26,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.def 84215604aa7b547d75e0f7b437966e7ad18fa8b2
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/attach.c 0bd4f11da6999665da30625665a4096ba7898de6
+F src/attach.c 3fe50b71cf6b324c7d217fc13742124dba726486
 F src/auth.c 60db23b98bb94c8b0178180faaf49dc116674217
 F src/btree.c fe763fde639793ef2010d5388d0d135ecc02b4eb
 F src/btree.h 94dfec0a1722d33359b23e7e310f2b64ffedf029
@@ -55,7 +55,7 @@ F src/os_win.h babd4e912967c6b09088cfe38a45e8005a07ba44
 F src/pager.c ae06c85de0db43f61a7a3e5eacad3fd5615daf59
 F src/pager.h 67739fe649f33be55dba522ca8a9cc4e42d14f71
 F src/parse.y 581a2ce014b843506805b2470c02b7865ad034d5
-F src/pragma.c 7156618038546ed4d09d733ceea231aebee3f2f8
+F src/pragma.c 0fbfb50491ac971dd22c049c3042c322e9cadb39
 F src/printf.c 17b28a1eedfe8129b05de981719306c18c3f1327
 F src/random.c eff68e3f257e05e81eae6c4d50a51eb88beb4ff3
 F src/select.c 14534579535579a082fda8bbc7d621d7d170f406
@@ -73,7 +73,7 @@ F src/tokenize.c 32171c3d576c7ec6acd6cf15e55c00ac0b314769
 F src/trigger.c 40e10f4b219b55e56478bc17480ce77654300e8d
 F src/update.c bbe126c67529bd699016af2d72bc4ceb8fd41527
 F src/utf.c 328890099db492dda5620ee5f924e244c6e57ff7
-F src/util.c d5aaf211543fb6e285654fada50252c857ac78aa
+F src/util.c f53a683ff6daf25694920c42020848fc38967a8f
 F src/vacuum.c c5f11bf25e49479940133d1bb882ad2a5d6fa021
 F src/vdbe.c 45f659497b479f001c2f4e8251474aba3975b9f8
 F src/vdbe.h e081c72cd0f7c19d49b1927460aeefcf0fbc85ac
@@ -248,7 +248,7 @@ F www/tclsqlite.tcl 560ecd6a916b320e59f2917317398f3d59b7cc25
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P af44ddeea110576bf9c475b5e6e3540ee50c5edf
-R afb470c685b393383d09d5ee609f260e
+P fa82becae7e41c47a6387061932f692c6f9f472e
+R edad9a6786f399b5ab4dfba836413b99
 U drh
-Z 341c14103181636b02bfc0ae91fe7a33
+Z 8c9e068ca55b5659b9e57265a53ffefe

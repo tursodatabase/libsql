@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.114 2004/08/31 00:52:37 drh Exp $
+** $Id: util.c,v 1.115 2004/09/05 23:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -591,7 +591,7 @@ int sqlite3StrNICmp(const char *zLeft, const char *zRight, int N){
 ** the string is numeric and contains the '.' character, set *realnum
 ** to TRUE (otherwise FALSE).
 **
-** Am empty string is considered non-numeric.
+** An empty string is considered non-numeric.
 */
 int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
   int incr = (enc==SQLITE_UTF8?1:2);
@@ -722,7 +722,7 @@ int sqlite3atoi64(const char *zNum, i64 *pNum){
 ** 32-bit signed integer, return TRUE.  Otherwise return FALSE.
 **
 ** This routine returns FALSE for the string -2147483648 even that
-** that number will, in theory fit in a 32-bit integer.  But positive
+** that number will in fact fit in a 32-bit integer.  But positive
 ** 2147483648 will not fit in 32 bits.  So it seems safer to return
 ** false.
 */
