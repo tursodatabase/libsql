@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.16 2000/06/05 18:54:47 drh Exp $
+** $Id: vdbe.c,v 1.17 2000/06/05 21:39:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -107,6 +107,30 @@ struct Mem {
 typedef struct Mem Mem;
 
 /*
+** An Agg structure describes and Aggregator.  Each Agg consists of
+** zero or more Aggregator elements (AggElem).  Each AggElem contains
+** a key and one or more values.  The values are used in processing
+** aggregate functions in a SELECT.  The key is used to implement
+** the GROUP BY clause of a select.
+*/
+typedef struct Agg Agg;
+typedef struct AggElem AggElem;
+struct Agg {
+  int nMem;              /* Number of values stored in each AggElem */
+  AggElem *pCurrent;     /* The AggElem currently in focus */
+  int nElem;             /* The number of AggElems */
+  int nHash;             /* Number of slots in apHash[] */
+  AggElem **apHash;      /* A hash table for looking up AggElems by zKey */
+  AggElem *pFirst;       /* A list of all AggElems */
+};
+struct AggElem {
+  char *zKey;            /* The key to this AggElem */
+  AggElem *pHash;        /* Next AggElem with the same hash on zKey */
+  AggElem *pNext;        /* Next AggElem in a list of them all */
+  Mem aMem[1];           /* The values for this AggElem */
+};
+
+/*
 ** Allowed values for Stack.flags
 */
 #define STK_Null      0x0001   /* Value is NULL */
@@ -145,6 +169,7 @@ struct Vdbe {
   int nLineAlloc;     /* Number of spaces allocated for zLine */
   int nMem;           /* Number of memory locations currently allocated */
   Mem *aMem;          /* The memory locations */
+  Agg agg;            /* Aggregate information */
 };
 
 /*
@@ -325,6 +350,89 @@ int sqliteVdbeMakeLabel(Vdbe *p){
   }
   p->aLabel[i] = -1;
   return -1-i;
+}
+
+/*
+** Reset an Agg structure.  Delete all its contents.
+*/
+static void AggReset(Agg *p){
+  int i;
+  while( p->pFirst ){
+    AggElem *pElem = p->pFirst;
+    p->pFirst = pElem->pNext;
+    for(i=0; i<p->nMem; i++){
+      if( pElem->aMem[i].s.flags & STK_Dyn ){
+        sqliteFree(pElem->aMem[i].z);
+      }
+    }
+    sqliteFree(pElem);
+  }
+  sqliteFree(p->apHash);
+  memset(p, 0, sizeof(*p));
+}
+
+/*
+** Add the given AggElem to the hash table
+*/
+static void AggEnhash(Agg *p, AggElem *pElem){
+  int h = sqliteHashNoCase(pElem->zKey, 0) % p->nHash;
+  pElem->pHash = p->apHash[h];
+  p->apHash[h] = pElem;
+}
+
+/*
+** Change the size of the hash table to the amount given.
+*/
+static void AggRehash(Agg *p, int nHash){
+  int size;
+  AggElem *pElem;
+  if( p->nHash==nHash ) return;
+  size = nHash * sizeof(AggElem*);
+  p->apHash = sqliteRealloc(p->apHash, size );
+  memset(p->apHash, 0, size);
+  p->nHash = nHash;
+  for(pElem=p->pFirst; pElem; pElem=pElem->pNext){
+    AggEnhash(p, pElem);
+  }
+}
+
+/*
+** Insert a new element and make it the current element.  
+**
+** Return 0 on success and 1 if memory is exhausted.
+*/
+static int AggInsert(Agg *p, char *zKey){
+  AggElem *pElem;
+  if( p->nHash < p->nElem*2 ){
+    AggRehash(p, p->nElem*2 + 103);
+  }
+  if( p->nHash==0 ) return 1;
+  pElem = sqliteMalloc( sizeof(AggElem) + strlen(zKey) + 1 +
+                        (p->nMem-1)*sizeof(pElem->aMem[0]) );
+  if( pElem==0 ) return 1;
+  pElem->zKey = (char*)&pElem->aMem[p->nMem];
+  strcpy(pElem->zKey, zKey);
+  AggEnhash(p, pElem);
+  pElem->pNext = p->pFirst;
+  p->pFirst = pElem;
+  p->nElem++;
+  p->pCurrent = pElem;
+  return 0;
+}
+
+/*
+** Get the AggElem currently in focus
+*/
+#define AggInFocus(P)   ((P).pCurrent ? (P).pCurrent : _AggInFocus(&(P)))
+static AggElem *_AggInFocus(Agg *p){
+  AggElem *pFocus = p->pFirst;
+  if( pFocus ){
+    p->pCurrent = pFocus;
+  }else{
+    AggInsert(p,"");
+    pFocus = p->pCurrent;
+  }
+  return pFocus;
 }
 
 /*
@@ -519,6 +627,7 @@ static void Cleanup(Vdbe *p){
     p->zLine = 0;
   }
   p->nLineAlloc = 0;
+  AggReset(&p->agg);
 }
 
 /*
@@ -561,16 +670,17 @@ static char *zOpName[] = { 0,
   "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
   "Sort",           "SortNext",       "SortKey",        "SortCallback",
   "SortClose",      "FileOpen",       "FileRead",       "FileField",
-  "FileClose",      "MakeRecord",     "MakeKey",        "Goto",
-  "If",             "Halt",           "ColumnCount",    "ColumnName",
-  "Callback",       "Integer",        "String",         "Null",
-  "Pop",            "Dup",            "Pull",           "Add",
-  "AddImm",         "Subtract",       "Multiply",       "Divide",
-  "Min",            "Max",            "Like",           "Glob",
-  "Eq",             "Ne",             "Lt",             "Le",
-  "Gt",             "Ge",             "IsNull",         "NotNull",
-  "Negative",       "And",            "Or",             "Not",
-  "Concat",         "Noop",         
+  "FileClose",      "AggReset",       "AggFocus",       "AggIncr",
+  "AggNext",        "AggSet",         "AggGet",         "MakeRecord",
+  "MakeKey",        "Goto",           "If",             "Halt",
+  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
+  "String",         "Null",           "Pop",            "Dup",
+  "Pull",           "Add",            "AddImm",         "Subtract",
+  "Multiply",       "Divide",         "Min",            "Max",
+  "Like",           "Glob",           "Eq",             "Ne",
+  "Lt",             "Le",             "Gt",             "Ge",
+  "IsNull",         "NotNull",        "Negative",       "And",
+  "Or",             "Not",            "Concat",         "Noop",
 };
 
 /*
@@ -2477,6 +2587,164 @@ int sqliteVdbeExec(
             p->zStack[tos] = z;
             p->aStack[tos].flags |= STK_Dyn;
           }
+        }
+        break;
+      }
+
+      /* Opcode: AggReset * P2 *
+      **
+      ** Reset the aggregator so that it no longer contains any data.
+      ** Future aggregator elements will contain P2 values each.
+      */
+      case OP_AggReset: {
+        AggReset(&p->agg);
+        p->agg.nMem = pOp->p2;
+        break;
+      }
+
+      /* Opcode: AggFocus * P2 *
+      **
+      ** Pop the top of the stack and use that as an aggregator key.  If
+      ** an aggregator with that same key already exists, then make the
+      ** aggregator the current aggregator and jump to P2.  If no aggregator
+      ** with the given key exists, create one and make it current but
+      ** do not jump.
+      **
+      ** This opcode should not be executed after an AggNext but before
+      ** the next AggReset.
+      */
+      case OP_AggFocus: {
+        int tos = p->tos;
+        AggElem *pElem;
+        char *zKey;
+        int nKey;
+
+        if( tos<0 ) goto not_enough_stack;
+        Stringify(p, tos);
+        zKey = p->zStack[tos]; 
+        nKey = p->aStack[tos].n;
+        if( p->agg.nHash<=0 ){
+          pElem = 0;
+        }else{
+          int h = sqliteHashNoCase(zKey, nKey-1) % p->agg.nHash;
+          for(pElem=p->agg.apHash[h]; pElem; pElem=pElem->pHash){
+            if( strcmp(pElem->zKey, zKey)==0 ) break;
+          }
+        }
+        if( pElem ){
+          p->agg.pCurrent = pElem;
+          pc = pOp->p2 - 1;
+        }else{
+          AggInsert(&p->agg, zKey);
+        }
+        break; 
+      }
+
+      /* Opcode: AggIncr P1 P2 *
+      **
+      ** Increment the P2-th field of the aggregate element current
+      ** in focus by an amount P1.
+      */
+      case OP_AggIncr: {
+        AggElem *pFocus = AggInFocus(p->agg);
+        int i = pOp->p2;
+        if( pFocus==0 ) goto no_mem;
+        if( i>=0 && i<p->agg.nMem ){
+          Mem *pMem = &pFocus->aMem[i];
+          if( pMem->s.flags!=STK_Int ){
+            if( pMem->s.flags & STK_Int ){
+              /* Do nothing */
+            }else if( pMem->s.flags & STK_Real ){
+              pMem->s.i = pMem->s.r;
+            }else if( pMem->s.flags & STK_Str ){
+              pMem->s.i = atoi(pMem->z);
+            }else{
+              pMem->s.i = 0;
+            }
+            if( pMem->s.flags & STK_Dyn ) sqliteFree(pMem->z);
+            pMem->z = 0;
+            pMem->s.flags = STK_Int;
+          }
+          pMem->s.i += pOp->p1;
+        }
+        break;
+      }
+
+      /* Opcode: AggSet * P2 *
+      **
+      ** Move the top of the stack into the P2-th field of the current
+      ** aggregate.  String values are duplicated into new memory.
+      */
+      case OP_AggSet: {
+        AggElem *pFocus = AggInFocus(p->agg);
+        int i = pOp->p2;
+        int tos = p->tos;
+        if( tos<0 ) goto not_enough_stack;
+        if( pFocus==0 ) goto no_mem;
+        if( i>=0 && i<p->agg.nMem ){
+          Mem *pMem = &pFocus->aMem[i];
+          pMem->s = p->aStack[tos];
+          if( pMem->s.flags & STK_Str ){
+            pMem->z = sqliteMalloc( p->aStack[tos].n );
+            if( pMem->z==0 ) goto no_mem;
+            memcpy(pMem->z, p->zStack[tos], pMem->s.n);
+            pMem->s.flags |= STK_Str|STK_Dyn;
+          }
+        }
+        PopStack(p, 1);
+        break;
+      }
+
+      /* Opcode: AggGet * P2 *
+      **
+      ** Push a new entry onto the stack which is a copy of the P2-th field
+      ** of the current aggregate.  String are not duplicated so
+      ** string values will be ephemeral.  
+      */
+      case OP_AggGet: {
+        AggElem *pFocus = AggInFocus(p->agg);
+        int i = pOp->p2;
+        int tos = ++p->tos;
+        if( NeedStack(p, tos) ) goto no_mem;
+        if( pFocus==0 ) goto no_mem;
+        if( i>=0 && i<p->agg.nMem ){
+          Mem *pMem = &pFocus->aMem[i];
+          p->aStack[tos] = pMem->s;
+          p->zStack[tos] = pMem->z;
+          p->aStack[tos].flags &= ~STK_Dyn;
+        }
+        break;
+      }
+
+      /* Opcode: AggNext * P2 *
+      **
+      ** Make the next aggregate value the current aggregate.  The prior
+      ** aggregate is deleted.  If all aggregate values have been consumed,
+      ** jump to P2.
+      **
+      ** Do not execute an AggFocus after this opcode until after the
+      ** next AggReset.
+      */
+      case OP_AggNext: {
+        if( p->agg.nHash ){
+          p->agg.nHash = 0;
+          sqliteFree(p->agg.apHash);
+          p->agg.apHash = 0;
+          p->agg.pCurrent = p->agg.pFirst;
+        }else if( p->agg.pCurrent==p->agg.pFirst ){
+          int i;
+          AggElem *pElem = p->agg.pCurrent;
+          for(i=0; i<p->agg.nMem; i++){
+            if( pElem->aMem[i].s.flags & STK_Dyn ){
+              sqliteFree(pElem->aMem[i].z);
+            }
+          }
+          p->agg.pCurrent = p->agg.pFirst = pElem->pNext;
+          sqliteFree(pElem);
+          p->agg.nElem--;
+        }
+        if( p->agg.pCurrent==0 ){
+          pc = pOp->p2-1;
         }
         break;
       }
