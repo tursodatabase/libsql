@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.72 2003/04/26 02:50:11 drh Exp $
+** $Id: shell.c,v 1.73 2003/04/26 03:03:07 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -890,26 +890,36 @@ static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 }
 
 /*
-** Skip over an SQL comments and whitespace.  Return a pointer to the text that
-** follows the comments and whitespace.
-*/
-static char *skip_whitespace(char *z){
-  while( isspace(*z) ){ z++; }
-  while( z[0]=='-' && z[1]=='-' ){
-    z += 2;
-    while( *z && *z!='\n' ){ z++; }
-    while( isspace(*z) ){ z++; }
-  }
-  return z;
-}
-
-/*
 ** Return TRUE if the last non-whitespace character in z[] is a semicolon.
 ** z[] is N characters long.
 */
 static int _ends_with_semicolon(const char *z, int N){
   while( N>0 && isspace(z[N-1]) ){ N--; }
   return N>0 && z[N-1]==';';
+}
+
+/*
+** Test to see if a line consists entirely of whitespace.
+*/
+static int _all_whitespace(const char *z){
+  for(; *z; z++){
+    if( isspace(*z) ) continue;
+    if( *z=='/' && z[1]=='*' ){
+      z += 2;
+      while( *z && (*z!='*' || z[1]!='/') ){ z++; }
+      if( *z==0 ) return 0;
+      z++;
+      continue;
+    }
+    if( *z=='-' && z[1]=='-' ){
+      z += 2;
+      while( *z && *z!='\n' ){ z++; }
+      if( *z==0 ) return 1;
+      continue;
+    }
+    return 0;
+  }
+  return 1;
 }
 
 /*
@@ -931,6 +941,7 @@ static void process_input(struct callback_data *p, FILE *in){
       seenInterrupt = 0;
     }
     if( p->echoOn ) printf("%s\n", zLine);
+    if( _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
       int rc = do_meta_command(zLine, db, p);
       free(zLine);
@@ -976,8 +987,7 @@ static void process_input(struct callback_data *p, FILE *in){
     }
   }
   if( zSql ){
-    char *zTail = skip_whitespace(zSql);
-    if( zTail && zTail[0] ) printf("Incomplete SQL: %s\n", zSql);
+    if( !_all_whitespace(zSql) ) printf("Incomplete SQL: %s\n", zSql);
     free(zSql);
   }
 }
