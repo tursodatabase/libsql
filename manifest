@@ -1,5 +1,5 @@
-C Added\sexplanation\sand\sexamples\sfor\s%Q\sformat\sspecifier.\s(CVS\s623)
-D 2002-06-16T04:57:32
+C Expose\san\sadditional\sinternal\sAPI\sroutine\s(sqliteInitCallback())\sfor\nuse\sby\sprivate\scode.\s(CVS\s624)
+D 2002-06-16T18:21:44
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -28,7 +28,7 @@ F src/func.c b8d0fd3011f53ea0e46b6bab857612eb36b5d1ea
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
 F src/hash.h cd0433998bc1a3759d244e1637fe5a3c13b53bf8
 F src/insert.c 3a90bb98cd246f88cc26c44f24d5b47760bc5cba
-F src/main.c c99dc0a52160a0935e7f663355100c0fcdfb35b3
+F src/main.c 07f56387147f00e69eea7cea369071452bc4706f
 F src/md5.c 0ae1f3e2cac92d06fc6246d1b4b8f61a2fe66d3b
 F src/os.c 9cc40c5384baba4a85e160e67807645ca98ba3cc
 F src/os.h 4a361fccfbc4e7609b3e1557f604f94c1e96ad10
@@ -41,7 +41,7 @@ F src/select.c 6c3a92d7a0bdf3448265d530cc0e6f6e5a764997
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
-F src/sqliteInt.h 93e0ad1b37658391de6f211f65e7924a2064aa4d
+F src/sqliteInt.h b09bebf759f71a2c70510204d56053648eee9eb7
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c 9300c9606a38bc0c75d6c0bc8a6197ab979353d1
 F src/test1.c 5cc4f0bbf38237e04e1b2077e285b41bfb4c4cbf
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 7d5fc35b5d38230230344b4f70763f75940ab908
-R d122c615a4148cedce3cbd33972d093f
-U chw
-Z 3a86dbdae8ed57285b80b82bbf99d831
+P 633ce4dd252ac351b04bdb7bed2d5374ee9a3f12
+R 704a7f7fff6331780af41f270723daf8
+U drh
+Z 721b8e63e54d0704311d918642ec1d5c

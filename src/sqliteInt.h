@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.123 2002/06/11 02:25:42 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.124 2002/06/16 18:21:44 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -905,3 +905,4 @@ TriggerStep *sqliteTriggerUpdateStep(Token*, ExprList*, Expr*, int);
 TriggerStep *sqliteTriggerDeleteStep(Token*, Expr*);
 void sqliteDeleteTrigger(Trigger*);
 int sqliteJoinType(Parse*, Token*, Token*, Token*);
+int sqliteInitCallback(void*,int,char**,char**);

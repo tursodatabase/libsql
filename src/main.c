@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.79 2002/06/14 20:54:15 drh Exp $
+** $Id: main.c,v 1.80 2002/06/16 18:21:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -32,7 +32,7 @@
 **     argv[3] = SQL create statement for the table or index
 **
 */
-static int sqliteOpenCb(void *pDb, int argc, char **argv, char **azColName){
+int sqliteInitCallback(void *pDb, int argc, char **argv, char **azColName){
   sqlite *db = (sqlite*)pDb;
   Parse sParse;
   int nErr = 0;
@@ -259,7 +259,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     return SQLITE_NOMEM;
   }
   sqliteVdbeAddOpList(vdbe, sizeof(initProg)/sizeof(initProg[0]), initProg);
-  rc = sqliteVdbeExec(vdbe, sqliteOpenCb, db, pzErrMsg, 
+  rc = sqliteVdbeExec(vdbe, sqliteInitCallback, db, pzErrMsg, 
                       db->pBusyArg, db->xBusyCallback);
   sqliteVdbeDelete(vdbe);
   if( rc==SQLITE_OK && db->nTable==0 ){
@@ -282,7 +282,7 @@ static int sqliteInit(sqlite *db, char **pzErrMsg){
     azArg[2] = "2";
     azArg[3] = master_schema;
     azArg[4] = 0;
-    sqliteOpenCb(db, 4, azArg, 0);
+    sqliteInitCallback(db, 4, azArg, 0);
     pTab = sqliteFindTable(db, MASTER_NAME);
     if( pTab ){
       pTab->readOnly = 1;
