@@ -1,5 +1,5 @@
-C Fix\sa\s#ifdef\sin\sutil.c.\s(CVS\s2369)
-D 2005-03-10T12:35:46
+C Disable\sthe\salter2\stests\sif\sthere\sis\sa\scodec\scompiled\sinto\sthe\slibrary.\s(CVS\s2370)
+D 2005-03-10T12:52:47
 F Makefile.in 76443a83549d1539105e12d13bd0054a05ab2214
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -85,7 +85,7 @@ F src/where.c 80a2a9d24f868fc5744ba2838701c46934c7e09f
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/all.test 7f0988442ab811dfa41793b5b550f5828ce316f3
 F test/alter.test 3a20ce14c3989f7e2e75da50797065c2e56f838b
-F test/alter2.test 10277f9d5290951ab389c2fc92f3b1a78bbfe2af
+F test/alter2.test 60ba0a7057dc71ad630a1cc7c487104346849d50
 F test/attach.test 3c951c822047854fd6c2f1f6ad7c0ad82c7aa90b
 F test/attach2.test 6f3a3a3a7f5be40388dd4d805e0e0712718dca9d
 F test/attach3.test c05c70b933afbde0901dab9da3e66ee842c09f38
@@ -274,7 +274,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl 3e522a06ad41992023c80ca29a048ae2331ca5bd
-P 64c4c717d35c8fce9b4be073196c507f6d471188
-R 376a03a042ddb758e92aa5072636722f
+P f426c625c4c3de626b5f5f8b5a6343a7ec3b16e9
+R 4d34e3a6fbc8b940b8a716efa5ae8b3b
 U drh
-Z 1a38fbee75c00acc8623c5176ebc1fe3
+Z 05bd61621ca7830d39b52ce16b018ff9
