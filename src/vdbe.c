@@ -41,7 +41,7 @@
 ** But other routines are also provided to help in building up
 ** a program instruction by instruction.
 **
-** $Id: vdbe.c,v 1.26 2000/06/07 01:27:49 drh Exp $
+** $Id: vdbe.c,v 1.27 2000/06/07 15:39:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <unistd.h>
@@ -1715,6 +1715,7 @@ int sqliteVdbeExec(
           }
         }
         p->aTab[i].index = 0;
+        p->aTab[i].keyAsData = 0;
         break;
       }
 
