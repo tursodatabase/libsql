@@ -367,6 +367,19 @@ fulltest:	testfixture$(EXE) sqlite3$(EXE) crashtest
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/quick.test
 
+sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC) \
+			$(TOP)/tool/spaceanal.tcl
+	sed \
+	  -e '/^#/d' \
+	  -e 's,\\,\\\\,g' \
+	  -e 's,",\\",g' \
+	  -e 's,^,",' \
+	  -e 's,$$,\\n",' \
+	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 -DSQLITE_TEST=1 -static -o \
+ 		sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		libsqlite3.a $(LIBTCL) $(THREADLIB)
+
 # Rules used to build documentation
 #
 arch.html:	$(TOP)/www/arch.tcl

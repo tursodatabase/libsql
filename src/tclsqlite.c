@@ -11,7 +11,7 @@
 *************************************************************************
 ** A TCL Interface to SQLite
 **
-** $Id: tclsqlite.c,v 1.96 2004/07/22 02:40:39 drh Exp $
+** $Id: tclsqlite.c,v 1.97 2004/07/23 00:01:39 drh Exp $
 */
 #ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
 
@@ -1131,21 +1131,17 @@ int Tclsqlite3_SafeInit(Tcl_Interp *interp){
   return TCL_OK;
 }
 
-#if 0
-/*
-** If compiled using mktclapp, this routine runs to initialize
-** everything.
+#ifdef TCLSH
+/*****************************************************************************
+** The code that follows is used to build standalone TCL interpreters
 */
-int Et_AppInit(Tcl_Interp *interp){
-  return Sqlite3_Init(interp);
-}
-#endif
 
 /*
-** If the macro TCLSH is defined and is one, then put in code for the
-** "main" routine that will initialize Tcl.
+** If the macro TCLSH is one, then put in code this for the
+** "main" routine that will initialize Tcl and take input from
+** standard input.
 */
-#if defined(TCLSH) && TCLSH==1
+#if TCLSH==1
 static char zMainloop[] =
   "set line {}\n"
   "while {![eof stdin]} {\n"
@@ -1168,6 +1164,17 @@ static char zMainloop[] =
     "}\n"
   "}\n"
 ;
+#endif
+
+/*
+** If the macro TCLSH is two, then get the main loop code out of
+** the separate file "spaceanal_tcl.h".
+*/
+#if TCLSH==2
+static char zMainloop[] = 
+#include "spaceanal_tcl.h"
+;
+#endif
 
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
@@ -1191,7 +1198,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Md5_Init(interp);
   }
 #endif
-  if( argc>=2 ){
+  if( argc>=2 || TCLSH==2 ){
     int i;
     Tcl_SetVar(interp,"argv0",argv[1],TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp,"argv", "", TCL_GLOBAL_ONLY);
@@ -1199,13 +1206,14 @@ int TCLSH_MAIN(int argc, char **argv){
       Tcl_SetVar(interp, "argv", argv[i],
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
-    if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
+    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = interp->result;
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
-  }else{
+  }
+  if( argc<=1 || TCLSH==2 ){
     Tcl_GlobalEval(interp, zMainloop);
   }
   return 0;

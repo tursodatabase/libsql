@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.49 2004/07/22 01:19:35 drh Exp $
+** $Id: test3.c,v 1.50 2004/07/23 00:01:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1162,19 +1162,21 @@ static int btree_payload_size(
 }
 
 /*
-** Usage:   btree_cursor_info ID
+** Usage:   btree_cursor_info ID ?UP-CNT?
 **
-** Return eight integers containing information about the entry the
+** Return integers containing information about the entry the
 ** cursor is pointing to:
 **
 **   aResult[0] =  The page number
 **   aResult[1] =  The entry number
 **   aResult[2] =  Total number of entries on this page
-**   aResult[3] =  Size of this entry
+**   aResult[3] =  Cell size (local payload + header)
 **   aResult[4] =  Number of free bytes on this page
 **   aResult[5] =  Number of free blocks on the page
-**   aResult[6] =  Page number of the left child of this entry
-**   aResult[7] =  Page number of the right child for the whole page
+**   aResult[6] =  Total payload size (local + overflow)
+**   aResult[7] =  Header size in bytes
+**   aResult[8] =  Local payload size
+**   aResult[9] =  Parent page number
 */
 static int btree_cursor_info(
   void *NotUsed,
@@ -1185,16 +1187,22 @@ static int btree_cursor_info(
   BtCursor *pCur;
   int rc;
   int i, j;
-  int aResult[8];
+  int up;
+  int aResult[10];
   char zBuf[400];
 
-  if( argc!=2 ){
+  if( argc!=2 && argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
+       " ID ?UP-CNT?\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], (int*)&pCur) ) return TCL_ERROR;
-  rc = sqlite3BtreeCursorInfo(pCur, aResult);
+  if( argc==3 ){
+    if( Tcl_GetInt(interp, argv[2], &up) ) return TCL_ERROR;
+  }else{
+    up = 0;
+  }
+  rc = sqlite3BtreeCursorInfo(pCur, aResult, up);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;

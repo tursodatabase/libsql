@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.179 2004/07/22 02:40:38 drh Exp $
+** $Id: btree.c,v 1.180 2004/07/23 00:01:39 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3901,31 +3901,44 @@ int sqlite3BtreePageDump(Btree *pBt, int pgno, int recursive){
 **   aResult[0] =  The page number
 **   aResult[1] =  The entry number
 **   aResult[2] =  Total number of entries on this page
-**   aResult[3] =  Size of this entry
+**   aResult[3] =  Cell size (local payload + header)
 **   aResult[4] =  Number of free bytes on this page
 **   aResult[5] =  Number of free blocks on the page
-**   aResult[6] =  Page number of the left child of this entry
-**   aResult[7] =  Page number of the right child for the whole page
+**   aResult[6] =  Total payload size (local + overflow)
+**   aResult[7] =  Header size in bytes
+**   aResult[8] =  Local payload size
+**   aResult[9] =  Parent page number
 **
 ** This routine is used for testing and debugging only.
 */
-int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult){
+int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
   int cnt, idx;
   MemPage *pPage = pCur->pPage;
+  BtCursor tmpCur;
 
   pageIntegrity(pPage);
   assert( pPage->isInit );
+  getTempCursor(pCur, &tmpCur);
+  while( upCnt-- ){
+    moveToParent(&tmpCur);
+  }
+  pPage = tmpCur.pPage;
+  pageIntegrity(pPage);
   aResult[0] = sqlite3pager_pagenumber(pPage->aData);
   assert( aResult[0]==pPage->pgno );
-  aResult[1] = pCur->idx;
+  aResult[1] = tmpCur.idx;
   aResult[2] = pPage->nCell;
-  if( pCur->idx>=0 && pCur->idx<pPage->nCell ){
-    u8 *pCell = findCell(pPage, pCur->idx);
-    aResult[3] = cellSizePtr(pPage, pCell);
-    aResult[6] = pPage->leaf ? 0 : get4byte(pCell);
+  if( tmpCur.idx>=0 && tmpCur.idx<pPage->nCell ){
+    getCellInfo(&tmpCur);
+    aResult[3] = tmpCur.info.nSize;
+    aResult[6] = tmpCur.info.nData;
+    aResult[7] = tmpCur.info.nHeader;
+    aResult[8] = tmpCur.info.nLocal;
   }else{
     aResult[3] = 0;
     aResult[6] = 0;
+    aResult[7] = 0;
+    aResult[8] = 0;
   }
   aResult[4] = pPage->nFree;
   cnt = 0;
@@ -3935,7 +3948,12 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult){
     idx = get2byte(&pPage->aData[idx]);
   }
   aResult[5] = cnt;
-  aResult[7] = pPage->leaf ? 0 : get4byte(&pPage->aData[pPage->hdrOffset+8]);
+  if( pPage->pParent==0 || isRootPage(pPage) ){
+    aResult[9] = 0;
+  }else{
+    aResult[9] = pPage->pParent->pgno;
+  }
+  releaseTempCursor(&tmpCur);
   return SQLITE_OK;
 }
 #endif
