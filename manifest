@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sauto-vacuum\sdatabases\sand\sthe\sVACUUM\scommand.\sAlso\sadd\s"pages\sread"\sand\s"pages\swritten"\sstatistics\sto\sthe\spager\slayer.\s(CVS\s2183)
-D 2005-01-08T12:42:39
+C Fix\sa\scomment.\s(CVS\s2184)
+D 2005-01-08T15:43:19
 F Makefile.in ecf441ac5ca1ccfc8748a8a9537706e69893dfa4
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README a01693e454a00cc117967e3f9fdab2d4d52e9bc1
@@ -29,7 +29,7 @@ F sqlite3.def dbaeb20c153e1d366e8f421b55a573f5dfc00863
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/attach.c e49d09dad9f5f9fb10b4b0c1be5a70ae4c45e689
 F src/auth.c 3b81f2a42f48a62c2c9c9b0eda31a157c681edea
-F src/btree.c 1f069c10b99cce7ad8942b7b2f584883720a0a60
+F src/btree.c 5483bf070f1f9db540d526e70397f42c857c07e5
 F src/btree.h 861e40b759a195ba63819740e484390012cf81ab
 F src/build.c af1296e8a21a406b4f4c4f1e1365e075071219f3
 F src/cursor.c f883813759742068890b1f699335872bfa8fdf41
@@ -263,7 +263,7 @@ F www/tclsqlite.tcl e73f8f8e5f20e8277619433f7970060ab01088fc
 F www/vdbe.tcl 095f106d93875c94b47367384ebc870517431618
 F www/version3.tcl 092a01f5ef430d2c4acc0ae558d74c4bb89638a0
 F www/whentouse.tcl c3b50d3ac31c54be2a1af9b488a89d22f1e6e746
-P 5023b1dba2e61bb10d1b488874e3d3eea3973145
-R 828efbbcb9553b519fed802fb45be0b6
-U danielk1977
-Z 4ff88f42ddcc62731dabe33ae1df2dc7
+P fb3bf68d0e83b463c7e2f95b4502ba6f8158c074
+R 7b899dfdb34524e0b647e71db3f94a04
+U drh
+Z dc33d0b51c02b0380f298c0fa7efa871

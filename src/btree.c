@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.227 2005/01/08 12:42:39 danielk1977 Exp $
+** $Id: btree.c,v 1.228 2005/01/08 15:43:19 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3432,7 +3432,7 @@ static void dropCell(MemPage *pPage, int idx, int sz){
 **
 ** If nSkip is non-zero, then do not copy the first nSkip bytes of the
 ** cell. The caller will overwrite them after this function returns. If
-** nSkip is non-zero, then pCell may not point to a valid memory location 
+** nSkip is non-zero, then pCell may not point to an invalid memory location 
 ** (but pCell+nSkip is always valid).
 */
 static int insertCell(
