@@ -1,5 +1,5 @@
-C Fix\scapi3.test\sso\sthat\sit\sworks\swith\sproduction\s(as\swell\sas\sdebugging\s)\sbuilds.\s(CVS\s1766)
-D 2004-06-29T14:03:58
+C Run\stests\sin\sUTF-16\smode.\s(CVS\s1767)
+D 2004-06-29T23:52:48
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -174,7 +174,7 @@ F test/types.test 6c49e574970866558365a025b44c9fd8a162ef0d
 F test/types2.test 5d725fcb68dbd032c6d4950d568d75fa33872687
 F test/unique.test 0e38d4cc7affeef2527720d1dafd1f6870f02f2b
 F test/update.test b29bd9061a1150426dab6959806fcc73a41b1217
-F test/utf16.test 86650f5fe40dcd7ada4b305cb54d6753d9ab7319
+F test/utf16.test b20a8cea5877d53fa2cf177a38b0d5f4b84b70b4
 F test/vacuum.test 3922b97f958986a9ab198c30480f54361087a06f
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test b42c98499ae9fbf578cd7a4b020d23057c8825fb
@@ -232,7 +232,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 76e0b74961af3ff285757ac428b82fe7eaffc025
-R e22231de78a033c0a90f661617ad0dfd
+P 9cf371d85d99235771f173572265c5e4dd5ab273
+R d42ca7ddc9878730f90e65ee92fd2235
 U danielk1977
-Z 17042cf4cdfadc174e66915f6d6aca06
+Z 6ae347125369dc8f10182d763c734d9f

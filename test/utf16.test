@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: utf16.test,v 1.1 2004/06/28 13:09:11 danielk1977 Exp $
+# $Id: utf16.test,v 1.2 2004/06/29 23:52:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -18,9 +18,28 @@ rename finish_test really_finish_test2
 proc finish_test {} {}
 set ISQUICK 1
 
-set FILES {
-  func.test
+if { [llength $argv]>0 } {
+  set FILES $argv
+  set argv [list]
+} else {
+  set F {
+    auth.test bind.test blob.test capi2.test capi3.test collate1.test
+    collate2.test collate3.test collate4.test collate5.test collate6.test
+    conflict.test date.test delete.test expr.test fkey1.test func.test
+    hook.test index.test insert2.test insert.test interrupt.test in.test
+    intpkey.test ioerr.test join2.test join.test lastinsert.test
+    laststmtchanges.test limit.test lock2.test lock.test main.test 
+    memdb.test minmax.test misc1.test misc2.test misc3.test notnull.test
+    null.test progress.test quote.test rowid.test select1.test select2.test
+    select3.test select4.test select5.test select6.test sort.test 
+    subselect.test tableapi.test table.test tclsqlite.test temptable.test
+    trace.test trans.test trigger1.test trigger2.test trigger3.test
+    trigger4.test types2.test types.test unique.test update.test
+    vacuum.test view.test where.test
+  }
+  foreach f $F {lappend FILES $testdir/$f}
 }
+puts $FILES
 
 rename sqlite3 real_sqlite3
 proc sqlite3 {args} {
@@ -38,8 +57,7 @@ proc do_test {args} {
 }
 
 foreach f $FILES {
-  set testfile $testdir/$f
-  source $testfile
+  source $f
   catch {db close}
   if {$sqlite_open_file_count>0} {
     puts "$tail did not close all files: $sqlite_open_file_count"
@@ -54,4 +72,5 @@ rename finish_test ""
 rename really_finish_test2 finish_test
 rename do_test ""
 rename really_do_test do_test
+finish_test
 
