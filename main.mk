@@ -78,6 +78,7 @@ SRC = \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
+  $(TOP)/src/legacy.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os_mac.c \
   $(TOP)/src/os_unix.c \
@@ -134,6 +135,7 @@ HDR = \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
+   $(TOP)/src/os_common.h \
    $(TOP)/src/os_mac.h \
    $(TOP)/src/os_unix.h \
    $(TOP)/src/os_win.h \

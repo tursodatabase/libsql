@@ -1,5 +1,5 @@
-C Add\sthe\scapi3ref.html\spage\sto\sthe\swebsite.\s(CVS\s1516)
-D 2004-06-01T01:22:38
+C Makefile\schanges\sfor\sbuilding\swindows\sDLLs.\s(CVS\s1517)
+D 2004-06-01T01:45:11
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -16,7 +16,8 @@ F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh f6b283068efa69f06eb8aa1fe4bddfdbdeb35826
-F main.mk 0b231e6e257ab4d3a036510df1f636e9b75ffb3d
+F main.mk b717f9861a3acdd3a4e81fc59731a393bf6a0c6e
+F mkdll.sh 68d34a961a1fdfa15ef27fc4f4740be583112124
 F publish.sh 2e579b7474d57b6debcead93c73a49eb8cb81718
 F spec.template a38492f1c1dd349fc24cb0565e08afc53045304b
 F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
@@ -213,7 +214,7 @@ F www/support.tcl 67682848d6ddd283370451dc3da2e56cded9fc9a
 F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 6902fb1b49fdf0e38265fa26198690243cdc2f58
-R d57cd331d29ed702de6a88d65460d891
+P 89f54f1ffdddc99340777cda6d9b1d7446549fa2
+R cdfbb65facdbc30feb7d845fb9129454
 U drh
-Z e3df5c47224ee70e358b0ca52ff2a388
+Z c2c1d678f12db45dfa44d1a3efee9c99
