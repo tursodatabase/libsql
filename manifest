@@ -1,5 +1,5 @@
-C Add\sa\schecksum\sto\sthe\smaster\sjournal\sname\sstored\sat\sthe\send\sof\sa\sjournal\nfile.\s(CVS\s1692)
-D 2004-06-25T11:11:54
+C Fix\sCVS\smerge\sproblem.\s(CVS\s1693)
+D 2004-06-25T12:08:47
 F Makefile.in cb7a9889c38723f72b2506c4236ff30a05ff172b
 F Makefile.linux-gcc a9e5a0d309fa7c38e7c14d3ecf7690879d3a5457
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -62,7 +62,7 @@ F src/sqlite.h.in b70fded2bdfeaddfb06adea3888118b722975136
 F src/sqliteInt.h dd796b6abc6d50505fe33c54f0143d7000681a41
 F src/table.c af14284fa36c8d41f6829e3f2819dce07d3e2de2
 F src/tclsqlite.c 8d093146332b2f0cbf2a8ebe8597d481619308a3
-F src/test1.c fcf1a914c27f50d93a41e0b90890008c3ea28cbc
+F src/test1.c e4e0ae8af8040c848ef35f92e6a22b2245b9b873
 F src/test2.c dafd8bd314a554bf376c6d3a8c83fd69219f5a40
 F src/test3.c 7247090d15a5a43823079b6fd8dad1ed3cccdedf
 F src/test4.c a921a69821fd30209589228e64f94e9f715b6fe2
@@ -229,7 +229,7 @@ F www/tclsqlite.tcl 19191cf2a1010eaeff74c51d83fd5f5a4d899075
 F www/vdbe.tcl 59288db1ac5c0616296b26dce071c36cb611dfe9
 F www/version3.tcl 563ba3ac02f64da27ab17f3edbe8e56bfd0293fb
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 2a9cea61f90be4881b01f8a7c1ca4dab77706d2f
-R bd27578118e1d5c93a1e7eca81aa4432
+P 4905e74925a4e9d467c51dc174f265b9395ae9fa
+R 98cae54b77ddaa39769902b12d5a271c
 U danielk1977
-Z 3291e0dae2ad58b9c1c0c10b19637fd1
+Z 7a7f720eca297a401dca9b9f9bbfe29b
