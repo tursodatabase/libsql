@@ -1,5 +1,5 @@
-C Add\ssome\smore\scode\sto\ssupport\smanifest\styping\sin\sindices.\sNot\sactivated\syet.\s(CVS\s1362)
-D 2004-05-12T11:24:03
+C The\spager\snow\shandles\sfile\s":memory:"\scomplete\sin\smemory\swith\sno\sdisk\sI/O.\s(CVS\s1363)
+D 2004-05-12T13:30:08
 F Makefile.in ab7b0d5118e2da97bac66be8684a1034e3500f5a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/main.c 4b82d7e78f4c9799343b02740a5ba9768d5e464d
 F src/md5.c 8e39fdae6d8776b87558e91dcc94740c9b635a9c
 F src/os.c ddcda92f7fd71b4513c57c1ec797917f206d504e
 F src/os.h fbb2f6595fc34fa351830d88fe1c6b85118f0383
-F src/pager.c 43556f37b80efdccb853dbf86b3d09470d791d0d
+F src/pager.c fa60e566b370de0ed400859ba681134948b027bc
 F src/pager.h 0c95b18f2785b58bfbb2b6f6a221f23caf378687
 F src/parse.y d0258aa3cc8b0c5742b07b699d10fa98f3caea7d
 F src/pragma.c 2ab2a12b62ec5370b9221f44b4743a633a90bfa8
@@ -115,6 +115,7 @@ F test/misuse.test 1095f26d1aed406c65e1d2eba651c4bb7c38cbff
 F test/notnull.test 7a08117a71e74b0321aaa937dbeb41a09d6eb1d0
 F test/null.test c14d0f4739f21e929b8115b72bf0c765b6bb1721
 F test/pager.test 548968643d91c1c43a3a3eb1a232e9ca87b4069e
+F test/pager2.test 7ff175a28484fd324df9315dfe35f6fb159910ec
 F test/pragma.test 24a3f7a697b45cb90d664ebce5566bec7ac41571
 F test/printf.test 46b3d07d59d871d0831b4a657f6dfcafe0574850
 F test/progress.test 701b6115c2613128ececdfe1398a1bd0e1a4cfb3 x
@@ -189,7 +190,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P 0242c9e4f7c85e9c911cf30d90b0cdb1015f3d7d
-R 55c977fb56a1a23227079a7a24ed9935
-U danielk1977
-Z 9a14b0592b340e466792086217d73072
+P 2f16c9ef3c101c4280991ce3cb0c3bea7b6ed439
+R 34cbf66e13c9fd717a5c35355887a263
+U drh
+Z fff149a4adda820449b55f8e9ff0bdd9
