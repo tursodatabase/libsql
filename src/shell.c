@@ -8,15 +8,11 @@
 **    May you find forgiveness for yourself and forgive others.
 **    May you share freely, never taking more than you give.
 **
-** 2002 April 18
-**
-** I, Matthew O. Persico, hereby release all edits made by me to
-** this source into the public domain.
 *************************************************************************
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.54 2002/04/19 01:00:13 persicom Exp $
+** $Id: shell.c,v 1.55 2002/04/19 12:34:06 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +33,9 @@
 #else
 # define readline(p) getline(p,stdin)
 # define add_history(X)
+# define read_history(X)
+# define write_history(X)
+# define stifle_history(X)
 #endif
 
 /*
@@ -45,6 +44,11 @@
 ** by the SIGINT handler to interrupt database processing.
 */
 static sqlite *db = 0;
+
+/*
+** True if an interrupt (Control-C) has been received.
+*/
+static int seenInterrupt = 0;
 
 /*
 ** This is the name of our program. It is set in main(), used
@@ -273,6 +277,7 @@ static void output_html_string(FILE *out, const char *z){
 ** This routine runs when the user presses Ctrl-C
 */
 static void interrupt_handler(int NotUsed){
+  seenInterrupt = 1;
   if( db ) sqlite_interrupt(db);
 }
 
@@ -506,11 +511,14 @@ static void process_input(struct callback_data *p, FILE *in);
 /*
 ** If an input line begins with "." then invoke this routine to
 ** process that line.
+**
+** Return 1 to exit and 0 to continue.
 */
-static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
+static int do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   int i = 1;
   int nArg = 0;
   int n, c;
+  int rc = 0;
   char *azArg[50];
 
   /* Parse the input line into tokens.
@@ -533,7 +541,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
 
   /* Process the input line.
   */
-  if( nArg==0 ) return;
+  if( nArg==0 ) return rc;
   n = strlen(azArg[0]);
   c = azArg[0][0];
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
@@ -581,8 +589,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
-    sqlite_close(db);
-    exit(0);
+    rc = 1;
   }else
 
   if( c=='e' && strncmp(azArg[0], "explain", n)==0 ){
@@ -821,11 +828,12 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   if( c=='s' && strncmp(azArg[0], "show", n)==0){
     int i;
     fprintf(p->out,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
-    fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" : "off");
+    fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
     fprintf(p->out,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
     fprintf(p->out,"%9.9s: %s\n","nullvalue", p->nullvalue);
-    fprintf(p->out,"%9.9s: %s\n","output", strlen(p->outfile) ? p->outfile : "stdout");
+    fprintf(p->out,"%9.9s: %s\n","output",
+                                 strlen(p->outfile) ? p->outfile : "stdout");
     fprintf(p->out,"%9.9s: %s\n","separator", p->separator);
     fprintf(p->out,"%9.9s: ","width");
     for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
@@ -892,21 +900,35 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   {
-    fprintf(stderr, "unknown command or invalid arguments: \"%s\". Enter \".help\" for help\n",
-      azArg[0]);
+    fprintf(stderr, "unknown command or invalid arguments: "
+      " \"%s\". Enter \".help\" for help\n", azArg[0]);
   }
+
+  return rc;
 }
 
+/*
+** Read input from *in and process it.  If *in==0 then input
+** is interactive - the user is typing it it.  Otherwise, input
+** is coming from a file or device.  A prompt is issued and history
+** is saved only if input is interactive.  An interrupt signal will
+** cause this routine to exit immediately, unless input is interactive.
+*/
 static void process_input(struct callback_data *p, FILE *in){
   char *zLine;
   char *zSql = 0;
   int nSql = 0;
   char *zErrMsg;
   while( fflush(p->out), (zLine = one_input_line(zSql, in))!=0 ){
+    if( seenInterrupt ){
+      if( in!=0 ) break;
+      seenInterrupt = 0;
+    }
     if( p->echoOn ) printf("%s\n", zLine);
     if( zLine && zLine[0]=='.' && nSql==0 ){
-      do_meta_command(zLine, db, p);
+      int rc = do_meta_command(zLine, db, p);
       free(zLine);
+      if( rc ) break;
       continue;
     }
     if( zSql==0 ){
@@ -949,54 +971,62 @@ static void process_input(struct callback_data *p, FILE *in){
   }
 }
 
-static void process_sqliterc(struct callback_data *p,
-                             char *sqliterc_override){
+/*
+** Return a pathname which is the user's home directory.  A
+** 0 return indicates an error of some kind.  Space to hold the
+** resulting string is obtained from malloc().  The calling
+** function should free the result.
+*/
+static char *find_home_dir(void){
+  char *home_dir = NULL;
 
+#if !defined(_WIN32) && !defined(WIN32)
+  struct passwd *pwent;
+  uid_t uid = getuid();
+  while( (pwent=getpwent()) != NULL) {
+    if(pwent->pw_uid == uid) {
+      home_dir = pwent->pw_dir;
+      break;
+    }
+  }
+#endif
+
+  if (!home_dir) {
+    home_dir = getenv("HOME");
+    if (!home_dir) {
+      home_dir = getenv("HOMEPATH"); /* Windows? */
+    }
+  }
+
+  if( home_dir ){
+    char *z = malloc( strlen(home_dir)+1 );
+    if( z ) strcpy(z, home_dir);
+    home_dir = z;
+  }
+  return home_dir;
+}
+
+/*
+** Read input from the file given by sqliterc_override.  Or if that
+** parameter is NULL, take input from ~/.sqliterc
+*/
+static void process_sqliterc(struct callback_data *p, char *sqliterc_override){
   char *home_dir = NULL;
   char *sqliterc = sqliterc_override;
   FILE *in = NULL;
 
   if (sqliterc == NULL) {
-    /* Figure out the user's home directory */
-#if !defined(_WIN32) && !defined(WIN32)
-    struct passwd *pwent;
-    uid_t uid = getuid();
-    while( (pwent=getpwent()) != NULL) {
-      if(pwent->pw_uid == uid) {
-        home_dir = pwent->pw_dir;
-        break;
-      }
-    }
-#endif
-
-    if (!home_dir) {
-      home_dir = getenv("HOME");
-      if (!home_dir) {
-        home_dir = getenv("HOMEPATH"); /* Windows? */
-      }
-      if (!home_dir) {
-        printf("Cannot find home directory from which to load .sqliterc\n");
-        return;
-      }
-    }
-
-    /* With the home directory, open the init file and process */
-    sqliterc = (char *)calloc(strlen(home_dir) +
-                              strlen("/.sqliterc") +
-                              1,
-                              sizeof(char));
+    home_dir = find_home_dir();
+    sqliterc = home_dir ? malloc(strlen(home_dir) + 15) : 0;
     if( sqliterc==0 ){
       fprintf(stderr,"%s: out of memory!\n", Argv0);
       exit(1);
     }
     sprintf(sqliterc,"%s/.sqliterc",home_dir);
+    free(home_dir);
   }
   in = fopen(sqliterc,"r");
-  if(!in) {
-    /* File either had an error or was not found. Since I cannot
-     * tell, I cannot bark. */
-    return;
-  } else {
+  if(in) {
     printf("Loading resources from %s\n",sqliterc);
     process_input(p,in);
     fclose(in);
@@ -1004,6 +1034,9 @@ static void process_sqliterc(struct callback_data *p,
   return;
 }
 
+/*
+** Initialize the state information in data
+*/
 void main_init(struct callback_data *data) {
   memset(data, 0, sizeof(*data));
   data->mode = MODE_List;
@@ -1125,12 +1158,23 @@ int main(int argc, char **argv){
   }else{
     extern int isatty();
     if( isatty(0) ){
+      char *zHome;
+      char *zHistory = 0;
       printf(
         "SQLite version %s\n"
         "Enter \".help\" for instructions\n",
         sqlite_version
       );
+      zHome = find_home_dir();
+      if( zHome && (zHistory = malloc(strlen(zHome)+20))!=0 ){
+        sprintf(zHistory,"%s/.sqlite_history", zHome);
+      }
+      if( zHistory ) read_history(zHistory);
       process_input(&data, 0);
+      if( zHistory ){
+        stifle_history(100);
+        write_history(zHistory);
+      }
     }else{
       process_input(&data, stdin);
     }
