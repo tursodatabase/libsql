@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.145 2004/01/15 02:44:03 drh Exp $
+** $Id: main.c,v 1.146 2004/01/15 13:29:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -784,22 +784,23 @@ static int sqliteDefaultBusyCallback(
  int count                /* Number of times table has been busy */
 ){
 #if SQLITE_MIN_SLEEP_MS==1
-  int delay = 10;
-  int prior_delay = 0;
+  static const char delays[] =
+     { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50,  50, 100};
+  static const short int totals[] =
+     { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228, 287};
+# define NDELAY (sizeof(delays)/sizeof(delays[0]))
   int timeout = (int)Timeout;
-  int i;
+  int delay, prior;
 
-  for(i=1; i<count; i++){ 
-    prior_delay += delay;
-    delay = delay*2;
-    if( delay>=1000 ){
-      delay = 1000;
-      prior_delay += 1000*(count - i - 1);
-      break;
-    }
+  if( count <= NDELAY ){
+    delay = delays[count-1];
+    prior = totals[count-1];
+  }else{
+    delay = delays[NDELAY-1];
+    prior = totals[NDELAY-1] + delay*(count-NDELAY-1);
   }
-  if( prior_delay + delay > timeout ){
-    delay = timeout - prior_delay;
+  if( prior + delay > timeout ){
+    delay = timeout - prior;
     if( delay<=0 ) return 0;
   }
   sqliteOsSleep(delay);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.18 2002/09/14 13:47:33 drh Exp $
+# $Id: lock.test,v 1.19 2004/01/15 13:29:40 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -232,7 +232,19 @@ do_test lock-2.7 {
   lappend r $msg
   lappend r $::callback_value
 } {0 {} {1 2 3}}
-integrity_check lock-2.8
+
+# Test the built-in busy timeout handler
+#
+do_test lock-2.8 {
+  db2 timeout 400
+  execsql BEGIN
+  catchsql BEGIN db2
+} {1 {database is locked}}
+do_test lock-2.9 {
+  db2 timeout 0
+  execsql COMMIT
+} {}
+integrity_check lock-2.10
 
 # Try to start two transactions in a row
 #

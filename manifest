@@ -1,5 +1,5 @@
-C Allow\s"<expr>\sIN\s<table>"\sas\sa\sshorthand\sfor\n"<expr>\sIN\s(SELECT\s*\sFROM\s<table>)"\s(CVS\s1180)
-D 2004-01-15T03:30:25
+C More\saggressive\sretry\sschedule\sin\ssqlite_busy_timeout().\s(CVS\s1181)
+D 2004-01-15T13:29:32
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -36,7 +36,7 @@ F src/func.c 62cf8fae8147c0301d1c6a4a94fe0a78f7aa5b33
 F src/hash.c 9b56ef3b291e25168f630d5643a4264ec011c70e
 F src/hash.h 3247573ab95b9dd90bcca0307a75d9a16da1ccc7
 F src/insert.c 01f66866f35c986eab4a57373ca689a3255ef2df
-F src/main.c 67af644fa7c1b8bb06032b6a9459d084cf79bb81
+F src/main.c 808ea1bda0798f4a714479aee8289d65f04cf29b
 F src/md5.c fe4f9c9c6f71dfc26af8da63e4d04489b1430565
 F src/os.c 681ec36217bc7c795d55d9a63ff79a8614ddee8c
 F src/os.h 257c9aef1567bb20c8b767fc27fe3ee7d89104e0
@@ -97,7 +97,7 @@ F test/intpkey.test 9320af48415c594afd4e15f8ef0daa272e05502e
 F test/ioerr.test 5dbaf09f96b56ee01cf3edd762b96eb4ad2c9ca4
 F test/join.test 9ef6aabaac9de51d5fc41e68d1f4355da05a84cd
 F test/limit.test fa2a8b3fe377ebe60e0bc9a6a35af9ac4eb3d2b3
-F test/lock.test 388a3a10962d2d571c0c1821cc35bf069ee73473
+F test/lock.test 3d1855ba930732566f569d680e828656bd5b7f5c
 F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
@@ -180,7 +180,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 72bc84f2f18f6eeb279a4ad670310e85d154f663
-R 2bc9ea54c7ac36ba81835b3e442ee3bc
+P 01874d252ac44861e927dea3f5534f67e19b1fa8
+R 889c699198a4172a6f24b672e8a9f759
 U drh
-Z 123afbc81ac483920b37bfd6b69d6479
+Z 4f8f302ff0837a7468fa75430d63c5d0
