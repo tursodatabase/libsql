@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.143 2003/07/16 11:51:36 drh Exp $
+** $Id: select.c,v 1.144 2003/07/19 00:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1852,13 +1852,13 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
     if( pIdx==0 ) return 0;
   }
 
-  /* Identify column names if we will be using the callback.  This
+  /* Identify column types if we will be using the callback.  This
   ** step is skipped if the output is going to a table or a memory cell.
+  ** The column names have already been generated in the calling function.
   */
   v = sqliteGetVdbe(pParse);
   if( v==0 ) return 0;
   if( eDest==SRT_Callback ){
-    generateColumnNames(pParse, p->pSrc, p->pEList);
     generateColumnTypes(pParse, p->pSrc, p->pEList);
   }
 
@@ -2120,14 +2120,6 @@ int sqliteSelect(
     }
   }
 
-  /* Check for the special case of a min() or max() function by itself
-  ** in the result set.
-  */
-  if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
-    rc = 0;
-    goto select_end;
-  }
-
   /* Begin generating code.
   */
   v = sqliteGetVdbe(pParse);
@@ -2173,6 +2165,14 @@ int sqliteSelect(
     p->nOffset = iMem;
   }
 
+  /* Check for the special case of a min() or max() function by itself
+  ** in the result set.
+  */
+  if( simpleMinMaxQuery(pParse, p, eDest, iParm) ){
+    rc = 0;
+    goto select_end;
+  }
+
   /* Generate code for all sub-queries in the FROM clause
   */
   for(i=0; i<pTabList->nSrc; i++){
@@ -2214,6 +2214,11 @@ int sqliteSelect(
   /* Identify column types if we will be using a callback.  This
   ** step is skipped if the output is going to a destination other
   ** than a callback.
+  **
+  ** We have to do this separately from the creation of column names
+  ** above because if the pTabList contains views then they will not
+  ** have been resolved and we will not know the column types until
+  ** now.
   */
   if( eDest==SRT_Callback ){
     generateColumnTypes(pParse, pTabList, pEList);
