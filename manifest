@@ -1,5 +1,5 @@
-C The\sprior\sfix\sof\sticket\s#360\swas\sincorrect\sand\scaused\sa\smemory\sleak.\s\sThis\ncheck-in\splugs\sthe\smemory\sleak\sand\scorrectly\sfixes\sticket\s#360.\s(CVS\s1040)
-D 2003-06-29T20:25:08
+C Version\s2.8.4\s(CVS\s1041)
+D 2003-06-29T20:45:29
 F Makefile.in 9ad23ed4ca97f9670c4496432e3fbd4b3760ebde
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -167,7 +167,7 @@ F www/speed.tcl 2f6b1155b99d39adb185f900456d1d592c4832b3
 F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
-P 9cca95937837333c91f5dee8c48178cf7e06d59f
+P fc490f677b89e623b41f9e7f5f3bade9b981562c
 R e554dbb5c195efefdc6c47a14ad5d26c
 U drh
-Z 2bc7ff7b967bfdee965a4b69cafc3802
+Z 2412d49a78a19f6e07753d047ab7a25e
