@@ -25,7 +25,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.103 2002/07/11 12:18:16 drh Exp $
+** $Id: build.c,v 1.104 2002/07/13 03:11:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1274,6 +1274,7 @@ void sqliteCreateIndex(
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nId;
   pIndex->onError = pIndex->isUnique = onError;
+  pIndex->autoIndex = pName==0;
 
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
@@ -1438,6 +1439,12 @@ void sqliteDropIndex(Parse *pParse, Token *pName){
   if( pIndex==0 ){
     sqliteSetNString(&pParse->zErrMsg, "no such index: ", 0, 
         pName->z, pName->n, 0);
+    pParse->nErr++;
+    return;
+  }
+  if( pIndex->autoIndex ){
+    sqliteSetString(&pParse->zErrMsg, "index associated with UNIQUE "
+      "or PRIMARY KEY constraint cannot be dropped", 0);
     pParse->nErr++;
     return;
   }

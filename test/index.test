@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.17 2001/11/24 00:31:47 drh Exp $
+# $Id: index.test,v 1.18 2002/07/13 03:11:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -380,5 +380,39 @@ do_test index-12.7 {
     SELECT a FROM t4 WHERE a>-0.5 ORDER BY b
   }
 } {0.0 0.00 abc +1.0 0 00000}
+
+# Make sure we cannot drop an automatically created index.
+#
+do_test index-13.1 {
+  execsql {
+   CREATE TABLE t5(
+      a int UNIQUE,
+      b float PRIMARY KEY,
+      c varchar(10),
+      UNIQUE(a,c)
+   );
+   INSERT INTO t5 VALUES(1,2,3);
+   SELECT * FROM t5;
+  }
+} {1 2 3}
+do_test index-13.2 {
+  set ::idxlist [execsql {
+    SELECT name FROM sqlite_master WHERE type="index" AND tbl_name="t5";
+  }]
+  llength $::idxlist
+} {3}
+for {set i 0} {$i<[llength $::idxlist]} {incr i} {
+  do_test index-13.3.$i {
+    catchsql "
+      DROP INDEX '[lindex $::idxlist $i]';
+    "
+  } {1 {index associated with UNIQUE or PRIMARY KEY constraint cannot be dropped}}
+}
+do_test index-13.4 {
+  execsql {
+    INSERT INTO t5 VALUES('a','b','c');
+    SELECT * FROM t5;
+  }
+} {1 2 3 a b c}
 
 finish_test

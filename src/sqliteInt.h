@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.136 2002/07/11 12:18:17 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.137 2002/07/13 03:11:54 drh Exp $
 */
 #include "sqlite.h"
 #include "hash.h"
@@ -384,6 +384,7 @@ struct Index {
   int tnum;        /* Page containing root of this index in database file */
   u8 isUnique;     /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
   Index *pNext;    /* The next index associated with the same table */
 };
 

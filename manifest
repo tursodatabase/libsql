@@ -1,5 +1,5 @@
-C Turn\sof\sthe\sreporting\sof\sdatatypes\sin\sthe\s4th\scallback\sargument\sunless\sthe\nSHOW_DATATYPES\spragma\sis\sON.\s\sEliminate\sthe\sNULL\spointer\sthat\sused\sto\sseparate\nthe\sbeginning\sof\sdatatypes\sfrom\sthe\send\sof\scolumn\snames\sso\sthat\sthe\scallback\ncan\stest\sto\ssee\swhether\sor\snot\sdatatypes\sare\sprovided.\s\sThis\sis\san\nincompatible\schanges,\sbut\ssince\sthe\sprior\sbehavior\swas\snever\sdocumented,\swe\nwill\slet\sit\sin.\s(CVS\s670)
-D 2002-07-11T12:18:16
+C Fix\sfor\sticket\s#95:\sDo\snot\sallow\sautomatically\screated\sindices\s(associated\nwith\sUNIQUE\sor\sPRIMARY\sKEY\sconstraints)\sto\sbe\sdropped.\s(CVS\s671)
+D 2002-07-13T03:11:53
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -20,7 +20,7 @@ F sqlite.1 83f4a9d37bdf2b7ef079a82d54eaf2e3509ee6ea
 F src/TODO af7f3cab0228e34149cf98e073aa83d45878e7e6
 F src/btree.c db8cd1bd46cd30a1763c3cc80602571d1b30a329
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
-F src/build.c d8318cd8aa1d8175740515e3b2bc55f6f8ad512d
+F src/build.c 58ce73da93699bbbe676908678e1e44bad1853cb
 F src/delete.c 215492ffcea4262a993e55f3c4a67dc9fea4da9c
 F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
 F src/expr.c 4b25ee5e65f351d40dea8575b998605762556d76
@@ -41,7 +41,7 @@ F src/select.c f4e7221a319da25f549a434a6c664eedcbce4dec
 F src/shell.c 16cb2db27f2d3045f78e74e83bac965a8249357b
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
-F src/sqliteInt.h a4f79f88e6b2cf970a8ea91c0a2c32430bbd0a7d
+F src/sqliteInt.h 943209263393dcbaf1e753b83a0f33258f090a5f
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c ba454c5166252a55cb4db8af4d29d2a18b6e6f3d
 F src/test1.c 456cb080db85056be723e770435d9509afc3a83a
@@ -66,7 +66,7 @@ F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test 5fadd0bc87c223b424ce6752b576c1df346abf1f
 F test/func.test cae5f27e09736cfdcc978c3719ac1345405b848c
 F test/in.test e59461f1702b7387880bf08a0ce6bb777925d282
-F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
+F test/index.test 1a69532e7868eddac61c679fd03f46b5666214da
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
 F test/intpkey.test 69a6a9b41e541f27a2ffcd20264fb35adc3c2680
@@ -140,7 +140,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P ff8b6f4ee8099a7170cb786b8ead9a3e42ab5869
-R 4c9a5cc2cec864756c678ced0f23d593
+P b98727246d5fcc1b097b577be498a77e954c5dc4
+R 63ac9211f1b05cfcd7456d042d50424a
 U drh
-Z 840152c064bf52b6a31a6b9344474a04
+Z 55a586e46b5f7dee263dd374af92bd39
