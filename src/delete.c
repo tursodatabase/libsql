@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.87 2004/11/05 06:02:07 danielk1977 Exp $
+** $Id: delete.c,v 1.88 2004/11/05 17:17:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -170,7 +170,7 @@ void sqlite3DeleteFrom(
   if( v==0 ){
     goto delete_from_cleanup;
   }
-  sqlite3VdbeCountChanges(v);
+  if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, row_triggers_exist, pTab->iDb);
 
   /* If we are trying to delete from a view, construct that view into
@@ -295,7 +295,7 @@ void sqlite3DeleteFrom(
       }
 
       /* Delete the row */
-      sqlite3GenerateRowDelete(db, v, pTab, iCur, 1);
+      sqlite3GenerateRowDelete(db, v, pTab, iCur, pParse->nested==0);
     }
 
     /* If there are row triggers, close all cursors then invoke

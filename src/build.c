@@ -24,9 +24,9 @@
 **     PRAGMA
 **
 <<<<<<< build.c
-** $Id: build.c,v 1.267 2004/11/05 09:19:28 danielk1977 Exp $
+** $Id: build.c,v 1.268 2004/11/05 17:17:50 drh Exp $
 =======
-** $Id: build.c,v 1.267 2004/11/05 09:19:28 danielk1977 Exp $
+** $Id: build.c,v 1.268 2004/11/05 17:17:50 drh Exp $
 >>>>>>> 1.262
 */
 #include "sqliteInt.h"
@@ -719,6 +719,17 @@ void sqlite3StartTable(
   if( pParse->pNewTable ) sqlite3DeleteTable(db, pParse->pNewTable);
   pParse->pNewTable = pTable;
 
+  /* If this is the magic sqlite_sequence table used by autoincrement,
+  ** then record a pointer to this table in the main database structure
+  ** so that INSERT can find the table easily.
+  */
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  if( strcmp(zName, "sqlite_sequence")==0 ){
+    assert( db->aDb[iDb].pSeqTab==0 );
+    db->aDb[iDb].pSeqTab = pTable;
+  }
+#endif
+
   /* Begin generating the code that will insert the table record into
   ** the SQLITE_MASTER table.  Note in particular that we must go ahead
   ** and allocate the record number for the table entry now.  Before any
@@ -738,6 +749,10 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp(v, OP_Integer, db->enc, 0);
     sqlite3VdbeAddOp(v, OP_SetCookie, iDb, 4);
 
+    /* This just creates a place-holder record in the sqlite_master table.
+    ** The record created does not contain anything yet.  It will be replaced
+    ** by the real entry in code generated at sqlite3EndTable().
+    */
     sqlite3OpenMasterTable(v, iDb);
     sqlite3VdbeAddOp(v, OP_NewRecno, 0, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
@@ -913,8 +928,10 @@ void sqlite3AddPrimaryKey(
     pTab->keyConf = onError;
     pTab->autoInc = autoInc;
   }else if( autoInc ){
+#ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
        "INTEGER PRIMARY KEY");
+#endif
   }else{
     sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0, 0);
     pList = 0;
@@ -1350,16 +1367,27 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
   if( !db->init.busy ){
     int n;
     Vdbe *v;
+    char *zType;    /* "view" or "table" */
+    char *zType2;   /* "VIEW" or "TABLE" */
+    char *zStmt;    /* Text of the CREATE TABLE or CREATE VIEW statement */
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
 
+    /* Create the rootpage for the new table and push it onto the stack.
+    ** A view has no rootpage, so just push a zero onto the stack for
+    ** views.  Initialize zType at the same time.
+    */
     if( p->pSelect==0 ){
       /* A regular table */
       sqlite3VdbeAddOp(v, OP_CreateTable, p->iDb, 0);
+      zType = "table";
+      zType2 = "TABLE";
     }else{
       /* A view */
       sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+      zType = "view";
+      zType2 = "VIEW";
     }
 
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
@@ -1391,7 +1419,8 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
         sqlite3DeleteTable(0, pSelTab);
       }
     }
-  
+
+#if 0  
     sqlite3OpenMasterTable(v, p->iDb);
 
     sqlite3VdbeOp3(v, OP_String8, 0, 0, p->pSelect==0?"table":"view",P3_STATIC);
@@ -1421,6 +1450,36 @@ void sqlite3EndTable(Parse *pParse, Token *pEnd, Select *pSelect){
     sqlite3VdbeAddOp(v, OP_PutIntKey, 0, 0);
     sqlite3ChangeCookie(db, v, p->iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
+#endif
+
+    /* Compute the complete text of the CREATE statement */
+    if( pSelect ){
+      zStmt = createTableStmt(p);
+    }else{
+      n = Addr(pEnd->z) - Addr(pParse->sNameToken.z) + 1;
+      zStmt = sqlite3MPrintf("CREATE %s %.*s", zType2, n, pParse->sNameToken.z);
+    }
+
+    /* A slot for the record has already been allocated in the 
+    ** SQLITE_MASTER table.  We just need to update that slot with all
+    ** the information we've collected.  The rowid for the preallocated
+    ** slot is the 2nd item on the stack.  The top of the stack is the
+    ** root page for the new table (or a 0 if this is a view).
+    */
+    sqlite3NestedParse(pParse,
+      "UPDATE %Q.%s "
+         "SET type='%s', name=%Q, tbl_name=%Q, rootpage=#0, sql=%Q "
+       "WHERE rowid=#1",
+      db->aDb[p->iDb].zName, SCHEMA_TABLE(p->iDb),
+      zType,
+      p->zName,
+      p->zName,
+      zStmt
+    );
+    sqliteFree(zStmt);
+
+    /* Reparse everything to update our internal data structures */
+    sqlite3ChangeCookie(db, v, p->iDb);
     sqlite3VdbeOp3(v, OP_ParseSchema, p->iDb, 0,
         sqlite3MPrintf("tbl_name='%q'",p->zName), P3_DYNAMIC);
   }
@@ -1648,7 +1707,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** is on the top of the stack.  See sqlite3RegisterExpr().
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q.%Q SET rootpage=%d WHERE #0 AND rootpage=#0",
+     "UPDATE %Q.%s SET rootpage=%d WHERE #0 AND rootpage=#0",
      pParse->db->aDb[iDb].zName, SCHEMA_TABLE(iDb), iTable);
 #endif
 }
@@ -1793,7 +1852,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView){
     ** database.
     */
     sqlite3NestedParse(pParse, 
-        "DELETE FROM %Q.%Q WHERE tbl_name=%Q and type!='trigger'",
+        "DELETE FROM %Q.%s WHERE tbl_name=%Q and type!='trigger'",
         db->aDb[pTab->iDb].zName, SCHEMA_TABLE(pTab->iDb), pTab->zName);
     if( !isView ){
       destroyTable(pParse, pTab);

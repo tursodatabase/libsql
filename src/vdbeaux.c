@@ -1806,6 +1806,6 @@ void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
 ** Set a flag in the vdbe to update the change counter when it is finalised
 ** or reset.
 */
-void sqlite3VdbeCountChanges(Vdbe *p){
-  p->changeCntOn = 1;
+void sqlite3VdbeCountChanges(Vdbe *v){
+  v->changeCntOn = 1;
 }

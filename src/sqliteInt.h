@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.333 2004/11/05 05:10:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.334 2004/11/05 17:17:50 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -324,7 +324,8 @@ struct Db {
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at synching data to disk */
   int cache_size;      /* Number of pages to use in the cache */
-  void *pAux;          /* Auxiliary data.  Usually NULL */
+  Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
+  void *pAux;               /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
 };
 
