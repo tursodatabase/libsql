@@ -20,7 +20,7 @@
 # The special crash-test module with its os_test.c backend only works
 # on Unix.
 #
-# $Id: crash.test,v 1.14 2005/01/13 11:07:54 danielk1977 Exp $
+# $Id: crash.test,v 1.15 2005/01/15 12:45:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -174,8 +174,8 @@ do_test crash-2.1 {
   execsql { SELECT sum(a), sum(b), sum(c) from abc }
 } {499500.0 999000.0 1498500.0}
 do_test crash-2.2 {
-  expr [file size test.db] / 1024
-} [expr $AUTOVACUUM ? 20 : 19]
+  expr ([file size test.db] / 1024)>16
+} {1}
 do_test crash-2.3 {
   crashsql 2 test.db-journal {
     DELETE FROM abc WHERE a < 800;
@@ -214,8 +214,8 @@ do_test crash-3.0 {
     INSERT INTO abc SELECT * FROM abc;
     INSERT INTO abc SELECT * FROM abc;
   }
-  expr [file size test.db] / 1024
-} [expr $AUTOVACUUM ? 557 : 554]
+  expr ([file size test.db] / 1024) > 450
+} {1}
 for {set i 1} {$i < $repeats} {incr i} {
   set sig [signature]
   do_test crash-3.$i.1 {
@@ -243,10 +243,6 @@ for {set i 1} {$i < $repeats} {incr i} {
 # crash-4.3.*: Test recovery when crash occurs during sync() of the master
 #              journal file. 
 #
-set filesize 559
-ifcapable default_autovacuum {
-  set filesize 562
-}
 do_test crash-4.0 {
   file delete -force test2.db
   file delete -force test2.db-journal
@@ -255,8 +251,8 @@ do_test crash-4.0 {
     PRAGMA aux.default_cache_size = 10;
     CREATE TABLE aux.abc2 AS SELECT 2*a as a, 2*b as b, 2*c as c FROM abc;
   }
-  expr [file size test2.db] / 1024
-} $filesize
+  expr ([file size test2.db] / 1024) > 450
+} {1}
 
 for {set i 1} {$i<$repeats} {incr i} {
   set sig [signature]
