@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.63 2002/02/24 01:55:17 drh Exp $
+** $Id: main.c,v 1.64 2002/02/27 01:53:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -648,6 +648,7 @@ int sqlite_create_function(
   UserFunc *p;
   if( db==0 || zName==0 ) return 1;
   p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  if( p==0 ) return 1;
   p->xFunc = xFunc;
   p->xStep = 0;
   p->xFinalize = 0;
@@ -663,6 +664,7 @@ int sqlite_create_aggregate(
   UserFunc *p;
   if( db==0 || zName==0 ) return 1;
   p = sqliteFindUserFunction(db, zName, strlen(zName), nArg, 1);
+  if( p==0 ) return 1;
   p->xFunc = 0;
   p->xStep = xStep;
   p->xFinalize = xFinalize;

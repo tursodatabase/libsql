@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.46 2002/02/27 01:47:12 drh Exp $
+** $Id: expr.c,v 1.47 2002/02/27 01:53:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1396,6 +1396,7 @@ UserFunc *sqliteFindUserFunction(
 ){
   UserFunc *pFirst, *p, *pMaybe;
   pFirst = p = (UserFunc*)sqliteHashFind(&db->userFunc, zName, nName);
+  if( p==0 ) return 0;
   if( !createFlag && nArg<0 ){
     while( p && p->xFunc==0 && p->xStep==0 ){ p = p->pNext; }
     return p;

@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\sVIEW\simplementation.\s(CVS\s396)
-D 2002-02-27T01:47:12
+C The\suser-defined\sfunction\sroutines\sfailed\sto\sdetect\sa\smalloc()\sfailure.\s(CVS\s397)
+D 2002-02-27T01:53:13
 F Makefile.in 50f1b3351df109b5774771350d8c1b8d3640130d
 F Makefile.template 89e373b2dad0321df00400fa968dc14b61a03296
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -23,12 +23,12 @@ F src/btree.c 495275fe14f3b718cf2f691dce979d4c0e1f8e5d
 F src/btree.h 8abeabfe6e0b1a990b64fa457592a6482f6674f3
 F src/build.c 7ada2426caba70cb1072ba268bedb694b5018065
 F src/delete.c 950d8f9097361419f1963875f9943344b469cf02
-F src/expr.c 4716119eea61b4f47225fca2338e75baa30b1315
+F src/expr.c 92ff4a2d87f7443f6081ba2d51e25c27e10c7b4e
 F src/func.c bed0099aaa558f8bfc50d9349bf7da2c99903f47
 F src/hash.c cc259475e358baaf299b00a2c7370f2b03dda892
 F src/hash.h dca065dda89d4575f3176e75e9a3dc0f4b4fb8b9
 F src/insert.c 164d2d5e943268a8ff0594e1947599e04df0ce11
-F src/main.c 69ba23401427f18f6eb1e9b92a3bd3236e2e39ad
+F src/main.c cbfa66d53578935790488f37f476d4932e36c01a
 F src/md5.c 52f677bfc590e09f71d07d7e327bd59da738d07c
 F src/os.c f6bc9b7ab530346bb7fef2ed39f2f1f214bc14ea
 F src/os.h a17596ecc7f38a228b83ecdb661fb03ce44726d6
@@ -127,7 +127,7 @@ F www/speed.tcl 83457b2bf6bb430900bd48ca3dd98264d9a916a5
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 829b393d1ab187fd7a5e978631b3429318885c49
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 63b87f2ea6cd78f039bf40026d21b18de20b3ba7
-R 9c2c59a14c868fd7e37dce1c3892e2d4
+P 668ef6380eba256ef82477b63aef850249a619a0
+R 672b44d109bf7bbf0ab39b1722058efe
 U drh
-Z e0d30da2ff6970c032fa0a7ae0570fac
+Z f74017b4041ef28aa366f6915101de05
