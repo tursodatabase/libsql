@@ -17,6 +17,16 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2000 Sep 29 (Not Released)} {
+<li>Added the <b>sqlite_get_table()</b> API</li>
+<li>Updated the documtation for due to the above change.</li>
+<li>Modified the <b>sqlite</b> shell to make use of the new
+    sqlite_get_table() API in order to print a list of tables
+    in multiple columns, similar to the way "ls" prints filenames.</li>
+<li>Modified the <b>sqlite</b> shell to print a semicolon at the
+    end of each CREATE statement in the output of the ".schema" command.</li>
+}
+
 chng {2000 Sep 21 (Not Released)} {
 <li>Change the tclsqlite "eval" method to return a list of results if
     no callback script is specified.</li>

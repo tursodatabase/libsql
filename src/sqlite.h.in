@@ -24,7 +24,7 @@
 ** This header file defines the interface that the sqlite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.2 2000/08/22 13:40:20 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.3 2000/09/29 13:30:55 drh Exp $
 */
 #ifndef _SQLITE_H_
 #define _SQLITE_H_
@@ -181,5 +181,34 @@ void sqlite_busy_handler(sqlite*, int(*)(void*,const char*,int), void*);
 ** turns off all busy handlers.
 */
 void sqlite_busy_timeout(sqlite*, int ms);
+
+/*
+** This next routine is really just a wrapper around sqlite_exec().
+** Instead of invoking a user-supplied callback for each row of the
+** result, this routine remembers each row of the result in memory
+** obtained from malloc(), then returns all of the result after the
+** query has finished.  After the calling function has finished using
+** the result, it should pass the result data pointer to 
+** sqlite_free_table() in order to release the memory that was malloc-ed.
+** Because of the way the malloc() happens, the calling function must
+** not try to call malloc() directly.  Only sqlite_free_table() is able
+** to release the memory properly and safely.
+**
+** The return value of this routine is the same as from sqlite_exec().
+*/
+int sqlite_get_table(
+  sqlite*,               /* An open database */
+  char *sql,             /* SQL to be executed */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncolumn,          /* Number of result columns written here */
+  char **errmsg          /* Error msg written here */
+);
+
+/*
+** Call this routine to free the memory that sqlite_get_table() allocated.
+*/
+void sqlite_free_table(char **result);
+
 
 #endif /* _SQLITE_H_ */

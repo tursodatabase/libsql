@@ -24,7 +24,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.24 2000/08/28 16:21:59 drh Exp $
+** $Id: shell.c,v 1.25 2000/09/29 13:30:55 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -140,8 +140,9 @@ struct callback_data {
 #define MODE_Line     0  /* One column per line.  Blank line between records */
 #define MODE_Column   1  /* One record per line in neat columns */
 #define MODE_List     2  /* One record per line with a separator */
-#define MODE_Html     3  /* Generate an XHTML table */
-#define MODE_Insert   4  /* Generate SQL "insert" statements */
+#define MODE_Semi     3  /* Same as MODE_List but append ";" to each line */
+#define MODE_Html     4  /* Generate an XHTML table */
+#define MODE_Insert   5  /* Generate SQL "insert" statements */
 
 /*
 ** Number of elements in an array
@@ -237,9 +238,14 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
   struct callback_data *p = (struct callback_data*)pArg;
   switch( p->mode ){
     case MODE_Line: {
+      int w = 5;
+      for(i=0; i<nArg; i++){
+        int len = strlen(azCol[i]);
+        if( len>w ) w = len;
+      }
       if( p->cnt++>0 ) fprintf(p->out,"\n");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%s = %s\n", azCol[i], azArg[i] ? azArg[i] : 0);
+        fprintf(p->out,"%*s = %s\n", w, azCol[i], azArg[i] ? azArg[i] : 0);
       }
       break;
     }
@@ -291,6 +297,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       break;
     }
+    case MODE_Semi:
     case MODE_List: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
@@ -312,7 +319,13 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
           }
           z += j;
         }
-        fprintf(p->out, "%s", i==nArg-1 ? "\n" : p->separator);
+        if( i<nArg-1 ){
+          fprintf(p->out, "%s", p->separator);
+        }else if( p->mode==MODE_Semi ){
+          fprintf(p->out, ";\n");
+        }else{
+          fprintf(p->out, "\n");
+        }
       }
       break;
     }
@@ -388,8 +401,8 @@ static char zHelp[] =
   ".header ON|OFF         Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".indices TABLE         Show names of all indices on TABLE\n"
-  ".mode MODE             Set mode to one of \"line\", \"column\", "
-                                      "\"list\", or \"html\"\n"
+  ".mode MODE             Set mode to one of \"line\", \"column\", \n"
+  "                       \"insert\", \"list\", or \"html\"\n"
   ".mode insert TABLE     Generate SQL insert statements for TABLE\n"
   ".output FILENAME       Send output to FILENAME\n"
   ".output stdout         Send output to the screen\n"
@@ -549,7 +562,7 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
     char zSql[1000];
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
-    data.mode = MODE_List;
+    data.mode = MODE_Semi;
     if( nArg>1 ){
       sprintf(zSql, "SELECT sql FROM sqlite_master "
                     "WHERE tbl_name LIKE '%.800s' AND type!='meta'"
@@ -572,12 +585,10 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
   }else
 
   if( c=='t' && n>1 && strncmp(azArg[0], "tables", n)==0 ){
-    struct callback_data data;
-    char *zErrMsg = 0;
+    char **azResult;
+    int nRow, rc;
+    char *zErrMsg;
     char zSql[1000];
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.mode = MODE_List;
     if( nArg==1 ){
       sprintf(zSql,
         "SELECT name FROM sqlite_master "
@@ -589,11 +600,32 @@ static void do_meta_command(char *zLine, sqlite *db, struct callback_data *p){
         "WHERE type='table' AND name LIKE '%%%.100s%%' "
         "ORDER BY name", azArg[1]);
     }
-    sqlite_exec(db, zSql, callback, &data, &zErrMsg);
+    rc = sqlite_get_table(db, zSql, &azResult, &nRow, 0, &zErrMsg);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       free(zErrMsg);
     }
+    if( rc==SQLITE_OK ){
+      int len, maxlen = 0;
+      int i, j;
+      int nPrintCol, nPrintRow;
+      for(i=1; i<=nRow; i++){
+        if( azResult[i]==0 ) continue;
+        len = strlen(azResult[i]);
+        if( len>maxlen ) maxlen = len;
+      }
+      nPrintCol = 80/(maxlen+2);
+      if( nPrintCol<1 ) nPrintCol = 1;
+      nPrintRow = (nRow + nPrintCol - 1)/nPrintCol;
+      for(i=0; i<nPrintRow; i++){
+        for(j=i+1; j<=nRow; j+=nPrintRow){
+          char *zSp = j<=nPrintRow ? "" : "  ";
+          printf("%s%-*s", zSp, maxlen, azResult[j] ? azResult[j] : "");
+        }
+        printf("\n");
+      }
+    }
+    sqlite_free_table(azResult);
   }else
 
   if( c=='t' && n>1 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){

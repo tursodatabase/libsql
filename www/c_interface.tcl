@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the sqlite.html file.
 #
-set rcsid {$Id: c_interface.tcl,v 1.7 2000/08/22 13:40:20 drh Exp $}
+set rcsid {$Id: c_interface.tcl,v 1.8 2000/09/29 13:30:55 drh Exp $}
 
 puts {<html>
 <head>
@@ -22,8 +22,8 @@ programming interface.</p>
 
 <h2>The API</h2>
 
-<p>The interface to the SQLite library consists of six functions
-(only three of which are required),
+<p>The interface to the SQLite library consists of eight functions
+(only the first three of which are required),
 one opaque data structure, and some constants used as return
 values from sqlite_exec():</p>
 
@@ -41,6 +41,17 @@ int sqlite_exec(
   void*,
   char **errmsg
 );
+
+int sqlite_get_table(
+  sqlite*,
+  char *sql,
+  char ***result,
+  int *nrow,
+  int *ncolumn,
+  char **errmsg
+);
+
+void sqlite_free_table(char**);
 
 int sqlite_complete(const char *sql);
 
@@ -209,6 +220,57 @@ being queried.
 </p></dd>
 </dl>
 </blockquote>
+
+<h2>Querying without using a callback function</h2>
+
+<p>The <b>sqlite_get_table()</b> function is a wrapper around
+<b>sqlite_exec()</b> that collects all the information from successive
+callbacks and write it into memory obtained from malloc().  This
+is a convenience function that allows the application to get the
+entire result of a database query with a single function call.</p>
+
+<p>The main result from <b>sqlite_get_table()</b> is an array of pointers
+to strings.  There is one element in this array for each column of
+each row in the result.  NULL results are represented by a NULL
+pointer. In addition to the regular data, there is an added row at the 
+beginning of the array that contains the names of each column of the
+result.</p>
+
+<p>As an example, consider the following query:</p>
+
+<blockquote>
+SELECT employee_name, login, host FROM users WHERE logic LIKE 'd%';
+</blockquote>
+
+<p>This query will return the name, login and host computer name
+for every employee whose login begins with the letter "d".  If this
+query is submitted to <b>sqlite_get_table()</b> the result might
+look like this:</p>
+
+<blockquote>
+nrow = 2<br>
+ncolumn = 3<br>
+result[0] = "employee_name"<br>
+result[1] = "login"<br>
+result[2] = "host"<br>
+result[3] = "dummy"<br>
+result[4] = "No such user"<br>
+result[5] = 0<br>
+result[6] = "D. Richard Hipp"<br>
+result[7] = "drh"<br>
+result[8] = "zadok"
+</blockquote>
+
+<p>Notice that the "host" value for the "dummy" record is NULL so
+the result[] array contains a NULL pointer at that slot.</p>
+
+<p>Memory to hold the information returned by <b>sqlite_get_table()</b>
+is obtained from malloc().  But the calling function should not try
+to free this information directly.  Instead, pass the complete table
+to <b>sqlite_free_table()</b> when the table is no longer needed.</p>
+
+<p>The <b>sqlite_get_table()</b> routine returns the same integer
+result code as <b>sqlite_exec()</b>.</p>
 
 <h2>Testing for a complete SQL statement</h2>
 
