@@ -1435,7 +1435,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.18 $
+# $Revision: 1.19 $
 
 #########
 # Programs needed
@@ -8356,7 +8356,7 @@ fi
 if test "$CYGWIN" = "yes"; then
   BUILD_EXEEXT=.exe
 else
-  BUILD_EXEEXT=""
+  BUILD_EXEEXT=$EXEEXT
 fi
 if test "$cross" = "0"; then
   TARGET_EXEEXT=$BUILD_EXEEXT
@@ -8596,7 +8596,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 if test "$ac_cv_search_Tcl_Init" = no; then
-  for ac_lib in         tcl8.4 tcl8.3 tcl8.2 tcl8.1 tcl8.0 tcl80 tcl; do
+  for ac_lib in         tcl8.4 tcl8.3 tcl84 tcl83 tcl; do
     LIBS="-l$ac_lib $otherlibs $ac_func_search_save_LIBS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -9186,7 +9186,7 @@ fi
 
 fi
 if test "$found" = "no"; then
-  for dir in /usr /usr/local /usr/local/readline /usr/contrib; do
+  for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
     as_ac_File=`echo "ac_cv_file_$dir/include/readline.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $dir/include/readline.h" >&5
 echo $ECHO_N "checking for $dir/include/readline.h... $ECHO_C" >&6

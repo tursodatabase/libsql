@@ -167,7 +167,7 @@ VDBEHDR = \
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite.h libsqlite.la sqlite 
+all:	sqlite.h libsqlite.la sqlite@TARGET_EXEEXT@
 
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
@@ -185,7 +185,7 @@ libtclsqlite.la:	tclsqlite.lo libsqlite.la
 		libsqlite.la $(LIBTCL) -rpath $(exec_prefix)/lib \
 		-version-info "8:6:8"
 
-sqlite:	$(TOP)/src/shell.c libsqlite.la sqlite.h
+sqlite@TARGET_EXEEXT@:	$(TOP)/src/shell.c libsqlite.la sqlite.h
 	$(LIBTOOL) $(TCC) $(READLINE_FLAGS) -o sqlite $(TOP)/src/shell.c \
 		libsqlite.la $(LIBREADLINE) -rpath $(exec_prefix)/lib
 
@@ -204,7 +204,7 @@ target_source:	$(SRC) $(VDBEHDR)
 
 # Rules to build the LEMON compiler generator
 #
-lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+lemon@BUILD_EXEEXT@:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
@@ -247,7 +247,7 @@ parse.lo:	parse.c $(HDR)
 
 parse.h:	parse.c
 
-parse.c:	$(TOP)/src/parse.y lemon
+parse.c:	$(TOP)/src/parse.y lemon@BUILD_EXEEXT@
 	cp $(TOP)/src/parse.y .
 	./lemon parse.y
 
@@ -345,15 +345,15 @@ tclsqlite:	$(TOP)/src/tclsqlite.c libsqlite.la
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite \
 		$(TOP)/src/tclsqlite.c libsqlite.la $(LIBTCL)
 
-testfixture:	$(TOP)/src/tclsqlite.c libtclsqlite.la libsqlite.la $(TESTSRC)
+testfixture@TARGET_EXEEXT@:	$(TOP)/src/tclsqlite.c libtclsqlite.la libsqlite.la $(TESTSRC)
 	$(LIBTOOL) $(TCC) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1\
                 -o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite.la libsqlite.la $(LIBTCL)
 
-fulltest:	testfixture sqlite
+fulltest:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
 	./testfixture $(TOP)/test/all.test
 
-test:	testfixture sqlite
+test:	testfixture@TARGET_EXEEXT@ sqlite@TARGET_EXEEXT@
 	./testfixture $(TOP)/test/quick.test
 
 index.html:	$(TOP)/www/index.tcl last_change
@@ -449,24 +449,40 @@ doc:	$(DOC)
 	mkdir -p doc
 	mv $(DOC) doc
 
-install:	sqlite libsqlite.la sqlite.h
+install:	sqlite@TARGET_EXEEXT@ libsqlite.la sqlite.h
 	$(INSTALL) -d $(exec_prefix)/lib
 	$(LIBTOOL) $(INSTALL) libsqlite.la $(exec_prefix)/lib
 	$(INSTALL) -d $(exec_prefix)/bin
-	$(LIBTOOL) $(INSTALL) sqlite $(exec_prefix)/bin
+	$(LIBTOOL) $(INSTALL) sqlite@TARGET_EXEEXT@ $(exec_prefix)/bin
 	$(INSTALL) -d $(prefix)/include
 	$(INSTALL) -m 0644 sqlite.h $(prefix)/include
 	$(INSTALL) -d $(exec_prefix)/lib/pkgconfig; 
 	$(INSTALL) -m 0644 sqlite.pc $(exec_prefix)/lib/pkgconfig; 
 
 clean:	
-	rm -f *.lo *.la *.o sqlite libsqlite.la sqlite.h opcodes.*
+	rm -f *.lo *.la *.o sqlite@TARGET_EXEEXT@ libsqlite.la sqlite.h opcodes.*
 	rm -rf .libs .deps 
-	rm -f lemon lempar.c parse.* sqlite*.tar.gz
+	rm -f lemon@BUILD_EXEEXT@ lempar.c parse.* sqlite*.tar.gz
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -f testfixture test.db
+	rm -f testfixture@TARGET_EXEEXT@ test.db
 	rm -rf doc
+	rm -f sqlite.dll sqlite.lib
+
+#make windows dll
+dll: sqlite.dll
+
+sqlite.dll: $(LIBOBJ) sqlite.def
+	dllwrap --dllname sqlite.dll --def sqlite.def $(LIBOBJ)
+	strip sqlite.dll
+	
+#target for dll import libraries
+implib: sqlite.lib 
+
+#make Borland C++ import library for the dll
+sqlite.lib: sqlite.dll
+	-implib -a sqlite.lib sqlite.dll sqlite.def
+	-lib /machine:i386 /def:sqlite.def 
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h
