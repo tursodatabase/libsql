@@ -1087,10 +1087,10 @@ static int vdbeCommit(sqlite *db){
     }
     rc = sqlite3OsSync(&master);
     if( rc!=SQLITE_OK ){
+      sqlite3OsClose(&master);
       sqliteFree(zMaster);
       return rc;
     }
-    sqlite3OsClose(&master);
 
     /* Sync all the db files involved in the transaction. The same call
     ** sets the master journal pointer in each individual journal. If
@@ -1107,22 +1107,40 @@ static int vdbeCommit(sqlite *db){
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
         rc = sqlite3BtreeSync(pBt, zMaster);
         if( rc!=SQLITE_OK ){
+          sqlite3OsClose(&master);
           sqliteFree(zMaster);
           return rc;
         }
       }
     }
+    sqlite3OsClose(&master);
     sqliteFree(zMaster);
     zMaster = 0;
 
-    /* Delete the master journal file. This commits the transaction. */
+    /* Delete the master journal file. This commits the transaction. After
+    ** doing this the directory is synced again before any individual
+    ** transaction files are deleted.
+    */
     rc = sqlite3OsDelete(zMaster);
     assert( rc==SQLITE_OK );
+    rc = sqlite3OsSyncDirectory(zMainFile);
+    if( rc!=SQLITE_OK ){
+      /* This is not good. The master journal file has been deleted, but
+      ** the directory sync failed. There is no completely safe course of
+      ** action from here. The individual journals contain the name of the
+      ** master journal file, but there is no way of knowing if that
+      ** master journal exists now or if it will exist after the operating
+      ** system crash that may follow the fsync() failure.
+      */
+      assert(0);
+      sqliteFree(zMaster);
+      return rc;
+    }
 
     /* All files and directories have already been synced, so the following
     ** calls to sqlite3BtreeCommit() are only closing files and deleting
     ** journals. If something goes wrong while this is happening we don't
-    ** really care. The integrity of the transaction is already guarenteed,
+    ** really care. The integrity of the transaction is already guaranteed,
     ** but some stray 'cold' journals may be lying around. Returning an
     ** error code won't help matters.
     */

@@ -621,6 +621,22 @@ int sqlite3OsSync(OsFile *id){
 }
 
 /*
+** Sync the directory zDirname. This is a no-op on operating systems other
+** than UNIX.
+*/
+int sqlite3OsSyncDirectory(const char *zDirname){
+  int fd;
+  int r;
+  fd = open(zDirname, O_RDONLY|O_BINARY, 0644);
+  if( fd<0 ){
+    return SQLITE_CANTOPEN; 
+  }
+  r = fsync(fd);
+  close(fd);
+  return ((r==0)?SQLITE_OK:SQLITE_IOERR);
+}
+
+/*
 ** Truncate an open file to a specified size
 */
 int sqlite3OsTruncate(OsFile *id, off_t nByte){

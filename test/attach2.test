@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.16 2004/06/12 02:17:15 drh Exp $
+# $Id: attach2.test,v 1.17 2004/06/14 09:35:17 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -304,4 +304,52 @@ db close
 db2 close
 file delete -force test2.db
 
+if 0 {
+
+# These tests - attach2-5.* - check that the master journal file is deleted
+# correctly when a multi-file transaction is committed or rolled back.
+#
+# Update: It's not actually created if a rollback occurs, so that test
+# doesn't really prove too much.
+foreach f [glob test.db*] {file delete -force $f}
+do_test attach2-5.1 {
+  sqlite db test.db
+  execsql {
+    ATTACH 'test.db2' AS aux;
+  }
+} {}
+do_test attach2-5.2 {
+  execsql {
+    BEGIN;
+    CREATE TABLE tbl(a, b, c);
+    CREATE TABLE aux.tbl(a, b, c);
+    COMMIT;
+  }
+} {}
+do_test attach2-5.3 {
+  glob test.db*
+} {test.db test.db2}
+do_test attach2-5.4 {
+  execsql {
+    BEGIN;
+    DROP TABLE aux.tbl;
+    DROP TABLE tbl;
+    ROLLBACK;
+  }
+} {}
+do_test attach2-5.5 {
+  glob test.db*
+} {test.db test.db2}
+
+db close
+
+}
+
+
 finish_test
+
+
+
+
+
+

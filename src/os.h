@@ -148,6 +148,7 @@ int sqlite3OsOpenReadWrite(const char*, OsFile*, int*);
 int sqlite3OsOpenExclusive(const char*, OsFile*, int);
 int sqlite3OsOpenReadOnly(const char*, OsFile*);
 int sqlite3OsOpenDirectory(const char*, OsFile*);
+int sqlite3OsSyncDirectory(const char*);
 int sqlite3OsTempFileName(char*);
 int sqlite3OsClose(OsFile*);
 int sqlite3OsRead(OsFile*, void*, int amt);
