@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.212 2004/02/14 23:05:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.213 2004/02/14 23:59:58 drh Exp $
 */
 #include "config.h"
 #include "sqlite.h"
@@ -872,8 +872,6 @@ struct AggExpr {
 struct Parse {
   sqlite *db;          /* The main database structure */
   int rc;              /* Return code from execution */
-  sqlite_callback xCallback;  /* The callback function */
-  void *pArg;          /* First argument to the callback function */
   char *zErrMsg;       /* An error message */
   Token sErrToken;     /* The token at which the error occurred */
   Token sFirstToken;   /* The first token parsed */
@@ -886,7 +884,6 @@ struct Parse {
   u8 nameClash;        /* A permanent table name clashes with temp table name */
   u8 useAgg;           /* If true, extract field values from the aggregator
                        ** while generating expressions.  Normally false */
-  u8 useCallback;      /* True if callbacks should be used to report results */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.67 2004/01/08 02:17:33 drh Exp $
+** $Id: tokenize.c,v 1.68 2004/02/14 23:59:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -474,7 +474,7 @@ abort_parse:
     pParse->zErrMsg = 0;
     if( !nErr ) nErr++;
   }
-  if( pParse->pVdbe && (pParse->useCallback || pParse->nErr>0) ){
+  if( pParse->pVdbe && pParse->nErr>0 ){
     sqliteVdbeDelete(pParse->pVdbe);
     pParse->pVdbe = 0;
   }

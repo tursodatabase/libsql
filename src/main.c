@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.154 2004/02/14 23:05:53 drh Exp $
+** $Id: main.c,v 1.155 2004/02/14 23:59:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -700,7 +700,6 @@ int sqlite_compile(
   if( db->pVdbe==0 ){ db->nChange = 0; }
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
-  sParse.useCallback = 0;
   if( db->xTrace ) db->xTrace(db->pTraceArg, zSql);
   sqliteRunParser(&sParse, zSql, pzErrMsg);
   if( sqlite_malloc_failed ){
@@ -766,7 +765,7 @@ int sqlite_reset(
   char **pzErrMsg            /* OUT: Write error messages here */
 ){
   int rc = sqliteVdbeReset((Vdbe*)pVm, pzErrMsg);
-  sqliteVdbeMakeReady((Vdbe*)pVm, -1, 0, 0, 0);
+  sqliteVdbeMakeReady((Vdbe*)pVm, -1, 0);
   sqliteStrRealloc(pzErrMsg);
   return rc;
 }

@@ -500,6 +500,7 @@ int sqliteVdbeList(
 ){
   sqlite *db = p->db;
   int i;
+  int rc = SQLITE_OK;
   static char *azColumnNames[] = {
      "addr", "opcode", "p1",  "p2",  "p3", 
      "int",  "text",   "int", "int", "text",
@@ -511,18 +512,20 @@ int sqliteVdbeList(
   p->azColName = azColumnNames;
   p->azResColumn = p->zArgv;
   for(i=0; i<5; i++) p->zArgv[i] = p->aStack[i].zShort;
-  p->rc = SQLITE_OK;
-  for(i=p->pc; p->rc==SQLITE_OK && i<p->nOp; i++){
-    if( db->flags & SQLITE_Interrupt ){
-      db->flags &= ~SQLITE_Interrupt;
-      if( db->magic!=SQLITE_MAGIC_BUSY ){
-        p->rc = SQLITE_MISUSE;
-      }else{
-        p->rc = SQLITE_INTERRUPT;
-      }
-      sqliteSetString(&p->zErrMsg, sqlite_error_string(p->rc), (char*)0);
-      break;
+  i = p->pc;
+  if( i>=p->nOp ){
+    p->rc = SQLITE_OK;
+    rc = SQLITE_DONE;
+  }else if( db->flags & SQLITE_Interrupt ){
+    db->flags &= ~SQLITE_Interrupt;
+    if( db->magic!=SQLITE_MAGIC_BUSY ){
+      p->rc = SQLITE_MISUSE;
+    }else{
+      p->rc = SQLITE_INTERRUPT;
     }
+    rc = SQLITE_ERROR;
+    sqliteSetString(&p->zErrMsg, sqlite_error_string(p->rc), (char*)0);
+  }else{
     sprintf(p->zArgv[0],"%d",i);
     sprintf(p->zArgv[2],"%d", p->aOp[i].p1);
     sprintf(p->zArgv[3],"%d", p->aOp[i].p2);
@@ -533,24 +536,13 @@ int sqliteVdbeList(
       p->zArgv[4] = p->aOp[i].p3;
     }
     p->zArgv[1] = sqliteOpcodeNames[p->aOp[i].opcode];
-    if( p->xCallback==0 ){
-      p->pc = i+1;
-      p->azResColumn = p->zArgv;
-      p->nResColumn = 5;
-      return SQLITE_ROW;
-    }
-    if( sqliteSafetyOff(db) ){
-      p->rc = SQLITE_MISUSE;
-      break;
-    }
-    if( p->xCallback(p->pCbArg, 5, p->zArgv, p->azColName) ){
-      p->rc = SQLITE_ABORT;
-    }
-    if( sqliteSafetyOn(db) ){
-      p->rc = SQLITE_MISUSE;
-    }
+    p->pc = i+1;
+    p->azResColumn = p->zArgv;
+    p->nResColumn = 5;
+    p->rc = SQLITE_OK;
+    rc = SQLITE_ROW;
   }
-  return p->rc==SQLITE_OK ? SQLITE_DONE : SQLITE_ERROR;
+  return rc;
 }
 
 /*
@@ -558,20 +550,10 @@ int sqliteVdbeList(
 ** as allocating stack space and initializing the program counter.
 ** After the VDBE has be prepped, it can be executed by one or more
 ** calls to sqliteVdbeExec().  
-**
-** The behavior of sqliteVdbeExec() is influenced by the parameters to
-** this routine.  If xCallback is NULL, then sqliteVdbeExec() will return
-** with SQLITE_ROW whenever there is a row of the result set ready
-** to be delivered.  p->azResColumn will point to the row and 
-** p->nResColumn gives the number of columns in the row.  If xCallback
-** is not NULL, then the xCallback() routine is invoked to process each
-** row in the result set.
 */
 void sqliteVdbeMakeReady(
   Vdbe *p,                       /* The VDBE */
   int nVar,                      /* Number of '?' see in the SQL statement */
-  sqlite_callback xCallback,     /* Result callback */
-  void *pCallbackArg,            /* 1st argument to xCallback() */
   int isExplain                  /* True if the EXPLAIN keywords is present */
 ){
   int n;
@@ -621,8 +603,6 @@ void sqliteVdbeMakeReady(
   p->returnDepth = 0;
   p->errorAction = OE_Abort;
   p->undoTransOnError = 0;
-  p->xCallback = xCallback;
-  p->pCbArg = pCallbackArg;
   p->popStack =  0;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;

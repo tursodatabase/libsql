@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.109 2004/02/12 18:46:39 drh Exp $
+** @(#) $Id: parse.y,v 1.110 2004/02/14 23:59:57 drh Exp $
 */
 %token_prefix TK_
 %token_type {Token}
@@ -65,13 +65,10 @@ struct TrigEvent { int a; IdList * b; };
 %nonassoc END_OF_FILE ILLEGAL SPACE UNCLOSED_STRING COMMENT FUNCTION
           COLUMN AGG_FUNCTION.
 
-// Input is zero or more commands.
+// Input is a single SQL command
 input ::= cmdlist.
-
-// A list of commands is zero or more commands
-//
-cmdlist ::= ecmd.
 cmdlist ::= cmdlist ecmd.
+cmdlist ::= ecmd.
 ecmd ::= explain cmdx SEMI.
 ecmd ::= SEMI.
 cmdx ::= cmd.           { sqliteExec(pParse); }

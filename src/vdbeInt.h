@@ -259,9 +259,7 @@ struct Vdbe {
   int returnStack[100];   /* Return address stack for OP_Gosub & OP_Return */
   int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
-  char **azResColumn;                        /* Values for one row of result */ 
-  int (*xCallback)(void*,int,char**,char**); /* Callback for SELECT results */
-  void *pCbArg;                              /* First argument to xCallback() */
+  char **azResColumn;     /* Values for one row of result */ 
   int popStack;           /* Pop the stack this much on entry to VdbeExec() */
   char *zErrMsg;          /* Error message written here */
   u8 explain;             /* True if EXPLAIN present on SQL command */

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.263 2004/02/14 17:35:07 drh Exp $
+** $Id: vdbe.c,v 1.264 2004/02/14 23:59:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -872,23 +872,12 @@ case OP_Callback: {
   }
   azArgv[i] = 0;
   p->nCallback++;
-  if( p->xCallback==0 ){
-    p->azResColumn = azArgv;
-    p->nResColumn = pOp->p1;
-    p->popStack = pOp->p1;
-    p->pc = pc + 1;
-    p->pTos = pTos;
-    return SQLITE_ROW;
-  }
-  if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
-  if( p->xCallback(p->pCbArg, pOp->p1, azArgv, p->azColName)!=0 ){
-    rc = SQLITE_ABORT;
-  }
-  if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-  popStack(&pTos, pOp->p1);
-  assert( pTos>=&p->aStack[-1] );
-  if( sqlite_malloc_failed ) goto no_mem;
-  break;
+  p->azResColumn = azArgv;
+  p->nResColumn = pOp->p1;
+  p->popStack = pOp->p1;
+  p->pc = pc + 1;
+  p->pTos = pTos;
+  return SQLITE_ROW;
 }
 
 /* Opcode: NullCallback P1 * *
@@ -908,25 +897,15 @@ case OP_Callback: {
 ** in cases where the result set is empty.
 */
 case OP_NullCallback: {
-  if( p->nCallback==0 && (db->flags & SQLITE_NullCallback)!=0 ){
-    if( p->xCallback!=0 ){
-      if( sqliteSafetyOff(db) ) goto abort_due_to_misuse; 
-      if( p->xCallback(p->pCbArg, pOp->p1, 0, p->azColName)!=0 ){
-        rc = SQLITE_ABORT;
-      }
-      if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-      if( sqlite_malloc_failed ) goto no_mem;
-    }else{
-      p->azResColumn = 0;
-      p->nResColumn = pOp->p1;
-      p->popStack = 0;
-      p->pc = pc + 1;
-      p->pTos = pTos;
-      return SQLITE_ROW;
-    }
-    p->nCallback++;
-  }
   p->nResColumn = pOp->p1;
+  if( p->nCallback==0 && (db->flags & SQLITE_NullCallback)!=0 ){
+    p->azResColumn = 0;
+    p->popStack = 0;
+    p->pc = pc + 1;
+    p->pTos = pTos;
+    p->nCallback++;
+    return SQLITE_ROW;
+  }
   break;
 }
 
@@ -4095,24 +4074,12 @@ case OP_SortCallback: {
   assert( pTos>=p->aStack );
   assert( pTos->flags & MEM_Str );
   p->nCallback++;
-  if( p->xCallback==0 ){
-    p->pc = pc+1;
-    p->azResColumn = (char**)pTos->z;
-    p->nResColumn = pOp->p1;
-    p->popStack = 1;
-    p->pTos = pTos;
-    return SQLITE_ROW;
-  }else{
-    if( sqliteSafetyOff(db) ) goto abort_due_to_misuse;
-    if( p->xCallback(p->pCbArg, pOp->p1, (char**)pTos->z, p->azColName)!=0){
-      rc = SQLITE_ABORT;
-    }
-    if( sqliteSafetyOn(db) ) goto abort_due_to_misuse;
-  }
-  Release(pTos);
-  pTos--;
-  if( sqlite_malloc_failed ) goto no_mem;
-  break;
+  p->pc = pc+1;
+  p->azResColumn = (char**)pTos->z;
+  p->nResColumn = pOp->p1;
+  p->popStack = 1;
+  p->pTos = pTos;
+  return SQLITE_ROW;
 }
 
 /* Opcode: SortReset * * *

@@ -23,7 +23,7 @@
 **     ROLLBACK
 **     PRAGMA
 **
-** $Id: build.c,v 1.169 2004/02/14 23:05:53 drh Exp $
+** $Id: build.c,v 1.170 2004/02/14 23:59:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -55,17 +55,6 @@ void sqliteBeginParse(Parse *pParse, int explainFlag){
 }
 
 /*
-** This is a fake callback procedure used when sqlite_exec() is
-** invoked with a NULL callback pointer.  If we pass a NULL callback
-** pointer into sqliteVdbeExec() it will return at every OP_Callback,
-** which we do not want it to do.  So we substitute a pointer to this
-** procedure in place of the NULL.
-*/
-static int fakeCallback(void *NotUsed, int n, char **az1, char **az2){
-  return 0;
-}
-
-/*
 ** This routine is called after a single SQL statement has been
 ** parsed and we want to execute the VDBE code to implement 
 ** that statement.  Prior action routines should have already
@@ -76,43 +65,20 @@ static int fakeCallback(void *NotUsed, int n, char **az1, char **az2){
 ** no VDBE code was generated.
 */
 void sqliteExec(Parse *pParse){
-  int rc = SQLITE_OK;
   sqlite *db = pParse->db;
   Vdbe *v = pParse->pVdbe;
-  int (*xCallback)(void*,int,char**,char**);
 
-  if( sqlite_malloc_failed ) return;
-  xCallback = pParse->xCallback;
-  if( xCallback==0 ){
-    if( pParse->useCallback ){
-      xCallback = fakeCallback;
-    }else if( v==0 ){
-      v = sqliteGetVdbe(pParse);
-      sqliteVdbeAddOp(v, OP_Halt, 0, 0);
-    }
+  if( v==0 && (v = sqliteGetVdbe(pParse))!=0 ){
+    sqliteVdbeAddOp(v, OP_Halt, 0, 0);
   }
+  if( sqlite_malloc_failed ) return;
   if( v && pParse->nErr==0 ){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqliteVdbeTrace(v, trace);
-    sqliteVdbeMakeReady(v, pParse->nVar, xCallback, pParse->pArg,
-                        pParse->explain);
-    if( pParse->useCallback ){
-      if( pParse->explain ){
-        rc = sqliteVdbeList(v);
-        db->next_cookie = db->aDb[0].schema_cookie;
-      }else{
-        sqliteVdbeExec(v);
-      }
-      rc = sqliteVdbeFinalize(v, &pParse->zErrMsg);
-      if( rc ) pParse->nErr++;
-      pParse->pVdbe = 0;
-      pParse->rc = rc;
-      if( rc ) pParse->nErr++;
-    }else{
-      pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
-    }
+    sqliteVdbeMakeReady(v, pParse->nVar, pParse->explain);
+    pParse->rc = pParse->nErr ? SQLITE_ERROR : SQLITE_DONE;
     pParse->colNamesSet = 0;
-  }else if( pParse->useCallback==0 && pParse->rc==SQLITE_OK ){
+  }else if( pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
   }
   pParse->nTab = 0;

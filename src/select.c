@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.154 2004/02/14 16:31:04 drh Exp $
+** $Id: select.c,v 1.155 2004/02/14 23:59:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -648,9 +648,6 @@ static void generateColumnTypes(
 ){
   Vdbe *v = pParse->pVdbe;
   int i, j;
-  if( pParse->useCallback && (pParse->db->flags & SQLITE_ReportTypes)==0 ){
-    return;
-  }
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
     char *zType = 0;
@@ -1502,9 +1499,7 @@ static int multiSelect(Parse *pParse, Select *p, int eDest, int iParm){
 
   /* Issue a null callback if that is what the user wants.
   */
-  if( eDest==SRT_Callback /* &&
-    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0) */
-  ){
+  if( eDest==SRT_Callback ){
     sqliteVdbeAddOp(v, OP_NullCallback, p->pEList->nExpr, 0);
   }
   return 0;
@@ -2402,9 +2397,7 @@ int sqliteSelect(
 
   /* Issue a null callback if that is what the user wants.
   */
-  if( eDest==SRT_Callback /* &&
-    (pParse->useCallback==0 || (pParse->db->flags & SQLITE_NullCallback)!=0) */
-  ){
+  if( eDest==SRT_Callback ){
     sqliteVdbeAddOp(v, OP_NullCallback, pEList->nExpr, 0);
   }
 
