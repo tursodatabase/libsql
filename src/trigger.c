@@ -111,9 +111,7 @@ void sqlite3BeginTrigger(
   }
 
   /* Do not create a trigger on a system table */
-  if( (iDb!=1 && sqlite3StrICmp(pTab->zName, MASTER_NAME)==0) || 
-      (iDb==1 && sqlite3StrICmp(pTab->zName, TEMP_MASTER_NAME)==0) 
-  ){
+  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
     sqlite3ErrorMsg(pParse, "cannot create trigger on system table");
     pParse->nErr++;
     goto trigger_cleanup;
@@ -167,7 +165,7 @@ void sqlite3BeginTrigger(
   pTrigger->iDb = iDb;
   pTrigger->iTabDb = pTab->iDb;
   pTrigger->op = op;
-  pTrigger->tr_tm = tr_tm;
+  pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
   pTrigger->pWhen = sqlite3ExprDup(pWhen);
   pTrigger->pColumns = sqlite3IdListDup(pColumns);
   pTrigger->foreach = foreach;
@@ -557,37 +555,37 @@ static int checkColumnOverLap(IdList *pIdList, ExprList *pEList){
 }
 
 /*
- * Returns true if a trigger matching op, tr_tm and foreach that is NOT already
- * on the Parse objects trigger-stack (to prevent recursive trigger firing) is
- * found in the list specified as pTrigger.
- */
+** Return a bit vector to indicate what kind of triggers exist for operation
+** "op" on table pTab.  If pChanges is not NULL then it is a list of columns
+** that are being updated.  Triggers only match if the ON clause of the
+** trigger definition overlaps the set of columns being updated.
+**
+** The returned bit vector is some combination of TRIGGER_BEFORE and
+** TRIGGER_AFTER.
+*/
 int sqlite3TriggersExist(
   Parse *pParse,          /* Used to check for recursive triggers */
-  Trigger *pTrigger,      /* A list of triggers associated with a table */
+  Table *pTab,            /* The table the contains the triggers */
   int op,                 /* one of TK_DELETE, TK_INSERT, TK_UPDATE */
-  int tr_tm,              /* one of TK_BEFORE, TK_AFTER */
-  int foreach,            /* one of TK_ROW or TK_STATEMENT */
   ExprList *pChanges      /* Columns that change in an UPDATE statement */
 ){
-  Trigger * pTriggerCursor;
+  Trigger *pTrigger = pTab->pTrigger;
+  int mask = 0;
 
-  pTriggerCursor = pTrigger;
-  while( pTriggerCursor ){
-    if( pTriggerCursor->op == op && 
-	pTriggerCursor->tr_tm == tr_tm && 
-	pTriggerCursor->foreach == foreach &&
-	checkColumnOverLap(pTriggerCursor->pColumns, pChanges) ){
-      TriggerStack * ss;
+  while( pTrigger ){
+    if( pTrigger->op==op && checkColumnOverLap(pTrigger->pColumns, pChanges) ){
+      TriggerStack *ss;
       ss = pParse->trigStack;
-      while( ss && ss->pTrigger != pTrigger ){
+      while( ss && ss->pTrigger!=pTab->pTrigger ){
 	ss = ss->pNext;
       }
-      if( !ss )return 1;
+      if( ss==0 ){
+        mask |= pTrigger->tr_tm;
+      }
     }
-    pTriggerCursor = pTriggerCursor->pNext;
+    pTrigger = pTrigger->pNext;
   }
-
-  return 0;
+  return mask;
 }
 
 /*
@@ -713,7 +711,7 @@ int sqlite3CodeRowTrigger(
   Parse *pParse,       /* Parse context */
   int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
   ExprList *pChanges,  /* Changes list for any UPDATE OF triggers */
-  int tr_tm,           /* One of TK_BEFORE, TK_AFTER */
+  int tr_tm,           /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
   Table *pTab,         /* The table to code triggers from */
   int newIdx,          /* The indice of the "new" row to access */
   int oldIdx,          /* The indice of the "old" row to access */
@@ -725,7 +723,7 @@ int sqlite3CodeRowTrigger(
   TriggerStack trigStackEntry;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
-  assert(tr_tm == TK_BEFORE || tr_tm == TK_AFTER );
+  assert(tr_tm == TRIGGER_BEFORE || tr_tm == TRIGGER_AFTER );
 
   assert(newIdx != -1 || oldIdx != -1);
 
@@ -734,8 +732,7 @@ int sqlite3CodeRowTrigger(
     int fire_this = 0;
 
     /* determine whether we should code this trigger */
-    if( pTrigger->op == op && pTrigger->tr_tm == tr_tm && 
-        pTrigger->foreach == TK_ROW ){
+    if( pTrigger->op == op && pTrigger->tr_tm == tr_tm ){
       fire_this = 1;
       for(pStack=pParse->trigStack; pStack; pStack=pStack->pNext){
         if( pStack->pTrigger==pTrigger ){

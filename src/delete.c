@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle DELETE FROM statements.
 **
-** $Id: delete.c,v 1.91 2004/11/23 01:47:30 drh Exp $
+** $Id: delete.c,v 1.92 2004/12/07 14:06:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -87,9 +87,7 @@ void sqlite3DeleteFrom(
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
-  int row_triggers_exist = 0;  /* True if any triggers exist */
-  int before_triggers;         /* True if there are BEFORE triggers */
-  int after_triggers;          /* True if there are AFTER triggers */
+  int triggers_exist = 0;      /* True if any triggers exist */
 #endif
 
   sContext.pParse = 0;
@@ -112,16 +110,10 @@ void sqlite3DeleteFrom(
   ** deleted from is a view
   */
 #ifndef SQLITE_OMIT_TRIGGER
-  before_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
-                         TK_DELETE, TK_BEFORE, TK_ROW, 0);
-  after_triggers = sqlite3TriggersExist(pParse, pTab->pTrigger, 
-                         TK_DELETE, TK_AFTER, TK_ROW, 0);
-  row_triggers_exist = before_triggers || after_triggers;
+  triggers_exist = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0);
   isView = pTab->pSelect!=0;
 #else
-# define before_triggers 0
-# define after_triggers 0
-# define row_triggers_exist 0
+# define triggers_exist 0
 # define isView 0
 #endif
 #ifdef SQLITE_OMIT_VIEW
@@ -129,7 +121,7 @@ void sqlite3DeleteFrom(
 # define isView 0
 #endif
 
-  if( sqlite3IsReadOnly(pParse, pTab, before_triggers) ){
+  if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
     goto delete_from_cleanup;
   }
   assert( pTab->iDb<db->nDb );
@@ -146,7 +138,7 @@ void sqlite3DeleteFrom(
 
   /* Allocate a cursor used to store the old.* data for a trigger.
   */
-  if( row_triggers_exist ){ 
+  if( triggers_exist ){ 
     oldIdx = pParse->nTab++;
   }
 
@@ -171,7 +163,7 @@ void sqlite3DeleteFrom(
     goto delete_from_cleanup;
   }
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, row_triggers_exist, pTab->iDb);
+  sqlite3BeginWriteOperation(pParse, triggers_exist, pTab->iDb);
 
   /* If we are trying to delete from a view, construct that view into
   ** a temporary table.
@@ -193,7 +185,7 @@ void sqlite3DeleteFrom(
   ** It is easier just to erase the whole table.  Note, however, that
   ** this means that the row change count will be incorrect.
   */
-  if( pWhere==0 && !row_triggers_exist ){
+  if( pWhere==0 && !triggers_exist ){
     if( db->flags & SQLITE_CountRows ){
       /* If counting rows deleted, just count the total number of
       ** entries in the table. */
@@ -245,7 +237,7 @@ void sqlite3DeleteFrom(
 
     /* Open the pseudo-table used to store OLD if there are triggers.
     */
-    if( row_triggers_exist ){
+    if( triggers_exist ){
       sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
       sqlite3VdbeAddOp(v, OP_SetNumColumns, oldIdx, pTab->nCol);
     }
@@ -260,7 +252,7 @@ void sqlite3DeleteFrom(
     /* This is the beginning of the delete loop when there are
     ** row triggers.
     */
-    if( row_triggers_exist ){
+    if( triggers_exist ){
       addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, end);
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       if( !isView ){
@@ -274,8 +266,8 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
 
-      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_BEFORE, pTab, -1, 
-          oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
+      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_BEFORE, pTab,
+          -1, oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
 
@@ -290,7 +282,7 @@ void sqlite3DeleteFrom(
 
       /* This is the beginning of the delete loop when there are no
       ** row triggers */
-      if( !row_triggers_exist ){ 
+      if( !triggers_exist ){ 
         addr = sqlite3VdbeAddOp(v, OP_ListRead, 0, end);
       }
 
@@ -301,14 +293,14 @@ void sqlite3DeleteFrom(
     /* If there are row triggers, close all cursors then invoke
     ** the AFTER triggers
     */
-    if( row_triggers_exist ){
+    if( triggers_exist ){
       if( !isView ){
         for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
           sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
         }
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
-      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TK_AFTER, pTab, -1, 
+      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1,
           oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
 	  addr);
     }
@@ -319,7 +311,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp(v, OP_ListReset, 0, 0);
 
     /* Close the cursors after the loop if there are no row triggers */
-    if( !row_triggers_exist ){
+    if( !triggers_exist ){
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
         sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
       }
