@@ -1,5 +1,5 @@
-C Add\sa\sfew\smore\stests\sand\sfix\sa\sfew\sbugs\sthat\sthe\stests\suncovered.\s(CVS\s652)
-D 2002-06-29T02:20:08
+C Added\sadditional\stests.\s\sNo\snew\serrors\sfound.\s(CVS\s653)
+D 2002-07-01T00:31:36
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -44,7 +44,7 @@ F src/sqlite.h.in 75c5bbb066d0faf34424b7d1babf8b44d5b31af2
 F src/sqliteInt.h 314a4feb08cccdeb90b434e6dde86b93d2f36b8e
 F src/table.c eed2098c9b577aa17f8abe89313a9c4413f57d63
 F src/tclsqlite.c e932591c0bb522b0a35ea7dc861c623ccb2e3aa8
-F src/test1.c 29ed719d8ce890733fbeadb53cacc4e542d423ed
+F src/test1.c a2f2b6b1df07d4e8b380323896c3ed34442cea91
 F src/test2.c 669cc22781c6461a273416ec1a7414d25c081730
 F src/test3.c 72ac6a9017a70e542954907a1dfd87ab6f7824e3
 F src/threadtest.c 81f0598e0f031c1bd506af337fdc1b7e8dff263f
@@ -64,8 +64,8 @@ F test/conflict.test 4518cc3c1c40c4ba74220d9ee814257ae7d09c47
 F test/copy.test 92e21ebea11319c3f70448d3763fdaa0e2f1c21f
 F test/delete.test c904a62129fe102b314a96111a8417f10249e4d8
 F test/expr.test 5fadd0bc87c223b424ce6752b576c1df346abf1f
-F test/func.test 7e5500c9db4b02fd62f9737931a6ada01e3b55d0
-F test/in.test c09312672e3f0709fa02c8e2e9cd8fb4bd6269aa
+F test/func.test cae5f27e09736cfdcc978c3719ac1345405b848c
+F test/in.test e59461f1702b7387880bf08a0ce6bb777925d282
 F test/index.test c8a471243bbf878974b99baf5badd59407237cf3
 F test/insert.test a122afb86911e77c181d912348866a5b1a61eeab
 F test/insert2.test c288375a64dad3295044714f0dfed4a193cf067f
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 96515b813eb57e1f48c28d357d1f38639b2fdcfa
-R c1f2449afe59030f9bd638b2fb549a9b
+P 91c0db66c86facb21b5b522afadd83d91a488256
+R 7d04cf3eef7b325f91f0693158023bcb
 U drh
-Z e559f098ea075de4e2b198f365f605ef
+Z e9235d5a107811a531de8a11c88a7168

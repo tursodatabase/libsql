@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.10 2002/06/26 20:06:06 drh Exp $
+** $Id: test1.c,v 1.11 2002/07/01 00:31:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -214,7 +214,7 @@ static void ifnullFunc(sqlite_func *context, int argc, const char **argv){
 /*
 ** Implementation of the x_sqlite_exec() function.  This function takes
 ** a single argument and attempts to execute that argument as SQL code.
-** This is illegal and shut set the SQLITE_MISUSE flag on the database.
+** This is illegal and should set the SQLITE_MISUSE flag on the database.
 ** 
 ** This routine simulates the effect of having two threads attempt to
 ** use the same database at the same time.
@@ -453,6 +453,60 @@ static int sqlite_abort(
 }
 
 /*
+** The following routine is a user-defined SQL function whose purpose
+** is to test the sqlite_set_result() API.
+*/
+static void testFunc(sqlite_func *context, int argc, const char **argv){
+  while( argc>=2 ){
+    if( argv[0]==0 ){
+      sqlite_set_result_error(context, "first argument to test function "
+         "may not be NULL", -1);
+    }else if( sqliteStrICmp(argv[0],"string")==0 ){
+      sqlite_set_result_string(context, argv[1], -1);
+    }else if( argv[1]==0 ){
+      sqlite_set_result_error(context, "2nd argument may not be NULL if the "
+         "first argument is not \"string\"", -1);
+    }else if( sqliteStrICmp(argv[0],"int")==0 ){
+      sqlite_set_result_int(context, atoi(argv[1]));
+    }else if( sqliteStrICmp(argv[0],"double")==0 ){
+      sqlite_set_result_double(context, atof(argv[1]));
+    }else{
+      sqlite_set_result_error(context,"first argument should be one of: "
+          "string int double", -1);
+    }
+    argc -= 2;
+    argv += 2;
+  }
+}
+
+/*
+** Usage:   sqlite_register_test_function  DB  NAME
+**
+** Register the test SQL function on the database DB under the name NAME.
+*/
+static int sqlite_register_test_function(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite *db;
+  int rc;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB FUNCTION-NAME", 0);
+    return TCL_ERROR;
+  }
+  db = (sqlite*)strtol(argv[1], 0, 0);
+  rc = sqlite_create_function(db, argv[2], -1, testFunc, 0);
+  if( rc!=0 ){
+    Tcl_AppendResult(interp, sqlite_error_string(rc), 0);
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -470,6 +524,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       sqlite_test_create_function, 0, 0);
   Tcl_CreateCommand(interp, "sqlite_create_aggregate",
       sqlite_test_create_aggregate, 0, 0);
+  Tcl_CreateCommand(interp, "sqlite_register_test_function",
+      sqlite_register_test_function, 0, 0);
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite_search_count, TCL_LINK_INT);
 #ifdef MEMORY_DEBUG

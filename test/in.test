@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.6 2002/01/28 15:53:05 drh Exp $
+# $Id: in.test,v 1.7 2002/07/01 00:31:36 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -167,7 +167,9 @@ do_test in-6.1 {
     INSERT INTO ta VALUES(4,4);
     INSERT INTO ta VALUES(6,6);
     INSERT INTO ta VALUES(8,8);
-    SELECT * FROM ta;
+    INSERT INTO ta VALUES(10,
+       'This is a key that is long enough to require a malloc in the VDBE');
+    SELECT * FROM ta WHERE a<10;
   }
 } {1 1 2 2 3 3 4 4 6 6 8 8}
 do_test in-6.2 {
@@ -179,7 +181,9 @@ do_test in-6.2 {
     INSERT INTO tb VALUES(5,5);
     INSERT INTO tb VALUES(7,7);
     INSERT INTO tb VALUES(9,9);
-    SELECT * FROM tb;
+    INSERT INTO tb VALUES(11,
+       'This is a key that is long enough to require a malloc in the VDBE');
+    SELECT * FROM tb WHERE a<10;
   }
 } {1 1 2 2 3 3 5 5 7 7 9 9}
 do_test in-6.3 {
@@ -191,12 +195,12 @@ do_test in-6.4 {
   execsql {
     SELECT a FROM ta WHERE b NOT IN (SELECT a FROM tb);
   }
-} {4 6 8}
+} {4 6 8 10}
 do_test in-6.5 {
   execsql {
     SELECT a FROM ta WHERE b IN (SELECT b FROM tb);
   }
-} {1 2 3}
+} {1 2 3 10}
 do_test in-6.6 {
   execsql {
     SELECT a FROM ta WHERE b NOT IN (SELECT b FROM tb);
@@ -211,7 +215,7 @@ do_test in-6.8 {
   execsql {
     SELECT a FROM ta WHERE a NOT IN (SELECT a FROM tb);
   }
-} {4 6 8}
+} {4 6 8 10}
 do_test in-6.9 {
   execsql {
     SELECT a FROM ta WHERE a IN (SELECT b FROM tb);
@@ -221,7 +225,6 @@ do_test in-6.10 {
   execsql {
     SELECT a FROM ta WHERE a NOT IN (SELECT b FROM tb);
   }
-} {4 6 8}
-
+} {4 6 8 10}
 
 finish_test
