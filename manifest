@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#75:\sAutoincrement\sINTEGER\sPRIMARY\sKEY\sfields\son\san\sINSERT\neven\sif\sthe\sdata\sis\scoming\sfrom\sa\sSELECT\sstatement.\s(CVS\s630)
-D 2002-06-19T20:32:44
+C Fix\sfor\sticket\s#73:\sThe\sORDER\sBY\sclause\sis\ssignificant\sfor\ssubqueries.\nThis\spasses\sall\sregression\stests,\sbut\smore\stesting\sis\sneeded\sto\sexercise\nall\spaths\sthrough\sthe\snew\scode.\s(CVS\s631)
+D 2002-06-20T03:38:26
 F Makefile.in 6291a33b87d2a395aafd7646ee1ed562c6f2c28c
 F Makefile.template 4e11752e0b5c7a043ca50af4296ec562857ba495
 F README a4c0ba11354ef6ba0776b400d057c59da47a4cc0
@@ -37,7 +37,7 @@ F src/pager.h 6fddfddd3b73aa8abc081b973886320e3c614f0e
 F src/parse.y 2285d8967d7334d52a2188089e5a881d73ba56f6
 F src/printf.c 236ed7a79386feed4456fa728fff8be793f1547c
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c 514b4b12f72df68e0c8b4187af302b7c22b22cf6
+F src/select.c 3eadcde4c74341d8ee7db69948cbcb16df9ae9fc
 F src/shell.c 1d22fe870ee852cfb975fd000dbe3973713d0a15
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 0038faa6d642de06b91143ee65a131bd831d020b
@@ -90,7 +90,7 @@ F test/rowid.test 4c55943300cddf73dd0f88d40a268cab14c83274
 F test/select1.test 0d708cec567104653ec9aa49fecf3444a2e7d150
 F test/select2.test aceea74fd895b9d007512f72499db589735bd8e4
 F test/select3.test 9469c332250a75a0ef1771fb5da62dc04ec77f18
-F test/select4.test 9b5c87b7a372172d65928cf860bcd5a54694c775
+F test/select4.test 13618c1107c2b51f5ae8417f00c50f899a68056f
 F test/select5.test c2a6c4a003316ee42cbbd689eebef8fdce0db2ac
 F test/select6.test efb8d0c07a440441db87db2c4ade6904e1407e85
 F test/sort.test 3b996ce7ca385f9cd559944ac0f4027a23aa546b
@@ -137,7 +137,7 @@ F www/speed.tcl da8afcc1d3ccc5696cfb388a68982bc3d9f7f00f
 F www/sqlite.tcl 8b5884354cb615049aed83039f8dfe1552a44279
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 5e8a3131aba25e22f3e25b9b1c051019381f11d1
-R 524db4044083fd865802aa3a7659d610
+P d599f75b659809a6e5eee09b0e9e6e90bde5af1e
+R 086d9eb833675513d9039b13c48320be
 U drh
-Z 7f1cd27c410e1c7fc4e1a09a08e84965
+Z 8d182409003e8da6cfa46f473fde17e7
