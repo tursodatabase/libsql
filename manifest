@@ -1,5 +1,5 @@
-C Make\sthe\sGROUP\sBY\sclause\swork\seven\sif\sthere\sare\sno\saggregate\sfunctions.\s(CVS\s859)
-D 2003-02-02T12:41:26
+C Make\sthe\sshell\srun\smuch\sfaster\sfor\sinputs\swhere\sa\ssingle\sSQL\sstatement\sspans\nthousands\sof\slines\sby\savoiding\sthe\scall\sto\ssqlite_complete()\sunless\sthe\ninput\sends\sin\sa\ssemicolon.\s(CVS\s860)
+D 2003-02-05T14:06:20
 F Makefile.in 6606854b1512f185b8e8c779b8d7fc2750463d64
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -39,7 +39,7 @@ F src/parse.y cdaed5009423d851708848bd279147c268e6022e
 F src/printf.c f8fd911a8738f9b2eb07aca2870473d34707055d
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c d12d4c12d6536deccdede90b482d24f0590f5dc8
-F src/shell.c cbb29252f0bd7b144d1e3126e64e17e5a314f2fd
+F src/shell.c 0d260a007e0668fc7dda2b0c89bd597ef2966ec6
 F src/shell.tcl 27ecbd63dd88396ad16d81ab44f73e6c0ea9d20e
 F src/sqlite.h.in 6f648803f2ffb9beb35cb1cfa42b323d55519171
 F src/sqliteInt.h f22092ed33fea784f58bcd57b90c0babd16a0e29
@@ -155,7 +155,7 @@ F www/speed.tcl 4d463e2aea41f688ed320a937f93ff885be918c3
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 65264780c553e8a00ec7a40cf76b89a11b245faf
-R bcf5d563cdfd66ab83ddebe53976490d
+P b68792315883eed8523f5e11856ec8378dc972c1
+R 58fd040d5f3c326dafe0f8ea3c342f54
 U drh
-Z de0eb8741aaf06b1a17e5c2252ef5c5a
+Z b59e898cbd5005ef4b11e662eace5dcc

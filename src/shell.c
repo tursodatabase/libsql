@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.65 2003/01/18 17:05:01 drh Exp $
+** $Id: shell.c,v 1.66 2003/02/05 14:06:20 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -927,6 +927,15 @@ static char *skip_whitespace(char *z){
 }
 
 /*
+** Return TRUE if the last non-whitespace character in z[] is a semicolon.
+** z[] is N characters long.
+*/
+static int _ends_with_semicolon(const char *z, int N){
+  while( N>0 && isspace(z[N-1]) ){ N--; }
+  return N>0 && z[N-1]==';';
+}
+
+/*
 ** Read input from *in and process it.  If *in==0 then input
 ** is interactive - the user is typing it it.  Otherwise, input
 ** is coming from a file or device.  A prompt is issued and history
@@ -971,7 +980,7 @@ static void process_input(struct callback_data *p, FILE *in){
       nSql += len;
     }
     free(zLine);
-    if( zSql && sqlite_complete(zSql) ){
+    if( zSql && _ends_with_semicolon(zSql, nSql) && sqlite_complete(zSql) ){
       p->cnt = 0;
       rc = sqlite_exec(db, zSql, callback, p, &zErrMsg);
       if( rc || zErrMsg ){
