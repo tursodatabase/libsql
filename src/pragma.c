@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.6 2003/05/10 03:03:34 jplyon Exp $
+** $Id: pragma.c,v 1.7 2003/05/11 20:09:20 jplyon Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -421,6 +421,7 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
     static VdbeOp indexListPreface[] = {
       { OP_ColumnName,  0, 0,       "seq"},
       { OP_ColumnName,  1, 0,       "name"},
+      { OP_ColumnName,  2, 0,       "file"},
     };
 
     sqliteVdbeAddOpList(v, ArraySize(indexListPreface), indexListPreface);
@@ -430,7 +431,9 @@ void sqlitePragma(Parse *pParse, Token *pLeft, Token *pRight, int minusFlag){
       sqliteVdbeAddOp(v, OP_Integer, i, 0);
       sqliteVdbeAddOp(v, OP_String, 0, 0);
       sqliteVdbeChangeP3(v, -1, db->aDb[i].zName, P3_STATIC);
-      sqliteVdbeAddOp(v, OP_Callback, 2, 0);
+      sqliteVdbeAddOp(v, OP_String, 0, 0);
+      sqliteVdbeChangeP3(v, -1, btOps(db->aDb[i].pBt)->GetFilename(db->aDb[i].pBt), P3_STATIC);
+      sqliteVdbeAddOp(v, OP_Callback, 3, 0);
     }
   }else
   /*

@@ -1,5 +1,5 @@
-C Changed\s".databases"\scommand\sto\suse\sPRAGMA\sdatabase_list.\s(CVS\s967)
-D 2003-05-11T20:07:05
+C Changed\sPRAGMA\sdatabase_list\sto\sshow\sthe\sfilename.\s(CVS\s968)
+D 2003-05-11T20:09:20
 F Makefile.in 004acec253ecdde985c8ecd5b7c9accdb210378f
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -40,7 +40,7 @@ F src/os.h 9e5bbddff123187295e3d00d49af06192cd1cd49
 F src/pager.c 51fdfda63e2d8c01fff8f7fe0c49f2636d5b1321
 F src/pager.h 5da62c83443f26b1792cfd72c96c422f91aadd31
 F src/parse.y 39b5240cb78047dc56d6d37c398baed7ba556779
-F src/pragma.c c2e932cb8962584d27300bb46723efd465bc8fe3
+F src/pragma.c 8928b747a48d2c84de79814a71792ea13367644b
 F src/printf.c fc5fdef6e92ad205005263661fe9716f55a49f3e
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
 F src/select.c c06b4605bca03d8237a3fc4098179bf3a7133702
@@ -165,7 +165,7 @@ F www/speed.tcl cb4c10a722614aea76d2c51f32ee43400d5951be
 F www/sqlite.tcl 4bd1729e320f5fa9125f0022b281fbe839192125
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 8b388b2f690dbfd50eefc0fdede1c7785f78afa1
-R a62aff9c2d1ccd3470c73630c954d229
+P bad2065337d8dcaacd519b8f1730a90f1c933c3e
+R 2f3baa72d19786b03a0300d43892d103
 U jplyon
-Z 280acb47c3622340801e99c170c357f1
+Z 6c3c744be243d2916c4a968c6f03228a
