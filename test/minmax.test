@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.6 2003/07/19 00:44:15 drh Exp $
+# $Id: minmax.test,v 1.7 2004/01/30 02:01:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -211,6 +211,30 @@ do_test minmax-6.7 {
     SELECT max(a) FROM t2 LIMIT 0
   }
 } {}
+
+# Make sure the max(x) and min(x) optimizations work for nested
+# queries.  Ticket #587.
+#
+do_test minmax-7.1 {
+  execsql {
+    SELECT max(x) FROM t1;
+  }
+} 20
+do_test minmax-7.2 {
+  execsql {
+    SELECT * FROM (SELECT max(x) FROM t1);
+  }
+} 20
+do_test minmax-7.3 {
+  execsql {
+    SELECT min(x) FROM t1;
+  }
+} 1
+do_test minmax-7.4 {
+  execsql {
+    SELECT * FROM (SELECT min(x) FROM t1);
+  }
+} 1
 
 
 finish_test

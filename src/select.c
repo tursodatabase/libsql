@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.149 2004/01/24 20:18:13 drh Exp $
+** $Id: select.c,v 1.150 2004/01/30 02:01:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1898,6 +1898,12 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
   if( v==0 ) return 0;
   if( eDest==SRT_Callback ){
     generateColumnTypes(pParse, p->pSrc, p->pEList);
+  }
+
+  /* If the output is destined for a temporary table, open that table.
+  */
+  if( eDest==SRT_TempTable ){
+    sqliteVdbeAddOp(v, OP_OpenTemp, iParm, 0);
   }
 
   /* Generating code to find the min or the max.  Basically all we have

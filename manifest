@@ -1,5 +1,5 @@
-C Change\spermissions\son\sthe\sinstall-sh\sfile\sto\sbe\sexecutable.\s\sTicket\s#582.\s(CVS\s1200)
-D 2004-01-27T17:46:56
+C Make\ssure\smin()\sand\smax()\soptimizations\swork\sfor\ssubqueries.\sTicket\s#587.\s(CVS\s1201)
+D 2004-01-30T02:01:04
 F Makefile.in 0515ff9218ad8d5a8f6220f0494b8ef94c67013b
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -46,7 +46,7 @@ F src/parse.y 7a121554c0c0c0150a77ab05417b01fa44813ac4
 F src/pragma.c 89d62c31c6f0a43376fe8d20549b87a6d30c467a
 F src/printf.c 292a7bfc5a815cb6465e32b2d5c9fe9bd43b27f0
 F src/random.c 19e8e00fe0df32a742f115773f57651be327cabe
-F src/select.c b5bc89a56d3d9162559bc173b7d5110f20249057
+F src/select.c b7694067df8d57fd0c85ddcc0840532d181552ad
 F src/shell.c 3b067edc098c45caca164bcad1fa79192c3ec5ae
 F src/sqlite.h.in c70d8533cd5a5ae8af580597dbc726693ef82de9
 F src/sqliteInt.h c5b727d5d07b88654c204c0fc1ae79c9f635a008
@@ -103,7 +103,7 @@ F test/main.test 6a851b5992c4881a725a3d9647e629199df8de9d
 F test/malloc.test 7ba32a9ebd3aeed52ae4aaa6d42ca37e444536fd
 F test/memdb.test 6ece25c7c0e6500199d3662607a3edca081abb2a
 F test/memleak.test a18e6810cae96d2f6f5136920267adbefc8e1e90
-F test/minmax.test 6d9b6d6ee34f42e2a58dffece1f76d35f446b3af
+F test/minmax.test 6680b8d79b9b6e026a476ebfb91f310f7774568e
 F test/misc1.test 0b98d493b0cf55cb5f53e1f3df8107c166eecb5a
 F test/misc2.test 10c2ce26407d37411b96273e552d5095393732be
 F test/misc3.test 01698429c87174fbad2bf35c6d737b4f83264490
@@ -182,7 +182,7 @@ F www/sqlite.tcl 3c83b08cf9f18aa2d69453ff441a36c40e431604
 F www/tclsqlite.tcl b9271d44dcf147a93c98f8ecf28c927307abd6da
 F www/vdbe.tcl 9b9095d4495f37697fd1935d10e14c6015e80aa1
 F www/whentouse.tcl a8335bce47cc2fddb07f19052cb0cb4d9129a8e4
-P d77e47764818ef495894013fb26b1a510f2f1a7e
-R 0a364661a8bb2ad06b5a169b96954eeb
+P eafa714d1f0abe7e4822a6d137c2a7c6179ffab3
+R d39fa065e30e1e0532ab6dc3e864bd94
 U drh
-Z af84989536902845acf2673088c789fb
+Z c358c54959e4dcb73fab284646bd586a
