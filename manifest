@@ -1,5 +1,5 @@
-C Do\snot\sput\sa\swrite\slock\son\sthe\smain\sdatabase\sfile\swhen\swriting\sto\sa\stemporary\ntable.\s(CVS\s750)
-D 2002-09-14T13:47:32
+C Modify\sthe\ssqlite_encode_binary()\sroutine\sto\sreturn\sthe\sstrlen()\sof\sthe\nencoded\sstring.\s\sAlso\sfix\sa\sbug\sthat\soccurs\swhen\sattempting\sto\sencode\na\szero-length\sbuffer.\s(CVS\s751)
+D 2002-09-16T11:44:06
 F Makefile.in d6c9a85c2a5e696843201d090dcf8bf2f8716f2a
 F Makefile.linux-gcc b86a99c493a5bfb402d1d9178dcdc4bd4b32f906
 F README f1de682fbbd94899d50aca13d387d1b3fd3be2dd
@@ -22,7 +22,7 @@ F src/btree.c 8024b87635c2adf133f153f1bb595125ec1c7d7b
 F src/btree.h 0ca6c2631338df62e4f7894252d9347ae234eda9
 F src/build.c d41b8da6b52ff84b235a785b226c37f3090ed276
 F src/delete.c aad9d4051ab46e6f6391ea5f7b8994a7c05bdd15
-F src/encode.c 346b12b46148506c32038524b95c4631ab46d760
+F src/encode.c 6c9c87d5b7b2c0101d011ebc283a80abf672a4d1
 F src/expr.c e1327eb020a68ff7c49382e121ad4b71b3441b2a
 F src/func.c e45cd908b9b723d9b91473d09e12c23f786b3fc2
 F src/hash.c 6a6236b89c8c060c65dabd300a1c8ce7c10edb72
@@ -149,7 +149,7 @@ F www/speed.tcl a20a792738475b68756ea7a19321600f23d1d803
 F www/sqlite.tcl ae3dcfb077e53833b59d4fcc94d8a12c50a44098
 F www/tclsqlite.tcl 1db15abeb446aad0caf0b95b8b9579720e4ea331
 F www/vdbe.tcl 2013852c27a02a091d39a766bc87cff329f21218
-P 6cb80ae10af60863cc25c22a6442ba1d43b7409c
-R 780c4a4a4908db085bbda24c5386e9ab
+P 3f253afe15d4f7392555f340a41d780d1248087f
+R ae2062ad558397dc7333045d78c8c1e1
 U drh
-Z 662e185948fcdefe24022119237f420c
+Z ff6d471c5e281a3e52ab81c5ecd43f4c

@@ -15,7 +15,7 @@
 ** data in an SQLite database.  The code in this file is used by any other
 ** part of the SQLite library.
 **
-** $Id: encode.c,v 1.2 2002/04/25 23:06:47 drh Exp $
+** $Id: encode.c,v 1.3 2002/09/16 11:44:06 drh Exp $
 */
 
 /*
@@ -30,10 +30,18 @@
 ** In other words, the output will be expanded by as much as 3
 ** bytes for every 253 bytes of input plus 2 bytes of fixed overhead.
 ** (This is approximately 2 + 1.019*n or about a 2% size increase.)
+**
+** The return value is the number of characters in the encoded
+** string, excluding the "\000" terminator.
 */
-void sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
+int sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
   int i, j, e, m;
   int cnt[256];
+  if( n<=0 ){
+    out[0] = 'x';
+    out[1] = 0;
+    return 1;
+  }
   memset(cnt, 0, sizeof(cnt));
   for(i=n-1; i>=0; i--){ cnt[in[i]]++; }
   m = n;
@@ -64,7 +72,8 @@ void sqlite_encode_binary(const unsigned char *in, int n, unsigned char *out){
       out[j++] = c;
     }
   }
-  out[j++] = 0;
+  out[j] = 0;
+  return j;
 }
 
 /*
@@ -106,7 +115,7 @@ int sqlite_decode_binary(const unsigned char *in, unsigned char *out){
 ** and run the result.
 */
 int main(int argc, char **argv){
-  int i, j, n, m;
+  int i, j, n, m, nOut;
   unsigned char in[30000];
   unsigned char out[33000];
 
@@ -123,7 +132,11 @@ int main(int argc, char **argv){
     }else{
       for(j=0; j<n; j++) in[j] = rand() & 0xff;
     }
-    sqlite_encode_binary(in, n, out);
+    nOut = sqlite_encode_binary(in, n, out);
+    if( nOut!=strlen(out) ){
+      printf(" ERROR return value is %d instead of %d\n", nOut, strlen(out));
+      exit(1);
+    }
     m = (256*n + 1262)/253;
     printf("size %d->%d (max %d)", n, strlen(out)+1, m);
     if( strlen(out)+1>m ){
