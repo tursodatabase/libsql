@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.302 2005/01/31 12:42:29 danielk1977 Exp $
+** $Id: build.c,v 1.303 2005/01/31 12:56:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -855,6 +855,43 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 }
 
 /*
+** Scan the column type name zType (length nType) and return the
+** associated affinity type.
+*/
+static char sqlite3AffinityType(const char *zType, int nType){
+  int n, i;
+  static const struct {
+    const char *zSub;  /* Keywords substring to search for */
+    char nSub;         /* length of zSub */
+    char affinity;     /* Affinity to return if it matches */
+  } substrings[] = {
+    {"INT",  3, SQLITE_AFF_INTEGER},
+    {"CHAR", 4, SQLITE_AFF_TEXT},
+    {"CLOB", 4, SQLITE_AFF_TEXT},
+    {"TEXT", 4, SQLITE_AFF_TEXT},
+    {"BLOB", 4, SQLITE_AFF_NONE},
+  };
+
+  if( nType==0 ){
+    return SQLITE_AFF_NONE;
+  }
+  for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
+    int c1 = substrings[i].zSub[0];
+    int c2 = tolower(c1);
+    int limit = nType - substrings[i].nSub;
+    const char *z = substrings[i].zSub;
+    for(n=0; n<=limit; n++){
+      int c = zType[n];
+      if( (c==c1 || c==c2)
+             && 0==sqlite3StrNICmp(&zType[n], z, substrings[i].nSub) ){
+        return substrings[i].affinity;
+      }
+    }
+  }
+  return SQLITE_AFF_NUMERIC;
+}
+
+/*
 ** This routine is called by the parser while in the middle of
 ** parsing a CREATE TABLE statement.  The pFirst token is the first
 ** token in the sequence of tokens that describe the type of the
@@ -1212,44 +1249,6 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
   return pColl;
 }
 
-
-
-/*
-** Scan the column type name zType (length nType) and return the
-** associated affinity type.
-*/
-static char sqlite3AffinityType(const char *zType, int nType){
-  int n, i;
-  static const struct {
-    const char *zSub;  /* Keywords substring to search for */
-    char nSub;         /* length of zSub */
-    char affinity;     /* Affinity to return if it matches */
-  } substrings[] = {
-    {"INT",  3, SQLITE_AFF_INTEGER},
-    {"CHAR", 4, SQLITE_AFF_TEXT},
-    {"CLOB", 4, SQLITE_AFF_TEXT},
-    {"TEXT", 4, SQLITE_AFF_TEXT},
-    {"BLOB", 4, SQLITE_AFF_NONE},
-  };
-
-  if( nType==0 ){
-    return SQLITE_AFF_NONE;
-  }
-  for(i=0; i<sizeof(substrings)/sizeof(substrings[0]); i++){
-    int c1 = substrings[i].zSub[0];
-    int c2 = tolower(c1);
-    int limit = nType - substrings[i].nSub;
-    const char *z = substrings[i].zSub;
-    for(n=0; n<=limit; n++){
-      int c = zType[n];
-      if( (c==c1 || c==c2)
-             && 0==sqlite3StrNICmp(&zType[n], z, substrings[i].nSub) ){
-        return substrings[i].affinity;
-      }
-    }
-  }
-  return SQLITE_AFF_NUMERIC;
-}
 
 /*
 ** Generate code that will increment the schema cookie.

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.128 2005/01/20 22:48:48 drh Exp $
+** $Id: util.c,v 1.129 2005/01/31 12:56:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -491,20 +491,6 @@ const unsigned char sqlite3UpperToLower[] = {
     252,253,254,255
 };
 #define UpperToLower sqlite3UpperToLower
-
-/*
-** This function computes a hash on the name of a keyword.
-** Case is not significant.
-*/
-int sqlite3HashNoCase(const char *z, int n){
-  int h = 0;
-  if( n<=0 ) n = strlen(z);
-  while( n > 0  ){
-    h = (h<<3) ^ h ^ UpperToLower[(unsigned char)*z++];
-    n--;
-  }
-  return h & 0x7fffffff;
-}
 
 /*
 ** Some systems have stricmp().  Others have strcasecmp().  Because

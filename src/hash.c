@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.15 2004/08/20 14:08:51 drh Exp $
+** $Id: hash.c,v 1.16 2005/01/31 12:56:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -98,7 +98,14 @@ static int ptrCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 ** Hash and comparison functions when the mode is SQLITE_HASH_STRING
 */
 static int strHash(const void *pKey, int nKey){
-  return sqlite3HashNoCase((const char*)pKey, nKey); 
+  const char *z = (const char *)pKey;
+  int h = 0;
+  if( nKey<=0 ) nKey = strlen(z);
+  while( nKey > 0  ){
+    h = (h<<3) ^ h ^ sqlite3UpperToLower[(unsigned char)*z++];
+    nKey--;
+  }
+  return h & 0x7fffffff;
 }
 static int strCompare(const void *pKey1, int n1, const void *pKey2, int n2){
   if( n1!=n2 ) return 1;
