@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.86 2002/05/26 20:54:34 drh Exp $
+** $Id: select.c,v 1.87 2002/05/27 03:25:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -676,8 +676,9 @@ static int fillInColumnList(Parse *pParse, Select *p){
           if( zTabName==0 || zTabName[0]==0 ){ 
             zTabName = pTab->zName;
           }
-          if( pName && (zTabName==0 || zTabName[0]==0 ||
-                sqliteStrNICmp(pName->z, zTabName, pName->n)!=0) ){
+          if( pName && (zTabName==0 || zTabName[0]==0 || 
+                 sqliteStrNICmp(pName->z, zTabName, pName->n)!=0 ||
+                 zTabName[pName->n]!=0) ){
             continue;
           }
           tableSeen = 1;
